@@ -1,9 +1,7 @@
 /**
  * PostgreSQL Generator - Core domain logic
- * Generates PostgreSQL DDL from Wesley schema using @supabase/pg-parser
+ * Generates PostgreSQL DDL from Wesley schema
  */
-
-import { parse, deparse } from '@supabase/pg-parser';
 import { DirectiveProcessor } from '../Directives.mjs';
 import { IndexDeduplicator } from '../IndexDeduplicator.mjs';
 import { TenantModel } from '../TenantModel.mjs';
@@ -188,6 +186,60 @@ export class PostgreSQLGenerator {
     if (tenantAnalysis.hasTenancy || tenantAnalysis.hasOwnership) {
       statements.push('-- TENANT MODEL SUPPORT');
       statements.push(tenantModel.generateSQL());
+    }
+    
+    return statements.join('\n\n');
+  }
+
+  /**
+   * Generate migration SQL from diff operations
+   */
+  async generateMigration(diff) {
+    const statements = [];
+    
+    for (const operation of diff) {
+      switch (operation.type) {
+        case 'ADD_TABLE':
+          statements.push(await this.generate(operation.schema));
+          break;
+          
+        case 'DROP_TABLE':
+          statements.push(`DROP TABLE IF EXISTS "${operation.table}";`);
+          break;
+          
+        case 'ADD_COLUMN':
+          statements.push(`ALTER TABLE "${operation.table}" ADD COLUMN "${operation.column.name}" ${this.getSQLType(operation.column)};`);
+          break;
+          
+        case 'DROP_COLUMN':
+          statements.push(`ALTER TABLE "${operation.table}" DROP COLUMN IF EXISTS "${operation.column}";`);
+          break;
+          
+        case 'RENAME_COLUMN':
+          statements.push(`ALTER TABLE "${operation.table}" RENAME COLUMN "${operation.oldName}" TO "${operation.newName}";`);
+          break;
+          
+        case 'ALTER_COLUMN':
+          const sqlType = this.getSQLType(operation.column);
+          statements.push(`ALTER TABLE "${operation.table}" ALTER COLUMN "${operation.column.name}" TYPE ${sqlType};`);
+          break;
+          
+        case 'ADD_INDEX':
+          const indexName = `${operation.table}_${operation.columns.join('_')}_idx`;
+          let indexStmt = `CREATE`;
+          if (operation.unique) indexStmt += ` UNIQUE`;
+          indexStmt += ` INDEX "${indexName}" ON "${operation.table}" (${operation.columns.map(c => `"${c}"`).join(', ')});`;
+          statements.push(indexStmt);
+          break;
+          
+        case 'DROP_INDEX':
+          statements.push(`DROP INDEX IF EXISTS "${operation.indexName}";`);
+          break;
+          
+        default:
+          // Add comment for unknown operations
+          statements.push(`-- Unknown operation: ${operation.type}`);
+      }
     }
     
     return statements.join('\n\n');
