@@ -205,36 +205,52 @@ export class PostgreSQLGenerator {
     
     // Generate policy for each operation
     if (rlsConfig.select) {
+      const roles = rlsConfig.selectRoles || rlsConfig.roles || ['authenticated'];
+      const roleList = roles.map(r => `'${r}'`).join(', ');
+      
       policies.push(`
 -- Drop if exists for idempotency
 DROP POLICY IF EXISTS "policy_${tableName}_select_${uid}" ON "${tableName}";
 CREATE POLICY "policy_${tableName}_select_${uid}" ON "${tableName}"
   FOR SELECT
+  TO ${roleList === "'public'" ? 'public' : roleList}
   USING (${rlsConfig.select});`);
     }
     
     if (rlsConfig.insert) {
+      const roles = rlsConfig.insertRoles || rlsConfig.roles || ['authenticated'];
+      const roleList = roles.map(r => `'${r}'`).join(', ');
+      
       policies.push(`
 DROP POLICY IF EXISTS "policy_${tableName}_insert_${uid}" ON "${tableName}";
 CREATE POLICY "policy_${tableName}_insert_${uid}" ON "${tableName}"
   FOR INSERT
+  TO ${roleList === "'public'" ? 'public' : roleList}
   WITH CHECK (${rlsConfig.insert});`);
     }
     
     if (rlsConfig.update) {
+      const roles = rlsConfig.updateRoles || rlsConfig.roles || ['authenticated'];
+      const roleList = roles.map(r => `'${r}'`).join(', ');
+      
       policies.push(`
 DROP POLICY IF EXISTS "policy_${tableName}_update_${uid}" ON "${tableName}";
 CREATE POLICY "policy_${tableName}_update_${uid}" ON "${tableName}"
   FOR UPDATE
+  TO ${roleList === "'public'" ? 'public' : roleList}
   USING (${rlsConfig.update})
   WITH CHECK (${rlsConfig.update});`);
     }
     
     if (rlsConfig.delete) {
+      const roles = rlsConfig.deleteRoles || rlsConfig.roles || ['authenticated'];
+      const roleList = roles.map(r => `'${r}'`).join(', ');
+      
       policies.push(`
 DROP POLICY IF EXISTS "policy_${tableName}_delete_${uid}" ON "${tableName}";
 CREATE POLICY "policy_${tableName}_delete_${uid}" ON "${tableName}"
   FOR DELETE
+  TO ${roleList === "'public'" ? 'public' : roleList}
   USING (${rlsConfig.delete});`);
     }
     

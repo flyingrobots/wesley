@@ -9,6 +9,7 @@ import { PostgreSQLGenerator } from './generators/PostgreSQLGenerator.mjs';
 import { PgTAPTestGenerator } from './generators/PgTAPTestGenerator.mjs';
 import { RPCFunctionGeneratorV2 } from './generators/RPCFunctionGeneratorV2.mjs';
 import { MigrationDiffer } from './generators/MigrationDiffer.mjs';
+import { ZodGenerator } from './generators/ZodGenerator.mjs';
 
 export class WesleyOrchestrator {
   constructor(options = {}) {
@@ -36,7 +37,12 @@ export class WesleyOrchestrator {
     const rpcGenerator = new RPCFunctionGeneratorV2(evidenceMap, {
       paramStrategy: options.rpcParamStrategy || 'jsonb'
     });
-    const migrationEngine = new MigrationDiffer();
+    const zodGenerator = new ZodGenerator(evidenceMap);
+    const migrationEngine = new MigrationDiffer({
+      allowDestructive: options.allowDestructive || false,
+      generateSnapshots: options.generateSnapshots ?? true,
+      riskThreshold: options.riskThreshold || 50
+    });
     
     // Generate artifacts
     const artifacts = {};
@@ -57,19 +63,34 @@ export class WesleyOrchestrator {
       });
     }
     
-    // 3. Generate RPC functions from mutations
+    // 3. Generate Zod schemas
+    artifacts.zod = await zodGenerator.generate(schema);
+    
+    // 4. Generate RPC functions from mutations
     if (this.enableRPC && schema.getMutations) {
       artifacts.rpcFunctions = await rpcGenerator.generate(schema);
     }
     
-    // 4. Generate migrations if previous schema exists
+    // 5. Generate migrations if previous schema exists
     if (this.enableMigrations && previousSchema) {
-      const diff = migrationEngine.diff(previousSchema, schema);
+      const diff = await migrationEngine.diff(previousSchema, schema);
+      
+      // Check for blocked operations
+      if (diff.safetyAnalysis?.blockedOperations?.length > 0) {
+        throw new Error(
+          `Migration blocked: ${diff.safetyAnalysis.blockedOperations[0].reason}\n` +
+          `Use --allow-destructive flag to proceed with destructive operations.`
+        );
+      }
+      
       if (diff.steps.length > 0) {
         artifacts.migration = {
           steps: diff.steps,
           sql: migrationEngine.toSQL(diff),
-          mri: this.calculateMRI(diff.steps)
+          mri: diff.holmesScore?.mri || this.calculateMRI(diff.steps),
+          safetyAnalysis: diff.safetyAnalysis,
+          preFlightSnapshot: diff.preFlightSnapshot,
+          holmesScore: diff.holmesScore
         };
       }
     }

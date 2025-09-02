@@ -3,7 +3,13 @@
  * Calculates differences between schemas for migrations
  */
 
+import { MigrationSafety } from '../MigrationSafety.mjs';
+
 export class MigrationDiffer {
+  constructor(options = {}) {
+    this.safety = new MigrationSafety(options);
+  }
+  
   async diff(previousSchema, currentSchema) {
     const steps = [];
 
@@ -71,7 +77,24 @@ export class MigrationDiffer {
       }
     }
 
-    return { steps };
+    // Analyze migration safety
+    const safetyAnalysis = this.safety.analyzeMigration(steps);
+    
+    // Generate pre-flight snapshot if risky
+    let preFlightSnapshot = null;
+    if (safetyAnalysis.totalRiskScore >= 20 && this.safety.generateSnapshots) {
+      preFlightSnapshot = this.safety.generatePreFlightSnapshot(currentSchema, steps);
+    }
+    
+    // Calculate Holmes risk score
+    const holmesScore = this.safety.calculateHolmesRiskScore(steps);
+
+    return { 
+      steps,
+      safetyAnalysis,
+      preFlightSnapshot,
+      holmesScore
+    };
   }
 }
 
