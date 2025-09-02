@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "docs/architecture/algorithm.md",
+                "file": "docs/CADET/README.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "algorithm"
+              "title": "README"
             }
           }
         ]
@@ -142,7 +142,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "README.md",
+                "file": "docs/CADET/README.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
@@ -182,11 +182,12 @@
             }
           }
         ],
-        "currentTab": 4
+        "currentTab": 3
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 300,
+    "collapsed": true
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -202,42 +203,42 @@
   },
   "active": "28237c72563437da",
   "lastOpenFiles": [
-    "packages/wesley-core/test/test-depth-strategy.test.mjs",
-    "packages/wesley-core/src/domain/TestDepthStrategy.mjs",
-    "packages/wesley-core/test/operation-registry.test.mjs",
-    "packages/wesley-core/src/domain/OperationRegistry.mjs",
-    "packages/wesley-core/test/rls-presets.test.mjs",
-    "packages/wesley-core/src/domain/RLSPresets.mjs",
-    "docs/features/row-level-security.md",
-    "docs/features",
-    "packages/wesley-core/src/commands/scaffold.mjs",
-    "packages/wesley-core/src/commands",
-    "packages/wesley-core/src/scaffolds/multi-tenant.graphql",
-    "packages/wesley-core/src/scaffolds",
-    "packages/wesley-core/node_modules/graphql/README.md",
-    "docs/drafts/boring-deployments.md",
-    "docs/drafts/migrations.md",
-    "docs/drafts/RLS-deep-dive.md",
-    "DEVLOG-2025-09-02.md",
-    "packages/wesley-core/TASKLIST.md",
-    "CODE_OF_CONDUCT.md",
-    "CONTRIBUTING.md",
-    "SECURITY.md",
-    "QUICK_START.md",
-    "example/DEMO_SCRIPT.md",
-    "example/README.md",
-    "docs/architecture/holmes-integration.md",
-    "docs/combined_markdown.md",
-    "docs/sha-lock.md",
-    "docs/architecture/test-generation.md",
-    "README.md",
-    "docs/internals/deep-dive.md",
-    "docs/README.md",
+    "packages/wesley-core/src/domain/generators/PostgreSQLGeneratorV2.mjs",
+    "packages/wesley-core/node_modules/@bjorn3/browser_wasi_shim/typings/wasi_defs.d.ts",
+    "packages/wesley-core/node_modules/@bjorn3/browser_wasi_shim/typings/wasi.d.ts",
+    "packages/wesley-core/node_modules/@bjorn3/browser_wasi_shim/typings/strace.d.ts",
+    "packages/wesley-core/node_modules/@bjorn3/browser_wasi_shim/typings/index.d.ts",
+    "packages/wesley-core/node_modules/@bjorn3/browser_wasi_shim/typings/fs_opfs.d.ts",
+    "packages/wesley-core/node_modules/@bjorn3/browser_wasi_shim/typings/fs_mem.d.ts",
+    "packages/wesley-core/node_modules/@bjorn3/browser_wasi_shim/typings/fd.d.ts",
+    "packages/wesley-core/node_modules/@bjorn3/browser_wasi_shim/typings/debug.d.ts",
+    "packages/wesley-core/node_modules/@bjorn3/browser_wasi_shim/dist/wasi_defs.js",
+    "packages/wesley-core/node_modules/@bjorn3/browser_wasi_shim/dist/wasi.js",
+    "packages/wesley-core/node_modules/@bjorn3/browser_wasi_shim/README.md",
+    "docs/CADET/INTSUM-2025-09-02.md",
+    "docs/CADET/DEVLOG-2025-09-02.md",
+    "docs/CADET/specs/coordinator.md",
+    "docs/CADET/05-testing-strategy.md",
+    "docs/CADET/04-resource-management.md",
+    "docs/CADET/06-cli-reference.md",
+    "docs/CADET/07-roadmap.md",
+    "docs/CADET/01-architecture.md",
+    "docs/CADET/specs/schema-drift.md",
+    "docs/CADET/requirements/scope.md",
+    "docs/CADET/requirements/definition-of-done.md",
+    "docs/CADET/specs/sql-executor.md",
+    "docs/CADET/specs/ddl-planner.md",
+    "docs/CADET/03-execution-models.md",
+    "docs/CADET/TASKS/Decisions.md",
+    "docs/CADET/TASKS/Plan.md",
+    "docs/CADET/requirements/user-stories.md",
     "docs/architecture/algorithm.md",
-    "WESLEY_MEMORY_BANK.md",
-    "WESLEY_CODE_BACKUP.md",
-    "graphql-to-everything/README.md",
-    "graphql-to-everything/node_modules/prettier/THIRD-PARTY-NOTICES.md",
+    "docs/CADET/02-ddl-safety.md",
+    "docs/CADET/README.md",
+    "docs/combined_markdown.md",
+    "docs/drafts/compiler.md",
+    "docs/features/row-level-security.md",
+    "packages/wesley-core/node_modules/graphql/README.md",
     "node_modules/png-js/images/djay.png",
     "node_modules/png-js/images/chompy.png",
     "node_modules/png-js/images/trees.png",
