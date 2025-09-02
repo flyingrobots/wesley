@@ -21,7 +21,14 @@ export * from './application/Commands.mjs';
 export * from './application/UseCases.mjs';
 export { GenerationPipeline } from './application/GenerationPipeline.mjs';
 export { EvidenceMap } from './application/EvidenceMap.mjs';
-export { Scoring } from './application/Scoring.mjs';
+export { ScoringEngine } from './application/Scoring.mjs';
+
+// Documentation & Configuration Utilities
+export { DocumentationGenerator } from './documentation/DocumentationGenerator.mjs';
+export { ConfigurationTemplate } from './config/ConfigurationTemplate.mjs';
 
 // Ports (Interfaces)
 export * from './ports/Ports.mjs';
+
+// CLI Module (Not exported directly - use specific CLI adapters)
+// CLI components are available via './cli/index.mjs' for adapter implementations
