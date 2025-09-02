@@ -79,41 +79,41 @@ return { base, list, nonNull /* field */, itemNonNull };
 
 ### Holmes Integration
 
-#### ⬜ 6. Add Evidence Hooks
-- [ ] Emit stable comments: `COMMENT ON TABLE "users" IS 'uid: abc123'`
-- [ ] Mirror UIDs on columns/constraints/indexes
-- [ ] Enable GraphQL fields ↔ DDL mapping after renames
-- [ ] Use existing UID directive
+#### ✅ 6. Add Evidence Hooks
+- [x] Emit stable comments: `COMMENT ON TABLE "users" IS 'uid: abc123'`
+- [x] Mirror UIDs on columns/constraints/indexes
+- [x] Enable GraphQL fields ↔ DDL mapping after renames
+- [x] Use existing UID directive
 
 ### Testing Enhancements
 
-#### ⬜ 7. Expand pgTAP Coverage
-- [ ] Policy existence per command (SELECT/INSERT/UPDATE/DELETE)
-- [ ] Negative tests for unauthorized access
-- [ ] Owner change regression tests
-- [ ] Hook tests to `@sensitive/@pii` directives
+#### ✅ 7. Expand pgTAP Coverage
+- [x] Policy existence per command (SELECT/INSERT/UPDATE/DELETE)
+- [x] Negative tests for unauthorized access
+- [x] Owner change regression tests
+- [x] Hook tests to `@sensitive/@pii` directives
 
 ### Code Quality
 
-#### ⬜ 8. Centralize Identifier Casing
-- [ ] Create central `Identifier` helper in AST
-- [ ] Make GraphQL→SQL name mapping pluggable
-- [ ] Support snake_case vs keep-case options
-- [ ] Avoid mixed-case table name surprises
+#### ✅ 8. Centralize Identifier Casing
+- [x] Create central `Identifier` helper in AST
+- [x] Make GraphQL→SQL name mapping pluggable
+- [x] Support snake_case vs keep-case options
+- [x] Avoid mixed-case table name surprises
 
-#### ⬜ 9. Example Parity
-- [ ] Add RPC example with new param strategy
-- [ ] Include failing→passing pgTAP test
-- [ ] Demonstrate auto-tests story
+#### ✅ 9. Example Parity
+- [x] Add RPC example with new param strategy
+- [x] Include failing→passing pgTAP test
+- [x] Demonstrate auto-tests story
 
 ---
 
 ## 📈 HIGH-IMPACT IMPROVEMENTS (Short Sprint)
 
-### ⬜ 1. List vs Object Relations
-- [ ] Only skip column emission for `@hasOne/@hasMany` (virtual)
-- [ ] Generate columns for FK scalars
-- [ ] Add guard in `buildTable()` for non-virtual lists
+### ✅ 1. List vs Object Relations
+- [x] Only skip column emission for `@hasOne/@hasMany` (virtual)
+- [x] Generate columns for FK scalars
+- [x] Add guard in `buildTable()` for non-virtual lists
 
 ### ⬜ 2. Directive Ergonomics
 - [ ] Add normalized aliases at parse time:
@@ -121,13 +121,13 @@ return { base, list, nonNull /* field */, itemNonNull };
   - [ ] `@uid` → `@unique`
 - [ ] Keep generators simple
 
-### ⬜ 3. RLS Correctness
-- [ ] Support `FORCE ROW LEVEL SECURITY` (add `AT_ForceRowSecurity`)
-- [ ] Generate correct USING/WITH CHECK per operation:
-  - [ ] SELECT: USING only
-  - [ ] INSERT: CHECK only
-  - [ ] UPDATE: USING + CHECK
-  - [ ] DELETE: USING only
+### ✅ 3. RLS Correctness (partial)
+- [x] Support `FORCE ROW LEVEL SECURITY` (add `AT_ForceRowSecurity`)
+- [x] Generate correct USING/WITH CHECK per operation:
+  - [x] SELECT: USING only
+  - [x] INSERT: CHECK only
+  - [x] UPDATE: USING + CHECK
+  - [x] DELETE: USING only
 - [ ] Allow `roles: [...]` on policies
 
 ### ⬜ 4. FK AST Details
@@ -140,13 +140,13 @@ return { base, list, nonNull /* field */, itemNonNull };
 - [ ] Support partial indexes via `@index(where:"...")`
 - [ ] Avoid double-creating indexes
 
-### ⬜ 6. Type Map Completeness
+### ✅ 6. Type Map Completeness
 Add support for:
-- [ ] Decimal/NUMERIC(p,s)
-- [ ] Date
-- [ ] Time
-- [ ] UUID
-- [ ] Inet
+- [x] Decimal/NUMERIC(p,s)
+- [x] Date
+- [x] Time
+- [x] UUID
+- [x] Inet
 
 ### ⬜ 7. Evidence-First Errors
 - [ ] Push invalid directive args to EvidenceMap
