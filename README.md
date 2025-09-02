@@ -1,286 +1,202 @@
-# 🚀 Wesley - The GraphQL Revolution
+# Wesley
 
-<div align="center">
-  <img src="./docs/assets/wesley-mascot.png" alt="Wesley" width="400" />
-  
-  **Everyone generates GraphQL from databases.**  
-  **Wesley generates databases from GraphQL.**
-  
-  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-  [![npm version](https://img.shields.io/npm/v/@wesley/cli.svg)](https://www.npmjs.com/package/@wesley/cli)
-  [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
-</div>
+> GraphQL is the schema. Postgres & Supabase are generated.
 
-## 📖 The Problem
-
-You write the same data shape **5+ times**:
-- SQL DDL for database
-- GraphQL schema for API  
-- TypeScript types for frontend
-- Zod schemas for validation
-- JSON Schema for OpenAPI
-
-**This is insane.**
-
-## ✨ The Solution
-
-GraphQL is your single source of truth. Everything else is generated.
+Write your GraphQL once. Wesley compiles phased, zero-downtime plans by default, generates RLS + tests, and ships a SHA-locked certificate proving it’s safe.
 
 ```graphql
-# THIS is your entire data layer
+type Document @table @tenant(by: "org_id") @rls(enable: true) {
+  id: ID! @pk
+  title: String!
+  org_id: ID! @fk(ref: "Org.id")
+  created_by: ID! @fk(ref: "User.id")
+}
+```
+
+```mermaid
+flowchart LR
+    subgraph YOU["You write"]
+      GQL["📝 GraphQL Schema<br/><small>schema.graphql</small>"]
+    end
+
+    subgraph WES["Wesley compiles"]
+      IR["🧠 Wesley IR"]
+      SQL["🗄️ Postgres DDL<br/><small>+ phased migrations</small>"]
+      TS["📘 TypeScript<br/><small>+ Zod</small>"]
+      RLS["🔒 RLS Policies<br/><small>+ helpers</small>"]
+      TEST["✅ pgTAP Suite<br/><small>structure/constraints/RLS/plan</small>"]
+      CERT["🔏 SHA-Locked Cert<br/><small>proofs & hashes</small>"]
+    end
+
+    subgraph PLAN["Zero-downtime plan (by default)"]
+      EXP[Expand]
+      BKG[Backfill]
+      VAL[Validate]
+      SWT[Switch]
+      CTR[Contract]
+    end
+
+    subgraph PROD["You deploy"]
+      DEP["🚀 Production"]
+    end
+
+    GQL -->|"wesley generate"| IR
+    IR --> SQL
+    IR --> TS
+    IR --> RLS
+    IR --> TEST
+    IR --> CERT
+
+    SQL --> EXP --> BKG --> VAL --> SWT --> CTR -->|"wesley deploy"| DEP
+
+    classDef p1 fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    classDef p2 fill:#fff3e0,stroke:#ff9800
+    classDef p3 fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+    class GQL p1
+    class SQL,TS,RLS,TEST,CERT p2
+    class DEP p3
+```
+
+Why GraphQL as schema?
+
+- One source of truth: Describe the domain once; Wesley generates SQL, migrations, types, validation, and RLS from it.
+- Naturally relational: Graphs express relationships and constraints cleanly; directives capture DB semantics where they’re used.
+- Portable by design: A schema → IR → generators pipeline targets Postgres/Supabase today, other backends tomorrow.
+
+⸻
+
+The problem (short version)
+
+You maintain the same shape in 5+ places:
+
+- GraphQL for APIs
+- Postgres DDL for DB
+- TypeScript for apps
+- Zod for runtime
+- RLS for security
+- migrations that drift
+
+When they drift, prod breaks. Reviews get harder. Deploys get scary. You’re playing schema telephone.
+
+⸻
+
+How Wesley works
+
+1) Define once
+
 type User @table {
-  id: ID! @primaryKey @default(expr: "gen_random_uuid()")
-  email: String! @unique @index
-  posts: [Post!]! @hasMany
+  id: ID! @pk
+  email: String! @unique
+  org_id: ID! @fk(ref: "Org.id")
 }
 
-type Post @table {
-  id: ID! @primaryKey @default(expr: "gen_random_uuid()")
-  user_id: ID! @foreignKey(ref: "User.id") @index
+2) Compile everything
+
+wesley generate --schema schema.graphql
+wesley plan         # expand → backfill → validate → switch → contract
+wesley rehearse     # run the plan on a shadow DB
+wesley certify      # emit SHA-locked proofs
+wesley deploy       # apply plan to production
+
+3) What you get
+
+✓ migrations/001_expand.sql     # online DDL
+✓ migrations/001_backfill.sql   # idempotent data moves
+✓ migrations/001_contract.sql   # cleanup phase
+✓ types/generated.ts            # TypeScript interfaces
+✓ schemas/zod.ts                # runtime validation
+✓ policies/rls.sql              # RLS policies + helpers
+✓ tests/                        # pgTAP suites (structure/constraints/RLS/plan)
+✓ certs/deploy-<sha>.json       # proofs & hashes
+
+## Key features
+
+### 🔒 Industrial-grade RLS
+
+- Tenant isolation via @tenant, composable security functions, required indexes auto-generated.
+- Every policy ships with allow/deny tests.
+
+### 🔄 Zero-downtime plans (by default)
+
+- Expand → Backfill → Validate → Switch → Contract protocol.
+- CONCURRENT indexes, NOT VALID constraints, chunked backfills, rollback steps.
+
+#### ✅ Tests you’ll actually run
+
+- pgTAP suites for structure, constraints, RLS paths, and plan rehearsal.
+- Idempotence checks and basic plan performance assertions.
+
+### 🔍 Drift detection
+
+- Enforces Schema === Database === Types before deploy.
+- Diff explains exactly what’s out of sync.
+
+### 📊 Evidence-based shipping
+
+- SHA-locked deploy certificates.
+- Optional “Moriarty” predictions from recent history (with regime-shift detection).
+
+### 🚀 Postgres-first, Supabase-native
+
+- Realtime, Storage, Auth helpers, and policy scaffolding generated from directives.
+
+## Compare
+
+|   | Hand-written | ORMs | Wesley |
+| --- | --------- | ---- | ------ |
+| Source of truth | ❌ many files | ❌ code-first | ✅ GraphQL schema |
+| Zero-downtime | ❌ manual | ❌ table locks risk | ✅ planned by default |
+| RLS generation | ❌ manual SQL | ❌ limited | ✅ automated + tests |
+| Drift detection | ❌ ad-hoc | ❌ partial | ✅ enforced |
+| Test coverage | ❌ rare | ❌ app-only | ✅ pgTAP suites |
+| Proof of safety | ❌ none | ❌ none | ✅ SHA-locked certs |
+
+## Getting started
+
+```bash
+npm install -g @wesley/cli
+wesley init
+```
+
+### Write a schema:
+
+```graphql
+type Post @table @rls(enable: true) {
+  id: ID! @pk
   title: String!
-  content: String
+  author_id: ID! @fk(ref: "User.id")
   published: Boolean! @default(expr: "false")
 }
 ```
 
-Wesley generates **everything** from this:
+Generate → rehearse → deploy:
 
-```bash
-wesley generate --schema schema.graphql
-
-✨ Generated:
-  ✓ PostgreSQL DDL       → out/schema.sql
-  ✓ TypeScript Types     → out/types.ts
-  ✓ Zod Schemas         → out/validation.ts
-  ✓ Migrations          → migrations/20240320_auto.sql
-  ✓ pgTAP Tests         → tests/20240320_auto.sql
-  ✓ API Documentation   → out/api-docs.md
+```
+wesley generate
+wesley rehearse
+wesley deploy
 ```
 
-## 🎯 Quick Start
+## FAQ
 
-```bash
-# Install Wesley
-npm install -g @wesley/cli
+> [!faq] What if I need custom SQL?\
 
-# Create your schema
-cat > schema.graphql << 'EOF'
-type User @table {
-  id: ID! @primaryKey @default(expr: "gen_random_uuid()")
-  email: String! @unique
-  name: String!
-}
-EOF
+Use @custom blocks; Wesley will test them and preserve them across generations.
 
-# Generate everything with evidence bundle
-wesley generate --schema schema.graphql --emit-bundle
+> [!faq] Can I bring an existing DB?
 
-# Install SHA-lock HOLMES (optional intelligence sidecar)
-npm install -g @wesley/holmes
+Yes—introspect to a starting GraphQL schema, then let Wesley own the future diffs.
 
-# Run investigation
-holmes investigate
+> [!faq] What about breaking changes?
 
-# Watch for changes
-wesley watch --schema schema.graphql
-```
+Detected and flagged. Wesley prefers backward-compatible plans; explicit approval is required for breaking steps.
 
-## 🏗️ Architecture
+> [!faq] Prisma vs Wesley?
 
-Wesley uses **Hexagonal Architecture** with **Event-Driven** patterns and **Zero Dependencies** in core:
-
-```mermaid
-graph TB
-    subgraph "Your Schema"
-        GraphQL[GraphQL Schema]
-    end
-    
-    subgraph "Wesley Core"
-        Parser[Parser]
-        Domain[Domain Model]
-        Events[Event Bus]
-    end
-    
-    subgraph "Generated Output"
-        SQL[PostgreSQL]
-        TS[TypeScript]
-        Zod[Zod]
-        Docs[Documentation]
-    end
-    
-    GraphQL --> Parser
-    Parser --> Domain
-    Domain --> Events
-    Events --> SQL
-    Events --> TS
-    Events --> Zod
-    Events --> Docs
-    
-    style GraphQL fill:#f9f,stroke:#333,stroke-width:4px
-    style Domain fill:#9f9,stroke:#333,stroke-width:2px
-```
-
-## 🔥 Features
-
-### 🎯 Schema-First Development
-Write your GraphQL schema. Get everything else for free.
-
-### 🔄 Automatic Migrations
-Change your schema. Migrations are generated automatically as diffs.
-
-### 🧪 Automatic Testing
-Every migration gets pgTAP tests. Structure, constraints, performance—all tested.
-
-### 🔍 SHA-lock HOLMES Integration
-Schema intelligence system: weighted scoring, evidence mapping, independent verification.
-
-### 🏃 Zero Dependencies Core
-Pure JavaScript domain logic. Run anywhere.
-
-### 🔌 Extensible
-Add custom generators, directives, and adapters.
-
-### 📦 Multi-Platform
-Works with Node.js, Deno, Bun, and Edge runtimes.
-
-### 🎨 Rich Directives
-
-```graphql
-# Core Directives
-@table                              # Mark as database table
-@primaryKey                         # Primary key constraint
-@unique                            # Unique constraint
-@index                             # Create index
-@default(expr: "SQL expression")   # Default value
-@foreignKey(ref: "Table.field")    # Foreign key
-@hasOne / @hasMany                 # Virtual relations
-
-# Intelligence Directives (NEW!)
-@uid(value: "stable-id")           # Stable identity across renames
-@weight(value: 10)                 # Importance weighting (1-10)
-@critical                          # Mark as mission-critical
-@sensitive                         # Security-sensitive field
-@pii                              # Personal identifiable information
-```
-
-## 📚 Documentation
-
-- [**The Paradigm Shift**](./docs/architecture/paradigm-shift.md) - Why GraphQL should be your source of truth
-- [**Architecture Overview**](./docs/architecture/overview.md) - Hexagonal, event-driven design
-- [**The Algorithm**](./docs/architecture/algorithm.md) - How GraphQL becomes everything
-- [**Test Generation**](./docs/architecture/test-generation.md) - Automatic pgTAP tests
-- [**HOLMES Integration**](./docs/architecture/holmes-integration.md) - Schema intelligence system
-- [**Internals Deep Dive**](./docs/internals/deep-dive.md) - Under the hood
-
-## 🛠️ Advanced Usage
-
-### Custom Generators
-
-```javascript
-import { Wesley, CustomGenerator } from '@wesley/core';
-
-class PythonGenerator extends CustomGenerator {
-  generate(schema) {
-    // Generate Python dataclasses
-    return schema.getTables()
-      .map(table => `@dataclass\nclass ${table.name}:\n${this.fields(table)}`)
-      .join('\n\n');
-  }
-}
-
-wesley.register('python', new PythonGenerator());
-```
-
-### Custom Directives
-
-```graphql
-type User @table @audit @softDelete {
-  id: ID! @primaryKey
-  email: String! @unique @encrypted
-  role: Role! @default(value: "USER")
-  deleted_at: DateTime @index
-}
-```
-
-### Supabase Integration
-
-```graphql
-type Post @table @realtime @rls(
-  select: "true"
-  insert: "auth.uid() = user_id"
-  update: "auth.uid() = user_id"
-  delete: "false"
-) {
-  id: ID! @primaryKey
-  user_id: ID! @foreignKey(ref: "User.id")
-  content: String!
-}
-```
-
-## 🔮 Roadmap
-
-### Shipped Today ✅
-- [x] Core architecture (Hexagonal, Event-driven)
-- [x] GraphQL parser with directives
-- [x] PostgreSQL generator
-- [x] TypeScript generator (basic)
-- [x] Migration diff engine
-- [x] Evidence mapping system
-- [x] SCS/MRI/TCI scoring
-- [x] @uid stable identities
-- [x] @weight/@critical directives
-
-### Coming This Week 🚀
-- [ ] @wesley/holmes package
-- [ ] Full TypeScript generator
-- [ ] Zod schema generator
-- [ ] HOLMES CI/CD integration
-- [ ] WATSON verification
-- [ ] MORIARTY predictions
-
-### Coming Soon 📅
-- [ ] Supabase RLS policies
-- [ ] Realtime subscriptions
-- [ ] Storage configuration
-- [ ] Multi-database support (MySQL, SQLite)
-- [ ] Visual schema editor (Ten Forward)
-- [ ] VS Code extension
-- [ ] Framework plugins (Next.js, Remix, SvelteKit)
-
-## 🤝 Contributing
-
-Wesley is looking for contributors! Areas we need help:
-
-- **Generators**: MySQL, SQLite, MongoDB, Prisma
-- **Frameworks**: Next.js, Remix, SvelteKit integrations
-- **Languages**: Python, Go, Rust type generators
-- **Testing**: Test coverage, edge cases
-- **Documentation**: Tutorials, examples, videos
-
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
-
-## 📜 Philosophy
-
-> "Migrations are a byproduct, not a task."
-
-You shouldn't "write migrations." You should evolve your schema and get migrations for free. Rails tried with ActiveRecord but got it backwards—they made you write migrations instead of schemas.
-
-Wesley does it right: **Schema first. Migrations are just diffs.**
-
-## 🌟 Why "Wesley"?
-
-Named after Wesley Crusher, the brilliant ensign who saw possibilities others couldn't. Like his namesake, Wesley (the tool) transcends conventional thinking to solve problems in ways that seem obvious only in hindsight.
-
-## 📄 License
-
-MIT © Captain James
+Prisma focuses on queries. Wesley compiles the data layer (DDL, migrations, RLS, tests, proofs).
 
 ---
 
-<div align="center">
-  <strong>Stop writing migrations. Write GraphQL.</strong>
-  
-  **"Make it so, schema."**
-  
-  [Documentation](./docs) • [Examples](./examples) • [Discord](https://discord.gg/wesley) • [Twitter](https://twitter.com/wesleyql)
-</div>
+**Stop maintaining schemas in 5 places.**  
+**Start shipping with confidence.**  
+**GraphQL in, Supabase out. Deployments are boring.**  
