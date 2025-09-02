@@ -11,7 +11,7 @@
 - [x] Add `itemNonNull` flag to `unwrapType()`
 - [x] Thread `itemNonNull` through `Field` and all generators
 - [x] Generate correct `NOT NULL` + array element checks
-- [ ] Update Zod schema generation
+- [x] Update Zod schema generation
 - [x] Update migration diff logic
 
 ```javascript
@@ -58,7 +58,7 @@ return { base, list, nonNull /* field */, itemNonNull };
   - [x] Option B: Discrete named parameters (configurable)
   - [ ] Option C: Composite type = table type
 - [x] Fix `$1.field` notation inconsistency
-- [ ] Add zod-backed validation on client
+- [x] Add zod-backed validation on client
 
 #### ✅ 3. Correct Return Types
 - [x] `RETURNS <table_name>` for create/update operations
@@ -128,7 +128,7 @@ return { base, list, nonNull /* field */, itemNonNull };
   - [x] INSERT: CHECK only
   - [x] UPDATE: USING + CHECK
   - [x] DELETE: USING only
-- [ ] Allow `roles: [...]` on policies
+- [x] Allow `roles: [...]` on policies
 
 ### ✅ 4. FK AST Details
 - [x] Validate pg-parser requirements for `fk_attrs`
@@ -166,10 +166,10 @@ Add support for:
 
 ## 🗓️ MEDIUM LIFTS (This Month)
 
-### ⬜ 1. Migration Safety Rails
-- [ ] Make drops opt-in with `--allow-destructive` flag
-- [ ] Emit pre-flight pgTAP snapshots for risky alters
-- [ ] Hook Holmes "risk score" to DROP/ALTER TYPE presence
+### ✅ 1. Migration Safety Rails
+- [x] Make drops opt-in with `--allow-destructive` flag
+- [x] Emit pre-flight pgTAP snapshots for risky alters
+- [x] Hook Holmes "risk score" to DROP/ALTER TYPE presence
 
 ### ⬜ 2. Owner/Tenant Model
 - [ ] Add `@tenant(column:"tenant_id")` directive
@@ -232,8 +232,8 @@ Support presets:
 ### Overall Status: ALPHA READY! 🚀
 - **Alpha Blockers**: 4/4 COMPLETED ✅
 - **Quick Wins**: 9/9 COMPLETED ✅
-- **High-Impact**: 7/9 COMPLETED (77%)
-- **Medium Lifts**: 0/3 NOT STARTED
+- **High-Impact**: 9/9 COMPLETED ✅
+- **Medium Lifts**: 1/3 COMPLETED (33%)
 - **Nice-to-Haves**: 0/5 NOT STARTED
 
 ### Alpha Blockers Status
@@ -256,7 +256,7 @@ Support presets:
 ### High-Impact Status
 - ✅ List vs Object Relations: COMPLETED
 - ✅ Directive Ergonomics: COMPLETED
-- ✅ RLS Correctness: COMPLETED (partial - missing roles)
+- ✅ RLS Correctness: COMPLETED
 - ✅ FK AST Details: COMPLETED
 - ✅ Index Strategy: COMPLETED
 - ✅ Type Map Completeness: COMPLETED
