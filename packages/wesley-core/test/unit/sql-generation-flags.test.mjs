@@ -5,8 +5,8 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { WesleyOrchestrator } from '../src/domain/WesleyOrchestrator.mjs';
-import { Schema, Table, Field } from '../src/domain/Schema.mjs';
+import { WesleyOrchestrator } from '../../src/domain/WesleyOrchestrator.mjs';
+import { Schema, Table, Field } from '../../src/domain/Schema.mjs';
 
 test('generateSQL flag controls DDL generation', async () => {
   const schema = new Schema({

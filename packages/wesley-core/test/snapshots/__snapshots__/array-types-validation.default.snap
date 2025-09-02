@@ -1,0 +1,29 @@
+import { z } from 'zod';
+// Entity Schemas
+export const CollectionSchema = z.object({
+  id: z.string().uuid(),
+  optionalStrings: z.array(z.string().nullable()).nullable(),
+  requiredStrings: z.array(z.string()),
+  mixedNumbers: z.array(z.number().int().nullable()),
+  uuidList: z.array(z.string().uuid()).nullable(),
+  dateList: z.array(z.date())
+});
+export type Collection = z.infer<typeof CollectionSchema>;
+// Input Schemas
+export const CreateCollectionSchema = z.object({
+  optionalStrings: z.array(z.string().nullable()).nullable(),
+  requiredStrings: z.array(z.string()),
+  mixedNumbers: z.array(z.number().int().nullable()),
+  uuidList: z.array(z.string().uuid()).nullable(),
+  dateList: z.array(z.date())
+});
+export type CreateCollectionInput = z.infer<typeof CreateCollectionSchema>;
+export const UpdateCollectionSchema = z.object({
+  optionalStrings: z.array(z.string().nullable()).nullable().optional(),
+  requiredStrings: z.array(z.string()).optional(),
+  mixedNumbers: z.array(z.number().int().nullable()).optional(),
+  uuidList: z.array(z.string().uuid()).nullable().optional(),
+  dateList: z.array(z.date()).optional()
+});
+export type UpdateCollectionInput = z.infer<typeof UpdateCollectionSchema>;
+// Refinements and Custom Validations

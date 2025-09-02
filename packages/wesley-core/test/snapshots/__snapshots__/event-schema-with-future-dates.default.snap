@@ -1,0 +1,32 @@
+import { z } from 'zod';
+// Entity Schemas
+export const EventSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1, "Name cannot be empty").max(100, "Name too long"),
+  startDate: z.date(),
+  endDate: z.date().min(new Date(), "Date must be in the future"),
+  futureEventDate: z.date().nullable().min(new Date(), "Date must be in the future"),
+  maxAttendees: z.number().int().nullable(),
+  ticketPrice: z.number().nullable().min(0, "Price cannot be negative")
+});
+export type Event = z.infer<typeof EventSchema>;
+// Input Schemas
+export const CreateEventSchema = z.object({
+  name: z.string().min(1, "Name cannot be empty").max(100, "Name too long"),
+  startDate: z.date(),
+  endDate: z.date().min(new Date(), "Date must be in the future"),
+  futureEventDate: z.date().nullable().min(new Date(), "Date must be in the future"),
+  maxAttendees: z.number().int().nullable(),
+  ticketPrice: z.number().nullable().min(0, "Price cannot be negative")
+});
+export type CreateEventInput = z.infer<typeof CreateEventSchema>;
+export const UpdateEventSchema = z.object({
+  name: z.string().min(1, "Name cannot be empty").max(100, "Name too long").optional(),
+  startDate: z.date().optional(),
+  endDate: z.date().min(new Date(), "Date must be in the future").optional(),
+  futureEventDate: z.date().nullable().min(new Date(), "Date must be in the future").optional(),
+  maxAttendees: z.number().int().nullable().optional(),
+  ticketPrice: z.number().nullable().min(0, "Price cannot be negative").optional()
+});
+export type UpdateEventInput = z.infer<typeof UpdateEventSchema>;
+// Refinements and Custom Validations

@@ -4,8 +4,8 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { OperationRegistry } from '../src/domain/OperationRegistry.mjs';
-import { GraphQLSchemaBuilder } from '../src/domain/GraphQLSchemaBuilder.mjs';
+import { OperationRegistry } from '../../src/domain/OperationRegistry.mjs';
+import { GraphQLSchemaBuilder } from '../../src/domain/GraphQLSchemaBuilder.mjs';
 import { parse } from 'graphql';
 
 test('harvests CRUD operations from tables', () => {

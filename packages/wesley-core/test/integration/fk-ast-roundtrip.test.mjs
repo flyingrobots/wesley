@@ -4,8 +4,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { PostgreSQLAstBuilder } from '../src/domain/PostgreSQLAstBuilder.mjs';
-import { Schema, Table, Field } from '../src/domain/Schema.mjs';
+import { PostgreSQLAstBuilder } from '../../src/domain/PostgreSQLAstBuilder.mjs';
+import { Schema, Table, Field } from '../../src/domain/Schema.mjs';
 import pgParser from '@supabase/pg-parser';
 
 describe('Foreign Key AST Roundtrip', () => {

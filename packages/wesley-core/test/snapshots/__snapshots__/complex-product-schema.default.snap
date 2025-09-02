@@ -1,0 +1,42 @@
+import { z } from 'zod';
+// Entity Schemas
+export const ProductSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1, "Name cannot be empty").max(100, "Name too long"),
+  description: z.string().nullable().max(10000, "Content too long"),
+  price: z.number().min(0, "Price cannot be negative"),
+  // Default: 0
+  quantity: z.number().int().min(0, "Count cannot be negative"),
+  tags: z.array(z.string().nullable()),
+  categoryIds: z.array(z.string().uuid()).nullable(),
+  // Default: {}
+  metadata: z.record(z.unknown()).nullable(),
+  websiteUrl: z.string().nullable().url("Invalid URL format")
+});
+export type Product = z.infer<typeof ProductSchema>;
+// Input Schemas
+export const CreateProductSchema = z.object({
+  name: z.string().min(1, "Name cannot be empty").max(100, "Name too long"),
+  description: z.string().nullable().max(10000, "Content too long"),
+  price: z.number().min(0, "Price cannot be negative"),
+  // Default: 0
+  quantity: z.number().int().min(0, "Count cannot be negative").default(0),
+  tags: z.array(z.string().nullable()),
+  categoryIds: z.array(z.string().uuid()).nullable(),
+  // Default: {}
+  metadata: z.record(z.unknown()).nullable().default({}),
+  websiteUrl: z.string().nullable().url("Invalid URL format")
+});
+export type CreateProductInput = z.infer<typeof CreateProductSchema>;
+export const UpdateProductSchema = z.object({
+  name: z.string().min(1, "Name cannot be empty").max(100, "Name too long").optional(),
+  description: z.string().nullable().max(10000, "Content too long").optional(),
+  price: z.number().min(0, "Price cannot be negative").optional(),
+  quantity: z.number().int().min(0, "Count cannot be negative").optional(),
+  tags: z.array(z.string().nullable()).optional(),
+  categoryIds: z.array(z.string().uuid()).nullable().optional(),
+  metadata: z.record(z.unknown()).nullable().optional(),
+  websiteUrl: z.string().nullable().url("Invalid URL format").optional()
+});
+export type UpdateProductInput = z.infer<typeof UpdateProductSchema>;
+// Refinements and Custom Validations

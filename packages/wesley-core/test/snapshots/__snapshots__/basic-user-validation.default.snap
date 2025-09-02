@@ -1,0 +1,35 @@
+import { z } from 'zod';
+// Entity Schemas
+export const UserSchema = z.object({
+  id: z.string().uuid(),
+  // Must be unique
+  email: z.string().min(1, "Required for unique field").email("Invalid email format"),
+  name: z.string().min(1, "Name cannot be empty").max(100, "Name too long"),
+  age: z.number().int().nullable().min(0, "Age cannot be negative").max(150, "Invalid age"),
+  // Default: true
+  isActive: z.boolean()
+});
+export type User = z.infer<typeof UserSchema>;
+// Input Schemas
+export const CreateUserSchema = z.object({
+  // Must be unique
+  email: z.string().min(1, "Required for unique field").email("Invalid email format"),
+  name: z.string().min(1, "Name cannot be empty").max(100, "Name too long"),
+  age: z.number().int().nullable().min(0, "Age cannot be negative").max(150, "Invalid age"),
+  // Default: true
+  isActive: z.boolean().default(true)
+});
+export type CreateUserInput = z.infer<typeof CreateUserSchema>;
+export const UpdateUserSchema = z.object({
+  email: z.string().min(1, "Required for unique field").email("Invalid email format").optional(),
+  name: z.string().min(1, "Name cannot be empty").max(100, "Name too long").optional(),
+  age: z.number().int().nullable().min(0, "Age cannot be negative").max(150, "Invalid age").optional(),
+  isActive: z.boolean().optional()
+});
+export type UpdateUserInput = z.infer<typeof UpdateUserSchema>;
+// Refinements and Custom Validations
+// Unique validation for email
+export const validateUserEmailUnique = async (value: string) => {
+  // Implementation would check database for uniqueness
+  return true; // Placeholder
+};

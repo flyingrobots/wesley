@@ -1,0 +1,56 @@
+import { z } from 'zod';
+// Entity Schemas
+export const UserProfileSchema = z.object({
+  id: z.string().uuid(),
+  // Sensitive data - handle with care, Must be unique
+  email: z.string().min(1, "Required for unique field").email("Invalid email format"),
+  // Sensitive data - handle with care
+  socialSecurityNumber: z.string().nullable(),
+  // Sensitive data - handle with care
+  creditCardNumber: z.string().nullable(),
+  phoneNumber: z.string().nullable(),
+  // Sensitive data - handle with care
+  dateOfBirth: z.date().nullable()
+});
+export type UserProfile = z.infer<typeof UserProfileSchema>;
+// Input Schemas
+export const CreateUserProfileSchema = z.object({
+  // Sensitive data - handle with care, Must be unique
+  email: z.string().min(1, "Required for unique field").email("Invalid email format"),
+  // Sensitive data - handle with care
+  socialSecurityNumber: z.string().nullable(),
+  // Sensitive data - handle with care
+  creditCardNumber: z.string().nullable(),
+  phoneNumber: z.string().nullable(),
+  // Sensitive data - handle with care
+  dateOfBirth: z.date().nullable()
+});
+export type CreateUserProfileInput = z.infer<typeof CreateUserProfileSchema>;
+export const UpdateUserProfileSchema = z.object({
+  email: z.string().min(1, "Required for unique field").email("Invalid email format").optional(),
+  socialSecurityNumber: z.string().nullable().optional(),
+  creditCardNumber: z.string().nullable().optional(),
+  phoneNumber: z.string().nullable().optional(),
+  dateOfBirth: z.date().nullable().optional()
+});
+export type UpdateUserProfileInput = z.infer<typeof UpdateUserProfileSchema>;
+// Refinements and Custom Validations
+// Unique validation for email
+export const validateUserProfileEmailUnique = async (value: string) => {
+  // Implementation would check database for uniqueness
+  return true; // Placeholder
+};
+// Enhanced validation for UserProfile sensitive fields
+export const UserProfileSensitiveDataSchema = UserProfileSchema.refine(
+  (data) => {
+    // Add custom validation logic for sensitive fields
+    // Validate email meets security requirements
+    // Validate socialSecurityNumber meets security requirements
+    // Validate creditCardNumber meets security requirements
+    // Validate dateOfBirth meets security requirements
+    return true;
+  },
+  {
+    message: "Sensitive data validation failed"
+  }
+);

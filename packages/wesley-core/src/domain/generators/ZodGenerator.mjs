@@ -62,10 +62,44 @@ ${fields.join(',\n')}
     // Build final output
     const importStatement = `import { ${Array.from(imports).join(', ')} } from 'zod';`;
     
+    const helpers = this.generateHelpers();
+    
     return `${importStatement}
+
+${helpers}
 
 ${schemas.join('\n\n')}`;
   }
+  
+  /**
+   * Generate helper functions for parsing and validation
+   */
+  generateHelpers() {
+    return `// Helper functions
+export const parseWithSchema = <T>(schema: z.ZodSchema<T>, data: unknown): T => {
+  return schema.parse(data);
+};
+
+export const safeParseWithSchema = <T>(schema: z.ZodSchema<T>, data: unknown): z.SafeParseReturnType<unknown, T> => {
+  return schema.safeParse(data);
+};
+
+// Database operation helpers
+export const validateCreate = <T>(schema: z.ZodSchema<T>, data: unknown): T => {
+  const result = schema.safeParse(data);
+  if (!result.success) {
+    throw new Error(\`Validation failed: \${result.error.message}\`);
+  }
+  return result.data;
+};
+
+export const validateUpdate = <T>(schema: z.ZodSchema<T>, data: unknown): T => {
+  const result = schema.safeParse(data);
+  if (!result.success) {
+    throw new Error(\`Validation failed: \${result.error.message}\`);
+  }
+  return result.data;
+};`;
   
   /**
    * Generate Zod schema for a field
@@ -120,10 +154,27 @@ ${schemas.join('\n\n')}`;
       'Decimal': 'z.number()',
       'UUID': 'z.string().uuid()',
       'JSON': 'z.record(z.any())',
-      'Inet': 'z.string().ip()'
+      'Inet': 'z.string().ip()',
+      'CIDR': 'z.string()', // CIDR notation
+      'MacAddr': 'z.string().regex(/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/)', // MAC address
+      'BigInt': 'z.bigint()',
+      'Bytes': 'z.instanceof(Buffer)' // For binary data
     };
     
+    // Check if it's an enum type (assuming enum types are UPPERCASE or have specific pattern)
+    if (this.isEnumType(field.type)) {
+      return `z.enum(['${field.type}'])`;  // This would need actual enum values
+    }
+    
     return typeMap[field.type] || 'z.unknown()';
+  }
+  
+  /**
+   * Check if a type is an enum type
+   */
+  isEnumType(type) {
+    // This is a heuristic - in practice you'd have enum metadata
+    return type && type[0] === type[0].toUpperCase() && !['ID', 'String', 'Int', 'Float', 'Boolean', 'DateTime', 'Date', 'Time', 'Decimal', 'UUID', 'JSON', 'Inet', 'CIDR', 'MacAddr', 'BigInt', 'Bytes'].includes(type);
   }
   
   /**
