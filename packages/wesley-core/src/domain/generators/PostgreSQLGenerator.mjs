@@ -11,7 +11,15 @@ const scalarMap = {
   Int: 'integer',
   Float: 'double precision',
   Boolean: 'boolean',
-  DateTime: 'timestamptz'
+  DateTime: 'timestamptz',
+  Date: 'date',
+  Time: 'time',
+  Decimal: 'numeric',
+  UUID: 'uuid',
+  JSON: 'jsonb',
+  Inet: 'inet',
+  CIDR: 'cidr',
+  MacAddr: 'macaddr'
 };
 
 export class PostgreSQLGenerator {
@@ -90,13 +98,28 @@ export class PostgreSQLGenerator {
         .join(',\n  ')}\n);`;
 
       statements.push(create);
+      
+      // Add UID comment for evidence tracking
+      const tableUid = table.directives?.['@uid'] || table.uid || `tbl_${table.name.toLowerCase()}`;
+      statements.push(`COMMENT ON TABLE "${table.name}" IS 'uid: ${tableUid}';`);
+      
+      // Add column comments with UIDs
+      for (const field of table.getFields()) {
+        if (!field.isVirtual()) {
+          const fieldUid = field.directives?.['@uid'] || `col_${table.name.toLowerCase()}_${field.name.toLowerCase()}`;
+          statements.push(`COMMENT ON COLUMN "${table.name}"."${field.name}" IS 'uid: ${fieldUid}';`);
+        }
+      }
 
-      // Generate indexes
+      // Generate indexes with UID comments
       for (const field of table.getFields()) {
         if (field.isIndexed()) {
+          const indexName = `${table.name}_${field.name}_idx`;
+          const indexUid = field.directives?.['@uid'] ? `idx_${field.directives['@uid']}` : `idx_${table.name.toLowerCase()}_${field.name.toLowerCase()}`;
           statements.push(
-            `CREATE INDEX IF NOT EXISTS "${table.name}_${field.name}_idx" ON "${table.name}" ("${field.name}");`
+            `CREATE INDEX IF NOT EXISTS "${indexName}" ON "${table.name}" ("${field.name}");`
           );
+          statements.push(`COMMENT ON INDEX "${indexName}" IS 'uid: ${indexUid}';`);
         }
       }
 
@@ -139,9 +162,10 @@ export class PostgreSQLGenerator {
     
     const policies = [];
     
-    // Enable RLS
+    // Enable RLS with FORCE for superusers
     policies.push(`-- Enable RLS for ${tableName}`);
     policies.push(`ALTER TABLE "${tableName}" ENABLE ROW LEVEL SECURITY;`);
+    policies.push(`ALTER TABLE "${tableName}" FORCE ROW LEVEL SECURITY;`);
     
     // Generate policy for each operation
     if (rlsConfig.select) {

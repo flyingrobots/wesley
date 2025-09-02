@@ -86,7 +86,9 @@ export class Field {
   }
 
   isVirtual() {
-    return this.list || !!this.directives['@hasMany'] || !!this.directives['@hasOne'];
+    // Only @hasMany and @hasOne are virtual relations
+    // Regular lists (arrays) should generate columns
+    return !!this.directives['@hasMany'] || !!this.directives['@hasOne'];
   }
 
   getDefault() {

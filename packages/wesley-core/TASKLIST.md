@@ -284,3 +284,11 @@ Support presets:
   - Updated migration diff to handle itemNonNull changes
   - Created test for SQL generation flags independence
   - Wired pg-parser with flip-able SQLBackend
+- Completed Quick Wins #6-9 and High-Impact #1, #3, #6:
+  - Added evidence hooks with COMMENT ON statements for UIDs
+  - Expanded pgTAP coverage with per-operation RLS tests
+  - Created centralized Identifier helper for name mapping
+  - Added example parity with RPC and failing→passing tests
+  - Fixed isVirtual() to only consider @hasOne/@hasMany
+  - Added FORCE ROW LEVEL SECURITY support
+  - Expanded type map with Date, Time, UUID, Decimal, Inet

@@ -1,0 +1,59 @@
+# RPC Example with New Parameter Strategy
+# Demonstrates jsonb parameter approach and ownership model
+
+type User @table @grant(roles: ["authenticated", "anon"]) {
+  id: ID! @primaryKey @uid(value: "user_001")
+  email: String! @unique @sensitive
+  name: String
+  role: UserRole!
+  createdAt: DateTime! @default(value: "NOW()")
+  
+  # Virtual relations
+  posts: [Post!]! @hasMany(ref: "author")
+  profile: Profile @hasOne
+}
+
+type Post @table @owner(column: "author_id") @rls(
+  enabled: true
+  select: "true"
+  insert: "auth.uid() = author_id"
+  update: "auth.uid() = author_id"
+  delete: "auth.uid() = author_id"
+) {
+  id: ID! @primaryKey
+  title: String! @index
+  content: String
+  published: Boolean! @default(value: "false")
+  author_id: ID! @foreignKey(ref: "User.id")
+  tags: [String!]! # Array with non-null items
+  metadata: JSON
+  createdAt: DateTime! @default(value: "NOW()")
+  updatedAt: DateTime! @default(value: "NOW()")
+}
+
+type Profile @table @owner(column: "user_id") {
+  id: ID! @primaryKey
+  user_id: ID! @foreignKey(ref: "User.id") @unique
+  bio: String
+  avatar_url: String
+  preferences: JSON @pii
+}
+
+enum UserRole {
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+# These would generate RPC functions with jsonb parameters:
+# - create_user(input jsonb) RETURNS users
+# - update_user(id uuid, updates jsonb) RETURNS users
+# - delete_user(id uuid) RETURNS boolean
+# - list_users(filters jsonb) RETURNS SETOF users
+#
+# - create_post(input jsonb) RETURNS posts
+# - update_post(id uuid, updates jsonb) RETURNS posts
+# - delete_post(id uuid) RETURNS boolean
+# - list_posts(filters jsonb) RETURNS SETOF posts
+#
+# With ownership automatically enforced via auth.uid() = author_id
