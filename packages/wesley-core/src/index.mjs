@@ -45,5 +45,22 @@ export { GenerationPipeline } from './application/GenerationPipeline.mjs';
 export { EvidenceMap } from './application/EvidenceMap.mjs';
 export { Scoring } from './application/Scoring.mjs';
 
+// Safety Components (Wave 3)
+export { 
+  ConcurrentSafetyAnalyzer,
+  ConcurrentSafetyError,
+  RaceConditionError,
+  LockEscalationError
+} from './domain/analyzer/ConcurrentSafetyAnalyzer.mjs';
+
+export { 
+  BackpressureController,
+  BackpressureError,
+  CircuitBreakerError,
+  RateLimitExceededError,
+  ConnectionPoolExhaustedError,
+  CircuitBreakerState
+} from './domain/control/BackpressureController.mjs';
+
 // Ports (Interfaces)
 export * from './ports/Ports.mjs';
