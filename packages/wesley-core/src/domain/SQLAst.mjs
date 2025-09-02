@@ -302,6 +302,14 @@ export class CreatePolicyStatement {
 // FUNCTION STATEMENTS
 // ═══════════════════════════════════════════════════════════════════
 
+export class ParameterDeclaration {
+  constructor(name, type, defaultValue = null) {
+    this.name = name;
+    this.type = type;
+    this.defaultValue = defaultValue;
+  }
+}
+
 export class CreateFunctionStatement {
   constructor(functionName) {
     this.functionName = functionName;
@@ -314,8 +322,17 @@ export class CreateFunctionStatement {
     this.volatility = null; // IMMUTABLE, STABLE, VOLATILE
   }
   
-  addParameter(name, type, defaultValue = null) {
-    this.parameters.push({ name, type, defaultValue });
+  addParameter(param) {
+    // Accept either ParameterDeclaration object or raw params
+    if (param instanceof ParameterDeclaration) {
+      this.parameters.push(param);
+    } else if (typeof param === 'string') {
+      // Legacy: addParameter(name, type, defaultValue)
+      const [name, type, defaultValue] = arguments;
+      this.parameters.push({ name, type, defaultValue });
+    } else {
+      this.parameters.push(param);
+    }
     return this;
   }
   
@@ -329,14 +346,36 @@ export class CreateFunctionStatement {
     return this;
   }
   
+  // Alias for consistency with RPCFunctionGeneratorV2
+  body(body) {
+    return this.setBody(body);
+  }
+  
+  // Alias for language
+  language(lang) {
+    this.language = lang;
+    return this;
+  }
+  
   setSecurityDefiner() {
     this.securityDefiner = true;
+    return this;
+  }
+  
+  // Alias that accepts boolean
+  securityDefiner(value = true) {
+    this.securityDefiner = value;
     return this;
   }
   
   setSearchPath(path) {
     this.searchPath = path;
     return this;
+  }
+  
+  // Alias for consistency
+  searchPath(path) {
+    return this.setSearchPath(path);
   }
   
   stable() {

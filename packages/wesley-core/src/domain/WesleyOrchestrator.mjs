@@ -7,7 +7,7 @@ import { EvidenceMap } from '../application/EvidenceMap.mjs';
 import { Scoring } from '../application/Scoring.mjs';
 import { PostgreSQLGenerator } from './generators/PostgreSQLGenerator.mjs';
 import { PgTAPTestGenerator } from './generators/PgTAPTestGenerator.mjs';
-import { RPCFunctionGenerator } from './generators/RPCFunctionGenerator.mjs';
+import { RPCFunctionGeneratorV2 } from './generators/RPCFunctionGeneratorV2.mjs';
 import { MigrationDiffEngine } from './generators/MigrationDiffEngine.mjs';
 
 export class WesleyOrchestrator {
@@ -33,7 +33,9 @@ export class WesleyOrchestrator {
     // Initialize generators with evidence map
     const sqlGenerator = new PostgreSQLGenerator(evidenceMap);
     const testGenerator = new PgTAPTestGenerator(evidenceMap);
-    const rpcGenerator = new RPCFunctionGenerator(evidenceMap);
+    const rpcGenerator = new RPCFunctionGeneratorV2(evidenceMap, {
+      paramStrategy: options.rpcParamStrategy || 'jsonb'
+    });
     const migrationEngine = new MigrationDiffEngine();
     
     // Generate artifacts

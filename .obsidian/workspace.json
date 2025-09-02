@@ -202,6 +202,7 @@
   },
   "active": "28237c72563437da",
   "lastOpenFiles": [
+    "packages/wesley-core/src/domain/generators/RPCFunctionGeneratorV2.mjs",
     "packages/wesley-core/TASKLIST.md",
     "packages/wesley-core/test/rls-idempotency.test.mjs",
     "packages/wesley-core/test/directive-registry.test.mjs",
@@ -237,7 +238,6 @@
     "graphql-to-everything/node_modules/@nodelib/fs.walk/README.md",
     "graphql-to-everything/node_modules/@nodelib/fs.scandir/README.md",
     "graphql-to-everything/node_modules/@nodelib/fs.stat/README.md",
-    "graphql-to-everything/node_modules/picomatch/README.md",
     "node_modules/png-js/images/djay.png",
     "node_modules/png-js/images/chompy.png",
     "node_modules/png-js/images/trees.png",

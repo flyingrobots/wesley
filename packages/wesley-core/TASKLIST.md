@@ -45,37 +45,37 @@ return { base, list, nonNull /* field */, itemNonNull };
 
 ### RPC Generator Fixes
 
-#### ⬜ 1. Align RPC with SQL AST
-- [ ] Replace raw string SQL with `CreateFunctionStatement`
-- [ ] Use AST for parameters, volatility, SECURITY DEFINER
-- [ ] Ensure consistent quoting/escaping
-- [ ] Prevent SQL injection vulnerabilities
+#### ✅ 1. Align RPC with SQL AST
+- [x] Replace raw string SQL with `CreateFunctionStatement`
+- [x] Use AST for parameters, volatility, SECURITY DEFINER
+- [x] Ensure consistent quoting/escaping
+- [x] Prevent SQL injection vulnerabilities
 
-#### ⬜ 2. Fix Parameter Strategy 
+#### ✅ 2. Fix Parameter Strategy 
 **Current Issue**: Mixing composite params with discrete primitives
-- [ ] **Choose one approach:**
-  - [ ] Option A: Single `jsonb` input + unpacking
-  - [ ] Option B: Discrete named parameters
+- [x] **Choose one approach:**
+  - [x] Option A: Single `jsonb` input + unpacking (default)
+  - [x] Option B: Discrete named parameters (configurable)
   - [ ] Option C: Composite type = table type
-- [ ] Fix `$1.field` notation inconsistency
+- [x] Fix `$1.field` notation inconsistency
 - [ ] Add zod-backed validation on client
 
-#### ⬜ 3. Correct Return Types
-- [ ] `RETURNS <table_name>` for create/update operations
-- [ ] `RETURNS SETOF <table_name>` for queries
-- [ ] `RETURNS boolean` for delete operations
-- [ ] Stop accidentally returning text/uuid
+#### ✅ 3. Correct Return Types
+- [x] `RETURNS <table_name>` for create/update operations
+- [x] `RETURNS SETOF <table_name>` for queries
+- [x] `RETURNS boolean` for delete operations
+- [x] Stop accidentally returning text/uuid
 
-#### ⬜ 4. Fix Hardcoded Auth Assumptions
+#### ✅ 4. Fix Hardcoded Auth Assumptions
 **Problem**: Assumes `auth.uid() = user_id` column name
-- [ ] Pull from `@owner(column: "owner_id")` directives
-- [ ] Use table policy metadata
-- [ ] Make ownership column configurable
+- [x] Pull from `@owner(column: "owner_id")` directives
+- [x] Use table policy metadata
+- [x] Make ownership column configurable
 
-#### ⬜ 5. Role Grant Flexibility
-- [ ] Allow per-RPC role overrides via directives
-- [ ] Fully wire `@grant` directive
-- [ ] Support custom role configurations
+#### ✅ 5. Role Grant Flexibility
+- [x] Allow per-RPC role overrides via directives
+- [x] Fully wire `@grant` directive
+- [x] Support custom role configurations
 
 ### Holmes Integration
 
@@ -236,11 +236,11 @@ Support presets:
 - ✅ AST → SQL Conversion: COMPLETED (toSQL already works)
 
 ### Quick Wins Status
-- 🔴 RPC AST Alignment: NOT STARTED
-- 🔴 Parameter Strategy: NOT STARTED
-- 🔴 Return Types: NOT STARTED
-- 🔴 Auth Assumptions: NOT STARTED
-- 🔴 Role Grants: NOT STARTED
+- ✅ RPC AST Alignment: COMPLETED
+- ✅ Parameter Strategy: COMPLETED
+- ✅ Return Types: COMPLETED  
+- ✅ Auth Assumptions: COMPLETED
+- ✅ Role Grants: COMPLETED
 - 🔴 Evidence Hooks: NOT STARTED
 - 🔴 pgTAP Coverage: NOT STARTED
 - 🔴 Identifier Casing: NOT STARTED
@@ -272,3 +272,9 @@ Support presets:
 - Fixed Alpha Blocker #2: Removed silent type coercion, now throws errors
 - Fixed Alpha Blocker #3: Separated generateSQL flag from enableRLS
 - Fixed Alpha Blocker #4: Verified toSQL() methods already work
+- Fixed Quick Win RPC #1-5: Complete RPC generator rewrite with AST
+  - Replaced raw SQL strings with CreateFunctionStatement AST
+  - Implemented consistent jsonb parameter strategy (configurable)
+  - Fixed return types (table/SETOF table/boolean)
+  - Made auth column detection directive-driven (@owner)
+  - Added role grant flexibility via @grant directive
