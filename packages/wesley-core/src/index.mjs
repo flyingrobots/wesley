@@ -16,6 +16,28 @@ export { PgTAPTestGenerator } from './domain/generators/PgTAPTestGenerator.mjs';
 export { RPCFunctionGenerator } from './domain/generators/RPCFunctionGenerator.mjs';
 export { MigrationDiffer } from './domain/generators/MigrationDiffer.mjs';
 
+// SQL Execution Components
+export { 
+  SQLExecutor, 
+  PostgreSQLConnection, 
+  SQLOperation 
+} from './domain/executor/SQLExecutor.mjs';
+
+export { 
+  MigrationExplainer, 
+  MigrationOperation, 
+  MigrationAnalysisSummary,
+  PostgreSQLLockLevels 
+} from './domain/explainer/MigrationExplainer.mjs';
+
+export { 
+  CICOrchestrator, 
+  CICOperation, 
+  CICExecutionStrategy,
+  CICProgressTracker,
+  CICOperationResult 
+} from './domain/orchestrator/CICOrchestrator.mjs';
+
 // Application Layer
 export * from './application/Commands.mjs';
 export * from './application/UseCases.mjs';
