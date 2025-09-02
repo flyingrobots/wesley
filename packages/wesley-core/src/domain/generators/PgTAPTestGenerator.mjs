@@ -4,13 +4,16 @@
  */
 
 import { DirectiveProcessor } from '../Directives.mjs';
+import { TestDepthStrategy } from '../TestDepthStrategy.mjs';
 
 export class PgTAPTestGenerator {
-  constructor(evidenceMap) {
+  constructor(evidenceMap, options = {}) {
     this.evidenceMap = evidenceMap;
     this.currentLine = 1;
     this.tests = [];
     this.testCount = 0;
+    this.depthStrategy = new TestDepthStrategy(options.depthThresholds || {});
+    this.enableDepthTesting = options.enableDepthTesting ?? true;
   }
 
   /**
@@ -84,20 +87,38 @@ export class PgTAPTestGenerator {
       for (const field of fields) {
         const fieldUid = DirectiveProcessor.getUid(field.directives) || 
                          `col:${table.name}.${field.name}`;
-        const weight = DirectiveProcessor.getWeight(field.directives);
+        const weight = this.enableDepthTesting 
+          ? this.depthStrategy.calculateFieldWeight(field)
+          : DirectiveProcessor.getWeight(field.directives);
         const isCritical = DirectiveProcessor.isCritical(field.directives);
+        
+        // Determine test depth based on weight
+        const testDepth = this.enableDepthTesting
+          ? this.depthStrategy.getFieldTestDepth(field)
+          : 'standard';
         
         // Record evidence
         this.recordEvidence(fieldUid, 'test', tests.length + 1);
         
-        tests.push(`-- Column: ${table.name}.${field.name} (weight: ${weight}${isCritical ? ', CRITICAL' : ''})`);
+        // Generate test summary
+        if (this.enableDepthTesting) {
+          tests.push(this.depthStrategy.generateTestSummary(field, testDepth, weight));
+        } else {
+          tests.push(`-- Column: ${table.name}.${field.name} (weight: ${weight}${isCritical ? ', CRITICAL' : ''})`);
+        }
         tests.push(`-- EVIDENCE: ${fieldUid} -> ${this.getEvidence(fieldUid)}`);
         
-        // Column existence
-        tests.push(`SELECT has_column('${table.name}', '${field.name}', ` +
-                  `'Column ${table.name}.${field.name} should exist');`);
+        // Generate tests based on depth
+        if (this.enableDepthTesting) {
+          const depthTests = this.depthStrategy.generateFieldTests(field, table.name, testDepth);
+          tests.push(...depthTests);
+        } else {
+          // Original simple tests
+          // Column existence
+          tests.push(`SELECT has_column('${table.name}', '${field.name}', ` +
+                    `'Column ${table.name}.${field.name} should exist');`);
         
-        // Column type
+          // Column type
         const sqlType = this.mapToSQLType(field);
         tests.push(`SELECT col_type_is('${table.name}', '${field.name}', '${sqlType}', ` +
                   `'${table.name}.${field.name} should be ${sqlType}');`);

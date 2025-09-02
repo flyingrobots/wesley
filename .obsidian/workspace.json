@@ -202,6 +202,8 @@
   },
   "active": "28237c72563437da",
   "lastOpenFiles": [
+    "packages/wesley-core/test/test-depth-strategy.test.mjs",
+    "packages/wesley-core/src/domain/TestDepthStrategy.mjs",
     "packages/wesley-core/test/operation-registry.test.mjs",
     "packages/wesley-core/src/domain/OperationRegistry.mjs",
     "packages/wesley-core/test/rls-presets.test.mjs",
@@ -212,8 +214,6 @@
     "packages/wesley-core/src/commands",
     "packages/wesley-core/src/scaffolds/multi-tenant.graphql",
     "packages/wesley-core/src/scaffolds",
-    "packages/wesley-core/package-lock.json",
-    "packages/wesley-core/node_modules/graphql/validation/rules/custom/NoSchemaIntrospectionCustomRule.mjs",
     "packages/wesley-core/node_modules/graphql/README.md",
     "docs/drafts/boring-deployments.md",
     "docs/drafts/migrations.md",
