@@ -34,8 +34,13 @@ export class MigrationDiffEngine {
             field: currField 
           });
         } else if (prevField && currField) {
-          // Check for type changes
-          if (prevField.type !== currField.type || prevField.nonNull !== currField.nonNull) {
+          // Check for type changes (including array and item nullability)
+          const typeChanged = prevField.type !== currField.type;
+          const nullChanged = prevField.nonNull !== currField.nonNull;
+          const listChanged = prevField.list !== currField.list;
+          const itemNullChanged = prevField.itemNonNull !== currField.itemNonNull;
+          
+          if (typeChanged || nullChanged || listChanged || itemNullChanged) {
             steps.push({ 
               kind: 'alter_type', 
               table: tableName, 

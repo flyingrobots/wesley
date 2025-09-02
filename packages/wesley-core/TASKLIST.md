@@ -10,9 +10,9 @@
 **Problem**: Only tracking field nullability, missing difference between `[T]!` vs `[T!]!`
 - [x] Add `itemNonNull` flag to `unwrapType()`
 - [x] Thread `itemNonNull` through `Field` and all generators
-- [ ] Generate correct `NOT NULL` + array element checks
+- [x] Generate correct `NOT NULL` + array element checks
 - [ ] Update Zod schema generation
-- [ ] Update migration diff logic
+- [x] Update migration diff logic
 
 ```javascript
 // Implementation shape:
@@ -30,14 +30,14 @@ return { base, list, nonNull /* field */, itemNonNull };
 - [x] Introduce `generateSQL` flag (default: true)
 - [x] Keep `enableRLS` only for RLS policy emission
 - [x] Update Orchestrator constructor
-- [ ] Test both flags independently
+- [x] Test both flags independently
 
 ### ✅ 4. Implement PostgreSQL AST → SQL Conversion
 **Problem**: `toSQL()` returns placeholder text
 - [x] Add deterministic stringifier for SQL AST (already implemented)
-- [ ] Wire @supabase/pg-parser deparse
+- [x] Wire @supabase/pg-parser deparse
 - [x] Ensure real SQL output now
-- [ ] Create flip-able backend for future updates
+- [x] Create flip-able backend for future updates
 
 ---
 
@@ -268,6 +268,7 @@ Support presets:
 ## Commit Log
 
 ### 2025-09-02
+
 - Fixed Alpha Blocker #1: Added itemNonNull tracking for array nullability
 - Fixed Alpha Blocker #2: Removed silent type coercion, now throws errors
 - Fixed Alpha Blocker #3: Separated generateSQL flag from enableRLS
@@ -278,3 +279,8 @@ Support presets:
   - Fixed return types (table/SETOF table/boolean)
   - Made auth column detection directive-driven (@owner)
   - Added role grant flexibility via @grant directive
+- Completed remaining Alpha Blocker tasks:
+  - Added array element CHECK constraints for itemNonNull
+  - Updated migration diff to handle itemNonNull changes
+  - Created test for SQL generation flags independence
+  - Wired pg-parser with flip-able SQLBackend

@@ -202,6 +202,8 @@
   },
   "active": "28237c72563437da",
   "lastOpenFiles": [
+    "packages/wesley-core/src/domain/SQLBackend.mjs",
+    "packages/wesley-core/test/sql-generation-flags.test.mjs",
     "packages/wesley-core/src/domain/generators/RPCFunctionGeneratorV2.mjs",
     "packages/wesley-core/TASKLIST.md",
     "packages/wesley-core/test/rls-idempotency.test.mjs",
@@ -212,8 +214,6 @@
     "packages/wesley-core/test/snapshots/migration-generator.test.mjs",
     "packages/wesley-core/test/snapshots/test-generator.test.mjs",
     "packages/wesley-core/test/snapshots/sql-generator.test.mjs",
-    "packages/wesley-core/test/snapshots",
-    "docker-entrypoint-initdb.d/00-extensions.sql",
     "CODE_OF_CONDUCT.md",
     "CONTRIBUTING.md",
     "SECURITY.md",

@@ -75,6 +75,14 @@ export class PostgreSQLGenerator {
             `FOREIGN KEY ("${field.name}") REFERENCES "${refTable}"("${refCol || 'id'}") ON DELETE NO ACTION`
           );
         }
+        
+        // Add CHECK constraint for arrays with non-null items
+        if (field.list && field.itemNonNull) {
+          const baseType = scalarMap[field.type] || 'text';
+          constraints.push(
+            `CHECK (NOT "${field.name}" @> ARRAY[NULL]::${baseType}[])`
+          );
+        }
       }
 
       const create = `CREATE TABLE IF NOT EXISTS "${table.name}" (\n  ${[...cols, ...constraints]
@@ -103,8 +111,25 @@ export class PostgreSQLGenerator {
   }
 
   getSQLType(field) {
-    const pgType = scalarMap[field.type] || 'text';
-    return field.nonNull ? `${pgType} NOT NULL` : pgType;
+    const baseType = scalarMap[field.type] || 'text';
+    
+    // Handle array types with item nullability
+    if (field.list) {
+      // For arrays, PostgreSQL doesn't have NOT NULL on array elements directly
+      // but we can add CHECK constraints
+      const arrayType = `${baseType}[]`;
+      
+      // Add NOT NULL for the field itself if required
+      let sqlType = field.nonNull ? `${arrayType} NOT NULL` : arrayType;
+      
+      // Note: itemNonNull would need a CHECK constraint, added separately
+      // e.g., CHECK (NOT (array_field @> ARRAY[NULL]::type[]))
+      
+      return sqlType;
+    }
+    
+    // Regular non-array field
+    return field.nonNull ? `${baseType} NOT NULL` : baseType;
   }
 
   generateRLSPolicies(table) {
