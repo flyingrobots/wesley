@@ -5,13 +5,23 @@
 
 // Domain Models
 export { Schema, Table, Field } from './domain/Schema.mjs';
+export { DirectiveProcessor } from './domain/Directives.mjs';
 
 // Domain Events
 export * from './domain/Events.mjs';
 
+// Domain Generators (core business logic)
+export { PostgreSQLGenerator } from './domain/generators/PostgreSQLGenerator.mjs';
+export { PgTAPTestGenerator } from './domain/generators/PgTAPTestGenerator.mjs';
+export { RPCFunctionGenerator } from './domain/generators/RPCFunctionGenerator.mjs';
+export { MigrationDiffEngine } from './domain/generators/MigrationDiffEngine.mjs';
+
 // Application Layer
 export * from './application/Commands.mjs';
 export * from './application/UseCases.mjs';
+export { GenerationPipeline } from './application/GenerationPipeline.mjs';
+export { EvidenceMap } from './application/EvidenceMap.mjs';
+export { Scoring } from './application/Scoring.mjs';
 
 // Ports (Interfaces)
 export * from './ports/Ports.mjs';

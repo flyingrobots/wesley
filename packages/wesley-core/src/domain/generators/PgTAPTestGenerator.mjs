@@ -3,7 +3,7 @@
  * Generates production-grade database tests from GraphQL schema
  */
 
-import { DirectiveProcessor } from '@wesley/core';
+import { DirectiveProcessor } from '../Directives.mjs';
 
 export class PgTAPTestGenerator {
   constructor(evidenceMap) {
@@ -31,9 +31,10 @@ export class PgTAPTestGenerator {
     // Index tests with EXPLAIN verification
     suites.push(this.generateIndexTests(schema));
     
-    // RLS tests if Supabase-aware
-    if (options.supabase) {
-      suites.push(this.generateRLSTests(schema));
+    // RLS tests for tables with @rls directive
+    const rlsTests = this.generateRLSTests(schema);
+    if (rlsTests) {
+      suites.push(rlsTests);
     }
     
     // Behavior tests (triggers, functions)
@@ -576,17 +577,25 @@ export class PgTAPTestGenerator {
     };
     return typeMap[field.type] || 'text';
   }
-
-  generateRLSQuery(table, operation, context) {
+  
+  generateRLSQuery(tableName, operation, userType) {
+    const userId = userType === 'owner' 
+      ? '00000000-0000-0000-0000-000000000001'
+      : '00000000-0000-0000-0000-000000000002';
+    
     switch (operation) {
       case 'select':
-        return `SELECT * FROM "${table}" LIMIT 1`;
+        return `SELECT * FROM "${tableName}" WHERE user_id = '${userId}'::uuid`;
+        
       case 'insert':
-        return `INSERT INTO "${table}" (id) VALUES ('test-id')`;
+        return `INSERT INTO "${tableName}" (id, user_id) VALUES (gen_random_uuid(), '${userId}'::uuid)`;
+        
       case 'update':
-        return `UPDATE "${table}" SET id = id WHERE id = 'test-id'`;
+        return `UPDATE "${tableName}" SET updated_at = now() WHERE user_id = '${userId}'::uuid`;
+        
       case 'delete':
-        return `DELETE FROM "${table}" WHERE id = 'test-id'`;
+        return `DELETE FROM "${tableName}" WHERE user_id = '${userId}'::uuid`;
+        
       default:
         return `SELECT 1`;
     }

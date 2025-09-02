@@ -1,0 +1,4 @@
+* text=auto eol=lf
+*.sql linguist-language=SQL
+*.mjs linguist-language=JavaScript
+*.graphql linguist-language=GraphQL

@@ -10,6 +10,9 @@
     "./generators": "./src/generators/index.mjs",
     "./parsers": "./src/parsers/index.mjs"
   },
+  "files": [
+    "src/"
+  ],
   "scripts": {
     "test": "node --test test/**/*.test.mjs",
     "lint": "eslint src/"
@@ -17,7 +20,11 @@
   "dependencies": {
     "@wesley/core": "workspace:*",
     "graphql": "^16.9.0",
-    "fast-glob": "^3.3.2"
+    "fast-glob": "^3.3.2",
+    "@supabase/pg-parser": "^0.1.0"
+  },
+  "engines": { 
+    "node": ">=18.17" 
   },
   "keywords": ["graphql", "sql", "node", "adapters"],
   "author": "Captain James",

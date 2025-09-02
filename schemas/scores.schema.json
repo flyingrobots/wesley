@@ -1,0 +1,77 @@
+{
+  "$id": "https://wesley.dev/schema/scores-1.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Wesley Scores v1",
+  "type": "object",
+  "required": ["version", "commit", "scores", "thresholds"],
+  "properties": {
+    "version": { 
+      "type": "string",
+      "pattern": "^1\\.[0-9]+\\.[0-9]+$"
+    },
+    "commit": { 
+      "type": "string",
+      "minLength": 7
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "scores": {
+      "type": "object",
+      "required": ["scs", "tci", "mri"],
+      "properties": {
+        "scs": { 
+          "type": "number", 
+          "minimum": 0, 
+          "maximum": 1,
+          "description": "Schema Coverage Score"
+        },
+        "tci": { 
+          "type": "number", 
+          "minimum": 0, 
+          "maximum": 1,
+          "description": "Test Confidence Index"
+        },
+        "mri": { 
+          "type": "number", 
+          "minimum": 0, 
+          "maximum": 1,
+          "description": "Migration Risk Index"
+        }
+      },
+      "additionalProperties": false
+    },
+    "thresholds": {
+      "type": "object",
+      "required": ["scs", "tci", "mri"],
+      "properties": {
+        "scs": { "type": "number", "default": 0.8 },
+        "tci": { "type": "number", "default": 0.7 },
+        "mri": { "type": "number", "default": 0.4 }
+      },
+      "additionalProperties": false
+    },
+    "readiness": {
+      "type": "object",
+      "required": ["verdict", "confidence"],
+      "properties": {
+        "verdict": {
+          "type": "string",
+          "enum": ["NOT READY", "IN PROGRESS", "READY FOR REVIEW", "READY FOR PRODUCTION"]
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "recommendations": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

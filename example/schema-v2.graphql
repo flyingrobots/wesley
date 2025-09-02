@@ -1,0 +1,105 @@
+# Version 2 of schema - demonstrates migration generation
+# Changes from v1:
+# - Added 'phone' field to User (low risk)
+# - Added 'discount_code' to Order (low risk) 
+# - Changed Product.price_cents to BIGINT (medium risk)
+# - Added new ReviewSystem table (low risk)
+# - Dropped CartItem.added_at field (HIGH RISK - data loss)
+
+scalar UUID
+scalar DateTime
+scalar JSON
+
+directive @uid(value: String!) on OBJECT | FIELD_DEFINITION
+directive @weight(value: Int! = 5) on OBJECT | FIELD_DEFINITION
+directive @critical on OBJECT | FIELD_DEFINITION
+directive @sensitive on FIELD_DEFINITION
+directive @pii on FIELD_DEFINITION
+
+type User @table @critical @uid("tbl:user") {
+  id: UUID! @primaryKey @default(expr: "gen_random_uuid()") @uid("col:user.id")
+  email: String! @unique @pii @weight(9) @uid("col:user.email")
+  password_hash: String! @sensitive @weight(10) @uid("col:user.password")
+  
+  full_name: String @pii @weight(7) @uid("col:user.full_name")
+  phone: String @pii @weight(8) @uid("col:user.phone")  # NEW FIELD
+  
+  email_verified: Boolean! @default(expr: "false") @weight(8)
+  created_at: DateTime! @default(expr: "now()")
+  
+  orders: [Order!]! @hasMany
+  reviews: [Review!]! @hasMany  # NEW RELATION
+}
+
+type Product @table @uid("tbl:product") {
+  id: UUID! @primaryKey @default(expr: "gen_random_uuid()") @uid("col:product.id")
+  
+  sku: String! @unique @weight(9) @uid("col:product.sku")
+  name: String! @weight(8) @uid("col:product.name")
+  slug: String! @unique @index @weight(7) @uid("col:product.slug")
+  
+  price_cents: BigInt! @weight(9) @uid("col:product.price")  # CHANGED TYPE
+  stock_quantity: Int! @default(value: 0) @weight(8)
+  
+  published: Boolean! @default(expr: "false") @index @weight(7)
+  created_at: DateTime! @default(expr: "now()")
+  
+  order_items: [OrderItem!]! @hasMany
+  reviews: [Review!]! @hasMany  # NEW RELATION
+}
+
+type Order @table @critical @uid("tbl:order") {
+  id: UUID! @primaryKey @default(expr: "gen_random_uuid()") @uid("col:order.id")
+  order_number: String! @unique @weight(10) @uid("col:order.number")
+  user_id: UUID! @foreignKey(ref: "User.id") @index @weight(9)
+  
+  status: String! @weight(9) @uid("col:order.status")
+  total_cents: Int! @weight(9)
+  
+  discount_code: String @weight(5) @uid("col:order.discount")  # NEW FIELD
+  discount_amount_cents: Int @default(value: 0) @weight(6)  # NEW FIELD
+  
+  payment_intent_id: String @unique @sensitive @weight(9)
+  paid_at: DateTime @weight(7)
+  
+  created_at: DateTime! @default(expr: "now()")
+  
+  user: User! @belongsTo
+  items: [OrderItem!]! @hasMany
+}
+
+type OrderItem @table @uid("tbl:order_item") {
+  id: UUID! @primaryKey @default(expr: "gen_random_uuid()")
+  order_id: UUID! @foreignKey(ref: "Order.id") @index @weight(8)
+  product_id: UUID! @foreignKey(ref: "Product.id") @index @weight(7)
+  
+  quantity: Int! @weight(8)
+  unit_price_cents: Int! @weight(8)
+  
+  order: Order! @belongsTo
+  product: Product! @belongsTo
+}
+
+# NEW TABLE - Review system
+type Review @table @uid("tbl:review") {
+  id: UUID! @primaryKey @default(expr: "gen_random_uuid()") @uid("col:review.id")
+  product_id: UUID! @foreignKey(ref: "Product.id") @index @weight(8) @uid("col:review.product_id")
+  user_id: UUID! @foreignKey(ref: "User.id") @index @weight(7) @uid("col:review.user_id")
+  order_id: UUID @foreignKey(ref: "Order.id") @weight(6) @uid("col:review.order_id")
+  
+  rating: Int! @weight(8) @uid("col:review.rating")
+  title: String @weight(5) @uid("col:review.title")
+  content: String @weight(6) @uid("col:review.content")
+  
+  helpful_count: Int! @default(value: 0) @weight(4)
+  verified_purchase: Boolean! @default(expr: "false") @weight(7)
+  
+  created_at: DateTime! @default(expr: "now()")
+  updated_at: DateTime! @default(expr: "now()")
+  
+  product: Product! @belongsTo
+  user: User! @belongsTo
+  order: Order @belongsTo
+}
+
+# REMOVED: Cart and CartItem tables (assuming we're moving to session storage)

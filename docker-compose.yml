@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: wesley
+      POSTGRES_PASSWORD: wesley_test
+      POSTGRES_DB: wesley_test
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker-entrypoint-initdb.d/00-extensions.sql:/docker-entrypoint-initdb.d/00-extensions.sql:ro
+      - ./example/out/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./example/tests/generated.sql:/docker-entrypoint-initdb.d/02-tests.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wesley -d wesley_test"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # pgTAP test runner
+  pgtap:
+    image: postgres:15-alpine
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGUSER: wesley
+      PGPASSWORD: wesley_test
+      PGDATABASE: wesley_test
+    volumes:
+      - ./example/tests:/tests:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command: |
+      "apk add --no-cache build-base perl perl-dev && \
+       cd /tmp && \
+       wget https://github.com/theory/pgtap/archive/v1.3.0.tar.gz && \
+       tar -xzf v1.3.0.tar.gz && \
+       cd pgtap-1.3.0 && \
+       make && make install && \
+       psql -c 'CREATE EXTENSION IF NOT EXISTS pgtap' && \
+       pg_prove -v /tests/*.sql"
+
+volumes:
+  postgres_data:

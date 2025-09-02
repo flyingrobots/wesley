@@ -1,9 +1,9 @@
 /**
- * PostgreSQL Generator - Node.js implementation
- * Implements SQLGenerator port from wesley-core
+ * PostgreSQL Generator - Core domain logic
+ * Generates PostgreSQL DDL from Wesley schema
  */
 
-import { DirectiveProcessor } from '@wesley/core';
+import { DirectiveProcessor } from '../Directives.mjs';
 
 const scalarMap = {
   ID: 'uuid',
@@ -90,6 +90,12 @@ export class PostgreSQLGenerator {
           );
         }
       }
+
+      // Generate RLS policies if @rls directive present
+      const rlsConfig = table.directives?.['@rls'];
+      if (rlsConfig) {
+        statements.push(this.generateRLSPolicies(table));
+      }
     }
 
     return statements.join('\n\n');
@@ -98,5 +104,54 @@ export class PostgreSQLGenerator {
   getSQLType(field) {
     const pgType = scalarMap[field.type] || 'text';
     return field.nonNull ? `${pgType} NOT NULL` : pgType;
+  }
+
+  generateRLSPolicies(table) {
+    const tableName = table.name;
+    const rlsConfig = table.rls;
+    const uid = table.uid || tableName.toLowerCase();
+    
+    const policies = [];
+    
+    // Enable RLS
+    policies.push(`-- Enable RLS for ${tableName}`);
+    policies.push(`ALTER TABLE "${tableName}" ENABLE ROW LEVEL SECURITY;`);
+    
+    // Generate policy for each operation
+    if (rlsConfig.select) {
+      policies.push(`
+-- Drop if exists for idempotency
+DROP POLICY IF EXISTS "policy_${tableName}_select_${uid}" ON "${tableName}";
+CREATE POLICY "policy_${tableName}_select_${uid}" ON "${tableName}"
+  FOR SELECT
+  USING (${rlsConfig.select});`);
+    }
+    
+    if (rlsConfig.insert) {
+      policies.push(`
+DROP POLICY IF EXISTS "policy_${tableName}_insert_${uid}" ON "${tableName}";
+CREATE POLICY "policy_${tableName}_insert_${uid}" ON "${tableName}"
+  FOR INSERT
+  WITH CHECK (${rlsConfig.insert});`);
+    }
+    
+    if (rlsConfig.update) {
+      policies.push(`
+DROP POLICY IF EXISTS "policy_${tableName}_update_${uid}" ON "${tableName}";
+CREATE POLICY "policy_${tableName}_update_${uid}" ON "${tableName}"
+  FOR UPDATE
+  USING (${rlsConfig.update})
+  WITH CHECK (${rlsConfig.update});`);
+    }
+    
+    if (rlsConfig.delete) {
+      policies.push(`
+DROP POLICY IF EXISTS "policy_${tableName}_delete_${uid}" ON "${tableName}";
+CREATE POLICY "policy_${tableName}_delete_${uid}" ON "${tableName}"
+  FOR DELETE
+  USING (${rlsConfig.delete});`);
+    }
+    
+    return policies.join('\n');
   }
 }

@@ -1,150 +1,17 @@
-# Dependencies
 node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-# Testing
-coverage/
-*.lcov
-.nyc_output/
-test-results/
-junit.xml
-*.tap
-.vitest/
-
-# Build outputs
+pnpm-lock.yaml
+.wesley/
 dist/
-build/
-out/
-*.tsbuildinfo
-
-# Environment variables
+*.log
+coverage/
+.DS_Store
 .env
 .env.local
-.env.development
-.env.test
-.env.production
-.env*.local
-
-# IDE and Editor files
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
-.DS_Store
-Thumbs.db
-.obsidian/
-
-# Logs
-logs/
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-# Runtime data
-pids/
-*.pid
-*.seed
-*.pid.lock
-
-# Database
-*.sqlite
-*.sqlite3
-*.db
-migrations/*.lock
-.migrations-backup/
-
-# Temporary files
-tmp/
-temp/
-.tmp/
-.temp/
-*.tmp
-*.temp
-
-# Cache
-.cache/
-.parcel-cache/
-.next/
-.nuxt/
-.vuepress/dist/
-.serverless/
-.fusebox/
-.dynamodb/
-.tern-port/
-.vscode-test/
-
-# OS files
-.DS_Store
-Thumbs.db
-desktop.ini
-.Spotlight-V100
-.Trashes
-
-# Package manager files
-.npm/
-.yarn/
-.pnp.*
-.yarn-integrity
-
-# Optional npm cache directory
-.npm
-
-# Optional eslint cache
-.eslintcache
-
-# Optional stylelint cache
-.stylelintcache
-
-# Microbundle cache
-.rpt2_cache/
-.rts2_cache_cjs/
-.rts2_cache_es/
-.rts2_cache_umd/
-
-# Optional REPL history
-.node_repl_history
-
-# Output of 'npm pack'
-*.tgz
-
-# Yarn Integrity file
-.yarn-integrity
-
-# dotenv environment variable files
-.env
-.env.development.local
-.env.test.local
-.env.production.local
-.env.local
-
-# Supabase
-.supabase/
-supabase/.branches/
-supabase/.temp/
-
-# Project specific
-datarc.local.json
-.datarc.local.json
-.data/
-*.backup
-*.bak
-reports/
-.reports/
-
-# Test artifacts
-test-migrations/
-test-sql/
-migrations/
-test/fixtures/migrations/
-
-# Lock files (keep package-lock.json, ignore others)
-yarn.lock
-pnpm-lock.yaml
+out/
+db/migrations/
+tests/generated/

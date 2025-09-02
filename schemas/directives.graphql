@@ -1,0 +1,185 @@
+"""
+Wesley Canonical Directives
+Version: 1.0.0
+
+These directives extend GraphQL schemas with database-specific metadata.
+Import this file into your schema to use Wesley's full capabilities.
+"""
+
+# ═══════════════════════════════════════════════════════════════════
+# CORE DIRECTIVES - Table and Field Markers
+# ═══════════════════════════════════════════════════════════════════
+
+"Marks a type as a database table"
+directive @table on OBJECT
+
+"Marks a field as the primary key"
+directive @primaryKey on FIELD_DEFINITION
+
+"Creates a unique constraint on the field"
+directive @unique on FIELD_DEFINITION
+
+"Creates an index on the field for query performance"
+directive @index on FIELD_DEFINITION
+
+"Sets a default value for the field"
+directive @default(
+  "SQL expression for the default value"
+  expr: String
+  "Literal value for the default"
+  value: String
+) on FIELD_DEFINITION
+
+"Creates a foreign key relationship"
+directive @foreignKey(
+  "Reference in format Table.column"
+  ref: String!
+  "Action on delete: CASCADE, SET NULL, NO ACTION"
+  onDelete: String = "NO ACTION"
+  "Action on update: CASCADE, SET NULL, NO ACTION"
+  onUpdate: String = "NO ACTION"
+) on FIELD_DEFINITION
+
+"Adds a CHECK constraint to the field"
+directive @check(
+  "SQL expression for the check constraint"
+  expr: String!
+) on FIELD_DEFINITION
+
+# ═══════════════════════════════════════════════════════════════════
+# RELATIONSHIP DIRECTIVES - Virtual Fields
+# ═══════════════════════════════════════════════════════════════════
+
+"Defines a one-to-many relationship (virtual field, no column created)"
+directive @hasMany on FIELD_DEFINITION
+
+"Defines a one-to-one relationship (virtual field, no column created)"
+directive @hasOne on FIELD_DEFINITION
+
+"Defines the inverse of a relationship"
+directive @belongsTo on FIELD_DEFINITION
+
+# ═══════════════════════════════════════════════════════════════════
+# INTELLIGENCE DIRECTIVES - Wesley Schema Intelligence
+# ═══════════════════════════════════════════════════════════════════
+
+"Assigns a stable unique identifier that survives renames"
+directive @uid(
+  "Unique identifier for the element"
+  value: String!
+) on OBJECT | FIELD_DEFINITION
+
+"Sets the importance weight for prioritization (1-10)"
+directive @weight(
+  "Weight value from 1 (low) to 10 (critical)"
+  value: Int! = 5
+) on OBJECT | FIELD_DEFINITION
+
+"Marks a table or field as mission-critical (weight: 10)"
+directive @critical on OBJECT | FIELD_DEFINITION
+
+"Marks a field as containing sensitive data requiring special handling"
+directive @sensitive on FIELD_DEFINITION
+
+"Marks a field as containing personally identifiable information"
+directive @pii on FIELD_DEFINITION
+
+# ═══════════════════════════════════════════════════════════════════
+# BEHAVIOR DIRECTIVES - Automatic Behaviors
+# ═══════════════════════════════════════════════════════════════════
+
+"Automatically updates the field with current timestamp on record update"
+directive @updatedAt on FIELD_DEFINITION
+
+"Field value is computed and should not be directly set"
+directive @computed(
+  "SQL expression for computing the value"
+  expr: String!
+) on FIELD_DEFINITION
+
+"Creates a trigger for the field"
+directive @trigger(
+  "Trigger name"
+  name: String!
+  "Trigger timing: BEFORE or AFTER"
+  when: String!
+  "Trigger operation: INSERT, UPDATE, DELETE"
+  on: String!
+  "Trigger function to execute"
+  execute: String!
+) on FIELD_DEFINITION
+
+# ═══════════════════════════════════════════════════════════════════
+# SUPABASE DIRECTIVES - Supabase-specific Features
+# ═══════════════════════════════════════════════════════════════════
+
+"Configures Row Level Security policies for the table"
+directive @rls(
+  "SELECT policy expression"
+  select: String
+  "INSERT policy expression"
+  insert: String
+  "UPDATE policy expression"
+  update: String
+  "DELETE policy expression"
+  delete: String
+) on OBJECT
+
+"Enables Supabase Realtime subscriptions for the table"
+directive @realtime on OBJECT
+
+"Links the table to a Supabase Storage bucket"
+directive @storage(
+  "Storage bucket name"
+  bucket: String!
+  "Path pattern for files"
+  path: String
+) on OBJECT | FIELD_DEFINITION
+
+# ═══════════════════════════════════════════════════════════════════
+# RPC DIRECTIVES - Function Generation
+# ═══════════════════════════════════════════════════════════════════
+
+"Marks a mutation or query for RPC function generation"
+directive @rpc(
+  "Custom SQL for the RPC function body"
+  sql: String
+) on FIELD_DEFINITION
+
+"Specifies the database function logic"
+directive @function(
+  "PL/pgSQL function body"
+  logic: String!
+) on FIELD_DEFINITION
+
+"Grants execute permission to specific roles"
+directive @grant(
+  "Role to grant permission to"
+  to: String!
+) on FIELD_DEFINITION
+
+# ═══════════════════════════════════════════════════════════════════
+# VALIDATION DIRECTIVES - Data Validation
+# ═══════════════════════════════════════════════════════════════════
+
+"Validates string length"
+directive @length(
+  "Minimum length"
+  min: Int
+  "Maximum length"
+  max: Int
+) on FIELD_DEFINITION
+
+"Validates string pattern"
+directive @pattern(
+  "Regular expression pattern"
+  regex: String!
+) on FIELD_DEFINITION
+
+"Validates numeric range"
+directive @range(
+  "Minimum value"
+  min: Float
+  "Maximum value"
+  max: Float
+) on FIELD_DEFINITION

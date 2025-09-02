@@ -10,9 +10,17 @@
     "./application": "./src/application/index.mjs",
     "./ports": "./src/ports/index.mjs"
   },
+  "files": [
+    "src/"
+  ],
   "scripts": {
     "test": "node --test test/**/*.test.mjs",
+    "test:watch": "node --test --watch test/**/*.test.mjs",
+    "test:coverage": "node --test --experimental-test-coverage test/**/*.test.mjs",
     "lint": "eslint src/"
+  },
+  "engines": { 
+    "node": ">=18.17" 
   },
   "keywords": ["graphql", "schema", "domain", "hexagonal"],
   "author": "Captain James",

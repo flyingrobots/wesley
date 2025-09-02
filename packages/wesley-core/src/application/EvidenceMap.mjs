@@ -8,6 +8,7 @@ export class EvidenceMap {
     this.map = new Map();
     this.sha = null;
     this.timestamp = new Date().toISOString();
+    this.version = '1.0.0'; // Evidence bundle version
   }
 
   setSha(sha) {
@@ -76,6 +77,7 @@ export class EvidenceMap {
     }
     
     return {
+      version: this.version,
       sha: this.sha,
       timestamp: this.timestamp,
       evidence: result
@@ -87,6 +89,7 @@ export class EvidenceMap {
    */
   static fromJSON(json) {
     const map = new EvidenceMap();
+    map.version = json.version || '1.0.0';
     map.sha = json.sha;
     map.timestamp = json.timestamp;
     

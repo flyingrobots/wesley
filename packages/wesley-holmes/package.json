@@ -4,8 +4,15 @@
   "type": "module",
   "description": "SHA-lock HOLMES - Schema intelligence sidecar for Wesley",
   "main": "./src/index.mjs",
-  "bin": {
-    "holmes": "./src/cli.mjs"
+  "bin": { 
+    "wesley-holmes": "./src/cli.mjs" 
+  },
+  "exports": "./src/index.mjs",
+  "files": [
+    "src/"
+  ],
+  "engines": { 
+    "node": ">=18.17" 
   },
   "scripts": {
     "test": "node --test"

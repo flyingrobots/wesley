@@ -1,0 +1,69 @@
+{
+  "$id": "https://wesley.dev/schema/evidence-map-1.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Wesley Evidence Map v1",
+  "type": "object",
+  "required": ["version", "commit", "artifacts"],
+  "properties": {
+    "version": { 
+      "type": "string", 
+      "pattern": "^1\\.[0-9]+\\.[0-9]+$",
+      "description": "Semantic version of the schema"
+    },
+    "commit": { 
+      "type": "string", 
+      "minLength": 7,
+      "description": "Git commit SHA"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "artifacts": {
+      "type": "object",
+      "description": "uid → artifact citations",
+      "patternProperties": {
+        "^[-\\w.:/]+$": {
+          "type": "object",
+          "properties": {
+            "sql":   { "$ref": "#/$defs/citations" },
+            "ts":    { "$ref": "#/$defs/citations" },
+            "zod":   { "$ref": "#/$defs/citations" },
+            "tests": { "$ref": "#/$defs/citations" },
+            "rls":   { "$ref": "#/$defs/citations" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "citation": {
+      "type": "object",
+      "required": ["file", "lines", "sha"],
+      "properties": {
+        "file": { 
+          "type": "string",
+          "description": "Relative file path"
+        },
+        "lines": { 
+          "type": "string", 
+          "pattern": "^[0-9]+-[0-9]+$",
+          "description": "Line range (e.g., '10-20')"
+        },
+        "sha": { 
+          "type": "string", 
+          "minLength": 7,
+          "description": "Git SHA at time of generation"
+        }
+      },
+      "additionalProperties": false
+    },
+    "citations": { 
+      "type": "array", 
+      "items": { "$ref": "#/$defs/citation" } 
+    }
+  },
+  "additionalProperties": false
+}

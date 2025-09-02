@@ -93,6 +93,13 @@ async function test(options) {
   console.log('Tests are in: tests/generated.sql');
 }
 
+// Validate bundle command
+async function validateBundle(options) {
+  const { ValidateBundleCommand } = await import('./src/commands/validate-bundle.mjs');
+  const command = new ValidateBundleCommand();
+  await command.execute(options);
+}
+
 // Main CLI
 async function main() {
   const options = parseArgs(args);
@@ -106,12 +113,17 @@ async function main() {
       await test(options);
       break;
       
+    case 'validate-bundle':
+      await validateBundle(options);
+      break;
+      
     default:
       console.log(`
 Wesley - GraphQL → Everything
 
 Usage:
   wesley generate --schema <path>    Generate SQL, tests, and more
+  wesley validate-bundle             Validate .wesley/ bundle
   wesley investigate                  Run HOLMES investigation
   wesley verify                       Run WATSON verification
   wesley predict                      Run MORIARTY predictions
@@ -121,6 +133,8 @@ Options:
   --schema <path>      GraphQL schema file (default: schema.graphql)
   --emit-bundle        Emit .wesley/ evidence bundle
   --supabase          Enable Supabase features (RLS tests)
+  --bundle <path>      Bundle path for validation (default: .wesley)
+  --schemas <path>     Schemas path for validation (default: ./schemas)
 
 "Make it so, schema."
       `);

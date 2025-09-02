@@ -5,9 +5,20 @@
   "type": "module",
   "description": "Everyone generates GraphQL from databases. Wesley generates databases from GraphQL. One schema → SQL/migrations/types/Zod + Supabase RLS/Realtime/Storage.",
   "scripts": {
-    "build": "npm run build --workspaces",
-    "test": "npm run test --workspaces",
-    "lint": "npm run lint --workspaces"
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "test:watch": "pnpm -r test:watch",
+    "test:coverage": "pnpm -r test:coverage",
+    "lint": "eslint . --ext .js,.mjs",
+    "lint:fix": "eslint . --ext .js,.mjs --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "validate": "pnpm lint && pnpm format:check && pnpm test",
+    "generate:example": "cd example && pnpm exec wesley generate --schema ecommerce.graphql --emit-bundle",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:test": "docker-compose run pgtap",
+    "ci": "pnpm validate && pnpm generate:example && pnpm exec wesley validate-bundle --bundle example/.wesley --schemas schemas/"
   },
   "keywords": ["graphql", "sql", "database", "migrations", "supabase", "schema", "codegen", "postgresql", "schema-first"],
   "author": "Captain James",
