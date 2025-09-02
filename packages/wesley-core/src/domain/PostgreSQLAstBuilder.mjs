@@ -253,6 +253,9 @@ export class PostgreSQLAstBuilder {
               location: 0
             }
           },
+          // fk_attrs specifies which columns in THIS table form the FK
+          fk_attrs: [{ String: { sval: field.name } }],
+          // pk_attrs specifies which columns in the REFERENCED table to match
           pk_attrs: [{ String: { sval: refColumn || 'id' } }],
           fk_matchtype: 'FKCONSTR_MATCH_SIMPLE',
           fk_upd_action: 'FKCONSTR_ACTION_NOACTION',

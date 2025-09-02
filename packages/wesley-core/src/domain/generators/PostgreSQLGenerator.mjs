@@ -4,6 +4,7 @@
  */
 
 import { DirectiveProcessor } from '../Directives.mjs';
+import { IndexDeduplicator } from '../IndexDeduplicator.mjs';
 
 const scalarMap = {
   ID: 'uuid',
@@ -111,15 +112,50 @@ export class PostgreSQLGenerator {
         }
       }
 
-      // Generate indexes with UID comments
+      // Generate indexes with deduplication
+      const deduplicator = new IndexDeduplicator();
+      
+      // Register PKs and unique constraints first
+      for (const field of table.getFields()) {
+        if (field.isPrimaryKey()) {
+          deduplicator.registerPrimaryKey(table.name, field.name);
+        }
+        if (field.isUnique()) {
+          deduplicator.registerUniqueConstraint(table.name, field.name);
+        }
+      }
+      
+      // Generate non-redundant indexes
       for (const field of table.getFields()) {
         if (field.isIndexed()) {
-          const indexName = `${table.name}_${field.name}_idx`;
-          const indexUid = field.directives?.['@uid'] ? `idx_${field.directives['@uid']}` : `idx_${table.name.toLowerCase()}_${field.name.toLowerCase()}`;
-          statements.push(
-            `CREATE INDEX IF NOT EXISTS "${indexName}" ON "${table.name}" ("${field.name}");`
-          );
-          statements.push(`COMMENT ON INDEX "${indexName}" IS 'uid: ${indexUid}';`);
+          const indexDef = field.directives?.['@index'] || {};
+          const columns = [field.name];
+          const options = {
+            unique: indexDef.unique || false,
+            where: indexDef.where || null
+          };
+          
+          const check = deduplicator.isRedundant(table.name, columns, options);
+          if (!check.redundant) {
+            const indexName = `${table.name}_${field.name}_idx`;
+            const indexUid = field.directives?.['@uid'] ? `idx_${field.directives['@uid']}` : `idx_${table.name.toLowerCase()}_${field.name.toLowerCase()}`;
+            
+            let indexStmt = `CREATE`;
+            if (options.unique) indexStmt += ` UNIQUE`;
+            indexStmt += ` INDEX IF NOT EXISTS "${indexName}" ON "${table.name}" ("${field.name}")`;
+            if (options.where) {
+              indexStmt += ` WHERE ${options.where}`;
+            }
+            indexStmt += `;`;
+            
+            statements.push(indexStmt);
+            statements.push(`COMMENT ON INDEX "${indexName}" IS 'uid: ${indexUid}';`);
+            
+            deduplicator.registerIndex(table.name, columns, options);
+          } else {
+            // Add comment about skipped redundant index
+            statements.push(`-- Skipped redundant index: ${check.reason}`);
+          }
         }
       }
 

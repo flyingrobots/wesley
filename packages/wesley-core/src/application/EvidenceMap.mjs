@@ -6,6 +6,8 @@
 export class EvidenceMap {
   constructor() {
     this.map = new Map();
+    this.errors = new Map(); // uid -> error details
+    this.warnings = new Map(); // uid -> warning details
     this.sha = null;
     this.timestamp = new Date().toISOString();
     this.version = '1.0.0'; // Evidence bundle version
@@ -65,22 +67,116 @@ export class EvidenceMap {
     const evidence = this.getEvidence(uid);
     return required.every(kind => evidence[kind]?.length > 0);
   }
+  
+  /**
+   * Record an error for a schema element
+   */
+  recordError(uid, error) {
+    if (!this.errors.has(uid)) {
+      this.errors.set(uid, []);
+    }
+    
+    this.errors.get(uid).push({
+      message: error.message,
+      type: error.type || 'validation',
+      severity: error.severity || 'error',
+      context: error.context || {},
+      timestamp: new Date().toISOString(),
+      stack: error.stack
+    });
+  }
+  
+  /**
+   * Record a warning for a schema element
+   */
+  recordWarning(uid, warning) {
+    if (!this.warnings.has(uid)) {
+      this.warnings.set(uid, []);
+    }
+    
+    this.warnings.get(uid).push({
+      message: warning.message,
+      type: warning.type || 'validation',
+      severity: warning.severity || 'warning',
+      context: warning.context || {},
+      timestamp: new Date().toISOString()
+    });
+  }
+  
+  /**
+   * Get all errors for a schema element
+   */
+  getErrors(uid) {
+    return this.errors.get(uid) || [];
+  }
+  
+  /**
+   * Get all warnings for a schema element
+   */
+  getWarnings(uid) {
+    return this.warnings.get(uid) || [];
+  }
+  
+  /**
+   * Check if any errors exist
+   */
+  hasErrors() {
+    return this.errors.size > 0;
+  }
+  
+  /**
+   * Get all errors as an array
+   */
+  getAllErrors() {
+    const allErrors = [];
+    for (const [uid, errors] of this.errors) {
+      for (const error of errors) {
+        allErrors.push({ uid, ...error });
+      }
+    }
+    return allErrors;
+  }
+  
+  /**
+   * Get all warnings as an array
+   */
+  getAllWarnings() {
+    const allWarnings = [];
+    for (const [uid, warnings] of this.warnings) {
+      for (const warning of warnings) {
+        allWarnings.push({ uid, ...warning });
+      }
+    }
+    return allWarnings;
+  }
 
   /**
    * Export to JSON
    */
   toJSON() {
     const result = {};
+    const errors = {};
+    const warnings = {};
     
     for (const [uid, evidence] of this.map) {
       result[uid] = evidence;
+    }
+    
+    for (const [uid, errorList] of this.errors) {
+      errors[uid] = errorList;
+    }
+    
+    for (const [uid, warningList] of this.warnings) {
+      warnings[uid] = warningList;
     }
     
     return {
       version: this.version,
       sha: this.sha,
       timestamp: this.timestamp,
-      evidence: result
+      evidence: result,
+      errors,
+      warnings
     };
   }
 

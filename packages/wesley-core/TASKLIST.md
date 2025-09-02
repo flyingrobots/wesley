@@ -115,11 +115,11 @@ return { base, list, nonNull /* field */, itemNonNull };
 - [x] Generate columns for FK scalars
 - [x] Add guard in `buildTable()` for non-virtual lists
 
-### ⬜ 2. Directive Ergonomics
-- [ ] Add normalized aliases at parse time:
-  - [ ] `@pk` → `@primaryKey`
-  - [ ] `@uid` → `@unique`
-- [ ] Keep generators simple
+### ✅ 2. Directive Ergonomics
+- [x] Add normalized aliases at parse time:
+  - [x] `@pk` → `@primaryKey`
+  - [x] `@uid` → `@unique`
+- [x] Keep generators simple
 
 ### ✅ 3. RLS Correctness (partial)
 - [x] Support `FORCE ROW LEVEL SECURITY` (add `AT_ForceRowSecurity`)
@@ -130,15 +130,15 @@ return { base, list, nonNull /* field */, itemNonNull };
   - [x] DELETE: USING only
 - [ ] Allow `roles: [...]` on policies
 
-### ⬜ 4. FK AST Details
-- [ ] Validate pg-parser requirements for `fk_attrs`
-- [ ] Add roundtrip test for FK constraints
-- [ ] Ensure correct structure at table vs column level
+### ✅ 4. FK AST Details
+- [x] Validate pg-parser requirements for `fk_attrs`
+- [x] Add roundtrip test for FK constraints
+- [x] Ensure correct structure at table vs column level
 
-### ⬜ 5. Index Strategy
-- [ ] Add deduper for equivalent indexes
-- [ ] Support partial indexes via `@index(where:"...")`
-- [ ] Avoid double-creating indexes
+### ✅ 5. Index Strategy
+- [x] Add deduper for equivalent indexes
+- [x] Support partial indexes via `@index(where:"...")`
+- [x] Avoid double-creating indexes
 
 ### ✅ 6. Type Map Completeness
 Add support for:
@@ -148,19 +148,19 @@ Add support for:
 - [x] UUID
 - [x] Inet
 
-### ⬜ 7. Evidence-First Errors
-- [ ] Push invalid directive args to EvidenceMap
-- [ ] Surface duplicate type names
-- [ ] Extend to parsing/validation phase
+### ✅ 7. Evidence-First Errors
+- [x] Push invalid directive args to EvidenceMap
+- [x] Surface duplicate type names
+- [x] Extend to parsing/validation phase
 
-### ⬜ 8. Configurable Thresholds
-- [ ] Make SCS/MRI/TCI bars tunable in `wesley.config.mjs`
-- [ ] Keep sensible defaults
-- [ ] Explain why scores failed in recommendations
+### ✅ 8. Configurable Thresholds
+- [x] Make SCS/MRI/TCI bars tunable in `wesley.config.mjs`
+- [x] Keep sensible defaults
+- [x] Explain why scores failed in recommendations
 
-### ⬜ 9. Interface Name Cleanup
-- [ ] Rename port `MigrationDiffEngine` to `MigrationDiffer`
-- [ ] Avoid class name collision during DI
+### ✅ 9. Interface Name Cleanup
+- [x] Rename port `MigrationDiffEngine` to `MigrationDiffer`
+- [x] Avoid class name collision during DI
 
 ---
 

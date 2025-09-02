@@ -5,10 +5,10 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { MigrationDiffEngine } from '../../src/domain/generators/MigrationDiffEngine.mjs';
+import { MigrationDiffer } from '../../src/domain/generators/MigrationDiffer.mjs';
 
 test('generates add table migration', () => {
-  const engine = new MigrationDiffEngine();
+  const engine = new MigrationDiffer();
   
   const oldSchema = {
     tables: {}
@@ -36,7 +36,7 @@ test('generates add table migration', () => {
 });
 
 test('generates add column migration', () => {
-  const engine = new MigrationDiffEngine();
+  const engine = new MigrationDiffer();
   
   const oldSchema = {
     tables: {
@@ -70,7 +70,7 @@ test('generates add column migration', () => {
 });
 
 test('generates rename detection with @uid', () => {
-  const engine = new MigrationDiffEngine();
+  const engine = new MigrationDiffer();
   
   const oldSchema = {
     tables: {
@@ -104,7 +104,7 @@ test('generates rename detection with @uid', () => {
 });
 
 test('generates index migrations', () => {
-  const engine = new MigrationDiffEngine();
+  const engine = new MigrationDiffer();
   
   const oldSchema = {
     tables: {
@@ -139,7 +139,7 @@ test('generates index migrations', () => {
 });
 
 test('calculates migration risk correctly', () => {
-  const engine = new MigrationDiffEngine();
+  const engine = new MigrationDiffer();
   
   // High risk: dropping table
   const dropTableMigration = {

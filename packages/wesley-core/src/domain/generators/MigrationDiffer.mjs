@@ -1,9 +1,9 @@
 /**
- * Migration Diff Engine - Node.js implementation
+ * Migration Differ - Node.js implementation
  * Calculates differences between schemas for migrations
  */
 
-export class MigrationDiffEngine {
+export class MigrationDiffer {
   async diff(previousSchema, currentSchema) {
     const steps = [];
 

@@ -41,9 +41,9 @@ export class ZodGenerator {
   }
 }
 
-export class MigrationDiffEngine {
+export class MigrationDiffer {
   async diff(previousSchema, currentSchema) {
-    throw new Error('MigrationDiffEngine.diff() must be implemented');
+    throw new Error('MigrationDiffer.diff() must be implemented');
   }
 }
 

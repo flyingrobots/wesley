@@ -14,7 +14,7 @@ export * from './domain/Events.mjs';
 export { PostgreSQLGenerator } from './domain/generators/PostgreSQLGenerator.mjs';
 export { PgTAPTestGenerator } from './domain/generators/PgTAPTestGenerator.mjs';
 export { RPCFunctionGenerator } from './domain/generators/RPCFunctionGenerator.mjs';
-export { MigrationDiffEngine } from './domain/generators/MigrationDiffEngine.mjs';
+export { MigrationDiffer } from './domain/generators/MigrationDiffer.mjs';
 
 // Application Layer
 export * from './application/Commands.mjs';
