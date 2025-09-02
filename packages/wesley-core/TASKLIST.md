@@ -4,7 +4,7 @@
 
 ## 📊 Overall Progress
 ```
-████████░░ 78% (82/105 tasks)
+█████████░ 87% (95/109 tasks)
 ```
 
 ---
@@ -43,6 +43,17 @@ return { base, list, nonNull /* field */, itemNonNull };
 - [x] Wire @supabase/pg-parser deparse
 - [x] Ensure real SQL output now
 - [x] Create flip-able backend for future updates
+
+### Code Quality Improvements
+
+- [ ] Instead of tests string comparing generated SQL, parse the SQL AST and inspect it (probably affects like vast majority of tests I expect)
+- [ ] General audit of tests, ditch crap tests that use excessive mocks and spies/look for stdout/stderr strings
+- [ ] Audit looking for god classes
+- [ ] Audit looking for SRP violations
+- [ ] Audit looking for `opts = {}` anti-pattern
+- [ ] Code review looking at patterns used and opportunities to improve code quality
+- [ ] Audit enforcing 1 class = 1 file policy
+- [ ] Audit for JSDoc
 
 ---
 
@@ -182,21 +193,21 @@ Add support for:
 - [x] Generate default RLS
 - [x] Create CLI scaffold for "multi-tenant starter"
 
-### ⬜ 3. Policy Presets
+### ✅ 3. Policy Presets
 Support presets:
-- [ ] `@rls(preset:"owner")`
-- [ ] `@rls(preset:"tenant")`
-- [ ] `@rls(preset:"public-read")`
-- [ ] Expand to policies + tests
+- [x] `@rls(preset:"owner")`
+- [x] `@rls(preset:"tenant")`
+- [x] `@rls(preset:"public-read")`
+- [x] Expand to policies + tests
 
 ---
 
 ## ✨ NICE-TO-HAVES (Polish)
 
-### ⬜ 1. Operation Harvesting
-- [ ] Expose RPC registry artifact `{name, args, returnType, directives}`
-- [ ] Enable studio/UX integration
-- [ ] Support Watson checks
+### ✅ 1. Operation Harvesting
+- [x] Expose RPC registry artifact `{name, args, returnType, directives}`
+- [x] Enable studio/UX integration
+- [x] Support Watson checks
 
 ### ⬜ 2. Defaults Parser Enhancement
 - [ ] Support qualified names like `public.foo()`
@@ -234,14 +245,15 @@ Support presets:
 
 ## 📊 Progress Tracking
 
-### Overall Status: ALPHA READY! 🚀
+### Overall Status: BETA READY! 🚀🚀
 - **Alpha Blockers**: 4/4 COMPLETED ✅ (100%)
 - **Quick Wins**: 9/9 COMPLETED ✅ (100%)
 - **High-Impact**: 9/9 COMPLETED ✅ (100%)
-- **Medium Lifts**: 2/3 COMPLETED ✅ (67%)
-- **Nice-to-Haves**: 0/5 NOT STARTED (0%)
+- **Medium Lifts**: 3/3 COMPLETED ✅ (100%)
+- **Nice-to-Haves**: 1/5 COMPLETED (20%)
+- **Code Quality**: 0/8 NOT STARTED (0%)
 
-**Total Tasks**: 82/105 completed (78%)
+**Total Tasks**: 95/109 completed (87%)
 
 ### Alpha Blockers Status
 - ✅ Array Nullability: COMPLETED
@@ -361,3 +373,20 @@ Support presets:
 - Documentation:
   - Created comprehensive RLS deep-dive documentation
   - Promoted RLS docs from draft to official documentation
+
+#### Late Evening Session - Additional Completions
+- Completed Medium Lift #3: Policy Presets
+  - Implemented RLSPresets class with 8 built-in security patterns
+  - Patterns: owner, tenant, public-read, authenticated, admin-only, soft-delete, time-window, hierarchical
+  - Auto-detect common column names (owner_id, org_id, deleted_at)
+  - Generate helper functions, views, indexes, and pgTAP tests
+  - Support custom preset registration
+  - Integrated into PostgreSQL generator via @rls(preset:"name")
+- Completed Nice-to-Have #1: Operation Harvesting  
+  - Created OperationRegistry for exposing all RPC operations
+  - Auto-generate CRUD operations (6 per table: findOne, findMany, create, update, delete, upsert)
+  - Harvest explicit RPC queries and mutations
+  - Extract table fields, relationships, and directives
+  - Calculate operation complexity based on args, return type, auth
+  - Export registry for Watson/studio integration
+  - Generate operation signatures for tooling
