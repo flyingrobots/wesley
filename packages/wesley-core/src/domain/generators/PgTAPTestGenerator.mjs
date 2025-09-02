@@ -119,17 +119,18 @@ export class PgTAPTestGenerator {
                     `'Column ${table.name}.${field.name} should exist');`);
         
           // Column type
-        const sqlType = this.mapToSQLType(field);
-        tests.push(`SELECT col_type_is('${table.name}', '${field.name}', '${sqlType}', ` +
-                  `'${table.name}.${field.name} should be ${sqlType}');`);
+          const sqlType = this.mapToSQLType(field);
+          tests.push(`SELECT col_type_is('${table.name}', '${field.name}', '${sqlType}', ` +
+                    `'${table.name}.${field.name} should be ${sqlType}');`);
         
-        // Not null check
-        if (field.nonNull) {
-          tests.push(`SELECT col_not_null('${table.name}', '${field.name}', ` +
-                    `'${table.name}.${field.name} should not be nullable');`);
-        } else {
-          tests.push(`SELECT col_is_null('${table.name}', '${field.name}', ` +
-                    `'${table.name}.${field.name} should be nullable');`);
+          // Not null check
+          if (field.nonNull) {
+            tests.push(`SELECT col_not_null('${table.name}', '${field.name}', ` +
+                      `'${table.name}.${field.name} should not be nullable');`);
+          } else {
+            tests.push(`SELECT col_is_null('${table.name}', '${field.name}', ` +
+                      `'${table.name}.${field.name} should be nullable');`);
+          }
         }
         
         // Critical field extra checks

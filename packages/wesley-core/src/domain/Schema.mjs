@@ -50,6 +50,14 @@ export class Table {
     return this.fields[name];
   }
 
+  get rls() {
+    return this.directives['@rls'];
+  }
+
+  get uid() {
+    return this.directives['@uid']?.uid;
+  }
+
   getFields() {
     return Object.values(this.fields);
   }
@@ -97,5 +105,9 @@ export class Field {
 
   getForeignKeyRef() {
     return this.directives['@foreignKey']?.ref;
+  }
+
+  getCheckConstraint() {
+    return this.directives['@check']?.expr;
   }
 }

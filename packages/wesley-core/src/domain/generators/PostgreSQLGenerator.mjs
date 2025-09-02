@@ -1,8 +1,9 @@
 /**
  * PostgreSQL Generator - Core domain logic
- * Generates PostgreSQL DDL from Wesley schema
+ * Generates PostgreSQL DDL from Wesley schema using @supabase/pg-parser
  */
 
+import { parse, deparse } from '@supabase/pg-parser';
 import { DirectiveProcessor } from '../Directives.mjs';
 import { IndexDeduplicator } from '../IndexDeduplicator.mjs';
 import { TenantModel } from '../TenantModel.mjs';
@@ -94,6 +95,12 @@ export class PostgreSQLGenerator {
           constraints.push(
             `CHECK (NOT "${field.name}" @> ARRAY[NULL]::${baseType}[])`
           );
+        }
+
+        // Add custom CHECK constraints
+        const checkExpr = field.getCheckConstraint();
+        if (checkExpr) {
+          constraints.push(`CHECK (${checkExpr})`);
         }
       }
 
