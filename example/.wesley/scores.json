@@ -1,0 +1,113 @@
+{
+  "timestamp": "2024-03-20T10:30:00Z",
+  "sha": "abc123def456",
+  "scores": {
+    "scs": 0.843,
+    "mri": 0.23,
+    "tci": 0.71
+  },
+  "details": {
+    "scs": {
+      "description": "Schema Coverage Score",
+      "formula": "Σ(weight × coverage) / Σ(weight)",
+      "breakdown": {
+        "critical_fields": {
+          "covered": 12,
+          "total": 13,
+          "weight_sum": 117
+        },
+        "high_priority": {
+          "covered": 18,
+          "total": 20,
+          "weight_sum": 144
+        },
+        "standard": {
+          "covered": 11,
+          "total": 14,
+          "weight_sum": 42
+        }
+      }
+    },
+    "mri": {
+      "description": "Migration Risk Index",
+      "risk_points": 23,
+      "max_risk": 100,
+      "operations": [
+        {
+          "type": "ADD_COLUMN",
+          "risk": 5,
+          "reason": "Non-nullable without default"
+        },
+        {
+          "type": "CREATE_INDEX",
+          "risk": 10,
+          "reason": "Blocking operation on large table"
+        },
+        {
+          "type": "ADD_CONSTRAINT",
+          "risk": 8,
+          "reason": "Check constraint on existing data"
+        }
+      ]
+    },
+    "tci": {
+      "description": "Test Confidence Index",
+      "weighted_coverage": 0.71,
+      "breakdown": {
+        "structure": {
+          "coverage": 1.0,
+          "weight": 0.2,
+          "contribution": 0.2
+        },
+        "constraints": {
+          "coverage": 0.92,
+          "weight": 0.45,
+          "contribution": 0.414
+        },
+        "migrations": {
+          "coverage": 0.8,
+          "weight": 0.25,
+          "contribution": 0.2
+        },
+        "performance": {
+          "coverage": 0.2,
+          "weight": 0.1,
+          "contribution": 0.02
+        }
+      }
+    }
+  },
+  "readiness": {
+    "verdict": "READY FOR REVIEW",
+    "confidence": 0.87,
+    "thresholds": {
+      "scs": {
+        "required": 0.8,
+        "actual": 0.843,
+        "passed": true
+      },
+      "mri": {
+        "required": 0.4,
+        "actual": 0.23,
+        "passed": true
+      },
+      "tci": {
+        "required": 0.7,
+        "actual": 0.71,
+        "passed": true
+      }
+    },
+    "recommendations": [
+      "Add TypeScript types for remaining 6 entities",
+      "Implement RLS masking for User.phone (PII field)",
+      "Add performance tests for high-traffic queries"
+    ]
+  },
+  "predictions": {
+    "velocity": 0.032,
+    "eta_days": 3.3,
+    "eta_date": "2024-03-23",
+    "confidence": 0.87,
+    "basis": "14-day exponential moving average"
+  }
+}

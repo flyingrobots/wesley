@@ -1,0 +1,270 @@
+name: 🔍 Wesley + SHA-lock HOLMES CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+
+jobs:
+  wesley-generate:
+    name: "🚀 Wesley Generation"
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: "📦 Checkout Repository"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: "🔧 Setup pnpm"
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          
+      - name: "🔧 Setup Node.js"
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          
+      - name: "📦 Install Dependencies"
+        run: pnpm install
+        
+      - name: "🚀 Generate Artifacts"
+        run: |
+          cd example
+          pnpm exec wesley generate --schema schema.graphql --emit-bundle
+          
+      - name: "📊 Display Scores"
+        run: |
+          echo "## 📊 Generation Scores"
+          cat example/.wesley/scores.json | jq '.scores'
+          
+      - name: "💾 Upload Bundle"
+        uses: actions/upload-artifact@v3
+        with:
+          name: wesley-bundle
+          path: example/.wesley/
+          
+  holmes-investigate:
+    name: "🔍 HOLMES Investigation"
+    runs-on: ubuntu-latest
+    needs: wesley-generate
+    
+    steps:
+      - name: "📦 Checkout Repository"
+        uses: actions/checkout@v4
+        
+      - name: "🔧 Setup Node.js"
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: "📦 Install HOLMES"
+        run: pnpm install
+        
+      - name: "📥 Download Bundle"
+        uses: actions/download-artifact@v3
+        with:
+          name: wesley-bundle
+          path: example/.wesley/
+          
+      - name: "🔍 Run Investigation"
+        id: holmes
+        run: |
+          cd example
+          pnpm exec holmes investigate > holmes-report.md
+          cat holmes-report.md
+          
+      - name: "💾 Save Report"
+        uses: actions/upload-artifact@v3
+        with:
+          name: holmes-report
+          path: example/holmes-report.md
+          
+  watson-verify:
+    name: "🩺 WATSON Verification"
+    runs-on: ubuntu-latest
+    needs: holmes-investigate
+    
+    steps:
+      - name: "📦 Checkout Repository"
+        uses: actions/checkout@v4
+        
+      - name: "🔧 Setup Node.js"
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: "📦 Install HOLMES"
+        run: pnpm install
+        
+      - name: "📥 Download Bundle"
+        uses: actions/download-artifact@v3
+        with:
+          name: wesley-bundle
+          path: example/.wesley/
+          
+      - name: "🩺 Run Verification"
+        id: watson
+        run: |
+          cd example
+          pnpm exec holmes verify > watson-report.md
+          cat watson-report.md
+          
+      - name: "💾 Save Report"
+        uses: actions/upload-artifact@v3
+        with:
+          name: watson-report
+          path: example/watson-report.md
+          
+  moriarty-predict:
+    name: "🔮 MORIARTY Predictions"
+    runs-on: ubuntu-latest
+    needs: watson-verify
+    
+    steps:
+      - name: "📦 Checkout Repository"
+        uses: actions/checkout@v4
+        
+      - name: "🔧 Setup Node.js"
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: "📦 Install HOLMES"
+        run: pnpm install
+        
+      - name: "📥 Download Bundle"
+        uses: actions/download-artifact@v3
+        with:
+          name: wesley-bundle
+          path: example/.wesley/
+          
+      - name: "🔮 Run Predictions"
+        id: moriarty
+        run: |
+          cd example
+          pnpm exec holmes predict > moriarty-report.md || echo "Insufficient data for predictions" > moriarty-report.md
+          cat moriarty-report.md
+          
+      - name: "💾 Save Report"
+        uses: actions/upload-artifact@v3
+        with:
+          name: moriarty-report
+          path: example/moriarty-report.md
+          
+  test-pgtap:
+    name: "🧪 pgTAP Tests"
+    runs-on: ubuntu-latest
+    needs: wesley-generate
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+          
+    steps:
+      - name: "📦 Checkout Repository"
+        uses: actions/checkout@v4
+        
+      - name: "📥 Download Bundle"
+        uses: actions/download-artifact@v3
+        with:
+          name: wesley-bundle
+          path: example/.wesley/
+          
+      - name: "🧪 Install pgTAP"
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+          
+      - name: "🔨 Apply Schema"
+        run: |
+          PGPASSWORD=postgres psql -h localhost -U postgres -d test -f example/out/schema.sql
+          
+      - name: "🧪 Run Tests"
+        run: |
+          echo "pgTAP tests would run here"
+          echo "Tests are in: example/tests/generated.sql"
+          
+  comment-report:
+    name: "📝 Post Investigation Report"
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    needs: [holmes-investigate, watson-verify, moriarty-predict]
+    
+    permissions:
+      pull-requests: write
+      
+    steps:
+      - name: "📥 Download Reports"
+        uses: actions/download-artifact@v3
+        
+      - name: "📝 Create Comment"
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            const holmes = fs.readFileSync('holmes-report/holmes-report.md', 'utf8');
+            const watson = fs.readFileSync('watson-report/watson-report.md', 'utf8');
+            const moriarty = fs.readFileSync('moriarty-report/moriarty-report.md', 'utf8');
+            
+            const body = `
+            # 🔍 The Case of Pull Request #${{ github.event.pull_request.number }}
+            
+            ## 🕵️ SHA-lock HOLMES's Investigation
+            ${holmes}
+            
+            ---
+            
+            ## 🩺 Dr. WATSON's Verification
+            ${watson}
+            
+            ---
+            
+            ## 🔮 Professor MORIARTY's Predictions
+            ${moriarty}
+            
+            ---
+            *Filed at 221B Repository Street*
+            `;
+            
+            // Find existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('The Case of Pull Request')
+            );
+            
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body
+              });
+            }

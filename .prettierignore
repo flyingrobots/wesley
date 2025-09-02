@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Build outputs
+dist/
+build/
+coverage/
+.vitest/
+.nyc_output/
+
+# IDE
+.obsidian/
+.vscode/
+.idea/
+
+# Git
+.git/
+
+# Misc
+*.min.js
+*.min.css
+test-results/
+junit.xml
+*.tap
+*.log
+
+# Generated files
+migrations/
+.migration_archive/

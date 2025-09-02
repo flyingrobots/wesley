@@ -1,0 +1,60 @@
+# Example Wesley Schema
+# GraphQL is the source of truth - everything else is generated
+
+type User @table {
+  id: ID! @primaryKey @default(expr: "gen_random_uuid()")
+  email: String! @unique @index
+  username: String @unique
+  display_name: String
+  created_at: DateTime! @default(expr: "now()")
+  updated_at: DateTime! @default(expr: "now()")
+  
+  # Virtual relations (no column created)
+  posts: [Post!]! @hasMany
+  comments: [Comment!]! @hasMany
+}
+
+type Post @table {
+  id: ID! @primaryKey @default(expr: "gen_random_uuid()")
+  user_id: ID! @foreignKey(ref: "User.id") @index
+  title: String!
+  content: String
+  published: Boolean! @default(expr: "false")
+  published_at: DateTime
+  created_at: DateTime! @default(expr: "now()")
+  updated_at: DateTime! @default(expr: "now()")
+  
+  # Virtual relations
+  user: User! @hasOne
+  comments: [Comment!]! @hasMany
+  tags: [Tag!]! @hasMany
+}
+
+type Comment @table {
+  id: ID! @primaryKey @default(expr: "gen_random_uuid()")
+  post_id: ID! @foreignKey(ref: "Post.id") @index
+  user_id: ID! @foreignKey(ref: "User.id") @index
+  content: String!
+  created_at: DateTime! @default(expr: "now()")
+  
+  # Virtual relations
+  post: Post! @hasOne
+  user: User! @hasOne
+}
+
+type Tag @table {
+  id: ID! @primaryKey @default(expr: "gen_random_uuid()")
+  name: String! @unique @index
+  slug: String! @unique @index
+  created_at: DateTime! @default(expr: "now()")
+  
+  # Virtual relations
+  posts: [Post!]! @hasMany
+}
+
+# Future: Junction table for many-to-many
+# type PostTag @table {
+#   post_id: ID! @foreignKey(ref: "Post.id")
+#   tag_id: ID! @foreignKey(ref: "Tag.id")
+#   created_at: DateTime! @default(expr: "now()")
+# }

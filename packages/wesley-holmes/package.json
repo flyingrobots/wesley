@@ -1,0 +1,19 @@
+{
+  "name": "@wesley/holmes",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "SHA-lock HOLMES - Schema intelligence sidecar for Wesley",
+  "main": "./src/index.mjs",
+  "bin": {
+    "holmes": "./src/cli.mjs"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@wesley/core": "workspace:*"
+  },
+  "keywords": ["holmes", "watson", "moriarty", "verification", "prediction"],
+  "author": "Captain James",
+  "license": "MIT"
+}

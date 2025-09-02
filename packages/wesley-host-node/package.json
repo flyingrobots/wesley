@@ -1,0 +1,25 @@
+{
+  "name": "@wesley/host-node",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Wesley Node.js platform adapters - GraphQL parser, SQL generators, file system",
+  "main": "./src/index.mjs",
+  "exports": {
+    ".": "./src/index.mjs",
+    "./adapters": "./src/adapters/index.mjs",
+    "./generators": "./src/generators/index.mjs",
+    "./parsers": "./src/parsers/index.mjs"
+  },
+  "scripts": {
+    "test": "node --test test/**/*.test.mjs",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "@wesley/core": "workspace:*",
+    "graphql": "^16.9.0",
+    "fast-glob": "^3.3.2"
+  },
+  "keywords": ["graphql", "sql", "node", "adapters"],
+  "author": "Captain James",
+  "license": "MIT"
+}

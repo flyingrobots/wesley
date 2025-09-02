@@ -1,0 +1,20 @@
+{
+  "name": "@wesley/core",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Wesley core domain logic - pure functions, no dependencies",
+  "main": "./src/index.mjs",
+  "exports": {
+    ".": "./src/index.mjs",
+    "./domain": "./src/domain/index.mjs",
+    "./application": "./src/application/index.mjs",
+    "./ports": "./src/ports/index.mjs"
+  },
+  "scripts": {
+    "test": "node --test test/**/*.test.mjs",
+    "lint": "eslint src/"
+  },
+  "keywords": ["graphql", "schema", "domain", "hexagonal"],
+  "author": "Captain James",
+  "license": "MIT"
+}

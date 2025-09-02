@@ -1,0 +1,20 @@
+{
+  "name": "@wesley/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Wesley CLI - GraphQL to Everything",
+  "bin": {
+    "wesley": "./wesley.mjs",
+    "wes": "./wesley.mjs"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@wesley/core": "workspace:*",
+    "@wesley/host-node": "workspace:*"
+  },
+  "keywords": ["cli", "graphql", "schema", "generator"],
+  "author": "Captain James",
+  "license": "MIT"
+}

@@ -1,0 +1,26 @@
+{
+  "name": "wesley",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Everyone generates GraphQL from databases. Wesley generates databases from GraphQL. One schema → SQL/migrations/types/Zod + Supabase RLS/Realtime/Storage.",
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces",
+    "lint": "npm run lint --workspaces"
+  },
+  "keywords": ["graphql", "sql", "database", "migrations", "supabase", "schema", "codegen", "postgresql", "schema-first"],
+  "author": "Captain James",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jameskerr/wesley.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jameskerr/wesley/issues"
+  },
+  "homepage": "https://github.com/jameskerr/wesley#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
