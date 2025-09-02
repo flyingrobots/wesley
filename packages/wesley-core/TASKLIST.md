@@ -2,6 +2,11 @@
 ## Date: 2025-09-02
 ## Review By: James
 
+## 📊 Overall Progress
+```
+████████░░ 78% (82/105 tasks)
+```
+
 ---
 
 ## 🚨 ALPHA BLOCKERS (Fix First - Critical Issues)
@@ -171,11 +176,11 @@ Add support for:
 - [x] Emit pre-flight pgTAP snapshots for risky alters
 - [x] Hook Holmes "risk score" to DROP/ALTER TYPE presence
 
-### ⬜ 2. Owner/Tenant Model
-- [ ] Add `@tenant(column:"tenant_id")` directive
-- [ ] Add `@owner(column:"user_id")` directive
-- [ ] Generate default RLS
-- [ ] Create CLI scaffold for "multi-tenant starter"
+### ✅ 2. Owner/Tenant Model
+- [x] Add `@tenant(column:"tenant_id")` directive
+- [x] Add `@owner(column:"user_id")` directive
+- [x] Generate default RLS
+- [x] Create CLI scaffold for "multi-tenant starter"
 
 ### ⬜ 3. Policy Presets
 Support presets:
@@ -230,11 +235,13 @@ Support presets:
 ## 📊 Progress Tracking
 
 ### Overall Status: ALPHA READY! 🚀
-- **Alpha Blockers**: 4/4 COMPLETED ✅
-- **Quick Wins**: 9/9 COMPLETED ✅
-- **High-Impact**: 9/9 COMPLETED ✅
-- **Medium Lifts**: 1/3 COMPLETED (33%)
-- **Nice-to-Haves**: 0/5 NOT STARTED
+- **Alpha Blockers**: 4/4 COMPLETED ✅ (100%)
+- **Quick Wins**: 9/9 COMPLETED ✅ (100%)
+- **High-Impact**: 9/9 COMPLETED ✅ (100%)
+- **Medium Lifts**: 2/3 COMPLETED ✅ (67%)
+- **Nice-to-Haves**: 0/5 NOT STARTED (0%)
+
+**Total Tasks**: 82/105 completed (78%)
 
 ### Alpha Blockers Status
 - ✅ Array Nullability: COMPLETED
@@ -335,3 +342,22 @@ Support presets:
 - Completed High-Impact #9: Interface Name Cleanup
   - Renamed MigrationDiffEngine to MigrationDiffer
   - Updated all imports and references throughout codebase
+
+#### Evening Session - Additional Features
+- Completed feature requests:
+  - Zod schema generation with proper array nullability
+  - RPC client with Zod validation
+  - RLS roles support with role-specific policies
+  - Migration safety rails with --allow-destructive flag
+- Completed Medium Lift #1: Migration Safety Rails
+  - Implemented --allow-destructive flag for DROP operations
+  - Added pre-flight snapshots for risky alters
+  - Integrated Holmes risk scoring
+- Completed Medium Lift #2: Owner/Tenant Model
+  - Implemented @tenant directive with org-scoped RLS
+  - Implemented @owner directive with user-level access
+  - Generated SECURITY DEFINER helper functions
+  - Created multi-tenant scaffold command
+- Documentation:
+  - Created comprehensive RLS deep-dive documentation
+  - Promoted RLS docs from draft to official documentation

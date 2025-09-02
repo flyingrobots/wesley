@@ -6,6 +6,7 @@
 import { DirectiveProcessor } from '../Directives.mjs';
 import { IndexDeduplicator } from '../IndexDeduplicator.mjs';
 import { TenantModel } from '../TenantModel.mjs';
+import { RLSPresets } from '../RLSPresets.mjs';
 
 const scalarMap = {
   ID: 'uuid',
@@ -29,6 +30,7 @@ export class PostgreSQLGenerator {
     this.evidenceMap = evidenceMap;
     this.currentLine = 1;
     this.output = [];
+    this.rlsPresets = new RLSPresets();
   }
 
   async generate(schema, options = {}) {
@@ -162,7 +164,12 @@ export class PostgreSQLGenerator {
       // Generate RLS policies if enabled and @rls directive present
       const rlsConfig = table.directives?.['@rls'];
       if (enableRLS && rlsConfig) {
-        statements.push(this.generateRLSPolicies(table));
+        // Check for preset usage
+        if (rlsConfig.preset) {
+          statements.push(this.generatePresetRLS(table, rlsConfig.preset));
+        } else {
+          statements.push(this.generateRLSPolicies(table));
+        }
       }
     }
 
@@ -265,5 +272,83 @@ CREATE POLICY "policy_${tableName}_delete_${uid}" ON "${tableName}"
     }
     
     return policies.join('\n');
+  }
+  
+  /**
+   * Generate RLS policies from preset
+   */
+  generatePresetRLS(table, presetConfig) {
+    const tableName = table.name;
+    let presetName;
+    let presetOptions = {};
+    
+    // Parse preset config (can be string or object)
+    if (typeof presetConfig === 'string') {
+      presetName = presetConfig;
+    } else {
+      presetName = presetConfig.name;
+      presetOptions = presetConfig.options || {};
+    }
+    
+    // Auto-detect common column names if not provided
+    const fields = table.getFields();
+    
+    // Owner column detection
+    if (!presetOptions.owner_column && (presetName === 'owner' || presetName === 'public-read')) {
+      const ownerField = fields.find(f => 
+        f.name === 'created_by' || 
+        f.name === 'owner_id' || 
+        f.name === 'user_id' ||
+        f.name === 'author_id'
+      );
+      if (ownerField) {
+        presetOptions.owner_column = ownerField.name;
+      }
+    }
+    
+    // Tenant column detection
+    if (!presetOptions.tenant_column && presetName === 'tenant') {
+      const tenantField = fields.find(f => 
+        f.name === 'org_id' || 
+        f.name === 'organization_id' || 
+        f.name === 'tenant_id' ||
+        f.name === 'company_id'
+      );
+      if (tenantField) {
+        presetOptions.tenant_column = tenantField.name;
+      }
+      
+      // Auto-detect membership table
+      if (!presetOptions.membership_table) {
+        // Look for common membership table names in schema
+        presetOptions.membership_table = 'membership'; // Default
+      }
+    }
+    
+    // Deleted at column detection for soft-delete
+    if (!presetOptions.deleted_at_column && presetName === 'soft-delete') {
+      const deletedField = fields.find(f => 
+        f.name === 'deleted_at' || 
+        f.name === 'deleted' || 
+        f.name === 'is_deleted'
+      );
+      if (deletedField) {
+        presetOptions.deleted_at_column = deletedField.name;
+      }
+    }
+    
+    // Generate SQL using preset
+    try {
+      return this.rlsPresets.generateSQL(presetName, tableName, presetOptions);
+    } catch (error) {
+      if (this.evidenceMap) {
+        this.evidenceMap.recordError(table.uid || tableName, {
+          message: `Failed to apply RLS preset: ${error.message}`,
+          type: 'rls_preset_error',
+          context: { preset: presetName, options: presetOptions }
+        });
+      }
+      throw error;
+    }
   }
 }
