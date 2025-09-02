@@ -12,7 +12,8 @@ import { MigrationDiffEngine } from './generators/MigrationDiffEngine.mjs';
 
 export class WesleyOrchestrator {
   constructor(options = {}) {
-    this.enableRLS = options.enableRLS ?? true;
+    this.generateSQL = options.generateSQL ?? true;  // Alpha Blocker #3: Separate SQL generation flag
+    this.enableRLS = options.enableRLS ?? true;      // Only controls RLS policy emission
     this.enableRPC = options.enableRPC ?? true;
     this.enableTests = options.enableTests ?? true;
     this.enableMigrations = options.enableMigrations ?? true;
@@ -39,8 +40,10 @@ export class WesleyOrchestrator {
     const artifacts = {};
     
     // 1. Generate SQL DDL
-    if (this.enableRLS) {
-      artifacts.sql = await sqlGenerator.generate(schema);
+    if (this.generateSQL) {
+      artifacts.sql = await sqlGenerator.generate(schema, { 
+        enableRLS: this.enableRLS  // Pass RLS flag to generator
+      });
     }
     
     // 2. Generate pgTAP tests

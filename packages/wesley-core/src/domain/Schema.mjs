@@ -60,11 +60,12 @@ export class Table {
 }
 
 export class Field {
-  constructor({ name, type, nonNull = false, list = false, directives = {} }) {
+  constructor({ name, type, nonNull = false, list = false, itemNonNull = false, directives = {} }) {
     this.name = name;
     this.type = type;
-    this.nonNull = nonNull;
+    this.nonNull = nonNull;  // Field-level nullability: [T]! or T!
     this.list = list;
+    this.itemNonNull = itemNonNull;  // Item-level nullability: [T!]!
     this.directives = directives;
   }
 

@@ -21,7 +21,8 @@ export class PostgreSQLGenerator {
     this.output = [];
   }
 
-  async generate(schema) {
+  async generate(schema, options = {}) {
+    const enableRLS = options.enableRLS ?? true;
     const statements = [];
     this.currentLine = 1;
     this.output = [];
@@ -91,9 +92,9 @@ export class PostgreSQLGenerator {
         }
       }
 
-      // Generate RLS policies if @rls directive present
+      // Generate RLS policies if enabled and @rls directive present
       const rlsConfig = table.directives?.['@rls'];
-      if (rlsConfig) {
+      if (enableRLS && rlsConfig) {
         statements.push(this.generateRLSPolicies(table));
       }
     }

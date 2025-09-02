@@ -51,6 +51,7 @@ export class GraphQLSchemaBuilder {
         type: typeInfo.base,
         nonNull: typeInfo.nonNull,
         list: typeInfo.list,
+        itemNonNull: typeInfo.itemNonNull,
         directives: this.extractDirectives(fieldNode)
       });
     }
@@ -160,7 +161,8 @@ export class GraphQLSchemaBuilder {
         }
         return obj;
       default:
-        return String(valueNode.value ?? '');
+        // Alpha Blocker #2: Remove silent coercion in value extraction
+        throw new Error(`Unknown value node kind: ${valueNode.kind}. Value node: ${JSON.stringify(valueNode)}`);
     }
   }
   
@@ -171,9 +173,10 @@ export class GraphQLSchemaBuilder {
     let base = '';
     let nonNull = false;
     let list = false;
+    let itemNonNull = false;
     let current = typeNode;
     
-    // Unwrap NonNull wrapper
+    // Unwrap outer NonNull wrapper (field nullability)
     if (current.kind === 'NonNullType') {
       nonNull = true;
       current = current.type;
@@ -184,8 +187,9 @@ export class GraphQLSchemaBuilder {
       list = true;
       current = current.type;
       
-      // List items might also be NonNull
+      // Check if list items are NonNull
       if (current.kind === 'NonNullType') {
+        itemNonNull = true;
         current = current.type;
       }
     }
@@ -194,9 +198,10 @@ export class GraphQLSchemaBuilder {
     if (current.kind === 'NamedType') {
       base = current.name.value;
     } else {
-      base = 'String'; // Default fallback
+      // Alpha Blocker #2: Remove silent type coercion
+      throw new Error(`Unknown GraphQL type kind: ${current.kind}. Type node: ${JSON.stringify(current)}`);
     }
     
-    return { base, nonNull, list };
+    return { base, nonNull, list, itemNonNull };
   }
 }

@@ -202,6 +202,7 @@
   },
   "active": "28237c72563437da",
   "lastOpenFiles": [
+    "packages/wesley-core/TASKLIST.md",
     "packages/wesley-core/test/rls-idempotency.test.mjs",
     "packages/wesley-core/test/directive-registry.test.mjs",
     "packages/wesley-core/src/application/EvidenceMap.mjs.tmp.78609.1756788588238",
@@ -212,7 +213,6 @@
     "packages/wesley-core/test/snapshots/sql-generator.test.mjs",
     "packages/wesley-core/test/snapshots",
     "docker-entrypoint-initdb.d/00-extensions.sql",
-    "docker-entrypoint-initdb.d",
     "CODE_OF_CONDUCT.md",
     "CONTRIBUTING.md",
     "SECURITY.md",
