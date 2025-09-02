@@ -47,7 +47,8 @@ export class GraphQLSchemaBuilder {
   buildTable(node) {
     const fields = {};
     const tableName = node.name.value;
-    const tableUid = this.extractDirectives(node)?.['@uid'] || `table_${tableName.toLowerCase()}`;
+    const tableDirectives = this.extractDirectives(node);
+    const tableUid = tableDirectives?.['@uid'] || `table_${tableName.toLowerCase()}`;
     
     // Check for duplicate type names
     if (fields[tableName]) {
@@ -79,11 +80,18 @@ export class GraphQLSchemaBuilder {
       });
     }
     
-    return new Table({
+    const table = new Table({
       name: tableName,
-      directives: this.extractDirectives(node),
+      directives: tableDirectives,
       fields
     });
+    
+    // Parse RLS config if present
+    if (tableDirectives['@rls']) {
+      table.rls = this.parseRLSConfig(tableDirectives['@rls']);
+    }
+    
+    return table;
   }
   
   /**
@@ -336,5 +344,27 @@ export class GraphQLSchemaBuilder {
     }
     
     return { base, nonNull, list, itemNonNull };
+  }
+  
+  /**
+   * Parse RLS configuration from directive arguments
+   */
+  parseRLSConfig(args) {
+    const config = {
+      enabled: args.enabled ?? args.enable ?? true,
+      select: args.select || 'true',
+      insert: args.insert || 'true',
+      update: args.update || 'true',
+      delete: args.delete || 'false',
+      roles: args.roles || ['authenticated']
+    };
+    
+    // Parse role-specific settings if provided
+    if (args.selectRoles) config.selectRoles = args.selectRoles;
+    if (args.insertRoles) config.insertRoles = args.insertRoles;
+    if (args.updateRoles) config.updateRoles = args.updateRoles;
+    if (args.deleteRoles) config.deleteRoles = args.deleteRoles;
+    
+    return config;
   }
 }

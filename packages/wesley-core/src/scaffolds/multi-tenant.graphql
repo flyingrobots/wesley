@@ -1,0 +1,326 @@
+# Wesley Multi-Tenant Starter Schema
+# This scaffold provides a production-ready multi-tenant SaaS foundation
+# Run: wesley scaffold multi-tenant --output my-schema.graphql
+
+# ==========================================
+# Core Entities
+# ==========================================
+
+type Organization @table {
+  id: ID! @primaryKey
+  name: String! @unique
+  slug: String! @unique @index
+  plan: PricingPlan! @default(value: "FREE") @index
+  created_at: DateTime! @default(value: "NOW()")
+  updated_at: DateTime! @default(value: "NOW()")
+}
+
+enum PricingPlan {
+  FREE
+  STARTER
+  PROFESSIONAL  
+  ENTERPRISE
+}
+
+type User @table {
+  id: ID! @primaryKey
+  email: String! @unique @email
+  name: String!
+  avatar_url: String @url
+  created_at: DateTime! @default(value: "NOW()")
+  last_seen_at: DateTime
+}
+
+# Junction table for user-org relationships
+type Membership @table {
+  user_id: ID! @foreignKey(ref: "User.id") @index
+  org_id: ID! @foreignKey(ref: "Organization.id") @index
+  role: MemberRole! @index
+  invited_by: ID @foreignKey(ref: "User.id")
+  invited_at: DateTime
+  accepted_at: DateTime
+  created_at: DateTime! @default(value: "NOW()")
+  
+  @@primaryKey(fields: ["user_id", "org_id"])
+  @@index(fields: ["org_id", "role"])
+}
+
+enum MemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+# ==========================================
+# Tenant-Scoped Resources
+# ==========================================
+
+type Project @table 
+  @tenant(by: "org_id")
+  @owner(column: "created_by")
+  @rls(enabled: true) {
+  id: ID! @primaryKey
+  org_id: ID! @foreignKey(ref: "Organization.id") @index
+  name: String!
+  description: String
+  status: ProjectStatus! @default(value: "ACTIVE") @index
+  created_by: ID! @foreignKey(ref: "User.id") @index
+  created_at: DateTime! @default(value: "NOW()")
+  updated_at: DateTime! @default(value: "NOW()")
+  
+  @@index(fields: ["org_id", "status"])
+}
+
+enum ProjectStatus {
+  ACTIVE
+  ARCHIVED
+  DELETED
+}
+
+type Document @table
+  @tenant(by: "org_id")
+  @owner(column: "created_by")
+  @rls(
+    enabled: true,
+    select: "tenant_or_shared",
+    insert: "tenant_and_owner",
+    update: "owner_or_editor",
+    delete: "owner_or_admin"
+  ) {
+  id: ID! @primaryKey
+  org_id: ID! @foreignKey(ref: "Organization.id") @index
+  project_id: ID! @foreignKey(ref: "Project.id") @index
+  title: String!
+  content: String
+  content_type: String! @default(value: "text/plain")
+  tags: [String!]!
+  metadata: JSON
+  version: Int! @default(value: "1")
+  is_published: Boolean! @default(value: "false") @index
+  created_by: ID! @foreignKey(ref: "User.id") @index
+  created_at: DateTime! @default(value: "NOW()")
+  updated_at: DateTime! @default(value: "NOW()")
+  
+  @@index(fields: ["org_id", "is_published"])
+  @@index(fields: ["project_id", "is_published"])
+}
+
+# Sharing/collaboration
+type DocumentShare @table {
+  id: ID! @primaryKey
+  document_id: ID! @foreignKey(ref: "Document.id") @index
+  shared_with_user_id: ID @foreignKey(ref: "User.id") @index
+  shared_with_org_id: ID @foreignKey(ref: "Organization.id") @index
+  permission: SharePermission! @default(value: "VIEW")
+  expires_at: DateTime
+  created_by: ID! @foreignKey(ref: "User.id")
+  created_at: DateTime! @default(value: "NOW()")
+  
+  @@unique(fields: ["document_id", "shared_with_user_id"])
+  @@unique(fields: ["document_id", "shared_with_org_id"])
+  @@index(fields: ["shared_with_user_id", "permission"])
+}
+
+enum SharePermission {
+  VIEW
+  COMMENT
+  EDIT
+}
+
+# ==========================================
+# Audit & Activity
+# ==========================================
+
+type AuditLog @table
+  @tenant(by: "org_id")
+  @rls(
+    enabled: true,
+    select: "tenant_admins_only",
+    insert: "system_only",
+    update: "never",
+    delete: "never"
+  ) {
+  id: ID! @primaryKey
+  org_id: ID! @foreignKey(ref: "Organization.id") @index
+  user_id: ID @foreignKey(ref: "User.id") @index
+  action: String! @index
+  resource_type: String! @index
+  resource_id: ID! @index
+  changes: JSON
+  ip_address: String @ip @sensitive
+  user_agent: String
+  created_at: DateTime! @default(value: "NOW()") @index
+  
+  @@index(fields: ["org_id", "created_at"])
+  @@index(fields: ["resource_type", "resource_id"])
+}
+
+# ==========================================
+# API Access
+# ==========================================
+
+type ApiKey @table
+  @tenant(by: "org_id")
+  @owner(column: "created_by")
+  @rls(
+    enabled: true,
+    select: "owner_or_admin",
+    insert: "admin_only",
+    update: "owner_only",
+    delete: "owner_or_admin"
+  ) {
+  id: ID! @primaryKey
+  org_id: ID! @foreignKey(ref: "Organization.id") @index
+  name: String!
+  key_hash: String! @sensitive @unique
+  prefix: String! @index # First 8 chars for identification
+  last_used_at: DateTime
+  expires_at: DateTime @index
+  scopes: [String!]!
+  rate_limit: Int @default(value: "1000")
+  created_by: ID! @foreignKey(ref: "User.id")
+  created_at: DateTime! @default(value: "NOW()")
+  revoked_at: DateTime
+  
+  @@index(fields: ["org_id", "expires_at"])
+}
+
+# ==========================================
+# Invitations
+# ==========================================
+
+type Invitation @table {
+  id: ID! @primaryKey
+  org_id: ID! @foreignKey(ref: "Organization.id") @index
+  email: String! @email @index
+  role: MemberRole! @default(value: "MEMBER")
+  invited_by: ID! @foreignKey(ref: "User.id")
+  token: String! @unique @sensitive
+  expires_at: DateTime! @index
+  accepted_at: DateTime
+  created_at: DateTime! @default(value: "NOW()")
+  
+  @@unique(fields: ["org_id", "email"])
+  @@index(fields: ["email", "expires_at"])
+}
+
+# ==========================================
+# Notifications
+# ==========================================
+
+type Notification @table
+  @owner(column: "user_id")
+  @rls(
+    enabled: true,
+    select: "owner_only",
+    update: "owner_only",
+    delete: "owner_only"
+  ) {
+  id: ID! @primaryKey
+  user_id: ID! @foreignKey(ref: "User.id") @index
+  org_id: ID @foreignKey(ref: "Organization.id") @index
+  type: String! @index
+  title: String!
+  body: String
+  action_url: String @url
+  is_read: Boolean! @default(value: "false") @index
+  read_at: DateTime
+  created_at: DateTime! @default(value: "NOW()") @index
+  
+  @@index(fields: ["user_id", "is_read", "created_at"])
+}
+
+# ==========================================
+# Settings & Preferences
+# ==========================================
+
+type UserPreference @table
+  @owner(column: "user_id")
+  @rls(
+    enabled: true,
+    select: "owner_only",
+    insert: "owner_only",
+    update: "owner_only",
+    delete: "owner_only"
+  ) {
+  user_id: ID! @primaryKey @foreignKey(ref: "User.id")
+  theme: Theme! @default(value: "SYSTEM")
+  email_notifications: Boolean! @default(value: "true")
+  weekly_digest: Boolean! @default(value: "true")
+  timezone: String! @default(value: "UTC")
+  locale: String! @default(value: "en")
+  created_at: DateTime! @default(value: "NOW()")
+  updated_at: DateTime! @default(value: "NOW()")
+}
+
+enum Theme {
+  LIGHT
+  DARK
+  SYSTEM
+}
+
+type OrganizationSettings @table
+  @tenant(by: "org_id")
+  @rls(
+    enabled: true,
+    select: "tenant",
+    update: "admin_only"
+  ) {
+  org_id: ID! @primaryKey @foreignKey(ref: "Organization.id")
+  allow_invites: Boolean! @default(value: "true")
+  require_2fa: Boolean! @default(value: "false")
+  allowed_domains: [String!]
+  default_role: MemberRole! @default(value: "MEMBER")
+  data_retention_days: Int! @default(value: "365")
+  created_at: DateTime! @default(value: "NOW()")
+  updated_at: DateTime! @default(value: "NOW()")
+}
+
+# ==========================================
+# RPC Functions (Optional)
+# ==========================================
+
+type Query {
+  # Get current user's organizations
+  my_organizations: [Organization!]! @rpc(
+    sql: "SELECT o.* FROM organization o 
+          JOIN membership m ON m.org_id = o.id 
+          WHERE m.user_id = auth.uid()"
+  )
+  
+  # Get organization members with details
+  organization_members(org_id: ID!): [MemberDetail!]! @rpc(
+    sql: "SELECT u.*, m.role, m.created_at as joined_at 
+          FROM user u 
+          JOIN membership m ON m.user_id = u.id 
+          WHERE m.org_id = $1 
+          AND wesley.is_member_of($1)"
+  )
+}
+
+type MemberDetail {
+  id: ID!
+  email: String!
+  name: String!
+  avatar_url: String
+  role: MemberRole!
+  joined_at: DateTime!
+}
+
+type Mutation {
+  # Invite user to organization
+  invite_user(org_id: ID!, email: String!, role: MemberRole!): Invitation! @rpc(
+    sql: "SELECT wesley.invite_user($1, $2, $3, auth.uid())"
+  )
+  
+  # Accept invitation
+  accept_invitation(token: String!): Membership! @rpc(
+    sql: "SELECT wesley.accept_invitation($1, auth.uid())"
+  )
+  
+  # Transfer ownership
+  transfer_ownership(org_id: ID!, new_owner_id: ID!): Boolean! @rpc(
+    sql: "SELECT wesley.transfer_ownership($1, $2, auth.uid())"
+  )
+}

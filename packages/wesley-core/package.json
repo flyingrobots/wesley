@@ -19,10 +19,18 @@
     "test:coverage": "node --test --experimental-test-coverage test/**/*.test.mjs",
     "lint": "eslint src/"
   },
-  "engines": { 
-    "node": ">=18.17" 
+  "engines": {
+    "node": ">=18.17"
   },
-  "keywords": ["graphql", "schema", "domain", "hexagonal"],
+  "keywords": [
+    "graphql",
+    "schema",
+    "domain",
+    "hexagonal"
+  ],
   "author": "Captain James",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "graphql": "^16.11.0"
+  }
 }

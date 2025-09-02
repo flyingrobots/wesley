@@ -5,6 +5,7 @@
 
 import { DirectiveProcessor } from '../Directives.mjs';
 import { IndexDeduplicator } from '../IndexDeduplicator.mjs';
+import { TenantModel } from '../TenantModel.mjs';
 
 const scalarMap = {
   ID: 'uuid',
@@ -165,6 +166,16 @@ export class PostgreSQLGenerator {
       }
     }
 
+    // Analyze schema for tenant model
+    const tenantModel = new TenantModel(schema);
+    const tenantAnalysis = tenantModel.analyze();
+    
+    // If we have tenant model, generate additional SQL
+    if (tenantAnalysis.hasTenancy || tenantAnalysis.hasOwnership) {
+      statements.push('-- TENANT MODEL SUPPORT');
+      statements.push(tenantModel.generateSQL());
+    }
+    
     return statements.join('\n\n');
   }
 
