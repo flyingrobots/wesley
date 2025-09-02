@@ -202,6 +202,8 @@
   },
   "active": "28237c72563437da",
   "lastOpenFiles": [
+    "docs/features/row-level-security.md",
+    "docs/features",
     "packages/wesley-core/src/commands/scaffold.mjs",
     "packages/wesley-core/src/commands",
     "packages/wesley-core/src/scaffolds/multi-tenant.graphql",
@@ -211,8 +213,6 @@
     "packages/wesley-core/node_modules/graphql/validation/rules/custom/NoSchemaIntrospectionCustomRule.js",
     "packages/wesley-core/node_modules/graphql/validation/rules/custom/NoSchemaIntrospectionCustomRule.d.ts",
     "packages/wesley-core/node_modules/graphql/validation/rules/custom/NoDeprecatedCustomRule.mjs",
-    "packages/wesley-core/node_modules/graphql/validation/rules/custom/NoDeprecatedCustomRule.js",
-    "packages/wesley-core/node_modules/graphql/validation/rules/custom/NoDeprecatedCustomRule.d.ts",
     "packages/wesley-core/node_modules/graphql/README.md",
     "docs/drafts/boring-deployments.md",
     "docs/drafts/migrations.md",
