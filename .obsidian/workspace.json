@@ -202,6 +202,7 @@
   },
   "active": "28237c72563437da",
   "lastOpenFiles": [
+    "DEVLOG-2025-09-02.md",
     "packages/wesley-core/src/domain/MigrationSafety.mjs",
     "packages/wesley-core/src/client/RPCClient.mjs",
     "packages/wesley-core/src/client",
@@ -212,7 +213,6 @@
     "packages/wesley-core/wesley.config.mjs",
     "packages/wesley-core/src/domain/IndexDeduplicator.mjs",
     "packages/wesley-core/test/fk-ast-roundtrip.test.mjs",
-    "example/failing-to-passing.sql",
     "packages/wesley-core/TASKLIST.md",
     "CODE_OF_CONDUCT.md",
     "CONTRIBUTING.md",

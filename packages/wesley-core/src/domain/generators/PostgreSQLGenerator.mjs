@@ -100,8 +100,7 @@ export class PostgreSQLGenerator {
 
       statements.push(create);
       
-      // Add UID comment for evidence tracking
-      const tableUid = table.directives?.['@uid'] || table.uid || `tbl_${table.name.toLowerCase()}`;
+      // Add UID comment for evidence tracking (reuse tableUid from above)
       statements.push(`COMMENT ON TABLE "${table.name}" IS 'uid: ${tableUid}';`);
       
       // Add column comments with UIDs
