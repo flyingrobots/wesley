@@ -1,0 +1,50 @@
+import { z } from 'zod';
+// Entity Schemas
+export const DataTypeTestSchema = z.object({
+  id: z.string().uuid(),
+  stringField: z.string().nullable(),
+  intField: z.number().int().nullable(),
+  bigIntField: z.bigint().nullable(),
+  floatField: z.number().nullable(),
+  decimalField: z.number().nullable(),
+  booleanField: z.boolean().nullable(),
+  dateField: z.date().nullable(),
+  timeField: z.date().nullable(),
+  dateTimeField: z.date().nullable(),
+  jsonField: z.record(z.unknown()).nullable(),
+  inetField: z.string().ip().nullable(),
+  idField: z.string().nullable()
+});
+export type DataTypeTest = z.infer<typeof DataTypeTestSchema>;
+// Input Schemas
+export const CreateDataTypeTestSchema = z.object({
+  stringField: z.string().nullable(),
+  intField: z.number().int().nullable(),
+  bigIntField: z.bigint().nullable(),
+  floatField: z.number().nullable(),
+  decimalField: z.number().nullable(),
+  booleanField: z.boolean().nullable(),
+  dateField: z.date().nullable(),
+  timeField: z.date().nullable(),
+  dateTimeField: z.date().nullable(),
+  jsonField: z.record(z.unknown()).nullable(),
+  inetField: z.string().ip().nullable(),
+  idField: z.string().nullable()
+});
+export type CreateDataTypeTestInput = z.infer<typeof CreateDataTypeTestSchema>;
+export const UpdateDataTypeTestSchema = z.object({
+  stringField: z.string().nullable().optional(),
+  intField: z.number().int().nullable().optional(),
+  bigIntField: z.bigint().nullable().optional(),
+  floatField: z.number().nullable().optional(),
+  decimalField: z.number().nullable().optional(),
+  booleanField: z.boolean().nullable().optional(),
+  dateField: z.date().nullable().optional(),
+  timeField: z.date().nullable().optional(),
+  dateTimeField: z.date().nullable().optional(),
+  jsonField: z.record(z.unknown()).nullable().optional(),
+  inetField: z.string().ip().nullable().optional(),
+  idField: z.string().nullable().optional()
+});
+export type UpdateDataTypeTestInput = z.infer<typeof UpdateDataTypeTestSchema>;
+// Refinements and Custom Validations

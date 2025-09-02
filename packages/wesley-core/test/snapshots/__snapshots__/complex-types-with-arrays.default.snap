@@ -1,0 +1,38 @@
+export interface Product {
+  id: string;
+  /** @indexed - Database index exists */
+  name: string;
+  tags: Array<string | null>;
+  categoryIds?: Array<string> | null;
+  prices: Array<number>;
+  /** @default {} */
+  metadata?: Record<string, any> | null;
+  features?: Array<string | null> | null;
+}
+export interface ProductInput {
+  /** @indexed - Database index exists */
+  name?: string | null;
+  tags?: Array<string | null> | null;
+  categoryIds?: Array<string> | null;
+  prices?: Array<number> | null;
+  /** @default {} */
+  metadata?: Record<string, any> | null;
+  features?: Array<string | null> | null;
+}
+export interface CreateProductInput {
+  name: string;
+  tags: Array<string | null>;
+  prices: Array<number>;
+  id?: string;
+  categoryIds?: Array<string> | null;
+  metadata?: Record<string, any> | null;
+  features?: Array<string | null> | null;
+}
+export interface UpdateProductInput {
+  name?: string | null;
+  tags?: Array<string | null> | null;
+  categoryIds?: Array<string> | null;
+  prices?: Array<number> | null;
+  metadata?: Record<string, any> | null;
+  features?: Array<string | null> | null;
+}

@@ -5,8 +5,8 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { MigrationDiffer } from '../src/domain/generators/MigrationDiffer.mjs';
-import { Schema, Table, Field } from '../src/domain/Schema.mjs';
+import { MigrationDiffer } from '../../src/domain/generators/MigrationDiffer.mjs';
+import { Schema, Table, Field } from '../../src/domain/Schema.mjs';
 
 test('detects added tables', async () => {
   const differ = new MigrationDiffer();

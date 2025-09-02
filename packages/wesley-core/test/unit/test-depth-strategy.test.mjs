@@ -4,8 +4,8 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { TestDepthStrategy } from '../src/domain/TestDepthStrategy.mjs';
-import { Field } from '../src/domain/Schema.mjs';
+import { TestDepthStrategy } from '../../src/domain/TestDepthStrategy.mjs';
+import { Field } from '../../src/domain/Schema.mjs';
 
 test('calculates field weights correctly', () => {
   const strategy = new TestDepthStrategy();

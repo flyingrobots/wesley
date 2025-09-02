@@ -1,0 +1,84 @@
+export interface User {
+  id: string;
+  /** @unique - Must be unique */
+  email: string;
+  profile?: Record<string, any> | null;
+}
+export interface Post {
+  id: string;
+  /** @indexed - Database index exists */
+  title: string;
+  /** @sensitive - Contains sensitive data */
+  content?: string | null;
+  authorId: string;
+  publishedAt?: Date | null;
+  /** @default 0 */
+  viewCount: number;
+}
+export interface Comment {
+  id: string;
+  content: string;
+  postId: string;
+  authorId: string;
+  /** @default now() */
+  createdAt: Date;
+}
+export interface UserInput {
+  /** @unique - Must be unique */
+  email?: string | null;
+  profile?: Record<string, any> | null;
+}
+export interface CreateUserInput {
+  email: string;
+  id?: string;
+  profile?: Record<string, any> | null;
+}
+export interface UpdateUserInput {
+  email?: string | null;
+  profile?: Record<string, any> | null;
+}
+export interface PostInput {
+  /** @indexed - Database index exists */
+  title?: string | null;
+  /** @sensitive - Contains sensitive data */
+  content?: string | null;
+  authorId?: string | null;
+  publishedAt?: Date | null;
+  /** @default 0 */
+  viewCount?: number | null;
+}
+export interface CreatePostInput {
+  title: string;
+  authorId: string;
+  id?: string;
+  content?: string | null;
+  publishedAt?: Date | null;
+  viewCount?: number;
+}
+export interface UpdatePostInput {
+  title?: string | null;
+  content?: string | null;
+  authorId?: string | null;
+  publishedAt?: Date | null;
+  viewCount?: number | null;
+}
+export interface CommentInput {
+  content?: string | null;
+  postId?: string | null;
+  authorId?: string | null;
+  /** @default now() */
+  createdAt?: Date | null;
+}
+export interface CreateCommentInput {
+  content: string;
+  postId: string;
+  authorId: string;
+  id?: string;
+  createdAt?: Date;
+}
+export interface UpdateCommentInput {
+  content?: string | null;
+  postId?: string | null;
+  authorId?: string | null;
+  createdAt?: Date | null;
+}

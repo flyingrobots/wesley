@@ -4,8 +4,8 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { GraphQLSchemaBuilder } from '../src/domain/GraphQLSchemaBuilder.mjs';
-import { PostgreSQLGenerator } from '../src/domain/generators/PostgreSQLGenerator.mjs';
+import { GraphQLSchemaBuilder } from '../../src/domain/GraphQLSchemaBuilder.mjs';
+import { PostgreSQLGenerator } from '../../src/domain/generators/PostgreSQLGenerator.mjs';
 import { parse } from 'graphql';
 
 test('generates tenant model SQL for @tenant directive', async () => {

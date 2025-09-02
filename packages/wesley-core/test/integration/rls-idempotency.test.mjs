@@ -6,8 +6,8 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { PostgreSQLGenerator } from '../src/domain/generators/PostgreSQLGenerator.mjs';
-import { PgTAPTestGenerator } from '../src/domain/generators/PgTAPTestGenerator.mjs';
+import { PostgreSQLGenerator } from '../../src/domain/generators/PostgreSQLGenerator.mjs';
+import { PgTAPTestGenerator } from '../../src/domain/generators/PgTAPTestGenerator.mjs';
 
 test('RLS policies have deterministic names', () => {
   const generator = new PostgreSQLGenerator();

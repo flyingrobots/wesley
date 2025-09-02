@@ -4,9 +4,9 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { RLSPresets } from '../src/domain/RLSPresets.mjs';
-import { GraphQLSchemaBuilder } from '../src/domain/GraphQLSchemaBuilder.mjs';
-import { PostgreSQLGenerator } from '../src/domain/generators/PostgreSQLGenerator.mjs';
+import { RLSPresets } from '../../src/domain/RLSPresets.mjs';
+import { GraphQLSchemaBuilder } from '../../src/domain/GraphQLSchemaBuilder.mjs';
+import { PostgreSQLGenerator } from '../../src/domain/generators/PostgreSQLGenerator.mjs';
 import { parse } from 'graphql';
 
 test('generates owner preset RLS policies', async () => {
