@@ -6,6 +6,13 @@ import { DirectiveProcessor } from '../Directives.mjs';
 import { IndexDeduplicator } from '../IndexDeduplicator.mjs';
 import { TenantModel } from '../TenantModel.mjs';
 import { RLSPresets } from '../RLSPresets.mjs';
+import { 
+  validateSQLIdentifier,
+  validateConstraintExpression,
+  escapeIdentifier,
+  escapeLiteral,
+  SecurityError 
+} from '../security/InputValidator.mjs';
 
 const scalarMap = {
   ID: 'uuid',
@@ -39,6 +46,20 @@ export class PostgreSQLGenerator {
     this.output = [];
 
     for (const table of schema.getTables()) {
+      // 🛡️ SECURITY: Validate table name
+      try {
+        validateSQLIdentifier(table.name, 'table name');
+      } catch (error) {
+        if (this.evidenceMap) {
+          this.evidenceMap.recordError(table.name, {
+            message: `Invalid table name: ${error.message}`,
+            type: 'security_validation_error',
+            context: { tableName: table.name }
+          });
+        }
+        throw error;
+      }
+
       const tableUid = DirectiveProcessor.getUid(table.directives) || `tbl:${table.name}`;
       const tableStartLine = this.currentLine;
       
@@ -49,11 +70,25 @@ export class PostgreSQLGenerator {
         // Skip virtual relation fields
         if (field.isVirtual()) continue;
 
+        // 🛡️ SECURITY: Validate field name
+        try {
+          validateSQLIdentifier(field.name, 'field name');
+        } catch (error) {
+          if (this.evidenceMap) {
+            this.evidenceMap.recordError(`${table.name}.${field.name}`, {
+              message: `Invalid field name: ${error.message}`,
+              type: 'security_validation_error',
+              context: { tableName: table.name, fieldName: field.name }
+            });
+          }
+          throw error;
+        }
+
         const fieldUid = DirectiveProcessor.getUid(field.directives) || 
                         `col:${table.name}.${field.name}`;
         const fieldStartLine = this.currentLine + cols.length + constraints.length + 2;
 
-        let col = `"${field.name}" ${this.getSQLType(field)}`;
+        let col = `${escapeIdentifier(field.name)} ${this.getSQLType(field)}`;
 
         if (field.isPrimaryKey()) {
           constraints.push(`PRIMARY KEY ("${field.name}")`);
@@ -98,7 +133,24 @@ export class PostgreSQLGenerator {
         // Add custom CHECK constraints
         const checkExpr = field.getCheckConstraint();
         if (checkExpr) {
-          constraints.push(`CHECK (${checkExpr})`);
+          // 🛡️ SECURITY: Validate check constraint expression
+          try {
+            validateConstraintExpression(checkExpr);
+            constraints.push(`CHECK (${checkExpr})`);
+          } catch (error) {
+            if (this.evidenceMap) {
+              this.evidenceMap.recordError(`${table.name}.${field.name}`, {
+                message: `Invalid check constraint: ${error.message}`,
+                type: 'security_validation_error',
+                context: { tableName: table.name, fieldName: field.name, checkExpr }
+              });
+            }
+            throw new SecurityError(
+              `Dangerous check constraint in ${table.name}.${field.name}: ${error.message}`,
+              error.code,
+              { tableName: table.name, fieldName: field.name, checkExpr }
+            );
+          }
         }
       }
 
