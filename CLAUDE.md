@@ -4,209 +4,193 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-D.A.T.A. (Database Automation, Testing, and Alignment) is a CLI tool for managing Supabase/PostgreSQL database migrations, Edge Functions, and pgTAP testing. Built with Node.js, it provides a comprehensive workflow for database development with production safety features. Like its namesake android from Star Trek: The Next Generation, D.A.T.A. prioritizes logical operations and preventing harm to production systems.
+Wesley is a GraphQL schema-first code generator that compiles GraphQL schemas into PostgreSQL DDL, TypeScript types, RLS policies, and pgTAP tests. It generates phased, zero-downtime migration plans by default and provides SHA-locked certificates proving deployment safety. The core philosophy: "GraphQL is the schema. Postgres & Supabase are generated."
 
 ## Key Technologies
 
 - **Runtime**: Node.js >= 18.0.0
-- **Database**: PostgreSQL via Supabase (local and production)
-- **Testing**: Vitest for unit tests, pgTAP for database tests
-- **CLI Framework**: Commander.js
-- **Architecture**: Event-driven command pattern with dependency injection
+- **Schema Language**: GraphQL with Wesley directives (@table, @rls, @fk, etc.)
+- **Database**: PostgreSQL/Supabase (generated from GraphQL)
+- **Testing**: Vitest for unit tests, pgTAP for database tests (generated)
+- **Architecture**: Hexagonal architecture with ports and adapters pattern
+- **Monorepo**: pnpm workspaces with three main packages (core, host-node, cli)
 
 ## Common Development Commands
 
-### Running Tests
+### Running Wesley CLI
+```bash
+# Generate code from GraphQL schema
+pnpm exec wesley generate ./example/schema.graphql
+
+# Watch mode for development (not yet implemented)
+pnpm exec wesley watch ./example/schema.graphql
+
+# Run tests (not yet implemented) 
+pnpm exec wesley test
+
+# Deploy with zero-downtime plan (not yet implemented)
+pnpm exec wesley deploy
+```
+
+### Testing
 ```bash
 # Run all Vitest tests
-npm test
+pnpm test
 
 # Watch mode for development
-npm run test:watch
+pnpm test:watch
 
 # Generate test coverage
-npm run test:coverage
-```
-
-### Database Migration Workflow
-```bash
-# 1. Generate migration from SQL changes
-npm run migrate:generate   # or: data db migrate generate --name <name>
-
-# 2. Test migration in isolated schema
-npm run migrate:test       # or: data db migrate test
-
-# 3. Promote to production (requires confirmation)
-npm run migrate:promote    # or: data db migrate promote --prod
-
-# 4. Check migration status
-npm run migrate:status     # or: data db migrate status
-
-# 5. Rollback if needed
-npm run migrate:rollback   # or: data db migrate rollback --prod
-```
-
-### Building and Compiling
-```bash
-# Compile SQL sources into migration
-data db compile
-
-# Compile with Edge Functions deployment
-data db compile --deploy-functions
+pnpm test:coverage
 ```
 
 ## Architecture
 
-### Code Organization Rules
-- **One Class Per File**: Each file must contain exactly one class. The filename must match the class name.
-- **Self-Documenting Names**: Each artifact should describe its contents based on its filename.
-- **No Multi-Class Files**: If a file contains multiple classes, it must be refactored immediately.
+### Package Structure
+- **@wesley/core**: Domain logic, generators, and IR (Intermediate Representation)
+  - Pure domain models (Schema, Table, Field, etc.)
+  - Generator ports (interfaces)
+  - Event-driven command pattern
+  
+- **@wesley/host-node**: Node.js platform adapters
+  - File system operations (WesleyFileWriter)
+  - Console logging (WesleyConsoleLogger)
+  - Parser implementations
+  - Generator implementations
+  
+- **@wesley/cli**: Command-line interface
+  - Generate command (transforms GraphQL to outputs)
+  - Watch command (planned)
+  - Test runner (planned)
+  - Deploy command (planned)
 
-### Command Class Hierarchy
-- **Command** (src/lib/Command.js): Base class with event emission and logging
-- **SupabaseCommand**: Commands using Supabase API
-- **DatabaseCommand**: Direct database access commands
-- **TestCommand**: Testing-related commands
+### Hexagonal Architecture Principles
+```
+Core (Domain) → Ports (Interfaces) → Adapters (Platform-specific)
+```
+- Core package should have NO platform dependencies
+- All I/O operations go through ports
+- Adapters implement ports for specific platforms
 
-All commands follow an event-driven pattern:
+### GraphQL Directives (Wesley Extensions)
+- `@table`: Marks a type as a database table
+- `@pk`: Primary key field
+- `@fk(ref: "Table.field")`: Foreign key relationship
+- `@rls(enable: true)`: Enable Row Level Security
+- `@tenant(by: "field")`: Multi-tenancy configuration
+- `@unique`: Unique constraint
+- `@check(expr: "...")`: Check constraint
+- `@default(value: "...")`: Default value
+
+### Generated Outputs
+From a single GraphQL schema, Wesley generates:
+1. **PostgreSQL DDL**: Tables, constraints, indexes
+2. **Migration Plans**: Phased zero-downtime migrations (expand/backfill/validate/switch/contract)
+3. **TypeScript Types**: Zod schemas and TypeScript interfaces
+4. **RLS Policies**: Row Level Security policies and helper functions
+5. **pgTAP Tests**: Comprehensive test suites for structure, constraints, RLS, and migrations
+6. **SHA-Locked Certificate**: Cryptographic proof of migration safety
+
+## Important Patterns
+
+### Event-Driven Architecture
+Commands emit events for progress tracking:
 ```javascript
-command.emit('progress', { message: 'Processing...' });
-command.emit('success', { message: 'Complete!' });
+command.emit('progress', { message: 'Parsing schema...' });
+command.emit('success', { message: 'Generation complete!' });
 command.emit('error', { message: 'Failed', error });
 ```
 
-### Directory Structure
-- **src/commands/**: Command implementations organized by domain (db/, functions/, test/)
-- **src/lib/**: Core libraries and base classes
-- **src/reporters/**: Output formatters (CliReporter)
-- **migrations/**: Generated database migrations
-- **sql/**: SQL source files (input)
-- **tests/**: pgTAP test files
-- **functions/**: Supabase Edge Functions
-
-### Path Configuration
-Paths can be configured via:
-1. Command-line options: `--sql-dir`, `--tests-dir`, `--migrations-dir`
-2. Environment variables: `data_SQL_DIR`, `data_TESTS_DIR`, `data_MIGRATIONS_DIR`
-3. Configuration file: `.datarc.json`
-
-### Configuration System
-Configuration is loaded from `.datarc.json` with the following structure:
-```json
-{
-  "test": {
-    "minimum_coverage": 80,
-    "test_timeout": 300,
-    "output_formats": ["console", "junit", "json"]
-  },
-  "environments": {
-    "local": {
-      "db": "postgresql://..."
-    }
+### Dependency Injection
+All components use constructor injection:
+```javascript
+class GenerateCommand {
+  constructor({ parser, generator, writer }) {
+    this.parser = parser;
+    this.generator = generator;
+    this.writer = writer;
   }
 }
 ```
 
-## Important Patterns
-
-### Production Safety
-- All production commands require explicit `--prod` flag
-- Destructive operations require typed confirmation
-- Commands wrap operations in transactions where supported
-- Process management includes zombie prevention and cleanup
-
 ### Error Handling
-- Custom error types in `src/lib/dataError/`
-- Commands should emit error events before throwing
-- Process exit codes are handled by CliReporter
+- Custom error types with context
+- Commands emit error events before throwing
+- Graceful degradation where possible
 
-### Testing Strategy
-- Unit tests use Vitest (test/*.test.js)
-- Database tests use pgTAP (tests/*.sql)
-- Test commands support multiple output formats (console, JUnit, JSON)
-- Coverage enforcement configurable via .datarc.json
+## Development Status
+
+**⚠️ ACTIVE DEVELOPMENT - Not Production Ready**
+
+Currently implemented:
+- Basic GraphQL parsing
+- Partial SQL generation
+- File writing adapter
+- CLI structure
+
+Not yet implemented:
+- Complete generator suite
+- Migration planning
+- RLS generation
+- Test generation
+- Watch mode
+- Deploy command
+- Browser/Deno adapters
+
+## Current Issues & Priorities
+
+1. **Package Exports**: Host-node package needs index.mjs with proper exports
+2. **CLI Imports**: Import paths need correction to use proper packages
+3. **Generator Completion**: Most generators have stub implementations
+4. **Testing**: Tests exist but may not run due to import issues
+
+## Development Notes
+
+### Adding New Features
+1. Define domain models in @wesley/core
+2. Create port interfaces in core
+3. Implement adapters in @wesley/host-node
+4. Wire up in CLI commands
+5. Add comprehensive tests
+
+### Working with Monorepo
+```bash
+# Install dependencies (creates pnpm-lock.yaml)
+pnpm install
+
+# Run from workspace root
+pnpm -r build  # Build all packages
+pnpm -r test   # Test all packages
+```
+
+### Troubleshooting
+
+If CLI won't run:
+- Check that host-node exports are properly defined in index.mjs
+- Verify pnpm workspace links are established (`pnpm install`)
+- Ensure all import paths reference correct packages
 
 ## Environment Variables
 
 ```bash
-# Database connections
+# Output directory for generated files
+WESLEY_OUTPUT_DIR=./generated
+
+# Enable debug logging
+WESLEY_DEBUG=true
+
+# Database connection (for deploy/test commands when implemented)
 DATABASE_URL=postgresql://...
-data_DATABASE_URL=postgresql://...
-
-# Supabase credentials
-data_SERVICE_ROLE_KEY=...
-data_ANON_KEY=...
-
-# Production credentials (for --prod flag)
-PROD_SUPABASE_URL=...
-PROD_SUPABASE_SERVICE_ROLE_KEY=...
-PROD_SUPABASE_ANON_KEY=...
-
-# Path overrides
-data_SQL_DIR=./sql
-data_TESTS_DIR=./tests
-data_MIGRATIONS_DIR=./migrations
 ```
 
-## Development Notes
+## Contributing
 
-### Adding New Commands
-1. Extend appropriate base class (Command, DatabaseCommand, etc.)
-2. Implement `performExecute()` method
-3. Emit appropriate events for progress tracking
-4. Register in src/index.js with commander
+This project follows hexagonal architecture strictly. When contributing:
+1. Keep domain logic in core package
+2. Platform-specific code goes in adapters
+3. Use ports for all boundaries
+4. Write tests for both domain and adapters
+5. Follow existing patterns and conventions
 
-### Working with Migrations
-- Migrations include metadata.json with tracking info
-- Use MigrationMetadata class for parsing/validation
-- Test migrations run in isolated schemas (@data.tests.*)
-- Production migrations require double confirmation
-
-### Edge Functions Integration
-- Functions can be deployed with migrations via `--deploy-functions`
-- Validation happens before deployment
-- Production deployments require import maps unless `--skip-import-map`
-
-## Troubleshooting
-
-### Compile Command Issues
-If `data db compile` exits with no error output:
-- Ensure SQL source directory exists (default: ./sql)
-- Use `--sql-dir` and `--migrations-dir` to specify custom paths
-- The compile command now properly displays errors for missing directories
-- Example: `data db compile --sql-dir /path/to/sql --migrations-dir /path/to/migrations`
-
-### Static Analysis for Async/Await
-
-The project includes ESLint configuration and git pre-commit hooks to catch common async/await issues:
-
-```bash
-# Run linting to check for async/await problems
-npm run lint
-
-# Auto-fix issues where possible
-npm run lint:fix
-
-# Hooks are automatically installed via npm install
-npm run postinstall  # Manually re-install git hooks if needed
-```
-
-#### Git Pre-commit Hook
-- Automatically runs ESLint on staged JavaScript files
-- Prevents commits with linting errors
-- Checks for floating promises and async issues
-- Bypass with `git commit --no-verify` (use sparingly!)
-
-#### ESLint Rules Enforced
-- `require-await`: Async functions must use await
-- `promise/catch-or-return`: Promises must be handled
-- `promise/always-return`: Promise chains must return values
-- `no-async-promise-executor`: No async functions in Promise constructor
-
-For TypeScript projects, use `@typescript-eslint/no-floating-promises` to catch unawaited async calls.
-
-### Recent Fixes
-- Fixed error handling in CompileCommand constructor to properly display errors
-- Added `isProd` property to start event emissions
-- Fixed MigrationCompiler config property naming (sqlDir vs rootDir)
-- CRITICAL: ABSOLUTELY ZERO TYPESCRIPT ALLOWED, CLAUDE. Very slim exceptions to this rule (Edge Function generation nonsense). For information, see @import @docs/decisions/000-javascript-not-typescript.md
+---
+*This document reflects Wesley's actual implementation status. For the aspirational vision, see README.md*

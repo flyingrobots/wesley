@@ -4,9 +4,9 @@
 ## PROGRESS
 
 ```bash
-██░░░░░░░░ 22% ~= 13/60
+██░░░░░░░░ 23% ~= 14/60
 
-13 = count(✅ completed), 60 = count(✅ + - [ ])
+14 = count(✅ completed + - [x]), 60 = total tasks
 ```
 
 ## Executive Summary
@@ -163,7 +163,7 @@ The monorepo setup assumes all packages work together, but:
 ## Recommended Actions
 
 ### Immediate (Sprint 1)
-- [ ] 1. **Fix CLAUDE.md**: Update to reflect Wesley, not D.A.T.A.
+- [x] 1. **Fix CLAUDE.md**: Update to reflect Wesley, not D.A.T.A.
 - [ ] 2. **Create host-node index.mjs**: Export all adapters properly
 - [ ] 3. **Fix CLI imports**: Either move generators to host-node or fix import paths
 - [ ] 4. **Add build step**: Ensure packages link before distribution
