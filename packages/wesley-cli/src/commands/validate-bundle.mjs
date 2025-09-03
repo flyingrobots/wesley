@@ -3,13 +3,14 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-export class ValidateBundleCommand {
+import { WesleyCommand } from '../framework/WesleyCommand.mjs';
+
+export class ValidateBundleCommand extends WesleyCommand {
   constructor() {
-    this.name = 'validate-bundle';
-    this.description = 'Validate Wesley bundle against JSON schemas';
+    super('validate-bundle', 'Validate Wesley bundle against JSON schemas');
   }
 
-  async execute(options = {}) {
+  async executeCore({ options }) {
     const bundlePath = options.bundle || '.wesley';
     const schemasPath = options.schemas || path.join(process.cwd(), 'schemas');
     
@@ -91,8 +92,8 @@ export class ValidateBundleCommand {
       }
       
     } catch (error) {
-      console.error('❌ Validation error:', error.message);
-      process.exit(1);
+      error.code = error.code || 'VALIDATION_FAILED';
+      throw error;
     }
   }
 }
