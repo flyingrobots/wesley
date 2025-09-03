@@ -4,21 +4,17 @@
     "type": "split",
     "children": [
       {
-        "id": "b2662caa4c684929",
+        "id": "7e52f73b159e4595",
         "type": "tabs",
         "children": [
           {
-            "id": "28237c72563437da",
+            "id": "19ef462515886eca",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "example/docs/WalkThru.md",
-                "mode": "source",
-                "source": false
-              },
+              "type": "empty",
+              "state": {},
               "icon": "lucide-file",
-              "title": "WalkThru"
+              "title": "New tab"
             }
           }
         ]
@@ -78,7 +74,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 300,
+    "collapsed": true
   },
   "right": {
     "id": "73978322ca3d5051",
@@ -185,7 +182,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 300,
+    "collapsed": true
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -199,36 +197,10 @@
       "chronology:Open Chronology": false
     }
   },
-  "active": "28237c72563437da",
+  "active": "19ef462515886eca",
   "lastOpenFiles": [
-    "packages/wesley-cli/invalid.graphql",
-    "packages/wesley-cli/test/error-handling.test.sh",
-    "packages/wesley-cli/test/test-framework.sh",
-    "packages/wesley-cli/test/golden-path.test.sh",
-    "packages/wesley-core/src/compiler/inprocess.mjs",
-    "packages/wesley-core/src/compiler",
-    "packages/wesley-core/src/ports/clock.mjs",
-    "packages/wesley-core/src/ports/fs.mjs",
-    "packages/wesley-core/src/ports/writer.mjs",
-    "packages/wesley-core/src/ports/diff.mjs",
-    "packages/wesley-core/src/ports/testgen.mjs",
-    "packages/wesley-cli/TASKLIST.md",
-    "example/seo-graph-ql-2.md",
-    "DEVLOG-2025-09-02-TASKS-SLAPS-Orchestration.md",
-    "packages/wesley-core/TASKLIST.md",
-    "docs/features/row-level-security.md",
-    "docs/drafts/boring-deployments.md",
-    "docs/drafts/migrations.md",
-    "docs/drafts/compiler.md",
-    "docs/CADET/specs/sql-executor.md",
-    "docs/CADET/specs/schema-drift.md",
-    "docs/CADET/specs/ddl-planner.md",
-    "docs/CADET/specs/coordinator.md",
+    "docs/debates/codex/cli-test-framework/README.md",
     "docs/CADET/requirements/user-stories.md",
-    "docs/CADET/requirements/scope.md",
-    "docs/CADET/requirements/definition-of-done.md",
-    "docs/CADET/TASKS/Plan.md",
-    "docs/CADET/TASKS/Decisions.md",
     "docs/CADET/README.md",
     "docs/CADET/INTSUM-2025-09-02.md",
     "docs/CADET/DEVLOG-2025-09-02.md",
@@ -237,6 +209,32 @@
     "docs/CADET/05-testing-strategy.md",
     "docs/CADET/04-resource-management.md",
     "docs/CADET/03-execution-models.md",
+    "docs/CADET/02-ddl-safety.md",
+    "docs/CADET/01-architecture.md",
+    "docs/CADET/specs/sql-executor.md",
+    "docs/CADET/TASKS/Retrospective.md",
+    "docs/CADET/TASKS/Plan.md",
+    "docs/CADET/TASKS/Decisions.md",
+    "docs/CADET/specs/schema-drift.md",
+    "docs/CADET/specs/ddl-planner.md",
+    "docs/CADET/specs/coordinator.md",
+    "docs/architecture/algorithm.md",
+    "docs/CADET/requirements/definition-of-done.md",
+    "docs/debates/codex/cli-test-framework/final-statement/codex.md",
+    "CLAUDE.md",
+    "example/seo-graph-ql-2.md",
+    "docs/debates/codex/cli-test-framework/round-2/codex.md",
+    "docs/debates/codex/cli-test-framework/opening-statement/codex.md",
+    "docs/debates/codex/cli-test-framework/opening-statement/claude.md.tmp.79596.1756891436993",
+    "docs/debates/codex/cli-test-framework/final-statement/codex",
+    "docs/debates/codex/cli-test-framework/final-statement/claude",
+    "docs/debates/codex/cli-test-framework/final-statement",
+    "docs/debates/codex/cli-test-framework/round-3/codex",
+    "docs/debates/codex/cli-test-framework/round-3/claude",
+    "docs/debates/codex/cli-test-framework/round-3",
+    "docs/debates/codex/cli-test-framework/round-2/codex",
+    "docs/debates/codex/cli-test-framework/round-2/claude",
+    "docs/debates/codex/cli-test-framework/round-2",
     "node_modules/png-js/images/djay.png",
     "node_modules/png-js/images/chompy.png",
     "node_modules/png-js/images/trees.png",

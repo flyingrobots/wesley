@@ -1,0 +1,26 @@
+
+> @wesley/cli@0.1.0 test:tap /Users/james/git/wesley/packages/wesley-cli
+> ./test/run-bats.sh --tap
+
+[0;34mWesley CLI - Bats Test Suite[0m
+=============================
+Found 1 test file(s):
+  - test/cli-basic.bats
+
+[0;34mRunning tests...[0m
+
+1..12
+ok 1 version flag works
+ok 2 short version flag works
+ok 3 help flag works
+ok 4 generate help works
+ok 5 missing schema file exits 2
+ok 6 GraphQL syntax error exits 3
+ok 7 quiet flag suppresses output
+ok 8 JSON mode formats errors as JSON
+ok 9 stdin input with --schema - works
+ok 10 --stdin convenience flag works
+ok 11 empty stdin exits 2
+ok 12 JSON + stdin stream separation
+
+[0;32m✅ All tests passed![0m

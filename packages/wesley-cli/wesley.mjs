@@ -21,6 +21,11 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Command } from 'commander';
+
+// Helper function to read stdin synchronously
+function readStdinUtf8() {
+  return readFileSync(0, 'utf8'); // fd 0 = stdin, blocks until EOF
+}
 import { InProcessCompiler, SystemClock } from '@wesley/core';
 import {
   GraphQLSchemaParser,
@@ -104,11 +109,23 @@ program
  *  - Add `--watch` mode to re‑run on change (needs chokidar + incremental compilation)
  */
 async function generate(options) {
-  const schemaPath = resolve(options.schema || 'schema.graphql');
+  const rawSchemaArg = options.schema;
+  const fromStdin = rawSchemaArg === '-' || options.stdin === true;
   
+  let schemaPath = fromStdin ? '<stdin>' : resolve(rawSchemaArg || 'schema.graphql');
   let schemaContent;
+  
   try {
-    schemaContent = readFileSync(schemaPath, 'utf8');
+    if (fromStdin) {
+      schemaContent = readStdinUtf8();
+      if (!schemaContent || schemaContent.trim().length === 0) {
+        const error = new Error('Schema input from stdin is empty.');
+        error.code = 'EEMPTYSCHEMA';
+        throw error;
+      }
+    } else {
+      schemaContent = readFileSync(schemaPath, 'utf8');
+    }
   } catch (error) {
     if (error.code === 'ENOENT') {
       if (options.json) {
@@ -125,6 +142,21 @@ async function generate(options) {
       }
       process.exit(2);
     }
+    if (error.code === 'EEMPTYSCHEMA') {
+      if (options.json) {
+        console.error(JSON.stringify({
+          success: false,
+          code: 'EEMPTYSCHEMA',
+          error: 'Schema input from stdin is empty',
+          suggestion: 'Try: echo "type Query { hello: String }" | wesley generate --schema -',
+          timestamp: new Date().toISOString()
+        }, null, 2));
+      } else if (!options.quiet) {
+        console.error(`💥 Error: Schema input from stdin is empty`);
+        console.error('   Try: echo "type Query { hello: String }" | wesley generate --schema -');
+      }
+      process.exit(2);
+    }
     throw error;
   }
   
@@ -137,6 +169,7 @@ async function generate(options) {
   
   // Store globally for exit handlers  
   globalLogger = logger;
+  globalOptions = options;
   
   let result;
   try {
@@ -238,7 +271,8 @@ async function validateBundle(options) {
 program
   .command('generate')
   .description('Generate SQL, tests, and more from GraphQL schema')
-  .option('-s, --schema <path>', 'GraphQL schema file', 'schema.graphql')
+  .option('-s, --schema <path>', 'GraphQL schema file. Use "-" for stdin', 'schema.graphql')
+  .option('--stdin', 'Read schema from stdin (alias for --schema -)')
   .option('--emit-bundle', 'Emit .wesley/ evidence bundle')
   .option('--supabase', 'Enable Supabase features (RLS tests)')
   .option('-v, --verbose', 'More logs (level=debug)')
@@ -246,7 +280,16 @@ program
   .option('-q, --quiet', 'Silence logs (level=silent)')
   .option('--json', 'Emit newline-delimited JSON logs')
   .option('--log-level <level>', 'One of: error|warn|info|debug|trace')
-  .action(generate);
+  .action((options) => {
+    // Handle --stdin flag by setting schema to '-'
+    if (options.stdin && options.schema && options.schema !== '-') {
+      // If both --stdin and --schema provided, prefer stdin
+      options.schema = '-';
+    } else if (options.stdin) {
+      options.schema = '-';
+    }
+    return generate(options);
+  });
 
 // Test command
 program
@@ -266,14 +309,39 @@ program
 
 // Global logger for exit handlers
 let globalLogger = null;
+let globalOptions = null;
+
+function outputError(error, logger, options) {
+  if (options?.json) {
+    process.stderr.write(JSON.stringify({
+      success: false,
+      code: 'UNHANDLED_ERROR',
+      error: error.message,
+      stack: options.debug || options.verbose ? error.stack : undefined,
+      timestamp: new Date().toISOString()
+    }, null, 2) + '\n');
+  } else if (!options?.quiet) {
+    process.stderr.write(formatError(error, options) + '\n');
+  }
+}
 
 process.on('unhandledRejection', (error) => {
-  console.error(formatError(error));
+  if (globalLogger && globalOptions) {
+    globalLogger.error({ err: error }, 'unhandled:rejection');
+    outputError(error, globalLogger, globalOptions);
+  } else {
+    process.stderr.write(formatError(error) + '\n');
+  }
   process.exit(exitCodeFor(error));
 });
 
 process.on('uncaughtException', (error) => {
-  console.error(formatError(error));
+  if (globalLogger && globalOptions) {
+    globalLogger.error({ err: error }, 'uncaught:exception');
+    outputError(error, globalLogger, globalOptions);
+  } else {
+    process.stderr.write(formatError(error) + '\n');
+  }
   process.exit(exitCodeFor(error));
 });
 

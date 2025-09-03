@@ -15,7 +15,9 @@
     "node": ">=18.17"
   },
   "scripts": {
-    "test": "node --test"
+    "test": "./test/run-bats.sh",
+    "test:verbose": "./test/run-bats.sh --verbose",
+    "test:tap": "./test/run-bats.sh --tap"
   },
   "dependencies": {
     "@wesley/core": "workspace:*",
