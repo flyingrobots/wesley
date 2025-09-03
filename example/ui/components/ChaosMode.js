@@ -97,29 +97,92 @@ export class ChaosMode {
 
         <!-- Migration Form -->
         <div id="migrationForm" class="bg-white rounded-lg shadow-lg p-6 mb-6 hidden">
-          <h3 class="text-xl font-semibold mb-4">Create Migration</h3>
           
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Title</label>
-            <input type="text" id="migrationTitle" 
-                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                   placeholder="Coffee dependency tracking">
+          <!-- Mode Toggle -->
+          <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-semibold">Create Migration</h3>
+            <div class="flex bg-gray-100 rounded-lg p-1">
+              <button id="modeGraphQL" class="mode-btn active px-3 py-1 rounded-md">🔥 GraphQL Editor</button>
+              <button id="modeDSL" class="mode-btn px-3 py-1 rounded-md">⚙️ DSL Manual</button>
+            </div>
           </div>
-          
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Reason</label>
-            <textarea id="migrationReason" 
-                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Track employee coffee consumption for productivity optimization..."
-                      rows="3"></textarea>
+
+          <!-- GraphQL Mode -->
+          <div id="graphqlMode" class="mode-content">
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-700 mb-2">Current Schema</label>
+              <textarea id="currentSchema" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm bg-gray-50"
+                        rows="8"
+                        readonly
+                        placeholder="Loading current S.E.O. schema..."></textarea>
+            </div>
+
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-700 mb-2">✏️ Edit Schema</label>
+              <textarea id="newSchema" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                        rows="12"
+                        placeholder="Edit the GraphQL schema above..."></textarea>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Migration Title</label>
+                <input type="text" id="migrationTitle" 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       placeholder="Add employee coffee tracking">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Reason</label>
+                <input type="text" id="migrationReason" 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       placeholder="Enhanced productivity metrics">
+              </div>
+            </div>
+
+            <div class="flex space-x-4 mb-4">
+              <button id="generateMigration" class="btn-primary">🔄 Generate Migration</button>
+              <button id="previewDiff" class="btn-secondary">👀 Preview Changes</button>
+            </div>
           </div>
-          
-          <div class="mb-6">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Migration DSL (JSON)</label>
-            <textarea id="migrationDSL" 
-                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
-                      rows="12"
-                      placeholder='${JSON.stringify(this.getExampleDSL(), null, 2)}'></textarea>
+
+          <!-- DSL Mode -->
+          <div id="dslMode" class="mode-content hidden">
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-700 mb-2">Title</label>
+              <input type="text" id="migrationTitleDSL" 
+                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                     placeholder="Coffee dependency tracking">
+            </div>
+            
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-700 mb-2">Reason</label>
+              <textarea id="migrationReasonDSL" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Track employee coffee consumption for productivity optimization..."
+                        rows="3"></textarea>
+            </div>
+            
+            <div class="mb-6">
+              <label class="block text-sm font-medium text-gray-700 mb-2">Migration DSL (JSON)</label>
+              <textarea id="migrationDSL" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                        rows="12"
+                        placeholder='${JSON.stringify(this.getExampleDSL(), null, 2)}'></textarea>
+            </div>
+          </div>
+
+          <!-- Schema Diff Preview -->
+          <div id="schemaDiff" class="hidden bg-blue-50 rounded-lg p-4 mb-4">
+            <h4 class="font-semibold mb-2">📊 Schema Changes Preview</h4>
+            <div id="diffContent"></div>
+          </div>
+
+          <!-- Generated Migration Preview -->
+          <div id="generatedMigration" class="hidden bg-green-50 rounded-lg p-4 mb-4">
+            <h4 class="font-semibold mb-2">🔧 Generated Migration DSL</h4>
+            <pre id="generatedDSL" class="bg-white p-3 rounded border font-mono text-sm overflow-x-auto"></pre>
           </div>
           
           <div class="flex space-x-4">
@@ -168,6 +231,21 @@ export class ChaosMode {
         }
         .step-item {
           @apply flex items-center justify-between py-2 px-3 bg-white rounded border border-gray-100;
+        }
+        .mode-btn {
+          @apply text-sm font-medium transition-colors duration-200;
+        }
+        .mode-btn.active {
+          @apply bg-white text-blue-600 shadow-sm;
+        }
+        .mode-btn:not(.active) {
+          @apply text-gray-600 hover:text-gray-800;
+        }
+        .diff-addition {
+          @apply bg-green-100 text-green-800 px-2 py-1 rounded-md text-sm;
+        }
+        .diff-modification {
+          @apply bg-yellow-100 text-yellow-800 px-2 py-1 rounded-md text-sm;
         }
       </style>
     `;
@@ -225,10 +303,29 @@ export class ChaosMode {
       const form = document.getElementById('migrationForm');
       if (e.target.checked) {
         form.classList.remove('hidden');
+        this.loadCurrentSchema();
       } else {
         form.classList.add('hidden');
         this.clearPlan();
       }
+    });
+
+    // Mode switching
+    document.getElementById('modeGraphQL').addEventListener('click', () => {
+      this.switchToGraphQLMode();
+    });
+    
+    document.getElementById('modeDSL').addEventListener('click', () => {
+      this.switchToDSLMode();
+    });
+
+    // GraphQL mode actions
+    document.getElementById('generateMigration').addEventListener('click', () => {
+      this.generateMigrationFromSchema();
+    });
+    
+    document.getElementById('previewDiff').addEventListener('click', () => {
+      this.previewSchemaDiff();
     });
 
     // Plan migration
@@ -249,6 +346,13 @@ export class ChaosMode {
     // Refresh audit
     document.getElementById('refreshAudit').addEventListener('click', () => {
       this.loadRecentMigrations();
+    });
+
+    // Auto-copy current schema to editor when changed
+    document.getElementById('currentSchema').addEventListener('input', (e) => {
+      if (!document.getElementById('newSchema').value.trim()) {
+        document.getElementById('newSchema').value = e.target.value;
+      }
     });
 
     // Listen for custom migration events
@@ -702,5 +806,353 @@ export class ChaosMode {
   getAuthToken() {
     // TODO: Implement real auth token
     return 'demo-token';
+  }
+
+  /**
+   * Switch to GraphQL editor mode
+   * @private
+   */
+  switchToGraphQLMode() {
+    document.getElementById('modeGraphQL').classList.add('active');
+    document.getElementById('modeDSL').classList.remove('active');
+    document.getElementById('graphqlMode').classList.remove('hidden');
+    document.getElementById('dslMode').classList.add('hidden');
+    
+    this.loadCurrentSchema();
+  }
+
+  /**
+   * Switch to DSL manual mode
+   * @private
+   */
+  switchToDSLMode() {
+    document.getElementById('modeDSL').classList.add('active');
+    document.getElementById('modeGraphQL').classList.remove('active');
+    document.getElementById('dslMode').classList.remove('hidden');
+    document.getElementById('graphqlMode').classList.add('hidden');
+  }
+
+  /**
+   * Load current S.E.O. schema from file
+   * @private
+   */
+  async loadCurrentSchema() {
+    try {
+      // In a real app, this would load from the database or API
+      // For demo, we'll load from the seo.graphql file
+      const response = await fetch('/example/seo.graphql');
+      const schemaText = await response.text();
+      
+      // Extract just the table types for editing
+      const tableTypes = this.extractTableTypes(schemaText);
+      
+      document.getElementById('currentSchema').value = tableTypes;
+      
+      // Auto-populate the editor if empty
+      if (!document.getElementById('newSchema').value.trim()) {
+        document.getElementById('newSchema').value = tableTypes;
+      }
+      
+    } catch (error) {
+      console.error('Failed to load current schema:', error);
+      document.getElementById('currentSchema').value = '# Failed to load current schema\n# Using minimal example:\n\ntype Employee @table {\n  id: UUID! @pk\n  display_name: String!\n  email: String! @unique\n  current_bandwidth: Float\n}';
+      document.getElementById('newSchema').value = document.getElementById('currentSchema').value;
+    }
+  }
+
+  /**
+   * Extract table types from GraphQL schema
+   * @private
+   * @param {string} schemaText - Full GraphQL schema
+   * @returns {string} Just the table type definitions
+   */
+  extractTableTypes(schemaText) {
+    const lines = schemaText.split('\n');
+    const tableLines = [];
+    let inTableType = false;
+    let braceCount = 0;
+    
+    for (const line of lines) {
+      // Check if starting a table type
+      if (line.trim().match(/^type\s+\w+.*@table/)) {
+        inTableType = true;
+        braceCount = 0;
+      }
+      
+      if (inTableType) {
+        tableLines.push(line);
+        
+        // Count braces to know when type definition ends
+        braceCount += (line.match(/{/g) || []).length;
+        braceCount -= (line.match(/}/g) || []).length;
+        
+        if (braceCount === 0 && line.includes('}')) {
+          inTableType = false;
+          tableLines.push(''); // Add blank line between types
+        }
+      }
+    }
+    
+    return tableLines.join('\n').trim();
+  }
+
+  /**
+   * Preview schema differences
+   * @private
+   */
+  async previewSchemaDiff() {
+    const currentSchema = document.getElementById('currentSchema').value.trim();
+    const newSchema = document.getElementById('newSchema').value.trim();
+    
+    if (!newSchema) {
+      alert('Please enter a GraphQL schema to preview');
+      return;
+    }
+    
+    try {
+      const response = await fetch('/edge/wesley/diff', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.getAuthToken()}`
+        },
+        body: JSON.stringify({
+          oldSchema: currentSchema || null,
+          newSchema: newSchema
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Schema diff failed');
+      }
+
+      this.displaySchemaDiff(result);
+
+    } catch (error) {
+      alert(`Schema diff failed: ${error.message}`);
+      console.error('Schema diff error:', error);
+    }
+  }
+
+  /**
+   * Generate migration DSL from schema changes
+   * @private
+   */
+  async generateMigrationFromSchema() {
+    const currentSchema = document.getElementById('currentSchema').value.trim();
+    const newSchema = document.getElementById('newSchema').value.trim();
+    const title = document.getElementById('migrationTitle').value.trim();
+    const reason = document.getElementById('migrationReason').value.trim();
+    
+    if (!newSchema || !title || !reason) {
+      alert('Please fill in the GraphQL schema, title, and reason');
+      return;
+    }
+    
+    try {
+      const response = await fetch('/edge/wesley/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.getAuthToken()}`
+        },
+        body: JSON.stringify({
+          oldSchema: currentSchema || null,
+          newSchema: newSchema,
+          title: title,
+          reason: reason
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Migration generation failed');
+      }
+
+      if (!result.hasChanges) {
+        alert('No schema changes detected - nothing to migrate!');
+        return;
+      }
+
+      this.displayGeneratedMigration(result.dsl);
+
+    } catch (error) {
+      alert(`Migration generation failed: ${error.message}`);
+      console.error('Migration generation error:', error);
+    }
+  }
+
+  /**
+   * Display schema diff preview
+   * @private
+   * @param {Object} diffResult - Diff result from Wesley
+   */
+  displaySchemaDiff(diffResult) {
+    const diffPane = document.getElementById('schemaDiff');
+    const diffContent = document.getElementById('diffContent');
+    
+    if (!diffResult.hasChanges) {
+      diffContent.innerHTML = '<p class="text-gray-500">No changes detected</p>';
+      diffPane.classList.remove('hidden');
+      return;
+    }
+    
+    let html = `
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-3">
+        <div class="diff-addition">+${diffResult.summary.newTables} tables</div>
+        <div class="diff-addition">+${diffResult.summary.newColumns} columns</div>
+        <div class="diff-addition">+${diffResult.summary.newIndexes} indexes</div>
+        <div class="diff-addition">+${diffResult.summary.newConstraints} constraints</div>
+      </div>
+      
+      <div class="space-y-2">
+    `;
+    
+    diffResult.operations.forEach(op => {
+      switch (op.op) {
+        case 'create_table':
+          html += `<div class="flex items-center space-x-2">
+            <span class="diff-addition">CREATE TABLE</span>
+            <code>${op.name}</code>
+            <span class="text-gray-500">(${op.cols.length} columns)</span>
+          </div>`;
+          break;
+        case 'add_column':
+          html += `<div class="flex items-center space-x-2">
+            <span class="diff-addition">ADD COLUMN</span>
+            <code>${op.table}.${op.name}</code>
+            <span class="text-gray-500">${op.type}</span>
+          </div>`;
+          break;
+        case 'add_index_concurrently':
+          html += `<div class="flex items-center space-x-2">
+            <span class="diff-addition">ADD INDEX</span>
+            <code>${op.table}(${op.cols.join(', ')})</code>
+          </div>`;
+          break;
+        case 'add_foreign_key_not_valid':
+          html += `<div class="flex items-center space-x-2">
+            <span class="diff-addition">ADD FOREIGN KEY</span>
+            <code>${op.src}.${op.col} → ${op.tgt}.${op.tgt_col}</code>
+          </div>`;
+          break;
+      }
+    });
+    
+    html += '</div>';
+    diffContent.innerHTML = html;
+    diffPane.classList.remove('hidden');
+  }
+
+  /**
+   * Display generated migration DSL
+   * @private
+   * @param {Object} dsl - Generated migration DSL
+   */
+  displayGeneratedMigration(dsl) {
+    const migrationPane = document.getElementById('generatedMigration');
+    const dslPre = document.getElementById('generatedDSL');
+    
+    dslPre.textContent = JSON.stringify(dsl, null, 2);
+    migrationPane.classList.remove('hidden');
+    
+    // Auto-populate the DSL in case user wants to switch to manual mode
+    document.getElementById('migrationDSL').value = JSON.stringify(dsl, null, 2);
+    
+    console.log('🔥 Generated Wesley migration DSL:', dsl);
+  }
+
+  /**
+   * Plan migration (updated to work with both modes)
+   * @private
+   */
+  async planMigration() {
+    let migrationPlan;
+    let title, reason;
+    
+    // Check which mode we're in
+    if (document.getElementById('graphqlMode').classList.contains('hidden')) {
+      // DSL mode
+      title = document.getElementById('migrationTitleDSL').value.trim();
+      reason = document.getElementById('migrationReasonDSL').value.trim();
+      const dslText = document.getElementById('migrationDSL').value.trim();
+
+      if (!title || !reason || !dslText) {
+        alert('Please fill in all fields');
+        return;
+      }
+
+      try {
+        const dsl = JSON.parse(dslText);
+        migrationPlan = {
+          title,
+          reason,
+          requesterId: this.getCurrentUserId(),
+          ...dsl
+        };
+      } catch (error) {
+        alert('Invalid JSON in Migration DSL');
+        return;
+      }
+    } else {
+      // GraphQL mode - use generated DSL
+      const generatedDSL = document.getElementById('migrationDSL').value.trim();
+      title = document.getElementById('migrationTitle').value.trim();
+      reason = document.getElementById('migrationReason').value.trim();
+      
+      if (!generatedDSL) {
+        alert('Please generate a migration first by clicking "🔄 Generate Migration"');
+        return;
+      }
+      
+      if (!title || !reason) {
+        alert('Please fill in migration title and reason');
+        return;
+      }
+
+      try {
+        const dsl = JSON.parse(generatedDSL);
+        migrationPlan = {
+          title,
+          reason,
+          requesterId: this.getCurrentUserId(),
+          ...dsl
+        };
+      } catch (error) {
+        alert('Generated DSL is invalid - please regenerate');
+        return;
+      }
+    }
+
+    try {
+      const response = await fetch('/edge/chaos/runner/plan', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.getAuthToken()}`
+        },
+        body: JSON.stringify({ migrationPlan, requesterId: this.getCurrentUserId() })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Planning failed');
+      }
+
+      this.currentPlan = result.executionPlan;
+      this.displayPlan(result);
+      
+      // Enable execute button
+      document.getElementById('executeMigration').classList.remove('hidden');
+      document.getElementById('executeMigration').disabled = false;
+
+    } catch (error) {
+      alert(`Planning failed: ${error.message}`);
+      console.error('Planning error:', error);
+    }
   }
 }

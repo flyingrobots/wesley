@@ -11,10 +11,14 @@
             "id": "28237c72563437da",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "example/docs/WalkThru.md",
+                "mode": "source",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "New tab"
+              "title": "WalkThru"
             }
           }
         ]
@@ -177,12 +181,11 @@
             }
           }
         ],
-        "currentTab": 3
+        "currentTab": 4
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -198,6 +201,9 @@
   },
   "active": "28237c72563437da",
   "lastOpenFiles": [
+    "example/ui/components/ChaosMode.js.tmp.13520.1756881388219",
+    "example/edge/wesley/generator.js",
+    "example/edge/wesley",
     "packages/wesley-core/package.json.tmp.78609.1756843233556",
     "packages/wesley-core/wesley.config.mjs",
     "packages/wesley-core/test/test-depth-strategy.test.mjs",
@@ -206,9 +212,6 @@
     "packages/wesley-core/test/snapshots/test-generator.test.mjs.bak",
     "packages/wesley-core/test/rls-presets.test.mjs",
     "packages/wesley-core/test/operation-registry.test.mjs",
-    "packages/wesley-core/test/migration-differ.test.mjs",
-    "packages/wesley-core/test/fk-ast-roundtrip.test.mjs",
-    "packages/wesley-core/src/scaffolds/multi-tenant.graphql",
     "packages/wesley-core/TASKLIST.md",
     "docs/features/row-level-security.md",
     "docs/drafts/boring-deployments.md",
