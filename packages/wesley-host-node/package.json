@@ -5,10 +5,7 @@
   "description": "Wesley Node.js platform adapters - GraphQL parser, SQL generators, file system",
   "main": "./src/index.mjs",
   "exports": {
-    ".": "./src/index.mjs",
-    "./adapters": "./src/adapters/index.mjs",
-    "./generators": "./src/generators/index.mjs",
-    "./parsers": "./src/parsers/index.mjs"
+    ".": "./src/index.mjs"
   },
   "files": [
     "src/"
