@@ -18,15 +18,24 @@
     "lint": "eslint src/"
   },
   "dependencies": {
+    "@supabase/pg-parser": "^0.1.0",
     "@wesley/core": "workspace:*",
-    "graphql": "^16.9.0",
     "fast-glob": "^3.3.2",
-    "@supabase/pg-parser": "^0.1.0"
+    "graphql": "^16.9.0",
+    "pino": "^9.9.0"
   },
-  "engines": { 
-    "node": ">=18.17" 
+  "engines": {
+    "node": ">=18.17"
   },
-  "keywords": ["graphql", "sql", "node", "adapters"],
+  "keywords": [
+    "graphql",
+    "sql",
+    "node",
+    "adapters"
+  ],
   "author": "Captain James",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "pino-pretty": "^13.1.1"
+  }
 }

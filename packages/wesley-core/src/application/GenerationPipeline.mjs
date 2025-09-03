@@ -26,7 +26,7 @@ export class GenerationPipeline {
     evidenceMap.setSha(options.sha || 'uncommitted');
     
     // 1. Parse schema
-    this.logger?.log('Parsing schema...');
+    this.logger?.info('Parsing schema...');
     const schema = await this.parser.parse(schemaContent);
     
     // 2. Load previous schema for diffing
@@ -71,19 +71,19 @@ export class GenerationPipeline {
     
     // SQL
     if (this.sqlGenerator) {
-      this.logger?.log('Generating SQL...');
+      this.logger?.info('Generating SQL...');
       artifacts.sql = await this.sqlGenerator.generate(schema, options.evidenceMap);
     }
     
     // TypeScript
     if (this.typeGenerator) {
-      this.logger?.log('Generating TypeScript...');
+      this.logger?.info('Generating TypeScript...');
       artifacts.typescript = await this.typeGenerator.generate(schema, options.evidenceMap);
     }
     
     // Tests
     if (this.testGenerator) {
-      this.logger?.log('Generating tests...');
+      this.logger?.info('Generating tests...');
       artifacts.tests = await this.testGenerator.generate(schema, {
         evidenceMap: options.evidenceMap,
         migrationSteps: options.diff?.steps,
@@ -93,7 +93,7 @@ export class GenerationPipeline {
     
     // Migration
     if (options.diff?.steps?.length > 0) {
-      this.logger?.log('Generating migration...');
+      this.logger?.info('Generating migration...');
       artifacts.migration = await this.diffEngine.generateMigration(options.diff);
     }
     

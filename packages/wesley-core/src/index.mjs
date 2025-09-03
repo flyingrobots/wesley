@@ -64,3 +64,15 @@ export {
 
 // Ports (Interfaces)
 export * from './ports/Ports.mjs';
+export { CompilerPort } from './ports/compiler.mjs';
+export { ParserPort } from './ports/parser.mjs';
+export { SqlGeneratorPort } from './ports/sqlgen.mjs';
+export { TestGeneratorPort } from './ports/testgen.mjs';
+export { DiffEnginePort } from './ports/diff.mjs';
+export { WriterPort } from './ports/writer.mjs';
+export { FileSystemPort } from './ports/fs.mjs';
+export { LoggerPort } from './ports/logger.mjs';
+export { ClockPort, SystemClock } from './ports/clock.mjs';
+
+// Application Services
+export { InProcessCompiler } from './compiler/inprocess.mjs';

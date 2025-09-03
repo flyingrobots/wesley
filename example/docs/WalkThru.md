@@ -3,7 +3,7 @@
 
 > **"This isn't 'SQL Runner' - it's infrastructure."**
 
-This PR implements a production-grade migration orchestration system that transforms Chaos Mode from "a button that runs SQL" into a mini orchestration platform with proof-obligations, wave execution, and real-time monitoring.
+This PR implements a production-grade migration orchestration system that transforms Chaos Mode from "a button that runs SQL" into a mini orchestration platform with proof-obligations, wave execution, and real-time monitoring.bu
 
 ## 🎯 What This Builds
 

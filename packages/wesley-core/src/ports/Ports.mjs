@@ -71,20 +71,15 @@ export class FileSystem {
   }
 }
 
-export class Logger {
-  log(message, level = 'info') {
-    throw new Error('Logger.log() must be implemented');
-  }
-
-  error(message, error) {
-    throw new Error('Logger.error() must be implemented');
-  }
-
-  warn(message) {
-    throw new Error('Logger.warn() must be implemented');
-  }
-
-  debug(message) {
-    throw new Error('Logger.debug() must be implemented');
-  }
+export class LoggerPort {
+  info(o, m) { throw new Error('LoggerPort.info() must be implemented'); }
+  warn(o, m) { throw new Error('LoggerPort.warn() must be implemented'); }
+  error(o, m) { throw new Error('LoggerPort.error() must be implemented'); }
+  debug(o, m) { throw new Error('LoggerPort.debug() must be implemented'); }
+  child(b) { throw new Error('LoggerPort.child() must be implemented'); }
+  setLevel(l) { throw new Error('LoggerPort.setLevel() must be implemented'); }
+  async flush() { throw new Error('LoggerPort.flush() must be implemented'); }
 }
+
+// Keep old Logger export for backward compatibility
+export const Logger = LoggerPort;
