@@ -16,6 +16,8 @@ export { PgTAPTestGenerator } from './domain/generators/PgTAPTestGenerator.mjs';
 export { RPCFunctionGenerator } from './domain/generators/RPCFunctionGenerator.mjs';
 export { MigrationDiffer } from './domain/generators/MigrationDiffer.mjs';
 export { ModelGenerator } from './domain/generators/ModelGenerator.mjs';
+export { ZodGenerator } from './domain/generators/ZodGenerator.mjs';
+export { TypeScriptGenerator } from './domain/generators/TypeScriptGenerator.mjs';
 
 // SQL Execution Components
 export { 

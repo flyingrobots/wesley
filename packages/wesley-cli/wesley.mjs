@@ -26,7 +26,7 @@ import { Command } from 'commander';
 function readStdinUtf8() {
   return readFileSync(0, 'utf8'); // fd 0 = stdin, blocks until EOF
 }
-import { InProcessCompiler, SystemClock, ModelGenerator } from '@wesley/core';
+import { InProcessCompiler, SystemClock, ModelGenerator, ZodGenerator, TypeScriptGenerator } from '@wesley/core';
 import {
   GraphQLSchemaParser,
   GraphQLAdapter,
@@ -329,6 +329,128 @@ async function generateModels(options) {
   }
 }
 
+async function generateZod(options) {
+  const fromStdin = options.schema === '-';
+  const schemaPath = fromStdin ? '<stdin>' : resolve(options.schema);
+  
+  let schemaContent;
+  try {
+    if (fromStdin) {
+      schemaContent = readStdinUtf8();
+      if (!schemaContent?.trim()) {
+        throw Object.assign(new Error('Schema input from stdin is empty'), { code: 'EEMPTYSCHEMA' });
+      }
+    } else {
+      schemaContent = readFileSync(schemaPath, 'utf8');
+    }
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      console.error(`💥 Error: Schema file not found: ${schemaPath}`);
+      console.error('   Try: wesley zod --schema path/to/schema.graphql');
+      process.exit(2);
+    }
+    if (error.code === 'EEMPTYSCHEMA') {
+      console.error('💥 Error: Schema input from stdin is empty');
+      process.exit(2);
+    }
+    throw error;
+  }
+
+  const { logger } = makeCompiler(options);
+  globalLogger = logger;
+  globalOptions = options;
+
+  try {
+    // Parse GraphQL schema to Wesley Schema objects
+    const parser = new GraphQLSchemaParser();
+    const schema = await parser.parse(schemaContent);
+    
+    // Generate Zod schemas
+    const generator = new ZodGenerator(null);
+    const zodCode = generator.generate(schema);
+    
+    // Write to file or stdout
+    if (options.outFile) {
+      const outPath = resolve(options.outFile);
+      const fs = new NodeFileSystem();
+      await fs.write(outPath, zodCode);
+      
+      if (!options.quiet) {
+        console.log(`✨ Generated Zod schemas: ${outPath}`);
+      }
+    } else {
+      console.log(zodCode);
+    }
+  } catch (error) {
+    console.error('💥 Error generating Zod schemas:', error.message);
+    if (options.debug || options.verbose) {
+      console.error(error.stack);
+    }
+    process.exit(exitCodeFor(error));
+  }
+}
+
+async function generateTypeScript(options) {
+  const fromStdin = options.schema === '-';
+  const schemaPath = fromStdin ? '<stdin>' : resolve(options.schema);
+  
+  let schemaContent;
+  try {
+    if (fromStdin) {
+      schemaContent = readStdinUtf8();
+      if (!schemaContent?.trim()) {
+        throw Object.assign(new Error('Schema input from stdin is empty'), { code: 'EEMPTYSCHEMA' });
+      }
+    } else {
+      schemaContent = readFileSync(schemaPath, 'utf8');
+    }
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      console.error(`💥 Error: Schema file not found: ${schemaPath}`);
+      console.error('   Try: wesley typescript --schema path/to/schema.graphql');
+      process.exit(2);
+    }
+    if (error.code === 'EEMPTYSCHEMA') {
+      console.error('💥 Error: Schema input from stdin is empty');
+      process.exit(2);
+    }
+    throw error;
+  }
+
+  const { logger } = makeCompiler(options);
+  globalLogger = logger;
+  globalOptions = options;
+
+  try {
+    // Parse GraphQL schema to Wesley Schema objects  
+    const parser = new GraphQLSchemaParser();
+    const schema = await parser.parse(schemaContent);
+    
+    // Generate TypeScript interfaces
+    const generator = new TypeScriptGenerator(null);
+    const tsCode = generator.generate(schema);
+    
+    // Write to file or stdout
+    if (options.outFile) {
+      const outPath = resolve(options.outFile);
+      const fs = new NodeFileSystem();
+      await fs.write(outPath, tsCode);
+      
+      if (!options.quiet) {
+        console.log(`✨ Generated TypeScript interfaces: ${outPath}`);
+      }
+    } else {
+      console.log(tsCode);
+    }
+  } catch (error) {
+    console.error('💥 Error generating TypeScript interfaces:', error.message);
+    if (options.debug || options.verbose) {
+      console.error(error.stack);
+    }
+    process.exit(exitCodeFor(error));
+  }
+}
+
 // Generate command
 program
   .command('generate')
@@ -382,6 +504,33 @@ program
   .option('--json', 'Emit newline-delimited JSON logs')
   .option('--log-level <level>', 'One of: error|warn|info|debug|trace')
   .action(generateModels);
+
+// Zod command
+program
+  .command('zod')
+  .description('Generate standalone Zod validation schemas from GraphQL schema')
+  .requiredOption('--schema <path>', 'Path to GraphQL schema file (use "-" for stdin)')
+  .option('--out-file <file>', 'Output file (prints to stdout if not specified)')
+  .option('-v, --verbose', 'Verbose output (level=info)')
+  .option('-d, --debug', 'Debug output (level=debug)')
+  .option('-q, --quiet', 'Silence logs (level=silent)')
+  .option('--json', 'Emit newline-delimited JSON logs')
+  .option('--log-level <level>', 'One of: error|warn|info|debug|trace')
+  .action(generateZod);
+
+// TypeScript command
+program
+  .command('typescript')
+  .alias('ts')
+  .description('Generate TypeScript interfaces and types from GraphQL schema')
+  .requiredOption('--schema <path>', 'Path to GraphQL schema file (use "-" for stdin)')
+  .option('--out-file <file>', 'Output file (prints to stdout if not specified)')
+  .option('-v, --verbose', 'Verbose output (level=info)')
+  .option('-d, --debug', 'Debug output (level=debug)')
+  .option('-q, --quiet', 'Silence logs (level=silent)')
+  .option('--json', 'Emit newline-delimited JSON logs')
+  .option('--log-level <level>', 'One of: error|warn|info|debug|trace')
+  .action(generateTypeScript);
 
 // Global logger for exit handlers
 let globalLogger = null;

@@ -100,6 +100,7 @@ export const validateUpdate = <T>(schema: z.ZodSchema<T>, data: unknown): T => {
   }
   return result.data;
 };`;
+  }
   
   /**
    * Generate Zod schema for a field
