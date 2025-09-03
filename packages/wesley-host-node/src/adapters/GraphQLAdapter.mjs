@@ -29,7 +29,7 @@ class GraphQLSchemaParser {
     // Canonical directive set
     this.canonicalDirectives = new Set([
       'wes_table', 'wes_pk', 'wes_fk', 'wes_unique', 
-      'wes_index', 'wes_tenant', 'wes_default'
+      'wes_index', 'wes_tenant', 'wes_default', 'wes_rls', 'wes_check'
     ]);
     
     // Legacy aliases (with deprecation warnings)
@@ -38,10 +38,12 @@ class GraphQLSchemaParser {
       ['wesley_table', 'wes_table'], ['wesley_pk', 'wes_pk'], ['wesley_fk', 'wes_fk'],
       ['wesley_unique', 'wes_unique'], ['wesley_index', 'wes_index'], 
       ['wesley_tenant', 'wes_tenant'], ['wesley_default', 'wes_default'],
+      ['wesley_rls', 'wes_rls'], ['wesley_check', 'wes_check'],
       // Short aliases  
       ['table', 'wes_table'], ['pk', 'wes_pk'], ['fk', 'wes_fk'],
       ['unique', 'wes_unique'], ['index', 'wes_index'], 
-      ['tenant', 'wes_tenant'], ['default', 'wes_default']
+      ['tenant', 'wes_tenant'], ['default', 'wes_default'],
+      ['rls', 'wes_rls'], ['check', 'wes_check']
     ]);
   }
   

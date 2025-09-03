@@ -167,6 +167,12 @@ export class GraphQLSchemaParser {
       directives['@tenant'] = { by: tableData.tenantBy };
     }
     
+    // Handle RLS directives - check for both new and legacy names
+    const rlsDirective = tableData.directives?.['wes_rls'] || tableData.directives?.['rls'];
+    if (rlsDirective) {
+      directives['@rls'] = rlsDirective;
+    }
+    
     return directives;
   }
 }

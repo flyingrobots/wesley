@@ -1,0 +1,257 @@
+# Freaky RLS Test Schema - Complex Multi-Tenant Surveillance App
+# Tests Wesley's ability to handle complex RLS scenarios
+
+type Query {
+  hello: String
+}
+
+type Organization @wes_table @wes_rls(
+  select: "true"
+  insert: "auth.role() = 'service_role'"
+  update: "auth.role() = 'service_role' OR (auth.uid() IN (SELECT user_id FROM organization_admins WHERE org_id = id))"
+  delete: "false"
+) {
+  id: ID! @wes_pk
+  name: String!
+  surveillance_level: Int! @wes_check(expr: "surveillance_level BETWEEN 1 AND 5") @wes_default(value: "3")
+  created_at: DateTime! @wes_default(value: "now()")
+  deleted_at: DateTime
+}
+
+type Department @wes_table @wes_rls(
+  select: "auth.uid() IN (SELECT user_id FROM department_members WHERE dept_id = id) OR auth.uid() IN (SELECT user_id FROM organization_admins WHERE org_id = organization_id)"
+  insert: "auth.uid() IN (SELECT user_id FROM organization_admins WHERE org_id = organization_id)"
+  update: "auth.uid() IN (SELECT user_id FROM department_managers WHERE dept_id = id) OR auth.uid() IN (SELECT user_id FROM organization_admins WHERE org_id = organization_id)"
+  delete: "auth.uid() IN (SELECT user_id FROM organization_admins WHERE org_id = organization_id)"
+) {
+  id: ID! @wes_pk
+  name: String!
+  organization_id: ID! @wes_fk(ref: "Organization.id")
+  budget: Float @wes_check(expr: "budget > 0")
+  manager_override_surveillance: Boolean! @wes_default(value: "false")
+  created_at: DateTime! @wes_default(value: "now()")
+}
+
+type Employee @wes_table @wes_rls(
+  select: """
+    -- Can see yourself always
+    auth.uid() = user_id OR 
+    -- Managers can see their department members
+    auth.uid() IN (
+      SELECT dm.user_id 
+      FROM department_managers dm 
+      JOIN department_members em ON dm.dept_id = em.dept_id 
+      WHERE em.user_id = user_id
+    ) OR
+    -- Org admins can see everyone in their org
+    auth.uid() IN (
+      SELECT oa.user_id 
+      FROM organization_admins oa 
+      JOIN department_members em ON oa.org_id = em.organization_id 
+      WHERE em.user_id = user_id
+    ) OR
+    -- High surveillance level employees are visible to everyone in org
+    (surveillance_level >= 4 AND auth.uid() IN (
+      SELECT em2.user_id 
+      FROM department_members em1 
+      JOIN department_members em2 ON em1.organization_id = em2.organization_id 
+      WHERE em1.user_id = user_id
+    ))
+  """
+  insert: "auth.uid() IN (SELECT user_id FROM organization_admins WHERE org_id IN (SELECT organization_id FROM department_members WHERE user_id = user_id))"
+  update: """
+    -- Can update yourself (limited fields)
+    (auth.uid() = user_id AND current_setting('rls.updating_field') NOT IN ('surveillance_level', 'productivity_score')) OR
+    -- Managers can update their reports
+    auth.uid() IN (
+      SELECT dm.user_id 
+      FROM department_managers dm 
+      JOIN department_members em ON dm.dept_id = em.dept_id 
+      WHERE em.user_id = user_id
+    ) OR
+    -- Org admins can update anyone
+    auth.uid() IN (
+      SELECT oa.user_id 
+      FROM organization_admins oa 
+      JOIN department_members em ON oa.org_id = em.organization_id 
+      WHERE em.user_id = user_id
+    )
+  """
+  delete: "false"
+) {
+  id: ID! @wes_pk
+  user_id: ID! @wes_unique
+  name: String!
+  email: String! @wes_unique
+  surveillance_level: Int! @wes_check(expr: "surveillance_level BETWEEN 1 AND 5") @wes_default(value: "2")
+  productivity_score: Float @wes_check(expr: "productivity_score BETWEEN 0.0 AND 100.0") @wes_default(value: "50.0")
+  current_bandwidth: Float @wes_check(expr: "current_bandwidth >= 0.0") @wes_default(value: "0.0")
+  is_being_coached: Boolean! @wes_default(value: "false")
+  last_activity: DateTime @wes_default(value: "now()")
+  created_at: DateTime! @wes_default(value: "now()")
+}
+
+# Junction table for many-to-many org admin relationships
+type OrganizationAdmin @wes_table @wes_rls(
+  select: "auth.uid() = user_id OR auth.uid() IN (SELECT user_id FROM organization_admins WHERE org_id = org_id)"
+  insert: "auth.uid() IN (SELECT user_id FROM organization_admins WHERE org_id = org_id)"
+  update: "false"
+  delete: "auth.uid() IN (SELECT user_id FROM organization_admins WHERE org_id = org_id)"
+) {
+  id: ID! @wes_pk
+  user_id: ID! @wes_fk(ref: "Employee.user_id")
+  org_id: ID! @wes_fk(ref: "Organization.id")
+  granted_at: DateTime! @wes_default(value: "now()")
+  granted_by: ID @wes_fk(ref: "Employee.user_id")
+}
+
+# Junction table for department membership
+type DepartmentMember @wes_table @wes_rls(
+  select: """
+    -- Can see your own memberships
+    auth.uid() = user_id OR 
+    -- Department managers can see their department members
+    auth.uid() IN (SELECT user_id FROM department_managers WHERE dept_id = dept_id) OR
+    -- Org admins can see all memberships in their org
+    auth.uid() IN (SELECT user_id FROM organization_admins WHERE org_id = organization_id)
+  """
+  insert: "auth.uid() IN (SELECT user_id FROM department_managers WHERE dept_id = dept_id) OR auth.uid() IN (SELECT user_id FROM organization_admins WHERE org_id = organization_id)"
+  update: "false"
+  delete: "auth.uid() IN (SELECT user_id FROM department_managers WHERE dept_id = dept_id) OR auth.uid() IN (SELECT user_id FROM organization_admins WHERE org_id = organization_id)"
+) {
+  id: ID! @wes_pk
+  user_id: ID! @wes_fk(ref: "Employee.user_id")
+  dept_id: ID! @wes_fk(ref: "Department.id")
+  organization_id: ID! @wes_fk(ref: "Organization.id")
+  role: String! @wes_default(value: "member")
+  joined_at: DateTime! @wes_default(value: "now()")
+}
+
+# Junction table for department managers
+type DepartmentManager @wes_table @wes_rls(
+  select: "auth.uid() = user_id OR auth.uid() IN (SELECT user_id FROM department_managers WHERE dept_id = dept_id) OR auth.uid() IN (SELECT user_id FROM organization_admins WHERE org_id IN (SELECT organization_id FROM departments WHERE id = dept_id))"
+  insert: "auth.uid() IN (SELECT user_id FROM organization_admins WHERE org_id IN (SELECT organization_id FROM departments WHERE id = dept_id))"
+  update: "false" 
+  delete: "auth.uid() IN (SELECT user_id FROM organization_admins WHERE org_id IN (SELECT organization_id FROM departments WHERE id = dept_id))"
+) {
+  id: ID! @wes_pk
+  user_id: ID! @wes_fk(ref: "Employee.user_id")
+  dept_id: ID! @wes_fk(ref: "Department.id")
+  appointed_at: DateTime! @wes_default(value: "now()")
+  appointed_by: ID! @wes_fk(ref: "Employee.user_id")
+}
+
+# High-frequency surveillance data with partitioning
+type ActivityEvent @wes_table @wes_rls(
+  select: """
+    -- Can see your own activity
+    auth.uid() = employee_user_id OR
+    -- Managers can see their reports' activity
+    auth.uid() IN (
+      SELECT dm.user_id 
+      FROM department_managers dm 
+      JOIN department_members em ON dm.dept_id = em.dept_id 
+      WHERE em.user_id = employee_user_id
+    ) OR
+    -- Org admins can see all activity in their org
+    auth.uid() IN (
+      SELECT oa.user_id 
+      FROM organization_admins oa 
+      JOIN department_members em ON oa.org_id = em.organization_id 
+      WHERE em.user_id = employee_user_id
+    ) OR
+    -- High surveillance employees' activity visible to coworkers
+    (auth.uid() IN (
+      SELECT em2.user_id 
+      FROM department_members em1 
+      JOIN department_members em2 ON em1.dept_id = em2.dept_id 
+      WHERE em1.user_id = employee_user_id
+    ) AND employee_user_id IN (
+      SELECT user_id FROM employees WHERE surveillance_level >= 4
+    ))
+  """
+  insert: "auth.uid() = employee_user_id OR auth.role() = 'service_role'"
+  update: "false"
+  delete: "auth.role() = 'service_role' AND created_at < now() - interval '90 days'"
+) {
+  id: ID! @wes_pk
+  employee_user_id: ID! @wes_fk(ref: "Employee.user_id")
+  event_type: String! # KEYSTROKE, MOUSE_MOVE, IDLE, etc.
+  raw_data: String # JSON blob of event details
+  productivity_impact: Float @wes_check(expr: "productivity_impact BETWEEN -10.0 AND 10.0")
+  surveillance_triggered: Boolean! @wes_default(value: "false")
+  created_at: DateTime! @wes_default(value: "now()")
+}
+
+# Peer coaching assignments (forced collaboration)
+type CoachingPair @wes_table @wes_rls(
+  select: """
+    -- Both coach and coachee can see the pairing
+    auth.uid() = coach_user_id OR auth.uid() = coachee_user_id OR
+    -- Managers can see pairings in their department
+    auth.uid() IN (
+      SELECT dm.user_id 
+      FROM department_managers dm 
+      JOIN department_members em ON dm.dept_id = em.dept_id 
+      WHERE em.user_id IN (coach_user_id, coachee_user_id)
+    ) OR
+    -- Org admins can see all pairings
+    auth.uid() IN (
+      SELECT oa.user_id 
+      FROM organization_admins oa 
+      JOIN department_members em ON oa.org_id = em.organization_id 
+      WHERE em.user_id IN (coach_user_id, coachee_user_id)
+    )
+  """
+  insert: "auth.role() = 'service_role' OR auth.uid() IN (SELECT user_id FROM department_managers WHERE dept_id IN (SELECT dept_id FROM department_members WHERE user_id IN (coach_user_id, coachee_user_id)))"
+  update: "auth.uid() IN (coach_user_id, coachee_user_id) OR auth.uid() IN (SELECT user_id FROM department_managers WHERE dept_id IN (SELECT dept_id FROM department_members WHERE user_id IN (coach_user_id, coachee_user_id)))"
+  delete: "auth.uid() IN (SELECT user_id FROM department_managers WHERE dept_id IN (SELECT dept_id FROM department_members WHERE user_id IN (coach_user_id, coachee_user_id))) OR auth.role() = 'service_role'"
+) {
+  id: ID! @wes_pk
+  coach_user_id: ID! @wes_fk(ref: "Employee.user_id")
+  coachee_user_id: ID! @wes_fk(ref: "Employee.user_id") @wes_check(expr: "coach_user_id != coachee_user_id")
+  pairing_reason: String! # LOW_BANDWIDTH, SURVEILLANCE_TRIGGERED, MANUAL
+  target_bandwidth: Float @wes_check(expr: "target_bandwidth > 0.0 AND target_bandwidth <= 100.0")
+  sessions_completed: Int! @wes_default(value: "0") @wes_check(expr: "sessions_completed >= 0")
+  is_active: Boolean! @wes_default(value: "true")
+  created_at: DateTime! @wes_default(value: "now()")
+  completed_at: DateTime
+}
+
+# Meeting surveillance data with facial analysis
+type MeetingEngagement @wes_table @wes_rls(
+  select: """
+    -- Can see your own engagement data
+    auth.uid() = employee_user_id OR
+    -- Meeting organizers can see all attendee engagement
+    auth.uid() IN (SELECT organizer_user_id FROM meetings WHERE id = meeting_id) OR
+    -- Managers can see their reports' engagement
+    auth.uid() IN (
+      SELECT dm.user_id 
+      FROM department_managers dm 
+      JOIN department_members em ON dm.dept_id = em.dept_id 
+      WHERE em.user_id = employee_user_id
+    ) OR
+    -- Org admins see everything
+    auth.uid() IN (
+      SELECT oa.user_id 
+      FROM organization_admins oa 
+      JOIN department_members em ON oa.org_id = em.organization_id 
+      WHERE em.user_id = employee_user_id
+    )
+  """
+  insert: "auth.role() = 'service_role'"
+  update: "false"
+  delete: "auth.role() = 'service_role'"
+) {
+  id: ID! @wes_pk
+  meeting_id: ID! # Would reference a meetings table
+  employee_user_id: ID! @wes_fk(ref: "Employee.user_id")
+  engagement_score: Float! @wes_check(expr: "engagement_score BETWEEN 0.0 AND 100.0")
+  eye_contact_percentage: Float @wes_check(expr: "eye_contact_percentage BETWEEN 0.0 AND 100.0")
+  speaking_time_seconds: Int @wes_check(expr: "speaking_time_seconds >= 0")
+  distraction_count: Int! @wes_default(value: "0") @wes_check(expr: "distraction_count >= 0")
+  facial_expression_data: String # JSON with emotion analysis
+  alert_triggered: Boolean! @wes_default(value: "false")
+  timestamp: DateTime! @wes_default(value: "now()")
+}

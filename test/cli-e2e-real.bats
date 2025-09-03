@@ -6,27 +6,18 @@
 load "helpers.bash"
 
 setup() {
-    # Set up paths
-    CLI_PATH="$(pwd)/../packages/wesley-cli/wesley.mjs"
+    # Hybrid approach: pnpm wesley with WESLEY_CLI override
     output_dir="$(mktemp -d)"
-    
-    # Simple test schema
-    cat > "$BATS_TMPDIR/test-schema.graphql" << 'EOF'
-type User @table {
-  id: ID! @pk
-  email: String! @unique
-  name: String!
-  created_at: DateTime! @default(value: "now()")
+    schema_path="test/fixtures/rls-schema.graphql"
 }
 
-type Post @table {
-  id: ID! @pk
-  title: String!
-  content: String
-  user_id: ID! @fk(ref: "User.id")
-  created_at: DateTime! @default(value: "now()")
-}
-EOF
+# Hybrid wesley command - uses pnpm by default, WESLEY_CLI override for special cases
+wesley() {
+    if [ -n "$WESLEY_CLI" ]; then 
+        "$WESLEY_CLI" "$@"
+    else
+        pnpm wesley "$@" 
+    fi
 }
 
 teardown() {
@@ -38,7 +29,14 @@ teardown() {
 
 @test "models command generates working JavaScript classes" {
     # Execute: Generate JS models
-    run node "$CLI_PATH" models --schema "$BATS_TMPDIR/test-schema.graphql" --target js --out-dir "$output_dir" --quiet
+    run wesley models --schema "$schema_path" --target js --out-dir "$output_dir" --quiet
+    
+    # Debug: Show actual output if failed
+    if [ "$status" -ne 0 ]; then
+        echo "STDOUT: $output"
+        echo "STDERR: $(cat /dev/stderr 2>/dev/null || echo 'No stderr')"
+        echo "Exit code: $status"
+    fi
     assert_success
     
     # Verify: Generated files exist
@@ -66,7 +64,7 @@ teardown() {
 
 @test "models command generates working TypeScript classes" {
     # Execute: Generate TS models
-    run node "$CLI_PATH" models --schema "$BATS_TMPDIR/test-schema.graphql" --target ts --out-dir "$output_dir" --quiet
+    run wesley models --schema "$schema_path" --target ts --out-dir "$output_dir" --quiet
     assert_success
     
     # Verify: Generated files exist
@@ -87,7 +85,7 @@ teardown() {
 
 @test "zod command generates working Zod schemas" {
     # Execute: Generate Zod schemas
-    run node "$CLI_PATH" zod --schema "$BATS_TMPDIR/test-schema.graphql" --out-file "$output_dir/schemas.js" --quiet
+    run wesley zod --schema "$schema_path" --out-file "$output_dir/schemas.js" --quiet
     assert_success
     
     # Verify: Output file exists
@@ -110,7 +108,7 @@ teardown() {
 
 @test "typescript command generates working TypeScript types" {
     # Execute: Generate TS types
-    run node "$CLI_PATH" typescript --schema "$BATS_TMPDIR/test-schema.graphql" --out-file "$output_dir/types.ts" --quiet
+    run wesley typescript --schema "$schema_path" --out-file "$output_dir/types.ts" --quiet
     assert_success
     
     # Verify: Output file exists
@@ -133,7 +131,7 @@ teardown() {
 
 @test "generate command produces all artifacts" {
     # Execute: Full generation pipeline
-    run node "$CLI_PATH" generate --schema "$BATS_TMPDIR/test-schema.graphql" --quiet
+    run wesley generate --schema "$schema_path" --quiet
     assert_success
     
     # Verify: SQL DDL is generated
@@ -159,12 +157,12 @@ teardown() {
 
 @test "stdin input works for all commands" {
     # Test: models command with stdin
-    run bash -c "echo 'type User @table { id: ID! @pk }' | node '$CLI_PATH' models --schema - --target js --out-dir '$output_dir' --quiet"
+    echo 'type User @table { id: ID! @pk }' | run wesley models --schema - --target js --out-dir "$output_dir" --quiet
     assert_success
     assert_file_exists "$output_dir/User.js"
     
     # Test: zod command with stdin  
-    run bash -c "echo 'type User @table { id: ID! @pk }' | node '$CLI_PATH' zod --schema - --out-file '$output_dir/zod.js' --quiet"
+    echo 'type User @table { id: ID! @pk }' | run wesley zod --schema - --out-file "$output_dir/zod.js" --quiet
     assert_success
     assert_file_exists "$output_dir/zod.js"
 }
@@ -173,17 +171,17 @@ teardown() {
     # Test: Invalid GraphQL syntax
     echo "invalid graphql syntax here" > "$BATS_TMPDIR/bad-schema.graphql"
     
-    run node "$CLI_PATH" models --schema "$BATS_TMPDIR/bad-schema.graphql" --target js --out-dir "$output_dir" --quiet
+    run wesley models --schema "$BATS_TMPDIR/bad-schema.graphql" --target js --out-dir "$output_dir" --quiet
     assert_failure
     
     # Test: Missing schema file
-    run node "$CLI_PATH" models --schema "$BATS_TMPDIR/nonexistent.graphql" --target js --out-dir "$output_dir" --quiet
+    run wesley models --schema "$BATS_TMPDIR/nonexistent.graphql" --target js --out-dir "$output_dir" --quiet
     assert_failure
 }
 
 @test "aliases work correctly" {
     # Test: typescript alias 'ts' works
-    run node "$CLI_PATH" ts --schema "$BATS_TMPDIR/test-schema.graphql" --out-file "$output_dir/types.ts" --quiet
+    run wesley ts --schema "$schema_path" --out-file "$output_dir/types.ts" --quiet
     assert_success
     assert_file_exists "$output_dir/types.ts"
 }

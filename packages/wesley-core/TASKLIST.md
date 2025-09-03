@@ -231,7 +231,24 @@ Support presets:
 
 ## 🔧 IMPLEMENTATION FIXES
 
-### ⬜ RPC Function Generator
+### ⬜ RPC Function Generator - NEEDS IMPLEMENTATION
+**Status**: Code exists but not integrated with parser/generator pipeline
+
+#### Critical Implementation Tasks
+- [ ] **Fix GraphQL Directive Parsing**: Update GraphQLAdapter to recognize @rpc, @function, @grant directives
+- [ ] **Wire RPC Generator**: Connect RPCFunctionGeneratorV2 to generate command pipeline  
+- [ ] **Directive Registration**: Add RPC directive definitions to canonicalDirectives set
+- [ ] **Operation Extraction**: Parse Query/Mutation fields and extract @rpc/@function logic
+- [ ] **SQL Function Generation**: Convert @function(logic: "...") to CREATE FUNCTION statements
+- [ ] **Integration Testing**: Create E2E tests for mutations → PostgreSQL functions
+
+#### Parser Fixes Needed
+- [ ] Add `@rpc`, `@function`, `@grant` to GraphQLAdapter.canonicalDirectives
+- [ ] Handle string literal directive arguments (e.g., `@function(logic: "...")`)  
+- [ ] Extract GraphQL operations (Query/Mutation fields) not just table types
+- [ ] Pass operation metadata to RPC generator
+
+#### Current Working State
 - [ ] Pull table/column names from domain Schema
 - [ ] Use `Field.isVirtual()` and related methods
 - [ ] Stop inferring from `createX` naming
@@ -390,3 +407,36 @@ Support presets:
   - Calculate operation complexity based on args, return type, auth
   - Export registry for Watson/studio integration
   - Generate operation signatures for tooling
+
+### 2025-09-03 - Complex RLS Testing & RPC Investigation
+
+#### Complex RLS Capabilities Verified ✅
+- **Multi-Tenant Surveillance Schema**: Created freaky-rls-schema.graphql with 9 interconnected tables
+- **Complex Authorization Logic**: Successfully generated RLS policies with:
+  - Multi-table JOINs in policies (department_members, organization_admins)
+  - Hierarchical permissions (self → manager → org admin → service role)
+  - Surveillance level escalation (high surveillance employees visible to coworkers)
+  - Time-based policies (90-day retention, activity windows)
+  - Field-level update restrictions using `current_setting('rls.updating_field')`
+  - Service role system operations with proper isolation
+- **Generated 50+ RLS Policies**: All syntactically correct PostgreSQL with proper USING/WITH CHECK clauses
+- **Production-Ready Output**: Complex policies like surveillance-triggered visibility and coaching pair management
+
+#### RPC Function Status Investigation ❌
+- **Discovery**: RPC function generation is NOT fully implemented
+- **Issue**: GraphQL parser doesn't recognize `@rpc`, `@function`, `@grant` directive syntax
+- **Current State**: 
+  - RPC generators exist in codebase (RPCFunctionGenerator, RPCFunctionGeneratorV2)
+  - Example schemas with RPC directives fail to parse
+  - Directive definitions cause "Syntax Error: Expected Name, found String" 
+- **Gap Analysis**:
+  - RLS generation: FULLY WORKING ✅
+  - Table/DDL generation: FULLY WORKING ✅  
+  - Model generation: FULLY WORKING ✅
+  - RPC functions: ASPIRATIONAL CODE ❌
+
+#### Parser RLS Directive Fix ✅
+- **Fixed**: GraphQLSchemaParser missing RLS directive extraction
+- **Root Cause**: `convertTableDirectivesToExpectedFormat()` only handled `@table` and `@tenant` directives
+- **Solution**: Added RLS directive mapping from `wes_rls`/`rls` → `@rls` format expected by PostgreSQLGenerator
+- **Result**: Complex RLS policies now generate correctly with `--supabase` flag
