@@ -1,15 +1,18 @@
 import { GraphQLSchemaParser } from '@wesley/host-node';
 import { TypeScriptGenerator } from '@wesley/core';
-import { WesleyCommand } from '../framework/WesleyCommand.mjs';
+import { FileOutputGeneratorCommand } from '../framework/FileOutputGeneratorCommand.mjs';
 
-export class TypeScriptCommand extends WesleyCommand {
+export class TypeScriptCommand extends FileOutputGeneratorCommand {
   constructor() {
     super('typescript', 'Generate TypeScript interfaces from GraphQL');
-    this.requiresSchema = true;
+  }
+
+  configureCommander(cmd) {
+    return super.configureCommander(cmd).alias('ts');
   }
 
   async executeCore(ctx) {
-    const { schemaContent, options } = ctx;
+    const { schemaContent, options, fileSystem } = ctx;
 
     const parser = new GraphQLSchemaParser();
     const schema = await parser.parse(schemaContent);
@@ -18,7 +21,7 @@ export class TypeScriptCommand extends WesleyCommand {
     const tsCode = generator.generate(schema);
 
     const outFile = options.outFile;
-    const written = await this.writeOutput({ code: tsCode, outFile, options });
+    const written = await this.writeOutput({ code: tsCode, outFile, options, fileSystem });
     if (!options.quiet && outFile) {
       console.log(`✨ Generated TypeScript interfaces: ${written}`);
     }
@@ -28,3 +31,5 @@ export class TypeScriptCommand extends WesleyCommand {
 
 export default TypeScriptCommand;
 
+// Auto-register this command by creating an instance
+new TypeScriptCommand();

@@ -1,11 +1,16 @@
 import { GraphQLAdapter } from '@wesley/host-node';
 import { ModelGenerator } from '@wesley/core';
-import { WesleyCommand } from '../framework/WesleyCommand.mjs';
+import { GeneratorCommand } from '../framework/GeneratorCommand.mjs';
 
-export class ModelsCommand extends WesleyCommand {
+export class ModelsCommand extends GeneratorCommand {
   constructor() {
     super('models', 'Generate model classes with Zod validation');
-    this.requiresSchema = true;
+  }
+
+  configureCommander(cmd) {
+    return super.configureCommander(cmd)
+      .option('--target <type>', 'Output target: "ts" or "js"', 'ts')
+      .option('--out-dir <dir>', 'Output directory', 'src/models');
   }
 
   async executeCore(ctx) {
@@ -32,3 +37,5 @@ export class ModelsCommand extends WesleyCommand {
 
 export default ModelsCommand;
 
+// Auto-register this command by creating an instance
+new ModelsCommand();

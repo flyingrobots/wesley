@@ -1,7 +1,7 @@
-import { readFileSync } from 'node:fs';
-
+// Remove Node.js coupling - delegate to host adapter
 export function readStdinUtf8() {
-  return readFileSync(0, 'utf8');
+  // This will be injected by the command context
+  throw new Error('readStdinUtf8 must be provided by host adapter');
 }
 
 export function formatError(err, options = {}) {

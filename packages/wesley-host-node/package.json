@@ -2,13 +2,17 @@
   "name": "@wesley/host-node",
   "version": "0.1.0",
   "type": "module",
-  "description": "Wesley Node.js platform adapters - GraphQL parser, SQL generators, file system",
+  "description": "Wesley Node.js platform adapters and executable",
   "main": "./src/index.mjs",
+  "bin": {
+    "wesley": "./bin/wesley.mjs"
+  },
   "exports": {
     ".": "./src/index.mjs"
   },
   "files": [
-    "src/"
+    "src/",
+    "bin/"
   ],
   "scripts": {
     "test": "node --test test/**/*.test.mjs",
@@ -16,7 +20,9 @@
   },
   "dependencies": {
     "@supabase/pg-parser": "^0.1.0",
+    "@wesley/cli": "workspace:*",
     "@wesley/core": "workspace:*",
+    "commander": "^14.0.0",
     "fast-glob": "^3.3.2",
     "graphql": "^16.9.0",
     "pino": "^9.9.0"

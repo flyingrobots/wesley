@@ -1,15 +1,14 @@
 import { GraphQLSchemaParser } from '@wesley/host-node';
 import { ZodGenerator } from '@wesley/core';
-import { WesleyCommand } from '../framework/WesleyCommand.mjs';
+import { FileOutputGeneratorCommand } from '../framework/FileOutputGeneratorCommand.mjs';
 
-export class ZodCommand extends WesleyCommand {
+export class ZodCommand extends FileOutputGeneratorCommand {
   constructor() {
     super('zod', 'Generate standalone Zod schemas from GraphQL');
-    this.requiresSchema = true;
   }
 
   async executeCore(ctx) {
-    const { schemaContent, options } = ctx;
+    const { schemaContent, options, fileSystem } = ctx;
 
     const parser = new GraphQLSchemaParser();
     const schema = await parser.parse(schemaContent);
@@ -18,7 +17,7 @@ export class ZodCommand extends WesleyCommand {
     const zodCode = generator.generate(schema);
 
     const outFile = options.outFile;
-    const written = await this.writeOutput({ code: zodCode, outFile, options });
+    const written = await this.writeOutput({ code: zodCode, outFile, options, fileSystem });
     if (!options.quiet && outFile) {
       console.log(`✨ Generated Zod schemas: ${written}`);
     }
@@ -28,3 +27,5 @@ export class ZodCommand extends WesleyCommand {
 
 export default ZodCommand;
 
+// Auto-register this command by creating an instance
+new ZodCommand();

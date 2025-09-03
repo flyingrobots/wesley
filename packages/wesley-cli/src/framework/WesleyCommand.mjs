@@ -1,12 +1,10 @@
-import { resolve } from 'node:path';
-import { readFileSync } from 'node:fs';
 import { createPinoLogger, NodeFileSystem } from '@wesley/host-node';
-import { readStdinUtf8, resolveLevel, formatError, exitCodeFor } from './utils.mjs';
+import { resolveLevel, formatError, exitCodeFor } from './utils.mjs';
+import { AutomaticallyRegisteredProgram } from './AutomaticallyRegisteredProgram.mjs';
 
-export class WesleyCommand {
+export class WesleyCommand extends AutomaticallyRegisteredProgram {
   constructor(name, description) {
-    this.name = name;
-    this.description = description;
+    super(name, description);
     this.requiresSchema = false;
   }
 
@@ -25,23 +23,25 @@ export class WesleyCommand {
   }
 
   // Read schema from file or stdin if requested
-  readSchemaFromOptions(options) {
+  async readSchemaFromOptions(options, fileSystem) {
     const fromStdin = options.schema === '-' || options.stdin === true;
-    const schemaPath = fromStdin ? '<stdin>' : resolve(options.schema);
     let schemaContent;
+    
     try {
       if (fromStdin) {
-        schemaContent = readStdinUtf8();
+        schemaContent = await fileSystem.readStdin();
         if (!schemaContent || !schemaContent.trim()) {
           const e = new Error('Schema input from stdin is empty');
           e.code = 'EEMPTYSCHEMA';
           throw e;
         }
       } else {
-        schemaContent = readFileSync(schemaPath, 'utf8');
+        const schemaPath = await fileSystem.resolve(options.schema);
+        schemaContent = await fileSystem.readFile(schemaPath, 'utf8');
       }
     } catch (error) {
       if (error.code === 'ENOENT') {
+        const schemaPath = fromStdin ? '<stdin>' : options.schema;
         const err = new Error(`Schema file not found: ${schemaPath}`);
         err.code = 'ENOENT';
         throw err;
@@ -52,11 +52,10 @@ export class WesleyCommand {
   }
 
   // Write output to file or stdout
-  async writeOutput({ code, outFile, options }) {
+  async writeOutput({ code, outFile, options, fileSystem }) {
     if (outFile) {
-      const outPath = resolve(outFile);
-      const fs = new NodeFileSystem();
-      await fs.write(outPath, code);
+      const outPath = await fileSystem.resolve(outFile);
+      await fileSystem.write(outPath, code);
       if (!options.quiet) {
         // Consumer prints its own friendly line if needed
         // Intentionally minimal here for reusability.
@@ -77,12 +76,13 @@ export class WesleyCommand {
   async execute(options = {}) {
     try {
       const logger = this.makeLogger(options);
-      const context = { options, logger };
+      const fileSystem = new NodeFileSystem();
+      const context = { options, logger, fileSystem };
       // expose for process-level handlers
       globalThis.__WESLEY_LOGGER = logger;
       globalThis.__WESLEY_OPTIONS = options;
       if (this.requiresSchema) {
-        Object.assign(context, this.readSchemaFromOptions(options));
+        Object.assign(context, await this.readSchemaFromOptions(options, fileSystem));
       }
       const result = await this.executeCore(context);
       return result;

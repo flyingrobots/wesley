@@ -15,6 +15,20 @@ export class GeneratePipelineCommand extends WesleyCommand {
     this.requiresSchema = true;
   }
 
+  configureCommander(cmd) {
+    return cmd
+      .option('-s, --schema <path>', 'GraphQL schema file. Use "-" for stdin', 'schema.graphql')
+      .option('--stdin', 'Read schema from stdin (alias for --schema -)')
+      .option('--emit-bundle', 'Emit .wesley/ evidence bundle')
+      .option('--supabase', 'Enable Supabase features (RLS tests)')
+      .option('-v, --verbose', 'More logs (level=debug)')
+      .option('--debug', 'Debug output with stack traces')
+      .option('-q, --quiet', 'Silence logs (level=silent)')
+      .option('--json', 'Emit newline-delimited JSON logs')
+      .option('--log-level <level>', 'One of: error|warn|info|debug|trace')
+      .option('--show-plan', 'Display execution plan before running');
+  }
+
   makeCompiler(options) {
     const logger = this.makeLogger(options, { cmd: 'generate' });
     const compiler = new InProcessCompiler({
@@ -83,3 +97,5 @@ export class GeneratePipelineCommand extends WesleyCommand {
 
 export default GeneratePipelineCommand;
 
+// Auto-register this command by creating an instance
+new GeneratePipelineCommand();
