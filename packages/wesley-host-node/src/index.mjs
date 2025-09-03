@@ -22,7 +22,10 @@ import { GraphQLAdapter } from './adapters/GraphQLAdapter.mjs';
 // TODO: These should probably be imported directly from core by the CLI
 import {
   PostgreSQLGenerator,
-  PgTAPTestGenerator
+  PgTAPTestGenerator,
+  Schema,
+  Table,
+  Field
 } from '@wesley/core';
 
 export { PostgreSQLGenerator, PgTAPTestGenerator };
@@ -44,28 +47,126 @@ export class GraphQLSchemaParser {
         throw new Error(`Invalid GraphQL schema: ${validation.error}`);
       }
 
-      // Parse SDL to Wesley Schema (stub for now, but with proper structure)
-      const wesleySchema = this.adapter.parseSDL(schemaSource);
+      // Parse SDL to Wesley IR using the real parser
+      const wesleyIR = this.adapter.parseSDL(schemaSource);
+      
+      // Convert Wesley IR to Wesley domain model objects
+      const schema = this.convertIRToSchema(wesleyIR);
       
       // Return Wesley schema object with expected interface
       return {
-        getTables: () => this.extractTablesFromSchema(wesleySchema),
+        getTables: () => schema.getTables(),
         toJSON: () => ({ 
-          tables: this.extractTablesFromSchema(wesleySchema).map(t => t.toJSON()),
+          tables: schema.getTables().map(t => t.toJSON ? t.toJSON() : t),
           raw: schemaSource 
         }),
         raw: schemaSource
       };
     } catch (error) {
+      // Preserve the error type if it's a Wesley parse error
+      if (error.name === 'PARSE_FAILED') {
+        throw error;
+      }
       throw new Error(`GraphQL parsing failed: ${error.message}`);
     }
   }
 
-  extractTablesFromSchema(wesleySchema) {
-    // Stub implementation - should extract @table types from GraphQL AST
-    // For now, return empty array to avoid crashes
-    console.warn('GraphQLSchemaParser.extractTablesFromSchema: Using stub implementation');
-    return [];
+  /**
+   * Convert Wesley IR to Wesley domain model objects
+   */
+  convertIRToSchema(ir) {
+    const tables = {};
+    
+    for (const tableData of ir.tables) {
+      // Convert columns to Field objects
+      const fields = {};
+      for (const columnData of tableData.columns) {
+        const field = new Field({
+          name: columnData.name,
+          type: this.postgresqlToGraphQLType(columnData.type),
+          nonNull: !columnData.nullable,
+          list: columnData.type.includes('[]'),
+          directives: this.convertDirectivesToExpectedFormat(columnData, tableData)
+        });
+        fields[field.name] = field;
+      }
+      
+      // Create Table object
+      const table = new Table({
+        name: tableData.name,
+        directives: this.convertTableDirectivesToExpectedFormat(tableData),
+        fields: fields
+      });
+      
+      tables[table.name] = table;
+    }
+    
+    return new Schema(tables);
+  }
+  
+  /**
+   * Convert PostgreSQL type back to GraphQL type (best effort)
+   */
+  postgresqlToGraphQLType(pgType) {
+    const baseType = pgType.replace('[]', '');
+    switch (baseType) {
+      case 'uuid': return 'ID';
+      case 'text': return 'String';
+      case 'integer': return 'Int';
+      case 'double precision': return 'Float';
+      case 'boolean': return 'Boolean';
+      case 'timestamptz': return 'DateTime';
+      default: return 'String';
+    }
+  }
+  
+  /**
+   * Convert Wesley directives to expected format for fields
+   */
+  convertDirectivesToExpectedFormat(columnData, tableData) {
+    const directives = {};
+    
+    // Check for primary key
+    if (tableData.primaryKey === columnData.name) {
+      directives['@primaryKey'] = {};
+    }
+    
+    // Check for foreign keys
+    const fk = tableData.foreignKeys.find(fk => fk.column === columnData.name);
+    if (fk) {
+      directives['@foreignKey'] = { ref: `${fk.refTable}.${fk.refColumn}` };
+    }
+    
+    // Check for unique constraint
+    if (columnData.unique) {
+      directives['@unique'] = {};
+    }
+    
+    // Check for default value
+    if (columnData.default) {
+      directives['@default'] = { expr: columnData.default };
+    }
+    
+    // Check for indexes
+    const index = tableData.indexes.find(idx => idx.columns.includes(columnData.name));
+    if (index) {
+      directives['@index'] = { name: index.name, using: index.using };
+    }
+    
+    return directives;
+  }
+  
+  /**
+   * Convert Wesley table directives to expected format
+   */
+  convertTableDirectivesToExpectedFormat(tableData) {
+    const directives = { '@table': {} };
+    
+    if (tableData.tenantBy) {
+      directives['@tenant'] = { by: tableData.tenantBy };
+    }
+    
+    return directives;
   }
 }
 
@@ -80,7 +181,8 @@ export class MigrationDiffEngine {
     return {
       steps: [],
       operations: [],
-      sql: '-- No migration generated (stub implementation)'
+      sql: '-- No migration generated (stub implementation)',
+      manifest: { kind: 'noop' }
     };
   }
 

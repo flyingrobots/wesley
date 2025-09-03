@@ -23,50 +23,47 @@ export class WesleyFileWriter {
   async writeBundle(bundle) {
     this.ensureDirectories();
     
+    // Handle the actual structure returned by InProcessCompiler
+    const artifacts = bundle.artifacts || {};
     // Write artifacts
-    if (bundle.generated.sql) {
+    if (artifacts.sql) {
       writeFileSync(
         join(this.dirs.output, 'schema.sql'),
-        bundle.generated.sql
+        artifacts.sql
       );
     }
     
-    if (bundle.generated.typescript) {
+    if (artifacts.typescript) {
       writeFileSync(
         join(this.dirs.output, 'types.ts'),
-        bundle.generated.typescript
+        artifacts.typescript
       );
     }
     
-    if (bundle.generated.tests) {
+    if (artifacts.tests) {
       writeFileSync(
         join(this.dirs.tests, 'generated.sql'),
-        bundle.generated.tests
+        artifacts.tests
       );
     }
     
-    if (bundle.generated.migration) {
+    if (artifacts.migration?.sql) {
       const timestamp = new Date().toISOString().replace(/[-:T.Z]/g, '').slice(0, 14);
       writeFileSync(
         join(this.dirs.migrations, `${timestamp}_auto.sql`),
-        bundle.generated.migration
+        artifacts.migration.sql
       );
     }
     
-    // Write Wesley bundle files
-    writeFileSync(
-      join(this.dirs.wesley, 'schema.ir.json'),
-      JSON.stringify(bundle.schema, null, 2)
-    );
-    
+    // Write Wesley bundle files - handle correct bundle structure
     writeFileSync(
       join(this.dirs.wesley, 'evidence-map.json'),
-      JSON.stringify(bundle.evidence, null, 2)
+      JSON.stringify(bundle.evidence || [], null, 2)
     );
     
     writeFileSync(
       join(this.dirs.wesley, 'scores.json'),
-      JSON.stringify(bundle.scores, null, 2)
+      JSON.stringify(bundle.scores || {}, null, 2)
     );
     
     writeFileSync(
@@ -74,10 +71,10 @@ export class WesleyFileWriter {
       JSON.stringify(bundle, null, 2)
     );
     
-    // Update snapshot for next diff
+    // Update snapshot for next diff - use artifacts for the snapshot
     writeFileSync(
       join(this.dirs.wesley, 'snapshot.json'),
-      JSON.stringify(bundle.schema, null, 2)
+      JSON.stringify({ artifacts: bundle.artifacts, meta: bundle.meta }, null, 2)
     );
     
     // Update history
