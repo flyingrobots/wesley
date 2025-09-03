@@ -1,7 +1,7 @@
 # Wave 2 Implementation Summary
 
 ## Overview
-Successfully implemented Wave 2 tasks (WP4.T002, WP4.T003, WP4.T004) for the D.A.T.A. CLI tool, providing comprehensive output formatting, progress tracking, and error recovery capabilities.
+Successfully implemented Wave 2 tasks (WP4.T002, WP4.T003, WP4.T004) for the Wesley CLI tool, providing comprehensive output formatting, progress tracking, and error recovery capabilities.
 
 ## Completed Components
 
@@ -168,10 +168,10 @@ src/
 
 ## Next Steps
 
-These Wave 2 components are ready for integration with existing D.A.T.A. CLI commands and provide a solid foundation for:
+These Wave 2 components are ready for integration with existing Wesley CLI commands and provide a solid foundation for:
 - Migration execution with full recovery
 - Production-safe database operations
 - Comprehensive user feedback
 - Operational monitoring and metrics
 
-The implementation follows D.A.T.A.'s core principles of logical operations and preventing harm to production systems, like its Star Trek namesake.
+The implementation follows Wesley's core principles of schema-first development and production safety with zero-downtime migrations.
