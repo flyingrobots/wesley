@@ -3,7 +3,7 @@
  * Just connects core generator to Node.js file system
  */
 
-import { PostgreSQLGenerator } from '@wesley/core/generators';
+import { PostgreSQLGenerator } from '@wesley/core';
 
 export class PostgreSQLAdapter {
   constructor(fileWriter) {

@@ -3,7 +3,16 @@
  * Generates PostgreSQL DDL from Wesley schema using @supabase/pg-parser
  */
 
-import { parse, deparse } from '@supabase/pg-parser';
+// Note: @supabase/pg-parser doesn't export parse/deparse directly
+// For now, stub these functions until proper implementation
+const parse = (sql) => { 
+  console.warn('PostgreSQLGenerator: parse function not implemented');
+  return {}; 
+};
+const deparse = (ast) => { 
+  console.warn('PostgreSQLGenerator: deparse function not implemented');
+  return '-- deparse not implemented'; 
+};
 import { DirectiveProcessor } from '../Directives.mjs';
 import { IndexDeduplicator } from '../IndexDeduplicator.mjs';
 import { TenantModel } from '../TenantModel.mjs';

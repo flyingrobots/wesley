@@ -43,7 +43,7 @@ export * from './application/Commands.mjs';
 export * from './application/UseCases.mjs';
 export { GenerationPipeline } from './application/GenerationPipeline.mjs';
 export { EvidenceMap } from './application/EvidenceMap.mjs';
-export { Scoring } from './application/Scoring.mjs';
+export { ScoringEngine } from './application/Scoring.mjs';
 
 // Safety Components (Wave 3)
 export { 

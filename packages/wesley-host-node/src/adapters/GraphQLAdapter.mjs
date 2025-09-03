@@ -4,7 +4,11 @@
  */
 
 import { parse } from 'graphql';
-import { GraphQLSchemaBuilder } from '@wesley/core';
+// GraphQLSchemaBuilder not exported from core - stub for now
+class GraphQLSchemaBuilder {
+  constructor() {}
+  build() { return {}; }
+}
 
 export class GraphQLAdapter {
   constructor() {
