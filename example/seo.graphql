@@ -1,0 +1,616 @@
+"""
+S.E.O. - Synergistic Enhancement Orchestrator
+"Not just another platform; it's a paradigm shift in professional engagement!"
+
+We leverage cross-discipline synergies to disrupt traditional workflows, 
+empowering you to upcycle your personal bandwidth through holistic monitoring.
+
+Features every surveillance technology known to corporate America:
+- Auth: Role-based permissions with manager override capabilities
+- Storage: Facial recognition data, keystroke patterns, delegation history
+- Realtime: Live bandwidth tracking, engagement monitoring, forced pairing
+- RPC: Complex scoring algorithms hidden from prying employee eyes  
+- Edge Functions: AI-powered "productivity enhancement" and facial analysis
+- RLS: Different data access based on surveillance level and bandwidth score
+"""
+
+scalar DateTime
+scalar UUID
+scalar JSON
+scalar Percentage  # 0.0 to 100.0
+scalar BandwidthScore  # Proprietary algorithm output
+
+# ============================================
+# ENUMS - The taxonomy of corporate surveillance
+# ============================================
+
+enum EngagementLevel {
+  ROCK_STAR          # 90-100% - Drinking the Kool-Aid
+  HIGH_PERFORMER     # 75-89% - Meeting expectations  
+  MEETING_BASELINE   # 60-74% - Adequate synergy
+  NEEDS_COACHING     # 40-59% - Requires intervention
+  PIP_CANDIDATE      # 20-39% - Performance improvement plan
+  BANDWIDTH_DEFICIT  # 0-19% - Prepare resume
+}
+
+enum BandwidthStatus {
+  OPTIMIZED          # Peak performance state
+  RAMPING_UP         # Building momentum 
+  PLATEAUING         # Stable but uninspiring
+  DECLINING          # Concerning trajectory
+  CRITICAL           # Emergency intervention required
+  OFFLINE            # Not participating in excellence
+}
+
+enum ActivityType {
+  KEYSTROKE          # Raw productivity measurement
+  MOUSE_MOVEMENT     # Engagement indicators
+  CAMERA_ENGAGEMENT  # Facial analysis during meetings
+  CHAT_PARTICIPATION # Synergistic touchpoint activity
+  TASK_COMPLETION    # Plate management effectiveness
+  DELEGATION_EVENT   # Leadership capacity demonstration
+  FOCUS_TIME         # Deep work periods (monitored)
+  COLLABORATION      # Team bandwidth optimization
+}
+
+enum PlateSize {
+  APPETIZER         # Small task (0-2 hours)
+  ENTREE           # Medium task (2-8 hours)  
+  FAMILY_STYLE     # Large task (1-3 days)
+  THANKSGIVING     # Major initiative (weeks)
+  POTLUCK          # Collaborative effort
+}
+
+enum TouchpointTemplate {
+  LOW_HANGING_FRUIT     # "Let's tackle this low-hanging fruit"
+  THOUGHT_LEADERSHIP    # "I'm looking for thought leadership" 
+  HOLISTIC_APPROACH     # "Let's chat about the holistic approach"
+  CIRCLE_BACK          # "Let's circle back on this"
+  SYNC_UP              # "Quick sync to align on priorities"
+  BANDWIDTH_CHECK      # "How's your bandwidth looking?"
+}
+
+enum DeepDiveAlert {
+  LOSING_FOCUS         # Eye tracking indicates distraction
+  LOW_ENGAGEMENT       # Facial expression analysis
+  MULTITASKING         # Secondary screen detected
+  DEVICE_DISTRACTION   # Phone usage detected
+  ENERGY_DECLINING     # Posture analysis
+  CAMERA_AVOIDANCE     # Looking away from camera
+}
+
+enum IdeationMandatoryField {
+  LEVERAGING          # What are we leveraging?
+  OPERATIONALIZING    # How do we operationalize this?
+  SCALABILITY         # What's the scalability factor?
+  ROI_POTENTIAL       # Return on investment projection
+  CROSS_FUNCTIONAL    # Cross-functional implications
+  THOUGHT_LEADERSHIP  # Thought leadership opportunities
+}
+
+# ============================================
+# CORE SURVEILLANCE TABLES
+# ============================================
+
+"""
+Employee profiles with comprehensive surveillance metadata
+"""
+type Employee @table @rls(enable: true) @realtime {
+  id: UUID! @pk @default(value: "auth.uid()")
+  
+  # Basic identity
+  email: String! @unique
+  display_name: String!
+  avatar_url: String
+  title: String!
+  department: String!
+  
+  # Surveillance scores (calculated in real-time)
+  current_bandwidth: BandwidthScore! @default(value: "75.0")
+  engagement_level: EngagementLevel! @default(value: "'MEETING_BASELINE'")
+  bandwidth_status: BandwidthStatus! @default(value: "'OPTIMIZED'")
+  
+  # Performance metrics
+  total_keystrokes_today: Int! @default(value: 0)
+  focus_time_minutes_today: Int! @default(value: 0)
+  collaboration_score: Percentage! @default(value: "50.0")
+  delegation_effectiveness: Percentage! @default(value: "50.0")
+  
+  # Behavioral patterns (AI-analyzed)
+  productivity_pattern: JSON  # Peak hours, decline patterns
+  communication_style: JSON   # Response times, word choices
+  collaboration_preferences: JSON  # Who they work with, how often
+  
+  # Intervention tracking
+  requires_pairing: Boolean! @default(value: false)
+  last_coaching_session: DateTime
+  pip_status: Boolean! @default(value: false)
+  
+  # Manager surveillance permissions
+  manager_id: UUID @fk(ref: "Employee.id", onDelete: "SET NULL")
+  surveillance_level: Int! @default(value: 1) @check(expr: "surveillance_level BETWEEN 1 AND 5")
+  
+  # Relationships
+  manager: Employee @belongsTo(field: "manager_id")
+  direct_reports: [Employee!]! @hasMany(field: "manager_id")
+  activities: [ActivityEvent!]! @hasMany(field: "employee_id")
+  plates: [PlateItem!]! @hasMany(field: "assigned_to")
+  touchpoints: [TouchpointMessage!]! @hasMany(field: "sender_id")
+  deep_dives: [DeepDiveSession!]! @hasMany(field: "employee_id")
+  
+  created_at: DateTime! @default(value: "now()")
+  updated_at: DateTime! @default(value: "now()")
+}
+
+"""
+Real-time activity monitoring
+Every interaction is logged and analyzed
+"""
+type ActivityEvent @table @rls(enable: true) @realtime @partitioned(by: "created_at") {
+  id: UUID! @pk @default(value: "gen_random_uuid()")
+  
+  employee_id: UUID! @fk(ref: "Employee.id", onDelete: "CASCADE")
+  activity_type: ActivityType!
+  
+  # Raw data capture
+  raw_data: JSON!  # Type-specific measurements
+  # KEYSTROKE: { count, words_per_minute, pause_patterns }
+  # MOUSE_MOVEMENT: { distance, click_rate, scroll_behavior }
+  # CAMERA_ENGAGEMENT: { eye_contact_percentage, emotion_detected, posture_score }
+  # CHAT_PARTICIPATION: { message_count, sentiment, response_time }
+  
+  # Analysis results
+  productivity_impact: Float!  # -1.0 to 1.0
+  engagement_factor: Float!    # 0.0 to 1.0
+  collaboration_weight: Float! # How much this affects team metrics
+  
+  # Context
+  session_id: UUID  # Groups related activities
+  application_context: String  # What app/system they were using
+  meeting_id: UUID @fk(ref: "DeepDiveSession.id", onDelete: "SET NULL")
+  
+  # Metadata
+  created_at: DateTime! @default(value: "now()")
+  
+  # Relationships
+  employee: Employee! @belongsTo(field: "employee_id")
+  meeting: DeepDiveSession @belongsTo(field: "meeting_id")
+}
+
+"""
+The "On My Plate" visual task management with public shaming
+"""
+type PlateItem @table @rls(enable: true) @realtime @audit {
+  id: UUID! @pk @default(value: "gen_random_uuid()")
+  
+  # Task details
+  title: String!
+  description: String
+  plate_size: PlateSize!
+  estimated_hours: Int! @check(expr: "estimated_hours > 0")
+  
+  # Ownership and delegation
+  assigned_to: UUID! @fk(ref: "Employee.id", onDelete: "RESTRICT")
+  originally_assigned_to: UUID! @fk(ref: "Employee.id", onDelete: "RESTRICT")
+  delegated_by: UUID @fk(ref: "Employee.id", onDelete: "SET NULL")
+  delegation_count: Int! @default(value: 0)
+  
+  # Status tracking
+  completion_percentage: Percentage! @default(value: "0.0")
+  is_overdue: Boolean! @default(value: false)
+  priority_score: Int! @default(value: 5) @check(expr: "priority_score BETWEEN 1 AND 10")
+  
+  # Public visibility (for accountability)
+  is_visible_to_team: Boolean! @default(value: true)
+  delegation_reason: String  # Public justification for offloading
+  
+  # Deadlines and pressure
+  due_date: DateTime
+  created_at: DateTime! @default(value: "now()")
+  updated_at: DateTime! @default(value: "now()")
+  
+  # Relationships
+  assignee: Employee! @belongsTo(field: "assigned_to")
+  original_assignee: Employee! @belongsTo(field: "originally_assigned_to")
+  delegator: Employee @belongsTo(field: "delegated_by")
+  delegation_history: [DelegationEvent!]! @hasMany(field: "plate_item_id")
+}
+
+"""
+Public delegation events for transparency and accountability
+"""
+type DelegationEvent @table @rls(enable: true) @realtime {
+  id: UUID! @pk @default(value: "gen_random_uuid()")
+  
+  plate_item_id: UUID! @fk(ref: "PlateItem.id", onDelete: "CASCADE")
+  from_employee: UUID! @fk(ref: "Employee.id", onDelete: "RESTRICT")
+  to_employee: UUID! @fk(ref: "Employee.id", onDelete: "RESTRICT")
+  
+  # Justification (required for public viewing)
+  reason: String! @check(expr: "length(reason) >= 10")
+  bandwidth_impact: String  # How this affects both parties' bandwidth
+  
+  # Visibility (broadcast to entire team)
+  is_public: Boolean! @default(value: true)
+  manager_notified: Boolean! @default(value: true)
+  team_notified: Boolean! @default(value: true)
+  
+  # Approval workflow
+  requires_approval: Boolean! @default(value: false)
+  approved_by: UUID @fk(ref: "Employee.id", onDelete: "SET NULL")
+  approval_status: String @default(value: "'PENDING'")
+  
+  created_at: DateTime! @default(value: "now()")
+  
+  # Relationships
+  plate_item: PlateItem! @belongsTo(field: "plate_item_id")
+  delegator: Employee! @belongsTo(field: "from_employee")
+  delegatee: Employee! @belongsTo(field: "to_employee")
+  approver: Employee @belongsTo(field: "approved_by")
+}
+
+"""
+"Synergistic Touchpoints" - Chat with engagement scoring
+"""
+type TouchpointMessage @table @rls(enable: true) @realtime {
+  id: UUID! @pk @default(value: "gen_random_uuid()")
+  
+  # Message routing
+  sender_id: UUID! @fk(ref: "Employee.id", onDelete: "RESTRICT")
+  recipient_id: UUID @fk(ref: "Employee.id", onDelete: "RESTRICT")
+  channel_id: UUID @fk(ref: "TouchpointChannel.id", onDelete: "CASCADE")
+  
+  # Content and templates
+  content: String! @check(expr: "length(content) <= 2000")
+  template_used: TouchpointTemplate
+  buzzword_count: Int! @default(value: 0)
+  sentiment_score: Float! @default(value: "0.0")  # -1.0 to 1.0
+  
+  # Engagement metrics
+  sender_engagement_score: Percentage!
+  response_time_seconds: Int
+  read_receipt: Boolean! @default(value: false)
+  
+  # Restrictions based on performance
+  blocked_due_to_low_engagement: Boolean! @default(value: false)
+  blocked_due_to_high_chat_volume: Boolean! @default(value: false)
+  
+  # Threading
+  reply_to_id: UUID @fk(ref: "TouchpointMessage.id", onDelete: "CASCADE")
+  
+  created_at: DateTime! @default(value: "now()")
+  
+  # Relationships
+  sender: Employee! @belongsTo(field: "sender_id")
+  recipient: Employee @belongsTo(field: "recipient_id")
+  channel: TouchpointChannel! @belongsTo(field: "channel_id")
+  reply_to: TouchpointMessage @belongsTo(field: "reply_to_id")
+  replies: [TouchpointMessage!]! @hasMany(field: "reply_to_id")
+}
+
+"""
+Chat channels for team touchpoints
+"""
+type TouchpointChannel @table @rls(enable: true) {
+  id: UUID! @pk @default(value: "gen_random_uuid()")
+  
+  name: String! @unique
+  description: String
+  is_public: Boolean! @default(value: true)
+  
+  # Engagement requirements
+  minimum_engagement_score: Percentage! @default(value: "50.0")
+  requires_manager_approval: Boolean! @default(value: false)
+  
+  # Analytics
+  total_messages: Int! @default(value: 0)
+  average_engagement: Percentage! @default(value: "50.0")
+  most_active_contributor: UUID @fk(ref: "Employee.id", onDelete: "SET NULL")
+  
+  created_at: DateTime! @default(value: "now()")
+  
+  # Relationships
+  messages: [TouchpointMessage!]! @hasMany(field: "channel_id")
+}
+
+"""
+"Ideation Decks" - Mandatory buzzword compliance whiteboard
+"""
+type IdeationSlide @table @rls(enable: true) @realtime {
+  id: UUID! @pk @default(value: "gen_random_uuid()")
+  
+  # Slide content
+  title: String!
+  creator_id: UUID! @fk(ref: "Employee.id", onDelete: "RESTRICT")
+  
+  # Mandatory fields (with validation)
+  leveraging_field: String! @check(expr: "length(leveraging_field) >= 20")
+  operationalizing_field: String! @check(expr: "length(operationalizing_field) >= 20")
+  scalability_field: String! @check(expr: "length(scalability_field) >= 20")
+  roi_potential_field: String! @check(expr: "length(roi_potential_field) >= 20")
+  cross_functional_field: String! @check(expr: "length(cross_functional_field) >= 20")
+  thought_leadership_field: String! @check(expr: "length(thought_leadership_field) >= 20")
+  
+  # Auto-analysis
+  buzzword_compliance_score: Percentage!
+  creativity_inhibition_factor: Float!  # How much the form killed creativity
+  group_think_alignment: Percentage!    # How similar to other slides
+  
+  # Presentation to thought leadership feed
+  is_published: Boolean! @default(value: false)
+  published_at: DateTime
+  company_wide_visibility: Boolean! @default(value: true)
+  
+  # Collaboration
+  canvas_data: JSON!  # Whiteboard elements, drawings, etc.
+  collaborators: UUID[]  # Array of employee IDs
+  
+  created_at: DateTime! @default(value: "now()")
+  updated_at: DateTime! @default(value: "now()")
+  
+  # Relationships
+  creator: Employee! @belongsTo(field: "creator_id")
+  comments: [IdeationComment!]! @hasMany(field: "slide_id")
+}
+
+"""
+Comments on ideation slides for group think reinforcement
+"""
+type IdeationComment @table @rls(enable: true) @realtime {
+  id: UUID! @pk @default(value: "gen_random_uuid()")
+  
+  slide_id: UUID! @fk(ref: "IdeationSlide.id", onDelete: "CASCADE")
+  commenter_id: UUID! @fk(ref: "Employee.id", onDelete: "RESTRICT")
+  
+  content: String! @check(expr: "length(content) <= 1000")
+  
+  # Engagement tracking
+  commenter_engagement_score: Percentage!
+  contributes_to_group_think: Boolean! @default(value: true)
+  
+  created_at: DateTime! @default(value: "now()")
+  
+  # Relationships
+  slide: IdeationSlide! @belongsTo(field: "slide_id")
+  commenter: Employee! @belongsTo(field: "commenter_id")
+}
+
+"""
+"Deep Dive" meeting sessions with facial surveillance
+"""
+type DeepDiveSession @table @rls(enable: true) @realtime {
+  id: UUID! @pk @default(value: "gen_random_uuid()")
+  
+  # Meeting basics
+  title: String!
+  description: String
+  scheduled_start: DateTime!
+  scheduled_end: DateTime!
+  actual_start: DateTime
+  actual_end: DateTime
+  
+  # Surveillance settings
+  camera_required: Boolean! @default(value: true)
+  facial_analysis_enabled: Boolean! @default(value: true)
+  engagement_monitoring: Boolean! @default(value: true)
+  
+  # Meeting outcomes
+  total_alerts_triggered: Int! @default(value: 0)
+  average_engagement_score: Percentage
+  most_engaged_participant: UUID @fk(ref: "Employee.id", onDelete: "SET NULL")
+  least_engaged_participant: UUID @fk(ref: "Employee.id", onDelete: "SET NULL")
+  
+  # Post-meeting actions
+  follow_up_required: Boolean! @default(value: false)
+  coaching_recommendations: JSON  # AI-generated improvement suggestions
+  
+  created_by: UUID! @fk(ref: "Employee.id", onDelete: "RESTRICT")
+  created_at: DateTime! @default(value: "now()")
+  
+  # Relationships
+  creator: Employee! @belongsTo(field: "created_by")
+  participants: [DeepDiveParticipant!]! @hasMany(field: "session_id")
+  alerts: [DeepDiveAlert!]! @hasMany(field: "session_id")
+  activities: [ActivityEvent!]! @hasMany(field: "meeting_id")
+}
+
+"""
+Meeting participants with individual surveillance data
+"""
+type DeepDiveParticipant @table @rls(enable: true) @realtime {
+  id: UUID! @pk @default(value: "gen_random_uuid()")
+  
+  session_id: UUID! @fk(ref: "DeepDiveSession.id", onDelete: "CASCADE")
+  employee_id: UUID! @fk(ref: "Employee.id", onDelete: "CASCADE")
+  
+  # Participation metrics
+  camera_on_percentage: Percentage!
+  eye_contact_percentage: Percentage
+  speaking_time_seconds: Int! @default(value: 0)
+  engagement_score: Percentage!
+  
+  # Behavioral analysis
+  attention_span_seconds: Int
+  distraction_events: Int! @default(value: 0)
+  positive_expressions: Int! @default(value: 0)
+  negative_expressions: Int! @default(value: 0)
+  
+  # Alerts triggered for this participant
+  total_alerts: Int! @default(value: 0)
+  focus_alerts: Int! @default(value: 0)
+  engagement_alerts: Int! @default(value: 0)
+  
+  joined_at: DateTime
+  left_at: DateTime
+  
+  # Relationships
+  session: DeepDiveSession! @belongsTo(field: "session_id")
+  employee: Employee! @belongsTo(field: "employee_id")
+  
+  @@unique([session_id, employee_id])
+}
+
+"""
+Real-time alerts during deep dive sessions
+"""
+type DeepDiveAlert @table @rls(enable: true) @realtime @ephemeral(ttl: "24 hours") {
+  id: UUID! @pk @default(value: "gen_random_uuid()")
+  
+  session_id: UUID! @fk(ref: "DeepDiveSession.id", onDelete: "CASCADE")
+  employee_id: UUID! @fk(ref: "Employee.id", onDelete: "CASCADE")
+  
+  alert_type: DeepDiveAlert!
+  message: String!  # The condescending pop-up message
+  
+  # Alert context
+  confidence_score: Percentage!  # How sure the AI is
+  recommended_action: String     # Suggested intervention
+  
+  # Response tracking
+  was_dismissed: Boolean! @default(value: false)
+  employee_response: String      # Did they improve after the alert?
+  
+  triggered_at: DateTime! @default(value: "now()")
+  
+  # Relationships
+  session: DeepDiveSession! @belongsTo(field: "session_id")
+  employee: Employee! @belongsTo(field: "employee_id")
+}
+
+"""
+Forced pairing recommendations when bandwidth drops
+"""
+type BandwidthPairing @table @rls(enable: true) @realtime {
+  id: UUID! @pk @default(value: "gen_random_uuid()")
+  
+  # The struggling employee
+  low_bandwidth_employee: UUID! @fk(ref: "Employee.id", onDelete: "CASCADE")
+  current_bandwidth_score: BandwidthScore!
+  
+  # The helper assigned
+  mentor_employee: UUID! @fk(ref: "Employee.id", onDelete: "CASCADE")
+  mentor_bandwidth_score: BandwidthScore!
+  
+  # Pairing details
+  reason: String!  # AI-generated explanation
+  recommended_activities: JSON  # Specific tasks to do together
+  expected_duration_hours: Int!
+  
+  # Status tracking
+  is_active: Boolean! @default(value: true)
+  was_accepted: Boolean
+  completion_percentage: Percentage! @default(value: "0.0")
+  
+  # Outcomes
+  bandwidth_improvement: BandwidthScore  # Before/after comparison
+  mentor_feedback: String
+  mentee_feedback: String
+  
+  created_at: DateTime! @default(value: "now()")
+  completed_at: DateTime
+  
+  # Relationships
+  mentee: Employee! @belongsTo(field: "low_bandwidth_employee")
+  mentor: Employee! @belongsTo(field: "mentor_employee")
+}
+
+# ============================================
+# SURVEILLANCE VIEWS AND ANALYTICS
+# ============================================
+
+"""
+Real-time dashboard for management surveillance
+"""
+type TeamSurveillanceDashboard @view @rls(enable: true) @realtime {
+  employee_id: UUID! @pk
+  employee_name: String!
+  department: String!
+  
+  # Current state
+  current_bandwidth: BandwidthScore!
+  engagement_level: EngagementLevel!
+  bandwidth_trend: String!  # "increasing", "stable", "declining"
+  
+  # Today's activity
+  keystrokes_today: Int!
+  focus_time_today: Int!
+  meetings_attended: Int!
+  chat_engagement: Percentage!
+  
+  # Flags requiring attention
+  requires_intervention: Boolean!
+  needs_pairing: Boolean!
+  is_declining: Boolean!
+  
+  last_updated: DateTime!
+}
+
+"""
+Company-wide thought leadership feed
+"""
+type ThoughtLeadershipFeed @view @realtime {
+  id: UUID! @pk
+  slide_id: UUID!
+  creator_name: String!
+  slide_title: String!
+  
+  # Compliance scores
+  buzzword_score: Percentage!
+  group_think_alignment: Percentage!
+  
+  # Engagement
+  views: Int!
+  comments: Int!
+  
+  published_at: DateTime!
+}
+
+# ============================================
+# RPC FUNCTIONS - The surveillance algorithms
+# ============================================
+
+"""
+RPC functions for complex surveillance operations
+All business logic hidden behind secure functions
+"""
+type SurveillanceRPCs @rpc {
+  # Bandwidth calculation and monitoring
+  calculateBandwidthScore(employeeId: UUID!): BandwidthScore! @auth
+  updateEngagementLevel(employeeId: UUID!, activityData: JSON!): EngagementLevel! @auth
+  triggerBandwidthAlert(employeeId: UUID!, threshold: Float!): Boolean! @auth
+  
+  # Forced pairing system
+  findOptimalMentor(strugglingEmployeeId: UUID!): Employee! @auth
+  createForcedPairing(menteeId: UUID!, mentorId: UUID!): BandwidthPairing! @auth
+  completePairingSession(pairingId: UUID!, outcomes: JSON!): Boolean! @auth
+  
+  # Task delegation and plate management
+  delegateTask(plateItemId: UUID!, toEmployeeId: UUID!, reason: String!): DelegationEvent! @auth
+  calculateDelegationImpact(fromId: UUID!, toId: UUID!, taskComplexity: Int!): JSON! @auth
+  broadcastDelegation(delegationId: UUID!): Boolean! @auth
+  
+  # Meeting surveillance
+  startDeepDiveMonitoring(sessionId: UUID!): Boolean! @auth
+  recordEngagementMetrics(sessionId: UUID!, participantData: JSON!): Boolean! @auth
+  triggerFocusAlert(sessionId: UUID!, employeeId: UUID!, alertType: DeepDiveAlert!): Boolean! @auth
+  
+  # Chat restrictions and engagement
+  checkChatPermissions(employeeId: UUID!): JSON! @auth
+  applyChatRestriction(employeeId: UUID!, reason: String!): Boolean! @auth
+  calculateChatEngagementScore(messageId: UUID!): Percentage! @auth
+  
+  # Ideation compliance
+  validateBuzzwordCompliance(slideId: UUID!): JSON! @auth
+  calculateGroupThinkScore(slideId: UUID!): Percentage! @auth
+  publishToThoughtLeadership(slideId: UUID!): Boolean! @auth
+  
+  # Analytics and reporting
+  generateProductivityReport(employeeId: UUID!, dateRange: JSON!): JSON! @auth
+  getTeamSurveillanceMetrics(managerId: UUID!): JSON! @auth
+  predictBandwidthDecline(employeeId: UUID!): JSON! @auth
+  
+  # Intervention recommendations
+  generateCoachingPlan(employeeId: UUID!): JSON! @auth
+  schedulePerformanceReview(employeeId: UUID!, concerns: [String!]!): Boolean! @auth
+  escalateToHR(employeeId: UUID!, violations: JSON!): Boolean! @auth
+}
