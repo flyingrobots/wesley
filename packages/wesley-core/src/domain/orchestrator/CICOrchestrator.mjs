@@ -619,7 +619,8 @@ export class CICOrchestrator {
       `;
       
       const result = await this.sqlExecutor.executeOperation({
-        sql: sql.replace('$1', `'${indexName}'`),
+        sql: 'SELECT 1 FROM pg_indexes WHERE indexname = $1 LIMIT 1',
+        params: [indexName],
         metadata: { operation: 'CHECK_INDEX_EXISTS' }
       });
       
@@ -644,15 +645,14 @@ export class CICOrchestrator {
       const operation = result.operation;
       
       try {
-        const sql = `
-          SELECT indexname 
-          FROM pg_indexes 
-          WHERE indexname = '${operation.indexName}' 
-          AND NOT indisvalid;
-        `;
-        
         const checkResult = await this.sqlExecutor.executeOperation({
-          sql,
+          sql: `
+            SELECT indexname 
+            FROM pg_indexes 
+            WHERE indexname = $1
+            AND NOT indisvalid
+          `,
+          params: [operation.indexName],
           metadata: { operation: 'CHECK_INVALID_INDEX' }
         });
         
