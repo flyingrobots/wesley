@@ -1,8 +1,10 @@
 # Wesley
 
-> GraphQL is the schema. Postgres & Supabase are generated.
+> Production-grade database migrations from GraphQL. Zero downtime by default.
 
-Write your GraphQL once. Wesley compiles phased, zero-downtime plans by default, generates RLS + tests, and ships a SHA-locked certificate proving it’s safe.
+Wesley is a schema-first database migration platform that uses GraphQL SDL as the single source of truth. It generates PostgreSQL DDL with lock-aware strategies, TypeScript types, RLS policies, and comprehensive tests - all while prioritizing production safety with advisory locks, drift detection, and checkpoint recovery.
+
+**The adult in the room for database operations.** No surprises, no 3am pages, just boring reliability.
 
 ```graphql
 type Document @table @tenant(by: "org_id") @rls(enable: true) {
@@ -109,36 +111,43 @@ wesley deploy       # apply plan to production
 ✓ tests/                        # pgTAP suites (structure/constraints/RLS/plan)
 ✓ certs/deploy-<sha>.json       # proofs & hashes
 
-## Key features
+## Key Features
 
-### 🔒 Industrial-grade RLS
+### 🔒 Production Safety First
 
-- Tenant isolation via @tenant, composable security functions, required indexes auto-generated.
-- Every policy ships with allow/deny tests.
+- **Zero-downtime DDL** - All operations use CONCURRENTLY or NOT VALID patterns by default
+- **Advisory locks** - Prevents concurrent migrations automatically
+- **Lock-aware planning** - DDL Planner rewrites operations to minimize lock impact
+- **Checkpoint recovery** - Resume failed migrations from last good state
+- **Drift detection** - Runtime validation catches schema mismatches before damage
 
-### 🔄 Zero-downtime plans (by default)
+### 🔄 Phased Migration Protocol
 
-- Expand → Backfill → Validate → Switch → Contract protocol.
-- CONCURRENT indexes, NOT VALID constraints, chunked backfills, rollback steps.
+- **Expand → Backfill → Validate → Switch → Contract** - Battle-tested strategy
+- **Wave execution** - Batches compatible operations to reduce total time
+- **Resource awareness** - Respects Postgres limits (one CIC per table, etc.)
+- **Dry-run mode** - Preview exact SQL and lock impact before execution
 
-#### ✅ Tests you’ll actually run
+### 📊 Observable Operations
 
-- pgTAP suites for structure, constraints, RLS paths, and plan rehearsal.
-- Idempotence checks and basic plan performance assertions.
+- **SHA-locked certificates** - Cryptographic proof of what was deployed
+- **Explain mode** - Shows precise lock levels for each operation
+- **Dead column detection** - Uses pg_stat_statements to find unused columns
+- **Performance baselines** - Tracks migration timing for future predictions
 
-### 🔍 Drift detection
+### ✅ Comprehensive Testing
 
-- Enforces Schema === Database === Types before deploy.
-- Diff explains exactly what’s out of sync.
+- **pgTAP suites** - Generated tests for structure, constraints, RLS, and migrations
+- **Property-based testing** - Fast-check for DDL planner correctness
+- **Round-trip validation** - Ensures GraphQL → SQL → GraphQL preservation
+- **Idempotence checks** - All operations safe to retry
 
-### 📊 Evidence-based shipping
+### 🚀 Developer Experience
 
-- SHA-locked deploy certificates.
-- Optional “Moriarty” predictions from recent history (with regime-shift detection).
-
-### 🚀 Postgres-first, Supabase-native
-
-- Realtime, Storage, Auth helpers, and policy scaffolding generated from directives.
+- **Watch mode** - Incremental compilation with atomic saves
+- **GraphQL ESLint** - Schema linting and best practices
+- **TypeScript generation** - Types and Zod schemas from GraphQL
+- **RLS helpers** - Composable security functions with required indexes
 
 ## Compare
 

@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Wesley is a GraphQL schema-first code generator that compiles GraphQL schemas into PostgreSQL DDL, TypeScript types, RLS policies, and pgTAP tests. It generates phased, zero-downtime migration plans by default and provides SHA-locked certificates proving deployment safety. The core philosophy: "GraphQL is the schema. Postgres & Supabase are generated."
+Wesley is a production-grade database migration and code generation platform that uses GraphQL SDL as the single source of truth. It compiles GraphQL schemas into PostgreSQL DDL with zero-downtime migration strategies, TypeScript types, RLS policies, and pgTAP tests. The system prioritizes production safety with advisory locks, drift detection, checkpoint recovery, and lock-aware DDL operations. Core philosophy: "GraphQL is the schema. Postgres & Supabase are generated."
+
+**Mission:** Be the "adult in the room" for database operations - no surprises, no 3am pages, just boring reliability.
 
 ## Key Technologies
 
@@ -118,23 +120,45 @@ class GenerateCommand {
 - Commands emit error events before throwing
 - Graceful degradation where possible
 
+## Production Safety Features (Planned)
+
+### Zero-Downtime Migration Strategies
+- **Online DDL** - All operations use CONCURRENTLY or NOT VALID patterns by default
+- **Lock-Aware Planning** - DDL Planner rewrites operations to minimize lock impact
+- **Wave Execution** - Batches compatible operations to reduce migration time
+- **Advisory Locks** - Transaction-scoped locks prevent concurrent migrations
+- **Checkpoint Recovery** - Resume failed migrations from last good state
+
+### Safety Rails
+- **Drift Detection** - Runtime schema hash validation catches mismatches
+- **Dry-Run Mode** - Preview exact SQL and lock impact before execution
+- **Resource Awareness** - Automatic mutex handling for exclusive resources (e.g., one CIC per table)
+- **Dead Column Detection** - Uses pg_stat_statements to find unused columns
+- **Explain Mode** - Shows precise lock levels for each operation
+
 ## Development Status
 
-**⚠️ ACTIVE DEVELOPMENT - Not Production Ready**
+**⚠️ ACTIVE DEVELOPMENT - Foundation Phase**
 
-Currently implemented:
+Currently implemented (partially):
 - Basic GraphQL parsing
 - Partial SQL generation
 - File writing adapter
 - CLI structure
+- Monorepo setup with pnpm workspaces
+
+Priority work in progress:
+- **Package exports** - Creating index.mjs for host-node (CRITICAL)
+- **DDL Planner** - Safe operation rewriting
+- **SQL Executor** - Streaming with transaction awareness
+- **Watch Mode** - Incremental compilation with chokidar
 
 Not yet implemented:
-- Complete generator suite
-- Migration planning
-- RLS generation
-- Test generation
-- Watch mode
-- Deploy command
+- Complete generator suite (TypeScript, Zod, RLS)
+- Production CLI with all safety flags
+- Schema linting via GraphQL ESLint
+- Checkpoint/resume capability
+- Rolling frontier execution
 - Browser/Deno adapters
 
 ## Current Issues & Priorities
