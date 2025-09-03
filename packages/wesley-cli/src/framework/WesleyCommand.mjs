@@ -26,9 +26,11 @@ export class WesleyCommand extends AutomaticallyRegisteredProgram {
   async readSchemaFromOptions(options, fileSystem) {
     const fromStdin = options.schema === '-' || options.stdin === true;
     let schemaContent;
+    let schemaPath;
     
     try {
       if (fromStdin) {
+        schemaPath = '<stdin>';
         schemaContent = await fileSystem.readStdin();
         if (!schemaContent || !schemaContent.trim()) {
           const e = new Error('Schema input from stdin is empty');
@@ -36,13 +38,13 @@ export class WesleyCommand extends AutomaticallyRegisteredProgram {
           throw e;
         }
       } else {
-        const schemaPath = await fileSystem.resolve(options.schema);
+        schemaPath = await fileSystem.resolve(options.schema);
         schemaContent = await fileSystem.readFile(schemaPath, 'utf8');
       }
     } catch (error) {
       if (error.code === 'ENOENT') {
-        const schemaPath = fromStdin ? '<stdin>' : options.schema;
-        const err = new Error(`Schema file not found: ${schemaPath}`);
+        const errorPath = fromStdin ? '<stdin>' : options.schema;
+        const err = new Error(`Schema file not found: ${errorPath}`);
         err.code = 'ENOENT';
         throw err;
       }

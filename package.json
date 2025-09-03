@@ -18,6 +18,7 @@
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
     "docker:test": "docker-compose run pgtap",
+    "wesley": "node packages/wesley-host-node/bin/wesley.mjs",
     "ci": "pnpm validate && pnpm generate:example && pnpm exec wesley validate-bundle --bundle example/.wesley --schemas schemas/"
   },
   "keywords": ["graphql", "sql", "database", "migrations", "supabase", "schema", "codegen", "postgresql", "schema-first"],
