@@ -23,12 +23,13 @@ import { GraphQLAdapter } from './adapters/GraphQLAdapter.mjs';
 import {
   PostgreSQLGenerator,
   PgTAPTestGenerator,
+  ModelGenerator,
   Schema,
   Table,
   Field
 } from '@wesley/core';
 
-export { PostgreSQLGenerator, PgTAPTestGenerator };
+export { PostgreSQLGenerator, PgTAPTestGenerator, ModelGenerator };
 
 // Stub implementations for missing components
 // TODO: Implement these properly

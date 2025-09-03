@@ -26,9 +26,10 @@ import { Command } from 'commander';
 function readStdinUtf8() {
   return readFileSync(0, 'utf8'); // fd 0 = stdin, blocks until EOF
 }
-import { InProcessCompiler, SystemClock } from '@wesley/core';
+import { InProcessCompiler, SystemClock, ModelGenerator } from '@wesley/core';
 import {
   GraphQLSchemaParser,
+  GraphQLAdapter,
   PostgreSQLGenerator,
   PgTAPTestGenerator,
   MigrationDiffEngine,
@@ -267,6 +268,67 @@ async function validateBundle(options) {
   }
 }
 
+async function generateModels(options) {
+  const fromStdin = options.schema === '-';
+  const schemaPath = fromStdin ? '<stdin>' : resolve(options.schema);
+  
+  let schemaContent;
+  try {
+    if (fromStdin) {
+      schemaContent = readStdinUtf8();
+      if (!schemaContent?.trim()) {
+        throw Object.assign(new Error('Schema input from stdin is empty'), { code: 'EEMPTYSCHEMA' });
+      }
+    } else {
+      schemaContent = readFileSync(schemaPath, 'utf8');
+    }
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      console.error(`💥 Error: Schema file not found: ${schemaPath}`);
+      console.error('   Try: wesley models --schema path/to/schema.graphql');
+      process.exit(2);
+    }
+    if (error.code === 'EEMPTYSCHEMA') {
+      console.error('💥 Error: Schema input from stdin is empty');
+      process.exit(2);
+    }
+    throw error;
+  }
+
+  const { logger } = makeCompiler(options);
+  globalLogger = logger;
+  globalOptions = options;
+
+  try {
+    // Parse GraphQL schema directly to Wesley IR
+    // Use GraphQLAdapter to obtain IR with columns/types as expected by ModelGenerator
+    const adapter = new GraphQLAdapter();
+    const ir = adapter.parseSDL(schemaContent);
+    
+    // Generate models using ts-morph
+    const generator = new ModelGenerator({
+      target: options.target,
+      outputDir: options.outDir
+    });
+    
+    const result = await generator.generate(ir, { outDir: options.outDir });
+    
+    if (!options.quiet) {
+      console.log('✨ Generated model classes:');
+      result.files.forEach(file => {
+        console.log(`  ✓ ${file}`);
+      });
+      console.log(`\n📁 Target: ${result.target} (${result.outputDir})`);
+    }
+  } catch (error) {
+    console.error('💥 Error generating models:', error.message);
+    if (options.debug || options.verbose) {
+      console.error(error.stack);
+    }
+    process.exit(exitCodeFor(error));
+  }
+}
+
 // Generate command
 program
   .command('generate')
@@ -306,6 +368,20 @@ program
   .option('--bundle <path>', 'Bundle path', '.wesley')
   .option('--schemas <path>', 'Schemas path', './schemas')
   .action(validateBundle);
+
+// Models command
+program
+  .command('models')
+  .description('Generate TypeScript/JavaScript model classes with Zod validation')
+  .requiredOption('--schema <path>', 'Path to GraphQL schema file (use "-" for stdin)')
+  .option('--target <type>', 'Output target: "ts" or "js"', 'ts')
+  .option('--out-dir <dir>', 'Output directory', 'src/models')
+  .option('-v, --verbose', 'Verbose output (level=info)')
+  .option('-d, --debug', 'Debug output (level=debug)')
+  .option('-q, --quiet', 'Silence logs (level=silent)')
+  .option('--json', 'Emit newline-delimited JSON logs')
+  .option('--log-level <level>', 'One of: error|warn|info|debug|trace')
+  .action(generateModels);
 
 // Global logger for exit handlers
 let globalLogger = null;

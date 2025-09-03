@@ -5,7 +5,8 @@
 
 import { parse, Kind, buildSchema, validate } from 'graphql';
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 // Wesley directive validation errors
 class WesleyParseError extends Error {
@@ -49,9 +50,10 @@ class GraphQLSchemaParser {
    */
   loadDirectiveSchema() {
     try {
-      // Find the schema file relative to this module
-      // This assumes the schema is in the project root/schemas directory
-      const schemaPath = join(process.cwd(), 'schemas', 'directives.graphql');
+      // Find the schema file relative to this module - look up the directory tree
+      const moduleDir = dirname(fileURLToPath(import.meta.url));
+      const projectRoot = join(moduleDir, '../../../../');
+      const schemaPath = join(projectRoot, 'schemas', 'directives.graphql');
       const directiveSchemaSDL = readFileSync(schemaPath, 'utf8');
       return buildSchema(directiveSchemaSDL);
     } catch (error) {
@@ -92,7 +94,9 @@ class GraphQLSchemaParser {
         .map(def => `type ${def.name.value}`)
         .join('\n');
       
-      const directiveSDL = readFileSync(join(process.cwd(), 'schemas', 'directives.graphql'), 'utf8');
+      const moduleDir = dirname(fileURLToPath(import.meta.url));
+      const projectRoot = join(moduleDir, '../../../../');
+      const directiveSDL = readFileSync(join(projectRoot, 'schemas', 'directives.graphql'), 'utf8');
       const fullSchemaSDL = `${directiveSDL}\n\n${userTypeDefs}`;
       
       // Parse the combined schema to validate directive usage
@@ -418,14 +422,16 @@ class GraphQLSchemaParser {
 }
 
 export class GraphQLAdapter {
-  constructor() {
-    this.parser = new GraphQLSchemaParser();
+  constructor(options = {}) {
+    // Use the fully implemented parser above for all logic
+    this.parser = new GraphQLSchemaParser(options);
   }
-  
+
   /**
    * Parse GraphQL SDL and return Wesley IR
    */
   parseSDL(sdl) {
+    // Delegate to the real parser implementation
     return this.parser.parse(sdl);
   }
   
@@ -434,6 +440,7 @@ export class GraphQLAdapter {
    */
   validateSDL(sdl) {
     try {
+      // Fast syntax check using graphql.parse
       parse(sdl);
       return { valid: true };
     } catch (error) {
