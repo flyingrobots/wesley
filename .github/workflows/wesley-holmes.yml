@@ -18,9 +18,9 @@ jobs:
           fetch-depth: 0
           
       - name: "🔧 Setup pnpm"
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: 9
           
       - name: "🔧 Setup Node.js"
         uses: actions/setup-node@v4
@@ -34,7 +34,7 @@ jobs:
       - name: "🚀 Generate Artifacts"
         run: |
           cd example
-          pnpm exec wesley generate --schema schema.graphql --emit-bundle
+          pnpm exec wesley generate --schema ecommerce.graphql --emit-bundle
           
       - name: "📊 Display Scores"
         run: |
@@ -74,7 +74,7 @@ jobs:
         id: holmes
         run: |
           cd example
-          pnpm exec holmes investigate > holmes-report.md
+          pnpm exec wesley-holmes investigate > holmes-report.md
           cat holmes-report.md
           
       - name: "💾 Save Report"
@@ -110,7 +110,7 @@ jobs:
         id: watson
         run: |
           cd example
-          pnpm exec holmes verify > watson-report.md
+          pnpm exec wesley-holmes verify > watson-report.md
           cat watson-report.md
           
       - name: "💾 Save Report"
@@ -146,7 +146,7 @@ jobs:
         id: moriarty
         run: |
           cd example
-          pnpm exec holmes predict > moriarty-report.md || echo "Insufficient data for predictions" > moriarty-report.md
+          pnpm exec wesley-holmes predict > moriarty-report.md || echo "Insufficient data for predictions" > moriarty-report.md
           cat moriarty-report.md
           
       - name: "💾 Save Report"
@@ -191,12 +191,12 @@ jobs:
           
       - name: "🔨 Apply Schema"
         run: |
-          PGPASSWORD=postgres psql -h localhost -U postgres -d test -f example/out/schema.sql
+          PGPASSWORD=postgres psql -h localhost -U postgres -d test -f example/.wesley/postgres.sql || echo "No postgres.sql found yet"
           
       - name: "🧪 Run Tests"
         run: |
           echo "pgTAP tests would run here"
-          echo "Tests are in: example/tests/generated.sql"
+          echo "Tests are in: example/.wesley/pgtap.sql"
           
   comment-report:
     name: "📝 Post Investigation Report"

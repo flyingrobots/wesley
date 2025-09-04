@@ -36,9 +36,9 @@ jobs:
       - run: node packages/wesley-cli/wesley.mjs generate --schema example/ecommerce.graphql --emit-bundle
       - run: node packages/wesley-cli/wesley.mjs validate-bundle --bundle example/.wesley --schemas schemas
 
-      - run: node packages/wesley-holmes/src/cli.mjs investigate > holmes.md
-      - run: node packages/wesley-holmes/src/cli.mjs verify holmes.md > watson.md  
-      - run: node packages/wesley-holmes/src/cli.mjs predict --from example/.wesley/scores.json > moriarty.md
+      - run: cd example && pnpm exec wesley-holmes investigate > holmes.md
+      - run: cd example && pnpm exec wesley-holmes verify > watson.md  
+      - run: cd example && pnpm exec wesley-holmes predict > moriarty.md
 
       - name: Gate on metrics
         run: |
