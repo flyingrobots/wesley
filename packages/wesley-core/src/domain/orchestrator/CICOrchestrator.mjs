@@ -18,6 +18,8 @@
  */
 
 import { DomainEvent } from '../Events.mjs';
+import { parse as parseSQL } from '@supabase/pg-parser';
+import { createSafeQuery } from '../security/StandardSanitizer.mjs';
 
 export class CICOrchestrationStarted extends DomainEvent {
   constructor(operations, strategy) {
@@ -127,48 +129,71 @@ export class CICOperation {
   }
   
   /**
-   * Extract index name from CREATE INDEX statement
+   * Extract index metadata from CREATE INDEX statement using AST parsing
    */
+  extractIndexMetadata(sql) {
+    try {
+      const ast = parseSQL(sql);
+      const stmt = ast[0];
+      
+      if (stmt.IndexStmt) {
+        const indexStmt = stmt.IndexStmt;
+        return {
+          indexName: indexStmt.idxname || 'unknown_index',
+          tableName: indexStmt.relation?.relname || 'unknown_table',
+          columns: indexStmt.indexParams?.map(param => 
+            param.IndexElem?.name || 'unknown_column'
+          ) || [],
+          wherePredicate: indexStmt.whereClause ? 'EXISTS' : null,
+          indexMethod: indexStmt.accessMethod || 'btree',
+          unique: indexStmt.unique || false,
+          concurrent: indexStmt.concurrent || false
+        };
+      }
+      
+      // Fallback for non-standard or unparseable SQL
+      return {
+        indexName: 'unknown_index',
+        tableName: 'unknown_table', 
+        columns: [],
+        wherePredicate: null,
+        indexMethod: 'btree',
+        unique: false,
+        concurrent: false
+      };
+    } catch (error) {
+      // If AST parsing fails, return safe defaults
+      return {
+        indexName: 'parse_failed',
+        tableName: 'parse_failed',
+        columns: [],
+        wherePredicate: null,
+        indexMethod: 'btree',
+        unique: false,
+        concurrent: false
+      };
+    }
+  }
+  
+  // Legacy methods for backward compatibility (now use AST parsing)
   extractIndexName(sql) {
-    const match = sql.match(/CREATE\s+(?:UNIQUE\s+)?INDEX\s+(?:CONCURRENTLY\s+)?(?:IF\s+NOT\s+EXISTS\s+)?(?:"?([^"]+)"?|([^\s]+))/i);
-    return match ? (match[1] || match[2]) : 'unknown_index';
+    return this.extractIndexMetadata(sql).indexName;
   }
   
-  /**
-   * Extract table name from CREATE INDEX statement
-   */
   extractTableName(sql) {
-    const match = sql.match(/ON\s+(?:"?([^"]+)"?\.)?(?:"?([^"]+)"?|([^\s(]+))/i);
-    return match ? (match[2] || match[3]) : 'unknown_table';
+    return this.extractIndexMetadata(sql).tableName;
   }
   
-  /**
-   * Extract column names from CREATE INDEX statement
-   */
   extractColumns(sql) {
-    const match = sql.match(/\(([^)]+)\)/);
-    if (!match) return [];
-    
-    return match[1]
-      .split(',')
-      .map(col => col.trim().replace(/["'`]/g, ''))
-      .filter(col => col.length > 0);
+    return this.extractIndexMetadata(sql).columns;
   }
   
-  /**
-   * Extract WHERE predicate for partial indexes
-   */
   extractWherePredicate(sql) {
-    const match = sql.match(/WHERE\s+(.+?)(?:$|;)/i);
-    return match ? match[1].trim() : null;
+    return this.extractIndexMetadata(sql).wherePredicate;
   }
   
-  /**
-   * Extract index method (btree, gin, gist, etc.)
-   */
   extractIndexMethod(sql) {
-    const match = sql.match(/USING\s+(\w+)/i);
-    return match ? match[1].toLowerCase() : 'btree';
+    return this.extractIndexMetadata(sql).indexMethod;
   }
   
   /**
@@ -204,10 +229,13 @@ export class CICOperation {
   }
   
   /**
-   * Generate cleanup SQL for failed index
+   * Generate cleanup SQL for failed index using safe parameterized query
    */
-  getCleanupSql() {
-    return `DROP INDEX CONCURRENTLY IF EXISTS "${this.indexName}";`;
+  getCleanupQuery() {
+    return createSafeQuery(
+      'DROP INDEX CONCURRENTLY IF EXISTS $1',
+      [this.indexName]
+    );
   }
   
   /**
@@ -671,8 +699,10 @@ export class CICOrchestrator {
     // Clean up invalid indexes
     for (const invalid of invalidIndexes) {
       try {
+        const cleanupQuery = invalid.operation.getCleanupQuery();
         await this.sqlExecutor.executeOperation({
-          sql: invalid.operation.getCleanupSql(),
+          sql: cleanupQuery.sql,
+          params: cleanupQuery.params,
           metadata: { 
             operation: 'CLEANUP_INVALID_INDEX',
             originalOperation: invalid.name
