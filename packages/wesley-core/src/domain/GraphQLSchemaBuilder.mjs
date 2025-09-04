@@ -142,14 +142,97 @@ export class GraphQLSchemaBuilder {
       const validOperations = ['select', 'insert', 'update', 'delete'];
       
       for (const op of validOperations) {
-        if (rls[op] && typeof rls[op] !== 'string') {
-          this.evidenceMap.recordError(uid, {
-            message: `Invalid @rls ${op} expression. Expected string`,
-            type: 'invalid_directive_arg',
-            context: { directive: '@rls', operation: op }
-          });
+        if (rls[op]) {
+          if (typeof rls[op] !== 'string') {
+            this.evidenceMap.recordError(uid, {
+              message: `Invalid @rls ${op} expression. Expected string`,
+              type: 'invalid_directive_arg',
+              context: { directive: '@rls', operation: op }
+            });
+          } else {
+            // Additional SQL injection protection for RLS expressions
+            this.validateRLSExpression(rls[op], op, uid, fieldName);
+          }
         }
       }
+    }
+  }
+
+  /**
+   * Validate RLS expression for potential SQL injection patterns
+   * @param {string} expression - The RLS expression to validate
+   * @param {string} operation - The operation (select, insert, update, delete)
+   * @param {string} uid - Field/table UID for error reporting
+   * @param {string} context - Field name or table name for context
+   */
+  validateRLSExpression(expression, operation, uid, context) {
+    if (!this.evidenceMap) return; // Skip validation if no evidence map
+
+    // Check for obviously dangerous SQL injection patterns
+    const suspiciousPatterns = [
+      /;\s*(DROP|DELETE|INSERT|UPDATE|ALTER|CREATE)\s+/i,  // Statement injection
+      /--.*$/m,                                             // SQL comments
+      /\/\*.*?\*\//g,                                      // Block comments  
+      /\bUNION\s+SELECT\b/i,                               // Union injection
+      /\bEXEC(\s|\()/i,                                    // Exec statements
+      /\bxp_\w+/i,                                         // Extended procedures
+      /\bsp_\w+/i                                          // Stored procedures
+    ];
+
+    for (const pattern of suspiciousPatterns) {
+      if (pattern.test(expression)) {
+        this.evidenceMap.recordError(uid, {
+          message: `Potentially dangerous SQL pattern in @rls ${operation} expression: ${expression}`,
+          type: 'rls_security_violation',
+          context: { 
+            directive: '@rls', 
+            operation, 
+            expression, 
+            pattern: pattern.toString(),
+            field: context 
+          }
+        });
+        break;
+      }
+    }
+
+    // Warn about unparameterized user input references
+    const userInputPatterns = [
+      /\$\d+/,                    // Raw parameter references
+      /\buser_input\b/i,          // Direct user_input references
+      /\brequest\./i,             // Request object access
+      /\bparams\./i              // Params object access
+    ];
+
+    for (const pattern of userInputPatterns) {
+      if (pattern.test(expression)) {
+        this.evidenceMap.recordWarning(uid, {
+          message: `@rls ${operation} expression contains potentially unsafe user input reference: ${expression}`,
+          type: 'rls_security_warning',
+          context: { 
+            directive: '@rls', 
+            operation, 
+            expression,
+            recommendation: 'Use Supabase auth.uid() or auth.jwt() functions instead',
+            field: context
+          }
+        });
+        break;
+      }
+    }
+
+    // Check for length limits (prevent excessive RLS expressions)
+    if (expression.length > 1000) {
+      this.evidenceMap.recordWarning(uid, {
+        message: `@rls ${operation} expression is very long (${expression.length} chars). Consider simplifying.`,
+        type: 'rls_complexity_warning',
+        context: { 
+          directive: '@rls', 
+          operation, 
+          length: expression.length,
+          field: context
+        }
+      });
     }
   }
   
