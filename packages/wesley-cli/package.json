@@ -2,12 +2,13 @@
   "name": "@wesley/cli",
   "version": "0.1.0",
   "type": "module",
-  "description": "Wesley CLI library - platform-agnostic command interface",
-  "exports": {
-    ".": "./src/index.mjs",
-    "./commands": "./src/commands.mjs"
+  "description": "Wesley CLI - GraphQL to Everything",
+  "bin": {
+    "wesley": "./wesley.mjs"
   },
+  "exports": "./wesley.mjs",
   "files": [
+    "wesley.mjs",
     "src/"
   ],
   "engines": {

@@ -1,22 +1,15 @@
 #!/usr/bin/env node
 
+import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { WesleyCommand } from '../framework/WesleyCommand.mjs';
-
-export class ValidateBundleCommand extends WesleyCommand {
+export class ValidateBundleCommand {
   constructor() {
-    super('validate-bundle', 'Validate Wesley bundle against JSON schemas');
+    this.name = 'validate-bundle';
+    this.description = 'Validate Wesley bundle against JSON schemas';
   }
 
-  configureCommander(cmd) {
-    return cmd
-      .option('--bundle <path>', 'Bundle path', '.wesley')
-      .option('--schemas <path>', 'Schemas path', './schemas')
-      .option('--show-plan', 'Display execution plan before running');
-  }
-
-  async executeCore({ options, fileSystem }) {
+  async execute(options = {}) {
     const bundlePath = options.bundle || '.wesley';
     const schemasPath = options.schemas || path.join(process.cwd(), 'schemas');
     
@@ -30,18 +23,18 @@ export class ValidateBundleCommand extends WesleyCommand {
       
       // Load schemas
       const evidenceMapSchema = JSON.parse(
-        await fileSystem.readFile(path.join(schemasPath, 'evidence-map.schema.json'), 'utf8')
+        await fs.readFile(path.join(schemasPath, 'evidence-map.schema.json'), 'utf8')
       );
       const scoresSchema = JSON.parse(
-        await fileSystem.readFile(path.join(schemasPath, 'scores.schema.json'), 'utf8')
+        await fs.readFile(path.join(schemasPath, 'scores.schema.json'), 'utf8')
       );
       
       // Load bundle files
       const evidenceMap = JSON.parse(
-        await fileSystem.readFile(path.join(bundlePath, 'evidence-map.json'), 'utf8')
+        await fs.readFile(path.join(bundlePath, 'evidence-map.json'), 'utf8')
       );
       const scores = JSON.parse(
-        await fileSystem.readFile(path.join(bundlePath, 'scores.json'), 'utf8')
+        await fs.readFile(path.join(bundlePath, 'scores.json'), 'utf8')
       );
       
       // Check version
@@ -98,13 +91,10 @@ export class ValidateBundleCommand extends WesleyCommand {
       }
       
     } catch (error) {
-      error.code = error.code || 'VALIDATION_FAILED';
-      throw error;
+      console.error('❌ Validation error:', error.message);
+      process.exit(1);
     }
   }
 }
 
 export default ValidateBundleCommand;
-
-// Auto-register this command by creating an instance
-new ValidateBundleCommand();

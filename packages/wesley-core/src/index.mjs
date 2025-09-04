@@ -74,7 +74,8 @@ export { TestGeneratorPort } from './ports/testgen.mjs';
 export { DiffEnginePort } from './ports/diff.mjs';
 export { WriterPort } from './ports/writer.mjs';
 export { FileSystemPort } from './ports/fs.mjs';
-export { LoggerPort } from './ports/logger.mjs';
+// Fixed case sensitivity: logger.mjs -> Logger.mjs  
+export { LoggerPort } from './ports/Logger.mjs';
 export { ClockPort, SystemClock } from './ports/clock.mjs';
 
 // Application Services

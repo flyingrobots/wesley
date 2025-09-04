@@ -84,7 +84,7 @@ done
 echo -e "${BLUE}Running tests...${NC}"
 echo ""
 
-if bats $BATS_OPTS "${BATS_FILES[@]}"; then
+if /opt/homebrew/bin/bats $BATS_OPTS "${BATS_FILES[@]}"; then
     echo ""
     echo -e "${GREEN}✅ All tests passed!${NC}"
     exit 0
