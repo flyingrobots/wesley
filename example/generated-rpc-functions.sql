@@ -78,6 +78,22 @@ DECLARE
   cart_item record;
   current_quantity integer;
 BEGIN
+  -- Input validation
+  IF product_id IS NULL THEN
+    RAISE EXCEPTION 'Product ID is required'
+      USING ERRCODE = 'PARAM';
+  END IF;
+  
+  IF quantity IS NULL OR quantity <= 0 THEN
+    RAISE EXCEPTION 'Quantity must be positive integer, got: %', quantity
+      USING ERRCODE = 'PARAM';
+  END IF;
+  
+  IF quantity > 999 THEN
+    RAISE EXCEPTION 'Quantity cannot exceed 999, got: %', quantity
+      USING ERRCODE = 'PARAM';
+  END IF;
+
   -- Verify authenticated
   IF auth.uid() IS NULL THEN
     RAISE EXCEPTION 'Authentication required'
