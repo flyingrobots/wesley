@@ -7,6 +7,7 @@
 import { spawn } from 'node:child_process';
 import { resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readdirSync } from 'node:fs';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const projectRoot = resolve(__dirname, '..');
@@ -41,6 +42,25 @@ const testConfigs = {
 };
 
 /**
+ * Find test files matching a pattern
+ */
+function findTestFiles(pattern) {
+  try {
+    // Convert glob pattern to directory path
+    const patternDir = pattern.replace('/**/*.test.mjs', '');
+    const fullPath = join(projectRoot, patternDir);
+    
+    const files = readdirSync(fullPath, { recursive: true })
+      .filter(file => file.endsWith('.test.mjs'))
+      .map(file => join(patternDir, file));
+    
+    return files;
+  } catch (error) {
+    return [];
+  }
+}
+
+/**
  * Run a specific test suite
  */
 async function runTestSuite(suiteName, config, options = {}) {
@@ -48,9 +68,20 @@ async function runTestSuite(suiteName, config, options = {}) {
     console.log(`\n🧪 Running ${config.description}...`);
     console.log(`   Pattern: ${config.pattern}`);
     
+    // Find test files manually
+    const testFiles = findTestFiles(config.pattern);
+    
+    if (testFiles.length === 0) {
+      console.log(`Could not find any test files matching pattern: ${config.pattern}`);
+      resolve({ success: false, code: 1 });
+      return;
+    }
+    
+    console.log(`   Found ${testFiles.length} test files`);
+    
     const args = [
       '--test',
-      config.pattern,
+      ...testFiles,
       '--test-timeout', config.timeout.toString()
     ];
 
