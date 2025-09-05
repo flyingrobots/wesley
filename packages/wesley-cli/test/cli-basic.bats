@@ -99,16 +99,15 @@ EOF
 }
 
 @test "stdin input with --schema - works" {
-    run bash -c "echo 'type Query { hello: String }' | node '$CLI_PATH' generate --schema - --quiet 2>/dev/null"
-    # Expect exit 3 due to stub parser - that's correct behavior
-    assert_failure 3
-    assert_output ""
+    run bash -c "echo 'type User @wes_table { id: ID! @wes_pk }' | node '$CLI_PATH' generate --schema - --out out"
+    assert_success
+    assert_file_exist out/schema.sql
 }
 
 @test "--stdin convenience flag works" {
-    run bash -c "echo 'type Query { hello: String }' | node '$CLI_PATH' generate --stdin --quiet 2>/dev/null"
-    assert_failure 3
-    assert_output ""
+    run bash -c "echo 'type User @wes_table { id: ID! @wes_pk }' | node '$CLI_PATH' generate --stdin --out out"
+    assert_success
+    assert_file_exist out/schema.sql
 }
 
 @test "empty stdin exits 2" {

@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://wesley.dev/schemas/ir.schema.json",
+  "title": "Wesley Canonical IR",
+  "description": "Canonical intermediate representation produced from GraphQL SDL and consumed by generators and planners.",
+  "type": "object",
+  "required": ["tables"],
+  "properties": {
+    "version": { "type": ["string", "null"], "description": "Optional IR version identifier" },
+    "tables": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/Table" }
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "Table": {
+      "type": "object",
+      "required": ["name", "columns"],
+      "properties": {
+        "name": { "type": "string" },
+        "directives": { "type": "object", "additionalProperties": true },
+        "columns": { "type": "array", "items": { "$ref": "#/definitions/Column" } },
+        "primaryKey": { "type": ["string", "null"] },
+        "foreignKeys": { "type": "array", "items": { "$ref": "#/definitions/ForeignKey" }, "default": [] },
+        "indexes": { "type": "array", "items": { "$ref": "#/definitions/Index" }, "default": [] },
+        "tenantBy": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "Column": {
+      "type": "object",
+      "required": ["name", "type", "nullable"],
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "type": "string", "description": "PostgreSQL type, arrays indicated with [] suffix" },
+        "nullable": { "type": "boolean" },
+        "default": { "type": ["string", "null"] },
+        "unique": { "type": ["boolean", "null"] },
+        "directives": { "type": "object", "additionalProperties": true }
+      },
+      "additionalProperties": false
+    },
+    "ForeignKey": {
+      "type": "object",
+      "required": ["column", "refTable", "refColumn"],
+      "properties": {
+        "column": { "type": "string" },
+        "refTable": { "type": "string" },
+        "refColumn": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "Index": {
+      "type": "object",
+      "required": ["columns"],
+      "properties": {
+        "columns": { "type": "array", "items": { "type": "string" } },
+        "name": { "type": ["string", "null"] },
+        "using": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    }
+  }
+}
+

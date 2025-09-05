@@ -6,12 +6,5 @@
  */
 
 export { TaskDefinition, TaskDependency, TaskGraph } from './TaskDefinition.mjs';
-export { TaskScheduler, SchedulingStrategy } from './TaskScheduler.mjs';
-export { TaskQueue, QueuePriority } from './TaskQueue.mjs';
-export { DependencyResolver } from './DependencyResolver.mjs';
-export { TaskKernel } from './TaskKernel.mjs';
 
-// Task execution coordination with S.L.A.P.S.
-export { ExecutionCoordinator } from './ExecutionCoordinator.mjs';
-export { ResourceManager } from './ResourceManager.mjs';
-export { ProgressTracker } from './ProgressTracker.mjs';
+// NOTE: Additional exports (scheduler, queue, kernel, etc.) will be added when implemented.

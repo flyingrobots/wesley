@@ -9,10 +9,12 @@ import { WesleyCommand } from './framework/WesleyCommand.mjs';
 
 // Import commands to trigger auto-registration
 import { GeneratePipelineCommand } from './commands/generate.mjs';
+import { TransformPipelineCommand } from './commands/transform.mjs';
 
 export async function program(argv, ctx) {
   // Create commands with context (auto-registers them)
   new GeneratePipelineCommand(ctx);
+  new TransformPipelineCommand(ctx);
   
   // TODO: Add other commands when they're updated
   // new ModelsCommand(ctx);
