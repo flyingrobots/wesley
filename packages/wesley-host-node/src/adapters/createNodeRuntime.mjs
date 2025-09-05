@@ -9,6 +9,7 @@ import process from 'node:process';
 import pino from 'pino';
 import { NodeFileSystem } from './NodeFileSystem.mjs';
 import { ConfigLoader } from './ConfigLoader.mjs';
+import { DbAdapter } from './DbAdapter.mjs';
 import { GraphQLAdapter } from './GraphQLAdapter.mjs';
 
 // Stub generators for fallback when packages are broken
@@ -129,6 +130,7 @@ export async function createNodeRuntime() {
     stdout: process.stdout,
     stderr: process.stderr,
     config,
+    db: new DbAdapter(),
     
     // Parsers
     parsers: {
