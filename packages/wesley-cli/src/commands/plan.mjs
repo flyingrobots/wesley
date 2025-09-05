@@ -24,6 +24,8 @@ export class PlanCommand extends WesleyCommand {
 
   async executeCore(context) {
     const { options, schemaContent, logger } = context;
+    const outDir = options.outDir || this.ctx?.config?.paths?.migrations || this.ctx?.config?.paths?.output || 'out';
+    options.outDir = outDir;
 
     // Enforce clean tree only in strict policy; default: allow
     const env = this.ctx.env || {};

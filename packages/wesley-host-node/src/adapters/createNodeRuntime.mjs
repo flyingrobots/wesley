@@ -8,6 +8,7 @@ import * as fs from 'node:fs/promises';
 import process from 'node:process';
 import pino from 'pino';
 import { NodeFileSystem } from './NodeFileSystem.mjs';
+import { ConfigLoader } from './ConfigLoader.mjs';
 import { GraphQLAdapter } from './GraphQLAdapter.mjs';
 
 // Stub generators for fallback when packages are broken
@@ -109,6 +110,16 @@ export async function createNodeRuntime() {
 
   const nodeFs = new NodeFileSystem();
 
+  // Load configuration (user override via env path if provided)
+  let config = null;
+  try {
+    const loader = new ConfigLoader();
+    const cfgPath = process.env.WESLEY_CONFIG_FILEPATH || null;
+    config = await loader.load(cfgPath);
+  } catch (e) {
+    console.warn('Warning: could not load Wesley config:', e?.message || e);
+  }
+
   return {
     // Core utilities
     logger,
@@ -117,6 +128,7 @@ export async function createNodeRuntime() {
     stdin: process.stdin,
     stdout: process.stdout,
     stderr: process.stderr,
+    config,
     
     // Parsers
     parsers: {

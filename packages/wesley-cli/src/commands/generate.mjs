@@ -31,6 +31,8 @@ export class GeneratePipelineCommand extends WesleyCommand {
 
   async executeCore(context) {
     const { schemaContent, schemaPath, options, logger } = context;
+    const outDir = options.outDir || this.ctx?.config?.paths?.output || 'out';
+    options.outDir = outDir;
     
     // Handle --stdin convenience flag
     if (options.stdin) {
