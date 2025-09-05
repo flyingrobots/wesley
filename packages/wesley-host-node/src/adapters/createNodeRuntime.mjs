@@ -8,6 +8,8 @@ import * as fs from 'node:fs/promises';
 import process from 'node:process';
 import pino from 'pino';
 import { NodeFileSystem } from './NodeFileSystem.mjs';
+import { ConfigLoader } from './ConfigLoader.mjs';
+import { DbAdapter } from './DbAdapter.mjs';
 import { GraphQLAdapter } from './GraphQLAdapter.mjs';
 
 // Stub generators for fallback when packages are broken
@@ -109,6 +111,16 @@ export async function createNodeRuntime() {
 
   const nodeFs = new NodeFileSystem();
 
+  // Load configuration (user override via env path if provided)
+  let config = null;
+  try {
+    const loader = new ConfigLoader();
+    const cfgPath = process.env.WESLEY_CONFIG_FILEPATH || null;
+    config = await loader.load(cfgPath);
+  } catch (e) {
+    console.warn('Warning: could not load Wesley config:', e?.message || e);
+  }
+
   return {
     // Core utilities
     logger,
@@ -117,13 +129,15 @@ export async function createNodeRuntime() {
     stdin: process.stdin,
     stdout: process.stdout,
     stderr: process.stderr,
+    config,
+    db: new DbAdapter(),
     
     // Parsers
     parsers: {
       graphql: {
         parse: (sdl) => {
           const adapter = new GraphQLAdapter();
-          return adapter.parseSDL(sdl);
+          return adapter.parseSDL(sanitizeGraphQL(sdl, process.env));
         }
       }
     },
@@ -154,5 +168,22 @@ export async function createNodeRuntime() {
     clock: { 
       now: () => new Date() 
     },
+    // Validators
+    validators: {
+      sanitizeGraphQL: (sdl) => sanitizeGraphQL(sdl, process.env)
+    }
   };
+}
+
+function sanitizeGraphQL(sdl, env) {
+  if (typeof sdl !== 'string') throw new Error('Schema content must be a string');
+  const max = parseInt(env?.WESLEY_MAX_SCHEMA_BYTES || '5242880', 10); // 5MB default
+  if (Buffer.byteLength(sdl, 'utf8') > max) {
+    const e = new Error(`Schema exceeds max size (${max} bytes)`);
+    e.code = 'EINPUTSIZE';
+    throw e;
+  }
+  // Strip BOM and null bytes
+  let out = sdl.replace(/^\uFEFF/, '').replace(/\u0000/g, '');
+  return out;
 }

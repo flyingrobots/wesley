@@ -31,6 +31,8 @@ export class GeneratePipelineCommand extends WesleyCommand {
 
   async executeCore(context) {
     const { schemaContent, schemaPath, options, logger } = context;
+    const outDir = options.outDir || this.ctx?.config?.paths?.output || 'out';
+    options.outDir = outDir;
     
     // Handle --stdin convenience flag
     if (options.stdin) {
@@ -38,7 +40,8 @@ export class GeneratePipelineCommand extends WesleyCommand {
     }
     
     // Safety: require clean git working tree unless explicitly allowed
-    if (!options.allowDirty) {
+    const env = this.ctx.env || {};
+    if (shouldEnforceClean(env, options) && !options.allowDirty) {
       try { await assertCleanGit(); } catch (e) { e.code = e.code || 'DIRTY_WORKTREE'; throw e; }
     }
 
@@ -178,6 +181,13 @@ export class GeneratePipelineCommand extends WesleyCommand {
 export default GeneratePipelineCommand;
 
 // Utilities
+function shouldEnforceClean(env, options) {
+  const policy = (env?.WESLEY_GIT_POLICY || 'emit').toLowerCase();
+  if (policy === 'off') return false;
+  if (policy === 'strict') return true;
+  // default policy: enforce only when producing bundle/certs
+  return !!options.emitBundle;
+}
 async function assertCleanGit() {
   const { execSync } = await import('node:child_process');
   try {

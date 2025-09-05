@@ -77,13 +77,12 @@ export class WesleyCommand {
 
   // Resolve log level from options
   resolveLogLevel(options) {
-    if (options.quiet) return 100; // silent
-    if (options.debug || options.verbose) return 10; // debug
+    if (options.quiet) return LOG_LEVELS.silent;
+    if (options.debug || options.verbose) return LOG_LEVELS.debug;
     if (options.logLevel) {
-      const levels = { trace: 5, debug: 10, info: 30, warn: 40, error: 50, fatal: 60, silent: 100 };
-      return levels[options.logLevel] || 30;
+      return LOG_LEVELS[options.logLevel] ?? LOG_LEVELS.info;
     }
-    return 30; // info
+    return LOG_LEVELS.info;
   }
 
   // Read schema from file or stdin (ASYNC - keeping the improvement)
@@ -178,7 +177,7 @@ export class WesleyCommand {
     } catch (error) {
       // Handle errors properly
       const exitCode = this.exitCodeFor(error);
-      
+
       if (options.json) {
         this.ctx.stderr.write(JSON.stringify({
           success: false,
@@ -200,8 +199,9 @@ export class WesleyCommand {
           if (hint) this.ctx.stderr.write(`   Try: ${hint}\n`);
         }
       }
-      
-      process.exit(exitCode);
+      // Defer exit to program entry via ExitError
+      const { ExitError } = await import('./errors.mjs');
+      throw new ExitError(exitCode, error);
     }
   }
 
@@ -244,3 +244,4 @@ export class WesleyCommand {
 }
 
 export default WesleyCommand;
+const LOG_LEVELS = { trace: 5, debug: 10, info: 30, warn: 40, error: 50, fatal: 60, silent: 100 };

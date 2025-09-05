@@ -24,8 +24,12 @@ export class PlanCommand extends WesleyCommand {
 
   async executeCore(context) {
     const { options, schemaContent, logger } = context;
+    const outDir = options.outDir || this.ctx?.config?.paths?.migrations || this.ctx?.config?.paths?.output || 'out';
+    options.outDir = outDir;
 
-    if (!options.allowDirty) {
+    // Enforce clean tree only in strict policy; default: allow
+    const env = this.ctx.env || {};
+    if (shouldEnforceCleanPlan(env) && !options.allowDirty) {
       try { await assertCleanGit(); } catch (e) { e.code = e.code || 'DIRTY_WORKTREE'; throw e; }
     }
 
@@ -192,6 +196,10 @@ function emitMigrations(plan) {
 export default PlanCommand;
 
 // Git cleanliness check
+function shouldEnforceCleanPlan(env) {
+  const policy = (env?.WESLEY_GIT_POLICY || 'emit').toLowerCase();
+  return policy === 'strict';
+}
 async function assertCleanGit() {
   const { execSync } = await import('node:child_process');
   try { execSync('git rev-parse --is-inside-work-tree', { stdio: 'ignore' }); } catch { return; }

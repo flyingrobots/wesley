@@ -11,12 +11,14 @@ import { WesleyCommand } from './framework/WesleyCommand.mjs';
 import { GeneratePipelineCommand } from './commands/generate.mjs';
 import { TransformPipelineCommand } from './commands/transform.mjs';
 import { PlanCommand } from './commands/plan.mjs';
+import { RehearseCommand } from './commands/rehearse.mjs';
 
 export async function program(argv, ctx) {
   // Create commands with context (auto-registers them)
   new GeneratePipelineCommand(ctx);
   new TransformPipelineCommand(ctx);
   new PlanCommand(ctx);
+  new RehearseCommand(ctx);
   
   // TODO: Add other commands when they're updated
   // new ModelsCommand(ctx);
@@ -41,10 +43,13 @@ export async function program(argv, ctx) {
     await program.parseAsync(argv, { from: 'node' });
     return 0;
   } catch (error) {
-    // Error handling is done in WesleyCommand.execute()
-    // This catch is for any Commander-level errors
+    // Allow commands to throw ExitError to control exit code
+    if (error && error.name === 'ExitError') {
+      return error.exitCode ?? 1;
+    }
+    // Commander-level errors or unexpected issues
     if (!program.opts().quiet) {
-      console.error('Command error:', error.message);
+      console.error(error?.stack || error?.message || String(error));
     }
     return 1;
   }
