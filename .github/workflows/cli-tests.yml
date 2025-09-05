@@ -9,7 +9,6 @@ on:
       - 'packages/wesley-host-node/**'
       - '.github/workflows/cli-tests.yml'
   pull_request:
-    branches: [ main ]
     paths:
       - 'packages/wesley-cli/**'
       - 'packages/wesley-core/**'
