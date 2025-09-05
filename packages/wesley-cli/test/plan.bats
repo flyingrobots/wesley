@@ -34,10 +34,17 @@ EOF
   assert_output --partial "validate"
 }
 
+@test "plan --map shows change mapping" {
+  create_schema
+  run node "$CLI_PATH" plan --schema schema.graphql --map
+  assert_success
+  assert_output --partial "Change Mapping"
+  assert_output --partial "type Org added"
+}
+
 @test "plan --write creates migration files" {
   create_schema
   run node "$CLI_PATH" plan --schema schema.graphql --write --out-dir out
   assert_success
   [ -f out/migrations/001_expand.sql ]
 }
-

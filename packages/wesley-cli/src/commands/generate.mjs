@@ -20,6 +20,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
       .option('--emit-bundle', 'Emit .wesley/ evidence bundle')
       .option('--supabase', 'Enable Supabase features (RLS tests)')
       .option('--out-dir <dir>', 'Output directory', 'out')
+      .option('--allow-dirty', 'Allow running with a dirty git working tree (not recommended)')
       .option('-v, --verbose', 'More logs (level=debug)')
       .option('--debug', 'Debug output with stack traces')
       .option('-q, --quiet', 'Silence logs (level=silent)')
@@ -36,6 +37,11 @@ export class GeneratePipelineCommand extends WesleyCommand {
       options.schema = '-';
     }
     
+    // Safety: require clean git working tree unless explicitly allowed
+    if (!options.allowDirty) {
+      try { await assertCleanGit(); } catch (e) { e.code = e.code || 'DIRTY_WORKTREE'; throw e; }
+    }
+
     logger.info({ schema: schemaPath }, 'Parsing schema...');
 
     // Use injected generators and writer
@@ -170,3 +176,19 @@ export class GeneratePipelineCommand extends WesleyCommand {
 
 // Export for testing
 export default GeneratePipelineCommand;
+
+// Utilities
+async function assertCleanGit() {
+  const { execSync } = await import('node:child_process');
+  try {
+    execSync('git rev-parse --is-inside-work-tree', { stdio: 'ignore' });
+  } catch {
+    return; // Not a git repo: skip
+  }
+  const out = execSync('git status --porcelain', { encoding: 'utf8' }).trim();
+  if (out.length > 0) {
+    const err = new Error('Working tree has uncommitted changes. Commit or stash before running, or pass --allow-dirty.');
+    err.code = 'DIRTY_WORKTREE';
+    throw err;
+  }
+}

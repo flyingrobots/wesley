@@ -16,12 +16,18 @@ export class PlanCommand extends WesleyCommand {
       .option('--stdin', 'Read schema from stdin (alias for --schema -)')
       .option('--out-dir <dir>', 'Output directory for migrations', 'out')
       .option('--explain', 'Show plan explanation')
+      .option('--map', 'Show mapping from GraphQL/IR changes to migration steps')
+      .option('--allow-dirty', 'Allow running with a dirty git working tree (not recommended)')
       .option('--write', 'Write migration files to out-dir/migrations')
       .option('--json', 'Emit JSON plan');
   }
 
   async executeCore(context) {
     const { options, schemaContent, logger } = context;
+
+    if (!options.allowDirty) {
+      try { await assertCleanGit(); } catch (e) { e.code = e.code || 'DIRTY_WORKTREE'; throw e; }
+    }
 
     const current = this.ctx.parsers.graphql.parse(schemaContent);
 
@@ -33,15 +39,24 @@ export class PlanCommand extends WesleyCommand {
 
     const plan = buildAdditivePlan(previous, current);
     const explain = explainPlan(plan);
+    const mapping = buildMapping(plan);
 
     if (options.json) {
-      this.ctx.stdout.write(JSON.stringify({ plan, explain }, null, 2) + '\n');
+      this.ctx.stdout.write(JSON.stringify({ plan, explain, mapping }, null, 2) + '\n');
       return { phases: plan.phases.length, steps: explain.steps.length };
     }
 
     if (options.explain) {
       logger.info('🧭 Migration Plan (additive)');
       for (const line of explain.lines) logger.info(line);
+    }
+
+    if (options.map && !options.json) {
+      logger.info('');
+      logger.info('🔎 Change Mapping (GraphQL/IR → Steps)');
+      for (const item of mapping) {
+        logger.info(`Δ ${item.change} → ${item.steps.map(s=> s.op + ' ' + s.table + (s.column?'.'+s.column:'' )).join(', ')}`);
+      }
     }
 
     if (options.write) {
@@ -176,3 +191,46 @@ function emitMigrations(plan) {
 
 export default PlanCommand;
 
+// Git cleanliness check
+async function assertCleanGit() {
+  const { execSync } = await import('node:child_process');
+  try { execSync('git rev-parse --is-inside-work-tree', { stdio: 'ignore' }); } catch { return; }
+  const out = execSync('git status --porcelain', { encoding: 'utf8' }).trim();
+  if (out) {
+    const err = new Error('Working tree has uncommitted changes. Commit or stash before running, or pass --allow-dirty.');
+    err.code = 'DIRTY_WORKTREE';
+    throw err;
+  }
+}
+
+function buildMapping(plan) {
+  const mapping = [];
+  // naive grouping: each create_table represents a table-added change
+  for (const ph of plan.phases) {
+    for (const s of ph.steps) {
+      if (s.op === 'create_table') {
+        const steps = [];
+        for (const ph2 of plan.phases) {
+          for (const s2 of ph2.steps) if (s2.table === s.table) steps.push(s2);
+        }
+        mapping.push({ change: `type ${s.table} added`, steps });
+      }
+      if (s.op === 'add_column') {
+        mapping.push({ change: `field ${s.table}.${s.column} added`, steps: [s] });
+      }
+      if (s.op === 'create_index_concurrently') {
+        mapping.push({ change: `index on ${s.table}(${(s.columns||[]).join(',')}) added`, steps: [s] });
+      }
+      if (s.op === 'add_fk_not_valid') {
+        mapping.push({ change: `foreign key ${s.table}.${s.column} → ${s.refTable}.${s.refColumn}`, steps: [s] });
+      }
+    }
+  }
+  // de-duplicate changes by key
+  const seen = new Set();
+  const uniq = [];
+  for (const m of mapping) {
+    if (seen.has(m.change)) continue; seen.add(m.change); uniq.push(m);
+  }
+  return uniq;
+}
