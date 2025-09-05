@@ -56,18 +56,18 @@ export class GeneratePipelineCommand extends WesleyCommand {
     // Otherwise, simple sequential execution
     const artifacts = [];
     
-    // Parse schema (would use real parser)
-    const ir = { schema: schemaContent, tables: [] };
+    // Parse schema to IR
+    const ir = this.ctx.parsers.graphql.parse(schemaContent);
     
     // Generate DDL
-    const ddlResult = generators.sql.emitDDL({ schema: schemaContent });
+    const ddlResult = generators.sql.emitDDL(ir);
     if (ddlResult && ddlResult.files) {
       artifacts.push(...ddlResult.files);
     }
     
     // Generate RLS if Supabase flag
     if (options.supabase && generators.sql.emitRLS) {
-      const rlsResult = generators.sql.emitRLS({ schema: schemaContent });
+      const rlsResult = generators.sql.emitRLS(ir);
       if (rlsResult && rlsResult.files) {
         artifacts.push(...rlsResult.files);
       }
@@ -75,7 +75,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
     
     // Generate tests
     if (generators.tests && generators.tests.emitPgTap) {
-      const testResult = generators.tests.emitPgTap({ schema: schemaContent });
+      const testResult = generators.tests.emitPgTap(ir);
       if (testResult && testResult.files) {
         artifacts.push(...testResult.files);
       }
@@ -133,8 +133,8 @@ export class GeneratePipelineCommand extends WesleyCommand {
     
     // Define handlers
     const handlers = {
-      parse_schema: async (n) => ({ ast: this.ctx.parsers.graphql.parse(n.args.sdl) }),
-      validate_ir: async (n, deps) => ({ ir: { tables: [] } }), // TODO: Real validation
+      parse_schema: async (n) => ({ ir: this.ctx.parsers.graphql.parse(n.args.sdl) }),
+      validate_ir: async (n, deps) => ({ ir: deps.parse.ir }), // pass-through for MVP
       emit_ddl: async (n, deps) => generators.sql.emitDDL(deps.validate.ir),
       emit_rls: async (n, deps) => generators.sql.emitRLS(deps.validate.ir),
       emit_tests: async (n, deps) => generators.tests.emitPgTap(deps.validate.ir),
