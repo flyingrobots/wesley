@@ -42,7 +42,7 @@ jobs:
           cat example/.wesley/scores.json | jq '.scores'
           
       - name: "💾 Upload Bundle"
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: wesley-bundle
           path: example/.wesley/
@@ -71,7 +71,7 @@ jobs:
         run: pnpm install
         
       - name: "📥 Download Bundle"
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: wesley-bundle
           path: example/.wesley/
@@ -84,7 +84,7 @@ jobs:
           cat holmes-report.md
           
       - name: "💾 Save Report"
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: holmes-report
           path: example/holmes-report.md
@@ -113,7 +113,7 @@ jobs:
         run: pnpm install
         
       - name: "📥 Download Bundle"
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: wesley-bundle
           path: example/.wesley/
@@ -126,7 +126,7 @@ jobs:
           cat watson-report.md
           
       - name: "💾 Save Report"
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: watson-report
           path: example/watson-report.md
@@ -155,7 +155,7 @@ jobs:
         run: pnpm install
         
       - name: "📥 Download Bundle"
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: wesley-bundle
           path: example/.wesley/
@@ -197,7 +197,7 @@ jobs:
         uses: actions/checkout@v4
         
       - name: "📥 Download Bundle"
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: wesley-bundle
           path: example/.wesley/
