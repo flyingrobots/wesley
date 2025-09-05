@@ -27,10 +27,7 @@ const deparse = (ast) => {
     return '-- deparse failed: ' + error.message;
   }
 };
-import { DirectiveProcessor } from '../Directives.mjs';
-import { IndexDeduplicator } from '../IndexDeduplicator.mjs';
-import { TenantModel } from '../TenantModel.mjs';
-import { RLSPresets } from '../RLSPresets.mjs';
+import { DirectiveProcessor, IndexDeduplicator, TenantModel, RLSPresets } from '@wesley/core';
 
 const scalarMap = {
   ID: 'uuid',

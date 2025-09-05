@@ -1,4 +1,3 @@
-import { createPinoLogger, NodeFileSystem } from '@wesley/host-node';
 import { resolveLevel, formatError, exitCodeFor } from './utils.mjs';
 import { AutomaticallyRegisteredProgram } from './AutomaticallyRegisteredProgram.mjs';
 
@@ -13,17 +12,21 @@ export class WesleyCommand extends AutomaticallyRegisteredProgram {
 
   // Common logger
   makeLogger(options = {}, bindings = {}) {
-    return createPinoLogger({
-      name: 'Wesley',
-      level: resolveLevel(options),
-      pretty: !options.json,
-      json: !!options.json,
-      bindings: { cmd: this.name, ...bindings }
-    });
+    const adapters = globalThis.__WESLEY_ADAPTERS;
+    if (!adapters) {
+      throw new Error('Wesley adapters not available - main() was not called correctly');
+    }
+    return adapters.logger;
   }
 
   // Read schema from file or stdin if requested
-  async readSchemaFromOptions(options, fileSystem) {
+  async readSchemaFromOptions(options) {
+    const adapters = globalThis.__WESLEY_ADAPTERS;
+    if (!adapters) {
+      throw new Error('Wesley adapters not available - main() was not called correctly');
+    }
+    const fileSystem = adapters.fileSystem;
+    
     const fromStdin = options.schema === '-' || options.stdin === true;
     let schemaContent;
     let schemaPath;

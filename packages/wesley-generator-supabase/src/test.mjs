@@ -3,7 +3,7 @@
  * Generates production-grade database tests from GraphQL schema
  */
 
-import { DirectiveProcessor } from '../Directives.mjs';
+import { DirectiveProcessor } from '@wesley/core';
 import { TestDepthStrategy } from '../TestDepthStrategy.mjs';
 
 export class PgTAPTestGenerator {
