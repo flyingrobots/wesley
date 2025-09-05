@@ -8,6 +8,7 @@ import * as fs from 'node:fs/promises';
 import process from 'node:process';
 import pino from 'pino';
 import { NodeFileSystem } from './NodeFileSystem.mjs';
+import { GraphQLAdapter } from './GraphQLAdapter.mjs';
 
 // Stub generators for fallback when packages are broken
 const stub = {
@@ -118,13 +119,13 @@ export async function createNodeRuntime() {
     stderr: process.stderr,
     
     // Parsers
-    parsers: { 
-      graphql: { 
-        parse: (s) => {
-          // TODO: Wire real GraphQL parser
-          return { ast: s };
-        } 
-      } 
+    parsers: {
+      graphql: {
+        parse: (sdl) => {
+          const adapter = new GraphQLAdapter();
+          return adapter.parseSDL(sdl);
+        }
+      }
     },
     
     // Generators (lazy-loaded)
