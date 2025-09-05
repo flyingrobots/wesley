@@ -1,0 +1,77 @@
+name: REALM (Docker)
+
+on:
+  push:
+    branches: [ main, dev, 'feat/*', 'fix/*', 'milestone/*' ]
+    paths:
+      - 'packages/**'
+      - '.github/workflows/realm-docker.yml'
+  pull_request:
+    paths:
+      - 'packages/**'
+      - '.github/workflows/realm-docker.yml'
+
+jobs:
+  realm-docker:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: wesley
+          POSTGRES_PASSWORD: wesley_test
+          POSTGRES_DB: wesley_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U wesley -d wesley_test" \
+          --health-interval 5s \
+          --health-timeout 5s \
+          --health-retries 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install deps
+        run: pnpm install
+
+      - name: Wait for Postgres
+        run: |
+          for i in {1..60}; do
+            pg_isready -h localhost -U wesley -d wesley_test && break
+            sleep 1
+          done
+        env:
+          PGPASSWORD: wesley_test
+
+      - name: Transform
+        run: node packages/wesley-host-node/bin/wesley.mjs transform --schema example/ecommerce.graphql --out out
+
+      - name: Plan (write)
+        run: node packages/wesley-host-node/bin/wesley.mjs plan --schema example/ecommerce.graphql --write --out out
+
+      - name: Rehearse (REALM)
+        run: node packages/wesley-host-node/bin/wesley.mjs rehearse --schema example/ecommerce.graphql --dsn postgres://wesley:wesley_test@localhost:5432/wesley_test --timeout 300000
+
+      - name: Upload realm.json
+        uses: actions/upload-artifact@v4
+        with:
+          name: realm-json
+          path: .wesley/realm.json
+
+      - name: Gate on PASS
+        run: |
+          node -e 'const fs=require("fs"); const j=JSON.parse(fs.readFileSync(".wesley/realm.json","utf8")); if(j.verdict!=="PASS"){console.error(j); process.exit(1)}'
+

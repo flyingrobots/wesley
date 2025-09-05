@@ -3,7 +3,7 @@
  * This is the ONLY place where we depend on the graphql npm package
  */
 
-import { parse, Kind, buildSchema, validate } from 'graphql';
+import { parse, Kind, buildSchema, validate, getLocation } from 'graphql';
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -159,6 +159,7 @@ class GraphQLSchemaParser {
     const indexes = [];
     let primaryKey = null;
     let tenantBy = null;
+    const tableLoc = this.getNodeLocation(typeDef);
     
     // Process tenant directive first
     const tenantDirective = this.findDirective(typeDef.directives, 'wes_tenant');
@@ -233,7 +234,8 @@ class GraphQLSchemaParser {
       foreignKeys,
       indexes,
       tenantBy,
-      directives: this.extractDirectives(typeDef.directives)
+      directives: this.extractDirectives(typeDef.directives),
+      location: tableLoc
     };
   }
   
@@ -244,12 +246,14 @@ class GraphQLSchemaParser {
     const name = field.name.value;
     const nullable = !this.isNonNullType(field.type);
     const type = this.mapGraphQLTypeToPostgreSQL(field.type);
+    const loc = this.getNodeLocation(field);
     
     const column = {
       name,
       type,
       nullable,
-      directives: this.extractDirectives(field.directives)
+      directives: this.extractDirectives(field.directives),
+      location: loc
     };
     
     // Process directives
@@ -268,6 +272,27 @@ class GraphQLSchemaParser {
     }
     
     return column;
+  }
+
+  /**
+   * Extract human-friendly location info from AST node
+   */
+  getNodeLocation(node) {
+    try {
+      if (!node?.loc || !node.loc?.source) return null;
+      const start = getLocation(node.loc.source, node.loc.start);
+      const end = getLocation(node.loc.source, node.loc.end);
+      return {
+        start: node.loc.start,
+        end: node.loc.end,
+        startLine: start.line,
+        startColumn: start.column,
+        endLine: end.line,
+        endColumn: end.column
+      };
+    } catch {
+      return null;
+    }
   }
   
   /**

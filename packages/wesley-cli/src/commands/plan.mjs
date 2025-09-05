@@ -43,7 +43,7 @@ export class PlanCommand extends WesleyCommand {
 
     const plan = buildAdditivePlan(previous, current);
     const explain = explainPlan(plan);
-    const mapping = buildMapping(plan);
+    const mapping = buildMapping(plan, current);
 
     if (options.json) {
       this.ctx.stdout.write(JSON.stringify({ plan, explain, mapping }, null, 2) + '\n');
@@ -211,8 +211,9 @@ async function assertCleanGit() {
   }
 }
 
-function buildMapping(plan) {
+function buildMapping(plan, ir) {
   const mapping = [];
+  const tmap = new Map((ir.tables||[]).map(t => [t.name, t]));
   // naive grouping: each create_table represents a table-added change
   for (const ph of plan.phases) {
     for (const s of ph.steps) {
@@ -221,16 +222,21 @@ function buildMapping(plan) {
         for (const ph2 of plan.phases) {
           for (const s2 of ph2.steps) if (s2.table === s.table) steps.push(s2);
         }
-        mapping.push({ change: `type ${s.table} added`, steps });
+        const t = tmap.get(s.table) || {};
+        mapping.push({ change: `type ${s.table} added`, location: t.location || null, steps });
       }
       if (s.op === 'add_column') {
-        mapping.push({ change: `field ${s.table}.${s.column} added`, steps: [s] });
+        const t = tmap.get(s.table) || {};
+        const colLoc = (t.columns||[]).find(c => c.name === s.column)?.location || null;
+        mapping.push({ change: `field ${s.table}.${s.column} added`, location: colLoc, steps: [s] });
       }
       if (s.op === 'create_index_concurrently') {
         mapping.push({ change: `index on ${s.table}(${(s.columns||[]).join(',')}) added`, steps: [s] });
       }
       if (s.op === 'add_fk_not_valid') {
-        mapping.push({ change: `foreign key ${s.table}.${s.column} → ${s.refTable}.${s.refColumn}`, steps: [s] });
+        const t = tmap.get(s.table) || {};
+        const colLoc = (t.columns||[]).find(c => c.name === s.column)?.location || null;
+        mapping.push({ change: `foreign key ${s.table}.${s.column} → ${s.refTable}.${s.refColumn}`, location: colLoc, steps: [s] });
       }
     }
   }
