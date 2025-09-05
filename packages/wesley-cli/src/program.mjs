@@ -11,12 +11,14 @@ import { WesleyCommand } from './framework/WesleyCommand.mjs';
 import { GeneratePipelineCommand } from './commands/generate.mjs';
 import { TransformPipelineCommand } from './commands/transform.mjs';
 import { PlanCommand } from './commands/plan.mjs';
+import { RehearseCommand } from './commands/rehearse.mjs';
 
 export async function program(argv, ctx) {
   // Create commands with context (auto-registers them)
   new GeneratePipelineCommand(ctx);
   new TransformPipelineCommand(ctx);
   new PlanCommand(ctx);
+  new RehearseCommand(ctx);
   
   // TODO: Add other commands when they're updated
   // new ModelsCommand(ctx);
