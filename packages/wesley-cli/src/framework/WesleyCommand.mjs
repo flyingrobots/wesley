@@ -1,54 +1,245 @@
 /**
- * Base Wesley Command
- * Pure - NO Node.js imports, NO generator imports
- * Everything comes through ctx dependency injection
+ * WesleyCommand - Hybrid Architecture
+ * Combines Commander parsing with hexagonal dependency injection
+ * Best of both worlds: Rich CLI features + Pure architecture
  */
 
 export class WesleyCommand {
-  /** @param {{ logger:any, fs:any, env:any, stdin:any, parsers:any, generators:any, planner:any, runner:any, writer:any, clock:any }} ctx */
-  constructor(ctx) {
+  /** @param {{ logger:any, fs:any, env:any, stdin:any, stdout:any, stderr:any, parsers:any, generators:any, planner:any, runner:any, writer:any, clock:any }} ctx */
+  constructor(ctx, name, description) {
     this.ctx = ctx;
-    this.name = 'unknown';
+    this.name = name;
+    this.description = description;
+    this.requiresSchema = false;
+    
+    // Auto-register on construction (if registry exists)
+    if (WesleyCommand.registry) {
+      WesleyCommand.registry.set(name, this);
+    }
   }
 
-  // Common logger
+  // Static registry for auto-registration
+  static registry = new Map();
+  
+  // Register all commands with a Commander program
+  static registerAll(program) {
+    for (const [name, cmd] of this.registry) {
+      const subcommand = program.command(name).description(cmd.description);
+      cmd.configureCommander(subcommand);
+      subcommand.action((options, command) => {
+        // Merge global options from parent program
+        const globalOpts = program.opts();
+        const mergedOptions = { ...globalOpts, ...options };
+        return cmd.execute(mergedOptions, command);
+      });
+    }
+  }
+
+  // Subclasses override to add command-specific options
+  configureCommander(cmd) { 
+    return cmd; 
+  }
+
+  // Create logger with proper context
   makeLogger(options = {}, bindings = {}) {
     const logger = this.ctx.logger;
-    if (logger && logger.child) {
-      return logger.child({ cmd: this.name, ...bindings });
+    const level = this.resolveLogLevel(options);
+    
+    // If quiet mode, return no-op logger
+    if (options.quiet) {
+      return {
+        debug: () => {},
+        info: () => {},
+        warn: () => {},
+        error: () => {},
+        fatal: () => {}
+      };
     }
-    return logger || console;
+    
+    // If logger supports child/level setting
+    if (logger && logger.child) {
+      return logger.child({ 
+        cmd: this.name, 
+        ...bindings,
+        level 
+      });
+    }
+    
+    // Fallback to console with level filtering
+    return {
+      debug: level <= 10 ? console.log : () => {},
+      info: level <= 30 ? console.log : () => {},
+      warn: level <= 40 ? console.warn : () => {},
+      error: level <= 50 ? console.error : () => {},
+      fatal: console.error
+    };
   }
 
-  // Read schema from file or stdin if requested  
+  // Resolve log level from options
+  resolveLogLevel(options) {
+    if (options.quiet) return 100; // silent
+    if (options.debug || options.verbose) return 10; // debug
+    if (options.logLevel) {
+      const levels = { trace: 5, debug: 10, info: 30, warn: 40, error: 50, fatal: 60, silent: 100 };
+      return levels[options.logLevel] || 30;
+    }
+    return 30; // info
+  }
+
+  // Read schema from file or stdin (ASYNC - keeping the improvement)
   async readSchemaFromOptions(options) {
     const { fs, stdin } = this.ctx;
     const fromStdin = options.schema === '-' || options.stdin === true;
     
     if (fromStdin) {
-      return await new Promise((resolve, reject) => {
-        let buf = '';
-        stdin.setEncoding('utf8');
-        stdin.on('data', chunk => buf += chunk);
-        stdin.on('end', () => {
-          if (!buf.trim()) {
-            const e = new Error('Schema input from stdin is empty');
-            e.code = 'EEMPTYSCHEMA';
-            reject(e);
-          } else {
-            resolve(buf);
-          }
-        });
-        stdin.on('error', reject);
-      });
+      const content = await this.readFromStdin();
+      if (!content || !content.trim()) {
+        const e = new Error('Schema input from stdin is empty');
+        e.code = 'EEMPTYSCHEMA';
+        throw e;
+      }
+      return { schemaPath: '<stdin>', schemaContent: content };
     }
     
-    return await fs.read(options.schema);
+    try {
+      const schemaPath = options.schema || 'schema.graphql';
+      const content = await fs.read(schemaPath);
+      return { schemaPath, schemaContent: content };
+    } catch (error) {
+      if (error.code === 'ENOENT' || error.message?.includes('ENOENT')) {
+        const err = new Error(`Schema file not found: ${options.schema}`);
+        err.code = 'ENOENT';
+        throw err;
+      }
+      throw error;
+    }
   }
 
-  // Subclasses must implement run
-  async run(argv) {
-    throw new Error('run must be implemented by subclasses');
+  // Async stdin reading (keeping this improvement)
+  async readFromStdin() {
+    const { stdin } = this.ctx;
+    return new Promise((resolve, reject) => {
+      let buf = '';
+      stdin.setEncoding('utf8');
+      stdin.on('data', chunk => buf += chunk);
+      stdin.on('end', () => resolve(buf));
+      stdin.on('error', reject);
+    });
+  }
+
+  // Write output to file or stdout
+  async writeOutput({ code, outFile, options }) {
+    const { fs, stdout } = this.ctx;
+    
+    if (outFile) {
+      await fs.write(outFile, code);
+      if (!options.quiet) {
+        // Let command decide what to log
+      }
+      return outFile;
+    } else {
+      stdout.write(code + (code?.endsWith('\n') ? '' : '\n'));
+      return '<stdout>';
+    }
+  }
+
+  // Main execute flow with error handling
+  async execute(options = {}, command) {
+    const logger = this.makeLogger(options);
+    
+    try {
+      const context = { 
+        options, 
+        logger,
+        fs: this.ctx.fs,
+        command 
+      };
+      
+      // Read schema if required
+      if (this.requiresSchema) {
+        const schemaData = await this.readSchemaFromOptions(options);
+        Object.assign(context, schemaData);
+      }
+      
+      // Execute the command logic
+      const result = await this.executeCore(context);
+      
+      // Handle JSON output mode
+      if (options.json && result) {
+        this.ctx.stdout.write(JSON.stringify({
+          success: true,
+          result,
+          timestamp: new Date().toISOString()
+        }, null, 2) + '\n');
+      }
+      
+      return result;
+      
+    } catch (error) {
+      // Handle errors properly
+      const exitCode = this.exitCodeFor(error);
+      
+      if (options.json) {
+        this.ctx.stderr.write(JSON.stringify({
+          success: false,
+          code: error.code || 'ERROR',
+          error: error.message,
+          stack: (options.debug || options.verbose) ? error.stack : undefined,
+          timestamp: new Date().toISOString()
+        }, null, 2) + '\n');
+      } else if (!options.quiet) {
+        this.ctx.stderr.write(this.formatError(error, options) + '\n');
+        
+        // Add helpful hints
+        if (error.code === 'ENOENT') {
+          const hint = this.missingSchemaHint();
+          if (hint) this.ctx.stderr.write(`   Try: ${hint}\n`);
+        }
+        if (error.code === 'EEMPTYSCHEMA') {
+          const hint = this.emptySchemaHint();
+          if (hint) this.ctx.stderr.write(`   Try: ${hint}\n`);
+        }
+      }
+      
+      process.exit(exitCode);
+    }
+  }
+
+  // Subclasses must implement
+  async executeCore(context) {
+    throw new Error('executeCore must be implemented by subclasses');
+  }
+
+  // Error formatting
+  formatError(error, options) {
+    const code = error.code ? `[${error.code}] ` : '';
+    const message = `❌ ${code}${error.message}`;
+    
+    if (options.debug || options.verbose) {
+      return message + '\n' + error.stack;
+    }
+    return message;
+  }
+
+  // Exit code mapping
+  exitCodeFor(error) {
+    const codeMap = {
+      'ENOENT': 2,
+      'EEMPTYSCHEMA': 2,
+      'PARSE_FAILED': 3,
+      'GENERATION_FAILED': 4,
+      'VALIDATION_FAILED': 5
+    };
+    return codeMap[error.code] || 1;
+  }
+
+  // Helpful hints for common errors
+  missingSchemaHint() {
+    return `wesley ${this.name} --schema path/to/schema.graphql`;
+  }
+
+  emptySchemaHint() {
+    return `echo "type Query { hello: String }" | wesley ${this.name} --schema -`;
   }
 }
 

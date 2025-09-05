@@ -73,7 +73,8 @@ export async function createNodeRuntime() {
     console.warn('Warning: @wesley/slaps not available');
   }
 
-  const logger = pino({ 
+  // Create a wrapper that respects quiet mode
+  const pinoLogger = pino({ 
     name: 'Wesley', 
     level: process.env.WESLEY_LOG_LEVEL || 'info',
     transport: process.env.NODE_ENV === 'development' ? {
@@ -81,6 +82,29 @@ export async function createNodeRuntime() {
       options: { colorize: true }
     } : undefined
   });
+
+  // Logger wrapper that can be silenced
+  const logger = {
+    child: (bindings) => {
+      const childLogger = pinoLogger.child(bindings);
+      // If level is set to silent (100), create a no-op logger
+      if (bindings.level >= 100) {
+        return {
+          debug: () => {},
+          info: () => {},
+          warn: () => {},
+          error: () => {},
+          fatal: () => {}
+        };
+      }
+      return childLogger;
+    },
+    debug: pinoLogger.debug.bind(pinoLogger),
+    info: pinoLogger.info.bind(pinoLogger),
+    warn: pinoLogger.warn.bind(pinoLogger),
+    error: pinoLogger.error.bind(pinoLogger),
+    fatal: pinoLogger.fatal.bind(pinoLogger)
+  };
 
   const nodeFs = new NodeFileSystem();
 

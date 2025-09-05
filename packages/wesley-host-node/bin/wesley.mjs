@@ -9,12 +9,11 @@ import { program } from '@wesley/cli/src/program.mjs';
 import { createNodeRuntime } from '../src/adapters/createNodeRuntime.mjs';
 
 // Compose at the edge
-const argv = process.argv.slice(2);
 const ctx = await createNodeRuntime();
 
-// Run the pure CLI with injected dependencies
+// Run the pure CLI with injected dependencies - pass full argv for Commander
 try {
-  const exitCode = await program(argv, ctx);
+  const exitCode = await program(process.argv, ctx);
   process.exit(exitCode || 0);
 } catch (error) {
   console.error(error?.stack || error);

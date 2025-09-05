@@ -1,56 +1,46 @@
 /**
  * Wesley CLI Program
- * PURE command routing - NO generator imports!
- * Everything through dependency injection
+ * Uses Commander with auto-registration
+ * Commands register themselves when imported
  */
 
+import { Command } from 'commander';
+import { WesleyCommand } from './framework/WesleyCommand.mjs';
+
+// Import commands to trigger auto-registration
 import { GeneratePipelineCommand } from './commands/generate.mjs';
 
 export async function program(argv, ctx) {
-  const command = argv[0];
-  const args = argv.slice(1);
+  // Create commands with context (auto-registers them)
+  new GeneratePipelineCommand(ctx);
   
-  // Command routing without any imports
-  const commands = {
-    'generate': () => new GeneratePipelineCommand(ctx),
-    '--version': () => ({
-      run: async () => {
-        console.log('Wesley CLI v0.1.0');
-        return 0;
-      }
-    }),
-    '-v': () => ({
-      run: async () => {
-        console.log('Wesley CLI v0.1.0');
-        return 0;
-      }
-    }),
-    '--help': () => ({
-      run: async () => {
-        console.log('Wesley - GraphQL → Everything');
-        console.log('');
-        console.log('Commands:');
-        console.log('  generate <schema>  Generate SQL, tests, and more from GraphQL');
-        console.log('');
-        console.log('Options:');
-        console.log('  --version, -v     Show version');
-        console.log('  --help            Show this help');
-        return 0;
-      }
-    })
-  };
+  // TODO: Add other commands when they're updated
+  // new ModelsCommand(ctx);
+  // new TypeScriptCommand(ctx);
+  // new ZodCommand(ctx);
   
-  // Default to help if no command
-  const cmdFactory = commands[command] || commands['--help'];
-  const cmd = cmdFactory();
+  // Create main program
+  const program = new Command()
+    .name('wesley')
+    .version('0.1.0')
+    .description('Wesley - GraphQL → Everything\n"Make it so, schema."')
+    .option('-v, --verbose', 'Verbose output')
+    .option('--debug', 'Debug mode with stack traces')
+    .option('-q, --quiet', 'Suppress all output')
+    .option('--json', 'Output JSON');
   
+  // Register all commands from the registry
+  WesleyCommand.registerAll(program);
+  
+  // Parse and execute
   try {
-    return await cmd.run(args);
+    await program.parseAsync(argv, { from: 'node' });
+    return 0;
   } catch (error) {
-    if (ctx.logger) {
-      ctx.logger.error(error);
-    } else {
-      console.error(error);
+    // Error handling is done in WesleyCommand.execute()
+    // This catch is for any Commander-level errors
+    if (!program.opts().quiet) {
+      console.error('Command error:', error.message);
     }
     return 1;
   }

@@ -1,44 +1,163 @@
 /**
- * Generate Command
- * PURE - No imports from generators or host-node
- * Everything through ctx
+ * Generate Command - Full Pipeline
+ * Uses Commander for parsing + DI for execution
+ * Auto-registers on import
  */
 
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 
 export class GeneratePipelineCommand extends WesleyCommand {
   constructor(ctx) {
-    super(ctx);
-    this.name = 'generate';
+    super(ctx, 'generate', 'Generate SQL, tests, and more from GraphQL schema');
+    this.requiresSchema = true;
   }
   
-  async run(argv) {
-    const logger = this.makeLogger({}, { cmd: 'generate' });
-    
-    // Parse args (simplified for now)
-    const schemaPath = argv[0] || 'schema.graphql';
-    const schema = await this.readSchemaFromOptions({ schema: schemaPath });
+  // Configure Commander options
+  configureCommander(cmd) {
+    return cmd
+      .option('-s, --schema <path>', 'GraphQL schema file. Use "-" for stdin', 'schema.graphql')
+      .option('--stdin', 'Read schema from stdin (alias for --schema -)')
+      .option('--emit-bundle', 'Emit .wesley/ evidence bundle')
+      .option('--supabase', 'Enable Supabase features (RLS tests)')
+      .option('--out-dir <dir>', 'Output directory', 'out')
+      .option('-v, --verbose', 'More logs (level=debug)')
+      .option('--debug', 'Debug output with stack traces')
+      .option('-q, --quiet', 'Silence logs (level=silent)')
+      .option('--json', 'Emit newline-delimited JSON logs')
+      .option('--log-level <level>', 'One of: error|warn|info|debug|trace')
+      .option('--show-plan', 'Display execution plan before running');
+  }
 
+  async executeCore(context) {
+    const { schemaContent, schemaPath, options, logger } = context;
+    
+    // Handle --stdin convenience flag
+    if (options.stdin) {
+      options.schema = '-';
+    }
+    
     logger.info({ schema: schemaPath }, 'Parsing schema...');
 
-    // Use injected generators
-    const { generators, writer } = this.ctx;
+    // Use injected generators and writer
+    const { generators, writer, planner, runner } = this.ctx;
     
+    // Check if we have what we need
     if (!generators || !generators.sql) {
-      logger.error('SQL generator not available');
-      return;
+      const err = new Error('SQL generator not available');
+      err.code = 'GENERATION_FAILED';
+      throw err;
     }
 
-    // Generate DDL using injected generator
-    const ddlResult = generators.sql.emitDDL({ schema });
+    // If T.A.S.K.S. and S.L.A.P.S. are available, use them
+    if (planner && runner && planner.buildPlan && runner.run) {
+      return await this.executeWithTasksAndSlaps(context);
+    }
+
+    // Otherwise, simple sequential execution
+    const artifacts = [];
     
-    // Write files using injected writer
-    if (writer && writer.writeFiles) {
-      await writer.writeFiles(ddlResult.files || [], 'out');
+    // Parse schema (would use real parser)
+    const ir = { schema: schemaContent, tables: [] };
+    
+    // Generate DDL
+    const ddlResult = generators.sql.emitDDL({ schema: schemaContent });
+    if (ddlResult && ddlResult.files) {
+      artifacts.push(...ddlResult.files);
     }
     
-    logger.info('✨ Generated DDL');
+    // Generate RLS if Supabase flag
+    if (options.supabase && generators.sql.emitRLS) {
+      const rlsResult = generators.sql.emitRLS({ schema: schemaContent });
+      if (rlsResult && rlsResult.files) {
+        artifacts.push(...rlsResult.files);
+      }
+    }
+    
+    // Generate tests
+    if (generators.tests && generators.tests.emitPgTap) {
+      const testResult = generators.tests.emitPgTap({ schema: schemaContent });
+      if (testResult && testResult.files) {
+        artifacts.push(...testResult.files);
+      }
+    }
+    
+    // Write files
+    if (writer && writer.writeFiles) {
+      await writer.writeFiles(artifacts, options.outDir);
+    }
+    
+    // Output results
+    if (!options.quiet && !options.json) {
+      logger.info('');
+      logger.info('✨ Generated:');
+      for (const file of artifacts) {
+        logger.info(`  ✓ ${file.name}`);
+      }
+      logger.info('');
+    }
+    
+    return {
+      artifacts: artifacts.length,
+      outDir: options.outDir
+    };
+  }
+
+  async executeWithTasksAndSlaps(context) {
+    const { schemaContent, options, logger } = context;
+    const { planner, runner, generators, writer } = this.ctx;
+    
+    // Build task graph
+    const nodes = [
+      { id: 'parse', op: 'parse_schema', args: { sdl: schemaContent } },
+      { id: 'validate', op: 'validate_ir', needs: ['parse'] },
+      { id: 'gen_ddl', op: 'emit_ddl', needs: ['validate'] },
+      { id: 'gen_rls', op: 'emit_rls', needs: ['validate'], skip: !options.supabase },
+      { id: 'gen_tests', op: 'emit_tests', needs: ['validate'] },
+      { id: 'write', op: 'write_files', needs: ['gen_ddl', 'gen_rls', 'gen_tests'], args: { out: options.outDir } }
+    ].filter(n => !n.skip);
+    
+    const edges = [];
+    for (const node of nodes) {
+      if (node.needs) {
+        for (const dep of node.needs) {
+          edges.push([dep, node.id]);
+        }
+      }
+    }
+    
+    const plan = planner.buildPlan(nodes, edges, { versions: {} });
+    
+    if (options.showPlan) {
+      logger.info({ plan }, 'Execution plan:');
+    }
+    
+    // Define handlers
+    const handlers = {
+      parse_schema: async (n) => ({ ast: this.ctx.parsers.graphql.parse(n.args.sdl) }),
+      validate_ir: async (n, deps) => ({ ir: { tables: [] } }), // TODO: Real validation
+      emit_ddl: async (n, deps) => generators.sql.emitDDL(deps.validate.ir),
+      emit_rls: async (n, deps) => generators.sql.emitRLS(deps.validate.ir),
+      emit_tests: async (n, deps) => generators.tests.emitPgTap(deps.validate.ir),
+      write_files: async (n, deps) => {
+        const artifacts = [
+          ...(deps.gen_ddl?.files || []),
+          ...(deps.gen_rls?.files || []),
+          ...(deps.gen_tests?.files || [])
+        ];
+        return writer.writeFiles(artifacts, n.args.out);
+      }
+    };
+    
+    // Execute with S.L.A.P.S.
+    const result = await runner.run(plan, { handlers, logger });
+    
+    if (!options.quiet && !options.json) {
+      logger.info('✨ Generation complete!');
+    }
+    
+    return result;
   }
 }
 
+// Export for testing
 export default GeneratePipelineCommand;
