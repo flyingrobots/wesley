@@ -38,7 +38,8 @@ export class GeneratePipelineCommand extends WesleyCommand {
     }
     
     // Safety: require clean git working tree unless explicitly allowed
-    if (shouldEnforceClean(options) && !options.allowDirty) {
+    const env = this.ctx.env || {};
+    if (shouldEnforceClean(env, options) && !options.allowDirty) {
       try { await assertCleanGit(); } catch (e) { e.code = e.code || 'DIRTY_WORKTREE'; throw e; }
     }
 
@@ -178,8 +179,8 @@ export class GeneratePipelineCommand extends WesleyCommand {
 export default GeneratePipelineCommand;
 
 // Utilities
-function shouldEnforceClean(options) {
-  const policy = (process?.env?.WESLEY_GIT_POLICY || 'emit').toLowerCase();
+function shouldEnforceClean(env, options) {
+  const policy = (env?.WESLEY_GIT_POLICY || 'emit').toLowerCase();
   if (policy === 'off') return false;
   if (policy === 'strict') return true;
   // default policy: enforce only when producing bundle/certs

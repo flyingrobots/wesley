@@ -26,7 +26,8 @@ export class PlanCommand extends WesleyCommand {
     const { options, schemaContent, logger } = context;
 
     // Enforce clean tree only in strict policy; default: allow
-    if (shouldEnforceCleanPlan() && !options.allowDirty) {
+    const env = this.ctx.env || {};
+    if (shouldEnforceCleanPlan(env) && !options.allowDirty) {
       try { await assertCleanGit(); } catch (e) { e.code = e.code || 'DIRTY_WORKTREE'; throw e; }
     }
 
@@ -193,8 +194,8 @@ function emitMigrations(plan) {
 export default PlanCommand;
 
 // Git cleanliness check
-function shouldEnforceCleanPlan() {
-  const policy = (process?.env?.WESLEY_GIT_POLICY || 'emit').toLowerCase();
+function shouldEnforceCleanPlan(env) {
+  const policy = (env?.WESLEY_GIT_POLICY || 'emit').toLowerCase();
   return policy === 'strict';
 }
 async function assertCleanGit() {
