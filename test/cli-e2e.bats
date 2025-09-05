@@ -5,7 +5,7 @@
 load 'helpers'
 
 setup() {
-    export CLI_PATH="$BATS_TEST_DIRNAME/../packages/wesley-cli/wesley.mjs"
+    export CLI_PATH="$BATS_TEST_DIRNAME/../packages/wesley-host-node/bin/wesley.mjs"
     export TEMP_DIR="$(mktemp -d)"
     export RLS_SCHEMA="$BATS_TEST_DIRNAME/fixtures/rls-schema.graphql"
 }

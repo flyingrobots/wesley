@@ -3,6 +3,10 @@
  * Generates typed Supabase client wrapper with RLS helpers and CRUD operations
  */
 
+// Re-export DDL generator with the name expected by CLI
+export { PostgreSQLGenerator } from './ddl.mjs';
+export { PgTAPTestGenerator } from './test.mjs';
+
 export class SupabaseGenerator {
   constructor(evidenceMap) {
     this.evidenceMap = evidenceMap;

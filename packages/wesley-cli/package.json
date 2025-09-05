@@ -3,12 +3,12 @@
   "version": "0.1.0",
   "type": "module",
   "description": "Wesley CLI - GraphQL to Everything",
-  "bin": {
-    "wesley": "./wesley.mjs"
+  "exports": {
+    ".": "./src/index.mjs",
+    "./src/commands": "./src/commands.mjs",
+    "./src/main.mjs": "./src/main.mjs"
   },
-  "exports": "./wesley.mjs",
   "files": [
-    "wesley.mjs",
     "src/"
   ],
   "engines": {
@@ -21,7 +21,6 @@
   },
   "dependencies": {
     "@wesley/core": "workspace:*",
-    "@wesley/host-node": "workspace:*",
     "ajv": "^8.12.0",
     "ajv-formats": "^2.1.1",
     "commander": "^14.0.0"

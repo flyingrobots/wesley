@@ -18,16 +18,12 @@ export { WesleyFileWriter } from './adapters/WesleyFileWriter.mjs';
 // Import GraphQLAdapter for use in GraphQLSchemaParser
 import { GraphQLAdapter } from './adapters/GraphQLAdapter.mjs';
 
-// Re-export generators from core that CLI expects
-// TODO: These should probably be imported directly from core by the CLI
-import {
-  PostgreSQLGenerator,
-  PgTAPTestGenerator,
-  ModelGenerator,
-  Schema,
-  Table,
-  Field
-} from '@wesley/core';
+// Re-export generators from proper packages
+import { PostgreSQLGenerator, PgTAPTestGenerator } from '@wesley/generator-supabase';
+import { ModelGenerator } from '@wesley/generator-js';
+
+// Import core domain models
+import { Schema, Table, Field } from '@wesley/core';
 
 export { PostgreSQLGenerator, PgTAPTestGenerator, ModelGenerator };
 

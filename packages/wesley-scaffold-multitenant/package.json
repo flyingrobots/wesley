@@ -1,0 +1,32 @@
+{
+  "name": "@wesley/scaffold-multitenant",
+  "version": "0.1.0",
+  "description": "Wesley Multi-tenant SaaS Scaffold - Production-ready GraphQL schema and CLI",
+  "type": "module",
+  "main": "src/index.mjs",
+  "exports": {
+    ".": "./src/index.mjs"
+  },
+  "files": [
+    "src",
+    "templates"
+  ],
+  "scripts": {
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@wesley/core": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^1.0.0"
+  },
+  "keywords": [
+    "wesley",
+    "scaffold",
+    "multitenant",
+    "saas",
+    "graphql-schema"
+  ],
+  "author": "Wesley Team",
+  "license": "MIT"
+}

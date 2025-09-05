@@ -1,4 +1,3 @@
-import { GraphQLSchemaParser } from '@wesley/host-node';
 import { TypeScriptGenerator } from '@wesley/core';
 import { FileOutputGeneratorCommand } from '../framework/FileOutputGeneratorCommand.mjs';
 

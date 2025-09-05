@@ -21,7 +21,17 @@
     "wesley": "node packages/wesley-host-node/bin/wesley.mjs",
     "ci": "pnpm validate && pnpm generate:example && pnpm exec wesley validate-bundle --bundle example/.wesley --schemas schemas/"
   },
-  "keywords": ["graphql", "sql", "database", "migrations", "supabase", "schema", "codegen", "postgresql", "schema-first"],
+  "keywords": [
+    "graphql",
+    "sql",
+    "database",
+    "migrations",
+    "supabase",
+    "schema",
+    "codegen",
+    "postgresql",
+    "schema-first"
+  ],
   "author": "Captain James",
   "license": "MIT",
   "repository": {
@@ -34,5 +44,8 @@
   "homepage": "https://github.com/jameskerr/wesley#readme",
   "engines": {
     "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@supabase/pg-parser": "^0.1.3"
   }
 }

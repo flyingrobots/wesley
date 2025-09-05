@@ -1,4 +1,3 @@
-import { GraphQLSchemaParser } from '@wesley/host-node';
 import { ZodGenerator } from '@wesley/core';
 import { FileOutputGeneratorCommand } from '../framework/FileOutputGeneratorCommand.mjs';
 

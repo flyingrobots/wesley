@@ -10,21 +10,9 @@ export { DirectiveProcessor } from './domain/Directives.mjs';
 // Domain Events
 export * from './domain/Events.mjs';
 
-// Domain Generators (core business logic)
-export { PostgreSQLGenerator } from './domain/generators/PostgreSQLGenerator.mjs';
-export { PgTAPTestGenerator } from './domain/generators/PgTAPTestGenerator.mjs';
-export { RPCFunctionGenerator } from './domain/generators/RPCFunctionGenerator.mjs';
-export { MigrationDiffer } from './domain/generators/MigrationDiffer.mjs';
-export { ModelGenerator } from './domain/generators/ModelGenerator.mjs';
-export { ZodGenerator } from './domain/generators/ZodGenerator.mjs';
-export { TypeScriptGenerator } from './domain/generators/TypeScriptGenerator.mjs';
+// Note: Generators moved to dedicated packages per ENSIGN reorganization
 
-// SQL Execution Components
-export { 
-  SQLExecutor, 
-  PostgreSQLConnection, 
-  SQLOperation 
-} from './domain/executor/SQLExecutor.mjs';
+// Note: SQLExecutor moved to host-node adapters per ENSIGN reorganization
 
 export { 
   MigrationExplainer, 
@@ -78,5 +66,4 @@ export { FileSystemPort } from './ports/fs.mjs';
 export { LoggerPort } from './ports/Logger.mjs';
 export { ClockPort, SystemClock } from './ports/clock.mjs';
 
-// Application Services
-export { InProcessCompiler } from './compiler/inprocess.mjs';
+// Note: Compiler services moved to host-node adapters per ENSIGN reorganization

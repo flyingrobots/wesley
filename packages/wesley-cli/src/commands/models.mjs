@@ -1,5 +1,3 @@
-import { GraphQLAdapter } from '@wesley/host-node';
-import { ModelGenerator } from '@wesley/core';
 import { GeneratorCommand } from '../framework/GeneratorCommand.mjs';
 
 export class ModelsCommand extends GeneratorCommand {

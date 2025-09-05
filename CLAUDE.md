@@ -48,6 +48,64 @@ pnpm test:coverage
 
 ## Architecture
 
+Wesley follows **hexagonal architecture** (ports and adapters pattern) with strict separation of concerns across packages.
+
+### Hexagonal Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    wesley-core                          │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │              Domain Layer                       │   │
+│  │  • Business logic (Schema, Table, Field)       │   │
+│  │  • Domain services & validators                 │   │
+│  │  • Zero platform dependencies                  │   │
+│  └─────────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │              Ports Layer                        │   │
+│  │  • Interfaces for external systems             │   │
+│  │  • Logger, FileSystem, Parser ports            │   │
+│  └─────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────┘
+              ↑                           ↑
+              │                           │
+┌─────────────────────┐         ┌─────────────────────┐
+│    wesley-cli       │         │  wesley-host-node   │
+│ ┌─────────────────┐ │         │ ┌─────────────────┐ │
+│ │  CLI Framework  │ │         │ │   Adapters      │ │
+│ │  • Commands     │ │         │ │  • NodeFileSystem│ │
+│ │  • Framework    │ │         │ │  • PinoLogger   │ │
+│ │  • NO platform  │ │         │ │  • GraphQL      │ │
+│ │    dependencies │ │         │ │  • PostgreSQL   │ │
+│ └─────────────────┘ │         │ └─────────────────┘ │
+└─────────────────────┘         │ ┌─────────────────┐ │
+                                │ │   Entry Point   │ │
+                                │ │  bin/wesley.mjs │ │
+                                │ │ (Node.js only)  │ │
+                                │ └─────────────────┘ │
+                                └─────────────────────┘
+```
+
+### **CRITICAL: CLI Entry Point Architecture**
+
+The CLI executable is **intentionally NOT in wesley-cli package**. Here's why:
+
+- **wesley-cli**: Pure, platform-agnostic command framework
+- **wesley-host-node**: Node.js-specific executable that imports CLI framework
+- **Future**: wesley-host-bun, wesley-host-deno for other runtimes
+
+This enables true portability - the same CLI logic works across Node.js, Bun, Deno, browsers.
+
+**Entry Points by Runtime:**
+```bash
+packages/wesley-host-node/bin/wesley.mjs    # ← THE actual executable
+packages/wesley-host-bun/bin/wesley.mjs     # Future: Bun runtime  
+packages/wesley-host-deno/bin/wesley.mjs    # Future: Deno runtime
+```
+
+**Why This Seems Counter-Intuitive:**
+Most CLIs put the executable in the main package. Wesley's hexagonal approach separates portable logic from runtime-specific execution for maximum flexibility.
+
 ### Package Structure
 - **@wesley/core**: Domain logic, generators, and IR (Intermediate Representation)
   - Pure domain models (Schema, Table, Field, etc.)

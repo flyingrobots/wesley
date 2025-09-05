@@ -14,8 +14,8 @@ setup() {
     export TEST_TEMP_DIR
     cd "$TEST_TEMP_DIR"
     
-    # Set CLI path relative to original directory
-    CLI_PATH="$BATS_TEST_DIRNAME/../wesley.mjs"
+    # Set CLI path to the proper location after ENSIGN reorganization
+    CLI_PATH="$BATS_TEST_DIRNAME/../../wesley-host-node/bin/wesley.mjs"
     export CLI_PATH
 }
 

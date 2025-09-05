@@ -1,0 +1,38 @@
+{
+  "name": "@wesley/tasks",
+  "version": "0.1.0",
+  "description": "Wesley T.A.S.K.S. - Task Abstraction, Scheduling, and Kernel System",
+  "type": "module",
+  "main": "src/index.mjs",
+  "exports": {
+    ".": "./src/index.mjs"
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "test": "vitest"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "vitest": "^1.0.0"
+  },
+  "peerDependencies": {},
+  "keywords": [
+    "wesley",
+    "task-scheduling",
+    "dependency-resolution",
+    "orchestration"
+  ],
+  "author": "Wesley Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wesleydev/wesley.git",
+    "directory": "packages/wesley-tasks"
+  },
+  "homepage": "https://github.com/wesleydev/wesley#readme",
+  "bugs": {
+    "url": "https://github.com/wesleydev/wesley/issues"
+  }
+}

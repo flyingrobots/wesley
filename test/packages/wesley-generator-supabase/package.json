@@ -1,0 +1,40 @@
+{
+  "name": "@wesley/generator-supabase",
+  "version": "0.1.0",
+  "description": "Wesley Supabase/PostgreSQL Generators - DDL, RLS, and pgTAP tests",
+  "type": "module",
+  "main": "src/index.mjs",
+  "exports": {
+    ".": "./src/index.mjs"
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@wesley/core": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^1.0.0"
+  },
+  "keywords": [
+    "wesley",
+    "supabase",
+    "postgresql",
+    "sql-generation",
+    "rls-policies"
+  ],
+  "author": "Wesley Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wesleydev/wesley.git",
+    "directory": "packages/wesley-generator-supabase"
+  },
+  "homepage": "https://github.com/wesleydev/wesley#readme",
+  "bugs": {
+    "url": "https://github.com/wesleydev/wesley/issues"
+  }
+}

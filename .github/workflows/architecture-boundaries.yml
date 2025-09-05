@@ -1,0 +1,195 @@
+name: Architecture Boundary Enforcement
+
+on:
+  push:
+    branches: [ main, develop, 'feature/*', 'fix/*' ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  enforce-boundaries:
+    runs-on: ubuntu-latest
+    name: Enforce Hexagonal Architecture Boundaries
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'pnpm'
+    
+    - name: Install pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+    
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+    
+    - name: Install dependency-cruiser
+      run: pnpm add -D dependency-cruiser
+    
+    - name: Check architecture boundaries
+      run: |
+        echo "🏗️  Checking hexagonal architecture boundaries..."
+        pnpm exec depcruise --config .dependency-cruiser.mjs packages/
+        
+    - name: Generate architecture diagram
+      run: |
+        echo "📊 Generating architecture diagram..."
+        pnpm exec depcruise --config .dependency-cruiser.mjs \
+          --output-type archi packages/ > architecture.svg
+        
+    - name: Upload architecture diagram
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: architecture-diagram
+        path: architecture.svg
+        retention-days: 30
+    
+    - name: Check package.json dependencies
+      run: |
+        echo "📦 Validating package.json dependencies..."
+        
+        # Core should not depend on Node.js specific packages
+        if grep -E '"(fs-extra|path|os|child_process)"' packages/wesley-core/package.json; then
+          echo "❌ wesley-core should not have Node.js dependencies"
+          exit 1
+        fi
+        
+        # CLI should not depend on host adapter
+        if grep -E '"@wesley/host-node"' packages/wesley-cli/package.json; then
+          echo "❌ wesley-cli should not depend on host adapter"
+          exit 1
+        fi
+        
+        echo "✅ package.json dependencies are valid"
+    
+    - name: Validate import statements
+      run: |
+        echo "🔍 Checking import statements for boundary violations..."
+        
+        # Check for Node.js imports in core
+        if find packages/wesley-core/src -name "*.mjs" -exec grep -l "from ['\"]fs['\"]" {} \;; then
+          echo "❌ Found Node.js fs imports in wesley-core"
+          exit 1
+        fi
+        
+        if find packages/wesley-core/src -name "*.mjs" -exec grep -l "from ['\"]path['\"]" {} \;; then
+          echo "❌ Found Node.js path imports in wesley-core"
+          exit 1
+        fi
+        
+        # Check CLI doesn't import from host
+        if find packages/wesley-cli/src -name "*.mjs" -exec grep -l "from ['\"]@wesley/host-node" {} \;; then
+          echo "❌ Found host-node imports in wesley-cli"
+          exit 1
+        fi
+        
+        echo "✅ Import statements follow architecture boundaries"
+    
+    - name: Check for process usage in core
+      run: |
+        echo "🔍 Checking for process usage in core domain..."
+        
+        if find packages/wesley-core/src -name "*.mjs" -exec grep -l "process\." {} \;; then
+          echo "❌ Found process usage in wesley-core"
+          echo "Core domain should be platform-agnostic"
+          exit 1
+        fi
+        
+        echo "✅ Core domain is platform-agnostic"
+    
+    - name: Validate ENSIGN structure
+      run: |
+        echo "🏛️  Validating ENSIGN package structure..."
+        
+        # Check that all required packages exist
+        required_packages=(
+          "wesley-core"
+          "wesley-host-node" 
+          "wesley-cli"
+          "wesley-tasks"
+          "wesley-slaps"
+          "wesley-generator-supabase"
+          "wesley-generator-js"
+          "wesley-scaffold-multitenant"
+          "wesley-stack-supabase-nextjs"
+        )
+        
+        for package in "${required_packages[@]}"; do
+          if [ ! -d "packages/$package" ]; then
+            echo "❌ Missing required package: $package"
+            exit 1
+          fi
+          
+          if [ ! -f "packages/$package/package.json" ]; then
+            echo "❌ Missing package.json for: $package"
+            exit 1
+          fi
+          
+          if [ ! -d "packages/$package/src" ]; then
+            echo "❌ Missing src directory for: $package"
+            exit 1
+          fi
+        done
+        
+        echo "✅ ENSIGN package structure is valid"
+    
+    - name: Generate boundary report
+      if: always()
+      run: |
+        echo "📋 Generating architecture boundary report..."
+        
+        cat > boundary-report.md << 'EOF'
+        # Architecture Boundary Report
+        
+        ## ENSIGN Reorganization Status
+        
+        ### Completed ✅
+        - Core domain extracted from god module
+        - Generators moved to dedicated packages
+        - CLI and Node.js code evicted from core
+        - T.A.S.K.S. and S.L.A.P.S. orchestration implemented
+        - Package boundaries defined and enforced
+        
+        ### Package Structure
+        
+        ```
+        wesley/
+        ├── packages/
+        │   ├── wesley-core/              # Pure domain logic
+        │   ├── wesley-host-node/         # Node.js adapters
+        │   ├── wesley-cli/               # Platform-agnostic CLI
+        │   ├── wesley-tasks/             # Task scheduling system
+        │   ├── wesley-slaps/             # PostgreSQL execution engine
+        │   ├── wesley-generator-supabase/# Supabase/PostgreSQL generators
+        │   ├── wesley-generator-js/      # JavaScript/TypeScript generators
+        │   ├── wesley-scaffold-multitenant/ # Multi-tenant scaffold
+        │   └── wesley-stack-supabase-nextjs/ # Full-stack Supabase template
+        ```
+        
+        ### Dependency Rules
+        
+        1. **Core** → Only other core modules (hexagonal center)
+        2. **Adapters** → Can use core + platform libraries
+        3. **Generators** → Can use core, no cross-dependencies
+        4. **T.A.S.K.S.** → Independent scheduling system
+        5. **S.L.A.P.S.** → Can coordinate with T.A.S.K.S.
+        
+        Generated at: $(date)
+        EOF
+        
+    - name: Upload boundary report
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: boundary-report
+        path: boundary-report.md
+        retention-days: 90

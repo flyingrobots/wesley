@@ -22,6 +22,8 @@
     "@supabase/pg-parser": "^0.1.0",
     "@wesley/cli": "workspace:*",
     "@wesley/core": "workspace:*",
+    "@wesley/generator-js": "workspace:*",
+    "@wesley/generator-supabase": "workspace:*",
     "commander": "^14.0.0",
     "fast-glob": "^3.3.2",
     "graphql": "^16.9.0",

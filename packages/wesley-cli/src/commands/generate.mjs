@@ -1,12 +1,4 @@
 import { InProcessCompiler, SystemClock } from '@wesley/core';
-import {
-  GraphQLSchemaParser,
-  PostgreSQLGenerator,
-  PgTAPTestGenerator,
-  MigrationDiffEngine,
-  NodeFileSystem,
-  WesleyFileWriter
-} from '@wesley/host-node';
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 
 export class GeneratePipelineCommand extends WesleyCommand {
@@ -31,12 +23,18 @@ export class GeneratePipelineCommand extends WesleyCommand {
 
   makeCompiler(options) {
     const logger = this.makeLogger(options, { cmd: 'generate' });
+    const adapters = globalThis.__WESLEY_ADAPTERS;
+    
+    if (!adapters) {
+      throw new Error('Wesley adapters not available - main() was not called correctly');
+    }
+    
     const compiler = new InProcessCompiler({
-      parser: new GraphQLSchemaParser(),
-      sqlGenerator: new PostgreSQLGenerator(),
-      testGenerator: new PgTAPTestGenerator(),
-      diffEngine: new MigrationDiffEngine(),
-      fileSystem: new NodeFileSystem(),
+      parser: adapters.graphQLSchemaParser,
+      sqlGenerator: adapters.postgreSQLGenerator,
+      testGenerator: adapters.pgTAPTestGenerator,
+      diffEngine: adapters.migrationDiffEngine,
+      fileSystem: adapters.fileSystem,
       logger,
       clock: new SystemClock()
     });
@@ -45,8 +43,9 @@ export class GeneratePipelineCommand extends WesleyCommand {
 
   async executeCore(ctx) {
     const { schemaContent, options } = ctx;
+    const adapters = globalThis.__WESLEY_ADAPTERS;
 
-    const writer = new WesleyFileWriter(options);
+    const writer = adapters.wesleyFileWriter.create(options);
     const sha = writer.getCurrentSHA();
 
     const { logger, compiler } = this.makeCompiler(options);
