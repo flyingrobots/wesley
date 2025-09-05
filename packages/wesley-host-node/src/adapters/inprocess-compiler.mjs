@@ -1,5 +1,5 @@
 // wesley-core/src/compiler/inprocess.js
-import { CompilerPort, CompilerError } from '../ports/compiler.mjs';
+import { CompilerPort } from '@wesley/core';
 
 export class InProcessCompiler extends CompilerPort {
   constructor(deps) { 

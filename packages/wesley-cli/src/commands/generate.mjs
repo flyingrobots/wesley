@@ -1,100 +1,44 @@
-import { InProcessCompiler, SystemClock } from '@wesley/core';
+/**
+ * Generate Command
+ * PURE - No imports from generators or host-node
+ * Everything through ctx
+ */
+
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 
 export class GeneratePipelineCommand extends WesleyCommand {
-  constructor() {
-    super('generate', 'Generate SQL, tests, and more from GraphQL schema');
-    this.requiresSchema = true;
+  constructor(ctx) {
+    super(ctx);
+    this.name = 'generate';
   }
-
-  configureCommander(cmd) {
-    return cmd
-      .option('-s, --schema <path>', 'GraphQL schema file. Use "-" for stdin', 'schema.graphql')
-      .option('--stdin', 'Read schema from stdin (alias for --schema -)')
-      .option('--emit-bundle', 'Emit .wesley/ evidence bundle')
-      .option('--supabase', 'Enable Supabase features (RLS tests)')
-      .option('-v, --verbose', 'More logs (level=debug)')
-      .option('--debug', 'Debug output with stack traces')
-      .option('-q, --quiet', 'Silence logs (level=silent)')
-      .option('--json', 'Emit newline-delimited JSON logs')
-      .option('--log-level <level>', 'One of: error|warn|info|debug|trace')
-      .option('--show-plan', 'Display execution plan before running');
-  }
-
-  makeCompiler(options) {
-    const logger = this.makeLogger(options, { cmd: 'generate' });
-    const adapters = globalThis.__WESLEY_ADAPTERS;
+  
+  async run(argv) {
+    const logger = this.makeLogger({}, { cmd: 'generate' });
     
-    if (!adapters) {
-      throw new Error('Wesley adapters not available - main() was not called correctly');
+    // Parse args (simplified for now)
+    const schemaPath = argv[0] || 'schema.graphql';
+    const schema = await this.readSchemaFromOptions({ schema: schemaPath });
+
+    logger.info({ schema: schemaPath }, 'Parsing schema...');
+
+    // Use injected generators
+    const { generators, writer } = this.ctx;
+    
+    if (!generators || !generators.sql) {
+      logger.error('SQL generator not available');
+      return;
+    }
+
+    // Generate DDL using injected generator
+    const ddlResult = generators.sql.emitDDL({ schema });
+    
+    // Write files using injected writer
+    if (writer && writer.writeFiles) {
+      await writer.writeFiles(ddlResult.files || [], 'out');
     }
     
-    const compiler = new InProcessCompiler({
-      parser: adapters.graphQLSchemaParser,
-      sqlGenerator: adapters.postgreSQLGenerator,
-      testGenerator: adapters.pgTAPTestGenerator,
-      diffEngine: adapters.migrationDiffEngine,
-      fileSystem: adapters.fileSystem,
-      logger,
-      clock: new SystemClock()
-    });
-    return { logger, compiler };
-  }
-
-  async executeCore(ctx) {
-    const { schemaContent, options } = ctx;
-    const adapters = globalThis.__WESLEY_ADAPTERS;
-
-    const writer = adapters.wesleyFileWriter.create(options);
-    const sha = writer.getCurrentSHA();
-
-    const { logger, compiler } = this.makeCompiler(options);
-
-    const result = await compiler.compile(
-      { sdl: schemaContent, flags: { supabase: !!options.supabase, emitBundle: !!options['emit-bundle'] } },
-      { sha, outDir: options.outDir || 'out' }
-    );
-
-    await writer.writeBundle(result);
-
-    if (options.json) {
-      const output = {
-        success: true,
-        artifacts: result.artifacts || {},
-        scores: result.scores || null,
-        meta: result.meta || {},
-        timestamp: new Date().toISOString()
-      };
-      console.log(JSON.stringify(output, null, 2));
-    } else if (!options.quiet) {
-      console.log('');
-      console.log('✨ Generated:');
-      if (result.artifacts && result.artifacts.sql) console.log('  ✓ PostgreSQL DDL       → out/schema.sql');
-      if (result.artifacts && result.artifacts.typescript) console.log('  ✓ TypeScript Types     → out/types.ts');
-      if (result.artifacts && result.artifacts.tests) console.log('  ✓ pgTAP Tests          → tests/generated.sql');
-      if (result.artifacts && result.artifacts.migration) console.log('  ✓ Migration            → db/migrations/');
-      console.log('');
-
-      if (result.scores && result.scores.scores) {
-        console.log('📊 Scores:');
-        const { scs, mri, tci } = result.scores.scores;
-        if (typeof scs === 'number') console.log(`  SCS: ${(scs * 100).toFixed(1)}%`);
-        if (typeof mri === 'number') console.log(`  MRI: ${(mri * 100).toFixed(1)}%`);
-        if (typeof tci === 'number') console.log(`  TCI: ${(tci * 100).toFixed(1)}%`);
-        console.log('');
-        if (result.scores.readiness && result.scores.readiness.verdict) {
-          console.log(`🎯 Verdict: ${result.scores.readiness.verdict}`);
-        }
-      } else {
-        console.log('📊 Scores: (not available)');
-      }
-      console.log('');
-    }
-    return result;
+    logger.info('✨ Generated DDL');
   }
 }
 
 export default GeneratePipelineCommand;
-
-// Auto-register this command by creating an instance
-new GeneratePipelineCommand();

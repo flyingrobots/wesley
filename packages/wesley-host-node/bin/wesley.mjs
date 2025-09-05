@@ -1,10 +1,22 @@
 #!/usr/bin/env node
 /**
- * Wesley CLI Executable - Node.js host entry point
- * Dependency injects Node.js adapters into the platform-agnostic CLI library
+ * Wesley CLI - Node.js Host Entry Point
+ * This is the ONLY place where we compose everything
+ * This is where Node.js-specific code lives
  */
 
-import { main } from '@wesley/cli/src/main.mjs';
-import { createAdapters } from '../src/adapters/index.mjs';
+import { program } from '@wesley/cli/src/program.mjs';
+import { createNodeRuntime } from '../src/adapters/createNodeRuntime.mjs';
 
-await main(process.argv, createAdapters());
+// Compose at the edge
+const argv = process.argv.slice(2);
+const ctx = await createNodeRuntime();
+
+// Run the pure CLI with injected dependencies
+try {
+  const exitCode = await program(argv, ctx);
+  process.exit(exitCode || 0);
+} catch (error) {
+  console.error(error?.stack || error);
+  process.exit(1);
+}

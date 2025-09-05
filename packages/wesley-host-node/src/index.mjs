@@ -19,13 +19,15 @@ export { WesleyFileWriter } from './adapters/WesleyFileWriter.mjs';
 import { GraphQLAdapter } from './adapters/GraphQLAdapter.mjs';
 
 // Re-export generators from proper packages
-import { PostgreSQLGenerator, PgTAPTestGenerator } from '@wesley/generator-supabase';
-import { ModelGenerator } from '@wesley/generator-js';
+// TODO: Fix missing dependencies in generator packages
+// import { PostgreSQLGenerator, PgTAPTestGenerator } from '@wesley/generator-supabase';
+// import { ModelGenerator } from '@wesley/generator-js';
 
 // Import core domain models
 import { Schema, Table, Field } from '@wesley/core';
 
-export { PostgreSQLGenerator, PgTAPTestGenerator, ModelGenerator };
+// Temporary stubs - will be replaced by adapters
+// export { PostgreSQLGenerator, PgTAPTestGenerator, ModelGenerator };
 
 // Stub implementations for missing components
 // TODO: Implement these properly

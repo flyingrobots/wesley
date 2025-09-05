@@ -41,20 +41,19 @@ export class SQLDeparser {
     }
 
     // Handle different statement types
-    switch (true) {
-      case this.isCreateTable(stmt):
-        return this.deparseCreateTable(stmt);
-      case this.isCreateIndex(stmt):
-        return this.deparseCreateIndex(stmt);
-      case this.isCreatePolicy(stmt):
-        return this.deparseCreatePolicy(stmt);
-      case this.isAlterTable(stmt):
-        return this.deparseAlterTable(stmt);
-      case this.isComment(stmt):
-        return this.deparseComment(stmt);
-      default:
-        console.warn('SQLDeparser: Unknown statement type:', Object.keys(stmt));
-        return '';
+    if (this.isCreateTable(stmt)) {
+      return this.deparseCreateTable(stmt);
+    } else if (this.isCreateIndex(stmt)) {
+      return this.deparseCreateIndex(stmt);
+    } else if (this.isCreatePolicy(stmt)) {
+      return this.deparseCreatePolicy(stmt);
+    } else if (this.isAlterTable(stmt)) {
+      return this.deparseAlterTable(stmt);
+    } else if (this.isComment(stmt)) {
+      return this.deparseComment(stmt);
+    } else {
+      console.warn('SQLDeparser: Unknown statement type:', Object.keys(stmt));
+      return '';
     }
   }
 
