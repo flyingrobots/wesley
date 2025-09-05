@@ -86,6 +86,15 @@ export class GeneratePipelineCommand extends WesleyCommand {
       await writer.writeFiles(artifacts, options.outDir);
     }
     
+    // Persist snapshot of IR for future diffs
+    try {
+      if (this.ctx.fs && ir && ir.tables) {
+        await this.ctx.fs.write('.wesley/snapshot.json', JSON.stringify({ tables: ir.tables }, null, 2));
+      }
+    } catch (e) {
+      logger.warn('Could not write IR snapshot: ' + (e?.message || e));
+    }
+    
     // Output results
     if (!options.quiet && !options.json) {
       logger.info('');
