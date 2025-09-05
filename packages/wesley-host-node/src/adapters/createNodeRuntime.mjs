@@ -137,7 +137,7 @@ export async function createNodeRuntime() {
       graphql: {
         parse: (sdl) => {
           const adapter = new GraphQLAdapter();
-          return adapter.parseSDL(sdl);
+          return adapter.parseSDL(sanitizeGraphQL(sdl, process.env));
         }
       }
     },
@@ -168,5 +168,22 @@ export async function createNodeRuntime() {
     clock: { 
       now: () => new Date() 
     },
+    // Validators
+    validators: {
+      sanitizeGraphQL: (sdl) => sanitizeGraphQL(sdl, process.env)
+    }
   };
+}
+
+function sanitizeGraphQL(sdl, env) {
+  if (typeof sdl !== 'string') throw new Error('Schema content must be a string');
+  const max = parseInt(env?.WESLEY_MAX_SCHEMA_BYTES || '5242880', 10); // 5MB default
+  if (Buffer.byteLength(sdl, 'utf8') > max) {
+    const e = new Error(`Schema exceeds max size (${max} bytes)`);
+    e.code = 'EINPUTSIZE';
+    throw e;
+  }
+  // Strip BOM and null bytes
+  let out = sdl.replace(/^\uFEFF/, '').replace(/\u0000/g, '');
+  return out;
 }
