@@ -12,6 +12,10 @@ import { GeneratePipelineCommand } from './commands/generate.mjs';
 import { TransformPipelineCommand } from './commands/transform.mjs';
 import { PlanCommand } from './commands/plan.mjs';
 import { RehearseCommand } from './commands/rehearse.mjs';
+import { CertCreateCommand } from './commands/cert-create.mjs';
+import { CertSignCommand } from './commands/cert-sign.mjs';
+import { CertVerifyCommand } from './commands/cert-verify.mjs';
+import { CertBadgeCommand } from './commands/cert-badge.mjs';
 
 export async function program(argv, ctx) {
   // Create commands with context (auto-registers them)
@@ -19,6 +23,10 @@ export async function program(argv, ctx) {
   new TransformPipelineCommand(ctx);
   new PlanCommand(ctx);
   new RehearseCommand(ctx);
+  new CertCreateCommand(ctx);
+  new CertSignCommand(ctx);
+  new CertVerifyCommand(ctx);
+  new CertBadgeCommand(ctx);
   
   // TODO: Add other commands when they're updated
   // new ModelsCommand(ctx);
