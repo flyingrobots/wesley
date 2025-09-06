@@ -52,6 +52,10 @@ export class RehearseCommand extends WesleyCommand {
       dsn = dsn || defaultDsnFor('postgres', env);
     }
 
+    // Optional provider hooks from config
+    const hooks = this.ctx?.config?.realm?.hooks || {};
+    if (hooks.preUp) await runHook(hooks.preUp, logger);
+
     if (!dsn) {
       const e = new Error('No DSN provided for rehearsal. Pass --dsn or configure realm.dsn.');
       e.code = 'NO_DSN';
@@ -77,6 +81,7 @@ export class RehearseCommand extends WesleyCommand {
       };
       await this.ctx.fs.write('.wesley/realm.json', JSON.stringify(realm, null, 2));
       if (!options.json) logger.info('🕶️ REALM verdict: PASS');
+      if (hooks.postDown) await runHook(hooks.postDown, logger);
       if (options.json) this.ctx.stdout.write(JSON.stringify(realm, null, 2) + '\n');
       return realm;
     } catch (error) {
@@ -89,6 +94,7 @@ export class RehearseCommand extends WesleyCommand {
       };
       await this.ctx.fs.write('.wesley/realm.json', JSON.stringify(realm, null, 2));
       if (!options.json) logger.error('🕶️ REALM verdict: FAIL - ' + error.message);
+      if (hooks.postDown) try { await runHook(hooks.postDown, logger); } catch {}
       if (options.json) this.ctx.stdout.write(JSON.stringify(realm, null, 2) + '\n');
       const e = new Error('REALM rehearsal failed: ' + error.message);
       e.code = 'REALM_FAILED';
@@ -108,6 +114,16 @@ async function tryStartDocker(logger) {
     execSync('docker compose up -d postgres', { stdio: 'inherit' });
   } catch (e) {
     logger.warn('Could not start docker compose postgres: ' + (e?.message || e));
+  }
+}
+
+async function runHook(cmd, logger) {
+  try {
+    const { execSync } = await import('node:child_process');
+    logger.info(`🔧 realm hook: ${cmd}`);
+    execSync(cmd, { stdio: 'inherit' });
+  } catch (e) {
+    logger.warn('realm hook failed: ' + (e?.message || e));
   }
 }
 
