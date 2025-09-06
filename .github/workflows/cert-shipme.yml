@@ -1,0 +1,53 @@
+name: SHIPME Certificate
+
+on:
+  push:
+    branches: [ main, dev, 'feat/*', 'fix/*', 'milestone/*' ]
+    paths:
+      - 'packages/**'
+      - '.github/workflows/cert-shipme.yml'
+  pull_request:
+    paths:
+      - 'packages/**'
+      - '.github/workflows/cert-shipme.yml'
+
+jobs:
+  cert:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: 'pnpm' }
+      - run: pnpm install
+
+      - name: Transform
+        run: node packages/wesley-host-node/bin/wesley.mjs transform --schema example/ecommerce.graphql --out out
+
+      - name: Plan (write)
+        run: node packages/wesley-host-node/bin/wesley.mjs plan --schema example/ecommerce.graphql --write --out out
+
+      - name: REALM (rehearse docker Postgres)
+        uses: ./.github/workflows/reusable-realm-docker
+        if: false # placeholder if we convert to reusable workflow later
+
+      - name: Create SHIPME
+        run: node packages/wesley-host-node/bin/wesley.mjs cert-create --env production --out SHIPME.md
+
+      - name: Generate keypair
+        run: |
+          node -e "const {generateKeyPairSync}=require('crypto');const {writeFileSync}=require('fs');const {privateKey, publicKey}=generateKeyPairSync('ed25519'); writeFileSync('priv.pem', privateKey.export({type:'pkcs8',format:'pem'})); writeFileSync('pub.pem', publicKey.export({type:'spki',format:'pem'}));"
+
+      - name: Sign SHIPME
+        run: node packages/wesley-host-node/bin/wesley.mjs cert-sign --in SHIPME.md --key priv.pem --signer HOLMES
+
+      - name: Verify SHIPME
+        run: node packages/wesley-host-node/bin/wesley.mjs cert-verify --in SHIPME.md --pub pub.pem
+
+      - name: Upload SHIPME
+        uses: actions/upload-artifact@v4
+        with:
+          name: SHIPME
+          path: SHIPME.md
+

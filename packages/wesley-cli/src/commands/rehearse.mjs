@@ -15,9 +15,10 @@ export class RehearseCommand extends WesleyCommand {
       .option('-s, --schema <path>', 'GraphQL schema file. Use "-" for stdin', 'schema.graphql')
       .option('--stdin', 'Read schema from stdin (alias for --schema -)')
       .option('--dsn <url>', 'Database DSN for rehearsal')
-      .option('--provider <name>', 'realm provider: postgres|supabase', 'postgres')
+      .option('--provider <name>', 'realm provider: postgres|supabase')
       .option('--docker', 'Attempt to start docker compose service postgres')
       .option('--dry-run', 'Explain without executing')
+      .option('--keep', 'Keep temporary schema for inspection')
       .option('--timeout <ms>', 'Timeout in ms', '300000')
       .option('--json', 'Emit JSON');
   }
@@ -41,7 +42,7 @@ export class RehearseCommand extends WesleyCommand {
       return { dryRun: true, steps: explain.steps.length };
     }
 
-    const provider = (options.provider || 'postgres').toLowerCase();
+    const provider = (options.provider || this.ctx?.config?.realm?.provider || 'postgres').toLowerCase();
     const env = this.ctx.env || {};
     let dsn = options.dsn || this.ctx?.config?.realm?.dsn || defaultDsnFor(provider, env);
 
@@ -151,4 +152,3 @@ function lockFor(step){ switch(step.op){ case 'create_table': return L('ACCESS E
 function L(name,blocksWrites,blocksReads){return {name,blocksWrites,blocksReads};}
 
 export default RehearseCommand;
-
