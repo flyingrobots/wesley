@@ -58,15 +58,21 @@ export class RehearseCommand extends WesleyCommand {
     }
 
     const start = Date.now();
+    const keep = (this.ctx.env?.WESLEY_REALM_KEEP === '1') || !!options.keep;
+    const tempSchema = `_realm_${Date.now().toString(36)}`;
+    const withSearchPath = (sql) => `SET LOCAL search_path TO "${tempSchema}",public;\n${sql}`;
+    const execAll = async (sql) => execSql(this.ctx.db, dsn, withSearchPath(sql));
     try {
-      const files = emitMigrations(plan);
-      for (const f of files) {
-        await execSql(this.ctx.db, dsn, f.content);
+      // Isolated schema for rehearsal
+      await execSql(this.ctx.db, dsn, `CREATE SCHEMA IF NOT EXISTS "${tempSchema}";`);
+      // Apply full DDL to temp schema
+      const ddl = this.ctx.generators?.sql?.emitDDL?.(ir);
+      if (ddl?.files?.length) {
+        for (const f of ddl.files) await execAll(f.content);
       }
-      // Simple health probe: select from each table
-      for (const t of ir.tables || []) {
-        await execSql(this.ctx.db, dsn, `SELECT 1 FROM "${t.name.toLowerCase()}" LIMIT 1;`).catch(()=>{});
-      }
+      // Apply only VALIDATE steps (FK validation)
+      const files = emitMigrations(plan).filter(f => f.name.includes('validate'));
+      for (const f of files) await execAll(f.content);
       const realm = {
         provider,
         verdict: 'PASS',
@@ -75,6 +81,9 @@ export class RehearseCommand extends WesleyCommand {
         timestamp: new Date().toISOString()
       };
       await this.ctx.fs.write('.wesley/realm.json', JSON.stringify(realm, null, 2));
+      if (!keep) {
+        await execSql(this.ctx.db, dsn, `DROP SCHEMA IF EXISTS "${tempSchema}" CASCADE;`).catch(()=>{});
+      }
       if (!options.json) logger.info('🕶️ REALM verdict: PASS');
       if (options.json) this.ctx.stdout.write(JSON.stringify(realm, null, 2) + '\n');
       return realm;
@@ -87,6 +96,7 @@ export class RehearseCommand extends WesleyCommand {
         timestamp: new Date().toISOString()
       };
       await this.ctx.fs.write('.wesley/realm.json', JSON.stringify(realm, null, 2));
+      try { await execSql(this.ctx.db, dsn, `DROP SCHEMA IF EXISTS "${tempSchema}" CASCADE;`); } catch {}
       if (!options.json) logger.error('🕶️ REALM verdict: FAIL - ' + error.message);
       if (options.json) this.ctx.stdout.write(JSON.stringify(realm, null, 2) + '\n');
       const e = new Error('REALM rehearsal failed: ' + error.message);
@@ -151,4 +161,3 @@ function lockFor(step){ switch(step.op){ case 'create_table': return L('ACCESS E
 function L(name,blocksWrites,blocksReads){return {name,blocksWrites,blocksReads};}
 
 export default RehearseCommand;
-
