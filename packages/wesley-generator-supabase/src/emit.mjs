@@ -8,12 +8,16 @@
  * @param {object} ir - { tables: [...] }
  */
 export function emitDDL(ir) {
-  const lines = [];
+  const q = (id) => '"' + String(id).replace(/"/g, '""') + '"';
+  const tname = (name) => String(name).toLowerCase();
 
-  const q = (id) => '"' + id.replace(/"/g, '""') + '"';
-  const tname = (name) => name.toLowerCase();
+  const tables = ir.tables || [];
+  const create = [];
+  const indexes = [];
+  const fks = [];
 
-  for (const table of ir.tables || []) {
+  // Pass 1: CREATE TABLE only (with PK/UNIQUE)
+  for (const table of tables) {
     const tbl = tname(table.name);
     const colLines = [];
     for (const col of table.columns || []) {
@@ -22,41 +26,34 @@ export function emitDDL(ir) {
       if (col.default) parts.push('DEFAULT ' + col.default);
       colLines.push('  ' + parts.join(' '));
     }
-    if (table.primaryKey) {
-      colLines.push(`  PRIMARY KEY (${q(table.primaryKey)})`);
-    }
-    // Unique constraints per unique column
-    for (const col of table.columns || []) {
-      if (col.unique) {
-        colLines.push(`  UNIQUE (${q(col.name)})`);
-      }
-    }
-    lines.push(`CREATE TABLE IF NOT EXISTS ${q(tbl)} (\n${colLines.join(',\n')}\n);`);
+    if (table.primaryKey) colLines.push(`  PRIMARY KEY (${q(table.primaryKey)})`);
+    for (const col of table.columns || []) if (col.unique) colLines.push(`  UNIQUE (${q(col.name)})`);
+    create.push(`CREATE TABLE IF NOT EXISTS ${q(tbl)} (\n${colLines.join(',\n')}\n);`);
+  }
 
-    // Indexes (concurrently)
+  // Pass 2: Indexes
+  for (const table of tables) {
+    const tbl = tname(table.name);
     for (const idx of table.indexes || []) {
       const idxName = idx.name || `idx_${tbl}_${(idx.columns || []).join('_')}`;
       const using = idx.using ? ` USING ${idx.using}` : '';
       const cols = (idx.columns || []).map((c) => q(c)).join(', ');
-      lines.push(`CREATE INDEX CONCURRENTLY IF NOT EXISTS ${q(idxName)} ON ${q(tbl)}${using} (${cols});`);
+      indexes.push(`CREATE INDEX CONCURRENTLY IF NOT EXISTS ${q(idxName)} ON ${q(tbl)}${using} (${cols});`);
     }
-    // Foreign keys (NOT VALID)
+  }
+
+  // Pass 3: FKs (NOT VALID)
+  for (const table of tables) {
+    const tbl = tname(table.name);
     for (const fk of table.foreignKeys || []) {
       const cname = `fk_${tbl}_${fk.column}`;
       const refTable = tname(fk.refTable);
-      lines.push(
-        `ALTER TABLE ${q(tbl)} ADD CONSTRAINT ${q(cname)} FOREIGN KEY (${q(fk.column)}) REFERENCES ${q(refTable)} (${q(fk.refColumn)}) NOT VALID;`
-      );
+      fks.push(`ALTER TABLE ${q(tbl)} ADD CONSTRAINT ${q(cname)} FOREIGN KEY (${q(fk.column)}) REFERENCES ${q(refTable)} (${q(fk.refColumn)}) NOT VALID;`);
     }
-    lines.push('');
   }
 
-  return {
-    label: 'ddl',
-    files: [
-      { name: 'schema.sql', content: lines.join('\n') }
-    ]
-  };
+  const content = [create.join('\n'), indexes.join('\n'), fks.join('\n')].filter(Boolean).join('\n\n') + '\n';
+  return { label: 'ddl', files: [{ name: 'schema.sql', content }] };
 }
 
 /**
