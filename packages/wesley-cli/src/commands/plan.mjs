@@ -16,6 +16,7 @@ export class PlanCommand extends WesleyCommand {
       .option('--stdin', 'Read schema from stdin (alias for --schema -)')
       .option('--out-dir <dir>', 'Output directory for migrations', 'out')
       .option('--explain', 'Show plan explanation')
+      .option('--radar', 'Show lock radar summary')
       .option('--map', 'Show mapping from GraphQL/IR changes to migration steps')
       .option('--allow-dirty', 'Allow running with a dirty git working tree (not recommended)')
       .option('--write', 'Write migration files to out-dir/migrations')
@@ -43,16 +44,27 @@ export class PlanCommand extends WesleyCommand {
 
     const plan = buildAdditivePlan(previous, current);
     const explain = explainPlan(plan);
+    const radar = buildLockRadar(explain, plan);
     const mapping = buildMapping(plan);
 
     if (options.json) {
-      this.ctx.stdout.write(JSON.stringify({ plan, explain, mapping }, null, 2) + '\n');
+      this.ctx.stdout.write(JSON.stringify({ plan, explain, mapping, radar }, null, 2) + '\n');
       return { phases: plan.phases.length, steps: explain.steps.length };
     }
 
     if (options.explain) {
       logger.info('🧭 Migration Plan (additive)');
       for (const line of explain.lines) logger.info(line);
+    }
+
+    if (options.radar && !options.json) {
+      logger.info('');
+      logger.info('🔭 Lock Radar');
+      for (const line of radar.lines) logger.info(line);
+      if (radar.notes?.length) {
+        logger.info('Notes:');
+        for (const n of radar.notes) logger.info(' - ' + n);
+      }
     }
 
     if (options.map && !options.json) {
@@ -191,6 +203,57 @@ function emitMigrations(plan) {
   if (expand.length) files.push({ name: '001_expand.sql', content: expand.join('\n') + '\n' });
   if (validate.length) files.push({ name: '002_validate.sql', content: validate.join('\n') + '\n' });
   return files;
+}
+
+// Build a compact summary of locks and phase impact
+function buildLockRadar(explain, plan) {
+  const counts = new Map();
+  let blocksReads = 0;
+  let blocksWrites = 0;
+  let accessExclusive = 0;
+  let cic = 0;
+  let fkNV = 0;
+  let fkValidate = 0;
+  for (const s of explain.steps) {
+    const name = s.lock?.name || 'UNKNOWN';
+    counts.set(name, (counts.get(name) || 0) + 1);
+    if (s.lock?.blocksReads) blocksReads++;
+    if (s.lock?.blocksWrites) blocksWrites++;
+    if (name === 'ACCESS EXCLUSIVE') accessExclusive++;
+    if (s.op === 'create_index_concurrently') cic++;
+    if (s.op === 'add_fk_not_valid') fkNV++;
+    if (s.op === 'validate_fk') fkValidate++;
+  }
+  // Phase summary
+  const phaseLines = [];
+  for (const ph of plan.phases) {
+    const phSteps = ph.steps.length;
+    phaseLines.push(`• ${ph.name}: ${phSteps} op(s)`);
+  }
+  // Order locks by perceived severity then count
+  const severity = ['ACCESS EXCLUSIVE', 'EXCLUSIVE', 'SHARE UPDATE EXCLUSIVE', 'SHARE ROW EXCLUSIVE', 'SHARE', 'ROW EXCLUSIVE', 'ROW SHARE', 'ACCESS SHARE', 'UNKNOWN'];
+  const lockLines = Array.from(counts.entries())
+    .sort((a,b)=>{
+      const ia = severity.indexOf(a[0]);
+      const ib = severity.indexOf(b[0]);
+      if (ia !== ib) return ia - ib;
+      return b[1] - a[1];
+    })
+    .map(([k,v]) => `${k}: ${v} ${bar(v)}`);
+  const lines = [
+    ...lockLines,
+    `blocks(writes): ${blocksWrites} | blocks(reads): ${blocksReads}`,
+    ...phaseLines
+  ];
+  const notes = [];
+  if (accessExclusive > 0) notes.push('ACCESS EXCLUSIVE detected — review plan.');
+  if (cic > 0) notes.push(`${cic} CREATE INDEX CONCURRENTLY`);
+  if (fkNV > 0 || fkValidate > 0) notes.push(`${fkNV} FK NOT VALID → ${fkValidate} VALIDATE`);
+  return { lines, notes, counts: Object.fromEntries(counts) };
+}
+function bar(n){
+  const max = Math.min(n, 10);
+  return max > 0 ? ' ' + '▓'.repeat(max) : '';
 }
 
 export default PlanCommand;

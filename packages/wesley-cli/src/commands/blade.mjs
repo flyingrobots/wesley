@@ -27,6 +27,7 @@ export class BladeCommand extends WesleyCommand {
       .option('--dsn <url>', 'Database DSN for rehearsal')
       .option('--docker', 'Attempt to start docker compose service postgres')
       .option('--dry-run', 'Rehearse dry run (no DB)')
+      .option('--radar', 'Show lock radar summary during plan')
       .option('--env <name>', 'Target environment', 'production')
       .option('--sign-key <path>', 'Private key (PEM) for signing')
       .option('--pub <path>', 'Public key (PEM) for verification')
@@ -47,7 +48,7 @@ export class BladeCommand extends WesleyCommand {
     // 2) Plan (explain)
     logger.info('🛡️  BLADE: plan (explain)');
     const plan = new PlanCommand(this.ctx);
-    await plan.execute({ schema: options.schema, outDir, explain: true, json: false });
+    await plan.execute({ schema: options.schema, outDir, explain: true, radar: !!options.radar, json: false });
 
     // 3) Rehearse (shadow)
     logger.info('🕶️  BLADE: rehearse (shadow)');
