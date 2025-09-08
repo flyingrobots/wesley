@@ -4,7 +4,7 @@ export class CertBadgeCommand extends WesleyCommand {
   constructor(ctx) {
     super(ctx, 'cert-badge', 'Print SHIPME.md badge line');
   }
-  configureCommander(cmd){ return cmd.option('--in <file>', 'Certificate file', 'SHIPME.md'); }
+  configureCommander(cmd){ return cmd.option('--in <file>', 'Certificate file', '.wesley/SHIPME.md'); }
   async executeCore({ options }){
     const md = await this.ctx.fs.read(options.in);
     const { json } = extractJsonBlock(md);
@@ -27,4 +27,3 @@ function extractJsonBlock(md) {
 }
 
 export default CertBadgeCommand;
-

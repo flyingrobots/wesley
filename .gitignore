@@ -16,4 +16,7 @@ out/
 db/migrations/
 tests/generated/
 .obsidian/
-
+demo/blade/*.key
+demo/blade/*.pub
+demo/blade/keys/*.key
+demo/blade/keys/*.pub

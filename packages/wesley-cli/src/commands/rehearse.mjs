@@ -167,4 +167,47 @@ function explainPlan(plan) {
 function lockFor(step){ switch(step.op){ case 'create_table': return L('ACCESS EXCLUSIVE', true, true); case 'add_column': return step.nullable!==false||step.default?L('SHARE ROW EXCLUSIVE',true,false):L('ACCESS EXCLUSIVE',true,true); case 'create_index_concurrently': return L('SHARE UPDATE EXCLUSIVE',true,false); case 'add_fk_not_valid': return L('SHARE ROW EXCLUSIVE',true,false); case 'validate_fk': return L('SHARE ROW EXCLUSIVE',true,false); default: return L('EXCLUSIVE',true,false);} }
 function L(name,blocksWrites,blocksReads){return {name,blocksWrites,blocksReads};}
 
+// Emit migration SQL files for rehearsal (mirrors plan.mjs)
+function emitMigrations(plan) {
+  const files = [];
+  const expand = [];
+  const validate = [];
+
+  const q = (id) => '"' + id.replace(/\"/g, '""') + '"';
+  const tname = (n) => n.toLowerCase();
+
+  for (const phase of plan.phases) {
+    for (const s of phase.steps) {
+      if (s.op === 'create_table') {
+        expand.push(`-- create table ${s.table}`);
+        // table DDL handled by full schema ddl; keep placeholder here
+      }
+      if (s.op === 'add_column') {
+        const parts = [`ALTER TABLE ${q(tname(s.table))} ADD COLUMN ${q(s.column)} ${s.type}`];
+        if (s.nullable === false && s.default) parts.push('DEFAULT ' + s.default);
+        // Add as nullable by default in expand phase
+        expand.push(parts.join(' ') + ';');
+      }
+      if (s.op === 'create_index_concurrently') {
+        const idxName = s.name || `idx_${tname(s.table)}_${(s.columns || []).join('_')}`;
+        const using = s.using ? ` USING ${s.using}` : '';
+        const cols = (s.columns || []).map((c)=> q(c)).join(', ');
+        expand.push(`CREATE INDEX CONCURRENTLY IF NOT EXISTS ${q(idxName)} ON ${q(tname(s.table))}${using} (${cols});`);
+      }
+      if (s.op === 'add_fk_not_valid') {
+        const cname = `fk_${tname(s.table)}_${s.column}`;
+        expand.push(`ALTER TABLE ${q(tname(s.table))} ADD CONSTRAINT ${q(cname)} FOREIGN KEY (${q(s.column)}) REFERENCES ${q(tname(s.refTable))} (${q(s.refColumn)}) NOT VALID;`);
+      }
+      if (s.op === 'validate_fk') {
+        const cname = `fk_${tname(s.table)}_${s.column}`;
+        validate.push(`ALTER TABLE ${q(tname(s.table))} VALIDATE CONSTRAINT ${q(cname)};`);
+      }
+    }
+  }
+
+  if (expand.length) files.push({ name: '001_expand.sql', content: expand.join('\n') + '\n' });
+  if (validate.length) files.push({ name: '002_validate.sql', content: validate.join('\n') + '\n' });
+  return files;
+}
+
 export default RehearseCommand;

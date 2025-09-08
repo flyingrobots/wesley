@@ -10,7 +10,7 @@ export class CertVerifyCommand extends WesleyCommand {
 
   configureCommander(cmd) {
     return cmd
-      .option('--in <file>', 'Certificate file', 'SHIPME.md')
+      .option('--in <file>', 'Certificate file', '.wesley/SHIPME.md')
       .option('--pub <path...>', 'Public key(s) for verification')
       .option('--json', 'Emit JSON results');
   }
@@ -70,4 +70,3 @@ async function verifySig(pubPath, data, b64sig) {
 }
 
 export default CertVerifyCommand;
-

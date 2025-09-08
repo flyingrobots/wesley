@@ -10,7 +10,7 @@ export class CertSignCommand extends WesleyCommand {
 
   configureCommander(cmd) {
     return cmd
-      .option('--in <file>', 'Certificate file', 'SHIPME.md')
+      .option('--in <file>', 'Certificate file', '.wesley/SHIPME.md')
       .option('--key <path>', 'Private key (PEM)')
       .option('--signer <name>', 'Signer label', 'HOLMES');
   }
@@ -72,4 +72,3 @@ async function signPayload(keyPath, data) {
 }
 
 export default CertSignCommand;
-

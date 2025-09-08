@@ -209,3 +209,15 @@ Prisma focuses on queries. Wesley compiles the data layer (DDL, migrations, RLS,
 **Stop maintaining schemas in 5 places.**  
 **Start shipping with confidence.**  
 **GraphQL in, Supabase out. Deployments are boring.**  
+
+## Demo: BLADE (Daywalker Deploys)
+
+Looking for a memorable 5–7 minute demo? Check out BLADE — the “Daywalker Deploys” flow that runs transform → plan (lock‑aware) → rehearse (shadow) → certify → verify with a single command. See docs/blade.md for the story, assets, and how to run it. Certificates and internal artifacts live under `.wesley/` (e.g., `.wesley/SHIPME.md`).
+
+## Internal Artifacts (`.wesley/`)
+
+Wesley writes build and evidence artifacts to `.wesley/` by default:
+- `.wesley/snapshot.json` — IR snapshot for diffs
+- `.wesley/realm.json` — rehearsal verdicts
+- `.wesley/SHIPME.md` — certificate file (human + canonical JSON)
+- Evidence maps and scores (when enabled)

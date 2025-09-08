@@ -1,0 +1,7 @@
+# Baseline schema for BLADE demo
+
+type User @table {
+  id: ID! @pk
+  email: String! @unique
+}
+
