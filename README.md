@@ -221,3 +221,14 @@ Wesley writes build and evidence artifacts to `.wesley/` by default:
 - `.wesley/realm.json` — rehearsal verdicts
 - `.wesley/SHIPME.md` — certificate file (human + canonical JSON)
 - Evidence maps and scores (when enabled)
+
+## Environment Variables
+
+Copy `.env.example` to `.env` and set values as needed. Key vars:
+- `WESLEY_LOG_LEVEL`: trace|debug|info|warn|error|silent (default: info)
+- `WESLEY_GIT_POLICY`: emit|strict|off — git cleanliness checks (default: emit)
+- `WESLEY_MAX_SCHEMA_BYTES`: schema size limit in bytes (default: 5MB)
+- `WESLEY_CONFIG_FILEPATH`: path to config override
+- `GITHUB_SHA`: commit SHA to embed in certs when git isn’t available (CI)
+- `SUPABASE_DB_URL` / `SUPABASE_POSTGRES_URL`: DSN for rehearse when provider=supabase
+- `WESLEY_TEST_DSN` / `TEST_DATABASE_URL`: opt‑in DSNs for test suites
