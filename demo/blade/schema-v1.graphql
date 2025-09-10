@@ -1,7 +1,6 @@
 # Baseline schema for BLADE demo
 
-type User @table {
-  id: ID! @pk
-  email: String! @unique
+type User @wes_table {
+  id: ID! @wes_pk
+  email: String! @wes_unique
 }
-

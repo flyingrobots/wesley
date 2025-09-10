@@ -67,13 +67,17 @@ export async function createNodeRuntime() {
   try {
     planner = await import('@wesley/tasks');
   } catch (e) {
-    console.warn('Warning: @wesley/tasks not available');
+    if (process.env.WESLEY_WARN_MISSING === '1') {
+      console.warn('Warning: @wesley/tasks not available');
+    }
   }
   
   try {
     runner = await import('@wesley/slaps');
   } catch (e) {
-    console.warn('Warning: @wesley/slaps not available');
+    if (process.env.WESLEY_WARN_MISSING === '1') {
+      console.warn('Warning: @wesley/slaps not available');
+    }
   }
 
   // Create a wrapper that respects quiet mode

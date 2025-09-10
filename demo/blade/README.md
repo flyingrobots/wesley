@@ -12,7 +12,7 @@ This demo shows a one‑line schema change flowing through:
 
 ## Run (one‑shot)
 
-Option A — new wrapper command
+Option A — new wrapper command (quick start)
 
 ```
 wesley blade \
@@ -30,6 +30,16 @@ wesley blade \
   --out-dir demo/out \
   --dsn postgres://wesley:wesley_test@localhost:5432/wesley_test \
   --env production
+```
+
+Optional: simulate upgrade from v1 to v2
+
+```
+# Seed baseline snapshot from v1
+wesley generate --schema demo/blade/schema-v1.graphql --out-dir demo/out --quiet
+
+# Then run blade against v2 to see additive changes
+wesley blade --schema demo/blade/schema-v2.graphql --out-dir demo/out --dry-run
 ```
 
 Optional signing & verify (generate keys locally)

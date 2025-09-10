@@ -1,8 +1,7 @@
 # v2 schema (one-line additive, safe)
 
-type User @table {
-  id: ID! @pk
-  email: String! @unique
-  created_at: DateTime! @default(value: "now()") @index
+type User @wes_table {
+  id: ID! @wes_pk
+  email: String! @wes_unique
+  created_at: DateTime! @wes_default(value: "now()") @wes_index
 }
-

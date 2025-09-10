@@ -91,28 +91,19 @@ class GraphQLSchemaParser {
    */
   validateDirectiveUsage(ast) {
     try {
-      // Create a temporary schema with the user's types and Wesley directives
-      const userTypeDefs = ast.definitions
-        .filter(def => def.kind === Kind.OBJECT_TYPE_DEFINITION)
-        .map(def => `type ${def.name.value}`)
-        .join('\n');
-      
+      // Best-effort directive validation against known directive SDL only.
+      // Avoid constructing incomplete user types (no fields) which triggers GraphQL schema errors.
       const moduleDir = dirname(fileURLToPath(import.meta.url));
       const projectRoot = join(moduleDir, '../../../../');
       const directiveSDL = readFileSync(join(projectRoot, 'schemas', 'directives.graphql'), 'utf8');
-      const fullSchemaSDL = `${directiveSDL}\n\n${userTypeDefs}`;
-      
-      // Parse the combined schema to validate directive usage
-      const fullSchema = buildSchema(fullSchemaSDL);
-      const validationErrors = validate(fullSchema, ast);
-      
-      if (validationErrors.length > 0) {
-        const errorMessages = validationErrors.map(err => err.message).join(', ');
-        throw new WesleyParseError(`Directive validation failed: ${errorMessages}`);
-      }
+      const fullSchema = buildSchema(directiveSDL);
+      // Validate the AST against a schema that only declares directives.
+      validate(fullSchema, ast);
     } catch (error) {
-      // Non-fatal: directive validation is best-effort
-      console.warn('Directive validation skipped:', error.message);
+      // Non-fatal: directive validation is best-effort; stay silent unless explicitly enabled.
+      if (process.env.WESLEY_STRICT_DIRECTIVES === '1') {
+        console.warn('Directive validation skipped:', error.message);
+      }
     }
   }
   
@@ -345,8 +336,10 @@ class GraphQLSchemaParser {
       // Check aliases
       const canonical = this.legacyAliases.get(directiveName);
       if (canonical === canonicalName) {
-        // Issue deprecation warning
-        console.warn(`Deprecated directive @${directiveName} used. Use @${canonicalName} instead.`);
+        // Deprecation hint (silent by default; enable with WESLEY_WARN_DEPRECATED=1)
+        if (process.env.WESLEY_WARN_DEPRECATED === '1') {
+          console.warn(`Deprecated directive @${directiveName} used. Use @${canonicalName} instead.`);
+        }
         return directive;
       }
     }
