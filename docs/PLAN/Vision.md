@@ -1,6 +1,6 @@
 Wesley — Vision & Plan (Set In Stone)
 
-TL;DR: Wesley is the schema→system brain. It compiles GraphQL (+ Wesley directives) to deterministic artifacts, plans zero-downtime changes, and runs its own plans with receipts. One blessed stack now (Supabase + Next.js). Everything else waits.
+TL;DR: Wesley is the schema→system brain. It compiles GraphQL (+ Wesley directives) to deterministic artifacts, plans zero-downtime changes, and runs its own plans with receipts. One blessed demo now (BLADE). Everything else waits.
 
 ⸻
 
@@ -8,7 +8,7 @@ The Vision
 
 12 months — The Declarative Supabase Standard
 	•	Product: GraphQL (+ directives) → IR → SQL/RLS/migrations + JS+Zod → Plan → Runner → Certificate.
-	•	Scope: One stack (supabase-nextjs). 1–3 Packs (multi-tenant, marketplace-lite, analytics-lite).
+•	Scope: One demo (BLADE). 1–3 Packs (multi-tenant, marketplace-lite, analytics-lite).
 	•	Guarantees: Zero-downtime patterns, drift detection, pgTAP proof, idempotent re-runs.
 	•	Reputation: “If you’re building SaaS on Supabase, you use Wesley.”
 
@@ -52,7 +52,7 @@ packages/
   wesley-generator-supabase/   # SQL/RLS/migrations/pgTAP emitters
   wesley-generator-js/         # JS + JSDoc + Zod emitters
   wesley-scaffold-multitenant/ # 300+ line GraphQL scaffold (+ docs/tests)
-  wesley-stack-supabase-nextjs/# Recipe manifest that wires generators
+  wesley-stack-*/                 # (future) stack recipe manifests that wire generators
   wesley-tasks/                # Planner: DAG builder/toposort/hashes (generic)
   wesley-slaps/                # Runner: executor/journal/retries (generic)
   # (later) wesley-runner-pg/  # Postgres step handlers (locks, NOT VALID, etc.)
@@ -72,8 +72,8 @@ Immediate Steps Required to Reorganize the Repo (and Why)
 	•	@wesley/host-node: adapters + bin/wesley.mjs that calls cli/main.
 	3.	Extract the scaffold out of core
 	•	Move multi-tenant.graphql to @wesley/scaffold-multitenant/ with README + tests.
-	4.	Introduce the stack recipe
-	•	@wesley/stack-supabase-nextjs/recipe.json lists generator steps for the scaffold.
+4.	Introduce stack recipes (future)
+•	@wesley/stack-*/recipe.json lists generator steps for a scaffold.
 	5.	Normalize generators as pure emitters
 	•	No Node imports. Accept ports (logger/clock/random/sinks).
 	6.	Add TASKS/SLAPS packages
@@ -108,14 +108,14 @@ What To Do Once Refactoring Is Complete
 	•	Protected branches + required checks: dep-cruise, ESLint, E2E snapshot, pgTAP.
 	•	RFCs/WEPs: any RED change requires a proposal (Motivation → IR impact → Safety → Back-compat → Revert plan).
 
-3) Productize the demo
-	•	Scripted runbook + 90-second screencast:
+3) Productize the demo (BLADE)
+•	Scripted runbook + 90-second screencast:
 	1.	wesley analyze
 	2.	wesley generate
 	3.	wesley plan
 	4.	wesley migrate up
 	5.	pgTAP proof + Certificate printout
-	•	Publish the hello SaaS repo (Next.js minimal UI) powered by generated artifacts.
+•	Publish the BLADE screencast and CLI walkthrough powered by generated artifacts.
 
 4) Open safe lanes for contributors
 	•	Label 8–12 GREEN issues (Packs, docs, pgTAP cases, examples).
@@ -170,17 +170,9 @@ packages/wesley-generator-*/**          @flyingrobots
 packages/wesley-stack-*/**              @flyingrobots
 IR_SPEC.md                              @flyingrobots
 
-Stack recipe (minimal)
+Stack recipe (minimal, future)
 
-{
-  "name": "@wesley/stack-supabase-nextjs",
-  "recipes": {
-    "multitenant": [
-      { "use": "@wesley/generator-supabase", "with": ["ddl","rls","indexes","pgtap"] },
-      { "use": "@wesley/generator-js", "with": ["models","zod","next-api:/api/*"] }
-    ]
-  }
-}
+[omitted: future stack recipe JSON sketch]
 
 
 ⸻
@@ -368,7 +360,7 @@ Talks to
 
 ⸻
 
-7) @wesley-stack-supabase-nextjs — Recipe Manifest (PURE, AMBER)
+7) @wesley-stack-* — Recipe Manifest (PURE, AMBER, future)
 
 Job: Describe how to realize a scaffold with specific generators.
 
@@ -379,7 +371,7 @@ Public API
   "recipes": {
     "multitenant": [
       { "use": "@wesley/generator-supabase", "with": ["ddl","rls","migrations","pgtap"] },
-      { "use": "@wesley/generator-js", "with": ["models","zod","next-api:/api/*"] }
+      { "use": "@wesley/generator-js", "with": ["models","zod"] }
     ]
   }
 }
@@ -585,7 +577,7 @@ Quick examples (so it’s unambiguous)
 → Step handler in @wesley/runner-pg; executed by SLAPS with resources:["db:postgres"].
 	•	“I want to add a Marketplace scaffold.”
 → Create @wesley-scaffold-marketplace (schema + README).
-→ Extend @wesley-stack-supabase-nextjs/recipe.json with "marketplace" recipe.
+→ Extend @wesley-stack-*/recipe.json with "marketplace" recipe.
 	•	“I want to calculate IR hashes for the certificate.”
 → Pure hashing in @wesley/tasks/hash.mjs (or in core if it’s IR-level).
 

@@ -1066,7 +1066,7 @@ File layout (human first, machine underneath)
 # Wesley Deployment Certificate — PRODUCTION
 > “Data Done Right.” Signed by SHA-lock HOLMES. Cross-examined by Dr. Wat-SUM.
 
-- Repo: flyingrobots/wesley-demo
+- Demo: BLADE — see docs/blade.md
 - Env: production
 - Git: main @ 9f1c2ab (tag: v1.3.0)
 - Targets: postgres, prisma, drizzle, typescript, zod, pgtap
@@ -1108,7 +1108,7 @@ File layout (human first, machine underneath)
 {
   "version": "1.0",
   "certificate_id": "cert_prod_2025-09-03T23:05Z_9f1c2ab",
-  "repo": "flyingrobots/wesley-demo",
+  "demo": "BLADE (docs/blade.md)",
   "env": "production",
   "git": { "sha": "9f1c2ab", "tag": "v1.3.0", "branch": "main", "dirty": false },
   "targets": ["postgres","prisma","drizzle","typescript","zod","pgtap"],
@@ -1349,7 +1349,7 @@ Artifacts (content-addressed):
 SHIPIT.md (template)
 Human up top, machine below. Signed by SHA-lock HOLMES (plan & integrity) and Dr. Wat-SUM (evidence & stats).
 # Wesley Deployment Certificate — PRODUCTION
-Repo: flyingrobots/wesley-demo
+Demo: BLADE (docs/blade.md)
 Git: main @ 9f1c2ab (tag: v1.3.0)
 Window: 2025-09-03T23:05Z ± 8m (TTP ~6m40s)
 Risk: LOW (0.18) — Friday deploy approved ✅
@@ -1631,7 +1631,7 @@ wesley cert verify --in SHIPME.md && wesley deploy --env production
 # Wesley Deployment Certificate — PRODUCTION
 > “Data Done Right.” Signed by **SHA-lock HOLMES** · Cross-examined by **Dr. Wat-SUM**
 
-- Repo: flyingrobots/wesley-demo
+- Demo: BLADE (docs/blade.md)
 - Env: production
 - Git: main @ **9f1c2ab** (tag: **v1.3.0**)
 - Targets: postgres, prisma, drizzle, typescript, zod, pgtap
@@ -1676,7 +1676,7 @@ wesley cert verify --in SHIPME.md && wesley deploy --env production
 {
   "version": "1.0",
   "certificate_id": "cert_prod_2025-09-03T23:05Z_9f1c2ab",
-  "repo": "flyingrobots/wesley-demo",
+  "demo": "BLADE (docs/blade.md)",
   "env": "production",
   "git": { "sha": "9f1c2ab", "tag": "v1.3.0", "branch": "main", "dirty": false },
   "targets": ["postgres","prisma","drizzle","typescript","zod","pgtap"],
