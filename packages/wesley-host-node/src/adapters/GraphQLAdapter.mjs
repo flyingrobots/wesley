@@ -39,8 +39,9 @@ class GraphQLSchemaParser {
       ['wesley_unique', 'wes_unique'], ['wesley_index', 'wes_index'], 
       ['wesley_tenant', 'wes_tenant'], ['wesley_default', 'wes_default'],
       ['wesley_rls', 'wes_rls'], ['wesley_check', 'wes_check'],
-      // Short aliases  
+      // Short/alternate aliases  
       ['table', 'wes_table'], ['pk', 'wes_pk'], ['fk', 'wes_fk'],
+      ['primaryKey', 'wes_pk'], ['foreignKey', 'wes_fk'],
       ['unique', 'wes_unique'], ['index', 'wes_index'], 
       ['tenant', 'wes_tenant'], ['default', 'wes_default'],
       ['rls', 'wes_rls'], ['check', 'wes_check']
@@ -171,6 +172,11 @@ class GraphQLSchemaParser {
     
     // Process fields
     for (const field of typeDef.fields) {
+      // Skip relation-only fields (object types without explicit FK directive)
+      if (this.isRelationOnlyField(field)) {
+        continue;
+      }
+
       const column = this.buildColumn(field, tableName);
       columns.push(column);
       
@@ -255,9 +261,9 @@ class GraphQLSchemaParser {
     // Process directives
     const defaultDirective = this.findDirective(field.directives, 'wes_default');
     if (defaultDirective) {
-      const value = this.getDirectiveArgument(defaultDirective, 'value');
+      const value = this.getDirectiveArgumentAny(defaultDirective, ['value', 'expr']);
       if (!value) {
-        throw new WesleyParseError(`@wes_default directive requires 'value' argument`, 'wes_default', name);
+        throw new WesleyParseError(`@wes_default directive requires 'value' (or 'expr') argument`, 'wes_default', name);
       }
       column.default = value;
     }
@@ -280,11 +286,15 @@ class GraphQLSchemaParser {
     let pgType;
     switch (baseType) {
       case 'ID': pgType = 'uuid'; break;
+      case 'UUID': pgType = 'uuid'; break;
       case 'String': pgType = 'text'; break;
       case 'Int': pgType = 'integer'; break;
       case 'Float': pgType = 'double precision'; break;
       case 'Boolean': pgType = 'boolean'; break;
       case 'DateTime': pgType = 'timestamptz'; break;
+      case 'Date': pgType = 'date'; break;
+      case 'Time': pgType = 'time with time zone'; break;
+      case 'JSON': pgType = 'jsonb'; break;
       default: pgType = 'text'; // fallback
     }
     
@@ -420,6 +430,38 @@ class GraphQLSchemaParser {
    */
   getBasePostgreSQLType(pgType) {
     return pgType.replace('[]', '');
+  }
+
+  /**
+   * Try multiple argument names in order and return the first found
+   */
+  getDirectiveArgumentAny(directive, argNames = []) {
+    for (const name of argNames) {
+      const v = this.getDirectiveArgument(directive, name);
+      if (v != null) return v;
+    }
+    return null;
+  }
+
+  /**
+   * Determine if a field should be treated as relation-only (no column emitted)
+   */
+  isRelationOnlyField(field) {
+    const base = this.getBaseType(field.type);
+    const isScalar = this.isScalarType(base);
+    const hasFk = !!this.findDirective(field.directives, 'wes_fk');
+    const nameSet = new Set((field.directives || []).map(d => d.name.value));
+    const hasRelationHint = nameSet.has('belongsTo') || nameSet.has('hasMany') || nameSet.has('hasOne');
+    if (hasRelationHint) return true;
+    if (!isScalar && !hasFk) return true;
+    return false;
+  }
+
+  /**
+   * Minimal scalar whitelist for schema → SQL mapping
+   */
+  isScalarType(name) {
+    return new Set(['ID','UUID','String','Int','Float','Boolean','DateTime','Date','Time','JSON']).has(name);
   }
 }
 

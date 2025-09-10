@@ -2,6 +2,25 @@
 
 A running changelog of collaboration between Codex and the team. Append new entries at the top (reverse‑chronological). Keep entries concise and action‑oriented.
 
+## 2025-09-10
+
+- Created branch `fix/critical-issues` and unblocked core transform → plan → rehearse → cert.
+  - Parser: added aliases (`primaryKey`→`wes_pk`, `foreignKey`→`wes_fk`), default arg fallback (`value` or `expr`), relation‑only field skip, and scalar mappings (`UUID`, `JSON`, `Date`, `Time`).
+  - Files: `packages/wesley-host-node/src/adapters/GraphQLAdapter.mjs`.
+  - Examples: switched positional directive args to named args for `@uid`/`@weight`.
+  - Files: `example/schema.graphql`, `example/ecommerce.graphql`.
+- Verification:
+  - `wesley generate --schema example/schema.graphql` now succeeds (DDL + tests emitted).
+  - `wesley blade --schema <min> --dry-run` runs end‑to‑end and writes `.wesley/SHIPME.md`.
+- Notes:
+  - Existing package tests cover E2E flows (`packages/wesley-cli/test/blade.bats`, `cert-e2e.bats`, `plan*.bats`, `rehearse*.bats`).
+  - Root `test/` E2E files reference legacy commands (models/typescript/zod); keep archived or update after JS generator wiring.
+
+Next
+- Wire `@wesley/generator-js` emit wrappers or adapt host to class APIs (to revive models/zod/types commands and tests).
+- Reduce directive validation warnings (extend directive schema or relax best‑effort validator for unknown directives).
+- Align README/examples to canonical `@wes_*` or clearly document supported aliases.
+
 ## 2025-09-08
 
 - Repo survey and initial assessment completed.
