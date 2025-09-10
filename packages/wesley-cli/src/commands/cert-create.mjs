@@ -11,7 +11,7 @@ export class CertCreateCommand extends WesleyCommand {
   configureCommander(cmd) {
     return cmd
       .option('--env <name>', 'Target environment', 'production')
-      .option('--out <file>', 'Output file', 'SHIPME.md')
+      .option('--out <file>', 'Output file', '.wesley/SHIPME.md')
       .option('--json', 'Emit JSON to stdout (no file)');
   }
 
@@ -99,4 +99,3 @@ async function hashArtifacts(ctx, outDir) {
 }
 
 export default CertCreateCommand;
-

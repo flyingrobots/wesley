@@ -15,9 +15,10 @@ export class RehearseCommand extends WesleyCommand {
       .option('-s, --schema <path>', 'GraphQL schema file. Use "-" for stdin', 'schema.graphql')
       .option('--stdin', 'Read schema from stdin (alias for --schema -)')
       .option('--dsn <url>', 'Database DSN for rehearsal')
-      .option('--provider <name>', 'realm provider: postgres|supabase', 'postgres')
+      .option('--provider <name>', 'realm provider: postgres|supabase')
       .option('--docker', 'Attempt to start docker compose service postgres')
       .option('--dry-run', 'Explain without executing')
+      .option('--keep', 'Keep temporary schema for inspection')
       .option('--timeout <ms>', 'Timeout in ms', '300000')
       .option('--json', 'Emit JSON');
   }
@@ -41,7 +42,7 @@ export class RehearseCommand extends WesleyCommand {
       return { dryRun: true, steps: explain.steps.length };
     }
 
-    const provider = (options.provider || 'postgres').toLowerCase();
+    const provider = (options.provider || this.ctx?.config?.realm?.provider || 'postgres').toLowerCase();
     const env = this.ctx.env || {};
     let dsn = options.dsn || this.ctx?.config?.realm?.dsn || defaultDsnFor(provider, env);
 
@@ -50,6 +51,10 @@ export class RehearseCommand extends WesleyCommand {
       // assume default DSN if not provided
       dsn = dsn || defaultDsnFor('postgres', env);
     }
+
+    // Optional provider hooks from config
+    const hooks = this.ctx?.config?.realm?.hooks || {};
+    if (hooks.preUp) await runHook(hooks.preUp, logger);
 
     if (!dsn) {
       const e = new Error('No DSN provided for rehearsal. Pass --dsn or configure realm.dsn.');
@@ -76,6 +81,7 @@ export class RehearseCommand extends WesleyCommand {
       };
       await this.ctx.fs.write('.wesley/realm.json', JSON.stringify(realm, null, 2));
       if (!options.json) logger.info('🕶️ REALM verdict: PASS');
+      if (hooks.postDown) await runHook(hooks.postDown, logger);
       if (options.json) this.ctx.stdout.write(JSON.stringify(realm, null, 2) + '\n');
       return realm;
     } catch (error) {
@@ -88,6 +94,7 @@ export class RehearseCommand extends WesleyCommand {
       };
       await this.ctx.fs.write('.wesley/realm.json', JSON.stringify(realm, null, 2));
       if (!options.json) logger.error('🕶️ REALM verdict: FAIL - ' + error.message);
+      if (hooks.postDown) try { await runHook(hooks.postDown, logger); } catch {}
       if (options.json) this.ctx.stdout.write(JSON.stringify(realm, null, 2) + '\n');
       const e = new Error('REALM rehearsal failed: ' + error.message);
       e.code = 'REALM_FAILED';
@@ -107,6 +114,16 @@ async function tryStartDocker(logger) {
     execSync('docker compose up -d postgres', { stdio: 'inherit' });
   } catch (e) {
     logger.warn('Could not start docker compose postgres: ' + (e?.message || e));
+  }
+}
+
+async function runHook(cmd, logger) {
+  try {
+    const { execSync } = await import('node:child_process');
+    logger.info(`🔧 realm hook: ${cmd}`);
+    execSync(cmd, { stdio: 'inherit' });
+  } catch (e) {
+    logger.warn('realm hook failed: ' + (e?.message || e));
   }
 }
 
@@ -150,5 +167,47 @@ function explainPlan(plan) {
 function lockFor(step){ switch(step.op){ case 'create_table': return L('ACCESS EXCLUSIVE', true, true); case 'add_column': return step.nullable!==false||step.default?L('SHARE ROW EXCLUSIVE',true,false):L('ACCESS EXCLUSIVE',true,true); case 'create_index_concurrently': return L('SHARE UPDATE EXCLUSIVE',true,false); case 'add_fk_not_valid': return L('SHARE ROW EXCLUSIVE',true,false); case 'validate_fk': return L('SHARE ROW EXCLUSIVE',true,false); default: return L('EXCLUSIVE',true,false);} }
 function L(name,blocksWrites,blocksReads){return {name,blocksWrites,blocksReads};}
 
-export default RehearseCommand;
+// Emit migration SQL files for rehearsal (mirrors plan.mjs)
+function emitMigrations(plan) {
+  const files = [];
+  const expand = [];
+  const validate = [];
 
+  const q = (id) => '"' + id.replace(/\"/g, '""') + '"';
+  const tname = (n) => n.toLowerCase();
+
+  for (const phase of plan.phases) {
+    for (const s of phase.steps) {
+      if (s.op === 'create_table') {
+        expand.push(`-- create table ${s.table}`);
+        // table DDL handled by full schema ddl; keep placeholder here
+      }
+      if (s.op === 'add_column') {
+        const parts = [`ALTER TABLE ${q(tname(s.table))} ADD COLUMN ${q(s.column)} ${s.type}`];
+        if (s.nullable === false && s.default) parts.push('DEFAULT ' + s.default);
+        // Add as nullable by default in expand phase
+        expand.push(parts.join(' ') + ';');
+      }
+      if (s.op === 'create_index_concurrently') {
+        const idxName = s.name || `idx_${tname(s.table)}_${(s.columns || []).join('_')}`;
+        const using = s.using ? ` USING ${s.using}` : '';
+        const cols = (s.columns || []).map((c)=> q(c)).join(', ');
+        expand.push(`CREATE INDEX CONCURRENTLY IF NOT EXISTS ${q(idxName)} ON ${q(tname(s.table))}${using} (${cols});`);
+      }
+      if (s.op === 'add_fk_not_valid') {
+        const cname = `fk_${tname(s.table)}_${s.column}`;
+        expand.push(`ALTER TABLE ${q(tname(s.table))} ADD CONSTRAINT ${q(cname)} FOREIGN KEY (${q(s.column)}) REFERENCES ${q(tname(s.refTable))} (${q(s.refColumn)}) NOT VALID;`);
+      }
+      if (s.op === 'validate_fk') {
+        const cname = `fk_${tname(s.table)}_${s.column}`;
+        validate.push(`ALTER TABLE ${q(tname(s.table))} VALIDATE CONSTRAINT ${q(cname)};`);
+      }
+    }
+  }
+
+  if (expand.length) files.push({ name: '001_expand.sql', content: expand.join('\n') + '\n' });
+  if (validate.length) files.push({ name: '002_validate.sql', content: validate.join('\n') + '\n' });
+  return files;
+}
+
+export default RehearseCommand;

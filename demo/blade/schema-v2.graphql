@@ -1,0 +1,8 @@
+# v2 schema (one-line additive, safe)
+
+type User @table {
+  id: ID! @pk
+  email: String! @unique
+  created_at: DateTime! @default(value: "now()") @index
+}
+
