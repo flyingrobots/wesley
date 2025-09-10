@@ -1,15 +1,22 @@
 #!/usr/bin/env node
 
-import fs from 'node:fs/promises';
 import path from 'node:path';
 
-export class ValidateBundleCommand {
+import { WesleyCommand } from '../framework/WesleyCommand.mjs';
+
+export class ValidateBundleCommand extends WesleyCommand {
   constructor() {
-    this.name = 'validate-bundle';
-    this.description = 'Validate Wesley bundle against JSON schemas';
+    super('validate-bundle', 'Validate Wesley bundle against JSON schemas');
   }
 
-  async execute(options = {}) {
+  configureCommander(cmd) {
+    return cmd
+      .option('--bundle <path>', 'Bundle path', '.wesley')
+      .option('--schemas <path>', 'Schemas path', './schemas')
+      .option('--show-plan', 'Display execution plan before running');
+  }
+
+  async executeCore({ options, fileSystem }) {
     const bundlePath = options.bundle || '.wesley';
     const schemasPath = options.schemas || path.join(process.cwd(), 'schemas');
     
@@ -23,18 +30,18 @@ export class ValidateBundleCommand {
       
       // Load schemas
       const evidenceMapSchema = JSON.parse(
-        await fs.readFile(path.join(schemasPath, 'evidence-map.schema.json'), 'utf8')
+        await fileSystem.readFile(path.join(schemasPath, 'evidence-map.schema.json'), 'utf8')
       );
       const scoresSchema = JSON.parse(
-        await fs.readFile(path.join(schemasPath, 'scores.schema.json'), 'utf8')
+        await fileSystem.readFile(path.join(schemasPath, 'scores.schema.json'), 'utf8')
       );
       
       // Load bundle files
       const evidenceMap = JSON.parse(
-        await fs.readFile(path.join(bundlePath, 'evidence-map.json'), 'utf8')
+        await fileSystem.readFile(path.join(bundlePath, 'evidence-map.json'), 'utf8')
       );
       const scores = JSON.parse(
-        await fs.readFile(path.join(bundlePath, 'scores.json'), 'utf8')
+        await fileSystem.readFile(path.join(bundlePath, 'scores.json'), 'utf8')
       );
       
       // Check version
@@ -91,10 +98,13 @@ export class ValidateBundleCommand {
       }
       
     } catch (error) {
-      console.error('❌ Validation error:', error.message);
-      process.exit(1);
+      error.code = error.code || 'VALIDATION_FAILED';
+      throw error;
     }
   }
 }
 
 export default ValidateBundleCommand;
+
+// Auto-register this command by creating an instance
+new ValidateBundleCommand();

@@ -1,0 +1,22 @@
+export interface User {
+  id: string;
+  email?: string | null;
+  age?: number | null;
+  tags?: Array<string | null> | null;
+}
+export interface UserInput {
+  email?: string | null;
+  age?: number | null;
+  tags?: Array<string | null> | null;
+}
+export interface CreateUserInput {
+  id?: string;
+  email?: string | null;
+  age?: number | null;
+  tags?: Array<string | null> | null;
+}
+export interface UpdateUserInput {
+  email?: string | null;
+  age?: number | null;
+  tags?: Array<string | null> | null;
+}

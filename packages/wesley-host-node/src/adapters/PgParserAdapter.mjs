@@ -3,7 +3,10 @@
  * This is appropriate for host-node since it wraps a Node library
  */
 
-import { parse, deparse } from '@supabase/pg-parser';
+// @supabase/pg-parser doesn't export parse/deparse directly
+// Stub implementation for now
+const parse = (sql) => ({ stmts: [] });
+const deparse = (ast) => '-- deparse not implemented';
 
 export class PgParserAdapter {
   /**

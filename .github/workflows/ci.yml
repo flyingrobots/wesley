@@ -33,6 +33,16 @@ jobs:
 
       - run: pnpm -w test
 
+      # Test model generation command
+      - name: Test model generation
+        run: |
+          bats test/cli-models.bats
+          
+      # Test generator commands (TypeScript, Zod)
+      - name: Test generator commands
+        run: |
+          bats test/cli-generators.bats
+
       - run: node packages/wesley-cli/wesley.mjs generate --schema example/ecommerce.graphql --emit-bundle
       - run: node packages/wesley-cli/wesley.mjs validate-bundle --bundle example/.wesley --schemas schemas
 

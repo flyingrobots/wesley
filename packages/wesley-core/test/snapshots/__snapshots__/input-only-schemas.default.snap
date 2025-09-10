@@ -1,0 +1,33 @@
+import { z } from 'zod';
+// Entity Schemas
+export const BlogPostSchema = z.object({
+  id: z.string().uuid(),
+  title: z.string(),
+  // Must be unique
+  slug: z.string().min(1, "Required for unique field"),
+  content: z.string().nullable().max(10000, "Content too long"),
+  publishedAt: z.date().nullable(),
+  // Default: 0
+  viewCount: z.number().int().min(0, "Count cannot be negative")
+});
+export type BlogPost = z.infer<typeof BlogPostSchema>;
+// Input Schemas
+export const CreateBlogPostSchema = z.object({
+  title: z.string(),
+  // Must be unique
+  slug: z.string().min(1, "Required for unique field"),
+  content: z.string().nullable().max(10000, "Content too long"),
+  publishedAt: z.date().nullable(),
+  // Default: 0
+  viewCount: z.number().int().min(0, "Count cannot be negative").default(0)
+});
+export type CreateBlogPostInput = z.infer<typeof CreateBlogPostSchema>;
+export const UpdateBlogPostSchema = z.object({
+  title: z.string().optional(),
+  slug: z.string().min(1, "Required for unique field").optional(),
+  content: z.string().nullable().max(10000, "Content too long").optional(),
+  publishedAt: z.date().nullable().optional(),
+  viewCount: z.number().int().min(0, "Count cannot be negative").optional()
+});
+export type UpdateBlogPostInput = z.infer<typeof UpdateBlogPostSchema>;
+// Refinements and Custom Validations

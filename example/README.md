@@ -1,186 +1,233 @@
-# 🚀 Wesley + 🔍 SHA-lock HOLMES Demo
+# S.E.O.: Synergistic Enhancement Orchestrator
 
-> **"Everyone generates GraphQL from databases. Wesley generates databases from GraphQL."**
+> **"Not just another platform; it's a paradigm shift in professional engagement!"**
 
-This demo showcases how Wesley revolutionizes database development by making GraphQL your single source of truth, with SHA-lock HOLMES providing production-grade intelligence.
+We leverage cross-discipline synergies to disrupt traditional workflows, empowering you to upcycle your personal bandwidth through holistic monitoring and enhancement.
 
-## 🎯 The Problem This Solves
+## 🎯 Design Overview
 
-Traditional development requires writing the same data shape 5+ times:
-- ❌ SQL DDL for database
-- ❌ GraphQL schema for API
-- ❌ TypeScript types for frontend
-- ❌ Zod schemas for validation
-- ❌ Migrations manually written
-- ❌ Tests manually written
+S.E.O. is a **comprehensive workplace collaboration and monitoring platform** that demonstrates Wesley's ability to generate complex, multi-tenant applications with sophisticated surveillance capabilities, real-time features, and enterprise-grade security.
 
-**Wesley inverts this:** Write GraphQL once. Get everything else for free.
+**Think:** The most dystopian corporate productivity app ever conceived - "What if LinkedIn, Microsoft Viva, and Black Mirror had a baby?"
 
-## 🏃 Quick Demo
+## 🏗️ Architecture Philosophy
 
-```bash
-# Run the interactive demo
-./demo.sh
+S.E.O. serves as the **ultimate Wesley showcase** because it exercises every Supabase feature while being technically challenging enough to prove Wesley's production readiness:
 
-# Or run Wesley directly
-wesley generate --schema ecommerce.graphql --emit-bundle
+### Core Principles
+1. **Schema-First Development** - Single GraphQL schema generates entire stack
+2. **RPC-Heavy Architecture** - All business logic secured behind database functions
+3. **Multi-Tenant Surveillance** - Complex RLS policies for department/team isolation
+4. **Real-Time Everything** - Live bandwidth tracking, engagement monitoring, forced pairing
+5. **Evidence-Based Productivity** - Every interaction logged, analyzed, and scored
 
-# Run HOLMES investigation
-holmes investigate
-```
+### Technical Complexity Showcase
+- **30+ interconnected tables** with complex relationships
+- **Real-time aggregations** across multiple surveillance metrics
+- **AI-driven scoring algorithms** hidden behind RPC functions
+- **Multi-level security policies** based on role and surveillance level
+- **High-frequency event processing** for activity monitoring
+- **Edge function integrations** for facial analysis and engagement scoring
 
-## 🔥 Key Innovations
+## 🎭 The Five Dystopian Modules
 
-### 1. Intelligent Directives
+### 1. 📊 Bandwidth Timeline
+*"Your productivity, visualized in real-time!"*
 
+**The Feature:** Public dashboard showing every employee's "bandwidth" score calculated from keystrokes, mouse movements, and engagement metrics. When your score drops below 41.3%, the system automatically pairs you with a high-performer for "coaching."
+
+**Wesley Benefits:**
+- Complex event sourcing with `ActivityEvent` partitioned tables
+- Real-time aggregations and triggers for bandwidth calculation
+- RPC functions for secure scoring algorithms
+- RLS policies for different visibility levels
+
+### 2. 🍽️ On My Plate
+*"Visual task management with accountability!"*
+
+**The Feature:** Tasks are displayed as different sized "plates" - from appetizers to Thanksgiving feasts. You can "offload" tasks to colleagues, but every delegation is broadcast company-wide with public justification required.
+
+**Wesley Benefits:**
+- Many-to-many relationships through `DelegationEvent` junction tables
+- Real-time notifications and public broadcasting
+- Audit trails for every task movement
+- Complex constraint validation
+
+### 3. 💬 Synergistic Touchpoints  
+*"Chat, but with engagement scoring!"*
+
+**The Feature:** Workplace chat with mandatory buzzword templates. If your engagement score drops below 50%, you're locked out of messaging. Spend too much time chatting and your score also suffers.
+
+**Wesley Benefits:**
+- Message threading and complex chat relationships
+- Real-time engagement calculation
+- Permission-based messaging restrictions
+- Sentiment analysis and buzzword tracking
+
+### 4. 🎨 Ideation Decks
+*"Creativity through mandatory compliance!"*
+
+**The Feature:** Collaborative whiteboard that forces you to fill out forms with mandatory fields like "Leveraging," "Operationalizing," and "Scalability" before your idea can be shared with the company's "Thought Leadership" feed.
+
+**Wesley Benefits:**
+- Canvas/whiteboard real-time collaboration
+- Form validation with business logic
+- Auto-publishing to company feeds
+- Creativity inhibition scoring algorithms
+
+### 5. 🎥 Deep Dive Sessions
+*"Meetings with facial surveillance!"*
+
+**The Feature:** Video meetings where your camera must stay on, engagement is calculated from eye contact and facial expressions, and helpful pop-ups appear if your score drops: "It looks like you're losing focus. Let's take this offline and circle back when your bandwidth frees up!"
+
+**Wesley Benefits:**
+- Real-time video analytics integration
+- Alert systems with configurable thresholds  
+- Meeting participation tracking
+- Behavioral pattern analysis
+
+## 🔧 Technical Specifications
+
+### Database Schema Highlights
 ```graphql
-type User @table @critical @uid("tbl:user") {
-  email: String! @pii @weight(9)
-  password_hash: String! @sensitive @weight(10)
-  theme: String @weight(2)  # Low priority
+# Multi-tenant surveillance with complex scoring
+type Employee @table @rls(enable: true) @realtime {
+  current_bandwidth: BandwidthScore!
+  engagement_level: EngagementLevel!
+  surveillance_level: Int! @check(expr: "surveillance_level BETWEEN 1 AND 5")
+  productivity_pattern: JSON  # AI-analyzed behavioral patterns
+}
+
+# High-frequency activity logging with partitioning
+type ActivityEvent @table @realtime @partitioned(by: "created_at") {
+  raw_data: JSON!  # Keystroke patterns, mouse movements, etc.
+  productivity_impact: Float!  # Calculated impact score
+}
+
+# Real-time collaboration with ephemeral cursor tracking
+type LiveCursor @table @realtime @ephemeral {
+  status: CursorStatus!  # IDLE, MOVING, CONFUSED, RAGE_CLICKING
+  last_update: DateTime! @default(value: "now()")
 }
 ```
 
-- **@uid**: Stable identities survive renames
-- **@weight**: Critical fields get more attention
-- **@sensitive**: Automatic security enforcement
-- **@pii**: Compliance tracking
+### RPC Function Architecture
+All business logic secured behind database functions:
+- `calculateBandwidthScore()` - Proprietary scoring algorithm
+- `triggerForcedPairing()` - Automatic mentor assignment
+- `validateBuzzwordCompliance()` - Creativity compliance scoring
+- `recordFacialEngagement()` - Meeting surveillance data
 
-### 2. Weighted Scoring System
+### Real-Time Features
+- Live bandwidth score updates across the organization
+- Instant delegation broadcasts with public notifications
+- Real-time cursor tracking in ideation canvases
+- Live meeting engagement alerts and interventions
 
-Not all fields are equal. Wesley knows this:
+## 📱 UX Design Philosophy
 
-```
-User.password_hash: weight=10 → Critical security field
-User.email:        weight=9  → Important PII
-User.theme:        weight=2  → Cosmetic preference
-```
+**Design Goal:** Maximum psychological pressure through gamification and public accountability.
 
-The scoring system prioritizes what matters:
-- **SCS** (Schema Coverage Score): Weighted by importance
-- **MRI** (Migration Risk Index): Quantified danger
-- **TCI** (Test Confidence Index): Risk-weighted coverage
+### Visual Language
+- **Corporate Minimal** - Clean, sterile interface that feels "professional"
+- **Surveillance Friendly** - UI elements that normalize constant monitoring
+- **Gamified Shame** - Progress bars, scores, and public leaderboards everywhere
+- **Helpful Condescension** - "Friendly" AI suggestions that are actually controlling
 
-### 3. SHA-locked Evidence
+### Key UX Patterns
+1. **Always-Visible Metrics** - Your bandwidth score is always in the top-right corner
+2. **Public Dashboards** - Everyone can see everyone else's productivity metrics  
+3. **Forced Interactions** - System-mandated pairing and collaboration
+4. **Buzzword Autocomplete** - Forms that guide you toward corporate speak
+5. **Surveillance Normalization** - Camera feeds and engagement metrics feel "normal"
 
-Every claim is verifiable:
+## 🎯 Wesley Validation Objectives
 
-```json
-{
-  "col:user.password": {
-    "sql": [{"file": "schema.sql", "lines": "15-18", "sha": "abc123d"}],
-    "tests": [{"file": "security.sql", "lines": "45-67", "sha": "abc123d"}]
-  }
-}
-```
+S.E.O. proves Wesley can handle:
 
-No more "it works on my machine." Evidence is SHA-locked to specific commits.
+### ✅ **Complex Multi-Tenancy**
+- Department/team/individual permission hierarchies
+- Manager override capabilities
+- Surveillance level-based data access
 
-### 4. Production Safety Gates
+### ✅ **Real-Time at Scale** 
+- High-frequency event processing
+- Live dashboard updates across organization
+- Instant notification broadcasting
 
-Wesley blocks dangerous operations automatically:
+### ✅ **Advanced RLS Policies**
+- Permission-based data visibility
+- Role-dependent feature access  
+- Surveillance level restrictions
 
-```graphql
-password: String! @sensitive
-# ❌ BLOCKS if no hash constraint in SQL
+### ✅ **RPC-Heavy Architecture**
+- Business logic completely hidden from client
+- Complex scoring algorithms secured
+- Batch operations for performance
 
-email: String! @pii
-# ⚠️ WARNS if no RLS masking policy
+### ✅ **Edge Function Integration**
+- AI-powered engagement scoring
+- Facial expression analysis
+- Productivity pattern recognition
 
-type Post @table @rls
-# ❌ BLOCKS if RLS enabled but policies missing
-```
+### ✅ **Production-Grade Features**
+- Audit trails for compliance
+- Data retention policies
+- Performance optimization for high load
 
-## 📊 Real Results
+## 🚀 Implementation Roadmap
 
-Running this demo generates:
+### Phase 1: Core Surveillance Infrastructure
+- [ ] Employee profiles with bandwidth tracking
+- [ ] Activity event logging and processing
+- [ ] Basic RPC scoring functions
+- [ ] Multi-tenant RLS policies
 
-### Generated Artifacts
-- ✅ PostgreSQL DDL with constraints
-- ✅ TypeScript types with proper nullability
-- ✅ Zod schemas for validation
-- ✅ pgTAP tests weighted by risk
-- ✅ Migration diffs automatically
-- ✅ Evidence bundle for verification
+### Phase 2: Social Features with Accountability
+- [ ] Plate-based task management
+- [ ] Public delegation broadcasting  
+- [ ] Chat with engagement restrictions
+- [ ] Forced pairing algorithms
 
-### Intelligence Reports
-```
-Weighted Completion: ████████░░ 84% (156/185 weighted points)
-Migration Risk:      ██░░░░░░░░ 23% (Low risk)
-Test Confidence:     ███████░░░ 71% (Good coverage)
+### Phase 3: Real-Time Collaboration
+- [ ] Ideation canvas with live cursors
+- [ ] Buzzword compliance forms
+- [ ] Company-wide thought leadership feed
+- [ ] Real-time notification systems
 
-Verdict: READY FOR REVIEW
-```
+### Phase 4: Advanced Surveillance
+- [ ] Meeting facial analysis integration
+- [ ] Predictive bandwidth modeling
+- [ ] Behavioral pattern AI
+- [ ] Executive dashboard analytics
 
-### CI/CD Integration
-Every PR gets automatic analysis:
-- HOLMES investigates the changes
-- WATSON verifies independently
-- MORIARTY predicts ship date
-- Report posted as PR comment
+## 💡 Why S.E.O. Is The Perfect Demo
 
-## 🎨 Architecture
+1. **Memorable** - So dystopian it sticks in people's minds forever
+2. **Comprehensive** - Uses every single Supabase feature
+3. **Complex** - Proves Wesley can handle enterprise-scale applications  
+4. **Satirical** - Critiques toxic productivity culture while showcasing tech
+5. **Discussion Starter** - Guaranteed to generate conversations about the demo
 
-```mermaid
-graph LR
-    GraphQL[GraphQL Schema] --> Wesley[Wesley Core]
-    Wesley --> SQL[PostgreSQL]
-    Wesley --> TS[TypeScript]
-    Wesley --> Tests[pgTAP Tests]
-    Wesley --> Bundle[Evidence Bundle]
-    Bundle --> Holmes[HOLMES]
-    Holmes --> Report[Intelligence Report]
-    
-    style GraphQL fill:#f9f,stroke:#333,stroke-width:4px
-    style Bundle fill:#9f9,stroke:#333,stroke-width:2px
-```
+## 📋 Deliverables
 
-## 💡 Why This Closes Interviews
+This design package includes:
+- **README.md** (this file) - Overall design philosophy and objectives
+- **tech-spec.md** - Detailed technical implementation specifications
+- **ux-design.md** - User experience design and interface specifications
+- **seo.graphql** - Complete GraphQL schema with all tables and relationships
 
-1. **Production Mindset**: Not just code generation—production safety built-in
-2. **Data-Driven**: Quantified metrics, not opinions
-3. **Verifiable**: SHA-locked evidence, not promises
-4. **Intelligent**: Knows what matters (weight-based prioritization)
-5. **Complete**: From schema to deployed database with tests
+## 🎬 Demo Script Preview
 
-## 🚢 Ship Timeline
+*"Imagine a world where every keystroke is measured, every meeting expression is analyzed, and your 'bandwidth' score determines your career trajectory. Welcome to S.E.O. - the workplace platform nobody asked for, but everyone will remember."*
 
-Based on current velocity (3.2% coverage/day):
-- Current: 84.3% complete
-- Target: 95% production-ready
-- **ETA: 3 days**
-
-## 📝 The E-Commerce Schema
-
-The demo uses a realistic e-commerce schema with:
-- User authentication with bcrypt
-- Product catalog with inventory
-- Order processing with payments
-- Security constraints enforced
-- RLS policies for multi-tenancy
-
-## 🔮 Next Steps
-
-1. **Install Wesley**: `npm install -g @wesley/cli`
-2. **Install HOLMES**: `npm install -g @wesley/holmes`
-3. **Run the demo**: `./demo.sh`
-4. **Try your schema**: Replace with your GraphQL
-5. **Ship to production**: With confidence
-
-## 🌟 The Paradigm Shift
-
-> "Migrations are a byproduct, not a task."
-
-Stop writing migrations. Stop writing SQL. Stop writing tests manually.
-
-Write GraphQL. Ship everything.
-
-**"Make it so, schema."**
+**S.E.O.: Where synergy meets surveillance. Built with Wesley, because even dystopia deserves good architecture.**
 
 ---
 
 <div align="center">
-  <strong>Built in 7 days. Ready for production.</strong>
-  
-  Wesley + SHA-lock HOLMES: Where schemas become systems.
+  <strong>S.E.O. - Synergistic Enhancement Orchestrator</strong><br/>
+  <em>Making workplace surveillance feel like productivity</em><br/>
+  <br/>
+  Built with Wesley • Powered by Supabase • Inspired by Black Mirror
 </div>

@@ -1,0 +1,19 @@
+type User @table {
+  id: ID! @pk
+  name: String!
+  email: String! @unique
+  created_at: DateTime! @default(value: "now()")
+}
+
+type Post @table @rls(
+  select: "true"
+  insert: "auth.uid() = user_id"  
+  update: "auth.uid() = user_id"
+  delete: "auth.uid() = user_id"
+) {
+  id: ID! @pk
+  title: String!
+  content: String
+  user_id: ID! @fk(ref: "User.id")
+  created_at: DateTime! @default(value: "now()")
+}

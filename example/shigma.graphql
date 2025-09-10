@@ -1,0 +1,419 @@
+"""
+Shigma™ - Collaborative Mood Boards for the Modern Workplace
+"The shittiest Figma!"
+
+Features every Supabase service because this is a demo, baby!
+- Auth: User accounts, team management
+- Storage: Upload those vibes (images)
+- Realtime: Live cursors, chat, board updates
+- RPC: EVERYTHING is an RPC because we're paranoid about data leakage
+- Edge Functions: Image processing, thumbnail generation
+- RLS: Complex policies for team/board/element access
+"""
+
+scalar DateTime
+scalar UUID
+scalar JSON
+scalar URL
+
+# ============================================
+# ENUMS - The vibe taxonomy
+# ============================================
+
+enum VibeMood {
+  INSPIRATIONAL    # Monday morning energy
+  CHAOTIC          # Wednesday afternoon reality
+  AESTHETIC        # Someone discovered gradients
+  CORPORATE        # Board approved
+  UNHINGED         # Friday at 4:59pm
+  MINIMALIST       # We deleted everything
+  MAXIMALIST       # We added everything back
+}
+
+enum ElementType {
+  IMAGE
+  TEXT
+  STICKY_NOTE
+  EMOJI_SPAM      # Essential for any workplace tool
+  DRAWING         # The squiggly lines no one asked for
+  CONNECTOR       # Arrows pointing at nothing
+  VIBE_CHECK      # A poll but cooler
+}
+
+enum BoardPermission {
+  VIEWER          # Can see the chaos
+  EDITOR          # Can contribute to chaos  
+  ADMIN           # Can delete the chaos
+  VIBE_LORD       # Unlimited power
+}
+
+enum CursorStatus {
+  IDLE
+  MOVING
+  TYPING
+  DRAWING
+  CONFUSED        # Hovering over the same spot for 30 seconds
+  RAGE_CLICKING   # We've all been there
+}
+
+# ============================================
+# TABLES - Where vibes live
+# ============================================
+
+"""
+Users from Supabase Auth (auth.users)
+Extended profile data for our vibe creators
+"""
+type UserProfile @table @rls(enable: true) {
+  id: UUID! @pk @default(value: "auth.uid()")  # Links to auth.users
+  
+  # Profile basics
+  username: String! @unique @check(expr: "length(username) >= 3")
+  display_name: String!
+  avatar_url: URL
+  bio: String @check(expr: "length(bio) <= 500")
+  
+  # Vibe metrics
+  total_vibes_created: Int! @default(value: 0)
+  total_boards_created: Int! @default(value: 0)
+  chaos_level: Int! @default(value: 1) @check(expr: "chaos_level BETWEEN 1 AND 10")
+  
+  # Presence
+  is_online: Boolean! @default(value: false)
+  last_seen: DateTime! @default(value: "now()")
+  current_board_id: UUID @fk(ref: "Board.id", onDelete: "SET NULL")
+  
+  # Metadata
+  created_at: DateTime! @default(value: "now()")
+  updated_at: DateTime! @default(value: "now()")
+  
+  # Relationships
+  owned_teams: [Team!]! @hasMany(field: "owner_id")
+  team_members: [TeamMember!]! @hasMany(field: "user_id")
+  boards: [Board!]! @hasMany(field: "created_by")
+  cursors: [LiveCursor!]! @hasMany(field: "user_id")
+}
+
+"""
+Teams own boards and have members
+Multi-tenancy boundary
+"""
+type Team @table @rls(enable: true) @tenant(by: "id") {
+  id: UUID! @pk @default(value: "gen_random_uuid()")
+  
+  # Team info
+  name: String! @unique
+  slug: String! @unique @check(expr: "slug ~ '^[a-z0-9-]+$'")
+  logo_url: URL
+  
+  # Limits (for that SaaS feel)
+  max_boards: Int! @default(value: 10)
+  max_members: Int! @default(value: 5)
+  max_storage_gb: Int! @default(value: 1)
+  
+  # Billing (always need billing in demos)
+  is_premium: Boolean! @default(value: false)
+  subscription_ends_at: DateTime
+  
+  # Relationships
+  owner_id: UUID! @fk(ref: "UserProfile.id", onDelete: "RESTRICT")
+  
+  owner: UserProfile! @belongsTo(field: "owner_id")
+  members: [TeamMember!]! @hasMany(field: "team_id")
+  boards: [Board!]! @hasMany(field: "team_id")
+  
+  created_at: DateTime! @default(value: "now()")
+}
+
+"""
+Junction table for team membership
+"""
+type TeamMember @table @rls(enable: true) @index(fields: ["team_id", "user_id"]) {
+  id: UUID! @pk @default(value: "gen_random_uuid()")
+  
+  team_id: UUID! @fk(ref: "Team.id", onDelete: "CASCADE")
+  user_id: UUID! @fk(ref: "UserProfile.id", onDelete: "CASCADE")
+  
+  role: BoardPermission! @default(value: "'VIEWER'")
+  joined_at: DateTime! @default(value: "now()")
+  
+  # Relationships
+  team: Team! @belongsTo(field: "team_id")
+  user: UserProfile! @belongsTo(field: "user_id")
+  
+  @@unique([team_id, user_id])
+}
+
+"""
+The main canvas where vibes are assembled
+"""
+type Board @table @rls(enable: true) @softDelete @audit {
+  id: UUID! @pk @default(value: "gen_random_uuid()")
+  
+  # Board identity
+  name: String!
+  description: String
+  slug: String! @unique @check(expr: "slug ~ '^[a-z0-9-]+$'")
+  
+  # The vibe
+  mood: VibeMood! @default(value: "'CORPORATE'")
+  background_color: String! @default(value: "'#ffffff'")
+  background_image_url: URL
+  
+  # Canvas settings
+  width: Int! @default(value: 1920)
+  height: Int! @default(value: 1080)
+  zoom_level: Float! @default(value: 1.0) @check(expr: "zoom_level BETWEEN 0.1 AND 5.0")
+  
+  # Access control
+  is_public: Boolean! @default(value: false)
+  password_hash: String  # For "protected" boards
+  
+  # Stats
+  element_count: Int! @default(value: 0)
+  active_users: Int! @default(value: 0)
+  total_views: Int! @default(value: 0)
+  
+  # Relationships
+  team_id: UUID! @fk(ref: "Team.id", onDelete: "CASCADE")
+  created_by: UUID! @fk(ref: "UserProfile.id", onDelete: "RESTRICT")
+  
+  team: Team! @belongsTo(field: "team_id")
+  creator: UserProfile! @belongsTo(field: "created_by")
+  elements: [BoardElement!]! @hasMany(field: "board_id")
+  cursors: [LiveCursor!]! @hasMany(field: "board_id")
+  chat_messages: [ChatMessage!]! @hasMany(field: "board_id")
+  
+  # Timestamps
+  created_at: DateTime! @default(value: "now()")
+  updated_at: DateTime! @default(value: "now()")
+  deleted_at: DateTime  # Soft delete
+}
+
+"""
+Individual elements on the mood board
+This is where the magic (chaos) happens
+"""
+type BoardElement @table @rls(enable: true) @softDelete @realtime {
+  id: UUID! @pk @default(value: "gen_random_uuid()")
+  
+  board_id: UUID! @fk(ref: "Board.id", onDelete: "CASCADE")
+  
+  # Element properties
+  type: ElementType!
+  
+  # Position and dimensions (because everything needs to be draggable)
+  x: Float! @check(expr: "x >= 0")
+  y: Float! @check(expr: "y >= 0")
+  width: Float! @check(expr: "width > 0")
+  height: Float! @check(expr: "height > 0")
+  rotation: Float! @default(value: 0) @check(expr: "rotation BETWEEN -360 AND 360")
+  z_index: Int! @default(value: 0)
+  
+  # Content (depends on type)
+  content: JSON!  # Stores type-specific data
+  # For IMAGE: { url, alt, filters }
+  # For TEXT: { text, font, size, color }
+  # For STICKY_NOTE: { text, color }
+  # For EMOJI_SPAM: { emoji, density }
+  # For DRAWING: { path, stroke, fill }
+  # For CONNECTOR: { fromId, toId, style }
+  # For VIBE_CHECK: { question, options, votes }
+  
+  # Style
+  opacity: Float! @default(value: 1.0) @check(expr: "opacity BETWEEN 0 AND 1")
+  blend_mode: String @default(value: "'normal'")
+  
+  # Locking (to prevent others from moving your perfectly placed element)
+  is_locked: Boolean! @default(value: false)
+  locked_by: UUID @fk(ref: "UserProfile.id", onDelete: "SET NULL")
+  
+  # Who's editing
+  currently_editing_by: UUID @fk(ref: "UserProfile.id", onDelete: "SET NULL")
+  
+  # Metadata
+  created_by: UUID! @fk(ref: "UserProfile.id", onDelete: "SET NULL")
+  created_at: DateTime! @default(value: "now()")
+  updated_at: DateTime! @default(value: "now()")
+  deleted_at: DateTime
+  
+  # Relationships
+  board: Board! @belongsTo(field: "board_id")
+  creator: UserProfile! @belongsTo(field: "created_by")
+  editor: UserProfile @belongsTo(field: "currently_editing_by")
+}
+
+"""
+Live cursor tracking for that collaborative feel
+Powered by Supabase Realtime
+"""
+type LiveCursor @table @rls(enable: true) @realtime @ephemeral {
+  id: UUID! @pk @default(value: "gen_random_uuid()")
+  
+  board_id: UUID! @fk(ref: "Board.id", onDelete: "CASCADE")
+  user_id: UUID! @fk(ref: "UserProfile.id", onDelete: "CASCADE")
+  
+  # Cursor position
+  x: Float!
+  y: Float!
+  
+  # What they're doing
+  status: CursorStatus! @default(value: "'IDLE'")
+  selected_element_id: UUID @fk(ref: "BoardElement.id", onDelete: "SET NULL")
+  
+  # Appearance
+  color: String!  # Each user gets a color
+  label: String   # Shows username or custom message
+  
+  # Heartbeat
+  last_update: DateTime! @default(value: "now()")
+  
+  # Relationships
+  board: Board! @belongsTo(field: "board_id")
+  user: UserProfile! @belongsTo(field: "user_id")
+  
+  @@unique([board_id, user_id])
+}
+
+"""
+Chat messages for each board
+Because no collab tool is complete without ignored chat
+"""
+type ChatMessage @table @rls(enable: true) @realtime {
+  id: UUID! @pk @default(value: "gen_random_uuid()")
+  
+  board_id: UUID! @fk(ref: "Board.id", onDelete: "CASCADE")
+  user_id: UUID! @fk(ref: "UserProfile.id", onDelete: "SET NULL")
+  
+  # Message content
+  content: String! @check(expr: "length(content) <= 1000")
+  
+  # Rich features
+  mentions: UUID[]  # Array of mentioned user IDs
+  attachments: JSON # File attachments metadata
+  reactions: JSON   # Emoji reactions with counts
+  
+  # Threading (because we're sophisticated)
+  reply_to_id: UUID @fk(ref: "ChatMessage.id", onDelete: "CASCADE")
+  
+  # Metadata
+  is_edited: Boolean! @default(value: false)
+  edited_at: DateTime
+  created_at: DateTime! @default(value: "now()")
+  
+  # Relationships
+  board: Board! @belongsTo(field: "board_id")
+  user: UserProfile @belongsTo(field: "user_id")
+  reply_to: ChatMessage @belongsTo(field: "reply_to_id")
+  replies: [ChatMessage!]! @hasMany(field: "reply_to_id")
+}
+
+"""
+Storage bucket references for Supabase Storage
+Tracks uploaded images and generated thumbnails
+"""
+type StorageObject @table @rls(enable: true) {
+  id: UUID! @pk @default(value: "gen_random_uuid()")
+  
+  # Bucket and path
+  bucket_name: String! @default(value: "'workvibes'")
+  object_path: String! @unique
+  
+  # File metadata
+  filename: String!
+  content_type: String!
+  size_bytes: Int! @check(expr: "size_bytes > 0")
+  
+  # Processed versions (via Edge Functions)
+  thumbnail_path: String
+  optimized_path: String
+  blur_hash: String  # For progressive loading
+  
+  # Ownership
+  uploaded_by: UUID! @fk(ref: "UserProfile.id", onDelete: "SET NULL")
+  team_id: UUID! @fk(ref: "Team.id", onDelete: "CASCADE")
+  
+  # Usage tracking
+  used_in_boards: UUID[]  # Array of board IDs using this image
+  access_count: Int! @default(value: 0)
+  
+  created_at: DateTime! @default(value: "now()")
+  
+  # Relationships
+  uploader: UserProfile! @belongsTo(field: "uploaded_by")
+  team: Team! @belongsTo(field: "team_id")
+}
+
+# ============================================
+# RPC FUNCTIONS - The real magic
+# ============================================
+
+"""
+RPC functions for complex operations
+Because we don't trust the client with ANYTHING
+"""
+type RPCFunctions @rpc {
+  # Board operations
+  createBoard(name: String!, teamId: UUID!): Board! @auth
+  duplicateBoard(boardId: UUID!): Board! @auth
+  exportBoard(boardId: UUID!, format: String!): JSON! @auth
+  
+  # Element operations (batch for performance)
+  batchCreateElements(boardId: UUID!, elements: JSON!): [BoardElement!]! @auth
+  batchUpdateElements(updates: JSON!): [BoardElement!]! @auth
+  batchDeleteElements(elementIds: [UUID!]!): Boolean! @auth
+  
+  # Collaboration
+  broadcastCursor(boardId: UUID!, x: Float!, y: Float!, status: CursorStatus!): Boolean! @auth
+  sendVibeCheck(boardId: UUID!, question: String!, options: [String!]!): BoardElement! @auth
+  
+  # Team management
+  inviteToTeam(teamId: UUID!, email: String!, role: BoardPermission!): TeamMember! @auth
+  upgradeTeam(teamId: UUID!, planType: String!): Team! @auth
+  
+  # Analytics (because data)
+  getBoardAnalytics(boardId: UUID!): JSON! @auth
+  getTeamUsage(teamId: UUID!): JSON! @auth
+  getVibeReport(boardId: UUID!): JSON! @auth  # ML-powered vibe analysis
+  
+  # Storage operations
+  requestUploadUrl(filename: String!, contentType: String!): JSON! @auth
+  processUploadedImage(objectPath: String!): StorageObject! @auth
+  
+  # Search (powered by pg_trgm)
+  searchBoards(query: String!, teamId: UUID): [Board!]! @auth
+  searchElements(query: String!, boardId: UUID!): [BoardElement!]! @auth
+}
+
+# ============================================
+# VIEWS - For complex queries
+# ============================================
+
+"""
+Materialized view for team statistics
+"""
+type TeamStats @view @index(fields: ["team_id"]) {
+  team_id: UUID! @pk
+  total_boards: Int!
+  total_members: Int!
+  total_elements: Int!
+  total_storage_used: BigInt!
+  most_active_user_id: UUID
+  most_popular_mood: VibeMood
+  avg_chaos_level: Float!
+  last_activity: DateTime!
+}
+
+"""
+View for board activity feed
+"""
+type ActivityFeed @view @realtime {
+  id: UUID!
+  board_id: UUID!
+  user_id: UUID
+  action: String!  # "created", "updated", "deleted", "commented"
+  target_type: String!  # "element", "board", "chat"
+  target_id: UUID
+  metadata: JSON
+  occurred_at: DateTime!
+}

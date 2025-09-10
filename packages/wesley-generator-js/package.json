@@ -1,0 +1,32 @@
+{
+  "name": "@wesley/generator-js",
+  "version": "0.1.0",
+  "description": "Wesley JavaScript/TypeScript Generators - Models, Types, and Zod schemas",
+  "type": "module",
+  "main": "src/index.mjs",
+  "exports": {
+    ".": "./src/index.mjs"
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@wesley/core": "workspace:*",
+    "ts-morph": "^19.0.0"
+  },
+  "devDependencies": {
+    "vitest": "^1.0.0"
+  },
+  "keywords": [
+    "wesley",
+    "javascript",
+    "typescript",
+    "code-generation",
+    "models"
+  ],
+  "author": "Wesley Team",
+  "license": "MIT"
+}

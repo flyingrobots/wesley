@@ -1,0 +1,43 @@
+{
+  "name": "@wesley/slaps",
+  "version": "0.1.0",
+  "description": "Wesley S.L.A.P.S. - Strategic Lock-Aware PostgreSQL System",
+  "type": "module",
+  "main": "src/index.mjs",
+  "exports": {
+    ".": "./src/index.mjs"
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@wesley/tasks": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^1.0.0"
+  },
+  "peerDependencies": {
+    "pg": "^8.0.0"
+  },
+  "keywords": [
+    "wesley",
+    "postgresql",
+    "lock-management",
+    "execution-engine",
+    "concurrency"
+  ],
+  "author": "Wesley Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wesleydev/wesley.git",
+    "directory": "packages/wesley-slaps"
+  },
+  "homepage": "https://github.com/wesleydev/wesley#readme",
+  "bugs": {
+    "url": "https://github.com/wesleydev/wesley/issues"
+  }
+}

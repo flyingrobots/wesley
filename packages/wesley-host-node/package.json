@@ -2,31 +2,45 @@
   "name": "@wesley/host-node",
   "version": "0.1.0",
   "type": "module",
-  "description": "Wesley Node.js platform adapters - GraphQL parser, SQL generators, file system",
+  "description": "Wesley Node.js platform adapters and executable",
   "main": "./src/index.mjs",
+  "bin": {
+    "wesley": "./bin/wesley.mjs"
+  },
   "exports": {
-    ".": "./src/index.mjs",
-    "./adapters": "./src/adapters/index.mjs",
-    "./generators": "./src/generators/index.mjs",
-    "./parsers": "./src/parsers/index.mjs"
+    ".": "./src/index.mjs"
   },
   "files": [
-    "src/"
+    "src/",
+    "bin/"
   ],
   "scripts": {
     "test": "node --test test/**/*.test.mjs",
     "lint": "eslint src/"
   },
   "dependencies": {
+    "@supabase/pg-parser": "^0.1.0",
+    "@wesley/cli": "workspace:*",
     "@wesley/core": "workspace:*",
-    "graphql": "^16.9.0",
+    "@wesley/generator-js": "workspace:*",
+    "@wesley/generator-supabase": "workspace:*",
+    "commander": "^14.0.0",
     "fast-glob": "^3.3.2",
-    "@supabase/pg-parser": "^0.1.0"
+    "graphql": "^16.9.0",
+    "pino": "^9.9.0"
   },
-  "engines": { 
-    "node": ">=18.17" 
+  "engines": {
+    "node": ">=18.17"
   },
-  "keywords": ["graphql", "sql", "node", "adapters"],
+  "keywords": [
+    "graphql",
+    "sql",
+    "node",
+    "adapters"
+  ],
   "author": "Captain James",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "pino-pretty": "^13.1.1"
+  }
 }

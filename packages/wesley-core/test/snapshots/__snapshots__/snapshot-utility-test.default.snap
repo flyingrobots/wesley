@@ -1,0 +1,2 @@
+SELECT * FROM users WHERE id = 1;
+SELECT * FROM posts WHERE author_id = 1;
