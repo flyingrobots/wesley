@@ -17,6 +17,8 @@ import { CertSignCommand } from './commands/cert-sign.mjs';
 import { CertVerifyCommand } from './commands/cert-verify.mjs';
 import { CertBadgeCommand } from './commands/cert-badge.mjs';
 import { BladeCommand } from './commands/blade.mjs';
+import { InitCommand } from './commands/init.mjs';
+import { UpCommand } from './commands/up.mjs';
 
 export async function program(argv, ctx) {
   // Create commands with context (auto-registers them)
@@ -29,6 +31,8 @@ export async function program(argv, ctx) {
   new CertVerifyCommand(ctx);
   new CertBadgeCommand(ctx);
   new BladeCommand(ctx);
+  new InitCommand(ctx);
+  new UpCommand(ctx);
   
   // TODO: Add other commands when they're updated
   // new ModelsCommand(ctx);
