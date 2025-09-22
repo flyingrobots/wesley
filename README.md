@@ -1,8 +1,8 @@
 # Wesley
 
-> Production-grade database migrations from GraphQL. Zero downtime by default.
+> Instant backend – Just add GraphQL! Zero downtime by default.
 
-Wesley is a schema-first database migration platform that uses GraphQL SDL as the single source of truth. It generates PostgreSQL DDL with lock-aware strategies, TypeScript types, RLS policies, and comprehensive tests - all while prioritizing production safety with advisory locks, drift detection, and checkpoint recovery.
+Wesley is a schema-first data layer that uses GraphQL SDL as the single source of truth. It transforms it into PostgreSQL DDL with lock-aware strategies, TypeScript types, RLS policies, comprehensive pgTAP tests, all while prioritizing production safety with advisory locks, drift detection, checkpoint recovery, and a "safe to deploy" certification system built-in.
 
 **The adult in the room for database operations.** No surprises, no 3am pages, just boring reliability.
 
@@ -59,49 +59,52 @@ flowchart LR
     class DEP p3
 ```
 
-Why GraphQL as schema?
+## Why GraphQL as schema?
 
 - One source of truth: Describe the domain once; Wesley generates SQL, migrations, types, validation, and RLS from it.
 - Naturally relational: Graphs express relationships and constraints cleanly; directives capture DB semantics where they’re used.
 - Portable by design: A schema → IR → generators pipeline targets Postgres/Supabase today, other backends tomorrow.
+- Schmea that evolves: Just like your database.
 
-⸻
+## The problem (short version)
 
-The problem (short version)
+Modern development stacks require that the same shape is described over and over (often 5+ places) which leads to inevitable drift.
 
-You maintain the same shape in 5+ places:
-
-- GraphQL for APIs
-- Postgres DDL for DB
-- TypeScript for apps
-- Zod for runtime
-- RLS for security
-- migrations that drift
+ + Postgres DDL for DB
+ + GraphQL for APIs
+ + TypeScript for apps
+ + Zod for runtime
+ + RLS for security
+ + Hand-written database migrations
+=> drift
 
 When they drift, prod breaks. Reviews get harder. Deploys get scary. You’re playing schema telephone.
 
-⸻
+## How Wesley works
 
-How Wesley works
+### 1) Define once
 
-1) Define once
-
+```graphql
 type User @table {
   id: ID! @pk
   email: String! @unique
   org_id: ID! @fk(ref: "Org.id")
 }
+```
 
-2) Compile everything
+### 2) Compile everything
 
+```bash
 wesley generate --schema schema.graphql
 wesley plan         # expand → backfill → validate → switch → contract
 wesley rehearse     # run the plan on a shadow DB
 wesley certify      # emit SHA-locked proofs
 wesley deploy       # apply plan to production
+```
 
-3) What you get
+### 3) What you get
 
+```bash
 ✓ migrations/001_expand.sql     # online DDL
 ✓ migrations/001_backfill.sql   # idempotent data moves
 ✓ migrations/001_contract.sql   # cleanup phase
@@ -110,6 +113,7 @@ wesley deploy       # apply plan to production
 ✓ policies/rls.sql              # RLS policies + helpers
 ✓ tests/                        # pgTAP suites (structure/constraints/RLS/plan)
 ✓ certs/deploy-<sha>.json       # proofs & hashes
+```
 
 ## Key Features
 
@@ -178,7 +182,7 @@ type Post @table @rls(enable: true) {
 }
 ```
 
-Generate → rehearse → deploy:
+### Generate → rehearse → deploy:
 
 ```
 wesley generate
