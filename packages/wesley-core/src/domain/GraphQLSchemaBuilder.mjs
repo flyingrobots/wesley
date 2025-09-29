@@ -80,18 +80,15 @@ export class GraphQLSchemaBuilder {
       });
     }
     
-    const table = new Table({
+    if (tableDirectives['@rls']) {
+      tableDirectives['@rls'] = this.parseRLSConfig(tableDirectives['@rls']);
+    }
+
+    return new Table({
       name: tableName,
       directives: tableDirectives,
       fields
     });
-    
-    // Parse RLS config if present
-    if (tableDirectives['@rls']) {
-      table.rls = this.parseRLSConfig(tableDirectives['@rls']);
-    }
-    
-    return table;
   }
   
   /**

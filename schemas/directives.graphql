@@ -38,6 +38,59 @@ directive @wes_default(
   value: String!
 ) on FIELD_DEFINITION
 
+directive @wes_uid(
+  value: String!
+) on FIELD_DEFINITION | OBJECT
+
+directive @wes_weight(
+  value: Int!
+) on FIELD_DEFINITION | OBJECT
+
+directive @wes_critical on FIELD_DEFINITION | OBJECT
+directive @wes_sensitive on FIELD_DEFINITION | OBJECT
+directive @wes_pii on FIELD_DEFINITION | OBJECT
+
+directive @wes_hasMany(
+  type: String!
+  field: String
+  via: String
+) on FIELD_DEFINITION
+
+directive @wes_belongsTo(
+  ref: String!
+) on FIELD_DEFINITION
+
+directive @wes_owner(
+  column: String
+  select: String
+  insert: String
+  update: String
+  delete: String
+) on OBJECT
+
+directive @wes_grant(
+  roles: [String!]
+) on OBJECT | FIELD_DEFINITION
+
+directive @wes_noRPC on OBJECT
+
+directive @wes_rls(
+  using: String
+  check: String
+  select: String
+  insert: String
+  update: String
+  delete: String
+  roles: [String!]
+  selectRoles: [String!]
+  insertRoles: [String!]
+  updateRoles: [String!]
+  deleteRoles: [String!]
+  preset: String
+  name: String
+  options: JSON
+) on OBJECT
+
 # ═══════════════════════════════════════════════════════════════════
 # LEGACY ALIASES (Deprecated - use @wes_* instead)
 # ═══════════════════════════════════════════════════════════════════
@@ -49,6 +102,32 @@ directive @wesley_unique on FIELD_DEFINITION
 directive @wesley_index(name: String, using: String) on FIELD_DEFINITION | OBJECT
 directive @wesley_tenant(by: String!) on OBJECT
 directive @wesley_default(value: String!) on FIELD_DEFINITION
+directive @wesley_uid(value: String!) on FIELD_DEFINITION | OBJECT
+directive @wesley_weight(value: Int!) on FIELD_DEFINITION | OBJECT
+directive @wesley_critical on FIELD_DEFINITION | OBJECT
+directive @wesley_sensitive on FIELD_DEFINITION | OBJECT
+directive @wesley_pii on FIELD_DEFINITION | OBJECT
+directive @wesley_hasMany(type: String!, field: String, via: String) on FIELD_DEFINITION
+directive @wesley_belongsTo(ref: String!) on FIELD_DEFINITION
+directive @wesley_owner(column: String, select: String, insert: String, update: String, delete: String) on OBJECT
+directive @wesley_grant(roles: [String!]) on OBJECT | FIELD_DEFINITION
+directive @wesley_noRPC on OBJECT
+directive @wesley_rls(
+  using: String
+  check: String
+  select: String
+  insert: String
+  update: String
+  delete: String
+  roles: [String!]
+  selectRoles: [String!]
+  insertRoles: [String!]
+  updateRoles: [String!]
+  deleteRoles: [String!]
+  preset: String
+  name: String
+  options: JSON
+) on OBJECT
 
 directive @table on OBJECT
 directive @pk on FIELD_DEFINITION
@@ -57,6 +136,34 @@ directive @unique on FIELD_DEFINITION
 directive @index(name: String, using: String) on FIELD_DEFINITION | OBJECT
 directive @tenant(by: String!) on OBJECT
 directive @default(value: String!) on FIELD_DEFINITION
+directive @uid(value: String!) on FIELD_DEFINITION | OBJECT
+directive @weight(value: Int!) on FIELD_DEFINITION | OBJECT
+directive @critical on FIELD_DEFINITION | OBJECT
+directive @sensitive on FIELD_DEFINITION | OBJECT
+directive @pii on FIELD_DEFINITION | OBJECT
+directive @primaryKey on FIELD_DEFINITION | OBJECT
+directive @foreignKey(ref: String!) on FIELD_DEFINITION
+directive @hasMany(type: String!, field: String, via: String) on FIELD_DEFINITION
+directive @belongsTo(ref: String!) on FIELD_DEFINITION
+directive @owner(column: String, select: String, insert: String, update: String, delete: String) on OBJECT
+directive @grant(roles: [String!]) on OBJECT | FIELD_DEFINITION
+directive @noRPC on OBJECT
+directive @rls(
+  using: String
+  check: String
+  select: String
+  insert: String
+  update: String
+  delete: String
+  roles: [String!]
+  selectRoles: [String!]
+  insertRoles: [String!]
+  updateRoles: [String!]
+  deleteRoles: [String!]
+  preset: String
+  name: String
+  options: JSON
+) on OBJECT
 
 # Note: Additional directives for relationships, RLS, validation, etc. 
 # can be added here as needed. For now, focusing on core table directives.

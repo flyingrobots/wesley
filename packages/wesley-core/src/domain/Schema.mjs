@@ -26,6 +26,24 @@ export class Schema {
   toJSON() {
     return { tables: this.tables };
   }
+
+  toAST() {
+    return {
+      kind: 'WesleySchema',
+      tables: Object.values(this.tables).map(table => table.toAST ? table.toAST() : {
+        name: table.name,
+        directives: table.directives,
+        fields: Object.values(table.fields).map(field => ({
+          name: field.name,
+          type: field.type,
+          nonNull: field.nonNull,
+          list: field.list,
+          itemNonNull: field.itemNonNull,
+          directives: field.directives
+        }))
+      })
+    };
+  }
 }
 
 export class Table {
@@ -64,6 +82,21 @@ export class Table {
 
   isTable() {
     return !!this.directives['@table'];
+  }
+
+  toAST() {
+    return {
+      name: this.name,
+      directives: this.directives,
+      fields: this.getFields().map(field => field.toAST ? field.toAST() : {
+        name: field.name,
+        type: field.type,
+        nonNull: field.nonNull,
+        list: field.list,
+        itemNonNull: field.itemNonNull,
+        directives: field.directives
+      })
+    };
   }
 }
 
@@ -109,5 +142,16 @@ export class Field {
 
   getCheckConstraint() {
     return this.directives['@check']?.expr;
+  }
+
+  toAST() {
+    return {
+      name: this.name,
+      type: this.type,
+      nonNull: this.nonNull,
+      list: this.list,
+      itemNonNull: this.itemNonNull,
+      directives: this.directives
+    };
   }
 }

@@ -4,7 +4,7 @@
  */
 
 import { EvidenceMap } from '../application/EvidenceMap.mjs';
-import { Scoring } from '../application/Scoring.mjs';
+import { ScoringEngine } from '../application/Scoring.mjs';
 import { PostgreSQLGenerator } from './generators/PostgreSQLGenerator.mjs';
 import { PgTAPTestGenerator } from './generators/PgTAPTestGenerator.mjs';
 import { RPCFunctionGeneratorV2 } from './generators/RPCFunctionGeneratorV2.mjs';
@@ -55,11 +55,15 @@ export class WesleyOrchestrator {
     }
     
     // 2. Generate pgTAP tests
+    let diffForTests = null;
+    if (previousSchema) {
+      diffForTests = await migrationEngine.diff(previousSchema, schema);
+    }
+
     if (this.enableTests) {
       artifacts.tests = await testGenerator.generate(schema, {
         supabase: options.supabase,
-        migrationSteps: previousSchema ? 
-          migrationEngine.diff(previousSchema, schema).steps : null
+        migrationSteps: diffForTests ? diffForTests.steps : null
       });
     }
     
@@ -73,7 +77,7 @@ export class WesleyOrchestrator {
     
     // 5. Generate migrations if previous schema exists
     if (this.enableMigrations && previousSchema) {
-      const diff = await migrationEngine.diff(previousSchema, schema);
+      const diff = diffForTests ?? await migrationEngine.diff(previousSchema, schema);
       
       // Check for blocked operations
       if (diff.safetyAnalysis?.blockedOperations?.length > 0) {
@@ -87,20 +91,20 @@ export class WesleyOrchestrator {
         artifacts.migration = {
           steps: diff.steps,
           sql: migrationEngine.toSQL(diff),
-          mri: diff.holmesScore?.mri || this.calculateMRI(diff.steps),
+          mri: diff.holmesScore || this.calculateMRI(diff.steps),
           safetyAnalysis: diff.safetyAnalysis,
           preFlightSnapshot: diff.preFlightSnapshot,
-          holmesScore: diff.holmesScore
+          holmesScore: diff.holmesAssessment || { mri: diff.holmesScore }
         };
       }
     }
     
     // 5. Calculate scores
-    const scoring = new Scoring();
+    const scoring = new ScoringEngine(evidenceMap);
     const scores = {
-      scs: scoring.calculateSCS(schema, evidenceMap),
+      scs: scoring.calculateSCS(schema),
       mri: artifacts.migration ? artifacts.migration.mri : 0,
-      tci: scoring.calculateTCI(schema, evidenceMap)
+      tci: scoring.calculateTCI(schema, options.testResults || { passed: 0, failed: 0, total: 0, suites: [] })
     };
     
     // 6. Determine readiness
