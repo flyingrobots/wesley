@@ -164,10 +164,12 @@ wesley deploy       # apply plan to production
 
 ```bash
 npm install -g @wesley/cli
-wesley init
+wesley init                      # scaffold minimal schema.graphql
+wesley generate                  # compile GraphQL → SQL/tests and write snapshot
+wesley up --docker               # bootstrap or migrate your dev DB
 ```
 
-### Write a schema:
+### Edit your schema (v1 → v2):
 
 ```graphql
 type Post @table @rls(enable: true) {
@@ -178,12 +180,17 @@ type Post @table @rls(enable: true) {
 }
 ```
 
-Generate → rehearse → deploy:
+Generate → migrate:
 
 ```
-wesley generate
-wesley rehearse
-wesley deploy
+wesley generate                  # after editing schema.graphql
+wesley up                        # applies additive, lock‑aware migrations
+
+DSN quick reference
+- `--dsn` wins for all commands.
+- With `--provider supabase`, falls back to `SUPABASE_DB_URL`/`SUPABASE_POSTGRES_URL`.
+- Otherwise, uses local default: `postgres://wesley:wesley_test@localhost:5432/wesley_test`.
+- If both Supabase and Postgres env vars are present and no `--provider` is set, Wesley prefers Supabase and logs a warning; use `--provider` or `--dsn` to override.
 ```
 
 ## FAQ

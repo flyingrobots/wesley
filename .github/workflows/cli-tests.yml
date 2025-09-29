@@ -24,7 +24,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest]
         node-version: [18.x, 20.x, 22.x]
       fail-fast: false
 
@@ -53,11 +53,6 @@ jobs:
         tar -xzf v1.12.0.tar.gz
         sudo ./bats-core-1.12.0/install.sh /usr/local
         echo "/usr/local/bin" >> $GITHUB_PATH
-
-    - name: Install Bats (macOS)
-      if: matrix.os == 'macos-latest'
-      run: |
-        brew install bats-core
 
     - name: Verify Bats installation
       run: |

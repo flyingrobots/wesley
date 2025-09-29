@@ -15,6 +15,7 @@ export class UpCommand extends WesleyCommand {
       .option('-s, --schema <path>', 'GraphQL schema file. Use "-" for stdin', 'schema.graphql')
       .option('--stdin', 'Read schema from stdin (alias for --schema -)')
       .option('--dsn <url>', 'Database DSN for dev environment')
+      .option('--provider <name>', 'DB provider: postgres|supabase')
       .option('--docker', 'Attempt to start docker compose service postgres')
       .option('--out-dir <dir>', 'Output directory (for schema.sql)', 'out')
       .option('--dry-run', 'Explain without executing')
@@ -24,7 +25,7 @@ export class UpCommand extends WesleyCommand {
   async executeCore({ options, schemaContent, logger }) {
     const env = this.ctx.env || {};
     const outDir = options.outDir || 'out';
-    let dsn = options.dsn || defaultDsnFor('postgres', env);
+    let dsn = options.dsn || pickDsn(options, env, this.makeLogger(options, { phase: 'up' }));
 
     if (options.docker) {
       await tryStartDocker(logger);
@@ -103,6 +104,39 @@ export class UpCommand extends WesleyCommand {
 function defaultDsnFor(provider, env) {
   if (provider === 'supabase') return env.SUPABASE_DB_URL || env.SUPABASE_POSTGRES_URL || null;
   return 'postgres://wesley:wesley_test@localhost:5432/wesley_test';
+}
+
+function pickDsn(options, env, logger) {
+  // 1) Explicit --dsn wins
+  if (options?.dsn) return options.dsn;
+
+  // 2) Provider hint
+  const hinted = (options?.provider || '').toLowerCase();
+  const hasSupabase = !!(env.SUPABASE_DB_URL || env.SUPABASE_POSTGRES_URL);
+  const hasPostgres = !!(env.POSTGRES_URL || env.DATABASE_URL || env.TEST_DATABASE_URL || env.WESLEY_TEST_DSN);
+
+  if (hinted === 'supabase') {
+    return env.SUPABASE_DB_URL || env.SUPABASE_POSTGRES_URL || null;
+  }
+  if (hinted === 'postgres') {
+    return env.POSTGRES_URL || env.DATABASE_URL || env.TEST_DATABASE_URL || env.WESLEY_TEST_DSN || null;
+  }
+
+  // 3) Auto-detect
+  if (hasSupabase && hasPostgres) {
+    // Prefer Supabase if both present, but warn for clarity
+    logger?.warn?.('Both SUPABASE_* and POSTGRES/DATABASE_URL present; defaulting to SUPABASE_*. Use --provider to disambiguate or --dsn to override.');
+    return env.SUPABASE_DB_URL || env.SUPABASE_POSTGRES_URL;
+  }
+  if (hasSupabase) {
+    return env.SUPABASE_DB_URL || env.SUPABASE_POSTGRES_URL;
+  }
+  if (hasPostgres) {
+    return env.POSTGRES_URL || env.DATABASE_URL || env.TEST_DATABASE_URL || env.WESLEY_TEST_DSN;
+  }
+
+  // 4) Fallback to local default
+  return defaultDsnFor('postgres', env);
 }
 
 async function tryStartDocker(logger) {
