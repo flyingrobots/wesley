@@ -40,6 +40,7 @@ export class PostgreSQLGenerator {
     this.output = [];
 
     for (const table of schema.getTables()) {
+      const sqlTable = (await import('../Identifier.mjs')).identifier.toTableSQLName(table.name);
       const tableUid = DirectiveProcessor.getUid(table.directives) || `tbl:${table.name}`;
       const tableStartLine = this.currentLine;
 
@@ -52,10 +53,11 @@ export class PostgreSQLGenerator {
         const fieldUid = DirectiveProcessor.getUid(field.directives) || `col:${table.name}.${field.name}`;
         const fieldStartLine = this.currentLine + cols.length + constraints.length + 2;
 
-        let col = `"${field.name}" ${this.getSQLType(field)}`;
+        const colName = (await import('../Identifier.mjs')).identifier.toSQL(field.name);
+        let col = `"${colName}" ${this.getSQLType(field)}`;
 
         if (field.isPrimaryKey()) {
-          constraints.push(`PRIMARY KEY ("${field.name}")`);
+          constraints.push(`PRIMARY KEY ("${colName}")`);
         }
 
         const defaultValue = field.getDefault();
@@ -74,20 +76,21 @@ export class PostgreSQLGenerator {
         }
 
         if (field.isUnique()) {
-          constraints.push(`UNIQUE ("${field.name}")`);
+          constraints.push(`UNIQUE ("${colName}")`);
         }
 
         const fkRef = field.getForeignKeyRef();
         if (fkRef) {
           const [refTable, refCol] = fkRef.split('.');
+          const idf = (await import('../Identifier.mjs')).identifier;
           constraints.push(
-            `FOREIGN KEY ("${field.name}") REFERENCES "${refTable}"("${refCol || 'id'}") ON DELETE NO ACTION`
+            `FOREIGN KEY ("${colName}") REFERENCES "${idf.toTableSQLName(refTable)}"("${idf.toSQL(refCol || 'id')}") ON DELETE NO ACTION`
           );
         }
 
         if (field.list && field.itemNonNull) {
           const baseType = scalarMap[field.type] || 'text';
-          constraints.push(`CHECK (NOT "${field.name}" @> ARRAY[NULL]::${baseType}[])`);
+          constraints.push(`CHECK (NOT "${colName}" @> ARRAY[NULL]::${baseType}[])`);
         }
 
         const checkExpr = field.getCheckConstraint();
@@ -96,17 +99,18 @@ export class PostgreSQLGenerator {
         }
       }
 
-      const create = `CREATE TABLE IF NOT EXISTS "${table.name}" (\n  ${[...cols, ...constraints]
+      const create = `CREATE TABLE IF NOT EXISTS "${sqlTable}" (\n  ${[...cols, ...constraints]
         .filter(Boolean)
         .join(',\n  ')}\n);`;
 
       statements.push(create);
-      statements.push(`COMMENT ON TABLE "${table.name}" IS 'uid: ${tableUid}';`);
+      statements.push(`COMMENT ON TABLE "${sqlTable}" IS 'uid: ${tableUid}';`);
 
       for (const field of table.getFields()) {
         if (!field.isVirtual()) {
-          const fieldUid = field.directives?.['@uid'] || `col_${table.name.toLowerCase()}_${field.name.toLowerCase()}`;
-          statements.push(`COMMENT ON COLUMN "${table.name}"."${field.name}" IS 'uid: ${fieldUid}';`);
+          const idf = (await import('../Identifier.mjs')).identifier;
+          const fieldUid = field.directives?.['@uid'] || `col_${idf.toTableSQLName(table.name)}_${idf.toSQL(field.name)}`;
+          statements.push(`COMMENT ON COLUMN "${sqlTable}"."${idf.toSQL(field.name)}" IS 'uid: ${fieldUid}';`);
         }
       }
 
@@ -114,30 +118,31 @@ export class PostgreSQLGenerator {
 
       for (const field of table.getFields()) {
         if (field.isPrimaryKey()) {
-          deduplicator.registerPrimaryKey(table.name, field.name);
+          deduplicator.registerPrimaryKey(sqlTable, (await import('../Identifier.mjs')).identifier.toSQL(field.name));
         }
         if (field.isUnique()) {
-          deduplicator.registerUniqueConstraint(table.name, field.name);
+          deduplicator.registerUniqueConstraint(sqlTable, (await import('../Identifier.mjs')).identifier.toSQL(field.name));
         }
       }
 
       for (const field of table.getFields()) {
         if (field.isIndexed()) {
           const indexDef = field.directives?.['@index'] || {};
-          const columns = [field.name];
+          const idf = (await import('../Identifier.mjs')).identifier;
+          const columns = [idf.toSQL(field.name)];
           const options = {
             unique: indexDef.unique || false,
             where: indexDef.where || null
           };
 
-          const check = deduplicator.isRedundant(table.name, columns, options);
+          const check = deduplicator.isRedundant(sqlTable, columns, options);
           if (!check.redundant) {
-            const indexName = `${table.name}_${field.name}_idx`;
-            const indexUid = field.directives?.['@uid'] ? `idx_${field.directives['@uid']}` : `idx_${table.name.toLowerCase()}_${field.name.toLowerCase()}`;
+            const indexName = `${sqlTable}_${idf.toSQL(field.name)}_idx`;
+            const indexUid = field.directives?.['@uid'] ? `idx_${field.directives['@uid']}` : `idx_${sqlTable}_${idf.toSQL(field.name)}`;
 
             let indexStmt = `CREATE`;
             if (options.unique) indexStmt += ` UNIQUE`;
-            indexStmt += ` INDEX IF NOT EXISTS "${indexName}" ON "${table.name}" ("${field.name}")`;
+            indexStmt += ` INDEX IF NOT EXISTS "${indexName}" ON "${sqlTable}" ("${idf.toSQL(field.name)}")`;
             if (options.where) {
               indexStmt += ` WHERE ${options.where}`;
             }
@@ -146,7 +151,7 @@ export class PostgreSQLGenerator {
             statements.push(indexStmt);
             statements.push(`COMMENT ON INDEX "${indexName}" IS 'uid: ${indexUid}';`);
 
-            deduplicator.registerIndex(table.name, columns, options);
+            deduplicator.registerIndex(sqlTable, columns, options);
           } else {
             statements.push(`-- Skipped redundant index: ${check.reason}`);
           }

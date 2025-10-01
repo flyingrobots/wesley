@@ -9,6 +9,15 @@ export class Identifier {
   }
   
   /**
+   * Table name mapping: snake_case + naive pluralization (append 's' if absent)
+   */
+  toTableSQLName(graphqlName) {
+    const base = this.toSQL(graphqlName);
+    if (base.endsWith('s')) return base;
+    return `${base}s`;
+  }
+
+  /**
    * Convert GraphQL name to SQL identifier
    */
   toSQL(graphqlName) {

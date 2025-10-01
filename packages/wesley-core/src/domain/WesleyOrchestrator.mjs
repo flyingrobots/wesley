@@ -49,9 +49,8 @@ export class WesleyOrchestrator {
     
     // 1. Generate SQL DDL
     if (this.generateSQL) {
-      artifacts.sql = await sqlGenerator.generate(schema, { 
-        enableRLS: this.enableRLS  // Pass RLS flag to generator
-      });
+      const gen = await sqlGenerator.generate(schema, { enableRLS: this.enableRLS });
+      artifacts.sql = typeof gen === 'string' ? gen : gen.sql;
     }
     
     // 2. Generate pgTAP tests
