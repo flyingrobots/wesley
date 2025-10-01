@@ -84,6 +84,13 @@ done
 echo -e "${BLUE}Running tests...${NC}"
 echo ""
 
+# If bats is not installed (e.g., in generic CI job), skip gracefully
+if ! command -v bats >/dev/null 2>&1; then
+    echo -e "${YELLOW}bats not found in PATH; skipping CLI bats tests${NC}"
+    echo -e "${YELLOW}Hint:${NC} CLI bats tests run in the dedicated 'Wesley CLI Tests' workflow."
+    exit 0
+fi
+
 if bats $BATS_OPTS "${BATS_FILES[@]}"; then
     echo ""
     echo -e "${GREEN}✅ All tests passed!${NC}"
