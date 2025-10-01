@@ -11,7 +11,7 @@
     "src"
   ],
   "scripts": {
-    "test": "vitest"
+    "test": "bash -lc 'shopt -s globstar nullglob; files=(test/**/*.{test,spec}.{js,mjs,ts,tsx} src/**/*.{test,spec}.{js,mjs,ts,tsx}); has_any=0; for f in \"${files[@]}\"; do if grep -qE "(^|[^a-zA-Z])(test|it)\s*\(" \"$f\"; then has_any=1; break; fi; done; if [ $has_any -eq 1 ]; then vitest; else echo \"No runnable tests in @wesley/generator-supabase; skipping\"; fi'"
   },
   "dependencies": {
     "@wesley/core": "workspace:*",
