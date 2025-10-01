@@ -16,7 +16,7 @@
     "node": ">=18.17"
   },
   "scripts": {
-    "test": "bash -lc 'if command -v bats >/dev/null 2>&1; then ./test/run-bats.sh; else echo Skipping\ CLI\ bats\ tests; fi'",
+    "test": "bash -lc 'if command -v bats >/dev/null 2>&1; then ./test/run-bats.sh; else echo \"Skipping CLI bats tests\"; fi'",
     "test:verbose": "./test/run-bats.sh --verbose",
     "test:tap": "./test/run-bats.sh --tap"
   },
