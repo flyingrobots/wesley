@@ -57,9 +57,7 @@ ${unregistered.map(d => `directive @${d} on FIELD_DEFINITION | OBJECT`).join('\n
 `);
   }
   
-  console.log(`✅ All ${usedDirectives.size} directives are registered`);
-  console.log(`   Registered: ${Array.from(registeredDirectives).join(', ')}`);
-  console.log(`   Used: ${Array.from(usedDirectives).join(', ')}`);
+  // Logging removed to avoid node:test runner serialization flakes in CI
 });
 
 test('directive processor handles all registered directives', () => {
@@ -108,5 +106,5 @@ test('directive weights are properly defined', async () => {
   assert(weights['@foreignKey'] >= 8, 'foreignKey should have weight >= 8');
   assert(weights['@pii'] >= 8, 'pii should have weight >= 8');
 
-  console.log('✅ Directive weights properly configured');
+  // Logging removed to avoid node:test runner serialization flakes in CI
 });
