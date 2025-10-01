@@ -4,7 +4,7 @@
  */
 
 export class Identifier {
-  constructor(strategy = 'preserve') {
+  constructor(strategy = 'snake_case') {
     this.strategy = strategy; // 'preserve', 'snake_case', 'lower', 'upper'
   }
   
