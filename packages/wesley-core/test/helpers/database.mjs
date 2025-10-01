@@ -84,8 +84,9 @@ export class MockDatabase {
     this.queries = [];
     this.results = [];
     this.transactionDepth = 0;
-    this.shouldError = false;
+    this.shouldError = false; // legacy persistent error mode
     this.errorMessage = 'Mock database error';
+    this.failNext = false; // one-shot error flag
   }
   
   /**
@@ -94,6 +95,12 @@ export class MockDatabase {
   async query(sql, params = []) {
     this.queries.push({ sql, params, timestamp: new Date() });
     
+    // One-shot failure takes precedence to simulate a single failing statement
+    if (this.failNext) {
+      this.failNext = false;
+      throw new Error(this.errorMessage);
+    }
+    // Legacy persistent error mode (used nowhere currently, but kept for compatibility)
     if (this.shouldError) {
       throw new Error(this.errorMessage);
     }
@@ -144,8 +151,8 @@ export class MockDatabase {
    * Configure mock to throw error on next query
    */
   mockError(message = 'Mock database error') {
-    this.shouldError = true;
     this.errorMessage = message;
+    this.failNext = true;
   }
   
   /**
