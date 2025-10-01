@@ -44,14 +44,12 @@ jobs:
       - run: pnpm -w test
 
       # Test model generation command
-      - name: Test model generation (skipped in CI quick path)
-        if: ${{ false }}
+      - name: Test model generation
         run: |
           bats test/cli-models.bats
           
       # Test generator commands (TypeScript, Zod)
-      - name: Test generator commands (skipped in CI quick path)
-        if: ${{ false }}
+      - name: Test generator commands
         run: |
           bats test/cli-generators.bats
 

@@ -246,10 +246,7 @@ async function main() {
     }
   }
 
-  // In CI environments, run only the most stable suites by default
-  if (suiteArgs.length === 0 && (process.env.CI || process.env.GITHUB_ACTIONS)) {
-    selectedSuites = ['unit', 'snapshots'];
-  }
+  // Use all suites by default; CI selection is controlled by workflows
 
   if (selectedSuites.length === 0) {
     console.error('❌ No valid test suites specified');

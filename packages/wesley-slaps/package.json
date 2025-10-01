@@ -11,7 +11,7 @@
     "src"
   ],
   "scripts": {
-    "test": "bash -lc 'shopt -s globstar nullglob; files=(test/**/*.{test,spec}.{js,mjs,ts,tsx} src/**/*.{test,spec}.{js,mjs,ts,tsx}); if [ ${#files[@]} -gt 0 ]; then vitest; else echo \"No test files in @wesley/slaps; skipping\"; fi'"
+    "test": "vitest"
   },
   "dependencies": {
     "@wesley/tasks": "workspace:*"

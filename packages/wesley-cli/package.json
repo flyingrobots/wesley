@@ -16,7 +16,7 @@
     "node": ">=18.17"
   },
   "scripts": {
-    "test": "bash -lc 'echo \"Skipping CLI bats tests\"'",
+    "test": "./test/run-bats.sh",
     "test:verbose": "./test/run-bats.sh --verbose",
     "test:tap": "./test/run-bats.sh --tap"
   },
