@@ -101,7 +101,7 @@ describe('SQL Generation Snapshots', () => {
     });
 
     const result = await generator.generate(schema);
-    toMatchSnapshot(result, 'sql-basic-table-with-constraints');
+    toMatchSnapshot(result.sql, 'sql-basic-table-with-constraints');
   });
 
   test('sql-multi-table-with-foreign-keys', async () => {
@@ -186,7 +186,7 @@ describe('SQL Generation Snapshots', () => {
     });
 
     const result = await generator.generate(schema);
-    toMatchSnapshot(result, 'sql-multi-table-with-foreign-keys');
+    toMatchSnapshot(result.sql, 'sql-multi-table-with-foreign-keys');
   });
 
   test('sql-array-and-json-types', async () => {
@@ -234,7 +234,7 @@ describe('SQL Generation Snapshots', () => {
     });
 
     const result = await generator.generate(schema);
-    toMatchSnapshot(result, 'sql-array-and-json-types');
+    toMatchSnapshot(result.sql, 'sql-array-and-json-types');
   });
 
   test('sql-rls-policies-and-security', async () => {
@@ -301,7 +301,7 @@ describe('SQL Generation Snapshots', () => {
     });
 
     const result = await generator.generate(schema);
-    toMatchSnapshot(result, 'sql-rls-policies-and-security');
+    toMatchSnapshot(result.sql, 'sql-rls-policies-and-security');
   });
 
   test('sql-indexes-and-constraints', async () => {
@@ -364,7 +364,7 @@ describe('SQL Generation Snapshots', () => {
     });
 
     const result = await generator.generate(schema);
-    toMatchSnapshot(result, 'sql-indexes-and-constraints');
+    toMatchSnapshot(result.sql, 'sql-indexes-and-constraints');
   });
 
   test('sql-all-data-types', async () => {
@@ -443,7 +443,7 @@ describe('SQL Generation Snapshots', () => {
     });
 
     const result = await generator.generate(schema);
-    toMatchSnapshot(result, 'sql-all-data-types');
+    toMatchSnapshot(result.sql, 'sql-all-data-types');
   });
 
   test('sql-complex-multi-tenant-schema', async () => {
@@ -549,7 +549,7 @@ describe('SQL Generation Snapshots', () => {
     });
 
     const result = await generator.generate(schema);
-    toMatchSnapshot(result, 'sql-complex-multi-tenant-schema');
+    toMatchSnapshot(result.sql, 'sql-complex-multi-tenant-schema');
   });
 });
 

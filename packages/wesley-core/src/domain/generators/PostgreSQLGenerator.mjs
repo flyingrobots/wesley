@@ -174,7 +174,9 @@ export class PostgreSQLGenerator {
       statements.push(tenantModel.generateSQL());
     }
 
-    return statements.join('\n\n');
+    const sql = statements.join('\n\n');
+    // Return backward-compatible shape expected by tests: { sql }
+    return { sql };
   }
 
   getSQLType(field) {
