@@ -1,0 +1,16 @@
+CREATE TABLE IF NOT EXISTS "Product" (
+  "id" uuid NOT NULL,
+  "name" text NOT NULL,
+  "tags" text NOT NULL,
+  "categories" text,
+  "metadata" jsonb,
+  "prices" text NOT NULL,
+  PRIMARY KEY ("id")
+);
+COMMENT ON TABLE "Product" IS 'uid: tbl:Product';
+COMMENT ON COLUMN "Product"."id" IS 'uid: col_product_id';
+COMMENT ON COLUMN "Product"."name" IS 'uid: col_product_name';
+COMMENT ON COLUMN "Product"."tags" IS 'uid: col_product_tags';
+COMMENT ON COLUMN "Product"."categories" IS 'uid: col_product_categories';
+COMMENT ON COLUMN "Product"."metadata" IS 'uid: col_product_metadata';
+COMMENT ON COLUMN "Product"."prices" IS 'uid: col_product_prices';

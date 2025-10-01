@@ -1,0 +1,38 @@
+CREATE TABLE IF NOT EXISTS "User" (
+  "id" uuid NOT NULL,
+  "email" text NOT NULL,
+  PRIMARY KEY ("id"),
+  UNIQUE ("email")
+);
+COMMENT ON TABLE "User" IS 'uid: tbl:User';
+COMMENT ON COLUMN "User"."id" IS 'uid: col_user_id';
+COMMENT ON COLUMN "User"."email" IS 'uid: col_user_email';
+CREATE TABLE IF NOT EXISTS "Post" (
+  "id" uuid NOT NULL,
+  "title" text NOT NULL,
+  "content" text,
+  "authorId" uuid NOT NULL,
+  "publishedAt" timestamptz,
+  PRIMARY KEY ("id"),
+  FOREIGN KEY ("authorId") REFERENCES "User"("id") ON DELETE NO ACTION
+);
+COMMENT ON TABLE "Post" IS 'uid: tbl:Post';
+COMMENT ON COLUMN "Post"."id" IS 'uid: col_post_id';
+COMMENT ON COLUMN "Post"."title" IS 'uid: col_post_title';
+COMMENT ON COLUMN "Post"."content" IS 'uid: col_post_content';
+COMMENT ON COLUMN "Post"."authorId" IS 'uid: col_post_authorid';
+COMMENT ON COLUMN "Post"."publishedAt" IS 'uid: col_post_publishedat';
+CREATE TABLE IF NOT EXISTS "Comment" (
+  "id" uuid NOT NULL,
+  "content" text NOT NULL,
+  "postId" uuid NOT NULL,
+  "authorId" uuid NOT NULL,
+  PRIMARY KEY ("id"),
+  FOREIGN KEY ("postId") REFERENCES "Post"("id") ON DELETE NO ACTION,
+  FOREIGN KEY ("authorId") REFERENCES "User"("id") ON DELETE NO ACTION
+);
+COMMENT ON TABLE "Comment" IS 'uid: tbl:Comment';
+COMMENT ON COLUMN "Comment"."id" IS 'uid: col_comment_id';
+COMMENT ON COLUMN "Comment"."content" IS 'uid: col_comment_content';
+COMMENT ON COLUMN "Comment"."postId" IS 'uid: col_comment_postid';
+COMMENT ON COLUMN "Comment"."authorId" IS 'uid: col_comment_authorid';

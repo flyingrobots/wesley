@@ -1,0 +1,15 @@
+CREATE TABLE IF NOT EXISTS "User" (
+  "id" uuid NOT NULL,
+  "email" text NOT NULL,
+  "name" text NOT NULL,
+  "age" integer,
+  "createdAt" timestamptz NOT NULL,
+  PRIMARY KEY ("id"),
+  UNIQUE ("email")
+);
+COMMENT ON TABLE "User" IS 'uid: tbl:User';
+COMMENT ON COLUMN "User"."id" IS 'uid: col_user_id';
+COMMENT ON COLUMN "User"."email" IS 'uid: col_user_email';
+COMMENT ON COLUMN "User"."name" IS 'uid: col_user_name';
+COMMENT ON COLUMN "User"."age" IS 'uid: col_user_age';
+COMMENT ON COLUMN "User"."createdAt" IS 'uid: col_user_createdat';

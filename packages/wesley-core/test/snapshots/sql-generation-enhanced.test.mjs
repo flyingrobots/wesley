@@ -63,7 +63,7 @@ function toMatchSnapshot(actual, testName, snapshotName = 'default') {
 describe('SQL Generation Snapshots', () => {
   const generator = new PostgreSQLGenerator();
 
-  test('basic-table-with-constraints', async () => {
+  test('sql-basic-table-with-constraints', async () => {
     const schema = new Schema({
       User: new Table({
         name: 'User',
@@ -101,10 +101,10 @@ describe('SQL Generation Snapshots', () => {
     });
 
     const result = await generator.generate(schema);
-    toMatchSnapshot(result.sql, 'basic-table-with-constraints');
+    toMatchSnapshot(result, 'sql-basic-table-with-constraints');
   });
 
-  test('multi-table-with-foreign-keys', async () => {
+  test('sql-multi-table-with-foreign-keys', async () => {
     const schema = new Schema({
       User: new Table({
         name: 'User',
@@ -146,7 +146,7 @@ describe('SQL Generation Snapshots', () => {
             name: 'authorId',
             type: 'UUID',
             nonNull: true,
-            directives: { '@foreignKey': { references: 'User.id' } }
+            directives: { '@foreignKey': { ref: 'User.id' } }
           }),
           publishedAt: new Field({
             name: 'publishedAt',
@@ -173,23 +173,23 @@ describe('SQL Generation Snapshots', () => {
             name: 'postId',
             type: 'UUID',
             nonNull: true,
-            directives: { '@foreignKey': { references: 'Post.id' } }
+            directives: { '@foreignKey': { ref: 'Post.id' } }
           }),
           authorId: new Field({
             name: 'authorId',
             type: 'UUID',
             nonNull: true,
-            directives: { '@foreignKey': { references: 'User.id' } }
+            directives: { '@foreignKey': { ref: 'User.id' } }
           })
         }
       })
     });
 
     const result = await generator.generate(schema);
-    toMatchSnapshot(result.sql, 'multi-table-with-foreign-keys');
+    toMatchSnapshot(result, 'sql-multi-table-with-foreign-keys');
   });
 
-  test('array-and-json-types', async () => {
+  test('sql-array-and-json-types', async () => {
     const schema = new Schema({
       Product: new Table({
         name: 'Product',
@@ -234,10 +234,10 @@ describe('SQL Generation Snapshots', () => {
     });
 
     const result = await generator.generate(schema);
-    toMatchSnapshot(result.sql, 'array-and-json-types');
+    toMatchSnapshot(result, 'sql-array-and-json-types');
   });
 
-  test('rls-policies-and-security', async () => {
+  test('sql-rls-policies-and-security', async () => {
     const schema = new Schema({
       Organization: new Table({
         name: 'Organization',
@@ -287,7 +287,7 @@ describe('SQL Generation Snapshots', () => {
             nonNull: true,
             directives: { 
               '@tenant': { column: 'orgId' },
-              '@foreignKey': { references: 'Organization.id' }
+              '@foreignKey': { ref: 'Organization.id' }
             }
           }),
           createdBy: new Field({
@@ -301,10 +301,10 @@ describe('SQL Generation Snapshots', () => {
     });
 
     const result = await generator.generate(schema);
-    toMatchSnapshot(result.sql, 'rls-policies-and-security');
+    toMatchSnapshot(result, 'sql-rls-policies-and-security');
   });
 
-  test('indexes-and-constraints', async () => {
+  test('sql-indexes-and-constraints', async () => {
     const schema = new Schema({
       Event: new Table({
         name: 'Event',
@@ -364,10 +364,10 @@ describe('SQL Generation Snapshots', () => {
     });
 
     const result = await generator.generate(schema);
-    toMatchSnapshot(result.sql, 'indexes-and-constraints');
+    toMatchSnapshot(result, 'sql-indexes-and-constraints');
   });
 
-  test('all-data-types', async () => {
+  test('sql-all-data-types', async () => {
     const schema = new Schema({
       DataTypes: new Table({
         name: 'DataTypes',
@@ -443,10 +443,10 @@ describe('SQL Generation Snapshots', () => {
     });
 
     const result = await generator.generate(schema);
-    toMatchSnapshot(result.sql, 'all-data-types');
+    toMatchSnapshot(result, 'sql-all-data-types');
   });
 
-  test('complex-multi-tenant-schema', async () => {
+  test('sql-complex-multi-tenant-schema', async () => {
     const schema = new Schema({
       Tenant: new Table({
         name: 'Tenant',
@@ -492,7 +492,7 @@ describe('SQL Generation Snapshots', () => {
             nonNull: true,
             directives: { 
               '@tenant': { column: 'tenantId' },
-              '@foreignKey': { references: 'Tenant.id' },
+              '@foreignKey': { ref: 'Tenant.id' },
               '@index': {}
             }
           }),
@@ -524,7 +524,7 @@ describe('SQL Generation Snapshots', () => {
             nonNull: true,
             directives: { 
               '@tenant': { column: 'tenantId' },
-              '@foreignKey': { references: 'Tenant.id' },
+              '@foreignKey': { ref: 'Tenant.id' },
               '@index': {}
             }
           }),
@@ -534,7 +534,7 @@ describe('SQL Generation Snapshots', () => {
             nonNull: true,
             directives: { 
               '@owner': { column: 'ownerId' },
-              '@foreignKey': { references: 'User.id' },
+              '@foreignKey': { ref: 'User.id' },
               '@index': {}
             }
           }),
@@ -549,7 +549,7 @@ describe('SQL Generation Snapshots', () => {
     });
 
     const result = await generator.generate(schema);
-    toMatchSnapshot(result.sql, 'complex-multi-tenant-schema');
+    toMatchSnapshot(result, 'sql-complex-multi-tenant-schema');
   });
 });
 

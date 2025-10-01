@@ -82,7 +82,7 @@ export const testSQL = {
 export class MockDatabase {
   constructor() {
     this.queries = [];
-    this.results = new Map();
+    this.results = [];
     this.transactionDepth = 0;
     this.shouldError = false;
     this.errorMessage = 'Mock database error';
@@ -98,9 +98,10 @@ export class MockDatabase {
       throw new Error(this.errorMessage);
     }
     
-    // Return pre-configured result or empty result
-    const key = this.normalizeSQL(sql);
-    return this.results.get(key) || { rows: [], rowCount: 0 };
+    // Return first matching configured result (substring match on normalized SQL)
+    const norm = this.normalizeSQL(sql);
+    const entry = this.results.find(r => norm.includes(r.pattern));
+    return entry?.result || { rows: [], rowCount: 0 };
   }
   
   /**
@@ -135,8 +136,8 @@ export class MockDatabase {
    * Configure mock to return specific result for a query
    */
   mockResult(sql, result) {
-    const key = this.normalizeSQL(sql);
-    this.results.set(key, result);
+    const pattern = this.normalizeSQL(sql);
+    this.results.push({ pattern, result });
   }
   
   /**
@@ -152,7 +153,7 @@ export class MockDatabase {
    */
   reset() {
     this.queries = [];
-    this.results.clear();
+    this.results = [];
     this.transactionDepth = 0;
     this.shouldError = false;
   }

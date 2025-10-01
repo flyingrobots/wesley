@@ -1,0 +1,25 @@
+CREATE TABLE IF NOT EXISTS "Organization" (
+  "id" uuid NOT NULL,
+  "name" text NOT NULL,
+  "ownerId" uuid NOT NULL,
+  PRIMARY KEY ("id")
+);
+COMMENT ON TABLE "Organization" IS 'uid: tbl:Organization';
+COMMENT ON COLUMN "Organization"."id" IS 'uid: col_organization_id';
+COMMENT ON COLUMN "Organization"."name" IS 'uid: col_organization_name';
+COMMENT ON COLUMN "Organization"."ownerId" IS 'uid: col_organization_ownerid';
+CREATE TABLE IF NOT EXISTS "Document" (
+  "id" uuid NOT NULL,
+  "title" text NOT NULL,
+  "content" text,
+  "orgId" uuid NOT NULL,
+  "createdBy" uuid NOT NULL,
+  PRIMARY KEY ("id"),
+  FOREIGN KEY ("orgId") REFERENCES "Organization"("id") ON DELETE NO ACTION
+);
+COMMENT ON TABLE "Document" IS 'uid: tbl:Document';
+COMMENT ON COLUMN "Document"."id" IS 'uid: col_document_id';
+COMMENT ON COLUMN "Document"."title" IS 'uid: col_document_title';
+COMMENT ON COLUMN "Document"."content" IS 'uid: col_document_content';
+COMMENT ON COLUMN "Document"."orgId" IS 'uid: col_document_orgid';
+COMMENT ON COLUMN "Document"."createdBy" IS 'uid: col_document_createdby';
