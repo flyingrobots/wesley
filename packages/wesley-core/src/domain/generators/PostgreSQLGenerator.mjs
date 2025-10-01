@@ -180,8 +180,10 @@ export class PostgreSQLGenerator {
     }
 
     const sql = statements.join('\n\n');
-    // Return backward-compatible shape expected by tests: { sql }
-    return { sql };
+    // Return a String object so callers can use string methods AND access .sql
+    const str = new String(sql);
+    str.sql = sql;
+    return str;
   }
 
   getSQLType(field) {
