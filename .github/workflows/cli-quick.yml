@@ -68,13 +68,13 @@ jobs:
         echo ""
         echo "🔥 Smoke testing CLI commands..."
         echo "Version check:"
-        node wesley.mjs --version
+        node ../wesley-host-node/bin/wesley.mjs --version
         echo ""
         echo "Help check:"  
-        node wesley.mjs --help | head -5
+        node ../wesley-host-node/bin/wesley.mjs --help | head -5
         echo ""
         echo "stdin support check:"
-        echo 'type Query { hello: String }' | node wesley.mjs generate --schema - --json --quiet || echo "✓ Expected parser failure (stub implementation)"
+        echo 'type Query { hello: String }' | node ../wesley-host-node/bin/wesley.mjs generate --schema - --json --quiet || echo "✓ Expected parser failure (stub implementation)"
 
     - name: Success notification
       run: |
