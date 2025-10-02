@@ -28,7 +28,7 @@ export class UpCommand extends WesleyCommand {
     let dsn = options.dsn || pickDsn(options, env, this.makeLogger(options, { phase: 'up' }));
 
     if (options.docker) {
-      await tryStartDocker(logger);
+      await tryStartDocker(this.ctx, logger);
       dsn = dsn || defaultDsnFor('postgres', env);
     }
     if (!dsn) {
@@ -139,19 +139,15 @@ function pickDsn(options, env, logger) {
   return defaultDsnFor('postgres', env);
 }
 
-async function tryStartDocker(logger) {
+async function tryStartDocker(ctx, logger) {
   try {
-    const { access } = await import('node:fs/promises');
-    const { constants } = await import('node:fs');
-    const hasCompose = await access('docker-compose.yml', constants.F_OK).then(()=>true).catch(async()=>{
-      return await access('compose.yaml', constants.F_OK).then(()=>true).catch(()=>false);
-    });
+    const fs = ctx.fs;
+    const hasCompose = await fs.exists('docker-compose.yml') || await fs.exists('compose.yaml');
     if (!hasCompose) {
       logger?.warn?.('No docker-compose file found in current directory; skipping --docker');
       return;
     }
-    const { execSync } = await import('node:child_process');
-    execSync('docker compose up -d postgres', { stdio: 'pipe' });
+    await ctx.shell.exec('docker compose up -d postgres');
     logger?.info?.('Started docker compose service: postgres');
   } catch (e) {
     logger?.warn?.('Could not start docker compose postgres: ' + (e?.message || e));

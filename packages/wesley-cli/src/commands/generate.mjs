@@ -189,13 +189,12 @@ function shouldEnforceClean(env, options) {
   return !!options.emitBundle;
 }
 async function assertCleanGit() {
-  const { execSync } = await import('node:child_process');
   try {
-    execSync('git rev-parse --is-inside-work-tree', { stdio: 'ignore' });
+    await (globalThis?.wesleyCtx?.shell?.execSync?.('git rev-parse --is-inside-work-tree', { stdio: 'ignore' }));
   } catch {
     return; // Not a git repo: skip
   }
-  const out = execSync('git status --porcelain', { encoding: 'utf8' }).trim();
+  const out = (await globalThis?.wesleyCtx?.shell?.exec?.('git status --porcelain')).stdout.trim();
   if (out.length > 0) {
     const err = new Error('Working tree has uncommitted changes. Commit or stash before running, or pass --allow-dirty.');
     err.code = 'DIRTY_WORKTREE';

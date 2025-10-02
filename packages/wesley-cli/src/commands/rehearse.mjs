@@ -47,14 +47,14 @@ export class RehearseCommand extends WesleyCommand {
     let dsn = options.dsn || this.ctx?.config?.realm?.dsn || defaultDsnFor(provider, env);
 
     if (options.docker && provider === 'postgres') {
-      await tryStartDocker(logger);
+      await tryStartDocker(this.ctx, logger);
       // assume default DSN if not provided
       dsn = dsn || defaultDsnFor('postgres', env);
     }
 
     // Optional provider hooks from config
     const hooks = this.ctx?.config?.realm?.hooks || {};
-    if (hooks.preUp) await runHook(hooks.preUp, logger);
+    if (hooks.preUp) await runHook(this.ctx, hooks.preUp, logger);
 
     if (!dsn) {
       const e = new Error('No DSN provided for rehearsal. Pass --dsn or configure realm.dsn.');
@@ -81,7 +81,7 @@ export class RehearseCommand extends WesleyCommand {
       };
       await this.ctx.fs.write('.wesley/realm.json', JSON.stringify(realm, null, 2));
       if (!options.json) logger.info('🕶️ REALM verdict: PASS');
-      if (hooks.postDown) await runHook(hooks.postDown, logger);
+      if (hooks.postDown) await runHook(this.ctx, hooks.postDown, logger);
       if (options.json) this.ctx.stdout.write(JSON.stringify(realm, null, 2) + '\n');
       return realm;
     } catch (error) {
@@ -94,7 +94,7 @@ export class RehearseCommand extends WesleyCommand {
       };
       await this.ctx.fs.write('.wesley/realm.json', JSON.stringify(realm, null, 2));
       if (!options.json) logger.error('🕶️ REALM verdict: FAIL - ' + error.message);
-      if (hooks.postDown) try { await runHook(hooks.postDown, logger); } catch {}
+      if (hooks.postDown) try { await runHook(this.ctx, hooks.postDown, logger); } catch {}
       if (options.json) this.ctx.stdout.write(JSON.stringify(realm, null, 2) + '\n');
       const e = new Error('REALM rehearsal failed: ' + error.message);
       e.code = 'REALM_FAILED';
@@ -108,20 +108,18 @@ function defaultDsnFor(provider, env) {
   return 'postgres://wesley:wesley_test@localhost:5432/wesley_test';
 }
 
-async function tryStartDocker(logger) {
+async function tryStartDocker(ctx, logger) {
   try {
-    const { execSync } = await import('node:child_process');
-    execSync('docker compose up -d postgres', { stdio: 'inherit' });
+    await ctx.shell.exec('docker compose up -d postgres', { inheritStdio: true });
   } catch (e) {
     logger.warn('Could not start docker compose postgres: ' + (e?.message || e));
   }
 }
 
-async function runHook(cmd, logger) {
+async function runHook(ctx, cmd, logger) {
   try {
-    const { execSync } = await import('node:child_process');
     logger.info(`🔧 realm hook: ${cmd}`);
-    execSync(cmd, { stdio: 'inherit' });
+    await ctx.shell.exec(cmd, { inheritStdio: true });
   } catch (e) {
     logger.warn('realm hook failed: ' + (e?.message || e));
   }

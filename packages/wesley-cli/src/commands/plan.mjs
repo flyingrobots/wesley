@@ -264,9 +264,9 @@ function shouldEnforceCleanPlan(env) {
   return policy === 'strict';
 }
 async function assertCleanGit() {
-  const { execSync } = await import('node:child_process');
-  try { execSync('git rev-parse --is-inside-work-tree', { stdio: 'ignore' }); } catch { return; }
-  const out = execSync('git status --porcelain', { encoding: 'utf8' }).trim();
+  const shell = globalThis?.wesleyCtx?.shell;
+  try { shell?.execSync?.('git rev-parse --is-inside-work-tree', { stdio: 'ignore' }); } catch { return; }
+  const out = (await shell?.exec?.('git status --porcelain'))?.stdout?.trim?.() || '';
   if (out) {
     const err = new Error('Working tree has uncommitted changes. Commit or stash before running, or pass --allow-dirty.');
     err.code = 'DIRTY_WORKTREE';
