@@ -23,15 +23,15 @@ directive @function(logic: String) on FIELD_DEFINITION
 # TABLES WITH RLS
 # =====================
 
-type User @wes_table @critical @uid("tbl:user") @wes_rls(
+type User @wes_table @critical @uid(value: "tbl:user") @wes_rls(
   select: "true"  # Anyone can see users
   insert: "false" # Only through registration
   update: "auth.uid() = id"  # Users can update themselves
   delete: "false" # No user deletion
 ) {
-  id: UUID! @wes_pk @wes_default(expr: "auth.uid()") @uid("col:user.id")
-  email: String! @wes_unique @pii @weight(9) @uid("col:user.email")
-  password_hash: String! @sensitive @weight(10) @uid("col:user.password")
+  id: UUID! @wes_pk @wes_default(expr: "auth.uid()") @uid(value: "col:user.id")
+  email: String! @wes_unique @pii @weight(9) @uid(value: "col:user.email")
+  password_hash: String! @sensitive @weight(10) @uid(value: "col:user.password")
   
   full_name: String @pii @weight(7)
   role: String! @wes_default(value: "customer") @weight(8)
@@ -43,19 +43,19 @@ type User @wes_table @critical @uid("tbl:user") @wes_rls(
   orders: [Order!]! @hasMany
 }
 
-type Product @wes_table @uid("tbl:product") @wes_rls(
+type Product @wes_table @uid(value: "tbl:product") @wes_rls(
   select: "published = true OR auth.uid() IN (SELECT id FROM User WHERE role = 'admin')"
   insert: "auth.uid() IN (SELECT id FROM User WHERE role = 'admin')"
   update: "auth.uid() IN (SELECT id FROM User WHERE role = 'admin')"
   delete: "auth.uid() IN (SELECT id FROM User WHERE role = 'admin')"
 ) {
-  id: UUID! @wes_pk @wes_default(expr: "gen_random_uuid()") @uid("col:product.id")
+  id: UUID! @wes_pk @wes_default(expr: "gen_random_uuid()") @uid(value: "col:product.id")
   
-  sku: String! @wes_unique @weight(9) @uid("col:product.sku")
-  name: String! @weight(8) @uid("col:product.name")
-  slug: String! @wes_unique @wes_index @weight(7) @uid("col:product.slug")
+  sku: String! @wes_unique @weight(9) @uid(value: "col:product.sku")
+  name: String! @weight(8) @uid(value: "col:product.name")
+  slug: String! @wes_unique @wes_index @weight(7) @uid(value: "col:product.slug")
   
-  price_cents: Int! @weight(9) @uid("col:product.price")
+  price_cents: Int! @weight(9) @uid(value: "col:product.price")
   stock_quantity: Int! @wes_default(value: 0) @weight(8)
   low_stock_threshold: Int! @wes_default(value: 10) @weight(6)
   
@@ -71,17 +71,17 @@ type Product @wes_table @uid("tbl:product") @wes_rls(
   inventory_logs: [InventoryLog!]! @hasMany
 }
 
-type Order @wes_table @critical @uid("tbl:order") @wes_rls(
+type Order @wes_table @critical @uid(value: "tbl:order") @wes_rls(
   select: "user_id = auth.uid() OR auth.uid() IN (SELECT id FROM User WHERE role = 'admin')"
   insert: "user_id = auth.uid()"
   update: "user_id = auth.uid() AND status = 'pending'"
   delete: "false"  # Orders cannot be deleted, only cancelled
 ) {
-  id: UUID! @wes_pk @wes_default(expr: "gen_random_uuid()") @uid("col:order.id")
-  order_number: String! @wes_unique @weight(10) @uid("col:order.number")
+  id: UUID! @wes_pk @wes_default(expr: "gen_random_uuid()") @uid(value: "col:order.id")
+  order_number: String! @wes_unique @weight(10) @uid(value: "col:order.number")
   user_id: UUID! @wes_fk(ref: "User.id") @wes_index @weight(9)
   
-  status: String! @wes_default(value: "pending") @weight(9) @uid("col:order.status")
+  status: String! @wes_default(value: "pending") @weight(9) @uid(value: "col:order.status")
   
   subtotal_cents: Int! @weight(8)
   tax_cents: Int! @weight(7)
@@ -106,7 +106,7 @@ type Order @wes_table @critical @uid("tbl:order") @wes_rls(
   items: [OrderItem!]! @hasMany
 }
 
-type OrderItem @wes_table @uid("tbl:order_item") @wes_rls(
+type OrderItem @wes_table @uid(value: "tbl:order_item") @wes_rls(
   select: "order_id IN (SELECT id FROM Order WHERE user_id = auth.uid())"
   insert: "order_id IN (SELECT id FROM Order WHERE user_id = auth.uid() AND status = 'pending')"
   update: "order_id IN (SELECT id FROM Order WHERE user_id = auth.uid() AND status = 'pending')"
@@ -128,7 +128,7 @@ type OrderItem @wes_table @uid("tbl:order_item") @wes_rls(
   product: Product! @belongsTo
 }
 
-type Cart @wes_table @uid("tbl:cart") @wes_rls(
+type Cart @wes_table @uid(value: "tbl:cart") @wes_rls(
   select: "user_id = auth.uid()"
   insert: "user_id = auth.uid()"
   update: "user_id = auth.uid()"
@@ -146,7 +146,7 @@ type Cart @wes_table @uid("tbl:cart") @wes_rls(
   items: [CartItem!]! @hasMany
 }
 
-type CartItem @wes_table @uid("tbl:cart_item") @wes_rls(
+type CartItem @wes_table @uid(value: "tbl:cart_item") @wes_rls(
   select: "cart_id IN (SELECT id FROM Cart WHERE user_id = auth.uid())"
   insert: "cart_id IN (SELECT id FROM Cart WHERE user_id = auth.uid())"
   update: "cart_id IN (SELECT id FROM Cart WHERE user_id = auth.uid())"
@@ -165,7 +165,7 @@ type CartItem @wes_table @uid("tbl:cart_item") @wes_rls(
 }
 
 # Inventory tracking with RLS
-type InventoryLog @wes_table @uid("tbl:inventory_log") @wes_rls(
+type InventoryLog @wes_table @uid(value: "tbl:inventory_log") @wes_rls(
   select: "auth.uid() IN (SELECT id FROM User WHERE role IN ('admin', 'warehouse'))"
   insert: "auth.uid() IN (SELECT id FROM User WHERE role IN ('admin', 'warehouse'))"
   update: "false"  # Logs are immutable
