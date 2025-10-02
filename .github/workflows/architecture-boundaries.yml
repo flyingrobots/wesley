@@ -34,12 +34,12 @@ jobs:
     - name: Check architecture boundaries
       run: |
         echo "🏗️  Checking hexagonal architecture boundaries..."
-        pnpm dlx dependency-cruiser@latest depcruise --config .dependency-cruiser.mjs packages/
+        pnpm dlx depcruise --config .dependency-cruiser.mjs packages/
         
     - name: Generate architecture diagram
       run: |
         echo "📊 Generating architecture diagram..."
-        pnpm dlx dependency-cruiser@latest depcruise --config .dependency-cruiser.mjs \
+        pnpm dlx depcruise --config .dependency-cruiser.mjs \
           --output-type archi packages/ > architecture.svg
         
     - name: Upload architecture diagram
