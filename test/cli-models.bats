@@ -5,7 +5,8 @@
 load 'helpers'
 
 setup() {
-    export CLI_PATH="$BATS_TEST_DIRNAME/../packages/wesley-cli/wesley.mjs"
+    # Use host-node entrypoint (CLI package wrapper file no longer exists)
+    export CLI_PATH="$BATS_TEST_DIRNAME/../packages/wesley-host-node/bin/wesley.mjs"
     export TEMP_DIR="$(mktemp -d)"
     export TEST_SCHEMA="$TEMP_DIR/test-schema.graphql"
     
