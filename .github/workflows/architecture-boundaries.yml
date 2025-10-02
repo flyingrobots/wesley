@@ -31,18 +31,15 @@ jobs:
     - name: Install dependencies
       run: pnpm install --no-frozen-lockfile
     
-    - name: Install dependency-cruiser
-      run: pnpm add -D dependency-cruiser
-    
     - name: Check architecture boundaries
       run: |
         echo "🏗️  Checking hexagonal architecture boundaries..."
-        pnpm exec depcruise --config .dependency-cruiser.mjs packages/
+        pnpm dlx dependency-cruiser@latest depcruise --config .dependency-cruiser.mjs packages/
         
     - name: Generate architecture diagram
       run: |
         echo "📊 Generating architecture diagram..."
-        pnpm exec depcruise --config .dependency-cruiser.mjs \
+        pnpm dlx dependency-cruiser@latest depcruise --config .dependency-cruiser.mjs \
           --output-type archi packages/ > architecture.svg
         
     - name: Upload architecture diagram
