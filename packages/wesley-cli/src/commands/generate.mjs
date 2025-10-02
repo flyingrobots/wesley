@@ -104,6 +104,59 @@ export class GeneratePipelineCommand extends WesleyCommand {
       logger.warn('Could not write IR snapshot: ' + (e?.message || e));
     }
     
+    // Optionally emit a minimal evidence bundle for HOLMES sidecar
+    if (options.emitBundle) {
+      try {
+        // Resolve current commit SHA (fallback to env or unknown)
+        let sha = process.env.GITHUB_SHA || 'unknown';
+        try {
+          const out = await (globalThis?.wesleyCtx?.shell?.exec?.('git rev-parse HEAD'));
+          const s = out?.stdout?.trim();
+          if (s) sha = s;
+        } catch {}
+
+        const timestamp = new Date().toISOString();
+        // Minimal scoring heuristic (placeholder until full evidence pipeline)
+        const scs = Math.min(1, Math.max(0, (artifacts.length > 0 ? 0.6 : 0.3)));
+        const tci = artifacts.some(a => a.name?.includes('tests')) ? 0.7 : 0.4;
+        const mri = 0.2;
+        const readiness = { verdict: (scs > 0.75 && tci > 0.6 ? 'ELEMENTARY' : (scs > 0.4 ? 'REQUIRES INVESTIGATION' : 'YOU SHALL NOT PASS')) };
+
+        const scores = { scores: { scs, tci, mri }, readiness };
+
+        // Evidence map: cite generated SQL and tests
+        const sqlFile = `${outDir}/schema.sql`;
+        const testFile = `${outDir}/tests.sql`;
+        const evidence = {
+          // Use coarse UID until we have fine-grained per-field evidence
+          evidence: {
+            schema: {
+              sql: [{ file: sqlFile, lines: '1-9999', sha }],
+              tests: [{ file: testFile, lines: '1-9999', sha }]
+            }
+          }
+        };
+
+        const bundle = { sha, timestamp, evidence, scores };
+        await this.ctx.fs.write('.wesley/scores.json', JSON.stringify(scores, null, 2));
+        await this.ctx.fs.write('.wesley/bundle.json', JSON.stringify(bundle, null, 2));
+
+        // Append a tiny history for MORIARTY
+        try {
+          let history = { points: [] };
+          try {
+            const raw = await this.ctx.fs.read('.wesley/history.json');
+            history = JSON.parse(raw.toString('utf8')) || history;
+          } catch {}
+          const day = Math.floor(Date.now() / 86400000);
+          history.points.push({ day, timestamp, scs, tci, mri });
+          await this.ctx.fs.write('.wesley/history.json', JSON.stringify(history, null, 2));
+        } catch {}
+      } catch (e) {
+        logger.warn('Could not emit HOLMES evidence bundle: ' + (e?.message || e));
+      }
+    }
+    
     // Output results
     if (!options.quiet && !options.json) {
       logger.info('');

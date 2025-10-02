@@ -34,7 +34,8 @@ jobs:
       - name: "🚀 Generate Artifacts"
         run: |
           cd example
-          pnpm exec wesley generate --schema schema.graphql --emit-bundle
+          # Use workspace binary directly to avoid PATH/bin resolution issues
+          node ../packages/wesley-host-node/bin/wesley.mjs generate --schema schema.graphql --emit-bundle --allow-dirty
           
       - name: "📊 Display Scores"
         run: |
@@ -80,7 +81,8 @@ jobs:
         id: holmes
         run: |
           cd example
-          pnpm exec holmes investigate > holmes-report.md
+          # Run HOLMES from workspace package
+          node ../packages/wesley-holmes/src/cli.mjs investigate > holmes-report.md
           cat holmes-report.md
           
       - name: "💾 Save Report"
@@ -122,7 +124,7 @@ jobs:
         id: watson
         run: |
           cd example
-          pnpm exec holmes verify > watson-report.md
+          node ../packages/wesley-holmes/src/cli.mjs verify > watson-report.md
           cat watson-report.md
           
       - name: "💾 Save Report"
@@ -164,7 +166,7 @@ jobs:
         id: moriarty
         run: |
           cd example
-          pnpm exec holmes predict > moriarty-report.md || echo "Insufficient data for predictions" > moriarty-report.md
+          node ../packages/wesley-holmes/src/cli.mjs predict > moriarty-report.md || echo "Insufficient data for predictions" > moriarty-report.md
           cat moriarty-report.md
           
       - name: "💾 Save Report"
