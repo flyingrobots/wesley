@@ -1,5 +1,7 @@
 // ESLint rules scoped to @wesley/core to enforce purity
 module.exports = {
+  env: { es2022: true },
+  parserOptions: { ecmaVersion: 2022, sourceType: 'module' },
   rules: {
     'no-restricted-imports': [
       'error',
@@ -22,4 +24,3 @@ module.exports = {
     ]
   }
 };
-
