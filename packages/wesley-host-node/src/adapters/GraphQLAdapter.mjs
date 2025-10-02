@@ -253,7 +253,7 @@ class GraphQLSchemaParser {
     const defaultDirective = this.findDirective(field.directives, 'wes_default');
     if (defaultDirective) {
       const value = this.getDirectiveArgumentAny(defaultDirective, ['value', 'expr']);
-      if (!value) {
+      if (value === undefined || value === null) {
         throw new WesleyParseError(`@wes_default directive requires 'value' (or 'expr') argument`, 'wes_default', name);
       }
       column.default = value;
@@ -356,8 +356,17 @@ class GraphQLSchemaParser {
     const arg = directive.arguments.find(a => a.name.value === argName);
     if (!arg) return null;
     
-    if (arg.value.kind === Kind.STRING) {
-      return arg.value.value;
+    switch (arg.value.kind) {
+      case Kind.STRING:
+        return arg.value.value;
+      case Kind.INT:
+        return parseInt(arg.value.value, 10);
+      case Kind.FLOAT:
+        return parseFloat(arg.value.value);
+      case Kind.BOOLEAN:
+        return arg.value.value;
+      default:
+        return null;
     }
     
     return null;

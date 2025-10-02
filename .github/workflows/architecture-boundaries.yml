@@ -34,12 +34,12 @@ jobs:
     - name: Check architecture boundaries
       run: |
         echo "🏗️  Checking hexagonal architecture boundaries..."
-        pnpm dlx depcruise --config .dependency-cruiser.mjs packages/
+        pnpm dlx dependency-cruiser --config .dependency-cruiser.mjs packages/
         
     - name: Generate architecture diagram
       run: |
         echo "📊 Generating architecture diagram..."
-        pnpm dlx depcruise --config .dependency-cruiser.mjs \
+        pnpm dlx dependency-cruiser --config .dependency-cruiser.mjs \
           --output-type archi packages/ > architecture.svg
         
     - name: Upload architecture diagram
@@ -90,13 +90,10 @@ jobs:
     
     # ESLint purity rules enforce no process/node:* in core; skip manual grep
 
-    - name: Install ESLint (for core purity check)
-      run: pnpm add -D eslint
-
     - name: Run ESLint for core (purity rules)
       run: |
         echo "🔎 Running ESLint restricted-imports check for wesley-core..."
-        pnpm exec eslint --no-eslintrc -c packages/wesley-core/.eslintrc.cjs "packages/wesley-core/src/**/*.mjs" --max-warnings=0
+        pnpm dlx eslint@8.57.0 --no-eslintrc -c packages/wesley-core/.eslintrc.cjs "packages/wesley-core/src/**/*.mjs" --max-warnings=0
     
     - name: Validate ENSIGN structure
       run: |

@@ -72,7 +72,7 @@ function fmt(v){ if (v==null) return 'n/a'; return typeof v==='number' ? Number(
 
 async function gitSha(ctx) {
   try {
-    const { execSync } = await import('node:child_process');
+    const execSync = this.ctx.shell.execSync;
     return execSync('git rev-parse HEAD', { encoding: 'utf8' }).trim();
   } catch {
     return ctx.env?.GITHUB_SHA || null;

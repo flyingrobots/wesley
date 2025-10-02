@@ -144,3 +144,48 @@ Operational guidance for the next agent
 Open questions / Decisions to confirm
 - Do we keep manual grep checks for fs/path/node:* now that dep-cruise + ESLint enforce purity, or rely solely on the tools?
 - When to re‑enable evidence + HOLMES gating in main CI (target after RLS defaults + evidence stabilization)?
+
+### 2025-10-02 — Session Debrief (Local Discipline + Next Moves)
+
+Why this entry
+- We saw repeated CI cycles while iterating on the architecture‑boundaries job. To conserve CI minutes and keep feedback snappy, we’re adopting a strict local pre‑push discipline that mirrors CI.
+
+New local pre‑push checklist (run before any push)
+- Install (non‑frozen to avoid lockfile mismatches):
+  - `pnpm install --no-frozen-lockfile`
+- Full workspace tests:
+  - `pnpm -w test`
+- Architecture boundaries (depcruise smoke):
+  - `pnpm dlx depcruise --config .dependency-cruiser.mjs packages/`
+- Core purity (ESLint) — use an ESLint that supports .eslintrc.cjs:
+  - Option A (preferred, local only): `pnpm dlx eslint@8.57.0 --no-eslintrc -c packages/wesley-core/.eslintrc.cjs "packages/wesley-core/src/**/*.mjs" --max-warnings=0`
+  - Option B (if we lift to flat config later): use repo ESLint as configured by CI
+- CLI smoke:
+  - `node packages/wesley-host-node/bin/wesley.mjs generate --schema example/schema.graphql --allow-dirty`
+
+Rules of engagement
+- Do not push if any of the above fail locally. Fix locally first, then push a single tight commit.
+- Group related changes; keep commits surgical (ci:, fix(cli):, refactor(core):, docs:).
+
+Immediate next moves (to be done locally first)
+1) Boundaries job
+   - Current PR has simplified checks (depcruise + ESLint + lightweight node:* and host import smoke). Run the local pre‑push set; if clean, push a single commit to re‑run CI. If ESLint v9 conflicts locally, use the v8 dlx command above.
+2) Reinstate bundle validation + HOLMES (after emit‑bundle stabilization)
+   - Switch CI generate to `--emit-bundle`, then add `wesley validate-bundle` with the correct bundle path, re‑enable HOLMES steps and score gating.
+3) RLS defaults + tests
+   - Extend generator to default tenant/owner USING expressions if `@wes_tenant`/`@owner` present and `@wes_rls` omits an expression; add a minimal pgTAP suite in CI postgres.
+4) Plan phases (MVP+)
+   - Implement `backfill/switch/contract` phase emission, wire to `plan --explain` and `rehearse` SQL emission; keep destructive changes explain‑only for MVP.
+5) Docs
+   - Fix broken links in `docs/README.md`; sweep `docs/features/row-level-security.md` for canonical `@wes_*` usage.
+
+Hand‑off instructions for the next agent
+- Context: PR #18 on branch `fix/cli-adapters-and-boundaries` is almost green; only the architecture‑boundaries job is pending stabilization.
+- Start by running the local pre‑push checklist exactly as above.
+- If depcruise/ESLint pass locally but CI still fails the boundaries job:
+  - Temporarily add `set -euo pipefail` and `set -x` plus explicit `echo` of matches to the boundaries job to surface the exact offender, then remove the verbosity once green.
+  - Prefer tool‑based enforcement (depcruise + ESLint) over brittle greps; keep only the simple node:* + host‑import smoke checks.
+- Once boundaries is green:
+  - Add `--emit-bundle` in CI generate; reintroduce `validate-bundle` and HOLMES gating (investigate/verify/predict) using the emitted `.wesley` bundle.
+  - Proceed to RLS defaults + pgTAP, then plan phases, in that order, with one scoped PR if this PR is merged, or follow‑up commits if requested.
+- Commit hygiene: keep changes minimal and separated; include rationale in each commit message.
