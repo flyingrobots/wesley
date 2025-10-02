@@ -7,14 +7,14 @@ directive @critical on OBJECT | FIELD_DEFINITION
 directive @sensitive on FIELD_DEFINITION
 directive @pii on FIELD_DEFINITION
 
-type User @table @uid(value: "tbl:user") @critical {
+type User @wes_table @uid(value: "tbl:user") @critical {
   id: ID! 
-    @primaryKey 
+    @wes_pk 
     @uid(value: "col:user.id")
-    @default(expr: "gen_random_uuid()")
+    @wes_default(expr: "gen_random_uuid()")
   
   email: String! 
-    @unique 
+    @wes_unique 
     @index
     @pii
     @uid(value: "col:user.email")
@@ -27,20 +27,20 @@ type User @table @uid(value: "tbl:user") @critical {
     @check(expr: "char_length(password_hash) = 60")
   
   username: String
-    @unique
+    @wes_unique
     @uid(value: "col:user.username")
     @weight(value: 6)
   
   theme: String
-    @default(expr: "'light'")
+    @wes_default(expr: "'light'")
     @weight(value: 2)
   
   created_at: DateTime!
-    @default(expr: "now()")
+    @wes_default(expr: "now()")
     @uid(value: "col:user.created_at")
   
   updated_at: DateTime!
-    @default(expr: "now()")
+    @wes_default(expr: "now()")
     @updatedAt
     @uid(value: "col:user.updated_at")
   
@@ -48,19 +48,19 @@ type User @table @uid(value: "tbl:user") @critical {
   posts: [Post!]! @hasMany
 }
 
-type Post @table @uid(value: "tbl:post") @rls(
+type Post @wes_table @uid(value: "tbl:post") @wes_rls(
   select: "true"
   insert: "auth.uid() = user_id"
   update: "auth.uid() = user_id"  
   delete: "auth.uid() = user_id"
 ) {
   id: ID!
-    @primaryKey
+    @wes_pk
     @uid(value: "col:post.id")
-    @default(expr: "gen_random_uuid()")
+    @wes_default(expr: "gen_random_uuid()")
   
   user_id: ID!
-    @foreignKey(ref: "User.id")
+    @wes_fk(ref: "User.id")
     @index
     @uid(value: "col:post.user_id")
     @weight(value: 7)
@@ -74,7 +74,7 @@ type Post @table @uid(value: "tbl:post") @rls(
     @weight(value: 4)
   
   published: Boolean!
-    @default(expr: "false")
+    @wes_default(expr: "false")
     @uid(value: "col:post.published")
     @weight(value: 3)
   
@@ -82,7 +82,7 @@ type Post @table @uid(value: "tbl:post") @rls(
     @uid(value: "col:post.published_at")
   
   created_at: DateTime!
-    @default(expr: "now()")
+    @wes_default(expr: "now()")
     @uid(value: "col:post.created_at")
   
   # Virtual relations
@@ -90,20 +90,20 @@ type Post @table @uid(value: "tbl:post") @rls(
   comments: [Comment!]! @hasMany
 }
 
-type Comment @table @uid(value: "tbl:comment") {
+type Comment @wes_table @uid(value: "tbl:comment") {
   id: ID!
-    @primaryKey
+    @wes_pk
     @uid(value: "col:comment.id")
-    @default(expr: "gen_random_uuid()")
+    @wes_default(expr: "gen_random_uuid()")
   
   post_id: ID!
-    @foreignKey(ref: "Post.id")
+    @wes_fk(ref: "Post.id")
     @index
     @uid(value: "col:comment.post_id")
     @weight(value: 6)
   
   user_id: ID!
-    @foreignKey(ref: "User.id")
+    @wes_fk(ref: "User.id")
     @index
     @uid(value: "col:comment.user_id")
     @weight(value: 6)
@@ -113,7 +113,7 @@ type Comment @table @uid(value: "tbl:comment") {
     @weight(value: 4)
   
   created_at: DateTime!
-    @default(expr: "now()")
+    @wes_default(expr: "now()")
     @uid(value: "col:comment.created_at")
   
   # Virtual relations

@@ -1,39 +1,39 @@
 # RPC Example with New Parameter Strategy
 # Demonstrates jsonb parameter approach and ownership model
 
-type User @table @grant(roles: ["authenticated", "anon"]) {
-  id: ID! @primaryKey @uid(value: "user_001")
-  email: String! @unique @sensitive
+type User @wes_table @grant(roles: ["authenticated", "anon"]) {
+  id: ID! @wes_pk @uid(value: "user_001")
+  email: String! @wes_unique @sensitive
   name: String
   role: UserRole!
-  createdAt: DateTime! @default(value: "NOW()")
+  createdAt: DateTime! @wes_default(value: "NOW()")
   
   # Virtual relations
   posts: [Post!]! @hasMany(ref: "author")
   profile: Profile @hasOne
 }
 
-type Post @table @owner(column: "author_id") @rls(
+type Post @wes_table @owner(column: "author_id") @wes_rls(
   enabled: true
   select: "true"
   insert: "auth.uid() = author_id"
   update: "auth.uid() = author_id"
   delete: "auth.uid() = author_id"
 ) {
-  id: ID! @primaryKey
-  title: String! @index
+  id: ID! @wes_pk
+  title: String! @wes_index
   content: String
-  published: Boolean! @default(value: "false")
-  author_id: ID! @foreignKey(ref: "User.id")
+  published: Boolean! @wes_default(value: "false")
+  author_id: ID! @wes_fk(ref: "User.id")
   tags: [String!]! # Array with non-null items
   metadata: JSON
-  createdAt: DateTime! @default(value: "NOW()")
-  updatedAt: DateTime! @default(value: "NOW()")
+  createdAt: DateTime! @wes_default(value: "NOW()")
+  updatedAt: DateTime! @wes_default(value: "NOW()")
 }
 
-type Profile @table @owner(column: "user_id") {
-  id: ID! @primaryKey
-  user_id: ID! @foreignKey(ref: "User.id") @unique
+type Profile @wes_table @owner(column: "user_id") {
+  id: ID! @wes_pk
+  user_id: ID! @wes_fk(ref: "User.id") @wes_unique
   bio: String
   avatar_url: String
   preferences: JSON @pii

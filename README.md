@@ -7,11 +7,11 @@ Wesley is a schema-first database migration platform that uses GraphQL SDL as th
 **The adult in the room for database operations.** No surprises, no 3am pages, just boring reliability.
 
 ```graphql
-type Document @table @tenant(by: "org_id") @rls(enable: true) {
-  id: ID! @pk
+type Document @wes_table @wes_tenant(by: "org_id") @wes_rls(enabled: true) {
+  id: ID! @wes_pk
   title: String!
-  org_id: ID! @fk(ref: "Org.id")
-  created_by: ID! @fk(ref: "User.id")
+  org_id: ID! @wes_fk(ref: "Org.id")
+  created_by: ID! @wes_fk(ref: "User.id")
 }
 ```
 
@@ -86,10 +86,10 @@ How Wesley works
 
 1) Define once
 
-type User @table {
-  id: ID! @pk
-  email: String! @unique
-  org_id: ID! @fk(ref: "Org.id")
+type User @wes_table {
+  id: ID! @wes_pk
+  email: String! @wes_unique
+  org_id: ID! @wes_fk(ref: "Org.id")
 }
 
 2) Compile everything
@@ -172,11 +172,11 @@ wesley up --docker               # bootstrap or migrate your dev DB
 ### Edit your schema (v1 → v2):
 
 ```graphql
-type Post @table @rls(enable: true) {
-  id: ID! @pk
+type Post @wes_table @wes_rls(enabled: true) {
+  id: ID! @wes_pk
   title: String!
-  author_id: ID! @fk(ref: "User.id")
-  published: Boolean! @default(expr: "false")
+  author_id: ID! @wes_fk(ref: "User.id")
+  published: Boolean! @wes_default(value: "false")
 }
 ```
 

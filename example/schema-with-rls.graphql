@@ -10,7 +10,7 @@ directive @weight(value: Int! = 5) on OBJECT | FIELD_DEFINITION
 directive @critical on OBJECT | FIELD_DEFINITION
 directive @sensitive on FIELD_DEFINITION
 directive @pii on FIELD_DEFINITION
-directive @rls(
+directive @wes_rls(
   select: String
   insert: String
   update: String
@@ -23,65 +23,65 @@ directive @function(logic: String) on FIELD_DEFINITION
 # TABLES WITH RLS
 # =====================
 
-type User @table @critical @uid("tbl:user") @rls(
+type User @wes_table @critical @uid("tbl:user") @wes_rls(
   select: "true"  # Anyone can see users
   insert: "false" # Only through registration
   update: "auth.uid() = id"  # Users can update themselves
   delete: "false" # No user deletion
 ) {
-  id: UUID! @primaryKey @default(expr: "auth.uid()") @uid("col:user.id")
-  email: String! @unique @pii @weight(9) @uid("col:user.email")
+  id: UUID! @wes_pk @wes_default(expr: "auth.uid()") @uid("col:user.id")
+  email: String! @wes_unique @pii @weight(9) @uid("col:user.email")
   password_hash: String! @sensitive @weight(10) @uid("col:user.password")
   
   full_name: String @pii @weight(7)
-  role: String! @default(value: "customer") @weight(8)
+  role: String! @wes_default(value: "customer") @weight(8)
   
-  email_verified: Boolean! @default(expr: "false") @weight(8)
-  created_at: DateTime! @default(expr: "now()")
-  updated_at: DateTime! @default(expr: "now()") @updatedAt
+  email_verified: Boolean! @wes_default(expr: "false") @weight(8)
+  created_at: DateTime! @wes_default(expr: "now()")
+  updated_at: DateTime! @wes_default(expr: "now()") @updatedAt
   
   orders: [Order!]! @hasMany
 }
 
-type Product @table @uid("tbl:product") @rls(
+type Product @wes_table @uid("tbl:product") @wes_rls(
   select: "published = true OR auth.uid() IN (SELECT id FROM User WHERE role = 'admin')"
   insert: "auth.uid() IN (SELECT id FROM User WHERE role = 'admin')"
   update: "auth.uid() IN (SELECT id FROM User WHERE role = 'admin')"
   delete: "auth.uid() IN (SELECT id FROM User WHERE role = 'admin')"
 ) {
-  id: UUID! @primaryKey @default(expr: "gen_random_uuid()") @uid("col:product.id")
+  id: UUID! @wes_pk @wes_default(expr: "gen_random_uuid()") @uid("col:product.id")
   
-  sku: String! @unique @weight(9) @uid("col:product.sku")
+  sku: String! @wes_unique @weight(9) @uid("col:product.sku")
   name: String! @weight(8) @uid("col:product.name")
-  slug: String! @unique @index @weight(7) @uid("col:product.slug")
+  slug: String! @wes_unique @wes_index @weight(7) @uid("col:product.slug")
   
   price_cents: Int! @weight(9) @uid("col:product.price")
-  stock_quantity: Int! @default(value: 0) @weight(8)
-  low_stock_threshold: Int! @default(value: 10) @weight(6)
+  stock_quantity: Int! @wes_default(value: 0) @weight(8)
+  low_stock_threshold: Int! @wes_default(value: 10) @weight(6)
   
-  published: Boolean! @default(expr: "false") @index @weight(7)
-  featured: Boolean! @default(expr: "false") @weight(5)
+  published: Boolean! @wes_default(expr: "false") @wes_index @weight(7)
+  featured: Boolean! @wes_default(expr: "false") @weight(5)
   
-  created_at: DateTime! @default(expr: "now()")
-  updated_at: DateTime! @default(expr: "now()") @updatedAt
+  created_at: DateTime! @wes_default(expr: "now()")
+  updated_at: DateTime! @wes_default(expr: "now()") @updatedAt
   
-  created_by: UUID! @foreignKey(ref: "User.id") @weight(7)
+  created_by: UUID! @wes_fk(ref: "User.id") @weight(7)
   
   order_items: [OrderItem!]! @hasMany
   inventory_logs: [InventoryLog!]! @hasMany
 }
 
-type Order @table @critical @uid("tbl:order") @rls(
+type Order @wes_table @critical @uid("tbl:order") @wes_rls(
   select: "user_id = auth.uid() OR auth.uid() IN (SELECT id FROM User WHERE role = 'admin')"
   insert: "user_id = auth.uid()"
   update: "user_id = auth.uid() AND status = 'pending'"
   delete: "false"  # Orders cannot be deleted, only cancelled
 ) {
-  id: UUID! @primaryKey @default(expr: "gen_random_uuid()") @uid("col:order.id")
-  order_number: String! @unique @weight(10) @uid("col:order.number")
-  user_id: UUID! @foreignKey(ref: "User.id") @index @weight(9)
+  id: UUID! @wes_pk @wes_default(expr: "gen_random_uuid()") @uid("col:order.id")
+  order_number: String! @wes_unique @weight(10) @uid("col:order.number")
+  user_id: UUID! @wes_fk(ref: "User.id") @wes_index @weight(9)
   
-  status: String! @default(value: "pending") @weight(9) @uid("col:order.status")
+  status: String! @wes_default(value: "pending") @weight(9) @uid("col:order.status")
   
   subtotal_cents: Int! @weight(8)
   tax_cents: Int! @weight(7)
@@ -91,12 +91,12 @@ type Order @table @critical @uid("tbl:order") @rls(
   shipping_address: JSON! @pii @weight(8)
   billing_address: JSON! @pii @weight(8)
   
-  payment_intent_id: String @unique @sensitive @weight(9)
-  payment_status: String! @default(value: "pending") @weight(9)
+  payment_intent_id: String @wes_unique @sensitive @weight(9)
+  payment_status: String! @wes_default(value: "pending") @weight(9)
   
   notes: String @weight(2)
   
-  created_at: DateTime! @default(expr: "now()")
+  created_at: DateTime! @wes_default(expr: "now()")
   paid_at: DateTime @weight(7)
   shipped_at: DateTime @weight(6)
   delivered_at: DateTime @weight(6)
@@ -106,15 +106,15 @@ type Order @table @critical @uid("tbl:order") @rls(
   items: [OrderItem!]! @hasMany
 }
 
-type OrderItem @table @uid("tbl:order_item") @rls(
+type OrderItem @wes_table @uid("tbl:order_item") @wes_rls(
   select: "order_id IN (SELECT id FROM Order WHERE user_id = auth.uid())"
   insert: "order_id IN (SELECT id FROM Order WHERE user_id = auth.uid() AND status = 'pending')"
   update: "order_id IN (SELECT id FROM Order WHERE user_id = auth.uid() AND status = 'pending')"
   delete: "order_id IN (SELECT id FROM Order WHERE user_id = auth.uid() AND status = 'pending')"
 ) {
-  id: UUID! @primaryKey @default(expr: "gen_random_uuid()")
-  order_id: UUID! @foreignKey(ref: "Order.id") @index @weight(8)
-  product_id: UUID! @foreignKey(ref: "Product.id") @index @weight(7)
+  id: UUID! @wes_pk @wes_default(expr: "gen_random_uuid()")
+  order_id: UUID! @wes_fk(ref: "Order.id") @wes_index @weight(8)
+  product_id: UUID! @wes_fk(ref: "Product.id") @wes_index @weight(7)
   
   quantity: Int! @weight(8)
   unit_price_cents: Int! @weight(8)
@@ -128,51 +128,51 @@ type OrderItem @table @uid("tbl:order_item") @rls(
   product: Product! @belongsTo
 }
 
-type Cart @table @uid("tbl:cart") @rls(
+type Cart @wes_table @uid("tbl:cart") @wes_rls(
   select: "user_id = auth.uid()"
   insert: "user_id = auth.uid()"
   update: "user_id = auth.uid()"
   delete: "user_id = auth.uid()"
 ) {
-  id: UUID! @primaryKey @default(expr: "gen_random_uuid()")
-  user_id: UUID! @unique @foreignKey(ref: "User.id") @weight(8)
+  id: UUID! @wes_pk @wes_default(expr: "gen_random_uuid()")
+  user_id: UUID! @wes_unique @wes_fk(ref: "User.id") @weight(8)
   
-  expires_at: DateTime! @default(expr: "now() + interval '7 days'") @index @weight(7)
+  expires_at: DateTime! @wes_default(expr: "now() + interval '7 days'") @wes_index @weight(7)
   
-  created_at: DateTime! @default(expr: "now()")
-  updated_at: DateTime! @default(expr: "now()") @updatedAt
+  created_at: DateTime! @wes_default(expr: "now()")
+  updated_at: DateTime! @wes_default(expr: "now()") @updatedAt
   
   user: User! @belongsTo
   items: [CartItem!]! @hasMany
 }
 
-type CartItem @table @uid("tbl:cart_item") @rls(
+type CartItem @wes_table @uid("tbl:cart_item") @wes_rls(
   select: "cart_id IN (SELECT id FROM Cart WHERE user_id = auth.uid())"
   insert: "cart_id IN (SELECT id FROM Cart WHERE user_id = auth.uid())"
   update: "cart_id IN (SELECT id FROM Cart WHERE user_id = auth.uid())"
   delete: "cart_id IN (SELECT id FROM Cart WHERE user_id = auth.uid())"
 ) {
-  id: UUID! @primaryKey @default(expr: "gen_random_uuid()")
-  cart_id: UUID! @foreignKey(ref: "Cart.id") @index @weight(7)
-  product_id: UUID! @foreignKey(ref: "Product.id") @index @weight(7)
+  id: UUID! @wes_pk @wes_default(expr: "gen_random_uuid()")
+  cart_id: UUID! @wes_fk(ref: "Cart.id") @wes_index @weight(7)
+  product_id: UUID! @wes_fk(ref: "Product.id") @wes_index @weight(7)
   
   quantity: Int! @weight(7)
   
-  added_at: DateTime! @default(expr: "now()")
+  added_at: DateTime! @wes_default(expr: "now()")
   
   cart: Cart! @belongsTo
   product: Product! @belongsTo
 }
 
 # Inventory tracking with RLS
-type InventoryLog @table @uid("tbl:inventory_log") @rls(
+type InventoryLog @wes_table @uid("tbl:inventory_log") @wes_rls(
   select: "auth.uid() IN (SELECT id FROM User WHERE role IN ('admin', 'warehouse'))"
   insert: "auth.uid() IN (SELECT id FROM User WHERE role IN ('admin', 'warehouse'))"
   update: "false"  # Logs are immutable
   delete: "false"  # Logs cannot be deleted
 ) {
-  id: UUID! @primaryKey @default(expr: "gen_random_uuid()")
-  product_id: UUID! @foreignKey(ref: "Product.id") @index @weight(8)
+  id: UUID! @wes_pk @wes_default(expr: "gen_random_uuid()")
+  product_id: UUID! @wes_fk(ref: "Product.id") @wes_index @weight(8)
   
   quantity_change: Int! @weight(9)  # Positive for restocking, negative for sales
   quantity_after: Int! @weight(8)
@@ -180,8 +180,8 @@ type InventoryLog @table @uid("tbl:inventory_log") @rls(
   reason: String! @weight(7)  # 'sale', 'restock', 'adjustment', 'return'
   reference_id: UUID @weight(6)  # Order ID or restock batch ID
   
-  created_by: UUID! @foreignKey(ref: "User.id") @weight(7)
-  created_at: DateTime! @default(expr: "now()") @index
+  created_by: UUID! @wes_fk(ref: "User.id") @weight(7)
+  created_at: DateTime! @wes_default(expr: "now()") @wes_index
   
   product: Product! @belongsTo
   user: User! @belongsTo
