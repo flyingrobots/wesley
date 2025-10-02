@@ -88,17 +88,7 @@ jobs:
         
         echo "✅ Lightweight import checks passed"
     
-    - name: Check for process usage in core
-      run: |
-        echo "🔍 Checking for process usage in core domain..."
-        
-        if find packages/wesley-core/src -name "*.mjs" -exec grep -l "process\." {} \;; then
-          echo "❌ Found process usage in wesley-core"
-          echo "Core domain should be platform-agnostic"
-          exit 1
-        fi
-        
-        echo "✅ Core domain is platform-agnostic"
+    # ESLint purity rules enforce no process/node:* in core; skip manual grep
 
     - name: Install ESLint (for core purity check)
       run: pnpm add -D eslint
