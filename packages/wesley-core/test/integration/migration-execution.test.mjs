@@ -196,11 +196,12 @@ test('migration execution: drop column with safety checks', async () => {
   const migration = await differ.diff(oldSchema, newSchema);
   assert.equal(migration.steps.length, 1);
   assert.equal(migration.steps[0].kind, 'drop_column');
-  assert.equal(migration.steps[0].columnName, 'deprecated');
+  assert.equal(migration.steps[0].column, 'deprecated');
   
   // This should be flagged as potentially destructive
-  assert.equal(migration.risk, 'high');
-  assert(migration.warnings.length > 0);
+  assert.equal(migration.safetyAnalysis.isDestructive, true);
+  const dropRisk = migration.safetyAnalysis.risks.find(r => r.step === 'drop_column');
+  assert(dropRisk && (dropRisk.severity === 'high' || dropRisk.severity === 'critical'));
   
   // Mock successful DROP COLUMN
   db.mockResult('alter table', { rowCount: 0 });
@@ -332,11 +333,12 @@ test('migration execution: rollback on error', async () => {
   
   // Mock a failure on the second operation
   db.mockResult('create table users', { rowCount: 0 });
-  db.mockError('column "invalid_column" does not exist');
   
   let errorThrown = false;
   
   await db.begin();
+  // Fail the next statement (ALTER TABLE ...)
+  db.mockError('column "invalid_column" does not exist');
   try {
     await db.query('CREATE TABLE users (id uuid PRIMARY KEY)');
     await db.query('ALTER TABLE users ADD CONSTRAINT invalid_constraint FOREIGN KEY (invalid_column) REFERENCES other_table (id)');

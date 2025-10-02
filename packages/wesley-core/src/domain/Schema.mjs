@@ -137,7 +137,8 @@ export class Field {
   }
 
   getForeignKeyRef() {
-    return this.directives['@foreignKey']?.ref;
+    const fk = this.directives['@foreignKey'];
+    return fk?.ref || fk?.references;
   }
 
   getCheckConstraint() {

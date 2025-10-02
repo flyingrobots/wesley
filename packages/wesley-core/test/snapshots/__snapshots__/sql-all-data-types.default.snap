@@ -1,30 +1,30 @@
-CREATE TABLE IF NOT EXISTS "DataTypes" (
+CREATE TABLE IF NOT EXISTS "data_types" (
   "id" uuid NOT NULL,
-  "textField" text,
-  "intField" integer,
-  "bigIntField" text,
-  "floatField" double precision,
-  "decimalField" numeric,
-  "boolField" boolean,
-  "dateField" date,
-  "timeField" time,
-  "datetimeField" timestamptz,
-  "jsonField" jsonb,
-  "uuidField" uuid,
-  "inetField" inet,
+  "text_field" text,
+  "int_field" integer,
+  "big_int_field" text,
+  "float_field" double precision,
+  "decimal_field" numeric,
+  "bool_field" boolean,
+  "date_field" date,
+  "time_field" time,
+  "datetime_field" timestamptz,
+  "json_field" jsonb,
+  "uuid_field" uuid,
+  "inet_field" inet,
   PRIMARY KEY ("id")
 );
-COMMENT ON TABLE "DataTypes" IS 'uid: tbl:DataTypes';
-COMMENT ON COLUMN "DataTypes"."id" IS 'uid: col_datatypes_id';
-COMMENT ON COLUMN "DataTypes"."textField" IS 'uid: col_datatypes_textfield';
-COMMENT ON COLUMN "DataTypes"."intField" IS 'uid: col_datatypes_intfield';
-COMMENT ON COLUMN "DataTypes"."bigIntField" IS 'uid: col_datatypes_bigintfield';
-COMMENT ON COLUMN "DataTypes"."floatField" IS 'uid: col_datatypes_floatfield';
-COMMENT ON COLUMN "DataTypes"."decimalField" IS 'uid: col_datatypes_decimalfield';
-COMMENT ON COLUMN "DataTypes"."boolField" IS 'uid: col_datatypes_boolfield';
-COMMENT ON COLUMN "DataTypes"."dateField" IS 'uid: col_datatypes_datefield';
-COMMENT ON COLUMN "DataTypes"."timeField" IS 'uid: col_datatypes_timefield';
-COMMENT ON COLUMN "DataTypes"."datetimeField" IS 'uid: col_datatypes_datetimefield';
-COMMENT ON COLUMN "DataTypes"."jsonField" IS 'uid: col_datatypes_jsonfield';
-COMMENT ON COLUMN "DataTypes"."uuidField" IS 'uid: col_datatypes_uuidfield';
-COMMENT ON COLUMN "DataTypes"."inetField" IS 'uid: col_datatypes_inetfield';
+COMMENT ON TABLE "data_types" IS 'uid: tbl:DataTypes';
+COMMENT ON COLUMN "data_types"."id" IS 'uid: col_data_types_id';
+COMMENT ON COLUMN "data_types"."text_field" IS 'uid: col_data_types_text_field';
+COMMENT ON COLUMN "data_types"."int_field" IS 'uid: col_data_types_int_field';
+COMMENT ON COLUMN "data_types"."big_int_field" IS 'uid: col_data_types_big_int_field';
+COMMENT ON COLUMN "data_types"."float_field" IS 'uid: col_data_types_float_field';
+COMMENT ON COLUMN "data_types"."decimal_field" IS 'uid: col_data_types_decimal_field';
+COMMENT ON COLUMN "data_types"."bool_field" IS 'uid: col_data_types_bool_field';
+COMMENT ON COLUMN "data_types"."date_field" IS 'uid: col_data_types_date_field';
+COMMENT ON COLUMN "data_types"."time_field" IS 'uid: col_data_types_time_field';
+COMMENT ON COLUMN "data_types"."datetime_field" IS 'uid: col_data_types_datetime_field';
+COMMENT ON COLUMN "data_types"."json_field" IS 'uid: col_data_types_json_field';
+COMMENT ON COLUMN "data_types"."uuid_field" IS 'uid: col_data_types_uuid_field';
+COMMENT ON COLUMN "data_types"."inet_field" IS 'uid: col_data_types_inet_field';

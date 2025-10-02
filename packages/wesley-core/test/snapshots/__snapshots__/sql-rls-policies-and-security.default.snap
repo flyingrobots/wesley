@@ -1,25 +1,25 @@
-CREATE TABLE IF NOT EXISTS "Organization" (
+CREATE TABLE IF NOT EXISTS "organizations" (
   "id" uuid NOT NULL,
   "name" text NOT NULL,
-  "ownerId" uuid NOT NULL,
+  "owner_id" uuid NOT NULL,
   PRIMARY KEY ("id")
 );
-COMMENT ON TABLE "Organization" IS 'uid: tbl:Organization';
-COMMENT ON COLUMN "Organization"."id" IS 'uid: col_organization_id';
-COMMENT ON COLUMN "Organization"."name" IS 'uid: col_organization_name';
-COMMENT ON COLUMN "Organization"."ownerId" IS 'uid: col_organization_ownerid';
-CREATE TABLE IF NOT EXISTS "Document" (
+COMMENT ON TABLE "organizations" IS 'uid: tbl:Organization';
+COMMENT ON COLUMN "organizations"."id" IS 'uid: col_organizations_id';
+COMMENT ON COLUMN "organizations"."name" IS 'uid: col_organizations_name';
+COMMENT ON COLUMN "organizations"."owner_id" IS 'uid: col_organizations_owner_id';
+CREATE TABLE IF NOT EXISTS "documents" (
   "id" uuid NOT NULL,
   "title" text NOT NULL,
   "content" text,
-  "orgId" uuid NOT NULL,
-  "createdBy" uuid NOT NULL,
+  "org_id" uuid NOT NULL,
+  "created_by" uuid NOT NULL,
   PRIMARY KEY ("id"),
-  FOREIGN KEY ("orgId") REFERENCES "Organization"("id") ON DELETE NO ACTION
+  FOREIGN KEY ("org_id") REFERENCES "organizations"("id") ON DELETE NO ACTION
 );
-COMMENT ON TABLE "Document" IS 'uid: tbl:Document';
-COMMENT ON COLUMN "Document"."id" IS 'uid: col_document_id';
-COMMENT ON COLUMN "Document"."title" IS 'uid: col_document_title';
-COMMENT ON COLUMN "Document"."content" IS 'uid: col_document_content';
-COMMENT ON COLUMN "Document"."orgId" IS 'uid: col_document_orgid';
-COMMENT ON COLUMN "Document"."createdBy" IS 'uid: col_document_createdby';
+COMMENT ON TABLE "documents" IS 'uid: tbl:Document';
+COMMENT ON COLUMN "documents"."id" IS 'uid: col_documents_id';
+COMMENT ON COLUMN "documents"."title" IS 'uid: col_documents_title';
+COMMENT ON COLUMN "documents"."content" IS 'uid: col_documents_content';
+COMMENT ON COLUMN "documents"."org_id" IS 'uid: col_documents_org_id';
+COMMENT ON COLUMN "documents"."created_by" IS 'uid: col_documents_created_by';

@@ -3,7 +3,7 @@
  * Generators and utilities for fast-check property tests
  */
 
-import fc from 'fast-check';
+import { fc } from 'fast-check';
 
 /**
  * Configuration for property tests

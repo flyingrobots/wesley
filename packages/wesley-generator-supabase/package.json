@@ -11,7 +11,7 @@
     "src"
   ],
   "scripts": {
-    "test": "vitest"
+    "test": "node --test"
   },
   "dependencies": {
     "@wesley/core": "workspace:*",

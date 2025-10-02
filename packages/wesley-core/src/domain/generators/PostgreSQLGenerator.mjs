@@ -61,8 +61,9 @@ export class PostgreSQLGenerator {
         }
 
         const defaultValue = field.getDefault();
-        if (defaultValue?.expr) {
-          col += ` DEFAULT ${defaultValue.expr}`;
+        if (defaultValue?.expr || defaultValue?.value) {
+          const dv = defaultValue.expr ?? defaultValue.value;
+          col += ` DEFAULT ${dv}`;
         }
 
         cols.push(col);

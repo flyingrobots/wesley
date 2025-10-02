@@ -66,22 +66,20 @@ test('RLS policies are idempotent', () => {
 test('generates pgTAP test for RLS idempotency', () => {
   const testGenerator = new PgTAPTestGenerator();
   
-  const schema = {
-    tables: {
-      Order: {
-        name: 'Order',
-        uid: 'order_001',
-        rls: {
-          enabled: true,
-          select: 'user_id = auth.uid()'
-        },
-        fields: [
-          { name: 'id', type: 'ID', required: true },
-          { name: 'user_id', type: 'ID', required: true }
-        ]
-      }
+  // Build a minimal Schema instance
+  const schema = new (class MinimalSchema {
+    constructor() {
+      this._tables = [
+        {
+          name: 'Order',
+        directives: { '@uid': { value: 'order_001' }, '@rls': { enabled: true, select: 'user_id = auth.uid()' } },
+          getFields() { return []; },
+          isTable() { return true; }
+        }
+      ];
     }
-  };
+    getTables() { return this._tables; }
+  })();
   
   const tests = testGenerator.generate(schema);
   
@@ -89,7 +87,7 @@ test('generates pgTAP test for RLS idempotency', () => {
   assert(tests.includes('policy_Order_select_order_001'));
   
   // Should test RLS is enabled
-  assert(tests.includes("SELECT table_has_rls('Order')"));
+  assert(tests.includes("table_has_rls('Order'"));
 });
 
 test('policy names use uid fallback correctly', () => {

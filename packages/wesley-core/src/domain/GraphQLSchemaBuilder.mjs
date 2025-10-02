@@ -356,6 +356,11 @@ export class GraphQLSchemaBuilder {
       roles: args.roles || ['authenticated']
     };
     
+    // Preserve preset configuration (string or object with name/options)
+    if (args.preset !== undefined) {
+      config.preset = args.preset;
+    }
+    
     // Parse role-specific settings if provided
     if (args.selectRoles) config.selectRoles = args.selectRoles;
     if (args.insertRoles) config.insertRoles = args.insertRoles;

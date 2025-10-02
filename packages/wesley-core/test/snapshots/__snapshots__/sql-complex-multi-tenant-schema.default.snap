@@ -1,47 +1,47 @@
-CREATE TABLE IF NOT EXISTS "Tenant" (
+CREATE TABLE IF NOT EXISTS "tenants" (
   "id" uuid NOT NULL,
   "name" text NOT NULL,
-  "plan" text NOT NULL,
+  "plan" text NOT NULL DEFAULT 'free',
   PRIMARY KEY ("id"),
   UNIQUE ("name")
 );
-COMMENT ON TABLE "Tenant" IS 'uid: tbl:Tenant';
-COMMENT ON COLUMN "Tenant"."id" IS 'uid: col_tenant_id';
-COMMENT ON COLUMN "Tenant"."name" IS 'uid: col_tenant_name';
-COMMENT ON COLUMN "Tenant"."plan" IS 'uid: col_tenant_plan';
-CREATE TABLE IF NOT EXISTS "User" (
+COMMENT ON TABLE "tenants" IS 'uid: tbl:Tenant';
+COMMENT ON COLUMN "tenants"."id" IS 'uid: col_tenants_id';
+COMMENT ON COLUMN "tenants"."name" IS 'uid: col_tenants_name';
+COMMENT ON COLUMN "tenants"."plan" IS 'uid: col_tenants_plan';
+CREATE TABLE IF NOT EXISTS "users" (
   "id" uuid NOT NULL,
   "email" text NOT NULL,
-  "tenantId" uuid NOT NULL,
-  "role" text NOT NULL,
+  "tenant_id" uuid NOT NULL,
+  "role" text NOT NULL DEFAULT 'member',
   PRIMARY KEY ("id"),
   UNIQUE ("email"),
-  FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE NO ACTION
+  FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE NO ACTION
 );
-COMMENT ON TABLE "User" IS 'uid: tbl:User';
-COMMENT ON COLUMN "User"."id" IS 'uid: col_user_id';
-COMMENT ON COLUMN "User"."email" IS 'uid: col_user_email';
-COMMENT ON COLUMN "User"."tenantId" IS 'uid: col_user_tenantid';
-COMMENT ON COLUMN "User"."role" IS 'uid: col_user_role';
-CREATE INDEX IF NOT EXISTS "User_tenantId_idx" ON "User" ("tenantId");
-COMMENT ON INDEX "User_tenantId_idx" IS 'uid: idx_user_tenantid';
-CREATE TABLE IF NOT EXISTS "Project" (
+COMMENT ON TABLE "users" IS 'uid: tbl:User';
+COMMENT ON COLUMN "users"."id" IS 'uid: col_users_id';
+COMMENT ON COLUMN "users"."email" IS 'uid: col_users_email';
+COMMENT ON COLUMN "users"."tenant_id" IS 'uid: col_users_tenant_id';
+COMMENT ON COLUMN "users"."role" IS 'uid: col_users_role';
+CREATE INDEX IF NOT EXISTS "users_tenant_id_idx" ON "users" ("tenant_id");
+COMMENT ON INDEX "users_tenant_id_idx" IS 'uid: idx_users_tenant_id';
+CREATE TABLE IF NOT EXISTS "projects" (
   "id" uuid NOT NULL,
   "name" text NOT NULL,
-  "tenantId" uuid NOT NULL,
-  "ownerId" uuid NOT NULL,
-  "settings" jsonb,
+  "tenant_id" uuid NOT NULL,
+  "owner_id" uuid NOT NULL,
+  "settings" jsonb DEFAULT {},
   PRIMARY KEY ("id"),
-  FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE NO ACTION,
-  FOREIGN KEY ("ownerId") REFERENCES "User"("id") ON DELETE NO ACTION
+  FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE NO ACTION,
+  FOREIGN KEY ("owner_id") REFERENCES "users"("id") ON DELETE NO ACTION
 );
-COMMENT ON TABLE "Project" IS 'uid: tbl:Project';
-COMMENT ON COLUMN "Project"."id" IS 'uid: col_project_id';
-COMMENT ON COLUMN "Project"."name" IS 'uid: col_project_name';
-COMMENT ON COLUMN "Project"."tenantId" IS 'uid: col_project_tenantid';
-COMMENT ON COLUMN "Project"."ownerId" IS 'uid: col_project_ownerid';
-COMMENT ON COLUMN "Project"."settings" IS 'uid: col_project_settings';
-CREATE INDEX IF NOT EXISTS "Project_tenantId_idx" ON "Project" ("tenantId");
-COMMENT ON INDEX "Project_tenantId_idx" IS 'uid: idx_project_tenantid';
-CREATE INDEX IF NOT EXISTS "Project_ownerId_idx" ON "Project" ("ownerId");
-COMMENT ON INDEX "Project_ownerId_idx" IS 'uid: idx_project_ownerid';
+COMMENT ON TABLE "projects" IS 'uid: tbl:Project';
+COMMENT ON COLUMN "projects"."id" IS 'uid: col_projects_id';
+COMMENT ON COLUMN "projects"."name" IS 'uid: col_projects_name';
+COMMENT ON COLUMN "projects"."tenant_id" IS 'uid: col_projects_tenant_id';
+COMMENT ON COLUMN "projects"."owner_id" IS 'uid: col_projects_owner_id';
+COMMENT ON COLUMN "projects"."settings" IS 'uid: col_projects_settings';
+CREATE INDEX IF NOT EXISTS "projects_tenant_id_idx" ON "projects" ("tenant_id");
+COMMENT ON INDEX "projects_tenant_id_idx" IS 'uid: idx_projects_tenant_id';
+CREATE INDEX IF NOT EXISTS "projects_owner_id_idx" ON "projects" ("owner_id");
+COMMENT ON INDEX "projects_owner_id_idx" IS 'uid: idx_projects_owner_id';

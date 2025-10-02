@@ -16,7 +16,7 @@ export class PgTAPTestGenerator {
     this.enableDepthTesting = options.enableDepthTesting ?? true;
   }
 
-  async generate(schema, options = {}) {
+  generate(schema, options = {}) {
     const suites = [];
 
     suites.push(this.generateStructureTests(schema));

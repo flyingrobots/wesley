@@ -1,32 +1,32 @@
-CREATE TABLE IF NOT EXISTS "Event" (
+CREATE TABLE IF NOT EXISTS "events" (
   "id" uuid NOT NULL,
   "name" text NOT NULL,
   "slug" text NOT NULL,
-  "startDate" timestamptz NOT NULL,
-  "endDate" timestamptz NOT NULL,
-  "status" text NOT NULL,
-  "categoryId" uuid NOT NULL,
-  "organizerId" uuid NOT NULL,
+  "start_date" timestamptz NOT NULL,
+  "end_date" timestamptz NOT NULL,
+  "status" text NOT NULL DEFAULT 'draft',
+  "category_id" uuid NOT NULL,
+  "organizer_id" uuid NOT NULL,
   PRIMARY KEY ("id"),
   UNIQUE ("slug")
 );
-COMMENT ON TABLE "Event" IS 'uid: tbl:Event';
-COMMENT ON COLUMN "Event"."id" IS 'uid: col_event_id';
-COMMENT ON COLUMN "Event"."name" IS 'uid: col_event_name';
-COMMENT ON COLUMN "Event"."slug" IS 'uid: col_event_slug';
-COMMENT ON COLUMN "Event"."startDate" IS 'uid: col_event_startdate';
-COMMENT ON COLUMN "Event"."endDate" IS 'uid: col_event_enddate';
-COMMENT ON COLUMN "Event"."status" IS 'uid: col_event_status';
-COMMENT ON COLUMN "Event"."categoryId" IS 'uid: col_event_categoryid';
-COMMENT ON COLUMN "Event"."organizerId" IS 'uid: col_event_organizerid';
-CREATE INDEX IF NOT EXISTS "Event_name_idx" ON "Event" ("name");
-COMMENT ON INDEX "Event_name_idx" IS 'uid: idx_event_name';
+COMMENT ON TABLE "events" IS 'uid: tbl:Event';
+COMMENT ON COLUMN "events"."id" IS 'uid: col_events_id';
+COMMENT ON COLUMN "events"."name" IS 'uid: col_events_name';
+COMMENT ON COLUMN "events"."slug" IS 'uid: col_events_slug';
+COMMENT ON COLUMN "events"."start_date" IS 'uid: col_events_start_date';
+COMMENT ON COLUMN "events"."end_date" IS 'uid: col_events_end_date';
+COMMENT ON COLUMN "events"."status" IS 'uid: col_events_status';
+COMMENT ON COLUMN "events"."category_id" IS 'uid: col_events_category_id';
+COMMENT ON COLUMN "events"."organizer_id" IS 'uid: col_events_organizer_id';
+CREATE INDEX IF NOT EXISTS "events_name_idx" ON "events" ("name");
+COMMENT ON INDEX "events_name_idx" IS 'uid: idx_events_name';
 -- Skipped redundant index: Index on slug is covered by unique constraint on slug
-CREATE INDEX IF NOT EXISTS "Event_startDate_idx" ON "Event" ("startDate");
-COMMENT ON INDEX "Event_startDate_idx" IS 'uid: idx_event_startdate';
-CREATE INDEX IF NOT EXISTS "Event_status_idx" ON "Event" ("status") WHERE status = 'published';
-COMMENT ON INDEX "Event_status_idx" IS 'uid: idx_event_status';
-CREATE INDEX IF NOT EXISTS "Event_categoryId_idx" ON "Event" ("categoryId");
-COMMENT ON INDEX "Event_categoryId_idx" IS 'uid: idx_event_categoryid';
-CREATE INDEX IF NOT EXISTS "Event_organizerId_idx" ON "Event" ("organizerId");
-COMMENT ON INDEX "Event_organizerId_idx" IS 'uid: idx_event_organizerid';
+CREATE INDEX IF NOT EXISTS "events_start_date_idx" ON "events" ("start_date");
+COMMENT ON INDEX "events_start_date_idx" IS 'uid: idx_events_start_date';
+CREATE INDEX IF NOT EXISTS "events_status_idx" ON "events" ("status") WHERE status = 'published';
+COMMENT ON INDEX "events_status_idx" IS 'uid: idx_events_status';
+CREATE INDEX IF NOT EXISTS "events_category_id_idx" ON "events" ("category_id");
+COMMENT ON INDEX "events_category_id_idx" IS 'uid: idx_events_category_id';
+CREATE INDEX IF NOT EXISTS "events_organizer_id_idx" ON "events" ("organizer_id");
+COMMENT ON INDEX "events_organizer_id_idx" IS 'uid: idx_events_organizer_id';
