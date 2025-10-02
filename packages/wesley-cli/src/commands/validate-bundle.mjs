@@ -3,8 +3,8 @@
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 
 export class ValidateBundleCommand extends WesleyCommand {
-  constructor() {
-    super('validate-bundle', 'Validate Wesley bundle against JSON schemas');
+  constructor(ctx) {
+    super(ctx, 'validate-bundle', 'Validate Wesley bundle against JSON schemas');
   }
 
   configureCommander(cmd) {

@@ -73,13 +73,17 @@ jobs:
         echo "🔍 Checking import statements for boundary violations..."
         
         # Check for Node.js imports in core (classic imports)
-        if find packages/wesley-core/src -name "*.mjs" -exec grep -l "from ['\"]fs['\"]" {} \;; then
+        FS_MATCHES=$(grep -RIl "from ['\"]fs['\"]" packages/wesley-core/src || true)
+        if [[ -n "$FS_MATCHES" ]]; then
           echo "❌ Found Node.js fs imports in wesley-core"
+          echo "$FS_MATCHES"
           exit 1
         fi
 
-        if find packages/wesley-core/src -name "*.mjs" -exec grep -l "from ['\"]path['\"]" {} \;; then
+        PATH_MATCHES=$(grep -RIl "from ['\"]path['\"]" packages/wesley-core/src || true)
+        if [[ -n "$PATH_MATCHES" ]]; then
           echo "❌ Found Node.js path imports in wesley-core"
+          echo "$PATH_MATCHES"
           exit 1
         fi
 
