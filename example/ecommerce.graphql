@@ -14,8 +14,8 @@ directive @pii on FIELD_DEFINITION
 # Core User table with authentication
 type User @table @critical @uid(value: "tbl:user") {
   id: UUID! @primaryKey @default(expr: "gen_random_uuid()") @uid(value: "col:user.id")
-  email: String! @unique @pii @weight(9) @uid("col:user.email")
-  password_hash: String! @sensitive @weight(10) @uid("col:user.password")
+  email: String! @unique @pii @weight(value: 9) @uid(value: "col:user.email")
+  password_hash: String! @sensitive @weight(value: 10) @uid(value: "col:user.password")
   
   full_name: String @pii @weight(7) @uid("col:user.full_name")
   phone: String @pii @weight(8) @uid("col:user.phone")
@@ -27,7 +27,7 @@ type User @table @critical @uid(value: "tbl:user") {
 }
 
 # Products with inventory tracking
-type Product @table @uid("tbl:product") {
+type Product @table @uid(value: "tbl:product") {
   id: UUID! @primaryKey @default(expr: "gen_random_uuid()") @uid("col:product.id")
   
   sku: String! @unique @weight(value: 9) @uid(value: "col:product.sku")
@@ -35,7 +35,7 @@ type Product @table @uid("tbl:product") {
   slug: String! @unique @index @weight(value: 7) @uid(value: "col:product.slug")
   
   price_cents: Int! @weight(value: 9) @uid(value: "col:product.price")
-  stock_quantity: Int! @default(value: 0) @weight(8)
+  stock_quantity: Int! @default(value: 0) @weight(value: 8)
   
   published: Boolean! @default(expr: "false") @index @weight(value: 7)
   created_at: DateTime! @default(expr: "now()")
@@ -50,7 +50,7 @@ type Order @table @critical @uid(value: "tbl:order") {
   user_id: UUID! @foreignKey(ref: "User.id") @index @weight(value: 9)
   
   status: String! @weight(value: 9) @uid(value: "col:order.status")
-  total_cents: Int! @weight(9)
+  total_cents: Int! @weight(value: 9)
   
   payment_intent_id: String @unique @sensitive @weight(value: 9)
   paid_at: DateTime @weight(value: 7)
