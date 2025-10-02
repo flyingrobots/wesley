@@ -3,7 +3,7 @@
  * Generates Zod validation schemas from the Wesley schema model.
  */
 
-import { Buffer } from 'node:buffer';
+// Avoid Node-specific imports to keep core pure
 
 export class ZodGenerator {
   constructor(evidenceMap) {
@@ -132,7 +132,8 @@ export const validateUpdate = <T>(schema: z.ZodSchema<T>, data: unknown): T => {
       CIDR: 'z.string()',
       MacAddr: "z.string().regex(/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/)",
       BigInt: 'z.bigint()',
-      Bytes: 'z.instanceof(Buffer)'
+      // Use Uint8Array for isomorphic binary representation
+      Bytes: 'z.instanceof(Uint8Array)'
     };
 
     if (this.isEnumType(field.type)) {
