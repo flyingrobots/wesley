@@ -3,7 +3,7 @@
  * Provides automatic retry logic, rollback capabilities, and intelligent error handling
  */
 
-import { EventEmitter } from 'events';
+import { EventEmitter } from '../../util/EventEmitter.mjs';
 import CheckpointManager from './CheckpointManager.mjs';
 
 export class ErrorRecovery extends EventEmitter {

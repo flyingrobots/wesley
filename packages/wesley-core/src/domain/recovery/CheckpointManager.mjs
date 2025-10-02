@@ -3,8 +3,8 @@
  * Manages operation checkpoints for rollback and recovery scenarios
  */
 
-import { EventEmitter } from 'events';
-import crypto from 'crypto';
+import { EventEmitter } from '../../util/EventEmitter.mjs';
+import { randomHex, hashString } from '../../util/hash.mjs';
 
 export class CheckpointManager extends EventEmitter {
   constructor(options = {}) {
@@ -243,7 +243,7 @@ export class CheckpointManager extends EventEmitter {
    */
   generateCheckpointId(operationId) {
     const timestamp = Date.now();
-    const random = crypto.randomBytes(4).toString('hex');
+    const random = randomHex(4);
     return `cp_${operationId}_${timestamp}_${random}`;
   }
 
@@ -252,7 +252,7 @@ export class CheckpointManager extends EventEmitter {
    */
   generateRecoveryPointId(operationId) {
     const timestamp = Date.now();
-    const random = crypto.randomBytes(4).toString('hex');
+    const random = randomHex(4);
     return `rp_${operationId}_${timestamp}_${random}`;
   }
 
@@ -260,7 +260,11 @@ export class CheckpointManager extends EventEmitter {
    * Calculate state size in bytes
    */
   calculateStateSize(state) {
-    return Buffer.byteLength(JSON.stringify(state), 'utf8');
+    if (typeof TextEncoder !== 'undefined') {
+      return new TextEncoder().encode(JSON.stringify(state)).length;
+    }
+    // Fallback
+    return (JSON.stringify(state) || '').length;
   }
 
   /**
@@ -268,7 +272,7 @@ export class CheckpointManager extends EventEmitter {
    */
   generateStateHash(state) {
     const stateStr = JSON.stringify(state, Object.keys(state).sort());
-    return crypto.createHash('sha256').update(stateStr).digest('hex');
+    return hashString(stateStr);
   }
 
   /**
@@ -277,10 +281,7 @@ export class CheckpointManager extends EventEmitter {
   async serializeState(state) {
     const serialized = JSON.stringify(state);
     
-    if (this.options.compressionEnabled) {
-      // Simple compression - in production, use a proper compression library
-      return Buffer.from(serialized).toString('base64');
-    }
+    // Compression disabled in pure core to avoid platform APIs
     
     return serialized;
   }
@@ -289,10 +290,7 @@ export class CheckpointManager extends EventEmitter {
    * Deserialize state from storage
    */
   async deserializeState(serializedState) {
-    if (this.options.compressionEnabled) {
-      const decompressed = Buffer.from(serializedState, 'base64').toString();
-      return JSON.parse(decompressed);
-    }
+    // Compression disabled in pure core
     
     return JSON.parse(serializedState);
   }
