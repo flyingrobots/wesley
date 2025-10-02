@@ -17,10 +17,10 @@ type User @table @critical @uid(value: "tbl:user") {
   email: String! @unique @pii @weight(value: 9) @uid(value: "col:user.email")
   password_hash: String! @sensitive @weight(value: 10) @uid(value: "col:user.password")
   
-  full_name: String @pii @weight(7) @uid("col:user.full_name")
-  phone: String @pii @weight(8) @uid("col:user.phone")
+  full_name: String @pii @weight(value: 7) @uid(value: "col:user.full_name")
+  phone: String @pii @weight(value: 8) @uid(value: "col:user.phone")
   
-  email_verified: Boolean! @default(expr: "false") @weight(8)
+  email_verified: Boolean! @default(expr: "false") @weight(value: 8)
   created_at: DateTime! @default(expr: "now()")
   
   orders: [Order!]! @hasMany
@@ -28,7 +28,7 @@ type User @table @critical @uid(value: "tbl:user") {
 
 # Products with inventory tracking
 type Product @table @uid(value: "tbl:product") {
-  id: UUID! @primaryKey @default(expr: "gen_random_uuid()") @uid("col:product.id")
+  id: UUID! @primaryKey @default(expr: "gen_random_uuid()") @uid(value: "col:product.id")
   
   sku: String! @unique @weight(value: 9) @uid(value: "col:product.sku")
   name: String! @weight(value: 8) @uid(value: "col:product.name")
