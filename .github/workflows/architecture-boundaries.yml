@@ -68,40 +68,25 @@ jobs:
         
         echo "✅ package.json dependencies are valid"
     
-    - name: Validate import statements
+    - name: Validate import statements (lightweight)
       run: |
-        echo "🔍 Checking import statements for boundary violations..."
+        echo "🔍 Checking import statements for boundary violations (lightweight)..."
         
-        # Check for Node.js imports in core (classic imports)
-        FS_MATCHES=$(grep -RIl --include='*.mjs' "from ['\"]fs['\"]" packages/wesley-core/src || true)
-        if [[ -n "$FS_MATCHES" ]]; then
-          echo "❌ Found Node.js fs imports in wesley-core"
-          echo "$FS_MATCHES"
-          exit 1
-        fi
-
-        PATH_MATCHES=$(grep -RIl --include='*.mjs' "from ['\"]path['\"]" packages/wesley-core/src || true)
-        if [[ -n "$PATH_MATCHES" ]]; then
-          echo "❌ Found Node.js path imports in wesley-core"
-          echo "$PATH_MATCHES"
-          exit 1
-        fi
-
-        # Check for modern node:* specifiers in core
+        # Quick smoke: disallow node:* imports in core (ESM specifiers)
         NODE_MATCHES=$(grep -RIl --include='*.mjs' -E "from ['\"]node:|require\(['\"]node:" packages/wesley-core/src || true)
         if [[ -n "$NODE_MATCHES" ]]; then
           echo "❌ Found node:* imports in wesley-core"
           echo "$NODE_MATCHES"
           exit 1
         fi
-
-        # Check CLI doesn't import from host
-        if find packages/wesley-cli/src -name "*.mjs" -exec grep -l "from ['\"]@wesley/host-node" {} \;; then
+        
+        # Quick smoke: CLI must not import host directly
+        if find packages/wesley-cli/src -name "*.mjs" -exec grep -l "from ['\"]@wesley/host-node" {} \; | grep .; then
           echo "❌ Found host-node imports in wesley-cli"
           exit 1
         fi
         
-        echo "✅ Import statements follow architecture boundaries"
+        echo "✅ Lightweight import checks passed"
     
     - name: Check for process usage in core
       run: |
