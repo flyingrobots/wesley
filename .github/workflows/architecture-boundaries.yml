@@ -75,17 +75,23 @@ jobs:
       run: |
         echo "🔍 Checking import statements for boundary violations..."
         
-        # Check for Node.js imports in core
+        # Check for Node.js imports in core (classic imports)
         if find packages/wesley-core/src -name "*.mjs" -exec grep -l "from ['\"]fs['\"]" {} \;; then
           echo "❌ Found Node.js fs imports in wesley-core"
           exit 1
         fi
-        
+
         if find packages/wesley-core/src -name "*.mjs" -exec grep -l "from ['\"]path['\"]" {} \;; then
           echo "❌ Found Node.js path imports in wesley-core"
           exit 1
         fi
-        
+
+        # Check for modern node:* specifiers in core
+        if rg -n "from ['\"]node:|require\(['\"]node:" packages/wesley-core/src --hidden --no-heading; then
+          echo "❌ Found node:* imports in wesley-core"
+          exit 1
+        fi
+
         # Check CLI doesn't import from host
         if find packages/wesley-cli/src -name "*.mjs" -exec grep -l "from ['\"]@wesley/host-node" {} \;; then
           echo "❌ Found host-node imports in wesley-cli"
@@ -105,6 +111,14 @@ jobs:
         fi
         
         echo "✅ Core domain is platform-agnostic"
+
+    - name: Install ESLint (for core purity check)
+      run: pnpm add -D eslint
+
+    - name: Run ESLint for core (purity rules)
+      run: |
+        echo "🔎 Running ESLint restricted-imports check for wesley-core..."
+        pnpm exec eslint --no-eslintrc -c packages/wesley-core/.eslintrc.cjs "packages/wesley-core/src/**/*.mjs" --max-warnings=0
     
     - name: Validate ENSIGN structure
       run: |
