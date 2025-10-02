@@ -88,8 +88,10 @@ jobs:
         fi
 
         # Check for modern node:* specifiers in core
-        if rg -n "from ['\"]node:|require\(['\"]node:" packages/wesley-core/src --hidden --no-heading; then
+        NODE_MATCHES=$(grep -RIl "from ['\"]node:|require\(['\"]node:" packages/wesley-core/src || true)
+        if [[ -n "$NODE_MATCHES" ]]; then
           echo "❌ Found node:* imports in wesley-core"
+          echo "$NODE_MATCHES"
           exit 1
         fi
 
