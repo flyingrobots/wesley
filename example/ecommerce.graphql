@@ -35,7 +35,7 @@ type Product @wes_table @uid(value: "tbl:product") {
   slug: String! @wes_unique @wes_index @weight(value: 7) @uid(value: "col:product.slug")
   
   price_cents: Int! @weight(value: 9) @uid(value: "col:product.price")
-  stock_quantity: Int! @wes_default(value: 0) @weight(value: 8)
+  stock_quantity: Int! @wes_default(expr: "0") @weight(value: 8)
   
   published: Boolean! @wes_default(expr: "false") @wes_index @weight(value: 7)
   created_at: DateTime! @wes_default(expr: "now()")
