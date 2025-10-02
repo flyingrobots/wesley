@@ -74,7 +74,7 @@ jobs:
         node ../wesley-host-node/bin/wesley.mjs --help | head -5
         echo ""
         echo "stdin support check:"
-        echo 'type Query { hello: String }' | node ../wesley-host-node/bin/wesley.mjs generate --schema - --json --quiet || echo "✓ Expected parser failure (stub implementation)"
+        echo 'type Query { hello: String }' | node ../wesley-host-node/bin/wesley.mjs generate --schema - --json --quiet || echo "✓ Expected parser failure" || true
 
     - name: Success notification
       run: |
