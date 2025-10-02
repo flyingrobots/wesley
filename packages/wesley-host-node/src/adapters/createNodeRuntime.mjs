@@ -135,7 +135,7 @@ export async function createNodeRuntime() {
     stderr: process.stderr,
     config,
     db: new DbAdapter(),
-    
+
     // Parsers
     parsers: {
       graphql: {
@@ -152,7 +152,32 @@ export async function createNodeRuntime() {
       tests: testGen, 
       js: jsGen 
     },
-    
+
+    // Shell exec wrapper (host-only)
+    shell: {
+      exec: async (cmd, options = {}) => {
+        const { exec } = await import('node:child_process');
+        return await new Promise((resolve, reject) => {
+          const child = exec(cmd, { ...options }, (error, stdout, stderr) => {
+            if (error) {
+              error.stdout = stdout;
+              error.stderr = stderr;
+              return reject(error);
+            }
+            resolve({ stdout, stderr });
+          });
+          if (options.inheritStdio) {
+            child.stdout?.pipe(process.stdout);
+            child.stderr?.pipe(process.stderr);
+          }
+        });
+      },
+      execSync: async (cmd, options = {}) => {
+        const { execSync } = await import('node:child_process');
+        return execSync(cmd, { stdio: options.stdio ?? 'pipe', ...options });
+      }
+    },
+
     // Planning and execution (may be null)
     planner,
     runner,

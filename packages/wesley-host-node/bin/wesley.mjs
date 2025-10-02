@@ -10,6 +10,8 @@ import { createNodeRuntime } from '../src/adapters/createNodeRuntime.mjs';
 
 // Compose at the edge
 const ctx = await createNodeRuntime();
+// Expose context to CLI utilities that cannot receive DI directly
+globalThis.wesleyCtx = ctx;
 
 // Run the pure CLI with injected dependencies - pass full argv for Commander
 try {
