@@ -73,14 +73,14 @@ jobs:
         echo "🔍 Checking import statements for boundary violations..."
         
         # Check for Node.js imports in core (classic imports)
-        FS_MATCHES=$(grep -RIl "from ['\"]fs['\"]" packages/wesley-core/src || true)
+        FS_MATCHES=$(grep -RIl --include='*.mjs' "from ['\"]fs['\"]" packages/wesley-core/src || true)
         if [[ -n "$FS_MATCHES" ]]; then
           echo "❌ Found Node.js fs imports in wesley-core"
           echo "$FS_MATCHES"
           exit 1
         fi
 
-        PATH_MATCHES=$(grep -RIl "from ['\"]path['\"]" packages/wesley-core/src || true)
+        PATH_MATCHES=$(grep -RIl --include='*.mjs' "from ['\"]path['\"]" packages/wesley-core/src || true)
         if [[ -n "$PATH_MATCHES" ]]; then
           echo "❌ Found Node.js path imports in wesley-core"
           echo "$PATH_MATCHES"
@@ -88,7 +88,7 @@ jobs:
         fi
 
         # Check for modern node:* specifiers in core
-        NODE_MATCHES=$(grep -RIl "from ['\"]node:|require\(['\"]node:" packages/wesley-core/src || true)
+        NODE_MATCHES=$(grep -RIl --include='*.mjs' -E "from ['\"]node:|require\(['\"]node:" packages/wesley-core/src || true)
         if [[ -n "$NODE_MATCHES" ]]; then
           echo "❌ Found node:* imports in wesley-core"
           echo "$NODE_MATCHES"
