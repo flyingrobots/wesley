@@ -46,6 +46,11 @@ jobs:
         with:
           name: wesley-bundle
           path: example/.wesley/
+      - name: "💾 Upload Out Artifacts"
+        uses: actions/upload-artifact@v4
+        with:
+          name: wesley-out
+          path: example/out/
           
   holmes-investigate:
     name: "🔍 HOLMES Investigation"
@@ -201,6 +206,11 @@ jobs:
         with:
           name: wesley-bundle
           path: example/.wesley/
+      - name: "📥 Download Out"
+        uses: actions/download-artifact@v4
+        with:
+          name: wesley-out
+          path: example/out/
           
       - name: "🧪 Install pgTAP"
         run: |

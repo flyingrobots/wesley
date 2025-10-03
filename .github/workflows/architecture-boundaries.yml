@@ -120,7 +120,6 @@ jobs:
           "wesley-generator-supabase"
           "wesley-generator-js"
           "wesley-scaffold-multitenant"
-          "wesley-stack-supabase-nextjs"
         )
         
         for package in "${required_packages[@]}"; do
