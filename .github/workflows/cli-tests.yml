@@ -108,9 +108,9 @@ jobs:
         pnpm test:verbose || true
         echo ""
         echo "=== CLI MANUAL TEST ==="
-        node wesley.mjs --version
-        node wesley.mjs --help
-        echo 'type Query { hello: String }' | node wesley.mjs generate --schema - --json --quiet || echo "Expected to fail with stub parser"
+        pnpm exec wesley --version
+        pnpm exec wesley --help
+        echo 'type Query { hello: String }' | pnpm exec wesley generate --schema - --json --quiet || echo "Expected to fail with stub parser"
 
   test-summary:
     name: Test Summary

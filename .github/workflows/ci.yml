@@ -25,6 +25,14 @@ jobs:
         with: { node-version: 20, cache: 'pnpm' }
       - run: pnpm install
 
+      # Install Bats (for root E2E tests)
+      - name: Install Bats
+        run: |
+          curl -LO https://github.com/bats-core/bats-core/archive/v1.12.0.tar.gz
+          tar -xzf v1.12.0.tar.gz
+          sudo ./bats-core-1.12.0/install.sh /usr/local
+          echo "/usr/local/bin" >> $GITHUB_PATH
+
       # Spin local PG via docker-compose init scripts (extensions)
       - run: psql -h localhost -U postgres -c "select 1" || true
         env: { PGPASSWORD: postgres }
@@ -43,8 +51,8 @@ jobs:
         run: |
           bats test/cli-generators.bats
 
-      - run: node packages/wesley-cli/wesley.mjs generate --schema example/ecommerce.graphql --emit-bundle
-      - run: node packages/wesley-cli/wesley.mjs validate-bundle --bundle example/.wesley --schemas schemas
+      - run: pnpm exec wesley generate --schema example/ecommerce.graphql --emit-bundle
+      - run: pnpm exec wesley validate-bundle --bundle example/.wesley --schemas schemas
 
       - run: node packages/wesley-holmes/src/cli.mjs investigate > holmes.md
       - run: node packages/wesley-holmes/src/cli.mjs verify holmes.md > watson.md  
