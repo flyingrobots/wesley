@@ -1,6 +1,6 @@
 # RFC: Compile GraphQL Operations to SQL via a Query IR (QIR)
 
-- Status: Draft (updated per maintainer feedback)
+- Status: Accepted
 - Date: 2025-10-03
 - Owner: Core Team
 - Discussed In: docs/architecture/overview.md, docs/architecture/paradigm-shift.md
