@@ -68,6 +68,15 @@ jobs:
       run: |
         pnpm install --frozen-lockfile
 
+    - name: Install Bats plugins (assert/support/file)
+      run: |
+        set -euo pipefail
+        PLUGDIR="packages/wesley-cli/test/bats-plugins"
+        mkdir -p "$PLUGDIR"
+        git clone --depth=1 https://github.com/bats-core/bats-support "$PLUGDIR/bats-support" || true
+        git clone --depth=1 https://github.com/bats-core/bats-assert "$PLUGDIR/bats-assert" || true
+        git clone --depth=1 https://github.com/bats-core/bats-file "$PLUGDIR/bats-file" || true
+
     - name: Build packages
       run: |
         pnpm --filter @wesley/core build || echo "No build script for core"
@@ -108,9 +117,9 @@ jobs:
         pnpm test:verbose || true
         echo ""
         echo "=== CLI MANUAL TEST ==="
-        pnpm exec wesley --version
-        pnpm exec wesley --help
-        echo 'type Query { hello: String }' | pnpm exec wesley generate --schema - --json --quiet || echo "Expected to fail with stub parser"
+        node ../wesley-host-node/bin/wesley.mjs --version
+        node ../wesley-host-node/bin/wesley.mjs --help
+        echo 'type Query { hello: String }' | node ../wesley-host-node/bin/wesley.mjs generate --schema - --json --quiet || echo "Expected to fail with stub parser"
 
   test-summary:
     name: Test Summary
