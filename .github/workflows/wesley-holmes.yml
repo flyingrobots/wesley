@@ -34,7 +34,7 @@ jobs:
       - name: "🚀 Generate Artifacts"
         run: |
           cd example
-          pnpm exec wesley generate --schema schema.graphql --emit-bundle
+          node ../packages/wesley-host-node/bin/wesley.mjs generate --schema schema.graphql --emit-bundle
           
       - name: "📊 Display Scores"
         run: |
