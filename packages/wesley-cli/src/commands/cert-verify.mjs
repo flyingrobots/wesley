@@ -19,7 +19,7 @@ export class CertVerifyCommand extends WesleyCommand {
     const md = await this.ctx.fs.read(options.in);
     const { json } = extractJsonBlock(md);
     const canonical = canonicalize({ ...json, signatures: [] });
-    const pubs = options.pub || [];
+    const pubs = Array.isArray(options.pub) ? options.pub : (options.pub ? [options.pub] : []);
     let validCount = 0;
     for (const sig of json.signatures || []) {
       for (const p of pubs) {
