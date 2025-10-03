@@ -1,0 +1,51 @@
+name: Feature Request
+description: Propose a new feature or enhancement.
+title: "[feat] <short summary>"
+labels: ["feature"]
+assignees: []
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem are you trying to solve?
+      placeholder: Migrating schemas currently requires manual SQL edits.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: What do you want the system to do?
+      placeholder: Add a CLI command `wesley migrate --dry-run`.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      placeholder: |
+        - Manually editing SQL files
+        - Using external tool `sqitch`
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: impact
+    attributes:
+      label: Impact Areas
+      options:
+        - label: CLI
+        - label: Docs
+        - label: API
+        - label: Infra/CI
+        - label: Other
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options: ["Low","Medium","High","Critical"]
+

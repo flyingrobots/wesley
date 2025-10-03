@@ -1,0 +1,44 @@
+name: RFC / Proposal
+description: For larger design changes requiring discussion.
+title: "[rfc] <short title>"
+labels: ["rfc","discussion"]
+assignees: []
+body:
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Why should we make this change?
+    validations:
+      required: true
+
+  - type: textarea
+    id: design
+    attributes:
+      label: Proposed Design
+      description: Include diagrams, examples, or pseudo-code.
+    validations:
+      required: true
+
+  - type: textarea
+    id: tradeoffs
+    attributes:
+      label: Tradeoffs / Risks
+      description: What could go wrong? What did you reject?
+    validations:
+      required: true
+
+  - type: textarea
+    id: migration
+    attributes:
+      label: Migration / Rollout Plan
+      description: Steps for incremental rollout, backwards compatibility, or flags.
+    validations:
+      required: false
+
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Link to related issues, prior art, external docs.
+

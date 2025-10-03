@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security Vulnerability Disclosure
+    url: mailto:james@flyingrobots.dev
+    about: Please report vulnerabilities privately. Do not file a public issue.
+  - name: Questions & Help
+    url: https://github.com/flyingrobots/wesley/discussions
+    about: Use Discussions for Q&A and support.
