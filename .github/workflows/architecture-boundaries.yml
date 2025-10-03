@@ -10,6 +10,7 @@ jobs:
   enforce-boundaries:
     runs-on: ubuntu-latest
     name: Enforce Hexagonal Architecture Boundaries
+    timeout-minutes: 4
     
     steps:
     - name: Checkout code
@@ -31,19 +32,16 @@ jobs:
     - name: Install dependencies
       run: pnpm install --no-frozen-lockfile
     
-    - name: Install dependency-cruiser
-      run: pnpm add -D dependency-cruiser
-    
-    - name: Check architecture boundaries
+    - name: Check architecture boundaries (≤4m)
       run: |
         echo "🏗️  Checking hexagonal architecture boundaries..."
-        pnpm exec depcruise --config .dependency-cruiser.mjs packages/
+        timeout 240s pnpm dlx depcruise --config .dependency-cruiser.mjs packages/ || { echo "depcruise timed out"; exit 1; }
         
-    - name: Generate architecture diagram
+    - name: Generate architecture diagram (≤4m)
       run: |
         echo "📊 Generating architecture diagram..."
-        pnpm exec depcruise --config .dependency-cruiser.mjs \
-          --output-type archi packages/ > architecture.svg
+        timeout 240s pnpm dlx depcruise --config .dependency-cruiser.mjs \
+          --output-type archi packages/ > architecture.svg || { echo "diagram generation timed out"; exit 1; }
         
     - name: Upload architecture diagram
       uses: actions/upload-artifact@v4
