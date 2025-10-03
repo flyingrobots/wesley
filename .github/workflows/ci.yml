@@ -23,7 +23,7 @@ jobs:
         with: { version: 9 }
       - uses: actions/setup-node@v4
         with: { node-version: 20, cache: 'pnpm' }
-      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm install
 
       # Install Bats (for root E2E tests)
       - name: Install Bats

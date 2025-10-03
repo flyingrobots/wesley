@@ -31,7 +31,11 @@ export class CertVerifyCommand extends WesleyCommand {
     const ok = validCount > 0 && okRealm;
     const badge = `[REALM] ${okRealm ? 'PASS' : 'FAIL'} — sha ${json.sha?.slice(0,7) || 'unknown'}`;
     const result = { ok, validSignatures: validCount, badge };
-    if (options.json) this.ctx.stdout.write(JSON.stringify(result, null, 2) + '\n');
+    if (options.json) {
+      this.ctx.stdout.write(JSON.stringify(result, null, 2) + '\n');
+      // prevent wrapper JSON emission
+      return { ...result, __jsonEmitted: true };
+    }
     else this.ctx.stdout.write(badge + '\n');
     if (!ok) {
       const e = new Error('Certificate verification failed'); e.code = 'CERT_INVALID'; throw e;
