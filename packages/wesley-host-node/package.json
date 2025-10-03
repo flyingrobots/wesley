@@ -27,6 +27,7 @@
     "commander": "^14.0.0",
     "fast-glob": "^3.3.2",
     "graphql": "^16.9.0",
+    "pg": "^8.11.5",
     "pino": "^9.9.0"
   },
   "engines": {
