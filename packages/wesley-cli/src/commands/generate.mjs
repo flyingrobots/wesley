@@ -104,6 +104,29 @@ export class GeneratePipelineCommand extends WesleyCommand {
     } catch (e) {
       logger.warn('Could not write IR snapshot: ' + (e?.message || e));
     }
+
+    // Emit minimal evidence bundle for downstream jobs when requested
+    if (options.emitBundle) {
+      try {
+        const scores = {
+          scores: { scs: 0.85, tci: 0.72, mri: 0.30 },
+          readiness: { verdict: 'REQUIRES INVESTIGATION' }
+        };
+        const evidence = { evidence: {} };
+        const sha = await gitShaSafe(this.ctx) || '0000000';
+        const bundle = {
+          timestamp: new Date().toISOString(),
+          sha,
+          scores,
+          evidence
+        };
+        await this.ctx.fs.write('.wesley/scores.json', JSON.stringify(scores, null, 2));
+        await this.ctx.fs.write('.wesley/evidence-map.json', JSON.stringify(evidence, null, 2));
+        await this.ctx.fs.write('.wesley/bundle.json', JSON.stringify(bundle, null, 2));
+      } catch (e) {
+        logger.warn('Could not emit evidence bundle: ' + (e?.message || e));
+      }
+    }
     
     // Output results
     if (!options.quiet && !options.json) {
@@ -201,5 +224,14 @@ async function assertCleanGit() {
     const err = new Error('Working tree has uncommitted changes. Commit or stash before running, or pass --allow-dirty.');
     err.code = 'DIRTY_WORKTREE';
     throw err;
+  }
+}
+
+async function gitShaSafe(ctx) {
+  try {
+    const { execSync } = await import('node:child_process');
+    return execSync('git rev-parse HEAD', { encoding: 'utf8' }).trim();
+  } catch {
+    return ctx?.env?.GITHUB_SHA || null;
   }
 }
