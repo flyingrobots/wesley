@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { compileFilter } from '../../../src/domain/qir/PredicateCompiler.mjs';
+import { compileFilter } from '../../src/domain/qir/PredicateCompiler.mjs';
 
 const env = {
   resolveColumn: (path) => {
@@ -29,4 +29,3 @@ test('contains on text[] stays contains', () => {
   assert.equal(p.kind, 'Compare');
   assert.equal(p.op, 'contains');
 });
-

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { collectParams } from '../../../src/domain/qir/ParamCollector.mjs';
+import { collectParams } from '../../src/domain/qir/ParamCollector.mjs';
 
 test('collectParams: deterministic ordering with duplicates', () => {
   const plan = {
@@ -31,4 +31,3 @@ test('collectParams: deterministic ordering with duplicates', () => {
   const { ordered } = collectParams(plan);
   assert.deepEqual(ordered.map(p => p.name), ['q', 'limit', 'since']);
 });
-
