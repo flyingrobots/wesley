@@ -1,6 +1,6 @@
 # RFC: Compile GraphQL Operations to SQL via a Query IR (QIR)
 
-- Status: Draft
+- Status: Draft (updated per maintainer feedback)
 - Date: 2025-10-03
 - Owner: Core Team
 - Discussed In: docs/architecture/overview.md, docs/architecture/paradigm-shift.md
@@ -8,13 +8,15 @@
 
 ## Summary
 
-Wesley inverts the traditional “DB → GraphQL” flow: a single GraphQL schema becomes DDL, migrations, types, tests, and evidence. Today, custom read/write operations are supported by embedding SQL/PLpgSQL strings in directives like `@rpc(sql: ...)` or `@function(logic: ...)`. That is expedient, but it isn’t idiomatic GraphQL and undermines the “one declarative language” story.
+Wesley inverts the traditional “DB → GraphQL” flow: a single GraphQL schema becomes DDL, migrations, types, tests, and evidence. Today, custom read/write operations are often expressed by embedding SQL/PLpgSQL strings in directives like `@rpc(sql: ...)` or `@function(logic: ...)`. That is expedient, but it isn’t idiomatic GraphQL and undermines the “one declarative language” story.
 
 This RFC proposes a first-class pipeline to compile actual GraphQL operation documents (queries/mutations) into safe, parameterized SQL (views or functions) using a minimal Query IR (QIR). The goal is to express intent purely in GraphQL and let Wesley generate the correct relational plan and artifacts, while respecting RLS, tenant/owner directives, and zero-downtime philosophy.
 
+Updates in this revision incorporate maintainer feedback: spec-compliant auth variables, null vs empty-list semantics, SECURITY DEFINER hardening, deterministic output, and zero-downtime versioning for ops artifacts.
+
 ## Goals
 
-- Allow operators to define read operations as standard GraphQL queries (documents), not inline SQL.
+- Define reads as standard GraphQL operations (documents), not inline SQL.
 - Compile to parameterized SQL (or views/functions) that preserve GraphQL result shape and performance expectations.
 - Integrate with existing mappings (types→tables, fields→columns, relationships via directives).
 - Respect security/tenancy (`@wes_rls`, `@wes_owner`, `@wes_tenant`) and avoid duplicating RLS logic when enabled.
@@ -24,7 +26,7 @@ This RFC proposes a first-class pipeline to compile actual GraphQL operation doc
 
 - Full analytics DSL, window functions, or arbitrary SQL expressions across the graph.
 - Automatic materialized view maintenance or cost‑based join optimization.
-- Mutation compilation beyond CRUD that is already handled by RPC synthesis; custom write logic may still use `@function` in MVP.
+- Mutation compilation beyond CRUD already handled by RPC synthesis; bespoke writes may continue to use `@function` in MVP.
 
 ## Prior Art and Fit
 
@@ -64,7 +66,7 @@ interface ProjectionItem {
 
 // Expressions & Predicates
 interface ColumnRef { kind: 'ColumnRef'; table: string; column: string; }
-interface ParamRef { kind: 'ParamRef'; name: string; special?: 'auth.uid'|'tenant'; }
+interface ParamRef { kind: 'ParamRef'; name: string; special?: 'auth_uid'|'tenant'; }
 interface Literal { kind: 'Literal'; value: string|number|boolean|null; type?: string; }
 interface FuncCall { kind: 'FuncCall'; name: string; args: Expr[]; }
 interface ScalarSubquery { kind: 'ScalarSubquery'; plan: QueryPlan; }
@@ -72,7 +74,7 @@ interface JsonBuildObject { kind: 'JsonBuildObject'; fields: { key: string; valu
 interface JsonAgg { kind: 'JsonAgg'; value: Expr; orderBy?: OrderBy[]; }
 
 interface Predicate {
-  kind: 'And'|'Or'|'Not'|'Compare'|'Exists';
+  kind: 'And'|'Or'|'Not'|'Compare'|'Exists'|'IsNull'|'IsNotNull';
   left?: Predicate|Expr; right?: Predicate|Expr; op?: 'eq'|'ne'|'lt'|'lte'|'gt'|'gte'|'ilike'|'contains'|'in';
   subquery?: QueryPlan; // for Exists
 }
@@ -107,16 +109,18 @@ Pipeline stages and responsibilities:
   - Scalar: `ProjectionItem` with `ColumnRef('t0', column)` or computed `FuncCall`.
   - Object relation (1:1 / many:1): add `JoinNode` with alias `tN`; project columns from `tN` or a `JsonBuildObject` if nesting should be materialized.
   - List relation (1:N): add a `LateralNode` whose plan selects the child rows and projects a `JsonAgg(JsonBuildObject(...))` as the single projected value.
-- For filters (`where` input): recursively translate into `Predicate` trees using `Compare`/`And`/`Or`/`Exists`.
+- For filters (`where` input): recursively translate into `Predicate` trees using `Compare`/`And`/`Or`/`Exists`/`IsNull`/`IsNotNull`.
 - For aggregates in scalar context (e.g., `membersCount`): use `ScalarSubquery` rather than GROUP BY to avoid wide grouping.
 
 4) Parameterization & auth
 - Replace variable references with `ParamRef` and produce a deterministic `$1..$N` order.
-- Special tokens: `$auth.uid` → `ParamRef{ special: 'auth.uid' }` that compiles to `auth.uid()` (or a bound param in non-Supabase contexts).
-- If `@wes_rls(enabled: true)` on the base table, prefer relying on RLS for row filtering; otherwise inject owner/tenant predicates derived from directives.
+- Special context bindings: use a spec‑compliant variable like `$auth_uid`, then compile per target:
+  - Supabase: inline `auth.uid()` in predicates.
+  - Vanilla Postgres: bind from session via `current_setting('app.user_id', true)` or pass as a normal parameter.
+- If `@wes_rls(enabled: true)` on the base table, prefer relying on RLS for row filtering (see decision table); otherwise inject owner/tenant predicates derived from directives.
 
 5) Lower QIR to SQL AST
-- Translate QIR nodes to existing `SQLAst` constructs where possible; use raw fragments for `LATERAL` if needed initially.
+- Translate QIR nodes to existing `SQLAst` constructs where possible; use raw fragments for `LATERAL` initially if needed.
 - Emit SELECT with FROM, JOIN/LATERAL, WHERE, ORDER BY, LIMIT/OFFSET.
 - Materialize nested fields as JSON objects/arrays in projection.
 
@@ -133,12 +137,12 @@ Pipeline stages and responsibilities:
 
 ## Example: "My Organizations"
 
-GraphQL operation (pure GraphQL; no SQL in directives):
+GraphQL operation (pure GraphQL; spec‑compliant auth variable):
 
 ```graphql
-query MyOrganizations($limit: Int = 20, $offset: Int = 0) {
+query MyOrganizations($limit: Int = 20, $offset: Int = 0, $auth_uid: ID) {
   organizations(
-    where: { members: { some: { user_id: { eq: $auth.uid } } } }
+    where: { members: { some: { user_id: { eq: $auth_uid } } } }
     orderBy: [{ name: asc }]
     limit: $limit
     offset: $offset
@@ -150,7 +154,7 @@ query MyOrganizations($limit: Int = 20, $offset: Int = 0) {
 }
 ```
 
-Compiled SQL (flat rows + correlated count):
+Compiled SQL (flat rows + correlated count; Supabase binding shown):
 
 ```sql
 SELECT
@@ -196,31 +200,75 @@ ORDER BY o.name ASC
 LIMIT $1 OFFSET $2;
 ```
 
-Parameter binding order: `$1 = $limit`, `$2 = $offset` (auth.uid compiled inline). In non-Supabase contexts, `$auth.uid` can be compiled to a bound `$N` provided by session.
+Parameter binding order: `$1 = $limit`, `$2 = $offset`. The `$auth_uid` variable is compiled per target (inline `auth.uid()` or a session/param binding).
 
 ---
 
 ## Filter DSL Mapping (MVP)
 
 - Scalars: `{ field: { eq|ne|lt|lte|gt|gte|ilike|contains|in } }`
+- Nullability: `{ field: { isNull: true } }`, `{ field: { isNotNull: true } }`
 - Logical: `{ AND: [...], OR: [...], NOT: {...} }`
 - Lists: `{ relation: { some|every|none: { ...predicate... } } }` → `EXISTS` / `NOT EXISTS` / double negation
 - Timestamps: allow `string` inputs coerced with `::timestamptz` at compile time
+- Arrays: `in: [ ... ]` binds as `$n::<pgType>[]`; empty list compiles to `false` (or `= ANY('{}'::<type>[])`) to avoid full‑table scans.
 
 Examples:
 
 - `{ name: { ilike: "%acme%" } }` → `o.name ILIKE $1`
 - `{ created_at: { gte: "2025-01-01" } }` → `o.created_at >= $1::timestamptz`
-- `{ members: { some: { user_id: { eq: $auth.uid } } } }` → `EXISTS (SELECT 1 FROM membership m WHERE m.org_id = o.id AND m.user_id = auth.uid())`
+- `{ members: { some: { user_id: { eq: $auth_uid } } } }` → `EXISTS (SELECT 1 FROM membership m WHERE m.org_id = o.id AND m.user_id = auth.uid())`
+
+---
+
+## Null vs Empty List Semantics
+
+- Missing optional relation (no row or relation absent): project `null`.
+- Present relation with zero matching rows: project `[]` for lists, `null` for single object relations.
+- Compiler uses LEFT JOIN (for 1:1/m:1) and LATERAL subqueries (for 1:N) to preserve GraphQL semantics.
 
 ---
 
 ## Security Model
 
-- Prefer RLS: if `@wes_rls(enabled: true)` is present on the base table, rely on it and do not duplicate predicates.
-- Ownership/Tenancy: when RLS is absent, derive predicates from `@wes_owner(column: ...)` and `@wes_tenant(by: ...)`.
-- All literals parameterized; no string concatenation from user inputs.
-- Functions emitted as `SECURITY DEFINER` with explicit `GRANT EXECUTE` per roles from `@wes_grant` or sensible defaults.
+### RLS‑First Decision Table (MVP)
+
+| Base table has @wes_rls | Caller filters include owner/tenant | Compiler injects owner/tenant predicate? |
+|-------------------------|------------------------------------|------------------------------------------|
+| yes                     | any                                | no (rely on RLS)                         |
+| no                      | none                               | yes (derive from @wes_owner/@wes_tenant) |
+| no                      | explicit owner/tenant filters       | no (avoid duplication)                   |
+
+Notes:
+- The compiler never narrows results twice. If the caller supplies explicit owner/tenant filters, we do not add derived predicates.
+- Prefer RLS when available; tests enforce that policies exist if `@wes_rls(enabled: true)` is declared.
+
+### Function Hardening Defaults
+
+- Prefer `SECURITY INVOKER` when RLS fully covers access; otherwise `SECURITY DEFINER` with:
+  - `SET search_path = pg_catalog, <app_schema>` (avoid `public` if possible).
+  - Minimal privileges: owner is a dedicated role; explicit `GRANT EXECUTE` per role (`@wes_grant` or defaults).
+- Auth portability: `$auth_uid` compiles to `auth.uid()` (Supabase) or `current_setting('app.user_id', true)` (vanilla Postgres) based on config.
+
+---
+
+## Determinism & Stability
+
+- Stable aliasing: table aliases `t0..tN` assigned in DFS and reused consistently.
+- Stable parameter order: variables are bound in deterministic visitation order (documented), producing stable `$1..$N` numbering.
+- Deterministic projection ordering: preserve GraphQL field order; sort JSON object keys when materializing nested objects for snapshot stability.
+- Evidence keys: hash(operationName + normalized selection) to anchor evidence entries rather than raw file:line that may drift.
+
+---
+
+## Output Artifacts & Zero‑Downtime Versioning
+
+- No args → `CREATE VIEW q_<op>_v1 AS <select>`
+- Args present → `CREATE FUNCTION q_<op>_v1(args...) RETURNS SETOF <table>|jsonb ...`
+- Expand/Switch/Contract for shape changes:
+  1) Create new version (`_v2`) alongside `_v1`.
+  2) Switch: update dependents (or publish a shim view/function) to point at `_v2`.
+  3) Contract: drop `_v1` once no dependents remain (planner explains lock levels).
 
 ---
 
@@ -231,40 +279,34 @@ Examples:
   - `generated/sql/views/*.sql` and/or `generated/sql/rpc/*.sql`
   - TypeScript operation types + Zod validators
   - Evidence entries in `.wesley/evidence-map.json`
-- HOLMES: consumes evidence to score SCS/TCI coverage for operations (e.g., “operation has SQL + TS + Zod + tests”).
+- HOLMES: consumes evidence to score operation coverage (SCS/TCI dimensions for ops).
+- Config knobs (`wesley.config.mjs`): ops folder, target (supabase/postgres), output preference (view/function), RLS reliance strategy, nested list shaping guardrails.
+
+---
+
+## Performance Guardrails (MVP)
+
+- Nested lists require explicit `orderBy` and `limit` (compiler warns or fails otherwise).
+- Prefer correlated subqueries for counts; V2 may rewrite to GROUP BY when safe.
+- Index suggestions: compiler emits hints (non-blocking) when predicates lack supporting indexes.
+- Option to prefer JOIN + grouping over LATERAL for certain 1:1/m:1 shapes (configurable).
 
 ---
 
 ## Phased Plan
 
-1) MVP (this RFC)
-- Implement QIR data structures and a conservative compiler for: single root table, scalar projections, simple joins, EXISTS filters, order/limit/offset, nested lists via LATERAL json_agg.
+1) MVP
+- Implement QIR data structures and a conservative compiler for: single root table, scalar projections, simple joins, EXISTS filters, `isNull/isNotNull`, order/limit/offset, nested lists via LATERAL json_agg.
 - Output: parameterized SELECT and optional RPC function wrapper `RETURNS SETOF <table>|jsonb`.
 - Tests: snapshot SQL + pgTAP shape tests; evidence map coverage.
 
 2) V2
-- Add GROUP BY compilation path when aggregates mix with scalars intentionally.
-- Add pagination for nested lists (`field(limit, offset, orderBy)` on LATERAL plans).
-- Support computed field expressions via `@wes_expr(select: ...)` in the schema.
+- Add GROUP BY compilation when aggregates mix intentionally with scalars.
+- Pagination for nested lists.
+- Computed field expressions via `@wes_expr(select: ...)` in the schema.
 
 3) V3
-- Cost-aware join order heuristics, materialized views (optional), partial indexes suggestions.
-
----
-
-## Compatibility & Migration
-
-- Existing `@rpc(sql: ...)` and `@function(logic: ...)` remain supported as escape hatches.
-- Prefer canonical `@wes_*` schema directives; operation documents are pure GraphQL.
-- No workflow changes; main CI remains lean with evidence + tests for operations enabled where available.
-
----
-
-## Open Questions
-
-- Composite return types: Should the compiler emit Postgres composite types to mirror ad‑hoc shapes, or default to `jsonb` for non-table projections?
-- Auth context: In non‑Supabase environments, how should `$auth.uid` be provided (GUC, session var, bound param)?
-- N+1 vs shaping: When should we favor JOINs vs LATERAL subqueries for nested objects to balance performance and JSON shaping?
+- Cost-aware join order heuristics, optional materialized views, partial index suggestions.
 
 ---
 
@@ -330,22 +372,11 @@ function compileOperation(op: GQLOperation, schema: WesleySchema): CompiledSQL {
 
 ---
 
-## Appendix: Mapping Cheatsheet
+## Appendix: RLS Decision Table (copy‑paste)
 
-- `some` → `EXISTS (SELECT 1 FROM child WHERE child.fk = parent.pk AND <pred>)`
-- `none` → `NOT EXISTS ( ... )`
-- `every` → `NOT EXISTS (SELECT 1 FROM child WHERE child.fk = parent.pk AND NOT(<pred>))`
-- Nested lists → `LEFT JOIN LATERAL (SELECT json_agg(json_build_object(...)) ...)` and project as a single JSON column
-- Aggregated scalar in flat row → correlated subquery in projection
+| RLS on base | Caller provides owner/tenant filters | Inject derived owner/tenant? |
+|-------------|-------------------------------------|------------------------------|
+| yes         | any                                 | no                           |
+| no          | none                                | yes                          |
+| no          | explicit                             | no                           |
 
----
-
-## Call for Review
-
-Feedback requested on:
-- QIR scope sufficiency for MVP
-- Output form defaults (SETOF table vs jsonb)
-- Security posture (RLS reliance vs explicit predicates)
-- Performance implications of LATERAL shaping defaults
-
-If accepted, we will stage behind a `--ops` feature flag and land a minimal compiler, tests, and documentation, without touching destructive planner logic.
