@@ -163,7 +163,10 @@ export class WesleyCommand {
       // Execute the command logic
       const result = await this.executeCore(context);
       
-      // Handle JSON output mode
+      // Handle JSON output mode (avoid double-emitting when command already wrote JSON)
+      if (options.json && result && result.__jsonEmitted) {
+        return result;
+      }
       if (options.json && result) {
         this.ctx.stdout.write(JSON.stringify({
           success: true,

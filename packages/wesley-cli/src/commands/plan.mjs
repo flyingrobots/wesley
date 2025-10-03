@@ -49,7 +49,7 @@ export class PlanCommand extends WesleyCommand {
 
     if (options.json) {
       this.ctx.stdout.write(JSON.stringify({ plan, explain, mapping, radar }, null, 2) + '\n');
-      return { phases: plan.phases.length, steps: explain.steps.length };
+      return { phases: plan.phases.length, steps: explain.steps.length, __jsonEmitted: true };
     }
 
     if (options.explain) {

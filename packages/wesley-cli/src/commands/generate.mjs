@@ -20,6 +20,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
       .option('--emit-bundle', 'Emit .wesley/ evidence bundle')
       .option('--supabase', 'Enable Supabase features (RLS tests)')
       .option('--out-dir <dir>', 'Output directory', 'out')
+      .option('--out <dir>', 'Alias for --out-dir')
       .option('--allow-dirty', 'Allow running with a dirty git working tree (not recommended)')
       .option('-v, --verbose', 'More logs (level=debug)')
       .option('--debug', 'Debug output with stack traces')
@@ -31,7 +32,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
 
   async executeCore(context) {
     const { schemaContent, schemaPath, options, logger } = context;
-    const outDir = options.outDir || this.ctx?.config?.paths?.output || 'out';
+    const outDir = options.out || options.outDir || this.ctx?.config?.paths?.output || 'out';
     options.outDir = outDir;
     
     // Handle --stdin convenience flag
