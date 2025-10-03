@@ -13,6 +13,7 @@ class WesleyParseError extends Error {
   constructor(message, directive = null, field = null) {
     super(message);
     this.name = 'PARSE_FAILED';
+    this.code = 'PARSE_FAILED';
     this.directive = directive;
     this.field = field;
   }
@@ -79,10 +80,12 @@ class GraphQLSchemaParser {
       
       return this.buildIRFromAST(ast);
     } catch (error) {
-      if (error.name === 'PARSE_FAILED') {
+      if (error.name === 'PARSE_FAILED' || error.code === 'PARSE_FAILED') {
         throw error;
       }
-      throw new WesleyParseError(`GraphQL syntax error: ${error.message}`);
+      const e = new WesleyParseError(`GraphQL syntax error: ${error.message}`);
+      e.code = 'PARSE_FAILED';
+      throw e;
     }
   }
   
