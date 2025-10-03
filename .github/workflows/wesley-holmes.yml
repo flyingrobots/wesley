@@ -32,16 +32,44 @@ jobs:
         run: pnpm install
         
       - name: "🚀 Generate Artifacts"
+        env:
+          WESLEY_OUT_DIR: out
         run: |
           cd example
           # Use workspace binary directly to avoid PATH/bin resolution issues
-          node ../packages/wesley-host-node/bin/wesley.mjs generate --schema schema.graphql --emit-bundle --allow-dirty
+          # Explicit out dir to align with downstream pgTAP apply step
+          node ../packages/wesley-host-node/bin/wesley.mjs generate \
+            --schema schema.graphql \
+            --emit-bundle \
+            --allow-dirty \
+            --out-dir "$WESLEY_OUT_DIR"
           
       - name: "📊 Display Scores"
         run: |
           echo "## 📊 Generation Scores"
-          cat example/.wesley/scores.json | jq '.scores'
+          if [ -f example/.wesley/scores.json ]; then
+            cat example/.wesley/scores.json | jq '.scores'
+          elif [ -f .wesley/scores.json ]; then
+            cat .wesley/scores.json | jq '.scores'
+          else
+            echo "No scores.json found yet"
+          fi
           
+      - name: "📦 Prepare Bundle for Upload"
+        run: |
+          if [ -f example/.wesley/bundle.json ]; then
+            echo "Bundle already under example/.wesley"
+          elif [ -f .wesley/bundle.json ]; then
+            echo "Copying root .wesley to example/.wesley for artifact upload"
+            mkdir -p example/.wesley
+            cp -R .wesley/. example/.wesley/
+          else
+            echo "❌ Bundle not found in expected locations"
+            ls -la
+            ls -la example || true
+            exit 1
+          fi
+
       - name: "💾 Upload Bundle"
         uses: actions/upload-artifact@v4
         with:
@@ -210,8 +238,11 @@ jobs:
           sudo apt-get install -y postgresql-client
           
       - name: "🔨 Apply Schema"
+        env:
+          WESLEY_OUT_DIR: out
         run: |
-          PGPASSWORD=postgres psql -h localhost -U postgres -d test -f example/out/schema.sql
+          # Apply the generated schema produced in the generation step
+          PGPASSWORD=postgres psql -h localhost -U postgres -d test -f "example/${WESLEY_OUT_DIR}/schema.sql"
           
       - name: "🧪 Run Tests"
         run: |
