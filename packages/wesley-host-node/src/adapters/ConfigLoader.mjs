@@ -89,6 +89,13 @@ export class ConfigLoader {
           securityDefiner: true, volatility: 'VOLATILE'
         }
       },
+      // Experimental operation documents (QIR) settings
+      ops: {
+        folder: 'ops',                 // location of .graphql operation docs
+        target: 'function',            // 'function' | 'view'
+        nestedList: { requireLimit: true, requireOrderBy: true },
+        rlsReliance: 'prefer',         // 'prefer' (RLS-first) | 'derive' (inject from directives if absent)
+      },
       naming: {
         strategy: 'snake_case', tablePrefix: '',
         indexPrefix: 'idx_', constraintPrefix: '', policyPrefix: 'policy_'
@@ -168,6 +175,23 @@ export class ConfigLoader {
     const validParamStrategies = ['jsonb', 'discrete', 'composite'];
     if (!validParamStrategies.includes(config.generation.rpc.paramStrategy)) {
       throw new Error(`Invalid RPC param strategy: ${config.generation.rpc.paramStrategy}`);
+    }
+
+    // Validate ops section
+    const ops = config.ops || {};
+    const validTargets = ['function', 'view'];
+    if (ops.target && !validTargets.includes(ops.target)) {
+      throw new Error(`Invalid ops.target: ${ops.target}. Expected 'function' or 'view'`);
+    }
+    if (ops.nestedList) {
+      const { requireLimit, requireOrderBy } = ops.nestedList;
+      if (typeof requireLimit !== 'boolean' || typeof requireOrderBy !== 'boolean') {
+        throw new Error('ops.nestedList.{requireLimit,requireOrderBy} must be boolean');
+      }
+    }
+    const validRls = ['prefer', 'derive'];
+    if (ops.rlsReliance && !validRls.includes(ops.rlsReliance)) {
+      throw new Error(`Invalid ops.rlsReliance: ${ops.rlsReliance}. Expected 'prefer' or 'derive'`);
     }
   }
   

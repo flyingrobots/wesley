@@ -41,6 +41,19 @@ node packages/wesley-host-node/bin/wesley.mjs cert-verify --in .wesley/SHIPME.md
 
 Evidence bundle lives under `.wesley/` and is validated against JSON Schemas in `schemas/`.
 
+### Experimental: Operation Documents (QIR)
+
+You can start placing GraphQL operation documents (queries) in an `ops/` folder and pass `--ops ops/` to `generate`. In this MVP, the flag is a no‑op validator; future versions compile these operations to SQL via the QIR pipeline proposed in docs/drafts/2025-10-03-rfc-query-ops-to-sql-qir.md.
+
+Example:
+
+```bash
+node packages/wesley-host-node/bin/wesley.mjs generate \
+  --schema schema.graphql \
+  --ops ops/ \
+  --emit-bundle
+```
+
 ## HOLMES (investigate/verify/predict)
 
 From the repo root:
@@ -64,4 +77,3 @@ bash demo/blade/run.sh
 - Use canonical directives (`@wes_table`, `@wes_pk`, `@wes_fk`, `@wes_index`, `@wes_default`, `@wes_tenant`).
 - Aliases (e.g., `@table`, `@pk`) are accepted but deprecated.
 - In CI, use the same entrypoint: `node packages/wesley-host-node/bin/wesley.mjs`.
-
