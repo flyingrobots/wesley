@@ -35,6 +35,13 @@ jobs:
         run: |
           cd example
           node ../packages/wesley-host-node/bin/wesley.mjs generate --schema schema.graphql --emit-bundle
+
+      - name: "📂 List Generated Outputs"
+        run: |
+          echo "== example/.wesley =="
+          ls -la example/.wesley || true
+          echo "== example/out =="
+          ls -la example/out || true
           
       - name: "📊 Display Scores"
         run: |
