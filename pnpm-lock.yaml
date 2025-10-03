@@ -139,6 +139,8 @@ importers:
         specifier: ^1.0.0
         version: 1.6.1
 
+  packages/wesley-stack-supabase-nextjs: {}
+
   packages/wesley-tasks:
     devDependencies:
       vitest:
