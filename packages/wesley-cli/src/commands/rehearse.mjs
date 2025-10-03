@@ -35,11 +35,12 @@ export class RehearseCommand extends WesleyCommand {
     if (options.dryRun) {
       if (options.json) {
         this.ctx.stdout.write(JSON.stringify({ plan, explain }, null, 2) + '\n');
+        return { dryRun: true, steps: explain.steps.length, __jsonEmitted: true };
       } else {
         logger.info('🧭 REALM Dry Run');
         for (const line of explain.lines) logger.info(line);
+        return { dryRun: true, steps: explain.steps.length };
       }
-      return { dryRun: true, steps: explain.steps.length };
     }
 
     const provider = (options.provider || this.ctx?.config?.realm?.provider || 'postgres').toLowerCase();
@@ -82,7 +83,10 @@ export class RehearseCommand extends WesleyCommand {
       await this.ctx.fs.write('.wesley/realm.json', JSON.stringify(realm, null, 2));
       if (!options.json) logger.info('🕶️ REALM verdict: PASS');
       if (hooks.postDown) await runHook(hooks.postDown, logger);
-      if (options.json) this.ctx.stdout.write(JSON.stringify(realm, null, 2) + '\n');
+      if (options.json) {
+        this.ctx.stdout.write(JSON.stringify(realm, null, 2) + '\n');
+        return { ...realm, __jsonEmitted: true };
+      }
       return realm;
     } catch (error) {
       const realm = {
