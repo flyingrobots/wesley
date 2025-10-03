@@ -99,11 +99,19 @@ jobs:
       - name: "📦 Install HOLMES"
         run: pnpm install
         
-      - name: "📥 Download Bundle"
+      - name: "📥 Download Bundle (if available)"
+        id: download-bundle
         uses: actions/download-artifact@v4
         with:
           name: wesley-bundle
           path: example/.wesley/
+          if-no-artifact-found: warn
+      
+      - name: "🚀 Generate Artifacts (fallback if no bundle)"
+        if: ${{ steps.download-bundle.outcome == 'failure' || !steps.download-bundle.outputs.download-path }}
+        run: |
+          cd example
+          node ../packages/wesley-host-node/bin/wesley.mjs generate --schema schema.graphql --emit-bundle --allow-dirty --out-dir out
           
       - name: "🔍 Run Investigation"
         id: holmes
@@ -142,11 +150,19 @@ jobs:
       - name: "📦 Install HOLMES"
         run: pnpm install
         
-      - name: "📥 Download Bundle"
+      - name: "📥 Download Bundle (if available)"
+        id: download-bundle
         uses: actions/download-artifact@v4
         with:
           name: wesley-bundle
           path: example/.wesley/
+          if-no-artifact-found: warn
+      
+      - name: "🚀 Generate Artifacts (fallback if no bundle)"
+        if: ${{ steps.download-bundle.outcome == 'failure' || !steps.download-bundle.outputs.download-path }}
+        run: |
+          cd example
+          node ../packages/wesley-host-node/bin/wesley.mjs generate --schema schema.graphql --emit-bundle --allow-dirty --out-dir out
           
       - name: "🩺 Run Verification"
         id: watson
@@ -184,11 +200,19 @@ jobs:
       - name: "📦 Install HOLMES"
         run: pnpm install
         
-      - name: "📥 Download Bundle"
+      - name: "📥 Download Bundle (if available)"
+        id: download-bundle
         uses: actions/download-artifact@v4
         with:
           name: wesley-bundle
           path: example/.wesley/
+          if-no-artifact-found: warn
+      
+      - name: "🚀 Generate Artifacts (fallback if no bundle)"
+        if: ${{ steps.download-bundle.outcome == 'failure' || !steps.download-bundle.outputs.download-path }}
+        run: |
+          cd example
+          node ../packages/wesley-host-node/bin/wesley.mjs generate --schema schema.graphql --emit-bundle --allow-dirty --out-dir out
           
       - name: "🔮 Run Predictions"
         id: moriarty
@@ -226,11 +250,19 @@ jobs:
       - name: "📦 Checkout Repository"
         uses: actions/checkout@v4
         
-      - name: "📥 Download Bundle"
+      - name: "📥 Download Bundle (if available)"
+        id: download-bundle
         uses: actions/download-artifact@v4
         with:
           name: wesley-bundle
           path: example/.wesley/
+          if-no-artifact-found: warn
+      
+      - name: "🚀 Generate Artifacts (fallback if no bundle)"
+        if: ${{ steps.download-bundle.outcome == 'failure' || !steps.download-bundle.outputs.download-path }}
+        run: |
+          cd example
+          node ../packages/wesley-host-node/bin/wesley.mjs generate --schema schema.graphql --emit-bundle --allow-dirty --out-dir out
           
       - name: "🧪 Install pgTAP"
         run: |
