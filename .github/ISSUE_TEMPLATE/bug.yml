@@ -1,0 +1,59 @@
+name: Bug Report
+description: Report a reproducible defect in the system.
+title: "[bug] <short summary>"
+labels: ["bug"]
+assignees: []
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One-sentence description of the bug.
+      placeholder: The build fails on Node 22 with "ERR_MODULE_NOT_FOUND"
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to Reproduce
+      description: Exact steps, commands, or code to reproduce.
+      placeholder: |
+        1. Run `pnpm install`
+        2. Run `pnpm exec wesley build`
+        3. Observe error in logs
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      placeholder: Build should succeed on Node 22.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      placeholder: Error message, screenshots, or logs.
+    validations:
+      required: true
+
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      placeholder: "OS: macOS 15.2, Node v22.1.0, pnpm 9.1"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: blockers
+    attributes:
+      label: Is this blocking you?
+      options:
+        - label: Yes, blocks my workflow
+        - label: No, minor inconvenience
+
