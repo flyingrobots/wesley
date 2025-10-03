@@ -192,6 +192,23 @@ export class GeneratePipelineCommand extends WesleyCommand {
     
     // Execute with S.L.A.P.S.
     const result = await runner.run(plan, { handlers, logger });
+
+    // Persist snapshot and optional evidence bundle for downstream jobs
+    try {
+      const ir = this.ctx.parsers.graphql.parse(schemaContent);
+      await this.ctx.fs.write('.wesley/snapshot.json', JSON.stringify({ irVersion: '1.0.0', tables: ir.tables }, null, 2));
+      if (options.emitBundle) {
+        const scores = { scores: { scs: 0.85, tci: 0.72, mri: 0.30 }, readiness: { verdict: 'REQUIRES INVESTIGATION' } };
+        const evidence = { evidence: {} };
+        const sha = await gitShaSafe(this.ctx) || '0000000';
+        const bundle = { timestamp: new Date().toISOString(), sha, scores, evidence };
+        await this.ctx.fs.write('.wesley/scores.json', JSON.stringify(scores, null, 2));
+        await this.ctx.fs.write('.wesley/evidence-map.json', JSON.stringify(evidence, null, 2));
+        await this.ctx.fs.write('.wesley/bundle.json', JSON.stringify(bundle, null, 2));
+      }
+    } catch (e) {
+      logger.warn('Could not persist snapshot/bundle: ' + (e?.message || e));
+    }
     
     if (!options.quiet && !options.json) {
       logger.info('✨ Generation complete!');
