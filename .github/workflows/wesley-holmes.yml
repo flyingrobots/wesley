@@ -102,16 +102,21 @@ jobs:
       - name: "📥 Download Bundle (if available)"
         id: download-bundle
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: wesley-bundle
           path: example/.wesley/
-          if-no-artifact-found: warn
-      
-      - name: "🚀 Generate Artifacts (fallback if no bundle)"
-        if: ${{ steps.download-bundle.outcome == 'failure' || !steps.download-bundle.outputs.download-path }}
+
+      - name: "🔎 Ensure Bundle (fallback generate if missing)"
         run: |
-          cd example
-          node ../packages/wesley-host-node/bin/wesley.mjs generate --schema schema.graphql --emit-bundle --allow-dirty --out-dir out
+          if [ ! -f example/.wesley/bundle.json ]; then
+            echo "Bundle not found. Regenerating..."
+            cd example
+            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema schema.graphql --emit-bundle --allow-dirty --out-dir out
+            cd -
+          else
+            echo "Bundle found at example/.wesley/bundle.json"
+          fi
           
       - name: "🔍 Run Investigation"
         id: holmes
@@ -153,16 +158,21 @@ jobs:
       - name: "📥 Download Bundle (if available)"
         id: download-bundle
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: wesley-bundle
           path: example/.wesley/
-          if-no-artifact-found: warn
-      
-      - name: "🚀 Generate Artifacts (fallback if no bundle)"
-        if: ${{ steps.download-bundle.outcome == 'failure' || !steps.download-bundle.outputs.download-path }}
+
+      - name: "🔎 Ensure Bundle (fallback generate if missing)"
         run: |
-          cd example
-          node ../packages/wesley-host-node/bin/wesley.mjs generate --schema schema.graphql --emit-bundle --allow-dirty --out-dir out
+          if [ ! -f example/.wesley/bundle.json ]; then
+            echo "Bundle not found. Regenerating..."
+            cd example
+            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema schema.graphql --emit-bundle --allow-dirty --out-dir out
+            cd -
+          else
+            echo "Bundle found at example/.wesley/bundle.json"
+          fi
           
       - name: "🩺 Run Verification"
         id: watson
@@ -203,16 +213,21 @@ jobs:
       - name: "📥 Download Bundle (if available)"
         id: download-bundle
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: wesley-bundle
           path: example/.wesley/
-          if-no-artifact-found: warn
-      
-      - name: "🚀 Generate Artifacts (fallback if no bundle)"
-        if: ${{ steps.download-bundle.outcome == 'failure' || !steps.download-bundle.outputs.download-path }}
+
+      - name: "🔎 Ensure Bundle (fallback generate if missing)"
         run: |
-          cd example
-          node ../packages/wesley-host-node/bin/wesley.mjs generate --schema schema.graphql --emit-bundle --allow-dirty --out-dir out
+          if [ ! -f example/.wesley/bundle.json ]; then
+            echo "Bundle not found. Regenerating..."
+            cd example
+            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema schema.graphql --emit-bundle --allow-dirty --out-dir out
+            cd -
+          else
+            echo "Bundle found at example/.wesley/bundle.json"
+          fi
           
       - name: "🔮 Run Predictions"
         id: moriarty
@@ -253,16 +268,21 @@ jobs:
       - name: "📥 Download Bundle (if available)"
         id: download-bundle
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: wesley-bundle
           path: example/.wesley/
-          if-no-artifact-found: warn
-      
-      - name: "🚀 Generate Artifacts (fallback if no bundle)"
-        if: ${{ steps.download-bundle.outcome == 'failure' || !steps.download-bundle.outputs.download-path }}
+
+      - name: "🔎 Ensure Bundle (fallback generate if missing)"
         run: |
-          cd example
-          node ../packages/wesley-host-node/bin/wesley.mjs generate --schema schema.graphql --emit-bundle --allow-dirty --out-dir out
+          if [ ! -f example/.wesley/bundle.json ]; then
+            echo "Bundle not found. Regenerating..."
+            cd example
+            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema schema.graphql --emit-bundle --allow-dirty --out-dir out
+            cd -
+          else
+            echo "Bundle found at example/.wesley/bundle.json"
+          fi
           
       - name: "🧪 Install pgTAP"
         run: |
