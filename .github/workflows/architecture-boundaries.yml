@@ -70,6 +70,8 @@ jobs:
     
     - name: Validate import statements (lightweight)
       run: |
+        set -euo pipefail
+        set -x
         echo "🔍 Checking import statements for boundary violations (lightweight)..."
         
         # Quick smoke: disallow node:* imports in core (ESM specifiers)
