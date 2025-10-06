@@ -21,6 +21,7 @@ Wesley inverts the entire database development paradigm. While everyone else gen
 
 ### 📖 Guides
 - [Quick Start](./guides/quick-start.md) - Get running in 60 seconds
+- [Query Operations (QIR)](./guides/qir-ops.md) - Experimental operation → SQL lowering and emission
 - [Extending Wesley](./guides/extending.md) - Add new generators and adapters
 - [Migration Strategies](./guides/migrations.md) - Managing schema evolution
 
