@@ -20,7 +20,7 @@ jobs:
     - name: Install pnpm
       uses: pnpm/action-setup@v2
       with:
-        version: 9
+        version: 8
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -70,9 +70,11 @@ jobs:
     
     - name: Validate import statements (lightweight)
       run: |
+        set -euo pipefail
+        set -x
         echo "🔍 Checking import statements for boundary violations (lightweight)..."
         
-        # Quick smoke: disallow node:* imports in core (ESM specifiers)
+        # Disallow node:* imports in core (ESM specifiers)
         NODE_MATCHES=$(grep -RIl --include='*.mjs' -E "from ['\"]node:|require\(['\"]node:" packages/wesley-core/src || true)
         if [[ -n "$NODE_MATCHES" ]]; then
           echo "❌ Found node:* imports in wesley-core"
@@ -80,7 +82,7 @@ jobs:
           exit 1
         fi
         
-        # Quick smoke: CLI must not import host directly
+        # CLI must not import host directly
         if find packages/wesley-cli/src -name "*.mjs" -exec grep -l "from ['\"]@wesley/host-node" {} \; | grep .; then
           echo "❌ Found host-node imports in wesley-cli"
           exit 1

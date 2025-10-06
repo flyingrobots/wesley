@@ -54,6 +54,7 @@ jobs:
         sudo ./bats-core-1.12.0/install.sh /usr/local
         echo "/usr/local/bin" >> $GITHUB_PATH
 
+    # macOS runner removed to control GitHub Actions spend.
     - name: Verify Bats installation
       run: |
         bats --version
