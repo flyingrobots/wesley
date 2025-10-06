@@ -1,0 +1,16 @@
+# See https://docs.github.com/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owners
+* @flyingrobots
+
+# Core domain (pure)
+/packages/wesley-core/ @flyingrobots
+
+# CLI + host adapters
+/packages/wesley-host-node/ @flyingrobots
+/packages/wesley-cli/ @flyingrobots
+
+# Generators & stacks
+/packages/wesley-generator-*/ @flyingrobots
+/packages/wesley-stack-*/ @flyingrobots
+
