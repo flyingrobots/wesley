@@ -24,9 +24,9 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U wesley -d wesley_test" \
-          --health-interval 5s \
-          --health-timeout 5s \
+          --health-cmd "pg_isready -U wesley -d wesley_test"
+          --health-interval 5s
+          --health-timeout 5s
           --health-retries 30
     steps:
       - uses: actions/checkout@v4
@@ -37,10 +37,10 @@ jobs:
       - run: pnpm install
 
       - name: Transform
-        run: node packages/wesley-host-node/bin/wesley.mjs transform --schema example/ecommerce.graphql --out out
+        run: node packages/wesley-host-node/bin/wesley.mjs transform --schema example/ecommerce.graphql --out-dir out
 
       - name: Plan (write)
-        run: node packages/wesley-host-node/bin/wesley.mjs plan --schema example/ecommerce.graphql --write --out out
+        run: node packages/wesley-host-node/bin/wesley.mjs plan --schema example/ecommerce.graphql --write --out-dir out
 
       - name: Wait for Postgres
         run: |

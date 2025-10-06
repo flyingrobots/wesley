@@ -17,32 +17,29 @@ jobs:
       with:
         fetch-depth: 0
     
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'pnpm'
-    
     - name: Install pnpm
       uses: pnpm/action-setup@v2
       with:
         version: 8
     
-    - name: Install dependencies
-      run: pnpm install --frozen-lockfile
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'pnpm'
     
-    - name: Install dependency-cruiser
-      run: pnpm add -D dependency-cruiser
+    - name: Install dependencies
+      run: pnpm install --no-frozen-lockfile
     
     - name: Check architecture boundaries
       run: |
         echo "🏗️  Checking hexagonal architecture boundaries..."
-        pnpm exec depcruise --config .dependency-cruiser.mjs packages/
+        pnpm dlx dependency-cruiser --config .dependency-cruiser.mjs packages/
         
     - name: Generate architecture diagram
       run: |
         echo "📊 Generating architecture diagram..."
-        pnpm exec depcruise --config .dependency-cruiser.mjs \
+        pnpm dlx dependency-cruiser --config .dependency-cruiser.mjs \
           --output-type archi packages/ > architecture.svg
         
     - name: Upload architecture diagram
@@ -71,40 +68,32 @@ jobs:
         
         echo "✅ package.json dependencies are valid"
     
-    - name: Validate import statements
+    - name: Validate import statements (lightweight)
       run: |
-        echo "🔍 Checking import statements for boundary violations..."
+        echo "🔍 Checking import statements for boundary violations (lightweight)..."
         
-        # Check for Node.js imports in core
-        if find packages/wesley-core/src -name "*.mjs" -exec grep -l "from ['\"]fs['\"]" {} \;; then
-          echo "❌ Found Node.js fs imports in wesley-core"
+        # Quick smoke: disallow node:* imports in core (ESM specifiers)
+        NODE_MATCHES=$(grep -RIl --include='*.mjs' -E "from ['\"]node:|require\(['\"]node:" packages/wesley-core/src || true)
+        if [[ -n "$NODE_MATCHES" ]]; then
+          echo "❌ Found node:* imports in wesley-core"
+          echo "$NODE_MATCHES"
           exit 1
         fi
         
-        if find packages/wesley-core/src -name "*.mjs" -exec grep -l "from ['\"]path['\"]" {} \;; then
-          echo "❌ Found Node.js path imports in wesley-core"
-          exit 1
-        fi
-        
-        # Check CLI doesn't import from host
-        if find packages/wesley-cli/src -name "*.mjs" -exec grep -l "from ['\"]@wesley/host-node" {} \;; then
+        # Quick smoke: CLI must not import host directly
+        if find packages/wesley-cli/src -name "*.mjs" -exec grep -l "from ['\"]@wesley/host-node" {} \; | grep .; then
           echo "❌ Found host-node imports in wesley-cli"
           exit 1
         fi
         
-        echo "✅ Import statements follow architecture boundaries"
+        echo "✅ Lightweight import checks passed"
     
-    - name: Check for process usage in core
+    # ESLint purity rules enforce no process/node:* in core; skip manual grep
+
+    - name: Run ESLint for core (purity rules)
       run: |
-        echo "🔍 Checking for process usage in core domain..."
-        
-        if find packages/wesley-core/src -name "*.mjs" -exec grep -l "process\." {} \;; then
-          echo "❌ Found process usage in wesley-core"
-          echo "Core domain should be platform-agnostic"
-          exit 1
-        fi
-        
-        echo "✅ Core domain is platform-agnostic"
+        echo "🔎 Running ESLint restricted-imports check for wesley-core..."
+        pnpm dlx eslint@8.57.0 --no-eslintrc -c packages/wesley-core/.eslintrc.cjs "packages/wesley-core/src/**/*.mjs" --max-warnings=0
     
     - name: Validate ENSIGN structure
       run: |

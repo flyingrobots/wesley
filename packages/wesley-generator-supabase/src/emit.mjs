@@ -60,12 +60,26 @@ export function emitDDL(ir) {
  * Emit RLS policies (stub for MVP)
  */
 export function emitRLS(ir) {
-  return {
-    label: 'rls',
-    files: [
-      { name: 'rls.sql', content: '-- RLS policies will be generated here' }
-    ]
-  };
+  const lines = [];
+  const q = (id) => '"' + String(id).replace(/\"/g, '""').toLowerCase() + '"';
+  for (const t of ir.tables || []) {
+    const rls = (t.directives || {})['wes_rls'] || (t.directives || {})['rls'];
+    if (rls || t.tenantBy) {
+      lines.push(`-- RLS for ${t.name}`);
+      lines.push(`ALTER TABLE ${q(t.name)} ENABLE ROW LEVEL SECURITY;`);
+      const map = [ ['select','SELECT'], ['insert','INSERT'], ['update','UPDATE'], ['delete','DELETE'] ];
+      for (const [k, verb] of map) {
+        const expr = rls && typeof rls[k] === 'string' ? rls[k] : null;
+        if (expr) {
+          const pname = `${t.name.toLowerCase()}_${k}`;
+          lines.push(`CREATE POLICY ${q(pname)} ON ${q(t.name)} FOR ${verb} USING (${expr});`);
+        }
+      }
+      lines.push('');
+    }
+  }
+  const content = lines.length ? lines.join('\n') + '\n' : '-- No RLS annotations found\n';
+  return { label: 'rls', files: [{ name: 'rls.sql', content }] };
 }
 
 /**

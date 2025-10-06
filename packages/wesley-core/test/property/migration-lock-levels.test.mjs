@@ -4,7 +4,7 @@
  */
 
 import { test } from 'node:test';
-import fc from 'fast-check';
+import { fc } from 'fast-check';
 import { MigrationSafety } from '../../src/domain/MigrationSafety.mjs';
 import { sqlGenerators, propertyHelpers } from '../helpers/property-testing.mjs';
 

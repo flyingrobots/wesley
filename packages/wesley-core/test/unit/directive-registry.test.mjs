@@ -57,9 +57,7 @@ ${unregistered.map(d => `directive @${d} on FIELD_DEFINITION | OBJECT`).join('\n
 `);
   }
   
-  console.log(`✅ All ${usedDirectives.size} directives are registered`);
-  console.log(`   Registered: ${Array.from(registeredDirectives).join(', ')}`);
-  console.log(`   Used: ${Array.from(usedDirectives).join(', ')}`);
+  // Logging removed to avoid node:test runner serialization flakes in CI
 });
 
 test('directive processor handles all registered directives', () => {
@@ -94,20 +92,19 @@ test('directive processor handles all registered directives', () => {
   }
 });
 
-test('directive weights are properly defined', () => {
+test('directive weights are properly defined', async () => {
   // Load wesley.config.mjs to check weights
   const configPath = join(__dirname, '../../../../wesley.config.mjs');
-  
-  import(configPath).then(config => {
-    const weights = config.default?.weights?.defaults || {};
-    
-    // Critical directives should have high weights
-    assert(weights['@primaryKey'] >= 10, 'primaryKey should have weight >= 10');
-    assert(weights['@critical'] >= 10, 'critical should have weight >= 10');
-    assert(weights['@sensitive'] >= 8, 'sensitive should have weight >= 8');
-    assert(weights['@foreignKey'] >= 8, 'foreignKey should have weight >= 8');
-    assert(weights['@pii'] >= 8, 'pii should have weight >= 8');
-    
-    console.log('✅ Directive weights properly configured');
-  });
+  const config = await import(configPath);
+
+  const weights = config.default?.weights?.defaults || {};
+
+  // Critical directives should have high weights
+  assert(weights['@primaryKey'] >= 10, 'primaryKey should have weight >= 10');
+  assert(weights['@critical'] >= 10, 'critical should have weight >= 10');
+  assert(weights['@sensitive'] >= 8, 'sensitive should have weight >= 8');
+  assert(weights['@foreignKey'] >= 8, 'foreignKey should have weight >= 8');
+  assert(weights['@pii'] >= 8, 'pii should have weight >= 8');
+
+  // Logging removed to avoid node:test runner serialization flakes in CI
 });

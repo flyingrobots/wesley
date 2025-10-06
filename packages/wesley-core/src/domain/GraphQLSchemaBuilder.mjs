@@ -80,18 +80,15 @@ export class GraphQLSchemaBuilder {
       });
     }
     
-    const table = new Table({
+    if (tableDirectives['@rls']) {
+      tableDirectives['@rls'] = this.parseRLSConfig(tableDirectives['@rls']);
+    }
+
+    return new Table({
       name: tableName,
       directives: tableDirectives,
       fields
     });
-    
-    // Parse RLS config if present
-    if (tableDirectives['@rls']) {
-      table.rls = this.parseRLSConfig(tableDirectives['@rls']);
-    }
-    
-    return table;
   }
   
   /**
@@ -358,6 +355,11 @@ export class GraphQLSchemaBuilder {
       delete: args.delete || 'false',
       roles: args.roles || ['authenticated']
     };
+    
+    // Preserve preset configuration (string or object with name/options)
+    if (args.preset !== undefined) {
+      config.preset = args.preset;
+    }
     
     // Parse role-specific settings if provided
     if (args.selectRoles) config.selectRoles = args.selectRoles;

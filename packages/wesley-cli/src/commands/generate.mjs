@@ -17,6 +17,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
     return cmd
       .option('-s, --schema <path>', 'GraphQL schema file. Use "-" for stdin', 'schema.graphql')
       .option('--stdin', 'Read schema from stdin (alias for --schema -)')
+      .option('--ops <dir>', 'Experimental: directory with GraphQL operation documents (queries) to validate', 'ops')
       .option('--emit-bundle', 'Emit .wesley/ evidence bundle')
       .option('--supabase', 'Enable Supabase features (RLS tests)')
       .option('--out-dir <dir>', 'Output directory', 'out')
@@ -46,6 +47,35 @@ export class GeneratePipelineCommand extends WesleyCommand {
     }
 
     logger.info({ schema: schemaPath }, 'Parsing schema...');
+
+    // Experimental ops: validate presence of operation documents if --ops provided
+    if (options.ops) {
+      try {
+        const opsDir = options.ops;
+        const fs = this.ctx.fs;
+        const exists = await fs.exists(opsDir);
+        if (!exists) {
+          logger.warn({ opsDir }, 'Experimental --ops: directory not found; skipping ops validation');
+        } else {
+          // naive scan for .graphql files
+          // We avoid Node-specific APIs: rely on adapter for a minimal read attempt
+          // Try common filenames
+          const candidates = ['queries.graphql', 'operations.graphql'];
+          let found = false;
+          for (const c of candidates) {
+            const p = await fs.join(opsDir, c);
+            if (await fs.exists(p)) { found = true; break; }
+          }
+          if (!found) {
+            logger.info({ opsDir }, 'Experimental --ops: no known op files found; continue (no-op)');
+          } else {
+            logger.info({ opsDir }, 'Experimental --ops detected; future versions will compile operations to SQL (QIR).');
+          }
+        }
+      } catch (e) {
+        logger.warn('Experimental --ops validation failed: ' + (e?.message || e));
+      }
+    }
 
     // Use injected generators and writer
     const { generators, writer, planner, runner } = this.ctx;
@@ -102,6 +132,59 @@ export class GeneratePipelineCommand extends WesleyCommand {
       }
     } catch (e) {
       logger.warn('Could not write IR snapshot: ' + (e?.message || e));
+    }
+    
+    // Optionally emit a minimal evidence bundle for HOLMES sidecar
+    if (options.emitBundle) {
+      try {
+        // Resolve current commit SHA (fallback to env or unknown)
+        let sha = process.env.GITHUB_SHA || 'unknown';
+        try {
+          const out = await (globalThis?.wesleyCtx?.shell?.exec?.('git rev-parse HEAD'));
+          const s = out?.stdout?.trim();
+          if (s) sha = s;
+        } catch {}
+
+        const timestamp = new Date().toISOString();
+        // Minimal scoring heuristic (placeholder until full evidence pipeline)
+        const scs = Math.min(1, Math.max(0, (artifacts.length > 0 ? 0.6 : 0.3)));
+        const tci = artifacts.some(a => a.name?.includes('tests')) ? 0.7 : 0.4;
+        const mri = 0.2;
+        const readiness = { verdict: (scs > 0.75 && tci > 0.6 ? 'ELEMENTARY' : (scs > 0.4 ? 'REQUIRES INVESTIGATION' : 'YOU SHALL NOT PASS')) };
+
+        const scores = { scores: { scs, tci, mri }, readiness };
+
+        // Evidence map: cite generated SQL and tests
+        const sqlFile = `${outDir}/schema.sql`;
+        const testFile = `${outDir}/tests.sql`;
+        const evidence = {
+          // Use coarse UID until we have fine-grained per-field evidence
+          evidence: {
+            schema: {
+              sql: [{ file: sqlFile, lines: '1-9999', sha }],
+              tests: [{ file: testFile, lines: '1-9999', sha }]
+            }
+          }
+        };
+
+        const bundle = { sha, timestamp, evidence, scores };
+        await this.ctx.fs.write('.wesley/scores.json', JSON.stringify(scores, null, 2));
+        await this.ctx.fs.write('.wesley/bundle.json', JSON.stringify(bundle, null, 2));
+
+        // Append a tiny history for MORIARTY
+        try {
+          let history = { points: [] };
+          try {
+            const raw = await this.ctx.fs.read('.wesley/history.json');
+            history = JSON.parse(raw.toString('utf8')) || history;
+          } catch {}
+          const day = Math.floor(Date.now() / 86400000);
+          history.points.push({ day, timestamp, scs, tci, mri });
+          await this.ctx.fs.write('.wesley/history.json', JSON.stringify(history, null, 2));
+        } catch {}
+      } catch (e) {
+        logger.warn('Could not emit HOLMES evidence bundle: ' + (e?.message || e));
+      }
     }
     
     // Output results
@@ -189,13 +272,12 @@ function shouldEnforceClean(env, options) {
   return !!options.emitBundle;
 }
 async function assertCleanGit() {
-  const { execSync } = await import('node:child_process');
   try {
-    execSync('git rev-parse --is-inside-work-tree', { stdio: 'ignore' });
+    await (globalThis?.wesleyCtx?.shell?.execSync?.('git rev-parse --is-inside-work-tree', { stdio: 'ignore' }));
   } catch {
     return; // Not a git repo: skip
   }
-  const out = execSync('git status --porcelain', { encoding: 'utf8' }).trim();
+  const out = (await globalThis?.wesleyCtx?.shell?.exec?.('git status --porcelain')).stdout.trim();
   if (out.length > 0) {
     const err = new Error('Working tree has uncommitted changes. Commit or stash before running, or pass --allow-dirty.');
     err.code = 'DIRTY_WORKTREE';

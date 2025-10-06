@@ -32,15 +32,44 @@ jobs:
         run: pnpm install
         
       - name: "🚀 Generate Artifacts"
+        env:
+          WESLEY_OUT_DIR: out
         run: |
           cd example
-          pnpm exec wesley generate --schema schema.graphql --emit-bundle
+          # Use workspace binary directly to avoid PATH/bin resolution issues
+          # Explicit out dir to align with downstream pgTAP apply step
+          node ../packages/wesley-host-node/bin/wesley.mjs generate \
+            --schema schema.graphql \
+            --emit-bundle \
+            --allow-dirty \
+            --out-dir "$WESLEY_OUT_DIR"
           
       - name: "📊 Display Scores"
         run: |
           echo "## 📊 Generation Scores"
-          cat example/.wesley/scores.json | jq '.scores'
+          if [ -f example/.wesley/scores.json ]; then
+            cat example/.wesley/scores.json | jq '.scores'
+          elif [ -f .wesley/scores.json ]; then
+            cat .wesley/scores.json | jq '.scores'
+          else
+            echo "No scores.json found yet"
+          fi
           
+      - name: "📦 Prepare Bundle for Upload"
+        run: |
+          if [ -f example/.wesley/bundle.json ]; then
+            echo "Bundle already under example/.wesley"
+          elif [ -f .wesley/bundle.json ]; then
+            echo "Copying root .wesley to example/.wesley for artifact upload"
+            mkdir -p example/.wesley
+            cp -R .wesley/. example/.wesley/
+          else
+            echo "❌ Bundle not found in expected locations"
+            ls -la
+            ls -la example || true
+            exit 1
+          fi
+
       - name: "💾 Upload Bundle"
         uses: actions/upload-artifact@v4
         with:
@@ -70,17 +99,31 @@ jobs:
       - name: "📦 Install HOLMES"
         run: pnpm install
         
-      - name: "📥 Download Bundle"
+      - name: "📥 Download Bundle (if available)"
+        id: download-bundle
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: wesley-bundle
           path: example/.wesley/
+
+      - name: "🔎 Ensure Bundle (fallback generate if missing)"
+        run: |
+          if [ ! -f example/.wesley/bundle.json ]; then
+            echo "Bundle not found. Regenerating..."
+            cd example
+            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema schema.graphql --emit-bundle --allow-dirty --out-dir out
+            cd -
+          else
+            echo "Bundle found at example/.wesley/bundle.json"
+          fi
           
       - name: "🔍 Run Investigation"
         id: holmes
         run: |
           cd example
-          pnpm exec holmes investigate > holmes-report.md
+          # Run HOLMES from workspace package
+          node ../packages/wesley-holmes/src/cli.mjs investigate > holmes-report.md
           cat holmes-report.md
           
       - name: "💾 Save Report"
@@ -112,17 +155,30 @@ jobs:
       - name: "📦 Install HOLMES"
         run: pnpm install
         
-      - name: "📥 Download Bundle"
+      - name: "📥 Download Bundle (if available)"
+        id: download-bundle
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: wesley-bundle
           path: example/.wesley/
+
+      - name: "🔎 Ensure Bundle (fallback generate if missing)"
+        run: |
+          if [ ! -f example/.wesley/bundle.json ]; then
+            echo "Bundle not found. Regenerating..."
+            cd example
+            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema schema.graphql --emit-bundle --allow-dirty --out-dir out
+            cd -
+          else
+            echo "Bundle found at example/.wesley/bundle.json"
+          fi
           
       - name: "🩺 Run Verification"
         id: watson
         run: |
           cd example
-          pnpm exec holmes verify > watson-report.md
+          node ../packages/wesley-holmes/src/cli.mjs verify > watson-report.md
           cat watson-report.md
           
       - name: "💾 Save Report"
@@ -154,17 +210,30 @@ jobs:
       - name: "📦 Install HOLMES"
         run: pnpm install
         
-      - name: "📥 Download Bundle"
+      - name: "📥 Download Bundle (if available)"
+        id: download-bundle
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: wesley-bundle
           path: example/.wesley/
+
+      - name: "🔎 Ensure Bundle (fallback generate if missing)"
+        run: |
+          if [ ! -f example/.wesley/bundle.json ]; then
+            echo "Bundle not found. Regenerating..."
+            cd example
+            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema schema.graphql --emit-bundle --allow-dirty --out-dir out
+            cd -
+          else
+            echo "Bundle found at example/.wesley/bundle.json"
+          fi
           
       - name: "🔮 Run Predictions"
         id: moriarty
         run: |
           cd example
-          pnpm exec holmes predict > moriarty-report.md || echo "Insufficient data for predictions" > moriarty-report.md
+          node ../packages/wesley-holmes/src/cli.mjs predict > moriarty-report.md || echo "Insufficient data for predictions" > moriarty-report.md
           cat moriarty-report.md
           
       - name: "💾 Save Report"
@@ -196,11 +265,38 @@ jobs:
       - name: "📦 Checkout Repository"
         uses: actions/checkout@v4
         
-      - name: "📥 Download Bundle"
+      - name: "🔧 Setup pnpm"
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - name: "🔧 Setup Node.js"
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: "📦 Install Workspace"
+        run: pnpm install
+
+      - name: "📥 Download Bundle (if available)"
+        id: download-bundle
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: wesley-bundle
           path: example/.wesley/
+
+      - name: "🔎 Ensure Bundle (fallback generate if missing)"
+        run: |
+          if [ ! -f example/.wesley/bundle.json ]; then
+            echo "Bundle not found. Regenerating..."
+            cd example
+            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema schema.graphql --emit-bundle --allow-dirty --out-dir out
+            cd -
+          else
+            echo "Bundle found at example/.wesley/bundle.json"
+          fi
           
       - name: "🧪 Install pgTAP"
         run: |
@@ -208,8 +304,11 @@ jobs:
           sudo apt-get install -y postgresql-client
           
       - name: "🔨 Apply Schema"
+        env:
+          WESLEY_OUT_DIR: out
         run: |
-          PGPASSWORD=postgres psql -h localhost -U postgres -d test -f example/out/schema.sql
+          # Apply the generated schema produced in the generation step
+          PGPASSWORD=postgres psql -h localhost -U postgres -d test -f "example/${WESLEY_OUT_DIR}/schema.sql"
           
       - name: "🧪 Run Tests"
         run: |

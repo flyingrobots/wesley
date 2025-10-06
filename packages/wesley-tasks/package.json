@@ -11,7 +11,7 @@
     "src"
   ],
   "scripts": {
-    "test": "vitest"
+    "test": "vitest run"
   },
   "dependencies": {},
   "devDependencies": {

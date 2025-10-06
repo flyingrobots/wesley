@@ -80,6 +80,21 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+######## Preconditions ########
+# 1) bats installed
+if ! command -v bats >/dev/null 2>&1; then
+    echo -e "${YELLOW}bats not found in PATH; skipping CLI bats tests${NC}"
+    echo -e "${YELLOW}Hint:${NC} CLI bats tests run in the dedicated 'Wesley CLI Tests' workflow."
+    exit 0
+fi
+
+# 2) bats plugins vendored (present when submodules are checked out in CI)
+if [[ ! -f "test/bats-plugins/bats-support/load" ]] || [[ ! -f "test/bats-plugins/bats-assert/load" ]]; then
+    echo -e "${YELLOW}bats plugins not found; skipping CLI bats tests${NC}"
+    echo -e "${YELLOW}Hint:${NC} Ensure git submodules are checked out (actions/checkout with submodules: recursive)."
+    exit 0
+fi
+
 # Run the tests
 echo -e "${BLUE}Running tests...${NC}"
 echo ""

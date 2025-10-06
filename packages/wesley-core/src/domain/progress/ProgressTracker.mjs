@@ -3,7 +3,7 @@
  * Tracks operation progress, maintains history, and provides performance analytics
  */
 
-import { EventEmitter } from 'events';
+import { EventEmitter } from '../../util/EventEmitter.mjs';
 
 export class ProgressTracker extends EventEmitter {
   constructor(options = {}) {

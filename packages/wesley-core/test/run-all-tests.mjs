@@ -5,7 +5,8 @@
  */
 
 import { spawn } from 'node:child_process';
-import { resolve, join } from 'node:path';
+import { resolve, join, relative } from 'node:path';
+import { existsSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
@@ -40,6 +41,35 @@ const testConfigs = {
   }
 };
 
+function findTestFiles(pattern) {
+  const wildcardIndex = pattern.indexOf('*');
+  const basePart = wildcardIndex === -1 ? pattern : pattern.slice(0, wildcardIndex);
+  const normalizedBase = basePart.replace(/\/$/, '') || '.';
+  const baseDir = join(projectRoot, normalizedBase);
+
+  if (!existsSync(baseDir)) {
+    return [];
+  }
+
+  const suffix = pattern.includes('.') ? pattern.slice(pattern.indexOf('.')) : '.test.mjs';
+  const files = [];
+
+  const walk = (dir) => {
+    const entries = readdirSync(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      const absolutePath = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(absolutePath);
+      } else if (entry.isFile() && entry.name.endsWith(suffix)) {
+        files.push(relative(projectRoot, absolutePath));
+      }
+    }
+  };
+
+  walk(baseDir);
+  return files.sort();
+}
+
 /**
  * Run a specific test suite
  */
@@ -47,27 +77,33 @@ async function runTestSuite(suiteName, config, options = {}) {
   return new Promise((resolve, reject) => {
     console.log(`\n🧪 Running ${config.description}...`);
     console.log(`   Pattern: ${config.pattern}`);
-    
-    const args = [
-      '--test',
-      config.pattern,
-      '--test-timeout', config.timeout.toString()
-    ];
 
-    // Add coverage if requested
-    if (options.coverage) {
-      args.unshift('--experimental-test-coverage');
+    const matchedFiles = findTestFiles(config.pattern);
+    if (matchedFiles.length === 0) {
+      console.log('   ⚪️  No test files matched pattern, skipping suite');
+      resolve({ suite: suiteName, status: 'skipped', code: 0 });
+      return;
     }
 
-    // Add watch mode if requested
+    console.log(`   Matched files: ${matchedFiles.length}`);
+
+    const args = ['--test'];
+
+    if (options.coverage) {
+      args.push('--experimental-test-coverage');
+    }
+
+    args.push('--test-timeout', config.timeout.toString());
+
     if (options.watch) {
       args.push('--watch');
     }
 
-    // Add reporter options
     if (options.reporter) {
       args.push('--test-reporter', options.reporter);
     }
+
+    args.push(...matchedFiles);
 
     const testProcess = spawn('node', args, {
       cwd: projectRoot,
@@ -209,6 +245,8 @@ async function main() {
       console.warn(`   Available suites: ${Object.keys(testConfigs).join(', ')}`);
     }
   }
+
+  // Use all suites by default; CI selection is controlled by workflows
 
   if (selectedSuites.length === 0) {
     console.error('❌ No valid test suites specified');

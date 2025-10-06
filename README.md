@@ -7,11 +7,11 @@ Wesley is a schema-first data layer that uses GraphQL SDL as the single source o
 **The adult in the room for database operations.** No surprises, no 3am pages, just boring reliability.
 
 ```graphql
-type Document @table @tenant(by: "org_id") @rls(enable: true) {
-  id: ID! @pk
+type Document @wes_table @wes_tenant(by: "org_id") @wes_rls(enabled: true) {
+  id: ID! @wes_pk
   title: String!
-  org_id: ID! @fk(ref: "Org.id")
-  created_by: ID! @fk(ref: "User.id")
+  org_id: ID! @wes_fk(ref: "Org.id")
+  created_by: ID! @wes_fk(ref: "User.id")
 }
 ```
 
@@ -85,10 +85,10 @@ When they drift, prod breaks. Reviews get harder. Deploys get scary. You’re pl
 ### 1) Define once
 
 ```graphql
-type User @table {
-  id: ID! @pk
-  email: String! @unique
-  org_id: ID! @fk(ref: "Org.id")
+type User @wes_table {
+  id: ID! @wes_pk
+  email: String! @wes_unique
+  org_id: ID! @wes_fk(ref: "Org.id")
 }
 ```
 
@@ -168,26 +168,33 @@ wesley deploy       # apply plan to production
 
 ```bash
 npm install -g @wesley/cli
-wesley init
+wesley init                      # scaffold minimal schema.graphql
+wesley generate                  # compile GraphQL → SQL/tests and write snapshot
+wesley up --docker               # bootstrap or migrate your dev DB
 ```
 
-### Write a schema:
+### Edit your schema (v1 → v2):
 
 ```graphql
-type Post @table @rls(enable: true) {
-  id: ID! @pk
+type Post @wes_table @wes_rls(enabled: true) {
+  id: ID! @wes_pk
   title: String!
-  author_id: ID! @fk(ref: "User.id")
-  published: Boolean! @default(expr: "false")
+  author_id: ID! @wes_fk(ref: "User.id")
+  published: Boolean! @wes_default(value: "false")
 }
 ```
 
-### Generate → rehearse → deploy:
+### Generate → migrate:
 
 ```
-wesley generate
-wesley rehearse
-wesley deploy
+wesley generate                  # after editing schema.graphql
+wesley up                        # applies additive, lock‑aware migrations
+
+DSN quick reference
+- `--dsn` wins for all commands.
+- With `--provider supabase`, falls back to `SUPABASE_DB_URL`/`SUPABASE_POSTGRES_URL`.
+- Otherwise, uses local default: `postgres://wesley:wesley_test@localhost:5432/wesley_test`.
+- If both Supabase and Postgres env vars are present and no `--provider` is set, Wesley prefers Supabase and logs a warning; use `--provider` or `--dsn` to override.
 ```
 
 ## FAQ

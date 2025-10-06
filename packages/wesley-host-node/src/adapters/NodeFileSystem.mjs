@@ -5,7 +5,7 @@
 
 import { readFile, writeFile, access, mkdir } from 'node:fs/promises';
 import { constants } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { dirname, resolve, join as pathJoin } from 'node:path';
 import { createReadStream } from 'node:fs';
 
 export class NodeFileSystem {
@@ -36,6 +36,10 @@ export class NodeFileSystem {
 
   async resolve(path) {
     return resolve(path);
+  }
+
+  async join(...parts) {
+    return pathJoin(...parts);
   }
 
   async readFile(path, encoding = 'utf8') {

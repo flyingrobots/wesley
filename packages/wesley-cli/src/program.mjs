@@ -16,6 +16,7 @@ import { CertCreateCommand } from './commands/cert-create.mjs';
 import { CertSignCommand } from './commands/cert-sign.mjs';
 import { CertVerifyCommand } from './commands/cert-verify.mjs';
 import { CertBadgeCommand } from './commands/cert-badge.mjs';
+import { ValidateBundleCommand } from './commands/validate-bundle.mjs';
 import { BladeCommand } from './commands/blade.mjs';
 import { InitCommand } from './commands/init.mjs';
 import { UpCommand } from './commands/up.mjs';
@@ -30,6 +31,7 @@ export async function program(argv, ctx) {
   new CertSignCommand(ctx);
   new CertVerifyCommand(ctx);
   new CertBadgeCommand(ctx);
+  new ValidateBundleCommand(ctx);
   new BladeCommand(ctx);
   new InitCommand(ctx);
   new UpCommand(ctx);

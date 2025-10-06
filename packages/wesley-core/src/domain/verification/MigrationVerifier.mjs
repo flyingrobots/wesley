@@ -6,7 +6,7 @@
  * Licensed under the Apache License, Version 2.0
  */
 
-import { createHash } from 'node:crypto';
+import { hashString } from '../../util/hash.mjs';
 import { DomainEvent } from '../Events.mjs';
 
 /**
@@ -511,13 +511,8 @@ export class MigrationVerifier {
    * Calculate schema checksum
    */
   async calculateSchemaChecksum(snapshot) {
-    const hash = createHash(this.options.checksumAlgorithm);
-    
-    // Create deterministic representation of schema
     const schemaData = JSON.stringify(snapshot.schema || {}, Object.keys(snapshot.schema || {}).sort());
-    hash.update(schemaData);
-    
-    return hash.digest('hex');
+    return hashString(schemaData);
   }
 
   /**

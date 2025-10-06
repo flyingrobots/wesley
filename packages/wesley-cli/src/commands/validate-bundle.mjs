@@ -1,12 +1,10 @@
 #!/usr/bin/env node
 
-import path from 'node:path';
-
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 
 export class ValidateBundleCommand extends WesleyCommand {
-  constructor() {
-    super('validate-bundle', 'Validate Wesley bundle against JSON schemas');
+  constructor(ctx) {
+    super(ctx, 'validate-bundle', 'Validate Wesley bundle against JSON schemas');
   }
 
   configureCommander(cmd) {
@@ -16,9 +14,11 @@ export class ValidateBundleCommand extends WesleyCommand {
       .option('--show-plan', 'Display execution plan before running');
   }
 
-  async executeCore({ options, fileSystem }) {
+  async executeCore({ options }) {
+    const fs = this.ctx.fs;
+    const cwd = await fs.resolve('.');
     const bundlePath = options.bundle || '.wesley';
-    const schemasPath = options.schemas || path.join(process.cwd(), 'schemas');
+    const schemasPath = options.schemas || await fs.join(cwd, 'schemas');
     
     try {
       // Dynamic import of Ajv
@@ -30,18 +30,18 @@ export class ValidateBundleCommand extends WesleyCommand {
       
       // Load schemas
       const evidenceMapSchema = JSON.parse(
-        await fileSystem.readFile(path.join(schemasPath, 'evidence-map.schema.json'), 'utf8')
+        await fs.readFile(await fs.join(schemasPath, 'evidence-map.schema.json'), 'utf8')
       );
       const scoresSchema = JSON.parse(
-        await fileSystem.readFile(path.join(schemasPath, 'scores.schema.json'), 'utf8')
+        await fs.readFile(await fs.join(schemasPath, 'scores.schema.json'), 'utf8')
       );
       
       // Load bundle files
       const evidenceMap = JSON.parse(
-        await fileSystem.readFile(path.join(bundlePath, 'evidence-map.json'), 'utf8')
+        await fs.readFile(await fs.join(bundlePath, 'evidence-map.json'), 'utf8')
       );
       const scores = JSON.parse(
-        await fileSystem.readFile(path.join(bundlePath, 'scores.json'), 'utf8')
+        await fs.readFile(await fs.join(bundlePath, 'scores.json'), 'utf8')
       );
       
       // Check version
@@ -76,7 +76,7 @@ export class ValidateBundleCommand extends WesleyCommand {
       
       // Check thresholds if config available
       if (options.config) {
-        const config = await import(path.resolve(options.config));
+        const config = await import(await fs.resolve(options.config));
         const thresholds = config.default?.thresholds || {};
         
         if (scores.scores.scs < thresholds.scs) {

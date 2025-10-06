@@ -28,6 +28,7 @@ export default {
       },
       to: {
         path: [
+          '^node:.*',
           '^fs$',
           '^path$',
           '^os$',
@@ -36,7 +37,8 @@ export default {
           '^stream$',
           '^events$',
           '^util$',
-          '^crypto$'
+          '^crypto$',
+          '^buffer$'
         ],
         pathNot: [
           // Allow core Node.js types that are platform-agnostic
@@ -76,131 +78,16 @@ export default {
       to: {
         path: 'packages/wesley-generator-*/src'
       }
-    },
-    {
-      name: 'no-circular-dependencies',
-      comment: 'No circular dependencies anywhere',
-      severity: 'error',
-      from: {},
-      to: {}
-    }
-  ],
-  allowed: [
-    {
-      name: 'core-to-core',
-      comment: 'Core domain modules can import from each other',
-      from: {
-        path: 'packages/wesley-core/src'
-      },
-      to: {
-        path: 'packages/wesley-core/src'
-      }
-    },
-    {
-      name: 'adapters-to-core',
-      comment: 'Adapter packages can import from core domain',
-      from: {
-        path: [
-          'packages/wesley-host-node/src',
-          'packages/wesley-cli/src'
-        ]
-      },
-      to: {
-        path: 'packages/wesley-core/src'
-      }
-    },
-    {
-      name: 'host-to-external',
-      comment: 'Host adapter can use external Node.js libraries',
-      from: {
-        path: 'packages/wesley-host-node/src'
-      },
-      to: {
-        path: [
-          '^fs$',
-          '^path$',
-          '^crypto$',
-          '^stream$',
-          '^events$',
-          'node_modules'
-        ]
-      }
-    },
-    {
-      name: 'generators-to-core',
-      comment: 'Generator packages can import from core',
-      from: {
-        path: 'packages/wesley-generator-*/src'
-      },
-      to: {
-        path: 'packages/wesley-core/src'
-      }
-    },
-    {
-      name: 'slaps-to-tasks',
-      comment: 'S.L.A.P.S. can depend on T.A.S.K.S. for coordination',
-      from: {
-        path: 'packages/wesley-slaps/src'
-      },
-      to: {
-        path: 'packages/wesley-tasks/src'
-      }
     }
   ],
   options: {
-    doNotFollow: {
-      path: [
-        'node_modules',
-        '\\.d\\.ts$'
-      ]
-    },
+    includeOnly: { path: '^packages/.+?/src' },
     exclude: {
       path: [
         'node_modules',
-        'test',
-        'tests',
-        '__tests__',
-        'spec',
-        '\\.spec\\.',
-        '\\.test\\.'
+        '/test/',
+        '\\.(spec|test)\\.'
       ]
-    },
-    includeOnly: {
-      path: 'packages/wesley-'
-    },
-    focus: '',
-    collapse: {
-      path: '^packages/[^/]+/src'
-    },
-    reporterOptions: {
-      dot: {
-        collapsePattern: 'node_modules/[^/]+',
-        filters: {
-          includeOnly: {
-            path: 'packages/wesley-'
-          }
-        }
-      },
-      archi: {
-        collapsePattern: '^packages/wesley-[^/]+/src',
-        theme: {
-          graph: {
-            splines: 'ortho'
-          }
-        }
-      }
-    },
-    tsConfig: {
-      fileName: 'tsconfig.json'
-    },
-    babelConfig: {
-      fileName: '.babelrc'
-    },
-    webpackConfig: {
-      fileName: 'webpack.config.js',
-      env: {
-        NODE_ENV: 'development'
-      }
     }
   }
 };

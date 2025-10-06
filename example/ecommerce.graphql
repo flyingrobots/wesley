@@ -12,60 +12,60 @@ directive @sensitive on FIELD_DEFINITION
 directive @pii on FIELD_DEFINITION
 
 # Core User table with authentication
-type User @table @critical @uid(value: "tbl:user") {
-  id: UUID! @primaryKey @default(expr: "gen_random_uuid()") @uid(value: "col:user.id")
-  email: String! @unique @pii @weight(9) @uid("col:user.email")
-  password_hash: String! @sensitive @weight(10) @uid("col:user.password")
+type User @wes_table @critical @uid(value: "tbl:user") {
+  id: UUID! @wes_pk @wes_default(expr: "gen_random_uuid()") @uid(value: "col:user.id")
+  email: String! @wes_unique @pii @weight(value: 9) @uid(value: "col:user.email")
+  password_hash: String! @sensitive @weight(value: 10) @uid(value: "col:user.password")
   
-  full_name: String @pii @weight(7) @uid("col:user.full_name")
-  phone: String @pii @weight(8) @uid("col:user.phone")
+  full_name: String @pii @weight(value: 7) @uid(value: "col:user.full_name")
+  phone: String @pii @weight(value: 8) @uid(value: "col:user.phone")
   
-  email_verified: Boolean! @default(expr: "false") @weight(8)
-  created_at: DateTime! @default(expr: "now()")
+  email_verified: Boolean! @wes_default(expr: "false") @weight(value: 8)
+  created_at: DateTime! @wes_default(expr: "now()")
   
   orders: [Order!]! @hasMany
 }
 
 # Products with inventory tracking
-type Product @table @uid("tbl:product") {
-  id: UUID! @primaryKey @default(expr: "gen_random_uuid()") @uid("col:product.id")
+type Product @wes_table @uid(value: "tbl:product") {
+  id: UUID! @wes_pk @wes_default(expr: "gen_random_uuid()") @uid(value: "col:product.id")
   
-  sku: String! @unique @weight(value: 9) @uid(value: "col:product.sku")
+  sku: String! @wes_unique @weight(value: 9) @uid(value: "col:product.sku")
   name: String! @weight(value: 8) @uid(value: "col:product.name")
-  slug: String! @unique @index @weight(value: 7) @uid(value: "col:product.slug")
+  slug: String! @wes_unique @wes_index @weight(value: 7) @uid(value: "col:product.slug")
   
   price_cents: Int! @weight(value: 9) @uid(value: "col:product.price")
-  stock_quantity: Int! @default(value: 0) @weight(8)
+  stock_quantity: Int! @wes_default(expr: "0") @weight(value: 8)
   
-  published: Boolean! @default(expr: "false") @index @weight(value: 7)
-  created_at: DateTime! @default(expr: "now()")
+  published: Boolean! @wes_default(expr: "false") @wes_index @weight(value: 7)
+  created_at: DateTime! @wes_default(expr: "now()")
   
   order_items: [OrderItem!]! @hasMany
 }
 
 # Orders with payment tracking
-type Order @table @critical @uid(value: "tbl:order") {
-  id: UUID! @primaryKey @default(expr: "gen_random_uuid()") @uid(value: "col:order.id")
-  order_number: String! @unique @weight(value: 10) @uid(value: "col:order.number")
-  user_id: UUID! @foreignKey(ref: "User.id") @index @weight(value: 9)
+type Order @wes_table @critical @uid(value: "tbl:order") {
+  id: UUID! @wes_pk @wes_default(expr: "gen_random_uuid()") @uid(value: "col:order.id")
+  order_number: String! @wes_unique @weight(value: 10) @uid(value: "col:order.number")
+  user_id: UUID! @wes_fk(ref: "User.id") @wes_index @weight(value: 9)
   
   status: String! @weight(value: 9) @uid(value: "col:order.status")
-  total_cents: Int! @weight(9)
+  total_cents: Int! @weight(value: 9)
   
-  payment_intent_id: String @unique @sensitive @weight(value: 9)
+  payment_intent_id: String @wes_unique @sensitive @weight(value: 9)
   paid_at: DateTime @weight(value: 7)
   
-  created_at: DateTime! @default(expr: "now()")
+  created_at: DateTime! @wes_default(expr: "now()")
   
   user: User! @belongsTo
   items: [OrderItem!]! @hasMany
 }
 
 # Order line items
-type OrderItem @table @uid(value: "tbl:order_item") {
-  id: UUID! @primaryKey @default(expr: "gen_random_uuid()")
-  order_id: UUID! @foreignKey(ref: "Order.id") @index @weight(value: 8)
-  product_id: UUID! @foreignKey(ref: "Product.id") @index @weight(value: 7)
+type OrderItem @wes_table @uid(value: "tbl:order_item") {
+  id: UUID! @wes_pk @wes_default(expr: "gen_random_uuid()")
+  order_id: UUID! @wes_fk(ref: "Order.id") @wes_index @weight(value: 8)
+  product_id: UUID! @wes_fk(ref: "Product.id") @wes_index @weight(value: 7)
   
   quantity: Int! @weight(value: 8)
   unit_price_cents: Int! @weight(value: 8)

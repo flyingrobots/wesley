@@ -14,7 +14,7 @@
     "src/"
   ],
   "scripts": {
-    "test": "node test/run-all-tests.mjs",
+    "test": "node test/run-all-tests.mjs unit integration snapshots",
     "test:watch": "node test/run-all-tests.mjs --watch",
     "test:coverage": "node test/run-all-tests.mjs --coverage",
     "test:unit": "node test/run-all-tests.mjs unit",

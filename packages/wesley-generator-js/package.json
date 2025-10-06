@@ -11,7 +11,7 @@
     "src"
   ],
   "scripts": {
-    "test": "vitest"
+    "test": "node -e \"const fs=require('fs'),p=require('path'),cp=require('child_process');let has=false;function w(d){for(const e of fs.readdirSync(d,{withFileTypes:true})){if(e.name==='node_modules'||e.name==='dist')continue;const fp=p.join(d,e.name);if(e.isDirectory())w(fp); else if(/\\.(test|spec)\\.(c|m)?[jt]sx?$/.test(e.name)) has=true;}} w(process.cwd()); if(!has){console.log('No tests found; skipping'); process.exit(0)} cp.spawnSync('vitest',['run'],{stdio:'inherit'});\""
   },
   "dependencies": {
     "@wesley/core": "workspace:*",

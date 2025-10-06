@@ -6,7 +6,7 @@
  * @license Apache-2.0
  */
 
-import { EventEmitter } from 'node:events';
+import { EventEmitter } from '../../util/EventEmitter.mjs';
 import { DomainEvent } from '../Events.mjs';
 
 /**

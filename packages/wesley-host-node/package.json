@@ -15,7 +15,7 @@
     "bin/"
   ],
   "scripts": {
-    "test": "node --test test/**/*.test.mjs",
+    "test": "node --test",
     "lint": "eslint src/"
   },
   "dependencies": {

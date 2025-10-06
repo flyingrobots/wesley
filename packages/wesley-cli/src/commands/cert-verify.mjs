@@ -23,7 +23,7 @@ export class CertVerifyCommand extends WesleyCommand {
     let validCount = 0;
     for (const sig of json.signatures || []) {
       for (const p of pubs) {
-        const ok = await verifySig(p, canonical, sig.signature);
+        const ok = await verifySig(this.ctx.fs, p, canonical, sig.signature);
         if (ok) { validCount++; break; }
       }
     }
@@ -56,11 +56,10 @@ function canonicalize(obj) {
   return JSON.stringify(sort(obj));
 }
 
-async function verifySig(pubPath, data, b64sig) {
-  const { readFile } = await import('node:fs/promises');
+async function verifySig(fs, pubPath, data, b64sig) {
   const { createPublicKey, verify } = await import('node:crypto');
   try {
-    const pem = await readFile(pubPath);
+    const pem = await fs.readFile(pubPath);
     const key = createPublicKey(pem);
     const ok = verify(null, Buffer.from(data), key, Buffer.from(b64sig, 'base64'));
     return !!ok;

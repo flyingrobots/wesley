@@ -22,7 +22,10 @@ export class CertSignCommand extends WesleyCommand {
     const md = await this.ctx.fs.read(options.in);
     const { pre, json, post } = extractJsonBlock(md);
     const canonical = canonicalize(json);
-    const sig = await signPayload(options.key, canonical);
+    const { createPrivateKey, sign } = await import('node:crypto');
+    const pem = await this.ctx.fs.readFile(options.key);
+    const key = createPrivateKey(pem);
+    const sig = sign(null, Buffer.from(canonical), key).toString('base64');
     const signature = {
       signer: options.signer || 'HOLMES',
       createdAt: new Date().toISOString(),
@@ -62,13 +65,6 @@ function canonicalize(obj) {
   return JSON.stringify(sort(obj));
 }
 
-async function signPayload(keyPath, data) {
-  const { readFile } = await import('node:fs/promises');
-  const { createPrivateKey, sign } = await import('node:crypto');
-  const pem = await readFile(keyPath);
-  const key = createPrivateKey(pem);
-  const sig = sign(null, Buffer.from(data), key);
-  return sig.toString('base64');
-}
+// (Signing logic moved into executeCore to use injected filesystem)
 
 export default CertSignCommand;

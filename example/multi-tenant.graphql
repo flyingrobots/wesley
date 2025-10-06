@@ -1,25 +1,25 @@
 # Multi-tenant SaaS Example Schema
 # Demonstrates Wesley's @tenant and @owner directives
 
-type Org @table {
-  id: ID! @primaryKey
-  name: String! @unique
-  slug: String! @unique @index
-  createdAt: DateTime! @default(value: "NOW()")
+type Org @wes_table {
+  id: ID! @wes_pk
+  name: String! @wes_unique
+  slug: String! @wes_unique @wes_index
+  createdAt: DateTime! @wes_default(value: "NOW()")
 }
 
-type User @table {
-  id: ID! @primaryKey
-  email: String! @unique @email
+type User @wes_table {
+  id: ID! @wes_pk
+  email: String! @wes_unique @email
   name: String!
-  createdAt: DateTime! @default(value: "NOW()")
+  createdAt: DateTime! @wes_default(value: "NOW()")
 }
 
-type Membership @table {
-  user_id: ID! @foreignKey(ref: "User.id") @index
-  org_id: ID! @foreignKey(ref: "Org.id") @index
-  role: MemberRole! @index
-  createdAt: DateTime! @default(value: "NOW()")
+type Membership @wes_table {
+  user_id: ID! @wes_fk(ref: "User.id") @wes_index
+  org_id: ID! @wes_fk(ref: "Org.id") @wes_index
+  role: MemberRole! @wes_index
+  createdAt: DateTime! @wes_default(value: "NOW()")
   
   # Composite primary key
   @@primaryKey(fields: ["user_id", "org_id"])
@@ -34,40 +34,40 @@ enum MemberRole {
 
 # Tenant-scoped resources
 
-type Project @table 
-  @tenant(by: "org_id")
+type Project @wes_table 
+  @wes_tenant(by: "org_id")
   @owner(column: "created_by")
-  @rls(enabled: true) {
-  id: ID! @primaryKey
-  org_id: ID! @foreignKey(ref: "Org.id") @index
+  @wes_rls(enabled: true) {
+  id: ID! @wes_pk
+  org_id: ID! @wes_fk(ref: "Org.id") @wes_index
   name: String!
   description: String
-  created_by: ID! @foreignKey(ref: "User.id") @index
-  createdAt: DateTime! @default(value: "NOW()")
-  updatedAt: DateTime! @default(value: "NOW()")
+  created_by: ID! @wes_fk(ref: "User.id") @wes_index
+  createdAt: DateTime! @wes_default(value: "NOW()")
+  updatedAt: DateTime! @wes_default(value: "NOW()")
 }
 
-type Document @table
-  @tenant(by: "org_id")
+type Document @wes_table
+  @wes_tenant(by: "org_id")
   @owner(column: "created_by")
-  @rls(
+  @wes_rls(
     enabled: true,
     select: "tenant",
     insert: "tenant_and_owner",
     update: "owner_or_admin",
     delete: "owner_or_admin"
   ) {
-  id: ID! @primaryKey
-  org_id: ID! @foreignKey(ref: "Org.id") @index
-  project_id: ID! @foreignKey(ref: "Project.id") @index
+  id: ID! @wes_pk
+  org_id: ID! @wes_fk(ref: "Org.id") @wes_index
+  project_id: ID! @wes_fk(ref: "Project.id") @wes_index
   title: String!
   content: String
-  status: DocumentStatus! @default(value: "DRAFT") @index
-  created_by: ID! @foreignKey(ref: "User.id") @index
+  status: DocumentStatus! @wes_default(value: "DRAFT") @wes_index
+  created_by: ID! @wes_fk(ref: "User.id") @wes_index
   tags: [String!]!
   metadata: JSON
-  createdAt: DateTime! @default(value: "NOW()")
-  updatedAt: DateTime! @default(value: "NOW()")
+  createdAt: DateTime! @wes_default(value: "NOW()")
+  updatedAt: DateTime! @wes_default(value: "NOW()")
 }
 
 enum DocumentStatus {
@@ -78,15 +78,15 @@ enum DocumentStatus {
 
 # Sharing/collaboration features
 
-type DocumentShare @table {
-  id: ID! @primaryKey
-  document_id: ID! @foreignKey(ref: "Document.id") @index
-  user_id: ID! @foreignKey(ref: "User.id") @index
-  can_edit: Boolean! @default(value: "false")
-  can_comment: Boolean! @default(value: "true")
+type DocumentShare @wes_table {
+  id: ID! @wes_pk
+  document_id: ID! @wes_fk(ref: "Document.id") @wes_index
+  user_id: ID! @wes_fk(ref: "User.id") @wes_index
+  can_edit: Boolean! @wes_default(value: "false")
+  can_comment: Boolean! @wes_default(value: "true")
   expires_at: DateTime
-  created_by: ID! @foreignKey(ref: "User.id")
-  createdAt: DateTime! @default(value: "NOW()")
+  created_by: ID! @wes_fk(ref: "User.id")
+  createdAt: DateTime! @wes_default(value: "NOW()")
   
   # Ensure unique shares per user/doc
   @@unique(fields: ["document_id", "user_id"])
@@ -94,46 +94,46 @@ type DocumentShare @table {
 
 # Activity/audit log
 
-type ActivityLog @table
-  @tenant(by: "org_id")
-  @rls(
+type ActivityLog @wes_table
+  @wes_tenant(by: "org_id")
+  @wes_rls(
     enabled: true,
     select: "tenant",
     insert: "system_only",
     update: "never",
     delete: "never"
   ) {
-  id: ID! @primaryKey
-  org_id: ID! @foreignKey(ref: "Org.id") @index
-  user_id: ID! @foreignKey(ref: "User.id") @index
-  action: String! @index
-  resource_type: String! @index
-  resource_id: ID! @index
+  id: ID! @wes_pk
+  org_id: ID! @wes_fk(ref: "Org.id") @wes_index
+  user_id: ID! @wes_fk(ref: "User.id") @wes_index
+  action: String! @wes_index
+  resource_type: String! @wes_index
+  resource_id: ID! @wes_index
   metadata: JSON
   ip_address: String @sensitive
   user_agent: String
-  createdAt: DateTime! @default(value: "NOW()") @index
+  createdAt: DateTime! @wes_default(value: "NOW()") @wes_index
 }
 
 # API Keys for programmatic access
 
-type ApiKey @table
-  @tenant(by: "org_id")
+type ApiKey @wes_table
+  @wes_tenant(by: "org_id")
   @owner(column: "created_by")
-  @rls(
+  @wes_rls(
     enabled: true,
     select: "owner_or_admin",
     insert: "admin_only",
     update: "owner_only",
     delete: "owner_or_admin"
   ) {
-  id: ID! @primaryKey
-  org_id: ID! @foreignKey(ref: "Org.id") @index
+  id: ID! @wes_pk
+  org_id: ID! @wes_fk(ref: "Org.id") @wes_index
   name: String!
-  key_hash: String! @sensitive @unique
+  key_hash: String! @sensitive @wes_unique
   last_used_at: DateTime
   expires_at: DateTime
   scopes: [String!]!
-  created_by: ID! @foreignKey(ref: "User.id")
-  createdAt: DateTime! @default(value: "NOW()")
+  created_by: ID! @wes_fk(ref: "User.id")
+  createdAt: DateTime! @wes_default(value: "NOW()")
 }
