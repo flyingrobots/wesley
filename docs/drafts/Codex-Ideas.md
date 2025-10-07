@@ -455,7 +455,7 @@
 ▌ git shiplog init
 ▌ ```
 ▌
-▌ *(NOTE: See [docs/TRUST.md](docs/TRUST.md) for one-time policy and trust setup instructions)*
+▌ *(NOTE: See [docs/TRUST.md](../TRUST.md) for one-time policy and trust setup instructions)*
 ▌
 ▌ Record a deployment event:
 ▌
@@ -746,8 +746,8 @@
 ▌
 ▌ [![Build](https://img.shields.io/github/actions/workflow/status/neuroglyph/git-mind/ci.yml?branch=main)](https://github.com/neuroglyph/git-
 ▌ mind/actions)
-▌ [![License](https://img.shields.io/badge/license-MIND--UCAL--1.0-blue)](LICENSE)
-▌ [![Status](https://img.shields.io/badge/status-early--stage-orange)](docs/roadmap.md)
+▌ [![License](https://img.shields.io/badge/license-MIND--UCAL--1.0-blue)](../../LICENSE)
+▌ [![Status](https://img.shields.io/badge/status-early--stage-orange)](../../docs/roadmap.md)
 ▌
 ▌ > __Version your thoughts. Branch your ideas. Merge understanding.__
 ▌
@@ -943,7 +943,7 @@
 ▌ <!-- features-progress:end -->
 ▌
 ▌ 🚀 Early release — Core features work today, API may evolve
-▌ 📅 Roadmap: `docs/roadmap.md`
+▌ 📅 Roadmap: `../../docs/roadmap.md`
 ▌ 🤝 Contributing: `CONTRIBUTING.md`
 ▌
 ▌ ---
@@ -995,7 +995,7 @@
 ▌
 ▌ ---
 ▌
-▌ _git-mind is open source under [LicenseRef-MIND-UCAL-1.0](LICENSE)_
+▌ _git-mind is open source under [LicenseRef-MIND-UCAL-1.0](../../LICENSE)_
 ▌ _© J. Kirby Ross • [flyingrobots.dev](https://flyingrobots.dev/)_
 ▌
 

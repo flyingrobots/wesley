@@ -2,7 +2,7 @@
 
 ## Overview
 
-Wesley CLI uses **Bats (Bash Automated Testing System)** for testing, as decided through our [comprehensive debate with Codex](../../docs/debates/codex/cli-test-framework/). This approach provides authentic CLI testing with industry-standard tooling.
+Wesley CLI uses **Bats (Bash Automated Testing System)** for testing. See the [CLI tests guide](../../../docs/guides/cli-tests.md) for rationale and CI details.
 
 ## Running Tests
 

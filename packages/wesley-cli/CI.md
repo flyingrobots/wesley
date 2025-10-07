@@ -47,7 +47,7 @@ Wesley CLI uses two GitHub Actions workflows for comprehensive testing:
 
 ## Test Framework: Bats
 
-Wesley CLI uses **Bats (Bash Automated Testing System)** for end-to-end testing, chosen through [technical debate with Codex](../../docs/debates/codex/cli-test-framework/).
+Wesley CLI uses **Bats (Bash Automated Testing System)** for end-to-end testing. See the [CLI tests guide](../../docs/guides/cli-tests.md).
 
 **Why Bats?**
 - ✅ **Authentic testing** - Real subprocess execution, actual exit codes
