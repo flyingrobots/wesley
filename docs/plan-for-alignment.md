@@ -1,57 +1,65 @@
-# Plan for Alignment with Vision
+# Plan for Alignment (Consolidated)
 
-This document tracks the concrete actions needed to bring the repository into alignment with its stated vision and guardrails. Each item is a checklist entry; we’ll check them off as work lands on main.
+This plan has been consolidated into a single living checklist: `go-public-checklist.md` at the repo root. Please use that document for all task tracking (public readiness + QIR milestones).
+
+Link: ../go-public-checklist.md
 
 ## Consistency Remediation
-- [ ] Normalize directive namespace to canonical `@wes_*` across README and examples.
-- [ ] Clearly document aliases and deprecation timeline (prefer `@wes_*`; accept `@wesley_*` and bare forms with warnings).
-- [ ] Unify install/usage instructions (single blessed path; make clear the actual executable is provided by `@wesley/host-node`).
-- [ ] Fix broken/missing docs links in `docs/README.md` (remove or add pages for `guides/*`, `internals/event-flow.md`, `internals/parser.md`).
-- [ ] Remove or redirect the empty `holmes.md` at repo root to real docs.
-- [ ] Update `wesley.config.mjs` weights to use canonical directive names (`@wes_pk`, `@wes_fk`, etc.) or clearly map legacy names.
-- [ ] Correct `QUICK_START.md` inaccuracies or replace with a living guide under `docs/guides/quick-start.md`.
-- [ ] Ensure examples do not reference removed assets (e.g., `example/demo.sh`).
+- [x] Normalize directive namespace to canonical `@wes_*` across README and examples (pass completed; continue sweeping edge cases).
+- [x] Document aliases + deprecation (prefer `@wes_*`; legacy forms accepted with warnings where present).
+- [x] Unify install/usage: use `node packages/wesley-host-node/bin/wesley.mjs` in repo and `@wesley/cli` for global.
+- [x] Fix broken/missing docs links in `docs/README.md`; added `docs/guides/quick-start.md` and linked.
+- [x] Redirect/replace empty `holmes.md` with workflow-produced report (kept as placeholder, now populated by CI).
+- [x] Update config weights to canonical directive names (mapping preserved for legacy).
+- [x] Replace `QUICK_START.md` with maintained guide under `docs/guides/quick-start.md`.
+- [x] Ensure examples remove stale assets.
 
 ## Feature Completion (MVP Vertical Slice)
-- [ ] Implement RLS generation in `@wesley/generator-supabase` for core patterns (tenant, owner, shared) to match docs.
-- [ ] Extend migration planning to cover backfill/switch/contract phases with explain output.
-- [ ] Wire plan phases to emit corresponding SQL files for rehearsal beyond expand/validate.
-- [ ] Compute and write SCS/MRI/TCI based on generated artifacts; validate via schemas.
-- [ ] Strengthen certificate flow: verify evidence + REALM verdicts and basic signer plumbing in CLI/HOLMES.
+- [x] Implement minimal RLS generation for core patterns (tenant/owner/shared); extend presets as needed.
+- [ ] Extend migration planning to cover backfill/switch/contract (explain mode safe by default).
+- [ ] Wire plan phases to emit SQL files per phase for rehearsal (beyond expand/validate).
+- [x] Compute SCS/MRI/TCI in `.wesley/scores.json`; validate via schemas (present — gating kept non-blocking).
+- [x] Strengthen certificate flow: evidence+REALM artifacts emitted; verification CLI in place (further hardening optional).
 
 ## Architecture Alignment
-- [ ] Remove all Node built-in imports from `@wesley/core` (e.g., `node:buffer`), keeping core pure.
-- [ ] Add dependency-cruiser rule to block `^node:` imports from `packages/wesley-core/src`.
-- [ ] Add ESLint no-restricted-imports for core (block `node:*`, `process`, `fs`, `path`, etc.).
-- [ ] Refactor CLI commands to use injected adapters only (no direct `node:*`); start with `rehearse` and `up`.
-- [ ] Keep OS/db/filesystem interactions in `@wesley/host-node` adapters; expose a minimal `ctx.shell` wrapper for CLI.
+- [x] Remove Node built-ins from core (pure domain). Add pure utils (EventEmitter/hash) where needed.
+- [x] dependency-cruiser rule blocks `^node:` imports in core.
+- [x] ESLint no-restricted-imports for core (node:*, process, fs, path, etc.).
+- [x] CLI refactored to injected adapters (generate/plan/rehearse/up/cert/validate-bundle).
+- [x] Host-node owns OS/db/fs interactions; `ctx.shell` available for CLI commands.
 
 ## Documentation IA Alignment
-- [ ] Create `docs/guides/quick-start.md` and make `docs/README.md` link valid.
-- [ ] Consolidate the IA to Concepts, How-To, Reference, Internals, Roadmap (no dead links).
-- [ ] Lead all snippets with canonical `@wes_*`; explain aliases once.
+- [x] `docs/guides/quick-start.md` created; linked from docs/README.md and root README.
+- [ ] Consolidate IA: Concepts / How-To / Reference / Internals / Roadmap (continue pruning dead links).
+- [x] Snippets use canonical `@wes_*`; aliases explained once.
 
 ## CI/Enforcement
-- [ ] Update `.dependency-cruiser.mjs` to catch `^node:` and enforce no Node imports in core.
-- [ ] Add ESLint config scoped to `packages/wesley-core` to block node APIs and process usage.
-- [ ] Add CI step that fails on boundary violations (imports and node:* usage) in core and CLI.
-- [ ] Keep main CI lean; ensure CLI e2e stays in dedicated workflows.
+- [x] `.dependency-cruiser.mjs` enforces boundaries in CI.
+- [x] ESLint core config added; purity enforced via CI step.
+- [x] Architecture Boundary job stabilized (tool-based checks + light smoke).
+- [x] Main CI kept lean; CLI E2E and quick checks in dedicated workflows; macOS removed to control Actions cost.
 
 ## Roadmap & Issues
 - [ ] Surface Vision/Milestones under `docs/roadmap/` with a one-screen “Now” status.
-- [ ] Mirror MVP tasks from this plan into GitHub Issues with labels (if repo visibility permits).
+- [x] Create `go-public-checklist.md` as the single source of truth for public readiness and QIR tasks.
 
 ## File-Level Tasks (Initial Pass)
-- [ ] Replace directive usage in `README.md` examples to `@wes_*` where applicable.
-- [ ] Update `example/*.graphql` to canonical directives (table/pk/fk/index/default), and prefer `@wes_rls`.
-- [ ] Add `docs/guides/quick-start.md` and point users at `@wesley/host-node` CLI entry.
-- [ ] Add `packages/wesley-core/.eslintrc.cjs` with `no-restricted-imports`.
-- [ ] Update `.dependency-cruiser.mjs` to forbid `^node:` in core.
-- [ ] Add `ctx.shell` to host-node runtime and refactor `rehearse`/`up` commands to use it.
+- [x] Update README examples to `@wes_*` forms.
+- [x] Update `example/*.graphql` to canonical directives.
+- [x] Add `docs/guides/quick-start.md`; reference host-node CLI entry.
+- [x] Add `packages/wesley-core/.eslintrc.cjs` with `no-restricted-imports`.
+- [x] Update `.dependency-cruiser.mjs` to forbid `^node:` in core.
+- [x] Add `ctx.shell` to host-node and refactor `rehearse`/`up` to use it.
+
+## QIR Alignment Addendum
+- [x] Lowering: SELECT/JOIN/LEFT/LATERAL/ORDER BY/LIMIT/OFFSET; NULL/IN/ANY; COALESCE jsonb_agg; deterministic tie-breaker.
+- [x] Emission: CREATE VIEW + SQL function (RETURNS SETOF jsonb) with deterministic names/params; robust quoting.
+- [ ] Translator: map GraphQL operations → QIR plans (selections, joins, filters, order, pagination, nested lists).
+- [ ] CLI wiring: `--ops` path to compile and emit ops; write artifacts to example/out/ops.
+- [ ] Examples + EXPLAIN JSON snapshots; pgTAP smoke for emitted ops (shape, filters, RLS where relevant).
 
 ---
 
 Owner: Core team  
 Review cadence: Weekly until MVP sign-off  
-Target: MVP ready with BLADE demo at production-parity locks
-
+Target: Public MVP with BLADE demo and experimental QIR behind `--ops`

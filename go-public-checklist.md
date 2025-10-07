@@ -25,6 +25,10 @@ This checklist tracks the remaining work before we “go public” and the follo
 - [ ] Minimal docs site (Pages/Docusaurus) mirroring README + guides.
 - [ ] Contributor onramp: label starter issues (good first issue) and open a “Roadmap” issue.
 
+## Migrations & Planning (DDL)
+- [ ] Extend migration planning to cover backfill/switch/contract phases (explain‑only by default).
+- [ ] Emit per‑phase SQL files for rehearsal beyond expand/validate.
+
 ## QIR — Phase C (CLI Wiring, Examples)
 - [ ] Wire `--ops` in CLI/host-node to compile operations → QIR → SQL via `emitView`/`emitFunction` (keep default behavior unchanged).
 - [ ] Implement minimal GraphQL operation → QIR plan builder:
@@ -44,6 +48,10 @@ This checklist tracks the remaining work before we “go public” and the follo
 - [ ] Diagnostics: EXPLAIN JSON analysis + optional HOLMES gating in dedicated workflow.
 - [ ] Security hardening: exhaustive param-safety tests; ensure no string concatenation for params in lowering.
 
+## Docs IA & Roadmap
+- [ ] Consolidate docs IA (Concepts / How‑To / Reference / Internals / Roadmap); prune dead links.
+- [ ] Surface Vision/Milestones under `docs/roadmap/` with a one‑screen “Now” status.
+
 ## Public Launch — Short Plan
 - [ ] README note + CI costs note (why Ubuntu-only).
 - [ ] Guard/remove remaining Claude workflows.
@@ -53,4 +61,3 @@ This checklist tracks the remaining work before we “go public” and the follo
 - [ ] Example ops + snapshots (SQL + EXPLAIN JSON).
 - [ ] pgTAP smoke for ops emission.
 - [ ] Docs update for CLI `--ops` usage.
-
