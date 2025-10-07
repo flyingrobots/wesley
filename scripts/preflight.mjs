@@ -69,28 +69,24 @@ const linkChk = spawnSync(process.execPath, ['scripts/check-doc-links.mjs'], { s
 if (linkChk.status !== 0) fail('Docs link check failed');
 
 // 6) Architecture boundaries via dependency-cruiser
-function tryRun(label, primary, pArgs, fallback, fArgs) {
-  let res = spawnSync(primary, pArgs, { stdio: 'inherit', shell: process.platform === 'win32' });
-  if (res.error || res.status !== 0) {
-    res = spawnSync(fallback, fArgs, { stdio: 'inherit', shell: process.platform === 'win32' });
-  }
-  return res.status === 0;
+function runOrFail(cmd, args, msg) {
+  const res = spawnSync(cmd, args, { stdio: 'inherit', shell: process.platform === 'win32' });
+  if (res.status !== 0) fail(msg);
 }
 
-const depOk = tryRun(
-  'depcruise',
+// Enforce pnpm-only to match workspace policy
+runOrFail('pnpm', ['--version'], 'pnpm is required for preflight');
+
+runOrFail(
   'pnpm', ['dlx', 'dependency-cruiser', '--config', '.dependency-cruiser.mjs', 'packages/'],
-  'npx', ['-y', 'dependency-cruiser', '--config', '.dependency-cruiser.mjs', 'packages/']
+  'dependency-cruiser boundary check failed'
 );
-if (!depOk) fail('dependency-cruiser boundary check failed');
 
 // 7) ESLint core purity
-const eslintOk = tryRun(
-  'eslint-core',
+runOrFail(
   'pnpm', ['dlx', 'eslint@8.57.0', '--no-eslintrc', '-c', 'packages/wesley-core/.eslintrc.cjs', 'packages/wesley-core/src/**/*.mjs', '--max-warnings=0'],
-  'npx', ['-y', 'eslint@8.57.0', '--no-eslintrc', '-c', 'packages/wesley-core/.eslintrc.cjs', 'packages/wesley-core/src/**/*.mjs', '--max-warnings=0']
+  'ESLint core purity check failed'
 );
-if (!eslintOk) fail('ESLint core purity check failed');
 
 if (!ok) {
   console.error('\n❌ Preflight failed with the following issues:');
