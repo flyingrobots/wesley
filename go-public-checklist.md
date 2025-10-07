@@ -5,7 +5,7 @@ This checklist tracks the remaining work before we “go public” and the follo
 ## Repo Readiness — Must
 - [ ] Tighten README messaging; add “Experimental QIR” pointer to `docs/guides/qir-ops.md`.
 - [ ] Add a Compatibility section to README (Node 18/20/22, pnpm 9, Ubuntu-only CI).
-- [ ] Mark required checks on `main` (branch protection): CI build-test, Architecture Boundary Enforcement, CLI Quick Check.
+- [x] Mark required checks on `main` (branch protection): CI build-test, Architecture Boundary Enforcement, CLI Quick Check, Preflight, Docs Link Check.
 - [ ] Keep SHIPME/HOLMES non-blocking until bundles are consistently present.
 - [ ] Enable branch protection rules: require PRs, reviews, dismiss stale approvals, linear history (merge).
 - [ ] Verify `.wesley/` and `example/out/` are ignored from source control; no secrets/DSNs anywhere.
