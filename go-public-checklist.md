@@ -9,10 +9,11 @@ This checklist tracks the remaining work before we “go public” and the follo
 - [ ] Keep SHIPME/HOLMES non-blocking until bundles are consistently present.
 - [ ] Enable branch protection rules: require PRs, reviews, dismiss stale approvals, linear history (merge).
 - [ ] Verify `.wesley/` and `example/out/` are ignored from source control; no secrets/DSNs anywhere.
+- [x] Verify `.wesley/` and `example/out/` are ignored from source control; no secrets/DSNs anywhere.
 - [ ] Confirm LICENSE at root and license fields across package.json files (audit all packages).
-- [ ] Confirm `.github/pull_request_template.md` and `CODEOWNERS` present and correct.
+- [x] Confirm `.github/pull_request_template.md` and `CODEOWNERS` present and correct.
 - [ ] Review SECURITY.md, CODE_OF_CONDUCT.md, CONTRIBUTING.md for clarity/links.
-- [ ] Guard or remove remaining Claude workflows (jsdoc/claude.yml) to avoid spend on forks; ensure actions are pinned.
+- [x] Guard or remove remaining Claude workflows (jsdoc/claude.yml) to avoid spend on forks; ensure actions are pinned.
 - [ ] Prepare v0.1.0 release: tag, GitHub Release notes linking README + Quick Start.
 
 ## Repo Readiness — Should
@@ -50,7 +51,7 @@ This checklist tracks the remaining work before we “go public” and the follo
 
 ## Docs IA & Roadmap
 - [ ] Consolidate docs IA (Concepts / How‑To / Reference / Internals / Roadmap); prune dead links.
-- [ ] Surface Vision/Milestones under `docs/roadmap/` with a one‑screen “Now” status.
+- [x] Surface Vision/Milestones under `docs/roadmap/` with a one‑screen “Now” status.
 
 ## Public Launch — Short Plan
 - [ ] README note + CI costs note (why Ubuntu-only).
