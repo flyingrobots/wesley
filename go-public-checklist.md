@@ -6,9 +6,12 @@ This checklist tracks the remaining work before we “go public” and the follo
 - [ ] Tighten README messaging; add “Experimental QIR” pointer to `docs/guides/qir-ops.md`.
 - [ ] Add a Compatibility section to README (Node 18/20/22, pnpm 9, Ubuntu-only CI).
 - [x] Mark required checks on `main` (branch protection): CI build-test, Architecture Boundary Enforcement, CLI Quick Check, Preflight, Docs Link Check.
-- [ ] Keep SHIPME/HOLMES non-blocking until bundles are consistently present.
-- [ ] Enable branch protection rules: require PRs, reviews, dismiss stale approvals, linear history (merge).
-- [ ] Verify `.wesley/` and `example/out/` are ignored from source control; no secrets/DSNs anywhere.
+- [x] Keep SHIPME/HOLMES non-blocking until bundles are consistently present.
+- [ ] Enable branch protection rules:
+  - [x] Require PR reviews (≥1)
+  - [x] Dismiss stale approvals on new commits
+  - [x] Enforce admins
+  - [ ] Enforce linear history (left disabled to support merge strategy)
 - [x] Verify `.wesley/` and `example/out/` are ignored from source control; no secrets/DSNs anywhere.
 - [ ] Confirm LICENSE at root and license fields across package.json files (audit all packages).
 - [x] Confirm `.github/pull_request_template.md` and `CODEOWNERS` present and correct.
@@ -55,8 +58,8 @@ This checklist tracks the remaining work before we “go public” and the follo
 
 ## Public Launch — Short Plan
 - [ ] README note + CI costs note (why Ubuntu-only).
-- [ ] Guard/remove remaining Claude workflows.
-- [ ] Set required checks and branch protection on `main`.
+- [x] Guard/remove remaining Claude workflows.
+- [x] Set required checks and branch protection on `main`.
 - [ ] Tag release + publish Release notes.
 - [ ] Minimal ops→QIR translator + `--ops` path (Phase C).
 - [ ] Example ops + snapshots (SQL + EXPLAIN JSON).
