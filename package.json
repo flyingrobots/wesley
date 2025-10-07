@@ -44,6 +44,7 @@
     "url": "https://github.com/jameskerr/wesley/issues"
   },
   "homepage": "https://github.com/jameskerr/wesley#readme",
+  "packageManager": "pnpm@9.15.9",
   "engines": {
     "node": ">=18.0.0"
   },
