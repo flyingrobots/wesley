@@ -6,6 +6,9 @@ Wesley is a schema-first data layer that uses GraphQL SDL as the single source o
 
 **The adult in the room for database operations.** No surprises, no 3am pages, just boring reliability.
 
+> [!NOTE]
+> Experimental QIR: Wesley now includes an experimental Query IR (QIR) pipeline that compiles operation plans into deterministic SQL. It’s behind the `--ops` flag and off by default. See docs/guides/qir-ops.md for the current scope (lowering + emission) and roadmap.
+
 ```graphql
 type Document @wes_table @wes_tenant(by: "org_id") @wes_rls(enabled: true) {
   id: ID! @wes_pk
@@ -198,6 +201,16 @@ DSN quick reference
 ```
 
 ## FAQ
+
+## Compatibility
+
+- Node.js: 18.x, 20.x, 22.x (CI uses Node 20 LTS; recommended)
+- Package manager: pnpm 9 (workspace pinned via packageManager)
+- CI runners: Ubuntu (macOS runners intentionally removed to control GitHub Actions costs)
+
+## License
+
+Wesley is licensed under MIND‑UCAL v1.0 (Moral Intelligence · Non‑violent Development · Universal Charter‑Aligned License). See LICENSE for full text and the Universal Charter reference.
 
 > [!faq] What if I need custom SQL?\
 

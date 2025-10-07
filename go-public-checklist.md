@@ -3,8 +3,8 @@
 This checklist tracks the remaining work before we “go public” and the follow‑on QIR milestones. Check off items as they are completed. Keep changes surgical per AGENTS.md.
 
 ## Repo Readiness — Must
-- [ ] Tighten README messaging; add “Experimental QIR” pointer to `docs/guides/qir-ops.md`.
-- [ ] Add a Compatibility section to README (Node 18/20/22, pnpm 9, Ubuntu-only CI).
+- [x] Tighten README messaging; add “Experimental QIR” pointer to `docs/guides/qir-ops.md`.
+- [x] Add a Compatibility section to README (Node 18/20/22, pnpm 9, Ubuntu-only CI).
 - [x] Mark required checks on `main` (branch protection): CI build-test, Architecture Boundary Enforcement, CLI Quick Check, Preflight, Docs Link Check.
 - [x] Keep SHIPME/HOLMES non-blocking until bundles are consistently present.
 - [ ] Enable branch protection rules:
@@ -57,7 +57,7 @@ This checklist tracks the remaining work before we “go public” and the follo
 - [x] Surface Vision/Milestones under `docs/roadmap/` with a one‑screen “Now” status.
 
 ## Public Launch — Short Plan
-- [ ] README note + CI costs note (why Ubuntu-only).
+- [x] README note + CI costs note (why Ubuntu-only).
 - [x] Guard/remove remaining Claude workflows.
 - [x] Set required checks and branch protection on `main`.
 - [ ] Tag release + publish Release notes.

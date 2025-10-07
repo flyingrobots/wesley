@@ -140,6 +140,10 @@ Update relevant docs when making changes:
 - New features: Update README.md
 - Architecture changes: Update docs/architecture/
 
+## License
+
+This project is licensed under **MIND‑UCAL v1.0** (Moral Intelligence · Non‑violent Development · Universal Charter‑Aligned License). See `LICENSE` for the full text. By contributing, you agree your contributions will be distributed under MIND‑UCAL v1.0.
+
 ## Release Process
 
 We use changesets for versioning:
