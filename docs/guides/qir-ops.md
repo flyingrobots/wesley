@@ -18,6 +18,7 @@ This guide documents the MVP of the Query IR (QIR) pipeline that compiles operat
   - SQL Function (Invoker): `CREATE OR REPLACE FUNCTION wes_ops.op_<name>(params...) RETURNS SETOF jsonb LANGUAGE sql STABLE AS $$ SELECT to_jsonb(q.*) FROM (<select>) q $$;`
   - Deterministic naming (`op_<sanitized-name>`), params from `collectParams()` (`p_<name> <type>`), schema `wes_ops`.
 
+ 
 ## Constraints and behavior
 
 - Lowering avoids identifier quoting for readability in tests; reserved identifiers should be avoided in aliases and column names.
@@ -85,6 +86,8 @@ pnpm -C packages/wesley-core test:unit
 pnpm -C packages/wesley-core test:snapshots
 ```
 
+ 
+ 
 ## Roadmap
 
 - Wire `--ops` end-to-end in CLI (expose emission; EXPLAIN JSON snapshots).
@@ -93,4 +96,3 @@ pnpm -C packages/wesley-core test:snapshots
 - RLS defaults phase 2 and pgTAP for policies generated from annotations.
 
 See also: docs/drafts/2025-10-03-rfc-query-ops-to-sql-qir.md
-

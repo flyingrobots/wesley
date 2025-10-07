@@ -41,23 +41,34 @@ function qualifiedOpName(schema, opName) {
   return `${sanitizeIdent(schema)}.${sanitizeOpName(opName)}`;
 }
 
+function sanitizeIdentBase(s, fallback) {
+  const base = String(s || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/gi, '_')
+    .replace(/^_+|_+$/g, '');
+  return base || fallback;
+}
+
 function sanitizeOpName(s) {
-  // prefix for ops; keep deterministic; strip non-word to underscores, lowercase
-  const base = String(s || 'op').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
-  return `op_${base || 'unnamed'}`;
+  const base = sanitizeIdentBase(s, 'op');
+  return sqlQuoteIdent(`op_${base === 'op' ? 'unnamed' : base}`);
 }
 
 function sanitizeIdent(s) {
-  // conservative: allow letters, digits, underscore
-  const v = String(s || '').replace(/[^a-zA-Z0-9_]/g, '');
-  return v || 'public';
+  const base = sanitizeIdentBase(s, 'public');
+  return sqlQuoteIdent(base);
+}
+
+function sqlQuoteIdent(raw) {
+  const escaped = String(raw).replace(/"/g, '""');
+  return `"${escaped}"`;
 }
 
 function uniqueParamNames(ordered) {
   const seen = new Map();
   const out = [];
   for (const p of ordered) {
-    const base = `p_${String(p.name || 'arg')}`.replace(/[^a-zA-Z0-9_]/g, '_');
+    const base = `p_${sanitizeIdentBase(p.name, 'arg')}`;
     const n = seen.get(base) || 0;
     seen.set(base, n + 1);
     const display = n === 0 ? base : `${base}_${n+1}`;
@@ -65,4 +76,3 @@ function uniqueParamNames(ordered) {
   }
   return out;
 }
-
