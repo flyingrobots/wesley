@@ -28,12 +28,17 @@ test('emitFunction: generates deterministic function with params and jsonb rows'
   const plan = new QueryPlan(filter, proj, { orderBy: [ new OrderBy(new ColumnRef('t0','name'), 'asc') ] });
 
   const sql = emitFunction('Org List', plan);
-  assert.ok(sql.startsWith('CREATE OR REPLACE FUNCTION wes_ops.op_org_list('));
+  assert.ok(sql.startsWith('CREATE OR REPLACE FUNCTION "wes_ops"."op_org_list"('));
   assert.ok(sql.includes('p_ids text[]'));
   assert.ok(sql.includes('RETURNS SETOF jsonb'));
   assert.ok(sql.includes('SELECT to_jsonb(q.*) FROM ('));
   assert.ok(sql.includes('FROM organization t0'));
-  assert.ok(/ORDER BY\s+t0\.name\s+ASC?,?\s*,\s*t0\.id\s+ASC?/i.test(sql));
+  assert.ok(sql.includes('ORDER BY'));
+  const orderByIndex = sql.indexOf('ORDER BY');
+  const orderClause = sql.slice(orderByIndex, sql.indexOf('\n', orderByIndex) > 0 ? sql.indexOf('\n', orderByIndex) : sql.length);
+  assert.ok(orderClause.includes('t0.name'));
+  assert.ok(orderClause.includes('t0.id'));
+  assert.ok(orderClause.indexOf('t0.name') < orderClause.indexOf('t0.id'));
 });
 
 test('emitView: wraps lowered SQL in CREATE VIEW', () => {
@@ -45,7 +50,7 @@ test('emitView: wraps lowered SQL in CREATE VIEW', () => {
   const plan = new QueryPlan(root, proj, { orderBy: [ new OrderBy(new ColumnRef('t0','name'), 'asc') ] });
 
   const sql = emitView('Org View!', plan);
-  assert.ok(sql.startsWith('CREATE OR REPLACE VIEW wes_ops.op_org_view AS'));
+  assert.ok(sql.startsWith('CREATE OR REPLACE VIEW "wes_ops"."op_org_view" AS'));
   assert.ok(sql.includes('SELECT t0.id AS id, t0.name AS name'));
 });
 

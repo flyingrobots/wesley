@@ -42,15 +42,21 @@ function qualifiedOpName(schema, opName) {
 }
 
 function sanitizeOpName(s) {
-  // prefix for ops; keep deterministic; strip non-word to underscores, lowercase
-  const base = String(s || 'op').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
-  return `op_${base || 'unnamed'}`;
+  // prefix for ops; deterministic; base sanitize then SQL-quote
+  const base = String(s || 'op').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'unnamed';
+  const ident = `op_${base}`;
+  return sqlQuoteIdent(ident);
 }
 
 function sanitizeIdent(s) {
-  // conservative: allow letters, digits, underscore
-  const v = String(s || '').replace(/[^a-zA-Z0-9_]/g, '');
-  return v || 'public';
+  // sanitize then SQL-quote (used for schemas)
+  const base = String(s || '').replace(/[^a-zA-Z0-9_]/g, '') || 'public';
+  return sqlQuoteIdent(base);
+}
+
+function sqlQuoteIdent(raw) {
+  const escaped = String(raw).replace(/"/g, '""');
+  return `"${escaped}"`;
 }
 
 function uniqueParamNames(ordered) {
@@ -65,4 +71,3 @@ function uniqueParamNames(ordered) {
   }
   return out;
 }
-
