@@ -44,7 +44,7 @@ function qualifiedOpName(schema, opName) {
 function sanitizeIdentBase(s, fallback) {
   const base = String(s || '')
     .toLowerCase()
-    .replace(/[^a-z0-9]+/gi, '_')
+    .replace(/[^a-z0-9]+/g, '_')
     .replace(/^_+|_+$/g, '');
   return base || fallback;
 }
@@ -71,7 +71,7 @@ function uniqueParamNames(ordered) {
     const base = `p_${sanitizeIdentBase(p.name, 'arg')}`;
     const n = seen.get(base) || 0;
     seen.set(base, n + 1);
-    const display = n === 0 ? base : `${base}_${n+1}`;
+    const display = n === 0 ? base : `${base}_${n}`;
     out.push({ display, type: p.typeHint || 'text' });
   }
   return out;
