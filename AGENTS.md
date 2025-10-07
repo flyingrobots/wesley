@@ -57,6 +57,64 @@ This document defines repo‑wide conventions and guardrails for human and AI ag
 
 ## Agents Activity Log
 
+### 2025-10-07 — Debrief + Hand‑off
+
+Summary of today’s work (public readiness + QIR)
+- QIR
+  - Implemented SQL lowering (SELECT/JOIN/LEFT/LATERAL/ORDER/LIMIT) with deterministic ORDER BY tie‑breaker, NULL/IN semantics, and COALESCE(jsonb_agg). Added unit + snapshot tests. Opened and merged PR #42.
+  - Added emission helpers (emitView/emitFunction returning SETOF jsonb) with robust identifier quoting and unified sanitization; added tests. Opened PR #44 and merged after green.
+  - Authored docs guide docs/guides/qir-ops.md (MVP lowering + emission) and opened PR #45; resolved conflicts post‑merge of #44, fixed MD022 spacing and strict ORDER BY assertions.
+- Docs/Plans
+  - Refreshed DRIFT_ANALYSIS_REPORT.md with current status (+ Readiness Matrix) and next actions; clarified the pivot status and QIR progress.
+  - Consolidated planning into a single go-public-checklist.md; pointed docs/plan-for-alignment.md to it and kept as historical snapshot. Opened PR #46 containing the checklist and follow‑ups.
+  - Added missing docs to eliminate broken links: internals (event-flow, parser), guides (extending, migrations, CLI tests), TRUST, and roadmap. Fixed all relative links; added docs link‑check workflow.
+- CI/Tooling
+  - Pruned dead/expensive workflows (Claude actions), removed macOS from matrices where still referenced, and fixed docs links to remove dead targets.
+  - Added Preflight script (docs link‑check, dep‑cruise boundaries, ESLint core purity, workflow/.gitignore hygiene). Wired as:
+    - Local: pre-push git hook via .githooks and prepare script.
+    - CI: Preflight workflow on PRs and pushes to main.
+  - Enforced pnpm‑only (removed npx fallbacks) and pinned packageManager to pnpm@9.15.9.
+  - Updated branch protection on main to require: build-test, Enforce Hexagonal Architecture Boundaries, Quick CLI Test, Preflight, Docs Link Check; 1 review; dismiss stale approvals; admins enforced.
+- PR hygiene
+  - Closed superseded/conflicting PRs #16 (drop macOS), #17 (CI no hangs), #39 (CI entrypoints+Bats), and replaced #22 with #43 (OSS hygiene docs/templates) which was merged.
+
+CI State
+- Main CI and Architecture Boundaries are stable and fast; CLI Quick Check is green; Preflight + Docs Link Check now run on PRs and main.
+- HOLMES remains non‑blocking (artifact fallback in place). macOS runners removed to control Actions spend.
+
+Outstanding / Next Steps
+- QIR Phase C
+  - Wire --ops end‑to‑end in CLI/host‑node: minimal GraphQL op → QIR plan builder; compile ops via emitView/emitFunction; write artifacts under example/out/ops; keep default behavior unchanged.
+  - Add example operations + EXPLAIN (FORMAT JSON) snapshots; add pgTAP smoke tests for emitted ops (shape/filters; RLS where relevant).
+- DDL Planning
+  - Extend planner for backfill/switch/contract phases (explain‑only by default) and emit per‑phase SQL for rehearsal.
+- Docs
+  - README polish (Experimental QIR note + CI costs); Compatibility section (Node/pnpm/Ubuntu‑only CI); contributor preflight note done.
+
+Resume Prompt (copy/paste into a new Codex instance)
+
+You are assisting on the “Wesley” monorepo (GraphQL → Postgres generator). Continue where we left off on 2025‑10‑07.
+
+Context snapshot:
+- Merged: #42 (QIR lowering), #44 (QIR emission), #43 (OSS templates/Codeowners/Changelog).
+- Open PRs: #45 (docs/qir: lowering+emission guide), #46 (go-public-checklist + preflight/link‑check/prune).
+- CI: Required checks on main: build-test, Architecture Boundaries, Quick CLI Test, Preflight, Docs Link Check. HOLMES is non‑blocking. macOS runners removed.
+- Tooling: pre-push preflight (pnpm‑only) checks docs links, dep‑cruise boundaries, ESLint core purity, workflow/.gitignore hygiene. pnpm pinned @ 9.15.9.
+
+Goals for next session:
+1) QIR Phase C — CLI wiring behind --ops
+   - Implement a minimal GraphQL op → QIR plan builder (selections, joins, filters, order, pagination; nested lists via LATERAL+jsonb_agg; ParamRef type hints).
+   - Expose --ops in CLI/host-node to compile ops and emit SQL via emitView/emitFunction; write to example/out/ops; keep default behavior unchanged.
+   - Add example ops + EXPLAIN JSON snapshots; add pgTAP smoke for emitted ops.
+2) DDL Planner — backfill/switch/contract phases (explain‑only), emit per‑phase SQL.
+3) README polish (Experimental QIR + CI costs) and pre‑check completed items in go-public-checklist.md.
+
+Local commands:
+- pnpm install
+- pnpm run preflight
+- pnpm -r test
+- node packages/wesley-host-node/bin/wesley.mjs generate --schema example/schema.graphql --emit-bundle --out-dir example/out --allow-dirty
+
 ### 2025-09-29
 - Resolved the README merge conflict on `pr-16`, restoring the generate → rehearse → deploy workflow while keeping the new messaging.
 - Deleted the stale `.git/.COMMIT_EDITMSG.swp` swap file so the merge could proceed cleanly.

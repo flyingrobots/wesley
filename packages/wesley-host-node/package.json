@@ -39,7 +39,7 @@
     "adapters"
   ],
   "author": "Captain James",
-  "license": "MIT",
+  "license": "LicenseRef-MIND-UCAL-1.0",
   "devDependencies": {
     "pino-pretty": "^13.1.1"
   }

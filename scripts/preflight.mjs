@@ -88,6 +88,29 @@ runOrFail(
   'ESLint core purity check failed'
 );
 
+// 8) License audit — ensure all packages use MIND-UCAL
+try {
+  const pkgs = [
+    'package.json',
+    'packages/wesley-core/package.json',
+    'packages/wesley-cli/package.json',
+    'packages/wesley-host-node/package.json',
+    'packages/wesley-holmes/package.json',
+    'packages/wesley-generator-supabase/package.json',
+    'packages/wesley-generator-js/package.json',
+    'packages/wesley-slaps/package.json',
+    'packages/wesley-tasks/package.json',
+    'packages/wesley-scaffold-multitenant/package.json',
+    'packages/wesley-stack-supabase-nextjs/package.json'
+  ];
+  for (const p of pkgs) {
+    const c = JSON.parse(readFileSync(resolve(p), 'utf8'));
+    if (c.license !== 'LicenseRef-MIND-UCAL-1.0') fail(`License mismatch in ${p}: ${c.license}`);
+  }
+} catch (e) {
+  fail(`License audit failed: ${e?.message || e}`);
+}
+
 if (!ok) {
   console.error('\n❌ Preflight failed with the following issues:');
   for (const m of failures) console.error(' -', m);

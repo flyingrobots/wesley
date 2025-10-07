@@ -38,7 +38,7 @@
     "hexagonal"
   ],
   "author": "Captain James",
-  "license": "Apache-2.0",
+  "license": "LicenseRef-MIND-UCAL-1.0",
   "dependencies": {
     "@supabase/pg-parser": "^0.1.3",
     "chokidar": "^4.0.3",
