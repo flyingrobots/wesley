@@ -1,9 +1,13 @@
 name: Preflight
 
+permissions:
+  contents: read
+
 on:
   pull_request:
   push:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   preflight:
@@ -13,8 +17,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - uses: pnpm/action-setup@v2
-        with:
-          version: 9
+      - uses: pnpm/action-setup@v4
       - name: Run repository preflight
         run: node scripts/preflight.mjs

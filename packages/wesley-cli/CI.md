@@ -31,12 +31,12 @@ Wesley CLI uses two GitHub Actions workflows for comprehensive testing:
 
 **Triggers**: Push/PR to CLI + related packages
 **Runtime**: ~8-12 minutes  
-**Environment**: Cross-platform matrix
+**Environment**: Ubuntu-only matrix
 
 **Matrix Coverage**:
-- **OS**: Ubuntu Latest, macOS Latest
+- **OS**: Ubuntu Latest
 - **Node.js**: 18.x, 20.x, 22.x
-- **Total**: 6 combinations
+- **Total**: 3 combinations
 
 **Features**:
 - TAP output format for CI integration
@@ -83,7 +83,7 @@ pnpm test:tap
 ### Test Coverage
 - **12 test cases** covering core CLI functionality
 - **Real subprocess execution** - No mocks or stubs
-- **Cross-platform validation** - Ubuntu + macOS
+- **Ubuntu validation** - Matrix across Node versions
 - **Multi-Node version** - 18.x through 22.x support
 - **Error scenarios** - Exit codes, malformed input, missing files
 

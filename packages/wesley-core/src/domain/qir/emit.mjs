@@ -41,17 +41,39 @@ function qualifiedOpName(schema, opName) {
   return `${sanitizeIdent(schema)}.${sanitizeOpName(opName)}`;
 }
 
+/**
+ * Normalize a string into a safe SQL identifier base (unquoted).
+ * - Lowercases, replaces non-alphanumerics with underscores, trims leading/trailing underscores.
+ * - Returns `fallback` if the normalized base is empty.
+ * - Validates length per PostgreSQL's 63-character identifier limit.
+ *
+ * Note: Callers that add prefixes (e.g., `op_`, `p_`) should ensure the final
+ * identifier including the prefix also satisfies the length limit.
+ *
+ * @param {string} s input string to normalize
+ * @param {string} fallback fallback value if result is empty
+ * @returns {string} normalized identifier base (not quoted)
+ * @throws {Error} if normalized identifier exceeds 63 characters
+ */
 function sanitizeIdentBase(s, fallback) {
   const base = String(s || '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '_')
     .replace(/^_+|_+$/g, '');
-  return base || fallback;
+  const result = base || fallback;
+  if (result.length > 63) {
+    throw new Error(`Identifier base exceeds PostgreSQL's 63-character limit: "${result}"`);
+  }
+  return result;
 }
 
 function sanitizeOpName(s) {
   const base = sanitizeIdentBase(s, 'op');
-  return sqlQuoteIdent(`op_${base === 'op' ? 'unnamed' : base}`);
+  const final = `op_${base === 'op' ? 'unnamed' : base}`;
+  if (final.length > 63) {
+    throw new Error(`Operation identifier exceeds 63 characters: "${final}"`);
+  }
+  return sqlQuoteIdent(final);
 }
 
 function sanitizeIdent(s) {
@@ -72,6 +94,9 @@ function uniqueParamNames(ordered) {
     const n = seen.get(base) || 0;
     seen.set(base, n + 1);
     const display = n === 0 ? base : `${base}_${n}`;
+    if (display.length > 63) {
+      throw new Error(`Parameter identifier exceeds 63 characters: "${display}"`);
+    }
     out.push({ display, type: p.typeHint || 'text' });
   }
   return out;

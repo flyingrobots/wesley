@@ -3,6 +3,9 @@ import { readdirSync, statSync, readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 
 const root = resolve('.');
+// Directories to skip when scanning for markdown files:
+// - '.wesley': local developer state / emitted artifacts (bundles, scores)
+// - 'out': build/output directory that may contain generated docs or temp files
 const ignoreDirs = new Set(['.git', 'node_modules', '.wesley', 'out']);
 
 const mdFiles = [];
@@ -22,6 +25,9 @@ function walk(dir) {
 
 walk(root);
 
+// Matches [text](link) but not images; does not handle nested/escaped brackets
+// in link text or parentheses inside URLs. Good enough for our docs; improve
+// with a markdown parser if these edge cases arise.
 const linkRe = /(?<!\!)\[[^\]]+\]\(([^)]+)\)/g; // [text](link), not images
 const issues = [];
 
@@ -39,7 +45,19 @@ for (const file of mdFiles) {
     const base = dirname(file);
     const target = resolve(base, link);
     let exists = false;
-    try { exists = statSync(target).isFile() || statSync(target).isDirectory(); } catch { exists = false; }
+    try {
+      const st = statSync(target);
+      exists = st.isFile() || st.isDirectory();
+    } catch (err) {
+      // Treat only missing paths as non-existent; surface unexpected errors
+      if (err && (err.code === 'ENOENT' || err.code === 'ENOTDIR')) {
+        exists = false;
+      } else {
+        console.error(`Unexpected fs error while checking link: ${target}`);
+        console.error(err);
+        throw err;
+      }
+    }
     if (!exists) {
       issues.push({ file, link: m[1], position: m.index });
     }
@@ -55,4 +73,3 @@ if (issues.length) {
 } else {
   console.log('✅ No broken relative links found in markdown docs');
 }
-

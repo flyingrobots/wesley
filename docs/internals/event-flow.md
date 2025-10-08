@@ -3,10 +3,10 @@
 This note sketches the high‑level flow from GraphQL SDL to emitted artifacts:
 
 1) Parse SDL → Domain Schema (events: SchemaParsed)
-2) Analyze → Differences/Operations (events: SchemaAnalyzed, OperationsHarvested)
-3) Plan → Phased DDL (events: PlanComputed)
-4) Generate → SQL, Types, Zod, RLS, pgTAP (events: ArtifactsEmitted)
-5) Certify → Evidence bundle + SHIPME (events: EvidenceProduced)
+2) Generate → SQL, Types (events: SQLGenerated, TypeScriptGenerated)
+3) Diff/Plan → Migrations (events: MigrationDiffCalculated, MigrationSQLGenerated)
+4) Write → Files (events: FileWriteRequested, FileWritten)
 
-All core phases emit events that can be observed by hosts/adapters. The core remains pure and testable; IO lives in host‑node.
-
+Notes
+- The earlier docs referenced additional events (SchemaAnalyzed, OperationsHarvested, PlanComputed, ArtifactsEmitted, EvidenceProduced). These are not implemented yet and are reserved for future phases. Current implementations emit the event classes found in `packages/wesley-core/src/domain/Events.mjs`.
+- The core remains pure and testable; IO concerns live in host‑node adapters.

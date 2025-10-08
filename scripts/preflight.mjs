@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-import { readdirSync, statSync, readFileSync } from 'node:fs';
+import { readdirSync, statSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
 
 if (process.env.SKIP_PREFLIGHT === '1') {
   console.log('SKIP_PREFLIGHT=1 set — skipping preflight checks');
@@ -82,30 +83,40 @@ runOrFail(
   'dependency-cruiser boundary check failed'
 );
 
-// 7) ESLint core purity
-runOrFail(
-  'pnpm', ['dlx', 'eslint@8.57.0', '--no-eslintrc', '-c', 'packages/wesley-core/.eslintrc.cjs', 'packages/wesley-core/src/**/*.mjs', '--max-warnings=0'],
-  'ESLint core purity check failed'
-);
-
-// 8) License audit — ensure all packages use MIND-UCAL
+// 7) ESLint core purity (use repo's ESLint version, flat-config compatible)
 try {
-  const pkgs = [
-    'package.json',
-    'packages/wesley-core/package.json',
-    'packages/wesley-cli/package.json',
-    'packages/wesley-host-node/package.json',
-    'packages/wesley-holmes/package.json',
-    'packages/wesley-generator-supabase/package.json',
-    'packages/wesley-generator-js/package.json',
-    'packages/wesley-slaps/package.json',
-    'packages/wesley-tasks/package.json',
-    'packages/wesley-scaffold-multitenant/package.json',
-    'packages/wesley-stack-supabase-nextjs/package.json'
-  ];
-  for (const p of pkgs) {
-    const c = JSON.parse(readFileSync(resolve(p), 'utf8'));
-    if (c.license !== 'LicenseRef-MIND-UCAL-1.0') fail(`License mismatch in ${p}: ${c.license}`);
+  const flatConfigPath = resolve(tmpdir(), `eslint.core-purity.${Date.now()}.config.mjs`);
+  const cfg = `export default [{\n  files: [\"packages/wesley-core/src/**/*.mjs\"],\n  languageOptions: { ecmaVersion: 2022, sourceType: 'module' },\n  rules: {\n    'no-restricted-imports': [\n      'error',\n      {\n        patterns: [ { group: ['node:*'], message: 'Do not use Node built-ins in core (keep it pure).' } ],\n        paths: [\n          { name: 'fs', message: 'Use ports/adapters; no fs in core.' },\n          { name: 'path', message: 'Use ports/adapters; no path in core.' },\n          { name: 'process', message: 'Do not use process in core.' },\n          { name: 'child_process', message: 'No child_process in core.' },\n          { name: 'os', message: 'No os in core.' },\n          { name: 'buffer', message: 'No Buffer usage in core.' }\n        ]\n      }\n    ]\n  }\n}];\n`;
+  writeFileSync(flatConfigPath, cfg, 'utf8');
+  runOrFail('pnpm', ['dlx', 'eslint', '--config', flatConfigPath, 'packages/wesley-core/src/**/*.mjs', '--max-warnings=0'], 'ESLint core purity check failed');
+} catch (e) {
+  fail(`ESLint core purity check failed to run: ${e?.message || e}`);
+}
+
+// 8) License audit — ensure all packages use MIND-UCAL (dynamic discovery)
+try {
+  const ls = spawnSync('pnpm', ['ls', '-r', '--json', '--depth=-1'], { encoding: 'utf8' });
+  if (ls.status !== 0) throw new Error(`pnpm ls failed with code ${ls.status}`);
+  const list = JSON.parse(ls.stdout || '[]');
+  // Include root and all workspace packages
+  const packageJsonPaths = new Set();
+  for (const entry of list) {
+    if (!entry.path) continue;
+    packageJsonPaths.add(resolve(entry.path, 'package.json'));
+  }
+  // Ensure root package.json is included
+  packageJsonPaths.add(resolve('package.json'));
+  for (const p of packageJsonPaths) {
+    let content;
+    try {
+      content = JSON.parse(readFileSync(p, 'utf8'));
+    } catch (err) {
+      fail(`License audit: failed to read ${p}: ${err?.message || err}`);
+      continue;
+    }
+    if (content.license !== 'LicenseRef-MIND-UCAL-1.0') {
+      fail(`License mismatch in ${p}: ${content.license}`);
+    }
   }
 } catch (e) {
   fail(`License audit failed: ${e?.message || e}`);
