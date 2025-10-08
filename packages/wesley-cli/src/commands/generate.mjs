@@ -296,6 +296,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
       }
       const outDir = options.outDir || 'out';
       const outFiles = [];
+      const expectations = new Map();
 
       // Prepare JSON Schema validator (dynamic import to keep host-light)
       let ajv, addFormats, validateOp;
@@ -327,6 +328,9 @@ export class GeneratePipelineCommand extends WesleyCommand {
           let baseName = (op.name || 'unnamed').toLowerCase().replace(/[^a-z0-9]+/g, '_');
           if (!baseName) baseName = 'unnamed';
           if (baseName.length > 240) baseName = baseName.slice(0, 240);
+          // Record expected patterns for content asserts in pgTAP
+          const pats = buildOpPatterns(op);
+          if (pats.length) expectations.set(baseName, pats);
           if (isParamless) {
             const viewSql = emitView(op.name || 'unnamed', plan);
             outFiles.push({ name: `ops/${baseName}.view.sql`, content: viewSql + '\n' });
@@ -348,9 +352,9 @@ export class GeneratePipelineCommand extends WesleyCommand {
         const opsDir = await fs.join(outDir, 'ops');
         logger.info({ count: outFiles.length, dir: opsDir }, 'Compiled operations (experimental)');
 
-        // Generate basic pgTAP tests for ops functions
+        // Generate pgTAP tests for ops functions with extra content checks
         try {
-          const tapSql = await this.buildOpsPgTapTests(outDir);
+          const tapSql = await this.buildOpsPgTapTests(outDir, expectations);
           if (tapSql) {
             await this.ctx.writer.writeFiles([{ name: 'tests-ops.sql', content: tapSql }], outDir);
             logger.info({ file: await fs.join(outDir, 'tests-ops.sql') }, 'Emitted pgTAP tests for ops');
@@ -401,6 +405,26 @@ export class GeneratePipelineCommand extends WesleyCommand {
       // This is a heuristic: look for FROM "<table>" or FROM <table>
       // Without parsing, assert presence of FROM in definition
       lines.push(`SELECT ok(position('FROM' in pg_get_functiondef(p.oid)) > 0, 'wes_ops.${opName} contains FROM clause') FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='wes_ops' AND p.proname='${opName}';`);
+      // Extra asserts based on generated SQL content
+      const pats = [];
+      if (content.includes('ORDER BY')) pats.push('ORDER BY');
+      if (content.includes(' LIMIT ')) {
+        const m = content.match(/LIMIT\s+\d+/);
+        pats.push(m ? m[0] : 'LIMIT');
+      }
+      if (content.includes(' ILIKE ')) pats.push('ILIKE');
+      if (/:uuid\b/.test(content)) pats.push('::uuid');
+      if (/:text\b/.test(content)) pats.push('::text');
+      if (content.includes('LEFT JOIN LATERAL')) pats.push('LEFT JOIN LATERAL');
+      if (content.includes('jsonb_agg')) pats.push('jsonb_agg');
+      if (content.includes('jsonb_build_object')) pats.push('jsonb_build_object');
+      if (content.includes(' = TRUE')) pats.push('= TRUE');
+      if (content.includes(' = FALSE')) pats.push('= FALSE');
+      for (const pat of pats) {
+        const esc = pat.replace(/'/g, "''");
+        const label = pat.length > 48 ? pat.slice(0,48).replace(/'/g,'"') + '…' : pat.replace(/'/g,'"');
+        lines.push(`SELECT ok(position('${esc}' in pg_get_functiondef(p.oid)) > 0, 'wes_ops.${opName} contains ${label}') FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='wes_ops' AND p.proname='${opName}';`);
+      }
     }
 
     lines.push('SELECT finish();');
@@ -420,6 +444,34 @@ function shouldEnforceClean(env, options) {
   if (policy === 'strict') return true;
   // default policy: enforce only when producing bundle/certs
   return !!options.emitBundle;
+}
+
+// Derive heuristic assertion patterns from an op JSON object
+function buildOpPatterns(op) {
+  const pats = [];
+  const tbl = typeof op.table === 'string' ? op.table.trim() : '';
+  if (tbl) pats.push(`FROM ${tbl === 'order' ? '"order"' : tbl}`);
+  const filters = Array.isArray(op.filters) ? op.filters : (op.filters ? [op.filters] : []);
+  for (const f of filters) {
+    const opx = String(f?.op || 'eq');
+    if (opx === 'ilike') pats.push('ILIKE');
+    if (opx === 'like') pats.push('LIKE');
+    if (opx === 'in') pats.push(' = ANY(');
+    if (opx === 'eq' && typeof f.value === 'boolean') pats.push(`= ${f.value ? 'TRUE' : 'FALSE'}`);
+    if ((opx === 'eq' || opx === 'in') && f.param?.type) pats.push(`::${String(f.param.type)}`);
+  }
+  if (Array.isArray(op.lists) && op.lists.length) {
+    pats.push('LEFT JOIN LATERAL');
+    pats.push('jsonb_agg');
+    pats.push('jsonb_build_object');
+  }
+  const orderList = Array.isArray(op.orderBy) ? op.orderBy : (op.orderBy ? [op.orderBy] : []);
+  for (const ob of orderList) {
+    const col = ob?.column; const dir = String(ob?.dir || 'asc').toUpperCase();
+    if (col) pats.push(`${col} ${dir}`);
+  }
+  if (op.limit) pats.push(`LIMIT ${op.limit}`);
+  return pats;
 }
 async function assertCleanGit() {
   try {
