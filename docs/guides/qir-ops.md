@@ -121,6 +121,48 @@ node packages/wesley-host-node/bin/wesley.mjs generate \
 
 This produces both a `CREATE VIEW` and a `CREATE FUNCTION` for each operation, e.g.: `example/out/ops/products_by_name.view.sql` and `example/out/ops/products_by_name.fn.sql`.
 
+### JSON Schema & Validation
+
+Wesley validates each `*.op.json` with Ajv against a published schema stored in-repo:
+
+- Schema file: `schemas/op.schema.json`
+- `$id`: `https://wesley.dev/schemas/op.schema.json`
+
+Allowed parameter types: `text`, `uuid`, `int`, `bigint`, `numeric`, `jsonb`, `bool`, `date`, `timestamp`. Append `[]` for arrays used with `op: "in"`.
+
+Failure examples
+
+Invalid: `op: "in"` without an array type hint
+```jsonc
+{
+  "name": "by_ids",
+  "table": "product",
+  "filters": [
+    { "column": "id", "op": "in", "param": { "name": "ids", "type": "uuid" } } // should be "uuid[]"
+  ]
+}
+```
+
+CLI output (trimmed):
+```
+Op schema validation failed: /filters/0/param/type must match pattern "^(text|uuid|int|bigint|numeric|jsonb|bool|date|timestamp)(\\[\\])?$"
+```
+
+Invalid: `isNull` with a value
+```jsonc
+{
+  "table": "product",
+  "filters": [ { "column": "deleted_at", "op": "isNull", "value": false } ]
+}
+```
+
+CLI output (trimmed):
+```
+Op schema validation failed: (root) must NOT have required property 'value' when op isNull/isNotNull
+```
+
+Tip: run with `--debug` to print the full Ajv error array.
+
 ## Roadmap
 
 - Wire `--ops` end-to-end in CLI (expose emission; EXPLAIN JSON snapshots).

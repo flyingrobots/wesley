@@ -337,6 +337,13 @@ export class GeneratePipelineCommand extends WesleyCommand {
         }
       }
       if (outFiles.length) {
+        // Aggregate all function SQL into a single file for docker-compose init
+        const fnChunks = outFiles
+          .filter(f => f.name.endsWith('.fn.sql'))
+          .map(f => `-- ${f.name}\n${f.content}`);
+        if (fnChunks.length) {
+          outFiles.push({ name: 'ops.functions.sql', content: fnChunks.join('\n') });
+        }
         await this.ctx.writer.writeFiles(outFiles, outDir);
         const opsDir = await fs.join(outDir, 'ops');
         logger.info({ count: outFiles.length, dir: opsDir }, 'Compiled operations (experimental)');

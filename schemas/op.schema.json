@@ -1,0 +1,153 @@
+{
+  "$id": "https://wesley.dev/schemas/op.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Wesley Operation (MVP)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["table"],
+  "properties": {
+    "name": { "type": "string", "minLength": 1 },
+    "table": { "type": "string", "minLength": 1 },
+    "alias": { "type": "string", "minLength": 1 },
+    "columns": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "filters": { "type": "array", "items": { "$ref": "#/$defs/filter" } },
+    "joins": { "type": "array", "items": { "$ref": "#/$defs/join" } },
+    "lists": { "type": "array", "items": { "$ref": "#/$defs/list" } },
+    "orderBy": { "type": "array", "items": { "$ref": "#/$defs/orderBy" } },
+    "limit": { "type": "integer", "minimum": 1 },
+    "offset": { "type": "integer", "minimum": 0 }
+  },
+  "$defs": {
+    "orderBy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["column"],
+      "properties": {
+        "column": { "type": "string", "minLength": 1 },
+        "dir": { "type": "string", "enum": ["asc", "desc"] },
+        "nulls": { "type": "string", "enum": ["first", "last"] }
+      }
+    },
+    "filter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["column"],
+      "properties": {
+        "column": { "type": "string", "minLength": 1 },
+        "op": {
+          "type": "string",
+          "enum": ["eq","ne","lt","lte","gt","gte","like","ilike","contains","in","isNull","isNotNull"]
+        },
+        "param": { "$ref": "#/$defs/param" },
+        "value": {}
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "op": { "enum": ["isNull","isNotNull"] } } },
+          "then": { "not": { "anyOf": [ { "required": ["param"] }, { "required": ["value"] } ] } }
+        },
+        {
+          "if": { "properties": { "op": { "enum": ["eq","ne","lt","lte","gt","gte","like","ilike","contains","in"] } } },
+          "then": { "anyOf": [ { "required": ["param"] }, { "required": ["value"] } ] }
+        }
+      ]
+    },
+    "param": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "type": {
+          "type": "string",
+          "pattern": "^(text|uuid|int|bigint|numeric|jsonb|bool|date|timestamp)(\\[\\])?$"
+        }
+      }
+    },
+    "join": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["table","on"],
+      "properties": {
+        "table": { "type": "string", "minLength": 1 },
+        "alias": { "type": "string", "minLength": 1 },
+        "type": { "type": "string", "enum": ["INNER","LEFT","inner","left"] },
+        "on": { "$ref": "#/$defs/joinOn" }
+      }
+    },
+    "joinOn": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["left"],
+      "properties": {
+        "left": { "$ref": "#/$defs/colRef" },
+        "right": { "$ref": "#/$defs/colRef" },
+        "rightColumn": { "type": "string", "minLength": 1 },
+        "op": { "type": "string", "enum": ["eq","ne","lt","lte","gt","gte"] }
+      }
+    },
+    "colRef": {
+      "anyOf": [
+        { "type": "string", "minLength": 1 },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["column"],
+          "properties": {
+            "table": { "type": "string", "minLength": 1 },
+            "column": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": [ { "type": "string", "minLength": 1 }, { "type": "string", "minLength": 1 } ]
+        }
+      ]
+    },
+    "list": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["table"],
+      "properties": {
+        "alias": { "type": "string", "minLength": 1 },
+        "table": { "type": "string", "minLength": 1 },
+        "tableAlias": { "type": "string", "minLength": 1 },
+        "lateralAlias": { "type": "string", "minLength": 1 },
+        "match": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["local","foreign"],
+          "properties": {
+            "local": { "type": "string", "minLength": 1 },
+            "foreign": { "type": "string", "minLength": 1 }
+          }
+        },
+        "select": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              { "type": "string", "minLength": 1 },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["column"],
+                "properties": {
+                  "column": { "type": "string", "minLength": 1 },
+                  "alias": { "type": "string", "minLength": 1 }
+                }
+              }
+            ]
+          }
+        },
+        "orderBy": { "type": "array", "items": { "$ref": "#/$defs/orderBy" } },
+        "filters": { "type": "array", "items": { "$ref": "#/$defs/filter" } }
+      }
+    }
+  }
+}
+

@@ -4,7 +4,7 @@
  */
 
 export const opJsonSchema = {
-  $id: 'https://wesley.dev/schemas/op.json',
+  $id: 'https://wesley.dev/schemas/op.schema.json',
   type: 'object',
   additionalProperties: false,
   required: ['table'],
@@ -179,4 +179,3 @@ export const opJsonSchema = {
 };
 
 export default opJsonSchema;
-
