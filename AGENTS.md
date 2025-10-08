@@ -55,7 +55,32 @@ This document defines repo‑wide conventions and guardrails for human and AI ag
 
 ---
 
+## Neo4j Memory & Local Notes (Persistent Protocol)
+
+- Default knowledge graph
+  - Host: `http://localhost:7474`
+  - Auth: `neo4j:password123`
+  - DB: `neo4j`
+
+- What to store
+  - On topic switches or milestones, write an `Insight` node with: `{ content, added_by: 'Codex', confidence, timestamp: datetime() }` and relate it to the relevant `Topic` via `(:Insight)-[:ABOUT]->(:Topic)` and optionally to entities like `(:PullRequest)` via `[:RELATES_TO]`.
+  - Keep a daily `Timeline` node `(:Timeline {date: date()})` under each active `Topic` and link insights with `[:INCLUDES]`.
+
+- Local notes (source of truth for drafts)
+  - Write ad‑hoc notes to `~/Codex/Wesley/` (markdown files). Include thoughts, plans, concerns, checklists, and sketches. Use filename pattern: `notes-YYYY-MM-DD.md`.
+  - Summarize important local notes to Neo4j as `Insight` records when they are actionable.
+
+- Minimal cURL templates
+  - Query interests: `curl -s -u neo4j:password123 -H 'Content-Type: application/json' -X POST http://localhost:7474/db/neo4j/query/v2 -d '{"statement":"MATCH (j:User {name:\"James\"})-[:INTERESTED_IN]->(i) RETURN i.name"}'`
+  - Add insight: `curl -s -u neo4j:password123 -H 'Content-Type: application/json' -X POST http://localhost:7474/db/neo4j/query/v2 -d '{"statement":"MATCH (t:Topic {name:\"Wesley\"}) MATCH (j:User {name:\"James\"}) CREATE (i:Insight {content:\"...\", added_by:\"Codex\", confidence:0.9, timestamp:datetime()}) CREATE (j)-[:HAS_INSIGHT]->(i) CREATE (i)-[:ABOUT]->(t) RETURN i"}'`
+
+- JSONL Debriefs
+  - After each work session, append a single‑line JSON object to the “Agents Activity Log” (this file) with: `date`, `time`, `summary`, `commits`, `ci_status`, and `highlights`. Keep it machine parsable.
+
+
 ## Agents Activity Log
+
+{"date":"2025-10-08","time":"06:58Z","who":"Codex","summary":"PR #46 stabilization + QIR --ops hardening; memory activation","commits":["1cfe300","4298b1d","6cbe846","aa2b6dc","625ebd5","53e4deb","b389378","a492790"],"ci_status":"preflight green; workflows unified; pgTAP fixed (functions-only apply)","highlights":["CLI --ops: emit views only when paramless; always emit functions","OpPlanBuilder: normalize filters/orderBy; strict validation; lateral lists via LEFT JOIN LATERAL + jsonb_agg","Lowering: minimal quoting for reserved/unsafe idents; Emission: reserved param guard","Workflows: ecommerce.graphql; create wes_ops; install extensions; apply *.fn.sql; EXPLAIN strict; pgTAP installed in container","Pinned pnpm 9.15.9 in boundaries; action-setup@v4 elsewhere; preflight ESLint via pnpm dlx v9"],"neo4j":{"topic":"Wesley","pr":46,"timeline":"2025-10-08","insights":["CI","Builder","CLI/Ops","Workflows"]}}
 
 ### 2025-10-08 — PR feedback + QIR --ops MVP wiring
 {"date":"2025-10-08","time":"16:40Z","summary":"Addressed PR #45/#46 feedback; unblocked pnpm action; added experimental --ops wiring and examples.","topics":[{"topic":"PR #45 (docs/qir)","what":"Updated docs to surface emitView() SQL and clarified reserved keyword limitation explicitly (will error).","why":"Example previously dropped returned SQL and wording implied protection we don’t enforce."},{"topic":"PR #46 (preflight+workflows+docs)","what":"Added permissions (contents:read) to docs-link-check/preflight; fixed branches list; removed pnpm version pins across workflows to avoid ERR_PNPM_BAD_PM_VERSION; improved preflight to use repo ESLint via flat-config temp file and dynamic license audit via pnpm ls; documented link-check regex limitations and ignoreDirs rationale; tightened fs error handling.","why":"Resolve CI failures and align tooling with repo ESLint version; improve maintainability."},{"topic":"QIR --ops (MVP)","what":"Exposed @wesley/core/domain/qir via package exports; added OpPlanBuilder (JSON DSL → QIR plan); wired CLI generate to compile *.op.json under --ops into view/function SQL; added examples (example/ops/products_by_name.op.json, orders_by_user.op.json).","why":"Deliver Phase C initial wiring without changing default CLI behavior."}],"ci_effects":["Preflight and Docs Link Check pass locally","Removed pnpm action version pins to resolve setup error","No permissions widening; least-privilege applied"],"next_steps":["Add EXPLAIN (FORMAT JSON) snapshots for ops","Add pgTAP smoke tests for emitted ops","Consider removing the early --ops no-op log to reduce noise","Extend builder for joins + nested lists (LATERAL + jsonb_agg)"]}
