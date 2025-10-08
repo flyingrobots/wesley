@@ -5,7 +5,7 @@
  */
 
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
-import { buildPlanFromJson, emitFunction, emitView } from '@wesley/core/domain/qir';
+import { buildPlanFromJson, emitFunction, emitView, collectParams } from '@wesley/core/domain/qir';
 
 export class GeneratePipelineCommand extends WesleyCommand {
   constructor(ctx) {
@@ -301,12 +301,16 @@ export class GeneratePipelineCommand extends WesleyCommand {
           const raw = await fs.read(path);
           const op = JSON.parse(String(raw));
           const plan = buildPlanFromJson(op);
-          const viewSql = emitView(op.name || 'unnamed', plan);
+          const paramCount = (collectParams(plan)?.ordered?.length) || 0;
+          const isParamless = paramCount === 0;
           const fnSql = emitFunction(op.name || 'unnamed', plan);
           let baseName = (op.name || 'unnamed').toLowerCase().replace(/[^a-z0-9]+/g, '_');
           if (!baseName) baseName = 'unnamed';
           if (baseName.length > 240) baseName = baseName.slice(0, 240);
-          outFiles.push({ name: `ops/${baseName}.view.sql`, content: viewSql + '\n' });
+          if (isParamless) {
+            const viewSql = emitView(op.name || 'unnamed', plan);
+            outFiles.push({ name: `ops/${baseName}.view.sql`, content: viewSql + '\n' });
+          }
           outFiles.push({ name: `ops/${baseName}.fn.sql`, content: fnSql + '\n' });
         } catch (e) {
           logger.warn({ file: path }, 'Failed to compile op: ' + (e?.message || e));

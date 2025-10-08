@@ -328,7 +328,7 @@ jobs:
           # Ops emission targets schema wes_ops; create it if missing
           PGPASSWORD=postgres psql -h localhost -U postgres -d test -c 'CREATE SCHEMA IF NOT EXISTS wes_ops;'
       
-      - name: "📦 Apply Ops SQL (views/functions)"
+      - name: "📦 Apply Ops SQL (functions only)"
         env:
           WESLEY_OUT_DIR: out
         run: |
@@ -339,9 +339,9 @@ jobs:
             echo "No ops SQL directory found; skipping"
             exit 0
           fi
-          files=("$OPS_DIR"/*.sql)
+          files=("$OPS_DIR"/*.fn.sql)
           if [ ${#files[@]} -eq 0 ]; then
-            echo "No ops SQL files found; nothing to apply"
+            echo "No ops function SQL files found; nothing to apply"
             exit 0
           fi
           for f in "${files[@]}"; do
