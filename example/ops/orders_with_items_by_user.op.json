@@ -1,0 +1,20 @@
+{
+  "name": "orders_with_items_by_user",
+  "table": "order",
+  "columns": ["id", "order_number", "status"],
+  "filters": [
+    { "column": "user_id", "op": "eq", "param": { "name": "user_id", "type": "uuid" } }
+  ],
+  "lists": [
+    {
+      "alias": "items",
+      "table": "order_item",
+      "match": { "local": "id", "foreign": "order_id" },
+      "select": ["id", "product_id", "quantity"],
+      "orderBy": [ { "column": "id", "dir": "asc" } ]
+    }
+  ],
+  "orderBy": [ { "column": "created_at", "dir": "desc" } ],
+  "limit": 100
+}
+

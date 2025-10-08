@@ -3,7 +3,7 @@
  * Implements FileSystem port from wesley-core
  */
 
-import { readFile, writeFile, access, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, access, mkdir, readdir } from 'node:fs/promises';
 import { constants } from 'node:fs';
 import { dirname, resolve, join as pathJoin } from 'node:path';
 import { createReadStream } from 'node:fs';
@@ -40,6 +40,11 @@ export class NodeFileSystem {
 
   async join(...parts) {
     return pathJoin(...parts);
+  }
+
+  async readDir(path) {
+    const entries = await readdir(path, { withFileTypes: true });
+    return entries.map(e => ({ name: e.name, path: resolve(path, e.name), isFile: e.isFile(), isDirectory: e.isDirectory() }));
   }
 
   async readFile(path, encoding = 'utf8') {

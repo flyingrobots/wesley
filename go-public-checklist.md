@@ -37,7 +37,7 @@ This checklist tracks the remaining work before we “go public” and the follo
 - [x] Wire `--ops` in CLI/host-node to compile operations → QIR → SQL via `emitView`/`emitFunction` (keep default behavior unchanged).
 - [ ] Implement minimal GraphQL operation → QIR plan builder:
   - [x] Resolve root table, selected columns (joins pending).
-  - [ ] Nested lists → LATERAL + `jsonb_agg`.
+  - [x] Nested lists → LATERAL + `jsonb_agg`.
   - [x] Variables → `ParamRef` with type hints.
   - [x] WHERE/ORDER/LIMIT/OFFSET mapping to Predicate/OrderBy.
 - [ ] Replace ORDER BY tie-breaker heuristic with actual PK/unique keys from Schema metadata.
