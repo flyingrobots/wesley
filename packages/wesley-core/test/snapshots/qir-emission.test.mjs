@@ -33,12 +33,7 @@ test('emitFunction: generates deterministic function with params and jsonb rows'
   assert.ok(sql.includes('RETURNS SETOF jsonb'));
   assert.ok(sql.includes('SELECT to_jsonb(q.*) FROM ('));
   assert.ok(sql.includes('FROM organization t0'));
-  assert.ok(sql.includes('ORDER BY'));
-  const orderByIndex = sql.indexOf('ORDER BY');
-  const orderClause = sql.slice(orderByIndex, sql.indexOf('\n', orderByIndex) > 0 ? sql.indexOf('\n', orderByIndex) : sql.length);
-  assert.ok(orderClause.includes('t0.name'));
-  assert.ok(orderClause.includes('t0.id'));
-  assert.ok(orderClause.indexOf('t0.name') < orderClause.indexOf('t0.id'));
+  assert.ok(/ORDER BY\s+t0\.name\s+ASC\s*,\s*t0\.id\s+ASC/i.test(sql));
 });
 
 test('emitView: wraps lowered SQL in CREATE VIEW', () => {

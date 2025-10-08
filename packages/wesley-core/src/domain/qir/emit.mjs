@@ -41,16 +41,43 @@ function qualifiedOpName(schema, opName) {
   return `${sanitizeIdent(schema)}.${sanitizeOpName(opName)}`;
 }
 
+/**
+ * Normalize a string into a safe SQL identifier base (unquoted).
+ * - Lowercases, replaces non-alphanumerics with underscores, trims leading/trailing underscores.
+ * - Returns `fallback` if the normalized base is empty.
+ * - Validates length per PostgreSQL's 63-character identifier limit.
+ *
+ * Note: Callers that add prefixes (e.g., `op_`, `p_`) should ensure the final
+ * identifier including the prefix also satisfies the length limit.
+ *
+ * @param {string} s input string to normalize
+ * @param {string} fallback fallback value if result is empty
+ * @returns {string} normalized identifier base (not quoted)
+ * @throws {Error} if normalized identifier exceeds 63 characters
+ */
+function sanitizeIdentBase(s, fallback) {
+  const base = String(s || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+  const result = base || fallback;
+  if (result.length > 63) {
+    throw new Error(`Identifier base exceeds PostgreSQL's 63-character limit: "${result}"`);
+  }
+  return result;
+}
+
 function sanitizeOpName(s) {
-  // prefix for ops; deterministic; base sanitize then SQL-quote
-  const base = String(s || 'op').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'unnamed';
-  const ident = `op_${base}`;
-  return sqlQuoteIdent(ident);
+  const base = sanitizeIdentBase(s, 'op');
+  const final = `op_${base === 'op' ? 'unnamed' : base}`;
+  if (final.length > 63) {
+    throw new Error(`Operation identifier exceeds 63 characters: "${final}"`);
+  }
+  return sqlQuoteIdent(final);
 }
 
 function sanitizeIdent(s) {
-  // sanitize then SQL-quote (used for schemas)
-  const base = String(s || '').replace(/[^a-zA-Z0-9_]/g, '') || 'public';
+  const base = sanitizeIdentBase(s, 'public');
   return sqlQuoteIdent(base);
 }
 
@@ -63,10 +90,13 @@ function uniqueParamNames(ordered) {
   const seen = new Map();
   const out = [];
   for (const p of ordered) {
-    const base = `p_${String(p.name || 'arg')}`.replace(/[^a-zA-Z0-9_]/g, '_');
+    const base = `p_${sanitizeIdentBase(p.name, 'arg')}`;
     const n = seen.get(base) || 0;
     seen.set(base, n + 1);
-    const display = n === 0 ? base : `${base}_${n+1}`;
+    const display = n === 0 ? base : `${base}_${n}`;
+    if (display.length > 63) {
+      throw new Error(`Parameter identifier exceeds 63 characters: "${display}"`);
+    }
     out.push({ display, type: p.typeHint || 'text' });
   }
   return out;
