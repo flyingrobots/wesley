@@ -287,11 +287,12 @@ export class GeneratePipelineCommand extends WesleyCommand {
       // Discovery mode: Manifest overrides directory contract
       let files = [];
       let pattern = options.opsGlob || '**/*.op.json';
+      let manifest = null;
       if (options.opsManifest) {
         // Manifest mode (B)
         const manifestPath = options.opsManifest;
         const raw = await fs.read(manifestPath);
-        const manifest = JSON.parse(String(raw));
+        manifest = JSON.parse(String(raw));
         // Validate manifest against schema if available
         try {
           const AjvMod = await import('ajv');
@@ -473,10 +474,30 @@ export class GeneratePipelineCommand extends WesleyCommand {
           try { await fs.mkdir?.(explainDir, { recursive: true }); } catch {}
           for (const { baseName } of opsLoaded) {
             try {
-              // Only attempt when function is paramless (we emitted view for it)
+              // If paramless (we emitted view), run without args.
+              // If params exist, look for manifest.explainArgs samples by (sanitized) name.
               const hasView = outFiles.some(f => f.name === `ops/${baseName}.view.sql`);
-              if (!hasView) continue;
-              const sql = `EXPLAIN (FORMAT JSON) SELECT * FROM wes_ops.op_${baseName}()`;
+              let sql;
+              if (hasView) {
+                sql = `EXPLAIN (FORMAT JSON) SELECT * FROM wes_ops.op_${baseName}()`;
+              } else if (manifest && manifest.explainArgs) {
+                // prefer sanitized key
+                const keyCandidates = [baseName];
+                // also check raw keys that may equal original names
+                for (const k of Object.keys(manifest.explainArgs)) {
+                  const kSan = (k || '').toLowerCase().replace(/[^a-z0-9]+/g, '_') || 'unnamed';
+                  if (!keyCandidates.includes(kSan) && kSan === baseName) keyCandidates.push(k);
+                }
+                let args = null;
+                for (const kc of keyCandidates) {
+                  if (Array.isArray(manifest.explainArgs[kc])) { args = manifest.explainArgs[kc]; break; }
+                }
+                if (!args) continue; // no samples → skip
+                const joined = args.join(', ');
+                sql = `EXPLAIN (FORMAT JSON) SELECT * FROM wes_ops.op_${baseName}(${joined})`;
+              } else {
+                continue; // no samples; skip
+              }
               const res = await this.ctx.db?.query?.(options.opsDsn, sql);
               let payload = '';
               if (typeof res === 'string') payload = res;

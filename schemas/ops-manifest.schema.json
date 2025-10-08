@@ -8,8 +8,15 @@
     "include": { "type": "array", "items": { "type": "string" } },
     "exclude": { "type": "array", "items": { "type": "string" } },
     "allowEmpty": { "type": "boolean" },
-    "explain": { "type": "boolean" }
+    "explain": { "type": "boolean" },
+    "explainArgs": {
+      "type": "object",
+      "description": "Optional example args for parameterized ops. Keys are op names (pre-sanitization ok); values are arrays of raw SQL expressions inserted by position.",
+      "additionalProperties": {
+        "type": "array",
+        "items": { "type": "string" }
+      }
+    }
   },
   "required": ["include"]
 }
-

@@ -38,3 +38,32 @@ This page shows common patterns for `--ops-manifest` discovery.
 - Discovery expands globs relative to the `--ops` directory, subtracts `exclude`, then sorts files deterministically.
 - Sanitized-name collisions fail with a clear error listing colliding files. Keep op names unique post-sanitization.
 
+## Explain JSON for parameterized ops
+
+Provide example arguments to run EXPLAIN (FORMAT JSON) for parameterized ops via `--ops-explain-json --ops-dsn`.
+
+```json
+{
+  "include": ["**/*.op.json"],
+  "explainArgs": {
+    "products_by_name": ["'Al%'"],
+    "orders_by_user": ["'00000000-0000-0000-0000-000000000000'::uuid"]
+  }
+}
+```
+
+Run:
+
+```bash
+node packages/wesley-host-node/bin/wesley.mjs generate \
+  --schema example/ecommerce.graphql \
+  --ops example/ops \
+  --ops-manifest example/ops/manifest.json \
+  --ops-explain-json \
+  --ops-dsn "postgres://wesley:wesley_test@localhost:5432/wesley_test" \
+  --out-dir example/out
+```
+
+Notes
+- Values in `explainArgs` are inserted as raw SQL expressions by position; quote and cast as needed.
+- Keys are matched against the sanitized op name (lowercased, non‑alphanumeric → `_`).
