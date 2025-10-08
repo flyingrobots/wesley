@@ -18,7 +18,11 @@ export class GeneratePipelineCommand extends WesleyCommand {
     return cmd
       .option('-s, --schema <path>', 'GraphQL schema file. Use "-" for stdin', 'schema.graphql')
       .option('--stdin', 'Read schema from stdin (alias for --schema -)')
-      .option('--ops <dir>', 'Experimental: directory with GraphQL operation documents (queries) to validate', 'ops')
+      .option('--ops <dir>', 'Experimental: directory with GraphQL operation JSON files (*.op.json)', 'ops')
+      .option('--ops-glob <pattern>', 'Glob for ops discovery (default: **/*.op.json)')
+      .option('--ops-allow-empty', 'Do not error if no ops are found')
+      .option('--ops-explain', 'Emit EXPLAIN JSON snapshots for ops (writes to out/ops/explain)')
+      .option('--ops-manifest <path>', 'Optional manifest (include/exclude) to control discovery')
       .option('--emit-bundle', 'Emit .wesley/ evidence bundle')
       .option('--supabase', 'Enable Supabase features (RLS tests)')
       .option('--out-dir <dir>', 'Output directory', 'out')
@@ -274,37 +278,96 @@ export class GeneratePipelineCommand extends WesleyCommand {
       const fs = this.ctx.fs;
       const exists = await fs.exists(opsDir);
       if (!exists) {
-        logger.info({ opsDir }, 'Experimental --ops: directory not found; skipping');
-        return;
+        const e = new Error(`--ops directory not found: ${opsDir}`);
+        e.code = 'ENOENT';
+        throw e;
       }
-      // Find *.op.json files (MVP DSL)
-      const dirEntries = await fs.readDir?.(opsDir);
-      const files = Array.isArray(dirEntries)
-        ? dirEntries.filter(f => f.name?.endsWith?.('.op.json')).map(f => f.path || `${opsDir}/${f.name}`)
-        : [];
-      if (files.length === 0) {
-        // Fallback to a couple of well-known names
-        const fallbacks = ['products_by_name.op.json', 'orders_by_user.op.json'];
-        for (const name of fallbacks) {
-          const p = await fs.join(opsDir, name);
-          if (await fs.exists(p)) files.push(p);
-        }
-      }
-      if (files.length === 0) {
-        logger.info({ opsDir }, 'Experimental --ops: no *.op.json files found; skipping');
-        return;
+      // Strict discovery: recursive scan for **/*.op.json (simple suffix match)
+      const pattern = options.opsGlob || '**/*.op.json';
+      const files = await findOpFilesRecursive(fs, opsDir, pattern);
+      if (files.length === 0 && !options.opsAllowEmpty) {
+        const e = new Error(`No ops matched in ${opsDir} (glob: ${pattern}). Pass --ops-allow-empty to proceed.`);
+        e.code = 'VALIDATION_FAILED';
+        throw e;
       }
       const outDir = options.outDir || 'out';
       const outFiles = [];
+
+      // Prepare JSON Schema validator (Ajv)
+      let ajvValidate;
+      try {
+        const AjvMod = await import('ajv');
+        const Ajv = AjvMod.default || AjvMod;
+        const fmtMod = await import('ajv-formats');
+        const addFormats = fmtMod.default || fmtMod;
+        const ajv = new Ajv({ strict: false, allErrors: true });
+        addFormats(ajv);
+        let schema;
+        try {
+          const qir = await import('@wesley/core/domain/qir');
+          schema = qir.opJsonSchema;
+        } catch {}
+        if (!schema) {
+          try {
+            const mod = await import('@wesley/core/src/domain/qir/op.schema.mjs');
+            schema = mod.opJsonSchema;
+          } catch {}
+        }
+        if (schema) {
+          ajvValidate = ajv.compile(schema);
+        } else {
+          logger.warn('ops: no schema export found; skipping Ajv validation');
+        }
+      } catch (e) {
+        logger.warn('ops: could not initialize Ajv; schema validation skipped: ' + (e?.message || e));
+      }
+
+      // Load + validate + detect collisions
+      const collisions = new Map(); // baseName -> [files]
+      let hadErrors = false;
+      const opsLoaded = [];
       for (const path of files) {
         try {
           const raw = await fs.read(path);
           const op = JSON.parse(String(raw));
-          const plan = buildPlanFromJson(op);
-          // Sanitize operation name for identifiers and filenames
+          if (ajvValidate && !ajvValidate(op)) {
+            hadErrors = true;
+            const errs = (ajvValidate.errors || []).map(er => `${er.instancePath || '(root)'} ${er.message}`).join('; ');
+            logger.warn({ file: path, errors: ajvValidate.errors }, `ops: schema validation failed: ${errs}`);
+            continue;
+          }
           let baseName = (op.name || 'unnamed').toLowerCase().replace(/[^a-z0-9]+/g, '_');
           if (!baseName) baseName = 'unnamed';
           if (baseName.length > 240) baseName = baseName.slice(0, 240);
+          const list = collisions.get(baseName) || [];
+          list.push(path);
+          collisions.set(baseName, list);
+          opsLoaded.push({ path, op, baseName });
+        } catch (e) {
+          hadErrors = true;
+          logger.warn({ file: path }, 'ops: failed to read/parse op: ' + (e?.message || e));
+        }
+      }
+
+      // Collisions → fail
+      const dupes = Array.from(collisions.entries()).filter(([_, arr]) => arr.length > 1);
+      if (dupes.length > 0) {
+        hadErrors = true;
+        for (const [key, arr] of dupes) {
+          logger.warn({ key, files: arr }, `ops: sanitized name collision: ${key}`);
+        }
+      }
+      if (hadErrors && !options.opsAllowErrors) {
+        const e = new Error('ops: one or more operations failed validation or collided');
+        e.code = 'VALIDATION_FAILED';
+        throw e;
+      }
+
+      // Compile ordered set deterministically
+      opsLoaded.sort((a,b)=> a.baseName.localeCompare(b.baseName));
+      for (const { op, baseName } of opsLoaded) {
+        try {
+          const plan = buildPlanFromJson(op);
           const paramCount = (collectParams(plan)?.ordered?.length) || 0;
           const isParamless = paramCount === 0;
           const fnSql = emitFunction(baseName, plan);
@@ -314,16 +377,25 @@ export class GeneratePipelineCommand extends WesleyCommand {
           }
           outFiles.push({ name: `ops/${baseName}.fn.sql`, content: fnSql + '\n' });
         } catch (e) {
-          logger.warn({ file: path }, 'Failed to compile op: ' + (e?.message || e));
+          logger.warn({ op: baseName }, 'ops: failed to compile plan: ' + (e?.message || e));
+          if (!options.opsAllowErrors) {
+            const ex = new Error('ops: compile failed');
+            ex.code = 'VALIDATION_FAILED';
+            throw ex;
+          }
         }
+      }
+      for (const path of files) {
+        // no-op: preserved block boundary for patch clarity
       }
       if (outFiles.length) {
         await this.ctx.writer.writeFiles(outFiles, outDir);
         const opsOutputDir = await fs.join(outDir, 'ops');
-        logger.info({ count: outFiles.length, dir: opsOutputDir }, 'Compiled operations (experimental)');
+        logger.info({ count: outFiles.length, dir: opsOutputDir }, 'Compiled operations');
       }
     } catch (e) {
-      logger.warn('Experimental --ops failed: ' + (e?.message || e));
+      // Propagate strict failures so the command exits non-zero
+      throw e;
     }
   }
 }
@@ -338,6 +410,40 @@ function shouldEnforceClean(env, options) {
   if (policy === 'strict') return true;
   // default policy: enforce only when producing bundle/certs
   return !!options.emitBundle;
+}
+
+// Recursively find **/*.op.json (simple suffix match with optional custom glob)
+async function findOpFilesRecursive(fs, dir, globPattern) {
+  const results = [];
+  const isDefault = !globPattern || globPattern === '**/*.op.json';
+
+  async function walk(path) {
+    let entries;
+    try {
+      entries = await fs.readDir?.(path);
+    } catch {
+      return; // not a directory or adapter lacks readDir
+    }
+    if (!Array.isArray(entries)) return;
+    for (const e of entries) {
+      const p = e.path || await fs.join(path, e.name);
+      const name = e.name || p;
+      // Match file
+      const isCandidate = isDefault ? name.endsWith('.op.json') : name.includes('.op.json');
+      if (isCandidate) results.push(p);
+      // Recurse into subdirectories (best-effort): if readDir works on p, it's a dir
+      try {
+        const sub = await fs.readDir?.(p);
+        if (Array.isArray(sub)) await walk(p);
+      } catch {}
+    }
+  }
+
+  await walk(dir);
+  // Deduplicate and sort deterministically
+  const uniq = Array.from(new Set(results));
+  uniq.sort();
+  return uniq;
 }
 async function assertCleanGit() {
   try {
