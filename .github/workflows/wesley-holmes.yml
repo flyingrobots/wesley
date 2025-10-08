@@ -306,14 +306,28 @@ jobs:
           WESLEY_OUT_DIR: out
         run: |
           set -euo pipefail
-          if [ -d "example/${WESLEY_OUT_DIR}/ops" ]; then
-            for f in example/${WESLEY_OUT_DIR}/ops/*.sql; do
-              echo "Applying $f";
-              PGPASSWORD=postgres psql -h localhost -U postgres -d test -f "$f";
-            done
-          else
+          OPS_DIR="example/${WESLEY_OUT_DIR}/ops"
+          shopt -s nullglob
+          if [ ! -d "$OPS_DIR" ]; then
             echo "No ops SQL directory found; skipping"
+            exit 0
           fi
+          files=("$OPS_DIR"/*.sql)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No ops SQL files found; nothing to apply"
+            exit 0
+          fi
+          for f in "${files[@]}"; do
+            if [ ! -s "$f" ]; then
+              echo "Skipping empty file: $f"
+              continue
+            fi
+            echo "Applying $f in a transaction..."
+            tmp=$(mktemp)
+            { echo 'BEGIN;'; cat "$f"; echo 'COMMIT;'; } > "$tmp"
+            PGPASSWORD=postgres psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d test -f "$tmp"
+            rm -f "$tmp"
+          done
 
       - name: "🌱 Seed minimal data for ops"
         run: |
@@ -344,12 +358,15 @@ jobs:
 
       - name: "🧪 Run Tests"
         run: |
-          # Try to enable pgtap (will fail if not installed in server image)
-          PGPASSWORD=postgres psql -h localhost -U postgres -d test -c 'CREATE EXTENSION IF NOT EXISTS pgtap;' || true
-          # Run ops pgTAP smoke (skips if pgtap not available)
-          PGPASSWORD=postgres psql -h localhost -U postgres -d test -f example/tests/ops.pgtap.sql || true
+          # Run ops pgTAP smoke only if pgTAP is available
+          HAS_PGTAP=$(PGPASSWORD=postgres psql -h localhost -U postgres -d test -t -A -c "SELECT 1 FROM pg_available_extensions WHERE name='pgtap'" || echo '')
+          if [ "$HAS_PGTAP" = "1" ]; then
+            PGPASSWORD=postgres psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d test -f example/tests/ops.pgtap.sql
+          else
+            echo "pgtap extension not available; skipping pgTAP tests"
+          fi
           # Simple non-pgTAP assertion: expect exactly 1 published product matching 'Al%'
-          CNT=$(PGPASSWORD=postgres psql -h localhost -U postgres -d test -t -A -c "SELECT count(*) FROM wes_ops.op_products_by_name('Al%')" || echo 0)
+          CNT=$(PGPASSWORD=postgres psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d test -t -A -c "SELECT count(*) FROM wes_ops.op_products_by_name('Al%')" || echo 0)
           echo "Count from op_products_by_name('Al%') = $CNT"
           if [ "$CNT" != "1" ]; then
             echo "Expected 1 row from products_by_name, got $CNT" >&2

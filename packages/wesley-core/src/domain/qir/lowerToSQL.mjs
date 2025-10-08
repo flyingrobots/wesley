@@ -15,7 +15,15 @@ import { collectParams } from './ParamCollector.mjs';
 
 // Lightweight helpers
 const isObject = (v) => v && typeof v === 'object';
-const escIdent = (s) => s; // keep identifiers bare for readability in MVP
+// Minimal quoting: keep identifiers bare for readability unless they require
+// quoting (reserved or not matching [a-z_][a-z0-9_]*). This ensures examples
+// like table "order" remain valid.
+const RESERVED = new Set(['select','insert','update','delete','from','where','group','order','by','limit','offset','join','left','right','on','and','or','not','null','true','false','table','view','function','schema','user']);
+const needsQuoting = (s) => {
+  const id = String(s);
+  return !/^[a-z_][a-z0-9_]*$/.test(id) || RESERVED.has(id.toLowerCase());
+};
+const escIdent = (s) => needsQuoting(s) ? `"${String(s).replace(/\"/g, '""')}"` : String(s);
 const escString = (s) => String(s).replace(/'/g, "''");
 
 export function lowerToSQL(plan, paramsEnv = null) {
@@ -234,4 +242,3 @@ function orderMentionsExpr(orderByList, expr) {
     return e.kind === 'ColumnRef' && expr.kind === 'ColumnRef' && e.table === expr.table && e.column === expr.column;
   });
 }
-

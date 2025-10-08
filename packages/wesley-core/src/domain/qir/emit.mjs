@@ -14,6 +14,12 @@ import { collectParams } from './ParamCollector.mjs';
 
 const DEFAULT_SCHEMA = 'wes_ops';
 
+// Minimal reserved keyword list (PostgreSQL core). Not exhaustive; used to avoid
+// accidental collisions for unquoted identifiers (e.g., parameter names).
+const RESERVED = new Set([
+  'select','insert','update','delete','from','where','group','order','by','limit','offset','join','left','right','on','and','or','not','null','true','false','table','view','function','schema','user'
+]);
+
 export function emitView(opName, plan, { schema = DEFAULT_SCHEMA } = {}) {
   const name = qualifiedOpName(schema, opName);
   const selectSql = lowerToSQL(plan);
@@ -69,6 +75,8 @@ function sanitizeIdentBase(s, fallback) {
 
 function sanitizeOpName(s) {
   const base = sanitizeIdentBase(s, 'op');
+  // Avoid confusing collisions with the required "op_" prefix by substituting
+  // "unnamed" when the sanitized base is exactly "op" → "op_unnamed".
   const final = `op_${base === 'op' ? 'unnamed' : base}`;
   if (final.length > 63) {
     throw new Error(`Operation identifier exceeds 63 characters: "${final}"`);
@@ -93,7 +101,8 @@ function uniqueParamNames(ordered) {
     const base = `p_${sanitizeIdentBase(p.name, 'arg')}`;
     const n = seen.get(base) || 0;
     seen.set(base, n + 1);
-    const display = n === 0 ? base : `${base}_${n}`;
+    let display = n === 0 ? base : `${base}_${n}`;
+    if (RESERVED.has(display.toLowerCase())) display = `${display}_p`;
     if (display.length > 63) {
       throw new Error(`Parameter identifier exceeds 63 characters: "${display}"`);
     }

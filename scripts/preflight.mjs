@@ -88,7 +88,7 @@ try {
   const flatConfigPath = resolve(tmpdir(), `eslint.core-purity.${Date.now()}.config.mjs`);
   const cfg = `export default [{\n  files: [\"packages/wesley-core/src/**/*.mjs\"],\n  languageOptions: { ecmaVersion: 2022, sourceType: 'module' },\n  rules: {\n    'no-restricted-imports': [\n      'error',\n      {\n        patterns: [ { group: ['node:*'], message: 'Do not use Node built-ins in core (keep it pure).' } ],\n        paths: [\n          { name: 'fs', message: 'Use ports/adapters; no fs in core.' },\n          { name: 'path', message: 'Use ports/adapters; no path in core.' },\n          { name: 'process', message: 'Do not use process in core.' },\n          { name: 'child_process', message: 'No child_process in core.' },\n          { name: 'os', message: 'No os in core.' },\n          { name: 'buffer', message: 'No Buffer usage in core.' }\n        ]\n      }\n    ]\n  }\n}];\n`;
   writeFileSync(flatConfigPath, cfg, 'utf8');
-  runOrFail('pnpm', ['dlx', 'eslint', '--config', flatConfigPath, 'packages/wesley-core/src/**/*.mjs', '--max-warnings=0'], 'ESLint core purity check failed');
+  runOrFail('pnpm', ['exec', 'eslint', '--config', flatConfigPath, 'packages/wesley-core/src/**/*.mjs', '--max-warnings=0'], 'ESLint core purity check failed');
 } catch (e) {
   fail(`ESLint core purity check failed to run: ${e?.message || e}`);
 }

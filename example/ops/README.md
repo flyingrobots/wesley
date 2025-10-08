@@ -69,3 +69,17 @@ psql -d <db> -t -A -c "EXPLAIN (FORMAT JSON) SELECT * FROM wes_ops.op_products_b
 
 Note: The DSL is experimental; joins, distinct, pagination, and deeper composition will expand in future phases. See docs/guides/qir-ops.md for the QIR lowering/emission guide.
 
+## Validation & Error Handling
+
+Required fields:
+- `name` (string), `table` (string)
+
+Optional fields:
+- `columns` (array of non-empty strings) — omit or [] for SELECT *
+- `filters` (array) — allowed ops: eq, ne, lt, lte, gt, gte, like, ilike, contains, in, isNull, isNotNull
+- `orderBy` (array) — `dir`: asc|desc; `nulls`: first|last (optional)
+- `limit` (>0 integer), `offset` (>=0 integer)
+- `joins` (array) — each join requires `table` (string) and `on` with `{ left, right, op }`
+- `lists` (array) — each list requires `table` and either `match` `{ local, foreign }` and/or `filters`
+
+The builder validates inputs and throws descriptive errors when values are missing or invalid (field name, offending value, expected shape). Identifiers should be trusted schema-derived names; user input must not be used for table/column/alias names.

@@ -42,9 +42,29 @@ export class NodeFileSystem {
     return pathJoin(...parts);
   }
 
+  /**
+   * Read directory entries (non-recursive).
+   * @param {string} path - Directory path to read.
+   * @returns {Promise<Array<{name:string, path:string, isFile:boolean, isDirectory:boolean, isSymbolicLink:boolean}>>}
+   */
   async readDir(path) {
-    const entries = await readdir(path, { withFileTypes: true });
-    return entries.map(e => ({ name: e.name, path: resolve(path, e.name), isFile: e.isFile(), isDirectory: e.isDirectory() }));
+    if (!path || typeof path !== 'string') {
+      throw new TypeError('readDir(path) requires a non-empty string');
+    }
+    try {
+      const entries = await readdir(path, { withFileTypes: true });
+      return entries.map(e => ({
+        name: e.name,
+        path: resolve(path, e.name),
+        isFile: e.isFile(),
+        isDirectory: e.isDirectory(),
+        isSymbolicLink: e.isSymbolicLink?.() || false
+      }));
+    } catch (err) {
+      const e = new Error(`Failed to readDir(${path}): ${err?.message || err}`);
+      e.code = err?.code;
+      throw e;
+    }
   }
 
   async readFile(path, encoding = 'utf8') {

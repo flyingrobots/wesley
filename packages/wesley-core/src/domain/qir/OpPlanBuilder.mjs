@@ -21,12 +21,17 @@ export function buildPlanFromJson(op) {
   const root = new TableNode(op.table, alias);
 
   const proj = new Projection();
-  const cols = Array.isArray(op.columns) && op.columns.length ? op.columns : ['*'];
-  if (cols.length === 1 && cols[0] === '*') {
+  const cols = op.columns ?? ['*'];
+  if (!Array.isArray(cols)) throw new Error('op.columns must be an array when provided');
+  if (cols.length === 0 || (cols.length === 1 && cols[0] === '*')) {
     // Leave projection empty → SELECT *
   } else {
     for (const c of cols) {
-      proj.add(new ProjectionItem(String(c), new ColumnRef(alias, String(c))));
+      if (typeof c !== 'string' || c.trim().length === 0) {
+        throw new Error(`Invalid column name in columns[]: ${JSON.stringify(c)}`);
+      }
+      const name = c.trim();
+      proj.add(new ProjectionItem(name, new ColumnRef(alias, name)));
     }
   }
 
@@ -37,9 +42,13 @@ export function buildPlanFromJson(op) {
   // Optional simple joins (INNER/LEFT) with on clause
   if (Array.isArray(op.joins)) {
     for (const j of op.joins) {
-      const jAlias = j.alias || `j_${String(j.table).slice(0,1)}`;
-      const right = new TableNode(String(j.table), jAlias);
-      const joinType = (j.type || 'INNER').toUpperCase() === 'LEFT' ? 'LEFT' : 'INNER';
+      const table = (typeof j.table === 'string' && j.table.trim()) || null;
+      if (!table) throw new Error(`join.table must be a non-empty string: ${JSON.stringify(j)}`);
+      if (!j.on) throw new Error('join.on is required for joins');
+      const jAlias = j.alias || `j_${table.slice(0,1)}`;
+      const right = new TableNode(table, jAlias);
+      const jt = String(j.type || 'INNER').toUpperCase();
+      const joinType = jt === 'LEFT' ? 'LEFT' : 'INNER';
       const on = buildOnPredicate(j.on, alias, jAlias);
       rel = new JoinNode(rel, right, joinType, on);
     }
@@ -95,13 +104,29 @@ export function buildPlanFromJson(op) {
   // ORDER BY, LIMIT/OFFSET
   const order = [];
   for (const ob of op.orderBy || []) {
-    order.push(new OrderBy(new ColumnRef(alias, String(ob.column)), ob.dir || 'asc', ob.nulls || null));
+    const col = (typeof ob.column === 'string' && ob.column.trim()) || null;
+    if (!col) throw new Error(`orderBy entry missing valid column: ${JSON.stringify(ob)}`);
+    let dir = String(ob.dir || 'asc').toLowerCase();
+    if (dir !== 'asc' && dir !== 'desc') dir = 'asc';
+    let nulls = ob.nulls == null ? null : String(ob.nulls).toLowerCase();
+    if (nulls && nulls !== 'first' && nulls !== 'last') nulls = null;
+    order.push(new OrderBy(new ColumnRef(alias, col), dir, nulls));
   }
+
+  const toPosInt = (v, name, allowZero) => {
+    if (v == null) return null;
+    if (typeof v === 'string' && v.trim() === '') return null;
+    const n = Number(v);
+    if (!Number.isInteger(n) || (!allowZero ? n <= 0 : n < 0)) {
+      throw new Error(`${name} must be ${allowZero ? 'a non-negative' : 'a positive'} integer. Received: ${JSON.stringify(v)}`);
+    }
+    return n;
+  };
 
   const plan = new QueryPlan(rel, proj, {
     orderBy: order,
-    limit: op.limit != null ? Number(op.limit) : null,
-    offset: op.offset != null ? Number(op.offset) : null,
+    limit: toPosInt(op.limit, 'limit', false),
+    offset: toPosInt(op.offset, 'offset', true),
   });
   return plan;
 }
@@ -110,8 +135,12 @@ function buildPredicate(alias, filters) {
   if (!filters || filters.length === 0) return null;
   const parts = [];
   for (const f of filters) {
-    const left = new ColumnRef(alias, String(f.column));
+    const col = (typeof f.column === 'string' && f.column.trim()) || null;
+    if (!col) throw new Error(`Filter missing valid column: ${JSON.stringify(f)}`);
+    const left = new ColumnRef(alias, col);
+    const allowed = new Set(['eq','ne','lt','lte','gt','gte','like','ilike','contains','in','isNull','isNotNull']);
     const op = String(f.op || 'eq');
+    if (!allowed.has(op)) throw new Error(`Unsupported filter op: ${op}`);
     if (op === 'isNull' || op === 'isNotNull') {
       parts.push(op === 'isNull' ? Predicate.isNull(left) : Predicate.isNotNull(left));
       continue;
@@ -124,16 +153,16 @@ function buildPredicate(alias, filters) {
 }
 
 function buildOnPredicate(on, leftDefault, rightAlias) {
-  if (!on) return { kind: 'Compare', left: { kind: 'Literal', value: true }, op: 'eq', right: { kind: 'Literal', value: true } }; // ON TRUE
+  if (!on) throw new Error('Join requires an "on" condition. Provide { left, right, op }');
   const parseRef = (r) => {
-    if (Array.isArray(r)) return new ColumnRef(String(r[0] || leftDefault), String(r[1]));
-    if (typeof r === 'string') {
-      const m = r.split('.');
-      if (m.length === 2) return new ColumnRef(m[0], m[1]);
-      return new ColumnRef(leftDefault, r);
+    let table, column;
+    if (Array.isArray(r)) { table = r[0] || leftDefault; column = r[1]; }
+    else if (typeof r === 'string') { const m = r.split('.'); if (m.length === 2) { table = m[0]; column = m[1]; } else { table = leftDefault; column = r; } }
+    else { table = r?.table || leftDefault; column = r?.column; }
+    if (!table || typeof table !== 'string' || !column || typeof column !== 'string') {
+      throw new Error(`Invalid column reference in join.on: ${JSON.stringify(r)}`);
     }
-    // structured { table, column }
-    return new ColumnRef(String(r.table || leftDefault), String(r.column));
+    return new ColumnRef(table, column);
   };
   const op = String(on.op || 'eq');
   const left = parseRef(on.left);
@@ -143,10 +172,15 @@ function buildOnPredicate(on, leftDefault, rightAlias) {
 
 function buildRightExpr(param, value, op) {
   if (param && param.name) {
-    const p = new ParamRef(String(param.name));
-    if (param.type) p.typeHint = String(param.type);
-    // For IN, expect array type
-    if (op === 'in' && p.typeHint && !p.typeHint.endsWith('[]')) p.typeHint = p.typeHint + '[]';
+    const name = String(param.name);
+    const allowedTypes = new Set(['text','uuid','int','bigint','numeric','jsonb','bool','date','timestamp']);
+    let typeHint = param.type ? String(param.type) : undefined;
+    if (typeHint && !allowedTypes.has(typeHint.replace(/\[\]$/, ''))) {
+      throw new Error(`Unsupported param type: ${typeHint} for ${name}`);
+    }
+    if (op === 'in' && typeHint && !typeHint.endsWith('[]')) typeHint = typeHint + '[]';
+    const p = new ParamRef(name);
+    if (typeHint) p.typeHint = typeHint;
     return p;
   }
   // Fallback to literal value

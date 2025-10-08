@@ -303,7 +303,9 @@ export class GeneratePipelineCommand extends WesleyCommand {
           const plan = buildPlanFromJson(op);
           const viewSql = emitView(op.name || 'unnamed', plan);
           const fnSql = emitFunction(op.name || 'unnamed', plan);
-          const baseName = (op.name || 'unnamed').toLowerCase().replace(/[^a-z0-9]+/g, '_');
+          let baseName = (op.name || 'unnamed').toLowerCase().replace(/[^a-z0-9]+/g, '_');
+          if (!baseName) baseName = 'unnamed';
+          if (baseName.length > 240) baseName = baseName.slice(0, 240);
           outFiles.push({ name: `ops/${baseName}.view.sql`, content: viewSql + '\n' });
           outFiles.push({ name: `ops/${baseName}.fn.sql`, content: fnSql + '\n' });
         } catch (e) {
