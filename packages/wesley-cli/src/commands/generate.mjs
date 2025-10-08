@@ -5,7 +5,7 @@
  */
 
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
-import { buildPlanFromJson, emitFunction, emitView, collectParams } from '@wesley/core/domain/qir';
+import { buildPlanFromJson, emitFunction, emitView, collectParams, opJsonSchema } from '@wesley/core/domain/qir';
 
 export class GeneratePipelineCommand extends WesleyCommand {
   constructor(ctx) {
@@ -296,10 +296,30 @@ export class GeneratePipelineCommand extends WesleyCommand {
       }
       const outDir = options.outDir || 'out';
       const outFiles = [];
+
+      // Prepare JSON Schema validator (dynamic import to keep host-light)
+      let ajv, addFormats, validateOp;
+      try {
+        const AjvMod = await import('ajv');
+        const Ajv = AjvMod.default || AjvMod;
+        const fmtMod = await import('ajv-formats');
+        addFormats = (fmtMod.default || fmtMod);
+        ajv = new Ajv({ strict: false, allErrors: true });
+        addFormats(ajv);
+        validateOp = ajv.compile(opJsonSchema);
+      } catch (e) {
+        logger.warn('Experimental --ops: failed to initialize AJV, skipping schema validation: ' + (e?.message || e));
+      }
       for (const path of files) {
         try {
           const raw = await fs.read(path);
           const op = JSON.parse(String(raw));
+          // Validate against schema first
+          if (validateOp && !validateOp(op)) {
+            const errs = (validateOp.errors || []).map(er => `${er.instancePath || '(root)'} ${er.message}`).join('; ');
+            logger.warn({ file: path, errors: validateOp.errors }, `Op schema validation failed: ${errs}`);
+            continue;
+          }
           const plan = buildPlanFromJson(op);
           const paramCount = (collectParams(plan)?.ordered?.length) || 0;
           const isParamless = paramCount === 0;
@@ -320,10 +340,66 @@ export class GeneratePipelineCommand extends WesleyCommand {
         await this.ctx.writer.writeFiles(outFiles, outDir);
         const opsDir = await fs.join(outDir, 'ops');
         logger.info({ count: outFiles.length, dir: opsDir }, 'Compiled operations (experimental)');
+
+        // Generate basic pgTAP tests for ops functions
+        try {
+          const tapSql = await this.buildOpsPgTapTests(outDir);
+          if (tapSql) {
+            await this.ctx.writer.writeFiles([{ name: 'tests-ops.sql', content: tapSql }], outDir);
+            logger.info({ file: await fs.join(outDir, 'tests-ops.sql') }, 'Emitted pgTAP tests for ops');
+          }
+        } catch (e) {
+          logger.warn('Failed to emit pgTAP tests for ops: ' + (e?.message || e));
+        }
       }
     } catch (e) {
       logger.warn('Experimental --ops failed: ' + (e?.message || e));
     }
+  }
+
+  // Build a minimal pgTAP suite validating ops functions exist and include expected clauses
+  async buildOpsPgTapTests(outDir) {
+    const fs = this.ctx.fs;
+    const opsPath = await fs.join(outDir, 'ops');
+    const exists = await fs.exists(opsPath);
+    if (!exists) return '';
+    const dirEntries = await fs.readDir?.(opsPath);
+    const fnFiles = (dirEntries || []).filter(f => f.name?.endsWith?.('.fn.sql'));
+    if (fnFiles.length === 0) return '';
+    const lines = [];
+    lines.push('-- Wesley Generated pgTAP suite for ops');
+    lines.push('BEGIN;');
+    lines.push('SELECT plan(999);');
+    lines.push("CREATE SCHEMA IF NOT EXISTS wes_ops; -- Ensure schema for functions under test");
+
+    for (const f of fnFiles) {
+      const content = String(await fs.read(f.path || (await fs.join(opsPath, f.name))));
+      const m = content.match(/CREATE\s+OR\s+REPLACE\s+FUNCTION\s+"?(\w+)"?\./i)
+        ? null
+        : content.match(/CREATE\s+OR\s+REPLACE\s+FUNCTION\s+([^\s(]+)/i);
+      // Extract function signature schema.func(args)
+      let fnQName = null;
+      if (!m) {
+        const m2 = content.match(/CREATE\s+OR\s+REPLACE\s+FUNCTION\s+\"?([a-zA-Z_][\w]*)\"?\.(\"?[a-zA-Z_][\w]*\"?)/);
+        if (m2) fnQName = `${m2[1]}.${m2[2].replace(/\"/g,'"')}`;
+      } else {
+        fnQName = (m && m[1]) || null;
+      }
+      // Use filename to recover base op name
+      const base = f.name.replace(/\.fn\.sql$/,'');
+      const opName = `op_${base}`;
+      // Test function presence via catalog
+      lines.push(`SELECT ok(EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='wes_ops' AND p.proname='${opName}'), 'wes_ops.${opName} exists');`);
+      // Test definition contains FROM root table (best-effort)
+      // This is a heuristic: look for FROM "<table>" or FROM <table>
+      // Without parsing, assert presence of FROM in definition
+      lines.push(`SELECT ok(position('FROM' in pg_get_functiondef(p.oid)) > 0, 'wes_ops.${opName} contains FROM clause') FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='wes_ops' AND p.proname='${opName}';`);
+    }
+
+    lines.push('SELECT finish();');
+    lines.push('ROLLBACK;');
+    lines.push('');
+    return lines.join('\n');
   }
 }
 

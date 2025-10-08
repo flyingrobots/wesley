@@ -99,13 +99,13 @@ EOF
 }
 
 @test "stdin input with --schema - works" {
-    run bash -c "echo 'type User @wes_table { id: ID! @wes_pk }' | node '$CLI_PATH' generate --schema - --out out"
+    run bash -c "echo 'type User @wes_table { id: ID! @wes_pk }' | node '$CLI_PATH' generate --schema - --out-dir out"
     assert_success
     assert_file_exist out/schema.sql
 }
 
 @test "--stdin convenience flag works" {
-    run bash -c "echo 'type User @wes_table { id: ID! @wes_pk }' | node '$CLI_PATH' generate --stdin --out out"
+    run bash -c "echo 'type User @wes_table { id: ID! @wes_pk }' | node '$CLI_PATH' generate --stdin --out-dir out"
     assert_success
     assert_file_exist out/schema.sql
 }

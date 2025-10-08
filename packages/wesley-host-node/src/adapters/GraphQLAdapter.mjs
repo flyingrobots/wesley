@@ -60,7 +60,11 @@ class GraphQLSchemaParser {
       const directiveSchemaSDL = readFileSync(schemaPath, 'utf8');
       return buildSchema(directiveSchemaSDL);
     } catch (error) {
-      console.warn('Could not load Wesley directive schema for validation:', error.message);
+      // Keep silent by default to avoid polluting JSON outputs;
+      // enable with WESLEY_WARN_DIRECTIVES=1 for debugging.
+      if (process.env.WESLEY_WARN_DIRECTIVES === '1') {
+        console.warn('Could not load Wesley directive schema for validation:', error.message);
+      }
       return null;
     }
   }

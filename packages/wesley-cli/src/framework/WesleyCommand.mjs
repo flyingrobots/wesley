@@ -46,7 +46,7 @@ export class WesleyCommand {
     const level = this.resolveLogLevel(options);
     
     // If quiet mode, return no-op logger
-    if (options.quiet) {
+    if (options.quiet || options.json) {
       return {
         debug: () => {},
         info: () => {},
@@ -162,16 +162,8 @@ export class WesleyCommand {
       
       // Execute the command logic
       const result = await this.executeCore(context);
-      
-      // Handle JSON output mode
-      if (options.json && result) {
-        this.ctx.stdout.write(JSON.stringify({
-          success: true,
-          result,
-          timestamp: new Date().toISOString()
-        }, null, 2) + '\n');
-      }
-      
+      // In JSON mode, subcommands are responsible for structured output.
+      // We intentionally avoid duplicating output here to keep stdout machine-parseable.
       return result;
       
     } catch (error) {
@@ -212,7 +204,8 @@ export class WesleyCommand {
 
   // Error formatting
   formatError(error, options) {
-    const code = error.code ? `[${error.code}] ` : '';
+    const codeOrName = error.code || error.name;
+    const code = codeOrName ? `[${codeOrName}] ` : '';
     const message = `❌ ${code}${error.message}`;
     
     if (options.debug || options.verbose) {
@@ -230,7 +223,8 @@ export class WesleyCommand {
       'GENERATION_FAILED': 4,
       'VALIDATION_FAILED': 5
     };
-    return codeMap[error.code] || 1;
+    const key = error.code || error.name;
+    return codeMap[key] || 1;
   }
 
   // Helpful hints for common errors

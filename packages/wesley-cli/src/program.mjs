@@ -60,7 +60,7 @@ export async function program(argv, ctx) {
     return 0;
   } catch (error) {
     // Allow commands to throw ExitError to control exit code
-    if (error && error.name === 'ExitError') {
+    if (error && (error.name === 'ExitError' || Number.isInteger?.(error.exitCode))) {
       return error.exitCode ?? 1;
     }
     // Commander-level errors or unexpected issues

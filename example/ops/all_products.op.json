@@ -1,0 +1,9 @@
+{
+  "name": "all_products",
+  "table": "product",
+  "columns": ["id", "name", "slug"],
+  "filters": [ { "column": "published", "op": "eq", "value": true } ],
+  "orderBy": [ { "column": "name", "dir": "asc" } ],
+  "limit": 100
+}
+

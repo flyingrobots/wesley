@@ -37,7 +37,7 @@ JSON
   create_schema
   create_realm_pass
   # transform to produce artifacts
-  run node "$CLI_PATH" transform --schema schema.graphql --out out
+  run node "$CLI_PATH" transform --schema schema.graphql --out-dir out
   assert_success
 
   # create SHIPME

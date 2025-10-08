@@ -176,6 +176,32 @@ wesley generate                  # compile GraphQL → SQL/tests and write snaps
 wesley up --docker               # bootstrap or migrate your dev DB
 ```
 
+### Using --ops (experimental QIR)
+
+The `--ops` flag lets you compile simple operation descriptions (JSON files) into SQL views/functions via the QIR pipeline.
+
+- Put one or more `*.op.json` files in a folder (e.g., `example/ops`).
+- Run generate with `--ops <dir>`:
+
+```bash
+wesley generate \
+  --schema example/ecommerce.graphql \
+  --ops example/ops \
+  --emit-bundle \
+  --out-dir example/out
+```
+
+What you get
+- Functions for every op under `example/out/ops/*.fn.sql` (always).
+- Views for paramless ops under `example/out/ops/*.view.sql`.
+- A tiny pgTAP suite at `example/out/tests-ops.sql` that checks function existence.
+
+Validation
+- The CLI validates each `*.op.json` against a built‑in JSON Schema (Ajv). You’ll get precise path errors on invalid fields.
+- Allowed param types include: `text`, `uuid`, `int`, `bigint`, `numeric`, `jsonb`, `bool`, `date`, `timestamp` (append `[]` for arrays with `op: "in"`).
+
+See the full guide and examples in docs/guides/qir-ops.md.
+
 ### Edit your schema (v1 → v2):
 
 ```graphql
