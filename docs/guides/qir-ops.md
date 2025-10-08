@@ -188,6 +188,8 @@ node packages/wesley-host-node/bin/wesley.mjs generate \
 
 Validation: the manifest is checked against `schemas/ops-manifest.schema.json`. Discovery expands `include` globs, subtracts `exclude`, sorts files, and honors `allowEmpty`.
 
+See also: docs/cookbook/ops-manifest-examples.md
+
 ### Discovery Modes (planned)
 
 We are moving to a strict discovery model by default: when `--ops <dir>` is present, Wesley will recursively compile all `**/*.op.json` files (configurable with `--ops-glob`), fail if none are found unless `--ops-allow-empty` is provided, and sort files deterministically. A manifest mode (`--ops-manifest`) will be available for curated control (include/exclude lists). See the design note in `docs/drafts/2025-10-08-ops-discovery-modes.md`.

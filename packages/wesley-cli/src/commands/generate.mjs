@@ -22,6 +22,8 @@ export class GeneratePipelineCommand extends WesleyCommand {
       .option('--ops-glob <pattern>', 'Glob for ops discovery (default: **/*.op.json)')
       .option('--ops-allow-empty', 'Do not error if no ops are found')
       .option('--ops-explain', 'Emit EXPLAIN JSON snapshots for ops (writes to out/ops/explain)')
+      .option('--ops-explain-json', 'Execute EXPLAIN (FORMAT JSON) for paramless ops against a DSN and write snapshots')
+      .option('--ops-dsn <url>', 'Database DSN to use with --ops-explain-json')
       .option('--ops-manifest <path>', 'Optional manifest (include/exclude) to control discovery')
       .option('--emit-bundle', 'Emit .wesley/ evidence bundle')
       .option('--supabase', 'Enable Supabase features (RLS tests)')
@@ -464,6 +466,28 @@ export class GeneratePipelineCommand extends WesleyCommand {
         await this.ctx.writer.writeFiles(outFiles, outDir);
         const opsOutputDir = await fs.join(outDir, 'ops');
         logger.info({ count: outFiles.length, dir: opsOutputDir }, 'Compiled operations');
+
+        // Optional: run EXPLAIN (FORMAT JSON) for paramless ops if DSN provided
+        if (options.opsExplainJson && options.opsDsn && Array.isArray(opsLoaded) && opsLoaded.length) {
+          const explainDir = await fs.join(outDir, 'ops', 'explain-json');
+          try { await fs.mkdir?.(explainDir, { recursive: true }); } catch {}
+          for (const { baseName } of opsLoaded) {
+            try {
+              // Only attempt when function is paramless (we emitted view for it)
+              const hasView = outFiles.some(f => f.name === `ops/${baseName}.view.sql`);
+              if (!hasView) continue;
+              const sql = `EXPLAIN (FORMAT JSON) SELECT * FROM wes_ops.op_${baseName}()`;
+              const res = await this.ctx.db?.query?.(options.opsDsn, sql);
+              let payload = '';
+              if (typeof res === 'string') payload = res;
+              else if (res && Array.isArray(res.rows) && res.rows.length) payload = JSON.stringify(res.rows[0], null, 2);
+              else payload = JSON.stringify(res ?? {}, null, 2);
+              await fs.write(await fs.join(explainDir, `${baseName}.explain.json`), payload + '\n');
+            } catch (e) {
+              logger.warn({ op: baseName }, 'ops: explain-json skipped: ' + (e?.message || e));
+            }
+          }
+        }
       }
     } catch (e) {
       // Propagate strict failures so the command exits non-zero
