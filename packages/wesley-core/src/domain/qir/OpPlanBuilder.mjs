@@ -58,31 +58,59 @@ export function buildPlanFromJson(op) {
   if (Array.isArray(op.lists)) {
     let lateralIdx = 0;
     for (const list of op.lists) {
-      const lAlias = list.lateralAlias || `l${lateralIdx++}`;
-      const jsonAlias = list.alias || 'items';
-      const lt = String(list.table);
-      const ltAlias = list.tableAlias || `${lAlias}_t`;
+      const lAliasBase = (typeof list.lateralAlias === 'string' && list.lateralAlias.trim()) ? list.lateralAlias.trim() : `l${lateralIdx}`;
+      const lAlias = lAliasBase;
+      if (!(typeof list.lateralAlias === 'string' && list.lateralAlias.trim())) lateralIdx += 1;
+      const jsonAlias = (typeof list.alias === 'string' && list.alias.trim()) ? list.alias.trim() : 'items';
+      const tableName = (typeof list.table === 'string' && list.table.trim()) ? list.table.trim() : '';
+      if (!tableName) throw new Error(`lists[].table must be a non-empty string: ${JSON.stringify(list)}`);
+      const lt = tableName;
+      const ltAlias = (typeof list.tableAlias === 'string' && list.tableAlias.trim()) ? list.tableAlias.trim() : `${lAlias}_t`;
 
       // Build subplan: SELECT COALESCE(jsonb_agg(jsonb_build_object(...)), '[]'::jsonb) AS <jsonAlias>
       const subRoot = new TableNode(lt, ltAlias);
       const subProj = new Projection();
       const fields = [];
-      const sels = Array.isArray(list.select) && list.select.length ? list.select : [];
+      const sels = Array.isArray(list.select) ? list.select : [];
       for (const s of sels) {
-        const k = typeof s === 'string' ? s : (s.alias || s.column);
-        const col = typeof s === 'string' ? s : s.column;
-        fields.push({ key: k, value: new ColumnRef(ltAlias, String(col)) });
+        if (typeof s === 'string') {
+          const col = s.trim();
+          if (!col) throw new Error(`lists[].select column must be a non-empty string: ${JSON.stringify(s)}`);
+          fields.push({ key: col, value: new ColumnRef(ltAlias, col) });
+          continue;
+        }
+        if (!s || typeof s !== 'object') {
+          throw new Error(`lists[].select entries must be strings or objects with column/alias: ${JSON.stringify(s)}`);
+        }
+        const column = (typeof s.column === 'string' && s.column.trim()) ? s.column.trim() : '';
+        if (!column) throw new Error(`lists[].select column must be a non-empty string: ${JSON.stringify(s)}`);
+        const key = (typeof s.alias === 'string' && s.alias.trim()) ? s.alias.trim() : column;
+        fields.push({ key, value: new ColumnRef(ltAlias, column) });
       }
-      const orderBy = (list.orderBy || []).map(ob => new OrderBy(new ColumnRef(ltAlias, String(ob.column)), ob.dir || 'asc'));
+      const orderDefs = Array.isArray(list.orderBy) ? list.orderBy : [];
+      const orderBy = [];
+      for (const ob of orderDefs) {
+        const col = (typeof ob.column === 'string' && ob.column.trim()) ? ob.column.trim() : '';
+        if (!col) throw new Error(`lists[].orderBy entry missing valid column: ${JSON.stringify(ob)}`);
+        let dir = ob.dir ? String(ob.dir).toLowerCase() : 'asc';
+        if (dir !== 'asc' && dir !== 'desc') {
+          throw new Error(`lists[].orderBy.dir must be "asc" or "desc". Received: ${JSON.stringify(ob.dir)}`);
+        }
+        orderBy.push(new OrderBy(new ColumnRef(ltAlias, col), dir));
+      }
       const jsonExpr = new JsonAgg(new JsonBuildObject(fields), orderBy);
       subProj.add(new ProjectionItem(jsonAlias, jsonExpr));
 
       // Subplan filters: either match.local/foreign or explicit filters
       let subPred = null;
-      if (list.match && list.match.local && list.match.foreign) {
-        // foreign refers to sub table column, local refers to outer (root) alias
-        const left = new ColumnRef(ltAlias, String(list.match.foreign));
-        const right = new ColumnRef(alias, String(list.match.local));
+      if (list.match != null) {
+        const foreign = (typeof list.match.foreign === 'string' && list.match.foreign.trim()) ? list.match.foreign.trim() : '';
+        const local = (typeof list.match.local === 'string' && list.match.local.trim()) ? list.match.local.trim() : '';
+        if (!foreign || !local) {
+          throw new Error(`lists[].match requires non-empty local/foreign strings: ${JSON.stringify(list.match)}`);
+        }
+        const left = new ColumnRef(ltAlias, foreign);
+        const right = new ColumnRef(alias, local);
         subPred = Predicate.compare(left, 'eq', right);
       }
       if (Array.isArray(list.filters) && list.filters.length) {
@@ -107,9 +135,16 @@ export function buildPlanFromJson(op) {
     const col = (typeof ob.column === 'string' && ob.column.trim()) || null;
     if (!col) throw new Error(`orderBy entry missing valid column: ${JSON.stringify(ob)}`);
     let dir = String(ob.dir || 'asc').toLowerCase();
-    if (dir !== 'asc' && dir !== 'desc') dir = 'asc';
-    let nulls = ob.nulls == null ? null : String(ob.nulls).toLowerCase();
-    if (nulls && nulls !== 'first' && nulls !== 'last') nulls = null;
+    if (dir !== 'asc' && dir !== 'desc') {
+      throw new Error(`orderBy.dir must be "asc" or "desc". Received: ${JSON.stringify(ob.dir)}`);
+    }
+    let nulls = null;
+    if (ob.nulls != null) {
+      nulls = String(ob.nulls).toLowerCase();
+      if (nulls !== 'first' && nulls !== 'last') {
+        throw new Error(`orderBy.nulls must be "first" or "last". Received: ${JSON.stringify(ob.nulls)}`);
+      }
+    }
     order.push(new OrderBy(new ColumnRef(alias, col), dir, nulls));
   }
 

@@ -32,7 +32,8 @@ try {
     if (/macos-latest/.test(c)) fail(`macOS runner referenced in ${f}`);
   }
 } catch {
-  // ignore if workflows folder missing
+  // Intentionally ignored: workflows dir may not exist in some environments
+  // (forks, minimal clones). This check is best-effort only.
 }
 
 // 3) No Claude code workflows
