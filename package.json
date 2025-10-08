@@ -20,6 +20,8 @@
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
     "docker:test": "docker-compose run pgtap",
+    "docker:test:ops": "node packages/wesley-host-node/bin/wesley.mjs generate --schema example/ecommerce.graphql --ops example/ops --emit-bundle --out-dir example/out --allow-dirty && docker-compose down -v && docker-compose up -d && docker-compose run pgtap && docker-compose down",
+    "docker:test:ops:fast": "node packages/wesley-host-node/bin/wesley.mjs generate --schema example/ecommerce.graphql --ops example/ops --emit-bundle --out-dir example/out --allow-dirty && docker-compose up -d && docker-compose exec -T postgres psql -U wesley -d wesley_test -v ON_ERROR_STOP=1 -f - < example/out/ops.functions.sql && docker-compose run pgtap",
     "wesley": "node packages/wesley-host-node/bin/wesley.mjs",
     "ci": "pnpm validate && pnpm generate:example && pnpm exec wesley validate-bundle --bundle example/.wesley --schemas schemas/"
   },

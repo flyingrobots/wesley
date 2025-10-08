@@ -202,6 +202,24 @@ Validation
 
 See the full guide and examples in docs/guides/qir-ops.md.
 
+### Docker Compose test loop (pgTAP)
+
+One‑shot clean run (recreates the DB volume so init scripts apply schema + ops):
+
+```bash
+pnpm run docker:test:ops
+```
+
+Faster run (keeps volume; streams updated ops.functions.sql into Postgres):
+
+```bash
+pnpm run docker:test:ops:fast
+```
+
+Compose expectations
+- Postgres service mounts `example/out/schema.sql` and `example/out/ops.functions.sql` into `/docker-entrypoint-initdb.d/` on a fresh volume.
+- pgTAP runner mounts `example/out/tests.sql` and `example/out/tests-ops.sql` into `/tests/` and runs `pg_prove /tests/*.sql`.
+
 ### Edit your schema (v1 → v2):
 
 ```graphql
