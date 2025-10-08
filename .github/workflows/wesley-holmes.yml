@@ -39,7 +39,7 @@ jobs:
           node ../packages/wesley-host-node/bin/wesley.mjs generate \
             --schema ecommerce.graphql \
             --emit-bundle \
-            --ops ../example/ops \
+            --ops ./ops \
             --allow-dirty \
             --out-dir "$WESLEY_OUT_DIR"
           
@@ -109,7 +109,7 @@ jobs:
           if [ ! -f example/.wesley/bundle.json ]; then
             echo "Bundle not found. Regenerating..."
             cd example
-            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema ecommerce.graphql --emit-bundle --allow-dirty --ops ../example/ops --out-dir out
+            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema ecommerce.graphql --emit-bundle --allow-dirty --ops ./ops --out-dir out
             cd -
           else
             echo "Bundle found at example/.wesley/bundle.json"
@@ -163,7 +163,7 @@ jobs:
           if [ ! -f example/.wesley/bundle.json ]; then
             echo "Bundle not found. Regenerating..."
             cd example
-            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema ecommerce.graphql --emit-bundle --allow-dirty --ops ../example/ops --out-dir out
+            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema ecommerce.graphql --emit-bundle --allow-dirty --ops ./ops --out-dir out
             cd -
           else
             echo "Bundle found at example/.wesley/bundle.json"
@@ -216,7 +216,7 @@ jobs:
           if [ ! -f example/.wesley/bundle.json ]; then
             echo "Bundle not found. Regenerating..."
             cd example
-            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema ecommerce.graphql --emit-bundle --allow-dirty --ops ../example/ops --out-dir out
+            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema ecommerce.graphql --emit-bundle --allow-dirty --ops ./ops --out-dir out
             cd -
           else
             echo "Bundle found at example/.wesley/bundle.json"
@@ -283,7 +283,7 @@ jobs:
           if [ ! -f example/.wesley/bundle.json ]; then
             echo "Bundle not found. Regenerating..."
             cd example
-            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema ecommerce.graphql --emit-bundle --allow-dirty --ops ../example/ops --out-dir out
+            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema ecommerce.graphql --emit-bundle --allow-dirty --ops ./ops --out-dir out
             cd -
           else
             echo "Bundle found at example/.wesley/bundle.json"
@@ -300,15 +300,17 @@ jobs:
           set -euo pipefail
           docker exec -u 0 ${{ job.services.postgres.id }} bash -lc '
             set -euo pipefail
+            export DEBIAN_FRONTEND=noninteractive
             apt-get update
-            if apt-get install -y postgresql-15-pgtap; then
+            if apt-get install -y --no-install-recommends postgresql-15-pgtap; then
               echo "Installed postgresql-15-pgtap"
-            elif apt-get install -y pgtap; then
+            elif apt-get install -y --no-install-recommends pgtap; then
               echo "Installed generic pgtap package"
             else
               echo "Failed to install pgTAP in postgres service" >&2
               exit 1
             fi
+            apt-get clean && rm -rf /var/lib/apt/lists/*
           '
           
       - name: "🔨 Apply Schema"
@@ -349,23 +351,23 @@ jobs:
               echo "Skipping empty file: $f"
               continue
             fi
-            echo "Applying $f in a transaction..."
-            tmp=$(mktemp)
-            { echo 'BEGIN;'; cat "$f"; echo 'COMMIT;'; } > "$tmp"
-            PGPASSWORD=postgres psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d test -f "$tmp"
-            rm -f "$tmp"
+            echo "Applying $f (single transaction)..."
+            PGPASSWORD=postgres psql -1 -v ON_ERROR_STOP=1 -h localhost -U postgres -d test -f "$f"
           done
 
       - name: "🌱 Seed minimal data for ops"
         run: |
-          # Seed a couple of products (one published, one not)
-          PGPASSWORD=postgres psql -h localhost -U postgres -d test <<'SQL'
+          set -euo pipefail
+          # Seed a couple of products (one published, one not) and run in a single transaction
+          PGPASSWORD=postgres psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d test <<'SQL'
+          BEGIN;
           insert into product (id, sku, name, slug, price_cents, stock_quantity, published, created_at)
           values (gen_random_uuid(), 'SKU1', 'Alpha', 'alpha', 100, 10, true, now())
           on conflict do nothing;
           insert into product (id, sku, name, slug, price_cents, stock_quantity, published, created_at)
           values (gen_random_uuid(), 'SKU2', 'Beta', 'beta', 200, 0, false, now())
           on conflict do nothing;
+          COMMIT;
           SQL
 
       - name: "🧪 Generate EXPLAIN JSON snapshots"
@@ -386,9 +388,13 @@ jobs:
 
       - name: "🧪 Run Tests"
         run: |
+          set -euo pipefail
+          # Optional gate: set RUN_PGTAP=false to skip pgTAP tests
+          : "${RUN_PGTAP:=true}"
           # Run ops pgTAP smoke only if pgTAP is available
           HAS_PGTAP=$(PGPASSWORD=postgres psql -h localhost -U postgres -d test -t -A -c "SELECT 1 FROM pg_available_extensions WHERE name='pgtap'" || echo '')
-          if [ "$HAS_PGTAP" = "1" ]; then
+          if [ "$RUN_PGTAP" = "true" ] && [ "$HAS_PGTAP" = "1" ]; then
+            PGPASSWORD=postgres psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d test -c 'CREATE EXTENSION IF NOT EXISTS pgtap;'
             PGPASSWORD=postgres psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d test -f example/tests/ops.pgtap.sql
           else
             echo "pgtap extension not available; skipping pgTAP tests"

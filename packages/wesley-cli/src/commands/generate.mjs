@@ -301,14 +301,15 @@ export class GeneratePipelineCommand extends WesleyCommand {
           const raw = await fs.read(path);
           const op = JSON.parse(String(raw));
           const plan = buildPlanFromJson(op);
-          const paramCount = (collectParams(plan)?.ordered?.length) || 0;
-          const isParamless = paramCount === 0;
-          const fnSql = emitFunction(op.name || 'unnamed', plan);
+          // Sanitize operation name for identifiers and filenames
           let baseName = (op.name || 'unnamed').toLowerCase().replace(/[^a-z0-9]+/g, '_');
           if (!baseName) baseName = 'unnamed';
           if (baseName.length > 240) baseName = baseName.slice(0, 240);
+          const paramCount = (collectParams(plan)?.ordered?.length) || 0;
+          const isParamless = paramCount === 0;
+          const fnSql = emitFunction(baseName, plan);
           if (isParamless) {
-            const viewSql = emitView(op.name || 'unnamed', plan);
+            const viewSql = emitView(baseName, plan);
             outFiles.push({ name: `ops/${baseName}.view.sql`, content: viewSql + '\n' });
           }
           outFiles.push({ name: `ops/${baseName}.fn.sql`, content: fnSql + '\n' });
@@ -318,8 +319,8 @@ export class GeneratePipelineCommand extends WesleyCommand {
       }
       if (outFiles.length) {
         await this.ctx.writer.writeFiles(outFiles, outDir);
-        const opsDir = await fs.join(outDir, 'ops');
-        logger.info({ count: outFiles.length, dir: opsDir }, 'Compiled operations (experimental)');
+        const opsOutputDir = await fs.join(outDir, 'ops');
+        logger.info({ count: outFiles.length, dir: opsOutputDir }, 'Compiled operations (experimental)');
       }
     } catch (e) {
       logger.warn('Experimental --ops failed: ' + (e?.message || e));
