@@ -317,6 +317,11 @@ jobs:
         run: |
           # Apply the generated schema produced in the generation step
           PGPASSWORD=postgres psql -h localhost -U postgres -d test -f "example/${WESLEY_OUT_DIR}/schema.sql"
+
+      - name: "🏗️ Ensure wes_ops schema"
+        run: |
+          # Ops emission targets schema wes_ops; create it if missing
+          PGPASSWORD=postgres psql -h localhost -U postgres -d test -c 'CREATE SCHEMA IF NOT EXISTS wes_ops;'
       
       - name: "📦 Apply Ops SQL (views/functions)"
         env:
