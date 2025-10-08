@@ -63,6 +63,6 @@ This checklist tracks the remaining work before we “go public” and the follo
 - [x] Set required checks and branch protection on `main`.
 - [ ] Tag release + publish Release notes.
 - [ ] Minimal ops→QIR translator + `--ops` path (Phase C).
-- [ ] Example ops + snapshots (SQL + EXPLAIN JSON).
-- [ ] pgTAP smoke for ops emission.
-- [ ] Docs update for CLI `--ops` usage.
+ - [x] Example ops + snapshots (SQL + EXPLAIN JSON).
+ - [x] pgTAP smoke for ops emission.
+ - [x] Docs update for CLI `--ops` usage.
