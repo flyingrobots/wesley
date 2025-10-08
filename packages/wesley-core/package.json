@@ -8,7 +8,8 @@
     ".": "./src/index.mjs",
     "./domain": "./src/domain/index.mjs",
     "./application": "./src/application/index.mjs",
-    "./ports": "./src/ports/index.mjs"
+    "./ports": "./src/ports/index.mjs",
+    "./domain/qir": "./src/domain/qir/index.mjs"
   },
   "files": [
     "src/"

@@ -13,7 +13,7 @@ This checklist tracks the remaining work before we “go public” and the follo
   - [x] Enforce admins
   - [ ] Enforce linear history (left disabled to support merge strategy)
 - [x] Verify `.wesley/` and `example/out/` are ignored from source control; no secrets/DSNs anywhere.
-- [ ] Confirm LICENSE at root and license fields across package.json files (audit all packages).
+- [x] Confirm LICENSE at root and license fields across package.json files (audit all packages).
 - [x] Confirm `.github/pull_request_template.md` and `CODEOWNERS` present and correct.
 - [ ] Review SECURITY.md, CODE_OF_CONDUCT.md, CONTRIBUTING.md for clarity/links.
 - [x] Guard or remove remaining Claude workflows (jsdoc/claude.yml) to avoid spend on forks; ensure actions are pinned.
@@ -34,14 +34,14 @@ This checklist tracks the remaining work before we “go public” and the follo
 - [ ] Emit per‑phase SQL files for rehearsal beyond expand/validate.
 
 ## QIR — Phase C (CLI Wiring, Examples)
-- [ ] Wire `--ops` in CLI/host-node to compile operations → QIR → SQL via `emitView`/`emitFunction` (keep default behavior unchanged).
+- [x] Wire `--ops` in CLI/host-node to compile operations → QIR → SQL via `emitView`/`emitFunction` (keep default behavior unchanged).
 - [ ] Implement minimal GraphQL operation → QIR plan builder:
-  - [ ] Resolve root table, selected columns/joins.
+  - [x] Resolve root table, selected columns (joins pending).
   - [ ] Nested lists → LATERAL + `jsonb_agg`.
-  - [ ] Variables → `ParamRef` with type hints.
-  - [ ] WHERE/ORDER/LIMIT/OFFSET mapping to Predicate/OrderBy.
+  - [x] Variables → `ParamRef` with type hints.
+  - [x] WHERE/ORDER/LIMIT/OFFSET mapping to Predicate/OrderBy.
 - [ ] Replace ORDER BY tie-breaker heuristic with actual PK/unique keys from Schema metadata.
-- [ ] Add example operations under `example/ops/` and emit SQL to `example/out/ops/`.
+- [x] Add example operations under `example/ops/` and emit SQL to `example/out/ops/`.
 - [ ] Add EXPLAIN (FORMAT JSON) snapshots for emitted SQL.
 - [ ] Add pgTAP smoke tests for emitted views/functions (shape, filtering); include RLS cases when applicable.
 - [ ] Update docs: add “Using --ops via CLI” section to `docs/guides/qir-ops.md` and link from Quick Start.

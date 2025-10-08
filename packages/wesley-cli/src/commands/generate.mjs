@@ -5,6 +5,7 @@
  */
 
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
+import { buildPlanFromJson, emitFunction, emitView } from '@wesley/core/domain/qir';
 
 export class GeneratePipelineCommand extends WesleyCommand {
   constructor(ctx) {
@@ -187,6 +188,9 @@ export class GeneratePipelineCommand extends WesleyCommand {
       }
     }
     
+    // Compile operations behind --ops (experimental)
+    await this.compileOpsIfRequested(context);
+
     // Output results
     if (!options.quiet && !options.json) {
       logger.info('');
@@ -251,12 +255,69 @@ export class GeneratePipelineCommand extends WesleyCommand {
     
     // Execute with S.L.A.P.S.
     const result = await runner.run(plan, { handlers, logger });
+
+    // After main generation, compile operations if requested
+    await this.compileOpsIfRequested(context);
     
     if (!options.quiet && !options.json) {
       logger.info('✨ Generation complete!');
     }
     
     return result;
+  }
+
+  async compileOpsIfRequested(context) {
+    const { options, logger } = context;
+    const opsDir = options.ops;
+    if (!opsDir) return;
+    try {
+      const fs = this.ctx.fs;
+      const exists = await fs.exists(opsDir);
+      if (!exists) {
+        logger.info({ opsDir }, 'Experimental --ops: directory not found; skipping');
+        return;
+      }
+      // Find *.op.json files (MVP DSL)
+      const dirEntries = await fs.readDir?.(opsDir);
+      const files = Array.isArray(dirEntries)
+        ? dirEntries.filter(f => f.name?.endsWith?.('.op.json')).map(f => f.path || `${opsDir}/${f.name}`)
+        : [];
+      if (files.length === 0) {
+        // Fallback to a couple of well-known names
+        const fallbacks = ['products_by_name.op.json', 'orders_by_user.op.json'];
+        for (const name of fallbacks) {
+          const p = await fs.join(opsDir, name);
+          if (await fs.exists(p)) files.push(p);
+        }
+      }
+      if (files.length === 0) {
+        logger.info({ opsDir }, 'Experimental --ops: no *.op.json files found; skipping');
+        return;
+      }
+      const outDir = options.outDir || 'out';
+      const outFiles = [];
+      for (const path of files) {
+        try {
+          const raw = await fs.read(path);
+          const op = JSON.parse(String(raw));
+          const plan = buildPlanFromJson(op);
+          const viewSql = emitView(op.name || 'unnamed', plan);
+          const fnSql = emitFunction(op.name || 'unnamed', plan);
+          const baseName = (op.name || 'unnamed').toLowerCase().replace(/[^a-z0-9]+/g, '_');
+          outFiles.push({ name: `ops/${baseName}.view.sql`, content: viewSql + '\n' });
+          outFiles.push({ name: `ops/${baseName}.fn.sql`, content: fnSql + '\n' });
+        } catch (e) {
+          logger.warn({ file: path }, 'Failed to compile op: ' + (e?.message || e));
+        }
+      }
+      if (outFiles.length) {
+        await this.ctx.writer.writeFiles(outFiles, outDir);
+        const opsDir = await fs.join(outDir, 'ops');
+        logger.info({ count: outFiles.length, dir: opsDir }, 'Compiled operations (experimental)');
+      }
+    } catch (e) {
+      logger.warn('Experimental --ops failed: ' + (e?.message || e));
+    }
   }
 }
 

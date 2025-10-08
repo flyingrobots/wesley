@@ -57,6 +57,9 @@ This document defines repo‑wide conventions and guardrails for human and AI ag
 
 ## Agents Activity Log
 
+### 2025-10-08 — PR feedback + QIR --ops MVP wiring
+{"date":"2025-10-08","time":"16:40Z","summary":"Addressed PR #45/#46 feedback; unblocked pnpm action; added experimental --ops wiring and examples.","topics":[{"topic":"PR #45 (docs/qir)","what":"Updated docs to surface emitView() SQL and clarified reserved keyword limitation explicitly (will error).","why":"Example previously dropped returned SQL and wording implied protection we don’t enforce."},{"topic":"PR #46 (preflight+workflows+docs)","what":"Added permissions (contents:read) to docs-link-check/preflight; fixed branches list; removed pnpm version pins across workflows to avoid ERR_PNPM_BAD_PM_VERSION; improved preflight to use repo ESLint via flat-config temp file and dynamic license audit via pnpm ls; documented link-check regex limitations and ignoreDirs rationale; tightened fs error handling.","why":"Resolve CI failures and align tooling with repo ESLint version; improve maintainability."},{"topic":"QIR --ops (MVP)","what":"Exposed @wesley/core/domain/qir via package exports; added OpPlanBuilder (JSON DSL → QIR plan); wired CLI generate to compile *.op.json under --ops into view/function SQL; added examples (example/ops/products_by_name.op.json, orders_by_user.op.json).","why":"Deliver Phase C initial wiring without changing default CLI behavior."}],"ci_effects":["Preflight and Docs Link Check pass locally","Removed pnpm action version pins to resolve setup error","No permissions widening; least-privilege applied"],"next_steps":["Add EXPLAIN (FORMAT JSON) snapshots for ops","Add pgTAP smoke tests for emitted ops","Consider removing the early --ops no-op log to reduce noise","Extend builder for joins + nested lists (LATERAL + jsonb_agg)"]}
+
 ### 2025-10-07 — Debrief + Hand‑off
 
 Summary of today’s work (public readiness + QIR)

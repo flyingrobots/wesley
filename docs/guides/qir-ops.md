@@ -86,6 +86,39 @@ pnpm -C packages/wesley-core test:unit
 pnpm -C packages/wesley-core test:snapshots
 ```
 
+## Using --ops (Experimental)
+
+The CLI can compile simple operation descriptions into SQL when `--ops` points to a directory of `*.op.json` files. The MVP DSL supports a root table, projected columns, basic filters, ordering, and limit/offset.
+
+Example file: `example/ops/products_by_name.op.json`
+
+```json
+{
+  "name": "products_by_name",
+  "table": "product",
+  "columns": ["id", "name", "slug"],
+  "filters": [
+    { "column": "published", "op": "eq", "value": true },
+    { "column": "name", "op": "ilike", "param": { "name": "q", "type": "text" } }
+  ],
+  "orderBy": [ { "column": "name", "dir": "asc" } ],
+  "limit": 50
+}
+```
+
+Generate and emit ops SQL to `out/ops/`:
+
+```bash
+node packages/wesley-host-node/bin/wesley.mjs generate \
+  --schema example/ecommerce.graphql \
+  --ops example/ops \
+  --emit-bundle \
+  --out-dir example/out \
+  --allow-dirty
+```
+
+This produces both a `CREATE VIEW` and a `CREATE FUNCTION` for each operation, e.g.: `example/out/ops/products_by_name.view.sql` and `example/out/ops/products_by_name.fn.sql`.
+
 ## Roadmap
 
 - Wire `--ops` end-to-end in CLI (expose emission; EXPLAIN JSON snapshots).
