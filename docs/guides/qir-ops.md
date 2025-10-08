@@ -121,6 +121,10 @@ node packages/wesley-host-node/bin/wesley.mjs generate \
 
 This produces both a `CREATE VIEW` and a `CREATE FUNCTION` for each operation, e.g.: `example/out/ops/products_by_name.view.sql` and `example/out/ops/products_by_name.fn.sql`.
 
+### Discovery Modes (planned)
+
+We are moving to a strict discovery model by default: when `--ops <dir>` is present, Wesley will recursively compile all `**/*.op.json` files (configurable with `--ops-glob`), fail if none are found unless `--ops-allow-empty` is provided, and sort files deterministically. A manifest mode (`--ops-manifest`) will be available for curated control (include/exclude lists). See the design note in `docs/drafts/2025-10-08-ops-discovery-modes.md`.
+
 ## Roadmap
 
 - Wire `--ops` end-to-end in CLI (expose emission; EXPLAIN JSON snapshots).
