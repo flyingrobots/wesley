@@ -15,10 +15,15 @@
 
 import { QueryPlan, TableNode, JoinNode, LateralNode, Projection, ProjectionItem, ColumnRef, OrderBy, Predicate, ParamRef, JsonBuildObject, JsonAgg } from './Nodes.mjs';
 
+// Allowed sets (module-level singletons)
+const ALLOWED_FILTER_OPS = new Set(['eq','ne','lt','lte','gt','gte','like','ilike','contains','in','isNull','isNotNull']);
+const ALLOWED_PARAM_TYPES = new Set(['text','uuid','int','bigint','numeric','jsonb','bool','date','timestamp']);
+
 export function buildPlanFromJson(op) {
-  if (!op || !op.table) throw new Error('op.table is required');
-  const alias = op.alias || 't0';
-  const root = new TableNode(op.table, alias);
+  const tableName = (typeof op?.table === 'string' && op.table.trim()) ? op.table.trim() : '';
+  if (!tableName) throw new Error('op.table is required');
+  const alias = (typeof op?.alias === 'string' && op.alias.trim()) ? op.alias.trim() : 't0';
+  const root = new TableNode(tableName, alias);
 
   const proj = new Projection();
   const cols = op.columns ?? ['*'];
@@ -173,9 +178,8 @@ function buildPredicate(alias, filters) {
     const col = (typeof f.column === 'string' && f.column.trim()) || null;
     if (!col) throw new Error(`Filter missing valid column: ${JSON.stringify(f)}`);
     const left = new ColumnRef(alias, col);
-    const allowed = new Set(['eq','ne','lt','lte','gt','gte','like','ilike','contains','in','isNull','isNotNull']);
     const op = String(f.op || 'eq');
-    if (!allowed.has(op)) throw new Error(`Unsupported filter op: ${op}`);
+    if (!ALLOWED_FILTER_OPS.has(op)) throw new Error(`Unsupported filter op: ${op}`);
     if (op === 'isNull' || op === 'isNotNull') {
       parts.push(op === 'isNull' ? Predicate.isNull(left) : Predicate.isNotNull(left));
       continue;
@@ -208,9 +212,8 @@ function buildOnPredicate(on, leftDefault, rightAlias) {
 function buildRightExpr(param, value, op) {
   if (param && param.name) {
     const name = String(param.name);
-    const allowedTypes = new Set(['text','uuid','int','bigint','numeric','jsonb','bool','date','timestamp']);
     let typeHint = param.type ? String(param.type) : undefined;
-    if (typeHint && !allowedTypes.has(typeHint.replace(/\[\]$/, ''))) {
+    if (typeHint && !ALLOWED_PARAM_TYPES.has(typeHint.replace(/\[\]$/, ''))) {
       throw new Error(`Unsupported param type: ${typeHint} for ${name}`);
     }
     if (op === 'in' && typeHint && !typeHint.endsWith('[]')) typeHint = typeHint + '[]';

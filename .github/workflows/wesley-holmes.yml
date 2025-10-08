@@ -18,7 +18,7 @@ jobs:
           fetch-depth: 0
           
       - name: "🔧 Setup pnpm"
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
           
       - name: "🔧 Setup Node.js"
         uses: actions/setup-node@v4
@@ -85,7 +85,7 @@ jobs:
         uses: actions/checkout@v4
         
       - name: "🔧 Setup pnpm"
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         
       - name: "🔧 Setup Node.js"
         uses: actions/setup-node@v4
@@ -139,7 +139,7 @@ jobs:
         uses: actions/checkout@v4
         
       - name: "🔧 Setup pnpm"
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         
       - name: "🔧 Setup Node.js"
         uses: actions/setup-node@v4
@@ -296,8 +296,20 @@ jobs:
       
       - name: "📦 Install pgTAP into Postgres service"
         run: |
-          # Install pgTAP inside the postgres:15 service container so CREATE EXTENSION works
-          docker exec -u 0 ${{ job.services.postgres.id }} bash -lc "apt-get update && (apt-get install -y postgresql-15-pgtap || apt-get install -y pgtap)"
+          # Install pgTAP inside the postgres:15 container as root so CREATE EXTENSION works
+          set -euo pipefail
+          docker exec -u 0 ${{ job.services.postgres.id }} bash -lc '
+            set -euo pipefail
+            apt-get update
+            if apt-get install -y postgresql-15-pgtap; then
+              echo "Installed postgresql-15-pgtap"
+            elif apt-get install -y pgtap; then
+              echo "Installed generic pgtap package"
+            else
+              echo "Failed to install pgTAP in postgres service" >&2
+              exit 1
+            fi
+          '
           
       - name: "🔨 Apply Schema"
         env:
