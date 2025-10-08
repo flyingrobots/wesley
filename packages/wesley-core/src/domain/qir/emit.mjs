@@ -103,6 +103,8 @@ function uniqueParamNames(ordered) {
     seen.set(base, n + 1);
     let display = n === 0 ? base : `${base}_${n}`;
     if (RESERVED.has(display.toLowerCase())) display = `${display}_p`;
+    let display = n === 0 ? base : `${base}_${n}`;
+    if (RESERVED.has(display.toLowerCase())) display = `${display}_p`;
     if (display.length > 63) {
       throw new Error(`Parameter identifier exceeds 63 characters: "${display}"`);
     }

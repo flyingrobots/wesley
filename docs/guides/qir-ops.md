@@ -21,7 +21,8 @@ This guide documents the MVP of the Query IR (QIR) pipeline that compiles operat
 ## Constraints and behavior
 
 - The lowering phase (lowerToSQL.mjs) avoids quoting identifiers for readability in tests, but will minimally quote reserved identifiers to avoid invalid SQL (e.g., table "order"). Do not rely on this for security.
-- Security warning: Because lowering primarily emits unquoted identifiers, user-controlled values MUST NEVER flow into table/column/alias names. Only use trusted, validated identifiers from schema metadata or a server-side whitelist. As an immediate mitigation, validate/whitelist identifiers server‑side and avoid interpolating raw user values; future releases will add stricter validation/quoting modes.
+- Security warning: Because lowering primarily emits unquoted identifiers, user-controlled values MUST NEVER flow into table/column/alias names. Only use trusted, validated identifiers from schema metadata or a server-side whitelist. As an immediate mitigation, validate/whitelist identifiers server-side and avoid interpolating raw user values; future releases will add stricter validation/quoting modes.
+
 - Function returns `SETOF jsonb` for MVP to keep signatures stable; future work can emit `RETURNS TABLE (...)` if desired.
 - Primary key tie-breaker currently assumes `<leftmost-alias>.id`; will use real PK/unique keys when metadata is available.
 
