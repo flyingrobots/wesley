@@ -358,6 +358,13 @@ export class GeneratePipelineCommand extends WesleyCommand {
             schema = mod.opJsonSchema;
           } catch {}
         }
+        if (!schema) {
+          try {
+            // Fallback to reading JSON schema shipped in repo
+            const rawSchema = await this.ctx.fs.read('schemas/op.schema.json');
+            schema = JSON.parse(String(rawSchema));
+          } catch {}
+        }
         if (schema) {
           ajvValidate = ajv.compile(schema);
         } else {
