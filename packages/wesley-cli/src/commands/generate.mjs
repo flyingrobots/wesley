@@ -282,9 +282,54 @@ export class GeneratePipelineCommand extends WesleyCommand {
         e.code = 'ENOENT';
         throw e;
       }
-      // Strict discovery: recursive scan for **/*.op.json (simple suffix match)
-      const pattern = options.opsGlob || '**/*.op.json';
-      const files = await findOpFilesRecursive(fs, opsDir, pattern);
+      // Discovery mode: Manifest overrides directory contract
+      let files = [];
+      let pattern = options.opsGlob || '**/*.op.json';
+      if (options.opsManifest) {
+        // Manifest mode (B)
+        const manifestPath = options.opsManifest;
+        const raw = await fs.read(manifestPath);
+        const manifest = JSON.parse(String(raw));
+        // Validate manifest against schema if available
+        try {
+          const AjvMod = await import('ajv');
+          const Ajv = AjvMod.default || AjvMod;
+          const fmtMod = await import('ajv-formats');
+          const addFormats = fmtMod.default || fmtMod;
+          const ajv = new Ajv({ strict: false, allErrors: true });
+          addFormats(ajv);
+          let mschema;
+          try { mschema = JSON.parse(String(await fs.read('schemas/ops-manifest.schema.json'))); } catch {}
+          if (mschema) {
+            const validate = ajv.compile(mschema);
+            if (!validate(manifest)) {
+              const errs = (validate.errors || []).map(er => `${er.instancePath || '(root)'} ${er.message}`).join('; ');
+              const e = new Error(`ops manifest validation failed: ${errs}`); e.code='VALIDATION_FAILED'; throw e;
+            }
+          }
+        } catch (e) {
+          // Schema missing or Ajv unavailable → continue; discovery will still run
+          if (e?.code === 'VALIDATION_FAILED') throw e;
+          logger.warn('ops: manifest validation unavailable: ' + (e?.message || e));
+        }
+        // Minimal structural validation (we keep Ajv out to avoid extra deps)
+        const inc = Array.isArray(manifest.include) ? manifest.include : [];
+        const exc = Array.isArray(manifest.exclude) ? manifest.exclude : [];
+        const allowEmpty = Boolean(manifest.allowEmpty);
+        const expanded = await expandGlobs(fs, opsDir, inc.length ? inc : ['**/*.op.json']);
+        const excluded = await expandGlobs(fs, opsDir, exc);
+        const exclSet = new Set(excluded);
+        files = expanded.filter(f => !exclSet.has(f));
+        pattern = inc.length ? inc.join(',') : pattern;
+        if (files.length === 0 && !allowEmpty && !options.opsAllowEmpty) {
+          const e = new Error(`Manifest produced no files (ops=${opsDir}, include=${JSON.stringify(inc)}, exclude=${JSON.stringify(exc)})`);
+          e.code = 'VALIDATION_FAILED';
+          throw e;
+        }
+      } else {
+        // Strict directory contract (A)
+        files = await findOpFilesRecursive(fs, opsDir, pattern);
+      }
       if (files.length === 0 && !options.opsAllowEmpty) {
         const e = new Error(`No ops matched in ${opsDir} (glob: ${pattern}). Pass --ops-allow-empty to proceed.`);
         e.code = 'VALIDATION_FAILED';
@@ -444,6 +489,39 @@ async function findOpFilesRecursive(fs, dir, globPattern) {
   const uniq = Array.from(new Set(results));
   uniq.sort();
   return uniq;
+}
+
+// Expand one or more glob patterns relative to base dir using the same walker
+async function expandGlobs(fs, baseDir, globs) {
+  if (!Array.isArray(globs) || globs.length === 0) return [];
+  const files = await findOpFilesRecursive(fs, baseDir, '**/*.op.json');
+  const tests = globs.map(g => globToRegExp(g));
+  const matched = files.filter(f => tests.some(rx => rx.test(f.replaceAll('\\\\','/'))));
+  const uniq = Array.from(new Set(matched));
+  uniq.sort();
+  return uniq;
+}
+
+// Very small glob → RegExp converter for patterns like **/*.op.json, ops/*.json
+function globToRegExp(glob) {
+  // Normalize path separators to '/'
+  const s = String(glob).replaceAll('\\\\','/');
+  let rx = '^';
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (ch === '*') {
+      if (s[i+1] === '*') { rx += '.*'; i++; }
+      else rx += '[^/]*';
+    } else if (ch === '?') {
+      rx += '[^/]';
+    } else if ('+.^$|()[]{}'.includes(ch)) {
+      rx += '\\' + ch;
+    } else {
+      rx += ch;
+    }
+  }
+  rx += '$';
+  return new RegExp(rx);
 }
 async function assertCleanGit() {
   try {
