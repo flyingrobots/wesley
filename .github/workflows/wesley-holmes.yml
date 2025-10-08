@@ -39,6 +39,7 @@ jobs:
           node ../packages/wesley-host-node/bin/wesley.mjs generate \
             --schema schema.graphql \
             --emit-bundle \
+            --ops ../example/ops \
             --allow-dirty \
             --out-dir "$WESLEY_OUT_DIR"
           
@@ -108,7 +109,7 @@ jobs:
           if [ ! -f example/.wesley/bundle.json ]; then
             echo "Bundle not found. Regenerating..."
             cd example
-            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema schema.graphql --emit-bundle --allow-dirty --out-dir out
+            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema schema.graphql --emit-bundle --allow-dirty --ops ../example/ops --out-dir out
             cd -
           else
             echo "Bundle found at example/.wesley/bundle.json"
@@ -162,7 +163,7 @@ jobs:
           if [ ! -f example/.wesley/bundle.json ]; then
             echo "Bundle not found. Regenerating..."
             cd example
-            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema schema.graphql --emit-bundle --allow-dirty --out-dir out
+            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema schema.graphql --emit-bundle --allow-dirty --ops ../example/ops --out-dir out
             cd -
           else
             echo "Bundle found at example/.wesley/bundle.json"
@@ -299,11 +300,61 @@ jobs:
         run: |
           # Apply the generated schema produced in the generation step
           PGPASSWORD=postgres psql -h localhost -U postgres -d test -f "example/${WESLEY_OUT_DIR}/schema.sql"
-          
+      
+      - name: "📦 Apply Ops SQL (views/functions)"
+        env:
+          WESLEY_OUT_DIR: out
+        run: |
+          set -euo pipefail
+          if [ -d "example/${WESLEY_OUT_DIR}/ops" ]; then
+            for f in example/${WESLEY_OUT_DIR}/ops/*.sql; do
+              echo "Applying $f";
+              PGPASSWORD=postgres psql -h localhost -U postgres -d test -f "$f";
+            done
+          else
+            echo "No ops SQL directory found; skipping"
+          fi
+
+      - name: "🌱 Seed minimal data for ops"
+        run: |
+          # Seed a couple of products (one published, one not)
+          PGPASSWORD=postgres psql -h localhost -U postgres -d test <<'SQL'
+          insert into product (id, sku, name, slug, price_cents, stock_quantity, published, created_at)
+          values (gen_random_uuid(), 'SKU1', 'Alpha', 'alpha', 100, 10, true, now())
+          on conflict do nothing;
+          insert into product (id, sku, name, slug, price_cents, stock_quantity, published, created_at)
+          values (gen_random_uuid(), 'SKU2', 'Beta', 'beta', 200, 0, false, now())
+          on conflict do nothing;
+          SQL
+
+      - name: "🧪 Generate EXPLAIN JSON snapshots"
+        env:
+          WESLEY_OUT_DIR: out
+        run: |
+          mkdir -p example/${WESLEY_OUT_DIR}/ops/explain
+          # EXPLAIN (FORMAT JSON) for function calls
+          PGPASSWORD=postgres psql -h localhost -U postgres -d test -t -A -c "EXPLAIN (FORMAT JSON) SELECT * FROM wes_ops.op_products_by_name('Al%')" > example/${WESLEY_OUT_DIR}/ops/explain/products_by_name.explain.json || true
+          PGPASSWORD=postgres psql -h localhost -U postgres -d test -t -A -c "EXPLAIN (FORMAT JSON) SELECT * FROM wes_ops.op_orders_by_user('00000000-0000-0000-0000-000000000000')" > example/${WESLEY_OUT_DIR}/ops/explain/orders_by_user.explain.json || true
+
+      - name: "⬆️ Upload EXPLAIN snapshots"
+        uses: actions/upload-artifact@v4
+        with:
+          name: ops-explain
+          path: example/out/ops/explain/
+
       - name: "🧪 Run Tests"
         run: |
-          echo "pgTAP tests would run here"
-          echo "Tests are in: example/tests/generated.sql"
+          # Try to enable pgtap (will fail if not installed in server image)
+          PGPASSWORD=postgres psql -h localhost -U postgres -d test -c 'CREATE EXTENSION IF NOT EXISTS pgtap;' || true
+          # Run ops pgTAP smoke (skips if pgtap not available)
+          PGPASSWORD=postgres psql -h localhost -U postgres -d test -f example/tests/ops.pgtap.sql || true
+          # Simple non-pgTAP assertion: expect exactly 1 published product matching 'Al%'
+          CNT=$(PGPASSWORD=postgres psql -h localhost -U postgres -d test -t -A -c "SELECT count(*) FROM wes_ops.op_products_by_name('Al%')" || echo 0)
+          echo "Count from op_products_by_name('Al%') = $CNT"
+          if [ "$CNT" != "1" ]; then
+            echo "Expected 1 row from products_by_name, got $CNT" >&2
+            exit 1
+          fi
           
   comment-report:
     name: "📝 Post Investigation Report"

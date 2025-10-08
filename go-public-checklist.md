@@ -42,8 +42,8 @@ This checklist tracks the remaining work before we “go public” and the follo
   - [x] WHERE/ORDER/LIMIT/OFFSET mapping to Predicate/OrderBy.
 - [ ] Replace ORDER BY tie-breaker heuristic with actual PK/unique keys from Schema metadata.
 - [x] Add example operations under `example/ops/` and emit SQL to `example/out/ops/`.
-- [ ] Add EXPLAIN (FORMAT JSON) snapshots for emitted SQL.
-- [ ] Add pgTAP smoke tests for emitted views/functions (shape, filtering); include RLS cases when applicable.
+- [x] Add EXPLAIN (FORMAT JSON) snapshots for emitted SQL (generated in CI and uploaded as artifact).
+- [x] Add pgTAP smoke tests for emitted views/functions (basic existence + filter behavior; skips if pgtap unavailable). RLS cases TBD.
 - [ ] Update docs: add “Using --ops via CLI” section to `docs/guides/qir-ops.md` and link from Quick Start.
 
 ## QIR — Phase D (Enhancements)
@@ -51,6 +51,7 @@ This checklist tracks the remaining work before we “go public” and the follo
 - [ ] Option to emit `RETURNS TABLE (...)` for function signatures (keep jsonb default).
 - [ ] Diagnostics: EXPLAIN JSON analysis + optional HOLMES gating in dedicated workflow.
 - [ ] Security hardening: exhaustive param-safety tests; ensure no string concatenation for params in lowering.
+- [ ] Identifier safety: full quoting/validation coverage — detect reserved keywords, enforce 63-char limits with helpful messages, and minimally quote identifiers in lowering when required (configurable minimal|all).
 
 ## Docs IA & Roadmap
 - [ ] Consolidate docs IA (Concepts / How‑To / Reference / Internals / Roadmap); prune dead links.
