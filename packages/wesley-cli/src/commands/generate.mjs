@@ -5,7 +5,7 @@
  */
 
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
-import { buildPlanFromJson, emitFunction, emitView, collectParams } from '@wesley/core/domain/qir';
+import { buildPlanFromJson, emitFunction, emitView, collectParams, lowerToSQL } from '@wesley/core/domain/qir';
 
 export class GeneratePipelineCommand extends WesleyCommand {
   constructor(ctx) {
@@ -428,6 +428,17 @@ export class GeneratePipelineCommand extends WesleyCommand {
             outFiles.push({ name: `ops/${baseName}.view.sql`, content: viewSql + '\n' });
           }
           outFiles.push({ name: `ops/${baseName}.fn.sql`, content: fnSql + '\n' });
+          // Optional: emit EXPLAIN SQL wrapper for later execution (does not contact DB)
+          if (options.opsExplain) {
+            const sel = lowerToSQL(plan);
+            const explain = [
+              'EXPLAIN (FORMAT JSON)',
+              'SELECT to_jsonb(q.*) FROM (',
+              sel,
+              ') AS q;'
+            ].join('\n');
+            outFiles.push({ name: `ops/explain/${baseName}.explain.sql`, content: explain + '\n' });
+          }
         } catch (e) {
           logger.warn({ op: baseName }, 'ops: failed to compile plan: ' + (e?.message || e));
           if (!options.opsAllowErrors) {
@@ -441,6 +452,15 @@ export class GeneratePipelineCommand extends WesleyCommand {
         // no-op: preserved block boundary for patch clarity
       }
       if (outFiles.length) {
+        // Aggregators when explain is enabled
+        if (options.opsExplain) {
+          const explainChunks = outFiles
+            .filter(f => f.name.startsWith('ops/explain/') && f.name.endsWith('.explain.sql'))
+            .map(f => `-- ${f.name}\n${f.content}`);
+          if (explainChunks.length) {
+            outFiles.push({ name: 'ops.explain.sql', content: explainChunks.join('\n') });
+          }
+        }
         await this.ctx.writer.writeFiles(outFiles, outDir);
         const opsOutputDir = await fs.join(outDir, 'ops');
         logger.info({ count: outFiles.length, dir: opsOutputDir }, 'Compiled operations');
