@@ -61,7 +61,7 @@ try {
   for (const f of files) {
     const c = readFileSync(f, 'utf8');
     if (/from\s+['"]node:/.test(c) || /require\(['"]node:/.test(c)) fail(`node:* import in core: ${f}`);
-    if (/from\s+['"]fs['"]/.test(c) || /from\s+['"]path['"]/.test(c)) fail(`platform import in core: ${f}`);
+    if (/\bfrom\s+['"](fs|path)(?:\/[^'"]*)?['"]/ .test(c) || /\brequire\(['"](fs|path)(?:\/[^'"]*)?['"]\)/ .test(c)) fail(`platform import in core: ${f}`);
     if (/\bprocess\./.test(c)) fail(`process.* used in core: ${f}`);
   }
 } catch {

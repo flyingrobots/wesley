@@ -63,9 +63,8 @@ export function buildPlanFromJson(op) {
   if (Array.isArray(op.lists)) {
     let lateralIdx = 0;
     for (const list of op.lists) {
-      const lAliasBase = (typeof list.lateralAlias === 'string' && list.lateralAlias.trim()) ? list.lateralAlias.trim() : `l${lateralIdx}`;
-      const lAlias = lAliasBase;
-      if (!(typeof list.lateralAlias === 'string' && list.lateralAlias.trim())) lateralIdx += 1;
+      const hasAlias = typeof list.lateralAlias === 'string' && list.lateralAlias.trim().length > 0;
+      const lAlias = hasAlias ? list.lateralAlias.trim() : `l${lateralIdx++}`;
       const jsonAlias = (typeof list.alias === 'string' && list.alias.trim()) ? list.alias.trim() : 'items';
       const tableName = (typeof list.table === 'string' && list.table.trim()) ? list.table.trim() : '';
       if (!tableName) throw new Error(`lists[].table must be a non-empty string: ${JSON.stringify(list)}`);

@@ -192,7 +192,7 @@ jobs:
         uses: actions/checkout@v4
         
       - name: "🔧 Setup pnpm"
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         
       - name: "🔧 Setup Node.js"
         uses: actions/setup-node@v4
@@ -216,7 +216,7 @@ jobs:
           if [ ! -f example/.wesley/bundle.json ]; then
             echo "Bundle not found. Regenerating..."
             cd example
-            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema schema.graphql --emit-bundle --allow-dirty --out-dir out
+            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema schema.graphql --emit-bundle --allow-dirty --ops ../example/ops --out-dir out
             cd -
           else
             echo "Bundle found at example/.wesley/bundle.json"
@@ -283,7 +283,7 @@ jobs:
           if [ ! -f example/.wesley/bundle.json ]; then
             echo "Bundle not found. Regenerating..."
             cd example
-            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema schema.graphql --emit-bundle --allow-dirty --out-dir out
+            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema schema.graphql --emit-bundle --allow-dirty --ops ../example/ops --out-dir out
             cd -
           else
             echo "Bundle found at example/.wesley/bundle.json"
