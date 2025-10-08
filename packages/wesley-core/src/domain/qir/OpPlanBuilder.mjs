@@ -40,8 +40,9 @@ export function buildPlanFromJson(op) {
     }
   }
 
-  // WHERE predicate via a Filter relation wrapper
-  const predicate = buildPredicate(alias, op.filters || []);
+  // WHERE predicate via a Filter relation wrapper (normalize filters)
+  const normFilters = Array.isArray(op.filters) ? op.filters : (op.filters ? [op.filters] : []);
+  const predicate = buildPredicate(alias, normFilters);
   let rel = predicate ? { kind: 'Filter', input: root, predicate } : root;
 
   // Optional simple joins (INNER/LEFT) with on clause
@@ -135,7 +136,8 @@ export function buildPlanFromJson(op) {
 
   // ORDER BY, LIMIT/OFFSET
   const order = [];
-  for (const ob of op.orderBy || []) {
+  const orderList = Array.isArray(op.orderBy) ? op.orderBy : (op.orderBy ? [op.orderBy] : []);
+  for (const ob of orderList) {
     const col = (typeof ob.column === 'string' && ob.column.trim()) || null;
     if (!col) throw new Error(`orderBy entry missing valid column: ${JSON.stringify(ob)}`);
     let dir = String(ob.dir || 'asc').toLowerCase();
@@ -171,9 +173,10 @@ export function buildPlanFromJson(op) {
 }
 
 function buildPredicate(alias, filters) {
-  if (!filters || filters.length === 0) return null;
+  const list = Array.isArray(filters) ? filters : (filters ? [filters] : []);
+  if (list.length === 0) return null;
   const parts = [];
-  for (const f of filters) {
+  for (const f of list) {
     const col = (typeof f.column === 'string' && f.column.trim()) || null;
     if (!col) throw new Error(`Filter missing valid column: ${JSON.stringify(f)}`);
     const left = new ColumnRef(alias, col);

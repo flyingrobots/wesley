@@ -37,7 +37,7 @@ jobs:
           # Use workspace binary directly to avoid PATH/bin resolution issues
           # Explicit out dir to align with downstream pgTAP apply step
           node ../packages/wesley-host-node/bin/wesley.mjs generate \
-            --schema schema.graphql \
+            --schema ecommerce.graphql \
             --emit-bundle \
             --ops ../example/ops \
             --allow-dirty \
@@ -109,7 +109,7 @@ jobs:
           if [ ! -f example/.wesley/bundle.json ]; then
             echo "Bundle not found. Regenerating..."
             cd example
-            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema schema.graphql --emit-bundle --allow-dirty --ops ../example/ops --out-dir out
+            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema ecommerce.graphql --emit-bundle --allow-dirty --ops ../example/ops --out-dir out
             cd -
           else
             echo "Bundle found at example/.wesley/bundle.json"
@@ -163,7 +163,7 @@ jobs:
           if [ ! -f example/.wesley/bundle.json ]; then
             echo "Bundle not found. Regenerating..."
             cd example
-            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema schema.graphql --emit-bundle --allow-dirty --ops ../example/ops --out-dir out
+            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema ecommerce.graphql --emit-bundle --allow-dirty --ops ../example/ops --out-dir out
             cd -
           else
             echo "Bundle found at example/.wesley/bundle.json"

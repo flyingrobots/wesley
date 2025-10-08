@@ -17,8 +17,10 @@ jobs:
       with:
         fetch-depth: 0
     
-    - name: Install pnpm
-      uses: pnpm/action-setup@v4
+    - name: Install pnpm (pinned)
+      uses: pnpm/action-setup@v2
+      with:
+        version: 9.15.9
     
     - name: Setup Node.js
       uses: actions/setup-node@v4
