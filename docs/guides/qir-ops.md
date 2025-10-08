@@ -20,7 +20,7 @@ This guide documents the MVP of the Query IR (QIR) pipeline that compiles operat
 
 ## Constraints and behavior
 
-- The lowering phase (lowerToSQL.mjs) avoids quoting identifiers for readability in tests; avoid using reserved SQL keywords in aliases and column names. [Reserved keyword reference: PostgreSQL Appendix C](https://www.postgresql.org/docs/current/sql-keywords-appendix.html).
+- The lowering phase (lowerToSQL.mjs) avoids quoting identifiers for readability in tests. Using reserved SQL keywords in aliases or column names will cause SQL errors — this is a known limitation until stricter validation/quoting is added. See the [PostgreSQL reserved keywords](https://www.postgresql.org/docs/current/sql-keywords-appendix.html) and prefer non‑reserved identifiers.
 - Function returns `SETOF jsonb` for MVP to keep signatures stable; future work can emit `RETURNS TABLE (...)` if desired.
 - Primary key tie-breaker currently assumes `<leftmost-alias>.id`; will use real PK/unique keys when metadata is available.
 
@@ -68,7 +68,8 @@ Emit a view:
 ```js
 import { emitView } from '@wesley/core/domain/qir';
 
-emitView('Org View!', plan);
+const viewSql = emitView('Org View!', plan);
+console.log(viewSql);
 // CREATE OR REPLACE VIEW wes_ops.op_org_view AS
 // SELECT ...
 ```
