@@ -304,7 +304,13 @@ export class GeneratePipelineCommand extends WesleyCommand {
           // Sanitize operation name for identifiers and filenames
           let baseName = (op.name || 'unnamed').toLowerCase().replace(/[^a-z0-9]+/g, '_');
           if (!baseName) baseName = 'unnamed';
-          if (baseName.length > 240) baseName = baseName.slice(0, 240);
+          // PostgreSQL identifiers cap at 63 bytes; use 60 to leave room for schema prefix (wes_ops.op_)
+          const maxIdLen = 60;
+          if (baseName.length > maxIdLen) {
+            const truncated = baseName.slice(0, maxIdLen);
+            logger.warn({ original: op.name, truncated }, 'Operation name truncated to fit PostgreSQL identifier limit');
+            baseName = truncated;
+          }
           const paramCount = (collectParams(plan)?.ordered?.length) || 0;
           const isParamless = paramCount === 0;
           const fnSql = emitFunction(baseName, plan);
