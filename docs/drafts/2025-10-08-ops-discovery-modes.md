@@ -88,7 +88,7 @@ Activated when `--ops-manifest <path>` is supplied. Provides curated control.
 
 ## Logging (examples)
 
-```
+```text
 ops: found 4 files under example/ops (glob: **/*.op.json)
 ops: compiling (1/4) example/ops/products_by_name.op.json → sanitized: products_by_name
 ops: ajv errors (2): /filters/0/param/type must match pattern …
