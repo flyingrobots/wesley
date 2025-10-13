@@ -44,6 +44,8 @@ run_cli() {
 }
 
 @test "--ops-allow-errors succeeds in CI with override" {
-  run run_cli --ops-allow-errors --i-know-what-im-doing --quiet
+  run run_cli --ops-allow-errors --i-know-what-im-doing
   assert_success
+  assert_output --partial "ops: compiled operation"
+  [[ -s "$OUT_DIR/ops/products.fn.sql" ]] || fail "Expected ops/products.fn.sql to exist"
 }
