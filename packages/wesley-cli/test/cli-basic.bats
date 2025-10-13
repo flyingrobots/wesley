@@ -11,12 +11,10 @@ load 'bats-plugins/bats-file/load'
 setup() {
     # Create temp directory for this test
     TEST_TEMP_DIR="$(mktemp -d -t wesley-bats-XXXXXX)"
-    export TEST_TEMP_DIR
     cd "$TEST_TEMP_DIR"
     
     # Set CLI path to the proper location after ENSIGN reorganization
     CLI_PATH="$BATS_TEST_DIRNAME/../../wesley-host-node/bin/wesley.mjs"
-    export CLI_PATH
 }
 
 teardown() {
@@ -99,13 +97,13 @@ EOF
 }
 
 @test "stdin input with --schema - works" {
-    run bash -c "echo 'type User @wes_table { id: ID! @wes_pk }' | node '$CLI_PATH' generate --schema - --out out"
+    run bash -c "echo 'type User @wes_table { id: ID! @wes_pk }' | node '$CLI_PATH' generate --schema - --out-dir out"
     assert_success
     assert_file_exist out/schema.sql
 }
 
 @test "--stdin convenience flag works" {
-    run bash -c "echo 'type User @wes_table { id: ID! @wes_pk }' | node '$CLI_PATH' generate --stdin --out out"
+    run bash -c "echo 'type User @wes_table { id: ID! @wes_pk }' | node '$CLI_PATH' generate --stdin --out-dir out"
     assert_success
     assert_file_exist out/schema.sql
 }

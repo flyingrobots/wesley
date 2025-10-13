@@ -13,6 +13,7 @@
     "lint:fix": "eslint . --ext .js,.mjs --fix",
     "preflight": "node scripts/preflight.mjs",
     "prepare": "node scripts/install-hooks.mjs",
+    "setup:bats-plugins": "bash scripts/setup-bats-plugins.sh",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "validate": "pnpm lint && pnpm format:check && pnpm test",

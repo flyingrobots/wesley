@@ -6,10 +6,8 @@ load 'bats-plugins/bats-file/load'
 
 setup() {
   TEST_TEMP_DIR="$(mktemp -d -t wesley-transform-XXXXXX)"
-  export TEST_TEMP_DIR
   cd "$TEST_TEMP_DIR"
   CLI_PATH="$BATS_TEST_DIRNAME/../../wesley-host-node/bin/wesley.mjs"
-  export CLI_PATH
 }
 
 teardown() {
@@ -37,8 +35,7 @@ EOF
 
 @test "transform runs successfully on minimal schema" {
   create_min_schema
-  run node "$CLI_PATH" transform --schema schema.graphql --out out
+  run node "$CLI_PATH" transform --schema schema.graphql --out-dir out
   assert_success
   # Out directory should exist (writer stubs may create files)
 }
-

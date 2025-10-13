@@ -13,6 +13,7 @@ class WesleyParseError extends Error {
   constructor(message, directive = null, field = null) {
     super(message);
     this.name = 'PARSE_FAILED';
+    this.code = 'PARSE_FAILED';
     this.directive = directive;
     this.field = field;
   }
@@ -29,7 +30,7 @@ class GraphQLSchemaParser {
     // Canonical directive set
     this.canonicalDirectives = new Set([
       'wes_table', 'wes_pk', 'wes_fk', 'wes_unique', 
-      'wes_index', 'wes_tenant', 'wes_default', 'wes_rls', 'wes_check'
+      'wes_index', 'wes_tenant', 'wes_default', 'wes_rls'
     ]);
     
     // Legacy aliases (with deprecation warnings)
@@ -38,13 +39,13 @@ class GraphQLSchemaParser {
       ['wesley_table', 'wes_table'], ['wesley_pk', 'wes_pk'], ['wesley_fk', 'wes_fk'],
       ['wesley_unique', 'wes_unique'], ['wesley_index', 'wes_index'], 
       ['wesley_tenant', 'wes_tenant'], ['wesley_default', 'wes_default'],
-      ['wesley_rls', 'wes_rls'], ['wesley_check', 'wes_check'],
+      ['wesley_rls', 'wes_rls'],
       // Short/alternate aliases  
       ['table', 'wes_table'], ['pk', 'wes_pk'], ['fk', 'wes_fk'],
       ['primaryKey', 'wes_pk'], ['foreignKey', 'wes_fk'],
       ['unique', 'wes_unique'], ['index', 'wes_index'], 
       ['tenant', 'wes_tenant'], ['default', 'wes_default'],
-      ['rls', 'wes_rls'], ['check', 'wes_check']
+      ['rls', 'wes_rls']
     ]);
   }
   

@@ -5,3 +5,10 @@ echo "🔎 Preflight: running repository checks..."
 node scripts/preflight.mjs
 echo "✅ Preflight passed"
 
+if [[ "${WESLEY_SKIP_CLI_TESTS:-0}" != "1" ]]; then
+  echo "🧪 CLI: running Bats suite..."
+  pnpm --filter @wesley/cli test
+  echo "✅ CLI Bats passed"
+else
+  echo "⚠️ CLI Bats skipped (WESLEY_SKIP_CLI_TESTS=1)."
+fi

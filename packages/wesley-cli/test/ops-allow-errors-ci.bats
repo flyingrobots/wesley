@@ -7,6 +7,8 @@ setup() {
   TMP_ROOT="$(mktemp -d)"
   OPS_DIR="$TMP_ROOT/ops"
   mkdir -p "$OPS_DIR"
+  CLI_BIN="$WESLEY_REPO_ROOT/packages/wesley-host-node/bin/wesley.mjs"
+  SCHEMA_PATH="$WESLEY_REPO_ROOT/example/ecommerce.graphql"
 
   cat >"$OPS_DIR/products.op.json" <<'JSON'
 {
@@ -31,8 +33,8 @@ run_cli() {
   rm -rf "$OUT_DIR"
   mkdir -p "$OUT_DIR"
   CI=true NODE_ENV=production \
-    node ../wesley-host-node/bin/wesley.mjs generate \
-      --schema ../example/ecommerce.graphql \
+    node "$CLI_BIN" generate \
+      --schema "$SCHEMA_PATH" \
       --ops "$OPS_DIR" \
       --out-dir "$OUT_DIR" \
       --allow-dirty \
