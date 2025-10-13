@@ -17,6 +17,8 @@ setup() {
 }
 JSON
 
+  printf 'not json\n' >"$OPS_DIR/broken.op.json"
+
   OUT_DIR="$TMP_ROOT/out"
 }
 
@@ -47,5 +49,6 @@ run_cli() {
   run run_cli --ops-allow-errors --i-know-what-im-doing
   assert_success
   assert_output --partial "ops: compiled operation"
+  assert_output --partial "Skipping op due to compile error (allowed)"
   [[ -s "$OUT_DIR/ops/products.fn.sql" ]] || fail "Expected ops/products.fn.sql to exist"
 }
