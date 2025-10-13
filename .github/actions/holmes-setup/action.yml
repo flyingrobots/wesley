@@ -111,7 +111,7 @@ runs:
         popd >/dev/null
 
     - name: Save Moriarty cache
-      if: ${{ always() && hashFiles(format('{0}/history.json', inputs.bundle-dir)) != '' }}
+      if: ${{ always() && steps.moriarty-cache.outputs.cache-hit != 'true' && hashFiles(format('{0}/history.json', inputs.bundle-dir)) != '' }}
       uses: actions/cache/save@v4
       with:
         path: ${{ inputs.bundle-dir }}/history.json
