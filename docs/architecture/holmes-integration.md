@@ -318,6 +318,12 @@ jobs:
         run: node .github/scripts/holmes-comment.mjs # combines markdown sections
 ```
 
+## Report Validation & Dashboard
+
+- **End-to-end integration test** – `test/holmes-e2e.bats` runs the full suite (`wesley generate --emit-bundle` → `holmes investigate/verify/predict`) and asserts that both Markdown and JSON artifacts exist with the expected keys (SCS/TCI/MRI, verdicts, velocity metrics). The test fails loudly if any file is missing, so HOLMES regressions surface immediately during local Bats runs or in the CLI workflows.
+- **JSON schema validation** – `@wesley/holmes` ships lightweight runtime schemas (`packages/wesley-holmes/src/report-schemas.mjs`) with targeted node tests. The CLI validates each report against the schema before emitting JSON, which prevents malformed artifacts from leaking into CI.
+- **Static dashboard artifact** – The HOLMES workflow now assembles a `holmes-dashboard` artifact containing `docs/holmes-dashboard/index.html` plus the suite JSON. Open the HTML locally (or host via GitHub Pages) to visualize recent SCS/TCI/MRI history, MORIARTY velocity/ETA, and verdict summaries without needing additional tooling.
+
 The GitHub comment highlights the markdown narratives and links directly to the JSON artifacts so other workflows (or local tooling) can consume structured results without scraping text.
 
 ## Machine-Readable Reports

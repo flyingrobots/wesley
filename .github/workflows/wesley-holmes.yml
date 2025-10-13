@@ -352,7 +352,34 @@ jobs:
         with:
           merge-multiple: true
           path: reports
-      
+
+      - name: "📊 Assemble Dashboard"
+        run: |
+          set -euo pipefail
+          mkdir -p dashboard
+          cp docs/holmes-dashboard/index.html dashboard/index.html
+          missing=0
+          for report in holmes watson moriarty; do
+            src=$(find reports -name "$report-report.json" -print -quit)
+            if [ -z "$src" ]; then
+              echo "Missing $report-report.json" >&2
+              missing=1
+            else
+              cp "$src" "dashboard/$report-report.json"
+            fi
+          done
+          if [ $missing -ne 0 ]; then
+            echo "Dashboard assembly failed due to missing report JSON" >&2
+            exit 1
+          fi
+
+      - name: "📤 Upload Dashboard"
+        uses: actions/upload-artifact@v4
+        with:
+          name: holmes-dashboard
+          path: dashboard
+          if-no-files-found: error
+
       - name: "📝 Create Comment"
         uses: actions/github-script@v7
         with:
