@@ -33,6 +33,7 @@ export class Moriarty {
     const latest = this.history.points[this.history.points.length - 1];
     const series = this.calculateEMA();
     const slope = this.calculateSlope(series);
+    const recentVelocity = this.calculateRecentVelocity(series);
     
     report.push('## 🔮 Current State');
     report.push('');
@@ -48,7 +49,7 @@ export class Moriarty {
     report.push('## 📈 Velocity Analysis');
     report.push('');
     
-    const velocity = slope.scs;
+    const velocity = recentVelocity;
     report.push(`**SCS Velocity**: ${velocity >= 0 ? '+' : ''}${(velocity * 100).toFixed(2)}%/day`);
     
     if (Math.abs(velocity) < this.minSlope) {
@@ -75,7 +76,7 @@ export class Moriarty {
       
       // Confidence calculation
       const variance = this.calculateVariance(series);
-      const confidence = Math.max(0, Math.min(100, 100 - variance * 100));
+      const confidence = Math.max(0, Math.min(100, 100 - variance * 120));
       
       report.push('');
       report.push(`**Confidence**: ${confidence.toFixed(0)}%`);
@@ -153,6 +154,22 @@ export class Moriarty {
     const tciSlope = xs.reduce((acc, x, i) => acc + (x - xBar) * (tciList[i] - tciBar), 0) / denominator;
     
     return { scs: scsSlope, tci: tciSlope };
+  }
+
+  calculateRecentVelocity(series) {
+    if (series.length < 2) return 0;
+    const window = Math.min(4, series.length);
+    const recent = series.slice(-window);
+    let velocity = 0;
+    for (let i = 1; i < recent.length; i++) {
+      const delta = recent[i].scs - recent[i - 1].scs;
+      const days = (recent[i].day - recent[i - 1].day) || 1;
+      velocity += delta / days;
+    }
+    velocity /= (recent.length - 1);
+    const longSlope = this.calculateSlope(series).scs;
+    // Blend recent velocity with long-term slope to avoid drastic swings
+    return (velocity * 0.7) + (longSlope * 0.3);
   }
 
   calculateVariance(series) {

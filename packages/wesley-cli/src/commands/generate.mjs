@@ -161,7 +161,12 @@ export class GeneratePipelineCommand extends WesleyCommand {
           const history = await loadMoriartyHistory({
             fs: this.ctx.fs,
             shell: globalThis?.wesleyCtx?.shell,
-            defaultBase: process.env.WESLEY_BASE_REF || process.env.GITHUB_BASE_REF || 'main'
+            defaultBase:
+              process.env.WESLEY_BASE_REF ||
+              process.env.GITHUB_BASE_REF ||
+              process.env.WESLEY_DEFAULT_BRANCH ||
+              process.env.GITHUB_DEFAULT_BRANCH ||
+              'main'
           });
           const day = Math.floor(Date.now() / 86400000);
           const nextPoints = mergeHistoryPoints(history.points, [{ day, timestamp, scs, tci, mri }]);
@@ -468,7 +473,7 @@ async function assertCleanGit() {
   }
 }
 
-async function loadMoriartyHistory({ fs, shell, defaultBase = 'main' }) {
+async function loadMoriartyHistory({ fs, shell, defaultBase }) {
   let points = [];
   try {
     const raw = await fs.read('.wesley/history.json');
@@ -476,7 +481,9 @@ async function loadMoriartyHistory({ fs, shell, defaultBase = 'main' }) {
     if (Array.isArray(parsed?.points)) {
       points = mergeHistoryPoints(points, parsed.points);
     }
-  } catch {}
+  } catch (err) {
+    console.warn('[Moriarty] Unable to read local history:', err?.message);
+  }
 
   const gitShell = shell?.exec ? shell : null;
   if (!gitShell) {
@@ -486,15 +493,24 @@ async function loadMoriartyHistory({ fs, shell, defaultBase = 'main' }) {
   try {
     const inside = await gitShell.exec('git rev-parse --is-inside-work-tree');
     if (!inside?.stdout?.trim()) return { points };
-  } catch {
+  } catch (err) {
+    console.warn('[Moriarty] Git repo check failed:', err?.message);
     return { points };
   }
 
   let mergeBase;
+  const fallbackBase =
+    defaultBase ||
+    process.env.WESLEY_BASE_REF ||
+    process.env.GITHUB_BASE_REF ||
+    process.env.WESLEY_DEFAULT_BRANCH ||
+    process.env.GITHUB_DEFAULT_BRANCH ||
+    'main';
   try {
-    const mb = await gitShell.exec(`git merge-base HEAD ${defaultBase}`);
+    const mb = await gitShell.exec(`git merge-base HEAD ${fallbackBase}`);
     mergeBase = mb?.stdout?.trim();
-  } catch {
+  } catch (err) {
+    console.warn('[Moriarty] merge-base lookup failed:', err?.message);
     return { points };
   }
   if (!mergeBase) return { points };
@@ -507,7 +523,8 @@ async function loadMoriartyHistory({ fs, shell, defaultBase = 'main' }) {
         points = mergeHistoryPoints(parsed.points, points);
       }
     }
-  } catch {
+  } catch (err) {
+    console.warn('[Moriarty] No history at merge-base:', err?.message);
     // merge-base history missing or unreadable; ignore
   }
 

@@ -6,6 +6,13 @@ on:
   push:
     branches: [main]
 
+env:
+  HOLMES_BUNDLE_DIR: example/.wesley
+  HOLMES_SCHEMA: example/ecommerce.graphql
+  HOLMES_OPS_DIR: ./ops
+  HOLMES_OUT_DIR: out
+  HOLMES_ARTIFACT: wesley-bundle
+
 jobs:
   wesley-generate:
     name: "🚀 Wesley Generation"
@@ -16,83 +23,38 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          
-      - name: "🔧 Setup pnpm"
-        uses: pnpm/action-setup@v4
-          
-      - name: "🔧 Setup Node.js"
-        uses: actions/setup-node@v4
+      
+      - name: "🛠️ Setup HOLMES environment"
+        uses: ./.github/actions/holmes-setup
         with:
-          node-version: '20'
-          cache: 'pnpm'
-          
-      - name: "📦 Install Dependencies"
-        run: pnpm install
+          bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
+          schema: ${{ env.HOLMES_SCHEMA }}
+          ops-dir: ${{ env.HOLMES_OPS_DIR }}
+          out-dir: ${{ env.HOLMES_OUT_DIR }}
+          artifact-name: ${{ env.HOLMES_ARTIFACT }}
         
-      - name: "🧠 Restore Moriarty cache"
-        id: moriarty-cache
-        uses: actions/cache@v4
-        with:
-          path: example/.wesley/history.json
-          key: moriarty-${{ github.sha }}
-          restore-keys: |
-            moriarty-${{ github.ref }}-
-            moriarty-${{ github.base_ref }}-
-            moriarty-main-
-
-      - name: "🚀 Generate Artifacts"
-        env:
-          WESLEY_OUT_DIR: out
-        run: |
-          cd example
-          # Use workspace binary directly to avoid PATH/bin resolution issues
-          # Explicit out dir to align with downstream pgTAP apply step
-          node ../packages/wesley-host-node/bin/wesley.mjs generate \
-            --schema ecommerce.graphql \
-            --emit-bundle \
-            --ops ./ops \
-            --allow-dirty \
-            --out-dir "$WESLEY_OUT_DIR"
-          cd -
-
-      - name: "💾 Save Moriarty cache"
-        if: ${{ always() && hashFiles('example/.wesley/history.json') != '' }}
-        uses: actions/cache/save@v4
-        with:
-          path: example/.wesley/history.json
-          key: moriarty-${{ github.sha }}
-          
       - name: "📊 Display Scores"
         run: |
           echo "## 📊 Generation Scores"
-          if [ -f example/.wesley/scores.json ]; then
-            cat example/.wesley/scores.json | jq '.scores'
-          elif [ -f .wesley/scores.json ]; then
-            cat .wesley/scores.json | jq '.scores'
+          if [ -f $HOLMES_BUNDLE_DIR/scores.json ]; then
+            cat $HOLMES_BUNDLE_DIR/scores.json | jq '.scores'
           else
             echo "No scores.json found yet"
           fi
           
       - name: "📦 Prepare Bundle for Upload"
         run: |
-          if [ -f example/.wesley/bundle.json ]; then
-            echo "Bundle already under example/.wesley"
-          elif [ -f .wesley/bundle.json ]; then
-            echo "Copying root .wesley to example/.wesley for artifact upload"
-            mkdir -p example/.wesley
-            cp -R .wesley/. example/.wesley/
-          else
-            echo "❌ Bundle not found in expected locations"
-            ls -la
-            ls -la example || true
-            exit 1
-          fi
+          ls -la $HOLMES_BUNDLE_DIR
+          test -f "$HOLMES_BUNDLE_DIR/bundle.json"
 
       - name: "💾 Upload Bundle"
         uses: actions/upload-artifact@v4
         with:
-          name: wesley-bundle
-          path: example/.wesley/
+          name: ${{ env.HOLMES_ARTIFACT }}
+          path: |
+            ${{ env.HOLMES_BUNDLE_DIR }}/bundle.json
+            ${{ env.HOLMES_BUNDLE_DIR }}/scores.json
+            ${{ env.HOLMES_BUNDLE_DIR }}/history.json
           
   holmes-investigate:
     name: "🔍 HOLMES Investigation"
@@ -102,42 +64,20 @@ jobs:
     steps:
       - name: "📦 Checkout Repository"
         uses: actions/checkout@v4
-        
-      - name: "🔧 Setup pnpm"
-        uses: pnpm/action-setup@v4
-        
-      - name: "🔧 Setup Node.js"
-        uses: actions/setup-node@v4
+      
+      - name: "🛠️ Setup HOLMES environment"
+        uses: ./.github/actions/holmes-setup
         with:
-          node-version: '20'
-          cache: 'pnpm'
-          
-      - name: "📦 Install HOLMES"
-        run: pnpm install
-        
-      - name: "📥 Download Bundle (if available)"
-        id: download-bundle
-        uses: actions/download-artifact@v4
-        continue-on-error: true
-        with:
-          name: wesley-bundle
-          path: example/.wesley/
-
-      - name: "🔎 Ensure Bundle (fallback generate if missing)"
-        run: |
-          if [ ! -f example/.wesley/bundle.json ]; then
-            echo "Bundle not found. Regenerating..."
-            cd example
-            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema ecommerce.graphql --emit-bundle --allow-dirty --ops ./ops --out-dir out
-            cd -
-          else
-            echo "Bundle found at example/.wesley/bundle.json"
-          fi
+          bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
+          schema: ${{ env.HOLMES_SCHEMA }}
+          ops-dir: ${{ env.HOLMES_OPS_DIR }}
+          out-dir: ${{ env.HOLMES_OUT_DIR }}
+          artifact-name: ${{ env.HOLMES_ARTIFACT }}
           
       - name: "🔍 Run Investigation"
         id: holmes
         run: |
-          cd example
+          cd "$(dirname "${HOLMES_SCHEMA}")"
           # Run HOLMES from workspace package
           node ../packages/wesley-holmes/src/cli.mjs investigate > holmes-report.md
           cat holmes-report.md
@@ -146,7 +86,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: holmes-report
-          path: example/holmes-report.md
+          path: |
+            $(dirname "${{ env.HOLMES_SCHEMA }}")/holmes-report.md
           
   watson-verify:
     name: "🩺 WATSON Verification"
@@ -157,41 +98,19 @@ jobs:
       - name: "📦 Checkout Repository"
         uses: actions/checkout@v4
         
-      - name: "🔧 Setup pnpm"
-        uses: pnpm/action-setup@v4
-        
-      - name: "🔧 Setup Node.js"
-        uses: actions/setup-node@v4
+      - name: "🛠️ Setup HOLMES environment"
+        uses: ./.github/actions/holmes-setup
         with:
-          node-version: '20'
-          cache: 'pnpm'
-          
-      - name: "📦 Install HOLMES"
-        run: pnpm install
-        
-      - name: "📥 Download Bundle (if available)"
-        id: download-bundle
-        uses: actions/download-artifact@v4
-        continue-on-error: true
-        with:
-          name: wesley-bundle
-          path: example/.wesley/
-
-      - name: "🔎 Ensure Bundle (fallback generate if missing)"
-        run: |
-          if [ ! -f example/.wesley/bundle.json ]; then
-            echo "Bundle not found. Regenerating..."
-            cd example
-            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema ecommerce.graphql --emit-bundle --allow-dirty --ops ./ops --out-dir out
-            cd -
-          else
-            echo "Bundle found at example/.wesley/bundle.json"
-          fi
+          bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
+          schema: ${{ env.HOLMES_SCHEMA }}
+          ops-dir: ${{ env.HOLMES_OPS_DIR }}
+          out-dir: ${{ env.HOLMES_OUT_DIR }}
+          artifact-name: ${{ env.HOLMES_ARTIFACT }}
           
       - name: "🩺 Run Verification"
         id: watson
         run: |
-          cd example
+          cd "$(dirname "${HOLMES_SCHEMA}")"
           node ../packages/wesley-holmes/src/cli.mjs verify > watson-report.md
           cat watson-report.md
           
@@ -199,7 +118,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: watson-report
-          path: example/watson-report.md
+          path: |
+            $(dirname "${{ env.HOLMES_SCHEMA }}")/watson-report.md
           
   moriarty-predict:
     name: "🔮 MORIARTY Predictions"
@@ -210,41 +130,19 @@ jobs:
       - name: "📦 Checkout Repository"
         uses: actions/checkout@v4
         
-      - name: "🔧 Setup pnpm"
-        uses: pnpm/action-setup@v4
-        
-      - name: "🔧 Setup Node.js"
-        uses: actions/setup-node@v4
+      - name: "🛠️ Setup HOLMES environment"
+        uses: ./.github/actions/holmes-setup
         with:
-          node-version: '20'
-          cache: 'pnpm'
-          
-      - name: "📦 Install HOLMES"
-        run: pnpm install
-        
-      - name: "📥 Download Bundle (if available)"
-        id: download-bundle
-        uses: actions/download-artifact@v4
-        continue-on-error: true
-        with:
-          name: wesley-bundle
-          path: example/.wesley/
-
-      - name: "🔎 Ensure Bundle (fallback generate if missing)"
-        run: |
-          if [ ! -f example/.wesley/bundle.json ]; then
-            echo "Bundle not found. Regenerating..."
-            cd example
-            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema ecommerce.graphql --emit-bundle --allow-dirty --ops ./ops --out-dir out
-            cd -
-          else
-            echo "Bundle found at example/.wesley/bundle.json"
-          fi
+          bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
+          schema: ${{ env.HOLMES_SCHEMA }}
+          ops-dir: ${{ env.HOLMES_OPS_DIR }}
+          out-dir: ${{ env.HOLMES_OUT_DIR }}
+          artifact-name: ${{ env.HOLMES_ARTIFACT }}
           
       - name: "🔮 Run Predictions"
         id: moriarty
         run: |
-          cd example
+          cd "$(dirname "${HOLMES_SCHEMA}")"
           node ../packages/wesley-holmes/src/cli.mjs predict > moriarty-report.md || echo "Insufficient data for predictions" > moriarty-report.md
           cat moriarty-report.md
           
@@ -252,7 +150,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: moriarty-report
-          path: example/moriarty-report.md
+          path: |
+            $(dirname "${{ env.HOLMES_SCHEMA }}")/moriarty-report.md
           
   test-pgtap:
     name: "🧪 pgTAP Tests"

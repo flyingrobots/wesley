@@ -3,12 +3,25 @@
  * Investigates Wesley's evidence bundle
  */
 
+import { existsSync, readFileSync } from 'node:fs';
+
+const DEFAULT_WEIGHTS = {
+  password: 10,
+  email: 8,
+  id: 7,
+  user: 6,
+  created: 5,
+  theme: 2,
+  default: 5
+};
+
 export class Holmes {
   constructor(bundle) {
     this.bundle = bundle;
     this.sha = bundle.sha;
     this.evidence = bundle.evidence;
     this.scores = bundle.scores;
+    this.weights = this.loadWeightOverrides();
   }
 
   /**
@@ -117,22 +130,24 @@ export class Holmes {
   }
 
   inferWeight(uid) {
-    if (uid.includes('password')) return 10;
-    if (uid.includes('email')) return 8;
-    if (uid.includes('id')) return 7;
-    if (uid.includes('user')) return 6;
-    if (uid.includes('created')) return 5;
-    if (uid.includes('theme')) return 2;
-    return 5;
+    const lowered = uid.toLowerCase();
+    for (const [needle, weight] of Object.entries(this.weights)) {
+      if (needle === 'default') continue;
+      if (lowered.includes(needle)) {
+        return weight;
+      }
+    }
+    return this.weights.default;
   }
 
   getStatus(evidence) {
     const hasSQL = evidence.sql?.length > 0;
     const hasTests = evidence.tests?.length > 0;
     
-    if (hasSQL && hasTests) return '✅';
-    if (hasSQL || hasTests) return '⚠️';
-    return '⛔';
+    if (hasSQL && hasTests) return '✅ SQL & tests';
+    if (hasSQL) return '⚠️ SQL only';
+    if (hasTests) return '⚠️ Tests only';
+    return '⛔ Missing';
   }
 
   getCitation(evidence) {
@@ -147,8 +162,8 @@ export class Holmes {
   }
 
   makeDeduction(uid, status) {
-    if (status === '✅') return 'Elementary!';
-    if (status === '⚠️') return 'Incomplete';
+    if (status.startsWith('✅')) return 'Elementary!';
+    if (status.startsWith('⚠️')) return 'Incomplete';
     if (uid.includes('password') || uid.includes('sensitive')) {
       return 'CRITICAL OVERSIGHT!';
     }
@@ -189,5 +204,24 @@ export class Holmes {
       safe: unsafe === 0,
       ruling: unsafe === 0 ? 'All secured' : `${unsafe} EXPOSED!`
     };
+  }
+
+  loadWeightOverrides() {
+    const weights = { ...DEFAULT_WEIGHTS };
+    try {
+      if (process.env.WESLEY_HOLMES_WEIGHT_FILE && existsSync(process.env.WESLEY_HOLMES_WEIGHT_FILE)) {
+        const fileWeights = JSON.parse(readFileSync(process.env.WESLEY_HOLMES_WEIGHT_FILE, 'utf8'));
+        Object.assign(weights, fileWeights);
+      } else if (process.env.WESLEY_HOLMES_WEIGHTS) {
+        const envWeights = JSON.parse(process.env.WESLEY_HOLMES_WEIGHTS);
+        Object.assign(weights, envWeights);
+      }
+    } catch (err) {
+      console.warn('[Holmes] Unable to load weight overrides:', err?.message);
+    }
+    if (typeof weights.default !== 'number') {
+      weights.default = DEFAULT_WEIGHTS.default;
+    }
+    return weights;
   }
 }

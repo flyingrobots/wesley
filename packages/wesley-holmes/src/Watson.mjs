@@ -4,6 +4,7 @@
  */
 
 import { existsSync, readFileSync } from 'node:fs';
+import { execSync } from 'node:child_process';
 
 export class Watson {
   constructor(bundle) {
@@ -104,28 +105,46 @@ export class Watson {
     let failed = 0;
     let unverified = 0;
     
-    for (const [uid, evidence] of Object.entries(this.evidence.evidence || {})) {
-      for (const [kind, locations] of Object.entries(evidence)) {
+    for (const evidence of Object.values(this.evidence.evidence || {})) {
+      for (const locations of Object.values(evidence)) {
         for (const loc of locations) {
           total++;
-          
-          // Verify SHA matches
+
           if (loc.sha !== this.sha) {
             failed++;
             continue;
           }
-          
-          // Verify file exists (if local)
+
+          let gitContent = null;
+          try {
+            gitContent = execSync(`git show ${loc.sha}:${loc.file}`, { encoding: 'utf8' });
+          } catch (err) {
+            console.warn('[Watson] git show failed:', err?.message);
+            failed++;
+            continue;
+          }
+
+          let localContent = null;
           if (existsSync(loc.file)) {
+            try {
+              localContent = readFileSync(loc.file, 'utf8');
+            } catch (err) {
+              console.warn('[Watson] Unable to read local file:', err?.message);
+            }
+          }
+
+          if (localContent !== null && localContent === gitContent) {
             verified++;
-          } else {
-            // Can't verify but SHA is correct
+          } else if (localContent === null) {
+            // We trust the git snapshot even if workspace lacks the file
             unverified++;
+          } else {
+            failed++;
           }
         }
       }
     }
-    
+
     return { total, verified, failed, unverified };
   }
 
