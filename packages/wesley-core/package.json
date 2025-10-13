@@ -8,7 +8,8 @@
     ".": "./src/index.mjs",
     "./domain": "./src/domain/index.mjs",
     "./application": "./src/application/index.mjs",
-    "./ports": "./src/ports/index.mjs"
+    "./ports": "./src/ports/index.mjs",
+    "./domain/qir": "./src/domain/qir/index.mjs"
   },
   "files": [
     "src/"
@@ -38,7 +39,7 @@
     "hexagonal"
   ],
   "author": "Captain James",
-  "license": "Apache-2.0",
+  "license": "LicenseRef-MIND-UCAL-1.0",
   "dependencies": {
     "@supabase/pg-parser": "^0.1.3",
     "chokidar": "^4.0.3",

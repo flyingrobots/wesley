@@ -67,7 +67,7 @@ Wesley follows hexagonal architecture with clear separation:
 git clone https://github.com/yourusername/wesley.git
 cd wesley
 
-# Install dependencies
+# Install dependencies (pnpm workspace)
 pnpm install
 
 # Run tests
@@ -140,6 +140,10 @@ Update relevant docs when making changes:
 - New features: Update README.md
 - Architecture changes: Update docs/architecture/
 
+## License
+
+This project is licensed under **MIND‑UCAL v1.0** (Moral Intelligence · Non‑violent Development · Universal Charter‑Aligned License). See `LICENSE` for the full text. By contributing, you agree your contributions will be distributed under MIND‑UCAL v1.0.
+
 ## Release Process
 
 We use changesets for versioning:
@@ -153,3 +157,27 @@ pnpm publish
 ## Questions?
 
 Feel free to open an issue for any questions about contributing!
+
+## Tooling & Hooks
+
+### Package Manager
+- We use pnpm (workspace). Please ensure pnpm 9+ is installed. The repo pins the package manager in `package.json`.
+
+### Git Hooks
+- On install, our `prepare` script sets `core.hooksPath` to `.githooks/`.
+- A pre-push hook runs a fast preflight before pushing.
+
+### Preflight (local and CI)
+- Run manually: `pnpm run preflight`.
+- What it checks:
+  - Docs link integrity (relative links only)
+  - Architecture boundaries via dependency-cruiser
+  - ESLint purity for `packages/wesley-core` (no node:* / process / fs / path)
+  - Workflow hygiene (no macOS runners, no Claude workflows)
+  - .gitignore hygiene (.wesley/ and out/ ignored)
+- Bypass (not recommended): set `SKIP_PREFLIGHT=1`.
+- CI: A `Preflight` workflow runs on PRs and main pushes and should pass before merging.
+
+### Node / Runtimes
+- Recommended Node: 20 LTS (CI uses Node 20).
+- macOS runners are removed from CI to control cost; Linux environments are primary.

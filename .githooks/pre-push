@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "🔎 Preflight: running repository checks..."
+node scripts/preflight.mjs
+echo "✅ Preflight passed"
+

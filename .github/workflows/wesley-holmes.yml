@@ -18,9 +18,7 @@ jobs:
           fetch-depth: 0
           
       - name: "🔧 Setup pnpm"
-        uses: pnpm/action-setup@v2
-        with:
-          version: 9
+        uses: pnpm/action-setup@v4
           
       - name: "🔧 Setup Node.js"
         uses: actions/setup-node@v4
@@ -39,8 +37,9 @@ jobs:
           # Use workspace binary directly to avoid PATH/bin resolution issues
           # Explicit out dir to align with downstream pgTAP apply step
           node ../packages/wesley-host-node/bin/wesley.mjs generate \
-            --schema schema.graphql \
+            --schema ecommerce.graphql \
             --emit-bundle \
+            --ops ./ops \
             --allow-dirty \
             --out-dir "$WESLEY_OUT_DIR"
           
@@ -86,9 +85,7 @@ jobs:
         uses: actions/checkout@v4
         
       - name: "🔧 Setup pnpm"
-        uses: pnpm/action-setup@v2
-        with:
-          version: 9
+        uses: pnpm/action-setup@v4
         
       - name: "🔧 Setup Node.js"
         uses: actions/setup-node@v4
@@ -112,7 +109,7 @@ jobs:
           if [ ! -f example/.wesley/bundle.json ]; then
             echo "Bundle not found. Regenerating..."
             cd example
-            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema schema.graphql --emit-bundle --allow-dirty --out-dir out
+            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema ecommerce.graphql --emit-bundle --allow-dirty --ops ./ops --out-dir out
             cd -
           else
             echo "Bundle found at example/.wesley/bundle.json"
@@ -142,9 +139,7 @@ jobs:
         uses: actions/checkout@v4
         
       - name: "🔧 Setup pnpm"
-        uses: pnpm/action-setup@v2
-        with:
-          version: 9
+        uses: pnpm/action-setup@v4
         
       - name: "🔧 Setup Node.js"
         uses: actions/setup-node@v4
@@ -168,7 +163,7 @@ jobs:
           if [ ! -f example/.wesley/bundle.json ]; then
             echo "Bundle not found. Regenerating..."
             cd example
-            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema schema.graphql --emit-bundle --allow-dirty --out-dir out
+            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema ecommerce.graphql --emit-bundle --allow-dirty --ops ./ops --out-dir out
             cd -
           else
             echo "Bundle found at example/.wesley/bundle.json"
@@ -197,9 +192,7 @@ jobs:
         uses: actions/checkout@v4
         
       - name: "🔧 Setup pnpm"
-        uses: pnpm/action-setup@v2
-        with:
-          version: 9
+        uses: pnpm/action-setup@v4
         
       - name: "🔧 Setup Node.js"
         uses: actions/setup-node@v4
@@ -223,7 +216,7 @@ jobs:
           if [ ! -f example/.wesley/bundle.json ]; then
             echo "Bundle not found. Regenerating..."
             cd example
-            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema schema.graphql --emit-bundle --allow-dirty --out-dir out
+            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema ecommerce.graphql --emit-bundle --allow-dirty --ops ./ops --out-dir out
             cd -
           else
             echo "Bundle found at example/.wesley/bundle.json"
@@ -266,9 +259,7 @@ jobs:
         uses: actions/checkout@v4
         
       - name: "🔧 Setup pnpm"
-        uses: pnpm/action-setup@v2
-        with:
-          version: 9
+        uses: pnpm/action-setup@v4
 
       - name: "🔧 Setup Node.js"
         uses: actions/setup-node@v4
@@ -292,7 +283,7 @@ jobs:
           if [ ! -f example/.wesley/bundle.json ]; then
             echo "Bundle not found. Regenerating..."
             cd example
-            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema schema.graphql --emit-bundle --allow-dirty --out-dir out
+            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema ecommerce.graphql --emit-bundle --allow-dirty --ops ./ops --out-dir out
             cd -
           else
             echo "Bundle found at example/.wesley/bundle.json"
@@ -302,18 +293,119 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y postgresql-client
+      
+      - name: "📦 Install pgTAP into Postgres service"
+        run: |
+          # Install pgTAP inside the postgres:15 container as root so CREATE EXTENSION works
+          set -euo pipefail
+          docker exec -u 0 ${{ job.services.postgres.id }} bash -lc '
+            set -euo pipefail
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get update
+            if apt-get install -y --no-install-recommends postgresql-15-pgtap; then
+              echo "Installed postgresql-15-pgtap"
+            elif apt-get install -y --no-install-recommends pgtap; then
+              echo "Installed generic pgtap package"
+            else
+              echo "Failed to install pgTAP in postgres service" >&2
+              exit 1
+            fi
+            apt-get clean && rm -rf /var/lib/apt/lists/*
+          '
           
       - name: "🔨 Apply Schema"
         env:
           WESLEY_OUT_DIR: out
         run: |
           # Apply the generated schema produced in the generation step
-          PGPASSWORD=postgres psql -h localhost -U postgres -d test -f "example/${WESLEY_OUT_DIR}/schema.sql"
-          
+          # Ensure required extensions present (needed by generated defaults/indexes)
+          PGPASSWORD=postgres psql -h localhost -U postgres -d test -c 'CREATE EXTENSION IF NOT EXISTS pgcrypto;'
+          PGPASSWORD=postgres psql -h localhost -U postgres -d test -c 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp";'
+          PGPASSWORD=postgres psql -h localhost -U postgres -d test -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm;'
+          # Apply schema (fail fast on errors)
+          PGPASSWORD=postgres psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d test -f "example/${WESLEY_OUT_DIR}/schema.sql"
+
+      - name: "🏗️ Ensure wes_ops schema"
+        run: |
+          # Ops emission targets schema wes_ops; create it if missing
+          PGPASSWORD=postgres psql -h localhost -U postgres -d test -c 'CREATE SCHEMA IF NOT EXISTS wes_ops;'
+      
+      - name: "📦 Apply Ops SQL (functions only)"
+        env:
+          WESLEY_OUT_DIR: out
+        run: |
+          set -euo pipefail
+          OPS_DIR="example/${WESLEY_OUT_DIR}/ops"
+          shopt -s nullglob
+          if [ ! -d "$OPS_DIR" ]; then
+            echo "No ops SQL directory found; skipping"
+            exit 0
+          fi
+          files=("$OPS_DIR"/*.fn.sql)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No ops function SQL files found; nothing to apply"
+            exit 0
+          fi
+          for f in "${files[@]}"; do
+            if [ ! -s "$f" ]; then
+              echo "Skipping empty file: $f"
+              continue
+            fi
+            echo "Applying $f (single transaction)..."
+            PGPASSWORD=postgres psql -1 -v ON_ERROR_STOP=1 -h localhost -U postgres -d test -f "$f"
+          done
+
+      - name: "🌱 Seed minimal data for ops"
+        run: |
+          set -euo pipefail
+          # Seed a couple of products (one published, one not) and run in a single transaction
+          PGPASSWORD=postgres psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d test <<'SQL'
+          BEGIN;
+          insert into product (id, sku, name, slug, price_cents, stock_quantity, published, created_at)
+          values (gen_random_uuid(), 'SKU1', 'Alpha', 'alpha', 100, 10, true, now())
+          on conflict do nothing;
+          insert into product (id, sku, name, slug, price_cents, stock_quantity, published, created_at)
+          values (gen_random_uuid(), 'SKU2', 'Beta', 'beta', 200, 0, false, now())
+          on conflict do nothing;
+          COMMIT;
+          SQL
+
+      - name: "🧪 Generate EXPLAIN JSON snapshots"
+        env:
+          WESLEY_OUT_DIR: out
+        run: |
+          set -euo pipefail
+          mkdir -p example/${WESLEY_OUT_DIR}/ops/explain
+          # EXPLAIN (FORMAT JSON) for function calls
+          PGPASSWORD=postgres psql -h localhost -U postgres -d test -t -A -c "EXPLAIN (FORMAT JSON) SELECT * FROM wes_ops.op_products_by_name('Al%')" > example/${WESLEY_OUT_DIR}/ops/explain/products_by_name.explain.json
+          PGPASSWORD=postgres psql -h localhost -U postgres -d test -t -A -c "EXPLAIN (FORMAT JSON) SELECT * FROM wes_ops.op_orders_by_user('00000000-0000-0000-0000-000000000000')" > example/${WESLEY_OUT_DIR}/ops/explain/orders_by_user.explain.json
+
+      - name: "⬆️ Upload EXPLAIN snapshots"
+        uses: actions/upload-artifact@v4
+        with:
+          name: ops-explain
+          path: example/out/ops/explain/
+
       - name: "🧪 Run Tests"
         run: |
-          echo "pgTAP tests would run here"
-          echo "Tests are in: example/tests/generated.sql"
+          set -euo pipefail
+          # Optional gate: set RUN_PGTAP=false to skip pgTAP tests
+          : "${RUN_PGTAP:=true}"
+          # Run ops pgTAP smoke only if pgTAP is available
+          HAS_PGTAP=$(PGPASSWORD=postgres psql -h localhost -U postgres -d test -t -A -c "SELECT 1 FROM pg_available_extensions WHERE name='pgtap'" || echo '')
+          if [ "$RUN_PGTAP" = "true" ] && [ "$HAS_PGTAP" = "1" ]; then
+            PGPASSWORD=postgres psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d test -c 'CREATE EXTENSION IF NOT EXISTS pgtap;'
+            PGPASSWORD=postgres psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d test -f example/tests/ops.pgtap.sql
+          else
+            echo "pgtap extension not available; skipping pgTAP tests"
+          fi
+          # Simple non-pgTAP assertion: expect exactly 1 published product matching 'Al%'
+          CNT=$(PGPASSWORD=postgres psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d test -t -A -c "SELECT count(*) FROM wes_ops.op_products_by_name('Al%')" || echo 0)
+          echo "Count from op_products_by_name('Al%') = $CNT"
+          if [ "$CNT" != "1" ]; then
+            echo "Expected 1 row from products_by_name, got $CNT" >&2
+            exit 1
+          fi
           
   comment-report:
     name: "📝 Post Investigation Report"

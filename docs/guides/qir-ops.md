@@ -20,7 +20,9 @@ This guide documents the MVP of the Query IR (QIR) pipeline that compiles operat
 
 ## Constraints and behavior
 
-- The lowering phase (lowerToSQL.mjs) avoids quoting identifiers for readability in tests. Using reserved SQL keywords in aliases or column names will cause SQL errors — this is a known limitation until stricter validation/quoting is added. See the [PostgreSQL reserved keywords](https://www.postgresql.org/docs/current/sql-keywords-appendix.html) and prefer non‑reserved identifiers.
+- The lowering phase (lowerToSQL.mjs) avoids quoting identifiers for readability in tests, but will minimally quote reserved identifiers to avoid invalid SQL (e.g., table "order"). Do not rely on this for security.
+- Security warning: Because lowering primarily emits unquoted identifiers, user-controlled values MUST NEVER flow into table/column/alias names. Only use trusted, validated identifiers from schema metadata or a server-side whitelist. As an immediate mitigation, validate/whitelist identifiers server-side and avoid interpolating raw user values; future releases will add stricter validation/quoting modes.
+
 - Function returns `SETOF jsonb` for MVP to keep signatures stable; future work can emit `RETURNS TABLE (...)` if desired.
 - Primary key tie-breaker currently assumes `<leftmost-alias>.id`; will use real PK/unique keys when metadata is available.
 
@@ -85,6 +87,43 @@ Run:
 pnpm -C packages/wesley-core test:unit
 pnpm -C packages/wesley-core test:snapshots
 ```
+
+## Using --ops (Experimental)
+
+The CLI can compile simple operation descriptions into SQL when `--ops` points to a directory of `*.op.json` files. The MVP DSL supports a root table, projected columns, basic filters, ordering, and limit/offset.
+
+Example file: `example/ops/products_by_name.op.json`
+
+```json
+{
+  "name": "products_by_name",
+  "table": "product",
+  "columns": ["id", "name", "slug"],
+  "filters": [
+    { "column": "published", "op": "eq", "value": true },
+    { "column": "name", "op": "ilike", "param": { "name": "q", "type": "text" } }
+  ],
+  "orderBy": [ { "column": "name", "dir": "asc" } ],
+  "limit": 50
+}
+```
+
+Generate and emit ops SQL to `out/ops/`:
+
+```bash
+node packages/wesley-host-node/bin/wesley.mjs generate \
+  --schema example/ecommerce.graphql \
+  --ops example/ops \
+  --emit-bundle \
+  --out-dir example/out \
+  --allow-dirty
+```
+
+This produces both a `CREATE VIEW` and a `CREATE FUNCTION` for each operation, e.g.: `example/out/ops/products_by_name.view.sql` and `example/out/ops/products_by_name.fn.sql`.
+
+### Discovery Modes (planned)
+
+We are moving to a strict discovery model by default: when `--ops <dir>` is present, Wesley will recursively compile all `**/*.op.json` files (configurable with `--ops-glob`), fail if none are found unless `--ops-allow-empty` is provided, and sort files deterministically. A manifest mode (`--ops-manifest`) will be available for curated control (include/exclude lists). See the design note in `docs/drafts/2025-10-08-ops-discovery-modes.md`.
 
 ## Roadmap
 

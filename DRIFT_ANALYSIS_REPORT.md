@@ -1,21 +1,36 @@
 # Wesley Implementation Status Report
-*Updated after discovering Wesley pivoted from D.A.T.A. project*
+Updated: 2025-10-07 — reflects current main after QIR SQL lowering + emission (PRs #42, #44) and repo/docs hygiene (#43, #45). The original “drift” was a product pivot from D.A.T.A. to Wesley; this report now tracks real implementation status.
 
 ## PROGRESS
 
 ```bash
-████░░░░░░ 35% ~= 21/60
+███████░░░ 65% ~= 39/60
 
-21 = count(✅ completed + - [x]), 60 = total tasks
+39 ≈ count(✅ completed + - [x]), 60 = total tracked tasks (see go-public-checklist.md)
 ```
 
 ## Executive Summary
 
-**Overall Implementation Score: 35/100 (FOUNDATION PHASE)**
+**Overall Implementation Score: 65/100 (MVP SHAPING UP)**
 
-Wesley is a **Data Layer Compiler** that generates PostgreSQL, TypeScript, Zod, pgTAP tests, and Supabase integrations from GraphQL schemas. This project **pivoted from D.A.T.A.** (a database migration tool), which explains the apparent "drift" - it wasn't drift, it was a fundamental product change.
+Wesley is a schema‑first data layer compiler that generates PostgreSQL, TypeScript, Zod, pgTAP tests, and RLS from GraphQL. The earlier “drift” was a pivot, not decay. We now have stable CI, a pure core, working generators, and an experimental QIR path (lowering + emission) behind `--ops`.
 
-**Current Status:** Foundation exists, CLI runs, architecture is sound. Core compilation logic needs implementation.
+**Current Status:** Core generators and tests are in place; CI is green and cost‑conscious; QIR lowering/emission is merged. Remaining: CLI wiring for `--ops`, a minimal op→QIR translator, and public‑readiness polish tracked in go-public-checklist.md.
+
+## Readiness Matrix (snapshot)
+
+| Area                          | Readiness | Notes |
+|-------------------------------|-----------|-------|
+| Core domain (Schema/Events)   | 80%       | Stable models; minor use-case polish |
+| Generators (DDL/Zod/TS/RLS)   | 80%       | Rich directive coverage + snapshots |
+| pgTAP generation              | 75%       | Suites emitted; expand coverage over time |
+| QIR: Nodes/Params/Predicates  | 90%       | Deterministic traversal semantics |
+| QIR: Lowering + Emission      | 85%       | SELECT/JOIN/LATERAL/order/limit; VIEW+SQL fn |
+| QIR: op→QIR translator        | 30%       | Pending: map GraphQL ops to plans |
+| CLI (generate/plan/rehearse)  | 75%       | Adapterized; `--ops` wiring pending |
+| HOLMES/WATSON/MORIARTY        | 60%       | Hardened workflow; gating off by default |
+| CI/Workflows                  | 85%       | Ubuntu-only; boundaries stable; artifacts robust |
+| Docs/OSS hygiene              | 80%       | Guides + PR template + CODEOWNERS; checklist added |
 
 ## ✅ Resolved Issues (Previously Critical)
 
@@ -30,81 +45,78 @@ Wesley is a **Data Layer Compiler** that generates PostgreSQL, TypeScript, Zod, 
 - **Status**: ✅ CLI now runs successfully
 
 ### ~~3. Build System Completely Broken~~ **FIXED**
+  
+### 4. CI instability and cost overruns — FIXED
+- Removed macOS runners to control spend; Ubuntu‑only matrices retained
+- Stabilized Architecture Boundaries workflow (dep‑cruise + ESLint purity + lightweight node:* smoke)
+- Removed failing Claude Code Review workflow; guarded remaining optional Claude jobs
+
+### 5. Evidence/HOLMES flakiness — FIXED
+- HOLMES workflow hardened: tolerates missing bundle by regenerating; aligns out dirs; artifacts uploaded consistently
 - **Issue**: Package linking and exports were broken
 - **Resolution**: Fixed exports, added pnpm-lock.yaml
 - **Status**: ✅ Can run `node packages/wesley-cli/wesley.mjs`
 
 ## 🚧 Current Implementation Gaps
 
-### 1. Generator Implementation (Score: 30/100)
+### 1. Generator Implementation (Score: 75/100)
 
 **What Works:**
-- ✅ PostgreSQLGenerator class exists
-- ✅ PgTAPTestGenerator class exists
-- ✅ Basic SQL generation structure
+- ✅ PostgreSQL DDL generator with rich directive coverage (snapshots included)
+- ✅ Zod and TypeScript generators (snapshot tests in place)
+- ✅ RLS policy emission (minimal + presets) and pgTAP generation
+- ✅ QIR: Nodes, ParamCollector (deterministic), PredicateCompiler, SQL lowering (lists/NULL/IN/ANY/tie‑breakers), and emission (VIEW + SQL function returning jsonb)
 
-**What's Stubbed:**
-- [ ] GraphQLSchemaParser - stub implementation
-- [ ] MigrationDiffEngine - stub implementation  
-- [ ] TypeScript generator - partial implementation
-- [ ] Zod generator - not implemented
-- [ ] RLS policy generator - not implemented
+**What’s Pending / Next:**
+- [ ] Minimal op→QIR translator (from GraphQL ops to QIR plans) for `--ops`
+- [ ] Deterministic ORDER BY via actual PK/unique metadata (replace heuristic `<alias>.id`)
+- [ ] Optional RETURNS TABLE(...) signatures for SQL functions
 
-### 2. Architecture Alignment (Score: 60/100)
+### 2. Architecture Alignment (Score: 85/100)
 
 **What's Good:**
-- ✅ Hexagonal architecture structure in place
-- ✅ Clear separation of packages (core/host-node/cli)
-- ✅ Ports and adapters pattern established
+- ✅ Hexagonal boundaries enforced in CI (dep‑cruise + ESLint purity)
+- ✅ Clear package separation (core/host‑node/cli)
+- ✅ Pure core (no node:*); adapterization complete for CLI paths used
 
 **Issues:**
-- [ ] Core has some platform dependencies (should be pure)
-- [ ] Not all operations go through ports
-- [ ] Some adapters bypass abstraction layers
+- [ ] Sweep remaining CLI utilities for any lingering host imports
+- [ ] Keep boundary job lean (prefer tool‑based checks over greps)
 
 ## Detailed Implementation Status
 
-### Core Package (45% complete)
-- ✅ Domain models (Schema, Table, Field) implemented
-- ✅ Event system partially implemented
-- ✅ Command pattern implemented
-- ✅ PostgreSQL generator (basic)
-- ✅ PgTAP generator (basic)
-- [ ] TypeScript generator incomplete
-- [ ] Zod generator missing
-- [ ] Migration differ missing
-- [ ] Use cases layer incomplete
+### Core Package (~80% complete)
+- ✅ Domain models (Schema, Table, Field)
+- ✅ Generators: PostgreSQL, Zod, TypeScript, RLS; pgTAP suites
+- ✅ QIR: Nodes, ParamCollector, PredicateCompiler, Lowering, Emission
+- ✅ Evidence scaffolding and internal artifacts
+- [ ] QIR: op→QIR translator (pending)
+- [ ] ORDER BY tie‑breaker via real PK/unique metadata
 
-### Host-Node Package (40% complete)
-- ✅ File system adapter implemented
-- ✅ Console logger implemented
-- ✅ Index.mjs exports created
-- ✅ Event bus implementation
-- [ ] GraphQL parser needs real implementation
-- [ ] pg-parser integration broken (library doesn't export expected functions)
-- [ ] Migration engine not implemented
+### Host-Node Package (~70% complete)
+- ✅ File system + path adapters; shell adapter; stable entrypoint (`wesley.mjs`)
+- ✅ Fallback import resilience for CLI resolution
+- ✅ Works in CI workflows; supports generate/plan/rehearse/cert
+- [ ] op→QIR CLI wiring for `--ops`
 
-### CLI Package (50% complete)
-- ✅ Basic command structure exists
-- ✅ Generate command partially implemented
-- ✅ CLI runs and shows help
-- [ ] Watch command not implemented
-- [ ] Test runner not implemented  
-- [ ] Deploy command not implemented
+### CLI Package (~75% complete)
+- ✅ Commands: generate, plan, rehearse, up, cert‑*, validate‑bundle
+- ✅ Cost‑aware tests (Ubuntu only), quick CLI + E2E
+- [ ] `--ops` wire‑up (compile ops → QIR → SQL emission)
+- [ ] Optional watch for ops once wired
 
-### Holmes/Watson/Moriarty Packages (10% complete)
-- ✅ Package structure exists
-- [ ] Investigation logic not implemented
-- [ ] Verification logic not implemented
-- [ ] Prediction engine not implemented
+### HOLMES/WATSON/MORIARTY (~60% complete)
+- ✅ CLI exists and runs in CI; investigation/verification/prediction steps produce artifacts
+- ✅ Workflow hardened (artifact fallback, upload)
+- [ ] Stabilize gating and thresholds; make blocking only when artifacts are guaranteed
 
 ## Root Cause Analysis
 
-### Primary Issue: Early Stage Implementation
-Wesley is in early development after pivoting from D.A.T.A. The architecture and vision are solid, but most generators and features need to be built.
+### Primary Issue: Remaining Productization
+Core capabilities are implemented; remaining work is wiring, polish, and public‑readiness. The experimental QIR path needs a minimal translator and CLI exposure behind `--ops`.
 
-### Secondary Issue: Stub Implementations
-Many components have stub implementations to make the CLI run. These need to be replaced with real logic.
+### Secondary Issue: Experimental QIR
+Lowering + emission are merged; the translator and examples must be added before recommending `--ops` broadly.
 
 ### Not Issues Anymore:
 - ✅ Documentation mismatch (fixed - was due to pivot)
@@ -113,52 +125,45 @@ Many components have stub implementations to make the CLI run. These need to be 
 
 ## Recommended Actions
 
-### Immediate (Current Sprint)
-- [x] 1. **Fix CLAUDE.md**: Update to reflect Wesley, not D.A.T.A.
-- [x] 2. **Create host-node index.mjs**: Export all adapters properly
-- [x] 3. **Fix CLI imports**: Either move generators to host-node or fix import paths
-- [x] 4. **Remove D.A.T.A. references**: Clean up old project references
-- [ ] 5. **Implement GraphQLSchemaParser**: Replace stub with real parser
+### Action Plan — Tracked in go-public-checklist.md
+Use go-public-checklist.md as the living source of tasks. Highlights:
 
-### Short-term (Next 2-3 Sprints)
-- [ ] 1. **Complete PostgreSQL generator**: Full DDL generation with all directives
-- [ ] 2. **Implement TypeScript generator**: Generate types from GraphQL
-- [ ] 3. **Implement Zod generator**: Runtime validation schemas
-- [ ] 4. **Add watch mode**: File watching with incremental compilation
+Immediate
+- [ ] README polish (+ QIR note), Compatibility section
+- [ ] Required checks + branch protection for main
+- [ ] Guard/remove remaining Claude workflows
 
-### Medium-term (Sprint 4-6)
-- [ ] 1. **Migration system**: Diff and plan generation
-- [ ] 2. **RLS generation**: Supabase Row Level Security policies
-- [ ] 3. **pgTAP test generation**: Comprehensive test suites
-- [ ] 4. **Production hardening**: Error handling, edge cases
+Short Term
+- [ ] `--ops` CLI wiring + op→QIR translator
+- [ ] Example ops + EXPLAIN JSON snapshots
+- [ ] pgTAP smoke for ops emission
 
-### Long-term (Sprint 7+)
-- [ ] 1. **Holmes/Watson/Moriarty**: Investigation and prediction systems
-- [ ] 2. **Multi-platform support**: Browser, Deno adapters
-- [ ] 3. **Visual tooling**: Schema editor, debugging tools
-- [ ] 4. **Deployment integration**: Direct deploy to Supabase
+Medium Term
+- [ ] ORDER BY tie‑breaker via real PK/unique keys
+- [ ] Optional RETURNS TABLE(...) for functions
+- [ ] Docs site or enriched guides
 
 ## Success Metrics
 
 To reach **90/100 (PRODUCTION READY)**:
 
-- [x] 1. **Package Linking (0 → 100)**: ✅ All imports resolve, CLI runs
-- [x] 2. **Documentation Accuracy (0 → 100)**: ✅ Docs reflect Wesley reality
-- [ ] 3. **Generator Completeness (30 → 90)**: Implement all generators
-- [ ] 4. **Architecture Alignment (60 → 90)**: Pure core, proper ports
-- [ ] 5. **Test Coverage (15 → 80)**: Comprehensive test suites
+- [x] Package Linking: ✅ imports resolve; CLI and workflows run
+- [x] Documentation Accuracy: ✅ docs reflect Wesley (README/docs/guide)
+- [ ] Generator Completeness → 90: QIR translator + ops wiring; RETURNS TABLE option
+- [ ] Architecture Alignment → 90: final adapterization sweep, boundary job hygiene
+- [ ] Test Coverage → 80: op emission pgTAP + EXPLAIN JSON snapshots + property tests
 
 ## Conclusion
 
-Wesley is not "broken" or suffering from drift - it's a **new project that pivoted from D.A.T.A.** The foundation is solid:
+Wesley is not “broken” or suffering from drift — it **successfully pivoted from D.A.T.A.** The foundation is solid:
 - ✅ Clear vision as Data Layer Compiler
 - ✅ Good architectural design
 - ✅ CLI runs after our fixes
 - ✅ Documentation now accurate
 
-**Next Priority:** Replace stub implementations with real generator logic, starting with GraphQL parsing and PostgreSQL generation.
+**Next Priority:** Wire `--ops` end‑to‑end (op→QIR→SQL), add examples and tests, and complete public‑readiness tasks in go-public-checklist.md.
 
 The project is in much better shape than the original "drift" analysis suggested. It just needs its core compilation features to be implemented.
 
 ---
-*Report updated to reflect pivot from D.A.T.A. to Wesley - Not drift, but evolution*
+*Report reflects current main through 2025‑10‑07 — Pivot complete; now shipping the MVP.*
