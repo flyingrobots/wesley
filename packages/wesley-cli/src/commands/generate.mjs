@@ -40,15 +40,14 @@ export class GeneratePipelineCommand extends WesleyCommand {
     options.outDir = outDir;
 
     const isCI = String(this.ctx?.env?.CI || '').toLowerCase() === 'true' || this.ctx?.env?.CI === '1';
-    if (options.opsAllowErrors && isCI && !options.iKnowWhatImDoing) {
-      const err = new Error('--ops-allow-errors is disabled when CI=true; remove the flag or rerun with --i-know-what-im-doing.');
-      err.code = 'OPS_ALLOW_ERRORS_FORBIDDEN';
-      throw err;
+    const canAllowErrors = !isCI || options.iKnowWhatImDoing;
+    if (options.opsAllowErrors && !canAllowErrors) {
+      throw opsError('OPS_ALLOW_ERRORS_FORBIDDEN', '--ops-allow-errors is disabled when CI=true; remove the flag or rerun with --i-know-what-im-doing.');
     }
     if (options.opsAllowErrors && isCI && options.iKnowWhatImDoing) {
-      context.logger.warn({ opsAllowErrors: true }, '--ops-allow-errors acknowledged in CI due to override flag');
+      logger.warn({ opsAllowErrors: true }, '--ops-allow-errors acknowledged in CI due to override flag');
     }
-    options.opsAllowErrors = !!options.opsAllowErrors && !(isCI && !options.iKnowWhatImDoing);
+    options.opsAllowErrors = !!options.opsAllowErrors && canAllowErrors;
 
     // Handle --stdin convenience flag
     if (options.stdin) {
