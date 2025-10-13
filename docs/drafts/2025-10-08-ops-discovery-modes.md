@@ -34,6 +34,7 @@ Activated when `--ops <dir>` is provided and no manifest is specified.
   - Sort results using bytewise lexicographic order under the C/POSIX locale. Implementation MUST either force `LC_ALL=C` before sorting or use a locale-free comparator (e.g. `Buffer.compare`).
   - Add a regression test that runs discovery under `LC_ALL=en_US.UTF-8` and `LC_ALL=C` and asserts the sanitized compile order is identical; this guards against accidental locale leaks.
   - If 0 matches and `--ops-allow-empty` not set → `VALIDATION_FAILED` with a helpful hint.
+  - No magic filename fallback: if the directory scan finds nothing, that's authoritative.
 
 - Identifier policy
   - Lower-case op names and replace every character outside `[a-z0-9]` with `_`. If the sanitized result is empty, treat it as `unnamed`.
@@ -52,6 +53,7 @@ Activated when `--ops <dir>` is provided and no manifest is specified.
   - Ajv schema errors → skip that op; aggregate and exit 5 unless `--ops-allow-errors`.
   - Discovery empty without `--ops-allow-empty` → exit 4.
   - Identifier collision or 63-byte overflow → exit 3 with a detailed list of colliding files.
+  - Invoking `--ops-allow-errors` while `CI=true` produces exit 2 (`OPS_ALLOW_ERRORS_FORBIDDEN`) unless `--i-know-what-im-doing` is also passed.
 
 ### Mode B — Manifest (Opt‑in)
 
@@ -123,9 +125,11 @@ Example manifest:
 - `--ops-allow-empty` (A & B controls empty set; default false)
 - `--ops-explain` (A only; manifest’s `explain` controls B)
 - `--ops-manifest <path>` (switch to manifest mode)
-- `--ops-allow-errors` (compile others even if some fail Ajv; exit 0)
+- `--ops-allow-errors` (compile others even if some fail Ajv; exit 0). **Do not use in CI**; when `CI=true` the CLI ignores this flag unless `--i-know-what-im-doing` is also supplied, and preflight fails the build if the override is missing.
 - `--out-dir <dir>` (base output directory; defaults to `out/`)
 - `--log-format <text|json>` (default `text`; JSON emits deterministic fields: `timestamp`, `level`, `code`, `op`, `path`, `message`)
+- `--i-know-what-im-doing` (opt-in override for hazardous flags in CI; required alongside `--ops-allow-errors` when `CI=true`)
+- `--ops-schema <name>` (override emitted SQL schema; defaults to `wes_ops`)
 
 ## Logging (examples)
 
@@ -165,6 +169,8 @@ ops: collision: sanitized key "orders_by_user" from multiple files: …/orders_b
   - `--ops` on empty dir → failure; with `--ops-allow-empty` → success.
   - Name collision sample → failure.
   - Manifest include/exclude → exact set compiled; explain snapshots written when enabled.
+  - CI guard: invoking `wesley generate --ops --ops-allow-errors` with `CI=true` must fail unless `--i-know-what-im-doing` accompanies it.
+  - Ops schema override: `--ops-schema custom_schema` emits SQL objects under `custom_schema`.
 
 - CI (compose)
   - Aggregated `ops.functions.sql` applies cleanly.
@@ -174,9 +180,10 @@ ops: collision: sanitized key "orders_by_user" from multiple files: …/orders_b
 
 - README “Using --ops”: note strict discovery by default; show `--ops-allow-empty` and `--ops-glob` usage.
 - qir-ops guide: add a “Discovery Modes” section and link this draft.
-- Publish `schemas/ops-manifest.schema.json` in a follow‑up when implementing manifest.
+- Preflight: add guard that fails when `--ops-allow-errors` appears in CI without `--i-know-what-im-doing`.
+- Publish `schemas/ops-manifest.schema.json` in a follow-up when implementing manifest.
 
 ## Open Questions
 
-- Do we allow `--ops-allow-errors` to succeed CI when some ops fail Ajv? (leaning yes for local dev; CI should keep default strict)
+- Should the `--i-know-what-im-doing` escape hatch remain long-term, or be dropped before GA?
 - Should manifest support per‑op overrides (e.g., force view emission)? (out of scope for MVP)

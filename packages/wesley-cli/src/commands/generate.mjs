@@ -19,10 +19,13 @@ export class GeneratePipelineCommand extends WesleyCommand {
       .option('-s, --schema <path>', 'GraphQL schema file. Use "-" for stdin', 'schema.graphql')
       .option('--stdin', 'Read schema from stdin (alias for --schema -)')
       .option('--ops <dir>', 'Experimental: directory with GraphQL operation documents (queries) to validate', 'ops')
+      .option('--ops-schema <name>', 'Schema name for emitted ops SQL (default wes_ops)', 'wes_ops')
+      .option('--ops-allow-errors', 'Continue compiling remaining ops even if some fail validation (not allowed in CI without override)')
       .option('--emit-bundle', 'Emit .wesley/ evidence bundle')
       .option('--supabase', 'Enable Supabase features (RLS tests)')
       .option('--out-dir <dir>', 'Output directory', 'out')
       .option('--allow-dirty', 'Allow running with a dirty git working tree (not recommended)')
+      .option('--i-know-what-im-doing', 'Acknowledge hazardous flags in CI environments')
       .option('-v, --verbose', 'More logs (level=debug)')
       .option('--debug', 'Debug output with stack traces')
       .option('-q, --quiet', 'Silence logs (level=silent)')
@@ -35,7 +38,18 @@ export class GeneratePipelineCommand extends WesleyCommand {
     const { schemaContent, schemaPath, options, logger } = context;
     const outDir = options.outDir || this.ctx?.config?.paths?.output || 'out';
     options.outDir = outDir;
-    
+
+    const isCI = String(this.ctx?.env?.CI || '').toLowerCase() === 'true' || this.ctx?.env?.CI === '1';
+    if (options.opsAllowErrors && isCI && !options.iKnowWhatImDoing) {
+      const err = new Error('--ops-allow-errors is disabled when CI=true; remove the flag or rerun with --i-know-what-im-doing.');
+      err.code = 'OPS_ALLOW_ERRORS_FORBIDDEN';
+      throw err;
+    }
+    if (options.opsAllowErrors && isCI && options.iKnowWhatImDoing) {
+      context.logger.warn({ opsAllowErrors: true }, '--ops-allow-errors acknowledged in CI due to override flag');
+    }
+    options.opsAllowErrors = !!options.opsAllowErrors && !(isCI && !options.iKnowWhatImDoing);
+
     // Handle --stdin convenience flag
     if (options.stdin) {
       options.schema = '-';
@@ -283,21 +297,15 @@ export class GeneratePipelineCommand extends WesleyCommand {
         ? dirEntries.filter(f => f.name?.endsWith?.('.op.json')).map(f => f.path || `${opsDir}/${f.name}`)
         : [];
       if (files.length === 0) {
-        // Fallback to a couple of well-known names
-        const fallbacks = ['products_by_name.op.json', 'orders_by_user.op.json'];
-        for (const name of fallbacks) {
-          const p = await fs.join(opsDir, name);
-          if (await fs.exists(p)) files.push(p);
-        }
-      }
-      if (files.length === 0) {
         logger.info({ opsDir }, 'Experimental --ops: no *.op.json files found; skipping');
         return;
       }
       files.sort((a, b) => Buffer.compare(Buffer.from(a), Buffer.from(b)));
       const outDir = options.outDir || 'out';
+      const targetSchema = options.opsSchema || 'wes_ops';
       const compiledOps = [];
       const collisions = new Map();
+      const allowErrors = !!options.opsAllowErrors;
       const compileErrors = [];
       for (const path of files) {
         try {
@@ -306,11 +314,11 @@ export class GeneratePipelineCommand extends WesleyCommand {
           const plan = buildPlanFromJson(op);
           const baseName = sanitizeOpIdentifier(op.name);
           const byteLength = Buffer.byteLength(baseName, 'utf8');
-          if (byteLength > POSTGRESQL_IDENTIFIER_LIMIT) {
+          if (byteLength + OP_PREFIX_BYTES > POSTGRESQL_IDENTIFIER_LIMIT) {
             throw opsError(
               'OPS_IDENTIFIER_TOO_LONG',
-              `Sanitized op name "${baseName}" from ${path} exceeds PostgreSQL identifier limit (${byteLength} bytes > ${POSTGRESQL_IDENTIFIER_LIMIT})`,
-              { file: path, sanitized: baseName, bytes: byteLength, limit: POSTGRESQL_IDENTIFIER_LIMIT }
+              `Sanitized op name "${baseName}" from ${path} exceeds PostgreSQL identifier limit once prefixed (bytes=${byteLength + OP_PREFIX_BYTES}, limit=${POSTGRESQL_IDENTIFIER_LIMIT})`,
+              { file: path, sanitized: baseName, bytes: byteLength + OP_PREFIX_BYTES, limit: POSTGRESQL_IDENTIFIER_LIMIT }
             );
           }
           const seen = collisions.get(baseName) || [];
@@ -324,8 +332,12 @@ export class GeneratePipelineCommand extends WesleyCommand {
             logger.error({ file: path, sanitized: e?.meta?.sanitized, bytes: e?.meta?.bytes }, e.message);
             throw e;
           }
-          compileErrors.push({ file: path, message: e?.message || String(e) });
-          logger.warn({ file: path }, 'Failed to compile op: ' + (e?.message || e));
+          compileErrors.push({ file: path, message: e?.message || String(e), code: e?.code });
+          if (allowErrors) {
+            logger.warn({ file: path, code: e?.code }, 'Skipping op due to compile error (allowed)');
+          } else {
+            logger.warn({ file: path, code: e?.code }, 'Failed to compile op: ' + (e?.message || e));
+          }
         }
       }
       const collisionEntries = Array.from(collisions.entries()).filter(([, paths]) => paths.length > 1);
@@ -340,13 +352,16 @@ export class GeneratePipelineCommand extends WesleyCommand {
         throw err;
       }
       if (compileErrors.length > 0) {
-        const err = opsError(
-          'OPS_COMPILE_FAILED',
-          `Failed to compile ${compileErrors.length} operation(s); see log for details`,
-          { failures: compileErrors }
-        );
-        logger.error(err.meta, err.message);
-        throw err;
+        if (!allowErrors) {
+          const err = opsError(
+            'OPS_COMPILE_FAILED',
+            `Failed to compile ${compileErrors.length} operation(s); see log for details`,
+            { failures: compileErrors }
+          );
+          logger.error(err.meta, err.message);
+          throw err;
+        }
+        logger.warn({ count: compileErrors.length, failures: compileErrors }, 'Continuing despite compilation errors due to --ops-allow-errors');
       }
       if (compiledOps.length) {
         const outFiles = [];
@@ -355,13 +370,14 @@ export class GeneratePipelineCommand extends WesleyCommand {
         for (const entry of compiledOps) {
           ordinal += 1;
           const { baseName, plan, isParamless, path } = entry;
-          const fnSql = emitFunction(baseName, plan);
+          // emitFunction/emitView default to wes_ops; we pass the requested schema explicitly
+          const fnSql = emitFunction(baseName, plan, { schema: targetSchema });
           if (isParamless) {
-            const viewSql = emitView(baseName, plan);
+            const viewSql = emitView(baseName, plan, { schema: targetSchema });
             outFiles.push({ name: `ops/${baseName}.view.sql`, content: viewSql + '\n' });
           }
           outFiles.push({ name: `ops/${baseName}.fn.sql`, content: fnSql + '\n' });
-          logger.info({ ordinal, total, sanitized: baseName, file: path, code: 'OPS_DISCOVERY' }, 'ops: compiled operation');
+          logger.info({ ordinal, total, sanitized: baseName, file: path, schema: targetSchema, code: 'OPS_DISCOVERY' }, 'ops: compiled operation');
         }
         await this.ctx.writer.writeFiles(outFiles, outDir);
         const opsOutputDir = await fs.join(outDir, 'ops');
@@ -378,6 +394,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
 export default GeneratePipelineCommand;
 
 const POSTGRESQL_IDENTIFIER_LIMIT = 63;
+const OP_PREFIX_BYTES = Buffer.byteLength('op_', 'utf8');
 
 function sanitizeOpIdentifier(name) {
   const raw = (name || 'unnamed').toLowerCase().replace(/[^a-z0-9]+/g, '_');
