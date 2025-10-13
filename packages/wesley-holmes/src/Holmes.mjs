@@ -16,15 +16,12 @@ export class Holmes {
    */
   investigate() {
     const report = [];
-    
-    report.push('════════════════════════════════════════════════════════════════════');
-    report.push('                    SHA-lock HOLMES Investigation');
-    report.push('════════════════════════════════════════════════════════════════════');
-    report.push(`Generated:     ${this.bundle.timestamp}`);
-    report.push(`Commit SHA:    ${this.sha}`);
-    report.push('════════════════════════════════════════════════════════════════════');
-    report.push(`⚠️  ALL EVIDENCE HEREIN IS VALID ONLY FOR COMMIT ${this.sha.substring(0, 7)}`);
-    report.push('════════════════════════════════════════════════════════════════════');
+    report.push('### 🕵️ SHA-lock HOLMES Investigation');
+    report.push('');
+    report.push(`- Generated: ${this.bundle.timestamp}`);
+    report.push(`- Commit SHA: ${this.sha}`);
+    report.push('');
+    report.push(`> ⚠️ Evidence valid only for commit \`${this.sha.substring(0, 7)}\``);
     report.push('');
     
     // Executive Deduction

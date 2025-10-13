@@ -17,14 +17,12 @@ export class Watson {
    */
   verify() {
     const report = [];
-    
-    report.push('════════════════════════════════════════════════════════════════════');
-    report.push('         DR. WATSON\'S INDEPENDENT VERIFICATION REPORT');
-    report.push('         Medical Examination of Evidence');
-    report.push('════════════════════════════════════════════════════════════════════');
-    report.push(`Examination Date: ${new Date().toISOString()}`);
-    report.push(`Patient SHA: ${this.sha}`);
-    report.push('════════════════════════════════════════════════════════════════════');
+    report.push('### 🩺 Dr. Watson\'s Independent Verification Report');
+    report.push('');
+    report.push('_Medical Examination of Evidence_');
+    report.push('');
+    report.push(`- Examination Date: ${new Date().toISOString()}`);
+    report.push(`- Patient SHA: ${this.sha}`);
     report.push('');
     
     report.push('## 🔬 Citation Verification');

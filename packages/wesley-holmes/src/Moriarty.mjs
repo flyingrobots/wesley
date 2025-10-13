@@ -15,20 +15,18 @@ export class Moriarty {
    */
   predict() {
     const report = [];
-    
-    report.push('════════════════════════════════════════════════════════════════════');
-    report.push('         PROFESSOR MORIARTY\'S TEMPORAL PREDICTIONS');
-    report.push('         The Mathematics of Inevitability');
-    report.push('════════════════════════════════════════════════════════════════════');
-    report.push(`Analysis Date: ${new Date().toISOString()}`);
-    report.push('════════════════════════════════════════════════════════════════════');
+    report.push('### 🧠 Professor Moriarty\'s Temporal Predictions');
+    report.push('');
+    report.push('_The Mathematics of Inevitability_');
+    report.push('');
+    report.push(`- Analysis Date: ${new Date().toISOString()}`);
     report.push('');
     
     if (!this.history.points || this.history.points.length < 2) {
       report.push('**INSUFFICIENT DATA**');
       report.push('');
-      report.push('"I require at least two data points to predict the future."');
-      report.push('"Run Wesley generate multiple times to build history."');
+      report.push('> "I require at least two data points to predict the future."');
+      report.push('> "Run Wesley generate multiple times to build history."');
       return report.join('\n');
     }
     
