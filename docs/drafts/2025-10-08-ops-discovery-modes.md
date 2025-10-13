@@ -158,7 +158,7 @@ Planned (not yet implemented):
 2) Default Strict (planned)
    - Remove hard-coded fallbacks entirely.
    - Add planned flags (`--ops-glob`, `--ops-allow-empty`, `--ops-explain`).
-   
+
 3) Manifest (future)
    - Support `--ops-manifest` + publish `schemas/ops-manifest.schema.json`.
 
