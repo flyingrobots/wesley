@@ -6,6 +6,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 cd "$SCRIPT_DIR/.."
 
 # Colors
@@ -88,10 +89,16 @@ if ! command -v bats >/dev/null 2>&1; then
     exit 0
 fi
 
-# 2) bats plugins vendored (present when submodules are checked out in CI)
-if [[ ! -f "test/bats-plugins/bats-support/load" ]] || [[ ! -f "test/bats-plugins/bats-assert/load" ]]; then
+# 2) bats plugins vendored
+if [[ ! -f "test/bats-plugins/bats-support/load.bash" ]] || [[ ! -f "test/bats-plugins/bats-assert/load.bash" ]] || [[ ! -f "test/bats-plugins/bats-file/load.bash" ]]; then
+    if [[ -x "$REPO_ROOT/scripts/setup-bats-plugins.sh" ]]; then
+        echo -e "${YELLOW}bats plugins not found; installing via scripts/setup-bats-plugins.sh${NC}"
+        bash "$REPO_ROOT/scripts/setup-bats-plugins.sh"
+    fi
+fi
+if [[ ! -f "test/bats-plugins/bats-support/load.bash" ]] || [[ ! -f "test/bats-plugins/bats-assert/load.bash" ]] || [[ ! -f "test/bats-plugins/bats-file/load.bash" ]]; then
     echo -e "${YELLOW}bats plugins not found; skipping CLI bats tests${NC}"
-    echo -e "${YELLOW}Hint:${NC} Ensure git submodules are checked out (actions/checkout with submodules: recursive)."
+    echo -e "${YELLOW}Hint:${NC} Run 'pnpm run setup:bats-plugins' to download the plugins."
     exit 0
 fi
 
