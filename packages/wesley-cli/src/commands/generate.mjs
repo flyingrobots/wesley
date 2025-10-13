@@ -301,7 +301,8 @@ export class GeneratePipelineCommand extends WesleyCommand {
         logger.info({ opsDir }, 'Experimental --ops: no *.op.json files found; skipping');
         return;
       }
-      files.sort((a, b) => a.localeCompare(b, 'en'));
+      // Use default code-point ordering for locale-invariant sorting
+      files.sort();
       const outDir = options.outDir || 'out';
       const targetSchema = options.opsSchema || 'wes_ops';
       const compiledOps = [];
