@@ -21,6 +21,10 @@ inputs:
     description: Name of the artifact containing the HOLMES bundle
     required: false
     default: wesley-bundle
+  always-generate:
+    description: Force regeneration even if artifacts are available
+    required: false
+    default: 'false'
 runs:
   using: composite
   steps:
@@ -57,7 +61,23 @@ runs:
       continue-on-error: true
       with:
         name: ${{ inputs.artifact-name }}
-        path: ${{ inputs.bundle-dir }}
+        path: holmes-artifacts
+
+    - name: Sync bundle artifact
+      shell: bash
+      run: |
+        if [ -d holmes-artifacts ]; then
+          shopt -s globstar
+          for f in holmes-artifacts/**/*; do
+            if [ -f "$f" ]; then
+              rel="${f#holmes-artifacts/}"
+              target="${{ inputs.bundle-dir }}/$rel"
+              mkdir -p "$(dirname "$target")"
+              cp "$f" "$target"
+            fi
+          done
+          rm -rf holmes-artifacts
+        fi
 
     - name: Ensure HOLMES bundle
       shell: bash
@@ -74,6 +94,21 @@ runs:
             --out-dir "${{ inputs.out-dir }}"
           popd >/dev/null
         fi
+
+    - name: Force regeneration
+      if: ${{ inputs.always-generate == 'true' }}
+      shell: bash
+      run: |
+        SCHEMA_DIR="$(dirname "${{ inputs.schema }}")"
+        SCHEMA_FILE="$(basename "${{ inputs.schema }}")"
+        pushd "$SCHEMA_DIR" >/dev/null
+        node ../packages/wesley-host-node/bin/wesley.mjs generate \
+          --schema "$SCHEMA_FILE" \
+          --emit-bundle \
+          --ops "${{ inputs.ops-dir }}" \
+          --allow-dirty \
+          --out-dir "${{ inputs.out-dir }}"
+        popd >/dev/null
 
     - name: Save Moriarty cache
       if: ${{ always() && hashFiles(format('{0}/history.json', inputs.bundle-dir)) != '' }}

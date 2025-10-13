@@ -32,6 +32,7 @@ jobs:
           ops-dir: ${{ env.HOLMES_OPS_DIR }}
           out-dir: ${{ env.HOLMES_OUT_DIR }}
           artifact-name: ${{ env.HOLMES_ARTIFACT }}
+          always-generate: 'true'
         
       - name: "📊 Display Scores"
         run: |
@@ -138,6 +139,7 @@ jobs:
           ops-dir: ${{ env.HOLMES_OPS_DIR }}
           out-dir: ${{ env.HOLMES_OUT_DIR }}
           artifact-name: ${{ env.HOLMES_ARTIFACT }}
+          always-generate: 'true'
           
       - name: "🔮 Run Predictions"
         id: moriarty
@@ -185,27 +187,15 @@ jobs:
           node-version: '20'
           cache: 'pnpm'
 
-      - name: "📦 Install Workspace"
-        run: pnpm install
-
-      - name: "📥 Download Bundle (if available)"
-        id: download-bundle
-        uses: actions/download-artifact@v4
-        continue-on-error: true
+      - name: "🛠️ Setup HOLMES environment"
+        uses: ./.github/actions/holmes-setup
         with:
-          name: wesley-bundle
-          path: example/.wesley/
-
-      - name: "🔎 Ensure Bundle (fallback generate if missing)"
-        run: |
-          if [ ! -f example/.wesley/bundle.json ]; then
-            echo "Bundle not found. Regenerating..."
-            cd example
-            node ../packages/wesley-host-node/bin/wesley.mjs generate --schema ecommerce.graphql --emit-bundle --allow-dirty --ops ./ops --out-dir out
-            cd -
-          else
-            echo "Bundle found at example/.wesley/bundle.json"
-          fi
+          bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
+          schema: ${{ env.HOLMES_SCHEMA }}
+          ops-dir: ${{ env.HOLMES_OPS_DIR }}
+          out-dir: ${{ env.HOLMES_OUT_DIR }}
+          artifact-name: ${{ env.HOLMES_ARTIFACT }}
+          always-generate: 'true'
           
       - name: "🧪 Install pgTAP"
         run: |
@@ -337,16 +327,29 @@ jobs:
     steps:
       - name: "📥 Download Reports"
         uses: actions/download-artifact@v4
-        
+        with:
+          merge-multiple: true
+          path: reports
+      
       - name: "📝 Create Comment"
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
-            
-            const holmes = fs.readFileSync('holmes-report/holmes-report.md', 'utf8');
-            const watson = fs.readFileSync('watson-report/watson-report.md', 'utf8');
-            const moriarty = fs.readFileSync('moriarty-report/moriarty-report.md', 'utf8');
+            const path = require('path');
+
+            const schemaDir = path.dirname(process.env.HOLMES_SCHEMA || 'example/ecommerce.graphql');
+            const findReport = (artifact, filename) => {
+              const full = path.join('reports', artifact, schemaDir, filename);
+              if (!fs.existsSync(full)) {
+                throw new Error(`Expected report at ${full}`);
+              }
+              return fs.readFileSync(full, 'utf8');
+            };
+
+            const holmes = findReport('holmes-report', 'holmes-report.md');
+            const watson = findReport('watson-report', 'watson-report.md');
+            const moriarty = findReport('moriarty-report', 'moriarty-report.md');
             
             const body = `
             # 🔍 The Case of Pull Request #${{ github.event.pull_request.number }}
