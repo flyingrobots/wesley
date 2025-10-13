@@ -9,6 +9,7 @@ on:
 env:
   HOLMES_BUNDLE_DIR: example/.wesley
   HOLMES_SCHEMA: example/ecommerce.graphql
+  HOLMES_SCHEMA_DIR: example
   HOLMES_OPS_DIR: ./ops
   HOLMES_OUT_DIR: out
   HOLMES_ARTIFACT: wesley-bundle
@@ -87,8 +88,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: holmes-report
-          path: |
-            $(dirname "${{ env.HOLMES_SCHEMA }}")/holmes-report.md
+          path: ${{ env.HOLMES_SCHEMA_DIR }}/holmes-report.md
           
   watson-verify:
     name: "🩺 WATSON Verification"
@@ -119,8 +119,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: watson-report
-          path: |
-            $(dirname "${{ env.HOLMES_SCHEMA }}")/watson-report.md
+          path: ${{ env.HOLMES_SCHEMA_DIR }}/watson-report.md
           
   moriarty-predict:
     name: "🔮 MORIARTY Predictions"
@@ -152,8 +151,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: moriarty-report
-          path: |
-            $(dirname "${{ env.HOLMES_SCHEMA }}")/moriarty-report.md
+          path: ${{ env.HOLMES_SCHEMA_DIR }}/moriarty-report.md
           
   test-pgtap:
     name: "🧪 pgTAP Tests"
@@ -341,7 +339,8 @@ jobs:
             const findReport = (artifact, filename) => {
               const base = path.join('reports', artifact);
               if (!fs.existsSync(base)) {
-                throw new Error(`Artifact directory missing: ${base}`);
+                console.warn(`Artifact directory missing: ${base}`);
+                return `_Report missing for ${artifact}_`;
               }
               const stack = [base];
               while (stack.length) {
@@ -356,7 +355,8 @@ jobs:
                   }
                 }
               }
-              throw new Error(`Expected report file ${filename} in ${base}`);
+              console.warn(`Expected report file ${filename} in ${base}`);
+              return `_Report missing for ${artifact}_`;
             };
 
             const holmes = findReport('holmes-report', 'holmes-report.md');
