@@ -338,13 +338,25 @@ jobs:
             const fs = require('fs');
             const path = require('path');
 
-            const schemaDir = path.dirname(process.env.HOLMES_SCHEMA || 'example/ecommerce.graphql');
             const findReport = (artifact, filename) => {
-              const full = path.join('reports', artifact, schemaDir, filename);
-              if (!fs.existsSync(full)) {
-                throw new Error(`Expected report at ${full}`);
+              const base = path.join('reports', artifact);
+              if (!fs.existsSync(base)) {
+                throw new Error(`Artifact directory missing: ${base}`);
               }
-              return fs.readFileSync(full, 'utf8');
+              const stack = [base];
+              while (stack.length) {
+                const current = stack.pop();
+                const entries = fs.readdirSync(current, { withFileTypes: true });
+                for (const entry of entries) {
+                  const fullPath = path.join(current, entry.name);
+                  if (entry.isDirectory()) {
+                    stack.push(fullPath);
+                  } else if (entry.isFile() && entry.name === filename) {
+                    return fs.readFileSync(fullPath, 'utf8');
+                  }
+                }
+              }
+              throw new Error(`Expected report file ${filename} in ${base}`);
             };
 
             const holmes = findReport('holmes-report', 'holmes-report.md');
