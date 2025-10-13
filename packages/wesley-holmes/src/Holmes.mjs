@@ -28,94 +28,121 @@ export class Holmes {
    * Conduct investigation and return report
    */
   investigate() {
-    const report = [];
-    report.push('### 🕵️ SHA-lock HOLMES Investigation');
-    report.push('');
-    report.push(`- Generated: ${this.bundle.timestamp}`);
-    report.push(`- Commit SHA: ${this.sha}`);
-    report.push('');
-    report.push(`> ⚠️ Evidence valid only for commit \`${this.sha.substring(0, 7)}\``);
-    report.push('');
-    
-    // Executive Deduction
-    report.push('## 🔍 Executive Deduction');
-    report.push('');
-    report.push('"Watson, after careful examination of the evidence, I deduce..."');
-    report.push('');
-    
-    const scs = this.scores.scores.scs;
-    const bar = '█'.repeat(Math.round(scs * 10)) + '░'.repeat(10 - Math.round(scs * 10));
-    report.push(`**Weighted Completion**: ${bar} ${(scs * 100).toFixed(1)}%`);
-    report.push(`**Verification Status**: ${this.countVerifications()} claims verified`);
-    report.push(`**Ship Verdict**: ${this.scores.readiness.verdict}`);
-    report.push('');
-    
-    // The Weight of Evidence
-    report.push('## 📊 The Weight of Evidence');
-    report.push('');
-    report.push('"Observe, Watson, how not all features carry equal importance..."');
-    report.push('');
-    report.push('| Element | Weight | Status | Evidence | Deduction |');
-    report.push('|---------|--------|--------|----------|-----------|');
-    
-    // Analyze each element
+    return this.renderInvestigation(this.investigationData());
+  }
+
+  investigationData() {
+    const summary = {
+      generatedAt: this.bundle.timestamp,
+      sha: this.sha,
+      weightedCompletion: this.scores.scores.scs,
+      verificationCount: this.countVerifications(),
+      verificationStatus: this.scores.readiness.verdict,
+      tci: this.scores.scores.tci,
+      mri: this.scores.scores.mri
+    };
+
+    const elements = [];
     for (const [uid, evidence] of Object.entries(this.evidence.evidence || {})) {
       const weight = this.inferWeight(uid);
       const status = this.getStatus(evidence);
       const citation = this.getCitation(evidence);
       const deduction = this.makeDeduction(uid, status);
-      
-      report.push(`| ${uid} | ${weight} | ${status} | ${citation} | ${deduction} |`);
+      elements.push({ element: uid, weight, status, evidence: citation, deduction });
     }
-    
-    report.push('');
-    
-    // Risk Assessment
-    report.push('## 🚪 Security & Performance Gates');
-    report.push('');
-    report.push('"Elementary security measures, Watson..."');
-    report.push('');
-    report.push('| Gate | Status | Evidence | Holmes\'s Ruling |');
-    report.push('|------|--------|----------|-----------------|');
-    
-    const mri = this.scores.scores.mri;
-    const tci = this.scores.scores.tci;
-    
-    report.push(`| Migration Risk | ${mri < 0.4 ? '✅' : '⛔'} | MRI: ${(mri * 100).toFixed(1)}% | "${this.assessRisk(mri)}" |`);
-    report.push(`| Test Coverage | ${tci > 0.7 ? '✅' : '⚠️'} | TCI: ${(tci * 100).toFixed(1)}% | "${this.assessTests(tci)}" |`);
-    
-    // Check for sensitive fields
-    const hasSensitive = this.checkSensitiveFields();
-    report.push(`| Sensitive Fields | ${hasSensitive.safe ? '✅' : '⛔'} | ${hasSensitive.count} fields | "${hasSensitive.ruling}" |`);
-    
-    report.push('');
-    
-    // The Verdict
-    report.push('## 📋 The Verdict');
-    report.push('');
-    
-    switch (this.scores.readiness.verdict) {
-      case 'ELEMENTARY':
-        report.push('✅ **ELEMENTARY** - Ship immediately!');
-        report.push('"The evidence is conclusive. No mysteries remain."');
-        break;
-      case 'REQUIRES INVESTIGATION':
-        report.push('⚠️ **REQUIRES FURTHER INVESTIGATION**');
-        report.push('"Some clues remain unclear. Address the noted issues."');
-        break;
+
+    const gates = [];
+    const mri = summary.mri;
+    const tci = summary.tci;
+    gates.push({ gate: 'Migration Risk', status: mri < 0.4 ? '✅' : '⛔', evidence: `MRI: ${(mri * 100).toFixed(1)}%`, ruling: this.assessRisk(mri) });
+    gates.push({ gate: 'Test Coverage', status: tci > 0.7 ? '✅' : '⚠️', evidence: `TCI: ${(tci * 100).toFixed(1)}%`, ruling: this.assessTests(tci) });
+    const sensitive = this.checkSensitiveFields();
+    gates.push({ gate: 'Sensitive Fields', status: sensitive.safe ? '✅' : '⛔', evidence: `${sensitive.count} fields`, ruling: sensitive.ruling });
+
+    const verdict = this.buildVerdict(summary.verificationStatus);
+
+    return {
+      metadata: summary,
+      evidence: elements,
+      gates,
+      verdict
+    };
+  }
+
+  renderInvestigation(data) {
+    const { metadata, evidence, gates, verdict } = data;
+    const lines = [];
+    lines.push('### 🕵️ SHA-lock HOLMES Investigation');
+    lines.push('');
+    lines.push(`- Generated: ${metadata.generatedAt}`);
+    lines.push(`- Commit SHA: ${metadata.sha}`);
+    lines.push('');
+    lines.push(`> ⚠️ Evidence valid only for commit \`${metadata.sha.substring(0, 7)}\``);
+    lines.push('');
+
+    lines.push('## 🔍 Executive Deduction');
+    lines.push('');
+    lines.push('"Watson, after careful examination of the evidence, I deduce..."');
+    lines.push('');
+    lines.push(`**Weighted Completion**: ${this.progressBar(metadata.weightedCompletion)} ${(metadata.weightedCompletion * 100).toFixed(1)}%`);
+    lines.push(`**Verification Status**: ${metadata.verificationCount} claims verified`);
+    lines.push(`**Ship Verdict**: ${metadata.verificationStatus}`);
+    lines.push('');
+
+    lines.push('## 📊 The Weight of Evidence');
+    lines.push('');
+    lines.push('"Observe, Watson, how not all features carry equal importance..."');
+    lines.push('');
+    lines.push('| Element | Weight | Status | Evidence | Deduction |');
+    lines.push('|---------|--------|--------|----------|-----------|');
+    for (const row of evidence) {
+      lines.push(`| ${row.element} | ${row.weight} | ${row.status} | ${row.evidence} | ${row.deduction} |`);
+    }
+    lines.push('');
+
+    lines.push('## 🚪 Security & Performance Gates');
+    lines.push('');
+    lines.push('"Elementary security measures, Watson..."');
+    lines.push('');
+    lines.push('| Gate | Status | Evidence | Holmes\'s Ruling |');
+    lines.push('|------|--------|----------|-----------------|');
+    for (const gate of gates) {
+      lines.push(`| ${gate.gate} | ${gate.status} | ${gate.evidence} | "${gate.ruling}" |`);
+    }
+    lines.push('');
+
+    lines.push('## 📋 The Verdict');
+    lines.push('');
+    lines.push(verdict.markdown);
+    lines.push('');
+    lines.push('Signed and sealed,');
+    lines.push('- S. Holmes, Consulting Detective');
+    lines.push('');
+    lines.push(`[END OF INVESTIGATION FOR COMMIT ${metadata.sha.substring(0, 7)}]`);
+    return lines.join('\n');
+  }
+
+  buildVerdict(code) {
+    switch (code) {
+      case 'ELEMENTARY': {
+        const message = 'Ship immediately! The evidence is conclusive.';
+        return { code, message, markdown: `✅ **ELEMENTARY** - Ship immediately!\n"The evidence is conclusive. No mysteries remain."` };
+      }
+      case 'REQUIRES INVESTIGATION': {
+        const message = 'Further investigation required before shipping.';
+        return { code, message, markdown: `⚠️ **REQUIRES FURTHER INVESTIGATION**\n"Some clues remain unclear. Address the noted issues."` };
+      }
       case 'YOU SHALL NOT PASS':
-        report.push('⛔ **YOU SHALL NOT PASS**');
-        report.push('"Critical evidence is missing! Return to your laboratory!"');
-        break;
+      default: {
+        const message = 'Do not ship. Critical evidence is missing.';
+        return { code: 'YOU SHALL NOT PASS', message, markdown: `⛔ **YOU SHALL NOT PASS**\n"Critical evidence is missing! Return to your laboratory!"` };
+      }
     }
-    
-    report.push('');
-    report.push('Signed and sealed,');
-    report.push('- S. Holmes, Consulting Detective');
-    report.push('');
-    report.push(`[END OF INVESTIGATION FOR COMMIT ${this.sha.substring(0, 7)}]`);
-    
-    return report.join('\n');
+  }
+
+  progressBar(value) {
+    const filled = Math.round(Math.min(Math.max(value, 0), 1) * 10);
+    return '█'.repeat(filled) + '░'.repeat(10 - filled);
   }
 
   // Helper methods

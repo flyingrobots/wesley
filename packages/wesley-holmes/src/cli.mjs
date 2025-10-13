@@ -3,12 +3,25 @@
  * SHA-lock HOLMES CLI - Sidecar intelligence for Wesley
  */
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { Holmes } from './Holmes.mjs';
 import { Watson } from './Watson.mjs';
 import { Moriarty } from './Moriarty.mjs';
 
-const command = process.argv[2];
+function parseArgs(raw) {
+  const args = [...raw];
+  const options = {};
+  const positionals = [];
+  while (args.length) {
+    const token = args.shift();
+    if (token === '--json') {
+      options.json = args.shift();
+      continue;
+    }
+    positionals.push(token);
+  }
+  return { command: positionals.shift(), options, rest: positionals };
+}
 
 function loadBundle() {
   try {
@@ -28,25 +41,38 @@ function loadHistory() {
 }
 
 async function main() {
+  const { command, options } = parseArgs(process.argv.slice(2));
   switch (command) {
     case 'investigate': {
       const bundle = loadBundle();
       const holmes = new Holmes(bundle);
-      console.log(holmes.investigate());
+      const data = holmes.investigationData();
+      if (options.json) {
+        writeFileSync(options.json, JSON.stringify(data, null, 2));
+      }
+      console.log(holmes.renderInvestigation(data));
       break;
     }
     
     case 'verify': {
       const bundle = loadBundle();
       const watson = new Watson(bundle);
-      console.log(watson.verify());
+      const data = watson.verificationData();
+      if (options.json) {
+        writeFileSync(options.json, JSON.stringify(data, null, 2));
+      }
+      console.log(watson.renderVerification(data));
       break;
     }
     
     case 'predict': {
       const history = loadHistory();
       const moriarty = new Moriarty(history);
-      console.log(moriarty.predict());
+      const data = moriarty.predictionData();
+      if (options.json) {
+        writeFileSync(options.json, JSON.stringify(data, null, 2));
+      }
+      console.log(moriarty.renderPrediction(data));
       break;
     }
     
@@ -54,19 +80,27 @@ async function main() {
       // Combined report
       const bundle = loadBundle();
       const history = loadHistory();
-      
-      console.log('# 🔍 The Case of Schema Investigation\n');
-      
       const holmes = new Holmes(bundle);
-      console.log(holmes.investigate());
-      console.log('\n---\n');
-      
       const watson = new Watson(bundle);
-      console.log(watson.verify());
-      console.log('\n---\n');
-      
       const moriarty = new Moriarty(history);
-      console.log(moriarty.predict());
+      const holmesData = holmes.investigationData();
+      const watsonData = watson.verificationData();
+      const moriartyData = moriarty.predictionData();
+
+      if (options.json) {
+        writeFileSync(options.json, JSON.stringify({
+          holmes: holmesData,
+          watson: watsonData,
+          moriarty: moriartyData
+        }, null, 2));
+      }
+
+      console.log('# 🔍 The Case of Schema Investigation\n');
+      console.log(holmes.renderInvestigation(holmesData));
+      console.log('\n---\n');
+      console.log(watson.renderVerification(watsonData));
+      console.log('\n---\n');
+      console.log(moriarty.renderPrediction(moriartyData));
       
       break;
     }

@@ -14,105 +14,144 @@ export class Moriarty {
    * Predict completion based on historical data
    */
   predict() {
+    return this.renderPrediction(this.predictionData());
+  }
+
+  predictionData() {
+    const analysisAt = new Date().toISOString();
+    const base = {
+      metadata: {
+        analysisAt
+      }
+    };
+
+    if (!this.history.points || this.history.points.length < 2) {
+      return {
+        ...base,
+        status: 'INSUFFICIENT_DATA',
+        message: 'At least two historical points are required for prediction.'
+      };
+    }
+
+    const series = this.calculateEMA();
+    const slope = this.calculateSlope(series);
+    const recentVelocity = this.calculateRecentVelocity(series);
+    const latest = this.history.points[this.history.points.length - 1];
+    const plateau = Math.abs(recentVelocity) < this.minSlope;
+    const regression = series.length >= 2 && series[series.length - 1].scs < series[series.length - 2].scs;
+
+    let eta = null;
+    let confidence = null;
+    if (recentVelocity > this.minSlope) {
+      const daysToComplete = (1 - latest.scs) / recentVelocity;
+      const optimistic = Math.ceil(daysToComplete * 0.7);
+      const realistic = Math.ceil(daysToComplete);
+      const pessimistic = Math.ceil(daysToComplete * 1.5);
+      eta = {
+        optimistic,
+        realistic,
+        pessimistic,
+        optimisticDate: this.formatDate(new Date(Date.now() + optimistic * 24 * 60 * 60 * 1000)),
+        realisticDate: this.formatDate(new Date(Date.now() + realistic * 24 * 60 * 60 * 1000)),
+        pessimisticDate: this.formatDate(new Date(Date.now() + pessimistic * 24 * 60 * 60 * 1000))
+      };
+      const variance = this.calculateVariance(series);
+      confidence = Math.max(0, Math.min(100, 100 - variance * 120));
+    }
+
+    const recentHistory = this.history.points.slice(-7).map(point => ({
+      timestamp: point.timestamp,
+      scs: point.scs,
+      tci: point.tci,
+      mri: point.mri
+    }));
+
+    return {
+      ...base,
+      status: 'OK',
+      latest,
+      velocity: {
+        recent: recentVelocity,
+        blendedSlope: slope.scs
+      },
+      plateauDetected: plateau,
+      regressionDetected: regression,
+      eta,
+      confidence,
+      patterns: this.detectPatterns(),
+      history: recentHistory
+    };
+  }
+
+  renderPrediction(data) {
     const report = [];
     report.push('### 🧠 Professor Moriarty\'s Temporal Predictions');
     report.push('');
     report.push('_The Mathematics of Inevitability_');
     report.push('');
-    report.push(`- Analysis Date: ${new Date().toISOString()}`);
+    report.push(`- Analysis Date: ${data.metadata.analysisAt}`);
     report.push('');
-    
-    if (!this.history.points || this.history.points.length < 2) {
+
+    if (data.status === 'INSUFFICIENT_DATA') {
       report.push('**INSUFFICIENT DATA**');
       report.push('');
       report.push('> "I require at least two data points to predict the future."');
       report.push('> "Run Wesley generate multiple times to build history."');
       return report.join('\n');
     }
-    
-    const latest = this.history.points[this.history.points.length - 1];
-    const series = this.calculateEMA();
-    const slope = this.calculateSlope(series);
-    const recentVelocity = this.calculateRecentVelocity(series);
-    
+
+    const latest = data.latest;
     report.push('## 🔮 Current State');
     report.push('');
-    
-    const scsBar = this.makeProgressBar(latest.scs);
-    const tciBar = this.makeProgressBar(latest.tci);
-    
-    report.push(`**SCS**: ${scsBar} ${(latest.scs * 100).toFixed(1)}%`);
-    report.push(`**TCI**: ${tciBar} ${(latest.tci * 100).toFixed(1)}%`);
+    report.push(`**SCS**: ${this.makeProgressBar(latest.scs)} ${(latest.scs * 100).toFixed(1)}%`);
+    report.push(`**TCI**: ${this.makeProgressBar(latest.tci)} ${(latest.tci * 100).toFixed(1)}%`);
     report.push(`**MRI**: ${(latest.mri * 100).toFixed(1)}% risk`);
     report.push('');
-    
+
     report.push('## 📈 Velocity Analysis');
     report.push('');
-    
-    const velocity = recentVelocity;
-    report.push(`**SCS Velocity**: ${velocity >= 0 ? '+' : ''}${(velocity * 100).toFixed(2)}%/day`);
-    
-    if (Math.abs(velocity) < this.minSlope) {
+    report.push(`**SCS Velocity**: ${data.velocity.recent >= 0 ? '+' : ''}${(data.velocity.recent * 100).toFixed(2)}%/day`);
+    if (data.plateauDetected) {
       report.push('⚠️ **PLATEAU DETECTED** - Progress has stalled!');
     }
-    
-    if (series.length >= 2 && series[series.length - 1].scs < series[series.length - 2].scs) {
+    if (data.regressionDetected) {
       report.push('🚨 **REGRESSION DETECTED** - Score decreasing!');
     }
-    
     report.push('');
-    
-    // ETA Calculation
+
     report.push('## ⏰ Completion Predictions');
     report.push('');
-    
-    if (velocity > this.minSlope) {
-      const daysToComplete = (1.0 - latest.scs) / velocity;
-      const etaDate = new Date(Date.now() + daysToComplete * 24 * 60 * 60 * 1000);
-      
-      report.push(`**Optimistic**: ${Math.ceil(daysToComplete * 0.7)} days → ${this.formatDate(new Date(Date.now() + daysToComplete * 0.7 * 24 * 60 * 60 * 1000))}`);
-      report.push(`**Realistic**: ${Math.ceil(daysToComplete)} days → ${this.formatDate(etaDate)}`);
-      report.push(`**Pessimistic**: ${Math.ceil(daysToComplete * 1.5)} days → ${this.formatDate(new Date(Date.now() + daysToComplete * 1.5 * 24 * 60 * 60 * 1000))}`);
-      
-      // Confidence calculation
-      const variance = this.calculateVariance(series);
-      const confidence = Math.max(0, Math.min(100, 100 - variance * 120));
-      
+    if (data.eta) {
+      report.push(`**Optimistic**: ${data.eta.optimistic} days → ${data.eta.optimisticDate}`);
+      report.push(`**Realistic**: ${data.eta.realistic} days → ${data.eta.realisticDate}`);
+      report.push(`**Pessimistic**: ${data.eta.pessimistic} days → ${data.eta.pessimisticDate}`);
       report.push('');
-      report.push(`**Confidence**: ${confidence.toFixed(0)}%`);
+      report.push(`**Confidence**: ${Math.round(data.confidence ?? 0)}%`);
     } else {
       report.push('**ETA**: Cannot predict (insufficient velocity)');
       report.push('');
       report.push('"At current velocity, completion is... improbable."');
     }
-    
-    // Pattern detection
-    const patterns = this.detectPatterns();
-    if (patterns.length > 0) {
+
+    if (data.patterns.length > 0) {
       report.push('');
       report.push('## 🎭 Crime Patterns Detected');
       report.push('');
-      for (const pattern of patterns) {
+      for (const pattern of data.patterns) {
         report.push(`- **${pattern.type}**: ${pattern.description}`);
       }
     }
-    
-    // Historical chart
+
     report.push('');
     report.push('## 📊 Historical Trajectory');
     report.push('');
-    
-    const last7 = this.history.points.slice(-7);
-    for (const point of last7) {
-      const date = new Date(point.timestamp).toISOString().slice(5, 10);
-      const bar = this.makeProgressBar(point.scs);
-      report.push(`${date}: ${bar} ${(point.scs * 100).toFixed(1)}%`);
+    for (const point of data.history) {
+      const date = point.timestamp ? new Date(point.timestamp).toISOString().slice(5, 10) : point.day ?? '?';
+      report.push(`${date}: ${this.makeProgressBar(point.scs)} ${(point.scs * 100).toFixed(1)}%`);
     }
-    
     report.push('');
     report.push('*"Every problem becomes elementary when reduced to mathematics"*');
     report.push('— Professor Moriarty');
-    
     return report.join('\n');
   }
 

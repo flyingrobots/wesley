@@ -9,7 +9,6 @@ on:
 env:
   HOLMES_BUNDLE_DIR: example/.wesley
   HOLMES_SCHEMA: example/ecommerce.graphql
-  HOLMES_SCHEMA_DIR: example
   HOLMES_OPS_DIR: ./ops
   HOLMES_OUT_DIR: out
   HOLMES_ARTIFACT: wesley-bundle
@@ -79,17 +78,21 @@ jobs:
       - name: "🔍 Run Investigation"
         id: holmes
         run: |
-          cd "$(dirname "${HOLMES_SCHEMA}")"
-          # Run HOLMES from workspace package
-          node ../packages/wesley-holmes/src/cli.mjs investigate > holmes-report.md
+          SCHEMA_DIR="$(dirname "${HOLMES_SCHEMA}")"
+          cd "$SCHEMA_DIR"
+          node ../packages/wesley-holmes/src/cli.mjs investigate --json holmes-report.json > holmes-report.md
           cat holmes-report.md
           cd - >/dev/null
+          cp "$SCHEMA_DIR/holmes-report.md" holmes.md
+          cp "$SCHEMA_DIR/holmes-report.json" holmes.json
           
       - name: "💾 Save Report"
         uses: actions/upload-artifact@v4
         with:
           name: holmes-report
-          path: ${{ env.HOLMES_SCHEMA_DIR }}/holmes-report.md
+          path: |
+            holmes.md
+            holmes.json
           
   watson-verify:
     name: "🩺 WATSON Verification"
@@ -112,16 +115,21 @@ jobs:
       - name: "🩺 Run Verification"
         id: watson
         run: |
-          cd "$(dirname "${HOLMES_SCHEMA}")"
-          node ../packages/wesley-holmes/src/cli.mjs verify > watson-report.md
+          SCHEMA_DIR="$(dirname "${HOLMES_SCHEMA}")"
+          cd "$SCHEMA_DIR"
+          node ../packages/wesley-holmes/src/cli.mjs verify --json watson-report.json > watson-report.md
           cat watson-report.md
           cd - >/dev/null
+          cp "$SCHEMA_DIR/watson-report.md" watson.md
+          cp "$SCHEMA_DIR/watson-report.json" watson.json
           
       - name: "💾 Save Report"
         uses: actions/upload-artifact@v4
         with:
           name: watson-report
-          path: ${{ env.HOLMES_SCHEMA_DIR }}/watson-report.md
+          path: |
+            watson.md
+            watson.json
           
   moriarty-predict:
     name: "🔮 MORIARTY Predictions"
@@ -145,16 +153,21 @@ jobs:
       - name: "🔮 Run Predictions"
         id: moriarty
         run: |
-          cd "$(dirname "${HOLMES_SCHEMA}")"
-          node ../packages/wesley-holmes/src/cli.mjs predict > moriarty-report.md || echo "Insufficient data for predictions" > moriarty-report.md
+          SCHEMA_DIR="$(dirname "${HOLMES_SCHEMA}")"
+          cd "$SCHEMA_DIR"
+          node ../packages/wesley-holmes/src/cli.mjs predict --json moriarty-report.json > moriarty-report.md || echo "Insufficient data for predictions" > moriarty-report.md
           cat moriarty-report.md
           cd - >/dev/null
+          cp "$SCHEMA_DIR/moriarty-report.md" moriarty.md
+          cp "$SCHEMA_DIR/moriarty-report.json" moriarty.json
           
       - name: "💾 Save Report"
         uses: actions/upload-artifact@v4
         with:
           name: moriarty-report
-          path: ${{ env.HOLMES_SCHEMA_DIR }}/moriarty-report.md
+          path: |
+            moriarty.md
+            moriarty.json
           
   test-pgtap:
     name: "🧪 pgTAP Tests"
@@ -380,11 +393,14 @@ jobs:
             ---
             
             ## 🔮 Professor MORIARTY's Predictions
-            ${moriarty}
-            
-            ---
-            *Filed at 221B Repository Street*
-            `;
+${moriarty}
+
+---
+Machine-readable reports: holmes-report.json · watson-report.json · moriarty-report.json (see workflow artifacts).
+
+---
+*Filed at 221B Repository Street*
+`;
             
             // Find existing comment
             const { data: comments } = await github.rest.issues.listComments({
