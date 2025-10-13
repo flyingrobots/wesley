@@ -348,6 +348,16 @@ function sanitizeOpIdentifier(name) {
   return sanitized;
 }
 
+function derivePrefixedIdentifier(baseName) {
+  const normalized = String(baseName || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+  const effective = normalized || 'op';
+  const suffix = effective === 'op' ? 'unnamed' : effective;
+  return `op_${suffix}`;
+}
+
 async function findOpFiles(fs, opsDir, logger) {
   const exists = await fs.exists(opsDir);
   if (!exists) {
@@ -382,6 +392,21 @@ async function compileOpFile(fs, path, collisions, logger) {
       'OPS_IDENTIFIER_TOO_LONG',
       `Sanitized op name "${baseName}" from ${path} exceeds PostgreSQL identifier limit (bytes=${byteLength}, limit=${POSTGRESQL_IDENTIFIER_LIMIT})`,
       { file: path, sanitized: baseName, bytes: byteLength, limit: POSTGRESQL_IDENTIFIER_LIMIT }
+    );
+  }
+  const emittedIdentifier = derivePrefixedIdentifier(baseName);
+  const emittedByteLength = Buffer.byteLength(emittedIdentifier, 'utf8');
+  if (emittedByteLength > POSTGRESQL_IDENTIFIER_LIMIT) {
+    throw new OpsError(
+      'OPS_IDENTIFIER_TOO_LONG',
+      `Prefixed op identifier "${emittedIdentifier}" from ${path} exceeds PostgreSQL identifier limit (bytes=${emittedByteLength}, limit=${POSTGRESQL_IDENTIFIER_LIMIT})`,
+      {
+        file: path,
+        sanitized: emittedIdentifier,
+        base: baseName,
+        bytes: emittedByteLength,
+        limit: POSTGRESQL_IDENTIFIER_LIMIT
+      }
     );
   }
   const seen = collisions.get(baseName) || [];
