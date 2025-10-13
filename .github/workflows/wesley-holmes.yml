@@ -29,6 +29,17 @@ jobs:
       - name: "📦 Install Dependencies"
         run: pnpm install
         
+      - name: "🧠 Restore Moriarty cache"
+        id: moriarty-cache
+        uses: actions/cache@v4
+        with:
+          path: example/.wesley/history.json
+          key: moriarty-${{ github.sha }}
+          restore-keys: |
+            moriarty-${{ github.ref }}-
+            moriarty-${{ github.base_ref }}-
+            moriarty-main-
+
       - name: "🚀 Generate Artifacts"
         env:
           WESLEY_OUT_DIR: out
@@ -42,6 +53,14 @@ jobs:
             --ops ./ops \
             --allow-dirty \
             --out-dir "$WESLEY_OUT_DIR"
+          cd -
+
+      - name: "💾 Save Moriarty cache"
+        if: ${{ always() && hashFiles('example/.wesley/history.json') != '' }}
+        uses: actions/cache/save@v4
+        with:
+          path: example/.wesley/history.json
+          key: moriarty-${{ github.sha }}
           
       - name: "📊 Display Scores"
         run: |
