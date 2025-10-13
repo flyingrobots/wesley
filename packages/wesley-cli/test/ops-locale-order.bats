@@ -106,5 +106,9 @@ parse_order() {
 
   assert_not_equal "$order_a" ""
   assert_equal "$order_a" "$order_b"
+  # Expected order after sanitization & ASCII sort:
+  # Alpha  → alpha
+  # Éclair → _clair
+  # Zulu   → zulu
   assert_equal "$order_a" "alpha,_clair,zulu"
 }
