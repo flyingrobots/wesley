@@ -294,48 +294,102 @@ export class GeneratePipelineCommand extends WesleyCommand {
         logger.info({ opsDir }, 'Experimental --ops: no *.op.json files found; skipping');
         return;
       }
+      files.sort((a, b) => Buffer.compare(Buffer.from(a), Buffer.from(b)));
       const outDir = options.outDir || 'out';
-      const outFiles = [];
+      const compiledOps = [];
+      const collisions = new Map();
+      const compileErrors = [];
       for (const path of files) {
         try {
           const raw = await fs.read(path);
           const op = JSON.parse(String(raw));
           const plan = buildPlanFromJson(op);
-          // Sanitize operation name for identifiers and filenames
-          let baseName = (op.name || 'unnamed').toLowerCase().replace(/[^a-z0-9]+/g, '_');
-          if (!baseName) baseName = 'unnamed';
-          // PostgreSQL identifiers cap at 63 bytes; use 60 to leave room for schema prefix (wes_ops.op_)
-          const maxIdLen = 60;
-          if (baseName.length > maxIdLen) {
-            const truncated = baseName.slice(0, maxIdLen);
-            logger.warn({ original: op.name, truncated }, 'Operation name truncated to fit PostgreSQL identifier limit');
-            baseName = truncated;
+          const baseName = sanitizeOpIdentifier(op.name);
+          const byteLength = Buffer.byteLength(baseName, 'utf8');
+          if (byteLength > POSTGRESQL_IDENTIFIER_LIMIT) {
+            throw opsError(
+              'OPS_IDENTIFIER_TOO_LONG',
+              `Sanitized op name "${baseName}" from ${path} exceeds PostgreSQL identifier limit (${byteLength} bytes > ${POSTGRESQL_IDENTIFIER_LIMIT})`,
+              { file: path, sanitized: baseName, bytes: byteLength, limit: POSTGRESQL_IDENTIFIER_LIMIT }
+            );
           }
+          const seen = collisions.get(baseName) || [];
+          seen.push(path);
+          collisions.set(baseName, seen);
           const paramCount = (collectParams(plan)?.ordered?.length) || 0;
           const isParamless = paramCount === 0;
+          compiledOps.push({ baseName, plan, isParamless, path });
+        } catch (e) {
+          if (e?.code === 'OPS_IDENTIFIER_TOO_LONG') {
+            logger.error({ file: path, sanitized: e?.meta?.sanitized, bytes: e?.meta?.bytes }, e.message);
+            throw e;
+          }
+          compileErrors.push({ file: path, message: e?.message || String(e) });
+          logger.warn({ file: path }, 'Failed to compile op: ' + (e?.message || e));
+        }
+      }
+      const collisionEntries = Array.from(collisions.entries()).filter(([, paths]) => paths.length > 1);
+      if (collisionEntries.length > 0) {
+        const formatted = collisionEntries.map(([key, paths]) => `${key}: ${paths.join(', ')}`);
+        const err = opsError(
+          'OPS_COLLISION',
+          `Sanitized identifier collision(s): ${formatted.join(' | ')}`,
+          { collisions: collisionEntries.map(([key, paths]) => ({ identifier: key, paths })) }
+        );
+        logger.error(err.meta, err.message);
+        throw err;
+      }
+      if (compileErrors.length > 0) {
+        const err = opsError(
+          'OPS_COMPILE_FAILED',
+          `Failed to compile ${compileErrors.length} operation(s); see log for details`,
+          { failures: compileErrors }
+        );
+        logger.error(err.meta, err.message);
+        throw err;
+      }
+      if (compiledOps.length) {
+        const outFiles = [];
+        const total = compiledOps.length;
+        let ordinal = 0;
+        for (const entry of compiledOps) {
+          ordinal += 1;
+          const { baseName, plan, isParamless, path } = entry;
           const fnSql = emitFunction(baseName, plan);
           if (isParamless) {
             const viewSql = emitView(baseName, plan);
             outFiles.push({ name: `ops/${baseName}.view.sql`, content: viewSql + '\n' });
           }
           outFiles.push({ name: `ops/${baseName}.fn.sql`, content: fnSql + '\n' });
-        } catch (e) {
-          logger.warn({ file: path }, 'Failed to compile op: ' + (e?.message || e));
+          logger.info({ ordinal, total, sanitized: baseName, file: path, code: 'OPS_DISCOVERY' }, 'ops: compiled operation');
         }
-      }
-      if (outFiles.length) {
         await this.ctx.writer.writeFiles(outFiles, outDir);
         const opsOutputDir = await fs.join(outDir, 'ops');
         logger.info({ count: outFiles.length, dir: opsOutputDir }, 'Compiled operations (experimental)');
       }
     } catch (e) {
-      logger.warn('Experimental --ops failed: ' + (e?.message || e));
+      logger.error({ code: e?.code, error: e?.message }, 'Experimental --ops failed');
+      throw e;
     }
   }
 }
 
 // Export for testing
 export default GeneratePipelineCommand;
+
+const POSTGRESQL_IDENTIFIER_LIMIT = 63;
+
+function sanitizeOpIdentifier(name) {
+  const raw = (name || 'unnamed').toLowerCase().replace(/[^a-z0-9]+/g, '_');
+  return raw || 'unnamed';
+}
+
+function opsError(code, message, meta = {}) {
+  const err = new Error(message);
+  err.code = code;
+  err.meta = { code, ...meta };
+  return err;
+}
 
 // Utilities
 function shouldEnforceClean(env, options) {

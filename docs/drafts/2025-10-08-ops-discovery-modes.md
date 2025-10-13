@@ -31,24 +31,27 @@ Activated when `--ops <dir>` is provided and no manifest is specified.
 
 - Discovery
   - Recursively scan `<dir>` for files matching the glob.
-  - Sort results lexicographically (POSIX/C), compile in that order.
+  - Sort results using bytewise lexicographic order under the C/POSIX locale. Implementation MUST either force `LC_ALL=C` before sorting or use a locale-free comparator (e.g. `Buffer.compare`).
+  - Add a regression test that runs discovery under `LC_ALL=en_US.UTF-8` and `LC_ALL=C` and asserts the sanitized compile order is identical; this guards against accidental locale leaks.
   - If 0 matches and `--ops-allow-empty` not set → `VALIDATION_FAILED` with a helpful hint.
 
 - Identifier policy
-  - Sanitize op name once to a base identifier (lowercase, non‑alphanumeric → `_`, fallback `unnamed`, 63‑char guard).
-  - Fail on collisions where two different files sanitize to the same base (list both paths and the colliding key).
+  - Lower-case op names and replace every character outside `[a-z0-9]` with `_`. If the sanitized result is empty, treat it as `unnamed`.
+  - Measure identifier length in bytes (UTF-8). If the sanitized value exceeds 63 bytes, fail with `VALIDATION_FAILED` (no truncation) and surface the offending identifier + file path.
+  - Fail on collisions where two different files sanitize to the same base (list every colliding path, including the implicit `unnamed`).
 
 - Output contract (deterministic)
-  - `out/ops/<sanitized>.fn.sql` (always)
-  - `out/ops/<sanitized>.view.sql` (paramless ops only)
-  - `out/ops.functions.sql` (aggregator for init/compose)
-  - `out/tests-ops.sql` (pgTAP suite with existence + content assertions)
-  - Optional `out/ops/explain/<sanitized>.explain.json` (when `--ops-explain`)
+  - `${outDir}/ops/<sanitized>.fn.sql` (always; `outDir` defaults to `out/`)
+  - `${outDir}/ops/<sanitized>.view.sql` (only when the op defines zero input parameters; optional/defaulted params count as parameters → no view)
+  - `${outDir}/ops.functions.sql` (aggregator for init/compose)
+  - `${outDir}/tests-ops.sql` (pgTAP suite with existence + content assertions)
+  - Optional `${outDir}/ops/explain/<sanitized>.explain.json` (when `--ops-explain`)
 
 - Validation & Exit semantics
-  - Ajv schema errors → skip that op; aggregate and exit non‑zero unless `--ops-allow-errors`.
-  - Discovery empty without `--ops-allow-empty` → non‑zero (`VALIDATION_FAILED`).
-  - Identifier collision or 63‑char overflow → non‑zero (`VALIDATION_FAILED`).
+  - Exit codes are numeric and stable: `0` success, `2` generic validation failure, `3` identifier collision or 63-byte overflow, `4` empty discovery without `--ops-allow-empty`, `5` Ajv/schema failures when `--ops-allow-errors` is absent.
+  - Ajv schema errors → skip that op; aggregate and exit 5 unless `--ops-allow-errors`.
+  - Discovery empty without `--ops-allow-empty` → exit 4.
+  - Identifier collision or 63-byte overflow → exit 3 with a detailed list of colliding files.
 
 ### Mode B — Manifest (Opt‑in)
 
@@ -58,21 +61,57 @@ Activated when `--ops-manifest <path>` is supplied. Provides curated control.
 
 ```json
 {
+  "$id": "https://wesley.dev/schemas/ops-manifest.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
+  "description": "Curated ops discovery manifest for Wesley CLI",
   "additionalProperties": false,
   "properties": {
-    "include": { "type": "array", "items": { "type": "string" } },
-    "exclude": { "type": "array", "items": { "type": "string" } },
-    "allowEmpty": { "type": "boolean" },
-    "explain": { "type": "boolean" }
+    "include": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "description": "Glob pattern relative to the manifest directory"
+      },
+      "description": "Set of globs to include"
+    },
+    "exclude": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "description": "Glob pattern relative to the manifest directory"
+      },
+      "description": "Globs to subtract after include (optional)"
+    },
+    "allowEmpty": {
+      "type": "boolean",
+      "default": false,
+      "description": "Permit an empty result set without error"
+    },
+    "explain": {
+      "type": "boolean",
+      "default": false,
+      "description": "Emit EXPLAIN JSON snapshots for compiled ops"
+    }
   },
   "required": ["include"]
 }
 ```
 
+Example manifest:
+
+```json
+{
+  "include": ["ops/**/*.op.json"],
+  "exclude": ["ops/archive/**"],
+  "allowEmpty": false,
+  "explain": true
+}
+```
+
 - Semantics
-  - Expand `include` globs relative to `--ops <dir>` (or manifest directory if clearer), subtract `exclude`, sort.
+  - Expand `include` globs relative to the manifest file's directory; `--ops` is ignored in manifest mode. Apply `exclude` afterward, then sort via the same bytewise comparator as Mode A.
   - `allowEmpty` (default false) controls empty set behavior.
   - `explain` toggles EXPLAIN JSON emission.
   - If both manifest and `--ops-glob`/`--ops-explain` are supplied, manifest takes precedence.
@@ -85,6 +124,8 @@ Activated when `--ops-manifest <path>` is supplied. Provides curated control.
 - `--ops-explain` (A only; manifest’s `explain` controls B)
 - `--ops-manifest <path>` (switch to manifest mode)
 - `--ops-allow-errors` (compile others even if some fail Ajv; exit 0)
+- `--out-dir <dir>` (base output directory; defaults to `out/`)
+- `--log-format <text|json>` (default `text`; JSON emits deterministic fields: `timestamp`, `level`, `code`, `op`, `path`, `message`)
 
 ## Logging (examples)
 
@@ -93,6 +134,11 @@ ops: found 4 files under example/ops (glob: **/*.op.json)
 ops: compiling (1/4) example/ops/products_by_name.op.json → sanitized: products_by_name
 ops: ajv errors (2): /filters/0/param/type must match pattern …
 ops: collision: sanitized key "orders_by_user" from multiple files: …/orders_by_user.op.json, …/orders-by-user.op.json
+```
+
+```jsonl
+{"timestamp":"2025-10-08T02:12:03.456Z","level":"info","code":"OPS_DISCOVERY","op":"products_by_name","path":"example/ops/products_by_name.op.json","message":"ops: compiling"}
+{"timestamp":"2025-10-08T02:12:03.789Z","level":"error","code":"OPS_COLLISION","op":"orders_by_user","path":"example/ops/orders-by-user.op.json","message":"Sanitized identifier collision","collidesWith":["example/ops/orders_by_user.op.json","example/ops/orders-by-user.op.json"]}
 ```
 
 ## Migration Plan
@@ -134,4 +180,3 @@ ops: collision: sanitized key "orders_by_user" from multiple files: …/orders_b
 
 - Do we allow `--ops-allow-errors` to succeed CI when some ops fail Ajv? (leaning yes for local dev; CI should keep default strict)
 - Should manifest support per‑op overrides (e.g., force view emission)? (out of scope for MVP)
-

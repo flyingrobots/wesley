@@ -144,6 +144,18 @@ export class WesleyCommand {
 
   // Main execute flow with error handling
   async execute(options = {}, command) {
+    const requestedFormat = (options.logFormat || (options.json ? 'json' : 'text'))?.toLowerCase?.() || 'text';
+    if (!['text', 'json'].includes(requestedFormat)) {
+      const err = new Error(`Unsupported log format: ${options.logFormat}`);
+      err.code = 'INVALID_LOG_FORMAT';
+      throw err;
+    }
+    options.logFormat = requestedFormat;
+    if (requestedFormat === 'json') {
+      options.json = true;
+      process.env.WESLEY_LOG_FORMAT = 'json';
+    }
+
     const logger = this.makeLogger(options);
     
     try {
@@ -228,7 +240,12 @@ export class WesleyCommand {
       'EEMPTYSCHEMA': 2,
       'PARSE_FAILED': 3,
       'GENERATION_FAILED': 4,
-      'VALIDATION_FAILED': 5
+      'VALIDATION_FAILED': 5,
+      'OPS_COLLISION': 3,
+      'OPS_IDENTIFIER_TOO_LONG': 3,
+      'OPS_EMPTY_SET': 4,
+      'OPS_COMPILE_FAILED': 5,
+      'INVALID_LOG_FORMAT': 2
     };
     return codeMap[error.code] || 1;
   }

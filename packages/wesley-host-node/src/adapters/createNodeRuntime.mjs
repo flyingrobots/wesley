@@ -81,10 +81,11 @@ export async function createNodeRuntime() {
   }
 
   // Create a wrapper that respects quiet mode
+  const usePretty = process.env.NODE_ENV === 'development' && process.env.WESLEY_LOG_FORMAT !== 'json';
   const pinoLogger = pino({ 
     name: 'Wesley', 
     level: process.env.WESLEY_LOG_LEVEL || 'info',
-    transport: process.env.NODE_ENV === 'development' ? {
+    transport: usePretty ? {
       target: 'pino-pretty',
       options: { colorize: true }
     } : undefined
