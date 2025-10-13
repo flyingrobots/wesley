@@ -47,7 +47,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
     if (options.opsAllowErrors && isCI && options.iKnowWhatImDoing) {
       logger.warn({ opsAllowErrors: true }, '--ops-allow-errors acknowledged in CI due to override flag');
     }
-    options.opsAllowErrors = !!options.opsAllowErrors;
+    options.opsAllowErrors = Boolean(options.opsAllowErrors);
 
     // Handle --stdin convenience flag
     if (options.stdin) {
@@ -266,7 +266,11 @@ export class GeneratePipelineCommand extends WesleyCommand {
       // Find *.op.json files (MVP DSL)
       const dirEntries = await fs.readDir?.(opsDir);
       const files = Array.isArray(dirEntries)
-        ? dirEntries.filter(f => f.name?.endsWith?.('.op.json')).map(f => f.path || `${opsDir}/${f.name}`)
+        ? await Promise.all(
+            dirEntries
+              .filter(f => f.name?.endsWith?.('.op.json'))
+              .map(async f => f.path || await fs.join(opsDir, f.name))
+          )
         : [];
       if (files.length === 0) {
         logger.info({ opsDir }, 'Experimental --ops: no *.op.json files found; skipping');
@@ -278,8 +282,9 @@ export class GeneratePipelineCommand extends WesleyCommand {
       const targetSchema = options.opsSchema || 'wes_ops';
       const compiledOps = [];
       const collisions = new Map();
-      const allowErrors = !!options.opsAllowErrors;
+      const allowErrors = Boolean(options.opsAllowErrors);
       const compileErrors = [];
+      const skippedErrors = [];
       for (const path of files) {
         try {
           const raw = await fs.read(path);
@@ -315,6 +320,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
             throw e;
           }
           if (allowErrors) {
+            skippedErrors.push({ file: path, message: e?.message || String(e), code: e?.code });
             logger.warn({ file: path, code: e?.code }, 'Skipping op due to compile error (allowed)');
           } else {
             compileErrors.push({ file: path, message: e?.message || String(e), code: e?.code });
@@ -323,16 +329,16 @@ export class GeneratePipelineCommand extends WesleyCommand {
         }
       }
       if (compileErrors.length > 0) {
-        if (!allowErrors) {
-          const err = opsError(
-            'OPS_COMPILE_FAILED',
-            `Failed to compile ${compileErrors.length} operation(s); see log for details`,
-            { failures: compileErrors }
-          );
-          logger.error(err.meta, err.message);
-          throw err;
-        }
-        logger.warn({ count: compileErrors.length, failures: compileErrors }, 'Continuing despite compilation errors due to --ops-allow-errors');
+        const err = opsError(
+          'OPS_COMPILE_FAILED',
+          `Failed to compile ${compileErrors.length} operation(s); see log for details`,
+          { failures: compileErrors }
+        );
+        logger.error(err.meta, err.message);
+        throw err;
+      }
+      if (skippedErrors.length > 0) {
+        logger.warn({ count: skippedErrors.length, failures: skippedErrors }, 'Continuing despite compilation errors due to --ops-allow-errors');
       }
       if (compiledOps.length) {
         const outFiles = [];
