@@ -83,6 +83,7 @@ jobs:
           # Run HOLMES from workspace package
           node ../packages/wesley-holmes/src/cli.mjs investigate > holmes-report.md
           cat holmes-report.md
+          cd - >/dev/null
           
       - name: "💾 Save Report"
         uses: actions/upload-artifact@v4
@@ -114,6 +115,7 @@ jobs:
           cd "$(dirname "${HOLMES_SCHEMA}")"
           node ../packages/wesley-holmes/src/cli.mjs verify > watson-report.md
           cat watson-report.md
+          cd - >/dev/null
           
       - name: "💾 Save Report"
         uses: actions/upload-artifact@v4
@@ -146,6 +148,7 @@ jobs:
           cd "$(dirname "${HOLMES_SCHEMA}")"
           node ../packages/wesley-holmes/src/cli.mjs predict > moriarty-report.md || echo "Insufficient data for predictions" > moriarty-report.md
           cat moriarty-report.md
+          cd - >/dev/null
           
       - name: "💾 Save Report"
         uses: actions/upload-artifact@v4
