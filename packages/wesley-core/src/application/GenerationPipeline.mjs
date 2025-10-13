@@ -7,6 +7,8 @@ import { EvidenceMap } from './EvidenceMap.mjs';
 import { ScoringEngine } from './Scoring.mjs';
 import { DirectiveProcessor } from '../domain/Directives.mjs';
 
+const BUNDLE_VERSION = '2.0.0';
+
 export class GenerationPipeline {
   constructor(ports) {
     this.parser = ports.parser;
@@ -109,6 +111,7 @@ export class GenerationPipeline {
     return {
       sha,
       timestamp,
+      bundleVersion: BUNDLE_VERSION,
       schema: schema.toJSON(),
       evidence: evidenceMap.toJSON(),
       scores,

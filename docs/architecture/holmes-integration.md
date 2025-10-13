@@ -197,13 +197,16 @@ Every `wesley generate` creates `.wesley/` bundle:
 
 ```
 .wesley/
+├── bundle.json          # bundleVersion, evidence, score breakdowns (SCS/TCI/MRI)
 ├── schema.ast.json       # Normalized AST (sorted)
 ├── schema.ir.json        # Wesley domain IR
 ├── artifacts.json        # {artifact: [files]} with hashes
 ├── evidence-map.json     # Element → file:lines@sha
 ├── snapshot.json         # Previous IR for diffs
-├── scores.json          # SCS/MRI/TCI scores
-└── history.json         # Score history for predictions
+├── scores.json           # Detached copy of scores + thresholds
+└── history.json          # Score history for predictions
+
+Bundle v2 adds a `breakdown` object so HOLMES can report granular metrics (e.g., `scs.sql`, `tci.unit_rls`, `mri.drops`) alongside the rolled-up SCS/TCI/MRI scores.
 ```
 
 ## Package Architecture

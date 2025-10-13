@@ -7,6 +7,7 @@ This checklist tracks the remaining work before we “go public” and the follo
 - [ ] [#53](https://github.com/flyingrobots/wesley/issues/53) Load declarative weights from `.wesley/weights.json` with documented precedence.
 - [ ] [#54](https://github.com/flyingrobots/wesley/issues/54) Honor `@wes_evidence` (or equivalent) so scoring respects contextual evidence requirements.
 - [ ] [#55](https://github.com/flyingrobots/wesley/issues/55) Enrich dashboard insights (why/volatility/balancing metrics/celebrate improvements).
+- [ ] [#56](https://github.com/flyingrobots/wesley/issues/56) Track ops end-to-end evidence so TCI `e2e_ops` coverage reflects real tests.
 
 ## Repo Readiness — Must
 - [x] Tighten README messaging; add “Experimental QIR” pointer to `docs/guides/qir-ops.md`.

@@ -137,7 +137,48 @@ export class GeneratePipelineCommand extends WesleyCommand {
         const mri = 0.2;
         const readiness = { verdict: (scs > 0.75 && tci > 0.6 ? 'ELEMENTARY' : (scs > 0.4 ? 'REQUIRES INVESTIGATION' : 'YOU SHALL NOT PASS')) };
 
-        const scores = { scores: { scs, tci, mri }, readiness };
+        const scsBreakdown = {
+          sql: { score: scs, earnedWeight: parseFloat((scs).toFixed(3)), totalWeight: 1 },
+          types: { score: scs, earnedWeight: parseFloat((scs).toFixed(3)), totalWeight: 1 },
+          validation: { score: scs, earnedWeight: parseFloat((scs).toFixed(3)), totalWeight: 1 },
+          tests: { score: Math.min(1, tci), earnedWeight: parseFloat((Math.min(1, tci)).toFixed(3)), totalWeight: 1 }
+        };
+
+        const tciBreakdown = {
+          unit_constraints: { score: tci, covered: 1, total: 1 },
+          unit_rls: { score: 0, covered: 0, total: 0 },
+          integration_relations: { score: 0, covered: 0, total: 0 },
+          e2e_ops: { score: 0, covered: 0, total: 0, note: 'Not tracked in quick emit mode' },
+          legacy_components: {
+            structure: tci,
+            constraints: tci,
+            migrations: 0,
+            performance: 0
+          }
+        };
+
+        const mriPoints = Math.round(mri * 100);
+        const mriBreakdown = {
+          drops: { score: mri, points: mriPoints, count: 0 },
+          renames_without_uid: { score: 0, points: 0, count: 0 },
+          add_not_null_without_default: { score: 0, points: 0, count: 0 },
+          non_concurrent_indexes: { score: 0, points: 0, count: 0 },
+          totalPoints: mriPoints
+        };
+
+        const scores = {
+          version: '2.0.0',
+          timestamp,
+          commit: sha,
+          scores: { scs, tci, mri },
+          breakdown: { scs: scsBreakdown, tci: tciBreakdown, mri: mriBreakdown },
+          readiness,
+          metadata: {
+            tables: 0,
+            migrationSteps: 0,
+            testsRun: 0
+          }
+        };
 
         // Evidence map: cite generated SQL and tests
         const sqlFile = `${outDir}/schema.sql`;
@@ -152,7 +193,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
           }
         };
 
-        const bundle = { sha, timestamp, evidence, scores };
+        const bundle = { sha, timestamp, bundleVersion: '2.0.0', evidence, scores };
         await this.ctx.fs.write('.wesley/scores.json', JSON.stringify(scores, null, 2));
         await this.ctx.fs.write('.wesley/bundle.json', JSON.stringify(bundle, null, 2));
 

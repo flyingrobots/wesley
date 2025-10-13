@@ -16,12 +16,40 @@ const holmesSample = {
     verificationCount: 4,
     weightedCompletion: 0.9,
     tci: 0.8,
-    mri: 0.1
+    mri: 0.1,
+    bundleVersion: '2.0.0'
   },
   scores: {
     scs: 0.9,
     tci: 0.8,
     mri: 0.1
+  },
+  breakdown: {
+    scs: {
+      sql: { score: 0.95, earnedWeight: 19, totalWeight: 20 },
+      types: { score: 0.9, earnedWeight: 18, totalWeight: 20 },
+      validation: { score: 0.85, earnedWeight: 17, totalWeight: 20 },
+      tests: { score: 0.7, earnedWeight: 14, totalWeight: 20 }
+    },
+    tci: {
+      unit_constraints: { score: 0.8, covered: 8, total: 10 },
+      unit_rls: { score: null, covered: 0, total: 0 },
+      integration_relations: { score: 0.75, covered: 3, total: 4 },
+      e2e_ops: { score: null, covered: 0, total: 0, note: 'Not tracked' },
+      legacy_components: {
+        structure: 0.8,
+        constraints: 0.8,
+        migrations: 1,
+        performance: 1
+      }
+    },
+    mri: {
+      drops: { score: 0.5, points: 10, count: 1 },
+      renames_without_uid: { score: 0.2, points: 4, count: 1 },
+      add_not_null_without_default: { score: 0, points: 0, count: 0 },
+      non_concurrent_indexes: { score: 0, points: 0, count: 0 },
+      totalPoints: 14
+    }
   },
   evidence: [
     {

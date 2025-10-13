@@ -40,7 +40,8 @@ export class Holmes {
       verificationCount: this.countVerifications(),
       verificationStatus: this.scores?.readiness?.verdict ?? 'UNKNOWN',
       tci: scores.tci,
-      mri: scores.mri
+      mri: scores.mri,
+      bundleVersion: this.bundle.bundleVersion || this.scores?.version || '1.0.0'
     };
 
     const elements = [];
@@ -65,6 +66,7 @@ export class Holmes {
     return {
       metadata: summary,
       scores,
+      breakdown: this.scores?.breakdown || {},
       evidence: elements,
       gates,
       verdict
@@ -72,12 +74,13 @@ export class Holmes {
   }
 
   renderInvestigation(data) {
-    const { metadata, evidence, gates, verdict } = data;
+    const { metadata, evidence, gates, verdict, scores, breakdown } = data;
     const lines = [];
     lines.push('### 🕵️ SHA-lock HOLMES Investigation');
     lines.push('');
     lines.push(`- Generated: ${metadata.generatedAt}`);
     lines.push(`- Commit SHA: ${metadata.sha}`);
+    lines.push(`- Bundle Version: ${metadata.bundleVersion}`);
     lines.push('');
     lines.push(`> ⚠️ Evidence valid only for commit \`${metadata.sha.substring(0, 7)}\``);
     lines.push('');
@@ -87,10 +90,52 @@ export class Holmes {
     lines.push('"Watson, after careful examination of the evidence, I deduce..."');
     lines.push('');
     lines.push(`**Weighted Completion**: ${this.progressBar(metadata.weightedCompletion)} ${(metadata.weightedCompletion * 100).toFixed(1)}%`);
-    lines.push(`**Scores**: SCS ${(data.scores.scs * 100).toFixed(1)}% · TCI ${(data.scores.tci * 100).toFixed(1)}% · MRI ${(data.scores.mri * 100).toFixed(1)}%`);
+    lines.push(`**Scores**: SCS ${(scores.scs * 100).toFixed(1)}% · TCI ${(scores.tci * 100).toFixed(1)}% · MRI ${(scores.mri * 100).toFixed(1)}%`);
     lines.push(`**Verification Status**: ${metadata.verificationCount} claims verified`);
     lines.push(`**Ship Verdict**: ${metadata.verificationStatus}`);
     lines.push('');
+
+    if (breakdown?.scs) {
+      lines.push('## 🧩 SCS Breakdown');
+      lines.push('');
+      lines.push('| Component | Score | Coverage |');
+      lines.push('|-----------|-------|----------|');
+      for (const [label, detail] of Object.entries(breakdown.scs)) {
+        const score = detail.score === null ? 'N/A' : `${(detail.score * 100).toFixed(1)}%`;
+        const coverage = detail.totalWeight ? `${detail.earnedWeight.toFixed(2)}/${detail.totalWeight.toFixed(2)}` : '—';
+        lines.push(`| ${this.formatLabel(label)} | ${score} | ${coverage} |`);
+      }
+      lines.push('');
+    }
+
+    if (breakdown?.tci) {
+      lines.push('## 🧪 TCI Breakdown');
+      lines.push('');
+      lines.push('| Component | Score | Coverage | Note |');
+      lines.push('|-----------|-------|----------|------|');
+      for (const [label, detail] of Object.entries(breakdown.tci)) {
+        if (label === 'legacy_components') continue;
+        const score = detail.score === null ? 'N/A' : `${(detail.score * 100).toFixed(1)}%`;
+        const coverage = detail.total ? `${detail.covered}/${detail.total}` : '—';
+        const note = detail.note || '';
+        lines.push(`| ${this.formatLabel(label)} | ${score} | ${coverage} | ${note} |`);
+      }
+      lines.push('');
+    }
+
+    if (breakdown?.mri) {
+      lines.push('## ⚠️ MRI Breakdown');
+      lines.push('');
+      lines.push('| Component | Risk Share | Points | Count |');
+      lines.push('|-----------|------------|--------|-------|');
+      const totalPoints = breakdown.mri.totalPoints || 0;
+      for (const [label, detail] of Object.entries(breakdown.mri)) {
+        if (label === 'totalPoints') continue;
+        const share = totalPoints > 0 ? `${(detail.points / totalPoints * 100).toFixed(1)}%` : '0%';
+        lines.push(`| ${this.formatLabel(label)} | ${share} | ${detail.points} | ${detail.count} |`);
+      }
+      lines.push('');
+    }
 
     lines.push('## 📊 The Weight of Evidence');
     lines.push('');
@@ -221,6 +266,12 @@ export class Holmes {
     if (tci > 0.7) return 'Adequate coverage';
     if (tci > 0.5) return 'Insufficient coverage';
     return 'Theatrical tests!';
+  }
+
+  formatLabel(label) {
+    return label
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, c => c.toUpperCase());
   }
 
   checkSensitiveFields() {

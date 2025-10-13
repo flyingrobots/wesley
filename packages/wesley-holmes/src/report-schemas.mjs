@@ -10,13 +10,52 @@ const stringField = { type: 'string' };
 const numberField = { type: 'number' };
 const booleanField = { type: 'boolean' };
 
+function scsComponentSchema() {
+  return {
+    type: 'object',
+    required: ['score', 'earnedWeight', 'totalWeight'],
+    properties: {
+      score: { anyOf: [numberField, { type: 'null' }] },
+      earnedWeight: numberField,
+      totalWeight: numberField
+    },
+    additionalProperties: false
+  };
+}
+
+function tciComponentSchema() {
+  return {
+    type: 'object',
+    required: ['score', 'covered', 'total'],
+    properties: {
+      score: { anyOf: [numberField, { type: 'null' }] },
+      covered: numberField,
+      total: numberField
+    },
+    additionalProperties: false
+  };
+}
+
+function mriComponentSchema() {
+  return {
+    type: 'object',
+    required: ['score', 'points', 'count'],
+    properties: {
+      score: numberField,
+      points: numberField,
+      count: numberField
+    },
+    additionalProperties: false
+  };
+}
+
 export const holmesReportSchema = {
   type: 'object',
-  required: ['metadata', 'scores', 'evidence', 'gates', 'verdict'],
+  required: ['metadata', 'scores', 'breakdown', 'evidence', 'gates', 'verdict'],
   properties: {
     metadata: {
       type: 'object',
-      required: ['generatedAt', 'sha', 'verificationStatus', 'verificationCount'],
+      required: ['generatedAt', 'sha', 'verificationStatus', 'verificationCount', 'bundleVersion'],
       properties: {
         generatedAt: stringField,
         sha: stringField,
@@ -24,7 +63,8 @@ export const holmesReportSchema = {
         verificationCount: numberField,
         weightedCompletion: numberField,
         tci: numberField,
-        mri: numberField
+        mri: numberField,
+        bundleVersion: stringField
       }
     },
     scores: {
@@ -34,6 +74,57 @@ export const holmesReportSchema = {
         scs: numberField,
         tci: numberField,
         mri: numberField
+      }
+    },
+    breakdown: {
+      type: 'object',
+      required: ['scs', 'tci', 'mri'],
+      properties: {
+        scs: {
+          type: 'object',
+          required: ['sql', 'types', 'validation', 'tests'],
+          properties: {
+            sql: scsComponentSchema(),
+            types: scsComponentSchema(),
+            validation: scsComponentSchema(),
+            tests: scsComponentSchema()
+          }
+        },
+        tci: {
+          type: 'object',
+          required: ['unit_constraints', 'unit_rls', 'integration_relations', 'e2e_ops'],
+          properties: {
+            unit_constraints: tciComponentSchema(),
+            unit_rls: tciComponentSchema(),
+            integration_relations: tciComponentSchema(),
+            e2e_ops: {
+              type: 'object',
+              required: ['score', 'covered', 'total'],
+              properties: {
+                score: { anyOf: [numberField, { type: 'null' }] },
+                covered: numberField,
+                total: numberField,
+                note: { type: 'string' }
+              },
+              additionalProperties: false
+            },
+            legacy_components: {
+              type: 'object',
+              additionalProperties: true
+            }
+          }
+        },
+        mri: {
+          type: 'object',
+          required: ['drops', 'renames_without_uid', 'add_not_null_without_default', 'non_concurrent_indexes', 'totalPoints'],
+          properties: {
+            drops: mriComponentSchema(),
+            renames_without_uid: mriComponentSchema(),
+            add_not_null_without_default: mriComponentSchema(),
+            non_concurrent_indexes: mriComponentSchema(),
+            totalPoints: numberField
+          }
+        }
       }
     },
     evidence: {

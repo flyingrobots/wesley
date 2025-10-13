@@ -11,6 +11,8 @@ import { RPCFunctionGeneratorV2 } from './generators/RPCFunctionGeneratorV2.mjs'
 import { MigrationDiffer } from './generators/MigrationDiffer.mjs';
 import { ZodGenerator } from './generators/ZodGenerator.mjs';
 
+const BUNDLE_VERSION = '2.0.0';
+
 export class WesleyOrchestrator {
   constructor(options = {}) {
     this.generateSQL = options.generateSQL ?? true;  // Alpha Blocker #3: Separate SQL generation flag
@@ -98,20 +100,22 @@ export class WesleyOrchestrator {
       }
     }
     
-    // 5. Calculate scores
+    // 5. Calculate scores with breakdown
     const scoring = new ScoringEngine(evidenceMap);
-    const scores = {
-      scs: scoring.calculateSCS(schema),
-      mri: artifacts.migration ? artifacts.migration.mri : 0,
-      tci: scoring.calculateTCI(schema, options.testResults || { passed: 0, failed: 0, total: 0, suites: [] })
-    };
+    const migrationSteps = artifacts.migration?.steps || (diffForTests ? diffForTests.steps : []);
+    const scoreDetails = scoring.exportScores(
+      schema,
+      migrationSteps,
+      options.testResults || { passed: 0, failed: 0, total: 0, suites: [] }
+    );
     
-    // 6. Determine readiness
-    const readiness = this.determineReadiness(scores);
+    // 6. Determine readiness (backwards compatibility for legacy consumers)
+    const readiness = scoreDetails.readiness;
     
     // Return complete bundle
     return {
       timestamp,
+      bundleVersion: BUNDLE_VERSION,
       sha,
       schema: {
         ast: schema.toAST(),
@@ -121,8 +125,7 @@ export class WesleyOrchestrator {
       artifacts,
       evidenceMap: evidenceMap.toJSON(),
       scores: {
-        scores,
-        readiness,
+        ...scoreDetails,
         history: [] // Would be populated from previous runs
       }
     };
