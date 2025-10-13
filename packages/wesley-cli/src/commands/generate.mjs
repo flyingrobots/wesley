@@ -287,11 +287,11 @@ export class GeneratePipelineCommand extends WesleyCommand {
           const plan = buildPlanFromJson(op);
           const baseName = sanitizeOpIdentifier(op.name);
           const byteLength = Buffer.byteLength(baseName, 'utf8');
-          if (byteLength + OP_PREFIX_BYTES > POSTGRESQL_IDENTIFIER_LIMIT) {
+          if (byteLength > POSTGRESQL_IDENTIFIER_LIMIT) {
             throw opsError(
               'OPS_IDENTIFIER_TOO_LONG',
-              `Sanitized op name "${baseName}" from ${path} exceeds PostgreSQL identifier limit once prefixed (bytes=${byteLength + OP_PREFIX_BYTES}, limit=${POSTGRESQL_IDENTIFIER_LIMIT})`,
-              { file: path, sanitized: baseName, bytes: byteLength + OP_PREFIX_BYTES, limit: POSTGRESQL_IDENTIFIER_LIMIT }
+              `Sanitized op name "${baseName}" from ${path} exceeds PostgreSQL identifier limit (bytes=${byteLength}, limit=${POSTGRESQL_IDENTIFIER_LIMIT})`,
+              { file: path, sanitized: baseName, bytes: byteLength, limit: POSTGRESQL_IDENTIFIER_LIMIT }
             );
           }
           const seen = collisions.get(baseName) || [];
@@ -365,7 +365,6 @@ export class GeneratePipelineCommand extends WesleyCommand {
 export default GeneratePipelineCommand;
 
 const POSTGRESQL_IDENTIFIER_LIMIT = 63;
-const OP_PREFIX_BYTES = Buffer.byteLength('op_', 'utf8');
 
 function sanitizeOpIdentifier(name) {
   const normalized = (name ?? 'unnamed').normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
