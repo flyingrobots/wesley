@@ -325,6 +325,15 @@ export class GeneratePipelineCommand extends WesleyCommand {
           const seen = collisions.get(baseName) || [];
           seen.push(path);
           collisions.set(baseName, seen);
+          if (seen.length > 1) {
+            const err = opsError(
+              'OPS_COLLISION',
+              `Identifier collision detected: "${baseName}" used in ${seen.join(', ')}`,
+              { identifier: baseName, paths: [...seen] }
+            );
+            logger.error(err.meta, err.message);
+            throw err;
+          }
           const paramCount = (collectParams(plan)?.ordered?.length) || 0;
           const isParamless = paramCount === 0;
           compiledOps.push({ baseName, plan, isParamless, path });
@@ -340,17 +349,6 @@ export class GeneratePipelineCommand extends WesleyCommand {
             logger.warn({ file: path, code: e?.code }, 'Failed to compile op: ' + (e?.message || e));
           }
         }
-      }
-      const collisionEntries = Array.from(collisions.entries()).filter(([, paths]) => paths.length > 1);
-      if (collisionEntries.length > 0) {
-        const formatted = collisionEntries.map(([key, paths]) => `${key}: ${paths.join(', ')}`);
-        const err = opsError(
-          'OPS_COLLISION',
-          `Sanitized identifier collision(s): ${formatted.join(' | ')}`,
-          { collisions: collisionEntries.map(([key, paths]) => ({ identifier: key, paths })) }
-        );
-        logger.error(err.meta, err.message);
-        throw err;
       }
       if (compileErrors.length > 0) {
         if (!allowErrors) {
