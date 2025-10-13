@@ -333,10 +333,10 @@ export class GeneratePipelineCommand extends WesleyCommand {
             logger.error({ file: path, sanitized: e?.meta?.sanitized, bytes: e?.meta?.bytes }, e.message);
             throw e;
           }
-          compileErrors.push({ file: path, message: e?.message || String(e), code: e?.code });
           if (allowErrors) {
             logger.warn({ file: path, code: e?.code }, 'Skipping op due to compile error (allowed)');
           } else {
+            compileErrors.push({ file: path, message: e?.message || String(e), code: e?.code });
             logger.warn({ file: path, code: e?.code }, 'Failed to compile op: ' + (e?.message || e));
           }
         }
