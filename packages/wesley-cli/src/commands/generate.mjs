@@ -156,16 +156,21 @@ export class GeneratePipelineCommand extends WesleyCommand {
         await this.ctx.fs.write('.wesley/scores.json', JSON.stringify(scores, null, 2));
         await this.ctx.fs.write('.wesley/bundle.json', JSON.stringify(bundle, null, 2));
 
-        // Append a tiny history for MORIARTY
+        // Append a tiny history for MORIARTY (hydrate from merge-base if available)
         try {
-          let history = { points: [] };
-          try {
-            const raw = await this.ctx.fs.read('.wesley/history.json');
-            history = JSON.parse(raw.toString('utf8')) || history;
-          } catch {}
+          const history = await loadMoriartyHistory({
+            fs: this.ctx.fs,
+            shell: globalThis?.wesleyCtx?.shell,
+            defaultBase:
+              process.env.WESLEY_BASE_REF ||
+              process.env.GITHUB_BASE_REF ||
+              process.env.WESLEY_DEFAULT_BRANCH ||
+              process.env.GITHUB_DEFAULT_BRANCH ||
+              'main'
+          });
           const day = Math.floor(Date.now() / 86400000);
-          history.points.push({ day, timestamp, scs, tci, mri });
-          await this.ctx.fs.write('.wesley/history.json', JSON.stringify(history, null, 2));
+          const nextPoints = mergeHistoryPoints(history.points, [{ day, timestamp, scs, tci, mri }]);
+          await this.ctx.fs.write('.wesley/history.json', JSON.stringify({ points: nextPoints }, null, 2));
         } catch {}
       } catch (e) {
         logger.warn('Could not emit HOLMES evidence bundle: ' + (e?.message || e));
@@ -466,4 +471,79 @@ async function assertCleanGit() {
     err.code = 'DIRTY_WORKTREE';
     throw err;
   }
+}
+
+async function loadMoriartyHistory({ fs, shell, defaultBase }) {
+  let points = [];
+  try {
+    const raw = await fs.read('.wesley/history.json');
+    const parsed = JSON.parse(raw.toString('utf8'));
+    if (Array.isArray(parsed?.points)) {
+      points = mergeHistoryPoints(points, parsed.points);
+    }
+  } catch (err) {
+    console.warn('[Moriarty] Unable to read local history:', err?.message);
+  }
+
+  const gitShell = shell?.exec ? shell : null;
+  if (!gitShell) {
+    return { points };
+  }
+
+  try {
+    const inside = await gitShell.exec('git rev-parse --is-inside-work-tree');
+    if (!inside?.stdout?.trim()) return { points };
+  } catch (err) {
+    console.warn('[Moriarty] Git repo check failed:', err?.message);
+    return { points };
+  }
+
+  let mergeBase;
+  const fallbackBase =
+    defaultBase ||
+    process.env.WESLEY_BASE_REF ||
+    process.env.GITHUB_BASE_REF ||
+    process.env.WESLEY_DEFAULT_BRANCH ||
+    process.env.GITHUB_DEFAULT_BRANCH ||
+    'main';
+  try {
+    const mb = await gitShell.exec(`git merge-base HEAD ${fallbackBase}`);
+    mergeBase = mb?.stdout?.trim();
+  } catch (err) {
+    console.warn('[Moriarty] merge-base lookup failed:', err?.message);
+    return { points };
+  }
+  if (!mergeBase) return { points };
+
+  try {
+    const show = await gitShell.exec(`git show ${mergeBase}:.wesley/history.json`);
+    if (show?.stdout) {
+      const parsed = JSON.parse(show.stdout);
+      if (Array.isArray(parsed?.points)) {
+        points = mergeHistoryPoints(parsed.points, points);
+      }
+    }
+  } catch (err) {
+    console.warn('[Moriarty] No history at merge-base:', err?.message);
+    // merge-base history missing or unreadable; ignore
+  }
+
+  return { points };
+}
+
+function mergeHistoryPoints(...pointArrays) {
+  const dedupe = new Map();
+  for (const arr of pointArrays) {
+    if (!Array.isArray(arr)) continue;
+    for (const point of arr) {
+      const key = point?.timestamp || `${point?.day ?? 'unknown'}-${point?.scs ?? '0'}-${point?.tci ?? '0'}`;
+      dedupe.set(key, point);
+    }
+  }
+  return Array.from(dedupe.values()).sort((a, b) => {
+    const at = Date.parse(a?.timestamp || 0);
+    const bt = Date.parse(b?.timestamp || 0);
+    if (!Number.isNaN(at) && !Number.isNaN(bt)) return at - bt;
+    return (a?.day ?? 0) - (b?.day ?? 0);
+  });
 }

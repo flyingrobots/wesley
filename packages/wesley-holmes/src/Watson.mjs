@@ -4,6 +4,7 @@
  */
 
 import { existsSync, readFileSync } from 'node:fs';
+import { execSync } from 'node:child_process';
 
 export class Watson {
   constructor(bundle) {
@@ -16,88 +17,103 @@ export class Watson {
    * Verify Holmes's evidence independently
    */
   verify() {
+    return this.renderVerification(this.verificationData());
+  }
+
+  verificationData() {
+    const examinedAt = new Date().toISOString();
+    const citations = this.verifyCitations();
+    const verificationRate = citations.total > 0 ? citations.verified / citations.total : 0;
+    const mathCheck = this.verifyMath();
+    const inconsistencies = this.checkInconsistencies();
+    const opinion = this.buildOpinion(verificationRate, inconsistencies.length === 0);
+    return {
+      metadata: {
+        examinedAt,
+        sha: this.sha
+      },
+      citations: {
+        total: citations.total,
+        verified: citations.verified,
+        failed: citations.failed,
+        unverified: citations.unverified,
+        rate: verificationRate
+      },
+      math: {
+        claimedScs: this.bundle.scores.scores.scs,
+        recalculatedScs: mathCheck.scs,
+        difference: this.bundle.scores.scores.scs - mathCheck.scs,
+        acceptable: Math.abs(this.bundle.scores.scores.scs - mathCheck.scs) < 0.01
+      },
+      inconsistencies,
+      opinion
+    };
+  }
+
+  renderVerification(data) {
     const report = [];
-    
-    report.push('════════════════════════════════════════════════════════════════════');
-    report.push('         DR. WATSON\'S INDEPENDENT VERIFICATION REPORT');
-    report.push('         Medical Examination of Evidence');
-    report.push('════════════════════════════════════════════════════════════════════');
-    report.push(`Examination Date: ${new Date().toISOString()}`);
-    report.push(`Patient SHA: ${this.sha}`);
-    report.push('════════════════════════════════════════════════════════════════════');
+    report.push('### 🩺 Dr. Watson\'s Independent Verification Report');
     report.push('');
-    
+    report.push('_Medical Examination of Evidence_');
+    report.push('');
+    report.push(`- Examination Date: ${data.metadata.examinedAt}`);
+    report.push(`- Patient SHA: ${data.metadata.sha}`);
+    report.push('');
     report.push('## 🔬 Citation Verification');
     report.push('');
     report.push('"Let me examine each piece of evidence independently..."');
     report.push('');
-    
-    const results = this.verifyCitations();
-    
-    report.push(`- **Citations Examined**: ${results.total}`);
-    report.push(`- **Verified**: ${results.verified} ✅`);
-    report.push(`- **Failed**: ${results.failed} ❌`);
-    report.push(`- **Unable to Verify**: ${results.unverified}`);
+    report.push(`- **Citations Examined**: ${data.citations.total}`);
+    report.push(`- **Verified**: ${data.citations.verified} ✅`);
+    report.push(`- **Failed**: ${data.citations.failed} ❌`);
+    report.push(`- **Unable to Verify**: ${data.citations.unverified}`);
     report.push('');
-    
-    const verificationRate = results.total > 0 
-      ? (results.verified / results.total * 100).toFixed(1)
-      : 0;
-    
-    report.push(`**Verification Rate**: ${verificationRate}%`);
+    report.push(`**Verification Rate**: ${(data.citations.rate * 100).toFixed(1)}%`);
     report.push('');
-    
-    // Mathematical verification
     report.push('## 📊 Mathematical Verification');
     report.push('');
     report.push('"I shall recalculate Holmes\'s arithmetic..."');
     report.push('');
-    
-    const mathCheck = this.verifyMath();
-    report.push(`Holmes claimed SCS: ${(this.bundle.scores.scores.scs * 100).toFixed(1)}%`);
-    report.push(`Watson calculates: ${(mathCheck.scs * 100).toFixed(1)}%`);
-    report.push(`Difference: ${Math.abs(this.bundle.scores.scores.scs - mathCheck.scs) < 0.01 ? '✅ Negligible' : '⚠️ Significant'}`);
+    report.push(`Holmes claimed SCS: ${(data.math.claimedScs * 100).toFixed(1)}%`);
+    report.push(`Watson calculates: ${(data.math.recalculatedScs * 100).toFixed(1)}%`);
+    report.push(`Difference: ${data.math.acceptable ? '✅ Negligible' : '⚠️ Significant'}`);
     report.push('');
-    
-    // Consistency checks
     report.push('## 🔍 Consistency Analysis');
     report.push('');
     report.push('"Checking for contradictions in Holmes\'s deductions..."');
     report.push('');
-    
-    const inconsistencies = this.checkInconsistencies();
-    if (inconsistencies.length === 0) {
+    if (data.inconsistencies.length === 0) {
       report.push('✅ No logical inconsistencies detected');
     } else {
-      for (const issue of inconsistencies) {
+      for (const issue of data.inconsistencies) {
         report.push(`⚠️ ${issue}`);
       }
     }
-    
     report.push('');
-    
-    // Medical opinion
     report.push('## 🩺 Dr. Watson\'s Medical Opinion');
     report.push('');
-    
-    if (verificationRate >= 80 && inconsistencies.length === 0) {
-      report.push('**VERIFICATION: PASSED** ✅');
-      report.push('');
-      report.push('"I have examined Holmes\'s evidence independently and concur with his"');
-      report.push('"deductions. The investigation is thorough and the conclusions sound."');
-    } else {
-      report.push('**VERIFICATION: CONCERNS NOTED** ⚠️');
-      report.push('');
-      report.push('"While Holmes\'s methods are generally sound, I have noted some"');
-      report.push('"discrepancies that warrant further investigation."');
-    }
-    
+    report.push(data.opinion.markdown);
     report.push('');
     report.push('Respectfully submitted,');
     report.push('- Dr. J. Watson, M.D.');
     report.push('  Medical Examiner & Verification Specialist');
-    
     return report.join('\n');
+  }
+
+  buildOpinion(rate, noIssues) {
+    const passed = rate >= 0.8 && noIssues;
+    if (passed) {
+      return {
+        verdict: 'PASSED',
+        message: 'Evidence independently verified; conclusions concur.',
+        markdown: '**VERIFICATION: PASSED** ✅\n\n"I have examined Holmes\'s evidence independently and concur with his"\n"deductions. The investigation is thorough and the conclusions sound."'
+      };
+    }
+    return {
+      verdict: 'CONCERNS',
+      message: 'Discrepancies detected; further investigation recommended.',
+      markdown: '**VERIFICATION: CONCERNS NOTED** ⚠️\n\n"While Holmes\'s methods are generally sound, I have noted some"\n"discrepancies that warrant further investigation."'
+    };
   }
 
   verifyCitations() {
@@ -106,28 +122,46 @@ export class Watson {
     let failed = 0;
     let unverified = 0;
     
-    for (const [uid, evidence] of Object.entries(this.evidence.evidence || {})) {
-      for (const [kind, locations] of Object.entries(evidence)) {
+    for (const evidence of Object.values(this.evidence.evidence || {})) {
+      for (const locations of Object.values(evidence)) {
         for (const loc of locations) {
           total++;
-          
-          // Verify SHA matches
+
           if (loc.sha !== this.sha) {
             failed++;
             continue;
           }
-          
-          // Verify file exists (if local)
+
+          let gitContent = null;
+          try {
+            gitContent = execSync(`git show ${loc.sha}:${loc.file}`, { encoding: 'utf8' });
+          } catch (err) {
+            console.warn('[Watson] git show failed:', err?.message);
+            failed++;
+            continue;
+          }
+
+          let localContent = null;
           if (existsSync(loc.file)) {
+            try {
+              localContent = readFileSync(loc.file, 'utf8');
+            } catch (err) {
+              console.warn('[Watson] Unable to read local file:', err?.message);
+            }
+          }
+
+          if (localContent !== null && localContent === gitContent) {
             verified++;
-          } else {
-            // Can't verify but SHA is correct
+          } else if (localContent === null) {
+            // We trust the git snapshot even if workspace lacks the file
             unverified++;
+          } else {
+            failed++;
           }
         }
       }
     }
-    
+
     return { total, verified, failed, unverified };
   }
 

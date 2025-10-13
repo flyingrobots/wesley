@@ -236,15 +236,22 @@ npm install -g @wesley/holmes
 # Run investigation
 holmes investigate
 
+# Emit machine-readable JSON alongside markdown
+holmes investigate --json holmes-report.json > holmes-report.md
+
 # WATSON verification
-holmes verify
+holmes verify --json watson-report.json > watson-report.md
 
 # MORIARTY predictions
-holmes predict
+holmes predict --json moriarty-report.json > moriarty-report.md
 
 # Combined report
-holmes report
+holmes report --json holmes-suite.json > holmes-suite.md
+
+# All commands accept --json <path> to persist structured output
 ```
+
+The JSON documents contain the same information rendered in the markdown (investigation metadata, evidence tables, verification stats, velocity analysis, etc.) and are ideal for downstream automation.
 
 ## CI/CD Integration
 
@@ -261,18 +268,81 @@ jobs:
   holmes-investigate:
     needs: wesley-generate
     steps:
-      - run: wesley investigate --weighted
-      
+      - uses: ./.github/actions/holmes-setup
+      - run: |
+          holmes investigate \
+            --json holmes-report.json > holmes-report.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: holmes-report
+          path: |
+            holmes-report.md
+            holmes-report.json
+
   watson-verify:
     needs: holmes-investigate
     steps:
-      - run: wesley verify --independent
-      
+      - uses: ./.github/actions/holmes-setup
+      - run: |
+          holmes verify \
+            --json watson-report.json > watson-report.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: watson-report
+          path: |
+            watson-report.md
+            watson-report.json
+
   moriarty-predict:
     needs: watson-verify
     steps:
-      - run: wesley predict --eta production
+      - uses: ./.github/actions/holmes-setup
+      - run: |
+          holmes predict \
+            --json moriarty-report.json > moriarty-report.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: moriarty-report
+          path: |
+            moriarty-report.md
+            moriarty-report.json
+
+  comment-reports:
+    needs: [holmes-investigate, watson-verify, moriarty-predict]
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          path: reports
+      - name: Post summary comment
+        run: node .github/scripts/holmes-comment.mjs # combines markdown sections
 ```
+
+The GitHub comment highlights the markdown narratives and links directly to the JSON artifacts so other workflows (or local tooling) can consume structured results without scraping text.
+
+## Machine-Readable Reports
+
+- `holmes-report.json` – investigation summary, weighted evidence table, gate results, verdict metadata
+- `watson-report.json` – citation verification counts, recalculated SCS, inconsistencies, opinion verdict
+- `moriarty-report.json` – latest score snapshot, blended velocity, optional ETA windows, detected patterns, recent history
+
+These files live under the HOLMES workflow artifacts (flat files, no subdirectories) and mirror the markdown comment content. The combined `holmes report --json holmes-suite.json` command is convenient for local dashboards.
+
+## History Hydration & Caching
+
+- Each `wesley generate --emit-bundle` appends a point to `.wesley/history.json` (day, timestamp, SCS/TCI/MRI).
+- When MORIARTY runs in CI, the CLI merges local history, the merge-base snapshot (`git show <merge-base>:.wesley/history.json`), and a GitHub Actions cache keyed by commit SHA (with branch/base fallbacks). This gives predictions continuity across branch reruns.
+
+## Customising Weighting
+
+HOLMES inspects environment variables at runtime:
+
+| Variable | Purpose |
+|----------|---------|
+| `WESLEY_HOLMES_WEIGHTS` | JSON string mapping substrings → weights, e.g. `{"password":12,"default":4}` |
+| `WESLEY_HOLMES_WEIGHT_FILE` | Path to a JSON file with the same structure |
+
+If neither is provided HOLMES uses the defaults listed earlier. This allows teams to tune SCS weights without forking the core.
 
 ## Security Gates
 

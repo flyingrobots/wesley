@@ -1,0 +1,118 @@
+name: Setup HOLMES Environment
+description: Install dependencies, restore Moriarty history, download bundle, regenerate if missing.
+inputs:
+  bundle-dir:
+    description: Path to the .wesley bundle directory
+    required: false
+    default: example/.wesley
+  schema:
+    description: Path to the schema SDL used for generation
+    required: false
+    default: example/ecommerce.graphql
+  ops-dir:
+    description: Path to the ops directory (relative to schema directory)
+    required: false
+    default: ./ops
+  out-dir:
+    description: Generation output directory (relative to schema directory)
+    required: false
+    default: out
+  artifact-name:
+    description: Name of the artifact containing the HOLMES bundle
+    required: false
+    default: wesley-bundle
+  always-generate:
+    description: Force regeneration even if artifacts are available
+    required: false
+    default: 'false'
+runs:
+  using: composite
+  steps:
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'pnpm'
+
+    - name: Install workspace
+      shell: bash
+      run: pnpm install
+
+    - name: Ensure bundle directory
+      shell: bash
+      run: mkdir -p "${{ inputs.bundle-dir }}"
+
+    - name: Restore Moriarty cache
+      id: moriarty-cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ inputs.bundle-dir }}/history.json
+        key: moriarty-${{ github.sha }}
+        restore-keys: |
+          moriarty-${{ github.ref }}-
+          moriarty-${{ github.base_ref }}-
+          moriarty-main-
+
+    - name: Download bundle artifact
+      uses: actions/download-artifact@v4
+      continue-on-error: true
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: holmes-artifacts
+
+    - name: Sync bundle artifact
+      shell: bash
+      run: |
+        if [ -d holmes-artifacts ]; then
+          shopt -s globstar
+          for f in holmes-artifacts/**/*; do
+            if [ -f "$f" ]; then
+              rel="${f#holmes-artifacts/}"
+              target="${{ inputs.bundle-dir }}/$rel"
+              mkdir -p "$(dirname "$target")"
+              cp "$f" "$target"
+            fi
+          done
+          rm -rf holmes-artifacts
+        fi
+
+    - name: Ensure HOLMES bundle
+      shell: bash
+      run: |
+        if [ ! -f "${{ inputs.bundle-dir }}/bundle.json" ]; then
+          SCHEMA_DIR="$(dirname "${{ inputs.schema }}")"
+          SCHEMA_FILE="$(basename "${{ inputs.schema }}")"
+          pushd "$SCHEMA_DIR" >/dev/null
+          node ../packages/wesley-host-node/bin/wesley.mjs generate \
+            --schema "$SCHEMA_FILE" \
+            --emit-bundle \
+            --ops "${{ inputs.ops-dir }}" \
+            --allow-dirty \
+            --out-dir "${{ inputs.out-dir }}"
+          popd >/dev/null
+        fi
+
+    - name: Force regeneration
+      if: ${{ inputs.always-generate == 'true' }}
+      shell: bash
+      run: |
+        SCHEMA_DIR="$(dirname "${{ inputs.schema }}")"
+        SCHEMA_FILE="$(basename "${{ inputs.schema }}")"
+        pushd "$SCHEMA_DIR" >/dev/null
+        node ../packages/wesley-host-node/bin/wesley.mjs generate \
+          --schema "$SCHEMA_FILE" \
+          --emit-bundle \
+          --ops "${{ inputs.ops-dir }}" \
+          --allow-dirty \
+          --out-dir "${{ inputs.out-dir }}"
+        popd >/dev/null
+
+    - name: Save Moriarty cache
+      if: ${{ always() && steps.moriarty-cache.outputs.cache-hit != 'true' && hashFiles(format('{0}/history.json', inputs.bundle-dir)) != '' }}
+      uses: actions/cache/save@v4
+      with:
+        path: ${{ inputs.bundle-dir }}/history.json
+        key: moriarty-${{ github.sha }}
