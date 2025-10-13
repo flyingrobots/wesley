@@ -13,6 +13,7 @@ class WesleyParseError extends Error {
   constructor(message, directive = null, field = null) {
     super(message);
     this.name = 'PARSE_FAILED';
+    this.code = 'PARSE_FAILED';
     this.directive = directive;
     this.field = field;
   }

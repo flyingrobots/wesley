@@ -24,7 +24,9 @@ EOF
   create_schema
   run node "$CLI_PATH" rehearse --schema schema.graphql --dry-run --json
   assert_success
-  echo "$output" | jq -e '.plan and .explain' >/dev/null
-  echo "$output" | jq -e '.explain.steps | length >= 1' >/dev/null
+  local json
+  json=$(echo "$output" | jq -s 'map(select(has("plan"))) | first')
+  [[ -n "$json" ]] || fail "No JSON output with plan data"
+  echo "$json" | jq -e '.plan and .explain' >/dev/null
+  echo "$json" | jq -e '.explain.steps | length >= 1' >/dev/null
 }
-

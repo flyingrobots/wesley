@@ -24,11 +24,13 @@ EOF
   create_schema
   run node "$CLI_PATH" plan --schema schema.graphql --explain --json
   assert_success
+  local json
+  json=$(echo "$output" | jq -s 'map(select(has("plan"))) | first')
+  [[ -n "$json" ]] || fail "No JSON output with plan data"
   # Has plan + explain keys
-  echo "$output" | jq -e '.plan and .explain' >/dev/null
+  echo "$json" | jq -e '.plan and .explain' >/dev/null
   # Contains CIC step
-  echo "$output" | jq -e '.explain.steps | map(select(.op=="create_index_concurrently")) | length > 0' >/dev/null
+  echo "$json" | jq -e '.explain.steps | map(select(.op=="create_index_concurrently")) | length > 0' >/dev/null
   # Contains validate_fk step
-  echo "$output" | jq -e '.explain.steps | map(select(.op=="validate_fk")) | length > 0' >/dev/null
+  echo "$json" | jq -e '.explain.steps | map(select(.op=="validate_fk")) | length > 0' >/dev/null
 }
-

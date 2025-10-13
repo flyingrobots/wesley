@@ -9,6 +9,9 @@ CANONICAL NAMESPACE: @wes_* (preferred)
 Legacy aliases: @wesley_* and bare names (@table, @pk) supported with deprecation warnings
 """
 
+# Shared scalars used by directives
+scalar JSON
+
 # ═══════════════════════════════════════════════════════════════════
 # CORE DIRECTIVES - Table and Field Markers (Canonical @wes_ namespace)
 # ═══════════════════════════════════════════════════════════════════

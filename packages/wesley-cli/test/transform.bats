@@ -37,8 +37,7 @@ EOF
 
 @test "transform runs successfully on minimal schema" {
   create_min_schema
-  run node "$CLI_PATH" transform --schema schema.graphql --out out
+  run node "$CLI_PATH" transform --schema schema.graphql --out-dir out
   assert_success
   # Out directory should exist (writer stubs may create files)
 }
-
