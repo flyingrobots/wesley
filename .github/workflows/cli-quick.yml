@@ -5,11 +5,10 @@ name: Wesley CLI Quick Check
 
 on:
   push:
-    paths:
-      - 'packages/wesley-cli/**'
+    branches:
+      - main
   pull_request:
-    paths:
-      - 'packages/wesley-cli/**'
+    types: [opened, synchronize, reopened]
 
 env:
   FORCE_COLOR: 1
@@ -25,16 +24,33 @@ jobs:
       with:
         submodules: recursive  # For Bats plugins
 
+    - name: Detect CLI changes
+      id: changes
+      uses: dorny/paths-filter@v3
+      with:
+        filters: |
+          cli:
+            - 'packages/wesley-cli/**'
+
+    - name: Skip check (no CLI changes)
+      if: steps.changes.outputs.cli != 'true'
+      run: |
+        echo "No changes under packages/wesley-cli; skipping quick CLI tests."
+        echo "::notice title=Quick Check Skipped::No CLI changes detected"
+
     - name: Setup pnpm
+      if: steps.changes.outputs.cli == 'true'
       uses: pnpm/action-setup@v4
 
     - name: Setup Node.js (LTS)
+      if: steps.changes.outputs.cli == 'true'
       uses: actions/setup-node@v4
       with:
         node-version: '20'
         cache: 'pnpm'
 
     - name: Install Bats
+      if: steps.changes.outputs.cli == 'true'
       run: |
         curl -LO https://github.com/bats-core/bats-core/archive/v1.12.0.tar.gz
         tar -xzf v1.12.0.tar.gz
@@ -42,10 +58,12 @@ jobs:
         echo "/usr/local/bin" >> $GITHUB_PATH
 
     - name: Install dependencies
+      if: steps.changes.outputs.cli == 'true'
       run: |
         pnpm install --frozen-lockfile
 
     - name: Initialize git for CLI tests
+      if: steps.changes.outputs.cli == 'true'
       run: |
         cd packages/wesley-cli  
         git init .
@@ -55,12 +73,14 @@ jobs:
         git commit -m "CI test commit" || echo "Nothing to commit"
 
     - name: Run CLI tests
+      if: steps.changes.outputs.cli == 'true'
       run: |
         cd packages/wesley-cli
         echo "🧪 Running Wesley CLI Tests..."
         pnpm test
 
     - name: Smoke test CLI functionality
+      if: steps.changes.outputs.cli == 'true'
       run: |
         cd packages/wesley-cli
         echo ""
@@ -75,6 +95,7 @@ jobs:
         echo 'type Query { hello: String }' | node ../wesley-host-node/bin/wesley.mjs generate --schema - --json --quiet || echo "✓ Expected parser failure" || true
 
     - name: Success notification
+      if: steps.changes.outputs.cli == 'true'
       run: |
         echo "✅ Wesley CLI quick check passed!"
         echo "All 12 end-to-end tests successful"
