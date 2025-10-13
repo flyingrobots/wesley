@@ -62,35 +62,6 @@ export class GeneratePipelineCommand extends WesleyCommand {
 
     logger.info({ schema: schemaPath }, 'Parsing schema...');
 
-    // Experimental ops: validate presence of operation documents if --ops provided
-    if (options.ops) {
-      try {
-        const opsDir = options.ops;
-        const fs = this.ctx.fs;
-        const exists = await fs.exists(opsDir);
-        if (!exists) {
-          logger.warn({ opsDir }, 'Experimental --ops: directory not found; skipping ops validation');
-        } else {
-          // naive scan for .graphql files
-          // We avoid Node-specific APIs: rely on adapter for a minimal read attempt
-          // Try common filenames
-          const candidates = ['queries.graphql', 'operations.graphql'];
-          let found = false;
-          for (const c of candidates) {
-            const p = await fs.join(opsDir, c);
-            if (await fs.exists(p)) { found = true; break; }
-          }
-          if (!found) {
-            logger.info({ opsDir }, 'Experimental --ops: no known op files found; continue (no-op)');
-          } else {
-            logger.info({ opsDir }, 'Experimental --ops detected; future versions will compile operations to SQL (QIR).');
-          }
-        }
-      } catch (e) {
-        logger.warn('Experimental --ops validation failed: ' + (e?.message || e));
-      }
-    }
-
     // Use injected generators and writer
     const { generators, writer, planner, runner } = this.ctx;
     
