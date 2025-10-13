@@ -201,8 +201,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
       }
     }
     
-    // Compile operations behind --ops (experimental)
-    await this.compileOpsIfRequested(context);
+    await this.postGenerationHooks(context);
 
     // Output results
     if (!options.quiet && !options.json) {
@@ -269,14 +268,17 @@ export class GeneratePipelineCommand extends WesleyCommand {
     // Execute with S.L.A.P.S.
     const result = await runner.run(plan, { handlers, logger });
 
-    // After main generation, compile operations if requested
-    await this.compileOpsIfRequested(context);
+    await this.postGenerationHooks(context);
     
     if (!options.quiet && !options.json) {
       logger.info('✨ Generation complete!');
     }
     
     return result;
+  }
+
+  async postGenerationHooks(context) {
+    await this.compileOpsIfRequested(context);
   }
 
   async compileOpsIfRequested(context) {
