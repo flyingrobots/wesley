@@ -284,3 +284,4 @@ Hand‑off instructions for the next agent
 - Add generator wrappers in `createNodeRuntime` that expose `emitModels/emitZod/emitTs` via `@wesley/generator-js` and honor workspace dirs.
 - Rework CLI tests to target `rls.sql` under `--supabase` and add regression coverage for reinstated commands.
 - Document revived commands + dependency expectations in README/architecture notes.
+{"date":"2025-10-13","time":"22:34Z","who":"Codex","summary":"Scoring bundle v2 with SCS/TCI/MRI breakdowns and validated HOLMES output","commits":["9f86006","0e4ac2f","dc6a6a9"],"ci_status":"preflight + holmes tests + bats green","highlights":["Core scoring engine now emits sub-metrics and bundleVersion 2.0","HOLMES CLI/render schema updated to surface new breakdown tables","Added go-public issue #56 for ops e2e evidence tracking"]}
