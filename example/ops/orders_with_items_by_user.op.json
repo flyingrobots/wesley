@@ -8,7 +8,7 @@
   "lists": [
     {
       "alias": "items",
-      "table": "order_item",
+      "table": "orderitem",
       "match": { "local": "id", "foreign": "order_id" },
       "select": ["id", "product_id", "quantity"],
       "orderBy": [ { "column": "id", "dir": "asc" } ]
@@ -17,4 +17,3 @@
   "orderBy": [ { "column": "created_at", "dir": "desc" } ],
   "limit": 100
 }
-

@@ -47,7 +47,7 @@ Nested list (LATERAL + jsonb_agg):
   "lists": [
     {
       "alias": "items",
-      "table": "order_item",
+      "table": "orderitem",
       "match": { "local": "id", "foreign": "order_id" },
       "select": ["id", "product_id", "quantity"],
       "orderBy": [ { "column": "id", "dir": "asc" } ]
