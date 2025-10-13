@@ -32,14 +32,15 @@ export class Holmes {
   }
 
   investigationData() {
+    const scores = this.extractScores();
     const summary = {
       generatedAt: this.bundle.timestamp,
       sha: this.sha,
-      weightedCompletion: this.scores.scores.scs,
+      weightedCompletion: scores.scs,
       verificationCount: this.countVerifications(),
-      verificationStatus: this.scores.readiness.verdict,
-      tci: this.scores.scores.tci,
-      mri: this.scores.scores.mri
+      verificationStatus: this.scores?.readiness?.verdict ?? 'UNKNOWN',
+      tci: scores.tci,
+      mri: scores.mri
     };
 
     const elements = [];
@@ -63,6 +64,7 @@ export class Holmes {
 
     return {
       metadata: summary,
+      scores,
       evidence: elements,
       gates,
       verdict
@@ -85,6 +87,7 @@ export class Holmes {
     lines.push('"Watson, after careful examination of the evidence, I deduce..."');
     lines.push('');
     lines.push(`**Weighted Completion**: ${this.progressBar(metadata.weightedCompletion)} ${(metadata.weightedCompletion * 100).toFixed(1)}%`);
+    lines.push(`**Scores**: SCS ${(data.scores.scs * 100).toFixed(1)}% · TCI ${(data.scores.tci * 100).toFixed(1)}% · MRI ${(data.scores.mri * 100).toFixed(1)}%`);
     lines.push(`**Verification Status**: ${metadata.verificationCount} claims verified`);
     lines.push(`**Ship Verdict**: ${metadata.verificationStatus}`);
     lines.push('');
@@ -146,6 +149,15 @@ export class Holmes {
   }
 
   // Helper methods
+  extractScores() {
+    const source = this.scores?.scores ?? {};
+    return {
+      scs: typeof source.scs === 'number' ? source.scs : 0,
+      tci: typeof source.tci === 'number' ? source.tci : 0,
+      mri: typeof source.mri === 'number' ? source.mri : 0
+    };
+  }
+
   countVerifications() {
     let count = 0;
     for (const evidence of Object.values(this.evidence.evidence || {})) {

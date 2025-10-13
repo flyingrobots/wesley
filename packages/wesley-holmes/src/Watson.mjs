@@ -132,14 +132,17 @@ export class Watson {
             continue;
           }
 
-          let gitContent = null;
-          try {
-            gitContent = execSync(`git show ${loc.sha}:${loc.file}`, { encoding: 'utf8' });
-          } catch (err) {
-            console.warn('[Watson] git show failed:', err?.message);
+          const snapshot = this.safeGitShow(loc.sha, loc.file);
+          if (snapshot.status === 'missing') {
+            unverified++;
+            continue;
+          }
+          if (snapshot.status === 'error') {
+            console.warn('[Watson] Unexpected git failure:', snapshot.message);
             failed++;
             continue;
           }
+          const gitContent = snapshot.content;
 
           let localContent = null;
           if (existsSync(loc.file)) {
@@ -221,5 +224,24 @@ export class Watson {
     if (uid.includes('created')) return 5;
     if (uid.includes('theme')) return 2;
     return 5;
+  }
+
+  safeGitShow(sha, file) {
+    try {
+      const content = execSync(`git show ${sha}:${file}`, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+      return { status: 'ok', content };
+    } catch (error) {
+      const stderr = error?.stderr ? error.stderr.toString() : '';
+      const message = stderr || error?.message || '';
+      const nonFatalPatterns = [
+        'not a git repository',
+        'does not exist in',
+        'exists on disk'
+      ];
+      if (nonFatalPatterns.some(pattern => message.includes(pattern)) || sha === 'unknown') {
+        return { status: 'missing' };
+      }
+      return { status: 'error', message: message.trim() };
+    }
   }
 }

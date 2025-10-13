@@ -34,13 +34,13 @@ teardown() {
     assert_file_exists moriarty.json
     assert_file_exists moriarty.md
 
-    run node -e "const fs=require('fs'); const data=JSON.parse(fs.readFileSync('holmes.json','utf8')); if(!data.scores) throw new Error('missing scores'); ['scs','tci','mri'].forEach(k=>{ if(typeof data.scores[k] !== 'number') throw new Error('missing scores.'+k); }); if(!data.verdict || !data.verdict.code) throw new Error('missing verdict');"
+    run node -e "const fs=require('fs'); const data=JSON.parse(fs.readFileSync('holmes.json','utf8')); if(!data.metadata || !data.metadata.verificationStatus) throw new Error('missing metadata'); if(typeof data.metadata.verificationCount !== 'number') throw new Error('verificationCount missing'); if(!data.scores) throw new Error('missing scores'); ['scs','tci','mri'].forEach(k=>{ if(typeof data.scores[k] !== 'number') throw new Error('missing scores.'+k); }); if(!Array.isArray(data.evidence)) throw new Error('evidence array missing'); if(!data.verdict || !data.verdict.code) throw new Error('missing verdict');"
     assert_success
 
     run node -e "const fs=require('fs'); const data=JSON.parse(fs.readFileSync('watson.json','utf8')); if(!data.citations || typeof data.citations.total !== 'number') throw new Error('missing citations'); if(!data.math || typeof data.math.claimedScs !== 'number') throw new Error('missing math'); if(!data.opinion || !data.opinion.verdict) throw new Error('missing opinion');"
     assert_success
 
-    run node -e "const fs=require('fs'); const data=JSON.parse(fs.readFileSync('moriarty.json','utf8')); if(!data.status) throw new Error('missing status'); if(!('history' in data)) throw new Error('missing history field');"
+    run node -e "const fs=require('fs'); const data=JSON.parse(fs.readFileSync('moriarty.json','utf8')); if(!data.status) throw new Error('missing status'); if(!Array.isArray(data.history)) throw new Error('history must be array');"
     assert_success
 
     run test -s holmes.md

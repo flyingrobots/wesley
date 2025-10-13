@@ -7,6 +7,12 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { Holmes } from './Holmes.mjs';
 import { Watson } from './Watson.mjs';
 import { Moriarty } from './Moriarty.mjs';
+import {
+  holmesReportSchema,
+  watsonReportSchema,
+  moriartyReportSchema,
+  validateReport
+} from './report-schemas.mjs';
 
 function parseArgs(raw) {
   const args = [...raw];
@@ -40,6 +46,15 @@ function loadHistory() {
   }
 }
 
+function validateOrExit(label, schema, data) {
+  const { valid, errors } = validateReport(schema, data);
+  if (!valid) {
+    const detail = errors.map(err => ` - ${err}`).join('\n');
+    console.error(`[${label}] Report validation failed:\n${detail}`);
+    process.exit(1);
+  }
+}
+
 async function main() {
   const { command, options } = parseArgs(process.argv.slice(2));
   switch (command) {
@@ -47,28 +62,31 @@ async function main() {
       const bundle = loadBundle();
       const holmes = new Holmes(bundle);
       const data = holmes.investigationData();
+      validateOrExit('HOLMES', holmesReportSchema, data);
       if (options.json) {
         writeFileSync(options.json, JSON.stringify(data, null, 2));
       }
       console.log(holmes.renderInvestigation(data));
       break;
     }
-    
+
     case 'verify': {
       const bundle = loadBundle();
       const watson = new Watson(bundle);
       const data = watson.verificationData();
+      validateOrExit('WATSON', watsonReportSchema, data);
       if (options.json) {
         writeFileSync(options.json, JSON.stringify(data, null, 2));
       }
       console.log(watson.renderVerification(data));
       break;
     }
-    
+
     case 'predict': {
       const history = loadHistory();
       const moriarty = new Moriarty(history);
       const data = moriarty.predictionData();
+      validateOrExit('MORIARTY', moriartyReportSchema, data);
       if (options.json) {
         writeFileSync(options.json, JSON.stringify(data, null, 2));
       }
@@ -86,6 +104,10 @@ async function main() {
       const holmesData = holmes.investigationData();
       const watsonData = watson.verificationData();
       const moriartyData = moriarty.predictionData();
+
+      validateOrExit('HOLMES', holmesReportSchema, holmesData);
+      validateOrExit('WATSON', watsonReportSchema, watsonData);
+      validateOrExit('MORIARTY', moriartyReportSchema, moriartyData);
 
       if (options.json) {
         writeFileSync(options.json, JSON.stringify({

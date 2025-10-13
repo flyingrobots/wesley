@@ -19,13 +19,24 @@ export class Moriarty {
 
   predictionData() {
     const analysisAt = new Date().toISOString();
+    const historyPoints = Array.isArray(this.history?.points) ? this.history.points : [];
+    const recentHistory = historyPoints.slice(-7).map(point => ({
+      timestamp: point.timestamp ?? this.formatDateString(point.day),
+      scs: point.scs ?? 0,
+      tci: point.tci ?? 0,
+      mri: point.mri ?? 0
+    }));
     const base = {
       metadata: {
         analysisAt
-      }
+      },
+      history: recentHistory,
+      plateauDetected: false,
+      regressionDetected: false,
+      patterns: []
     };
 
-    if (!this.history.points || this.history.points.length < 2) {
+    if (!historyPoints || historyPoints.length < 2) {
       return {
         ...base,
         status: 'INSUFFICIENT_DATA',
@@ -59,13 +70,6 @@ export class Moriarty {
       confidence = Math.max(0, Math.min(100, 100 - variance * 120));
     }
 
-    const recentHistory = this.history.points.slice(-7).map(point => ({
-      timestamp: point.timestamp,
-      scs: point.scs,
-      tci: point.tci,
-      mri: point.mri
-    }));
-
     return {
       ...base,
       status: 'OK',
@@ -78,8 +82,7 @@ export class Moriarty {
       regressionDetected: regression,
       eta,
       confidence,
-      patterns: this.detectPatterns(),
-      history: recentHistory
+      patterns: this.detectPatterns()
     };
   }
 
@@ -261,8 +264,17 @@ export class Moriarty {
   }
 
   makeProgressBar(value) {
-    const filled = Math.round(value * 10);
+    const clamped = Math.min(Math.max(value, 0), 1);
+    const filled = Math.round(clamped * 10);
     return '█'.repeat(filled) + '░'.repeat(10 - filled);
+  }
+
+  formatDateString(day) {
+    if (typeof day === 'number' && Number.isFinite(day)) {
+      const millis = day * 24 * 60 * 60 * 1000;
+      return new Date(millis).toISOString();
+    }
+    return new Date(0).toISOString();
   }
 
   formatDate(date) {
