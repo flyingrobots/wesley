@@ -42,7 +42,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
     const isCI = String(this.ctx?.env?.CI || '').toLowerCase() === 'true' || this.ctx?.env?.CI === '1';
     const canAllowErrors = !isCI || options.iKnowWhatImDoing;
     if (options.opsAllowErrors && !canAllowErrors) {
-      throw opsError('OPS_ALLOW_ERRORS_FORBIDDEN', '--ops-allow-errors is disabled when CI=true; remove the flag or rerun with --i-know-what-im-doing.');
+      throw new OpsError('OPS_ALLOW_ERRORS_FORBIDDEN', '--ops-allow-errors is disabled when CI=true; remove the flag or rerun with --i-know-what-im-doing.');
     }
     if (options.opsAllowErrors && isCI && options.iKnowWhatImDoing) {
       logger.warn({ opsAllowErrors: true }, '--ops-allow-errors acknowledged in CI due to override flag');
@@ -172,7 +172,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
       }
     }
     
-    await this.postGenerationHooks(context);
+    await this.compileOpsIfRequested(context);
 
     // Output results
     if (!options.quiet && !options.json) {
@@ -239,7 +239,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
     // Execute with S.L.A.P.S.
     const result = await runner.run(plan, { handlers, logger });
 
-    await this.postGenerationHooks(context);
+    await this.compileOpsIfRequested(context);
     
     if (!options.quiet && !options.json) {
       logger.info('✨ Generation complete!');
@@ -248,88 +248,55 @@ export class GeneratePipelineCommand extends WesleyCommand {
     return result;
   }
 
-  async postGenerationHooks(context) {
-    await this.compileOpsIfRequested(context);
-  }
-
   async compileOpsIfRequested(context) {
     const { options, logger } = context;
     const opsDir = options.ops;
     if (!opsDir) return;
     try {
       const fs = this.ctx.fs;
-      const exists = await fs.exists(opsDir);
-      if (!exists) {
-        logger.info({ opsDir }, 'Experimental --ops: directory not found; skipping');
-        return;
-      }
-      // Find *.op.json files (MVP DSL)
-      const dirEntries = await fs.readDir?.(opsDir);
-      const files = Array.isArray(dirEntries)
-        ? await Promise.all(
-            dirEntries
-              .filter(f => f.name?.endsWith?.('.op.json'))
-              .map(async f => f.path || await fs.join(opsDir, f.name))
-          )
-        : [];
+      const files = await findOpFiles(fs, opsDir, logger);
       if (files.length === 0) {
-        logger.info({ opsDir }, 'Experimental --ops: no *.op.json files found; skipping');
         return;
       }
-      // Use default code-point ordering for locale-invariant sorting
-      files.sort();
       const outDir = options.outDir || 'out';
       const targetSchema = options.opsSchema || 'wes_ops';
+      const allowErrors = Boolean(options.opsAllowErrors);
       const compiledOps = [];
       const collisions = new Map();
-      const allowErrors = Boolean(options.opsAllowErrors);
       const compileErrors = [];
       const skippedErrors = [];
-      for (const path of files) {
-        try {
-          const raw = await fs.read(path);
-          const op = JSON.parse(String(raw));
-          const plan = buildPlanFromJson(op);
-          const baseName = sanitizeOpIdentifier(op.name);
-          const byteLength = Buffer.byteLength(baseName, 'utf8');
-          if (byteLength > POSTGRESQL_IDENTIFIER_LIMIT) {
-            throw opsError(
-              'OPS_IDENTIFIER_TOO_LONG',
-              `Sanitized op name "${baseName}" from ${path} exceeds PostgreSQL identifier limit (bytes=${byteLength}, limit=${POSTGRESQL_IDENTIFIER_LIMIT})`,
-              { file: path, sanitized: baseName, bytes: byteLength, limit: POSTGRESQL_IDENTIFIER_LIMIT }
-            );
-          }
-          const seen = collisions.get(baseName) || [];
-          seen.push(path);
-          collisions.set(baseName, seen);
-          if (seen.length > 1) {
-            const err = opsError(
-              'OPS_COLLISION',
-              `Identifier collision detected: "${baseName}" used in ${seen.join(', ')}`,
-              { identifier: baseName, paths: [...seen] }
-            );
-            logger.error(err.meta, err.message);
-            throw err;
-          }
-          const paramCount = (collectParams(plan)?.ordered?.length) || 0;
-          const isParamless = paramCount === 0;
-          compiledOps.push({ baseName, plan, isParamless, path });
-        } catch (e) {
-          if (e?.code === 'OPS_IDENTIFIER_TOO_LONG') {
-            logger.error({ file: path, sanitized: e?.meta?.sanitized, bytes: e?.meta?.bytes }, e.message);
-            throw e;
-          }
-          if (allowErrors) {
-            skippedErrors.push({ file: path, message: e?.message || String(e), code: e?.code });
-            logger.warn({ file: path, code: e?.code }, 'Skipping op due to compile error (allowed)');
-          } else {
-            compileErrors.push({ file: path, message: e?.message || String(e), code: e?.code });
-            logger.warn({ file: path, code: e?.code }, 'Failed to compile op: ' + (e?.message || e));
+      let fileIndex = 0;
+      const workerCount = Math.min(CONCURRENCY_LIMIT, files.length);
+      const workers = Array.from({ length: workerCount }, async () => {
+        for (;;) {
+          const idx = fileIndex++;
+          if (idx >= files.length) break;
+          const path = files[idx];
+          try {
+            const compiled = await compileOpFile(fs, path, collisions, logger);
+            compiledOps.push({ order: idx, ...compiled });
+          } catch (e) {
+            if (e?.code === 'OPS_IDENTIFIER_TOO_LONG') {
+              logger.error(
+                { file: path, sanitized: e?.meta?.sanitized, bytes: e?.meta?.bytes },
+                e.message
+              );
+              throw e;
+            }
+            if (allowErrors) {
+              skippedErrors.push({ file: path, message: e?.message || String(e), code: e?.code });
+              logger.warn({ file: path, code: e?.code }, 'Skipping op due to compile error (allowed)');
+            } else {
+              compileErrors.push({ file: path, message: e?.message || String(e), code: e?.code });
+              logger.warn({ file: path, code: e?.code }, 'Failed to compile op: ' + (e?.message || e));
+            }
           }
         }
-      }
+      });
+      await Promise.all(workers);
+
       if (compileErrors.length > 0) {
-        const err = opsError(
+        const err = new OpsError(
           'OPS_COMPILE_FAILED',
           `Failed to compile ${compileErrors.length} operation(s); see log for details`,
           { failures: compileErrors }
@@ -341,21 +308,9 @@ export class GeneratePipelineCommand extends WesleyCommand {
         logger.warn({ count: skippedErrors.length, failures: skippedErrors }, 'Continuing despite compilation errors due to --ops-allow-errors');
       }
       if (compiledOps.length) {
-        const outFiles = [];
-        const total = compiledOps.length;
-        let ordinal = 0;
-        for (const entry of compiledOps) {
-          ordinal += 1;
-          const { baseName, plan, isParamless, path } = entry;
-          // emitFunction/emitView default to wes_ops; we pass the requested schema explicitly
-          const fnSql = emitFunction(baseName, plan, { schema: targetSchema });
-          if (isParamless) {
-            const viewSql = emitView(baseName, plan, { schema: targetSchema });
-            outFiles.push({ name: `ops/${baseName}.view.sql`, content: viewSql + '\n' });
-          }
-          outFiles.push({ name: `ops/${baseName}.fn.sql`, content: fnSql + '\n' });
-          logger.info({ ordinal, total, sanitized: baseName, file: path, schema: targetSchema, code: 'OPS_DISCOVERY' }, 'ops: compiled operation');
-        }
+        compiledOps.sort((a, b) => a.order - b.order);
+        const orderedOps = compiledOps.map(({ order, ...rest }) => rest);
+        const outFiles = emitOpArtifacts(orderedOps, targetSchema, logger);
         await this.ctx.writer.writeFiles(outFiles, outDir);
         const opsOutputDir = await fs.join(outDir, 'ops');
         logger.info({ count: outFiles.length, dir: opsOutputDir }, 'Compiled operations (experimental)');
@@ -370,7 +325,20 @@ export class GeneratePipelineCommand extends WesleyCommand {
 // Export for testing
 export default GeneratePipelineCommand;
 
+// Limit concurrent file I/O to balance throughput with resource usage.
+const CONCURRENCY_LIMIT = 8;
+// PostgreSQL truncates identifiers to 63 bytes (NAMEDATALEN - 1) and counts UTF-8 byte length.
+// See: https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS
 const POSTGRESQL_IDENTIFIER_LIMIT = 63;
+
+class OpsError extends Error {
+  constructor(code, message, meta = {}) {
+    super(message);
+    this.name = 'OpsError';
+    this.code = code;
+    this.meta = { code, ...meta };
+  }
+}
 
 function sanitizeOpIdentifier(name) {
   const normalized = (name ?? 'unnamed').normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
@@ -380,11 +348,77 @@ function sanitizeOpIdentifier(name) {
   return sanitized;
 }
 
-function opsError(code, message, meta = {}) {
-  const err = new Error(message);
-  err.code = code;
-  err.meta = { code, ...meta };
-  return err;
+async function findOpFiles(fs, opsDir, logger) {
+  const exists = await fs.exists(opsDir);
+  if (!exists) {
+    logger.info({ opsDir }, 'Experimental --ops: directory not found; skipping');
+    return [];
+  }
+  const dirEntries = await fs.readDir?.(opsDir);
+  if (!Array.isArray(dirEntries)) {
+    logger.info({ opsDir }, 'Experimental --ops: no *.op.json files found; skipping');
+    return [];
+  }
+  const candidates = dirEntries.filter(entry => entry.name?.endsWith?.('.op.json'));
+  if (candidates.length === 0) {
+    logger.info({ opsDir }, 'Experimental --ops: no *.op.json files found; skipping');
+    return [];
+  }
+  const files = await Promise.all(
+    candidates.map(async entry => entry.path || await fs.join(opsDir, entry.name))
+  );
+  files.sort(); // Use default code-point ordering for locale-invariant sorting.
+  return files;
+}
+
+async function compileOpFile(fs, path, collisions, logger) {
+  const raw = await fs.read(path);
+  const op = JSON.parse(String(raw));
+  const plan = buildPlanFromJson(op);
+  const baseName = sanitizeOpIdentifier(op.name);
+  const byteLength = Buffer.byteLength(baseName, 'utf8');
+  if (byteLength > POSTGRESQL_IDENTIFIER_LIMIT) {
+    throw new OpsError(
+      'OPS_IDENTIFIER_TOO_LONG',
+      `Sanitized op name "${baseName}" from ${path} exceeds PostgreSQL identifier limit (bytes=${byteLength}, limit=${POSTGRESQL_IDENTIFIER_LIMIT})`,
+      { file: path, sanitized: baseName, bytes: byteLength, limit: POSTGRESQL_IDENTIFIER_LIMIT }
+    );
+  }
+  const seen = collisions.get(baseName) || [];
+  seen.push(path);
+  collisions.set(baseName, seen);
+  if (seen.length > 1) {
+    const err = new OpsError(
+      'OPS_COLLISION',
+      `Identifier collision detected: "${baseName}" used in ${seen.join(', ')}`,
+      { identifier: baseName, paths: [...seen] }
+    );
+    logger.error(err.meta, err.message);
+    throw err;
+  }
+  const paramCount = (collectParams(plan)?.ordered?.length) || 0;
+  return { baseName, plan, isParamless: paramCount === 0, path };
+}
+
+function emitOpArtifacts(compiledOps, targetSchema, logger) {
+  const outFiles = [];
+  const total = compiledOps.length;
+  let ordinal = 0;
+  for (const entry of compiledOps) {
+    ordinal += 1;
+    const { baseName, plan, isParamless, path } = entry;
+    const fnSql = emitFunction(baseName, plan, { schema: targetSchema });
+    if (isParamless) {
+      const viewSql = emitView(baseName, plan, { schema: targetSchema });
+      outFiles.push({ name: `ops/${baseName}.view.sql`, content: `${viewSql}\n` });
+    }
+    outFiles.push({ name: `ops/${baseName}.fn.sql`, content: `${fnSql}\n` });
+    logger.info(
+      { ordinal, total, sanitized: baseName, file: path, schema: targetSchema, code: 'OPS_DISCOVERY' },
+      'ops: compiled operation'
+    );
+  }
+  return outFiles;
 }
 
 // Utilities
