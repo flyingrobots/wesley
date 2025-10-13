@@ -47,7 +47,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
     if (options.opsAllowErrors && isCI && options.iKnowWhatImDoing) {
       logger.warn({ opsAllowErrors: true }, '--ops-allow-errors acknowledged in CI due to override flag');
     }
-    options.opsAllowErrors = !!options.opsAllowErrors && canAllowErrors;
+    options.opsAllowErrors = !!options.opsAllowErrors;
 
     // Handle --stdin convenience flag
     if (options.stdin) {
