@@ -387,27 +387,16 @@ jobs:
             const fs = require('fs');
             const path = require('path');
 
-            const findReport = (artifact, filename) => {
-              const base = path.join('reports', artifact);
-              if (!fs.existsSync(base)) {
-                console.warn(`Artifact directory missing: ${base}`);
-                return `_Report missing for ${artifact}_`;
+            const readReport = (status, artifactDir, filename) => {
+              if (status !== 'success') {
+                return `_Report unavailable: upstream job status **${status}**_`;
               }
-              const stack = [base];
-              while (stack.length) {
-                const current = stack.pop();
-                const entries = fs.readdirSync(current, { withFileTypes: true });
-                for (const entry of entries) {
-                  const fullPath = path.join(current, entry.name);
-                  if (entry.isDirectory()) {
-                    stack.push(fullPath);
-                  } else if (entry.isFile() && entry.name === filename) {
-                    return fs.readFileSync(fullPath, 'utf8');
-                  }
-                }
+              const target = path.join('reports', artifactDir, filename);
+              if (!fs.existsSync(target)) {
+                console.warn(`Expected report file missing: ${target}`);
+                return `_Report missing for ${artifactDir}_`;
               }
-              console.warn(`Expected report file ${filename} in ${base}`);
-              return `_Report missing for ${artifact}_`;
+              return fs.readFileSync(target, 'utf8');
             };
 
             const statuses = {
@@ -416,16 +405,9 @@ jobs:
               moriarty: process.env.MORIARTY_STATUS || 'unknown'
             };
 
-            const reportOrStatus = (status, artifact, filename) => {
-              if (status !== 'success') {
-                return `_Report unavailable: upstream job status **${status}**_`;
-              }
-              return findReport(artifact, filename);
-            };
-
-            const holmes = reportOrStatus(statuses.holmes, 'holmes-report', 'holmes-report.md');
-            const watson = reportOrStatus(statuses.watson, 'watson-report', 'watson-report.md');
-            const moriarty = reportOrStatus(statuses.moriarty, 'moriarty-report', 'moriarty-report.md');
+            const holmes = readReport(statuses.holmes, 'holmes', 'holmes-report.md');
+            const watson = readReport(statuses.watson, 'watson', 'watson-report.md');
+            const moriarty = readReport(statuses.moriarty, 'moriarty', 'moriarty-report.md');
             
             const body = `
             # 🔍 The Case of Pull Request #${{ github.event.pull_request.number }}
