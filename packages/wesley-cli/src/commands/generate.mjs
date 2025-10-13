@@ -396,8 +396,11 @@ const POSTGRESQL_IDENTIFIER_LIMIT = 63;
 const OP_PREFIX_BYTES = Buffer.byteLength('op_', 'utf8');
 
 function sanitizeOpIdentifier(name) {
-  const raw = (name || 'unnamed').toLowerCase().replace(/[^a-z0-9]+/g, '_');
-  return raw || 'unnamed';
+  const normalized = (name ?? 'unnamed').normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
+  const raw = normalized.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  let sanitized = raw || 'unnamed';
+  if (/^[0-9]/.test(sanitized)) sanitized = `_${sanitized}`;
+  return sanitized;
 }
 
 function opsError(code, message, meta = {}) {
