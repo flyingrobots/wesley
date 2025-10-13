@@ -56,6 +56,7 @@ jobs:
             ${{ env.HOLMES_BUNDLE_DIR }}/bundle.json
             ${{ env.HOLMES_BUNDLE_DIR }}/scores.json
             ${{ env.HOLMES_BUNDLE_DIR }}/history.json
+          if-no-files-found: error
           
   holmes-investigate:
     name: "🔍 HOLMES Investigation"
@@ -78,21 +79,22 @@ jobs:
       - name: "🔍 Run Investigation"
         id: holmes
         run: |
+          set -euo pipefail
           SCHEMA_DIR="$(dirname "${HOLMES_SCHEMA}")"
-          cd "$SCHEMA_DIR"
+          pushd "$SCHEMA_DIR" >/dev/null
           node ../packages/wesley-holmes/src/cli.mjs investigate --json holmes-report.json > holmes-report.md
           cat holmes-report.md
-          cd - >/dev/null
-          cp "$SCHEMA_DIR/holmes-report.md" holmes.md
-          cp "$SCHEMA_DIR/holmes-report.json" holmes.json
+          popd >/dev/null
+          mkdir -p reports/holmes
+          cp "$SCHEMA_DIR/holmes-report.md" reports/holmes/holmes-report.md
+          cp "$SCHEMA_DIR/holmes-report.json" reports/holmes/holmes-report.json
           
       - name: "💾 Save Report"
         uses: actions/upload-artifact@v4
         with:
           name: holmes-report
-          path: |
-            holmes.md
-            holmes.json
+          path: reports/holmes
+          if-no-files-found: error
           
   watson-verify:
     name: "🩺 WATSON Verification"
@@ -115,21 +117,22 @@ jobs:
       - name: "🩺 Run Verification"
         id: watson
         run: |
+          set -euo pipefail
           SCHEMA_DIR="$(dirname "${HOLMES_SCHEMA}")"
-          cd "$SCHEMA_DIR"
+          pushd "$SCHEMA_DIR" >/dev/null
           node ../packages/wesley-holmes/src/cli.mjs verify --json watson-report.json > watson-report.md
           cat watson-report.md
-          cd - >/dev/null
-          cp "$SCHEMA_DIR/watson-report.md" watson.md
-          cp "$SCHEMA_DIR/watson-report.json" watson.json
+          popd >/dev/null
+          mkdir -p reports/watson
+          cp "$SCHEMA_DIR/watson-report.md" reports/watson/watson-report.md
+          cp "$SCHEMA_DIR/watson-report.json" reports/watson/watson-report.json
           
       - name: "💾 Save Report"
         uses: actions/upload-artifact@v4
         with:
           name: watson-report
-          path: |
-            watson.md
-            watson.json
+          path: reports/watson
+          if-no-files-found: error
           
   moriarty-predict:
     name: "🔮 MORIARTY Predictions"
@@ -153,21 +156,22 @@ jobs:
       - name: "🔮 Run Predictions"
         id: moriarty
         run: |
+          set -euo pipefail
           SCHEMA_DIR="$(dirname "${HOLMES_SCHEMA}")"
-          cd "$SCHEMA_DIR"
-          node ../packages/wesley-holmes/src/cli.mjs predict --json moriarty-report.json > moriarty-report.md || echo "Insufficient data for predictions" > moriarty-report.md
+          pushd "$SCHEMA_DIR" >/dev/null
+          node ../packages/wesley-holmes/src/cli.mjs predict --json moriarty-report.json > moriarty-report.md
           cat moriarty-report.md
-          cd - >/dev/null
-          cp "$SCHEMA_DIR/moriarty-report.md" moriarty.md
-          cp "$SCHEMA_DIR/moriarty-report.json" moriarty.json
+          popd >/dev/null
+          mkdir -p reports/moriarty
+          cp "$SCHEMA_DIR/moriarty-report.md" reports/moriarty/moriarty-report.md
+          cp "$SCHEMA_DIR/moriarty-report.json" reports/moriarty/moriarty-report.json
           
       - name: "💾 Save Report"
         uses: actions/upload-artifact@v4
         with:
           name: moriarty-report
-          path: |
-            moriarty.md
-            moriarty.json
+          path: reports/moriarty
+          if-no-files-found: error
           
   test-pgtap:
     name: "🧪 pgTAP Tests"
@@ -334,6 +338,10 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     needs: [holmes-investigate, watson-verify, moriarty-predict]
+    env:
+      HOLMES_STATUS: ${{ needs.holmes-investigate.result }}
+      WATSON_STATUS: ${{ needs.watson-verify.result }}
+      MORIARTY_STATUS: ${{ needs.moriarty-predict.result }}
     
     permissions:
       pull-requests: write
@@ -344,7 +352,34 @@ jobs:
         with:
           merge-multiple: true
           path: reports
-      
+
+      - name: "📊 Assemble Dashboard"
+        run: |
+          set -euo pipefail
+          mkdir -p dashboard
+          cp docs/holmes-dashboard/index.html dashboard/index.html
+          missing=0
+          for report in holmes watson moriarty; do
+            src=$(find reports -name "$report-report.json" -print -quit)
+            if [ -z "$src" ]; then
+              echo "Missing $report-report.json" >&2
+              missing=1
+            else
+              cp "$src" "dashboard/$report-report.json"
+            fi
+          done
+          if [ $missing -ne 0 ]; then
+            echo "Dashboard assembly failed due to missing report JSON" >&2
+            exit 1
+          fi
+
+      - name: "📤 Upload Dashboard"
+        uses: actions/upload-artifact@v4
+        with:
+          name: holmes-dashboard
+          path: dashboard
+          if-no-files-found: error
+
       - name: "📝 Create Comment"
         uses: actions/github-script@v7
         with:
@@ -352,32 +387,27 @@ jobs:
             const fs = require('fs');
             const path = require('path');
 
-            const findReport = (artifact, filename) => {
-              const base = path.join('reports', artifact);
-              if (!fs.existsSync(base)) {
-                console.warn(`Artifact directory missing: ${base}`);
-                return `_Report missing for ${artifact}_`;
+            const readReport = (status, artifactDir, filename) => {
+              if (status !== 'success') {
+                return `_Report unavailable: upstream job status **${status}**_`;
               }
-              const stack = [base];
-              while (stack.length) {
-                const current = stack.pop();
-                const entries = fs.readdirSync(current, { withFileTypes: true });
-                for (const entry of entries) {
-                  const fullPath = path.join(current, entry.name);
-                  if (entry.isDirectory()) {
-                    stack.push(fullPath);
-                  } else if (entry.isFile() && entry.name === filename) {
-                    return fs.readFileSync(fullPath, 'utf8');
-                  }
-                }
+              const target = path.join('reports', artifactDir, filename);
+              if (!fs.existsSync(target)) {
+                console.warn(`Expected report file missing: ${target}`);
+                return `_Report missing for ${artifactDir}_`;
               }
-              console.warn(`Expected report file ${filename} in ${base}`);
-              return `_Report missing for ${artifact}_`;
+              return fs.readFileSync(target, 'utf8');
             };
 
-            const holmes = findReport('holmes-report', 'holmes-report.md');
-            const watson = findReport('watson-report', 'watson-report.md');
-            const moriarty = findReport('moriarty-report', 'moriarty-report.md');
+            const statuses = {
+              holmes: process.env.HOLMES_STATUS || 'unknown',
+              watson: process.env.WATSON_STATUS || 'unknown',
+              moriarty: process.env.MORIARTY_STATUS || 'unknown'
+            };
+
+            const holmes = readReport(statuses.holmes, 'holmes', 'holmes-report.md');
+            const watson = readReport(statuses.watson, 'watson', 'watson-report.md');
+            const moriarty = readReport(statuses.moriarty, 'moriarty', 'moriarty-report.md');
             
             const body = `
             # 🔍 The Case of Pull Request #${{ github.event.pull_request.number }}

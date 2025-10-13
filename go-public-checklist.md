@@ -2,6 +2,12 @@
 
 This checklist tracks the remaining work before we “go public” and the follow‑on QIR milestones. Check off items as they are completed. Keep changes surgical per AGENTS.md.
 
+## HOLMES Scoring Enhancements — Must
+- [ ] [#52](https://github.com/flyingrobots/wesley/issues/52) Decompose SCS/TCI/MRI into sub-metrics and expose breakdowns in HOLMES JSON/markdown/dashboard.
+- [ ] [#53](https://github.com/flyingrobots/wesley/issues/53) Load declarative weights from `.wesley/weights.json` with documented precedence.
+- [ ] [#54](https://github.com/flyingrobots/wesley/issues/54) Honor `@wes_evidence` (or equivalent) so scoring respects contextual evidence requirements.
+- [ ] [#55](https://github.com/flyingrobots/wesley/issues/55) Enrich dashboard insights (why/volatility/balancing metrics/celebrate improvements).
+
 ## Repo Readiness — Must
 - [x] Tighten README messaging; add “Experimental QIR” pointer to `docs/guides/qir-ops.md`.
 - [x] Add a Compatibility section to README (Node 18/20/22, pnpm 9, Ubuntu-only CI).
