@@ -6,10 +6,8 @@ load 'bats-plugins/bats-file/load'
 
 setup() {
   TEST_TEMP_DIR="$(mktemp -d -t wesley-transform-XXXXXX)"
-  export TEST_TEMP_DIR
   cd "$TEST_TEMP_DIR"
   CLI_PATH="$BATS_TEST_DIRNAME/../../wesley-host-node/bin/wesley.mjs"
-  export CLI_PATH
 }
 
 teardown() {

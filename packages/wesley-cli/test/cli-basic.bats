@@ -11,12 +11,10 @@ load 'bats-plugins/bats-file/load'
 setup() {
     # Create temp directory for this test
     TEST_TEMP_DIR="$(mktemp -d -t wesley-bats-XXXXXX)"
-    export TEST_TEMP_DIR
     cd "$TEST_TEMP_DIR"
     
     # Set CLI path to the proper location after ENSIGN reorganization
     CLI_PATH="$BATS_TEST_DIRNAME/../../wesley-host-node/bin/wesley.mjs"
-    export CLI_PATH
 }
 
 teardown() {
