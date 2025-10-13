@@ -123,9 +123,10 @@ Example manifest:
 - `--ops-allow-empty` (A & B controls empty set; default false)
 - `--ops-explain` (A only; manifest’s `explain` controls B)
 - `--ops-manifest <path>` (switch to manifest mode)
-- `--ops-allow-errors` (compile others even if some fail Ajv; exit 0)
+- `--ops-allow-errors` (compile others even if some fail Ajv; exit 0). **Do not use in CI**; when `CI=true` the CLI ignores this flag unless `--i-know-what-im-doing` is also supplied, and preflight fails the build if the override is missing.
 - `--out-dir <dir>` (base output directory; defaults to `out/`)
 - `--log-format <text|json>` (default `text`; JSON emits deterministic fields: `timestamp`, `level`, `code`, `op`, `path`, `message`)
+- `--i-know-what-im-doing` (opt-in override for hazardous flags in CI; required alongside `--ops-allow-errors` when `CI=true`)
 
 ## Logging (examples)
 
@@ -165,6 +166,7 @@ ops: collision: sanitized key "orders_by_user" from multiple files: …/orders_b
   - `--ops` on empty dir → failure; with `--ops-allow-empty` → success.
   - Name collision sample → failure.
   - Manifest include/exclude → exact set compiled; explain snapshots written when enabled.
+  - CI guard: invoking `wesley generate --ops --ops-allow-errors` with `CI=true` must fail unless `--i-know-what-im-doing` accompanies it.
 
 - CI (compose)
   - Aggregated `ops.functions.sql` applies cleanly.
@@ -178,5 +180,5 @@ ops: collision: sanitized key "orders_by_user" from multiple files: …/orders_b
 
 ## Open Questions
 
-- Do we allow `--ops-allow-errors` to succeed CI when some ops fail Ajv? (leaning yes for local dev; CI should keep default strict)
+- Should the `--i-know-what-im-doing` escape hatch remain long-term, or be dropped before GA?
 - Should manifest support per‑op overrides (e.g., force view emission)? (out of scope for MVP)

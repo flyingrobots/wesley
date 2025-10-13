@@ -245,6 +245,7 @@ export class WesleyCommand {
       'OPS_IDENTIFIER_TOO_LONG': 3,
       'OPS_EMPTY_SET': 4,
       'OPS_COMPILE_FAILED': 5,
+      'OPS_ALLOW_ERRORS_FORBIDDEN': 2,
       'INVALID_LOG_FORMAT': 2
     };
     return codeMap[error.code] || 1;

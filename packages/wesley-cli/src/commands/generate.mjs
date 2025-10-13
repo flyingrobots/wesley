@@ -19,10 +19,12 @@ export class GeneratePipelineCommand extends WesleyCommand {
       .option('-s, --schema <path>', 'GraphQL schema file. Use "-" for stdin', 'schema.graphql')
       .option('--stdin', 'Read schema from stdin (alias for --schema -)')
       .option('--ops <dir>', 'Experimental: directory with GraphQL operation documents (queries) to validate', 'ops')
+      .option('--ops-allow-errors', 'Continue compiling remaining ops even if some fail validation (not allowed in CI without override)')
       .option('--emit-bundle', 'Emit .wesley/ evidence bundle')
       .option('--supabase', 'Enable Supabase features (RLS tests)')
       .option('--out-dir <dir>', 'Output directory', 'out')
       .option('--allow-dirty', 'Allow running with a dirty git working tree (not recommended)')
+      .option('--i-know-what-im-doing', 'Acknowledge hazardous flags in CI environments')
       .option('-v, --verbose', 'More logs (level=debug)')
       .option('--debug', 'Debug output with stack traces')
       .option('-q, --quiet', 'Silence logs (level=silent)')
@@ -35,7 +37,18 @@ export class GeneratePipelineCommand extends WesleyCommand {
     const { schemaContent, schemaPath, options, logger } = context;
     const outDir = options.outDir || this.ctx?.config?.paths?.output || 'out';
     options.outDir = outDir;
-    
+
+    const isCI = String(this.ctx?.env?.CI || '').toLowerCase() === 'true' || this.ctx?.env?.CI === '1';
+    if (options.opsAllowErrors && isCI && !options.iKnowWhatImDoing) {
+      const err = new Error('--ops-allow-errors is disabled when CI=true; remove the flag or rerun with --i-know-what-im-doing.');
+      err.code = 'OPS_ALLOW_ERRORS_FORBIDDEN';
+      throw err;
+    }
+    if (options.opsAllowErrors && isCI && options.iKnowWhatImDoing) {
+      context.logger.warn({ opsAllowErrors: true }, '--ops-allow-errors acknowledged in CI due to override flag');
+    }
+    options.opsAllowErrors = !!options.opsAllowErrors && !(isCI && !options.iKnowWhatImDoing);
+
     // Handle --stdin convenience flag
     if (options.stdin) {
       options.schema = '-';
@@ -298,6 +311,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
       const outDir = options.outDir || 'out';
       const compiledOps = [];
       const collisions = new Map();
+      const allowErrors = !!options.opsAllowErrors;
       const compileErrors = [];
       for (const path of files) {
         try {
@@ -324,8 +338,12 @@ export class GeneratePipelineCommand extends WesleyCommand {
             logger.error({ file: path, sanitized: e?.meta?.sanitized, bytes: e?.meta?.bytes }, e.message);
             throw e;
           }
-          compileErrors.push({ file: path, message: e?.message || String(e) });
-          logger.warn({ file: path }, 'Failed to compile op: ' + (e?.message || e));
+          if (!allowErrors) {
+            compileErrors.push({ file: path, message: e?.message || String(e), code: e?.code });
+            logger.warn({ file: path, code: e?.code }, 'Failed to compile op: ' + (e?.message || e));
+          } else {
+            logger.warn({ file: path, code: e?.code }, 'Skipping op due to compile error (allowed)');
+          }
         }
       }
       const collisionEntries = Array.from(collisions.entries()).filter(([, paths]) => paths.length > 1);
@@ -339,7 +357,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
         logger.error(err.meta, err.message);
         throw err;
       }
-      if (compileErrors.length > 0) {
+      if (!allowErrors && compileErrors.length > 0) {
         const err = opsError(
           'OPS_COMPILE_FAILED',
           `Failed to compile ${compileErrors.length} operation(s); see log for details`,
