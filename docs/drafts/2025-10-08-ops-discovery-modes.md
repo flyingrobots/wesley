@@ -33,12 +33,12 @@ Activated when `--ops <dir>` is provided and no manifest is specified.
   - Recursively scan `<dir>` for files matching the glob.
   - Sort results using bytewise lexicographic order under the C/POSIX locale. Implementation MUST either force `LC_ALL=C` before sorting or use a locale-free comparator (e.g. `Buffer.compare`).
   - Add a regression test that runs discovery under `LC_ALL=en_US.UTF-8` and `LC_ALL=C` and asserts the sanitized compile order is identical; this guards against accidental locale leaks.
-  - If 0 matches and `--ops-allow-empty` not set → `VALIDATION_FAILED` with a helpful hint.
+  - If 0 matches and `--ops-allow-empty` not set → exit `4` with a helpful hint.
   - No magic filename fallback: if the directory scan finds nothing, that's authoritative.
 
 - Identifier policy
   - Lower-case op names and replace every character outside `[a-z0-9]` with `_`. If the sanitized result is empty, treat it as `unnamed`.
-  - Measure identifier length in bytes (UTF-8). If the sanitized value exceeds 63 bytes, fail with `VALIDATION_FAILED` (no truncation) and surface the offending identifier + file path.
+  - Measure identifier length in bytes (UTF-8). If the sanitized value exceeds 63 bytes, exit `3` (no truncation) and surface the offending identifier + file path.
   - Fail on collisions where two different files sanitize to the same base (list every colliding path, including the implicit `unnamed`).
 
 - Output contract (deterministic)
