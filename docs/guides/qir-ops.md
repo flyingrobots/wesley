@@ -90,9 +90,22 @@ pnpm -C packages/wesley-core test:snapshots
 
 ## Using --ops (Experimental)
 
-The CLI can compile simple operation descriptions into SQL when `--ops` points to a directory of `*.op.json` files. The MVP DSL supports a root table, projected columns, basic filters, ordering, and limit/offset.
+The CLI can compile operation descriptions into SQL when `--ops` points to a directory of `*.op.json` files. The MVP DSL supports a root table, projected columns, basic filters, ordering, and limit/offset.
 
-Example file: `example/ops/products_by_name.op.json`
+### Directory layout
+
+```text
+your-repo/
+├── schema.graphql
+└── ops/
+    ├── products_by_name.op.json
+    └── orders_by_user.op.json
+```
+
+> [!NOTE]
+> The current release scans only the top-level of the directory you pass to `--ops`. Nested folders and glob patterns are planned but not yet implemented.
+
+Each file must contain a JSON document describing the operation. For example, `example/ops/products_by_name.op.json`:
 
 ```json
 {
@@ -108,7 +121,7 @@ Example file: `example/ops/products_by_name.op.json`
 }
 ```
 
-Generate and emit ops SQL to `out/ops/`:
+### CLI flags
 
 ```bash
 node packages/wesley-host-node/bin/wesley.mjs generate \
@@ -119,11 +132,59 @@ node packages/wesley-host-node/bin/wesley.mjs generate \
   --allow-dirty
 ```
 
-This produces both a `CREATE VIEW` and a `CREATE FUNCTION` for each operation, e.g.: `example/out/ops/products_by_name.view.sql` and `example/out/ops/products_by_name.fn.sql`.
+| Flag | Description |
+| --- | --- |
+| `--ops <dir>` | Enable operation compilation for all `*.op.json` files in the directory (non-recursive). |
+| `--ops-schema <name>` | Override the target schema for emitted SQL (default `wes_ops`). |
+| `--ops-allow-errors` | Continue compiling even if individual operations fail validation. Disabled on CI unless `--i-know-what-im-doing` is also supplied. |
 
-### Discovery Modes (planned)
+Compiled artifacts are written under `out/ops/`:
+- `ops/<name>.fn.sql` — always generated; contains `CREATE FUNCTION wes_ops.op_<name>(...)`.
+- `ops/<name>.view.sql` — emitted only when the operation has no parameters; exposes a read-only `CREATE VIEW`.
 
-We are moving to a strict discovery model by default: when `--ops <dir>` is present, Wesley will recursively compile all `**/*.op.json` files (configurable with `--ops-glob`), fail if none are found unless `--ops-allow-empty` is provided, and sort files deterministically. A manifest mode (`--ops-manifest`) will be available for curated control (include/exclude lists). See the design note in `docs/drafts/2025-10-08-ops-discovery-modes.md`.
+Example output:
+
+```text
+example/out/
+└── ops/
+    ├── products_by_name.fn.sql
+    ├── products_by_name.view.sql
+    ├── orders_by_user.fn.sql
+    └── orders_by_user.view.sql   # only if paramless
+```
+
+### Identifier sanitisation and limits
+
+- Operation names are normalised (NFKD), lowercased, and converted to snake case. Non-alphanumeric characters collapse to `_`.
+- Identifiers cannot exceed PostgreSQL’s 63-byte limit. If the base name or prefixed identifier (`op_<name>`) becomes too long, the CLI raises `OPS_IDENTIFIER_TOO_LONG`.
+- Duplicate (post-sanitisation) names cause an `OPS_COLLISION` error. Resolve by renaming or restructuring the files.
+
+### Error handling
+
+- Invalid JSON or DSL violations raise `OPS_PARSE_FAILED`.
+- Discovery skips silently if the directory is missing or contains no `*.op.json` files.
+- `--ops-allow-errors` (outside CI, or with `--i-know-what-im-doing`) allows compilation to continue while logging each failure.
+
+### Applying and inspecting operations
+
+1. Run `wesley generate --ops …` to produce SQL.
+2. Apply the generated function and (optionally) view files using your preferred migration runner or `psql`:
+
+   ```bash
+   psql "$DATABASE_URL" -f out/ops/products_by_name.fn.sql
+   psql "$DATABASE_URL" -f out/ops/products_by_name.view.sql
+   ```
+
+3. Use `EXPLAIN (FORMAT JSON)` or snapshot tooling (see the HOLMES workflow) to inspect execution plans and ensure proper indexes exist.
+
+### Discovery roadmap
+
+Future releases will add:
+- Recursive discovery and glob support (`--ops-glob`).
+- Manifest-driven inclusion/exclusion (`--ops-manifest`).
+- Automatic EXPLAIN JSON snapshots and pgTAP smoke tests.
+
+See `docs/drafts/2025-10-08-ops-discovery-modes.md` for details.
 
 ## Roadmap
 
