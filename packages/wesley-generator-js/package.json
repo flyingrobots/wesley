@@ -18,7 +18,7 @@
     "ts-morph": "^19.0.0"
   },
   "devDependencies": {
-    "vitest": "^1.0.0"
+    "vitest": "^3.2.4"
   },
   "keywords": [
     "wesley",

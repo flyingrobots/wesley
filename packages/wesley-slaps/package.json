@@ -17,7 +17,7 @@
     "@wesley/tasks": "workspace:*"
   },
   "devDependencies": {
-    "vitest": "^1.0.0"
+    "vitest": "^3.2.4"
   },
   "peerDependencies": {
     "pg": "^8.0.0"
