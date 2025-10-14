@@ -50,6 +50,6 @@
   },
   "homepage": "https://github.com/flyingrobots/wesley/tree/main/packages/wesley-host-node#readme",
   "devDependencies": {
-    "pino-pretty": "^13.1.1"
+    "pino-pretty": "^13.1.2"
   }
 }
