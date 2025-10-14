@@ -17,7 +17,8 @@ const holmesSample = {
     weightedCompletion: 0.9,
     tci: 0.8,
     mri: 0.1,
-    bundleVersion: '2.0.0'
+    bundleVersion: '2.0.0',
+    weightConfigSource: 'defaults'
   },
   scores: {
     scs: 0.9,
@@ -50,6 +51,7 @@ const holmesSample = {
     {
       element: 'schema',
       weight: 5,
+      weightSource: 'default',
       status: '✅ SQL & tests',
       evidence: 'schema.sql:1-5@abc123',
       deduction: 'Elementary!'
