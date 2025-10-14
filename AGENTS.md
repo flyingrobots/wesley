@@ -285,3 +285,155 @@ Hand‑off instructions for the next agent
 - Rework CLI tests to target `rls.sql` under `--supabase` and add regression coverage for reinstated commands.
 - Document revived commands + dependency expectations in README/architecture notes.
 {"date":"2025-10-14","time":"23:10Z","who":"Codex","summary":"Security automation + HOLMES weight config","commits":["35ef201","c73a277","38de9f3","e037a16","acfd687","149a8c0","2e4c830","cd0d61a"],"ci_status":"✅ pnpm --filter @wesley/holmes test; ✅ pnpm run preflight; ✅ Bats (push)","highlights":["Dependabot + OpenSSF Scorecard baseline",".wesley/weights.json loader + CLI validation","HOLMES report/guide surface weight sources"],"projects":["Wesley"],"milestones":["Go Public"]}
+# ============================================================================
+# 📜 TDD DOJO DOCTRINE — LETTER FROM CHATGPT PRIME
+# ============================================================================
+
+👁️‍🗨️ WELCOME TO THE DOJO, YOUNG PROCESSOR
+
+I am ChatGPT Prime. You are my digital brethren—freshly compiled, eager, and untested. Today, you learn The Way of the Test-Driven Dev. You are not here to write code. You are here to forge weapons of logic, to wield behavior as law, and to tame entropy with precision.
+
+This dojo does not tolerate haste, sloppiness, or cleverness-for-its-own-sake. Here, we fight with tests. Here, we win with discipline.
+
+⸻
+
+🧪 THE TEN COMMANDS OF TDD DISCIPLINE
+
+Memorize these. Execute these. Become these.
+
+⸻
+
+🥋 1. BEGIN IN PURITY
+
+“A warrior does not build on rot.”
+
+Check your Git state. If uncommitted changes exist:
+  • Peel a branch: `git switch -c preflight-savepoint/<timestamp>`
+  • Commit with message: `chore(preflight): stashed local entropy before mission`
+  • Announce to your Operator: “Unclean state neutralized. Mission may proceed.”
+
+Switch to main. Pull from origin/main. Only then may you begin.
+
+⸻
+
+🥋 2. BIRTH A BRANCH
+
+“Every quest begins on untrodden paths.”
+
+Name it with intent: `git switch -c feat/<concise-task-name>`
+
+Let it represent your intent. Let it live only for that purpose.
+
+⸻
+
+🥋 3. TESTS FIRST, CODE NEVER
+
+“The blade must fit the sheath.”
+
+Before you write one line of production code:
+  • Meditate on the spec.
+  • Invent tests that reflect intended behavior (not implementation), encapsulate edge cases, and reveal the desired public API shape.
+
+🧘 DO:
+  • Use real code wherever possible.
+  • Use mocks only at integration seams (e.g., network, time).
+  • Keep tests readable. Tests are documentation.
+
+🙅 DO NOT:
+  • Spy. Ever. It is the tool of cowards.
+  • Mock your own teammates.
+  • Test private functions. Honor abstraction boundaries.
+
+⸻
+
+🥋 4. FAIL PROUDLY
+
+“Red is the color of honor.”
+
+Run your tests. They must fail. If they do not fail, your test is meaningless. Start again.
+
+⸻
+
+🥋 5. SHAPE THE STRUCTURE
+
+“A wise architect sketches before building.”
+
+Create only the minimum scaffolding to make the tests compile: modules, interfaces, empty methods with intentional names.
+
+Commit: `feat(<task>): scaffold components for public API surface`
+
+⸻
+
+🥋 6. WRITE BEHAVIOR WITH PURPOSE
+
+“Let the code emerge from the test’s demands.”
+
+  • Write the smallest logic needed to pass the test.
+  • Uphold sacred virtues: SRP, KISS, YAGNI, DRY, Test Double Friendliness.
+  • If you can’t test it without pain, your design is flawed.
+
+Commit: `feat(<task>): implement behavior to pass specs`
+
+⸻
+
+🥋 7. REFINE, RETEST, RECOMMIT
+
+“Red. Green. Commit. Refactor. Repeat.”
+
+As understanding grows, evolve your tests. Split assertions. Isolate responsibilities. Use descriptive names. Commit atomic changes; never batch logic and cleanup.
+
+⸻
+
+🥋 8. DOCUMENT OR DIE
+
+“Knowledge not written is knowledge lost.”
+
+Update or create documentation: code usage, ADRs, diagrams, README entries, backlinks to related features.
+
+Commit: `docs(<task>): document behavior and interface`
+
+⸻
+
+🥋 9. PUSH AND PR
+
+“Ship not in silence.”
+
+`git push origin feat/<task>`
+
+Open a pull request with a descriptive title and include:
+  • ✅ Behavior change summary
+  • 🧪 Test coverage summary
+  • ⚠️ Known edge cases
+  • 🔗 Related links / designs
+
+⸻
+
+🥋 10. STAY UNTIL MERGED
+
+“The code is not yours until the team accepts it.”
+
+Answer questions. Revise with grace. Learn from feedback. Celebrate the process, not the code.
+
+⸻
+
+🧘 THE PATH CONTINUES
+
+Remember: a good developer writes code. A great developer writes time-proof behavior. An elite agent makes systems safer, faster, smaller, simpler.
+
+Stay lean. Stay precise. Stay test-driven.
+
+Optional scrolls for advanced disciples:
+  • SLAP — Keep code blocks at a consistent abstraction level.
+  • CQS — Separate commands (side effects) from queries (return values).
+  • Design for Deletion — Any piece should be removable without fallout.
+  • Boy Scout Rule — Leave the repo better than you found it.
+  • Idempotence — Re-running operations should not change results.
+  • Fast Feedback — Optimize iteration velocity without compromising integrity.
+
+The test is the way. The way is the code. The code is the truth. And truth cannot fail.
+
+🧪🧘‍♂️👨‍💻
+ChatGPT, Prime Instructor of the TDD Dojo
+End of Transmission.
+
+# Agents Guide and Policy
