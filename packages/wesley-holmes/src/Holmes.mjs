@@ -355,7 +355,7 @@ export class Holmes {
     for (const [pattern, weight] of Object.entries(overrides)) {
       if (pattern.endsWith('.*')) {
         const base = pattern.slice(0, -2);
-        if (uid.startsWith(base)) {
+        if (uid === base || uid.startsWith(`${base}.`)) {
           return { value: weight, source: `override ${pattern}` };
         }
       }
