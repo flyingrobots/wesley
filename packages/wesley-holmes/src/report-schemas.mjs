@@ -38,7 +38,8 @@ export const holmesReportSchema = {
         weightedCompletion: numberField,
         tci: numberField,
         mri: numberField,
-        bundleVersion: stringField
+        bundleVersion: stringField,
+        weightConfigSource: stringField
       }
     },
     scores: {
@@ -96,6 +97,7 @@ export const holmesReportSchema = {
         properties: {
           element: stringField,
           weight: numberField,
+          weightSource: stringField,
           status: stringField,
           evidence: stringField,
           deduction: stringField

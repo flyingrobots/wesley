@@ -362,14 +362,36 @@ These files live under the HOLMES workflow artifacts (flat files, no subdirector
 
 ## Customising Weighting
 
-HOLMES inspects environment variables at runtime:
+HOLMES now loads weights from `.wesley/weights.json`. Use the following structure (all numeric weights):
+
+```json
+{
+  "default": 5,
+  "substrings": {
+    "password": 12,
+    "ssn": 11
+  },
+  "directives": {
+    "sensitive": 10,
+    "critical": 9
+  },
+  "overrides": {
+    "col:User.email": 8,
+    "tbl:Orders.*": 7
+  }
+}
+```
+
+Precedence: **overrides → directives → substrings → default**. Keys in `overrides` can target exact UIDs (`col:User.email`) or wildcard suffixes (`tbl:Orders.*`). Directive keys omit the leading `@` (`"sensitive": 10`).
+
+Environment overrides still work when needed:
 
 | Variable | Purpose |
 |----------|---------|
-| `WESLEY_HOLMES_WEIGHTS` | JSON string mapping substrings → weights, e.g. `{"password":12,"default":4}` |
-| `WESLEY_HOLMES_WEIGHT_FILE` | Path to a JSON file with the same structure |
+| `WESLEY_HOLMES_WEIGHTS` | JSON string override (highest priority) |
+| `WESLEY_HOLMES_WEIGHT_FILE` | Path override for the config file |
 
-If neither is provided HOLMES uses the defaults listed earlier. This allows teams to tune SCS weights without forking the core.
+Run `holmes weights:validate [--file path]` to lint configuration files locally. The HOLMES report now states which source supplied the weights and the reason behind each element’s weight.
 
 ## Security Gates
 
@@ -406,12 +428,12 @@ type Post @table @rls
 **Verification Status**: 47/47 claims independently verified
 **Ship Verdict**: ELEMENTARY
 
-| Feature | Weight | Status | Evidence | Deduction |
-|---------|--------|--------|----------|-----------|
-| User.password | 10 | ✅ | `schema.sql:45@abc123d` | "Properly hashed!" |
-| User.email | 8 | ✅ | `schema.sql:42@abc123d` | "Unique as required" |
-| Post.content | 5 | ⚠️ | Missing Zod validation | "Minor oversight" |
-| User.theme | 2 | ✅ | `types.ts:8@abc123d` | "Low priority complete" |
+| Feature | Weight | Source | Status | Evidence | Deduction |
+|---------|--------|--------|--------|----------|-----------|
+| User.password | 12 | Override col:User.password | ✅ | `schema.sql:45@abc123d` | "Properly hashed!" |
+| User.email | 8 | Substring email | ✅ | `schema.sql:42@abc123d` | "Unique as required" |
+| Post.content | 5 | Default | ⚠️ | Missing Zod validation | "Minor oversight" |
+| User.theme | 2 | Substring theme | ✅ | `types.ts:8@abc123d` | "Low priority complete" |
 
 ## 📊 Scores
 

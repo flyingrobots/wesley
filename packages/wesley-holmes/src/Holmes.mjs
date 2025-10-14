@@ -3,17 +3,8 @@
  * Investigates Wesley's evidence bundle
  */
 
-import { existsSync, readFileSync } from 'node:fs';
-
-const DEFAULT_WEIGHTS = {
-  password: 10,
-  email: 8,
-  id: 7,
-  user: 6,
-  created: 5,
-  theme: 2,
-  default: 5
-};
+import { relative } from 'node:path';
+import { loadWeightConfig } from './weight-config.mjs';
 
 export class Holmes {
   constructor(bundle) {
@@ -22,7 +13,10 @@ export class Holmes {
     this.evidence = bundle.evidence;
     this.scores = bundle.scores;
     this.bundleVersion = bundle.bundleVersion || '1.0.0';
-    this.weights = this.loadWeightOverrides();
+    const { config, source } = loadWeightConfig();
+    this.weightConfig = config;
+    this.weightConfigSource = this.formatWeightConfigSource(source);
+    this.schemaDirectives = this.buildDirectiveIndex(bundle?.schema);
   }
 
   /**
@@ -43,16 +37,17 @@ export class Holmes {
       verificationStatus: this.scores?.readiness?.verdict ?? 'UNKNOWN',
       tci: scores.tci,
       mri: scores.mri,
-      bundleVersion: this.bundleVersion
+      bundleVersion: this.bundleVersion,
+      weightConfigSource: this.weightConfigSource
     };
 
     const elements = [];
     for (const [uid, evidence] of Object.entries(this.evidence.evidence || {})) {
-      const weight = this.inferWeight(uid);
+      const weightInfo = this.inferWeight(uid);
       const status = this.getStatus(evidence);
       const citation = this.getCitation(evidence);
       const deduction = this.makeDeduction(uid, status);
-      elements.push({ element: uid, weight, status, evidence: citation, deduction });
+      elements.push({ element: uid, weight: weightInfo.value, weightSource: weightInfo.source, status, evidence: citation, deduction });
     }
 
     const gates = [];
@@ -93,6 +88,7 @@ export class Holmes {
     lines.push('');
     lines.push(`**Weighted Completion**: ${this.progressBar(metadata.weightedCompletion)} ${(metadata.weightedCompletion * 100).toFixed(1)}%`);
     lines.push(`**Scores**: SCS ${(data.scores.scs * 100).toFixed(1)}% · TCI ${(data.scores.tci * 100).toFixed(1)}% · MRI ${(data.scores.mri * 100).toFixed(1)}%`);
+    lines.push(`**Weight Config**: ${metadata.weightConfigSource}`);
     lines.push(`**Verification Status**: ${metadata.verificationCount} claims verified`);
     lines.push(`**Ship Verdict**: ${metadata.verificationStatus}`);
     lines.push('');
@@ -106,10 +102,10 @@ export class Holmes {
     lines.push('');
     lines.push('"Observe, Watson, how not all features carry equal importance..."');
     lines.push('');
-    lines.push('| Element | Weight | Status | Evidence | Deduction |');
-    lines.push('|---------|--------|--------|----------|-----------|');
+    lines.push('| Element | Weight | Source | Status | Evidence | Deduction |');
+    lines.push('|---------|--------|--------|--------|----------|-----------|');
     for (const row of evidence) {
-      lines.push(`| ${row.element} | ${row.weight} | ${row.status} | ${row.evidence} | ${row.deduction} |`);
+      lines.push(`| ${row.element} | ${row.weight} | ${this.prettyLabel(row.weightSource)} | ${row.status} | ${row.evidence} | ${row.deduction} |`);
     }
     lines.push('');
 
@@ -260,14 +256,16 @@ export class Holmes {
   }
 
   inferWeight(uid) {
-    const lowered = uid.toLowerCase();
-    for (const [needle, weight] of Object.entries(this.weights)) {
-      if (needle === 'default') continue;
-      if (lowered.includes(needle)) {
-        return weight;
-      }
-    }
-    return this.weights.default;
+    const override = this.matchOverride(uid);
+    if (override) return override;
+
+    const directiveWeight = this.matchDirective(uid);
+    if (directiveWeight) return directiveWeight;
+
+    const substringWeight = this.matchSubstring(uid);
+    if (substringWeight) return substringWeight;
+
+    return { value: this.weightConfig.default, source: 'default' };
   }
 
   getStatus(evidence) {
@@ -336,22 +334,104 @@ export class Holmes {
     };
   }
 
-  loadWeightOverrides() {
-    const weights = { ...DEFAULT_WEIGHTS };
-    try {
-      if (process.env.WESLEY_HOLMES_WEIGHT_FILE && existsSync(process.env.WESLEY_HOLMES_WEIGHT_FILE)) {
-        const fileWeights = JSON.parse(readFileSync(process.env.WESLEY_HOLMES_WEIGHT_FILE, 'utf8'));
-        Object.assign(weights, fileWeights);
-      } else if (process.env.WESLEY_HOLMES_WEIGHTS) {
-        const envWeights = JSON.parse(process.env.WESLEY_HOLMES_WEIGHTS);
-        Object.assign(weights, envWeights);
+  matchOverride(uid) {
+    const overrides = this.weightConfig.overrides;
+    if (!overrides || typeof overrides !== 'object') {
+      return null;
+    }
+
+    const direct = overrides[uid];
+    if (typeof direct === 'number') {
+      return { value: direct, source: `override ${uid}` };
+    }
+
+    if (uid.startsWith('col:')) {
+      const table = `tbl:${uid.split(':')[1].split('.')[0]}`;
+      if (typeof overrides[table] === 'number') {
+        return { value: overrides[table], source: `override ${table}` };
       }
-    } catch (err) {
-      console.warn('[Holmes] Unable to load weight overrides:', err?.message);
     }
-    if (typeof weights.default !== 'number') {
-      weights.default = DEFAULT_WEIGHTS.default;
+
+    for (const [pattern, weight] of Object.entries(overrides)) {
+      if (pattern.endsWith('.*')) {
+        const base = pattern.slice(0, -2);
+        if (uid.startsWith(base)) {
+          return { value: weight, source: `override ${pattern}` };
+        }
+      }
     }
-    return weights;
+
+    return null;
   }
+
+  matchDirective(uid) {
+    const directives = this.weightConfig.directives;
+    if (!directives || typeof directives !== 'object') {
+      return null;
+    }
+
+    const names = this.schemaDirectives[uid];
+    if (!names || !names.length) {
+      return null;
+    }
+
+    for (const name of names) {
+      if (typeof directives[name] === 'number') {
+        return { value: directives[name], source: `directive @${name}` };
+      }
+    }
+
+    return null;
+  }
+
+  matchSubstring(uid) {
+    const substrings = this.weightConfig.substrings || {};
+    const lowered = uid.toLowerCase();
+    const entries = Object.entries(substrings).sort((a, b) => b[0].length - a[0].length);
+    for (const [needle, weight] of entries) {
+      if (lowered.includes(needle)) {
+        return { value: weight, source: `substring ${needle}` };
+      }
+    }
+    return null;
+  }
+
+  buildDirectiveIndex(schema) {
+    const index = {};
+    if (!schema || typeof schema !== 'object' || !schema.tables) {
+      return index;
+    }
+
+    for (const [tableName, table] of Object.entries(schema.tables || {})) {
+      const tableKey = `tbl:${tableName}`;
+      index[tableKey] = extractDirectiveNames(table?.directives);
+
+      for (const [fieldName, field] of Object.entries(table?.fields || {})) {
+        const fieldKey = `col:${tableName}.${fieldName}`;
+        index[fieldKey] = extractDirectiveNames(field?.directives);
+      }
+    }
+
+    return index;
+  }
+
+  formatWeightConfigSource(source) {
+    if (!source || source === 'defaults') {
+      return 'defaults';
+    }
+    if (source.startsWith('env:')) {
+      return source.replace('env:', 'env ');
+    }
+    if (source.startsWith('file:')) {
+      const absolute = source.slice(5);
+      const rel = relative(process.cwd(), absolute);
+      return `file ${rel}`;
+    }
+    return source;
+  }
+}
+
+function extractDirectiveNames(directives) {
+  if (!directives || typeof directives !== 'object') return [];
+  return Object.keys(directives).map((name) => (name.startsWith('@') ? name.slice(1) : name).toLowerCase());
 }
