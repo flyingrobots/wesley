@@ -134,21 +134,31 @@ async function execSql(db, dsn, sql) {
 function buildAdditivePlan(prev, curr) {
   const pmap = new Map((prev.tables || []).map(t => [t.name, t]));
   const cmap = new Map((curr.tables || []).map(t => [t.name, t]));
-  const phases = [ { name: 'expand', steps: [] }, { name: 'validate', steps: [] } ];
+  const phaseOrder = ['expand', 'backfill', 'validate', 'switch', 'contract'];
+  const phases = phaseOrder.map(name => ({ name, steps: [] }));
+  const getPhase = (name) => phases.find(p => p.name === name);
   for (const [name, t] of cmap) {
     const old = pmap.get(name);
     if (!old) {
-      phases[0].steps.push({ op: 'create_table', table: name });
-      for (const idx of t.indexes || []) phases[0].steps.push({ op: 'create_index_concurrently', table: name, columns: idx.columns, using: idx.using, name: idx.name });
-      for (const fk of t.foreignKeys || []) { phases[0].steps.push({ op: 'add_fk_not_valid', table: name, column: fk.column, refTable: fk.refTable, refColumn: fk.refColumn }); phases[1].steps.push({ op: 'validate_fk', table: name, column: fk.column }); }
+      getPhase('expand').steps.push({ op: 'create_table', table: name });
+      for (const idx of t.indexes || []) getPhase('expand').steps.push({ op: 'create_index_concurrently', table: name, columns: idx.columns, using: idx.using, name: idx.name });
+      for (const fk of t.foreignKeys || []) { getPhase('expand').steps.push({ op: 'add_fk_not_valid', table: name, column: fk.column, refTable: fk.refTable, refColumn: fk.refColumn }); getPhase('validate').steps.push({ op: 'validate_fk', table: name, column: fk.column }); }
       continue;
     }
     const oldCols = new Set((old.columns || []).map(c => c.name));
-    for (const c of t.columns || []) if (!oldCols.has(c.name)) phases[0].steps.push({ op: 'add_column', table: name, column: c.name, type: c.type, nullable: c.nullable, default: c.default });
+    for (const c of t.columns || []) {
+      if (!oldCols.has(c.name)) {
+        getPhase('expand').steps.push({ op: 'add_column', table: name, column: c.name, type: c.type, nullable: c.nullable, default: c.default });
+        if (c.nullable === false) {
+          getPhase('backfill').steps.push({ op: 'backfill_column', table: name, column: c.name, default: c.default });
+          getPhase('switch').steps.push({ op: 'set_not_null', table: name, column: c.name });
+        }
+      }
+    }
     const oldIdxSig = new Set((old.indexes || []).map(i => (i.columns||[]).join('|')));
-    for (const idx of t.indexes || []) { const sig = (idx.columns||[]).join('|'); if (!oldIdxSig.has(sig)) phases[0].steps.push({ op: 'create_index_concurrently', table: name, columns: idx.columns, using: idx.using, name: idx.name }); }
+    for (const idx of t.indexes || []) { const sig = (idx.columns||[]).join('|'); if (!oldIdxSig.has(sig)) getPhase('expand').steps.push({ op: 'create_index_concurrently', table: name, columns: idx.columns, using: idx.using, name: idx.name }); }
     const oldFks = new Set((old.foreignKeys||[]).map(f => `${f.column}->${f.refTable}.${f.refColumn}`));
-    for (const fk of t.foreignKeys || []) { const key = `${fk.column}->${fk.refTable}.${fk.refColumn}`; if (!oldFks.has(key)) { phases[0].steps.push({ op: 'add_fk_not_valid', table: name, column: fk.column, refTable: fk.refTable, refColumn: fk.refColumn }); phases[1].steps.push({ op: 'validate_fk', table: name, column: fk.column }); } }
+    for (const fk of t.foreignKeys || []) { const key = `${fk.column}->${fk.refTable}.${fk.refColumn}`; if (!oldFks.has(key)) { getPhase('expand').steps.push({ op: 'add_fk_not_valid', table: name, column: fk.column, refTable: fk.refTable, refColumn: fk.refColumn }); getPhase('validate').steps.push({ op: 'validate_fk', table: name, column: fk.column }); } }
   }
   return { phases };
 }
@@ -162,49 +172,89 @@ function explainPlan(plan) {
   }
   return { lines, steps };
 }
-function lockFor(step){ switch(step.op){ case 'create_table': return L('ACCESS EXCLUSIVE', true, true); case 'add_column': return step.nullable!==false||step.default?L('SHARE ROW EXCLUSIVE',true,false):L('ACCESS EXCLUSIVE',true,true); case 'create_index_concurrently': return L('SHARE UPDATE EXCLUSIVE',true,false); case 'add_fk_not_valid': return L('SHARE ROW EXCLUSIVE',true,false); case 'validate_fk': return L('SHARE ROW EXCLUSIVE',true,false); default: return L('EXCLUSIVE',true,false);} }
+function lockFor(step){
+  switch(step.op){
+    case 'create_table': return L('ACCESS EXCLUSIVE', true, true);
+    case 'add_column': return step.nullable!==false||step.default?L('SHARE ROW EXCLUSIVE',true,false):L('ACCESS EXCLUSIVE',true,true);
+    case 'create_index_concurrently': return L('SHARE UPDATE EXCLUSIVE',true,false);
+    case 'add_fk_not_valid': return L('SHARE ROW EXCLUSIVE',true,false);
+    case 'validate_fk': return L('SHARE ROW EXCLUSIVE',true,false);
+    case 'backfill_column': return L('ROW EXCLUSIVE', true, false);
+    case 'set_not_null': return L('ACCESS EXCLUSIVE', true, true);
+    default: return L('EXCLUSIVE',true,false);
+  }
+}
 function L(name,blocksWrites,blocksReads){return {name,blocksWrites,blocksReads};}
 
 // Emit migration SQL files for rehearsal (mirrors plan.mjs)
 function emitMigrations(plan) {
   const files = [];
-  const expand = [];
-  const validate = [];
+  const statements = new Map([
+    ['expand', []],
+    ['backfill', []],
+    ['validate', []],
+    ['switch', []],
+    ['contract', []]
+  ]);
 
   const q = (id) => '"' + id.replace(/\"/g, '""') + '"';
   const tname = (n) => n.toLowerCase();
 
   for (const phase of plan.phases) {
     for (const s of phase.steps) {
+      const bucket = statements.get(phase.name);
+      if (!bucket) continue;
       if (s.op === 'create_table') {
-        expand.push(`-- create table ${s.table}`);
+        bucket.push(`-- create table ${s.table}`);
         // table DDL handled by full schema ddl; keep placeholder here
       }
       if (s.op === 'add_column') {
         const parts = [`ALTER TABLE ${q(tname(s.table))} ADD COLUMN ${q(s.column)} ${s.type}`];
         if (s.nullable === false && s.default) parts.push('DEFAULT ' + s.default);
         // Add as nullable by default in expand phase
-        expand.push(parts.join(' ') + ';');
+        bucket.push(parts.join(' ') + ';');
       }
       if (s.op === 'create_index_concurrently') {
         const idxName = s.name || `idx_${tname(s.table)}_${(s.columns || []).join('_')}`;
         const using = s.using ? ` USING ${s.using}` : '';
         const cols = (s.columns || []).map((c)=> q(c)).join(', ');
-        expand.push(`CREATE INDEX CONCURRENTLY IF NOT EXISTS ${q(idxName)} ON ${q(tname(s.table))}${using} (${cols});`);
+        bucket.push(`CREATE INDEX CONCURRENTLY IF NOT EXISTS ${q(idxName)} ON ${q(tname(s.table))}${using} (${cols});`);
       }
       if (s.op === 'add_fk_not_valid') {
         const cname = `fk_${tname(s.table)}_${s.column}`;
-        expand.push(`ALTER TABLE ${q(tname(s.table))} ADD CONSTRAINT ${q(cname)} FOREIGN KEY (${q(s.column)}) REFERENCES ${q(tname(s.refTable))} (${q(s.refColumn)}) NOT VALID;`);
+        bucket.push(`ALTER TABLE ${q(tname(s.table))} ADD CONSTRAINT ${q(cname)} FOREIGN KEY (${q(s.column)}) REFERENCES ${q(tname(s.refTable))} (${q(s.refColumn)}) NOT VALID;`);
       }
       if (s.op === 'validate_fk') {
         const cname = `fk_${tname(s.table)}_${s.column}`;
-        validate.push(`ALTER TABLE ${q(tname(s.table))} VALIDATE CONSTRAINT ${q(cname)};`);
+        bucket.push(`ALTER TABLE ${q(tname(s.table))} VALIDATE CONSTRAINT ${q(cname)};`);
+      }
+      if (s.op === 'backfill_column') {
+        if (s.default) {
+          bucket.push(`UPDATE ${q(tname(s.table))} SET ${q(s.column)} = ${s.default} WHERE ${q(s.column)} IS NULL;`);
+        } else {
+          bucket.push(`-- TODO: backfill ${tname(s.table)}.${s.column} before switching to NOT NULL`);
+        }
+      }
+      if (s.op === 'set_not_null') {
+        bucket.push(`ALTER TABLE ${q(tname(s.table))} ALTER COLUMN ${q(s.column)} SET NOT NULL;`);
       }
     }
   }
 
-  if (expand.length) files.push({ name: '001_expand.sql', content: expand.join('\n') + '\n' });
-  if (validate.length) files.push({ name: '002_validate.sql', content: validate.join('\n') + '\n' });
+  const orderedFiles = [
+    ['expand', '001_expand.sql'],
+    ['backfill', '002_backfill.sql'],
+    ['validate', '003_validate.sql'],
+    ['switch', '004_switch.sql'],
+    ['contract', '005_contract.sql']
+  ];
+
+  for (const [phaseName, fileName] of orderedFiles) {
+    const stmts = statements.get(phaseName) || [];
+    if (stmts.length) {
+      files.push({ name: fileName, content: stmts.join('\n') + '\n' });
+    }
+  }
   return files;
 }
 

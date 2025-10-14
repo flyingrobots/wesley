@@ -36,7 +36,7 @@ This checklist tracks the remaining work before we “go public” and the follo
 - [ ] Contributor onramp: label starter issues (good first issue) and open a “Roadmap” issue.
 
 ## Migrations & Planning (DDL)
-- [ ] Extend migration planning to cover backfill/switch/contract phases (explain‑only by default).
+- [x] Extend migration planning to cover backfill/switch/contract phases (explain‑only by default).
 - [ ] Emit per‑phase SQL files for rehearsal beyond expand/validate.
 
 ## QIR — Phase C (CLI Wiring, Examples)
