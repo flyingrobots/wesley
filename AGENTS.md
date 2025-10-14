@@ -284,3 +284,4 @@ Hand‑off instructions for the next agent
 - Add generator wrappers in `createNodeRuntime` that expose `emitModels/emitZod/emitTs` via `@wesley/generator-js` and honor workspace dirs.
 - Rework CLI tests to target `rls.sql` under `--supabase` and add regression coverage for reinstated commands.
 - Document revived commands + dependency expectations in README/architecture notes.
+{"date":"2025-10-14","time":"23:10Z","who":"Codex","summary":"Security automation + HOLMES weight config","commits":["35ef201","c73a277","38de9f3","e037a16","acfd687","149a8c0","2e4c830","cd0d61a"],"ci_status":"✅ pnpm --filter @wesley/holmes test; ✅ pnpm run preflight; ✅ Bats (push)","highlights":["Dependabot + OpenSSF Scorecard baseline",".wesley/weights.json loader + CLI validation","HOLMES report/guide surface weight sources"],"projects":["Wesley"],"milestones":["Go Public"]}
