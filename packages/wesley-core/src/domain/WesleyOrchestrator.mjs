@@ -100,14 +100,18 @@ export class WesleyOrchestrator {
     
     // 5. Calculate scores
     const scoring = new ScoringEngine(evidenceMap);
-    const scores = {
-      scs: scoring.calculateSCS(schema),
-      mri: artifacts.migration ? artifacts.migration.mri : 0,
-      tci: scoring.calculateTCI(schema, options.testResults || { passed: 0, failed: 0, total: 0, suites: [] })
-    };
+    const exportedScores = scoring.exportScores(
+      schema,
+      diffForTests?.steps || [],
+      options.testResults || { passed: 0, failed: 0, total: 0, suites: [] }
+    );
     
-    // 6. Determine readiness
-    const readiness = this.determineReadiness(scores);
+    const scores = exportedScores.scores;
+    const readiness = exportedScores.readiness || this.determineReadiness({
+      scs: scores?.scs ?? 0,
+      mri: scores?.mri ?? 0,
+      tci: scores?.tci ?? 0
+    });
     
     // Return complete bundle
     return {
@@ -121,9 +125,9 @@ export class WesleyOrchestrator {
       artifacts,
       evidenceMap: evidenceMap.toJSON(),
       scores: {
-        scores,
+        ...exportedScores,
         readiness,
-        history: [] // Would be populated from previous runs
+        history: []
       }
     };
   }

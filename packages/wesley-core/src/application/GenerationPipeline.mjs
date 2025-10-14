@@ -4,7 +4,7 @@
  */
 
 import { EvidenceMap } from './EvidenceMap.mjs';
-import { ScoringEngine } from './Scoring.mjs';
+import { ScoringEngine, BUNDLE_VERSION } from './Scoring.mjs';
 import { DirectiveProcessor } from '../domain/Directives.mjs';
 
 export class GenerationPipeline {
@@ -107,6 +107,7 @@ export class GenerationPipeline {
     const { schema, evidenceMap, scores, artifacts, sha, timestamp } = data;
     
     return {
+      bundleVersion: BUNDLE_VERSION,
       sha,
       timestamp,
       schema: schema.toJSON(),

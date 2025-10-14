@@ -142,6 +142,11 @@ Wesley calculates three scores:
 - Measures: Did artifacts exist for each schema element?
 - Range: 0-1 (0% to 100%)
 - Threshold: 0.8 (80%) recommended
+- Breakdown surfaced in bundles:
+  - **sql** – weighted DDL coverage for each UID
+  - **types** – TypeScript emission coverage
+  - **validation** – Zod/runtime schema coverage
+  - **tests** – pgTAP suites covering the element
 
 Example:
 ```javascript
@@ -166,6 +171,15 @@ SCS = (10 × 0.66 + 2 × 1.0) / 12 = 0.72 (72%)
 | RENAME (no @uid) | 10 | Breaks references |
 | CREATE INDEX (blocking) | 10 | Performance impact |
 
+Breakdown vectors in `scores.breakdown.mri`:
+
+- **drops** – destructive operations such as `DROP TABLE`/`DROP COLUMN`
+- **renames** – renames without `@uid` continuity
+- **defaults** – new NOT NULL columns missing defaults/backfill strategy
+- **typeChanges** – ALTER TYPE operations (unsafe casts weigh more)
+- **indexes** – blocking index creation or missing `CONCURRENTLY`
+- **other** – residual operations recorded for transparency
+
 Example:
 ```sql
 -- Migration with MRI = 0.55 (55% risk)
@@ -181,6 +195,11 @@ ALTER COLUMN posts.count TYPE bigint; -- +30 (unsafe)
 - Constraint tests: 45% (weighted by field importance)
 - Migration tests: 25%
 - Performance tests: 10%
+- Bundle sub-metrics:
+  - **unitConstraints** – weighted structure/constraint coverage (with depth detail)
+  - **rls** – RLS policy verification for tables annotated with `@wes_rls`
+  - **integrationRelations** – behaviour/computed/relationship checks
+  - **e2eOps** – migration steps exercised by pgTAP suites
 
 Example:
 ```
@@ -202,9 +221,11 @@ Every `wesley generate` creates `.wesley/` bundle:
 ├── artifacts.json        # {artifact: [files]} with hashes
 ├── evidence-map.json     # Element → file:lines@sha
 ├── snapshot.json         # Previous IR for diffs
-├── scores.json          # SCS/MRI/TCI scores
+├── scores.json          # SCS/MRI/TCI scores + breakdowns
 └── history.json         # Score history for predictions
 ```
+
+Bundles include `"bundleVersion": "2.0.0"` to let downstream consumers branch on schema changes without guessing.
 
 ## Package Architecture
 

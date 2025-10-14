@@ -333,6 +333,8 @@ export class PgTAPTestGenerator {
     tests.push('');
 
     for (const step of migrationSteps) {
+      const stepUid = this.getMigrationUid(step);
+      this.recordEvidence(stepUid, 'test', tests.length + 1);
       tests.push(`-- Migration step: ${step.kind}`);
 
       switch (step.kind) {
@@ -374,6 +376,15 @@ export class PgTAPTestGenerator {
     }
 
     return tests.join('\n');
+  }
+
+  getMigrationUid(step) {
+    if (step.uid) return step.uid;
+    const parts = [step.kind];
+    if (step.table) parts.push(step.table);
+    if (step.column) parts.push(step.column);
+    if (step.name) parts.push(step.name);
+    return `migration:${parts.join(':')}`;
   }
 
   wrapTestSuite(content) {
