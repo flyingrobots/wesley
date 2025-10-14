@@ -5,10 +5,12 @@ on:
     branches: [ main, dev, 'feat/*', 'fix/*', 'milestone/*' ]
     paths:
       - 'packages/**'
+      - '.github/**'
       - '.github/workflows/cert-shipme.yml'
   pull_request:
     paths:
       - 'packages/**'
+      - '.github/**'
       - '.github/workflows/cert-shipme.yml'
 
 jobs:
