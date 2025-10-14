@@ -91,7 +91,7 @@ type User @table @critical {
 | `@unique` | 8 | Business constraint |
 | `@pii` | 8 | Privacy compliance |
 | `@index` | 5 | Performance optimization |
-| Default field | 3 | Standard field |
+| Default field | 5 | Standard field |
 
 ## The Evidence Map
 
@@ -382,7 +382,7 @@ HOLMES now loads weights from `.wesley/weights.json`. Use the following structur
 }
 ```
 
-Precedence: **overrides → directives → substrings → default**. Keys in `overrides` can target exact UIDs (`col:User.email`) or wildcard suffixes (`tbl:Orders.*`). Directive keys omit the leading `@` (`"sensitive": 10`).
+Precedence: **overrides → directives → substrings → default**. Keys in `overrides` can target exact UIDs (`col:User.email`) or wildcard suffixes (`tbl:Orders.*`). Directive keys omit the leading `@` (`"sensitive": 10`) and honour the same aliases Wesley already supports (e.g. `pk`, `primaryKey`, or `@primaryKey` all map to the same entry).
 
 Environment overrides still work when needed:
 

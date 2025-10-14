@@ -340,24 +340,43 @@ export class Holmes {
       return null;
     }
 
+    const info = parseUid(uid);
+
     const direct = overrides[uid];
-    if (typeof direct === 'number') {
+    if (isNumber(direct)) {
       return { value: direct, source: `override ${uid}` };
     }
 
-    if (uid.startsWith('col:')) {
-      const table = `tbl:${uid.split(':')[1].split('.')[0]}`;
-      if (typeof overrides[table] === 'number') {
-        return { value: overrides[table], source: `override ${table}` };
+    if (info.kind === 'col' && info.table) {
+      const tableKey = `tbl:${info.table}`;
+      if (isNumber(overrides[tableKey])) {
+        return { value: overrides[tableKey], source: `override ${tableKey}` };
       }
     }
 
     for (const [pattern, weight] of Object.entries(overrides)) {
-      if (pattern.endsWith('.*')) {
-        const base = pattern.slice(0, -2);
-        if (uid === base || uid.startsWith(`${base}.`)) {
+      if (!pattern.endsWith('.*')) continue;
+      const baseId = pattern.slice(0, -2);
+      const baseInfo = parseUid(baseId);
+
+      if (baseInfo.kind === 'tbl' && baseInfo.table) {
+        if (info.kind === 'tbl' && info.table === baseInfo.table) {
           return { value: weight, source: `override ${pattern}` };
         }
+        if (info.kind === 'col' && info.table === baseInfo.table) {
+          return { value: weight, source: `override ${pattern}` };
+        }
+      } else if (baseInfo.kind === 'col' && baseInfo.table) {
+        if (info.kind === 'col' && info.table === baseInfo.table) {
+          if (!baseInfo.column) {
+            return { value: weight, source: `override ${pattern}` };
+          }
+          if (info.column && info.column.startsWith(baseInfo.column)) {
+            return { value: weight, source: `override ${pattern}` };
+          }
+        }
+      } else if (uid.startsWith(baseId)) {
+        return { value: weight, source: `override ${pattern}` };
       }
     }
 
@@ -434,4 +453,27 @@ export class Holmes {
 function extractDirectiveNames(directives) {
   if (!directives || typeof directives !== 'object') return [];
   return Object.keys(directives).map((name) => (name.startsWith('@') ? name.slice(1) : name).toLowerCase());
+}
+
+function parseUid(uid) {
+  if (typeof uid !== 'string') {
+    return { kind: null, table: null, column: null }; // best effort fallback
+  }
+  const [kind, rest] = uid.split(':', 2);
+  if (!rest) {
+    return { kind, table: null, column: null };
+  }
+  if (kind === 'tbl') {
+    return { kind, table: rest, column: null };
+  }
+  if (kind === 'col') {
+    const [table, column] = rest.split('.', 2);
+    return { kind, table: table || null, column: column || null };
+  }
+  const [table, column] = rest.split('.', 2);
+  return { kind, table: table || null, column: column || null };
+}
+
+function isNumber(value) {
+  return typeof value === 'number' && Number.isFinite(value);
 }
