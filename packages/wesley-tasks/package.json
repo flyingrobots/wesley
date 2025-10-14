@@ -15,7 +15,7 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "vitest": "^1.0.0"
+    "vitest": "^3.2.4"
   },
   "peerDependencies": {},
   "keywords": [
