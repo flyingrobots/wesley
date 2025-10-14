@@ -28,5 +28,14 @@
     "models"
   ],
   "author": "Wesley Team",
-  "license": "LicenseRef-MIND-UCAL-1.0"
+  "license": "LicenseRef-MIND-UCAL-1.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/flyingrobots/wesley.git",
+    "directory": "packages/wesley-generator-js"
+  },
+  "bugs": {
+    "url": "https://github.com/flyingrobots/wesley/issues"
+  },
+  "homepage": "https://github.com/flyingrobots/wesley/tree/main/packages/wesley-generator-js#readme"
 }
