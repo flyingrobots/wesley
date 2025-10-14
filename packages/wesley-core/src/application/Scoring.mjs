@@ -376,14 +376,26 @@ export class ScoringEngine {
 
   // Helper methods
   isSafeCast(fromType, toType) {
+    if (!fromType || !toType) return false;
+    if (fromType === toType) return true;
+
     const safeCasts = {
-      'Int': ['Float', 'String'],
-      'Float': ['String'],
-      'Boolean': ['String'],
-      'ID': ['String']
+      Int: ['Float', 'Decimal', 'BigInt', 'String'],
+      Float: ['Decimal', 'String'],
+      Decimal: ['String'],
+      BigInt: ['Decimal', 'String'],
+      Boolean: ['String', 'Int'],
+      ID: ['String'],
+      UUID: ['String']
     };
-    
-    return safeCasts[fromType]?.includes(toType) || false;
+
+    // Treat expressed as strings but allow case-insensitive matches
+    const from = String(fromType);
+    const to = String(toType);
+
+    return (safeCasts[from] || safeCasts[from.charAt(0).toUpperCase() + from.slice(1)] || [])
+      .map(target => target.toLowerCase())
+      .includes(to.toLowerCase());
   }
 
   calculateTestCoverage(schema, testedElements) {
@@ -542,8 +554,10 @@ export class ScoringEngine {
     return kinds.some(kind => Array.isArray(evidence[kind]) && evidence[kind].length > 0);
   }
 
-  round(value) {
-    if (typeof value !== 'number' || Number.isNaN(value)) return 0;
+  round(value, fallback = 0) {
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+      return fallback;
+    }
     return Math.round(value * 1000) / 1000;
   }
 }

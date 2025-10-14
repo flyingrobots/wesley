@@ -137,7 +137,23 @@ export class GeneratePipelineCommand extends WesleyCommand {
         const mri = 0.2;
         const readiness = { verdict: (scs > 0.75 && tci > 0.6 ? 'ELEMENTARY' : (scs > 0.4 ? 'REQUIRES INVESTIGATION' : 'YOU SHALL NOT PASS')) };
 
-        const breakdownScore = (value) => ({ score: Number(value.toFixed(3)), totalWeight: 1, coveredWeight: Number(value.toFixed(3)) });
+        const toScore = (value) => Number(value.toFixed(3));
+        const makeCoverageEntry = (value, { totalWeight = 1, coveredWeight = value } = {}) => ({
+          score: toScore(value),
+          totalWeight,
+          coveredWeight: toScore(coveredWeight)
+        });
+        const makeCountEntry = (value, { total = 1, covered = value, components = {} } = {}) => ({
+          score: toScore(value),
+          total,
+          covered: toScore(covered),
+          components
+        });
+        const makeRiskEntry = (value, { points = Math.round(value * 100), contribution = 1 } = {}) => ({
+          score: toScore(value),
+          points,
+          contribution: toScore(contribution)
+        });
         const scores = {
           version: '2.0.0',
           timestamp,
@@ -149,24 +165,24 @@ export class GeneratePipelineCommand extends WesleyCommand {
             mri: Number(mri.toFixed(3)),
             breakdown: {
               scs: {
-                sql: breakdownScore(scs),
-                types: breakdownScore(scs),
-                validation: breakdownScore(scs),
-                tests: breakdownScore(tci)
+                sql: makeCoverageEntry(scs),
+                types: makeCoverageEntry(scs),
+                validation: makeCoverageEntry(scs),
+                tests: makeCoverageEntry(tci)
               },
               tci: {
-                unitConstraints: { score: Number(tci.toFixed(3)), total: 1, covered: Number(tci.toFixed(3)), components: {} },
-                rls: { score: Number(tci.toFixed(3)), total: 1, covered: Number(tci.toFixed(3)) },
-                integrationRelations: { score: Number(tci.toFixed(3)), total: 1, covered: Number(tci.toFixed(3)) },
-                e2eOps: { score: Number(tci.toFixed(3)), total: 1, covered: Number(tci.toFixed(3)) }
+                unitConstraints: makeCountEntry(tci),
+                rls: makeCountEntry(tci),
+                integrationRelations: makeCountEntry(tci),
+                e2eOps: makeCountEntry(tci)
               },
               mri: {
-                drops: { score: Number(mri.toFixed(3)), points: Math.round(mri * 100), contribution: 1 },
-                renames: { score: 0, points: 0, contribution: 0 },
-                defaults: { score: 0, points: 0, contribution: 0 },
-                typeChanges: { score: 0, points: 0, contribution: 0 },
-                indexes: { score: 0, points: 0, contribution: 0 },
-                other: { score: 0, points: 0, contribution: 0 }
+                drops: makeRiskEntry(mri),
+                renames: makeRiskEntry(0, { points: 0, contribution: 0 }),
+                defaults: makeRiskEntry(0, { points: 0, contribution: 0 }),
+                typeChanges: makeRiskEntry(0, { points: 0, contribution: 0 }),
+                indexes: makeRiskEntry(0, { points: 0, contribution: 0 }),
+                other: makeRiskEntry(0, { points: 0, contribution: 0 })
               }
             }
           },
