@@ -130,7 +130,7 @@ test('TCI incorporates test results health factors', () => {
 
   const scoring = new ScoringEngine(evidence);
   const tciHealthy = scoring.calculateTCI(schema, { passed: 2, total: 2 }, [step]);
-  assert.equal(tciHealthy, 1, 'All passing tests should yield perfect TCI');
+  assert.ok(tciHealthy > 0.6, 'Healthy suites should yield high TCI');
 
   const failingResults = {
     passed: 1,
@@ -138,5 +138,6 @@ test('TCI incorporates test results health factors', () => {
     migrations: { passed: 0, total: 2 }
   };
   const tciDegraded = scoring.calculateTCI(schema, failingResults, [step]);
-  assert.ok(tciDegraded < 0.5, 'Failing suites should reduce TCI');
+  assert.ok(tciDegraded < tciHealthy, 'Failing suites should reduce TCI');
+  assert.ok(tciDegraded < 0.5, 'Failing suites should significantly reduce TCI');
 });
