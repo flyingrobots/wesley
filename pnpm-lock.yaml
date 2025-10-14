@@ -81,6 +81,9 @@ importers:
       '@wesley/core':
         specifier: workspace:*
         version: link:../wesley-core
+      commander:
+        specifier: ^14.0.0
+        version: 14.0.1
 
   packages/wesley-host-node:
     dependencies:

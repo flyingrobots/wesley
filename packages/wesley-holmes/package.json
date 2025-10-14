@@ -18,7 +18,8 @@
     "test": "node --test"
   },
   "dependencies": {
-    "@wesley/core": "workspace:*"
+    "@wesley/core": "workspace:*",
+    "commander": "^14.0.0"
   },
   "keywords": ["holmes", "watson", "moriarty", "verification", "prediction"],
   "author": "Captain James",
