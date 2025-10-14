@@ -108,7 +108,7 @@ export class ScoringEngine {
    * Weighted average of different test types
    */
   calculateTCI(schema, testResults = {}, migrationSteps = []) {
-    const breakdown = this.calculateTCIBreakdown(schema, migrationSteps);
+    const breakdown = this.calculateTCIBreakdown(schema, migrationSteps, testResults);
     const weights = { unitConstraints: 0.45, rls: 0.2, integrationRelations: 0.2, e2eOps: 0.15 };
     let totalWeight = 0;
     let weightedScore = 0;
@@ -121,10 +121,10 @@ export class ScoringEngine {
     }
 
     const score = totalWeight > 0 ? weightedScore / totalWeight : 0;
-    return this.round(score);
+    return this.round(score, 0);
   }
 
-  calculateTCIBreakdown(schema, migrationSteps = []) {
+  calculateTCIBreakdown(schema, migrationSteps = [], testResults = {}) {
     const breakdown = {
       unitConstraints: { total: 0, covered: 0, components: {} },
       rls: { total: 0, covered: 0 },
@@ -279,6 +279,19 @@ export class ScoringEngine {
     breakdown.rls.score = breakdown.rls.score ?? 0;
     breakdown.integrationRelations.score = breakdown.integrationRelations.score ?? 0;
     breakdown.e2eOps.score = breakdown.e2eOps.score ?? 0;
+
+    const health = this.deriveTestHealth(testResults);
+    const applyHealth = (key) => {
+      const entry = breakdown[key];
+      if (!entry) return;
+      const factor = this.resolveHealthFactor(health, key);
+      entry.score = this.round(entry.score * factor, entry.score);
+    };
+
+    applyHealth('unitConstraints');
+    applyHealth('rls');
+    applyHealth('integrationRelations');
+    applyHealth('e2eOps');
 
     return breakdown;
   }
@@ -482,7 +495,7 @@ export class ScoringEngine {
     const scsBreakdown = this.calculateSCSBreakdown(schema);
     const scs = this.round(this.calculateSCS(schema));
     const mriMetrics = this.calculateMRIMetrics(migrationSteps);
-    const tciBreakdown = this.calculateTCIBreakdown(schema, migrationSteps);
+    const tciBreakdown = this.calculateTCIBreakdown(schema, migrationSteps, testResults);
     const tci = this.calculateTCI(schema, testResults, migrationSteps);
     const readiness = this.calculateReadiness(scs, mriMetrics.score, tci);
 
@@ -552,6 +565,108 @@ export class ScoringEngine {
     const evidence = this.evidenceMap.getEvidence(uid);
     if (!evidence) return false;
     return kinds.some(kind => Array.isArray(evidence[kind]) && evidence[kind].length > 0);
+  }
+
+  deriveTestHealth(testResults = {}) {
+    const health = {};
+
+    const overall = this.toRatio(testResults.passed, testResults.total, testResults.failed)
+      ?? this.ratioFromSuites(testResults.suites);
+    if (overall != null) health.overall = overall;
+
+    health.unitConstraints = this.toRatioFromObject(testResults.unitConstraints)
+      ?? this.toRatioFromObject(testResults.constraints)
+      ?? this.toRatioFromArray(testResults.constraints);
+
+    health.rls = this.toRatioFromObject(testResults.rls)
+      ?? this.toRatioFromObject(testResults.policies);
+
+    health.integrationRelations = this.toRatioFromObject(testResults.integration)
+      ?? this.toRatioFromObject(testResults.behavior)
+      ?? this.toRatioFromArray(testResults.integration);
+
+    health.e2eOps = this.toRatioFromObject(testResults.migrations)
+      ?? this.toRatioFromObject(testResults.endToEnd)
+      ?? this.toRatio(testResults.migrationsPassed, testResults.migrationsTotal, testResults.migrationsFailed);
+
+    return health;
+  }
+
+  resolveHealthFactor(health, key) {
+    const factor = health[key];
+    if (typeof factor === 'number' && Number.isFinite(factor)) {
+      return this.clamp(factor, 0, 1);
+    }
+    if (typeof health.overall === 'number' && Number.isFinite(health.overall)) {
+      return this.clamp(health.overall, 0, 1);
+    }
+    return 1;
+  }
+
+  toRatio(passed, total, failed) {
+    if (typeof total === 'number' && total > 0) {
+      const pass = typeof passed === 'number'
+        ? passed
+        : (typeof failed === 'number' ? total - failed : total);
+      return this.clamp(pass / total, 0, 1);
+    }
+    if (typeof passed === 'number' && typeof failed === 'number') {
+      const denom = passed + failed;
+      if (denom > 0) {
+        return this.clamp(passed / denom, 0, 1);
+      }
+    }
+    return null;
+  }
+
+  toRatioFromObject(value) {
+    if (!value || typeof value !== 'object') return null;
+    return this.toRatio(value.passed ?? value.success ?? value.ok ?? value.completed, value.total ?? value.count, value.failed ?? value.errors);
+  }
+
+  toRatioFromArray(arr) {
+    if (!Array.isArray(arr) || arr.length === 0) return null;
+    let passed = 0;
+    for (const item of arr) {
+      if (item === true || item === 1 || item === 'pass' || item === 'passed') {
+        passed += 1;
+      } else if (item && typeof item === 'object') {
+        const ratio = this.toRatioFromObject(item);
+        if (ratio != null) {
+          passed += ratio;
+        }
+      }
+    }
+    return this.clamp(passed / arr.length, 0, 1);
+  }
+
+  ratioFromSuites(suites) {
+    if (!Array.isArray(suites) || suites.length === 0) {
+      return null;
+    }
+    let total = 0;
+    let passed = 0;
+    for (const suite of suites) {
+      const ratio = this.toRatioFromObject(suite) ?? this.statusToRatio(suite.status ?? suite.verdict);
+      if (ratio != null) {
+        total += 1;
+        passed += ratio;
+      }
+    }
+    if (total === 0) return null;
+    return this.clamp(passed / total, 0, 1);
+  }
+
+  statusToRatio(status) {
+    if (!status) return null;
+    const normalized = String(status).toLowerCase();
+    if (['pass', 'passed', 'ok', 'success'].includes(normalized)) return 1;
+    if (['fail', 'failed', 'error'].includes(normalized)) return 0;
+    return null;
+  }
+
+  clamp(value, min = 0, max = 1) {
+    return Math.min(Math.max(value, min), max);
   }
 
   round(value, fallback = 0) {

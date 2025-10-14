@@ -92,7 +92,7 @@ test('ScoringEngine computes breakdown metrics with evidence', () => {
     record(uid, 'test');
   }
 
-  const tciBreakdown = scoring.calculateTCIBreakdown(schema, migrationSteps);
+  const tciBreakdown = scoring.calculateTCIBreakdown(schema, migrationSteps, {});
   assert.ok(tciBreakdown.unitConstraints.score > 0.5, 'Unit constraints score should reflect recorded tests');
   assert.equal(tciBreakdown.rls.score, 1, 'RLS coverage should be complete');
   assert.ok(tciBreakdown.e2eOps.score > 0, 'E2E coverage should be recorded');
@@ -101,4 +101,42 @@ test('ScoringEngine computes breakdown metrics with evidence', () => {
   assert.ok(mriMetrics.breakdown.drops.points >= 25, 'Drop risk captured');
   assert.ok(mriMetrics.breakdown.defaults.points >= 10, 'Default risk captured');
   assert.ok(mriMetrics.score > 0, 'MRI score should be non-zero');
+});
+
+test('TCI incorporates test results health factors', () => {
+  const evidence = new EvidenceMap();
+  evidence.setSha('sha');
+
+  const fields = [
+    createField('id', { directives: { '@primaryKey': {} }, primaryKey: true }),
+    createField('email', { directives: { '@unique': {} }, unique: true })
+  ];
+
+  const table = {
+    name: 'Account',
+    directives: { '@rls': {} },
+    getFields: () => fields
+  };
+
+  const schema = { getTables: () => [table] };
+  const step = { kind: 'add_column', table: 'account', column: 'status', field: { nonNull: true, directives: {} } };
+
+  const record = (uid, kind) => evidence.record(uid, kind, { file: `${kind}.sql`, lines: '1-1' });
+  const fieldUid = (field) => `col:${table.name}.${field.name}`;
+  ['sql', 'typescript', 'zod', 'test'].forEach(kind => record(fieldUid(fields[0]), kind));
+  ['sql', 'typescript', 'zod', 'test'].forEach(kind => record(fieldUid(fields[1]), kind));
+  record('tbl:Account.rls', 'test');
+  record(`migration:${step.kind}:${step.table}:${step.column}`, 'test');
+
+  const scoring = new ScoringEngine(evidence);
+  const tciHealthy = scoring.calculateTCI(schema, { passed: 2, total: 2 }, [step]);
+  assert.equal(tciHealthy, 1, 'All passing tests should yield perfect TCI');
+
+  const failingResults = {
+    passed: 1,
+    total: 2,
+    migrations: { passed: 0, total: 2 }
+  };
+  const tciDegraded = scoring.calculateTCI(schema, failingResults, [step]);
+  assert.ok(tciDegraded < 0.5, 'Failing suites should reduce TCI');
 });
