@@ -43,7 +43,7 @@ Evidence bundle lives under `.wesley/` and is validated against JSON Schemas in 
 
 ### Experimental: Operation Documents (QIR)
 
-You can compile GraphQL operation documents (queries) in an `ops/` folder and pass `--ops ops/` to `generate`. Each `*.op.json` file is translated to a deterministic SQL function (and, when parameterless, a companion view) under `out/ops/`. See [docs/guides/qir-ops.md](./qir-ops.md#using---ops-experimental) for the JSON shape, naming rules, and CLI flags.
+You can compile GraphQL operation documents (queries) in an `ops/` folder and pass `--ops ops/` to `generate`. Each `*.op.json` file is translated to a deterministic SQL function (and, when parameterless, a companion view) under `out/ops/`. See [docs/guides/qir-ops.md](./qir-ops.md#quick-start-from-graphql-to-executable-sql) for the JSON shape, naming rules, and CLI flags.
 
 Example:
 
