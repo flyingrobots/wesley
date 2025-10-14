@@ -173,6 +173,39 @@
   </section>
 
   <section class="card" style="margin-top:2rem">
+    <h2>Score Breakdown</h2>
+    <div class="grid" id="breakdown-grid">
+      <div>
+        <h3>SCS</h3>
+        <table>
+          <thead><tr><th>Component</th><th>Score</th><th>Coverage</th></tr></thead>
+          <tbody id="scs-breakdown">
+            <tr><td colspan="3" class="muted">No data.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <h3>TCI</h3>
+        <table>
+          <thead><tr><th>Component</th><th>Score</th><th>Coverage</th><th>Notes</th></tr></thead>
+          <tbody id="tci-breakdown">
+            <tr><td colspan="4" class="muted">No data.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <h3>MRI</h3>
+        <table>
+          <thead><tr><th>Risk</th><th>Score</th><th>Contribution</th><th>Points</th></tr></thead>
+          <tbody id="mri-breakdown">
+            <tr><td colspan="4" class="muted">No data.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" style="margin-top:2rem">
     <h3>Raw JSON</h3>
     <details>
       <summary>holmes-report.json</summary>
@@ -285,6 +318,97 @@
       el.textContent = data ? JSON.stringify(data, null, 2) : 'not loaded';
     }
 
+    function formatPercent(value) {
+      return typeof value === 'number' && Number.isFinite(value) ? `${(value * 100).toFixed(1)}%` : '—';
+    }
+
+    function renderBreakdown(breakdown) {
+      renderScsBreakdown(breakdown?.scs);
+      renderTciBreakdown(breakdown?.tci);
+      renderMriBreakdown(breakdown?.mri);
+    }
+
+    function renderScsBreakdown(data) {
+      const tbody = document.getElementById('scs-breakdown');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      if (!data || Object.keys(data).length === 0) {
+        const row = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = 3;
+        cell.className = 'muted';
+        cell.textContent = 'No breakdown data.';
+        row.appendChild(cell);
+        tbody.appendChild(row);
+        return;
+      }
+      for (const [key, entry] of Object.entries(data)) {
+        const row = document.createElement('tr');
+        const coverage = entry?.totalWeight > 0
+          ? `${formatPercent((entry.coveredWeight || 0) / entry.totalWeight)} (${(entry.coveredWeight || 0).toFixed(1)}/${entry.totalWeight.toFixed(1)})`
+          : '—';
+        row.innerHTML = `<td>${labelize(key)}</td><td>${formatPercent(entry?.score)}</td><td>${coverage}</td>`;
+        tbody.appendChild(row);
+      }
+    }
+
+    function renderTciBreakdown(data) {
+      const tbody = document.getElementById('tci-breakdown');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      if (!data || Object.keys(data).length === 0) {
+        const row = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = 4;
+        cell.className = 'muted';
+        cell.textContent = 'No breakdown data.';
+        row.appendChild(cell);
+        tbody.appendChild(row);
+        return;
+      }
+      for (const [key, entry] of Object.entries(data)) {
+        const coverage = entry?.total > 0
+          ? `${formatPercent((entry.covered || 0) / entry.total)} (${(entry.covered || 0).toFixed(1)}/${entry.total.toFixed(1)})`
+          : '—';
+        const notes = entry?.components
+          ? Object.entries(entry.components)
+              .map(([name, value]) => `${labelize(name)} ${formatPercent(value)}`)
+              .join(', ')
+          : '—';
+        const row = document.createElement('tr');
+        row.innerHTML = `<td>${labelize(key)}</td><td>${formatPercent(entry?.score)}</td><td>${coverage}</td><td>${notes}</td>`;
+        tbody.appendChild(row);
+      }
+    }
+
+    function renderMriBreakdown(data) {
+      const tbody = document.getElementById('mri-breakdown');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      if (!data || Object.keys(data).length === 0) {
+        const row = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = 4;
+        cell.className = 'muted';
+        cell.textContent = 'No breakdown data.';
+        row.appendChild(cell);
+        tbody.appendChild(row);
+        return;
+      }
+      for (const [key, entry] of Object.entries(data)) {
+        const row = document.createElement('tr');
+        row.innerHTML = `<td>${labelize(key)}</td><td>${formatPercent(entry?.score)}</td><td>${formatPercent(entry?.contribution)}</td><td>${(entry?.points ?? 0).toFixed(1)}</td>`;
+        tbody.appendChild(row);
+      }
+    }
+
+    function labelize(value) {
+      return String(value || '')
+        .replace(/([a-z])([A-Z])/g, '$1 $2')
+        .replace(/_/g, ' ')
+        .replace(/^./, (m) => m.toUpperCase());
+    }
+
     (async () => {
       const holmes = await loadJSON('holmes-report.json');
       const watson = await loadJSON('watson-report.json');
@@ -299,6 +423,7 @@
         setProgress('tci', holmes.scores?.tci ?? 0);
         setProgress('mri', holmes.scores?.mri ?? 0, v => `${Math.round((v ?? 0) * 100)}%`);
         renderVerdict('verdict-holmes', 'HOLMES', holmes.verdict?.code, holmes.verdict?.message);
+        renderBreakdown(holmes.breakdown);
       }
 
       if (watson) {

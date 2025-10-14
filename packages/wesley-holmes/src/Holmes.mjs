@@ -21,6 +21,7 @@ export class Holmes {
     this.sha = bundle.sha;
     this.evidence = bundle.evidence;
     this.scores = bundle.scores;
+    this.bundleVersion = bundle.bundleVersion || '1.0.0';
     this.weights = this.loadWeightOverrides();
   }
 
@@ -32,7 +33,8 @@ export class Holmes {
   }
 
   investigationData() {
-    const scores = this.extractScores();
+    const breakdown = this.extractBreakdown();
+    const scores = { ...this.extractScores(), breakdown };
     const summary = {
       generatedAt: this.bundle.timestamp,
       sha: this.sha,
@@ -40,7 +42,8 @@ export class Holmes {
       verificationCount: this.countVerifications(),
       verificationStatus: this.scores?.readiness?.verdict ?? 'UNKNOWN',
       tci: scores.tci,
-      mri: scores.mri
+      mri: scores.mri,
+      bundleVersion: this.bundleVersion
     };
 
     const elements = [];
@@ -65,6 +68,7 @@ export class Holmes {
     return {
       metadata: summary,
       scores,
+      breakdown,
       evidence: elements,
       gates,
       verdict
@@ -78,6 +82,7 @@ export class Holmes {
     lines.push('');
     lines.push(`- Generated: ${metadata.generatedAt}`);
     lines.push(`- Commit SHA: ${metadata.sha}`);
+    lines.push(`- Bundle Version: ${metadata.bundleVersion || '—'}`);
     lines.push('');
     lines.push(`> ⚠️ Evidence valid only for commit \`${metadata.sha.substring(0, 7)}\``);
     lines.push('');
@@ -90,6 +95,11 @@ export class Holmes {
     lines.push(`**Scores**: SCS ${(data.scores.scs * 100).toFixed(1)}% · TCI ${(data.scores.tci * 100).toFixed(1)}% · MRI ${(data.scores.mri * 100).toFixed(1)}%`);
     lines.push(`**Verification Status**: ${metadata.verificationCount} claims verified`);
     lines.push(`**Ship Verdict**: ${metadata.verificationStatus}`);
+    lines.push('');
+
+    lines.push('## 🧮 Score Breakdown');
+    lines.push('');
+    this.renderBreakdown(lines, data.breakdown);
     lines.push('');
 
     lines.push('## 📊 The Weight of Evidence');
@@ -158,6 +168,15 @@ export class Holmes {
     };
   }
 
+  extractBreakdown() {
+    const raw = this.scores?.scores?.breakdown || {};
+    return {
+      scs: raw.scs || {},
+      tci: raw.tci || {},
+      mri: raw.mri || {}
+    };
+  }
+
   countVerifications() {
     let count = 0;
     for (const evidence of Object.values(this.evidence.evidence || {})) {
@@ -166,6 +185,78 @@ export class Holmes {
       }
     }
     return count;
+  }
+
+  renderBreakdown(lines, breakdown = {}) {
+    const scs = breakdown.scs || {};
+    const tci = breakdown.tci || {};
+    const mri = breakdown.mri || {};
+
+    if (!Object.keys(scs).length && !Object.keys(tci).length && !Object.keys(mri).length) {
+      lines.push('_Breakdown not available in bundle._');
+      return;
+    }
+
+    if (Object.keys(scs).length) {
+      lines.push('### Schema Coverage (SCS)');
+      lines.push('');
+      lines.push('| Component | Score | Coverage |');
+      lines.push('|-----------|-------|----------|');
+      for (const [key, entry] of Object.entries(scs)) {
+        const score = this.formatPercent(entry?.score);
+        const coverage = typeof entry?.coveredWeight === 'number' && typeof entry?.totalWeight === 'number' && entry.totalWeight > 0
+          ? `${this.formatPercent(entry.coveredWeight / entry.totalWeight)} (${entry.coveredWeight.toFixed(1)}/${entry.totalWeight.toFixed(1)})`
+          : '—';
+        lines.push(`| ${this.prettyLabel(key)} | ${score} | ${coverage} |`);
+      }
+      lines.push('');
+    }
+
+    if (Object.keys(tci).length) {
+      lines.push('### Test Confidence (TCI)');
+      lines.push('');
+      lines.push('| Component | Score | Coverage | Notes |');
+      lines.push('|-----------|-------|----------|-------|');
+      for (const [key, entry] of Object.entries(tci)) {
+        const score = this.formatPercent(entry?.score);
+        const coverage = typeof entry?.covered === 'number' && typeof entry?.total === 'number' && entry.total > 0
+          ? `${this.formatPercent(entry.covered / entry.total)} (${entry.covered.toFixed(1)}/${entry.total.toFixed(1)})`
+          : '—';
+        const notes = entry?.components
+          ? Object.entries(entry.components)
+              .map(([name, value]) => `${this.prettyLabel(name)} ${this.formatPercent(value)}`)
+              .join(', ')
+          : '';
+        lines.push(`| ${this.prettyLabel(key)} | ${score} | ${coverage} | ${notes || '—'} |`);
+      }
+      lines.push('');
+    }
+
+    if (Object.keys(mri).length) {
+      lines.push('### Migration Risk (MRI)');
+      lines.push('');
+      lines.push('| Risk Vector | Score | Contribution | Points |');
+      lines.push('|-------------|-------|--------------|--------|');
+      for (const [key, entry] of Object.entries(mri)) {
+        const score = this.formatPercent(entry?.score);
+        const contribution = this.formatPercent(entry?.contribution);
+        const points = typeof entry?.points === 'number' ? entry.points.toFixed(1) : '0.0';
+        lines.push(`| ${this.prettyLabel(key)} | ${score} | ${contribution} | ${points} |`);
+      }
+      lines.push('');
+    }
+  }
+
+  prettyLabel(key) {
+    return String(key || '')
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      .replace(/_/g, ' ')
+      .replace(/^./, (m) => m.toUpperCase());
+  }
+
+  formatPercent(value) {
+    if (typeof value !== 'number' || Number.isNaN(value)) return '—';
+    return `${(value * 100).toFixed(1)}%`;
   }
 
   inferWeight(uid) {

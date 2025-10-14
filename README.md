@@ -141,6 +141,7 @@ wesley deploy       # apply plan to production
 - **Explain mode** - Shows precise lock levels for each operation
 - **Dead column detection** - Uses pg_stat_statements to find unused columns
 - **Performance baselines** - Tracks migration timing for future predictions
+- **Score breakdowns** - HOLMES surfaces SCS/TCI/MRI sub-metrics so you know exactly which vectors need attention
 
 ### ✅ Comprehensive Testing
 

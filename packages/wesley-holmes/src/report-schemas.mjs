@@ -9,6 +9,19 @@
 const stringField = { type: 'string' };
 const numberField = { type: 'number' };
 const booleanField = { type: 'boolean' };
+const scoreBreakdownEntry = {
+  type: 'object',
+  required: ['score'],
+  properties: {
+    score: numberField,
+    totalWeight: numberField,
+    coveredWeight: numberField,
+    total: numberField,
+    covered: numberField,
+    contribution: numberField,
+    points: numberField
+  }
+};
 
 export const holmesReportSchema = {
   type: 'object',
@@ -16,7 +29,7 @@ export const holmesReportSchema = {
   properties: {
     metadata: {
       type: 'object',
-      required: ['generatedAt', 'sha', 'verificationStatus', 'verificationCount'],
+      required: ['generatedAt', 'sha', 'verificationStatus', 'verificationCount', 'bundleVersion'],
       properties: {
         generatedAt: stringField,
         sha: stringField,
@@ -24,16 +37,55 @@ export const holmesReportSchema = {
         verificationCount: numberField,
         weightedCompletion: numberField,
         tci: numberField,
-        mri: numberField
+        mri: numberField,
+        bundleVersion: stringField
       }
     },
     scores: {
       type: 'object',
-      required: ['scs', 'tci', 'mri'],
+      required: ['scs', 'tci', 'mri', 'breakdown'],
       properties: {
         scs: numberField,
         tci: numberField,
-        mri: numberField
+        mri: numberField,
+        breakdown: {
+          type: 'object',
+          required: ['scs', 'tci', 'mri'],
+          properties: {
+            scs: {
+              type: 'object',
+              required: ['sql', 'types', 'validation', 'tests'],
+              properties: {
+                sql: scoreBreakdownEntry,
+                types: scoreBreakdownEntry,
+                validation: scoreBreakdownEntry,
+                tests: scoreBreakdownEntry
+              }
+            },
+            tci: {
+              type: 'object',
+              required: ['unitConstraints', 'rls', 'integrationRelations', 'e2eOps'],
+              properties: {
+                unitConstraints: scoreBreakdownEntry,
+                rls: scoreBreakdownEntry,
+                integrationRelations: scoreBreakdownEntry,
+                e2eOps: scoreBreakdownEntry
+              }
+            },
+            mri: {
+              type: 'object',
+              required: ['drops', 'renames', 'defaults', 'typeChanges', 'indexes', 'other'],
+              properties: {
+                drops: scoreBreakdownEntry,
+                renames: scoreBreakdownEntry,
+                defaults: scoreBreakdownEntry,
+                typeChanges: scoreBreakdownEntry,
+                indexes: scoreBreakdownEntry,
+                other: scoreBreakdownEntry
+              }
+            }
+          }
+        }
       }
     },
     evidence: {
