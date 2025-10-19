@@ -62,12 +62,38 @@ flowchart LR
     class DEP p3
 ```
 
+## Quick Start (local workspace)
+
+```bash
+# 1. Clone and install
+git clone https://github.com/flyingrobots/wesley.git
+cd wesley
+pnpm install
+
+# 2. Generate everything for the example schema
+node packages/wesley-host-node/bin/wesley.mjs generate \
+  --schema example/schema.graphql \
+  --ops example/ops \
+  --emit-bundle \
+  --out-dir example/out
+
+# 3. Dry-run the migration plan (no database required)
+node packages/wesley-host-node/bin/wesley.mjs plan --schema example/schema.graphql --explain
+node packages/wesley-host-node/bin/wesley.mjs rehearse --schema example/schema.graphql --dry-run --json
+```
+
+Where to go next:
+
+- 📚 Read the [delivery lifecycle](docs/architecture/lifecycle.md) to see how Transform → Plan → Rehearse → Ship fit together.
+- 🗺️ Check the [roadmap](docs/roadmap.md) for milestone status.
+- ⚔️ Run the [BLADE demo](docs/blade.md) for a scripted end-to-end walkthrough.
+
 ## Why GraphQL as schema?
 
 - One source of truth: Describe the domain once; Wesley generates SQL, migrations, types, validation, and RLS from it.
 - Naturally relational: Graphs express relationships and constraints cleanly; directives capture DB semantics where they’re used.
 - Portable by design: A schema → IR → generators pipeline targets Postgres/Supabase today, other backends tomorrow.
-- Schmea that evolves: Just like your database.
+- Schema that evolves: Just like your database.
 
 ## The problem (short version)
 
@@ -209,6 +235,7 @@ DSN quick reference
 - Node.js: 18.x, 20.x, 22.x (CI uses Node 20 LTS; recommended)
 - Package manager: pnpm 9 (workspace pinned via packageManager)
 - CI runners: Ubuntu (macOS runners intentionally removed to control GitHub Actions costs)
+- The CLI works on macOS/Windows for development, but official CI support targets Ubuntu images.
 
 ## License
 

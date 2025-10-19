@@ -38,7 +38,7 @@
     "node",
     "adapters"
   ],
-  "author": "Captain James",
+  "author": "Wesley Authors <oss@flyingrobots.dev>",
   "license": "LicenseRef-MIND-UCAL-1.0",
   "repository": {
     "type": "git",

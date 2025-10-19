@@ -16,5 +16,9 @@
   "homepage": "https://github.com/flyingrobots/wesley/tree/main/packages/wesley-stack-supabase-nextjs#readme",
   "scripts": {
     "test": "node -e \"console.log('No tests for stack template')\""
+  },
+  "author": "Wesley Authors <oss@flyingrobots.dev>",
+  "engines": {
+    "node": ">=18.17"
   }
 }

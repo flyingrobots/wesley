@@ -22,6 +22,7 @@
     "docker:down": "docker-compose down",
     "docker:test": "docker-compose run pgtap",
     "wesley": "node packages/wesley-host-node/bin/wesley.mjs",
+    "meta:fix-packages": "node scripts/fix-package-metadata.mjs",
     "ci": "pnpm validate && pnpm generate:example && pnpm exec wesley validate-bundle --bundle example/.wesley --schemas schemas/"
   },
   "keywords": [
@@ -35,7 +36,7 @@
     "postgresql",
     "schema-first"
   ],
-  "author": "Captain James",
+  "author": "Wesley Authors <oss@flyingrobots.dev>",
   "license": "LicenseRef-MIND-UCAL-1.0",
   "repository": {
     "type": "git",
@@ -47,7 +48,7 @@
   "homepage": "https://github.com/flyingrobots/wesley#readme",
   "packageManager": "pnpm@9.15.9",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=18.17"
   },
   "dependencies": {
     "@supabase/pg-parser": "^0.1.3"

@@ -8,6 +8,11 @@ By participating in this project, you agree to abide by our [Code of Conduct](CO
 
 ## How Can I Contribute?
 
+### Read the roadmap
+
+Before you open a large feature request, skim the current [roadmap](docs/roadmap.md)
+so work lines up with the active milestone.
+
 ### Reporting Bugs
 
 Before creating bug reports, please check existing issues. When creating a bug report, include:
@@ -37,6 +42,8 @@ Enhancement suggestions are tracked as GitHub issues. When creating an enhanceme
 4. Ensure all tests pass: `pnpm test`
 5. Update documentation as needed
 6. Follow the commit message conventions
+7. Apply an appropriate label (see [docs/governance/labels.md](docs/governance/labels.md))
+   when you open the PR so reviewers know how to triage it.
 
 ## Architecture Guidelines
 
@@ -136,9 +143,10 @@ refactor: move generators to core
 ## Documentation
 
 Update relevant docs when making changes:
-- API changes: Update JSDoc comments
-- New features: Update README.md
-- Architecture changes: Update docs/architecture/
+- API changes: update JSDoc comments
+- New features: update README.md and Quick Start where needed
+- Architecture changes: update `docs/architecture/`
+- Roadmap or workflow changes: update `docs/roadmap.md` and `docs/governance/`
 
 ## License
 
@@ -156,7 +164,9 @@ pnpm publish
 
 ## Questions?
 
-Feel free to open an issue for any questions about contributing!
+Feel free to open an issue for any questions about contributing. For private
+questions (conduct or security), email `oss@flyingrobots.dev`
+(`security@flyingrobots.dev` for incident reports).
 
 ## Tooling & Hooks
 
