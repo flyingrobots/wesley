@@ -27,7 +27,7 @@
     "sql-generation",
     "rls-policies"
   ],
-  "author": "Wesley Team",
+  "author": "Wesley Authors <oss@flyingrobots.dev>",
   "license": "LicenseRef-MIND-UCAL-1.0",
   "repository": {
     "type": "git",
@@ -37,5 +37,8 @@
   "homepage": "https://github.com/flyingrobots/wesley/tree/main/packages/wesley-generator-supabase#readme",
   "bugs": {
     "url": "https://github.com/flyingrobots/wesley/issues"
+  },
+  "engines": {
+    "node": ">=18.17"
   }
 }
