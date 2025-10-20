@@ -9,7 +9,7 @@ services:
       POSTGRES_DB: wesley_test
       POSTGRES_HOST_AUTH_METHOD: trust
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./test/fixtures/postgres/00-extensions.sql:/docker-entrypoint-initdb.d/00-extensions.sql:ro

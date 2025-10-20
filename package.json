@@ -19,6 +19,7 @@
     "validate": "pnpm lint && pnpm format:check && pnpm test",
     "generate:example": "cd example && pnpm exec wesley generate --schema ecommerce.graphql --emit-bundle",
     "clean": "node scripts/clean.mjs",
+    "smoke:postgres-fixture": "bash scripts/smoke/postgres-fixture.sh",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
     "docker:test": "docker-compose run pgtap",
