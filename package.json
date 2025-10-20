@@ -18,6 +18,7 @@
     "format:check": "prettier --check .",
     "validate": "pnpm lint && pnpm format:check && pnpm test",
     "generate:example": "cd example && pnpm exec wesley generate --schema ecommerce.graphql --emit-bundle",
+    "clean": "node scripts/clean.mjs",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
     "docker:test": "docker-compose run pgtap",

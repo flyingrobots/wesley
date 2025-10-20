@@ -187,11 +187,13 @@ export async function createNodeRuntime() {
     
     // File writer
     writer: { 
-      writeFiles: async (artifacts, outdir) => {
-        // TODO: Implement proper file writing
-        for (const artifact of artifacts) {
-          const path = `${outdir}/${artifact.name}`;
-          await nodeFs.write(path, artifact.content);
+      writeFiles: async (artifacts, options) => {
+        const items = Array.isArray(artifacts) ? artifacts : [];
+        const baseDir = typeof options === 'string' ? options : options?.baseDir;
+        for (const artifact of items) {
+          const targetPath = artifact.path
+            || (baseDir ? await nodeFs.join(baseDir, artifact.name) : artifact.name);
+          await nodeFs.write(targetPath, artifact.content);
         }
       } 
     },

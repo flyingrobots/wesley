@@ -3,6 +3,7 @@
  */
 
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
+import { buildOutputPathMap, resolveFilePath } from '../utils/output-paths.mjs';
 
 export class PlanCommand extends WesleyCommand {
   constructor(ctx) {
@@ -25,8 +26,10 @@ export class PlanCommand extends WesleyCommand {
 
   async executeCore(context) {
     const { options, schemaContent, logger } = context;
-    const outDir = options.outDir || this.ctx?.config?.paths?.migrations || this.ctx?.config?.paths?.output || 'out';
-    options.outDir = outDir;
+    const configPaths = this.ctx?.config?.paths || {};
+    const baseOutDir = options.outDir || configPaths.output || 'out';
+    const outputPaths = buildOutputPathMap(configPaths, baseOutDir);
+    options.outDir = outputPaths.baseDir;
 
     // Enforce clean tree only in strict policy; default: allow
     const env = this.ctx.env || {};
@@ -38,7 +41,8 @@ export class PlanCommand extends WesleyCommand {
 
     let previous = { tables: [] };
     try {
-      const snap = await this.ctx.fs.read('.wesley/snapshot.json');
+      const snapshotPath = resolveFilePath(outputPaths.bundleDir, 'snapshot.json');
+      const snap = await this.ctx.fs.read(snapshotPath);
       previous = JSON.parse(snap);
     } catch {}
 
@@ -78,9 +82,10 @@ export class PlanCommand extends WesleyCommand {
     if (options.write) {
       const files = emitMigrations(plan);
       for (const f of files) {
-        await this.ctx.fs.write(`${options.outDir}/migrations/${f.name}`, f.content);
+        const targetPath = resolveFilePath(outputPaths.migrationsDir, f.name);
+        await this.ctx.fs.write(targetPath, f.content);
       }
-      if (!options.quiet) logger.info(`✍️ Wrote ${files.length} migration file(s) to ${options.outDir}/migrations`);
+      if (!options.quiet) logger.info(`✍️ Wrote ${files.length} migration file(s) to ${outputPaths.migrationsDir}`);
     }
 
     return { phases: plan.phases.length };
