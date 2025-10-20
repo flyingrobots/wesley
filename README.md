@@ -205,6 +205,9 @@ wesley generate                  # compile GraphQL → SQL/tests and write snaps
 wesley up --docker               # bootstrap or migrate your dev DB
 ```
 
+> [!NOTE]
+> The Docker setup seeds PostgreSQL using the version-controlled fixtures in `test/fixtures/postgres/`. Those scripts provision extensions and baseline tables the first time the container starts. Edit or extend them when you need deterministic demo data.
+
 ### Edit your schema (v1 → v2):
 
 ```graphql

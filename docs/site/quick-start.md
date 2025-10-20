@@ -53,3 +53,7 @@ This runs the migration plan without touching a database and prints the REALM
 - Learn about HOLMES scoring: [docs/architecture/holmes-architecture.md](../architecture/holmes-architecture.md)
 
 Need a scripted, showcase flow? Run the [BLADE Demo](../blade.md).
+
+> ℹ️ **Local Postgres fixtures**
+>
+> The repo seeds the Dockerised PostgreSQL instance with SQL stored in `test/fixtures/postgres/`. Those files are version-controlled so every developer gets the same extensions and baseline objects the first time the container starts.

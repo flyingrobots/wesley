@@ -12,7 +12,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./docker-entrypoint-initdb.d/00-extensions.sql:/docker-entrypoint-initdb.d/00-extensions.sql:ro
+      - ./test/fixtures/postgres/00-extensions.sql:/docker-entrypoint-initdb.d/00-extensions.sql:ro
       - ./example/out/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
       - ./example/tests/generated.sql:/docker-entrypoint-initdb.d/02-tests.sql:ro
     healthcheck:
