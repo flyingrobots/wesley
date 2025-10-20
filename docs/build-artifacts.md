@@ -5,8 +5,11 @@ Wesley generates several directories and files as part of its compile and valida
 | Artifact | Produced By | Purpose / Contents | Safe to Delete? |
 | --- | --- | --- | --- |
 | `.wesley/` | `wesley generate`, `wesley plan`, `wesley rehearse`, `wesley cert-*` | Evidence bundle, score reports, SHIPME certificate, HOLMES inputs. Delete when you no longer need the latest bundle. | ✅ Generated each run. |
-| `out/` | `wesley generate` (default output path) | SQL, models, tests, and other generated files when running at repo root. | ✅ Regenerated on next compile. |
-| `example/out/` | `pnpm generate:example`, direct CLI runs inside `example/` | Generated artifacts for the ecommerce demo schema. | ✅ Regenerated on next demo run. |
+| `out/` | `wesley generate` | Core DDL (`schema.sql`), RLS output (`rls.sql`), and default artifacts. | ✅ Generated from the current schema. |
+| `out/tests/` | `wesley generate` | pgTAP suites (`tests.sql`) and future test artifacts. | ✅ Regenerated on compile. |
+| `out/models/`, `out/zod/` | (future) `wesley models/zod` commands | JavaScript/TypeScript models and validation schemas. | ✅ Regenerated when commands run. |
+| `out/ops/` | `wesley generate --ops …` | Experimental operation SQL (views/functions + explain output). | ✅ Regenerated when ops compile. |
+| `example/out/` | `pnpm generate:example`, direct CLI runs inside `example/` | Generated artifacts for the ecommerce demo schema (follows the same subdirectory layout). | ✅ Regenerated on next demo run. |
 | `example/.wesley/` | `pnpm generate:example`, demo rehearsals | Evidence bundle for example schema; mirrors root `.wesley/`. | ✅ Regenerated with demo commands. |
 | `demo/blade/*.key`, `demo/blade/*.pub`, `demo/blade/keys/` | `demo/blade/run.sh` | Temporary signing keys for the BLADE demo flow. | ✅ Regenerate as part of the demo. |
 | `coverage/` | `pnpm test:coverage` | Coverage reports from Jest/Vitest suites. | ✅ Pure test output. |
@@ -18,3 +21,5 @@ Wesley generates several directories and files as part of its compile and valida
 ## Cleaning Up
 
 The repository defines `pnpm clean` to remove the directories above in one shot. Use it whenever you want to return the workspace to a pristine state before a fresh compile or demo run. See `scripts/clean.mjs` for the exact list of paths.
+
+Output locations are driven by `wesley.config.mjs` (`paths.output` + `paths.artifacts`). Override those values to redirect generators without editing the commands themselves.
