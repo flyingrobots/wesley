@@ -56,6 +56,6 @@
   },
   "devDependencies": {
     "dependency-cruiser": "17.1.0",
-    "eslint": "^9.36.0"
+    "eslint": "^9.38.0"
   }
 }
