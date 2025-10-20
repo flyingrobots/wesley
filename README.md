@@ -185,6 +185,10 @@ wesley deploy       # apply plan to production
 - **TypeScript generation** - Types and Zod schemas from GraphQL
 - **RLS helpers** - Composable security functions with required indexes
 
+## Workspace Scripts
+
+A full reference for `pnpm run` scripts lives in [docs/scripts-reference.md](docs/scripts-reference.md). It explains what each command does, when to use it, and any caveats.
+
 ## Compare
 
 |   | Hand-written | ORMs | Wesley |
