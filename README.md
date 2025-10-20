@@ -87,6 +87,7 @@ Where to go next:
 - 📚 Read the [delivery lifecycle](docs/architecture/lifecycle.md) to see how Transform → Plan → Rehearse → Ship fit together.
 - 🗺️ Check the [roadmap](docs/roadmap.md) for milestone status.
 - ⚔️ Run the [BLADE demo](docs/blade.md) for a scripted end-to-end walkthrough.
+- 🌐 Browse the docs site: https://flyingrobots.github.io/wesley/ (auto-published from `mkdocs.yml`)
 
 ## Why GraphQL as schema?
 
