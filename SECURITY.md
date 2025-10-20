@@ -13,7 +13,7 @@ Wesley takes security seriously, especially when generating production database 
 
 ### Where to Report
 
-Please report security vulnerabilities to: security@wesleyql.dev
+Please report security vulnerabilities to: security@flyingrobots.dev
 
 ### What to Include
 

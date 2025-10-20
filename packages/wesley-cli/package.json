@@ -23,7 +23,7 @@
   "dependencies": {
     "@wesley/core": "workspace:*",
     "ajv": "^8.12.0",
-    "ajv-formats": "^2.1.1",
+    "ajv-formats": "^3.0.1",
     "commander": "^14.0.0"
   },
   "keywords": [
@@ -32,6 +32,15 @@
     "schema",
     "generator"
   ],
-  "author": "Captain James",
-  "license": "LicenseRef-MIND-UCAL-1.0"
+  "author": "Wesley Authors <oss@flyingrobots.dev>",
+  "license": "LicenseRef-MIND-UCAL-1.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/flyingrobots/wesley.git",
+    "directory": "packages/wesley-cli"
+  },
+  "bugs": {
+    "url": "https://github.com/flyingrobots/wesley/issues"
+  },
+  "homepage": "https://github.com/flyingrobots/wesley/tree/main/packages/wesley-cli#readme"
 }

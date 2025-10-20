@@ -4,23 +4,39 @@
   "type": "module",
   "description": "SHA-lock HOLMES - Schema intelligence sidecar for Wesley",
   "main": "./src/index.mjs",
-  "bin": { 
-    "wesley-holmes": "./src/cli.mjs" 
+  "bin": {
+    "wesley-holmes": "./src/cli.mjs"
   },
   "exports": "./src/index.mjs",
   "files": [
     "src/"
   ],
-  "engines": { 
-    "node": ">=18.17" 
+  "engines": {
+    "node": ">=18.17"
   },
   "scripts": {
     "test": "node --test"
   },
   "dependencies": {
-    "@wesley/core": "workspace:*"
+    "@wesley/core": "workspace:*",
+    "commander": "^14.0.0"
   },
-  "keywords": ["holmes", "watson", "moriarty", "verification", "prediction"],
-  "author": "Captain James",
-  "license": "LicenseRef-MIND-UCAL-1.0"
+  "keywords": [
+    "holmes",
+    "watson",
+    "moriarty",
+    "verification",
+    "prediction"
+  ],
+  "author": "Wesley Authors <oss@flyingrobots.dev>",
+  "license": "LicenseRef-MIND-UCAL-1.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/flyingrobots/wesley.git",
+    "directory": "packages/wesley-holmes"
+  },
+  "bugs": {
+    "url": "https://github.com/flyingrobots/wesley/issues"
+  },
+  "homepage": "https://github.com/flyingrobots/wesley/tree/main/packages/wesley-holmes#readme"
 }
