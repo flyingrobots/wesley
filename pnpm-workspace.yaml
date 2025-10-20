@@ -1,2 +1,7 @@
 packages:
+  # Core packages (domain logic, CLI, adapters, generators)
   - 'packages/*'
+  # Example projects (demo schemas + CLI smoke tests)
+  - 'example'
+  # MkDocs documentation sources (deployed via docs-site workflow)
+  - 'docs/site'
