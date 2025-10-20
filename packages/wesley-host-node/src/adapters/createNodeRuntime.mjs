@@ -186,16 +186,19 @@ export async function createNodeRuntime() {
     runner,
     
     // File writer
-    writer: { 
-      writeFiles: async (artifacts, options) => {
-        const items = Array.isArray(artifacts) ? artifacts : [];
-        const baseDir = typeof options === 'string' ? options : options?.baseDir;
-        for (const artifact of items) {
-          const targetPath = artifact.path
-            || (baseDir ? await nodeFs.join(baseDir, artifact.name) : artifact.name);
-          await nodeFs.write(targetPath, artifact.content);
+    writer: {
+      writeFiles: async (artifacts) => {
+        if (!Array.isArray(artifacts)) {
+          throw new TypeError('writer.writeFiles expects an array of artifacts');
         }
-      } 
+        for (const artifact of artifacts) {
+          if (!artifact || typeof artifact.path !== 'string') {
+            const name = artifact?.name ?? '<unknown>';
+            throw new TypeError(`Artifact "${name}" is missing a resolved path`);
+          }
+          await nodeFs.write(artifact.path, artifact.content ?? '');
+        }
+      }
     },
     
     // Clock

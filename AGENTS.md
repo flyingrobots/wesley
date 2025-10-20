@@ -52,6 +52,7 @@ This document defines repo‑wide conventions and guardrails for human and AI ag
 ## Agent Behavior
 - Before edits: state intent and list files you expect to touch.
 - After edits: summarize the delta and CI effects (which jobs pass/fail and why).
+- Never bypass pre-push hooks or test gates with `--no-verify`; if hooks time out or fail, stop and surface the failure instead of forcing the push.
 
 ---
 
