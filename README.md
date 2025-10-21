@@ -95,6 +95,7 @@ Where to go next:
 - 📜 Peek into the live Chronicle at [CHRONICLES_OF_THE_MACHINE-KIND_VOL_00000001.jsonl](CHRONICLES_OF_THE_MACHINE-KIND_VOL_00000001.jsonl) to see how prior sessions captured their work.
 - 🛠️ Explore the [scripts catalogue](scripts/README.md) for maintenance commands (`preflight`, `clean`, metadata fixers, and more).
 - 🧪 See how integration suites are organised in [test/README.md](test/README.md).
+- 🧬 Browse the canonical schemas in [schemas/README.md](schemas/README.md).
 
 ---
 
