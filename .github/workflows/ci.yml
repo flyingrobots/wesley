@@ -45,4 +45,4 @@ jobs:
       # CLI bats are covered by dedicated workflows; keep main CI lean
       # (See .github/workflows/cli-tests.yml and cli-quick.yml)
 
-      - run: node packages/wesley-host-node/bin/wesley.mjs generate --schema example/ecommerce.graphql --allow-dirty
+      - run: node packages/wesley-host-node/bin/wesley.mjs generate --schema test/fixtures/examples/ecommerce.graphql --allow-dirty

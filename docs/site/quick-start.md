@@ -21,17 +21,17 @@ Compile the example schema and operation plans:
 
 ```bash
 node packages/wesley-host-node/bin/wesley.mjs generate \
-  --schema example/schema.graphql \
-  --ops example/ops \
+  --schema test/fixtures/examples/schema.graphql \
+  --ops test/fixtures/examples/ops \
   --emit-bundle \
-  --out-dir example/out
+  --out-dir out/examples
 ```
 
 ## 3. Inspect the plan
 
 ```bash
 node packages/wesley-host-node/bin/wesley.mjs plan \
-  --schema example/schema.graphql \
+  --schema test/fixtures/examples/schema.graphql \
   --explain
 ```
 
@@ -39,7 +39,7 @@ node packages/wesley-host-node/bin/wesley.mjs plan \
 
 ```bash
 node packages/wesley-host-node/bin/wesley.mjs rehearse \
-  --schema example/schema.graphql \
+  --schema test/fixtures/examples/schema.graphql \
   --dry-run --json
 ```
 

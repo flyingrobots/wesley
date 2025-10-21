@@ -38,10 +38,10 @@ jobs:
       - run: pnpm install
 
       - name: Transform
-        run: node packages/wesley-host-node/bin/wesley.mjs transform --schema example/ecommerce.graphql --out-dir out
+        run: node packages/wesley-host-node/bin/wesley.mjs transform --schema test/fixtures/examples/ecommerce.graphql --out-dir out
 
       - name: Plan (write)
-        run: node packages/wesley-host-node/bin/wesley.mjs plan --schema example/ecommerce.graphql --write --out-dir out
+        run: node packages/wesley-host-node/bin/wesley.mjs plan --schema test/fixtures/examples/ecommerce.graphql --write --out-dir out
 
       - name: Wait for Postgres
         run: |
@@ -53,7 +53,7 @@ jobs:
           PGPASSWORD: wesley_test
 
       - name: Rehearse (REALM)
-        run: node packages/wesley-host-node/bin/wesley.mjs rehearse --schema example/ecommerce.graphql --dsn postgres://wesley:wesley_test@localhost:5432/wesley_test --timeout 300000
+        run: node packages/wesley-host-node/bin/wesley.mjs rehearse --schema test/fixtures/examples/ecommerce.graphql --dsn postgres://wesley:wesley_test@localhost:5432/wesley_test --timeout 300000
 
       - name: Create SHIPME
         run: node packages/wesley-host-node/bin/wesley.mjs cert-create --env production --out SHIPME.md

@@ -7,7 +7,7 @@ setup() {
     export CLI_PATH="$REPO_ROOT/packages/wesley-host-node/bin/wesley.mjs"
     export HOLMES_CLI="$REPO_ROOT/packages/wesley-holmes/src/cli.mjs"
     export TEMP_DIR="$(mktemp -d)"
-    cp "$REPO_ROOT/example/schema.graphql" "$TEMP_DIR/schema.graphql"
+    cp "$REPO_ROOT/test/fixtures/examples/schema.graphql" "$TEMP_DIR/schema.graphql"
 }
 
 teardown() {

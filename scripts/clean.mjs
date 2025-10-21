@@ -8,9 +8,8 @@ const directories = [
   'coverage',
   'dist',
   'tests/generated',
-  'example/.wesley',
-  'example/out',
-  'demo/blade/keys',
+  'test/fixtures/examples/.wesley',
+  'test/fixtures/examples/out',
 ];
 
 const filePatterns = [
