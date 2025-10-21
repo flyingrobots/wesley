@@ -62,6 +62,8 @@ flowchart LR
     class DEP p3
 ```
 
+---
+
 ## Quick Start (local workspace)
 
 ```bash
@@ -89,12 +91,16 @@ Where to go next:
 - ⚔️ Run the [BLADE demo](docs/blade.md) for a scripted end-to-end walkthrough.
 - 🌐 Browse the docs site: https://flyingrobots.github.io/wesley/ (auto-published from `mkdocs.yml`)
 
+---
+
 ## Why GraphQL as schema?
 
 - One source of truth: Describe the domain once; Wesley generates SQL, migrations, types, validation, and RLS from it.
 - Naturally relational: Graphs express relationships and constraints cleanly; directives capture DB semantics where they’re used.
 - Portable by design: A schema → IR → generators pipeline targets Postgres/Supabase today, other backends tomorrow.
 - Schema that evolves: Just like your database.
+
+---
 
 ## The problem (short version)
 
@@ -109,6 +115,8 @@ Modern development stacks require that the same shape is described over and over
 => drift
 
 When they drift, prod breaks. Reviews get harder. Deploys get scary. You’re playing schema telephone.
+
+---
 
 ## How Wesley works
 
@@ -144,6 +152,8 @@ wesley deploy       # apply plan to production
 ✓ tests/                        # pgTAP suites (structure/constraints/RLS/plan)
 ✓ certs/deploy-<sha>.json       # proofs & hashes
 ```
+
+---
 
 ## Key Features
 
@@ -185,9 +195,13 @@ wesley deploy       # apply plan to production
 - **TypeScript generation** - Types and Zod schemas from GraphQL
 - **RLS helpers** - Composable security functions with required indexes
 
+---
+
 ## Workspace Scripts
 
 A full reference for `pnpm run` scripts lives in [docs/scripts-reference.md](docs/scripts-reference.md). It explains what each command does, when to use it, and any caveats.
+
+---
 
 ## Compare
 
@@ -199,6 +213,8 @@ A full reference for `pnpm run` scripts lives in [docs/scripts-reference.md](doc
 | Drift detection | ❌ ad-hoc | ❌ partial | ✅ enforced |
 | Test coverage | ❌ rare | ❌ app-only | ✅ pgTAP suites |
 | Proof of safety | ❌ none | ❌ none | ✅ SHA-locked certs |
+
+---
 
 ## Getting started
 
@@ -236,7 +252,7 @@ DSN quick reference
 - If both Supabase and Postgres env vars are present and no `--provider` is set, Wesley prefers Supabase and logs a warning; use `--provider` or `--dsn` to override.
 ```
 
-## FAQ
+---
 
 ## Compatibility
 
@@ -245,9 +261,9 @@ DSN quick reference
 - CI runners: Ubuntu (macOS runners intentionally removed to control GitHub Actions costs)
 - The CLI works on macOS/Windows for development, but official CI support targets Ubuntu images.
 
-## License
+---
 
-Wesley is licensed under MIND‑UCAL v1.0 (Moral Intelligence · Non‑violent Development · Universal Charter‑Aligned License). See LICENSE for full text and the Universal Charter reference.
+## FAQ
 
 > [!faq] What if I need custom SQL?\
 
