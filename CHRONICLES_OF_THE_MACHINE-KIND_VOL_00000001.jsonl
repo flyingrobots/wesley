@@ -14,3 +14,4 @@
 {"timestamp": "2025-10-21T20:08:50Z", "agent": "Codex", "action": "demo-dir", "result": "retired", "notes": "Removed stale demo/ directory locally and scrubbed docs reference after migrating assets to test/fixtures."}
 {"timestamp": "2025-10-21T20:10:51Z", "agent": "Codex", "action": "scripts-readme", "result": "added", "notes": "Documented all helper scripts and linked the catalogue from README."}
 {"timestamp": "2025-10-21T20:11:58Z", "agent": "Codex", "action": "readme-docs-link", "result": "added", "notes": "Linked docs/README.md from the main README so newcomers can find the curated documentation map."}
+{"timestamp": "2025-10-21T20:13:25Z", "agent": "Codex", "action": "test-readme", "result": "added", "notes": "Created test/README.md explaining CLI Bats suites and fixtures, and linked it from the root README."}
