@@ -11,3 +11,4 @@
 {"timestamp": "2025-10-21T19:08:01Z", "agent": "Codex", "action": "repo-report", "result": "produced", "notes": "Drafted REPO_REPORT.md with newcomer/LLM/package/GitHub analysis and actionable checklist."}
 {"timestamp": "2025-10-21T19:40:59Z", "agent": "Codex", "action": "repo-report-formatting", "result": "updated", "notes": "Reformatted REPO_REPORT.md with success/danger/warning admonitions and section scores plus improvement guidance."}
 {"timestamp": "2025-10-21T20:05:32Z", "agent": "Codex", "action": "docs-readme", "result": "updated", "notes": "Linked AGENTS protocol and Chronicles log from README to guide contributors."}
+{"timestamp": "2025-10-21T20:08:50Z", "agent": "Codex", "action": "demo-dir", "result": "retired", "notes": "Removed stale demo/ directory locally and scrubbed docs reference after migrating assets to test/fixtures."}
