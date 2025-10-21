@@ -69,6 +69,11 @@ psql -d <db> -t -A -c "EXPLAIN (FORMAT JSON) SELECT * FROM wes_ops.op_products_b
 
 Note: The DSL is experimental; joins, distinct, pagination, and deeper composition will expand in future phases. See docs/guides/qir-ops.md for the QIR lowering/emission guide.
 
+## Consuming Tests
+
+- `test/holmes-e2e.bats` generates bundles that include QIR outputs compiled from these operations.
+- Future QIR smoke tests will continue to point at this directory—treat filenames as stable contract.
+
 ## Validation & Error Handling
 
 Required fields:

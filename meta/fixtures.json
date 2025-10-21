@@ -18,6 +18,12 @@
       "path": "test/fixtures/postgres",
       "kind": ["sql"],
       "description": "SQL scripts loaded by CI docker-compose to install required Postgres extensions."
+    },
+    {
+      "name": "rls-schema",
+      "path": "test/fixtures/rls-schema.graphql",
+      "kind": ["graphql"],
+      "description": "Focused schema covering row-level security directives used by CLI E2E suites."
     }
   ]
 }

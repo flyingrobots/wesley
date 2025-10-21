@@ -327,7 +327,7 @@ See [`packages/wesley-holmes/README.md`](packages/wesley-holmes/README.md) for t
 ### 🧪 Testing & Fixtures
 - [`test/`](test/README.md) — Integration and E2E test suites
 - [`schemas/`](schemas/README.md) — Canonical GraphQL schemas
-- [`graphql/`](graphql/README.md) — Sample SDL and patterns
+- [`test/fixtures/reference/`](test/fixtures/reference/README.md) — Comprehensive SDL for experiments and future tests
 
 ### 🛠️ Development
 - **[Scripts Reference](docs/scripts-reference.md)** — Complete `pnpm run` commands guide
