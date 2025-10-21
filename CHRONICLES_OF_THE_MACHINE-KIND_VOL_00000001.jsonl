@@ -17,3 +17,4 @@
 {"timestamp": "2025-10-21T20:13:25Z", "agent": "Codex", "action": "test-readme", "result": "added", "notes": "Created test/README.md explaining CLI Bats suites and fixtures, and linked it from the root README."}
 {"timestamp": "2025-10-21T20:14:51Z", "agent": "Codex", "action": "schemas-readme", "result": "added", "notes": "Captured canonical schema descriptions in schemas/README.md and linked from the main README."}
 {"timestamp": "2025-10-21T20:16:10Z", "agent": "Codex", "action": "graphql-readme", "result": "added", "notes": "Documented the canonical GraphQL schema location and linked it from README."}
+{"timestamp": "2025-10-21T20:22:07Z", "agent": "Codex", "action": "package-readmes", "result": "added", "notes": "Created README.md files for every workspace package to describe responsibilities, status, and dev commands."}
