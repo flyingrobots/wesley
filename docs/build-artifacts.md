@@ -16,7 +16,7 @@ Wesley generates several directories and files as part of its compile and valida
 | `dist/` | Package-level build scripts (`pnpm -r build`) | Transpiled bundles for any package that emits compiled JS. | ✅ Rebuilt by the corresponding package build. |
 | `tests/generated/` | CLI/evidence workflows | Generated SQL/pgTAP test suites used during rehearsal. | ✅ Regenerated on next CLI run. |
 
-> ℹ️ Additional temporary directories may appear under `demo/` or individual packages when running bespoke scripts. They follow the same pattern—anything listed in `.gitignore` is expected to be disposable unless you are auditing the output.
+> ℹ️ Additional temporary directories may appear under individual packages when running bespoke scripts. They follow the same pattern—anything listed in `.gitignore` is expected to be disposable unless you are auditing the output.
 
 ## Cleaning Up
 
