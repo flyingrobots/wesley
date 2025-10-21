@@ -4,27 +4,55 @@ _Generated: 2025-10-21_
 
 ## 1. First-Time Human Pass (New Developer)
 
+**Score: 8/10** – The onboarding story is compelling and the quick start works out of the box, but a few stray artifacts and hidden expectations could surprise fresh eyes. To reach 10/10, surface the agent protocol in the README and ensure generated leftovers (e.g., `demo/out/`) are cleaned or documented.
+
 ### 1.1 Immediate Impressions
-- The root `README.md` is thorough and opinionated. It gives a solid elevator pitch, a copy-paste local quick start, and clear “where to go next” pointers.
-- The presence of `AGENTS.md` and the Chronicles file at the root is unusual but well-signposted; the README doesn’t mention them directly, so newcomers may miss their significance unless they explore.
-- Folders are few and descriptive (`docs/`, `packages/`, `test/`, etc.), but a generated `demo/out/` directory lingers and could confuse someone skimming for source vs. artifacts.
+
+> [!success]
+> The root `README.md` is opinionated and actionable, pairing an elevator pitch with copy-paste quick-start commands and follow-up links.
+
+> [!warning]
+> `AGENTS.md` and the Chronicles log at the root are valuable but unreferenced by the README, so humans may miss their significance on the first pass.
+
+> [!warning]
+> A generated `demo/out/` directory lingers at the root, blurring the line between source and artifacts.
 
 ### 1.2 Documentation Flow
-- `docs/README.md` provides a curated map of the documentation site. The `mkdocs.yml` at the root makes it easy to discover http://flyingrobots.github.io/wesley/.
-- Guides are split sensibly between architecture, internals, and task-oriented guides. The recently relocated fixtures referenced in the README (`test/fixtures/examples/…`) line up with docs.
-- For hands-on learning, the README links to the BLADE demo and the lifecycle doc. It may still help to surface `pnpm run preflight` or `pnpm run clean` in the README so new contributors know the repo-specific commands exist.
+
+> [!success]
+> `docs/README.md` acts as a curated map, and the live MkDocs site makes browsing painless.
+
+> [!success]
+> Guides (Quick Start, QIR, migrations) match the updated fixture paths, so docs and code stay in sync.
+
+> [!warning]
+> Core scripts like `pnpm run preflight` and `pnpm run clean` are discoverable in `scripts/`, but a README mention would help new contributors run the right commands first.
 
 ### 1.3 Tooling & Local Setup
-- `pnpm` is clearly the package manager of record (pinned in `package.json` and `pnpm-workspace.yaml`).
-- `scripts/preflight.mjs` codifies hygiene checks. The script expects `.gitignore` entries for fixtures and outputs, which matches the current layout.
-- `scripts/clean.mjs` now wipes the relocated fixture outputs but not `demo/out/`. Either add that directory to the cleaner or document it as intentionally persistent.
+
+> [!success]
+> `pnpm` is clearly the package manager of record, pinned in both `package.json` and `pnpm-workspace.yaml`.
+
+> [!success]
+> `scripts/preflight.mjs` captures the repo hygiene bar and mirrors `.gitignore`, making CI parity straightforward.
+
+> [!warning]
+> `scripts/clean.mjs` now wipes fixture outputs but still leaves `demo/out/`; either explain the directory or fold it into the cleaner.
 
 ### 1.4 Potential Confusions & Nice Touches
-- `demo/` only contains generated `out/` files; a README or removal of the directory would reduce ambiguity.
-- `node_modules/` exists both at root and in every package (typical for workspaces, but worth noting for repo size).
-- `CHRONICLES_OF_THE_MACHINE-KIND_VOL_00000001.jsonl` and `AGENTS.md` set expectations for autonomous contributors—a cool feature, but humans may skim past them unless we call them out in the README.
+
+> [!warning]
+> `demo/` currently contains only generated SQL/tests; without context it reads like stale source.
+
+> [!warning]
+> Workspace-level `node_modules/` directories are expected but balloon repository size—worth a note in CONTRIBUTING for expectations.
+
+> [!success]
+> The Chronicles log plus `AGENTS.md` form a thoughtful process for autonomous contributors once discovered.
 
 ## 2. Root Directory Mini-Report
+
+**Score: 7/10** – The directory structure is compact and purposeful, but a couple of folders (`demo/`, `graphql/`) could use inline context. Cleaning or documenting generated areas would bring this to 10/10.
 
 | Path | Purpose & Contents | Newcomer Notes | Suggested Action |
 | --- | --- | --- | --- |
@@ -41,12 +69,23 @@ _Generated: 2025-10-21_
 
 ## 3. Repository Through an LLM Lens
 
-- **Determinism & Metadata:** The repo already provides machine-friendly fixtures and schemas. Consider adding a machine-readable manifest (e.g., `meta/fixtures.json`) mapping logical names to paths so automations can discover test inputs without hardcoded strings.
-- **Automation Hooks:** `scripts/preflight.mjs` and `pnpm run clean` are great entry points. Packaging them into a single “bootstrap” script (`pnpm run setup`) could help automated agents know the exact sequence (install → preflight → test).
-- **Context Surfaces:** The agent guidance (`AGENTS.md`) is gold. Linking it from `README.md` would ensure both humans and bots see it upfront. For LLMs with limited token windows, a short `CONTRIBUTING_SUMMARY.md` might help.
-- **Large Trees:** Each package has its own `node_modules/`, which can balloon tokens when crawled blindly. A `.llmignore` (similar to `.gitignore`) listing generated directories could help future automation tools.
+**Score: 7/10** – The repository is already automation-friendly, but a few metadata additions would smooth LLM workflows. Adding a fixtures manifest and a documented bootstrap path would push this toward 10/10.
+
+> [!success]
+> Machine-readable fixtures and schemas are already present, making deterministic analyses feasible.
+
+> [!warning]
+> Introduce a manifest (e.g., `meta/fixtures.json`) so agents can enumerate canonical inputs without bespoke path knowledge.
+
+> [!warning]
+> Package install → preflight → test into a documented bootstrap command so automated agents know the exact sequence.
+
+> [!warning]
+> Consider adding a `.llmignore` (in the spirit of `.gitignore`) to keep massive generated directories out of token windows.
 
 ## 4. Packages Overview
+
+**Score: 6.5/10** – Code layout and testing are solid, but several packages lack README/context. Adding lightweight READMEs or doc links would raise this to 10/10.
 
 | Package | Snapshot | Expectations Met? | Opportunities |
 | --- | --- | --- | --- |
@@ -63,9 +102,16 @@ _Generated: 2025-10-21_
 
 ## 5. GitHub Meta Snapshot
 
-- **Issues:** 20 recent open issues skew toward enhancements (CLI, generators) and demos. Labels are consistent (`pkg:*`, `group:*`). No critical bugs flagged.
-- **Pull Requests:** Only PR #109 is open (draft docs on QIR). CI likely stable.
-- **Projects:** Two public projects (Wesley #5 with 64 items, db8 Roadmap #3 with 87 items). Both appear active; no README attached, so contributors must inspect columns manually.
+**Score: 7.5/10** – Issue hygiene is strong and review load is light, but projects lack summaries. Adding project READMEs or cross-links from docs would make this a 10/10.
+
+> [!success]
+> Issues are consistently labeled (`pkg:*`, `group:*`), making triage predictable.
+
+> [!success]
+> Only one open PR (draft docs) suggests CI is stable and review queues are short.
+
+> [!warning]
+> GitHub Projects are active but have no descriptions; contributors must open the board to infer context.
 
 ## 6. Recommendations (Checklist)
 
@@ -75,4 +121,3 @@ _Generated: 2025-10-21_
 - [ ] Consider a machine-readable manifest for fixtures/schemas to aid automation and LLM agents.
 - [ ] Optionally document `schemas/` in README or docs as the canonical schema repository.
 - [ ] Attach short descriptions/readmes to GitHub Projects or link them from `docs/roadmap.md` for discoverability.
-
