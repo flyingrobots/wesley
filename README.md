@@ -197,6 +197,12 @@ wesley deploy       # apply plan to production
 
 ---
 
+## Workspace Scripts
+
+A full reference for `pnpm run` scripts lives in [docs/scripts-reference.md](docs/scripts-reference.md). It explains what each command does, when to use it, and any caveats.
+
+---
+
 ## Compare
 
 |   | Hand-written | ORMs | Wesley |

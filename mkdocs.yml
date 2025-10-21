@@ -8,6 +8,7 @@ nav:
   - Home: index.md
   - Quick Start: quick-start.md
   - Roadmap: roadmap.md
+  - Scripts: scripts.md
   - Reference:
       - Lifecycle: ../architecture/lifecycle.md
       - README: ../README.md
