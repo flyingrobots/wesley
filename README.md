@@ -294,6 +294,19 @@ Prisma focuses on queries. Wesley compiles the data layer (DDL, migrations, RLS,
 **Start shipping with confidence.**  
 **GraphQL in, Supabase out. Deployments are boring.**  
 
+## Workspace Packages
+
+- [@wesley/cli](packages/wesley-cli/README.md) – Command-line interface that drives generation, planning, rehearsals, certification, and the Daywalker "blade" demo.
+- [@wesley/core](packages/wesley-core/README.md) – Pure domain logic: directive registry, IR builders, lowering pipeline, and SQL/RLS emission helpers.
+- [@wesley/host-node](packages/wesley-host-node/README.md) – Node.js adapters (filesystem, shell) and the `wesley` binary entrypoint.
+- [@wesley/generator-js](packages/wesley-generator-js/README.md) – Emits JavaScript/TypeScript/Zod artifacts from the Wesley IR (foundational; CLI wiring in progress).
+- [@wesley/generator-supabase](packages/wesley-generator-supabase/README.md) – Supabase-specific emitters and test helpers such as `TestDepthStrategy.mjs`.
+- [@wesley/holmes](packages/wesley-holmes/README.md) – SHA-lock investigations (`holmes`), verifications (`watson`), and predictions (`moriarty`), plus the reporting CLI.
+- [@wesley/tasks](packages/wesley-tasks/README.md) – Task orchestration primitives shared across planning/execution flows.
+- [@wesley/slaps](packages/wesley-slaps/README.md) – Lock-aware scheduling utilities that bridge plans and task execution.
+- [@wesley/scaffold-multitenant](packages/wesley-scaffold-multitenant/README.md) – **WIP** scaffolding templates for future `wesley scaffold` commands.
+- [@wesley/stack-supabase-nextjs](packages/wesley-stack-supabase-nextjs/README.md) – **WIP** experimental stack demonstrating Wesley + Supabase + Next.js integration.
+
 ## Demo: BLADE (Daywalker Deploys)
 
 Looking for a memorable 5–7 minute demo? Check out BLADE — the “Daywalker Deploys” flow that runs transform → plan (lock‑aware) → rehearse (shadow) → certify → verify with a single command. See docs/blade.md for the story, assets, and how to run it. Certificates and internal artifacts live under `.wesley/` (e.g., `.wesley/SHIPME.md`).
