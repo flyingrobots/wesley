@@ -96,6 +96,7 @@ Where to go next:
 - 🛠️ Explore the [scripts catalogue](scripts/README.md) for maintenance commands (`preflight`, `clean`, metadata fixers, and more).
 - 🧪 See how integration suites are organised in [test/README.md](test/README.md).
 - 🧬 Browse the canonical schemas in [schemas/README.md](schemas/README.md).
+- 🧾 Reference the sample SDL in [graphql/README.md](graphql/README.md).
 
 ---
 
