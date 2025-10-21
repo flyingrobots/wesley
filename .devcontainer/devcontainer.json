@@ -8,11 +8,13 @@
   "updateRemoteUserUID": true,
   "features": {
     "ghcr.io/devcontainers/features/git:1": {},
-    "ghcr.io/devcontainers/features/gh:1": {}
+    "ghcr.io/devcontainers/features/github-cli:1": {}
   },
   "containerEnv": {
-    "PNPM_HOME": "/home/node/.local/share/pnpm",
-    "PATH": "/home/node/.local/share/pnpm:$PATH"
+    "PNPM_HOME": "/home/node/.local/share/pnpm"
+  },
+  "remoteEnv": {
+    "PATH": "${containerEnv:PATH}:/home/node/.local/share/pnpm"
   },
   "postCreateCommand": "corepack enable && pnpm install && pnpm run setup:bats-plugins",
   "customizations": {
