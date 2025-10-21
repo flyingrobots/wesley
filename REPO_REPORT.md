@@ -1,123 +1,116 @@
 # Repository Field Report
 
-_Generated: 2025-10-21_
+_Generated: 2025-10-21 (refreshed)_
 
 ## 1. First-Time Human Pass (New Developer)
 
-**Score: 8/10** – The onboarding story is compelling and the quick start works out of the box, but a few stray artifacts and hidden expectations could surprise fresh eyes. To reach 10/10, surface the agent protocol in the README and ensure generated leftovers (e.g., `demo/out/`) are cleaned or documented.
+**Score: 9/10** – The README now feels like a guided tour: quick start, scripts, tests, agent protocol, and evidence story are all surfaced. To hit 10/10, consider a short “start here” nav so newcomers aren’t overwhelmed by the detail.
 
 ### 1.1 Immediate Impressions
 
 > [!success]
-> The root `README.md` is opinionated and actionable, pairing an elevator pitch with copy-paste quick-start commands and follow-up links.
+> The root `README.md` is opinionated and actionable, with copy-paste quick-start commands plus forward links to docs, scripts, tests, and operational guidance.
+
+> [!success]
+> `AGENTS.md` and the live Chronicle are linked from the README, so the contributor protocol is impossible to miss.
 
 > [!warning]
-> `AGENTS.md` and the Chronicles log at the root are valuable but unreferenced by the README, so humans may miss their significance on the first pass.
-
-> [!warning]
-> A generated `demo/out/` directory lingers at the root, blurring the line between source and artifacts.
+> The README now doubles as a field manual; a concise TL;DR may help newcomers decide which sections to read first.
 
 ### 1.2 Documentation Flow
 
 > [!success]
-> `docs/README.md` acts as a curated map, and the live MkDocs site makes browsing painless.
+> `docs/README.md`, MkDocs, and the README’s deep links keep the documentation tree discoverable.
 
 > [!success]
-> Guides (Quick Start, QIR, migrations) match the updated fixture paths, so docs and code stay in sync.
+> Guides, fixtures, and CLI examples now reference the same paths (`test/fixtures/...`), eliminating earlier drift.
 
-> [!warning]
-> Core scripts like `pnpm run preflight` and `pnpm run clean` are discoverable in `scripts/`, but a README mention would help new contributors run the right commands first.
+> [!success]
+> Scripts, bootstrap, and test instructions are all linked—prerequisites are explicit.
 
 ### 1.3 Tooling & Local Setup
 
 > [!success]
-> `pnpm` is clearly the package manager of record, pinned in both `package.json` and `pnpm-workspace.yaml`.
+> `pnpm` remains front-and-center; `pnpm run bootstrap` codifies install → preflight → test.
 
 > [!success]
-> `scripts/preflight.mjs` captures the repo hygiene bar and mirrors `.gitignore`, making CI parity straightforward.
+> `scripts/preflight.mjs` + `.llmignore` + `meta/fixtures.json` give both humans and agents a deterministic footing.
 
-> [!warning]
-> `scripts/clean.mjs` now wipes fixture outputs but still leaves `demo/out/`; either explain the directory or fold it into the cleaner.
+> [!success]
+> Cleanup tooling aligns with the new fixture layout—no stray generated directories linger.
 
 ### 1.4 Potential Confusions & Nice Touches
 
 > [!warning]
-> `demo/` currently contains only generated SQL/tests; without context it reads like stale source.
-
-> [!warning]
-> Workspace-level `node_modules/` directories are expected but balloon repository size—worth a note in CONTRIBUTING for expectations.
+> Workspace-level `node_modules/` directories still swell the repo; a CONTRIBUTING note could acknowledge the footprint.
 
 > [!success]
-> The Chronicles log plus `AGENTS.md` form a thoughtful process for autonomous contributors once discovered.
+> Chronicles, AGENTS, fixtures, and package READMEs form a cohesive story—hard to get lost once you know the map.
 
 ## 2. Root Directory Mini-Report
 
-**Score: 7/10** – The directory structure is compact and purposeful, but a couple of folders (`demo/`, `graphql/`) could use inline context. Cleaning or documenting generated areas would bring this to 10/10.
+**Score: 9/10** – Root is now tidy (fixtures live under `test/fixtures`, `graphql/` removed, new meta/README breadcrumbs). Ongoing improvement: add a newcomer TL;DR to orient the eye.
 
 | Path | Purpose & Contents | Newcomer Notes | Suggested Action |
 | --- | --- | --- | --- |
-| `docs/` | Authoritative documentation (architecture, guides, governance, MkDocs site). | Well-organized; `docs/README.md` provides a map. | Consider linking `docs/README.md` from root README. |
-| `packages/` | Workspace packages for CLI, core, generators, adapters, demos. | Each package has code/tests; some lack package-level READMEs. | Add short package READMEs or doc links where missing. |
-| `test/` | Top-level Bats suites, `fixtures/`, and package-specific helpers. | Fixtures now under `test/fixtures/…`—good consolidation. | Highlight fixtures path in README (already partially done). |
-| `scripts/` | Utility scripts (`preflight`, `clean`, hooks). | Clear naming; mix of JS and Bash. | None. |
-| `schemas/` | JSON/GraphQL schemas for evidence, IR, directives. | Acts as canonical schema store; documented indirectly. | Mention in README or docs as “source of truth” for schema assets. |
-| `graphql/` | Canonical example `schema.graphql`. | Single entry point; helpful for readers. | Possibly add README clarifying difference from fixtures. |
-| `demo/` | Currently only `out/` (generated SQL/tests). | Looks like stale output. | Add to cleaner or remove folder. |
-| `docs/blade.md` & `test/fixtures/blade/` | Demo assets + narrative. | Paths now consistent (`out/blade`). | None. |
-| `CHRONICLES_….jsonl` | Agent activity log. | Unique artifact; when noticed, adds clarity. | Mention in README? |
-| Root files (`AGENTS.md`, `CHANGELOG.md`, etc.) | Governance & process docs. | Standard plus agent instructions. | None. |
+| `docs/` | Architecture, guides, governance, MkDocs site. | README links straight to `docs/README.md`. | None. |
+| `packages/` | Workspace packages for CLI/core/generators/etc. | Each package now ships a README. | Keep READMEs fresh as APIs evolve. |
+| `test/` | Bats suites, fixtures, package harnesses. | New README explains commands, fixtures, CI. | None. |
+| `scripts/` | Utility scripts (preflight, clean, hooks). | Documented via `scripts/README.md`. | None. |
+| `schemas/` | JSON schemas for evidence/IR/directives. | README added and linked from root. | Maintain alongside schema changes. |
+| `meta/` | Machine-readable fixtures manifest. | Useful for automation; currently advisory. | Consider enforcing via preflight. |
+| `test/fixtures/` | Canonical fixtures (examples, blade, postgres, reference, RLS schema). | Every subdir now has a README. | None. |
+| `CHRONICLES_….jsonl` | Agent activity log. | README points here explicitly. | None. |
+| Root files (`AGENTS.md`, `CHANGELOG.md`, etc.) | Governance with agent protocol front-and-center. | None. | None. |
 
 ## 3. Repository Through an LLM Lens
 
-**Score: 7/10** – The repository is already automation-friendly, but a few metadata additions would smooth LLM workflows. Adding a fixtures manifest and a documented bootstrap path would push this toward 10/10.
+**Score: 9/10** – Fixtures manifest, `.llmignore`, bootstrap command, and AGENTS appendix give agents clear guardrails. Remaining opportunity: enforce the manifest via preflight so it can’t silently drift.
 
 > [!success]
-> Machine-readable fixtures and schemas are already present, making deterministic analyses feasible.
+> `meta/fixtures.json` enumerates canonical inputs for automation.
+
+> [!success]
+> `.llmignore` is documented in README/AGENTS, keeping token budgets sane.
+
+> [!success]
+> `pnpm run bootstrap` documents the exact sequence for first-class validation.
 
 > [!warning]
-> Introduce a manifest (e.g., `meta/fixtures.json`) so agents can enumerate canonical inputs without bespoke path knowledge.
-
-> [!warning]
-> Package install → preflight → test into a documented bootstrap command so automated agents know the exact sequence.
-
-> [!warning]
-> Consider adding a `.llmignore` (in the spirit of `.gitignore`) to keep massive generated directories out of token windows.
+> Manifest isn’t yet enforced—adding a preflight check would make it authoritative.
 
 ## 4. Packages Overview
 
-**Score: 6.5/10** – Code layout and testing are solid, but several packages lack README/context. Adding lightweight READMEs or doc links would raise this to 10/10.
+**Score: 8.5/10** – Every package now has a README, and lingering tasklists moved to GitHub issues (#174–185). Remaining gap: WIP scaffolds/stacks still need roadmap milestones as the story firms up.
 
 | Package | Snapshot | Expectations Met? | Opportunities |
 | --- | --- | --- | --- |
-| `@wesley/cli` | Commander-based CLI; Bats tests under `test/`. | Yes—tests & CI docs present. | Provide package-level README to summarize commands (currently only CI/TASKLIST). |
-| `@wesley/core` | Pure domain logic, rich test harness (`test/run-all-tests.mjs`). | Yes—well-documented internally. | Ensure `TASKLIST.md` stays current or move to issues/projects. |
-| `@wesley/generator-js` | Emits JS models from IR. Minimal skeleton. | Mostly—code present, but no README/tests. | Add README + basic tests or TODO to roadmap. |
-| `@wesley/generator-supabase` | Supabase-specific emitters with tests. | Yes. | Document `TestDepthStrategy.mjs` purpose. |
-| `@wesley/holmes` | Evidence scoring CLI with tests. | Yes. | Could benefit from high-level README. |
-| `@wesley/host-node` | Node adapters (`bin/wesley.mjs`, src, tests). | Yes. | No immediate gaps. |
-| `@wesley/scaffold-multitenant` | Scaffolding templates (templates/). | Partially—templates exist, but README absent. |
-| `@wesley/slaps` | SLAs & scoring package. | Minimal docs. | Add README describing SLAPS acronym/purpose. |
-| `@wesley/stack-supabase-nextjs` | Starter stack scaffolding. | Contains `src/`; README missing. | Document usage or mark experimental. |
-| `@wesley/tasks` | Task orchestration utilities with tests. | Looks complete. | No action. |
+| `@wesley/cli` | CLI entrypoint + Bats suites. | README covers commands/tests. | Keep README synced with CLI help output. |
+| `@wesley/core` | Directive/IR/SQL engine. | README + follow-up issues. | Monitor issues #177–185. |
+| `@wesley/generator-js` | JS/TS/Zod emitters. | README added; tests queued. | Track coverage in roadmap. |
+| `@wesley/generator-supabase` | Supabase emitters/tests. | README documents `TestDepthStrategy`. | None. |
+| `@wesley/holmes` | HOLMES/WATSON/MORIARTY tooling. | README plus README section in root. | Expand as scoring evolves. |
+| `@wesley/host-node` | Node adapters + binary. | README added. | None. |
+| `@wesley/scaffold-multitenant` | WIP scaffold templates. | README labels status. | Align roadmap/milestones. |
+| `@wesley/slaps` | Lock-aware scheduling primitives. | README added. | None. |
+| `@wesley/stack-supabase-nextjs` | WIP stack demo. | README labels status. | Align roadmap/milestones. |
+| `@wesley/tasks` | Task orchestration utilities. | README added. | None. |
 
 ## 5. GitHub Meta Snapshot
 
-**Score: 7.5/10** – Issue hygiene is strong and review load is light, but projects lack summaries. Adding project READMEs or cross-links from docs would make this a 10/10.
+**Score: 8.5/10** – Issue hygiene remains strong, and the Wesley project board now carries a description. Keep roadmap ↔ project ↔ README cross-links aligned as initiatives evolve.
 
 > [!success]
-> Issues are consistently labeled (`pkg:*`, `group:*`), making triage predictable.
+> Issues are consistently labeled (`pkg:*`, `group:*`), keeping triage predictable.
 
 > [!success]
-> Only one open PR (draft docs) suggests CI is stable and review queues are short.
+> Wesley project board has a description; roadmap references active streams.
 
 > [!warning]
-> GitHub Projects are active but have no descriptions; contributors must open the board to infer context.
+> Continue cross-linking milestones for scaffold/stack work so WIP expectations are obvious to new contributors.
 
 ## 6. Recommendations (Checklist)
 
-- [ ] Add `demo/out/` (or the entire `demo/` folder) to `scripts/clean.mjs` and/or `.gitignore`, or document its purpose.
-- [ ] Surface `AGENTS.md` (and the Chronicles concept) in `README.md` so newcomers know why the files exist.
-- [ ] Create lightweight READMEs for packages lacking context (`generator-js`, `holmes`, `scaffold-multitenant`, `slaps`, `stack-supabase-nextjs`).
-- [ ] Consider a machine-readable manifest for fixtures/schemas to aid automation and LLM agents.
-- [ ] Optionally document `schemas/` in README or docs as the canonical schema repository.
-- [ ] Attach short descriptions/readmes to GitHub Projects or link them from `docs/roadmap.md` for discoverability.
+- [ ] Add a concise “start here” nav in README to help newcomers skim the essentials.
+- [ ] Enforce `meta/fixtures.json` via preflight/lint so automation can rely on it.
+- [ ] Keep scaffold/stack roadmap milestones/issues up to date as the WIP stabilises.
