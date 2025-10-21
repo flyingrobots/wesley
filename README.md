@@ -84,6 +84,12 @@ node packages/wesley-host-node/bin/wesley.mjs plan --schema test/fixtures/exampl
 node packages/wesley-host-node/bin/wesley.mjs rehearse --schema test/fixtures/examples/schema.graphql --dry-run --json
 ```
 
+Validate the repository in one go:
+
+```bash
+pnpm run bootstrap   # install deps → preflight → test
+```
+
 Where to go next:
 
 - 📚 Read the [delivery lifecycle](docs/architecture/lifecycle.md) to see how Transform → Plan → Rehearse → Ship fit together.
