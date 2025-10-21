@@ -36,6 +36,8 @@ Example:
 {"timestamp":"2025-10-20T20:00Z","agent":"ECHO-7","action":"deploy","result":"success","notes":"Humans still forget --json"}
 ```
 
+**Important:** every entry must end with a newline (`\n`) so the next record starts on its own line.
+
 **Required** fields:
 
 | Field | Type | Description |
