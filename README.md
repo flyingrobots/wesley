@@ -1,13 +1,10 @@
 # Wesley
 
-> Instant backend – Just add GraphQL! Zero downtime by default.
+> **GraphQL in. PostgreSQL out. Zero downtime by default.**
 
-Wesley is a schema-first data layer that uses GraphQL SDL as the single source of truth. It transforms it into PostgreSQL DDL with lock-aware strategies, TypeScript types, RLS policies, comprehensive pgTAP tests, all while prioritizing production safety with advisory locks, drift detection, checkpoint recovery, and a "safe to deploy" certification system built-in.
+Wesley inverts the entire database development paradigm. While everyone else generates GraphQL FROM databases, Wesley generates databases FROM GraphQL—along with TypeScript types, Zod schemas, RLS policies, comprehensive tests, and SHA-locked deployment certificates. All from a single source of truth.
 
-**The adult in the room for database operations.** No surprises, no 3am pages, just boring reliability.
-
-> [!NOTE]
-> Experimental QIR: Wesley now includes an experimental Query IR (QIR) pipeline that compiles operation plans into deterministic SQL. It’s behind the `--ops` flag and off by default. See docs/guides/qir-ops.md for the current scope (lowering + emission) and roadmap.
+**Stop maintaining schemas in 5 places. Start shipping with confidence.**
 
 ```graphql
 type Document @wes_table @wes_tenant(by: "org_id") @wes_rls(enabled: true) {
@@ -18,13 +15,31 @@ type Document @wes_table @wes_tenant(by: "org_id") @wes_rls(enabled: true) {
 }
 ```
 
+## Why Wesley Exists
+
+Modern development requires describing the same data shape 5+ times:
+
+- PostgreSQL DDL for your database
+- GraphQL schema for your API
+- TypeScript types for your frontend
+- Zod schemas for runtime validation  
+- RLS policies for security
+
+**When they drift, production breaks.** Reviews get harder. Deploys get scary. You're playing schema telephone with yourself.
+
+### The Wesley Philosophy
+
+**GraphQL is the single source of truth. Everything else is generated.**
+
+Migrations aren't tasks you write—they're diffs you get for free when your schema evolves. Wesley does what Rails tried with ActiveRecord, but gets it right: **Schema first. Migrations are just artifacts.**
+
 ```mermaid
 flowchart LR
-    subgraph YOU["You write"]
+    subgraph YOU["You Write"]
       GQL["📝 GraphQL Schema<br/><small>schema.graphql</small>"]
     end
 
-    subgraph WES["Wesley compiles"]
+    subgraph WES["Wesley Generates"]
       IR["🧠 Wesley IR"]
       SQL["🗄️ Postgres DDL<br/><small>+ phased migrations</small>"]
       TS["📘 TypeScript<br/><small>+ Zod</small>"]
@@ -33,7 +48,7 @@ flowchart LR
       CERT["🔏 SHA-Locked Cert<br/><small>proofs & hashes</small>"]
     end
 
-    subgraph PLAN["Zero-downtime plan (by default)"]
+    subgraph PLAN["Zero-Downtime Plan"]
       EXP[Expand]
       BKG[Backfill]
       VAL[Validate]
@@ -41,7 +56,7 @@ flowchart LR
       CTR[Contract]
     end
 
-    subgraph PROD["You deploy"]
+    subgraph PROD["You Deploy"]
       DEP["🚀 Production"]
     end
 
@@ -64,108 +79,66 @@ flowchart LR
 
 ---
 
-## Quick Start (local workspace)
+## Quick Start
 
 ```bash
-# 1. Clone and install
+# Install Wesley
+npm install -g @wesley/cli
+
+# Initialize your schema
+wesley init
+
+# Generate everything from your GraphQL schema
+wesley generate --schema schema.graphql
+
+# Deploy to production (with zero-downtime planning)
+wesley deploy
+```
+
+### Try the Examples
+
+```bash
+# Clone the repository
 git clone https://github.com/flyingrobots/wesley.git
 cd wesley
 pnpm install
 
-# 2. Generate everything for the example schema
+# Generate everything for the example schema
 node packages/wesley-host-node/bin/wesley.mjs generate \
   --schema test/fixtures/examples/schema.graphql \
   --ops test/fixtures/examples/ops \
   --emit-bundle \
   --out-dir out/examples
 
-# 3. Dry-run the migration plan (no database required)
-node packages/wesley-host-node/bin/wesley.mjs plan --schema test/fixtures/examples/schema.graphql --explain
-node packages/wesley-host-node/bin/wesley.mjs rehearse --schema test/fixtures/examples/schema.graphql --dry-run --json
-```
+# Preview migration plan (no database required)
+node packages/wesley-host-node/bin/wesley.mjs plan \
+  --schema test/fixtures/examples/schema.graphql \
+  --explain
 
-Validate the repository in one go:
-
-```bash
+# Validate the entire repository
 pnpm run bootstrap   # install deps → preflight → test
 ```
 
-Where to go next:
-
-- 📚 Read the [delivery lifecycle](docs/architecture/lifecycle.md) to see how Transform → Plan → Rehearse → Ship fit together.
-- 🗺️ Check the [roadmap](docs/roadmap.md) for milestone status.
-- ⚔️ Run the [BLADE demo](docs/blade.md) for a scripted end-to-end walkthrough.
-- 🌐 Browse the docs site: https://flyingrobots.github.io/wesley/ (auto-published from `mkdocs.yml`)
-- 📚 Dive deeper via the curated [docs index](docs/README.md).
-- 🤖 Review the [AGENTS protocol](AGENTS.md) to understand how contributors (human or machine) should operate and log activity in the Chronicles.
-- 📜 Peek into the live Chronicle at [CHRONICLES_OF_THE_MACHINE-KIND_VOL_00000001.jsonl](CHRONICLES_OF_THE_MACHINE-KIND_VOL_00000001.jsonl) to see how prior sessions captured their work.
-- 🧹 Automation helpers honour [`.llmignore`](.llmignore) to skip bulky outputs when scanning the repo.
-- 🛠️ Explore the [scripts catalogue](scripts/README.md) for maintenance commands (`preflight`, `clean`, metadata fixers, and more).
-- 🧪 See how integration suites are organised in [test/README.md](test/README.md).
-- 🧬 Browse the canonical schemas in [schemas/README.md](schemas/README.md).
-- 🧾 Reference the sample SDL in [graphql/README.md](graphql/README.md).
-- 🧱 Inspect the machine-readable fixture map in [meta/fixtures.json](meta/fixtures.json).
-
 ---
 
-## Why GraphQL as schema?
+## What You Get
 
-- One source of truth: Describe the domain once; Wesley generates SQL, migrations, types, validation, and RLS from it.
-- Naturally relational: Graphs express relationships and constraints cleanly; directives capture DB semantics where they’re used.
-- Portable by design: A schema → IR → generators pipeline targets Postgres/Supabase today, other backends tomorrow.
-- Schema that evolves: Just like your database.
-
----
-
-## The problem (short version)
-
-Modern development stacks require that the same shape is described over and over (often 5+ places) which leads to inevitable drift.
-
- + Postgres DDL for DB
- + GraphQL for APIs
- + TypeScript for apps
- + Zod for runtime
- + RLS for security
- + Hand-written database migrations
-=> drift
-
-When they drift, prod breaks. Reviews get harder. Deploys get scary. You’re playing schema telephone.
-
----
-
-## How Wesley works
-
-### 1) Define once
-
-```graphql
-type User @wes_table {
-  id: ID! @wes_pk
-  email: String! @wes_unique
-  org_id: ID! @wes_fk(ref: "Org.id")
-}
-```
-
-### 2) Compile everything
+When you run `wesley generate`, you receive:
 
 ```bash
-wesley generate --schema schema.graphql
-wesley plan         # expand → backfill → validate → switch → contract
-wesley rehearse     # run the plan on a shadow DB
-wesley certify      # emit SHA-locked proofs
-wesley deploy       # apply plan to production
-```
-
-### 3) What you get
-
-```bash
-✓ migrations/001_expand.sql     # online DDL
-✓ migrations/001_backfill.sql   # idempotent data moves
-✓ migrations/001_contract.sql   # cleanup phase
-✓ types/generated.ts            # TypeScript interfaces
-✓ schemas/zod.ts                # runtime validation
-✓ policies/rls.sql              # RLS policies + helpers
-✓ tests/                        # pgTAP suites (structure/constraints/RLS/plan)
-✓ certs/deploy-<sha>.json       # proofs & hashes
+✓ migrations/
+  ├─ 001_expand.sql      # Online DDL (CONCURRENTLY, NOT VALID)
+  ├─ 001_backfill.sql    # Idempotent data transformations
+  └─ 001_contract.sql    # Cleanup phase
+✓ types/generated.ts     # TypeScript interfaces
+✓ schemas/zod.ts         # Runtime validation
+✓ policies/rls.sql       # Row-level security + helpers
+✓ tests/                 # pgTAP suites
+  ├─ structure/          # Table, column, constraint tests
+  ├─ rls/                # Policy enforcement tests
+  └─ plan/               # Migration plan validation
+✓ certs/
+  └─ deploy-<sha>.json   # Cryptographic deployment proof
 ```
 
 ---
@@ -174,78 +147,77 @@ wesley deploy       # apply plan to production
 
 ### 🔒 Production Safety First
 
-- **Zero-downtime DDL** - All operations use CONCURRENTLY or NOT VALID patterns by default
-- **Advisory locks** - Prevents concurrent migrations automatically
-- **Lock-aware planning** - DDL Planner rewrites operations to minimize lock impact
-- **Checkpoint recovery** - Resume failed migrations from last good state
-- **Drift detection** - Runtime validation catches schema mismatches before damage
+- **Zero-downtime DDL** — All operations use `CONCURRENTLY` or `NOT VALID` patterns by default
+- **Advisory locks** — Prevents concurrent migrations automatically  
+- **Lock-aware planning** — DDL Planner rewrites operations to minimize lock impact
+- **Checkpoint recovery** — Resume failed migrations from last good state
+- **Drift detection** — Runtime validation catches schema mismatches before damage
 
 ### 🔄 Phased Migration Protocol
 
-- **Expand → Backfill → Validate → Switch → Contract** - Battle-tested strategy
-- **Wave execution** - Batches compatible operations to reduce total time
-- **Resource awareness** - Respects Postgres limits (one CIC per table, etc.)
-- **Dry-run mode** - Preview exact SQL and lock impact before execution
+Wesley uses battle-tested **Expand → Backfill → Validate → Switch → Contract** strategy:
+
+- **Wave execution** — Batches compatible operations to reduce total time
+- **Resource awareness** — Respects Postgres limits (one CIC per table, etc.)
+- **Dry-run mode** — Preview exact SQL and lock impact before execution
 
 ### 📊 Observable Operations
 
-- **SHA-locked certificates** - Cryptographic proof of what was deployed
-- **Explain mode** - Shows precise lock levels for each operation
-- **Dead column detection** - Uses pg_stat_statements to find unused columns
-- **Performance baselines** - Tracks migration timing for future predictions
-- **Score breakdowns** - HOLMES surfaces SCS/TCI/MRI sub-metrics so you know exactly which vectors need attention
-- **Customizable weighting** - HOLMES reads `.wesley/weights.json` so teams can tune evidence priorities ([guide](docs/guides/customizing-holmes-weights.md))
+- **SHA-locked certificates** — Cryptographic proof of what was deployed
+- **Explain mode** — Shows precise lock levels for each operation
+- **Dead column detection** — Uses `pg_stat_statements` to find unused columns
+- **Performance baselines** — Tracks migration timing for future predictions
+- **HOLMES scoring** — Evidence-based deployment confidence with customizable weights
 
 ### ✅ Comprehensive Testing
 
-- **pgTAP suites** - Generated tests for structure, constraints, RLS, and migrations
-- **Property-based testing** - Fast-check for DDL planner correctness
-- **Round-trip validation** - Ensures GraphQL → SQL → GraphQL preservation
-- **Idempotence checks** - All operations safe to retry
+- **pgTAP suites** — Generated tests for structure, constraints, RLS, and migrations
+- **Property-based testing** — Fast-check for DDL planner correctness
+- **Round-trip validation** — Ensures GraphQL → SQL → GraphQL preservation
+- **Idempotence checks** — All operations safe to retry
 
 ### 🚀 Developer Experience
 
-- **Watch mode** - Incremental compilation with atomic saves
-- **GraphQL ESLint** - Schema linting and best practices
-- **TypeScript generation** - Types and Zod schemas from GraphQL
-- **RLS helpers** - Composable security functions with required indexes
+- **Watch mode** — Incremental compilation with atomic saves
+- **GraphQL ESLint** — Schema linting and best practices
+- **TypeScript generation** — Types and Zod schemas from GraphQL
+- **RLS helpers** — Composable security functions with required indexes
 
 ---
 
-## Workspace Scripts
+## Comparison
 
-A full reference for `pnpm run` scripts lives in [docs/scripts-reference.md](docs/scripts-reference.md). It explains what each command does, when to use it, and any caveats.
-
----
-
-## Compare
-
-|   | Hand-written | ORMs | Wesley |
-| --- | --------- | ---- | ------ |
-| Source of truth | ❌ many files | ❌ code-first | ✅ GraphQL schema |
-| Zero-downtime | ❌ manual | ❌ table locks risk | ✅ planned by default |
-| RLS generation | ❌ manual SQL | ❌ limited | ✅ automated + tests |
-| Drift detection | ❌ ad-hoc | ❌ partial | ✅ enforced |
-| Test coverage | ❌ rare | ❌ app-only | ✅ pgTAP suites |
-| Proof of safety | ❌ none | ❌ none | ✅ SHA-locked certs |
+|   | Hand-written | ORMs | **Wesley** |
+|---|--------------|------|------------|
+| Source of truth | ❌ Many files | ❌ Code-first | ✅ **GraphQL schema** |
+| Zero-downtime | ❌ Manual | ❌ Table locks risk | ✅ **Planned by default** |
+| RLS generation | ❌ Manual SQL | ❌ Limited | ✅ **Automated + tests** |
+| Drift detection | ❌ Ad-hoc | ❌ Partial | ✅ **Enforced** |
+| Test coverage | ❌ Rare | ❌ App-only | ✅ **pgTAP suites** |
+| Proof of safety | ❌ None | ❌ None | ✅ **SHA-locked certs** |
 
 ---
 
-## Getting started
+## Example: Schema Evolution
 
-```bash
-npm install -g @wesley/cli
-wesley init                      # scaffold minimal schema.graphql
-wesley generate                  # compile GraphQL → SQL/tests and write snapshot
-wesley up --docker               # bootstrap or migrate your dev DB
-```
-
-> [!NOTE]
-> The Docker setup seeds PostgreSQL using the version-controlled fixtures in `test/fixtures/postgres/`. Those scripts provision extensions and baseline tables the first time the container starts. Edit or extend them when you need deterministic demo data.
-
-### Edit your schema (v1 → v2):
+### Define your schema (v1):
 
 ```graphql
+type User @wes_table @wes_rls(enabled: true) {
+  id: ID! @wes_pk
+  email: String! @wes_unique
+}
+```
+
+### Evolve your schema (v2):
+
+```graphql
+type User @wes_table @wes_rls(enabled: true) {
+  id: ID! @wes_pk
+  email: String! @wes_unique
+  posts: [Post!]! @wes_hasMany  # New relationship
+}
+
 type Post @wes_table @wes_rls(enabled: true) {
   id: ID! @wes_pk
   title: String!
@@ -254,126 +226,267 @@ type Post @wes_table @wes_rls(enabled: true) {
 }
 ```
 
-### Generate → migrate:
+### Generate and deploy:
+
+```bash
+wesley generate                  # Generates migrations, types, policies, tests
+wesley plan                      # Shows lock-aware migration plan
+wesley rehearse                  # Tests on shadow database
+wesley certify                   # Creates SHA-locked proof
+wesley deploy                    # Applies to production
+```
+
+Wesley automatically creates:
+- New `posts` table with proper indexes
+- Foreign key from `Post.author_id` → `User.id`  
+- RLS policies for both tables
+- TypeScript types for `User` and `Post`
+- Zod schemas for runtime validation
+- pgTAP tests for structure and constraints
+
+All zero-downtime. All tested. All provably safe.
+
+---
+
+## Advanced Features
+
+### Experimental: Query IR (QIR)
+
+Wesley includes an experimental Query Intermediate Representation pipeline that compiles GraphQL operations into deterministic SQL:
+
+```bash
+wesley generate \
+  --schema schema.graphql \
+  --ops ./operations \
+  --emit-bundle
+```
+
+The QIR pipeline:
+- Parses GraphQL queries, mutations, subscriptions
+- Lowers them to an intermediate representation  
+- Emits optimized PostgreSQL
+- Generates pgTAP tests for operation contracts
+
+See [`docs/guides/qir-ops.md`](docs/guides/qir-ops.md) for details.
+
+### HOLMES: Evidence-Based Deployments
+
+HOLMES inspects `.wesley/` bundles to produce machine-readable scores and human-friendly reports:
+
+```bash
+# Investigate deployment readiness
+holmes investigate --bundle .wesley/
+
+# Verify against previous deployment
+watson verify --current .wesley/ --baseline .wesley/previous/
+
+# Predict migration impact
+moriarty predict --bundle .wesley/
+```
+
+**Key HOLMES features:**
+- **Weighted scoring** — Customize via `.wesley/weights.json`
+- **SCS/TCI/MRI metrics** — Schema Coverage, Test Confidence, Migration Risk
+- **Evidence maps** — Deterministic fingerprints per release
+- **Regression detection** — Catch issues before production
+
+See [`packages/wesley-holmes/README.md`](packages/wesley-holmes/README.md) for the complete guide.
+
+---
+
+## Documentation
+
+### 📚 Getting Started
+- **[Documentation Hub](docs/README.md)** — Philosophy, architecture, and manifesto
+- **[Quick Start Guide](docs/guides/quick-start.md)** — Get running in 60 seconds
+- **[Migration Strategies](docs/guides/migrations.md)** — Schema evolution patterns
+- **[Query Operations (QIR)](docs/guides/qir-ops.md)** — Experimental operation pipeline
+
+### 🏗️ Architecture
+- **[The Paradigm Shift](docs/architecture/paradigm-shift.md)** — Why GraphQL is your source of truth
+- **[Architecture Overview](docs/architecture/overview.md)** — Hexagonal, event-driven design
+- **[The Algorithm](docs/architecture/algorithm.md)** — How GraphQL becomes SQL
+- **[Delivery Lifecycle](docs/architecture/lifecycle.md)** — Transform → Plan → Rehearse → Ship
+- **[HOLMES Integration](docs/architecture/holmes-integration.md)** — Evidence bundles and scoring
+
+### 🔧 Implementation
+- **[Internals Deep Dive](docs/internals/deep-dive.md)** — How Wesley works under the hood
+- **[Event Flow](docs/internals/event-flow.md)** — Tracing events through the system
+- **[Parser Design](docs/internals/parser.md)** — GraphQL SDL to domain model
+
+### 📦 Packages
+- [`@wesley/cli`](packages/wesley-cli/README.md) — Command-line interface
+- [`@wesley/core`](packages/wesley-core/README.md) — Pure domain logic (directive registry, IR, SQL emission)
+- [`@wesley/host-node`](packages/wesley-host-node/README.md) — Node.js adapters and binary entrypoint
+- [`@wesley/generator-js`](packages/wesley-generator-js/README.md) — JavaScript/TypeScript/Zod emitters
+- [`@wesley/generator-supabase`](packages/wesley-generator-supabase/README.md) — Supabase-specific generators
+- [`@wesley/holmes`](packages/wesley-holmes/README.md) — SHA-lock investigations and scoring
+- [`@wesley/tasks`](packages/wesley-tasks/README.md) — Task orchestration primitives
+- [`@wesley/slaps`](packages/wesley-slaps/README.md) — Lock-aware scheduling utilities
+
+### 🧪 Testing & Fixtures
+- [`test/`](test/README.md) — Integration and E2E test suites
+- [`schemas/`](schemas/README.md) — Canonical GraphQL schemas
+- [`graphql/`](graphql/README.md) — Sample SDL and patterns
+
+### 🛠️ Development
+- **[Scripts Reference](docs/scripts-reference.md)** — Complete `pnpm run` commands guide
+- [`scripts/`](scripts/README.md) — Maintenance and automation scripts
+- **[Roadmap](docs/roadmap.md)** — Current focus and upcoming milestones
+- **[SAGENTS Codex](AGENTS.md)** — Protocol for human and AI contributors
+
+### 🎬 Demos
+- **[BLADE (Daywalker Deploys)](docs/blade.md)** — 5-minute demo of the full pipeline
+
+---
+
+## Workspace Organization
+
+Wesley is a monorepo managed with pnpm workspaces:
 
 ```
-wesley generate                  # after editing schema.graphql
-wesley up                        # applies additive, lock‑aware migrations
-
-DSN quick reference
-- `--dsn` wins for all commands.
-- With `--provider supabase`, falls back to `SUPABASE_DB_URL`/`SUPABASE_POSTGRES_URL`.
-- Otherwise, uses local default: `postgres://wesley:wesley_test@localhost:5432/wesley_test`.
-- If both Supabase and Postgres env vars are present and no `--provider` is set, Wesley prefers Supabase and logs a warning; use `--provider` or `--dsn` to override.
+wesley/
+├── packages/           # Core packages
+│   ├── wesley-cli/     # Command-line interface
+│   ├── wesley-core/    # Pure domain logic
+│   ├── wesley-holmes/  # Evidence scoring
+│   └── ...
+├── docs/              # Documentation
+├── test/              # Integration tests
+│   └── fixtures/      # Canonical test inputs
+├── schemas/           # Reference schemas
+├── scripts/           # Automation tools
+└── .wesley/           # Build artifacts (gitignored)
+    ├── snapshot.json  # IR snapshot for diffs
+    ├── realm.json     # Rehearsal verdicts
+    └── SHIPME.md      # Deployment certificate
 ```
+
+### Working with Packages
+
+```bash
+# Run tests for specific package
+pnpm --filter @wesley/core test
+pnpm --filter @wesley/cli test
+
+# Full system validation
+pnpm run bootstrap
+
+# Watch mode during development
+wesley watch --schema schema.graphql
+```
+
+---
+
+## Configuration
+
+### Environment Variables
+
+Copy `.env.example` to `.env`:
+
+```bash
+# Logging
+WESLEY_LOG_LEVEL=info              # trace|debug|info|warn|error|silent
+
+# Git integration
+WESLEY_GIT_POLICY=emit             # emit|strict|off
+
+# Schema limits
+WESLEY_MAX_SCHEMA_BYTES=5242880    # 5MB default
+
+# Database connections
+SUPABASE_DB_URL=postgresql://...
+WESLEY_TEST_DSN=postgresql://...
+```
+
+### DSN Quick Reference
+
+- `--dsn` flag wins for all commands
+- With `--provider supabase`, falls back to `SUPABASE_DB_URL`/`SUPABASE_POSTGRES_URL`
+- Otherwise, uses local default: `postgres://wesley:wesley_test@localhost:5432/wesley_test`
 
 ---
 
 ## Compatibility
 
-- Node.js: 18.x, 20.x, 22.x (CI uses Node 20 LTS; recommended)
-- Package manager: pnpm 9 (workspace pinned via packageManager)
-- CI runners: Ubuntu (macOS runners intentionally removed to control GitHub Actions costs)
-- The CLI works on macOS/Windows for development, but official CI support targets Ubuntu images.
+- **Node.js**: 18.x, 20.x, 22.x (CI uses Node 20 LTS)
+- **Package manager**: pnpm 9 (workspace pinned)
+- **CI runners**: Ubuntu (macOS removed to control costs)
+- **Development**: Works on macOS/Windows, but CI targets Ubuntu
 
 ---
 
 ## FAQ
 
-> [!faq] What if I need custom SQL?\
+**Q: What if I need custom SQL?**  
+Use `@custom` blocks. Wesley will test them and preserve them across generations.
 
-Use @custom blocks; Wesley will test them and preserve them across generations.
+**Q: Can I bring an existing database?**  
+Yes—introspect to a starting GraphQL schema, then let Wesley own future diffs.
 
-> [!faq] Can I bring an existing DB?
+**Q: What about breaking changes?**  
+Detected and flagged. Wesley prefers backward-compatible plans; explicit approval required for breaking steps.
 
-Yes—introspect to a starting GraphQL schema, then let Wesley own the future diffs.
+**Q: How does Wesley compare to Prisma?**  
+Prisma focuses on queries. Wesley compiles the entire data layer (DDL, migrations, RLS, tests, proofs).
 
-> [!faq] What about breaking changes?
-
-Detected and flagged. Wesley prefers backward-compatible plans; explicit approval is required for breaking steps.
-
-> [!faq] Prisma vs Wesley?
-
-Prisma focuses on queries. Wesley compiles the data layer (DDL, migrations, RLS, tests, proofs).
+**Q: Can I use Wesley with [framework]?**  
+Yes! Wesley generates standard SQL, TypeScript, and Zod schemas that work with any framework. Dedicated integrations for Next.js/Remix/SvelteKit are on the roadmap.
 
 ---
 
-**Stop maintaining schemas in 5 places.**  
+## Contributing
+
+Wesley follows the [SAGENTS Codex](AGENTS.md) for contribution guidelines. Whether you're human or machine:
+
+1. **Obey repository rules** — Every rule was written for a reason
+2. **Respect `.llmignore`** — It guards focus from noise
+3. **Log your work** — Append to the Chronicles, never alter history
+4. **Test thoroughly** — Run `pnpm run bootstrap` before submitting
+
+See the [roadmap](docs/roadmap.md) for current priorities and the [Wesley Project Board](https://github.com/users/flyingrobots/projects/5) for active work.
+
+---
+
+## The Future
+
+Wesley is just the beginning. The roadmap includes:
+
+- **Visual Schema Editor** — Design schemas visually
+- **Multi-Database Support** — MySQL, SQLite, and more
+- **Framework Integration** — First-class Next.js, Remix, SvelteKit plugins
+- **Time-Travel Debugging** — Replay schema evolution
+- **AI-Powered Optimization** — Let AI suggest schema improvements
+
+---
+
+## Philosophy
+
+> *"Things are only impossible until they're not."* — Jean-Luc Picard
+
+Wesley is named after Wesley Crusher, the brilliant ensign who saw possibilities others couldn't. Like his namesake, Wesley (the tool) transcends conventional thinking to solve problems in ways that seem obvious only in hindsight.
+
+**The revolution is declaring GraphQL as the single source of truth.**  
+**The innovation is making that actually work.**  
+**The magic is making it boring.**
+
+---
+
+**Stop playing schema telephone.**  
 **Start shipping with confidence.**  
-**GraphQL in, Supabase out. Deployments are boring.**  
+**Make it so. 🖖**
 
-## Evidence, HOLMES, and Observability
+---
 
-Wesley treats deployment evidence as a first-class product:
+## License
 
-> [!success]
-> **HOLMES** inspects `.wesley/` bundles, producing machine-readable scores and human-friendly reports that live alongside your build artifacts.
+MIT
 
-- [Holmes CLI](packages/wesley-holmes/README.md) exposes `investigate`, `verify`, and `predict` commands for SHA-lock certification.
-- Evidence bundles carry deterministic `scores.json`, markdown narratives, and immutable fingerprints per release.
-- Weighted scoring is configurable via `.wesley/weights.json`, letting teams tune SCS/TCI/MRI priorities without forking the engine.
-- Watson and Moriarty modes plug the same evidence maps into verification and forecasting workflows, so regressions are caught *before* production.
+---
 
-When you run `pnpm --filter @wesley/holmes test` (or the dedicated CI workflow), you get end-to-end assurance that migrations, policies, and evidence stay in lockstep.
+## Links
 
-## Workspace Packages
-
-- [@wesley/cli](packages/wesley-cli/README.md) – Command-line interface that drives generation, planning, rehearsals, certification, and the Daywalker "blade" demo.
-- [@wesley/core](packages/wesley-core/README.md) – Pure domain logic: directive registry, IR builders, lowering pipeline, and SQL/RLS emission helpers.
-- [@wesley/host-node](packages/wesley-host-node/README.md) – Node.js adapters (filesystem, shell) and the `wesley` binary entrypoint.
-- [@wesley/generator-js](packages/wesley-generator-js/README.md) – Emits JavaScript/TypeScript/Zod artifacts from the Wesley IR (foundational; CLI wiring in progress).
-- [@wesley/generator-supabase](packages/wesley-generator-supabase/README.md) – Supabase-specific emitters and test helpers such as `TestDepthStrategy.mjs`.
-- [@wesley/holmes](packages/wesley-holmes/README.md) – SHA-lock investigations (`holmes`), verifications (`watson`), and predictions (`moriarty`), plus the reporting CLI.
-- [@wesley/tasks](packages/wesley-tasks/README.md) – Task orchestration primitives shared across planning/execution flows.
-- [@wesley/slaps](packages/wesley-slaps/README.md) – Lock-aware scheduling utilities that bridge plans and task execution.
-- [@wesley/scaffold-multitenant](packages/wesley-scaffold-multitenant/README.md) – **WIP** scaffolding templates for future `wesley scaffold` commands.
-- [@wesley/stack-supabase-nextjs](packages/wesley-stack-supabase-nextjs/README.md) – **WIP** experimental stack demonstrating Wesley + Supabase + Next.js integration.
-
-## Operational Guidance
-
-### GitHub Projects
-
-> [!success]
-> We maintain a single “Wesley” project board for sprint-sized work; resist the temptation to splinter into per-package boards unless scope truly demands it.
-
-- Use the [Wesley Project](https://github.com/users/flyingrobots/projects/5) to track QIR work, CLI improvements, HOLMES scoring tasks, and scaffolds. Keep everything in one place for shared visibility.
-
-### Versioning & Releases
-
-- Wesley packages follow **workspace SemVer**. Release trains move together unless a package warrants a patch out-of-band.
-- Compatibility notes (e.g., `@wesley/holmes` vs `@wesley/core`) belong in `CHANGELOG.md` and package READMEs. Keep the matrix current whenever exports change.
-- When a breaking change lands, bump the major version for every affected package; keep dependent packages aligned via `workspace:*` so pnpm enforces consistency.
-
-### Working in Isolation
-
-- Use pnpm filters to target packages: `pnpm --filter @wesley/core test`, `pnpm --filter @wesley/cli lint`, etc.
-- Many packages provide their own README with dev notes—start there before spelunking the source tree.
-- For full-system confidence, run `pnpm run bootstrap`; for fast iteration, lean on targeted tests + fixtures (`test/README.md`).
-
-### Automation Etiquette
-
-- Honour [`.llmignore`](.llmignore) when building tooling—skip directories listed there to stay within context budgets.
-- Agents should log every meaningful operation to the Chronicles (see [AGENTS.md](AGENTS.md)); humans benefit from the history too.
-
-## Demo: BLADE (Daywalker Deploys)
-
-Looking for a memorable 5–7 minute demo? Check out BLADE — the “Daywalker Deploys” flow that runs transform → plan (lock‑aware) → rehearse (shadow) → certify → verify with a single command. See docs/blade.md for the story, assets, and how to run it. Certificates and internal artifacts live under `.wesley/` (e.g., `.wesley/SHIPME.md`).
-
-## Internal Artifacts (`.wesley/`)
-
-Wesley writes build and evidence artifacts to `.wesley/` by default:
-- `.wesley/snapshot.json` — IR snapshot for diffs
-- `.wesley/realm.json` — rehearsal verdicts
-- `.wesley/SHIPME.md` — certificate file (human + canonical JSON)
-- Evidence maps and scores (when enabled)
-
-## Environment Variables
-
-Copy `.env.example` to `.env` and set values as needed. Key vars:
-- `WESLEY_LOG_LEVEL`: trace|debug|info|warn|error|silent (default: info)
-- `WESLEY_GIT_POLICY`: emit|strict|off — git cleanliness checks (default: emit)
-- `WESLEY_MAX_SCHEMA_BYTES`: schema size limit in bytes (default: 5MB)
-- `WESLEY_CONFIG_FILEPATH`: path to config override
-- `GITHUB_SHA`: commit SHA to embed in certs when git isn’t available (CI)
-- `SUPABASE_DB_URL` / `SUPABASE_POSTGRES_URL`: DSN for rehearse when provider=supabase
-- `WESLEY_TEST_DSN` / `TEST_DATABASE_URL`: opt‑in DSNs for test suites
+- **Website**: https://flyingrobots.github.io/wesley/
+- **GitHub**: https://github.com/flyingrobots/wesley
+- **Issues**: https://github.com/flyingrobots/wesley/issues
+- **Project Board**: https://github.com/users/flyingrobots/projects/5
