@@ -1,0 +1,8 @@
+.git/
+node_modules/
+.wesley/
+out/
+test/fixtures/examples/.wesley/
+test/fixtures/examples/out/
+test/fixtures/blade/out/
+coverage/

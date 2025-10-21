@@ -38,6 +38,10 @@ Example:
 
 **Important:** every entry must end with a newline (`\n`) so the next record starts on its own line.
 
+### Context Budgets & `.llmignore`
+
+To keep large trees out of limited-context agents, honour the repo-level [`.llmignore`](.llmignore). Treat it like `.gitignore`—skip the listed directories when scanning or ingesting files.
+
 **Required** fields:
 
 | Field | Type | Description |
