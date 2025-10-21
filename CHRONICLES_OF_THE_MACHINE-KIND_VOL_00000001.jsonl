@@ -19,3 +19,4 @@
 {"timestamp": "2025-10-21T20:16:10Z", "agent": "Codex", "action": "graphql-readme", "result": "added", "notes": "Documented the canonical GraphQL schema location and linked it from README."}
 {"timestamp": "2025-10-21T20:22:07Z", "agent": "Codex", "action": "package-readmes", "result": "added", "notes": "Created README.md files for every workspace package to describe responsibilities, status, and dev commands."}
 {"timestamp": "2025-10-21T20:23:25Z", "agent": "Codex", "action": "readme-packages", "result": "expanded", "notes": "Added a workspace package overview to README, linking the new per-package READMEs and flagging WIP scaffolds/stacks."}
+{"timestamp": "2025-10-21T20:25:46Z", "agent": "Codex", "action": "fixtures-manifest", "result": "added", "notes": "Added meta/fixtures.json for automation-friendly fixture discovery and linked it from README."}
