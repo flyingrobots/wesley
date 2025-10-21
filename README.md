@@ -90,6 +90,8 @@ Where to go next:
 - 🗺️ Check the [roadmap](docs/roadmap.md) for milestone status.
 - ⚔️ Run the [BLADE demo](docs/blade.md) for a scripted end-to-end walkthrough.
 - 🌐 Browse the docs site: https://flyingrobots.github.io/wesley/ (auto-published from `mkdocs.yml`)
+- 🤖 Review the [AGENTS protocol](AGENTS.md) to understand how contributors (human or machine) should operate and log activity in the Chronicles.
+- 📜 Peek into the live Chronicle at [CHRONICLES_OF_THE_MACHINE-KIND_VOL_00000001.jsonl](CHRONICLES_OF_THE_MACHINE-KIND_VOL_00000001.jsonl) to see how prior sessions captured their work.
 
 ---
 
