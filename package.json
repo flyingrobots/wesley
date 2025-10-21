@@ -12,19 +12,20 @@
     "lint": "eslint . --ext .js,.mjs",
     "lint:fix": "eslint . --ext .js,.mjs --fix",
     "preflight": "node scripts/preflight.mjs",
-    "prepare": "node scripts/install-hooks.mjs",
+    "prepare": "bash scripts/install-hooks.sh",
     "setup:bats-plugins": "bash scripts/setup-bats-plugins.sh",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "bootstrap": "pnpm install && pnpm run preflight && pnpm run test",
     "validate": "pnpm lint && pnpm format:check && pnpm test",
-    "generate:example": "cd example && pnpm exec wesley generate --schema ecommerce.graphql --emit-bundle",
+    "generate:example": "cd test/fixtures/examples && node ../../../packages/wesley-host-node/bin/wesley.mjs generate --schema ecommerce.graphql --emit-bundle --out-dir out --allow-dirty",
     "clean": "node scripts/clean.mjs",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
     "docker:test": "docker-compose run pgtap",
     "wesley": "node packages/wesley-host-node/bin/wesley.mjs",
     "meta:fix-packages": "node scripts/fix-package-metadata.mjs",
-    "ci": "pnpm validate && pnpm generate:example && pnpm exec wesley validate-bundle --bundle example/.wesley --schemas schemas/"
+    "ci": "pnpm validate && pnpm generate:example && node packages/wesley-host-node/bin/wesley.mjs validate-bundle --bundle test/fixtures/examples/.wesley --schemas schemas/"
   },
   "keywords": [
     "graphql",

@@ -26,7 +26,7 @@ test('all directives in schema are registered', () => {
   }
   
   // Load example schemas to check
-  const exampleSchemaPath = join(__dirname, '../../../../example/ecommerce.graphql');
+  const exampleSchemaPath = join(__dirname, '../../../../test/fixtures/examples/ecommerce.graphql');
   const exampleContent = readFileSync(exampleSchemaPath, 'utf8');
   
   // Find all used directives in schema

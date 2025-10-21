@@ -144,8 +144,8 @@ Planned (not yet implemented):
 ## Logging (examples)
 
 ```json
-{"level":30,"time":1728439323456,"name":"Wesley","cmd":"generate","code":"OPS_DISCOVERY","ordinal":1,"total":3,"sanitized":"alpha","file":"example/ops/Alpha.op.json","schema":"wes_ops","msg":"ops: compiled operation"}
-{"level":40,"time":1728439323567,"name":"Wesley","cmd":"generate","code":"OPS_IDENTIFIER_TOO_LONG","file":"example/ops/too_long.op.json","sanitized":"op_super_long_identifier","bytes":72,"limit":63,"msg":"Sanitized op name \"op_super_long_identifier\" from example/ops/too_long.op.json exceeds PostgreSQL identifier limit once prefixed (bytes=72, limit=63)"}
+{"level":30,"time":1728439323456,"name":"Wesley","cmd":"generate","code":"OPS_DISCOVERY","ordinal":1,"total":3,"sanitized":"alpha","file":"test/fixtures/examples/ops/Alpha.op.json","schema":"wes_ops","msg":"ops: compiled operation"}
+{"level":40,"time":1728439323567,"name":"Wesley","cmd":"generate","code":"OPS_IDENTIFIER_TOO_LONG","file":"test/fixtures/examples/ops/too_long.op.json","sanitized":"op_super_long_identifier","bytes":72,"limit":63,"msg":"Sanitized op name \"op_super_long_identifier\" from test/fixtures/examples/ops/too_long.op.json exceeds PostgreSQL identifier limit once prefixed (bytes=72, limit=63)"}
 ```
 
 > JSON output shown above comes directly from pino when the CLI runs with default logging.

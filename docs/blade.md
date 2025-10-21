@@ -31,8 +31,8 @@ A memorable, end‑to‑end demo and storytelling wrapper for Wesley that dramat
 
 ```
 wesley blade \
-  --schema demo/blade/schema-v2.graphql \
-  --out-dir demo/out \
+  --schema test/fixtures/blade/schema-v2.graphql \
+  --out-dir out/blade \
   --docker \
   --env production \
   [--sign-key holmes.key --pub holmes.pub --signer HOLMES]
@@ -46,9 +46,9 @@ Wrapper command location:
 
 ## Demo Assets
 
-- `demo/blade/schema-v1.graphql` — baseline
-- `demo/blade/schema-v2.graphql` — one‑line additive change (nullable + index)
-- `demo/blade/README.md` — quick operator guide
+- `test/fixtures/blade/schema-v1.graphql` — baseline
+- `test/fixtures/blade/schema-v2.graphql` — one‑line additive change (nullable + index)
+- `test/fixtures/blade/README.md` — quick operator guide
 
 Suggestions to enhance the show:
 - “Lock radar” highlighting `CREATE INDEX CONCURRENTLY`, `NOT VALID`, `VALIDATE CONSTRAINT`

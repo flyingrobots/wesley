@@ -69,7 +69,7 @@ node packages/wesley-holmes/src/cli.mjs predict --from .wesley/scores.json
 Run the full demo flow:
 
 ```bash
-bash demo/blade/run.sh
+bash test/fixtures/blade/run.sh
 ```
 
 ## Tips

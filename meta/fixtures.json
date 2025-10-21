@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "fixtures": [
+    {
+      "name": "examples",
+      "path": "test/fixtures/examples",
+      "kind": ["graphql", "ops", "generated-sql"],
+      "description": "Canonical example schemas, JSON operations, and pgTAP outputs used by docs and quick-start flows."
+    },
+    {
+      "name": "blade-demo",
+      "path": "test/fixtures/blade",
+      "kind": ["graphql", "demo"],
+      "description": "Daywalker Deploys demo assets (schema v1/v2, run script, signing key instructions)."
+    },
+    {
+      "name": "postgres-init",
+      "path": "test/fixtures/postgres",
+      "kind": ["sql"],
+      "description": "SQL scripts loaded by CI docker-compose to install required Postgres extensions."
+    }
+  ]
+}

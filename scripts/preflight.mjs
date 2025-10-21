@@ -18,7 +18,10 @@ function fail(msg) { ok = false; failures.push(msg); }
 try {
   const gi = readFileSync(resolve('.gitignore'), 'utf8');
   if (!gi.match(/^\.wesley\//m)) fail('Missing .wesley/ in .gitignore');
-  if (!gi.match(/^out\//m)) fail('Missing out/ in .gitignore (covers example/out)');
+  if (!gi.match(/^test\/fixtures\/examples\/\.wesley\//m)) fail('Missing test/fixtures/examples/.wesley/ in .gitignore');
+  if (!gi.match(/^out\//m)) fail('Missing out/ in .gitignore (covers generated outputs)');
+  if (!gi.match(/^test\/fixtures\/examples\/out\//m)) fail('Missing test/fixtures/examples/out/ in .gitignore');
+  if (!gi.match(/^test\/fixtures\/blade\/out\//m)) fail('Missing test/fixtures/blade/out/ in .gitignore');
 } catch {
   fail('Missing .gitignore');
 }

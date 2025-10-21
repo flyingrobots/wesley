@@ -74,14 +74,20 @@ pnpm install
 
 # 2. Generate everything for the example schema
 node packages/wesley-host-node/bin/wesley.mjs generate \
-  --schema example/schema.graphql \
-  --ops example/ops \
+  --schema test/fixtures/examples/schema.graphql \
+  --ops test/fixtures/examples/ops \
   --emit-bundle \
-  --out-dir example/out
+  --out-dir out/examples
 
 # 3. Dry-run the migration plan (no database required)
-node packages/wesley-host-node/bin/wesley.mjs plan --schema example/schema.graphql --explain
-node packages/wesley-host-node/bin/wesley.mjs rehearse --schema example/schema.graphql --dry-run --json
+node packages/wesley-host-node/bin/wesley.mjs plan --schema test/fixtures/examples/schema.graphql --explain
+node packages/wesley-host-node/bin/wesley.mjs rehearse --schema test/fixtures/examples/schema.graphql --dry-run --json
+```
+
+Validate the repository in one go:
+
+```bash
+pnpm run bootstrap   # install deps → preflight → test
 ```
 
 Where to go next:
@@ -90,6 +96,15 @@ Where to go next:
 - 🗺️ Check the [roadmap](docs/roadmap.md) for milestone status.
 - ⚔️ Run the [BLADE demo](docs/blade.md) for a scripted end-to-end walkthrough.
 - 🌐 Browse the docs site: https://flyingrobots.github.io/wesley/ (auto-published from `mkdocs.yml`)
+- 📚 Dive deeper via the curated [docs index](docs/README.md).
+- 🤖 Review the [AGENTS protocol](AGENTS.md) to understand how contributors (human or machine) should operate and log activity in the Chronicles.
+- 📜 Peek into the live Chronicle at [CHRONICLES_OF_THE_MACHINE-KIND_VOL_00000001.jsonl](CHRONICLES_OF_THE_MACHINE-KIND_VOL_00000001.jsonl) to see how prior sessions captured their work.
+- 🧹 Automation helpers honour [`.llmignore`](.llmignore) to skip bulky outputs when scanning the repo.
+- 🛠️ Explore the [scripts catalogue](scripts/README.md) for maintenance commands (`preflight`, `clean`, metadata fixers, and more).
+- 🧪 See how integration suites are organised in [test/README.md](test/README.md).
+- 🧬 Browse the canonical schemas in [schemas/README.md](schemas/README.md).
+- 🧾 Reference the sample SDL in [graphql/README.md](graphql/README.md).
+- 🧱 Inspect the machine-readable fixture map in [meta/fixtures.json](meta/fixtures.json).
 
 ---
 
@@ -286,6 +301,59 @@ Prisma focuses on queries. Wesley compiles the data layer (DDL, migrations, RLS,
 **Stop maintaining schemas in 5 places.**  
 **Start shipping with confidence.**  
 **GraphQL in, Supabase out. Deployments are boring.**  
+
+## Evidence, HOLMES, and Observability
+
+Wesley treats deployment evidence as a first-class product:
+
+> [!success]
+> **HOLMES** inspects `.wesley/` bundles, producing machine-readable scores and human-friendly reports that live alongside your build artifacts.
+
+- [Holmes CLI](packages/wesley-holmes/README.md) exposes `investigate`, `verify`, and `predict` commands for SHA-lock certification.
+- Evidence bundles carry deterministic `scores.json`, markdown narratives, and immutable fingerprints per release.
+- Weighted scoring is configurable via `.wesley/weights.json`, letting teams tune SCS/TCI/MRI priorities without forking the engine.
+- Watson and Moriarty modes plug the same evidence maps into verification and forecasting workflows, so regressions are caught *before* production.
+
+When you run `pnpm --filter @wesley/holmes test` (or the dedicated CI workflow), you get end-to-end assurance that migrations, policies, and evidence stay in lockstep.
+
+## Workspace Packages
+
+- [@wesley/cli](packages/wesley-cli/README.md) – Command-line interface that drives generation, planning, rehearsals, certification, and the Daywalker "blade" demo.
+- [@wesley/core](packages/wesley-core/README.md) – Pure domain logic: directive registry, IR builders, lowering pipeline, and SQL/RLS emission helpers.
+- [@wesley/host-node](packages/wesley-host-node/README.md) – Node.js adapters (filesystem, shell) and the `wesley` binary entrypoint.
+- [@wesley/generator-js](packages/wesley-generator-js/README.md) – Emits JavaScript/TypeScript/Zod artifacts from the Wesley IR (foundational; CLI wiring in progress).
+- [@wesley/generator-supabase](packages/wesley-generator-supabase/README.md) – Supabase-specific emitters and test helpers such as `TestDepthStrategy.mjs`.
+- [@wesley/holmes](packages/wesley-holmes/README.md) – SHA-lock investigations (`holmes`), verifications (`watson`), and predictions (`moriarty`), plus the reporting CLI.
+- [@wesley/tasks](packages/wesley-tasks/README.md) – Task orchestration primitives shared across planning/execution flows.
+- [@wesley/slaps](packages/wesley-slaps/README.md) – Lock-aware scheduling utilities that bridge plans and task execution.
+- [@wesley/scaffold-multitenant](packages/wesley-scaffold-multitenant/README.md) – **WIP** scaffolding templates for future `wesley scaffold` commands.
+- [@wesley/stack-supabase-nextjs](packages/wesley-stack-supabase-nextjs/README.md) – **WIP** experimental stack demonstrating Wesley + Supabase + Next.js integration.
+
+## Operational Guidance
+
+### GitHub Projects
+
+> [!success]
+> We maintain a single “Wesley” project board for sprint-sized work; resist the temptation to splinter into per-package boards unless scope truly demands it.
+
+- Use the [Wesley Project](https://github.com/users/flyingrobots/projects/5) to track QIR work, CLI improvements, HOLMES scoring tasks, and scaffolds. Keep everything in one place for shared visibility.
+
+### Versioning & Releases
+
+- Wesley packages follow **workspace SemVer**. Release trains move together unless a package warrants a patch out-of-band.
+- Compatibility notes (e.g., `@wesley/holmes` vs `@wesley/core`) belong in `CHANGELOG.md` and package READMEs. Keep the matrix current whenever exports change.
+- When a breaking change lands, bump the major version for every affected package; keep dependent packages aligned via `workspace:*` so pnpm enforces consistency.
+
+### Working in Isolation
+
+- Use pnpm filters to target packages: `pnpm --filter @wesley/core test`, `pnpm --filter @wesley/cli lint`, etc.
+- Many packages provide their own README with dev notes—start there before spelunking the source tree.
+- For full-system confidence, run `pnpm run bootstrap`; for fast iteration, lean on targeted tests + fixtures (`test/README.md`).
+
+### Automation Etiquette
+
+- Honour [`.llmignore`](.llmignore) when building tooling—skip directories listed there to stay within context budgets.
+- Agents should log every meaningful operation to the Chronicles (see [AGENTS.md](AGENTS.md)); humans benefit from the history too.
 
 ## Demo: BLADE (Daywalker Deploys)
 

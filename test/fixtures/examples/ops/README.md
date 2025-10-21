@@ -11,14 +11,14 @@ Compile ops:
 
 ```bash
 node packages/wesley-host-node/bin/wesley.mjs generate \
-  --schema example/ecommerce.graphql \
-  --ops example/ops \
+  --schema test/fixtures/examples/ecommerce.graphql \
+  --ops test/fixtures/examples/ops \
   --emit-bundle \
-  --out-dir example/out \
+  --out-dir out/examples \
   --allow-dirty
 ```
 
-Outputs land in `example/out/ops/` as both a `CREATE VIEW` and a `CREATE FUNCTION` per operation.
+Outputs land in `out/examples/ops/` as both a `CREATE VIEW` and a `CREATE FUNCTION` per operation.
 
 ## DSL Reference (MVP)
 
@@ -64,7 +64,7 @@ After applying the generated schema and ops SQL to a Postgres database:
 ```bash
 # Function call EXPLAIN
 psql -d <db> -t -A -c "EXPLAIN (FORMAT JSON) SELECT * FROM wes_ops.op_products_by_name('Al%')" \
-  > example/out/ops/explain/products_by_name.explain.json
+  > out/examples/ops/explain/products_by_name.explain.json
 ```
 
 Note: The DSL is experimental; joins, distinct, pagination, and deeper composition will expand in future phases. See docs/guides/qir-ops.md for the QIR lowering/emission guide.

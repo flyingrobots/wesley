@@ -12,9 +12,9 @@ openssl pkey -in holmes.key -pubout -out holmes.pub
 Pass to the one‑shot command:
 
 ```
-wesley blade --schema demo/blade/schema-v2.graphql \
-  --sign-key demo/blade/keys/holmes.key \
-  --pub demo/blade/keys/holmes.pub
+wesley blade --schema test/fixtures/blade/schema-v2.graphql \
+  --sign-key test/fixtures/blade/keys/holmes.key \
+  --pub test/fixtures/blade/keys/holmes.pub
 ```
 
 Security note: Never commit private keys. This folder stays local-only.

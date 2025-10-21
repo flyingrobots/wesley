@@ -609,7 +609,7 @@
 
   - 01-compile-plan.yml
       - Wesley compile + plan (JSON outputs)
-      - Artifacts: example/out/schema.sql, plan.json, explain-locks.json
+      - Artifacts: out/examples/schema.sql, plan.json, explain-locks.json
   - 02-rehearse-certify.yml
       - Rehearse: wesley rehearse --json > realm.json
       - Certify: wesley cert-create --env $ENV --out .wesley/SHIPME.md

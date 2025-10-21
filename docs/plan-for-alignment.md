@@ -45,7 +45,7 @@ Link: ../go-public-checklist.md
 
 ## File-Level Tasks (Initial Pass)
 - [x] Update README examples to `@wes_*` forms.
-- [x] Update `example/*.graphql` to canonical directives.
+- [x] Update `test/fixtures/examples/*.graphql` to canonical directives.
 - [x] Add `docs/guides/quick-start.md`; reference host-node CLI entry.
 - [x] Add `packages/wesley-core/.eslintrc.cjs` with `no-restricted-imports`.
 - [x] Update `.dependency-cruiser.mjs` to forbid `^node:` in core.
@@ -55,7 +55,7 @@ Link: ../go-public-checklist.md
 - [x] Lowering: SELECT/JOIN/LEFT/LATERAL/ORDER BY/LIMIT/OFFSET; NULL/IN/ANY; COALESCE jsonb_agg; deterministic tie-breaker.
 - [x] Emission: CREATE VIEW + SQL function (RETURNS SETOF jsonb) with deterministic names/params; robust quoting.
 - [ ] Translator: map GraphQL operations → QIR plans (selections, joins, filters, order, pagination, nested lists).
-- [ ] CLI wiring: `--ops` path to compile and emit ops; write artifacts to example/out/ops.
+- [ ] CLI wiring: `--ops` path to compile and emit ops; write artifacts to out/examples/ops.
 - [ ] Examples + EXPLAIN JSON snapshots; pgTAP smoke for emitted ops (shape, filters, RLS where relevant).
 
 ---

@@ -8,7 +8,7 @@ setup() {
   OPS_DIR="$TMP_ROOT/ops"
   mkdir -p "$OPS_DIR"
   CLI_BIN="$WESLEY_REPO_ROOT/packages/wesley-host-node/bin/wesley.mjs"
-  SCHEMA_PATH="$WESLEY_REPO_ROOT/example/ecommerce.graphql"
+  SCHEMA_PATH="$WESLEY_REPO_ROOT/test/fixtures/examples/ecommerce.graphql"
 
   cat >"$OPS_DIR/products.op.json" <<'JSON'
 {

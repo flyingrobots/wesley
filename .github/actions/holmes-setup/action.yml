@@ -4,11 +4,11 @@ inputs:
   bundle-dir:
     description: Path to the .wesley bundle directory
     required: false
-    default: example/.wesley
+    default: test/fixtures/examples/.wesley
   schema:
     description: Path to the schema SDL used for generation
     required: false
-    default: example/ecommerce.graphql
+    default: test/fixtures/examples/ecommerce.graphql
   ops-dir:
     description: Path to the ops directory (relative to schema directory)
     required: false
@@ -86,7 +86,7 @@ runs:
           SCHEMA_DIR="$(dirname "${{ inputs.schema }}")"
           SCHEMA_FILE="$(basename "${{ inputs.schema }}")"
           pushd "$SCHEMA_DIR" >/dev/null
-          node ../packages/wesley-host-node/bin/wesley.mjs generate \
+          node "$GITHUB_WORKSPACE/packages/wesley-host-node/bin/wesley.mjs" generate \
             --schema "$SCHEMA_FILE" \
             --emit-bundle \
             --ops "${{ inputs.ops-dir }}" \
@@ -102,7 +102,7 @@ runs:
         SCHEMA_DIR="$(dirname "${{ inputs.schema }}")"
         SCHEMA_FILE="$(basename "${{ inputs.schema }}")"
         pushd "$SCHEMA_DIR" >/dev/null
-        node ../packages/wesley-host-node/bin/wesley.mjs generate \
+        node "$GITHUB_WORKSPACE/packages/wesley-host-node/bin/wesley.mjs" generate \
           --schema "$SCHEMA_FILE" \
           --emit-bundle \
           --ops "${{ inputs.ops-dir }}" \

@@ -7,8 +7,8 @@ on:
     branches: [main]
 
 env:
-  HOLMES_BUNDLE_DIR: example/.wesley
-  HOLMES_SCHEMA: example/ecommerce.graphql
+  HOLMES_BUNDLE_DIR: test/fixtures/examples/.wesley
+  HOLMES_SCHEMA: test/fixtures/examples/ecommerce.graphql
   HOLMES_OPS_DIR: ./ops
   HOLMES_OUT_DIR: out
   HOLMES_ARTIFACT: wesley-bundle
@@ -249,7 +249,7 @@ jobs:
           PGPASSWORD=postgres psql -h localhost -U postgres -d test -c 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp";'
           PGPASSWORD=postgres psql -h localhost -U postgres -d test -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm;'
           # Apply schema (fail fast on errors)
-          PGPASSWORD=postgres psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d test -f "example/${WESLEY_OUT_DIR}/schema.sql"
+          PGPASSWORD=postgres psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d test -f "test/fixtures/examples/${WESLEY_OUT_DIR}/schema.sql"
 
       - name: "🏗️ Ensure wes_ops schema"
         run: |
@@ -261,7 +261,7 @@ jobs:
           WESLEY_OUT_DIR: out
         run: |
           set -euo pipefail
-          OPS_DIR="example/${WESLEY_OUT_DIR}/ops"
+          OPS_DIR="test/fixtures/examples/${WESLEY_OUT_DIR}/ops"
           shopt -s nullglob
           if [ ! -d "$OPS_DIR" ]; then
             echo "No ops SQL directory found; skipping"
@@ -301,16 +301,16 @@ jobs:
           WESLEY_OUT_DIR: out
         run: |
           set -euo pipefail
-          mkdir -p example/${WESLEY_OUT_DIR}/ops/explain
+          mkdir -p test/fixtures/examples/${WESLEY_OUT_DIR}/ops/explain
           # EXPLAIN (FORMAT JSON) for function calls
-          PGPASSWORD=postgres psql -h localhost -U postgres -d test -t -A -c "EXPLAIN (FORMAT JSON) SELECT * FROM wes_ops.op_products_by_name('Al%')" > example/${WESLEY_OUT_DIR}/ops/explain/products_by_name.explain.json
-          PGPASSWORD=postgres psql -h localhost -U postgres -d test -t -A -c "EXPLAIN (FORMAT JSON) SELECT * FROM wes_ops.op_orders_by_user('00000000-0000-0000-0000-000000000000')" > example/${WESLEY_OUT_DIR}/ops/explain/orders_by_user.explain.json
+          PGPASSWORD=postgres psql -h localhost -U postgres -d test -t -A -c "EXPLAIN (FORMAT JSON) SELECT * FROM wes_ops.op_products_by_name('Al%')" > test/fixtures/examples/${WESLEY_OUT_DIR}/ops/explain/products_by_name.explain.json
+          PGPASSWORD=postgres psql -h localhost -U postgres -d test -t -A -c "EXPLAIN (FORMAT JSON) SELECT * FROM wes_ops.op_orders_by_user('00000000-0000-0000-0000-000000000000')" > test/fixtures/examples/${WESLEY_OUT_DIR}/ops/explain/orders_by_user.explain.json
 
       - name: "⬆️ Upload EXPLAIN snapshots"
         uses: actions/upload-artifact@v4
         with:
           name: ops-explain
-          path: example/out/ops/explain/
+          path: test/fixtures/examples/out/ops/explain/
 
       - name: "🧪 Run Tests"
         run: |
@@ -321,7 +321,7 @@ jobs:
           HAS_PGTAP=$(PGPASSWORD=postgres psql -h localhost -U postgres -d test -t -A -c "SELECT 1 FROM pg_available_extensions WHERE name='pgtap'" || echo '')
           if [ "$RUN_PGTAP" = "true" ] && [ "$HAS_PGTAP" = "1" ]; then
             PGPASSWORD=postgres psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d test -c 'CREATE EXTENSION IF NOT EXISTS pgtap;'
-            PGPASSWORD=postgres psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d test -f example/tests/ops.pgtap.sql
+            PGPASSWORD=postgres psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d test -f test/fixtures/examples/tests/ops.pgtap.sql
           else
             echo "pgtap extension not available; skipping pgTAP tests"
           fi

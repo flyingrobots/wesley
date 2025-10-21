@@ -17,7 +17,7 @@ This demo proves the promise: one schema → safe migrations → shadow rehearsa
 
 1) Transform
 ```bash
-wesley transform --schema ./example/ecommerce.graphql \
+wesley transform --schema ./test/fixtures/examples/ecommerce.graphql \
   --target postgres,typescript,zod,pgtap --out out
 ```
 Expected:
@@ -26,7 +26,7 @@ Expected:
 
 2) Plan (Explain)
 ```bash
-wesley plan --schema ./example/ecommerce.graphql --explain
+wesley plan --schema ./test/fixtures/examples/ecommerce.graphql --explain
 ```
 Expected:
 - Phase ordering shown: expand → backfill → validate → switch → contract
@@ -71,4 +71,3 @@ Expected:
 - Use “no‑change” path once to showcase transform narrative
 - Toggle a backfill to show idempotence
 - Show `--dry-run` vs real rehearsal
-
