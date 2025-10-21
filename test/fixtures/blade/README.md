@@ -16,8 +16,8 @@ Option A — new wrapper command (quick start)
 
 ```
 wesley blade \
-  --schema demo/blade/schema-v2.graphql \
-  --out-dir demo/out \
+  --schema test/fixtures/blade/schema-v2.graphql \
+  --out-dir out/blade \
   --docker \
   --env production
 ```
@@ -26,8 +26,8 @@ Option B — explicit DSN (skip docker auto‑up)
 
 ```
 wesley blade \
-  --schema demo/blade/schema-v2.graphql \
-  --out-dir demo/out \
+  --schema test/fixtures/blade/schema-v2.graphql \
+  --out-dir out/blade \
   --dsn postgres://wesley:wesley_test@localhost:5432/wesley_test \
   --env production
 ```
@@ -36,23 +36,23 @@ Optional: simulate upgrade from v1 to v2
 
 ```
 # Seed baseline snapshot from v1
-wesley generate --schema demo/blade/schema-v1.graphql --out-dir demo/out --quiet
+wesley generate --schema test/fixtures/blade/schema-v1.graphql --out-dir out/blade --quiet
 
 # Then run blade against v2 to see additive changes
-wesley blade --schema demo/blade/schema-v2.graphql --out-dir demo/out --dry-run
+wesley blade --schema test/fixtures/blade/schema-v2.graphql --out-dir out/blade --dry-run
 ```
 
 Optional signing & verify (generate keys locally)
 
 ```
 # one‑time
-openssl genpkey -algorithm ed25519 -out demo/blade/keys/holmes.key
-openssl pkey -in demo/blade/keys/holmes.key -pubout -out demo/blade/keys/holmes.pub
+openssl genpkey -algorithm ed25519 -out test/fixtures/blade/keys/holmes.key
+openssl pkey -in test/fixtures/blade/keys/holmes.key -pubout -out test/fixtures/blade/keys/holmes.pub
 
 # include in blade
-wesley blade --schema demo/blade/schema-v2.graphql \
-  --sign-key demo/blade/keys/holmes.key \
-  --pub demo/blade/keys/holmes.pub
+wesley blade --schema test/fixtures/blade/schema-v2.graphql \
+  --sign-key test/fixtures/blade/keys/holmes.key \
+  --pub test/fixtures/blade/keys/holmes.pub
 ```
 
 ## What to watch

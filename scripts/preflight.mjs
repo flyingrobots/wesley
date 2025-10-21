@@ -21,6 +21,7 @@ try {
   if (!gi.match(/^test\/fixtures\/examples\/\.wesley\//m)) fail('Missing test/fixtures/examples/.wesley/ in .gitignore');
   if (!gi.match(/^out\//m)) fail('Missing out/ in .gitignore (covers generated outputs)');
   if (!gi.match(/^test\/fixtures\/examples\/out\//m)) fail('Missing test/fixtures/examples/out/ in .gitignore');
+  if (!gi.match(/^test\/fixtures\/blade\/out\//m)) fail('Missing test/fixtures/blade/out/ in .gitignore');
 } catch {
   fail('Missing .gitignore');
 }

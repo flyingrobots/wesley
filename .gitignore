@@ -15,10 +15,11 @@ coverage/
 *~
 out/
 test/fixtures/examples/out/
+test/fixtures/blade/out/
 db/migrations/
 tests/generated/
 .obsidian/
-demo/blade/*.key
-demo/blade/*.pub
-demo/blade/keys/*.key
-demo/blade/keys/*.pub
+test/fixtures/blade/*.key
+test/fixtures/blade/*.pub
+test/fixtures/blade/keys/*.key
+test/fixtures/blade/keys/*.pub

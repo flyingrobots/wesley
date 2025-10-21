@@ -10,11 +10,12 @@ const directories = [
   'tests/generated',
   'test/fixtures/examples/.wesley',
   'test/fixtures/examples/out',
+  'test/fixtures/blade/out',
 ];
 
 const filePatterns = [
   {
-    directory: 'demo/blade',
+    directory: 'test/fixtures/blade',
     shouldRemove: (name) => name.endsWith('.key') || name.endsWith('.pub'),
   },
 ];
