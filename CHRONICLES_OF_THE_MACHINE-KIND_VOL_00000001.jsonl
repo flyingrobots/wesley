@@ -22,3 +22,4 @@
 {"timestamp": "2025-10-21T20:25:46Z", "agent": "Codex", "action": "fixtures-manifest", "result": "added", "notes": "Added meta/fixtures.json for automation-friendly fixture discovery and linked it from README."}
 {"timestamp": "2025-10-21T20:27:32Z", "agent": "Codex", "action": "bootstrap-script", "result": "added", "notes": "Introduced pnpm run bootstrap (install \u2192 preflight \u2192 test) and documented it in README and scripts guide."}
 {"timestamp": "2025-10-21T20:29:08Z", "agent": "Codex", "action": "llmignore", "result": "added", "notes": "Added .llmignore and documented its usage in README and AGENTS for automation-friendly scans."}
+{"timestamp": "2025-10-21T21:05:32Z", "agent": "Codex", "action": "cli-tasklist", "result": "migrated", "notes": "Transferred CLI TODOs into issues #174-176 and removed packages/wesley-cli/TASKLIST.md."}
