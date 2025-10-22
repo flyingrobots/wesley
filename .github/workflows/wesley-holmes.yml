@@ -82,7 +82,7 @@ jobs:
           set -euo pipefail
           SCHEMA_DIR="$(dirname "${HOLMES_SCHEMA}")"
           pushd "$SCHEMA_DIR" >/dev/null
-          node ../packages/wesley-holmes/src/cli.mjs investigate --json holmes-report.json > holmes-report.md
+          node "$GITHUB_WORKSPACE/packages/wesley-holmes/src/cli.mjs" investigate --json holmes-report.json > holmes-report.md
           cat holmes-report.md
           popd >/dev/null
           mkdir -p reports/holmes
@@ -120,7 +120,7 @@ jobs:
           set -euo pipefail
           SCHEMA_DIR="$(dirname "${HOLMES_SCHEMA}")"
           pushd "$SCHEMA_DIR" >/dev/null
-          node ../packages/wesley-holmes/src/cli.mjs verify --json watson-report.json > watson-report.md
+          node "$GITHUB_WORKSPACE/packages/wesley-holmes/src/cli.mjs" verify --json watson-report.json > watson-report.md
           cat watson-report.md
           popd >/dev/null
           mkdir -p reports/watson
@@ -159,7 +159,7 @@ jobs:
           set -euo pipefail
           SCHEMA_DIR="$(dirname "${HOLMES_SCHEMA}")"
           pushd "$SCHEMA_DIR" >/dev/null
-          node ../packages/wesley-holmes/src/cli.mjs predict --json moriarty-report.json > moriarty-report.md
+          node "$GITHUB_WORKSPACE/packages/wesley-holmes/src/cli.mjs" predict --json moriarty-report.json > moriarty-report.md
           cat moriarty-report.md
           popd >/dev/null
           mkdir -p reports/moriarty
