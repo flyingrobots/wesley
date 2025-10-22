@@ -1,0 +1,64 @@
+name: Run HOLMES CLI
+description: Execute Wesley HOLMES CLI reporting command and collect artifacts.
+inputs:
+  command:
+    description: HOLMES CLI subcommand to execute (investigate|verify|predict)
+    required: true
+  report-name:
+    description: Base name for report files (holmes|watson|moriarty)
+    required: true
+  schema-path:
+    description: Path to the GraphQL schema relative to the repository root
+    required: true
+  bundle-dir:
+    description: Path to the Wesley bundle directory relative to the repository root
+    required: true
+  history-file:
+    description: Path to MORIARTY history JSON relative to the repository root (defaults to <bundle-dir>/history.json)
+    required: false
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        set -euo pipefail
+        command="${{ inputs.command }}"
+        report="${{ inputs['report-name'] }}"
+        schema_rel="${{ inputs['schema-path'] }}"
+        bundle_rel="${{ inputs['bundle-dir'] }}"
+        history_rel="${{ inputs['history-file'] }}"
+
+        schema_path="$GITHUB_WORKSPACE/$schema_rel"
+        if [ ! -f "$schema_path" ]; then
+          echo "Schema file not found at $schema_path" >&2
+          exit 1
+        fi
+
+        schema_dir="$(dirname "$schema_path")"
+        bundle_dir="$GITHUB_WORKSPACE/$bundle_rel"
+        bundle_json="$bundle_dir/bundle.json"
+        if [ ! -f "$bundle_json" ]; then
+          echo "Wesley bundle not found at $bundle_json" >&2
+          exit 1
+        fi
+
+        if [ -n "$history_rel" ]; then
+          history_path="$GITHUB_WORKSPACE/$history_rel"
+        else
+          history_path="$bundle_dir/history.json"
+        fi
+
+        json_path="$schema_dir/${report}-report.json"
+        md_path="$schema_dir/${report}-report.md"
+
+        node "$GITHUB_WORKSPACE/packages/wesley-holmes/src/cli.mjs" "$command" \
+          --bundle-dir "$bundle_dir" \
+          --history-file "$history_path" \
+          --json "$json_path" > "$md_path"
+
+        cat "$md_path"
+
+        reports_dir="$GITHUB_WORKSPACE/reports/$report"
+        mkdir -p "$reports_dir"
+        cp "$json_path" "$reports_dir/${report}-report.json"
+        cp "$md_path" "$reports_dir/${report}-report.md"

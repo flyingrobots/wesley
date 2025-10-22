@@ -42,6 +42,13 @@ jobs:
           else
             echo "No scores.json found yet"
           fi
+
+      - name: "📤 Upload Dashboard Template"
+        uses: actions/upload-artifact@v4
+        with:
+          name: dashboard-template
+          path: docs/holmes-dashboard
+          if-no-files-found: error
           
       - name: "📦 Prepare Bundle for Upload"
         run: |
@@ -78,17 +85,13 @@ jobs:
           
       - name: "🔍 Run Investigation"
         id: holmes
-        run: |
-          set -euo pipefail
-          SCHEMA_DIR="$(dirname "${HOLMES_SCHEMA}")"
-          pushd "$SCHEMA_DIR" >/dev/null
-          node ../packages/wesley-holmes/src/cli.mjs investigate --json holmes-report.json > holmes-report.md
-          cat holmes-report.md
-          popd >/dev/null
-          mkdir -p reports/holmes
-          cp "$SCHEMA_DIR/holmes-report.md" reports/holmes/holmes-report.md
-          cp "$SCHEMA_DIR/holmes-report.json" reports/holmes/holmes-report.json
-          
+        uses: ./.github/actions/run-holmes-command
+        with:
+          command: investigate
+          report-name: holmes
+          schema-path: ${{ env.HOLMES_SCHEMA }}
+          bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
+
       - name: "💾 Save Report"
         uses: actions/upload-artifact@v4
         with:
@@ -116,17 +119,13 @@ jobs:
           
       - name: "🩺 Run Verification"
         id: watson
-        run: |
-          set -euo pipefail
-          SCHEMA_DIR="$(dirname "${HOLMES_SCHEMA}")"
-          pushd "$SCHEMA_DIR" >/dev/null
-          node ../packages/wesley-holmes/src/cli.mjs verify --json watson-report.json > watson-report.md
-          cat watson-report.md
-          popd >/dev/null
-          mkdir -p reports/watson
-          cp "$SCHEMA_DIR/watson-report.md" reports/watson/watson-report.md
-          cp "$SCHEMA_DIR/watson-report.json" reports/watson/watson-report.json
-          
+        uses: ./.github/actions/run-holmes-command
+        with:
+          command: verify
+          report-name: watson
+          schema-path: ${{ env.HOLMES_SCHEMA }}
+          bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
+
       - name: "💾 Save Report"
         uses: actions/upload-artifact@v4
         with:
@@ -155,17 +154,13 @@ jobs:
           
       - name: "🔮 Run Predictions"
         id: moriarty
-        run: |
-          set -euo pipefail
-          SCHEMA_DIR="$(dirname "${HOLMES_SCHEMA}")"
-          pushd "$SCHEMA_DIR" >/dev/null
-          node ../packages/wesley-holmes/src/cli.mjs predict --json moriarty-report.json > moriarty-report.md
-          cat moriarty-report.md
-          popd >/dev/null
-          mkdir -p reports/moriarty
-          cp "$SCHEMA_DIR/moriarty-report.md" reports/moriarty/moriarty-report.md
-          cp "$SCHEMA_DIR/moriarty-report.json" reports/moriarty/moriarty-report.json
-          
+        uses: ./.github/actions/run-holmes-command
+        with:
+          command: predict
+          report-name: moriarty
+          schema-path: ${{ env.HOLMES_SCHEMA }}
+          bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
+
       - name: "💾 Save Report"
         uses: actions/upload-artifact@v4
         with:
@@ -353,11 +348,24 @@ jobs:
           merge-multiple: true
           path: reports
 
+      - name: "📥 Download Dashboard Template"
+        uses: actions/download-artifact@v4
+        with:
+          name: dashboard-template
+          path: dashboard-template
+
       - name: "📊 Assemble Dashboard"
         run: |
           set -euo pipefail
           mkdir -p dashboard
-          cp docs/holmes-dashboard/index.html dashboard/index.html
+          template_path=$(find dashboard-template -name "index.html" -print -quit)
+          if [ -z "$template_path" ]; then
+            echo "Dashboard template index.html not found" >&2
+            exit 1
+          fi
+          template_dir=$(dirname "$template_path")
+          cp -R "$template_dir"/. dashboard/
+          mkdir -p reports
           missing=0
           for report in holmes watson moriarty; do
             src=$(find reports -name "$report-report.json" -print -quit)
@@ -387,16 +395,42 @@ jobs:
             const fs = require('fs');
             const path = require('path');
 
-            const readReport = (status, artifactDir, filename) => {
+            const findFirst = (root, filename, mustContain) => {
+              const stack = [root];
+              while (stack.length) {
+                const dir = stack.pop();
+                let entries = [];
+                try {
+                  entries = fs.readdirSync(dir, { withFileTypes: true });
+                } catch {
+                  continue;
+                }
+                for (const entry of entries) {
+                  const fullPath = path.join(dir, entry.name);
+                  if (entry.isDirectory()) {
+                    stack.push(fullPath);
+                  } else if (
+                    entry.isFile() &&
+                    entry.name === filename &&
+                    (!mustContain || fullPath.includes(`${path.sep}${mustContain}${path.sep}`))
+                  ) {
+                    return fullPath;
+                  }
+                }
+              }
+              return null;
+            };
+
+            const readReport = (status, reportName, filename) => {
               if (status !== 'success') {
                 return `_Report unavailable: upstream job status **${status}**_`;
               }
-              const target = path.join('reports', artifactDir, filename);
-              if (!fs.existsSync(target)) {
-                console.warn(`Expected report file missing: ${target}`);
-                return `_Report missing for ${artifactDir}_`;
+              const match = findFirst('reports', filename, reportName);
+              if (!match) {
+                console.warn(`Report not found: ${reportName}/${filename}`);
+                return `_Report missing for ${reportName}_`;
               }
-              return fs.readFileSync(target, 'utf8');
+              return fs.readFileSync(match, 'utf8');
             };
 
             const statuses = {
@@ -423,14 +457,12 @@ jobs:
             ---
             
             ## 🔮 Professor MORIARTY's Predictions
-${moriarty}
-
----
-Machine-readable reports: holmes-report.json · watson-report.json · moriarty-report.json (see workflow artifacts).
-
----
-*Filed at 221B Repository Street*
-`;
+            ${moriarty}
+            ---
+            Machine-readable reports: holmes-report.json · watson-report.json · moriarty-report.json (see workflow artifacts).
+            ---
+            *Filed at 221B Repository Street*
+            `;
             
             // Find existing comment
             const { data: comments } = await github.rest.issues.listComments({
