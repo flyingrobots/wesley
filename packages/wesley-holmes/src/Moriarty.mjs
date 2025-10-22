@@ -70,7 +70,7 @@ export class Moriarty {
       confidence = Math.max(0, Math.min(100, 100 - variance * 120));
     }
 
-    return {
+    const result = {
       ...base,
       status: 'OK',
       latest,
@@ -80,10 +80,17 @@ export class Moriarty {
       },
       plateauDetected: plateau,
       regressionDetected: regression,
-      eta,
-      confidence,
       patterns: this.detectPatterns()
     };
+
+    if (eta) {
+      result.eta = eta;
+    }
+    if (confidence !== null) {
+      result.confidence = confidence;
+    }
+
+    return result;
   }
 
   renderPrediction(data) {
