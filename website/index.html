@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Wesley · The Data Layer Compiler</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <div class="container">
+        <p class="eyebrow">GraphQL in · Postgres out</p>
+        <h1>Wesley</h1>
+        <p class="tagline">
+          Compile your GraphQL schema into a provably safe PostgreSQL backend with zero-downtime migrations,
+          automated tests, and cryptographic deployment proofs.
+        </p>
+        <div class="cta-group">
+          <a class="button primary" href="https://github.com/flyingrobots/wesley">View on GitHub</a>
+          <a class="button secondary" href="#features">Explore Features</a>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section id="features" class="section">
+        <div class="container">
+          <h2>Why Wesley?</h2>
+          <div class="feature-grid">
+            <article>
+              <h3>Schema First</h3>
+              <p>
+                Define your domain once in GraphQL. Wesley generates migrations, types, policies, and tests that stay in lockstep.
+              </p>
+            </article>
+            <article>
+              <h3>Zero Downtime</h3>
+              <p>
+                Automated expand/contract migrations include rehearsal plans and pgTAP coverage to keep production safe.
+              </p>
+            </article>
+            <article>
+              <h3>Evidence Trails</h3>
+              <p>
+                SHA-locked HOLMES reports, WATSON verification, and MORIARTY predictions give reviewers proof that changes are ready.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section alt">
+        <div class="container">
+          <h2>Getting Started</h2>
+          <ol class="getting-started">
+            <li>Clone the repository and install dependencies with <code>pnpm install</code>.</li>
+            <li>Generate example artifacts via <code>pnpm run bootstrap</code>.</li>
+            <li>Point Wesley at your schema to produce ready-to-ship Postgres migrations.</li>
+          </ol>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="container">
+        <p>Built with ❤️ by the Wesley maintainers. Need help? <a href="https://github.com/flyingrobots/wesley/issues">Open an issue</a>.</p>
+      </div>
+    </footer>
+  </body>
+</html>
