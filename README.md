@@ -1,8 +1,10 @@
 # Wesley
 
+> Compile your GraphQL schema into a provably safe PostgreSQL backend with zero-downtime migrations, full test coverage, and cryptographic deployment proofs.
+>
 > **GraphQL in. PostgreSQL out. Zero downtime by default.**
 
-Wesley inverts the entire database development paradigm. While everyone else generates GraphQL FROM databases, Wesley generates databases FROM GraphQL—along with TypeScript types, Zod schemas, RLS policies, comprehensive tests, and SHA-locked deployment certificates. All from a single source of truth.
+Wesley inverts the entire database development paradigm. While everyone else generates GraphQL *from* databases, Wesley generates a battle-tested **PostgreSQL backend _from_ GraphQL**—along with TypeScript types, Zod schemas, Row-Level Security (RLS) policies, comprehensive tests, and SHA-locked deployment certificates. All from a single source of truth.
 
 **Stop maintaining schemas in 5 places. Start shipping with confidence.**
 
@@ -39,23 +41,46 @@ type Document @wes_table @wes_tenant(by: "org_id") @wes_rls(enabled: true) {
 | Experience the Daywalker (BLADE) demo | `node packages/wesley-host-node/bin/wesley.mjs blade --schema test/fixtures/blade/schema-v2.graphql --out-dir out/blade --dry-run` | Uses curated fixtures to demonstrate the zero-downtime flow end-to-end. |
 | Dive into docs/tests/scripts | [`docs/README.md`](docs/README.md), [`scripts/README.md`](scripts/README.md), [`test/README.md`](test/README.md) | Each guide explains prerequisites, commands, and fixture usage. |
 
+---
+
 ## Why Wesley Exists
 
-Modern development requires describing the same data shape 5+ times:
+Modern development forces you to describe the same data shape across multiple domains:
 
-- PostgreSQL DDL for your database
-- GraphQL schema for your API
-- TypeScript types for your frontend
-- Zod schemas for runtime validation  
-- RLS policies for security
+1. **PostgreSQL DDL** for your database schema
+2. **GraphQL schema** for your API contract
+3. **TypeScript types** for your frontend/backend
+4. **Zod schemas** for runtime validation
+5. **RLS policies** for granular security
 
-**When they drift, production breaks.** Reviews get harder. Deploys get scary. You're playing schema telephone with yourself.
+**When these five sources drift, production breaks.** Reviews are harder. Deploys are scarier. You're constantly playing _schema telephone_ with yourself.
 
 ### The Wesley Philosophy
 
-**GraphQL is the single source of truth. Everything else is generated.**
+**GraphQL is the single source of truth. Everything else is generated and tested.**
 
-Migrations aren't tasks you write—they're diffs you get for free when your schema evolves. Wesley does what Rails tried with ActiveRecord, but gets it right: **Schema first. Migrations are just artifacts.**
+Migrations aren't manual tasks—they're diffs you get for free when your schema evolves. Wesley realizes the promise of the _schema-first_ approach: **Schema is the source. Migrations are just artifacts.**
+
+## What You Get
+
+When you run `wesley generate`, it outputs a complete, ready-to-deploy data layer:
+
+```bash
+✓ migrations/
+  ├─ 001_expand.sql      # Online DDL (CONCURRENTLY, NOT VALID)
+  ├─ 001_backfill.sql    # Idempotent data transformations
+  └─ 001_contract.sql    # Cleanup phase
+✓ types/generated.ts     # TypeScript interfaces
+✓ schemas/zod.ts         # Runtime validation
+✓ policies/rls.sql       # Row-level security + helpers
+✓ tests/                 # pgTAP suites
+  ├─ structure/          # Table, column, constraint tests
+  ├─ rls/                # Policy enforcement tests
+  └─ plan/               # Migration plan validation
+✓ certs/
+  └─ deploy-<sha>.json   # Cryptographic deployment proof
+```
+
 
 ```mermaid
 flowchart LR
@@ -106,27 +131,23 @@ flowchart LR
 ## Quick Start
 
 ```bash
-# Install Wesley
-npm install -g @wesley/cli
+git clone https://github.com/flyingrobots/wesley.git
+cd wesley
+pnpm install
 
-# Initialize your schema
-wesley init
+# Explore the CLI via the workspace script
+pnpm wesley --help
 
 # Generate everything from your GraphQL schema
-wesley generate --schema schema.graphql
+pnpm wesley generate --schema schema.graphql
 
 # Deploy to production (with zero-downtime planning)
-wesley deploy
+pnpm wesley deploy
 ```
 
 ### Try the Examples
 
 ```bash
-# Clone the repository
-git clone https://github.com/flyingrobots/wesley.git
-cd wesley
-pnpm install
-
 # Generate everything for the example schema
 node packages/wesley-host-node/bin/wesley.mjs generate \
   --schema test/fixtures/examples/schema.graphql \
@@ -145,67 +166,31 @@ pnpm run bootstrap   # install deps → preflight → test
 
 ---
 
-## What You Get
-
-When you run `wesley generate`, you receive:
-
-```bash
-✓ migrations/
-  ├─ 001_expand.sql      # Online DDL (CONCURRENTLY, NOT VALID)
-  ├─ 001_backfill.sql    # Idempotent data transformations
-  └─ 001_contract.sql    # Cleanup phase
-✓ types/generated.ts     # TypeScript interfaces
-✓ schemas/zod.ts         # Runtime validation
-✓ policies/rls.sql       # Row-level security + helpers
-✓ tests/                 # pgTAP suites
-  ├─ structure/          # Table, column, constraint tests
-  ├─ rls/                # Policy enforcement tests
-  └─ plan/               # Migration plan validation
-✓ certs/
-  └─ deploy-<sha>.json   # Cryptographic deployment proof
-```
-
----
-
 ## Key Features
 
-### 🔒 Production Safety First
+Wesley is engineered for safety, speed, and confidence.
 
-- **Zero-downtime DDL** — All operations use `CONCURRENTLY` or `NOT VALID` patterns by default
-- **Advisory locks** — Prevents concurrent migrations automatically  
-- **Lock-aware planning** — DDL Planner rewrites operations to minimize lock impact
-- **Checkpoint recovery** — Resume failed migrations from last good state
-- **Drift detection** — Runtime validation catches schema mismatches before damage
+### 🔒 Safety First
 
-### 🔄 Phased Migration Protocol
+- **Zero-downtime DDL:** All operations automatically use `CONCURRENTLY` and `NOT VALID` patterns.
+- **Phased Migration Protocol:** Implements the battle-tested **Expand → Backfill → Validate → Switch → Contract** strategy.
+- **Advisory Locks:** Automated locking prevents concurrent migration disasters.
+- **Lock-Aware Planning:** The DDL planner rewrites SQL operations to minimize lock impact.
+- **Drift Detection:** Runtime validation catches schema mismatches before damage occurs.
 
-Wesley uses battle-tested **Expand → Backfill → Validate → Switch → Contract** strategy:
+### 🔄 Comprehensive Testing & Validation
 
-- **Wave execution** — Batches compatible operations to reduce total time
-- **Resource awareness** — Respects Postgres limits (one CIC per table, etc.)
-- **Dry-run mode** — Preview exact SQL and lock impact before execution
+- **pgTAP Suites:** Generates PostgreSQL-native tests for structure, constraints, RLS enforcement, and migration logic.
+- **Property-Based Testing:** Uses `fast-check` to prove the DDL planner's correctness.
+- **Round-Trip Validation:** Guarantees schema preservation: GraphQL → SQL → GraphQL.
+- **Idempotence Checks:** All generated operations are safe to retry.
 
-### 📊 Observable Operations
+### 📊 ### Observability & Proofs (SHA-lock HOLMES)
 
-- **SHA-locked certificates** — Cryptographic proof of what was deployed
-- **Explain mode** — Shows precise lock levels for each operation
-- **Dead column detection** — Uses `pg_stat_statements` to find unused columns
-- **Performance baselines** — Tracks migration timing for future predictions
-- **HOLMES scoring** — Evidence-based deployment confidence with customizable weights
-
-### ✅ Comprehensive Testing
-
-- **pgTAP suites** — Generated tests for structure, constraints, RLS, and migrations
-- **Property-based testing** — Fast-check for DDL planner correctness
-- **Round-trip validation** — Ensures GraphQL → SQL → GraphQL preservation
-- **Idempotence checks** — All operations safe to retry
-
-### 🚀 Developer Experience
-
-- **Watch mode** — Incremental compilation with atomic saves
-- **GraphQL ESLint** — Schema linting and best practices
-- **TypeScript generation** — Types and Zod schemas from GraphQL
-- **RLS helpers** — Composable security functions with required indexes
+- **SHA-Locked Certificates:** Provides an immutable, auditable record of the deployed state.
+- **Explain Mode:** Shows the precise **lock levels** for every operation in the migration plan.
+- **HOLMES Scoring:** An evidence-based confidence system that produces **SCS/TCI/MRI** metrics (Schema Coverage, Test Confidence, Migration Risk) for deployment readiness.
+- **Dead Column Detection:** Tools to find and flag unused database columns for safe cleanup.
 
 ---
 
@@ -260,15 +245,13 @@ wesley certify                   # Creates SHA-locked proof
 wesley deploy                    # Applies to production
 ```
 
-Wesley automatically creates:
-- New `posts` table with proper indexes
-- Foreign key from `Post.author_id` → `User.id`  
-- RLS policies for both tables
-- TypeScript types for `User` and `Post`
-- Zod schemas for runtime validation
-- pgTAP tests for structure and constraints
+### The Deployment Process:
 
-All zero-downtime. All tested. All provably safe.
+Wesley ensures a safe, zero-downtime deployment by automatically creating:
+
+- The new `posts` table with the foreign key and RLS policies.
+- **All** required TypeScript types and Zod schemas.
+- **All** pgTAP tests to validate the new structure and security.
 
 ---
 
@@ -276,7 +259,9 @@ All zero-downtime. All tested. All provably safe.
 
 ### Experimental: Query IR (QIR)
 
-Wesley includes an experimental Query Intermediate Representation pipeline that compiles GraphQL operations into deterministic SQL:
+Wesley includes an experimental **Query Intermediate Representation** pipeline that compiles GraphQL operations into deterministic, optimized SQL.
+
+The QIR pipeline translates queries, mutations, and subscriptions, then emits optimized PostgreSQL and generates pgTAP tests for operation contracts. See the documentation for details.
 
 ```bash
 wesley generate \
@@ -285,17 +270,11 @@ wesley generate \
   --emit-bundle
 ```
 
-The QIR pipeline:
-- Parses GraphQL queries, mutations, subscriptions
-- Lowers them to an intermediate representation  
-- Emits optimized PostgreSQL
-- Generates pgTAP tests for operation contracts
-
 See [`docs/guides/qir-ops.md`](docs/guides/qir-ops.md) for details.
 
-### HOLMES: Evidence-Based Deployments
+### SHA-locked HOLMES: Evidence-Based Deployments
 
-HOLMES inspects `.wesley/` bundles to produce machine-readable scores and human-friendly reports:
+The **HOLMES** (Heuristic for Observable Logic, Metrics, and Evidence System) toolkit inspects Wesley's evidence bundles (`.wesley/`) to produce an objective, machine-readable score for deployment readiness.
 
 ```bash
 # Investigate deployment readiness
@@ -308,11 +287,8 @@ watson verify --current .wesley/ --baseline .wesley/previous/
 moriarty predict --bundle .wesley/
 ```
 
-**Key HOLMES features:**
-- **Weighted scoring** — Customize via `.wesley/weights.json`
-- **SCS/TCI/MRI metrics** — Schema Coverage, Test Confidence, Migration Risk
-- **Evidence maps** — Deterministic fingerprints per release
-- **Regression detection** — Catch issues before production
+This system allows you to define a minimum confidence score before a deploy can proceed.   
+The certificate is generates is SHA-locked to the commit it ran against.
 
 See [`packages/wesley-holmes/README.md`](packages/wesley-holmes/README.md) for the complete guide.
 
@@ -467,6 +443,7 @@ Wesley follows the [SAGENTS Codex](AGENTS.md) for contribution guidelines. Wheth
 2. **Respect `.llmignore`** — It guards focus from noise
 3. **Log your work** — Append to the Chronicles, never alter history
 4. **Test thoroughly** — Run `pnpm run bootstrap` before submitting
+5. **Read `AGENTS.md`** — Guide for AI Agents
 
 See the [roadmap](docs/roadmap.md) for current priorities and the [Wesley Project Board](https://github.com/users/flyingrobots/projects/5) for active work.
 
@@ -496,15 +473,11 @@ Wesley is named after Wesley Crusher, the brilliant ensign who saw possibilities
 
 ---
 
+## Wesley — The Data Layer Compiler
+
 **Stop playing schema telephone.**  
 **Start shipping with confidence.**  
 **Make it so. 🖖**
-
----
-
-## License
-
-MIT
 
 ---
 
@@ -514,3 +487,8 @@ MIT
 - **GitHub**: https://github.com/flyingrobots/wesley
 - **Issues**: https://github.com/flyingrobots/wesley/issues
 - **Project Board**: https://github.com/users/flyingrobots/projects/5
+
+---
+## License
+
+MIT

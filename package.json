@@ -17,6 +17,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "bootstrap": "pnpm install && pnpm run preflight && pnpm run test",
+    "test:ci:local": "bash scripts/test-ci-locally.sh",
     "validate": "pnpm lint && pnpm format:check && pnpm test",
     "generate:example": "cd test/fixtures/examples && node ../../../packages/wesley-host-node/bin/wesley.mjs generate --schema ecommerce.graphql --emit-bundle --out-dir out --allow-dirty",
     "clean": "node scripts/clean.mjs",

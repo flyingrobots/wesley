@@ -10,6 +10,7 @@ This directory contains helper scripts that power development workflows. Run the
 | `install-hooks.sh` | Sets `core.hooksPath` to `.githooks`, ensuring local Git hooks run. Safe to rerun. | `bash scripts/install-hooks.sh` |
 | `preflight.mjs` | Runs the repository hygiene suite (docs link check, dependency boundaries, ESLint purity, license audit). | `pnpm run preflight` – respects `SKIP_PREFLIGHT=1` to bypass |
 | `setup-bats-plugins.sh` | Installs pinned Bats testing plugins into `packages/wesley-cli/test/bats-plugins`. | `bash scripts/setup-bats-plugins.sh` |
+| `test-ci-locally.sh` | Simulates the GitHub Actions CLI job locally (installs deps, runs Bats, emits TAP). | `pnpm run test:ci:local` |
 | _(composite)_ | Convenience bootstrap script that installs dependencies, runs preflight, then runs the workspace tests. | `pnpm run bootstrap` |
 
 > [!tip]

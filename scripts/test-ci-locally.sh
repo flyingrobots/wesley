@@ -5,10 +5,13 @@
 
 set -euo pipefail
 
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+CLI_DIR="$ROOT_DIR/packages/wesley-cli"
+
 echo "🧪 Wesley CLI - Local CI Simulation"
 echo "===================================="
 
-cd packages/wesley-cli
+cd "$CLI_DIR"
 
 echo ""
 echo "📦 Installing dependencies..."
@@ -46,6 +49,7 @@ echo "TAP results saved to cli-test-results-local.tap"
 
 echo ""
 echo "🔥 Running smoke tests..."
+
 echo "Version check:"
 node wesley.mjs --version
 
