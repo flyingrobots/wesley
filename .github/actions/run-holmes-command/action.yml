@@ -1,0 +1,35 @@
+name: Run HOLMES CLI
+description: Execute Wesley HOLMES CLI reporting command and collect artifacts.
+inputs:
+  command:
+    description: HOLMES CLI subcommand to execute (investigate|verify|predict)
+    required: true
+  report-name:
+    description: Base name for report files (holmes|watson|moriarty)
+    required: true
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        set -euo pipefail
+        command="${{ inputs.command }}"
+        report="${{ inputs['report-name'] }}"
+        schema_path="$GITHUB_WORKSPACE/${HOLMES_SCHEMA}"
+        schema_dir="$(dirname "$schema_path")"
+        bundle_dir="$GITHUB_WORKSPACE/${HOLMES_BUNDLE_DIR}"
+        json_path="$schema_dir/${report}-report.json"
+        md_path="$schema_dir/${report}-report.md"
+
+        mkdir -p "$schema_dir"
+
+        node "$GITHUB_WORKSPACE/packages/wesley-holmes/src/cli.mjs" "$command" \
+          --bundle-dir "$bundle_dir" \
+          --history-file "$bundle_dir/history.json" \
+          --json "$json_path" > "$md_path"
+
+        cat "$md_path"
+
+        mkdir -p "reports/$report"
+        cp "$json_path" "reports/$report/${report}-report.json"
+        cp "$md_path" "reports/$report/${report}-report.md"

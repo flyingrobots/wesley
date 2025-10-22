@@ -42,6 +42,13 @@ jobs:
           else
             echo "No scores.json found yet"
           fi
+
+      - name: "📤 Upload Dashboard Template"
+        uses: actions/upload-artifact@v4
+        with:
+          name: dashboard-template
+          path: docs/holmes-dashboard/index.html
+          if-no-files-found: error
           
       - name: "📦 Prepare Bundle for Upload"
         run: |
@@ -78,16 +85,10 @@ jobs:
           
       - name: "🔍 Run Investigation"
         id: holmes
-        run: |
-          set -euo pipefail
-          SCHEMA_DIR="$(dirname "${HOLMES_SCHEMA}")"
-          pushd "$SCHEMA_DIR" >/dev/null
-          node "$GITHUB_WORKSPACE/packages/wesley-holmes/src/cli.mjs" investigate --json holmes-report.json > holmes-report.md
-          cat holmes-report.md
-          popd >/dev/null
-          mkdir -p reports/holmes
-          cp "$SCHEMA_DIR/holmes-report.md" reports/holmes/holmes-report.md
-          cp "$SCHEMA_DIR/holmes-report.json" reports/holmes/holmes-report.json
+        uses: ./.github/actions/run-holmes-command
+        with:
+          command: investigate
+          report-name: holmes
           
       - name: "💾 Save Report"
         uses: actions/upload-artifact@v4
@@ -116,16 +117,10 @@ jobs:
           
       - name: "🩺 Run Verification"
         id: watson
-        run: |
-          set -euo pipefail
-          SCHEMA_DIR="$(dirname "${HOLMES_SCHEMA}")"
-          pushd "$SCHEMA_DIR" >/dev/null
-          node "$GITHUB_WORKSPACE/packages/wesley-holmes/src/cli.mjs" verify --json watson-report.json > watson-report.md
-          cat watson-report.md
-          popd >/dev/null
-          mkdir -p reports/watson
-          cp "$SCHEMA_DIR/watson-report.md" reports/watson/watson-report.md
-          cp "$SCHEMA_DIR/watson-report.json" reports/watson/watson-report.json
+        uses: ./.github/actions/run-holmes-command
+        with:
+          command: verify
+          report-name: watson
           
       - name: "💾 Save Report"
         uses: actions/upload-artifact@v4
@@ -155,16 +150,10 @@ jobs:
           
       - name: "🔮 Run Predictions"
         id: moriarty
-        run: |
-          set -euo pipefail
-          SCHEMA_DIR="$(dirname "${HOLMES_SCHEMA}")"
-          pushd "$SCHEMA_DIR" >/dev/null
-          node "$GITHUB_WORKSPACE/packages/wesley-holmes/src/cli.mjs" predict --json moriarty-report.json > moriarty-report.md
-          cat moriarty-report.md
-          popd >/dev/null
-          mkdir -p reports/moriarty
-          cp "$SCHEMA_DIR/moriarty-report.md" reports/moriarty/moriarty-report.md
-          cp "$SCHEMA_DIR/moriarty-report.json" reports/moriarty/moriarty-report.json
+        uses: ./.github/actions/run-holmes-command
+        with:
+          command: predict
+          report-name: moriarty
           
       - name: "💾 Save Report"
         uses: actions/upload-artifact@v4
@@ -347,20 +336,23 @@ jobs:
       pull-requests: write
       
     steps:
-      - name: "📦 Checkout Repository"
-        uses: actions/checkout@v4
-
       - name: "📥 Download Reports"
         uses: actions/download-artifact@v4
         with:
           merge-multiple: true
           path: reports
 
+      - name: "📥 Download Dashboard Template"
+        uses: actions/download-artifact@v4
+        with:
+          name: dashboard-template
+          path: dashboard-template
+
       - name: "📊 Assemble Dashboard"
         run: |
           set -euo pipefail
           mkdir -p dashboard
-          cp docs/holmes-dashboard/index.html dashboard/index.html
+          cp dashboard-template/index.html dashboard/index.html
           missing=0
           for report in holmes watson moriarty; do
             src=$(find reports -name "$report-report.json" -print -quit)
@@ -427,10 +419,8 @@ jobs:
             
             ## 🔮 Professor MORIARTY's Predictions
             ${moriarty}
-            
             ---
             Machine-readable reports: holmes-report.json · watson-report.json · moriarty-report.json (see workflow artifacts).
-            
             ---
             *Filed at 221B Repository Street*
             `;
