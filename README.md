@@ -1,6 +1,10 @@
 # Wesley
 
-<img width="500" alt="Wesley" src="https://github.com/user-attachments/assets/2ccbbf55-c42e-45a5-8549-0f103b8d1328" align="right" />
+> [!note]
+> **Wesley** is pre-alpha. It does work, but it's somewhere between MVP and alpha.  
+> Just being real: probably don't want to use this in prod until _at least_ beta.
+> Star the repo, watch for updates! It's under active development.
+> _- flyingrobots_
 
 > Compile your GraphQL schema into a provably safe PostgreSQL backend with zero-downtime migrations, full test coverage, and cryptographic deployment proofs.
 >
@@ -19,17 +23,6 @@ type Document @wes_table @wes_tenant(by: "org_id") @wes_rls(enabled: true) {
 }
 ```
 
-## Table of Contents
-
-- [TL;DR – Getting Started](#tldr--getting-started)
-- [Why Wesley Exists](#why-wesley-exists)
-  - [The Wesley Philosophy](#the-wesley-philosophy)
-- [Quick Start](#quick-start)
-  - [Try the Examples](#try-the-examples)
-- [Key Features](#key-features)
-- [Advanced Features](#advanced-features)
-- [FAQ](#faq)
-
 ## TL;DR – Getting Started
 
 | Goal | Command(s) | Notes |
@@ -41,11 +34,22 @@ type Document @wes_table @wes_tenant(by: "org_id") @wes_rls(enabled: true) {
 | Experience the Daywalker (BLADE) demo | `node packages/wesley-host-node/bin/wesley.mjs blade --schema test/fixtures/blade/schema-v2.graphql --out-dir out/blade --dry-run` | Uses curated fixtures to demonstrate the zero-downtime flow end-to-end. |
 | Dive into docs/tests/scripts | [`docs/README.md`](docs/README.md), [`scripts/README.md`](scripts/README.md), [`test/README.md`](test/README.md) | Each guide explains prerequisites, commands, and fixture usage. |
 
+## Table of Contents
+
+<img width="500" alt="Wesley" src="https://github.com/user-attachments/assets/2ccbbf55-c42e-45a5-8549-0f103b8d1328" align="right" />
+
+- [TL;DR – Getting Started](#tldr--getting-started)
+- [Why Wesley Exists](#why-wesley-exists)
+  - [The Wesley Philosophy](#the-wesley-philosophy)
+- [Quick Start](#quick-start)
+  - [Try the Examples](#try-the-examples)
+- [Key Features](#key-features)
+- [Advanced Features](#advanced-features)
+- [FAQ](#faq)
+
 ---
 
-## Why Wesley Exists
-
-<img width="400" alt="Just Add Schema" src="https://github.com/user-attachments/assets/df0ed74b-8dd9-467b-9e6c-563496ca4985" align="right" />
+### Why Wesley Exists
 
 Modern development forces you to describe the same data shape across multiple domains:
 
@@ -172,7 +176,6 @@ pnpm run bootstrap   # install deps → preflight → test
 
 <img width="500" alt="Wesley is for YOU!" src="https://github.com/user-attachments/assets/60cb4558-8a98-4d51-bdda-4878ba24f085" align="right" />
 
-
 Wesley is engineered for safety, speed, and confidence.
 
 ### 🔒 Safety First
@@ -252,15 +255,15 @@ wesley deploy                    # Applies to production
 
 ### The Deployment Process:
 
+<img width="400" alt="Just Add Schema" src="https://github.com/user-attachments/assets/df0ed74b-8dd9-467b-9e6c-563496ca4985" align="right" />
+
 Wesley ensures a safe, zero-downtime deployment by automatically creating:
 
 - The new `posts` table with the foreign key and RLS policies.
 - **All** required TypeScript types and Zod schemas.
 - **All** pgTAP tests to validate the new structure and security.
 
----
-
-## Advanced Features
+### Advanced Features
 
 ### Experimental: Query IR (QIR)
 
@@ -483,7 +486,7 @@ Wesley is named after Wesley Crusher, the brilliant ensign who saw possibilities
 
 ## Wesley — The Data Layer Compiler
 
-![wesley-logo](https://github.com/user-attachments/assets/cce3bbb2-fc70-4081-8fa7-96538b96eb8b)
+<img src="https://github.com/user-attachments/assets/cce3bbb2-fc70-4081-8fa7-96538b96eb8b" width="300" alt="Wesley" align="left" />
 
 **Stop playing schema telephone.**  
 **Start shipping with confidence.**  
@@ -491,7 +494,7 @@ Wesley is named after Wesley Crusher, the brilliant ensign who saw possibilities
 
 ---
 
-## Links
+### Links
 
 - **Website**: https://flyingrobots.github.io/wesley/
 - **GitHub**: https://github.com/flyingrobots/wesley
@@ -499,6 +502,7 @@ Wesley is named after Wesley Crusher, the brilliant ensign who saw possibilities
 - **Project Board**: https://github.com/users/flyingrobots/projects/5
 
 ---
+
 ## License
 
-MIT
+MIT © J. Kirby Ross ([flyingrobots](https://github.com/flyingrobots)
