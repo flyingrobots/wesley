@@ -423,14 +423,14 @@ jobs:
             ---
             
             ## 🔮 Professor MORIARTY's Predictions
-${moriarty}
-
----
-Machine-readable reports: holmes-report.json · watson-report.json · moriarty-report.json (see workflow artifacts).
-
----
-*Filed at 221B Repository Street*
-`;
+            ${moriarty}
+            
+            ---
+            Machine-readable reports: holmes-report.json · watson-report.json · moriarty-report.json (see workflow artifacts).
+            
+            ---
+            *Filed at 221B Repository Street*
+            `;
             
             // Find existing comment
             const { data: comments } = await github.rest.issues.listComments({
