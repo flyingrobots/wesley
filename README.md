@@ -15,6 +15,30 @@ type Document @wes_table @wes_tenant(by: "org_id") @wes_rls(enabled: true) {
 }
 ```
 
+## Table of Contents
+
+- [TL;DR – Getting Started](#tldr--getting-started)
+- [Why Wesley Exists](#why-wesley-exists)
+  - [The Wesley Philosophy](#the-wesley-philosophy)
+- [Quick Start](#quick-start)
+  - [Try the Examples](#try-the-examples)
+- [Key Features](#key-features)
+- [Evidence, HOLMES, and Observability](#evidence-holmes-and-observability)
+- [Workspace Packages](#workspace-packages)
+- [Operational Guidance](#operational-guidance)
+- [FAQ](#faq)
+
+## TL;DR – Getting Started
+
+| Goal | Command(s) | Notes |
+| --- | --- | --- |
+| Install tooling & sanity-check repo | `pnpm install`<br>`pnpm run bootstrap` | Bootstraps dependencies, runs preflight, executes workspace tests. |
+| Generate everything from the example schema | `node packages/wesley-host-node/bin/wesley.mjs generate --schema test/fixtures/examples/schema.graphql --ops test/fixtures/examples/ops --emit-bundle --out-dir out/examples` | Produces SQL, pgTAP, ops SQL, and a `.wesley/` evidence bundle. |
+| Preview migration plan & rehearsal | `node packages/wesley-host-node/bin/wesley.mjs plan --schema test/fixtures/examples/schema.graphql --explain`<br>`node packages/wesley-host-node/bin/wesley.mjs rehearse --schema test/fixtures/examples/schema.graphql --dry-run --json` | No database required for `--dry-run`; inspect JSON for lock levels and REALM verdicts. |
+| Run HOLMES evidence checks | `pnpm --filter @wesley/holmes exec node packages/wesley-host-node/bin/wesley.mjs generate --schema test/fixtures/examples/schema.graphql --emit-bundle --out-dir out/examples`<br>`pnpm --filter @wesley/holmes exec node packages/wesley-holmes/src/cli.mjs investigate --json holmes.json > holmes.md` | Generates scores + markdown report; see [Evidence, HOLMES, and Observability](#evidence-holmes-and-observability). |
+| Experience the Daywalker (BLADE) demo | `node packages/wesley-host-node/bin/wesley.mjs blade --schema test/fixtures/blade/schema-v2.graphql --out-dir out/blade --dry-run` | Uses curated fixtures to demonstrate the zero-downtime flow end-to-end. |
+| Dive into docs/tests/scripts | [`docs/README.md`](docs/README.md), [`scripts/README.md`](scripts/README.md), [`test/README.md`](test/README.md) | Each guide explains prerequisites, commands, and fixture usage. |
+
 ## Why Wesley Exists
 
 Modern development requires describing the same data shape 5+ times:
