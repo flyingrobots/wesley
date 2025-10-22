@@ -18,10 +18,7 @@ import {
 } from './report-schemas.mjs';
 
 function resolvePath(target, fallback) {
-  if (!target) {
-    return fallback;
-  }
-  return path.isAbsolute(target) ? target : path.resolve(target);
+  return !target ? fallback : (path.isAbsolute(target) ? target : path.resolve(target));
 }
 
 function loadBundle(bundlePath) {
@@ -128,8 +125,11 @@ Requires:
     .description('Generate combined HOLMES, WATSON, and MORIARTY report')
     .option('--json <file>', 'Write combined JSON to file')
     .action(options => {
-      const bundle = loadBundle();
-      const history = loadHistory();
+      const opts = program.optsWithGlobals();
+      const bundleDir = resolvePath(opts.bundleDir, '.wesley');
+      const bundlePath = path.join(bundleDir, 'bundle.json');
+      const bundle = loadBundle(bundlePath);
+      const history = loadHistory(opts.historyFile, bundleDir);
       const holmes = new Holmes(bundle);
       const watson = new Watson(bundle);
       const moriarty = new Moriarty(history);

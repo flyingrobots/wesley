@@ -89,7 +89,9 @@ jobs:
         with:
           command: investigate
           report-name: holmes
-          
+          schema-path: ${{ env.HOLMES_SCHEMA }}
+          bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
+
       - name: "💾 Save Report"
         uses: actions/upload-artifact@v4
         with:
@@ -121,7 +123,9 @@ jobs:
         with:
           command: verify
           report-name: watson
-          
+          schema-path: ${{ env.HOLMES_SCHEMA }}
+          bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
+
       - name: "💾 Save Report"
         uses: actions/upload-artifact@v4
         with:
@@ -154,7 +158,9 @@ jobs:
         with:
           command: predict
           report-name: moriarty
-          
+          schema-path: ${{ env.HOLMES_SCHEMA }}
+          bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
+
       - name: "💾 Save Report"
         uses: actions/upload-artifact@v4
         with:
@@ -340,7 +346,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           merge-multiple: true
-          path: reports
+          path: .
 
       - name: "📥 Download Dashboard Template"
         uses: actions/download-artifact@v4
@@ -352,7 +358,12 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dashboard
-          cp dashboard-template/index.html dashboard/index.html
+          template_path=$(find dashboard-template -name "index.html" -print -quit)
+          if [ -z "$template_path" ]; then
+            echo "Dashboard template index.html not found" >&2
+            exit 1
+          fi
+          cp "$template_path" dashboard/index.html
           missing=0
           for report in holmes watson moriarty; do
             src=$(find reports -name "$report-report.json" -print -quit)
@@ -387,7 +398,11 @@ jobs:
                 return `_Report unavailable: upstream job status **${status}**_`;
               }
               const target = path.join('reports', artifactDir, filename);
+              const altTarget = path.join('reports', 'reports', artifactDir, filename);
               if (!fs.existsSync(target)) {
+                if (fs.existsSync(altTarget)) {
+                  return fs.readFileSync(altTarget, 'utf8');
+                }
                 console.warn(`Expected report file missing: ${target}`);
                 return `_Report missing for ${artifactDir}_`;
               }
