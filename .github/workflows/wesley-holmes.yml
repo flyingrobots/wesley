@@ -346,7 +346,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           merge-multiple: true
-          path: .
+          path: reports
 
       - name: "📥 Download Dashboard Template"
         uses: actions/download-artifact@v4
@@ -364,6 +364,7 @@ jobs:
             exit 1
           fi
           cp "$template_path" dashboard/index.html
+          mkdir -p reports
           missing=0
           for report in holmes watson moriarty; do
             src=$(find reports -name "$report-report.json" -print -quit)
