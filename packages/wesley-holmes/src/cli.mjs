@@ -18,7 +18,8 @@ import {
 } from './report-schemas.mjs';
 
 function resolvePath(target, fallback) {
-  return !target ? fallback : (path.isAbsolute(target) ? target : path.resolve(target));
+  const chosen = target || fallback;
+  return path.isAbsolute(chosen) ? chosen : path.resolve(chosen);
 }
 
 function loadBundle(bundlePath) {

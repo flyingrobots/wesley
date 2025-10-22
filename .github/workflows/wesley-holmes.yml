@@ -399,11 +399,7 @@ jobs:
                 return `_Report unavailable: upstream job status **${status}**_`;
               }
               const target = path.join('reports', artifactDir, filename);
-              const altTarget = path.join('reports', 'reports', artifactDir, filename);
               if (!fs.existsSync(target)) {
-                if (fs.existsSync(altTarget)) {
-                  return fs.readFileSync(altTarget, 'utf8');
-                }
                 console.warn(`Expected report file missing: ${target}`);
                 return `_Report missing for ${artifactDir}_`;
               }

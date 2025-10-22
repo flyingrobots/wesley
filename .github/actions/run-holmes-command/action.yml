@@ -28,15 +28,6 @@ runs:
         bundle_rel="${{ inputs['bundle-dir'] }}"
         history_rel="${{ inputs['history-file'] }}"
 
-        if [ -z "$schema_rel" ]; then
-          echo "schema-path input is required" >&2
-          exit 1
-        fi
-        if [ -z "$bundle_rel" ]; then
-          echo "bundle-dir input is required" >&2
-          exit 1
-        fi
-
         schema_path="$GITHUB_WORKSPACE/$schema_rel"
         if [ ! -f "$schema_path" ]; then
           echo "Schema file not found at $schema_path" >&2
