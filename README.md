@@ -6,9 +6,7 @@
 > Star the repo, watch for updates! It's under active development.
 > _- flyingrobots_
 
-> Compile your GraphQL schema into a provably safe PostgreSQL backend with zero-downtime migrations, full test coverage, and cryptographic deployment proofs.
->
-> **GraphQL in. PostgreSQL out. Zero downtime by default.**
+> **The data layer compiler that turns GraphQL schemas into production-ready PostgreSQL—with zero-downtime migrations, comprehensive tests, and cryptographic deployment proofs.**
 
 Wesley inverts the entire database development paradigm. While everyone else generates GraphQL *from* databases, Wesley generates a battle-tested **PostgreSQL backend _from_ GraphQL**—along with TypeScript types, Zod schemas, Row-Level Security (RLS) policies, comprehensive tests, and SHA-locked deployment certificates. All from a single source of truth.
 
