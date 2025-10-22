@@ -1,5 +1,8 @@
 # Wesley
 
+<img width="500" alt="Wesley" src="https://github.com/user-attachments/assets/07da1905-8060-4227-9f4f-b22674e082b2" align="left" />
+
+
 > Compile your GraphQL schema into a provably safe PostgreSQL backend with zero-downtime migrations, full test coverage, and cryptographic deployment proofs.
 >
 > **GraphQL in. PostgreSQL out. Zero downtime by default.**
@@ -25,9 +28,7 @@ type Document @wes_table @wes_tenant(by: "org_id") @wes_rls(enabled: true) {
 - [Quick Start](#quick-start)
   - [Try the Examples](#try-the-examples)
 - [Key Features](#key-features)
-- [Evidence, HOLMES, and Observability](#evidence-holmes-and-observability)
-- [Workspace Packages](#workspace-packages)
-- [Operational Guidance](#operational-guidance)
+- [Advanced Features](#advanced-features)
 - [FAQ](#faq)
 
 ## TL;DR – Getting Started
@@ -44,6 +45,9 @@ type Document @wes_table @wes_tenant(by: "org_id") @wes_rls(enabled: true) {
 ---
 
 ## Why Wesley Exists
+
+<img width="500" alt="Just Add Schema" src="https://github.com/user-attachments/assets/33c8f447-bcdf-42e1-b39f-5924bc9a00ee" align="right" />
+
 
 Modern development forces you to describe the same data shape across multiple domains:
 
@@ -168,6 +172,9 @@ pnpm run bootstrap   # install deps → preflight → test
 
 ## Key Features
 
+<img width="500" alt="Wesley is for YOU!" src="https://github.com/user-attachments/assets/60cb4558-8a98-4d51-bdda-4878ba24f085" align="right" />
+
+
 Wesley is engineered for safety, speed, and confidence.
 
 ### 🔒 Safety First
@@ -273,6 +280,9 @@ wesley generate \
 See [`docs/guides/qir-ops.md`](docs/guides/qir-ops.md) for details.
 
 ### SHA-locked HOLMES: Evidence-Based Deployments
+
+<img width="500" alt="SHA-lock Holmes + Shipme" src="https://github.com/user-attachments/assets/685f9193-f1b3-43ca-9c22-3f3fb2a21fd1" align="right" />
+
 
 The **HOLMES** (Heuristic for Observable Logic, Metrics, and Evidence System) toolkit inspects Wesley's evidence bundles (`.wesley/`) to produce an objective, machine-readable score for deployment readiness.
 
@@ -474,6 +484,8 @@ Wesley is named after Wesley Crusher, the brilliant ensign who saw possibilities
 ---
 
 ## Wesley — The Data Layer Compiler
+
+![wesley-logo](https://github.com/user-attachments/assets/cce3bbb2-fc70-4081-8fa7-96538b96eb8b)
 
 **Stop playing schema telephone.**  
 **Start shipping with confidence.**  
