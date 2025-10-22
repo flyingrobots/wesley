@@ -47,7 +47,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: dashboard-template
-          path: docs/holmes-dashboard/index.html
+          path: docs/holmes-dashboard
           if-no-files-found: error
           
       - name: "📦 Prepare Bundle for Upload"
@@ -363,7 +363,8 @@ jobs:
             echo "Dashboard template index.html not found" >&2
             exit 1
           fi
-          cp "$template_path" dashboard/index.html
+          template_dir=$(dirname "$template_path")
+          cp -R "$template_dir"/. dashboard/
           mkdir -p reports
           missing=0
           for report in holmes watson moriarty; do
@@ -394,16 +395,42 @@ jobs:
             const fs = require('fs');
             const path = require('path');
 
-            const readReport = (status, artifactDir, filename) => {
+            const findFirst = (root, filename, mustContain) => {
+              const stack = [root];
+              while (stack.length) {
+                const dir = stack.pop();
+                let entries = [];
+                try {
+                  entries = fs.readdirSync(dir, { withFileTypes: true });
+                } catch {
+                  continue;
+                }
+                for (const entry of entries) {
+                  const fullPath = path.join(dir, entry.name);
+                  if (entry.isDirectory()) {
+                    stack.push(fullPath);
+                  } else if (
+                    entry.isFile() &&
+                    entry.name === filename &&
+                    (!mustContain || fullPath.includes(`${path.sep}${mustContain}${path.sep}`))
+                  ) {
+                    return fullPath;
+                  }
+                }
+              }
+              return null;
+            };
+
+            const readReport = (status, reportName, filename) => {
               if (status !== 'success') {
                 return `_Report unavailable: upstream job status **${status}**_`;
               }
-              const target = path.join('reports', artifactDir, filename);
-              if (!fs.existsSync(target)) {
-                console.warn(`Expected report file missing: ${target}`);
-                return `_Report missing for ${artifactDir}_`;
+              const match = findFirst('reports', filename, reportName);
+              if (!match) {
+                console.warn(`Report not found: ${reportName}/${filename}`);
+                return `_Report missing for ${reportName}_`;
               }
-              return fs.readFileSync(target, 'utf8');
+              return fs.readFileSync(match, 'utf8');
             };
 
             const statuses = {
