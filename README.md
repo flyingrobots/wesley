@@ -1,7 +1,6 @@
 # Wesley
 
-<img width="500" alt="Wesley" src="https://github.com/user-attachments/assets/07da1905-8060-4227-9f4f-b22674e082b2" align="left" />
-
+<img width="500" alt="Wesley" src="https://github.com/user-attachments/assets/2ccbbf55-c42e-45a5-8549-0f103b8d1328" align="right" />
 
 > Compile your GraphQL schema into a provably safe PostgreSQL backend with zero-downtime migrations, full test coverage, and cryptographic deployment proofs.
 >
@@ -46,8 +45,7 @@ type Document @wes_table @wes_tenant(by: "org_id") @wes_rls(enabled: true) {
 
 ## Why Wesley Exists
 
-<img width="500" alt="Just Add Schema" src="https://github.com/user-attachments/assets/33c8f447-bcdf-42e1-b39f-5924bc9a00ee" align="right" />
-
+<img width="400" alt="Just Add Schema" src="https://github.com/user-attachments/assets/df0ed74b-8dd9-467b-9e6c-563496ca4985" align="right" />
 
 Modern development forces you to describe the same data shape across multiple domains:
 
