@@ -23,3 +23,5 @@ test/fixtures/blade/*.key
 test/fixtures/blade/*.pub
 test/fixtures/blade/keys/*.key
 test/fixtures/blade/keys/*.pub
+website/.astro/
+website/dist/
