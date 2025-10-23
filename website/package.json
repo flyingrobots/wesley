@@ -1,25 +1,27 @@
 {
-  "name": "website",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "dev": "astro dev",
-    "build": "astro build",
-    "preview": "astro preview"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "name": "wesley-website",
+  "private": true,
+  "version": "0.0.0",
   "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
   "dependencies": {
-    "@astrojs/mdx": "^4.3.7",
-    "@astrojs/react": "^4.4.0",
     "@emotion/react": "^11.14.0",
     "@mantine/core": "^8.3.5",
     "@mantine/hooks": "^8.3.5",
+    "@mantinex/mantine-logo": "^2.0.0",
     "@tabler/icons-react": "^3.34.1",
-    "astro": "^5.14.8",
-    "marked": "^16.4.1"
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.1",
+    "@types/react-dom": "^19.0.1",
+    "@vitejs/plugin-react": "^4.3.1",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.5"
   }
 }
