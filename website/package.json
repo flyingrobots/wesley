@@ -16,7 +16,6 @@
     "@astrojs/mdx": "^4.3.7",
     "@astrojs/react": "^4.4.0",
     "@emotion/react": "^11.14.0",
-    "@mantinex/mantine-logo": "^2.0.0",
     "@mantine/core": "^8.3.5",
     "@mantine/hooks": "^8.3.5",
     "@tabler/icons-react": "^3.34.1",

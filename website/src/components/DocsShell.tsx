@@ -1,5 +1,3 @@
-import '@mantinex/mantine-logo/styles.css';
-
 import { useMemo, type ReactNode } from 'react';
 import { MantineProvider, AppShell, Container, Paper, ScrollArea } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';

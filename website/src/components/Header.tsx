@@ -5,10 +5,10 @@ import {
   Button,
   Burger,
   Group,
+  ThemeIcon,
   Text,
 } from '@mantine/core';
-import { IconBrandGithub, IconBook2 } from '@tabler/icons-react';
-import { MantineLogo } from '@mantinex/mantine-logo';
+import { IconBrandGithub, IconBook2, IconSchema } from '@tabler/icons-react';
 
 interface HeaderProps {
   navOpened?: boolean;
@@ -27,8 +27,15 @@ export default function Header({ navOpened = false, onToggleNav }: HeaderProps =
             size="sm"
             aria-label="Toggle navigation"
           />
-          <Group gap="xs" align="center">
-            <MantineLogo size={28} />
+          <Group gap="xs" align="center" wrap="nowrap">
+            <ThemeIcon
+              size={34}
+              radius="lg"
+              gradient={{ from: 'blue.5', to: 'cyan.4', deg: 135 }}
+              variant="gradient"
+            >
+              <IconSchema size={18} stroke={1.6} />
+            </ThemeIcon>
             <div>
               <Text fw={600}>Wesley Docs</Text>
               <Text size="xs" c="dimmed">

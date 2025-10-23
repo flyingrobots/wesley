@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react';
-import { Code, Group, ScrollArea, Text } from '@mantine/core';
+import { Code, Group, ScrollArea, Text, ThemeIcon } from '@mantine/core';
 import {
   IconBookmarks,
   IconBrandGithub,
@@ -8,8 +8,8 @@ import {
   IconRocket,
   IconRoute,
   IconTerminal2,
+  IconSchema,
 } from '@tabler/icons-react';
-import { MantineLogo } from '@mantinex/mantine-logo';
 import classes from './Sidebar.module.css';
 
 interface NavItem {
@@ -36,7 +36,14 @@ export default function Sidebar({ items, currentSlug }: SidebarProps) {
     <nav className={classes.navbar}>
       <div className={classes.navbarMain}>
         <Group className={classes.header} justify="space-between" gap="sm" wrap="nowrap">
-          <MantineLogo size={24} />
+          <ThemeIcon
+            size={32}
+            variant="gradient"
+            radius="lg"
+            gradient={{ from: 'blue.5', to: 'cyan.4', deg: 135 }}
+          >
+            <IconSchema size={17} stroke={1.6} />
+          </ThemeIcon>
           <div className={classes.headerText}>
             <Text size="xs" c="dimmed" fw={600}>
               Wesley
