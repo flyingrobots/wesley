@@ -1,18 +1,16 @@
----
-
-## Additional Notes
-
-Loop in DX/Docs teams for copy and onboarding flows; capture analytics requirements early.
-
-## Dependencies
-
-- **Blocked by:** [WB-002](./wb-002-implement-host-browser-adapter.md), [WB-003](./wb-003-browser-build-pipeline.md)
-
 # [WB-004] Browser Playground Experience
 
 ## Overview
 
 Create an Astro/Mantine-powered playground that runs entirely client-side using the browser adapter. Users can paste GraphQL SDL, run Wesley, view generated artifacts, and download bundles.
+
+## Dependencies
+
+- **Blocked by:** [WB-002](./wb-002-implement-host-browser-adapter.md), [WB-003](./wb-003-browser-build-pipeline.md)
+
+## Additional Notes
+
+Loop in DX/Docs teams for copy and onboarding flows; capture analytics requirements early.
 
 ## References & Assets
 
@@ -118,7 +116,6 @@ Extend the Astro/Mantine site, embed React components for editor/viewer, use bro
 - [ ] WB-002 completed
 - [ ] WB-003 bundle available
 
----
 
 ## Production Notes
 

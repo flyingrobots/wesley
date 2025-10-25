@@ -1,16 +1,3 @@
----
-
-<!--
-Leave space for notes, open questions, or follow-ups uncovered during grooming or implementation.
--->
-## Additional Notes
-
-Document findings in `docs/features/host-browser.md` and attach benchmark artifacts to the RFC.
-
-## Dependencies
-
-- **Blocks:** [WB-002](./wb-002-implement-host-browser-adapter.md), [WB-003](./wb-003-browser-build-pipeline.md)
-
 # [WB-001] Browser Host Architecture Spike
 
 ## Overview
@@ -24,6 +11,14 @@ Run a focused spike to validate how Wesley's hexagonal ports map to a browser ho
 - [ ] Related Issues / PRs: WB-002, WB-003, WB-004
 - [ ] Feature Flags / Experiments: n/a
 - [ ] Other Assets: `docs/features/host-browser.md`
+
+## Dependencies
+
+- **Blocks:** [WB-002](./wb-002-implement-host-browser-adapter.md), [WB-003](./wb-003-browser-build-pipeline.md)
+
+## Additional Notes
+
+Document findings in `docs/features/host-browser.md` and attach benchmark artifacts to the RFC.
 
 ## User Story
 
@@ -98,6 +93,7 @@ Run dependency-cruiser and custom scripts to surface Node imports, experiment wi
 ### QA Sign-off Matrix
 
 | Environment | Surface (browser / device / API) | Owner | Status | Notes |
+| --- | --- | --- | --- | --- |
 | Spike | Desktop Chrome | TBD | pending | Compare with Firefox if time permits |
 
 ## Requirements
@@ -118,8 +114,6 @@ Run dependency-cruiser and custom scripts to surface Node imports, experiment wi
 
 - [ ] RFC authors sign-off on spike scope
 
----
-
 ## Production Notes
 
 ### Priority: 4 / 5
@@ -139,3 +133,4 @@ Two to three half-day sessions for audits, prototyping, and write-up.
 - **Primary Risks:** Underestimating hidden Node dependencies.
 - **Mitigations:** Escalate findings immediately and convert to follow-up issues.
 - **Rollback / Kill Switch:** n/a (spike only).
+

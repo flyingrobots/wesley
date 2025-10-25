@@ -1,19 +1,17 @@
----
+# [WB-003] Browser Build & Packaging Pipeline
 
-## Additional Notes
+## Overview
 
-Collaborate with release engineering to integrate size budgets and artifact publishing.
+Set up the build infrastructure required to bundle Wesley core + browser host for modern browsers, including ESM outputs, optional WASM shims, and automated size/regression checks.
 
 ## Dependencies
 
 - **Blocked by:** [WB-001](./wb-001-browser-adapter-spike.md)
 - **Blocks:** [WB-004](./wb-004-browser-playground-ui.md)
 
-# [WB-003] Browser Build & Packaging Pipeline
+## Additional Notes
 
-## Overview
-
-Set up the build infrastructure required to bundle Wesley core + browser host for modern browsers, including ESM outputs, optional WASM shims, and automated size/regression checks.
+Collaborate with release engineering to integrate size budgets and artifact publishing.
 
 ## References & Assets
 
@@ -114,8 +112,6 @@ Use Rollup with plugin ecosystem (replace, node-polyfills where necessary), prod
 
 - [ ] WB-001 completed
 - [ ] Partial support from WB-002 for entrypoints
-
----
 
 ## Production Notes
 
