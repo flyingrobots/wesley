@@ -54,15 +54,15 @@ export function NavbarSimple() {
       </div>
 
       <div className={classes.footer}>
-        <a href="#" className={classes.link} onClick={(event) => event.preventDefault()}>
+        <button type="button" className={classes.link} onClick={() => {/* TODO: open account switcher */}}>
           <IconSwitchHorizontal className={classes.linkIcon} stroke={1.5} />
           <span>Change account</span>
-        </a>
+        </button>
 
-        <a href="#" className={classes.link} onClick={(event) => event.preventDefault()}>
+        <button type="button" className={classes.link} onClick={() => {/* TODO: sign out */}}>
           <IconLogout className={classes.linkIcon} stroke={1.5} />
           <span>Logout</span>
-        </a>
+        </button>
       </div>
     </nav>
   );

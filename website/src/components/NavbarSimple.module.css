@@ -45,6 +45,9 @@
   border-radius: var(--mantine-radius-md);
   font-weight: 600;
   transition: background-color 150ms ease, color 150ms ease;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
 }
 
 .link:hover {
