@@ -17,6 +17,9 @@ jobs:
   wesley-generate:
     name: "🚀 Wesley Generation"
     runs-on: ubuntu-latest
+    outputs:
+      schema: ${{ steps.detect.outputs.schema }}
+      bundle_dir: ${{ steps.detect.outputs.bundle_dir }}
     
     steps:
       - name: "📦 Checkout Repository"
@@ -24,11 +27,39 @@ jobs:
         with:
           fetch-depth: 0
       
+      - name: "🕵️ Detect Schema"
+        id: detect
+        shell: bash
+        run: |
+          set -euo pipefail
+          # 1) Explicit override wins
+          if [ -n "${WESLEY_SCHEMA:-}" ] && [ -f "$WESLEY_SCHEMA" ]; then
+            schema="$WESLEY_SCHEMA"
+          else
+            # 2) Search tracked files for *.graphql, prefer schema.graphql
+            mapfile -t files < <(git ls-files "**/*.graphql" 2>/dev/null || true)
+            picked=""
+            if [ ${#files[@]} -gt 0 ]; then
+              for f in "${files[@]}"; do
+                if [ "${f##*/}" = "schema.graphql" ]; then picked="$f"; break; fi
+              done
+              if [ -z "$picked" ]; then picked="${files[0]}"; fi
+            fi
+            # 3) Fallback to workflow default
+            schema="${picked:-$HOLMES_SCHEMA}"
+          fi
+          base_dir="$(dirname "$schema")"
+          bundle_dir="$base_dir/.wesley"
+          echo "schema=$schema" >> "$GITHUB_OUTPUT"
+          echo "bundle_dir=$bundle_dir" >> "$GITHUB_OUTPUT"
+          echo "Detected schema: $schema"
+          echo "Bundle dir: $bundle_dir"
+      
       - name: "🛠️ Setup HOLMES environment"
         uses: ./.github/actions/holmes-setup
         with:
-          bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
-          schema: ${{ env.HOLMES_SCHEMA }}
+          bundle-dir: ${{ steps.detect.outputs.bundle_dir }}
+          schema: ${{ steps.detect.outputs.schema }}
           ops-dir: ${{ env.HOLMES_OPS_DIR }}
           out-dir: ${{ env.HOLMES_OUT_DIR }}
           artifact-name: ${{ env.HOLMES_ARTIFACT }}
@@ -77,11 +108,12 @@ jobs:
       - name: "🛠️ Setup HOLMES environment"
         uses: ./.github/actions/holmes-setup
         with:
-          bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
-          schema: ${{ env.HOLMES_SCHEMA }}
+          bundle-dir: ${{ needs.wesley-generate.outputs.bundle_dir }}
+          schema: ${{ needs.wesley-generate.outputs.schema }}
           ops-dir: ${{ env.HOLMES_OPS_DIR }}
           out-dir: ${{ env.HOLMES_OUT_DIR }}
           artifact-name: ${{ env.HOLMES_ARTIFACT }}
+          always-generate: 'true'
           
       - name: "🔍 Run Investigation"
         id: holmes
@@ -89,8 +121,8 @@ jobs:
         with:
           command: investigate
           report-name: holmes
-          schema-path: ${{ env.HOLMES_SCHEMA }}
-          bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
+          schema-path: ${{ needs.wesley-generate.outputs.schema }}
+          bundle-dir: ${{ needs.wesley-generate.outputs.bundle_dir }}
 
       - name: "💾 Save Report"
         uses: actions/upload-artifact@v4
@@ -111,11 +143,12 @@ jobs:
       - name: "🛠️ Setup HOLMES environment"
         uses: ./.github/actions/holmes-setup
         with:
-          bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
-          schema: ${{ env.HOLMES_SCHEMA }}
+          bundle-dir: ${{ needs.wesley-generate.outputs.bundle_dir }}
+          schema: ${{ needs.wesley-generate.outputs.schema }}
           ops-dir: ${{ env.HOLMES_OPS_DIR }}
           out-dir: ${{ env.HOLMES_OUT_DIR }}
           artifact-name: ${{ env.HOLMES_ARTIFACT }}
+          always-generate: 'true'
           
       - name: "🩺 Run Verification"
         id: watson
@@ -123,8 +156,8 @@ jobs:
         with:
           command: verify
           report-name: watson
-          schema-path: ${{ env.HOLMES_SCHEMA }}
-          bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
+          schema-path: ${{ needs.wesley-generate.outputs.schema }}
+          bundle-dir: ${{ needs.wesley-generate.outputs.bundle_dir }}
 
       - name: "💾 Save Report"
         uses: actions/upload-artifact@v4
@@ -145,8 +178,8 @@ jobs:
       - name: "🛠️ Setup HOLMES environment"
         uses: ./.github/actions/holmes-setup
         with:
-          bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
-          schema: ${{ env.HOLMES_SCHEMA }}
+          bundle-dir: ${{ needs.wesley-generate.outputs.bundle_dir }}
+          schema: ${{ needs.wesley-generate.outputs.schema }}
           ops-dir: ${{ env.HOLMES_OPS_DIR }}
           out-dir: ${{ env.HOLMES_OUT_DIR }}
           artifact-name: ${{ env.HOLMES_ARTIFACT }}
@@ -158,8 +191,8 @@ jobs:
         with:
           command: predict
           report-name: moriarty
-          schema-path: ${{ env.HOLMES_SCHEMA }}
-          bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
+          schema-path: ${{ needs.wesley-generate.outputs.schema }}
+          bundle-dir: ${{ needs.wesley-generate.outputs.bundle_dir }}
 
       - name: "💾 Save Report"
         uses: actions/upload-artifact@v4
@@ -394,6 +427,8 @@ jobs:
           script: |
             const fs = require('fs');
             const path = require('path');
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}#artifacts`;
+            const runStamp = new Date().toISOString();
 
             const findFirst = (root, filename, mustContain) => {
               const stack = [root];
@@ -443,51 +478,34 @@ jobs:
             const watson = readReport(statuses.watson, 'watson', 'watson-report.md');
             const moriarty = readReport(statuses.moriarty, 'moriarty', 'moriarty-report.md');
             
-            const body = `
-            # 🔍 The Case of Pull Request #${{ github.event.pull_request.number }}
-            
-            ## 🕵️ SHA-lock HOLMES's Investigation
-            ${holmes}
-            
-            ---
-            
-            ## 🩺 Dr. WATSON's Verification
-            ${watson}
-            
-            ---
-            
-            ## 🔮 Professor MORIARTY's Predictions
-            ${moriarty}
-            ---
-            Machine-readable reports: holmes-report.json · watson-report.json · moriarty-report.json (see workflow artifacts).
-            ---
-            *Filed at 221B Repository Street*
-            `;
-            
-            // Find existing comment
-            const { data: comments } = await github.rest.issues.listComments({
+            const lines = [
+              `# 🔍 The Case of Pull Request #${context.payload.pull_request.number}`,
+              '',
+              `Run: ${runStamp} · [see workflow artifacts](${runUrl})`,
+              '',
+              '<details><summary>🕵️ SHA-lock HOLMES\'s Investigation</summary>\n\n',
+              holmes,
+              '\n\n</details>',
+              '',
+              '<details><summary>🩺 Dr. WATSON\'s Verification</summary>\n\n',
+              watson,
+              '\n\n</details>',
+              '',
+              '<details><summary>🔮 Professor MORIARTY\'s Predictions</summary>\n\n',
+              moriarty,
+              '\n\n</details>',
+              '',
+              '_Machine-readable reports:_ holmes-report.json · watson-report.json · moriarty-report.json — [see artifacts](' + runUrl + ')',
+              '',
+              '*Filed at 221B Repository Street*'
+            ];
+
+            const body = lines.join('\n');
+
+            // Post a new comment each run to preserve history
+            await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
+              body
             });
-            
-            const botComment = comments.find(comment => 
-              comment.user.type === 'Bot' && 
-              comment.body.includes('The Case of Pull Request')
-            );
-            
-            if (botComment) {
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: botComment.id,
-                body
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body
-              });
-            }
