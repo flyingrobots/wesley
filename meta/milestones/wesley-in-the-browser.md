@@ -28,18 +28,18 @@ Deliver a first-class "host-browser" adapter that lets Wesley's core compile Gra
 
 ## Workstreams
 
-| Workstream | Description | Owner | Status | Notes |
-| --- | --- | --- | --- | --- |
-| Browser Architecture & RFC | Finalize adapter contracts, storage strategy, and RFC sign-off | TBD | not_started | Aligns with new RFC in `docs/features/host-browser.md` |
-| Core Adapter Implementation | Implement `@wesley/host-browser` with in-memory ports + caching | TBD | not_started | Target issue WB-002 |
-| Build & Packaging | Configure Rollup/Vite pipeline and WASM/web builds with validation | TBD | not_started | Target issue WB-003 |
-| Playground Experience | Ship Astro/Mantine playground UI + telemetry hooks | TBD | not_started | Target issue WB-004 |
+| Workstream | Description | Owner | Status | Budget | Notes |
+| --- | --- | --- | --- | --- | --- |
+| Browser Architecture & RFC | Finalize adapter contracts, storage strategy, and RFC sign-off | @flyingrobots | not_started | 2 weeks; decisions logged; ≤ 3 open risks | Aligns with new RFC in `docs/features/host-browser.md` |
+| Core Adapter Implementation | Implement `@wesley/host-browser` with in-memory ports + caching | @flyingrobots | not_started | API parity; perf within 5% of Node on fixtures | Target issue WB-002 |
+| Build & Packaging | Configure Rollup/Vite pipeline and WASM/web builds with validation | @flyingrobots | not_started | ≤ 500 KB gzip core; init ≤ 200 ms (M1) | Target issue WB-003 |
+| Playground Experience | Ship Astro/Mantine playground UI + telemetry hooks | @flyingrobots | not_started | FCP ≤ 1.5 s (M1); TTI ≤ 2.5 s | Target issue WB-004 |
 
 ## Dependencies
 
-- [ ] RFC accepted (owner TBD, due 2025-11-01)
-- [ ] Hexagonal core audit complete to confirm no residual Node imports (owner TBD, due 2025-11-04)
-- [ ] Legal/license review for browser distribution of dependencies (owner TBD, due 2025-11-18)
+- [ ] RFC accepted (owner @flyingrobots, due 2025-11-01)
+- [ ] Hexagonal core audit complete to confirm no residual Node imports (owner @flyingrobots, due 2025-11-04)
+- [ ] Legal/license review for browser distribution of dependencies (owner @flyingrobots, due 2025-11-18)
 
 ## Risks & Mitigations
 
