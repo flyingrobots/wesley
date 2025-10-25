@@ -18,20 +18,20 @@ This checklist sequences the issues in a recommended order of implementation.
 ### Phase 1: Foundational Safety & Confidence
 
 -   [ ] **#188: E2E Test Suite for Core Workflow**
-    *   **Priority:** 5/5
-    *   **Rationale:** Provides the essential safety net for all future development. Moves Wesley to a beta-ready state.
+  - **Priority:** 5/5
+  - **Rationale:** Provides the essential safety net for all future development. Moves Wesley to a beta-ready state.
 
 ### Phase 2: Core Schema Management & Safety
 
 -   [ ] **#189: Feature: Destructive Migration Planning**
-    *   **Priority:** 5/5
-    *   **Rationale:** Unlocks the ability to manage full schema evolution, including breaking changes, which is critical for production use.
+  - **Priority:** 5/5
+  - **Rationale:** Unlocks the ability to manage full schema evolution, including breaking changes, which is critical for production use.
 
 ### Phase 3: Enhanced Developer Experience & Risk Mitigation
 
 -   [ ] **#190: DX: Interactive CLI for Risky Operations**
-    *   **Priority:** 4/5
-    *   **Rationale:** A direct dependency of destructive migrations, ensuring user confirmation for high-risk operations. Improves safety and DX.
+  - **Priority:** 4/5
+  - **Rationale:** A direct dependency of destructive migrations, ensuring user confirmation for high-risk operations. Improves safety and DX.
 
 ### Phase 4: Ecosystem Integration & Visualization
 
