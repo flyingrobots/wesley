@@ -395,7 +395,8 @@ jobs:
             const fs = require('fs');
             const path = require('path');
 
-            const findFirst = (root, filename, mustContain) => {
+            const findMatches = (root, filename) => {
+              const results = [];
               const stack = [root];
               while (stack.length) {
                 const dir = stack.pop();
@@ -409,23 +410,36 @@ jobs:
                   const fullPath = path.join(dir, entry.name);
                   if (entry.isDirectory()) {
                     stack.push(fullPath);
-                  } else if (
-                    entry.isFile() &&
-                    entry.name === filename &&
-                    (!mustContain || fullPath.includes(`${path.sep}${mustContain}${path.sep}`))
-                  ) {
-                    return fullPath;
+                  } else if (entry.isFile() && entry.name === filename) {
+                    results.push(fullPath);
                   }
                 }
               }
-              return null;
+              return results;
+            };
+
+            const findReportPath = (filename, reportName) => {
+              const matches = findMatches('reports', filename);
+              if (matches.length === 0) {
+                return null;
+              }
+              if (reportName) {
+                const preferred = matches.find((candidate) => {
+                  const parts = candidate.split(path.sep).map((part) => part.toLowerCase());
+                  return parts.includes(reportName.toLowerCase());
+                });
+                if (preferred) {
+                  return preferred;
+                }
+              }
+              return matches[0];
             };
 
             const readReport = (status, reportName, filename) => {
               if (status !== 'success') {
                 return `_Report unavailable: upstream job status **${status}**_`;
               }
-              const match = findFirst('reports', filename, reportName);
+              const match = findReportPath(filename, reportName);
               if (!match) {
                 console.warn(`Report not found: ${reportName}/${filename}`);
                 return `_Report missing for ${reportName}_`;
@@ -442,40 +456,45 @@ jobs:
             const holmes = readReport(statuses.holmes, 'holmes', 'holmes-report.md');
             const watson = readReport(statuses.watson, 'watson', 'watson-report.md');
             const moriarty = readReport(statuses.moriarty, 'moriarty', 'moriarty-report.md');
-            
-            const body = `
-            # 🔍 The Case of Pull Request #${{ github.event.pull_request.number }}
-            
-            ## 🕵️ SHA-lock HOLMES's Investigation
-            ${holmes}
-            
-            ---
-            
-            ## 🩺 Dr. WATSON's Verification
-            ${watson}
-            
-            ---
-            
-            ## 🔮 Professor MORIARTY's Predictions
-            ${moriarty}
-            ---
-            Machine-readable reports: holmes-report.json · watson-report.json · moriarty-report.json (see workflow artifacts).
-            ---
-            *Filed at 221B Repository Street*
-            `;
-            
-            // Find existing comment
+
+            const lines = [
+              `# 🔍 The Case of Pull Request #${context.payload.pull_request.number}`,
+              '',
+              '## 🕵️ SHA-lock HOLMES\'s Investigation',
+              holmes,
+              '',
+              '---',
+              '',
+              '## 🩺 Dr. WATSON\'s Verification',
+              watson,
+              '',
+              '---',
+              '',
+              '## 🔮 Professor MORIARTY\'s Predictions',
+              moriarty,
+              '',
+              '---',
+              '',
+              '_Machine-readable reports:_ holmes-report.json · watson-report.json · moriarty-report.json (see workflow artifacts).',
+              '',
+              '---',
+              '',
+              '*Filed at 221B Repository Street*'
+            ];
+
+            const body = lines.join('\n');
+
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
             });
-            
-            const botComment = comments.find(comment => 
-              comment.user.type === 'Bot' && 
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
               comment.body.includes('The Case of Pull Request')
             );
-            
+
             if (botComment) {
               await github.rest.issues.updateComment({
                 owner: context.repo.owner,
