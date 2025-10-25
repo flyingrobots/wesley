@@ -6,13 +6,14 @@ This page highlights the immediate focus areas. The living checklist is `go-publ
 
 - `QIR Phase C` — `--ops` wiring, op→QIR translator, examples, EXPLAIN JSON snapshots, pgTAP smoke tests ([issues #160](https://github.com/flyingrobots/wesley/issues/160), [#159](https://github.com/flyingrobots/wesley/issues/159))
 - `RLS defaults Phase 2` — Extend generated policies and pgTAP coverage ([issue #116](https://github.com/flyingrobots/wesley/issues/116))
-- `Evidence & HOLMES` — Score refinements, schema hash emission, richer RLS composition ([issues #184](https://github.com/flyingrobots/wesley/issues/184), [#183](https://github.com/flyingrobots/wesley/issues/183))
+- `Evidence & HOLMES` — Score refinements, schema hash emission, richer RLS composition, and adoption docs bundle ([issues #184](https://github.com/flyingrobots/wesley/issues/184), [#183](https://github.com/flyingrobots/wesley/issues/183), [#192](https://github.com/flyingrobots/wesley/issues/192))
+- `Destructive Migration Safety` — Unified detection, mitigation, and CLI gating for risky changes ([issues #189](https://github.com/flyingrobots/wesley/issues/189), [#190](https://github.com/flyingrobots/wesley/issues/190))
 
 ## Next Up
 
 - `CLI Resilience` — STDIN schema input, atomic writes, pgTAP runner ([issues #174](https://github.com/flyingrobots/wesley/issues/174)–[#176](https://github.com/flyingrobots/wesley/issues/176))
 - `Core Quality Sweep` — SQL AST comparisons, test audits, architectural cleanup, JSDoc refresh ([issues #177](https://github.com/flyingrobots/wesley/issues/177)–[#180](https://github.com/flyingrobots/wesley/issues/180))
-- `RPC Pipeline` — Composite params, SQL coverage, directive parsing, E2E tests ([issues #181](https://github.com/flyingrobots/wesley/issues/181)–[#185](https://github.com/flyingrobots/wesley/issues/185))
+- `RPC Pipeline` — Composite params, directive plumbing, generator coverage, E2E tests ([issues #181](https://github.com/flyingrobots/wesley/issues/181), [#185](https://github.com/flyingrobots/wesley/issues/185))
 - `Scaffolds & Stacks (WIP)` — Multi-tenant templates and Supabase/Next.js stacks; see `group:frontend-adapters` + `group:devops-scaffolding` issues and mark milestones before public release.
 
 ## Governance

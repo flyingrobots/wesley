@@ -1,0 +1,530 @@
+.
+├── AGENTS.md
+├── CHANGELOG.md
+├── CHRONICLES_OF_THE_MACHINE-KIND_VOL_00000001.jsonl
+├── CODE_OF_CONDUCT.md
+├── CONTRIBUTING.md
+├── LICENSE
+├── README.md
+├── SECURITY.md
+├── docker-compose.yml
+├── docs
+│   ├── DIRECTIVES.md
+│   ├── README.md
+│   ├── TRUST.md
+│   ├── architecture
+│   │   ├── algorithm.md
+│   │   ├── holmes-architecture.md
+│   │   ├── holmes-integration.md
+│   │   ├── lifecycle.md
+│   │   ├── overview.md
+│   │   ├── paradigm-shift.md
+│   │   └── test-generation.md
+│   ├── blade.md
+│   ├── build-artifacts.md
+│   ├── drafts
+│   │   ├── 2025-10-03-rfc-query-ops-to-sql-qir.md
+│   │   ├── 2025-10-08-ops-discovery-modes.md
+│   │   ├── Codex-Ideas.md
+│   │   ├── boring-deployments.md
+│   │   ├── compiler.md
+│   │   └── migrations.md
+│   ├── features
+│   │   └── row-level-security.md
+│   ├── governance
+│   │   └── labels.md
+│   ├── guides
+│   │   ├── cli-tests.md
+│   │   ├── customizing-holmes-weights.md
+│   │   ├── extending.md
+│   │   ├── migrations.md
+│   │   ├── qir-ops.md
+│   │   └── quick-start.md
+│   ├── holmes-dashboard
+│   │   └── index.html
+│   ├── internals
+│   │   ├── deep-dive.md
+│   │   ├── event-flow.md
+│   │   └── parser.md
+│   ├── issue-sequence.md
+│   ├── milestones
+│   │   ├── MVP
+│   │   │   ├── APISpec.md
+│   │   │   ├── DX.md
+│   │   │   ├── DataModelSpec.md
+│   │   │   ├── Example.md
+│   │   │   ├── FunctionalSpec.md
+│   │   │   ├── ImplementationPlan.md
+│   │   │   ├── PRD.md
+│   │   │   ├── README.md
+│   │   │   ├── Spec.md
+│   │   │   ├── TechnicalArchitecture.md
+│   │   │   ├── TestPlan.md
+│   │   │   ├── UXDesign.md
+│   │   │   ├── UserStories.md
+│   │   │   └── audits
+│   │   │       └── tests.md
+│   │   └── README.md
+│   ├── plan-for-alignment.md
+│   ├── roadmap.md
+│   ├── scripts-reference.md
+│   └── site
+│       ├── index.md
+│       ├── quick-start.md
+│       ├── reference.md
+│       ├── roadmap.md
+│       └── scripts.md
+├── meta
+│   └── fixtures.json
+├── mkdocs.yml
+├── package.json
+├── packages
+│   ├── wesley-cli
+│   │   ├── CI.md
+│   │   ├── README.md
+│   │   ├── invalid.graphql
+│   │   ├── package.json
+│   │   ├── src
+│   │   │   ├── commands
+│   │   │   │   ├── blade.mjs
+│   │   │   │   ├── cert-badge.mjs
+│   │   │   │   ├── cert-create.mjs
+│   │   │   │   ├── cert-sign.mjs
+│   │   │   │   ├── cert-verify.mjs
+│   │   │   │   ├── generate.mjs
+│   │   │   │   ├── index.mjs
+│   │   │   │   ├── init.mjs
+│   │   │   │   ├── models.mjs
+│   │   │   │   ├── plan.mjs
+│   │   │   │   ├── rehearse.mjs
+│   │   │   │   ├── transform.mjs
+│   │   │   │   ├── typescript.mjs
+│   │   │   │   ├── up.mjs
+│   │   │   │   ├── validate-bundle.mjs
+│   │   │   │   ├── watch.mjs
+│   │   │   │   └── zod.mjs
+│   │   │   ├── commands.mjs
+│   │   │   ├── formatters
+│   │   │   │   ├── CleanFormatter.mjs
+│   │   │   │   └── index.mjs
+│   │   │   ├── framework
+│   │   │   │   ├── AutomaticallyRegisteredProgram.mjs
+│   │   │   │   ├── CommandFactory.mjs
+│   │   │   │   ├── ExecutionPlan.mjs
+│   │   │   │   ├── FileOutputGeneratorCommand.mjs
+│   │   │   │   ├── GeneratorCommand.mjs
+│   │   │   │   ├── PlanBuilder.mjs
+│   │   │   │   ├── WesleyCommand.mjs
+│   │   │   │   ├── errors.mjs
+│   │   │   │   └── utils.mjs
+│   │   │   ├── index.mjs
+│   │   │   ├── main.mjs
+│   │   │   ├── program.mjs
+│   │   │   └── utils
+│   │   │       └── output-paths.mjs
+│   │   └── test
+│   │       ├── README.md
+│   │       ├── archived-bash-tests
+│   │       │   ├── cli-features.test.sh
+│   │       │   ├── error-handling.test.sh
+│   │       │   ├── run-all-tests.sh
+│   │       │   ├── stdin-json.test.sh
+│   │       │   └── test-framework.sh
+│   │       ├── bats-plugins
+│   │       ├── blade.bats
+│   │       ├── cert-e2e.bats
+│   │       ├── cli-basic.bats
+│   │       ├── demo-stdin-json.sh
+│   │       ├── golden-path.test.sh
+│   │       ├── helpers
+│   │       │   └── assert-output-paths.mjs
+│   │       ├── ops-allow-errors-ci.bats
+│   │       ├── ops-locale-order.bats
+│   │       ├── output-paths.bats
+│   │       ├── plan-json.bats
+│   │       ├── plan-radar.bats
+│   │       ├── plan.bats
+│   │       ├── regression-codex-features.sh
+│   │       ├── rehearse-json.bats
+│   │       ├── rehearse.bats
+│   │       ├── run-bats.sh
+│   │       └── transform.bats
+│   ├── wesley-core
+│   │   ├── README.md
+│   │   ├── TESTING_IMPLEMENTATION_SUMMARY.md
+│   │   ├── WAVE2_IMPLEMENTATION.md
+│   │   ├── demo
+│   │   │   └── watch-with-checkpoints.mjs
+│   │   ├── package-lock.json
+│   │   ├── package.json
+│   │   ├── src
+│   │   │   ├── application
+│   │   │   │   ├── Commands.mjs
+│   │   │   │   ├── EvidenceMap.mjs
+│   │   │   │   ├── GenerationPipeline.mjs
+│   │   │   │   ├── Scoring.mjs
+│   │   │   │   └── UseCases.mjs
+│   │   │   ├── domain
+│   │   │   │   ├── Directives.mjs
+│   │   │   │   ├── Events.mjs
+│   │   │   │   ├── GraphQLSchemaBuilder.mjs
+│   │   │   │   ├── Identifier.mjs
+│   │   │   │   ├── IndexDeduplicator.mjs
+│   │   │   │   ├── MigrationSafety.mjs
+│   │   │   │   ├── OperationRegistry.mjs
+│   │   │   │   ├── PostgreSQLAstBuilder.mjs
+│   │   │   │   ├── RLSPresets.mjs
+│   │   │   │   ├── SQLAst.mjs
+│   │   │   │   ├── SQLBackend.mjs
+│   │   │   │   ├── SQLCst.mjs
+│   │   │   │   ├── Schema.mjs
+│   │   │   │   ├── TenantModel.mjs
+│   │   │   │   ├── TestDepthStrategy.mjs
+│   │   │   │   ├── WesleyIR.schema.ts
+│   │   │   │   ├── WesleyOrchestrator.mjs
+│   │   │   │   ├── analyzer
+│   │   │   │   │   ├── ConcurrentSafetyAnalyzer.mjs
+│   │   │   │   │   └── DefaultAnalyzer.mjs
+│   │   │   │   ├── control
+│   │   │   │   │   └── BackpressureController.mjs
+│   │   │   │   ├── explainer
+│   │   │   │   │   └── MigrationExplainer.mjs
+│   │   │   │   ├── generators
+│   │   │   │   │   ├── MigrationDiffer.mjs
+│   │   │   │   │   ├── PgTAPTestGenerator.mjs
+│   │   │   │   │   ├── PostgreSQLGenerator.mjs
+│   │   │   │   │   ├── RPCFunctionGeneratorV2.mjs
+│   │   │   │   │   ├── RepairGenerator.mjs
+│   │   │   │   │   ├── RollbackGenerator.mjs
+│   │   │   │   │   ├── TriggerGenerator.mjs
+│   │   │   │   │   └── ZodGenerator.mjs
+│   │   │   │   ├── locks
+│   │   │   │   │   ├── AdvisoryLockManager.mjs
+│   │   │   │   │   └── LockMonitor.mjs
+│   │   │   │   ├── monitoring
+│   │   │   │   │   └── PerformanceMonitor.mjs
+│   │   │   │   ├── optimizer
+│   │   │   │   │   └── BatchOptimizer.mjs
+│   │   │   │   ├── orchestrator
+│   │   │   │   │   └── CICOrchestrator.mjs
+│   │   │   │   ├── planner
+│   │   │   │   │   └── DDLPlanner.mjs
+│   │   │   │   ├── progress
+│   │   │   │   │   ├── ProgressTracker.mjs
+│   │   │   │   │   └── index.mjs
+│   │   │   │   ├── qir
+│   │   │   │   │   ├── Nodes.mjs
+│   │   │   │   │   ├── OpPlanBuilder.mjs
+│   │   │   │   │   ├── ParamCollector.mjs
+│   │   │   │   │   ├── PredicateCompiler.mjs
+│   │   │   │   │   ├── emit.mjs
+│   │   │   │   │   ├── index.mjs
+│   │   │   │   │   └── lowerToSQL.mjs
+│   │   │   │   ├── recovery
+│   │   │   │   │   ├── CheckpointManager.mjs
+│   │   │   │   │   ├── ErrorRecovery.mjs
+│   │   │   │   │   ├── example-integration.mjs
+│   │   │   │   │   └── index.mjs
+│   │   │   │   ├── transaction
+│   │   │   │   │   └── TransactionManager.mjs
+│   │   │   │   ├── validation
+│   │   │   │   │   ├── DifferentialValidator.mjs
+│   │   │   │   │   └── SafetyValidator.mjs
+│   │   │   │   └── verification
+│   │   │   │       └── MigrationVerifier.mjs
+│   │   │   ├── index.mjs
+│   │   │   ├── ports
+│   │   │   │   ├── Logger.mjs
+│   │   │   │   ├── Ports.mjs
+│   │   │   │   ├── clock.mjs
+│   │   │   │   ├── compiler.mjs
+│   │   │   │   ├── diff.mjs
+│   │   │   │   ├── fs.mjs
+│   │   │   │   ├── parser.mjs
+│   │   │   │   ├── sqlgen.mjs
+│   │   │   │   ├── testgen.mjs
+│   │   │   │   └── writer.mjs
+│   │   │   ├── testing
+│   │   │   │   └── IntegrationTestHarness.mjs
+│   │   │   └── util
+│   │   │       ├── EventEmitter.mjs
+│   │   │       └── hash.mjs
+│   │   ├── test
+│   │   │   ├── README.md
+│   │   │   ├── advisory-lock-manager.test.mjs
+│   │   │   ├── backpressure-controller.test.mjs
+│   │   │   ├── batch-optimizer.test.mjs
+│   │   │   ├── checkpoint-manager.test.mjs
+│   │   │   ├── checkpoint-simple.test.mjs
+│   │   │   ├── cic-orchestrator.test.mjs
+│   │   │   ├── concurrent-safety-analyzer.test.mjs
+│   │   │   ├── ddl-planner.test.mjs
+│   │   │   ├── default-analyzer.test.mjs
+│   │   │   ├── differential-validator.test.mjs
+│   │   │   ├── helpers
+│   │   │   │   ├── database.mjs
+│   │   │   │   └── property-testing.mjs
+│   │   │   ├── integration
+│   │   │   │   ├── concurrent-migration-prevention.test.mjs
+│   │   │   │   ├── fk-ast-roundtrip.test.mjs
+│   │   │   │   ├── migration-checkpoints.test.mjs
+│   │   │   │   ├── migration-execution.test.mjs
+│   │   │   │   ├── migration-rollback.test.mjs
+│   │   │   │   ├── rls-idempotency.test.mjs
+│   │   │   │   └── rls-presets.test.mjs
+│   │   │   ├── integration-test-harness.test.mjs
+│   │   │   ├── lock-monitor.test.mjs
+│   │   │   ├── migration-explainer.test.mjs
+│   │   │   ├── migration-verifier.test.mjs
+│   │   │   ├── performance-monitor.test.mjs
+│   │   │   ├── property
+│   │   │   │   ├── ddl-planner-idempotency.test.mjs
+│   │   │   │   └── migration-lock-levels.test.mjs
+│   │   │   ├── repair-generator.test.mjs
+│   │   │   ├── rollback-generator.test.mjs
+│   │   │   ├── run-all-tests.mjs
+│   │   │   ├── safety-validator.test.mjs
+│   │   │   ├── snapshots
+│   │   │   │   ├── __snapshots__
+│   │   │   │   │   ├── all-data-types-coverage.default.snap
+│   │   │   │   │   ├── all-data-types.default.snap
+│   │   │   │   │   ├── array-and-json-types.default.snap
+│   │   │   │   │   ├── array-types-validation.default.snap
+│   │   │   │   │   ├── basic-table-with-constraints.default.snap
+│   │   │   │   │   ├── basic-user-interfaces.default.snap
+│   │   │   │   │   ├── basic-user-validation.default.snap
+│   │   │   │   │   ├── complex-multi-tenant-schema.default.snap
+│   │   │   │   │   ├── complex-product-schema.default.snap
+│   │   │   │   │   ├── complex-types-with-arrays.default.snap
+│   │   │   │   │   ├── event-schema-with-future-dates.default.snap
+│   │   │   │   │   ├── indexes-and-constraints.default.snap
+│   │   │   │   │   ├── input-only-schemas.default.snap
+│   │   │   │   │   ├── multi-table-with-foreign-keys.default.snap
+│   │   │   │   │   ├── multi-table-with-relationships.default.snap
+│   │   │   │   │   ├── rls-policies-and-security.default.snap
+│   │   │   │   │   ├── sensitive-data-with-refinements.default.snap
+│   │   │   │   │   ├── snapshot-utility-test.default.snap
+│   │   │   │   │   ├── sql-all-data-types.default.snap
+│   │   │   │   │   ├── sql-array-and-json-types.default.snap
+│   │   │   │   │   ├── sql-basic-table-with-constraints.default.snap
+│   │   │   │   │   ├── sql-complex-multi-tenant-schema.default.snap
+│   │   │   │   │   ├── sql-indexes-and-constraints.default.snap
+│   │   │   │   │   ├── sql-multi-table-with-foreign-keys.default.snap
+│   │   │   │   │   ├── sql-rls-policies-and-security.default.snap
+│   │   │   │   │   ├── strict-null-checks-disabled.default.snap
+│   │   │   │   │   └── tenant-aware-types.default.snap
+│   │   │   │   ├── migration-generator.test.mjs
+│   │   │   │   ├── qir-emission.test.mjs
+│   │   │   │   ├── sql-generation-enhanced.test.mjs
+│   │   │   │   ├── sql-generator.test.mjs
+│   │   │   │   ├── test-generator.test.mjs
+│   │   │   │   ├── test-generator.test.mjs.bak
+│   │   │   │   ├── typescript-generation.test.mjs
+│   │   │   │   └── zod-generation.test.mjs
+│   │   │   ├── sql-executor.test.mjs
+│   │   │   ├── transaction-manager.test.mjs
+│   │   │   ├── trigger-generator.test.mjs
+│   │   │   ├── unit
+│   │   │   │   ├── directive-registry.test.mjs
+│   │   │   │   ├── migration-differ.test.mjs
+│   │   │   │   ├── operation-registry.test.mjs
+│   │   │   │   ├── qir-lowering.test.mjs
+│   │   │   │   ├── qir-nodes.test.mjs
+│   │   │   │   ├── qir-param-collector.test.mjs
+│   │   │   │   ├── qir-predicate-compiler.test.mjs
+│   │   │   │   ├── scoring-engine.test.mjs
+│   │   │   │   ├── sql-generation-flags.test.mjs
+│   │   │   │   ├── tenant-model.test.mjs
+│   │   │   │   └── test-depth-strategy.test.mjs
+│   │   │   ├── watch-command.test.mjs
+│   │   │   ├── watch-simple.test.mjs
+│   │   │   ├── wave2-integration.test.mjs
+│   │   │   └── wave3-safety-integration.test.mjs
+│   │   └── wesley.config.mjs
+│   ├── wesley-generator-js
+│   │   ├── README.md
+│   │   ├── package.json
+│   │   └── src
+│   │       ├── index.mjs
+│   │       ├── model.mjs
+│   │       ├── typescript.mjs
+│   │       └── zod.mjs
+│   ├── wesley-generator-supabase
+│   │   ├── README.md
+│   │   ├── TestDepthStrategy.mjs
+│   │   ├── package.json
+│   │   ├── src
+│   │   │   ├── SQLDeparser.mjs
+│   │   │   ├── ddl.mjs
+│   │   │   ├── emit.mjs
+│   │   │   ├── index.mjs
+│   │   │   ├── migration.mjs
+│   │   │   ├── repair.mjs
+│   │   │   ├── rollback.mjs
+│   │   │   ├── rpc-v2.mjs
+│   │   │   ├── rpc.mjs
+│   │   │   ├── test-v2.mjs
+│   │   │   ├── test.mjs
+│   │   │   └── trigger.mjs
+│   │   └── test
+│   │       └── emit-ddl.test.mjs
+│   ├── wesley-holmes
+│   │   ├── README.md
+│   │   ├── package.json
+│   │   ├── src
+│   │   │   ├── Holmes.mjs
+│   │   │   ├── Moriarty.mjs
+│   │   │   ├── Watson.mjs
+│   │   │   ├── cli.mjs
+│   │   │   ├── index.mjs
+│   │   │   ├── report-schemas.mjs
+│   │   │   └── weight-config.mjs
+│   │   └── test
+│   │       ├── cli-options.test.mjs
+│   │       ├── holmes-weighting.test.mjs
+│   │       ├── report-validation.test.mjs
+│   │       └── weight-config.test.mjs
+│   ├── wesley-host-node
+│   │   ├── README.md
+│   │   ├── bin
+│   │   │   └── wesley.mjs
+│   │   ├── package.json
+│   │   ├── src
+│   │   │   ├── adapters
+│   │   │   │   ├── CheckpointManager.mjs
+│   │   │   │   ├── ConfigLoader.mjs
+│   │   │   │   ├── ConsoleLogger.mjs
+│   │   │   │   ├── DbAdapter.mjs
+│   │   │   │   ├── EventBus.mjs
+│   │   │   │   ├── GraphQLAdapter.mjs
+│   │   │   │   ├── NodeFileSystem.mjs
+│   │   │   │   ├── PgParserAdapter.mjs
+│   │   │   │   ├── PinoLogger.mjs
+│   │   │   │   ├── PostgreSQLAdapter.mjs
+│   │   │   │   ├── SQLExecutor.mjs
+│   │   │   │   ├── WesleyFileWriter.mjs
+│   │   │   │   ├── compiler-inprocess.mjs
+│   │   │   │   ├── console-compat-logger.mjs
+│   │   │   │   ├── createNodeRuntime.mjs
+│   │   │   │   ├── index.mjs
+│   │   │   │   ├── inprocess-compiler.mjs
+│   │   │   │   └── logger-pino.mjs
+│   │   │   └── index.mjs
+│   │   └── test
+│   │       └── parser-ir.test.mjs
+│   ├── wesley-scaffold-multitenant
+│   │   ├── README.md
+│   │   ├── package.json
+│   │   ├── src
+│   │   │   └── cli.mjs
+│   │   └── templates
+│   │       └── multi-tenant.graphql
+│   ├── wesley-slaps
+│   │   ├── README.md
+│   │   ├── package.json
+│   │   └── src
+│   │       ├── LockAwareExecutor.mjs
+│   │       ├── TasksSlapsBridge.mjs
+│   │       └── index.mjs
+│   ├── wesley-stack-supabase-nextjs
+│   │   ├── README.md
+│   │   ├── package.json
+│   │   └── src
+│   └── wesley-tasks
+│       ├── README.md
+│       ├── package.json
+│       ├── src
+│       │   ├── TaskDefinition.mjs
+│       │   └── index.mjs
+│       └── test
+│           └── task-graph.test.mjs
+├── pnpm-workspace.yaml
+├── requirements-docs.txt
+├── schemas
+│   ├── README.md
+│   ├── directives.graphql
+│   ├── evidence-map.schema.json
+│   ├── ir.schema.json
+│   └── scores.schema.json
+├── scripts
+│   ├── README.md
+│   ├── check-doc-links.mjs
+│   ├── clean.mjs
+│   ├── fix-package-metadata.mjs
+│   ├── install-hooks.sh
+│   ├── preflight.mjs
+│   ├── setup-bats-plugins.sh
+│   └── test-ci-locally.sh
+├── test
+│   ├── README.md
+│   ├── cli-e2e-real.bats
+│   ├── cli-e2e.bats
+│   ├── cli-generators.bats
+│   ├── cli-models.bats
+│   ├── e2e
+│   │   ├── README.md
+│   │   ├── run-tests.sh
+│   │   ├── setup
+│   │   │   ├── before-all.sql
+│   │   │   └── before-each.sql
+│   │   └── teardown
+│   │       └── after-all.sql
+│   ├── fixtures
+│   │   ├── README.md
+│   │   ├── blade
+│   │   │   ├── README.md
+│   │   │   ├── keys
+│   │   │   │   └── README.md
+│   │   │   ├── run.sh
+│   │   │   ├── schema-v1.graphql
+│   │   │   └── schema-v2.graphql
+│   │   ├── examples
+│   │   │   ├── README.md
+│   │   │   ├── ecommerce.graphql
+│   │   │   ├── multi-tenant.graphql
+│   │   │   ├── ops
+│   │   │   │   ├── README.md
+│   │   │   │   ├── orders_by_user.op.json
+│   │   │   │   ├── orders_with_items_by_user.op.json
+│   │   │   │   └── products_by_name.op.json
+│   │   │   ├── rpc-example.graphql
+│   │   │   ├── schema-v2.graphql
+│   │   │   ├── schema-with-rls.graphql
+│   │   │   ├── schema.graphql
+│   │   │   └── tests
+│   │   │       ├── README.md
+│   │   │       └── ops.pgtap.sql
+│   │   ├── expected-pgtap-user-post-schema.sql
+│   │   ├── freaky-rls-schema.graphql
+│   │   ├── freaky-rpc-schema.graphql
+│   │   ├── postgres
+│   │   │   ├── 00-extensions.sql
+│   │   │   └── README.md
+│   │   ├── reference
+│   │   │   ├── README.md
+│   │   │   └── schema.graphql
+│   │   └── rls-schema.graphql
+│   ├── helpers.bash
+│   ├── holmes-e2e.bats
+│   └── packages
+│       ├── README.md
+│       ├── wesley-generator-js
+│       │   ├── README.md
+│       │   ├── package.json
+│       │   └── src
+│       │       └── index.mjs
+│       └── wesley-generator-supabase
+│           ├── README.md
+│           ├── package.json
+│           └── src
+│               ├── SQLDeparser.mjs
+│               └── index.mjs
+├── tree.txt
+├── website
+│   ├── README.md
+│   ├── index.html
+│   └── styles.css
+├── website-preview.png
+└── wesley.config.mjs
+
+98 directories, 430 files
