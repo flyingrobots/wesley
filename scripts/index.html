@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://flyingrobots.github.io/wesley/scripts/">
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>Scripts - Wesley Docs</title>
+        <link href="../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../css/brands.min.css" rel="stylesheet">
+        <link href="../css/solid.min.css" rel="stylesheet">
+        <link href="../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="..">Wesley Docs</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href=".." class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../quick-start/" class="nav-link">Quick Start</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../roadmap/" class="nav-link">Roadmap</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="./" class="nav-link active" aria-current="page">Scripts</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Reference</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../architecture/lifecycle.md" class="dropdown-item">Lifecycle</a>
+</li>
+                                    
+<li>
+    <a href="../../README.md" class="dropdown-item">README</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../roadmap/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" class="nav-link disabled">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://github.com/flyingrobots/wesley" class="nav-link">flyingrobots/wesley</a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#workspace-scripts" class="nav-link">Workspace Scripts</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#core-workflow-scripts" class="nav-link">Core Workflow Scripts</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#maintenance-tooling" class="nav-link">Maintenance &amp; Tooling</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#smoke-checks" class="nav-link">Smoke Checks</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#package-specific-commands" class="nav-link">Package-Specific Commands</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="workspace-scripts">Workspace Scripts<a class="headerlink" href="#workspace-scripts" title="Permanent link">&para;</a></h1>
+<p>Wesley exposes a handful of <code>pnpm run &lt;script&gt;</code> commands for common workflows. This page mirrors the content in <code>docs/scripts-reference.md</code> so the MkDocs site stays in sync.</p>
+<blockquote>
+<p>ℹ️ <strong>Where to run these</strong>: Unless noted, execute all scripts from the repository root.</p>
+</blockquote>
+<h2 id="core-workflow-scripts">Core Workflow Scripts<a class="headerlink" href="#core-workflow-scripts" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Script</th>
+<th>Purpose</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pnpm run build</code></td>
+<td>Run <code>build</code> in every workspace package.</td>
+<td>Uses <code>pnpm -r build</code>; only packages that define <code>build</code> will execute.</td>
+</tr>
+<tr>
+<td><code>pnpm run test</code></td>
+<td>Run the full workspace test suite.</td>
+<td>Equivalent to <code>pnpm -r test</code>.</td>
+</tr>
+<tr>
+<td><code>pnpm run test:watch</code>, <code>pnpm run test:coverage</code></td>
+<td>Watch mode / coverage runs.</td>
+<td>Provided where individual packages support them.</td>
+</tr>
+<tr>
+<td><code>pnpm run lint</code>, <code>pnpm run lint:fix</code></td>
+<td>Repo-wide ESLint checks.</td>
+<td>The <code>--fix</code> variant applies automatic fixes.</td>
+</tr>
+<tr>
+<td><code>pnpm run format</code>, <code>pnpm run format:check</code></td>
+<td>Prettier formatting helpers.</td>
+<td><code>format</code> rewrites files, <code>format:check</code> ensures compliance.</td>
+</tr>
+<tr>
+<td><code>pnpm run validate</code></td>
+<td>Runs lint → format check → test.</td>
+<td>Good pre-PR smoke check.</td>
+</tr>
+<tr>
+<td><code>pnpm run preflight</code></td>
+<td>Docs link validation, dependency boundaries, ESLint core purity, license audit.</td>
+<td>Mirrors the CI preflight job.</td>
+</tr>
+<tr>
+<td><code>pnpm run clean</code></td>
+<td>Remove generated artifacts (<code>out/</code>, <code>.wesley/</code>, etc.).</td>
+<td>See <code>scripts/clean.mjs</code> for the full list.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="maintenance-tooling">Maintenance &amp; Tooling<a class="headerlink" href="#maintenance-tooling" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Script</th>
+<th>Purpose</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pnpm run setup:bats-plugins</code></td>
+<td>Download/update vendored Bats plugins.</td>
+<td>Needed for CLI Bats tests (runs automatically inside the devcontainer).</td>
+</tr>
+<tr>
+<td><code>pnpm run meta:fix-packages</code></td>
+<td>Normalize workspace <code>package.json</code> metadata.</td>
+<td>Wraps <code>scripts/fix-package-metadata.mjs</code>.</td>
+</tr>
+<tr>
+<td><code>pnpm run docker:up</code>, <code>pnpm run docker:down</code></td>
+<td>Start/stop the docker-compose stack.</td>
+<td>Useful for local Postgres testing.</td>
+</tr>
+<tr>
+<td><code>pnpm run docker:test</code></td>
+<td>Run pgTAP tests inside docker-compose.</td>
+<td>Executes the <code>pgtap</code> service.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="smoke-checks">Smoke Checks<a class="headerlink" href="#smoke-checks" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Script</th>
+<th>Purpose</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pnpm run smoke:postgres-fixture</code></td>
+<td>Start a disposable Postgres container that mounts <code>test/fixtures/postgres/</code>, verify seeded extensions, then tear down.</td>
+<td>Ensures the fixture files still apply cleanly.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="package-specific-commands">Package-Specific Commands<a class="headerlink" href="#package-specific-commands" title="Permanent link">&para;</a></h2>
+<p>Use <code>pnpm --filter &lt;package&gt; &lt;script&gt;</code> for package-level tasks. Common examples:</p>
+<ul>
+<li><code>pnpm --filter @wesley/cli test</code> – run the CLI Bats suite.</li>
+<li><code>pnpm --filter @wesley-core test:unit</code> – run core unit tests.</li>
+<li><code>pnpm --filter @wesley-core test:property</code> – run property-based tests.</li>
+</ul>
+<p>Refer to each package’s <code>package.json</code> for the full list of available scripts.</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../js/base.js"></script>
+        <script src="../search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>
