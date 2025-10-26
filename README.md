@@ -1,5 +1,8 @@
 # Wesley
 
+[![Browser Smoke](https://github.com/flyingrobots/wesley/actions/workflows/browser-smoke.yml/badge.svg?branch=main)](https://github.com/flyingrobots/wesley/actions/workflows/browser-smoke.yml)
+[![Runtime Smokes](https://github.com/flyingrobots/wesley/actions/workflows/runtime-smokes.yml/badge.svg?branch=main)](https://github.com/flyingrobots/wesley/actions/workflows/runtime-smokes.yml)
+
 > [!note]
 > **Wesley** is pre-alpha. It does work, but it's somewhere between MVP and alpha.  
 > Just being real: probably don't want to use this in prod until _at least_ beta.
@@ -337,6 +340,13 @@ See [`packages/wesley-holmes/README.md`](packages/wesley-holmes/README.md) for t
 - [`test/`](test/README.md) — Integration and E2E test suites
 - [`schemas/`](schemas/README.md) — Canonical GraphQL schemas
 - [`test/fixtures/reference/`](test/fixtures/reference/README.md) — Comprehensive SDL for experiments and future tests
+
+### 🧭 Runtime Smokes
+- Browser: `node scripts/browser_smoke_playwright.mjs` (builds Vite harness and runs Playwright)
+- Deno: `deno run --config deno.json -A scripts/deno_smoke.ts`
+- Bun: `bun run scripts/bun_smoke.mjs`
+
+CI runs these via the workflows “Browser Smoke” and “Runtime Smokes”.
 
 ### 🛠️ Development
 - **[Scripts Reference](docs/scripts-reference.md)** — Complete `pnpm run` commands guide
