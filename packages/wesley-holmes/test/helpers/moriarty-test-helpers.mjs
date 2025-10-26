@@ -72,7 +72,8 @@ export function buildLog(commits) {
 export function runPredict(repoRoot, bundleDirAbs, extraEnv = {}) {
   const cliPath = path.join(repoRoot, 'packages', 'wesley-holmes', 'src', 'cli.mjs');
   const jsonOut = path.join(bundleDirAbs, 'moriarty-report.json');
-  const args = [cliPath, 'predict', '--bundle-dir', bundleDirAbs, '--json', jsonOut];
+  const historyPath = path.join(bundleDirAbs, '.wesley', 'history.json');
+  const args = [cliPath, 'predict', '--bundle-dir', bundleDirAbs, '--history-file', historyPath, '--json', jsonOut];
   const env = { ...process.env, ...extraEnv };
   const result = spawnSync(process.execPath, args, { cwd: repoRoot, encoding: 'utf8', env });
   if (result.status !== 0) {
@@ -87,4 +88,3 @@ export function day(n) {
 }
 
 export function nowSecs() { return Math.trunc(Date.now()/1000); }
-

@@ -30,6 +30,7 @@ test('scenario 1: tiny change after long quiet → plateau detected', () => {
   const day3 = day0 + 3;
   writeHistory(tmp, [
     { day: day0, scs: 0.82, tci: 0.75, mri: 0.2 },
+    { day: day0 + 1, scs: 0.82, tci: 0.75, mri: 0.2 },
     { day: day3, scs: 0.82, tci: 0.75, mri: 0.2 },
   ]);
   writeContext(tmp, { ci: { stability: 0.95 }, timeframeHours: 168, baseRef: 'main' });
@@ -42,6 +43,8 @@ test('scenario 1: tiny change after long quiet → plateau detected', () => {
 
   withFakeGit({ mergeBase: 'deadbeef', sinceLog, prLog }, () => {
     const json = runPredict(repoRoot, tmp, { MORIARTY_BASE_REF: 'main' });
+    // debug
+    // console.log('scenario1 status:', json.status, 'history len:', json.history?.length);
     assert.equal(json.status, 'OK');
     assert.equal(json.plateauDetected, true);
     assert.ok(json.velocity.gitActivityIndex <= 0.35);
@@ -55,6 +58,7 @@ test('scenario 2: one massive commit → no plateau, confidence penalized', () =
   const day1 = day0 + 1;
   writeHistory(tmp, [
     { day: day0, scs: 0.60, tci: 0.60, mri: 0.20 },
+    { day: day0 + 0.5, scs: 0.60, tci: 0.60, mri: 0.20 },
     { day: day1, scs: 0.60, tci: 0.60, mri: 0.20 },
   ]);
 
@@ -67,6 +71,7 @@ test('scenario 2: one massive commit → no plateau, confidence penalized', () =
 
   withFakeGit({ mergeBase: 'deadbeef', sinceLog, prLog }, () => {
     const json = runPredict(repoRoot, tmp, { MORIARTY_BASE_REF: 'main' });
+    // console.log('scenario2 status:', json.status, 'history len:', json.history?.length);
     assert.equal(json.status, 'OK');
     assert.equal(json.plateauDetected, false);
     assert.ok(json.velocity.gitActivityIndex > 0.5);
@@ -150,4 +155,3 @@ test('scenario 8: velocity cliff pattern appears', () => {
     assert.ok(hasCliff, 'Expected VELOCITY_CLIFF pattern');
   });
 });
-
