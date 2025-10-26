@@ -44,7 +44,7 @@ export function lowerToSQL(plan, paramsEnv = null, opts = {}) {
   if (orderItems.length > 0) {
     const rendered = orderItems.map(ob => renderOrderBy(ob, params, identOpts));
     // Append tie-breaker if primary key (id) not already present
-    const pkRef = guessPrimaryKeyRef(plan);
+    const pkRef = typeof opts.pkResolver === 'function' ? opts.pkResolver(plan) : guessPrimaryKeyRef(plan);
     if (pkRef && !orderMentionsExpr(orderItems, pkRef)) {
       rendered.push(`${renderExpr(pkRef, params, identOpts)} ASC`);
     }
