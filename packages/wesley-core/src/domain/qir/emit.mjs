@@ -20,17 +20,17 @@ const RESERVED = new Set([
   'select','insert','update','delete','from','where','group','order','by','limit','offset','join','left','right','on','and','or','not','null','true','false','table','view','function','schema','user'
 ]);
 
-export function emitView(opName, plan, { schema = DEFAULT_SCHEMA, identPolicy = 'strict' } = {}) {
+export function emitView(opName, plan, { schema = DEFAULT_SCHEMA, identPolicy = 'strict', pkResolver = null } = {}) {
   const name = qualifiedOpName(schema, opName);
-  const selectSql = lowerToSQL(plan, null, { identPolicy });
+  const selectSql = lowerToSQL(plan, null, { identPolicy, pkResolver });
   return `CREATE OR REPLACE VIEW ${name} AS\n${selectSql};`;
 }
 
-export function emitFunction(opName, plan, { schema = DEFAULT_SCHEMA, identPolicy = 'strict' } = {}) {
+export function emitFunction(opName, plan, { schema = DEFAULT_SCHEMA, identPolicy = 'strict', pkResolver = null } = {}) {
   const name = qualifiedOpName(schema, opName);
   const { ordered } = collectParams(plan);
   const params = uniqueParamNames(ordered).map(({ display, type }) => `${display} ${type || 'text'}`).join(', ');
-  const selectSql = lowerToSQL(plan, null, { identPolicy });
+  const selectSql = lowerToSQL(plan, null, { identPolicy, pkResolver });
   const body = `SELECT to_jsonb(q.*) FROM (\n${selectSql}\n) AS q`;
   return [
     `CREATE OR REPLACE FUNCTION ${name}(${params})`,

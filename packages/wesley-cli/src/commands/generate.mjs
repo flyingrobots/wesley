@@ -321,6 +321,30 @@ export class GeneratePipelineCommand extends WesleyCommand {
     if (!opsDir) return;
     try {
       const fs = this.ctx.fs;
+      // Build PK map from IR so ops emission can derive deterministic tie-breakers from real keys
+      let ir = context.ir;
+      try {
+        if (!ir && context.schemaContent) {
+          ir = this.ctx.parsers.graphql.parse(context.schemaContent);
+        }
+      } catch {}
+      const pkMap = new Map();
+      if (ir && Array.isArray(ir.tables)) {
+        for (const t of ir.tables) {
+          if (t?.name && t?.primaryKey) pkMap.set(String(t.name), String(t.primaryKey));
+        }
+      }
+      const pkResolver = (plan) => {
+        // Find leftmost base table alias + name
+        let r = plan?.root;
+        while (r && r.kind === 'Filter') r = r.input;
+        while (r && r.kind === 'Join') r = r.left;
+        if (r && r.kind === 'Table' && r.alias && r.table) {
+          const pk = pkMap.get(String(r.table));
+          if (pk) return { kind: 'ColumnRef', table: r.alias, column: pk };
+        }
+        return null; // fallback handled in lowerToSQL
+      };
       const files = await findOpFiles(fs, opsDir, logger);
       if (files.length === 0) {
         return;
@@ -379,7 +403,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
       if (compiledOps.length) {
         compiledOps.sort((a, b) => a.order - b.order);
         const orderedOps = compiledOps.map(({ order, ...rest }) => rest);
-        const outFiles = emitOpArtifacts(orderedOps, targetSchema, logger);
+        const outFiles = emitOpArtifacts(orderedOps, targetSchema, logger, pkResolver);
         const materialized = materializeArtifacts(outFiles, 'ops', outputPaths);
         await this.ctx.writer.writeFiles(materialized);
         const opsOutputDir = outputPaths.ops;
@@ -498,7 +522,7 @@ async function compileOpFile(fs, path, collisions, logger) {
   return { baseName, plan, isParamless: paramCount === 0, path };
 }
 
-function emitOpArtifacts(compiledOps, targetSchema, logger) {
+function emitOpArtifacts(compiledOps, targetSchema, logger, pkResolver) {
   const outFiles = [];
   const total = compiledOps.length;
   let ordinal = 0;
@@ -506,9 +530,9 @@ function emitOpArtifacts(compiledOps, targetSchema, logger) {
   for (const entry of compiledOps) {
     ordinal += 1;
     const { baseName, plan, isParamless, path } = entry;
-    const fnSql = emitFunction(baseName, plan, { schema: targetSchema, identPolicy: 'strict' });
+    const fnSql = emitFunction(baseName, plan, { schema: targetSchema, identPolicy: 'strict', pkResolver });
     if (isParamless) {
-      const viewSql = emitView(baseName, plan, { schema: targetSchema, identPolicy: 'strict' });
+      const viewSql = emitView(baseName, plan, { schema: targetSchema, identPolicy: 'strict', pkResolver });
       outFiles.push({ name: `${baseName}.view.sql`, content: `${viewSql}\n` });
       deployChunks.push(viewSql);
     }
