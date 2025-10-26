@@ -44,6 +44,15 @@ function loadHistory(historyPath, bundleDir) {
   }
 }
 
+function loadMoriartyContext(bundleDir) {
+  try {
+    const contextPath = resolvePath(null, path.join(bundleDir ?? '.wesley', 'moriarty-context.json'));
+    return JSON.parse(readFileSync(contextPath, 'utf8'));
+  } catch {
+    return {};
+  }
+}
+
 function ensureValidReport(label, schema, data) {
   const { valid, errors } = validateReport(schema, data);
   if (!valid) {
@@ -112,7 +121,8 @@ Requires:
       const opts = program.optsWithGlobals();
       const bundleDir = resolvePath(opts.bundleDir, '.wesley');
       const history = loadHistory(opts.historyFile, bundleDir);
-      const moriarty = new Moriarty(history);
+      const ctx = loadMoriartyContext(bundleDir);
+      const moriarty = new Moriarty(history, ctx);
       const data = moriarty.predictionData();
       ensureValidReport('MORIARTY', moriartyReportSchema, data);
       if (options.json) {
@@ -131,9 +141,10 @@ Requires:
       const bundlePath = path.join(bundleDir, 'bundle.json');
       const bundle = loadBundle(bundlePath);
       const history = loadHistory(opts.historyFile, bundleDir);
+      const ctx = loadMoriartyContext(bundleDir);
       const holmes = new Holmes(bundle);
       const watson = new Watson(bundle);
-      const moriarty = new Moriarty(history);
+      const moriarty = new Moriarty(history, ctx);
       const holmesData = holmes.investigationData();
       const watsonData = watson.verificationData();
       const moriartyData = moriarty.predictionData();
