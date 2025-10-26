@@ -1,0 +1,29 @@
+# Folders to exclude from LLM context ingestion
+node_modules/
+dist/
+build/
+.cache/
+.turbo/
+coverage/
+.git/
+.idea/
+.vscode/
+
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# Framework-specific (safe defaults)
+.next/
+.nuxt/
+.svelte-kit/
+.astro/
+
+# Logs and lockfiles
+*.log
+pnpm-lock.yaml
+yarn.lock
+package-lock.json
+
+# Chronicles are append-only; exclude from ingestion noise
+CHRONICLES_OF_THE_MACHINE-KIND_VOL_*.jsonl
