@@ -103,6 +103,15 @@ importers:
         specifier: ^14.0.0
         version: 14.0.1
 
+  packages/wesley-host-browser:
+    dependencies:
+      '@wesley/core':
+        specifier: workspace:*
+        version: link:../wesley-core
+      graphql:
+        specifier: ^16.11.0
+        version: 16.11.0
+
   packages/wesley-host-node:
     dependencies:
       '@supabase/pg-parser':

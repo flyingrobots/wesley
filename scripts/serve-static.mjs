@@ -1,0 +1,44 @@
+#!/usr/bin/env node
+// Minimal static file server for CI smokes
+import http from 'node:http';
+import { readFileSync, existsSync, statSync } from 'node:fs';
+import { createReadStream } from 'node:fs';
+import { resolve, join, extname } from 'node:path';
+
+const args = new Map(process.argv.slice(2).map((a) => {
+  const [k, v] = a.split('=');
+  return [k.replace(/^--/, ''), v ?? ''];
+}));
+
+const root = resolve(args.get('dir') || 'test/browser/smoke/dist');
+const port = parseInt(args.get('port') || '8787', 10);
+
+const contentType = (file) => ({
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.map': 'application/json',
+  '.json': 'application/json'
+})[extname(file)] || 'application/octet-stream';
+
+const server = http.createServer((req, res) => {
+  const url = (req.url || '/').split('?')[0];
+  const filePath = resolve(join(root, url === '/' ? '/index.html' : url));
+  if (!filePath.startsWith(root)) {
+    res.writeHead(403); res.end('Forbidden'); return;
+  }
+  try {
+    if (!existsSync(filePath) || !statSync(filePath).isFile()) {
+      res.writeHead(404); res.end('Not found'); return;
+    }
+    res.writeHead(200, { 'content-type': contentType(filePath) });
+    createReadStream(filePath).pipe(res);
+  } catch (e) {
+    res.writeHead(500); res.end(String(e?.message || e));
+  }
+});
+
+server.listen(port, '127.0.0.1', () => {
+  console.log(`[serve-static] listening on http://127.0.0.1:${port} (root=${root})`);
+});
+

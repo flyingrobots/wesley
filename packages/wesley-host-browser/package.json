@@ -1,0 +1,37 @@
+{
+  "name": "@wesley/host-browser",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Wesley browser host runtime (pure ESM, no Node built-ins)",
+  "main": "./src/index.mjs",
+  "exports": {
+    ".": {
+      "browser": "./src/index.mjs",
+      "default": "./src/index.mjs"
+    }
+  },
+  "sideEffects": false,
+  "files": [
+    "src/"
+  ],
+  "keywords": [
+    "graphql",
+    "browser",
+    "adapters",
+    "runtime"
+  ],
+  "author": "Wesley Authors <oss@flyingrobots.dev>",
+  "license": "LicenseRef-MIND-UCAL-1.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/flyingrobots/wesley.git",
+    "directory": "packages/wesley-host-browser"
+  },
+  "bugs": {
+    "url": "https://github.com/flyingrobots/wesley/issues"
+  },
+  "homepage": "https://github.com/flyingrobots/wesley/tree/main/packages/wesley-host-browser#readme",
+  "dependencies": {
+    "@wesley/core": "workspace:*"
+  }
+}
