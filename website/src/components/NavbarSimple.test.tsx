@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
-import React from 'react';
+import { render, screen } from '@testing-library/react';
+import { NavbarSimple } from './NavbarSimple';
 import { NavbarSimple } from './NavbarSimple';
 
 describe('NavbarSimple', () => {
