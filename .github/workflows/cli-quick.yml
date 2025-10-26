@@ -43,7 +43,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pnpm install --frozen-lockfile
+        pnpm install --no-frozen-lockfile
 
     - name: Initialize git for CLI tests
       run: |

@@ -1,0 +1,24 @@
+:root {
+  font-family: 'Dongle', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+  line-height: 1.2;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: #E9A717; /* page background */
+  color: #2C2102; /* global text color */
+  display: flex;
+  place-items: center;
+}
+
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
