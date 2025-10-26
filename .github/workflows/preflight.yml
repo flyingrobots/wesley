@@ -18,7 +18,13 @@ jobs:
         with:
           node-version: 20
       - uses: pnpm/action-setup@v4
+      - name: Verify pnpm version
+        run: |
+          echo "pnpm: $(pnpm --version)"
+          node -v
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
+      - name: Verify lockfile unchanged
+        run: git diff --exit-code -- pnpm-lock.yaml
       - name: Run repository preflight
         run: node scripts/preflight.mjs
