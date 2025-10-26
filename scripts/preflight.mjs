@@ -75,14 +75,31 @@ try {
 const linkChk = spawnSync(process.execPath, ['scripts/check-doc-links.mjs'], { stdio: 'inherit' });
 if (linkChk.status !== 0) fail('Docs link check failed');
 
-// 6) Architecture boundaries via dependency-cruiser
+// 6) pnpm version consistency
+try {
+  const pkg = JSON.parse(readFileSync(resolve('package.json'), 'utf8'));
+  const pm = pkg.packageManager || '';
+  const required = pm.startsWith('pnpm@') ? pm.split('@')[1] : '';
+  const res = spawnSync('pnpm', ['--version'], { encoding: 'utf8' });
+  if (res.status !== 0) {
+    fail('pnpm is required for preflight');
+  } else {
+    const have = (res.stdout || '').trim();
+    if (required && have !== required) {
+      fail(`pnpm version mismatch: required ${required} from packageManager, found ${have}. Hint: corepack prepare pnpm@${required} --activate`);
+    }
+  }
+} catch (e) {
+  fail(`pnpm version check failed: ${e?.message || e}`);
+}
+
+// 7) Architecture boundaries via dependency-cruiser
 function runOrFail(cmd, args, msg) {
   const res = spawnSync(cmd, args, { stdio: 'inherit', shell: process.platform === 'win32' });
   if (res.status !== 0) fail(msg);
 }
 
-// Enforce pnpm-only to match workspace policy
-runOrFail('pnpm', ['--version'], 'pnpm is required for preflight');
+// Enforce pnpm-only to match workspace policy (version already checked above)
 
 runOrFail(
   'pnpm', ['exec', 'depcruise', '--config', '.dependency-cruiser.mjs', 'packages/'],

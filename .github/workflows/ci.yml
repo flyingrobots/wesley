@@ -22,9 +22,15 @@ jobs:
         with:
           submodules: recursive
       - uses: pnpm/action-setup@v4
+      - name: Verify pnpm version
+        run: |
+          echo "pnpm: $(pnpm --version)"
+          node -v
       - uses: actions/setup-node@v4
         with: { node-version: 20, cache: 'pnpm' }
-      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm install --frozen-lockfile
+      - name: Verify lockfile unchanged
+        run: git diff --exit-code -- pnpm-lock.yaml
 
       # Install Bats for CLI tests executed in this workflow
       - name: Install Bats (Ubuntu)

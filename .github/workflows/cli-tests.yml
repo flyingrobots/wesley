@@ -36,6 +36,10 @@ jobs:
 
     - name: Setup pnpm
       uses: pnpm/action-setup@v4
+    - name: Verify pnpm version
+      run: |
+        echo "pnpm: $(pnpm --version)"
+        node -v
 
     - name: Setup Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v4
@@ -59,7 +63,9 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pnpm install --no-frozen-lockfile
+        pnpm install --frozen-lockfile
+    - name: Verify lockfile unchanged
+      run: git diff --exit-code -- pnpm-lock.yaml
 
     - name: Build packages
       run: |
