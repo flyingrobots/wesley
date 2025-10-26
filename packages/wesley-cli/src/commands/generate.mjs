@@ -502,6 +502,7 @@ function emitOpArtifacts(compiledOps, targetSchema, logger) {
   const outFiles = [];
   const total = compiledOps.length;
   let ordinal = 0;
+  const deployChunks = [`BEGIN;`, `CREATE SCHEMA IF NOT EXISTS "${targetSchema}";`];
   for (const entry of compiledOps) {
     ordinal += 1;
     const { baseName, plan, isParamless, path } = entry;
@@ -509,13 +510,17 @@ function emitOpArtifacts(compiledOps, targetSchema, logger) {
     if (isParamless) {
       const viewSql = emitView(baseName, plan, { schema: targetSchema, identPolicy: 'strict' });
       outFiles.push({ name: `${baseName}.view.sql`, content: `${viewSql}\n` });
+      deployChunks.push(viewSql);
     }
     outFiles.push({ name: `${baseName}.fn.sql`, content: `${fnSql}\n` });
+    deployChunks.push(fnSql);
     logger.info(
       { ordinal, total, sanitized: baseName, file: path, schema: targetSchema, code: 'OPS_DISCOVERY' },
       'ops: compiled operation'
     );
   }
+  deployChunks.push('COMMIT;');
+  outFiles.push({ name: `ops_deploy.sql`, content: deployChunks.join('\n\n') + '\n' });
   return outFiles;
 }
 
