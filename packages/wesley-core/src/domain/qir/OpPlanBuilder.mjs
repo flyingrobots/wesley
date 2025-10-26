@@ -234,5 +234,8 @@ function buildRightExpr(param, value, op) {
     return p;
   }
   // Fallback to literal value
+  if (op === 'in') {
+    throw new Error(`IN operator requires a parameter with explicit array type (e.g., text[])`);
+  }
   return { kind: 'Literal', value };
 }
