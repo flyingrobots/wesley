@@ -434,21 +434,24 @@ async function findOpFiles(fs, opsDir, logger) {
     logger.info({ opsDir }, 'Experimental --ops: directory not found; skipping');
     return [];
   }
-  const dirEntries = await fs.readDir?.(opsDir);
-  if (!Array.isArray(dirEntries)) {
+  const acc = [];
+  const walk = async (dir) => {
+    const entries = await fs.readDir?.(dir);
+    if (!Array.isArray(entries)) return;
+    for (const e of entries) {
+      if (e.isDirectory) {
+        await walk(e.path);
+      } else if (e.isFile && e.name?.endsWith?.('.op.json')) {
+        acc.push(e.path || await fs.join(dir, e.name));
+      }
+    }
+  };
+  await walk(opsDir);
+  acc.sort(); // locale-invariant deterministic ordering
+  if (acc.length === 0) {
     logger.info({ opsDir }, 'Experimental --ops: no *.op.json files found; skipping');
-    return [];
   }
-  const candidates = dirEntries.filter(entry => entry.name?.endsWith?.('.op.json'));
-  if (candidates.length === 0) {
-    logger.info({ opsDir }, 'Experimental --ops: no *.op.json files found; skipping');
-    return [];
-  }
-  const files = await Promise.all(
-    candidates.map(async entry => entry.path || await fs.join(opsDir, entry.name))
-  );
-  files.sort(); // Use default code-point ordering for locale-invariant sorting.
-  return files;
+  return acc;
 }
 
 async function compileOpFile(fs, path, collisions, logger) {
@@ -502,9 +505,9 @@ function emitOpArtifacts(compiledOps, targetSchema, logger) {
   for (const entry of compiledOps) {
     ordinal += 1;
     const { baseName, plan, isParamless, path } = entry;
-    const fnSql = emitFunction(baseName, plan, { schema: targetSchema });
+    const fnSql = emitFunction(baseName, plan, { schema: targetSchema, identPolicy: 'strict' });
     if (isParamless) {
-      const viewSql = emitView(baseName, plan, { schema: targetSchema });
+      const viewSql = emitView(baseName, plan, { schema: targetSchema, identPolicy: 'strict' });
       outFiles.push({ name: `${baseName}.view.sql`, content: `${viewSql}\n` });
     }
     outFiles.push({ name: `${baseName}.fn.sql`, content: `${fnSql}\n` });
