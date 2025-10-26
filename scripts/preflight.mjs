@@ -106,7 +106,7 @@ runOrFail(
   'dependency-cruiser boundary check failed'
 );
 
-// 7) ESLint core purity (use repo's ESLint version, flat-config compatible)
+// 8) ESLint core purity (use repo's ESLint version, flat-config compatible)
 try {
   const flatConfigPath = resolve(tmpdir(), `eslint.core-purity.${Date.now()}.config.mjs`);
   const cfg = `export default [{\n    files: [\"packages/wesley-core/src/**/*.mjs\"],\n    languageOptions: { ecmaVersion: 2022, sourceType: 'module' },\n    rules: {\n      'no-restricted-imports': [\n        'error',\n        {\n          patterns: [ { group: ['node:*'], message: 'Do not use Node built-ins in core (keep it pure).' } ],\n          paths: [\n            { name: 'fs', message: 'Use ports/adapters; no fs in core.' },\n            { name: 'path', message: 'Use ports/adapters; no path in core.' },\n            { name: 'process', message: 'Do not use process in core.' },\n            { name: 'child_process', message: 'No child_process in core.' },\n            { name: 'os', message: 'No os in core.' },\n            { name: 'buffer', message: 'No Buffer usage in core.' }\n          ]\n        }\n      ]\n    }\n  }];\n`;
@@ -116,7 +116,21 @@ try {
   fail(`ESLint core purity check failed to run: ${e?.message || e}`);
 }
 
-// 8) License audit — ensure all packages use MIND-UCAL (dynamic discovery)
+// 9) Core packaging hygiene — ensure @wesley/core has no Node-only deps or engines
+try {
+  const corePkgPath = resolve('packages/wesley-core/package.json');
+  const core = JSON.parse(readFileSync(corePkgPath, 'utf8'));
+  const badDeps = new Set(['chokidar', 'ts-morph', 'fs-extra', '@types/node']);
+  const deps = Object.keys(core.dependencies || {}).concat(Object.keys(core.devDependencies || {}));
+  for (const d of deps) {
+    if (badDeps.has(d)) fail(`@wesley/core must not depend on '${d}' (host-specific).`);
+  }
+  if (core.engines && core.engines.node) fail(`@wesley/core must not declare engines.node; keep hosts portable.`);
+} catch (e) {
+  // If core package missing, skip
+}
+
+// 10) License audit — ensure all packages use MIND-UCAL (dynamic discovery)
 try {
   const ls = spawnSync('pnpm', ['ls', '-r', '--json', '--depth=-1'], { encoding: 'utf8' });
   if (ls.status !== 0) throw new Error(`pnpm ls failed with code ${ls.status}`);
