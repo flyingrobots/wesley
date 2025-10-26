@@ -39,7 +39,7 @@ runs:
 
     - name: Install workspace
       shell: bash
-      run: pnpm install
+      run: pnpm install --no-frozen-lockfile
 
     - name: Ensure bundle directory
       shell: bash

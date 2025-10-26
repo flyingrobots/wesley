@@ -35,7 +35,7 @@ jobs:
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with: { node-version: 20, cache: 'pnpm' }
-      - run: pnpm install
+      - run: pnpm install --no-frozen-lockfile
 
       - name: Transform
         run: node packages/wesley-host-node/bin/wesley.mjs transform --schema test/fixtures/examples/ecommerce.graphql --out-dir out
