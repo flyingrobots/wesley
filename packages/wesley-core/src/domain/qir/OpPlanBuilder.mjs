@@ -215,10 +215,20 @@ function buildRightExpr(param, value, op) {
   if (param && param.name) {
     const name = String(param.name);
     let typeHint = param.type ? String(param.type) : undefined;
+    // Security hardening: require explicit types for risky operators
+    if (op === 'in') {
+      if (!typeHint) throw new Error(`Param '${name}' requires an explicit array type for IN (e.g., text[])`);
+      if (!typeHint.endsWith('[]')) typeHint = typeHint + '[]';
+    }
+    if (op === 'like' || op === 'ilike') {
+      if (!typeHint) throw new Error(`Param '${name}' requires an explicit type for ${op.toUpperCase()} (e.g., text)`);
+    }
+    if (op === 'contains' && !typeHint) {
+      throw new Error(`Param '${name}' requires an explicit type for CONTAINS (e.g., jsonb or text[])`);
+    }
     if (typeHint && !ALLOWED_PARAM_TYPES.has(typeHint.replace(/\[\]$/, ''))) {
       throw new Error(`Unsupported param type: ${typeHint} for ${name}`);
     }
-    if (op === 'in' && typeHint && !typeHint.endsWith('[]')) typeHint = typeHint + '[]';
     const p = new ParamRef(name);
     if (typeHint) p.typeHint = typeHint;
     return p;
