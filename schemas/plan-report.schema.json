@@ -1,0 +1,99 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://wesley.dev/schemas/plan-report.schema.json",
+  "title": "Wesley Plan Report (plan --explain --json)",
+  "type": "object",
+  "required": ["plan", "explain", "mapping", "radar"],
+  "properties": {
+    "plan": {
+      "type": "object",
+      "required": ["phases"],
+      "properties": {
+        "phases": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "steps"],
+            "properties": {
+              "name": { "type": "string" },
+              "steps": {
+                "type": "array",
+                "items": { "$ref": "#/definitions/Step" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "explain": {
+      "type": "object",
+      "required": ["lines", "steps"],
+      "properties": {
+        "lines": { "type": "array", "items": { "type": "string" } },
+        "steps": { "type": "array", "items": { "$ref": "#/definitions/StepWithLock" } }
+      }
+    },
+    "mapping": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["change", "steps"],
+        "properties": {
+          "change": { "type": "string" },
+          "steps": { "type": "array", "items": { "$ref": "#/definitions/Step" } }
+        }
+      }
+    },
+    "radar": {
+      "type": "object",
+      "required": ["lines", "counts"],
+      "properties": {
+        "lines": { "type": "array", "items": { "type": "string" } },
+        "notes": { "type": ["array", "null"], "items": { "type": "string" } },
+        "counts": { "type": "object", "additionalProperties": { "type": "integer" } }
+      }
+    }
+  },
+  "additionalProperties": true,
+  "definitions": {
+    "Step": {
+      "type": "object",
+      "required": ["op", "table"],
+      "properties": {
+        "op": { "type": "string", "enum": [
+          "create_table", "add_column", "create_index_concurrently", "add_fk_not_valid", "validate_fk"
+        ] },
+        "table": { "type": "string" },
+        "column": { "type": ["string", "null"] },
+        "type": { "type": ["string", "null"] },
+        "default": { "type": ["string", "null"] },
+        "nullable": { "type": ["boolean", "null"] },
+        "columns": { "type": ["array", "null"], "items": { "type": "string" } },
+        "using": { "type": ["string", "null"] },
+        "name": { "type": ["string", "null"] },
+        "refTable": { "type": ["string", "null"] },
+        "refColumn": { "type": ["string", "null"] }
+      }
+    },
+    "StepWithLock": {
+      "allOf": [
+        { "$ref": "#/definitions/Step" },
+        {
+          "type": "object",
+          "required": ["lock"],
+          "properties": {
+            "lock": {
+              "type": "object",
+              "required": ["name", "blocksWrites", "blocksReads"],
+              "properties": {
+                "name": { "type": "string" },
+                "blocksWrites": { "type": "boolean" },
+                "blocksReads": { "type": "boolean" }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

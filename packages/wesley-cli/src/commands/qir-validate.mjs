@@ -23,6 +23,16 @@ export class QirValidateCommand extends WesleyCommand {
       .action(async (file, options) => {
         return this.execute({ ...options, file, envelope: true });
       });
+
+    // Ops manifest validation
+    cmd
+      .command('manifest-validate')
+      .description('Validate an ops manifest JSON against schemas/ops-manifest.schema.json')
+      .argument('<file>', 'Path to ops manifest JSON')
+      .option('--json', 'Emit JSON output')
+      .action(async (file, options) => {
+        return this.execute({ ...options, file, manifest: true });
+      });
     return root;
   }
 
@@ -70,6 +80,25 @@ export class QirValidateCommand extends WesleyCommand {
       }
       if (!options.json) logger.info({ file: input }, 'IR envelope validation OK');
       return { valid: true, file: input, kind: 'envelope' };
+    } else if (options.manifest) {
+      const root = process.env.WESLEY_REPO_ROOT || process.cwd();
+      const [schemaJson, manJson] = await Promise.all([
+        fs.read(await this.ctx.fs.join(root, 'schemas', 'ops-manifest.schema.json')),
+        fs.read(input)
+      ]);
+      const schema = JSON.parse(schemaJson);
+      const manifest = JSON.parse(manJson);
+      const validate = ajv.compile(schema);
+      const ok = validate(manifest);
+      if (!ok) {
+        const err = new Error('Ops manifest validation failed');
+        err.code = 'VALIDATION_FAILED';
+        err.meta = { errors: validate.errors };
+        logger.error({ errors: validate.errors }, err.message);
+        throw err;
+      }
+      if (!options.json) logger.info({ file: input }, 'Ops manifest validation OK');
+      return { valid: true, file: input, kind: 'ops-manifest' };
     } else {
       const root = process.env.WESLEY_REPO_ROOT || process.cwd();
       const schemaPath = await this.ctx.fs.join(root, 'schemas', 'qir.schema.json');
