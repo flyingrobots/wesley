@@ -82,7 +82,7 @@ jobs:
       
       - name: Create/Update PR Comment
         if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const badge = process.env.BADGE || '${{ steps.badge.outputs.BADGE }}';
