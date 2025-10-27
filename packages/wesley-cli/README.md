@@ -1,5 +1,8 @@
 # @wesley/cli
 
+Status: Active  
+![pkg-cli](https://github.com/flyingrobots/wesley/actions/workflows/pkg-cli.yml/badge.svg?branch=main)
+
 Command-line interface for turning GraphQL schemas into database artifacts (SQL, migrations, RLS, pgTAP) and running operational workflows (plan, rehearse, certify, blade).
 
 ## Usage

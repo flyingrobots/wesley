@@ -1,5 +1,9 @@
 # @wesley/core
 
+Status: Active
+
+![pkg-core](https://github.com/flyingrobots/wesley/actions/workflows/pkg-core.yml/badge.svg?branch=main)
+
 Pure domain layer that models GraphQL directives, intermediate representation (IR), and SQL/RLS generation logic. Designed to be host-agnostic with no Node.js APIs.
 
 ## Highlights

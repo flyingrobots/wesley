@@ -1,5 +1,8 @@
 # @wesley/generator-js
 
+Status: Active  
+![pkg-generator-js](https://github.com/flyingrobots/wesley/actions/workflows/pkg-generator-js.yml/badge.svg?branch=main)
+
 Code generation helpers that turn Wesley IR into JavaScript/TypeScript artifacts:
 
 - `model.mjs` – Plain JS model emitters.

@@ -363,6 +363,22 @@ Badges for key packages:
 - @wesley/tasks: ![pkg-tasks](https://github.com/flyingrobots/wesley/actions/workflows/pkg-tasks.yml/badge.svg?branch=main)
 - @wesley/slaps: ![pkg-slaps](https://github.com/flyingrobots/wesley/actions/workflows/pkg-slaps.yml/badge.svg?branch=main)
 
+## Package Matrix
+
+| Package | Status | CI | Notes |
+| --- | --- | --- | --- |
+| `@wesley/core` | Active | ![pkg-core](https://github.com/flyingrobots/wesley/actions/workflows/pkg-core.yml/badge.svg?branch=main) | Pure domain logic, no Node builtins |
+| `@wesley/cli` | Active | ![pkg-cli](https://github.com/flyingrobots/wesley/actions/workflows/pkg-cli.yml/badge.svg?branch=main) | CLI + Bats suites |
+| `@wesley/host-node` | Active | ![pkg-host-node](https://github.com/flyingrobots/wesley/actions/workflows/pkg-host-node.yml/badge.svg?branch=main) | Node adapters + binary |
+| `@wesley/host-browser` | Experimental | ![Browser Smoke](https://github.com/flyingrobots/wesley/actions/workflows/browser-smoke.yml/badge.svg?branch=main) | Pure ESM; in‑memory FS; minimal parser; smoke‑level only |
+| `@wesley/generator-js` | Active | ![pkg-generator-js](https://github.com/flyingrobots/wesley/actions/workflows/pkg-generator-js.yml/badge.svg?branch=main) | TS/Zod emitters |
+| `@wesley/generator-supabase` | Active | ![pkg-generator-supabase](https://github.com/flyingrobots/wesley/actions/workflows/pkg-generator-supabase.yml/badge.svg?branch=main) | SQL/RLS/pgTAP emitters |
+| `@wesley/holmes` | Active | ![pkg-holmes](https://github.com/flyingrobots/wesley/actions/workflows/pkg-holmes.yml/badge.svg?branch=main) | Evidence scoring |
+| `@wesley/tasks` | Active | ![pkg-tasks](https://github.com/flyingrobots/wesley/actions/workflows/pkg-tasks.yml/badge.svg?branch=main) | Planner utilities |
+| `@wesley/slaps` | Active | ![pkg-slaps](https://github.com/flyingrobots/wesley/actions/workflows/pkg-slaps.yml/badge.svg?branch=main) | Scheduling/core utils |
+| `@wesley/scaffold-multitenant` | Too soon | — | Early scaffold, no CI yet |
+| `@wesley/stack-supabase-nextjs` | Too soon | — | Early stack template, no CI yet |
+
 ### 🛠️ Development
 - **[Scripts Reference](docs/scripts-reference.md)** — Complete `pnpm run` commands guide
 - [`scripts/`](scripts/README.md) — Maintenance and automation scripts

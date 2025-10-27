@@ -1,5 +1,8 @@
 # @wesley/holmes
 
+Status: Active  
+![pkg-holmes](https://github.com/flyingrobots/wesley/actions/workflows/pkg-holmes.yml/badge.svg?branch=main)
+
 Implements SHA-lock investigative tooling for Wesley deployments.
 
 - **Holmes** – Inspects evidence bundles, computes scores, and produces machine-readable + markdown reports.
