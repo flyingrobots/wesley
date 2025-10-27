@@ -24,6 +24,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
       .option('--ops-schema <name>', 'Schema name for emitted ops SQL (default wes_ops)', 'wes_ops')
       .option('--ops-security <mode>', 'Security for emitted functions: invoker|definer', 'invoker')
       .option('--ops-search-path <list>', 'Comma-separated search_path for ops functions (e.g., "pg_catalog, wes_ops")')
+      .option('--ops-explain <mode>', 'Emit EXPLAIN JSON snapshots for ops: mock', '')
       .option('--ops-allow-errors', 'Continue compiling remaining ops even if some fail validation (not allowed in CI without override)')
       .option('--emit-bundle', 'Emit .wesley/ evidence bundle')
       .option('--supabase', 'Enable Supabase features (RLS tests)')
@@ -449,11 +450,40 @@ export class GeneratePipelineCommand extends WesleyCommand {
         const setSearchPath = options.opsSearchPath
           ? String(options.opsSearchPath).split(',').map(s => s.trim()).filter(Boolean)
           : null;
-        const outFiles = emitOpArtifacts(orderedOps, targetSchema, logger, pkResolver, { security, setSearchPath, allowErrors: !!options.opsAllowErrors });
+        const explainMode = (options.opsExplain || '').toLowerCase();
+        const outFiles = emitOpArtifacts(orderedOps, targetSchema, logger, pkResolver, { security, setSearchPath, allowErrors: !!options.opsAllowErrors, explainMode });
         const materialized = materializeArtifacts(outFiles, 'ops', outputPaths);
         await this.ctx.writer.writeFiles(materialized);
         const opsOutputDir = outputPaths.ops;
         logger.info({ count: outFiles.length, dir: opsOutputDir }, 'Compiled operations (experimental)');
+
+        // Validate generated registry.json against schema
+        try {
+          const registryPath = await this.ctx.fs.join(opsOutputDir, 'registry.json');
+          if (await this.ctx.fs.exists(registryPath)) {
+            const [{ default: Ajv }, { default: addFormats }] = await Promise.all([
+              import('ajv'),
+              import('ajv-formats')
+            ]);
+            const ajv = new Ajv({ strict: false, allErrors: true });
+            addFormats(ajv);
+            const root = process.env.WESLEY_REPO_ROOT || process.cwd();
+            const schemaJson = await this.ctx.fs.read(await this.ctx.fs.join(root, 'schemas', 'ops-registry.schema.json'));
+            const schema = JSON.parse(schemaJson);
+            const reg = JSON.parse((await this.ctx.fs.read(registryPath)).toString('utf8'));
+            const validate = ajv.compile(schema);
+            if (!validate(reg)) {
+              const err = new OpsError('OPS_REGISTRY_INVALID', 'Generated ops registry failed schema validation', { errors: validate.errors, file: registryPath });
+              this.ctx.logger.error(err.meta, err.message);
+              if (!options.opsAllowErrors) throw err;
+            } else {
+              this.ctx.logger.info({ file: registryPath }, 'Ops registry validated');
+            }
+          }
+        } catch (ve) {
+          this.ctx.logger.warn({ error: ve?.message }, 'Ops registry validation skipped due to error');
+          if (!options.opsAllowErrors) throw ve;
+        }
       }
     } catch (e) {
       logger.error({ code: e?.code, error: e?.message }, 'Experimental --ops failed');
@@ -590,12 +620,12 @@ async function compileOpFile(fs, path, collisions, logger) {
   return { baseName, plan, isParamless: paramCount === 0, path };
 }
 
-function emitOpArtifacts(compiledOps, targetSchema, logger, pkResolver, { security = 'invoker', setSearchPath = null, allowErrors = false } = {}) {
+function emitOpArtifacts(compiledOps, targetSchema, logger, pkResolver, { security = 'invoker', setSearchPath = null, allowErrors = false, explainMode = '' } = {}) {
   const outFiles = [];
   const total = compiledOps.length;
   let ordinal = 0;
   const deployChunks = [`BEGIN;`, `CREATE SCHEMA IF NOT EXISTS "${targetSchema}";`];
-  const registry = { schema: targetSchema, ops: [] };
+  const registry = { version: '1.0.0', schema: targetSchema, ops: [] };
   for (const entry of compiledOps) {
     ordinal += 1;
     const { baseName, plan, isParamless, path } = entry;
@@ -646,12 +676,23 @@ function emitOpArtifacts(compiledOps, targetSchema, logger, pkResolver, { securi
     } catch (e) {
       logger.warn({ file: path, error: e?.message }, 'Failed to record registry entry');
     }
+
+    // Optional EXPLAIN JSON snapshot (mock only for now)
+    if (emitted && String(explainMode).toLowerCase() === 'mock') {
+      const explain = {
+        Plan: { 'Node Type': 'Result', Plans: [] },
+        Mock: true,
+        Version: 1
+      };
+      outFiles.push({ name: `explain/${baseName}.explain.json`, content: JSON.stringify(explain, null, 2) + '\n' });
+    }
   }
   deployChunks.push('COMMIT;');
   outFiles.push({ name: `ops_deploy.sql`, content: deployChunks.join('\n\n') + '\n' });
   // Emit registry.json next to SQL outputs
   try {
     const registryStr = JSON.stringify({
+      version: registry.version,
       schema: registry.schema,
       ops: registry.ops.sort((a, b) => a.name.localeCompare(b.name))
     }, null, 2) + '\n';

@@ -33,6 +33,16 @@ export class QirValidateCommand extends WesleyCommand {
       .action(async (file, options) => {
         return this.execute({ ...options, file, manifest: true });
       });
+
+    // Ops registry validation
+    cmd
+      .command('registry-validate')
+      .description('Validate an ops registry JSON against schemas/ops-registry.schema.json')
+      .argument('<file>', 'Path to ops registry JSON')
+      .option('--json', 'Emit JSON output')
+      .action(async (file, options) => {
+        return this.execute({ ...options, file, registry: true });
+      });
     return root;
   }
 
@@ -99,6 +109,25 @@ export class QirValidateCommand extends WesleyCommand {
       }
       if (!options.json) logger.info({ file: input }, 'Ops manifest validation OK');
       return { valid: true, file: input, kind: 'ops-manifest' };
+    } else if (options.registry) {
+      const root = process.env.WESLEY_REPO_ROOT || process.cwd();
+      const [schemaJson, regJson] = await Promise.all([
+        fs.read(await this.ctx.fs.join(root, 'schemas', 'ops-registry.schema.json')),
+        fs.read(input)
+      ]);
+      const schema = JSON.parse(schemaJson);
+      const registry = JSON.parse(regJson);
+      const validate = ajv.compile(schema);
+      const ok = validate(registry);
+      if (!ok) {
+        const err = new Error('Ops registry validation failed');
+        err.code = 'VALIDATION_FAILED';
+        err.meta = { errors: validate.errors };
+        logger.error({ errors: validate.errors }, err.message);
+        throw err;
+      }
+      if (!options.json) logger.info({ file: input }, 'Ops registry validation OK');
+      return { valid: true, file: input, kind: 'ops-registry' };
     } else {
       const root = process.env.WESLEY_REPO_ROOT || process.cwd();
       const schemaPath = await this.ctx.fs.join(root, 'schemas', 'qir.schema.json');

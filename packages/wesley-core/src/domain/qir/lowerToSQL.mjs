@@ -27,9 +27,11 @@ export function lowerToSQL(plan, paramsEnv = null, opts = {}) {
     ? paramsEnv
     : collectParams(plan);
 
-  // Build SELECT list
+  // Build DISTINCT ON (optional) and SELECT list
   const selectList = (plan.projection?.items || []).map(pi => `${renderExpr(pi.expr, params, identOpts)} AS ${escIdent(pi.alias, identOpts)}`).join(', ');
   const projectionSQL = selectList.length > 0 ? selectList : '*';
+  const distinctExprs = Array.isArray(plan.distinctOn) ? plan.distinctOn : [];
+  const distinctSQL = distinctExprs.length ? `DISTINCT ON (${distinctExprs.map(e => renderExpr(e, params, identOpts)).join(', ')}) ` : '';
 
   // Render FROM and gather WHERE predicates from Filter nodes embedded in relation tree
   const whereParts = [];
@@ -38,9 +40,16 @@ export function lowerToSQL(plan, paramsEnv = null, opts = {}) {
   // WHERE
   const whereSQL = whereParts.length ? `\nWHERE ${whereParts.join(' AND ')}` : '';
 
-  // ORDER BY with deterministic tie-breaker
+  // ORDER BY with deterministic tie-breaker; ensure DISTINCT ON prefix when present
   let orderSQL = '';
   const orderItems = [...(plan.orderBy || [])];
+  if (distinctExprs.length) {
+    // Ensure orderBy begins with distinctOn expressions in order
+    for (let i = distinctExprs.length - 1; i >= 0; i--) {
+      const de = distinctExprs[i];
+      orderItems.unshift({ expr: de, direction: 'asc', nulls: null });
+    }
+  }
   if (orderItems.length > 0) {
     const rendered = orderItems.map(ob => renderOrderBy(ob, params, identOpts));
     // Append tie-breaker if primary key (id) not already present
@@ -55,7 +64,7 @@ export function lowerToSQL(plan, paramsEnv = null, opts = {}) {
   const lim = plan.limit != null ? `\nLIMIT ${Number(plan.limit)}` : '';
   const off = plan.offset != null ? `\nOFFSET ${Number(plan.offset)}` : '';
 
-  return `SELECT ${projectionSQL}\nFROM ${fromSQL}${whereSQL}${orderSQL}${lim}${off}`.trim();
+  return `SELECT ${distinctSQL}${projectionSQL}\nFROM ${fromSQL}${whereSQL}${orderSQL}${lim}${off}`.trim();
 }
 
 // ────────────────────────────────────────────────────────────────────────────

@@ -160,6 +160,7 @@ try {
   const qirFiles = files.filter(f => f.endsWith('.qir.json'));
   const envFiles = files.filter(f => /(^|\/)ir-?envelope(\.json)?$/.test(f) || f.endsWith('sample-envelope.json'));
   const manFiles = files.filter(f => /ops\.manifest\.json$|ops-manifest\.json$/.test(f));
+  // Also validate any emitted ops registry if present in out/**/ops/registry.json
   const cli = existsSync('packages/wesley-host-node/bin/wesley.mjs') ? 'packages/wesley-host-node/bin/wesley.mjs' : 'node_modules/.bin/wesley';
   for (const f of qirFiles) {
     const r = spawnSync(process.execPath, [cli, 'qir', 'validate', f], { stdio: 'inherit' });
@@ -172,6 +173,32 @@ try {
   for (const f of manFiles) {
     const r = spawnSync(process.execPath, [cli, 'qir', 'manifest-validate', f], { stdio: 'inherit' });
     if (r.status !== 0) fail(`Ops manifest validation failed for ${f}`);
+  }
+  // Discover and validate registries under out/**/ops/registry.json if present (best-effort)
+  try {
+    const findRegistries = (dir) => {
+      const out = [];
+      const walk = (p) => {
+        let ents = [];
+        try { ents = readdirSync(p, { withFileTypes: true }); } catch { return; }
+        for (const e of ents) {
+          const full = resolve(p, e.name);
+          if (e.isDirectory()) walk(full);
+          else if (e.isFile() && /\bops\/registry\.json$/.test(full)) out.push(full);
+        }
+      };
+      walk(dir);
+      return out;
+    };
+    const outDir = resolve('out');
+    if (existsSync(outDir)) {
+      for (const reg of findRegistries(outDir)) {
+        const r = spawnSync(process.execPath, [cli, 'qir', 'registry-validate', reg], { stdio: 'inherit' });
+        if (r.status !== 0) fail(`Ops registry validation failed for ${reg}`);
+      }
+    }
+  } catch (e) {
+    // Non-fatal: registry may not exist in all runs
   }
 } catch (e) {
   fail(`QIR/Envelope/Manifest validation step failed to run: ${e?.message || e}`);

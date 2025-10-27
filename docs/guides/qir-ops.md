@@ -127,7 +127,7 @@ This produces both a `CREATE VIEW` and a `CREATE FUNCTION` for each operation, e
 
 In addition, Wesley emits a machine-readable operation registry:
 
-- `out/examples/ops/registry.json` — lists each op’s sanitized name, target schema, function/view identifiers, parameter order and types, projected field aliases (when specified), and the source op file path. Adapters can use this to wire RPC endpoints without parsing SQL.
+- `out/examples/ops/registry.json` — versioned (version: "1.0.0") index listing each op’s sanitized name, target schema, function/view identifiers, parameter order and types, projected field aliases (when specified), and the source op file path. Adapters can use this to wire RPC endpoints without parsing SQL.
 
 Example (abridged):
 
@@ -189,6 +189,26 @@ QIR is self-documented via a JSON Schema and can be validated using the CLI:
   - `registry.json` — machine‑readable index of compiled ops
 - A transactional `ops_deploy.sql` bundles the statements (BEGIN; CREATE SCHEMA IF NOT EXISTS; all views/functions; COMMIT).
 
+### Optional: EXPLAIN JSON snapshots
+
+Pass `--ops-explain mock` to emit a lightweight EXPLAIN‑shaped JSON file alongside ops:
+
+```bash
+node packages/wesley-host-node/bin/wesley.mjs generate \
+  --schema test/fixtures/examples/ecommerce.graphql \
+  --ops test/fixtures/examples/ops \
+  --ops-explain mock \
+  --ops-allow-errors \
+  --allow-dirty
+```
+
+This produces `out/.../ops/explain/<name>.explain.json` with a stub shape:
+
+```json
+{ "Plan": { "Node Type": "Result", "Plans": [] }, "Mock": true, "Version": 1 }
+```
+It’s intentionally DB‑free; swap to a real EXPLAIN strategy in a future phase.
+
 These validators load schemas from the local `schemas/` folder and fail with structured errors when the shape drifts.
 
 ### Discovery Modes (planned)
@@ -212,3 +232,7 @@ By default, emitted functions use `SECURITY INVOKER` and do not modify `search_p
 - Pin lookup path: `--ops-search-path "pg_catalog, <your_app_schema>"` to avoid unexpected name resolution via the session’s `search_path`.
 
 You can also call `emitFunction(name, plan, { security, setSearchPath })` directly when embedding in custom tooling.
+
+## Identifier policy for reserved words (strict mode)
+
+Strict mode validates identifiers and errors on reserved keywords (e.g., table named `order`). This avoids ambiguous SQL and unexpected behavior from partial quoting. If you must work with legacy schemas containing reserved names, either rename at source or compile with `--ops-allow-errors` to skip failing ops while you migrate. A future policy option may allow strict‑but‑quoted rendering; for now, failure is explicit by design.

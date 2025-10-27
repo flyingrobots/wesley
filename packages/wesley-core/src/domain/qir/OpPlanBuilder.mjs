@@ -203,6 +203,10 @@ function buildOnPredicate(on, leftDefault, rightAlias) {
     if (!table || typeof table !== 'string' || !column || typeof column !== 'string') {
       throw new Error(`Invalid column reference in join.on: ${JSON.stringify(r)}`);
     }
+    // Diagnostics: discourage ambiguous unqualified refs like 'id'
+    if (typeof r === 'string' && r.indexOf('.') === -1 && r.toLowerCase() === 'id') {
+      throw new Error(`Ambiguous join reference '${r}'. Qualify as '<alias>.id' or pass { table, column } to join.on`);
+    }
     return new ColumnRef(table, column);
   };
   const op = String(on.op || 'eq');
