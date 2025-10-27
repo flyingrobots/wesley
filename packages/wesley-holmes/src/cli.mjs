@@ -117,6 +117,7 @@ Requires:
     .command('predict')
     .description('Run MORIARTY predictions')
     .option('--json <file>', 'Write prediction JSON to file')
+    .option('--project-merge [baseRef]', 'Simulate PR merge and include projected results (MP-01..03: stub only)')
     .action(options => {
       const opts = program.optsWithGlobals();
       const bundleDir = resolvePath(opts.bundleDir, '.wesley');
@@ -124,6 +125,16 @@ Requires:
       const ctx = loadMoriartyContext(bundleDir);
       const moriarty = new Moriarty(history, ctx);
       const data = moriarty.predictionData();
+      if (typeof options.projectMerge !== 'undefined') {
+        const baseRef = typeof options.projectMerge === 'string' && options.projectMerge.length > 0
+          ? options.projectMerge
+          : (process.env.MORIARTY_BASE_REF || process.env.GITHUB_BASE_REF || 'main');
+        data.projection = {
+          status: 'planned',
+          merge: { baseRef, strategy: 'deferred' },
+          notes: 'Projection planned (MP-01..03). Execution and scoring lands in MP-04..06.'
+        };
+      }
       ensureValidReport('MORIARTY', moriartyReportSchema, data);
       if (options.json) {
         writeFileSync(options.json, JSON.stringify(data, null, 2));
@@ -135,6 +146,7 @@ Requires:
     .command('report')
     .description('Generate combined HOLMES, WATSON, and MORIARTY report')
     .option('--json <file>', 'Write combined JSON to file')
+    .option('--project-merge [baseRef]', 'Simulate PR merge and include projected results (MP-01..03: stub only)')
     .action(options => {
       const opts = program.optsWithGlobals();
       const bundleDir = resolvePath(opts.bundleDir, '.wesley');
@@ -148,6 +160,16 @@ Requires:
       const holmesData = holmes.investigationData();
       const watsonData = watson.verificationData();
       const moriartyData = moriarty.predictionData();
+      if (typeof options.projectMerge !== 'undefined') {
+        const baseRef = typeof options.projectMerge === 'string' && options.projectMerge.length > 0
+          ? options.projectMerge
+          : (process.env.MORIARTY_BASE_REF || process.env.GITHUB_BASE_REF || 'main');
+        moriartyData.projection = {
+          status: 'planned',
+          merge: { baseRef, strategy: 'deferred' },
+          notes: 'Projection planned (MP-01..03). Execution and scoring lands in MP-04..06.'
+        };
+      }
 
       ensureValidReport('HOLMES', holmesReportSchema, holmesData);
       ensureValidReport('WATSON', watsonReportSchema, watsonData);

@@ -31,8 +31,8 @@ export function withFakeGit(config, fn) {
 `try { cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf8')); } catch {}\n` +
 `const args = process.argv.slice(2);\n` +
 `function out(s){ if (s) process.stdout.write(String(s)); }\n` +
-`if (args[0] === 'rev-parse' && args.includes('--is-inside-work-tree')) { out('true\n'); process.exit(0); }\n` +
-`if (args[0] === 'merge-base') { out((cfg.mergeBase || 'deadbeef') + '\n'); process.exit(0); }\n` +
+`if (args[0] === 'rev-parse' && args.includes('--is-inside-work-tree')) { out('true\\n'); process.exit(0); }\n` +
+`if (args[0] === 'merge-base') { out((cfg.mergeBase || 'deadbeef') + '\\n'); process.exit(0); }\n` +
 `if (args[0] === 'fetch') { process.exit(0); }\n` +
 `if (args[0] === 'log') {\n` +
 `  const sinceArg = args.find(a => a.startsWith('--since='));\n` +
@@ -67,6 +67,22 @@ export function buildLog(commits) {
     }
   }
   return out;
+}
+
+// Convenience: build a simple series of commits spaced by `intervalSec`.
+// opts: { count, startTs=nowSecs(), intervalSec=300, makeFiles(i) => [{a,d,file}] }
+export function buildLogSeries(opts = {}) {
+  const count = Math.max(0, Math.trunc(opts.count ?? 0));
+  const intervalSec = Math.max(1, Math.trunc(opts.intervalSec ?? 300));
+  const startTs = Math.trunc(opts.startTs ?? nowSecs());
+  const makeFiles = typeof opts.makeFiles === 'function'
+    ? opts.makeFiles
+    : () => ([{ a: 1, d: 0, file: 'schema.graphql' }]);
+  const commits = [];
+  for (let i = 0; i < count; i++) {
+    commits.push({ ts: startTs - (i * intervalSec), files: makeFiles(i) });
+  }
+  return buildLog(commits);
 }
 
 export function runPredict(repoRoot, bundleDirAbs, extraEnv = {}) {

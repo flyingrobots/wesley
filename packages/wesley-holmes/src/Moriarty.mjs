@@ -280,6 +280,22 @@ export class Moriarty {
     report.push('');
     report.push('*"Every problem becomes elementary when reduced to mathematics"*');
     report.push('— Professor Moriarty');
+
+    // Optional: Projection section (MP-01..03 stub)
+    if (data.projection) {
+      report.push('');
+      report.push('---');
+      report.push('');
+      report.push('## 🔭 Projected After Merge (stub)');
+      const p = data.projection;
+      report.push(`Status: ${p.status || 'unknown'}`);
+      if (p.merge) {
+        report.push(`Base: ${p.merge.baseRef || 'main'} · Strategy: ${p.merge.strategy || 'tbd'}`);
+      }
+      if (typeof p.notes === 'string' && p.notes) {
+        report.push(p.notes);
+      }
+    }
     return report.join('\n');
   }
 
