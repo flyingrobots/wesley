@@ -20,3 +20,15 @@ HOST=browser bats test/hosts/host-contracts.bats
 
 The job builds a small Vite app, serves it, and uses Playwright to assert results.
 
+## Bundler Notes & Budgets
+
+- Examples in-repo
+  - Vite (contracts harness): `test/browser/contracts/vite.config.mjs`
+  - Vite (smoke harness): `test/browser/smoke/vite.config.mjs`
+- Bundle size budget
+  - CI enforces a total JS size budget for the contracts harness (default 50KB).
+  - Override with `BUNDLE_MAX_KB=<number>` in the workflow/job environment.
+- Tips
+  - Keep the browser host pure ESM; avoid Node polyfills and heavy deps.
+  - Prefer small, purpose-built parsers/adapters over general libs where possible.
+  - Verify tree-shaking: `"sideEffects": false` in `@wesley/host-browser`.
