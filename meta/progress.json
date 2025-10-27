@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-10-27T01:25:43.200Z",
+  "generatedAt": "2025-10-27T04:49:39.231Z",
   "repo": "",
   "overall": {
     "stage": "MVP",
@@ -129,6 +129,34 @@
       "docs": {
         "hasStatus": true,
         "hasUsage": false,
+        "hasApi": true,
+        "hasCaveats": false
+      }
+    },
+    {
+      "name": "@wesley/host-deno",
+      "status": "Experimental",
+      "stage": "MVP",
+      "progress": 30,
+      "next": "Alpha",
+      "passRate": null,
+      "docs": {
+        "hasStatus": false,
+        "hasUsage": true,
+        "hasApi": true,
+        "hasCaveats": false
+      }
+    },
+    {
+      "name": "@wesley/host-bun",
+      "status": "Experimental",
+      "stage": "MVP",
+      "progress": 30,
+      "next": "Alpha",
+      "passRate": null,
+      "docs": {
+        "hasStatus": false,
+        "hasUsage": true,
         "hasApi": true,
         "hasCaveats": false
       }

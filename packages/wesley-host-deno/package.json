@@ -1,0 +1,26 @@
+{
+  "name": "@wesley/host-deno",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Wesley Deno host runtime (pure ESM)",
+  "main": "./mod.ts",
+  "exports": {
+    ".": "./mod.ts"
+  },
+  "sideEffects": false,
+  "files": [
+    "mod.ts",
+    "examples/"
+  ],
+  "keywords": ["deno", "runtime", "adapters", "wesley"],
+  "author": "Wesley Authors <oss@flyingrobots.dev>",
+  "license": "LicenseRef-MIND-UCAL-1.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/flyingrobots/wesley.git",
+    "directory": "packages/wesley-host-deno"
+  },
+  "bugs": { "url": "https://github.com/flyingrobots/wesley/issues" },
+  "homepage": "https://github.com/flyingrobots/wesley"
+}
+
