@@ -49,8 +49,8 @@ importers:
         specifier: ^3.0.1
         version: 3.0.1(ajv@8.17.1)
       commander:
-        specifier: ^14.0.0
-        version: 14.0.1
+        specifier: ^14.0.2
+        version: 14.0.2
 
   packages/wesley-core:
     dependencies:
@@ -103,8 +103,8 @@ importers:
         specifier: workspace:*
         version: link:../wesley-core
       commander:
-        specifier: ^14.0.0
-        version: 14.0.1
+        specifier: ^14.0.2
+        version: 14.0.2
 
   packages/wesley-host-node:
     dependencies:
@@ -124,8 +124,8 @@ importers:
         specifier: workspace:*
         version: link:../wesley-generator-supabase
       commander:
-        specifier: ^14.0.0
-        version: 14.0.1
+        specifier: ^14.0.2
+        version: 14.0.2
       fast-glob:
         specifier: ^3.3.2
         version: 3.3.3
@@ -1160,8 +1160,8 @@ packages:
   colorette@2.0.20:
     resolution: {integrity: sha512-IfEDxwoWIjkeXL1eXcDiow4UbKjhLdq6/EuSVR9GMN7KVH3r9gQ83e73hsz1Nd1T3ijd5xv1wcWRYO+D6kCI2w==}
 
-  commander@14.0.1:
-    resolution: {integrity: sha512-2JkV3gUZUVrbNA+1sjBOYLsMZ5cEEl8GTFP2a4AVz5hvasAMCQ1D2l2le/cX+pV4N6ZU17zjUahLpIXRrnWL8A==}
+  commander@14.0.2:
+    resolution: {integrity: sha512-TywoWNNRbhoD0BXs1P3ZEScW8W5iKrnbithIl0YH+uCmBd0QpPOA8yc82DS3BIE5Ma6FnBVUsJ7wVUDz4dvOWQ==}
     engines: {node: '>=20'}
 
   concat-map@0.0.1:
@@ -3685,7 +3685,7 @@ snapshots:
 
   colorette@2.0.20: {}
 
-  commander@14.0.1: {}
+  commander@14.0.2: {}
 
   concat-map@0.0.1: {}
 
@@ -3771,7 +3771,7 @@ snapshots:
       acorn-loose: 8.5.2
       acorn-walk: 8.3.4
       ajv: 8.17.1
-      commander: 14.0.1
+      commander: 14.0.2
       enhanced-resolve: 5.18.3
       ignore: 7.0.5
       interpret: 3.1.1
