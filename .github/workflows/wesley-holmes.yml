@@ -44,7 +44,7 @@ jobs:
           fi
 
       - name: "📤 Upload Dashboard Template"
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: dashboard-template
           path: docs/holmes-dashboard
@@ -56,7 +56,7 @@ jobs:
           test -f "$HOLMES_BUNDLE_DIR/bundle.json"
 
       - name: "💾 Upload Bundle"
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ env.HOLMES_ARTIFACT }}
           path: |
@@ -93,7 +93,7 @@ jobs:
           bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
 
       - name: "💾 Save Report"
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: holmes-report
           path: reports/holmes
@@ -127,7 +127,7 @@ jobs:
           bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
 
       - name: "💾 Save Report"
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: watson-report
           path: reports/watson
@@ -162,7 +162,7 @@ jobs:
           bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
 
       - name: "💾 Save Report"
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: moriarty-report
           path: reports/moriarty
@@ -302,7 +302,7 @@ jobs:
           PGPASSWORD=postgres psql -h localhost -U postgres -d test -t -A -c "EXPLAIN (FORMAT JSON) SELECT * FROM wes_ops.op_orders_by_user('00000000-0000-0000-0000-000000000000')" > test/fixtures/examples/${WESLEY_OUT_DIR}/ops/explain/orders_by_user.explain.json
 
       - name: "⬆️ Upload EXPLAIN snapshots"
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ops-explain
           path: test/fixtures/examples/out/ops/explain/
@@ -382,7 +382,7 @@ jobs:
           fi
 
       - name: "📤 Upload Dashboard"
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: holmes-dashboard
           path: dashboard
