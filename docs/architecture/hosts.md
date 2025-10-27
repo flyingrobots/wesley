@@ -61,3 +61,11 @@ HOST=bun bats test/hosts/host-contracts.bats
 - Deno/Bun: `.github/workflows/runtime-smokes.yml` runs the contracts with HOST=deno and HOST=bun.
 - Node: same workflow includes HOST=node; in addition, CLI workflows provide deep coverage.
 
+## Progress & Maturity
+
+The repository tracks per‑package maturity (MVP → Alpha → Beta → v1.0.0) and computes an overall project stage:
+
+- See the root README “Overall Project Status” badge and “Package Matrix” for a live view.
+- Automation lives in `scripts/compute-progress.mjs` and runs nightly via `.github/workflows/progress.yml`.
+- The computation considers: CI pass rate, presence of docs sections, and (in upcoming work) milestone completion, coverage, and budgets.
+

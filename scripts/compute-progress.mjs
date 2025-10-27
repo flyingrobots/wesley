@@ -4,8 +4,8 @@
  * - Uses GitHub Actions API when GITHUB_TOKEN + GITHUB_REPOSITORY are present.
  * - Falls back to defaults when offline.
  */
-import { readFileSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
 
 const repo = process.env.GITHUB_REPOSITORY || '';
 const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '';
@@ -141,6 +141,27 @@ async function main() {
 
   const out = { generatedAt: new Date().toISOString(), repo, overall: { stage: overallStage, next: overallNext, progress: overallProgress }, results };
   writeFileSync(resolve('meta/progress.json'), JSON.stringify(out, null, 2), 'utf8');
+
+  // Write shields endpoint for overall badge
+  const colorByStage = (s) => ({
+    'Prototype': 'lightgrey',
+    'MVP': 'blue',
+    'Alpha': 'orange',
+    'Beta': 'yellowgreen',
+    'v1.0.0': 'brightgreen'
+  })[s] || 'blue';
+  const msg = overallStage === 'v1.0.0'
+    ? 'v1.0.0'
+    : `${overallStage} • ${overallProgress}%→${overallNext}`;
+  const badge = {
+    schemaVersion: 1,
+    label: 'project',
+    message: msg,
+    color: colorByStage(overallStage)
+  };
+  const badgePath = resolve('meta/badges/overall.json');
+  mkdirSync(dirname(badgePath), { recursive: true });
+  writeFileSync(badgePath, JSON.stringify(badge), 'utf8');
 
   // Build table markdown
   rows.push('| Package | Status | Stage | Progress | CI | Notes |');
