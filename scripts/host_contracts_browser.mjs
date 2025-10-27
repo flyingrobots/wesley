@@ -30,6 +30,26 @@ async function waitFor(url, ms = 15000) {
 async function main() {
   // Build contracts harness
   await sh('pnpm', ['exec', 'vite', 'build', '--config', 'test/browser/contracts/vite.config.mjs']);
+  // Enforce bundle size budget (sum of JS assets)
+  try {
+    const maxKb = Number(process.env.BUNDLE_MAX_KB || '50');
+    const { readdirSync, statSync } = await import('node:fs');
+    const { join } = await import('node:path');
+    const dir = 'test/browser/contracts/dist/assets';
+    let total = 0;
+    for (const f of readdirSync(dir)) {
+      if (!f.endsWith('.js')) continue;
+      total += statSync(join(dir, f)).size;
+    }
+    const kb = Math.round(total / 1024);
+    if (kb > maxKb) {
+      throw new Error(`Bundle size ${kb}KB exceeds budget ${maxKb}KB (set BUNDLE_MAX_KB to override)`);
+    }
+    console.log(`[bundle-budget] OK: ${kb}KB <= ${maxKb}KB`);
+  } catch (e) {
+    console.error('[bundle-budget] check failed:', e?.message || e);
+    throw e;
+  }
 
   // Serve dist
   const srv = spawn(process.execPath, ['scripts/serve-static.mjs', '--dir=test/browser/contracts/dist'], { stdio: 'inherit' });
