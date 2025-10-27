@@ -14,10 +14,10 @@ export class QirValidateCommand extends WesleyCommand {
       .action(async (file, options) => {
         return this.execute({ ...options, file });
       });
-    // Experimental: envelope validation
+    // Envelope validation
     cmd
       .command('envelope-validate')
-      .description('[EXPERIMENTAL] Validate an IR envelope JSON against schemas (set WESLEY_EXPERIMENTAL_QIR_ENVELOPE=1)')
+      .description('Validate an IR envelope JSON against schemas (Schema IR + QIR plans)')
       .argument('<file>', 'Path to IR envelope JSON file')
       .option('--json', 'Emit JSON output')
       .action(async (file, options) => {
@@ -46,15 +46,11 @@ export class QirValidateCommand extends WesleyCommand {
     addFormats(ajv);
 
     if (options.envelope) {
-      if (String(process.env.WESLEY_EXPERIMENTAL_QIR_ENVELOPE || '') !== '1') {
-        const e = new Error('Envelope validation is experimental. Set WESLEY_EXPERIMENTAL_QIR_ENVELOPE=1 to enable.');
-        e.code = 'EXPERIMENTAL_DISABLED';
-        throw e;
-      }
+      const root = process.env.WESLEY_REPO_ROOT || process.cwd();
       const [schemaIR, schemaQIR, schemaEnv, envJson] = await Promise.all([
-        fs.read(await this.ctx.fs.join(process.cwd(), 'schemas', 'ir.schema.json')),
-        fs.read(await this.ctx.fs.join(process.cwd(), 'schemas', 'qir.schema.json')),
-        fs.read(await this.ctx.fs.join(process.cwd(), 'schemas', 'ir-envelope.schema.json')).catch(() => '{}'),
+        fs.read(await this.ctx.fs.join(root, 'schemas', 'ir.schema.json')),
+        fs.read(await this.ctx.fs.join(root, 'schemas', 'qir.schema.json')),
+        fs.read(await this.ctx.fs.join(root, 'schemas', 'ir-envelope.schema.json')).catch(() => '{}'),
         fs.read(input)
       ]);
       const ir = JSON.parse(schemaIR);
@@ -75,7 +71,8 @@ export class QirValidateCommand extends WesleyCommand {
       if (!options.json) logger.info({ file: input }, 'IR envelope validation OK');
       return { valid: true, file: input, kind: 'envelope' };
     } else {
-      const schemaPath = await this.ctx.fs.join(process.cwd(), 'schemas', 'qir.schema.json');
+      const root = process.env.WESLEY_REPO_ROOT || process.cwd();
+      const schemaPath = await this.ctx.fs.join(root, 'schemas', 'qir.schema.json');
       const [schemaJson, planJson] = await Promise.all([
         fs.read(schemaPath),
         fs.read(input)

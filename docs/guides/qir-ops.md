@@ -128,8 +128,7 @@ QIR is self-documented via a JSON Schema and can be validated using the CLI:
 - Validate a single QIR plan JSON:
   - `wesley qir validate test/fixtures/qir/sample-flat.qir.json`
 
-- Validate an experimental IR envelope (Schema IR + QIR plans):
-  - `export WESLEY_EXPERIMENTAL_QIR_ENVELOPE=1`
+- Validate an IR envelope (Schema IR + QIR plans):
   - `wesley qir envelope-validate test/fixtures/qir/sample-envelope.json`
 
 These validators load schemas from the local `schemas/` folder and fail with structured errors when the shape drifts.
