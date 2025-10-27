@@ -20,7 +20,9 @@
         "properties": {
           "signer": { "type": "string" },
           "keyId": { "type": "string" },
-          "signature": { "type": "string" }
+          "signature": { "type": "string" },
+          "createdAt": { "type": ["string", "null"], "format": "date-time" },
+          "alg": { "type": ["string", "null"] }
         },
         "additionalProperties": false
       },
