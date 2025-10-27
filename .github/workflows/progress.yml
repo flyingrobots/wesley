@@ -28,6 +28,8 @@ jobs:
         run: corepack enable
       - name: Install deps (frozen)
         run: pnpm install --frozen-lockfile
+      - name: Generate coverage for core (for gating)
+        run: pnpm --filter @wesley/core test:coverage || true
       - name: Compute progress
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -40,4 +42,3 @@ jobs:
           body: 'Automated update of Package Matrix and meta/progress.json.'
           branch: progress/update-matrix
           delete-branch: true
-

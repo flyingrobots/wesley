@@ -29,6 +29,23 @@ async function fetchWorkflowPassRate(workflowFile, branch = 'main', take = 10) {
   } catch { return null; }
 }
 
+async function fetchMilestoneRatioFor(pkgName, milestoneTitle) {
+  try {
+    if (!token || !repo) return null;
+    const qBase = `repo:${repo} label:"pkg:${pkgName}" milestone:"${milestoneTitle}"`;
+    const openUrl = `https://api.github.com/search/issues?q=${encodeURIComponent(qBase + ' is:issue is:open')}`;
+    const closedUrl = `https://api.github.com/search/issues?q=${encodeURIComponent(qBase + ' is:issue is:closed')}`;
+    const headers = { 'authorization': `Bearer ${token}`, 'accept': 'application/vnd.github+json' };
+    const [openRes, closedRes] = await Promise.all([fetch(openUrl, { headers }), fetch(closedUrl, { headers })]);
+    if (!openRes.ok || !closedRes.ok) return null;
+    const open = await openRes.json();
+    const closed = await closedRes.json();
+    const total = (open.total_count || 0) + (closed.total_count || 0);
+    if (total === 0) return null; // no milestone usage yet
+    return { total, closed: (closed.total_count || 0), ratio: (closed.total_count || 0) / total };
+  } catch { return null; }
+}
+
 function detectDocsSections(readmePath) {
   try {
     const c = readFileSync(resolve(readmePath), 'utf8');
@@ -52,7 +69,7 @@ function inferBaseStage(status) {
   return 'MVP';
 }
 
-function computeStageAndProgress(pkg, passRate, docs) {
+function computeStageAndProgress(pkg, passRate, docs, milestones) {
   const base = inferBaseStage(pkg.status);
   let stage = base;
   let progress = 0; // % to next stage
@@ -64,7 +81,8 @@ function computeStageAndProgress(pkg, passRate, docs) {
   if (stage === 'MVP') {
     const pr = passRate ?? 0; // 0..1 or 0 when unknown
     const d = docs.hasUsage ? 1 : 0;
-    const score = 0.7 * pr + 0.3 * d;
+    const alphaRatio = milestones?.alpha?.ratio ?? 0;
+    const score = 0.5 * pr + 0.2 * d + 0.3 * alphaRatio;
     if (pr >= 0.95 && d) { stage = 'Alpha'; progress = 0; }
     else progress = Math.round(score * 100);
   }
@@ -75,7 +93,8 @@ function computeStageAndProgress(pkg, passRate, docs) {
   if (stage === 'Alpha') {
     const pr = passRate ?? 0;
     const d = (docs.hasApi && docs.hasCaveats) ? 1 : 0;
-    const score = 0.7 * Math.min(1, pr / 0.98) + 0.3 * d;
+    const betaRatio = milestones?.beta?.ratio ?? 0;
+    const score = 0.5 * Math.min(1, pr / 0.98) + 0.2 * d + 0.3 * betaRatio;
     if (pr >= 0.98 && d) { stage = 'Beta'; progress = 0; }
     else progress = Math.round(score * 100);
   }
@@ -106,8 +125,18 @@ async function main() {
   for (const p of cfg.packages) {
     const docs = detectDocsSections(p.readme);
     const passRate = await fetchWorkflowPassRate(p.ci);
-    const { stage, progress, next } = computeStageAndProgress(p, passRate, docs);
-    results.push({ name: p.name, status: p.status, stage, progress, next, passRate, docs });
+    const milestones = {
+      alpha: await fetchMilestoneRatioFor(p.name, 'Alpha'),
+      beta: await fetchMilestoneRatioFor(p.name, 'Beta')
+    };
+    const { stage, progress, next } = computeStageAndProgress(p, passRate, docs, milestones);
+    // try to read coverage summary when available (local from progress workflow)
+    let coverage = null;
+    try {
+      const sum = JSON.parse(readFileSync(resolve('packages/wesley-core/coverage/coverage-summary.json'), 'utf8'));
+      coverage = sum.total?.lines?.pct ?? null;
+    } catch {}
+    results.push({ name: p.name, status: p.status, stage, progress, next, passRate, docs, milestones, coverage });
   }
 
   // Write meta/progress.json
