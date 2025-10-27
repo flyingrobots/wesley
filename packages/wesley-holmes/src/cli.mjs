@@ -132,10 +132,13 @@ Requires:
         try {
           const { MergePlanner } = await import('./merge/Planner.mjs');
           const { MergeTreeStrategy } = await import('./merge/MergeTreeStrategy.mjs');
+          const { WorktreeStrategy } = await import('./merge/WorktreeStrategy.mjs');
           const planner = new MergePlanner({ repoRoot: process.cwd() });
           const plan = planner.plan({ baseRef });
-          const strategy = new MergeTreeStrategy({ repoRoot: process.cwd() });
-          const result = strategy.execute(plan);
+          let result = new MergeTreeStrategy({ repoRoot: process.cwd() }).execute(plan);
+          if (!result || result.status === 'error') {
+            result = new WorktreeStrategy({ repoRoot: process.cwd() }).execute(plan);
+          }
           data.projection = { ...result };
         } catch (e) {
           data.projection = {
@@ -177,10 +180,13 @@ Requires:
         try {
           const { MergePlanner } = await import('./merge/Planner.mjs');
           const { MergeTreeStrategy } = await import('./merge/MergeTreeStrategy.mjs');
+          const { WorktreeStrategy } = await import('./merge/WorktreeStrategy.mjs');
           const planner = new MergePlanner({ repoRoot: process.cwd() });
           const plan = planner.plan({ baseRef });
-          const strategy = new MergeTreeStrategy({ repoRoot: process.cwd() });
-          const result = strategy.execute(plan);
+          let result = new MergeTreeStrategy({ repoRoot: process.cwd() }).execute(plan);
+          if (!result || result.status === 'error') {
+            result = new WorktreeStrategy({ repoRoot: process.cwd() }).execute(plan);
+          }
           moriartyData.projection = { ...result };
         } catch (e) {
           moriartyData.projection = {
