@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
-load bats-assert
-load bats-file
+load 'bats-plugins/bats-assert/load'
+load 'bats-plugins/bats-file/load'
 
 setup() {
   ROOT_DIR="$(git rev-parse --show-toplevel)"
@@ -30,4 +30,3 @@ setup() {
   run jq -e '.Plan | type == "object" and (."Node Type" != null)' "$EXPL"
   assert_success
 }
-
