@@ -23,6 +23,31 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: "🕵️ Detect Schema"
+        id: detect
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "${WESLEY_SCHEMA:-}" ] && [ -f "$WESLEY_SCHEMA" ]; then
+            schema="$WESLEY_SCHEMA"
+          else
+            mapfile -t files < <(git ls-files "**/*.graphql" 2>/dev/null || true)
+            picked=""
+            if [ ${#files[@]} -gt 0 ]; then
+              for f in "${files[@]}"; do
+                if [ "${f##*/}" = "schema.graphql" ]; then picked="$f"; break; fi
+              done
+              if [ -z "$picked" ]; then picked="${files[0]}"; fi
+            fi
+            schema="${picked:-$HOLMES_SCHEMA}"
+          fi
+          base_dir="$(dirname "$schema")"
+          bundle_dir="$base_dir/.wesley"
+          echo "schema=$schema" >> "$GITHUB_OUTPUT"
+          echo "bundle_dir=$bundle_dir" >> "$GITHUB_OUTPUT"
+          echo "Detected schema: $schema"
+          echo "Bundle dir: $bundle_dir"
       
       - name: "🛠️ Setup HOLMES environment"
         uses: ./.github/actions/holmes-setup
