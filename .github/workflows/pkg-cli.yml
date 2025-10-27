@@ -1,0 +1,30 @@
+name: pkg-cli
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - 'packages/wesley-cli/**'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
+  pull_request:
+    branches: ["**"]
+    paths:
+      - 'packages/wesley-cli/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Enable corepack (pnpm)
+        run: corepack enable
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+      - name: @wesley/cli tests (Bats)
+        run: pnpm --filter @wesley/cli test
+

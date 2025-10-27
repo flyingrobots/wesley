@@ -348,6 +348,21 @@ See [`packages/wesley-holmes/README.md`](packages/wesley-holmes/README.md) for t
 
 CI runs these via the workflows “Browser Smoke” and “Runtime Smokes”.
 
+### 🖥️ Hosts
+- See `docs/architecture/hosts.md` for supported hosts and notes.
+
+### Per‑Package Status
+Badges for key packages:
+
+- @wesley/core: ![pkg-core](https://github.com/flyingrobots/wesley/actions/workflows/pkg-core.yml/badge.svg?branch=main)
+- @wesley/cli: ![pkg-cli](https://github.com/flyingrobots/wesley/actions/workflows/pkg-cli.yml/badge.svg?branch=main)
+- @wesley/host-node: ![pkg-host-node](https://github.com/flyingrobots/wesley/actions/workflows/pkg-host-node.yml/badge.svg?branch=main)
+- @wesley/generator-js: ![pkg-generator-js](https://github.com/flyingrobots/wesley/actions/workflows/pkg-generator-js.yml/badge.svg?branch=main)
+- @wesley/generator-supabase: ![pkg-generator-supabase](https://github.com/flyingrobots/wesley/actions/workflows/pkg-generator-supabase.yml/badge.svg?branch=main)
+- @wesley/holmes: ![pkg-holmes](https://github.com/flyingrobots/wesley/actions/workflows/pkg-holmes.yml/badge.svg?branch=main)
+- @wesley/tasks: ![pkg-tasks](https://github.com/flyingrobots/wesley/actions/workflows/pkg-tasks.yml/badge.svg?branch=main)
+- @wesley/slaps: ![pkg-slaps](https://github.com/flyingrobots/wesley/actions/workflows/pkg-slaps.yml/badge.svg?branch=main)
+
 ### 🛠️ Development
 - **[Scripts Reference](docs/scripts-reference.md)** — Complete `pnpm run` commands guide
 - [`scripts/`](scripts/README.md) — Maintenance and automation scripts

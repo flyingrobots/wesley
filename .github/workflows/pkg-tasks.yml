@@ -1,0 +1,30 @@
+name: pkg-tasks
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - 'packages/wesley-tasks/**'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
+  pull_request:
+    branches: ["**"]
+    paths:
+      - 'packages/wesley-tasks/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Enable corepack (pnpm)
+        run: corepack enable
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+      - name: @wesley/tasks tests
+        run: pnpm --filter @wesley/tasks test
+
