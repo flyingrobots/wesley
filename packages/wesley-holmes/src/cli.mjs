@@ -118,7 +118,7 @@ Requires:
     .description('Run MORIARTY predictions')
     .option('--json <file>', 'Write prediction JSON to file')
     .option('--project-merge [baseRef]', 'Simulate PR merge and include projected results (MP-01..03: stub only)')
-    .action(options => {
+    .action(async options => {
       const opts = program.optsWithGlobals();
       const bundleDir = resolvePath(opts.bundleDir, '.wesley');
       const history = loadHistory(opts.historyFile, bundleDir);
@@ -129,11 +129,21 @@ Requires:
         const baseRef = typeof options.projectMerge === 'string' && options.projectMerge.length > 0
           ? options.projectMerge
           : (process.env.MORIARTY_BASE_REF || process.env.GITHUB_BASE_REF || 'main');
-        data.projection = {
-          status: 'planned',
-          merge: { baseRef, strategy: 'deferred' },
-          notes: 'Projection planned (MP-01..03). Execution and scoring lands in MP-04..06.'
-        };
+        try {
+          const { MergePlanner } = await import('./merge/Planner.mjs');
+          const { MergeTreeStrategy } = await import('./merge/MergeTreeStrategy.mjs');
+          const planner = new MergePlanner({ repoRoot: process.cwd() });
+          const plan = planner.plan({ baseRef });
+          const strategy = new MergeTreeStrategy({ repoRoot: process.cwd() });
+          const result = strategy.execute(plan);
+          data.projection = { ...result };
+        } catch (e) {
+          data.projection = {
+            status: 'error',
+            merge: { baseRef, strategy: 'merge-tree' },
+            notes: `Projection failed early: ${e?.message || e}`
+          };
+        }
       }
       ensureValidReport('MORIARTY', moriartyReportSchema, data);
       if (options.json) {
@@ -147,7 +157,7 @@ Requires:
     .description('Generate combined HOLMES, WATSON, and MORIARTY report')
     .option('--json <file>', 'Write combined JSON to file')
     .option('--project-merge [baseRef]', 'Simulate PR merge and include projected results (MP-01..03: stub only)')
-    .action(options => {
+    .action(async options => {
       const opts = program.optsWithGlobals();
       const bundleDir = resolvePath(opts.bundleDir, '.wesley');
       const bundlePath = path.join(bundleDir, 'bundle.json');
@@ -164,11 +174,21 @@ Requires:
         const baseRef = typeof options.projectMerge === 'string' && options.projectMerge.length > 0
           ? options.projectMerge
           : (process.env.MORIARTY_BASE_REF || process.env.GITHUB_BASE_REF || 'main');
-        moriartyData.projection = {
-          status: 'planned',
-          merge: { baseRef, strategy: 'deferred' },
-          notes: 'Projection planned (MP-01..03). Execution and scoring lands in MP-04..06.'
-        };
+        try {
+          const { MergePlanner } = await import('./merge/Planner.mjs');
+          const { MergeTreeStrategy } = await import('./merge/MergeTreeStrategy.mjs');
+          const planner = new MergePlanner({ repoRoot: process.cwd() });
+          const plan = planner.plan({ baseRef });
+          const strategy = new MergeTreeStrategy({ repoRoot: process.cwd() });
+          const result = strategy.execute(plan);
+          moriartyData.projection = { ...result };
+        } catch (e) {
+          moriartyData.projection = {
+            status: 'error',
+            merge: { baseRef, strategy: 'merge-tree' },
+            notes: `Projection failed early: ${e?.message || e}`
+          };
+        }
       }
 
       ensureValidReport('HOLMES', holmesReportSchema, holmesData);
