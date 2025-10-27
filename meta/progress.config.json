@@ -1,0 +1,31 @@
+{
+  "project": {
+    "requiredForAlpha": ["@wesley/core", "@wesley/cli", "@wesley/host-node", "@wesley/generator-supabase"],
+    "weights": {
+      "@wesley/core": 0.25,
+      "@wesley/cli": 0.15,
+      "@wesley/host-node": 0.15,
+      "@wesley/generator-supabase": 0.15,
+      "@wesley/generator-js": 0.1,
+      "@wesley/holmes": 0.1,
+      "@wesley/tasks": 0.05,
+      "@wesley/slaps": 0.03,
+      "@wesley/scaffold-multitenant": 0.01,
+      "@wesley/stack-supabase-nextjs": 0.01
+    }
+  },
+  "packages": [
+    { "name": "@wesley/core", "status": "Active", "ci": "pkg-core.yml", "readme": "packages/wesley-core/README.md", "notes": "Pure domain logic, no Node builtins" },
+    { "name": "@wesley/cli", "status": "Active", "ci": "pkg-cli.yml", "readme": "packages/wesley-cli/README.md", "notes": "CLI + Bats suites" },
+    { "name": "@wesley/host-node", "status": "Active", "ci": "pkg-host-node.yml", "readme": "packages/wesley-host-node/README.md", "notes": "Node adapters + binary" },
+    { "name": "@wesley/host-browser", "status": "Experimental", "ci": "browser-smoke.yml", "readme": "packages/wesley-host-browser/README.md", "notes": "Pure ESM; in-memory FS; minimal parser; smoke-level only" },
+    { "name": "@wesley/generator-js", "status": "Active", "ci": "pkg-generator-js.yml", "readme": "packages/wesley-generator-js/README.md", "notes": "TS/Zod emitters" },
+    { "name": "@wesley/generator-supabase", "status": "Active", "ci": "pkg-generator-supabase.yml", "readme": "packages/wesley-generator-supabase/README.md", "notes": "SQL/RLS/pgTAP emitters" },
+    { "name": "@wesley/holmes", "status": "Active", "ci": "pkg-holmes.yml", "readme": "packages/wesley-holmes/README.md", "notes": "Evidence scoring" },
+    { "name": "@wesley/tasks", "status": "Active", "ci": "pkg-tasks.yml", "readme": "packages/wesley-tasks/README.md", "notes": "Planner utilities" },
+    { "name": "@wesley/slaps", "status": "Active", "ci": "pkg-slaps.yml", "readme": "packages/wesley-slaps/README.md", "notes": "Scheduling/core utils" },
+    { "name": "@wesley/scaffold-multitenant", "status": "Too soon", "ci": null, "readme": "packages/wesley-scaffold-multitenant/README.md", "notes": "Early scaffold, no CI yet" },
+    { "name": "@wesley/stack-supabase-nextjs", "status": "Too soon", "ci": null, "readme": "packages/wesley-stack-supabase-nextjs/README.md", "notes": "Early stack template, no CI yet" }
+  ]
+}
+
