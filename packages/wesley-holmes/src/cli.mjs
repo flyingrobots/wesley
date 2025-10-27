@@ -132,11 +132,27 @@ Requires:
         try {
           const { MergePlanner } = await import('./merge/Planner.mjs');
           const { MergeTreeStrategy } = await import('./merge/MergeTreeStrategy.mjs');
+          const { WorktreeStrategy } = await import('./merge/WorktreeStrategy.mjs');
           const planner = new MergePlanner({ repoRoot: process.cwd() });
           const plan = planner.plan({ baseRef });
-          const strategy = new MergeTreeStrategy({ repoRoot: process.cwd() });
-          const result = strategy.execute(plan);
+          let result = new MergeTreeStrategy({ repoRoot: process.cwd() }).execute(plan);
+          if (!result || result.status === 'error') {
+            result = new WorktreeStrategy({ repoRoot: process.cwd() }).execute(plan);
+          }
           data.projection = { ...result };
+          // MP-06 (partial): penalize readiness confidence if projection cannot be built
+          if (data.projection?.status && data.projection.status !== 'clean') {
+            const penalty = data.projection.status === 'conflicts' ? 30 : 50; // big hit on unknown/error
+            if (typeof data.confidence === 'number') {
+              data.confidence = Math.max(0, data.confidence - penalty);
+            }
+            data.projection.impact = { confidencePenalty: penalty };
+            data.patterns = Array.isArray(data.patterns) ? data.patterns : [];
+            const desc = data.projection.status === 'conflicts'
+              ? 'Merge conflicts detected in projection: readiness uncertain'
+              : 'Projection failed: inability to build projected bundle reduces readiness confidence';
+            data.patterns.push({ type: 'MERGE_PROJECTION_ISSUE', description: desc });
+          }
         } catch (e) {
           data.projection = {
             status: 'error',
@@ -177,11 +193,26 @@ Requires:
         try {
           const { MergePlanner } = await import('./merge/Planner.mjs');
           const { MergeTreeStrategy } = await import('./merge/MergeTreeStrategy.mjs');
+          const { WorktreeStrategy } = await import('./merge/WorktreeStrategy.mjs');
           const planner = new MergePlanner({ repoRoot: process.cwd() });
           const plan = planner.plan({ baseRef });
-          const strategy = new MergeTreeStrategy({ repoRoot: process.cwd() });
-          const result = strategy.execute(plan);
+          let result = new MergeTreeStrategy({ repoRoot: process.cwd() }).execute(plan);
+          if (!result || result.status === 'error') {
+            result = new WorktreeStrategy({ repoRoot: process.cwd() }).execute(plan);
+          }
           moriartyData.projection = { ...result };
+          if (moriartyData.projection?.status && moriartyData.projection.status !== 'clean') {
+            const penalty = moriartyData.projection.status === 'conflicts' ? 30 : 50;
+            if (typeof moriartyData.confidence === 'number') {
+              moriartyData.confidence = Math.max(0, moriartyData.confidence - penalty);
+            }
+            moriartyData.projection.impact = { confidencePenalty: penalty };
+            moriartyData.patterns = Array.isArray(moriartyData.patterns) ? moriartyData.patterns : [];
+            const desc = moriartyData.projection.status === 'conflicts'
+              ? 'Merge conflicts detected in projection: readiness uncertain'
+              : 'Projection failed: inability to build projected bundle reduces readiness confidence';
+            moriartyData.patterns.push({ type: 'MERGE_PROJECTION_ISSUE', description: desc });
+          }
         } catch (e) {
           moriartyData.projection = {
             status: 'error',
