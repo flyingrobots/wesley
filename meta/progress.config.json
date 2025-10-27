@@ -26,6 +26,8 @@
     { "name": "@wesley/holmes", "status": "Active", "ci": "pkg-holmes.yml", "readme": "packages/wesley-holmes/README.md", "notes": "Evidence scoring" },
     { "name": "@wesley/tasks", "status": "Active", "ci": "pkg-tasks.yml", "readme": "packages/wesley-tasks/README.md", "notes": "Planner utilities" },
     { "name": "@wesley/slaps", "status": "Active", "ci": "pkg-slaps.yml", "readme": "packages/wesley-slaps/README.md", "notes": "Scheduling/core utils" },
+    { "name": "@wesley/host-deno", "status": "Experimental", "ci": "pkg-host-deno.yml", "readme": "packages/wesley-host-deno/README.md", "notes": "Deno host runtime (demo)" },
+    { "name": "@wesley/host-bun", "status": "Experimental", "ci": "pkg-host-bun.yml", "readme": "packages/wesley-host-bun/README.md", "notes": "Bun host runtime (demo)" },
     { "name": "@wesley/scaffold-multitenant", "status": "Too soon", "ci": null, "readme": "packages/wesley-scaffold-multitenant/README.md", "notes": "Early scaffold, no CI yet" },
     { "name": "@wesley/stack-supabase-nextjs", "status": "Too soon", "ci": null, "readme": "packages/wesley-stack-supabase-nextjs/README.md", "notes": "Early stack template, no CI yet" }
   ]

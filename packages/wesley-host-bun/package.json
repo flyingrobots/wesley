@@ -1,0 +1,19 @@
+{
+  "name": "@wesley/host-bun",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Wesley Bun host runtime (pure ESM)",
+  "main": "./src/index.mjs",
+  "exports": {
+    ".": "./src/index.mjs"
+  },
+  "sideEffects": false,
+  "files": ["src/", "examples/"],
+  "keywords": ["bun", "runtime", "adapters", "wesley"],
+  "author": "Wesley Authors <oss@flyingrobots.dev>",
+  "license": "LicenseRef-MIND-UCAL-1.0",
+  "repository": { "type": "git", "url": "https://github.com/flyingrobots/wesley.git", "directory": "packages/wesley-host-bun" },
+  "bugs": { "url": "https://github.com/flyingrobots/wesley/issues" },
+  "homepage": "https://github.com/flyingrobots/wesley"
+}
+

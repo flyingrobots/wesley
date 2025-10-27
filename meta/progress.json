@@ -179,6 +179,34 @@
       "coverage": null
     },
     {
+      "name": "@wesley/host-deno",
+      "status": "Experimental",
+      "stage": "MVP",
+      "progress": 30,
+      "next": "Alpha",
+      "passRate": null,
+      "docs": {
+        "hasStatus": false,
+        "hasUsage": true,
+        "hasApi": true,
+        "hasCaveats": false
+      }
+    },
+    {
+      "name": "@wesley/host-bun",
+      "status": "Experimental",
+      "stage": "MVP",
+      "progress": 30,
+      "next": "Alpha",
+      "passRate": null,
+      "docs": {
+        "hasStatus": false,
+        "hasUsage": true,
+        "hasApi": true,
+        "hasCaveats": false
+      }
+    },
+    {
       "name": "@wesley/scaffold-multitenant",
       "status": "Too soon",
       "stage": "Prototype",

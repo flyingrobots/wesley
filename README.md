@@ -386,6 +386,8 @@ Progress: 4% → Alpha
 | `@wesley/holmes` | Active | MVP | 20% → Alpha | ![pkg-holmes.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-holmes.yml/badge.svg?branch=main) | Evidence scoring |
 | `@wesley/tasks` | Active | MVP | 0% → Alpha | ![pkg-tasks.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-tasks.yml/badge.svg?branch=main) | Planner utilities |
 | `@wesley/slaps` | Active | MVP | 0% → Alpha | ![pkg-slaps.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-slaps.yml/badge.svg?branch=main) | Scheduling/core utils |
+| `@wesley/host-deno` | Experimental | MVP | 30% → Alpha | ![pkg-host-deno.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-host-deno.yml/badge.svg?branch=main) | Deno host runtime (demo) |
+| `@wesley/host-bun` | Experimental | MVP | 30% → Alpha | ![pkg-host-bun.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-host-bun.yml/badge.svg?branch=main) | Bun host runtime (demo) |
 | `@wesley/scaffold-multitenant` | Too soon | Prototype | 25% → MVP | — | Early scaffold, no CI yet |
 | `@wesley/stack-supabase-nextjs` | Too soon | Prototype | 25% → MVP | — | Early stack template, no CI yet |
 <!-- END:PACKAGE_MATRIX -->
