@@ -1,0 +1,8 @@
+{
+  "root": { "kind": "Filter", "input": { "kind": "Table", "table": "organization", "alias": "t0" }, "predicate": { "kind": "Compare", "left": { "kind": "ColumnRef", "table": "t0", "column": "deleted_at" }, "op": "isNull" } },
+  "projection": { "items": [ { "alias": "id", "expr": { "kind": "ColumnRef", "table": "t0", "column": "id" } }, { "alias": "name", "expr": { "kind": "ColumnRef", "table": "t0", "column": "name" } } ] },
+  "orderBy": [ { "expr": { "kind": "ColumnRef", "table": "t0", "column": "name" }, "direction": "asc" } ],
+  "limit": 10,
+  "offset": 0
+}
+

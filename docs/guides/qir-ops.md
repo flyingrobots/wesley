@@ -121,6 +121,19 @@ node packages/wesley-host-node/bin/wesley.mjs generate \
 
 This produces both a `CREATE VIEW` and a `CREATE FUNCTION` for each operation, e.g.: `out/examples/ops/products_by_name.view.sql` and `out/examples/ops/products_by_name.fn.sql`.
 
+### Validating QIR plans (schema-backed)
+
+QIR is self-documented via a JSON Schema and can be validated using the CLI:
+
+- Validate a single QIR plan JSON:
+  - `wesley qir validate test/fixtures/qir/sample-flat.qir.json`
+
+- Validate an experimental IR envelope (Schema IR + QIR plans):
+  - `export WESLEY_EXPERIMENTAL_QIR_ENVELOPE=1`
+  - `wesley qir envelope-validate test/fixtures/qir/sample-envelope.json`
+
+These validators load schemas from the local `schemas/` folder and fail with structured errors when the shape drifts.
+
 ### Discovery Modes (planned)
 
 We are moving to a strict discovery model by default: when `--ops <dir>` is present, Wesley will recursively compile all `**/*.op.json` files (configurable with `--ops-glob`), fail if none are found unless `--ops-allow-empty` is provided, and sort files deterministically. A manifest mode (`--ops-manifest`) will be available for curated control (include/exclude lists). See the design note in `docs/drafts/2025-10-08-ops-discovery-modes.md`.
