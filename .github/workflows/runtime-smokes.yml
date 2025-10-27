@@ -12,20 +12,29 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+      - name: Install bats
+        run: sudo apt-get update && sudo apt-get install -y bats jq
       - uses: denoland/setup-deno@v1
         with:
           deno-version: v2.x
-      - name: Deno smoke
-        run: deno run --config deno.json -A scripts/deno_smoke.ts | tee deno.out && grep -q "^DENO_SMOKE_OK:" deno.out
+      - name: Deno host contracts (Bats)
+        run: |
+          mkdir -p test/hosts/bats-plugins
+          bash scripts/setup-bats-plugins.sh
+          HOST=deno bats test/hosts/host-contracts.bats
 
   bun-smoke:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+      - name: Install bats
+        run: sudo apt-get update && sudo apt-get install -y bats jq
       - uses: oven-sh/setup-bun@v1
         with:
           bun-version: latest
-      - name: Bun smoke
-        run: bun run scripts/bun_smoke.mjs | tee bun.out && grep -q "^BUN_SMOKE_OK:" bun.out
-
+      - name: Bun host contracts (Bats)
+        run: |
+          mkdir -p test/hosts/bats-plugins
+          bash scripts/setup-bats-plugins.sh
+          HOST=bun bats test/hosts/host-contracts.bats

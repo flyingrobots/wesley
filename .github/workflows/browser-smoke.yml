@@ -28,6 +28,11 @@ jobs:
       - name: Preflight
         run: pnpm run -s preflight
 
-      - name: Run browser smoke with Playwright
-        run: node scripts/browser_smoke_playwright.mjs
+      - name: Install bats
+        run: sudo apt-get update && sudo apt-get install -y bats jq
 
+      - name: Run browser host contracts (Bats → Playwright)
+        run: |
+          mkdir -p test/hosts/bats-plugins
+          bash scripts/setup-bats-plugins.sh
+          HOST=browser bats test/hosts/host-contracts.bats
