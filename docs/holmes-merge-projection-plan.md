@@ -32,6 +32,10 @@ Phases (bite-sized)
 
 See `scripts/gh-issues/issue_plan.json` for the granular “1 issue = 1 deliverable” breakdown, each ≤ 3 hours.
 
+Templates & Spec
+- Ready‑to‑use policy templates: `docs/templates/holmes-policy/` (GitHub, GitLab, Bitbucket, Azure DevOps, Gitea, trunk flows). Copy the closest template to `.wesley/holmes-policy.json`.
+- Full policy specification: `docs/holmes-policy-spec.md`.
+
 How to create issues (org-level project)
 - Prereqs: gh CLI authed (gh auth status) with repo + project access.
 - Set env and run:
