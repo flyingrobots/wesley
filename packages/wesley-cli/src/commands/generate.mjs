@@ -317,10 +317,20 @@ export class GeneratePipelineCommand extends WesleyCommand {
 
   async compileOpsIfRequested(context) {
     const { options, logger } = context;
-    const opsDir = options.ops;
-    if (!opsDir) return;
+    // Discovery: prefer explicit --ops or --ops-manifest, otherwise auto-detect conventional paths
+    let opsDir = options.ops || null;
+    let manifestPath = options.opsManifest || null;
     try {
       const fs = this.ctx.fs;
+      if (!manifestPath) {
+        for (const c of ['ops/ops.manifest.json', 'ops.manifest.json', 'ops-manifest.json']) {
+          if (await fs.exists(c)) { manifestPath = c; break; }
+        }
+      }
+      if (!opsDir && !manifestPath) {
+        if (await fs.exists('ops')) opsDir = 'ops';
+      }
+      if (!opsDir && !manifestPath) return;
       // Build PK map from IR so ops emission can derive deterministic tie-breakers from real keys
       let ir = context.ir;
       try {
@@ -345,7 +355,37 @@ export class GeneratePipelineCommand extends WesleyCommand {
         }
         return null; // fallback handled in lowerToSQL
       };
-      const files = await findOpFiles(fs, opsDir, logger);
+      let files = [];
+      if (manifestPath) {
+        const manifest = JSON.parse(await fs.read(manifestPath));
+        // Validate manifest
+        try {
+          const { default: Ajv } = await import('ajv');
+          const { default: addFormats } = await import('ajv-formats');
+          const ajv = new Ajv({ strict: false, allErrors: true });
+          addFormats(ajv);
+          const root = process.env.WESLEY_REPO_ROOT || process.cwd();
+          const schemaJson = await fs.read(await fs.join(root, 'schemas', 'ops-manifest.schema.json'));
+          const validate = ajv.compile(JSON.parse(schemaJson));
+          const ok = validate(manifest);
+          if (!ok) {
+            const err = new OpsError('OPS_MANIFEST_INVALID', 'Ops manifest failed schema validation', { errors: validate.errors, file: manifestPath });
+            logger.error(err.meta, err.message);
+            throw err;
+          }
+        } catch (e) {
+          if (!e.code) e.code = 'OPS_MANIFEST_INVALID';
+          throw e;
+        }
+        files = await resolveManifestEntries(fs, manifest.include || [], manifest.exclude || [], logger);
+        if (files.length === 0 && !(JSON.parse(await fs.read(manifestPath)).allowEmpty)) {
+          const err = new OpsError('OPS_EMPTY_SET', 'Ops manifest produced no files and allowEmpty=false', { file: manifestPath });
+          logger.error(err.meta, err.message);
+          throw err;
+        }
+      } else {
+        files = await findOpFiles(fs, opsDir, logger);
+      }
       if (files.length === 0) {
         return;
       }
@@ -476,6 +516,28 @@ async function findOpFiles(fs, opsDir, logger) {
     logger.info({ opsDir }, 'Experimental --ops: no *.op.json files found; skipping');
   }
   return acc;
+}
+
+async function resolveManifestEntries(fs, includes = [], excludes = [], logger) {
+  const acc = new Set();
+  const addDir = async (dir) => {
+    const entries = await fs.readDir(dir);
+    for (const e of entries) {
+      if (e.isDirectory) await addDir(e.path);
+      else if (e.isFile && e.name?.endsWith?.('.op.json')) acc.add(e.path);
+    }
+  };
+  for (const entry of includes) {
+    if (!entry) continue;
+    const path = entry;
+    const isDir = await fs.readDir?.(path).then(()=>true).catch(()=>false);
+    if (isDir) await addDir(path);
+    else if (await fs.exists(path)) acc.add(path);
+  }
+  const excluded = (p) => excludes.some(ex => p === ex || p.endsWith(ex));
+  const list = Array.from(acc).filter(p => !excluded(p)).sort();
+  if (list.length === 0) logger.info({ includes, excludes }, 'ops manifest resolved no files');
+  return list;
 }
 
 async function compileOpFile(fs, path, collisions, logger) {

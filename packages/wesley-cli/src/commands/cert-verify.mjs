@@ -46,11 +46,10 @@ export class CertVerifyCommand extends WesleyCommand {
       const validate = ajv.compile(JSON.parse(shipmeSchema));
       const ok = validate(json);
       if (!ok) {
-        // Keep verification usable during schema transition: warn, don't fail
-        if (!options.json) {
-          const warn = this.makeLogger({}, { cmd: 'cert-verify' });
-          warn.warn({ errors: validate.errors }, 'Certificate JSON failed schema validation (warning only)');
-        }
+        const e = new Error('Certificate JSON failed schema validation');
+        e.code = 'VALIDATION_FAILED';
+        e.meta = validate.errors;
+        throw e;
       }
     } catch (e) {
       e.code = e.code || 'VALIDATION_FAILED';

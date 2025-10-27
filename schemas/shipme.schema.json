@@ -10,7 +10,7 @@
     "environment": { "type": ["string", "null"] },
     "scores": { "type": ["object", "null"] },
     "realm": {
-      "anyOf": [ { "$ref": "realm.schema.json#" }, { "type": "null" } ]
+      "anyOf": [ { "$ref": "https://wesley.dev/schemas/realm.schema.json#" }, { "type": "null" } ]
     },
     "signatures": {
       "type": "array",

@@ -1,6 +1,6 @@
 # Query Operations (QIR) — Lowering and Emission (MVP)
 
-Status: Experimental (behind `--ops`). Public CLI behavior is unchanged.
+Status: Enabled. Ops discovery runs automatically when an ops manifest or an `ops/` directory is present.
 
 This guide documents the MVP of the Query IR (QIR) pipeline that compiles operation plans into deterministic SQL and wraps them for execution.
 
@@ -88,9 +88,10 @@ pnpm -C packages/wesley-core test:unit
 pnpm -C packages/wesley-core test:snapshots
 ```
 
-## Using --ops (Experimental)
+## Using Ops (Always-On Discovery)
 
-The CLI can compile simple operation descriptions into SQL when `--ops` points to a directory of `*.op.json` files. The MVP DSL supports a root table, projected columns, basic filters, ordering, and limit/offset.
+You don’t need a flag to compile ops during generate. If the project contains either an ops manifest (preferred) or a conventional `ops/` directory, Wesley compiles all `*.op.json` plans.
+The DSL supports a root table, projected columns, basic filters, ordering, and limit/offset.
 
 Example file: `test/fixtures/examples/ops/products_by_name.op.json`
 
@@ -113,13 +114,33 @@ Generate and emit ops SQL to `out/ops/`:
 ```bash
 node packages/wesley-host-node/bin/wesley.mjs generate \
   --schema test/fixtures/examples/ecommerce.graphql \
-  --ops test/fixtures/examples/ops \
   --emit-bundle \
   --out-dir out/examples \
   --allow-dirty
 ```
 
 This produces both a `CREATE VIEW` and a `CREATE FUNCTION` for each operation, e.g.: `out/examples/ops/products_by_name.view.sql` and `out/examples/ops/products_by_name.fn.sql`.
+
+### Discovery and Manifest
+
+By default, discovery is strict and deterministic:
+- If an ops manifest is present, Wesley validates it (schemas/ops-manifest.schema.json) and compiles the listed files (and directories) in sorted order. Use `include` for files/dirs and `exclude` for pruning.
+- If no manifest is present but an `ops/` directory exists, Wesley recursively discovers all `**/*.op.json` files, sorts them deterministically, and compiles them.
+- If neither is present, ops are skipped with a helpful log line.
+
+Example `ops/ops.manifest.json`:
+
+```json
+{
+  "include": [
+    "ops/queries",
+    "ops/special/report_x.op.json"
+  ],
+  "exclude": [
+    "ops/queries/experimental/"
+  ]
+}
+```
 
 ### Validating QIR plans (schema-backed)
 
@@ -130,6 +151,16 @@ QIR is self-documented via a JSON Schema and can be validated using the CLI:
 
 - Validate an IR envelope (Schema IR + QIR plans):
   - `wesley qir envelope-validate test/fixtures/qir/sample-envelope.json`
+
+## Emission rules (recap)
+
+- Strict identifier policy in ops emission: deterministic quoting with validation.
+- ORDER BY tie‑breakers use real primary keys from Schema IR (via pkResolver).
+- IN/LIKE/ILIKE/CONTAINS require explicit param types in the op plan builder.
+- For each op, the CLI emits:
+  - `<name>.fn.sql` — function wrapper (SETOF jsonb)
+  - `<name>.view.sql` — view wrapper when the op is paramless
+- A transactional `ops_deploy.sql` bundles the statements (BEGIN; CREATE SCHEMA IF NOT EXISTS; all views/functions; COMMIT).
 
 These validators load schemas from the local `schemas/` folder and fail with structured errors when the shape drifts.
 
