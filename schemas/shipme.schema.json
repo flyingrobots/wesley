@@ -10,7 +10,7 @@
     "environment": { "type": ["string", "null"] },
     "scores": { "type": ["object", "null"] },
     "realm": {
-      "$ref": "realm.schema.json#"
+      "anyOf": [ { "$ref": "realm.schema.json#" }, { "type": "null" } ]
     },
     "signatures": {
       "type": "array",
