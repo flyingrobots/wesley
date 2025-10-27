@@ -53,6 +53,8 @@ function sanitizeGraphQL(sdl, { maxBytes = 5 * 1024 * 1024 } = {}) {
   return sdl.replace(/^\uFEFF/, '').replace(/\u0000/g, '');
 }
 
+import { BrowserParserPort } from './BrowserParserPort.mjs';
+
 export async function createBrowserRuntime() {
   const logger = createConsoleLogger();
   const fs = new MemoryFileSystem();
@@ -63,24 +65,7 @@ export async function createBrowserRuntime() {
     hrtime: () => (globalThis.performance?.now?.() ?? Date.now())
   };
 
-  // Tiny SDL detector (no graphql-js): finds `type Name @wes_table { ... }`
-  const parsers = {
-    graphql: {
-      parse: (sdl) => {
-        const cleaned = sanitizeGraphQL(sdl);
-        const tables = [];
-        const re = /\btype\s+([A-Za-z_][A-Za-z0-9_]*)\s*([^\{]*)\{/g;
-        let m;
-        while ((m = re.exec(cleaned)) !== null) {
-          const name = m[1];
-          const head = m[2] || '';
-          const has = /@wes_table\b|@wesley_table\b|\b@table\b/.test(head);
-          if (has) tables.push({ name });
-        }
-        return { tables, toJSON() { return { tables }; } };
-      }
-    }
-  };
+  const parsers = { graphql: new BrowserParserPort() };
 
   return {
     logger,
