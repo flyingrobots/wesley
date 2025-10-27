@@ -40,9 +40,19 @@ async function main() {
     throw e;
   }
 
-  // Ensure playwright installed and run spec, capture JSON
+  // Ensure playwright installed (skip if cache present) and run spec, capture JSON
   try {
-    await sh('pnpm', ['dlx', 'playwright@latest', 'install', 'chromium']);
+    const browsersPath = process.env.PLAYWRIGHT_BROWSERS_PATH || `${process.env.HOME}/.cache/ms-playwright`;
+    const { readdirSync, existsSync } = await import('node:fs');
+    let haveChromium = false;
+    try {
+      if (existsSync(browsersPath)) {
+        haveChromium = readdirSync(browsersPath).some((n) => n.startsWith('chromium'));
+      }
+    } catch {}
+    if (!haveChromium) {
+      await sh('pnpm', ['dlx', 'playwright@latest', 'install', 'chromium']);
+    }
     const outDir = mkdtempSync(join(tmpdir(), 'hc-'));
     const outFile = join(outDir, 'browser.json');
     await sh('pnpm', ['dlx', 'playwright@latest', 'test', 'test/browser/contracts/host-contracts.spec.mjs', '--reporter=line'], { env: { ...process.env, OUT_JSON: outFile } });
@@ -54,4 +64,3 @@ async function main() {
 }
 
 main().catch((e) => { console.error(e?.stack || e); process.exit(1); });
-
