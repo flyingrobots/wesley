@@ -22,6 +22,8 @@ export class GeneratePipelineCommand extends WesleyCommand {
       .option('--stdin', 'Read schema from stdin (alias for --schema -)')
       .option('--ops <dir>', 'Experimental: directory containing *.op.json files to compile (omit to disable)')
       .option('--ops-schema <name>', 'Schema name for emitted ops SQL (default wes_ops)', 'wes_ops')
+      .option('--ops-security <mode>', 'Security for emitted functions: invoker|definer', 'invoker')
+      .option('--ops-search-path <list>', 'Comma-separated search_path for ops functions (e.g., "pg_catalog, wes_ops")')
       .option('--ops-allow-errors', 'Continue compiling remaining ops even if some fail validation (not allowed in CI without override)')
       .option('--emit-bundle', 'Emit .wesley/ evidence bundle')
       .option('--supabase', 'Enable Supabase features (RLS tests)')
@@ -443,7 +445,11 @@ export class GeneratePipelineCommand extends WesleyCommand {
       if (compiledOps.length) {
         compiledOps.sort((a, b) => a.order - b.order);
         const orderedOps = compiledOps.map(({ order, ...rest }) => rest);
-        const outFiles = emitOpArtifacts(orderedOps, targetSchema, logger, pkResolver);
+        const security = String(options.opsSecurity || 'invoker');
+        const setSearchPath = options.opsSearchPath
+          ? String(options.opsSearchPath).split(',').map(s => s.trim()).filter(Boolean)
+          : null;
+        const outFiles = emitOpArtifacts(orderedOps, targetSchema, logger, pkResolver, { security, setSearchPath, allowErrors: !!options.opsAllowErrors });
         const materialized = materializeArtifacts(outFiles, 'ops', outputPaths);
         await this.ctx.writer.writeFiles(materialized);
         const opsOutputDir = outputPaths.ops;
@@ -584,29 +590,75 @@ async function compileOpFile(fs, path, collisions, logger) {
   return { baseName, plan, isParamless: paramCount === 0, path };
 }
 
-function emitOpArtifacts(compiledOps, targetSchema, logger, pkResolver) {
+function emitOpArtifacts(compiledOps, targetSchema, logger, pkResolver, { security = 'invoker', setSearchPath = null, allowErrors = false } = {}) {
   const outFiles = [];
   const total = compiledOps.length;
   let ordinal = 0;
   const deployChunks = [`BEGIN;`, `CREATE SCHEMA IF NOT EXISTS "${targetSchema}";`];
+  const registry = { schema: targetSchema, ops: [] };
   for (const entry of compiledOps) {
     ordinal += 1;
     const { baseName, plan, isParamless, path } = entry;
-    const fnSql = emitFunction(baseName, plan, { schema: targetSchema, identPolicy: 'strict', pkResolver });
-    if (isParamless) {
-      const viewSql = emitView(baseName, plan, { schema: targetSchema, identPolicy: 'strict', pkResolver });
-      outFiles.push({ name: `${baseName}.view.sql`, content: `${viewSql}\n` });
-      deployChunks.push(viewSql);
+    let emitted = false;
+    try {
+      const fnSql = emitFunction(baseName, plan, { schema: targetSchema, identPolicy: 'strict', pkResolver, security, setSearchPath });
+      if (isParamless) {
+        const viewSql = emitView(baseName, plan, { schema: targetSchema, identPolicy: 'strict', pkResolver });
+        outFiles.push({ name: `${baseName}.view.sql`, content: `${viewSql}\n` });
+        deployChunks.push(viewSql);
+      }
+      outFiles.push({ name: `${baseName}.fn.sql`, content: `${fnSql}\n` });
+      deployChunks.push(fnSql);
+      emitted = true;
+    } catch (e) {
+      if (!allowErrors) throw e;
+      logger.warn({ op: baseName, file: path, error: e?.message }, 'Skipping op during emission due to error');
     }
-    outFiles.push({ name: `${baseName}.fn.sql`, content: `${fnSql}\n` });
-    deployChunks.push(fnSql);
     logger.info(
       { ordinal, total, sanitized: baseName, file: path, schema: targetSchema, code: 'OPS_DISCOVERY' },
       'ops: compiled operation'
     );
+
+    // Build registry entry (deterministic)
+    try {
+      const params = (collectParams(plan)?.ordered || []).map(p => ({ name: String(p.name), type: p.typeHint || 'text' }));
+      const projItems = Array.isArray(plan?.projection?.items) ? plan.projection.items.map(i => String(i?.alias || '')).filter(Boolean) : [];
+      const opId = derivePrefixedIdentifier(baseName);
+      const entryJson = {
+        name: baseName,
+        sql: {
+          schema: targetSchema,
+          function: opId,
+          view: isParamless ? opId : null
+        },
+        params,
+        projection: {
+          star: projItems.length === 0,
+          items: projItems
+        },
+        files: {
+          function: `${baseName}.fn.sql`,
+          view: isParamless ? `${baseName}.view.sql` : null
+        },
+        sourceFile: path
+      };
+      if (emitted) registry.ops.push(entryJson);
+    } catch (e) {
+      logger.warn({ file: path, error: e?.message }, 'Failed to record registry entry');
+    }
   }
   deployChunks.push('COMMIT;');
   outFiles.push({ name: `ops_deploy.sql`, content: deployChunks.join('\n\n') + '\n' });
+  // Emit registry.json next to SQL outputs
+  try {
+    const registryStr = JSON.stringify({
+      schema: registry.schema,
+      ops: registry.ops.sort((a, b) => a.name.localeCompare(b.name))
+    }, null, 2) + '\n';
+    outFiles.push({ name: `registry.json`, content: registryStr });
+  } catch (e) {
+    logger.warn({ error: e?.message }, 'Failed to emit ops registry');
+  }
   return outFiles;
 }
 

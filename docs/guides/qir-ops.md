@@ -15,7 +15,7 @@ This guide documents the MVP of the Query IR (QIR) pipeline that compiles operat
   - Deterministic param ordering using `collectParams()`.
 - Emission (`emit.mjs`):
   - View: `CREATE OR REPLACE VIEW wes_ops.op_<name> AS <select>`.
-  - SQL Function (Invoker): `CREATE OR REPLACE FUNCTION wes_ops.op_<name>(params...) RETURNS SETOF jsonb LANGUAGE sql STABLE AS $$ SELECT to_jsonb(q.*) FROM (<select>) q $$;`
+  - SQL Function: `CREATE OR REPLACE FUNCTION wes_ops.op_<name>(params...) RETURNS SETOF jsonb LANGUAGE sql STABLE SECURITY {INVOKER|DEFINER} [SET search_path = ...] AS $$ SELECT to_jsonb(q.*) FROM (<select>) q $$;`
   - Deterministic naming (`op_<sanitized-name>`), params from `collectParams()` (`p_<name> <type>`), schema `wes_ops`.
 
 ## Constraints and behavior
@@ -53,11 +53,13 @@ Emit a function with an IN parameter:
 import { emitFunction } from '@wesley/core/domain/qir';
 
 // Assume plan has WHERE t0.id IN $ids::text[]
-const sql = emitFunction('Org List', plan);
+const sql = emitFunction('Org List', plan, { security: 'invoker', setSearchPath: ['pg_catalog','wes_ops'] });
 // CREATE OR REPLACE FUNCTION wes_ops.op_org_list(p_ids text[])
 // RETURNS SETOF jsonb
 // LANGUAGE sql
 // STABLE
+// SECURITY INVOKER
+// SET search_path = "pg_catalog", "wes_ops"
 // AS $$
 // SELECT to_jsonb(q.*) FROM (
 //   SELECT ...
@@ -114,12 +116,36 @@ Generate and emit ops SQL to `out/ops/`:
 ```bash
 node packages/wesley-host-node/bin/wesley.mjs generate \
   --schema test/fixtures/examples/ecommerce.graphql \
+  --ops-security invoker \
+  --ops-search-path "pg_catalog, wes_ops" \
   --emit-bundle \
   --out-dir out/examples \
   --allow-dirty
 ```
 
 This produces both a `CREATE VIEW` and a `CREATE FUNCTION` for each operation, e.g.: `out/examples/ops/products_by_name.view.sql` and `out/examples/ops/products_by_name.fn.sql`.
+
+In addition, Wesley emits a machine-readable operation registry:
+
+- `out/examples/ops/registry.json` — lists each op’s sanitized name, target schema, function/view identifiers, parameter order and types, projected field aliases (when specified), and the source op file path. Adapters can use this to wire RPC endpoints without parsing SQL.
+
+Example (abridged):
+
+```json
+{
+  "schema": "wes_ops",
+  "ops": [
+    {
+      "name": "products_by_name",
+      "sql": { "schema": "wes_ops", "function": "op_products_by_name", "view": "op_products_by_name" },
+      "params": [ { "name": "q", "type": "text" } ],
+      "projection": { "star": false, "items": ["id","name","slug"] },
+      "files": { "function": "products_by_name.fn.sql", "view": "products_by_name.view.sql" },
+      "sourceFile": "ops/queries/products_by_name.op.json"
+    }
+  ]
+}
+```
 
 ### Discovery and Manifest
 
@@ -160,6 +186,7 @@ QIR is self-documented via a JSON Schema and can be validated using the CLI:
 - For each op, the CLI emits:
   - `<name>.fn.sql` — function wrapper (SETOF jsonb)
   - `<name>.view.sql` — view wrapper when the op is paramless
+  - `registry.json` — machine‑readable index of compiled ops
 - A transactional `ops_deploy.sql` bundles the statements (BEGIN; CREATE SCHEMA IF NOT EXISTS; all views/functions; COMMIT).
 
 These validators load schemas from the local `schemas/` folder and fail with structured errors when the shape drifts.
@@ -176,3 +203,12 @@ We are moving to a strict discovery model by default: when `--ops <dir>` is pres
 - RLS defaults phase 2 and pgTAP for policies generated from annotations.
 
 See also: docs/drafts/2025-10-03-rfc-query-ops-to-sql-qir.md
+
+## Security defaults and search_path
+
+By default, emitted functions use `SECURITY INVOKER` and do not modify `search_path`. For hardened deployments you can:
+
+- Switch to definer: `--ops-security definer` when the op must bypass caller RLS and you’ve audited the body.
+- Pin lookup path: `--ops-search-path "pg_catalog, <your_app_schema>"` to avoid unexpected name resolution via the session’s `search_path`.
+
+You can also call `emitFunction(name, plan, { security, setSearchPath })` directly when embedding in custom tooling.
