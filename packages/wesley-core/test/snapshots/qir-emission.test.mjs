@@ -32,8 +32,8 @@ test('emitFunction: generates deterministic function with params and jsonb rows'
   assert.ok(sql.includes('p_ids text[]'));
   assert.ok(sql.includes('RETURNS SETOF jsonb'));
   assert.ok(sql.includes('SELECT to_jsonb(q.*) FROM ('));
-  assert.ok(sql.includes('FROM organization t0'));
-  assert.ok(/ORDER BY\s+t0\.name\s+ASC\s*,\s*t0\.id\s+ASC/i.test(sql));
+  assert.ok(sql.includes('FROM "organization" "t0"'));
+  assert.ok(/ORDER BY\s+"t0"\."name"\s+ASC\s*,\s*"t0"\."id"\s+ASC/i.test(sql));
 });
 
 test('emitView: wraps lowered SQL in CREATE VIEW', () => {
@@ -46,7 +46,7 @@ test('emitView: wraps lowered SQL in CREATE VIEW', () => {
 
   const sql = emitView('Org View!', plan);
   assert.ok(sql.startsWith('CREATE OR REPLACE VIEW "wes_ops"."op_org_view" AS'));
-  assert.ok(sql.includes('SELECT t0.id AS id, t0.name AS name'));
+  assert.ok(sql.includes('SELECT "t0"."id" AS "id", "t0"."name" AS "name"'));
 });
 
 test('emitFunction: preserves jsonb_agg COALESCE inside wrapper', () => {
@@ -55,5 +55,16 @@ test('emitFunction: preserves jsonb_agg COALESCE inside wrapper', () => {
   const proj = new Projection([ new ProjectionItem('items', { kind: 'JsonAgg', value }) ]);
   const plan = new QueryPlan(root, proj, {});
   const sql = emitFunction('agg', plan);
-  assert.ok(sql.includes("COALESCE(jsonb_agg(jsonb_build_object('id', t0.id)), '[]'::jsonb)"));
+  assert.ok(sql.includes("COALESCE(jsonb_agg(jsonb_build_object('id', \"t0\".\"id\")), '[]'::jsonb)"));
+});
+
+test('emitFunction: supports SECURITY and SET search_path', () => {
+  const root = new TableNode('organization', 't0');
+  const proj = new Projection([
+    new ProjectionItem('id', new ColumnRef('t0', 'id')),
+  ]);
+  const plan = new QueryPlan(root, proj, {});
+  const sql = emitFunction('secure', plan, { security: 'definer', setSearchPath: ['pg_catalog', 'wes_ops'] });
+  assert.ok(/SECURITY DEFINER/.test(sql));
+  assert.ok(/SET search_path =\s+"pg_catalog",\s+"wes_ops"/i.test(sql));
 });

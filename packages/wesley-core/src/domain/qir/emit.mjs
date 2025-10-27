@@ -20,23 +20,39 @@ const RESERVED = new Set([
   'select','insert','update','delete','from','where','group','order','by','limit','offset','join','left','right','on','and','or','not','null','true','false','table','view','function','schema','user'
 ]);
 
-export function emitView(opName, plan, { schema = DEFAULT_SCHEMA } = {}) {
+export function emitView(opName, plan, { schema = DEFAULT_SCHEMA, identPolicy = 'strict', pkResolver = null } = {}) {
   const name = qualifiedOpName(schema, opName);
-  const selectSql = lowerToSQL(plan);
+  const selectSql = lowerToSQL(plan, null, { identPolicy, pkResolver });
   return `CREATE OR REPLACE VIEW ${name} AS\n${selectSql};`;
 }
 
-export function emitFunction(opName, plan, { schema = DEFAULT_SCHEMA } = {}) {
+export function emitFunction(opName, plan, {
+  schema = DEFAULT_SCHEMA,
+  identPolicy = 'strict',
+  pkResolver = null,
+  security = 'invoker',
+  setSearchPath = null,
+} = {}) {
   const name = qualifiedOpName(schema, opName);
   const { ordered } = collectParams(plan);
   const params = uniqueParamNames(ordered).map(({ display, type }) => `${display} ${type || 'text'}`).join(', ');
-  const selectSql = lowerToSQL(plan);
+  const selectSql = lowerToSQL(plan, null, { identPolicy, pkResolver });
   const body = `SELECT to_jsonb(q.*) FROM (\n${selectSql}\n) AS q`;
+  const attrs = [];
+  // Language and volatility first
+  attrs.push('LANGUAGE sql');
+  attrs.push('STABLE');
+  // SECURITY { INVOKER | DEFINER }
+  const sec = String(security || 'invoker').toLowerCase() === 'definer' ? 'SECURITY DEFINER' : 'SECURITY INVOKER';
+  attrs.push(sec);
+  // Optional: SET search_path = <list>
+  const sp = renderSearchPath(setSearchPath);
+  if (sp) attrs.push(`SET search_path = ${sp}`);
+
   return [
     `CREATE OR REPLACE FUNCTION ${name}(${params})`,
     `RETURNS SETOF jsonb`,
-    `LANGUAGE sql`,
-    `STABLE`,
+    ...attrs,
     `AS $$`,
     body,
     `$$;`
@@ -109,4 +125,13 @@ function uniqueParamNames(ordered) {
     out.push({ display, type: p.typeHint || 'text' });
   }
   return out;
+}
+
+function renderSearchPath(sp) {
+  if (!sp) return '';
+  let parts = Array.isArray(sp) ? sp : String(sp).split(',');
+  parts = parts.map((p) => String(p).trim()).filter(Boolean);
+  if (parts.length === 0) return '';
+  // Quote identifiers deterministically
+  return parts.map((p) => sanitizeIdent(p)).join(', ');
 }

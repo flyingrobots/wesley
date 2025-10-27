@@ -1,6 +1,6 @@
 # Query Operations (QIR) — Lowering and Emission (MVP)
 
-Status: Experimental (behind `--ops`). Public CLI behavior is unchanged.
+Status: Enabled. Ops discovery runs automatically when an ops manifest or an `ops/` directory is present.
 
 This guide documents the MVP of the Query IR (QIR) pipeline that compiles operation plans into deterministic SQL and wraps them for execution.
 
@@ -15,7 +15,7 @@ This guide documents the MVP of the Query IR (QIR) pipeline that compiles operat
   - Deterministic param ordering using `collectParams()`.
 - Emission (`emit.mjs`):
   - View: `CREATE OR REPLACE VIEW wes_ops.op_<name> AS <select>`.
-  - SQL Function (Invoker): `CREATE OR REPLACE FUNCTION wes_ops.op_<name>(params...) RETURNS SETOF jsonb LANGUAGE sql STABLE AS $$ SELECT to_jsonb(q.*) FROM (<select>) q $$;`
+  - SQL Function: `CREATE OR REPLACE FUNCTION wes_ops.op_<name>(params...) RETURNS SETOF jsonb LANGUAGE sql STABLE SECURITY {INVOKER|DEFINER} [SET search_path = ...] AS $$ SELECT to_jsonb(q.*) FROM (<select>) q $$;`
   - Deterministic naming (`op_<sanitized-name>`), params from `collectParams()` (`p_<name> <type>`), schema `wes_ops`.
 
 ## Constraints and behavior
@@ -53,11 +53,13 @@ Emit a function with an IN parameter:
 import { emitFunction } from '@wesley/core/domain/qir';
 
 // Assume plan has WHERE t0.id IN $ids::text[]
-const sql = emitFunction('Org List', plan);
+const sql = emitFunction('Org List', plan, { security: 'invoker', setSearchPath: ['pg_catalog','wes_ops'] });
 // CREATE OR REPLACE FUNCTION wes_ops.op_org_list(p_ids text[])
 // RETURNS SETOF jsonb
 // LANGUAGE sql
 // STABLE
+// SECURITY INVOKER
+// SET search_path = "pg_catalog", "wes_ops"
 // AS $$
 // SELECT to_jsonb(q.*) FROM (
 //   SELECT ...
@@ -88,9 +90,10 @@ pnpm -C packages/wesley-core test:unit
 pnpm -C packages/wesley-core test:snapshots
 ```
 
-## Using --ops (Experimental)
+## Using Ops (Always-On Discovery)
 
-The CLI can compile simple operation descriptions into SQL when `--ops` points to a directory of `*.op.json` files. The MVP DSL supports a root table, projected columns, basic filters, ordering, and limit/offset.
+You don’t need a flag to compile ops during generate. If the project contains either an ops manifest (preferred) or a conventional `ops/` directory, Wesley compiles all `*.op.json` plans.
+The DSL supports a root table, projected columns, basic filters, ordering, and limit/offset.
 
 Example file: `test/fixtures/examples/ops/products_by_name.op.json`
 
@@ -113,13 +116,100 @@ Generate and emit ops SQL to `out/ops/`:
 ```bash
 node packages/wesley-host-node/bin/wesley.mjs generate \
   --schema test/fixtures/examples/ecommerce.graphql \
-  --ops test/fixtures/examples/ops \
+  --ops-security invoker \
+  --ops-search-path "pg_catalog, wes_ops" \
   --emit-bundle \
   --out-dir out/examples \
   --allow-dirty
 ```
 
 This produces both a `CREATE VIEW` and a `CREATE FUNCTION` for each operation, e.g.: `out/examples/ops/products_by_name.view.sql` and `out/examples/ops/products_by_name.fn.sql`.
+
+In addition, Wesley emits a machine-readable operation registry:
+
+- `out/examples/ops/registry.json` — versioned (version: "1.0.0") index listing each op’s sanitized name, target schema, function/view identifiers, parameter order and types, projected field aliases (when specified), and the source op file path. Adapters can use this to wire RPC endpoints without parsing SQL.
+
+Example (abridged):
+
+```json
+{
+  "schema": "wes_ops",
+  "ops": [
+    {
+      "name": "products_by_name",
+      "sql": { "schema": "wes_ops", "function": "op_products_by_name", "view": "op_products_by_name" },
+      "params": [ { "name": "q", "type": "text" } ],
+      "projection": { "star": false, "items": ["id","name","slug"] },
+      "files": { "function": "products_by_name.fn.sql", "view": "products_by_name.view.sql" },
+      "sourceFile": "ops/queries/products_by_name.op.json"
+    }
+  ]
+}
+```
+
+### Discovery and Manifest
+
+By default, discovery is strict and deterministic:
+- If an ops manifest is present, Wesley validates it (schemas/ops-manifest.schema.json) and compiles the listed files (and directories) in sorted order. Use `include` for files/dirs and `exclude` for pruning.
+- If no manifest is present but an `ops/` directory exists, Wesley recursively discovers all `**/*.op.json` files, sorts them deterministically, and compiles them.
+- If neither is present, ops are skipped with a helpful log line.
+
+Example `ops/ops.manifest.json`:
+
+```json
+{
+  "include": [
+    "ops/queries",
+    "ops/special/report_x.op.json"
+  ],
+  "exclude": [
+    "ops/queries/experimental/"
+  ]
+}
+```
+
+### Validating QIR plans (schema-backed)
+
+QIR is self-documented via a JSON Schema and can be validated using the CLI:
+
+- Validate a single QIR plan JSON:
+  - `wesley qir validate test/fixtures/qir/sample-flat.qir.json`
+
+- Validate an IR envelope (Schema IR + QIR plans):
+  - `wesley qir envelope-validate test/fixtures/qir/sample-envelope.json`
+
+## Emission rules (recap)
+
+- Strict identifier policy in ops emission: deterministic quoting with validation.
+- ORDER BY tie‑breakers use real primary keys from Schema IR (via pkResolver).
+- IN/LIKE/ILIKE/CONTAINS require explicit param types in the op plan builder.
+- For each op, the CLI emits:
+  - `<name>.fn.sql` — function wrapper (SETOF jsonb)
+  - `<name>.view.sql` — view wrapper when the op is paramless
+  - `registry.json` — machine‑readable index of compiled ops
+- A transactional `ops_deploy.sql` bundles the statements (BEGIN; CREATE SCHEMA IF NOT EXISTS; all views/functions; COMMIT).
+
+### Optional: EXPLAIN JSON snapshots
+
+Pass `--ops-explain mock` to emit a lightweight EXPLAIN‑shaped JSON file alongside ops:
+
+```bash
+node packages/wesley-host-node/bin/wesley.mjs generate \
+  --schema test/fixtures/examples/ecommerce.graphql \
+  --ops test/fixtures/examples/ops \
+  --ops-explain mock \
+  --ops-allow-errors \
+  --allow-dirty
+```
+
+This produces `out/.../ops/explain/<name>.explain.json` with a stub shape:
+
+```json
+{ "Plan": { "Node Type": "Result", "Plans": [] }, "Mock": true, "Version": 1 }
+```
+It’s intentionally DB‑free; swap to a real EXPLAIN strategy in a future phase.
+
+These validators load schemas from the local `schemas/` folder and fail with structured errors when the shape drifts.
 
 ### Discovery Modes (planned)
 
@@ -133,3 +223,16 @@ We are moving to a strict discovery model by default: when `--ops <dir>` is pres
 - RLS defaults phase 2 and pgTAP for policies generated from annotations.
 
 See also: docs/drafts/2025-10-03-rfc-query-ops-to-sql-qir.md
+
+## Security defaults and search_path
+
+By default, emitted functions use `SECURITY INVOKER` and do not modify `search_path`. For hardened deployments you can:
+
+- Switch to definer: `--ops-security definer` when the op must bypass caller RLS and you’ve audited the body.
+- Pin lookup path: `--ops-search-path "pg_catalog, <your_app_schema>"` to avoid unexpected name resolution via the session’s `search_path`.
+
+You can also call `emitFunction(name, plan, { security, setSearchPath })` directly when embedding in custom tooling.
+
+## Identifier policy for reserved words (strict mode)
+
+Strict mode validates identifiers and errors on reserved keywords (e.g., table named `order`). This avoids ambiguous SQL and unexpected behavior from partial quoting. If you must work with legacy schemas containing reserved names, either rename at source or compile with `--ops-allow-errors` to skip failing ops while you migrate. A future policy option may allow strict‑but‑quoted rendering; for now, failure is explicit by design.

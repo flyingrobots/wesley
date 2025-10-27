@@ -72,10 +72,11 @@ function fmt(v){ if (v==null) return 'n/a'; return typeof v==='number' ? Number(
 
 async function gitSha(ctx) {
   try {
-    const execSync = this.ctx.shell.execSync;
-    return execSync('git rev-parse HEAD', { encoding: 'utf8' }).trim();
+    const out = await ctx.shell.exec('git rev-parse HEAD');
+    const s = out?.stdout?.trim();
+    return s || ctx.env?.GITHUB_SHA || 'unknown';
   } catch {
-    return ctx.env?.GITHUB_SHA || null;
+    return ctx.env?.GITHUB_SHA || 'unknown';
   }
 }
 

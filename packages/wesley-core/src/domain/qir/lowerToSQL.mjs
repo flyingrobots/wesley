@@ -12,47 +12,50 @@
  */
 
 import { collectParams } from './ParamCollector.mjs';
+import { renderIdent } from './identifiers.mjs';
 
 // Lightweight helpers
 const isObject = (v) => v && typeof v === 'object';
-// Minimal quoting: keep identifiers bare for readability unless they require
-// quoting (reserved or not matching [a-z_][a-z0-9_]*). This ensures examples
-// like table "order" remain valid.
-const RESERVED = new Set(['select','insert','update','delete','from','where','group','order','by','limit','offset','join','left','right','on','and','or','not','null','true','false','table','view','function','schema','user']);
-const needsQuoting = (s) => {
-  const id = String(s);
-  return !/^[a-z_][a-z0-9_]*$/.test(id) || RESERVED.has(id.toLowerCase());
-};
-const escIdent = (s) => needsQuoting(s) ? `"${String(s).replace(/\"/g, '""')}"` : String(s);
+const escIdent = (s, opts) => renderIdent(s, opts);
 const escString = (s) => String(s).replace(/'/g, "''");
 
-export function lowerToSQL(plan, paramsEnv = null) {
+export function lowerToSQL(plan, paramsEnv = null, opts = {}) {
   if (!plan || !plan.root) throw new Error('lowerToSQL: invalid plan');
+  const identOpts = { policy: opts.identPolicy || 'minimal' };
 
   const params = paramsEnv && paramsEnv.ordered && paramsEnv.indexByName
     ? paramsEnv
     : collectParams(plan);
 
-  // Build SELECT list
-  const selectList = (plan.projection?.items || []).map(pi => `${renderExpr(pi.expr, params)} AS ${escIdent(pi.alias)}`).join(', ');
+  // Build DISTINCT ON (optional) and SELECT list
+  const selectList = (plan.projection?.items || []).map(pi => `${renderExpr(pi.expr, params, identOpts)} AS ${escIdent(pi.alias, identOpts)}`).join(', ');
   const projectionSQL = selectList.length > 0 ? selectList : '*';
+  const distinctExprs = Array.isArray(plan.distinctOn) ? plan.distinctOn : [];
+  const distinctSQL = distinctExprs.length ? `DISTINCT ON (${distinctExprs.map(e => renderExpr(e, params, identOpts)).join(', ')}) ` : '';
 
   // Render FROM and gather WHERE predicates from Filter nodes embedded in relation tree
   const whereParts = [];
-  const fromSQL = renderRelation(plan.root, params, whereParts);
+  const fromSQL = renderRelation(plan.root, params, whereParts, identOpts);
 
   // WHERE
   const whereSQL = whereParts.length ? `\nWHERE ${whereParts.join(' AND ')}` : '';
 
-  // ORDER BY with deterministic tie-breaker
+  // ORDER BY with deterministic tie-breaker; ensure DISTINCT ON prefix when present
   let orderSQL = '';
   const orderItems = [...(plan.orderBy || [])];
+  if (distinctExprs.length) {
+    // Ensure orderBy begins with distinctOn expressions in order
+    for (let i = distinctExprs.length - 1; i >= 0; i--) {
+      const de = distinctExprs[i];
+      orderItems.unshift({ expr: de, direction: 'asc', nulls: null });
+    }
+  }
   if (orderItems.length > 0) {
-    const rendered = orderItems.map(ob => renderOrderBy(ob, params));
+    const rendered = orderItems.map(ob => renderOrderBy(ob, params, identOpts));
     // Append tie-breaker if primary key (id) not already present
-    const pkRef = guessPrimaryKeyRef(plan);
+    const pkRef = typeof opts.pkResolver === 'function' ? opts.pkResolver(plan) : guessPrimaryKeyRef(plan);
     if (pkRef && !orderMentionsExpr(orderItems, pkRef)) {
-      rendered.push(`${renderExpr(pkRef, params)} ASC`);
+      rendered.push(`${renderExpr(pkRef, params, identOpts)} ASC`);
     }
     orderSQL = `\nORDER BY ${rendered.join(', ')}`;
   }
@@ -61,70 +64,70 @@ export function lowerToSQL(plan, paramsEnv = null) {
   const lim = plan.limit != null ? `\nLIMIT ${Number(plan.limit)}` : '';
   const off = plan.offset != null ? `\nOFFSET ${Number(plan.offset)}` : '';
 
-  return `SELECT ${projectionSQL}\nFROM ${fromSQL}${whereSQL}${orderSQL}${lim}${off}`.trim();
+  return `SELECT ${distinctSQL}${projectionSQL}\nFROM ${fromSQL}${whereSQL}${orderSQL}${lim}${off}`.trim();
 }
 
 // ────────────────────────────────────────────────────────────────────────────
 // Relation rendering
-function renderRelation(r, params, whereParts) {
+function renderRelation(r, params, whereParts, identOpts) {
   if (!r) return '';
   switch (r.kind) {
     case 'Table':
-      return `${escIdent(r.table)} ${escIdent(r.alias)}`;
+      return `${escIdent(r.table, identOpts)} ${escIdent(r.alias, identOpts)}`;
     case 'Subquery': {
-      const sql = lowerToSQL(r.plan, params);
-      return `(\n${sql}\n) ${escIdent(r.alias)}`;
+      const sql = lowerToSQL(r.plan, params, identOpts);
+      return `(\n${sql}\n) ${escIdent(r.alias, identOpts)}`;
     }
     case 'Lateral': {
-      const sql = lowerToSQL(r.plan, params);
-      return `LATERAL (\n${sql}\n) ${escIdent(r.alias)}`;
+      const sql = lowerToSQL(r.plan, params, identOpts);
+      return `LATERAL (\n${sql}\n) ${escIdent(r.alias, identOpts)}`;
     }
     case 'Join': {
-      const left = renderRelation(r.left, params, whereParts);
-      const right = renderRelation(r.right, params, whereParts);
+      const left = renderRelation(r.left, params, whereParts, identOpts);
+      const right = renderRelation(r.right, params, whereParts, identOpts);
       const jt = r.joinType && String(r.joinType).toUpperCase() === 'LEFT' ? 'LEFT JOIN' : 'JOIN';
-      const on = r.on ? renderPredicate(r.on, params) : 'TRUE';
+      const on = r.on ? renderPredicate(r.on, params, identOpts) : 'TRUE';
       return `${left} ${jt} ${right} ON ${on}`;
     }
     case 'Filter': {
       // Non-canonical node used in tests; extract predicate into WHERE
-      if (r.predicate) whereParts.push(renderPredicate(r.predicate, params));
-      return renderRelation(r.input, params, whereParts);
+      if (r.predicate) whereParts.push(renderPredicate(r.predicate, params, identOpts));
+      return renderRelation(r.input, params, whereParts, identOpts);
     }
     default:
       // Fallback: assume table-like
-      if (r.table && r.alias) return `${escIdent(r.table)} ${escIdent(r.alias)}`;
+      if (r.table && r.alias) return `${escIdent(r.table, identOpts)} ${escIdent(r.alias, identOpts)}`;
       throw new Error(`Unsupported relation kind: ${r.kind}`);
   }
 }
 
 // ────────────────────────────────────────────────────────────────────────────
 // Predicates & expressions
-function renderPredicate(p, params) {
+function renderPredicate(p, params, identOpts) {
   if (!p) return 'TRUE';
   switch (p.kind) {
     case 'Exists':
-      return `EXISTS (\n${lowerToSQL(p.subquery, params)}\n)`;
+      return `EXISTS (\n${lowerToSQL(p.subquery, params, identOpts)}\n)`;
     case 'Not':
-      return `(NOT ${renderPredicate(p.left, params)})`;
+      return `(NOT ${renderPredicate(p.left, params, identOpts)})`;
     case 'And':
-      return `(${renderPredicate(p.left, params)} AND ${renderPredicate(p.right, params)})`;
+      return `(${renderPredicate(p.left, params, identOpts)} AND ${renderPredicate(p.right, params, identOpts)})`;
     case 'Or':
-      return `(${renderPredicate(p.left, params)} OR ${renderPredicate(p.right, params)})`;
+      return `(${renderPredicate(p.left, params, identOpts)} OR ${renderPredicate(p.right, params, identOpts)})`;
     case 'Compare': {
       const { op } = p;
       // Null checks
-      if (op === 'isNull')    return `${renderExpr(p.left, params)} IS NULL`;
-      if (op === 'isNotNull') return `${renderExpr(p.left, params)} IS NOT NULL`;
+      if (op === 'isNull')    return `${renderExpr(p.left, params, identOpts)} IS NULL`;
+      if (op === 'isNotNull') return `${renderExpr(p.left, params, identOpts)} IS NOT NULL`;
 
       if (op === 'in') {
-        const left = renderExpr(p.left, params);
+        const left = renderExpr(p.left, params, identOpts);
         const paramSql = renderParam(p.right, params, /*forceCast*/true);
         return `${left} = ANY(${paramSql})`;
       }
 
-      const left = renderExpr(p.left, params);
-      const right = renderExpr(p.right, params);
+      const left = renderExpr(p.left, params, identOpts);
+      const right = renderExpr(p.right, params, identOpts);
       switch (op) {
         case 'eq':  return `${left} = ${right}`;
         case 'ne':  return `${left} <> ${right}`;
@@ -144,30 +147,34 @@ function renderPredicate(p, params) {
   }
 }
 
-function renderExpr(e, params) {
+function renderExpr(e, params, identOpts) {
   if (!e) return 'NULL';
   switch (e.kind) {
     case 'ColumnRef':
-      return `${escIdent(e.table)}.${escIdent(e.column)}`;
+      return `${escIdent(e.table, identOpts)}.${escIdent(e.column, identOpts)}`;
     case 'ParamRef':
       return renderParam(e, params);
     case 'Literal':
       return renderLiteral(e.value, e.type);
     case 'FuncCall': {
-      const args = (e.args || []).map(a => renderExpr(a, params)).join(', ');
-      return `${e.name}(${args})`;
+      const fn = String(e.name); // keep unquoted for built-ins; validated upstream when needed
+      const args = (e.args || []).map(a => renderExpr(a, params, identOpts)).join(', ');
+      return `${fn}(${args})`;
     }
     case 'ScalarSubquery':
-      return `(\n${lowerToSQL(e.plan, params)}\n)`;
+      return `(\n${lowerToSQL(e.plan, params, identOpts)}\n)`;
     case 'JsonBuildObject':
-      return renderJsonBuildObject(e, params);
+      return renderJsonBuildObject(e, params, identOpts);
     case 'JsonAgg':
-      return renderJsonAgg(e, params);
+      return renderJsonAgg(e, params, identOpts);
     default:
       // Allow plain objects shaped like ColumnRef/ParamRef/Literal
-      if (isObject(e.left) && e.op) return renderPredicate(e, params);
-      if (e.table && e.column) return `${escIdent(e.table)}.${escIdent(e.column)}`;
-      if (e.name && e.args) return `${e.name}(${(e.args||[]).map(a => renderExpr(a, params)).join(', ')})`;
+      if (isObject(e.left) && e.op) return renderPredicate(e, params, identOpts);
+      if (e.table && e.column) return `${escIdent(e.table, identOpts)}.${escIdent(e.column, identOpts)}`;
+      if (e.name && e.args) {
+        const fn2 = String(e.name);
+        return `${fn2}(${(e.args||[]).map(a => renderExpr(a, params, identOpts)).join(', ')})`;
+      }
       throw new Error(`Unsupported expr kind '${e.kind}'`);
   }
 }
@@ -183,27 +190,27 @@ function renderLiteral(v, type = null) {
   return `'${escString(v)}'${type ? `::${type}` : ''}`;
 }
 
-function renderJsonBuildObject(e, params) {
+function renderJsonBuildObject(e, params, identOpts) {
   // fields: [{ key, value }]
   const pairs = (e.fields || []).flatMap(({ key, value }) => [
     `'${escString(String(key))}'`,
-    renderExpr(value, params)
+    renderExpr(value, params, identOpts)
   ]);
   return `jsonb_build_object(${pairs.join(', ')})`;
 }
 
-function renderJsonAgg(e, params) {
-  const inner = renderExpr(e.value, params);
+function renderJsonAgg(e, params, identOpts) {
+  const inner = renderExpr(e.value, params, identOpts);
   const order = (e.orderBy || []).length
-    ? ' ORDER BY ' + e.orderBy.map(ob => renderOrderBy(ob, params)).join(', ')
+    ? ' ORDER BY ' + e.orderBy.map(ob => renderOrderBy(ob, params, identOpts)).join(', ')
     : '';
   return `COALESCE(jsonb_agg(${inner}${order}), '[]'::jsonb)`;
 }
 
-function renderOrderBy(ob, params) {
+function renderOrderBy(ob, params, identOpts) {
   const dir = ob.direction && String(ob.direction).toLowerCase() === 'desc' ? 'DESC' : 'ASC';
   const nulls = ob.nulls ? ` NULLS ${String(ob.nulls).toUpperCase()}` : '';
-  return `${renderExpr(ob.expr, params)} ${dir}${nulls}`;
+  return `${renderExpr(ob.expr, params, identOpts)} ${dir}${nulls}`;
 }
 
 function renderParam(p, params, forceCast = false) {

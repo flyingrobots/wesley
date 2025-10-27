@@ -1,0 +1,7 @@
+{
+  "include": [
+    "test/fixtures/examples/ops"
+  ],
+  "exclude": []
+}
+

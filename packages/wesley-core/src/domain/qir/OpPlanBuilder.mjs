@@ -203,6 +203,10 @@ function buildOnPredicate(on, leftDefault, rightAlias) {
     if (!table || typeof table !== 'string' || !column || typeof column !== 'string') {
       throw new Error(`Invalid column reference in join.on: ${JSON.stringify(r)}`);
     }
+    // Diagnostics: discourage ambiguous unqualified refs like 'id'
+    if (typeof r === 'string' && r.indexOf('.') === -1 && r.toLowerCase() === 'id') {
+      throw new Error(`Ambiguous join reference '${r}'. Qualify as '<alias>.id' or pass { table, column } to join.on`);
+    }
     return new ColumnRef(table, column);
   };
   const op = String(on.op || 'eq');
@@ -215,14 +219,27 @@ function buildRightExpr(param, value, op) {
   if (param && param.name) {
     const name = String(param.name);
     let typeHint = param.type ? String(param.type) : undefined;
+    // Security hardening: require explicit types for risky operators
+    if (op === 'in') {
+      if (!typeHint) throw new Error(`Param '${name}' requires an explicit array type for IN (e.g., text[])`);
+      if (!typeHint.endsWith('[]')) typeHint = typeHint + '[]';
+    }
+    if (op === 'like' || op === 'ilike') {
+      if (!typeHint) throw new Error(`Param '${name}' requires an explicit type for ${op.toUpperCase()} (e.g., text)`);
+    }
+    if (op === 'contains' && !typeHint) {
+      throw new Error(`Param '${name}' requires an explicit type for CONTAINS (e.g., jsonb or text[])`);
+    }
     if (typeHint && !ALLOWED_PARAM_TYPES.has(typeHint.replace(/\[\]$/, ''))) {
       throw new Error(`Unsupported param type: ${typeHint} for ${name}`);
     }
-    if (op === 'in' && typeHint && !typeHint.endsWith('[]')) typeHint = typeHint + '[]';
     const p = new ParamRef(name);
     if (typeHint) p.typeHint = typeHint;
     return p;
   }
   // Fallback to literal value
+  if (op === 'in') {
+    throw new Error(`IN operator requires a parameter with explicit array type (e.g., text[])`);
+  }
   return { kind: 'Literal', value };
 }

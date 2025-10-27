@@ -22,6 +22,9 @@ export class GeneratePipelineCommand extends WesleyCommand {
       .option('--stdin', 'Read schema from stdin (alias for --schema -)')
       .option('--ops <dir>', 'Experimental: directory containing *.op.json files to compile (omit to disable)')
       .option('--ops-schema <name>', 'Schema name for emitted ops SQL (default wes_ops)', 'wes_ops')
+      .option('--ops-security <mode>', 'Security for emitted functions: invoker|definer', 'invoker')
+      .option('--ops-search-path <list>', 'Comma-separated search_path for ops functions (e.g., "pg_catalog, wes_ops")')
+      .option('--ops-explain <mode>', 'Emit EXPLAIN JSON snapshots for ops: mock', '')
       .option('--ops-allow-errors', 'Continue compiling remaining ops even if some fail validation (not allowed in CI without override)')
       .option('--emit-bundle', 'Emit .wesley/ evidence bundle')
       .option('--supabase', 'Enable Supabase features (RLS tests)')
@@ -317,11 +320,75 @@ export class GeneratePipelineCommand extends WesleyCommand {
 
   async compileOpsIfRequested(context) {
     const { options, logger } = context;
-    const opsDir = options.ops;
-    if (!opsDir) return;
+    // Discovery: prefer explicit --ops or --ops-manifest, otherwise auto-detect conventional paths
+    let opsDir = options.ops || null;
+    let manifestPath = options.opsManifest || null;
     try {
       const fs = this.ctx.fs;
-      const files = await findOpFiles(fs, opsDir, logger);
+      if (!manifestPath) {
+        for (const c of ['ops/ops.manifest.json', 'ops.manifest.json', 'ops-manifest.json']) {
+          if (await fs.exists(c)) { manifestPath = c; break; }
+        }
+      }
+      if (!opsDir && !manifestPath) {
+        if (await fs.exists('ops')) opsDir = 'ops';
+      }
+      if (!opsDir && !manifestPath) return;
+      // Build PK map from IR so ops emission can derive deterministic tie-breakers from real keys
+      let ir = context.ir;
+      try {
+        if (!ir && context.schemaContent) {
+          ir = this.ctx.parsers.graphql.parse(context.schemaContent);
+        }
+      } catch {}
+      const pkMap = new Map();
+      if (ir && Array.isArray(ir.tables)) {
+        for (const t of ir.tables) {
+          if (t?.name && t?.primaryKey) pkMap.set(String(t.name), String(t.primaryKey));
+        }
+      }
+      const pkResolver = (plan) => {
+        // Find leftmost base table alias + name
+        let r = plan?.root;
+        while (r && r.kind === 'Filter') r = r.input;
+        while (r && r.kind === 'Join') r = r.left;
+        if (r && r.kind === 'Table' && r.alias && r.table) {
+          const pk = pkMap.get(String(r.table));
+          if (pk) return { kind: 'ColumnRef', table: r.alias, column: pk };
+        }
+        return null; // fallback handled in lowerToSQL
+      };
+      let files = [];
+      if (manifestPath) {
+        const manifest = JSON.parse(await fs.read(manifestPath));
+        // Validate manifest
+        try {
+          const { default: Ajv } = await import('ajv');
+          const { default: addFormats } = await import('ajv-formats');
+          const ajv = new Ajv({ strict: false, allErrors: true });
+          addFormats(ajv);
+          const root = process.env.WESLEY_REPO_ROOT || process.cwd();
+          const schemaJson = await fs.read(await fs.join(root, 'schemas', 'ops-manifest.schema.json'));
+          const validate = ajv.compile(JSON.parse(schemaJson));
+          const ok = validate(manifest);
+          if (!ok) {
+            const err = new OpsError('OPS_MANIFEST_INVALID', 'Ops manifest failed schema validation', { errors: validate.errors, file: manifestPath });
+            logger.error(err.meta, err.message);
+            throw err;
+          }
+        } catch (e) {
+          if (!e.code) e.code = 'OPS_MANIFEST_INVALID';
+          throw e;
+        }
+        files = await resolveManifestEntries(fs, manifest.include || [], manifest.exclude || [], logger);
+        if (files.length === 0 && !(JSON.parse(await fs.read(manifestPath)).allowEmpty)) {
+          const err = new OpsError('OPS_EMPTY_SET', 'Ops manifest produced no files and allowEmpty=false', { file: manifestPath });
+          logger.error(err.meta, err.message);
+          throw err;
+        }
+      } else {
+        files = await findOpFiles(fs, opsDir, logger);
+      }
       if (files.length === 0) {
         return;
       }
@@ -379,11 +446,44 @@ export class GeneratePipelineCommand extends WesleyCommand {
       if (compiledOps.length) {
         compiledOps.sort((a, b) => a.order - b.order);
         const orderedOps = compiledOps.map(({ order, ...rest }) => rest);
-        const outFiles = emitOpArtifacts(orderedOps, targetSchema, logger);
+        const security = String(options.opsSecurity || 'invoker');
+        const setSearchPath = options.opsSearchPath
+          ? String(options.opsSearchPath).split(',').map(s => s.trim()).filter(Boolean)
+          : null;
+        const explainMode = (options.opsExplain || '').toLowerCase();
+        const outFiles = emitOpArtifacts(orderedOps, targetSchema, logger, pkResolver, { security, setSearchPath, allowErrors: !!options.opsAllowErrors, explainMode });
         const materialized = materializeArtifacts(outFiles, 'ops', outputPaths);
         await this.ctx.writer.writeFiles(materialized);
         const opsOutputDir = outputPaths.ops;
         logger.info({ count: outFiles.length, dir: opsOutputDir }, 'Compiled operations (experimental)');
+
+        // Validate generated registry.json against schema
+        try {
+          const registryPath = await this.ctx.fs.join(opsOutputDir, 'registry.json');
+          if (await this.ctx.fs.exists(registryPath)) {
+            const [{ default: Ajv }, { default: addFormats }] = await Promise.all([
+              import('ajv'),
+              import('ajv-formats')
+            ]);
+            const ajv = new Ajv({ strict: false, allErrors: true });
+            addFormats(ajv);
+            const root = process.env.WESLEY_REPO_ROOT || process.cwd();
+            const schemaJson = await this.ctx.fs.read(await this.ctx.fs.join(root, 'schemas', 'ops-registry.schema.json'));
+            const schema = JSON.parse(schemaJson);
+            const reg = JSON.parse((await this.ctx.fs.read(registryPath)).toString('utf8'));
+            const validate = ajv.compile(schema);
+            if (!validate(reg)) {
+              const err = new OpsError('OPS_REGISTRY_INVALID', 'Generated ops registry failed schema validation', { errors: validate.errors, file: registryPath });
+              this.ctx.logger.error(err.meta, err.message);
+              if (!options.opsAllowErrors) throw err;
+            } else {
+              this.ctx.logger.info({ file: registryPath }, 'Ops registry validated');
+            }
+          }
+        } catch (ve) {
+          this.ctx.logger.warn({ error: ve?.message }, 'Ops registry validation skipped due to error');
+          if (!options.opsAllowErrors) throw ve;
+        }
       }
     } catch (e) {
       logger.error({ code: e?.code, error: e?.message }, 'Experimental --ops failed');
@@ -434,21 +534,46 @@ async function findOpFiles(fs, opsDir, logger) {
     logger.info({ opsDir }, 'Experimental --ops: directory not found; skipping');
     return [];
   }
-  const dirEntries = await fs.readDir?.(opsDir);
-  if (!Array.isArray(dirEntries)) {
+  const acc = [];
+  const walk = async (dir) => {
+    const entries = await fs.readDir?.(dir);
+    if (!Array.isArray(entries)) return;
+    for (const e of entries) {
+      if (e.isDirectory) {
+        await walk(e.path);
+      } else if (e.isFile && e.name?.endsWith?.('.op.json')) {
+        acc.push(e.path || await fs.join(dir, e.name));
+      }
+    }
+  };
+  await walk(opsDir);
+  acc.sort(); // locale-invariant deterministic ordering
+  if (acc.length === 0) {
     logger.info({ opsDir }, 'Experimental --ops: no *.op.json files found; skipping');
-    return [];
   }
-  const candidates = dirEntries.filter(entry => entry.name?.endsWith?.('.op.json'));
-  if (candidates.length === 0) {
-    logger.info({ opsDir }, 'Experimental --ops: no *.op.json files found; skipping');
-    return [];
+  return acc;
+}
+
+async function resolveManifestEntries(fs, includes = [], excludes = [], logger) {
+  const acc = new Set();
+  const addDir = async (dir) => {
+    const entries = await fs.readDir(dir);
+    for (const e of entries) {
+      if (e.isDirectory) await addDir(e.path);
+      else if (e.isFile && e.name?.endsWith?.('.op.json')) acc.add(e.path);
+    }
+  };
+  for (const entry of includes) {
+    if (!entry) continue;
+    const path = entry;
+    const isDir = await fs.readDir?.(path).then(()=>true).catch(()=>false);
+    if (isDir) await addDir(path);
+    else if (await fs.exists(path)) acc.add(path);
   }
-  const files = await Promise.all(
-    candidates.map(async entry => entry.path || await fs.join(opsDir, entry.name))
-  );
-  files.sort(); // Use default code-point ordering for locale-invariant sorting.
-  return files;
+  const excluded = (p) => excludes.some(ex => p === ex || p.endsWith(ex));
+  const list = Array.from(acc).filter(p => !excluded(p)).sort();
+  if (list.length === 0) logger.info({ includes, excludes }, 'ops manifest resolved no files');
+  return list;
 }
 
 async function compileOpFile(fs, path, collisions, logger) {
@@ -495,23 +620,85 @@ async function compileOpFile(fs, path, collisions, logger) {
   return { baseName, plan, isParamless: paramCount === 0, path };
 }
 
-function emitOpArtifacts(compiledOps, targetSchema, logger) {
+function emitOpArtifacts(compiledOps, targetSchema, logger, pkResolver, { security = 'invoker', setSearchPath = null, allowErrors = false, explainMode = '' } = {}) {
   const outFiles = [];
   const total = compiledOps.length;
   let ordinal = 0;
+  const deployChunks = [`BEGIN;`, `CREATE SCHEMA IF NOT EXISTS "${targetSchema}";`];
+  const registry = { version: '1.0.0', schema: targetSchema, ops: [] };
   for (const entry of compiledOps) {
     ordinal += 1;
     const { baseName, plan, isParamless, path } = entry;
-    const fnSql = emitFunction(baseName, plan, { schema: targetSchema });
-    if (isParamless) {
-      const viewSql = emitView(baseName, plan, { schema: targetSchema });
-      outFiles.push({ name: `${baseName}.view.sql`, content: `${viewSql}\n` });
+    let emitted = false;
+    try {
+      const fnSql = emitFunction(baseName, plan, { schema: targetSchema, identPolicy: 'strict', pkResolver, security, setSearchPath });
+      if (isParamless) {
+        const viewSql = emitView(baseName, plan, { schema: targetSchema, identPolicy: 'strict', pkResolver });
+        outFiles.push({ name: `${baseName}.view.sql`, content: `${viewSql}\n` });
+        deployChunks.push(viewSql);
+      }
+      outFiles.push({ name: `${baseName}.fn.sql`, content: `${fnSql}\n` });
+      deployChunks.push(fnSql);
+      emitted = true;
+    } catch (e) {
+      if (!allowErrors) throw e;
+      logger.warn({ op: baseName, file: path, error: e?.message }, 'Skipping op during emission due to error');
     }
-    outFiles.push({ name: `${baseName}.fn.sql`, content: `${fnSql}\n` });
     logger.info(
       { ordinal, total, sanitized: baseName, file: path, schema: targetSchema, code: 'OPS_DISCOVERY' },
       'ops: compiled operation'
     );
+
+    // Build registry entry (deterministic)
+    try {
+      const params = (collectParams(plan)?.ordered || []).map(p => ({ name: String(p.name), type: p.typeHint || 'text' }));
+      const projItems = Array.isArray(plan?.projection?.items) ? plan.projection.items.map(i => String(i?.alias || '')).filter(Boolean) : [];
+      const opId = derivePrefixedIdentifier(baseName);
+      const entryJson = {
+        name: baseName,
+        sql: {
+          schema: targetSchema,
+          function: opId,
+          view: isParamless ? opId : null
+        },
+        params,
+        projection: {
+          star: projItems.length === 0,
+          items: projItems
+        },
+        files: {
+          function: `${baseName}.fn.sql`,
+          view: isParamless ? `${baseName}.view.sql` : null
+        },
+        sourceFile: path
+      };
+      if (emitted) registry.ops.push(entryJson);
+    } catch (e) {
+      logger.warn({ file: path, error: e?.message }, 'Failed to record registry entry');
+    }
+
+    // Optional EXPLAIN JSON snapshot (mock only for now)
+    if (emitted && String(explainMode).toLowerCase() === 'mock') {
+      const explain = {
+        Plan: { 'Node Type': 'Result', Plans: [] },
+        Mock: true,
+        Version: 1
+      };
+      outFiles.push({ name: `explain/${baseName}.explain.json`, content: JSON.stringify(explain, null, 2) + '\n' });
+    }
+  }
+  deployChunks.push('COMMIT;');
+  outFiles.push({ name: `ops_deploy.sql`, content: deployChunks.join('\n\n') + '\n' });
+  // Emit registry.json next to SQL outputs
+  try {
+    const registryStr = JSON.stringify({
+      version: registry.version,
+      schema: registry.schema,
+      ops: registry.ops.sort((a, b) => a.name.localeCompare(b.name))
+    }, null, 2) + '\n';
+    outFiles.push({ name: `registry.json`, content: registryStr });
+  } catch (e) {
+    logger.warn({ error: e?.message }, 'Failed to emit ops registry');
   }
   return outFiles;
 }

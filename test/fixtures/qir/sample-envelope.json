@@ -1,0 +1,28 @@
+{
+  "version": "0.1",
+  "schema": {
+    "version": "0.1",
+    "tables": [
+      {
+        "name": "organization",
+        "columns": [
+          { "name": "id", "type": "uuid", "nullable": false },
+          { "name": "name", "type": "text", "nullable": false }
+        ],
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": []
+      }
+    ]
+  },
+  "ops": {
+    "plans": [
+      {
+        "root": { "kind": "Table", "table": "organization", "alias": "t0" },
+        "projection": { "items": [ { "alias": "id", "expr": { "kind": "ColumnRef", "table": "t0", "column": "id" } } ] }
+      }
+    ]
+  },
+  "evidence": {}
+}
+

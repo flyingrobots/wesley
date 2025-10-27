@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://wesley.dev/schemas/ir-envelope.schema.json",
+  "title": "Wesley IR Envelope (Experimental)",
+  "description": "Bundle of Schema IR + QIR plans + optional evidence and version info.",
+  "type": "object",
+  "required": ["schema", "ops"],
+  "properties": {
+    "version": { "type": ["string", "null"] },
+    "schema": { "$ref": "ir.schema.json#" },
+    "ops": {
+      "type": "object",
+      "required": ["plans"],
+      "properties": {
+        "plans": { "type": "array", "items": { "$ref": "qir.schema.json#" } }
+      },
+      "additionalProperties": false
+    },
+    "evidence": { "type": ["object", "null"] }
+  },
+  "additionalProperties": false
+}
+
