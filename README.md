@@ -363,6 +363,13 @@ Badges for key packages:
 - @wesley/tasks: ![pkg-tasks](https://github.com/flyingrobots/wesley/actions/workflows/pkg-tasks.yml/badge.svg?branch=main)
 - @wesley/slaps: ![pkg-slaps](https://github.com/flyingrobots/wesley/actions/workflows/pkg-slaps.yml/badge.svg?branch=main)
 
+## Overall Project Status
+
+<!-- BEGIN:OVERALL_STATUS -->
+Stage: MVP  \
+Progress: 6% → Alpha
+<!-- END:OVERALL_STATUS -->
+
 ## Package Matrix
 
 <!-- BEGIN:PACKAGE_MATRIX -->

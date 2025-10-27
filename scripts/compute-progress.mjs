@@ -111,7 +111,35 @@ async function main() {
   }
 
   // Write meta/progress.json
-  const out = { generatedAt: new Date().toISOString(), repo, results };
+  // Compute overall stage
+  const order = ['Prototype', 'MVP', 'Alpha', 'Beta', 'v1.0.0'];
+  const idx = (s) => Math.max(0, order.indexOf(s));
+  const reqFor = (stage) => {
+    if (stage === 'Alpha') return cfg.project.requiredForAlpha || [];
+    if (stage === 'Beta') return cfg.project.requiredForBeta || (cfg.packages.filter(p => p.status === 'Active').map(p => p.name));
+    if (stage === 'v1.0.0') return cfg.project.requiredForV1 || (cfg.packages.filter(p => p.status === 'Active').map(p => p.name));
+    return [];
+  };
+  const have = (stage, names) => names.every(n => idx((results.find(r => r.name === n) || {}).stage || 'Prototype') >= idx(stage));
+  let overallStage = 'MVP';
+  if (have('Alpha', reqFor('Alpha'))) overallStage = 'Alpha';
+  if (have('Beta', reqFor('Beta'))) overallStage = 'Beta';
+  if (have('v1.0.0', reqFor('v1.0.0'))) overallStage = 'v1.0.0';
+  const overallNext = nextStage(overallStage);
+  // Compute progress to next stage via weighted average
+  const include = reqFor(overallNext);
+  const weights = cfg.project.weights || {};
+  let wsum = 0; let acc = 0;
+  for (const name of include) {
+    const w = Number(weights[name] || 0.01);
+    const r = results.find(x => x.name === name);
+    const reached = r && idx(r.stage) >= idx(overallNext);
+    const frac = reached ? 1 : (r ? (r.progress / 100) : 0);
+    acc += w * frac; wsum += w;
+  }
+  const overallProgress = include.length && wsum > 0 ? Math.round((acc / wsum) * 100) : 0;
+
+  const out = { generatedAt: new Date().toISOString(), repo, overall: { stage: overallStage, next: overallNext, progress: overallProgress }, results };
   writeFileSync(resolve('meta/progress.json'), JSON.stringify(out, null, 2), 'utf8');
 
   // Build table markdown
@@ -124,25 +152,31 @@ async function main() {
     rows.push(`| \`${p.name}\` | ${p.status} | ${r.stage} | ${prog} | ${badge} | ${p.notes} |`);
   }
 
-  // Update README between markers
+  // Update README Overall and Package Matrix between markers
   const readmePath = resolve('README.md');
   const readme = readFileSync(readmePath, 'utf8');
-  const startMarker = '<!-- BEGIN:PACKAGE_MATRIX -->';
-  const endMarker = '<!-- END:PACKAGE_MATRIX -->';
-  const start = readme.indexOf(startMarker);
-  const end = readme.indexOf(endMarker);
-  if (start === -1 || end === -1 || end < start) {
-    console.error('Package matrix markers not found in README.md');
+  const pkgStart = '<!-- BEGIN:PACKAGE_MATRIX -->';
+  const pkgEnd = '<!-- END:PACKAGE_MATRIX -->';
+  const ovStart = '<!-- BEGIN:OVERALL_STATUS -->';
+  const ovEnd = '<!-- END:OVERALL_STATUS -->';
+
+  const s1 = readme.indexOf(pkgStart), e1 = readme.indexOf(pkgEnd);
+  const s2 = readme.indexOf(ovStart), e2 = readme.indexOf(ovEnd);
+  if (s1 === -1 || e1 === -1 || e1 < s1 || s2 === -1 || e2 === -1 || e2 < s2) {
+    console.error('Markers not found in README.md');
     process.exit(2);
   }
-  const before = readme.slice(0, start + startMarker.length);
-  const after = readme.slice(end);
-  const body = '\n' + rows.join('\n') + '\n';
-  const nextReadme = before + body + after;
+  const matrixBefore = readme.slice(0, s1 + pkgStart.length);
+  const matrixAfter = readme.slice(e1);
+  const matrixBody = '\n' + rows.join('\n') + '\n';
+
+  const overallBefore = (matrixBefore + matrixBody + matrixAfter).slice(0, s2 + ovStart.length);
+  const overallAfterPre = (matrixBefore + matrixBody + matrixAfter).slice(e2);
+  const overallBody = `\nStage: ${overallStage}  \\\nProgress: ${overallProgress}% → ${overallNext}\n`;
+  const nextReadme = overallBefore + overallBody + overallAfterPre;
   writeFileSync(readmePath, nextReadme, 'utf8');
 
   console.log('Updated meta/progress.json and README Package Matrix.');
 }
 
 main().catch((e) => { console.error(e?.stack || e); process.exit(1); });
-

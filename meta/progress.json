@@ -1,6 +1,11 @@
 {
-  "generatedAt": "2025-10-27T00:50:20.862Z",
+  "generatedAt": "2025-10-27T00:56:32.120Z",
   "repo": "",
+  "overall": {
+    "stage": "MVP",
+    "next": "Alpha",
+    "progress": 6
+  },
   "results": [
     {
       "name": "@wesley/core",

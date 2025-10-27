@@ -1,6 +1,8 @@
 {
   "project": {
     "requiredForAlpha": ["@wesley/core", "@wesley/cli", "@wesley/host-node", "@wesley/generator-supabase"],
+    "requiredForBeta": ["@wesley/core", "@wesley/cli", "@wesley/host-node", "@wesley/generator-supabase", "@wesley/generator-js", "@wesley/holmes"],
+    "requiredForV1": ["@wesley/core", "@wesley/cli", "@wesley/host-node", "@wesley/generator-supabase", "@wesley/generator-js", "@wesley/holmes", "@wesley/tasks", "@wesley/slaps"],
     "weights": {
       "@wesley/core": 0.25,
       "@wesley/cli": 0.15,
@@ -28,4 +30,3 @@
     { "name": "@wesley/stack-supabase-nextjs", "status": "Too soon", "ci": null, "readme": "packages/wesley-stack-supabase-nextjs/README.md", "notes": "Early stack template, no CI yet" }
   ]
 }
-
