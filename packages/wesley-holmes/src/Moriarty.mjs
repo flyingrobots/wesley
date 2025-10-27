@@ -292,6 +292,12 @@ export class Moriarty {
       if (p.merge) {
         report.push(`Base: ${p.merge.baseRef || 'main'} · Strategy: ${p.merge.strategy || 'tbd'}`);
       }
+      if (p.mergedTree) {
+        report.push(`Merged tree: ${p.mergedTree}`);
+      }
+      if (p.impact?.confidencePenalty) {
+        report.push(`Impact: -${p.impact.confidencePenalty} confidence due to projection issues`);
+      }
       if (typeof p.notes === 'string' && p.notes) {
         report.push(p.notes);
       }
