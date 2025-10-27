@@ -25,6 +25,11 @@ jobs:
         run: corepack enable
       - name: Install deps
         run: pnpm install --frozen-lockfile
-      - name: @wesley/core tests
-        run: pnpm --filter @wesley/core test
-
+      - name: @wesley/core tests (coverage)
+        run: pnpm --filter @wesley/core test:coverage || pnpm --filter @wesley/core test
+      - name: Upload core coverage (if present)
+        uses: actions/upload-artifact@v4
+        with:
+          name: core-coverage
+          path: packages/wesley-core/coverage/**
+          if-no-files-found: ignore
