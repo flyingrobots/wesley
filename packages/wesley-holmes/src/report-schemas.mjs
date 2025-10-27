@@ -217,6 +217,28 @@ export const moriartyReportSchema = {
     confidence: numberField,
     patterns: {
       type: 'array'
+    },
+    // MP-01..03: Optional projection skeleton (clean/conflicts/error/planned)
+    projection: {
+      type: 'object',
+      properties: {
+        status: stringField,
+        merge: {
+          type: 'object',
+          properties: {
+            baseRef: stringField,
+            mergeBase: stringField,
+            strategy: stringField
+          }
+        },
+        scores: {
+          type: 'object'
+        },
+        delta: {
+          type: 'object'
+        },
+        notes: stringField
+      }
     }
   }
 };

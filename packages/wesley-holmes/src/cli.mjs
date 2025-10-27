@@ -44,6 +44,15 @@ function loadHistory(historyPath, bundleDir) {
   }
 }
 
+function loadMoriartyContext(bundleDir) {
+  try {
+    const contextPath = resolvePath(null, path.join(bundleDir ?? '.wesley', 'moriarty-context.json'));
+    return JSON.parse(readFileSync(contextPath, 'utf8'));
+  } catch {
+    return {};
+  }
+}
+
 function ensureValidReport(label, schema, data) {
   const { valid, errors } = validateReport(schema, data);
   if (!valid) {
@@ -108,12 +117,50 @@ Requires:
     .command('predict')
     .description('Run MORIARTY predictions')
     .option('--json <file>', 'Write prediction JSON to file')
-    .action(options => {
+    .option('--project-merge [baseRef]', 'Simulate PR merge and include projected results (MP-01..03: stub only)')
+    .action(async options => {
       const opts = program.optsWithGlobals();
       const bundleDir = resolvePath(opts.bundleDir, '.wesley');
       const history = loadHistory(opts.historyFile, bundleDir);
-      const moriarty = new Moriarty(history);
+      const ctx = loadMoriartyContext(bundleDir);
+      const moriarty = new Moriarty(history, ctx);
       const data = moriarty.predictionData();
+      if (typeof options.projectMerge !== 'undefined') {
+        const baseRef = typeof options.projectMerge === 'string' && options.projectMerge.length > 0
+          ? options.projectMerge
+          : (process.env.MORIARTY_BASE_REF || process.env.GITHUB_BASE_REF || 'main');
+        try {
+          const { MergePlanner } = await import('./merge/Planner.mjs');
+          const { MergeTreeStrategy } = await import('./merge/MergeTreeStrategy.mjs');
+          const { WorktreeStrategy } = await import('./merge/WorktreeStrategy.mjs');
+          const planner = new MergePlanner({ repoRoot: process.cwd() });
+          const plan = planner.plan({ baseRef });
+          let result = new MergeTreeStrategy({ repoRoot: process.cwd() }).execute(plan);
+          if (!result || result.status === 'error') {
+            result = new WorktreeStrategy({ repoRoot: process.cwd() }).execute(plan);
+          }
+          data.projection = { ...result };
+          // MP-06 (partial): penalize readiness confidence if projection cannot be built
+          if (data.projection?.status && data.projection.status !== 'clean') {
+            const penalty = data.projection.status === 'conflicts' ? 30 : 50; // big hit on unknown/error
+            if (typeof data.confidence === 'number') {
+              data.confidence = Math.max(0, data.confidence - penalty);
+            }
+            data.projection.impact = { confidencePenalty: penalty };
+            data.patterns = Array.isArray(data.patterns) ? data.patterns : [];
+            const desc = data.projection.status === 'conflicts'
+              ? 'Merge conflicts detected in projection: readiness uncertain'
+              : 'Projection failed: inability to build projected bundle reduces readiness confidence';
+            data.patterns.push({ type: 'MERGE_PROJECTION_ISSUE', description: desc });
+          }
+        } catch (e) {
+          data.projection = {
+            status: 'error',
+            merge: { baseRef, strategy: 'merge-tree' },
+            notes: `Projection failed early: ${e?.message || e}`
+          };
+        }
+      }
       ensureValidReport('MORIARTY', moriartyReportSchema, data);
       if (options.json) {
         writeFileSync(options.json, JSON.stringify(data, null, 2));
@@ -125,18 +172,55 @@ Requires:
     .command('report')
     .description('Generate combined HOLMES, WATSON, and MORIARTY report')
     .option('--json <file>', 'Write combined JSON to file')
-    .action(options => {
+    .option('--project-merge [baseRef]', 'Simulate PR merge and include projected results (MP-01..03: stub only)')
+    .action(async options => {
       const opts = program.optsWithGlobals();
       const bundleDir = resolvePath(opts.bundleDir, '.wesley');
       const bundlePath = path.join(bundleDir, 'bundle.json');
       const bundle = loadBundle(bundlePath);
       const history = loadHistory(opts.historyFile, bundleDir);
+      const ctx = loadMoriartyContext(bundleDir);
       const holmes = new Holmes(bundle);
       const watson = new Watson(bundle);
-      const moriarty = new Moriarty(history);
+      const moriarty = new Moriarty(history, ctx);
       const holmesData = holmes.investigationData();
       const watsonData = watson.verificationData();
       const moriartyData = moriarty.predictionData();
+      if (typeof options.projectMerge !== 'undefined') {
+        const baseRef = typeof options.projectMerge === 'string' && options.projectMerge.length > 0
+          ? options.projectMerge
+          : (process.env.MORIARTY_BASE_REF || process.env.GITHUB_BASE_REF || 'main');
+        try {
+          const { MergePlanner } = await import('./merge/Planner.mjs');
+          const { MergeTreeStrategy } = await import('./merge/MergeTreeStrategy.mjs');
+          const { WorktreeStrategy } = await import('./merge/WorktreeStrategy.mjs');
+          const planner = new MergePlanner({ repoRoot: process.cwd() });
+          const plan = planner.plan({ baseRef });
+          let result = new MergeTreeStrategy({ repoRoot: process.cwd() }).execute(plan);
+          if (!result || result.status === 'error') {
+            result = new WorktreeStrategy({ repoRoot: process.cwd() }).execute(plan);
+          }
+          moriartyData.projection = { ...result };
+          if (moriartyData.projection?.status && moriartyData.projection.status !== 'clean') {
+            const penalty = moriartyData.projection.status === 'conflicts' ? 30 : 50;
+            if (typeof moriartyData.confidence === 'number') {
+              moriartyData.confidence = Math.max(0, moriartyData.confidence - penalty);
+            }
+            moriartyData.projection.impact = { confidencePenalty: penalty };
+            moriartyData.patterns = Array.isArray(moriartyData.patterns) ? moriartyData.patterns : [];
+            const desc = moriartyData.projection.status === 'conflicts'
+              ? 'Merge conflicts detected in projection: readiness uncertain'
+              : 'Projection failed: inability to build projected bundle reduces readiness confidence';
+            moriartyData.patterns.push({ type: 'MERGE_PROJECTION_ISSUE', description: desc });
+          }
+        } catch (e) {
+          moriartyData.projection = {
+            status: 'error',
+            merge: { baseRef, strategy: 'merge-tree' },
+            notes: `Projection failed early: ${e?.message || e}`
+          };
+        }
+      }
 
       ensureValidReport('HOLMES', holmesReportSchema, holmesData);
       ensureValidReport('WATSON', watsonReportSchema, watsonData);
