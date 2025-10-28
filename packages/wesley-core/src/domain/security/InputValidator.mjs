@@ -296,11 +296,19 @@ export function createParameterizedQuery(sql, params = []) {
     throw new SecurityError('Parameters must be an array', 'INVALID_PARAMS');
   }
   
-  // Validate that parameter count matches placeholders
-  const placeholderCount = (sql.match(/\$\d+/g) || []).length;
-  if (placeholderCount !== params.length) {
+  // Validate placeholders form a contiguous 1..N sequence and match params length
+  const indices = new Set();
+  const re = /\$([1-9]\d*)/g;
+  let m;
+  while ((m = re.exec(sql)) !== null) {
+    indices.add(Number(m[1]));
+  }
+  const max = indices.size ? Math.max(...indices) : 0;
+  const contiguous = max === indices.size && Array.from({ length: max }, (_, i) => i + 1).every(n => indices.has(n));
+  if (!contiguous || max !== params.length) {
+    const placeholderCount = indices.size;
     throw new SecurityError(
-      `Parameter count mismatch: ${placeholderCount} placeholders, ${params.length} parameters`,
+      `Parameter count mismatch: ${placeholderCount} placeholders (expect 1..${max}), ${params.length} parameters`,
       'PARAMETER_COUNT_MISMATCH'
     );
   }

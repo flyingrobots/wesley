@@ -51,7 +51,7 @@ describe('🔧 StandardSanitizer.buildDDL', () => {
       roles: ['authenticated'],
       check: 'auth.uid() = user_id'
     });
-    expect(sql).toBe('CREATE POLICY "p_users_insert_owner" ON "users" FOR INSERT TO "authenticated" WITH CHECK (auth.uid() = user_id)');
+    expect(sql).toBe('CREATE POLICY "p_users_insert_owner" ON "users" FOR INSERT TO AUTHENTICATED WITH CHECK (auth.uid() = user_id)');
   });
 
   test('builds UPDATE policy USING + WITH CHECK', () => {
@@ -72,22 +72,22 @@ describe('🔧 StandardSanitizer.buildDDL', () => {
       table: 'docs',
       operation: 'select',
       roles: ['Public', 'authenticated', 'custom_role'],
-      using: 'true'
+      using: 'auth.uid() = owner_id'
     });
-    expect(sql1).toBe('CREATE POLICY "p_mixed_roles" ON "docs" FOR SELECT TO PUBLIC, AUTHENTICATED, "custom_role" USING (true)');
+    expect(sql1).toBe('CREATE POLICY "p_mixed_roles" ON "docs" FOR SELECT TO PUBLIC, AUTHENTICATED, "custom_role" USING (auth.uid() = owner_id)');
 
     const sql2 = buildDDL(DDL_TEMPLATES.CREATE_POLICY_USING, {
       policy: 'p_more_roles',
       table: 'docs',
       operation: 'select',
       roles: ['ANONYMOUS', 'Admin', 'role_x'],
-      using: 'true'
+      using: 'auth.uid() = owner_id'
     });
-    expect(sql2).toBe('CREATE POLICY "p_more_roles" ON "docs" FOR SELECT TO ANONYMOUS, "Admin", "role_x" USING (true)');
+    expect(sql2).toBe('CREATE POLICY "p_more_roles" ON "docs" FOR SELECT TO ANONYMOUS, "Admin", "role_x" USING (auth.uid() = owner_id)');
   });
 
   test('throws on unresolved placeholders', () => {
     expect(() => buildDDL(DDL_TEMPLATES.CREATE_TABLE, { table: 'users' }))
-      .toThrow(/Unresolved DDL placeholders: \{columns\}/);
+      .toThrow(/Unresolved DDL placeholders: \{column_defs\}/);
   });
 });
