@@ -151,7 +151,7 @@ export function buildDDL(template, values = {}) {
 
   const sanitizeRoles = (val) => {
     const items = isArray(val) ? val : String(val).split(',').map(s => s.trim()).filter(Boolean);
-    const special = new Set(['PUBLIC', 'CURRENT_ROLE', 'CURRENT_USER', 'SESSION_USER']);
+    const special = new Set(['PUBLIC', 'ANONYMOUS', 'AUTHENTICATED', 'CURRENT_ROLE', 'CURRENT_USER', 'SESSION_USER']);
     if (items.length === 0) throw new Error('roles must contain at least one role');
     return items.map(r => special.has(String(r).toUpperCase()) ? String(r).toUpperCase() : sanitizeIdent(r, 'role')).join(', ');
   };
@@ -203,11 +203,23 @@ export function buildDDL(template, values = {}) {
       case 'expression':
         replacement = sanitizeExpression(value);
         break;
+      case 'using':
+        replacement = sanitizeExpression(value);
+        break;
+      case 'check':
+        replacement = sanitizeExpression(value);
+        break;
       default:
         throw new Error(`Unsupported placeholder: {${key}}`);
     }
 
     sql = sql.replace(new RegExp(`\\{${key}\\}`, 'g'), replacement);
+  }
+
+  // Final safety guard: no unresolved {placeholders} may remain
+  const unresolved = sql.match(/\{[^}]+\}/g);
+  if (unresolved && unresolved.length) {
+    throw new Error(`Unresolved DDL placeholders: ${[...new Set(unresolved)].join(', ')}`);
   }
 
   return sql;
@@ -226,7 +238,10 @@ export const DDL_TEMPLATES = {
   
   // RLS Templates (safer than string building)
   ENABLE_RLS: 'ALTER TABLE {table} ENABLE ROW LEVEL SECURITY',
-  CREATE_POLICY: 'CREATE POLICY {policy} ON {table} FOR {operation} TO {roles} USING ({expression})'
+  // Create policy variants to cover USING / WITH CHECK forms
+  CREATE_POLICY_USING: 'CREATE POLICY {policy} ON {table} FOR {operation} TO {roles} USING ({using})',
+  CREATE_POLICY_WITH_CHECK: 'CREATE POLICY {policy} ON {table} FOR {operation} TO {roles} WITH CHECK ({check})',
+  CREATE_POLICY_USING_WITH_CHECK: 'CREATE POLICY {policy} ON {table} FOR {operation} TO {roles} USING ({using}) WITH CHECK ({check})'
 };
 
 /**
@@ -236,6 +251,25 @@ export const DDL_TEMPLATES = {
  * const sql = buildDDL(DDL_TEMPLATES.CREATE_TABLE, {
  *   table: tableName,              // identifier → quoted automatically
  *   columns: ['id', 'email']       // identifiers → quoted and joined
+ * });
+ * 
+ * // RLS: INSERT policy (WITH CHECK only)
+ * const insertPolicy = buildDDL(DDL_TEMPLATES.CREATE_POLICY_WITH_CHECK, {
+ *   policy: 'p_insert_owner',
+ *   table: 'posts',
+ *   operation: 'INSERT',
+ *   roles: ['PUBLIC'],
+ *   check: "auth.uid() = owner_id"
+ * });
+ * 
+ * // RLS: UPDATE policy (USING + WITH CHECK)
+ * const updatePolicy = buildDDL(DDL_TEMPLATES.CREATE_POLICY_USING_WITH_CHECK, {
+ *   policy: 'p_update_owner',
+ *   table: 'posts',
+ *   operation: 'UPDATE',
+ *   roles: ['authenticated'],
+ *   using: "auth.uid() = owner_id",
+ *   check: "auth.uid() = owner_id"
  * });
  * 
  * // GOOD: Using parameterized queries for runtime operations  
