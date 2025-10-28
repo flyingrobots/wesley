@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { buildDDL, DDL_TEMPLATES } from '../../src/domain/security/StandardSanitizer.mjs';
+import { buildDDL, DDL_TEMPLATES, formatColumnDefs } from '../../src/domain/security/StandardSanitizer.mjs';
 
 describe('🔧 StandardSanitizer.buildDDL', () => {
   test('builds ADD COLUMN with identifiers and validated type', () => {
@@ -29,6 +29,18 @@ describe('🔧 StandardSanitizer.buildDDL', () => {
       using: "auth.uid() = user_id OR role = 'admin'"
     });
     expect(sql).toBe('CREATE POLICY "p_users_owner_or_admin" ON "users" FOR SELECT TO PUBLIC USING (auth.uid() = user_id OR role = \'admin\')');
+  });
+
+  test('builds CREATE TABLE with column_defs array (formatter helper)', () => {
+    const defs = formatColumnDefs([
+      '"id" uuid PRIMARY KEY',
+      '"email" text NOT NULL'
+    ]);
+    const sql = buildDDL(DDL_TEMPLATES.CREATE_TABLE, {
+      table: 'users',
+      column_defs: defs
+    });
+    expect(sql).toBe('CREATE TABLE IF NOT EXISTS "users" ("id" uuid PRIMARY KEY, "email" text NOT NULL)');
   });
 
   test('builds INSERT policy WITH CHECK only', () => {

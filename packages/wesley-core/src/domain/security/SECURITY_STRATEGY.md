@@ -45,13 +45,33 @@ const result = await client.query(
 Since DDL can't be parameterized, Wesley validates + escapes:
 
 ```javascript
-// ✅ VALIDATED: Wesley checks identifiers before generation
-validateSQLIdentifier(tableName, 'table name');
-const sql = `CREATE TABLE ${escapeIdentifier(tableName)} (...)`;
+import { buildDDL, DDL_TEMPLATES, formatColumnDefs } from '@wesley/core/domain/security/StandardSanitizer.mjs';
 
-// ✅ TEMPLATE APPROACH: Even safer
-const sql = buildDDL(DDL_TEMPLATES.CREATE_TABLE, {
-  table: tableName  // Validated and quoted automatically
+// ✅ TEMPLATE APPROACH (recommended)
+const tableSQL = buildDDL(DDL_TEMPLATES.CREATE_TABLE, {
+  table: 'users',
+  column_defs: formatColumnDefs([
+    '"id" uuid PRIMARY KEY',
+    '"email" text NOT NULL'
+  ])
+});
+
+// ✅ RLS policy templates
+const insertPolicy = buildDDL(DDL_TEMPLATES.CREATE_POLICY_WITH_CHECK, {
+  policy: 'p_users_insert_owner',
+  table: 'users',
+  operation: 'INSERT',
+  roles: ['authenticated'],
+  check: 'auth.uid() = owner_id'
+});
+
+const updatePolicy = buildDDL(DDL_TEMPLATES.CREATE_POLICY_USING_WITH_CHECK, {
+  policy: 'p_users_update_owner',
+  table: 'users',
+  operation: 'UPDATE',
+  roles: ['PUBLIC'],            // special roles are unquoted and case-insensitive
+  using: 'auth.uid() = owner_id',
+  check: 'auth.uid() = owner_id'
 });
 ```
 
@@ -71,10 +91,13 @@ CREATE POLICY "bypass_all" ON users
   USING (true);  -- Bypasses all security
 ```
 
-Note on clause semantics:
+Choosing the right policy clause:
 
-- INSERT policies use WITH CHECK to validate new rows: e.g., `CREATE POLICY ... FOR INSERT ... WITH CHECK (auth.uid() = user_id)`.
-- UPDATE policies commonly include both USING (which rows are visible to update) and WITH CHECK (what the new row must satisfy): e.g., `CREATE POLICY ... FOR UPDATE ... USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id)`.
+- SELECT/DELETE → USING only
+- INSERT → WITH CHECK only
+- UPDATE → USING and WITH CHECK
+
+These templates match RLSPresets output (owner/tenant/public-read, etc.).
 
 
 ## 🧪 Security Testing

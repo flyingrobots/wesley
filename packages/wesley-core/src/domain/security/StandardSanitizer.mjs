@@ -249,6 +249,16 @@ export function buildDDL(template, values = {}) {
 }
 
 /**
+ * Utility: format an array of column definitions as a comma+space separated list.
+ * buildDDL already accepts arrays for {column_defs}, but this helper makes intent explicit
+ * at call sites that want to pre-format the fragment.
+ */
+export function formatColumnDefs(items) {
+  if (!Array.isArray(items)) return String(items ?? '');
+  return items.map(String).join(', ');
+}
+
+/**
  * Safe DDL templates for common operations
  * These follow PostgreSQL best practices and can be safely parameterized
  */
