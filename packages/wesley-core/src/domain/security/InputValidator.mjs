@@ -204,11 +204,17 @@ export function validateRLSExpression(expression) {
   // First run general constraint validation
   validateConstraintExpression(expression);
   
-  // RLS-specific dangerous patterns
+  // RLS-specific dangerous patterns (narrowed to avoid false positives)
+  // We intentionally DO NOT flag any occurrence of TRUE when used in
+  // legitimate comparisons (e.g., approved = TRUE) or as a function
+  // default (e.g., COALESCE(is_active, TRUE)). We only detect obvious
+  // bypass constructs that make the predicate trivially TRUE.
   const rlsDangerousPatterns = [
-    { pattern: /\btrue\b/i, name: 'always true (bypasses RLS)' },
-    { pattern: /\b1\s*=\s*1\b/, name: 'always true condition' },
-    { pattern: /\bfalse\s+OR\s+true\b/i, name: 'RLS bypass attempt' },
+    // Classic injection/bypass patterns
+    { pattern: /\bor\s*1\s*=\s*1\b/i, name: 'OR 1=1 bypass' },
+    // Entire expression is just TRUE (optionally wrapped in parentheses)
+    { pattern: /^\s*\(*\s*true\s*\)*\s*$/i, name: 'predicate is always TRUE' },
+    // DDL or RLS manipulation should never appear inside a USING/USING () clause
     { pattern: /DROP\s+POLICY/i, name: 'policy manipulation' },
     { pattern: /CREATE\s+POLICY/i, name: 'policy creation' },
     { pattern: /ALTER\s+TABLE.*RLS/i, name: 'RLS manipulation' },

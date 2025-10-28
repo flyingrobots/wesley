@@ -117,20 +117,99 @@ export function validateIdentifier(name, context = 'identifier') {
  * @param {Object} values - Values to substitute safely
  * @returns {string} Safe DDL statement
  */
+import { validateConstraintExpression as _validateConstraintExpression } from './InputValidator.mjs';
+import { validatePostgreSQLType as _validatePostgreSQLType } from './InputValidator.mjs';
+
+/**
+ * Build DDL from a template using type-aware placeholder handling.
+ * Recognized placeholder keys and their treatment:
+ * - identifier: table, column, index, policy, schema → quoted identifiers
+ * - ident list: columns, roles → each item validated + quoted (roles keeps PUBLIC unquoted)
+ * - type: type → validated PostgreSQL type (not quoted)
+ * - enum: operation → one of SELECT|INSERT|UPDATE|DELETE|ALL (uppercased)
+ * - sql fragment: expression → validated constraint/expression (inserted as-is)
+ *
+ * Unknown placeholders will throw to avoid unsafe insertion.
+ */
 export function buildDDL(template, values = {}) {
   let sql = template;
-  
-  // Replace placeholders with safely quoted values
+
+  const isArray = (v) => Array.isArray(v);
+
+  const sanitizeIdent = (name, ctx) => {
+    validateIdentifier(name, ctx);
+    return quoteIdentifier(name);
+  };
+
+  const sanitizeIdentList = (val, ctx) => {
+    const items = isArray(val) ? val : String(val).split(',').map(s => s.trim()).filter(Boolean);
+    if (items.length === 0) {
+      throw new Error(`${ctx} must contain at least one identifier`);
+    }
+    return items.map(it => sanitizeIdent(it, `${ctx} item`)).join(', ');
+  };
+
+  const sanitizeRoles = (val) => {
+    const items = isArray(val) ? val : String(val).split(',').map(s => s.trim()).filter(Boolean);
+    const special = new Set(['PUBLIC', 'CURRENT_ROLE', 'CURRENT_USER', 'SESSION_USER']);
+    if (items.length === 0) throw new Error('roles must contain at least one role');
+    return items.map(r => special.has(String(r).toUpperCase()) ? String(r).toUpperCase() : sanitizeIdent(r, 'role')).join(', ');
+  };
+
+  const sanitizeType = (t) => {
+    _validatePostgreSQLType(String(t));
+    return String(t);
+  };
+
+  const sanitizeOperation = (op) => {
+    const allowed = new Set(['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'ALL']);
+    const up = String(op).toUpperCase();
+    if (!allowed.has(up)) {
+      throw new Error(`operation must be one of ${[...allowed].join(', ')}`);
+    }
+    return up;
+  };
+
+  const sanitizeExpression = (expr) => {
+    _validateConstraintExpression(String(expr));
+    return String(expr);
+  };
+
   for (const [key, value] of Object.entries(values)) {
     const placeholder = `{${key}}`;
-    
-    if (sql.includes(placeholder)) {
-      // Validate then quote the identifier
-      validateIdentifier(value, key);
-      sql = sql.replace(new RegExp(`\\{${key}\\}`, 'g'), quoteIdentifier(value));
+    if (!sql.includes(placeholder)) continue;
+
+    let replacement;
+    switch (key) {
+      case 'table':
+      case 'column':
+      case 'index':
+      case 'policy':
+      case 'schema':
+        replacement = sanitizeIdent(value, key);
+        break;
+      case 'columns':
+        replacement = sanitizeIdentList(value, 'columns');
+        break;
+      case 'roles':
+        replacement = sanitizeRoles(value);
+        break;
+      case 'type':
+        replacement = sanitizeType(value);
+        break;
+      case 'operation':
+        replacement = sanitizeOperation(value);
+        break;
+      case 'expression':
+        replacement = sanitizeExpression(value);
+        break;
+      default:
+        throw new Error(`Unsupported placeholder: {${key}}`);
     }
+
+    sql = sql.replace(new RegExp(`\\{${key}\\}`, 'g'), replacement);
   }
-  
+
   return sql;
 }
 
@@ -155,8 +234,8 @@ export const DDL_TEMPLATES = {
  * 
  * // GOOD: Using templates + validation
  * const sql = buildDDL(DDL_TEMPLATES.CREATE_TABLE, {
- *   table: tableName,  // Validated and quoted automatically
- *   columns: columnDefs.join(', ')
+ *   table: tableName,              // identifier → quoted automatically
+ *   columns: ['id', 'email']       // identifiers → quoted and joined
  * });
  * 
  * // GOOD: Using parameterized queries for runtime operations  
