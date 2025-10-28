@@ -190,6 +190,218 @@ export function buildDDL(template, values = {}) {
     return String(expr);
   };
 
+  // Split a comma-separated list at top-level (ignoring commas inside quotes/parentheses)
+  const splitTopLevel = (input, delimiter = ',') => {
+    const s = String(input ?? '');
+    const parts = [];
+    let buf = '';
+    let depth = 0;
+    let inSQ = false; // '
+    let inDQ = false; // "
+    for (let i = 0; i < s.length; i++) {
+      const ch = s[i];
+      const prev = s[i - 1];
+      if (!inSQ && ch === '"') inDQ = !inDQ;
+      else if (!inDQ && ch === '\'') inSQ = !inSQ;
+      else if (!inSQ && !inDQ && ch === '(') depth++;
+      else if (!inSQ && !inDQ && ch === ')') depth = Math.max(0, depth - 1);
+      if (ch === delimiter && !inSQ && !inDQ && depth === 0) {
+        parts.push(buf.trim());
+        buf = '';
+      } else {
+        buf += ch;
+      }
+    }
+    if (buf.trim().length) parts.push(buf.trim());
+    return parts;
+  };
+
+  // Tokenize a clause by whitespace while keeping parentheses and quoted strings intact
+  const tokenize = (input) => {
+    const s = String(input ?? '').trim();
+    const tokens = [];
+    let buf = '';
+    let inSQ = false;
+    let inDQ = false;
+    let depth = 0;
+    const flush = () => { if (buf.length) { tokens.push(buf); buf = ''; } };
+    for (let i = 0; i < s.length; i++) {
+      const ch = s[i];
+      if (inSQ) {
+        buf += ch;
+        if (ch === '\'' && s[i - 1] !== '\\') inSQ = false;
+        continue;
+      }
+      if (inDQ) {
+        buf += ch;
+        if (ch === '"' && s[i - 1] !== '\\') inDQ = false;
+        continue;
+      }
+      if (ch === '\'') { inSQ = true; buf += ch; continue; }
+      if (ch === '"') { inDQ = true; buf += ch; continue; }
+      if (ch === '(') { depth++; buf += ch; continue; }
+      if (ch === ')') { depth = Math.max(0, depth - 1); buf += ch; continue; }
+      if (/\s/.test(ch) && depth === 0) { flush(); continue; }
+      buf += ch;
+    }
+    flush();
+    return tokens;
+  };
+
+  // Find the longest prefix of tokens that forms a valid PostgreSQL type
+  const extractTypePrefix = (rest) => {
+    const toks = tokenize(rest);
+    let bestIdx = 0;
+    let best = '';
+    for (let i = 1; i <= toks.length; i++) {
+      const cand = toks.slice(0, i).join(' ');
+      try {
+        _validatePostgreSQLType(cand);
+        bestIdx = i;
+        best = cand;
+      } catch (_) {
+        // keep searching for longer valid prefix; validator throws on invalid
+      }
+    }
+    if (bestIdx === 0) {
+      throw new Error(`column_defs: could not parse PostgreSQL type from: ${rest}`);
+    }
+    return { type: best, remainderTokens: toks.slice(bestIdx) };
+  };
+
+  const upper = (s) => String(s).toUpperCase();
+  const isWord = (tok, w) => upper(tok) === w;
+  const nextIs = (tokens, i, ...words) => words.every((w, k) => upper(tokens[i + k]) === w);
+
+  const sanitizeReferences = (tokens, startIdx) => {
+    let i = startIdx;
+    if (!isWord(tokens[i], 'REFERENCES')) return { consumed: 0, text: '' };
+    i++;
+    if (i >= tokens.length) throw new Error('REFERENCES requires table identifier');
+    let tableTok = tokens[i++];
+    // Allow schema.table or quoted identifiers
+    const quoteStrip = (t) => t.startsWith('"') && t.endsWith('"') ? t.slice(1, -1).replace(/""/g, '"') : t;
+    const parts = tableTok.split('.').map(quoteStrip);
+    if (parts.length > 2) throw new Error('REFERENCES: invalid qualified name');
+    const sanitizedTable = parts.map(p => sanitizeIdent(p, 'fk table')).join('.');
+    let text = `REFERENCES ${sanitizedTable}`;
+    // Optional column list
+    if (i < tokens.length && /^\(/.test(tokens[i])) {
+      const colTok = tokens[i++];
+      const colMatch = colTok.match(/^\((.*)\)$/);
+      if (!colMatch) throw new Error('REFERENCES: expected single column in parentheses');
+      const colName = colMatch[1].trim();
+      if (!colName) throw new Error('REFERENCES: empty column list');
+      text += ` (${sanitizeIdent(colName, 'fk column')})`;
+    }
+    // Optional actions
+    while (i < tokens.length) {
+      if (nextIs(tokens, i, 'ON', 'DELETE') || nextIs(tokens, i, 'ON', 'UPDATE')) {
+        const actionType = upper(tokens[i + 1]);
+        i += 2;
+        const actionTok = upper(tokens[i++] || '');
+        const nextTok = upper(tokens[i] || '');
+        const action = (actionTok === 'SET' && (nextTok === 'NULL' || nextTok === 'DEFAULT'))
+          ? `SET ${nextTok}` && (i++, `SET ${nextTok}`)
+          : (['NO', 'RESTRICT', 'CASCADE'].includes(actionTok) ? (actionTok === 'NO' ? (i++, 'NO ACTION') : actionTok) : null);
+        const resolved = action || actionTok;
+        const allowed = new Set(['NO ACTION', 'RESTRICT', 'CASCADE', 'SET NULL', 'SET DEFAULT']);
+        if (!allowed.has(resolved)) throw new Error(`REFERENCES: invalid action ${actionTok}`);
+        text += ` ON ${actionType} ${resolved}`;
+        continue;
+      }
+      break; // stop on unknown sequence; rest processed by caller
+    }
+    return { consumed: i - startIdx, text };
+  };
+
+  const sanitizeConstraints = (tokens) => {
+    const out = [];
+    let i = 0;
+    const emit = (s) => out.push(s);
+    const restFrom = (j) => tokens.slice(j).join(' ');
+    const findNextKeywordIdx = (j) => {
+      const keywords = ['PRIMARY', 'NOT', 'NULL', 'UNIQUE', 'CHECK', 'REFERENCES', 'COLLATE', 'GENERATED'];
+      for (let k = j; k < tokens.length; k++) {
+        if (keywords.includes(upper(tokens[k]))) return k;
+      }
+      return tokens.length;
+    };
+    while (i < tokens.length) {
+      const t = upper(tokens[i]);
+      if (t === 'PRIMARY' && upper(tokens[i + 1]) === 'KEY') {
+        emit('PRIMARY KEY'); i += 2; continue;
+      }
+      if (t === 'NOT' && upper(tokens[i + 1]) === 'NULL') { emit('NOT NULL'); i += 2; continue; }
+      if (t === 'NULL') { emit('NULL'); i += 1; continue; }
+      if (t === 'UNIQUE') { emit('UNIQUE'); i += 1; continue; }
+      if (t === 'COLLATE') {
+        const col = tokens[i + 1];
+        if (!col) throw new Error('COLLATE requires a name');
+        // Collation is an identifier
+        const name = col.startsWith('"') && col.endsWith('"') ? col.slice(1, -1).replace(/""/g, '"') : col;
+        emit(`COLLATE ${sanitizeIdent(name, 'collation')}`); i += 2; continue;
+      }
+      if (t === 'DEFAULT') {
+        // Capture until next recognized keyword at top level
+        const j = findNextKeywordIdx(i + 1);
+        const expr = restFrom(i + 1).split(' ').slice(0, j - (i + 1)).join(' ');
+        _validateConstraintExpression(expr);
+        emit(`DEFAULT ${expr}`);
+        i = j; continue;
+      }
+      if (t === 'CHECK') {
+        const exprTok = tokens[i + 1] || '';
+        const m = exprTok.match(/^\((.*)\)$/s);
+        if (!m) throw new Error('CHECK requires (...) expression');
+        _validateConstraintExpression(m[1]);
+        emit(`CHECK (${m[1]})`);
+        i += 2; continue;
+      }
+      if (t === 'REFERENCES') {
+        const { consumed, text } = sanitizeReferences(tokens, i);
+        if (!consumed) throw new Error('Invalid REFERENCES clause');
+        emit(text);
+        i += consumed; continue;
+      }
+      if (t === 'GENERATED') {
+        // Accept common identity forms
+        if (nextIs(tokens, i + 1, 'ALWAYS', 'AS', 'IDENTITY')) {
+          emit('GENERATED ALWAYS AS IDENTITY'); i += 4; continue;
+        }
+        if (nextIs(tokens, i + 1, 'BY', 'DEFAULT', 'AS', 'IDENTITY')) {
+          emit('GENERATED BY DEFAULT AS IDENTITY'); i += 5; continue;
+        }
+        throw new Error('Unsupported GENERATED clause');
+      }
+      throw new Error(`Unsupported or unsafe column constraint token: ${tokens[i]}`);
+    }
+    return out.join(' ');
+  };
+
+  const sanitizeColumnDef = (clause) => {
+    const s = String(clause ?? '').trim();
+    if (!s) throw new Error('column_defs clause cannot be empty');
+    const m = s.match(/^\s*(?:"([^"]+)"|([a-zA-Z_][\w$]*))\s+([\s\S]+)$/);
+    if (!m) throw new Error(`column_defs clause must start with an identifier: ${s}`);
+    const rawName = m[1] ?? m[2];
+    const rest = m[3];
+    const name = sanitizeIdent(rawName, 'column');
+    const { type, remainderTokens } = extractTypePrefix(rest);
+    // Validate type
+    _validatePostgreSQLType(type);
+    const constraints = remainderTokens.length ? sanitizeConstraints(remainderTokens) : '';
+    return [name, type, constraints].filter(Boolean).join(' ');
+  };
+
+  const sanitizeColumnDefs = (val) => {
+    const str = Array.isArray(val) ? val.map(String).join(', ') : String(val ?? '');
+    // Split into clauses and sanitize each
+    const clauses = splitTopLevel(str, ',');
+    if (clauses.length === 0) throw new Error('column_defs must contain at least one column definition');
+    return clauses.map(sanitizeColumnDef).join(', ');
+  };
+
   const sanitizePolicyExpression = (expr) => {
     _validateRLSExpression(String(expr));
     return String(expr);
@@ -212,7 +424,7 @@ export function buildDDL(template, values = {}) {
         replacement = sanitizeIdentList(value, 'columns');
         break;
       case 'column_defs':
-        replacement = sanitizeConstraintFragment(Array.isArray(value) ? value.join(', ') : value);
+        replacement = sanitizeColumnDefs(value);
         break;
       case 'roles':
         replacement = sanitizeRoles(value);
