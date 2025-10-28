@@ -102,7 +102,9 @@ describe('🔒 Parameter Validation Security Tests', () => {
         'integer[]',
         'text[]',
         'jsonb',
-        'uuid'
+        'uuid',
+        'timestamp(6) with time zone',
+        'time(3) without time zone'
       ];
       
       for (const type of validTypes) {

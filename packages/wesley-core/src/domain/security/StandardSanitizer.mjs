@@ -17,12 +17,19 @@
  * @returns {Object} Query ready for execution
  */
 export function createSafeQuery(sql, params = []) {
-  // Validate parameter count matches placeholders
-  const placeholderCount = (sql.match(/\$\d+/g) || []).length;
-  if (placeholderCount !== params.length) {
-    throw new Error(
-      `Parameter mismatch: ${placeholderCount} placeholders, ${params.length} parameters`
-    );
+  // Validate parameter indices form a contiguous 1..N sequence and match params length
+  const indices = new Set();
+  const re = /\$([1-9]\d*)/g;
+  let m;
+  while ((m = re.exec(sql)) !== null) {
+    indices.add(Number(m[1]));
+  }
+  const max = indices.size ? Math.max(...indices) : 0;
+  // Build expected set 1..max and compare
+  const contiguous = max === indices.size && Array.from({ length: max }, (_, i) => i + 1).every(n => indices.has(n));
+  if (!contiguous || max !== params.length) {
+    const placeholderCount = indices.size;
+    throw new Error(`Parameter mismatch: ${placeholderCount} placeholders (expect 1..${max}), ${params.length} parameters`);
   }
   
   // Ensure no template literals (common injection vector)
@@ -62,6 +69,9 @@ export function quoteLiteral(value) {
   }
   
   if (typeof value === 'number') {
+    if (!Number.isFinite(value)) {
+      throw new Error('Cannot quote non-finite number');
+    }
     return value.toString();
   }
   
@@ -96,11 +106,14 @@ export function validateIdentifier(name, context = 'identifier') {
   
   // Block obvious injection patterns
   const dangerousPatterns = [
-    /[;\x00]/,           // Semicolon or null byte
+    /;/,                 // Semicolon
     /--/,                // SQL comments
     /\/\*/,              // Block comments  
-    /DROP|DELETE|INSERT|UPDATE|CREATE|ALTER|GRANT|REVOKE/i  // DDL/DML keywords
+    /\b(?:DROP|DELETE|INSERT|UPDATE|CREATE|ALTER|GRANT|REVOKE)\b/i  // DDL/DML keywords
   ];
+  if (String(name).includes('\0')) {
+    throw new Error(`${context} contains null byte`);
+  }
   
   for (const pattern of dangerousPatterns) {
     if (pattern.test(name)) {
@@ -131,6 +144,8 @@ import { validatePostgreSQLType as _validatePostgreSQLType } from './InputValida
  *
  * Unknown placeholders will throw to avoid unsafe insertion.
  */
+import { validateRLSExpression as _validateRLSExpression } from './InputValidator.mjs';
+
 export function buildDDL(template, values = {}) {
   let sql = template;
 
@@ -170,8 +185,13 @@ export function buildDDL(template, values = {}) {
     return up;
   };
 
-  const sanitizeExpression = (expr) => {
+  const sanitizeConstraintFragment = (expr) => {
     _validateConstraintExpression(String(expr));
+    return String(expr);
+  };
+
+  const sanitizePolicyExpression = (expr) => {
+    _validateRLSExpression(String(expr));
     return String(expr);
   };
 
@@ -191,6 +211,9 @@ export function buildDDL(template, values = {}) {
       case 'columns':
         replacement = sanitizeIdentList(value, 'columns');
         break;
+      case 'column_defs':
+        replacement = sanitizeConstraintFragment(Array.isArray(value) ? value.join(', ') : value);
+        break;
       case 'roles':
         replacement = sanitizeRoles(value);
         break;
@@ -201,19 +224,19 @@ export function buildDDL(template, values = {}) {
         replacement = sanitizeOperation(value);
         break;
       case 'expression':
-        replacement = sanitizeExpression(value);
+        replacement = sanitizePolicyExpression(value);
         break;
       case 'using':
-        replacement = sanitizeExpression(value);
+        replacement = sanitizePolicyExpression(value);
         break;
       case 'check':
-        replacement = sanitizeExpression(value);
+        replacement = sanitizePolicyExpression(value);
         break;
       default:
         throw new Error(`Unsupported placeholder: {${key}}`);
     }
 
-    sql = sql.replace(new RegExp(`\\{${key}\\}`, 'g'), replacement);
+    sql = sql.replace(new RegExp(`\\{${key}\\}`, 'g'), () => replacement);
   }
 
   // Final safety guard: no unresolved {placeholders} may remain
@@ -230,7 +253,7 @@ export function buildDDL(template, values = {}) {
  * These follow PostgreSQL best practices and can be safely parameterized
  */
 export const DDL_TEMPLATES = {
-  CREATE_TABLE: 'CREATE TABLE IF NOT EXISTS {table} ({columns})',
+  CREATE_TABLE: 'CREATE TABLE IF NOT EXISTS {table} ({column_defs})',
   ADD_COLUMN: 'ALTER TABLE {table} ADD COLUMN {column} {type}',
   DROP_COLUMN: 'ALTER TABLE {table} DROP COLUMN IF EXISTS {column}',
   CREATE_INDEX: 'CREATE INDEX IF NOT EXISTS {index} ON {table} ({columns})',
@@ -250,7 +273,10 @@ export const DDL_TEMPLATES = {
  * // GOOD: Using templates + validation
  * const sql = buildDDL(DDL_TEMPLATES.CREATE_TABLE, {
  *   table: tableName,              // identifier → quoted automatically
- *   columns: ['id', 'email']       // identifiers → quoted and joined
+ *   column_defs: [                 // SQL fragments → validated
+ *     '"id" uuid PRIMARY KEY',
+ *     '"email" text NOT NULL'
+ *   ]
  * });
  * 
  * // RLS: INSERT policy (WITH CHECK only)

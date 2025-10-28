@@ -93,14 +93,16 @@ export function validatePostgreSQLType(type) {
   const normalizedType = type.toLowerCase().trim();
   
   // Check for array notation
-  const arrayMatch = normalizedType.match(/^(.+)\[\]$/);
+  const arrayMatch = normalizedType.match(/^(.*)\[\]$/);
   if (arrayMatch) {
     return validatePostgreSQLType(arrayMatch[1]);
   }
   
-  // Check for precision/scale notation
-  const precisionMatch = normalizedType.match(/^(\w+(?:\s+\w+)*)\(\d+(?:,\s*\d+)?\)$/);
-  const baseType = precisionMatch ? precisionMatch[1] : normalizedType;
+  // Base type with optional precision and optional time zone qualifier
+  const m = normalizedType.match(/^(\w+(?:\s+\w+)*?)(?:\((?:\d+)(?:\s*,\s*\d+)?\))?(?:\s+(with|without)\s+time\s+zone)?$/);
+  const baseCore = m ? m[1] : normalizedType;
+  const tzq = m && m[2] ? `${m[2]} time zone` : '';
+  const baseType = tzq ? `${baseCore} ${tzq}` : baseCore;
   
   const validTypes = new Set([
     // Numeric types
@@ -176,7 +178,6 @@ export function validateConstraintExpression(expression) {
     { pattern: /--.*$/m, name: 'SQL comment' },
     { pattern: /\/\*.*?\*\//gs, name: 'block comment' },
     { pattern: /;\s*\w+/, name: 'multiple statements' },
-    { pattern: /\x00/, name: 'null byte' },
     { pattern: /\bEXECUTE\s+/i, name: 'dynamic SQL execution' },
     { pattern: /\bEVAL\s*\(/i, name: 'expression evaluation' }
   ];
@@ -185,6 +186,9 @@ export function validateConstraintExpression(expression) {
     if (pattern.test(expression)) {
       throw new SecurityError(`Constraint expression contains dangerous pattern: ${name}`, 'DANGEROUS_CONSTRAINT');
     }
+  }
+  if (String(expression).includes('\0')) {
+    throw new SecurityError('Constraint expression contains dangerous pattern: null byte', 'DANGEROUS_CONSTRAINT');
   }
   
   return true;
@@ -212,8 +216,11 @@ export function validateRLSExpression(expression) {
   const rlsDangerousPatterns = [
     // Classic injection/bypass patterns
     { pattern: /\bor\s*1\s*=\s*1\b/i, name: 'OR 1=1 bypass' },
-    // Entire expression is just TRUE (optionally wrapped in parentheses)
+    // Entire expression is just TRUE/FALSE (optionally wrapped in parentheses) or numeric tautology
     { pattern: /^\s*\(*\s*true\s*\)*\s*$/i, name: 'predicate is always TRUE' },
+    { pattern: /^\s*\(*\s*1\s*=\s*1\s*\)*\s*$/i, name: 'predicate is always TRUE (1=1)' },
+    { pattern: /^\s*\(*\s*false\s+or\s+true\s*\)*\s*$/i, name: 'boolean tautology (false OR true)' },
+    { pattern: /^\s*\(*\s*true\s+or\s+false\s*\)*\s*$/i, name: 'boolean tautology (true OR false)' },
     // DDL or RLS manipulation should never appear inside a USING/USING () clause
     { pattern: /DROP\s+POLICY/i, name: 'policy manipulation' },
     { pattern: /CREATE\s+POLICY/i, name: 'policy creation' },

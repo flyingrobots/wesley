@@ -71,6 +71,12 @@ CREATE POLICY "bypass_all" ON users
   USING (true);  -- Bypasses all security
 ```
 
+Note on clause semantics:
+
+- INSERT policies use WITH CHECK to validate new rows: e.g., `CREATE POLICY ... FOR INSERT ... WITH CHECK (auth.uid() = user_id)`.
+- UPDATE policies commonly include both USING (which rows are visible to update) and WITH CHECK (what the new row must satisfy): e.g., `CREATE POLICY ... FOR UPDATE ... USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id)`.
+
+
 ## 🧪 Security Testing
 
 Wesley includes comprehensive security test suites:
@@ -87,10 +93,12 @@ Wesley includes comprehensive security test suites:
 - ✅ Define RLS policies in GraphQL - Wesley ensures they're safe
 - ❌ Never include raw SQL in schema comments or descriptions
 
-### For Wesley Runtime Users  
+
+### For Wesley Runtime Users
 - ✅ **PREFER**: Supabase-js client for all data operations
 - ✅ **FALLBACK**: Parameterized queries with pg library
 - ❌ **NEVER**: String interpolation or template literals with user data
+
 
 ### For Production Deployment
 - ✅ All Wesley-generated SQL is pre-validated for security
