@@ -24,7 +24,7 @@
     "@wesley/core": "workspace:*",
     "ajv": "^8.12.0",
     "ajv-formats": "^3.0.1",
-    "commander": "^14.0.0"
+    "commander": "^14.0.2"
   },
   "keywords": [
     "cli",
