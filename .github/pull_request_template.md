@@ -1,23 +1,37 @@
-## Context
-- What problem does this PR solve? Link issues/tickets.
+## Summary
+- What problem does this PR solve? Link issues/PRs.
+
+## Why
+- Rationale for this approach. Mention alternatives considered and trade‑offs.
 
 ## Changes
-- Summary of the minimal, surgical changes.
+- Bulleted list of focused changes (keep it surgical).
 
-## Rationale & Alternatives
-- Why this approach? What else was considered and why not?
+## Risk
+- User‑facing or CI risk and mitigations. Rollout/enablement notes if any.
 
-## Risks
-- User-facing or CI risks. How mitigated? Rollout notes.
+## Backout
+- How to revert safely; follow‑up cleanup if rollback happens.
 
-## Backout Plan
-- How to revert safely if needed.
+## Testing
+- Unit: `pnpm -w -F @wesley/core test:unit`
+- Snapshots: `UPDATE_SNAPSHOTS=1 pnpm -w -F @wesley/core test:snapshots` (only when intentionally updating)
+- CLI Bats: `pnpm -w -F @wesley/cli test`
+- Preflight: `pnpm run preflight`
 
-## Screenshots / Logs (if relevant)
+## EvidenceMap / SourceMap (if applicable)
+- Confirm UIDs use `tbl:Table` and `col:Table.field`.
+- If mapping SQL→SDL, verify `.wesley/bundle.json` exists and SourceMap finds SDL.
+
+## Screenshots / Logs (optional)
+
+## Merge Strategy
+- Merge commit only; no rebase.
+- Delete branch after merge.
 
 ## Checklist
-- [ ] One-topic PR with tight diff
-- [ ] Tests pass locally (smallest relevant subset)
+- [ ] One‑topic PR with tight diff
+- [ ] Tests green locally (unit, snapshots, CLI Bats as relevant)
+- [ ] Preflight passes (`pnpm run preflight`)
 - [ ] No widened permissions/secrets in workflows
 - [ ] Docs updated if behavior changed
-
