@@ -44,6 +44,7 @@ type Document @wes_table @wes_tenant(by: "org_id") @wes_rls(enabled: true) {
 - [Key Features](#key-features)
 - [Advanced Features](#advanced-features)
 - [FAQ](#faq)
+ - [Evidence, HOLMES, and Observability](#evidence-holmes-and-observability)
 
 ---
 
@@ -197,6 +198,17 @@ Wesley is engineered for safety, speed, and confidence.
 - **Explain Mode:** Shows the precise **lock levels** for every operation in the migration plan.
 - **HOLMES Scoring:** An evidence-based confidence system that produces **SCS/TCI/MRI** metrics (Schema Coverage, Test Confidence, Migration Risk) for deployment readiness.
 - **Dead Column Detection:** Tools to find and flag unused database columns for safe cleanup.
+
+---
+
+## Evidence, HOLMES, and Observability
+
+- EvidenceMap is the authoritative mapping between schema elements and generated artifacts. Generators record evidence under stable UIDs:
+  - Tables: `tbl:TableName`
+  - Columns: `col:TableName.columnName`
+- SQL comments like `COMMENT ON COLUMN … IS 'uid: …'` are human-readable hints. Tooling (SourceMap, scoring, HOLMES) reads from EvidenceMap, not from the comment strings.
+- To surface a SQL error in the original GraphQL SDL, load the evidence bundle (`.wesley/bundle.json`) and call `findSourceForSql(evidenceMap, { file, line })`.
+- Scores (SCS/TCI/MRI) are computed from EvidenceMap; ensure generators record artifacts to keep scores accurate.
 
 ---
 

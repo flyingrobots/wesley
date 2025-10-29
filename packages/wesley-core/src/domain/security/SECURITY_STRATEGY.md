@@ -99,6 +99,14 @@ Choosing the right policy clause:
 
 These templates match RLSPresets output (owner/tenant/public-read, etc.).
 
+### 5. **Evidence and Source Mapping**
+
+- EvidenceMap is the source of truth for where schema elements land in generated artifacts. Generators record evidence using stable UIDs:
+  - Tables: `tbl:TableName`
+  - Columns: `col:TableName.columnName`
+- SQL `COMMENT ON ... 'uid: …'` strings are informational hints only. Consumers (SourceMap, scoring, HOLMES) read from EvidenceMap.
+- To map a SQL error back to SDL, use SourceMap utilities (e.g., `findSourceForSql(evidenceMap, { file, line })`).
+
 
 ## 🧪 Security Testing
 
