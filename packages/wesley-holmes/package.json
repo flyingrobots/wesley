@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@wesley/core": "workspace:*",
-    "commander": "^14.0.0"
+    "commander": "^14.0.2"
   },
   "keywords": [
     "holmes",
