@@ -7,7 +7,10 @@ import { GenerationPipeline } from "../wesley-core/src/index.mjs";
 class MemoryFileSystem {
   private files = new Map<string,string>();
   async exists(p:string){ return this.files.has(p); }
-  async read(p:string){ if(!this.files.has(p)) throw new Error(`ENOENT: ${p}`); return this.files.get(p)!; }
+  async read(p:string){
+    if(!this.files.has(p)) { const e = new Error(`ENOENT: ${p}`) as Error & { code?: string }; e.code = 'ENOENT'; throw e; }
+    return this.files.get(p)!;
+  }
   async write(p:string,c:string){ this.files.set(p, String(c ?? "")); }
 }
 
@@ -26,9 +29,13 @@ export async function createDenoRuntime(){
     graphql: {
       async parse(sdl:string){
         // ultra-minimal detector for @wes_table types
-        const re = /\btype\s+([A-Za-z_][A-Za-z0-9_]*)\s*([^\{]*)\{/g; const tables:string[]=[]; let m:RegExpExecArray|null;
-        while((m=re.exec(sdl))!==null){ if(/@wes_table\b|@wesley_table\b|\b@table\b/.test(m[2]||'')) tables.push(m[1]); }
-        return { tables: tables.map(name=>({name})), toJSON(){ return { tables }; } };
+        const re = /\btype\s+([A-Za-z_][A-Za-z0-9_]*)\s*([^\{]*)\{/g;
+        const tables: Array<{ name: string }> = [];
+        let m: RegExpExecArray | null;
+        while ((m = re.exec(sdl)) !== null) {
+          if (/@wes_table\b|@wesley_table\b|\b@table\b/.test(m[2] || '')) tables.push({ name: m[1] });
+        }
+        return { tables, toJSON(){ return { tables }; } };
       }
     }
   };
@@ -37,10 +44,18 @@ export async function createDenoRuntime(){
 
 export async function runInDeno(schemaSDL:string){
   const rt = await createDenoRuntime();
-  const pipeline = new GenerationPipeline({ parser: rt.parsers.graphql, diffEngine: { async diff(){ return { steps: [] }; }, async generateMigration(){ return null; } }, fileSystem: undefined, logger: rt.logger });
+  const diffEngine = {
+    async diff(){ return { steps: [] }; },
+    async generateMigration(){ return null; }
+  };
+  const pipeline = new GenerationPipeline({
+    parser: rt.parsers.graphql,
+    diffEngine,
+    fileSystem: undefined,
+    logger: rt.logger
+  });
   const bundle = await pipeline.execute(schemaSDL, { sha: 'deno-smoke' });
   const tables = Array.isArray(bundle?.schema?.tables)? bundle.schema.tables.length : 0;
   const token = `DENO_HOST_OK:${tables}:${(await rt.crypto.sha256Hex(bundle.schema)).slice(0,12)}`;
   return { ok:true, token, tables };
 }
-

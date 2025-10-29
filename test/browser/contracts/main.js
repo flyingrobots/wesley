@@ -36,4 +36,11 @@ async function main() {
   }
 }
 
-main();
+main().catch(err => {
+  console.error('Fatal error in main():', err);
+  window.__host_contracts = {
+    passed: 0,
+    failed: 1,
+    cases: [{ name: 'main-crash', ok: false, details: { error: String(err) } }]
+  };
+});

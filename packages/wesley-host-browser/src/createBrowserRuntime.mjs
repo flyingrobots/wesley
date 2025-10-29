@@ -30,13 +30,12 @@ class MemoryFileSystem {
 
 // Web Crypto helpers
 async function sha256Hex(input) {
-  if (!globalThis.crypto || !globalThis.crypto.subtle) {
-    throw new Error('WebCrypto API unavailable: globalThis.crypto.subtle is required to compute SHA-256');
-  }
+  const subtle = globalThis.crypto && globalThis.crypto.subtle;
+  if (!subtle) throw new Error('WebCrypto (crypto.subtle) is not available in this runtime');
   const enc = new TextEncoder();
   const data = enc.encode(typeof input === 'string' ? input : JSON.stringify(input));
   // Prefer globalThis.crypto.subtle (available in browsers and some runtimes)
-  const digest = await globalThis.crypto.subtle.digest('SHA-256', data);
+  const digest = await subtle.digest('SHA-256', data);
   const bytes = new Uint8Array(digest);
   return [...bytes].map(b => b.toString(16).padStart(2, '0')).join('');
 }
@@ -52,8 +51,11 @@ function sanitizeGraphQL(sdl, { maxBytes = 5 * 1024 * 1024 } = {}) {
     e.code = 'EINPUTSIZE';
     throw e;
   }
-  // Strip BOM
-  return sdl.replace(/^\uFEFF/, '');
+  // Strip BOM without control chars in regex; defensively drop null bytes
+  let out = sdl;
+  if (out.length && out.charCodeAt(0) === 0xFEFF) out = out.slice(1);
+  if (out.indexOf('\0') !== -1) out = out.split('\0').join('');
+  return out;
 }
 
 import { BrowserParserPort } from './BrowserParserPort.mjs';

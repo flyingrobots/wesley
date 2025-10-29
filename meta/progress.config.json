@@ -11,6 +11,8 @@
       "@wesley/generator-js": 0.1,
       "@wesley/holmes": 0.1,
       "@wesley/host-browser": 0,
+      "@wesley/host-deno": 0,
+      "@wesley/host-bun": 0,
       "@wesley/tasks": 0.05,
       "@wesley/slaps": 0.03,
       "@wesley/scaffold-multitenant": 0.01,

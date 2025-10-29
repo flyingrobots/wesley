@@ -20,4 +20,3 @@ jobs:
           bun-version: latest
       - name: Bun host smoke
         run: bun run packages/wesley-host-bun/examples/smoke.mjs | tee bun-host.out && grep -q '^BUN_HOST_OK:' bun-host.out
-

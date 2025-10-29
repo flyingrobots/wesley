@@ -9,7 +9,12 @@ import { join } from 'node:path';
 async function sh(cmd, args, opts = {}) {
   return await new Promise((resolve, reject) => {
     const p = spawn(cmd, args, { stdio: 'inherit', ...opts });
-    p.on('exit', (code) => code === 0 ? resolve() : reject(new Error(`${cmd} ${args.join(' ')} exited ${code}`)));
+    p.on('error', (err) => reject(err));
+    p.on('exit', (code, signal) =>
+      code === 0
+        ? resolve()
+        : reject(new Error(`${cmd} ${args.join(' ')} exited ${code ?? 'null'}${signal ? ` (signal ${signal})` : ''}`))
+    );
   });
 }
 
@@ -55,6 +60,7 @@ async function main() {
   const port = process.env.TEST_SERVER_PORT || '8787';
   let srvErr = '';
   const srv = spawn(process.execPath, ['scripts/serve-static.mjs', '--dir=test/browser/contracts/dist', `--port=${port}`], { stdio: ['ignore','pipe','pipe'] });
+  srv.on('error', (e) => { throw new Error(`serve-static failed to spawn: ${e?.message || e}`); });
   srv.stderr?.on('data', (d) => { srvErr += d.toString(); if (srvErr.length > 2000) srvErr = srvErr.slice(-2000); });
   srv.on('error', (err) => { srvErr += `\n[spawn-error] ${err?.message || err}`; });
   try {
