@@ -190,16 +190,28 @@ export class WesleyCommand {
       // Handle errors properly
       const exitCode = this.exitCodeFor(error);
 
+      // Best-effort SDL source annotation if evidence bundle is available
+      let sdlNote = null;
+      try {
+        const { annotateErrorWithSDL } = await import('../utils/source-map.mjs');
+        const ann = await annotateErrorWithSDL(error, { fs: this.ctx.fs });
+        if (ann && ann.file && ann.lines) {
+          sdlNote = `${ann.file}:${ann.lines}`;
+        }
+      } catch {}
+
       if (options.json) {
         this.ctx.stderr.write(JSON.stringify({
           success: false,
           code: error.code || 'ERROR',
-          error: error.message,
+          error: sdlNote ? `${error.message} (SDL: ${sdlNote})` : error.message,
           stack: (options.debug || options.verbose) ? error.stack : undefined,
           timestamp: new Date().toISOString()
         }, null, 2) + '\n');
       } else if (!options.quiet) {
-        this.ctx.stderr.write(this.formatError(error, options) + '\n');
+        const msg = this.formatError(error, options);
+        const annotated = sdlNote ? `${msg}\n   SDL: ${sdlNote}` : msg;
+        this.ctx.stderr.write(annotated + '\n');
         
         // Add helpful hints
         if (error.code === 'ENOENT') {
