@@ -110,7 +110,7 @@ export class PostgreSQLGenerator {
       for (const field of table.getFields()) {
         if (!field.isVirtual()) {
           const idf = (await import('../Identifier.mjs')).identifier;
-          const fieldUid = field.directives?.['@uid'] || `col_${idf.toTableSQLName(table.name)}_${idf.toSQL(field.name)}`;
+          const fieldUid = field.directives?.['@uid'] || `col:${table.name}.${field.name}`;
           statements.push(`COMMENT ON COLUMN "${sqlTable}"."${idf.toSQL(field.name)}" IS 'uid: ${fieldUid}';`);
         }
       }
