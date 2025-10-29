@@ -43,7 +43,7 @@ ${fields.join(',\n')}
       }
 
       if (this.evidenceMap) {
-        const tableUid = table.directives?.['@uid'] || `table_${table.name.toLowerCase()}`;
+        const tableUid = table.directives?.['@uid'] || `tbl:${table.name}`;
         this.evidenceMap.record(tableUid, 'zod', {
           file: 'generated/zod.ts',
           lines: `${schemas.length - 3}-${schemas.length}`
