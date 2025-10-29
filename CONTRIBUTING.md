@@ -67,6 +67,14 @@ Wesley follows hexagonal architecture with clear separation:
 - Sidecar package for intelligence features
 - Separate from main CLI
 
+### Evidence UIDs (Very Important)
+- Use a consistent UID scheme when recording artifacts to `EvidenceMap`:
+  - Tables: `tbl:TableName`
+  - Columns: `col:TableName.columnName`
+- Generators should always record evidence under these keys. Do not invent new prefixes.
+- SQL comments may still include legacy strings like `uid: col_table_column` in some snapshots; these are human hints only and are not used for lookups. EvidenceMap keys are the source of truth.
+- When adding new producers/consumers, prefer `tbl:/col:` and update tests accordingly.
+
 ## Development Setup
 
 ```bash

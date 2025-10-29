@@ -482,7 +482,7 @@ export class ScoringEngine {
     for (const table of schema.getTables()) {
       for (const field of table.getFields()) {
         if (!field.isForeignKey()) continue;
-        const fieldUid = DirectiveProcessor.getUid(field.directives) || `${table.name}.${field.name}`;
+        const fieldUid = DirectiveProcessor.getUid(field.directives) || `col:${table.name}.${field.name}`;
         total += 1;
         if (tested.has(`${table.name}.${field.name}.fk`) || this.evidenceMap.hasArtifact(`${fieldUid}.fk`, 'test')) {
           covered += 1;
