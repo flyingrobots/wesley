@@ -7,6 +7,9 @@
 
 import { DirectiveProcessor } from '../domain/Directives.mjs';
 
+// Bundle version used by GenerationPipeline and consumers when emitting bundles
+export const BUNDLE_VERSION = '2.0.0';
+
 export class ScoringEngine {
   constructor(evidenceMap) {
     this.evidenceMap = evidenceMap;

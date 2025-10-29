@@ -22,6 +22,7 @@ export class Holmes {
     this.evidence = bundle.evidence;
     this.scores = bundle.scores;
     this.weights = this.loadWeightOverrides();
+    this.schemaDirectives = {};
   }
 
   /**
@@ -46,11 +47,15 @@ export class Holmes {
 
     const elements = [];
     for (const [uid, evidence] of Object.entries(this.evidence.evidence || {})) {
-      const weight = this.inferWeight(uid);
+      const w = this.inferWeight(uid);
+      const weight = typeof w === 'object' ? w.value : w;
+      const weightSource = typeof w === 'object' ? w.source : undefined;
       const status = this.getStatus(evidence);
       const citation = this.getCitation(evidence);
       const deduction = this.makeDeduction(uid, status);
-      elements.push({ element: uid, weight, status, evidence: citation, deduction });
+      const row = { element: uid, weight, status, evidence: citation, deduction };
+      if (weightSource) row.weightSource = weightSource;
+      elements.push(row);
     }
 
     const gates = [];
@@ -63,14 +68,37 @@ export class Holmes {
 
     const verdict = this.buildVerdict(summary.verificationStatus);
 
+    const rawBreakdown = this.scores?.breakdown || this.scores?.scores?.breakdown || {};
+    const breakdown = normalizeBreakdown(rawBreakdown);
     return {
       metadata: summary,
       scores,
-      breakdown: this.scores?.breakdown || {},
+      breakdown,
       evidence: elements,
       gates,
       verdict
     };
+  }
+
+  /**
+   * Build a simple index of directives by column UID: col:Table.field -> ['primarykey','unique','foreignkey']
+   */
+  buildDirectiveIndex(schema) {
+    const index = {};
+    try {
+      const tables = schema?.tables || {};
+      for (const [tableName, table] of Object.entries(tables)) {
+        const fields = table?.fields || {};
+        for (const [fieldName, field] of Object.entries(fields)) {
+          const uid = `col:${tableName}.${fieldName}`;
+          const dirs = Object.keys(field?.directives || {})
+            .map((k) => (k.startsWith('@') ? k.slice(1) : k).toLowerCase());
+          if (dirs.length) index[uid] = dirs;
+        }
+      }
+    } catch {}
+    this.schemaDirectives = index;
+    return index;
   }
 
   renderInvestigation(data) {
@@ -215,13 +243,39 @@ export class Holmes {
 
   inferWeight(uid) {
     const lowered = uid.toLowerCase();
-    for (const [needle, weight] of Object.entries(this.weights)) {
-      if (needle === 'default') continue;
-      if (lowered.includes(needle)) {
-        return weight;
+    const cfg = this.weightConfig || this.weights || { default: DEFAULT_WEIGHTS.default, substrings: {}, directives: {}, overrides: {} };
+    // 1) Explicit overrides (table/column patterns)
+    for (const [pattern, weight] of Object.entries(cfg.overrides || {})) {
+      // Support simple wildcard: tbl:Table.* covering all columns
+      if (pattern.startsWith('tbl:') && pattern.endsWith('.*')) {
+        const tbl = pattern.slice(4, -2);
+        if (lowered.startsWith(`col:${tbl.toLowerCase()}.`)) {
+          return { value: weight, source: `override ${pattern}` };
+        }
+      }
+      if (lowered === pattern.toLowerCase()) {
+        return { value: weight, source: `override ${pattern}` };
       }
     }
-    return this.weights.default;
+
+    // 2) Directive-based weights
+    const dirs = this.schemaDirectives?.[uid] || [];
+    for (const d of dirs) {
+      const w = cfg.directives?.[d];
+      if (typeof w === 'number') {
+        return { value: w, source: `directive @${d}` };
+      }
+    }
+
+    // 3) Substring heuristics
+    for (const [needle, weight] of Object.entries(cfg.substrings || {})) {
+      if (needle && lowered.includes(needle)) {
+        return { value: weight, source: `substring ${needle}` };
+      }
+    }
+
+    // 4) Default
+    return { value: cfg.default ?? DEFAULT_WEIGHTS.default, source: 'default' };
   }
 
   getStatus(evidence) {
@@ -314,4 +368,60 @@ export class Holmes {
     }
     return weights;
   }
+}
+
+function normalizeBreakdown(b) {
+  if (!b || typeof b !== 'object') return {};
+  const out = { scs: {}, tci: {}, mri: {} };
+  // SCS (fields already match: score, earnedWeight, totalWeight)
+  if (b.scs) {
+    out.scs.sql = b.scs.sql || { score: 0, earnedWeight: 0, totalWeight: 0 };
+    out.scs.types = b.scs.types || { score: 0, earnedWeight: 0, totalWeight: 0 };
+    out.scs.validation = b.scs.validation || { score: 0, earnedWeight: 0, totalWeight: 0 };
+    out.scs.tests = b.scs.tests || { score: 0, earnedWeight: 0, totalWeight: 0 };
+    // If legacy fields used different names, attempt to map total/covered → totalWeight/earnedWeight
+    for (const k of Object.keys(out.scs)) {
+      const comp = out.scs[k];
+      if (comp.total !== undefined && comp.totalWeight === undefined) comp.totalWeight = comp.total;
+      if (comp.covered !== undefined && comp.earnedWeight === undefined) comp.earnedWeight = comp.covered;
+    }
+  }
+  // TCI (normalize legacy keys and fields)
+  if (b.tci) {
+    const map = {
+      unit_constraints: b.tci.unit_constraints || b.tci.unitConstraints,
+      unit_rls: b.tci.unit_rls || b.tci.rls,
+      integration_relations: b.tci.integration_relations || b.tci.integrationRelations,
+      e2e_ops: b.tci.e2e_ops || b.tci.e2eOps || { score: null, covered: 0, total: 0, note: 'Query operation test tracking not yet implemented' }
+    };
+    for (const [key, val] of Object.entries(map)) {
+      if (!val) { out.tci[key] = { score: null, covered: 0, total: 0 }; continue; }
+      out.tci[key] = {
+        score: val.score ?? null,
+        covered: val.covered ?? val.coveredWeight ?? 0,
+        total: val.total ?? val.totalWeight ?? 0,
+        note: val.note ?? 'N/A'
+      };
+    }
+    if (b.tci.legacy_components) out.tci.legacy_components = b.tci.legacy_components;
+  }
+  // MRI (normalize legacy component names and ensure count/points present)
+  if (b.mri) {
+    const map = {
+      drops: b.mri.drops,
+      renames_without_uid: b.mri.renames_without_uid || b.mri.renames,
+      add_not_null_without_default: b.mri.add_not_null_without_default || b.mri.defaults,
+      non_concurrent_indexes: b.mri.non_concurrent_indexes || b.mri.indexes
+    };
+    for (const [key, val] of Object.entries(map)) {
+      const comp = val || {};
+      out.mri[key] = {
+        score: comp.score ?? 0,
+        points: comp.points ?? 0,
+        count: comp.count ?? 0
+      };
+    }
+    out.mri.totalPoints = b.mri.totalPoints ?? Object.values(out.mri).reduce((s, c) => s + (c && typeof c.points === 'number' ? c.points : 0), 0);
+  }
+  return out;
 }
