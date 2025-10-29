@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "defaults": {
+    "mode": "auto",
+    "assumeDefaultBranch": "main",
+    "penalties": { "projectionError": 50, "projectionConflicts": 30 },
+    "fetchBase": true,
+    "useProviderAPI": false
+  },
+  "rules": [
+    { "when": { "event": "pull_request", "provider": "azure" },
+      "then": { "mode": "on", "baseFrom": "ci_env" } },
+    { "when": { "branchMatches": ["feature/*", "fix/*", "hotfix/*"] },
+      "then": { "mode": "on", "baseFrom": "default_branch" } },
+    { "when": { "branchEquals": "main" },
+      "then": { "mode": "off", "notes": "Trunk default; projection n/a" } }
+  ]
+}
+

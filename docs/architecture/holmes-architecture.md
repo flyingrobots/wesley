@@ -47,6 +47,39 @@ Moriarty performs trend analysis over `.wesley/history.json`:
 - `predictionData()` flags plateaus/regressions, derives optimistic/realistic/pessimistic ETAs when velocity is sufficient, gauges confidence via variance, and runs lightweight pattern detectors (velocity cliffs, test lag).
 - The Markdown report emphasizes the latest scores, velocity analysis, ETA table, detected patterns, and a sparkline-style history list.
 
+### Intent and Signals
+
+Moriarty’s goal is to forecast when a feature branch becomes “ship-ready,” not to grade the whole organization’s commit volume. Its core signal is change in SCS (schema coverage), but it also considers developer activity to avoid false “plateau” flags when SCS hasn’t moved yet:
+
+- Primary: SCS velocity from `.wesley/history.json` (EMA-smoothed).
+- Secondary: Recent Git activity for the current PR branch (commits and relevant file changes) derived from the PR graph (`merge-base .. HEAD`).
+- Tertiary: Time-window git activity as a fallback (e.g., last 24h) when PR graph is unavailable.
+
+These are blended to compute a small corrective “activity index.” Activity cannot inflate readiness; it only prevents declaring a plateau when work is clearly happening.
+
+Environment knobs (see CI wiring for defaults):
+- `MORIARTY_BASE_REF` – base branch for PR graph (defaults to `GITHUB_BASE_REF` or `main`).
+- `MORIARTY_GIT_WINDOW_HOURS` – time window for fallback activity (default: 24).
+- `MORIARTY_ACTIVITY_THRESHOLD` – minimum activity index to suppress plateau when SCS is flat (default: 0.35).
+- `MORIARTY_ACTIVITY_COMMITS_PER_DAY`, `MORIARTY_ACTIVITY_RELEVANT_PER_DAY` – normalization targets for “active” (defaults: 6 and 4).
+ - `MORIARTY_ACTIVITY_LINES_PER_DAY`, `MORIARTY_ACTIVITY_FILES_PER_DAY` – magnitude/breadth targets for work volume (defaults: 400 LOC/day, 10 files/day).
+
+Design constraints:
+- Team-wide commits on the base branch do not penalize the PR’s forecast.
+- Activity is weighted by relevance (schema/DDL/tests/.wesley artifacts > docs/random).
+- When Git is missing or shallow, Moriarty gracefully falls back to SCS-only velocity.
+
+### Readiness “EXPLAIN”
+
+To clarify why a branch is (or isn’t) “prod-ready,” Moriarty now prints an EXPLAIN block that evaluates explicit thresholds:
+
+- SCS ≥ 80%
+- TCI ≥ 70%
+- MRI ≤ 40%
+- CI stability (base branch, recent horizon) ≥ 90%
+
+These thresholds are configurable via `MORIARTY_READY_*` environment variables and are treated as guidance in the report. They do not override Holmes’s verdict gates.
+
 ## Report Schemas & Validation
 
 Before printing, each CLI command validates the structured data against bespoke schemas defined in `report-schemas.mjs`. The validator supports required keys, primitive typing, nested objects/arrays, and emits explicit error messages if generated reports diverge from the contract. This guarantees downstream tooling can rely on consistent JSON layouts.

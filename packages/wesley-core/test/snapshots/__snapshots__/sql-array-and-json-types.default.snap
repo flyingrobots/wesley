@@ -8,9 +8,9 @@ CREATE TABLE IF NOT EXISTS "products" (
   PRIMARY KEY ("id")
 );
 COMMENT ON TABLE "products" IS 'uid: tbl:Product';
-COMMENT ON COLUMN "products"."id" IS 'uid: col_products_id';
-COMMENT ON COLUMN "products"."name" IS 'uid: col_products_name';
-COMMENT ON COLUMN "products"."tags" IS 'uid: col_products_tags';
-COMMENT ON COLUMN "products"."categories" IS 'uid: col_products_categories';
-COMMENT ON COLUMN "products"."metadata" IS 'uid: col_products_metadata';
-COMMENT ON COLUMN "products"."prices" IS 'uid: col_products_prices';
+COMMENT ON COLUMN "products"."id" IS 'uid: col:Product.id';
+COMMENT ON COLUMN "products"."name" IS 'uid: col:Product.name';
+COMMENT ON COLUMN "products"."tags" IS 'uid: col:Product.tags';
+COMMENT ON COLUMN "products"."categories" IS 'uid: col:Product.categories';
+COMMENT ON COLUMN "products"."metadata" IS 'uid: col:Product.metadata';
+COMMENT ON COLUMN "products"."prices" IS 'uid: col:Product.prices';

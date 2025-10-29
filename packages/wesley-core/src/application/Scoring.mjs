@@ -7,13 +7,8 @@
 
 import { DirectiveProcessor } from '../domain/Directives.mjs';
 
-export const SCORE_SCHEMA_VERSION = '2.0.0';
+// Bundle version used by GenerationPipeline and consumers when emitting bundles
 export const BUNDLE_VERSION = '2.0.0';
-export const DEFAULT_THRESHOLDS = Object.freeze({
-  scs: 0.8,
-  tci: 0.7,
-  mri: 0.4
-});
 
 export class ScoringEngine {
   constructor(evidenceMap) {
@@ -24,29 +19,22 @@ export class ScoringEngine {
    * Schema Coverage Score - Did artifacts exist for each IR node?
    * Formula: Σ(weight × present) / Σ(weight)
    */
-  calculateSCS(schema, requiredArtifacts = ['sql', 'typescript', 'zod']) {
-    const breakdown = this.calculateSCSBreakdown(schema, requiredArtifacts);
-    const weights = { sql: 0.4, types: 0.25, validation: 0.2, tests: 0.15 };
-    let totalWeight = 0;
-    let weightedScore = 0;
+  calculateSCSDetails(schema, options = {}) {
+    const artifactGroups = options.artifactGroups || {
+      sql: ['sql'],
+      types: ['ts', 'typescript'],
+      validation: ['zod'],
+      tests: ['test']
+    };
+    const rollupGroups = options.rollupGroups || ['sql', 'types', 'validation'];
 
-    for (const [key, meta] of Object.entries(breakdown)) {
-      if (meta.totalWeight > 0 && weights[key]) {
-        totalWeight += weights[key];
-        weightedScore += weights[key] * meta.score;
-      }
+    const totals = {};
+    for (const key of Object.keys(artifactGroups)) {
+      totals[key] = { totalWeight: 0, earnedWeight: 0 };
     }
 
-    return totalWeight > 0 ? weightedScore / totalWeight : 0;
-  }
-
-  calculateSCSBreakdown(schema, requiredArtifacts = ['sql', 'typescript', 'zod']) {
-    const categories = {
-      sql: { kinds: ['sql'], totalWeight: 0, coveredWeight: 0 },
-      types: { kinds: ['typescript', 'ts'], totalWeight: 0, coveredWeight: 0 },
-      validation: { kinds: ['zod', 'validation'], totalWeight: 0, coveredWeight: 0 },
-      tests: { kinds: ['test', 'tests'], totalWeight: 0, coveredWeight: 0 }
-    };
+    let totalWeight = 0;
+    let earnedWeight = 0;
 
     for (const table of schema.getTables()) {
       for (const field of table.getFields()) {
@@ -54,311 +42,221 @@ export class ScoringEngine {
           continue;
         }
 
+        // Normalize to the same fallback UID format used by generators
+        // (e.g., PostgreSQL + pgTAP use `col:Table.field`).
         const uid = DirectiveProcessor.getUid(field.directives) || `col:${table.name}.${field.name}`;
         const weight = DirectiveProcessor.getWeight(field.directives);
-        if (weight <= 0) continue;
 
-        for (const meta of Object.values(categories)) {
-          meta.totalWeight += weight;
-          if (this.hasAnyEvidence(uid, meta.kinds)) {
-            meta.coveredWeight += weight;
+        totalWeight += weight;
+        let hasAllRequired = true;
+
+        for (const [group, kinds] of Object.entries(artifactGroups)) {
+          const hasArtifact = this.evidenceMap.hasArtifact(uid, kinds);
+          totals[group].totalWeight += weight;
+          if (hasArtifact) {
+            totals[group].earnedWeight += weight;
+          } else if (rollupGroups.includes(group)) {
+            hasAllRequired = false;
           }
+        }
+
+        if (hasAllRequired) {
+          earnedWeight += weight;
         }
       }
     }
 
-    // Ensure legacy "complete artifacts" still accounted for consumers relying on default argument
-    if (requiredArtifacts && requiredArtifacts.length) {
-      const completeKey = '_completeArtifacts';
-      if (!categories[completeKey]) {
-        categories[completeKey] = { kinds: requiredArtifacts, totalWeight: 0, coveredWeight: 0 };
-      }
-      for (const table of schema.getTables()) {
-        for (const field of table.getFields()) {
-          if (field.isVirtual() || DirectiveProcessor.shouldSkip(field.directives)) continue;
-          const uid = DirectiveProcessor.getUid(field.directives) || `col:${table.name}.${field.name}`;
-          const weight = DirectiveProcessor.getWeight(field.directives);
-          if (weight <= 0) continue;
-          categories[completeKey].totalWeight += weight;
-          if (this.evidenceMap?.hasCompleteArtifacts?.(uid, requiredArtifacts)) {
-            categories[completeKey].coveredWeight += weight;
-          }
-        }
-      }
+    const breakdown = {};
+    for (const [group, summary] of Object.entries(totals)) {
+      const { totalWeight: total, earnedWeight: earned } = summary;
+      breakdown[group] = {
+        score: total > 0 ? parseFloat((earned / total).toFixed(3)) : 0,
+        earnedWeight: parseFloat(earned.toFixed(3)),
+        totalWeight: parseFloat(total.toFixed(3))
+      };
     }
 
-    for (const meta of Object.values(categories)) {
-      meta.score = meta.totalWeight > 0 ? meta.coveredWeight / meta.totalWeight : 0;
-      meta.score = this.round(meta.score);
-    }
+    const score = totalWeight > 0 ? earnedWeight / totalWeight : 0;
 
-    return categories;
+    return {
+      score: parseFloat(score.toFixed(3)),
+      breakdown
+    };
+  }
+
+  calculateSCS(schema, options) {
+    return this.calculateSCSDetails(schema, options).score;
   }
 
   /**
    * Migration Risk Index - How spicy is this migration?
    * 0 = safe, 1 = maximum spice
    */
+  calculateMRIDetails(migrationSteps = []) {
+    const components = {
+      drops: { points: 0, count: 0 },
+      renames_without_uid: { points: 0, count: 0 },
+      add_not_null_without_default: { points: 0, count: 0 },
+      non_concurrent_indexes: { points: 0, count: 0 }
+    };
+
+    let riskPoints = 0;
+
+    for (const step of migrationSteps) {
+      switch (step.kind) {
+        case 'drop_table':
+          components.drops.points += 40;
+          components.drops.count += 1;
+          riskPoints += 40;
+          break;
+        case 'drop_column':
+          components.drops.points += 25;
+          components.drops.count += 1;
+          riskPoints += 25;
+          break;
+        case 'alter_type':
+          if (!this.isSafeCast(step.from, step.to)) {
+            components.add_not_null_without_default.points += 30;
+            components.add_not_null_without_default.count += 1;
+            riskPoints += 30;
+          }
+          break;
+        case 'add_column':
+          if (step.field?.nonNull && !step.field?.directives?.['@default']) {
+            components.add_not_null_without_default.points += 25;
+            components.add_not_null_without_default.count += 1;
+            riskPoints += 25;
+          }
+          break;
+        case 'rename_column':
+        case 'rename_table':
+          if (!step.uidContinuity) {
+            components.renames_without_uid.points += 10;
+            components.renames_without_uid.count += 1;
+            riskPoints += 10;
+          }
+          break;
+        case 'create_index':
+          if (step.concurrent === false) {
+            components.non_concurrent_indexes.points += 10;
+            components.non_concurrent_indexes.count += 1;
+            riskPoints += 10;
+          }
+          break;
+      }
+    }
+
+    const normalized = Math.min(100, riskPoints) / 100;
+
+    const breakdown = {};
+    const normalizedTotal = Math.min(100, riskPoints) || 0;
+    for (const [key, value] of Object.entries(components)) {
+      const limitedPoints = Math.min(value.points, 100);
+      breakdown[key] = {
+        score: normalizedTotal > 0 ? parseFloat((limitedPoints / normalizedTotal).toFixed(3)) : 0,
+        points: value.points,
+        count: value.count
+      };
+    }
+
+    breakdown.totalPoints = riskPoints;
+
+    return {
+      score: parseFloat(normalized.toFixed(3)),
+      breakdown
+    };
+  }
+
   calculateMRI(migrationSteps) {
-    return this.calculateMRIMetrics(migrationSteps).score;
+    return this.calculateMRIDetails(migrationSteps).score;
   }
 
   /**
    * Test Confidence Index - How well tested is the schema?
    * Weighted average of different test types
    */
-  calculateTCI(schema, testResults = {}, migrationSteps = []) {
-    const breakdown = this.calculateTCIBreakdown(schema, migrationSteps, testResults);
-    const weights = { unitConstraints: 0.45, rls: 0.2, integrationRelations: 0.2, e2eOps: 0.15 };
-    let totalWeight = 0;
-    let weightedScore = 0;
+  calculateTCIDetails(schema, testResults = {}) {
+    const weights = {
+      structure: 0.20,    // Tables/columns exist
+      constraints: 0.45,  // PK/FK/unique work
+      migrations: 0.25,   // Migrations apply cleanly
+      performance: 0.10   // Indexes used
+    };
 
-    for (const [key, meta] of Object.entries(breakdown)) {
-      if (meta.total > 0 && weights[key]) {
-        totalWeight += weights[key];
-        weightedScore += weights[key] * meta.score;
-      }
-    }
+    const testedStructure = this.collectStructureEvidence(schema);
+    const structureDetails = this.calculateTestCoverageDetails(schema, testedStructure);
 
-    const score = totalWeight > 0 ? weightedScore / totalWeight : 0;
-    return this.round(score, 0);
-  }
+    const testedConstraints = this.collectConstraintEvidence(schema);
+    const constraintDetails = this.calculateConstraintCoverageDetails(schema, testedConstraints);
 
-  calculateTCIBreakdown(schema, migrationSteps = [], testResults = {}) {
+    const relationDetails = this.calculateRelationCoverageDetails(schema, testedConstraints);
+    const rlsDetails = this.calculateRlsCoverageDetails(schema);
+
+    const migrationCoverage = testResults.migrations?.passed /
+      (testResults.migrations?.total || 1) || 0;
+    const performanceCoverage = this.calculateIndexCoverage(
+      schema,
+      testResults.performance || []
+    );
+
+    const score = (
+      weights.structure * structureDetails.score +
+      weights.constraints * constraintDetails.score +
+      weights.migrations * migrationCoverage +
+      weights.performance * performanceCoverage
+    );
+
     const breakdown = {
-      unitConstraints: { total: 0, covered: 0, components: {} },
-      rls: { total: 0, covered: 0 },
-      integrationRelations: { total: 0, covered: 0 },
-      e2eOps: { total: 0, covered: 0 }
+      unit_constraints: {
+        score: structureNumber(constraintDetails.score),
+        covered: constraintDetails.coveredWeight,
+        total: constraintDetails.totalWeight
+      },
+      unit_rls: {
+        score: structureNumber(rlsDetails.score),
+        covered: rlsDetails.covered,
+        total: rlsDetails.total
+      },
+      integration_relations: {
+        score: structureNumber(relationDetails.score),
+        covered: relationDetails.covered,
+        total: relationDetails.total
+      },
+      e2e_ops: {
+        score: null,
+        covered: 0,
+        total: 0,
+        note: 'Query operation test tracking not yet implemented'
+      },
+      legacy_components: {
+        structure: structureDetails.score,
+        constraints: constraintDetails.score,
+        migrations: migrationCoverage,
+        performance: performanceCoverage
+      }
     };
 
-    const structure = { total: 0, covered: 0 };
-    const constraints = { total: 0, covered: 0 };
-    const defaults = { total: 0, covered: 0 };
-    const indexes = { total: 0, covered: 0 };
-
-    for (const table of schema.getTables()) {
-      const tableUid = DirectiveProcessor.getUid(table.directives) || `tbl:${table.name}`;
-      if (table.directives?.['@rls']) {
-        breakdown.rls.total += 1;
-        if (this.hasAnyEvidence(`${tableUid}.rls`, ['test'])) {
-          breakdown.rls.covered += 1;
-        }
-      }
-
-      for (const field of table.getFields()) {
-        if (field.isVirtual()) {
-          // Integration coverage for relation helpers is inferred from behavior/generation tests
-          const relationUid = DirectiveProcessor.getUid(field.directives) || `rel:${table.name}.${field.name}`;
-          // @hasMany / @hasOne fields surface via relation directives
-          breakdown.integrationRelations.total += 1;
-          if (this.hasAnyEvidence(relationUid, ['test'])) {
-            breakdown.integrationRelations.covered += 1;
-          }
-          continue;
-        }
-
-        if (DirectiveProcessor.shouldSkip(field.directives)) {
-          continue;
-        }
-
-        const fieldUid = DirectiveProcessor.getUid(field.directives) || `col:${table.name}.${field.name}`;
-        const weight = DirectiveProcessor.getWeight(field.directives);
-
-        structure.total += weight;
-        if (this.hasAnyEvidence(fieldUid, ['test'])) {
-          structure.covered += weight;
-        }
-
-        if (field.isPrimaryKey()) {
-          constraints.total += weight;
-          if (this.hasAnyEvidence(`${fieldUid}.pk`, ['test'])) {
-            constraints.covered += weight;
-          }
-        }
-
-        if (field.isForeignKey()) {
-          constraints.total += weight;
-          if (this.hasAnyEvidence(`${fieldUid}.fk`, ['test'])) {
-            constraints.covered += weight;
-          }
-          breakdown.integrationRelations.total += 1;
-          if (this.hasAnyEvidence(`${fieldUid}.fk`, ['test'])) {
-            breakdown.integrationRelations.covered += 1;
-          }
-        }
-
-        if (field.isUnique()) {
-          constraints.total += weight;
-          if (this.hasAnyEvidence(`${fieldUid}.unique`, ['test'])) {
-            constraints.covered += weight;
-          }
-        }
-
-        if (field.directives?.['@check']) {
-          constraints.total += weight;
-          if (this.hasAnyEvidence(`${fieldUid}.check`, ['test'])) {
-            constraints.covered += weight;
-          }
-        }
-
-        if (field.directives?.['@default']) {
-          defaults.total += weight;
-          if (this.hasAnyEvidence(`${fieldUid}.default`, ['test'])) {
-            defaults.covered += weight;
-          }
-        }
-
-        if (field.isIndexed() || field.isUnique()) {
-          indexes.total += weight;
-          if (this.hasAnyEvidence(`${fieldUid}.index`, ['test'])) {
-            indexes.covered += weight;
-          }
-        }
-
-        if (field.directives?.['@computed'] || field.directives?.['@generated']) {
-          breakdown.integrationRelations.total += 1;
-          const suffix = field.directives['@computed'] ? 'behavior' : 'generated';
-          if (this.hasAnyEvidence(`${fieldUid}.${suffix}`, ['test'])) {
-            breakdown.integrationRelations.covered += 1;
-          }
-        }
-      }
-    }
-
-    const structureScore = structure.total > 0 ? structure.covered / structure.total : 0;
-    const constraintScore = constraints.total > 0 ? constraints.covered / constraints.total : 0;
-    const defaultScore = defaults.total > 0 ? defaults.covered / defaults.total : 0;
-    const indexScore = indexes.total > 0 ? indexes.covered / indexes.total : 0;
-
-    breakdown.unitConstraints.total = structure.total + constraints.total + defaults.total + indexes.total;
-    const normalizedWeight = (structure.total > 0 ? 0.35 : 0) + (constraints.total > 0 ? 0.35 : 0) + (defaults.total > 0 ? 0.1 : 0) + (indexes.total > 0 ? 0.2 : 0);
-    const unitScore = normalizedWeight > 0
-      ? (
-          (structure.total > 0 ? 0.35 * structureScore : 0) +
-          (constraints.total > 0 ? 0.35 * constraintScore : 0) +
-          (defaults.total > 0 ? 0.1 * defaultScore : 0) +
-          (indexes.total > 0 ? 0.2 * indexScore : 0)
-        ) / normalizedWeight
-      : 0;
-
-    breakdown.unitConstraints.covered = breakdown.unitConstraints.total * unitScore;
-    breakdown.unitConstraints.components = {
-      structure: this.round(structureScore),
-      constraints: this.round(constraintScore),
-      defaults: this.round(defaultScore),
-      indexes: this.round(indexScore)
+    return {
+      score: parseFloat(score.toFixed(3)),
+      breakdown
     };
-    breakdown.unitConstraints.score = this.round(unitScore);
-
-    if (breakdown.rls.total > 0) {
-      breakdown.rls.score = this.round(breakdown.rls.covered / breakdown.rls.total);
-    } else {
-      breakdown.rls.score = 0;
-    }
-
-    if (breakdown.integrationRelations.total > 0) {
-      breakdown.integrationRelations.score = this.round(breakdown.integrationRelations.covered / breakdown.integrationRelations.total);
-    } else {
-      breakdown.integrationRelations.score = 0;
-    }
-
-    for (const step of migrationSteps) {
-      breakdown.e2eOps.total += 1;
-      if (this.hasAnyEvidence(this.migrationStepUid(step), ['test'])) {
-        breakdown.e2eOps.covered += 1;
-      }
-    }
-
-    if (breakdown.e2eOps.total > 0) {
-      breakdown.e2eOps.score = this.round(breakdown.e2eOps.covered / breakdown.e2eOps.total);
-    } else {
-      breakdown.e2eOps.score = 0;
-    }
-
-    breakdown.rls.score = breakdown.rls.score ?? 0;
-    breakdown.integrationRelations.score = breakdown.integrationRelations.score ?? 0;
-    breakdown.e2eOps.score = breakdown.e2eOps.score ?? 0;
-
-    const health = this.deriveTestHealth(testResults);
-    const applyHealth = (key) => {
-      const entry = breakdown[key];
-      if (!entry) return;
-      const factor = this.resolveHealthFactor(health, key);
-      entry.score = this.round(entry.score * factor, entry.score);
-    };
-
-    applyHealth('unitConstraints');
-    applyHealth('rls');
-    applyHealth('integrationRelations');
-    applyHealth('e2eOps');
-
-    return breakdown;
   }
 
-  calculateMRIMetrics(migrationSteps) {
-    const categories = {
-      drops: 0,
-      renames: 0,
-      defaults: 0,
-      typeChanges: 0,
-      indexes: 0,
-      other: 0
-    };
-
-    for (const step of migrationSteps) {
-      switch (step.kind) {
-        case 'drop_table':
-          categories.drops += 40;
-          break;
-        case 'drop_column':
-          categories.drops += 25;
-          break;
-        case 'rename_column':
-        case 'rename_table':
-          categories.renames += step.uidContinuity ? 5 : 15;
-          break;
-        case 'alter_type':
-          categories.typeChanges += this.isSafeCast(step.from, step.to) ? 10 : 30;
-          break;
-        case 'add_column': {
-          const risky = step.field?.nonNull && !step.field?.directives?.['@default'];
-          categories.defaults += risky ? 25 : 10;
-          break;
-        }
-        case 'create_index':
-          categories.indexes += step.concurrent === false ? 10 : 5;
-          break;
-        default:
-          categories.other += 5;
-      }
-    }
-
-    const totalPoints = Object.values(categories).reduce((sum, value) => sum + value, 0);
-    const capped = Math.min(totalPoints, 100);
-    const score = this.round(capped / 100);
-
-    const breakdown = {};
-    for (const [key, points] of Object.entries(categories)) {
-      breakdown[key] = {
-        points,
-        score: this.round(Math.min(points, 100) / 100),
-        contribution: totalPoints > 0 ? this.round(points / totalPoints) : 0
-      };
-    }
-
-    return { score, points: totalPoints, breakdown };
-  }
-
-  calculateMRIBreakdown(migrationSteps) {
-    return this.calculateMRIMetrics(migrationSteps).breakdown;
+  calculateTCI(schema, testResults) {
+    return this.calculateTCIDetails(schema, testResults).score;
   }
 
   /**
    * Calculate overall system readiness
    */
   calculateReadiness(scs, mri, tci, thresholds = {}) {
-    const t = { ...DEFAULT_THRESHOLDS, ...thresholds };
+    const defaults = {
+      scs: 0.8,
+      tci: 0.7,
+      mri: 0.4  // Lower is better for risk
+    };
+    
+    const t = { ...defaults, ...thresholds };
     
     const scsPass = scs >= t.scs;
     const tciPass = tci >= t.tci;
@@ -389,29 +287,17 @@ export class ScoringEngine {
 
   // Helper methods
   isSafeCast(fromType, toType) {
-    if (!fromType || !toType) return false;
-    if (fromType === toType) return true;
-
     const safeCasts = {
-      Int: ['Float', 'Decimal', 'BigInt', 'String'],
-      Float: ['Decimal', 'String'],
-      Decimal: ['String'],
-      BigInt: ['Decimal', 'String'],
-      Boolean: ['String', 'Int'],
-      ID: ['String'],
-      UUID: ['String']
+      'Int': ['Float', 'String'],
+      'Float': ['String'],
+      'Boolean': ['String'],
+      'ID': ['String']
     };
-
-    // Treat expressed as strings but allow case-insensitive matches
-    const from = String(fromType);
-    const to = String(toType);
-
-    return (safeCasts[from] || safeCasts[from.charAt(0).toUpperCase() + from.slice(1)] || [])
-      .map(target => target.toLowerCase())
-      .includes(to.toLowerCase());
+    
+    return safeCasts[fromType]?.includes(toType) || false;
   }
 
-  calculateTestCoverage(schema, testedElements) {
+  calculateTestCoverageDetails(schema, testedElements) {
     const tested = new Set(testedElements);
     let total = 0;
     let covered = 0;
@@ -430,10 +316,19 @@ export class ScoringEngine {
       }
     }
 
-    return total > 0 ? covered / total : 0;
+    const score = total > 0 ? covered / total : 0;
+    return {
+      score,
+      total,
+      covered
+    };
   }
 
-  calculateConstraintCoverage(schema, testedConstraints) {
+  calculateTestCoverage(schema, testedElements) {
+    return this.calculateTestCoverageDetails(schema, testedElements).score;
+  }
+
+  calculateConstraintCoverageDetails(schema, testedConstraints) {
     const tested = new Set(testedConstraints);
     let totalWeight = 0;
     let coveredWeight = 0;
@@ -466,7 +361,16 @@ export class ScoringEngine {
       }
     }
 
-    return totalWeight > 0 ? coveredWeight / totalWeight : 0;
+    const score = totalWeight > 0 ? coveredWeight / totalWeight : 0;
+    return {
+      score,
+      totalWeight,
+      coveredWeight
+    };
+  }
+
+  calculateConstraintCoverage(schema, testedConstraints) {
+    return this.calculateConstraintCoverageDetails(schema, testedConstraints).score;
   }
 
   calculateIndexCoverage(schema, testedIndexes) {
@@ -492,28 +396,30 @@ export class ScoringEngine {
    * Export scores to JSON
    */
   exportScores(schema, migrationSteps = [], testResults = {}) {
-    const scsBreakdown = this.calculateSCSBreakdown(schema);
-    const scs = this.round(this.calculateSCS(schema));
-    const mriMetrics = this.calculateMRIMetrics(migrationSteps);
-    const tciBreakdown = this.calculateTCIBreakdown(schema, migrationSteps, testResults);
-    const tci = this.calculateTCI(schema, testResults, migrationSteps);
-    const readiness = this.calculateReadiness(scs, mriMetrics.score, tci);
+    const scsDetails = this.calculateSCSDetails(schema);
+    const mriDetails = this.calculateMRIDetails(migrationSteps);
+    const tciDetails = this.calculateTCIDetails(schema, testResults);
+
+    const readiness = this.calculateReadiness(
+      scsDetails.score,
+      mriDetails.score,
+      tciDetails.score
+    );
 
     return {
-      version: SCORE_SCHEMA_VERSION,
+      version: BUNDLE_VERSION,
       timestamp: new Date().toISOString(),
       commit: this.evidenceMap.sha,
       scores: {
-        scs,
-        mri: mriMetrics.score,
-        tci,
-        breakdown: {
-          scs: this.serializeBreakdown(scsBreakdown),
-          tci: this.serializeBreakdown(tciBreakdown),
-          mri: this.serializeBreakdown(mriMetrics.breakdown)
-        }
+        scs: scsDetails.score,
+        mri: mriDetails.score,
+        tci: tciDetails.score
       },
-      thresholds: { ...DEFAULT_THRESHOLDS },
+      breakdown: {
+        scs: scsDetails.breakdown,
+        mri: mriDetails.breakdown,
+        tci: tciDetails.breakdown
+      },
       readiness,
       metadata: {
         tables: schema.getTables().length,
@@ -523,156 +429,96 @@ export class ScoringEngine {
     };
   }
 
-  serializeBreakdown(breakdown) {
-    if (!breakdown || typeof breakdown !== 'object') return breakdown;
-    const result = {};
-    for (const [key, value] of Object.entries(breakdown)) {
-      if (key.startsWith('_')) {
-        continue;
+  collectStructureEvidence(schema) {
+    const tested = new Set();
+
+    for (const table of schema.getTables()) {
+      const tableUid = DirectiveProcessor.getUid(table.directives) || `tbl:${table.name}`;
+      if (this.evidenceMap.hasArtifact(tableUid, 'test')) {
+        tested.add(table.name);
       }
-      if (value && typeof value === 'object' && !Array.isArray(value)) {
-        result[key] = {};
-        for (const [innerKey, innerValue] of Object.entries(value)) {
-          if (innerKey.startsWith('_')) continue;
-          if (typeof innerValue === 'number') {
-            result[key][innerKey] = this.round(innerValue);
-          } else if (innerValue && typeof innerValue === 'object') {
-            result[key][innerKey] = this.serializeBreakdown(innerValue);
-          } else {
-            result[key][innerKey] = innerValue;
-          }
-        }
-      } else {
-        result[key] = value;
-      }
-    }
-    return result;
-  }
 
-  migrationStepUid(step) {
-    if (step.uid) return step.uid;
-    const parts = [step.kind];
-    if (step.table) parts.push(step.table);
-    if (step.column) parts.push(step.column);
-    if (step.name) parts.push(step.name);
-    return `migration:${parts.join(':')}`;
-  }
-
-  hasAnyEvidence(uid, kinds) {
-    if (!this.evidenceMap || typeof this.evidenceMap.getEvidence !== 'function') {
-      return false;
-    }
-    const evidence = this.evidenceMap.getEvidence(uid);
-    if (!evidence) return false;
-    return kinds.some(kind => Array.isArray(evidence[kind]) && evidence[kind].length > 0);
-  }
-
-  deriveTestHealth(testResults = {}) {
-    const health = {};
-
-    const overall = this.toRatio(testResults.passed, testResults.total, testResults.failed)
-      ?? this.ratioFromSuites(testResults.suites);
-    if (overall != null) health.overall = overall;
-
-    health.unitConstraints = this.toRatioFromObject(testResults.unitConstraints)
-      ?? this.toRatioFromObject(testResults.constraints)
-      ?? this.toRatioFromArray(testResults.constraints);
-
-    health.rls = this.toRatioFromObject(testResults.rls)
-      ?? this.toRatioFromObject(testResults.policies);
-
-    health.integrationRelations = this.toRatioFromObject(testResults.integration)
-      ?? this.toRatioFromObject(testResults.behavior)
-      ?? this.toRatioFromArray(testResults.integration);
-
-    health.e2eOps = this.toRatioFromObject(testResults.migrations)
-      ?? this.toRatioFromObject(testResults.endToEnd)
-      ?? this.toRatio(testResults.migrationsPassed, testResults.migrationsTotal, testResults.migrationsFailed);
-
-    return health;
-  }
-
-  resolveHealthFactor(health, key) {
-    const factor = health[key];
-    if (typeof factor === 'number' && Number.isFinite(factor)) {
-      return this.clamp(factor, 0, 1);
-    }
-    if (typeof health.overall === 'number' && Number.isFinite(health.overall)) {
-      return this.clamp(health.overall, 0, 1);
-    }
-    return 1;
-  }
-
-  toRatio(passed, total, failed) {
-    if (typeof total === 'number' && total > 0) {
-      const pass = typeof passed === 'number'
-        ? passed
-        : (typeof failed === 'number' ? total - failed : total);
-      return this.clamp(pass / total, 0, 1);
-    }
-    if (typeof passed === 'number' && typeof failed === 'number') {
-      const denom = passed + failed;
-      if (denom > 0) {
-        return this.clamp(passed / denom, 0, 1);
-      }
-    }
-    return null;
-  }
-
-  toRatioFromObject(value) {
-    if (!value || typeof value !== 'object') return null;
-    return this.toRatio(value.passed ?? value.success ?? value.ok ?? value.completed, value.total ?? value.count, value.failed ?? value.errors);
-  }
-
-  toRatioFromArray(arr) {
-    if (!Array.isArray(arr) || arr.length === 0) return null;
-    let passed = 0;
-    for (const item of arr) {
-      if (item === true || item === 1 || item === 'pass' || item === 'passed') {
-        passed += 1;
-      } else if (item && typeof item === 'object') {
-        const ratio = this.toRatioFromObject(item);
-        if (ratio != null) {
-          passed += ratio;
+      for (const field of table.getFields()) {
+        if (field.isVirtual()) continue;
+        const fieldUid = DirectiveProcessor.getUid(field.directives) || `col:${table.name}.${field.name}`;
+        if (this.evidenceMap.hasArtifact(fieldUid, 'test')) {
+          tested.add(`${table.name}.${field.name}`);
         }
       }
     }
-    return this.clamp(passed / arr.length, 0, 1);
+
+    return Array.from(tested);
   }
 
-  ratioFromSuites(suites) {
-    if (!Array.isArray(suites) || suites.length === 0) {
-      return null;
+  collectConstraintEvidence(schema) {
+    const tested = new Set();
+
+    for (const table of schema.getTables()) {
+      for (const field of table.getFields()) {
+        const fieldUid = DirectiveProcessor.getUid(field.directives) || `col:${table.name}.${field.name}`;
+
+        if (field.isPrimaryKey() && this.evidenceMap.hasArtifact(`${fieldUid}.pk`, 'test')) {
+          tested.add(`${table.name}.${field.name}.pk`);
+        }
+
+        if (field.isForeignKey() && this.evidenceMap.hasArtifact(`${fieldUid}.fk`, 'test')) {
+          tested.add(`${table.name}.${field.name}.fk`);
+        }
+
+        if (field.isUnique() && this.evidenceMap.hasArtifact(`${fieldUid}.unique`, 'test')) {
+          tested.add(`${table.name}.${field.name}.unique`);
+        }
+      }
     }
+
+    return Array.from(tested);
+  }
+
+  calculateRelationCoverageDetails(schema, testedConstraintsArray) {
+    const tested = new Set(testedConstraintsArray);
     let total = 0;
-    let passed = 0;
-    for (const suite of suites) {
-      const ratio = this.toRatioFromObject(suite) ?? this.statusToRatio(suite.status ?? suite.verdict);
-      if (ratio != null) {
+    let covered = 0;
+
+    for (const table of schema.getTables()) {
+      for (const field of table.getFields()) {
+        if (!field.isForeignKey()) continue;
+        const fieldUid = DirectiveProcessor.getUid(field.directives) || `col:${table.name}.${field.name}`;
         total += 1;
-        passed += ratio;
+        if (tested.has(`${table.name}.${field.name}.fk`) || this.evidenceMap.hasArtifact(`${fieldUid}.fk`, 'test')) {
+          covered += 1;
+        }
       }
     }
-    if (total === 0) return null;
-    return this.clamp(passed / total, 0, 1);
+
+    return {
+      score: total > 0 ? covered / total : 0,
+      covered,
+      total
+    };
   }
 
-  statusToRatio(status) {
-    if (!status) return null;
-    const normalized = String(status).toLowerCase();
-    if (['pass', 'passed', 'ok', 'success'].includes(normalized)) return 1;
-    if (['fail', 'failed', 'error'].includes(normalized)) return 0;
-    return null;
-  }
+  calculateRlsCoverageDetails(schema) {
+    let total = 0;
+    let covered = 0;
 
-  clamp(value, min = 0, max = 1) {
-    return Math.min(Math.max(value, min), max);
-  }
-
-  round(value, fallback = 0) {
-    if (typeof value !== 'number' || !Number.isFinite(value)) {
-      return fallback;
+    for (const table of schema.getTables()) {
+      if (!table.directives?.['@rls']) continue;
+      total += 1;
+      const tableUid = DirectiveProcessor.getUid(table.directives) || `tbl:${table.name}`;
+      if (this.evidenceMap.hasArtifact(`${tableUid}.rls`, 'test')) {
+        covered += 1;
+      }
     }
-    return Math.round(value * 1000) / 1000;
+
+    return {
+      score: total > 0 ? covered / total : 0,
+      covered,
+      total
+    };
   }
+}
+
+function structureNumber(value) {
+  if (value === null || value === undefined) return null;
+  return parseFloat(value.toFixed(3));
 }

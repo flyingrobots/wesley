@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "defaults": {
+    "mode": "auto",
+    "assumeDefaultBranch": "main",
+    "penalties": { "projectionError": 50, "projectionConflicts": 30 },
+    "fetchBase": true
+  },
+  "rules": [
+    { "when": { "branchEquals": "main" },
+      "then": { "mode": "off", "notes": "Trunk default; projection n/a" } },
+    { "when": { "branchMatches": ["*"] },
+      "then": { "mode": "on", "baseFrom": "default_branch" } }
+  ]
+}
+
