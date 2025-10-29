@@ -5,8 +5,6 @@
  */
 
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
-import { buildOutputPathMap, materializeArtifacts, resolveFilePath } from '../utils/output-paths.mjs';
-import { relative } from 'node:path';
 import { buildPlanFromJson, emitFunction, emitView, collectParams } from '@wesley/core/domain/qir';
 
 export class GeneratePipelineCommand extends WesleyCommand {
@@ -38,11 +36,8 @@ export class GeneratePipelineCommand extends WesleyCommand {
 
   async executeCore(context) {
     const { schemaContent, schemaPath, options, logger } = context;
-    const configPaths = this.ctx?.config?.paths || {};
-    const outDir = options.outDir || configPaths.output || 'out';
+    const outDir = options.outDir || this.ctx?.config?.paths?.output || 'out';
     options.outDir = outDir;
-    const outputPaths = buildOutputPathMap(configPaths, outDir);
-    context.outputPaths = outputPaths;
 
     const isCI = String(this.ctx?.env?.CI || '').toLowerCase() === 'true' || this.ctx?.env?.CI === '1';
     const canAllowErrors = !isCI || options.iKnowWhatImDoing;
@@ -90,30 +85,35 @@ export class GeneratePipelineCommand extends WesleyCommand {
     
     // Generate DDL
     const ddlResult = generators.sql.emitDDL(ir);
-    artifacts.push(...materializeArtifacts(ddlResult?.files || [], 'ddl', outputPaths));
+    if (ddlResult && ddlResult.files) {
+      artifacts.push(...ddlResult.files);
+    }
     
     // Generate RLS if Supabase flag
     if (options.supabase && generators.sql.emitRLS) {
       const rlsResult = generators.sql.emitRLS(ir);
-      artifacts.push(...materializeArtifacts(rlsResult?.files || [], 'rls', outputPaths));
+      if (rlsResult && rlsResult.files) {
+        artifacts.push(...rlsResult.files);
+      }
     }
     
     // Generate tests
     if (generators.tests && generators.tests.emitPgTap) {
       const testResult = generators.tests.emitPgTap(ir);
-      artifacts.push(...materializeArtifacts(testResult?.files || [], 'pgtap', outputPaths));
+      if (testResult && testResult.files) {
+        artifacts.push(...testResult.files);
+      }
     }
     
     // Write files
     if (writer && writer.writeFiles) {
-      await writer.writeFiles(artifacts);
+      await writer.writeFiles(artifacts, options.outDir);
     }
     
     // Persist snapshot of IR for future diffs
     try {
       if (this.ctx.fs && ir && ir.tables) {
-        const snapshotPath = resolveFilePath(outputPaths.bundleDir, 'snapshot.json');
-        await this.ctx.fs.write(snapshotPath, JSON.stringify({ irVersion: '1.0.0', tables: ir.tables }, null, 2));
+        await this.ctx.fs.write('.wesley/snapshot.json', JSON.stringify({ irVersion: '1.0.0', tables: ir.tables }, null, 2));
       }
     } catch (e) {
       logger.warn('Could not write IR snapshot: ' + (e?.message || e));
@@ -137,64 +137,52 @@ export class GeneratePipelineCommand extends WesleyCommand {
         const mri = 0.2;
         const readiness = { verdict: (scs > 0.75 && tci > 0.6 ? 'ELEMENTARY' : (scs > 0.4 ? 'REQUIRES INVESTIGATION' : 'YOU SHALL NOT PASS')) };
 
-        const toScore = (value) => Number(value.toFixed(3));
-        const makeCoverageEntry = (value, { totalWeight = 1, coveredWeight = value } = {}) => ({
-          score: toScore(value),
-          totalWeight,
-          coveredWeight: toScore(coveredWeight)
-        });
-        const makeCountEntry = (value, { total = 1, covered = value, components = {} } = {}) => ({
-          score: toScore(value),
-          total,
-          covered: toScore(covered),
-          components
-        });
-        const makeRiskEntry = (value, { points = Math.round(value * 100), contribution = 1 } = {}) => ({
-          score: toScore(value),
-          points,
-          contribution: toScore(contribution)
-        });
+        const scsBreakdown = {
+          sql: { score: scs, earnedWeight: parseFloat((scs).toFixed(3)), totalWeight: 1 },
+          types: { score: scs, earnedWeight: parseFloat((scs).toFixed(3)), totalWeight: 1 },
+          validation: { score: scs, earnedWeight: parseFloat((scs).toFixed(3)), totalWeight: 1 },
+          tests: { score: Math.min(1, tci), earnedWeight: parseFloat((Math.min(1, tci)).toFixed(3)), totalWeight: 1 }
+        };
+
+        const tciBreakdown = {
+          unit_constraints: { score: tci, covered: 1, total: 1 },
+          unit_rls: { score: 0, covered: 0, total: 0 },
+          integration_relations: { score: 0, covered: 0, total: 0 },
+          e2e_ops: { score: 0, covered: 0, total: 0, note: 'Not tracked in quick emit mode' },
+          legacy_components: {
+            structure: tci,
+            constraints: tci,
+            migrations: 0,
+            performance: 0
+          }
+        };
+
+        const mriPoints = Math.round(mri * 100);
+        const mriBreakdown = {
+          drops: { score: mri, points: mriPoints, count: 0 },
+          renames_without_uid: { score: 0, points: 0, count: 0 },
+          add_not_null_without_default: { score: 0, points: 0, count: 0 },
+          non_concurrent_indexes: { score: 0, points: 0, count: 0 },
+          totalPoints: mriPoints
+        };
+
         const scores = {
           version: '2.0.0',
           timestamp,
           commit: sha,
-          thresholds: { scs: 0.8, tci: 0.7, mri: 0.4 },
-          scores: {
-            scs: Number(scs.toFixed(3)),
-            tci: Number(tci.toFixed(3)),
-            mri: Number(mri.toFixed(3)),
-            breakdown: {
-              scs: {
-                sql: makeCoverageEntry(scs),
-                types: makeCoverageEntry(scs),
-                validation: makeCoverageEntry(scs),
-                tests: makeCoverageEntry(tci)
-              },
-              tci: {
-                unitConstraints: makeCountEntry(tci),
-                rls: makeCountEntry(tci),
-                integrationRelations: makeCountEntry(tci),
-                e2eOps: makeCountEntry(tci)
-              },
-              mri: {
-                drops: makeRiskEntry(mri),
-                renames: makeRiskEntry(0, { points: 0, contribution: 0 }),
-                defaults: makeRiskEntry(0, { points: 0, contribution: 0 }),
-                typeChanges: makeRiskEntry(0, { points: 0, contribution: 0 }),
-                indexes: makeRiskEntry(0, { points: 0, contribution: 0 }),
-                other: makeRiskEntry(0, { points: 0, contribution: 0 })
-              }
-            }
-          },
+          scores: { scs, tci, mri },
+          breakdown: { scs: scsBreakdown, tci: tciBreakdown, mri: mriBreakdown },
           readiness,
-          metadata: { artifacts: artifacts.length }
+          metadata: {
+            tables: 0,
+            migrationSteps: 0,
+            testsRun: 0
+          }
         };
 
         // Evidence map: cite generated SQL and tests
-        const schemaArtifact = artifacts.find((a) => a.category === 'ddl' && a.name === 'schema.sql');
-        const testsArtifact = artifacts.find((a) => a.category === 'pgtap' && a.name === 'tests.sql');
-        const sqlFile = schemaArtifact?.path || resolveFilePath(outputPaths.ddl, 'schema.sql');
-        const testFile = testsArtifact?.path || resolveFilePath(outputPaths.pgtap, 'tests.sql');
+        const sqlFile = `${outDir}/schema.sql`;
+        const testFile = `${outDir}/tests.sql`;
         const evidence = {
           // Use coarse UID until we have fine-grained per-field evidence
           evidence: {
@@ -205,29 +193,25 @@ export class GeneratePipelineCommand extends WesleyCommand {
           }
         };
 
-        const bundle = { bundleVersion: '2.0.0', sha, timestamp, evidence, scores };
-        const scoresPath = resolveFilePath(outputPaths.bundleDir, 'scores.json');
-        const bundlePath = resolveFilePath(outputPaths.bundleDir, 'bundle.json');
-        await this.ctx.fs.write(scoresPath, JSON.stringify(scores, null, 2));
-        await this.ctx.fs.write(bundlePath, JSON.stringify(bundle, null, 2));
+        const bundle = { sha, timestamp, bundleVersion: '2.0.0', evidence, scores };
+        await this.ctx.fs.write('.wesley/scores.json', JSON.stringify(scores, null, 2));
+        await this.ctx.fs.write('.wesley/bundle.json', JSON.stringify(bundle, null, 2));
 
         // Append a tiny history for MORIARTY (hydrate from merge-base if available)
         try {
-        const history = await loadMoriartyHistory({
-          fs: this.ctx.fs,
-          shell: globalThis?.wesleyCtx?.shell,
-          defaultBase:
-            process.env.WESLEY_BASE_REF ||
-            process.env.GITHUB_BASE_REF ||
-            process.env.WESLEY_DEFAULT_BRANCH ||
-            process.env.GITHUB_DEFAULT_BRANCH ||
-            'main',
-          bundleDir: outputPaths.bundleDir
-        });
+          const history = await loadMoriartyHistory({
+            fs: this.ctx.fs,
+            shell: globalThis?.wesleyCtx?.shell,
+            defaultBase:
+              process.env.WESLEY_BASE_REF ||
+              process.env.GITHUB_BASE_REF ||
+              process.env.WESLEY_DEFAULT_BRANCH ||
+              process.env.GITHUB_DEFAULT_BRANCH ||
+              'main'
+          });
           const day = Math.floor(Date.now() / 86400000);
           const nextPoints = mergeHistoryPoints(history.points, [{ day, timestamp, scs, tci, mri }]);
-          const historyPath = resolveFilePath(outputPaths.bundleDir, 'history.json');
-          await this.ctx.fs.write(historyPath, JSON.stringify({ points: nextPoints }, null, 2));
+          await this.ctx.fs.write('.wesley/history.json', JSON.stringify({ points: nextPoints }, null, 2));
         } catch {}
       } catch (e) {
         logger.warn('Could not emit HOLMES evidence bundle: ' + (e?.message || e));
@@ -241,25 +225,20 @@ export class GeneratePipelineCommand extends WesleyCommand {
       logger.info('');
       logger.info('✨ Generated:');
       for (const file of artifacts) {
-        const display = relative(process.cwd(), file.path || file.name || '');
-        logger.info(`  ✓ ${display}`);
+        logger.info(`  ✓ ${file.name}`);
       }
       logger.info('');
     }
     
     return {
       artifacts: artifacts.length,
-      outDir: outputPaths.baseDir
+      outDir: options.outDir
     };
   }
 
   async executeWithTasksAndSlaps(context) {
     const { schemaContent, options, logger } = context;
     const { planner, runner, generators, writer } = this.ctx;
-    const configPaths = this.ctx?.config?.paths || {};
-    const outDir = options.outDir || configPaths.output || 'out';
-    const outputPaths = buildOutputPathMap(configPaths, outDir);
-    context.outputPaths = outputPaths;
     
     // Build task graph
     const nodes = [
@@ -295,11 +274,11 @@ export class GeneratePipelineCommand extends WesleyCommand {
       emit_tests: async (n, deps) => generators.tests.emitPgTap(deps.validate.ir),
       write_files: async (n, deps) => {
         const artifacts = [
-          ...materializeArtifacts(deps.gen_ddl?.files || [], 'ddl', outputPaths),
-          ...materializeArtifacts(deps.gen_rls?.files || [], 'rls', outputPaths),
-          ...materializeArtifacts(deps.gen_tests?.files || [], 'pgtap', outputPaths)
+          ...(deps.gen_ddl?.files || []),
+          ...(deps.gen_rls?.files || []),
+          ...(deps.gen_tests?.files || [])
         ];
-        return writer.writeFiles(artifacts);
+        return writer.writeFiles(artifacts, n.args.out);
       }
     };
     
@@ -325,9 +304,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
       if (files.length === 0) {
         return;
       }
-      const configPaths = this.ctx?.config?.paths || {};
-      const outputPaths = context.outputPaths || buildOutputPathMap(configPaths, options.outDir || configPaths.output || 'out');
-      const baseOutDir = outputPaths.baseDir;
+      const outDir = options.outDir || 'out';
       const targetSchema = options.opsSchema || 'wes_ops';
       const allowErrors = Boolean(options.opsAllowErrors);
       const compiledOps = [];
@@ -380,9 +357,8 @@ export class GeneratePipelineCommand extends WesleyCommand {
         compiledOps.sort((a, b) => a.order - b.order);
         const orderedOps = compiledOps.map(({ order, ...rest }) => rest);
         const outFiles = emitOpArtifacts(orderedOps, targetSchema, logger);
-        const materialized = materializeArtifacts(outFiles, 'ops', outputPaths);
-        await this.ctx.writer.writeFiles(materialized);
-        const opsOutputDir = outputPaths.ops;
+        await this.ctx.writer.writeFiles(outFiles, outDir);
+        const opsOutputDir = await fs.join(outDir, 'ops');
         logger.info({ count: outFiles.length, dir: opsOutputDir }, 'Compiled operations (experimental)');
       }
     } catch (e) {
@@ -505,9 +481,9 @@ function emitOpArtifacts(compiledOps, targetSchema, logger) {
     const fnSql = emitFunction(baseName, plan, { schema: targetSchema });
     if (isParamless) {
       const viewSql = emitView(baseName, plan, { schema: targetSchema });
-      outFiles.push({ name: `${baseName}.view.sql`, content: `${viewSql}\n` });
+      outFiles.push({ name: `ops/${baseName}.view.sql`, content: `${viewSql}\n` });
     }
-    outFiles.push({ name: `${baseName}.fn.sql`, content: `${fnSql}\n` });
+    outFiles.push({ name: `ops/${baseName}.fn.sql`, content: `${fnSql}\n` });
     logger.info(
       { ordinal, total, sanitized: baseName, file: path, schema: targetSchema, code: 'OPS_DISCOVERY' },
       'ops: compiled operation'
@@ -538,11 +514,10 @@ async function assertCleanGit() {
   }
 }
 
-async function loadMoriartyHistory({ fs, shell, defaultBase, bundleDir = '.wesley' }) {
+async function loadMoriartyHistory({ fs, shell, defaultBase }) {
   let points = [];
   try {
-    const bundlePath = resolveFilePath(bundleDir, 'history.json');
-    const raw = await fs.read(bundlePath);
+    const raw = await fs.read('.wesley/history.json');
     const parsed = JSON.parse(raw.toString('utf8'));
     if (Array.isArray(parsed?.points)) {
       points = mergeHistoryPoints(points, parsed.points);

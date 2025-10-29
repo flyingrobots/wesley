@@ -227,6 +227,28 @@ Every `wesley generate` creates `.wesley/` bundle:
 
 Bundles include `"bundleVersion": "2.0.0"` to let downstream consumers branch on schema changes without guessing.
 
+## CI Integration Notes for Moriarty
+
+Moriarty can leverage the PR’s actual git graph to better infer active work on a branch, preventing false “plateau” warnings when SCS hasn’t ticked yet:
+
+- Ensure checkout is unshallowed and remote branches are fetched:
+  - Use `actions/checkout@v4` with `fetch-depth: 0`.
+  - Optionally run `git fetch --prune --unshallow --tags` and fetch refs under `refs/remotes/origin/*`.
+- Provide the base branch (typically `github.base_ref`) as `MORIARTY_BASE_REF`.
+- Optional environment tuning:
+  - `MORIARTY_GIT_WINDOW_HOURS`: 24 (fallback activity window)
+  - `MORIARTY_ACTIVITY_THRESHOLD`: 0.35 (suppress plateau if activity above this)
+  - `MORIARTY_ACTIVITY_COMMITS_PER_DAY`: 6
+  - `MORIARTY_ACTIVITY_RELEVANT_PER_DAY`: 4
+
+Moriarty blends signals as follows:
+
+- `activityIndex = 0.6 × PRActivity + 0.4 × WindowActivity` (each normalized 0–1)
+- Blended velocity = `0.7 × SCSRecentVelocity + 0.3 × activityIndex × 0.02`
+- Plateau triggers only when blended velocity is below 1%/day AND the activity index is below threshold.
+
+This keeps the predictor conservative: activity doesn’t “buy” readiness, it only prevents premature “stalled” judgments in active branches.
+
 ## Package Architecture
 
 Wesley and HOLMES are separate packages:

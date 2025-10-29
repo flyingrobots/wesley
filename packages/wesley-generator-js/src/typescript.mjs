@@ -30,7 +30,7 @@ export class TypeScriptGenerator {
       
       // Record evidence
       if (this.evidenceMap) {
-        const tableUid = table.directives?.['@uid'] || `table_${table.name.toLowerCase()}`;
+        const tableUid = table.directives?.['@uid'] || `tbl:${table.name}`;
         this.evidenceMap.record(tableUid, 'typescript', {
           file: 'generated/types.ts',
           lines: `${interfaces.length}-${interfaces.length}`

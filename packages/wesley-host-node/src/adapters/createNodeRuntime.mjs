@@ -5,6 +5,7 @@
  */
 
 import * as fs from 'node:fs/promises';
+import path from 'node:path';
 import process from 'node:process';
 import pino from 'pino';
 import { NodeFileSystem } from './NodeFileSystem.mjs';
@@ -187,16 +188,23 @@ export async function createNodeRuntime() {
     
     // File writer
     writer: {
-      writeFiles: async (artifacts) => {
+      writeFiles: async (artifacts, baseDir) => {
         if (!Array.isArray(artifacts)) {
           throw new TypeError('writer.writeFiles expects an array of artifacts');
         }
         for (const artifact of artifacts) {
-          if (!artifact || typeof artifact.path !== 'string') {
+          let targetPath = artifact?.path;
+          if (!targetPath) {
             const name = artifact?.name ?? '<unknown>';
-            throw new TypeError(`Artifact "${name}" is missing a resolved path`);
+            // Fallback: write under provided baseDir (or 'out/') if not materialized by the caller
+            if (typeof name === 'string' && name.length > 0) {
+              const dir = (typeof baseDir === 'string' && baseDir.length > 0) ? baseDir : 'out';
+              targetPath = path.join(dir, name);
+            } else {
+              throw new TypeError(`Artifact "${name}" is missing a resolved path`);
+            }
           }
-          await nodeFs.write(artifact.path, artifact.content ?? '');
+          await nodeFs.write(targetPath, artifact.content ?? '');
         }
       }
     },

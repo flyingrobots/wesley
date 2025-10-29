@@ -3,15 +3,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Wesley Scores v2",
   "type": "object",
-  "required": [
-    "version",
-    "commit",
-    "timestamp",
-    "scores",
-    "thresholds",
-    "readiness",
-    "metadata"
-  ],
+  "required": ["version", "commit", "timestamp", "scores", "breakdown", "readiness", "metadata"],
   "properties": {
     "version": {
       "type": "string",
@@ -27,148 +19,128 @@
     },
     "scores": {
       "type": "object",
-      "required": ["scs", "tci", "mri", "breakdown"],
+      "required": ["scs", "tci", "mri"],
       "properties": {
-        "scs": { "$ref": "#/$defs/scoreValue" },
-        "tci": { "$ref": "#/$defs/scoreValue" },
-        "mri": { "$ref": "#/$defs/scoreValue" },
-        "breakdown": {
+        "scs": { "type": "number", "minimum": 0, "maximum": 1 },
+        "tci": { "type": "number", "minimum": 0, "maximum": 1 },
+        "mri": { "type": "number", "minimum": 0, "maximum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "breakdown": {
+      "type": "object",
+      "required": ["scs", "tci", "mri"],
+      "properties": {
+        "scs": {
           "type": "object",
-          "required": ["scs", "tci", "mri"],
+          "required": ["sql", "types", "validation", "tests"],
           "properties": {
-            "scs": {
-              "type": "object",
-              "required": ["sql", "types", "validation", "tests"],
-              "properties": {
-                "sql": { "$ref": "#/$defs/scsBreakdownEntry" },
-                "types": { "$ref": "#/$defs/scsBreakdownEntry" },
-                "validation": { "$ref": "#/$defs/scsBreakdownEntry" },
-                "tests": { "$ref": "#/$defs/scsBreakdownEntry" }
-              },
-              "additionalProperties": true
+            "sql":   { "$ref": "#/definitions/scsComponent" },
+            "types": { "$ref": "#/definitions/scsComponent" },
+            "validation": { "$ref": "#/definitions/scsComponent" },
+            "tests": { "$ref": "#/definitions/scsComponent" }
+          },
+          "additionalProperties": false
+        },
+        "tci": {
+          "type": "object",
+          "required": ["unit_constraints", "unit_rls", "integration_relations", "e2e_ops"],
+          "properties": {
+            "unit_constraints": { "$ref": "#/definitions/tciComponent" },
+            "unit_rls": { "$ref": "#/definitions/tciComponent" },
+            "integration_relations": { "$ref": "#/definitions/tciComponent" },
+            "e2e_ops": {
+              "allOf": [ { "$ref": "#/definitions/tciComponent" }, { "properties": { "note": { "type": "string" } } } ]
             },
-            "tci": {
+            "legacy_components": {
               "type": "object",
-              "required": ["unitConstraints", "rls", "integrationRelations", "e2eOps"],
-              "properties": {
-                "unitConstraints": { "$ref": "#/$defs/tciBreakdownEntry" },
-                "rls": { "$ref": "#/$defs/tciBreakdownEntry" },
-                "integrationRelations": { "$ref": "#/$defs/tciBreakdownEntry" },
-                "e2eOps": { "$ref": "#/$defs/tciBreakdownEntry" }
-              },
-              "additionalProperties": true
-            },
-            "mri": {
-              "type": "object",
-              "properties": {
-                "drops": { "$ref": "#/$defs/mriBreakdownEntry" },
-                "renames": { "$ref": "#/$defs/mriBreakdownEntry" },
-                "defaults": { "$ref": "#/$defs/mriBreakdownEntry" },
-                "typeChanges": { "$ref": "#/$defs/mriBreakdownEntry" },
-                "indexes": { "$ref": "#/$defs/mriBreakdownEntry" },
-                "other": { "$ref": "#/$defs/mriBreakdownEntry" }
-              },
               "additionalProperties": true
             }
+          },
+          "additionalProperties": false
+        },
+        "mri": {
+          "type": "object",
+          "required": ["drops", "renames_without_uid", "add_not_null_without_default", "non_concurrent_indexes", "totalPoints"],
+          "properties": {
+            "drops": { "$ref": "#/definitions/mriComponent" },
+            "renames_without_uid": { "$ref": "#/definitions/mriComponent" },
+            "add_not_null_without_default": { "$ref": "#/definitions/mriComponent" },
+            "non_concurrent_indexes": { "$ref": "#/definitions/mriComponent" },
+            "totalPoints": { "type": "number" }
           },
           "additionalProperties": false
         }
       },
       "additionalProperties": false
     },
-    "thresholds": {
-      "type": "object",
-      "required": ["scs", "tci", "mri"],
-      "properties": {
-        "scs": { "$ref": "#/$defs/scoreValue" },
-        "tci": { "$ref": "#/$defs/scoreValue" },
-        "mri": { "$ref": "#/$defs/scoreValue" }
-      },
-      "additionalProperties": false
-    },
     "readiness": {
       "type": "object",
-      "required": ["ready", "verdict", "scs", "tci", "mri"],
+      "required": ["ready", "verdict"],
       "properties": {
         "ready": { "type": "boolean" },
-        "verdict": { "type": "string" },
-        "scs": { "$ref": "#/$defs/readinessGate" },
-        "tci": { "$ref": "#/$defs/readinessGate" },
-        "mri": { "$ref": "#/$defs/readinessGate" }
+        "verdict": {
+          "type": "string",
+          "enum": ["ELEMENTARY", "REQUIRES INVESTIGATION", "YOU SHALL NOT PASS"]
+        },
+        "scs": { "$ref": "#/definitions/thresholdComponent" },
+        "tci": { "$ref": "#/definitions/thresholdComponent" },
+        "mri": { "$ref": "#/definitions/thresholdComponent" }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "metadata": {
       "type": "object",
       "required": ["tables", "migrationSteps", "testsRun"],
       "properties": {
-        "tables": { "type": "integer", "minimum": 0 },
-        "migrationSteps": { "type": "integer", "minimum": 0 },
-        "testsRun": { "type": "integer", "minimum": 0 }
+        "tables": { "type": "number" },
+        "migrationSteps": { "type": "number" },
+        "testsRun": { "type": "number" }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     }
   },
-  "$defs": {
-    "scoreValue": {
-      "type": "number",
-      "minimum": 0,
-      "maximum": 1
-    },
-    "scsBreakdownEntry": {
+  "additionalProperties": false,
+  "definitions": {
+    "scsComponent": {
       "type": "object",
-      "required": ["score", "totalWeight", "coveredWeight"],
+      "required": ["score", "earnedWeight", "totalWeight"],
       "properties": {
-        "score": { "$ref": "#/$defs/scoreValue" },
-        "totalWeight": { "type": "number", "minimum": 0 },
-        "coveredWeight": { "type": "number", "minimum": 0 },
-        "kinds": {
-          "type": "array",
-          "items": { "type": "string" }
-        }
+        "score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "earnedWeight": { "type": "number" },
+        "totalWeight": { "type": "number" }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
-    "tciBreakdownEntry": {
+    "tciComponent": {
       "type": "object",
-      "required": ["score"],
+      "required": ["score", "covered", "total"],
       "properties": {
-        "score": { "$ref": "#/$defs/scoreValue" },
-        "total": { "type": "number", "minimum": 0 },
-        "covered": { "type": "number", "minimum": 0 },
-        "components": {
-          "type": "object",
-          "properties": {
-            "structure": { "$ref": "#/$defs/scoreValue" },
-            "constraints": { "$ref": "#/$defs/scoreValue" },
-            "defaults": { "$ref": "#/$defs/scoreValue" },
-            "indexes": { "$ref": "#/$defs/scoreValue" }
-          },
-          "additionalProperties": true
-        }
+        "score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "covered": { "type": "number" },
+        "total": { "type": "number" }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
-    "mriBreakdownEntry": {
+    "mriComponent": {
       "type": "object",
-      "required": ["score", "points", "contribution"],
+      "required": ["score", "points", "count"],
       "properties": {
-        "score": { "$ref": "#/$defs/scoreValue" },
-        "points": { "type": "number", "minimum": 0 },
-        "contribution": { "$ref": "#/$defs/scoreValue" }
+        "score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "points": { "type": "number" },
+        "count": { "type": "number" }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
-    "readinessGate": {
+    "thresholdComponent": {
       "type": "object",
       "required": ["score", "threshold", "pass"],
       "properties": {
-        "score": { "$ref": "#/$defs/scoreValue" },
-        "threshold": { "$ref": "#/$defs/scoreValue" },
+        "score": { "type": "number" },
+        "threshold": { "type": "number" },
         "pass": { "type": "boolean" }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     }
-  },
-  "additionalProperties": false
+  }
 }

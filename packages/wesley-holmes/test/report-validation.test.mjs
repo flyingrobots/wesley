@@ -17,41 +17,44 @@ const holmesSample = {
     weightedCompletion: 0.9,
     tci: 0.8,
     mri: 0.1,
-    bundleVersion: '2.0.0',
-    weightConfigSource: 'defaults'
+    bundleVersion: '2.0.0'
   },
   scores: {
     scs: 0.9,
     tci: 0.8,
-    mri: 0.1,
-    breakdown: {
-      scs: {
-        sql: { score: 0.95, totalWeight: 10, coveredWeight: 9.5 },
-        types: { score: 0.9, totalWeight: 10, coveredWeight: 9 },
-        validation: { score: 0.85, totalWeight: 10, coveredWeight: 8.5 },
-        tests: { score: 0.88, totalWeight: 10, coveredWeight: 8.8 }
-      },
-      tci: {
-        unitConstraints: { score: 0.8, total: 40, covered: 32, components: { structure: 0.9, constraints: 0.8, defaults: 0.7, indexes: 0.75 } },
-        rls: { score: 1, total: 1, covered: 1 },
-        integrationRelations: { score: 0.7, total: 5, covered: 3.5 },
-        e2eOps: { score: 0.6, total: 5, covered: 3 }
-      },
-      mri: {
-        drops: { score: 0.1, points: 10, contribution: 0.25 },
-        renames: { score: 0, points: 0, contribution: 0 },
-        defaults: { score: 0.05, points: 5, contribution: 0.1 },
-        typeChanges: { score: 0, points: 0, contribution: 0 },
-        indexes: { score: 0.02, points: 2, contribution: 0.05 },
-        other: { score: 0.03, points: 3, contribution: 0.07 }
+    mri: 0.1
+  },
+  breakdown: {
+    scs: {
+      sql: { score: 0.95, earnedWeight: 19, totalWeight: 20 },
+      types: { score: 0.9, earnedWeight: 18, totalWeight: 20 },
+      validation: { score: 0.85, earnedWeight: 17, totalWeight: 20 },
+      tests: { score: 0.7, earnedWeight: 14, totalWeight: 20 }
+    },
+    tci: {
+      unit_constraints: { score: 0.8, covered: 8, total: 10 },
+      unit_rls: { score: null, covered: 0, total: 0 },
+      integration_relations: { score: 0.75, covered: 3, total: 4 },
+      e2e_ops: { score: null, covered: 0, total: 0, note: 'Not tracked' },
+      legacy_components: {
+        structure: 0.8,
+        constraints: 0.8,
+        migrations: 1,
+        performance: 1
       }
+    },
+    mri: {
+      drops: { score: 0.5, points: 10, count: 1 },
+      renames_without_uid: { score: 0.2, points: 4, count: 1 },
+      add_not_null_without_default: { score: 0, points: 0, count: 0 },
+      non_concurrent_indexes: { score: 0, points: 0, count: 0 },
+      totalPoints: 14
     }
   },
   evidence: [
     {
       element: 'schema',
       weight: 5,
-      weightSource: 'default',
       status: '✅ SQL & tests',
       evidence: 'schema.sql:1-5@abc123',
       deduction: 'Elementary!'

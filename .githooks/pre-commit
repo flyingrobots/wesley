@@ -1,0 +1,154 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Auto-sync pnpm-lock.yaml when dependency resolution manifests change.
+# - Triggers only when staged changes affect fields that impact resolution:
+#   dependencies/devDependencies/optionalDependencies/peerDependencies,
+#   overrides (npm or pnpm.overrides), pnpm.peerDependencyRules,
+#   pnpm.packageExtensions, workspaces, or pnpm-workspace.yaml.
+# - Also triggers when the root package.json `packageManager` field changes
+#   (e.g., pnpm version bump or switching package managers).
+# - Runs `pnpm install --lockfile-only` and stages pnpm-lock.yaml.
+# - Blocks commit only if pnpm is missing or wrong version AND an update is required.
+# Skip entirely with: WESLEY_SKIP_LOCKFILE_HOOK=1
+
+if [[ "${WESLEY_SKIP_LOCKFILE_HOOK:-0}" == "1" ]]; then
+  echo "⚠️  Skipping lockfile guard (WESLEY_SKIP_LOCKFILE_HOOK=1)."
+  exit 0
+fi
+
+# Only act if package manifests are staged
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR)
+if ! echo "$STAGED_FILES" | grep -E -q '(^|/)package.json$|(^|/)pnpm-workspace.yaml$'; then
+  exit 0
+fi
+
+echo "🔎 Checking if staged manifest changes affect the lockfile..."
+
+NEEDS_UPDATE=0
+
+# If pnpm-workspace.yaml changed, lockfile may need update (importers layout)
+if echo "$STAGED_FILES" | grep -Eq '(^|/)pnpm-workspace.yaml$'; then
+  NEEDS_UPDATE=1
+fi
+
+# Helper: determine if a package.json change affects resolution using Node (no jq dependency)
+check_pkg_change() {
+  local path="$1"
+  # Read staged version of the file
+  local staged_json
+  if ! staged_json=$(git show ":$path" 2>/dev/null); then
+    # Deleted or unreadable in index -> treat as affecting
+    return 0
+  fi
+  # Read HEAD version of the file (may not exist)
+  local head_json
+  head_json=$(git show "HEAD:$path" 2>/dev/null || echo '{}')
+  # Use node to compare only resolution-impacting fields
+  node -e '
+    function pick(x){
+      if(!x||typeof x!="object") return {};
+      const out={
+        dependencies:x.dependencies||{},
+        devDependencies:x.devDependencies||{},
+        optionalDependencies:x.optionalDependencies||{},
+        peerDependencies:x.peerDependencies||{},
+        overrides:x.overrides||{},
+        pnpmOverrides:(x.pnpm&&x.pnpm.overrides)||{},
+        pnpmPeerRules:(x.pnpm&&x.pnpm.peerDependencyRules)||{},
+        pnpmPackageExtensions:(x.pnpm&&x.pnpm.packageExtensions)||{},
+        workspaces:x.workspaces||null
+      };
+      // stable stringify with sorted keys
+      function sort(obj){
+        if(Array.isArray(obj)) return obj.map(sort);
+        if(obj&&typeof obj==="object"){ return Object.keys(obj).sort().reduce((a,k)=>{a[k]=sort(obj[k]);return a;},{}); }
+        return obj;
+      }
+      return JSON.stringify(sort(out));
+    }
+    const fs=require("node:fs");
+    const staged=JSON.parse(fs.readFileSync(0,"utf8"));
+    const head=JSON.parse(process.argv[1]||"{}");
+    const s=pick(staged), h=pick(head);
+    process.exit(s===h? 10: 0);
+  ' "${head_json}" <<<"${staged_json}"
+  case $? in
+    0) return 0 ;;  # changed
+    10) return 1 ;; # no change
+    *) return 0 ;;  # on parser error, be safe and assume change
+  esac
+}
+
+# Evaluate all staged package.json files
+while IFS= read -r f; do
+  [[ -z "$f" ]] && continue
+  if [[ "$f" =~ (^|/)package.json$ ]]; then
+    if check_pkg_change "$f"; then
+      NEEDS_UPDATE=1
+      break
+    fi
+  fi
+done < <(echo "$STAGED_FILES")
+
+# Additionally, if root package.json's packageManager changed, require action
+if echo "$STAGED_FILES" | grep -qx "package.json"; then
+  ROOT_STAGED=$(git show ":package.json" 2>/dev/null || echo '{}')
+  ROOT_HEAD=$(git show "HEAD:package.json" 2>/dev/null || echo '{}')
+  PM_CHANGE_OUTPUT=$(node -e '
+    try{
+      const fs=require("node:fs");
+      const staged=JSON.parse(fs.readFileSync(0,"utf8"));
+      const head=JSON.parse(process.argv[1]||"{}");
+      const s=staged.packageManager||""; const h=head.packageManager||"";
+      if(s!==h){ console.log(`${h}=>${s}`); process.exit(0);} else process.exit(10);
+    }catch{ process.exit(0) }
+  ' "${ROOT_HEAD}" <<<"${ROOT_STAGED}" || true)
+  PM_CHANGED=$?
+  if [[ "$PM_CHANGED" -eq 0 ]]; then
+    PM_NEW="${PM_CHANGE_OUTPUT#*=>}"
+    PM_OLD="${PM_CHANGE_OUTPUT%=>*}"
+    # If switching away from pnpm, block with guidance (this repo standardizes on pnpm)
+    if [[ ! "$PM_NEW" =~ ^pnpm@ ]]; then
+      echo "❌ packageManager changed from '${PM_OLD:-<none>}' to '${PM_NEW:-<none>}', which is not pnpm." >&2
+      echo "   This repository is configured for pnpm; update CI/workflows and lockfiles in a dedicated PR if switching managers." >&2
+      echo "   To proceed with pnpm, set packageManager to 'pnpm@<version>' and re-run the commit." >&2
+      exit 1
+    fi
+    # Switching pnpm version: ensure lockfile is regenerated
+    NEEDS_UPDATE=1
+  fi
+fi
+
+if [[ "$NEEDS_UPDATE" != "1" ]]; then
+  echo "✅ Manifest changes do not impact lockfile; skipping pnpm install"
+  exit 0
+fi
+
+echo "🧩 Manifest changes affect dependency resolution. Updating pnpm-lock.yaml..."
+
+# Ensure pnpm exists and version matches only when we need to update
+if ! command -v pnpm >/dev/null 2>&1; then
+  echo "❌ pnpm not found on PATH." >&2
+  echo "   Tip: corepack enable && corepack prepare pnpm@<version> --activate" >&2
+  exit 1
+fi
+
+REQ=$(node -e "try{const pm=require('./package.json').packageManager||'';if(pm.startsWith('pnpm@')){console.log(pm.split('@')[1])}}catch{process.exit(0)}" || true)
+HAVE=$(pnpm --version || true)
+if [[ -n "${REQ:-}" && "${HAVE:-}" != "$REQ" ]]; then
+  echo "❌ pnpm version mismatch: required $REQ (from packageManager), found $HAVE." >&2
+  echo "   Run: corepack prepare pnpm@$REQ --activate" >&2
+  exit 1
+fi
+
+pnpm install --lockfile-only
+
+if ! git diff --quiet -- pnpm-lock.yaml; then
+  git add pnpm-lock.yaml
+  echo "✅ Updated and staged pnpm-lock.yaml"
+else
+  echo "✅ pnpm-lock.yaml already up to date"
+fi
+
+exit 0

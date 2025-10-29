@@ -3,11 +3,24 @@
  * Predictive analytics for schema completion
  */
 
+import { execSync } from 'node:child_process';
+
 export class Moriarty {
-  constructor(history) {
+  constructor(history, context = {}) {
     this.history = history;
+    this.context = context || {};
     this.alpha = 0.4; // EMA smoothing factor
-    this.minSlope = 0.01; // Minimum progress per day
+    this.minSlope = 0.01; // Minimum SCS progress per day to avoid plateau
+    // Git-activity blending (optional, auto-detected when git is available)
+    this.useGitActivity = (process.env.MORIARTY_USE_GIT || '1') !== '0';
+    this.gitWindowHours = Number(process.env.MORIARTY_GIT_WINDOW_HOURS || '24');
+    this.activityPlateauThreshold = Number(process.env.MORIARTY_ACTIVITY_THRESHOLD || '0.35');
+    // Normalization knobs for activity index
+    this.activityCommitThreshold = Number(process.env.MORIARTY_ACTIVITY_COMMITS_PER_DAY || '6');
+    this.activityRelevantCommitThreshold = Number(process.env.MORIARTY_ACTIVITY_RELEVANT_PER_DAY || '4');
+    this.activityLinesPerDayTarget = Number(process.env.MORIARTY_ACTIVITY_LINES_PER_DAY || '400');
+    this.activityFilesPerDayTarget = Number(process.env.MORIARTY_ACTIVITY_FILES_PER_DAY || '10');
+    this.confidenceBurstinessMax = Number(process.env.MORIARTY_CONFIDENCE_BURSTINESS_MAX_PCT || '15');
   }
 
   /**
@@ -48,7 +61,26 @@ export class Moriarty {
     const slope = this.calculateSlope(series);
     const recentVelocity = this.calculateRecentVelocity(series);
     const latest = this.history.points[this.history.points.length - 1];
-    const plateau = Math.abs(recentVelocity) < this.minSlope;
+    // Optional: blend SCS velocity with Git activity to avoid false plateaus
+    let gitActivity = null;
+    let activityIndex = 0;
+    let prActivity = null;
+    let prIndex = 0;
+    if (this.useGitActivity) {
+      // Prefer PR graph activity if base ref is available; blend with time-window activity
+      prActivity = this.computeGitPRActivity();
+      prIndex = this.normalizeActivity(prActivity);
+      const windowActivity = this.computeGitActivityWindow();
+      const windowIndex = this.normalizeActivity(windowActivity);
+      activityIndex = (Number.isFinite(prIndex) ? prIndex * 0.6 : 0) + (Number.isFinite(windowIndex) ? windowIndex * 0.4 : 0);
+      gitActivity = {
+        window: windowActivity || undefined,
+        pr: prActivity || undefined,
+        indexBreakdown: { pr: prIndex, window: windowIndex }
+      };
+    }
+    const blendedRecentVelocity = (recentVelocity * 0.7) + (activityIndex * 0.3 * 0.02); // map activity to ~2%/day max
+    const plateau = Math.abs(blendedRecentVelocity) < this.minSlope && (activityIndex < this.activityPlateauThreshold);
     const regression = series.length >= 2 && series[series.length - 1].scs < series[series.length - 2].scs;
 
     let eta = null;
@@ -70,17 +102,60 @@ export class Moriarty {
       confidence = Math.max(0, Math.min(100, 100 - variance * 120));
     }
 
+    // Confidence adjuster: penalize bursty commit size distributions
+    let burstinessIndex = 0;
+    if (gitActivity) {
+      const sizes = [];
+      if (gitActivity?.pr?.commitRelevantSizes?.length) sizes.push(...gitActivity.pr.commitRelevantSizes);
+      if (gitActivity?.window?.commitRelevantSizes?.length) sizes.push(...gitActivity.window.commitRelevantSizes);
+      if (sizes.length >= 2) {
+        burstinessIndex = this.computeBurstinessIndex(sizes);
+        if (confidence !== null) {
+          const penalty = Math.min(this.confidenceBurstinessMax, burstinessIndex * this.confidenceBurstinessMax);
+          confidence = Math.max(0, confidence - penalty);
+        }
+      }
+    }
+
     const result = {
       ...base,
       status: 'OK',
       latest,
       velocity: {
         recent: recentVelocity,
-        blendedSlope: slope.scs
+        blendedSlope: slope.scs,
+        gitActivityIndex: activityIndex,
+        blendedRecent: blendedRecentVelocity
       },
+      gitActivity: gitActivity ? { ...gitActivity, burstinessIndex } : undefined,
       plateauDetected: plateau,
       regressionDetected: regression,
       patterns: this.detectPatterns()
+    };
+
+    // Readiness EXPLAIN (non-blocking): clarify what "prod-ready" means
+    const thresholds = {
+      scs: Number(process.env.MORIARTY_READY_SCS || '0.8'),
+      tci: Number(process.env.MORIARTY_READY_TCI || '0.7'),
+      mri: Number(process.env.MORIARTY_READY_MRI || '0.4'),
+      ci: Number(process.env.MORIARTY_READY_CI_STABILITY || '0.9')
+    };
+    const ci = this.context?.ci || {};
+    const readiness = {
+      scs: { value: latest.scs ?? 0, pass: (latest.scs ?? 0) >= thresholds.scs, threshold: thresholds.scs },
+      tci: { value: latest.tci ?? 0, pass: (latest.tci ?? 0) >= thresholds.tci, threshold: thresholds.tci },
+      mri: { value: latest.mri ?? 0, pass: (latest.mri ?? 0) <= thresholds.mri, threshold: thresholds.mri },
+      ci:  { value: Number(ci.stability ?? 0), pass: Number(ci.stability ?? 0) >= thresholds.ci, threshold: thresholds.ci, windowHours: this.context?.timeframeHours }
+    };
+    result.explain = {
+      thresholds,
+      readiness,
+      delivery: {
+        issuesClosed: Number(this.context?.issuesClosed || 0),
+        prsMerged: Number(this.context?.prsMerged || 0),
+        baseRef: this.context?.baseRef || null,
+        since: this.context?.since || this.context?.generatedAt || null
+      }
     };
 
     if (eta) {
@@ -121,8 +196,32 @@ export class Moriarty {
     report.push('## 📈 Velocity Analysis');
     report.push('');
     report.push(`**SCS Velocity**: ${data.velocity.recent >= 0 ? '+' : ''}${(data.velocity.recent * 100).toFixed(2)}%/day`);
+    if (data.gitActivity?.window) {
+      const w = data.gitActivity.window;
+      const filesPerDay = w.windowHours > 0 ? (w.uniqueRelevantFiles * (24 / w.windowHours)) : w.uniqueRelevantFiles;
+      const relLinesPerDay = w.windowHours > 0 ? (w.relevantLinesChanged * (24 / w.windowHours)) : w.relevantLinesChanged;
+      report.push(`**Git Activity (window)**: ${w.windowHours}h · commits ${w.commits} (${w.relevantCommits} relevant) · ~${w.commitsPerDay.toFixed(2)} commits/day`);
+      report.push(`↳ Magnitude: ~${Math.round(relLinesPerDay)} relevant LOC/day across ~${filesPerDay.toFixed(1)} files/day`);
+    }
+    if (data.gitActivity?.pr) {
+      const p = data.gitActivity.pr;
+      const filesPerDay = p.days > 0 ? (p.uniqueRelevantFiles / p.days) : p.uniqueRelevantFiles;
+      const relLinesPerDay = p.days > 0 ? (p.relevantLinesChanged / p.days) : p.relevantLinesChanged;
+      report.push(`**Git Activity (PR range)**: commits ${p.commits} (${p.relevantCommits} relevant) over ~${p.days.toFixed(2)} days · ~${p.commitsPerDay.toFixed(2)} commits/day`);
+      report.push(`↳ Magnitude: ~${Math.round(relLinesPerDay)} relevant LOC/day across ~${filesPerDay.toFixed(1)} files/day`);
+    }
+    if (data.gitActivity) {
+      const br = data.gitActivity.indexBreakdown || { pr: 0, window: 0 };
+      report.push(`**Activity Index**: ${Math.round((data.velocity.gitActivityIndex || 0) * 100)} / 100  (PR ${Math.round(br.pr*100)}, Window ${Math.round(br.window*100)})`);
+      report.push(`**Blended Velocity**: ${data.velocity.blendedRecent >= 0 ? '+' : ''}${(data.velocity.blendedRecent * 100).toFixed(2)}%/day`);
+      if (Number.isFinite(data.gitActivity.burstinessIndex)) {
+        report.push(`**Commit Size Burstiness**: ${(data.gitActivity.burstinessIndex * 100).toFixed(0)} / 100 (higher = more uneven commit sizes)`);
+      }
+    }
     if (data.plateauDetected) {
-      report.push('⚠️ **PLATEAU DETECTED** - Progress has stalled!');
+      report.push('⚠️ **PLATEAU DETECTED** - Low SCS movement and low recent Git activity.');
+    } else if (data.velocity.recent < this.minSlope && data.gitActivity) {
+      report.push('ℹ️ Low SCS movement, but recent Git activity suggests ongoing work. Plateau not flagged.');
     }
     if (data.regressionDetected) {
       report.push('🚨 **REGRESSION DETECTED** - Score decreasing!');
@@ -152,6 +251,25 @@ export class Moriarty {
       }
     }
 
+    // Readiness EXPLAIN (clarify inputs/thresholds that imply "prod-ready")
+    if (data.explain) {
+      report.push('');
+      report.push('## 🧪 Readiness EXPLAIN');
+      report.push('');
+      const r = data.explain.readiness;
+      report.push(`- SCS ≥ ${(data.explain.thresholds.scs*100).toFixed(0)}% → ${r.scs.pass ? 'PASS ✅' : 'FAIL ❌'} (actual ${(r.scs.value*100).toFixed(1)}%)`);
+      report.push(`- TCI ≥ ${(data.explain.thresholds.tci*100).toFixed(0)}% → ${r.tci.pass ? 'PASS ✅' : 'FAIL ❌'} (actual ${(r.tci.value*100).toFixed(1)}%)`);
+      report.push(`- MRI ≤ ${(data.explain.thresholds.mri*100).toFixed(0)}% → ${r.mri.pass ? 'PASS ✅' : 'FAIL ❌'} (actual ${(r.mri.value*100).toFixed(1)}%)`);
+      if (Number.isFinite(r.ci.value)) {
+        report.push(`- CI Stability ≥ ${(data.explain.thresholds.ci*100).toFixed(0)}% (branch ${this.context?.ci?.branch || 'base'}) → ${r.ci.pass ? 'PASS ✅' : 'FAIL ❌'} (actual ${(r.ci.value*100).toFixed(0)}% over ~${r.ci.windowHours ?? '?'}h)`);
+      }
+      if (data.explain.delivery) {
+        report.push(`- Delivery context (last ${this.context?.timeframeHours ?? 168}h): ${data.explain.delivery.issuesClosed} issues closed · ${data.explain.delivery.prsMerged} PRs merged (informational, not gating)`);
+      }
+      report.push('');
+      report.push('_Signals blend:_ SCS velocity (70%) + Git activity (30%, branch-first). Activity only suppresses false plateaus; it never inflates readiness.');
+    }
+
     report.push('');
     report.push('## 📊 Historical Trajectory');
     report.push('');
@@ -162,6 +280,28 @@ export class Moriarty {
     report.push('');
     report.push('*"Every problem becomes elementary when reduced to mathematics"*');
     report.push('— Professor Moriarty');
+
+    // Optional: Projection section (MP-01..03 stub)
+    if (data.projection) {
+      report.push('');
+      report.push('---');
+      report.push('');
+      report.push('## 🔭 Projected After Merge (stub)');
+      const p = data.projection;
+      report.push(`Status: ${p.status || 'unknown'}`);
+      if (p.merge) {
+        report.push(`Base: ${p.merge.baseRef || 'main'} · Strategy: ${p.merge.strategy || 'tbd'}`);
+      }
+      if (p.mergedTree) {
+        report.push(`Merged tree: ${p.mergedTree}`);
+      }
+      if (p.impact?.confidencePenalty) {
+        report.push(`Impact: -${p.impact.confidencePenalty} confidence due to projection issues`);
+      }
+      if (typeof p.notes === 'string' && p.notes) {
+        report.push(p.notes);
+      }
+    }
     return report.join('\n');
   }
 
@@ -286,5 +426,219 @@ export class Moriarty {
 
   formatDate(date) {
     return date.toISOString().slice(0, 10);
+  }
+
+  // --- Git activity helpers ---
+  computeGitActivityWindow() {
+    // Best effort: if git is not available or repo is too shallow, return null
+    try {
+      execSync('git rev-parse --is-inside-work-tree', { stdio: 'ignore' });
+    } catch {
+      return null;
+    }
+    const windowHours = Math.max(1, Math.floor(this.gitWindowHours));
+    const sinceIso = new Date(Date.now() - windowHours * 3600 * 1000).toISOString();
+    let raw = '';
+    try {
+      // Use a log format that marks commit boundaries so we can parse numstat blocks.
+      raw = execSync(`git log --since='${sinceIso}' --pretty=format:'--%ct' --numstat --no-merges`, { encoding: 'utf8' });
+    } catch {
+      return null;
+    }
+    if (!raw || !raw.trim()) {
+      return { windowHours, commits: 0, relevantCommits: 0, commitsPerDay: 0, linesChanged: 0, relevantLinesChanged: 0 };
+    }
+
+    const lines = raw.split(/\r?\n/);
+    let commits = 0;
+    let relevantCommits = 0;
+    let linesChanged = 0;
+    let relevantLinesChanged = 0;
+    let inCommit = false;
+    let commitRelevant = false;
+    let commitRelevantSize = 0;
+    const commitRelevantSizes = [];
+    const uniqueRelevantFilesSet = new Set();
+    const isRelevant = (file) => {
+      const f = String(file || '').toLowerCase();
+      return f.endsWith('.graphql') || f.includes('/ddl/') || f.includes('pgtap') || f.endsWith('.sql') || f.includes('/schema') || f.includes('.wesley/bundle.json') || f.includes('.wesley/history.json');
+    };
+
+    for (const line of lines) {
+      if (line.startsWith('--')) {
+        // Commit boundary
+        if (inCommit) {
+          if (commitRelevant) {
+            relevantCommits++;
+            commitRelevantSizes.push(commitRelevantSize);
+          }
+        }
+        inCommit = true;
+        commitRelevant = false;
+        commitRelevantSize = 0;
+        commits++;
+        continue;
+      }
+      // numstat line: additions deletions path
+      const parts = line.trim().split(/\s+/);
+      if (parts.length >= 3) {
+        const add = parts[0] === '-' ? 0 : parseInt(parts[0], 10) || 0;
+        const del = parts[1] === '-' ? 0 : parseInt(parts[1], 10) || 0;
+        const file = parts.slice(2).join(' ');
+        const delta = add + del;
+        linesChanged += delta;
+        if (isRelevant(file)) {
+          relevantLinesChanged += delta;
+          commitRelevant = true;
+          commitRelevantSize += delta;
+          uniqueRelevantFilesSet.add(file);
+        }
+      }
+    }
+    // Close last commit
+    if (inCommit && commitRelevant) {
+      relevantCommits++;
+      commitRelevantSizes.push(commitRelevantSize);
+    }
+    const commitsPerDay = commits * (24 / windowHours);
+    return {
+      windowHours,
+      commits,
+      relevantCommits,
+      commitsPerDay,
+      linesChanged,
+      relevantLinesChanged,
+      uniqueRelevantFiles: uniqueRelevantFilesSet.size,
+      commitRelevantSizes
+    };
+  }
+
+  normalizeActivity(act) {
+    if (!act) return 0;
+    const commitsPerDay = Number.isFinite(act.commitsPerDay) ? act.commitsPerDay : 0;
+    const relPerDay = Number.isFinite(act.windowHours)
+      ? (act.relevantCommits * (24 / act.windowHours))
+      : (Number.isFinite(act.days) && act.days > 0 ? act.relevantCommits / act.days : 0);
+    const locPerDay = Number.isFinite(act.windowHours)
+      ? (act.relevantLinesChanged * (24 / act.windowHours))
+      : (Number.isFinite(act.days) && act.days > 0 ? act.relevantLinesChanged / act.days : act.relevantLinesChanged);
+    const filesPerDay = Number.isFinite(act.windowHours)
+      ? (Number.isFinite(act.uniqueRelevantFiles) ? (act.uniqueRelevantFiles * (24 / act.windowHours)) : 0)
+      : (Number.isFinite(act.days) && act.days > 0 && Number.isFinite(act.uniqueRelevantFiles) ? act.uniqueRelevantFiles / act.days : 0);
+    const commitScore = Math.min(1, commitsPerDay / this.activityCommitThreshold);
+    const relevantScore = Math.min(1, relPerDay / this.activityRelevantCommitThreshold);
+    const volumeScore = Math.min(1, locPerDay / Math.max(1, this.activityLinesPerDayTarget));
+    const breadthScore = Math.min(1, filesPerDay / Math.max(1, this.activityFilesPerDayTarget));
+    // Weight relevant changes a bit more than raw volume
+    return (
+      (commitScore * 0.25) +
+      (relevantScore * 0.35) +
+      (volumeScore * 0.25) +
+      (breadthScore * 0.15)
+    );
+  }
+
+  computeGitPRActivity() {
+    // Use MORIARTY_BASE_REF or GITHUB_BASE_REF as the base; fall back to origin/main
+    let baseRef = process.env.MORIARTY_BASE_REF || process.env.GITHUB_BASE_REF || 'main';
+    try {
+      execSync('git rev-parse --is-inside-work-tree', { stdio: 'ignore' });
+    } catch {
+      return null;
+    }
+    try {
+      // Ensure we have the base ref locally
+      try { execSync(`git fetch --prune origin ${baseRef}:${'refs/remotes/origin/' + baseRef}`, { stdio: 'ignore' }); } catch {}
+      const remoteBase = baseRef.startsWith('origin/') ? baseRef : `origin/${baseRef}`;
+      const mergeBase = execSync(`git merge-base HEAD ${remoteBase}`, { encoding: 'utf8' }).trim();
+      if (!mergeBase) return null;
+      // Collect PR-only commits
+      const raw = execSync(`git log ${mergeBase}..HEAD --pretty=format:'--%ct' --numstat --no-merges`, { encoding: 'utf8' });
+      if (!raw || !raw.trim()) {
+        return { commits: 0, relevantCommits: 0, days: 0, commitsPerDay: 0, linesChanged: 0, relevantLinesChanged: 0 };
+      }
+      const lines = raw.split(/\r?\n/);
+      let commits = 0;
+      let relevantCommits = 0;
+      let linesChanged = 0;
+      let relevantLinesChanged = 0;
+      let inCommit = false;
+      let commitRelevant = false;
+      let firstTs = null;
+      let lastTs = null;
+      let commitRelevantSize = 0;
+      const commitRelevantSizes = [];
+      const uniqueRelevantFilesSet = new Set();
+      const isRelevant = (file) => {
+        const f = String(file || '').toLowerCase();
+        return f.endsWith('.graphql') || f.includes('/ddl/') || f.endsWith('.sql') || f.includes('pgtap') || f.includes('/schema') || f.includes('.wesley/bundle.json') || f.includes('.wesley/history.json');
+      };
+      for (const line of lines) {
+        if (line.startsWith('--')) {
+          const ts = Number(line.slice(2).trim());
+          if (Number.isFinite(ts)) {
+            if (firstTs === null) firstTs = ts;
+            lastTs = ts;
+          }
+          if (inCommit) {
+            if (commitRelevant) {
+              relevantCommits++;
+              commitRelevantSizes.push(commitRelevantSize);
+            }
+          }
+          inCommit = true;
+          commitRelevant = false;
+          commitRelevantSize = 0;
+          commits++;
+          continue;
+        }
+        const parts = line.trim().split(/\s+/);
+        if (parts.length >= 3) {
+          const add = parts[0] === '-' ? 0 : parseInt(parts[0], 10) || 0;
+          const del = parts[1] === '-' ? 0 : parseInt(parts[1], 10) || 0;
+          const file = parts.slice(2).join(' ');
+          const delta = add + del;
+          linesChanged += delta;
+          if (isRelevant(file)) {
+            relevantLinesChanged += delta;
+            commitRelevant = true;
+            commitRelevantSize += delta;
+            uniqueRelevantFilesSet.add(file);
+          }
+        }
+      }
+      if (inCommit && commitRelevant) {
+        relevantCommits++;
+        commitRelevantSizes.push(commitRelevantSize);
+      }
+      const spanSecs = firstTs && lastTs ? Math.max(1, Math.abs(lastTs - firstTs)) : 0;
+      const days = spanSecs / 86400 || 0;
+      const commitsPerDay = days > 0 ? commits / days : commits; // if span is too small, assume concentrated activity
+      return {
+        commits,
+        relevantCommits,
+        days,
+        commitsPerDay,
+        linesChanged,
+        relevantLinesChanged,
+        uniqueRelevantFiles: uniqueRelevantFilesSet.size,
+        commitRelevantSizes
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  computeBurstinessIndex(samples) {
+    if (!Array.isArray(samples) || samples.length < 2) return 0;
+    const nums = samples.map((n) => (Number.isFinite(n) ? n : 0)).filter((n) => n > 0);
+    if (nums.length < 2) return 0;
+    const mean = nums.reduce((a,b)=>a+b,0)/nums.length;
+    if (mean <= 0) return 0;
+    const variance = nums.reduce((a,n)=>a+Math.pow(n-mean,2),0)/(nums.length-1);
+    const sd = Math.sqrt(variance);
+    const cv = sd / mean; // coefficient of variation
+    // Map CV to 0..1 with a soft cap; CV≈2 or more → ~1
+    return Math.min(1, cv / 2);
   }
 }
