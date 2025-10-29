@@ -210,6 +210,29 @@ Wesley is engineered for safety, speed, and confidence.
 - To surface a SQL error in the original GraphQL SDL, load the evidence bundle (`.wesley/bundle.json`) and call `findSourceForSql(evidenceMap, { file, line })`.
 - Scores (SCS/TCI/MRI) are computed from EvidenceMap; ensure generators record artifacts to keep scores accurate.
 
+Example: map a SQL error back to SDL
+
+```js
+import fs from 'node:fs/promises';
+import { EvidenceMap } from '@wesley/core';
+// Temporary deep import until re-exported at package root
+import { findSourceForSql } from '@wesley/core/src/application/SourceMap.mjs';
+
+// Load the bundle written by `wesley generate --emit-bundle`
+const raw = await fs.readFile('.wesley/bundle.json', 'utf8');
+const bundle = JSON.parse(raw);
+
+// Evidence payload may be nested; normalize it
+const payload = bundle?.evidence?.evidence ? bundle.evidence : bundle;
+const ev = EvidenceMap.fromJSON(payload);
+
+// If a failure mentions out/schema.sql:123
+const mapped = findSourceForSql(ev, { file: 'out/schema.sql', line: 123 });
+if (mapped?.source) {
+  console.log(`SDL: ${mapped.source.file} lines ${mapped.source.lines} (uid ${mapped.uid})`);
+}
+```
+
 ---
 
 ## Comparison

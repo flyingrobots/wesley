@@ -107,6 +107,28 @@ These templates match RLSPresets output (owner/tenant/public-read, etc.).
 - SQL `COMMENT ON ... 'uid: …'` strings are informational hints only. Consumers (SourceMap, scoring, HOLMES) read from EvidenceMap.
 - To map a SQL error back to SDL, use SourceMap utilities (e.g., `findSourceForSql(evidenceMap, { file, line })`).
 
+Example (Node):
+
+```js
+import fs from 'node:fs/promises';
+import { EvidenceMap } from '@wesley/core';
+// Temporary deep import until re-exported at package root
+import { findSourceForSql } from '@wesley/core/src/application/SourceMap.mjs';
+
+// Load bundle produced by: wesley generate --emit-bundle
+const raw = await fs.readFile('.wesley/bundle.json', 'utf8');
+const bundle = JSON.parse(raw);
+
+// Accept either flat { evidence: {...} } or nested { evidence: { evidence: {...} } }
+const payload = bundle?.evidence?.evidence ? bundle.evidence : bundle;
+const ev = EvidenceMap.fromJSON(payload);
+
+// Suppose a failure references out/schema.sql:123
+const result = findSourceForSql(ev, { file: 'out/schema.sql', line: 123 });
+// result: { uid: 'col:Table.field', source: { file: 'schema.graphql', lines: 'X-Y', columns: 'A-B' } }
+```
+
+
 
 ## 🧪 Security Testing
 
