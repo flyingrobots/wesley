@@ -22,9 +22,14 @@ const contentType = (file) => ({
 })[extname(file)] || 'application/octet-stream';
 
 const server = http.createServer((req, res) => {
-  const url = (req.url || '/').split('?')[0];
-  const filePath = resolve(join(root, url === '/' ? '/index.html' : url));
-  if (!filePath.startsWith(root)) {
+  // Parse path and normalize relative to root to prevent path traversal
+  let reqPath = (req.url || '/').split('?')[0] || '/';
+  // Remove any leading slashes so join/resolve do not discard root
+  reqPath = reqPath.replace(/^\/+/, '');
+  if (reqPath === '') reqPath = 'index.html';
+  const filePath = resolve(root, reqPath);
+  // Ensure resolved path is within root
+  if (!filePath.startsWith(root + '/') && filePath !== root && !filePath.startsWith(root + '\\')) {
     res.writeHead(403); res.end('Forbidden'); return;
   }
   try {
@@ -41,4 +46,3 @@ const server = http.createServer((req, res) => {
 server.listen(port, '127.0.0.1', () => {
   console.log(`[serve-static] listening on http://127.0.0.1:${port} (root=${root})`);
 });
-
