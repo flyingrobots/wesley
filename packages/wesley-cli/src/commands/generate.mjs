@@ -86,7 +86,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
     const artifacts = [];
     
     // Parse schema to IR
-    const ir = this.ctx.parsers.graphql.parse(schemaContent);
+    const ir = this.ctx.parsers.graphql.parse(schemaContent, { filename: schemaPath });
     
     // Generate DDL
     const ddlResult = generators.sql.emitDDL(ir);

@@ -5,6 +5,23 @@
  */
 
 import { Schema, Table, Field } from './Schema.mjs';
+import { getLocation } from 'graphql';
+
+function locSpan(node) {
+  try {
+    if (!node?.loc?.source) return null;
+    const src = node.loc.source;
+    const start = getLocation(src, node.loc.start);
+    const end = getLocation(src, node.loc.end);
+    return {
+      file: src.name || '<unknown>',
+      lines: `${start.line}-${end.line}`,
+      columns: `${start.column}-${end.column}`
+    };
+  } catch {
+    return null;
+  }
+}
 
 export class GraphQLSchemaBuilder {
   constructor(evidenceMap) {
@@ -49,6 +66,13 @@ export class GraphQLSchemaBuilder {
     const tableName = node.name.value;
     const tableDirectives = this.extractDirectives(node);
     const tableUid = tableDirectives?.['@uid'] || `table_${tableName.toLowerCase()}`;
+    // Record SDL source location evidence when available
+    if (this.evidenceMap) {
+      const loc = locSpan(node);
+      if (loc) {
+        this.evidenceMap.record(tableUid, 'source', loc);
+      }
+    }
     
     // Check for duplicate type names
     if (fields[tableName]) {
@@ -78,6 +102,12 @@ export class GraphQLSchemaBuilder {
         itemNonNull: typeInfo.itemNonNull,
         directives
       });
+
+      // Record SDL source location for field
+      if (this.evidenceMap) {
+        const floc = locSpan(fieldNode);
+        if (floc) this.evidenceMap.record(fieldUid, 'source', floc);
+      }
     }
     
     if (tableDirectives['@rls']) {
