@@ -1,2 +1,9 @@
 packages:
+  # Core packages (domain logic, CLI, adapters, generators)
   - 'packages/*'
+  # Example fixtures (demo schemas + CLI smoke tests)
+  - 'test/fixtures/examples'
+  # MkDocs documentation sources (deployed via docs-site workflow)
+  - 'docs/site'
+  # Frontend website (Vite/React)
+  - 'wesley-website'

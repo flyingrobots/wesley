@@ -1,0 +1,65 @@
+name: Chore
+description: Maintenance, refactor, cleanup, docs, CI, or tooling work.
+title: "[chore] <short summary>"
+labels: ["chore"]
+assignees: []
+body:
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: What will change? Keep it small and focused.
+      placeholder: "Docs reorg: fix broken links in docs/README.md and add guides/quick-start.md"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: category
+    attributes:
+      label: Category
+      options:
+        - label: Docs
+        - label: CI
+        - label: Refactor
+        - label: Tests
+        - label: Build/Release
+        - label: Security
+        - label: Cleanup
+        - label: Governance
+
+  - type: textarea
+    id: tasks
+    attributes:
+      label: Tasks
+      description: List concrete tasks. Use checklist items.
+      placeholder: |
+        - [ ] Update docs links
+        - [ ] Add link checker to CI
+        - [ ] Verify passing CI
+    validations:
+      required: true
+
+  - type: textarea
+    id: rationale
+    attributes:
+      label: Rationale
+      description: Why are we doing this? Expected impact.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: risk
+    attributes:
+      label: Risk / Impact
+      options:
+        - label: No behavior changes
+        - label: Docs-only change
+        - label: Affects CI or release
+        - label: Might need follow-up PRs
+
+  - type: input
+    id: related
+    attributes:
+      label: Related Issues/PRs
+      placeholder: "#123, #456"
+

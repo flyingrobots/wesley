@@ -1,0 +1,43 @@
+{
+  "name": "Wesley Dev",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "remoteUser": "node",
+  "updateRemoteUserUID": true,
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "containerEnv": {
+    "PNPM_HOME": "/home/node/.local/share/pnpm"
+  },
+  "remoteEnv": {
+    "PATH": "${containerEnv:PATH}:/home/node/.local/share/pnpm"
+  },
+  "postCreateCommand": "corepack enable && pnpm install && pnpm run setup:bats-plugins",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "editor.formatOnSave": true,
+        "files.trimTrailingWhitespace": true,
+        "files.insertFinalNewline": true
+      },
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "editorconfig.editorconfig"
+      ]
+    }
+  },
+  "portsAttributes": {
+    "5432": {
+      "label": "PostgreSQL"
+    }
+  },
+  "runArgs": [
+    "--init"
+  ]
+}

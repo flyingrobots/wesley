@@ -49,9 +49,16 @@ export default {
   // Output paths
   paths: {
     output: 'out',
-    migrations: 'db/migrations',
-    tests: 'tests',
-    bundle: '.wesley'
+    bundle: '.wesley',
+    migrations: 'migrations',
+    artifacts: {
+      ddl: '',
+      rls: '',
+      pgtap: 'tests',
+      models: 'models',
+      zod: 'zod',
+      ops: 'ops'
+    }
   },
   
   // Generator settings

@@ -1,0 +1,41 @@
+{
+  "name": "@wesley/tasks",
+  "version": "0.1.0",
+  "description": "Wesley T.A.S.K.S. - Task Abstraction, Scheduling, and Kernel System",
+  "type": "module",
+  "main": "src/index.mjs",
+  "exports": {
+    ".": "./src/index.mjs"
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "vitest": "^4.0.3"
+  },
+  "peerDependencies": {},
+  "keywords": [
+    "wesley",
+    "task-scheduling",
+    "dependency-resolution",
+    "orchestration"
+  ],
+  "author": "Wesley Authors <oss@flyingrobots.dev>",
+  "license": "LicenseRef-MIND-UCAL-1.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/flyingrobots/wesley.git",
+    "directory": "packages/wesley-tasks"
+  },
+  "homepage": "https://github.com/flyingrobots/wesley/tree/main/packages/wesley-tasks#readme",
+  "bugs": {
+    "url": "https://github.com/flyingrobots/wesley/issues"
+  },
+  "engines": {
+    "node": ">=18.17"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "products_by_name",
+  "table": "product",
+  "columns": ["id", "name", "slug"],
+  "filters": [
+    { "column": "published", "op": "eq", "value": true },
+    { "column": "name", "op": "ilike", "param": { "name": "q", "type": "text" } }
+  ],
+  "orderBy": [ { "column": "name", "dir": "asc" } ],
+  "limit": 50
+}
+

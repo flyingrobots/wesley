@@ -1,0 +1,139 @@
+# Multi-tenant SaaS Example Schema
+# Demonstrates Wesley's @tenant and @owner directives
+
+type Org @wes_table {
+  id: ID! @wes_pk
+  name: String! @wes_unique
+  slug: String! @wes_unique @wes_index
+  createdAt: DateTime! @wes_default(value: "NOW()")
+}
+
+type User @wes_table {
+  id: ID! @wes_pk
+  email: String! @wes_unique @email
+  name: String!
+  createdAt: DateTime! @wes_default(value: "NOW()")
+}
+
+type Membership @wes_table {
+  user_id: ID! @wes_fk(ref: "User.id") @wes_index
+  org_id: ID! @wes_fk(ref: "Org.id") @wes_index
+  role: MemberRole! @wes_index
+  createdAt: DateTime! @wes_default(value: "NOW()")
+  
+  # Composite primary key
+  @@primaryKey(fields: ["user_id", "org_id"])
+}
+
+enum MemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+# Tenant-scoped resources
+
+type Project @wes_table 
+  @wes_tenant(by: "org_id")
+  @owner(column: "created_by")
+  @wes_rls(enabled: true) {
+  id: ID! @wes_pk
+  org_id: ID! @wes_fk(ref: "Org.id") @wes_index
+  name: String!
+  description: String
+  created_by: ID! @wes_fk(ref: "User.id") @wes_index
+  createdAt: DateTime! @wes_default(value: "NOW()")
+  updatedAt: DateTime! @wes_default(value: "NOW()")
+}
+
+type Document @wes_table
+  @wes_tenant(by: "org_id")
+  @owner(column: "created_by")
+  @wes_rls(
+    enabled: true,
+    select: "tenant",
+    insert: "tenant_and_owner",
+    update: "owner_or_admin",
+    delete: "owner_or_admin"
+  ) {
+  id: ID! @wes_pk
+  org_id: ID! @wes_fk(ref: "Org.id") @wes_index
+  project_id: ID! @wes_fk(ref: "Project.id") @wes_index
+  title: String!
+  content: String
+  status: DocumentStatus! @wes_default(value: "DRAFT") @wes_index
+  created_by: ID! @wes_fk(ref: "User.id") @wes_index
+  tags: [String!]!
+  metadata: JSON
+  createdAt: DateTime! @wes_default(value: "NOW()")
+  updatedAt: DateTime! @wes_default(value: "NOW()")
+}
+
+enum DocumentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+# Sharing/collaboration features
+
+type DocumentShare @wes_table {
+  id: ID! @wes_pk
+  document_id: ID! @wes_fk(ref: "Document.id") @wes_index
+  user_id: ID! @wes_fk(ref: "User.id") @wes_index
+  can_edit: Boolean! @wes_default(value: "false")
+  can_comment: Boolean! @wes_default(value: "true")
+  expires_at: DateTime
+  created_by: ID! @wes_fk(ref: "User.id")
+  createdAt: DateTime! @wes_default(value: "NOW()")
+  
+  # Ensure unique shares per user/doc
+  @@unique(fields: ["document_id", "user_id"])
+}
+
+# Activity/audit log
+
+type ActivityLog @wes_table
+  @wes_tenant(by: "org_id")
+  @wes_rls(
+    enabled: true,
+    select: "tenant",
+    insert: "system_only",
+    update: "never",
+    delete: "never"
+  ) {
+  id: ID! @wes_pk
+  org_id: ID! @wes_fk(ref: "Org.id") @wes_index
+  user_id: ID! @wes_fk(ref: "User.id") @wes_index
+  action: String! @wes_index
+  resource_type: String! @wes_index
+  resource_id: ID! @wes_index
+  metadata: JSON
+  ip_address: String @sensitive
+  user_agent: String
+  createdAt: DateTime! @wes_default(value: "NOW()") @wes_index
+}
+
+# API Keys for programmatic access
+
+type ApiKey @wes_table
+  @wes_tenant(by: "org_id")
+  @owner(column: "created_by")
+  @wes_rls(
+    enabled: true,
+    select: "owner_or_admin",
+    insert: "admin_only",
+    update: "owner_only",
+    delete: "owner_or_admin"
+  ) {
+  id: ID! @wes_pk
+  org_id: ID! @wes_fk(ref: "Org.id") @wes_index
+  name: String!
+  key_hash: String! @sensitive @wes_unique
+  last_used_at: DateTime
+  expires_at: DateTime
+  scopes: [String!]!
+  created_by: ID! @wes_fk(ref: "User.id")
+  createdAt: DateTime! @wes_default(value: "NOW()")
+}

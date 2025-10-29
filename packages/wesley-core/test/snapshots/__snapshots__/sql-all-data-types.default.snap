@@ -1,0 +1,30 @@
+CREATE TABLE IF NOT EXISTS "data_types" (
+  "id" uuid NOT NULL,
+  "text_field" text,
+  "int_field" integer,
+  "big_int_field" text,
+  "float_field" double precision,
+  "decimal_field" numeric,
+  "bool_field" boolean,
+  "date_field" date,
+  "time_field" time,
+  "datetime_field" timestamptz,
+  "json_field" jsonb,
+  "uuid_field" uuid,
+  "inet_field" inet,
+  PRIMARY KEY ("id")
+);
+COMMENT ON TABLE "data_types" IS 'uid: tbl:DataTypes';
+COMMENT ON COLUMN "data_types"."id" IS 'uid: col:DataTypes.id';
+COMMENT ON COLUMN "data_types"."text_field" IS 'uid: col:DataTypes.textField';
+COMMENT ON COLUMN "data_types"."int_field" IS 'uid: col:DataTypes.intField';
+COMMENT ON COLUMN "data_types"."big_int_field" IS 'uid: col:DataTypes.bigIntField';
+COMMENT ON COLUMN "data_types"."float_field" IS 'uid: col:DataTypes.floatField';
+COMMENT ON COLUMN "data_types"."decimal_field" IS 'uid: col:DataTypes.decimalField';
+COMMENT ON COLUMN "data_types"."bool_field" IS 'uid: col:DataTypes.boolField';
+COMMENT ON COLUMN "data_types"."date_field" IS 'uid: col:DataTypes.dateField';
+COMMENT ON COLUMN "data_types"."time_field" IS 'uid: col:DataTypes.timeField';
+COMMENT ON COLUMN "data_types"."datetime_field" IS 'uid: col:DataTypes.datetimeField';
+COMMENT ON COLUMN "data_types"."json_field" IS 'uid: col:DataTypes.jsonField';
+COMMENT ON COLUMN "data_types"."uuid_field" IS 'uid: col:DataTypes.uuidField';
+COMMENT ON COLUMN "data_types"."inet_field" IS 'uid: col:DataTypes.inetField';

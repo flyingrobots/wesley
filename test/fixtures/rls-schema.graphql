@@ -1,0 +1,363 @@
+# Advanced E-Commerce Schema with RLS, Mutations, and RPC Functions
+# Demonstrates Wesley's production-grade capabilities
+
+scalar UUID
+scalar DateTime
+scalar JSON
+
+directive @uid(value: String!) on OBJECT | FIELD_DEFINITION
+directive @weight(value: Int! = 5) on OBJECT | FIELD_DEFINITION
+directive @critical on OBJECT | FIELD_DEFINITION
+directive @sensitive on FIELD_DEFINITION
+directive @pii on FIELD_DEFINITION
+directive @wes_rls(
+  select: String
+  insert: String
+  update: String
+  delete: String
+) on OBJECT
+directive @rpc on FIELD_DEFINITION
+directive @function(logic: String) on FIELD_DEFINITION
+
+# =====================
+# TABLES WITH RLS
+# =====================
+
+type User @wes_table @critical @uid(value: "tbl:user") @wes_rls(
+  select: "true"  # Anyone can see users
+  insert: "false" # Only through registration
+  update: "auth.uid() = id"  # Users can update themselves
+  delete: "false" # No user deletion
+) {
+  id: UUID! @wes_pk @wes_default(expr: "auth.uid()") @uid(value: "col:user.id")
+  email: String! @wes_unique @pii @weight(9) @uid(value: "col:user.email")
+  password_hash: String! @sensitive @weight(10) @uid(value: "col:user.password")
+  
+  full_name: String @pii @weight(7)
+  role: String! @wes_default(value: "customer") @weight(8)
+  
+  email_verified: Boolean! @wes_default(expr: "false") @weight(8)
+  created_at: DateTime! @wes_default(expr: "now()")
+  updated_at: DateTime! @wes_default(expr: "now()") @updatedAt
+  
+  orders: [Order!]! @hasMany
+}
+
+type Product @wes_table @uid(value: "tbl:product") @wes_rls(
+  select: "published = true OR auth.uid() IN (SELECT id FROM User WHERE role = 'admin')"
+  insert: "auth.uid() IN (SELECT id FROM User WHERE role = 'admin')"
+  update: "auth.uid() IN (SELECT id FROM User WHERE role = 'admin')"
+  delete: "auth.uid() IN (SELECT id FROM User WHERE role = 'admin')"
+) {
+  id: UUID! @wes_pk @wes_default(expr: "gen_random_uuid()") @uid(value: "col:product.id")
+  
+  sku: String! @wes_unique @weight(9) @uid(value: "col:product.sku")
+  name: String! @weight(8) @uid(value: "col:product.name")
+  slug: String! @wes_unique @wes_index @weight(7) @uid(value: "col:product.slug")
+  
+  price_cents: Int! @weight(9) @uid(value: "col:product.price")
+  stock_quantity: Int! @wes_default(value: 0) @weight(8)
+  low_stock_threshold: Int! @wes_default(value: 10) @weight(6)
+  
+  published: Boolean! @wes_default(expr: "false") @wes_index @weight(7)
+  featured: Boolean! @wes_default(expr: "false") @weight(5)
+  
+  created_at: DateTime! @wes_default(expr: "now()")
+  updated_at: DateTime! @wes_default(expr: "now()") @updatedAt
+  
+  created_by: UUID! @wes_fk(ref: "User.id") @weight(7)
+  
+  order_items: [OrderItem!]! @hasMany
+  inventory_logs: [InventoryLog!]! @hasMany
+}
+
+type Order @wes_table @critical @uid(value: "tbl:order") @wes_rls(
+  select: "user_id = auth.uid() OR auth.uid() IN (SELECT id FROM User WHERE role = 'admin')"
+  insert: "user_id = auth.uid()"
+  update: "user_id = auth.uid() AND status = 'pending'"
+  delete: "false"  # Orders cannot be deleted, only cancelled
+) {
+  id: UUID! @wes_pk @wes_default(expr: "gen_random_uuid()") @uid(value: "col:order.id")
+  order_number: String! @wes_unique @weight(10) @uid(value: "col:order.number")
+  user_id: UUID! @wes_fk(ref: "User.id") @wes_index @weight(9)
+  
+  status: String! @wes_default(value: "pending") @weight(9) @uid(value: "col:order.status")
+  
+  subtotal_cents: Int! @weight(8)
+  tax_cents: Int! @weight(7)
+  shipping_cents: Int! @weight(7)
+  total_cents: Int! @weight(9)
+  
+  shipping_address: JSON! @pii @weight(8)
+  billing_address: JSON! @pii @weight(8)
+  
+  payment_intent_id: String @wes_unique @sensitive @weight(9)
+  payment_status: String! @wes_default(value: "pending") @weight(9)
+  
+  notes: String @weight(2)
+  
+  created_at: DateTime! @wes_default(expr: "now()")
+  paid_at: DateTime @weight(7)
+  shipped_at: DateTime @weight(6)
+  delivered_at: DateTime @weight(6)
+  cancelled_at: DateTime @weight(5)
+  
+  user: User! @belongsTo
+  items: [OrderItem!]! @hasMany
+}
+
+type OrderItem @wes_table @uid(value: "tbl:order_item") @wes_rls(
+  select: "order_id IN (SELECT id FROM Order WHERE user_id = auth.uid())"
+  insert: "order_id IN (SELECT id FROM Order WHERE user_id = auth.uid() AND status = 'pending')"
+  update: "order_id IN (SELECT id FROM Order WHERE user_id = auth.uid() AND status = 'pending')"
+  delete: "order_id IN (SELECT id FROM Order WHERE user_id = auth.uid() AND status = 'pending')"
+) {
+  id: UUID! @wes_pk @wes_default(expr: "gen_random_uuid()")
+  order_id: UUID! @wes_fk(ref: "Order.id") @wes_index @weight(8)
+  product_id: UUID! @wes_fk(ref: "Product.id") @wes_index @weight(7)
+  
+  quantity: Int! @weight(8)
+  unit_price_cents: Int! @weight(8)
+  subtotal_cents: Int! @weight(8)
+  
+  # Snapshot product details at time of order
+  product_name: String! @weight(6)
+  product_sku: String! @weight(7)
+  
+  order: Order! @belongsTo
+  product: Product! @belongsTo
+}
+
+type Cart @wes_table @uid(value: "tbl:cart") @wes_rls(
+  select: "user_id = auth.uid()"
+  insert: "user_id = auth.uid()"
+  update: "user_id = auth.uid()"
+  delete: "user_id = auth.uid()"
+) {
+  id: UUID! @wes_pk @wes_default(expr: "gen_random_uuid()")
+  user_id: UUID! @wes_unique @wes_fk(ref: "User.id") @weight(8)
+  
+  expires_at: DateTime! @wes_default(expr: "now() + interval '7 days'") @wes_index @weight(7)
+  
+  created_at: DateTime! @wes_default(expr: "now()")
+  updated_at: DateTime! @wes_default(expr: "now()") @updatedAt
+  
+  user: User! @belongsTo
+  items: [CartItem!]! @hasMany
+}
+
+type CartItem @wes_table @uid(value: "tbl:cart_item") @wes_rls(
+  select: "cart_id IN (SELECT id FROM Cart WHERE user_id = auth.uid())"
+  insert: "cart_id IN (SELECT id FROM Cart WHERE user_id = auth.uid())"
+  update: "cart_id IN (SELECT id FROM Cart WHERE user_id = auth.uid())"
+  delete: "cart_id IN (SELECT id FROM Cart WHERE user_id = auth.uid())"
+) {
+  id: UUID! @wes_pk @wes_default(expr: "gen_random_uuid()")
+  cart_id: UUID! @wes_fk(ref: "Cart.id") @wes_index @weight(7)
+  product_id: UUID! @wes_fk(ref: "Product.id") @wes_index @weight(7)
+  
+  quantity: Int! @weight(7)
+  
+  added_at: DateTime! @wes_default(expr: "now()")
+  
+  cart: Cart! @belongsTo
+  product: Product! @belongsTo
+}
+
+# Inventory tracking with RLS
+type InventoryLog @wes_table @uid(value: "tbl:inventory_log") @wes_rls(
+  select: "auth.uid() IN (SELECT id FROM User WHERE role IN ('admin', 'warehouse'))"
+  insert: "auth.uid() IN (SELECT id FROM User WHERE role IN ('admin', 'warehouse'))"
+  update: "false"  # Logs are immutable
+  delete: "false"  # Logs cannot be deleted
+) {
+  id: UUID! @wes_pk @wes_default(expr: "gen_random_uuid()")
+  product_id: UUID! @wes_fk(ref: "Product.id") @wes_index @weight(8)
+  
+  quantity_change: Int! @weight(9)  # Positive for restocking, negative for sales
+  quantity_after: Int! @weight(8)
+  
+  reason: String! @weight(7)  # 'sale', 'restock', 'adjustment', 'return'
+  reference_id: UUID @weight(6)  # Order ID or restock batch ID
+  
+  created_by: UUID! @wes_fk(ref: "User.id") @weight(7)
+  created_at: DateTime! @wes_default(expr: "now()") @wes_index
+  
+  product: Product! @belongsTo
+  user: User! @belongsTo
+}
+
+# =====================
+# GRAPHQL MUTATIONS (Generate RPC Functions)
+# =====================
+
+type Mutation {
+  # User registration with automatic cart creation
+  registerUser(input: RegisterUserInput!): User! @rpc @function(logic: "
+    -- Create user account
+    INSERT INTO User (email, password_hash, full_name)
+    VALUES (input.email, crypt(input.password, gen_salt('bf')), input.full_name)
+    RETURNING * INTO new_user;
+    
+    -- Create empty cart for user
+    INSERT INTO Cart (user_id) VALUES (new_user.id);
+    
+    RETURN new_user;
+  ")
+  
+  # Add item to cart with stock validation
+  addToCart(productId: UUID!, quantity: Int!): CartItem! @rpc @function(logic: "
+    -- Check stock availability
+    IF (SELECT stock_quantity FROM Product WHERE id = productId) < quantity THEN
+      RAISE EXCEPTION 'Insufficient stock';
+    END IF;
+    
+    -- Add or update cart item
+    INSERT INTO CartItem (cart_id, product_id, quantity)
+    VALUES (
+      (SELECT id FROM Cart WHERE user_id = auth.uid()),
+      productId,
+      quantity
+    )
+    ON CONFLICT (cart_id, product_id) DO UPDATE
+    SET quantity = CartItem.quantity + EXCLUDED.quantity
+    RETURNING *;
+  ")
+  
+  # Checkout cart and create order
+  checkout(shippingAddress: JSON!, billingAddress: JSON!): Order! @rpc @function(logic: "
+    -- Calculate totals
+    SELECT SUM(ci.quantity * p.price_cents) INTO subtotal
+    FROM CartItem ci
+    JOIN Product p ON ci.product_id = p.id
+    WHERE ci.cart_id = (SELECT id FROM Cart WHERE user_id = auth.uid());
+    
+    -- Create order
+    INSERT INTO Order (user_id, subtotal_cents, total_cents, shipping_address, billing_address)
+    VALUES (auth.uid(), subtotal, subtotal * 1.1, shippingAddress, billingAddress)
+    RETURNING * INTO new_order;
+    
+    -- Copy cart items to order items
+    INSERT INTO OrderItem (order_id, product_id, quantity, unit_price_cents)
+    SELECT new_order.id, ci.product_id, ci.quantity, p.price_cents
+    FROM CartItem ci
+    JOIN Product p ON ci.product_id = p.id
+    WHERE ci.cart_id = (SELECT id FROM Cart WHERE user_id = auth.uid());
+    
+    -- Update inventory
+    INSERT INTO InventoryLog (product_id, quantity_change, reason, reference_id, created_by)
+    SELECT ci.product_id, -ci.quantity, 'sale', new_order.id, auth.uid()
+    FROM CartItem ci
+    WHERE ci.cart_id = (SELECT id FROM Cart WHERE user_id = auth.uid());
+    
+    -- Update product stock
+    UPDATE Product p
+    SET stock_quantity = stock_quantity - ci.quantity
+    FROM CartItem ci
+    WHERE p.id = ci.product_id
+    AND ci.cart_id = (SELECT id FROM Cart WHERE user_id = auth.uid());
+    
+    -- Clear cart
+    DELETE FROM CartItem WHERE cart_id = (SELECT id FROM Cart WHERE user_id = auth.uid());
+    
+    RETURN new_order;
+  ")
+  
+  # Cancel order (with stock restoration)
+  cancelOrder(orderId: UUID!): Order! @rpc @function(logic: "
+    -- Verify order can be cancelled
+    IF (SELECT status FROM Order WHERE id = orderId AND user_id = auth.uid()) != 'pending' THEN
+      RAISE EXCEPTION 'Order cannot be cancelled';
+    END IF;
+    
+    -- Restore inventory
+    INSERT INTO InventoryLog (product_id, quantity_change, reason, reference_id, created_by)
+    SELECT oi.product_id, oi.quantity, 'return', orderId, auth.uid()
+    FROM OrderItem oi
+    WHERE oi.order_id = orderId;
+    
+    UPDATE Product p
+    SET stock_quantity = stock_quantity + oi.quantity
+    FROM OrderItem oi
+    WHERE p.id = oi.product_id AND oi.order_id = orderId;
+    
+    -- Update order status
+    UPDATE Order
+    SET status = 'cancelled', cancelled_at = now()
+    WHERE id = orderId
+    RETURNING *;
+  ")
+  
+  # Admin: Restock product
+  restockProduct(productId: UUID!, quantity: Int!, batchId: UUID): Product! @rpc @grant(to: "admin") @function(logic: "
+    -- Verify admin role
+    IF (SELECT role FROM User WHERE id = auth.uid()) != 'admin' THEN
+      RAISE EXCEPTION 'Unauthorized';
+    END IF;
+    
+    -- Update stock
+    UPDATE Product
+    SET stock_quantity = stock_quantity + quantity
+    WHERE id = productId
+    RETURNING * INTO updated_product;
+    
+    -- Log inventory change
+    INSERT INTO InventoryLog (product_id, quantity_change, quantity_after, reason, reference_id, created_by)
+    VALUES (productId, quantity, updated_product.stock_quantity, 'restock', batchId, auth.uid());
+    
+    RETURN updated_product;
+  ")
+}
+
+# =====================
+# CUSTOM QUERIES WITH RPC
+# =====================
+
+type Query {
+  # Get low stock products (warehouse dashboard)
+  lowStockProducts(threshold: Int = 10): [Product!]! @rpc @grant(to: "authenticated") @rpc(sql: "
+    SELECT * FROM Product
+    WHERE stock_quantity <= COALESCE($1, low_stock_threshold)
+    AND auth.uid() IN (SELECT id FROM User WHERE role IN ('admin', 'warehouse'))
+    ORDER BY stock_quantity ASC;
+  ")
+  
+  # Get user's order history with pagination
+  myOrders(limit: Int = 10, offset: Int = 0): [Order!]! @rpc @rpc(sql: "
+    SELECT * FROM Order
+    WHERE user_id = auth.uid()
+    ORDER BY created_at DESC
+    LIMIT $1 OFFSET $2;
+  ")
+  
+  # Admin: Sales report
+  salesReport(startDate: DateTime!, endDate: DateTime!): JSON! @rpc @grant(to: "admin") @rpc(sql: "
+    SELECT 
+      COUNT(DISTINCT o.id) as total_orders,
+      COUNT(DISTINCT o.user_id) as unique_customers,
+      SUM(o.total_cents) / 100.0 as total_revenue,
+      AVG(o.total_cents) / 100.0 as average_order_value,
+      json_agg(
+        json_build_object(
+          'product_name', p.name,
+          'quantity_sold', SUM(oi.quantity),
+          'revenue', SUM(oi.subtotal_cents) / 100.0
+        ) ORDER BY SUM(oi.subtotal_cents) DESC
+      ) as top_products
+    FROM Order o
+    JOIN OrderItem oi ON o.id = oi.order_id
+    JOIN Product p ON oi.product_id = p.id
+    WHERE o.created_at BETWEEN $1 AND $2
+    AND o.status != 'cancelled';
+  ")
+}
+
+# =====================
+# INPUT TYPES FOR MUTATIONS
+# =====================
+
+input RegisterUserInput {
+  email: String!
+  password: String!
+  full_name: String!
+}

@@ -1,0 +1,36 @@
+export interface User {
+  id: string;
+  /** @unique - Must be unique */
+  email: string;
+  name: string;
+  age?: number | null;
+  /** @default true */
+  isActive: boolean;
+  /** @default now() */
+  createdAt: Date;
+}
+export interface UserInput {
+  /** @unique - Must be unique */
+  email?: string | null;
+  name?: string | null;
+  age?: number | null;
+  /** @default true */
+  isActive?: boolean | null;
+  /** @default now() */
+  createdAt?: Date | null;
+}
+export interface CreateUserInput {
+  email: string;
+  name: string;
+  id?: string;
+  age?: number | null;
+  isActive?: boolean;
+  createdAt?: Date;
+}
+export interface UpdateUserInput {
+  email?: string | null;
+  name?: string | null;
+  age?: number | null;
+  isActive?: boolean | null;
+  createdAt?: Date | null;
+}

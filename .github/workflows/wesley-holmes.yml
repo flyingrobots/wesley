@@ -6,6 +6,13 @@ on:
   push:
     branches: [main]
 
+env:
+  HOLMES_BUNDLE_DIR: test/fixtures/examples/.wesley
+  HOLMES_SCHEMA: test/fixtures/examples/ecommerce.graphql
+  HOLMES_OPS_DIR: ./ops
+  HOLMES_OUT_DIR: out
+  HOLMES_ARTIFACT: wesley-bundle
+
 jobs:
   wesley-generate:
     name: "🚀 Wesley Generation"
@@ -13,39 +20,75 @@ jobs:
     
     steps:
       - name: "📦 Checkout Repository"
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
-          
-      - name: "🔧 Setup pnpm"
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8
-          
-      - name: "🔧 Setup Node.js"
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-          
-      - name: "📦 Install Dependencies"
-        run: pnpm install
-        
-      - name: "🚀 Generate Artifacts"
+
+      - name: "🕵️ Detect Schema"
+        id: detect
+        shell: bash
         run: |
-          cd example
-          pnpm exec wesley generate --schema schema.graphql --emit-bundle
-          
+          set -euo pipefail
+          if [ -n "${WESLEY_SCHEMA:-}" ] && [ -f "$WESLEY_SCHEMA" ]; then
+            schema="$WESLEY_SCHEMA"
+          else
+            mapfile -t files < <(git ls-files "**/*.graphql" 2>/dev/null || true)
+            picked=""
+            if [ ${#files[@]} -gt 0 ]; then
+              for f in "${files[@]}"; do
+                if [ "${f##*/}" = "schema.graphql" ]; then picked="$f"; break; fi
+              done
+              if [ -z "$picked" ]; then picked="${files[0]}"; fi
+            fi
+            schema="${picked:-$HOLMES_SCHEMA}"
+          fi
+          base_dir="$(dirname "$schema")"
+          bundle_dir="$base_dir/.wesley"
+          echo "schema=$schema" >> "$GITHUB_OUTPUT"
+          echo "bundle_dir=$bundle_dir" >> "$GITHUB_OUTPUT"
+          echo "Detected schema: $schema"
+          echo "Bundle dir: $bundle_dir"
+      
+      - name: "🛠️ Setup HOLMES environment"
+        uses: ./.github/actions/holmes-setup
+        with:
+          bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
+          schema: ${{ env.HOLMES_SCHEMA }}
+          ops-dir: ${{ env.HOLMES_OPS_DIR }}
+          out-dir: ${{ env.HOLMES_OUT_DIR }}
+          artifact-name: ${{ env.HOLMES_ARTIFACT }}
+          always-generate: 'true'
+        
       - name: "📊 Display Scores"
         run: |
           echo "## 📊 Generation Scores"
-          cat example/.wesley/scores.json | jq '.scores'
-          
-      - name: "💾 Upload Bundle"
-        uses: actions/upload-artifact@v4
+          if [ -f $HOLMES_BUNDLE_DIR/scores.json ]; then
+            cat $HOLMES_BUNDLE_DIR/scores.json | jq '.scores'
+          else
+            echo "No scores.json found yet"
+          fi
+
+      - name: "📤 Upload Dashboard Template"
+        uses: actions/upload-artifact@v5
         with:
-          name: wesley-bundle
-          path: example/.wesley/
+          name: dashboard-template
+          path: docs/holmes-dashboard
+          if-no-files-found: error
+          
+      - name: "📦 Prepare Bundle for Upload"
+        run: |
+          ls -la $HOLMES_BUNDLE_DIR
+          test -f "$HOLMES_BUNDLE_DIR/bundle.json"
+
+      - name: "💾 Upload Bundle"
+        uses: actions/upload-artifact@v5
+        with:
+          name: ${{ env.HOLMES_ARTIFACT }}
+          path: |
+            ${{ env.HOLMES_BUNDLE_DIR }}/bundle.json
+            ${{ env.HOLMES_BUNDLE_DIR }}/scores.json
+            ${{ env.HOLMES_BUNDLE_DIR }}/history.json
+          if-no-files-found: error
           
   holmes-investigate:
     name: "🔍 HOLMES Investigation"
@@ -54,34 +97,32 @@ jobs:
     
     steps:
       - name: "📦 Checkout Repository"
-        uses: actions/checkout@v4
-        
-      - name: "🔧 Setup Node.js"
-        uses: actions/setup-node@v4
+        uses: actions/checkout@v5
+      
+      - name: "🛠️ Setup HOLMES environment"
+        uses: ./.github/actions/holmes-setup
         with:
-          node-version: '20'
-          
-      - name: "📦 Install HOLMES"
-        run: pnpm install
-        
-      - name: "📥 Download Bundle"
-        uses: actions/download-artifact@v4
-        with:
-          name: wesley-bundle
-          path: example/.wesley/
+          bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
+          schema: ${{ env.HOLMES_SCHEMA }}
+          ops-dir: ${{ env.HOLMES_OPS_DIR }}
+          out-dir: ${{ env.HOLMES_OUT_DIR }}
+          artifact-name: ${{ env.HOLMES_ARTIFACT }}
           
       - name: "🔍 Run Investigation"
         id: holmes
-        run: |
-          cd example
-          pnpm exec holmes investigate > holmes-report.md
-          cat holmes-report.md
-          
+        uses: ./.github/actions/run-holmes-command
+        with:
+          command: investigate
+          report-name: holmes
+          schema-path: ${{ env.HOLMES_SCHEMA }}
+          bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
+
       - name: "💾 Save Report"
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: holmes-report
-          path: example/holmes-report.md
+          path: reports/holmes
+          if-no-files-found: error
           
   watson-verify:
     name: "🩺 WATSON Verification"
@@ -90,34 +131,32 @@ jobs:
     
     steps:
       - name: "📦 Checkout Repository"
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         
-      - name: "🔧 Setup Node.js"
-        uses: actions/setup-node@v4
+      - name: "🛠️ Setup HOLMES environment"
+        uses: ./.github/actions/holmes-setup
         with:
-          node-version: '20'
-          
-      - name: "📦 Install HOLMES"
-        run: pnpm install
-        
-      - name: "📥 Download Bundle"
-        uses: actions/download-artifact@v4
-        with:
-          name: wesley-bundle
-          path: example/.wesley/
+          bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
+          schema: ${{ env.HOLMES_SCHEMA }}
+          ops-dir: ${{ env.HOLMES_OPS_DIR }}
+          out-dir: ${{ env.HOLMES_OUT_DIR }}
+          artifact-name: ${{ env.HOLMES_ARTIFACT }}
           
       - name: "🩺 Run Verification"
         id: watson
-        run: |
-          cd example
-          pnpm exec holmes verify > watson-report.md
-          cat watson-report.md
-          
+        uses: ./.github/actions/run-holmes-command
+        with:
+          command: verify
+          report-name: watson
+          schema-path: ${{ env.HOLMES_SCHEMA }}
+          bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
+
       - name: "💾 Save Report"
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: watson-report
-          path: example/watson-report.md
+          path: reports/watson
+          if-no-files-found: error
           
   moriarty-predict:
     name: "🔮 MORIARTY Predictions"
@@ -126,34 +165,153 @@ jobs:
     
     steps:
       - name: "📦 Checkout Repository"
-        uses: actions/checkout@v4
-        
-      - name: "🔧 Setup Node.js"
-        uses: actions/setup-node@v4
+        uses: actions/checkout@v5
         with:
-          node-version: '20'
-          
-      - name: "📦 Install HOLMES"
-        run: pnpm install
+          fetch-depth: 0
         
-      - name: "📥 Download Bundle"
-        uses: actions/download-artifact@v4
+      - name: "🛠️ Setup HOLMES environment"
+        uses: ./.github/actions/holmes-setup
         with:
-          name: wesley-bundle
-          path: example/.wesley/
+          bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
+          schema: ${{ env.HOLMES_SCHEMA }}
+          ops-dir: ${{ env.HOLMES_OPS_DIR }}
+          out-dir: ${{ env.HOLMES_OUT_DIR }}
+          artifact-name: ${{ env.HOLMES_ARTIFACT }}
+          always-generate: 'true'
+
+      - name: "🔄 Ensure history for MORIARTY"
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git rev-parse --is-shallow-repository >/dev/null 2>&1; then
+            git fetch --prune --unshallow --tags || true
+          fi
+          git fetch --prune origin '+refs/heads/*:refs/remotes/origin/*' || true
+
+      - name: "🧮 Compute MORIARTY context (issues/PRs/CI)"
+        uses: actions/github-script@v7
+        continue-on-error: true
+        env:
+          BUNDLE_DIR: ${{ env.HOLMES_BUNDLE_DIR }}
+          BASE_REF: ${{ github.base_ref }}
+          TIMEFRAME_HOURS: 168
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const baseRef = process.env.BASE_REF || 'main';
+            const hours = Number(process.env.TIMEFRAME_HOURS || '168');
+            const since = new Date(Date.now() - hours*3600*1000);
+            const sinceIso = since.toISOString();
+
+            async function countClosedIssuesSince() {
+              let page = 1, per_page = 100, count = 0;
+              while (page <= 3) {
+                const { data } = await github.rest.issues.listForRepo({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  state: 'closed',
+                  since: sinceIso,
+                  per_page,
+                  page
+                });
+                if (!data || data.length === 0) break;
+                for (const item of data) {
+                  if (!item.pull_request && item.closed_at && new Date(item.closed_at) >= since) count++;
+                }
+                if (data.length < per_page) break;
+                page++;
+              }
+              return count;
+            }
+
+            async function countMergedPRsSince() {
+              let page = 1, per_page = 100, count = 0;
+              while (page <= 3) {
+                const { data } = await github.rest.pulls.list({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  state: 'closed',
+                  base: baseRef,
+                  per_page,
+                  page
+                });
+                if (!data || data.length === 0) break;
+                for (const pr of data) {
+                  if (pr.merged_at && new Date(pr.merged_at) >= since) count++;
+                }
+                if (data.length < per_page) break;
+                page++;
+              }
+              return count;
+            }
+
+            async function computeCIStability() {
+              let page = 1, per_page = 100, runs = 0, success = 0;
+              while (page <= 3) {
+                const { data } = await github.rest.actions.listWorkflowRunsForRepo({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  branch: baseRef,
+                  per_page,
+                  page
+                });
+                if (!data || !data.workflow_runs || data.workflow_runs.length === 0) break;
+                for (const run of data.workflow_runs) {
+                  const created = new Date(run.created_at);
+                  if (created < since) continue;
+                  runs++;
+                  if (run.conclusion === 'success') success++;
+                }
+                if (data.workflow_runs.length < per_page) break;
+                page++;
+              }
+              const stability = runs > 0 ? success / runs : null;
+              return { branch: baseRef, runsConsidered: runs, successes: success, stability, since: sinceIso };
+            }
+
+            const [issuesClosed, prsMerged, ci] = await Promise.all([
+              countClosedIssuesSince(),
+              countMergedPRsSince(),
+              computeCIStability()
+            ]);
+
+            const out = {
+              generatedAt: new Date().toISOString(),
+              timeframeHours: hours,
+              baseRef,
+              issuesClosed,
+              prsMerged,
+              ci
+            };
+            const outDir = process.env.BUNDLE_DIR || '.wesley';
+            fs.mkdirSync(outDir, { recursive: true });
+            const outPath = path.join(outDir, 'moriarty-context.json');
+            fs.writeFileSync(outPath, JSON.stringify(out, null, 2));
+            core.info(`Wrote ${outPath}`);
           
       - name: "🔮 Run Predictions"
         id: moriarty
-        run: |
-          cd example
-          pnpm exec holmes predict > moriarty-report.md || echo "Insufficient data for predictions" > moriarty-report.md
-          cat moriarty-report.md
-          
+        uses: ./.github/actions/run-holmes-command
+        with:
+          command: predict
+          report-name: moriarty
+          schema-path: ${{ env.HOLMES_SCHEMA }}
+          bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
+        env:
+          MORIARTY_BASE_REF: "${{ github.base_ref }}"
+          MORIARTY_USE_GIT: "1"
+          MORIARTY_GIT_WINDOW_HOURS: "24"
+          MORIARTY_ACTIVITY_THRESHOLD: "0.35"
+          MORIARTY_ACTIVITY_COMMITS_PER_DAY: "6"
+          MORIARTY_ACTIVITY_RELEVANT_PER_DAY: "4"
+
       - name: "💾 Save Report"
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: moriarty-report
-          path: example/moriarty-report.md
+          path: reports/moriarty
+          if-no-files-found: error
           
   test-pgtap:
     name: "🧪 pgTAP Tests"
@@ -176,33 +334,154 @@ jobs:
           
     steps:
       - name: "📦 Checkout Repository"
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         
-      - name: "📥 Download Bundle"
-        uses: actions/download-artifact@v4
+      - name: "🔧 Setup pnpm"
+        uses: pnpm/action-setup@v4
+
+      - name: "🔧 Setup Node.js"
+        uses: actions/setup-node@v4
         with:
-          name: wesley-bundle
-          path: example/.wesley/
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: "🛠️ Setup HOLMES environment"
+        uses: ./.github/actions/holmes-setup
+        with:
+          bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
+          schema: ${{ env.HOLMES_SCHEMA }}
+          ops-dir: ${{ env.HOLMES_OPS_DIR }}
+          out-dir: ${{ env.HOLMES_OUT_DIR }}
+          artifact-name: ${{ env.HOLMES_ARTIFACT }}
+          always-generate: 'true'
           
       - name: "🧪 Install pgTAP"
         run: |
           sudo apt-get update
           sudo apt-get install -y postgresql-client
+      
+      - name: "📦 Install pgTAP into Postgres service"
+        run: |
+          # Install pgTAP inside the postgres:15 container as root so CREATE EXTENSION works
+          set -euo pipefail
+          docker exec -u 0 ${{ job.services.postgres.id }} bash -lc '
+            set -euo pipefail
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get update
+            if apt-get install -y --no-install-recommends postgresql-15-pgtap; then
+              echo "Installed postgresql-15-pgtap"
+            elif apt-get install -y --no-install-recommends pgtap; then
+              echo "Installed generic pgtap package"
+            else
+              echo "Failed to install pgTAP in postgres service" >&2
+              exit 1
+            fi
+            apt-get clean && rm -rf /var/lib/apt/lists/*
+          '
           
       - name: "🔨 Apply Schema"
+        env:
+          WESLEY_OUT_DIR: out
         run: |
-          PGPASSWORD=postgres psql -h localhost -U postgres -d test -f example/out/schema.sql
-          
+          # Apply the generated schema produced in the generation step
+          # Ensure required extensions present (needed by generated defaults/indexes)
+          PGPASSWORD=postgres psql -h localhost -U postgres -d test -c 'CREATE EXTENSION IF NOT EXISTS pgcrypto;'
+          PGPASSWORD=postgres psql -h localhost -U postgres -d test -c 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp";'
+          PGPASSWORD=postgres psql -h localhost -U postgres -d test -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm;'
+          # Apply schema (fail fast on errors)
+          PGPASSWORD=postgres psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d test -f "test/fixtures/examples/${WESLEY_OUT_DIR}/schema.sql"
+
+      - name: "🏗️ Ensure wes_ops schema"
+        run: |
+          # Ops emission targets schema wes_ops; create it if missing
+          PGPASSWORD=postgres psql -h localhost -U postgres -d test -c 'CREATE SCHEMA IF NOT EXISTS wes_ops;'
+      
+      - name: "📦 Apply Ops SQL (functions only)"
+        env:
+          WESLEY_OUT_DIR: out
+        run: |
+          set -euo pipefail
+          OPS_DIR="test/fixtures/examples/${WESLEY_OUT_DIR}/ops"
+          shopt -s nullglob
+          if [ ! -d "$OPS_DIR" ]; then
+            echo "No ops SQL directory found; skipping"
+            exit 0
+          fi
+          files=("$OPS_DIR"/*.fn.sql)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No ops function SQL files found; nothing to apply"
+            exit 0
+          fi
+          for f in "${files[@]}"; do
+            if [ ! -s "$f" ]; then
+              echo "Skipping empty file: $f"
+              continue
+            fi
+            echo "Applying $f (single transaction)..."
+            PGPASSWORD=postgres psql -1 -v ON_ERROR_STOP=1 -h localhost -U postgres -d test -f "$f"
+          done
+
+      - name: "🌱 Seed minimal data for ops"
+        run: |
+          set -euo pipefail
+          # Seed a couple of products (one published, one not) and run in a single transaction
+          PGPASSWORD=postgres psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d test <<'SQL'
+          BEGIN;
+          insert into product (id, sku, name, slug, price_cents, stock_quantity, published, created_at)
+          values (gen_random_uuid(), 'SKU1', 'Alpha', 'alpha', 100, 10, true, now())
+          on conflict do nothing;
+          insert into product (id, sku, name, slug, price_cents, stock_quantity, published, created_at)
+          values (gen_random_uuid(), 'SKU2', 'Beta', 'beta', 200, 0, false, now())
+          on conflict do nothing;
+          COMMIT;
+          SQL
+
+      - name: "🧪 Generate EXPLAIN JSON snapshots"
+        env:
+          WESLEY_OUT_DIR: out
+        run: |
+          set -euo pipefail
+          mkdir -p test/fixtures/examples/${WESLEY_OUT_DIR}/ops/explain
+          # EXPLAIN (FORMAT JSON) for function calls
+          PGPASSWORD=postgres psql -h localhost -U postgres -d test -t -A -c "EXPLAIN (FORMAT JSON) SELECT * FROM wes_ops.op_products_by_name('Al%')" > test/fixtures/examples/${WESLEY_OUT_DIR}/ops/explain/products_by_name.explain.json
+          PGPASSWORD=postgres psql -h localhost -U postgres -d test -t -A -c "EXPLAIN (FORMAT JSON) SELECT * FROM wes_ops.op_orders_by_user('00000000-0000-0000-0000-000000000000')" > test/fixtures/examples/${WESLEY_OUT_DIR}/ops/explain/orders_by_user.explain.json
+
+      - name: "⬆️ Upload EXPLAIN snapshots"
+        uses: actions/upload-artifact@v5
+        with:
+          name: ops-explain
+          path: test/fixtures/examples/out/ops/explain/
+
       - name: "🧪 Run Tests"
         run: |
-          echo "pgTAP tests would run here"
-          echo "Tests are in: example/tests/generated.sql"
+          set -euo pipefail
+          # Optional gate: set RUN_PGTAP=false to skip pgTAP tests
+          : "${RUN_PGTAP:=true}"
+          # Run ops pgTAP smoke only if pgTAP is available
+          HAS_PGTAP=$(PGPASSWORD=postgres psql -h localhost -U postgres -d test -t -A -c "SELECT 1 FROM pg_available_extensions WHERE name='pgtap'" || echo '')
+          if [ "$RUN_PGTAP" = "true" ] && [ "$HAS_PGTAP" = "1" ]; then
+            PGPASSWORD=postgres psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d test -c 'CREATE EXTENSION IF NOT EXISTS pgtap;'
+            PGPASSWORD=postgres psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d test -f test/fixtures/examples/tests/ops.pgtap.sql
+          else
+            echo "pgtap extension not available; skipping pgTAP tests"
+          fi
+          # Simple non-pgTAP assertion: expect exactly 1 published product matching 'Al%'
+          CNT=$(PGPASSWORD=postgres psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d test -t -A -c "SELECT count(*) FROM wes_ops.op_products_by_name('Al%')" || echo 0)
+          echo "Count from op_products_by_name('Al%') = $CNT"
+          if [ "$CNT" != "1" ]; then
+            echo "Expected 1 row from products_by_name, got $CNT" >&2
+            exit 1
+          fi
           
   comment-report:
     name: "📝 Post Investigation Report"
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     needs: [holmes-investigate, watson-verify, moriarty-predict]
+    env:
+      HOLMES_STATUS: ${{ needs.holmes-investigate.result }}
+      WATSON_STATUS: ${{ needs.watson-verify.result }}
+      MORIARTY_STATUS: ${{ needs.moriarty-predict.result }}
     
     permissions:
       pull-requests: write
@@ -210,49 +489,166 @@ jobs:
     steps:
       - name: "📥 Download Reports"
         uses: actions/download-artifact@v4
-        
+        with:
+          merge-multiple: true
+          path: reports
+
+      - name: "📥 Download Dashboard Template"
+        uses: actions/download-artifact@v4
+        with:
+          name: dashboard-template
+          path: dashboard-template
+
+      - name: "📊 Assemble Dashboard"
+        run: |
+          set -euo pipefail
+          mkdir -p dashboard
+          template_path=$(find dashboard-template -name "index.html" -print -quit)
+          if [ -z "$template_path" ]; then
+            echo "Dashboard template index.html not found" >&2
+            exit 1
+          fi
+          template_dir=$(dirname "$template_path")
+          cp -R "$template_dir"/. dashboard/
+          mkdir -p reports
+          missing=0
+          for report in holmes watson moriarty; do
+            src=$(find reports -name "$report-report.json" -print -quit)
+            if [ -z "$src" ]; then
+              echo "Missing $report-report.json" >&2
+              missing=1
+            else
+              cp "$src" "dashboard/$report-report.json"
+            fi
+          done
+          if [ $missing -ne 0 ]; then
+            echo "Dashboard assembly failed due to missing report JSON" >&2
+            exit 1
+          fi
+
+      - name: "📤 Upload Dashboard"
+        uses: actions/upload-artifact@v5
+        with:
+          name: holmes-dashboard
+          path: dashboard
+          if-no-files-found: error
+
       - name: "📝 Create Comment"
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const fs = require('fs');
-            
-            const holmes = fs.readFileSync('holmes-report/holmes-report.md', 'utf8');
-            const watson = fs.readFileSync('watson-report/watson-report.md', 'utf8');
-            const moriarty = fs.readFileSync('moriarty-report/moriarty-report.md', 'utf8');
-            
-            const body = `
-            # 🔍 The Case of Pull Request #${{ github.event.pull_request.number }}
-            
-            ## 🕵️ SHA-lock HOLMES's Investigation
-            ${holmes}
-            
-            ---
-            
-            ## 🩺 Dr. WATSON's Verification
-            ${watson}
-            
-            ---
-            
-            ## 🔮 Professor MORIARTY's Predictions
-            ${moriarty}
-            
-            ---
-            *Filed at 221B Repository Street*
-            `;
-            
-            // Find existing comment
+            const path = require('path');
+
+            const findMatches = (root, filename) => {
+              const results = [];
+              const stack = [root];
+              while (stack.length) {
+                const dir = stack.pop();
+                let entries = [];
+                try {
+                  entries = fs.readdirSync(dir, { withFileTypes: true });
+                } catch {
+                  continue;
+                }
+                for (const entry of entries) {
+                  const fullPath = path.join(dir, entry.name);
+                  if (entry.isDirectory()) {
+                    stack.push(fullPath);
+                  } else if (entry.isFile() && entry.name === filename) {
+                    results.push(fullPath);
+                  }
+                }
+              }
+              return results;
+            };
+
+            const findReportPath = (filename, reportName) => {
+              const matches = findMatches('reports', filename);
+              if (matches.length === 0) {
+                return null;
+              }
+              if (reportName) {
+                const preferred = matches.find((candidate) => {
+                  const parts = candidate.split(path.sep).map((part) => part.toLowerCase());
+                  return parts.includes(reportName.toLowerCase());
+                });
+                if (preferred) {
+                  return preferred;
+                }
+              }
+              return matches[0];
+            };
+
+            const readReport = (status, reportName, filename) => {
+              if (status !== 'success') {
+                return `_Report unavailable: upstream job status **${status}**_`;
+              }
+              const match = findReportPath(filename, reportName);
+              if (!match) {
+                console.warn(`Report not found: ${reportName}/${filename}`);
+                return `_Report missing for ${reportName}_`;
+              }
+              return fs.readFileSync(match, 'utf8');
+            };
+
+            const statuses = {
+              holmes: process.env.HOLMES_STATUS || 'unknown',
+              watson: process.env.WATSON_STATUS || 'unknown',
+              moriarty: process.env.MORIARTY_STATUS || 'unknown'
+            };
+
+            const holmes = readReport(statuses.holmes, 'holmes', 'holmes-report.md');
+            const watson = readReport(statuses.watson, 'watson', 'watson-report.md');
+            const moriarty = readReport(statuses.moriarty, 'moriarty', 'moriarty-report.md');
+
+            const lines = [
+              `# 🔍 The Case of Pull Request #${context.payload.pull_request.number}`,
+              '',
+              '<details><summary>🕵️ SHA-lock HOLMES\'s Investigation (click to expand)</summary>',
+              '',
+              holmes,
+              '',
+              '</details>',
+              '',
+              '---',
+              '',
+              '<details><summary>🩺 Dr. WATSON\'s Verification (click to expand)</summary>',
+              '',
+              watson,
+              '',
+              '</details>',
+              '',
+              '---',
+              '',
+              '<details><summary>🔮 Professor MORIARTY\'s Predictions (click to expand)</summary>',
+              '',
+              moriarty,
+              '',
+              '</details>',
+              '',
+              '---',
+              '',
+              '_Machine-readable reports:_ holmes-report.json · watson-report.json · moriarty-report.json (see workflow artifacts).',
+              '',
+              '---',
+              '',
+              '*Filed at 221B Repository Street*'
+            ];
+
+            const body = lines.join('\n');
+
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
             });
-            
-            const botComment = comments.find(comment => 
-              comment.user.type === 'Bot' && 
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
               comment.body.includes('The Case of Pull Request')
             );
-            
+
             if (botComment) {
               await github.rest.issues.updateComment({
                 owner: context.repo.owner,
@@ -268,3 +664,12 @@ jobs:
                 body
               });
             }
+      - name: "🔄 Ensure history for MORIARTY"
+        shell: bash
+        run: |
+          set -euo pipefail
+          # In case fetch-depth wasn't honored or repo is shallow, try to unshallow
+          if git rev-parse --is-shallow-repository >/dev/null 2>&1; then
+            git fetch --prune --unshallow --tags || true
+          fi
+          git fetch --prune origin '+refs/heads/*:refs/remotes/origin/*' || true

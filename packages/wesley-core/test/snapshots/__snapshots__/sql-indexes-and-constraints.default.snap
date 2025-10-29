@@ -1,0 +1,32 @@
+CREATE TABLE IF NOT EXISTS "events" (
+  "id" uuid NOT NULL,
+  "name" text NOT NULL,
+  "slug" text NOT NULL,
+  "start_date" timestamptz NOT NULL,
+  "end_date" timestamptz NOT NULL,
+  "status" text NOT NULL DEFAULT 'draft',
+  "category_id" uuid NOT NULL,
+  "organizer_id" uuid NOT NULL,
+  PRIMARY KEY ("id"),
+  UNIQUE ("slug")
+);
+COMMENT ON TABLE "events" IS 'uid: tbl:Event';
+COMMENT ON COLUMN "events"."id" IS 'uid: col:Event.id';
+COMMENT ON COLUMN "events"."name" IS 'uid: col:Event.name';
+COMMENT ON COLUMN "events"."slug" IS 'uid: col:Event.slug';
+COMMENT ON COLUMN "events"."start_date" IS 'uid: col:Event.startDate';
+COMMENT ON COLUMN "events"."end_date" IS 'uid: col:Event.endDate';
+COMMENT ON COLUMN "events"."status" IS 'uid: col:Event.status';
+COMMENT ON COLUMN "events"."category_id" IS 'uid: col:Event.categoryId';
+COMMENT ON COLUMN "events"."organizer_id" IS 'uid: col:Event.organizerId';
+CREATE INDEX IF NOT EXISTS "events_name_idx" ON "events" ("name");
+COMMENT ON INDEX "events_name_idx" IS 'uid: idx_events_name';
+-- Skipped redundant index: Index on slug is covered by unique constraint on slug
+CREATE INDEX IF NOT EXISTS "events_start_date_idx" ON "events" ("start_date");
+COMMENT ON INDEX "events_start_date_idx" IS 'uid: idx_events_start_date';
+CREATE INDEX IF NOT EXISTS "events_status_idx" ON "events" ("status") WHERE status = 'published';
+COMMENT ON INDEX "events_status_idx" IS 'uid: idx_events_status';
+CREATE INDEX IF NOT EXISTS "events_category_id_idx" ON "events" ("category_id");
+COMMENT ON INDEX "events_category_id_idx" IS 'uid: idx_events_category_id';
+CREATE INDEX IF NOT EXISTS "events_organizer_id_idx" ON "events" ("organizer_id");
+COMMENT ON INDEX "events_organizer_id_idx" IS 'uid: idx_events_organizer_id';

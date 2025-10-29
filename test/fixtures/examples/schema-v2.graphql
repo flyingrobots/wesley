@@ -1,0 +1,105 @@
+# Version 2 of schema - demonstrates migration generation
+# Changes from v1:
+# - Added 'phone' field to User (low risk)
+# - Added 'discount_code' to Order (low risk) 
+# - Changed Product.price_cents to BIGINT (medium risk)
+# - Added new ReviewSystem table (low risk)
+# - Dropped CartItem.added_at field (HIGH RISK - data loss)
+
+scalar UUID
+scalar DateTime
+scalar JSON
+
+directive @uid(value: String!) on OBJECT | FIELD_DEFINITION
+directive @weight(value: Int! = 5) on OBJECT | FIELD_DEFINITION
+directive @critical on OBJECT | FIELD_DEFINITION
+directive @sensitive on FIELD_DEFINITION
+directive @pii on FIELD_DEFINITION
+
+type User @wes_table @critical @uid("tbl:user") {
+  id: UUID! @wes_pk @wes_default(expr: "gen_random_uuid()") @uid("col:user.id")
+  email: String! @wes_unique @pii @weight(9) @uid("col:user.email")
+  password_hash: String! @sensitive @weight(10) @uid("col:user.password")
+  
+  full_name: String @pii @weight(7) @uid("col:user.full_name")
+  phone: String @pii @weight(8) @uid("col:user.phone")  # NEW FIELD
+  
+  email_verified: Boolean! @wes_default(expr: "false") @weight(8)
+  created_at: DateTime! @wes_default(expr: "now()")
+  
+  orders: [Order!]! @hasMany
+  reviews: [Review!]! @hasMany  # NEW RELATION
+}
+
+type Product @wes_table @uid("tbl:product") {
+  id: UUID! @wes_pk @wes_default(expr: "gen_random_uuid()") @uid("col:product.id")
+  
+  sku: String! @wes_unique @weight(9) @uid("col:product.sku")
+  name: String! @weight(8) @uid("col:product.name")
+  slug: String! @wes_unique @wes_index @weight(7) @uid("col:product.slug")
+  
+  price_cents: BigInt! @weight(9) @uid("col:product.price")  # CHANGED TYPE
+  stock_quantity: Int! @wes_default(value: 0) @weight(8)
+  
+  published: Boolean! @wes_default(expr: "false") @wes_index @weight(7)
+  created_at: DateTime! @wes_default(expr: "now()")
+  
+  order_items: [OrderItem!]! @hasMany
+  reviews: [Review!]! @hasMany  # NEW RELATION
+}
+
+type Order @wes_table @critical @uid("tbl:order") {
+  id: UUID! @wes_pk @wes_default(expr: "gen_random_uuid()") @uid("col:order.id")
+  order_number: String! @wes_unique @weight(10) @uid("col:order.number")
+  user_id: UUID! @wes_fk(ref: "User.id") @wes_index @weight(9)
+  
+  status: String! @weight(9) @uid("col:order.status")
+  total_cents: Int! @weight(9)
+  
+  discount_code: String @weight(5) @uid("col:order.discount")  # NEW FIELD
+  discount_amount_cents: Int @wes_default(value: 0) @weight(6)  # NEW FIELD
+  
+  payment_intent_id: String @wes_unique @sensitive @weight(9)
+  paid_at: DateTime @weight(7)
+  
+  created_at: DateTime! @wes_default(expr: "now()")
+  
+  user: User! @belongsTo
+  items: [OrderItem!]! @hasMany
+}
+
+type OrderItem @wes_table @uid("tbl:order_item") {
+  id: UUID! @wes_pk @wes_default(expr: "gen_random_uuid()")
+  order_id: UUID! @wes_fk(ref: "Order.id") @wes_index @weight(8)
+  product_id: UUID! @wes_fk(ref: "Product.id") @wes_index @weight(7)
+  
+  quantity: Int! @weight(8)
+  unit_price_cents: Int! @weight(8)
+  
+  order: Order! @belongsTo
+  product: Product! @belongsTo
+}
+
+# NEW TABLE - Review system
+type Review @wes_table @uid("tbl:review") {
+  id: UUID! @wes_pk @wes_default(expr: "gen_random_uuid()") @uid("col:review.id")
+  product_id: UUID! @wes_fk(ref: "Product.id") @wes_index @weight(8) @uid("col:review.product_id")
+  user_id: UUID! @wes_fk(ref: "User.id") @wes_index @weight(7) @uid("col:review.user_id")
+  order_id: UUID @wes_fk(ref: "Order.id") @weight(6) @uid("col:review.order_id")
+  
+  rating: Int! @weight(8) @uid("col:review.rating")
+  title: String @weight(5) @uid("col:review.title")
+  content: String @weight(6) @uid("col:review.content")
+  
+  helpful_count: Int! @wes_default(value: 0) @weight(4)
+  verified_purchase: Boolean! @wes_default(expr: "false") @weight(7)
+  
+  created_at: DateTime! @wes_default(expr: "now()")
+  updated_at: DateTime! @wes_default(expr: "now()")
+  
+  product: Product! @belongsTo
+  user: User! @belongsTo
+  order: Order @belongsTo
+}
+
+# REMOVED: Cart and CartItem tables (assuming we're moving to session storage)

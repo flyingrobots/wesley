@@ -38,10 +38,10 @@ graph TB
 ```mermaid
 graph LR
     subgraph "Monorepo Structure"
-        Core[@wesley/core]
-        Host[@wesley/host-node]
-        CLI[@wesley/cli]
-        Templates[@wesley/templates]
+        Core["@wesley/core"]
+        Host["@wesley/host-node"]
+        CLI["@wesley/cli"]
+        Templates["@wesley/templates"]
         
         Core -->|"Pure Logic"| Core
         Host -->|"Implements"| Core

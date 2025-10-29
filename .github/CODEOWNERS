@@ -1,0 +1,30 @@
+# See https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# At the moment, I, @flyingrobots, am the only code owner, but we lay out
+# each package explicitly so future contributors can slot in easily.
+
+# Contact Info:
+# James Ross <james@flyingrobots.dev> (https://github.com/flyingrobots)
+
+# Default owner covers everything else
+* @flyingrobots
+
+# Core domain (pure)
+/packages/wesley-core/ @flyingrobots
+
+# CLI + host adapters
+/packages/wesley-cli/ @flyingrobots
+/packages/wesley-host-node/ @flyingrobots
+
+# Generators
+/packages/wesley-generator-js/ @flyingrobots
+/packages/wesley-generator-supabase/ @flyingrobots
+
+# Stacks & scaffolds
+/packages/wesley-stack-supabase-nextjs/ @flyingrobots
+/packages/wesley-scaffold-multitenant/ @flyingrobots
+
+# Internals
+/packages/wesley-holmes/ @flyingrobots
+/packages/wesley-slaps/ @flyingrobots
+/packages/wesley-tasks/ @flyingrobots

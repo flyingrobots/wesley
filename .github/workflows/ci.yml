@@ -18,32 +18,37 @@ jobs:
           --health-timeout 5s
           --health-retries 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
       - uses: pnpm/action-setup@v4
-        with: { version: 9 }
+      - name: Verify pnpm version
+        run: |
+          echo "pnpm: $(pnpm --version)"
+          node -v
       - uses: actions/setup-node@v4
         with: { node-version: 20, cache: 'pnpm' }
-      - run: pnpm install
+      - run: pnpm install --frozen-lockfile
+      - name: Verify lockfile unchanged
+        run: git diff --exit-code -- pnpm-lock.yaml
+
+      # Install Bats for CLI tests executed in this workflow
+      - name: Install Bats (Ubuntu)
+        run: |
+          curl -LO https://github.com/bats-core/bats-core/archive/v1.12.0.tar.gz
+          tar -xzf v1.12.0.tar.gz
+          sudo ./bats-core-1.12.0/install.sh /usr/local
+          echo "/usr/local/bin" >> $GITHUB_PATH
 
       # Spin local PG via docker-compose init scripts (extensions)
       - run: psql -h localhost -U postgres -c "select 1" || true
         env: { PGPASSWORD: postgres }
-      - run: psql -h localhost -U postgres -f docker-entrypoint-initdb.d/00-extensions.sql
+      - run: psql -h localhost -U postgres -f test/fixtures/postgres/00-extensions.sql
         env: { PGPASSWORD: postgres }
 
       - run: pnpm -w test
 
-      - run: node packages/wesley-cli/wesley.mjs generate --schema example/ecommerce.graphql --emit-bundle
-      - run: node packages/wesley-cli/wesley.mjs validate-bundle --bundle example/.wesley --schemas schemas
+      # CLI bats are covered by dedicated workflows; keep main CI lean
+      # (See .github/workflows/cli-tests.yml and cli-quick.yml)
 
-      - run: node packages/wesley-holmes/src/cli.mjs investigate > holmes.md
-      - run: node packages/wesley-holmes/src/cli.mjs verify holmes.md > watson.md  
-      - run: node packages/wesley-holmes/src/cli.mjs predict --from example/.wesley/scores.json > moriarty.md
-
-      - name: Gate on metrics
-        run: |
-          node -e '
-            const s=require("fs").readFileSync("example/.wesley/scores.json","utf8"); 
-            const {scores}=JSON.parse(s);
-            const ok = scores.scs>=0.8 && scores.tci>=0.7 && scores.mri<=0.4;
-            if(!ok){console.error(scores); process.exit(1)}'
+      - run: node packages/wesley-host-node/bin/wesley.mjs generate --schema test/fixtures/examples/ecommerce.graphql --allow-dirty

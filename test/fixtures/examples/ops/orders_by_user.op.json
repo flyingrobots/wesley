@@ -1,0 +1,11 @@
+{
+  "name": "orders_by_user",
+  "table": "order",
+  "columns": ["id", "order_number", "status", "total_cents"],
+  "filters": [
+    { "column": "user_id", "op": "eq", "param": { "name": "user_id", "type": "uuid" } }
+  ],
+  "orderBy": [ { "column": "created_at", "dir": "desc" } ],
+  "limit": 100
+}
+

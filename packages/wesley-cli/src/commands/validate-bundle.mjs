@@ -1,17 +1,24 @@
 #!/usr/bin/env node
 
-import fs from 'node:fs/promises';
-import path from 'node:path';
+import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 
-export class ValidateBundleCommand {
-  constructor() {
-    this.name = 'validate-bundle';
-    this.description = 'Validate Wesley bundle against JSON schemas';
+export class ValidateBundleCommand extends WesleyCommand {
+  constructor(ctx) {
+    super(ctx, 'validate-bundle', 'Validate Wesley bundle against JSON schemas');
   }
 
-  async execute(options = {}) {
+  configureCommander(cmd) {
+    return cmd
+      .option('--bundle <path>', 'Bundle path', '.wesley')
+      .option('--schemas <path>', 'Schemas path', './schemas')
+      .option('--show-plan', 'Display execution plan before running');
+  }
+
+  async executeCore({ options }) {
+    const fs = this.ctx.fs;
+    const cwd = await fs.resolve('.');
     const bundlePath = options.bundle || '.wesley';
-    const schemasPath = options.schemas || path.join(process.cwd(), 'schemas');
+    const schemasPath = options.schemas || await fs.join(cwd, 'schemas');
     
     try {
       // Dynamic import of Ajv
@@ -23,18 +30,18 @@ export class ValidateBundleCommand {
       
       // Load schemas
       const evidenceMapSchema = JSON.parse(
-        await fs.readFile(path.join(schemasPath, 'evidence-map.schema.json'), 'utf8')
+        await fs.readFile(await fs.join(schemasPath, 'evidence-map.schema.json'), 'utf8')
       );
       const scoresSchema = JSON.parse(
-        await fs.readFile(path.join(schemasPath, 'scores.schema.json'), 'utf8')
+        await fs.readFile(await fs.join(schemasPath, 'scores.schema.json'), 'utf8')
       );
       
       // Load bundle files
       const evidenceMap = JSON.parse(
-        await fs.readFile(path.join(bundlePath, 'evidence-map.json'), 'utf8')
+        await fs.readFile(await fs.join(bundlePath, 'evidence-map.json'), 'utf8')
       );
       const scores = JSON.parse(
-        await fs.readFile(path.join(bundlePath, 'scores.json'), 'utf8')
+        await fs.readFile(await fs.join(bundlePath, 'scores.json'), 'utf8')
       );
       
       // Check version
@@ -69,7 +76,7 @@ export class ValidateBundleCommand {
       
       // Check thresholds if config available
       if (options.config) {
-        const config = await import(path.resolve(options.config));
+        const config = await import(await fs.resolve(options.config));
         const thresholds = config.default?.thresholds || {};
         
         if (scores.scores.scs < thresholds.scs) {
@@ -91,10 +98,13 @@ export class ValidateBundleCommand {
       }
       
     } catch (error) {
-      console.error('❌ Validation error:', error.message);
-      process.exit(1);
+      error.code = error.code || 'VALIDATION_FAILED';
+      throw error;
     }
   }
 }
 
 export default ValidateBundleCommand;
+
+// Auto-register this command by creating an instance
+new ValidateBundleCommand();

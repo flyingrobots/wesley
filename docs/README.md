@@ -18,9 +18,11 @@ Wesley inverts the entire database development paradigm. While everyone else gen
 - [Internals Deep Dive](./internals/deep-dive.md) - How Wesley works under the hood
 - [Event Flow](./internals/event-flow.md) - Tracing events through the system
 - [Parser Design](./internals/parser.md) - GraphQL SDL to domain model transformation
+- [SHA-lock HOLMES Integration](./architecture/holmes-integration.md) - Evidence bundles, investigations, and CI reports
 
 ### 📖 Guides
 - [Quick Start](./guides/quick-start.md) - Get running in 60 seconds
+- [Query Operations (QIR)](./guides/qir-ops.md) - Experimental operation → SQL lowering and emission
 - [Extending Wesley](./guides/extending.md) - Add new generators and adapters
 - [Migration Strategies](./guides/migrations.md) - Managing schema evolution
 

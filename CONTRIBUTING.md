@@ -8,6 +8,11 @@ By participating in this project, you agree to abide by our [Code of Conduct](CO
 
 ## How Can I Contribute?
 
+### Read the roadmap
+
+Before you open a large feature request, skim the current [roadmap](docs/roadmap.md)
+so work lines up with the active milestone.
+
 ### Reporting Bugs
 
 Before creating bug reports, please check existing issues. When creating a bug report, include:
@@ -37,6 +42,8 @@ Enhancement suggestions are tracked as GitHub issues. When creating an enhanceme
 4. Ensure all tests pass: `pnpm test`
 5. Update documentation as needed
 6. Follow the commit message conventions
+7. Apply an appropriate label (see [docs/governance/labels.md](docs/governance/labels.md))
+   when you open the PR so reviewers know how to triage it.
 
 ## Architecture Guidelines
 
@@ -60,6 +67,14 @@ Wesley follows hexagonal architecture with clear separation:
 - Sidecar package for intelligence features
 - Separate from main CLI
 
+### Evidence UIDs (Very Important)
+- Use a consistent UID scheme when recording artifacts to `EvidenceMap`:
+  - Tables: `tbl:TableName`
+  - Columns: `col:TableName.columnName`
+- Generators should always record evidence under these keys. Do not invent new prefixes.
+- SQL comments may still include legacy strings like `uid: col_table_column` in some snapshots; these are human hints only and are not used for lookups. EvidenceMap keys are the source of truth.
+- When adding new producers/consumers, prefer `tbl:/col:` and update tests accordingly.
+
 ## Development Setup
 
 ```bash
@@ -67,7 +82,7 @@ Wesley follows hexagonal architecture with clear separation:
 git clone https://github.com/yourusername/wesley.git
 cd wesley
 
-# Install dependencies
+# Install dependencies (pnpm workspace)
 pnpm install
 
 # Run tests
@@ -136,9 +151,14 @@ refactor: move generators to core
 ## Documentation
 
 Update relevant docs when making changes:
-- API changes: Update JSDoc comments
-- New features: Update README.md
-- Architecture changes: Update docs/architecture/
+- API changes: update JSDoc comments
+- New features: update README.md and Quick Start where needed
+- Architecture changes: update `docs/architecture/`
+- Roadmap or workflow changes: update `docs/roadmap.md` and `docs/governance/`
+
+## License
+
+This project is licensed under **MIND‑UCAL v1.0** (Moral Intelligence · Non‑violent Development · Universal Charter‑Aligned License). See `LICENSE` for the full text. By contributing, you agree your contributions will be distributed under MIND‑UCAL v1.0.
 
 ## Release Process
 
@@ -152,4 +172,30 @@ pnpm publish
 
 ## Questions?
 
-Feel free to open an issue for any questions about contributing!
+Feel free to open an issue for any questions about contributing. For private
+questions (conduct or security), email `oss@flyingrobots.dev`
+(`security@flyingrobots.dev` for incident reports).
+
+## Tooling & Hooks
+
+### Package Manager
+- We use pnpm (workspace). Please ensure pnpm 9+ is installed. The repo pins the package manager in `package.json`.
+
+### Git Hooks
+- On install, our `prepare` script sets `core.hooksPath` to `.githooks/`.
+- A pre-push hook runs a fast preflight before pushing.
+
+### Preflight (local and CI)
+- Run manually: `pnpm run preflight`.
+- What it checks:
+  - Docs link integrity (relative links only)
+  - Architecture boundaries via dependency-cruiser
+  - ESLint purity for `packages/wesley-core` (no node:* / process / fs / path)
+  - Workflow hygiene (no macOS runners, no Claude workflows)
+  - .gitignore hygiene (.wesley/ and out/ ignored)
+- Bypass (not recommended): set `SKIP_PREFLIGHT=1`.
+- CI: A `Preflight` workflow runs on PRs and main pushes and should pass before merging.
+
+### Node / Runtimes
+- Recommended Node: 20 LTS (CI uses Node 20).
+- macOS runners are removed from CI to control cost; Linux environments are primary.

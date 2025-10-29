@@ -3,27 +3,44 @@
   "version": "0.1.0",
   "type": "module",
   "description": "Wesley CLI - GraphQL to Everything",
-  "bin": { 
-    "wesley": "./wesley.mjs" 
+  "exports": {
+    ".": "./src/index.mjs",
+    "./src/commands": "./src/commands.mjs",
+    "./src/main.mjs": "./src/main.mjs",
+    "./src/program.mjs": "./src/program.mjs"
   },
-  "exports": "./wesley.mjs",
   "files": [
-    "wesley.mjs",
     "src/"
   ],
-  "engines": { 
-    "node": ">=18.17" 
+  "engines": {
+    "node": ">=18.17"
   },
   "scripts": {
-    "test": "node --test"
+    "test": "./test/run-bats.sh",
+    "test:verbose": "./test/run-bats.sh --verbose",
+    "test:tap": "./test/run-bats.sh --tap"
   },
   "dependencies": {
     "@wesley/core": "workspace:*",
-    "@wesley/host-node": "workspace:*",
     "ajv": "^8.12.0",
-    "ajv-formats": "^2.1.1"
+    "ajv-formats": "^3.0.1",
+    "commander": "^14.0.2"
   },
-  "keywords": ["cli", "graphql", "schema", "generator"],
-  "author": "Captain James",
-  "license": "MIT"
+  "keywords": [
+    "cli",
+    "graphql",
+    "schema",
+    "generator"
+  ],
+  "author": "Wesley Authors <oss@flyingrobots.dev>",
+  "license": "LicenseRef-MIND-UCAL-1.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/flyingrobots/wesley.git",
+    "directory": "packages/wesley-cli"
+  },
+  "bugs": {
+    "url": "https://github.com/flyingrobots/wesley/issues"
+  },
+  "homepage": "https://github.com/flyingrobots/wesley/tree/main/packages/wesley-cli#readme"
 }

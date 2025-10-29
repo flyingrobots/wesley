@@ -1,0 +1,76 @@
+export interface Organization {
+  id: string;
+  /** @unique - Must be unique */
+  name: string;
+  /** @default {} */
+  settings?: Record<string, any> | null;
+}
+export interface User {
+  id: string;
+  /** @unique - Must be unique */
+  email: string;
+  orgId: string;
+  /** @default 'member' */
+  role: string;
+}
+export interface Document {
+  id: string;
+  title: string;
+  /** @sensitive - Contains sensitive data */
+  content?: string | null;
+  orgId: string;
+  ownerId: string;
+}
+export interface OrganizationInput {
+  /** @unique - Must be unique */
+  name?: string | null;
+  /** @default {} */
+  settings?: Record<string, any> | null;
+}
+export interface CreateOrganizationInput {
+  name: string;
+  id?: string;
+  settings?: Record<string, any> | null;
+}
+export interface UpdateOrganizationInput {
+  name?: string | null;
+  settings?: Record<string, any> | null;
+}
+export interface UserInput {
+  /** @unique - Must be unique */
+  email?: string | null;
+  orgId?: string | null;
+  /** @default 'member' */
+  role?: string | null;
+}
+export interface CreateUserInput {
+  email: string;
+  orgId: string;
+  id?: string;
+  role?: string;
+}
+export interface UpdateUserInput {
+  email?: string | null;
+  orgId?: string | null;
+  role?: string | null;
+}
+export interface DocumentInput {
+  title?: string | null;
+  /** @sensitive - Contains sensitive data */
+  content?: string | null;
+  orgId?: string | null;
+  ownerId?: string | null;
+}
+export interface CreateDocumentInput {
+  title: string;
+  orgId: string;
+  ownerId: string;
+  id?: string;
+  content?: string | null;
+}
+export interface UpdateDocumentInput {
+  title?: string | null;
+  content?: string | null;
+  orgId?: string | null;
+  ownerId?: string | null;
+}

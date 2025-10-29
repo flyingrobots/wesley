@@ -43,11 +43,11 @@ test('generates basic table DDL', async () => {
   
   const sql = await generator.generate(schema);
   
-  assert(sql.includes('CREATE TABLE IF NOT EXISTS "User"'));
+  assert(sql.includes('CREATE TABLE IF NOT EXISTS "users"'));
   assert(sql.includes('"id" uuid'));
   assert(sql.includes('"email" text NOT NULL'));
   assert(sql.includes('"name" text'));
-  assert(sql.includes('"createdAt" timestamptz NOT NULL DEFAULT NOW()'));
+  assert(sql.includes('"created_at" timestamptz NOT NULL DEFAULT NOW()'));
 });
 
 test('generates foreign key constraints', async () => {
@@ -82,7 +82,7 @@ test('generates foreign key constraints', async () => {
   
   const sql = await generator.generate(schema);
   
-  assert(sql.includes('FOREIGN KEY ("userId") REFERENCES "User"("id")'));
+  assert(sql.includes('FOREIGN KEY ("user_id") REFERENCES "users"("id")'));
 });
 
 test('generates RLS policies with proper naming', () => {

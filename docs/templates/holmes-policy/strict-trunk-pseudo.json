@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "defaults": {
+    "mode": "auto",
+    "assumeDefaultBranch": "main",
+    "penalties": { "projectionError": 60, "projectionConflicts": 30 },
+    "fetchBase": true,
+    "pseudoAgainst": "HEAD~1"
+  },
+  "rules": [
+    { "when": { "branchEquals": "main" },
+      "then": { "mode": "pseudo", "pseudoAgainst": "HEAD~1", "notes": "Strict trunk: sanity projection vs previous commit" } },
+    { "when": { "branchMatches": ["*"] },
+      "then": { "mode": "on", "baseFrom": "default_branch" } }
+  ]}
+

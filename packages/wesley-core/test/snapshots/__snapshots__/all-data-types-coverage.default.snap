@@ -1,0 +1,58 @@
+export interface DataTypes {
+  id: string;
+  stringField?: string | null;
+  intField?: number | null;
+  bigIntField?: bigint | null;
+  floatField?: number | null;
+  decimalField?: number | null;
+  booleanField?: boolean | null;
+  dateField?: Date | null;
+  timeField?: Date | null;
+  dateTimeField?: Date | null;
+  jsonField?: Record<string, any> | null;
+  inetField?: string | null;
+  idField?: string | null;
+}
+export interface DataTypesInput {
+  stringField?: string | null;
+  intField?: number | null;
+  bigIntField?: bigint | null;
+  floatField?: number | null;
+  decimalField?: number | null;
+  booleanField?: boolean | null;
+  dateField?: Date | null;
+  timeField?: Date | null;
+  dateTimeField?: Date | null;
+  jsonField?: Record<string, any> | null;
+  inetField?: string | null;
+  idField?: string | null;
+}
+export interface CreateDataTypesInput {
+  id?: string;
+  stringField?: string | null;
+  intField?: number | null;
+  bigIntField?: bigint | null;
+  floatField?: number | null;
+  decimalField?: number | null;
+  booleanField?: boolean | null;
+  dateField?: Date | null;
+  timeField?: Date | null;
+  dateTimeField?: Date | null;
+  jsonField?: Record<string, any> | null;
+  inetField?: string | null;
+  idField?: string | null;
+}
+export interface UpdateDataTypesInput {
+  stringField?: string | null;
+  intField?: number | null;
+  bigIntField?: bigint | null;
+  floatField?: number | null;
+  decimalField?: number | null;
+  booleanField?: boolean | null;
+  dateField?: Date | null;
+  timeField?: Date | null;
+  dateTimeField?: Date | null;
+  jsonField?: Record<string, any> | null;
+  inetField?: string | null;
+  idField?: string | null;
+}

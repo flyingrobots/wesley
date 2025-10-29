@@ -4,10 +4,19 @@
  */
 
 export class Identifier {
-  constructor(strategy = 'preserve') {
+  constructor(strategy = 'snake_case') {
     this.strategy = strategy; // 'preserve', 'snake_case', 'lower', 'upper'
   }
   
+  /**
+   * Table name mapping: snake_case + naive pluralization (append 's' if absent)
+   */
+  toTableSQLName(graphqlName) {
+    const base = this.toSQL(graphqlName);
+    if (base.endsWith('s')) return base;
+    return `${base}s`;
+  }
+
   /**
    * Convert GraphQL name to SQL identifier
    */

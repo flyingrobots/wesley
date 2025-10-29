@@ -91,7 +91,7 @@ type User @table @critical {
 | `@unique` | 8 | Business constraint |
 | `@pii` | 8 | Privacy compliance |
 | `@index` | 5 | Performance optimization |
-| Default field | 3 | Standard field |
+| Default field | 5 | Standard field |
 
 ## The Evidence Map
 
@@ -142,6 +142,11 @@ Wesley calculates three scores:
 - Measures: Did artifacts exist for each schema element?
 - Range: 0-1 (0% to 100%)
 - Threshold: 0.8 (80%) recommended
+- Breakdown surfaced in bundles:
+  - **sql** – weighted DDL coverage for each UID
+  - **types** – TypeScript emission coverage
+  - **validation** – Zod/runtime schema coverage
+  - **tests** – pgTAP suites covering the element
 
 Example:
 ```javascript
@@ -166,6 +171,15 @@ SCS = (10 × 0.66 + 2 × 1.0) / 12 = 0.72 (72%)
 | RENAME (no @uid) | 10 | Breaks references |
 | CREATE INDEX (blocking) | 10 | Performance impact |
 
+Breakdown vectors in `scores.breakdown.mri`:
+
+- **drops** – destructive operations such as `DROP TABLE`/`DROP COLUMN`
+- **renames** – renames without `@uid` continuity
+- **defaults** – new NOT NULL columns missing defaults/backfill strategy
+- **typeChanges** – ALTER TYPE operations (unsafe casts weigh more)
+- **indexes** – blocking index creation or missing `CONCURRENTLY`
+- **other** – residual operations recorded for transparency
+
 Example:
 ```sql
 -- Migration with MRI = 0.55 (55% risk)
@@ -181,6 +195,11 @@ ALTER COLUMN posts.count TYPE bigint; -- +30 (unsafe)
 - Constraint tests: 45% (weighted by field importance)
 - Migration tests: 25%
 - Performance tests: 10%
+- Bundle sub-metrics:
+  - **unitConstraints** – weighted structure/constraint coverage (with depth detail)
+  - **rls** – RLS policy verification for tables annotated with `@wes_rls`
+  - **integrationRelations** – behaviour/computed/relationship checks
+  - **e2eOps** – migration steps exercised by pgTAP suites
 
 Example:
 ```
@@ -202,9 +221,33 @@ Every `wesley generate` creates `.wesley/` bundle:
 ├── artifacts.json        # {artifact: [files]} with hashes
 ├── evidence-map.json     # Element → file:lines@sha
 ├── snapshot.json         # Previous IR for diffs
-├── scores.json          # SCS/MRI/TCI scores
+├── scores.json          # SCS/MRI/TCI scores + breakdowns
 └── history.json         # Score history for predictions
 ```
+
+Bundles include `"bundleVersion": "2.0.0"` to let downstream consumers branch on schema changes without guessing.
+
+## CI Integration Notes for Moriarty
+
+Moriarty can leverage the PR’s actual git graph to better infer active work on a branch, preventing false “plateau” warnings when SCS hasn’t ticked yet:
+
+- Ensure checkout is unshallowed and remote branches are fetched:
+  - Use `actions/checkout@v4` with `fetch-depth: 0`.
+  - Optionally run `git fetch --prune --unshallow --tags` and fetch refs under `refs/remotes/origin/*`.
+- Provide the base branch (typically `github.base_ref`) as `MORIARTY_BASE_REF`.
+- Optional environment tuning:
+  - `MORIARTY_GIT_WINDOW_HOURS`: 24 (fallback activity window)
+  - `MORIARTY_ACTIVITY_THRESHOLD`: 0.35 (suppress plateau if activity above this)
+  - `MORIARTY_ACTIVITY_COMMITS_PER_DAY`: 6
+  - `MORIARTY_ACTIVITY_RELEVANT_PER_DAY`: 4
+
+Moriarty blends signals as follows:
+
+- `activityIndex = 0.6 × PRActivity + 0.4 × WindowActivity` (each normalized 0–1)
+- Blended velocity = `0.7 × SCSRecentVelocity + 0.3 × activityIndex × 0.02`
+- Plateau triggers only when blended velocity is below 1%/day AND the activity index is below threshold.
+
+This keeps the predictor conservative: activity doesn’t “buy” readiness, it only prevents premature “stalled” judgments in active branches.
 
 ## Package Architecture
 
@@ -236,15 +279,22 @@ npm install -g @wesley/holmes
 # Run investigation
 holmes investigate
 
+# Emit machine-readable JSON alongside markdown
+holmes investigate --json holmes-report.json > holmes-report.md
+
 # WATSON verification
-holmes verify
+holmes verify --json watson-report.json > watson-report.md
 
 # MORIARTY predictions
-holmes predict
+holmes predict --json moriarty-report.json > moriarty-report.md
 
 # Combined report
-holmes report
+holmes report --json holmes-suite.json > holmes-suite.md
+
+# All commands accept --json <path> to persist structured output
 ```
+
+The JSON documents contain the same information rendered in the markdown (investigation metadata, evidence tables, verification stats, velocity analysis, etc.) and are ideal for downstream automation.
 
 ## CI/CD Integration
 
@@ -261,18 +311,109 @@ jobs:
   holmes-investigate:
     needs: wesley-generate
     steps:
-      - run: wesley investigate --weighted
-      
+      - uses: ./.github/actions/holmes-setup
+      - run: |
+          holmes investigate \
+            --json holmes-report.json > holmes-report.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: holmes-report
+          path: |
+            holmes-report.md
+            holmes-report.json
+
   watson-verify:
     needs: holmes-investigate
     steps:
-      - run: wesley verify --independent
-      
+      - uses: ./.github/actions/holmes-setup
+      - run: |
+          holmes verify \
+            --json watson-report.json > watson-report.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: watson-report
+          path: |
+            watson-report.md
+            watson-report.json
+
   moriarty-predict:
     needs: watson-verify
     steps:
-      - run: wesley predict --eta production
+      - uses: ./.github/actions/holmes-setup
+      - run: |
+          holmes predict \
+            --json moriarty-report.json > moriarty-report.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: moriarty-report
+          path: |
+            moriarty-report.md
+            moriarty-report.json
+
+  comment-reports:
+    needs: [holmes-investigate, watson-verify, moriarty-predict]
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          path: reports
+      - name: Post summary comment
+        run: node .github/scripts/holmes-comment.mjs # combines markdown sections
 ```
+
+## Report Validation & Dashboard
+
+- **End-to-end integration test** – `test/holmes-e2e.bats` runs the full suite (`wesley generate --emit-bundle` → `holmes investigate/verify/predict`) and asserts that both Markdown and JSON artifacts exist with the expected keys (SCS/TCI/MRI, verdicts, velocity metrics). The test fails loudly if any file is missing, so HOLMES regressions surface immediately during local Bats runs or in the CLI workflows.
+- **JSON schema validation** – `@wesley/holmes` ships lightweight runtime schemas (`packages/wesley-holmes/src/report-schemas.mjs`) with targeted node tests. The CLI validates each report against the schema before emitting JSON, which prevents malformed artifacts from leaking into CI.
+- **Static dashboard artifact** – The HOLMES workflow now assembles a `holmes-dashboard` artifact containing `docs/holmes-dashboard/index.html` plus the suite JSON. Open the HTML locally (or host via GitHub Pages) to visualize recent SCS/TCI/MRI history, MORIARTY velocity/ETA, and verdict summaries without needing additional tooling.
+
+The GitHub comment highlights the markdown narratives and links directly to the JSON artifacts so other workflows (or local tooling) can consume structured results without scraping text.
+
+## Machine-Readable Reports
+
+- `holmes-report.json` – investigation summary, weighted evidence table, gate results, verdict metadata
+- `watson-report.json` – citation verification counts, recalculated SCS, inconsistencies, opinion verdict
+- `moriarty-report.json` – latest score snapshot, blended velocity, optional ETA windows, detected patterns, recent history
+
+These files live under the HOLMES workflow artifacts (flat files, no subdirectories) and mirror the markdown comment content. The combined `holmes report --json holmes-suite.json` command is convenient for local dashboards.
+
+## History Hydration & Caching
+
+- Each `wesley generate --emit-bundle` appends a point to `.wesley/history.json` (day, timestamp, SCS/TCI/MRI).
+- When MORIARTY runs in CI, the CLI merges local history, the merge-base snapshot (`git show <merge-base>:.wesley/history.json`), and a GitHub Actions cache keyed by commit SHA (with branch/base fallbacks). This gives predictions continuity across branch reruns.
+
+## Customising Weighting
+
+HOLMES now loads weights from `.wesley/weights.json`. Use the following structure (all numeric weights):
+
+```json
+{
+  "default": 5,
+  "substrings": {
+    "password": 12,
+    "ssn": 11
+  },
+  "directives": {
+    "sensitive": 10,
+    "critical": 9
+  },
+  "overrides": {
+    "col:User.email": 8,
+    "tbl:Orders.*": 7
+  }
+}
+```
+
+Precedence: **overrides → directives → substrings → default**. Keys in `overrides` can target exact UIDs (`col:User.email`) or wildcard suffixes (`tbl:Orders.*`). Directive keys omit the leading `@` (`"sensitive": 10`) and honour the same aliases Wesley already supports (e.g. `pk`, `primaryKey`, or `@primaryKey` all map to the same entry).
+
+Environment overrides still work when needed:
+
+| Variable | Purpose |
+|----------|---------|
+| `WESLEY_HOLMES_WEIGHTS` | JSON string override (highest priority) |
+| `WESLEY_HOLMES_WEIGHT_FILE` | Path override for the config file |
+
+Run `holmes weights:validate [--file path]` to lint configuration files locally. The HOLMES report now states which source supplied the weights and the reason behind each element’s weight.
 
 ## Security Gates
 
@@ -309,12 +450,12 @@ type Post @table @rls
 **Verification Status**: 47/47 claims independently verified
 **Ship Verdict**: ELEMENTARY
 
-| Feature | Weight | Status | Evidence | Deduction |
-|---------|--------|--------|----------|-----------|
-| User.password | 10 | ✅ | `schema.sql:45@abc123d` | "Properly hashed!" |
-| User.email | 8 | ✅ | `schema.sql:42@abc123d` | "Unique as required" |
-| Post.content | 5 | ⚠️ | Missing Zod validation | "Minor oversight" |
-| User.theme | 2 | ✅ | `types.ts:8@abc123d` | "Low priority complete" |
+| Feature | Weight | Source | Status | Evidence | Deduction |
+|---------|--------|--------|--------|----------|-----------|
+| User.password | 12 | Override col:User.password | ✅ | `schema.sql:45@abc123d` | "Properly hashed!" |
+| User.email | 8 | Substring email | ✅ | `schema.sql:42@abc123d` | "Unique as required" |
+| Post.content | 5 | Default | ⚠️ | Missing Zod validation | "Minor oversight" |
+| User.theme | 2 | Substring theme | ✅ | `types.ts:8@abc123d` | "Low priority complete" |
 
 ## 📊 Scores
 

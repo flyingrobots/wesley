@@ -1,0 +1,276 @@
+# Freaky RPC Test Schema - S.E.O. Business Logic Functions
+# Tests Wesley's ability to handle complex mutations and queries
+
+scalar DateTime
+scalar JSON
+
+directive @rpc on FIELD_DEFINITION
+directive @function(logic: String) on FIELD_DEFINITION
+directive @grant(to: String) on FIELD_DEFINITION
+
+type Query {
+  hello: String
+  
+  # Employee surveillance query - get productivity scores
+  getProductivityScores(
+    departmentId: String
+    timeRange: String = "today"
+  ): [EmployeeProductivity!]! @rpc @rpc(sql: "
+    SELECT 
+      e.user_id,
+      e.name,
+      e.current_bandwidth,
+      e.productivity_score,
+      AVG(ae.productivity_impact) as avg_impact,
+      COUNT(ae.id) as activity_count
+    FROM Employee e
+    LEFT JOIN ActivityEvent ae ON e.user_id = ae.employee_user_id
+    LEFT JOIN DepartmentMember dm ON e.user_id = dm.user_id
+    WHERE ($1 IS NULL OR dm.dept_id::text = $1)
+    AND ae.created_at >= CASE 
+      WHEN $2 = 'today' THEN CURRENT_DATE
+      WHEN $2 = 'week' THEN CURRENT_DATE - INTERVAL '7 days'
+      ELSE CURRENT_DATE - INTERVAL '30 days'
+    END
+    GROUP BY e.user_id, e.name, e.current_bandwidth, e.productivity_score
+    ORDER BY e.productivity_score DESC;
+  ")
+  
+  # Find employees who need coaching (surveillance trigger)
+  getCoachingCandidates: [CoachingCandidate!]! @rpc @rpc(sql: "
+    SELECT 
+      e.user_id,
+      e.name,
+      e.current_bandwidth,
+      e.productivity_score,
+      e.surveillance_level,
+      COUNT(ae.id) as recent_activity_count
+    FROM Employee e
+    LEFT JOIN ActivityEvent ae ON e.user_id = ae.employee_user_id 
+      AND ae.created_at >= CURRENT_DATE - INTERVAL '1 day'
+    WHERE e.current_bandwidth < 41.3 
+    OR e.productivity_score < 50.0
+    OR ae.surveillance_triggered = true
+    GROUP BY e.user_id, e.name, e.current_bandwidth, e.productivity_score, e.surveillance_level
+    HAVING COUNT(ae.id) > 0
+    ORDER BY e.productivity_score ASC, e.current_bandwidth ASC;
+  ")
+}
+
+type Mutation {
+  # Trigger forced coaching pairing (dystopian feature)
+  triggerForcedPairing(
+    coacheeUserId: String!
+    reason: String = "LOW_BANDWIDTH"
+  ): CoachingPair! @rpc @function(logic: "
+    -- Find best available coach (high bandwidth, not already coaching)
+    SELECT user_id INTO coach_id
+    FROM Employee e
+    WHERE e.current_bandwidth >= 70.0
+    AND e.user_id NOT IN (
+      SELECT coach_user_id FROM CoachingPair WHERE is_active = true
+    )
+    AND e.user_id != coacheeUserId::uuid
+    ORDER BY e.productivity_score DESC, e.current_bandwidth DESC
+    LIMIT 1;
+    
+    IF coach_id IS NULL THEN
+      RAISE EXCEPTION 'No available coaches found';
+    END IF;
+    
+    -- Create coaching pair
+    INSERT INTO CoachingPair (
+      coach_user_id, 
+      coachee_user_id, 
+      pairing_reason,
+      target_bandwidth
+    ) VALUES (
+      coach_id, 
+      coacheeUserId::uuid, 
+      reason,
+      75.0
+    )
+    RETURNING *;
+    
+    -- Mark coachee as being coached
+    UPDATE Employee 
+    SET is_being_coached = true
+    WHERE user_id = coacheeUserId::uuid;
+    
+    -- Log the pairing event
+    INSERT INTO ActivityEvent (
+      employee_user_id,
+      event_type,
+      raw_data,
+      productivity_impact,
+      surveillance_triggered
+    ) VALUES (
+      coacheeUserId::uuid,
+      'COACHING_ASSIGNED',
+      json_build_object(
+        'coach_id', coach_id,
+        'reason', reason,
+        'auto_assigned', true
+      )::text,
+      5.0,
+      true
+    );
+  ")
+  
+  # Update surveillance level (admin only)
+  escalateSurveillance(
+    employeeId: String!
+    newLevel: Int!
+    justification: String!
+  ): Employee! @rpc @grant(to: "organization_admin") @function(logic: "
+    -- Verify admin privileges
+    IF NOT EXISTS (
+      SELECT 1 FROM OrganizationAdmin oa 
+      JOIN DepartmentMember dm ON oa.org_id = dm.organization_id
+      WHERE oa.user_id = auth.uid() AND dm.user_id = employeeId::uuid
+    ) THEN
+      RAISE EXCEPTION 'Insufficient privileges to modify surveillance level';
+    END IF;
+    
+    -- Update surveillance level
+    UPDATE Employee 
+    SET surveillance_level = newLevel
+    WHERE user_id = employeeId::uuid
+    RETURNING * INTO updated_employee;
+    
+    -- Log surveillance change
+    INSERT INTO ActivityEvent (
+      employee_user_id,
+      event_type,
+      raw_data,
+      productivity_impact,
+      surveillance_triggered
+    ) VALUES (
+      employeeId::uuid,
+      'SURVEILLANCE_ESCALATED',
+      json_build_object(
+        'old_level', (SELECT surveillance_level FROM Employee WHERE user_id = employeeId::uuid),
+        'new_level', newLevel,
+        'justification', justification,
+        'escalated_by', auth.uid()
+      )::text,
+      -2.0,  -- Negative impact for being escalated
+      true
+    );
+    
+    RETURN updated_employee;
+  ")
+  
+  # Process bandwidth calculation (runs periodically)
+  calculateBandwidth(
+    employeeId: String!
+    timeWindowHours: Int = 8
+  ): BandwidthResult! @rpc @grant(to: "service_role") @function(logic: "
+    -- Calculate bandwidth from activity events
+    SELECT 
+      COUNT(*) as total_events,
+      COUNT(CASE WHEN event_type = 'KEYSTROKE' THEN 1 END) as keystrokes,
+      COUNT(CASE WHEN event_type = 'MOUSE_MOVE' THEN 1 END) as mouse_moves,
+      COUNT(CASE WHEN event_type = 'IDLE' THEN 1 END) as idle_periods,
+      AVG(productivity_impact) as avg_impact
+    INTO activity_stats
+    FROM ActivityEvent
+    WHERE employee_user_id = employeeId::uuid
+    AND created_at >= NOW() - (timeWindowHours || ' hours')::INTERVAL;
+    
+    -- Wesley's proprietary bandwidth algorithm (totally dystopian)
+    bandwidth_score := LEAST(100.0, GREATEST(0.0,
+      (activity_stats.keystrokes * 0.3) +
+      (activity_stats.mouse_moves * 0.2) +
+      (activity_stats.avg_impact * 10.0) -
+      (activity_stats.idle_periods * 2.0)
+    ));
+    
+    -- Update employee bandwidth
+    UPDATE Employee 
+    SET current_bandwidth = bandwidth_score
+    WHERE user_id = employeeId::uuid;
+    
+    -- Check if coaching is needed
+    needs_coaching := bandwidth_score < 41.3;
+    
+    IF needs_coaching AND NOT EXISTS (
+      SELECT 1 FROM CoachingPair 
+      WHERE coachee_user_id = employeeId::uuid AND is_active = true
+    ) THEN
+      -- Auto-trigger coaching
+      PERFORM triggerForcedPairing(employeeId, 'AUTO_LOW_BANDWIDTH');
+    END IF;
+    
+    -- Return result
+    SELECT bandwidth_score as score, needs_coaching, activity_stats.total_events as activity_count;
+  ")
+}
+
+# Custom return types for RPC functions
+type EmployeeProductivity {
+  user_id: String!
+  name: String!
+  current_bandwidth: Float!
+  productivity_score: Float!
+  avg_impact: Float
+  activity_count: Int!
+}
+
+type CoachingCandidate {
+  user_id: String!
+  name: String!
+  current_bandwidth: Float!
+  productivity_score: Float!
+  surveillance_level: Int!
+  recent_activity_count: Int!
+}
+
+type BandwidthResult {
+  score: Float!
+  needs_coaching: Boolean!
+  activity_count: Int!
+}
+
+# Reference the table types from the main schema
+type Employee @wes_table {
+  id: String! @wes_pk
+  user_id: String! @wes_unique
+  name: String!
+  current_bandwidth: Float! @wes_default(value: "0.0")
+  productivity_score: Float! @wes_default(value: "50.0")
+  surveillance_level: Int! @wes_default(value: "2")
+  is_being_coached: Boolean! @wes_default(value: "false")
+}
+
+type CoachingPair @wes_table {
+  id: String! @wes_pk
+  coach_user_id: String! @wes_fk(ref: "Employee.user_id")
+  coachee_user_id: String! @wes_fk(ref: "Employee.user_id")
+  pairing_reason: String!
+  target_bandwidth: Float
+  is_active: Boolean! @wes_default(value: "true")
+}
+
+type ActivityEvent @wes_table {
+  id: String! @wes_pk
+  employee_user_id: String! @wes_fk(ref: "Employee.user_id")
+  event_type: String!
+  raw_data: String
+  productivity_impact: Float
+  surveillance_triggered: Boolean! @wes_default(value: "false")
+  created_at: DateTime! @wes_default(value: "now()")
+}
+
+type OrganizationAdmin @wes_table {
+  id: String! @wes_pk
+  user_id: String! @wes_fk(ref: "Employee.user_id")
+  org_id: String!
+}
+
+type DepartmentMember @wes_table {
+  id: String! @wes_pk
+  user_id: String! @wes_fk(ref: "Employee.user_id")
+  dept_id: String!
+  organization_id: String!
+}

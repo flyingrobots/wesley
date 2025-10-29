@@ -1,0 +1,100 @@
+name: SHIPME Certificate
+
+on:
+  push:
+    branches: [ main, dev, 'feat/*', 'fix/*', 'milestone/*' ]
+    paths:
+      - 'packages/**'
+      - '.github/**'
+      - '.github/workflows/cert-shipme.yml'
+  pull_request:
+    paths:
+      - 'packages/**'
+      - '.github/**'
+      - '.github/workflows/cert-shipme.yml'
+
+jobs:
+  cert:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: wesley
+          POSTGRES_PASSWORD: wesley_test
+          POSTGRES_DB: wesley_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U wesley -d wesley_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: 'pnpm' }
+      - run: pnpm install --no-frozen-lockfile
+
+      - name: Transform
+        run: node packages/wesley-host-node/bin/wesley.mjs transform --schema test/fixtures/examples/ecommerce.graphql --out-dir out
+
+      - name: Plan (write)
+        run: node packages/wesley-host-node/bin/wesley.mjs plan --schema test/fixtures/examples/ecommerce.graphql --write --out-dir out
+
+      - name: Wait for Postgres
+        run: |
+          for i in {1..60}; do
+            pg_isready -h localhost -U wesley -d wesley_test && break
+            sleep 1
+          done
+        env:
+          PGPASSWORD: wesley_test
+
+      - name: Rehearse (REALM)
+        run: node packages/wesley-host-node/bin/wesley.mjs rehearse --schema test/fixtures/examples/ecommerce.graphql --dsn postgres://wesley:wesley_test@localhost:5432/wesley_test --timeout 300000
+
+      - name: Create SHIPME
+        run: node packages/wesley-host-node/bin/wesley.mjs cert-create --env production --out SHIPME.md
+
+      - name: Generate keypair
+        run: |
+          node -e "const {generateKeyPairSync}=require('crypto');const {writeFileSync}=require('fs');const {privateKey, publicKey}=generateKeyPairSync('ed25519'); writeFileSync('priv.pem', privateKey.export({type:'pkcs8',format:'pem'})); writeFileSync('pub.pem', publicKey.export({type:'spki',format:'pem'}));"
+
+      - name: Sign SHIPME
+        run: node packages/wesley-host-node/bin/wesley.mjs cert-sign --in SHIPME.md --key priv.pem --signer HOLMES
+
+      - name: Verify SHIPME
+        run: node packages/wesley-host-node/bin/wesley.mjs cert-verify --in SHIPME.md --pub pub.pem
+
+      - name: Upload SHIPME
+        uses: actions/upload-artifact@v5
+        with:
+          name: SHIPME
+          path: SHIPME.md
+
+      - name: Post SHIPME badge to PR
+        if: github.event_name == 'pull_request'
+        id: badge
+        run: |
+          echo "BADGE=$(node packages/wesley-host-node/bin/wesley.mjs cert-badge --in SHIPME.md)" >> $GITHUB_OUTPUT
+      
+      - name: Create/Update PR Comment
+        if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]'
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const badge = process.env.BADGE || '${{ steps.badge.outputs.BADGE }}';
+            const body = `\n### 🚢 SHIPME\n\n${badge}\n`;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const botComment = comments.find(c => c.user.type === 'Bot' && c.body.includes('### 🚢 SHIPME'));
+            if (botComment) {
+              await github.rest.issues.updateComment({ owner: context.repo.owner, repo: context.repo.repo, comment_id: botComment.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
+            }

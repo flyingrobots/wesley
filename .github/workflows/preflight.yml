@@ -1,0 +1,30 @@
+name: Preflight
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: pnpm/action-setup@v4
+      - name: Verify pnpm version
+        run: |
+          echo "pnpm: $(pnpm --version)"
+          node -v
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Verify lockfile unchanged
+        run: git diff --exit-code -- pnpm-lock.yaml
+      - name: Run repository preflight
+        run: node scripts/preflight.mjs

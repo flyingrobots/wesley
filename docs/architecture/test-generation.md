@@ -1,8 +1,8 @@
-# Automatic Test Generation: Production-Grade pgTAP from Schema
+# Automatic Test Generation: pgTAP from Schema
 
 ## The Killer Feature
 
-Wesley doesn't just generate code—it **proves it works**. Every schema element gets risk-weighted tests that turn "neat codegen" into "production fortress."
+Wesley **proves the it generates works**. Every schema element gets risk-weighted tests that turn "neat codegen" into "solid foundation."
 
 1. **Structure**: Tables, columns, types exist as expected
 2. **Constraints**: Primary keys, foreign keys, checks work

@@ -9,7 +9,8 @@ import { PgTAPTestGenerator } from '../../src/domain/generators/PgTAPTestGenerat
 import { Schema, Table, Field } from '../../src/domain/Schema.mjs';
 
 test('generates basic table tests', async () => {
-  const generator = new PgTAPTestGenerator();
+  // Disable depth testing to assert on canonical pgTAP statements
+  const generator = new PgTAPTestGenerator(undefined, { enableDepthTesting: false });
   
   const schema = new Schema({
     User: new Table({
@@ -43,18 +44,18 @@ test('generates basic table tests', async () => {
   assert(sql.includes("has_table('User'"));
   
   // Should include column tests
-  assert(sql.includes("has_column('User', 'id')"));
-  assert(sql.includes("has_column('User', 'email')"));
-  assert(sql.includes("has_column('User', 'password')"));
+  assert(sql.includes("has_column('User', 'id',"));
+  assert(sql.includes("has_column('User', 'email',"));
+  assert(sql.includes("has_column('User', 'password',"));
   
   // Should include constraint tests
-  assert(sql.includes("col_is_pk('User', 'id')"));
-  assert(sql.includes("col_is_unique('User', 'email')"));
-  assert(sql.includes("col_not_null('User', 'password')"));
+  assert(sql.includes("col_is_pk('User', 'id',"));
+  assert(sql.includes("col_is_unique('User', 'email',"));
+  assert(sql.includes("col_not_null('User', 'password',"));
 });
 
 test('generates foreign key tests', async () => {
-  const generator = new PgTAPTestGenerator();
+  const generator = new PgTAPTestGenerator(undefined, { enableDepthTesting: false });
   
   const schema = new Schema({
     Order: new Table({
@@ -84,13 +85,13 @@ test('generates foreign key tests', async () => {
 });
 
 test('generates RLS policy tests', async () => {
-  const generator = new PgTAPTestGenerator();
+  const generator = new PgTAPTestGenerator(undefined, { enableDepthTesting: false });
   
   const schema = new Schema({
     Product: new Table({
       name: 'Product',
       directives: {
-        '@uid': { uid: 'product_001' },
+        '@uid': { value: 'product_001' },
         '@rls': {
           enabled: true,
           select: 'true',
@@ -116,15 +117,15 @@ test('generates RLS policy tests', async () => {
   const sql = await generator.generate(schema);
   
   // Should test RLS is enabled
-  assert(sql.includes("RLS should be enabled on Product"));
+  assert(sql.includes("table_has_rls('Product', 'Product should have RLS enabled')"));
   
-  // Should test policy exists
-  assert(sql.includes("RLS should allow select"));
-  assert(sql.includes("RLS should allow insert"));
+  // Should test policies exist with expected identifiers
+  assert(sql.includes("policy_exists('Product', 'policy_Product_select_product_001'"));
+  assert(sql.includes("policy_exists('Product', 'policy_Product_insert_product_001'"));
 });
 
 test('prioritizes critical field tests', async () => {
-  const generator = new PgTAPTestGenerator();
+  const generator = new PgTAPTestGenerator(undefined, { enableDepthTesting: false });
   
   const schema = new Schema({
     Payment: new Table({
@@ -166,7 +167,7 @@ test('prioritizes critical field tests', async () => {
 });
 
 test('generates performance tests for indexed fields', async () => {
-  const generator = new PgTAPTestGenerator();
+  const generator = new PgTAPTestGenerator(undefined, { enableDepthTesting: false });
   
   const schema = new Schema({
     Product: new Table({
@@ -197,6 +198,6 @@ test('generates performance tests for indexed fields', async () => {
   const sql = await generator.generate(schema);
   
   // Should include index existence tests
-  assert(sql.includes("has_index('Product', 'Product_sku_idx')"));
-  assert(sql.includes("has_index('Product', 'Product_name_idx')"));
+  assert(sql.includes("has_index('Product', 'Product_sku_idx',"));
+  assert(sql.includes("has_index('Product', 'Product_name_idx',"));
 });

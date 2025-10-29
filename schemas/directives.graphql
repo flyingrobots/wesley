@@ -4,182 +4,169 @@ Version: 1.0.0
 
 These directives extend GraphQL schemas with database-specific metadata.
 Import this file into your schema to use Wesley's full capabilities.
+
+CANONICAL NAMESPACE: @wes_* (preferred)
+Legacy aliases: @wesley_* and bare names (@table, @pk) supported with deprecation warnings
 """
 
+# Shared scalars used by directives
+scalar JSON
+
 # ═══════════════════════════════════════════════════════════════════
-# CORE DIRECTIVES - Table and Field Markers
+# CORE DIRECTIVES - Table and Field Markers (Canonical @wes_ namespace)
 # ═══════════════════════════════════════════════════════════════════
 
-"Marks a type as a database table"
-directive @table on OBJECT
+directive @wes_table(
+  name: String
+) on OBJECT
 
-"Marks a field as the primary key"
-directive @primaryKey on FIELD_DEFINITION
+directive @wes_pk on FIELD_DEFINITION
 
-"Creates a unique constraint on the field"
-directive @unique on FIELD_DEFINITION
-
-"Creates an index on the field for query performance"
-directive @index on FIELD_DEFINITION
-
-"Sets a default value for the field"
-directive @default(
-  "SQL expression for the default value"
-  expr: String
-  "Literal value for the default"
-  value: String
-) on FIELD_DEFINITION
-
-"Creates a foreign key relationship"
-directive @foreignKey(
-  "Reference in format Table.column"
+directive @wes_fk(
   ref: String!
-  "Action on delete: CASCADE, SET NULL, NO ACTION"
-  onDelete: String = "NO ACTION"
-  "Action on update: CASCADE, SET NULL, NO ACTION"
-  onUpdate: String = "NO ACTION"
 ) on FIELD_DEFINITION
 
-"Adds a CHECK constraint to the field"
-directive @check(
-  "SQL expression for the check constraint"
-  expr: String!
-) on FIELD_DEFINITION
+directive @wes_unique on FIELD_DEFINITION
 
-# ═══════════════════════════════════════════════════════════════════
-# RELATIONSHIP DIRECTIVES - Virtual Fields
-# ═══════════════════════════════════════════════════════════════════
+directive @wes_index(
+  name: String
+  using: String
+) on FIELD_DEFINITION | OBJECT
 
-"Defines a one-to-many relationship (virtual field, no column created)"
-directive @hasMany on FIELD_DEFINITION
+directive @wes_tenant(
+  by: String!
+) on OBJECT
 
-"Defines a one-to-one relationship (virtual field, no column created)"
-directive @hasOne on FIELD_DEFINITION
-
-"Defines the inverse of a relationship"
-directive @belongsTo on FIELD_DEFINITION
-
-# ═══════════════════════════════════════════════════════════════════
-# INTELLIGENCE DIRECTIVES - Wesley Schema Intelligence
-# ═══════════════════════════════════════════════════════════════════
-
-"Assigns a stable unique identifier that survives renames"
-directive @uid(
-  "Unique identifier for the element"
+directive @wes_default(
   value: String!
-) on OBJECT | FIELD_DEFINITION
-
-"Sets the importance weight for prioritization (1-10)"
-directive @weight(
-  "Weight value from 1 (low) to 10 (critical)"
-  value: Int! = 5
-) on OBJECT | FIELD_DEFINITION
-
-"Marks a table or field as mission-critical (weight: 10)"
-directive @critical on OBJECT | FIELD_DEFINITION
-
-"Marks a field as containing sensitive data requiring special handling"
-directive @sensitive on FIELD_DEFINITION
-
-"Marks a field as containing personally identifiable information"
-directive @pii on FIELD_DEFINITION
-
-# ═══════════════════════════════════════════════════════════════════
-# BEHAVIOR DIRECTIVES - Automatic Behaviors
-# ═══════════════════════════════════════════════════════════════════
-
-"Automatically updates the field with current timestamp on record update"
-directive @updatedAt on FIELD_DEFINITION
-
-"Field value is computed and should not be directly set"
-directive @computed(
-  "SQL expression for computing the value"
-  expr: String!
 ) on FIELD_DEFINITION
 
-"Creates a trigger for the field"
-directive @trigger(
-  "Trigger name"
-  name: String!
-  "Trigger timing: BEFORE or AFTER"
-  when: String!
-  "Trigger operation: INSERT, UPDATE, DELETE"
-  on: String!
-  "Trigger function to execute"
-  execute: String!
+directive @wes_uid(
+  value: String!
+) on FIELD_DEFINITION | OBJECT
+
+directive @wes_weight(
+  value: Int!
+) on FIELD_DEFINITION | OBJECT
+
+directive @wes_critical on FIELD_DEFINITION | OBJECT
+directive @wes_sensitive on FIELD_DEFINITION | OBJECT
+directive @wes_pii on FIELD_DEFINITION | OBJECT
+
+directive @wes_hasMany(
+  type: String!
+  field: String
+  via: String
 ) on FIELD_DEFINITION
 
-# ═══════════════════════════════════════════════════════════════════
-# SUPABASE DIRECTIVES - Supabase-specific Features
-# ═══════════════════════════════════════════════════════════════════
+directive @wes_belongsTo(
+  ref: String!
+) on FIELD_DEFINITION
 
-"Configures Row Level Security policies for the table"
-directive @rls(
-  "SELECT policy expression"
+directive @wes_owner(
+  column: String
   select: String
-  "INSERT policy expression"
   insert: String
-  "UPDATE policy expression"
   update: String
-  "DELETE policy expression"
   delete: String
 ) on OBJECT
 
-"Enables Supabase Realtime subscriptions for the table"
-directive @realtime on OBJECT
-
-"Links the table to a Supabase Storage bucket"
-directive @storage(
-  "Storage bucket name"
-  bucket: String!
-  "Path pattern for files"
-  path: String
+directive @wes_grant(
+  roles: [String!]
 ) on OBJECT | FIELD_DEFINITION
 
-# ═══════════════════════════════════════════════════════════════════
-# RPC DIRECTIVES - Function Generation
-# ═══════════════════════════════════════════════════════════════════
+directive @wes_noRPC on OBJECT
 
-"Marks a mutation or query for RPC function generation"
-directive @rpc(
-  "Custom SQL for the RPC function body"
-  sql: String
-) on FIELD_DEFINITION
-
-"Specifies the database function logic"
-directive @function(
-  "PL/pgSQL function body"
-  logic: String!
-) on FIELD_DEFINITION
-
-"Grants execute permission to specific roles"
-directive @grant(
-  "Role to grant permission to"
-  to: String!
-) on FIELD_DEFINITION
+directive @wes_rls(
+  using: String
+  check: String
+  select: String
+  insert: String
+  update: String
+  delete: String
+  roles: [String!]
+  selectRoles: [String!]
+  insertRoles: [String!]
+  updateRoles: [String!]
+  deleteRoles: [String!]
+  preset: String
+  name: String
+  options: JSON
+) on OBJECT
 
 # ═══════════════════════════════════════════════════════════════════
-# VALIDATION DIRECTIVES - Data Validation
+# LEGACY ALIASES (Deprecated - use @wes_* instead)
 # ═══════════════════════════════════════════════════════════════════
 
-"Validates string length"
-directive @length(
-  "Minimum length"
-  min: Int
-  "Maximum length"
-  max: Int
-) on FIELD_DEFINITION
+directive @wesley_table(name: String) on OBJECT
+directive @wesley_pk on FIELD_DEFINITION  
+directive @wesley_fk(ref: String!) on FIELD_DEFINITION
+directive @wesley_unique on FIELD_DEFINITION
+directive @wesley_index(name: String, using: String) on FIELD_DEFINITION | OBJECT
+directive @wesley_tenant(by: String!) on OBJECT
+directive @wesley_default(value: String!) on FIELD_DEFINITION
+directive @wesley_uid(value: String!) on FIELD_DEFINITION | OBJECT
+directive @wesley_weight(value: Int!) on FIELD_DEFINITION | OBJECT
+directive @wesley_critical on FIELD_DEFINITION | OBJECT
+directive @wesley_sensitive on FIELD_DEFINITION | OBJECT
+directive @wesley_pii on FIELD_DEFINITION | OBJECT
+directive @wesley_hasMany(type: String!, field: String, via: String) on FIELD_DEFINITION
+directive @wesley_belongsTo(ref: String!) on FIELD_DEFINITION
+directive @wesley_owner(column: String, select: String, insert: String, update: String, delete: String) on OBJECT
+directive @wesley_grant(roles: [String!]) on OBJECT | FIELD_DEFINITION
+directive @wesley_noRPC on OBJECT
+directive @wesley_rls(
+  using: String
+  check: String
+  select: String
+  insert: String
+  update: String
+  delete: String
+  roles: [String!]
+  selectRoles: [String!]
+  insertRoles: [String!]
+  updateRoles: [String!]
+  deleteRoles: [String!]
+  preset: String
+  name: String
+  options: JSON
+) on OBJECT
 
-"Validates string pattern"
-directive @pattern(
-  "Regular expression pattern"
-  regex: String!
-) on FIELD_DEFINITION
+directive @table on OBJECT
+directive @pk on FIELD_DEFINITION
+directive @fk(ref: String!) on FIELD_DEFINITION  
+directive @unique on FIELD_DEFINITION
+directive @index(name: String, using: String) on FIELD_DEFINITION | OBJECT
+directive @tenant(by: String!) on OBJECT
+directive @default(value: String!) on FIELD_DEFINITION
+directive @uid(value: String!) on FIELD_DEFINITION | OBJECT
+directive @weight(value: Int!) on FIELD_DEFINITION | OBJECT
+directive @critical on FIELD_DEFINITION | OBJECT
+directive @sensitive on FIELD_DEFINITION | OBJECT
+directive @pii on FIELD_DEFINITION | OBJECT
+directive @primaryKey on FIELD_DEFINITION | OBJECT
+directive @foreignKey(ref: String!) on FIELD_DEFINITION
+directive @hasMany(type: String!, field: String, via: String) on FIELD_DEFINITION
+directive @belongsTo(ref: String!) on FIELD_DEFINITION
+directive @owner(column: String, select: String, insert: String, update: String, delete: String) on OBJECT
+directive @grant(roles: [String!]) on OBJECT | FIELD_DEFINITION
+directive @noRPC on OBJECT
+directive @rls(
+  using: String
+  check: String
+  select: String
+  insert: String
+  update: String
+  delete: String
+  roles: [String!]
+  selectRoles: [String!]
+  insertRoles: [String!]
+  updateRoles: [String!]
+  deleteRoles: [String!]
+  preset: String
+  name: String
+  options: JSON
+) on OBJECT
 
-"Validates numeric range"
-directive @range(
-  "Minimum value"
-  min: Float
-  "Maximum value"
-  max: Float
-) on FIELD_DEFINITION
+# Note: Additional directives for relationships, RLS, validation, etc. 
+# can be added here as needed. For now, focusing on core table directives.

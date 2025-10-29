@@ -67,6 +67,18 @@ export class EvidenceMap {
     const evidence = this.getEvidence(uid);
     return required.every(kind => evidence[kind]?.length > 0);
   }
+
+  hasArtifact(uid, kinds = ['sql']) {
+    const evidence = this.getEvidence(uid);
+    const list = Array.isArray(kinds) ? kinds : [kinds];
+    return list.some(kind => evidence[kind]?.length > 0);
+  }
+
+  forEachEvidence(callback) {
+    for (const [uid, evidence] of this.map.entries()) {
+      callback(uid, evidence);
+    }
+  }
   
   /**
    * Record an error for a schema element

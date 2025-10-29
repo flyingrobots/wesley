@@ -3,6 +3,8 @@
  * Provides safety checks and pre-flight snapshots for risky migrations
  */
 
+import { DDLPlanner } from './planner/DDLPlanner.mjs';
+
 export class MigrationSafety {
   constructor(options = {}) {
     this.allowDestructive = options.allowDestructive || false;
@@ -32,6 +34,98 @@ export class MigrationSafety {
       requiresConfirmation: totalRiskScore >= this.riskThreshold,
       blockedOperations: this.getBlockedOperations(migrationSteps)
     };
+  }
+
+  /**
+   * Map high-level operation type to internal step kind
+   */
+  mapOperationTypeToStep(operationType, operation = {}) {
+    const concurrent = operation.concurrent === true;
+    const map = {
+      CREATE_TABLE: 'create_table',
+      DROP_TABLE: 'drop_table',
+      ALTER_TABLE_ADD_COLUMN: 'add_column',
+      ALTER_TABLE_DROP_COLUMN: 'drop_column',
+      ALTER_TABLE_ALTER_COLUMN: 'alter_type',
+      CREATE_INDEX: concurrent ? 'create_index_concurrently' : 'create_index',
+      CREATE_INDEX_CONCURRENTLY: 'create_index_concurrently',
+      DROP_INDEX: 'drop_index',
+      ADD_CONSTRAINT: 'add_constraint',
+      DROP_CONSTRAINT: 'drop_constraint',
+      RENAME_TABLE: 'rename_table',
+      RENAME_COLUMN: 'rename_column'
+    };
+    return map[operationType] || null;
+  }
+
+  /**
+   * Calculate lock level name for a generic operation type
+   */
+  calculateLockLevel(operationType, operation = {}) {
+    const planner = new DDLPlanner();
+    const kind = this.mapOperationTypeToStep(operationType, operation);
+    if (!kind) return 'ACCESS_EXCLUSIVE';
+    const info = planner.getLockInfoForStep({ kind });
+    return info.lockLevelName;
+  }
+
+  /**
+   * Calculate lock level name for a specific operation object
+   */
+  calculateOperationLock(operation) {
+    return this.calculateLockLevel(operation.type, operation);
+  }
+
+  /**
+   * Determine if a set of locks are mutually compatible
+   */
+  areLocksCompatible(lockNames) {
+    // Conservative compatibility: ACCESS_EXCLUSIVE never compatible; EXCLUSIVE only with ACCESS_SHARE
+    const levels = {
+      ACCESS_SHARE: 1,
+      ROW_SHARE: 2,
+      ROW_EXCLUSIVE: 3,
+      SHARE_UPDATE_EXCLUSIVE: 4,
+      SHARE: 5,
+      SHARE_ROW_EXCLUSIVE: 6,
+      EXCLUSIVE: 7,
+      ACCESS_EXCLUSIVE: 8
+    };
+    const locks = lockNames.map(n => n).filter(Boolean);
+    if (locks.some(n => n === 'ACCESS_EXCLUSIVE')) return false;
+    if (locks.some(n => n === 'EXCLUSIVE')) {
+      // Only compatible with ACCESS_SHARE in our conservative model
+      return locks.every(n => n === 'EXCLUSIVE' || n === 'ACCESS_SHARE');
+    }
+    // Equal or lower-level locks considered compatible
+    const max = Math.max(...locks.map(n => levels[n] || 8));
+    const min = Math.min(...locks.map(n => levels[n] || 8));
+    return max - min <= 4;
+  }
+
+  /**
+   * Assess overall migration risk given a list of operations
+   */
+  assessMigrationRisk(operations, { concurrent } = {}) {
+    // Simple risk model: any ACCESS_EXCLUSIVE => high risk, else medium/low
+    const locks = operations.map(op => this.calculateOperationLock(op));
+    if (locks.includes('ACCESS_EXCLUSIVE')) return 80;
+    if (locks.includes('EXCLUSIVE')) return 60;
+    return concurrent ? 10 : 20;
+  }
+
+  /**
+   * Batch operations by lock compatibility (coarse grouping)
+   */
+  batchOperations(operations) {
+    const buckets = new Map();
+    for (const op of operations) {
+      const lock = this.calculateOperationLock(op);
+      const key = lock || 'UNKNOWN';
+      if (!buckets.has(key)) buckets.set(key, []);
+      buckets.get(key).push(op);
+    }
+    return Array.from(buckets.values());
   }
   
   /**
