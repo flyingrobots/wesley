@@ -102,6 +102,12 @@ export class GraphQLSchemaBuilder {
         itemNonNull: typeInfo.itemNonNull,
         directives
       });
+
+      // Record SDL source location for field
+      if (this.evidenceMap) {
+        const floc = locSpan(fieldNode);
+        if (floc) this.evidenceMap.record(fieldUid, 'source', floc);
+      }
     }
     
     if (tableDirectives['@rls']) {
@@ -394,8 +400,3 @@ export class GraphQLSchemaBuilder {
     return config;
   }
 }
-      // Record SDL source location for field
-      if (this.evidenceMap) {
-        const floc = locSpan(fieldNode);
-        if (floc) this.evidenceMap.record(fieldUid, 'source', floc);
-      }
