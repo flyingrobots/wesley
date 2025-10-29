@@ -42,7 +42,9 @@ export class ScoringEngine {
           continue;
         }
 
-        const uid = DirectiveProcessor.getUid(field.directives) || `${table.name}.${field.name}`;
+        // Normalize to the same fallback UID format used by generators
+        // (e.g., PostgreSQL + pgTAP use `col:Table.field`).
+        const uid = DirectiveProcessor.getUid(field.directives) || `col:${table.name}.${field.name}`;
         const weight = DirectiveProcessor.getWeight(field.directives);
 
         totalWeight += weight;
@@ -405,7 +407,7 @@ export class ScoringEngine {
     );
 
     return {
-      version: '2.0.0',
+      version: BUNDLE_VERSION,
       timestamp: new Date().toISOString(),
       commit: this.evidenceMap.sha,
       scores: {
@@ -438,7 +440,7 @@ export class ScoringEngine {
 
       for (const field of table.getFields()) {
         if (field.isVirtual()) continue;
-        const fieldUid = DirectiveProcessor.getUid(field.directives) || `${table.name}.${field.name}`;
+        const fieldUid = DirectiveProcessor.getUid(field.directives) || `col:${table.name}.${field.name}`;
         if (this.evidenceMap.hasArtifact(fieldUid, 'test')) {
           tested.add(`${table.name}.${field.name}`);
         }
@@ -453,7 +455,7 @@ export class ScoringEngine {
 
     for (const table of schema.getTables()) {
       for (const field of table.getFields()) {
-        const fieldUid = DirectiveProcessor.getUid(field.directives) || `${table.name}.${field.name}`;
+        const fieldUid = DirectiveProcessor.getUid(field.directives) || `col:${table.name}.${field.name}`;
 
         if (field.isPrimaryKey() && this.evidenceMap.hasArtifact(`${fieldUid}.pk`, 'test')) {
           tested.add(`${table.name}.${field.name}.pk`);

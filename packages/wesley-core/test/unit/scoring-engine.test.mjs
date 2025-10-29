@@ -44,7 +44,7 @@ test('ScoringEngine computes breakdown metrics with evidence', () => {
   };
 
   // Record evidence for fields (matching EvidenceMap expectations)
-  const fieldUid = (field) => `${table.name}.${field.name}`;
+  const fieldUid = (field) => `col:${table.name}.${field.name}`;
   const record = (uid, kind) => {
     evidence.record(uid, kind, {
       file: `${kind}.sql`,
@@ -123,7 +123,7 @@ test('TCI incorporates test results health factors', () => {
   const step = { kind: 'add_column', table: 'account', column: 'status', field: { nonNull: true, directives: {} } };
 
   const record = (uid, kind) => evidence.record(uid, kind, { file: `${kind}.sql`, lines: '1-1' });
-  const fieldUid = (field) => `${table.name}.${field.name}`;
+  const fieldUid = (field) => `col:${table.name}.${field.name}`;
   ['sql', 'typescript', 'zod', 'test'].forEach(kind => record(fieldUid(fields[0]), kind));
   record(`${fieldUid(fields[0])}.pk`, 'test');
   ['sql', 'typescript', 'zod', 'test'].forEach(kind => record(fieldUid(fields[1]), kind));
