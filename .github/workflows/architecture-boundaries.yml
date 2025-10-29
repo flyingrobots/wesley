@@ -13,7 +13,7 @@ jobs:
     
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
     
@@ -43,7 +43,7 @@ jobs:
           --output-type archi packages/ > architecture.svg
         
     - name: Upload architecture diagram
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       if: always()
       with:
         name: architecture-diagram
@@ -176,7 +176,7 @@ jobs:
         EOF
         
     - name: Upload boundary report
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       if: always()
       with:
         name: boundary-report
