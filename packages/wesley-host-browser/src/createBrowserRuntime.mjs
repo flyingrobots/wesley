@@ -30,6 +30,9 @@ class MemoryFileSystem {
 
 // Web Crypto helpers
 async function sha256Hex(input) {
+  if (!globalThis.crypto || !globalThis.crypto.subtle) {
+    throw new Error('WebCrypto API unavailable: globalThis.crypto.subtle is required to compute SHA-256');
+  }
   const enc = new TextEncoder();
   const data = enc.encode(typeof input === 'string' ? input : JSON.stringify(input));
   // Prefer globalThis.crypto.subtle (available in browsers and some runtimes)
@@ -49,8 +52,8 @@ function sanitizeGraphQL(sdl, { maxBytes = 5 * 1024 * 1024 } = {}) {
     e.code = 'EINPUTSIZE';
     throw e;
   }
-  // Strip BOM and null bytes (defensive)
-  return sdl.replace(/^\uFEFF/, '').replace(/\u0000/g, '');
+  // Strip BOM
+  return sdl.replace(/^\uFEFF/, '');
 }
 
 import { BrowserParserPort } from './BrowserParserPort.mjs';

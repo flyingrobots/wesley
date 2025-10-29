@@ -4,7 +4,7 @@ load 'bats-plugins/bats-support/load'
 load 'bats-plugins/bats-assert/load'
 
 setup() {
-  HOST="${HOST:-${HOST_ARG:-node}}"
+  HOST="${HOST:-node}"
 }
 
 @test "host contracts pass on selected host" {
@@ -22,9 +22,6 @@ setup() {
   fi
 
   assert_success
-  # Validate JSON and ensure failed == 0
-  run node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const j=JSON.parse(s); if(j.failed!==0) { console.error(j); process.exit(1);} })'
-  # feed previous output into the validator
+  # Validate JSON and ensure failed == 0 (pipe prior output into validator)
   printf "%s" "$output" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const j=JSON.parse(s); if(j.failed!==0) { console.error(j); process.exit(1);} })'
 }
-

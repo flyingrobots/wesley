@@ -17,7 +17,7 @@ function byteLen(str) { return te(str).length; }
 function sanitizeGraphQL(sdl, maxBytes = 5 * 1024 * 1024) {
   if (typeof sdl !== 'string') throw new Error('Schema must be a string');
   if (byteLen(sdl) > maxBytes) { const e = new Error(`Schema exceeds max size (${maxBytes} bytes)`); e.code = 'EINPUTSIZE'; throw e; }
-  return sdl.replace(/^\uFEFF/, '').replace(/\u0000/g, '');
+  return sdl.replace(/^\uFEFF/, '');
 }
 
 function detectTables(sdl) {
@@ -83,4 +83,3 @@ if (import.meta.main || (typeof Deno !== 'undefined' && Deno?.mainModule === imp
   // eslint-disable-next-line no-console
   console.log(JSON.stringify(out));
 }
-

@@ -7,14 +7,18 @@ const schema = /* GraphQL */ `
 
 async function main() {
   const el = document.getElementById('result');
+  if (!el) {
+    window.__WESLEY_TEST_SMOKE = { ok: false, error: "missing #result" };
+    return;
+  }
   try {
     const res = await runInBrowser(schema);
     const ok = res.ok && typeof res.token === 'string' && res.token.startsWith('BROWSER_SMOKE_OK:');
-    window.__wesley_smoke = { ok, token: res.token };
-    el.textContent = ok ? `OK: ${res.token}` : 'FAILED';
+    window.__WESLEY_TEST_SMOKE = ok ? { ok, token: res.token } : { ok, token: res.token, reason: JSON.stringify(res) };
+    el.textContent = ok ? `OK: ${res.token}` : `FAILED: ${JSON.stringify(res)}`;
     el.className = ok ? 'ok' : 'err';
   } catch (err) {
-    window.__wesley_smoke = { ok: false, error: String(err?.message || err) };
+    window.__WESLEY_TEST_SMOKE = { ok: false, error: String(err?.message || err) };
     el.textContent = `ERROR: ${String(err?.message || err)}`;
     el.className = 'err';
     console.error(err);
@@ -22,4 +26,3 @@ async function main() {
 }
 
 main();
-

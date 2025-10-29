@@ -1,8 +1,5 @@
 # @wesley/holmes
 
-Status: Active  
-![pkg-holmes](https://github.com/flyingrobots/wesley/actions/workflows/pkg-holmes.yml/badge.svg?branch=main)
-
 Implements SHA-lock investigative tooling for Wesley deployments.
 
 - **Holmes** – Inspects evidence bundles, computes scores, and produces machine-readable + markdown reports.
@@ -20,5 +17,8 @@ pnpm --filter @wesley/holmes exec node src/cli.mjs investigate --help
 Artifacts are persisted under `.wesley/` (e.g., `scores.json`, markdown reports) and consumed by the CI workflows.
 
 ## Status
+
+Status: Active  
+![pkg-holmes](https://github.com/flyingrobots/wesley/actions/workflows/pkg-holmes.yml/badge.svg?branch=main)
 
 Production ready; weighting configuration is extensible via `.wesley/weights.json`.

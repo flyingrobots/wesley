@@ -17,7 +17,7 @@ const cfg = readJSON('meta/progress.config.json');
 
 async function fetchWorkflowPassRate(workflowFile, branch = 'main', take = 10) {
   try {
-    if (!token || !repo || !workflowFile) return null;
+    if (!token || !repo || !workflowFile || typeof fetch !== 'function') return null;
     const url = `https://api.github.com/repos/${repo}/actions/workflows/${workflowFile}/runs?branch=${encodeURIComponent(branch)}&per_page=${take}`;
     const res = await fetch(url, { headers: { 'authorization': `Bearer ${token}`, 'accept': 'application/vnd.github+json' } });
     if (!res.ok) return null;
@@ -61,6 +61,7 @@ function detectDocsSections(readmePath) {
 function nextStage(stage) {
   const order = ['Prototype', 'MVP', 'Alpha', 'Beta', 'v1.0.0'];
   const i = order.indexOf(stage);
+  if (i < 0) throw new Error(`Unknown stage: ${stage}`);
   return order[Math.min(order.length - 1, i + 1)] || 'MVP';
 }
 
@@ -111,8 +112,8 @@ function computeStageAndProgress(pkg, passRate, docs, milestones) {
   // Prototype → MVP (for "Too soon")
   if (base === 'Prototype' && stage === 'Prototype') {
     const d = docs.hasUsage ? 0.5 : 0;
-    const score = 0.5 + d; // encourage early progress between 50–100 when usage appears
-    progress = Math.round(score * 50); // 0–100 toward MVP
+    const score = 0.5 + d; // 0.5 or 1.0
+    progress = Math.round(score * 100); // 50 or 100
   }
 
   return { stage, progress, next: nextStage(stage) };
@@ -160,7 +161,11 @@ async function main() {
   const weights = cfg.project.weights || {};
   let wsum = 0; let acc = 0;
   for (const name of include) {
-    const w = Number(weights[name] || 0.01);
+    if (!(name in weights)) {
+      console.error(`Missing weight for ${name} in meta/progress.config.json`);
+      process.exit(2);
+    }
+    const w = Number(weights[name]);
     const r = results.find(x => x.name === name);
     const reached = r && idx(r.stage) >= idx(overallNext);
     const frac = reached ? 1 : (r ? (r.progress / 100) : 0);
@@ -168,7 +173,11 @@ async function main() {
   }
   const overallProgress = include.length && wsum > 0 ? Math.round((acc / wsum) * 100) : 0;
 
-  const out = { generatedAt: new Date().toISOString(), repo, overall: { stage: overallStage, next: overallNext, progress: overallProgress }, results };
+  if (!repo) {
+    console.error('GITHUB_REPOSITORY not set; cannot generate badge URLs.');
+    process.exit(3);
+  }
+  const out = { generatedAt: new Date().toISOString(), overall: { stage: overallStage, next: overallNext, progress: overallProgress }, results };
   writeFileSync(resolve('meta/progress.json'), JSON.stringify(out, null, 2), 'utf8');
 
   // Write shields endpoint for overall badge
@@ -197,7 +206,7 @@ async function main() {
   rows.push('| --- | --- | --- | --- | --- | --- |');
   for (const p of cfg.packages) {
     const r = results.find(x => x.name === p.name) || { stage: inferBaseStage(p.status), progress: 0, next: 'Alpha' };
-    const badge = p.ci ? `![${p.ci}](https://github.com/${repo || 'flyingrobots/wesley'}/actions/workflows/${p.ci}/badge.svg?branch=main)` : '—';
+    const badge = p.ci ? `![${p.ci}](https://github.com/${repo}/actions/workflows/${p.ci}/badge.svg?branch=main)` : '—';
     const prog = r.stage === 'v1.0.0' ? '100% — v1.0.0' : `${r.progress}% → ${r.next}`;
     rows.push(`| \`${p.name}\` | ${p.status} | ${r.stage} | ${prog} | ${badge} | ${p.notes} |`);
   }

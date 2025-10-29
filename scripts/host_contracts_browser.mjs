@@ -52,12 +52,17 @@ async function main() {
   }
 
   // Serve dist
-  const srv = spawn(process.execPath, ['scripts/serve-static.mjs', '--dir=test/browser/contracts/dist'], { stdio: 'inherit' });
+  const port = process.env.TEST_SERVER_PORT || '8787';
+  let srvErr = '';
+  const srv = spawn(process.execPath, ['scripts/serve-static.mjs', '--dir=test/browser/contracts/dist', `--port=${port}`], { stdio: ['ignore','pipe','pipe'] });
+  srv.stderr?.on('data', (d) => { srvErr += d.toString(); if (srvErr.length > 2000) srvErr = srvErr.slice(-2000); });
+  srv.on('error', (err) => { srvErr += `\n[spawn-error] ${err?.message || err}`; });
   try {
-    await waitFor('http://127.0.0.1:8787');
+    await waitFor(`http://127.0.0.1:${port}`);
   } catch (e) {
-    srv.kill('SIGKILL');
-    throw e;
+    try { srv.kill('SIGTERM'); await sleep(1000); if (!srv.killed) srv.kill('SIGKILL'); } catch {}
+    const err = new Error(`Static server failed to start: ${e?.message || e}\n${srvErr}`);
+    throw err;
   }
 
   // Ensure playwright installed (skip if cache present) and run spec, capture JSON
@@ -70,16 +75,17 @@ async function main() {
         haveChromium = readdirSync(browsersPath).some((n) => n.startsWith('chromium'));
       }
     } catch {}
+    const PWV = process.env.PLAYWRIGHT_VERSION || '1.43.0';
     if (!haveChromium) {
-      await sh('pnpm', ['dlx', 'playwright@latest', 'install', 'chromium']);
+      await sh('pnpm', ['dlx', `playwright@${PWV}`, 'install', 'chromium']);
     }
     const outDir = mkdtempSync(join(tmpdir(), 'hc-'));
     const outFile = join(outDir, 'browser.json');
-    await sh('pnpm', ['dlx', 'playwright@latest', 'test', 'test/browser/contracts/host-contracts.spec.mjs', '--reporter=line'], { env: { ...process.env, OUT_JSON: outFile } });
+    await sh('pnpm', ['dlx', `playwright@${PWV}`, 'test', 'test/browser/contracts/host-contracts.spec.mjs', '--reporter=line'], { env: { ...process.env, OUT_JSON: outFile } });
     const json = readFileSync(outFile, 'utf8');
     process.stdout.write(json + '\n');
   } finally {
-    srv.kill('SIGKILL');
+    try { srv.kill('SIGTERM'); await sleep(1000); if (!srv.killed) srv.kill('SIGKILL'); } catch {}
   }
 }
 

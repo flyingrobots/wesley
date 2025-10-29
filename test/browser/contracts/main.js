@@ -14,6 +14,10 @@ async function verifyIr() {
 
 async function main() {
   const el = document.getElementById('app');
+  if (!el) {
+    window.__host_contracts = { passed: 0, failed: 1, cases: [{ name: 'bootstrap', ok: false, details: { error: "'#app' element not found" } }] };
+    return;
+  }
   try {
     const res = await runAll();
     const irOk = await verifyIr();

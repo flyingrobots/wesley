@@ -43,6 +43,11 @@ jobs:
       - name: Install bats
         run: sudo apt-get update && sudo apt-get install -y bats jq
 
+      - name: Install Playwright browsers (with deps)
+        run: |
+          npm -v >/dev/null 2>&1 || npm ci
+          npx playwright install --with-deps
+
       - name: Run browser host contracts (Bats → Playwright)
         run: |
           mkdir -p test/hosts/bats-plugins

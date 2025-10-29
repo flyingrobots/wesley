@@ -7,7 +7,11 @@ import http from 'node:http';
 async function sh(cmd, args, opts = {}) {
   return await new Promise((resolve, reject) => {
     const p = spawn(cmd, args, { stdio: 'inherit', ...opts });
-    p.on('exit', (code) => code === 0 ? resolve() : reject(new Error(`${cmd} ${args.join(' ')} exited ${code}`)));
+    p.on('error', (err) => reject(err));
+    p.on('exit', (code, signal) => {
+      if (code === 0) return resolve();
+      reject(new Error(`${cmd} ${args.join(' ')} exited ${code ?? 'null'}${signal ? ` (signal ${signal})` : ''}`));
+    });
   });
 }
 
@@ -30,21 +34,31 @@ async function main() {
   await sh('pnpm', ['exec', 'vite', 'build', '--config', 'test/browser/smoke/vite.config.mjs']);
 
   // Start a static server over the dist output
-  const srv = spawn(process.execPath, ['scripts/serve-static.mjs'], { stdio: 'inherit' });
+  const port = process.env.TEST_SERVER_PORT || '8787';
+  const srv = spawn(process.execPath, ['scripts/serve-static.mjs', `--port=${port}`], { stdio: 'inherit' });
   try {
-    await waitForHttp('http://127.0.0.1:8787');
+    await waitForHttp(`http://127.0.0.1:${port}`);
   } catch (e) {
-    srv.kill('SIGKILL');
+    try {
+      srv.kill('SIGTERM');
+      await sleep(1000);
+      if (!srv.killed) srv.kill('SIGKILL');
+    } catch {}
     throw e;
   }
 
   // Install Playwright Chromium (ephemeral) and run the spec via pnpm dlx
-  await sh('pnpm', ['dlx', 'playwright@latest', 'install', 'chromium']);
+  const PWV = process.env.PLAYWRIGHT_VERSION || '1.43.0';
+  await sh('pnpm', ['dlx', `playwright@${PWV}`, 'install', 'chromium']);
   try {
-    await sh('pnpm', ['dlx', 'playwright@latest', 'test', 'test/browser/smoke/smoke.spec.mjs', '--reporter=line']);
+    await sh('pnpm', ['dlx', `playwright@${PWV}`, 'test', 'test/browser/smoke/smoke.spec.mjs', '--reporter=line']);
     console.log('✅ Browser smoke OK');
   } finally {
-    srv.kill('SIGKILL');
+    try {
+      srv.kill('SIGTERM');
+      await sleep(1000);
+      if (!srv.killed) srv.kill('SIGKILL');
+    } catch {}
   }
 }
 
