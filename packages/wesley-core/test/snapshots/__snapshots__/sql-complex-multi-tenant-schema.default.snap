@@ -6,9 +6,9 @@ CREATE TABLE IF NOT EXISTS "tenants" (
   UNIQUE ("name")
 );
 COMMENT ON TABLE "tenants" IS 'uid: tbl:Tenant';
-COMMENT ON COLUMN "tenants"."id" IS 'uid: col_tenants_id';
-COMMENT ON COLUMN "tenants"."name" IS 'uid: col_tenants_name';
-COMMENT ON COLUMN "tenants"."plan" IS 'uid: col_tenants_plan';
+COMMENT ON COLUMN "tenants"."id" IS 'uid: col:Tenant.id';
+COMMENT ON COLUMN "tenants"."name" IS 'uid: col:Tenant.name';
+COMMENT ON COLUMN "tenants"."plan" IS 'uid: col:Tenant.plan';
 CREATE TABLE IF NOT EXISTS "users" (
   "id" uuid NOT NULL,
   "email" text NOT NULL,
@@ -19,10 +19,10 @@ CREATE TABLE IF NOT EXISTS "users" (
   FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE NO ACTION
 );
 COMMENT ON TABLE "users" IS 'uid: tbl:User';
-COMMENT ON COLUMN "users"."id" IS 'uid: col_users_id';
-COMMENT ON COLUMN "users"."email" IS 'uid: col_users_email';
-COMMENT ON COLUMN "users"."tenant_id" IS 'uid: col_users_tenant_id';
-COMMENT ON COLUMN "users"."role" IS 'uid: col_users_role';
+COMMENT ON COLUMN "users"."id" IS 'uid: col:User.id';
+COMMENT ON COLUMN "users"."email" IS 'uid: col:User.email';
+COMMENT ON COLUMN "users"."tenant_id" IS 'uid: col:User.tenantId';
+COMMENT ON COLUMN "users"."role" IS 'uid: col:User.role';
 CREATE INDEX IF NOT EXISTS "users_tenant_id_idx" ON "users" ("tenant_id");
 COMMENT ON INDEX "users_tenant_id_idx" IS 'uid: idx_users_tenant_id';
 CREATE TABLE IF NOT EXISTS "projects" (
@@ -36,11 +36,11 @@ CREATE TABLE IF NOT EXISTS "projects" (
   FOREIGN KEY ("owner_id") REFERENCES "users"("id") ON DELETE NO ACTION
 );
 COMMENT ON TABLE "projects" IS 'uid: tbl:Project';
-COMMENT ON COLUMN "projects"."id" IS 'uid: col_projects_id';
-COMMENT ON COLUMN "projects"."name" IS 'uid: col_projects_name';
-COMMENT ON COLUMN "projects"."tenant_id" IS 'uid: col_projects_tenant_id';
-COMMENT ON COLUMN "projects"."owner_id" IS 'uid: col_projects_owner_id';
-COMMENT ON COLUMN "projects"."settings" IS 'uid: col_projects_settings';
+COMMENT ON COLUMN "projects"."id" IS 'uid: col:Project.id';
+COMMENT ON COLUMN "projects"."name" IS 'uid: col:Project.name';
+COMMENT ON COLUMN "projects"."tenant_id" IS 'uid: col:Project.tenantId';
+COMMENT ON COLUMN "projects"."owner_id" IS 'uid: col:Project.ownerId';
+COMMENT ON COLUMN "projects"."settings" IS 'uid: col:Project.settings';
 CREATE INDEX IF NOT EXISTS "projects_tenant_id_idx" ON "projects" ("tenant_id");
 COMMENT ON INDEX "projects_tenant_id_idx" IS 'uid: idx_projects_tenant_id';
 CREATE INDEX IF NOT EXISTS "projects_owner_id_idx" ON "projects" ("owner_id");
