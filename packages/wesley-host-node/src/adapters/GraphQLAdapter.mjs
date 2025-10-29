@@ -3,7 +3,7 @@
  * This is the ONLY place where we depend on the graphql npm package
  */
 
-import { parse, Kind, buildSchema, validate } from 'graphql';
+import { parse, Kind, buildSchema, validate, Source } from 'graphql';
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -69,9 +69,12 @@ class GraphQLSchemaParser {
   /**
    * Parse GraphQL SDL to Wesley IR
    */
-  parse(sdl) {
+  parse(sdl, options = {}) {
     try {
-      const ast = parse(sdl);
+      const src = (options && options.filename)
+        ? new Source(sdl, options.filename)
+        : sdl; // graphql will synthesize a generic Source if we pass string
+      const ast = parse(src);
       
       // Validate directive usage if we have the directive schema
       if (this.directiveSchema) {

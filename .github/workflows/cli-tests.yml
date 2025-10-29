@@ -30,7 +30,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         submodules: recursive  # For Bats plugins
 
@@ -93,7 +93,7 @@ jobs:
         pnpm test:tap > cli-test-results.tap
 
     - name: Upload TAP test results
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       if: always()
       with:
         name: cli-test-results-${{ matrix.os }}-node${{ matrix.node-version }}

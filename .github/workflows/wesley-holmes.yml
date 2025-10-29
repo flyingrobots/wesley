@@ -20,7 +20,7 @@ jobs:
     
     steps:
       - name: "📦 Checkout Repository"
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -69,7 +69,7 @@ jobs:
           fi
 
       - name: "📤 Upload Dashboard Template"
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: dashboard-template
           path: docs/holmes-dashboard
@@ -81,7 +81,7 @@ jobs:
           test -f "$HOLMES_BUNDLE_DIR/bundle.json"
 
       - name: "💾 Upload Bundle"
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ env.HOLMES_ARTIFACT }}
           path: |
@@ -97,7 +97,7 @@ jobs:
     
     steps:
       - name: "📦 Checkout Repository"
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       
       - name: "🛠️ Setup HOLMES environment"
         uses: ./.github/actions/holmes-setup
@@ -118,7 +118,7 @@ jobs:
           bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
 
       - name: "💾 Save Report"
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: holmes-report
           path: reports/holmes
@@ -131,7 +131,7 @@ jobs:
     
     steps:
       - name: "📦 Checkout Repository"
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         
       - name: "🛠️ Setup HOLMES environment"
         uses: ./.github/actions/holmes-setup
@@ -152,7 +152,7 @@ jobs:
           bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
 
       - name: "💾 Save Report"
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: watson-report
           path: reports/watson
@@ -165,7 +165,7 @@ jobs:
     
     steps:
       - name: "📦 Checkout Repository"
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
         
@@ -307,7 +307,7 @@ jobs:
           MORIARTY_ACTIVITY_RELEVANT_PER_DAY: "4"
 
       - name: "💾 Save Report"
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: moriarty-report
           path: reports/moriarty
@@ -334,7 +334,7 @@ jobs:
           
     steps:
       - name: "📦 Checkout Repository"
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         
       - name: "🔧 Setup pnpm"
         uses: pnpm/action-setup@v4
@@ -447,7 +447,7 @@ jobs:
           PGPASSWORD=postgres psql -h localhost -U postgres -d test -t -A -c "EXPLAIN (FORMAT JSON) SELECT * FROM wes_ops.op_orders_by_user('00000000-0000-0000-0000-000000000000')" > test/fixtures/examples/${WESLEY_OUT_DIR}/ops/explain/orders_by_user.explain.json
 
       - name: "⬆️ Upload EXPLAIN snapshots"
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ops-explain
           path: test/fixtures/examples/out/ops/explain/
@@ -527,14 +527,14 @@ jobs:
           fi
 
       - name: "📤 Upload Dashboard"
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: holmes-dashboard
           path: dashboard
           if-no-files-found: error
 
       - name: "📝 Create Comment"
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const fs = require('fs');

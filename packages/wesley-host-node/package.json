@@ -24,7 +24,7 @@
     "@wesley/core": "workspace:*",
     "@wesley/generator-js": "workspace:*",
     "@wesley/generator-supabase": "workspace:*",
-    "commander": "^14.0.0",
+    "commander": "^14.0.2",
     "fast-glob": "^3.3.2",
     "graphql": "^16.9.0",
     "pino": "^10.1.0"
