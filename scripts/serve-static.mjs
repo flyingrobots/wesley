@@ -3,7 +3,7 @@
 import http from 'node:http';
 import { readFileSync, existsSync, statSync } from 'node:fs';
 import { createReadStream } from 'node:fs';
-import { resolve, join, extname } from 'node:path';
+import { resolve, join, extname, relative, isAbsolute } from 'node:path';
 
 const args = new Map(process.argv.slice(2).map((a) => {
   const [k, v] = a.split('=');
@@ -36,8 +36,9 @@ const server = http.createServer((req, res) => {
   reqPath = reqPath.replace(/^\/+/, '');
   if (reqPath === '') reqPath = 'index.html';
   const filePath = resolve(root, reqPath);
-  // Ensure resolved path is within root
-  if (!filePath.startsWith(root + '/') && filePath !== root && !filePath.startsWith(root + '\\')) {
+  // Ensure resolved path is within root using a robust relative check
+  const rel = relative(root, filePath);
+  if (isAbsolute(rel) || rel.startsWith('..')) {
     res.writeHead(403); res.end('Forbidden'); return;
   }
   try {
