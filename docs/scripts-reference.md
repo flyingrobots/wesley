@@ -30,7 +30,7 @@ Wesley uses `pnpm run <script>` to provide a common set of maintenance, test, an
 
 | Helper | Purpose | Notes |
 | --- | --- | --- |
-| `scripts/host_contracts_runner.mjs` | Shared runner used by Node, Deno, and Bun host‑contract entrypoints. | Emits a single JSON result and sets exit code (0 when `failed === 0`). Entry scripts (`host_contracts_node.mjs`, `host_contracts_deno.ts`, `host_contracts_bun.mjs`) simply `import { runAndReport }` and await it. |
+| `scripts/host_contracts_runner.mjs` | Shared runner used by Node, Deno, and Bun host‑contract entrypoints. | Emits a single JSON result and sets exit code (0 when `failed === 0`). Entry scripts (`host_contracts_node.mjs`, `host_contracts_deno.mjs`, `host_contracts_bun.mjs`) simply `import { runAndReport }` and await it. |
 
 ## Progress & Badges
 
