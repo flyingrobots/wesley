@@ -9,6 +9,13 @@ import { resolve, dirname } from 'node:path';
 
 const repo = process.env.GITHUB_REPOSITORY || '';
 const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '';
+const argv = Array.from(process.argv || []);
+const DRY_RUN = argv.includes('--dry-run') || /^(1|true)$/i.test(String(process.env.DRY_RUN || ''));
+
+if (argv.includes('--help') || argv.includes('-h')) {
+  console.log(`Usage: node scripts/compute-progress.mjs [--dry-run]\n\nOptions:\n  --dry-run   Compute and print a summary; do not write files.`);
+  process.exit(0);
+}
 
 function readJSON(p) { return JSON.parse(readFileSync(resolve(p), 'utf8')); }
 function has(hay, needle) { return hay.toLowerCase().includes(needle.toLowerCase()); }
@@ -180,7 +187,11 @@ async function main() {
     console.warn('GITHUB_REPOSITORY not set; CI badge URLs will be disabled (—).');
   }
   const out = { generatedAt: new Date().toISOString(), overall: { stage: overallStage, next: overallNext, progress: overallProgress }, results };
-  writeFileSync(resolve('meta/progress.json'), JSON.stringify(out, null, 2), 'utf8');
+  if (DRY_RUN) {
+    console.log('[dry-run] meta/progress.json\n' + JSON.stringify(out, null, 2));
+  } else {
+    writeFileSync(resolve('meta/progress.json'), JSON.stringify(out, null, 2), 'utf8');
+  }
 
   // Write shields endpoint for overall badge
   const colorByStage = (s) => ({
@@ -200,8 +211,12 @@ async function main() {
     color: colorByStage(overallStage)
   };
   const badgePath = resolve('meta/badges/overall.json');
-  mkdirSync(dirname(badgePath), { recursive: true });
-  writeFileSync(badgePath, JSON.stringify(badge), 'utf8');
+  if (DRY_RUN) {
+    console.log('[dry-run] meta/badges/overall.json\n' + JSON.stringify(badge));
+  } else {
+    mkdirSync(dirname(badgePath), { recursive: true });
+    writeFileSync(badgePath, JSON.stringify(badge), 'utf8');
+  }
 
   // Build table markdown
   rows.push('| Package | Status | Stage | Progress | CI | Notes |');
@@ -237,9 +252,12 @@ async function main() {
   const overallAfterPre = (matrixBefore + matrixBody + matrixAfter).slice(e2);
   const overallBody = `\nStage: ${overallStage}  \\\nProgress: ${overallProgress}% → ${overallNext}\n`;
   const nextReadme = overallBefore + overallBody + overallAfterPre;
-  writeFileSync(readmePath, nextReadme, 'utf8');
-
-  console.log('Updated meta/progress.json and README Package Matrix.');
+  if (DRY_RUN) {
+    console.log('[dry-run] README.md would be updated between markers.');
+  } else {
+    writeFileSync(readmePath, nextReadme, 'utf8');
+    console.log('Updated meta/progress.json and README Package Matrix.');
+  }
 }
 
 main().catch((e) => { console.error(e?.stack || e); process.exit(1); });

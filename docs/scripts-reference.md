@@ -36,7 +36,7 @@ Wesley uses `pnpm run <script>` to provide a common set of maintenance, test, an
 
 | Helper | Purpose | Notes |
 | --- | --- | --- |
-| `scripts/compute-progress.mjs` | Aggregates package status into `meta/progress.json`, updates README matrix and overall shields endpoint. | On local runs where `GITHUB_REPOSITORY` is unset, CI badge links are disabled and show an em dash (—) in the README table. Missing package weights log a warning and default to `0.01` during weighted progress calculation. |
+| `scripts/compute-progress.mjs` | Aggregates package status into `meta/progress.json`, updates README matrix and overall shields endpoint. | On local runs where `GITHUB_REPOSITORY` is unset, CI badge links are disabled and show an em dash (—) in the README table. `--dry-run` prints a summary without writing files. Missing package weights log a warning and default to `0.01` during weighted progress calculation. |
 
 ## Smoke Checks
 
