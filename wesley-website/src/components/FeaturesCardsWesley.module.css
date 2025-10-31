@@ -1,0 +1,21 @@
+.title {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: light-dark(var(--mantine-color-black), var(--mantine-color-white));
+}
+
+.description {
+  max-width: 56ch;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.card {
+  background-color: var(--mantine-color-body);
+}
+
+.cardTitle {
+  line-height: 1.2;
+}
+
