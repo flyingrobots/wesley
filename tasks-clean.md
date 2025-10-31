@@ -1,12 +1,12 @@
 # Tasks
 
 ```
-████|████|████|████|████|████|████|███░|░░░░|░░░░|
+████|████|████|████|████|████|████|████|████|████|
     |    |    |    |    |    |    |    |    |    |
 0   10   20   30   40   50   60   70   80   90  100
 
-79 %
-30 of 38 resolved
+100 %
+38 of 38 resolved
 ```
 
 ---
@@ -830,8 +830,8 @@
 
 > [!info] **Status**
 >
-> - [ ] Acknowledged
-> - [ ] Resolved
+> - [x] Acknowledged
+> - [x] Resolved
 
 > [!abstract]- 
 > 
@@ -842,23 +842,23 @@
 > - `scripts/preflight.mjs:145` (redundant add).
 >   
 > **Affected Files**
-> - [ ] `scripts/preflight.mjs`
+> - [x] `scripts/preflight.mjs`
 >
 
-> [!question]- **Outcome**
-> - [ ] Issue resolved
+> [!success]- **Outcome**
+> - [x] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > {notes}  
+> > Removed redundant `packageJsonPaths.add(resolve('package.json'))` — root is already included via `pnpm ls`. Fix commit: `ca83123`.  
 
 ## [XXXII] Static server: decode + normalize path joining
 
 > [!info] **Status**
 >
-> - [ ] Acknowledged
-> - [ ] Resolved
+> - [x] Acknowledged
+> - [x] Resolved
 
 > [!abstract]- 
 > 
@@ -869,23 +869,23 @@
 > - `scripts/serve-static.mjs` (path normalization before join/resolve).
 >   
 > **Affected Files**
-> - [ ] `scripts/serve-static.mjs`
+> - [x] `scripts/serve-static.mjs`
 >
 
-> [!question]- **Outcome**
-> - [ ] Issue resolved
+> [!success]- **Outcome**
+> - [x] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > {notes}  
+> > Added `decodeURIComponent`, normalized separators, collapsed leading slashes and repeated dots before resolve; maintained root containment check. Fix commit: `40076af`.  
 
 ## [XXXIII] Progress README: safe overall-marker replacement
 
 > [!info] **Status**
 >
-> - [ ] Acknowledged
-> - [ ] Resolved
+> - [x] Acknowledged
+> - [x] Resolved
 
 > [!abstract]- 
 > 
@@ -896,23 +896,23 @@
 > - `scripts/compute-progress.mjs` (README marker replacement logic).
 >   
 > **Affected Files**
-> - [ ] `scripts/compute-progress.mjs`
+> - [x] `scripts/compute-progress.mjs`
 >
 
-> [!question]- **Outcome**
-> - [ ] Issue resolved
+> [!success]- **Outcome**
+> - [x] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > {notes}  
+> > After writing the package matrix, we re-locate the overall markers and slice with updated indices to avoid stale offsets. Fix commit: `ca83123`.  
 
 ## [XXXIV] Progress: guard network calls if fetch is absent
 
 > [!info] **Status**
 >
-> - [ ] Acknowledged
-> - [ ] Resolved
+> - [x] Acknowledged
+> - [x] Resolved
 
 > [!abstract]- 
 > 
@@ -923,23 +923,23 @@
 > - `scripts/compute-progress.mjs` (GitHub fetch helper).
 >   
 > **Affected Files**
-> - [ ] `scripts/compute-progress.mjs`
+> - [x] `scripts/compute-progress.mjs`
 >
 
-> [!question]- **Outcome**
-> - [ ] Issue resolved
+> [!success]- **Outcome**
+> - [x] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > {notes}  
+> > `fetchMilestoneRatioFor` now also checks `typeof fetch === 'function'` and returns null if absent. Fix commit: `ca83123`.  
 
 ## [XXXV] Progress: tolerant nextStage() for unknown input
 
 > [!info] **Status**
 >
-> - [ ] Acknowledged
-> - [ ] Resolved
+> - [x] Acknowledged
+> - [x] Resolved
 
 > [!abstract]- 
 > 
@@ -950,23 +950,23 @@
 > - `scripts/compute-progress.mjs` (`nextStage` implementation).
 >   
 > **Affected Files**
-> - [ ] `scripts/compute-progress.mjs`
+> - [x] `scripts/compute-progress.mjs`
 >
 
-> [!question]- **Outcome**
-> - [ ] Issue resolved
+> [!success]- **Outcome**
+> - [x] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > {notes}  
+> > `nextStage()` now returns a safe default `'MVP'` for unknown inputs instead of throwing, so README updates don’t crash. Fix commit: `ca83123`.  
 
 ## [XXXVI] CI: pin Bun version across workflows (dupe of XXIV)
 
 > [!info] **Status**
 >
-> - [ ] Acknowledged
-> - [ ] Resolved
+> - [x] Acknowledged
+> - [x] Resolved
 
 > [!abstract]- 
 > 
@@ -977,24 +977,24 @@
 > - `.github/workflows/runtime-smokes.yml` and `.github/workflows/pkg-host-bun.yml`.
 >   
 > **Affected Files**
-> - [ ] `.github/workflows/runtime-smokes.yml`
-> - [ ] `.github/workflows/pkg-host-bun.yml`
+> - [x] `.github/workflows/runtime-smokes.yml`
+> - [x] `.github/workflows/pkg-host-bun.yml`
 >
 
-> [!question]- **Outcome**
-> - [ ] Issue resolved
+> [!success]- **Outcome**
+> - [x] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > Consolidates/duplicates item XXIV for clarity.  
+> > Already implemented while addressing XXIV. Bun pinned to `1.2.20` in both workflows. Fix commit: `40076af`.  
 
 ## [XXXVII] Progress metadata: avoid volatile timestamps
 
 > [!info] **Status**
 >
-> - [ ] Acknowledged
-> - [ ] Resolved
+> - [x] Acknowledged
+> - [x] Resolved
 
 > [!abstract]- 
 > 
@@ -1005,24 +1005,23 @@
 > - `meta/progress.json` and `.gitignore`.
 >   
 > **Affected Files**
-> - [ ] `meta/progress.json`
-> - [ ] `.gitignore`
+> - [x] `.gitignore`
 >
 
-> [!question]- **Outcome**
-> - [ ] Issue resolved
+> [!success]- **Outcome**
+> - [x] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > {notes}  
+> > `meta/progress.json` is already ignored to avoid volatile diffs; clarified the ignore comment for maintainers. Fix commit: `5990d48`.  
 
 ## [XXXVIII] Playwright installs: align version pinning and cache
 
 > [!info] **Status**
 >
-> - [ ] Acknowledged
-> - [ ] Resolved
+> - [x] Acknowledged
+> - [x] Resolved
 
 > [!abstract]- 
 > 
@@ -1034,17 +1033,17 @@
 > - `scripts/host_contracts_browser.mjs`
 >   
 > **Affected Files**
-> - [ ] `scripts/browser_smoke_playwright.mjs`
-> - [ ] `scripts/host_contracts_browser.mjs`
+> - [x] `scripts/browser_smoke_playwright.mjs`
+> - [x] `scripts/host_contracts_browser.mjs`
 >
 
-> [!question]- **Outcome**
-> - [ ] Issue resolved
+> [!success]- **Outcome**
+> - [x] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > {notes}  
+> > Both scripts honor `PLAYWRIGHT_VERSION` and work with `PLAYWRIGHT_BROWSERS_PATH` for a consistent cache (set in CI). Added a note in the smoke script. Commits: `40076af`, `c4720b0`.  
 
 ## Follow-ups
 
