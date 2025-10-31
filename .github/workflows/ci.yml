@@ -52,3 +52,15 @@ jobs:
       # (See .github/workflows/cli-tests.yml and cli-quick.yml)
 
       - run: node packages/wesley-host-node/bin/wesley.mjs generate --schema test/fixtures/examples/ecommerce.graphql --allow-dirty
+
+      - name: Repo Bats tests (server/progress/ci checks)
+        env:
+          BATS_LIB_PATH: packages/wesley-cli/test
+        run: |
+          bash scripts/setup-bats-plugins.sh
+          bats \
+            test/serve-static*.bats \
+            test/progress-*.bats \
+            test/ci-*.bats \
+            test/deno-host-webcrypto-guard.bats \
+            test/browser-contracts-*.bats
