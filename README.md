@@ -409,6 +409,8 @@ Progress: 4% → Alpha
 
 ## Package Matrix
 
+Note: In local runs where `GITHUB_REPOSITORY` is unset, the CI badge column renders an em dash (—).
+
 <!-- BEGIN:PACKAGE_MATRIX -->
 | Package | Status | Stage | Progress | CI | Notes |
 | --- | --- | --- | --- | --- | --- |

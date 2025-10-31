@@ -159,6 +159,52 @@ try {
   fail(`License audit failed: ${e?.message || e}`);
 }
 
+// 11) Progress weights completeness — required packages must have explicit weights
+try {
+  const cfg = JSON.parse(readFileSync(resolve('meta/progress.config.json'), 'utf8'));
+  const weights = (cfg.project && cfg.project.weights) || {};
+  const req = new Set([].concat(
+    cfg.project?.requiredForAlpha || [],
+    cfg.project?.requiredForBeta || [],
+    cfg.project?.requiredForV1 || []
+  ));
+  const missing = [];
+  for (const name of req) {
+    if (!(name in weights) || !Number.isFinite(Number(weights[name]))) {
+      missing.push(name);
+    }
+  }
+  if (missing.length) {
+    fail(`Progress weights missing for required packages: ${missing.join(', ')}`);
+  }
+} catch (e) {
+  fail(`Progress weights completeness check failed: ${e?.message || e}`);
+}
+
+// 12) Docs whitespace rule — avoid trailing double-space line breaks on Status lines
+try {
+  const cfg = JSON.parse(readFileSync(resolve('meta/progress.config.json'), 'utf8'));
+  const offenders = [];
+  for (const p of cfg.packages || []) {
+    const rp = p.readme;
+    if (!rp) continue;
+    let content = '';
+    try { content = readFileSync(resolve(rp), 'utf8'); } catch { continue; }
+    const lines = content.split(/\r?\n/);
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (/^Status:\s.*\s\s$/.test(line)) {
+        offenders.push(`${rp}:${i + 1}`);
+      }
+    }
+  }
+  if (offenders.length) {
+    fail(`Docs whitespace: trailing double-spaces after Status lines found at: ${offenders.join(', ')}`);
+  }
+} catch (e) {
+  fail(`Docs whitespace check failed: ${e?.message || e}`);
+}
+
 if (!ok) {
   console.error('\n❌ Preflight failed with the following issues:');
   for (const m of failures) console.error(' -', m);

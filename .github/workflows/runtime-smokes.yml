@@ -21,6 +21,9 @@ jobs:
       - uses: denoland/setup-deno@v1
         with:
           deno-version: v2.x
+      - name: Deno lint (smoke files)
+        run: |
+          deno lint --config deno.json scripts/deno_smoke.ts
       - name: Deno host contracts (Bats)
         run: |
           mkdir -p test/hosts/bats-plugins

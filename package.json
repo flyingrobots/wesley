@@ -12,6 +12,7 @@
     "lint": "eslint . --ext .js,.mjs",
     "lint:fix": "eslint . --ext .js,.mjs --fix",
     "preflight": "node scripts/preflight.mjs",
+    "lint:docs-whitespace": "node scripts/lint-docs-whitespace.mjs",
     "prepare": "bash scripts/install-hooks.sh",
     "setup:bats-plugins": "bash scripts/setup-bats-plugins.sh",
     "format": "prettier --write .",
