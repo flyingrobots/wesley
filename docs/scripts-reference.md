@@ -32,6 +32,12 @@ Wesley uses `pnpm run <script>` to provide a common set of maintenance, test, an
 | --- | --- | --- |
 | `scripts/host_contracts_runner.mjs` | Shared runner used by Node, Deno, and Bun host‑contract entrypoints. | Emits a single JSON result and sets exit code (0 when `failed === 0`). Entry scripts (`host_contracts_node.mjs`, `host_contracts_deno.ts`, `host_contracts_bun.mjs`) simply `import { runAndReport }` and await it. |
 
+## Progress & Badges
+
+| Helper | Purpose | Notes |
+| --- | --- | --- |
+| `scripts/compute-progress.mjs` | Aggregates package status into `meta/progress.json`, updates README matrix and overall shields endpoint. | On local runs where `GITHUB_REPOSITORY` is unset, CI badge links are disabled and show an em dash (—) in the README table. Missing package weights log a warning and default to `0.01` during weighted progress calculation. |
+
 ## Smoke Checks
 
 | Script | Purpose | Notes |
