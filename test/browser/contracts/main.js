@@ -43,46 +43,75 @@ async function verifyIr() {
 }
 
 function renderSummary(el, res) {
-  const esc = (s) => String(s).replace(/[&<>"]+/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
-  const icon = (ok) => ok ? '✅' : '❌';
-  const rows = [];
-  rows.push('<h1>Host Contracts (Browser)</h1>');
-  rows.push(`<p class="meta"><strong>Passed:</strong> ${res.passed} &nbsp; <strong>Failed:</strong> ${res.failed} &nbsp; <strong>Total:</strong> ${res.passed + res.failed}</p>`);
-  rows.push('<ul class="cases">');
+  while (el.firstChild) el.removeChild(el.firstChild);
+  const icon = (ok) => (ok ? '✅' : '❌');
+  const text = (s) => document.createTextNode(String(s));
+
+  const h1 = document.createElement('h1');
+  h1.appendChild(text('Host Contracts (Browser)'));
+  el.appendChild(h1);
+
+  const meta = document.createElement('p');
+  meta.className = 'meta';
+  const s1 = document.createElement('strong'); s1.appendChild(text('Passed:'));
+  const s2 = document.createElement('strong'); s2.appendChild(text('Failed:'));
+  const s3 = document.createElement('strong'); s3.appendChild(text('Total:'));
+  meta.appendChild(s1); meta.appendChild(text(` ${res.passed} `));
+  meta.appendChild(text('\u00A0\u00A0'));
+  meta.appendChild(s2); meta.appendChild(text(` ${res.failed} `));
+  meta.appendChild(text('\u00A0\u00A0'));
+  meta.appendChild(s3); meta.appendChild(text(` ${res.passed + res.failed}`));
+  el.appendChild(meta);
+
+  const ul = document.createElement('ul');
+  ul.className = 'cases';
+
   for (const c of res.cases || []) {
-    if (c.ok) {
-      rows.push(`<li class="ok">${icon(true)} <code>${esc(c.name)}</code></li>`);
-      continue;
-    }
-    // Failure — include rich diagnostics when available
-    rows.push('<li class="fail">');
-    rows.push(`${icon(false)} <code>${esc(c.name)}</code>`);
-    const d = c.details || {};
-    if (c.name === 'browser-ir-shape' && d) {
-      const mt = Array.isArray(d.missingTables) && d.missingTables.length ? d.missingTables.join(', ') : '—';
-      const mc = d.missingColumns && typeof d.missingColumns === 'object' ? esc(JSON.stringify(d.missingColumns)) : '—';
-      rows.push('<details open>');
-      rows.push('<summary><strong>IR diagnostics</strong></summary>');
-      rows.push('<div>');
-      if (typeof d.expectedTableCount === 'number' || typeof d.actualTableCount === 'number') {
-        rows.push(`<div>tables: expected=${esc(d.expectedTableCount)} actual=${esc(d.actualTableCount)}</div>`);
+    const li = document.createElement('li');
+    li.className = c.ok ? 'ok' : 'fail';
+
+    li.appendChild(text(icon(c.ok) + ' '));
+    const code = document.createElement('code');
+    code.textContent = String(c.name || '');
+    li.appendChild(code);
+
+    if (!c.ok) {
+      const d = c.details || {};
+      if (c.name === 'browser-ir-shape' && d) {
+        const details = document.createElement('details'); details.open = true;
+        const summary = document.createElement('summary');
+        const strong = document.createElement('strong'); strong.appendChild(text('IR diagnostics'));
+        summary.appendChild(strong); details.appendChild(summary);
+        const wrap = document.createElement('div');
+        if (typeof d.expectedTableCount === 'number' || typeof d.actualTableCount === 'number') {
+          const row = document.createElement('div');
+          row.appendChild(text(`tables: expected=${d.expectedTableCount} actual=${d.actualTableCount}`));
+          wrap.appendChild(row);
+        }
+        const mt = Array.isArray(d.missingTables) && d.missingTables.length ? d.missingTables.join(', ') : '—';
+        const rowMt = document.createElement('div'); rowMt.appendChild(text(`missing tables: ${mt}`)); wrap.appendChild(rowMt);
+        const rowMc = document.createElement('div');
+        rowMc.appendChild(text('missing columns: '));
+        const mcCode = document.createElement('code');
+        mcCode.textContent = d.missingColumns && typeof d.missingColumns === 'object' ? JSON.stringify(d.missingColumns) : '—';
+        rowMc.appendChild(mcCode); wrap.appendChild(rowMc);
+        if (d.summary) { const row = document.createElement('div'); row.appendChild(text(`summary: ${String(d.summary)}`)); wrap.appendChild(row); }
+        if (d.sdlSnippet) { const pre = document.createElement('pre'); pre.textContent = String(d.sdlSnippet); wrap.appendChild(pre); }
+        details.appendChild(wrap); li.appendChild(details);
+      } else if (d && (d.error || Object.keys(d).length)) {
+        const details = document.createElement('details');
+        const summary = document.createElement('summary');
+        const strong = document.createElement('strong'); strong.appendChild(text('Details'));
+        summary.appendChild(strong); details.appendChild(summary);
+        const pre = document.createElement('pre'); pre.textContent = JSON.stringify(d, null, 2);
+        details.appendChild(pre); li.appendChild(details);
       }
-      rows.push(`<div>missing tables: ${esc(mt)}</div>`);
-      rows.push(`<div>missing columns: <code>${mc}</code></div>`);
-      if (d.summary) rows.push(`<div>summary: ${esc(d.summary)}</div>`);
-      if (d.sdlSnippet) rows.push(`<pre>${esc(d.sdlSnippet)}</pre>`);
-      rows.push('</div>');
-      rows.push('</details>');
-    } else if (d && (d.error || Object.keys(d).length)) {
-      rows.push('<details>');
-      rows.push('<summary><strong>Details</strong></summary>');
-      rows.push(`<pre>${esc(JSON.stringify(d, null, 2))}</pre>`);
-      rows.push('</details>');
     }
-    rows.push('</li>');
+
+    ul.appendChild(li);
   }
-  rows.push('</ul>');
-  el.innerHTML = rows.join('\n');
+
+  el.appendChild(ul);
 }
 
 async function main() {
