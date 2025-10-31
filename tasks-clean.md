@@ -38,7 +38,7 @@
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > Extracted a shared runner (`scripts/host_contracts_runner.mjs`) and updated Node/Bun/Deno entrypoints to delegate to it. Runner emits JSON and sets exit code consistently across runtimes. Duplicated glue code removed; behavior preserved.  
+> > Extracted a shared runner (`scripts/host_contracts_runner.mjs`) and updated Node/Bun/Deno entrypoints to delegate to it. Runner emits JSON and sets exit code consistently across runtimes. Duplicated glue code removed; behavior preserved. Fix commit: `eeb156998576443ee0524a5e3b9fd46d148d6829`.  
 
 ## [II] Browser runtime: WebCrypto guard
 
@@ -65,7 +65,7 @@
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > Verified guard is present: `sha256Hex` checks `globalThis.crypto?.subtle` and throws a clear error when unavailable. Documented this behavior in `docs/hosts/browser.md`. No code change required.  
+> > Verified guard is present: `sha256Hex` checks `globalThis.crypto?.subtle` and throws a clear error when unavailable. Documented this behavior in `docs/hosts/browser.md`. No code change required. Doc commit: `63fa1887ffb6ef5c6e5c621572fddcccd4e7257d`.  
 
 ## [III] Browser runtime: sanitizeGraphQL regex control chars
 
@@ -92,7 +92,7 @@
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > Confirmed `sanitizeGraphQL` uses BOM stripping and null-byte removal via string operations (no control characters inside regex). No code change required.  
+> > Confirmed `sanitizeGraphQL` uses BOM stripping and null-byte removal via string operations (no control characters inside regex). No code change required. Doc commit: `63fa1887ffb6ef5c6e5c621572fddcccd4e7257d`.  
 
 ## [IV] Progress math: Prototype stage multiplier
 
