@@ -92,6 +92,28 @@ async function main() {
     }
     await sh('pnpm', ['dlx', `playwright@${PWV}`, 'test', 'test/browser/contracts/host-contracts.spec.mjs', '--reporter=line'], { env: { ...process.env, OUT_JSON: outFile } });
     const json = readFileSync(outFile, 'utf8');
+    try {
+      const res = JSON.parse(json);
+      if (res && typeof res.failed === 'number' && res.failed > 0) {
+        const fail = Array.isArray(res.cases) && res.cases.find((c) => c && c.name === 'browser-ir-shape' && c.ok === false);
+        if (fail && fail.details) {
+          const { summary, missingTables, missingColumns, actualTableCount, expectedTableCount } = fail.details;
+          console.error('[host-contracts][diagnostics] verifyIr failed');
+          if (typeof expectedTableCount === 'number' && typeof actualTableCount === 'number') {
+            console.error(` - tables: expected=${expectedTableCount} actual=${actualTableCount}`);
+          }
+          if (Array.isArray(missingTables) && missingTables.length) {
+            console.error(` - missing tables: ${missingTables.join(', ')}`);
+          }
+          if (missingColumns && typeof missingColumns === 'object') {
+            for (const [t, cols] of Object.entries(missingColumns)) {
+              if (Array.isArray(cols) && cols.length) console.error(` - ${t} missing columns: ${cols.join(', ')}`);
+            }
+          }
+          if (summary) console.error(` - summary: ${summary}`);
+        }
+      }
+    } catch {}
     process.stdout.write(json + '\n');
   } finally {
     try { srv.kill('SIGTERM'); await sleep(1000); if (!srv.killed) srv.kill('SIGKILL'); } catch {}
