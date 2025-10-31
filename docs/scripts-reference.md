@@ -26,6 +26,12 @@ Wesley uses `pnpm run <script>` to provide a common set of maintenance, test, an
 | `pnpm run docker:up` / `docker:down` | Bring up / tear down the docker-compose stack. | Good for manual Postgres testing. |
 | `pnpm run docker:test` | Run pgTAP tests inside docker-compose. | Executes the `pgtap` service defined in compose. |
 
+## Test Harnesses
+
+| Helper | Purpose | Notes |
+| --- | --- | --- |
+| `scripts/host_contracts_runner.mjs` | Shared runner used by Node, Deno, and Bun host‑contract entrypoints. | Emits a single JSON result and sets exit code (0 when `failed === 0`). Entry scripts (`host_contracts_node.mjs`, `host_contracts_deno.ts`, `host_contracts_bun.mjs`) simply `import { runAndReport }` and await it. |
+
 ## Smoke Checks
 
 | Script | Purpose | Notes |
@@ -46,4 +52,3 @@ Some workspaces expose their own scripts via `pnpm --filter <package>`. Common e
 - Use `pnpm run <script> --help` if an underlying tool supports it (e.g., scripts that call CLI commands).
 - `pnpm run` always executes from the repo root; organize per-package scripts under `pnpm --filter` when you need more granularity.
 - Before adding new scripts, update this document so future contributors know what’s available.
-

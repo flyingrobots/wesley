@@ -7,7 +7,8 @@ The browser host is a minimal, pure‑ESM adapter for running Wesley logic in a 
 - Design choices:
   - No Node builtins or polyfills; Web APIs only.
   - Logging via `console`.
-  - Crypto via `SubtleCrypto.digest('SHA-256', …)`.
+- Crypto via `SubtleCrypto.digest('SHA-256', …)`.
+  - If `globalThis.crypto?.subtle` is unavailable (e.g., severely locked-down iframes), `sha256Hex()` throws a clear error so failures are explicit.
   - Clock via `Date`/`performance.now()`.
   - File I/O is an in‑memory Map (for tests/smokes).
   - Tiny SDL header detector for `@wes_table` (not full `graphql` parser) to keep the smoke dependency‑free.
