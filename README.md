@@ -431,6 +431,7 @@ Note: In local runs where `GITHUB_REPOSITORY` is unset, the CI badge column rend
 
 ### 🛠️ Development
 - **[Scripts Reference](docs/scripts-reference.md)** — Complete `pnpm run` commands guide
+- **[CI Overview](docs/ci.md)** — How workflows are structured, reusable steps, gating, and artifacts
 - [`scripts/`](scripts/README.md) — Maintenance and automation scripts
 - **[Roadmap](docs/roadmap.md)** — Current focus and upcoming milestones
 - **[SAGENTS Codex](AGENTS.md)** — Protocol for human and AI contributors

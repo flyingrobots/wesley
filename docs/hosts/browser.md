@@ -33,3 +33,13 @@ The job builds a small Vite app, serves it, and uses Playwright to assert result
   - Keep the browser host pure ESM; avoid Node polyfills and heavy deps.
   - Prefer small, purpose-built parsers/adapters over general libs where possible.
   - Verify tree-shaking: `"sideEffects": false` in `@wesley/host-browser`.
+
+## Diagnostics & Artifacts
+
+- OUT_JSON artifact
+  - The test harness writes the host-contracts JSON to the path in `OUT_JSON` when set.
+  - The browser-smoke workflow uploads this file as an artifact for debugging.
+- Quick parse-only mode
+  - For fast local debugging, set `ONLY_PARSE_OUT_JSON=1` and provide `OUT_JSON=path/to/file.json` to `scripts/host_contracts_browser.mjs`. The script will skip build/serve/Playwright and only parse + log diagnostics derived from the JSON content.
+- Rich verifyIr diagnostics
+  - When the browser IR shape check fails, stderr logs include expected/actual table counts, missing tables, missing columns, and an SDL snippet.
