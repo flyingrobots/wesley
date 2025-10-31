@@ -13,13 +13,16 @@ const args = new Map(process.argv.slice(2).map((a) => {
 const root = resolve(args.get('dir') || 'test/browser/smoke/dist');
 const port = parseInt(args.get('port') || '8787', 10);
 
-const contentType = (file) => ({
-  '.html': 'text/html; charset=utf-8',
-  '.js': 'application/javascript; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
-  '.map': 'application/json',
-  '.json': 'application/json'
-})[extname(file)] || 'application/octet-stream';
+export function contentType(file) {
+  const map = {
+    '.html': 'text/html; charset=utf-8',
+    '.js': 'application/javascript; charset=utf-8',
+    '.css': 'text/css; charset=utf-8',
+    '.map': 'application/json',
+    '.json': 'application/json'
+  };
+  return map[extname(file)] || 'application/octet-stream';
+}
 
 const server = http.createServer((req, res) => {
   // Parse path and normalize relative to root to prevent path traversal
