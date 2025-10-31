@@ -160,7 +160,7 @@ function renderSummary(el, res) {
 
 async function main() {
   const el = document.getElementById('report-container');
-  if (!el) throw new Error("'#app' element not found");
+  if (!el) throw new Error("'#report-container' element not found");
 
   const res = await runAll();
   const v = await verifyIr();
