@@ -20,7 +20,7 @@ Source lives in `src/` with modules grouped under `domain/`, `application/`, and
 
 ## Status
 
-Status: Active  
+Status: Active
 ![pkg-core](https://github.com/flyingrobots/wesley/actions/workflows/pkg-core.yml/badge.svg?branch=main)
 
 Actively developed; public APIs exported via `package.json#exports`.

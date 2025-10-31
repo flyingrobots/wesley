@@ -4,7 +4,7 @@ Pure-ESM browser host for Wesley. Provides a minimal runtime using Web APIs only
 
 ## Status
 
-Status: Experimental (Too soon for package-level CI)  
+Status: Experimental (Too soon for package-level CI)
 ![Browser Smoke](https://github.com/flyingrobots/wesley/actions/workflows/browser-smoke.yml/badge.svg?branch=main)
 
 - File I/O: in-memory only (for test harness)
