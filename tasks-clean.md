@@ -1047,6 +1047,6 @@
 
 ## Follow-ups
 
-- [ ] Add a `--dry-run` flag to `scripts/compute-progress.mjs` to preview changes without writing files (helps testing).
+- [x] Add a `--dry-run` flag to `scripts/compute-progress.mjs` to preview changes without writing files (helps testing). (commit `f1ec452a93f3`)
 - [ ] Add a preflight check that validates all `requiredFor*` packages have explicit weights in `meta/progress.config.json` (fail early instead of relying on the 0.01 default).
 - [ ] Document in README that local runs without `GITHUB_REPOSITORY` will show `—` for per-package CI badges.
