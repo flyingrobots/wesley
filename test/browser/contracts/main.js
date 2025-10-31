@@ -42,6 +42,47 @@ async function verifyIr() {
   return { ok: errors.length === 0, errors, details };
 }
 
+function renderSummary(el, res) {
+  const esc = (s) => String(s).replace(/[&<>"]+/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+  const icon = (ok) => ok ? '✅' : '❌';
+  const rows = [];
+  rows.push('<h1>Host Contracts (Browser)</h1>');
+  rows.push(`<p><strong>Passed:</strong> ${res.passed} &nbsp; <strong>Failed:</strong> ${res.failed} &nbsp; <strong>Total:</strong> ${res.passed + res.failed}</p>`);
+  rows.push('<ul>');
+  for (const c of res.cases || []) {
+    if (c.ok) {
+      rows.push(`<li>${icon(true)} <code>${esc(c.name)}</code></li>`);
+      continue;
+    }
+    // Failure — include rich diagnostics when available
+    rows.push('<li>');
+    rows.push(`${icon(false)} <code>${esc(c.name)}</code>`);
+    const d = c.details || {};
+    if (c.name === 'browser-ir-shape' && d) {
+      const mt = Array.isArray(d.missingTables) && d.missingTables.length ? d.missingTables.join(', ') : '—';
+      const mc = d.missingColumns && typeof d.missingColumns === 'object' ? esc(JSON.stringify(d.missingColumns)) : '—';
+      rows.push('<div style="margin:6px 0 10px 24px;">');
+      rows.push('<div><strong>IR diagnostics</strong></div>');
+      if (typeof d.expectedTableCount === 'number' || typeof d.actualTableCount === 'number') {
+        rows.push(`<div>tables: expected=${esc(d.expectedTableCount)} actual=${esc(d.actualTableCount)}</div>`);
+      }
+      rows.push(`<div>missing tables: ${esc(mt)}</div>`);
+      rows.push(`<div>missing columns: <code>${mc}</code></div>`);
+      if (d.summary) rows.push(`<div>summary: ${esc(d.summary)}</div>`);
+      if (d.sdlSnippet) rows.push(`<pre style="background:#f6f8fa;padding:8px;border-radius:6px;">${esc(d.sdlSnippet)}</pre>`);
+      rows.push('</div>');
+    } else if (d && (d.error || Object.keys(d).length)) {
+      rows.push('<div style="margin:6px 0 10px 24px;">');
+      rows.push('<div><strong>Details</strong></div>');
+      rows.push(`<pre style="background:#f6f8fa;padding:8px;border-radius:6px;">${esc(JSON.stringify(d, null, 2))}</pre>`);
+      rows.push('</div>');
+    }
+    rows.push('</li>');
+  }
+  rows.push('</ul>');
+  el.innerHTML = rows.join('\n');
+}
+
 async function main() {
   const el = document.getElementById('app');
   if (!el) throw new Error("'#app' element not found");
@@ -56,7 +97,7 @@ async function main() {
     res.cases.push({ name: 'browser-ir-shape', ok: true });
   }
   window.__host_contracts = res;
-  el.textContent = `passed=${res.passed} failed=${res.failed}`;
+  renderSummary(el, res);
 }
 
 main().catch(err => {
