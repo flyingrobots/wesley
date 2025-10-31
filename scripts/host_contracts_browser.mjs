@@ -33,6 +33,42 @@ async function waitFor(url, ms = 15000) {
 }
 
 async function main() {
+  // Test hook: if ONLY_PARSE_OUT_JSON=1, skip build/serve/playwright and only parse OUT_JSON
+  if (process.env.ONLY_PARSE_OUT_JSON === '1') {
+    const outFile = String(process.env.OUT_JSON || '').trim();
+    if (!outFile) {
+      console.error('[host-contracts][diagnostics] ONLY_PARSE_OUT_JSON set but OUT_JSON is empty');
+      process.exit(2);
+    }
+    const json = readFileSync(outFile, 'utf8');
+    try {
+      const res = JSON.parse(json);
+      if (res && typeof res.failed === 'number' && res.failed > 0) {
+        const fail = Array.isArray(res.cases) && res.cases.find((c) => c && c.name === 'browser-ir-shape' && c.ok === false);
+        if (fail && fail.details) {
+          const { summary, missingTables, missingColumns, actualTableCount, expectedTableCount } = fail.details;
+          console.error('[host-contracts][diagnostics] verifyIr failed');
+          if (typeof expectedTableCount === 'number' && typeof actualTableCount === 'number') {
+            console.error(` - tables: expected=${expectedTableCount} actual=${actualTableCount}`);
+          }
+          if (Array.isArray(missingTables) && missingTables.length) {
+            console.error(` - missing tables: ${missingTables.join(', ')}`);
+          }
+          if (missingColumns && typeof missingColumns === 'object') {
+            for (const [t, cols] of Object.entries(missingColumns)) {
+              if (Array.isArray(cols) && cols.length) console.error(` - ${t} missing columns: ${cols.join(', ')}`);
+            }
+          }
+          if (summary) console.error(` - summary: ${summary}`);
+        }
+      }
+    } catch (e) {
+      console.error('[host-contracts][diagnostics] failed to parse OUT_JSON:', e?.message || e);
+      process.exitCode = 1;
+    }
+    process.stdout.write(json + '\n');
+    process.exit(process.exitCode || 0);
+  }
   // Build contracts harness
   await sh('pnpm', ['exec', 'vite', 'build', '--config', 'test/browser/contracts/vite.config.mjs']);
   // Enforce bundle size budget (sum of JS assets)
