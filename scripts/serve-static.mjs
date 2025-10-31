@@ -15,7 +15,7 @@ const port = parseInt(args.get('port') || '8787', 10);
 
 const contentType = (file) => ({
   '.html': 'text/html; charset=utf-8',
-  '.js': 'text/javascript; charset=utf-8',
+  '.js': 'application/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
   '.map': 'application/json',
   '.json': 'application/json'
@@ -39,7 +39,9 @@ const server = http.createServer((req, res) => {
     res.writeHead(200, { 'content-type': contentType(filePath) });
     createReadStream(filePath).pipe(res);
   } catch (e) {
-    res.writeHead(500); res.end(String(e?.message || e));
+    // Do not leak internal errors to clients; log server-side instead
+    try { console.error('[serve-static] error:', e?.stack || e); } catch {}
+    res.writeHead(500); res.end('Internal Server Error');
   }
 });
 

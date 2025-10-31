@@ -11,7 +11,7 @@ setup() {
   if [ "$HOST" = "node" ]; then
     run node scripts/host_contracts_node.mjs
   elif [ "$HOST" = "deno" ]; then
-    run deno run --config deno.json -A scripts/host_contracts_deno.ts
+    run deno run --config deno.json -A scripts/host_contracts_deno.mjs
   elif [ "$HOST" = "bun" ]; then
     run bun run scripts/host_contracts_bun.mjs
   elif [ "$HOST" = "browser" ]; then

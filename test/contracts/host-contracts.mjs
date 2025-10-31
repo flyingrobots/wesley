@@ -7,8 +7,10 @@
 function te(str) { return new TextEncoder().encode(str); }
 
 async function sha256Hex(input) {
+  const subtle = globalThis.crypto && globalThis.crypto.subtle;
+  if (!subtle) throw new Error('WebCrypto (crypto.subtle) is not available');
   const data = typeof input === 'string' ? te(input) : te(JSON.stringify(input));
-  const d = await globalThis.crypto.subtle.digest('SHA-256', data);
+  const d = await subtle.digest('SHA-256', data);
   return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
