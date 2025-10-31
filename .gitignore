@@ -23,5 +23,5 @@ test/fixtures/blade/*.key
 test/fixtures/blade/*.pub
 test/fixtures/blade/keys/*.key
 test/fixtures/blade/keys/*.pub
-# Progress JSON is generated and volatile; keep out of commits
+# Progress JSON is generated and volatile; keep out of commits (computed by scripts/compute-progress.mjs)
 meta/progress.json
