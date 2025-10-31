@@ -113,7 +113,11 @@ async function main() {
           if (summary) console.error(` - summary: ${summary}`);
         }
       }
-    } catch {}
+    } catch (e) {
+      console.error('[host-contracts][diagnostics] failed to parse OUT_JSON:', e?.message || e);
+      // Surface the problem to CI while still emitting whatever was read
+      process.exitCode = 1;
+    }
     process.stdout.write(json + '\n');
   } finally {
     try { srv.kill('SIGTERM'); await sleep(1000); if (!srv.killed) srv.kill('SIGKILL'); } catch {}
