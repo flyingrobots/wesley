@@ -1,12 +1,12 @@
 # Tasks
 
 ```
-████|████|████|████|████|█░░░|░░░░|░░░░|░░░░|░░░░|
+████|████|████|████|████|████|████|███░|░░░░|░░░░|
     |    |    |    |    |    |    |    |    |    |
 0   10   20   30   40   50   60   70   80   90  100
 
-53 %
-20 of 38 resolved
+79 %
+30 of 38 resolved
 ```
 
 ---
@@ -304,9 +304,9 @@
 >
 
 > [!success]- **Outcome**
-> - [ ] Issue resolved
-> - [ ] Issue ignored
-> - [ ] Issue remains unsolved
+> - [x] Issue resolved
+ > - [ ] Issue ignored
+ > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
 > > Handled via shared runner `scripts/host_contracts_runner.mjs` which wraps execution in try/catch and sets exit codes consistently. Bun entry now delegates to the runner. Fix commit: `eeb156998576443ee0524a5e3b9fd46d148d6829`.  
@@ -331,9 +331,9 @@
 >
 
 > [!success]- **Outcome**
-> - [ ] Issue resolved
-> - [ ] Issue ignored
-> - [ ] Issue remains unsolved
+> - [x] Issue resolved
+ > - [ ] Issue ignored
+ > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
 > > Error handling implemented via shared runner (see XI). Also renamed entry to `.mjs` to align with runtime; Bats updated accordingly. Fix commits: runner `eeb156998576443ee0524a5e3b9fd46d148d6829`, rename/spec `e5fee807d1b1c9b7b4a9b3e6d1a4e3c5d6f789ab`.  
@@ -358,9 +358,9 @@
 >
 
 > [!success]- **Outcome**
-> - [ ] Issue resolved
-> - [ ] Issue ignored
-> - [ ] Issue remains unsolved
+> - [x] Issue resolved
+ > - [ ] Issue ignored
+ > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
 > > Renamed `scripts/host_contracts_deno.ts` to `scripts/host_contracts_deno.mjs` and updated tests. This keeps the file extension aligned with the runtime. Fix commit: `e5fee807d1b1c9b7b4a9b3e6d1a4e3c5d6f789ab`.  
@@ -385,9 +385,9 @@
 >
 
 > [!success]- **Outcome**
-> - [ ] Issue resolved
-> - [ ] Issue ignored
-> - [ ] Issue remains unsolved
+> - [x] Issue resolved
+ > - [ ] Issue ignored
+ > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
 > > Node entry delegates to shared runner which wraps errors and sets exit code. Fix commit: `eeb156998576443ee0524a5e3b9fd46d148d6829`.  
@@ -412,9 +412,9 @@
 >
 
 > [!success]- **Outcome**
-> - [ ] Issue resolved
-> - [ ] Issue ignored
-> - [ ] Issue remains unsolved
+> - [x] Issue resolved
+ > - [ ] Issue ignored
+ > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
 > > `.js` now served as `application/javascript; charset=utf-8`. Added Bats guard in `test/serve-static.bats`. Fix commit: `e5fee807d1b1c9b7b4a9b3e6d1a4e3c5d6f789ab` (tests: `723aeba`).  
@@ -439,9 +439,9 @@
 >
 
 > [!success]- **Outcome**
-> - [ ] Issue resolved
-> - [ ] Issue ignored
-> - [ ] Issue remains unsolved
+> - [x] Issue resolved
+ > - [ ] Issue ignored
+ > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
 > > Catch block now logs server-side and responds with a generic `Internal Server Error`. Added a Bats check to prevent reintroducing raw `res.end(String(e.message))`. Fix commit: `e5fee807d1b1c9b7b4a9b3e6d1a4e3c5d6f789ab` (tests: `723aeba`).  
@@ -466,9 +466,9 @@
 >
 
 > [!success]- **Outcome**
-> - [ ] Issue resolved
-> - [ ] Issue ignored
-> - [ ] Issue remains unsolved
+> - [x] Issue resolved
+ > - [ ] Issue ignored
+ > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
 > > Renamed constant to `OUT_JSON` to match environment variable and updated usage. Fix commit: `e5fee807d1b1c9b7b4a9b3e6d1a4e3c5d6f789ab` (tests: `723aeba`).  
@@ -493,9 +493,9 @@
 >
 
 > [!success]- **Outcome**
-> - [ ] Issue resolved
-> - [ ] Issue ignored
-> - [ ] Issue remains unsolved
+> - [x] Issue resolved
+ > - [ ] Issue ignored
+ > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
 > > Added a header comment documenting orchestration by `scripts/host_contracts_browser.mjs`, the server URL, and how results are written. Fix commit: `e5fee807d1b1c9b7b4a9b3e6d1a4e3c5d6f789ab` (tests: `723aeba`).  
@@ -520,9 +520,9 @@
 >
 
 > [!success]- **Outcome**
-> - [ ] Issue resolved
-> - [ ] Issue ignored
-> - [ ] Issue remains unsolved
+> - [x] Issue resolved
+ > - [ ] Issue ignored
+ > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
 > > Replaced the truthy compound check with explicit assertions: `expect(res).toBeTruthy()` and `expect(res.failed).toBe(0)`. Fix commit: `e5fee807d1b1c9b7b4a9b3e6d1a4e3c5d6f789ab` (tests: `723aeba`).  
@@ -547,9 +547,9 @@
 >
 
 > [!success]- **Outcome**
-> - [ ] Issue resolved
-> - [ ] Issue ignored
-> - [ ] Issue remains unsolved
+> - [x] Issue resolved
+ > - [ ] Issue ignored
+ > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
 > > `sha256Hex` now guards `globalThis.crypto?.subtle` and throws a clear error when unavailable. Added a Bats check. Fix commit: `e5fee807d1b1c9b7b4a9b3e6d1a4e3c5d6f789ab` (tests: `723aeba`).  
@@ -558,8 +558,8 @@
 
 > [!info] **Status**
 >
-> - [ ] Acknowledged
-> - [ ] Resolved
+> - [x] Acknowledged
+> - [x] Resolved
 
 > [!abstract]- 
 > 
@@ -574,19 +574,19 @@
 >
 
 > [!success]- **Outcome**
-> - [ ] Issue resolved
+> - [x] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > {notes}  
+> > Removed the pointless `npm -v || npm ci` check; browsers install via `pnpm dlx playwright install --with-deps`. Fix commit: `40076af`.  
 
 ## [XXII] pkg-core CI: quote token starting with '@'
 
 > [!info] **Status**
 >
-> - [ ] Acknowledged
-> - [ ] Resolved
+> - [x] Acknowledged
+> - [x] Resolved
 
 > [!abstract]- 
 > 
@@ -600,20 +600,20 @@
 > - [x] `.github/workflows/pkg-core.yml`
 >
 
-> [!question]- **Outcome**
-> - [ ] Issue resolved
+> [!success]- **Outcome**
+> - [x] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > {notes}  
+> > Run step is quoted (contains `@`); added YAML comment explaining why. Fix commit: `40076af`.  
 
 ## [XXIII] pkg-host-bun CI: add concurrency + timeout
 
 > [!info] **Status**
 >
-> - [ ] Acknowledged
-> - [ ] Resolved
+> - [x] Acknowledged
+> - [x] Resolved
 
 > [!abstract]- 
 > 
@@ -627,20 +627,20 @@
 > - [x] `.github/workflows/pkg-host-bun.yml`
 >
 
-> [!question]- **Outcome**
-> - [ ] Issue resolved
+> [!success]- **Outcome**
+> - [x] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > {notes}  
+> > Added `concurrency` with `cancel-in-progress: true` and `timeout-minutes: 5` to the job. Fix commit: `40076af`.  
 
 ## [XXIV] CI: pin Bun version (runtime-smokes + pkg-host-bun)
 
 > [!info] **Status**
 >
-> - [ ] Acknowledged
-> - [ ] Resolved
+> - [x] Acknowledged
+> - [x] Resolved
 
 > [!abstract]- 
 > 
@@ -656,20 +656,20 @@
 > - [x] `.github/workflows/pkg-host-bun.yml`
 >
 
-> [!question]- **Outcome**
-> - [ ] Issue resolved
+> [!success]- **Outcome**
+> - [x] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > {notes}  
+> > Pinned `bun-version: 1.2.20` in both workflows for reproducibility. Fix commit: `40076af`.  
 
 ## [XXV] Host-bun: document limitations of regex GraphQL shim
 
 > [!info] **Status**
 >
-> - [ ] Acknowledged
-> - [ ] Resolved
+> - [x] Acknowledged
+> - [x] Resolved
 
 > [!abstract]- 
 > 
@@ -683,20 +683,20 @@
 > - [x] `packages/wesley-host-bun/src/index.mjs`
 >
 
-> [!question]- **Outcome**
-> - [ ] Issue resolved
+> [!success]- **Outcome**
+> - [x] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > {notes}  
+> > Added comment above the inline regex parser: minimal and not production-grade; used only for smoke tests to keep bundle small. Fix commit: `40076af`.  
 
 ## [XXVI] Host-deno: WebCrypto guard in sha256Hex
 
 > [!info] **Status**
 >
-> - [ ] Acknowledged
-> - [ ] Resolved
+> - [x] Acknowledged
+> - [x] Resolved
 
 > [!abstract]- 
 > 
@@ -710,20 +710,20 @@
 > - [x] `packages/wesley-host-deno/mod.ts`
 >
 
-> [!question]- **Outcome**
-> - [ ] Issue resolved
+> [!success]- **Outcome**
+> - [x] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > {notes}  
+> > Guarded `sha256Hex` with `globalThis.crypto?.subtle` check; throws explicit error when unavailable. Fix commit: `40076af`.  
 
 ## [XXVII] Progress: parameterize coverage summary path per package
 
 > [!info] **Status**
 >
-> - [ ] Acknowledged
-> - [ ] Resolved
+> - [x] Acknowledged
+> - [x] Resolved
 
 > [!abstract]- 
 > 
@@ -738,19 +738,19 @@
 >
 
 > [!success]- **Outcome**
-> - [ ] Issue resolved
+> - [x] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > {notes}  
+> > Coverage path now derived from each package’s README directory instead of hardcoding `wesley-core`. Fix commit: `40076af`.  
 
 ## [XXVIII] Browser contracts orchestrator: dedupe error handlers
 
 > [!info] **Status**
 >
-> - [ ] Acknowledged
-> - [ ] Resolved
+> - [x] Acknowledged
+> - [x] Resolved
 
 > [!abstract]- 
 > 
@@ -765,9 +765,9 @@
 >
 
 > [!success]- **Outcome**
-> - [ ] Issue resolved
-> - [ ] Issue ignored
-> - [ ] Issue remains unsolved
+> - [x] Issue resolved
+ > - [ ] Issue ignored
+ > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
 > > Consolidated duplicate `srv.on('error')` handlers into one that both buffers error text and throws on spawn failure. Kept stderr buffering for better messages. Fix commit: `62fc5ac`.  
@@ -776,8 +776,8 @@
 
 > [!info] **Status**
 >
-> - [ ] Acknowledged
-> - [ ] Resolved
+> - [x] Acknowledged
+> - [x] Resolved
 
 > [!abstract]- 
 > 
@@ -792,19 +792,19 @@
 >
 
 > [!success]- **Outcome**
-> - [ ] Issue resolved
-> - [ ] Issue ignored
-> - [ ] Issue remains unsolved
+> - [x] Issue resolved
+ > - [ ] Issue ignored
+ > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > {notes}  
+> > Decoded URL, normalized separators, collapsed leading slashes and repeated dots; kept root containment check. Added encoded traversal e2e test. Fix commit: `40076af`.  
 
 ## [XXX] Browser contracts main: richer verifyIr diagnostics
 
 > [!info] **Status**
 >
-> - [ ] Acknowledged
-> - [ ] Resolved
+> - [x] Acknowledged
+> - [x] Resolved
 
 > [!abstract]- 
 > 
@@ -818,13 +818,13 @@
 > - [x] `test/browser/contracts/main.js`
 >
 
-> [!question]- **Outcome**
-> - [ ] Issue resolved
+> [!success]- **Outcome**
+> - [x] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > {notes}  
+> > `verifyIr()` returns `{ ok, errors, details }`; single `main().catch` handles errors; richer details pushed on failure. Fix commit: `40076af`.  
 
 ## [XXXI] Preflight: remove redundant root package.json addition
 
