@@ -93,6 +93,11 @@ function renderSummary(el, res) {
     li.className = c.ok ? CSS_CLASSES.ok : CSS_CLASSES.fail;
 
     li.appendChild(text(icon(c.ok) + ' '));
+    // Add a PASS/FAIL badge
+    const badge = document.createElement('span');
+    badge.className = 'badge ' + (c.ok ? 'badge-ok' : 'badge-fail');
+    badge.appendChild(text(c.ok ? 'PASS' : 'FAIL'));
+    li.appendChild(badge);
     const code = document.createElement('code');
     code.textContent = escapeHtml(String(c.name || ''));
     li.appendChild(code);
