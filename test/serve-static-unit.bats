@@ -3,41 +3,27 @@
 load 'bats-plugins/bats-support/load'
 load 'bats-plugins/bats-assert/load'
 
-@test "contentType maps js to application/javascript" {
-  run bash -lc "node -e \"import('{process.cwd().replace(/\\/g,'/')}/scripts/serve-static.mjs').then(m=>{console.log(m.contentType('x.js'))})\""
-  assert_success
-  assert_output "application/javascript; charset=utf-8"
-}
+@test "contentType maps extensions as expected (data-driven)" {
+  # Associative array: ext -> expected content type
+  declare -A MAP=(
+    [js]="application/javascript; charset=utf-8"
+    [html]="text/html; charset=utf-8"
+    [css]="text/css; charset=utf-8"
+    [png]="image/png"
+    [jpg]="image/jpeg"
+    [jpeg]="image/jpeg"
+    [svg]="image/svg+xml"
+    [json]="application/json"
+    [map]="application/json"
+  )
 
-@test "contentType maps html to text/html" {
-  run bash -lc "node -e \"import('{process.cwd().replace(/\\/g,'/')}/scripts/serve-static.mjs').then(m=>{console.log(m.contentType('index.html'))})\""
-  assert_success
-  assert_output "text/html; charset=utf-8"
-}
-
-@test "contentType maps css to text/css" {
-  run bash -lc "node -e \"import('{process.cwd().replace(/\\/g,'/')}/scripts/serve-static.mjs').then(m=>{console.log(m.contentType('styles.css'))})\""
-  assert_success
-  assert_output "text/css; charset=utf-8"
-}
-
-@test "contentType maps png to image/png" {
-  run bash -lc "node -e \"import('{process.cwd().replace(/\\/g,'/')}/scripts/serve-static.mjs').then(m=>{console.log(m.contentType('logo.png'))})\""
-  assert_success
-  assert_output "image/png"
-}
-
-@test "contentType maps jpg/jpeg to image/jpeg" {
-  run bash -lc "node -e \"import('{process.cwd().replace(/\\/g,'/')}/scripts/serve-static.mjs').then(m=>{console.log(m.contentType('photo.jpg'))})\""
-  assert_success
-  assert_output "image/jpeg"
-  run bash -lc "node -e \"import('{process.cwd().replace(/\\/g,'/')}/scripts/serve-static.mjs').then(m=>{console.log(m.contentType('photo.jpeg'))})\""
-  assert_success
-  assert_output "image/jpeg"
-}
-
-@test "contentType maps svg to image/svg+xml" {
-  run bash -lc "node -e \"import('{process.cwd().replace(/\\/g,'/')}/scripts/serve-static.mjs').then(m=>{console.log(m.contentType('icon.svg'))})\""
-  assert_success
-  assert_output "image/svg+xml"
+  for ext in "${!MAP[@]}"; do
+    expected="${MAP[$ext]}"
+    run bash -lc "node -e \"import('${PWD//\//\/}/scripts/serve-static.mjs').then(m=>{console.log(m.contentType('file.${ext}'))})\""
+    assert_success
+    if [[ "$output" != "$expected" ]]; then
+      echo "Mismatch for .$ext: expected '$expected' but got '$output'" >&2
+      return 1
+    fi
+  done
 }

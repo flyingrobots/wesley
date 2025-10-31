@@ -1,5 +1,27 @@
 import { runAll } from '../../contracts/host-contracts.mjs';
 
+// CSS class names used by the browser summary UI
+const CSS_CLASSES = Object.freeze({
+  cases: 'cases',
+  ok: 'ok',
+  fail: 'fail',
+  meta: 'meta'
+});
+
+// Robust HTML escaping (based on OWASP XSS Prevention Cheat Sheet)
+// Escapes & < > " ' and / — safe to use when building strings that will be inserted as text
+function escapeHtml(str) {
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+    '/': '&#x2F;'
+  };
+  return String(str).replace(/[&<>"'\/]/g, (ch) => map[ch]);
+}
+
 // verifyIr now returns structured diagnostics with rich context
 async function verifyIr() {
   const { createBrowserRuntime } = await import('../../../packages/wesley-host-browser/src/createBrowserRuntime.mjs');
@@ -64,15 +86,15 @@ function renderSummary(el, res) {
   el.appendChild(meta);
 
   const ul = document.createElement('ul');
-  ul.className = 'cases';
+  ul.className = CSS_CLASSES.cases;
 
   for (const c of res.cases || []) {
     const li = document.createElement('li');
-    li.className = c.ok ? 'ok' : 'fail';
+    li.className = c.ok ? CSS_CLASSES.ok : CSS_CLASSES.fail;
 
     li.appendChild(text(icon(c.ok) + ' '));
     const code = document.createElement('code');
-    code.textContent = String(c.name || '');
+    code.textContent = escapeHtml(String(c.name || ''));
     li.appendChild(code);
 
     if (!c.ok) {
@@ -85,7 +107,7 @@ function renderSummary(el, res) {
         const wrap = document.createElement('div');
         if (typeof d.expectedTableCount === 'number' || typeof d.actualTableCount === 'number') {
           const row = document.createElement('div');
-          row.appendChild(text(`tables: expected=${d.expectedTableCount} actual=${d.actualTableCount}`));
+          row.appendChild(text(`tables: expected=${escapeHtml(d.expectedTableCount)} actual=${escapeHtml(d.actualTableCount)}`));
           wrap.appendChild(row);
         }
         const mt = Array.isArray(d.missingTables) && d.missingTables.length ? d.missingTables.join(', ') : '—';
@@ -93,17 +115,17 @@ function renderSummary(el, res) {
         const rowMc = document.createElement('div');
         rowMc.appendChild(text('missing columns: '));
         const mcCode = document.createElement('code');
-        mcCode.textContent = d.missingColumns && typeof d.missingColumns === 'object' ? JSON.stringify(d.missingColumns) : '—';
+        mcCode.textContent = d.missingColumns && typeof d.missingColumns === 'object' ? escapeHtml(JSON.stringify(d.missingColumns)) : '—';
         rowMc.appendChild(mcCode); wrap.appendChild(rowMc);
-        if (d.summary) { const row = document.createElement('div'); row.appendChild(text(`summary: ${String(d.summary)}`)); wrap.appendChild(row); }
-        if (d.sdlSnippet) { const pre = document.createElement('pre'); pre.textContent = String(d.sdlSnippet); wrap.appendChild(pre); }
+        if (d.summary) { const row = document.createElement('div'); row.appendChild(text(`summary: ${escapeHtml(String(d.summary))}`)); wrap.appendChild(row); }
+        if (d.sdlSnippet) { const pre = document.createElement('pre'); pre.textContent = escapeHtml(String(d.sdlSnippet)); wrap.appendChild(pre); }
         details.appendChild(wrap); li.appendChild(details);
       } else if (d && (d.error || Object.keys(d).length)) {
         const details = document.createElement('details');
         const summary = document.createElement('summary');
         const strong = document.createElement('strong'); strong.appendChild(text('Details'));
         summary.appendChild(strong); details.appendChild(summary);
-        const pre = document.createElement('pre'); pre.textContent = JSON.stringify(d, null, 2);
+        const pre = document.createElement('pre'); pre.textContent = escapeHtml(JSON.stringify(d, null, 2));
         details.appendChild(pre); li.appendChild(details);
       }
     }
