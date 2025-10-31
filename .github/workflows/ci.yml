@@ -53,7 +53,28 @@ jobs:
 
       - run: node packages/wesley-host-node/bin/wesley.mjs generate --schema test/fixtures/examples/ecommerce.graphql --allow-dirty
 
+      - name: Detect changes for repo Bats tests
+        id: changelog
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_REF: ${{ github.event.pull_request.base.sha }}
+          BEFORE: ${{ github.event.before }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          RANGE="${BEFORE}..${SHA}"
+          if [ "$EVENT" = "pull_request" ] && [ -n "${BASE_REF}" ]; then
+            RANGE="${BASE_REF}..${SHA}"
+          fi
+          echo "Diff range: $RANGE"
+          CHANGED=$(git diff --name-only "$RANGE" || true)
+          echo "$CHANGED" | sed 's/^/ - /'
+          NEED=false
+          echo "$CHANGED" | grep -E -q '^(scripts/serve-static\.mjs|test/serve-static|scripts/compute-progress\.mjs|test/progress-|test/ci-|test/browser-contracts-|test/deno-host-webcrypto-guard\.bats)' && NEED=true || true
+          echo "RUN_BATS=$NEED" >> $GITHUB_ENV
+
       - name: Repo Bats tests (server/progress/ci checks)
+        if: ${{ env.RUN_BATS == 'true' }}
         env:
           BATS_LIB_PATH: packages/wesley-cli/test
         run: |
