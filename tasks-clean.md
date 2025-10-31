@@ -1,9 +1,9 @@
 # Tasks
 
 ```
-░██████|░░░░|░░░░|░░░░|░░░░|░░░░|░░░░|░░░░|░░░░|░░░░|
-       |    |    |    |    |    |    |    |    |    |
-0     10   20   30   40   50   60   70   80   90  100
+████|████|██░░|░░░░|░░░░|░░░░|░░░░|░░░░|░░░░|░░░░|
+    |    |    |    |    |    |    |    |    |    |
+0   10   20   30   40   50   60   70   80   90  100
 
 26 %
 10 of 38 resolved
@@ -196,7 +196,7 @@
 >
 
 > [!success]- **Outcome**
-> - [ ] Issue resolved
+> - [x] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
@@ -223,7 +223,7 @@
 >
 
 > [!success]- **Outcome**
-> - [ ] Issue resolved
+> - [x] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
@@ -250,7 +250,7 @@
 >
 
 > [!success]- **Outcome**
-> - [ ] Issue resolved
+> - [x] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
@@ -277,7 +277,7 @@
 >
 
 > [!success]- **Outcome**
-> - [ ] Issue resolved
+> - [x] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
@@ -1051,3 +1051,6 @@
 - [x] Add a `--dry-run` flag to `scripts/compute-progress.mjs` to preview changes without writing files (helps testing). (commit `f1ec452a93f3`)
 - [ ] Add a preflight check that validates all `requiredFor*` packages have explicit weights in `meta/progress.config.json` (fail early instead of relying on the 0.01 default).
 - [ ] Document in README that local runs without `GITHUB_REPOSITORY` will show `—` for per-package CI badges.
+ - [ ] Add a CI or pre-commit rule to prevent trailing double-space line breaks on README “Status:” lines (caught in VIII/IX).
+ - [ ] Add `deno lint --unstable` to the `deno-smoke` job to catch unused `deno-lint-ignore-*` directives early (found in X).
+ - [ ] Consider promoting `.github/actions/install-bats` to a reusable workflow callable across repos and pin package versions.
