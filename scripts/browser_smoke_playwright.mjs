@@ -48,6 +48,8 @@ async function main() {
   }
 
   // Install Playwright Chromium (ephemeral) and run the spec via pnpm dlx
+  // Respect PLAYWRIGHT_VERSION for deterministic installs; Playwright also honors
+  // PLAYWRIGHT_BROWSERS_PATH for cache location (set in CI workflow).
   const PWV = process.env.PLAYWRIGHT_VERSION || '1.43.0';
   await sh('pnpm', ['dlx', `playwright@${PWV}`, 'install', 'chromium']);
   try {
