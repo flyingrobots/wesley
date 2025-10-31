@@ -1054,6 +1054,6 @@
  - [x] Add a CI or pre-commit rule to prevent trailing double-space line breaks on README “Status:” lines (caught in VIII/IX). (commit `a815978`)
  - [x] Add `deno lint` to the `deno-smoke` job to catch unused `deno-lint-ignore-*` directives early (found in X). (commit `a815978`)
  - [ ] Consider promoting `.github/actions/install-bats` to a reusable workflow callable across repos and pin package versions.
- - [ ] Add an end-to-end test that boots `scripts/serve-static.mjs` and verifies `Content-Type: application/javascript` for a `.js` asset.
- - [ ] Export a small `contentType()` helper from `serve-static` (or a utility module) and add unit tests.
- - [ ] Attach the browser contracts JSON (`OUT_JSON`) as a CI artifact for easier debugging of failures.
+ - [x] Add an end-to-end test that boots `scripts/serve-static.mjs` and verifies `Content-Type: application/javascript` for a `.js` asset. (commit `9a490bc`)
+ - [x] Export a small `contentType()` helper from `serve-static` (or a utility module) and add unit tests. (commit `9a490bc`)
+ - [x] Attach the browser contracts JSON (`OUT_JSON`) as a CI artifact for easier debugging of failures. (commit `9a490bc`)
