@@ -5,13 +5,16 @@ const CSS_CLASSES = Object.freeze({
   report: 'report',
   title: 'report__title',
   meta: 'report__meta',
-  statLabel: 'stat-label',
-  cases: 'cases',
-  testCase: 'test-case',
-  testOk: 'test-case--ok',
-  testFail: 'test-case--failed',
-  badgeOk: 'badge badge--ok',
-  badgeFail: 'badge badge--fail',
+  stat: 'report__stat',
+  statLabel: 'report__stat-label',
+  cases: 'report__cases',
+  testCase: 'report__test-case',
+  testOk: 'report__test-case--ok',
+  testFail: 'report__test-case--failed',
+  statusIconOk: 'report__status-icon report__status-icon--ok',
+  statusIconFail: 'report__status-icon report__status-icon--fail',
+  badgeOk: 'report__badge report__badge--ok',
+  badgeFail: 'report__badge report__badge--fail',
   code: 'report__code',
   pre: 'report__pre',
   details: 'report__details',
@@ -78,6 +81,7 @@ function createStatusIcon(ok) {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('width', '14'); svg.setAttribute('height', '14');
   svg.setAttribute('viewBox', '0 0 24 24'); svg.setAttribute('role', 'img');
+  svg.setAttribute('class', ok ? CSS_CLASSES.statusIconOk : CSS_CLASSES.statusIconFail);
   const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
   title.textContent = ok ? 'pass' : 'fail'; svg.appendChild(title);
   const path = document.createElementNS('http://www.w3.org/2000/svg', 'path'); path.setAttribute('fill', 'currentColor');
@@ -90,12 +94,16 @@ function createReportHeader(res) {
   const frag = document.createDocumentFragment();
   const h1 = document.createElement('h1'); h1.className = CSS_CLASSES.title; h1.appendChild(document.createTextNode('Host Contracts (Browser)'));
   const meta = document.createElement('p'); meta.className = CSS_CLASSES.meta;
-  const s1 = document.createElement('span'); s1.className = CSS_CLASSES.statLabel; s1.appendChild(document.createTextNode('Passed:'));
-  const s2 = document.createElement('span'); s2.className = CSS_CLASSES.statLabel; s2.appendChild(document.createTextNode('Failed:'));
-  const s3 = document.createElement('span'); s3.className = CSS_CLASSES.statLabel; s3.appendChild(document.createTextNode('Total:'));
-  meta.appendChild(s1); meta.appendChild(document.createTextNode(` ${res.passed} `));
-  meta.appendChild(s2); meta.appendChild(document.createTextNode(` ${res.failed} `));
-  meta.appendChild(s3); meta.appendChild(document.createTextNode(` ${res.passed + res.failed}`));
+  const stat = (label, value) => {
+    const wrap = document.createElement('span'); wrap.className = CSS_CLASSES.stat;
+    const l = document.createElement('span'); l.className = CSS_CLASSES.statLabel; l.appendChild(document.createTextNode(label));
+    const v = document.createTextNode(` ${value}`);
+    wrap.appendChild(l); wrap.appendChild(v);
+    return wrap;
+  };
+  meta.appendChild(stat('Passed:', res.passed));
+  meta.appendChild(stat('Failed:', res.failed));
+  meta.appendChild(stat('Total:', res.passed + res.failed));
   frag.appendChild(h1); frag.appendChild(meta);
   return frag;
 }
@@ -124,10 +132,22 @@ function createTestCaseElement(c) {
   const code = document.createElement('code'); code.className = CSS_CLASSES.code; code.textContent = String(c.name || ''); li.appendChild(code);
   if (!c.ok) {
     const d = c.details || {};
-    if (c.name === 'browser-ir-shape' && d) li.appendChild(createFailureDetailsElement(d));
-    else if (d && (d.error || Object.keys(d).length)) { const details = document.createElement('details'); const summary = document.createElement('summary'); summary.className = CSS_CLASSES.summary; const label = document.createElement('span'); label.appendChild(document.createTextNode('Details')); summary.appendChild(label); details.appendChild(summary); const pre = document.createElement('pre'); pre.className = CSS_CLASSES.pre; pre.textContent = JSON.stringify(d, null, 2); details.appendChild(pre); li.appendChild(details); }
+    if (c.name === 'browser-ir-shape' && d) {
+      li.appendChild(createFailureDetailsElement(d));
+    } else {
+      const generic = createFailureDetails(d);
+      if (generic) li.appendChild(generic);
+    }
   }
   return li;
+}
+
+function createFailureDetails(d) {
+  if (!d || !(d.error || Object.keys(d).length)) return null;
+  const details = document.createElement('details');
+  const summary = document.createElement('summary'); summary.className = CSS_CLASSES.summary; const label = document.createElement('span'); label.appendChild(document.createTextNode('Details')); summary.appendChild(label); details.appendChild(summary);
+  const pre = document.createElement('pre'); pre.className = CSS_CLASSES.pre; pre.textContent = JSON.stringify(d, null, 2); details.appendChild(pre);
+  return details;
 }
 
 function renderSummary(el, res) {
