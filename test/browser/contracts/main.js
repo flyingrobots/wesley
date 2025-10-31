@@ -47,35 +47,37 @@ function renderSummary(el, res) {
   const icon = (ok) => ok ? '✅' : '❌';
   const rows = [];
   rows.push('<h1>Host Contracts (Browser)</h1>');
-  rows.push(`<p><strong>Passed:</strong> ${res.passed} &nbsp; <strong>Failed:</strong> ${res.failed} &nbsp; <strong>Total:</strong> ${res.passed + res.failed}</p>`);
-  rows.push('<ul>');
+  rows.push(`<p class="meta"><strong>Passed:</strong> ${res.passed} &nbsp; <strong>Failed:</strong> ${res.failed} &nbsp; <strong>Total:</strong> ${res.passed + res.failed}</p>`);
+  rows.push('<ul class="cases">');
   for (const c of res.cases || []) {
     if (c.ok) {
-      rows.push(`<li>${icon(true)} <code>${esc(c.name)}</code></li>`);
+      rows.push(`<li class="ok">${icon(true)} <code>${esc(c.name)}</code></li>`);
       continue;
     }
     // Failure — include rich diagnostics when available
-    rows.push('<li>');
+    rows.push('<li class="fail">');
     rows.push(`${icon(false)} <code>${esc(c.name)}</code>`);
     const d = c.details || {};
     if (c.name === 'browser-ir-shape' && d) {
       const mt = Array.isArray(d.missingTables) && d.missingTables.length ? d.missingTables.join(', ') : '—';
       const mc = d.missingColumns && typeof d.missingColumns === 'object' ? esc(JSON.stringify(d.missingColumns)) : '—';
-      rows.push('<div style="margin:6px 0 10px 24px;">');
-      rows.push('<div><strong>IR diagnostics</strong></div>');
+      rows.push('<details open>');
+      rows.push('<summary><strong>IR diagnostics</strong></summary>');
+      rows.push('<div>');
       if (typeof d.expectedTableCount === 'number' || typeof d.actualTableCount === 'number') {
         rows.push(`<div>tables: expected=${esc(d.expectedTableCount)} actual=${esc(d.actualTableCount)}</div>`);
       }
       rows.push(`<div>missing tables: ${esc(mt)}</div>`);
       rows.push(`<div>missing columns: <code>${mc}</code></div>`);
       if (d.summary) rows.push(`<div>summary: ${esc(d.summary)}</div>`);
-      if (d.sdlSnippet) rows.push(`<pre style="background:#f6f8fa;padding:8px;border-radius:6px;">${esc(d.sdlSnippet)}</pre>`);
+      if (d.sdlSnippet) rows.push(`<pre>${esc(d.sdlSnippet)}</pre>`);
       rows.push('</div>');
+      rows.push('</details>');
     } else if (d && (d.error || Object.keys(d).length)) {
-      rows.push('<div style="margin:6px 0 10px 24px;">');
-      rows.push('<div><strong>Details</strong></div>');
-      rows.push(`<pre style="background:#f6f8fa;padding:8px;border-radius:6px;">${esc(JSON.stringify(d, null, 2))}</pre>`);
-      rows.push('</div>');
+      rows.push('<details>');
+      rows.push('<summary><strong>Details</strong></summary>');
+      rows.push(`<pre>${esc(JSON.stringify(d, null, 2))}</pre>`);
+      rows.push('</details>');
     }
     rows.push('</li>');
   }
