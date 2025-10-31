@@ -1,12 +1,12 @@
 # Tasks
 
 ```
-░████|░░░░|░░░░|░░░░|░░░░|░░░░|░░░░|░░░░|░░░░|░░░░|
-     |    |    |    |    |    |    |    |    |    |
-0   10   20   30   40   50   60   70   80   90  100
+░██████|░░░░|░░░░|░░░░|░░░░|░░░░|░░░░|░░░░|░░░░|░░░░|
+       |    |    |    |    |    |    |    |    |    |
+0     10   20   30   40   50   60   70   80   90  100
 
-16 %
-6 of 38 resolved
+26 %
+10 of 38 resolved
 ```
 
 ---
@@ -179,8 +179,8 @@
 
 > [!info] **Status**
 >
-> - [ ] Acknowledged
-> - [ ] Resolved
+> - [x] Acknowledged
+> - [x] Resolved
 
 > [!abstract]- 
 > 
@@ -191,23 +191,24 @@
 > - `.github/workflows/runtime-smokes.yml:15–25, 31–41, 55–60` (duplicate installs across jobs).
 >   
 > **Affected Files**
-> - [ ] `.github/workflows/runtime-smokes.yml`
+> - [x] `.github/workflows/runtime-smokes.yml`
+> - [x] `.github/actions/install-bats/action.yml`
 >
 
-> [!question]- **Outcome**
+> [!success]- **Outcome**
 > - [ ] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > {notes}  
+> > Extracted `apt-get update && apt-get install -y bats jq` into a composite action at `.github/actions/install-bats`. Updated all jobs in `runtime-smokes.yml` to use the action. Note: GitHub jobs run on isolated runners; you cannot literally run apt once for all jobs, but the step is now DRY and managed in one place. Fix commit: `71d42b0`.  
 
 ## [VIII] Docs: trim trailing whitespace in host-node README
 
 > [!info] **Status**
 >
-> - [ ] Acknowledged
-> - [ ] Resolved
+> - [x] Acknowledged
+> - [x] Resolved
 
 > [!abstract]- 
 > 
@@ -218,23 +219,23 @@
 > - `packages/wesley-host-node/README.md:3` (trailing whitespace on status line).
 >   
 > **Affected Files**
-> - [ ] `packages/wesley-host-node/README.md`
+> - [x] `packages/wesley-host-node/README.md`
 >
 
-> [!question]- **Outcome**
+> [!success]- **Outcome**
 > - [ ] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > {notes}  
+> > Removed trailing double space on the Status line. No rendering change intended; avoids stray whitespace diffs. Fix commit: `71d42b0`.  
 
 ## [IX] Docs: trim trailing whitespace in slaps README
 
 > [!info] **Status**
 >
-> - [ ] Acknowledged
-> - [ ] Resolved
+> - [x] Acknowledged
+> - [x] Resolved
 
 > [!abstract]- 
 > 
@@ -245,23 +246,23 @@
 > - `packages/wesley-slaps/README.md` (status line trailing whitespace).
 >   
 > **Affected Files**
-> - [ ] `packages/wesley-slaps/README.md`
+> - [x] `packages/wesley-slaps/README.md`
 >
 
-> [!question]- **Outcome**
+> [!success]- **Outcome**
 > - [ ] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > {notes}  
+> > Removed trailing double space on the Status line to prevent accidental whitespace-only changes. Fix commit: `71d42b0`.  
 
 ## [X] Deno smoke: remove unused lint ignore
 
 > [!info] **Status**
 >
-> - [ ] Acknowledged
-> - [ ] Resolved
+> - [x] Acknowledged
+> - [x] Resolved
 
 > [!abstract]- 
 > 
@@ -272,16 +273,16 @@
 > - `scripts/deno_smoke.ts` (top-of-file directive).
 >   
 > **Affected Files**
-> - [ ] `scripts/deno_smoke.ts`
+> - [x] `scripts/deno_smoke.ts`
 >
 
-> [!question]- **Outcome**
+> [!success]- **Outcome**
 > - [ ] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > {notes}  
+> > Removed `// deno-lint-ignore-file no-explicit-any` from `scripts/deno_smoke.ts`; the file does not use `any`, so the directive was redundant. Fix commit: `71d42b0`.  
 
 ## [XI] Bun host contracts: error handling and exit code
 
