@@ -1049,8 +1049,8 @@
 ## Follow-ups
 
 - [x] Add a `--dry-run` flag to `scripts/compute-progress.mjs` to preview changes without writing files (helps testing). (commit `f1ec452a93f3`)
-- [ ] Add a preflight check that validates all `requiredFor*` packages have explicit weights in `meta/progress.config.json` (fail early instead of relying on the 0.01 default).
-- [ ] Document in README that local runs without `GITHUB_REPOSITORY` will show `—` for per-package CI badges.
- - [ ] Add a CI or pre-commit rule to prevent trailing double-space line breaks on README “Status:” lines (caught in VIII/IX).
- - [ ] Add `deno lint --unstable` to the `deno-smoke` job to catch unused `deno-lint-ignore-*` directives early (found in X).
+- [x] Add a preflight check that validates all `requiredFor*` packages have explicit weights in `meta/progress.config.json` (fail early instead of relying on the 0.01 default). (commit `a815978`)
+- [x] Document in README that local runs without `GITHUB_REPOSITORY` will show `—` for per-package CI badges. (commit `a815978`)
+ - [x] Add a CI or pre-commit rule to prevent trailing double-space line breaks on README “Status:” lines (caught in VIII/IX). (commit `a815978`)
+ - [x] Add `deno lint` to the `deno-smoke` job to catch unused `deno-lint-ignore-*` directives early (found in X). (commit `a815978`)
  - [ ] Consider promoting `.github/actions/install-bats` to a reusable workflow callable across repos and pin package versions.
