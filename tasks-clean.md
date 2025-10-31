@@ -1,12 +1,12 @@
 # Tasks
 
 ```
-░███|░░░░|░░░░|░░░░|░░░░|░░░░|░░░░|░░░░|░░░░|░░░░|
-    |    |    |    |    |    |    |    |    |    |
-0  10   20   30   40   50   60   70   80   90  100
+░████|░░░░|░░░░|░░░░|░░░░|░░░░|░░░░|░░░░|░░░░|░░░░|
+     |    |    |    |    |    |    |    |    |    |
+0   10   20   30   40   50   60   70   80   90  100
 
-8 %
-3 of 38 resolved
+16 %
+6 of 38 resolved
 ```
 
 ---
@@ -98,8 +98,8 @@
 
 > [!info] **Status**
 >
-> - [ ] Acknowledged
-> - [ ] Resolved
+> - [x] Acknowledged
+> - [x] Resolved
 
 > [!abstract]- 
 > 
@@ -110,23 +110,23 @@
 > - `tasks.md:1103–1116` (“Prototype progress math doesn’t match the comment.”).
 >   
 > **Affected Files**
-> - [ ] `scripts/compute-progress.mjs`
+> - [x] `scripts/compute-progress.mjs`
 >
 
-> [!question]- **Outcome**
+> [!success]- **Outcome**
 > - [ ] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > {notes}  
+> > Verified implementation already matches the doc: Prototype progress is either 50% (no usage docs) or 100% (usage present). Clarified the inline comment to lock intent. Fix commit: `100972d046225791ccaa7dc4f51ba6df5c15ff2f`.  
 
 ## [V] Progress aggregation: weight defaulting and logging
 
 > [!info] **Status**
 >
-> - [ ] Acknowledged
-> - [ ] Resolved
+> - [x] Acknowledged
+> - [x] Resolved
 
 > [!abstract]- 
 > 
@@ -137,23 +137,23 @@
 > - `tasks.md:1120–1136` (“Silent weight defaulting masks config errors. Log or validate.”).
 >   
 > **Affected Files**
-> - [ ] `scripts/compute-progress.mjs`
+> - [x] `scripts/compute-progress.mjs`
 >
 
-> [!question]- **Outcome**
+> [!success]- **Outcome**
 > - [ ] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > {notes}  
+> > Replaced silent defaulting with an explicit warning and safe default, and normalized with `wNum`: when a required package weight is missing, we log a warning and use `0.01` rather than silently coerce. Accumulators now use `wNum`. Fix commit: `100972d046225791ccaa7dc4f51ba6df5c15ff2f`.  
 
 ## [VI] Progress badges: repo fallback behavior
 
 > [!info] **Status**
 >
-> - [ ] Acknowledged
-> - [ ] Resolved
+> - [x] Acknowledged
+> - [x] Resolved
 
 > [!abstract]- 
 > 
@@ -164,16 +164,16 @@
 > - `tasks.md:1144–1156` (“Hardcoded repo fallback is brittle. Don’t lie when repo is unknown.”).
 >   
 > **Affected Files**
-> - [ ] `scripts/compute-progress.mjs`
+> - [x] `scripts/compute-progress.mjs`
 >
 
-> [!question]- **Outcome**
+> [!success]- **Outcome**
 > - [ ] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > {notes}  
+> > Local/offline runs no longer fail when `GITHUB_REPOSITORY` is unset. We warn and render an em dash (—) for CI badges in the README table when the repo is unknown. Overall shield endpoint remains generated. Fix commit: `100972d046225791ccaa7dc4f51ba6df5c15ff2f`.  
 
 ## [VII] CI: Deduplicate apt-get installs in runtime-smokes
 
@@ -1047,4 +1047,6 @@
 
 ## Follow-ups
 
-- [ ] Append items to this checklist
+- [ ] Add a `--dry-run` flag to `scripts/compute-progress.mjs` to preview changes without writing files (helps testing).
+- [ ] Add a preflight check that validates all `requiredFor*` packages have explicit weights in `meta/progress.config.json` (fail early instead of relying on the 0.01 default).
+- [ ] Document in README that local runs without `GITHUB_REPOSITORY` will show `—` for per-package CI badges.
