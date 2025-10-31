@@ -1,6 +1,6 @@
 # @wesley/host-node
 
-Status: Active  
+Status: Active
 ![pkg-host-node](https://github.com/flyingrobots/wesley/actions/workflows/pkg-host-node.yml/badge.svg?branch=main)
 
 Node.js host runtime that wires the pure `@wesley/core` engine into CLI adapters.
