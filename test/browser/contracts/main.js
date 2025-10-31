@@ -14,7 +14,7 @@ const CSS_CLASSES = Object.freeze({
   statusIconOk: 'report__status-icon report__status-icon--ok',
   statusIconFail: 'report__status-icon report__status-icon--fail',
   badgeOk: 'report__badge report__badge--ok',
-  badgeFail: 'report__badge report__badge--fail',
+  badgeFail: 'report__badge report__badge--failed',
   code: 'report__code',
   pre: 'report__pre',
   details: 'report__details',

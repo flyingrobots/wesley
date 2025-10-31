@@ -42,7 +42,7 @@ html { font-size: 16px; }
 
 .report__badge { display:inline-block; font-size: .75rem; line-height: var(--line-height-sm); padding: 0 var(--spacing-2); border-radius: var(--radius-md); margin-right: var(--spacing-1); }
 .report__badge--ok { background: var(--color-status-success); color: #fff; }
-.report__badge--fail { background: var(--color-status-error); color: #fff; }
+.report__badge--failed { background: var(--color-status-error); color: #fff; }
 
 .report__code { background: var(--color-background-code); padding: 0 var(--spacing-1); border-radius: var(--radius-sm); }
 .report__pre  { background: var(--color-background-code); padding: var(--spacing-2); border-radius: var(--radius-md); overflow: auto; white-space: pre-wrap; word-break: break-all; }
