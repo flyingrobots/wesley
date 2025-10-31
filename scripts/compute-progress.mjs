@@ -112,6 +112,7 @@ function computeStageAndProgress(pkg, passRate, docs, milestones) {
   // Prototype → MVP (for "Too soon")
   if (base === 'Prototype' && stage === 'Prototype') {
     const d = docs.hasUsage ? 0.5 : 0;
+    // As documented: Prototype progress shows either 50% (no usage docs) or 100% (usage present)
     const score = 0.5 + d; // 0.5 or 1.0
     progress = Math.round(score * 100); // 50 or 100
   }
@@ -161,21 +162,22 @@ async function main() {
   const weights = cfg.project.weights || {};
   let wsum = 0; let acc = 0;
   for (const name of include) {
-    if (!(name in weights)) {
-      console.error(`Missing weight for ${name} in meta/progress.config.json`);
-      process.exit(2);
+    let w = weights[name];
+    if (w === undefined) {
+      console.warn(`Warning: No weight for ${name} in meta/progress.config.json; using default 0.01`);
+      w = 0.01;
     }
-    const w = Number(weights[name]);
+    const wNum = Number(w);
     const r = results.find(x => x.name === name);
     const reached = r && idx(r.stage) >= idx(overallNext);
     const frac = reached ? 1 : (r ? (r.progress / 100) : 0);
-    acc += w * frac; wsum += w;
+    acc += wNum * frac; wsum += wNum;
   }
   const overallProgress = include.length && wsum > 0 ? Math.round((acc / wsum) * 100) : 0;
 
+  // When repo is unknown (local runs), continue and render em-dash for CI badges.
   if (!repo) {
-    console.error('GITHUB_REPOSITORY not set; cannot generate badge URLs.');
-    process.exit(3);
+    console.warn('GITHUB_REPOSITORY not set; CI badge URLs will be disabled (—).');
   }
   const out = { generatedAt: new Date().toISOString(), overall: { stage: overallStage, next: overallNext, progress: overallProgress }, results };
   writeFileSync(resolve('meta/progress.json'), JSON.stringify(out, null, 2), 'utf8');
@@ -206,7 +208,9 @@ async function main() {
   rows.push('| --- | --- | --- | --- | --- | --- |');
   for (const p of cfg.packages) {
     const r = results.find(x => x.name === p.name) || { stage: inferBaseStage(p.status), progress: 0, next: 'Alpha' };
-    const badge = p.ci ? `![${p.ci}](https://github.com/${repo}/actions/workflows/${p.ci}/badge.svg?branch=main)` : '—';
+    const badge = (repo && p.ci)
+      ? `![${p.ci}](https://github.com/${repo}/actions/workflows/${p.ci}/badge.svg?branch=main)`
+      : '—';
     const prog = r.stage === 'v1.0.0' ? '100% — v1.0.0' : `${r.progress}% → ${r.next}`;
     rows.push(`| \`${p.name}\` | ${p.status} | ${r.stage} | ${prog} | ${badge} | ${p.notes} |`);
   }
