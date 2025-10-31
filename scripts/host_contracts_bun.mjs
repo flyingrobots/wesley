@@ -1,6 +1,4 @@
 #!/usr/bin/env bun
-import { runAll } from '../test/contracts/host-contracts.mjs';
+import { runAndReport } from './host_contracts_runner.mjs';
 
-const res = await runAll();
-console.log(JSON.stringify(res));
-
+await runAndReport();
