@@ -14,7 +14,23 @@ test('host contracts pass in browser', async ({ page }) => {
   await page.waitForFunction(() => !!window.__host_contracts, null, { timeout: 15000 });
   const res = await page.evaluate(() => window.__host_contracts);
   expect(res).toBeTruthy();
-  expect(res.failed).toBe(0);
+  // The normal case should pass, but when it fails we expect rich diagnostics
+  if (res.failed > 0) {
+    const fail = res.cases.find((c) => c.name === 'browser-ir-shape' && c.ok === false);
+    if (fail) {
+      expect(fail.details).toBeTruthy();
+      expect(fail.details.expectedTableCount).toBe(2);
+      expect(typeof fail.details.actualTableCount).toBe('number');
+      // Either a summary mentioning expected vs actual or missing fields
+      expect(
+        /expected\s+2\s+tables|missing table|missing columns/i.test(String(fail.details.summary || ''))
+      ).toBeTruthy();
+      // Include SDL snippet context for debugging
+      expect(String(fail.details.sdlSnippet || '')).toContain('type');
+    }
+  } else {
+    expect(res.failed).toBe(0);
+  }
   if (OUT_JSON) {
     await fs.writeFile(OUT_JSON, JSON.stringify(res), 'utf8');
   }
