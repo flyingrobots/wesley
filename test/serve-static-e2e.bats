@@ -43,3 +43,9 @@ teardown() {
   assert_success
   echo "$output" | grep -q '^403$'
 }
+
+@test "serve-static prevents mixed encoded/plain traversal" {
+  run bash -lc "node -e \"require('http').get('http://127.0.0.1:$PORT/%2e%2e/../README.md',res=>{console.log(String(res.statusCode));res.resume();}).on('error',e=>{console.error(e);process.exit(1)})\""
+  assert_success
+  echo "$output" | grep -q '^403$'
+}
