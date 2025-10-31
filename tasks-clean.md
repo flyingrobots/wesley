@@ -1,12 +1,12 @@
 # Tasks
 
 ```
-░░░░|░░░░|░░░░|░░░░|░░░░|░░░░|░░░░|░░░░|░░░░|░░░░|
-    |    |    |    |    |    |    |    |    |    |                                                          
+░███|░░░░|░░░░|░░░░|░░░░|░░░░|░░░░|░░░░|░░░░|░░░░|
+    |    |    |    |    |    |    |    |    |    |
 0  10   20   30   40   50   60   70   80   90  100
 
-0 %
-0 of 38 resolved
+8 %
+3 of 38 resolved
 ```
 
 ---
@@ -15,8 +15,8 @@
 
 > [!info] **Status**
 >
-> - [ ] Acknowledged
-> - [ ] Resolved
+> - [x] Acknowledged
+> - [x] Resolved
 
 > [!abstract]- 
 > 
@@ -27,25 +27,25 @@
 > - `tasks.md:311` (“Blatant code duplication across runtime scripts” under `scripts/host_contracts_node.mjs` context).
 >   
 > **Affected Files**
-> - [ ] `scripts/host_contracts_node.mjs`
-> - [ ] `scripts/host_contracts_deno.ts`
-> - [ ] `scripts/host_contracts_bun.mjs`
+> - [x] `scripts/host_contracts_node.mjs`
+> - [x] `scripts/host_contracts_deno.ts`
+> - [x] `scripts/host_contracts_bun.mjs`
 >
 
-> [!question]- **Outcome**
+> [!success]- **Outcome**
 > - [ ] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > {notes}  
+> > Extracted a shared runner (`scripts/host_contracts_runner.mjs`) and updated Node/Bun/Deno entrypoints to delegate to it. Runner emits JSON and sets exit code consistently across runtimes. Duplicated glue code removed; behavior preserved.  
 
 ## [II] Browser runtime: WebCrypto guard
 
 > [!info] **Status**
 >
-> - [ ] Acknowledged
-> - [ ] Resolved
+> - [x] Acknowledged
+> - [x] Resolved
 
 > [!abstract]- 
 > 
@@ -56,23 +56,23 @@
 > In tasks.md: tasks.md:1006 (“Guard WebCrypto: fail loudly when crypto.subtle is absent.”).
 > 
 > **Affected Files** 
-> - [ ] `packages/wesley-host-browser/src/createBrowserRuntime.mjs`
+> - [x] `packages/wesley-host-browser/src/createBrowserRuntime.mjs`
 > 
 
-> [!question]- **Outcome**
+> [!success]- **Outcome**
 > - [ ] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > {notes}  
+> > Verified guard is present: `sha256Hex` checks `globalThis.crypto?.subtle` and throws a clear error when unavailable. Documented this behavior in `docs/hosts/browser.md`. No code change required.  
 
 ## [III] Browser runtime: sanitizeGraphQL regex control chars
 
 > [!info] **Status**
 >
-> - [ ] Acknowledged
-> - [ ] Resolved
+> - [x] Acknowledged
+> - [x] Resolved
 
 > [!abstract]- 
 > 
@@ -83,16 +83,16 @@
 > - `tasks.md:1032–1048` (sanitizeGraphQL change block).
 >   
 > **Affected Files**
-> - [ ] `packages/wesley-host-browser/src/createBrowserRuntime.mjs`
+> - [x] `packages/wesley-host-browser/src/createBrowserRuntime.mjs`
 >
 
-> [!question]- **Outcome**
+> [!success]- **Outcome**
 > - [ ] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > {notes}  
+> > Confirmed `sanitizeGraphQL` uses BOM stripping and null-byte removal via string operations (no control characters inside regex). No code change required.  
 
 ## [IV] Progress math: Prototype stage multiplier
 
