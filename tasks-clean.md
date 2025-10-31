@@ -570,10 +570,10 @@
 > - `.github/workflows/browser-smoke.yml:46–49` (install step).
 >   
 > **Affected Files**
-> - [ ] `.github/workflows/browser-smoke.yml`
+> - [x] `.github/workflows/browser-smoke.yml`
 >
 
-> [!question]- **Outcome**
+> [!success]- **Outcome**
 > - [ ] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
@@ -597,7 +597,7 @@
 > - `.github/workflows/pkg-core.yml:28–29` (run command with unquoted `@`).
 >   
 > **Affected Files**
-> - [ ] `.github/workflows/pkg-core.yml`
+> - [x] `.github/workflows/pkg-core.yml`
 >
 
 > [!question]- **Outcome**
@@ -624,7 +624,7 @@
 > - `.github/workflows/pkg-host-bun.yml:3–22` (workflow header and bun-host job).
 >   
 > **Affected Files**
-> - [ ] `.github/workflows/pkg-host-bun.yml`
+> - [x] `.github/workflows/pkg-host-bun.yml`
 >
 
 > [!question]- **Outcome**
@@ -652,8 +652,8 @@
 > - `.github/workflows/pkg-host-bun.yml` (same change).
 >   
 > **Affected Files**
-> - [ ] `.github/workflows/runtime-smokes.yml`
-> - [ ] `.github/workflows/pkg-host-bun.yml`
+> - [x] `.github/workflows/runtime-smokes.yml`
+> - [x] `.github/workflows/pkg-host-bun.yml`
 >
 
 > [!question]- **Outcome**
@@ -680,7 +680,7 @@
 > - `packages/wesley-host-bun/src/index.mjs` (inline parser comment above implementation).
 >   
 > **Affected Files**
-> - [ ] `packages/wesley-host-bun/src/index.mjs`
+> - [x] `packages/wesley-host-bun/src/index.mjs`
 >
 
 > [!question]- **Outcome**
@@ -707,7 +707,7 @@
 > - `packages/wesley-host-deno/mod.ts` (sha256Hex function).
 >   
 > **Affected Files**
-> - [ ] `packages/wesley-host-deno/mod.ts`
+> - [x] `packages/wesley-host-deno/mod.ts`
 >
 
 > [!question]- **Outcome**
@@ -734,10 +734,10 @@
 > - `scripts/compute-progress.mjs` (coverage path inside package loop).
 >   
 > **Affected Files**
-> - [ ] `scripts/compute-progress.mjs`
+> - [x] `scripts/compute-progress.mjs`
 >
 
-> [!question]- **Outcome**
+> [!success]- **Outcome**
 > - [ ] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
@@ -761,16 +761,16 @@
 > - `scripts/host_contracts_browser.mjs:63–65` (duplicate handlers).
 >   
 > **Affected Files**
-> - [ ] `scripts/host_contracts_browser.mjs`
+> - [x] `scripts/host_contracts_browser.mjs`
 >
 
-> [!question]- **Outcome**
+> [!success]- **Outcome**
 > - [ ] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > {notes}  
+> > Consolidated duplicate `srv.on('error')` handlers into one that both buffers error text and throws on spawn failure. Kept stderr buffering for better messages. Fix commit: `62fc5ac`.  
 
 ## [XXIX] Static server: robust path traversal prevention
 
@@ -788,10 +788,10 @@
 > - `scripts/serve-static.mjs` (request path resolution and 403 logic).
 >   
 > **Affected Files**
-> - [ ] `scripts/serve-static.mjs`
+> - [x] `scripts/serve-static.mjs`
 >
 
-> [!question]- **Outcome**
+> [!success]- **Outcome**
 > - [ ] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
@@ -815,7 +815,7 @@
 > - `test/browser/contracts/main.js` (verifyIr function and usages).
 >   
 > **Affected Files**
-> - [ ] `test/browser/contracts/main.js`
+> - [x] `test/browser/contracts/main.js`
 >
 
 > [!question]- **Outcome**
