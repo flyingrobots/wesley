@@ -10,7 +10,9 @@ describe('App', () => {
       </MantineProvider>
     )
 
-    const heading = screen.getByRole('heading', { name: /wesley/i })
+    // Pick the hero H1 specifically to avoid matching other "Wesley" headings
+    const heading = screen.getByRole('heading', { level: 1 })
     expect(heading).toBeInTheDocument()
+    expect(heading).toHaveTextContent(/wesley/i)
   })
 })
