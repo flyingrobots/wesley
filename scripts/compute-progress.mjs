@@ -38,7 +38,7 @@ async function fetchWorkflowPassRate(workflowFile, branch = 'main', take = 10) {
 
 async function fetchMilestoneRatioFor(pkgName, milestoneTitle) {
   try {
-    if (!token || !repo) return null;
+    if (!token || !repo || typeof fetch !== 'function') return null;
     const qBase = `repo:${repo} label:"pkg:${pkgName}" milestone:"${milestoneTitle}"`;
     const openUrl = `https://api.github.com/search/issues?q=${encodeURIComponent(qBase + ' is:issue is:open')}`;
     const closedUrl = `https://api.github.com/search/issues?q=${encodeURIComponent(qBase + ' is:issue is:closed')}`;
@@ -68,8 +68,8 @@ function detectDocsSections(readmePath) {
 function nextStage(stage) {
   const order = ['Prototype', 'MVP', 'Alpha', 'Beta', 'v1.0.0'];
   const i = order.indexOf(stage);
-  if (i < 0) throw new Error(`Unknown stage: ${stage}`);
-  return order[Math.min(order.length - 1, i + 1)] || 'MVP';
+  if (i < 0) return 'MVP';
+  return order[Math.min(order.length - 1, i + 1)];
 }
 
 function inferBaseStage(status) {
@@ -252,8 +252,15 @@ async function main() {
   const matrixAfter = readme.slice(e1);
   const matrixBody = '\n' + rows.join('\n') + '\n';
 
-  const overallBefore = (matrixBefore + matrixBody + matrixAfter).slice(0, s2 + ovStart.length);
-  const overallAfterPre = (matrixBefore + matrixBody + matrixAfter).slice(e2);
+  const afterMatrix = matrixBefore + matrixBody + matrixAfter;
+  // Re-locate overall markers after matrix update to avoid stale indices
+  const ns2 = afterMatrix.indexOf(ovStart), ne2 = afterMatrix.indexOf(ovEnd);
+  if (ns2 === -1 || ne2 === -1 || ne2 < ns2) {
+    console.error('Overall markers not found after matrix update in README.md');
+    process.exit(2);
+  }
+  const overallBefore = afterMatrix.slice(0, ns2 + ovStart.length);
+  const overallAfterPre = afterMatrix.slice(ne2);
   const overallBody = `\nStage: ${overallStage}  \\\nProgress: ${overallProgress}% → ${overallNext}\n`;
   const nextReadme = overallBefore + overallBody + overallAfterPre;
   if (DRY_RUN) {

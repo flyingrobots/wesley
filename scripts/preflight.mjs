@@ -135,14 +135,12 @@ try {
   const ls = spawnSync('pnpm', ['ls', '-r', '--json', '--depth=-1'], { encoding: 'utf8' });
   if (ls.status !== 0) throw new Error(`pnpm ls failed with code ${ls.status}`);
   const list = JSON.parse(ls.stdout || '[]');
-  // Include root and all workspace packages
+  // Include all workspace packages returned by pnpm ls
   const packageJsonPaths = new Set();
   for (const entry of list) {
     if (!entry.path) continue;
     packageJsonPaths.add(resolve(entry.path, 'package.json'));
   }
-  // Ensure root package.json is included
-  packageJsonPaths.add(resolve('package.json'));
   for (const p of packageJsonPaths) {
     let content;
     try {
