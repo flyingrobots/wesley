@@ -114,7 +114,7 @@
 >
 
 > [!success]- **Outcome**
-> - [ ] Issue resolved
+> - [x] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
@@ -141,7 +141,7 @@
 >
 
 > [!success]- **Outcome**
-> - [ ] Issue resolved
+> - [x] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
@@ -168,7 +168,7 @@
 >
 
 > [!success]- **Outcome**
-> - [ ] Issue resolved
+> - [x] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
