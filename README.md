@@ -436,6 +436,17 @@ Note: In local runs where `GITHUB_REPOSITORY` is unset, the CI badge column rend
 - **[Roadmap](docs/roadmap.md)** — Current focus and upcoming milestones
 - **[SAGENTS Codex](AGENTS.md)** — Protocol for human and AI contributors
 
+### ✅ Testing
+- Quick start
+  - Install deps: `pnpm install`
+  - Preflight: `pnpm run preflight`
+  - Workspace tests: `pnpm -r test`
+- Repo-level Bats tests (server/progress/CI checks)
+  - Install Bats plugins: `pnpm run setup:bats-plugins`
+  - Run the suite: `bats test/serve-static*.bats test/progress-*.bats test/ci-*.bats test/browser-contracts-*.bats`
+  - CI runs these conditionally when relevant files change (see [CI Overview](docs/ci.md)).
+- Full guide: see `test/README.md` for suite-by-suite commands and fixtures.
+
 ### 🎬 Demos
 - **[BLADE (Daywalker Deploys)](docs/blade.md)** — 5-minute demo of the full pipeline
 

@@ -34,6 +34,33 @@ In `ci.yml`, we run a concise set of repository-level Bats suites covering:
 
 To keep CI lean, these tests are gated via a simple diff check and only execute when relevant files change (paths matching `scripts/serve-static.mjs`, `scripts/compute-progress.mjs`, `test/serve-static*`, `test/progress-*`, `test/ci-*`, `test/browser-contracts-*`, or `test/deno-host-webcrypto-guard.bats`).
 
+Example gating snippet used in `ci.yml`:
+
+```yaml
+- name: Detect changes for repo Bats tests
+  id: changelog
+  run: |
+    RANGE="${{ github.event.before }}..${{ github.sha }}"
+    if [ "${{ github.event_name }}" = "pull_request" ] && [ -n "${{ github.event.pull_request.base.sha }}" ]; then
+      RANGE="${{ github.event.pull_request.base.sha }}..${{ github.sha }}"
+    fi
+    CHANGED=$(git diff --name-only "$RANGE" || true)
+    NEED=false
+    echo "$CHANGED" | grep -E -q '^(scripts/serve-static\\.mjs|test/serve-static|scripts/compute-progress\\.mjs|test/progress-|test/ci-|test/browser-contracts-|test/deno-host-webcrypto-guard\\.bats)' && NEED=true || true
+    echo "RUN_BATS=$NEED" >> $GITHUB_ENV
+- name: Repo Bats tests
+  if: ${{ env.RUN_BATS == 'true' }}
+  run: bats test/serve-static*.bats test/progress-*.bats test/ci-*.bats test/deno-host-webcrypto-guard.bats test/browser-contracts-*.bats
+```
+
+### Run these locally
+
+```bash
+pnpm run setup:bats-plugins
+BATS_LIB_PATH=packages/wesley-cli/test \
+  bats test/serve-static*.bats test/progress-*.bats test/ci-*.bats test/browser-contracts-*.bats
+```
+
 ## Playwright Caching & Version Pinning
 
 - Workflows respect `PLAYWRIGHT_VERSION` and set `PLAYWRIGHT_BROWSERS_PATH` to cache browsers under `~/.cache/ms-playwright`.
@@ -46,4 +73,3 @@ To keep CI lean, these tests are gated via a simple diff check and only execute 
 ## Artifacts
 
 The `browser-smoke.yml` workflow uploads the host-contracts JSON (`OUT_JSON`) for easier debugging when failures occur.
-

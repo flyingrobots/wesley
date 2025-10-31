@@ -43,7 +43,7 @@ Wesley uses `pnpm run <script>` to provide a common set of maintenance, test, an
 
 | Helper | Purpose | Notes |
 | --- | --- | --- |
-| `scripts/serve-static.mjs` | Minimal static server for browser smokes. | Exports `contentType(file)` and `isWithinRoot(root, file)`. Path normalization decodes URIs and uses `path.relative` to prevent traversal; returns 403 on attempts to escape the root. |
+| `scripts/serve-static.mjs` | Minimal static server for browser smokes. | Exports `contentType(file)` and `isWithinRoot(root, file)`. Path normalization decodes URIs and uses `path.relative` to prevent traversal; returns 403 on attempts to escape the root. Example: `node scripts/serve-static.mjs --dir=test/browser/contracts/dist --port=8787`. |
 
 ## Maintenance
 

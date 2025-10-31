@@ -43,3 +43,28 @@ The job builds a small Vite app, serves it, and uses Playwright to assert result
   - For fast local debugging, set `ONLY_PARSE_OUT_JSON=1` and provide `OUT_JSON=path/to/file.json` to `scripts/host_contracts_browser.mjs`. The script will skip build/serve/Playwright and only parse + log diagnostics derived from the JSON content.
 - Rich verifyIr diagnostics
   - When the browser IR shape check fails, stderr logs include expected/actual table counts, missing tables, missing columns, and an SDL snippet.
+
+### Examples
+
+Run the browser contracts and capture JSON locally:
+
+```bash
+# Install Playwright browsers once (uses cache if present)
+PLAYWRIGHT_VERSION=1.43.0 pnpm dlx playwright install --with-deps chromium
+
+# Run the orchestrator and write OUT_JSON
+OUT_JSON="/tmp/host-contracts.json" \
+  node scripts/host_contracts_browser.mjs
+
+# Inspect the JSON
+jq . "/tmp/host-contracts.json"
+```
+
+Parse the JSON without rebuilding/re-running Playwright (fast diagnostics loop):
+
+```bash
+ONLY_PARSE_OUT_JSON=1 OUT_JSON="/tmp/host-contracts.json" \
+  node scripts/host_contracts_browser.mjs 2> /tmp/diagnostics.log
+
+cat /tmp/diagnostics.log
+```
