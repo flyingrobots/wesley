@@ -30,7 +30,7 @@ export function contentType(file) {
   return CONTENT_TYPE_MAP.get(ext) || 'application/octet-stream';
 }
 
-export function isWithinRoot(rootDir, filePath) {
+export function isPathWithinRoot(rootDir, filePath) {
   const rel = relative(rootDir, filePath);
   return !(isAbsolute(rel) || rel.startsWith('..'));
 }
@@ -48,7 +48,7 @@ const server = http.createServer((req, res) => {
   if (reqPath === '') reqPath = 'index.html';
   const filePath = resolve(root, reqPath);
   // Ensure resolved path is within root using a robust relative check
-  if (!isWithinRoot(root, filePath)) {
+  if (!isPathWithinRoot(root, filePath)) {
     res.writeHead(403); res.end('Forbidden'); return;
   }
   try {

@@ -3,9 +3,11 @@ import { runAll } from '../../contracts/host-contracts.mjs';
 // CSS class names used by the browser summary UI
 const CSS_CLASSES = Object.freeze({
   cases: 'cases',
+  testCase: 'test-case',
   ok: 'ok',
   fail: 'fail',
-  meta: 'meta'
+  meta: 'meta',
+  statLabel: 'stat-label'
 });
 
 // Robust HTML escaping (based on OWASP XSS Prevention Cheat Sheet)
@@ -74,14 +76,12 @@ function renderSummary(el, res) {
   el.appendChild(h1);
 
   const meta = document.createElement('p');
-  meta.className = 'meta';
-  const s1 = document.createElement('strong'); s1.appendChild(text('Passed:'));
-  const s2 = document.createElement('strong'); s2.appendChild(text('Failed:'));
-  const s3 = document.createElement('strong'); s3.appendChild(text('Total:'));
+  meta.className = CSS_CLASSES.meta;
+  const s1 = document.createElement('span'); s1.className = CSS_CLASSES.statLabel; s1.appendChild(text('Passed:'));
+  const s2 = document.createElement('span'); s2.className = CSS_CLASSES.statLabel; s2.appendChild(text('Failed:'));
+  const s3 = document.createElement('span'); s3.className = CSS_CLASSES.statLabel; s3.appendChild(text('Total:'));
   meta.appendChild(s1); meta.appendChild(text(` ${res.passed} `));
-  meta.appendChild(text('\u00A0\u00A0'));
   meta.appendChild(s2); meta.appendChild(text(` ${res.failed} `));
-  meta.appendChild(text('\u00A0\u00A0'));
   meta.appendChild(s3); meta.appendChild(text(` ${res.passed + res.failed}`));
   el.appendChild(meta);
 
@@ -90,10 +90,28 @@ function renderSummary(el, res) {
 
   for (const c of res.cases || []) {
     const li = document.createElement('li');
-    li.className = c.ok ? CSS_CLASSES.ok : CSS_CLASSES.fail;
+    li.className = `${CSS_CLASSES.testCase} ${c.ok ? CSS_CLASSES.ok : CSS_CLASSES.fail}`;
 
     li.appendChild(text(icon(c.ok) + ' '));
-    // Add a PASS/FAIL badge
+    // Add a PASS/FAIL badge and accessible SVG icon
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', '14'); svg.setAttribute('height', '14');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('role', 'img');
+    const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+    title.textContent = c.ok ? 'pass' : 'fail';
+    svg.appendChild(title);
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('fill', c.ok ? 'currentColor' : 'currentColor');
+    if (c.ok) {
+      path.setAttribute('d', 'M9 16.2l-3.5-3.5L4 14.2l5 5 11-11-1.5-1.5z');
+    } else {
+      path.setAttribute('d', 'M18.3 5.71L12 12.01 5.7 5.71 4.29 7.12 10.59 13.4 4.29 19.7l1.41 1.41 6.3-6.3 6.29 6.3 1.41-1.41-6.29-6.3 6.29-6.28z');
+    }
+    svg.appendChild(path);
+    li.appendChild(svg);
+
+    // PASS/FAIL badge
     const badge = document.createElement('span');
     badge.className = 'badge ' + (c.ok ? 'badge-ok' : 'badge-fail');
     badge.appendChild(text(c.ok ? 'PASS' : 'FAIL'));
@@ -142,7 +160,7 @@ function renderSummary(el, res) {
 }
 
 async function main() {
-  const el = document.getElementById('app');
+  const el = document.getElementById('report-container');
   if (!el) throw new Error("'#app' element not found");
 
   const res = await runAll();
@@ -160,7 +178,7 @@ async function main() {
 
 main().catch(err => {
   console.error('Fatal error in main():', err);
-  const el = document.getElementById('app');
+  const el = document.getElementById('report-container');
   if (el) el.textContent = 'error';
   window.__host_contracts = {
     passed: 0,
