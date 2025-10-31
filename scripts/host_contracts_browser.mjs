@@ -60,9 +60,8 @@ async function main() {
   const port = process.env.TEST_SERVER_PORT || '8787';
   let srvErr = '';
   const srv = spawn(process.execPath, ['scripts/serve-static.mjs', '--dir=test/browser/contracts/dist', `--port=${port}`], { stdio: ['ignore','pipe','pipe'] });
-  srv.on('error', (e) => { throw new Error(`serve-static failed to spawn: ${e?.message || e}`); });
+  srv.on('error', (e) => { srvErr += `\n[spawn-error] ${e?.message || e}`; throw new Error(`serve-static failed to spawn: ${e?.message || e}`); });
   srv.stderr?.on('data', (d) => { srvErr += d.toString(); if (srvErr.length > 2000) srvErr = srvErr.slice(-2000); });
-  srv.on('error', (err) => { srvErr += `\n[spawn-error] ${err?.message || err}`; });
   try {
     await waitFor(`http://127.0.0.1:${port}`);
   } catch (e) {
