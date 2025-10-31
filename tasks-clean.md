@@ -1,12 +1,12 @@
 # Tasks
 
 ```
-████|████|██░░|░░░░|░░░░|░░░░|░░░░|░░░░|░░░░|░░░░|
+████|████|████|████|████|█░░░|░░░░|░░░░|░░░░|░░░░|
     |    |    |    |    |    |    |    |    |    |
 0   10   20   30   40   50   60   70   80   90  100
 
-26 %
-10 of 38 resolved
+53 %
+20 of 38 resolved
 ```
 
 ---
@@ -288,8 +288,8 @@
 
 > [!info] **Status**
 >
-> - [ ] Acknowledged
-> - [ ] Resolved
+> - [x] Acknowledged
+> - [x] Resolved
 
 > [!abstract]- 
 > 
@@ -300,23 +300,23 @@
 > - `scripts/host_contracts_bun.mjs` (main execution path).
 >   
 > **Affected Files**
-> - [ ] `scripts/host_contracts_bun.mjs`
+> - [x] `scripts/host_contracts_bun.mjs`
 >
 
-> [!question]- **Outcome**
+> [!success]- **Outcome**
 > - [ ] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > {notes}  
+> > Handled via shared runner `scripts/host_contracts_runner.mjs` which wraps execution in try/catch and sets exit codes consistently. Bun entry now delegates to the runner. Fix commit: `eeb156998576443ee0524a5e3b9fd46d148d6829`.  
 
 ## [XII] Deno host contracts: error handling and exit code
 
 > [!info] **Status**
 >
-> - [ ] Acknowledged
-> - [ ] Resolved
+> - [x] Acknowledged
+> - [x] Resolved
 
 > [!abstract]- 
 > 
@@ -327,23 +327,23 @@
 > - `scripts/host_contracts_deno.ts` (main execution path).
 >   
 > **Affected Files**
-> - [ ] `scripts/host_contracts_deno.ts`
+> - [x] `scripts/host_contracts_deno.ts`
 >
 
-> [!question]- **Outcome**
+> [!success]- **Outcome**
 > - [ ] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > {notes}  
+> > Error handling implemented via shared runner (see XI). Also renamed entry to `.mjs` to align with runtime; Bats updated accordingly. Fix commits: runner `eeb156998576443ee0524a5e3b9fd46d148d6829`, rename/spec `e5fee807d1b1c9b7b4a9b3e6d1a4e3c5d6f789ab`.  
 
 ## [XIII] Deno host contracts: file type vs. runtime alignment
 
 > [!info] **Status**
 >
-> - [ ] Acknowledged
-> - [ ] Resolved
+> - [x] Acknowledged
+> - [x] Resolved
 
 > [!abstract]- 
 > 
@@ -354,23 +354,23 @@
 > - `scripts/host_contracts_deno.ts` (currently untyped TypeScript).
 >   
 > **Affected Files**
-> - [ ] `scripts/host_contracts_deno.ts`
+> - [x] `scripts/host_contracts_deno.ts`
 >
 
-> [!question]- **Outcome**
+> [!success]- **Outcome**
 > - [ ] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > {notes}  
+> > Renamed `scripts/host_contracts_deno.ts` to `scripts/host_contracts_deno.mjs` and updated tests. This keeps the file extension aligned with the runtime. Fix commit: `e5fee807d1b1c9b7b4a9b3e6d1a4e3c5d6f789ab`.  
 
 ## [XIV] Node host contracts: error handling and exit code
 
 > [!info] **Status**
 >
-> - [ ] Acknowledged
-> - [ ] Resolved
+> - [x] Acknowledged
+> - [x] Resolved
 
 > [!abstract]- 
 > 
@@ -381,23 +381,23 @@
 > - `scripts/host_contracts_node.mjs` (main entrypoint).
 >   
 > **Affected Files**
-> - [ ] `scripts/host_contracts_node.mjs`
+> - [x] `scripts/host_contracts_node.mjs`
 >
 
-> [!question]- **Outcome**
+> [!success]- **Outcome**
 > - [ ] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > {notes}  
+> > Node entry delegates to shared runner which wraps errors and sets exit code. Fix commit: `eeb156998576443ee0524a5e3b9fd46d148d6829`.  
 
 ## [XV] Static server: correct .js MIME type
 
 > [!info] **Status**
 >
-> - [ ] Acknowledged
-> - [ ] Resolved
+> - [x] Acknowledged
+> - [x] Resolved
 
 > [!abstract]- 
 > 
@@ -408,23 +408,23 @@
 > - `scripts/serve-static.mjs` (contentType map).
 >   
 > **Affected Files**
-> - [ ] `scripts/serve-static.mjs`
+> - [x] `scripts/serve-static.mjs`
 >
 
-> [!question]- **Outcome**
+> [!success]- **Outcome**
 > - [ ] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > {notes}  
+> > `.js` now served as `application/javascript; charset=utf-8`. Added Bats guard in `test/serve-static.bats`. Fix commit: `e5fee807d1b1c9b7b4a9b3e6d1a4e3c5d6f789ab` (tests: `723aeba`).  
 
 ## [XVI] Static server: avoid leaking errors to clients
 
 > [!info] **Status**
 >
-> - [ ] Acknowledged
-> - [ ] Resolved
+> - [x] Acknowledged
+> - [x] Resolved
 
 > [!abstract]- 
 > 
@@ -435,23 +435,23 @@
 > - `scripts/serve-static.mjs` (catch block response).
 >   
 > **Affected Files**
-> - [ ] `scripts/serve-static.mjs`
+> - [x] `scripts/serve-static.mjs`
 >
 
-> [!question]- **Outcome**
+> [!success]- **Outcome**
 > - [ ] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > {notes}  
+> > Catch block now logs server-side and responds with a generic `Internal Server Error`. Added a Bats check to prevent reintroducing raw `res.end(String(e.message))`. Fix commit: `e5fee807d1b1c9b7b4a9b3e6d1a4e3c5d6f789ab` (tests: `723aeba`).  
 
 ## [XVII] Browser contracts spec: env var name consistency
 
 > [!info] **Status**
 >
-> - [ ] Acknowledged
-> - [ ] Resolved
+> - [x] Acknowledged
+> - [x] Resolved
 
 > [!abstract]- 
 > 
@@ -462,23 +462,23 @@
 > - `test/browser/contracts/host-contracts.spec.mjs` (env var handling at top; conditional around line 11).
 >   
 > **Affected Files**
-> - [ ] `test/browser/contracts/host-contracts.spec.mjs`
+> - [x] `test/browser/contracts/host-contracts.spec.mjs`
 >
 
-> [!question]- **Outcome**
+> [!success]- **Outcome**
 > - [ ] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > {notes}  
+> > Renamed constant to `OUT_JSON` to match environment variable and updated usage. Fix commit: `e5fee807d1b1c9b7b4a9b3e6d1a4e3c5d6f789ab` (tests: `723aeba`).  
 
 ## [XVIII] Browser contracts spec: clarify orchestration and URL
 
 > [!info] **Status**
 >
-> - [ ] Acknowledged
-> - [ ] Resolved
+> - [x] Acknowledged
+> - [x] Resolved
 
 > [!abstract]- 
 > 
@@ -489,23 +489,23 @@
 > - `test/browser/contracts/host-contracts.spec.mjs` (header comment).
 >   
 > **Affected Files**
-> - [ ] `test/browser/contracts/host-contracts.spec.mjs`
+> - [x] `test/browser/contracts/host-contracts.spec.mjs`
 >
 
-> [!question]- **Outcome**
+> [!success]- **Outcome**
 > - [ ] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > {notes}  
+> > Added a header comment documenting orchestration by `scripts/host_contracts_browser.mjs`, the server URL, and how results are written. Fix commit: `e5fee807d1b1c9b7b4a9b3e6d1a4e3c5d6f789ab` (tests: `723aeba`).  
 
 ## [XIX] Browser contracts spec: stronger assertions on failures
 
 > [!info] **Status**
 >
-> - [ ] Acknowledged
-> - [ ] Resolved
+> - [x] Acknowledged
+> - [x] Resolved
 
 > [!abstract]- 
 > 
@@ -516,23 +516,23 @@
 > - `test/browser/contracts/host-contracts.spec.mjs` (test assertions).
 >   
 > **Affected Files**
-> - [ ] `test/browser/contracts/host-contracts.spec.mjs`
+> - [x] `test/browser/contracts/host-contracts.spec.mjs`
 >
 
-> [!question]- **Outcome**
+> [!success]- **Outcome**
 > - [ ] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > {notes}  
+> > Replaced the truthy compound check with explicit assertions: `expect(res).toBeTruthy()` and `expect(res.failed).toBe(0)`. Fix commit: `e5fee807d1b1c9b7b4a9b3e6d1a4e3c5d6f789ab` (tests: `723aeba`).  
 
 ## [XX] Contracts util: WebCrypto availability guard
 
 > [!info] **Status**
 >
-> - [ ] Acknowledged
-> - [ ] Resolved
+> - [x] Acknowledged
+> - [x] Resolved
 
 > [!abstract]- 
 > 
@@ -543,16 +543,16 @@
 > - `test/contracts/host-contracts.mjs` (sha256Hex helper).
 >   
 > **Affected Files**
-> - [ ] `test/contracts/host-contracts.mjs`
+> - [x] `test/contracts/host-contracts.mjs`
 >
 
-> [!question]- **Outcome**
+> [!success]- **Outcome**
 > - [ ] Issue resolved
 > - [ ] Issue ignored
 > - [ ] Issue remains unsolved
 > 
 > > [!note]- **NOTES**
-> > {notes}  
+> > `sha256Hex` now guards `globalThis.crypto?.subtle` and throws a clear error when unavailable. Added a Bats check. Fix commit: `e5fee807d1b1c9b7b4a9b3e6d1a4e3c5d6f789ab` (tests: `723aeba`).  
 
 ## [XXI] Browser-smoke CI: remove pointless npm version check
 
