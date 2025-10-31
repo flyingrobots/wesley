@@ -15,9 +15,11 @@ class MemoryFileSystem {
 }
 
 async function sha256Hex(input:unknown){
+  const subtle = (globalThis as any).crypto && (globalThis as any).crypto.subtle;
+  if (!subtle) throw new Error('WebCrypto (crypto.subtle) is not available in this runtime');
   const enc = new TextEncoder();
   const data = enc.encode(typeof input === 'string' ? input : JSON.stringify(input));
-  const digest = await crypto.subtle.digest('SHA-256', data);
+  const digest = await subtle.digest('SHA-256', data);
   return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,'0')).join('');
 }
 

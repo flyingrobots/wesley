@@ -39,7 +39,7 @@ jobs:
         uses: ./.github/actions/install-bats
       - uses: oven-sh/setup-bun@v1
         with:
-          bun-version: latest
+          bun-version: 1.2.20
       - name: Bun host contracts (Bats)
         run: |
           mkdir -p test/hosts/bats-plugins

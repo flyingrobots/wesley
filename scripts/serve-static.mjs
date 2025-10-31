@@ -27,6 +27,11 @@ export function contentType(file) {
 const server = http.createServer((req, res) => {
   // Parse path and normalize relative to root to prevent path traversal
   let reqPath = (req.url || '/').split('?')[0] || '/';
+  try { reqPath = decodeURIComponent(reqPath); } catch {}
+  // Normalize to remove any .. segments
+  reqPath = reqPath.replace(/\\+/g, '/'); // collapse backslashes
+  reqPath = reqPath.replace(/^\/+/, '');
+  reqPath = reqPath.replace(/\.+/g, '.'); // collapse repeated dots in names
   // Remove any leading slashes so join/resolve do not discard root
   reqPath = reqPath.replace(/^\/+/, '');
   if (reqPath === '') reqPath = 'index.html';

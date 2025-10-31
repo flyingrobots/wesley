@@ -11,3 +11,8 @@ load 'bats-plugins/bats-assert/load'
   assert_output --partial "[dry-run] README.md would be updated between markers."
 }
 
+@test "compute-progress does not hardcode core coverage path" {
+  run bash -lc "grep -n 'packages/wesley-core/coverage/coverage-summary.json' scripts/compute-progress.mjs | wc -l"
+  assert_success
+  [ "$output" -eq 0 ]
+}

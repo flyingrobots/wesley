@@ -32,3 +32,8 @@ teardown() {
   echo "$output" | sed -n '2p' | grep -q '^application/javascript; charset=utf-8$'
 }
 
+@test "serve-static prevents traversal via encoded path" {
+  run bash -lc "node -e \"require('http').get('http://127.0.0.1:$PORT/%2e%2e/README.md',res=>{console.log(String(res.statusCode));res.resume();}).on('error',e=>{console.error(e);process.exit(1)})\""
+  assert_success
+  echo "$output" | grep -q '^403$'
+}

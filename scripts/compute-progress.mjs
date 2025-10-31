@@ -139,11 +139,15 @@ async function main() {
       beta: await fetchMilestoneRatioFor(p.name, 'Beta')
     };
     const { stage, progress, next } = computeStageAndProgress(p, passRate, docs, milestones);
-    // try to read coverage summary when available (local from progress workflow)
+    // Try to read per-package coverage summary if present
+    // Derive package base dir from readme path to avoid hardcoding
     let coverage = null;
     try {
-      const sum = JSON.parse(readFileSync(resolve('packages/wesley-core/coverage/coverage-summary.json'), 'utf8'));
-      coverage = sum.total?.lines?.pct ?? null;
+      const baseDir = p.readme ? dirname(resolve(p.readme)) : null;
+      if (baseDir) {
+        const sum = JSON.parse(readFileSync(resolve(baseDir, 'coverage/coverage-summary.json'), 'utf8'));
+        coverage = sum.total?.lines?.pct ?? null;
+      }
     } catch {}
     results.push({ name: p.name, status: p.status, stage, progress, next, passRate, docs, milestones, coverage });
   }
