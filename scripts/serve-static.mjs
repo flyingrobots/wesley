@@ -37,16 +37,12 @@ export function isPathWithinRoot(rootDir, filePath) {
 
 const server = http.createServer((req, res) => {
   // Parse path and normalize relative to root to prevent path traversal
-  let reqPath = (req.url || '/').split('?')[0] || '/';
-  try { reqPath = decodeURIComponent(reqPath); } catch {}
-  // Normalize to remove any .. segments
-  reqPath = reqPath.replace(/\\+/g, '/'); // collapse backslashes
-  reqPath = reqPath.replace(/^\/+/, '');
-  reqPath = reqPath.replace(/\.+/g, '.'); // collapse repeated dots in names
-  // Remove any leading slashes so join/resolve do not discard root
-  reqPath = reqPath.replace(/^\/+/, '');
-  if (reqPath === '') reqPath = 'index.html';
-  const filePath = resolve(root, reqPath);
+  const url = (req.url || '/').split('?')[0];
+  // Strip leading slashes, decode, and map / -> index.html
+  let clean;
+  try { clean = decodeURIComponent(url); } catch { clean = url || '/'; }
+  const rel = clean.replace(/^\/+/, '') || 'index.html';
+  const filePath = resolve(join(root, rel));
   // Ensure resolved path is within root using a robust relative check
   if (!isPathWithinRoot(root, filePath)) {
     res.writeHead(403); res.end('Forbidden'); return;
