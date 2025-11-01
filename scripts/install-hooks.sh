@@ -17,3 +17,8 @@ if git config --local core.hooksPath .githooks >/dev/null 2>&1; then
 else
   echo "Could not set git hooks path (non-fatal)." >&2
 fi
+
+# Ensure hooks are executable
+if [ -d .githooks ]; then
+  chmod +x .githooks/* 2>/dev/null || true
+fi
