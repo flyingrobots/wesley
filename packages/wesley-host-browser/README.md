@@ -15,7 +15,7 @@ Status: Experimental (Too soon for package-level CI)
 ## API
 
 - `createBrowserRuntime(): Promise<Runtime>` – Returns a small runtime object with `logger`, `fs`, `crypto`, `clock`, and a GraphQL parser.
-- `runInBrowser(schema: string)` – Runs a minimal generation pipeline with stub ports and returns `{ ok, token, tables }` where `token` begins with `BROWSER_SMOKE_OK:` when successful.
+- `runInBrowser(schema: string)` – Runs a minimal generation pipeline with stub ports and returns `{ ok, token, tables }` where `token` begins with `BROWSER_SMOKE_OK:` when successful. The `tables` field is a number (count of detected `@wes_table` types), not an array.
 
 ### Error Handling
 
