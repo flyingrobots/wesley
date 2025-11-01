@@ -74,7 +74,11 @@ jobs:
         env:
           BATS_LIB_PATH: packages/wesley-cli/test
         run: |
+          # Ensure tests that use `load 'bats-plugins/…'` from the repo-level
+          # `test/` directory can resolve plugins.
           bash scripts/setup-bats-plugins.sh
+          rm -rf test/bats-plugins || true
+          ln -sfn "$PWD/packages/wesley-cli/test/bats-plugins" test/bats-plugins
           bats \
             test/serve-static*.bats \
             test/progress-*.bats \
