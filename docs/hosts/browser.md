@@ -50,7 +50,7 @@ Run the browser contracts and capture JSON locally:
 
 ```bash
 # Install Playwright browsers once (uses cache if present)
-PLAYWRIGHT_VERSION=1.43.0 pnpm dlx playwright install --with-deps chromium
+PLAYWRIGHT_VERSION=1.43.0 pnpm dlx @playwright/test@${PLAYWRIGHT_VERSION} install --with-deps chromium
 
 # Run the orchestrator and write OUT_JSON
 OUT_JSON="/tmp/host-contracts.json" \
