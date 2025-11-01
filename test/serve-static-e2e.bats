@@ -33,19 +33,19 @@ teardown() {
 }
 
 @test "serve-static prevents traversal via encoded path" {
-  run bash -lc "curl -s -o /dev/null -w '%{http_code}\n' --path-as-is 'http://127.0.0.1:$PORT/%2e%2e/README.md'"
+  run bash -lc "PORT=$PORT PATHQ='/%2e%2e/README.md' node test/bin/raw-http-status.mjs"
   assert_success
   echo "$output" | grep -q '^403$'
 }
 
 @test "serve-static prevents traversal via ../ sequences" {
-  run bash -lc "curl -s -o /dev/null -w '%{http_code}\n' --path-as-is 'http://127.0.0.1:$PORT/../../README.md'"
+  run bash -lc "PORT=$PORT PATHQ='/../../README.md' node test/bin/raw-http-status.mjs"
   assert_success
   echo "$output" | grep -q '^403$'
 }
 
 @test "serve-static prevents mixed encoded/plain traversal" {
-  run bash -lc "curl -s -o /dev/null -w '%{http_code}\n' --path-as-is 'http://127.0.0.1:$PORT/%2e%2e/../README.md'"
+  run bash -lc "PORT=$PORT PATHQ='/%2e%2e/../README.md' node test/bin/raw-http-status.mjs"
   assert_success
   echo "$output" | grep -q '^403$'
 }
