@@ -70,6 +70,9 @@ const server = http.createServer((req, res) => {
   }
 });
 
-server.listen(port, '127.0.0.1', () => {
-  console.log(`[serve-static] listening on http://127.0.0.1:${port} (root=${root})`);
-});
+// Only start the server when executed directly as a script, not when imported
+if (import.meta.main || (process.argv[1] && /serve-static\.mjs$/.test(process.argv[1]))) {
+  server.listen(port, '127.0.0.1', () => {
+    console.log(`[serve-static] listening on http://127.0.0.1:${port} (root=${root})`);
+  });
+}
