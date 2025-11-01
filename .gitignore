@@ -30,3 +30,8 @@ meta/progress.json
 test-results/
 test/bats-plugins/
 test/hosts/bats-plugins/
+# Playwright local artifacts (reports, blobs)
+playwright-report/
+blob-report/
+# Vendored Bats plugins in package tests (installed by scripts/setup-bats-plugins.sh)
+packages/wesley-cli/test/bats-plugins/
