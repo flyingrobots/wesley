@@ -118,8 +118,8 @@ async function main() {
     } catch {}
     const PWV = process.env.PLAYWRIGHT_VERSION || '1.49.0';
     if (!haveChromium) {
-      // Use @playwright/test so the test runner dependency is present
-      await sh('pnpm', ['dlx', `@playwright/test@${PWV}`, 'install', 'chromium']);
+      // Use workspace-installed @playwright/test to install browsers
+      await sh('pnpm', ['exec', 'playwright', 'install', 'chromium']);
     }
     const provided = (process.env.OUT_JSON || '').trim();
     let outFile = provided;
@@ -127,7 +127,7 @@ async function main() {
       const outDir = mkdtempSync(join(tmpdir(), 'hc-'));
       outFile = join(outDir, 'browser.json');
     }
-    await sh('pnpm', ['dlx', `@playwright/test@${PWV}`, 'test', 'test/browser/contracts/host-contracts.spec.mjs', '--reporter=line'], { env: { ...process.env, OUT_JSON: outFile } });
+    await sh('pnpm', ['exec', 'playwright', 'test', 'test/browser/contracts/host-contracts.spec.mjs', '--reporter=line'], { env: { ...process.env, OUT_JSON: outFile } });
     const json = readFileSync(outFile, 'utf8');
     try {
       const res = JSON.parse(json);
