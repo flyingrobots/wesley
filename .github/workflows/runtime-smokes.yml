@@ -1,0 +1,87 @@
+name: Runtime Smokes
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deno-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install bats
+        uses: ./.github/actions/install-bats
+      - uses: denoland/setup-deno@v1
+        with:
+          deno-version: v2.x
+      - name: Deno lint (smoke files)
+        run: |
+          deno lint --config deno.json scripts/deno_smoke.ts
+      - name: Deno host contracts (Bats)
+        env:
+          BATS_LIB_PATH: packages/wesley-cli/test
+          TERM: xterm
+          BATS_NO_COLOR: "1"
+        run: |
+          rm -rf test/hosts/bats-plugins || true
+          ln -sfn "$PWD/packages/wesley-cli/test/bats-plugins" test/hosts/bats-plugins
+          timeout 2m bash scripts/setup-bats-plugins.sh
+          HOST=deno bats -t test/hosts/host-contracts.bats
+
+  bun-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install bats
+        uses: ./.github/actions/install-bats
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: 1.2.20
+      - name: Bun host contracts (Bats)
+        env:
+          BATS_LIB_PATH: packages/wesley-cli/test
+          TERM: xterm
+          BATS_NO_COLOR: "1"
+        run: |
+          rm -rf test/hosts/bats-plugins || true
+          ln -sfn "$PWD/packages/wesley-cli/test/bats-plugins" test/hosts/bats-plugins
+          timeout 2m bash scripts/setup-bats-plugins.sh
+          HOST=bun bats -t test/hosts/host-contracts.bats
+
+  node-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+      - name: Enable corepack (pnpm)
+        run: corepack enable
+      - name: Install deps (frozen)
+        run: pnpm install --frozen-lockfile
+      - name: Install bats
+        uses: ./.github/actions/install-bats
+      - name: Node host contracts (Bats)
+        env:
+          BATS_LIB_PATH: packages/wesley-cli/test
+          TERM: xterm
+          BATS_NO_COLOR: "1"
+        run: |
+          rm -rf test/hosts/bats-plugins || true
+          ln -sfn "$PWD/packages/wesley-cli/test/bats-plugins" test/hosts/bats-plugins
+          timeout 2m bash scripts/setup-bats-plugins.sh
+          HOST=node bats -t test/hosts/host-contracts.bats

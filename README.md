@@ -1,5 +1,10 @@
 # Wesley
 
+[![Overall](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/flyingrobots/wesley/main/meta/badges/overall.json)](README.md#overall-project-status)
+
+[![Browser Smoke](https://github.com/flyingrobots/wesley/actions/workflows/browser-smoke.yml/badge.svg?branch=main)](https://github.com/flyingrobots/wesley/actions/workflows/browser-smoke.yml)
+[![Runtime Smokes](https://github.com/flyingrobots/wesley/actions/workflows/runtime-smokes.yml/badge.svg?branch=main)](https://github.com/flyingrobots/wesley/actions/workflows/runtime-smokes.yml)
+
 > [!note]
 > **Wesley** is pre-alpha. It does work, but it's somewhere between MVP and alpha.  
 > Just being real: probably don't want to use this in prod until _at least_ beta.
@@ -373,11 +378,74 @@ See [`packages/wesley-holmes/README.md`](packages/wesley-holmes/README.md) for t
 - [`schemas/`](schemas/README.md) — Canonical GraphQL schemas
 - [`test/fixtures/reference/`](test/fixtures/reference/README.md) — Comprehensive SDL for experiments and future tests
 
+### 🧭 Runtime Smokes
+- Browser: `node scripts/browser_smoke_playwright.mjs` (builds Vite harness and runs Playwright)
+- Deno: `deno run --config deno.json -A scripts/deno_smoke.ts`
+- Bun: `bun run scripts/bun_smoke.mjs`
+
+CI runs these via the workflows “Browser Smoke” and “Runtime Smokes”.
+
+### 🖥️ Hosts
+- See `docs/architecture/hosts.md` for supported hosts and notes.
+
+### Per‑Package Status
+Badges for key packages:
+
+- @wesley/core: ![pkg-core](https://github.com/flyingrobots/wesley/actions/workflows/pkg-core.yml/badge.svg?branch=main)
+- @wesley/cli: ![pkg-cli](https://github.com/flyingrobots/wesley/actions/workflows/pkg-cli.yml/badge.svg?branch=main)
+- @wesley/host-node: ![pkg-host-node](https://github.com/flyingrobots/wesley/actions/workflows/pkg-host-node.yml/badge.svg?branch=main)
+- @wesley/generator-js: ![pkg-generator-js](https://github.com/flyingrobots/wesley/actions/workflows/pkg-generator-js.yml/badge.svg?branch=main)
+- @wesley/generator-supabase: ![pkg-generator-supabase](https://github.com/flyingrobots/wesley/actions/workflows/pkg-generator-supabase.yml/badge.svg?branch=main)
+- @wesley/holmes: ![pkg-holmes](https://github.com/flyingrobots/wesley/actions/workflows/pkg-holmes.yml/badge.svg?branch=main)
+- @wesley/tasks: ![pkg-tasks](https://github.com/flyingrobots/wesley/actions/workflows/pkg-tasks.yml/badge.svg?branch=main)
+- @wesley/slaps: ![pkg-slaps](https://github.com/flyingrobots/wesley/actions/workflows/pkg-slaps.yml/badge.svg?branch=main)
+
+## Overall Project Status
+
+<!-- BEGIN:OVERALL_STATUS -->
+Stage: MVP  \
+Progress: 4% → Alpha
+<!-- END:OVERALL_STATUS -->
+
+## Package Matrix
+
+Note: In local runs where `GITHUB_REPOSITORY` is unset, the CI badge column renders an em dash (—).
+
+<!-- BEGIN:PACKAGE_MATRIX -->
+| Package | Status | Stage | Progress | CI | Notes |
+| --- | --- | --- | --- | --- | --- |
+| `@wesley/core` | Active | MVP | 0% → Alpha | ![pkg-core.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-core.yml/badge.svg?branch=main) | Pure domain logic, no Node builtins |
+| `@wesley/cli` | Active | MVP | 20% → Alpha | ![pkg-cli.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-cli.yml/badge.svg?branch=main) | CLI + Bats suites |
+| `@wesley/host-node` | Active | MVP | 0% → Alpha | ![pkg-host-node.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-host-node.yml/badge.svg?branch=main) | Node adapters + binary |
+| `@wesley/host-browser` | Experimental | MVP | 0% → Alpha | ![browser-smoke.yml](https://github.com/flyingrobots/wesley/actions/workflows/browser-smoke.yml/badge.svg?branch=main) | Pure ESM; in-memory FS; minimal parser; smoke-level only |
+| `@wesley/generator-js` | Active | MVP | 0% → Alpha | ![pkg-generator-js.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-generator-js.yml/badge.svg?branch=main) | TS/Zod emitters |
+| `@wesley/generator-supabase` | Active | MVP | 0% → Alpha | ![pkg-generator-supabase.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-generator-supabase.yml/badge.svg?branch=main) | SQL/RLS/pgTAP emitters |
+| `@wesley/holmes` | Active | MVP | 20% → Alpha | ![pkg-holmes.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-holmes.yml/badge.svg?branch=main) | Evidence scoring |
+| `@wesley/tasks` | Active | MVP | 0% → Alpha | ![pkg-tasks.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-tasks.yml/badge.svg?branch=main) | Planner utilities |
+| `@wesley/slaps` | Active | MVP | 0% → Alpha | ![pkg-slaps.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-slaps.yml/badge.svg?branch=main) | Scheduling/core utils |
+| `@wesley/host-deno` | Experimental | MVP | 30% → Alpha | ![pkg-host-deno.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-host-deno.yml/badge.svg?branch=main) | Deno host runtime (demo) |
+| `@wesley/host-bun` | Experimental | MVP | 30% → Alpha | ![pkg-host-bun.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-host-bun.yml/badge.svg?branch=main) | Bun host runtime (demo) |
+| `@wesley/scaffold-multitenant` | Too soon | Prototype | 25% → MVP | — | Early scaffold, no CI yet |
+| `@wesley/stack-supabase-nextjs` | Too soon | Prototype | 25% → MVP | — | Early stack template, no CI yet |
+<!-- END:PACKAGE_MATRIX -->
+
 ### 🛠️ Development
 - **[Scripts Reference](docs/scripts-reference.md)** — Complete `pnpm run` commands guide
+- **[CI Overview](docs/ci.md)** — How workflows are structured, reusable steps, gating, and artifacts
 - [`scripts/`](scripts/README.md) — Maintenance and automation scripts
 - **[Roadmap](docs/roadmap.md)** — Current focus and upcoming milestones
 - **[SAGENTS Codex](AGENTS.md)** — Protocol for human and AI contributors
+
+### ✅ Testing
+- Quick start
+  - Install deps: `pnpm install`
+  - Preflight: `pnpm run preflight`
+  - Workspace tests: `pnpm -r test`
+- Repo-level Bats tests (server/progress/CI checks)
+  - Install Bats plugins: `pnpm run setup:bats-plugins`
+  - Run the suite: `bats test/serve-static*.bats test/progress-*.bats test/ci-*.bats test/browser-contracts-*.bats`
+  - CI runs these conditionally when relevant files change (see [CI Overview](docs/ci.md)).
+- Full guide: see `test/README.md` for suite-by-suite commands and fixtures.
 
 ### 🎬 Demos
 - **[BLADE (Daywalker Deploys)](docs/blade.md)** — 5-minute demo of the full pipeline

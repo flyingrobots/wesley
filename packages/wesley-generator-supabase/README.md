@@ -16,4 +16,7 @@ pnpm --filter @wesley/generator-supabase test
 
 ## Status
 
+Status: Active
+![pkg-generator-supabase](https://github.com/flyingrobots/wesley/actions/workflows/pkg-generator-supabase.yml/badge.svg?branch=main)
+
 Actively maintained as the canonical Supabase adapter.

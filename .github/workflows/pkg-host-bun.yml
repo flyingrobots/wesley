@@ -1,0 +1,26 @@
+name: pkg-host-bun
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - 'packages/wesley-host-bun/**'
+  pull_request:
+    branches: ["**"]
+    paths:
+      - 'packages/wesley-host-bun/**'
+
+jobs:
+  bun-host:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: 1.2.20
+      - name: Bun host smoke
+        run: bun run packages/wesley-host-bun/examples/smoke.mjs | tee bun-host.out && grep -q '^BUN_HOST_OK:' bun-host.out
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true

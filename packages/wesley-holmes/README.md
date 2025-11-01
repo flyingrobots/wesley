@@ -18,4 +18,7 @@ Artifacts are persisted under `.wesley/` (e.g., `scores.json`, markdown reports)
 
 ## Status
 
+Status: Active
+![pkg-holmes](https://github.com/flyingrobots/wesley/actions/workflows/pkg-holmes.yml/badge.svg?branch=main)
+
 Production ready; weighting configuration is extensible via `.wesley/weights.json`.

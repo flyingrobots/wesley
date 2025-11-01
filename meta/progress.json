@@ -1,0 +1,247 @@
+{
+  "generatedAt": "2025-10-27T04:56:16.200Z",
+  "overall": {
+    "stage": "MVP",
+    "next": "Alpha",
+    "progress": 4
+  },
+  "results": [
+    {
+      "name": "@wesley/core",
+      "status": "Active",
+      "stage": "MVP",
+      "progress": 0,
+      "next": "Alpha",
+      "passRate": null,
+      "docs": {
+        "hasStatus": true,
+        "hasUsage": false,
+        "hasApi": true,
+        "hasCaveats": false
+      },
+      "milestones": {
+        "alpha": null,
+        "beta": null
+      },
+      "coverage": null
+    },
+    {
+      "name": "@wesley/cli",
+      "status": "Active",
+      "stage": "MVP",
+      "progress": 20,
+      "next": "Alpha",
+      "passRate": null,
+      "docs": {
+        "hasStatus": true,
+        "hasUsage": true,
+        "hasApi": false,
+        "hasCaveats": false
+      },
+      "milestones": {
+        "alpha": null,
+        "beta": null
+      },
+      "coverage": null
+    },
+    {
+      "name": "@wesley/host-node",
+      "status": "Active",
+      "stage": "MVP",
+      "progress": 0,
+      "next": "Alpha",
+      "passRate": null,
+      "docs": {
+        "hasStatus": true,
+        "hasUsage": false,
+        "hasApi": false,
+        "hasCaveats": false
+      },
+      "milestones": {
+        "alpha": null,
+        "beta": null
+      },
+      "coverage": null
+    },
+    {
+      "name": "@wesley/host-browser",
+      "status": "Experimental",
+      "stage": "MVP",
+      "progress": 0,
+      "next": "Alpha",
+      "passRate": null,
+      "docs": {
+        "hasStatus": true,
+        "hasUsage": false,
+        "hasApi": true,
+        "hasCaveats": false
+      },
+      "milestones": {
+        "alpha": null,
+        "beta": null
+      },
+      "coverage": null
+    },
+    {
+      "name": "@wesley/generator-js",
+      "status": "Active",
+      "stage": "MVP",
+      "progress": 0,
+      "next": "Alpha",
+      "passRate": null,
+      "docs": {
+        "hasStatus": true,
+        "hasUsage": false,
+        "hasApi": false,
+        "hasCaveats": false
+      },
+      "milestones": {
+        "alpha": null,
+        "beta": null
+      },
+      "coverage": null
+    },
+    {
+      "name": "@wesley/generator-supabase",
+      "status": "Active",
+      "stage": "MVP",
+      "progress": 0,
+      "next": "Alpha",
+      "passRate": null,
+      "docs": {
+        "hasStatus": true,
+        "hasUsage": false,
+        "hasApi": false,
+        "hasCaveats": false
+      },
+      "milestones": {
+        "alpha": null,
+        "beta": null
+      },
+      "coverage": null
+    },
+    {
+      "name": "@wesley/holmes",
+      "status": "Active",
+      "stage": "MVP",
+      "progress": 20,
+      "next": "Alpha",
+      "passRate": null,
+      "docs": {
+        "hasStatus": true,
+        "hasUsage": true,
+        "hasApi": false,
+        "hasCaveats": false
+      },
+      "milestones": {
+        "alpha": null,
+        "beta": null
+      },
+      "coverage": null
+    },
+    {
+      "name": "@wesley/tasks",
+      "status": "Active",
+      "stage": "MVP",
+      "progress": 0,
+      "next": "Alpha",
+      "passRate": null,
+      "docs": {
+        "hasStatus": true,
+        "hasUsage": false,
+        "hasApi": false,
+        "hasCaveats": false
+      },
+      "milestones": {
+        "alpha": null,
+        "beta": null
+      },
+      "coverage": null
+    },
+    {
+      "name": "@wesley/slaps",
+      "status": "Active",
+      "stage": "MVP",
+      "progress": 0,
+      "next": "Alpha",
+      "passRate": null,
+      "docs": {
+        "hasStatus": true,
+        "hasUsage": false,
+        "hasApi": true,
+        "hasCaveats": false
+      },
+      "milestones": {
+        "alpha": null,
+        "beta": null
+      },
+      "coverage": null
+    },
+    {
+      "name": "@wesley/host-deno",
+      "status": "Experimental",
+      "stage": "MVP",
+      "progress": 30,
+      "next": "Alpha",
+      "passRate": null,
+      "docs": {
+        "hasStatus": false,
+        "hasUsage": true,
+        "hasApi": true,
+        "hasCaveats": false
+      }
+    },
+    {
+      "name": "@wesley/host-bun",
+      "status": "Experimental",
+      "stage": "MVP",
+      "progress": 30,
+      "next": "Alpha",
+      "passRate": null,
+      "docs": {
+        "hasStatus": false,
+        "hasUsage": true,
+        "hasApi": true,
+        "hasCaveats": false
+      }
+    },
+    {
+      "name": "@wesley/scaffold-multitenant",
+      "status": "Too soon",
+      "stage": "Prototype",
+      "progress": 25,
+      "next": "MVP",
+      "passRate": null,
+      "docs": {
+        "hasStatus": true,
+        "hasUsage": false,
+        "hasApi": false,
+        "hasCaveats": false
+      },
+      "milestones": {
+        "alpha": null,
+        "beta": null
+      },
+      "coverage": null
+    },
+    {
+      "name": "@wesley/stack-supabase-nextjs",
+      "status": "Too soon",
+      "stage": "Prototype",
+      "progress": 25,
+      "next": "MVP",
+      "passRate": null,
+      "docs": {
+        "hasStatus": true,
+        "hasUsage": false,
+        "hasApi": true,
+        "hasCaveats": false
+      },
+      "milestones": {
+        "alpha": null,
+        "beta": null
+      },
+      "coverage": null
+    }
+  ]
+}

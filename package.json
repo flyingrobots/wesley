@@ -12,6 +12,8 @@
     "lint": "eslint . --ext .js,.mjs",
     "lint:fix": "eslint . --ext .js,.mjs --fix",
     "preflight": "node scripts/preflight.mjs",
+    "lint:docs-whitespace": "node scripts/lint-docs-whitespace.mjs",
+    "tasks:update": "node scripts/tasks-update.mjs",
     "prepare": "bash scripts/install-hooks.sh",
     "setup:bats-plugins": "bash scripts/setup-bats-plugins.sh",
     "format": "prettier --write .",
@@ -64,6 +66,7 @@
     "vite": "^7.1.12"
   },
   "devDependencies": {
+    "@playwright/test": "1.49.0",
     "autoprefixer": "^10.4.21",
     "dependency-cruiser": "17.1.0",
     "eslint": "^9.38.0",

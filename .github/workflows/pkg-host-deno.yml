@@ -1,0 +1,27 @@
+name: pkg-host-deno
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - 'packages/wesley-host-deno/**'
+  pull_request:
+    branches: ["**"]
+    paths:
+      - 'packages/wesley-host-deno/**'
+
+concurrency:
+  group: pkg-host-deno-${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  deno-host:
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v1
+        with:
+          deno-version: v2.x
+      - name: Deno host smoke
+        run: deno run -A packages/wesley-host-deno/examples/smoke.ts | tee deno-host.out && grep -q '^DENO_HOST_OK:' deno-host.out

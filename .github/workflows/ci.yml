@@ -4,6 +4,7 @@ on: [push, pull_request]
 jobs:
   build-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     services:
       postgres:
         image: postgres:15
@@ -33,12 +34,8 @@ jobs:
         run: git diff --exit-code -- pnpm-lock.yaml
 
       # Install Bats for CLI tests executed in this workflow
-      - name: Install Bats (Ubuntu)
-        run: |
-          curl -LO https://github.com/bats-core/bats-core/archive/v1.12.0.tar.gz
-          tar -xzf v1.12.0.tar.gz
-          sudo ./bats-core-1.12.0/install.sh /usr/local
-          echo "/usr/local/bin" >> $GITHUB_PATH
+      - name: Install Bats
+        uses: ./.github/actions/install-bats
 
       # Spin local PG via docker-compose init scripts (extensions)
       - run: psql -h localhost -U postgres -c "select 1" || true
@@ -52,3 +49,53 @@ jobs:
       # (See .github/workflows/cli-tests.yml and cli-quick.yml)
 
       - run: node packages/wesley-host-node/bin/wesley.mjs generate --schema test/fixtures/examples/ecommerce.graphql --allow-dirty
+
+      - name: Detect changes for repo Bats tests (no servers)
+        id: changelog
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_REF: ${{ github.event.pull_request.base.sha }}
+          BEFORE: ${{ github.event.before }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          RANGE="${BEFORE}..${SHA}"
+          if [ "$EVENT" = "pull_request" ] && [ -n "${BASE_REF}" ]; then
+            RANGE="${BASE_REF}..${SHA}"
+          fi
+          echo "Diff range: $RANGE"
+          CHANGED=$(git diff --name-only "$RANGE" || true)
+          echo "$CHANGED" | sed 's/^/ - /'
+          NEED=false
+          # Trigger only on unit/serverless tests; exclude browser-contracts and serve-static e2e
+          echo "$CHANGED" | grep -E -q '^(scripts/serve-static\.mjs|test/serve-static-(unit|relative-unit)\.bats|scripts/compute-progress\.mjs|test/progress-|test/ci-|test/deno-host-webcrypto-guard\.bats)' && NEED=true || true
+          echo "RUN_BATS=$NEED" >> $GITHUB_ENV
+
+      - name: Repo Bats tests (unit/progress/ci checks only)
+        if: ${{ env.RUN_BATS == 'true' }}
+        env:
+          BATS_LIB_PATH: packages/wesley-cli/test
+          TERM: xterm
+          BATS_NO_COLOR: "1"
+        run: |
+          # Ensure tests that use `load 'bats-plugins/…'` from the repo-level
+          # `test/` directory can resolve plugins.
+          timeout 2m bash scripts/setup-bats-plugins.sh
+          rm -rf test/bats-plugins || true
+          ln -sfn "$PWD/packages/wesley-cli/test/bats-plugins" test/bats-plugins
+          set -euo pipefail
+          files=(
+            test/serve-static-unit.bats
+            test/serve-static-relative-unit.bats
+            test/progress-dry-run.bats
+            test/progress-safety.bats
+            test/ci-browser-smoke.bats
+            test/ci-pkg-core.bats
+            test/ci-pkg-host-bun.bats
+            test/ci-workflows.bats
+            test/deno-host-webcrypto-guard.bats
+          )
+          for f in "${files[@]}"; do
+            echo "Running Bats: $f"
+            timeout 3m bats -t "$f"
+          done

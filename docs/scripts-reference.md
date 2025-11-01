@@ -26,6 +26,31 @@ Wesley uses `pnpm run <script>` to provide a common set of maintenance, test, an
 | `pnpm run docker:up` / `docker:down` | Bring up / tear down the docker-compose stack. | Good for manual Postgres testing. |
 | `pnpm run docker:test` | Run pgTAP tests inside docker-compose. | Executes the `pgtap` service defined in compose. |
 
+## Test Harnesses
+
+| Helper | Purpose | Notes |
+| --- | --- | --- |
+| `scripts/host_contracts_runner.mjs` | Shared runner used by Node, Deno, and Bun host‑contract entrypoints. | Emits a single JSON result and sets exit code (0 when `failed === 0`). Entry scripts (`host_contracts_node.mjs`, `host_contracts_deno.mjs`, `host_contracts_bun.mjs`) simply `import { runAndReport }` and await it. |
+| `scripts/host_contracts_browser.mjs` | Builds the contracts bundle (Vite), serves it, runs Playwright, and prints JSON. | Honors `OUT_JSON`. When `ONLY_PARSE_OUT_JSON=1`, skips build/serve and only parses the file (useful for debugging). Logs verifyIr diagnostics to stderr when failures occur. |
+
+## Progress & Badges
+
+| Helper | Purpose | Notes |
+| --- | --- | --- |
+| `scripts/compute-progress.mjs` | Aggregates package status into `meta/progress.json`, updates README matrix and overall shields endpoint. | On local runs where `GITHUB_REPOSITORY` is unset, CI badge links are disabled and show an em dash (—) in the README table. `--dry-run` prints a summary without writing files. Missing package weights log a warning and default to `0.01` during weighted progress calculation. README markers are updated safely by re-locating indices after the matrix replacement. |
+
+## Static Server
+
+| Helper | Purpose | Notes |
+| --- | --- | --- |
+| `scripts/serve-static.mjs` | Minimal static server for browser smokes. | Exports `contentType(file)` and `isWithinRoot(root, file)`. Path normalization decodes URIs and uses `path.relative` to prevent traversal; returns 403 on attempts to escape the root. Example: `node scripts/serve-static.mjs --dir=test/browser/contracts/dist --port=8787`. |
+
+## Maintenance
+
+| Helper | Purpose | Notes |
+| --- | --- | --- |
+| `scripts/tasks-update.mjs` | Recomputes the ASCII progress header in `tasks-clean.md`. | Calculates the percentage and bar based on tasks with `[!success]` + checked "Issue resolved". |
+
 ## Smoke Checks
 
 | Script | Purpose | Notes |
@@ -46,4 +71,3 @@ Some workspaces expose their own scripts via `pnpm --filter <package>`. Common e
 - Use `pnpm run <script> --help` if an underlying tool supports it (e.g., scripts that call CLI commands).
 - `pnpm run` always executes from the repo root; organize per-package scripts under `pnpm --filter` when you need more granularity.
 - Before adding new scripts, update this document so future contributors know what’s available.
-

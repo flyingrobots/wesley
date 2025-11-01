@@ -1,5 +1,7 @@
 # @wesley/stack-supabase-nextjs
 
+Status: Too soon — experimental stack template; CI not enabled yet.
+
 Prototype stack that combines Wesley with Supabase and Next.js scaffolding. Provides example API routes, React hooks, and configuration to showcase generated artifacts in a web stack.
 
 ## Status

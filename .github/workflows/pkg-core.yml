@@ -1,0 +1,39 @@
+name: pkg-core
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - 'packages/wesley-core/**'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
+  pull_request:
+    branches: ["**"]
+    paths:
+      - 'packages/wesley-core/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Enable corepack (pnpm)
+        run: corepack enable
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+      - name: @wesley/core tests (coverage)
+        # Quote the command: '@' can confuse YAML if unquoted
+        run: "pnpm --filter @wesley/core test:coverage || pnpm --filter @wesley/core test"
+      - name: Upload core coverage (if present)
+        uses: actions/upload-artifact@v4
+        with:
+          name: core-coverage
+          path: packages/wesley-core/coverage/**
+          if-no-files-found: ignore

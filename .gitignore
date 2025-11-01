@@ -23,3 +23,15 @@ test/fixtures/blade/*.key
 test/fixtures/blade/*.pub
 test/fixtures/blade/keys/*.key
 test/fixtures/blade/keys/*.pub
+# Progress JSON is generated and volatile; keep out of commits (computed by scripts/compute-progress.mjs)
+meta/progress.json
+
+# Local test artifacts and symlinks
+test-results/
+test/bats-plugins/
+test/hosts/bats-plugins/
+# Playwright local artifacts (reports, blobs)
+playwright-report/
+blob-report/
+# Vendored Bats plugins in package tests (installed by scripts/setup-bats-plugins.sh)
+packages/wesley-cli/test/bats-plugins/

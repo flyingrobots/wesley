@@ -1,0 +1,32 @@
+name: pkg-slaps
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - 'packages/wesley-slaps/**'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
+  pull_request:
+    branches: ["**"]
+    paths:
+      - 'packages/wesley-slaps/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Enable corepack (pnpm)
+        run: corepack enable
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+      - name: @wesley/slaps tests
+        run: pnpm --filter @wesley/slaps test

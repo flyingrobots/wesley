@@ -1,0 +1,93 @@
+name: Browser Smoke
+
+on:
+  # Avoid double-runs on PRs from same repo by running push only on main
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["**"]
+  workflow_dispatch:
+    inputs:
+      note:
+        description: Optional note for manual run
+        required: false
+
+concurrency:
+  group: browser-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  browser-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Enable corepack (pnpm)
+        run: corepack enable
+
+      - name: Install deps (frozen)
+        run: pnpm install --frozen-lockfile
+
+      - name: Preflight
+        run: pnpm run -s preflight
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+
+      - name: Set Playwright env
+        run: echo "PLAYWRIGHT_BROWSERS_PATH=$HOME/.cache/ms-playwright" >> $GITHUB_ENV
+
+      - name: Install bats
+        uses: ./.github/actions/install-bats
+
+      - name: Install Playwright browsers (workspace)
+        run: pnpm exec playwright install chromium
+
+      - name: Run browser host contracts (Bats → Playwright)
+        env:
+          BATS_LIB_PATH: packages/wesley-cli/test
+          TERM: xterm
+          BATS_NO_COLOR: "1"
+        run: |
+          # Ensure Bats can resolve 'load "bats-plugins/..."' relative to the test dir
+          rm -rf test/hosts/bats-plugins || true
+          ln -sfn "$PWD/packages/wesley-cli/test/bats-plugins" test/hosts/bats-plugins
+          timeout 2m bash scripts/setup-bats-plugins.sh
+          OUT_JSON="$RUNNER_TEMP/host-contracts.json" HOST=browser bats -t test/hosts/host-contracts.bats
+
+      - name: Serve-static traversal e2e (no browser)
+        env:
+          BATS_LIB_PATH: packages/wesley-cli/test
+          TERM: xterm
+          BATS_NO_COLOR: "1"
+        run: |
+          # Repo-level plugin resolution
+          rm -rf test/bats-plugins || true
+          ln -sfn "$PWD/packages/wesley-cli/test/bats-plugins" test/bats-plugins
+          timeout 2m bats -t test/serve-static-e2e.bats
+
+      - name: Upload host-contracts JSON artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-host-contracts
+          path: ${{ runner.temp }}/host-contracts.json
+          if-no-files-found: warn

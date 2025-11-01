@@ -59,4 +59,24 @@ GitHub Actions runs the relevant subsets:
 - `.github/workflows/wesley-holmes.yml` — HOLMES evidence checks.
 - `.github/workflows/preflight.yml` — hygiene checks (docs links, ESLint purity, dependency boundaries).
 
+### Repo-level Bats tests (server/progress/CI checks)
+
+These small suites are gated in CI and only run when relevant files change. To run locally:
+
+```bash
+pnpm run setup:bats-plugins
+BATS_LIB_PATH=packages/wesley-cli/test \
+  bats test/serve-static*.bats test/progress-*.bats test/ci-*.bats test/browser-contracts-*.bats
+```
+
+When debugging browser contracts diagnostics only (no Vite/Playwright):
+
+```bash
+# Capture a JSON from a previous run, then:
+ONLY_PARSE_OUT_JSON=1 OUT_JSON=/path/to/host-contracts.json \
+  node scripts/host_contracts_browser.mjs 2> /tmp/diagnostics.log
+
+cat /tmp/diagnostics.log
+```
+
 If a suite fails locally but passes in CI (or vice versa), ensure you have the prerequisites above and re-run with `pnpm run bootstrap` before filing an issue.

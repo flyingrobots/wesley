@@ -44,11 +44,56 @@ export class GenerationPipeline {
     
     // 5. Calculate scores
     const scoringEngine = new ScoringEngine(evidenceMap);
-    const scores = scoringEngine.exportScores(
-      schema,
-      diff.steps || [],
-      options.testResults || {}
-    );
+    let scores;
+    try {
+      // Prefer full scoring when the parsed schema exposes the domain API
+      if (schema && typeof schema.getTables === 'function') {
+        scores = scoringEngine.exportScores(
+          schema,
+          diff.steps || [],
+          options.testResults || {}
+        );
+      } else {
+        // Minimal fallback for lightweight hosts (e.g., browser/deno/bun smokes)
+        // whose parsers return a small JSON-ish object with { tables } only.
+        this.logger?.warn?.('[scoring] Schema lacks getTables(); using minimal scoring fallback');
+        const mri = scoringEngine.calculateMRIDetails(diff.steps || []);
+        const zero = 0;
+        const readiness = scoringEngine.calculateReadiness(zero, mri.score, zero);
+        scores = {
+          version: BUNDLE_VERSION,
+          timestamp: new Date().toISOString(),
+          commit: evidenceMap.sha,
+          scores: { scs: zero, mri: mri.score, tci: zero },
+          breakdown: { scs: {}, mri: mri.breakdown, tci: {} },
+          readiness,
+          metadata: {
+            tables: Array.isArray(schema?.tables) ? schema.tables.length : 0,
+            migrationSteps: (diff.steps || []).length,
+            testsRun: (options.testResults && options.testResults.total) || 0
+          }
+        };
+      }
+    } catch (err) {
+      // Never crash generation due to scoring; prefer explicit degraded output
+      this.logger?.warn?.('[scoring] Failed to compute scores; defaulting to zeros:', err?.message || err);
+      const mri = scoringEngine.calculateMRIDetails(diff.steps || []);
+      const zero = 0;
+      const readiness = scoringEngine.calculateReadiness(zero, mri.score, zero);
+      scores = {
+        version: BUNDLE_VERSION,
+        timestamp: new Date().toISOString(),
+        commit: evidenceMap.sha,
+        scores: { scs: zero, mri: mri.score, tci: zero },
+        breakdown: { scs: {}, mri: mri.breakdown, tci: {} },
+        readiness,
+        metadata: {
+          tables: Array.isArray(schema?.tables) ? schema.tables.length : 0,
+          migrationSteps: (diff.steps || []).length,
+          testsRun: (options.testResults && options.testResults.total) || 0
+        }
+      };
+    }
     
     // 6. Create bundle
     const bundle = this.createBundle({

@@ -4,6 +4,9 @@ title: Wesley Overview
 
 # Wesley
 
+[![Browser Smoke](https://github.com/flyingrobots/wesley/actions/workflows/browser-smoke.yml/badge.svg?branch=main)](https://github.com/flyingrobots/wesley/actions/workflows/browser-smoke.yml)
+[![Runtime Smokes](https://github.com/flyingrobots/wesley/actions/workflows/runtime-smokes.yml/badge.svg?branch=main)](https://github.com/flyingrobots/wesley/actions/workflows/runtime-smokes.yml)
+
 Wesley is the “schema-first” data layer for Postgres and Supabase. Provide a
 GraphQL SDL input and the tooling generates:
 
@@ -41,3 +44,11 @@ wesley rehearse --schema schema.graphql --dry-run --json
 
 For a richer walkthrough, run the [BLADE demo](../blade.md) which
 scripts Transform → Plan → Rehearse → Certify on an example schema.
+
+## Runtime smokes
+
+CI exercises multi-host support on every push/PR:
+
+- Browser smoke harness (Vite + Playwright)
+- Deno smoke script
+- Bun smoke script
