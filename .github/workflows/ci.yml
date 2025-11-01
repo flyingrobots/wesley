@@ -4,6 +4,7 @@ on: [push, pull_request]
 jobs:
   build-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     services:
       postgres:
         image: postgres:15
