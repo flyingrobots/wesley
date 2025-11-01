@@ -25,6 +25,8 @@ jobs:
         run: |
           deno lint --config deno.json scripts/deno_smoke.ts
       - name: Deno host contracts (Bats)
+        env:
+          BATS_LIB_PATH: packages/wesley-cli/test
         run: |
           mkdir -p test/hosts/bats-plugins
           bash scripts/setup-bats-plugins.sh
@@ -41,6 +43,8 @@ jobs:
         with:
           bun-version: 1.2.20
       - name: Bun host contracts (Bats)
+        env:
+          BATS_LIB_PATH: packages/wesley-cli/test
         run: |
           mkdir -p test/hosts/bats-plugins
           bash scripts/setup-bats-plugins.sh
@@ -66,6 +70,8 @@ jobs:
       - name: Install bats
         uses: flyingrobots/wesley/.github/workflows/install-bats.yml@main
       - name: Node host contracts (Bats)
+        env:
+          BATS_LIB_PATH: packages/wesley-cli/test
         run: |
           mkdir -p test/hosts/bats-plugins
           bash scripts/setup-bats-plugins.sh

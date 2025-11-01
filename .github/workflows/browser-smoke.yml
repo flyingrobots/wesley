@@ -52,6 +52,8 @@ jobs:
         run: pnpm dlx playwright install --with-deps
 
       - name: Run browser host contracts (Bats → Playwright)
+        env:
+          BATS_LIB_PATH: packages/wesley-cli/test
         run: |
           mkdir -p test/hosts/bats-plugins
           bash scripts/setup-bats-plugins.sh
