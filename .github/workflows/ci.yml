@@ -81,9 +81,19 @@ jobs:
           timeout 2m bash scripts/setup-bats-plugins.sh
           rm -rf test/bats-plugins || true
           ln -sfn "$PWD/packages/wesley-cli/test/bats-plugins" test/bats-plugins
-          timeout 10m bats \
-            test/serve-static-unit.bats \
-            test/serve-static-relative-unit.bats \
-            test/progress-*.bats \
-            test/ci-*.bats \
+          set -euo pipefail
+          files=(
+            test/serve-static-unit.bats
+            test/serve-static-relative-unit.bats
+            test/progress-dry-run.bats
+            test/progress-safety.bats
+            test/ci-browser-smoke.bats
+            test/ci-pkg-core.bats
+            test/ci-pkg-host-bun.bats
+            test/ci-workflows.bats
             test/deno-host-webcrypto-guard.bats
+          )
+          for f in "${files[@]}"; do
+            echo "Running Bats: $f"
+            timeout 3m bats -p "$f"
+          done
