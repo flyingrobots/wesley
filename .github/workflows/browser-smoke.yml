@@ -71,6 +71,15 @@ jobs:
           bash scripts/setup-bats-plugins.sh
           OUT_JSON="$RUNNER_TEMP/host-contracts.json" HOST=browser bats test/hosts/host-contracts.bats
 
+      - name: Serve-static traversal e2e (no browser)
+        env:
+          BATS_LIB_PATH: packages/wesley-cli/test
+        run: |
+          # Repo-level plugin resolution
+          rm -rf test/bats-plugins || true
+          ln -sfn "$PWD/packages/wesley-cli/test/bats-plugins" test/bats-plugins
+          timeout 2m bats test/serve-static-e2e.bats
+
       - name: Upload host-contracts JSON artifact
         if: always()
         uses: actions/upload-artifact@v4
