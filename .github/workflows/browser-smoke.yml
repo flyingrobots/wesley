@@ -6,6 +6,11 @@ on:
     branches: ["main"]
   pull_request:
     branches: ["**"]
+  workflow_dispatch:
+    inputs:
+      note:
+        description: Optional note for manual run
+        required: false
 
 concurrency:
   group: browser-smoke-${{ github.ref }}
