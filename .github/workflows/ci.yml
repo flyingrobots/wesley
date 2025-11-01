@@ -78,7 +78,7 @@ jobs:
         run: |
           # Ensure tests that use `load 'bats-plugins/…'` from the repo-level
           # `test/` directory can resolve plugins.
-          bash scripts/setup-bats-plugins.sh
+          timeout 2m bash scripts/setup-bats-plugins.sh
           rm -rf test/bats-plugins || true
           ln -sfn "$PWD/packages/wesley-cli/test/bats-plugins" test/bats-plugins
           timeout 10m bats \
