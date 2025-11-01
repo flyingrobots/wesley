@@ -60,7 +60,9 @@ jobs:
         env:
           BATS_LIB_PATH: packages/wesley-cli/test
         run: |
-          mkdir -p test/hosts/bats-plugins
+          # Ensure Bats can resolve 'load "bats-plugins/..."' relative to the test dir
+          rm -rf test/hosts/bats-plugins || true
+          ln -sfn "$PWD/packages/wesley-cli/test/bats-plugins" test/hosts/bats-plugins
           bash scripts/setup-bats-plugins.sh
           OUT_JSON="$RUNNER_TEMP/host-contracts.json" HOST=browser bats test/hosts/host-contracts.bats
 

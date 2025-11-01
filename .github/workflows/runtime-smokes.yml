@@ -28,7 +28,8 @@ jobs:
         env:
           BATS_LIB_PATH: packages/wesley-cli/test
         run: |
-          mkdir -p test/hosts/bats-plugins
+          rm -rf test/hosts/bats-plugins || true
+          ln -sfn "$PWD/packages/wesley-cli/test/bats-plugins" test/hosts/bats-plugins
           bash scripts/setup-bats-plugins.sh
           HOST=deno bats test/hosts/host-contracts.bats
 
@@ -46,7 +47,8 @@ jobs:
         env:
           BATS_LIB_PATH: packages/wesley-cli/test
         run: |
-          mkdir -p test/hosts/bats-plugins
+          rm -rf test/hosts/bats-plugins || true
+          ln -sfn "$PWD/packages/wesley-cli/test/bats-plugins" test/hosts/bats-plugins
           bash scripts/setup-bats-plugins.sh
           HOST=bun bats test/hosts/host-contracts.bats
 
@@ -73,6 +75,7 @@ jobs:
         env:
           BATS_LIB_PATH: packages/wesley-cli/test
         run: |
-          mkdir -p test/hosts/bats-plugins
+          rm -rf test/hosts/bats-plugins || true
+          ln -sfn "$PWD/packages/wesley-cli/test/bats-plugins" test/hosts/bats-plugins
           bash scripts/setup-bats-plugins.sh
           HOST=node bats test/hosts/host-contracts.bats
