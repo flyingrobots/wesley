@@ -18,6 +18,22 @@ async function sh(cmd, args, opts = {}) {
   });
 }
 
+// Run a subprocess but mirror its stdout/stderr to this process's stderr so
+// our stdout stays clean JSON for Bats parsing.
+async function shToStderr(cmd, args, opts = {}) {
+  return await new Promise((resolve, reject) => {
+    const p = spawn(cmd, args, { stdio: ['ignore', 'pipe', 'pipe'], ...opts });
+    p.stdout?.on('data', (d) => process.stderr.write(d));
+    p.stderr?.on('data', (d) => process.stderr.write(d));
+    p.on('error', reject);
+    p.on('exit', (code, signal) =>
+      code === 0
+        ? resolve()
+        : reject(new Error(`${cmd} ${args.join(' ')} exited ${code ?? 'null'}${signal ? ` (signal ${signal})` : ''}`))
+    );
+  });
+}
+
 async function waitFor(url, ms = 15000) {
   const start = Date.now();
   while (Date.now() - start < ms) {
@@ -70,7 +86,7 @@ async function main() {
     process.exit(process.exitCode || 0);
   }
   // Build contracts harness
-  await sh('pnpm', ['exec', 'vite', 'build', '--config', 'test/browser/contracts/vite.config.mjs']);
+  await shToStderr('pnpm', ['exec', 'vite', 'build', '--config', 'test/browser/contracts/vite.config.mjs']);
   // Enforce bundle size budget (sum of JS assets)
   try {
     const maxKb = Number(process.env.BUNDLE_MAX_KB || '50');
@@ -86,7 +102,7 @@ async function main() {
     if (kb > maxKb) {
       throw new Error(`Bundle size ${kb}KB exceeds budget ${maxKb}KB (set BUNDLE_MAX_KB to override)`);
     }
-    console.log(`[bundle-budget] OK: ${kb}KB <= ${maxKb}KB`);
+    console.error(`[bundle-budget] OK: ${kb}KB <= ${maxKb}KB`);
   } catch (e) {
     console.error('[bundle-budget] check failed:', e?.message || e);
     throw e;
@@ -119,7 +135,7 @@ async function main() {
     const PWV = process.env.PLAYWRIGHT_VERSION || '1.49.0';
     if (!haveChromium) {
       // Use workspace-installed @playwright/test to install browsers
-      await sh('pnpm', ['exec', 'playwright', 'install', 'chromium']);
+      await shToStderr('pnpm', ['exec', 'playwright', 'install', 'chromium']);
     }
     const provided = (process.env.OUT_JSON || '').trim();
     let outFile = provided;
@@ -127,7 +143,7 @@ async function main() {
       const outDir = mkdtempSync(join(tmpdir(), 'hc-'));
       outFile = join(outDir, 'browser.json');
     }
-    await sh('pnpm', ['exec', 'playwright', 'test', 'test/browser/contracts/host-contracts.spec.mjs', '--reporter=line'], { env: { ...process.env, OUT_JSON: outFile } });
+    await shToStderr('pnpm', ['exec', 'playwright', 'test', 'test/browser/contracts/host-contracts.spec.mjs', '--reporter=line'], { env: { ...process.env, OUT_JSON: outFile } });
     const json = readFileSync(outFile, 'utf8');
     try {
       const res = JSON.parse(json);

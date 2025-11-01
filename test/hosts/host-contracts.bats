@@ -22,6 +22,16 @@ setup() {
   fi
 
   assert_success
-  # Validate JSON and ensure failed == 0 (pipe prior output into validator)
-  printf "%s" "$output" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const j=JSON.parse(s); if(j.failed!==0) { console.error(j); process.exit(1);} })'
+  # Validate JSON and ensure failed == 0. Prefer OUT_JSON when available to avoid
+  # mixing tool output with JSON; otherwise fall back to parsing stdout.
+  printf "%s" "$output" | node -e '
+    const fs = require("fs");
+    const p = process.env.OUT_JSON;
+    function check(s){ const j = JSON.parse(s); if (j.failed !== 0) { console.error(j); process.exit(1); } }
+    if (p && fs.existsSync(p)) {
+      check(fs.readFileSync(p, "utf8"));
+    } else {
+      let s = ""; process.stdin.on("data", d => s += d).on("end", () => check(s));
+    }
+  '
 }
