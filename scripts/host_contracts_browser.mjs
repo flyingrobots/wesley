@@ -116,7 +116,7 @@ async function main() {
         haveChromium = readdirSync(browsersPath).some((n) => n.startsWith('chromium'));
       }
     } catch {}
-    const PWV = process.env.PLAYWRIGHT_VERSION || '1.43.0';
+    const PWV = process.env.PLAYWRIGHT_VERSION || '1.49.0';
     if (!haveChromium) {
       // Use @playwright/test so the test runner dependency is present
       await sh('pnpm', ['dlx', `@playwright/test@${PWV}`, 'install', 'chromium']);

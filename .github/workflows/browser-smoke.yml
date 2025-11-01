@@ -53,10 +53,10 @@ jobs:
       - name: Install bats
         run: sudo apt-get update && sudo apt-get install -y bats jq
 
-      - name: Install Playwright browsers (with deps)
+      - name: Install Playwright browsers
         env:
-          PLAYWRIGHT_VERSION: '1.43.0'
-        run: pnpm dlx @playwright/test@${PLAYWRIGHT_VERSION} install --with-deps chromium
+          PLAYWRIGHT_VERSION: '1.49.0'
+        run: pnpm dlx @playwright/test@${PLAYWRIGHT_VERSION} install chromium
 
       - name: Run browser host contracts (Bats → Playwright)
         env:
