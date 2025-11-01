@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install bats
-        uses: flyingrobots/wesley/.github/workflows/install-bats.yml@main
+        uses: ./.github/actions/install-bats
       - uses: denoland/setup-deno@v1
         with:
           deno-version: v2.x
@@ -39,7 +39,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install bats
-        uses: flyingrobots/wesley/.github/workflows/install-bats.yml@main
+        uses: ./.github/actions/install-bats
       - uses: oven-sh/setup-bun@v1
         with:
           bun-version: 1.2.20
@@ -70,7 +70,7 @@ jobs:
       - name: Install deps (frozen)
         run: pnpm install --frozen-lockfile
       - name: Install bats
-        uses: flyingrobots/wesley/.github/workflows/install-bats.yml@main
+        uses: ./.github/actions/install-bats
       - name: Node host contracts (Bats)
         env:
           BATS_LIB_PATH: packages/wesley-cli/test

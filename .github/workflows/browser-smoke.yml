@@ -56,7 +56,7 @@ jobs:
         run: echo "PLAYWRIGHT_BROWSERS_PATH=$HOME/.cache/ms-playwright" >> $GITHUB_ENV
 
       - name: Install bats
-        run: sudo apt-get update && sudo apt-get install -y bats jq
+        uses: ./.github/actions/install-bats
 
       - name: Install Playwright browsers (workspace)
         run: pnpm exec playwright install chromium

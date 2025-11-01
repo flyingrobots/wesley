@@ -1,10 +1,12 @@
-name: "Install bats and jq"
-description: "Installs bats and jq via apt-get on ubuntu-latest"
+name: "Install Bats and JQ"
+description: "Installs bats and jq on Ubuntu runners"
 runs:
   using: "composite"
   steps:
-    - name: Install bats
+    - name: apt-get update
       shell: bash
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y bats jq
+      run: sudo apt-get update
+    - name: install bats and jq
+      shell: bash
+      run: sudo apt-get install -y bats jq
+

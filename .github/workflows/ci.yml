@@ -34,7 +34,7 @@ jobs:
 
       # Install Bats for CLI tests executed in this workflow
       - name: Install Bats
-        uses: flyingrobots/wesley/.github/workflows/install-bats.yml@main
+        uses: ./.github/actions/install-bats
 
       # Spin local PG via docker-compose init scripts (extensions)
       - run: psql -h localhost -U postgres -c "select 1" || true
