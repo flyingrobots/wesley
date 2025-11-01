@@ -41,7 +41,17 @@ const server = http.createServer((req, res) => {
   // Strip leading slashes, decode, and map / -> index.html
   let clean;
   try { clean = decodeURIComponent(url); } catch { clean = url || '/'; }
+  clean = clean.replace(/\\+/g, '/');
   const rel = clean.replace(/^\/+/, '') || 'index.html';
+  // Explicitly deny traversal attempts that introduce '..' path segments after decoding
+  {
+    const segments = rel.split('/').filter(Boolean);
+    if (segments.some(s => s === '..')) {
+      try { console.error(`[serve-static] deny traversal: url=${url} rel=${rel}`); } catch {}
+      res.writeHead(403); res.end('Forbidden'); return;
+    }
+  }
+  try { console.error(`[serve-static] url=${url} rel=${rel}`); } catch {}
   const filePath = resolve(join(root, rel));
   // Ensure resolved path is within root using a robust relative check
   if (!isPathWithinRoot(root, filePath)) {
