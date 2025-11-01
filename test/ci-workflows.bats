@@ -8,7 +8,7 @@ load 'bats-plugins/bats-assert/load'
   assert_success
   [ "$output" -eq 0 ]
 
-  run bash -lc "grep -n "'uses: \./\.github/actions/install-bats'" .github/workflows/runtime-smokes.yml | wc -l || true"
+  run bash -lc "grep -F 'uses: ./.github/actions/install-bats' .github/workflows/runtime-smokes.yml | wc -l || true"
   assert_success
   # One per job (deno, bun, node)
   [ "$output" -ge 1 ]
