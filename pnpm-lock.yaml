@@ -184,8 +184,8 @@ importers:
   wesley-website:
     dependencies:
       '@mantine/core':
-        specifier: ^8.3.5
-        version: 8.3.5(@mantine/hooks@8.3.5(react@19.2.0))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+        specifier: ^8.3.7
+        version: 8.3.7(@mantine/hooks@8.3.5(react@19.2.0))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@mantine/hooks':
         specifier: ^8.3.5
         version: 8.3.5(react@19.2.0)
@@ -674,10 +674,10 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
-  '@mantine/core@8.3.5':
-    resolution: {integrity: sha512-PdVNLMgOS2vFhOujRi6/VC9ic8w3UDyKX7ftwDeJ7yQT8CiepUxfbWWYpVpnq23bdWh/7fIT2Pn1EY8r8GOk7g==}
+  '@mantine/core@8.3.7':
+    resolution: {integrity: sha512-7gUTiUrD0pukpkSNvScGi/e+pBuBWYJP5yFHT4TFf1fmaQAA7PbNoAzUeEkPbVromDtK0VdEcpRlYpDnJhpz2g==}
     peerDependencies:
-      '@mantine/hooks': 8.3.5
+      '@mantine/hooks': 8.3.7
       react: ^18.x || ^19.x
       react-dom: ^18.x || ^19.x
 
@@ -3192,7 +3192,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@mantine/core@8.3.5(@mantine/hooks@8.3.5(react@19.2.0))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
+  '@mantine/core@8.3.7(@mantine/hooks@8.3.5(react@19.2.0))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
     dependencies:
       '@floating-ui/react': 0.27.16(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@mantine/hooks': 8.3.5(react@19.2.0)
