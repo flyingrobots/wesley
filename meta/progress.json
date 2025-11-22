@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-10-27T04:56:16.200Z",
+  "generatedAt": "2025-11-22T07:07:18.900Z",
   "overall": {
     "stage": "MVP",
     "next": "Alpha",
@@ -12,7 +12,7 @@
       "stage": "MVP",
       "progress": 0,
       "next": "Alpha",
-      "passRate": null,
+      "passRate": 0,
       "docs": {
         "hasStatus": true,
         "hasUsage": false,
@@ -31,7 +31,7 @@
       "stage": "MVP",
       "progress": 20,
       "next": "Alpha",
-      "passRate": null,
+      "passRate": 0,
       "docs": {
         "hasStatus": true,
         "hasUsage": true,
@@ -50,7 +50,7 @@
       "stage": "MVP",
       "progress": 0,
       "next": "Alpha",
-      "passRate": null,
+      "passRate": 0,
       "docs": {
         "hasStatus": true,
         "hasUsage": false,
@@ -67,9 +67,9 @@
       "name": "@wesley/host-browser",
       "status": "Experimental",
       "stage": "MVP",
-      "progress": 0,
+      "progress": 50,
       "next": "Alpha",
-      "passRate": null,
+      "passRate": 1,
       "docs": {
         "hasStatus": true,
         "hasUsage": false,
@@ -88,7 +88,7 @@
       "stage": "MVP",
       "progress": 0,
       "next": "Alpha",
-      "passRate": null,
+      "passRate": 0,
       "docs": {
         "hasStatus": true,
         "hasUsage": false,
@@ -107,7 +107,7 @@
       "stage": "MVP",
       "progress": 0,
       "next": "Alpha",
-      "passRate": null,
+      "passRate": 0,
       "docs": {
         "hasStatus": true,
         "hasUsage": false,
@@ -126,7 +126,7 @@
       "stage": "MVP",
       "progress": 20,
       "next": "Alpha",
-      "passRate": null,
+      "passRate": 0,
       "docs": {
         "hasStatus": true,
         "hasUsage": true,
@@ -145,7 +145,7 @@
       "stage": "MVP",
       "progress": 0,
       "next": "Alpha",
-      "passRate": null,
+      "passRate": 0,
       "docs": {
         "hasStatus": true,
         "hasUsage": false,
@@ -164,7 +164,7 @@
       "stage": "MVP",
       "progress": 0,
       "next": "Alpha",
-      "passRate": null,
+      "passRate": 0,
       "docs": {
         "hasStatus": true,
         "hasUsage": false,
@@ -180,36 +180,46 @@
     {
       "name": "@wesley/host-deno",
       "status": "Experimental",
-      "stage": "MVP",
-      "progress": 30,
-      "next": "Alpha",
-      "passRate": null,
+      "stage": "Alpha",
+      "progress": 50,
+      "next": "Beta",
+      "passRate": 1,
       "docs": {
         "hasStatus": false,
         "hasUsage": true,
         "hasApi": true,
         "hasCaveats": false
-      }
+      },
+      "milestones": {
+        "alpha": null,
+        "beta": null
+      },
+      "coverage": null
     },
     {
       "name": "@wesley/host-bun",
       "status": "Experimental",
-      "stage": "MVP",
-      "progress": 30,
-      "next": "Alpha",
-      "passRate": null,
+      "stage": "Alpha",
+      "progress": 50,
+      "next": "Beta",
+      "passRate": 1,
       "docs": {
         "hasStatus": false,
         "hasUsage": true,
         "hasApi": true,
         "hasCaveats": false
-      }
+      },
+      "milestones": {
+        "alpha": null,
+        "beta": null
+      },
+      "coverage": null
     },
     {
       "name": "@wesley/scaffold-multitenant",
       "status": "Too soon",
       "stage": "Prototype",
-      "progress": 25,
+      "progress": 50,
       "next": "MVP",
       "passRate": null,
       "docs": {
@@ -228,7 +238,7 @@
       "name": "@wesley/stack-supabase-nextjs",
       "status": "Too soon",
       "stage": "Prototype",
-      "progress": 25,
+      "progress": 50,
       "next": "MVP",
       "passRate": null,
       "docs": {
