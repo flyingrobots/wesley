@@ -105,7 +105,9 @@ if echo "$STAGED_FILES" | grep -qx "package.json"; then
     }catch{ process.exit(0) }
   ' "${ROOT_HEAD}" <<<"${ROOT_STAGED}" || true)
   PM_CHANGED=$?
-  if [[ "$PM_CHANGED" -eq 0 ]]; then
+  # Only act when we both detect a change (exit 0) AND have non-empty output.
+  # This avoids false positives where JSON parsing fails and PM_CHANGE_OUTPUT is empty.
+  if [[ "$PM_CHANGED" -eq 0 && -n "$PM_CHANGE_OUTPUT" ]]; then
     PM_NEW="${PM_CHANGE_OUTPUT#*=>}"
     PM_OLD="${PM_CHANGE_OUTPUT%=>*}"
     # If switching away from pnpm, block with guidance (this repo standardizes on pnpm)
