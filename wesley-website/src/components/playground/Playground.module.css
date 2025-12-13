@@ -1,11 +1,13 @@
+/* Container */
 .container {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 60px); /* Adjust based on new header height */
+  height: calc(100vh - 60px);
   padding: var(--mantine-spacing-lg);
   background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
 }
 
+/* Header */
 .header {
   margin-bottom: var(--mantine-spacing-lg);
 }
@@ -20,6 +22,7 @@
   font-size: var(--mantine-font-size-sm);
 }
 
+/* Controls */
 .controls {
   margin-bottom: var(--mantine-spacing-lg);
 }
@@ -28,6 +31,7 @@
   margin-bottom: var(--mantine-spacing-md);
 }
 
+/* Workspace */
 .workspace {
   flex: 1;
   display: flex;
@@ -41,10 +45,12 @@
 .panel {
   display: flex;
   flex: 1;
+  height: 100%;
   min-height: 0;
   overflow: hidden;
 }
 
+/* Sidebar (Generic) */
 .sidebar {
   width: 220px;
   background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
@@ -71,6 +77,7 @@
   font-size: var(--mantine-font-size-sm);
 }
 
+/* Editor */
 .editorContainer {
   flex: 1;
   position: relative;
@@ -103,7 +110,15 @@
   background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-8));
 }
 
-.queryControls {
+/* Database Panel specific */
+.dbMain {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.dbControls {
   padding: var(--mantine-spacing-sm);
   border-bottom: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
   background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
@@ -115,20 +130,10 @@
   padding: var(--mantine-spacing-md);
 }
 
-/* Mantine Table overrides */
-.mantineTable {
+.table {
   width: 100%;
-  font-size: var(--mantine-font-size-sm);
-  /* You can add more specific overrides here */
 }
 
-.mantineTable th {
+.table th {
   background-color: light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-5));
-  font-weight: 600;
-}
-
-.mantineTable th,
-.mantineTable td {
-  border: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
-  padding: var(--mantine-spacing-xs);
 }

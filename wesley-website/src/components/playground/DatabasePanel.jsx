@@ -36,8 +36,8 @@ export default function DatabasePanel({
     ));
 
     return (
-      <Box flex={1} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <Box p="sm" bd="1px solid gray.3" style={{ borderBottom: '1px solid var(--mantine-color-gray-3)' }} bg="gray.0">
+      <Box className={classes.dbMain}>
+        <Box className={classes.dbControls}>
           <Group align="flex-start">
             <Textarea
               placeholder="Enter SQL query"
@@ -53,9 +53,9 @@ export default function DatabasePanel({
           </Group>
         </Box>
 
-        <ScrollArea flex={1} p="md">
+        <ScrollArea className={classes.resultsArea}>
           {result && result.rows && result.rows.length > 0 ? (
-            <Table striped highlightOnHover withColumnBorders withTableBorder className={classes.mantineTable}>
+            <Table striped highlightOnHover withColumnBorders withTableBorder className={classes.table}>
               <Table.Thead>{ths}</Table.Thead>
               <Table.Tbody>{rows}</Table.Tbody>
             </Table>
@@ -73,8 +73,8 @@ export default function DatabasePanel({
     if (!tableSchema || tableSchema.length === 0) return <Text p="md" c="dimmed">No schema information available.</Text>;
 
     return (
-      <ScrollArea flex={1} p="md">
-        <Table striped highlightOnHover withColumnBorders withTableBorder className={classes.mantineTable}>
+      <ScrollArea className={classes.resultsArea}>
+        <Table striped highlightOnHover withColumnBorders withTableBorder className={classes.table}>
           <Table.Thead>
             <Table.Tr>
               <Table.Th>Column</Table.Th>
@@ -101,7 +101,7 @@ export default function DatabasePanel({
   // --- Main Render ---
 
   return (
-    <Flex h="100%">
+    <Flex className={classes.panel}>
       {/* Sidebar: Tables */}
       <Box className={classes.sidebar}>
         <Text className={classes.sidebarHeader}>Tables</Text>
@@ -123,10 +123,10 @@ export default function DatabasePanel({
       </Box>
 
       {/* Main Content */}
-      <Box flex={1} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <Box className={classes.dbMain}>
         {selectedTable ? (
           <Tabs value={activeTab} onChange={setActiveTab} variant="default" h="100%" display="flex" style={{ flexDirection: 'column' }}>
-            <Box p="xs" px="md" bg="white" style={{ borderBottom: '1px solid var(--mantine-color-gray-3)' }}>
+            <Box p="xs" px="md" bg="var(--mantine-color-body)" style={{ borderBottom: '1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4))' }}>
                 <Group justify="space-between">
                     <Text fw={700} size="lg">{selectedTable}</Text>
                     <Tabs.List>
@@ -136,16 +136,15 @@ export default function DatabasePanel({
                 </Group>
             </Box>
 
-            <Tabs.Panel value="data" flex={1} style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <Tabs.Panel value="data" className={classes.dbMain}>
                 {renderDataTab()}
             </Tabs.Panel>
 
-            <Tabs.Panel value="structure" flex={1} style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <Tabs.Panel value="structure" className={classes.dbMain}>
                 {renderStructureTab()}
             </Tabs.Panel>
           </Tabs>
         ) : (
-            // No table selected state (or just generic query runner)
             renderDataTab()
         )}
       </Box>
@@ -153,7 +152,6 @@ export default function DatabasePanel({
   );
 }
 
-// Helper component just for this file if needed
 function Code({ children }) {
     return <Box component="span" style={{ fontFamily: 'var(--mantine-font-family-monospace)', fontSize: '0.9em' }}>{children}</Box>
 }
