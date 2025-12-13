@@ -266,12 +266,14 @@ export default function TryNow() {
 
     const inputContent = inputFiles.find(f => f.file === activeView)?.body;
     if (inputContent !== undefined) {
-      return <CodeEditor value={inputContent} onChange={handleInputFileChange} />;
+      return <CodeEditor value={inputContent} onChange={handleInputFileChange} language="graphql" />;
     }
 
     const outputContent = outputFiles.find(f => f.file === activeView)?.body;
     if (outputContent !== undefined) {
-      return <CodeEditor value={outputContent} readOnly />;
+      const ext = activeView.split('.').pop();
+      const lang = ext === 'sql' ? 'sql' : ext === 'json' ? 'json' : 'graphql';
+      return <CodeEditor value={outputContent} readOnly language={lang} />;
     }
 
     return <Text p="md" c="dimmed">Select a file to view</Text>;
