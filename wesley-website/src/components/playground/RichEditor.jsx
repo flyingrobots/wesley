@@ -5,9 +5,25 @@ import { RichTextEditor as MantineRichTextEditor, Link } from '@mantine/tiptap';
 import { CodeBlockLowlight } from '@tiptap/extension-code-block-lowlight';
 import { common, createLowlight } from 'lowlight';
 import graphqlLang from 'highlight.js/lib/languages/graphql'; // Import the language definition
+import { Extension } from '@tiptap/core'; // For custom keymap extension
 
 const lowlight = createLowlight(common);
 lowlight.register('graphql', graphqlLang); // Register directly
+
+// Custom TabKey Extension
+const TabKeyExtension = Extension.create({
+  name: 'tabKey',
+
+  addKeyboardShortcuts() {
+    return {
+      Tab: ({ editor }) => {
+        // Prevent default browser behavior of focusing next element
+        editor.commands.insertContent('  '); // Insert 2 spaces for tab
+        return true; // Mark as handled
+      },
+    };
+  },
+});
 
 // Helper to ensure content is treated as a code block
 const createCodeDocument = (text) => ({
@@ -31,6 +47,7 @@ export default function RichEditor({ value, onChange }) {
         // Optional: define default language
         defaultLanguage: 'graphql',
       }),
+      TabKeyExtension, // Add our custom tab key extension
     ],
     content: createCodeDocument(value), // Initialize as code block
     onUpdate: ({ editor }) => {
