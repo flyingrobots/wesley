@@ -372,7 +372,7 @@ export default function TryNow() {
             title="Compile Schema" 
             description="Compiles your GraphQL schema into SQL migrations and other artifacts right here in your browser."
           >
-            <Button onClick={handleRunWesley} loading={compileStatus === 'running'}>
+            <Button onClick={handleRunWesley} loading={isCompiling}>
               Run Wesley
             </Button>
           </ExplanationPopover>
@@ -383,7 +383,7 @@ export default function TryNow() {
           >
             <Button 
               onClick={handleApplyToDatabase} 
-              disabled={dbLoading || compileStatus !== 'success'}
+              disabled={dbLoading || !lastCompileSuccess}
               variant="light"
             >
               Apply to Database
