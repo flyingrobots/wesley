@@ -1,31 +1,33 @@
-import { IconFile, IconCode, IconSearch, IconDatabase, IconPlus } from '@tabler/icons-react';
+import { IconFile, IconCode, IconSearch, IconDatabase } from '@tabler/icons-react';
 import {
-  ActionIcon,
   Badge,
   Box,
   Code,
   Group,
   Text,
   TextInput,
-  Tooltip,
   UnstyledButton,
   ScrollArea
 } from '@mantine/core';
 import cx from 'clsx';
 import classes from './PlaygroundNavbar.module.css';
 
-export default function PlaygroundNavbar({ 
-  inputFiles, 
-  outputFiles, 
-  activeFile, 
+export default function PlaygroundNavbar({
+  inputFiles,
+  outputFiles,
+  activeFile,
   onSelect,
-  onRunWesley
+  isTutorialActive,
+  tutorialStepId,
+  onSelectSidebarItem,
 }) {
   const mainLinks = inputFiles.map((file) => (
     <UnstyledButton 
       key={file.file} 
       className={cx(classes.mainLink, { [classes.mainLinkActive]: activeFile === file.file })}
-      onClick={() => onSelect(file.file)}
+      onClick={() => onSelectSidebarItem(file.file)}
+      disabled={isTutorialActive && tutorialStepId !== 'edit-schema'}
+      data-tutorial-id="editor"
     >
       <div className={classes.mainLinkInner}>
         <IconFile size={20} className={classes.mainLinkIcon} stroke={1.5} />
@@ -37,9 +39,11 @@ export default function PlaygroundNavbar({
   const collectionLinks = outputFiles.map((file) => (
     <a
       href="#"
-      onClick={(event) => { event.preventDefault(); onSelect(file.file); }}
+      onClick={(event) => { event.preventDefault(); onSelectSidebarItem(file.file); }}
       key={file.file}
       className={cx(classes.collectionLink, { [classes.mainLinkActive]: activeFile === file.file })} // Reuse active style
+      disabled={isTutorialActive && tutorialStepId !== 'sidebar-migrations'}
+      data-tutorial-id="sidebar-migrations"
     >
       <Box component="span" mr={9} fz={16}>
         {file.file.endsWith('.sql') ? '🐘' : '📄'}
@@ -65,13 +69,16 @@ export default function PlaygroundNavbar({
         rightSection={<Code className={classes.searchCode}>Ctrl + K</Code>}
         styles={{ section: { pointerEvents: 'none' } }}
         mb="sm"
+        disabled={isTutorialActive}
       />
 
       <div className={classes.section}>
         <div className={classes.mainLinks}>
           <UnstyledButton 
             className={cx(classes.mainLink, { [classes.mainLinkActive]: activeFile === 'database' })}
-            onClick={() => onSelect('database')}
+            onClick={() => onSelectSidebarItem('database')}
+            disabled={isTutorialActive && tutorialStepId !== 'sidebar-database'}
+            data-tutorial-id="sidebar-database"
           >
             <div className={classes.mainLinkInner}>
               <IconDatabase size={20} className={classes.mainLinkIcon} stroke={1.5} />
@@ -86,11 +93,6 @@ export default function PlaygroundNavbar({
           <Text size="xs" fw={500} c="dimmed">
             Input Schema
           </Text>
-          <Tooltip label="New file" withArrow position="right">
-            <ActionIcon variant="default" size={18}>
-              <IconPlus size={12} stroke={1.5} />
-            </ActionIcon>
-          </Tooltip>
         </Group>
         <div className={classes.mainLinks}>{mainLinks}</div>
       </div>

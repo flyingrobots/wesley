@@ -5,6 +5,7 @@
   height: calc(100vh - 60px);
   padding: var(--mantine-spacing-lg);
   background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
+  position: relative; /* For tutorial overlay */
 }
 
 /* Header */
@@ -136,4 +137,29 @@
 
 .table th {
   background-color: light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-5));
+}
+
+/* Tutorial Overlay */
+.tutorialOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent overlay */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999; /* Above everything but modals */
+}
+
+.tutorialCard {
+  background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
+  color: light-dark(var(--mantine-color-black), var(--mantine-color-white));
+  padding: var(--mantine-spacing-md);
+  border-radius: var(--mantine-radius-md);
+  width: 100%;
+  max-width: 400px;
+  box-shadow: var(--mantine-shadow-lg);
+  position: relative;
 }

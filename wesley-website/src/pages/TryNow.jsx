@@ -1,9 +1,9 @@
 // wesley-website/src/pages/TryNow.jsx
 import React, { useState, useEffect } from 'react';
-import { Button, Group, Loader, Title, Text, Box, Flex, Alert } from '@mantine/core'; // Keep Alert for Errors if needed
+import { Button, Group, Loader, Title, Text, Box, Flex, Alert } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { openConfirmModal } from '@mantine/modals';
-import { IconCheck, IconX, IconAlertCircle } from '@tabler/icons-react';
+import { IconCheck, IconX, IconAlertCircle, IconGauge } from '@tabler/icons-react'; // Import IconGauge
 import { createDbSession } from '../db/pglite';
 import { compileSchemaInBrowser } from '@wesley/host-browser';
 import classes from '../components/playground/Playground.module.css';
@@ -65,6 +65,67 @@ export default function TryNow() {
   const [compileErrors, setCompileErrors] = useState([]);
   const [dbQueryError, setDbQueryError] = useState(null);
 
+  // --- Tutorial State ---
+  const [isTutorialActive, setIsTutorialActive] = useState(false);
+  const [tutorialStep, setTutorialStep] = useState(0); // 0 = Welcome, increment for next steps
+
+  const TUTORIAL_STEPS = [
+    { id: 'welcome', title: "Welcome to Wesley", message: "Wesley is a schema-first compiler. You write GraphQL, we generate the database. Let's see how.", target: null, allowedActions: ['start-tutorial'] },
+    { id: 'edit-schema', title: "1. Edit Schema", message: "This is your GraphQL schema editor. You can type or edit your schema here. Make a small change, or just keep it as is. Then click 'Run Wesley'.", target: "editor", allowedActions: ['edit-input', 'run-wesley'] },
+    { id: 'run-wesley', title: "2. Run Wesley", message: "Click 'Run Wesley' to compile your schema into SQL migrations and other artifacts.", target: "run-wesley-button", allowedActions: ['run-wesley'] },
+    { id: 'review-artifacts', title: "3. Review Artifacts", message: "Wesley has generated SQL and a schema representation. Click 'migrations.sql' in the sidebar to view it.", target: "sidebar-migrations", allowedActions: ['select-output'] },
+    { id: 'apply-db', title: "4. Apply to Database", message: "Now, click 'Apply to Database' to run these migrations against your in-browser Postgres.", target: "apply-db-button", allowedActions: ['apply-db'] },
+    { id: 'explore-db', title: "5. Explore Database", message: "Your database is ready! Click 'Database Explorer' in the sidebar to view your tables and run queries.", target: "sidebar-database", allowedActions: ['select-database'] },
+    { id: 'run-query', title: "6. Run a Query", message: "The public tables are listed in the sidebar. Select a table, or type your own SQL query and click 'Run'.", target: "run-query-button", allowedActions: ['run-query', 'select-table'] },
+    { id: 'finished', title: "Tutorial Complete!", message: "You've successfully deployed a schema-first database! Feel free to experiment. You can always restart the tutorial.", target: null, allowedActions: ['reset-tutorial'] }
+  ];
+
+  const startTutorial = () => {
+    setIsTutorialActive(true);
+    setTutorialStep(0);
+    localStorage.setItem('wesley_tutorial_active', 'true');
+    localStorage.setItem('wesley_tutorial_step', '0');
+  };
+
+  const nextTutorialStep = () => {
+    setTutorialStep(prev => {
+      const newStep = prev + 1;
+      localStorage.setItem('wesley_tutorial_step', newStep.toString());
+      return newStep;
+    });
+  };
+
+  const prevTutorialStep = () => {
+    setTutorialStep(prev => {
+      const newStep = Math.max(0, prev - 1);
+      localStorage.setItem('wesley_tutorial_step', newStep.toString());
+      return newStep;
+    });
+  };
+
+  const skipTutorial = () => {
+    setIsTutorialActive(false);
+    setTutorialStep(TUTORIAL_STEPS.length -1);
+    localStorage.setItem('wesley_tutorial_active', 'false');
+    localStorage.setItem('wesley_tutorial_completed', 'true');
+    notifications.show({ title: 'Tutorial Skipped', message: 'You can restart it anytime.', color: 'gray' });
+  };
+
+  const resetTutorial = () => {
+    openConfirmModal({
+      title: 'Reset Tutorial?',
+      children: <Text size="sm">Are you sure you want to reset the tutorial progress?</Text>,
+      labels: { confirm: 'Reset', cancel: 'Cancel' },
+      onConfirm: () => {
+        setIsTutorialActive(false);
+        setTutorialStep(0);
+        localStorage.removeItem('wesley_tutorial_active');
+        localStorage.removeItem('wesley_tutorial_step');
+        localStorage.removeItem('wesley_tutorial_completed');
+        notifications.show({ title: 'Tutorial Reset', message: 'Tutorial progress cleared.', color: 'gray' });
+      },
+    });
+  };
 
   // --- Helpers ---
   const fetchTables = async (session) => {
@@ -100,10 +161,25 @@ export default function TryNow() {
             console.error(e);
         }
     }
+    // Tutorial step check
+    if (isTutorialActive && TUTORIAL_STEPS[tutorialStep].id === 'run-query') {
+      nextTutorialStep(); // User selected a table, assume they'll run query next
+    }
   };
 
   // --- Effects ---
   useEffect(() => {
+    // Load tutorial state from localStorage on mount
+    const savedActive = localStorage.getItem('wesley_tutorial_active') === 'true';
+    const savedStep = parseInt(localStorage.getItem('wesley_tutorial_step') || '0', 10);
+    const completed = localStorage.getItem('wesley_tutorial_completed') === 'true';
+
+    if (savedActive && !completed) {
+      setIsTutorialActive(true);
+      setTutorialStep(savedStep);
+    }
+    // If completed, don't auto-start
+
     let cancelled = false;
     let session;
 
@@ -141,9 +217,17 @@ export default function TryNow() {
     setInputFiles(prev => prev.map(f => 
       f.file === activeView ? { ...f, body } : f
     ));
+    if (isTutorialActive && TUTORIAL_STEPS[tutorialStep].id === 'edit-schema') {
+        nextTutorialStep();
+    }
   };
 
   const handleRunWesley = async () => {
+    // Tutorial step check
+    if (isTutorialActive && TUTORIAL_STEPS[tutorialStep].id === 'run-wesley') {
+        nextTutorialStep();
+    }
+    
     setIsCompiling(true);
     setLastCompileSuccess(false);
     setOutputFiles(initialOutputFiles);
@@ -161,6 +245,11 @@ export default function TryNow() {
           color: 'green',
           icon: <IconCheck size="1.1rem" />,
         });
+        // Tutorial step check
+        if (isTutorialActive && TUTORIAL_STEPS[tutorialStep].id === 'review-artifacts') {
+          setActiveView('migrations.sql'); // Auto-select for tutorial
+          nextTutorialStep();
+        }
       } else {
         setCompileErrors(result.errors || []);
         notifications.show({
@@ -183,6 +272,11 @@ export default function TryNow() {
   };
 
   const handleApplyToDatabase = async () => {
+    // Tutorial step check
+    if (isTutorialActive && TUTORIAL_STEPS[tutorialStep].id === 'apply-db') {
+        nextTutorialStep();
+    }
+
     if (!dbSession || !lastCompileSuccess) return;
     try {
       setDbLoading(true);
@@ -199,6 +293,10 @@ export default function TryNow() {
         color: 'green',
         icon: <IconCheck size="1.1rem" />,
       });
+      // Tutorial step check
+      if (isTutorialActive && TUTORIAL_STEPS[tutorialStep].id === 'explore-db') {
+        nextTutorialStep();
+      }
     } catch (error) {
       notifications.show({
         title: 'Migration Failed',
@@ -212,6 +310,11 @@ export default function TryNow() {
   };
 
   const handleRunDbQuery = async (queryOverride) => {
+    // Tutorial step check
+    if (isTutorialActive && TUTORIAL_STEPS[tutorialStep].id === 'run-query') {
+        nextTutorialStep();
+    }
+
     const sql = queryOverride || dbQueryText;
     if (!dbSession || !sql.trim()) return;
     if (queryOverride) setDbQueryText(sql);
@@ -329,20 +432,45 @@ export default function TryNow() {
           tables={dbTables}
           selectedTable={selectedTable}
           tableSchema={tableSchema}
-          onSelectTable={handleSelectTable}
+          onSelectTable={(tableName) => {
+            if (isTutorialActive && TUTORIAL_STEPS[tutorialStep].id === 'run-query') {
+              // Allow selecting a table in run-query step
+              handleSelectTable(tableName);
+              // Do not nextStep here, wait for query run
+            } else if (!isTutorialActive || TUTORIAL_STEPS[tutorialStep].id === 'explore-db') {
+              handleSelectTable(tableName);
+              if (isTutorialActive && TUTORIAL_STEPS[tutorialStep].id === 'explore-db') {
+                nextTutorialStep(); // Selected first table after explore-db
+              }
+            } else {
+              notifications.show({
+                title: 'Tutorial Hint',
+                message: 'Please follow the tutorial instructions.',
+                color: 'blue',
+                icon: <IconAlertCircle size="1.1rem" />,
+              });
+            }
+          }}
           query={dbQueryText}
           setQuery={setDbQueryText}
           onRun={() => handleRunDbQuery()}
           loading={dbLoading}
           result={dbQueryResult}
           // error={dbQueryError} // Removed: errors handled via notifications now
+          isTutorialActive={isTutorialActive}
+          tutorialStepId={isTutorialActive ? TUTORIAL_STEPS[tutorialStep].id : null}
         />
       );
     }
 
     const inputContent = inputFiles.find(f => f.file === activeView)?.body;
     if (inputContent !== undefined) {
-      return <CodeEditor value={inputContent} onChange={handleInputFileChange} language="graphql" />;
+      return <CodeEditor 
+                value={inputContent} 
+                onChange={handleInputFileChange} 
+                language="graphql" 
+                readOnly={isTutorialActive && TUTORIAL_STEPS[tutorialStep].id !== 'edit-schema'}
+              />;
     }
 
     const outputContent = outputFiles.find(f => f.file === activeView)?.body;
@@ -366,9 +494,19 @@ export default function TryNow() {
               Edit GraphQL schemas, compile to Postgres, and query live.
             </Text>
           </Box>
-          <Button onClick={handleResetPlayground} variant="subtle" color="gray" size="xs">
-            Reset Playground
-          </Button>
+          <Group>
+            {!isTutorialActive && localStorage.getItem('wesley_tutorial_completed') !== 'true' && (
+              <Button onClick={startTutorial} variant="default" size="xs" leftSection={<IconGauge size="1.1rem" />}>
+                Start Tutorial
+              </Button>
+            )}
+            {isTutorialActive && (
+                <Button onClick={resetTutorial} variant="subtle" size="xs">Reset Tutorial</Button>
+            )}
+            <Button onClick={handleResetPlayground} variant="subtle" color="gray" size="xs" disabled={isTutorialActive}>
+              Reset Playground
+            </Button>
+          </Group>
         </Group>
       </Box>
 
@@ -379,7 +517,12 @@ export default function TryNow() {
             title="Compile Schema" 
             description="Compiles your GraphQL schema into SQL migrations and other artifacts right here in your browser."
           >
-            <Button onClick={handleRunWesley} loading={isCompiling}>
+            <Button 
+              onClick={handleRunWesley} 
+              loading={isCompiling}
+              disabled={isTutorialActive && TUTORIAL_STEPS[tutorialStep].id !== "run-wesley"} // 'run-wesley' step
+              data-tutorial-id="run-wesley-button"
+            >
               Run Wesley
             </Button>
           </ExplanationPopover>
@@ -390,7 +533,8 @@ export default function TryNow() {
           >
             <Button 
               onClick={handleApplyToDatabase} 
-              disabled={dbLoading || !lastCompileSuccess}
+              disabled={dbLoading || !lastCompileSuccess || (isTutorialActive && TUTORIAL_STEPS[tutorialStep].id !== "apply-db")} // 'apply-db' step
+              data-tutorial-id="apply-db-button"
               variant="light"
             >
               Apply to Database
@@ -403,7 +547,7 @@ export default function TryNow() {
           >
             <Button 
               onClick={handleResetDatabase} 
-              disabled={dbLoading} 
+              disabled={dbLoading || isTutorialActive} 
               color="orange" 
               variant="subtle"
             >
@@ -437,13 +581,64 @@ export default function TryNow() {
             inputFiles={inputFiles}
             outputFiles={outputFiles}
             activeFile={activeView}
-            onSelect={setActiveView}
+            onSelect={(id) => {
+              if (isTutorialActive) {
+                if (TUTORIAL_STEPS[tutorialStep].id === 'review-artifacts' && id === 'migrations.sql') {
+                  setActiveView(id);
+                  nextTutorialStep();
+                } else if (TUTORIAL_STEPS[tutorialStep].id === 'explore-db' && id === 'database') {
+                  setActiveView(id);
+                  nextTutorialStep();
+                } else {
+                  notifications.show({
+                    title: 'Tutorial Hint',
+                    message: 'Please follow the tutorial instructions.',
+                    color: 'blue',
+                    icon: <IconAlertCircle size="1.1rem" />,
+                  });
+                }
+              } else {
+                setActiveView(id);
+              }
+            }}
           />
           <Box flex={1} style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             {renderMainContent()}
           </Box>
         </Flex>
       </Box>
+
+      {/* Tutorial Overlay */}
+      {isTutorialActive && (
+        <Box className={classes.tutorialOverlay}>
+          <Box className={classes.tutorialCard} p="md" shadow="md" radius="md">
+            <Text fw={700} size="lg" mb="xs">{TUTORIAL_STEPS[tutorialStep].title}</Text>
+            <Text size="sm" mb="md">{TUTORIAL_STEPS[tutorialStep].message}</Text>
+            <Group justify="space-between">
+                <Button onClick={skipTutorial} variant="subtle" color="gray" size="xs">Skip</Button>
+                <Group>
+                    <Button onClick={prevTutorialStep} disabled={tutorialStep === 0} variant="light" size="xs">Previous</Button>
+                    {tutorialStep < TUTORIAL_STEPS.length - 1 ? (
+                        <Button 
+                            onClick={nextTutorialStep} 
+                            size="xs" 
+                            disabled={
+                              (TUTORIAL_STEPS[tutorialStep].id === 'edit-schema' && inputFiles[0].body === initialInputFiles[0].body) || // Require edit
+                              (TUTORIAL_STEPS[tutorialStep].id === 'review-artifacts' && activeView !== 'migrations.sql') || // Require migrations.sql selected
+                              (TUTORIAL_STEPS[tutorialStep].id === 'explore-db' && activeView !== 'database') // Require db selected
+                            }
+                        >
+                            Next
+                        </Button>
+                    ) : (
+                        <Button onClick={skipTutorial} size="xs" color="green">Finish</Button>
+                    )}
+                </Group>
+            </Group>
+            <Text size="xs" c="dimmed" ta="right" mt="xs">Step {tutorialStep + 1} of {TUTORIAL_STEPS.length}</Text>
+          </Box>
+        </Box>
+      )}
     </Box>
   );
 }
