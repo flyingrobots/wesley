@@ -1,6 +1,8 @@
 // wesley-website/src/pages/TryNow.jsx
 import React, { useState, useEffect } from 'react';
-import { Button, Group, Loader, Alert, Title, Text, Box, Flex } from '@mantine/core';
+import { Button, Group, Loader, Title, Text, Box, Flex } from '@mantine/core';
+import { notifications } from '@mantine/notifications';
+import { IconCheck, IconX, IconAlertCircle } from '@tabler/icons-react';
 import { createDbSession } from '../db/pglite';
 import { compileSchemaInBrowser } from '@wesley/host-browser';
 import classes from '../components/playground/Playground.module.css';
@@ -42,15 +44,15 @@ const initialOutputFiles = [
 
 export default function TryNow() {
   // --- State ---
-  const [activeView, setActiveView] = useState(initialInputFiles[0].file); // 'database' or filename
+  const [activeView, setActiveView] = useState(initialInputFiles[0].file); 
   
   // Files
   const [inputFiles, setInputFiles] = useState(initialInputFiles);
   const [outputFiles, setOutputFiles] = useState(initialOutputFiles);
 
-  // Compilation
-  const [compileStatus, setCompileStatus] = useState('idle');
-  const [compileErrors, setCompileErrors] = useState([]);
+  // Compilation Status (for loading state only)
+  const [isCompiling, setIsCompiling] = useState(false);
+  const [lastCompileSuccess, setLastCompileSuccess] = useState(false);
 
   // Database
   const [dbSession, setDbSession] = useState(null);
@@ -60,7 +62,6 @@ export default function TryNow() {
   const [tableSchema, setTableSchema] = useState([]);
   const [dbQueryText, setDbQueryText] = useState("SELECT * FROM pg_catalog.pg_tables WHERE schemaname = 'public';");
   const [dbQueryResult, setDbQueryResult] = useState(null);
-  const [dbQueryError, setDbQueryError] = useState(null);
 
   // --- Helpers ---
   const fetchTables = async (session) => {
@@ -82,7 +83,6 @@ export default function TryNow() {
     setSelectedTable(tableName);
     setDbQueryText(`SELECT * FROM "${tableName}" LIMIT 100;`);
     
-    // Fetch Schema
     if (dbSession) {
         try {
             const schemaRes = await dbSession.query(`
@@ -92,8 +92,6 @@ export default function TryNow() {
                 ORDER BY ordinal_position;
             `);
             setTableSchema(schemaRes.rows);
-            
-            // Auto-run data query
             handleRunDbQuery(`SELECT * FROM "${tableName}" LIMIT 100;`);
         } catch (e) {
             console.error(e);
@@ -117,8 +115,12 @@ export default function TryNow() {
       } catch (error) {
         if (!cancelled) {
           console.error('Failed to initialize DbSession:', error);
-          setCompileErrors([{ message: `Failed to initialize database: ${error.message}` }]);
-          setCompileStatus('error');
+          notifications.show({
+            title: 'Database Init Failed',
+            message: error.message,
+            color: 'red',
+            icon: <IconX size="1.1rem" />,
+          });
         }
       } finally {
         if (!cancelled) setDbLoading(false);
@@ -139,41 +141,67 @@ export default function TryNow() {
   };
 
   const handleRunWesley = async () => {
-    setCompileStatus('running');
+    setIsCompiling(true);
+    setLastCompileSuccess(false);
     setOutputFiles(initialOutputFiles);
-    setCompileErrors([]);
 
     try {
       const result = await compileSchemaInBrowser(inputFiles);
 
       if (result.ok) {
         setOutputFiles(result.outputFiles);
-        setCompileStatus('success');
+        setLastCompileSuccess(true);
+        notifications.show({
+          title: 'Compilation Successful',
+          message: 'Schema generated successfully.',
+          color: 'green',
+          icon: <IconCheck size="1.1rem" />,
+        });
       } else {
-        setCompileErrors(result.errors || [{ message: 'Unknown compilation error' }]);
-        setCompileStatus('error');
+        notifications.show({
+          title: 'Compilation Failed',
+          message: result.errors?.map(e => e.message).join(', ') || 'Unknown error',
+          color: 'red',
+          icon: <IconX size="1.1rem" />,
+          autoClose: false,
+        });
       }
     } catch (error) {
-      setCompileErrors([{ message: `Unexpected error: ${error.message}` }]);
-      setCompileStatus('error');
+      notifications.show({
+        title: 'Compilation Error',
+        message: error.message,
+        color: 'red',
+        icon: <IconX size="1.1rem" />,
+      });
+    } finally {
+      setIsCompiling(false);
     }
   };
 
   const handleApplyToDatabase = async () => {
-    if (!dbSession || compileStatus !== 'success') return;
+    if (!dbSession || !lastCompileSuccess) return;
     try {
       setDbLoading(true);
-      setDbQueryError(null);
       const migrationsSql = outputFiles.find(f => f.file === 'migrations.sql')?.body;
       if (migrationsSql) {
         const statements = migrationsSql.split(';').map(s => s.trim()).filter(s => s.length > 0);
         await dbSession.applyMigrations(statements);
       }
-      setDbQueryResult({ rows: [{ status: 'Migrations applied successfully!' }], fields: ['status'] });
       await fetchTables(dbSession);
       setActiveView('database'); 
+      notifications.show({
+        title: 'Database Updated',
+        message: 'Migrations applied successfully.',
+        color: 'green',
+        icon: <IconCheck size="1.1rem" />,
+      });
     } catch (error) {
-      setDbQueryError(error.message);
+      notifications.show({
+        title: 'Migration Failed',
+        message: error.message,
+        color: 'red',
+        icon: <IconX size="1.1rem" />,
+      });
     } finally {
       setDbLoading(false);
     }
@@ -186,7 +214,6 @@ export default function TryNow() {
 
     setDbLoading(true);
     setDbQueryResult(null);
-    setDbQueryError(null);
     try {
       const result = await dbSession.query(sql);
       setDbQueryResult(result);
@@ -194,7 +221,12 @@ export default function TryNow() {
           await fetchTables(dbSession);
       }
     } catch (error) {
-      setDbQueryError(error.message);
+      notifications.show({
+        title: 'Query Failed',
+        message: error.message,
+        color: 'red',
+        icon: <IconAlertCircle size="1.1rem" />,
+      });
     } finally {
       setDbLoading(false);
     }
@@ -204,15 +236,24 @@ export default function TryNow() {
     if (!dbSession) return;
     setDbLoading(true);
     setDbQueryResult(null);
-    setDbQueryError(null);
     try {
       await dbSession.reset();
-      setDbQueryResult({ rows: [{ status: 'Database reset successfully!' }], fields: ['status'] });
       await fetchTables(dbSession);
       setSelectedTable(null);
       setTableSchema([]);
+      notifications.show({
+        title: 'Database Reset',
+        message: 'The database has been cleared.',
+        color: 'blue',
+        icon: <IconCheck size="1.1rem" />,
+      });
     } catch (error) {
-      setDbQueryError(error.message);
+      notifications.show({
+        title: 'Reset Failed',
+        message: error.message,
+        color: 'red',
+        icon: <IconX size="1.1rem" />,
+      });
     } finally {
       setDbLoading(false);
     }
@@ -221,13 +262,12 @@ export default function TryNow() {
   const handleResetPlayground = async () => {
     if (!confirm('Reset everything?')) return;
     
-    setCompileStatus('idle');
-    setCompileErrors([]);
+    setIsCompiling(false);
+    setLastCompileSuccess(false);
     setInputFiles(initialInputFiles);
     setOutputFiles(initialOutputFiles);
     setDbQueryText("SELECT * FROM pg_catalog.pg_tables WHERE schemaname = 'public';");
     setDbQueryResult(null);
-    setDbQueryError(null);
     setActiveView(initialInputFiles[0].file);
     setSelectedTable(null);
     setTableSchema([]);
@@ -237,6 +277,11 @@ export default function TryNow() {
         try {
             await dbSession.reset();
             await fetchTables(dbSession);
+            notifications.show({
+                title: 'Playground Reset',
+                message: 'All state has been cleared.',
+                color: 'gray',
+            });
         } catch (e) {
             console.error(e);
         } finally {
@@ -259,7 +304,7 @@ export default function TryNow() {
           onRun={() => handleRunDbQuery()}
           loading={dbLoading}
           result={dbQueryResult}
-          error={dbQueryError}
+          // error={dbQueryError} // Removed: errors handled via notifications now
         />
       );
     }
@@ -299,12 +344,12 @@ export default function TryNow() {
       {/* Controls */}
       <Box className={classes.controls}>
         <Group mb="md">
-          <Button onClick={handleRunWesley} loading={compileStatus === 'running'}>
+          <Button onClick={handleRunWesley} loading={isCompiling}>
             Run Wesley
           </Button>
           <Button 
             onClick={handleApplyToDatabase} 
-            disabled={dbLoading || compileStatus !== 'success'}
+            disabled={dbLoading || !lastCompileSuccess}
             variant="light"
           >
             Apply to Database
@@ -320,29 +365,6 @@ export default function TryNow() {
           {dbLoading && <Loader size="sm" />}
         </Group>
       </Box>
-
-      {/* Errors */}
-      {(compileErrors.length > 0 || dbQueryError) && (
-        <Box className={classes.alert}>
-          {compileErrors.map((err, idx) => (
-            <Alert key={idx} title="Compilation Error" color="red" withCloseButton onClose={() => setCompileErrors([])} mb="xs">
-              {err.message}
-            </Alert>
-          ))}
-          {dbQueryError && (
-            <Alert title="Database Error" color="red" withCloseButton onClose={() => setDbQueryError(null)}>
-              {dbQueryError}
-            </Alert>
-          )}
-        </Box>
-      )}
-
-      {/* Success Message */}
-      {compileStatus === 'success' && !dbQueryError && activeView !== 'database' && (
-        <Alert title="Success" color="green" className={classes.alert} withCloseButton onClose={() => setCompileStatus('idle')}>
-          Schema compiled! {outputFiles.find(f => f.file === 'migrations.sql')?.body ? 'Migrations generated.' : 'No migrations needed.'}
-        </Alert>
-      )}
 
       {/* Workspace Area */}
       <Box className={classes.workspace}>
