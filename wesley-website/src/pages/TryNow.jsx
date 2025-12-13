@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Tabs, Text, Code, Button, Group, Loader, ScrollArea, Alert, Textarea } from '@mantine/core';
 import { createDbSession } from '../db/pglite';
+import { compileSchemaInBrowser } from '@wesley/host-browser';
 
 // Define the generic file structure
 // eslint-disable-next-line no-unused-vars
@@ -53,7 +54,7 @@ export default function TryNow() {
   const [outputFiles, setOutputFiles] = useState(initialOutputFiles);
   const [dbSession, setDbSession] = useState(null);
   const [dbLoading, setDbLoading] = useState(true);
-  const [dbQueryText, setDbQueryText] = useState('SELECT * FROM User;');
+  const [dbQueryText, setDbQueryText] = useState('SELECT * FROM pg_catalog.pg_tables WHERE schemaname = \'public\';');
   const [dbQueryResult, setDbQueryResult] = useState(null);
   const [dbQueryError, setDbQueryError] = useState(null);
   const [activeInputFile, setActiveInputFile] = useState(initialInputFiles[0].file);
@@ -101,7 +102,38 @@ export default function TryNow() {
       file.file === fileName ? { ...file, body: newBody } : file
     ));
   };
-// ... (rest of component)
+
+  const handleRunWesley = async () => {
+    setCompileStatus('running');
+    setOutputFiles(initialOutputFiles); // Clear previous output
+    setCompileErrors([]);
+
+    // Use actual Wesley compilation
+    try {
+      const result = await compileSchemaInBrowser(inputFiles);
+
+      if (result.ok) {
+        setOutputFiles(result.outputFiles);
+        setCompileStatus('success');
+        setActiveTab('wesley-output'); // Switch to output tab on success
+      } else {
+        console.error('Wesley compilation failed:', result.errors);
+        setCompileErrors(result.errors || [{ message: 'Unknown compilation error' }]);
+        setCompileStatus('error');
+      }
+    } catch (error) {
+      console.error('Wesley compilation failed unexpectedly:', error);
+      setCompileErrors([{ message: `Unexpected error: ${error.message}` }]);
+      setCompileStatus('error');
+    }
+  };
+
+  const handleApplyToDatabase = async () => {
+    if (!dbSession || compileStatus !== 'success') return;
+    try {
+      setDbLoading(true);
+      setDbQueryError(null);
+      const migrationsSql = outputFiles.find(f => f.file === 'migrations.sql')?.body;
       if (migrationsSql) {
         // Split migrations by semicolon, filter out empty strings, and trim
         const statements = migrationsSql.split(';').map(s => s.trim()).filter(s => s.length > 0);
@@ -178,8 +210,141 @@ export default function TryNow() {
         }
     }
   };
-// ... (render)
-        <Tabs.Panel value="database-explorer" pt="xs" sx={{ flex: 1, display: 'flex', flexDirection: 'row', minHeight: 0 }}>
+
+  const activeInputFileContent = inputFiles.find(f => f.file === activeInputFile)?.body || '';
+  const activeOutputFileContent = outputFiles.find(f => f.file === activeOutputFile)?.body || '';
+
+  return (
+    <Box sx={{ padding: '20px', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 60px)' }}>
+      <Group position="apart" mb="md">
+          <Box>
+            <Text size="xl" weight={700}>Wesley Playground (Alpha)</Text>
+            <Text size="sm" color="dimmed">
+                Edit GraphQL schemas, compile to Postgres migrations, and see the resulting database live in your browser.
+            </Text>
+          </Box>
+          <Button onClick={handleResetPlayground} variant="subtle" color="gray" compact>Reset Playground</Button>
+      </Group>
+
+      <Group mb="md">
+        <Button onClick={handleRunWesley} loading={compileStatus === 'running'}>Run Wesley</Button>
+        <Button onClick={handleApplyToDatabase} disabled={dbLoading || compileStatus !== 'success'}>Apply to Database</Button>
+        <Button onClick={handleResetDatabase} disabled={dbLoading} color="orange" variant="light">Reset Database Only</Button>
+        {dbLoading && <Loader size="sm" />}
+      </Group>
+
+      {/* Status / Errors Panel */}
+      {(compileErrors.length > 0 || dbQueryError) && (
+        <Box mb="md">
+            {compileErrors.map((err, idx) => (
+                <Alert key={idx} title="Compilation Error" color="red" mb="xs" onClose={() => setCompileErrors([])} withCloseButton>
+                    {err.message}
+                </Alert>
+            ))}
+            {dbQueryError && (
+                <Alert title="Database Error" color="red" onClose={() => setDbQueryError(null)} withCloseButton>
+                    {dbQueryError}
+                </Alert>
+            )}
+        </Box>
+      )}
+      
+      {compileStatus === 'success' && !dbQueryError && activeTab !== 'database-explorer' && (
+          <Alert title="Success" color="green" mb="md" withCloseButton onClose={() => setCompileStatus('idle')}> 
+              Schema compiled successfully! {outputFiles.find(f => f.file === 'migrations.sql')?.body ? 'Migrations generated.' : 'No migrations needed.'}
+          </Alert>
+      )}
+
+      <Tabs value={activeTab} onTabChange={setActiveTab} grow sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <Tabs.List>
+          <Tabs.Tab value="input-schema">GraphQL Input Schema Files</Tabs.Tab>
+          <Tabs.Tab value="wesley-output">Wesley Output Files</Tabs.Tab>
+          <Tabs.Tab value="database-explorer" disabled={dbLoading}>Database Explorer</Tabs.Tab>
+        </Tabs.List>
+
+        <Tabs.Panel value="input-schema" pt="xs" sx={{ flex: 1, display: 'flex', flexDirection: 'row', minHeight: 0 }}>
+          <Box sx={{ width: '200px', borderRight: '1px solid #eee', paddingRight: '10px' }}>
+            <Text size="md" weight={500} mb="sm">Files</Text>
+            {inputFiles.map(file => (
+              <Box
+                key={file.file}
+                sx={{
+                  cursor: 'pointer',
+                  padding: '5px',
+                  backgroundColor: activeInputFile === file.file ? '#f0f0f0' : 'transparent',
+                  fontWeight: activeInputFile === file.file ? 600 : 400,
+                  '&:hover': { backgroundColor: '#f9f9f9' }
+                }}
+                onClick={() => setActiveInputFile(file.file)}
+              >
+                {file.file}
+              </Box>
+            ))}
+          </Box>
+          <ScrollArea sx={{ flex: 1, marginLeft: '10px' }}>
+            <Code block style={{ minHeight: '100%', height: '100%' }}>
+              <textarea
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  minHeight: '300px', // Ensure min height for editor
+                  border: 'none',
+                  backgroundColor: 'transparent',
+                  fontFamily: 'monospace',
+                  fontSize: '14px',
+                  resize: 'vertical',
+                  padding: '10px',
+                  boxSizing: 'border-box'
+                }}
+                value={activeInputFileContent}
+                onChange={(e) => handleInputFileChange(activeInputFile, e.target.value)}
+              />
+            </Code>
+          </ScrollArea>
+        </Tabs.Panel>
+
+        <Tabs.Panel value="wesley-output" pt="xs" sx={{ flex: 1, display: 'flex', flexDirection: 'row', minHeight: 0 }}>
+          <Box sx={{ width: '200px', borderRight: '1px solid #eee', paddingRight: '10px' }}>
+            <Text size="md" weight={500} mb="sm">Output Files</Text>
+            {outputFiles.map(file => (
+              <Box
+                key={file.file}
+                sx={{
+                  cursor: 'pointer',
+                  padding: '5px',
+                  backgroundColor: activeOutputFile === file.file ? '#f0f0f0' : 'transparent',
+                  fontWeight: activeOutputFile === file.file ? 600 : 400,
+                  '&:hover': { backgroundColor: '#f9f9f9' }
+                }}
+                onClick={() => setActiveOutputFile(file.file)}
+              >
+                {file.file}
+              </Box>
+            ))}
+          </Box>
+          <ScrollArea sx={{ flex: 1, marginLeft: '10px' }}>
+            <Code block style={{ minHeight: '100%', height: '100%' }}>
+              <textarea
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  minHeight: '300px', // Ensure min height for editor
+                  border: 'none',
+                  backgroundColor: 'transparent',
+                  fontFamily: 'monospace',
+                  fontSize: '14px',
+                  resize: 'vertical',
+                  padding: '10px',
+                  boxSizing: 'border-box'
+                }}
+                value={activeOutputFileContent}
+                readOnly // Output files are read-only
+              />
+            </Code>
+          </ScrollArea>
+        </Tabs.Panel>
+
+        <Tabs.Panel value="database-explorer" pt="xs" sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           {/* Tables Sidebar */}
           <Box sx={{ width: '200px', borderRight: '1px solid #eee', paddingRight: '10px', display: 'flex', flexDirection: 'column' }}>
             <Text size="md" weight={500} mb="sm">Tables</Text>
@@ -220,7 +385,6 @@ export default function TryNow() {
             </Group>
 
             <ScrollArea sx={{ flex: 1 }}>
-                {/* ... existing results display ... */}
             {dbQueryResult && dbQueryResult.rows && dbQueryResult.rows.length > 0 && (
               <Code block>
                 {/* Simple table display for now */}
@@ -247,7 +411,8 @@ export default function TryNow() {
             {dbQueryResult && dbQueryResult.rows && dbQueryResult.rows.length === 0 && (
               <Text color="dimmed">No results found.</Text>
             )}
-          </ScrollArea>
+            </ScrollArea>
+          </Box>
         </Tabs.Panel>
       </Tabs>
     </Box>
