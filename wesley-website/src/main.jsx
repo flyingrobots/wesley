@@ -11,7 +11,6 @@ import json from 'highlight.js/lib/languages/json';
 import '@mantine/core/styles.css'
 import '@mantine/code-highlight/styles.css';
 import '@mantine/notifications/styles.css';
-import '@mantine/modals/styles.css';
 import './index.css'
 import App from './App.jsx'
 
