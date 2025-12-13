@@ -47,6 +47,17 @@ export default function HeroBullets({ onNavigate }) {
             >
               Docs
             </Button>
+            <Button
+              variant="outline"
+              radius="xl"
+              size="md"
+              className={classes.control}
+              component="a"
+              href="/try"
+              onClick={(e) => { e.preventDefault(); onNavigate?.('/try') }}
+            >
+              Try Now (Alpha)
+            </Button>
           </Group>
         </div>
 

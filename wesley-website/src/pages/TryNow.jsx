@@ -1,8 +1,7 @@
 // wesley-website/src/pages/TryNow.jsx
 import React, { useState, useEffect } from 'react';
-import { Box, Tabs, Text, Code, Button, Group, Loader, ScrollArea } from '@mantine/core';
+import { Box, Tabs, Text, Code, Button, Group, Loader, ScrollArea, Alert, Textarea } from '@mantine/core';
 import { createDbSession } from '../db/pglite';
-import { compileSchemaInBrowser } from '@wesley/host-browser';
 
 // Define the generic file structure
 // eslint-disable-next-line no-unused-vars
@@ -60,6 +59,7 @@ export default function TryNow() {
   const [activeInputFile, setActiveInputFile] = useState(initialInputFiles[0].file);
   const [activeOutputFile, setActiveOutputFile] = useState(initialOutputFiles[0].file);
   const [compileStatus, setCompileStatus] = useState('idle'); // idle | running | success | error
+  const [compileErrors, setCompileErrors] = useState([]);
 
   // Initialize DbSession
   useEffect(() => {
@@ -69,7 +69,8 @@ export default function TryNow() {
         setDbSession(session);
       } catch (error) {
         console.error('Failed to initialize DbSession:', error);
-        // Optionally set a global error state here
+        setCompileErrors([{ message: `Failed to initialize database: ${error.message}` }]);
+        setCompileStatus('error');
       } finally {
         setDbLoading(false);
       }
@@ -86,6 +87,7 @@ export default function TryNow() {
   const handleRunWesley = async () => {
     setCompileStatus('running');
     setOutputFiles(initialOutputFiles); // Clear previous output
+    setCompileErrors([]);
 
     // Use actual Wesley compilation
     try {
@@ -97,19 +99,15 @@ export default function TryNow() {
         setActiveTab('wesley-output'); // Switch to output tab on success
       } else {
         console.error('Wesley compilation failed:', result.errors);
-        setOutputFiles([
-          { file: 'error.log', body: result.errors.map(e => e.message).join('\n') }
-        ]);
+        setCompileErrors(result.errors || [{ message: 'Unknown compilation error' }]);
         setCompileStatus('error');
-        setActiveTab('wesley-output'); // Show errors in output tab
+        // Stay on input tab or switch to output? Staying on input might be better to fix errors, 
+        // but roadmap said "Status / Errors" panel.
       }
     } catch (error) {
       console.error('Wesley compilation failed unexpectedly:', error);
-      setOutputFiles([
-        { file: 'error.log', body: `Unexpected error: ${error.message}` }
-      ]);
+      setCompileErrors([{ message: `Unexpected error: ${error.message}` }]);
       setCompileStatus('error');
-      setActiveTab('wesley-output'); // Show errors in output tab
     }
   };
 
@@ -117,15 +115,15 @@ export default function TryNow() {
     if (!dbSession || compileStatus !== 'success') return;
     try {
       setDbLoading(true);
+      setDbQueryError(null);
       const migrationsSql = outputFiles.find(f => f.file === 'migrations.sql')?.body;
       if (migrationsSql) {
         // Split migrations by semicolon, filter out empty strings, and trim
         const statements = migrationsSql.split(';').map(s => s.trim()).filter(s => s.length > 0);
         await dbSession.applyMigrations(statements);
       }
-      // Optionally run some post-application queries
       setDbQueryResult({ rows: [{ status: 'Migrations applied successfully!' }], fields: ['status'] });
-      setDbQueryError(null);
+      setActiveTab('database-explorer');
     } catch (error) {
       console.error('Failed to apply migrations:', error);
       setDbQueryError(error.message);
@@ -165,32 +163,83 @@ export default function TryNow() {
     }
   };
 
+  const handleResetPlayground = async () => {
+    if (!confirm('Are you sure you want to reset everything? This will clear your schema and database.')) return;
+    
+    setCompileStatus('idle');
+    setCompileErrors([]);
+    setInputFiles(initialInputFiles);
+    setOutputFiles(initialOutputFiles);
+    setDbQueryText('SELECT * FROM User;');
+    setDbQueryResult(null);
+    setDbQueryError(null);
+    setActiveTab('input-schema');
+    
+    if (dbSession) {
+        setDbLoading(true);
+        try {
+            await dbSession.reset();
+        } catch (e) {
+            console.error('Error resetting DB during playground reset:', e);
+        } finally {
+            setDbLoading(false);
+        }
+    }
+  };
+
 
   const activeInputFileContent = inputFiles.find(f => f.file === activeInputFile)?.body || '';
   const activeOutputFileContent = outputFiles.find(f => f.file === activeOutputFile)?.body || '';
 
   return (
     <Box sx={{ padding: '20px', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 60px)' }}>
-      <Text size="xl" weight={700} mb="md">Wesley Playground (Alpha)</Text>
-      <Text size="sm" color="dimmed" mb="lg">
-        Edit GraphQL schemas, compile to Postgres migrations, and see the resulting database live in your browser.
-      </Text>
+      <Group position="apart" mb="md">
+          <Box>
+            <Text size="xl" weight={700}>Wesley Playground (Alpha)</Text>
+            <Text size="sm" color="dimmed">
+                Edit GraphQL schemas, compile to Postgres migrations, and see the resulting database live in your browser.
+            </Text>
+          </Box>
+          <Button onClick={handleResetPlayground} variant="subtle" color="gray" compact>Reset Playground</Button>
+      </Group>
 
       <Group mb="md">
         <Button onClick={handleRunWesley} loading={compileStatus === 'running'}>Run Wesley</Button>
         <Button onClick={handleApplyToDatabase} disabled={dbLoading || compileStatus !== 'success'}>Apply to Database</Button>
-        <Button onClick={handleResetDatabase} disabled={dbLoading} color="red">Reset Database</Button>
+        <Button onClick={handleResetDatabase} disabled={dbLoading} color="orange" variant="light">Reset Database Only</Button>
         {dbLoading && <Loader size="sm" />}
       </Group>
 
-      <Tabs value={activeTab} onTabChange={setActiveTab} grow>
+      {/* Status / Errors Panel */}
+      {(compileErrors.length > 0 || dbQueryError) && (
+        <Box mb="md">
+            {compileErrors.map((err, idx) => (
+                <Alert key={idx} title="Compilation Error" color="red" mb="xs" onClose={() => setCompileErrors([])} withCloseButton>
+                    {err.message}
+                </Alert>
+            ))}
+            {dbQueryError && (
+                <Alert title="Database Error" color="red" onClose={() => setDbQueryError(null)} withCloseButton>
+                    {dbQueryError}
+                </Alert>
+            )}
+        </Box>
+      )}
+      
+      {compileStatus === 'success' && !dbQueryError && activeTab !== 'database-explorer' && (
+          <Alert title="Success" color="green" mb="md" withCloseButton onClose={() => setCompileStatus('idle')}>
+              Schema compiled successfully! {outputFiles.find(f => f.file === 'migrations.sql')?.body ? 'Migrations generated.' : 'No migrations needed.'}
+          </Alert>
+      )}
+
+      <Tabs value={activeTab} onTabChange={setActiveTab} grow sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <Tabs.List>
           <Tabs.Tab value="input-schema">GraphQL Input Schema Files</Tabs.Tab>
           <Tabs.Tab value="wesley-output">Wesley Output Files</Tabs.Tab>
           <Tabs.Tab value="database-explorer" disabled={dbLoading}>Database Explorer</Tabs.Tab>
         </Tabs.List>
 
-        <Tabs.Panel value="input-schema" pt="xs" sx={{ flex: 1, display: 'flex', flexDirection: 'row' }}>
+        <Tabs.Panel value="input-schema" pt="xs" sx={{ flex: 1, display: 'flex', flexDirection: 'row', minHeight: 0 }}>
           <Box sx={{ width: '200px', borderRight: '1px solid #eee', paddingRight: '10px' }}>
             <Text size="md" weight={500} mb="sm">Files</Text>
             {inputFiles.map(file => (
@@ -210,7 +259,7 @@ export default function TryNow() {
             ))}
           </Box>
           <ScrollArea sx={{ flex: 1, marginLeft: '10px' }}>
-            <Code block style={{ minHeight: 'calc(100% - 20px)' }}>
+            <Code block style={{ minHeight: '100%', height: '100%' }}>
               <textarea
                 style={{
                   width: '100%',
@@ -231,7 +280,7 @@ export default function TryNow() {
           </ScrollArea>
         </Tabs.Panel>
 
-        <Tabs.Panel value="wesley-output" pt="xs" sx={{ flex: 1, display: 'flex', flexDirection: 'row' }}>
+        <Tabs.Panel value="wesley-output" pt="xs" sx={{ flex: 1, display: 'flex', flexDirection: 'row', minHeight: 0 }}>
           <Box sx={{ width: '200px', borderRight: '1px solid #eee', paddingRight: '10px' }}>
             <Text size="md" weight={500} mb="sm">Output Files</Text>
             {outputFiles.map(file => (
@@ -251,7 +300,7 @@ export default function TryNow() {
             ))}
           </Box>
           <ScrollArea sx={{ flex: 1, marginLeft: '10px' }}>
-            <Code block style={{ minHeight: 'calc(100% - 20px)' }}>
+            <Code block style={{ minHeight: '100%', height: '100%' }}>
               <textarea
                 style={{
                   width: '100%',
@@ -272,7 +321,7 @@ export default function TryNow() {
           </ScrollArea>
         </Tabs.Panel>
 
-        <Tabs.Panel value="database-explorer" pt="xs" sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <Tabs.Panel value="database-explorer" pt="xs" sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           <Group mb="md">
             <Textarea
               placeholder="Enter SQL query"
@@ -287,9 +336,8 @@ export default function TryNow() {
           </Group>
 
           <ScrollArea sx={{ flex: 1 }}>
-            {dbQueryError && (
-              <Text color="red" mb="md">{dbQueryError}</Text>
-            )}
+            {/* Errors are handled in the main error panel now, but we can keep inline for redundant clarity if needed. 
+                For now, relying on the main panel. */}
 
             {dbQueryResult && dbQueryResult.rows && dbQueryResult.rows.length > 0 && (
               <Code block>
@@ -320,10 +368,6 @@ export default function TryNow() {
           </ScrollArea>
         </Tabs.Panel>
       </Tabs>
-
-      {compileStatus === 'error' && (
-        <Text color="red" mt="md">Wesley compilation failed. Check console for details.</Text>
-      )}
     </Box>
   );
 }

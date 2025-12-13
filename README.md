@@ -30,6 +30,7 @@ type Document @wes_table @wes_tenant(by: "org_id") @wes_rls(enabled: true) {
 
 | Goal | Command(s) | Notes |
 | --- | --- | --- |
+| Try the browser playground (Alpha) | `http://localhost:5173/try` (local dev) | **[Try Wesley Now](/try)** – Edit schemas, compile to SQL, and run queries in-browser (PGLite). No install required. |
 | Install tooling & sanity-check repo | `pnpm install`<br>`pnpm run bootstrap` | Bootstraps dependencies, runs preflight, executes workspace tests. |
 | Generate everything from the example schema | `node packages/wesley-host-node/bin/wesley.mjs generate --schema test/fixtures/examples/schema.graphql --ops test/fixtures/examples/ops --emit-bundle --out-dir out/examples` | Produces SQL, pgTAP, ops SQL, and a `.wesley/` evidence bundle. |
 | Preview migration plan & rehearsal | `node packages/wesley-host-node/bin/wesley.mjs plan --schema test/fixtures/examples/schema.graphql --explain`<br>`node packages/wesley-host-node/bin/wesley.mjs rehearse --schema test/fixtures/examples/schema.graphql --dry-run --json` | No database required for `--dry-run`; inspect JSON for lock levels and REALM verdicts. |
