@@ -4,8 +4,8 @@ import classes from './Playground.module.css';
 
 export default function CodeEditor({ value, onChange, readOnly = false }) {
   return (
-    <div className={classes.editorContainer}>
-      <Code block style={{ height: '100%', borderRadius: 0 }}>
+    <Box className={classes.editorContainer}>
+      <Code block className={classes.codeBlock}>
         <textarea
           className={`${classes.editor} ${readOnly ? classes.editorReadOnly : ''}`}
           value={value}
@@ -14,6 +14,6 @@ export default function CodeEditor({ value, onChange, readOnly = false }) {
           spellCheck={false}
         />
       </Code>
-    </div>
+    </Box>
   );
 }

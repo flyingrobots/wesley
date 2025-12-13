@@ -224,25 +224,25 @@ export default function TryNow() {
   const activeOutputContent = outputFiles.find(f => f.file === activeOutputFile)?.body || '';
 
   return (
-    <div className={classes.container}>
+    <Box className={classes.container}>
       {/* Header */}
-      <div className={classes.header}>
-        <Group justify="space-between">
-          <div>
-            <Title className={classes.title}>Wesley Playground (Alpha)</Title>
+      <Box className={classes.header}>
+        <Group justify="space-between" mb="md">
+          <Box>
+            <Title order={1} className={classes.title}>Wesley Playground (Alpha)</Title>
             <Text className={classes.subtitle}>
               Edit GraphQL schemas, compile to Postgres, and query live.
             </Text>
-          </div>
+          </Box>
           <Button onClick={handleResetPlayground} variant="subtle" color="gray" size="xs">
             Reset Playground
           </Button>
         </Group>
-      </div>
+      </Box>
 
       {/* Controls */}
-      <div className={classes.controls}>
-        <Group>
+      <Box className={classes.controls}>
+        <Group mb="md">
           <Button onClick={handleRunWesley} loading={compileStatus === 'running'}>
             Run Wesley
           </Button>
@@ -263,11 +263,11 @@ export default function TryNow() {
           </Button>
           {dbLoading && <Loader size="sm" />}
         </Group>
-      </div>
+      </Box>
 
       {/* Errors */}
       {(compileErrors.length > 0 || dbQueryError) && (
-        <div className={classes.alert}>
+        <Box className={classes.alert}>
           {compileErrors.map((err, idx) => (
             <Alert key={idx} title="Compilation Error" color="red" withCloseButton onClose={() => setCompileErrors([])}>
               {err.message}
@@ -278,7 +278,7 @@ export default function TryNow() {
               {dbQueryError}
             </Alert>
           )}
-        </div>
+        </Box>
       )}
 
       {/* Success Message */}
@@ -289,7 +289,7 @@ export default function TryNow() {
       )}
 
       {/* Workspace Tabs */}
-      <div className={classes.workspace}>
+      <Box className={classes.workspace}>
         <Tabs value={activeTab} onChange={setActiveTab} variant="outline" keepMounted={false}>
           <Tabs.List>
             <Tabs.Tab value="input-schema">GraphQL Input</Tabs.Tab>
@@ -297,8 +297,8 @@ export default function TryNow() {
             <Tabs.Tab value="database-explorer" disabled={dbLoading}>Database Explorer</Tabs.Tab>
           </Tabs.List>
 
-          <Tabs.Panel value="input-schema">
-            <div className={classes.panel}>
+          <Tabs.Panel value="input-schema" p={0}>
+            <Flex className={classes.panel}>
               <FileExplorer 
                 files={inputFiles} 
                 activeFile={activeInputFile} 
@@ -308,11 +308,11 @@ export default function TryNow() {
                 value={activeInputContent} 
                 onChange={handleInputFileChange} 
               />
-            </div>
+            </Flex>
           </Tabs.Panel>
 
-          <Tabs.Panel value="wesley-output">
-            <div className={classes.panel}>
+          <Tabs.Panel value="wesley-output" p={0}>
+            <Flex className={classes.panel}>
               <FileExplorer 
                 files={outputFiles} 
                 activeFile={activeOutputFile} 
@@ -322,10 +322,10 @@ export default function TryNow() {
                 value={activeOutputContent} 
                 readOnly 
               />
-            </div>
+            </Flex>
           </Tabs.Panel>
 
-          <Tabs.Panel value="database-explorer">
+          <Tabs.Panel value="database-explorer" p={0}>
             <DatabasePanel 
               tables={dbTables}
               query={dbQueryText}
@@ -337,7 +337,7 @@ export default function TryNow() {
             />
           </Tabs.Panel>
         </Tabs>
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }

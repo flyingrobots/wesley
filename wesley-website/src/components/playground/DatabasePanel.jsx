@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Button, Group, Textarea, Text, NavLink } from '@mantine/core';
+import { Box, Button, Group, Textarea, Text, NavLink, ScrollArea, Table } from '@mantine/core';
 import classes from './Playground.module.css';
 
 export default function DatabasePanel({ 
@@ -12,11 +12,11 @@ export default function DatabasePanel({
   error 
 }) {
   return (
-    <div className={classes.panel}>
+    <Flex className={classes.panel}>
       {/* Sidebar: Tables */}
-      <div className={classes.sidebar}>
-        <div className={classes.sidebarHeader}>Tables</div>
-        <div className={classes.fileList}>
+      <Box className={classes.sidebar}>
+        <Text className={classes.sidebarHeader}>Tables</Text>
+        <ScrollArea className={classes.fileList}>
           {tables.length === 0 && (
             <Text size="xs" c="dimmed" p="xs">No tables found</Text>
           )}
@@ -28,12 +28,12 @@ export default function DatabasePanel({
               variant="subtle"
             />
           ))}
-        </div>
-      </div>
+        </ScrollArea>
+      </Box>
 
       {/* Main: Query & Results */}
-      <div className={classes.editorContainer}>
-        <div className={classes.queryControls}>
+      <Box className={classes.editorContainer}>
+        <Box className={classes.queryControls}>
           <Group align="flex-start">
             <Textarea
               placeholder="Enter SQL query"
@@ -46,35 +46,33 @@ export default function DatabasePanel({
             />
             <Button onClick={onRun} disabled={loading}>Run</Button>
           </Group>
-        </div>
+        </Box>
 
-        <div className={classes.resultsArea}>
-          {/* Errors handled by parent via Alert, but can show inline too if desired */}
-          
+        <ScrollArea className={classes.resultsArea}>
           {result && result.rows && result.rows.length > 0 ? (
-            <table className={classes.tableWrapper}>
+            <Table className={classes.tableWrapper} striped highlightOnHover withColumnBorders withTableBorder>
               <thead>
                 <tr>
                   {result.fields.map(field => (
-                    <th key={field}>{field}</th>
+                    <Table.Th key={field}>{field}</Table.Th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {result.rows.map((row, rowIndex) => (
-                  <tr key={rowIndex}>
+                  <Table.Tr key={rowIndex}>
                     {result.fields.map(field => (
-                      <td key={field}>{String(row[field])}</td>
+                      <Table.Td key={field}>{String(row[field])}</Table.Td>
                     ))}
-                  </tr>
+                  </Table.Tr>
                 ))}
               </tbody>
-            </table>
+            </Table>
           ) : result ? (
             <Text c="dimmed" size="sm">No results found.</Text>
           ) : null}
-        </div>
-      </div>
-    </div>
+        </ScrollArea>
+      </Box>
+    </Flex>
   );
 }
