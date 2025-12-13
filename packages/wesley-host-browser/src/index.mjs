@@ -113,4 +113,4 @@ export async function compileSchemaInBrowser(inputFiles) {
 
 // Re-export runInBrowser for any existing uses, if necessary, or remove if compileSchemaInBrowser is the sole entry.
 // For now, keep it for compatibility until we confirm no other parts rely on it.
-export { runInBrowser } from './index.mjs'; 
+// export { runInBrowser } from './index.mjs'; 
