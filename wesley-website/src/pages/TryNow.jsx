@@ -11,6 +11,7 @@ import classes from '../components/playground/Playground.module.css';
 import PlaygroundNavbar from '../components/playground/PlaygroundNavbar';
 import CodeEditor from '../components/playground/CodeEditor';
 import DatabasePanel from '../components/playground/DatabasePanel';
+import ExplanationPopover from '../components/playground/ExplanationPopover';
 
 // Initial Files Configuration
 const initialInputFiles = [
@@ -367,24 +368,41 @@ export default function TryNow() {
       {/* Controls */}
       <Box className={classes.controls}>
         <Group mb="md">
-          <Button onClick={handleRunWesley} loading={isCompiling}>
-            Run Wesley
-          </Button>
-          <Button 
-            onClick={handleApplyToDatabase} 
-            disabled={dbLoading || !lastCompileSuccess}
-            variant="light"
+          <ExplanationPopover 
+            title="Compile Schema" 
+            description="Compiles your GraphQL schema into SQL migrations and other artifacts right here in your browser."
           >
-            Apply to Database
-          </Button>
-          <Button 
-            onClick={handleResetDatabase} 
-            disabled={dbLoading} 
-            color="orange" 
-            variant="subtle"
+            <Button onClick={handleRunWesley} loading={compileStatus === 'running'}>
+              Run Wesley
+            </Button>
+          </ExplanationPopover>
+
+          <ExplanationPopover 
+            title="Apply Migrations" 
+            description="Executes the generated SQL migrations against the in-memory PGLite database to create tables."
           >
-            Reset DB
-          </Button>
+            <Button 
+              onClick={handleApplyToDatabase} 
+              disabled={dbLoading || compileStatus !== 'success'}
+              variant="light"
+            >
+              Apply to Database
+            </Button>
+          </ExplanationPopover>
+
+          <ExplanationPopover 
+            title="Reset Database" 
+            description="Wipes all data and schema from the database, giving you a fresh start."
+          >
+            <Button 
+              onClick={handleResetDatabase} 
+              disabled={dbLoading} 
+              color="orange" 
+              variant="subtle"
+            >
+              Reset DB
+            </Button>
+          </ExplanationPopover>
           {dbLoading && <Loader size="sm" />}
         </Group>
       </Box>
