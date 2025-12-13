@@ -81,20 +81,39 @@ export default function TryNow() {
 
   // Initialize DbSession
   useEffect(() => {
+    let cancelled = false;
+    let session;
+
     async function initDb() {
       try {
-        const session = await createDbSession();
+        const s = await createDbSession();
+        if (cancelled) {
+          s.close().catch(console.error);
+          return;
+        }
+        session = s;
         setDbSession(session);
         await fetchTables(session);
       } catch (error) {
-        console.error('Failed to initialize DbSession:', error);
-        setCompileErrors([{ message: `Failed to initialize database: ${error.message}` }]);
-        setCompileStatus('error');
+        if (!cancelled) {
+          console.error('Failed to initialize DbSession:', error);
+          setCompileErrors([{ message: `Failed to initialize database: ${error.message}` }]);
+          setCompileStatus('error');
+        }
       } finally {
-        setDbLoading(false);
+        if (!cancelled) {
+          setDbLoading(false);
+        }
       }
     }
     initDb();
+
+    return () => {
+      cancelled = true;
+      if (session) {
+        session.close().catch(e => console.error('Error closing DB session:', e));
+      }
+    };
   }, []);
 
   const handleInputFileChange = (fileName, newBody) => {
@@ -223,7 +242,7 @@ export default function TryNow() {
                 Edit GraphQL schemas, compile to Postgres migrations, and see the resulting database live in your browser.
             </Text>
           </Box>
-          <Button onClick={handleResetPlayground} variant="subtle" color="gray" compact>Reset Playground</Button>
+          <Button onClick={handleResetPlayground} variant="subtle" color="gray" size="xs">Reset Playground</Button>
       </Group>
 
       <Group mb="md">
@@ -255,8 +274,8 @@ export default function TryNow() {
           </Alert>
       )}
 
-      <Tabs value={activeTab} onTabChange={setActiveTab} grow sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <Tabs.List>
+      <Tabs value={activeTab} onChange={setActiveTab} variant="outline" sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <Tabs.List grow>
           <Tabs.Tab value="input-schema">GraphQL Input Schema Files</Tabs.Tab>
           <Tabs.Tab value="wesley-output">Wesley Output Files</Tabs.Tab>
           <Tabs.Tab value="database-explorer" disabled={dbLoading}>Database Explorer</Tabs.Tab>

@@ -17,7 +17,7 @@ export class DbSession {
   #pg = null;
 
   constructor() {
-    this.#pg = new PGlite();
+    // Lazy init in reset()
   }
 
   /**
@@ -30,6 +30,18 @@ export class DbSession {
       await this.#pg.close(); // Close existing connection to clear state
     }
     this.#pg = new PGlite(); // Create a new instance for a clean slate
+    await this.#pg.waitReady; // Ensure it's ready before returning
+  }
+
+  /**
+   * Closes the database connection.
+   * @returns {Promise<void>}
+   */
+  async close() {
+    if (this.#pg) {
+      await this.#pg.close();
+      this.#pg = null;
+    }
   }
 
   /**
