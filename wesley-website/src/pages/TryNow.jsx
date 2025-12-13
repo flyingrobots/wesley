@@ -1,6 +1,6 @@
 // wesley-website/src/pages/TryNow.jsx
 import React, { useState, useEffect } from 'react';
-import { Button, Group, Loader, Alert, Tabs, Title, Text, Box } from '@mantine/core';
+import { Button, Group, Loader, Alert, Tabs, Title, Text, Box, Flex } from '@mantine/core';
 import { createDbSession } from '../db/pglite';
 import { compileSchemaInBrowser } from '@wesley/host-browser';
 import classes from '../components/playground/Playground.module.css';
