@@ -5,7 +5,7 @@ import { RichTextEditor as MantineRichTextEditor, Link } from '@mantine/tiptap';
 import { CodeBlockLowlight } from '@tiptap/extension-code-block-lowlight';
 import { common, createLowlight } from 'lowlight';
 import graphqlLang from 'highlight.js/lib/languages/graphql'; // Import the language definition
-import { Extension } from '@tiptap/core'; // For custom keymap extension
+import { Extension } from '@tiptap/react'; // Import Extension from @tiptap/react instead of @tiptap/core
 
 const lowlight = createLowlight(common);
 lowlight.register('graphql', graphqlLang); // Register directly
