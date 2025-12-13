@@ -9,7 +9,7 @@ import {
   IconStar,
   IconSwitchHorizontal,
   IconTrash,
-} from ' @tabler/icons-react';
+} from '@tabler/icons-react';
 import cx from 'clsx';
 import {
   Avatar,
@@ -21,8 +21,8 @@ import {
   Text,
   UnstyledButton,
   useMantineTheme,
-} from ' @mantine/core';
-import { useDisclosure } from ' @mantine/hooks';
+} from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
 import { MantineLogo } from '@mantinex/mantine-logo';
 import classes from './HeaderTabs.module.css';
 

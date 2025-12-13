@@ -16,7 +16,10 @@
     "@electric-sql/pglite": "^0.3.14",
     "@mantine/core": "^8.3.5",
     "@mantine/hooks": "^8.3.5",
+    "@mantinex/mantine-logo": "^2.0.0",
+    "@tabler/icons-react": "^3.35.0",
     "@wesley/host-browser": "workspace:^",
+    "clsx": "^2.1.1",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "zod": "^4.1.13"
