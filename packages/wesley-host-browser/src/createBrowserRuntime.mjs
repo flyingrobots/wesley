@@ -18,7 +18,7 @@ function createConsoleLogger() {
 }
 
 // In-memory file store for smoke tests (NOT persistent)
-class MemoryFileSystem {
+export class MemoryFileSystem {
   constructor() { this._files = new Map(); }
   async exists(path) { return this._files.has(path); }
   async read(path) {

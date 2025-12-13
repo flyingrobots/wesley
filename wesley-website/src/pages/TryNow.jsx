@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Tabs, Text, Code, Button, Group, Loader, ScrollArea } from '@mantine/core';
 import { createDbSession } from '../db/pglite';
+import { compileSchemaInBrowser } from '@wesley/host-browser';
 
 // Define the generic file structure
 // eslint-disable-next-line no-unused-vars
@@ -86,20 +87,29 @@ export default function TryNow() {
     setCompileStatus('running');
     setOutputFiles(initialOutputFiles); // Clear previous output
 
-    // Simulate Wesley compilation (replace with actual host-browser call later)
+    // Use actual Wesley compilation
     try {
-      // For now, let's just make a dummy SQL migration
-      const dummySql = inputFiles.find(f => f.file === activeInputFile)?.body
-        .replace(/type\s+(\w+)\s*{[^}]*}/g, (match, typeName) => `CREATE TABLE "${typeName}" (id UUID PRIMARY KEY);`) || '';
+      const result = await compileSchemaInBrowser(inputFiles);
 
-      setOutputFiles([
-        { file: 'migrations.sql', body: `--- Dummy Migration ---\n${dummySql}\nINSERT INTO some_table (value) VALUES ('Compiled from ${activeInputFile}');` },
-        { file: 'schema.sql', body: `-- Dummy Schema --\n\n-- Derived from input files` }
-      ]);
-      setCompileStatus('success');
+      if (result.ok) {
+        setOutputFiles(result.outputFiles);
+        setCompileStatus('success');
+        setActiveTab('wesley-output'); // Switch to output tab on success
+      } else {
+        console.error('Wesley compilation failed:', result.errors);
+        setOutputFiles([
+          { file: 'error.log', body: result.errors.map(e => e.message).join('\n') }
+        ]);
+        setCompileStatus('error');
+        setActiveTab('wesley-output'); // Show errors in output tab
+      }
     } catch (error) {
-      console.error("Wesley compilation failed:", error);
+      console.error('Wesley compilation failed unexpectedly:', error);
+      setOutputFiles([
+        { file: 'error.log', body: `Unexpected error: ${error.message}` }
+      ]);
       setCompileStatus('error');
+      setActiveTab('wesley-output'); // Show errors in output tab
     }
   };
 

@@ -88,8 +88,9 @@ export class BrowserParserPort {
       const head = m[2] || '';
       const body = m[3] || '';
       const directives = parseDirectives(head);
-      const hasWesTable = directives['wes_table'] || directives['wesley_table'] || directives['table'];
-      if (!hasWesTable) continue;
+      // For Alpha playground, treat all types as tables implicitly
+      // const hasWesTable = directives['wes_table'] || directives['wesley_table'] || directives['table'];
+      // if (!hasWesTable) continue;
       const columns = parseFields(body);
       // primary key detection
       let primaryKey = null;
