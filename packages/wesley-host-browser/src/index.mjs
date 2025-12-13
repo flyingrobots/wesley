@@ -78,12 +78,26 @@ export async function compileSchemaInBrowser(inputFiles) {
     const bundle = await pipeline.execute(schemaSDL, { sha: 'browser-playground' });
     const tables = Array.isArray(bundle?.schema?.tables) ? bundle.schema.tables.length : 0;
 
-    // Simulate SQL migration generation based on the combined SDL.
-    // This is a placeholder and should be replaced with actual Wesley generator calls.
-    const generatedSql = schemaSDL
-      .replace(/type\s+(\w+)\s*{[^}]*}/g, (match, typeName) => `CREATE TABLE "${typeName}" (id UUID PRIMARY KEY);`) 
-      // Basic cleanup of non-match text for the dummy output (very rough)
-      .split('\n').filter(line => line.startsWith('CREATE TABLE')).join('\n');
+    // Generate SQL from the parsed schema bundle
+    const generatedSql = (bundle.schema?.tables || []).map(table => {
+      const columns = table.columns.map(col => {
+        let def = `  "${col.name}" ${col.type}`;
+        if (!col.nullable) def += ' NOT NULL';
+        // BrowserParserPort detects primaryKey and puts it on the table object
+        // It might also be on the column directive, but let's check table.primaryKey
+        if (table.primaryKey === col.name || col.directives?.pk || col.directives?.wes_pk) {
+             if (!def.includes('PRIMARY KEY')) def += ' PRIMARY KEY';
+        }
+        if (col.default) {
+            // naive quoting for strings if not already quoted/expression
+            const val = col.default;
+            def += ` DEFAULT ${val}`;
+        }
+        return def;
+      }).join(',\n');
+      
+      return `CREATE TABLE "${table.name}" (\n${columns}\n);`;
+    }).join('\n\n');
     
     // Add a dummy SQL migration file as output
     result.outputFiles.push({ file: 'migrations.sql', body: generatedSql || '-- No migrations generated yet.' });
