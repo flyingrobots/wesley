@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Group, Loader, Title, Text, Box, Flex } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
+import { openConfirmModal } from '@mantine/modals';
 import { IconCheck, IconX, IconAlertCircle } from '@tabler/icons-react';
 import { createDbSession } from '../db/pglite';
 import { compileSchemaInBrowser } from '@wesley/host-browser';
@@ -232,62 +233,84 @@ export default function TryNow() {
     }
   };
 
-  const handleResetDatabase = async () => {
-    if (!dbSession) return;
-    setDbLoading(true);
-    setDbQueryResult(null);
-    try {
-      await dbSession.reset();
-      await fetchTables(dbSession);
-      setSelectedTable(null);
-      setTableSchema([]);
-      notifications.show({
-        title: 'Database Reset',
-        message: 'The database has been cleared.',
-        color: 'blue',
-        icon: <IconCheck size="1.1rem" />,
-      });
-    } catch (error) {
-      notifications.show({
-        title: 'Reset Failed',
-        message: error.message,
-        color: 'red',
-        icon: <IconX size="1.1rem" />,
-      });
-    } finally {
-      setDbLoading(false);
-    }
+  const handleResetDatabase = () => {
+    openConfirmModal({
+      title: 'Reset Database?',
+      children: (
+        <Text size="sm">
+          Are you sure you want to reset the database? This will clear all tables and data.
+        </Text>
+      ),
+      labels: { confirm: 'Reset', cancel: 'Cancel' },
+      confirmProps: { color: 'red' },
+      onConfirm: async () => {
+        if (!dbSession) return;
+        setDbLoading(true);
+        setDbQueryResult(null);
+        try {
+          await dbSession.reset();
+          await fetchTables(dbSession);
+          setSelectedTable(null);
+          setTableSchema([]);
+          notifications.show({
+            title: 'Database Reset',
+            message: 'The database has been cleared.',
+            color: 'blue',
+            icon: <IconCheck size="1.1rem" />,
+          });
+        } catch (error) {
+          notifications.show({
+            title: 'Reset Failed',
+            message: error.message,
+            color: 'red',
+            icon: <IconX size="1.1rem" />,
+          });
+        } finally {
+          setDbLoading(false);
+        }
+      },
+    });
   };
 
-  const handleResetPlayground = async () => {
-    if (!confirm('Reset everything?')) return;
-    
-    setIsCompiling(false);
-    setLastCompileSuccess(false);
-    setInputFiles(initialInputFiles);
-    setOutputFiles(initialOutputFiles);
-    setDbQueryText("SELECT * FROM pg_catalog.pg_tables WHERE schemaname = 'public';");
-    setDbQueryResult(null);
-    setActiveView(initialInputFiles[0].file);
-    setSelectedTable(null);
-    setTableSchema([]);
-    
-    if (dbSession) {
-        setDbLoading(true);
-        try {
-            await dbSession.reset();
-            await fetchTables(dbSession);
-            notifications.show({
-                title: 'Playground Reset',
-                message: 'All state has been cleared.',
-                color: 'gray',
-            });
-        } catch (e) {
-            console.error(e);
-        } finally {
-            setDbLoading(false);
+  const handleResetPlayground = () => {
+    openConfirmModal({
+      title: 'Reset Playground?',
+      children: (
+        <Text size="sm">
+          Are you sure you want to reset the entire playground? This will clear all your GraphQL schemas and reset the database.
+        </Text>
+      ),
+      labels: { confirm: 'Reset Everything', cancel: 'Cancel' },
+      confirmProps: { color: 'red' },
+      onConfirm: async () => {
+        setIsCompiling(false);
+        setLastCompileSuccess(false);
+        setInputFiles(initialInputFiles);
+        setOutputFiles(initialOutputFiles);
+        setDbQueryText("SELECT * FROM pg_catalog.pg_tables WHERE schemaname = 'public';");
+        setDbQueryResult(null);
+        setActiveView(initialInputFiles[0].file);
+        setSelectedTable(null);
+        setTableSchema([]);
+        
+        if (dbSession) {
+            setDbLoading(true);
+            try {
+                await dbSession.reset();
+                await fetchTables(dbSession);
+                notifications.show({
+                    title: 'Playground Reset',
+                    message: 'All state has been cleared.',
+                    color: 'gray',
+                });
+            } catch (e) {
+                console.error(e);
+            } finally {
+                setDbLoading(false);
+            }
         }
-    }
+      },
+    });
   };
 
   // --- Render Helpers ---
