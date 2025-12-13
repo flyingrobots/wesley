@@ -1,10 +1,11 @@
 // wesley-website/src/pages/TryNow.jsx
 import React, { useState, useEffect } from 'react';
-import { Button, Group, Loader, Alert, Tabs, Title, Text, Box, Flex } from '@mantine/core';
+import { Button, Group, Loader, Alert, Title, Text, Box, Flex } from '@mantine/core';
 import { createDbSession } from '../db/pglite';
 import { compileSchemaInBrowser } from '@wesley/host-browser';
+import classes from '../components/playground/Playground.module.css'; // We might keep this for container styles, or move to props
 
-import FileExplorer from '../components/playground/FileExplorer';
+import PlaygroundNavbar from '../components/playground/PlaygroundNavbar';
 import CodeEditor from '../components/playground/CodeEditor';
 import DatabasePanel from '../components/playground/DatabasePanel';
 
@@ -41,16 +42,14 @@ const initialOutputFiles = [
 
 export default function TryNow() {
   // --- State ---
-  const [activeTab, setActiveTab] = useState('input-schema');
+  const [activeView, setActiveView] = useState(initialInputFiles[0].file); // 'database' or filename
   
   // Files
   const [inputFiles, setInputFiles] = useState(initialInputFiles);
   const [outputFiles, setOutputFiles] = useState(initialOutputFiles);
-  const [activeInputFile, setActiveInputFile] = useState(initialInputFiles[0].file);
-  const [activeOutputFile, setActiveOutputFile] = useState(initialOutputFiles[0].file);
 
   // Compilation
-  const [compileStatus, setCompileStatus] = useState('idle'); // idle | running | success | error
+  const [compileStatus, setCompileStatus] = useState('idle');
   const [compileErrors, setCompileErrors] = useState([]);
 
   // Database
@@ -62,7 +61,6 @@ export default function TryNow() {
   const [dbQueryError, setDbQueryError] = useState(null);
 
   // --- Helpers ---
-
   const fetchTables = async (session) => {
     if (!session) return;
     try {
@@ -79,7 +77,6 @@ export default function TryNow() {
   };
 
   // --- Effects ---
-
   useEffect(() => {
     let cancelled = false;
     let session;
@@ -110,10 +107,9 @@ export default function TryNow() {
   }, []);
 
   // --- Handlers ---
-
   const handleInputFileChange = (body) => {
     setInputFiles(prev => prev.map(f => 
-      f.file === activeInputFile ? { ...f, body } : f
+      f.file === activeView ? { ...f, body } : f
     ));
   };
 
@@ -128,7 +124,8 @@ export default function TryNow() {
       if (result.ok) {
         setOutputFiles(result.outputFiles);
         setCompileStatus('success');
-        setActiveTab('wesley-output');
+        // Switch to first output file to show result? Or stay?
+        // setActiveView(result.outputFiles[0].file); 
       } else {
         setCompileErrors(result.errors || [{ message: 'Unknown compilation error' }]);
         setCompileStatus('error');
@@ -151,7 +148,7 @@ export default function TryNow() {
       }
       setDbQueryResult({ rows: [{ status: 'Migrations applied successfully!' }], fields: ['status'] });
       await fetchTables(dbSession);
-      setActiveTab('database-explorer');
+      setActiveView('database'); // Auto-switch to DB view
     } catch (error) {
       setDbQueryError(error.message);
     } finally {
@@ -194,7 +191,7 @@ export default function TryNow() {
   };
 
   const handleResetPlayground = async () => {
-    if (!confirm('Reset everything? This clears your schema and database.')) return;
+    if (!confirm('Reset everything?')) return;
     
     setCompileStatus('idle');
     setCompileErrors([]);
@@ -203,7 +200,7 @@ export default function TryNow() {
     setDbQueryText("SELECT * FROM pg_catalog.pg_tables WHERE schemaname = 'public';");
     setDbQueryResult(null);
     setDbQueryError(null);
-    setActiveTab('input-schema');
+    setActiveView(initialInputFiles[0].file);
     
     if (dbSession) {
         setDbLoading(true);
@@ -218,8 +215,34 @@ export default function TryNow() {
     }
   };
 
-  const activeInputContent = inputFiles.find(f => f.file === activeInputFile)?.body || '';
-  const activeOutputContent = outputFiles.find(f => f.file === activeOutputFile)?.body || '';
+  // --- Render Helpers ---
+  const renderMainContent = () => {
+    if (activeView === 'database') {
+      return (
+        <DatabasePanel 
+          tables={dbTables}
+          query={dbQueryText}
+          setQuery={setDbQueryText}
+          onRun={handleRunDbQuery}
+          loading={dbLoading}
+          result={dbQueryResult}
+          error={dbQueryError}
+        />
+      );
+    }
+
+    const inputContent = inputFiles.find(f => f.file === activeView)?.body;
+    if (inputContent !== undefined) {
+      return <CodeEditor value={inputContent} onChange={handleInputFileChange} />;
+    }
+
+    const outputContent = outputFiles.find(f => f.file === activeView)?.body;
+    if (outputContent !== undefined) {
+      return <CodeEditor value={outputContent} readOnly />;
+    }
+
+    return <Text p="md" c="dimmed">Select a file to view</Text>;
+  };
 
   return (
     <Box className={classes.container}>
@@ -280,57 +303,25 @@ export default function TryNow() {
       )}
 
       {/* Success Message */}
-      {compileStatus === 'success' && !dbQueryError && activeTab !== 'database-explorer' && (
+      {compileStatus === 'success' && !dbQueryError && activeView !== 'database' && (
         <Alert title="Success" color="green" className={classes.alert} withCloseButton onClose={() => setCompileStatus('idle')}>
           Schema compiled! {outputFiles.find(f => f.file === 'migrations.sql')?.body ? 'Migrations generated.' : 'No migrations needed.'}
         </Alert>
       )}
 
-      {/* Workspace Tabs */}
+      {/* Workspace Area */}
       <Box className={classes.workspace}>
-        <Tabs value={activeTab} onChange={setActiveTab} variant="default" keepMounted={false} h="100%" classNames={{ panel: classes.panel }}>
-          <Tabs.List>
-            <Tabs.Tab value="input-schema">GraphQL Input</Tabs.Tab>
-            <Tabs.Tab value="wesley-output">Wesley Output</Tabs.Tab>
-            <Tabs.Tab value="database-explorer" disabled={dbLoading}>Database Explorer</Tabs.Tab>
-          </Tabs.List>
-
-          <Tabs.Panel value="input-schema">
-            <FileExplorer 
-              files={inputFiles} 
-              activeFile={activeInputFile} 
-              onSelect={setActiveInputFile} 
-            />
-            <CodeEditor 
-              value={activeInputContent} 
-              onChange={handleInputFileChange} 
-            />
-          </Tabs.Panel>
-
-          <Tabs.Panel value="wesley-output">
-            <FileExplorer 
-              files={outputFiles} 
-              activeFile={activeOutputFile} 
-              onSelect={setActiveOutputFile} 
-            />
-            <CodeEditor 
-              value={activeOutputContent} 
-              readOnly 
-            />
-          </Tabs.Panel>
-
-          <Tabs.Panel value="database-explorer">
-            <DatabasePanel 
-              tables={dbTables}
-              query={dbQueryText}
-              setQuery={setDbQueryText}
-              onRun={handleRunDbQuery}
-              loading={dbLoading}
-              result={dbQueryResult}
-              error={dbQueryError}
-            />
-          </Tabs.Panel>
-        </Tabs>
+        <Flex h="100%" style={{ overflow: 'hidden' }}>
+          <PlaygroundNavbar 
+            inputFiles={inputFiles}
+            outputFiles={outputFiles}
+            activeFile={activeView}
+            onSelect={setActiveView}
+          />
+          <Box flex={1} style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            {renderMainContent()}
+          </Box>
+        </Flex>
       </Box>
     </Box>
   );
