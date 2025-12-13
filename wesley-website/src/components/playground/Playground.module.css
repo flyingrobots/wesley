@@ -1,26 +1,31 @@
 .container {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 60px);
-  padding: 20px;
+  height: calc(100vh - 60px); /* Adjust based on new header height */
+  padding: var(--mantine-spacing-lg);
+  background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
 }
 
 .header {
-  margin-bottom: 20px;
+  margin-bottom: var(--mantine-spacing-lg);
 }
 
 .title {
-  font-size: 24px;
+  font-size: var(--mantine-font-size-xl);
   font-weight: 700;
 }
 
 .subtitle {
   color: var(--mantine-color-dimmed);
-  font-size: 14px;
+  font-size: var(--mantine-font-size-sm);
 }
 
 .controls {
-  margin-bottom: 20px;
+  margin-bottom: var(--mantine-spacing-lg);
+}
+
+.alert {
+  margin-bottom: var(--mantine-spacing-md);
 }
 
 .workspace {
@@ -28,8 +33,8 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  border: 1px solid var(--mantine-color-gray-3);
-  border-radius: 4px;
+  border: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+  border-radius: var(--mantine-radius-md);
   overflow: hidden;
 }
 
@@ -42,43 +47,28 @@
 
 .sidebar {
   width: 220px;
-  border-right: 1px solid var(--mantine-color-gray-3);
-  background-color: var(--mantine-color-gray-0);
+  background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+  border-right: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
   display: flex;
   flex-direction: column;
 }
 
 .sidebarHeader {
-  padding: 10px;
+  padding: var(--mantine-spacing-xs) var(--mantine-spacing-md);
   font-weight: 600;
-  border-bottom: 1px solid var(--mantine-color-gray-3);
-  font-size: 14px;
+  border-bottom: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+  font-size: var(--mantine-font-size-sm);
 }
 
 .fileList {
   flex: 1;
   overflow-y: auto;
-  padding: 5px;
+  padding: var(--mantine-spacing-xs);
 }
 
 .fileItem {
-  padding: 6px 10px;
-  cursor: pointer;
-  font-size: 14px;
-  border-radius: 4px;
-  color: var(--mantine-color-text);
-  text-decoration: none;
-  display: block;
-}
-
-.fileItem:hover {
-  background-color: var(--mantine-color-gray-2);
-}
-
-.fileItemActive {
-  background-color: var(--mantine-color-blue-1);
-  color: var(--mantine-color-blue-7);
-  font-weight: 500;
+  border-radius: var(--mantine-radius-sm);
+  font-size: var(--mantine-font-size-sm);
 }
 
 .editorContainer {
@@ -89,62 +79,56 @@
   flex-direction: column;
 }
 
+.codeBlock {
+  height: 100%;
+  border-radius: 0;
+  padding: 0;
+}
+
 .editor {
   flex: 1;
   width: 100%;
   height: 100%;
   border: none;
-  padding: 15px;
+  padding: var(--mantine-spacing-md);
   font-family: var(--mantine-font-family-monospace);
-  font-size: 14px;
+  font-size: var(--mantine-font-size-sm);
   resize: none;
   background-color: transparent;
   outline: none;
-  color: var(--mantine-color-text);
+  color: light-dark(var(--mantine-color-black), var(--mantine-color-white));
 }
 
 .editorReadOnly {
-  background-color: var(--mantine-color-gray-0);
-}
-
-.dbContainer {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  padding: 0;
+  background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-8));
 }
 
 .queryControls {
-  padding: 10px;
-  border-bottom: 1px solid var(--mantine-color-gray-3);
-  background-color: var(--mantine-color-gray-0);
+  padding: var(--mantine-spacing-sm);
+  border-bottom: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+  background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
 }
 
 .resultsArea {
   flex: 1;
   overflow: auto;
-  padding: 15px;
+  padding: var(--mantine-spacing-md);
 }
 
-.tableWrapper {
+/* Mantine Table overrides */
+.mantineTable {
   width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
+  font-size: var(--mantine-font-size-sm);
+  /* You can add more specific overrides here */
 }
 
-.tableWrapper th,
-.tableWrapper td {
-  border: 1px solid var(--mantine-color-gray-3);
-  padding: 8px;
-  text-align: left;
-}
-
-.tableWrapper th {
-  background-color: var(--mantine-color-gray-1);
+.mantineTable th {
+  background-color: light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-5));
   font-weight: 600;
 }
 
-.alert {
-  margin-bottom: 15px;
+.mantineTable th,
+.mantineTable td {
+  border: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+  padding: var(--mantine-spacing-xs);
 }

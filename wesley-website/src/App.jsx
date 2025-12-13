@@ -10,6 +10,7 @@ import GettingStarted from './components/GettingStarted.jsx'
 import FutureSection from './components/FutureSection.jsx'
 import Documentation from './pages/Documentation.jsx'
 import HeaderSearch from './components/HeaderSearch.jsx'
+import { HeaderTabs } from './components/HeaderTabs.jsx'
 
 function usePath() {
   const [path, setPath] = useState(typeof window !== 'undefined' ? window.location.pathname : '/')
@@ -47,7 +48,7 @@ function App() {
 
   return (
     <Box style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <HeaderSearch onNavigate={navigate} />
+      <HeaderTabs onNavigate={navigate} />
       <Box style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
         {path === '/docs' ? (
           <Documentation />

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Box, Button, Group, Textarea, Text, NavLink, ScrollArea, Table, Flex } from '@mantine/core';
+import classes from './Playground.module.css';
 
 export default function DatabasePanel({ 
   tables, 
@@ -27,13 +28,11 @@ export default function DatabasePanel({
   ));
 
   return (
-    <Flex h="100%">
+    <Flex className={classes.panel}>
       {/* Sidebar: Tables */}
-      <Box w={220} bg="gray.0" bd="1px solid gray.3" style={{ borderRight: '1px solid var(--mantine-color-gray-3)', display: 'flex', flexDirection: 'column' }}>
-        <Text p="xs" size="sm" fw={600} bd="1px solid gray.3" style={{ borderBottom: '1px solid var(--mantine-color-gray-3)' }}>
-          Tables
-        </Text>
-        <ScrollArea flex={1} p={5}>
+      <Box className={classes.sidebar}>
+        <Text className={classes.sidebarHeader}>Tables</Text>
+        <ScrollArea className={classes.fileList}>
           {tables.length === 0 && (
             <Text size="xs" c="dimmed" p="xs">No tables found</Text>
           )}
@@ -43,15 +42,15 @@ export default function DatabasePanel({
               label={table}
               onClick={() => setQuery(`SELECT * FROM "${table}" LIMIT 100;`)}
               variant="subtle"
-              style={{ borderRadius: 4, fontSize: 14 }}
+              className={classes.fileItem}
             />
           ))}
         </ScrollArea>
       </Box>
 
       {/* Main: Query & Results */}
-      <Box flex={1} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <Box p="sm" bd="1px solid gray.3" style={{ borderBottom: '1px solid var(--mantine-color-gray-3)' }}>
+      <Box className={classes.editorContainer}>
+        <Box className={classes.queryControls}>
           <Group align="flex-start">
             <Textarea
               placeholder="Enter SQL query"
@@ -66,9 +65,9 @@ export default function DatabasePanel({
           </Group>
         </Box>
 
-        <ScrollArea flex={1} p="md">
+        <ScrollArea className={classes.resultsArea}>
           {result && result.rows && result.rows.length > 0 ? (
-            <Table striped highlightOnHover withColumnBorders withTableBorder>
+            <Table striped highlightOnHover withColumnBorders withTableBorder className={classes.mantineTable}>
               <Table.Thead>{ths}</Table.Thead>
               <Table.Tbody>{rows}</Table.Tbody>
             </Table>

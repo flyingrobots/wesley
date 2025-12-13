@@ -222,13 +222,13 @@ export default function TryNow() {
   const activeOutputContent = outputFiles.find(f => f.file === activeOutputFile)?.body || '';
 
   return (
-    <Box p="lg" h="calc(100vh - 60px)" display="flex" style={{ flexDirection: 'column' }}>
+    <Box className={classes.container}>
       {/* Header */}
-      <Box mb="lg">
+      <Box className={classes.header}>
         <Group justify="space-between" mb="md">
           <Box>
-            <Title order={1} size={24} fw={700}>Wesley Playground (Alpha)</Title>
-            <Text size="sm" c="dimmed">
+            <Title order={1} className={classes.title}>Wesley Playground (Alpha)</Title>
+            <Text className={classes.subtitle}>
               Edit GraphQL schemas, compile to Postgres, and query live.
             </Text>
           </Box>
@@ -239,8 +239,8 @@ export default function TryNow() {
       </Box>
 
       {/* Controls */}
-      <Box mb="lg">
-        <Group>
+      <Box className={classes.controls}>
+        <Group mb="md">
           <Button onClick={handleRunWesley} loading={compileStatus === 'running'}>
             Run Wesley
           </Button>
@@ -265,7 +265,7 @@ export default function TryNow() {
 
       {/* Errors */}
       {(compileErrors.length > 0 || dbQueryError) && (
-        <Box mb="md">
+        <Box className={classes.alert}>
           {compileErrors.map((err, idx) => (
             <Alert key={idx} title="Compilation Error" color="red" withCloseButton onClose={() => setCompileErrors([])} mb="xs">
               {err.message}
@@ -281,26 +281,22 @@ export default function TryNow() {
 
       {/* Success Message */}
       {compileStatus === 'success' && !dbQueryError && activeTab !== 'database-explorer' && (
-        <Alert title="Success" color="green" mb="md" withCloseButton onClose={() => setCompileStatus('idle')}>
+        <Alert title="Success" color="green" className={classes.alert} withCloseButton onClose={() => setCompileStatus('idle')}>
           Schema compiled! {outputFiles.find(f => f.file === 'migrations.sql')?.body ? 'Migrations generated.' : 'No migrations needed.'}
         </Alert>
       )}
 
       {/* Workspace Tabs */}
-      <Box 
-        flex={1} 
-        bd="1px solid gray.3" 
-        style={{ borderRadius: 4, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
-      >
-        <Tabs value={activeTab} onChange={setActiveTab} variant="default" keepMounted={false} h="100%" display="flex" style={{ flexDirection: 'column' }}>
+      <Box className={classes.workspace}>
+        <Tabs value={activeTab} onChange={setActiveTab} variant="default" keepMounted={false} h="100%">
           <Tabs.List bg="gray.0">
             <Tabs.Tab value="input-schema">GraphQL Input</Tabs.Tab>
             <Tabs.Tab value="wesley-output">Wesley Output</Tabs.Tab>
             <Tabs.Tab value="database-explorer" disabled={dbLoading}>Database Explorer</Tabs.Tab>
           </Tabs.List>
 
-          <Tabs.Panel value="input-schema" p={0} h="100%" flex={1} style={{ overflow: 'hidden' }}>
-            <Flex h="100%">
+          <Tabs.Panel value="input-schema" p={0} h="100%">
+            <Flex className={classes.panel}>
               <FileExplorer 
                 files={inputFiles} 
                 activeFile={activeInputFile} 
@@ -313,8 +309,8 @@ export default function TryNow() {
             </Flex>
           </Tabs.Panel>
 
-          <Tabs.Panel value="wesley-output" p={0} h="100%" flex={1} style={{ overflow: 'hidden' }}>
-            <Flex h="100%">
+          <Tabs.Panel value="wesley-output" p={0} h="100%">
+            <Flex className={classes.panel}>
               <FileExplorer 
                 files={outputFiles} 
                 activeFile={activeOutputFile} 
@@ -327,7 +323,7 @@ export default function TryNow() {
             </Flex>
           </Tabs.Panel>
 
-          <Tabs.Panel value="database-explorer" p={0} h="100%" flex={1} style={{ overflow: 'hidden' }}>
+          <Tabs.Panel value="database-explorer" p={0} h="100%">
             <DatabasePanel 
               tables={dbTables}
               query={dbQueryText}
