@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Anchor, Box, Button, Card, Center, Container, Group, Stack, Text, Title } from '@mantine/core'
 import ThemeLab from './pages/ThemeLab.jsx'
+import TryNow from './pages/TryNow.jsx' // Import TryNow
 import FooterLinks from './components/FooterLinks.jsx'
 import HeroBullets from './components/HeroBullets.jsx'
 import FeaturesTitleWesley from './components/FeaturesTitleWesley.jsx'
@@ -52,6 +53,8 @@ function App() {
           <Documentation />
         ) : path === '/theme-lab' ? (
           <ThemeLab />
+        ) : path === '/try' ? ( // Add new condition for /try path
+          <TryNow />
         ) : (
           <HomeContent onNavigate={navigate} />
         )}
