@@ -1,6 +1,6 @@
 // wesley-website/src/pages/TryNow.jsx
 import React, { useState, useEffect } from 'react';
-import { Button, Group, Loader, Title, Text, Box, Flex } from '@mantine/core';
+import { Button, Group, Loader, Title, Text, Box, Flex, Alert } from '@mantine/core'; // Keep Alert for Errors if needed
 import { notifications } from '@mantine/notifications';
 import { openConfirmModal } from '@mantine/modals';
 import { IconCheck, IconX, IconAlertCircle } from '@tabler/icons-react';
@@ -61,6 +61,10 @@ export default function TryNow() {
   const [tableSchema, setTableSchema] = useState([]);
   const [dbQueryText, setDbQueryText] = useState("SELECT * FROM pg_catalog.pg_tables WHERE schemaname = 'public';");
   const [dbQueryResult, setDbQueryResult] = useState(null);
+  // We keep local error state for persistent display if needed, but notifications handle transient errors
+  const [compileErrors, setCompileErrors] = useState([]);
+  const [dbQueryError, setDbQueryError] = useState(null);
+
 
   // --- Helpers ---
   const fetchTables = async (session) => {
@@ -143,6 +147,7 @@ export default function TryNow() {
     setIsCompiling(true);
     setLastCompileSuccess(false);
     setOutputFiles(initialOutputFiles);
+    setCompileErrors([]);
 
     try {
       const result = await compileSchemaInBrowser(inputFiles);
@@ -157,12 +162,12 @@ export default function TryNow() {
           icon: <IconCheck size="1.1rem" />,
         });
       } else {
+        setCompileErrors(result.errors || []);
         notifications.show({
           title: 'Compilation Failed',
-          message: result.errors?.map(e => e.message).join(', ') || 'Unknown error',
+          message: 'Check the error panel for details.',
           color: 'red',
           icon: <IconX size="1.1rem" />,
-          autoClose: false,
         });
       }
     } catch (error) {
@@ -213,6 +218,7 @@ export default function TryNow() {
 
     setDbLoading(true);
     setDbQueryResult(null);
+    setDbQueryError(null);
     try {
       const result = await dbSession.query(sql);
       setDbQueryResult(result);
@@ -220,6 +226,7 @@ export default function TryNow() {
           await fetchTables(dbSession);
       }
     } catch (error) {
+      setDbQueryError(error.message);
       notifications.show({
         title: 'Query Failed',
         message: error.message,
@@ -245,6 +252,7 @@ export default function TryNow() {
         if (!dbSession) return;
         setDbLoading(true);
         setDbQueryResult(null);
+        setDbQueryError(null);
         try {
           await dbSession.reset();
           await fetchTables(dbSession);
@@ -285,8 +293,10 @@ export default function TryNow() {
         setLastCompileSuccess(false);
         setInputFiles(initialInputFiles);
         setOutputFiles(initialOutputFiles);
+        setCompileErrors([]);
         setDbQueryText("SELECT * FROM pg_catalog.pg_tables WHERE schemaname = 'public';");
         setDbQueryResult(null);
+        setDbQueryError(null);
         setActiveView(initialInputFiles[0].file);
         setSelectedTable(null);
         setTableSchema([]);
@@ -403,6 +413,22 @@ export default function TryNow() {
           {dbLoading && <Loader size="sm" />}
         </Group>
       </Box>
+
+      {/* Errors */}
+      {(compileErrors.length > 0 || dbQueryError) && (
+        <Box className={classes.alert}>
+          {compileErrors.map((err, idx) => (
+            <Alert key={idx} title="Compilation Error" color="red" withCloseButton onClose={() => setCompileErrors([])} mb="xs">
+              {err.message}
+            </Alert>
+          ))}
+          {dbQueryError && (
+            <Alert title="Database Error" color="red" withCloseButton onClose={() => setDbQueryError(null)}>
+              {dbQueryError}
+            </Alert>
+          )}
+        </Box>
+      )}
 
       {/* Workspace Area */}
       <Box className={classes.workspace}>
