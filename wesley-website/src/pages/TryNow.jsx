@@ -288,42 +288,38 @@ export default function TryNow() {
 
       {/* Workspace Tabs */}
       <Box className={classes.workspace}>
-        <Tabs value={activeTab} onChange={setActiveTab} variant="default" keepMounted={false} h="100%">
-          <Tabs.List bg="gray.0">
+        <Tabs value={activeTab} onChange={setActiveTab} variant="default" keepMounted={false} h="100%" classNames={{ panel: classes.panel }}>
+          <Tabs.List>
             <Tabs.Tab value="input-schema">GraphQL Input</Tabs.Tab>
             <Tabs.Tab value="wesley-output">Wesley Output</Tabs.Tab>
             <Tabs.Tab value="database-explorer" disabled={dbLoading}>Database Explorer</Tabs.Tab>
           </Tabs.List>
 
-          <Tabs.Panel value="input-schema" p={0} h="100%">
-            <Flex className={classes.panel}>
-              <FileExplorer 
-                files={inputFiles} 
-                activeFile={activeInputFile} 
-                onSelect={setActiveInputFile} 
-              />
-              <CodeEditor 
-                value={activeInputContent} 
-                onChange={handleInputFileChange} 
-              />
-            </Flex>
+          <Tabs.Panel value="input-schema">
+            <FileExplorer 
+              files={inputFiles} 
+              activeFile={activeInputFile} 
+              onSelect={setActiveInputFile} 
+            />
+            <CodeEditor 
+              value={activeInputContent} 
+              onChange={handleInputFileChange} 
+            />
           </Tabs.Panel>
 
-          <Tabs.Panel value="wesley-output" p={0} h="100%">
-            <Flex className={classes.panel}>
-              <FileExplorer 
-                files={outputFiles} 
-                activeFile={activeOutputFile} 
-                onSelect={setActiveOutputFile} 
-              />
-              <CodeEditor 
-                value={activeOutputContent} 
-                readOnly 
-              />
-            </Flex>
+          <Tabs.Panel value="wesley-output">
+            <FileExplorer 
+              files={outputFiles} 
+              activeFile={activeOutputFile} 
+              onSelect={setActiveOutputFile} 
+            />
+            <CodeEditor 
+              value={activeOutputContent} 
+              readOnly 
+            />
           </Tabs.Panel>
 
-          <Tabs.Panel value="database-explorer" p={0} h="100%">
+          <Tabs.Panel value="database-explorer">
             <DatabasePanel 
               tables={dbTables}
               query={dbQueryText}
