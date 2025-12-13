@@ -1,165 +1,19 @@
-/* Container */
-.container {
-  display: flex;
-  flex-direction: column;
-  height: calc(100vh - 60px);
-  padding: var(--mantine-spacing-lg);
-  background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
-  position: relative; /* For tutorial overlay */
-}
+/* ... (existing styles) ... */
 
-/* Header */
-.header {
-  margin-bottom: var(--mantine-spacing-lg);
-}
-
-.title {
-  font-size: var(--mantine-font-size-xl);
-  font-weight: 700;
-}
-
-.subtitle {
-  color: var(--mantine-color-dimmed);
-  font-size: var(--mantine-font-size-sm);
-}
-
-/* Controls */
-.controls {
-  margin-bottom: var(--mantine-spacing-lg);
-}
-
-.alert {
-  margin-bottom: var(--mantine-spacing-md);
-}
-
-/* Workspace */
-.workspace {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  border: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+[data-tutorial-highlight='true'] {
+  outline: 2px solid var(--mantine-color-blue-6);
+  outline-offset: 2px;
   border-radius: var(--mantine-radius-md);
-  overflow: hidden;
-}
-
-.panel {
-  display: flex;
-  flex: 1;
-  height: 100%;
-  min-height: 0;
-  overflow: hidden;
-}
-
-/* Sidebar (Generic) */
-.sidebar {
-  width: 220px;
-  background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
-  border-right: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
-  display: flex;
-  flex-direction: column;
-}
-
-.sidebarHeader {
-  padding: var(--mantine-spacing-xs) var(--mantine-spacing-md);
-  font-weight: 600;
-  border-bottom: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
-  font-size: var(--mantine-font-size-sm);
-}
-
-.fileList {
-  flex: 1;
-  overflow-y: auto;
-  padding: var(--mantine-spacing-xs);
-}
-
-.fileItem {
-  border-radius: var(--mantine-radius-sm);
-  font-size: var(--mantine-font-size-sm);
-}
-
-/* Editor */
-.editorContainer {
-  flex: 1;
+  box-shadow: 0 0 12px 4px var(--mantine-color-blue-6);
   position: relative;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
+  z-index: 1001; /* Above overlay */
+  transition: all 0.3s ease;
 }
 
-.codeBlock {
-  height: 100%;
-  border-radius: 0;
-  padding: 0;
-}
-
-.editor {
-  flex: 1;
-  width: 100%;
-  height: 100%;
-  border: none;
-  padding: var(--mantine-spacing-md);
-  font-family: var(--mantine-font-family-monospace);
-  font-size: var(--mantine-font-size-sm);
-  resize: none;
-  background-color: transparent;
-  outline: none;
-  color: light-dark(var(--mantine-color-black), var(--mantine-color-white));
-}
-
-.editorReadOnly {
-  background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-8));
-}
-
-/* Database Panel specific */
-.dbMain {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.dbControls {
-  padding: var(--mantine-spacing-sm);
-  border-bottom: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
-  background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
-}
-
-.resultsArea {
-  flex: 1;
-  overflow: auto;
-  padding: var(--mantine-spacing-md);
-}
-
-.table {
-  width: 100%;
-}
-
-.table th {
-  background-color: light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-5));
-}
-
-/* Tutorial Overlay */
-.tutorialOverlay {
+.tutorialDialog {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent overlay */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 999; /* Above everything but modals */
-}
-
-.tutorialCard {
-  background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
-  color: light-dark(var(--mantine-color-black), var(--mantine-color-white));
-  padding: var(--mantine-spacing-md);
-  border-radius: var(--mantine-radius-md);
-  width: 100%;
+  bottom: var(--mantine-spacing-lg);
+  right: var(--mantine-spacing-lg);
+  z-index: 1002; /* Above highlight and overlay */
   max-width: 400px;
-  box-shadow: var(--mantine-shadow-lg);
-  position: relative;
 }

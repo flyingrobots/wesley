@@ -12,14 +12,15 @@ import {
 import cx from 'clsx';
 import classes from './PlaygroundNavbar.module.css';
 
-export default function PlaygroundNavbar({
-  inputFiles,
-  outputFiles,
-  activeFile,
+export default function PlaygroundNavbar({ 
+  inputFiles, 
+  outputFiles, 
+  activeFile, 
   onSelect,
   isTutorialActive,
   tutorialStepId,
   onSelectSidebarItem,
+  tutorialRefs
 }) {
   const mainLinks = inputFiles.map((file) => (
     <UnstyledButton 
@@ -27,7 +28,7 @@ export default function PlaygroundNavbar({
       className={cx(classes.mainLink, { [classes.mainLinkActive]: activeFile === file.file })}
       onClick={() => onSelectSidebarItem(file.file)}
       disabled={isTutorialActive && tutorialStepId !== 'edit-schema'}
-      data-tutorial-id="editor"
+      ref={tutorialRefs.editor}
     >
       <div className={classes.mainLinkInner}>
         <IconFile size={20} className={classes.mainLinkIcon} stroke={1.5} />
@@ -41,9 +42,9 @@ export default function PlaygroundNavbar({
       href="#"
       onClick={(event) => { event.preventDefault(); onSelectSidebarItem(file.file); }}
       key={file.file}
-      className={cx(classes.collectionLink, { [classes.mainLinkActive]: activeFile === file.file })} // Reuse active style
+      className={cx(classes.collectionLink, { [classes.mainLinkActive]: activeFile === file.file })}
       disabled={isTutorialActive && tutorialStepId !== 'sidebar-migrations'}
-      data-tutorial-id="sidebar-migrations"
+      ref={tutorialRefs['sidebar-migrations']}
     >
       <Box component="span" mr={9} fz={16}>
         {file.file.endsWith('.sql') ? '🐘' : '📄'}
@@ -78,7 +79,7 @@ export default function PlaygroundNavbar({
             className={cx(classes.mainLink, { [classes.mainLinkActive]: activeFile === 'database' })}
             onClick={() => onSelectSidebarItem('database')}
             disabled={isTutorialActive && tutorialStepId !== 'sidebar-database'}
-            data-tutorial-id="sidebar-database"
+            ref={tutorialRefs['sidebar-database']}
           >
             <div className={classes.mainLinkInner}>
               <IconDatabase size={20} className={classes.mainLinkIcon} stroke={1.5} />
