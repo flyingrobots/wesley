@@ -1,7 +1,8 @@
 import React from 'react';
-import { Box, Code } from '@mantine/core';
+import { Box } from '@mantine/core'; // Removed Code from import
 import { CodeHighlight } from '@mantine/code-highlight';
 import classes from './Playground.module.css';
+import RichEditor from './RichEditor'; // Import RichEditor
 
 export default function CodeEditor({ value, onChange, readOnly = false, language = 'graphql' }) {
   if (readOnly) {
@@ -17,17 +18,6 @@ export default function CodeEditor({ value, onChange, readOnly = false, language
     );
   }
 
-  return (
-    <Box className={classes.editorContainer}>
-      <Code block className={classes.codeBlock}>
-        <textarea
-          className={`${classes.editor} ${readOnly ? classes.editorReadOnly : ''}`}
-          value={value}
-          onChange={(e) => onChange && onChange(e.target.value)}
-          readOnly={readOnly}
-          spellCheck={false}
-        />
-      </Code>
-    </Box>
-  );
+  // Use RichEditor for editable content
+  return <RichEditor value={value} onChange={onChange} />;
 }
