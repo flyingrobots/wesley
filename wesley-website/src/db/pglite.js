@@ -12,12 +12,27 @@ import { PGlite } from '@electric-sql/pglite';
  * A session for interacting with an in-browser PGLite database.
  * This class abstracts the PGLite specific implementation.
  */
+// Singleton instance to prevent "already read Response" WASM errors during hot-reload/strict-mode
+let globalPg = null;
+
 export class DbSession {
   /** @type {PGlite | null} */
   #pg = null;
 
   constructor() {
-    // Lazy init in reset()
+    // Lazy init via reset/init
+  }
+
+  /**
+   * Initializes the session.
+   * Uses a singleton PGLite instance to be safe against React double-mounts.
+   */
+  async init() {
+    if (!globalPg) {
+      globalPg = new PGlite();
+      await globalPg.waitReady;
+    }
+    this.#pg = globalPg;
   }
 
   /**
@@ -26,23 +41,26 @@ export class DbSession {
    * @returns {Promise<void>}
    */
   async reset() {
-    if (this.#pg) {
-      await this.#pg.close(); // Close existing connection to clear state
-    }
-    this.#pg = new PGlite(); // Create a new instance for a clean slate
-    await this.#pg.waitReady; // Ensure it's ready before returning
+    await this.init(); // Ensure we have the instance
+    
+    // Instead of re-instantiating (which causes WASM race conditions),
+    // we drop the public schema and recreate it.
+    await this.#pg.query('DROP SCHEMA public CASCADE;');
+    await this.#pg.query('CREATE SCHEMA public;');
   }
 
   /**
    * Closes the database connection.
+   * For the browser demo, we actually keep the singleton alive to avoid WASM reloading issues.
    * @returns {Promise<void>}
    */
   async close() {
-    if (this.#pg) {
-      await this.#pg.close();
-      this.#pg = null;
-    }
+    // No-op: we keep globalPg alive for the lifetime of the tab to prevent "already read Response" errors.
+    this.#pg = null; 
   }
+
+  /**
+   * Applies a list of SQL migration statements to the database.
 
   /**
    * Applies a list of SQL migration statements to the database.
