@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Button, Group, Loader, Alert, Title, Text, Box, Flex } from '@mantine/core';
 import { createDbSession } from '../db/pglite';
 import { compileSchemaInBrowser } from '@wesley/host-browser';
-import classes from '../components/playground/Playground.module.css'; // We might keep this for container styles, or move to props
+import classes from '../components/playground/Playground.module.css';
 
 import PlaygroundNavbar from '../components/playground/PlaygroundNavbar';
 import CodeEditor from '../components/playground/CodeEditor';
@@ -56,6 +56,8 @@ export default function TryNow() {
   const [dbSession, setDbSession] = useState(null);
   const [dbLoading, setDbLoading] = useState(true);
   const [dbTables, setDbTables] = useState([]);
+  const [selectedTable, setSelectedTable] = useState(null);
+  const [tableSchema, setTableSchema] = useState([]);
   const [dbQueryText, setDbQueryText] = useState("SELECT * FROM pg_catalog.pg_tables WHERE schemaname = 'public';");
   const [dbQueryResult, setDbQueryResult] = useState(null);
   const [dbQueryError, setDbQueryError] = useState(null);
@@ -73,6 +75,29 @@ export default function TryNow() {
       setDbTables(res.rows.map(r => r.table_name));
     } catch (e) {
       console.error('Failed to fetch tables:', e);
+    }
+  };
+
+  const handleSelectTable = async (tableName) => {
+    setSelectedTable(tableName);
+    setDbQueryText(`SELECT * FROM "${tableName}" LIMIT 100;`);
+    
+    // Fetch Schema
+    if (dbSession) {
+        try {
+            const schemaRes = await dbSession.query(`
+                SELECT column_name, data_type, is_nullable, column_default
+                FROM information_schema.columns 
+                WHERE table_name = '${tableName}'
+                ORDER BY ordinal_position;
+            `);
+            setTableSchema(schemaRes.rows);
+            
+            // Auto-run data query
+            handleRunDbQuery(`SELECT * FROM "${tableName}" LIMIT 100;`);
+        } catch (e) {
+            console.error(e);
+        }
     }
   };
 
@@ -124,8 +149,6 @@ export default function TryNow() {
       if (result.ok) {
         setOutputFiles(result.outputFiles);
         setCompileStatus('success');
-        // Switch to first output file to show result? Or stay?
-        // setActiveView(result.outputFiles[0].file); 
       } else {
         setCompileErrors(result.errors || [{ message: 'Unknown compilation error' }]);
         setCompileStatus('error');
@@ -148,7 +171,7 @@ export default function TryNow() {
       }
       setDbQueryResult({ rows: [{ status: 'Migrations applied successfully!' }], fields: ['status'] });
       await fetchTables(dbSession);
-      setActiveView('database'); // Auto-switch to DB view
+      setActiveView('database'); 
     } catch (error) {
       setDbQueryError(error.message);
     } finally {
@@ -156,15 +179,18 @@ export default function TryNow() {
     }
   };
 
-  const handleRunDbQuery = async () => {
-    if (!dbSession || !dbQueryText.trim()) return;
+  const handleRunDbQuery = async (queryOverride) => {
+    const sql = queryOverride || dbQueryText;
+    if (!dbSession || !sql.trim()) return;
+    if (queryOverride) setDbQueryText(sql);
+
     setDbLoading(true);
     setDbQueryResult(null);
     setDbQueryError(null);
     try {
-      const result = await dbSession.query(dbQueryText);
+      const result = await dbSession.query(sql);
       setDbQueryResult(result);
-      if (dbQueryText.match(/create|drop|alter/i)) {
+      if (sql.match(/create|drop|alter/i)) {
           await fetchTables(dbSession);
       }
     } catch (error) {
@@ -183,6 +209,8 @@ export default function TryNow() {
       await dbSession.reset();
       setDbQueryResult({ rows: [{ status: 'Database reset successfully!' }], fields: ['status'] });
       await fetchTables(dbSession);
+      setSelectedTable(null);
+      setTableSchema([]);
     } catch (error) {
       setDbQueryError(error.message);
     } finally {
@@ -201,6 +229,8 @@ export default function TryNow() {
     setDbQueryResult(null);
     setDbQueryError(null);
     setActiveView(initialInputFiles[0].file);
+    setSelectedTable(null);
+    setTableSchema([]);
     
     if (dbSession) {
         setDbLoading(true);
@@ -221,9 +251,12 @@ export default function TryNow() {
       return (
         <DatabasePanel 
           tables={dbTables}
+          selectedTable={selectedTable}
+          tableSchema={tableSchema}
+          onSelectTable={handleSelectTable}
           query={dbQueryText}
           setQuery={setDbQueryText}
-          onRun={handleRunDbQuery}
+          onRun={() => handleRunDbQuery()}
           loading={dbLoading}
           result={dbQueryResult}
           error={dbQueryError}
