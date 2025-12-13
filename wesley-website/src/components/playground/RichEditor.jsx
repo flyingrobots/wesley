@@ -40,11 +40,14 @@ const createCodeDocument = (text) => ({
 export default function RichEditor({ value, onChange }) {
   const editor = useEditor({
     extensions: [
-      StarterKit,
-      Link, // Use Mantine's Link extension for Ctrl+K
+      // Configure StarterKit to disable its default Link and CodeBlock extensions
+      StarterKit.configure({
+        link: false,
+        codeBlock: false,
+      }),
+      Link, // Use Mantine's Link extension (explicitly added)
       CodeBlockLowlight.configure({
         lowlight,
-        // Optional: define default language
         defaultLanguage: 'graphql',
       }),
       TabKeyExtension, // Add our custom tab key extension
