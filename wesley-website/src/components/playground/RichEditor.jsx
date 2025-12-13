@@ -9,6 +9,18 @@ import graphqlLang from 'highlight.js/lib/languages/graphql'; // Import the lang
 const lowlight = createLowlight(common);
 lowlight.register('graphql', graphqlLang); // Register directly
 
+// Helper to ensure content is treated as a code block
+const createCodeDocument = (text) => ({
+  type: 'doc',
+  content: [
+    {
+      type: 'codeBlock',
+      attrs: { language: 'graphql' },
+      content: text ? [{ type: 'text', text }] : []
+    }
+  ]
+});
+
 export default function RichEditor({ value, onChange }) {
   const editor = useEditor({
     extensions: [
@@ -20,9 +32,12 @@ export default function RichEditor({ value, onChange }) {
         defaultLanguage: 'graphql',
       }),
     ],
-    content: value,
+    content: createCodeDocument(value), // Initialize as code block
     onUpdate: ({ editor }) => {
-      onChange(editor.getText()); // Get plain text for our schema
+      // Get plain text from the code block
+      // We use getText() which extracts text from all nodes. 
+      // Since we only have one code block, this works.
+      onChange(editor.getText()); 
     },
     // Adding placeholder for better UX
     editorProps: {
@@ -30,14 +45,13 @@ export default function RichEditor({ value, onChange }) {
         class: 'tiptap-editor-focused', // Apply custom class for editor area
       },
     },
-    // Adding placeholder for better UX
-    placeholder: 'Write your GraphQL schema here...',
   });
 
   // Ensure editor content is up-to-date with value prop
   React.useEffect(() => {
     if (editor && editor.getText() !== value) {
-      editor.commands.setContent(value, false, { preserveCursor: true });
+      // Force update into code block structure
+      editor.commands.setContent(createCodeDocument(value), false, { preserveCursor: true });
     }
   }, [value, editor]);
 
@@ -66,6 +80,14 @@ export default function RichEditor({ value, onChange }) {
           min-height: 100%;
           padding: 1rem;
           outline: none;
+        }
+        /* Target the code block specifically */
+        .ProseMirror pre {
+          background: transparent;
+          padding: 0;
+          margin: 0;
+          border-radius: 0;
+          font-family: inherit;
         }
         .ProseMirror p {
           margin: 0;
