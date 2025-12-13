@@ -39,10 +39,7 @@ type Product {
   }
 ];
 
-const initialOutputFiles = [
-  { file: 'migrations.sql', body: '' },
-  { file: 'schema.sql', body: '' }
-];
+const initialOutputFiles = [];
 
 export default function TryNow() {
   // --- State ---

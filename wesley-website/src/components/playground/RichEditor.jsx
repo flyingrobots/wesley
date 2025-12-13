@@ -42,16 +42,35 @@ export default function RichEditor({ value, onChange }) {
   }, [value, editor]);
 
   return (
-    <MantineRichTextEditor editor={editor} style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-      <MantineRichTextEditor.Toolbar sticky stickyOffset={0}> {/* Toolbar at the top */}
-        <MantineRichTextEditor.ControlsGroup>
-          <MantineRichTextEditor.Bold />
-          <MantineRichTextEditor.Italic />
-          <MantineRichTextEditor.Code />
-          <MantineRichTextEditor.CodeBlock />
-        </MantineRichTextEditor.ControlsGroup>
-      </MantineRichTextEditor.Toolbar>
-      <MantineRichTextEditor.Content style={{ flex: 1, overflowY: 'auto' }} />
+    <MantineRichTextEditor 
+      editor={editor} 
+      style={{ 
+        flex: 1, 
+        display: 'flex', 
+        flexDirection: 'column',
+        border: 'none', // Remove default border to blend with container
+      }}
+    >
+      {/* Removed Toolbar for Code Editor feel */}
+      
+      <MantineRichTextEditor.Content 
+        style={{ 
+          flex: 1, 
+          overflowY: 'auto',
+          fontFamily: 'var(--mantine-font-family-monospace)', // Force monospace
+          fontSize: 'var(--mantine-font-size-sm)',
+        }} 
+      />
+      <style>{`
+        .ProseMirror {
+          min-height: 100%;
+          padding: 1rem;
+          outline: none;
+        }
+        .ProseMirror p {
+          margin: 0;
+        }
+      `}</style>
     </MantineRichTextEditor>
   );
 }

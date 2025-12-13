@@ -95,14 +95,16 @@ export default function PlaygroundNavbar({
         <div className={classes.mainLinks}>{mainLinks}</div>
       </div>
 
-      <div className={classes.section}>
-        <Group className={classes.collectionsHeader} justify="space-between">
-          <Text size="xs" fw={500} c="dimmed">
-            Generated Artifacts
-          </Text>
-        </Group>
-        <div className={classes.collections}>{collectionLinks}</div>
-      </div>
+      {collectionLinks.length > 0 && (
+        <div className={classes.section}>
+          <Group className={classes.collectionsHeader} justify="space-between">
+            <Text size="xs" fw={500} c="dimmed">
+              Generated Artifacts
+            </Text>
+          </Group>
+          <div className={classes.collections}>{collectionLinks}</div>
+        </div>
+      )}
     </nav>
   );
 }
