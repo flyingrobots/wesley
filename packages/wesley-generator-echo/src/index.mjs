@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { parse, Kind } from 'graphql';
+import pkg from '../package.json' assert { type: 'json' };
 
 /**
  * Generator for Echo (Rust/WASM) artifacts.
@@ -13,6 +14,12 @@ export async function generateEcho({ sdl, ir, mutationIdNamespace = 'Mutation' }
   const intentEnum = buildIntentEnum(Object.keys(mutationIds));
 
   const fullIr = {
+    ir_version: 'echo-ir/v1',
+    generated_by: {
+      tool: '@wesley/generator-echo',
+      version: pkg.version
+    },
+    schema_sha256: sdl ? sha256hex(sdl) : undefined,
     ...baseIr,
     mutation_ids: mutationIds,
     types: [...(baseIr.types ?? []), intentEnum]
@@ -50,6 +57,10 @@ function hash32(text) {
   // SHA-256 then take first 4 bytes little-endian
   const buf = createHash('sha256').update(text).digest();
   return buf.readUInt32LE(0);
+}
+
+function sha256hex(text) {
+  return createHash('sha256').update(text).digest('hex');
 }
 
 function parseGraphQLToEchoIR(sdl) {
