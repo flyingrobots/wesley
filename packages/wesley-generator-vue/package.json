@@ -1,0 +1,27 @@
+{
+  "name": "@wesley/generator-vue",
+  "version": "0.1.0",
+  "description": "Wesley Vue Generator - Vue composables, dispatchers, and reactivity wrappers",
+  "type": "module",
+  "main": "src/index.mjs",
+  "exports": {
+    ".": "./src/index.mjs"
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@wesley/core": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^4.0.3"
+  },
+  "author": "Wesley Authors <oss@flyingrobots.dev>",
+  "license": "LicenseRef-MIND-UCAL-1.0",
+  "engines": {
+    "node": ">=18.17"
+  }
+}

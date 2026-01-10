@@ -107,6 +107,16 @@ importers:
         specifier: ^4.0.3
         version: 4.0.3(esbuild@0.25.10)(jsdom@27.0.1(postcss@8.5.6))(sugarss@5.0.1(postcss@8.5.6))
 
+  packages/wesley-generator-vue:
+    dependencies:
+      '@wesley/core':
+        specifier: workspace:*
+        version: link:../wesley-core
+    devDependencies:
+      vitest:
+        specifier: ^4.0.3
+        version: 4.0.3(esbuild@0.25.10)(jsdom@27.0.1(postcss@8.5.6))(sugarss@5.0.1(postcss@8.5.6))
+
   packages/wesley-holmes:
     dependencies:
       '@wesley/core':
