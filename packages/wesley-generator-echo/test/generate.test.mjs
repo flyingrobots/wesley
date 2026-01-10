@@ -1,32 +1,61 @@
 import { describe, it, expect } from 'vitest';
+import { createHash } from 'node:crypto';
 import { generateEcho } from '../src/index.mjs';
 
-describe('generateEcho', () => {
-  it('should generate Rust structs from AppState', async () => {
-    const ir = {
-      types: [
-        {
-          name: 'AppState',
-          kind: 'OBJECT',
-          fields: [
-            { name: 'theme', type: 'Theme', required: true },
-            { name: 'navOpen', type: 'Boolean', required: true },
-            { name: 'routePath', type: 'String', required: true }
-          ]
-        },
-        {
-          name: 'Theme',
-          kind: 'ENUM',
-          values: ['LIGHT', 'DARK', 'SYSTEM']
-        }
-      ]
-    };
+const schemaSDL = /* GraphQL */ `
+  enum Theme {
+    LIGHT
+    DARK
+    SYSTEM
+  }
 
-    const result = await generateEcho(ir);
-    const rustFile = result.files.find(f => f.path.endsWith('.rs'));
-    
-    expect(rustFile).toBeDefined();
-    expect(rustFile.content).toContain('pub struct AppState');
-    expect(rustFile.content).toContain('pub enum Theme');
+  type AppState {
+    theme: Theme!
+    navOpen: Boolean!
+    routePath: String!
+    tags: [String!]
+  }
+
+  type Mutation {
+    setTheme(mode: Theme!): AppState!
+    toggleNav: AppState!
+    routePush(path: String!): AppState!
+  }
+
+  type Query {
+    appState: AppState!
+  }
+`;
+
+const idFor = (name) => createHash('sha256').update(`Mutation:${name}`).digest().readUInt32LE(0);
+
+describe('generateEcho', () => {
+  it('emits Wesley IR JSON with types and mutation ids', async () => {
+    const result = await generateEcho({ sdl: schemaSDL });
+    const irFile = result.files.find((f) => f.path === 'ir.json');
+
+    expect(irFile).toBeDefined();
+    const ir = JSON.parse(irFile.content);
+
+    const appState = ir.types.find((t) => t.name === 'AppState');
+    const theme = ir.types.find((t) => t.name === 'Theme');
+
+    expect(appState).toBeDefined();
+    expect(appState.kind).toBe('OBJECT');
+    expect(appState.fields.some((f) => f.name === 'navOpen' && f.type === 'Boolean' && f.required === true)).toBe(true);
+    expect(appState.fields.some((f) => f.name === 'tags' && f.type === 'String' && f.list === true && f.required === false)).toBe(true);
+    expect(theme).toBeDefined();
+    expect(theme.values).toEqual(['LIGHT', 'DARK', 'SYSTEM']);
+
+    expect(ir.mutation_ids).toMatchObject({
+      setTheme: idFor('setTheme'),
+      toggleNav: idFor('toggleNav'),
+      routePush: idFor('routePush'),
+    });
+
+    // Include Intent enum of mutation names for downstream Rust.
+    const intentEnum = ir.types.find((t) => t.name === 'Intent');
+    expect(intentEnum).toBeDefined();
+    expect(intentEnum.values).toEqual(['setTheme', 'toggleNav', 'routePush']);
   });
 });

@@ -76,6 +76,12 @@ importers:
       '@wesley/core':
         specifier: workspace:*
         version: link:../wesley-core
+      '@wesley/host-node':
+        specifier: workspace:*
+        version: link:../wesley-host-node
+      graphql:
+        specifier: ^16.11.0
+        version: 16.11.0
     devDependencies:
       vitest:
         specifier: ^4.0.3

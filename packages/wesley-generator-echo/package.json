@@ -14,7 +14,9 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@wesley/core": "workspace:*"
+    "@wesley/core": "workspace:*",
+    "@wesley/host-node": "workspace:*",
+    "graphql": "^16.11.0"
   },
   "devDependencies": {
     "vitest": "^4.0.3"
