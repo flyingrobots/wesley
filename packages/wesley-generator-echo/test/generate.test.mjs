@@ -13,7 +13,6 @@ const schemaSDL = /* GraphQL */ `
     theme: Theme!
     navOpen: Boolean!
     routePath: String!
-    tags: [String!]
   }
 
   type Mutation {
@@ -27,35 +26,35 @@ const schemaSDL = /* GraphQL */ `
   }
 `;
 
-const idFor = (name) => createHash('sha256').update(`Mutation:${name}`).digest().readUInt32LE(0);
+const hash32 = (ns, name) => createHash('sha256').update(`${ns}:${name}`).digest().readUInt32LE(0);
 
 describe('generateEcho', () => {
-  it('emits Wesley IR JSON with types and mutation ids', async () => {
+  it('emits Wesley IR JSON with types and ops catalog', async () => {
     const result = await generateEcho({ sdl: schemaSDL });
     const irFile = result.files.find((f) => f.path === 'ir.json');
 
     expect(irFile).toBeDefined();
     const ir = JSON.parse(irFile.content);
 
+    expect(ir.ir_version).toBe('echo-ir/v1');
+    expect(ir.ops).toBeDefined();
+
     const appState = ir.types.find((t) => t.name === 'AppState');
     const theme = ir.types.find((t) => t.name === 'Theme');
-
     expect(appState).toBeDefined();
-    expect(appState.kind).toBe('OBJECT');
-    expect(appState.fields.some((f) => f.name === 'navOpen' && f.type === 'Boolean' && f.required === true)).toBe(true);
-    expect(appState.fields.some((f) => f.name === 'tags' && f.type === 'String' && f.list === true && f.required === false)).toBe(true);
-    expect(theme).toBeDefined();
+    expect(appState.fields).toHaveLength(3);
     expect(theme.values).toEqual(['LIGHT', 'DARK', 'SYSTEM']);
 
-    expect(ir.mutation_ids).toMatchObject({
-      setTheme: idFor('setTheme'),
-      toggleNav: idFor('toggleNav'),
-      routePush: idFor('routePush'),
-    });
+    const setTheme = ir.ops.find((o) => o.name === 'setTheme' && o.kind === 'MUTATION');
+    expect(setTheme.op_id).toBe(hash32('Mutation', 'setTheme'));
+    expect(setTheme.args).toEqual([
+      { name: 'mode', type: 'Theme', required: true, list: false }
+    ]);
+    expect(setTheme.result_type).toBe('AppState');
 
-    // Include Intent enum of mutation names for downstream Rust.
-    const intentEnum = ir.types.find((t) => t.name === 'Intent');
-    expect(intentEnum).toBeDefined();
-    expect(intentEnum.values).toEqual(['setTheme', 'toggleNav', 'routePush']);
+    const appStateQuery = ir.ops.find((o) => o.name === 'appState' && o.kind === 'QUERY');
+    expect(appStateQuery.op_id).toBe(hash32('Query', 'appState'));
+    expect(appStateQuery.args).toEqual([]);
+    expect(appStateQuery.result_type).toBe('AppState');
   });
 });

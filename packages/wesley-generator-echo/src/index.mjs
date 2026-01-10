@@ -1,28 +1,26 @@
 import { createHash } from 'node:crypto';
 import { parse, Kind } from 'graphql';
-import pkg from '../package.json' assert { type: 'json' };
+
+const PKG_VERSION = '0.1.0'; // keep simple: avoid package.json import in node CLI
 
 /**
  * Generator for Echo (Rust/WASM) artifacts.
  * Input: GraphQL SDL (string) or prebuilt Wesley IR.
  * Output: Wesley IR JSON enriched with mutation IDs + Intent enum for Echo.
  */
-export async function generateEcho({ sdl, ir, mutationIdNamespace = 'Mutation' } = {}) {
+export async function generateEcho({ sdl, ir, mutationIdNamespace = 'Mutation', queryNamespace = 'Query' } = {}) {
   const baseIr = ir ?? parseGraphQLToEchoIR(sdl);
 
-  const mutationIds = buildMutationIds(baseIr, mutationIdNamespace);
-  const intentEnum = buildIntentEnum(Object.keys(mutationIds));
-
+  const ops = buildOpsFromSDL(sdl, mutationIdNamespace, queryNamespace);
   const fullIr = {
     ir_version: 'echo-ir/v1',
     generated_by: {
       tool: '@wesley/generator-echo',
-      version: pkg.version
+      version: PKG_VERSION
     },
     schema_sha256: sdl ? sha256hex(sdl) : undefined,
     ...baseIr,
-    mutation_ids: mutationIds,
-    types: [...(baseIr.types ?? []), intentEnum]
+    ops,
   };
 
   return {
@@ -35,22 +33,44 @@ export async function generateEcho({ sdl, ir, mutationIdNamespace = 'Mutation' }
   };
 }
 
-function buildMutationIds(ir, namespace) {
-  const mutations = (ir.types || []).find((t) => t.name === 'Mutation');
-  const fields = mutations?.fields || [];
-  const ids = {};
-  for (const field of fields) {
-    ids[field.name] = hash32(`${namespace}:${field.name}`);
-  }
-  return ids;
-}
+function buildOpsFromSDL(sdl, mutationNs, queryNs) {
+  const doc = parse(sdl);
+  const mutationDef = doc.definitions.find(
+    (d) => d.kind === Kind.OBJECT_TYPE_DEFINITION && d.name.value === 'Mutation'
+  );
+  const queryDef = doc.definitions.find(
+    (d) => d.kind === Kind.OBJECT_TYPE_DEFINITION && d.name.value === 'Query'
+  );
 
-function buildIntentEnum(mutationNames) {
-  return {
-    name: 'Intent',
-    kind: 'ENUM',
-    values: mutationNames
+  const ops = [];
+  const extract = (def, kind, ns) => {
+    if (!def) return;
+    for (const f of def.fields ?? []) {
+      const { typeName: resultType } = unwrapType(f.type);
+      const args = (f.arguments ?? []).map((a) => {
+        const { typeName, required, list } = unwrapType(a.type);
+        return {
+          name: a.name.value,
+          type: typeName,
+          required,
+          list,
+        };
+      });
+      ops.push({
+        kind,
+        name: f.name.value,
+        op_id: hash32(`${ns}:${f.name.value}`),
+        args,
+        result_type: resultType,
+      });
+    }
   };
+
+  extract(mutationDef, 'MUTATION', mutationNs);
+  extract(queryDef, 'QUERY', queryNs);
+
+  ops.sort((a, b) => a.op_id - b.op_id || a.name.localeCompare(b.name));
+  return ops;
 }
 
 function hash32(text) {
@@ -77,6 +97,9 @@ function parseGraphQLToEchoIR(sdl) {
     }
 
     if (def.kind === Kind.OBJECT_TYPE_DEFINITION) {
+      // Skip Mutation/Query here; ops catalog carries operation info.
+      if (def.name.value === 'Mutation' || def.name.value === 'Query') continue;
+
       types.push({
         name: def.name.value,
         kind: 'OBJECT',
