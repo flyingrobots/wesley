@@ -37,6 +37,8 @@ describe('generateEcho', () => {
     const ir = JSON.parse(irFile.content);
 
     expect(ir.ir_version).toBe('echo-ir/v1');
+    expect(ir.codec_id).toBe('cbor-canon-v1');
+    expect(ir.registry_version).toBe(1);
     expect(ir.ops).toBeDefined();
 
     const appState = ir.types.find((t) => t.name === 'AppState');

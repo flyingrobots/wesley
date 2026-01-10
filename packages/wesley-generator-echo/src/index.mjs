@@ -17,6 +17,8 @@ export async function generateEcho({ sdl, ir, mutationIdNamespace = 'Mutation', 
   const ops = buildOpsFromSDL(sdl, mutationIdNamespace, queryNamespace);
   const fullIr = {
     ir_version: 'echo-ir/v1',
+    codec_id: 'cbor-canon-v1',
+    registry_version: 1,
     generated_by: {
       tool: '@wesley/generator-echo',
       version: PKG_VERSION
