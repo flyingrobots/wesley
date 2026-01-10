@@ -1,5 +1,8 @@
 import { createHash } from 'node:crypto';
 import { parse, Kind } from 'graphql';
+import { emitOps } from './emitOps.mjs';
+import { emitSchemas } from './emitSchemas.mjs';
+import { emitClient } from './emitClient.mjs';
 
 const PKG_VERSION = '0.1.0'; // keep simple: avoid package.json import in node CLI
 
@@ -25,10 +28,10 @@ export async function generateEcho({ sdl, ir, mutationIdNamespace = 'Mutation', 
 
   return {
     files: [
-      {
-        path: 'ir.json',
-        content: JSON.stringify(fullIr, null, 2)
-      }
+      { path: 'ir.json', content: JSON.stringify(fullIr, null, 2) },
+      { path: 'ops.generated.ts', content: emitOps(fullIr) },
+      { path: 'schemas.generated.ts', content: emitSchemas(fullIr) },
+      { path: 'client.generated.ts', content: emitClient(fullIr) },
     ]
   };
 }
