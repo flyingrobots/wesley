@@ -19,7 +19,8 @@
     "graphql": "^16.11.0"
   },
   "devDependencies": {
-    "vitest": "^4.0.3"
+    "vitest": "^4.0.3",
+    "zod": "^3.23.8"
   },
   "author": "Wesley Authors <oss@flyingrobots.dev>",
   "license": "LicenseRef-MIND-UCAL-1.0",
