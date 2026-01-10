@@ -31,6 +31,7 @@
     "clsx": "^2.1.1",
     "highlight.js": "^11.11.1",
     "lowlight": "^3.3.0",
+    "prosemirror-keymap": "^1.2.3",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "zod": "^4.1.13"

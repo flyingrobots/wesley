@@ -12,6 +12,7 @@ import '@mantine/core/styles.css'
 import '@mantine/code-highlight/styles.css';
 import '@mantine/notifications/styles.css';
 import '@mantine/tiptap/styles.css';
+import 'highlight.js/styles/atom-one-light.css'; // Highlight.js theme
 import './index.css'
 import App from './App.jsx'
 

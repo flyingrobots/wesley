@@ -241,6 +241,9 @@ importers:
       lowlight:
         specifier: ^3.3.0
         version: 3.3.0
+      prosemirror-keymap:
+        specifier: ^1.2.3
+        version: 1.2.3
       react:
         specifier: ^19.1.1
         version: 19.2.0
