@@ -12,6 +12,16 @@ const PKG_VERSION = '0.1.0'; // keep simple: avoid package.json import in node C
  * Output: Wesley IR JSON enriched with mutation IDs + Intent enum for Echo.
  */
 export async function generateEcho({ sdl, ir, mutationIdNamespace = 'Mutation', queryNamespace = 'Query' } = {}) {
+  if (typeof sdl !== 'string' || sdl.trim().length === 0) {
+    throw new Error('generateEcho: GraphQL SDL string is required (pass { sdl })');
+  }
+  if (typeof mutationIdNamespace !== 'string' || mutationIdNamespace.trim().length === 0) {
+    throw new Error('generateEcho: mutationIdNamespace must be a non-empty string');
+  }
+  if (typeof queryNamespace !== 'string' || queryNamespace.trim().length === 0) {
+    throw new Error('generateEcho: queryNamespace must be a non-empty string');
+  }
+
   const baseIr = ir ?? parseGraphQLToEchoIR(sdl);
 
   const ops = buildOpsFromSDL(sdl, mutationIdNamespace, queryNamespace);
