@@ -8,8 +8,9 @@ const PKG_VERSION = '0.1.0'; // keep simple: avoid package.json import in node C
 
 /**
  * Generator for Echo (Rust/WASM) artifacts.
- * Input: GraphQL SDL (string) or prebuilt Wesley IR.
- * Output: Wesley IR JSON enriched with mutation IDs + Intent enum for Echo.
+ * Input: GraphQL SDL (string) and optional prebuilt Wesley IR.
+ * Output: Echo IR JSON (`echo-ir/v1`) + a small set of host-side helper files
+ *         derived from the ops catalog (IDs, args/result metadata, schemas).
  */
 export async function generateEcho({ sdl, ir, mutationIdNamespace = 'Mutation', queryNamespace = 'Query' } = {}) {
   if (typeof sdl !== 'string' || sdl.trim().length === 0) {

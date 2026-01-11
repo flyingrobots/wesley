@@ -33,6 +33,14 @@ Returns:
 }
 ```
 
+### Host helper outputs
+
+The generator emits a small set of host-side helpers driven by the ops catalog:
+
+- `ops.generated.ts`: exports `SCHEMA_SHA256`, `CODEC_ID`, `REGISTRY_VERSION`, `OPS`, and `findOpId(name)`
+- `schemas.generated.ts`: Zod schemas for types (enums + objects); op var/result schemas are wired later
+- `client.generated.ts`: minimal client skeleton (registry verification, wasm interface)
+
 ### Op ID derivation (frozen rule)
 
 Each operation gets a persisted numeric ID:
@@ -52,4 +60,3 @@ Run tests:
 ```bash
 pnpm --filter @wesley/generator-echo test
 ```
-

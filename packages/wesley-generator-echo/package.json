@@ -1,7 +1,7 @@
 {
   "name": "@wesley/generator-echo",
   "version": "0.1.0",
-  "description": "Wesley Echo Generator - Rust structs, enums, and intent routing",
+  "description": "Wesley Echo generator: GraphQL SDL -> echo-ir/v1 + ops catalog + host helpers",
   "type": "module",
   "main": "src/index.mjs",
   "exports": {
