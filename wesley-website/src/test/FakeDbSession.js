@@ -92,7 +92,10 @@ export class FakeDbSession {
       const data = this.#tableData.get(tableName) || [];
       if (data.length > 0) {
         const fields = Object.keys(data[0]);
-        return { rows: data.slice(0, 100), fields };
+        // Parse LIMIT clause if present, otherwise return all data
+        const limitMatch = sql.match(/LIMIT\s+(\d+)/i);
+        const limit = limitMatch ? parseInt(limitMatch[1], 10) : data.length;
+        return { rows: data.slice(0, limit), fields };
       }
       return { rows: [], fields: [] };
     }

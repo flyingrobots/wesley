@@ -22,7 +22,7 @@ function mapType(gqlType, required, list) {
     tsType = `${tsType}[]`;
   }
 
-  return required ? tsType : `${tsType} | null`;
+  return required ? tsType : `${tsType} | undefined`;
 }
 
 /**

@@ -22,15 +22,23 @@ hljs.registerLanguage('json', json);
 
 const highlightJsAdapter = createHighlightJsAdapter(hljs);
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
+function Providers({ children }) {
+  return (
     <MantineProvider defaultColorScheme="light">
       <Notifications position="top-right" />
       <ModalsProvider>
         <CodeHighlightAdapterProvider adapter={highlightJsAdapter}>
-          <App />
+          {children}
         </CodeHighlightAdapterProvider>
       </ModalsProvider>
     </MantineProvider>
+  );
+}
+
+createRoot(document.getElementById('root')).render(
+  <StrictMode>
+    <Providers>
+      <App />
+    </Providers>
   </StrictMode>,
 )

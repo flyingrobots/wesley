@@ -26,12 +26,16 @@ export default function ExplanationPopover({ children, title, description, width
         </Box>
       </Popover.Target>
       <Popover.Dropdown style={{ pointerEvents: 'none' }}> {/* Prevent interaction with tooltip itself */}
-        <Text size="sm" fw={700} mb={5}>
-          {title}
-        </Text>
-        <Text size="xs" c="dimmed">
-          {description}
-        </Text>
+        {title && (
+          <Text size="sm" fw={700} mb={5}>
+            {title}
+          </Text>
+        )}
+        {description && (
+          <Text size="xs" c="dimmed">
+            {description}
+          </Text>
+        )}
       </Popover.Dropdown>
     </Popover>
   );

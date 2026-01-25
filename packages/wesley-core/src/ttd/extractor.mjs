@@ -162,6 +162,13 @@ export function extractTtdSchema(sdl, deps = {}) {
           const { typeName: fieldType, required, list } = unwrapType(field.type);
           const fieldDirectives = extractTtdDirectives(field.directives);
 
+          // Validate field-level registry if present
+          if (fieldDirectives.registry) {
+            if (typeof fieldDirectives.registry.id !== 'number') {
+              throw new Error(`Field "${field.name.value}" on type "${typeName}" has @wes_registry without a valid numeric id`);
+            }
+          }
+
           typeInfo.fields.push({
             name: field.name.value,
             type: fieldType,
@@ -169,6 +176,7 @@ export function extractTtdSchema(sdl, deps = {}) {
             list,
             stateField: fieldDirectives.stateField,
             constraint: fieldDirectives.constraint,
+            registry: fieldDirectives.registry,
           });
         }
 

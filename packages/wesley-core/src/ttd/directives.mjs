@@ -56,6 +56,13 @@ function getArgValue(arg) {
       return val.values.map(v => getArgValue({ value: v }));
     case 'EnumValue':
       return val.value;
+    case 'ObjectValue': {
+      const obj = {};
+      for (const field of val.fields) {
+        obj[field.name.value] = getArgValue({ value: field.value });
+      }
+      return obj;
+    }
     default:
       return val.value;
   }

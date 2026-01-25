@@ -44,7 +44,7 @@ describe('DbSession', () => {
     const insertStatements = Array.from({ length: 150 }, (_, i) => `INSERT INTO large_table VALUES (${i + 1});`);
     await dbSession.applyMigrations([createTable, ...insertStatements]);
 
-    const result = await dbSession.query('SELECT * FROM large_table;');
+    const result = await dbSession.query('SELECT * FROM large_table ORDER BY id;');
     expect(result.rows.length).toBe(100);
     expect(result.rows[0].id).toBe(1);
     expect(result.rows[99].id).toBe(100);

@@ -134,13 +134,19 @@ export function generateManifest(schema, deps = {}) {
     schemaHash: schema.schemaHash,
     registry: {
       version: 1,
-      entries: sortedRegistry.map(entry => ({
-        id: entry.id,
-        typeName: entry.typeName,
-        deprecated: entry.deprecated,
-        deprecatedBy: entry.deprecatedBy,
-        typeHash: hashType(schema.types.find(t => t.name === entry.typeName) || { name: entry.typeName, fields: [] }, hashDeps),
-      })),
+      entries: sortedRegistry.map(entry => {
+        const typeObj = schema.types.find(t => t.name === entry.typeName);
+        if (!typeObj) {
+          throw new Error(`Registry entry "${entry.id}" references unknown type "${entry.typeName}". Ensure the type is defined in the schema.`);
+        }
+        return {
+          id: entry.id,
+          typeName: entry.typeName,
+          deprecated: entry.deprecated,
+          deprecatedBy: entry.deprecatedBy,
+          typeHash: hashType(typeObj, hashDeps),
+        };
+      }),
     },
     ops: sortedOps.map(op => ({
       name: op.name,
