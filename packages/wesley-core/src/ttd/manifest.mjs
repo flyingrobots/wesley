@@ -50,6 +50,7 @@ export function generateContractsJson(schema) {
   // Group rules by state type to form state machines
   const stateMachines = [];
   const stateTypeMap = new Map();
+  const seenRulesPerType = new Map();
 
   // Find enum types that are used in rules
   for (const rule of schema.rules) {
@@ -60,8 +61,14 @@ export function generateContractsJson(schema) {
         if (enumDef.values.includes(state)) {
           if (!stateTypeMap.has(enumDef.name)) {
             stateTypeMap.set(enumDef.name, []);
+            seenRulesPerType.set(enumDef.name, new Set());
           }
-          stateTypeMap.get(enumDef.name).push(rule);
+          // Prevent duplicate rules per state type
+          const seen = seenRulesPerType.get(enumDef.name);
+          if (!seen.has(rule)) {
+            seen.add(rule);
+            stateTypeMap.get(enumDef.name).push(rule);
+          }
           break;
         }
       }

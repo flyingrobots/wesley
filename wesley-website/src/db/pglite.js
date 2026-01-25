@@ -61,9 +61,6 @@ export class DbSession {
 
   /**
    * Applies a list of SQL migration statements to the database.
-
-  /**
-   * Applies a list of SQL migration statements to the database.
    * @param {string[]} sqlMigrations - An array of SQL statements.
    * @returns {Promise<void>}
    */

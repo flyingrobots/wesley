@@ -64,8 +64,8 @@ export function generateTsTypes(schema) {
 
     for (const field of typeDef.fields || []) {
       const tsType = mapType(field.type, field.required, field.list);
-      const optional = field.required ? '' : '?';
-      lines.push(`  ${field.name}${optional}: ${tsType};`);
+      // Use only | null for non-required, not both ? and | null (avoids triple-state)
+      lines.push(`  ${field.name}: ${tsType};`);
     }
 
     lines.push('}');
@@ -83,8 +83,8 @@ export function generateTsTypes(schema) {
 
       for (const arg of op.args) {
         const tsType = mapType(arg.type, arg.required, arg.list);
-        const optional = arg.required ? '' : '?';
-        lines.push(`  ${arg.name}${optional}: ${tsType};`);
+        // Use only | null for non-required, not both ? and | null (avoids triple-state)
+        lines.push(`  ${arg.name}: ${tsType};`);
       }
 
       lines.push('}');

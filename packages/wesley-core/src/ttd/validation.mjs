@@ -326,6 +326,11 @@ export function validateTtdSchema(schema) {
   // Validate registry
   allErrors.push(...validateRegistry(schema.registry || []));
 
+  // Validate state machine rules
+  if (schema.rules && schema.rules.length > 0) {
+    allErrors.push(...validateStateMachine(schema.rules, validStates));
+  }
+
   // Separate errors and warnings
   const errors = allErrors.filter(e => e.severity === ValidationSeverity.ERROR);
   const warnings = allErrors.filter(e => e.severity === ValidationSeverity.WARNING);
