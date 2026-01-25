@@ -8,23 +8,37 @@
 
 /**
  * A fake in-memory implementation of DbSession for testing purposes.
+ * Uses a Map to store per-table data to avoid data leakage between tables.
  */
 export class FakeDbSession {
   /** @type {string[]} */
   #appliedMigrations = [];
-  /** @type {Array<Object>} */
-  #data = [];
+  /** @type {Map<string, Array<Object>>} */
+  #tableData = new Map();
   /** @type {string[]} */
   #tableNames = [];
 
   /**
    * @param {Object} [initialState]
-   * @param {Array<Object>} [initialState.data] - Initial data for the fake database.
+   * @param {Object<string, Array<Object>>} [initialState.tableData] - Initial data keyed by table name.
    * @param {string[]} [initialState.tableNames] - Initial table names for the fake database.
    */
   constructor(initialState = {}) {
-    this.#data = initialState.data || [];
-    this.#tableNames = initialState.tableNames || [];
+    if (initialState.tableData) {
+      for (const [name, data] of Object.entries(initialState.tableData)) {
+        this.#tableData.set(name, data);
+        if (!this.#tableNames.includes(name)) {
+          this.#tableNames.push(name);
+        }
+      }
+    }
+    if (initialState.tableNames) {
+      for (const name of initialState.tableNames) {
+        if (!this.#tableNames.includes(name)) {
+          this.#tableNames.push(name);
+        }
+      }
+    }
   }
 
   /**
@@ -33,7 +47,7 @@ export class FakeDbSession {
    */
   async reset() {
     this.#appliedMigrations = [];
-    this.#data = [];
+    this.#tableData.clear();
     this.#tableNames = [];
   }
 
@@ -48,7 +62,13 @@ export class FakeDbSession {
     sqlMigrations.forEach(sql => {
       const createTableMatch = sql.match(/CREATE TABLE\s+"?(\w+)"?/i);
       if (createTableMatch && createTableMatch[1]) {
-        this.#tableNames.push(createTableMatch[1]);
+        const tableName = createTableMatch[1];
+        if (!this.#tableNames.includes(tableName)) {
+          this.#tableNames.push(tableName);
+        }
+        if (!this.#tableData.has(tableName)) {
+          this.#tableData.set(tableName, []);
+        }
       }
     });
   }
@@ -69,11 +89,10 @@ export class FakeDbSession {
       if (!this.#tableNames.includes(tableName)) {
         throw new Error(`relation "${tableName}" does not exist`);
       }
-      // For simplicity, just return all mocked data for the first table
-      // In a real fake, you'd parse SQL more thoroughly.
-      if (this.#data.length > 0) {
-        const fields = Object.keys(this.#data[0]);
-        return { rows: this.#data.slice(0, 100), fields };
+      const data = this.#tableData.get(tableName) || [];
+      if (data.length > 0) {
+        const fields = Object.keys(data[0]);
+        return { rows: data.slice(0, 100), fields };
       }
       return { rows: [], fields: [] };
     }
@@ -83,8 +102,13 @@ export class FakeDbSession {
       // For basic insert, we can acknowledge it
       return { rows: [], fields: [] };
     }
-    if (sql.toLowerCase().startsWith('select count(*) from')) {
-        return { rows: [{ count: this.#data.length.toString() }], fields: ['count'] };
+
+    // Handle count queries for specific tables
+    const countMatch = sql.match(/select count\(\*\) from\s+"?(\w+)"?/i);
+    if (countMatch && countMatch[1]) {
+      const tableName = countMatch[1];
+      const data = this.#tableData.get(tableName) || [];
+      return { rows: [{ count: data.length.toString() }], fields: ['count'] };
     }
 
     throw new Error(`FakeDbSession does not support this query: ${sql}`);
@@ -115,6 +139,6 @@ export class FakeDbSession {
     if (!this.#tableNames.includes(tableName)) {
       this.#tableNames.push(tableName);
     }
-    this.#data = data;
+    this.#tableData.set(tableName, data);
   }
 }

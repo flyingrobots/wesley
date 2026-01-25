@@ -18,7 +18,7 @@
     background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-8));
   }
 
-  @media (max-width: $mantine-breakpoint-xs) {
+  @media (max-width: 36em) {
     display: none;
   }
 }

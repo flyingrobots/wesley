@@ -21,7 +21,7 @@ export default function DatabasePanel({
   const renderDataTab = () => {
     const ths = (
       <Table.Tr>
-        {result && result.fields.map(field => (
+        {result?.fields?.map(field => (
           <Table.Th key={field}>{field}</Table.Th>
         ))}
       </Table.Tr>
@@ -41,6 +41,7 @@ export default function DatabasePanel({
           <Group align="flex-start">
             <Textarea
               placeholder="Enter SQL query"
+              aria-label="SQL query input"
               value={query}
               onChange={(event) => setQuery(event.currentTarget.value)}
               autosize
@@ -54,6 +55,9 @@ export default function DatabasePanel({
         </Box>
 
         <ScrollArea className={classes.resultsArea}>
+          {error && (
+            <Text c="red" size="sm" mb="sm">{error.message || String(error)}</Text>
+          )}
           {result && result.rows && result.rows.length > 0 ? (
             <Table striped highlightOnHover withColumnBorders withTableBorder className={classes.table}>
               <Table.Thead>{ths}</Table.Thead>
