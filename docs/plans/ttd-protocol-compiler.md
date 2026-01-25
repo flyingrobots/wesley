@@ -3,7 +3,7 @@
 
 # TTD Protocol Compiler Plan
 
-**Status:** Complete (Phase 1a/1b/1c all complete)
+**Status:** Complete (Phase 1a/1b/1c + CLI Integration)
 **Created:** 2026-01-25
 **Origin:** Extracted from `flyingrobots/echo` TTD Master Plan
 **Scope:** Extend Wesley to compile deterministic protocol schemas for the Echo Time Travel Debugger
@@ -399,31 +399,48 @@ The compiler detects which mode to use based on directive presence:
 - If `@channel` or `@op` present → TTD protocol pipeline
 - Both can coexist in the same schema (different types)
 
-### 5.2 CLI Integration
+### 5.2 CLI Integration ✓
+
+The `compile-ttd` command is now available:
 
 ```bash
-# Existing DDL compilation
-wesley compile schema.graphql --out generated/
+# Basic usage
+wesley compile-ttd schema.graphql --out-dir generated/ttd/
 
-# New TTD protocol compilation
-wesley compile-ttd ttd-schema.graphql --out generated/ttd/
+# Specify targets (manifest, typescript, rust)
+wesley compile-ttd schema.graphql --target manifest,typescript
 
-# Or via flag
-wesley compile schema.graphql --mode ttd --out generated/
+# Dry-run to see what would be generated
+wesley compile-ttd schema.graphql --dry-run
+
+# JSON output for scripting
+wesley compile-ttd schema.graphql --dry-run --json
+
+# Stdin input
+cat schema.graphql | wesley compile-ttd --schema - --out-dir generated/
 ```
 
-### 5.3 Programmatic API
+**Options:**
+- `-s, --schema <path>` - Schema file (default: schema.graphql, use "-" for stdin)
+- `-o, --out-dir <dir>` - Output directory (default: ttd-out)
+- `-t, --target <targets>` - Comma-separated targets: manifest, typescript, rust
+- `--dry-run` - Show what would be generated without writing files
+- `--json` - JSON output for scripting
+
+### 5.3 Programmatic API ✓
 
 ```typescript
-import { compileTtdProtocol } from 'wesley-generator-ttd';
+import { compileTtdProtocol } from '@wesley/core/ttd';
 
 const result = await compileTtdProtocol({
-  schema: schemaContent,
-  outDir: 'generated/ttd',
-  targets: ['rust', 'typescript', 'manifest'],
+  sdl: schemaContent,
+  targets: ['manifest', 'typescript'],
+  deps: { clock, crypto }, // optional DI
 });
 
-console.log(result.schemaHash); // "sha256:..."
+console.log(result.schemaHash); // "23dc0e310ad5658b89..."
+console.log(result.files);      // [{ path: 'manifest/schema.json', content: '...' }, ...]
+console.log(result.validation); // { valid: true, errors: [], warnings: [...] }
 ```
 
 ---
