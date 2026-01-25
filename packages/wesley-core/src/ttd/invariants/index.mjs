@@ -22,7 +22,5 @@
 export * from './lexer.mjs';
 export * from './parser.mjs';
 export * from './ast.mjs';
-// VM bytecode compilation deferred to v2
-// export * from './compiler.mjs';
-// export * from './vm.mjs';
 export * from './golden.mjs';
+export * from './vm.mjs';

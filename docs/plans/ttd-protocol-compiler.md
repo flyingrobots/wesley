@@ -3,7 +3,7 @@
 
 # TTD Protocol Compiler Plan
 
-**Status:** Draft
+**Status:** In Progress (Phase 1a/1b complete, Phase 1c partial)
 **Created:** 2026-01-25
 **Origin:** Extracted from `flyingrobots/echo` TTD Master Plan
 **Scope:** Extend Wesley to compile deterministic protocol schemas for the Echo Time Travel Debugger
@@ -264,21 +264,23 @@ Wesley TTD Protocol Compiler is split into three maturity layers to prevent scop
 
 **Deliverables:**
 
-- [ ] Directive vocabulary parser (all directives from Part 1)
-- [ ] AST model for channels, ops, rules, invariants
-- [ ] Schema hashing (canonical field ordering)
-- [ ] Channel/op/rule model extraction
-- [ ] JSON manifest output: `schema.json`, `manifest.json`, `contracts.json`
+- [x] Directive vocabulary parser (all directives from Part 1)
+- [x] AST model for channels, ops, rules, invariants
+- [x] Schema hashing (canonical field ordering)
+- [x] Channel/op/rule model extraction
+- [x] JSON manifest output: `schema.json`, `manifest.json`, `contracts.json`
 
-**Key files to create/modify:**
+**Key files (implemented):**
 
 ```text
 packages/wesley-core/src/ttd/
-├── directives.ts      # Directive definitions and validation
-├── ast.ts             # TTD-specific AST nodes
-├── extractor.ts       # Extract channels/ops/rules from parsed schema
-├── hasher.ts          # Canonical schema hashing
-└── manifest.ts        # JSON manifest generation
+├── directives.mjs     # Directive definitions and validation ✓
+├── ast.mjs            # TTD-specific AST nodes ✓
+├── extractor.mjs      # Extract channels/ops/rules from parsed schema ✓
+├── hasher.mjs         # Canonical schema hashing ✓
+├── manifest.mjs       # JSON manifest generation ✓
+├── validation.mjs     # Validation rules ✓
+└── index.mjs          # Public API ✓
 ```
 
 **Output format:**
@@ -313,29 +315,29 @@ packages/wesley-core/src/ttd/
 
 **Deliverables:**
 
-- [ ] Rust types generation (structs/enums for ops/channels)
-- [ ] Rust CBOR codecs (canonical encode/decode via `minicbor`)
-- [ ] Rust registries (lookup tables)
-- [ ] TypeScript types generation
-- [ ] TypeScript Zod validators
-- [ ] TypeScript registries
+- [x] Rust types generation (structs/enums for ops/channels) — in Echo repo
+- [x] Rust CBOR codecs (canonical encode/decode via `minicbor`) — in Echo repo
+- [x] Rust registries (lookup tables) — in Echo repo
+- [x] TypeScript types generation
+- [x] TypeScript Zod validators
+- [x] TypeScript registries
 
 **Key files:**
 
 ```text
-packages/wesley-generator-ttd/
-├── src/
-│   ├── rust/
-│   │   ├── types.ts       # Rust struct/enum generation
-│   │   ├── cbor.ts        # CBOR codec generation
-│   │   ├── registry.ts    # Registry table generation
-│   │   └── hash.ts        # Hash helper generation
-│   ├── typescript/
-│   │   ├── types.ts       # TS type generation
-│   │   ├── zod.ts         # Zod validator generation
-│   │   └── registry.ts    # TS registry generation
-│   └── index.ts
-└── package.json
+packages/wesley-core/src/ttd/codegen/
+├── ts-types.mjs       # TS type generation ✓
+├── ts-zod.mjs         # Zod validator generation ✓
+├── ts-registry.mjs    # TS registry generation ✓
+├── orchestrator.mjs   # Codegen orchestration ✓
+└── index.mjs          # Public API ✓
+
+packages/wesley-generator-ttd/src/
+├── rust/              # Rust codegen (TODO)
+│   ├── types.mjs      # Rust struct/enum generation
+│   ├── cbor.mjs       # CBOR codec generation
+│   └── registry.mjs   # Registry table generation
+└── typescript/        # (moved to wesley-core)
 ```
 
 **Invariant:** Codegen is deterministic — same manifest → same output bytes.
@@ -346,21 +348,23 @@ packages/wesley-generator-ttd/
 
 **Deliverables:**
 
-- [ ] Invariant expression parser (EBNF grammar for `expr` field)
+- [x] Invariant expression parser (EBNF grammar for `expr` field)
 - [ ] Obligation spec compilation
-- [ ] Enforcement bytecode generation (simple stack VM)
+- [x] Enforcement bytecode generation (compiler in golden.mjs)
+- [x] VM runtime execution (vm.mjs with execute/verify/verifyAll)
 - [ ] Verification program output
-- [ ] Golden test framework
+- [x] Golden test framework
 
 **Key files:**
 
 ```text
-packages/wesley-core/src/ttd/
-├── invariants/
-│   ├── parser.ts      # Expression parser
-│   ├── compiler.ts    # Compile to bytecode
-│   ├── vm.ts          # Verification VM spec
-│   └── golden.ts      # Golden test generation
+packages/wesley-core/src/ttd/invariants/
+├── lexer.mjs          # Expression lexer ✓
+├── parser.mjs         # Expression parser ✓
+├── ast.mjs            # Invariant AST ✓
+├── golden.mjs         # Bytecode compiler + golden tests ✓
+├── vm.mjs             # Verification VM runtime ✓
+└── index.mjs          # Public API ✓
 ```
 
 **Expression grammar (simplified):**

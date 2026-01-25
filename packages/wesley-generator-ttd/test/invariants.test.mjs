@@ -12,6 +12,10 @@ import {
   Opcode,
   VmSpec,
   generateGoldenVectors,
+  execute,
+  verify,
+  verifyAll,
+  VmError,
 } from '@wesley/core/ttd/invariants';
 import { testCrypto } from './setup.mjs';
 
@@ -299,12 +303,14 @@ describe('Invariant Bytecode Compiler', () => {
       expect(opcodes).toContain(Opcode.CALL_METHOD);
     });
 
-    it('generates logical operators', () => {
+    it('generates logical operators with short-circuit', () => {
       const ast = parseExpr('x > 0 && y < 10');
       const bytecode = compileToBytecode(ast);
 
       const opcodes = bytecode.instructions.map(i => i.opcode);
-      expect(opcodes).toContain(Opcode.AND);
+      // Short-circuit AND uses DUP and conditional jumps instead of AND opcode
+      expect(opcodes).toContain(Opcode.DUP);
+      expect(opcodes).toContain(Opcode.JUMP_IF_FALSE);
     });
 
     it('includes constant pool', () => {
@@ -533,5 +539,206 @@ describe('Expression language edge cases', () => {
     const ast = parseExpr(expr);
 
     expect(ast.args).toHaveLength(2);
+  });
+});
+
+describe('VM Execution', () => {
+  describe('execute', () => {
+    it('executes simple boolean literal', () => {
+      const ast = parseExpr('true');
+      const bytecode = compileToBytecode(ast);
+      const result = execute(bytecode);
+
+      expect(result.ok).toBe(true);
+      expect(result.value).toBe(true);
+    });
+
+    it('executes false literal', () => {
+      const ast = parseExpr('false');
+      const bytecode = compileToBytecode(ast);
+      const result = execute(bytecode);
+
+      expect(result.ok).toBe(false);
+      expect(result.value).toBe(false);
+    });
+
+    it('executes numeric comparison', () => {
+      const ast = parseExpr('5 > 3');
+      const bytecode = compileToBytecode(ast);
+      const result = execute(bytecode);
+
+      expect(result.ok).toBe(true);
+      expect(result.value).toBe(true);
+    });
+
+    it('executes arithmetic expressions', () => {
+      const ast = parseExpr('(2 + 3) * 4 == 20');
+      const bytecode = compileToBytecode(ast);
+      const result = execute(bytecode);
+
+      expect(result.ok).toBe(true);
+      expect(result.value).toBe(true);
+    });
+
+    it('executes logical AND', () => {
+      const ast = parseExpr('true && true');
+      const bytecode = compileToBytecode(ast);
+      const result = execute(bytecode);
+
+      expect(result.ok).toBe(true);
+    });
+
+    it('executes logical OR', () => {
+      const ast = parseExpr('false || true');
+      const bytecode = compileToBytecode(ast);
+      const result = execute(bytecode);
+
+      expect(result.ok).toBe(true);
+    });
+
+    it('executes negation', () => {
+      const ast = parseExpr('!false');
+      const bytecode = compileToBytecode(ast);
+      const result = execute(bytecode);
+
+      expect(result.ok).toBe(true);
+      expect(result.value).toBe(true);
+    });
+
+    it('executes with bound variables', () => {
+      const ast = parseExpr('x >= 0');
+      const bytecode = compileToBytecode(ast);
+      const result = execute(bytecode, {
+        variables: { x: 10 },
+      });
+
+      expect(result.ok).toBe(true);
+    });
+
+    it('fails when variable is negative', () => {
+      const ast = parseExpr('x >= 0');
+      const bytecode = compileToBytecode(ast);
+      const result = execute(bytecode, {
+        variables: { x: -5 },
+      });
+
+      expect(result.ok).toBe(false);
+    });
+
+    it('executes forall quantifier - all pass', () => {
+      const ast = parseExpr('forall c in Counter: c.value >= 0');
+      const bytecode = compileToBytecode(ast);
+      const result = execute(bytecode, {
+        collections: {
+          Counter: [
+            { value: 0 },
+            { value: 10 },
+            { value: 100 },
+          ],
+        },
+      });
+
+      expect(result.ok).toBe(true);
+    });
+
+    it('executes forall quantifier - one fails', () => {
+      const ast = parseExpr('forall c in Counter: c.value >= 0');
+      const bytecode = compileToBytecode(ast);
+      const result = execute(bytecode, {
+        collections: {
+          Counter: [
+            { value: 10 },
+            { value: -1 }, // This should fail
+            { value: 100 },
+          ],
+        },
+      });
+
+      expect(result.ok).toBe(false);
+    });
+
+    it('executes forall on empty collection', () => {
+      const ast = parseExpr('forall c in Counter: c.value >= 0');
+      const bytecode = compileToBytecode(ast);
+      const result = execute(bytecode, {
+        collections: {
+          Counter: [],
+        },
+      });
+
+      // forall on empty set is vacuously true
+      expect(result.ok).toBe(true);
+    });
+
+    it('tracks instructions executed', () => {
+      const ast = parseExpr('1 + 2 + 3');
+      const bytecode = compileToBytecode(ast);
+      const result = execute(bytecode);
+
+      expect(result.instructionsExecuted).toBeGreaterThan(0);
+    });
+
+    it('tracks max stack depth', () => {
+      const ast = parseExpr('1 + 2 + 3 + 4');
+      const bytecode = compileToBytecode(ast);
+      const result = execute(bytecode);
+
+      expect(result.maxStackDepth).toBeGreaterThan(0);
+    });
+
+    it('handles division by zero gracefully', () => {
+      const ast = parseExpr('10 / 0');
+      const bytecode = compileToBytecode(ast);
+      const result = execute(bytecode);
+
+      expect(result.ok).toBe(false);
+      expect(result.error).toMatch(/division by zero/i);
+    });
+
+    it('loads op context', () => {
+      const ast = parseExpr('op.name == "increment"');
+      const bytecode = compileToBytecode(ast);
+      const result = execute(bytecode, {
+        op: { name: 'increment' },
+      });
+
+      expect(result.ok).toBe(true);
+    });
+  });
+
+  describe('verify', () => {
+    it('verifies simple invariant', () => {
+      const ast = parseExpr('x > 0');
+      const bytecode = compileToBytecode(ast);
+      const result = verify(bytecode, { variables: { x: 5 } });
+
+      expect(result.ok).toBe(true);
+    });
+  });
+
+  describe('verifyAll', () => {
+    it('verifies multiple invariants', () => {
+      const invariants = [
+        { name: 'positive', bytecode: compileToBytecode(parseExpr('x > 0')) },
+        { name: 'small', bytecode: compileToBytecode(parseExpr('x < 100')) },
+      ];
+
+      const results = verifyAll(invariants, { variables: { x: 50 } });
+
+      expect(results.positive.ok).toBe(true);
+      expect(results.small.ok).toBe(true);
+    });
+
+    it('reports individual failures', () => {
+      const invariants = [
+        { name: 'positive', bytecode: compileToBytecode(parseExpr('x > 0')) },
+        { name: 'small', bytecode: compileToBytecode(parseExpr('x < 10')) },
+      ];
+
+      const results = verifyAll(invariants, { variables: { x: 50 } });
+
+      expect(results.positive.ok).toBe(true);
+      expect(results.small.ok).toBe(false);
+    });
   });
 });

@@ -295,21 +295,39 @@ export function compileToBytecode(ast) {
       case ExprKind.LOGICAL:
         compile(node.left);
         if (node.operator === '&&') {
-          // Short-circuit AND: if left is false, jump past right
+          // Short-circuit AND: if left is false, result is false (left stays on stack)
+          // If left is true, discard it and result is right
+          emit(Opcode.DUP); // duplicate left for potential result
           const jumpIdx = instructions.length;
-          emit(Opcode.JUMP_IF_FALSE, 0); // placeholder
-          emit(Opcode.POP); // discard left
+          emit(Opcode.JUMP_IF_FALSE, 0); // placeholder - jump to end if false
+          emit(Opcode.POP); // discard duplicated left (it was true)
+          emit(Opcode.POP); // discard original left
           compile(node.right);
-          emit(Opcode.AND);
-          instructions[jumpIdx].operand = instructions.length; // patch jump target AFTER AND
+          // Right value is now the result, jump past the "false case"
+          const skipFalseIdx = instructions.length;
+          emit(Opcode.JUMP, 0); // placeholder
+          // False case: we jumped here with [false, false] on stack from DUP
+          instructions[jumpIdx].operand = instructions.length;
+          emit(Opcode.POP); // discard duplicated false, keep original false as result
+          // End
+          instructions[skipFalseIdx].operand = instructions.length;
         } else if (node.operator === '||') {
-          // Short-circuit OR: if left is true, jump past right
+          // Short-circuit OR: if left is true, result is true (left stays on stack)
+          // If left is false, discard it and result is right
+          emit(Opcode.DUP); // duplicate left for potential result
           const jumpIdx = instructions.length;
-          emit(Opcode.JUMP_IF_TRUE, 0); // placeholder
-          emit(Opcode.POP); // discard left
+          emit(Opcode.JUMP_IF_TRUE, 0); // placeholder - jump to end if true
+          emit(Opcode.POP); // discard duplicated left (it was false)
+          emit(Opcode.POP); // discard original left
           compile(node.right);
-          emit(Opcode.OR);
-          instructions[jumpIdx].operand = instructions.length; // patch jump target AFTER OR
+          // Right value is now the result, jump past the "true case"
+          const skipTrueIdx = instructions.length;
+          emit(Opcode.JUMP, 0); // placeholder
+          // True case: we jumped here with [true, true] on stack from DUP
+          instructions[jumpIdx].operand = instructions.length;
+          emit(Opcode.POP); // discard duplicated true, keep original true as result
+          // End
+          instructions[skipTrueIdx].operand = instructions.length;
         }
         break;
 
@@ -348,10 +366,14 @@ export function compileToBytecode(ast) {
         // Loop start
         const loopStart = instructions.length;
         emit(Opcode.ITER_NEXT);
+        // Stack now has: [item, hasMore] when items exist, or [false] when empty
 
         // If no more items, jump to success
         const jumpToSuccess = instructions.length;
-        emit(Opcode.JUMP_IF_FALSE, 0); // placeholder
+        emit(Opcode.JUMP_IF_FALSE, 0); // placeholder - checks hasMore/false
+
+        // Pop the hasMore flag (true), leaving item on stack
+        emit(Opcode.POP);
 
         // Store current item in variable
         emit(Opcode.STORE_VAR, addVariable(node.variable));
