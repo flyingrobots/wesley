@@ -5,7 +5,7 @@
  */
 
 import { createHash } from 'node:crypto';
-import { CryptoPort } from '@wesley/core/src/ports/crypto.mjs';
+import { CryptoPort } from '@wesley/core/ports';
 
 /**
  * Node Crypto - Native Node.js crypto implementation
@@ -13,10 +13,16 @@ import { CryptoPort } from '@wesley/core/src/ports/crypto.mjs';
  */
 export class NodeCrypto extends CryptoPort {
   sha256(data) {
+    if (typeof data !== 'string') {
+      throw new TypeError(`sha256 expects string, got ${typeof data}`);
+    }
     return createHash('sha256').update(data).digest('hex');
   }
 
   sha256Bytes(data) {
+    if (typeof data !== 'string') {
+      throw new TypeError(`sha256Bytes expects string, got ${typeof data}`);
+    }
     const buf = createHash('sha256').update(data).digest();
     return new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
   }

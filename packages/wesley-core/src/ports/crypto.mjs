@@ -15,7 +15,7 @@ export class CryptoPort {
   }
 
   /**
-   * Compute SHA-256 hash and return as Buffer
+   * Compute SHA-256 hash and return as raw bytes
    * @param {string} data - Data to hash
    * @returns {Uint8Array} Raw hash bytes
    */
@@ -31,9 +31,15 @@ export class CryptoPort {
 export class FakeCrypto extends CryptoPort {
   sha256(data) {
     // Return a deterministic fake hash based on input length and first chars
-    const prefix = data.slice(0, 8).padEnd(8, '0');
+    // Use only hex-safe characters (0-9, a-f) to avoid NaN in sha256Bytes
+    const hexChars = 'abcdef0123456789';
+    let prefix = '';
+    for (let i = 0; i < Math.min(8, data.length); i++) {
+      prefix += hexChars[data.charCodeAt(i) % 16];
+    }
+    prefix = prefix.padEnd(8, '0');
     const len = data.length.toString(16).padStart(8, '0');
-    return `fake${len}${prefix}`.padEnd(64, '0');
+    return `${len}${prefix}`.padEnd(64, '0');
   }
 
   sha256Bytes(data) {
