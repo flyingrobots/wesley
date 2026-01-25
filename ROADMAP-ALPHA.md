@@ -7,7 +7,7 @@
 > **TOTAL ESTIMATE (solo, no AI):** 34–60 hours.
 
 <!-- progress bar -->
-```
+```text
 PROGRESS
 0/343 complete
 █░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 0%
@@ -51,7 +51,7 @@ Create a dedicated `/try` page in `wesley-website` that hosts the playground UI:
 
 **Estimated effort (solo, no AI):** 1–2 hours.
 
-**Checklist**
+#### Checklist
 
 - [ ] Create `wesley-website/src/pages/TryNow.jsx` that renders a minimal placeholder:
   - [ ] Page title (“Wesley Playground (Alpha)”).
@@ -71,7 +71,7 @@ Create a dedicated `/try` page in `wesley-website` that hosts the playground UI:
 
 **Acceptance Criteria**
 
-- [ ] Navigating directly to `/try` loads the playground shell without a full page reload.
+- [ ] Navigating directly to `/try` loads the playground shell without a full-page reload.
 - [ ] The page clearly indicates that it is an **Alpha** playground.
 - [ ] No regressions to `/` or `/docs` routing.
 
@@ -99,7 +99,7 @@ Create a dedicated `/try` page in `wesley-website` that hosts the playground UI:
 
 **Estimated effort (solo, no AI):** 1–2 hours.
 
-**Checklist**
+#### Checklist
 
 - [ ] Update `wesley-website/src/components/HeroBullets.jsx`:
   - [ ] Add a “Try now” button next to “Get started” / “Docs”.
@@ -141,7 +141,7 @@ Create a dedicated `/try` page in `wesley-website` that hosts the playground UI:
 
 **Estimated effort (solo, no AI):** 1–2 hours.
 
-**Checklist**
+#### Checklist
 
 - [ ] In `TryNow.jsx`, define an `initialFiles` object with at least one GraphQL schema (e.g., `schema.graphql`).
 - [ ] Add React state: `const [files, setFiles] = useState(initialFiles);`.
@@ -177,7 +177,7 @@ Create a dedicated `/try` page in `wesley-website` that hosts the playground UI:
 
 **Estimated effort (solo, no AI):** 1–2 hours.
 
-**Checklist**
+#### Checklist
 
 - [ ] Use Mantine components (e.g., `NavLink`, `Stack`, or `List`) to render the file names from `Object.keys(files)`.
 - [ ] Visually distinguish the active file (bold, highlight, or icon).
@@ -213,7 +213,7 @@ Create a dedicated `/try` page in `wesley-website` that hosts the playground UI:
 
 **Estimated effort (solo, no AI):** 1–2 hours.
 
-**Checklist**
+#### Checklist
 
 - [ ] Add defensive checks so that if `activePath` points to a missing file key, it falls back to a default (e.g. first key in `files`).
 - [ ] Ensure workspace still behaves correctly if additional files are added in future (e.g. from presets).
@@ -249,7 +249,7 @@ Create a dedicated `/try` page in `wesley-website` that hosts the playground UI:
 
 **Estimated effort (solo, no AI):** 1–2 hours.
 
-**Checklist**
+#### Checklist
 
 - [ ] In `TryNow.jsx`, render a text editing component (Mantine `Textarea` or `Code`) for the active file.
 - [ ] Use `files[activePath]` as the editor value.
@@ -284,7 +284,7 @@ Create a dedicated `/try` page in `wesley-website` that hosts the playground UI:
 
 **Estimated effort (solo, no AI):** 1–2 hours.
 
-**Checklist**
+#### Checklist
 
 - [ ] Adjust layout (flex/grid) so editor and file tree resize with the window and remain usable on smaller screens.
 - [ ] Ensure the editor scrolls independently of the file tree and DB console.
@@ -316,7 +316,7 @@ Create a dedicated `/try` page in `wesley-website` that hosts the playground UI:
 
 **Estimated effort (solo, no AI):** 2–3 hours.
 
-**Checklist**
+#### Checklist
 
 - [ ] Add a dependency such as `@monaco-editor/react` if you choose to upgrade.
 - [ ] Replace the simple editor component with Monaco/CodeMirror in `TryNow.jsx`.
@@ -366,7 +366,7 @@ Expose a clean browser API via `@wesley/host-browser` to compile GraphQL schemas
 
 **Estimated effort (solo, no AI):** 2–3 hours.
 
-**Checklist**
+#### Checklist
 
 - [ ] Create/extend `packages/wesley-host-browser/src/index.mjs` to export a new function:
 
@@ -423,7 +423,7 @@ Expose a clean browser API via `@wesley/host-browser` to compile GraphQL schemas
 
 **Estimated effort (solo, no AI):** 2–3 hours.
 
-**Checklist**
+#### Checklist
 
 - [ ] In `compileSchemaInBrowser`, assert that `files` is a plain object mapping string paths to string contents.
 - [ ] Normalize line endings if needed and join multiple SDL files into a single SDL string (or prepare a structure compatible with the parser).
@@ -457,7 +457,7 @@ Expose a clean browser API via `@wesley/host-browser` to compile GraphQL schemas
 
 **Estimated effort (solo, no AI):** 2–3 hours.
 
-**Checklist**
+#### Checklist
 
 - [ ] Import and reuse `createBrowserRuntime()` from `@wesley/host-browser`.
 - [ ] Instantiate `GenerationPipeline` with:
@@ -494,7 +494,7 @@ Expose a clean browser API via `@wesley/host-browser` to compile GraphQL schemas
 
 **Estimated effort (solo, no AI):** 2–3 hours.
 
-**Checklist**
+#### Checklist
 
 - [ ] Implement or integrate a diff engine that can compute migration steps between previous and current schemas (for the Alpha demo, a simple “from empty” diff is acceptable).
 - [ ] Implement or integrate a generator that converts diff steps into SQL migration statements.
@@ -535,7 +535,7 @@ Expose a clean browser API via `@wesley/host-browser` to compile GraphQL schemas
 
 **Estimated effort (solo, no AI):** 1–2 hours.
 
-**Checklist**
+#### Checklist
 
 - [ ] In `TryNow.jsx`, add state:
   - [ ] `compileStatus` (`idle` | `running` | `success` | `error`).
@@ -578,7 +578,7 @@ Expose a clean browser API via `@wesley/host-browser` to compile GraphQL schemas
 
 **Estimated effort (solo, no AI):** 1–2 hours.
 
-**Checklist**
+#### Checklist
 
 - [ ] Expand the compile summary UI to:
   - [ ] Show `tables` and `sqlMigrations.length` on success.
@@ -628,7 +628,7 @@ Use PGLite to back the playground’s “Database view” so users can see and q
 
 **Estimated effort (solo, no AI):** 2–3 hours.
 
-**Checklist**
+#### Checklist
 
 - [ ] Add PGLite dependency to `wesley-website/package.json` (e.g. `@electric-sql/pglite` or chosen library).
 - [ ] Create `wesley-website/src/db/pglite.ts` (or `.mjs`) that exports the types (or JSDoc interface):
@@ -675,7 +675,7 @@ Use PGLite to back the playground’s “Database view” so users can see and q
 
 **Estimated effort (solo, no AI):** 1–2 hours.
 
-**Checklist**
+#### Checklist
 
 - [ ] Add `wesley-website/src/test/FakeDbSession.ts` (or similar) that implements the `DbSession` interface:
   - [ ] Track `reset()` calls, applied migrations, and executed queries in memory.
@@ -712,7 +712,7 @@ Use PGLite to back the playground’s “Database view” so users can see and q
 
 **Estimated effort (solo, no AI):** 1–2 hours.
 
-**Checklist**
+#### Checklist
 
 - [ ] Implement `applyMigrations(sql: string[])`:
   - [ ] Execute each migration inside a transaction where possible.
@@ -750,7 +750,7 @@ Use PGLite to back the playground’s “Database view” so users can see and q
 
 **Estimated effort (solo, no AI):** 1–2 hours.
 
-**Checklist**
+#### Checklist
 
 - [ ] Ensure `query(sql)`:
   - [ ] Limits result size (e.g., first 100 rows).
@@ -785,7 +785,7 @@ Use PGLite to back the playground’s “Database view” so users can see and q
 
 **Estimated effort (solo, no AI):** 1–2 hours.
 
-**Checklist**
+#### Checklist
 
 - [ ] In `TryNow.jsx`, add state for the DB session: `const [dbSession, setDbSession] = useState<DbSession | null>(null);`.
 - [ ] On mount, call `createDbSession()` and store the result in `dbSession`.
@@ -819,7 +819,7 @@ Use PGLite to back the playground’s “Database view” so users can see and q
 
 **Estimated effort (solo, no AI):** 1–2 hours.
 
-**Checklist**
+#### Checklist
 
 - [ ] Extend `onCompile` handler in `TryNow.jsx`:
   - [ ] After a successful compile, call `dbSession.applyMigrations(result.sqlMigrations)` (if `dbSession` is present).
@@ -853,7 +853,7 @@ Use PGLite to back the playground’s “Database view” so users can see and q
 
 **Estimated effort (solo, no AI):** 2–3 hours.
 
-**Checklist**
+#### Checklist
 
 - [ ] In `TryNow.jsx`, add:
   - [ ] `queryText` state (SQL input).
@@ -895,7 +895,7 @@ Use PGLite to back the playground’s “Database view” so users can see and q
 
 **Estimated effort (solo, no AI):** 1–2 hours.
 
-**Checklist**
+#### Checklist
 
 - [ ] Replace or augment the raw JSON output with a Mantine `Table` using `queryResult.rows` and `queryResult.fields`.
 - [ ] Add an error banner or callout when `queryError` is non-null.
@@ -944,7 +944,7 @@ Polish the experience, ensure graceful failure modes, and document/automate the 
 
 **Estimated effort (solo, no AI):** 1–2 hours.
 
-**Checklist**
+#### Checklist
 
 - [ ] Add a “Status / Errors” panel area in `TryNow`.
 - [ ] Render compile errors (from `compileResult.errors`) as readable messages.
@@ -978,7 +978,7 @@ Polish the experience, ensure graceful failure modes, and document/automate the 
 
 **Estimated effort (solo, no AI):** 1–2 hours.
 
-**Checklist**
+#### Checklist
 
 - [ ] Add a “Reset playground” button to `TryNow`.
 - [ ] On click:
@@ -1017,7 +1017,7 @@ Polish the experience, ensure graceful failure modes, and document/automate the 
 
 **Estimated effort (solo, no AI):** 1–2 hours.
 
-**Checklist**
+#### Checklist
 
 - [ ] Update root `README.md`:
   - [ ] Add a short “Try Wesley in your browser” section linking to the playground URL (e.g. `/try`).
@@ -1051,7 +1051,7 @@ Polish the experience, ensure graceful failure modes, and document/automate the 
 
 **Estimated effort (solo, no AI):** 1–2 hours.
 
-**Checklist**
+#### Checklist
 
 - [ ] Update `wesley-website/README.md`:
   - [ ] Describe the TryNow page.
@@ -1086,7 +1086,7 @@ Polish the experience, ensure graceful failure modes, and document/automate the 
 
 **Estimated effort (solo, no AI):** 2–3 hours.
 
-**Checklist**
+#### Checklist
 
 - [ ] Add or update a GitHub Actions workflow (e.g. `website.yml`):
   - [ ] Install dependencies for `wesley-website`.

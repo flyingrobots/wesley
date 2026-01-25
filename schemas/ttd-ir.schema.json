@@ -140,6 +140,7 @@
         "op_id": {
           "type": "integer",
           "minimum": 0,
+          "maximum": 4294967295,
           "description": "Stable 32-bit operation ID (hash of namespace:name)"
         },
         "args": {

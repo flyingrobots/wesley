@@ -1,4 +1,3 @@
-import React from 'react';
 import { Popover, Text, Box } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 
