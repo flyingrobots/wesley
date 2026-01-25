@@ -1,13 +1,15 @@
 /**
  * TTD Codegen Module
  *
- * Exports code generators for Rust and TypeScript.
+ * Exports TypeScript code generators. Rust code generation is handled by
+ * external tools (e.g., echo-ttd-gen) that consume the TTD IR/manifest.
+ *
+ * Architecture:
+ * - Wesley generates TTD IR (JSON manifest)
+ * - TypeScript codegen happens here (TS can generate TS)
+ * - Rust codegen is done by Rust tools using syn/quote/prettyplease
  */
 
-export * from './rust-types.mjs';
-export * from './rust-cbor.mjs';
-export * from './rust-registry.mjs';
-export * from './rust-hash.mjs';
 export * from './ts-types.mjs';
 export * from './ts-zod.mjs';
 export * from './ts-registry.mjs';

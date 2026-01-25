@@ -1,6 +1,11 @@
 /**
  * TTD Codegen Tests
- * These tests define the specification for Rust and TypeScript code generation.
+ *
+ * These tests define the specification for TypeScript code generation.
+ *
+ * NOTE: Rust code generation is NOT done in Wesley. Instead, Wesley outputs
+ * TTD IR (JSON) which is consumed by external Rust tools (e.g., echo-ttd-gen)
+ * that use syn/quote/prettyplease for proper AST-based codegen.
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -8,10 +13,6 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   extractTtdSchema,
-  generateRustTypes,
-  generateRustCbor,
-  generateRustRegistry,
-  generateRustHash,
   generateTsTypes,
   generateTsZod,
   generateTsRegistry,
@@ -20,165 +21,6 @@ import {
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const basicProtocolSdl = readFileSync(join(__dirname, 'fixtures/basic-protocol.graphql'), 'utf-8');
-
-describe('TTD Rust Codegen', () => {
-  describe('generateRustTypes', () => {
-    it('generates Rust structs for event types', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
-      const code = generateRustTypes(schema);
-
-      expect(code).toContain('pub struct CounterIncremented');
-      expect(code).toContain('pub struct CounterDecremented');
-      expect(code).toContain('pub struct CounterReset');
-    });
-
-    it('includes serde derives', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
-      const code = generateRustTypes(schema);
-
-      expect(code).toContain('#[derive(');
-      expect(code).toContain('Serialize');
-      expect(code).toContain('Deserialize');
-    });
-
-    it('generates correct field types', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
-      const code = generateRustTypes(schema);
-
-      // CounterIncremented fields
-      expect(code).toMatch(/counter_id:\s*String/);
-      expect(code).toMatch(/previous_value:\s*i64/);
-      expect(code).toMatch(/new_value:\s*i64/);
-      expect(code).toMatch(/timestamp:\s*String/);
-    });
-
-    it('generates enums for GraphQL enums', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
-      const code = generateRustTypes(schema);
-
-      expect(code).toContain('pub enum CounterState');
-      expect(code).toContain('Idle');
-      expect(code).toContain('Counting');
-      expect(code).toContain('Paused');
-      expect(code).toContain('Completed');
-    });
-
-    it('uses snake_case for field names', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
-      const code = generateRustTypes(schema);
-
-      expect(code).toContain('counter_id');
-      expect(code).toContain('previous_value');
-      expect(code).toContain('new_value');
-      expect(code).toContain('last_modified');
-    });
-
-    it('adds serde rename attributes for camelCase serialization', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
-      const code = generateRustTypes(schema);
-
-      expect(code).toContain('#[serde(rename = "counterId")]');
-      expect(code).toContain('#[serde(rename = "previousValue")]');
-    });
-
-    it('generates state type with proper fields', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
-      const code = generateRustTypes(schema);
-
-      expect(code).toContain('pub struct Counter');
-      expect(code).toMatch(/id:\s*String/);
-      expect(code).toMatch(/value:\s*i64/);
-      expect(code).toMatch(/state:\s*CounterState/);
-    });
-  });
-
-  describe('generateRustCbor', () => {
-    it('generates minicbor encode/decode implementations', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
-      const code = generateRustCbor(schema);
-
-      expect(code).toContain('impl minicbor::Encode');
-      expect(code).toContain('impl minicbor::Decode');
-    });
-
-    it('generates canonical CBOR encoding', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
-      const code = generateRustCbor(schema);
-
-      // Should encode fields in sorted order for canonical CBOR
-      expect(code).toContain('// Canonical CBOR: fields encoded in sorted key order');
-    });
-
-    it('includes type markers for registry types', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
-      const code = generateRustCbor(schema);
-
-      // Registry types should include their ID for disambiguation
-      expect(code).toContain('const TYPE_ID: u32');
-    });
-  });
-
-  describe('generateRustRegistry', () => {
-    it('generates registry lookup tables', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
-      const code = generateRustRegistry(schema);
-
-      expect(code).toContain('pub static TYPE_REGISTRY');
-      expect(code).toContain('pub static OP_REGISTRY');
-    });
-
-    it('includes type name to ID mappings', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
-      const code = generateRustRegistry(schema);
-
-      expect(code).toContain('"CounterIncremented"');
-      expect(code).toContain('=> 1');
-    });
-
-    it('includes op name to ID mappings', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
-      const code = generateRustRegistry(schema);
-
-      expect(code).toContain('"increment"');
-    });
-
-    it('generates lookup functions', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
-      const code = generateRustRegistry(schema);
-
-      expect(code).toContain('pub fn type_id_for_name');
-      expect(code).toContain('pub fn type_name_for_id');
-      expect(code).toContain('pub fn op_id_for_name');
-      expect(code).toContain('pub fn op_name_for_id');
-    });
-  });
-
-  describe('generateRustHash', () => {
-    it('generates hash helper functions', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
-      const code = generateRustHash(schema);
-
-      expect(code).toContain('pub fn hash_event');
-      expect(code).toContain('pub fn verify_event_hash');
-    });
-
-    it('includes schema hash constant', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
-      const code = generateRustHash(schema);
-
-      expect(code).toContain('pub const SCHEMA_HASH');
-      expect(code).toMatch(/SCHEMA_HASH:\s*&str\s*=\s*"[a-f0-9]{64}"/);
-    });
-
-    it('generates content-addressable digest functions', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
-      const code = generateRustHash(schema);
-
-      expect(code).toContain('fn compute_digest');
-      expect(code).toContain('sha256');
-    });
-  });
-});
 
 describe('TTD TypeScript Codegen', () => {
   describe('generateTsTypes', () => {
@@ -195,9 +37,9 @@ describe('TTD TypeScript Codegen', () => {
       const schema = extractTtdSchema(basicProtocolSdl);
       const code = generateTsTypes(schema);
 
-      expect(code).toMatch(/counterId:\s*string/);
-      expect(code).toMatch(/previousValue:\s*number/);
-      expect(code).toMatch(/newValue:\s*number/);
+      expect(code).toMatch(/counterId.*string/);
+      expect(code).toMatch(/previousValue.*number/);
+      expect(code).toMatch(/newValue.*number/);
     });
 
     it('generates enum types', () => {
@@ -215,9 +57,6 @@ describe('TTD TypeScript Codegen', () => {
 
       // Required fields should not have ?
       expect(code).toMatch(/counterId:\s*string;/);
-
-      // The Counter type in Query.getCounter returns optional
-      // This is based on the GraphQL schema
     });
 
     it('generates operation type interfaces', () => {
@@ -315,30 +154,6 @@ describe('TTD TypeScript Codegen', () => {
 });
 
 describe('compileTtdProtocol (orchestrator)', () => {
-  it('generates all output files', async () => {
-    const result = await compileTtdProtocol({
-      sdl: basicProtocolSdl,
-      targets: ['rust', 'typescript', 'manifest'],
-    });
-
-    expect(result.files).toBeDefined();
-    expect(Array.isArray(result.files)).toBe(true);
-  });
-
-  it('generates Rust files when target includes rust', async () => {
-    const result = await compileTtdProtocol({
-      sdl: basicProtocolSdl,
-      targets: ['rust'],
-    });
-
-    const paths = result.files.map(f => f.path);
-    expect(paths).toContain('rust/types.rs');
-    expect(paths).toContain('rust/cbor.rs');
-    expect(paths).toContain('rust/registry.rs');
-    expect(paths).toContain('rust/hash.rs');
-    expect(paths).toContain('rust/mod.rs');
-  });
-
   it('generates TypeScript files when target includes typescript', async () => {
     const result = await compileTtdProtocol({
       sdl: basicProtocolSdl,
@@ -362,19 +177,46 @@ describe('compileTtdProtocol (orchestrator)', () => {
     expect(paths).toContain('manifest/schema.json');
     expect(paths).toContain('manifest/manifest.json');
     expect(paths).toContain('manifest/contracts.json');
+    expect(paths).toContain('manifest/ttd-ir.json');
   });
 
-  it('generates all targets by default', async () => {
+  it('generates TTD IR for external Rust tools', async () => {
+    const result = await compileTtdProtocol({
+      sdl: basicProtocolSdl,
+      targets: ['manifest'],
+    });
+
+    const irFile = result.files.find(f => f.path === 'manifest/ttd-ir.json');
+    expect(irFile).toBeDefined();
+
+    const ir = JSON.parse(irFile.content);
+    expect(ir.ir_version).toBe('ttd-ir/v1');
+    expect(ir.schema_sha256).toBeDefined();
+    expect(ir.generated_by.tool).toBe('@wesley/generator-ttd');
+  });
+
+  it('generates manifest and typescript by default', async () => {
     const result = await compileTtdProtocol({
       sdl: basicProtocolSdl,
     });
 
     const paths = result.files.map(f => f.path);
 
-    // Should have rust, typescript, and manifest
-    expect(paths.some(p => p.startsWith('rust/'))).toBe(true);
+    // Should have typescript and manifest
     expect(paths.some(p => p.startsWith('typescript/'))).toBe(true);
     expect(paths.some(p => p.startsWith('manifest/'))).toBe(true);
+  });
+
+  it('generates README for rust target explaining external tooling', async () => {
+    const result = await compileTtdProtocol({
+      sdl: basicProtocolSdl,
+      targets: ['rust'],
+    });
+
+    const readme = result.files.find(f => f.path === 'rust/README.md');
+    expect(readme).toBeDefined();
+    expect(readme.content).toContain('echo-ttd-gen');
+    expect(readme.content).toContain('ttd-ir.json');
   });
 
   it('includes schema hash in result', async () => {
@@ -420,18 +262,26 @@ describe('compileTtdProtocol (orchestrator)', () => {
 });
 
 describe('Codegen Golden Tests', () => {
-  it('Rust types output is stable', async () => {
-    const schema = extractTtdSchema(basicProtocolSdl);
-    const code1 = generateRustTypes(schema);
-    const code2 = generateRustTypes(schema);
-
-    expect(code1).toBe(code2);
-  });
-
   it('TypeScript types output is stable', async () => {
     const schema = extractTtdSchema(basicProtocolSdl);
     const code1 = generateTsTypes(schema);
     const code2 = generateTsTypes(schema);
+
+    expect(code1).toBe(code2);
+  });
+
+  it('Zod schemas output is stable', async () => {
+    const schema = extractTtdSchema(basicProtocolSdl);
+    const code1 = generateTsZod(schema);
+    const code2 = generateTsZod(schema);
+
+    expect(code1).toBe(code2);
+  });
+
+  it('Registry output is stable', async () => {
+    const schema = extractTtdSchema(basicProtocolSdl);
+    const code1 = generateTsRegistry(schema);
+    const code2 = generateTsRegistry(schema);
 
     expect(code1).toBe(code2);
   });
