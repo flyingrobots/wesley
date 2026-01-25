@@ -16,6 +16,17 @@ import {
   verify,
   verifyAll,
   VmError,
+  compileObligation,
+  compileObligations,
+  generateVerificationManifest,
+  serializeObligations,
+  deserializeObligations,
+  ObligationSeverity,
+  ObligationKind,
+  Verifier,
+  createVerifier,
+  generateTsVerifier,
+  generateReport,
 } from '@wesley/core/ttd/invariants';
 import { testCrypto } from './setup.mjs';
 
@@ -740,5 +751,479 @@ describe('VM Execution', () => {
       expect(results.positive.ok).toBe(true);
       expect(results.small.ok).toBe(false);
     });
+  });
+});
+
+describe('Obligation Spec Compiler', () => {
+  describe('compileObligation', () => {
+    it('compiles a simple invariant', () => {
+      const invariant = {
+        name: 'counter_non_negative',
+        expr: 'forall c in Counter: c.value >= 0',
+        severity: 'ERROR',
+      };
+
+      const spec = compileObligation(invariant, { crypto: testCrypto });
+
+      expect(spec.id).toMatch(/^obligation:/);
+      expect(spec.name).toBe('counter_non_negative');
+      expect(spec.expr).toBe('forall c in Counter: c.value >= 0');
+      expect(spec.ast).toBeDefined();
+      expect(spec.bytecode).toBeDefined();
+      expect(spec.bytecode.instructions.length).toBeGreaterThan(0);
+      expect(spec.severity).toBe('ERROR');
+      expect(spec.hash).toMatch(/^[a-f0-9]{64}$/);
+    });
+
+    it('extracts dependencies from expression', () => {
+      const invariant = {
+        name: 'tick_emits',
+        expr: 'tick.mustEmit("state")',
+      };
+
+      const spec = compileObligation(invariant, { crypto: testCrypto });
+
+      expect(spec.dependencies).toContain('tick');
+    });
+
+    it('extracts collection dependencies from forall', () => {
+      const invariant = {
+        name: 'all_counters',
+        expr: 'forall c in Counter: c.value >= 0',
+      };
+
+      const spec = compileObligation(invariant, { crypto: testCrypto });
+
+      expect(spec.dependencies).toContain('collection:Counter');
+    });
+
+    it('infers TICK kind from tick reference', () => {
+      const invariant = {
+        name: 'tick_check',
+        expr: 'tick.count > 0',
+      };
+
+      const spec = compileObligation(invariant, { crypto: testCrypto });
+
+      expect(spec.kind).toBe(ObligationKind.TICK);
+    });
+
+    it('infers EVENTUAL kind from within clause', () => {
+      const invariant = {
+        name: 'eventual_check',
+        expr: 'op.produce().within(100)',
+      };
+
+      const spec = compileObligation(invariant, { crypto: testCrypto });
+
+      expect(spec.kind).toBe(ObligationKind.EVENTUAL);
+      expect(spec.withinTicks).toBe(100);
+    });
+
+    it('throws on invalid expression', () => {
+      const invariant = {
+        name: 'bad',
+        expr: 'this is not valid !!!',
+      };
+
+      expect(() => compileObligation(invariant, { crypto: testCrypto }))
+        .toThrow(/Failed to parse invariant/);
+    });
+
+    it('generates deterministic hashes', () => {
+      const invariant = {
+        name: 'test',
+        expr: 'x > 0',
+      };
+
+      const spec1 = compileObligation(invariant, { crypto: testCrypto });
+      const spec2 = compileObligation(invariant, { crypto: testCrypto });
+
+      expect(spec1.hash).toBe(spec2.hash);
+      expect(spec1.id).toBe(spec2.id);
+    });
+  });
+
+  describe('compileObligations', () => {
+    it('compiles all invariants from schema', () => {
+      const schema = {
+        invariants: [
+          { name: 'inv1', expr: 'true', severity: 'INFO' },
+          { name: 'inv2', expr: 'x > 0', severity: 'ERROR' },
+          { name: 'inv3', expr: 'forall c in C: c.ok', severity: 'FATAL' },
+        ],
+      };
+
+      const specs = compileObligations(schema, { crypto: testCrypto });
+
+      expect(specs).toHaveLength(3);
+      expect(specs[0].name).toBe('inv1');
+      expect(specs[1].name).toBe('inv2');
+      expect(specs[2].name).toBe('inv3');
+    });
+
+    it('handles empty invariants array', () => {
+      const schema = { invariants: [] };
+
+      const specs = compileObligations(schema, { crypto: testCrypto });
+
+      expect(specs).toHaveLength(0);
+    });
+
+    it('handles missing invariants array', () => {
+      const schema = {};
+
+      const specs = compileObligations(schema, { crypto: testCrypto });
+
+      expect(specs).toHaveLength(0);
+    });
+  });
+
+  describe('generateVerificationManifest', () => {
+    it('generates manifest from specs', () => {
+      const schema = {
+        invariants: [
+          { name: 'tick_inv', expr: 'tick.ok', severity: 'ERROR', kind: 'TICK' },
+          { name: 'eventual_inv', expr: 'op.done().within(10)', severity: 'WARN' },
+          { name: 'safety_inv', expr: 'x >= 0', severity: 'FATAL', kind: 'SAFETY' },
+        ],
+      };
+
+      const specs = compileObligations(schema, { crypto: testCrypto });
+      const manifest = generateVerificationManifest(specs, { crypto: testCrypto });
+
+      expect(manifest.version).toBe(1);
+      expect(manifest.totalObligations).toBe(3);
+      expect(manifest.manifestHash).toMatch(/^[a-f0-9]{64}$/);
+      expect(manifest.obligations).toHaveLength(3);
+    });
+
+    it('groups by kind', () => {
+      const schema = {
+        invariants: [
+          { name: 'tick1', expr: 'tick.a', kind: 'TICK' },
+          { name: 'tick2', expr: 'tick.b', kind: 'TICK' },
+          { name: 'safety1', expr: 'x > 0', kind: 'SAFETY' },
+        ],
+      };
+
+      const specs = compileObligations(schema, { crypto: testCrypto });
+      const manifest = generateVerificationManifest(specs, { crypto: testCrypto });
+
+      expect(manifest.byKind.TICK).toHaveLength(2);
+      expect(manifest.byKind.SAFETY).toHaveLength(1);
+    });
+
+    it('groups by severity', () => {
+      const schema = {
+        invariants: [
+          { name: 'info', expr: 'true', severity: 'INFO' },
+          { name: 'warn', expr: 'true', severity: 'WARN' },
+          { name: 'error', expr: 'true', severity: 'ERROR' },
+          { name: 'fatal', expr: 'true', severity: 'FATAL' },
+        ],
+      };
+
+      const specs = compileObligations(schema, { crypto: testCrypto });
+      const manifest = generateVerificationManifest(specs, { crypto: testCrypto });
+
+      expect(manifest.bySeverity.INFO).toHaveLength(1);
+      expect(manifest.bySeverity.WARN).toHaveLength(1);
+      expect(manifest.bySeverity.ERROR).toHaveLength(1);
+      expect(manifest.bySeverity.FATAL).toHaveLength(1);
+    });
+  });
+
+  describe('serialization', () => {
+    it('round-trips through serialize/deserialize', () => {
+      const schema = {
+        invariants: [
+          { name: 'test', expr: 'x > 0', severity: 'ERROR' },
+        ],
+      };
+
+      const specs = compileObligations(schema, { crypto: testCrypto });
+      const json = serializeObligations(specs);
+      const restored = deserializeObligations(json);
+
+      expect(restored).toHaveLength(1);
+      expect(restored[0].name).toBe('test');
+      expect(restored[0].expr).toBe('x > 0');
+      expect(restored[0].bytecode).toBeDefined();
+      expect(restored[0].ast).toBeDefined();
+    });
+
+    it('produces valid JSON', () => {
+      const schema = {
+        invariants: [
+          { name: 'a', expr: 'true' },
+          { name: 'b', expr: 'false' },
+        ],
+      };
+
+      const specs = compileObligations(schema, { crypto: testCrypto });
+      const json = serializeObligations(specs);
+
+      expect(() => JSON.parse(json)).not.toThrow();
+    });
+  });
+
+  describe('ObligationSeverity', () => {
+    it('has expected values', () => {
+      expect(ObligationSeverity.INFO).toBe('INFO');
+      expect(ObligationSeverity.WARN).toBe('WARN');
+      expect(ObligationSeverity.ERROR).toBe('ERROR');
+      expect(ObligationSeverity.FATAL).toBe('FATAL');
+    });
+  });
+
+  describe('ObligationKind', () => {
+    it('has expected values', () => {
+      expect(ObligationKind.TICK).toBe('TICK');
+      expect(ObligationKind.EVENTUAL).toBe('EVENTUAL');
+      expect(ObligationKind.SAFETY).toBe('SAFETY');
+      expect(ObligationKind.ALWAYS).toBe('ALWAYS');
+    });
+  });
+});
+
+describe('Verifier', () => {
+  const schema = {
+    invariants: [
+      { name: 'counter_positive', expr: 'forall c in Counter: c.value >= 0', severity: 'ERROR', kind: 'ALWAYS' },
+      { name: 'tick_check', expr: 'tick.count > 0', severity: 'WARN', kind: 'TICK' },
+      { name: 'safety_check', expr: 'x >= 0', severity: 'FATAL', kind: 'SAFETY' },
+    ],
+  };
+
+  describe('createVerifier', () => {
+    it('creates verifier from schema', () => {
+      const verifier = createVerifier(schema, { crypto: testCrypto });
+
+      expect(verifier).toBeInstanceOf(Verifier);
+      expect(verifier.specs).toHaveLength(3);
+      expect(verifier.manifest).toBeDefined();
+    });
+  });
+
+  describe('Verifier.verifyAll', () => {
+    it('verifies all obligations', () => {
+      const verifier = createVerifier(schema, { crypto: testCrypto });
+
+      const result = verifier.verifyAll({
+        collections: { Counter: [{ value: 10 }, { value: 20 }] },
+        variables: { x: 5, tick: { count: 1 } },
+      });
+
+      expect(result.totalChecked).toBe(3);
+      expect(result.timestamp).toBeDefined();
+      expect(result.durationMs).toBeGreaterThanOrEqual(0);
+    });
+
+    it('reports failures', () => {
+      const verifier = createVerifier(schema, { crypto: testCrypto });
+
+      const result = verifier.verifyAll({
+        collections: { Counter: [{ value: -5 }] }, // This fails counter_positive
+        variables: { x: -1, tick: { count: 0 } },  // x < 0 fails safety, count <= 0 fails tick
+      });
+
+      expect(result.passed).toBe(false);
+      expect(result.totalFailed).toBeGreaterThan(0);
+      expect(result.failures.length).toBeGreaterThan(0);
+    });
+
+    it('returns passed=true when all pass', () => {
+      const simpleSchema = {
+        invariants: [
+          { name: 'always_true', expr: 'true' },
+        ],
+      };
+      const verifier = createVerifier(simpleSchema, { crypto: testCrypto });
+
+      const result = verifier.verifyAll({});
+
+      expect(result.passed).toBe(true);
+      expect(result.totalPassed).toBe(1);
+      expect(result.totalFailed).toBe(0);
+    });
+  });
+
+  describe('Verifier.verifyOne', () => {
+    it('verifies a single obligation by ID', () => {
+      const verifier = createVerifier(schema, { crypto: testCrypto });
+      const spec = verifier.specs[0];
+
+      const result = verifier.verifyOne(spec.id, {
+        collections: { Counter: [{ value: 100 }] },
+      });
+
+      expect(result.id).toBe(spec.id);
+      expect(result.name).toBe(spec.name);
+      expect(result.passed).toBe(true);
+    });
+
+    it('throws on unknown obligation', () => {
+      const verifier = createVerifier(schema, { crypto: testCrypto });
+
+      expect(() => verifier.verifyOne('unknown:id', {}))
+        .toThrow(/Unknown obligation/);
+    });
+  });
+
+  describe('Verifier.verifyByKind', () => {
+    it('verifies only TICK obligations', () => {
+      const verifier = createVerifier(schema, { crypto: testCrypto });
+
+      const result = verifier.verifyTick({
+        variables: { tick: { count: 5 } },
+      });
+
+      expect(result.totalChecked).toBe(1);
+    });
+
+    it('verifies only SAFETY obligations', () => {
+      const verifier = createVerifier(schema, { crypto: testCrypto });
+
+      const result = verifier.verifySafety({
+        variables: { x: 10 },
+      });
+
+      expect(result.totalChecked).toBe(1);
+      expect(result.passed).toBe(true);
+    });
+  });
+
+  describe('Verifier.manifest', () => {
+    it('returns verification manifest', () => {
+      const verifier = createVerifier(schema, { crypto: testCrypto });
+
+      expect(verifier.manifest.version).toBe(1);
+      expect(verifier.manifest.totalObligations).toBe(3);
+    });
+  });
+
+  describe('Verifier.getObligation', () => {
+    it('returns obligation by ID', () => {
+      const verifier = createVerifier(schema, { crypto: testCrypto });
+      const spec = verifier.specs[0];
+
+      const retrieved = verifier.getObligation(spec.id);
+
+      expect(retrieved).toBe(spec);
+    });
+
+    it('returns undefined for unknown ID', () => {
+      const verifier = createVerifier(schema, { crypto: testCrypto });
+
+      expect(verifier.getObligation('unknown')).toBeUndefined();
+    });
+  });
+});
+
+describe('generateTsVerifier', () => {
+  it('generates valid TypeScript code', () => {
+    const schema = {
+      invariants: [
+        { name: 'test', expr: 'x > 0', severity: 'ERROR' },
+      ],
+    };
+    const specs = compileObligations(schema, { crypto: testCrypto });
+
+    const code = generateTsVerifier(specs);
+
+    expect(code).toContain("import { Verifier }");
+    expect(code).toContain('const specs =');
+    expect(code).toContain('export const verifier');
+    expect(code).toContain('export function verifyAll');
+    expect(code).toContain('export function verifyTick');
+    expect(code).toContain('export function verifySafety');
+  });
+
+  it('includes obligation specs in output', () => {
+    const schema = {
+      invariants: [
+        { name: 'my_invariant', expr: 'true', severity: 'WARN' },
+      ],
+    };
+    const specs = compileObligations(schema, { crypto: testCrypto });
+
+    const code = generateTsVerifier(specs);
+
+    expect(code).toContain('my_invariant');
+    expect(code).toContain('WARN');
+  });
+});
+
+describe('generateReport', () => {
+  it('generates report for passed verification', () => {
+    const result = {
+      passed: true,
+      totalChecked: 5,
+      totalPassed: 5,
+      totalFailed: 0,
+      failures: [],
+      timestamp: '2026-01-25T00:00:00Z',
+      durationMs: 10,
+    };
+
+    const report = generateReport(result);
+
+    expect(report).toContain('VERIFICATION REPORT');
+    expect(report).toContain('Total Checked: 5');
+    expect(report).toContain('Passed:        5');
+    expect(report).toContain('Failed:        0');
+    expect(report).toContain('✓ ALL PASSED');
+  });
+
+  it('generates report for failed verification', () => {
+    const result = {
+      passed: false,
+      totalChecked: 3,
+      totalPassed: 2,
+      totalFailed: 1,
+      failures: [
+        {
+          id: 'obligation:abc',
+          name: 'counter_check',
+          expr: 'x >= 0',
+          severity: 'ERROR',
+          error: 'Verification failed',
+        },
+      ],
+      timestamp: '2026-01-25T00:00:00Z',
+      durationMs: 5,
+    };
+
+    const report = generateReport(result);
+
+    expect(report).toContain('✗ FAILURES DETECTED');
+    expect(report).toContain('FAILURES');
+    expect(report).toContain('[ERROR] counter_check');
+    expect(report).toContain('x >= 0');
+  });
+
+  it('includes value in verbose mode', () => {
+    const result = {
+      passed: false,
+      totalChecked: 1,
+      totalPassed: 0,
+      totalFailed: 1,
+      failures: [
+        {
+          id: 'obligation:abc',
+          name: 'test',
+          expr: 'x > 0',
+          severity: 'ERROR',
+          value: -5,
+        },
+      ],
+      timestamp: '2026-01-25T00:00:00Z',
+      durationMs: 1,
+    };
+
+    const report = generateReport(result, { verbose: true });
+
+    expect(report).toContain('Value: -5');
   });
 });

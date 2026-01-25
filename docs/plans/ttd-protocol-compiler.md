@@ -3,7 +3,7 @@
 
 # TTD Protocol Compiler Plan
 
-**Status:** In Progress (Phase 1a/1b complete, Phase 1c partial)
+**Status:** Complete (Phase 1a/1b/1c all complete)
 **Created:** 2026-01-25
 **Origin:** Extracted from `flyingrobots/echo` TTD Master Plan
 **Scope:** Extend Wesley to compile deterministic protocol schemas for the Echo Time Travel Debugger
@@ -349,10 +349,10 @@ packages/wesley-generator-ttd/src/
 **Deliverables:**
 
 - [x] Invariant expression parser (EBNF grammar for `expr` field)
-- [ ] Obligation spec compilation
+- [x] Obligation spec compilation (obligations.mjs)
 - [x] Enforcement bytecode generation (compiler in golden.mjs)
 - [x] VM runtime execution (vm.mjs with execute/verify/verifyAll)
-- [ ] Verification program output
+- [x] Verification program output (verifier.mjs with Verifier class, generateTsVerifier)
 - [x] Golden test framework
 
 **Key files:**
@@ -364,6 +364,8 @@ packages/wesley-core/src/ttd/invariants/
 ├── ast.mjs            # Invariant AST ✓
 ├── golden.mjs         # Bytecode compiler + golden tests ✓
 ├── vm.mjs             # Verification VM runtime ✓
+├── obligations.mjs    # Obligation spec compiler ✓
+├── verifier.mjs       # Verification program generator ✓
 └── index.mjs          # Public API ✓
 ```
 

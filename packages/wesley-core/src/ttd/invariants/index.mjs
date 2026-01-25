@@ -24,3 +24,5 @@ export * from './parser.mjs';
 export * from './ast.mjs';
 export * from './golden.mjs';
 export * from './vm.mjs';
+export * from './obligations.mjs';
+export * from './verifier.mjs';
