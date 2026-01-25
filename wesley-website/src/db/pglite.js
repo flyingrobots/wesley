@@ -79,14 +79,17 @@ export class DbSession {
    * Executes a single SQL query against the database.
    * Limits result size to 100 rows.
    * @param {string} sql - The SQL query string.
+   * @param {Array<any>} [params] - Optional query parameters for parameterized queries.
    * @returns {Promise<QueryResult>}
    */
-  async query(sql) {
+  async query(sql, params) {
     if (!this.#pg) {
       throw new Error('PGLite database not initialized.');
     }
     try {
-      const result = await this.#pg.query(sql);
+      const result = params
+        ? await this.#pg.query(sql, params)
+        : await this.#pg.query(sql);
       // PGLite query result structure is { rows: [], fields: [{ name: 'col' }] }
       const rows = result.rows.slice(0, 100); // Limit results
       const fields = result.fields.map(f => f.name);

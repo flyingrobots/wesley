@@ -45,6 +45,15 @@ function generateConstraints(constraint) {
     const escapedPattern = constraint.pattern.replace(/\//g, '\\/');
     validators.push(`.regex(/${escapedPattern}/)`);
   }
+  if (constraint.oneOf && Array.isArray(constraint.oneOf) && constraint.oneOf.length > 0) {
+    const serializedValues = constraint.oneOf.map(v =>
+      typeof v === 'string' ? `'${v.replace(/'/g, "\\'")}'` : v
+    ).join(', ');
+    const messageValues = constraint.oneOf.map(v =>
+      typeof v === 'string' ? `"${v}"` : v
+    ).join(', ');
+    validators.push(`.refine(v => [${serializedValues}].includes(v), { message: "must be one of: ${messageValues}" })`);
+  }
 
   return validators.join('');
 }

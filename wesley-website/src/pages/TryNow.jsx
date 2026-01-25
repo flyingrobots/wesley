@@ -1,6 +1,6 @@
 // wesley-website/src/pages/TryNow.jsx
-import React, { useState, useEffect } from 'react';
-import { Button, Group, Loader, Title, Text, Box, Flex, Alert } from '@mantine/core'; // Keep Alert for Errors if needed
+import React, { useState, useReducer, useEffect } from 'react';
+import { Button, Group, Loader, Title, Text, Box, Flex, Alert } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { openConfirmModal } from '@mantine/modals';
 import { IconCheck, IconX, IconAlertCircle } from '@tabler/icons-react';
@@ -41,79 +41,163 @@ type Product {
 
 const initialOutputFiles = [];
 
+// --- Reducers ---
+const initialDbState = {
+  session: null,
+  loading: true,
+  tables: [],
+  selectedTable: null,
+  tableSchema: [],
+  queryText: "SELECT * FROM pg_catalog.pg_tables WHERE schemaname = 'public';",
+  queryResult: null,
+};
+
+function dbReducer(state, action) {
+  switch (action.type) {
+    case 'SET_SESSION':
+      return { ...state, session: action.payload };
+    case 'SET_LOADING':
+      return { ...state, loading: action.payload };
+    case 'SET_TABLES':
+      return { ...state, tables: action.payload };
+    case 'SELECT_TABLE':
+      return { ...state, selectedTable: action.payload };
+    case 'SET_TABLE_SCHEMA':
+      return { ...state, tableSchema: action.payload };
+    case 'SET_QUERY_TEXT':
+      return { ...state, queryText: action.payload };
+    case 'SET_QUERY_RESULT':
+      return { ...state, queryResult: action.payload };
+    case 'RESET':
+      return {
+        ...state,
+        tables: [],
+        selectedTable: null,
+        tableSchema: [],
+        queryText: "SELECT * FROM pg_catalog.pg_tables WHERE schemaname = 'public';",
+        queryResult: null,
+      };
+    default:
+      return state;
+  }
+}
+
+const initialCompileState = {
+  isCompiling: false,
+  lastSuccess: false,
+  errors: [],
+};
+
+function compileReducer(state, action) {
+  switch (action.type) {
+    case 'START':
+      return { isCompiling: true, lastSuccess: false, errors: [] };
+    case 'SUCCESS':
+      return { isCompiling: false, lastSuccess: true, errors: [] };
+    case 'FAILURE':
+      return { isCompiling: false, lastSuccess: false, errors: action.payload };
+    case 'RESET':
+      return initialCompileState;
+    default:
+      return state;
+  }
+}
+
+// Valid SQL identifier pattern (alphanumeric and underscore only)
+const VALID_TABLE_NAME = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
+
 export default function TryNow() {
   // --- State ---
-  const [activeView, setActiveView] = useState(initialInputFiles[0].file); 
-  
+  const [activeView, setActiveView] = useState(initialInputFiles[0].file);
+
   // Files
   const [inputFiles, setInputFiles] = useState(initialInputFiles);
   const [outputFiles, setOutputFiles] = useState(initialOutputFiles);
 
-  // Compilation Status (for loading state only)
-  const [isCompiling, setIsCompiling] = useState(false);
-  const [lastCompileSuccess, setLastCompileSuccess] = useState(false);
+  // Database state (consolidated)
+  const [dbState, dispatchDb] = useReducer(dbReducer, initialDbState);
 
-  // Database
-  const [dbSession, setDbSession] = useState(null);
-  const [dbLoading, setDbLoading] = useState(true);
-  const [dbTables, setDbTables] = useState([]);
-  const [selectedTable, setSelectedTable] = useState(null);
-  const [tableSchema, setTableSchema] = useState([]);
-  const [dbQueryText, setDbQueryText] = useState("SELECT * FROM pg_catalog.pg_tables WHERE schemaname = 'public';");
-  const [dbQueryResult, setDbQueryResult] = useState(null);
-  // We keep local error state for persistent display if needed, but notifications handle transient errors
-  const [compileErrors, setCompileErrors] = useState([]);
-  const [dbQueryError, setDbQueryError] = useState(null);
-
+  // Compile state (consolidated)
+  const [compileState, dispatchCompile] = useReducer(compileReducer, initialCompileState);
 
   // --- Helpers ---
   const fetchTables = async (session) => {
     if (!session) return;
     try {
       const res = await session.query(`
-        SELECT table_name 
-        FROM information_schema.tables 
-        WHERE table_schema = 'public' 
+        SELECT table_name
+        FROM information_schema.tables
+        WHERE table_schema = 'public'
         ORDER BY table_name;
       `);
-      setDbTables(res.rows.map(r => r.table_name));
+      dispatchDb({ type: 'SET_TABLES', payload: res.rows.map(r => r.table_name) });
     } catch (e) {
       console.error('Failed to fetch tables:', e);
     }
   };
 
   const handleSelectTable = async (tableName) => {
-    setSelectedTable(tableName);
-    setDbQueryText(`SELECT * FROM "${tableName}" LIMIT 100;`);
-    
-    if (dbSession) {
-        try {
-            const schemaRes = await dbSession.query(`
-                SELECT column_name, data_type, is_nullable, column_default
-                FROM information_schema.columns 
-                WHERE table_name = '${tableName}'
-                ORDER BY ordinal_position;
-            `);
-            setTableSchema(schemaRes.rows);
-            handleRunDbQuery(`SELECT * FROM "${tableName}" LIMIT 100;`);
-        } catch (e) {
-            console.error(e);
-        }
+    // Validate table name to prevent injection (defense-in-depth)
+    if (!VALID_TABLE_NAME.test(tableName)) {
+      notifications.show({
+        title: 'Invalid Table Name',
+        message: 'Table name contains invalid characters.',
+        color: 'red',
+        icon: <IconAlertCircle size="1.1rem" />,
+      });
+      return;
+    }
+
+    // Additional check: ensure tableName is from our known tables list
+    if (!dbState.tables.includes(tableName)) {
+      notifications.show({
+        title: 'Unknown Table',
+        message: 'Selected table does not exist.',
+        color: 'red',
+        icon: <IconAlertCircle size="1.1rem" />,
+      });
+      return;
+    }
+
+    dispatchDb({ type: 'SELECT_TABLE', payload: tableName });
+    dispatchDb({ type: 'SET_QUERY_TEXT', payload: `SELECT * FROM "${tableName}" LIMIT 100;` });
+
+    if (dbState.session) {
+      try {
+        // Use parameterized query for information_schema lookup
+        const schemaRes = await dbState.session.query(
+          `SELECT column_name, data_type, is_nullable, column_default
+           FROM information_schema.columns
+           WHERE table_name = $1
+           ORDER BY ordinal_position;`,
+          [tableName]
+        );
+        dispatchDb({ type: 'SET_TABLE_SCHEMA', payload: schemaRes.rows });
+        handleRunDbQuery(`SELECT * FROM "${tableName}" LIMIT 100;`);
+      } catch (e) {
+        console.error(e);
+      }
     }
   };
 
   // --- Effects ---
   useEffect(() => {
     let cancelled = false;
-    let session;
+    let session = null;
 
     async function initDb() {
       try {
         const s = await createDbSession();
-        if (cancelled) return; 
-        
+        if (cancelled) {
+          // Cleanup if cancelled during init
+          if (s && typeof s.close === 'function') {
+            s.close().catch(() => {});
+          }
+          return;
+        }
+
         session = s;
-        setDbSession(session);
+        dispatchDb({ type: 'SET_SESSION', payload: session });
         await fetchTables(session);
       } catch (error) {
         if (!cancelled) {
@@ -126,35 +210,41 @@ export default function TryNow() {
           });
         }
       } finally {
-        if (!cancelled) setDbLoading(false);
+        if (!cancelled) dispatchDb({ type: 'SET_LOADING', payload: false });
       }
     }
     initDb();
 
     return () => {
       cancelled = true;
+      // Cleanup: close/dispose session if it has a teardown method
+      if (session) {
+        if (typeof session.close === 'function') {
+          session.close().catch(() => {});
+        } else if (typeof session.dispose === 'function') {
+          session.dispose().catch(() => {});
+        }
+      }
     };
   }, []);
 
   // --- Handlers ---
   const handleInputFileChange = (body) => {
-    setInputFiles(prev => prev.map(f => 
+    setInputFiles(prev => prev.map(f =>
       f.file === activeView ? { ...f, body } : f
     ));
   };
 
   const handleRunWesley = async () => {
-    setIsCompiling(true);
-    setLastCompileSuccess(false);
+    dispatchCompile({ type: 'START' });
     setOutputFiles(initialOutputFiles);
-    setCompileErrors([]);
 
     try {
       const result = await compileSchemaInBrowser(inputFiles);
 
       if (result.ok) {
         setOutputFiles(result.outputFiles);
-        setLastCompileSuccess(true);
+        dispatchCompile({ type: 'SUCCESS' });
         notifications.show({
           title: 'Compilation Successful',
           message: 'Schema generated successfully.',
@@ -162,7 +252,7 @@ export default function TryNow() {
           icon: <IconCheck size="1.1rem" />,
         });
       } else {
-        setCompileErrors(result.errors || []);
+        dispatchCompile({ type: 'FAILURE', payload: result.errors || [] });
         notifications.show({
           title: 'Compilation Failed',
           message: 'Check the error panel for details.',
@@ -171,28 +261,43 @@ export default function TryNow() {
         });
       }
     } catch (error) {
+      dispatchCompile({ type: 'FAILURE', payload: [{ message: error.message }] });
       notifications.show({
         title: 'Compilation Error',
         message: error.message,
         color: 'red',
         icon: <IconX size="1.1rem" />,
       });
-    } finally {
-      setIsCompiling(false);
     }
   };
 
   const handleApplyToDatabase = async () => {
-    if (!dbSession || !lastCompileSuccess) return;
+    if (!dbState.session || !compileState.lastSuccess) return;
     try {
-      setDbLoading(true);
+      dispatchDb({ type: 'SET_LOADING', payload: true });
       const migrationsSql = outputFiles.find(f => f.file === 'migrations.sql')?.body;
       if (migrationsSql) {
+        // LIMITATION: This naive split on ';' will break SQL containing semicolons
+        // inside string literals (e.g., INSERT INTO t VALUES ('a;b')).
+        // A proper SQL-aware tokenizer would be needed for full support.
+        // For now, we validate and warn the user about this limitation.
+        const hasUnmatchedQuotes = (migrationsSql.match(/'/g) || []).length % 2 !== 0;
+        if (hasUnmatchedQuotes) {
+          notifications.show({
+            title: 'Migration Warning',
+            message: 'SQL contains unmatched quotes. Migrations with semicolons inside string literals are not supported.',
+            color: 'orange',
+            icon: <IconAlertCircle size="1.1rem" />,
+          });
+          dispatchDb({ type: 'SET_LOADING', payload: false });
+          return;
+        }
+
         const statements = migrationsSql.split(';').map(s => s.trim()).filter(s => s.length > 0);
-        await dbSession.applyMigrations(statements);
+        await dbState.session.applyMigrations(statements);
       }
-      await fetchTables(dbSession);
-      setActiveView('database'); 
+      await fetchTables(dbState.session);
+      setActiveView('database');
       notifications.show({
         title: 'Database Updated',
         message: 'Migrations applied successfully.',
@@ -207,26 +312,24 @@ export default function TryNow() {
         icon: <IconX size="1.1rem" />,
       });
     } finally {
-      setDbLoading(false);
+      dispatchDb({ type: 'SET_LOADING', payload: false });
     }
   };
 
   const handleRunDbQuery = async (queryOverride) => {
-    const sql = queryOverride || dbQueryText;
-    if (!dbSession || !sql.trim()) return;
-    if (queryOverride) setDbQueryText(sql);
+    const sql = queryOverride || dbState.queryText;
+    if (!dbState.session || !sql.trim()) return;
+    if (queryOverride) dispatchDb({ type: 'SET_QUERY_TEXT', payload: sql });
 
-    setDbLoading(true);
-    setDbQueryResult(null);
-    setDbQueryError(null);
+    dispatchDb({ type: 'SET_LOADING', payload: true });
+    dispatchDb({ type: 'SET_QUERY_RESULT', payload: null });
     try {
-      const result = await dbSession.query(sql);
-      setDbQueryResult(result);
+      const result = await dbState.session.query(sql);
+      dispatchDb({ type: 'SET_QUERY_RESULT', payload: result });
       if (sql.match(/create|drop|alter/i)) {
-          await fetchTables(dbSession);
+        await fetchTables(dbState.session);
       }
     } catch (error) {
-      setDbQueryError(error.message);
       notifications.show({
         title: 'Query Failed',
         message: error.message,
@@ -234,7 +337,7 @@ export default function TryNow() {
         icon: <IconAlertCircle size="1.1rem" />,
       });
     } finally {
-      setDbLoading(false);
+      dispatchDb({ type: 'SET_LOADING', payload: false });
     }
   };
 
@@ -249,15 +352,14 @@ export default function TryNow() {
       labels: { confirm: 'Reset', cancel: 'Cancel' },
       confirmProps: { color: 'red' },
       onConfirm: async () => {
-        if (!dbSession) return;
-        setDbLoading(true);
-        setDbQueryResult(null);
-        setDbQueryError(null);
+        if (!dbState.session) return;
+        dispatchDb({ type: 'SET_LOADING', payload: true });
+        dispatchDb({ type: 'SET_QUERY_RESULT', payload: null });
         try {
-          await dbSession.reset();
-          await fetchTables(dbSession);
-          setSelectedTable(null);
-          setTableSchema([]);
+          await dbState.session.reset();
+          await fetchTables(dbState.session);
+          dispatchDb({ type: 'SELECT_TABLE', payload: null });
+          dispatchDb({ type: 'SET_TABLE_SCHEMA', payload: [] });
           notifications.show({
             title: 'Database Reset',
             message: 'The database has been cleared.',
@@ -272,7 +374,7 @@ export default function TryNow() {
             icon: <IconX size="1.1rem" />,
           });
         } finally {
-          setDbLoading(false);
+          dispatchDb({ type: 'SET_LOADING', payload: false });
         }
       },
     });
@@ -289,33 +391,27 @@ export default function TryNow() {
       labels: { confirm: 'Reset Everything', cancel: 'Cancel' },
       confirmProps: { color: 'red' },
       onConfirm: async () => {
-        setIsCompiling(false);
-        setLastCompileSuccess(false);
+        dispatchCompile({ type: 'RESET' });
         setInputFiles(initialInputFiles);
         setOutputFiles(initialOutputFiles);
-        setCompileErrors([]);
-        setDbQueryText("SELECT * FROM pg_catalog.pg_tables WHERE schemaname = 'public';");
-        setDbQueryResult(null);
-        setDbQueryError(null);
+        dispatchDb({ type: 'RESET' });
         setActiveView(initialInputFiles[0].file);
-        setSelectedTable(null);
-        setTableSchema([]);
-        
-        if (dbSession) {
-            setDbLoading(true);
-            try {
-                await dbSession.reset();
-                await fetchTables(dbSession);
-                notifications.show({
-                    title: 'Playground Reset',
-                    message: 'All state has been cleared.',
-                    color: 'gray',
-                });
-            } catch (e) {
-                console.error(e);
-            } finally {
-                setDbLoading(false);
-            }
+
+        if (dbState.session) {
+          dispatchDb({ type: 'SET_LOADING', payload: true });
+          try {
+            await dbState.session.reset();
+            await fetchTables(dbState.session);
+            notifications.show({
+              title: 'Playground Reset',
+              message: 'All state has been cleared.',
+              color: 'gray',
+            });
+          } catch (e) {
+            console.error(e);
+          } finally {
+            dispatchDb({ type: 'SET_LOADING', payload: false });
+          }
         }
       },
     });
@@ -325,17 +421,16 @@ export default function TryNow() {
   const renderMainContent = () => {
     if (activeView === 'database') {
       return (
-        <DatabasePanel 
-          tables={dbTables}
-          selectedTable={selectedTable}
-          tableSchema={tableSchema}
+        <DatabasePanel
+          tables={dbState.tables}
+          selectedTable={dbState.selectedTable}
+          tableSchema={dbState.tableSchema}
           onSelectTable={handleSelectTable}
-          query={dbQueryText}
-          setQuery={setDbQueryText}
+          query={dbState.queryText}
+          setQuery={(text) => dispatchDb({ type: 'SET_QUERY_TEXT', payload: text })}
           onRun={() => handleRunDbQuery()}
-          loading={dbLoading}
-          result={dbQueryResult}
-          // error={dbQueryError} // Removed: errors handled via notifications now
+          loading={dbState.loading}
+          result={dbState.queryResult}
         />
       );
     }
@@ -375,65 +470,60 @@ export default function TryNow() {
       {/* Controls */}
       <Box className={classes.controls}>
         <Group mb="md">
-          <ExplanationPopover 
-            title="Compile Schema" 
+          <ExplanationPopover
+            title="Compile Schema"
             description="Compiles your GraphQL schema into SQL migrations and other artifacts right here in your browser."
           >
-            <Button onClick={handleRunWesley} loading={isCompiling}>
+            <Button onClick={handleRunWesley} loading={compileState.isCompiling}>
               Run Wesley
             </Button>
           </ExplanationPopover>
 
-          <ExplanationPopover 
-            title="Apply Migrations" 
+          <ExplanationPopover
+            title="Apply Migrations"
             description="Executes the generated SQL migrations against the in-memory PGLite database to create tables."
           >
-            <Button 
-              onClick={handleApplyToDatabase} 
-              disabled={dbLoading || !lastCompileSuccess}
+            <Button
+              onClick={handleApplyToDatabase}
+              disabled={dbState.loading || !compileState.lastSuccess}
               variant="light"
             >
               Apply to Database
             </Button>
           </ExplanationPopover>
 
-          <ExplanationPopover 
-            title="Reset Database" 
+          <ExplanationPopover
+            title="Reset Database"
             description="Wipes all data and schema from the database, giving you a fresh start."
           >
-            <Button 
-              onClick={handleResetDatabase} 
-              disabled={dbLoading} 
-              color="orange" 
+            <Button
+              onClick={handleResetDatabase}
+              disabled={dbState.loading}
+              color="orange"
               variant="subtle"
             >
               Reset DB
             </Button>
           </ExplanationPopover>
-          {dbLoading && <Loader size="sm" />}
+          {dbState.loading && <Loader size="sm" />}
         </Group>
       </Box>
 
-      {/* Errors */}
-      {(compileErrors.length > 0 || dbQueryError) && (
+      {/* Errors (compile errors only - db errors use notifications) */}
+      {compileState.errors.length > 0 && (
         <Box className={classes.alert}>
-          {compileErrors.map((err, idx) => (
-            <Alert key={idx} title="Compilation Error" color="red" withCloseButton onClose={() => setCompileErrors([])} mb="xs">
+          {compileState.errors.map((err, idx) => (
+            <Alert key={idx} title="Compilation Error" color="red" withCloseButton onClose={() => dispatchCompile({ type: 'RESET' })} mb="xs">
               {err.message}
             </Alert>
           ))}
-          {dbQueryError && (
-            <Alert title="Database Error" color="red" withCloseButton onClose={() => setDbQueryError(null)}>
-              {dbQueryError}
-            </Alert>
-          )}
         </Box>
       )}
 
       {/* Workspace Area */}
       <Box className={classes.workspace}>
         <Flex h="100%" style={{ overflow: 'hidden' }}>
-          <PlaygroundNavbar 
+          <PlaygroundNavbar
             inputFiles={inputFiles}
             outputFiles={outputFiles}
             activeFile={activeView}
