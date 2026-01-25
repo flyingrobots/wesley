@@ -1,0 +1,19 @@
+/* ... (existing styles) ... */
+
+[data-tutorial-highlight='true'] {
+  outline: 2px solid var(--mantine-color-blue-6);
+  outline-offset: 2px;
+  border-radius: var(--mantine-radius-md);
+  box-shadow: 0 0 12px 4px var(--mantine-color-blue-6);
+  position: relative;
+  z-index: 1001; /* Above overlay */
+  transition: all 0.3s ease;
+}
+
+.tutorialDialog {
+  position: absolute;
+  bottom: var(--mantine-spacing-lg);
+  right: var(--mantine-spacing-lg);
+  z-index: 1002; /* Above highlight and overlay */
+  max-width: 400px;
+}

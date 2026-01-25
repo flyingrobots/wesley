@@ -9,6 +9,7 @@ import {
   GraphQLSchemaParser
 } from '../index.mjs';
 import { InProcessCompiler } from './inprocess-compiler.mjs';
+import { NodeCrypto, nodeCrypto } from './NodeCrypto.mjs';
 
 // Stub migration diff engine
 class StubMigrationDiffEngine {
@@ -69,6 +70,10 @@ export function createAdapters() {
     pgTAPTestGenerator,
     migrationDiffEngine,
     wesleyFileWriter,
-    InProcessCompiler
+    InProcessCompiler,
+    crypto: nodeCrypto,
   };
 }
+
+// Re-export for direct use
+export { NodeCrypto, nodeCrypto };

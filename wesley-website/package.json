@@ -13,10 +13,28 @@
     "test:watch": "vitest --watch"
   },
   "dependencies": {
-    "@mantine/core": "^8.3.5",
-    "@mantine/hooks": "^8.3.5",
+    "@electric-sql/pglite": "^0.3.14",
+    "@mantine/code-highlight": "^8.3.10",
+    "@mantine/core": "^8.3.10",
+    "@mantine/hooks": "^8.3.10",
+    "@mantine/modals": "^8.3.10",
+    "@mantine/notifications": "^8.3.10",
+    "@mantine/tiptap": "^8.3.10",
+    "@mantinex/mantine-logo": "^2.0.0",
+    "@tabler/icons-react": "^3.35.0",
+    "@tiptap/extension-code-block-lowlight": "^3.13.0",
+    "@tiptap/extension-link": "^3.13.0",
+    "@tiptap/pm": "^3.13.0",
+    "@tiptap/react": "^3.13.0",
+    "@tiptap/starter-kit": "^3.13.0",
+    "@wesley/host-browser": "workspace:^",
+    "clsx": "^2.1.1",
+    "highlight.js": "^11.11.1",
+    "lowlight": "^3.3.0",
+    "prosemirror-keymap": "^1.2.3",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-dom": "^19.1.1",
+    "zod": "^4.1.13"
   },
   "devDependencies": {
     "@eslint/js": "^9.38.0",
@@ -37,6 +55,8 @@
     "jsdom": "^27.0.1",
     "postcss": "^8.5.6",
     "postcss-nesting": "^13.0.2",
+    "postcss-preset-mantine": "^1.18.0",
+    "postcss-simple-vars": "^7.0.1",
     "typescript-eslint": "^8.46.2",
     "vite": "npm:rolldown-vite@7.1.14",
     "vitest": "^4.0.3"

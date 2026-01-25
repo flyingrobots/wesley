@@ -33,23 +33,41 @@ function parseDirectives(head) {
 }
 
 function parseFields(body) {
-  // Crude splitter: one field per line; ignore relations (no scalar) unless directive forces column.
-  const lines = body.split(/\n+/).map(s => s.trim()).filter(Boolean);
+  // Robust splitter: handle CRLF, LF, CR
+  const lines = body.split(/\r?\n|\r/).map(s => s.trim()).filter(Boolean);
   const fields = [];
   for (const line of lines) {
     if (line.startsWith('}')) break;
-    // name: Type! @dir(args)
-    const m = line.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([^@]+?)(\s+@.+)?$/);
-    if (!m) continue;
+    
+    // Simplified regex: Name : EverythingElse
+    const m = line.match(/^([A-Za-z_]\w*)\s*:\s*(.+)$/);
+    if (!m) {
+        console.warn('[BrowserParserPort] Failed to match line:', line);
+        continue;
+    }
     const name = m[1];
-    const typeSpec = m[2].trim();
-    const head = m[3] || '';
+    let remainder = m[2].trim();
+    
+    // Split typeSpec from directives
+    let typeSpec = remainder;
+    let head = '';
+    const atIndex = remainder.indexOf('@');
+    if (atIndex !== -1) {
+        typeSpec = remainder.substring(0, atIndex).trim();
+        head = remainder.substring(atIndex);
+    }
+
     const directives = parseDirectives(head);
+    
     // detect scalar vs relation (very small whitelist)
     const base = typeSpec.replace(/[\[\]!]/g, '');
     const scalar = new Set(['ID','UUID','String','Int','Float','Boolean','DateTime','Date','Time','JSON']).has(base);
     const hasFk = directives['wes_fk'] || directives['wesley_fk'] || directives['fk'];
+    
+    // console.log('[BrowserParserPort] Field:', name, 'Type:', typeSpec, 'Base:', base, 'Scalar:', scalar, 'FK:', !!hasFk);
+
     if (!scalar && !hasFk) continue; // relation-only
+    
     const nullable = !typeSpec.endsWith('!');
     const pgType = (() => {
       switch (base) {
@@ -88,8 +106,9 @@ export class BrowserParserPort {
       const head = m[2] || '';
       const body = m[3] || '';
       const directives = parseDirectives(head);
-      const hasWesTable = directives['wes_table'] || directives['wesley_table'] || directives['table'];
-      if (!hasWesTable) continue;
+      // For Alpha playground, treat all types as tables implicitly
+      // const hasWesTable = directives['wes_table'] || directives['wesley_table'] || directives['table'];
+      // if (!hasWesTable) continue;
       const columns = parseFields(body);
       // primary key detection
       let primaryKey = null;

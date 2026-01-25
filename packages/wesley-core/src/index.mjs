@@ -64,6 +64,6 @@ export { WriterPort } from './ports/writer.mjs';
 export { FileSystemPort } from './ports/fs.mjs';
 // Fixed case sensitivity: logger.mjs -> Logger.mjs  
 export { LoggerPort } from './ports/Logger.mjs';
-export { ClockPort, SystemClock } from './ports/clock.mjs';
+export { ClockPort, SystemClock, FakeClock, systemClock } from './ports/clock.mjs';
 
 // Note: Compiler services moved to host-node adapters per ENSIGN reorganization

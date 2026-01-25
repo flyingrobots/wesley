@@ -5,6 +5,9 @@ All notable changes to this project will be documented in this file.
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
 ## [Unreleased]
+- Generators: implement `@wesley/generator-vue` minimal TS type emission (enums + interfaces) with docs and edge/failure-mode tests.
+- Generators: harden `@wesley/generator-echo` with explicit SDL validation, better failure-mode coverage, and package README.
+- Generators: add tests covering generated ops helpers (`ops.generated.ts`) to validate ops-catalog wiring and determinism.
 - Core (QIR): add `lowerToSQL` for SELECT/JOIN/LATERAL/ORDER BY/LIMIT/OFFSET with null/IN semantics and `jsonb_agg` COALESCE.
 - Core (QIR): add `emitView` and `emitFunction` (RETURNS SETOF jsonb) for deterministic operation wrappers.
 - Tests: unit + snapshot tests for lowering and emission.

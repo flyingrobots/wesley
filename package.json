@@ -9,6 +9,7 @@
     "test": "pnpm -r test",
     "test:watch": "pnpm -r test:watch",
     "test:coverage": "pnpm -r test:coverage",
+    "website:full-preview": "pnpm lint && pnpm test && pnpm --filter wesley-website build && pnpm --filter wesley-website preview",
     "lint": "eslint . --ext .js,.mjs",
     "lint:fix": "eslint . --ext .js,.mjs --fix",
     "preflight": "node scripts/preflight.mjs",

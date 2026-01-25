@@ -1,0 +1,117 @@
+# Basic TTD Protocol Schema for Testing
+# Defines a simple counter protocol with channels, ops, rules, and invariants
+
+scalar JSON
+
+# Import TTD directives (in real usage, these come from schemas/directives.graphql)
+
+enum CounterState {
+  IDLE
+  COUNTING
+  PAUSED
+  COMPLETED
+}
+
+# A channel for counter events
+type CounterEvents @wes_channel(name: "counter", version: 1, ordered: true) {
+  counterIncremented: CounterIncremented!
+  counterDecremented: CounterDecremented!
+  counterReset: CounterReset!
+}
+
+type CounterIncremented @wes_codec(format: "cbor", canonical: true) @wes_registry(id: 1) {
+  counterId: ID!
+  previousValue: Int!
+  newValue: Int!
+  timestamp: String!
+}
+
+type CounterDecremented @wes_codec(format: "cbor") @wes_registry(id: 2) {
+  counterId: ID!
+  previousValue: Int!
+  newValue: Int!
+  timestamp: String!
+}
+
+type CounterReset @wes_codec(format: "cbor") @wes_registry(id: 3) {
+  counterId: ID!
+  previousValue: Int!
+  timestamp: String!
+}
+
+# Counter state type with state fields
+type Counter @wes_version(major: 1, minor: 0) {
+  id: ID! @wes_stateField(key: true)
+  value: Int! @wes_stateField @wes_constraint(min: 0, max: 1000000)
+  state: CounterState! @wes_stateField
+  lastModified: String! @wes_stateField(derived: true, derivation: "now()")
+}
+
+type Mutation {
+  # Increment operation with emission contract
+  increment(counterId: ID!, amount: Int!): Counter!
+    @wes_op(name: "increment", idempotent: false)
+    @wes_requires(state: "counter.state == COUNTING")
+    @wes_produces(events: ["CounterIncremented"])
+    @wes_emission(channel: "counter", event: "CounterIncremented")
+    @wes_emitsTo(channel: "counter", within: 100)
+    @wes_footprint(reads: ["Counter"], writes: ["Counter"])
+    @wes_rule(name: "stay_counting", from: ["COUNTING"], to: "COUNTING")
+
+  # Decrement with guard
+  decrement(counterId: ID!, amount: Int!): Counter!
+    @wes_op(name: "decrement")
+    @wes_requires(state: "counter.state == COUNTING && counter.value >= amount")
+    @wes_produces(events: ["CounterDecremented"])
+    @wes_emission(channel: "counter", event: "CounterDecremented", condition: "amount > 0")
+    @wes_footprint(reads: ["Counter"], writes: ["Counter"])
+    @wes_rule(name: "decrement_rule", from: ["COUNTING"], to: "COUNTING", guard: "value >= amount")
+
+  # Reset operation
+  reset(counterId: ID!): Counter!
+    @wes_op(name: "reset", idempotent: true)
+    @wes_produces(events: ["CounterReset"])
+    @wes_emission(channel: "counter", event: "CounterReset")
+    @wes_footprint(reads: ["Counter"], writes: ["Counter"])
+    @wes_rule(name: "reset_to_idle", from: ["COUNTING", "PAUSED"], to: "IDLE")
+
+  # Start counting
+  start(counterId: ID!): Counter!
+    @wes_op(name: "start")
+    @wes_rule(name: "idle_to_counting", from: ["IDLE"], to: "COUNTING")
+    @wes_footprint(writes: ["Counter"])
+
+  # Pause counting
+  pause(counterId: ID!): Counter!
+    @wes_op(name: "pause")
+    @wes_rule(name: "counting_to_paused", from: ["COUNTING"], to: "PAUSED")
+    @wes_footprint(writes: ["Counter"])
+
+  # Resume counting
+  resume(counterId: ID!): Counter!
+    @wes_op(name: "resume")
+    @wes_rule(name: "paused_to_counting", from: ["PAUSED"], to: "COUNTING")
+    @wes_footprint(writes: ["Counter"])
+}
+
+type Query {
+  # Read-only operations
+  getCounter(id: ID!): Counter
+    @wes_op(name: "getCounter", readonly: true)
+    @wes_footprint(reads: ["Counter"])
+
+  listCounters(limit: Int, offset: Int): [Counter!]!
+    @wes_op(name: "listCounters", readonly: true)
+    @wes_footprint(reads: ["Counter"])
+}
+
+# System-level invariants
+type CounterSystem
+  @wes_invariant(name: "value_non_negative", expr: "forall c in Counter: c.value >= 0", severity: "error")
+  @wes_invariant(name: "value_bounded", expr: "forall c in Counter: c.value <= 1000000", severity: "error")
+  @wes_invariant(name: "increment_emits", expr: "op.increment.mustEmit(CounterIncremented).within(100)", severity: "error")
+{
+  # GraphQL requires types to have at least one field. This placeholder exists
+  # because CounterSystem is only used to carry @wes_invariant directives.
+  _placeholder: Boolean
+}

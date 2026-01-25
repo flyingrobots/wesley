@@ -12,6 +12,7 @@ import { NodeFileSystem } from './NodeFileSystem.mjs';
 import { ConfigLoader } from './ConfigLoader.mjs';
 import { DbAdapter } from './DbAdapter.mjs';
 import { GraphQLAdapter } from './GraphQLAdapter.mjs';
+import { nodeCrypto } from './NodeCrypto.mjs';
 
 // Stub generators for fallback when packages are broken
 const stub = {
@@ -210,9 +211,11 @@ export async function createNodeRuntime() {
     },
     
     // Clock
-    clock: { 
-      now: () => new Date() 
+    clock: {
+      now: () => new Date()
     },
+    // Crypto
+    crypto: nodeCrypto,
     // Validators
     validators: {
       sanitizeGraphQL: (sdl) => sanitizeGraphQL(sdl, process.env)

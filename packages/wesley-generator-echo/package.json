@@ -1,0 +1,39 @@
+{
+  "name": "@wesley/generator-echo",
+  "version": "0.1.0",
+  "description": "Wesley Echo generator: GraphQL SDL -> echo-ir/v1 + ops catalog + host helpers",
+  "type": "module",
+  "main": "src/index.mjs",
+  "exports": {
+    ".": "./src/index.mjs"
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@wesley/core": "workspace:*",
+    "@wesley/host-node": "workspace:*",
+    "graphql": "^16.11.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "vitest": "^4.0.3"
+  },
+  "author": "Wesley Authors <oss@flyingrobots.dev>",
+  "license": "LicenseRef-MIND-UCAL-1.0",
+  "engines": {
+    "node": ">=18.17"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/flyingrobots/wesley.git",
+    "directory": "packages/wesley-generator-echo"
+  },
+  "bugs": {
+    "url": "https://github.com/flyingrobots/wesley/issues"
+  },
+  "homepage": "https://github.com/flyingrobots/wesley/tree/main/packages/wesley-generator-echo#readme"
+}

@@ -43,9 +43,30 @@ export default function HeroBullets({ onNavigate }) {
               className={classes.control}
               component="a"
               href="/docs"
-              onClick={(e) => { e.preventDefault(); onNavigate?.('/docs') }}
+              onClick={(e) => {
+                if (onNavigate) {
+                  e.preventDefault();
+                  onNavigate('/docs');
+                }
+              }}
             >
               Docs
+            </Button>
+            <Button
+              variant="outline"
+              radius="xl"
+              size="md"
+              className={classes.control}
+              component="a"
+              href="/try"
+              onClick={(e) => {
+                if (onNavigate) {
+                  e.preventDefault();
+                  onNavigate('/try');
+                }
+              }}
+            >
+              Try Now (Alpha)
             </Button>
           </Group>
         </div>

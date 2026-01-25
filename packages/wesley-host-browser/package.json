@@ -31,7 +31,13 @@
     "url": "https://github.com/flyingrobots/wesley/issues"
   },
   "homepage": "https://github.com/flyingrobots/wesley/tree/main/packages/wesley-host-browser#readme",
+  "scripts": {
+    "test": "vitest run"
+  },
   "dependencies": {
     "@wesley/core": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^4.0.3"
   }
 }
