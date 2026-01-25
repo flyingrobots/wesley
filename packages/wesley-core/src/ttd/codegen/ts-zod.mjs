@@ -27,11 +27,12 @@ function generateConstraints(constraint) {
 
   const validators = [];
 
+  // Use .gte()/.lte() for numeric bounds to avoid collision with string .min()/.max()
   if (constraint.min !== undefined) {
-    validators.push(`.min(${constraint.min})`);
+    validators.push(`.gte(${constraint.min})`);
   }
   if (constraint.max !== undefined) {
-    validators.push(`.max(${constraint.max})`);
+    validators.push(`.lte(${constraint.max})`);
   }
   if (constraint.minLength !== undefined) {
     validators.push(`.min(${constraint.minLength})`);
@@ -40,7 +41,9 @@ function generateConstraints(constraint) {
     validators.push(`.max(${constraint.maxLength})`);
   }
   if (constraint.pattern) {
-    validators.push(`.regex(/${constraint.pattern}/)`);
+    // Escape forward slashes in pattern to prevent regex delimiter breakage
+    const escapedPattern = constraint.pattern.replace(/\//g, '\\/');
+    validators.push(`.regex(/${escapedPattern}/)`);
   }
 
   return validators.join('');

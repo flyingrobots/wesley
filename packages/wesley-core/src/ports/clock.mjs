@@ -32,6 +32,9 @@ export class FakeClock extends ClockPort {
    */
   constructor(fixedTimestamp) {
     super();
+    if (typeof fixedTimestamp !== 'string' || fixedTimestamp.trim().length === 0) {
+      throw new Error('FakeClock requires a non-empty ISO timestamp string');
+    }
     this.fixedTimestamp = fixedTimestamp;
   }
 

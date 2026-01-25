@@ -14,9 +14,12 @@ export default function ExplanationPopover({ children, title, description, width
       zIndex={100} // Ensure it's above other things
     >
       <Popover.Target>
-        <Box 
-          onMouseEnter={open} 
+        <Box
+          onMouseEnter={open}
           onMouseLeave={close}
+          onFocus={open}
+          onBlur={close}
+          tabIndex={0}
           style={{ display: 'inline-block' }} // Ensure box wraps button properly
         >
           {children}

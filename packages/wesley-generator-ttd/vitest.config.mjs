@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config';
+import { fileURLToPath } from 'node:url';
 
 export default defineConfig({
   test: {
@@ -13,8 +14,9 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@wesley/core/ttd': new URL('../wesley-core/src/ttd/index.mjs', import.meta.url).pathname,
-      '@wesley/core/ttd/invariants': new URL('../wesley-core/src/ttd/invariants/index.mjs', import.meta.url).pathname,
+      // More specific aliases must come first
+      '@wesley/core/ttd/invariants': fileURLToPath(new URL('../wesley-core/src/ttd/invariants/index.mjs', import.meta.url)),
+      '@wesley/core/ttd': fileURLToPath(new URL('../wesley-core/src/ttd/index.mjs', import.meta.url)),
     },
   },
 });

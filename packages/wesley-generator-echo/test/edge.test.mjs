@@ -51,11 +51,21 @@ describe('generateEcho edge cases', () => {
     const outA = await generateEcho({ sdl: sdlA });
     const outB = await generateEcho({ sdl: sdlB });
 
-    const irA = JSON.parse(outA.files.find((f) => f.path === 'ir.json').content);
-    const irB = JSON.parse(outB.files.find((f) => f.path === 'ir.json').content);
+    const irFileA = outA.files.find((f) => f.path === 'ir.json');
+    const irFileB = outB.files.find((f) => f.path === 'ir.json');
+    expect(irFileA).toBeDefined();
+    expect(irFileB).toBeDefined();
+    if (!irFileA || !irFileB) throw new Error('ir.json missing from generated files');
+    const irA = JSON.parse(irFileA.content);
+    const irB = JSON.parse(irFileB.content);
 
     // ops should be identical despite field order differences.
     expect(irA.ops).toEqual(irB.ops);
+
+    // Verify ops are sorted alphabetically by name
+    const opNames = irA.ops.map(op => op.name);
+    const sortedNames = [...opNames].sort();
+    expect(opNames).toEqual(sortedNames);
   });
 
   it('handles missing Mutation type gracefully (query ops still emitted)', async () => {

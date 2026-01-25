@@ -142,7 +142,7 @@ export function generateManifest(schema, deps = {}) {
       resultType: op.resultType,
       signatureHash: hashOp(op, hashDeps),
     })),
-    channels: schema.channels.map(c => ({
+    channels: [...schema.channels].sort((a, b) => a.name.localeCompare(b.name)).map(c => ({
       name: c.name,
       version: c.version,
       ordered: c.ordered,

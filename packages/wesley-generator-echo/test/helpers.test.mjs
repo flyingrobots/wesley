@@ -30,7 +30,8 @@ const schemaSDL = /* GraphQL */ `
 const hash32 = (ns, name) => createHash('sha256').update(`${ns}:${name}`).digest().readUInt32LE(0);
 
 function evalOpsGeneratedTs(source) {
-  const sanitized = source.replaceAll('export ', '');
+  // Strip only export keywords at statement boundaries
+  const sanitized = source.replace(/^export\s+/gm, '');
   const wrapped = `${sanitized}\n\nglobalThis.__exports = { SCHEMA_SHA256, REGISTRY_VERSION, CODEC_ID, OPS, findOpId };`;
   const context = vm.createContext({});
   vm.runInContext(wrapped, context);
