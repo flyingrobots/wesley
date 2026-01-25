@@ -9,6 +9,7 @@
 
 import { hashSchema, hashType, hashOp, hashChannel, canonicalizeObject } from './hasher.mjs';
 import { systemClock } from '../ports/clock.mjs';
+import { defaultCrypto } from '../ports/crypto.mjs';
 
 /**
  * Generate schema.json
@@ -108,8 +109,14 @@ export function generateContractsJson(schema) {
 
 /**
  * Generate manifest.json
+ * @param {object} schema - The TTD schema
+ * @param {object} deps - Dependencies (for DI)
+ * @param {import('../ports/crypto.mjs').CryptoPort} deps.crypto - Crypto port for hashing
  */
-export function generateManifest(schema) {
+export function generateManifest(schema, deps = {}) {
+  const crypto = deps.crypto ?? defaultCrypto;
+  const hashDeps = { crypto };
+
   // Sort ops by op_id
   const sortedOps = [...schema.ops].sort((a, b) => a.op_id - b.op_id);
 
@@ -125,7 +132,7 @@ export function generateManifest(schema) {
         typeName: entry.typeName,
         deprecated: entry.deprecated,
         deprecatedBy: entry.deprecatedBy,
-        typeHash: hashType(schema.types.find(t => t.name === entry.typeName) || { name: entry.typeName, fields: [] }),
+        typeHash: hashType(schema.types.find(t => t.name === entry.typeName) || { name: entry.typeName, fields: [] }, hashDeps),
       })),
     },
     ops: sortedOps.map(op => ({
@@ -133,7 +140,7 @@ export function generateManifest(schema) {
       op_id: op.op_id,
       args: op.args,
       resultType: op.resultType,
-      signatureHash: hashOp(op),
+      signatureHash: hashOp(op, hashDeps),
     })),
     channels: schema.channels.map(c => ({
       name: c.name,
@@ -141,7 +148,7 @@ export function generateManifest(schema) {
       ordered: c.ordered,
       persistent: c.persistent,
       eventTypes: c.eventTypes,
-      channelHash: hashChannel(c),
+      channelHash: hashChannel(c, hashDeps),
     })),
     codecs: schema.codecs.map(c => canonicalizeObject({
       typeName: c.typeName,

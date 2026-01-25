@@ -5,14 +5,18 @@
  * JSON serialization and SHA-256 hashing.
  */
 
-import { createHash } from 'node:crypto';
 import { parse, print } from 'graphql';
+import { defaultCrypto } from '../ports/crypto.mjs';
 
 /**
  * Compute SHA-256 hash of a string
+ * @param {string} str - String to hash
+ * @param {Object} deps - Dependencies
+ * @param {import('../ports/crypto.mjs').CryptoPort} deps.crypto - Crypto port
  */
-export function hashString(str) {
-  return createHash('sha256').update(str).digest('hex');
+export function hashString(str, deps = {}) {
+  const crypto = deps.crypto ?? defaultCrypto;
+  return crypto.sha256(str);
 }
 
 /**
@@ -46,8 +50,11 @@ export function canonicalizeObject(obj) {
 
 /**
  * Hash a type definition
+ * @param {Object} typeDef - Type definition to hash
+ * @param {Object} deps - Dependencies
+ * @param {import('../ports/crypto.mjs').CryptoPort} deps.crypto - Crypto port
  */
-export function hashType(typeDef) {
+export function hashType(typeDef, deps = {}) {
   // Sort fields by name for consistent hashing
   const normalized = {
     name: typeDef.name,
@@ -55,13 +62,16 @@ export function hashType(typeDef) {
   };
 
   const canonical = canonicalizeObject(normalized);
-  return hashString(JSON.stringify(canonical));
+  return hashString(JSON.stringify(canonical), deps);
 }
 
 /**
  * Hash an operation definition
+ * @param {Object} op - Operation to hash
+ * @param {Object} deps - Dependencies
+ * @param {import('../ports/crypto.mjs').CryptoPort} deps.crypto - Crypto port
  */
-export function hashOp(op) {
+export function hashOp(op, deps = {}) {
   // Sort args by name for consistent hashing
   const normalized = {
     name: op.name,
@@ -70,13 +80,16 @@ export function hashOp(op) {
   };
 
   const canonical = canonicalizeObject(normalized);
-  return hashString(JSON.stringify(canonical));
+  return hashString(JSON.stringify(canonical), deps);
 }
 
 /**
  * Hash a channel definition
+ * @param {Object} channel - Channel to hash
+ * @param {Object} deps - Dependencies
+ * @param {import('../ports/crypto.mjs').CryptoPort} deps.crypto - Crypto port
  */
-export function hashChannel(channel) {
+export function hashChannel(channel, deps = {}) {
   // Sort event types for consistent hashing
   const normalized = {
     name: channel.name,
@@ -87,7 +100,7 @@ export function hashChannel(channel) {
   };
 
   const canonical = canonicalizeObject(normalized);
-  return hashString(JSON.stringify(canonical));
+  return hashString(JSON.stringify(canonical), deps);
 }
 
 /**
@@ -97,8 +110,12 @@ export function hashChannel(channel) {
  * - Whitespace differences are ignored
  * - Comment differences are ignored
  * - The structure and content are preserved
+ *
+ * @param {string} sdl - GraphQL SDL to hash
+ * @param {Object} deps - Dependencies
+ * @param {import('../ports/crypto.mjs').CryptoPort} deps.crypto - Crypto port
  */
-export function hashSchema(sdl) {
+export function hashSchema(sdl, deps = {}) {
   // Parse and re-print to normalize whitespace and remove comments
   const doc = parse(sdl);
 
@@ -121,5 +138,5 @@ export function hashSchema(sdl) {
     definitions: sortedDefs,
   });
 
-  return hashString(normalizedSdl);
+  return hashString(normalizedSdl, deps);
 }

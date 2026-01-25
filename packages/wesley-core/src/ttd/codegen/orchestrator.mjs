@@ -21,6 +21,7 @@ import { generateTsTypes } from './ts-types.mjs';
 import { generateTsZod } from './ts-zod.mjs';
 import { generateTsRegistry } from './ts-registry.mjs';
 import { systemClock } from '../../ports/clock.mjs';
+import { defaultCrypto } from '../../ports/crypto.mjs';
 
 /**
  * Compile TTD protocol from GraphQL SDL
@@ -30,15 +31,18 @@ import { systemClock } from '../../ports/clock.mjs';
  * @param {string[]} options.targets - Output targets: 'manifest', 'typescript' (default: all)
  * @param {Object} options.deps - Dependencies for DI
  * @param {import('../../ports/clock.mjs').ClockPort} options.deps.clock - Clock port
+ * @param {import('../../ports/crypto.mjs').CryptoPort} options.deps.crypto - Crypto port
  * @returns {Promise<Object>} Compilation result with files array
  */
 export async function compileTtdProtocol({ sdl, targets = ['manifest', 'typescript'], deps = {} }) {
   const clock = deps.clock ?? systemClock;
+  const crypto = deps.crypto ?? defaultCrypto;
+
   // Extract TTD schema from SDL
-  const schema = extractTtdSchema(sdl, { clock });
+  const schema = extractTtdSchema(sdl, { clock, crypto });
 
   // Compute schema hash
-  schema.schemaHash = hashSchema(sdl);
+  schema.schemaHash = hashSchema(sdl, { crypto });
 
   // Validate schema
   const validation = validateTtdSchema(schema);
@@ -54,7 +58,7 @@ export async function compileTtdProtocol({ sdl, targets = ['manifest', 'typescri
   if (targets.includes('manifest')) {
     const schemaJson = generateSchemaJson(schema, { clock });
     const contractsJson = generateContractsJson(schema);
-    const manifest = generateManifest(schema);
+    const manifest = generateManifest(schema, { crypto });
 
     files.push({
       path: 'manifest/schema.json',

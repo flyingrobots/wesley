@@ -5,7 +5,7 @@
  * Bytecode compilation is deferred to v2; for now we only capture AST.
  */
 
-import { createHash } from 'node:crypto';
+import { defaultCrypto } from '../../ports/crypto.mjs';
 import { parseExpr } from './parser.mjs';
 import { ExprKind } from './ast.mjs';
 
@@ -100,13 +100,17 @@ function evaluateStatic(ast) {
  * Generate golden test vectors for invariant expressions
  *
  * @param {Array} specs - Array of {name, expr} objects
+ * @param {Object} deps - Dependencies
+ * @param {import('../../ports/crypto.mjs').CryptoPort} deps.crypto - Crypto port
  * @returns {Array} Array of golden vectors
  */
-export function generateGoldenVectors(specs) {
+export function generateGoldenVectors(specs, deps = {}) {
+  const crypto = deps.crypto ?? defaultCrypto;
+
   return specs.map(spec => {
     const ast = parseExpr(spec.expr);
     const astJson = JSON.stringify(ast, null, 2);
-    const astHash = createHash('sha256').update(astJson).digest('hex');
+    const astHash = crypto.sha256(astJson);
 
     const vector = {
       name: spec.name,
@@ -129,7 +133,7 @@ export function generateGoldenVectors(specs) {
     // Compile to bytecode
     const bytecode = compileToBytecode(ast);
     const bytecodeJson = JSON.stringify(bytecode, null, 2);
-    const bytecodeHash = createHash('sha256').update(bytecodeJson).digest('hex');
+    const bytecodeHash = crypto.sha256(bytecodeJson);
 
     vector.bytecode = bytecode;
     vector.bytecodeHash = bytecodeHash;

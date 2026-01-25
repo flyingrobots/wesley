@@ -14,23 +14,27 @@ import {
   canonicalizeObject,
   hashString,
 } from '@wesley/core/ttd';
+import { testCrypto } from './setup.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const basicProtocolSdl = readFileSync(join(__dirname, 'fixtures/basic-protocol.graphql'), 'utf-8');
 
+/** Crypto deps for hash functions */
+const deps = { crypto: testCrypto };
+
 describe('TTD Canonical Hasher', () => {
   describe('hashString', () => {
     it('produces consistent SHA-256 hashes', () => {
-      const hash1 = hashString('hello');
-      const hash2 = hashString('hello');
+      const hash1 = hashString('hello', deps);
+      const hash2 = hashString('hello', deps);
 
       expect(hash1).toBe(hash2);
       expect(hash1).toMatch(/^[a-f0-9]{64}$/);
     });
 
     it('produces different hashes for different inputs', () => {
-      const hash1 = hashString('hello');
-      const hash2 = hashString('world');
+      const hash1 = hashString('hello', deps);
+      const hash2 = hashString('world', deps);
 
       expect(hash1).not.toBe(hash2);
     });
@@ -83,8 +87,8 @@ describe('TTD Canonical Hasher', () => {
         ],
       };
 
-      const hash1 = hashType(typeDef);
-      const hash2 = hashType(typeDef);
+      const hash1 = hashType(typeDef, deps);
+      const hash2 = hashType(typeDef, deps);
 
       expect(hash1).toBe(hash2);
     });
@@ -106,8 +110,8 @@ describe('TTD Canonical Hasher', () => {
         name: 'Counter',
       };
 
-      const hash1 = hashType(typeDef1);
-      const hash2 = hashType(typeDef2);
+      const hash1 = hashType(typeDef1, deps);
+      const hash2 = hashType(typeDef2, deps);
 
       expect(hash1).toBe(hash2);
     });
@@ -123,8 +127,8 @@ describe('TTD Canonical Hasher', () => {
         fields: [{ name: 'value', type: 'Int', required: false }],
       };
 
-      const hash1 = hashType(typeDef1);
-      const hash2 = hashType(typeDef2);
+      const hash1 = hashType(typeDef1, deps);
+      const hash2 = hashType(typeDef2, deps);
 
       expect(hash1).not.toBe(hash2);
     });
@@ -141,8 +145,8 @@ describe('TTD Canonical Hasher', () => {
         resultType: 'Counter',
       };
 
-      const hash1 = hashOp(op);
-      const hash2 = hashOp(op);
+      const hash1 = hashOp(op, deps);
+      const hash2 = hashOp(op, deps);
 
       expect(hash1).toBe(hash2);
     });
@@ -160,7 +164,7 @@ describe('TTD Canonical Hasher', () => {
         resultType: 'Counter',
       };
 
-      expect(hashOp(op1)).not.toBe(hashOp(op2));
+      expect(hashOp(op1, deps)).not.toBe(hashOp(op2, deps));
     });
   });
 
@@ -174,8 +178,8 @@ describe('TTD Canonical Hasher', () => {
         persistent: false,
       };
 
-      const hash1 = hashChannel(channel);
-      const hash2 = hashChannel(channel);
+      const hash1 = hashChannel(channel, deps);
+      const hash2 = hashChannel(channel, deps);
 
       expect(hash1).toBe(hash2);
     });
@@ -193,14 +197,14 @@ describe('TTD Canonical Hasher', () => {
         eventTypes: ['EventB'],
       };
 
-      expect(hashChannel(channel1)).not.toBe(hashChannel(channel2));
+      expect(hashChannel(channel1, deps)).not.toBe(hashChannel(channel2, deps));
     });
   });
 
   describe('hashSchema', () => {
     it('produces consistent hashes for the same SDL', () => {
-      const hash1 = hashSchema(basicProtocolSdl);
-      const hash2 = hashSchema(basicProtocolSdl);
+      const hash1 = hashSchema(basicProtocolSdl, deps);
+      const hash2 = hashSchema(basicProtocolSdl, deps);
 
       expect(hash1).toBe(hash2);
       expect(hash1).toMatch(/^[a-f0-9]{64}$/);
@@ -218,7 +222,7 @@ describe('TTD Canonical Hasher', () => {
         }
       `;
 
-      expect(hashSchema(sdl1)).not.toBe(hashSchema(sdl2));
+      expect(hashSchema(sdl1, deps)).not.toBe(hashSchema(sdl2, deps));
     });
 
     it('ignores whitespace differences', () => {
@@ -229,7 +233,7 @@ describe('TTD Canonical Hasher', () => {
         }
       `;
 
-      expect(hashSchema(sdl1)).toBe(hashSchema(sdl2));
+      expect(hashSchema(sdl1, deps)).toBe(hashSchema(sdl2, deps));
     });
 
     it('ignores comment differences', () => {
@@ -242,14 +246,14 @@ describe('TTD Canonical Hasher', () => {
         }
       `;
 
-      expect(hashSchema(sdl1)).toBe(hashSchema(sdl2));
+      expect(hashSchema(sdl1, deps)).toBe(hashSchema(sdl2, deps));
     });
 
     it('is sensitive to type name changes', () => {
       const sdl1 = `type Counter { value: Int! }`;
       const sdl2 = `type CounterV2 { value: Int! }`;
 
-      expect(hashSchema(sdl1)).not.toBe(hashSchema(sdl2));
+      expect(hashSchema(sdl1, deps)).not.toBe(hashSchema(sdl2, deps));
     });
 
     it('is sensitive to directive argument changes', () => {
@@ -264,7 +268,7 @@ describe('TTD Canonical Hasher', () => {
         }
       `;
 
-      expect(hashSchema(sdl1)).not.toBe(hashSchema(sdl2));
+      expect(hashSchema(sdl1, deps)).not.toBe(hashSchema(sdl2, deps));
     });
   });
 
@@ -272,7 +276,7 @@ describe('TTD Canonical Hasher', () => {
     it('produces identical results across multiple runs', () => {
       const results = [];
       for (let i = 0; i < 10; i++) {
-        results.push(hashSchema(basicProtocolSdl));
+        results.push(hashSchema(basicProtocolSdl, deps));
       }
 
       const first = results[0];

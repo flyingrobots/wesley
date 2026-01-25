@@ -7,14 +7,18 @@ import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { extractTtdSchema } from '@wesley/core/ttd';
+import { testCrypto } from './setup.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const basicProtocolSdl = readFileSync(join(__dirname, 'fixtures/basic-protocol.graphql'), 'utf-8');
 
+/** Helper to extract with crypto adapter */
+const extract = (sdl) => extractTtdSchema(sdl, { crypto: testCrypto });
+
 describe('TTD Schema Extractor', () => {
   describe('extractTtdSchema', () => {
     it('extracts channels from schema', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
 
       expect(schema.channels).toHaveLength(1);
       const channel = schema.channels[0];
@@ -27,7 +31,7 @@ describe('TTD Schema Extractor', () => {
     });
 
     it('extracts operations from Mutation type', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
 
       expect(schema.ops.length).toBeGreaterThanOrEqual(6);
 
@@ -44,7 +48,7 @@ describe('TTD Schema Extractor', () => {
     });
 
     it('extracts operations from Query type', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
 
       const getCounter = schema.ops.find(o => o.name === 'getCounter');
       expect(getCounter).toBeDefined();
@@ -56,7 +60,7 @@ describe('TTD Schema Extractor', () => {
     });
 
     it('extracts transition rules', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
 
       expect(schema.rules.length).toBeGreaterThanOrEqual(5);
 
@@ -76,7 +80,7 @@ describe('TTD Schema Extractor', () => {
     });
 
     it('extracts invariants', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
 
       expect(schema.invariants.length).toBeGreaterThanOrEqual(3);
 
@@ -93,7 +97,7 @@ describe('TTD Schema Extractor', () => {
     });
 
     it('extracts emission contracts', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
 
       expect(schema.emissions.length).toBeGreaterThanOrEqual(3);
 
@@ -110,7 +114,7 @@ describe('TTD Schema Extractor', () => {
     });
 
     it('extracts footprint specs', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
 
       expect(schema.footprints.length).toBeGreaterThanOrEqual(6);
 
@@ -125,7 +129,7 @@ describe('TTD Schema Extractor', () => {
     });
 
     it('extracts registry entries', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
 
       expect(schema.registry.length).toBeGreaterThanOrEqual(3);
 
@@ -139,7 +143,7 @@ describe('TTD Schema Extractor', () => {
     });
 
     it('extracts codec specs', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
 
       expect(schema.codecs.length).toBeGreaterThanOrEqual(3);
 
@@ -150,7 +154,7 @@ describe('TTD Schema Extractor', () => {
     });
 
     it('extracts type definitions with state fields', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
 
       const counterType = schema.types.find(t => t.name === 'Counter');
       expect(counterType).toBeDefined();
@@ -174,7 +178,7 @@ describe('TTD Schema Extractor', () => {
     });
 
     it('extracts enum definitions', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
 
       const counterState = schema.enums.find(e => e.name === 'CounterState');
       expect(counterState).toBeDefined();
@@ -182,7 +186,7 @@ describe('TTD Schema Extractor', () => {
     });
 
     it('links ops to their rules', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
 
       const increment = schema.ops.find(o => o.name === 'increment');
       expect(increment.rules).toBeDefined();
@@ -191,7 +195,7 @@ describe('TTD Schema Extractor', () => {
     });
 
     it('computes op_id for each operation', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
 
       for (const op of schema.ops) {
         expect(typeof op.op_id).toBe('number');
@@ -205,7 +209,7 @@ describe('TTD Schema Extractor', () => {
     });
 
     it('includes schema metadata', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
 
       expect(schema.metadata).toBeDefined();
       expect(schema.metadata.extractedAt).toBeDefined();
@@ -215,7 +219,7 @@ describe('TTD Schema Extractor', () => {
 
   describe('error handling', () => {
     it('throws on invalid SDL', () => {
-      expect(() => extractTtdSchema('not valid graphql {')).toThrow();
+      expect(() => extract('not valid graphql {')).toThrow();
     });
 
     it('throws on missing required directive args', () => {
@@ -224,7 +228,7 @@ describe('TTD Schema Extractor', () => {
           bad: Result! @wes_rule(name: "test")
         }
       `;
-      expect(() => extractTtdSchema(sdl)).toThrow(/from.*required/i);
+      expect(() => extract(sdl)).toThrow(/from.*required/i);
     });
 
     it('returns empty schema for SDL without TTD directives', () => {
@@ -233,7 +237,7 @@ describe('TTD Schema Extractor', () => {
           hello: String!
         }
       `;
-      const schema = extractTtdSchema(sdl);
+      const schema = extract(sdl);
 
       expect(schema.channels).toHaveLength(0);
       expect(schema.ops).toHaveLength(0);

@@ -14,6 +14,10 @@ import {
   createCodecSpec,
   TtdAstKind,
 } from '@wesley/core/ttd';
+import { testCrypto } from './setup.mjs';
+
+/** Crypto deps for createOp */
+const deps = { crypto: testCrypto };
 
 describe('TTD AST Types', () => {
   describe('Channel', () => {
@@ -55,7 +59,7 @@ describe('TTD AST Types', () => {
           { name: 'amount', type: 'Int', required: true },
         ],
         resultType: 'Counter',
-      });
+      }, deps);
 
       expect(op.kind).toBe(TtdAstKind.OP);
       expect(op.name).toBe('increment');
@@ -71,7 +75,7 @@ describe('TTD AST Types', () => {
         args: [],
         resultType: 'Counter',
         namespace: 'Mutation',
-      });
+      }, deps);
 
       // op_id should be a 32-bit hash of namespace:name
       expect(typeof op.op_id).toBe('number');
@@ -84,7 +88,7 @@ describe('TTD AST Types', () => {
         args: [{ name: 'id', type: 'ID', required: true }],
         resultType: 'Counter',
         readonly: true,
-      });
+      }, deps);
 
       expect(op.readonly).toBe(true);
     });

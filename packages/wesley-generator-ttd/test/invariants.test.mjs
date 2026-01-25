@@ -13,6 +13,10 @@ import {
   VmSpec,
   generateGoldenVectors,
 } from '@wesley/core/ttd/invariants';
+import { testCrypto } from './setup.mjs';
+
+/** Crypto deps for golden vectors */
+const deps = { crypto: testCrypto };
 
 describe('Invariant Expression Lexer', () => {
   describe('tokenize', () => {
@@ -450,7 +454,7 @@ describe('Golden Test Vectors', () => {
         { name: 'simple_true', expr: 'true' },
         { name: 'simple_false', expr: 'false' },
         { name: 'comparison', expr: '5 > 3' },
-      ]);
+      ], deps);
 
       expect(vectors).toHaveLength(3);
 
@@ -464,8 +468,8 @@ describe('Golden Test Vectors', () => {
     });
 
     it('generates deterministic hashes', () => {
-      const vectors1 = generateGoldenVectors([{ name: 'test', expr: 'x >= 0' }]);
-      const vectors2 = generateGoldenVectors([{ name: 'test', expr: 'x >= 0' }]);
+      const vectors1 = generateGoldenVectors([{ name: 'test', expr: 'x >= 0' }], deps);
+      const vectors2 = generateGoldenVectors([{ name: 'test', expr: 'x >= 0' }], deps);
 
       expect(vectors1[0].bytecodeHash).toBe(vectors2[0].bytecodeHash);
     });
@@ -475,7 +479,7 @@ describe('Golden Test Vectors', () => {
         { name: 'always_true', expr: 'true' },
         { name: 'always_false', expr: 'false' },
         { name: 'static_compare', expr: '10 > 5' },
-      ]);
+      ], deps);
 
       expect(vectors[0].expectedResult).toBe(true);
       expect(vectors[1].expectedResult).toBe(false);
@@ -485,14 +489,14 @@ describe('Golden Test Vectors', () => {
     it('marks dynamic expressions as needing runtime evaluation', () => {
       const vectors = generateGoldenVectors([
         { name: 'forall', expr: 'forall c in Counter: c.value >= 0' },
-      ]);
+      ], deps);
 
       expect(vectors[0].requiresRuntime).toBe(true);
       expect(vectors[0].expectedResult).toBeUndefined();
     });
 
     it('includes bytecode length', () => {
-      const vectors = generateGoldenVectors([{ name: 'test', expr: 'x > 0' }]);
+      const vectors = generateGoldenVectors([{ name: 'test', expr: 'x > 0' }], deps);
 
       expect(vectors[0].bytecodeLength).toBeGreaterThan(0);
     });

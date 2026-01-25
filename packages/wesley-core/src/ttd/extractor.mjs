@@ -6,8 +6,8 @@
  */
 
 import { parse, Kind } from 'graphql';
-import { createHash } from 'node:crypto';
 import { systemClock } from '../ports/clock.mjs';
+import { defaultCrypto } from '../ports/crypto.mjs';
 import { hashSchema } from './hasher.mjs';
 import {
   createChannel,
@@ -36,10 +36,14 @@ import {
 
 /**
  * Compute op_id from namespace and name
+ * @param {string} namespace - Operation namespace
+ * @param {string} name - Operation name
+ * @param {import('../ports/crypto.mjs').CryptoPort} crypto - Crypto port
  */
-function computeOpId(namespace, name) {
-  const buf = createHash('sha256').update(`${namespace}:${name}`).digest();
-  return buf.readUInt32LE(0);
+function computeOpId(namespace, name, crypto) {
+  const bytes = crypto.sha256Bytes(`${namespace}:${name}`);
+  // Read first 4 bytes as little-endian uint32 (>>> 0 converts to unsigned)
+  return (bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24)) >>> 0;
 }
 
 /**
@@ -72,9 +76,11 @@ function unwrapType(typeNode) {
  * @param {string} sdl - GraphQL SDL with TTD directives
  * @param {Object} deps - Dependencies for DI
  * @param {import('../ports/clock.mjs').ClockPort} deps.clock - Clock port for timestamps
+ * @param {import('../ports/crypto.mjs').CryptoPort} deps.crypto - Crypto port for hashing
  */
 export function extractTtdSchema(sdl, deps = {}) {
   const clock = deps.clock ?? systemClock;
+  const crypto = deps.crypto ?? defaultCrypto;
   const doc = parse(sdl);
 
   const schema = {
@@ -226,7 +232,7 @@ export function extractTtdSchema(sdl, deps = {}) {
         idempotent: opInfo.idempotent ?? false,
         readonly: isQuery || (opInfo.readonly ?? false),
         timeout: opInfo.timeout,
-      });
+      }, { crypto });
 
       // Attach rules to op
       for (const ruleInfo of directives.rules) {
@@ -316,7 +322,7 @@ export function extractTtdSchema(sdl, deps = {}) {
   schema.ops.sort((a, b) => a.op_id - b.op_id);
 
   // Compute schema hash from SDL
-  schema.schemaHash = hashSchema(sdl);
+  schema.schemaHash = hashSchema(sdl, { crypto });
 
   return schema;
 }

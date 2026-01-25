@@ -4,7 +4,7 @@
  * Defines the Abstract Syntax Tree types for TTD protocol schemas.
  */
 
-import { createHash } from 'node:crypto';
+import { defaultCrypto } from '../ports/crypto.mjs';
 
 /**
  * AST node kinds
@@ -24,10 +24,14 @@ export const TtdAstKind = {
 
 /**
  * Compute op_id from namespace and name using SHA-256 hash
+ * @param {string} namespace - Operation namespace
+ * @param {string} name - Operation name
+ * @param {import('../ports/crypto.mjs').CryptoPort} crypto - Crypto port
  */
-function computeOpId(namespace, name) {
-  const buf = createHash('sha256').update(`${namespace}:${name}`).digest();
-  return buf.readUInt32LE(0);
+function computeOpId(namespace, name, crypto) {
+  const bytes = crypto.sha256Bytes(`${namespace}:${name}`);
+  // Read first 4 bytes as little-endian uint32 (>>> 0 converts to unsigned)
+  return (bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24)) >>> 0;
 }
 
 /**
@@ -52,6 +56,9 @@ export function createChannel({
 
 /**
  * Create an Op AST node
+ * @param {Object} options - Op options
+ * @param {Object} deps - Dependencies
+ * @param {import('../ports/crypto.mjs').CryptoPort} deps.crypto - Crypto port
  */
 export function createOp({
   name,
@@ -62,7 +69,8 @@ export function createOp({
   readonly = false,
   timeout,
   op_id,
-}) {
+}, deps = {}) {
+  const crypto = deps.crypto ?? defaultCrypto;
   return {
     kind: TtdAstKind.OP,
     name,
@@ -71,7 +79,7 @@ export function createOp({
     idempotent,
     readonly,
     timeout,
-    op_id: op_id ?? computeOpId(namespace, name),
+    op_id: op_id ?? computeOpId(namespace, name, crypto),
     rules: [],
   };
 }

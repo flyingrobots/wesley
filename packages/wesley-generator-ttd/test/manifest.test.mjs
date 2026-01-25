@@ -12,14 +12,26 @@ import {
   generateContractsJson,
   extractTtdSchema,
 } from '@wesley/core/ttd';
+import { FakeClock } from '@wesley/core/ports';
+import { testCrypto } from './setup.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const basicProtocolSdl = readFileSync(join(__dirname, 'fixtures/basic-protocol.graphql'), 'utf-8');
 
+/** Helper to extract with crypto adapter */
+const extract = (sdl) => extractTtdSchema(sdl, { crypto: testCrypto });
+
+/** Crypto deps for manifest generation */
+const deps = { crypto: testCrypto };
+
+/** Fixed clock for deterministic tests */
+const fakeClock = new FakeClock('2025-01-01T00:00:00.000Z');
+const schemaJsonDeps = { clock: fakeClock };
+
 describe('TTD Manifest Generator', () => {
   describe('generateSchemaJson', () => {
     it('outputs schema.json with all TTD components', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
       const schemaJson = generateSchemaJson(schema);
 
       expect(schemaJson.version).toBe('1.0.0');
@@ -32,7 +44,7 @@ describe('TTD Manifest Generator', () => {
     });
 
     it('includes schema hash in output', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
       const schemaJson = generateSchemaJson(schema);
 
       expect(schemaJson.hash).toBeDefined();
@@ -40,7 +52,7 @@ describe('TTD Manifest Generator', () => {
     });
 
     it('includes generation metadata', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
       const schemaJson = generateSchemaJson(schema);
 
       expect(schemaJson.generatedAt).toBeDefined();
@@ -48,9 +60,9 @@ describe('TTD Manifest Generator', () => {
     });
 
     it('produces deterministic output', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
-      const json1 = JSON.stringify(generateSchemaJson(schema));
-      const json2 = JSON.stringify(generateSchemaJson(schema));
+      const schema = extract(basicProtocolSdl);
+      const json1 = JSON.stringify(generateSchemaJson(schema, schemaJsonDeps));
+      const json2 = JSON.stringify(generateSchemaJson(schema, schemaJsonDeps));
 
       expect(json1).toBe(json2);
     });
@@ -58,7 +70,7 @@ describe('TTD Manifest Generator', () => {
 
   describe('generateContractsJson', () => {
     it('outputs contracts.json with emission contracts', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
       const contractsJson = generateContractsJson(schema);
 
       expect(contractsJson.emissions).toBeDefined();
@@ -67,7 +79,7 @@ describe('TTD Manifest Generator', () => {
     });
 
     it('includes invariants in contracts', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
       const contractsJson = generateContractsJson(schema);
 
       expect(contractsJson.invariants).toBeDefined();
@@ -75,7 +87,7 @@ describe('TTD Manifest Generator', () => {
     });
 
     it('includes footprints in contracts', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
       const contractsJson = generateContractsJson(schema);
 
       expect(contractsJson.footprints).toBeDefined();
@@ -83,7 +95,7 @@ describe('TTD Manifest Generator', () => {
     });
 
     it('includes state machine rules', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
       const contractsJson = generateContractsJson(schema);
 
       expect(contractsJson.stateMachines).toBeDefined();
@@ -96,7 +108,7 @@ describe('TTD Manifest Generator', () => {
     });
 
     it('validates emission timing constraints', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
       const contractsJson = generateContractsJson(schema);
 
       const incrementEmission = contractsJson.emissions.find(
@@ -108,8 +120,8 @@ describe('TTD Manifest Generator', () => {
 
   describe('generateManifest', () => {
     it('outputs manifest.json with registry', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
-      const manifest = generateManifest(schema);
+      const schema = extract(basicProtocolSdl);
+      const manifest = generateManifest(schema, deps);
 
       expect(manifest.registry).toBeDefined();
       expect(manifest.registry.version).toBe(1);
@@ -118,8 +130,8 @@ describe('TTD Manifest Generator', () => {
     });
 
     it('includes operation registry', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
-      const manifest = generateManifest(schema);
+      const schema = extract(basicProtocolSdl);
+      const manifest = generateManifest(schema, deps);
 
       expect(manifest.ops).toBeDefined();
       expect(Array.isArray(manifest.ops)).toBe(true);
@@ -131,8 +143,8 @@ describe('TTD Manifest Generator', () => {
     });
 
     it('includes channel registry', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
-      const manifest = generateManifest(schema);
+      const schema = extract(basicProtocolSdl);
+      const manifest = generateManifest(schema, deps);
 
       expect(manifest.channels).toBeDefined();
       expect(Array.isArray(manifest.channels)).toBe(true);
@@ -143,8 +155,8 @@ describe('TTD Manifest Generator', () => {
     });
 
     it('includes codec specifications', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
-      const manifest = generateManifest(schema);
+      const schema = extract(basicProtocolSdl);
+      const manifest = generateManifest(schema, deps);
 
       expect(manifest.codecs).toBeDefined();
 
@@ -155,16 +167,16 @@ describe('TTD Manifest Generator', () => {
     });
 
     it('includes schema hash for integrity verification', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
-      const manifest = generateManifest(schema);
+      const schema = extract(basicProtocolSdl);
+      const manifest = generateManifest(schema, deps);
 
       expect(manifest.schemaHash).toBeDefined();
       expect(manifest.schemaHash).toMatch(/^[a-f0-9]{64}$/);
     });
 
     it('includes content hashes for each component', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
-      const manifest = generateManifest(schema);
+      const schema = extract(basicProtocolSdl);
+      const manifest = generateManifest(schema, deps);
 
       // Each op should have a signature hash
       for (const op of manifest.ops) {
@@ -180,10 +192,10 @@ describe('TTD Manifest Generator', () => {
     });
 
     it('produces sorted and deterministic output', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
 
-      const manifest1 = generateManifest(schema);
-      const manifest2 = generateManifest(schema);
+      const manifest1 = generateManifest(schema, deps);
+      const manifest2 = generateManifest(schema, deps);
 
       expect(JSON.stringify(manifest1)).toBe(JSON.stringify(manifest2));
 
@@ -201,11 +213,11 @@ describe('TTD Manifest Generator', () => {
 
   describe('manifest file generation', () => {
     it('generates all three manifest files', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
 
       const schemaJson = generateSchemaJson(schema);
       const contractsJson = generateContractsJson(schema);
-      const manifest = generateManifest(schema);
+      const manifest = generateManifest(schema, deps);
 
       // All should be valid JSON objects
       expect(typeof schemaJson).toBe('object');

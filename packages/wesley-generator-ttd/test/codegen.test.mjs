@@ -19,14 +19,21 @@ import {
   compileTtdProtocol,
 } from '@wesley/core/ttd';
 import { FakeClock } from '@wesley/core';
+import { testCrypto } from './setup.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const basicProtocolSdl = readFileSync(join(__dirname, 'fixtures/basic-protocol.graphql'), 'utf-8');
 
+/** Helper to extract with crypto adapter */
+const extract = (sdl) => extractTtdSchema(sdl, { crypto: testCrypto });
+
+/** Crypto deps for compilation */
+const cryptoDeps = { crypto: testCrypto };
+
 describe('TTD TypeScript Codegen', () => {
   describe('generateTsTypes', () => {
     it('generates TypeScript interfaces for types', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
       const code = generateTsTypes(schema);
 
       expect(code).toContain('export interface CounterIncremented');
@@ -35,7 +42,7 @@ describe('TTD TypeScript Codegen', () => {
     });
 
     it('generates correct property types', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
       const code = generateTsTypes(schema);
 
       expect(code).toMatch(/counterId:\s*string/);
@@ -44,7 +51,7 @@ describe('TTD TypeScript Codegen', () => {
     });
 
     it('generates enum types', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
       const code = generateTsTypes(schema);
 
       expect(code).toContain('export enum CounterState');
@@ -53,7 +60,7 @@ describe('TTD TypeScript Codegen', () => {
     });
 
     it('marks required vs optional properties', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
       const code = generateTsTypes(schema);
 
       // Required fields should not have ?
@@ -61,7 +68,7 @@ describe('TTD TypeScript Codegen', () => {
     });
 
     it('generates operation type interfaces', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
       const code = generateTsTypes(schema);
 
       expect(code).toContain('export interface IncrementArgs');
@@ -69,7 +76,7 @@ describe('TTD TypeScript Codegen', () => {
     });
 
     it('includes JSDoc comments', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
       const code = generateTsTypes(schema);
 
       expect(code).toContain('/**');
@@ -79,7 +86,7 @@ describe('TTD TypeScript Codegen', () => {
 
   describe('generateTsZod', () => {
     it('generates Zod schemas for types', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
       const code = generateTsZod(schema);
 
       expect(code).toContain("import { z } from 'zod'");
@@ -88,7 +95,7 @@ describe('TTD TypeScript Codegen', () => {
     });
 
     it('uses correct Zod validators', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
       const code = generateTsZod(schema);
 
       expect(code).toContain('z.string()');
@@ -96,7 +103,7 @@ describe('TTD TypeScript Codegen', () => {
     });
 
     it('includes constraint validations', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
       const code = generateTsZod(schema);
 
       // Counter.value has min: 0, max: 1000000
@@ -105,7 +112,7 @@ describe('TTD TypeScript Codegen', () => {
     });
 
     it('generates enum validators', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
       const code = generateTsZod(schema);
 
       expect(code).toContain('export const CounterStateSchema');
@@ -113,7 +120,7 @@ describe('TTD TypeScript Codegen', () => {
     });
 
     it('generates inferred types', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
       const code = generateTsZod(schema);
 
       expect(code).toContain('z.infer<typeof CounterIncrementedSchema>');
@@ -122,7 +129,7 @@ describe('TTD TypeScript Codegen', () => {
 
   describe('generateTsRegistry', () => {
     it('generates registry maps', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
       const code = generateTsRegistry(schema);
 
       expect(code).toContain('export const TYPE_REGISTRY');
@@ -130,14 +137,14 @@ describe('TTD TypeScript Codegen', () => {
     });
 
     it('includes type ID constants', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
       const code = generateTsRegistry(schema);
 
       expect(code).toContain('COUNTER_INCREMENTED_TYPE_ID');
     });
 
     it('includes op ID constants', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
       const code = generateTsRegistry(schema);
 
       expect(code).toContain('INCREMENT_OP_ID');
@@ -145,7 +152,7 @@ describe('TTD TypeScript Codegen', () => {
     });
 
     it('generates lookup functions', () => {
-      const schema = extractTtdSchema(basicProtocolSdl);
+      const schema = extract(basicProtocolSdl);
       const code = generateTsRegistry(schema);
 
       expect(code).toContain('export function getTypeById');
@@ -159,6 +166,7 @@ describe('compileTtdProtocol (orchestrator)', () => {
     const result = await compileTtdProtocol({
       sdl: basicProtocolSdl,
       targets: ['typescript'],
+      deps: cryptoDeps,
     });
 
     const paths = result.files.map(f => f.path);
@@ -172,6 +180,7 @@ describe('compileTtdProtocol (orchestrator)', () => {
     const result = await compileTtdProtocol({
       sdl: basicProtocolSdl,
       targets: ['manifest'],
+      deps: cryptoDeps,
     });
 
     const paths = result.files.map(f => f.path);
@@ -185,6 +194,7 @@ describe('compileTtdProtocol (orchestrator)', () => {
     const result = await compileTtdProtocol({
       sdl: basicProtocolSdl,
       targets: ['manifest'],
+      deps: cryptoDeps,
     });
 
     const irFile = result.files.find(f => f.path === 'manifest/ttd-ir.json');
@@ -199,6 +209,7 @@ describe('compileTtdProtocol (orchestrator)', () => {
   it('generates manifest and typescript by default', async () => {
     const result = await compileTtdProtocol({
       sdl: basicProtocolSdl,
+      deps: cryptoDeps,
     });
 
     const paths = result.files.map(f => f.path);
@@ -212,6 +223,7 @@ describe('compileTtdProtocol (orchestrator)', () => {
     const result = await compileTtdProtocol({
       sdl: basicProtocolSdl,
       targets: ['rust'],
+      deps: cryptoDeps,
     });
 
     const readme = result.files.find(f => f.path === 'rust/README.md');
@@ -223,6 +235,7 @@ describe('compileTtdProtocol (orchestrator)', () => {
   it('includes schema hash in result', async () => {
     const result = await compileTtdProtocol({
       sdl: basicProtocolSdl,
+      deps: cryptoDeps,
     });
 
     expect(result.schemaHash).toBeDefined();
@@ -232,7 +245,7 @@ describe('compileTtdProtocol (orchestrator)', () => {
   it('produces deterministic output', async () => {
     // Use FakeClock for deterministic timestamps
     const clock = new FakeClock('2024-01-01T00:00:00.000Z');
-    const deps = { clock };
+    const deps = { clock, crypto: testCrypto };
 
     const result1 = await compileTtdProtocol({ sdl: basicProtocolSdl, deps });
     const result2 = await compileTtdProtocol({ sdl: basicProtocolSdl, deps });
@@ -253,12 +266,13 @@ describe('compileTtdProtocol (orchestrator)', () => {
       }
     `;
 
-    await expect(compileTtdProtocol({ sdl: invalidSdl })).rejects.toThrow();
+    await expect(compileTtdProtocol({ sdl: invalidSdl, deps: cryptoDeps })).rejects.toThrow();
   });
 
   it('includes validation result in output', async () => {
     const result = await compileTtdProtocol({
       sdl: basicProtocolSdl,
+      deps: cryptoDeps,
     });
 
     expect(result.validation).toBeDefined();
@@ -268,7 +282,7 @@ describe('compileTtdProtocol (orchestrator)', () => {
 
 describe('Codegen Golden Tests', () => {
   it('TypeScript types output is stable', async () => {
-    const schema = extractTtdSchema(basicProtocolSdl);
+    const schema = extract(basicProtocolSdl);
     const code1 = generateTsTypes(schema);
     const code2 = generateTsTypes(schema);
 
@@ -276,7 +290,7 @@ describe('Codegen Golden Tests', () => {
   });
 
   it('Zod schemas output is stable', async () => {
-    const schema = extractTtdSchema(basicProtocolSdl);
+    const schema = extract(basicProtocolSdl);
     const code1 = generateTsZod(schema);
     const code2 = generateTsZod(schema);
 
@@ -284,7 +298,7 @@ describe('Codegen Golden Tests', () => {
   });
 
   it('Registry output is stable', async () => {
-    const schema = extractTtdSchema(basicProtocolSdl);
+    const schema = extract(basicProtocolSdl);
     const code1 = generateTsRegistry(schema);
     const code2 = generateTsRegistry(schema);
 
@@ -292,8 +306,12 @@ describe('Codegen Golden Tests', () => {
   });
 
   it('manifest JSON is stable', async () => {
-    const result1 = await compileTtdProtocol({ sdl: basicProtocolSdl, targets: ['manifest'] });
-    const result2 = await compileTtdProtocol({ sdl: basicProtocolSdl, targets: ['manifest'] });
+    // Use FakeClock for deterministic timestamps
+    const clock = new FakeClock('2024-01-01T00:00:00.000Z');
+    const deps = { clock, crypto: testCrypto };
+
+    const result1 = await compileTtdProtocol({ sdl: basicProtocolSdl, targets: ['manifest'], deps });
+    const result2 = await compileTtdProtocol({ sdl: basicProtocolSdl, targets: ['manifest'], deps });
 
     const manifest1 = result1.files.find(f => f.path === 'manifest/manifest.json');
     const manifest2 = result2.files.find(f => f.path === 'manifest/manifest.json');
