@@ -38,9 +38,9 @@ describe('TTD TypeScript Codegen', () => {
       const schema = extractTtdSchema(basicProtocolSdl);
       const code = generateTsTypes(schema);
 
-      expect(code).toMatch(/counterId.*string/);
-      expect(code).toMatch(/previousValue.*number/);
-      expect(code).toMatch(/newValue.*number/);
+      expect(code).toMatch(/counterId:\s*string/);
+      expect(code).toMatch(/previousValue:\s*number/);
+      expect(code).toMatch(/newValue:\s*number/);
     });
 
     it('generates enum types', () => {
