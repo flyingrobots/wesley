@@ -107,8 +107,9 @@ describe('TTD TypeScript Codegen', () => {
       const code = generateTsZod(schema);
 
       // Counter.value has min: 0, max: 1000000
-      expect(code).toContain('.min(0)');
-      expect(code).toContain('.max(1000000)');
+      // Uses .gte()/.lte() for numeric bounds to avoid collision with string .min()/.max()
+      expect(code).toContain('.gte(0)');
+      expect(code).toContain('.lte(1000000)');
     });
 
     it('generates enum validators', () => {
