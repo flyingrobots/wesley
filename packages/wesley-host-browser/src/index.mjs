@@ -89,8 +89,21 @@ export async function compileSchemaInBrowser(inputFiles) {
              if (!def.includes('PRIMARY KEY')) def += ' PRIMARY KEY';
         }
         if (col.default) {
-            // naive quoting for strings if not already quoted/expression
-            const val = col.default;
+            // Re-quote string values for SQL (directive parsing strips quotes)
+            let val = col.default;
+            // Check if value needs SQL string quoting:
+            // - Not a number (integer or decimal)
+            // - Not already quoted
+            // - Not a SQL expression (containing parentheses like NOW())
+            const isNumeric = /^-?\d+(\.\d+)?$/.test(val);
+            const isAlreadyQuoted = /^'.*'$/.test(val);
+            const isExpression = /[()]/.test(val);
+            const isBoolean = /^(true|false)$/i.test(val);
+            const isNull = /^null$/i.test(val);
+            if (!isNumeric && !isAlreadyQuoted && !isExpression && !isBoolean && !isNull) {
+                // Escape single quotes in the value and wrap in SQL quotes
+                val = `'${val.replace(/'/g, "''")}'`;
+            }
             def += ` DEFAULT ${val}`;
         }
         return def;

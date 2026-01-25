@@ -111,5 +111,7 @@ type CounterSystem
   @wes_invariant(name: "value_bounded", expr: "forall c in Counter: c.value <= 1000000", severity: "error")
   @wes_invariant(name: "increment_emits", expr: "op.increment.mustEmit(CounterIncremented).within(100)", severity: "error")
 {
+  # GraphQL requires types to have at least one field. This placeholder exists
+  # because CounterSystem is only used to carry @wes_invariant directives.
   _placeholder: Boolean
 }

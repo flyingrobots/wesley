@@ -18,16 +18,19 @@ The target state is a **Rust crate (`wesley-core-rs`)** that:
 ## The Gap Analysis
 
 ### 1. Schema Parsing
+
 *   **Current (JS):** Uses `graphql-js` `buildSchema`.
-*   **Target (Rust):** Need to select a parser. `async-graphql-parser` is robust.
+*   **Target (Rust):** Use `async-graphql-parser` for its robust directive support and active maintenance.
 *   **Work:** Port the directive validation logic.
 
 ### 2. IR Generation
+
 *   **Current (JS):** `schemaToIR(schema) -> JSON`.
 *   **Target (Rust):** `schema_to_ir(&Schema) -> WesleyIR`.
 *   **Work:** Define the `WesleyIR` structs in Rust (deriving `Serialize` for JSON compat).
 
 ### 3. Binding Layer
+
 *   **Current:** N/A.
 *   **Target:** `wasm-bindgen` or `napi-rs` wrappers to expose `parse_and_generate_ir(sdl: String) -> String (JSON)`.
 

@@ -25,7 +25,9 @@ export class RustWriter {
 
   writeAttributes(attrs) {
     if (attrs && attrs.length > 0) {
-      this.writeLine(`#[${attrs.join(', ')}]`);
+      for (const attr of attrs) {
+        this.writeLine(`#[${attr}]`);
+      }
     }
   }
 

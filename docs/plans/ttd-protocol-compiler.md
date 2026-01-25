@@ -272,7 +272,7 @@ Wesley TTD Protocol Compiler is split into three maturity layers to prevent scop
 
 **Key files to create/modify:**
 
-```
+```text
 packages/wesley-core/src/ttd/
 ├── directives.ts      # Directive definitions and validation
 ├── ast.ts             # TTD-specific AST nodes
@@ -322,7 +322,7 @@ packages/wesley-core/src/ttd/
 
 **Key files:**
 
-```
+```text
 packages/wesley-generator-ttd/
 ├── src/
 │   ├── rust/
@@ -354,7 +354,7 @@ packages/wesley-generator-ttd/
 
 **Key files:**
 
-```
+```text
 packages/wesley-core/src/ttd/
 ├── invariants/
 │   ├── parser.ts      # Expression parser

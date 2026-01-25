@@ -88,7 +88,7 @@ export function generateTsRegistry(schema) {
 
   // Lookup functions
   lines.push('/**');
-  lines.push(' * Get type ID by name');
+  lines.push(' * Get type name by ID');
   lines.push(' */');
   lines.push('export function getTypeById(id: number): string | undefined {');
   lines.push('  return TYPE_REGISTRY_REV.get(id);');

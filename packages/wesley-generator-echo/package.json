@@ -16,15 +16,24 @@
   "dependencies": {
     "@wesley/core": "workspace:*",
     "@wesley/host-node": "workspace:*",
-    "graphql": "^16.11.0"
+    "graphql": "^16.11.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
-    "vitest": "^4.0.3",
-    "zod": "^3.23.8"
+    "vitest": "^4.0.3"
   },
   "author": "Wesley Authors <oss@flyingrobots.dev>",
   "license": "LicenseRef-MIND-UCAL-1.0",
   "engines": {
     "node": ">=18.17"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/flyingrobots/wesley.git",
+    "directory": "packages/wesley-generator-echo"
+  },
+  "bugs": {
+    "url": "https://github.com/flyingrobots/wesley/issues"
+  },
+  "homepage": "https://github.com/flyingrobots/wesley/tree/main/packages/wesley-generator-echo#readme"
 }

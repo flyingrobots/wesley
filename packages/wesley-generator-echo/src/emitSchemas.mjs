@@ -18,9 +18,12 @@ function zTypeForField(t, enumMap) {
 
 export function emitSchemas(ir) {
   const enums = new Map();
+  const enumValues = new Map(); // Store raw enum values for emission
   for (const t of ir.types ?? []) {
     if (t.kind === 'ENUM') {
-      enums.set(t.name, zLiteralEnum(t.values ?? []));
+      const values = t.values ?? [];
+      enums.set(t.name, zLiteralEnum(values));
+      enumValues.set(t.name, values);
     }
   }
 
@@ -43,8 +46,8 @@ export function emitSchemas(ir) {
   lines.push('import { z } from "zod";');
 
   // Enums
-  for (const [name, schema] of enums) {
-    lines.push(`export const ${name}Enum = z.enum(${JSON.stringify(schema._def.values)});`);
+  for (const [name] of enums) {
+    lines.push(`export const ${name}Enum = z.enum(${JSON.stringify(enumValues.get(name))});`);
   }
 
   // Objects
@@ -60,7 +63,12 @@ export function emitSchemas(ir) {
     // Fallback: if z.toString() is not helpful, emit simple JSON string placeholders.
     const props = fields.map((f) => {
       let ref = f.type;
-      let zcall = `z${f.list ? '.array(' : '('}${ref === 'String' ? 'z.string()' : ref === 'Boolean' ? 'z.boolean()' : ref === 'Int' ? 'z.number().int()' : ref === 'Float' ? 'z.number()' : enums.has(ref) ? `${ref}Enum` : 'z.any()'}${f.list ? ')' : ''}${f.required ? '' : '.optional()'}`;
+      // Build the inner type schema
+      let innerSchema = ref === 'String' ? 'z.string()' : ref === 'Boolean' ? 'z.boolean()' : ref === 'Int' ? 'z.number().int()' : ref === 'Float' ? 'z.number()' : enums.has(ref) ? `${ref}Enum` : 'z.any()';
+      // Wrap with z.array() only for list fields
+      let zcall = f.list ? `z.array(${innerSchema})` : innerSchema;
+      // Append .optional() if not required
+      if (!f.required) zcall += '.optional()';
       return `  ${f.name}: ${zcall}`;
     }).join(',\n');
     lines.push(`export const ${name}Schema = z.object({\n${props}\n}).strict();`);

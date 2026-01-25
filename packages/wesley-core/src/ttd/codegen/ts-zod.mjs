@@ -94,9 +94,9 @@ export function generateTsZod(schema) {
         zodType = `z.array(${zodType})`;
       }
 
-      // Handle optional fields
+      // Handle optional fields - use .nullish() for both undefined and null
       if (!field.required) {
-        zodType = `${zodType}.nullable()`;
+        zodType = `${zodType}.nullish()`;
       }
 
       lines.push(`  ${field.name}: ${zodType},`);

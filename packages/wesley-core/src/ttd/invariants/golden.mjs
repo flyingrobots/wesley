@@ -53,7 +53,11 @@ function evaluateStatic(ast) {
         case '+': return left + right;
         case '-': return left - right;
         case '*': return left * right;
-        case '/': return left / right;
+        case '/':
+          if (right === 0) {
+            throw new Error('Division by zero in static evaluation');
+          }
+          return left / right;
         default: throw new Error(`Unknown binary operator: ${ast.operator}`);
       }
     }
@@ -74,10 +78,9 @@ function evaluateStatic(ast) {
 
     case ExprKind.LOGICAL: {
       const left = evaluateStatic(ast.left);
-      const right = evaluateStatic(ast.right);
       switch (ast.operator) {
-        case '&&': return left && right;
-        case '||': return left || right;
+        case '&&': return left && evaluateStatic(ast.right);
+        case '||': return left || evaluateStatic(ast.right);
         default: throw new Error(`Unknown logical operator: ${ast.operator}`);
       }
     }
@@ -271,6 +274,7 @@ export function compileToBytecode(ast) {
           case '-': emit(Opcode.SUB); break;
           case '*': emit(Opcode.MUL); break;
           case '/': emit(Opcode.DIV); break;
+          default: throw new Error(`Unknown binary operator: ${node.operator}`);
         }
         break;
 
@@ -284,6 +288,7 @@ export function compileToBytecode(ast) {
           case '<=': emit(Opcode.CMP_LTE); break;
           case '>': emit(Opcode.CMP_GT); break;
           case '>=': emit(Opcode.CMP_GTE); break;
+          default: throw new Error(`Unknown comparison operator: ${node.operator}`);
         }
         break;
 
@@ -295,16 +300,16 @@ export function compileToBytecode(ast) {
           emit(Opcode.JUMP_IF_FALSE, 0); // placeholder
           emit(Opcode.POP); // discard left
           compile(node.right);
-          instructions[jumpIdx].operand = instructions.length; // patch jump target
           emit(Opcode.AND);
+          instructions[jumpIdx].operand = instructions.length; // patch jump target AFTER AND
         } else if (node.operator === '||') {
           // Short-circuit OR: if left is true, jump past right
           const jumpIdx = instructions.length;
           emit(Opcode.JUMP_IF_TRUE, 0); // placeholder
           emit(Opcode.POP); // discard left
           compile(node.right);
-          instructions[jumpIdx].operand = instructions.length; // patch jump target
           emit(Opcode.OR);
+          instructions[jumpIdx].operand = instructions.length; // patch jump target AFTER OR
         }
         break;
 
@@ -313,6 +318,7 @@ export function compileToBytecode(ast) {
         switch (node.operator) {
           case '!': emit(Opcode.NOT); break;
           case '-': emit(Opcode.PUSH_CONST, addConstant(-1)); emit(Opcode.MUL); break;
+          default: throw new Error(`Unknown unary operator: ${node.operator}`);
         }
         break;
 
@@ -330,7 +336,7 @@ export function compileToBytecode(ast) {
         emit(Opcode.CALL_METHOD, addConstant(node.method));
         break;
 
-      case ExprKind.FORALL:
+      case ExprKind.FORALL: {
         // Store collection reference
         addCollection(node.collection);
         addVariable(node.variable);
@@ -343,8 +349,8 @@ export function compileToBytecode(ast) {
         const loopStart = instructions.length;
         emit(Opcode.ITER_NEXT);
 
-        // If no more items, jump to end
-        const jumpToEnd = instructions.length;
+        // If no more items, jump to success
+        const jumpToSuccess = instructions.length;
         emit(Opcode.JUMP_IF_FALSE, 0); // placeholder
 
         // Store current item in variable
@@ -361,19 +367,27 @@ export function compileToBytecode(ast) {
         // Jump back to loop start
         emit(Opcode.JUMP, loopStart);
 
-        // End of loop - success case
-        const loopEnd = instructions.length;
+        // Success case - all iterations passed
+        const successLabel = instructions.length;
         emit(Opcode.ITER_END);
         emit(Opcode.PUSH_CONST, addConstant(true)); // forall succeeded
-
-        // Patch jump targets
-        instructions[jumpToEnd].operand = loopEnd;
-        instructions[failFastJump].operand = loopEnd + 1; // jump to fail case
+        const jumpPastFail = instructions.length;
+        emit(Opcode.JUMP, 0); // placeholder - jump past fail case
 
         // Fail case
+        const failLabel = instructions.length;
         emit(Opcode.ITER_END);
         emit(Opcode.PUSH_CONST, addConstant(false)); // forall failed
+
+        // End label (after both success and fail)
+        const endLabel = instructions.length;
+
+        // Patch jump targets
+        instructions[jumpToSuccess].operand = successLabel;
+        instructions[failFastJump].operand = failLabel;
+        instructions[jumpPastFail].operand = endLabel;
         break;
+      }
 
       default:
         throw new Error(`Unknown AST node kind: ${node.kind}`);
