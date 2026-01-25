@@ -1,0 +1,29 @@
+{
+  "name": "@wesley/generator-ttd",
+  "version": "0.1.0",
+  "description": "Wesley TTD Protocol Compiler: GraphQL SDL -> Rust/TypeScript types, CBOR codecs, registries, and manifests",
+  "type": "module",
+  "main": "src/index.mjs",
+  "exports": {
+    ".": "./src/index.mjs"
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@wesley/core": "workspace:*",
+    "graphql": "^16.11.0"
+  },
+  "devDependencies": {
+    "vitest": "^4.0.3",
+    "zod": "^3.23.8"
+  },
+  "author": "Wesley Authors <oss@flyingrobots.dev>",
+  "license": "LicenseRef-MIND-UCAL-1.0",
+  "engines": {
+    "node": ">=18.17"
+  }
+}
