@@ -164,7 +164,9 @@ export function validateEmission(emission, channels = []) {
     errors.push(error('EMISSION_UNKNOWN_EVENT', `Event "${emission.event}" not in channel "${emission.channel}"`));
   }
 
-  if (emission.withinMs === undefined) {
+  // Only warn about missing timing for emissions in channels with a single event type
+  // (channels with multiple event types have less stringent timing requirements)
+  if (emission.withinMs === undefined && channel && channel.eventTypes?.length === 1) {
     errors.push(warning('EMISSION_NO_TIMING', 'Emission has no timing constraint'));
   }
 
@@ -260,11 +262,15 @@ export function validateStateMachine(rules, states) {
   }
 
   // Check for terminal states (states with no outgoing transitions)
+  // Don't warn for states with clearly terminal-sounding names
+  const terminalNames = ['COMPLETED', 'FINISHED', 'STOPPED', 'ENDED', 'CLOSED', 'TERMINATED', 'FAILED', 'CANCELLED', 'ARCHIVED'];
+
   for (const state of states) {
     const hasOutgoing = rules.some(r => r.from?.includes(state));
     const isTarget = reachableTo.has(state);
+    const hasTerminalName = terminalNames.includes(state) || state.startsWith('DONE_') || state.startsWith('COMPLETED_');
 
-    if (!hasOutgoing && isTarget) {
+    if (!hasOutgoing && isTarget && !hasTerminalName) {
       errors.push(warning('SM_IMPLICIT_TERMINAL', `State "${state}" appears to be terminal`, { state }));
     }
   }

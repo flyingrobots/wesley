@@ -20,6 +20,7 @@ import { generateSchemaJson, generateContractsJson, generateManifest } from '../
 import { generateTsTypes } from './ts-types.mjs';
 import { generateTsZod } from './ts-zod.mjs';
 import { generateTsRegistry } from './ts-registry.mjs';
+import { systemClock } from '../../ports/clock.mjs';
 
 /**
  * Compile TTD protocol from GraphQL SDL
@@ -27,11 +28,14 @@ import { generateTsRegistry } from './ts-registry.mjs';
  * @param {Object} options
  * @param {string} options.sdl - GraphQL SDL with TTD directives
  * @param {string[]} options.targets - Output targets: 'manifest', 'typescript' (default: all)
+ * @param {Object} options.deps - Dependencies for DI
+ * @param {import('../../ports/clock.mjs').ClockPort} options.deps.clock - Clock port
  * @returns {Promise<Object>} Compilation result with files array
  */
-export async function compileTtdProtocol({ sdl, targets = ['manifest', 'typescript'] }) {
+export async function compileTtdProtocol({ sdl, targets = ['manifest', 'typescript'], deps = {} }) {
+  const clock = deps.clock ?? systemClock;
   // Extract TTD schema from SDL
-  const schema = extractTtdSchema(sdl);
+  const schema = extractTtdSchema(sdl, { clock });
 
   // Compute schema hash
   schema.schemaHash = hashSchema(sdl);
@@ -48,7 +52,7 @@ export async function compileTtdProtocol({ sdl, targets = ['manifest', 'typescri
 
   // Generate manifest files
   if (targets.includes('manifest')) {
-    const schemaJson = generateSchemaJson(schema);
+    const schemaJson = generateSchemaJson(schema, { clock });
     const contractsJson = generateContractsJson(schema);
     const manifest = generateManifest(schema);
 
@@ -73,6 +77,7 @@ export async function compileTtdProtocol({ sdl, targets = ['manifest', 'typescri
       content: JSON.stringify({
         ir_version: 'ttd-ir/v1',
         schema_sha256: schema.schemaHash,
+        generated_at: clock.now(),
         generated_by: {
           tool: '@wesley/generator-ttd',
           version: '0.1.0',

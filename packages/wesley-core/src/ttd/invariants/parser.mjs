@@ -82,6 +82,30 @@ class Parser {
   }
 
   /**
+   * Check if current token can be used as a property/method name
+   * Includes identifiers and method keywords that can appear after a dot
+   */
+  isPropertyName() {
+    const type = this.current().type;
+    return type === TokenType.IDENTIFIER ||
+           type === TokenType.MUST_EMIT ||
+           type === TokenType.PRODUCES ||
+           type === TokenType.EMITS_TO ||
+           type === TokenType.WITHIN;
+  }
+
+  /**
+   * Consume current token if it's a valid property name
+   */
+  expectPropertyName(message) {
+    if (this.isPropertyName()) {
+      return this.advance();
+    }
+    const tok = this.current();
+    throw new Error(`${message} at line ${tok.line}, column ${tok.column}. Got ${tok.type}`);
+  }
+
+  /**
    * Parse expression
    */
   parseExpr() {
@@ -215,7 +239,7 @@ class Parser {
     let expr = this.parsePrimary();
 
     while (this.match(TokenType.DOT)) {
-      const nameTok = this.expect(TokenType.IDENTIFIER, 'Expected property name after "."');
+      const nameTok = this.expectPropertyName('Expected property name after "."');
       const name = nameTok.value;
 
       // Check for method call

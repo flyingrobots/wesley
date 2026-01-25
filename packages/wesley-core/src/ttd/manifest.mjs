@@ -8,15 +8,20 @@
  */
 
 import { hashSchema, hashType, hashOp, hashChannel, canonicalizeObject } from './hasher.mjs';
+import { systemClock } from '../ports/clock.mjs';
 
 /**
  * Generate schema.json
+ * @param {object} schema - The TTD schema
+ * @param {object} deps - Dependencies (for DI)
+ * @param {import('../ports/clock.mjs').ClockPort} deps.clock - Clock port for timestamps
  */
-export function generateSchemaJson(schema) {
+export function generateSchemaJson(schema, deps = {}) {
+  const clock = deps.clock ?? systemClock;
   const schemaJson = {
     version: '1.0.0',
     hash: schema.schemaHash,
-    generatedAt: new Date().toISOString(),
+    generatedAt: clock.now(),
     generatedBy: '@wesley/generator-ttd',
     channels: schema.channels.map(c => canonicalizeObject(c)),
     ops: schema.ops.map(o => canonicalizeObject({

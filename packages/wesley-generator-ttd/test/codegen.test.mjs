@@ -18,6 +18,7 @@ import {
   generateTsRegistry,
   compileTtdProtocol,
 } from '@wesley/core/ttd';
+import { FakeClock } from '@wesley/core';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const basicProtocolSdl = readFileSync(join(__dirname, 'fixtures/basic-protocol.graphql'), 'utf-8');
@@ -229,8 +230,12 @@ describe('compileTtdProtocol (orchestrator)', () => {
   });
 
   it('produces deterministic output', async () => {
-    const result1 = await compileTtdProtocol({ sdl: basicProtocolSdl });
-    const result2 = await compileTtdProtocol({ sdl: basicProtocolSdl });
+    // Use FakeClock for deterministic timestamps
+    const clock = new FakeClock('2024-01-01T00:00:00.000Z');
+    const deps = { clock };
+
+    const result1 = await compileTtdProtocol({ sdl: basicProtocolSdl, deps });
+    const result2 = await compileTtdProtocol({ sdl: basicProtocolSdl, deps });
 
     expect(result1.schemaHash).toBe(result2.schemaHash);
 

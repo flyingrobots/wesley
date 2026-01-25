@@ -126,11 +126,14 @@ export function generateGoldenVectors(specs) {
       }
     }
 
-    // Bytecode compilation deferred to v2
-    // For now, bytecode fields are stubs
-    vector.bytecode = null;
-    vector.bytecodeHash = astHash; // Use AST hash as placeholder
-    vector.bytecodeLength = 0;
+    // Compile to bytecode
+    const bytecode = compileToBytecode(ast);
+    const bytecodeJson = JSON.stringify(bytecode, null, 2);
+    const bytecodeHash = createHash('sha256').update(bytecodeJson).digest('hex');
+
+    vector.bytecode = bytecode;
+    vector.bytecodeHash = bytecodeHash;
+    vector.bytecodeLength = bytecode.instructions.length;
 
     return vector;
   });
@@ -198,14 +201,189 @@ export const VmSpec = {
   },
 };
 
-// Stub for bytecode compiler (deferred to v2)
+/**
+ * Bytecode compiler
+ * Compiles invariant expression AST to stack-based bytecode
+ */
 export function compileToBytecode(ast) {
-  // Deferred to v2
+  const instructions = [];
+  const constants = [];
+  const variables = [];
+  const collections = [];
+
+  function emit(opcode, operand = null) {
+    instructions.push({ opcode, operand });
+  }
+
+  function addConstant(value) {
+    let idx = constants.indexOf(value);
+    if (idx === -1) {
+      idx = constants.length;
+      constants.push(value);
+    }
+    return idx;
+  }
+
+  function addVariable(name) {
+    let idx = variables.indexOf(name);
+    if (idx === -1) {
+      idx = variables.length;
+      variables.push(name);
+    }
+    return idx;
+  }
+
+  function addCollection(name) {
+    let idx = collections.indexOf(name);
+    if (idx === -1) {
+      idx = collections.length;
+      collections.push(name);
+    }
+    return idx;
+  }
+
+  function compile(node) {
+    switch (node.kind) {
+      case ExprKind.LITERAL:
+        emit(Opcode.PUSH_CONST, addConstant(node.value));
+        break;
+
+      case ExprKind.IDENTIFIER:
+        // Check for subject keywords
+        if (node.name === 'op') {
+          emit(Opcode.LOAD_OP);
+        } else if (node.name === 'channel') {
+          emit(Opcode.LOAD_CHANNEL);
+        } else {
+          emit(Opcode.LOAD_VAR, addVariable(node.name));
+        }
+        break;
+
+      case ExprKind.BINARY:
+        compile(node.left);
+        compile(node.right);
+        switch (node.operator) {
+          case '+': emit(Opcode.ADD); break;
+          case '-': emit(Opcode.SUB); break;
+          case '*': emit(Opcode.MUL); break;
+          case '/': emit(Opcode.DIV); break;
+        }
+        break;
+
+      case ExprKind.COMPARISON:
+        compile(node.left);
+        compile(node.right);
+        switch (node.operator) {
+          case '==': emit(Opcode.CMP_EQ); break;
+          case '!=': emit(Opcode.CMP_NEQ); break;
+          case '<': emit(Opcode.CMP_LT); break;
+          case '<=': emit(Opcode.CMP_LTE); break;
+          case '>': emit(Opcode.CMP_GT); break;
+          case '>=': emit(Opcode.CMP_GTE); break;
+        }
+        break;
+
+      case ExprKind.LOGICAL:
+        compile(node.left);
+        if (node.operator === '&&') {
+          // Short-circuit AND: if left is false, jump past right
+          const jumpIdx = instructions.length;
+          emit(Opcode.JUMP_IF_FALSE, 0); // placeholder
+          emit(Opcode.POP); // discard left
+          compile(node.right);
+          instructions[jumpIdx].operand = instructions.length; // patch jump target
+          emit(Opcode.AND);
+        } else if (node.operator === '||') {
+          // Short-circuit OR: if left is true, jump past right
+          const jumpIdx = instructions.length;
+          emit(Opcode.JUMP_IF_TRUE, 0); // placeholder
+          emit(Opcode.POP); // discard left
+          compile(node.right);
+          instructions[jumpIdx].operand = instructions.length; // patch jump target
+          emit(Opcode.OR);
+        }
+        break;
+
+      case ExprKind.UNARY:
+        compile(node.operand);
+        switch (node.operator) {
+          case '!': emit(Opcode.NOT); break;
+          case '-': emit(Opcode.PUSH_CONST, addConstant(-1)); emit(Opcode.MUL); break;
+        }
+        break;
+
+      case ExprKind.PROPERTY_ACCESS:
+        compile(node.object);
+        emit(Opcode.GET_PROP, addConstant(node.property));
+        break;
+
+      case ExprKind.METHOD_CALL:
+        compile(node.receiver);
+        // Push arguments
+        for (const arg of node.args) {
+          compile(arg);
+        }
+        emit(Opcode.CALL_METHOD, addConstant(node.method));
+        break;
+
+      case ExprKind.FORALL:
+        // Store collection reference
+        addCollection(node.collection);
+        addVariable(node.variable);
+
+        // Setup iteration
+        emit(Opcode.PUSH_CONST, addConstant(node.collection));
+        emit(Opcode.ITER_BEGIN);
+
+        // Loop start
+        const loopStart = instructions.length;
+        emit(Opcode.ITER_NEXT);
+
+        // If no more items, jump to end
+        const jumpToEnd = instructions.length;
+        emit(Opcode.JUMP_IF_FALSE, 0); // placeholder
+
+        // Store current item in variable
+        emit(Opcode.STORE_VAR, addVariable(node.variable));
+
+        // Compile body
+        compile(node.body);
+
+        // If body is false, fail fast
+        const failFastJump = instructions.length;
+        emit(Opcode.JUMP_IF_FALSE, 0); // placeholder
+        emit(Opcode.POP);
+
+        // Jump back to loop start
+        emit(Opcode.JUMP, loopStart);
+
+        // End of loop - success case
+        const loopEnd = instructions.length;
+        emit(Opcode.ITER_END);
+        emit(Opcode.PUSH_CONST, addConstant(true)); // forall succeeded
+
+        // Patch jump targets
+        instructions[jumpToEnd].operand = loopEnd;
+        instructions[failFastJump].operand = loopEnd + 1; // jump to fail case
+
+        // Fail case
+        emit(Opcode.ITER_END);
+        emit(Opcode.PUSH_CONST, addConstant(false)); // forall failed
+        break;
+
+      default:
+        throw new Error(`Unknown AST node kind: ${node.kind}`);
+    }
+  }
+
+  compile(ast);
+  emit(Opcode.RETURN);
+
   return {
     version: 1,
-    instructions: [],
-    constants: [],
-    variables: [],
-    collections: [],
+    instructions,
+    constants,
+    variables,
+    collections,
   };
 }

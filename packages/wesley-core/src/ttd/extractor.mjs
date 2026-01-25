@@ -7,6 +7,8 @@
 
 import { parse, Kind } from 'graphql';
 import { createHash } from 'node:crypto';
+import { systemClock } from '../ports/clock.mjs';
+import { hashSchema } from './hasher.mjs';
 import {
   createChannel,
   createOp,
@@ -67,8 +69,12 @@ function unwrapType(typeNode) {
 
 /**
  * Extract TTD schema from GraphQL SDL
+ * @param {string} sdl - GraphQL SDL with TTD directives
+ * @param {Object} deps - Dependencies for DI
+ * @param {import('../ports/clock.mjs').ClockPort} deps.clock - Clock port for timestamps
  */
-export function extractTtdSchema(sdl) {
+export function extractTtdSchema(sdl, deps = {}) {
+  const clock = deps.clock ?? systemClock;
   const doc = parse(sdl);
 
   const schema = {
@@ -83,7 +89,7 @@ export function extractTtdSchema(sdl) {
     types: [],
     enums: [],
     metadata: {
-      extractedAt: new Date().toISOString(),
+      extractedAt: clock.now(),
       ttdVersion: '1.0.0',
     },
   };
@@ -225,7 +231,7 @@ export function extractTtdSchema(sdl) {
       // Attach rules to op
       for (const ruleInfo of directives.rules) {
         if (!ruleInfo.from || !ruleInfo.to) {
-          throw new Error(`Rule "${ruleInfo.name}" is missing required "from" or "to" argument`);
+          throw new Error(`Rule "${ruleInfo.name}" has from/to as required arguments but they are missing`);
         }
         const rule = createRule({
           name: ruleInfo.name,
@@ -249,15 +255,34 @@ export function extractTtdSchema(sdl) {
         schema.emissions.push(emission);
       }
 
-      // Extract emitsTo (simplified emission)
+      // Extract emitsTo - merge with existing emissions from same channel
       if (directives.emitsTo) {
-        const emission = createEmission({
-          channel: directives.emitsTo.channel,
-          event: undefined, // Will be inferred from produces
-          opName: op.name,
-          withinMs: directives.emitsTo.within,
-        });
-        schema.emissions.push(emission);
+        const channel = directives.emitsTo.channel;
+        const withinMs = directives.emitsTo.within;
+
+        // Find existing emissions for this op/channel and add withinMs
+        const existingEmissions = schema.emissions.filter(
+          e => e.opName === op.name && e.channel === channel
+        );
+
+        if (existingEmissions.length > 0) {
+          // Merge withinMs into existing emissions
+          for (const existing of existingEmissions) {
+            existing.withinMs = withinMs;
+          }
+        } else {
+          // Create new emission with event from @wes_produces
+          const events = directives.produces?.events ?? [];
+          for (const event of events) {
+            const emission = createEmission({
+              channel,
+              event,
+              opName: op.name,
+              withinMs,
+            });
+            schema.emissions.push(emission);
+          }
+        }
       }
 
       // Extract footprint
@@ -272,13 +297,26 @@ export function extractTtdSchema(sdl) {
         schema.footprints.push(fp);
       }
 
-      schema.ops.push(op);
-      opsByName.set(op.name, op);
+      // Only add op if it has any TTD directives
+      const hasTtdDirectives = directives.op ||
+                               directives.rules.length > 0 ||
+                               directives.emissions.length > 0 ||
+                               directives.emitsTo ||
+                               directives.footprint ||
+                               directives.produces;
+
+      if (hasTtdDirectives) {
+        schema.ops.push(op);
+        opsByName.set(op.name, op);
+      }
     }
   }
 
   // Sort ops by op_id for deterministic output
   schema.ops.sort((a, b) => a.op_id - b.op_id);
+
+  // Compute schema hash from SDL
+  schema.schemaHash = hashSchema(sdl);
 
   return schema;
 }
