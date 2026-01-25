@@ -10,7 +10,7 @@ import { extractTtdSchema } from '@wesley/core/ttd';
 import { testCrypto } from './setup.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const basicProtocolSdl = readFileSync(join(__dirname, 'fixtures/basic-protocol.graphql'), 'utf-8');
+const basicProtocolSdl = readFileSync(join(__dirname, 'fixtures/basic-protocol/basic-protocol.graphql'), 'utf-8');
 
 /** Helper to extract with crypto adapter */
 const extract = (sdl) => extractTtdSchema(sdl, { crypto: testCrypto });

@@ -17,7 +17,7 @@ setup() {
     CLI_PATH="$BATS_TEST_DIRNAME/../../wesley-host-node/bin/wesley.mjs"
 
     # Path to TTD test fixture
-    TTD_SCHEMA="$BATS_TEST_DIRNAME/../../wesley-generator-ttd/test/fixtures/basic-protocol.graphql"
+    TTD_SCHEMA="$BATS_TEST_DIRNAME/../../wesley-generator-ttd/test/fixtures/basic-protocol/basic-protocol.graphql"
 }
 
 teardown() {
