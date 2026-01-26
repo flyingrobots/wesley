@@ -3,12 +3,19 @@
  * Predictive analytics for schema completion
  */
 
-import { execSync } from 'node:child_process';
+import { realGitAdapter } from './ports/git.mjs';
 
 export class Moriarty {
-  constructor(history, context = {}) {
+  /**
+   * @param {Object} history - Historical score data
+   * @param {Object} [context] - Additional context (CI, delivery, etc.)
+   * @param {Object} [options] - Configuration options
+   * @param {Object} [options.git] - Git adapter (defaults to realGitAdapter)
+   */
+  constructor(history, context = {}, options = {}) {
     this.history = history;
     this.context = context || {};
+    this.git = options.git || realGitAdapter;
     this.alpha = 0.4; // EMA smoothing factor
     this.minSlope = 0.01; // Minimum SCS progress per day to avoid plateau
     // Git-activity blending (optional, auto-detected when git is available)
@@ -431,20 +438,13 @@ export class Moriarty {
   // --- Git activity helpers ---
   computeGitActivityWindow() {
     // Best effort: if git is not available or repo is too shallow, return null
-    try {
-      execSync('git rev-parse --is-inside-work-tree', { stdio: 'ignore' });
-    } catch {
+    if (!this.git.isInsideWorkTree()) {
       return null;
     }
     const windowHours = Math.max(1, Math.floor(this.gitWindowHours));
     const sinceIso = new Date(Date.now() - windowHours * 3600 * 1000).toISOString();
-    let raw = '';
-    try {
-      // Use a log format that marks commit boundaries so we can parse numstat blocks.
-      raw = execSync(`git log --since='${sinceIso}' --pretty=format:'--%ct' --numstat --no-merges`, { encoding: 'utf8' });
-    } catch {
-      return null;
-    }
+    // Use a log format that marks commit boundaries so we can parse numstat blocks.
+    const raw = this.git.log({ since: sinceIso, format: '--%ct', numstat: true, noMerges: true });
     if (!raw || !raw.trim()) {
       return { windowHours, commits: 0, relevantCommits: 0, commitsPerDay: 0, linesChanged: 0, relevantLinesChanged: 0 };
     }
@@ -540,20 +540,18 @@ export class Moriarty {
 
   computeGitPRActivity() {
     // Use MORIARTY_BASE_REF or GITHUB_BASE_REF as the base; fall back to origin/main
-    let baseRef = process.env.MORIARTY_BASE_REF || process.env.GITHUB_BASE_REF || 'main';
-    try {
-      execSync('git rev-parse --is-inside-work-tree', { stdio: 'ignore' });
-    } catch {
+    const baseRef = process.env.MORIARTY_BASE_REF || process.env.GITHUB_BASE_REF || 'main';
+    if (!this.git.isInsideWorkTree()) {
       return null;
     }
     try {
       // Ensure we have the base ref locally
-      try { execSync(`git fetch --prune origin ${baseRef}:${'refs/remotes/origin/' + baseRef}`, { stdio: 'ignore' }); } catch {}
+      this.git.fetch(baseRef);
       const remoteBase = baseRef.startsWith('origin/') ? baseRef : `origin/${baseRef}`;
-      const mergeBase = execSync(`git merge-base HEAD ${remoteBase}`, { encoding: 'utf8' }).trim();
+      const mergeBase = this.git.mergeBase('HEAD', remoteBase);
       if (!mergeBase) return null;
       // Collect PR-only commits
-      const raw = execSync(`git log ${mergeBase}..HEAD --pretty=format:'--%ct' --numstat --no-merges`, { encoding: 'utf8' });
+      const raw = this.git.log({ range: `${mergeBase}..HEAD`, format: '--%ct', numstat: true, noMerges: true });
       if (!raw || !raw.trim()) {
         return { commits: 0, relevantCommits: 0, days: 0, commitsPerDay: 0, linesChanged: 0, relevantLinesChanged: 0 };
       }

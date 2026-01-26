@@ -129,7 +129,8 @@ function runCli(command, {
 
   const result = spawnSync(process.execPath, args, {
     cwd: repoRoot,
-    encoding: 'utf8'
+    encoding: 'utf8',
+    env: { ...process.env, MORIARTY_USE_GIT: '0' }
   });
 
   let parsed = null;
