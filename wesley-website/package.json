@@ -19,7 +19,7 @@
     "@mantine/hooks": "^8.3.10",
     "@mantine/modals": "^8.3.10",
     "@mantine/notifications": "^8.3.10",
-    "@mantine/tiptap": "^8.3.10",
+    "@mantine/tiptap": "^8.3.13",
     "@mantinex/mantine-logo": "^2.0.0",
     "@tabler/icons-react": "^3.35.0",
     "@tiptap/extension-code-block-lowlight": "^3.13.0",
