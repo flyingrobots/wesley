@@ -25,7 +25,7 @@
     "@tiptap/extension-code-block-lowlight": "^3.13.0",
     "@tiptap/extension-link": "^3.13.0",
     "@tiptap/pm": "^3.13.0",
-    "@tiptap/react": "^3.13.0",
+    "@tiptap/react": "^3.17.1",
     "@tiptap/starter-kit": "^3.13.0",
     "@wesley/host-browser": "workspace:^",
     "clsx": "^2.1.1",
