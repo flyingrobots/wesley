@@ -445,7 +445,11 @@ export class Moriarty {
     const sinceIso = new Date(Date.now() - windowHours * 3600 * 1000).toISOString();
     // Use a log format that marks commit boundaries so we can parse numstat blocks.
     const raw = this.git.log({ since: sinceIso, format: '--%ct', numstat: true, noMerges: true });
-    if (!raw || !raw.trim()) {
+    // Distinguish git failures (null) from genuine no-activity (empty string)
+    if (raw === null) {
+      return null;
+    }
+    if (!raw.trim()) {
       return { windowHours, commits: 0, relevantCommits: 0, commitsPerDay: 0, linesChanged: 0, relevantLinesChanged: 0 };
     }
 
@@ -552,7 +556,11 @@ export class Moriarty {
       if (!mergeBase) return null;
       // Collect PR-only commits
       const raw = this.git.log({ range: `${mergeBase}..HEAD`, format: '--%ct', numstat: true, noMerges: true });
-      if (!raw || !raw.trim()) {
+      // Distinguish git failures (null) from genuine no-activity (empty string)
+      if (raw === null) {
+        return null;
+      }
+      if (!raw.trim()) {
         return { commits: 0, relevantCommits: 0, days: 0, commitsPerDay: 0, linesChanged: 0, relevantLinesChanged: 0 };
       }
       const lines = raw.split(/\r?\n/);

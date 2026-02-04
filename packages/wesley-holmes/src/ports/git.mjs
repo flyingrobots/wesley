@@ -91,7 +91,7 @@ export const realGitAdapter = {
     try {
       return execFileSync('git', args, { encoding: 'utf8' });
     } catch {
-      return '';
+      return null;
     }
   }
 };
@@ -104,7 +104,7 @@ export const nullGitAdapter = {
   isInsideWorkTree: () => false,
   fetch: () => false,
   mergeBase: () => null,
-  log: () => ''
+  log: () => null
 };
 
 /**
