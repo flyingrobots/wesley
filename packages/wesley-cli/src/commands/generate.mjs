@@ -25,6 +25,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
       .option('--emit-bundle', 'Emit .wesley/ evidence bundle')
       .option('--supabase', 'Enable Supabase features (RLS tests)')
       .option('--out-dir <dir>', 'Output directory', 'out')
+      .option('--dry-run', 'Show what would be generated without writing files')
       .option('--allow-dirty', 'Allow running with a dirty git working tree (not recommended)')
       .option('--i-know-what-im-doing', 'Acknowledge hazardous flags in CI environments')
       .option('-v, --verbose', 'More logs (level=debug)')
@@ -81,9 +82,14 @@ export class GeneratePipelineCommand extends WesleyCommand {
     }
 
     // Handle --print-composed-sdl debug flag
-    if (options.printComposedSdl && context.units) {
-      this.ctx.stdout.write(context.units.map(u => u.sdl).join('\n\n') + '\n');
-      return { artifacts: 0 };
+    if (options.printComposedSdl) {
+      const sdl = context.units
+        ? context.units.map(u => u.sdl).join('\n\n')
+        : schemaContent;
+      this.ctx.stdout.write(sdl + '\n');
+      if (options.dryRun) {
+        return { artifacts: 0, dryRun: true };
+      }
     }
 
     // If T.A.S.K.S. and S.L.A.P.S. are available, use them
@@ -111,7 +117,9 @@ export class GeneratePipelineCommand extends WesleyCommand {
     // Handle --print-ir debug flag
     if (options.printIr) {
       this.ctx.stdout.write(JSON.stringify(ir, null, 2) + '\n');
-      return { artifacts: 0 };
+      if (options.dryRun) {
+        return { artifacts: 0, dryRun: true };
+      }
     }
     
     // Generate DDL
@@ -137,21 +145,23 @@ export class GeneratePipelineCommand extends WesleyCommand {
     }
     
     // Write files
-    if (writer && writer.writeFiles) {
+    if (!options.dryRun && writer && writer.writeFiles) {
       await writer.writeFiles(artifacts, options.outDir);
     }
-    
+
     // Persist snapshot of IR for future diffs
-    try {
-      if (this.ctx.fs && ir && ir.tables) {
-        await this.ctx.fs.write('.wesley/snapshot.json', JSON.stringify({ irVersion: '1.0.0', tables: ir.tables }, null, 2));
+    if (!options.dryRun) {
+      try {
+        if (this.ctx.fs && ir && ir.tables) {
+          await this.ctx.fs.write('.wesley/snapshot.json', JSON.stringify({ irVersion: '1.0.0', tables: ir.tables }, null, 2));
+        }
+      } catch (e) {
+        logger.warn('Could not write IR snapshot: ' + (e?.message || e));
       }
-    } catch (e) {
-      logger.warn('Could not write IR snapshot: ' + (e?.message || e));
     }
     
     // Optionally emit a minimal evidence bundle for HOLMES sidecar
-    if (options.emitBundle) {
+    if (options.emitBundle && !options.dryRun) {
       try {
         // Resolve current commit SHA (fallback to env or unknown)
         let sha = process.env.GITHUB_SHA || 'unknown';
@@ -249,21 +259,25 @@ export class GeneratePipelineCommand extends WesleyCommand {
       }
     }
     
-    await this.compileOpsIfRequested(context);
+    if (!options.dryRun) {
+      await this.compileOpsIfRequested(context);
+    }
 
     // Output results
-    if (!options.quiet && !options.json) {
+    if (!options.quiet && !options.json && !debugDump) {
+      const action = options.dryRun ? 'Would generate' : 'Generated';
       logger.info('');
-      logger.info('✨ Generated:');
+      logger.info(`${action}:`);
       for (const file of artifacts) {
-        logger.info(`  ✓ ${file.name}`);
+        logger.info(`  ${file.name}`);
       }
       logger.info('');
     }
-    
+
     return {
       artifacts: artifacts.length,
-      outDir: options.outDir
+      outDir: options.outDir,
+      dryRun: options.dryRun || false,
     };
   }
 

@@ -22,7 +22,7 @@ teardown() {
 }
 
 @test "composition: --print-composed-sdl outputs mangled SDL" {
-    run node "$CLI_PATH" generate --schema "$FIXTURES/game.graphql" --print-composed-sdl
+    run node "$CLI_PATH" generate --schema "$FIXTURES/game.graphql" --print-composed-sdl --dry-run
     assert_success
     # Should contain mangled type names
     assert_output --partial "testXdcore__Widget"
@@ -31,7 +31,7 @@ teardown() {
 }
 
 @test "composition: mangled SDL contains no @wes_package or @wes_import" {
-    run node "$CLI_PATH" generate --schema "$FIXTURES/game.graphql" --print-composed-sdl
+    run node "$CLI_PATH" generate --schema "$FIXTURES/game.graphql" --print-composed-sdl --dry-run
     assert_success
     # Composition directives should be stripped
     if [[ "$output" == *"@wes_package"* ]]; then
@@ -47,7 +47,7 @@ teardown() {
 # ─── Unit filtering ──────────────────────────────────────────────────────────
 
 @test "composition: --unit game.graphql filters to game-only types" {
-    run node "$CLI_PATH" generate --schema "$FIXTURES/game.graphql" --print-composed-sdl --unit game.graphql
+    run node "$CLI_PATH" generate --schema "$FIXTURES/game.graphql" --print-composed-sdl --dry-run --unit game.graphql
     assert_success
     # This test verifies --unit is accepted; actual filtering happens in IR,
     # --print-composed-sdl shows the full composed SDL before filtering
@@ -112,7 +112,7 @@ EOF
 # ─── Transitive type access ──────────────────────────────────────────────────
 
 @test "composition: transitive type access (game references core type via protocol)" {
-    run node "$CLI_PATH" generate --schema "$FIXTURES/game.graphql" --print-composed-sdl
+    run node "$CLI_PATH" generate --schema "$FIXTURES/game.graphql" --print-composed-sdl --dry-run
     assert_success
     # game.graphql references Widget which is defined in core.graphql,
     # accessible transitively through protocol.graphql's import chain
@@ -126,7 +126,7 @@ EOF
 # ─── IR provenance ────────────────────────────────────────────────────────────
 
 @test "composition: --print-ir produces valid JSON with provenance on every table" {
-    run node "$CLI_PATH" generate --schema "$FIXTURES/game.graphql" --print-ir
+    run node "$CLI_PATH" generate --schema "$FIXTURES/game.graphql" --print-ir --dry-run
     assert_success
 
     # Must be valid JSON that jq can parse
@@ -150,7 +150,7 @@ EOF
 }
 
 @test "composition: --print-ir metadata.units lists all units in topological order" {
-    run node "$CLI_PATH" generate --schema "$FIXTURES/game.graphql" --print-ir
+    run node "$CLI_PATH" generate --schema "$FIXTURES/game.graphql" --print-ir --dry-run
     assert_success
 
     local unit_count=$(echo "$output" | jq '.metadata.units | length')
@@ -168,7 +168,7 @@ EOF
 }
 
 @test "composition: --print-ir --unit filters IR to only matching sourceUnit" {
-    run node "$CLI_PATH" generate --schema "$FIXTURES/game.graphql" --print-ir --unit game.graphql
+    run node "$CLI_PATH" generate --schema "$FIXTURES/game.graphql" --print-ir --dry-run --unit game.graphql
     assert_success
 
     local table_count=$(echo "$output" | jq '.tables | length')
@@ -179,7 +179,7 @@ EOF
 }
 
 @test "composition: --print-ir --unit core.graphql shows only core tables" {
-    run node "$CLI_PATH" generate --schema "$FIXTURES/game.graphql" --print-ir --unit core.graphql
+    run node "$CLI_PATH" generate --schema "$FIXTURES/game.graphql" --print-ir --dry-run --unit core.graphql
     assert_success
 
     local table_count=$(echo "$output" | jq '.tables | length')
@@ -193,7 +193,7 @@ EOF
 
 @test "composition: extend type across units compiles to valid merged schema" {
     # protocol.graphql imports core-ext.graphql which extends Widget from core.graphql
-    run node "$CLI_PATH" generate --schema "$FIXTURES/protocol.graphql" --print-composed-sdl
+    run node "$CLI_PATH" generate --schema "$FIXTURES/protocol.graphql" --print-composed-sdl --dry-run
     assert_success
     # Both the base Widget and its extension should be in the output with mangled names
     assert_output --partial "testXdcore__Widget"
