@@ -147,6 +147,10 @@ export async function createNodeRuntime() {
         parse: (sdl) => {
           const adapter = new GraphQLAdapter();
           return adapter.parseSDL(sanitizeGraphQL(sdl, process.env));
+        },
+        parseComposed: (units) => {
+          const adapter = new GraphQLAdapter();
+          return adapter.parseComposed(units);
         }
       }
     },

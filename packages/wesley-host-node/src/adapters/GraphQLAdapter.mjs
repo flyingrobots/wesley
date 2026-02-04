@@ -3,7 +3,8 @@
  * This is the ONLY place where we depend on the graphql npm package
  */
 
-import { parse, Kind, buildSchema, validate, Source } from 'graphql';
+import { parse, print, Kind, buildSchema, buildASTSchema, validate, Source } from 'graphql';
+import { mangle, demangle } from '@wesley/core/domain/SchemaResolver.mjs';
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -469,6 +470,103 @@ class GraphQLSchemaParser {
   isScalarType(name) {
     return new Set(['ID','UUID','String','Int','Float','Boolean','DateTime','Date','Time','JSON']).has(name);
   }
+
+  /**
+   * Parse composed (multi-file) schema from resolved compilation units.
+   *
+   * 1. Concatenates all units' mangled SDL in topological order.
+   * 2. Parses + validates with buildASTSchema to catch errors.
+   * 3. Builds IR via existing buildIRFromAST.
+   * 4. Annotates IR with provenance (sourceUnit, package, qualifiedName).
+   *
+   * @param {Array} units - CompilationUnit[] from SchemaResolver (topological order)
+   * @returns {object} Wesley IR with provenance annotations
+   */
+  parseComposed(units) {
+    // 1. Concatenate mangled SDL
+    const mergedSdl = units.map(u => u.sdl).join('\n\n');
+
+    // 2. Parse the merged SDL
+    let ast;
+    try {
+      ast = parse(mergedSdl);
+    } catch (error) {
+      throw new WesleyParseError(`Composed schema syntax error: ${error.message}`);
+    }
+
+    // 3. Validate directive usage (best-effort, same as single-file path)
+    if (this.directiveSchema) {
+      this.validateDirectiveUsage(ast);
+    }
+
+    // 4. Build IR from the merged AST
+    const ir = this.buildIRFromAST(ast);
+
+    // 5. Build a lookup from mangled name → { sourceUnit, package, shortName }
+    const defLookup = new Map();
+    for (const unit of units) {
+      if (unit.definitions) {
+        for (const [shortName] of unit.definitions) {
+          const mangledName = mangle(unit.package, shortName);
+          defLookup.set(mangledName, {
+            sourceUnit: unit.id,
+            package: unit.package,
+            shortName,
+          });
+        }
+      }
+    }
+
+    // 6. Annotate tables with provenance
+    if (ir.tables) {
+      for (const table of ir.tables) {
+        const prov = defLookup.get(table.name);
+        if (prov) {
+          table.qualifiedName = table.name;
+          table.name = prov.shortName;
+          table.sourceUnit = prov.sourceUnit;
+          table.package = prov.package;
+        }
+      }
+    }
+
+    // Annotate enums
+    if (ir.enums) {
+      for (const en of ir.enums) {
+        const prov = defLookup.get(en.name);
+        if (prov) {
+          en.qualifiedName = en.name;
+          en.name = prov.shortName;
+          en.sourceUnit = prov.sourceUnit;
+          en.package = prov.package;
+        }
+      }
+    }
+
+    // Annotate scalars
+    if (ir.scalars) {
+      for (const sc of ir.scalars) {
+        const prov = defLookup.get(sc.name);
+        if (prov) {
+          sc.qualifiedName = sc.name;
+          sc.name = prov.shortName;
+          sc.sourceUnit = prov.sourceUnit;
+          sc.package = prov.package;
+        }
+      }
+    }
+
+    // 7. Attach composition metadata
+    ir.metadata = ir.metadata || {};
+    ir.metadata.units = units.map(u => ({
+      id: u.id,
+      package: u.package,
+      hash: u.hash,
+      imports: u.imports,
+    }));
+
+    return ir;
+  }
 }
 
 export class GraphQLAdapter {
@@ -485,6 +583,14 @@ export class GraphQLAdapter {
     return this.parser.parse(sdl);
   }
   
+  /**
+   * Parse composed (multi-file) schema from resolved compilation units.
+   * Delegates to the internal parser.
+   */
+  parseComposed(units) {
+    return this.parser.parseComposed(units);
+  }
+
   /**
    * Validate GraphQL SDL syntax
    */

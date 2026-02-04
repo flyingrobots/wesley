@@ -4,12 +4,21 @@
  * with Wesley directives processed and resolved.
  */
 
+export interface CompilationUnitMeta {
+  id: string;                // Relative path, e.g. "echo-core.graphql"
+  package: string | null;    // Package name, e.g. "echo.core"
+  hash: string;              // Content hash of raw SDL
+  imports: string[];         // Unit IDs this depends on
+}
+
 export interface WesleyIR {
   version: "1.0.0";
   metadata: {
     sourceHash: string;      // SHA of original GraphQL schema
     generatedAt: string;     // ISO timestamp
     schemaName?: string;     // Optional schema name
+    units?: CompilationUnitMeta[];  // Compilation units (multi-file composition)
+    composedHash?: string;          // Hash of composed/merged SDL
   };
   tables: Table[];
   enums?: Enum[];
@@ -24,6 +33,9 @@ export interface Table {
   fields: Field[];
   indexes: Index[];          // Computed from fields + directives
   constraints: Constraint[]; // Computed from relationships + directives
+  sourceUnit?: string;       // File where base definition lives (composition)
+  package?: string;          // Package name (composition)
+  qualifiedName?: string;    // Mangled name, unique across packages (composition)
 }
 
 export interface TableDirectives {
@@ -145,10 +157,16 @@ export interface Enum {
   name: string;
   values: string[];
   description?: string;
+  sourceUnit?: string;       // File where base definition lives (composition)
+  package?: string;          // Package name (composition)
+  qualifiedName?: string;    // Mangled name (composition)
 }
 
 export interface CustomScalar {
   name: string;
   sqlType: string;          // PostgreSQL type to use
   description?: string;
+  sourceUnit?: string;       // File where base definition lives (composition)
+  package?: string;          // Package name (composition)
+  qualifiedName?: string;    // Mangled name (composition)
 }

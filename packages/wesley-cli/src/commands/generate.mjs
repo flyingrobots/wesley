@@ -6,6 +6,7 @@
 
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import { buildPlanFromJson, emitFunction, emitView, collectParams } from '@wesley/core/domain/qir';
+import { filterIRByUnits } from '@wesley/core/domain/SchemaFilter.mjs';
 
 export class GeneratePipelineCommand extends WesleyCommand {
   constructor(ctx) {
@@ -31,7 +32,11 @@ export class GeneratePipelineCommand extends WesleyCommand {
       .option('-q, --quiet', 'Silence logs (level=silent)')
       .option('--json', 'Emit newline-delimited JSON logs')
       .option('--log-level <level>', 'One of: error|warn|info|debug|trace')
-      .option('--show-plan', 'Display execution plan before running');
+      .option('--show-plan', 'Display execution plan before running')
+      .option('--unit <units...>', 'Compilation unit IDs to generate for (repeatable or comma-separated)')
+      .option('--schema-root <dir>', 'Root directory for resolving @wes_import paths')
+      .option('--print-composed-sdl', 'Print the composed/mangled SDL to stdout (debug)')
+      .option('--print-ir', 'Print the parsed IR as JSON to stdout (debug)');
   }
 
   async executeCore(context) {
@@ -60,16 +65,25 @@ export class GeneratePipelineCommand extends WesleyCommand {
       try { await assertCleanGit(); } catch (e) { e.code = e.code || 'DIRTY_WORKTREE'; throw e; }
     }
 
-    logger.info({ schema: schemaPath }, 'Parsing schema...');
+    const debugDump = options.printComposedSdl || options.printIr;
+    if (!debugDump) {
+      logger.info({ schema: schemaPath }, 'Parsing schema...');
+    }
 
     // Use injected generators and writer
     const { generators, writer, planner, runner } = this.ctx;
-    
+
     // Check if we have what we need
     if (!generators || !generators.sql) {
       const err = new Error('SQL generator not available');
       err.code = 'GENERATION_FAILED';
       throw err;
+    }
+
+    // Handle --print-composed-sdl debug flag
+    if (options.printComposedSdl && context.units) {
+      this.ctx.stdout.write(context.units.map(u => u.sdl).join('\n\n') + '\n');
+      return { artifacts: 0 };
     }
 
     // If T.A.S.K.S. and S.L.A.P.S. are available, use them
@@ -79,9 +93,26 @@ export class GeneratePipelineCommand extends WesleyCommand {
 
     // Otherwise, simple sequential execution
     const artifacts = [];
-    
-    // Parse schema to IR
-    const ir = this.ctx.parsers.graphql.parse(schemaContent, { filename: schemaPath });
+
+    // Parse schema to IR (composition-aware)
+    let ir = context.units
+      ? this.ctx.parsers.graphql.parseComposed(context.units)
+      : this.ctx.parsers.graphql.parse(schemaContent, { filename: schemaPath });
+
+    // Apply --unit filter if specified
+    const unitFilter = options.unit
+      ? options.unit.flatMap(u => u.split(','))
+      : null;
+
+    if (unitFilter) {
+      ir = filterIRByUnits(ir, unitFilter);
+    }
+
+    // Handle --print-ir debug flag
+    if (options.printIr) {
+      this.ctx.stdout.write(JSON.stringify(ir, null, 2) + '\n');
+      return { artifacts: 0 };
+    }
     
     // Generate DDL
     const ddlResult = generators.sql.emitDDL(ir);

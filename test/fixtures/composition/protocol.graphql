@@ -1,0 +1,8 @@
+extend schema @wes_package(name: "test.protocol")
+extend schema @wes_import(from: "core.graphql")
+extend schema @wes_import(from: "core-ext.graphql")
+
+type WidgetEvent @wes_channel(name: "widgets") {
+  widget: Widget
+  action: String!
+}

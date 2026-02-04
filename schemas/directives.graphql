@@ -13,6 +13,18 @@ Legacy aliases: @wesley_* and bare names (@table, @pk) supported with deprecatio
 scalar JSON
 
 # ═══════════════════════════════════════════════════════════════════
+# SCHEMA COMPOSITION DIRECTIVES - Multi-file imports and namespacing
+# ═══════════════════════════════════════════════════════════════════
+
+directive @wes_package(
+  name: String!
+) on SCHEMA
+
+directive @wes_import(
+  from: String!
+) on SCHEMA
+
+# ═══════════════════════════════════════════════════════════════════
 # CORE DIRECTIVES - Table and Field Markers (Canonical @wes_ namespace)
 # ═══════════════════════════════════════════════════════════════════
 

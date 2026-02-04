@@ -89,7 +89,7 @@ export class WesleyCommand {
   async readSchemaFromOptions(options) {
     const { fs, stdin } = this.ctx;
     const fromStdin = options.schema === '-' || options.stdin === true;
-    
+
     if (fromStdin) {
       const content = await this.readFromStdin();
       if (!content || !content.trim()) {
@@ -99,11 +99,12 @@ export class WesleyCommand {
       }
       return { schemaPath: '<stdin>', schemaContent: content };
     }
-    
+
+    let schemaPath;
+    let content;
     try {
-      const schemaPath = options.schema || 'schema.graphql';
-      const content = await fs.read(schemaPath);
-      return { schemaPath, schemaContent: content };
+      schemaPath = options.schema || 'schema.graphql';
+      content = await fs.read(schemaPath);
     } catch (error) {
       if (error.code === 'ENOENT' || error.message?.includes('ENOENT')) {
         const err = new Error(`Schema file not found: ${options.schema}`);
@@ -112,6 +113,30 @@ export class WesleyCommand {
       }
       throw error;
     }
+
+    // Detect multi-file composition directives
+    const needsComposition = content.includes('@wes_import') || content.includes('@wes_package');
+    if (needsComposition) {
+      const { resolve } = await import('@wesley/core/domain/SchemaResolver.mjs');
+      const { resolve: pathResolve, dirname } = await import('node:path');
+      const { realpathSync } = await import('node:fs');
+
+      let realSchemaPath;
+      try {
+        realSchemaPath = realpathSync(schemaPath);
+      } catch {
+        realSchemaPath = pathResolve(schemaPath);
+      }
+      const rootDir = options.schemaRoot
+        ? pathResolve(options.schemaRoot)
+        : dirname(realSchemaPath);
+
+      const units = await resolve(realSchemaPath, (p) => fs.read(p), rootDir);
+      const mergedSdl = units.map(u => u.sdl).join('\n\n');
+      return { schemaPath, schemaContent: mergedSdl, units };
+    }
+
+    return { schemaPath, schemaContent: content };
   }
 
   // Async stdin reading (keeping this improvement)
@@ -251,6 +276,7 @@ export class WesleyCommand {
       'ENOENT': 2,
       'EEMPTYSCHEMA': 2,
       'PARSE_FAILED': 3,
+      'SCHEMA_RESOLUTION_FAILED': 3,
       'GENERATION_FAILED': 4,
       'VALIDATION_FAILED': 5,
       'OPS_COLLISION': 3,
@@ -258,6 +284,7 @@ export class WesleyCommand {
       'OPS_EMPTY_SET': 4,
       'OPS_COMPILE_FAILED': 5,
       'OPS_ALLOW_ERRORS_FORBIDDEN': 2,
+      'UNSUPPORTED_OPTION': 2,
       'INVALID_LOG_FORMAT': 2
     };
     return codeMap[error.code] || 1;

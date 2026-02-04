@@ -1,0 +1,6 @@
+extend schema @wes_package(name: "test.core")
+extend schema @wes_import(from: "core.graphql")
+
+extend type Widget {
+  created_at: Timestamp
+}
