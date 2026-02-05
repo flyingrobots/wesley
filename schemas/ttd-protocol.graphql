@@ -7,7 +7,7 @@
 # - Manifest files for compliance checking
 
 scalar JSON
-scalar Hash  # 32-byte SHA-256 hash (hex string)
+scalar Hash  # SHA-256 hash: 32 bytes binary, 64-character hex string
 scalar Timestamp  # ISO 8601 timestamp
 
 # ─── Session & Cursor State ─────────────────────────────────────────────────────

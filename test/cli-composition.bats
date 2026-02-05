@@ -227,7 +227,7 @@ EOF
 }
 
 @test "compile-ttd: --qualified-names preserves mangled type names" {
-    run node "$CLI_PATH" compile-ttd --schema "$FIXTURES/game.graphql" --qualified-names --print-ir --dry-run 2>/dev/null
+    run node "$CLI_PATH" compile-ttd --schema "$FIXTURES/game.graphql" --qualified-names --print-ir --dry-run
     assert_success
 
     # With --qualified-names, mangled names should be preserved
@@ -236,7 +236,7 @@ EOF
 }
 
 @test "compile-ttd: --print-composed-sdl shows demangled SDL" {
-    run node "$CLI_PATH" compile-ttd --schema "$FIXTURES/game.graphql" --print-composed-sdl --dry-run 2>/dev/null
+    run node "$CLI_PATH" compile-ttd --schema "$FIXTURES/game.graphql" --print-composed-sdl --dry-run
     assert_success
 
     # Should contain short type names
@@ -249,7 +249,7 @@ EOF
 }
 
 @test "compile-ttd: --print-composed-sdl --qualified-names shows mangled SDL" {
-    run node "$CLI_PATH" compile-ttd --schema "$FIXTURES/game.graphql" --print-composed-sdl --qualified-names --dry-run 2>/dev/null
+    run node "$CLI_PATH" compile-ttd --schema "$FIXTURES/game.graphql" --print-composed-sdl --qualified-names --dry-run
     assert_success
 
     # Should contain mangled names

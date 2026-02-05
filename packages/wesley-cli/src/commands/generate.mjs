@@ -83,6 +83,9 @@ export class GeneratePipelineCommand extends WesleyCommand {
 
     // Handle --print-composed-sdl debug flag
     if (options.printComposedSdl) {
+      if (!context.units) {
+        this.ctx.stderr.write('Warning: No composition directives found; printing raw schema.\n');
+      }
       const sdl = context.units
         ? context.units.map(u => u.sdl).join('\n\n')
         : schemaContent;
@@ -119,7 +122,13 @@ export class GeneratePipelineCommand extends WesleyCommand {
 
     // Handle --print-ir debug flag
     if (options.printIr) {
-      this.ctx.stdout.write(JSON.stringify(ir, null, 2) + '\n');
+      this.ctx.stdout.write(JSON.stringify(ir, (key, val) => {
+        // Truncate large content fields to keep output readable
+        if (key === 'content' && typeof val === 'string' && val.length > 200) {
+          return `<${val.length} bytes>`;
+        }
+        return val;
+      }, 2) + '\n');
       if (options.dryRun) {
         return { artifacts: 0, dryRun: true };
       }

@@ -8,6 +8,7 @@
  */
 
 import { parse, print, visit, Kind } from 'graphql';
+import { resolve as pathResolve } from 'node:path';
 
 // ─── Escape helpers ──────────────────────────────────────────────────────────
 
@@ -236,10 +237,9 @@ async function discover(entryPath, readFileFn, rootDir, units, pathToId) {
       }
     }
 
-    // Resolve import paths relative to rootDir using path.join and validate
+    // Resolve import paths relative to rootDir using path.resolve and validate
     const importPaths = [];
     for (const from of importFroms) {
-      const { resolve: pathResolve } = await import('node:path');
       const resolved = pathResolve(rootDir, from);
       // Validate the resolved path is inside rootDir to prevent path traversal
       if (!resolved.startsWith(rootDir + '/') && resolved !== rootDir) {
@@ -366,22 +366,10 @@ function detectDuplicateDefinitions(units) {
 // ─── Step 3: Topological sort ────────────────────────────────────────────────
 
 function topologicalSort(adj, pathToId) {
-  // Kahn's algorithm with sorted adjacency for determinism
-  const inDegree = new Map();
-  for (const node of adj.keys()) inDegree.set(node, 0);
-
-  for (const [node, deps] of adj) {
-    for (const dep of deps) {
-      inDegree.set(dep, (inDegree.get(dep) || 0) + 1);
-    }
-  }
-
+  // Kahn's algorithm with sorted adjacency for determinism.
   // adj[A] = [B, ...] means A depends on B (A imports B), so B must come before A.
-  // For Kahn's algorithm: inDegree[A] = adj[A].length (number of dependencies).
-
+  // For Kahn's algorithm: inDeg[A] = adj[A].length (number of dependencies).
   const inDeg = new Map();
-  for (const node of adj.keys()) inDeg.set(node, 0);
-  // Edges: for each A, for each dep B in adj[A], edge B→A, so inDeg[A]++
   for (const [node, deps] of adj) {
     inDeg.set(node, deps.length);
   }
@@ -554,9 +542,8 @@ function buildResolutionMaps(sorted, units, pathToId, adj) {
 // ─── Step 5: AST rewriting ──────────────────────────────────────────────────
 
 function rewriteAST(unit, resMap) {
-  const ast = parse(unit.rawSdl);
-
-  const rewritten = visit(ast, {
+  // Reuse unit.ast instead of re-parsing (visit returns new AST, doesn't mutate)
+  const rewritten = visit(unit.ast, {
     // Rewrite NamedType references (field types, union members, interface implements, etc.)
     NamedType(node) {
       const name = node.name.value;
@@ -613,11 +600,11 @@ function rewriteDefName(node, resMap) {
 // ─── Utilities ──────────────────────────────────────────────────────────────
 
 function simpleHash(str) {
-  // Simple FNV-1a 32-bit hash, hex encoded
+  // FNV-1a 32-bit hash, hex encoded (uses Math.imul for correct 32-bit multiply)
   let hash = 0x811c9dc5;
   for (let i = 0; i < str.length; i++) {
     hash ^= str.charCodeAt(i);
-    hash = (hash * 0x01000193) >>> 0;
+    hash = Math.imul(hash, 0x01000193) >>> 0;
   }
   return hash.toString(16).padStart(8, '0');
 }

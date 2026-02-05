@@ -150,6 +150,14 @@ export async function createNodeRuntime() {
         },
         parseComposed: (units) => {
           const adapter = new GraphQLAdapter();
+          // Enforce aggregate size limit before per-unit sanitization
+          const totalBytes = units.reduce((sum, u) => sum + Buffer.byteLength(u.sdl || '', 'utf8'), 0);
+          const max = parseInt(process.env?.WESLEY_MAX_SCHEMA_BYTES || '5242880', 10);
+          if (totalBytes > max) {
+            const e = new Error(`Composed schema exceeds max size (${totalBytes} bytes > ${max} limit)`);
+            e.code = 'EINPUTSIZE';
+            throw e;
+          }
           const sanitizedUnits = units.map(u => ({ ...u, sdl: sanitizeGraphQL(u.sdl, process.env) }));
           return adapter.parseComposed(sanitizedUnits);
         }
