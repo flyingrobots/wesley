@@ -132,7 +132,7 @@ export class WesleyCommand {
         ? pathResolve(options.schemaRoot)
         : dirname(realSchemaPath);
 
-      const units = await resolve(realSchemaPath, (p) => fs.read(p), rootDir);
+      const units = await resolve(realSchemaPath, (p) => fs.read(p), rootDir, { resolvePath: pathResolve });
       const mergedSdl = units.map(u => u.sdl).join('\n\n');
       return { schemaPath, schemaContent: mergedSdl, units };
     }

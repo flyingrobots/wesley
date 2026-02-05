@@ -8,7 +8,6 @@
  */
 
 import { parse, print, visit, Kind } from 'graphql';
-import { resolve as pathResolve } from 'node:path';
 
 // ─── Escape helpers ──────────────────────────────────────────────────────────
 
@@ -115,16 +114,19 @@ class SchemaResolutionError extends Error {
  * @param {string} entryPath  - Absolute path to the entry schema file.
  * @param {(absolutePath: string) => string|Promise<string>} readFileFn
  * @param {string} rootDir    - Root directory for resolving relative @wes_import paths.
+ * @param {{ resolvePath?: (base: string, rel: string) => string }} [opts]
  * @returns {Promise<CompilationUnit[]>} Units in topological order (leaves first).
  */
-export async function resolve(entryPath, readFileFn, rootDir) {
+export async function resolve(entryPath, readFileFn, rootDir, opts = {}) {
+  const resolvePath = opts.resolvePath || defaultResolvePath;
+
   // Step 1 — Discovery & metadata extraction
   /** @type {Map<string, RawUnit>} absolutePath → RawUnit */
   const units = new Map();
   /** @type {Map<string, string>} absolutePath → unitId (relative) */
   const pathToId = new Map();
 
-  await discover(entryPath, readFileFn, rootDir, units, pathToId);
+  await discover(entryPath, readFileFn, rootDir, units, pathToId, resolvePath);
 
   // Step 2 — Validation: cycles and duplicate definitions in same package
   const adj = buildAdjacencyList(units, pathToId);
@@ -163,7 +165,7 @@ export async function resolve(entryPath, readFileFn, rootDir) {
 
 // ─── Step 1: Discovery ──────────────────────────────────────────────────────
 
-async function discover(entryPath, readFileFn, rootDir, units, pathToId) {
+async function discover(entryPath, readFileFn, rootDir, units, pathToId, resolvePath) {
   const queue = [entryPath];
   const visited = new Set();
 
@@ -237,10 +239,10 @@ async function discover(entryPath, readFileFn, rootDir, units, pathToId) {
       }
     }
 
-    // Resolve import paths relative to rootDir using path.resolve and validate
+    // Resolve import paths relative to rootDir and validate
     const importPaths = [];
     for (const from of importFroms) {
-      const resolved = pathResolve(rootDir, from);
+      const resolved = resolvePath(rootDir, from);
       // Validate the resolved path is inside rootDir to prevent path traversal
       if (!resolved.startsWith(rootDir + '/') && resolved !== rootDir) {
         throw new SchemaResolutionError(
@@ -598,6 +600,21 @@ function rewriteDefName(node, resMap) {
 }
 
 // ─── Utilities ──────────────────────────────────────────────────────────────
+
+/**
+ * Pure default path resolver (no node:path dependency).
+ * Handles relative segments via simple normalization.
+ */
+function defaultResolvePath(base, rel) {
+  const parts = (base + '/' + rel).split('/');
+  const resolved = [];
+  for (const p of parts) {
+    if (p === '..') resolved.pop();
+    else if (p && p !== '.') resolved.push(p);
+  }
+  const prefix = (base + '/' + rel).startsWith('/') ? '/' : '';
+  return prefix + resolved.join('/');
+}
 
 function simpleHash(str) {
   // FNV-1a 32-bit hash, hex encoded (uses Math.imul for correct 32-bit multiply)

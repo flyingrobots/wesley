@@ -262,7 +262,7 @@ type Mutation {
     @wes_footprint(writes: ["CursorState"])
 
   # Create a new cursor in a session
-  createCursor(sessionId: Hash!, role: CursorRole!, initialTick: Int): CursorCreated!
+  createCursor(sessionId: Hash!, role: CursorRole!, initialTick: Int!): CursorCreated!
     @wes_op(name: "createCursor", idempotent: false)
     @wes_produces(events: ["CursorCreated"])
     @wes_emission(channel: "ttd.session", event: "CursorCreated")
