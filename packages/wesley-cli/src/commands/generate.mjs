@@ -113,7 +113,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
 
     // Apply --unit filter if specified
     const unitFilter = options.unit
-      ? options.unit.flatMap(u => u.split(','))
+      ? options.unit.flatMap(u => u.split(',')).map(s => s.trim()).filter(Boolean)
       : null;
 
     if (unitFilter) {

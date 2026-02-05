@@ -59,7 +59,7 @@ export class CompileTtdCommand extends WesleyCommand {
       } = await import('@wesley/core/domain/SchemaResolver');
 
       // Apply --unit filter if specified
-      const unitFilter = options.unit ? options.unit.flatMap(u => u.split(',')) : null;
+      const unitFilter = options.unit ? options.unit.flatMap(u => u.split(',')).map(s => s.trim()).filter(Boolean) : null;
       let activeUnits = context.units;
       if (unitFilter) {
         const composed = composeUnits(context.units, unitFilter);

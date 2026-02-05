@@ -730,7 +730,8 @@ function _demangleNode(node, demangleMap) {
  * @returns {{ missing: Array<{ type: string, definedIn: string }>, excludedUnits: string[] } | null}
  */
 export function validateFilteredSdl(sdl, allUnits, selectedUnitIds) {
-  const idSet = new Set(selectedUnitIds);
+  const normalized = selectedUnitIds.flatMap(id => id.split(',')).map(s => s.trim()).filter(Boolean);
+  const idSet = new Set(normalized);
   const doc = parse(sdl);
 
   // Collect all defined type names (only base definitions count — extensions need their base type)

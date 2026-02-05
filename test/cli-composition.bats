@@ -59,6 +59,7 @@ teardown() {
 @test "composition: collision.graphql produces error with both packages" {
     run bash -c "node '$CLI_PATH' generate --schema '$FIXTURES/collision.graphql' --out-dir '$TEMP_DIR/out' 2>&1"
     assert_failure
+    [[ "$status" -eq 3 ]]
     assert_output --partial "Widget"
     assert_output --partial "test.core"
     assert_output --partial "test.collision"
@@ -69,6 +70,7 @@ teardown() {
 @test "composition: core-dup.graphql produces duplicate-in-package error" {
     run bash -c "node '$CLI_PATH' generate --schema '$FIXTURES/core-dup.graphql' --out-dir '$TEMP_DIR/out' 2>&1"
     assert_failure
+    [[ "$status" -eq 3 ]]
     assert_output --partial "Duplicate definition"
     assert_output --partial "Widget"
     assert_output --partial "extend type"
@@ -91,6 +93,7 @@ EOF
 
     run bash -c "node '$CLI_PATH' generate --schema '$TEMP_DIR/cycle-a.graphql' --out-dir '$TEMP_DIR/out' 2>&1"
     assert_failure
+    [[ "$status" -eq 3 ]]
     assert_output --partial "cycle"
 }
 
@@ -263,6 +266,7 @@ EOF
     # filtering to only protocol.graphql should fail
     run bash -c "node '$CLI_PATH' compile-ttd --schema '$FIXTURES/game.graphql' --unit protocol.graphql --dry-run 2>&1"
     assert_failure
+    [[ "$status" -eq 3 ]]
     assert_output --partial "Widget"
     assert_output --partial "core.graphql"
 }
