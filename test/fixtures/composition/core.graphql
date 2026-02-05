@@ -1,0 +1,8 @@
+extend schema @wes_package(name: "test.core")
+
+type Widget @wes_table {
+  id: ID! @wes_pk
+  name: String!
+}
+
+scalar Timestamp

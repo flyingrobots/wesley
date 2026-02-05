@@ -1,6 +1,6 @@
 """
 Wesley Canonical Directives
-Version: 1.0.0
+Version: 1.1.0
 
 These directives extend GraphQL schemas with database-specific metadata.
 Import this file into your schema to use Wesley's full capabilities.
@@ -11,6 +11,18 @@ Legacy aliases: @wesley_* and bare names (@table, @pk) supported with deprecatio
 
 # Shared scalars used by directives
 scalar JSON
+
+# ═══════════════════════════════════════════════════════════════════
+# SCHEMA COMPOSITION DIRECTIVES - Multi-file imports and namespacing
+# ═══════════════════════════════════════════════════════════════════
+
+directive @wes_package(
+  name: String!
+) on SCHEMA
+
+directive @wes_import(
+  from: String!
+) on SCHEMA
 
 # ═══════════════════════════════════════════════════════════════════
 # CORE DIRECTIVES - Table and Field Markers (Canonical @wes_ namespace)

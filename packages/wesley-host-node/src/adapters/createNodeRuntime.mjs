@@ -147,6 +147,20 @@ export async function createNodeRuntime() {
         parse: (sdl) => {
           const adapter = new GraphQLAdapter();
           return adapter.parseSDL(sanitizeGraphQL(sdl, process.env));
+        },
+        parseComposed: (units) => {
+          const adapter = new GraphQLAdapter();
+          // Enforce aggregate size limit before per-unit sanitization
+          const totalBytes = units.reduce((sum, u) => sum + Buffer.byteLength(u.sdl || '', 'utf8'), 0);
+          const parsed = Number.parseInt(process.env?.WESLEY_MAX_SCHEMA_BYTES, 10);
+          const max = Number.isFinite(parsed) ? parsed : 5242880;
+          if (totalBytes > max) {
+            const e = new Error(`Composed schema exceeds max size (${totalBytes} bytes > ${max} limit)`);
+            e.code = 'EINPUTSIZE';
+            throw e;
+          }
+          const sanitizedUnits = units.map(u => ({ ...u, sdl: sanitizeGraphQL(u.sdl, process.env) }));
+          return adapter.parseComposed(sanitizedUnits);
         }
       }
     },

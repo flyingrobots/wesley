@@ -1,0 +1,6 @@
+extend schema @wes_package(name: "test.collision")
+extend schema @wes_import(from: "core.graphql")
+
+type Widget @wes_table {
+  id: ID! @wes_pk
+}

@@ -6,6 +6,7 @@
 
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import { buildPlanFromJson, emitFunction, emitView, collectParams } from '@wesley/core/domain/qir';
+import { filterIRByUnits } from '@wesley/core/domain/SchemaFilter';
 
 export class GeneratePipelineCommand extends WesleyCommand {
   constructor(ctx) {
@@ -24,6 +25,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
       .option('--emit-bundle', 'Emit .wesley/ evidence bundle')
       .option('--supabase', 'Enable Supabase features (RLS tests)')
       .option('--out-dir <dir>', 'Output directory', 'out')
+      .option('--dry-run', 'Show what would be generated without writing files')
       .option('--allow-dirty', 'Allow running with a dirty git working tree (not recommended)')
       .option('--i-know-what-im-doing', 'Acknowledge hazardous flags in CI environments')
       .option('-v, --verbose', 'More logs (level=debug)')
@@ -31,7 +33,11 @@ export class GeneratePipelineCommand extends WesleyCommand {
       .option('-q, --quiet', 'Silence logs (level=silent)')
       .option('--json', 'Emit newline-delimited JSON logs')
       .option('--log-level <level>', 'One of: error|warn|info|debug|trace')
-      .option('--show-plan', 'Display execution plan before running');
+      .option('--show-plan', 'Display execution plan before running')
+      .option('--unit <units...>', 'Compilation unit IDs to generate for (repeatable or comma-separated)')
+      .option('--schema-root <dir>', 'Root directory for resolving @wes_import paths')
+      .option('--print-composed-sdl', 'Print the composed/mangled SDL to stdout (debug)')
+      .option('--print-ir', 'Print the parsed IR as JSON to stdout (debug)');
   }
 
   async executeCore(context) {
@@ -60,11 +66,14 @@ export class GeneratePipelineCommand extends WesleyCommand {
       try { await assertCleanGit(); } catch (e) { e.code = e.code || 'DIRTY_WORKTREE'; throw e; }
     }
 
-    logger.info({ schema: schemaPath }, 'Parsing schema...');
+    const debugDump = options.printComposedSdl || options.printIr;
+    if (!debugDump) {
+      logger.info({ schema: schemaPath }, 'Parsing schema...');
+    }
 
     // Use injected generators and writer
     const { generators, writer, planner, runner } = this.ctx;
-    
+
     // Check if we have what we need
     if (!generators || !generators.sql) {
       const err = new Error('SQL generator not available');
@@ -72,16 +81,58 @@ export class GeneratePipelineCommand extends WesleyCommand {
       throw err;
     }
 
-    // If T.A.S.K.S. and S.L.A.P.S. are available, use them
-    if (planner && runner && planner.buildPlan && runner.run) {
+    // Handle --print-composed-sdl debug flag
+    if (options.printComposedSdl) {
+      if (!context.units) {
+        this.ctx.stderr.write('Warning: No composition directives found; printing raw schema.\n');
+      }
+      const sdl = context.units
+        ? context.units.map(u => u.sdl).join('\n\n')
+        : schemaContent;
+      this.ctx.stdout.write(sdl + '\n');
+      if (options.dryRun) {
+        return { artifacts: 0, dryRun: true };
+      }
+    }
+
+    // If T.A.S.K.S. and S.L.A.P.S. are available, use them — unless running in
+    // debug/introspection mode where the sequential pipeline is required to
+    // support --unit filtering, --dry-run, --print-ir, and --print-composed-sdl.
+    const needsSequentialPipeline = options.unit || options.dryRun || options.printIr || options.printComposedSdl;
+    if (planner && runner && planner.buildPlan && runner.run && !needsSequentialPipeline) {
       return await this.executeWithTasksAndSlaps(context);
     }
 
     // Otherwise, simple sequential execution
     const artifacts = [];
-    
-    // Parse schema to IR
-    const ir = this.ctx.parsers.graphql.parse(schemaContent, { filename: schemaPath });
+
+    // Parse schema to IR (composition-aware)
+    let ir = context.units
+      ? this.ctx.parsers.graphql.parseComposed(context.units)
+      : this.ctx.parsers.graphql.parse(schemaContent, { filename: schemaPath });
+
+    // Apply --unit filter if specified
+    const unitFilter = options.unit
+      ? options.unit.flatMap(u => u.split(',')).map(s => s.trim()).filter(Boolean)
+      : null;
+
+    if (unitFilter) {
+      ir = filterIRByUnits(ir, unitFilter);
+    }
+
+    // Handle --print-ir debug flag
+    if (options.printIr) {
+      this.ctx.stdout.write(JSON.stringify(ir, (key, val) => {
+        // Truncate large content fields to keep output readable
+        if (key === 'content' && typeof val === 'string' && val.length > 200) {
+          return `<${val.length} bytes>`;
+        }
+        return val;
+      }, 2) + '\n');
+      if (options.dryRun) {
+        return { artifacts: 0, dryRun: true };
+      }
+    }
     
     // Generate DDL
     const ddlResult = generators.sql.emitDDL(ir);
@@ -106,21 +157,23 @@ export class GeneratePipelineCommand extends WesleyCommand {
     }
     
     // Write files
-    if (writer && writer.writeFiles) {
+    if (!options.dryRun && writer && writer.writeFiles) {
       await writer.writeFiles(artifacts, options.outDir);
     }
-    
+
     // Persist snapshot of IR for future diffs
-    try {
-      if (this.ctx.fs && ir && ir.tables) {
-        await this.ctx.fs.write('.wesley/snapshot.json', JSON.stringify({ irVersion: '1.0.0', tables: ir.tables }, null, 2));
+    if (!options.dryRun) {
+      try {
+        if (this.ctx.fs && ir && ir.tables) {
+          await this.ctx.fs.write('.wesley/snapshot.json', JSON.stringify({ irVersion: '1.0.0', tables: ir.tables }, null, 2));
+        }
+      } catch (e) {
+        logger.warn('Could not write IR snapshot: ' + (e?.message || e));
       }
-    } catch (e) {
-      logger.warn('Could not write IR snapshot: ' + (e?.message || e));
     }
     
     // Optionally emit a minimal evidence bundle for HOLMES sidecar
-    if (options.emitBundle) {
+    if (options.emitBundle && !options.dryRun) {
       try {
         // Resolve current commit SHA (fallback to env or unknown)
         let sha = process.env.GITHUB_SHA || 'unknown';
@@ -218,21 +271,25 @@ export class GeneratePipelineCommand extends WesleyCommand {
       }
     }
     
-    await this.compileOpsIfRequested(context);
+    if (!options.dryRun) {
+      await this.compileOpsIfRequested(context);
+    }
 
     // Output results
-    if (!options.quiet && !options.json) {
+    if (!options.quiet && !options.json && !debugDump) {
+      const action = options.dryRun ? 'Would generate' : 'Generated';
       logger.info('');
-      logger.info('✨ Generated:');
+      logger.info(`${action}:`);
       for (const file of artifacts) {
-        logger.info(`  ✓ ${file.name}`);
+        logger.info(`  ${file.name}`);
       }
       logger.info('');
     }
-    
+
     return {
       artifacts: artifacts.length,
-      outDir: options.outDir
+      outDir: options.outDir,
+      dryRun: options.dryRun || false,
     };
   }
 

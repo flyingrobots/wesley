@@ -21,10 +21,16 @@ export class CompileTtdCommand extends WesleyCommand {
       .option('--stdin', 'Read schema from stdin')
       .option('-o, --out-dir <dir>', 'Output directory', 'ttd-out')
       .option('-t, --target <targets>', 'Comma-separated targets: manifest, typescript, rust', 'manifest,typescript')
-      .option('--dry-run', 'Show what would be generated without writing files');
+      .option('--dry-run', 'Show what would be generated without writing files')
+      .option('--unit <units...>', 'Compilation unit IDs to generate for (repeatable or comma-separated)')
+      .option('--schema-root <dir>', 'Root directory for resolving @wes_import paths')
+      .option('--qualified-names', 'Preserve mangled/qualified type names in output (default: demangle to short names)')
+      .option('--print-composed-sdl', 'Print the effective SDL to stdout before compilation (debug)')
+      .option('--print-ir', 'Print the TTD compilation result as JSON to stdout (debug)');
   }
 
-  async executeCore({ schemaContent, schemaPath, options, logger }) {
+  async executeCore(context) {
+    const { schemaContent, schemaPath, options, logger } = context;
     const fs = this.ctx.fs;
     const clock = this.ctx.clock;
     const crypto = this.ctx.crypto;
@@ -40,13 +46,81 @@ export class CompileTtdCommand extends WesleyCommand {
       }
     }
 
-    // Only log in non-JSON mode (JSON mode outputs structured result only)
-    if (!options.json) {
+    // ── Compute effective SDL: composition filtering + demangling ──
+
+    let effectiveSdl = schemaContent;
+
+    if (context.units) {
+      const {
+        composeUnits,
+        buildDemangleMap,
+        demangleSdl,
+        validateFilteredSdl,
+      } = await import('@wesley/core/domain/SchemaResolver');
+
+      // Apply --unit filter if specified
+      const unitFilter = options.unit ? options.unit.flatMap(u => u.split(',')).map(s => s.trim()).filter(Boolean) : null;
+      let activeUnits = context.units;
+      if (unitFilter) {
+        const composed = composeUnits(context.units, unitFilter);
+        effectiveSdl = composed.sdl;
+        activeUnits = composed.units;
+      }
+
+      // Demangle type names for clean TTD output (unless --qualified-names).
+      // buildDemangleMap uses the full context.units (not activeUnits) because
+      // demangling must map all mangled symbols across the entire composition.
+      if (!options.qualifiedNames) {
+        const demangleMap = buildDemangleMap(context.units);
+        effectiveSdl = demangleSdl(effectiveSdl, demangleMap);
+      }
+
+      // Validate that the filtered SDL isn't missing types from excluded units
+      if (unitFilter) {
+        const diag = validateFilteredSdl(effectiveSdl, context.units, unitFilter);
+        if (diag) {
+          const lines = diag.missing.map(m =>
+            m.definedIn
+              ? `  ${m.type} (defined in ${m.definedIn})`
+              : `  ${m.type} (unknown source)`
+          );
+          const e = new Error(
+            `Filtered SDL references types not included in the selected units:\n` +
+            lines.join('\n') + '\n\n' +
+            `You asked for units: ${unitFilter?.join(', ')}\n` +
+            `Add the missing units with --unit or compile the full schema.`
+          );
+          e.code = 'SCHEMA_RESOLUTION_FAILED';
+          throw e;
+        }
+      }
+    } else if (options.unit) {
+      const e = new Error(
+        `--unit requires a composed schema (with @wes_import/@wes_package directives).\n` +
+        `The schema at ${schemaPath} has no composition directives.`
+      );
+      e.code = 'UNSUPPORTED_OPTION';
+      throw e;
+    }
+
+    // ── Debug: print composed SDL ──
+
+    const debugDump = options.printComposedSdl || options.printIr;
+
+    if (options.printComposedSdl) {
+      this.ctx.stdout.write(effectiveSdl + '\n');
+      if (options.dryRun) {
+        return { files: [], dryRun: true };
+      }
+    }
+
+    if (!options.json && !debugDump) {
       logger?.info?.(`Compiling TTD protocol from ${schemaPath}`);
       logger?.debug?.(`Targets: ${targets.join(', ')}`);
     }
 
-    // Compile TTD protocol
+    // ── Compile TTD protocol ──
+
     const deps = {};
     if (clock) deps.clock = clock;
     if (crypto) deps.crypto = crypto;
@@ -54,7 +128,7 @@ export class CompileTtdCommand extends WesleyCommand {
     let result;
     try {
       result = await compileTtdProtocol({
-        sdl: schemaContent,
+        sdl: effectiveSdl,
         targets,
         deps,
       });
@@ -65,10 +139,26 @@ export class CompileTtdCommand extends WesleyCommand {
       throw e;
     }
 
+    // ── Debug: print IR ──
+
+    if (options.printIr) {
+      this.ctx.stdout.write(JSON.stringify(result, (key, val) => {
+        // Omit file contents from IR dump to keep output readable
+        if (key === 'content' && typeof val === 'string' && val.length > 200) {
+          return `<${val.length} bytes>`;
+        }
+        return val;
+      }, 2) + '\n');
+      if (options.dryRun) {
+        return { files: result.files.map(f => ({ path: f.path, size: f.content.length })), dryRun: true };
+      }
+    }
+
+    // ── Write files ──
+
     const outDir = options.outDir;
     const filesWritten = [];
 
-    // Write files (unless dry-run)
     if (!options.dryRun) {
       for (const file of result.files) {
         const fullPath = `${outDir}/${file.path}`;
@@ -85,7 +175,8 @@ export class CompileTtdCommand extends WesleyCommand {
       }
     }
 
-    // Report results
+    // ── Report results ──
+
     const summary = {
       schemaHash: result.schemaHash,
       files: result.files.map(f => ({
@@ -97,7 +188,7 @@ export class CompileTtdCommand extends WesleyCommand {
       dryRun: options.dryRun || false,
     };
 
-    if (!options.quiet && !options.json) {
+    if (!options.quiet && !options.json && !debugDump) {
       const action = options.dryRun ? 'Would generate' : 'Generated';
       logger?.info?.(`\n${action} ${result.files.length} files:`);
       for (const file of summary.files) {
