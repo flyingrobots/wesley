@@ -28,7 +28,7 @@ jobs:
         run: corepack enable
       - name: Install deps
         run: pnpm install --frozen-lockfile
-      - name: @wesley/host-node sanity
+      - name: "@wesley/host-node sanity"
         run: |
           pnpm --filter @wesley/host-node run test
           node packages/wesley-host-node/bin/wesley.mjs --version

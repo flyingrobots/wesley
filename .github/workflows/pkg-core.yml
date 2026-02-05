@@ -28,7 +28,7 @@ jobs:
         run: corepack enable
       - name: Install deps
         run: pnpm install --frozen-lockfile
-      - name: @wesley/core tests (coverage)
+      - name: "@wesley/core tests (coverage)"
         # Quote the command: '@' can confuse YAML if unquoted
         run: "pnpm --filter @wesley/core test:coverage || pnpm --filter @wesley/core test"
       - name: Upload core coverage (if present)

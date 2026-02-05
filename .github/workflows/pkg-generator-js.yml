@@ -28,5 +28,5 @@ jobs:
         run: corepack enable
       - name: Install deps
         run: pnpm install --frozen-lockfile
-      - name: @wesley/generator-js tests
+      - name: "@wesley/generator-js tests"
         run: pnpm --filter @wesley/generator-js test

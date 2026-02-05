@@ -28,5 +28,5 @@ jobs:
         run: corepack enable
       - name: Install deps
         run: pnpm install --frozen-lockfile
-      - name: @wesley/generator-supabase tests
+      - name: "@wesley/generator-supabase tests"
         run: pnpm --filter @wesley/generator-supabase test
