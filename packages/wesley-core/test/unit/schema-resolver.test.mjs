@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { parse as gqlParse } from 'graphql';
 
 import {
   resolve,
@@ -552,7 +553,6 @@ test('resolve: non-composition directives are preserved', async () => {
 // ─── Resolver: mangled names are valid GraphQL identifiers ──────────────────
 
 test('resolve: mangled names are valid GraphQL identifiers (re-parseable)', async () => {
-  const { parse: gqlParse } = await import('graphql');
   const files = {
     '/root/a.graphql': `
       extend schema @wes_package(name: "echo.core")

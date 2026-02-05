@@ -150,7 +150,8 @@ export async function createNodeRuntime() {
         },
         parseComposed: (units) => {
           const adapter = new GraphQLAdapter();
-          return adapter.parseComposed(units);
+          const sanitizedUnits = units.map(u => ({ ...u, sdl: sanitizeGraphQL(u.sdl, process.env) }));
+          return adapter.parseComposed(sanitizedUnits);
         }
       }
     },

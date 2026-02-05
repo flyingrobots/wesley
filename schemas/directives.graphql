@@ -1,6 +1,6 @@
 """
 Wesley Canonical Directives
-Version: 1.0.0
+Version: 1.1.0
 
 These directives extend GraphQL schemas with database-specific metadata.
 Import this file into your schema to use Wesley's full capabilities.

@@ -4,7 +4,7 @@
  */
 
 import { parse, print, Kind, buildSchema, buildASTSchema, validate, Source } from 'graphql';
-import { mangle, demangle } from '@wesley/core/domain/SchemaResolver.mjs';
+import { mangle, demangle } from '@wesley/core/domain/SchemaResolver';
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -526,6 +526,12 @@ class GraphQLSchemaParser {
           table.name = prov.shortName;
           table.sourceUnit = prov.sourceUnit;
           table.package = prov.package;
+        }
+        if (table.foreignKeys) {
+          for (const fk of table.foreignKeys) {
+            const fkProv = defLookup.get(fk.refTable);
+            if (fkProv) fk.refTable = fkProv.shortName;
+          }
         }
       }
     }

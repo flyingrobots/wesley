@@ -56,26 +56,27 @@ export class CompileTtdCommand extends WesleyCommand {
         buildDemangleMap,
         demangleSdl,
         validateFilteredSdl,
-      } = await import('@wesley/core/domain/SchemaResolver.mjs');
+      } = await import('@wesley/core/domain/SchemaResolver');
 
       // Apply --unit filter if specified
+      const unitFilter = options.unit ? options.unit.flatMap(u => u.split(',')) : null;
       let activeUnits = context.units;
-      if (options.unit) {
-        const unitFilter = options.unit.flatMap(u => u.split(','));
+      if (unitFilter) {
         const composed = composeUnits(context.units, unitFilter);
         effectiveSdl = composed.sdl;
         activeUnits = composed.units;
       }
 
-      // Demangle type names for clean TTD output (unless --qualified-names)
+      // Demangle type names for clean TTD output (unless --qualified-names).
+      // buildDemangleMap uses the full context.units (not activeUnits) because
+      // demangling must map all mangled symbols across the entire composition.
       if (!options.qualifiedNames) {
         const demangleMap = buildDemangleMap(context.units);
         effectiveSdl = demangleSdl(effectiveSdl, demangleMap);
       }
 
       // Validate that the filtered SDL isn't missing types from excluded units
-      if (options.unit) {
-        const unitFilter = options.unit.flatMap(u => u.split(','));
+      if (unitFilter) {
         const diag = validateFilteredSdl(effectiveSdl, context.units, unitFilter);
         if (diag) {
           const lines = diag.missing.map(m =>
@@ -86,7 +87,7 @@ export class CompileTtdCommand extends WesleyCommand {
           const e = new Error(
             `Filtered SDL references types not included in the selected units:\n` +
             lines.join('\n') + '\n\n' +
-            `You asked for units: ${unitFilter.join(', ')}\n` +
+            `You asked for units: ${unitFilter?.join(', ')}\n` +
             `Add the missing units with --unit or compile the full schema.`
           );
           e.code = 'SCHEMA_RESOLUTION_FAILED';

@@ -6,7 +6,7 @@
 
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import { buildPlanFromJson, emitFunction, emitView, collectParams } from '@wesley/core/domain/qir';
-import { filterIRByUnits } from '@wesley/core/domain/SchemaFilter.mjs';
+import { filterIRByUnits } from '@wesley/core/domain/SchemaFilter';
 
 export class GeneratePipelineCommand extends WesleyCommand {
   constructor(ctx) {
@@ -92,8 +92,11 @@ export class GeneratePipelineCommand extends WesleyCommand {
       }
     }
 
-    // If T.A.S.K.S. and S.L.A.P.S. are available, use them
-    if (planner && runner && planner.buildPlan && runner.run) {
+    // If T.A.S.K.S. and S.L.A.P.S. are available, use them — unless running in
+    // debug/introspection mode where the sequential pipeline is required to
+    // support --unit filtering, --dry-run, --print-ir, and --print-composed-sdl.
+    const needsSequentialPipeline = options.unit || options.dryRun || options.printIr || options.printComposedSdl;
+    if (planner && runner && planner.buildPlan && runner.run && !needsSequentialPipeline) {
       return await this.executeWithTasksAndSlaps(context);
     }
 

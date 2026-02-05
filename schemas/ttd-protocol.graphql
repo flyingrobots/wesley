@@ -166,11 +166,17 @@ type TruthFrame @wes_version(major: 1, minor: 0) {
   valueHash: Hash! @wes_stateField
 }
 
+enum ObligationStatusKind {
+  PENDING
+  SATISFIED
+  VIOLATED
+}
+
 type ObligationState @wes_version(major: 1, minor: 0) {
   id: ID! @wes_stateField(key: true)
   description: String! @wes_stateField
   deadlineTick: Int! @wes_stateField
-  status: String! @wes_stateField  # pending, satisfied, violated
+  status: ObligationStatusKind! @wes_stateField
 }
 
 enum StepResultKind {

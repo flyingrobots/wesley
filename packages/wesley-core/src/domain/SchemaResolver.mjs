@@ -101,7 +101,7 @@ const EXT_DEF_KINDS = new Set([
 class SchemaResolutionError extends Error {
   constructor(message) {
     super(message);
-    this.name = 'SCHEMA_RESOLUTION_FAILED';
+    this.name = 'SchemaResolutionError';
     this.code = 'SCHEMA_RESOLUTION_FAILED';
   }
 }
@@ -236,10 +236,17 @@ async function discover(entryPath, readFileFn, rootDir, units, pathToId) {
       }
     }
 
-    // Resolve import paths relative to rootDir
+    // Resolve import paths relative to rootDir using path.join and validate
     const importPaths = [];
     for (const from of importFroms) {
-      const resolved = rootDir + '/' + from;
+      const { resolve: pathResolve } = await import('node:path');
+      const resolved = pathResolve(rootDir, from);
+      // Validate the resolved path is inside rootDir to prevent path traversal
+      if (!resolved.startsWith(rootDir + '/') && resolved !== rootDir) {
+        throw new SchemaResolutionError(
+          `Path traversal detected: "${from}" resolves outside rootDir (${rootDir})`
+        );
+      }
       importPaths.push(resolved);
     }
 
@@ -369,18 +376,8 @@ function topologicalSort(adj, pathToId) {
     }
   }
 
-  // Wait — the adj is node → [its dependencies], so edges go node → dep.
-  // For topological sort, we need leaves first. Leaves have no dependencies (no outgoing edges in our adj).
-  // Kahn's needs in-degree based on the reverse graph.
-  // Actually: adj[A] = [B] means A depends on B, i.e., B must come before A.
-  // So the edge is B → A in the DAG. In-degree for A = number of nodes that depend on something that points to A.
-  // Let me reconsider: we want leaves (no deps) first.
-
-  // Reset in-degree: count how many nodes list X as a dependency
-  // (how many nodes import X, which means X must come before them)
-  // Actually for Kahn's: we need in-degree in the "must come before" DAG.
-  // If A imports B, then B must come before A. Edge: B → A.
-  // in-degree of A = number of its dependencies (adj[A].length)
+  // adj[A] = [B, ...] means A depends on B (A imports B), so B must come before A.
+  // For Kahn's algorithm: inDegree[A] = adj[A].length (number of dependencies).
 
   const inDeg = new Map();
   for (const node of adj.keys()) inDeg.set(node, 0);
@@ -417,8 +414,14 @@ function topologicalSort(adj, pathToId) {
     for (const depender of dependers) {
       inDeg.set(depender, inDeg.get(depender) - 1);
       if (inDeg.get(depender) === 0) {
-        queue.push(depender);
-        queue.sort(); // keep sorted
+        // Binary search insertion for O(log n) instead of O(n log n) per push
+        let lo = 0, hi = queue.length;
+        while (lo < hi) {
+          const mid = (lo + hi) >>> 1;
+          if (queue[mid] < depender) lo = mid + 1;
+          else hi = mid;
+        }
+        queue.splice(lo, 0, depender);
       }
     }
   }
@@ -726,10 +729,10 @@ export function validateFilteredSdl(sdl, allUnits, selectedUnitIds) {
   const idSet = new Set(selectedUnitIds);
   const doc = parse(sdl);
 
-  // Collect all defined type names
+  // Collect all defined type names (only base definitions count — extensions need their base type)
   const defined = new Set();
   for (const def of doc.definitions) {
-    if (BASE_DEF_KINDS.has(def.kind) || EXT_DEF_KINDS.has(def.kind)) {
+    if (BASE_DEF_KINDS.has(def.kind)) {
       defined.add(def.name.value);
     }
   }

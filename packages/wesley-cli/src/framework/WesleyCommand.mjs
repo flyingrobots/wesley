@@ -114,17 +114,18 @@ export class WesleyCommand {
       throw error;
     }
 
-    // Detect multi-file composition directives
-    const needsComposition = content.includes('@wes_import') || content.includes('@wes_package');
+    // Detect multi-file composition directives (regex avoids matching inside strings/comments)
+    const needsComposition = /(^|[^a-zA-Z0-9_])@wes_(import|package)\b/m.test(content);
     if (needsComposition) {
-      const { resolve } = await import('@wesley/core/domain/SchemaResolver.mjs');
+      const { resolve } = await import('@wesley/core/domain/SchemaResolver');
       const { resolve: pathResolve, dirname } = await import('node:path');
       const { realpathSync } = await import('node:fs');
 
       let realSchemaPath;
       try {
         realSchemaPath = realpathSync(schemaPath);
-      } catch {
+      } catch (err) {
+        this.ctx?.logger?.debug?.({ err, schemaPath }, 'realpathSync failed, using pathResolve');
         realSchemaPath = pathResolve(schemaPath);
       }
       const rootDir = options.schemaRoot

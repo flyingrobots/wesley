@@ -12,8 +12,8 @@
     "./domain/qir": "./src/domain/qir/index.mjs",
     "./ttd": "./src/ttd/index.mjs",
     "./ttd/invariants": "./src/ttd/invariants/index.mjs",
-    "./domain/SchemaResolver.mjs": "./src/domain/SchemaResolver.mjs",
-    "./domain/SchemaFilter.mjs": "./src/domain/SchemaFilter.mjs"
+    "./domain/SchemaResolver": "./src/domain/SchemaResolver.mjs",
+    "./domain/SchemaFilter": "./src/domain/SchemaFilter.mjs"
   },
   "files": [
     "src/"
