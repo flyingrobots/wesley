@@ -5,6 +5,8 @@ import { emitSchemas } from './emitSchemas.mjs';
 import { emitClient } from './emitClient.mjs';
 import { emitJoinImpls } from './emitJoinImpls.mjs';
 import { emitRawLeCodec } from './emitRawLeCodec.mjs';
+import { emitRawLeTsCodec } from './emitRawLeTsCodec.mjs';
+import { emitGuardedViews } from './emitGuardedViews.mjs';
 import { buildLayoutDescriptor, computeLayoutHash } from '@wesley/core';
 
 const PKG_VERSION = '0.1.0'; // keep simple: avoid package.json import in node CLI
@@ -72,6 +74,16 @@ export async function generateEcho({ sdl, ir, mutationIdNamespace = 'Mutation', 
   const codecRust = emitRawLeCodec(fullIr);
   if (codecRust) {
     files.push({ path: 'raw_le_codec.generated.rs', content: codecRust });
+  }
+
+  const codecTs = emitRawLeTsCodec(fullIr);
+  if (codecTs) {
+    files.push({ path: 'raw_le_codec.generated.ts', content: codecTs });
+  }
+
+  const guardedViews = emitGuardedViews(fullIr);
+  if (guardedViews) {
+    files.push({ path: 'guarded_views.generated.rs', content: guardedViews });
   }
 
   return { files };
@@ -154,6 +166,7 @@ function parseGraphQLToEchoIR(sdl) {
           required,
           list,
           join: extractJoinDirective(f),
+          views: extractViewDirectives(f),
         };
       });
 
@@ -190,6 +203,25 @@ function extractJoinDirective(fieldNode) {
     }
   }
   return null;
+}
+
+/**
+ * Extract @wes_view directives from a raw GraphQL field AST node.
+ * @param {object} fieldNode - GraphQL field definition AST node
+ * @returns {Array<{ rule: string, access: string }> | null}
+ */
+function extractViewDirectives(fieldNode) {
+  const views = [];
+  for (const dir of fieldNode.directives ?? []) {
+    if (dir.name.value === 'wes_view') {
+      const ruleArg = (dir.arguments ?? []).find((a) => a.name.value === 'rule');
+      const accessArg = (dir.arguments ?? []).find((a) => a.name.value === 'access');
+      if (ruleArg && accessArg) {
+        views.push({ rule: ruleArg.value.value, access: accessArg.value.value });
+      }
+    }
+  }
+  return views.length > 0 ? views : null;
 }
 
 function unwrapType(typeNode) {
