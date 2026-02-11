@@ -33,7 +33,7 @@ Echo also has a Rust-side consumer (`echo-wesley-gen` crate) that reads the JSON
 - [x] Stable generator plugin interface (`GeneratorPlugin` contract in `@wesley/core`)
 - [ ] Plugin discovery and registration via `wesley.config.mjs`
 - [ ] Generator-level test harness: feed SDL in, assert output artifacts
-- [ ] Document plugin lifecycle (parse → plan → generate → emit) for generator authors
+- [ ] Document plugin lifecycle (`init → plan → generate`; runner handles writing) for generator authors
 
 **Echo issue:** N/A (Wesley infra)
 **Depends on:** nothing

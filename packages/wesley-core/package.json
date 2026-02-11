@@ -13,7 +13,8 @@
     "./ttd": "./src/ttd/index.mjs",
     "./ttd/invariants": "./src/ttd/invariants/index.mjs",
     "./domain/SchemaResolver": "./src/domain/SchemaResolver.mjs",
-    "./domain/SchemaFilter": "./src/domain/SchemaFilter.mjs"
+    "./domain/SchemaFilter": "./src/domain/SchemaFilter.mjs",
+    "./testing": "./src/testing/testGenerator.mjs"
   },
   "files": [
     "src/"

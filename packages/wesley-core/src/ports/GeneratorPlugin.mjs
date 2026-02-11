@@ -2,9 +2,10 @@
 
 /**
  * Supported API versions. Core rejects unknown versions with a clear message.
- * @type {Set<string>}
+ * Frozen array — use .includes() to check membership.
+ * @type {ReadonlyArray<string>}
  */
-export const SUPPORTED_API_VERSIONS = new Set(['1']);
+export const SUPPORTED_API_VERSIONS = Object.freeze(['1']);
 
 /**
  * @typedef {Object} ArtifactEntry
@@ -82,79 +83,108 @@ export class GeneratorPlugin {
   }
 }
 
+/** @internal Throw a coded validation error. */
+function fail(msg, code) {
+  const err = new Error(msg);
+  err.code = code;
+  throw err;
+}
+
+/**
+ * Safely read a property that might be a throwing getter.
+ * Returns { ok: true, value } or { ok: false, error }.
+ * @internal
+ */
+function safeGet(obj, prop) {
+  try {
+    return { ok: true, value: obj[prop] };
+  } catch (e) {
+    return { ok: false, error: e };
+  }
+}
+
 /**
  * Duck-typing validator for plugin objects. Throws with code WPLY001
  * if the object doesn't conform to the GeneratorPlugin contract.
  *
  * Uses duck typing (no instanceof) so plain objects work too.
+ * Safely handles throwing getters (e.g. raw GeneratorPlugin base class).
  *
  * @param {unknown} plugin
  * @throws {{ message: string, code: string }}
  */
 export function validatePlugin(plugin) {
   if (plugin == null || typeof plugin !== 'object') {
-    const err = new Error('Plugin must be a non-null object');
-    err.code = 'WPLY001';
-    throw err;
+    fail('Plugin must be a non-null object', 'WPLY001');
   }
 
-  // apiVersion — must be a string in SUPPORTED_API_VERSIONS
-  const ver = plugin.apiVersion;
-  const pluginName = typeof plugin.name === 'string' && plugin.name.trim()
-    ? plugin.name.trim()
+  // Safely read apiVersion and name — these may be throwing getters
+  const verResult = safeGet(plugin, 'apiVersion');
+  const nameResult = safeGet(plugin, 'name');
+
+  if (!verResult.ok) {
+    fail(
+      `Plugin apiVersion getter threw: ${verResult.error.message}`,
+      'WPLY001'
+    );
+  }
+  if (!nameResult.ok) {
+    fail(
+      `Plugin name getter threw: ${nameResult.error.message}`,
+      'WPLY001'
+    );
+  }
+
+  const ver = verResult.value;
+  const pluginName = typeof nameResult.value === 'string' && nameResult.value.trim()
+    ? nameResult.value.trim()
     : undefined;
   const nameLabel = pluginName ? ` "${pluginName}"` : '';
 
+  // apiVersion — must be a string in SUPPORTED_API_VERSIONS
   if (ver === undefined || ver === null) {
-    const err = new Error(`Plugin${nameLabel} is missing required "apiVersion" property`);
-    err.code = 'WPLY001';
-    throw err;
+    fail(`Plugin${nameLabel} is missing required "apiVersion" property`, 'WPLY001');
   }
   if (typeof ver !== 'string') {
-    const err = new Error(
+    fail(
       `Plugin${nameLabel} apiVersion must be a string (got ${typeof ver}: ${ver}). ` +
-      `Use apiVersion: "${String(ver)}" instead of apiVersion: ${ver}`
+      `Use apiVersion: "${String(ver)}" instead of apiVersion: ${ver}`,
+      'WPLY001'
     );
-    err.code = 'WPLY001';
-    throw err;
   }
-  if (!SUPPORTED_API_VERSIONS.has(ver)) {
-    const err = new Error(
+  if (!SUPPORTED_API_VERSIONS.includes(ver)) {
+    fail(
       `Plugin${nameLabel} requires apiVersion "${ver}", ` +
-      `but only [${[...SUPPORTED_API_VERSIONS].map(v => `"${v}"`).join(', ')}] are supported`
+      `but only [${[...SUPPORTED_API_VERSIONS].map(v => `"${v}"`).join(', ')}] are supported`,
+      'WPLY001'
     );
-    err.code = 'WPLY001';
-    throw err;
   }
 
   // name — must be non-empty string after trim
-  if (typeof plugin.name !== 'string' || plugin.name.trim().length === 0) {
-    const err = new Error(
+  if (typeof nameResult.value !== 'string' || nameResult.value.trim().length === 0) {
+    fail(
       'Plugin "name" must be a non-empty string (got ' +
-      (typeof plugin.name === 'string' ? 'whitespace-only string' : typeof plugin.name) + ')'
+      (typeof nameResult.value === 'string' ? 'whitespace-only string' : typeof nameResult.value) + ')',
+      'WPLY001'
     );
-    err.code = 'WPLY001';
-    throw err;
   }
 
   // Methods — must be functions
   for (const method of ['plan', 'generate']) {
     if (typeof plugin[method] !== 'function') {
-      const err = new Error(
-        `Plugin${nameLabel} is missing required method "${method}" (got ${typeof plugin[method]})`
+      fail(
+        `Plugin${nameLabel} is missing required method "${method}" (got ${typeof plugin[method]})`,
+        'WPLY001'
       );
-      err.code = 'WPLY001';
-      throw err;
     }
   }
 
   // init is optional but if present must be a function
   if (plugin.init !== undefined && typeof plugin.init !== 'function') {
-    const err = new Error(
-      `Plugin${nameLabel} "init" must be a function if provided (got ${typeof plugin.init})`
+    fail(
+      `Plugin${nameLabel} "init" must be a function if provided (got ${typeof plugin.init})`,
+      'WPLY001'
     );
-    err.code = 'WPLY001';
-    throw err;
   }
 }
 
@@ -170,28 +200,20 @@ export function validatePlan(plan, pluginName) {
   const label = pluginName ? ` from plugin "${pluginName}"` : '';
 
   if (plan == null || typeof plan !== 'object') {
-    const err = new Error(`Plan${label} must be a non-null object (got ${plan === null ? 'null' : typeof plan})`);
-    err.code = 'WPLY004';
-    throw err;
+    fail(`Plan${label} must be a non-null object (got ${plan === null ? 'null' : typeof plan})`, 'WPLY004');
   }
 
   if (!Array.isArray(plan.artifacts)) {
-    const err = new Error(`Plan${label} must have an "artifacts" array (got ${typeof plan.artifacts})`);
-    err.code = 'WPLY004';
-    throw err;
+    fail(`Plan${label} must have an "artifacts" array (got ${typeof plan.artifacts})`, 'WPLY004');
   }
 
   for (let i = 0; i < plan.artifacts.length; i++) {
     const entry = plan.artifacts[i];
     if (entry == null || typeof entry !== 'object') {
-      const err = new Error(`Plan${label} artifacts[${i}] must be a non-null object`);
-      err.code = 'WPLY004';
-      throw err;
+      fail(`Plan${label} artifacts[${i}] must be a non-null object`, 'WPLY004');
     }
     if (typeof entry.path !== 'string' || entry.path.trim().length === 0) {
-      const err = new Error(`Plan${label} artifacts[${i}] must have a non-empty "path" string`);
-      err.code = 'WPLY004';
-      throw err;
+      fail(`Plan${label} artifacts[${i}] must have a non-empty "path" string`, 'WPLY004');
     }
   }
 }

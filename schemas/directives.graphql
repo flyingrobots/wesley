@@ -304,5 +304,14 @@ directive @wes_version(
   patch: Int                # Patch version (defaults to 0)
 ) on OBJECT
 
+# ═══════════════════════════════════════════════════════════════════
+# ECHO LATTICE / CRDT DIRECTIVES - Join strategies for merge semantics
+# ═══════════════════════════════════════════════════════════════════
+
+# Join: Declares the merge strategy for a field under concurrent writes
+directive @wes_join(
+  strategy: String!           # "union" | "max" | "lww"
+) on FIELD_DEFINITION
+
 # Note: Additional directives for relationships, RLS, validation, etc.
 # can be added here as needed. For now, focusing on core table directives.

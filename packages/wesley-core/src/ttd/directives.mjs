@@ -25,6 +25,7 @@ const TTD_DIRECTIVES = new Set([
   'wes_version',
   'wes_tick',
   'wes_effect',
+  'wes_join',
 ]);
 
 /**
@@ -267,6 +268,50 @@ export function parseEffectDirective(directive) {
 }
 
 /**
+ * Valid @wes_join strategies
+ */
+export const VALID_JOIN_STRATEGIES = ['union', 'max', 'lww'];
+
+/**
+ * Parse @wes_join directive
+ */
+export function parseJoinDirective(directive) {
+  return {
+    strategy: getArg(directive, 'strategy'),
+  };
+}
+
+/**
+ * Validate @wes_join directive against a field's type information.
+ *
+ * @param {{ strategy: string }} joinMeta - Parsed join directive metadata
+ * @param {{ list: boolean, base: string }} fieldType - Field type info (list flag and base type name)
+ * @param {string} fieldName - Field name for error messages
+ * @returns {string|null} Error message string, or null if valid
+ */
+export function validateJoinDirective(joinMeta, fieldType, fieldName) {
+  const { strategy } = joinMeta;
+
+  if (!VALID_JOIN_STRATEGIES.includes(strategy)) {
+    return `Unknown @wes_join strategy "${strategy}". Valid: ${VALID_JOIN_STRATEGIES.join(', ')}`;
+  }
+
+  if (strategy === 'union' && !fieldType.list) {
+    return `@wes_join(strategy: "union") requires a list field, but "${fieldName}" is ${fieldType.base}`;
+  }
+
+  if (strategy === 'max') {
+    const numericTypes = new Set(['Int', 'Float']);
+    if (!numericTypes.has(fieldType.base)) {
+      return `@wes_join(strategy: "max") requires Int or Float, but "${fieldName}" is ${fieldType.base}`;
+    }
+  }
+
+  // "lww" is valid on any field type
+  return null;
+}
+
+/**
  * Extract all TTD directives from a list of directives
  */
 export function extractTtdDirectives(directives) {
@@ -288,6 +333,7 @@ export function extractTtdDirectives(directives) {
     version: undefined,
     tick: undefined,
     effects: [],
+    join: undefined,
   };
 
   if (!directives) return result;
@@ -346,6 +392,9 @@ export function extractTtdDirectives(directives) {
         break;
       case 'wes_effect':
         result.effects.push(parseEffectDirective(d));
+        break;
+      case 'wes_join':
+        result.join = parseJoinDirective(d);
         break;
     }
   }

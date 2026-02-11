@@ -9,7 +9,7 @@ const PKG_VERSION = '0.1.0'; // keep simple: avoid package.json import in node C
 /**
  * Generator for Echo (Rust/WASM) artifacts.
  * Input: GraphQL SDL (string) and optional prebuilt Wesley IR.
- * Output: Echo IR JSON (`echo-ir/v1`) + a small set of host-side helper files
+ * Output: Echo IR JSON (`echo-ir/v2`) + a small set of host-side helper files
  *         derived from the ops catalog (IDs, args/result metadata, schemas).
  */
 export async function generateEcho({ sdl, ir, mutationIdNamespace = 'Mutation', queryNamespace = 'Query' } = {}) {
@@ -26,15 +26,19 @@ export async function generateEcho({ sdl, ir, mutationIdNamespace = 'Mutation', 
   const baseIr = ir ?? parseGraphQLToEchoIR(sdl);
 
   const ops = buildOpsFromSDL(sdl, mutationIdNamespace, queryNamespace);
+  const sdlHash = sdl ? sha256hex(sdl) : null;
   const fullIr = {
-    ir_version: 'echo-ir/v1',
+    ir_version: 'echo-ir/v2',
     codec_id: 'cbor-canon-v1',
     registry_version: 1,
     generated_by: {
       tool: '@wesley/generator-echo',
       version: PKG_VERSION
     },
-    schema_sha256: sdl ? sha256hex(sdl) : undefined,
+    schema_sha256: sdlHash,      // v1 compat
+    schema_hash: sdlHash,        // v2 canonical name
+    registry_hash: null,         // placeholder — EchoPlugin overwrites with canonical value
+    hash_chain: null,            // placeholder — EchoPlugin overwrites after bundle hash
     ...baseIr,
     ops,
   };
@@ -108,6 +112,8 @@ function parseGraphQLToEchoIR(sdl) {
       types.push({
         name: def.name.value,
         kind: 'ENUM',
+        type_id: def.name.value,
+        layout_hash: null,
         values: def.values?.map((v) => v.name.value) ?? [],
       });
     }
@@ -119,6 +125,8 @@ function parseGraphQLToEchoIR(sdl) {
       types.push({
         name: def.name.value,
         kind: 'OBJECT',
+        type_id: def.name.value,
+        layout_hash: null,
         fields: (def.fields ?? []).map((f) => {
           const { typeName, required, list } = unwrapType(f.type);
           return {
@@ -126,6 +134,7 @@ function parseGraphQLToEchoIR(sdl) {
             type: typeName,
             required,
             list,
+            join: extractJoinDirective(f),
           };
         }),
       });
@@ -133,6 +142,25 @@ function parseGraphQLToEchoIR(sdl) {
   }
 
   return { types };
+}
+
+/**
+ * Extract @wes_join / @join directive from a raw GraphQL field AST node.
+ * @param {object} fieldNode - GraphQL field definition AST node
+ * @returns {{ strategy: string } | null}
+ */
+function extractJoinDirective(fieldNode) {
+  for (const dir of fieldNode.directives ?? []) {
+    const name = dir.name.value;
+    if (name === 'wes_join' || name === 'join') {
+      const strategyArg = (dir.arguments ?? []).find((a) => a.name.value === 'strategy');
+      if (strategyArg) {
+        return { strategy: strategyArg.value.value };
+      }
+      return null;
+    }
+  }
+  return null;
 }
 
 function unwrapType(typeNode) {

@@ -1,0 +1,116 @@
+# Echo Core CAS-Facing Storage Types
+# Version: 1.0.0
+#
+# Canonical definitions for the five storage types used by Echo's
+# content-addressable store (CAS). These types are the source of truth
+# for generated Rust and TypeScript encoders (E2a).
+
+# ─── Tick Patches ────────────────────────────────────────────────────────────────
+
+"""
+Individual field-level change within a tick patch.
+Records the before/after value for a single field mutation.
+"""
+type FieldPatch @wes_codec(format: "cbor", canonical: true) @wes_version(major: 1, minor: 0) {
+  """Field name that was changed."""
+  field_name: String!
+  """Previous value (null for additions)."""
+  old_value: String
+  """New value (null for removals)."""
+  new_value: String
+}
+
+"""
+Tick-level patch blob: captures all field changes for one entity in one tick.
+Serialized and stored as a single CAS blob keyed by content hash.
+"""
+type WorldlineTickPatchV1 @wes_table @wes_codec(format: "cbor", canonical: true) @wes_version(major: 1, minor: 0) {
+  """Tick sequence number."""
+  tick_id: Int!
+  """Target entity identifier."""
+  entity_id: String!
+  """List of field-level patches applied this tick."""
+  patches: [FieldPatch!]!
+  """Microsecond timestamp as string (u64 exceeds GraphQL Int range)."""
+  timestamp_us: String!
+  """Optional raw payload bytes (base64-encoded in JSON context)."""
+  payload: String
+}
+
+# ─── Snapshots ───────────────────────────────────────────────────────────────────
+
+"""
+Segment directory for snapshot storage.
+Lists segment hashes so a snapshot can be reassembled from CAS blobs.
+"""
+type SnapshotManifest @wes_table @wes_codec(format: "cbor", canonical: true) @wes_version(major: 1, minor: 0) {
+  """Number of segments in this snapshot."""
+  segment_count: Int!
+  """Hex-encoded SHA-256 hashes of each segment blob."""
+  segment_hashes: [String!]!
+  """Total byte count across all segments."""
+  total_bytes: Int!
+  """Schema version hash this snapshot was created under."""
+  schema_hash: String!
+  """ISO 8601 creation timestamp."""
+  created_at: String!
+}
+
+# ─── Claims & Privacy ───────────────────────────────────────────────────────────
+
+"""
+Privacy-safe ledger carrier.
+Public record that references private data without revealing it.
+"""
+type ClaimRecord @wes_table @wes_codec(format: "cbor", canonical: true) @wes_version(major: 1, minor: 0) {
+  """Unique key identifying this claim."""
+  claim_key: String!
+  """Identifier for the claim scheme (e.g. hash-commit-v1)."""
+  scheme_id: String!
+  """Hash of the plaintext statement."""
+  statement_hash: String!
+  """Cryptographic commitment value."""
+  commitment: String!
+  """Optional hash of the ZK or conventional proof."""
+  proof_hash: String
+  """Optional reference to the private data atom."""
+  private_ref: String
+  """Hash of the governing policy."""
+  policy_hash: String!
+  """Identity of the claim issuer."""
+  issuer: String!
+}
+
+"""
+Privacy reference format.
+Points to private data via cryptographic commitments and optional ZK evidence.
+"""
+type PrivateAtomRefV1 @wes_table @wes_codec(format: "cbor", canonical: true) @wes_version(major: 1, minor: 0) {
+  """Cryptographic commitment value."""
+  commit: String!
+  """Hash of the governing policy."""
+  policy_hash: String!
+  """Hash of the plaintext statement."""
+  statement_hash: String!
+  """Optional ZK proof bytes."""
+  zk_evidence: String
+  """Optional opaque pointer for vault resolution."""
+  opaque_ref: String
+}
+
+"""
+Opaque pointer blob.
+Vault-level locator that can be resolved only by the owning vault service.
+"""
+type OpaqueRefV1 @wes_table @wes_codec(format: "cbor", canonical: true) @wes_version(major: 1, minor: 0) {
+  """Vault identifier."""
+  vault_id: String!
+  """Vault-internal locator string."""
+  locator: String!
+  """Cryptographic commitment binding this ref to its content."""
+  commit: String!
+  """Algorithm identifier for the commitment scheme."""
+  alg_id: String!
+  """Hash of the governing policy."""
+  policy_hash: String!
+}

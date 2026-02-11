@@ -145,6 +145,14 @@ export class Field {
     return this.directives['@check']?.expr;
   }
 
+  /**
+   * Get join strategy metadata, if any.
+   * @returns {{ strategy: string } | null}
+   */
+  getJoin() {
+    return this.directives['@join'] || null;
+  }
+
   toAST() {
     return {
       name: this.name,

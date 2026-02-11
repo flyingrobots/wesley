@@ -38,7 +38,7 @@ As a generator plugin author, I can implement a well-defined `GeneratorPlugin` i
 - [x] `apiVersion` field is required on all plugins; core rejects plugins with unsupported versions with a clear error message
 - [x] Plugins return artifacts as pure data (`Record<string, string | Uint8Array>`) — no filesystem I/O in plugins
 - [ ] Core handles all artifact writing, overwrite detection, and atomic commits
-- [x] Validation and plugin errors use machine-readable error codes (e.g., `WPLY001: Plugin init failed`, `WPLY002: Unsupported apiVersion`)
+- [x] Validation and plugin errors use machine-readable error codes (e.g., `WPLY001: Plugin validation error`, `WPLY002: Plugin execution error`)
 - [x] Pipeline exit code is non-zero when any enabled plugin fails (default mode)
 - [x] Pipeline exit code is 0 with `--best-effort` when at least one plugin succeeds
 - [x] Per-plugin status summary is emitted on completion
@@ -93,6 +93,7 @@ As a Wesley user, I can declare which generator plugins to run in my `wesley.con
   - `config` — plugin-specific configuration object passed to `init(config)`
   - `enabled` — optional boolean (default `true`)
 - `wesley.config.mjs` supports an `experimental` object for feature-gating in-progress capabilities:
+
   ```js
   experimental: {
     irV2: true,       // E1.5 — echo-ir/v2 format
@@ -100,6 +101,7 @@ As a Wesley user, I can declare which generator plugins to run in my `wesley.con
     join: false,      // E3 — @wes_join directive support
   }
   ```
+
   - All experimental flags default to `false`
   - Wesley MUST log a warning when an experimental flag is enabled (e.g., `Experimental feature "irV2" is enabled — behavior may change without notice`)
   - Generators can read experimental flags from their `init(config)` context to conditionally enable new output
@@ -285,7 +287,8 @@ As a Wesley user or CI pipeline, I can run `wesley doctor` to verify that my Wes
   - `crypto.subtle` (or Node `crypto`) is available for SHA-256 hashing
   - `experimental` flags are listed with their current values
 - Output: structured checklist with pass/fail per check
-  ```
+
+  ```text
   [pass] Node.js v22.1.0 (>=18.17)
   [pass] Config: wesley.config.mjs
   [pass] Plugin: @wesley/generator-echo (apiVersion: 1)
@@ -294,6 +297,7 @@ As a Wesley user or CI pipeline, I can run `wesley doctor` to verify that my Wes
   [pass] Hash: SHA-256 available
   [info] Experimental: irV2=true, rawLe=false, join=false
   ```
+
 - Exit code: 0 if all checks pass, 1 if any check fails
 - `--format json` flag for machine-readable output
 

@@ -10,7 +10,7 @@ import { validatePlugin, validatePlan } from '../ports/GeneratorPlugin.mjs';
  * @property {number} artifactCount
  * @property {string} [errorCode]
  * @property {string} [errorMessage]
- * @property {'init'|'plan'|'generate'} [phase]
+ * @property {'init'|'plan'|'generate'} [phase] - Validation failures report as 'init' (precondition of init)
  * @property {number} durationMs
  */
 
@@ -23,11 +23,28 @@ import { validatePlugin, validatePlan } from '../ports/GeneratorPlugin.mjs';
  */
 
 /**
+ * Deep-freeze an object and all nested objects. Pure utility (no node:* imports).
+ * @param {T} obj
+ * @returns {Readonly<T>}
+ * @template T
+ */
+function deepFreeze(obj) {
+  if (obj == null || typeof obj !== 'object') return obj;
+  Object.freeze(obj);
+  for (const val of Object.values(obj)) {
+    if (val != null && typeof val === 'object' && !Object.isFrozen(val)) {
+      deepFreeze(val);
+    }
+  }
+  return obj;
+}
+
+/**
  * PluginRunner - Orchestrates plugin execution with error isolation.
  *
  * Plugins run sequentially in input order (deterministic contract).
  * Each plugin goes through: validate → init → plan → generate.
- * Context is frozen to prevent mutation side-effects.
+ * Context is deeply frozen to prevent mutation side-effects.
  */
 export class PluginRunner {
   /**
@@ -38,6 +55,9 @@ export class PluginRunner {
    * @param {boolean} [deps.bestEffort=false]
    */
   constructor({ logger, clock, config, bestEffort = false }) {
+    if (!logger) throw new TypeError('PluginRunner requires a logger');
+    if (!clock) throw new TypeError('PluginRunner requires a clock');
+    if (config == null) throw new TypeError('PluginRunner requires a config object');
     this._logger = logger;
     this._clock = clock;
     this._config = config;
@@ -51,14 +71,27 @@ export class PluginRunner {
    * @returns {Promise<RunResult>}
    */
   async run(plugins, schema) {
+    if (!Array.isArray(plugins)) {
+      throw new TypeError("PluginRunner.run: 'plugins' must be an array");
+    }
+    if (schema == null) {
+      throw new TypeError("PluginRunner.run: 'schema' is required");
+    }
+
     const runId = _generateRunId();
     const results = [];
     let totalArtifacts = 0;
 
+    // Early return for empty plugins array — consistent regardless of bestEffort
+    if (plugins.length === 0) {
+      return { results, success: true, totalArtifacts: 0, runId };
+    }
+
     for (const plugin of plugins) {
       const startMs = Date.now();
 
-      // Phase: validate
+      // Phase: validate (reported as 'init' — validation is a precondition of init,
+      // and PluginResult.phase is constrained to 'init'|'plan'|'generate')
       try {
         validatePlugin(plugin);
       } catch (cause) {
@@ -75,10 +108,11 @@ export class PluginRunner {
         ? this._logger.child({ plugin: pluginName })
         : this._logger;
 
+      const frozenConfig = deepFreeze(JSON.parse(JSON.stringify(this._config)));
       const context = Object.freeze({
         logger: childLogger,
         clock: this._clock,
-        config: Object.freeze({ ...this._config }),
+        config: frozenConfig,
         runId,
       });
 
@@ -127,7 +161,10 @@ export class PluginRunner {
 
       // Validate generate() return type
       if (artifacts == null || typeof artifacts !== 'object' || Array.isArray(artifacts)) {
-        const msg = `Plugin "${pluginName}" generate() must return a Record<string, string|Uint8Array> (got ${Array.isArray(artifacts) ? 'Array' : typeof artifacts})`;
+        const typeLabel = artifacts === null ? 'null'
+          : Array.isArray(artifacts) ? 'Array'
+          : typeof artifacts;
+        const msg = `Plugin "${pluginName}" generate() must return a Record<string, string|Uint8Array> (got ${typeLabel})`;
         const cause = new Error(msg);
         cause.code = 'WPLY003';
         const result = _errorResult(plugin, 'generate', cause, startMs);
@@ -181,10 +218,19 @@ function _generateRunId() {
 
 /**
  * Build an error result entry for a plugin.
+ * Safely handles null/undefined plugin (e.g. when validatePlugin rejects null).
  */
 function _errorResult(plugin, phase, cause, startMs) {
+  let name = '<unknown>';
+  try {
+    if (plugin != null && typeof plugin === 'object' && typeof plugin.name === 'string') {
+      name = plugin.name;
+    }
+  } catch {
+    // Getter may throw — keep '<unknown>'
+  }
   return {
-    name: typeof plugin.name === 'string' ? plugin.name : '<unknown>',
+    name,
     status: 'error',
     artifactCount: 0,
     errorCode: cause.code || 'WPLY002',
@@ -198,7 +244,14 @@ function _errorResult(plugin, phase, cause, startMs) {
  * Throw a run error with pluginResults attached for CLI summary.
  */
 function _throwRunError(message, code, plugin, phase, pluginResults, startMs, cause) {
-  const pluginName = typeof plugin.name === 'string' ? plugin.name : '<unknown>';
+  let pluginName = '<unknown>';
+  try {
+    if (plugin != null && typeof plugin === 'object' && typeof plugin.name === 'string') {
+      pluginName = plugin.name;
+    }
+  } catch {
+    // Getter may throw — keep '<unknown>'
+  }
   const err = new Error(`Plugin "${pluginName}" failed in ${phase}: ${message}`);
   err.code = code;
   err.plugin = pluginName;

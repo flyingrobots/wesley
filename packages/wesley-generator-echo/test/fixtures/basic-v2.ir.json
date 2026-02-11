@@ -1,0 +1,85 @@
+{
+  "ir_version": "echo-ir/v2",
+  "codec_id": "cbor-canon-v1",
+  "registry_version": 1,
+  "generated_by": {
+    "tool": "@wesley/generator-echo",
+    "version": "0.1.0"
+  },
+  "schema_sha256": "59e5d47412e882cce17ab8cf9bffd1909b7081675fe04014de778f4a17866714",
+  "schema_hash": "59e5d47412e882cce17ab8cf9bffd1909b7081675fe04014de778f4a17866714",
+  "registry_hash": null,
+  "hash_chain": null,
+  "types": [
+    {
+      "name": "Theme",
+      "kind": "ENUM",
+      "type_id": "Theme",
+      "layout_hash": null,
+      "values": [
+        "LIGHT",
+        "DARK",
+        "SYSTEM"
+      ]
+    },
+    {
+      "name": "AppState",
+      "kind": "OBJECT",
+      "type_id": "AppState",
+      "layout_hash": null,
+      "fields": [
+        {
+          "name": "theme",
+          "type": "Theme",
+          "required": true,
+          "list": false,
+          "join": null
+        },
+        {
+          "name": "navOpen",
+          "type": "Boolean",
+          "required": true,
+          "list": false,
+          "join": null
+        },
+        {
+          "name": "routePath",
+          "type": "String",
+          "required": true,
+          "list": false,
+          "join": null
+        }
+      ]
+    }
+  ],
+  "ops": [
+    {
+      "kind": "QUERY",
+      "name": "appState",
+      "op_id": 190543078,
+      "args": [],
+      "result_type": "AppState"
+    },
+    {
+      "kind": "MUTATION",
+      "name": "setTheme",
+      "op_id": 1822649880,
+      "args": [
+        {
+          "name": "mode",
+          "type": "Theme",
+          "required": true,
+          "list": false
+        }
+      ],
+      "result_type": "AppState"
+    },
+    {
+      "kind": "MUTATION",
+      "name": "toggleNav",
+      "op_id": 3272403183,
+      "args": [],
+      "result_type": "AppState"
+    }
+  ]
+}

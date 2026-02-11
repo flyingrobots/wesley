@@ -206,6 +206,7 @@ As an Echo auditor, I need to trace a chain of hashes from the original SDL thro
 **Requirements**
 
 - Every generator output bundle includes a `hash_chain` object:
+
   ```json
   {
     "hash_chain": {
@@ -217,6 +218,7 @@ As an Echo auditor, I need to trace a chain of hashes from the original SDL thro
     }
   }
   ```
+
 - `sdl_hash` is the raw input hash (before canonicalization) — useful for detecting whitespace-only changes
 - Each hash in the chain is independently verifiable: given the artifact at that stage, recomputing its hash must match
 - The chain is metadata only — it does not affect the generated code
@@ -270,7 +272,7 @@ Each stage's hash input MUST be precisely defined. No undefined bytes. Ever.
 - [ ] Verification script/test that re-hashes each stage and asserts match
 - [ ] Documented in IR spec
 
-**Blocking:** E2a.3 (layout_hash builds on this chain)
+**Blocking:** E1.5 (echo-ir/v2), E2a.3 (layout_hash builds on this chain)
 **Blocked by:** E1.1, E1.2, E1.3
 
 ---
@@ -426,12 +428,14 @@ As a developer, I can run `wesley diff old.graphql new.graphql` to see what chan
   - `--breaking-only`: filter to show only breaking changes
   - `--exit-code`: exit with code 1 if any breaking changes detected (for CI gates)
 - Human-readable output format:
-  ```
+
+  ```text
   BREAKING  Removed type: UserProfile
   BREAKING  Removed field: Query.getUser
   safe      Added field: Query.listUsers (optional)
   safe      Added type: UserListItem
   ```
+
 - Machine-readable output: the `SchemaDelta` JSON from E1.6
 
 **Acceptance Criteria**

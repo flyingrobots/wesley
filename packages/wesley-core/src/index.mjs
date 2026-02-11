@@ -6,6 +6,11 @@
 // Domain Models
 export { Schema, Table, Field } from './domain/Schema.mjs';
 export { DirectiveProcessor } from './domain/Directives.mjs';
+export { canonicalize } from './domain/canonicalize.mjs';
+export { schemaHash } from './domain/schemaHash.mjs';
+export { registryHash, canonicalizeJSON } from './domain/registryHash.mjs';
+export { computeHashChain, computeSdlHash, computeIrHash, computeBundleHash } from './domain/hashChain.mjs';
+export { computeDelta } from './domain/schemaDelta.mjs';
 
 // Domain Events
 export * from './domain/Events.mjs';
@@ -36,6 +41,9 @@ export { GenerationPipeline } from './application/GenerationPipeline.mjs';
 export { EvidenceMap } from './application/EvidenceMap.mjs';
 export { ScoringEngine } from './application/Scoring.mjs';
 export { PluginRunner } from './application/PluginRunner.mjs';
+export { ArtifactWriter } from './application/ArtifactWriter.mjs';
+export { discoverPlugins } from './application/PluginDiscovery.mjs';
+export { validateConfig, KNOWN_EXPERIMENTAL_FLAGS } from './application/ConfigValidator.mjs';
 
 // Safety Components (Wave 3)
 export { 
@@ -67,5 +75,9 @@ export { FileSystemPort } from './ports/fs.mjs';
 export { LoggerPort } from './ports/Logger.mjs';
 export { ClockPort, SystemClock, FakeClock, systemClock } from './ports/clock.mjs';
 export { GeneratorPlugin, validatePlugin, validatePlan, SUPPORTED_API_VERSIONS } from './ports/GeneratorPlugin.mjs';
+export { ArtifactWriterPort, detectConflicts } from './ports/ArtifactWriter.mjs';
+
+// Testing helpers
+export { testGenerator, testGeneratorPlan, expectArtifact } from './testing/testGenerator.mjs';
 
 // Note: Compiler services moved to host-node adapters per ENSIGN reorganization

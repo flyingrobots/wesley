@@ -35,7 +35,7 @@ describe('generateEcho determinism', () => {
     const second = await run();
 
     expect(first).toEqual(second);
-    expect(first.ir_version).toBe('echo-ir/v1');
+    expect(first.ir_version).toBe('echo-ir/v2');
     expect(typeof first.schema_sha256).toBe('string');
     expect(first.schema_sha256.length).toBe(64);
   });

@@ -6,6 +6,7 @@
 
 import { Schema, Table, Field } from './Schema.mjs';
 import { getLocation } from 'graphql';
+import { VALID_JOIN_STRATEGIES, validateJoinDirective } from '../ttd/directives.mjs';
 
 function locSpan(node) {
   try {
@@ -66,6 +67,20 @@ export class GraphQLSchemaBuilder {
     const tableName = node.name.value;
     const tableDirectives = this.extractDirectives(node);
     const tableUid = tableDirectives?.['@uid'] || `tbl:${tableName}`;
+
+    // Reject @wes_join on type definitions (only valid on field definitions)
+    if (tableDirectives['@join']) {
+      const msg = `@wes_join is only valid on field definitions, not on type "${tableName}"`;
+      if (this.evidenceMap) {
+        this.evidenceMap.recordError(tableUid, {
+          message: msg,
+          type: 'invalid_directive_location',
+          context: { directive: '@join', typeName: tableName }
+        });
+      }
+      throw new Error(msg);
+    }
+
     // Record SDL source location evidence when available
     if (this.evidenceMap) {
       const loc = locSpan(node);
@@ -92,7 +107,7 @@ export class GraphQLSchemaBuilder {
       
       // Validate directive arguments
       const directives = this.extractDirectives(fieldNode);
-      this.validateDirectives(directives, fieldUid, fieldName);
+      this.validateDirectives(directives, fieldUid, fieldName, typeInfo);
       
       fields[fieldName] = new Field({
         name: fieldName,
@@ -123,10 +138,30 @@ export class GraphQLSchemaBuilder {
   
   /**
    * Validate directive arguments and record errors
+   * @param {Object} directives - Extracted directives
+   * @param {string} uid - Unique identifier for error tracking
+   * @param {string} fieldName - Field name for error messages
+   * @param {{ base: string, list: boolean, nonNull: boolean, itemNonNull: boolean }} [typeInfo] - Field type info
    */
-  validateDirectives(directives, uid, fieldName) {
+  validateDirectives(directives, uid, fieldName, typeInfo) {
+    // Validate @join directive (always, even without evidenceMap)
+    if (directives['@join']) {
+      const joinMeta = directives['@join'];
+      const error = validateJoinDirective(joinMeta, { list: typeInfo?.list ?? false, base: typeInfo?.base ?? 'unknown' }, fieldName);
+      if (error) {
+        if (this.evidenceMap) {
+          this.evidenceMap.recordError(uid, {
+            message: error,
+            type: 'invalid_directive_arg',
+            context: { directive: '@join', strategy: joinMeta.strategy }
+          });
+        }
+        throw new Error(error);
+      }
+    }
+
     if (!this.evidenceMap) return;
-    
+
     // Validate @foreignKey ref format
     if (directives['@foreignKey']) {
       const ref = directives['@foreignKey'].ref;
@@ -260,31 +295,34 @@ export class GraphQLSchemaBuilder {
    */
   normalizeDirectiveName(name) {
     const aliases = {
+      // Default: keep original if no alias found (placed first so explicit aliases below override)
+      [name]: `@${name}`,
+
       // Primary key aliases
       'pk': '@primaryKey',
       'primaryKey': '@primaryKey',
-      
+
       // Unique aliases
       'uid': '@unique',
       'unique': '@unique',
-      
+
       // Foreign key aliases
       'fk': '@foreignKey',
       'foreignKey': '@foreignKey',
-      
+
       // Index aliases
       'idx': '@index',
       'index': '@index',
-      
+
       // Relation aliases
       'hasOne': '@hasOne',
       'hasMany': '@hasMany',
       'belongsTo': '@belongsTo',
-      
+
       // RLS aliases
       'rls': '@rls',
       'rowLevelSecurity': '@rls',
-      
+
       // Other common aliases
       'table': '@table',
       'default': '@default',
@@ -293,9 +331,10 @@ export class GraphQLSchemaBuilder {
       'grant': '@grant',
       'sensitive': '@sensitive',
       'pii': '@pii',
-      
-      // Keep original if no alias found
-      [name]: `@${name}`
+
+      // Echo lattice/CRDT join
+      'wes_join': '@join',
+      'join': '@join',
     };
     
     // Remove @ if present in the input

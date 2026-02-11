@@ -1,0 +1,66 @@
+{
+  "ir_version": "echo-ir/v2",
+  "codec_id": "cbor-canon-v1",
+  "registry_version": 1,
+  "generated_by": {
+    "tool": "@wesley/generator-echo",
+    "version": "0.1.0"
+  },
+  "schema_sha256": "885564a5fd2e4a8dbb436c26b86b7e1dc3f5e1ef8753ef05d23b2a0bbd43d4d4",
+  "schema_hash": "885564a5fd2e4a8dbb436c26b86b7e1dc3f5e1ef8753ef05d23b2a0bbd43d4d4",
+  "registry_hash": null,
+  "hash_chain": null,
+  "types": [
+    {
+      "name": "GameState",
+      "kind": "OBJECT",
+      "type_id": "GameState",
+      "layout_hash": null,
+      "fields": [
+        {
+          "name": "players",
+          "type": "String",
+          "required": true,
+          "list": true,
+          "join": {
+            "strategy": "union"
+          }
+        },
+        {
+          "name": "maxScore",
+          "type": "Int",
+          "required": true,
+          "list": false,
+          "join": {
+            "strategy": "max"
+          }
+        },
+        {
+          "name": "lastUpdate",
+          "type": "String",
+          "required": false,
+          "list": false,
+          "join": {
+            "strategy": "lww"
+          }
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "required": true,
+          "list": false,
+          "join": null
+        }
+      ]
+    }
+  ],
+  "ops": [
+    {
+      "kind": "QUERY",
+      "name": "game",
+      "op_id": 278791367,
+      "args": [],
+      "result_type": "GameState"
+    }
+  ]
+}

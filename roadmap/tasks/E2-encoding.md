@@ -350,12 +350,14 @@ As the Echo determinism guarantee, I need a checked-in set of golden test vector
       {
         "label": "basic values",
         "value": { "a": 42, "b": "hello" },
-        "raw_le_hex": "2a000000050000006568656c6c6f"
+        "raw_le_hex": "2a00000005000000 68656c6c6f",
+        "_comment": "a=42 as i32 LE, b length=5 as u32 LE, then 'hello' UTF-8 bytes"
       },
       {
-        "label": "optional none",
-        "value": { "a": null, "b": "" },
-        "raw_le_hex": "0000000000"
+        "label": "zero and empty string",
+        "value": { "a": 0, "b": "" },
+        "raw_le_hex": "0000000000000000",
+        "_comment": "a=0 as i32 LE, b length=0 as u32 LE"
       }
     ]
   }

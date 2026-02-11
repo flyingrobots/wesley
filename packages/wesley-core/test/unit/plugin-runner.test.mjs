@@ -364,8 +364,8 @@ test('PluginRunner — best-effort all fail → success=false', async () => {
 });
 
 test('SUPPORTED_API_VERSIONS contains "1"', () => {
-  assert.ok(SUPPORTED_API_VERSIONS.has('1'));
-  assert.equal(SUPPORTED_API_VERSIONS.size, 1);
+  assert.ok(SUPPORTED_API_VERSIONS.includes('1'));
+  assert.equal(SUPPORTED_API_VERSIONS.length, 1);
 });
 
 test('GeneratorPlugin abstract methods throw', () => {
@@ -376,4 +376,89 @@ test('GeneratorPlugin abstract methods throw', () => {
   assert.throws(() => base.generate(), /must be implemented/);
   // init() is no-op by default — does not throw
   assert.doesNotThrow(() => base.init({}));
+});
+
+// ===========================================================================
+// Review feedback — regression tests
+// ===========================================================================
+
+test('SUPPORTED_API_VERSIONS is immutable', () => {
+  assert.throws(() => { SUPPORTED_API_VERSIONS.push('2'); }, TypeError);
+  assert.throws(() => { SUPPORTED_API_VERSIONS[0] = '99'; }, TypeError);
+});
+
+test('validatePlugin — raw GeneratorPlugin instance produces WPLY001 (not uncoded error)', () => {
+  const err = catchError(() => validatePlugin(new GeneratorPlugin()));
+  assert.equal(err.code, 'WPLY001');
+});
+
+test('validatePlugin — rejects non-function init (WPLY001)', () => {
+  const err = catchError(() => validatePlugin(makePlugin({ init: 'not-a-fn' })));
+  assert.equal(err.code, 'WPLY001');
+  assert.match(err.message, /init/);
+});
+
+test('PluginRunner — constructor throws on missing logger', () => {
+  assert.throws(() => new PluginRunner({ clock: fakeClock, config: {} }), /logger/i);
+});
+
+test('PluginRunner — constructor throws on missing clock', () => {
+  assert.throws(() => new PluginRunner({ logger: nullLogger, config: {} }), /clock/i);
+});
+
+test('PluginRunner — constructor throws on missing config', () => {
+  assert.throws(() => new PluginRunner({ logger: nullLogger, clock: fakeClock }), /config/i);
+});
+
+test('PluginRunner — run() throws on non-array plugins', async () => {
+  const runner = makeRunner();
+  const err = await catchReject(() => runner.run('not-array', {}));
+  assert.match(err.message, /array/i);
+});
+
+test('PluginRunner — run() throws on null schema', async () => {
+  const runner = makeRunner();
+  const err = await catchReject(() => runner.run([], null));
+  assert.match(err.message, /schema/i);
+});
+
+test('PluginRunner — empty plugins array returns consistent success regardless of bestEffort', async () => {
+  const normalRunner = makeRunner({ bestEffort: false });
+  const bestEffortRunner = makeRunner({ bestEffort: true });
+  const r1 = await normalRunner.run([], {});
+  const r2 = await bestEffortRunner.run([], {});
+  assert.equal(r1.success, r2.success);
+  assert.equal(r1.success, true);
+});
+
+test('PluginRunner — null generate() return produces error mentioning null, not object', async () => {
+  const runner = makeRunner({ bestEffort: true });
+  const plugin = makePlugin({
+    async generate() { return null; },
+  });
+  const result = await runner.run([plugin], {});
+  assert.equal(result.results[0].status, 'error');
+  assert.equal(result.results[0].errorCode, 'WPLY003');
+  assert.match(result.results[0].errorMessage, /null/);
+});
+
+test('PluginRunner — deep-frozen config prevents nested mutation', async () => {
+  const runner = makeRunner({ config: { nested: { key: 'value' } } });
+  const plugin = makePlugin({
+    async plan(schema, context) {
+      assert.throws(() => { context.config.nested.key = 'hacked'; }, TypeError);
+      return { artifacts: [{ path: 'out.txt' }] };
+    },
+    async generate() { return { 'out.txt': 'ok' }; },
+  });
+  const result = await runner.run([plugin], {});
+  assert.equal(result.success, true);
+});
+
+test('PluginRunner — null plugin in array produces WPLY001, not TypeError', async () => {
+  const runner = makeRunner({ bestEffort: true });
+  const result = await runner.run([null, makePlugin()], {});
+  assert.equal(result.results[0].status, 'error');
+  assert.equal(result.results[0].errorCode, 'WPLY001');
+  assert.equal(result.results[1].status, 'ok');
 });

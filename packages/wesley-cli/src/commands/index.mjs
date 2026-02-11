@@ -13,6 +13,8 @@ export * from './watch.mjs';
 export * from './zod.mjs';
 export * from './blade.mjs';
 export * from './compile-ttd.mjs';
+export * from './doctor.mjs';
+export * from './diff.mjs';
 
 import { CertSignCommand } from './cert-sign.mjs';
 export const StakeCommand = CertSignCommand; // Alias for BLADE

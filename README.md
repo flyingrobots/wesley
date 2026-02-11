@@ -351,6 +351,7 @@ See [`packages/wesley-holmes/README.md`](packages/wesley-holmes/README.md) for t
 - **[Quick Start Guide](docs/guides/quick-start.md)** — Get running in 60 seconds
 - **[Migration Strategies](docs/guides/migrations.md)** — Schema evolution patterns
 - **[Query Operations (QIR)](docs/guides/qir-ops.md)** — Experimental operation pipeline
+- **[Generator Plugins](docs/guides/generator-plugins.md)** — For generator authors: the plugin contract, testing harness, and configuration
 
 ### 🏗️ Architecture
 - **[The Paradigm Shift](docs/architecture/paradigm-shift.md)** — Why GraphQL is your source of truth

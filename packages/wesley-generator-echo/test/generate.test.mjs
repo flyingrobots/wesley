@@ -36,7 +36,7 @@ describe('generateEcho', () => {
     expect(irFile).toBeDefined();
     const ir = JSON.parse(irFile.content);
 
-    expect(ir.ir_version).toBe('echo-ir/v1');
+    expect(ir.ir_version).toBe('echo-ir/v2');
     expect(ir.codec_id).toBe('cbor-canon-v1');
     expect(ir.registry_version).toBe(1);
     expect(ir.ops).toBeDefined();
