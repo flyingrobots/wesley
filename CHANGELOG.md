@@ -31,6 +31,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 #### E3 — @wes_join Directive
 - **E3.1:** `@wes_join(strategy: "union"|"max"|"lww")` directive parsing and validation
+- **E3.2:** Rust `JoinFn` trait codegen — `emitJoinImpls()` generates `impl JoinFn` with per-field lattice calls, `has_join` per-type IR metadata
 - **E3.3:** Join directive documentation (`docs/guides/wes-join-directive.md`)
 
 #### Previous (pre-Echo roadmap)
