@@ -86,13 +86,13 @@ describe('echo-ir/v2 format', () => {
       expect(theme.type_id).toBe('Theme');
     });
 
-    it('emits layout_hash as null for all types', async () => {
+    it('emits layout_hash as 64-char hex for all types', async () => {
       const result = await generateEcho({ sdl: basicSDL });
       const ir = JSON.parse(result.files.find((f) => f.path === 'ir.json').content);
 
       for (const type of ir.types) {
         expect(type).toHaveProperty('layout_hash');
-        expect(type.layout_hash).toBeNull();
+        expect(type.layout_hash).toMatch(/^[0-9a-f]{64}$/);
       }
     });
   });

@@ -15,7 +15,7 @@
       "name": "Theme",
       "kind": "ENUM",
       "type_id": "Theme",
-      "layout_hash": null,
+      "layout_hash": "a7e0be4c0f3502645a4a55b1b7f2ab3d43510b26666b0ba0885278b6c210ed23",
       "values": [
         "LIGHT",
         "DARK",
@@ -26,7 +26,7 @@
       "name": "AppState",
       "kind": "OBJECT",
       "type_id": "AppState",
-      "layout_hash": null,
+      "layout_hash": "b4b8ad1ac2f3555b14a52516e7b4fbcf9ca0e6383b30a6bd4c6b4798006cb4fe",
       "has_join": false,
       "fields": [
         {

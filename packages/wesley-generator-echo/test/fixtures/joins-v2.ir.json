@@ -15,7 +15,7 @@
       "name": "GameState",
       "kind": "OBJECT",
       "type_id": "GameState",
-      "layout_hash": null,
+      "layout_hash": "22055a6777b91f5406e7c05d68179f58b78a1daeebe21237287094980f8a1fb1",
       "has_join": true,
       "fields": [
         {
