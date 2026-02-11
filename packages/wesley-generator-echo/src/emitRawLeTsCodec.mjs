@@ -124,7 +124,7 @@ function emitHelpers(lines) {
   lines.push('function _encodeF32(buf: number[], v: number): void {');
   lines.push('  const tmp = new DataView(new ArrayBuffer(4));');
   lines.push('  if (Number.isNaN(v)) {');
-  lines.push('    tmp.setUint32(0, 0x7FC00000, false);');
+  lines.push('    tmp.setUint32(0, 0x7FC00000, true);');
   lines.push('  } else {');
   lines.push('    tmp.setFloat32(0, v, true);');
   lines.push('  }');
@@ -378,7 +378,7 @@ function decodeCallForType(typeName) {
     case 'ID':
       return '_decodeString';
     default:
-      return `(bytes, off) => decode${typeName}(bytes, off.v).value`;
+      return `(bytes, off) => { const _r = decode${typeName}(bytes, off.v); off.v += _r.bytesRead; return _r.value; }`;
   }
 }
 

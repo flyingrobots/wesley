@@ -169,7 +169,7 @@ function encodeSingleValue(value, typeName, schema) {
   }
   if (schema.enums.has(typeName)) {
     const enumDef = schema.enums.get(typeName);
-    const sorted = [...enumDef.values].sort((a, b) => a.localeCompare(b));
+    const sorted = [...enumDef.values].sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
     return refEncodeEnum(value, sorted);
   }
   if (schema.types.has(typeName)) {
@@ -186,7 +186,7 @@ function encodeObject(value, typeName, schema) {
   const typeDef = schema.types.get(typeName);
   if (!typeDef) throw new Error(`Unknown object type: ${typeName}`);
 
-  const sortedFields = [...typeDef.fields].sort((a, b) => a.name.localeCompare(b.name));
+  const sortedFields = [...typeDef.fields].sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
   const bytes = [];
 
   for (const field of sortedFields) {

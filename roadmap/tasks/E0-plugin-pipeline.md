@@ -37,7 +37,7 @@ As a generator plugin author, I can implement a well-defined `GeneratorPlugin` i
 - [x] The interface is documented with JSDoc including parameter types and return types
 - [x] `apiVersion` field is required on all plugins; core rejects plugins with unsupported versions with a clear error message
 - [x] Plugins return artifacts as pure data (`Record<string, string | Uint8Array>`) — no filesystem I/O in plugins
-- [ ] Core handles all artifact writing, overwrite detection, and atomic commits
+- [x] Core handles all artifact writing, overwrite detection, and atomic commits
 - [x] Validation and plugin errors use machine-readable error codes (e.g., `WPLY001: Plugin validation error`, `WPLY002: Plugin execution error`)
 - [x] Pipeline exit code is non-zero when any enabled plugin fails (default mode)
 - [x] Pipeline exit code is 0 with `--best-effort` when at least one plugin succeeds
@@ -70,7 +70,7 @@ As a generator plugin author, I can implement a well-defined `GeneratorPlugin` i
 - [x] `apiVersion` field is part of the interface; core validates it
 - [x] One existing generator refactored to implement it (pure-return `generate()`, no `emit()` hook)
 - [x] Unit tests for lifecycle hooks (init/plan/generate) pass
-- [ ] Core artifact writer handles output (plugins have no filesystem side effects)
+- [x] Core artifact writer handles output (plugins have no filesystem side effects)
 - [x] Error isolation test passes (one broken plugin, one healthy plugin, healthy plugin completes)
 - [x] Error codes are machine-readable (prefixed, e.g., `WPLY0xx`)
 - [x] No regressions in existing `@wesley/core` tests
@@ -112,13 +112,13 @@ As a Wesley user, I can declare which generator plugins to run in my `wesley.con
 
 **Acceptance Criteria**
 
-- [ ] A `wesley.config.mjs` with two generators listed runs both generators
-- [ ] Setting `enabled: false` skips the plugin entirely (no `init()` call)
-- [ ] A missing package produces an error like `Generator "@wesley/generator-foo" not found. Searched: [paths]`
-- [ ] Plugin-specific config is forwarded to `init(config)` verbatim
-- [ ] `experimental` config block is parsed and validated; unknown flags produce a warning
-- [ ] Experimental flags default to `false` when absent
-- [ ] A warning is logged when an experimental flag is enabled
+- [x] A `wesley.config.mjs` with two generators listed runs both generators
+- [x] Setting `enabled: false` skips the plugin entirely (no `init()` call)
+- [x] A missing package produces an error like `Generator "@wesley/generator-foo" not found. Searched: [paths]`
+- [x] Plugin-specific config is forwarded to `init(config)` verbatim
+- [x] `experimental` config block is parsed and validated; unknown flags produce a warning
+- [x] Experimental flags default to `false` when absent
+- [x] A warning is logged when an experimental flag is enabled
 
 **Scope / Out of Scope**
 
@@ -144,11 +144,11 @@ As a Wesley user, I can declare which generator plugins to run in my `wesley.con
 
 **Definition of Done**
 
-- [ ] `wesley.config.mjs` schema documented and validated (including `experimental` block)
-- [ ] At least two generators configured and running in a single invocation
-- [ ] Error messages for missing/broken plugins are actionable
-- [ ] `experimental` flags are parsed, validated, and forwarded to plugin context
-- [ ] Integration test with real config file passes
+- [x] `wesley.config.mjs` schema documented and validated (including `experimental` block)
+- [x] At least two generators configured and running in a single invocation
+- [x] Error messages for missing/broken plugins are actionable
+- [x] `experimental` flags are parsed, validated, and forwarded to plugin context
+- [x] Integration test with real config file passes
 
 **Blocking:** E1.1, E2a.1, E3.1
 **Blocked by:** E0.1
@@ -174,10 +174,10 @@ As a generator plugin author, I can use a test harness that feeds SDL into my pl
 
 **Acceptance Criteria**
 
-- [ ] `testGenerator()` is importable and callable in a Vitest test file
-- [ ] A minimal test using `testGenerator(echoPlugin, 'type Query { ping: String }')` returns artifacts containing echo-ir JSON
-- [ ] The harness works without any filesystem setup (no temp dirs, no cleanup)
-- [ ] Snapshot tests produce stable output (no timestamps, no random values in artifacts)
+- [x] `testGenerator()` is importable and callable in a Vitest test file
+- [x] A minimal test using `testGenerator(echoPlugin, 'type Query { ping: String }')` returns artifacts containing echo-ir JSON
+- [x] The harness works without any filesystem setup (no temp dirs, no cleanup)
+- [x] Snapshot tests produce stable output (no timestamps, no random values in artifacts)
 
 **Scope / Out of Scope**
 
@@ -203,10 +203,10 @@ As a generator plugin author, I can use a test harness that feeds SDL into my pl
 
 **Definition of Done**
 
-- [ ] `testGenerator()` exported and documented
-- [ ] At least 3 tests using the harness for `generator-echo` pass
-- [ ] Snapshot stability verified (run twice, no diff)
-- [ ] No filesystem side effects during test execution
+- [x] `testGenerator()` exported and documented
+- [x] At least 3 tests using the harness for `generator-echo` pass
+- [x] Snapshot stability verified (run twice, no diff)
+- [x] No filesystem side effects during test execution
 
 **Blocking:** E1.1 (canonical AST tests will use this harness)
 **Blocked by:** E0.1
@@ -233,9 +233,9 @@ As a developer who wants to write a new Wesley generator (e.g., for a new langua
 
 **Acceptance Criteria**
 
-- [ ] A developer unfamiliar with Wesley internals can follow the guide and produce a working no-op generator within 30 minutes
-- [ ] The guide includes a working code example that can be copy-pasted and run
-- [ ] The guide is linked from the root README under a "For Generator Authors" section
+- [x] A developer unfamiliar with Wesley internals can follow the guide and produce a working no-op generator within 30 minutes
+- [x] The guide includes a working code example that can be copy-pasted and run
+- [x] The guide is linked from the root README under a "For Generator Authors" section
 
 **Scope / Out of Scope**
 
@@ -261,9 +261,9 @@ As a developer who wants to write a new Wesley generator (e.g., for a new langua
 
 **Definition of Done**
 
-- [ ] `docs/guides/generator-plugins.md` exists and is linked from README
-- [ ] Code examples in the guide are tested (extracted into a test or verified manually)
-- [ ] At least one reviewer unfamiliar with Wesley can follow the guide successfully
+- [x] `docs/guides/generator-plugins.md` exists and is linked from README
+- [x] Code examples in the guide are tested (extracted into a test or verified manually)
+- [x] At least one reviewer unfamiliar with Wesley can follow the guide successfully
 
 **Blocking:** nothing directly (but enables future contributors)
 **Blocked by:** E0.1, E0.2, E0.3
@@ -303,11 +303,11 @@ As a Wesley user or CI pipeline, I can run `wesley doctor` to verify that my Wes
 
 **Acceptance Criteria**
 
-- [ ] `wesley doctor` runs and produces structured output
-- [ ] Missing plugins are detected and reported with search paths
-- [ ] Invalid config produces a clear error with line/column if possible
-- [ ] `--format json` produces machine-readable diagnostic output
-- [ ] Exit code reflects pass/fail
+- [x] `wesley doctor` runs and produces structured output
+- [x] Missing plugins are detected and reported with search paths
+- [x] Invalid config produces a clear error with line/column if possible
+- [x] `--format json` produces machine-readable diagnostic output
+- [x] Exit code reflects pass/fail
 
 **Expected Complexity**
 
@@ -323,11 +323,11 @@ As a Wesley user or CI pipeline, I can run `wesley doctor` to verify that my Wes
 
 **Definition of Done**
 
-- [ ] `wesley doctor` subcommand works
-- [ ] At least 5 checks implemented (node version, config, plugins, crypto, experimental flags)
-- [ ] JSON output format available
-- [ ] CLI help text documented
-- [ ] Integration test passes
+- [x] `wesley doctor` subcommand works
+- [x] At least 5 checks implemented (node version, config, plugins, crypto, experimental flags)
+- [x] JSON output format available
+- [x] CLI help text documented
+- [x] Integration test passes
 
 **Blocking:** nothing
 **Blocked by:** E0.1, E0.2

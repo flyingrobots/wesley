@@ -16,7 +16,7 @@ Three Wesley packages already serve Echo:
 
 | Package | What it does | Status |
 | --- | --- | --- |
-| `@wesley/generator-echo` | SDL → `echo-ir/v1` JSON IR + ops catalog + host helpers | v0.1.0 (working) |
+| `@wesley/generator-echo` | SDL → `echo-ir/v2` JSON IR + ops catalog + host helpers | v0.1.0 (working) |
 | `@wesley/generator-ttd` | SDL → Rust/TS types, CBOR codecs, registries, manifests | v0.1.0 (working) |
 | `@wesley/generator-vue` | SDL → Vue composables, dispatchers, reactivity wrappers | v0.1.0 (scaffold) |
 
@@ -31,9 +31,9 @@ Echo also has a Rust-side consumer (`echo-wesley-gen` crate) that reads the JSON
 > **Prerequisite for everything below.** Make sure Wesley's plugin architecture is solid enough that Echo generators can evolve independently.
 
 - [x] Stable generator plugin interface (`GeneratorPlugin` contract in `@wesley/core`)
-- [ ] Plugin discovery and registration via `wesley.config.mjs`
-- [ ] Generator-level test harness: feed SDL in, assert output artifacts
-- [ ] Document plugin lifecycle (`init → plan → generate`; runner handles writing) for generator authors
+- [x] Plugin discovery and registration via `wesley.config.mjs`
+- [x] Generator-level test harness: feed SDL in, assert output artifacts
+- [x] Document plugin lifecycle (`init → plan → generate`; runner handles writing) for generator authors
 
 **Echo issue:** N/A (Wesley infra)
 **Depends on:** nothing
@@ -45,14 +45,14 @@ Echo also has a Rust-side consumer (`echo-wesley-gen` crate) that reads the JSON
 
 > Wesley becomes an importable grammar with a canonical AST. Schema hashes get pinned in Echo's receipts/events so old logs can never be silently reinterpreted under new semantics.
 
-- [ ] Canonical AST representation (deterministic serialization of the parsed SDL)
-- [ ] `schema_hash` computation: `SHA-256(canonical_ast_bytes)` → stable identity for a schema version
+- [x] Canonical AST representation (deterministic serialization of the parsed SDL)
+- [x] `schema_hash` computation: `SHA-256(canonical_ast_bytes)` → stable identity for a schema version
   - Wesley currently uses SHA-256; BLAKE3 migration is deferred
-- [ ] `registry_hash` computation: hash of the full generated registry blob
-- [ ] Schema hash chain: `SDL → IR → bundle` — each stage's hash recorded in output metadata
-- [ ] IR version bump (`echo-ir/v2`) to carry hash fields natively
-- [ ] `SchemaDelta` vocabulary: describe what changed between two schema versions (additions, removals, type changes)
-- [ ] Wesley patch dry-run: `wesley diff old.graphql new.graphql` → human-readable + machine-readable delta
+- [x] `registry_hash` computation: hash of the full generated registry blob
+- [x] Schema hash chain: `SDL → IR → bundle` — each stage's hash recorded in output metadata
+- [x] IR version bump (`echo-ir/v2`) to carry hash fields natively
+- [x] `SchemaDelta` vocabulary: describe what changed between two schema versions (additions, removals, type changes)
+- [x] Wesley patch dry-run: `wesley diff old.graphql new.graphql` → human-readable + machine-readable delta
 
 **Echo issues:** [#174](https://github.com/flyingrobots/echo/issues/174), [#193](https://github.com/flyingrobots/echo/issues/193), [#194](https://github.com/flyingrobots/echo/issues/194)
 **Depends on:** E0
@@ -66,36 +66,36 @@ Echo also has a Rust-side consumer (`echo-wesley-gen` crate) that reads the JSON
 
 #### E2a — Canonical Byte Encoders (`raw_le`)
 
-- [ ] `raw_le` encoding plugin: field-by-field encoding with deterministic field order and explicit endianness
-- [ ] Collision-free `Option` encoding (distinguish `Some(0)` from `None` — no sentinel values)
-- [ ] No reliance on host memory layout (no `transmute`, no `repr(Rust)`)
-- [ ] Generate encoders for **Rust** target
-- [ ] Generate encoders for **TypeScript/WASM** target
-- [ ] `layout_hash` computation: hash of the exact codec layout (any encoding change → new hash)
+- [x] `raw_le` encoding plugin: field-by-field encoding with deterministic field order and explicit endianness
+- [x] Collision-free `Option` encoding (distinguish `Some(0)` from `None` — no sentinel values)
+- [x] No reliance on host memory layout (no `transmute`, no `repr(Rust)`)
+- [x] Generate encoders for **Rust** target
+- [x] Generate encoders for **TypeScript/WASM** target
+- [x] `layout_hash` computation: hash of the exact codec layout (any encoding change → new hash)
 
 #### E2b — Schema-Defined Core Types
 
 Wesley schemas must define canonical encodings for Echo's core storage types:
 
-- [ ] `WorldlineTickPatchV*` (patch blobs)
-- [ ] `SnapshotManifest` (segment directory)
-- [ ] `ClaimRecord` (privacy-safe ledger carrier)
-- [ ] `PrivateAtomRefV1` (privacy reference format)
-- [ ] `OpaqueRefV1` (opaque pointer blob)
+- [x] `WorldlineTickPatchV*` (patch blobs)
+- [x] `SnapshotManifest` (segment directory)
+- [x] `ClaimRecord` (privacy-safe ledger carrier)
+- [x] `PrivateAtomRefV1` (privacy reference format)
+- [x] `OpaqueRefV1` (opaque pointer blob)
 
 #### E2c — GuardedView Generation
 
-- [ ] Generate rule-specific view surfaces that expose only declared reads/writes
-- [ ] Build-time footprint enforcement: a rule cannot access fields it didn't declare
-- [ ] Views are artifacts (generated code), not a runtime service
+- [x] Generate rule-specific view surfaces that expose only declared reads/writes
+- [x] Build-time footprint enforcement: a rule cannot access fields it didn't declare
+- [x] Views are artifacts (generated code), not a runtime service
 
 #### E2d — Golden Vectors
 
-- [ ] Golden vector test suite: prove `Rust encode(value) == TypeScript encode(value)` byte-for-byte
-- [ ] Option encoding vectors (`Some(0)` vs `None` vs `Some(None)` for nested options)
-- [ ] Round-trip determinism verification
-- [ ] Cross-platform CI matrix (Linux/macOS/Windows, musl/glibc)
-- [ ] Vector format: checked-in `.json` files with hex-encoded expected bytes
+- [x] Golden vector test suite: prove `Rust encode(value) == TypeScript encode(value)` byte-for-byte
+- [x] Option encoding vectors (`Some(0)` vs `None` vs `Some(None)` for nested options)
+- [x] Round-trip determinism verification
+- [ ] Cross-platform CI matrix (Linux/macOS/Windows, musl/glibc) — deferred
+- [x] Vector format: checked-in `.json` files with hex-encoded expected bytes
 
 **Echo issues:** SPEC-0008 (multi-issue)
 **Depends on:** E1 (needs stable `schema_hash` and `layout_hash`)
@@ -107,13 +107,13 @@ Wesley schemas must define canonical encodings for Echo's core storage types:
 
 > Lattice join strategies declared per-field in the schema, so Echo's merge semantics are schema-driven rather than hard-coded.
 
-- [ ] `@wes_join(strategy: "union")` directive on set-typed fields
-- [ ] `@wes_join(strategy: "max")` directive on scalar fields (cap/max lattice)
-- [ ] `@wes_join(strategy: "lww")` directive for last-writer-wins fields
-- [ ] Directive validation: reject `@wes_join` on incompatible field types
-- [ ] Generate `JoinFn` trait implementations in Rust output
-- [ ] Generate join metadata in JSON IR so `echo-wesley-gen` can produce the Rust `Lattice` impls
-- [ ] Document join semantics and ACI (Associative, Commutative, Idempotent) property requirements
+- [x] `@wes_join(strategy: "union")` directive on set-typed fields
+- [x] `@wes_join(strategy: "max")` directive on scalar fields (cap/max lattice)
+- [x] `@wes_join(strategy: "lww")` directive for last-writer-wins fields
+- [x] Directive validation: reject `@wes_join` on incompatible field types
+- [x] Generate `JoinFn` trait implementations in Rust output
+- [x] Generate join metadata in JSON IR so `echo-wesley-gen` can produce the Rust `Lattice` impls
+- [x] Document join semantics and ACI (Associative, Commutative, Idempotent) property requirements
 
 **Echo milestone:** M2.1 – Lattice Joins
 **Depends on:** E0
@@ -125,10 +125,10 @@ Wesley schemas must define canonical encodings for Echo's core storage types:
 
 > Schema-defined privacy types that participate in hashing and CAS storage.
 
-- [ ] `ClaimRecord` canonicalization (privacy-safe ledger carrier)
-- [ ] `PrivateAtomRefV1` canonical encoding (privacy reference blobs)
-- [ ] `OpaqueRefV1` canonical encoding (opaque pointer blobs)
-- [ ] Privacy-aware golden vectors
+- [x] `ClaimRecord` canonicalization (privacy-safe ledger carrier)
+- [x] `PrivateAtomRefV1` canonical encoding (privacy reference blobs)
+- [x] `OpaqueRefV1` canonical encoding (opaque pointer blobs)
+- [x] Privacy-aware golden vectors
 
 **Depends on:** E2 (needs canonical encoders)
 **Blocks:** nothing currently
@@ -153,7 +153,7 @@ These items are acknowledged but not scheduled:
 Wesley (this repo)                          Echo (~/git/echo)
 ─────────────────                          ──────────────────
 @wesley/generator-echo                     crates/echo-wesley-gen
-  └─ emits echo-ir/v1 JSON  ──────────►     └─ reads JSON IR
+  └─ emits echo-ir/v2 JSON  ──────────►     └─ reads JSON IR
   └─ emits schema_hash      ──────────►     └─ pins in receipts
 
 @wesley/generator-ttd                      crates/echo-ttd (future)

@@ -96,6 +96,7 @@ export class ArtifactWriter {
     for (const result of runResult.results) {
       if (result.status !== 'ok' || !result.artifacts) continue;
       for (const [path, data] of Object.entries(result.artifacts)) {
+        _validateArtifactPath(path, result.name);
         artifactMap.set(path, { data, plugin: result.name });
       }
     }
@@ -168,6 +169,29 @@ export class ArtifactWriter {
     }
 
     return { written, skipped, conflicts: conflictPaths };
+  }
+}
+
+/**
+ * Validate an artifact path to prevent path traversal attacks.
+ * Rejects absolute paths and paths containing '..' segments.
+ * @param {string} relPath
+ * @param {string} pluginName
+ */
+function _validateArtifactPath(relPath, pluginName) {
+  if (relPath.startsWith('/') || relPath.startsWith('\\')) {
+    throw new Error(
+      `Artifact path "${relPath}" from plugin "${pluginName}" is absolute — paths must be relative to outputDir`
+    );
+  }
+  // Normalize and check for '..' traversal segments
+  const segments = relPath.split(/[/\\]/);
+  for (const seg of segments) {
+    if (seg === '..') {
+      throw new Error(
+        `Artifact path "${relPath}" from plugin "${pluginName}" contains path traversal outside outputDir`
+      );
+    }
   }
 }
 

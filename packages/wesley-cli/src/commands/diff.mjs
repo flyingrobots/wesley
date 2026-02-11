@@ -177,7 +177,9 @@ export class DiffCommand extends WesleyCommand {
     let output;
 
     if (format === 'json') {
-      output = JSON.stringify(delta, null, 2);
+      output = options.breakingOnly
+        ? JSON.stringify({ ...delta, changes }, null, 2)
+        : JSON.stringify(delta, null, 2);
     } else if (format === 'summary') {
       output = formatSummary(changes);
     } else {

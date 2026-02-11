@@ -460,6 +460,47 @@ test('ArtifactWriter — works without fs.rm (cleanup is best-effort)', async ()
   assert.deepEqual(result.written, ['a.txt']);
 });
 
+// ===========================================================================
+// ArtifactWriter — path traversal protection
+// ===========================================================================
+
+test('ArtifactWriter — rejects artifact keys with path traversal (..)', async () => {
+  const memFs = createMemoryFs();
+  const writer = new ArtifactWriter({ fs: memFs, logger: nullLogger });
+
+  const runResult = makeRunResult([
+    { name: 'evil', artifacts: { '../../etc/passwd': 'pwned' } },
+  ]);
+
+  const err = await catchReject(() => writer.writeArtifacts(runResult, '/out'));
+  assert.match(err.message, /traversal|outside/i);
+});
+
+test('ArtifactWriter — rejects absolute artifact paths', async () => {
+  const memFs = createMemoryFs();
+  const writer = new ArtifactWriter({ fs: memFs, logger: nullLogger });
+
+  const runResult = makeRunResult([
+    { name: 'evil', artifacts: { '/etc/passwd': 'pwned' } },
+  ]);
+
+  const err = await catchReject(() => writer.writeArtifacts(runResult, '/out'));
+  assert.match(err.message, /traversal|outside|absolute/i);
+});
+
+test('ArtifactWriter — allows legitimate nested paths', async () => {
+  const memFs = createMemoryFs();
+  const writer = new ArtifactWriter({ fs: memFs, logger: nullLogger });
+
+  const runResult = makeRunResult([
+    { name: 'gen', artifacts: { 'sub/dir/file.txt': 'ok' } },
+  ]);
+
+  const result = await writer.writeArtifacts(runResult, '/out');
+  assert.deepEqual(result.written, ['sub/dir/file.txt']);
+  assert.equal(memFs.files.get('/out/sub/dir/file.txt'), 'ok');
+});
+
 test('ArtifactWriter — works without fs.stat (overwrite=false always writes)', async () => {
   const memFs = createMemoryFs();
   delete memFs.stat;

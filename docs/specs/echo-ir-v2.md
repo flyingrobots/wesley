@@ -35,6 +35,7 @@ Each entry in `types` is one of:
 | `kind` | `"OBJECT"` | Type kind | No |
 | `type_id` | `string` | Stable type identity (currently same as `name`) | Yes |
 | `layout_hash` | `string \| null` | Codec layout hash (`null` until E2a) | Yes |
+| `has_join` | `boolean` | Whether any field has a `@wes_join` directive | Yes |
 | `fields` | `Field[]` | Array of field definitions | No |
 
 ### ENUM Type
@@ -58,6 +59,7 @@ Each entry in an OBJECT type's `fields`:
 | `required` | `boolean` | Whether the field is non-null | No |
 | `list` | `boolean` | Whether the field is a list | No |
 | `join` | `{ strategy: string } \| null` | Join strategy from `@wes_join` directive | Yes |
+| `views` | `Array<{ rule: string, access: string }> \| null` | View rules from `@wes_view` directive | Yes |
 
 ### Join Strategies
 
@@ -121,10 +123,11 @@ This ensures consumers can distinguish "not yet computed" from "field does not e
       "kind": "OBJECT",
       "type_id": "AppState",
       "layout_hash": null,
+      "has_join": false,
       "fields": [
-        { "name": "theme", "type": "Theme", "required": true, "list": false, "join": null },
-        { "name": "navOpen", "type": "Boolean", "required": true, "list": false, "join": null },
-        { "name": "routePath", "type": "String", "required": true, "list": false, "join": null }
+        { "name": "theme", "type": "Theme", "required": true, "list": false, "join": null, "views": null },
+        { "name": "navOpen", "type": "Boolean", "required": true, "list": false, "join": null, "views": null },
+        { "name": "routePath", "type": "String", "required": true, "list": false, "join": null, "views": null }
       ]
     }
   ],

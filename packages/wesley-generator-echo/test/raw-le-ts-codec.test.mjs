@@ -337,6 +337,20 @@ describe('TextEncoder for strings', () => {
 });
 
 // ---------------------------------------------------------------------------
+// NaN canonical encoding — must match Rust (little-endian 0x7FC00000)
+// ---------------------------------------------------------------------------
+
+describe('NaN canonical encoding endianness', () => {
+  it('emits NaN bits in little-endian order (matching Rust to_le_bytes)', async () => {
+    const ts = await getTsCodec(allTypesSDL);
+    // The NaN branch must use little-endian (true), same as the normal Float path.
+    // Big-endian (false) would produce [0x7F, 0xC0, 0x00, 0x00] — wrong!
+    // Little-endian (true) produces [0x00, 0x00, 0xC0, 0x7F] — matches Rust.
+    expect(ts).toMatch(/setUint32\(\s*0\s*,\s*0x7FC00000\s*,\s*true\s*\)/);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // DO NOT EDIT header
 // ---------------------------------------------------------------------------
 
@@ -344,6 +358,33 @@ describe('header comment', () => {
   it('includes DO NOT EDIT comment', async () => {
     const ts = await getTsCodec(basicSDL);
     expect(ts).toContain('DO NOT EDIT');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Nested object decode — offset must advance correctly
+// ---------------------------------------------------------------------------
+
+describe('Nested object decode offset advancement', () => {
+  it('generates decode closure that advances offset for nested objects', async () => {
+    const ts = await getTsCodec(nestedSDL);
+    // The decode closure for nested types must advance off.v by bytesRead.
+    // Bug: `(bytes, off) => decode${typeName}(bytes, off.v).value` discards bytesRead.
+    // Fix: must capture result and advance: off.v += res.bytesRead
+    const decodeFn = ts.slice(ts.indexOf('export function decodeOuter'));
+    // The closure should NOT simply return .value without advancing offset
+    expect(decodeFn).not.toMatch(/=>\s*decodeInner\(bytes,\s*off\.v\)\.value/);
+  });
+
+  it('generates list-of-nested decode that advances offset per element', () => {
+    const ts = emitRawLeTsCodec({
+      types: [
+        { name: 'Child', kind: 'OBJECT', fields: [{ name: 'val', type: 'Int', required: true, list: false }] },
+        { name: 'Parent', kind: 'OBJECT', fields: [{ name: 'children', type: 'Child', required: true, list: true }] },
+      ],
+    });
+    // The decode list closure for Child must advance offset
+    expect(ts).not.toMatch(/=>\s*decodeChild\(bytes,\s*off\.v\)\.value[^;]*[,)]/);
   });
 });
 

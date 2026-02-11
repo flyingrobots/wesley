@@ -40,13 +40,13 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 #### E2d — Cross-Platform Determinism
 - **E2d.1:** Golden vector test suite — 44 checked-in JSON vectors across 12 fixture files (Boolean, Int, Float, String, ID, List, Option, Enum, nested objects, multi-field, optional list, privacy types) with reference encoder harness
 
-#### E4 — Privacy Types
-- **E4.1:** Privacy type canonical encoding verification — 28 tests for `ClaimRecord`, `PrivateAtomRefV1`, `OpaqueRefV1` round-trip encoding, Rust codegen field order, optional field handling
-
 #### E3 — @wes_join Directive
 - **E3.1:** `@wes_join(strategy: "union"|"max"|"lww")` directive parsing and validation
 - **E3.2:** Rust `JoinFn` trait codegen — `emitJoinImpls()` generates `impl JoinFn` with per-field lattice calls, `has_join` per-type IR metadata
 - **E3.3:** Join directive documentation (`docs/guides/wes-join-directive.md`)
+
+#### E4 — Privacy Types
+- **E4.1:** Privacy type canonical encoding verification — 28 tests for `ClaimRecord`, `PrivateAtomRefV1`, `OpaqueRefV1` round-trip encoding, Rust codegen field order, optional field handling
 
 #### Previous (pre-Echo roadmap)
 - Generators: `@wesley/generator-vue` minimal TS type emission (enums + interfaces)
@@ -57,6 +57,13 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Tests: unit + snapshot tests for lowering and emission
 - Docs: `docs/guides/qir-ops.md`; PR template and CODEOWNERS
 - CI: Ubuntu-only CLI matrix; stabilized architecture-boundaries workflow
+
+### Fixed
+- **E2a.2:** TS codec NaN canonicalization used big-endian instead of little-endian — now matches Rust `to_le_bytes`
+- **E2a.2:** TS codec nested object decode closure did not advance offset — caused corrupt state in lists/options
+- **E0.1:** `ArtifactWriter` path traversal vulnerability — artifact keys with `..` or absolute paths are now rejected
+- **E2d.1:** Golden vector reference encoder used `localeCompare` (non-deterministic across platforms) — now uses byte-order comparison
+- **E1.7:** `wesley diff --breaking-only --format json` now respects the breaking-only filter
 
 ### Changed
 - `generator-echo` now emits `echo-ir/v2` (was `echo-ir/v1`)

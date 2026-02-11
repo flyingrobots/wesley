@@ -165,6 +165,8 @@ function mapRustType(field) {
 
 /**
  * Map a GraphQL scalar/type name to Rust type.
+ * Note: Float maps to f32 (not f64) deliberately — SPEC-0008 raw_le wire
+ * format uses 4-byte LE floats, and the generated Rust structs match.
  * @param {string} typeName
  * @returns {string}
  */
