@@ -3,6 +3,7 @@ import { parse, Kind } from 'graphql';
 import { emitOps } from './emitOps.mjs';
 import { emitSchemas } from './emitSchemas.mjs';
 import { emitClient } from './emitClient.mjs';
+import { emitJoinImpls } from './emitJoinImpls.mjs';
 
 const PKG_VERSION = '0.1.0'; // keep simple: avoid package.json import in node CLI
 
@@ -43,14 +44,19 @@ export async function generateEcho({ sdl, ir, mutationIdNamespace = 'Mutation', 
     ops,
   };
 
-  return {
-    files: [
-      { path: 'ir.json', content: JSON.stringify(fullIr, null, 2) },
-      { path: 'ops.generated.ts', content: emitOps(fullIr) },
-      { path: 'schemas.generated.ts', content: emitSchemas(fullIr) },
-      { path: 'client.generated.ts', content: emitClient(fullIr) },
-    ]
-  };
+  const files = [
+    { path: 'ir.json', content: JSON.stringify(fullIr, null, 2) },
+    { path: 'ops.generated.ts', content: emitOps(fullIr) },
+    { path: 'schemas.generated.ts', content: emitSchemas(fullIr) },
+    { path: 'client.generated.ts', content: emitClient(fullIr) },
+  ];
+
+  const joinRust = emitJoinImpls(fullIr);
+  if (joinRust) {
+    files.push({ path: 'join.generated.rs', content: joinRust });
+  }
+
+  return { files };
 }
 
 function buildOpsFromSDL(sdl, mutationNs, queryNs) {
@@ -122,21 +128,26 @@ function parseGraphQLToEchoIR(sdl) {
       // Skip Mutation/Query here; ops catalog carries operation info.
       if (def.name.value === 'Mutation' || def.name.value === 'Query') continue;
 
+      const fields = (def.fields ?? []).map((f) => {
+        const { typeName, required, list } = unwrapType(f.type);
+        return {
+          name: f.name.value,
+          type: typeName,
+          required,
+          list,
+          join: extractJoinDirective(f),
+        };
+      });
+
+      const hasJoin = fields.some((f) => f.join !== null);
+
       types.push({
         name: def.name.value,
         kind: 'OBJECT',
         type_id: def.name.value,
         layout_hash: null,
-        fields: (def.fields ?? []).map((f) => {
-          const { typeName, required, list } = unwrapType(f.type);
-          return {
-            name: f.name.value,
-            type: typeName,
-            required,
-            list,
-            join: extractJoinDirective(f),
-          };
-        }),
+        has_join: hasJoin,
+        fields,
       });
     }
   }

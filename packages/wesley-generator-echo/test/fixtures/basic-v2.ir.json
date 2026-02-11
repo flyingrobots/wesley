@@ -27,6 +27,7 @@
       "kind": "OBJECT",
       "type_id": "AppState",
       "layout_hash": null,
+      "has_join": false,
       "fields": [
         {
           "name": "theme",

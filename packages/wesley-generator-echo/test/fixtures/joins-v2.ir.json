@@ -16,6 +16,7 @@
       "kind": "OBJECT",
       "type_id": "GameState",
       "layout_hash": null,
+      "has_join": true,
       "fields": [
         {
           "name": "players",

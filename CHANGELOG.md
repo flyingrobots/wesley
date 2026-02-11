@@ -5,22 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
 ## [Unreleased]
-- **E0.1 — Stable GeneratorPlugin Contract** (root node of Echo roadmap):
-  - Core: `GeneratorPlugin` abstract port with `init → plan → generate` lifecycle (`@wesley/core/src/ports/GeneratorPlugin.mjs`)
-  - Core: `PluginRunner` orchestrator with frozen context, sequential execution, error envelopes, best-effort mode (`@wesley/core/src/application/PluginRunner.mjs`)
-  - Core: `validatePlugin()` duck-typing validator and `validatePlan()` plan enforcer
-  - Core: `SUPPORTED_API_VERSIONS` set (currently `["1"]`)
-  - Echo: `EchoPlugin` adapter wrapping `generateEcho()` in the plugin contract (`@wesley/generator-echo/src/EchoPlugin.mjs`)
-  - CLI: WPLY001–WPLY004 error codes mapped to exit code 4
-  - Tests: 31 new unit tests for plugin validation, runner lifecycle, error isolation, frozen context, determinism
-- Generators: implement `@wesley/generator-vue` minimal TS type emission (enums + interfaces) with docs and edge/failure-mode tests.
-- Generators: harden `@wesley/generator-echo` with explicit SDL validation, better failure-mode coverage, and package README.
-- Generators: add tests covering generated ops helpers (`ops.generated.ts`) to validate ops-catalog wiring and determinism.
-- Core (QIR): add `lowerToSQL` for SELECT/JOIN/LATERAL/ORDER BY/LIMIT/OFFSET with null/IN semantics and `jsonb_agg` COALESCE.
-- Core (QIR): add `emitView` and `emitFunction` (RETURNS SETOF jsonb) for deterministic operation wrappers.
-- Tests: unit + snapshot tests for lowering and emission.
-- Docs: new guide docs/guides/qir-ops.md; add PR template and CODEOWNERS.
-- CI: Ubuntu-only CLI matrix to control Actions costs; stabilized architecture-boundaries workflow.
+
+### Added
+
+#### E0 — Plugin Pipeline Stabilization
+- **E0.1:** `GeneratorPlugin` contract with `apiVersion`, error isolation (WPLY001–004), `--best-effort` mode, per-plugin status summary, `PluginRunner` orchestrator with frozen context
+- **E0.1:** `ArtifactWriter` with overwrite detection, conflict reporting, atomic writes via temp staging, dry-run support
+- **E0.2:** Plugin discovery and registration via `wesley.config.mjs` `generators` array (`package`, `config`, `enabled` fields)
+- **E0.2:** `ConfigValidator` with `experimental` flag support (`irV2`, `rawLe`, `join`) and unknown-flag warnings
+- **E0.3:** `testGenerator(plugin, sdl, config?)` test harness with `testGeneratorPlan()` and `expectArtifact()` assertion helpers
+- **E0.4:** Generator plugin authoring guide (`docs/guides/generator-plugins.md`)
+- **E0.5:** `wesley doctor` CLI command — checks Node version, config, plugins, crypto, experimental flags; `--format json`
+
+#### E1 — Boundary Grammar & Schema Hash Pinning
+- **E1.1:** `canonicalize(sdl)` — deterministic AST serialization with lexicographic sorting, `extend type` folding, NFC normalization
+- **E1.2:** `schemaHash(sdl)` — SHA-256 of canonical AST bytes, 64-char lowercase hex
+- **E1.3:** `registryHash(obj)` and `canonicalizeJSON(obj)` — deterministic registry blob hashing
+- **E1.4:** `computeHashChain()` — full provenance: `sdl_hash → schema_hash → ir_hash → registry_hash → bundle_hash`
+- **E1.5:** `echo-ir/v2` format — `schema_hash`, `registry_hash`, `hash_chain`, per-type `type_id`/`layout_hash`, per-field `join`
+- **E1.6:** `computeDelta(oldSDL, newSDL)` — machine-readable schema diff with breaking change detection
+- **E1.7:** `wesley diff` CLI — `--format text|json|summary`, `--breaking-only`, `--exit-code`
+
+#### E2b — Core Type Schemas
+- **E2b.1:** Echo core storage types in Wesley SDL (`schemas/echo-core-types.graphql`): `WorldlineTickPatchV1`, `SnapshotManifest`, `ClaimRecord`, `PrivateAtomRefV1`, `OpaqueRefV1`, `FieldPatch`
+
+#### E3 — @wes_join Directive
+- **E3.1:** `@wes_join(strategy: "union"|"max"|"lww")` directive parsing and validation
+- **E3.3:** Join directive documentation (`docs/guides/wes-join-directive.md`)
+
+#### Previous (pre-Echo roadmap)
+- Generators: `@wesley/generator-vue` minimal TS type emission (enums + interfaces)
+- Generators: hardened `@wesley/generator-echo` with explicit SDL validation and package README
+- Generators: ops helpers tests (`ops.generated.ts`) for ops-catalog wiring
+- Core (QIR): `lowerToSQL` for SELECT/JOIN/LATERAL/ORDER BY/LIMIT/OFFSET
+- Core (QIR): `emitView` and `emitFunction` (RETURNS SETOF jsonb)
+- Tests: unit + snapshot tests for lowering and emission
+- Docs: `docs/guides/qir-ops.md`; PR template and CODEOWNERS
+- CI: Ubuntu-only CLI matrix; stabilized architecture-boundaries workflow
+
+### Changed
+- `generator-echo` now emits `echo-ir/v2` (was `echo-ir/v1`)
+- `schema_sha256` in IR uses canonical AST hash (was raw SDL hash)
 
 ## [0.1.0] - 2025-09-01
 - Initial public repository layout
