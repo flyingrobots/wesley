@@ -1,0 +1,21 @@
+{
+  "schema": "type Inner { x: Int! }\ntype Outer { inner: Inner!, label: String! }\ntype Query { t: Outer! }",
+  "type": "Outer",
+  "vectors": [
+    {
+      "label": "basic",
+      "value": { "inner": { "x": 42 }, "label": "test" },
+      "raw_le_hex": "2a0000000400000074657374"
+    },
+    {
+      "label": "zero-empty",
+      "value": { "inner": { "x": 0 }, "label": "" },
+      "raw_le_hex": "0000000000000000"
+    },
+    {
+      "label": "negative-inner",
+      "value": { "inner": { "x": -1 }, "label": "hi" },
+      "raw_le_hex": "ffffffff020000006869"
+    }
+  ]
+}

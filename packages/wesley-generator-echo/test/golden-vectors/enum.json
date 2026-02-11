@@ -1,0 +1,9 @@
+{
+  "schema": "enum Status { DRAFT ACTIVE ARCHIVED }\ntype EnumTest { value: Status! }\ntype Query { t: EnumTest! }",
+  "type": "EnumTest",
+  "vectors": [
+    { "label": "ACTIVE", "value": { "value": "ACTIVE" }, "raw_le_hex": "00000000" },
+    { "label": "ARCHIVED", "value": { "value": "ARCHIVED" }, "raw_le_hex": "01000000" },
+    { "label": "DRAFT", "value": { "value": "DRAFT" }, "raw_le_hex": "02000000" }
+  ]
+}

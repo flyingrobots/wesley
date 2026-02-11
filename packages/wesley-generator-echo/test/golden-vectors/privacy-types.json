@@ -1,0 +1,110 @@
+{
+  "schema": "type ClaimRecord @wes_table @wes_codec(format: \"cbor\", canonical: true) @wes_version(major: 1, minor: 0) {\n  claim_key: String!\n  scheme_id: String!\n  statement_hash: String!\n  commitment: String!\n  proof_hash: String\n  private_ref: String\n  policy_hash: String!\n  issuer: String!\n}\n\ntype PrivateAtomRefV1 @wes_table @wes_codec(format: \"cbor\", canonical: true) @wes_version(major: 1, minor: 0) {\n  commit: String!\n  policy_hash: String!\n  statement_hash: String!\n  zk_evidence: String\n  opaque_ref: String\n}\n\ntype OpaqueRefV1 @wes_table @wes_codec(format: \"cbor\", canonical: true) @wes_version(major: 1, minor: 0) {\n  vault_id: String!\n  locator: String!\n  commit: String!\n  alg_id: String!\n  policy_hash: String!\n}\n\ntype Query {\n  claim: ClaimRecord!\n  privateRef: PrivateAtomRefV1!\n  opaqueRef: OpaqueRefV1!\n}",
+  "vectors": [
+    {
+      "type": "ClaimRecord",
+      "label": "basic claim with no optionals",
+      "value": {
+        "claim_key": "k1",
+        "commitment": "c1",
+        "issuer": "i1",
+        "policy_hash": "p1",
+        "private_ref": null,
+        "proof_hash": null,
+        "scheme_id": "s1",
+        "statement_hash": "h1"
+      },
+      "raw_le_hex": "020000006b310200000063310200000069310200000070310000020000007331020000006831"
+    },
+    {
+      "type": "ClaimRecord",
+      "label": "claim with optional fields present",
+      "value": {
+        "claim_key": "key",
+        "commitment": "commit",
+        "issuer": "alice",
+        "policy_hash": "phash",
+        "private_ref": "pref",
+        "proof_hash": "proof",
+        "scheme_id": "hash-commit-v1",
+        "statement_hash": "shash"
+      },
+      "raw_le_hex": "030000006b657906000000636f6d6d697405000000616c696365050000007068617368010400000070726566010500000070726f6f660e000000686173682d636f6d6d69742d7631050000007368617368"
+    },
+    {
+      "type": "ClaimRecord",
+      "label": "claim with empty strings edge case",
+      "value": {
+        "claim_key": "",
+        "commitment": "",
+        "issuer": "",
+        "policy_hash": "",
+        "private_ref": "",
+        "proof_hash": "",
+        "scheme_id": "",
+        "statement_hash": ""
+      },
+      "raw_le_hex": "00000000000000000000000000000000010000000001000000000000000000000000"
+    },
+    {
+      "type": "PrivateAtomRefV1",
+      "label": "basic private ref with no optionals",
+      "value": {
+        "commit": "c1",
+        "opaque_ref": null,
+        "policy_hash": "p1",
+        "statement_hash": "h1",
+        "zk_evidence": null
+      },
+      "raw_le_hex": "0200000063310002000000703102000000683100"
+    },
+    {
+      "type": "PrivateAtomRefV1",
+      "label": "private ref with optionals present",
+      "value": {
+        "commit": "c1",
+        "opaque_ref": "vault://loc",
+        "policy_hash": "p1",
+        "statement_hash": "h1",
+        "zk_evidence": "zkproof"
+      },
+      "raw_le_hex": "020000006331010b0000007661756c743a2f2f6c6f6302000000703102000000683101070000007a6b70726f6f66"
+    },
+    {
+      "type": "PrivateAtomRefV1",
+      "label": "private ref round-trip with mixed optionals",
+      "value": {
+        "commit": "sha256:abc",
+        "opaque_ref": null,
+        "policy_hash": "policy-v2",
+        "statement_hash": "stmt-hash-001",
+        "zk_evidence": "snark-v1"
+      },
+      "raw_le_hex": "0a0000007368613235363a6162630009000000706f6c6963792d76320d00000073746d742d686173682d3030310108000000736e61726b2d7631"
+    },
+    {
+      "type": "OpaqueRefV1",
+      "label": "basic opaque ref",
+      "value": {
+        "alg_id": "sha256",
+        "commit": "abc123",
+        "locator": "/path/to/data",
+        "policy_hash": "phash",
+        "vault_id": "vault-1"
+      },
+      "raw_le_hex": "06000000736861323536060000006162633132330d0000002f706174682f746f2f64617461050000007068617368070000007661756c742d31"
+    },
+    {
+      "type": "OpaqueRefV1",
+      "label": "opaque ref with different values",
+      "value": {
+        "alg_id": "blake3",
+        "commit": "deadbeef",
+        "locator": "s3://bucket/key",
+        "policy_hash": "policy-hash-v2",
+        "vault_id": "vault-prod-42"
+      },
+      "raw_le_hex": "06000000626c616b65330800000064656164626565660f00000073333a2f2f6275636b65742f6b65790e000000706f6c6963792d686173682d76320d0000007661756c742d70726f642d3432"
+    }
+  ]
+}

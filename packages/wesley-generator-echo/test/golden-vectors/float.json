@@ -1,0 +1,11 @@
+{
+  "schema": "type FloatTest { value: Float! }\ntype Query { t: FloatTest! }",
+  "type": "FloatTest",
+  "vectors": [
+    { "label": "zero", "value": { "value": 0.0 }, "raw_le_hex": "00000000" },
+    { "label": "one", "value": { "value": 1.0 }, "raw_le_hex": "0000803f" },
+    { "label": "negative-one", "value": { "value": -1.0 }, "raw_le_hex": "000080bf" },
+    { "label": "pi-approx", "value": { "value": 3.140000104904175 }, "raw_le_hex": "c3f54840" },
+    { "label": "nan-canonical", "value": { "value": null, "_nan": true }, "raw_le_hex": "0000c07f" }
+  ]
+}

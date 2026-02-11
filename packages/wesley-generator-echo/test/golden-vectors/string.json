@@ -1,0 +1,9 @@
+{
+  "schema": "type StringTest { value: String! }\ntype Query { t: StringTest! }",
+  "type": "StringTest",
+  "vectors": [
+    { "label": "empty", "value": { "value": "" }, "raw_le_hex": "00000000" },
+    { "label": "hello", "value": { "value": "hello" }, "raw_le_hex": "0500000068656c6c6f" },
+    { "label": "unicode-cafe", "value": { "value": "café" }, "raw_le_hex": "05000000636166c3a9" }
+  ]
+}

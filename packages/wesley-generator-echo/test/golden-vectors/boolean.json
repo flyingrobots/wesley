@@ -1,0 +1,8 @@
+{
+  "schema": "type BoolTest { value: Boolean! }\ntype Query { t: BoolTest! }",
+  "type": "BoolTest",
+  "vectors": [
+    { "label": "true", "value": { "value": true }, "raw_le_hex": "01" },
+    { "label": "false", "value": { "value": false }, "raw_le_hex": "00" }
+  ]
+}
