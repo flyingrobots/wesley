@@ -156,3 +156,5 @@ function unwrapType(typeNode) {
   const typeName = node.name?.value ?? (node.type?.name?.value ?? 'Unknown');
   return { typeName, required, list };
 }
+
+export { EchoPlugin } from './EchoPlugin.mjs';

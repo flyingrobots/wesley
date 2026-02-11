@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
 ## [Unreleased]
+- **E0.1 — Stable GeneratorPlugin Contract** (root node of Echo roadmap):
+  - Core: `GeneratorPlugin` abstract port with `init → plan → generate` lifecycle (`@wesley/core/src/ports/GeneratorPlugin.mjs`)
+  - Core: `PluginRunner` orchestrator with frozen context, sequential execution, error envelopes, best-effort mode (`@wesley/core/src/application/PluginRunner.mjs`)
+  - Core: `validatePlugin()` duck-typing validator and `validatePlan()` plan enforcer
+  - Core: `SUPPORTED_API_VERSIONS` set (currently `["1"]`)
+  - Echo: `EchoPlugin` adapter wrapping `generateEcho()` in the plugin contract (`@wesley/generator-echo/src/EchoPlugin.mjs`)
+  - CLI: WPLY001–WPLY004 error codes mapped to exit code 4
+  - Tests: 31 new unit tests for plugin validation, runner lifecycle, error isolation, frozen context, determinism
 - Generators: implement `@wesley/generator-vue` minimal TS type emission (enums + interfaces) with docs and edge/failure-mode tests.
 - Generators: harden `@wesley/generator-echo` with explicit SDL validation, better failure-mode coverage, and package README.
 - Generators: add tests covering generated ops helpers (`ops.generated.ts`) to validate ops-catalog wiring and determinism.

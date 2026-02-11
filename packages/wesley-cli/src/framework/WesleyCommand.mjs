@@ -286,7 +286,11 @@ export class WesleyCommand {
       'OPS_COMPILE_FAILED': 5,
       'OPS_ALLOW_ERRORS_FORBIDDEN': 2,
       'UNSUPPORTED_OPTION': 2,
-      'INVALID_LOG_FORMAT': 2
+      'INVALID_LOG_FORMAT': 2,
+      'WPLY001': 4,
+      'WPLY002': 4,
+      'WPLY003': 4,
+      'WPLY004': 4
     };
     return codeMap[error.code] || 1;
   }

@@ -4,6 +4,7 @@ This page highlights the immediate focus areas. The living checklist is `go-publ
 
 ## In Flight
 
+- `Echo Plugin Pipeline (E0)` — Stable `GeneratorPlugin` contract, plugin runner, EchoPlugin adapter. E0.1 complete; E0.2–E0.5 next. See [roadmap/](../roadmap/).
 - `QIR Phase C` — `--ops` wiring, op→QIR translator, examples, EXPLAIN JSON snapshots, pgTAP smoke tests ([issues #160](https://github.com/flyingrobots/wesley/issues/160), [#159](https://github.com/flyingrobots/wesley/issues/159))
 - `RLS defaults Phase 2` — Extend generated policies and pgTAP coverage ([issue #116](https://github.com/flyingrobots/wesley/issues/116))
 - `Evidence & HOLMES` — Score refinements, schema hash emission, richer RLS composition ([issues #184](https://github.com/flyingrobots/wesley/issues/184), [#183](https://github.com/flyingrobots/wesley/issues/183))

@@ -35,6 +35,7 @@ export * from './application/UseCases.mjs';
 export { GenerationPipeline } from './application/GenerationPipeline.mjs';
 export { EvidenceMap } from './application/EvidenceMap.mjs';
 export { ScoringEngine } from './application/Scoring.mjs';
+export { PluginRunner } from './application/PluginRunner.mjs';
 
 // Safety Components (Wave 3)
 export { 
@@ -65,5 +66,6 @@ export { FileSystemPort } from './ports/fs.mjs';
 // Fixed case sensitivity: logger.mjs -> Logger.mjs  
 export { LoggerPort } from './ports/Logger.mjs';
 export { ClockPort, SystemClock, FakeClock, systemClock } from './ports/clock.mjs';
+export { GeneratorPlugin, validatePlugin, validatePlan, SUPPORTED_API_VERSIONS } from './ports/GeneratorPlugin.mjs';
 
 // Note: Compiler services moved to host-node adapters per ENSIGN reorganization
