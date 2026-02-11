@@ -34,21 +34,24 @@
           "type": "Theme",
           "required": true,
           "list": false,
-          "join": null
+          "join": null,
+          "views": null
         },
         {
           "name": "navOpen",
           "type": "Boolean",
           "required": true,
           "list": false,
-          "join": null
+          "join": null,
+          "views": null
         },
         {
           "name": "routePath",
           "type": "String",
           "required": true,
           "list": false,
-          "join": null
+          "join": null,
+          "views": null
         }
       ]
     }

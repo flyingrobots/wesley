@@ -25,7 +25,8 @@
           "list": true,
           "join": {
             "strategy": "union"
-          }
+          },
+          "views": null
         },
         {
           "name": "maxScore",
@@ -34,7 +35,8 @@
           "list": false,
           "join": {
             "strategy": "max"
-          }
+          },
+          "views": null
         },
         {
           "name": "lastUpdate",
@@ -43,14 +45,16 @@
           "list": false,
           "join": {
             "strategy": "lww"
-          }
+          },
+          "views": null
         },
         {
           "name": "name",
           "type": "String",
           "required": true,
           "list": false,
-          "join": null
+          "join": null,
+          "views": null
         }
       ]
     }
