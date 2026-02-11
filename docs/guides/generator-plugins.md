@@ -23,12 +23,13 @@ export class HelloPlugin extends GeneratorPlugin {
       artifacts: [
         { path: 'hello.txt', reason: 'Greeting file' },
       ],
+      metadata: { sdlLength: schema.sdl.length },
     };
   }
 
   async generate(plan, context) {
     return {
-      'hello.txt': `Hello from Wesley! Schema has ${schema.sdl.length} chars.`,
+      'hello.txt': `Hello from Wesley! Schema has ${plan.metadata.sdlLength} chars.`,
     };
   }
 }

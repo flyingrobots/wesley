@@ -11,6 +11,7 @@
 import { readFileSync } from 'node:fs';
 import { computeDelta } from '@wesley/core';
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
+import { ExitError } from '../framework/errors.mjs';
 
 // ─── helpers ────────────────────────────────────────────────────────
 
@@ -114,7 +115,7 @@ export class DiffCommand extends WesleyCommand {
     const args = typeof cmd?.args !== 'undefined' ? cmd.args : [];
 
     const oldPath = typeof options === 'string' ? options : args[0];
-    const newPath = args.length >= 2 ? args[1] : (typeof arguments[1] === 'string' ? arguments[1] : args[1]);
+    const newPath = args[1];
 
     // Merge parent (global) options that registerAll merges
     const mergedOpts = { ...realOpts };
@@ -123,7 +124,7 @@ export class DiffCommand extends WesleyCommand {
       return await this._run(oldPath, newPath, mergedOpts);
     } catch (error) {
       if (error.name === 'ExitError') throw error;
-      const { ExitError } = await import('../framework/errors.mjs');
+
       throw new ExitError(error.exitCode ?? 1, error);
     }
   }
@@ -135,7 +136,7 @@ export class DiffCommand extends WesleyCommand {
       const err = new Error('Two schema file paths are required: wesley diff <old-schema> <new-schema>');
       err.code = 'EUSAGE';
       this.ctx.stderr.write(err.message + '\n');
-      const { ExitError } = await import('../framework/errors.mjs');
+
       throw new ExitError(1, err);
     }
 
@@ -147,7 +148,7 @@ export class DiffCommand extends WesleyCommand {
       const err = new Error(`Cannot read old schema: ${oldPath}`);
       err.code = 'ENOENT';
       this.ctx.stderr.write(err.message + '\n');
-      const { ExitError } = await import('../framework/errors.mjs');
+
       throw new ExitError(2, err);
     }
     try {
@@ -156,7 +157,7 @@ export class DiffCommand extends WesleyCommand {
       const err = new Error(`Cannot read new schema: ${newPath}`);
       err.code = 'ENOENT';
       this.ctx.stderr.write(err.message + '\n');
-      const { ExitError } = await import('../framework/errors.mjs');
+
       throw new ExitError(2, err);
     }
 
@@ -193,7 +194,7 @@ export class DiffCommand extends WesleyCommand {
       delta.modified_ops.some((m) => m.breaking);
 
     if (options.exitCode && hasBreaking) {
-      const { ExitError } = await import('../framework/errors.mjs');
+
       throw new ExitError(1);
     }
 

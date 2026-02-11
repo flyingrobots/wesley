@@ -192,4 +192,3 @@ This roadmap complements Wesley's own `ROADMAP-ALPHA.md` (browser playground) an
 | [Task Specs: E2](./tasks/E2-encoding.md) | E2a.1–E2d.1 — Canonical encoding, views, golden vectors |
 | [Task Specs: E3](./tasks/E3-joins.md) | E3.1–E3.3 — @wes_join directive & lattice joins |
 | [Task Specs: E4](./tasks/E4-privacy.md) | E4.1 — Privacy type canonical encodings |
-| [Gantt Chart](./gantt.html) | Interactive D3 visualization of task schedule |
