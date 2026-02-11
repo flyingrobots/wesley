@@ -4,6 +4,8 @@ import { emitOps } from './emitOps.mjs';
 import { emitSchemas } from './emitSchemas.mjs';
 import { emitClient } from './emitClient.mjs';
 import { emitJoinImpls } from './emitJoinImpls.mjs';
+import { emitRawLeCodec } from './emitRawLeCodec.mjs';
+import { buildLayoutDescriptor, computeLayoutHash } from '@wesley/core';
 
 const PKG_VERSION = '0.1.0'; // keep simple: avoid package.json import in node CLI
 
@@ -25,6 +27,17 @@ export async function generateEcho({ sdl, ir, mutationIdNamespace = 'Mutation', 
   }
 
   const baseIr = ir ?? parseGraphQLToEchoIR(sdl);
+
+  // Build a type index for resolving field kinds (e.g. enum fields)
+  const typeIndex = new Map((baseIr.types ?? []).map((t) => [t.name, t]));
+
+  // Compute layout_hash for every type
+  await Promise.all(
+    (baseIr.types ?? []).map(async (t) => {
+      const descriptor = buildLayoutDescriptor(t, typeIndex);
+      t.layout_hash = await computeLayoutHash(descriptor);
+    }),
+  );
 
   const ops = buildOpsFromSDL(sdl, mutationIdNamespace, queryNamespace);
   const sdlHash = sdl ? sha256hex(sdl) : null;
@@ -54,6 +67,11 @@ export async function generateEcho({ sdl, ir, mutationIdNamespace = 'Mutation', 
   const joinRust = emitJoinImpls(fullIr);
   if (joinRust) {
     files.push({ path: 'join.generated.rs', content: joinRust });
+  }
+
+  const codecRust = emitRawLeCodec(fullIr);
+  if (codecRust) {
+    files.push({ path: 'raw_le_codec.generated.rs', content: codecRust });
   }
 
   return { files };
