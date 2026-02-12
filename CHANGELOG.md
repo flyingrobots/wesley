@@ -8,6 +8,19 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+#### Alpha Playground — Browser-Based "Try Wesley"
+- **A:** `/try` route, TryNow page, workspace state, file tree UI, Tiptap-based schema editor with GraphQL highlighting
+- **B:** `compileSchemaInBrowser()` API in `@wesley/host-browser` — regex-based parser, in-memory pipeline, SQL migration generation
+- **C:** PGLite integration — `DbSession` with `applyMigrations`/`reset`/`query` (100-row limit), `FakeDbSession` for tests, `DatabasePanel` with table view and schema inspector
+- **D1.1a:** Centralized error panel for compile, migration, query, and DB init errors
+- **D1.1b:** "Reset Playground" with confirmation modal (resets schemas, DB, compile state)
+- **D2.1b:** `docs/guides/browser-playground.md` architecture guide
+- **D2.2:** CI test step added to `wesley-website.yml` workflow
+- 9 TryNow component tests, 5 PGLite integration tests
+- Fixed `PlaygroundNavbar` crash when tutorial props are absent
+- `wesley-website` bumped to v0.1.0
+- ROADMAP-ALPHA.md marked 343/343 complete (100%)
+
 #### E0 — Plugin Pipeline Stabilization
 - **E0.1:** `GeneratorPlugin` contract with `apiVersion`, error isolation (WPLY001–004), `--best-effort` mode, per-plugin status summary, `PluginRunner` orchestrator with frozen context
 - **E0.1:** `ArtifactWriter` with overwrite detection, conflict reporting, atomic writes via temp staging, dry-run support
