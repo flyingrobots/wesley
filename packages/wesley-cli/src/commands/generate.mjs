@@ -717,11 +717,11 @@ function emitOpArtifacts(compiledOps, targetSchema, logger, pkResolver, { securi
         Mock: true,
         Version: 1
       };
-      outFiles.push({ name: `explain/${baseName}.explain.json`, content: JSON.stringify(explain, null, 2) + '\n' });
+      outFiles.push({ name: `ops/explain/${baseName}.explain.json`, content: JSON.stringify(explain, null, 2) + '\n' });
     }
   }
   deployChunks.push('COMMIT;');
-  outFiles.push({ name: `ops_deploy.sql`, content: deployChunks.join('\n\n') + '\n' });
+  outFiles.push({ name: `ops/ops_deploy.sql`, content: deployChunks.join('\n\n') + '\n' });
   // Emit registry.json next to SQL outputs
   try {
     const registryStr = JSON.stringify({
@@ -729,7 +729,7 @@ function emitOpArtifacts(compiledOps, targetSchema, logger, pkResolver, { securi
       schema: registry.schema,
       ops: registry.ops.sort((a, b) => a.name.localeCompare(b.name))
     }, null, 2) + '\n';
-    outFiles.push({ name: `registry.json`, content: registryStr });
+    outFiles.push({ name: `ops/registry.json`, content: registryStr });
   } catch (e) {
     logger.warn({ error: e?.message }, 'Failed to emit ops registry');
   }

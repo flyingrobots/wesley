@@ -1,5 +1,6 @@
 #!/usr/bin/env bats
 
+load 'bats-plugins/bats-support/load'
 load 'bats-plugins/bats-assert/load'
 load 'bats-plugins/bats-file/load'
 
