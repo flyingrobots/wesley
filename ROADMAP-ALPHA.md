@@ -986,7 +986,7 @@ Polish the experience, ensure graceful failure modes, and document/automate the 
   - [x] Recreate or reset the `DbSession` (drop tables or reinstantiate).
   - [x] Clear compile state (`compileStatus`, `compileResult`).
   - [x] Clear DB console state (`queryText`, `queryResult`, `queryError`).
-- [x] Ensure resetting does **not** require a full page reload.
+- [x] Ensure resetting does **not** require a full-page reload.
 
 **Acceptance Criteria**
 
