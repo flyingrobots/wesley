@@ -57,7 +57,7 @@ Archived here:
 - [Test Plan](TestPlan.md)
 
 Still in place:
-- [Technical Architecture](../milestones/MVP/TechnicalArchitecture.md)
+- [Technical Architecture](../../milestones/MVP/TechnicalArchitecture.md)
 
 Removed (fully executed):
 - UserStories, ImplementationPlan, UXDesign
