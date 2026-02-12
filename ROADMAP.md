@@ -11,9 +11,21 @@
 
 End-to-end `--ops` pipeline: compile GraphQL operations into QIR query plans.
 
+- [x] CLI wiring: `--ops` path to compile and emit ops; write artifacts to `out/ops/`
+- [x] Strict identifier quoting policy + reserved word detection
+- [x] Parameter safety hardening (typed IN/LIKE/ILIKE/CONTAINS)
+- [x] PK resolver for deterministic ORDER BY tie-breakers
+- [x] Transactional ops deployment (`ops_deploy.sql`)
+- [x] `--ops-security`, `--ops-search-path`, `--ops-explain mock` CLI flags
+- [x] Ops registry (versioned, schema-validated) + manifest discovery
+- [x] DISTINCT ON support in QIR lowering
+- [x] Cursor encode/decode helpers for pagination
+- [x] Ambiguous join ref diagnostics
+- [x] JSON schemas: qir, ops-manifest, ops-registry, ir-envelope, plan-report, realm, shipme
+- [x] QIR spec + IR Family spec (Mermaid diagrams) + expanded ops guide
 - [ ] Translator: map GraphQL operations → QIR plans (selections, joins, filters, order, pagination, nested lists)
-- [ ] CLI wiring: `--ops` path to compile and emit ops; write artifacts to `out/examples/ops`
-- [ ] Examples + EXPLAIN JSON snapshots; pgTAP smoke for emitted ops (shape, filters, RLS where relevant)
+- [ ] pgTAP smoke tests for emitted ops (shape, filters, RLS where relevant)
+- [ ] Real EXPLAIN snapshots (branch only has mock mode)
 
 Tracking: [#160](https://github.com/flyingrobots/wesley/issues/160), [#159](https://github.com/flyingrobots/wesley/issues/159)
 
