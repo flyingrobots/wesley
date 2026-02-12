@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://wesley.dev/schemas/ops-manifest.schema.json",
+  "title": "Wesley Ops Manifest",
+  "type": "object",
+  "required": ["include"],
+  "properties": {
+    "include": { "type": "array", "items": { "type": "string" } },
+    "exclude": { "type": "array", "items": { "type": "string" }, "default": [] },
+    "allowEmpty": { "type": "boolean", "default": false },
+    "schema": { "type": ["string", "null"], "description": "Override target SQL schema for emitted ops" }
+  },
+  "additionalProperties": false
+}
+

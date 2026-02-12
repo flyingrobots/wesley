@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Wesley Ops Registry",
+  "type": "object",
+  "required": ["version", "schema", "ops"],
+  "properties": {
+    "version": { "type": "string", "enum": ["1.0.0"] },
+    "schema": { "type": "string", "minLength": 1 },
+    "ops": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "sql", "params", "projection", "files", "sourceFile"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "sql": {
+            "type": "object",
+            "required": ["schema", "function"],
+            "properties": {
+              "schema": { "type": "string", "minLength": 1 },
+              "function": { "type": "string", "minLength": 1 },
+              "view": { "type": ["string", "null"] }
+            },
+            "additionalProperties": false
+          },
+          "params": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "type"],
+              "properties": {
+                "name": { "type": "string", "minLength": 1 },
+                "type": { "type": "string", "minLength": 1 }
+              },
+              "additionalProperties": false
+            }
+          },
+          "projection": {
+            "type": "object",
+            "required": ["star", "items"],
+            "properties": {
+              "star": { "type": "boolean" },
+              "items": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            },
+            "additionalProperties": false
+          },
+          "files": {
+            "type": "object",
+            "required": ["function"],
+            "properties": {
+              "function": { "type": "string", "minLength": 1 },
+              "view": { "type": ["string", "null"] }
+            },
+            "additionalProperties": false
+          },
+          "sourceFile": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
+

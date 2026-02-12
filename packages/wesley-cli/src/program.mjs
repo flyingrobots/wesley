@@ -23,6 +23,7 @@ import { UpCommand } from './commands/up.mjs';
 import { CompileTtdCommand } from './commands/compile-ttd.mjs';
 import { DoctorCommand } from './commands/doctor.mjs';
 import { DiffCommand } from './commands/diff.mjs';
+import { QirValidateCommand } from './commands/qir-validate.mjs';
 
 export async function program(argv, ctx) {
   // Create commands with context (auto-registers them)
@@ -41,6 +42,7 @@ export async function program(argv, ctx) {
   new CompileTtdCommand(ctx);
   new DoctorCommand(ctx);
   new DiffCommand(ctx);
+  new QirValidateCommand(ctx);
 
   // TODO: Add other commands when they're updated
   // new ModelsCommand(ctx);

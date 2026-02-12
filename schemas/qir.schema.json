@@ -1,0 +1,278 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://wesley.dev/schemas/qir.schema.json",
+  "title": "Wesley Query Intermediate Representation (QIR)",
+  "description": "Minimal query plan IR used to compile operations to SQL.",
+  "type": "object",
+  "required": ["root", "projection"],
+  "properties": {
+    "root": { "$ref": "#/definitions/RelationNode" },
+    "projection": { "$ref": "#/definitions/Projection" },
+    "orderBy": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/OrderBy" },
+      "default": []
+    },
+    "limit": { "type": ["integer", "null"] },
+    "offset": { "type": ["integer", "null"] }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "RelationNode": {
+      "oneOf": [
+        { "$ref": "#/definitions/TableNode" },
+        { "$ref": "#/definitions/JoinNode" },
+        { "$ref": "#/definitions/SubqueryNode" },
+        { "$ref": "#/definitions/LateralNode" },
+        { "$ref": "#/definitions/FilterNode" }
+      ]
+    },
+    "TableNode": {
+      "type": "object",
+      "required": ["kind", "table", "alias"],
+      "properties": {
+        "kind": { "const": "Table" },
+        "table": { "type": "string" },
+        "alias": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "JoinNode": {
+      "type": "object",
+      "required": ["kind", "left", "right", "joinType", "on"],
+      "properties": {
+        "kind": { "const": "Join" },
+        "left": { "$ref": "#/definitions/RelationNode" },
+        "right": { "$ref": "#/definitions/RelationNode" },
+        "joinType": { "type": "string", "enum": ["INNER", "LEFT"] },
+        "on": { "$ref": "#/definitions/Predicate" },
+        "alias": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "SubqueryNode": {
+      "type": "object",
+      "required": ["kind", "plan", "alias"],
+      "properties": {
+        "kind": { "const": "Subquery" },
+        "plan": { "$ref": "#/definitions/QueryPlan" },
+        "alias": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "LateralNode": {
+      "type": "object",
+      "required": ["kind", "plan", "alias"],
+      "properties": {
+        "kind": { "const": "Lateral" },
+        "plan": { "$ref": "#/definitions/QueryPlan" },
+        "alias": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "FilterNode": {
+      "type": "object",
+      "required": ["kind", "input", "predicate"],
+      "properties": {
+        "kind": { "const": "Filter" },
+        "input": { "$ref": "#/definitions/RelationNode" },
+        "predicate": { "$ref": "#/definitions/Predicate" },
+        "alias": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "Projection": {
+      "type": "object",
+      "required": ["items"],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/ProjectionItem" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "ProjectionItem": {
+      "type": "object",
+      "required": ["alias", "expr"],
+      "properties": {
+        "alias": { "type": "string" },
+        "expr": { "$ref": "#/definitions/Expr" }
+      },
+      "additionalProperties": false
+    },
+    "Expr": {
+      "oneOf": [
+        { "$ref": "#/definitions/ColumnRef" },
+        { "$ref": "#/definitions/ParamRef" },
+        { "$ref": "#/definitions/Literal" },
+        { "$ref": "#/definitions/FuncCall" },
+        { "$ref": "#/definitions/JsonBuildObject" },
+        { "$ref": "#/definitions/JsonAgg" },
+        { "$ref": "#/definitions/ScalarSubquery" }
+      ]
+    },
+    "ColumnRef": {
+      "type": "object",
+      "required": ["kind", "table", "column"],
+      "properties": {
+        "kind": { "const": "ColumnRef" },
+        "table": { "type": "string" },
+        "column": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "ParamRef": {
+      "type": "object",
+      "required": ["kind", "name"],
+      "properties": {
+        "kind": { "const": "ParamRef" },
+        "name": { "type": "string" },
+        "typeHint": { "type": ["string", "null"] },
+        "special": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "Literal": {
+      "type": "object",
+      "required": ["kind", "value"],
+      "properties": {
+        "kind": { "const": "Literal" },
+        "value": {
+          "oneOf": [
+            { "type": "string" },
+            { "type": "number" },
+            { "type": "boolean" },
+            { "type": "null" },
+            { "type": "array" },
+            { "type": "object" }
+          ]
+        },
+        "type": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "FuncCall": {
+      "type": "object",
+      "required": ["kind", "name", "args"],
+      "properties": {
+        "kind": { "const": "FuncCall" },
+        "name": { "type": "string" },
+        "args": { "type": "array", "items": { "$ref": "#/definitions/Expr" } }
+      },
+      "additionalProperties": false
+    },
+    "ScalarSubquery": {
+      "type": "object",
+      "required": ["kind", "plan"],
+      "properties": {
+        "kind": { "const": "ScalarSubquery" },
+        "plan": { "$ref": "#/definitions/QueryPlan" }
+      },
+      "additionalProperties": false
+    },
+    "JsonBuildObject": {
+      "type": "object",
+      "required": ["kind", "fields"],
+      "properties": {
+        "kind": { "const": "JsonBuildObject" },
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["key", "value"],
+            "properties": {
+              "key": { "type": "string" },
+              "value": { "$ref": "#/definitions/Expr" }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "JsonAgg": {
+      "type": "object",
+      "required": ["kind", "value"],
+      "properties": {
+        "kind": { "const": "JsonAgg" },
+        "value": { "$ref": "#/definitions/Expr" },
+        "orderBy": { "type": "array", "items": { "$ref": "#/definitions/OrderBy" }, "default": [] }
+      },
+      "additionalProperties": false
+    },
+    "Predicate": {
+      "oneOf": [
+        { "$ref": "#/definitions/PredicateCompare" },
+        { "$ref": "#/definitions/PredicateExists" },
+        { "$ref": "#/definitions/PredicateNot" },
+        { "$ref": "#/definitions/PredicateAnd" },
+        { "$ref": "#/definitions/PredicateOr" }
+      ]
+    },
+    "PredicateCompare": {
+      "type": "object",
+      "required": ["kind", "left", "op"],
+      "properties": {
+        "kind": { "const": "Compare" },
+        "left": { "$ref": "#/definitions/Expr" },
+        "op": {
+          "type": "string",
+          "enum": ["eq", "ne", "lt", "lte", "gt", "gte", "like", "ilike", "contains", "in", "isNull", "isNotNull"]
+        },
+        "right": { "anyOf": [ { "$ref": "#/definitions/Expr" }, { "type": "null" } ] }
+      },
+      "additionalProperties": false
+    },
+    "PredicateExists": {
+      "type": "object",
+      "required": ["kind", "subquery"],
+      "properties": {
+        "kind": { "const": "Exists" },
+        "subquery": { "$ref": "#/definitions/QueryPlan" }
+      },
+      "additionalProperties": false
+    },
+    "PredicateNot": {
+      "type": "object",
+      "required": ["kind", "left"],
+      "properties": {
+        "kind": { "const": "Not" },
+        "left": { "$ref": "#/definitions/Predicate" }
+      },
+      "additionalProperties": false
+    },
+    "PredicateAnd": {
+      "type": "object",
+      "required": ["kind", "left", "right"],
+      "properties": {
+        "kind": { "const": "And" },
+        "left": { "$ref": "#/definitions/Predicate" },
+        "right": { "$ref": "#/definitions/Predicate" }
+      },
+      "additionalProperties": false
+    },
+    "PredicateOr": {
+      "type": "object",
+      "required": ["kind", "left", "right"],
+      "properties": {
+        "kind": { "const": "Or" },
+        "left": { "$ref": "#/definitions/Predicate" },
+        "right": { "$ref": "#/definitions/Predicate" }
+      },
+      "additionalProperties": false
+    },
+    "OrderBy": {
+      "type": "object",
+      "required": ["expr"],
+      "properties": {
+        "expr": { "$ref": "#/definitions/Expr" },
+        "direction": { "type": "string", "enum": ["asc", "desc"], "default": "asc" },
+        "nulls": { "type": ["string", "null"], "enum": ["first", "last", null] }
+      },
+      "additionalProperties": false
+    },
+    "QueryPlan": { "$ref": "#" }
+  }
+}
+

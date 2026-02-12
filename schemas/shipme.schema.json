@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://wesley.dev/schemas/shipme.schema.json",
+  "title": "Wesley SHIPME Certificate",
+  "type": "object",
+  "required": ["sha", "timestamp", "realm"],
+  "properties": {
+    "sha": { "type": "string" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "environment": { "type": ["string", "null"] },
+    "scores": { "type": ["object", "null"] },
+    "realm": {
+      "anyOf": [ { "$ref": "https://wesley.dev/schemas/realm.schema.json#" }, { "type": "null" } ]
+    },
+    "signatures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["signer", "keyId", "signature"],
+        "properties": {
+          "signer": { "type": "string" },
+          "keyId": { "type": "string" },
+          "signature": { "type": "string" },
+          "createdAt": { "type": ["string", "null"], "format": "date-time" },
+          "alg": { "type": ["string", "null"] }
+        },
+        "additionalProperties": false
+      },
+      "default": []
+    }
+  },
+  "additionalProperties": true
+}

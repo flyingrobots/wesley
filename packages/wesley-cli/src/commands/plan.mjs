@@ -52,8 +52,28 @@ export class PlanCommand extends WesleyCommand {
     const mapping = buildMapping(plan);
 
     if (options.json) {
-      this.ctx.stdout.write(JSON.stringify({ plan, explain, mapping, radar }, null, 2) + '\n');
-      return { phases: plan.phases.length, steps: explain.steps.length };
+      // Validate JSON against schema to prevent drift
+      try {
+        const { default: Ajv } = await import('ajv');
+        const { default: addFormats } = await import('ajv-formats');
+        const ajv = new Ajv({ strict: false, allErrors: true });
+        addFormats(ajv);
+        const schemaJson = await this.ctx.fs.read((await this.ctx.fs.join(process.env.WESLEY_REPO_ROOT || process.cwd(), 'schemas', 'plan-report.schema.json')));
+        const validate = ajv.compile(JSON.parse(schemaJson));
+        const report = { plan, explain, mapping, radar };
+        const ok = validate(report);
+        if (!ok) {
+          const e = new Error('Plan report failed schema validation');
+          e.code = 'VALIDATION_FAILED';
+          e.meta = validate.errors;
+          throw e;
+        }
+        this.ctx.stdout.write(JSON.stringify(report, null, 2) + '\n');
+        return { phases: plan.phases.length, steps: explain.steps.length };
+      } catch (e) {
+        e.code = e.code || 'VALIDATION_FAILED';
+        throw e;
+      }
     }
 
     if (options.explain) {

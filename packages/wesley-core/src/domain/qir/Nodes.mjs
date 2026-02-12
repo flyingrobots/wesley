@@ -4,12 +4,13 @@
  */
 
 export class QueryPlan {
-  constructor(root, projection, { orderBy = [], limit = null, offset = null } = {}) {
+  constructor(root, projection, { orderBy = [], limit = null, offset = null, distinctOn = [] } = {}) {
     this.root = root; // RelationNode
     this.projection = projection; // Projection
     this.orderBy = orderBy; // OrderBy[]
     this.limit = limit; // number|null
     this.offset = offset; // number|null
+    this.distinctOn = distinctOn; // Expr[]
   }
 }
 
@@ -89,4 +90,3 @@ export class AliasAllocator {
   constructor(prefix = 't') { this.prefix = prefix; this.count = 0; }
   next() { return `${this.prefix}${this.count++}`; }
 }
-

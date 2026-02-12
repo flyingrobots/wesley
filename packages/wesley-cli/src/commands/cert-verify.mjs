@@ -18,6 +18,43 @@ export class CertVerifyCommand extends WesleyCommand {
   async executeCore({ options }) {
     const md = await this.ctx.fs.read(options.in);
     const { json } = extractJsonBlock(md);
+    // Validate SHIPME certificate schema first (drift guard)
+    try {
+      const { default: Ajv } = await import('ajv');
+      const { default: addFormats } = await import('ajv-formats');
+      const ajv = new Ajv({ strict: false, allErrors: true });
+      addFormats(ajv);
+      let root = process.env.WESLEY_REPO_ROOT || process.cwd();
+      let realmSchema, shipmeSchema;
+      try {
+        [realmSchema, shipmeSchema] = await Promise.all([
+          this.ctx.fs.read(await this.ctx.fs.join(root, 'schemas', 'realm.schema.json')),
+          this.ctx.fs.read(await this.ctx.fs.join(root, 'schemas', 'shipme.schema.json'))
+        ]);
+      } catch {
+        // Fallback: resolve relative to this module location
+        const { fileURLToPath } = await import('node:url');
+        const { dirname, resolve: pres } = await import('node:path');
+        const modDir = dirname(fileURLToPath(import.meta.url));
+        root = pres(modDir, '../../../..');
+        [realmSchema, shipmeSchema] = await Promise.all([
+          this.ctx.fs.read(pres(root, 'schemas', 'realm.schema.json')),
+          this.ctx.fs.read(pres(root, 'schemas', 'shipme.schema.json'))
+        ]);
+      }
+      ajv.addSchema(JSON.parse(realmSchema));
+      const validate = ajv.compile(JSON.parse(shipmeSchema));
+      const ok = validate(json);
+      if (!ok) {
+        const e = new Error('Certificate JSON failed schema validation');
+        e.code = 'VALIDATION_FAILED';
+        e.meta = validate.errors;
+        throw e;
+      }
+    } catch (e) {
+      e.code = e.code || 'VALIDATION_FAILED';
+      throw e;
+    }
     const canonical = canonicalize({ ...json, signatures: [] });
     const pubs = options.pub || [];
     let validCount = 0;
