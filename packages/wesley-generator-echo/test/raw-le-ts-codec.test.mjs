@@ -120,7 +120,8 @@ describe('browser-safe output', () => {
 describe('alphabetical field order', () => {
   it('encodes field a before field b in encode function', async () => {
     const ts = await getTsCodec(basicSDL);
-    const encodeBlock = ts.slice(ts.indexOf('export function encodeFoo'));
+    // In-place encoder has the field ordering logic
+    const encodeBlock = ts.slice(ts.indexOf('function _encodeFoo'));
     const aIdx = encodeBlock.indexOf('value.a');
     const bIdx = encodeBlock.indexOf('value.b');
     expect(aIdx).toBeGreaterThan(-1);
@@ -250,11 +251,11 @@ describe('Enum encoding', () => {
 describe('Nested object encoding', () => {
   it('calls the inner type encode function for nested objects', async () => {
     const ts = await getTsCodec(nestedSDL);
-    expect(ts).toContain('encodeInner');
+    expect(ts).toContain('_encodeInner');
     expect(ts).toContain('encodeOuter');
-    // The Outer encode function references the Inner encoder
-    const outerBlock = ts.slice(ts.indexOf('export function encodeOuter'));
-    expect(outerBlock).toContain('encodeInner');
+    // The in-place Outer encoder references the in-place Inner encoder
+    const outerBlock = ts.slice(ts.indexOf('function _encodeOuter'));
+    expect(outerBlock).toContain('_encodeInner');
   });
 });
 

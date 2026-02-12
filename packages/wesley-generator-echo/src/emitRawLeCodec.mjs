@@ -256,7 +256,7 @@ function emitHelpers(w) {
  * Variants are sorted alphabetically; index is u32 LE.
  */
 function emitEnumCodec(w, type) {
-  const sorted = [...type.values].sort((a, b) => a.localeCompare(b));
+  const sorted = [...type.values].sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
 
   // encode
   w.writeLine(`impl ${type.name} {`);
@@ -302,7 +302,7 @@ function emitEnumCodec(w, type) {
  * Fields are sorted alphabetically.
  */
 function emitObjectCodec(w, type) {
-  const fields = [...(type.fields ?? [])].sort((a, b) => a.name.localeCompare(b.name));
+  const fields = [...(type.fields ?? [])].sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
 
   w.writeLine(`impl ${type.name} {`);
   w.indent();

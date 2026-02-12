@@ -63,7 +63,12 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **E2a.2:** TS codec nested object decode closure did not advance offset — caused corrupt state in lists/options
 - **E0.1:** `ArtifactWriter` path traversal vulnerability — artifact keys with `..` or absolute paths are now rejected
 - **E2d.1:** Golden vector reference encoder used `localeCompare` (non-deterministic across platforms) — now uses byte-order comparison
-- **E1.7:** `wesley diff --breaking-only --format json` now respects the breaking-only filter
+- **E1.7:** `wesley diff --breaking-only --format json` now emits only filtered `{ changes }` (no unfiltered delta arrays)
+- **E2a.2:** Replace all `localeCompare` with byte-order comparison across codegen (emitRawLeCodec, emitRawLeTsCodec, emitGuardedViews, index.mjs)
+- **E2a.2:** TS codec nested encode now uses in-place `_encode` helpers — eliminates intermediate `Uint8Array` allocation per nested object
+- **E2d.1:** Golden vector `resolveNanSentinels` now recurses into arrays and array fields
+- **E2d.1:** Golden vector `unwrapType` now throws on missing node name instead of returning `'Unknown'`
+- **E2d.1:** Golden vector test runner now guards against missing `typeName` in fixture files
 
 ### Changed
 - `generator-echo` now emits `echo-ir/v2` (was `echo-ir/v1`)

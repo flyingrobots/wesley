@@ -54,7 +54,7 @@ export function emitRawLeTsCodec(ir) {
 // ---------------------------------------------------------------------------
 
 function emitEnumType(lines, type) {
-  const sorted = [...type.values].sort((a, b) => a.localeCompare(b));
+  const sorted = [...type.values].sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
   lines.push(`export type ${type.name} = ${sorted.map((v) => `'${v}'`).join(' | ')};`);
   lines.push('');
 }
@@ -85,7 +85,7 @@ function tsTypeForField(fieldType, required, list, encodableTypes) {
 }
 
 function emitObjectInterface(lines, type, encodableTypes) {
-  const fields = [...(type.fields ?? [])].sort((a, b) => a.name.localeCompare(b.name));
+  const fields = [...(type.fields ?? [])].sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
   lines.push(`export interface ${type.name} {`);
   for (const field of fields) {
     const tsType = tsTypeForField(field.type, field.required, field.list, encodableTypes);
@@ -238,7 +238,7 @@ function isScalar(typeName) {
  * Variants sorted alphabetically; index is u32 LE.
  */
 function emitEnumCodec(lines, type) {
-  const sorted = [...type.values].sort((a, b) => a.localeCompare(b));
+  const sorted = [...type.values].sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
 
   // encode
   lines.push(`export function encode${type.name}(value: ${type.name}): Uint8Array {`);
@@ -281,16 +281,22 @@ function emitEnumCodec(lines, type) {
  * Fields sorted alphabetically.
  */
 function emitObjectCodec(lines, type) {
-  const fields = [...(type.fields ?? [])].sort((a, b) => a.name.localeCompare(b.name));
+  const fields = [...(type.fields ?? [])].sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
 
-  // encode function
-  lines.push(`export function encode${type.name}(value: ${type.name}): Uint8Array {`);
-  lines.push('  const buf: number[] = [];');
+  // In-place encode — appends directly to a shared buf (avoids intermediate Uint8Array alloc)
+  lines.push(`function _encode${type.name}(buf: number[], value: ${type.name}): void {`);
 
   for (const field of fields) {
     emitFieldEncode(lines, field, `value.${field.name}`);
   }
 
+  lines.push('}');
+  lines.push('');
+
+  // Public encode — returns Uint8Array
+  lines.push(`export function encode${type.name}(value: ${type.name}): Uint8Array {`);
+  lines.push('  const buf: number[] = [];');
+  lines.push(`  _encode${type.name}(buf, value);`);
   lines.push('  return new Uint8Array(buf);');
   lines.push('}');
   lines.push('');
@@ -327,8 +333,8 @@ function encodeCallForScalar(typeName, accessor) {
     case 'ID':
       return `_encodeString(buf, ${accessor});`;
     default:
-      // Nested object — push the bytes from its encode function
-      return `{ const _inner = encode${typeName}(${accessor}); for (let _i = 0; _i < _inner.length; _i++) buf.push(_inner[_i]); }`;
+      // Nested object — encode in-place, no intermediate allocation
+      return `_encode${typeName}(buf, ${accessor});`;
   }
 }
 
@@ -344,7 +350,7 @@ function encodeInnerClosureForType(typeName) {
     case 'ID':
       return '_encodeString';
     default:
-      return `(buf, v) => { const _inner = encode${typeName}(v); for (let _i = 0; _i < _inner.length; _i++) buf.push(_inner[_i]); }`;
+      return `(buf, v) => _encode${typeName}(buf, v)`;
   }
 }
 

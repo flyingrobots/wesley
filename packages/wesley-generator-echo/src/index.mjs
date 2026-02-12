@@ -125,7 +125,7 @@ function buildOpsFromSDL(sdl, mutationNs, queryNs) {
   extract(mutationDef, 'MUTATION', mutationNs);
   extract(queryDef, 'QUERY', queryNs);
 
-  ops.sort((a, b) => a.name.localeCompare(b.name));
+  ops.sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
   return ops;
 }
 

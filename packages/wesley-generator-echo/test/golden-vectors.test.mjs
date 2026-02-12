@@ -120,7 +120,10 @@ function unwrapType(typeNode) {
     }
   }
 
-  const typeName = node.name?.value ?? 'Unknown';
+  if (!node.name?.value) {
+    throw new Error(`unwrapType: reached terminal node without a name (kind=${node.kind})`);
+  }
+  const typeName = node.name.value;
   return { typeName, required, list };
 }
 
@@ -212,7 +215,11 @@ function toHex(bytes) {
 
 function resolveNanSentinels(value, typeName, schema) {
   if (value == null || typeof value !== 'object') return value;
-  if (Array.isArray(value)) return value;
+
+  // Handle arrays — recurse into each element
+  if (Array.isArray(value)) {
+    return value.map((item) => resolveNanSentinels(item, typeName, schema));
+  }
 
   const typeDef = schema.types.get(typeName);
   if (!typeDef) return value;
@@ -228,8 +235,8 @@ function resolveNanSentinels(value, typeName, schema) {
     if (field.type === 'Float' && hasNanFlag && fv == null) {
       resolved[field.name] = NaN;
     }
-    // Recurse into nested object fields
-    else if (schema.types.has(field.type) && fv != null && typeof fv === 'object' && !Array.isArray(fv)) {
+    // Recurse into nested object fields (including arrays of objects)
+    else if (schema.types.has(field.type) && fv != null && typeof fv === 'object') {
       resolved[field.name] = resolveNanSentinels(fv, field.type, schema);
     }
   }
@@ -252,6 +259,7 @@ for (const file of vectorFiles) {
     for (const vec of fixture.vectors) {
       // Support both fixture-level and per-vector type names
       const typeName = vec.type ?? fixture.type;
+      if (!typeName) throw new Error(`Vector "${vec.label}" in ${file} is missing a type name`);
 
       it(vec.label, () => {
         // Resolve NaN sentinels before encoding

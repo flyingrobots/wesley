@@ -167,7 +167,7 @@ As a generator plugin author, I can use a test harness that feeds SDL into my pl
 - The helper:
   - Parses the SDL using Wesley's parser
   - Calls the plugin's full lifecycle (init → plan → generate)
-  - Returns the generated artifacts as an in-memory map (`Record<string, string | Buffer>`)
+  - Returns the generated artifacts as an in-memory map (`Record<string, string | Uint8Array>`)
   - Does NOT write to disk (emit step is skipped or uses a virtual FS)
 - Support snapshot testing: `expect(artifacts).toMatchSnapshot()`
 - Support assertion helpers: `expectArtifact(artifacts, 'output.rs').toContain('pub struct')`

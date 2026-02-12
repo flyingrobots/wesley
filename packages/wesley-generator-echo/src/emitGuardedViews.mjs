@@ -58,13 +58,13 @@ export function emitGuardedViews(ir) {
 
       // Emit ReadView
       if (readFields.length > 0) {
-        const sortedRead = [...readFields].sort((a, b) => a.name.localeCompare(b.name));
+        const sortedRead = [...readFields].sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
         emitReadView(w, type.name, capitalizedRule, sortedRead);
       }
 
       // Emit WriteView
       if (writeFields.length > 0) {
-        const sortedWrite = [...writeFields].sort((a, b) => a.name.localeCompare(b.name));
+        const sortedWrite = [...writeFields].sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
         emitWriteView(w, type.name, capitalizedRule, sortedWrite);
       }
     }
