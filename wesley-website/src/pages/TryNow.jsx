@@ -50,6 +50,7 @@ const initialDbState = {
   tableSchema: [],
   queryText: "SELECT * FROM pg_catalog.pg_tables WHERE schemaname = 'public';",
   queryResult: null,
+  errors: [],
 };
 
 function dbReducer(state, action) {
@@ -68,6 +69,10 @@ function dbReducer(state, action) {
       return { ...state, queryText: action.payload };
     case 'SET_QUERY_RESULT':
       return { ...state, queryResult: action.payload };
+    case 'ADD_ERROR':
+      return { ...state, errors: [...state.errors, action.payload] };
+    case 'CLEAR_ERRORS':
+      return { ...state, errors: [] };
     case 'RESET':
       return {
         ...state,
@@ -76,6 +81,7 @@ function dbReducer(state, action) {
         tableSchema: [],
         queryText: "SELECT * FROM pg_catalog.pg_tables WHERE schemaname = 'public';",
         queryResult: null,
+        errors: [],
       };
     default:
       return state;
@@ -202,12 +208,7 @@ export default function TryNow() {
       } catch (error) {
         if (!cancelled) {
           console.error('Failed to initialize DbSession:', error);
-          notifications.show({
-            title: 'Database Init Failed',
-            message: error.message,
-            color: 'red',
-            icon: <IconX size="1.1rem" />,
-          });
+          dispatchDb({ type: 'ADD_ERROR', payload: { title: 'Database Init Failed', message: error.message } });
         }
       } finally {
         if (!cancelled) dispatchDb({ type: 'SET_LOADING', payload: false });
@@ -274,6 +275,7 @@ export default function TryNow() {
   const handleApplyToDatabase = async () => {
     if (!dbState.session || !compileState.lastSuccess) return;
     try {
+      dispatchDb({ type: 'CLEAR_ERRORS' });
       dispatchDb({ type: 'SET_LOADING', payload: true });
       const migrationsSql = outputFiles.find(f => f.file === 'migrations.sql')?.body;
       if (migrationsSql) {
@@ -283,12 +285,7 @@ export default function TryNow() {
         // For now, we validate and warn the user about this limitation.
         const hasUnmatchedQuotes = (migrationsSql.match(/'/g) || []).length % 2 !== 0;
         if (hasUnmatchedQuotes) {
-          notifications.show({
-            title: 'Migration Warning',
-            message: 'SQL contains unmatched quotes. Migrations with semicolons inside string literals are not supported.',
-            color: 'orange',
-            icon: <IconAlertCircle size="1.1rem" />,
-          });
+          dispatchDb({ type: 'ADD_ERROR', payload: { title: 'Migration Warning', message: 'SQL contains unmatched quotes. Migrations with semicolons inside string literals are not supported.' } });
           dispatchDb({ type: 'SET_LOADING', payload: false });
           return;
         }
@@ -305,12 +302,7 @@ export default function TryNow() {
         icon: <IconCheck size="1.1rem" />,
       });
     } catch (error) {
-      notifications.show({
-        title: 'Migration Failed',
-        message: error.message,
-        color: 'red',
-        icon: <IconX size="1.1rem" />,
-      });
+      dispatchDb({ type: 'ADD_ERROR', payload: { title: 'Migration Failed', message: error.message } });
     } finally {
       dispatchDb({ type: 'SET_LOADING', payload: false });
     }
@@ -321,6 +313,7 @@ export default function TryNow() {
     if (!dbState.session || !sql.trim()) return;
     if (queryOverride) dispatchDb({ type: 'SET_QUERY_TEXT', payload: sql });
 
+    dispatchDb({ type: 'CLEAR_ERRORS' });
     dispatchDb({ type: 'SET_LOADING', payload: true });
     dispatchDb({ type: 'SET_QUERY_RESULT', payload: null });
     try {
@@ -330,12 +323,7 @@ export default function TryNow() {
         await fetchTables(dbState.session);
       }
     } catch (error) {
-      notifications.show({
-        title: 'Query Failed',
-        message: error.message,
-        color: 'red',
-        icon: <IconAlertCircle size="1.1rem" />,
-      });
+      dispatchDb({ type: 'ADD_ERROR', payload: { title: 'Query Failed', message: error.message } });
     } finally {
       dispatchDb({ type: 'SET_LOADING', payload: false });
     }
@@ -367,12 +355,7 @@ export default function TryNow() {
             icon: <IconCheck size="1.1rem" />,
           });
         } catch (error) {
-          notifications.show({
-            title: 'Reset Failed',
-            message: error.message,
-            color: 'red',
-            icon: <IconX size="1.1rem" />,
-          });
+          dispatchDb({ type: 'ADD_ERROR', payload: { title: 'Reset Failed', message: error.message } });
         } finally {
           dispatchDb({ type: 'SET_LOADING', payload: false });
         }
@@ -509,11 +492,16 @@ export default function TryNow() {
         </Group>
       </Box>
 
-      {/* Errors (compile errors only - db errors use notifications) */}
-      {compileState.errors.length > 0 && (
+      {/* Centralized error panel for compile and DB errors */}
+      {(compileState.errors.length > 0 || dbState.errors.length > 0) && (
         <Box className={classes.alert}>
           {compileState.errors.map((err, idx) => (
-            <Alert key={idx} title="Compilation Error" color="red" withCloseButton onClose={() => dispatchCompile({ type: 'RESET' })} mb="xs">
+            <Alert key={`compile-${idx}`} title="Compilation Error" color="red" withCloseButton onClose={() => dispatchCompile({ type: 'RESET' })} mb="xs">
+              {err.message}
+            </Alert>
+          ))}
+          {dbState.errors.map((err, idx) => (
+            <Alert key={`db-${idx}`} title={err.title} color="red" withCloseButton onClose={() => dispatchDb({ type: 'CLEAR_ERRORS' })} mb="xs">
               {err.message}
             </Alert>
           ))}

@@ -12,23 +12,27 @@ import {
 import cx from 'clsx';
 import classes from './PlaygroundNavbar.module.css';
 
-export default function PlaygroundNavbar({ 
-  inputFiles, 
-  outputFiles, 
-  activeFile, 
+const emptyRefs = {};
+
+export default function PlaygroundNavbar({
+  inputFiles,
+  outputFiles,
+  activeFile,
   onSelect,
-  isTutorialActive,
+  isTutorialActive = false,
   tutorialStepId,
   onSelectSidebarItem,
-  tutorialRefs
+  tutorialRefs = emptyRefs
 }) {
+  // Fall back to onSelect if onSelectSidebarItem is not provided
+  const handleSelect = onSelectSidebarItem || onSelect;
   const mainLinks = inputFiles.map((file) => (
     <UnstyledButton 
       key={file.file} 
       className={cx(classes.mainLink, { [classes.mainLinkActive]: activeFile === file.file })}
-      onClick={() => onSelectSidebarItem(file.file)}
+      onClick={() => handleSelect(file.file)}
       disabled={isTutorialActive && tutorialStepId !== 'edit-schema'}
-      ref={tutorialRefs.editor}
+      ref={tutorialRefs.editor || null}
     >
       <div className={classes.mainLinkInner}>
         <IconFile size={20} className={classes.mainLinkIcon} stroke={1.5} />
@@ -40,11 +44,11 @@ export default function PlaygroundNavbar({
   const collectionLinks = outputFiles.map((file) => (
     <a
       href="#"
-      onClick={(event) => { event.preventDefault(); onSelectSidebarItem(file.file); }}
+      onClick={(event) => { event.preventDefault(); handleSelect(file.file); }}
       key={file.file}
       className={cx(classes.collectionLink, { [classes.mainLinkActive]: activeFile === file.file })}
       disabled={isTutorialActive && tutorialStepId !== 'sidebar-migrations'}
-      ref={tutorialRefs['sidebar-migrations']}
+      ref={tutorialRefs['sidebar-migrations'] || null}
     >
       <Box component="span" mr={9} fz={16}>
         {file.file.endsWith('.sql') ? '🐘' : '📄'}
@@ -77,9 +81,9 @@ export default function PlaygroundNavbar({
         <div className={classes.mainLinks}>
           <UnstyledButton 
             className={cx(classes.mainLink, { [classes.mainLinkActive]: activeFile === 'database' })}
-            onClick={() => onSelectSidebarItem('database')}
+            onClick={() => handleSelect('database')}
             disabled={isTutorialActive && tutorialStepId !== 'sidebar-database'}
-            ref={tutorialRefs['sidebar-database']}
+            ref={tutorialRefs['sidebar-database'] || null}
           >
             <div className={classes.mainLinkInner}>
               <IconDatabase size={20} className={classes.mainLinkIcon} stroke={1.5} />

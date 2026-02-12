@@ -83,6 +83,10 @@ export class FakeDbSession {
     if (sql.toLowerCase().includes('select 1')) {
       return { rows: [{ value: 1 }], fields: ['value'] };
     }
+    // Handle information_schema queries (used by fetchTables and table schema inspection)
+    if (sql.includes('information_schema')) {
+      return { rows: [], fields: ['table_name'] };
+    }
     const fromMatch = sql.match(/FROM\s+"?(\w+)"?/i);
     if (fromMatch && fromMatch[1]) {
       const tableName = fromMatch[1];
