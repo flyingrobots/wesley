@@ -71,6 +71,8 @@ function dbReducer(state, action) {
       return { ...state, queryResult: action.payload };
     case 'ADD_ERROR':
       return { ...state, errors: [...state.errors, action.payload] };
+    case 'REMOVE_ERROR':
+      return { ...state, errors: state.errors.filter((_, i) => i !== action.payload) };
     case 'CLEAR_ERRORS':
       return { ...state, errors: [] };
     case 'RESET':
@@ -501,7 +503,7 @@ export default function TryNow() {
             </Alert>
           ))}
           {dbState.errors.map((err, idx) => (
-            <Alert key={`db-${idx}`} title={err.title} color="red" withCloseButton onClose={() => dispatchDb({ type: 'CLEAR_ERRORS' })} mb="xs">
+            <Alert key={`db-${idx}`} title={err.title} color="red" withCloseButton onClose={() => dispatchDb({ type: 'REMOVE_ERROR', payload: idx })} mb="xs">
               {err.message}
             </Alert>
           ))}

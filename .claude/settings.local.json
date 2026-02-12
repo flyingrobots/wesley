@@ -2,10 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(wc:*)",
-      "Bash(node -e:*)",
       "Bash(node:*)",
       "Bash(pnpm test:*)",
-      "Bash(test:*)",
+      "Bash(pnpm --filter:*)",
       "Bash(git checkout:*)",
       "Bash(git add:*)",
       "Bash(git reset:*)",
@@ -13,7 +12,10 @@
       "Bash(git push:*)",
       "Bash(gh pr create:*)",
       "Bash(gh pr view:*)",
-      "Bash(gh api:*)",
+      "Bash(gh pr comment:*)",
+      "Bash(gh api repos:*)",
+      "Bash(gh run:*)",
+      "Bash(gh issue:*)",
       "Bash(python3:*)",
       "WebSearch"
     ]

@@ -79,7 +79,7 @@ export class FakeDbSession {
    * @param {string} sql - The SQL query string.
    * @returns {Promise<QueryResult>}
    */
-  async query(sql) {
+  async query(sql, _params) {
     if (sql.toLowerCase().includes('select 1')) {
       return { rows: [{ value: 1 }], fields: ['value'] };
     }

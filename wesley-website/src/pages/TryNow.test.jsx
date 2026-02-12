@@ -6,8 +6,8 @@ import { Notifications } from '@mantine/notifications'
 import { vi, describe, it, expect, beforeEach } from 'vitest'
 import { FakeDbSession } from '../test/FakeDbSession'
 
-// Mock PGLite — return a FakeDbSession
-const mockSession = new FakeDbSession()
+// Fresh session per test — the vi.mock factory reads this at call-time
+let mockSession
 vi.mock('../db/pglite', () => ({
   createDbSession: vi.fn(() => Promise.resolve(mockSession)),
 }))
@@ -45,9 +45,10 @@ function renderTryNow() {
 }
 
 describe('TryNow', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks()
-    mockSession.reset()
+    vi.restoreAllMocks()
+    mockSession = new FakeDbSession()
     mockCompile.mockReset()
   })
 
@@ -74,12 +75,11 @@ describe('TryNow', () => {
     expect(editor.value).toContain('Order')
   })
 
-  it('shows fallback text when selecting database view', async () => {
+  it('shows database panel when selecting database view', async () => {
     const user = userEvent.setup()
     renderTryNow()
     await screen.findByText('Wesley Playground (Alpha)')
     await user.click(screen.getByText('Database Explorer'))
-    // Database panel should render (it has a SQL input)
     expect(screen.getByLabelText('SQL query input')).toBeInTheDocument()
   })
 
@@ -161,9 +161,8 @@ describe('TryNow', () => {
       errors: [],
     })
 
-    // Make applyMigrations fail
-    const origApply = mockSession.applyMigrations.bind(mockSession)
-    mockSession.applyMigrations = vi.fn().mockRejectedValue(new Error('syntax error at position 1'))
+    // Use vi.spyOn for safe mock restoration
+    vi.spyOn(mockSession, 'applyMigrations').mockRejectedValue(new Error('syntax error at position 1'))
 
     renderTryNow()
     await screen.findByText('Wesley Playground (Alpha)')
@@ -180,8 +179,6 @@ describe('TryNow', () => {
     // Error should appear in the centralized panel (not just a toast)
     expect(await screen.findByText('syntax error at position 1')).toBeInTheDocument()
     expect(screen.getByText('Migration Failed')).toBeInTheDocument()
-
-    mockSession.applyMigrations = origApply
   })
 
   it('clears compile errors on new compile attempt', async () => {

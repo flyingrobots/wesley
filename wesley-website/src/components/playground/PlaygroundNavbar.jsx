@@ -26,13 +26,13 @@ export default function PlaygroundNavbar({
 }) {
   // Fall back to onSelect if onSelectSidebarItem is not provided
   const handleSelect = onSelectSidebarItem || onSelect;
-  const mainLinks = inputFiles.map((file) => (
-    <UnstyledButton 
-      key={file.file} 
+  const mainLinks = inputFiles.map((file, idx) => (
+    <UnstyledButton
+      key={file.file}
       className={cx(classes.mainLink, { [classes.mainLinkActive]: activeFile === file.file })}
       onClick={() => handleSelect(file.file)}
       disabled={isTutorialActive && tutorialStepId !== 'edit-schema'}
-      ref={tutorialRefs.editor || null}
+      ref={idx === 0 ? (tutorialRefs.editor || null) : null}
     >
       <div className={classes.mainLinkInner}>
         <IconFile size={20} className={classes.mainLinkIcon} stroke={1.5} />
@@ -41,14 +41,18 @@ export default function PlaygroundNavbar({
     </UnstyledButton>
   ));
 
-  const collectionLinks = outputFiles.map((file) => (
+  const collectionLinks = outputFiles.map((file, idx) => (
     <a
       href="#"
-      onClick={(event) => { event.preventDefault(); handleSelect(file.file); }}
+      onClick={(event) => {
+        event.preventDefault();
+        if (isTutorialActive && tutorialStepId !== 'sidebar-migrations') return;
+        handleSelect(file.file);
+      }}
       key={file.file}
       className={cx(classes.collectionLink, { [classes.mainLinkActive]: activeFile === file.file })}
-      disabled={isTutorialActive && tutorialStepId !== 'sidebar-migrations'}
-      ref={tutorialRefs['sidebar-migrations'] || null}
+      aria-disabled={isTutorialActive && tutorialStepId !== 'sidebar-migrations'}
+      ref={idx === 0 ? (tutorialRefs['sidebar-migrations'] || null) : null}
     >
       <Box component="span" mr={9} fz={16}>
         {file.file.endsWith('.sql') ? '🐘' : '📄'}

@@ -105,7 +105,7 @@ Create a dedicated `/try` page in `wesley-website` that hosts the playground UI:
   - [x] Add a “Try now” button next to “Get started” / “Docs”.
   - [x] Wire its click handler to call `onNavigate('/try')` using the existing `App` navigation hook.
 - [x] Optionally, update `HeaderSearch` or navbar to include a “Try now” link:
-  - [x] Clicking “Try now” should call `onNavigate('/try')` (no full page reload).
+  - [x] Clicking “Try now” should call `onNavigate('/try')` (no full-page reload).
 - [x] Visually check:
   - [x] “Try now” appears in the hero.
   - [x] Button styling is consistent with existing buttons.
