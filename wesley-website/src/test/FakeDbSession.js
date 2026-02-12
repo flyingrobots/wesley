@@ -79,10 +79,33 @@ export class FakeDbSession {
    * @param {string} sql - The SQL query string.
    * @returns {Promise<QueryResult>}
    */
-  async query(sql) {
+  async query(sql, _params) {
     if (sql.toLowerCase().includes('select 1')) {
       return { rows: [{ value: 1 }], fields: ['value'] };
     }
+    // Handle information_schema.tables queries (used by fetchTables)
+    if (sql.includes('information_schema.tables')) {
+      const rows = [...this.#tableNames].sort().map(n => ({ table_name: n }));
+      return { rows, fields: ['table_name'] };
+    }
+    // Handle information_schema.columns queries (used by table schema inspection)
+    // Stubbed: _params (e.g. [tableName]) is intentionally ignored — we return
+    // empty columns because FakeDbSession does not track column metadata.
+    if (sql.includes('information_schema.columns')) {
+      return { rows: [], fields: ['column_name', 'data_type', 'is_nullable', 'column_default'] };
+    }
+
+    // Handle count queries before generic FROM (count also has FROM, so must come first)
+    const countMatch = sql.match(/select count\(\*\) from\s+"?(\w+)"?/i);
+    if (countMatch && countMatch[1]) {
+      const tableName = countMatch[1];
+      if (!this.#tableNames.includes(tableName)) {
+        throw new Error(`relation "${tableName}" does not exist`);
+      }
+      const data = this.#tableData.get(tableName) || [];
+      return { rows: [{ count: data.length.toString() }], fields: ['count'] };
+    }
+
     const fromMatch = sql.match(/FROM\s+"?(\w+)"?/i);
     if (fromMatch && fromMatch[1]) {
       const tableName = fromMatch[1];
@@ -104,14 +127,6 @@ export class FakeDbSession {
     if (sql.toLowerCase().startsWith('insert')) {
       // For basic insert, we can acknowledge it
       return { rows: [], fields: [] };
-    }
-
-    // Handle count queries for specific tables
-    const countMatch = sql.match(/select count\(\*\) from\s+"?(\w+)"?/i);
-    if (countMatch && countMatch[1]) {
-      const tableName = countMatch[1];
-      const data = this.#tableData.get(tableName) || [];
-      return { rows: [{ count: data.length.toString() }], fields: ['count'] };
     }
 
     throw new Error(`FakeDbSession does not support this query: ${sql}`);

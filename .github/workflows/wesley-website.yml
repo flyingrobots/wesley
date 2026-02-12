@@ -41,6 +41,9 @@ jobs:
       - name: Verify lockfile unchanged
         run: git diff --exit-code -- pnpm-lock.yaml
 
+      - name: Run tests
+        run: pnpm --filter wesley-website test
+
       - name: Build website
         run: pnpm --filter wesley-website run build
 
@@ -50,6 +53,7 @@ jobs:
           path: wesley-website/dist
 
   deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
     environment:

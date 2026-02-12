@@ -42,6 +42,8 @@ type Product {
 const initialOutputFiles = [];
 
 // --- Reducers ---
+let nextErrorId = 0;
+
 const initialDbState = {
   session: null,
   loading: true,
@@ -50,6 +52,7 @@ const initialDbState = {
   tableSchema: [],
   queryText: "SELECT * FROM pg_catalog.pg_tables WHERE schemaname = 'public';",
   queryResult: null,
+  errors: [],
 };
 
 function dbReducer(state, action) {
@@ -68,6 +71,12 @@ function dbReducer(state, action) {
       return { ...state, queryText: action.payload };
     case 'SET_QUERY_RESULT':
       return { ...state, queryResult: action.payload };
+    case 'ADD_ERROR':
+      return { ...state, errors: [...state.errors, { ...action.payload, id: nextErrorId++ }] };
+    case 'REMOVE_ERROR':
+      return { ...state, errors: state.errors.filter(e => e.id !== action.payload) };
+    case 'CLEAR_ERRORS':
+      return { ...state, errors: [] };
     case 'RESET':
       return {
         ...state,
@@ -76,6 +85,7 @@ function dbReducer(state, action) {
         tableSchema: [],
         queryText: "SELECT * FROM pg_catalog.pg_tables WHERE schemaname = 'public';",
         queryResult: null,
+        errors: [],
       };
     default:
       return state;
@@ -95,7 +105,9 @@ function compileReducer(state, action) {
     case 'SUCCESS':
       return { isCompiling: false, lastSuccess: true, errors: [] };
     case 'FAILURE':
-      return { isCompiling: false, lastSuccess: false, errors: action.payload };
+      return { isCompiling: false, lastSuccess: false, errors: action.payload.map(e => ({ ...e, id: nextErrorId++ })) };
+    case 'REMOVE_ERROR':
+      return { ...state, errors: state.errors.filter(e => e.id !== action.payload) };
     case 'RESET':
       return initialCompileState;
     default:
@@ -202,12 +214,7 @@ export default function TryNow() {
       } catch (error) {
         if (!cancelled) {
           console.error('Failed to initialize DbSession:', error);
-          notifications.show({
-            title: 'Database Init Failed',
-            message: error.message,
-            color: 'red',
-            icon: <IconX size="1.1rem" />,
-          });
+          dispatchDb({ type: 'ADD_ERROR', payload: { title: 'Database Init Failed', message: error.message } });
         }
       } finally {
         if (!cancelled) dispatchDb({ type: 'SET_LOADING', payload: false });
@@ -274,28 +281,27 @@ export default function TryNow() {
   const handleApplyToDatabase = async () => {
     if (!dbState.session || !compileState.lastSuccess) return;
     try {
+      dispatchDb({ type: 'CLEAR_ERRORS' });
       dispatchDb({ type: 'SET_LOADING', payload: true });
       const migrationsSql = outputFiles.find(f => f.file === 'migrations.sql')?.body;
-      if (migrationsSql) {
-        // LIMITATION: This naive split on ';' will break SQL containing semicolons
-        // inside string literals (e.g., INSERT INTO t VALUES ('a;b')).
-        // A proper SQL-aware tokenizer would be needed for full support.
-        // For now, we validate and warn the user about this limitation.
-        const hasUnmatchedQuotes = (migrationsSql.match(/'/g) || []).length % 2 !== 0;
-        if (hasUnmatchedQuotes) {
-          notifications.show({
-            title: 'Migration Warning',
-            message: 'SQL contains unmatched quotes. Migrations with semicolons inside string literals are not supported.',
-            color: 'orange',
-            icon: <IconAlertCircle size="1.1rem" />,
-          });
-          dispatchDb({ type: 'SET_LOADING', payload: false });
-          return;
-        }
-
-        const statements = migrationsSql.split(';').map(s => s.trim()).filter(s => s.length > 0);
-        await dbState.session.applyMigrations(statements);
+      if (!migrationsSql) {
+        dispatchDb({ type: 'ADD_ERROR', payload: { title: 'No Migrations', message: 'No migrations.sql file found in compiled output.' } });
+        dispatchDb({ type: 'SET_LOADING', payload: false });
+        return;
       }
+      // LIMITATION: This naive split on ';' will break SQL containing semicolons
+      // inside string literals (e.g., INSERT INTO t VALUES ('a;b')).
+      // A proper SQL-aware tokenizer would be needed for full support.
+      // For now, we validate and warn the user about this limitation.
+      const hasUnmatchedQuotes = (migrationsSql.match(/'/g) || []).length % 2 !== 0;
+      if (hasUnmatchedQuotes) {
+        dispatchDb({ type: 'ADD_ERROR', payload: { title: 'Migration Warning', message: 'SQL contains unmatched quotes. Migrations with semicolons inside string literals are not supported.' } });
+        dispatchDb({ type: 'SET_LOADING', payload: false });
+        return;
+      }
+
+      const statements = migrationsSql.split(';').map(s => s.trim()).filter(s => s.length > 0);
+      await dbState.session.applyMigrations(statements);
       await fetchTables(dbState.session);
       setActiveView('database');
       notifications.show({
@@ -305,12 +311,7 @@ export default function TryNow() {
         icon: <IconCheck size="1.1rem" />,
       });
     } catch (error) {
-      notifications.show({
-        title: 'Migration Failed',
-        message: error.message,
-        color: 'red',
-        icon: <IconX size="1.1rem" />,
-      });
+      dispatchDb({ type: 'ADD_ERROR', payload: { title: 'Migration Failed', message: error.message } });
     } finally {
       dispatchDb({ type: 'SET_LOADING', payload: false });
     }
@@ -321,21 +322,17 @@ export default function TryNow() {
     if (!dbState.session || !sql.trim()) return;
     if (queryOverride) dispatchDb({ type: 'SET_QUERY_TEXT', payload: sql });
 
+    dispatchDb({ type: 'CLEAR_ERRORS' });
     dispatchDb({ type: 'SET_LOADING', payload: true });
     dispatchDb({ type: 'SET_QUERY_RESULT', payload: null });
     try {
       const result = await dbState.session.query(sql);
       dispatchDb({ type: 'SET_QUERY_RESULT', payload: result });
-      if (sql.match(/create|drop|alter/i)) {
+      if (sql.match(/\b(create|drop|alter)\b/i)) {
         await fetchTables(dbState.session);
       }
     } catch (error) {
-      notifications.show({
-        title: 'Query Failed',
-        message: error.message,
-        color: 'red',
-        icon: <IconAlertCircle size="1.1rem" />,
-      });
+      dispatchDb({ type: 'ADD_ERROR', payload: { title: 'Query Failed', message: error.message } });
     } finally {
       dispatchDb({ type: 'SET_LOADING', payload: false });
     }
@@ -367,12 +364,7 @@ export default function TryNow() {
             icon: <IconCheck size="1.1rem" />,
           });
         } catch (error) {
-          notifications.show({
-            title: 'Reset Failed',
-            message: error.message,
-            color: 'red',
-            icon: <IconX size="1.1rem" />,
-          });
+          dispatchDb({ type: 'ADD_ERROR', payload: { title: 'Reset Failed', message: error.message } });
         } finally {
           dispatchDb({ type: 'SET_LOADING', payload: false });
         }
@@ -509,11 +501,16 @@ export default function TryNow() {
         </Group>
       </Box>
 
-      {/* Errors (compile errors only - db errors use notifications) */}
-      {compileState.errors.length > 0 && (
+      {/* Centralized error panel for compile and DB errors */}
+      {(compileState.errors.length > 0 || dbState.errors.length > 0) && (
         <Box className={classes.alert}>
-          {compileState.errors.map((err, idx) => (
-            <Alert key={idx} title="Compilation Error" color="red" withCloseButton onClose={() => dispatchCompile({ type: 'RESET' })} mb="xs">
+          {compileState.errors.map((err) => (
+            <Alert key={`compile-${err.id}`} title="Compilation Error" color="red" withCloseButton onClose={() => dispatchCompile({ type: 'REMOVE_ERROR', payload: err.id })} mb="xs">
+              {err.message}
+            </Alert>
+          ))}
+          {dbState.errors.map((err) => (
+            <Alert key={`db-${err.id}`} title={err.title} color="red" withCloseButton onClose={() => dispatchDb({ type: 'REMOVE_ERROR', payload: err.id })} mb="xs">
               {err.message}
             </Alert>
           ))}
