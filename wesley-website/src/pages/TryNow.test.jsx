@@ -20,8 +20,8 @@ vi.mock('@wesley/host-browser', () => ({
 
 // Mock RichEditor (Tiptap doesn't work in jsdom)
 vi.mock('../components/playground/RichEditor', () => ({
-  default: ({ value, onChange }) => (
-    <textarea data-testid="rich-editor" value={value} onChange={(e) => onChange?.(e.target.value)} />
+  default: ({ value, onChange, readOnly }) => (
+    <textarea data-testid="rich-editor" value={value} readOnly={readOnly} onChange={(e) => onChange?.(e.target.value)} />
   ),
 }))
 
@@ -179,6 +179,39 @@ describe('TryNow', () => {
     // Error should appear in the centralized panel (not just a toast)
     expect(await screen.findByText('syntax error at position 1')).toBeInTheDocument()
     expect(screen.getByText('Migration Failed')).toBeInTheDocument()
+  })
+
+  it('dismisses individual compile errors without removing others', async () => {
+    const user = userEvent.setup()
+
+    // Compile with two errors
+    mockCompile.mockResolvedValue({
+      ok: false,
+      outputFiles: [],
+      tables: 0,
+      warnings: [],
+      errors: [{ message: 'error alpha' }, { message: 'error beta' }],
+    })
+
+    renderTryNow()
+    await screen.findByText('Wesley Playground (Alpha)')
+
+    await user.click(screen.getByRole('button', { name: /run wesley/i }))
+
+    // Both errors visible
+    expect(await screen.findByText('error alpha')).toBeInTheDocument()
+    expect(screen.getByText('error beta')).toBeInTheDocument()
+
+    // Dismiss the first error (click its close button)
+    const alphaAlert = screen.getByText('error alpha').closest('[role="alert"]')
+    const closeButton = alphaAlert.querySelector('button[aria-label="Close"]') || alphaAlert.querySelector('button')
+    await user.click(closeButton)
+
+    // Alpha gone, beta remains
+    await vi.waitFor(() => {
+      expect(screen.queryByText('error alpha')).not.toBeInTheDocument()
+    })
+    expect(screen.getByText('error beta')).toBeInTheDocument()
   })
 
   it('clears compile errors on new compile attempt', async () => {

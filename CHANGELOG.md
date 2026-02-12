@@ -15,8 +15,13 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **D1.1a:** Centralized error panel for compile, migration, query, and DB init errors
 - **D1.1b:** "Reset Playground" with confirmation modal (resets schemas, DB, compile state)
 - **D2.1b:** `docs/guides/browser-playground.md` architecture guide
-- **D2.2:** CI test step added to `wesley-website.yml` workflow
-- 9 TryNow component tests, 5 PGLite integration tests, 4 FakeDbSession regression tests
+- **D2.2:** CI test step added to `wesley-website.yml` workflow; deploy gated to push-to-main only
+- 10 TryNow component tests (incl. individual error dismissal), 5 PGLite integration tests, 4 FakeDbSession regression tests
+- Stable error IDs (monotonic counter) for race-free individual error dismissal
+- Per-error dismiss for compile errors (no longer resets `lastSuccess`)
+- Guard against false "success" when no `migrations.sql` in compiled output
+- DDL detection regex uses word boundaries to avoid false triggers
+- `PlaygroundNavbar` handleSelect fallback to no-op prevents TypeError
 - Fixed `PlaygroundNavbar` crash when tutorial props are absent
 - `wesley-website` bumped to v0.1.0
 - ROADMAP-ALPHA.md marked 343/343 complete (100%)

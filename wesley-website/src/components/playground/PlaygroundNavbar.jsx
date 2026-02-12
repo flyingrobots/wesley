@@ -24,8 +24,8 @@ export default function PlaygroundNavbar({
   onSelectSidebarItem,
   tutorialRefs = emptyRefs
 }) {
-  // Fall back to onSelect if onSelectSidebarItem is not provided
-  const handleSelect = onSelectSidebarItem || onSelect;
+  // Fall back to onSelect if onSelectSidebarItem is not provided; no-op if neither exists
+  const handleSelect = onSelectSidebarItem || onSelect || (() => {});
   const mainLinks = inputFiles.map((file, idx) => (
     <UnstyledButton
       key={file.file}
