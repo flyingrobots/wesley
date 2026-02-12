@@ -45,16 +45,20 @@ flowchart LR
 - Scope slip → Strict MVP boundaries; ship the vertical slice; postpone advanced planning
 
 ## Documents
-- Example: docs/milestones/MVP/Example.md
-- User Stories: docs/milestones/MVP/UserStories.md
-- Implementation Plan: docs/milestones/MVP/ImplementationPlan.md
-- Spec: docs/milestones/MVP/Spec.md
-- DX Spec: docs/milestones/MVP/DX.md
-- PRD: docs/milestones/MVP/PRD.md
-- Functional Spec: docs/milestones/MVP/FunctionalSpec.md
-- Technical Architecture: docs/milestones/MVP/TechnicalArchitecture.md
-- UX Design: docs/milestones/MVP/UXDesign.md
-- API Spec: docs/milestones/MVP/APISpec.md
-- Data Model Spec: docs/milestones/MVP/DataModelSpec.md
-- Test Plan: docs/milestones/MVP/TestPlan.md
+
+Archived here:
+- [Example](Example.md)
+- [Spec](Spec.md)
+- [DX Spec](DX.md)
+- [PRD](PRD.md)
+- [Functional Spec](FunctionalSpec.md)
+- [API Spec](APISpec.md)
+- [Data Model Spec](DataModelSpec.md)
+- [Test Plan](TestPlan.md)
+
+Still in place:
+- [Technical Architecture](../../milestones/MVP/TechnicalArchitecture.md)
+
+Removed (fully executed):
+- UserStories, ImplementationPlan, UXDesign
 
