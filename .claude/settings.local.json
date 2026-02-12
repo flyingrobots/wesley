@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc:*)",
+      "Bash(node -e:*)",
+      "Bash(node:*)",
+      "Bash(pnpm test:*)",
+      "Bash(test:*)",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)",
+      "Bash(git reset:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(gh pr create:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh api:*)",
+      "Bash(python3:*)",
+      "WebSearch"
+    ]
+  }
+}

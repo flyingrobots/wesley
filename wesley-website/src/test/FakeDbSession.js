@@ -83,9 +83,14 @@ export class FakeDbSession {
     if (sql.toLowerCase().includes('select 1')) {
       return { rows: [{ value: 1 }], fields: ['value'] };
     }
-    // Handle information_schema queries (used by fetchTables and table schema inspection)
-    if (sql.includes('information_schema')) {
-      return { rows: [], fields: ['table_name'] };
+    // Handle information_schema.tables queries (used by fetchTables)
+    if (sql.includes('information_schema.tables')) {
+      const rows = [...this.#tableNames].sort().map(n => ({ table_name: n }));
+      return { rows, fields: ['table_name'] };
+    }
+    // Handle information_schema.columns queries (used by table schema inspection)
+    if (sql.includes('information_schema.columns')) {
+      return { rows: [], fields: ['column_name', 'data_type', 'is_nullable', 'column_default'] };
     }
     const fromMatch = sql.match(/FROM\s+"?(\w+)"?/i);
     if (fromMatch && fromMatch[1]) {

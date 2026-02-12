@@ -16,7 +16,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **D1.1b:** "Reset Playground" with confirmation modal (resets schemas, DB, compile state)
 - **D2.1b:** `docs/guides/browser-playground.md` architecture guide
 - **D2.2:** CI test step added to `wesley-website.yml` workflow
-- 9 TryNow component tests, 5 PGLite integration tests
+- 9 TryNow component tests, 5 PGLite integration tests, 4 FakeDbSession regression tests
 - Fixed `PlaygroundNavbar` crash when tutorial props are absent
 - `wesley-website` bumped to v0.1.0
 - ROADMAP-ALPHA.md marked 343/343 complete (100%)
