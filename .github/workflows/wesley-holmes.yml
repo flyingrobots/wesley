@@ -20,7 +20,7 @@ jobs:
     
     steps:
       - name: "📦 Checkout Repository"
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -97,7 +97,7 @@ jobs:
     
     steps:
       - name: "📦 Checkout Repository"
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       
       - name: "🛠️ Setup HOLMES environment"
         uses: ./.github/actions/holmes-setup
@@ -131,7 +131,7 @@ jobs:
     
     steps:
       - name: "📦 Checkout Repository"
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         
       - name: "🛠️ Setup HOLMES environment"
         uses: ./.github/actions/holmes-setup
@@ -165,7 +165,7 @@ jobs:
     
     steps:
       - name: "📦 Checkout Repository"
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
         
@@ -334,7 +334,7 @@ jobs:
           
     steps:
       - name: "📦 Checkout Repository"
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         
       - name: "🔧 Setup pnpm"
         uses: pnpm/action-setup@v4
