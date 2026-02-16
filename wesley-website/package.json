@@ -26,7 +26,7 @@
     "@tiptap/extension-link": "^3.13.0",
     "@tiptap/pm": "^3.13.0",
     "@tiptap/react": "^3.13.0",
-    "@tiptap/starter-kit": "^3.13.0",
+    "@tiptap/starter-kit": "^3.19.0",
     "@wesley/host-browser": "workspace:^",
     "clsx": "^2.1.1",
     "highlight.js": "^11.11.1",
