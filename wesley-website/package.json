@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.3.14",
-    "@mantine/code-highlight": "^8.3.10",
+    "@mantine/code-highlight": "^8.3.15",
     "@mantine/core": "^8.3.10",
     "@mantine/hooks": "^8.3.10",
     "@mantine/modals": "^8.3.10",
