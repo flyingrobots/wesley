@@ -7,8 +7,8 @@
   "properties": {
     "provider": { "type": ["string", "null"] },
     "verdict": { "type": "string", "enum": ["PASS", "FAIL"] },
-    "duration_ms": { "type": ["integer", "null"] },
-    "steps": { "type": ["integer", "null"] },
+    "duration_ms": { "type": ["integer", "null"], "minimum": 0 },
+    "steps": { "type": ["integer", "null"], "minimum": 0 },
     "error": { "type": ["string", "null"] },
     "timestamp": { "type": "string", "format": "date-time" }
   },

@@ -13,6 +13,11 @@
       "items": { "$ref": "#/definitions/OrderBy" },
       "default": []
     },
+    "distinctOn": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/Expr" },
+      "default": []
+    },
     "limit": { "type": ["integer", "null"] },
     "offset": { "type": ["integer", "null"] }
   },

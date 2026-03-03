@@ -74,9 +74,9 @@ async function gitSha(ctx) {
   try {
     const out = await ctx.shell.exec('git rev-parse HEAD');
     const s = out?.stdout?.trim();
-    return s || ctx.env?.GITHUB_SHA || 'unknown';
+    return s || ctx.env?.GITHUB_SHA || null;
   } catch {
-    return ctx.env?.GITHUB_SHA || 'unknown';
+    return ctx.env?.GITHUB_SHA || null;
   }
 }
 

@@ -49,7 +49,7 @@ export class CertSignCommand extends WesleyCommand {
 function extractJsonBlock(md) {
   const begin = md.indexOf('<!-- WESLEY_CERT:BEGIN -->');
   const fence = md.indexOf('```json', begin);
-  const fenceEnd = md.indexOf('```', fence + 1);
+  const fenceEnd = md.indexOf('```', fence + 7);
   const end = md.indexOf('<!-- WESLEY_CERT:END -->', fenceEnd);
   if (begin === -1 || fence === -1 || fenceEnd === -1 || end === -1) throw new Error('Invalid SHIPME.md format');
   const pre = md.slice(0, fence + 7) + '\n';

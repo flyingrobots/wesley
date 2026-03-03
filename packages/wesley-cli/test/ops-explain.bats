@@ -5,7 +5,7 @@ load 'bats-plugins/bats-assert/load'
 load 'bats-plugins/bats-file/load'
 
 setup() {
-  ROOT_DIR="$(git rev-parse --show-toplevel)"
+  ROOT_DIR="$WESLEY_REPO_ROOT"
   CLI="$ROOT_DIR/packages/wesley-host-node/bin/wesley.mjs"
   OUT="$ROOT_DIR/out/examples"
   rm -rf "$OUT"
@@ -18,6 +18,7 @@ setup() {
     --ops "$ROOT_DIR/test/fixtures/examples/ops" \
     --ops-explain mock \
     --ops-allow-errors \
+    --i-know-what-im-doing \
     --allow-dirty
 
   assert_success

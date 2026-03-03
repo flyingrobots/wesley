@@ -1,13 +1,13 @@
 #!/usr/bin/env bats
 
 @test "QIR schema validates representative plans (Ajv)" {
-  run node - <<'NODE'
+  run node --input-type=module - <<'NODE'
     import Ajv from 'ajv';
     import addFormats from 'ajv-formats';
     import { readFileSync } from 'node:fs';
     import { resolve } from 'node:path';
 
-    const schemaPath = resolve(process.cwd(), '../../schemas/qir.schema.json');
+    const schemaPath = resolve(process.env.WESLEY_REPO_ROOT || process.cwd(), 'schemas/qir.schema.json');
     const schema = JSON.parse(readFileSync(schemaPath, 'utf8'));
     const ajv = new Ajv({ strict: false, allErrors: true });
     addFormats(ajv);

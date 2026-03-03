@@ -52,7 +52,7 @@ export class QirValidateCommand extends WesleyCommand {
     const input = options.file;
     if (!input) {
       const e = new Error('Expected a path to a QIR JSON file');
-      e.code = 'ENOENT';
+      e.code = 'ERR_MISSING_ARGUMENT';
       throw e;
     }
 
@@ -70,7 +70,7 @@ export class QirValidateCommand extends WesleyCommand {
       const [schemaIR, schemaQIR, schemaEnv, envJson] = await Promise.all([
         fs.read(await this.ctx.fs.join(root, 'schemas', 'ir.schema.json')),
         fs.read(await this.ctx.fs.join(root, 'schemas', 'qir.schema.json')),
-        fs.read(await this.ctx.fs.join(root, 'schemas', 'ir-envelope.schema.json')).catch(() => '{}'),
+        fs.read(await this.ctx.fs.join(root, 'schemas', 'ir-envelope.schema.json')),
         fs.read(input)
       ]);
       const ir = JSON.parse(schemaIR);

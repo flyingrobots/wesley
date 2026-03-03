@@ -14,6 +14,8 @@
 import { collectParams } from './ParamCollector.mjs';
 import { renderIdent } from './identifiers.mjs';
 
+const SAFE_FUNC_RE = /^[a-zA-Z_][a-zA-Z0-9_.]*$/;
+
 // Lightweight helpers
 const isObject = (v) => v && typeof v === 'object';
 const escIdent = (s, opts) => renderIdent(s, opts);
@@ -157,7 +159,8 @@ function renderExpr(e, params, identOpts) {
     case 'Literal':
       return renderLiteral(e.value, e.type);
     case 'FuncCall': {
-      const fn = String(e.name); // keep unquoted for built-ins; validated upstream when needed
+      const fn = String(e.name);
+      if (!SAFE_FUNC_RE.test(fn)) throw new Error(`Unsafe SQL function name: ${fn}`);
       const args = (e.args || []).map(a => renderExpr(a, params, identOpts)).join(', ');
       return `${fn}(${args})`;
     }
@@ -173,6 +176,7 @@ function renderExpr(e, params, identOpts) {
       if (e.table && e.column) return `${escIdent(e.table, identOpts)}.${escIdent(e.column, identOpts)}`;
       if (e.name && e.args) {
         const fn2 = String(e.name);
+        if (!SAFE_FUNC_RE.test(fn2)) throw new Error(`Unsafe SQL function name: ${fn2}`);
         return `${fn2}(${(e.args||[]).map(a => renderExpr(a, params, identOpts)).join(', ')})`;
       }
       throw new Error(`Unsupported expr kind '${e.kind}'`);

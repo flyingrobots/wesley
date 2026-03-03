@@ -1,9 +1,8 @@
 #!/usr/bin/env node
-import { readdirSync, statSync, readFileSync, writeFileSync } from 'node:fs';
+import { readdirSync, statSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
-import { existsSync } from 'node:fs';
 
 if (process.env.SKIP_PREFLIGHT === '1') {
   console.log('SKIP_PREFLIGHT=1 set — skipping preflight checks');

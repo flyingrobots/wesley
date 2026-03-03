@@ -5,7 +5,7 @@
   "type": "object",
   "required": ["include"],
   "properties": {
-    "include": { "type": "array", "items": { "type": "string" } },
+    "include": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
     "exclude": { "type": "array", "items": { "type": "string" }, "default": [] },
     "allowEmpty": { "type": "boolean", "default": false },
     "schema": { "type": ["string", "null"], "description": "Override target SQL schema for emitted ops" }

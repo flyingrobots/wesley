@@ -5,7 +5,7 @@
  */
 
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
-import { buildPlanFromJson, emitFunction, emitView, collectParams } from '@wesley/core/domain/qir';
+import { buildPlanFromJson, emitFunction, emitView, collectParams, quoteIdent } from '@wesley/core/domain/qir';
 import { filterIRByUnits } from '@wesley/core/domain/SchemaFilter';
 
 export class GeneratePipelineCommand extends WesleyCommand {
@@ -657,7 +657,7 @@ function emitOpArtifacts(compiledOps, targetSchema, logger, pkResolver, { securi
   const outFiles = [];
   const total = compiledOps.length;
   let ordinal = 0;
-  const deployChunks = [`BEGIN;`, `CREATE SCHEMA IF NOT EXISTS "${targetSchema}";`];
+  const deployChunks = [`BEGIN;`, `CREATE SCHEMA IF NOT EXISTS ${quoteIdent(targetSchema)};`];
   const registry = { version: '1.0.0', schema: targetSchema, ops: [] };
   for (const entry of compiledOps) {
     ordinal += 1;

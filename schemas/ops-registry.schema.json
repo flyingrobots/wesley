@@ -1,5 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://wesley.dev/schemas/ops-registry.schema.json",
   "title": "Wesley Ops Registry",
   "type": "object",
   "required": ["version", "schema", "ops"],
