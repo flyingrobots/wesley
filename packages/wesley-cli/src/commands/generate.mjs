@@ -362,7 +362,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
     let manifestPath = options.opsManifest || null;
     try {
       const fs = this.ctx.fs;
-      if (!manifestPath) {
+      if (!manifestPath && !opsDir) {
         for (const c of ['ops/ops.manifest.json', 'ops.manifest.json', 'ops-manifest.json']) {
           if (await fs.exists(c)) { manifestPath = c; break; }
         }
@@ -611,7 +611,14 @@ async function resolveManifestEntries(fs, includes = [], excludes = [], logger) 
     if (isDir) await addDir(path);
     else if (await fs.exists(path)) acc.add(path);
   }
-  const excluded = (p) => excludes.some(ex => p === ex || p.endsWith(`/${ex}`));
+  const normalize = (v) => String(v || '').replace(/\\/g, '/').replace(/\/+$/g, '');
+  const excluded = (p) => {
+    const np = normalize(p);
+    return excludes.some((ex) => {
+      const ne = normalize(ex);
+      return np === ne || np.startsWith(`${ne}/`);
+    });
+  };
   const list = Array.from(acc).filter(p => !excluded(p)).sort();
   if (list.length === 0) logger.info({ includes, excludes }, 'ops manifest resolved no files');
   return list;

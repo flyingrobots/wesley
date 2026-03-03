@@ -77,17 +77,20 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - CI: Ubuntu-only CLI matrix; stabilized architecture-boundaries workflow
 
 ### Fixed
-- **QIR:** `lowerToSQL` recursive calls (Subquery, Lateral, ScalarSubquery, Exists) now pass full `opts` — preserves `pkResolver` and `identPolicy` in nested queries
+- **QIR:** `lowerToSQL` recursive calls (Subquery, Lateral, ScalarSubquery, Exists) now pass full `opts` — preserves `pkResolver` and `identPolicy` in nested queries; also threads `opts` through `renderOrderBy`
 - **QIR:** `lowerToSQL` join-type handling is now explicit (LEFT, INNER) and throws on unsupported types instead of silently defaulting to JOIN
-- **QIR:** `lowerToSQL` DISTINCT ON no longer duplicates ORDER BY entries that already match the leading prefix
+- **QIR:** `lowerToSQL` DISTINCT ON prefix uses position-based matching — preserves existing direction/nulls, supports multi-column distinctOn
 - **Cert:** `cert-sign` now validates key type is ed25519 before signing, preventing silent algorithm mismatch
 - **Cert:** `cert-verify` no longer masks infrastructure errors (import/parse) as `VALIDATION_FAILED`
-- **Ops:** `resolveManifestEntries` exclude matching now requires path-separator boundary (`/`) to prevent false positives on suffix overlap
+- **Ops:** `resolveManifestEntries` exclude matching uses normalized absolute-path prefix comparison (handles subtree excludes and Windows paths)
 - **Ops:** `compileOpsIfRequested` reuses parsed manifest for `allowEmpty` check instead of re-reading file (fixes TOCTOU)
+- **Ops:** Manifest auto-discovery no longer overrides explicit `--ops` flag
 - **Schema:** `realm.schema.json` now requires `error` field when `verdict` is `FAIL`
-- **Schema:** `shipme.schema.json` SHA field constrained to hex hash pattern (40 or 64 chars)
+- **Schema:** `shipme.schema.json` SHA field constrained to hex hash pattern (40 or 64 chars); signature identity fields (`signer`, `keyId`, `signature`) require non-empty strings
+- **Schema:** `ops-manifest.schema.json` `schema` property rejects empty strings
 - **CI:** `ops-explain.bats` and `qir-schema.bats` use fallback repo root when `WESLEY_REPO_ROOT` is unset
-- **Preflight:** CLI binary existence check added before QIR validation loop
+- **Preflight:** CLI binary existence check — removed broken `node_modules/.bin/wesley` shell-shim fallback; fails fast when primary entry point is missing
+- **Preflight:** `git diff`/`git ls-files` failure now detected and reported instead of silently skipping validations
 - **Preflight:** Registry path matching is now path-separator-agnostic (Windows-safe)
 - **E2a.2:** TS codec NaN canonicalization used big-endian instead of little-endian — now matches Rust `to_le_bytes`
 - **E2a.2:** TS codec nested object decode closure did not advance offset — caused corrupt state in lists/options

@@ -90,11 +90,58 @@ test('lowerToSQL: DISTINCT ON does not duplicate matching leading orderBy', () =
     ],
   };
   const sql = lowerToSQL(plan, null, { identPolicy: 'minimal' });
-  // The distinctOn expr matches the first orderBy item, so it should NOT be duplicated
   const orderMatch = sql.match(/ORDER BY\s+([\s\S]+)$/i);
   assert.ok(orderMatch, 'should have ORDER BY clause');
   const orderClauses = orderMatch[1].split(',').map(s => s.trim());
-  // Should be: t0.name ASC, t0.id DESC, t0.id ASC (tie-breaker) — not t0.name ASC, t0.name ASC, ...
   const nameCount = orderClauses.filter(c => /t0\.name/i.test(c)).length;
   assert.equal(nameCount, 1, `t0.name should appear exactly once in ORDER BY, got ${nameCount}`);
+});
+
+test('lowerToSQL: DISTINCT ON multi-column inserts only missing prefix entries', () => {
+  const plan = {
+    root: { kind: 'Table', table: 'log', alias: 't0' },
+    projection: { items: [
+      { alias: 'cat', expr: { kind: 'ColumnRef', table: 't0', column: 'category' } },
+      { alias: 'ts', expr: { kind: 'ColumnRef', table: 't0', column: 'created_at' } },
+    ] },
+    distinctOn: [
+      { kind: 'ColumnRef', table: 't0', column: 'category' },
+      { kind: 'ColumnRef', table: 't0', column: 'created_at' },
+    ],
+    orderBy: [
+      { expr: { kind: 'ColumnRef', table: 't0', column: 'category' }, direction: 'asc', nulls: null },
+      // created_at intentionally missing — should be inserted at position 1
+      { expr: { kind: 'ColumnRef', table: 't0', column: 'id' }, direction: 'desc', nulls: null },
+    ],
+  };
+  const sql = lowerToSQL(plan, null, { identPolicy: 'minimal' });
+  const orderMatch = sql.match(/ORDER BY\s+([\s\S]+)$/i);
+  assert.ok(orderMatch);
+  const clauses = orderMatch[1].split(',').map(s => s.trim());
+  // category should be first (already matched), created_at inserted second, id third
+  assert.match(clauses[0], /t0\.category/i, 'first should be category');
+  assert.match(clauses[1], /t0\.created_at/i, 'second should be created_at (inserted)');
+  assert.match(clauses[2], /t0\.id/i, 'third should be id');
+  const catCount = clauses.filter(c => /t0\.category/i.test(c)).length;
+  assert.equal(catCount, 1, 'category should appear exactly once');
+});
+
+test('lowerToSQL: DISTINCT ON preserves DESC direction when expression matches', () => {
+  const plan = {
+    root: { kind: 'Table', table: 'event', alias: 'e' },
+    projection: { items: [
+      { alias: 'name', expr: { kind: 'ColumnRef', table: 'e', column: 'name' } },
+    ] },
+    distinctOn: [{ kind: 'ColumnRef', table: 'e', column: 'name' }],
+    orderBy: [
+      { expr: { kind: 'ColumnRef', table: 'e', column: 'name' }, direction: 'desc', nulls: 'last' },
+    ],
+  };
+  const sql = lowerToSQL(plan, null, { identPolicy: 'minimal' });
+  // Expression matches at position 0, so existing DESC NULLS LAST should be preserved
+  assert.match(sql, /ORDER BY\s+e\.name\s+DESC\s+NULLS\s+LAST/i, 'should preserve DESC NULLS LAST');
+  const orderMatch = sql.match(/ORDER BY\s+([\s\S]+)$/i);
+  const clauses = orderMatch[1].split(',').map(s => s.trim());
+  const nameCount = clauses.filter(c => /e\.name/i.test(c)).length;
+  assert.equal(nameCount, 1, 'name should appear exactly once (not duplicated)');
 });

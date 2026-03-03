@@ -8,7 +8,7 @@
     "include": { "type": "array", "items": { "type": "string", "minLength": 1 }, "minItems": 1 },
     "exclude": { "type": "array", "items": { "type": "string", "minLength": 1 }, "default": [] },
     "allowEmpty": { "type": "boolean", "default": false },
-    "schema": { "type": ["string", "null"], "description": "Override target SQL schema for emitted ops" }
+    "schema": { "type": ["string", "null"], "minLength": 1, "description": "Override target SQL schema for emitted ops" }
   },
   "additionalProperties": false
 }

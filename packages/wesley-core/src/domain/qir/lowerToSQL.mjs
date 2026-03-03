@@ -46,19 +46,17 @@ export function lowerToSQL(plan, paramsEnv = null, opts = {}) {
   let orderSQL = '';
   const orderItems = [...(plan.orderBy || [])];
   if (distinctExprs.length) {
-    // Ensure orderBy begins with distinctOn expressions in order, skipping duplicates
-    for (let i = distinctExprs.length - 1; i >= 0; i--) {
+    // Ensure orderBy begins with distinctOn expressions by position (expression match only)
+    for (let i = 0; i < distinctExprs.length; i++) {
       const de = distinctExprs[i];
-      const head = orderItems[0];
-      const alreadyPresent = head && orderMentionsExpr([head], de) &&
-        (!head.direction || String(head.direction).toLowerCase() !== 'desc') && !head.nulls;
-      if (!alreadyPresent) {
-        orderItems.unshift({ expr: de, direction: 'asc', nulls: null });
+      const current = orderItems[i];
+      if (!current || !orderMentionsExpr([current], de)) {
+        orderItems.splice(i, 0, { expr: de, direction: 'asc', nulls: null });
       }
     }
   }
   if (orderItems.length > 0) {
-    const rendered = orderItems.map(ob => renderOrderBy(ob, params, identOpts));
+    const rendered = orderItems.map(ob => renderOrderBy(ob, params, identOpts, opts));
     // Append tie-breaker if primary key (id) not already present
     const pkRef = typeof opts.pkResolver === 'function' ? opts.pkResolver(plan) : guessPrimaryKeyRef(plan);
     if (pkRef && !orderMentionsExpr(orderItems, pkRef)) {
@@ -222,10 +220,10 @@ function renderJsonAgg(e, params, identOpts, opts) {
   return `COALESCE(jsonb_agg(${inner}${order}), '[]'::jsonb)`;
 }
 
-function renderOrderBy(ob, params, identOpts) {
+function renderOrderBy(ob, params, identOpts, opts) {
   const dir = ob.direction && String(ob.direction).toLowerCase() === 'desc' ? 'DESC' : 'ASC';
   const nulls = ob.nulls ? ` NULLS ${String(ob.nulls).toUpperCase()}` : '';
-  return `${renderExpr(ob.expr, params, identOpts)} ${dir}${nulls}`;
+  return `${renderExpr(ob.expr, params, identOpts, opts)} ${dir}${nulls}`;
 }
 
 function renderParam(p, params, forceCast = false) {

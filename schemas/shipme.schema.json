@@ -20,9 +20,9 @@
         "type": "object",
         "required": ["signer", "keyId", "signature"],
         "properties": {
-          "signer": { "type": "string" },
-          "keyId": { "type": "string" },
-          "signature": { "type": "string" },
+          "signer": { "type": "string", "minLength": 1 },
+          "keyId": { "type": "string", "minLength": 1 },
+          "signature": { "type": "string", "minLength": 1 },
           "createdAt": { "type": ["string", "null"], "format": "date-time" },
           "alg": { "type": ["string", "null"] }
         },

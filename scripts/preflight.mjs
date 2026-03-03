@@ -213,12 +213,15 @@ try {
   } catch {}
   const diffArgs = baseSha ? ['diff', '--name-only', '--diff-filter=ACMRTUXB', baseSha] : ['ls-files'];
   const df = spawnSync('git', diffArgs, { encoding: 'utf8' });
+  if (df.status !== 0) {
+    fail(`git ${diffArgs.join(' ')} failed (exit ${df.status}): ${(df.stderr || '').trim()}`);
+  }
   const files = (df.stdout || '').split(/\r?\n/).filter(Boolean);
   const qirFiles = files.filter(f => f.endsWith('.qir.json'));
   const envFiles = files.filter(f => /(^|\/)ir-?envelope(\.json)?$/.test(f) || f.endsWith('sample-envelope.json'));
   const manFiles = files.filter(f => /ops\.manifest\.json$|ops-manifest\.json$/.test(f));
   // Also validate any emitted ops registry if present in out/**/ops/registry.json
-  const cli = existsSync('packages/wesley-host-node/bin/wesley.mjs') ? 'packages/wesley-host-node/bin/wesley.mjs' : 'node_modules/.bin/wesley';
+  const cli = 'packages/wesley-host-node/bin/wesley.mjs';
   if (!existsSync(cli)) {
     fail(`Wesley CLI binary not found at ${cli}; install dependencies first`);
   }
