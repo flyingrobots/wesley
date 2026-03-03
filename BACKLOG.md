@@ -15,3 +15,9 @@ Items tracked from PR reviews, retrospectives, and ongoing development.
 - [ ] Add cursor edge-case tests: null/undefined/primitive inputs to `encodeCursor`/`decodeCursor`
 - [ ] Add complementary join diagnostics test proving qualified refs (`'a.id'`, `{table,column}` form) do not throw
 - [ ] Add LIKE and CONTAINS operator tests (positive + negative paths) mirroring existing IN/ILIKE cases
+- [ ] Add negative-path cert tests: wrong key type, missing key, corrupt SHIPME format
+- [ ] Add `--strict-ident` integration test that round-trips all PostgreSQL 16 reserved keywords
+
+## Infrastructure
+
+- [ ] Vendor Bats plugins (`bats-support`, `bats-assert`, `bats-file`) into `test/vendor/` to eliminate transient CI clone failures
