@@ -416,7 +416,14 @@ export class GeneratePipelineCommand extends WesleyCommand {
           if (!e.code) e.code = 'OPS_MANIFEST_INVALID';
           throw e;
         }
-        files = await resolveManifestEntries(fs, manifest.include || [], manifest.exclude || [], logger);
+        const repoRoot = process.env.WESLEY_REPO_ROOT || process.cwd();
+        const resolvedIncludes = await Promise.all(
+          (manifest.include || []).map(p => fs.join(repoRoot, p))
+        );
+        const resolvedExcludes = await Promise.all(
+          (manifest.exclude || []).map(p => fs.join(repoRoot, p))
+        );
+        files = await resolveManifestEntries(fs, resolvedIncludes, resolvedExcludes, logger);
         if (files.length === 0 && !(JSON.parse(await fs.read(manifestPath)).allowEmpty)) {
           const err = new OpsError('OPS_EMPTY_SET', 'Ops manifest produced no files and allowEmpty=false', { file: manifestPath });
           logger.error(err.meta, err.message);
