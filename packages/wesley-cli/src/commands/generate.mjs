@@ -488,7 +488,10 @@ export class GeneratePipelineCommand extends WesleyCommand {
       if (compiledOps.length) {
         compiledOps.sort((a, b) => a.order - b.order);
         const orderedOps = compiledOps.map(({ order, ...rest }) => rest);
-        const security = String(options.opsSecurity || 'invoker');
+        const security = String(options.opsSecurity || 'invoker').toLowerCase();
+        if (security !== 'invoker' && security !== 'definer') {
+          throw new OpsError('OPS_INVALID_SECURITY', `Invalid --ops-security value "${options.opsSecurity}"; must be "invoker" or "definer"`);
+        }
         const setSearchPath = options.opsSearchPath
           ? String(options.opsSearchPath).split(',').map(s => s.trim()).filter(Boolean)
           : null;

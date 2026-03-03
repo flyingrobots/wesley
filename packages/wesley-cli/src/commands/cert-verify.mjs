@@ -52,9 +52,6 @@ export class CertVerifyCommand extends WesleyCommand {
         throw e;
       }
     } catch (e) {
-      if (!e.code && e.meta && Array.isArray(e.meta)) {
-        e.code = 'VALIDATION_FAILED';
-      }
       throw e;
     }
     const canonical = canonicalize({ ...json, signatures: [] });

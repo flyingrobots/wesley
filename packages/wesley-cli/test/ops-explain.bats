@@ -11,6 +11,10 @@ setup() {
   rm -rf "$OUT"
 }
 
+teardown() {
+  rm -rf "$OUT"
+}
+
 @test "ops: emits mock EXPLAIN JSON snapshots with --ops-explain mock" {
   run node "$CLI" generate \
     --schema "$ROOT_DIR/test/fixtures/examples/ecommerce.graphql" \
