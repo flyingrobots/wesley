@@ -12,6 +12,8 @@
     "error": { "type": ["string", "null"] },
     "timestamp": { "type": "string", "format": "date-time" }
   },
+  "if": { "properties": { "verdict": { "const": "FAIL" } } },
+  "then": { "required": ["error"], "properties": { "error": { "type": "string", "minLength": 1 } } },
   "additionalProperties": false
 }
 

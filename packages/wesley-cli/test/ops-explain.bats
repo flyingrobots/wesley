@@ -5,7 +5,7 @@ load 'bats-plugins/bats-assert/load'
 load 'bats-plugins/bats-file/load'
 
 setup() {
-  ROOT_DIR="$WESLEY_REPO_ROOT"
+  ROOT_DIR="${WESLEY_REPO_ROOT:-$(cd "$BATS_TEST_DIRNAME/../../.." && pwd)}"
   CLI="$ROOT_DIR/packages/wesley-host-node/bin/wesley.mjs"
   OUT="$ROOT_DIR/out/examples"
   rm -rf "$OUT"

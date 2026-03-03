@@ -37,7 +37,7 @@ export function lowerToSQL(plan, paramsEnv = null, opts = {}) {
 
   // Render FROM and gather WHERE predicates from Filter nodes embedded in relation tree
   const whereParts = [];
-  const fromSQL = renderRelation(plan.root, params, whereParts, identOpts);
+  const fromSQL = renderRelation(plan.root, params, whereParts, identOpts, opts);
 
   // WHERE
   const whereSQL = whereParts.length ? `\nWHERE ${whereParts.join(' AND ')}` : '';
@@ -46,10 +46,15 @@ export function lowerToSQL(plan, paramsEnv = null, opts = {}) {
   let orderSQL = '';
   const orderItems = [...(plan.orderBy || [])];
   if (distinctExprs.length) {
-    // Ensure orderBy begins with distinctOn expressions in order
+    // Ensure orderBy begins with distinctOn expressions in order, skipping duplicates
     for (let i = distinctExprs.length - 1; i >= 0; i--) {
       const de = distinctExprs[i];
-      orderItems.unshift({ expr: de, direction: 'asc', nulls: null });
+      const head = orderItems[0];
+      const alreadyPresent = head && orderMentionsExpr([head], de) &&
+        (!head.direction || String(head.direction).toLowerCase() !== 'desc') && !head.nulls;
+      if (!alreadyPresent) {
+        orderItems.unshift({ expr: de, direction: 'asc', nulls: null });
+      }
     }
   }
   if (orderItems.length > 0) {
@@ -71,30 +76,36 @@ export function lowerToSQL(plan, paramsEnv = null, opts = {}) {
 
 // ────────────────────────────────────────────────────────────────────────────
 // Relation rendering
-function renderRelation(r, params, whereParts, identOpts) {
+function renderRelation(r, params, whereParts, identOpts, opts) {
   if (!r) return '';
   switch (r.kind) {
     case 'Table':
       return `${escIdent(r.table, identOpts)} ${escIdent(r.alias, identOpts)}`;
     case 'Subquery': {
-      const sql = lowerToSQL(r.plan, params, identOpts);
+      const sql = lowerToSQL(r.plan, params, opts);
       return `(\n${sql}\n) ${escIdent(r.alias, identOpts)}`;
     }
     case 'Lateral': {
-      const sql = lowerToSQL(r.plan, params, identOpts);
+      const sql = lowerToSQL(r.plan, params, opts);
       return `LATERAL (\n${sql}\n) ${escIdent(r.alias, identOpts)}`;
     }
     case 'Join': {
-      const left = renderRelation(r.left, params, whereParts, identOpts);
-      const right = renderRelation(r.right, params, whereParts, identOpts);
-      const jt = r.joinType && String(r.joinType).toUpperCase() === 'LEFT' ? 'LEFT JOIN' : 'JOIN';
-      const on = r.on ? renderPredicate(r.on, params, identOpts) : 'TRUE';
+      const left = renderRelation(r.left, params, whereParts, identOpts, opts);
+      const right = renderRelation(r.right, params, whereParts, identOpts, opts);
+      let jt;
+      switch (String(r.joinType || 'INNER').toUpperCase()) {
+        case 'LEFT':  jt = 'LEFT JOIN';  break;
+        case 'INNER': jt = 'JOIN';       break;
+        default:
+          throw new Error(`Unsupported join type: ${r.joinType}`);
+      }
+      const on = r.on ? renderPredicate(r.on, params, identOpts, opts) : 'TRUE';
       return `${left} ${jt} ${right} ON ${on}`;
     }
     case 'Filter': {
       // Non-canonical node used in tests; extract predicate into WHERE
-      if (r.predicate) whereParts.push(renderPredicate(r.predicate, params, identOpts));
-      return renderRelation(r.input, params, whereParts, identOpts);
+      if (r.predicate) whereParts.push(renderPredicate(r.predicate, params, identOpts, opts));
+      return renderRelation(r.input, params, whereParts, identOpts, opts);
     }
     default:
       // Fallback: assume table-like
@@ -105,31 +116,31 @@ function renderRelation(r, params, whereParts, identOpts) {
 
 // ────────────────────────────────────────────────────────────────────────────
 // Predicates & expressions
-function renderPredicate(p, params, identOpts) {
+function renderPredicate(p, params, identOpts, opts) {
   if (!p) return 'TRUE';
   switch (p.kind) {
     case 'Exists':
-      return `EXISTS (\n${lowerToSQL(p.subquery, params, identOpts)}\n)`;
+      return `EXISTS (\n${lowerToSQL(p.subquery, params, opts || {})}\n)`;
     case 'Not':
-      return `(NOT ${renderPredicate(p.left, params, identOpts)})`;
+      return `(NOT ${renderPredicate(p.left, params, identOpts, opts)})`;
     case 'And':
-      return `(${renderPredicate(p.left, params, identOpts)} AND ${renderPredicate(p.right, params, identOpts)})`;
+      return `(${renderPredicate(p.left, params, identOpts, opts)} AND ${renderPredicate(p.right, params, identOpts, opts)})`;
     case 'Or':
-      return `(${renderPredicate(p.left, params, identOpts)} OR ${renderPredicate(p.right, params, identOpts)})`;
+      return `(${renderPredicate(p.left, params, identOpts, opts)} OR ${renderPredicate(p.right, params, identOpts, opts)})`;
     case 'Compare': {
       const { op } = p;
       // Null checks
-      if (op === 'isNull')    return `${renderExpr(p.left, params, identOpts)} IS NULL`;
-      if (op === 'isNotNull') return `${renderExpr(p.left, params, identOpts)} IS NOT NULL`;
+      if (op === 'isNull')    return `${renderExpr(p.left, params, identOpts, opts)} IS NULL`;
+      if (op === 'isNotNull') return `${renderExpr(p.left, params, identOpts, opts)} IS NOT NULL`;
 
       if (op === 'in') {
-        const left = renderExpr(p.left, params, identOpts);
+        const left = renderExpr(p.left, params, identOpts, opts);
         const paramSql = renderParam(p.right, params, /*forceCast*/true);
         return `${left} = ANY(${paramSql})`;
       }
 
-      const left = renderExpr(p.left, params, identOpts);
-      const right = renderExpr(p.right, params, identOpts);
+      const left = renderExpr(p.left, params, identOpts, opts);
+      const right = renderExpr(p.right, params, identOpts, opts);
       switch (op) {
         case 'eq':  return `${left} = ${right}`;
         case 'ne':  return `${left} <> ${right}`;
@@ -149,7 +160,7 @@ function renderPredicate(p, params, identOpts) {
   }
 }
 
-function renderExpr(e, params, identOpts) {
+function renderExpr(e, params, identOpts, opts) {
   if (!e) return 'NULL';
   switch (e.kind) {
     case 'ColumnRef':
@@ -161,23 +172,23 @@ function renderExpr(e, params, identOpts) {
     case 'FuncCall': {
       const fn = String(e.name);
       if (!SAFE_FUNC_RE.test(fn)) throw new Error(`Unsafe SQL function name: ${fn}`);
-      const args = (e.args || []).map(a => renderExpr(a, params, identOpts)).join(', ');
+      const args = (e.args || []).map(a => renderExpr(a, params, identOpts, opts)).join(', ');
       return `${fn}(${args})`;
     }
     case 'ScalarSubquery':
-      return `(\n${lowerToSQL(e.plan, params, identOpts)}\n)`;
+      return `(\n${lowerToSQL(e.plan, params, opts || {})}\n)`;
     case 'JsonBuildObject':
-      return renderJsonBuildObject(e, params, identOpts);
+      return renderJsonBuildObject(e, params, identOpts, opts);
     case 'JsonAgg':
-      return renderJsonAgg(e, params, identOpts);
+      return renderJsonAgg(e, params, identOpts, opts);
     default:
       // Allow plain objects shaped like ColumnRef/ParamRef/Literal
-      if (isObject(e.left) && e.op) return renderPredicate(e, params, identOpts);
+      if (isObject(e.left) && e.op) return renderPredicate(e, params, identOpts, opts);
       if (e.table && e.column) return `${escIdent(e.table, identOpts)}.${escIdent(e.column, identOpts)}`;
       if (e.name && e.args) {
         const fn2 = String(e.name);
         if (!SAFE_FUNC_RE.test(fn2)) throw new Error(`Unsafe SQL function name: ${fn2}`);
-        return `${fn2}(${(e.args||[]).map(a => renderExpr(a, params, identOpts)).join(', ')})`;
+        return `${fn2}(${(e.args||[]).map(a => renderExpr(a, params, identOpts, opts)).join(', ')})`;
       }
       throw new Error(`Unsupported expr kind '${e.kind}'`);
   }
@@ -194,17 +205,17 @@ function renderLiteral(v, type = null) {
   return `'${escString(v)}'${type ? `::${type}` : ''}`;
 }
 
-function renderJsonBuildObject(e, params, identOpts) {
+function renderJsonBuildObject(e, params, identOpts, opts) {
   // fields: [{ key, value }]
   const pairs = (e.fields || []).flatMap(({ key, value }) => [
     `'${escString(String(key))}'`,
-    renderExpr(value, params, identOpts)
+    renderExpr(value, params, identOpts, opts)
   ]);
   return `jsonb_build_object(${pairs.join(', ')})`;
 }
 
-function renderJsonAgg(e, params, identOpts) {
-  const inner = renderExpr(e.value, params, identOpts);
+function renderJsonAgg(e, params, identOpts, opts) {
+  const inner = renderExpr(e.value, params, identOpts, opts);
   const order = (e.orderBy || []).length
     ? ' ORDER BY ' + e.orderBy.map(ob => renderOrderBy(ob, params, identOpts)).join(', ')
     : '';

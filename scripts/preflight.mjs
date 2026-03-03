@@ -219,6 +219,9 @@ try {
   const manFiles = files.filter(f => /ops\.manifest\.json$|ops-manifest\.json$/.test(f));
   // Also validate any emitted ops registry if present in out/**/ops/registry.json
   const cli = existsSync('packages/wesley-host-node/bin/wesley.mjs') ? 'packages/wesley-host-node/bin/wesley.mjs' : 'node_modules/.bin/wesley';
+  if (!existsSync(cli)) {
+    fail(`Wesley CLI binary not found at ${cli}; install dependencies first`);
+  }
   for (const f of qirFiles) {
     const r = spawnSync(process.execPath, [cli, 'qir', 'validate', f], { stdio: 'inherit' });
     if (r.status !== 0) fail(`QIR validation failed for ${f}`);
@@ -241,7 +244,7 @@ try {
         for (const e of ents) {
           const full = resolve(p, e.name);
           if (e.isDirectory()) walk(full);
-          else if (e.isFile() && /\bops\/registry\.json$/.test(full)) out.push(full);
+          else if (e.isFile() && full.replace(/\\/g, '/').endsWith('ops/registry.json')) out.push(full);
         }
       };
       walk(dir);

@@ -25,6 +25,11 @@ export class CertSignCommand extends WesleyCommand {
     const { createPrivateKey, createPublicKey, sign, createHash } = await import('node:crypto');
     const pem = await this.ctx.fs.readFile(options.key);
     const key = createPrivateKey(pem);
+    if (key.asymmetricKeyType !== 'ed25519') {
+      const e = new Error(`Unsupported key type: ${key.asymmetricKeyType} (expected ed25519)`);
+      e.code = 'EARGS';
+      throw e;
+    }
     const sig = sign(null, Buffer.from(canonical), key).toString('base64');
     // Derive a deterministic keyId from the public key (SPKI DER → SHA-256 hex)
     const pub = createPublicKey(key);

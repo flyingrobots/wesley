@@ -425,7 +425,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
           (manifest.exclude || []).map(p => fs.join(repoRoot, p))
         );
         files = await resolveManifestEntries(fs, resolvedIncludes, resolvedExcludes, logger);
-        if (files.length === 0 && !(JSON.parse(await fs.read(manifestPath)).allowEmpty)) {
+        if (files.length === 0 && !manifest.allowEmpty) {
           const err = new OpsError('OPS_EMPTY_SET', 'Ops manifest produced no files and allowEmpty=false', { file: manifestPath });
           logger.error(err.meta, err.message);
           throw err;
@@ -611,7 +611,7 @@ async function resolveManifestEntries(fs, includes = [], excludes = [], logger) 
     if (isDir) await addDir(path);
     else if (await fs.exists(path)) acc.add(path);
   }
-  const excluded = (p) => excludes.some(ex => p === ex || p.endsWith(ex));
+  const excluded = (p) => excludes.some(ex => p === ex || p.endsWith(`/${ex}`));
   const list = Array.from(acc).filter(p => !excluded(p)).sort();
   if (list.length === 0) logger.info({ includes, excludes }, 'ops manifest resolved no files');
   return list;

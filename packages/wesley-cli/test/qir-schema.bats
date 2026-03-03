@@ -7,7 +7,8 @@
     import { readFileSync } from 'node:fs';
     import { resolve } from 'node:path';
 
-    const schemaPath = resolve(process.env.WESLEY_REPO_ROOT || process.cwd(), 'schemas/qir.schema.json');
+    const repoRoot = process.env.WESLEY_REPO_ROOT || (process.env.BATS_TEST_DIRNAME ? resolve(process.env.BATS_TEST_DIRNAME, '../../..') : process.cwd());
+    const schemaPath = resolve(repoRoot, 'schemas/qir.schema.json');
     const schema = JSON.parse(readFileSync(schemaPath, 'utf8'));
     const ajv = new Ajv({ strict: false, allErrors: true });
     addFormats(ajv);
