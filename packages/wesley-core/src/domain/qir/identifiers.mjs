@@ -36,16 +36,14 @@ export function quoteIdent(ident) {
  *
  * Policies:
  * - minimal (default): quote only if necessary (legacy behavior)
- * - strict: validate allowed pattern and always quote; throw on RESERVED
+ * - strict: validate allowed character pattern and always quote;
+ *   reserved keywords are safely quoted (not rejected)
  */
 export function renderIdent(ident, { policy = 'minimal' } = {}) {
   const s = String(ident);
   if (policy === 'strict') {
     if (!IDENT_SAFE_RE.test(s)) {
       throw new Error(`Invalid SQL identifier: ${s}`);
-    }
-    if (RESERVED.has(s.toLowerCase())) {
-      throw new Error(`Identifier collides with reserved keyword: ${s}`);
     }
     return quoteIdent(s);
   }
