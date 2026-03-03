@@ -20,6 +20,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
       .option('-s, --schema <path>', 'GraphQL schema file. Use "-" for stdin', 'schema.graphql')
       .option('--stdin', 'Read schema from stdin (alias for --schema -)')
       .option('--ops <dir>', 'Experimental: directory containing *.op.json files to compile (omit to disable)')
+      .option('--ops-manifest <path>', 'Path to ops manifest JSON file (auto-detected if omitted)')
       .option('--ops-schema <name>', 'Schema name for emitted ops SQL (default wes_ops)', 'wes_ops')
       .option('--ops-security <mode>', 'Security for emitted functions: invoker|definer', 'invoker')
       .option('--ops-search-path <list>', 'Comma-separated search_path for ops functions (e.g., "pg_catalog, wes_ops")')
@@ -684,10 +685,12 @@ function emitOpArtifacts(compiledOps, targetSchema, logger, pkResolver, { securi
       if (!allowErrors) throw e;
       logger.warn({ op: baseName, file: path, error: e?.message }, 'Skipping op during emission due to error');
     }
-    logger.info(
-      { ordinal, total, sanitized: baseName, file: path, schema: targetSchema, code: 'OPS_DISCOVERY' },
-      'ops: compiled operation'
-    );
+    if (emitted) {
+      logger.info(
+        { ordinal, total, sanitized: baseName, file: path, schema: targetSchema, code: 'OPS_DISCOVERY' },
+        'ops: compiled operation'
+      );
+    }
 
     // Build registry entry (deterministic)
     try {

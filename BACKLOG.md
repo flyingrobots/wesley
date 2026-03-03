@@ -20,5 +20,3 @@ Items tracked from PR reviews, retrospectives, and ongoing development.
 ## Ideas
 
 - [ ] Create a `@wesley/cli-utils` package exporting shared `createSchemaValidator()` and `resolveRepoRoot()`
-- [ ] Replace `Buffer` in `Cursor.mjs` with `TextEncoder`/`btoa` for true platform agnosticism
-- [ ] Add a "schema surface" integration test that validates all generated JSON artifacts against their schemas
