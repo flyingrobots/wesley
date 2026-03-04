@@ -6,6 +6,38 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Fixed
+
+#### QIR Phase C — Self-Code Review (PR #392)
+
+- **C1:** `Predicate.isNull()`/`isNotNull()` now emit `{ kind: 'Compare', op: 'isNull' }` matching `lowerToSQL` expectations (was runtime crash)
+- **C2:** Validate `ParamRef.typeHint` against safe-type regex to prevent SQL injection
+- **C3:** Validate `Literal.type` against safe-type regex to prevent SQL injection
+- **C4:** Validate ORDER BY `nulls` to `'first'`|`'last'` only (was injectable)
+- **C5:** `cert-sign` canonicalizes with `{ ...json, signatures: [] }` to match `cert-verify`, fixing multi-signature verification
+- **M1:** `qir` subcommand `.action()` handlers merge parent program opts (`--verbose`, `--quiet`, `--json`)
+- **M2:** `validateRealm` in rehearse error path wrapped in try/catch to prevent masking original error
+- **M3:** Migration SQL emission validates `s.type`, `s.using`, `s.default` against safe regexes
+- **M4:** `LIMIT`/`OFFSET` validated as finite non-negative numbers (was emitting `NaN`)
+- **M5:** `Cursor.mjs` exported from barrel `index.mjs`
+- **M6:** `Cursor.mjs` uses `btoa`/`atob` instead of `Buffer` for browser compatibility
+- **M7:** `ir-family-spec.md` references correct `plan-report.schema.json`
+- **M8:** `ParamCollector` throws on unrecognized predicate kinds (defense-in-depth)
+- **m1:** `generate.mjs` uses local `logger` instead of `this.ctx.logger` for ops registry validation
+- **m2:** `cert-sign.mjs` and `cert-verify.mjs` use `fs.read()` to match host adapter contract
+- **m3:** `generate.mjs` uses `this.ctx.env` and `this.ctx.shell` instead of `process.env`/`globalThis`
+- **m4:** Extract shared migration helpers to `_migration-plan.mjs` (eliminates duplication)
+- **m5:** `emit.mjs` delegates to shared `sanitizeIdentBase` from `identifiers.mjs`
+- **m6:** `decodeCursor` strips `__proto__`/`constructor` keys after `JSON.parse`
+- **m7–m9:** Documentation uses present tense for shipped schemas; correct bats test paths
+- **m10–m11:** Remove dead `DistinctOn`, `Cast`, `CaseWhen` branches from `ParamCollector`
+- **n1:** Remove pointless `catch (e) { throw e }` in `cert-verify.mjs`
+- **n2:** Bats tests use robust `setup()` with `ROOT_DIR`/`CLI` pattern and `WESLEY_REPO_ROOT`
+- **n3:** `renderJsonAgg` passes `opts` to `renderOrderBy`
+- **n5:** Remove trivial `escIdent` wrapper; use `renderIdent` directly
+- **n6:** `qir-envelope-schema.bats` removes redundant `export` (keeps `env` prefix)
+- **n7:** `plan-report.schema.json` removes redundant `additionalProperties: true`
+
 ### Added
 
 #### Alpha Playground — Browser-Based "Try Wesley"
