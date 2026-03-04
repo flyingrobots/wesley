@@ -769,7 +769,10 @@ function shouldEnforceClean(env, options) {
 }
 async function assertCleanGit(shell) {
   try {
-    await (shell?.execSync?.('git rev-parse --is-inside-work-tree', { stdio: 'ignore' }));
+    const result = shell?.exec
+      ? await shell.exec('git rev-parse --is-inside-work-tree', { stdio: 'ignore' })
+      : shell?.execSync?.('git rev-parse --is-inside-work-tree', { stdio: 'ignore' });
+    if (!result && !shell?.exec && !shell?.execSync) return;
   } catch {
     return; // Not a git repo: skip
   }

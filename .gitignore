@@ -36,4 +36,5 @@ blob-report/
 # Vendored Bats plugins in package tests (installed by scripts/setup-bats-plugins.sh)
 packages/wesley-cli/test/bats-plugins/
 
+.claude/
 .ignore

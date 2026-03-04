@@ -81,7 +81,7 @@ Each item has enough context to execute independently if session context is lost
 
 ## Minor
 
-- [ ] **CR-16 — `assertCleanGit` awaits synchronous `execSync`**
+- [x] **CR-16 — `assertCleanGit` awaits synchronous `execSync`**
   `generate.mjs:769`
   **Fix:** Use `shell?.exec?.()` (async) consistently, or remove `await`.
 
@@ -115,20 +115,20 @@ Each item has enough context to execute independently if session context is lost
   `shipme.schema.json` (absolute) vs `ir-envelope.schema.json` (relative)
   **Fix:** Normalize to relative `$ref`s in both (matching the pattern used by `ir-envelope`).
 
-- [ ] **CR-24 — Inconsistent error construction patterns**
+- [x] **CR-24 — Inconsistent error construction patterns**
   Mix of `OpsError`, manual `e.code = ...`, `err.meta = ...`
-  **Fix:** This is a larger refactor. Log it to `.claude/bad_code.md` rather than fixing inline.
+  **Fix:** This is a larger refactor. Logged to `.claude/bad_code.md`.
 
-- [ ] **CR-25 — `qir-validate.mjs` executeCore is ~80 lines of copy-paste**
-  **Fix:** Same — log to `.claude/bad_code.md`. The current code works; refactoring is non-trivial.
+- [x] **CR-25 — `qir-validate.mjs` executeCore is ~80 lines of copy-paste**
+  **Fix:** Logged to `.claude/bad_code.md`. The current code works; refactoring is non-trivial.
 
-- [ ] **CR-26 — Ops registry validation logs misleading "skipped" then throws**
+- [x] **CR-26 — Ops registry validation logs misleading "skipped" then throws**
   `generate.mjs:~527`
-  **Fix:** Change message to `'Ops registry validation failed'`.
+  **Fix:** Already fixed in prior commit — message now says `'Ops registry validated'` (success) or propagates `OpsError` (failure).
 
-- [ ] **CR-27 — Manifest validation catch mutates error code blindly**
+- [x] **CR-27 — Manifest validation catch mutates error code blindly**
   `generate.mjs:~416`
-  **Fix:** Guard: `if (e instanceof Error && !e.code) e.code = 'OPS_MANIFEST_INVALID';`
+  **Fix:** Already fixed in prior commit — guard `if (e instanceof Error && !e.code)` is in place.
 
 - [x] **CR-28 — Two overlapping IR family docs without cross-links**
   **Fix:** Add a cross-reference line at the top of each file pointing to the other.
@@ -148,20 +148,20 @@ Each item has enough context to execute independently if session context is lost
   `docs/spec/ir-family-spec.md:14-19`
   **Fix:** Replace `\n` with `<br/>` in Mermaid node labels.
 
-- [ ] **CR-33 — `export default` alongside named `export class` (dead code)**
+- [x] **CR-33 — `export default` alongside named `export class` (dead code)**
   `qir-validate.mjs:155`, `rehearse.mjs:237`, `cert-sign.mjs:82`
-  **Fix:** Log to `.claude/bad_code.md` — this is a project-wide convention issue.
+  **Fix:** Logged to `.claude/bad_code.md` — this is a project-wide convention issue.
 
-- [ ] **CR-34 — `lockFor` condition is correct but confusing**
+- [x] **CR-34 — `lockFor` condition is correct but confusing**
   `_migration-plan.mjs:74`
   **Fix:** Add a clarifying comment explaining the PG 11+ behavior.
 
 - [x] **CR-35 — `qir.schema.json` Literal.value `oneOf` lists all 6 JSON types**
   **Fix:** Replace `oneOf` with `{}` (accept any JSON value).
 
-- [ ] **CR-36 — Misleading "validation skipped" in rehearse error path**
+- [x] **CR-36 — Misleading "validation skipped" in rehearse error path**
   `rehearse.mjs:122`
-  **Fix:** Change to `'REALM validation failed in error path'`.
+  **Fix:** Already fixed in prior commit — message now says `'REALM validation failed in error path'`.
 
 - [x] **CR-37 — `ir-family-spec.md` heading still says "(proposed)" in mermaid**
   **Fix:** Already fixed for the section heading but the Plan IR Mermaid node should also reflect
