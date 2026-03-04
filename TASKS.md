@@ -144,7 +144,7 @@ Each item has enough context to execute independently if session context is lost
 - [ ] **CR-31 — CHANGELOG missing comparison URLs**
   **Fix:** Add `[Unreleased]: https://github.com/flyingrobots/wesley/compare/v0.1.0...HEAD` at bottom.
 
-- [ ] **CR-32 — Mermaid `\n` in node labels may not render as linebreaks**
+- [x] **CR-32 — Mermaid `\n` in node labels may not render as linebreaks**
   `docs/spec/ir-family-spec.md:14-19`
   **Fix:** Replace `\n` with `<br/>` in Mermaid node labels.
 
@@ -163,6 +163,7 @@ Each item has enough context to execute independently if session context is lost
   `rehearse.mjs:122`
   **Fix:** Change to `'REALM validation failed in error path'`.
 
-- [ ] **CR-37 — `ir-family-spec.md` heading still says "(proposed)" in mermaid**
+- [x] **CR-37 — `ir-family-spec.md` heading still says "(proposed)" in mermaid**
   **Fix:** Already fixed for the section heading but the Plan IR Mermaid node should also reflect
   this is shipped. Check if the Mermaid diagram label needs updating.
+  **Result:** Verified — no "(proposed)" text in any Mermaid node labels; no change needed.

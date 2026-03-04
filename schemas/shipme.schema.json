@@ -11,7 +11,7 @@
     "environment": { "type": ["string", "null"] },
     "scores": { "type": ["object", "null"] },
     "realm": {
-      "anyOf": [ { "$ref": "https://wesley.dev/schemas/realm.schema.json#" }, { "type": "null" } ]
+      "anyOf": [ { "$ref": "realm.schema.json#" }, { "type": "null" } ]
     },
     "artifacts": { "type": ["object", "null"] },
     "signatures": {

@@ -143,16 +143,7 @@
       "required": ["kind", "value"],
       "properties": {
         "kind": { "const": "Literal" },
-        "value": {
-          "oneOf": [
-            { "type": "string" },
-            { "type": "number" },
-            { "type": "boolean" },
-            { "type": "null" },
-            { "type": "array" },
-            { "type": "object" }
-          ]
-        },
+        "value": {},
         "type": { "type": ["string", "null"] }
       },
       "additionalProperties": false
@@ -280,4 +271,3 @@
     "QueryPlan": { "$ref": "#" }
   }
 }
-

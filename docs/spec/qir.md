@@ -13,6 +13,7 @@ Status: Draft (synchronized with `schemas/qir.schema.json`).
   - `root`: `RelationNode` (Table | Join | Subquery | Lateral | Filter)
   - `projection`: list of `ProjectionItem`s
   - `orderBy?`: list of `OrderBy`
+  - `distinctOn?`: list of `Expr`s
   - `limit?`, `offset?`: integers or null
 
 ## Relations

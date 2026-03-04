@@ -80,6 +80,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - `generator-echo` now emits `echo-ir/v2` (was `echo-ir/v1`)
 - `schema_sha256` in IR uses canonical AST hash (was raw SDL hash)
 - **CR-13/14/20/21:** `docs/guides/qir-ops.md` — remove stale "Discovery Modes (planned)" section, add `version` field to registry example, update shipped features to present tense, prune shipped roadmap bullets
+- **CR-32:** `docs/spec/ir-family-spec.md` — replace `\n` with `<br/>` in Mermaid node labels so line breaks render correctly
 
 ### Fixed
 

@@ -20,7 +20,8 @@
                 "type": "array",
                 "items": { "$ref": "#/definitions/Step" }
               }
-            }
+            },
+            "additionalProperties": false
           }
         }
       }
@@ -41,7 +42,8 @@
         "properties": {
           "change": { "type": "string" },
           "steps": { "type": "array", "items": { "$ref": "#/definitions/Step" } }
-        }
+        },
+        "additionalProperties": false
       }
     },
     "radar": {
@@ -51,7 +53,8 @@
         "lines": { "type": "array", "items": { "type": "string" } },
         "notes": { "type": ["array", "null"], "items": { "type": "string" } },
         "counts": { "type": "object", "additionalProperties": { "type": "integer" } }
-      }
+      },
+      "additionalProperties": false
     }
   },
   "definitions": {

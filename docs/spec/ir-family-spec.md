@@ -4,6 +4,8 @@ Wesley treats “IR” not as a single type but as a small, coherent family of r
 
 At a high level, the Schema IR captures the shape of your world, the Query IR (QIR) captures what you want to read from that world, the Plan and REALM IRs explain and rehearse the impact of changes, and the Envelope bundles proofs and artifacts so humans and tools can trust the result.
 
+> See also: [IR Family Overview](ir-family.md) for a concise reference.
+
 ```mermaid
 flowchart LR
   subgraph Authoring

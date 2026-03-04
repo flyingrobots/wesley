@@ -2,6 +2,8 @@
 
 Wesley uses a small, versioned IR family rather than a single monolithic IR:
 
+> See also: [IR Family Specification and Design](ir-family-spec.md) for the full prose specification.
+
 - Schema IR (canonical): `schemas/ir.schema.json`
   - Produced by the GraphQL parser; consumed by generators, diff/planner, and rehearsal.
   - Captures tables, columns, directives, PK/FK/indexes, tenant/owner hints.
