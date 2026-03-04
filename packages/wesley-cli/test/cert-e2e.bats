@@ -33,6 +33,38 @@ create_realm_pass() {
 JSON
 }
 
+@test "cert sign + verify with two different keys (C5 multi-sig)" {
+  create_schema
+  create_realm_pass
+
+  run node "$CLI_PATH" transform --schema schema.graphql --out-dir out
+  assert_success
+
+  run node "$CLI_PATH" cert-create --env test --out .wesley/SHIPME.md
+  assert_success
+
+  command -v openssl >/dev/null || skip "openssl not available"
+
+  # Two distinct key pairs
+  openssl genpkey -algorithm ed25519 -out alice.key >/dev/null 2>&1
+  openssl pkey -in alice.key -pubout -out alice.pub >/dev/null 2>&1
+  openssl genpkey -algorithm ed25519 -out bob.key >/dev/null 2>&1
+  openssl pkey -in bob.key -pubout -out bob.pub >/dev/null 2>&1
+
+  # First signature
+  run node "$CLI_PATH" cert-sign --in .wesley/SHIPME.md --key alice.key --signer ALICE
+  assert_success
+
+  # Second signature
+  run node "$CLI_PATH" cert-sign --in .wesley/SHIPME.md --key bob.key --signer BOB
+  assert_success
+
+  # Verify both signatures pass (variadic --pub takes space-separated values)
+  run node "$CLI_PATH" cert-verify --in .wesley/SHIPME.md --pub alice.pub bob.pub --json
+  assert_success
+  echo "$output" | jq -e 'if has("validSignatures") then (.validSignatures == 2) else empty end' >/dev/null
+}
+
 @test "cert create + sign + verify succeeds with PASS realm" {
   create_schema
   create_realm_pass

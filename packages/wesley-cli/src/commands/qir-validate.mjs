@@ -11,8 +11,9 @@ export class QirValidateCommand extends WesleyCommand {
       .description('Validate a QIR JSON file against schemas/qir.schema.json')
       .argument('<file>', 'Path to QIR JSON file')
       .option('--json', 'Emit JSON output')
-      .action(async (file, options) => {
-        return this.execute({ ...options, file });
+      .action(async (file, options, command) => {
+        const globalOpts = command.parent?.parent?.opts?.() || {};
+        return this.execute({ ...globalOpts, ...options, file });
       });
     // Envelope validation
     cmd
@@ -20,8 +21,9 @@ export class QirValidateCommand extends WesleyCommand {
       .description('Validate an IR envelope JSON against schemas (Schema IR + QIR plans)')
       .argument('<file>', 'Path to IR envelope JSON file')
       .option('--json', 'Emit JSON output')
-      .action(async (file, options) => {
-        return this.execute({ ...options, file, envelope: true });
+      .action(async (file, options, command) => {
+        const globalOpts = command.parent?.parent?.opts?.() || {};
+        return this.execute({ ...globalOpts, ...options, file, envelope: true });
       });
 
     // Ops manifest validation
@@ -30,8 +32,9 @@ export class QirValidateCommand extends WesleyCommand {
       .description('Validate an ops manifest JSON against schemas/ops-manifest.schema.json')
       .argument('<file>', 'Path to ops manifest JSON')
       .option('--json', 'Emit JSON output')
-      .action(async (file, options) => {
-        return this.execute({ ...options, file, manifest: true });
+      .action(async (file, options, command) => {
+        const globalOpts = command.parent?.parent?.opts?.() || {};
+        return this.execute({ ...globalOpts, ...options, file, manifest: true });
       });
 
     // Ops registry validation
@@ -40,8 +43,9 @@ export class QirValidateCommand extends WesleyCommand {
       .description('Validate an ops registry JSON against schemas/ops-registry.schema.json')
       .argument('<file>', 'Path to ops registry JSON')
       .option('--json', 'Emit JSON output')
-      .action(async (file, options) => {
-        return this.execute({ ...options, file, registry: true });
+      .action(async (file, options, command) => {
+        const globalOpts = command.parent?.parent?.opts?.() || {};
+        return this.execute({ ...globalOpts, ...options, file, registry: true });
       });
     return root;
   }

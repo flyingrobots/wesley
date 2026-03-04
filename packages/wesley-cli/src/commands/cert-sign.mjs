@@ -21,7 +21,7 @@ export class CertSignCommand extends WesleyCommand {
     }
     const md = await this.ctx.fs.read(options.in);
     const { pre, json, post } = extractJsonBlock(md);
-    const canonical = canonicalize(json);
+    const canonical = canonicalize({ ...json, signatures: [] });
     const { createPrivateKey, createPublicKey, sign, createHash } = await import('node:crypto');
     const pem = await this.ctx.fs.readFile(options.key);
     const key = createPrivateKey(pem);
