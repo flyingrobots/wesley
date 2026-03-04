@@ -175,6 +175,19 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **SR-n8:** `hashArtifacts` in `cert-create.mjs` logs debug message on file hash failure instead of swallowing errors via bare `catch {}`
 - **SR-n9:** `cert-create.mjs` uses static `import { createHash } from 'node:crypto'` instead of dynamic `await import('node:crypto')` inside `hashArtifacts`
 
+#### Self-Review Round 8 — Schema, Docs, and Hygiene
+
+- **SR-n14:** `realm.schema.json` `if` condition now includes `"required": ["verdict"]` so the conditional `then` clause only fires when `verdict` is actually present
+- **SR-n16:** `shipme.schema.json` `alg` field gains a description noting supported values (`"ed25519"` or null)
+- **SR-n11:** Index dedup signature in `_migration-plan.mjs` now includes the `using` method (defaults to `btree`), preventing false dedup of indexes on the same columns with different access methods
+- **SR-m16:** `docs/spec/ir-family.md` now documents Plan IR, REALM IR, Ops Manifest, and Ops Registry alongside Schema IR and QIR
+- **SR-n20:** `docs/build-artifacts.md` changes `out/ops/` description from "Experimental" to "Generated" to match current enabled status
+- **SR-m17:** `docs/guides/qir-ops.md` "See also" reference reformatted as a proper markdown link (target file exists)
+- **SR-n22:** Strip extra trailing blank lines from fixture JSON files (`sample-flat.qir.json`, `sample-envelope.json`, `ops.manifest.json`)
+- **SR-n23:** Strip extra trailing blank lines from spec docs (`qir.md`, `ir-family.md`)
+- **SR-m19:** `qir-envelope-schema.bats` now asserts output content (not just exit code) after `envelope-validate`
+- **SR-m20:** Verified: `holmes-setup/action.yml` omits explicit pnpm version because `pnpm/action-setup@v4` reads `packageManager` from `package.json` — no change needed
+
 #### CodeRabbit Round-6 (PR #392)
 
 - **CR-R6-1 (Critical):** `renderSearchPath` in `emit.mjs` now preserves PostgreSQL special variables (`$user`, `pg_temp`) verbatim instead of mangling them through `sanitizeIdentBase`
