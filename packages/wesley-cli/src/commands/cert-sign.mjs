@@ -23,7 +23,7 @@ export class CertSignCommand extends WesleyCommand {
     const { pre, json, post } = extractJsonBlock(md);
     const canonical = canonicalize({ ...json, signatures: [] });
     const { createPrivateKey, createPublicKey, sign, createHash } = await import('node:crypto');
-    const pem = await this.ctx.fs.readFile(options.key);
+    const pem = await this.ctx.fs.read(options.key);
     const key = createPrivateKey(pem);
     if (key.asymmetricKeyType !== 'ed25519') {
       const e = new Error(`Unsupported key type: ${key.asymmetricKeyType} (expected ed25519)`);

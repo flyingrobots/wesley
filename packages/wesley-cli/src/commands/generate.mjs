@@ -67,7 +67,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
     // Safety: require clean git working tree unless explicitly allowed
     const env = this.ctx.env || {};
     if (shouldEnforceClean(env, options) && !options.allowDirty) {
-      try { await assertCleanGit(); } catch (e) { e.code = e.code || 'DIRTY_WORKTREE'; throw e; }
+      try { await assertCleanGit(this.ctx.shell); } catch (e) { e.code = e.code || 'DIRTY_WORKTREE'; throw e; }
     }
 
     const debugDump = options.printComposedSdl || options.printIr;
@@ -180,9 +180,9 @@ export class GeneratePipelineCommand extends WesleyCommand {
     if (options.emitBundle && !options.dryRun) {
       try {
         // Resolve current commit SHA (fallback to env or unknown)
-        let sha = process.env.GITHUB_SHA || 'unknown';
+        let sha = (this.ctx.env || {}).GITHUB_SHA || 'unknown';
         try {
-          const out = await (globalThis?.wesleyCtx?.shell?.exec?.('git rev-parse HEAD'));
+          const out = await (this.ctx.shell?.exec?.('git rev-parse HEAD'));
           const s = out?.stdout?.trim();
           if (s) sha = s;
         } catch {}
@@ -256,14 +256,15 @@ export class GeneratePipelineCommand extends WesleyCommand {
 
         // Append a tiny history for MORIARTY (hydrate from merge-base if available)
         try {
+          const ctxEnv = this.ctx.env || {};
           const history = await loadMoriartyHistory({
             fs: this.ctx.fs,
-            shell: globalThis?.wesleyCtx?.shell,
+            shell: this.ctx.shell,
             defaultBase:
-              process.env.WESLEY_BASE_REF ||
-              process.env.GITHUB_BASE_REF ||
-              process.env.WESLEY_DEFAULT_BRANCH ||
-              process.env.GITHUB_DEFAULT_BRANCH ||
+              ctxEnv.WESLEY_BASE_REF ||
+              ctxEnv.GITHUB_BASE_REF ||
+              ctxEnv.WESLEY_DEFAULT_BRANCH ||
+              ctxEnv.GITHUB_DEFAULT_BRANCH ||
               'main'
           });
           const day = Math.floor(Date.now() / 86400000);
@@ -518,14 +519,14 @@ export class GeneratePipelineCommand extends WesleyCommand {
             const validate = ajv.compile(schema);
             if (!validate(reg)) {
               const err = new OpsError('OPS_REGISTRY_INVALID', 'Generated ops registry failed schema validation', { errors: validate.errors, file: registryPath });
-              this.ctx.logger.error(err.meta, err.message);
+              logger.error(err.meta, err.message);
               if (!options.opsAllowErrors) throw err;
             } else {
-              this.ctx.logger.info({ file: registryPath }, 'Ops registry validated');
+              logger.info({ file: registryPath }, 'Ops registry validated');
             }
           }
         } catch (ve) {
-          this.ctx.logger.warn({ error: ve?.message }, 'Ops registry validation skipped due to error');
+          logger.warn({ error: ve?.message }, 'Ops registry validation skipped due to error');
           if (!options.opsAllowErrors) throw ve;
         }
       }
@@ -764,13 +765,13 @@ function shouldEnforceClean(env, options) {
   // default policy: enforce only when producing bundle/certs
   return !!options.emitBundle;
 }
-async function assertCleanGit() {
+async function assertCleanGit(shell) {
   try {
-    await (globalThis?.wesleyCtx?.shell?.execSync?.('git rev-parse --is-inside-work-tree', { stdio: 'ignore' }));
+    await (shell?.execSync?.('git rev-parse --is-inside-work-tree', { stdio: 'ignore' }));
   } catch {
     return; // Not a git repo: skip
   }
-  const out = (await globalThis?.wesleyCtx?.shell?.exec?.('git status --porcelain')).stdout.trim();
+  const out = (await shell?.exec?.('git status --porcelain'))?.stdout?.trim?.() || '';
   if (out.length > 0) {
     const err = new Error('Working tree has uncommitted changes. Commit or stash before running, or pass --allow-dirty.');
     err.code = 'DIRTY_WORKTREE';
