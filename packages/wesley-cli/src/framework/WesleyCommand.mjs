@@ -179,6 +179,8 @@ export class WesleyCommand {
     options.logFormat = requestedFormat;
     if (requestedFormat === 'json') {
       options.json = true;
+      // Known DI violation tracked in BACKLOG: mutating process.env is needed
+      // for compatibility with pino's log format detection during initialization.
       process.env.WESLEY_LOG_FORMAT = 'json';
     }
 

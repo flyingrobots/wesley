@@ -197,7 +197,10 @@ function renderExpr(e, params, identOpts, opts) {
     case 'JsonAgg':
       return renderJsonAgg(e, params, identOpts, opts);
     default:
-      // Allow plain objects shaped like ColumnRef/ParamRef/Literal
+      // Backward-compat shims: duck-type plain objects that lack an explicit
+      // `kind` tag but structurally match known expression shapes. These
+      // fallbacks exist for legacy callers that construct raw objects instead
+      // of using Nodes.mjs constructors. Tracked in .claude/bad_code.md.
       if (isObject(e.left) && e.op) return renderPredicate(e, params, identOpts, opts);
       if (e.table && e.column) return `${renderIdent(e.table, identOpts)}.${renderIdent(e.column, identOpts)}`;
       if (e.name && e.args) {

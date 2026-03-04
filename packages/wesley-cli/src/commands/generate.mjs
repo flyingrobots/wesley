@@ -33,7 +33,6 @@ export class GeneratePipelineCommand extends WesleyCommand {
       .option('--dry-run', 'Show what would be generated without writing files')
       .option('--allow-dirty', 'Allow running with a dirty git working tree (not recommended)')
       .option('--i-know-what-im-doing', 'Acknowledge hazardous flags in CI environments')
-      .option('-v, --verbose', 'More logs (level=debug)')
       .option('--debug', 'Debug output with stack traces')
       .option('-q, --quiet', 'Silence logs (level=silent)')
       .option('--json', 'Emit newline-delimited JSON logs')
@@ -415,7 +414,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
           logger.error({ code: e.code, errors: e.meta?.errors, file: manifestPath }, e.message);
           throw e;
         }
-        const repoRoot = (this.ctx.env || {}).WESLEY_REPO_ROOT || process.cwd();
+        const repoRoot = (this.ctx.env || {}).WESLEY_REPO_ROOT || this.ctx.cwd?.() || process.cwd();
         const resolvedIncludes = await Promise.all(
           (manifest.include || []).map(p => fs.join(repoRoot, p))
         );

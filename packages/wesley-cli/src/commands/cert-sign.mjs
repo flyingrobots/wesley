@@ -31,7 +31,7 @@ export class CertSignCommand extends WesleyCommand {
       e.code = 'EARGS';
       throw e;
     }
-    const sig = sign(null, Buffer.from(canonical), key).toString('base64');
+    const sig = sign(null, new TextEncoder().encode(canonical), key).toString('base64');
     // Derive a deterministic keyId from the public key (SPKI DER → SHA-256 hex)
     const pub = createPublicKey(key);
     const pubDer = pub.export({ type: 'spki', format: 'der' });

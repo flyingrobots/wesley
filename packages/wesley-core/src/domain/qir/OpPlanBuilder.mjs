@@ -51,7 +51,7 @@ export function buildPlanFromJson(op) {
       const table = (typeof j.table === 'string' && j.table.trim()) || null;
       if (!table) throw new Error(`join.table must be a non-empty string: ${JSON.stringify(j)}`);
       if (!j.on) throw new Error('join.on is required for joins');
-      const jAlias = j.alias || `j_${table.slice(0,1)}`;
+      const jAlias = j.alias || `j_${table}`;
       const right = new TableNode(table, jAlias);
       const jt = String(j.type || 'INNER').toUpperCase();
       const joinType = jt === 'LEFT' ? 'LEFT' : 'INNER';

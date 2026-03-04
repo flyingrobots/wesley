@@ -22,7 +22,7 @@ teardown() {
     --ops "$ROOT_DIR/test/fixtures/examples/ops" \
     --ops-explain mock \
     --ops-allow-errors \
-    --i-know-what-im-doing \
+    --i-know-what-im-doing `# Bypass safety prompt for automated testing` \
     --allow-dirty
 
   assert_success

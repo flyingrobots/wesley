@@ -1,5 +1,7 @@
 #!/usr/bin/env bats
 
+# Note: This test uses inline Node.js rather than CLI invocation, so bats-assert is not loaded.
+
 @test "QIR schema validates representative plans (Ajv)" {
   run node --input-type=module - <<'NODE'
     import Ajv from 'ajv';

@@ -7,16 +7,18 @@
  * - Avoid surprises around reserved keywords and invalid characters
  */
 
-// A pragmatic reserved keyword set covering common PostgreSQL tokens.
+// A pragmatic reserved keyword set covering common PostgreSQL 16 fully-reserved tokens.
 // Not exhaustive; intended to catch obvious collisions.
 export const RESERVED = new Set([
-  'all','analyze','and','as','asc','between','by','case','check','collate','column','constraint',
-  'create','cross','current_catalog','current_date','current_role','current_schema','current_time',
-  'current_timestamp','default','delete','desc','distinct','do','else','end','except','exists',
-  'false','fetch','for','foreign','from','full','group','having','ilike','in','inner','insert','intersect',
-  'into','is','join','left','like','limit','localtime','localtimestamp','natural','not','null','offset',
-  'on','or','order','outer','primary','references','returning','right','select','session_user',
-  'some','table','then','to','true','union','unique','update','user','using','values','view','when','where',
+  'all','alter','analyze','and','any','as','asc','between','by','case','cast','check','collate',
+  'column','constraint','create','cross','current_catalog','current_date','current_role',
+  'current_schema','current_time','current_timestamp','default','delete','desc','distinct','do',
+  'drop','else','end','except','exists','false','fetch','for','foreign','from','full','grant',
+  'group','having','ilike','in','index','inner','insert','intersect','into','is','join','left',
+  'like','limit','localtime','localtimestamp','natural','not','null','offset','on','or','order',
+  'outer','primary','references','returning','revoke','right','select','session_user','set',
+  'some','table','then','to','trigger','true','union','unique','update','user','using','values',
+  'view','when','where','window','with',
 ]);
 
 const IDENT_SAFE_RE = /^[a-z_][a-z0-9_]*$/; // canonical unquoted identifier

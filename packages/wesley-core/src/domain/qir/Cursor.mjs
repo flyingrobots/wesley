@@ -24,14 +24,11 @@ export function decodeCursor(str) {
     const binary = atob(b64);
     const bytes = Uint8Array.from(binary, c => c.codePointAt(0));
     const json = new TextDecoder().decode(bytes);
-    const parsed = JSON.parse(json);
+    const parsed = JSON.parse(json, (key, val) => (key === '__proto__' || key === 'constructor' || key === 'prototype') ? undefined : val);
     // Guard: callers expect a plain object; coerce primitives/arrays to {}
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
       return {};
     }
-    // Strip prototype-polluting keys
-    delete parsed.__proto__;
-    delete parsed.constructor;
     return parsed;
   } catch (e) {
     if (e instanceof SyntaxError) return {};

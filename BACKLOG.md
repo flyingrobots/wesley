@@ -18,6 +18,10 @@ Items tracked from PR reviews, retrospectives, and ongoing development.
 - [ ] Add negative-path cert tests: wrong key type, missing key, corrupt SHIPME format
 - [ ] Add `--strict-ident` integration test that round-trips all PostgreSQL 16 reserved keywords
 
+## Schema
+
+- [ ] `schemas/qir.schema.json` uses `QueryPlan: { "$ref": "#" }` as a root self-reference, which may confuse external JSON Schema tooling (e.g., code generators, IDE validators) that do not handle recursive `$ref` to root. Consider introducing a named `$defs/QueryPlan` definition and referencing that instead.
+
 ## Infrastructure
 
 - [ ] Vendor Bats plugins (`bats-support`, `bats-assert`, `bats-file`) into `test/vendor/` to eliminate transient CI clone failures

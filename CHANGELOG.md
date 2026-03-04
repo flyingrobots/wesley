@@ -126,6 +126,37 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **CR-16:** `assertCleanGit` prefers async `shell.exec()` over awaiting synchronous `execSync`
 - **CR-34:** `lockFor` in `_migration-plan.mjs` — add clarifying comment explaining PG 11+ ADD COLUMN lock behavior
 
+#### QIR Phase C — Self-Review Round 3
+
+- **SR-M1:** `lowerToSQL` LIMIT/OFFSET now requires integer values (`Number.isInteger`) — fractional values like `5.5` are rejected instead of producing invalid SQL
+- **SR-M2:** `renderLiteral` rejects `NaN` and `Infinity` number values — previously emitted as bare `NaN`/`Infinity` SQL tokens
+- **SR-M3:** DISTINCT ON prefix logic rewritten — removes matching entries from orderBy first, then prepends in distinctOn order (preserves user direction/nulls); prevents duplicate ORDER BY entries when user orderBy has the same expressions in a different order
+- **SR-M4:** `encodeCursor`/`decodeCursor` use TextEncoder/TextDecoder pipeline for UTF-8-safe base64 — previously crashed on multi-byte Unicode (emoji, CJK) via Latin1-only `btoa`
+- **SR-M5:** `emitMigrations` emits `DEFAULT` for any column with a default value and `NOT NULL` for non-nullable columns — previously only emitted `DEFAULT` when `nullable === false`, silently dropping defaults on nullable columns
+- **SR-M6:** Migration `DEFAULT` validation switched from denylist regex to strict allowlist (`SAFE_DEFAULT_RE`) — accepts numeric literals, booleans, bare function calls (`now()`), and single-quoted strings only
+- **SR-M7:** `loadMoriartyHistory` receives env via parameter — removed direct `process.env` access for `WESLEY_BASE_REF`, `GITHUB_BASE_REF`, `WESLEY_DEFAULT_BRANCH`, `GITHUB_DEFAULT_BRANCH`
+- **SR-M8:** `loadMoriartyHistory` receives logger via parameter — replaced four `console.warn` calls with injected `logger.warn`
+- **SR-M9:** `plan.mjs` `assertCleanGit` accepts `shell` parameter from `this.ctx.shell` and uses async `shell.exec()` — removed `globalThis` access and synchronous `execSync`
+- **SR-M10:** `schemaValidator.mjs` `loadSchemaFile` prefers `ctx.cwd?.()` over bare `process.cwd()` fallback; added `await` on import.meta.url fallback path; added directory math comment
+- **SR-M11:** Document mixed JSON Schema drafts (draft 2020-12 vs draft-07) in `docs/spec/ir-family-spec.md`
+- **SR-M12:** `plan-report.schema.json` adds `additionalProperties: false` to `plan`, `explain`, and root objects; adds `description` to `Step` definition explaining why `additionalProperties` is intentionally omitted (draft-07 `allOf` constraint)
+- **SR-M13:** `realm-schema.bats` test renamed from "validates against realm.schema.json" to "emits plan-report shape" — dry-run output is plan-report, not realm; added `mapping` and `radar` key assertions
+- **SR-m2:** `renderExpr` duck-typing fallbacks marked as backward-compat shims; logged to `.claude/bad_code.md`
+- **SR-m3:** `identifiers.mjs` RESERVED set updated to PostgreSQL 16 — added `alter`, `any`, `cast`, `drop`, `grant`, `index`, `revoke`, `set`, `trigger`, `window`, `with`
+- **SR-m9:** `cert-sign.mjs` uses `TextEncoder` for UTF-8 data signing instead of `Buffer.from()`
+- **SR-m13:** `generate.mjs` repo root resolution prefers `ctx.cwd?.()` over bare `process.cwd()` fallback
+- **SR-m14:** `generate.mjs` registry read uses `String()` instead of `.toString('utf8')` for host-adapter compatibility
+- **SR-m15:** `generate.mjs` ops registry and entry `schema` fields use `normalizedSchema` (lowercased) to match emitted SQL
+- **SR-n1:** `decodeCursor` uses `JSON.parse` reviver to filter `__proto__`, `constructor`, and `prototype` keys during parsing
+- **SR-n5:** Default join alias uses full table name (`j_${table}`) instead of first character to prevent collisions
+- **SR-n6:** `renderSearchPath` JSDoc documents lowercase-folding behavior
+- **SR-n10:** Remove duplicate `-v, --verbose` option from `generate` subcommand (already on root program)
+- **SR-n12:** `WesleyCommand.mjs` `process.env.WESLEY_LOG_FORMAT` mutation documented as known DI violation
+- **SR-n15:** `qir.schema.json` root self-reference `QueryPlan: { "$ref": "#" }` logged to BACKLOG for future tooling compatibility
+- **SR-n17:** `ops-explain.bats` `--i-know-what-im-doing` flag documented with inline comment
+- **SR-n18:** `cert-e2e.bats` jq assertions simplified from fragile `if has(...) then ... else empty end` to direct `.validSignatures == 2` / `.ok == true`
+- **SR-n19:** `qir-schema.bats` header comment explains why bats-assert plugins are not loaded (inline Node.js test)
+
 #### QIR Phase C — Self-Review Round 2
 
 - **SR-m1:** Document `findIndexByNameOnly` fallback in `lowerToSQL.mjs` — explains when the name-only param lookup legitimately triggers and its silent-binding risk

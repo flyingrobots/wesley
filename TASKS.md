@@ -275,230 +275,230 @@ plus 2 false-positive P1/P2 from chatgpt-codex-connector).
 
 ### Major (13)
 
-- [ ] **SR-M1 — LIMIT/OFFSET accepts fractional values**
+- [x] **SR-M1 — LIMIT/OFFSET accepts fractional values**
   `packages/wesley-core/src/domain/qir/lowerToSQL.mjs:71-79`
   `Number.isFinite(n) && n >= 0` never checks `Number.isInteger(n)`. `LIMIT 5.5` produces
   invalid SQL. Inconsistent with `OpPlanBuilder.toPosInt` which validates integers.
   **Fix:** Add `!Number.isInteger(n)` to both LIMIT and OFFSET checks. Add test for fractional values.
 
-- [ ] **SR-M2 — `renderLiteral` emits NaN/Infinity as SQL literals**
+- [x] **SR-M2 — `renderLiteral` emits NaN/Infinity as SQL literals**
   `packages/wesley-core/src/domain/qir/lowerToSQL.mjs:211`
   `String(NaN)` → `"NaN"`, `String(Infinity)` → `"Infinity"` — neither valid SQL.
   **Fix:** Add `Number.isFinite` guard before the number branch. Add test.
 
-- [ ] **SR-M3 — DISTINCT ON splice produces duplicate ORDER BY entries**
+- [x] **SR-M3 — DISTINCT ON splice produces duplicate ORDER BY entries**
   `packages/wesley-core/src/domain/qir/lowerToSQL.mjs:46-57`
   When `distinctOn: [a, b]` and `orderBy: [b DESC, a ASC]`, the splice-in-a-forward-loop
   inserts a duplicate without checking if the expression already exists elsewhere.
   **Fix:** Deduplicate after splicing, or check existence before inserting. Add test with reversed orderBy.
 
-- [ ] **SR-M4 — `encodeCursor` crashes on multi-byte Unicode**
+- [x] **SR-M4 — `encodeCursor` crashes on multi-byte Unicode**
   `packages/wesley-core/src/domain/qir/Cursor.mjs:7-11`
   `btoa(json)` only supports Latin1 (codepoints 0–255). Emoji/CJK payloads throw at runtime.
   **Fix:** Use TextEncoder/TextDecoder pipeline for UTF-8-safe base64. Add Unicode tests.
 
-- [ ] **SR-M5 — Nullable columns with defaults silently lose DEFAULT clause**
+- [x] **SR-M5 — Nullable columns with defaults silently lose DEFAULT clause**
   `packages/wesley-cli/src/commands/_migration-plan.mjs:120-121`
   `DEFAULT` only emitted when `s.nullable === false && s.default`. Nullable + default → dropped.
   **Fix:** Emit DEFAULT for any column that has a default value, not only NOT NULL columns.
 
-- [ ] **SR-M6 — `_migration-plan.mjs` default value denylist insufficient (Security)**
+- [x] **SR-M6 — `_migration-plan.mjs` default value denylist insufficient (Security)**
   `packages/wesley-cli/src/commands/_migration-plan.mjs:117`
   Denylist regex `/[;'"\\]|--|\/\*/` is fragile. Values like `now() OR 1=1` pass.
   **Fix:** Switch to strict allowlist: numeric literals, booleans, bare function calls, quoted strings.
 
-- [ ] **SR-M7 — `loadMoriartyHistory` uses `process.env` directly**
+- [x] **SR-M7 — `loadMoriartyHistory` uses `process.env` directly**
   `packages/wesley-cli/src/commands/generate.mjs:797-801`
   Reads `WESLEY_BASE_REF`, `GITHUB_BASE_REF`, etc. from `process.env` instead of injected `ctx.env`.
   **Fix:** Pass `env` parameter into `loadMoriartyHistory`; remove `process.env` fallback.
 
-- [ ] **SR-M8 — `loadMoriartyHistory` uses `console.warn` directly**
+- [x] **SR-M8 — `loadMoriartyHistory` uses `console.warn` directly**
   `packages/wesley-cli/src/commands/generate.mjs:778,790,806,820`
   Four `console.warn` calls bypass injected logger.
   **Fix:** Pass `logger` parameter; replace `console.warn` with `logger.warn`.
 
-- [ ] **SR-M9 — `plan.mjs` `assertCleanGit` uses `globalThis` and sync shell**
+- [x] **SR-M9 — `plan.mjs` `assertCleanGit` uses `globalThis` and sync shell**
   `packages/wesley-cli/src/commands/plan.mjs:158-167`
   Uses `globalThis?.wesleyCtx?.shell` instead of injected context; uses sync `execSync`.
   **Fix:** Accept `shell` parameter from `this.ctx.shell`; use async `shell.exec()`.
 
-- [ ] **SR-M10 — `schemaValidator.mjs` falls back to `process.cwd()`**
+- [x] **SR-M10 — `schemaValidator.mjs` falls back to `process.cwd()`**
   `packages/wesley-cli/src/framework/schemaValidator.mjs:43`
   Host-layer concern leaking into framework code.
   **Fix:** Replace with `ctx.cwd?.() || process.cwd()`.
 
-- [ ] **SR-M11 — Mixed JSON Schema drafts without documentation**
+- [x] **SR-M11 — Mixed JSON Schema drafts without documentation**
   `schemas/evidence-map.schema.json` uses draft 2020-12; 7 others use draft-07. Not documented.
   **Fix:** Add documentation in `docs/spec/ir-family-spec.md` noting the draft split. Log
   unification to BACKLOG.md.
 
-- [ ] **SR-M12 — `plan-report.schema.json` missing `additionalProperties: false`**
+- [x] **SR-M12 — `plan-report.schema.json` missing `additionalProperties: false`**
   `schemas/plan-report.schema.json:8-36`
   The `plan` and `explain` wrapper objects (and top-level root) accept extra keys silently.
   **Fix:** Add `additionalProperties: false` to `plan`, `explain`, and root objects.
 
-- [ ] **SR-M13 — `realm-schema.bats` asserts wrong shape**
+- [x] **SR-M13 — `realm-schema.bats` asserts wrong shape**
   `packages/wesley-cli/test/realm-schema.bats:16-17`
   Test claims "validates against realm.schema.json" but asserts plan-report keys.
   **Fix:** Rename test / fix assertions to reflect actual dry-run output shape (plan-report).
 
 ### Minor (20)
 
-- [ ] **SR-m1 — `renderParam` name-only fallback could bind wrong placeholder**
+- [x] **SR-m1 — `renderParam` name-only fallback could bind wrong placeholder**
   `packages/wesley-core/src/domain/qir/lowerToSQL.mjs:249-265`
   **Fix:** Log warning or throw if key-based lookup fails but name-only fallback succeeds.
 
-- [ ] **SR-m2 — `renderExpr` default duck-typing fallbacks undermine type discipline**
+- [x] **SR-m2 — `renderExpr` default duck-typing fallbacks undermine type discipline**
   `packages/wesley-core/src/domain/qir/lowerToSQL.mjs:192-202`
   **Fix:** Log to `.claude/bad_code.md`. Add comment marking as backward-compat shim.
 
-- [ ] **SR-m3 — `identifiers.mjs` RESERVED set missing common PG keywords**
+- [x] **SR-m3 — `identifiers.mjs` RESERVED set missing common PG keywords**
   `packages/wesley-core/src/domain/qir/identifiers.mjs:12-20`
   Missing `with`, `window`, `grant`, `revoke`, `role`, `trigger`, `index`, `type`, etc.
   **Fix:** Update to PostgreSQL 16 fully-reserved list. Already tracked in BACKLOG.
 
-- [ ] **SR-m4 — `ParamCollector` does not visit `distinctOn` expressions**
+- [x] **SR-m4 — `ParamCollector` does not visit `distinctOn` expressions**
   `packages/wesley-core/src/domain/qir/ParamCollector.mjs:13-26`
   **Fix:** Add `distinctOn` traversal between `orderBy` and `root`.
 
-- [ ] **SR-m5 — Two separate RESERVED sets (emit.mjs vs identifiers.mjs)**
+- [x] **SR-m5 — Two separate RESERVED sets (emit.mjs vs identifiers.mjs)**
   `packages/wesley-core/src/domain/qir/emit.mjs:20-22`
   **Fix:** Import `RESERVED` from `identifiers.mjs` for param-name collision check.
 
-- [ ] **SR-m6 — `OpPlanBuilder` array-form join ref accepts empty-string table**
+- [x] **SR-m6 — `OpPlanBuilder` array-form join ref accepts empty-string table**
   `packages/wesley-core/src/domain/qir/OpPlanBuilder.mjs:196-218`
   **Fix:** Validate that `r[0]` is non-empty when provided.
 
-- [ ] **SR-m7 — `cert-verify.mjs` bare `catch {}` swallows infra errors**
+- [x] **SR-m7 — `cert-verify.mjs` bare `catch {}` swallows infra errors**
   `packages/wesley-cli/src/commands/cert-verify.mjs:60-69`
   **Fix:** Distinguish crypto verification failures from infrastructure errors; re-throw non-verification errors.
 
-- [ ] **SR-m8 — `extractJsonBlock` doesn't assert marker ordering**
+- [x] **SR-m8 — `extractJsonBlock` doesn't assert marker ordering**
   `packages/wesley-cli/src/commands/_cert-utils.mjs:13-23`
   **Fix:** Assert `begin < fence < fenceEnd < end` after finding positions.
 
-- [ ] **SR-m9 — `cert-sign.mjs` uses `Buffer.from()` despite M6 migration**
+- [x] **SR-m9 — `cert-sign.mjs` uses `Buffer.from()` despite M6 migration**
   `packages/wesley-cli/src/commands/cert-sign.mjs:34`
   **Fix:** Replace with `TextEncoder` for UTF-8 data paths. Keep `Buffer` for base64 with comment.
 
-- [ ] **SR-m10 — `qir-validate.mjs` no-subcommand path throws instead of showing help**
+- [x] **SR-m10 — `qir-validate.mjs` no-subcommand path throws instead of showing help**
   `packages/wesley-cli/src/commands/qir-validate.mjs:9-51`
   **Fix:** Handle no-subcommand case by showing help text.
 
-- [ ] **SR-m11 — `qir-validate.mjs` hardcoded parent depth for global opts**
+- [x] **SR-m11 — `qir-validate.mjs` hardcoded parent depth for global opts**
   `packages/wesley-cli/src/commands/qir-validate.mjs:15-17`
   **Fix:** Walk parent chain dynamically to find root command.
 
-- [ ] **SR-m12 — `rehearse.mjs` health probe SQL injection via `t.name`**
+- [x] **SR-m12 — `rehearse.mjs` health probe SQL injection via `t.name`**
   `packages/wesley-cli/src/commands/rehearse.mjs:79`
   **Fix:** Use `q()` quoting function or inline double-quote escaping.
 
-- [ ] **SR-m13 — `generate.mjs` `process.cwd()` fallback for `repoRoot`**
+- [x] **SR-m13 — `generate.mjs` `process.cwd()` fallback for `repoRoot`**
   `packages/wesley-cli/src/commands/generate.mjs:417`
   **Fix:** Use shared `resolveRepoRoot(ctx)` or `ctx.cwd?.()`.
 
-- [ ] **SR-m14 — `generate.mjs` `.toString('utf8')` on potentially-string `fs.read`**
+- [x] **SR-m14 — `generate.mjs` `.toString('utf8')` on potentially-string `fs.read`**
   `packages/wesley-cli/src/commands/generate.mjs:505`
   **Fix:** Use `String(...)` consistently or call `JSON.parse` directly.
 
-- [ ] **SR-m15 — Registry uses raw `targetSchema` instead of `normalizedSchema`**
+- [x] **SR-m15 — Registry uses raw `targetSchema` instead of `normalizedSchema`**
   `packages/wesley-cli/src/commands/generate.mjs:664`
   **Fix:** Use `normalizedSchema` for `registry.schema` and `entry.sql.schema`.
 
-- [ ] **SR-m16 — `docs/spec/ir-family.md` missing Plan IR, REALM IR, and Ops coverage**
+- [x] **SR-m16 — `docs/spec/ir-family.md` missing Plan IR, REALM IR, and Ops coverage**
   **Fix:** Add bullet points for Plan IR, REALM IR, Ops schemas.
 
-- [ ] **SR-m17 — `docs/guides/qir-ops.md` dangling "See also" reference**
+- [x] **SR-m17 — `docs/guides/qir-ops.md` dangling "See also" reference**
   `docs/guides/qir-ops.md:221`
   **Fix:** Verify target file exists; remove or update if broken.
 
-- [ ] **SR-m18 — Silent `catch {}` on `snapshot.json` read in plan.mjs and rehearse.mjs**
+- [x] **SR-m18 — Silent `catch {}` on `snapshot.json` read in plan.mjs and rehearse.mjs**
   **Fix:** Distinguish ENOENT from parse errors; warn on corrupt JSON.
 
-- [ ] **SR-m19 — `qir-envelope-schema.bats` only asserts exit code, no output**
+- [x] **SR-m19 — `qir-envelope-schema.bats` only asserts exit code, no output**
   **Fix:** Add output content assertion for success message.
 
-- [ ] **SR-m20 — Inconsistent pnpm version pinning across CI workflows**
+- [x] **SR-m20 — Inconsistent pnpm version pinning across CI workflows**
   `.github/workflows/pkg-host-deno.yml` vs `.github/actions/holmes-setup/action.yml`
   **Fix:** Pin version consistently or omit in both (relying on `packageManager`).
 
 ### Nit (23)
 
-- [ ] **SR-n1 — Cursor proto-pollution guard only covers `__proto__`**
+- [x] **SR-n1 — Cursor proto-pollution guard only covers `__proto__`**
   **Fix:** Use `JSON.parse` reviver or `Object.create(null)` + copy.
 
-- [ ] **SR-n2 — Hardcoded unquoted alias `q` in `AS q` despite strict ident policy**
+- [x] **SR-n2 — Hardcoded unquoted alias `q` in `AS q` despite strict ident policy**
   `packages/wesley-core/src/domain/qir/emit.mjs:44`
   **Fix:** Use `renderIdent('q', identOpts)` for consistency.
 
-- [ ] **SR-n3 — Dead code: `!/::/.test(typeHint)` after SAFE_TYPE_RE validation**
+- [x] **SR-n3 — Dead code: `!/::/.test(typeHint)` after SAFE_TYPE_RE validation**
   `packages/wesley-core/src/domain/qir/lowerToSQL.mjs:263`
   **Fix:** Remove redundant check.
 
-- [ ] **SR-n4 — `PredicateCompiler.mjs` not re-exported from barrel `index.mjs`**
+- [x] **SR-n4 — `PredicateCompiler.mjs` not re-exported from barrel `index.mjs`**
   **Fix:** Add `export * from './PredicateCompiler.mjs'` or document exclusion.
 
-- [ ] **SR-n5 — Default join alias `j_${table.slice(0,1)}` collides for same-letter tables**
+- [x] **SR-n5 — Default join alias `j_${table.slice(0,1)}` collides for same-letter tables**
   `packages/wesley-core/src/domain/qir/OpPlanBuilder.mjs:54`
   **Fix:** Use `j_${table}` or `j${joinIndex}`.
 
-- [ ] **SR-n6 — `renderSearchPath` lowercases schema names via sanitizeIdentBase**
+- [x] **SR-n6 — `renderSearchPath` lowercases schema names via sanitizeIdentBase**
   `packages/wesley-core/src/domain/qir/emit.mjs:126-135`
   **Fix:** Document lowercase-folding behavior or allow raw names through.
 
-- [ ] **SR-n7 — `canonicalize` uses `.sort()` without explicit comparator**
+- [x] **SR-n7 — `canonicalize` uses `.sort()` without explicit comparator**
   `packages/wesley-cli/src/commands/_cert-utils.mjs:34`
   **Fix:** Use explicit comparator for locale-independent ordering.
 
-- [ ] **SR-n8 — `hashArtifacts` hardcodes `['schema.sql']`; empty `catch {}`**
+- [x] **SR-n8 — `hashArtifacts` hardcodes `['schema.sql']`; empty `catch {}`**
   `packages/wesley-cli/src/commands/cert-create.mjs:87-100`
   **Fix:** Log debug message when file is skipped.
 
-- [ ] **SR-n9 — Dynamic `import('node:crypto')` inconsistent with DI pattern**
+- [x] **SR-n9 — Dynamic `import('node:crypto')` inconsistent with DI pattern**
   `packages/wesley-cli/src/commands/cert-create.mjs:88`
   **Fix:** Use static import since CLI-only code.
 
-- [ ] **SR-n10 — `-v, --verbose` defined on both root program and `generate` subcommand**
+- [x] **SR-n10 — `-v, --verbose` defined on both root program and `generate` subcommand**
   `packages/wesley-cli/src/program.mjs:57`
   **Fix:** Remove from `generate` subcommand.
 
-- [ ] **SR-n11 — Index dedup signature doesn't include `using` method**
+- [x] **SR-n11 — Index dedup signature doesn't include `using` method**
   `packages/wesley-cli/src/commands/_migration-plan.mjs:42`
   **Fix:** Include `using` in signature: `join('|') + ':' + (i.using || 'btree')`.
 
-- [ ] **SR-n12 — `WesleyCommand.mjs` mutates `process.env.WESLEY_LOG_FORMAT`**
+- [x] **SR-n12 — `WesleyCommand.mjs` mutates `process.env.WESLEY_LOG_FORMAT`**
   **Fix:** Store in `ctx` instead of mutating `process.env`.
 
-- [ ] **SR-n13 — `plan-report.schema.json` Step lacks explanatory comment**
+- [x] **SR-n13 — `plan-report.schema.json` Step lacks explanatory comment**
   **Fix:** Add `description` explaining why `additionalProperties` is omitted.
 
-- [ ] **SR-n14 — `realm.schema.json` `if` condition missing `required: ["verdict"]`**
+- [x] **SR-n14 — `realm.schema.json` `if` condition missing `required: ["verdict"]`**
   **Fix:** Add `required` to make the condition fully explicit.
 
-- [ ] **SR-n15 — `qir.schema.json` root self-reference `"QueryPlan": { "$ref": "#" }`**
+- [x] **SR-n15 — `qir.schema.json` root self-reference `"QueryPlan": { "$ref": "#" }`**
   **Fix:** Log to BACKLOG for future tooling compatibility.
 
-- [ ] **SR-n16 — `shipme.schema.json` `alg` field has no enum constraint**
+- [x] **SR-n16 — `shipme.schema.json` `alg` field has no enum constraint**
   **Fix:** Add `enum: ["ed25519", null]` or document supported values.
 
-- [ ] **SR-n17 — `ops-explain.bats` undocumented `--i-know-what-im-doing` flag**
+- [x] **SR-n17 — `ops-explain.bats` undocumented `--i-know-what-im-doing` flag**
   **Fix:** Add comment explaining why the flag is needed.
 
-- [ ] **SR-n18 — `cert-e2e.bats` fragile jq assertion using `empty` as else**
+- [x] **SR-n18 — `cert-e2e.bats` fragile jq assertion using `empty` as else**
   **Fix:** Replace with direct assertion: `jq -e '.validSignatures == 2'`.
 
-- [ ] **SR-n19 — `qir-schema.bats` doesn't load bats-support/bats-assert plugins**
+- [x] **SR-n19 — `qir-schema.bats` doesn't load bats-support/bats-assert plugins**
   **Fix:** Add standard `load` lines; use `assert_success`/`assert_output`.
 
-- [ ] **SR-n20 — `docs/build-artifacts.md` says "Experimental" but ops is "Enabled"**
+- [x] **SR-n20 — `docs/build-artifacts.md` says "Experimental" but ops is "Enabled"**
   **Fix:** Remove or soften "Experimental" to match `qir-ops.md`.
 
-- [ ] **SR-n21 — `TASKS.md` is ephemeral PR tracker committed to repo**
+- [x] **SR-n21 — `TASKS.md` is ephemeral PR tracker committed to repo**
   **Fix:** Consider moving to PR body or `.github/` after merge.
 
-- [ ] **SR-n22 — Extra trailing blank lines in 4 fixture JSON files**
+- [x] **SR-n22 — Extra trailing blank lines in 4 fixture JSON files**
   `sample-flat.qir.json`, `sample-envelope.json`, `ops.manifest.json`, `products_by_name.op.json`
   **Fix:** Strip extra trailing blank lines.
 
-- [ ] **SR-n23 — Extra trailing blank lines in `docs/spec/*.md` files**
+- [x] **SR-n23 — Extra trailing blank lines in `docs/spec/*.md` files**
   **Fix:** Strip extra trailing blank lines at EOF.

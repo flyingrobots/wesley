@@ -62,7 +62,7 @@ JSON
   # Verify both signatures pass (variadic --pub takes space-separated values)
   run node "$CLI_PATH" cert-verify --in .wesley/SHIPME.md --pub alice.pub bob.pub --json
   assert_success
-  echo "$output" | jq -e 'if has("validSignatures") then (.validSignatures == 2) else empty end' >/dev/null
+  echo "$output" | jq -e '.validSignatures == 2' >/dev/null
 }
 
 @test "cert create + sign + verify succeeds with PASS realm" {
@@ -91,5 +91,5 @@ JSON
   # verify
   run node "$CLI_PATH" cert-verify --in .wesley/SHIPME.md --pub holmes.pub --json
   assert_success
-  echo "$output" | jq -e 'if has("ok") then (.ok == true) else empty end' >/dev/null
+  echo "$output" | jq -e '.ok == true' >/dev/null
 }

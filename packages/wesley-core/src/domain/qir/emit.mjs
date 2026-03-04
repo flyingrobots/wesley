@@ -117,6 +117,12 @@ function uniqueParamNames(ordered) {
 // temp schema. Both are pseudo-identifiers that cannot survive sanitizeIdentBase.
 const PG_SPECIAL_SEARCH_PATH = new Set(['$user', 'pg_temp']);
 
+/**
+ * Render SET search_path value. Non-special entries are lowercased via
+ * sanitizeIdentBase and double-quoted. PostgreSQL special variables ($user,
+ * pg_temp) are emitted verbatim. Note: case-sensitive schema names are
+ * folded to lowercase by sanitizeIdentBase.
+ */
 function renderSearchPath(sp) {
   if (!sp) return '';
   let parts = Array.isArray(sp) ? sp : String(sp).split(',');
