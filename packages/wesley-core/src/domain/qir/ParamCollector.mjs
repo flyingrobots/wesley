@@ -41,10 +41,6 @@ export function collectParams(plan) {
         visitRelation(r.input);
         if (r.predicate) visitPredicate(r.predicate);
         break;
-      case 'DistinctOn':
-        visitRelation(r.input);
-        if (Array.isArray(r.keys)) for (const k of r.keys) visitExpr(k);
-        break;
       default:
         // Table: nothing else to traverse
         break;
@@ -75,8 +71,7 @@ export function collectParams(plan) {
         }
         break;
       default:
-        // Unknown predicate shape — ignore
-        break;
+        throw new Error(`Unsupported predicate kind: ${p.kind}`);
     }
   };
 
@@ -98,16 +93,6 @@ export function collectParams(plan) {
         break;
       case 'ScalarSubquery':
         if (e.plan) visitPlan(e.plan);
-        break;
-      case 'Cast':
-        visitExpr(e.expr);
-        break;
-      case 'CaseWhen':
-        for (const b of e.branches || []) {
-          visitPredicate(b.when);
-          visitExpr(b.then);
-        }
-        if (e.else) visitExpr(e.else);
         break;
       default:
         // ColumnRef | Literal or unknown — nothing to do

@@ -15,10 +15,10 @@ import { collectParams } from './ParamCollector.mjs';
 import { renderIdent } from './identifiers.mjs';
 
 const SAFE_FUNC_RE = /^[a-zA-Z_][a-zA-Z0-9_.]*$/;
+const SAFE_TYPE_RE = /^[a-zA-Z_][a-zA-Z0-9_ [\]]*$/;
 
 // Lightweight helpers
 const isObject = (v) => v && typeof v === 'object';
-const escIdent = (s, opts) => renderIdent(s, opts);
 const escString = (s) => String(s).replace(/'/g, "''");
 
 export function lowerToSQL(plan, paramsEnv = null, opts = {}) {
@@ -30,7 +30,7 @@ export function lowerToSQL(plan, paramsEnv = null, opts = {}) {
     : collectParams(plan);
 
   // Build DISTINCT ON (optional) and SELECT list
-  const selectList = (plan.projection?.items || []).map(pi => `${renderExpr(pi.expr, params, identOpts)} AS ${escIdent(pi.alias, identOpts)}`).join(', ');
+  const selectList = (plan.projection?.items || []).map(pi => `${renderExpr(pi.expr, params, identOpts)} AS ${renderIdent(pi.alias, identOpts)}`).join(', ');
   const projectionSQL = selectList.length > 0 ? selectList : '*';
   const distinctExprs = Array.isArray(plan.distinctOn) ? plan.distinctOn : [];
   const distinctSQL = distinctExprs.length ? `DISTINCT ON (${distinctExprs.map(e => renderExpr(e, params, identOpts)).join(', ')}) ` : '';
@@ -66,8 +66,18 @@ export function lowerToSQL(plan, paramsEnv = null, opts = {}) {
   }
 
   // LIMIT/OFFSET
-  const lim = plan.limit != null ? `\nLIMIT ${Number(plan.limit)}` : '';
-  const off = plan.offset != null ? `\nOFFSET ${Number(plan.offset)}` : '';
+  let lim = '';
+  if (plan.limit != null) {
+    const n = Number(plan.limit);
+    if (!Number.isFinite(n) || n < 0) throw new Error(`Invalid LIMIT: ${JSON.stringify(plan.limit)}`);
+    lim = `\nLIMIT ${n}`;
+  }
+  let off = '';
+  if (plan.offset != null) {
+    const n = Number(plan.offset);
+    if (!Number.isFinite(n) || n < 0) throw new Error(`Invalid OFFSET: ${JSON.stringify(plan.offset)}`);
+    off = `\nOFFSET ${n}`;
+  }
 
   return `SELECT ${distinctSQL}${projectionSQL}\nFROM ${fromSQL}${whereSQL}${orderSQL}${lim}${off}`.trim();
 }
@@ -78,14 +88,14 @@ function renderRelation(r, params, whereParts, identOpts, opts) {
   if (!r) return '';
   switch (r.kind) {
     case 'Table':
-      return `${escIdent(r.table, identOpts)} ${escIdent(r.alias, identOpts)}`;
+      return `${renderIdent(r.table, identOpts)} ${renderIdent(r.alias, identOpts)}`;
     case 'Subquery': {
       const sql = lowerToSQL(r.plan, params, opts);
-      return `(\n${sql}\n) ${escIdent(r.alias, identOpts)}`;
+      return `(\n${sql}\n) ${renderIdent(r.alias, identOpts)}`;
     }
     case 'Lateral': {
       const sql = lowerToSQL(r.plan, params, opts);
-      return `LATERAL (\n${sql}\n) ${escIdent(r.alias, identOpts)}`;
+      return `LATERAL (\n${sql}\n) ${renderIdent(r.alias, identOpts)}`;
     }
     case 'Join': {
       const left = renderRelation(r.left, params, whereParts, identOpts, opts);
@@ -107,7 +117,7 @@ function renderRelation(r, params, whereParts, identOpts, opts) {
     }
     default:
       // Fallback: assume table-like
-      if (r.table && r.alias) return `${escIdent(r.table, identOpts)} ${escIdent(r.alias, identOpts)}`;
+      if (r.table && r.alias) return `${renderIdent(r.table, identOpts)} ${renderIdent(r.alias, identOpts)}`;
       throw new Error(`Unsupported relation kind: ${r.kind}`);
   }
 }
@@ -162,7 +172,7 @@ function renderExpr(e, params, identOpts, opts) {
   if (!e) return 'NULL';
   switch (e.kind) {
     case 'ColumnRef':
-      return `${escIdent(e.table, identOpts)}.${escIdent(e.column, identOpts)}`;
+      return `${renderIdent(e.table, identOpts)}.${renderIdent(e.column, identOpts)}`;
     case 'ParamRef':
       return renderParam(e, params);
     case 'Literal':
@@ -182,7 +192,7 @@ function renderExpr(e, params, identOpts, opts) {
     default:
       // Allow plain objects shaped like ColumnRef/ParamRef/Literal
       if (isObject(e.left) && e.op) return renderPredicate(e, params, identOpts, opts);
-      if (e.table && e.column) return `${escIdent(e.table, identOpts)}.${escIdent(e.column, identOpts)}`;
+      if (e.table && e.column) return `${renderIdent(e.table, identOpts)}.${renderIdent(e.column, identOpts)}`;
       if (e.name && e.args) {
         const fn2 = String(e.name);
         if (!SAFE_FUNC_RE.test(fn2)) throw new Error(`Unsafe SQL function name: ${fn2}`);
@@ -194,6 +204,9 @@ function renderExpr(e, params, identOpts, opts) {
 
 function renderLiteral(v, type = null) {
   if (v === null || v === undefined) return 'NULL';
+  if (type != null && !SAFE_TYPE_RE.test(String(type))) {
+    throw new Error(`Unsafe SQL type cast in Literal: ${type}`);
+  }
   if (typeof v === 'boolean') return v ? 'TRUE' : 'FALSE';
   if (typeof v === 'number') return String(v);
   if (Array.isArray(v) || isObject(v)) {
@@ -215,14 +228,21 @@ function renderJsonBuildObject(e, params, identOpts, opts) {
 function renderJsonAgg(e, params, identOpts, opts) {
   const inner = renderExpr(e.value, params, identOpts, opts);
   const order = (e.orderBy || []).length
-    ? ' ORDER BY ' + e.orderBy.map(ob => renderOrderBy(ob, params, identOpts)).join(', ')
+    ? ' ORDER BY ' + e.orderBy.map(ob => renderOrderBy(ob, params, identOpts, opts)).join(', ')
     : '';
   return `COALESCE(jsonb_agg(${inner}${order}), '[]'::jsonb)`;
 }
 
 function renderOrderBy(ob, params, identOpts, opts) {
   const dir = ob.direction && String(ob.direction).toLowerCase() === 'desc' ? 'DESC' : 'ASC';
-  const nulls = ob.nulls ? ` NULLS ${String(ob.nulls).toUpperCase()}` : '';
+  let nulls = '';
+  if (ob.nulls) {
+    const n = String(ob.nulls).toLowerCase();
+    if (n !== 'first' && n !== 'last') {
+      throw new Error(`Invalid NULLS value in ORDER BY: ${ob.nulls}`);
+    }
+    nulls = ` NULLS ${n.toUpperCase()}`;
+  }
   return `${renderExpr(ob.expr, params, identOpts, opts)} ${dir}${nulls}`;
 }
 
@@ -237,6 +257,9 @@ function renderParam(p, params, forceCast = false) {
   const discoveredIndex = idx || findIndexByNameOnly(params, name) || 0;
   if (!discoveredIndex) throw new Error(`Param not collected for '${name}'`);
 
+  if (typeHint && !SAFE_TYPE_RE.test(String(typeHint))) {
+    throw new Error(`Unsafe SQL type hint on ParamRef: ${typeHint}`);
+  }
   const cast = typeHint && (forceCast || !/::/.test(typeHint)) ? `::${typeHint}` : '';
   return `$${discoveredIndex}${cast}`;
 }

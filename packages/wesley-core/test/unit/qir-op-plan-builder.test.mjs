@@ -2,6 +2,18 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { buildPlanFromJson } from '../../src/domain/qir/OpPlanBuilder.mjs';
+import { lowerToSQL } from '../../src/domain/qir/lowerToSQL.mjs';
+
+test('OpPlanBuilder: isNull filter round-trips through lowerToSQL (C1)', () => {
+  const op = {
+    table: 'account',
+    columns: ['id', 'name'],
+    filters: [{ column: 'deleted_at', op: 'isNull' }]
+  };
+  const plan = buildPlanFromJson(op);
+  const sql = lowerToSQL(plan);
+  assert.ok(sql.includes('IS NULL'), 'SQL must contain IS NULL');
+});
 
 test('OpPlanBuilder: IN requires explicit array type', () => {
   const bad = {

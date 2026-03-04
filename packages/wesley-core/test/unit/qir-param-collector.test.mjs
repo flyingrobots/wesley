@@ -2,6 +2,18 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { collectParams } from '../../src/domain/qir/ParamCollector.mjs';
 
+test('collectParams: unrecognized predicate kind throws (M8)', () => {
+  const plan = {
+    root: {
+      kind: 'Filter',
+      input: { kind: 'Table', table: 'users', alias: 't0' },
+      predicate: { kind: 'Bogus', left: { kind: 'ColumnRef', table: 't0', column: 'id' } },
+    },
+    projection: { items: [] },
+  };
+  assert.throws(() => collectParams(plan), /unsupported predicate kind/i);
+});
+
 test('collectParams: deterministic ordering with duplicates', () => {
   const plan = {
     root: { kind: 'Table', alias: 't0', table: 'organization' },

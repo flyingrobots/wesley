@@ -79,8 +79,8 @@ export class Predicate {
   static or(left, right) { return { kind: 'Or', left, right }; }
   static not(inner) { return { kind: 'Not', left: inner }; }
   static exists(subqueryPlan) { return { kind: 'Exists', subquery: subqueryPlan }; }
-  static isNull(expr) { return { kind: 'IsNull', left: expr }; }
-  static isNotNull(expr) { return { kind: 'IsNotNull', left: expr }; }
+  static isNull(expr) { return { kind: 'Compare', left: expr, op: 'isNull' }; }
+  static isNotNull(expr) { return { kind: 'Compare', left: expr, op: 'isNotNull' }; }
 }
 
 export class OrderBy { constructor(expr, direction = 'asc', nulls = null) { this.expr = expr; this.direction = direction; this.nulls = nulls; } }

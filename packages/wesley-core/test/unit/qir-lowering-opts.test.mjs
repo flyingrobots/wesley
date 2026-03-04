@@ -2,6 +2,73 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { lowerToSQL } from '../../src/domain/qir/lowerToSQL.mjs';
+import {
+  QueryPlan,
+  TableNode,
+  Projection,
+  ProjectionItem,
+  ColumnRef,
+  OrderBy,
+} from '../../src/domain/qir/Nodes.mjs';
+
+test('lowerToSQL: ParamRef with unsafe typeHint throws (C2)', () => {
+  const plan = {
+    root: { kind: 'Table', table: 'users', alias: 't0' },
+    projection: { items: [
+      { alias: 'id', expr: { kind: 'ColumnRef', table: 't0', column: 'id' } },
+    ] },
+  };
+  // Inject a filter with a malicious typeHint
+  plan.root = {
+    kind: 'Filter',
+    input: plan.root,
+    predicate: {
+      kind: 'Compare', op: 'eq',
+      left: { kind: 'ColumnRef', table: 't0', column: 'id' },
+      right: { kind: 'ParamRef', name: 'x', typeHint: 'text; DROP TABLE users' },
+    },
+  };
+  assert.throws(() => lowerToSQL(plan), /unsafe sql type/i);
+});
+
+test('lowerToSQL: Literal with unsafe type throws (C3)', () => {
+  const plan = {
+    root: { kind: 'Table', table: 'items', alias: 't0' },
+    projection: { items: [
+      { alias: 'v', expr: { kind: 'Literal', value: 'hello', type: 'text; DROP TABLE users' } },
+    ] },
+  };
+  assert.throws(() => lowerToSQL(plan), /unsafe sql type/i);
+});
+
+test('lowerToSQL: orderBy with unsafe nulls throws (C4)', () => {
+  const root = new TableNode('items', 't0');
+  const proj = new Projection([
+    new ProjectionItem('id', new ColumnRef('t0', 'id')),
+  ]);
+  const plan = new QueryPlan(root, proj, {
+    orderBy: [new OrderBy(new ColumnRef('t0', 'id'), 'asc', 'FIRST; DROP TABLE x')],
+  });
+  assert.throws(() => lowerToSQL(plan), /invalid nulls/i);
+});
+
+test('lowerToSQL: non-numeric limit throws (M4)', () => {
+  const root = new TableNode('items', 't0');
+  const proj = new Projection([
+    new ProjectionItem('id', new ColumnRef('t0', 'id')),
+  ]);
+  const plan = new QueryPlan(root, proj, { limit: 'abc' });
+  assert.throws(() => lowerToSQL(plan), /invalid limit/i);
+});
+
+test('lowerToSQL: negative offset throws (M4)', () => {
+  const root = new TableNode('items', 't0');
+  const proj = new Projection([
+    new ProjectionItem('id', new ColumnRef('t0', 'id')),
+  ]);
+  const plan = new QueryPlan(root, proj, { offset: -5 });
+  assert.throws(() => lowerToSQL(plan), /invalid offset/i);
+});
 
 test('lowerToSQL: recursive Subquery preserves pkResolver from opts', () => {
   const inner = {

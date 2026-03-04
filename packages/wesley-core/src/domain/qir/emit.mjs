@@ -11,6 +11,7 @@
 
 import { lowerToSQL } from './lowerToSQL.mjs';
 import { collectParams } from './ParamCollector.mjs';
+import { sanitizeIdentBase as _sanitizeIdentBase } from './identifiers.mjs';
 
 const DEFAULT_SCHEMA = 'wes_ops';
 
@@ -65,24 +66,11 @@ function qualifiedOpName(schema, opName) {
 
 /**
  * Normalize a string into a safe SQL identifier base (unquoted).
- * - Lowercases, replaces non-alphanumerics with underscores, trims leading/trailing underscores.
- * - Returns `fallback` if the normalized base is empty.
- * - Validates length per PostgreSQL's 63-character identifier limit.
- *
- * Note: Callers that add prefixes (e.g., `op_`, `p_`) should ensure the final
- * identifier including the prefix also satisfies the length limit.
- *
- * @param {string} s input string to normalize
- * @param {string} fallback fallback value if result is empty
- * @returns {string} normalized identifier base (not quoted)
- * @throws {Error} if normalized identifier exceeds 63 characters
+ * Delegates to the shared `sanitizeIdentBase` from identifiers.mjs,
+ * then enforces PostgreSQL's 63-character identifier limit.
  */
 function sanitizeIdentBase(s, fallback) {
-  const base = String(s || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '_')
-    .replace(/^_+|_+$/g, '');
-  const result = base || fallback;
+  const result = _sanitizeIdentBase(s, fallback);
   if (result.length > 63) {
     throw new Error(`Identifier base exceeds PostgreSQL's 63-character limit: "${result}"`);
   }
