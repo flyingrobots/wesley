@@ -13,7 +13,7 @@ flowchart LR
   subgraph Core
     SIR[Schema IR\n(schemas/ir.schema.json)]
     QIR[Query IR\n(schemas/qir.schema.json)]
-    PLAN[Plan IR\n(schemas/plan.schema.json)]
+    PLAN[Plan IR\n(schemas/plan-report.schema.json)]
     REALM[REALM IR\n(schemas/realm.schema.json)]
     EVI[Evidence & Scores\n(schemas/evidence-map.schema.json,\nschemas/scores.schema.json)]
     ENV[IR Envelope\n(schemas/ir-envelope.schema.json)]
@@ -71,15 +71,15 @@ sequenceDiagram
   L->>DB: emit view or function wrappers
 ```
 
-## Plan IR (proposed)
+## Plan IR
 
-Human reviews hinge on two questions: “What will happen?” and “How risky is it?” The Plan IR answers both for `wesley plan --explain --json`. It describes phases (expand/backfill/validate/switch/contract), steps within each phase, a lock classification per step, and a succinct SQL preview. The schema will live at `schemas/plan.schema.json`. The CLI will validate its own JSON output against that schema during tests.
+Human reviews hinge on two questions: “What will happen?” and “How risky is it?” The Plan IR answers both for `wesley plan --explain --json`. It describes phases (expand/backfill/validate/switch/contract), steps within each phase, a lock classification per step, and a succinct SQL preview. The schema lives at `schemas/plan-report.schema.json`. The CLI validates its own JSON output against that schema during tests.
 
 Plan IR is intentionally descriptive, not prescriptive. It does not execute; it just explains. The contract makes lock levels explicit and serializes them as part of the reviewable artifact so CI can assert “no ACCESS EXCLUSIVE locks appear in expand.”
 
-## REALM IR (proposed)
+## REALM IR
 
-Rehearsal (`wesley rehearse --dry-run --json`) deserves a stable result format. REALM IR captures the rehearsal verdict, timings, relevant counters, and any structured notes. Its schema will live at `schemas/realm.schema.json`. By pinning shape and fields, we let CI gate on objective facts: how many tests ran, which ones failed, how long phases took, and whether the environment matched expectations.
+Rehearsal (`wesley rehearse --dry-run --json`) deserves a stable result format. REALM IR captures the rehearsal verdict, timings, relevant counters, and any structured notes. Its schema lives at `schemas/realm.schema.json`. By pinning shape and fields, we let CI gate on objective facts: how many tests ran, which ones failed, how long phases took, and whether the environment matched expectations.
 
 ## Evidence and scores
 
@@ -123,9 +123,9 @@ Each schema is versioned under SemVer and tightened only when the benefit outwei
 
 The IR family actively narrows the surface for mistakes. QIR uses explicit `ParamRef` with type hints so lowering never concatenates raw values. Identifier rendering is policy‑driven; strict mode quotes deterministically, and we validate or sanitize names when producing operation wrappers. When RLS is enabled, we prefer the database to enforce access rather than compiling redundant filters.
 
-## What comes next
+## Current state
 
-Two additional schemas will complete the family’s developer loop: Plan IR and REALM IR. As soon as those land, the CLI will validate `plan --explain --json` and `rehearse --dry-run --json` against their schemas in tests. An optional Ops Manifest schema will follow to support curated discovery in large repos.
+Plan IR and REALM IR complete the family’s developer loop. The CLI validates `plan --explain --json` and `rehearse --dry-run --json` against their schemas in tests. The Ops Manifest schema supports curated discovery in large repos.
 
-The total surface then looks like a modest set of JSON Schemas, referenced by the CLI and by docs, moving in lockstep with the code. It’s deliberately small and intentionally boring—exactly the point for infrastructure we intend to trust.
+The total surface is a modest set of JSON Schemas, referenced by the CLI and by docs, moving in lockstep with the code. It’s deliberately small and intentionally boring—exactly the point for infrastructure we intend to trust.
 

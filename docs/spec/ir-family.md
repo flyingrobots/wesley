@@ -19,9 +19,9 @@ Versioning
 
 Validation
 - Evidence schemas are validated in CLI (`validate-bundle`).
-- QIR schema is validated in CLI Bats tests (`test/qir-schema.bats`).
+- QIR schema is validated in CLI Bats tests (`packages/wesley-cli/test/qir-schema.bats`).
 
-Planned envelope (future)
-- A top‑level envelope can bundle both together for audits:
+Envelope
+- A top‑level envelope bundles both together for audits:
   - `{ schema: <SchemaIR>, ops: { plans: <QIR[]> }, evidence: {...}, version: "vX" }`.
 
