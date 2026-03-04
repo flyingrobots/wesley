@@ -208,6 +208,7 @@ This produces `out/.../ops/explain/<name>.explain.json` with a stub shape:
 ```json
 { "Plan": { "Node Type": "Result", "Plans": [] }, "Mock": true, "Version": 1 }
 ```
+
 It’s intentionally DB‑free; swap to a real EXPLAIN strategy in a future phase.
 
 These validators load schemas from the local `schemas/` folder and fail with structured errors when the shape drifts.

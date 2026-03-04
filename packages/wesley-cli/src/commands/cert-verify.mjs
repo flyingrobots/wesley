@@ -3,6 +3,7 @@
  */
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import { extractJsonBlock, canonicalize } from './_cert-utils.mjs';
+import { createAjv, loadSchemaFile } from '../framework/schemaValidator.mjs';
 
 export class CertVerifyCommand extends WesleyCommand {
   constructor(ctx) {
@@ -20,28 +21,11 @@ export class CertVerifyCommand extends WesleyCommand {
     const md = await this.ctx.fs.read(options.in);
     const { json } = extractJsonBlock(md);
     // Validate SHIPME certificate schema first (drift guard)
-    const { default: Ajv } = await import('ajv');
-    const { default: addFormats } = await import('ajv-formats');
-    const ajv = new Ajv({ strict: false, allErrors: true });
-    addFormats(ajv);
-    let root = (this.ctx.env || {}).WESLEY_REPO_ROOT || process.cwd();
-    let realmSchema, shipmeSchema;
-    try {
-      [realmSchema, shipmeSchema] = await Promise.all([
-        this.ctx.fs.read(await this.ctx.fs.join(root, 'schemas', 'realm.schema.json')),
-        this.ctx.fs.read(await this.ctx.fs.join(root, 'schemas', 'shipme.schema.json'))
-      ]);
-    } catch {
-      // Fallback: resolve relative to this module location
-      const { fileURLToPath } = await import('node:url');
-      const { dirname, resolve: pres } = await import('node:path');
-      const modDir = dirname(fileURLToPath(import.meta.url));
-      root = pres(modDir, '../../../..');
-      [realmSchema, shipmeSchema] = await Promise.all([
-        this.ctx.fs.read(pres(root, 'schemas', 'realm.schema.json')),
-        this.ctx.fs.read(pres(root, 'schemas', 'shipme.schema.json'))
-      ]);
-    }
+    const ajv = await createAjv();
+    const [realmSchema, shipmeSchema] = await Promise.all([
+      loadSchemaFile(this.ctx, 'realm.schema.json'),
+      loadSchemaFile(this.ctx, 'shipme.schema.json'),
+    ]);
     ajv.addSchema(JSON.parse(realmSchema));
     const validate = ajv.compile(JSON.parse(shipmeSchema));
     const schemaOk = validate(json);

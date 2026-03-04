@@ -68,3 +68,14 @@ test('emitFunction: supports SECURITY and SET search_path', () => {
   assert.ok(/SECURITY DEFINER/.test(sql));
   assert.ok(/SET search_path =\s+"pg_catalog",\s+"wes_ops"/i.test(sql));
 });
+
+test('emitFunction: renderSearchPath preserves $user and pg_temp verbatim', () => {
+  const root = new TableNode('organization', 't0');
+  const proj = new Projection([
+    new ProjectionItem('id', new ColumnRef('t0', 'id')),
+  ]);
+  const plan = new QueryPlan(root, proj, {});
+  const sql = emitFunction('sp_test', plan, { setSearchPath: ['$user', 'pg_temp', 'my_schema'] });
+  assert.ok(sql.includes('SET search_path = $user, pg_temp, "my_schema"'),
+    'Expected $user and pg_temp verbatim, my_schema quoted. Got: ' + sql);
+});

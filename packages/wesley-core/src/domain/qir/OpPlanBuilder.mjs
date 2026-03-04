@@ -203,9 +203,11 @@ function buildOnPredicate(on, leftDefault, rightAlias) {
     if (!table || typeof table !== 'string' || !column || typeof column !== 'string') {
       throw new Error(`Invalid column reference in join.on: ${JSON.stringify(r)}`);
     }
-    // Diagnostics: discourage ambiguous unqualified refs like 'id'
-    if (typeof r === 'string' && r.indexOf('.') === -1 && r.toLowerCase() === 'id') {
-      throw new Error(`Ambiguous join reference '${r}'. Qualify as '<alias>.id' or pass { table, column } to join.on`);
+    // Diagnostics: discourage ambiguous unqualified column refs in joins.
+    // Any bare string without a dot is resolved against a default alias which
+    // may silently pick the wrong table — require explicit qualification.
+    if (typeof r === 'string' && r.indexOf('.') === -1) {
+      throw new Error(`Ambiguous join reference '${r}'. Qualify as '<alias>.${r}' or pass { table, column } to join.on`);
     }
     return new ColumnRef(table, column);
   };

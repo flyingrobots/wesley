@@ -1,4 +1,5 @@
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
+import { createAjv, loadSchemaFile, assertValid } from '../framework/schemaValidator.mjs';
 
 export class QirValidateCommand extends WesleyCommand {
   constructor(ctx) {
@@ -60,98 +61,46 @@ export class QirValidateCommand extends WesleyCommand {
       throw e;
     }
 
-    // Lazy import Ajv at runtime in CLI to avoid adding core deps
-    const [{ default: Ajv }, { default: addFormats }] = await Promise.all([
-      import('ajv'),
-      import('ajv-formats')
-    ]);
+    // Dispatch to the appropriate validation path
+    const kind = options.envelope ? 'envelope'
+      : options.manifest ? 'ops-manifest'
+      : options.registry ? 'ops-registry'
+      : 'qir';
 
-    const ajv = new Ajv({ strict: false, allErrors: true });
-    addFormats(ajv);
+    const data = JSON.parse(await fs.read(input));
+    await this._validate(kind, data, input);
+    if (!options.json) logger.info({ file: input }, `${kind} validation OK`);
+    return { valid: true, file: input, kind };
+  }
 
-    if (options.envelope) {
-      const root = (this.ctx.env || {}).WESLEY_REPO_ROOT || process.cwd();
-      const [schemaIR, schemaQIR, schemaEnv, envJson] = await Promise.all([
-        fs.read(await this.ctx.fs.join(root, 'schemas', 'ir.schema.json')),
-        fs.read(await this.ctx.fs.join(root, 'schemas', 'qir.schema.json')),
-        fs.read(await this.ctx.fs.join(root, 'schemas', 'ir-envelope.schema.json')),
-        fs.read(input)
-      ]);
-      const ir = JSON.parse(schemaIR);
-      const qir = JSON.parse(schemaQIR);
-      const envSchema = JSON.parse(schemaEnv);
-      const env = JSON.parse(envJson);
-      ajv.addSchema(ir);
-      ajv.addSchema(qir);
-      const validate = ajv.compile(envSchema);
-      const ok = validate(env);
-      if (!ok) {
-        const err = new Error('IR envelope validation failed');
-        err.code = 'VALIDATION_FAILED';
-        err.meta = { errors: validate.errors };
-        logger.error({ errors: validate.errors }, err.message);
-        throw err;
+  async _validate(kind, data, file) {
+    const ajv = await createAjv();
+    switch (kind) {
+      case 'envelope': {
+        const [ir, qir, envSchema] = await Promise.all([
+          loadSchemaFile(this.ctx, 'ir.schema.json'),
+          loadSchemaFile(this.ctx, 'qir.schema.json'),
+          loadSchemaFile(this.ctx, 'ir-envelope.schema.json'),
+        ]);
+        ajv.addSchema(JSON.parse(ir));
+        ajv.addSchema(JSON.parse(qir));
+        const validate = ajv.compile(JSON.parse(envSchema));
+        if (!validate(data)) {
+          const e = new Error('IR envelope validation failed');
+          e.code = 'VALIDATION_FAILED';
+          e.meta = { errors: validate.errors };
+          throw e;
+        }
+        break;
       }
-      if (!options.json) logger.info({ file: input }, 'IR envelope validation OK');
-      return { valid: true, file: input, kind: 'envelope' };
-    } else if (options.manifest) {
-      const root = (this.ctx.env || {}).WESLEY_REPO_ROOT || process.cwd();
-      const [schemaJson, manJson] = await Promise.all([
-        fs.read(await this.ctx.fs.join(root, 'schemas', 'ops-manifest.schema.json')),
-        fs.read(input)
-      ]);
-      const schema = JSON.parse(schemaJson);
-      const manifest = JSON.parse(manJson);
-      const validate = ajv.compile(schema);
-      const ok = validate(manifest);
-      if (!ok) {
-        const err = new Error('Ops manifest validation failed');
-        err.code = 'VALIDATION_FAILED';
-        err.meta = { errors: validate.errors };
-        logger.error({ errors: validate.errors }, err.message);
-        throw err;
-      }
-      if (!options.json) logger.info({ file: input }, 'Ops manifest validation OK');
-      return { valid: true, file: input, kind: 'ops-manifest' };
-    } else if (options.registry) {
-      const root = (this.ctx.env || {}).WESLEY_REPO_ROOT || process.cwd();
-      const [schemaJson, regJson] = await Promise.all([
-        fs.read(await this.ctx.fs.join(root, 'schemas', 'ops-registry.schema.json')),
-        fs.read(input)
-      ]);
-      const schema = JSON.parse(schemaJson);
-      const registry = JSON.parse(regJson);
-      const validate = ajv.compile(schema);
-      const ok = validate(registry);
-      if (!ok) {
-        const err = new Error('Ops registry validation failed');
-        err.code = 'VALIDATION_FAILED';
-        err.meta = { errors: validate.errors };
-        logger.error({ errors: validate.errors }, err.message);
-        throw err;
-      }
-      if (!options.json) logger.info({ file: input }, 'Ops registry validation OK');
-      return { valid: true, file: input, kind: 'ops-registry' };
-    } else {
-      const root = (this.ctx.env || {}).WESLEY_REPO_ROOT || process.cwd();
-      const schemaPath = await this.ctx.fs.join(root, 'schemas', 'qir.schema.json');
-      const [schemaJson, planJson] = await Promise.all([
-        fs.read(schemaPath),
-        fs.read(input)
-      ]);
-      const schema = JSON.parse(schemaJson);
-      const plan = JSON.parse(planJson);
-      const validate = ajv.compile(schema);
-      const ok = validate(plan);
-      if (!ok) {
-        const err = new Error('QIR validation failed');
-        err.code = 'VALIDATION_FAILED';
-        err.meta = { errors: validate.errors };
-        logger.error({ errors: validate.errors }, err.message);
-        throw err;
-      }
-      if (!options.json) logger.info({ file: input }, 'QIR validation OK');
-      return { valid: true, file: input, kind: 'qir' };
+      case 'ops-manifest':
+        await assertValid(this.ctx, 'ops-manifest.schema.json', data, 'Ops manifest', ajv);
+        break;
+      case 'ops-registry':
+        await assertValid(this.ctx, 'ops-registry.schema.json', data, 'Ops registry', ajv);
+        break;
+      default:
+        await assertValid(this.ctx, 'qir.schema.json', data, 'QIR', ajv);
     }
   }
 }

@@ -5,8 +5,9 @@
  */
 
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
-import { buildPlanFromJson, emitFunction, emitView, collectParams, quoteIdent } from '@wesley/core/domain/qir';
+import { buildPlanFromJson, emitFunction, emitView, collectParams, quoteIdent, sanitizeIdentBase } from '@wesley/core/domain/qir';
 import { filterIRByUnits } from '@wesley/core/domain/SchemaFilter';
+import { assertValid } from '../framework/schemaValidator.mjs';
 
 export class GeneratePipelineCommand extends WesleyCommand {
   constructor(ctx) {
@@ -387,8 +388,12 @@ export class GeneratePipelineCommand extends WesleyCommand {
           if (t?.name && t?.primaryKey) pkMap.set(String(t.name), String(t.primaryKey));
         }
       }
+      /**
+       * Resolve the primary-key ColumnRef for ORDER BY tie-breaking.
+       * Only handles single-table and left-deep join trees; returns null for
+       * lateral/subquery plans (lowerToSQL falls back to guessPrimaryKeyRef).
+       */
       const pkResolver = (plan) => {
-        // Find leftmost base table alias + name
         let r = plan?.root;
         while (r && r.kind === 'Filter') r = r.input;
         while (r && r.kind === 'Join') r = r.left;
@@ -396,28 +401,17 @@ export class GeneratePipelineCommand extends WesleyCommand {
           const pk = pkMap.get(String(r.table));
           if (pk) return { kind: 'ColumnRef', table: r.alias, column: pk };
         }
-        return null; // fallback handled in lowerToSQL
+        return null;
       };
       let files = [];
       if (manifestPath) {
         const manifest = JSON.parse(await fs.read(manifestPath));
         // Validate manifest
         try {
-          const { default: Ajv } = await import('ajv');
-          const { default: addFormats } = await import('ajv-formats');
-          const ajv = new Ajv({ strict: false, allErrors: true });
-          addFormats(ajv);
-          const root = (this.ctx.env || {}).WESLEY_REPO_ROOT || process.cwd();
-          const schemaJson = await fs.read(await fs.join(root, 'schemas', 'ops-manifest.schema.json'));
-          const validate = ajv.compile(JSON.parse(schemaJson));
-          const ok = validate(manifest);
-          if (!ok) {
-            const err = new OpsError('OPS_MANIFEST_INVALID', 'Ops manifest failed schema validation', { errors: validate.errors, file: manifestPath });
-            logger.error(err.meta, err.message);
-            throw err;
-          }
+          await assertValid(this.ctx, 'ops-manifest.schema.json', manifest, 'Ops manifest');
         } catch (e) {
           if (e instanceof Error && !e.code) e.code = 'OPS_MANIFEST_INVALID';
+          logger.error({ code: e.code, errors: e.meta?.errors, file: manifestPath }, e.message);
           throw e;
         }
         const repoRoot = (this.ctx.env || {}).WESLEY_REPO_ROOT || process.cwd();
@@ -508,24 +502,9 @@ export class GeneratePipelineCommand extends WesleyCommand {
         try {
           const registryPath = await this.ctx.fs.join(opsOutputDir, 'registry.json');
           if (await this.ctx.fs.exists(registryPath)) {
-            const [{ default: Ajv }, { default: addFormats }] = await Promise.all([
-              import('ajv'),
-              import('ajv-formats')
-            ]);
-            const ajv = new Ajv({ strict: false, allErrors: true });
-            addFormats(ajv);
-            const root = (this.ctx.env || {}).WESLEY_REPO_ROOT || process.cwd();
-            const schemaJson = await this.ctx.fs.read(await this.ctx.fs.join(root, 'schemas', 'ops-registry.schema.json'));
-            const schema = JSON.parse(schemaJson);
             const reg = JSON.parse((await this.ctx.fs.read(registryPath)).toString('utf8'));
-            const validate = ajv.compile(schema);
-            if (!validate(reg)) {
-              const err = new OpsError('OPS_REGISTRY_INVALID', 'Generated ops registry failed schema validation', { errors: validate.errors, file: registryPath });
-              logger.error(err.meta, err.message);
-              if (!options.opsAllowErrors) throw err;
-            } else {
-              logger.info({ file: registryPath }, 'Ops registry validated');
-            }
+            await assertValid(this.ctx, 'ops-registry.schema.json', reg, 'Ops registry');
+            logger.info({ file: registryPath }, 'Ops registry validated');
           }
         } catch (ve) {
           logger.warn({ error: ve?.message }, 'Ops registry validation failed');
@@ -678,7 +657,10 @@ function emitOpArtifacts(compiledOps, targetSchema, logger, pkResolver, { securi
   const outFiles = [];
   const total = compiledOps.length;
   let ordinal = 0;
-  const deployChunks = [`BEGIN;`, `CREATE SCHEMA IF NOT EXISTS ${quoteIdent(targetSchema)};`];
+  // Normalize schema name to match emit.mjs's sanitizeIdentBase lowercasing,
+  // ensuring CREATE SCHEMA and emitted function schemas stay in sync.
+  const normalizedSchema = sanitizeIdentBase(targetSchema, 'wes_ops');
+  const deployChunks = [`BEGIN;`, `CREATE SCHEMA IF NOT EXISTS ${quoteIdent(normalizedSchema)};`];
   const registry = { version: '1.0.0', schema: targetSchema, ops: [] };
   for (const entry of compiledOps) {
     ordinal += 1;

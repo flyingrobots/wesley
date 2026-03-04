@@ -21,6 +21,8 @@ const RESERVED = new Set([
   'select','insert','update','delete','from','where','group','order','by','limit','offset','join','left','right','on','and','or','not','null','true','false','table','view','function','schema','user'
 ]);
 
+// identPolicy defaults to 'strict' here (ops emission is always strict) whereas
+// lowerToSQL defaults to 'minimal' for backward-compat with direct callers.
 export function emitView(opName, plan, { schema = DEFAULT_SCHEMA, identPolicy = 'strict', pkResolver = null } = {}) {
   const name = qualifiedOpName(schema, opName);
   const selectSql = lowerToSQL(plan, null, { identPolicy, pkResolver });
@@ -35,9 +37,10 @@ export function emitFunction(opName, plan, {
   setSearchPath = null,
 } = {}) {
   const name = qualifiedOpName(schema, opName);
-  const { ordered } = collectParams(plan);
+  const paramEnv = collectParams(plan);
+  const { ordered } = paramEnv;
   const params = uniqueParamNames(ordered).map(({ display, type }) => `${display} ${type || 'text'}`).join(', ');
-  const selectSql = lowerToSQL(plan, null, { identPolicy, pkResolver });
+  const selectSql = lowerToSQL(plan, paramEnv, { identPolicy, pkResolver });
   const body = `SELECT to_jsonb(q.*) FROM (\n${selectSql}\n) AS q`;
   const attrs = [];
   // Language and volatility first
@@ -115,11 +118,18 @@ function uniqueParamNames(ordered) {
   return out;
 }
 
+// PostgreSQL special search_path entries that must be emitted verbatim (unquoted).
+// $user resolves to the session user's default schema; pg_temp is the per-session
+// temp schema. Both are pseudo-identifiers that cannot survive sanitizeIdentBase.
+const PG_SPECIAL_SEARCH_PATH = new Set(['$user', 'pg_temp']);
+
 function renderSearchPath(sp) {
   if (!sp) return '';
   let parts = Array.isArray(sp) ? sp : String(sp).split(',');
   parts = parts.map((p) => String(p).trim()).filter(Boolean);
   if (parts.length === 0) return '';
-  // Quote identifiers deterministically
-  return parts.map((p) => sanitizeIdent(p)).join(', ');
+  return parts.map((p) => {
+    if (PG_SPECIAL_SEARCH_PATH.has(p)) return p;
+    return sqlQuoteIdent(sanitizeIdentBase(p, 'public'));
+  }).join(', ');
 }

@@ -25,6 +25,7 @@
             "additionalProperties": false
           },
           "params": {
+            "description": "Function parameters. Names should be unique per op; JSON Schema cannot enforce array-element uniqueness on a property — the emitter deduplicates at generation time.",
             "type": "array",
             "items": {
               "type": "object",

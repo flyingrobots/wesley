@@ -19,11 +19,13 @@ export function decodeCursor(str) {
     while (b64.length % 4) b64 += '=';
     const json = atob(b64);
     const parsed = JSON.parse(json);
-    // Strip prototype-polluting keys
-    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-      delete parsed.__proto__;
-      delete parsed.constructor;
+    // Guard: callers expect a plain object; coerce primitives/arrays to {}
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return {};
     }
+    // Strip prototype-polluting keys
+    delete parsed.__proto__;
+    delete parsed.constructor;
     return parsed;
   } catch (e) {
     if (e instanceof SyntaxError) return {};

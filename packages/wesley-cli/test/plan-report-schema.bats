@@ -12,4 +12,9 @@ setup() {
     echo "OUTPUT:$output"
   fi
   [ "$status" -eq 0 ]
+  # Verify the output contains expected plan-report top-level keys
+  [[ "$output" == *'"plan"'* ]]
+  [[ "$output" == *'"explain"'* ]]
+  [[ "$output" == *'"mapping"'* ]]
+  [[ "$output" == *'"radar"'* ]]
 }

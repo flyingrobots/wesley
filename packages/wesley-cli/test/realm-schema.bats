@@ -12,4 +12,7 @@ setup() {
     echo "OUTPUT:$output"
   fi
   [ "$status" -eq 0 ]
+  # Verify the output contains expected dry-run keys
+  [[ "$output" == *'"plan"'* ]]
+  [[ "$output" == *'"explain"'* ]]
 }

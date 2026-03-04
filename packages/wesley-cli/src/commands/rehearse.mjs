@@ -4,6 +4,7 @@
 
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import { buildAdditivePlan, explainPlan, emitMigrations } from './_migration-plan.mjs';
+import { assertValid } from '../framework/schemaValidator.mjs';
 
 export class RehearseCommand extends WesleyCommand {
   constructor(ctx) {
@@ -35,27 +36,11 @@ export class RehearseCommand extends WesleyCommand {
 
     if (options.dryRun) {
       if (options.json) {
-        // For dry-run, we output the plan/explain pair; validate plan half using plan-report subset
-        try {
-          const { default: Ajv } = await import('ajv');
-          const { default: addFormats } = await import('ajv-formats');
-          const ajv = new Ajv({ strict: false, allErrors: true });
-          addFormats(ajv);
-          const schemaJson = await this.ctx.fs.read((await this.ctx.fs.join((this.ctx?.env || {}).WESLEY_REPO_ROOT || process.cwd(), 'schemas', 'plan-report.schema.json')));
-          const validate = ajv.compile(JSON.parse(schemaJson));
-          const minimal = { plan, explain, mapping: [], radar: { lines: [], counts: {} } };
-          const ok = validate(minimal);
-          if (!ok) {
-            const e = new Error('Dry-run plan failed schema validation');
-            e.code = 'VALIDATION_FAILED';
-            e.meta = validate.errors;
-            throw e;
-          }
-          this.ctx.stdout.write(JSON.stringify({ plan, explain }, null, 2) + '\n');
-        } catch (e) {
-          e.code = e.code || 'VALIDATION_FAILED';
-          throw e;
-        }
+        // Validate and emit the same shape — include mapping/radar stubs so
+        // the output conforms to plan-report.schema.json.
+        const report = { plan, explain, mapping: [], radar: { lines: [], counts: {} } };
+        await assertValid(this.ctx, 'plan-report.schema.json', report, 'Dry-run plan');
+        this.ctx.stdout.write(JSON.stringify(report, null, 2) + '\n');
       } else {
         logger.info('🧭 REALM Dry Run');
         for (const line of explain.lines) logger.info(line);
@@ -104,7 +89,7 @@ export class RehearseCommand extends WesleyCommand {
       if (!options.json) logger.info('🕶️ REALM verdict: PASS');
       if (hooks.postDown) await runHook(this.ctx, hooks.postDown, logger);
       if (options.json) {
-        await validateRealm(this.ctx, realm);
+        await assertValid(this.ctx, 'realm.schema.json', realm, 'REALM report');
         this.ctx.stdout.write(JSON.stringify(realm, null, 2) + '\n');
       }
       return realm;
@@ -120,7 +105,7 @@ export class RehearseCommand extends WesleyCommand {
       if (!options.json) logger.error('🕶️ REALM verdict: FAIL - ' + error.message);
       if (hooks.postDown) try { await runHook(this.ctx, hooks.postDown, logger); } catch {}
       if (options.json) {
-        try { await validateRealm(this.ctx, realm); } catch (ve) { logger.warn('REALM validation failed in error path: ' + (ve?.message || ve)); }
+        try { await assertValid(this.ctx, 'realm.schema.json', realm, 'REALM report'); } catch (ve) { logger.warn('REALM validation failed in error path: ' + (ve?.message || ve)); }
         this.ctx.stdout.write(JSON.stringify(realm, null, 2) + '\n');
       }
       const e = new Error('REALM rehearsal failed: ' + error.message);
@@ -159,18 +144,3 @@ async function execSql(db, dsn, sql) {
 
 export default RehearseCommand;
 
-async function validateRealm(ctx, realm) {
-  const { default: Ajv } = await import('ajv');
-  const { default: addFormats } = await import('ajv-formats');
-  const ajv = new Ajv({ strict: false, allErrors: true });
-  addFormats(ajv);
-  const schemaJson = await ctx.fs.read((await ctx.fs.join((ctx.env || {}).WESLEY_REPO_ROOT || process.cwd(), 'schemas', 'realm.schema.json')));
-  const validate = ajv.compile(JSON.parse(schemaJson));
-  const ok = validate(realm);
-  if (!ok) {
-    const e = new Error('REALM report failed schema validation');
-    e.code = 'VALIDATION_FAILED';
-    e.meta = validate.errors;
-    throw e;
-  }
-}

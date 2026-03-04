@@ -153,6 +153,25 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **E2d.1:** Golden vector `unwrapType` now throws on missing node name instead of returning `'Unknown'`
 - **E2d.1:** Golden vector test runner now guards against missing `typeName` in fixture files
 
+#### CodeRabbit Round-6 (PR #392)
+
+- **CR-R6-1 (Critical):** `renderSearchPath` in `emit.mjs` now preserves PostgreSQL special variables (`$user`, `pg_temp`) verbatim instead of mangling them through `sanitizeIdentBase`
+- **CR-R6-2 (Critical):** `collectParams(plan)` in `emitFunction` no longer called twice — result is now passed to `lowerToSQL` as `paramEnv`
+- **CR-R6-3 (P2):** `emitOpArtifacts` normalizes `targetSchema` via `sanitizeIdentBase` before `CREATE SCHEMA IF NOT EXISTS`, ensuring schema name matches function emission
+- **CR-R6-4 (Major):** Extract shared `schemaValidator.mjs` helper — centralises Ajv instantiation, format registration, and dual-path schema resolution (WESLEY_REPO_ROOT → import.meta.url fallback) across cert-verify, generate, plan, qir-validate, and rehearse commands
+- **CR-R6-5 (Major):** `plan.mjs` catch block no longer mislabels infrastructure errors (import/parse) as `VALIDATION_FAILED`
+- **CR-R6-6 (Major):** `rehearse.mjs` dry-run now validates and emits the same shape (full plan-report with mapping/radar stubs)
+- **CR-R6-7 (Major):** `qir-validate.mjs` four nearly identical branches consolidated into `_validate()` dispatcher
+- **CR-R6-8 (Major):** Join ambiguity diagnostic in `OpPlanBuilder` now catches all unqualified string refs, not just `'id'`
+- **CR-R6-9 (Minor):** `decodeCursor` now returns `{}` for non-object payloads (arrays, primitives)
+- **CR-R6-10 (Minor):** `plan.mjs` non-JSON path now returns `{ phases, steps }` matching JSON return shape
+- **CR-R6-11 (Minor):** `qir-ops.md` markdown lint fix — add blank line after fenced code block
+- **CR-R6-12 (Trivial):** `emitView`/`emitFunction` comments clarify intentional `identPolicy` default difference vs `lowerToSQL`
+- **CR-R6-13 (Trivial):** `pkResolver` in `generate.mjs` gains JSDoc documenting single-table/left-deep limitation
+- **CR-R6-14 (Trivial):** `ops-registry.schema.json` `params` array gains description noting uniqueness enforced at generation time
+- **CR-R6-15 (Trivial):** Bats tests `plan-report-schema.bats` and `realm-schema.bats` now assert output content, not just exit status
+- **CR-R6-16 (Trivial):** Test coverage: cursor null/undefined/non-object edge cases, qualified join refs positive path, builder-based pkResolver test, LIKE/CONTAINS param guard tests
+
 ## [0.1.0] - 2025-09-01
 - Initial public repository layout
 

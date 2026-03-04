@@ -5,6 +5,7 @@
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import { buildOutputPathMap, resolveFilePath } from '../utils/output-paths.mjs';
 import { buildAdditivePlan, explainPlan, emitMigrations } from './_migration-plan.mjs';
+import { assertValid } from '../framework/schemaValidator.mjs';
 
 export class PlanCommand extends WesleyCommand {
   constructor(ctx) {
@@ -54,27 +55,10 @@ export class PlanCommand extends WesleyCommand {
 
     if (options.json) {
       // Validate JSON against schema to prevent drift
-      try {
-        const { default: Ajv } = await import('ajv');
-        const { default: addFormats } = await import('ajv-formats');
-        const ajv = new Ajv({ strict: false, allErrors: true });
-        addFormats(ajv);
-        const schemaJson = await this.ctx.fs.read((await this.ctx.fs.join((this.ctx.env || {}).WESLEY_REPO_ROOT || process.cwd(), 'schemas', 'plan-report.schema.json')));
-        const validate = ajv.compile(JSON.parse(schemaJson));
-        const report = { plan, explain, mapping, radar };
-        const ok = validate(report);
-        if (!ok) {
-          const e = new Error('Plan report failed schema validation');
-          e.code = 'VALIDATION_FAILED';
-          e.meta = validate.errors;
-          throw e;
-        }
-        this.ctx.stdout.write(JSON.stringify(report, null, 2) + '\n');
-        return { phases: plan.phases.length, steps: explain.steps.length };
-      } catch (e) {
-        e.code = e.code || 'VALIDATION_FAILED';
-        throw e;
-      }
+      const report = { plan, explain, mapping, radar };
+      await assertValid(this.ctx, 'plan-report.schema.json', report, 'Plan report');
+      this.ctx.stdout.write(JSON.stringify(report, null, 2) + '\n');
+      return { phases: plan.phases.length, steps: explain.steps.length };
     }
 
     if (options.explain) {
@@ -109,7 +93,7 @@ export class PlanCommand extends WesleyCommand {
       if (!options.quiet) logger.info(`✍️ Wrote ${files.length} migration file(s) to ${outputPaths.migrationsDir}`);
     }
 
-    return { phases: plan.phases.length };
+    return { phases: plan.phases.length, steps: explain.steps.length };
   }
 }
 

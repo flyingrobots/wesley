@@ -43,3 +43,43 @@ test('OpPlanBuilder: valid IN with text[] passes', () => {
   assert.ok(plan && plan.root && plan.projection);
 });
 
+test('OpPlanBuilder: LIKE requires explicit type', () => {
+  const bad = {
+    table: 't',
+    columns: ['name'],
+    filters: [{ column: 'name', op: 'like', param: { name: 'pattern' } }]
+  };
+  assert.throws(() => buildPlanFromJson(bad), /requires an explicit type for LIKE/);
+});
+
+test('OpPlanBuilder: valid LIKE with text passes', () => {
+  const good = {
+    table: 't',
+    columns: ['name'],
+    filters: [{ column: 'name', op: 'like', param: { name: 'pattern', type: 'text' } }]
+  };
+  const plan = buildPlanFromJson(good);
+  const sql = lowerToSQL(plan);
+  assert.ok(sql.includes('LIKE'), 'SQL must contain LIKE');
+});
+
+test('OpPlanBuilder: CONTAINS requires explicit type', () => {
+  const bad = {
+    table: 't',
+    columns: ['data'],
+    filters: [{ column: 'data', op: 'contains', param: { name: 'fragment' } }]
+  };
+  assert.throws(() => buildPlanFromJson(bad), /requires an explicit type for CONTAINS/);
+});
+
+test('OpPlanBuilder: valid CONTAINS with jsonb passes', () => {
+  const good = {
+    table: 't',
+    columns: ['data'],
+    filters: [{ column: 'data', op: 'contains', param: { name: 'fragment', type: 'jsonb' } }]
+  };
+  const plan = buildPlanFromJson(good);
+  const sql = lowerToSQL(plan);
+  assert.ok(sql.includes('@>'), 'SQL must contain @> operator');
+});
+

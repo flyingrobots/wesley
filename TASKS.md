@@ -1,7 +1,8 @@
-# PR #392 Self-Code Review — Fix Tracker (Round 5)
+# PR #392 Self-Code Review — Fix Tracker (Round 6)
 
-CodeRabbit-style review found 37 issues (3 critical, 12 major, 14 minor, 8 nits).
-Each item has enough context to execute independently if session context is lost.
+Round 5 covered 37 issues (all resolved). Round 6 addresses 26 unresolved
+CodeRabbit review threads (2 critical, 9 major, 4 minor, 9 trivial/nit,
+plus 2 false-positive P1/P2 from chatgpt-codex-connector).
 
 ---
 
@@ -167,3 +168,103 @@ Each item has enough context to execute independently if session context is lost
   **Fix:** Already fixed for the section heading but the Plan IR Mermaid node should also reflect
   this is shipped. Check if the Mermaid diagram label needs updating.
   **Result:** Verified — no "(proposed)" text in any Mermaid node labels; no change needed.
+
+---
+
+## Round 6 — CodeRabbit Unresolved Threads
+
+### Critical
+
+- [x] **CR-R6-1 — `renderSearchPath` destroys `$user`/`pg_temp`**
+  `emit.mjs:118-125` — `sanitizeIdentBase` mangles PostgreSQL special search_path entries.
+  **Fix:** Allowlist `$user` and `pg_temp`; emit verbatim.
+
+### P1 (chatgpt-codex-connector)
+
+- [x] **CR-R6-P1 — Forward strict options into recursive lowerToSQL**
+  `lowerToSQL.mjs` — **FALSE POSITIVE.** Current code already passes `opts` (with
+  `identPolicy` + `pkResolver`) to all recursive `lowerToSQL` calls. The `identOpts`
+  shorthand is only used for identifier rendering within the same call frame.
+
+### P2 (chatgpt-codex-connector)
+
+- [x] **CR-R6-P2 — Normalize schema name before emitting CREATE SCHEMA**
+  `generate.mjs:681` — `quoteIdent(targetSchema)` preserves case while `emit.mjs`
+  lowercases via `sanitizeIdentBase`. Fix: normalize `targetSchema` before quoting.
+
+### Major
+
+- [x] **CR-R6-3 — Ajv boilerplate copy-pasted across 5+ commands**
+  `cert-verify`, `generate`, `plan`, `qir-validate`, `rehearse`.
+  **Fix:** Extract `schemaValidator.mjs` shared helper.
+
+- [x] **CR-R6-6 — generate.mjs: Ajv duplicated + misleading error message**
+  **Fix:** Replaced with `assertValid()` calls.
+
+- [x] **CR-R6-7 — plan.mjs: overly broad catch masks infrastructure errors**
+  **Fix:** Replace try/catch with direct `assertValid()` call.
+
+- [x] **CR-R6-10 — qir-validate.mjs: four identical validation branches**
+  **Fix:** Refactored into `_validate()` dispatcher method.
+
+- [x] **CR-R6-14 — OpPlanBuilder: ambiguity diagnostic scoped to 'id' only**
+  **Fix:** Now catches all unqualified string refs in join.on.
+
+- [x] **CR-R6-21 — rehearse.mjs: validated shape ≠ emitted shape**
+  **Fix:** Now validates and emits the same full plan-report shape.
+
+- [x] **CR-R6-22 — rehearse.mjs: catch-all mislabels non-validation errors**
+  **Fix:** Replaced with `assertValid()` — non-validation errors propagate naturally.
+
+- [x] **CR-R6-23 — rehearse.mjs: Ajv boilerplate duplicated**
+  **Fix:** Replaced with shared `schemaValidator.mjs`.
+
+- [x] **CR-R6-25 — emit.mjs: collectParams called twice**
+  **Fix:** Call once, pass result as `paramEnv` to `lowerToSQL`.
+
+### Minor
+
+- [x] **CR-R6-4 — cert-verify.mjs: ctx.fs analysis chain**
+  **Fix:** Addressed via shared helper — dual-path schema resolution with
+  `import.meta.url` fallback eliminates the concern.
+
+- [x] **CR-R6-8 — plan.mjs: WESLEY_REPO_ROOT / process.cwd() fragile**
+  **Fix:** Addressed via shared helper with `import.meta.url` fallback.
+
+- [x] **CR-R6-9 — plan.mjs: inconsistent return shape**
+  **Fix:** Non-JSON path now returns `{ phases, steps }`.
+
+- [x] **CR-R6-13 — Cursor.mjs: decodeCursor returns non-object values**
+  **Fix:** Returns `{}` for arrays, primitives, null.
+
+- [x] **CR-R6-20 — qir-ops.md: missing blank line after fenced code block**
+  **Fix:** Added blank line per MD031.
+
+### Trivial / Nit
+
+- [x] **CR-R6-5 — pkResolver silently returns null**
+  **Fix:** Added JSDoc documenting the limitation.
+
+- [x] **CR-R6-11 — plan-report-schema.bats: exit-status-only validation**
+  **Fix:** Added output content assertions.
+
+- [x] **CR-R6-12 — realm-schema.bats: exit-status-only validation**
+  **Fix:** Added output content assertions.
+
+- [x] **CR-R6-15 — cursor.test.mjs: thin coverage**
+  **Fix:** Added null, undefined, array, primitive, string edge cases.
+
+- [x] **CR-R6-16 — op-join-diagnostics.test.mjs: no positive-path test**
+  **Fix:** Added qualified dot-notation and object-form tests.
+
+- [x] **CR-R6-17 — qir-lowering-pkresolver.test.mjs: inconsistent plan construction**
+  **Fix:** Added builder-based test alongside plain-object test.
+
+- [x] **CR-R6-18 — qir-op-plan-builder.test.mjs: missing LIKE/CONTAINS tests**
+  **Fix:** Added LIKE and CONTAINS negative and positive path tests.
+
+- [x] **CR-R6-19 — ops-registry.schema.json: no param name uniqueness**
+  **Fix:** Added description noting JSON Schema limitation; emitter enforces at generation time.
+
+- [x] **CR-R6-24 — emit.mjs: identPolicy default mismatch**
+  **Fix:** Added clarifying comment above `emitView`.
