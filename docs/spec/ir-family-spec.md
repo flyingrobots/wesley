@@ -11,12 +11,12 @@ flowchart LR
   end
 
   subgraph Core
-    SIR[Schema IR\n(schemas/ir.schema.json)]
-    QIR[Query IR\n(schemas/qir.schema.json)]
-    PLAN[Plan IR\n(schemas/plan-report.schema.json)]
-    REALM[REALM IR\n(schemas/realm.schema.json)]
-    EVI[Evidence & Scores\n(schemas/evidence-map.schema.json,\nschemas/scores.schema.json)]
-    ENV[IR Envelope\n(schemas/ir-envelope.schema.json)]
+    SIR[Schema IR<br/>(schemas/ir.schema.json)]
+    QIR[Query IR<br/>(schemas/qir.schema.json)]
+    PLAN[Plan IR<br/>(schemas/plan-report.schema.json)]
+    REALM[REALM IR<br/>(schemas/realm.schema.json)]
+    EVI[Evidence &amp; Scores<br/>(schemas/evidence-map.schema.json,<br/>schemas/scores.schema.json)]
+    ENV[IR Envelope<br/>(schemas/ir-envelope.schema.json)]
   end
 
   CLI[Wesley CLI]

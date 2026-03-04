@@ -20,11 +20,11 @@ This guide documents the MVP of the Query IR (QIR) pipeline that compiles operat
 
 ## Constraints and behavior
 
-- The lowering phase (lowerToSQL.mjs) avoids quoting identifiers for readability in tests, but will minimally quote reserved identifiers to avoid invalid SQL (e.g., table "order"). Do not rely on this for security.
+- The lowering phase (lowerToSQL.mjs) avoids quoting identifiers for readability in tests, but minimally quotes reserved identifiers to avoid invalid SQL (e.g., table "order"). Do not rely on this for security.
 - Security warning: Because lowering primarily emits unquoted identifiers, user-controlled values MUST NEVER flow into table/column/alias names. Only use trusted, validated identifiers from schema metadata or a server-side whitelist. As an immediate mitigation, validate/whitelist identifiers server-side and avoid interpolating raw user values; future releases will add stricter validation/quoting modes.
 
 - Function returns `SETOF jsonb` for MVP to keep signatures stable; future work can emit `RETURNS TABLE (...)` if desired.
-- Primary key tie-breaker currently assumes `<leftmost-alias>.id`; will use real PK/unique keys when metadata is available.
+- Primary key tie-breaker uses real PK/unique keys via `pkResolver` when Schema IR metadata is available; falls back to `<leftmost-alias>.id` heuristic otherwise.
 
 ## Examples
 
@@ -133,6 +133,7 @@ Example (abridged):
 
 ```json
 {
+  "version": "1.0.0",
   "schema": "wes_ops",
   "ops": [
     {
@@ -211,14 +212,8 @@ It’s intentionally DB‑free; swap to a real EXPLAIN strategy in a future phas
 
 These validators load schemas from the local `schemas/` folder and fail with structured errors when the shape drifts.
 
-### Discovery Modes (planned)
-
-We are moving to a strict discovery model by default: when `--ops <dir>` is present, Wesley will recursively compile all `**/*.op.json` files (configurable with `--ops-glob`), fail if none are found unless `--ops-allow-empty` is provided, and sort files deterministically. A manifest mode (`--ops-manifest`) will be available for curated control (include/exclude lists). See the design note in `docs/drafts/2025-10-08-ops-discovery-modes.md`.
-
 ## Roadmap
 
-- Wire `--ops` end-to-end in CLI (expose emission; EXPLAIN JSON snapshots).
-- Use actual PK/unique keys for deterministic ORDER BY.
 - Option to `RETURNS TABLE(...)` with projected column shapes.
 - RLS defaults phase 2 and pgTAP for policies generated from annotations.
 

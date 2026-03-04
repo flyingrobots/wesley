@@ -6,8 +6,8 @@ Items tracked from PR reviews, retrospectives, and ongoing development.
 
 - [ ] Extract shared Ajv validator helper and `resolveRepoRoot()` utility into a `@wesley/cli-utils` package (consolidates 5+ commands that duplicate Ajv init/schema-load/compile/error-wrap and fragile `process.env.WESLEY_REPO_ROOT || process.cwd()` pattern)
 - [ ] Consolidate RESERVED keyword set: merge `emit.mjs` local copy into `identifiers.mjs`, update to PostgreSQL 16 fully-reserved list
-- [ ] Centralize `sanitizeIdentBase` 63-char truncation in `identifiers.mjs` and remove duplicate in `emit.mjs`
-- [ ] Replace `Buffer` usage in `Cursor.mjs` with `TextEncoder`/`btoa` for platform-agnostic `@wesley/core`
+- [x] Centralize `sanitizeIdentBase` 63-char truncation in `identifiers.mjs` and remove duplicate in `emit.mjs`
+- [x] Replace `Buffer` usage in `Cursor.mjs` with `TextEncoder`/`btoa` for platform-agnostic `@wesley/core`
 
 ## Testing
 

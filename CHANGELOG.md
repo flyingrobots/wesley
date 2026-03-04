@@ -6,38 +6,6 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
-### Fixed
-
-#### QIR Phase C — Self-Code Review (PR #392)
-
-- **C1:** `Predicate.isNull()`/`isNotNull()` now emit `{ kind: 'Compare', op: 'isNull' }` matching `lowerToSQL` expectations (was runtime crash)
-- **C2:** Validate `ParamRef.typeHint` against safe-type regex to prevent SQL injection
-- **C3:** Validate `Literal.type` against safe-type regex to prevent SQL injection
-- **C4:** Validate ORDER BY `nulls` to `'first'`|`'last'` only (was injectable)
-- **C5:** `cert-sign` canonicalizes with `{ ...json, signatures: [] }` to match `cert-verify`, fixing multi-signature verification
-- **M1:** `qir` subcommand `.action()` handlers merge parent program opts (`--verbose`, `--quiet`, `--json`)
-- **M2:** `validateRealm` in rehearse error path wrapped in try/catch to prevent masking original error
-- **M3:** Migration SQL emission validates `s.type`, `s.using`, `s.default` against safe regexes
-- **M4:** `LIMIT`/`OFFSET` validated as finite non-negative numbers (was emitting `NaN`)
-- **M5:** `Cursor.mjs` exported from barrel `index.mjs`
-- **M6:** `Cursor.mjs` uses `btoa`/`atob` instead of `Buffer` for browser compatibility
-- **M7:** `ir-family-spec.md` references correct `plan-report.schema.json`
-- **M8:** `ParamCollector` throws on unrecognized predicate kinds (defense-in-depth)
-- **m1:** `generate.mjs` uses local `logger` instead of `this.ctx.logger` for ops registry validation
-- **m2:** `cert-sign.mjs` and `cert-verify.mjs` use `fs.read()` to match host adapter contract
-- **m3:** `generate.mjs` uses `this.ctx.env` and `this.ctx.shell` instead of `process.env`/`globalThis`
-- **m4:** Extract shared migration helpers to `_migration-plan.mjs` (eliminates duplication)
-- **m5:** `emit.mjs` delegates to shared `sanitizeIdentBase` from `identifiers.mjs`
-- **m6:** `decodeCursor` strips `__proto__`/`constructor` keys after `JSON.parse`
-- **m7–m9:** Documentation uses present tense for shipped schemas; correct bats test paths
-- **m10–m11:** Remove dead `DistinctOn`, `Cast`, `CaseWhen` branches from `ParamCollector`
-- **n1:** Remove pointless `catch (e) { throw e }` in `cert-verify.mjs`
-- **n2:** Bats tests use robust `setup()` with `ROOT_DIR`/`CLI` pattern and `WESLEY_REPO_ROOT`
-- **n3:** `renderJsonAgg` passes `opts` to `renderOrderBy`
-- **n5:** Remove trivial `escIdent` wrapper; use `renderIdent` directly
-- **n6:** `qir-envelope-schema.bats` removes redundant `export` (keeps `env` prefix)
-- **n7:** `plan-report.schema.json` removes redundant `additionalProperties: true`
-
 ### Added
 
 #### Alpha Playground — Browser-Based "Try Wesley"
@@ -108,7 +76,45 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Docs: `docs/guides/qir-ops.md`; PR template and CODEOWNERS
 - CI: Ubuntu-only CLI matrix; stabilized architecture-boundaries workflow
 
+### Changed
+- `generator-echo` now emits `echo-ir/v2` (was `echo-ir/v1`)
+- `schema_sha256` in IR uses canonical AST hash (was raw SDL hash)
+- **CR-13/14/20/21:** `docs/guides/qir-ops.md` — remove stale "Discovery Modes (planned)" section, add `version` field to registry example, update shipped features to present tense, prune shipped roadmap bullets
+
 ### Fixed
+
+#### QIR Phase C — Self-Code Review (PR #392)
+
+- **C1:** `Predicate.isNull()`/`isNotNull()` now emit `{ kind: 'Compare', op: 'isNull' }` matching `lowerToSQL` expectations (was runtime crash)
+- **C2:** Validate `ParamRef.typeHint` against safe-type regex to prevent SQL injection
+- **C3:** Validate `Literal.type` against safe-type regex to prevent SQL injection
+- **C4:** Validate ORDER BY `nulls` to `'first'`|`'last'` only (was injectable)
+- **C5:** `cert-sign` canonicalizes with `{ ...json, signatures: [] }` to match `cert-verify`, fixing multi-signature verification
+- **M1:** `qir` subcommand `.action()` handlers merge parent program opts (`--verbose`, `--quiet`, `--json`)
+- **M2:** `validateRealm` in rehearse error path wrapped in try/catch to prevent masking original error
+- **M3:** Migration SQL emission validates `s.type`, `s.using`, `s.default` against safe regexes
+- **M4:** `LIMIT`/`OFFSET` validated as finite non-negative numbers (was emitting `NaN`)
+- **M5:** `Cursor.mjs` exported from barrel `index.mjs`
+- **M6:** `Cursor.mjs` uses `btoa`/`atob` instead of `Buffer` for browser compatibility
+- **M7:** `ir-family-spec.md` references correct `plan-report.schema.json`
+- **M8:** `ParamCollector` throws on unrecognized predicate kinds (defense-in-depth)
+- **m1:** `generate.mjs` uses local `logger` instead of `this.ctx.logger` for ops registry validation
+- **m2:** `cert-sign.mjs` and `cert-verify.mjs` use `fs.read()` to match host adapter contract
+- **m3:** `generate.mjs` uses `this.ctx.env` and `this.ctx.shell` instead of `process.env`/`globalThis`
+- **m4:** Extract shared migration helpers to `_migration-plan.mjs` (eliminates duplication)
+- **m5:** `emit.mjs` delegates to shared `sanitizeIdentBase` from `identifiers.mjs`
+- **m6:** `decodeCursor` strips `__proto__`/`constructor` keys after `JSON.parse`
+- **m7–m9:** Documentation uses present tense for shipped schemas; correct bats test paths
+- **m10–m11:** Remove dead `DistinctOn`, `Cast`, `CaseWhen` branches from `ParamCollector`
+- **n1:** Remove pointless `catch (e) { throw e }` in `cert-verify.mjs`
+- **n2:** Bats tests use robust `setup()` with `ROOT_DIR`/`CLI` pattern and `WESLEY_REPO_ROOT`
+- **n3:** `renderJsonAgg` passes `opts` to `renderOrderBy`
+- **n4:** Moot — the private RESERVED set in `emit.mjs` was removed when `sanitizeIdentBase` was consolidated (see m5)
+- **n5:** Remove trivial `escIdent` wrapper; use `renderIdent` directly
+- **n6:** `qir-envelope-schema.bats` removes redundant `export` (keeps `env` prefix)
+- **n7:** `plan-report.schema.json` removes redundant `additionalProperties: true`
+
+#### Pre-review fixes
 - **QIR:** `lowerToSQL` recursive calls (Subquery, Lateral, ScalarSubquery, Exists) now pass full `opts` — preserves `pkResolver` and `identPolicy` in nested queries; also threads `opts` through `renderOrderBy`
 - **QIR:** `lowerToSQL` join-type handling is now explicit (LEFT, INNER) and throws on unsupported types instead of silently defaulting to JOIN
 - **QIR:** `lowerToSQL` DISTINCT ON prefix uses position-based matching — preserves existing direction/nulls, supports multi-column distinctOn
@@ -135,9 +141,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **E2d.1:** Golden vector `unwrapType` now throws on missing node name instead of returning `'Unknown'`
 - **E2d.1:** Golden vector test runner now guards against missing `typeName` in fixture files
 
-### Changed
-- `generator-echo` now emits `echo-ir/v2` (was `echo-ir/v1`)
-- `schema_sha256` in IR uses canonical AST hash (was raw SDL hash)
-
 ## [0.1.0] - 2025-09-01
 - Initial public repository layout
+
+[Unreleased]: https://github.com/flyingrobots/wesley/compare/v0.1.0...HEAD

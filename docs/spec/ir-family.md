@@ -9,19 +9,19 @@ Wesley uses a small, versioned IR family rather than a single monolithic IR:
   - Produced by op→plan builders/compilers; consumed by `lowerToSQL` and emission wrappers.
   - Captures relations, projections, predicates, params, ordering, and pagination.
 
-Cross‑references
+## Cross‑references
 - QIR references schema entities by name (e.g., `TableNode.table`).
 - During lowering, callers may provide `pkResolver(plan)` that maps the QIR root table to a Schema IR key for deterministic ORDER BY tie‑breakers.
 
-Versioning
+## Versioning
 - Both schemas live under `schemas/` and can evolve independently with semantic version notes in CHANGELOG.
 - Tests validate representative instances of each to prevent drift.
 
-Validation
+## Validation
 - Evidence schemas are validated in CLI (`validate-bundle`).
 - QIR schema is validated in CLI Bats tests (`packages/wesley-cli/test/qir-schema.bats`).
 
-Envelope
+## Envelope
 - A top‑level envelope bundles both together for audits:
   - `{ schema: <SchemaIR>, ops: { plans: <QIR[]> }, evidence: {...}, version: "vX" }`.
 
