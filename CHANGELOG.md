@@ -81,6 +81,11 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - `schema_sha256` in IR uses canonical AST hash (was raw SDL hash)
 - **CR-13/14/20/21:** `docs/guides/qir-ops.md` — remove stale "Discovery Modes (planned)" section, add `version` field to registry example, update shipped features to present tense, prune shipped roadmap bullets
 - **CR-32:** `docs/spec/ir-family-spec.md` — replace `\n` with `<br/>` in Mermaid node labels so line breaks render correctly
+- **CR-17:** `docs/spec/ir-family.md` — add `## ` heading markers to Cross-references, Versioning, Validation, and Envelope sections
+- **CR-18:** `docs/spec/qir.md` — insert blank lines after all `##` headings for consistent markdown formatting
+- **CR-19:** `docs/spec/qir.md` — add `distinctOn?` field to QueryPlan Top Level section
+- **CR-28:** Add cross-reference blockquotes linking `ir-family.md` and `ir-family-spec.md`
+- **CR-29:** `docs/README.md` — add IR Family Overview, IR Family Specification, and QIR Specification links under Core Concepts
 
 ### Fixed
 
@@ -114,6 +119,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **n5:** Remove trivial `escIdent` wrapper; use `renderIdent` directly
 - **n6:** `qir-envelope-schema.bats` removes redundant `export` (keeps `env` prefix)
 - **n7:** `plan-report.schema.json` removes redundant `additionalProperties: true`
+- **CR-22:** `plan-report.schema.json` — add `additionalProperties: false` to Phase items, Mapping items, and Radar object (Step/StepWithLock intentionally omitted due to `allOf` + draft-07 interaction)
+- **CR-23:** `shipme.schema.json` — normalize `$ref` from absolute URL to relative path (`realm.schema.json#`)
+- **CR-30:** Strip extra trailing newlines from JSON schema files (`qir`, `ir-envelope`, `ir`, `ops-manifest`, `ops-registry`, `realm`); add missing trailing newline to `evidence-map`
+- **CR-35:** `qir.schema.json` — simplify `Literal.value` from verbose `oneOf` (6 JSON types) to equivalent `{}`
 
 #### Pre-review fixes
 - **QIR:** `lowerToSQL` recursive calls (Subquery, Lateral, ScalarSubquery, Exists) now pass full `opts` — preserves `pkResolver` and `identPolicy` in nested queries; also threads `opts` through `renderOrderBy`
