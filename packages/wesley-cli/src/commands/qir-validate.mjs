@@ -70,7 +70,7 @@ export class QirValidateCommand extends WesleyCommand {
     addFormats(ajv);
 
     if (options.envelope) {
-      const root = process.env.WESLEY_REPO_ROOT || process.cwd();
+      const root = (this.ctx.env || {}).WESLEY_REPO_ROOT || process.cwd();
       const [schemaIR, schemaQIR, schemaEnv, envJson] = await Promise.all([
         fs.read(await this.ctx.fs.join(root, 'schemas', 'ir.schema.json')),
         fs.read(await this.ctx.fs.join(root, 'schemas', 'qir.schema.json')),
@@ -95,7 +95,7 @@ export class QirValidateCommand extends WesleyCommand {
       if (!options.json) logger.info({ file: input }, 'IR envelope validation OK');
       return { valid: true, file: input, kind: 'envelope' };
     } else if (options.manifest) {
-      const root = process.env.WESLEY_REPO_ROOT || process.cwd();
+      const root = (this.ctx.env || {}).WESLEY_REPO_ROOT || process.cwd();
       const [schemaJson, manJson] = await Promise.all([
         fs.read(await this.ctx.fs.join(root, 'schemas', 'ops-manifest.schema.json')),
         fs.read(input)
@@ -114,7 +114,7 @@ export class QirValidateCommand extends WesleyCommand {
       if (!options.json) logger.info({ file: input }, 'Ops manifest validation OK');
       return { valid: true, file: input, kind: 'ops-manifest' };
     } else if (options.registry) {
-      const root = process.env.WESLEY_REPO_ROOT || process.cwd();
+      const root = (this.ctx.env || {}).WESLEY_REPO_ROOT || process.cwd();
       const [schemaJson, regJson] = await Promise.all([
         fs.read(await this.ctx.fs.join(root, 'schemas', 'ops-registry.schema.json')),
         fs.read(input)
@@ -133,7 +133,7 @@ export class QirValidateCommand extends WesleyCommand {
       if (!options.json) logger.info({ file: input }, 'Ops registry validation OK');
       return { valid: true, file: input, kind: 'ops-registry' };
     } else {
-      const root = process.env.WESLEY_REPO_ROOT || process.cwd();
+      const root = (this.ctx.env || {}).WESLEY_REPO_ROOT || process.cwd();
       const schemaPath = await this.ctx.fs.join(root, 'schemas', 'qir.schema.json');
       const [schemaJson, planJson] = await Promise.all([
         fs.read(schemaPath),

@@ -41,7 +41,7 @@ export class RehearseCommand extends WesleyCommand {
           const { default: addFormats } = await import('ajv-formats');
           const ajv = new Ajv({ strict: false, allErrors: true });
           addFormats(ajv);
-          const schemaJson = await this.ctx.fs.read((await this.ctx.fs.join(process.env.WESLEY_REPO_ROOT || process.cwd(), 'schemas', 'plan-report.schema.json')));
+          const schemaJson = await this.ctx.fs.read((await this.ctx.fs.join((this.ctx?.env || {}).WESLEY_REPO_ROOT || process.cwd(), 'schemas', 'plan-report.schema.json')));
           const validate = ajv.compile(JSON.parse(schemaJson));
           const minimal = { plan, explain, mapping: [], radar: { lines: [], counts: {} } };
           const ok = validate(minimal);
@@ -164,7 +164,7 @@ async function validateRealm(ctx, realm) {
   const { default: addFormats } = await import('ajv-formats');
   const ajv = new Ajv({ strict: false, allErrors: true });
   addFormats(ajv);
-  const schemaJson = await ctx.fs.read((await ctx.fs.join(process.env.WESLEY_REPO_ROOT || process.cwd(), 'schemas', 'realm.schema.json')));
+  const schemaJson = await ctx.fs.read((await ctx.fs.join((ctx.env || {}).WESLEY_REPO_ROOT || process.cwd(), 'schemas', 'realm.schema.json')));
   const validate = ajv.compile(JSON.parse(schemaJson));
   const ok = validate(realm);
   if (!ok) {

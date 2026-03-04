@@ -405,7 +405,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
           const { default: addFormats } = await import('ajv-formats');
           const ajv = new Ajv({ strict: false, allErrors: true });
           addFormats(ajv);
-          const root = process.env.WESLEY_REPO_ROOT || process.cwd();
+          const root = (this.ctx.env || {}).WESLEY_REPO_ROOT || process.cwd();
           const schemaJson = await fs.read(await fs.join(root, 'schemas', 'ops-manifest.schema.json'));
           const validate = ajv.compile(JSON.parse(schemaJson));
           const ok = validate(manifest);
@@ -418,7 +418,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
           if (!e.code) e.code = 'OPS_MANIFEST_INVALID';
           throw e;
         }
-        const repoRoot = process.env.WESLEY_REPO_ROOT || process.cwd();
+        const repoRoot = (this.ctx.env || {}).WESLEY_REPO_ROOT || process.cwd();
         const resolvedIncludes = await Promise.all(
           (manifest.include || []).map(p => fs.join(repoRoot, p))
         );
@@ -512,7 +512,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
             ]);
             const ajv = new Ajv({ strict: false, allErrors: true });
             addFormats(ajv);
-            const root = process.env.WESLEY_REPO_ROOT || process.cwd();
+            const root = (this.ctx.env || {}).WESLEY_REPO_ROOT || process.cwd();
             const schemaJson = await this.ctx.fs.read(await this.ctx.fs.join(root, 'schemas', 'ops-registry.schema.json'));
             const schema = JSON.parse(schemaJson);
             const reg = JSON.parse((await this.ctx.fs.read(registryPath)).toString('utf8'));

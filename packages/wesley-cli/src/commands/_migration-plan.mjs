@@ -102,16 +102,17 @@ export function emitMigrations(plan) {
   for (const phase of plan.phases) {
     for (const s of phase.steps) {
       if (s.op === 'create_table') {
-        expand.push(`-- create table ${s.table}`);
+        expand.push(`-- create table ${tname(s.table).replace(/[\r\n]/g, ' ')}`);
       }
       if (s.op === 'add_column') {
         // M3: validate type
         if (s.type && !SAFE_PG_TYPE_RE.test(String(s.type))) {
           throw new Error(`Unsafe PostgreSQL type in migration: ${s.type}`);
         }
-        // M3: validate default (no semicolons)
-        if (s.default && /;/.test(String(s.default))) {
-          throw new Error(`Unsafe DEFAULT value in migration (contains semicolon): ${s.default}`);
+        // M3: validate default — reject SQL injection vectors (semicolons, quotes,
+        // comment sequences). Safe defaults are bare literals like 0, true, now().
+        if (s.default && /[;'"\\]|--|\/\*/.test(String(s.default))) {
+          throw new Error(`Unsafe DEFAULT value in migration: ${s.default}`);
         }
         const parts = [`ALTER TABLE ${q(tname(s.table))} ADD COLUMN ${q(s.column)} ${s.type}`];
         if (s.nullable === false && s.default) parts.push('DEFAULT ' + s.default);

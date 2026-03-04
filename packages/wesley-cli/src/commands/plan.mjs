@@ -59,7 +59,7 @@ export class PlanCommand extends WesleyCommand {
         const { default: addFormats } = await import('ajv-formats');
         const ajv = new Ajv({ strict: false, allErrors: true });
         addFormats(ajv);
-        const schemaJson = await this.ctx.fs.read((await this.ctx.fs.join(process.env.WESLEY_REPO_ROOT || process.cwd(), 'schemas', 'plan-report.schema.json')));
+        const schemaJson = await this.ctx.fs.read((await this.ctx.fs.join((this.ctx.env || {}).WESLEY_REPO_ROOT || process.cwd(), 'schemas', 'plan-report.schema.json')));
         const validate = ajv.compile(JSON.parse(schemaJson));
         const report = { plan, explain, mapping, radar };
         const ok = validate(report);

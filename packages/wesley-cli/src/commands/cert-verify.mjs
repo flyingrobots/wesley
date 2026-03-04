@@ -23,7 +23,7 @@ export class CertVerifyCommand extends WesleyCommand {
     const { default: addFormats } = await import('ajv-formats');
     const ajv = new Ajv({ strict: false, allErrors: true });
     addFormats(ajv);
-    let root = process.env.WESLEY_REPO_ROOT || process.cwd();
+    let root = (this.ctx.env || {}).WESLEY_REPO_ROOT || process.cwd();
     let realmSchema, shipmeSchema;
     try {
       [realmSchema, shipmeSchema] = await Promise.all([
