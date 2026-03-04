@@ -378,7 +378,9 @@ export class GeneratePipelineCommand extends WesleyCommand {
         if (!ir && context.schemaContent) {
           ir = this.ctx.parsers.graphql.parse(context.schemaContent);
         }
-      } catch {}
+      } catch (parseErr) {
+        logger.warn({ error: parseErr?.message }, 'Could not parse schema for PK map; ops will use heuristic tie-breakers');
+      }
       const pkMap = new Map();
       if (ir && Array.isArray(ir.tables)) {
         for (const t of ir.tables) {
@@ -415,7 +417,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
             throw err;
           }
         } catch (e) {
-          if (!e.code) e.code = 'OPS_MANIFEST_INVALID';
+          if (e instanceof Error && !e.code) e.code = 'OPS_MANIFEST_INVALID';
           throw e;
         }
         const repoRoot = (this.ctx.env || {}).WESLEY_REPO_ROOT || process.cwd();
@@ -526,7 +528,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
             }
           }
         } catch (ve) {
-          logger.warn({ error: ve?.message }, 'Ops registry validation skipped due to error');
+          logger.warn({ error: ve?.message }, 'Ops registry validation failed');
           if (!options.opsAllowErrors) throw ve;
         }
       }
@@ -602,7 +604,8 @@ async function findOpFiles(fs, opsDir, logger) {
 async function resolveManifestEntries(fs, includes = [], excludes = [], logger) {
   const acc = new Set();
   const addDir = async (dir) => {
-    const entries = await fs.readDir(dir);
+    const entries = await fs.readDir?.(dir);
+    if (!Array.isArray(entries)) return;
     for (const e of entries) {
       if (e.isDirectory) await addDir(e.path);
       else if (e.isFile && e.name?.endsWith?.('.op.json')) acc.add(e.path);
@@ -610,10 +613,9 @@ async function resolveManifestEntries(fs, includes = [], excludes = [], logger) 
   };
   for (const entry of includes) {
     if (!entry) continue;
-    const path = entry;
-    const isDir = await fs.readDir?.(path).then(()=>true).catch(()=>false);
-    if (isDir) await addDir(path);
-    else if (await fs.exists(path)) acc.add(path);
+    const isDir = fs.readDir ? await fs.readDir(entry).then(() => true).catch(() => false) : false;
+    if (isDir) await addDir(entry);
+    else if (await fs.exists(entry)) acc.add(entry);
   }
   const normalize = (v) => String(v || '').replace(/\\/g, '/').replace(/\/+$/g, '');
   const excluded = (p) => {

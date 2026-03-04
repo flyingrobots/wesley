@@ -2,6 +2,7 @@
  * Cert Verify - Validate SHIPME signatures and realm verdict
  */
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
+import { extractJsonBlock, canonicalize } from './_cert-utils.mjs';
 
 export class CertVerifyCommand extends WesleyCommand {
   constructor(ctx) {
@@ -70,22 +71,6 @@ export class CertVerifyCommand extends WesleyCommand {
     }
     return result;
   }
-}
-
-function extractJsonBlock(md) {
-  const begin = md.indexOf('<!-- WESLEY_CERT:BEGIN -->');
-  const fence = md.indexOf('```json', begin);
-  const fenceEnd = md.indexOf('```', fence + 7);
-  const end = md.indexOf('<!-- WESLEY_CERT:END -->', fenceEnd);
-  if (begin === -1 || fence === -1 || fenceEnd === -1 || end === -1) throw new Error('Invalid SHIPME.md format');
-  const jsonStr = md.slice(fence + 7, fenceEnd).trim();
-  const json = JSON.parse(jsonStr);
-  return { json };
-}
-
-function canonicalize(obj) {
-  const sort = (x) => Array.isArray(x) ? x.map(sort) : (x && typeof x==='object') ? Object.keys(x).sort().reduce((a,k)=>{a[k]=sort(x[k]);return a;},{}) : x;
-  return JSON.stringify(sort(obj));
 }
 
 async function verifySig(fs, pubPath, data, b64sig) {

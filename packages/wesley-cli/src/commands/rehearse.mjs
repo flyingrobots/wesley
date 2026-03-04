@@ -120,7 +120,7 @@ export class RehearseCommand extends WesleyCommand {
       if (!options.json) logger.error('🕶️ REALM verdict: FAIL - ' + error.message);
       if (hooks.postDown) try { await runHook(this.ctx, hooks.postDown, logger); } catch {}
       if (options.json) {
-        try { await validateRealm(this.ctx, realm); } catch (ve) { logger.warn('REALM validation skipped in error path: ' + (ve?.message || ve)); }
+        try { await validateRealm(this.ctx, realm); } catch (ve) { logger.warn('REALM validation failed in error path: ' + (ve?.message || ve)); }
         this.ctx.stdout.write(JSON.stringify(realm, null, 2) + '\n');
       }
       const e = new Error('REALM rehearsal failed: ' + error.message);
