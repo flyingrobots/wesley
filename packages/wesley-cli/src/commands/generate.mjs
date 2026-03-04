@@ -261,6 +261,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
           const history = await loadMoriartyHistory({
             fs: this.ctx.fs,
             shell: this.ctx.shell,
+            logger,
             defaultBase:
               ctxEnv.WESLEY_BASE_REF ||
               ctxEnv.GITHUB_BASE_REF ||
@@ -502,7 +503,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
         try {
           const registryPath = await this.ctx.fs.join(opsOutputDir, 'registry.json');
           if (await this.ctx.fs.exists(registryPath)) {
-            const reg = JSON.parse((await this.ctx.fs.read(registryPath)).toString('utf8'));
+            const reg = JSON.parse(String(await this.ctx.fs.read(registryPath)));
             await assertValid(this.ctx, 'ops-registry.schema.json', reg, 'Ops registry');
             logger.info({ file: registryPath }, 'Ops registry validated');
           }
@@ -661,7 +662,7 @@ function emitOpArtifacts(compiledOps, targetSchema, logger, pkResolver, { securi
   // ensuring CREATE SCHEMA and emitted function schemas stay in sync.
   const normalizedSchema = sanitizeIdentBase(targetSchema, 'wes_ops');
   const deployChunks = [`BEGIN;`, `CREATE SCHEMA IF NOT EXISTS ${quoteIdent(normalizedSchema)};`];
-  const registry = { version: '1.0.0', schema: targetSchema, ops: [] };
+  const registry = { version: '1.0.0', schema: normalizedSchema, ops: [] };
   for (const entry of compiledOps) {
     ordinal += 1;
     const { baseName, plan, isParamless, path } = entry;
@@ -695,7 +696,7 @@ function emitOpArtifacts(compiledOps, targetSchema, logger, pkResolver, { securi
       const entryJson = {
         name: baseName,
         sql: {
-          schema: targetSchema,
+          schema: normalizedSchema,
           function: opId,
           view: isParamless ? opId : null
         },
@@ -766,16 +767,17 @@ async function assertCleanGit(shell) {
   }
 }
 
-async function loadMoriartyHistory({ fs, shell, defaultBase }) {
+async function loadMoriartyHistory({ fs, shell, defaultBase, logger: log }) {
+  const warn = log?.warn ? log.warn.bind(log) : () => {};
   let points = [];
   try {
     const raw = await fs.read('.wesley/history.json');
-    const parsed = JSON.parse(raw.toString('utf8'));
+    const parsed = JSON.parse(String(raw));
     if (Array.isArray(parsed?.points)) {
       points = mergeHistoryPoints(points, parsed.points);
     }
   } catch (err) {
-    console.warn('[Moriarty] Unable to read local history:', err?.message);
+    warn('[Moriarty] Unable to read local history: ' + (err?.message || ''));
   }
 
   const gitShell = shell?.exec ? shell : null;
@@ -787,23 +789,17 @@ async function loadMoriartyHistory({ fs, shell, defaultBase }) {
     const inside = await gitShell.exec('git rev-parse --is-inside-work-tree');
     if (!inside?.stdout?.trim()) return { points };
   } catch (err) {
-    console.warn('[Moriarty] Git repo check failed:', err?.message);
+    warn('[Moriarty] Git repo check failed: ' + (err?.message || ''));
     return { points };
   }
 
   let mergeBase;
-  const fallbackBase =
-    defaultBase ||
-    process.env.WESLEY_BASE_REF ||
-    process.env.GITHUB_BASE_REF ||
-    process.env.WESLEY_DEFAULT_BRANCH ||
-    process.env.GITHUB_DEFAULT_BRANCH ||
-    'main';
+  const fallbackBase = defaultBase || 'main';
   try {
     const mb = await gitShell.exec(`git merge-base HEAD ${fallbackBase}`);
     mergeBase = mb?.stdout?.trim();
   } catch (err) {
-    console.warn('[Moriarty] merge-base lookup failed:', err?.message);
+    warn('[Moriarty] merge-base lookup failed: ' + (err?.message || ''));
     return { points };
   }
   if (!mergeBase) return { points };
@@ -817,7 +813,7 @@ async function loadMoriartyHistory({ fs, shell, defaultBase }) {
       }
     }
   } catch (err) {
-    console.warn('[Moriarty] No history at merge-base:', err?.message);
+    warn('[Moriarty] No history at merge-base: ' + (err?.message || ''));
     // merge-base history missing or unreadable; ignore
   }
 

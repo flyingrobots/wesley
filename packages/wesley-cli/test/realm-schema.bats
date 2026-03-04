@@ -6,13 +6,15 @@ setup() {
   export WESLEY_REPO_ROOT="$ROOT_DIR"
 }
 
-@test "rehearse --dry-run --json validates against realm.schema.json" {
+@test "rehearse --dry-run --json emits plan-report shape" {
   run node "$CLI" rehearse --schema "$ROOT_DIR/test/fixtures/examples/schema.graphql" --dry-run --json
   if [ "$status" -ne 0 ]; then
     echo "OUTPUT:$output"
   fi
   [ "$status" -eq 0 ]
-  # Verify the output contains expected dry-run keys
+  # Verify the output contains expected plan-report keys (dry-run emits plan-report, not realm)
   [[ "$output" == *'"plan"'* ]]
   [[ "$output" == *'"explain"'* ]]
+  [[ "$output" == *'"mapping"'* ]]
+  [[ "$output" == *'"radar"'* ]]
 }

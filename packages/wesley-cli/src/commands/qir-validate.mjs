@@ -13,7 +13,7 @@ export class QirValidateCommand extends WesleyCommand {
       .argument('<file>', 'Path to QIR JSON file')
       .option('--json', 'Emit JSON output')
       .action(async (file, options, command) => {
-        const globalOpts = command.parent?.parent?.opts?.() || {};
+        let root = command; while (root.parent) root = root.parent; const globalOpts = root.opts();
         return this.execute({ ...globalOpts, ...options, file });
       });
     // Envelope validation
@@ -23,7 +23,7 @@ export class QirValidateCommand extends WesleyCommand {
       .argument('<file>', 'Path to IR envelope JSON file')
       .option('--json', 'Emit JSON output')
       .action(async (file, options, command) => {
-        const globalOpts = command.parent?.parent?.opts?.() || {};
+        let root = command; while (root.parent) root = root.parent; const globalOpts = root.opts();
         return this.execute({ ...globalOpts, ...options, file, envelope: true });
       });
 
@@ -34,7 +34,7 @@ export class QirValidateCommand extends WesleyCommand {
       .argument('<file>', 'Path to ops manifest JSON')
       .option('--json', 'Emit JSON output')
       .action(async (file, options, command) => {
-        const globalOpts = command.parent?.parent?.opts?.() || {};
+        let root = command; while (root.parent) root = root.parent; const globalOpts = root.opts();
         return this.execute({ ...globalOpts, ...options, file, manifest: true });
       });
 
@@ -45,9 +45,10 @@ export class QirValidateCommand extends WesleyCommand {
       .argument('<file>', 'Path to ops registry JSON')
       .option('--json', 'Emit JSON output')
       .action(async (file, options, command) => {
-        const globalOpts = command.parent?.parent?.opts?.() || {};
+        let root = command; while (root.parent) root = root.parent; const globalOpts = root.opts();
         return this.execute({ ...globalOpts, ...options, file, registry: true });
       });
+    cmd.action(() => { cmd.help(); });
     return root;
   }
 

@@ -126,6 +126,16 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **CR-16:** `assertCleanGit` prefers async `shell.exec()` over awaiting synchronous `execSync`
 - **CR-34:** `lockFor` in `_migration-plan.mjs` — add clarifying comment explaining PG 11+ ADD COLUMN lock behavior
 
+#### QIR Phase C — Self-Review Round 2
+
+- **SR-m1:** Document `findIndexByNameOnly` fallback in `lowerToSQL.mjs` — explains when the name-only param lookup legitimately triggers and its silent-binding risk
+- **SR-m4:** `ParamCollector` now visits `distinctOn` expressions — previously skipped, causing uncollected params when `distinctOn` referenced a `ParamRef`
+- **SR-m5:** `emit.mjs` imports `RESERVED` from `identifiers.mjs` instead of maintaining a separate (diverged) local copy
+- **SR-m6:** `OpPlanBuilder.parseRef` array branch explicitly checks for empty-string, null, and undefined table elements instead of relying on falsy coercion
+- **SR-n2:** `emitFunction` wrapping alias `q` is now quoted via `sqlQuoteIdent` — consistent with strict identifier policy
+- **SR-n3:** Remove dead `forceCast`/`!/::/.test(typeHint)` guard in `renderParam` — `SAFE_TYPE_RE` already prevents `::` in type hints
+- **SR-n4:** `PredicateCompiler.mjs` re-exported from QIR barrel `index.mjs`
+
 #### Pre-review fixes
 - **QIR:** `lowerToSQL` recursive calls (Subquery, Lateral, ScalarSubquery, Exists) now pass full `opts` — preserves `pkResolver` and `identPolicy` in nested queries; also threads `opts` through `renderOrderBy`
 - **QIR:** `lowerToSQL` join-type handling is now explicit (LEFT, INNER) and throws on unsupported types instead of silently defaulting to JOIN
@@ -152,6 +162,18 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **E2d.1:** Golden vector `resolveNanSentinels` now recurses into arrays and array fields
 - **E2d.1:** Golden vector `unwrapType` now throws on missing node name instead of returning `'Unknown'`
 - **E2d.1:** Golden vector test runner now guards against missing `typeName` in fixture files
+
+#### Self-Review Round 7 — Error Handling, Hardening, and Hygiene
+
+- **SR-m7:** `verifySig` in `cert-verify.mjs` now distinguishes crypto mismatches (returns `false`) from infrastructure errors (re-throws) instead of swallowing all errors via bare `catch {}`
+- **SR-m8:** `extractJsonBlock` in `_cert-utils.mjs` asserts marker ordering (`begin < fence < fenceEnd < end`) after position lookup, returning `null` on misordered markers
+- **SR-m10:** `qir-validate.mjs` parent `qir` command now shows help when invoked without a subcommand instead of throwing
+- **SR-m11:** `qir-validate.mjs` subcommand `.action()` handlers use dynamic root-walk (`while (root.parent) root = root.parent`) instead of hardcoded `command.parent?.parent?.opts?.()`
+- **SR-m12:** Health probe SQL in `rehearse.mjs` escapes double quotes in table names (`replace(/"/g, '""')`) to prevent SQL injection via `t.name`
+- **SR-m18:** Snapshot.json read failures in `plan.mjs` and `rehearse.mjs` now distinguish `ENOENT` (silent) from parse/infrastructure errors (logged via `logger.warn`)
+- **SR-n7:** `canonicalize` in `_cert-utils.mjs` uses explicit comparator `(a, b) => a < b ? -1 : a > b ? 1 : 0` instead of locale-dependent `.sort()`
+- **SR-n8:** `hashArtifacts` in `cert-create.mjs` logs debug message on file hash failure instead of swallowing errors via bare `catch {}`
+- **SR-n9:** `cert-create.mjs` uses static `import { createHash } from 'node:crypto'` instead of dynamic `await import('node:crypto')` inside `hashArtifacts`
 
 #### CodeRabbit Round-6 (PR #392)
 

@@ -31,7 +31,7 @@ test('emitFunction: generates deterministic function with params and jsonb rows'
   assert.ok(sql.startsWith('CREATE OR REPLACE FUNCTION "wes_ops"."op_org_list"('));
   assert.ok(sql.includes('p_ids text[]'));
   assert.ok(sql.includes('RETURNS SETOF jsonb'));
-  assert.ok(sql.includes('SELECT to_jsonb(q.*) FROM ('));
+  assert.ok(sql.includes('SELECT to_jsonb("q".*) FROM ('));
   assert.ok(sql.includes('FROM "organization" "t0"'));
   assert.ok(/ORDER BY\s+"t0"\."name"\s+ASC\s*,\s*"t0"\."id"\s+ASC/i.test(sql));
 });

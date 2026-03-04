@@ -54,4 +54,3 @@ Status: Draft (synchronized with `schemas/qir.schema.json`).
 ## Notes
 
 - This spec defines the QIR surface consumed by `lowerToSQL`. It purposefully separates Query IR from the Canonical Schema IR (`schemas/ir.schema.json`). Cross‑references are by name (e.g., `TableNode.table`) and are wired by the lowering environment (e.g., `pkResolver`).
-

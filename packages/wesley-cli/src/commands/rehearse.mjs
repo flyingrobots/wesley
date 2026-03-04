@@ -29,7 +29,11 @@ export class RehearseCommand extends WesleyCommand {
     const ir = this.ctx.parsers.graphql.parse(schemaContent);
 
     let previous = { tables: [] };
-    try { previous = JSON.parse(await this.ctx.fs.read('.wesley/snapshot.json')); } catch {}
+    try { previous = JSON.parse(await this.ctx.fs.read('.wesley/snapshot.json')); } catch (e) {
+      if (e?.code !== 'ENOENT' && e?.code !== 'ERR_MODULE_NOT_FOUND') {
+        logger.warn('Could not read snapshot: ' + (e?.message || ''));
+      }
+    }
 
     const plan = buildAdditivePlan(previous, ir);
     const explain = explainPlan(plan);
@@ -76,7 +80,7 @@ export class RehearseCommand extends WesleyCommand {
       }
       // Simple health probe: select from each table
       for (const t of ir.tables || []) {
-        await execSql(this.ctx.db, dsn, `SELECT 1 FROM "${t.name.toLowerCase()}" LIMIT 1;`).catch(()=>{});
+        await execSql(this.ctx.db, dsn, `SELECT 1 FROM "${t.name.toLowerCase().replace(/"/g, '""')}" LIMIT 1;`).catch(()=>{});
       }
       const realm = {
         provider,

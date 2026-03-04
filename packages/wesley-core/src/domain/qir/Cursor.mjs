@@ -6,8 +6,11 @@
 
 export function encodeCursor(obj) {
   const json = JSON.stringify(obj == null ? {} : obj);
+  // Encode via TextEncoder for UTF-8 safety (btoa only supports Latin1)
+  const bytes = new TextEncoder().encode(json);
+  const binary = String.fromCodePoint(...bytes);
   // btoa produces standard base64; convert to base64url
-  return btoa(json).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
 export function decodeCursor(str) {
@@ -17,7 +20,10 @@ export function decodeCursor(str) {
     let b64 = String(str).replace(/-/g, '+').replace(/_/g, '/');
     // Re-pad
     while (b64.length % 4) b64 += '=';
-    const json = atob(b64);
+    // Decode via TextDecoder for UTF-8 safety (atob only produces Latin1)
+    const binary = atob(b64);
+    const bytes = Uint8Array.from(binary, c => c.codePointAt(0));
+    const json = new TextDecoder().decode(bytes);
     const parsed = JSON.parse(json);
     // Guard: callers expect a plain object; coerce primitives/arrays to {}
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {

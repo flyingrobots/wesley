@@ -11,15 +11,9 @@
 
 import { lowerToSQL } from './lowerToSQL.mjs';
 import { collectParams } from './ParamCollector.mjs';
-import { sanitizeIdentBase as _sanitizeIdentBase } from './identifiers.mjs';
+import { sanitizeIdentBase as _sanitizeIdentBase, RESERVED } from './identifiers.mjs';
 
 const DEFAULT_SCHEMA = 'wes_ops';
-
-// Minimal reserved keyword list (PostgreSQL core). Not exhaustive; used to avoid
-// accidental collisions for unquoted identifiers (e.g., parameter names).
-const RESERVED = new Set([
-  'select','insert','update','delete','from','where','group','order','by','limit','offset','join','left','right','on','and','or','not','null','true','false','table','view','function','schema','user'
-]);
 
 // identPolicy defaults to 'strict' here (ops emission is always strict) whereas
 // lowerToSQL defaults to 'minimal' for backward-compat with direct callers.
@@ -41,7 +35,7 @@ export function emitFunction(opName, plan, {
   const { ordered } = paramEnv;
   const params = uniqueParamNames(ordered).map(({ display, type }) => `${display} ${type || 'text'}`).join(', ');
   const selectSql = lowerToSQL(plan, paramEnv, { identPolicy, pkResolver });
-  const body = `SELECT to_jsonb(q.*) FROM (\n${selectSql}\n) AS q`;
+  const body = `SELECT to_jsonb(${sqlQuoteIdent('q')}.*) FROM (\n${selectSql}\n) AS ${sqlQuoteIdent('q')}`;
   const attrs = [];
   // Language and volatility first
   attrs.push('LANGUAGE sql');

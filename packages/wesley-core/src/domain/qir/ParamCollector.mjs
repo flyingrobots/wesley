@@ -21,6 +21,10 @@ export function collectParams(plan) {
     if (p.orderBy) {
       for (const ob of p.orderBy) visitExpr(ob.expr);
     }
+    // DISTINCT ON expressions
+    if (Array.isArray(p.distinctOn)) {
+      for (const expr of p.distinctOn) visitExpr(expr);
+    }
     // Root relation
     visitRelation(p.root);
   };

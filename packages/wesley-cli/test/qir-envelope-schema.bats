@@ -12,4 +12,5 @@ setup() {
     echo "OUTPUT:$output"
   fi
   [ "$status" -eq 0 ]
+  [[ "$output" == *"schemaIR"* ]] || [[ "$output" == *"valid"* ]] || [[ "$output" == *"ok"* ]] || [[ "$output" == *"envelope"* ]]
 }

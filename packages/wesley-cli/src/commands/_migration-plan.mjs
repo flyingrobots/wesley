@@ -8,6 +8,8 @@
 // ── Validation regexes (M3) ─────────────────────────────────────────────────
 const SAFE_PG_TYPE_RE = /^[a-zA-Z_][a-zA-Z0-9_ [\](),.]*$/;
 const SAFE_USING_RE = /^(btree|hash|gin|gist|spgist|brin)$/i;
+// Allowlist for DEFAULT values: numeric literals, booleans, bare function calls, single-quoted strings.
+const SAFE_DEFAULT_RE = /^(-?\d+(\.\d+)?|true|false|'[^']*'|[a-zA-Z_][a-zA-Z0-9_]*\(\))$/i;
 
 /**
  * Build an additive-only migration plan: tables/columns/indexes/fks.
@@ -39,9 +41,9 @@ export function buildAdditivePlan(prev, curr) {
       }
     }
     // New indexes
-    const oldIdxSig = new Set((old.indexes || []).map(i => (i.columns || []).join('|')));
+    const oldIdxSig = new Set((old.indexes || []).map(i => (i.columns || []).join('|') + ':' + (i.using || 'btree')));
     for (const idx of t.indexes || []) {
-      const sig = (idx.columns || []).join('|');
+      const sig = (idx.columns || []).join('|') + ':' + (idx.using || 'btree');
       if (!oldIdxSig.has(sig)) {
         phases[0].steps.push({ op: 'create_index_concurrently', table: name, columns: idx.columns, using: idx.using, name: idx.name });
       }
@@ -112,13 +114,14 @@ export function emitMigrations(plan) {
         if (s.type && !SAFE_PG_TYPE_RE.test(String(s.type))) {
           throw new Error(`Unsafe PostgreSQL type in migration: ${s.type}`);
         }
-        // M3: validate default — reject SQL injection vectors (semicolons, quotes,
-        // comment sequences). Safe defaults are bare literals like 0, true, now().
-        if (s.default && /[;'"\\]|--|\/\*/.test(String(s.default))) {
+        // M3/SR-M6: validate default — allowlist of safe patterns only.
+        // Accepts: numeric literals, booleans, bare function calls, single-quoted strings.
+        if (s.default != null && !SAFE_DEFAULT_RE.test(String(s.default))) {
           throw new Error(`Unsafe DEFAULT value in migration: ${s.default}`);
         }
         const parts = [`ALTER TABLE ${q(tname(s.table))} ADD COLUMN ${q(s.column)} ${s.type}`];
-        if (s.nullable === false && s.default) parts.push('DEFAULT ' + s.default);
+        if (s.nullable === false) parts.push('NOT NULL');
+        if (s.default != null) parts.push('DEFAULT ' + s.default);
         expand.push(parts.join(' ') + ';');
       }
       if (s.op === 'create_index_concurrently') {

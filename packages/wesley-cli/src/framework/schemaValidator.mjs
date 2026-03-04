@@ -40,7 +40,7 @@ export async function createAjv() {
  * @returns {Promise<string>} Raw file contents (string or Buffer)
  */
 export async function loadSchemaFile(ctx, name) {
-  const root = (ctx.env || {}).WESLEY_REPO_ROOT || process.cwd();
+  const root = (ctx.env || {}).WESLEY_REPO_ROOT || ctx.cwd?.() || process.cwd();
   try {
     const path = await ctx.fs.join(root, 'schemas', name);
     return await ctx.fs.read(path);
@@ -50,7 +50,8 @@ export async function loadSchemaFile(ctx, name) {
     const { dirname, resolve: pres } = await import('node:path');
     const modDir = dirname(fileURLToPath(import.meta.url));
     const fallbackRoot = pres(modDir, '../../../..');
-    return ctx.fs.read(pres(fallbackRoot, 'schemas', name));
+    // packages/wesley-cli/src/framework/ → src/ → wesley-cli/ → packages/ → repo root
+    return await ctx.fs.read(pres(fallbackRoot, 'schemas', name));
   }
 }
 

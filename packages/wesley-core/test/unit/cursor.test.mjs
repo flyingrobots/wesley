@@ -32,6 +32,12 @@ test('encodeCursor coerces null and undefined to empty object', () => {
   assert.deepEqual(decodeCursor(fromUndef), {});
 });
 
+test('encodeCursor handles multi-byte Unicode (SR-M4)', () => {
+  const obj = { name: '\u{1F600}', city: '\u4E1C\u4EAC' }; // emoji + CJK
+  const cur = encodeCursor(obj);
+  assert.deepEqual(decodeCursor(cur), obj);
+});
+
 test('decodeCursor returns {} for non-object payloads', () => {
   // Array payload
   const arr = btoa(JSON.stringify([1, 2])).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');

@@ -218,7 +218,7 @@ These validators load schemas from the local `schemas/` folder and fail with str
 - Option to `RETURNS TABLE(...)` with projected column shapes.
 - RLS defaults phase 2 and pgTAP for policies generated from annotations.
 
-See also: docs/drafts/2025-10-03-rfc-query-ops-to-sql-qir.md
+See also: [RFC — Query Ops to SQL (QIR)](../drafts/2025-10-03-rfc-query-ops-to-sql-qir.md)
 
 ## Security defaults and search_path
 

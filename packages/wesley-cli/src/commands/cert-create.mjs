@@ -1,6 +1,7 @@
 /**
  * Cert Create - Assemble SHIPME.md certificate from evidence/realm
  */
+import { createHash } from 'node:crypto';
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 
 export class CertCreateCommand extends WesleyCommand {
@@ -85,16 +86,17 @@ async function readJsonSafe(ctx, path) {
 }
 
 async function hashArtifacts(ctx, outDir) {
-  const crypto = await import('node:crypto');
   const fs = ctx.fs;
   const res = {};
   for (const f of ['schema.sql']) {
     try {
       const p = `${outDir}/${f}`;
       const buf = await fs.read(p);
-      const h = crypto.createHash('sha256').update(buf).digest('hex');
+      const h = createHash('sha256').update(buf).digest('hex');
       res[f] = { sha256: h };
-    } catch {}
+    } catch (e) {
+      ctx.logger?.debug?.('hashArtifacts: could not hash %s: %s', f, e?.message || e);
+    }
   }
   return res;
 }

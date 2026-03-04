@@ -46,13 +46,20 @@ export function lowerToSQL(plan, paramsEnv = null, opts = {}) {
   let orderSQL = '';
   const orderItems = [...(plan.orderBy || [])];
   if (distinctExprs.length) {
-    // Ensure orderBy begins with distinctOn expressions by position (expression match only)
-    for (let i = 0; i < distinctExprs.length; i++) {
+    // Ensure orderBy begins with distinctOn expressions by position.
+    // First, remove any existing entries that match a distinctOn expression
+    // to prevent duplicates when the user supplies them in a different order.
+    for (const de of distinctExprs) {
+      const idx = orderItems.findIndex(ob => orderMentionsExpr([ob], de));
+      if (idx >= 0) orderItems.splice(idx, 1);
+    }
+    // Then prepend all distinctOn expressions in order, preserving the
+    // user's original direction/nulls if one was found above.
+    const origOrderBy = plan.orderBy || [];
+    for (let i = distinctExprs.length - 1; i >= 0; i--) {
       const de = distinctExprs[i];
-      const current = orderItems[i];
-      if (!current || !orderMentionsExpr([current], de)) {
-        orderItems.splice(i, 0, { expr: de, direction: 'asc', nulls: null });
-      }
+      const orig = origOrderBy.find(ob => orderMentionsExpr([ob], de));
+      orderItems.unshift(orig ? { ...orig } : { expr: de, direction: 'asc', nulls: null });
     }
   }
   if (orderItems.length > 0) {
@@ -69,13 +76,13 @@ export function lowerToSQL(plan, paramsEnv = null, opts = {}) {
   let lim = '';
   if (plan.limit != null) {
     const n = Number(plan.limit);
-    if (!Number.isFinite(n) || n < 0) throw new Error(`Invalid LIMIT: ${JSON.stringify(plan.limit)}`);
+    if (!Number.isFinite(n) || n < 0 || !Number.isInteger(n)) throw new Error(`Invalid LIMIT: ${JSON.stringify(plan.limit)}`);
     lim = `\nLIMIT ${n}`;
   }
   let off = '';
   if (plan.offset != null) {
     const n = Number(plan.offset);
-    if (!Number.isFinite(n) || n < 0) throw new Error(`Invalid OFFSET: ${JSON.stringify(plan.offset)}`);
+    if (!Number.isFinite(n) || n < 0 || !Number.isInteger(n)) throw new Error(`Invalid OFFSET: ${JSON.stringify(plan.offset)}`);
     off = `\nOFFSET ${n}`;
   }
 
@@ -208,7 +215,10 @@ function renderLiteral(v, type = null) {
     throw new Error(`Unsafe SQL type cast in Literal: ${type}`);
   }
   if (typeof v === 'boolean') return v ? 'TRUE' : 'FALSE';
-  if (typeof v === 'number') return String(v);
+  if (typeof v === 'number') {
+    if (!Number.isFinite(v)) throw new Error(`Invalid numeric literal: ${v}`);
+    return String(v);
+  }
   if (Array.isArray(v) || isObject(v)) {
     const json = JSON.stringify(v);
     return `'${escString(json)}'::${type || 'jsonb'}`;
@@ -253,14 +263,19 @@ function renderParam(p, params, forceCast = false) {
   const key = `${special}:${name}:${typeHint || ''}`;
 
   const idx = params.indexByName?.get ? params.indexByName.get(key) : null;
-  // If not found, try by name only as a fallback (useful in tests)
+  // Fallback: look up by bare name when the fully-qualified key (special:name:typeHint)
+  // misses. This legitimately triggers when the caller supplies a ParamRef whose
+  // special/typeHint metadata differs from the originally collected key — e.g., a
+  // forceCast=true call re-rendering the same param with an array type suffix.
+  // Risk: if two params share a name but differ only in special/typeHint, the
+  // name-only lookup silently binds to whichever was collected first.
   const discoveredIndex = idx || findIndexByNameOnly(params, name) || 0;
   if (!discoveredIndex) throw new Error(`Param not collected for '${name}'`);
 
   if (typeHint && !SAFE_TYPE_RE.test(String(typeHint))) {
     throw new Error(`Unsafe SQL type hint on ParamRef: ${typeHint}`);
   }
-  const cast = typeHint && (forceCast || !/::/.test(typeHint)) ? `::${typeHint}` : '';
+  const cast = typeHint ? `::${typeHint}` : '';
   return `$${discoveredIndex}${cast}`;
 }
 

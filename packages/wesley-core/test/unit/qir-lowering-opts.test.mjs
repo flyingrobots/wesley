@@ -52,6 +52,48 @@ test('lowerToSQL: orderBy with unsafe nulls throws (C4)', () => {
   assert.throws(() => lowerToSQL(plan), /invalid nulls/i);
 });
 
+test('lowerToSQL: fractional limit throws (SR-M1)', () => {
+  const root = new TableNode('items', 't0');
+  const proj = new Projection([
+    new ProjectionItem('id', new ColumnRef('t0', 'id')),
+  ]);
+  const plan = new QueryPlan(root, proj, { limit: 5.5 });
+  assert.throws(() => lowerToSQL(plan), /invalid limit/i);
+});
+
+test('lowerToSQL: fractional offset throws (SR-M1)', () => {
+  const root = new TableNode('items', 't0');
+  const proj = new Projection([
+    new ProjectionItem('id', new ColumnRef('t0', 'id')),
+  ]);
+  const plan = new QueryPlan(root, proj, { offset: 3.7 });
+  assert.throws(() => lowerToSQL(plan), /invalid offset/i);
+});
+
+test('lowerToSQL: NaN literal throws (SR-M2)', () => {
+  const plan = {
+    root: { kind: 'Table', table: 't', alias: 't0' },
+    projection: { items: [{ alias: 'v', expr: { kind: 'Literal', value: NaN } }] },
+  };
+  assert.throws(() => lowerToSQL(plan), /invalid numeric/i);
+});
+
+test('lowerToSQL: Infinity literal throws (SR-M2)', () => {
+  const plan = {
+    root: { kind: 'Table', table: 't', alias: 't0' },
+    projection: { items: [{ alias: 'v', expr: { kind: 'Literal', value: Infinity } }] },
+  };
+  assert.throws(() => lowerToSQL(plan), /invalid numeric/i);
+});
+
+test('lowerToSQL: negative Infinity literal throws (SR-M2)', () => {
+  const plan = {
+    root: { kind: 'Table', table: 't', alias: 't0' },
+    projection: { items: [{ alias: 'v', expr: { kind: 'Literal', value: -Infinity } }] },
+  };
+  assert.throws(() => lowerToSQL(plan), /invalid numeric/i);
+});
+
 test('lowerToSQL: non-numeric limit throws (M4)', () => {
   const root = new TableNode('items', 't0');
   const proj = new Projection([
@@ -191,6 +233,36 @@ test('lowerToSQL: DISTINCT ON multi-column inserts only missing prefix entries',
   assert.match(clauses[2], /t0\.id/i, 'third should be id');
   const catCount = clauses.filter(c => /t0\.category/i.test(c)).length;
   assert.equal(catCount, 1, 'category should appear exactly once');
+});
+
+test('lowerToSQL: DISTINCT ON with reversed orderBy does not duplicate (SR-M3)', () => {
+  const plan = {
+    root: { kind: 'Table', table: 'log', alias: 't0' },
+    projection: { items: [
+      { alias: 'cat', expr: { kind: 'ColumnRef', table: 't0', column: 'category' } },
+      { alias: 'ts', expr: { kind: 'ColumnRef', table: 't0', column: 'created_at' } },
+    ] },
+    distinctOn: [
+      { kind: 'ColumnRef', table: 't0', column: 'category' },
+      { kind: 'ColumnRef', table: 't0', column: 'created_at' },
+    ],
+    orderBy: [
+      // Reversed relative to distinctOn
+      { expr: { kind: 'ColumnRef', table: 't0', column: 'created_at' }, direction: 'desc', nulls: null },
+      { expr: { kind: 'ColumnRef', table: 't0', column: 'category' }, direction: 'asc', nulls: null },
+    ],
+  };
+  const sql = lowerToSQL(plan, null, { identPolicy: 'minimal' });
+  const orderMatch = sql.match(/ORDER BY\s+([\s\S]+)$/i);
+  assert.ok(orderMatch, 'should have ORDER BY clause');
+  const clauses = orderMatch[1].split(',').map(s => s.trim());
+  // distinctOn expressions should lead, each appearing exactly once
+  assert.match(clauses[0], /t0\.category/i, 'first should be category (from distinctOn)');
+  assert.match(clauses[1], /t0\.created_at/i, 'second should be created_at (from distinctOn)');
+  const catCount = clauses.filter(c => /t0\.category/i.test(c)).length;
+  const tsCount = clauses.filter(c => /t0\.created_at/i.test(c)).length;
+  assert.equal(catCount, 1, 'category should appear exactly once');
+  assert.equal(tsCount, 1, 'created_at should appear exactly once');
 });
 
 test('lowerToSQL: DISTINCT ON preserves DESC direction when expression matches', () => {

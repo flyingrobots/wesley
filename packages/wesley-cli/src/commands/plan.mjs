@@ -36,7 +36,7 @@ export class PlanCommand extends WesleyCommand {
     // Enforce clean tree only in strict policy; default: allow
     const env = this.ctx.env || {};
     if (shouldEnforceCleanPlan(env) && !options.allowDirty) {
-      try { await assertCleanGit(); } catch (e) { e.code = e.code || 'DIRTY_WORKTREE'; throw e; }
+      try { await assertCleanGit(this.ctx.shell); } catch (e) { e.code = e.code || 'DIRTY_WORKTREE'; throw e; }
     }
 
     const current = this.ctx.parsers.graphql.parse(schemaContent);
@@ -46,7 +46,11 @@ export class PlanCommand extends WesleyCommand {
       const snapshotPath = resolveFilePath(outputPaths.bundleDir, 'snapshot.json');
       const snap = await this.ctx.fs.read(snapshotPath);
       previous = JSON.parse(snap);
-    } catch {}
+    } catch (e) {
+      if (e?.code !== 'ENOENT' && e?.code !== 'ERR_MODULE_NOT_FOUND') {
+        logger.warn('Could not read snapshot: ' + (e?.message || ''));
+      }
+    }
 
     const plan = buildAdditivePlan(previous, current);
     const explain = explainPlan(plan);
@@ -155,10 +159,10 @@ function shouldEnforceCleanPlan(env) {
   const policy = (env?.WESLEY_GIT_POLICY || 'emit').toLowerCase();
   return policy === 'strict';
 }
-async function assertCleanGit() {
-  const shell = globalThis?.wesleyCtx?.shell;
-  try { shell?.execSync?.('git rev-parse --is-inside-work-tree', { stdio: 'ignore' }); } catch { return; }
-  const out = (await shell?.exec?.('git status --porcelain'))?.stdout?.trim?.() || '';
+async function assertCleanGit(shell) {
+  if (!shell?.exec) return;
+  try { await shell.exec('git rev-parse --is-inside-work-tree'); } catch { return; }
+  const out = (await shell.exec('git status --porcelain'))?.stdout?.trim?.() || '';
   if (out) {
     const err = new Error('Working tree has uncommitted changes. Commit or stash before running, or pass --allow-dirty.');
     err.code = 'DIRTY_WORKTREE';

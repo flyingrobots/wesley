@@ -197,7 +197,14 @@ function buildOnPredicate(on, leftDefault, rightAlias) {
   if (!on) throw new Error('Join requires an "on" condition. Provide { left, right, op }');
   const parseRef = (r) => {
     let table, column;
-    if (Array.isArray(r)) { table = r[0] || leftDefault; column = r[1]; }
+    if (Array.isArray(r)) {
+      if (r[0] !== undefined && r[0] !== null && r[0] !== '' && typeof r[0] === 'string') {
+        table = r[0];
+      } else {
+        table = leftDefault;
+      }
+      column = r[1];
+    }
     else if (typeof r === 'string') { const m = r.split('.'); if (m.length === 2) { table = m[0]; column = m[1]; } else { table = leftDefault; column = r; } }
     else { table = r?.table || leftDefault; column = r?.column; }
     if (!table || typeof table !== 'string' || !column || typeof column !== 'string') {

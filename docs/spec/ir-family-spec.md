@@ -117,6 +117,15 @@ Validation is part of development, not an afterthought. The JSON Schemas live in
 
 CI also exercises these validators in Bats tests to keep the spec aligned with the code paths that produce and consume the IRs.
 
+## JSON Schema draft versions
+
+The schemas currently use two different JSON Schema drafts:
+
+- **Draft 2020-12**: `evidence-map.schema.json`, `scores.schema.json` — these use `$defs` and the modern `$id` resolution.
+- **Draft-07**: all other schemas (`qir`, `ir`, `ir-envelope`, `plan-report`, `realm`, `shipme`, `ops-manifest`, `ops-registry`) — these use `definitions`.
+
+This split exists because the evidence schemas were authored first under draft 2020-12. The newer schemas use draft-07 for Ajv compatibility with `allOf` composition patterns. Do not cross-reference between the two groups without testing resolution. Unification to a single draft is tracked in BACKLOG.md.
+
 ## Versioning and compatibility
 
 Each schema is versioned under SemVer and tightened only when the benefit outweighs the churn. Breaking changes are rare and explicit. The Envelope includes a version string and can carry both old and new shapes transiently during migrations, but the general rule is forward‑only with compatibility shims living in code, not in the spec.

@@ -64,8 +64,10 @@ async function verifySig(fs, pubPath, data, b64sig) {
     const key = createPublicKey(pem);
     const ok = verify(null, Buffer.from(data), key, Buffer.from(b64sig, 'base64'));
     return !!ok;
-  } catch {
-    return false;
+  } catch (err) {
+    // Crypto verification mismatch returns false; infrastructure errors propagate
+    if (err?.code === 'ERR_CRYPTO_SIGN_MISMATCH' || err?.message?.includes?.('Signature')) return false;
+    throw err;
   }
 }
 
