@@ -107,7 +107,7 @@ export function emitMigrations(plan) {
   for (const phase of plan.phases) {
     for (const s of phase.steps) {
       if (s.op === 'create_table') {
-        expand.push(`-- create table ${tname(s.table).replace(/[\r\n]/g, ' ')}`);
+        expand.push(`-- create table ${q(tname(s.table))}`);
       }
       if (s.op === 'add_column') {
         // M3: validate type
