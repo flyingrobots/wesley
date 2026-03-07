@@ -22,7 +22,7 @@ export function decodeCursor(str) {
     while (b64.length % 4) b64 += '=';
     // Decode via TextDecoder for UTF-8 safety (atob only produces Latin1)
     const binary = atob(b64);
-    const bytes = Uint8Array.from(binary, c => c.codePointAt(0));
+    const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
     const json = new TextDecoder().decode(bytes);
     const parsed = JSON.parse(json, (key, val) => (key === '__proto__' || key === 'constructor' || key === 'prototype') ? undefined : val);
     // Guard: callers expect a plain object; coerce primitives/arrays to {}
