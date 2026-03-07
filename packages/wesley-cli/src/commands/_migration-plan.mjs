@@ -82,7 +82,12 @@ export function lockFor(step) {
     // PG 11+ allows ADD COLUMN with a non-volatile DEFAULT without rewriting the table,
     // so nullable columns or columns with a DEFAULT only need SHARE ROW EXCLUSIVE.
     // ACCESS EXCLUSIVE is required only for NOT NULL columns without a DEFAULT.
-    case 'add_column': return step.nullable !== false || step.default ? L('SHARE ROW EXCLUSIVE', true, false) : L('ACCESS EXCLUSIVE', true, true);
+    case 'add_column': {
+      const canAvoidRewrite = step.nullable !== false || step.default != null;
+      return canAvoidRewrite
+        ? L('SHARE ROW EXCLUSIVE', true, false)
+        : L('ACCESS EXCLUSIVE', true, true);
+    }
     case 'create_index_concurrently': return L('SHARE UPDATE EXCLUSIVE', true, false);
     case 'add_fk_not_valid': return L('SHARE ROW EXCLUSIVE', true, false);
     case 'validate_fk': return L('SHARE ROW EXCLUSIVE', true, false);
