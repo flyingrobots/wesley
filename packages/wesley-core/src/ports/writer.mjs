@@ -5,7 +5,7 @@ export class WriterPort {
    * @param {object} result - Compilation result
    * @returns {Promise<{files: string[]}>}
    */
-  async writeBundle(result) { 
-    throw new Error('WriterPort.writeBundle() must be implemented'); 
+  async writeBundle(_result) {
+    throw new Error('WriterPort.writeBundle() must be implemented');
   }
 }

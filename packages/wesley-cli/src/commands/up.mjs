@@ -24,7 +24,7 @@ export class UpCommand extends WesleyCommand {
 
   async executeCore({ options, schemaContent, logger }) {
     const env = this.ctx.env || {};
-    const outDir = options.outDir || 'out';
+    const _outDir = options.outDir || 'out';
     let dsn = options.dsn || pickDsn(options, env, this.makeLogger(options, { phase: 'up' }));
 
     if (options.docker) {
@@ -47,7 +47,7 @@ export class UpCommand extends WesleyCommand {
       const snap = await this.ctx.fs.read('.wesley/snapshot.json');
       previous = JSON.parse(snap);
       hadSnapshot = true;
-    } catch {}
+    } catch { /* empty */ }
 
     if (!hadSnapshot) {
       // Bootstrap: emit full DDL and apply
@@ -86,7 +86,7 @@ export class UpCommand extends WesleyCommand {
   async writeSnapshot(ir) {
     try {
       await this.ctx.fs.write('.wesley/snapshot.json', JSON.stringify({ irVersion: '1.0.0', tables: ir.tables }, null, 2));
-    } catch {}
+    } catch { /* empty */ }
   }
 
   output(obj, options) {
@@ -199,7 +199,7 @@ function emitMigrations(plan) {
   const files = [];
   const expand = [];
   const validate = [];
-  const q = (id) => '"' + id.replace(/\"/g, '""') + '"';
+  const q = (id) => '"' + id.replace(/"/g, '""') + '"';
   const tname = (n) => n.toLowerCase();
   for (const phase of plan.phases) {
     for (const s of phase.steps) {

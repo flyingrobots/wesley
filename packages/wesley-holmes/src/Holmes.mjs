@@ -96,7 +96,7 @@ export class Holmes {
           if (dirs.length) index[uid] = dirs;
         }
       }
-    } catch {}
+    } catch { /* empty */ }
     this.schemaDirectives = index;
     return index;
   }
@@ -200,19 +200,19 @@ export class Holmes {
 
   buildVerdict(code) {
     switch (code) {
-      case 'ELEMENTARY': {
-        const message = 'Ship immediately! The evidence is conclusive.';
-        return { code, message, markdown: `✅ **ELEMENTARY** - Ship immediately!\n"The evidence is conclusive. No mysteries remain."` };
-      }
-      case 'REQUIRES INVESTIGATION': {
-        const message = 'Further investigation required before shipping.';
-        return { code, message, markdown: `⚠️ **REQUIRES FURTHER INVESTIGATION**\n"Some clues remain unclear. Address the noted issues."` };
-      }
-      case 'YOU SHALL NOT PASS':
-      default: {
-        const message = 'Do not ship. Critical evidence is missing.';
-        return { code: 'YOU SHALL NOT PASS', message, markdown: `⛔ **YOU SHALL NOT PASS**\n"Critical evidence is missing! Return to your laboratory!"` };
-      }
+    case 'ELEMENTARY': {
+      const message = 'Ship immediately! The evidence is conclusive.';
+      return { code, message, markdown: '✅ **ELEMENTARY** - Ship immediately!\n"The evidence is conclusive. No mysteries remain."' };
+    }
+    case 'REQUIRES INVESTIGATION': {
+      const message = 'Further investigation required before shipping.';
+      return { code, message, markdown: '⚠️ **REQUIRES FURTHER INVESTIGATION**\n"Some clues remain unclear. Address the noted issues."' };
+    }
+    case 'YOU SHALL NOT PASS':
+    default: {
+      const message = 'Do not ship. Critical evidence is missing.';
+      return { code: 'YOU SHALL NOT PASS', message, markdown: '⛔ **YOU SHALL NOT PASS**\n"Critical evidence is missing! Return to your laboratory!"' };
+    }
     }
   }
 
@@ -281,7 +281,7 @@ export class Holmes {
   getStatus(evidence) {
     const hasSQL = evidence.sql?.length > 0;
     const hasTests = evidence.tests?.length > 0;
-    
+
     if (hasSQL && hasTests) return '✅ SQL & tests';
     if (hasSQL) return '⚠️ SQL only';
     if (hasTests) return '⚠️ Tests only';
@@ -290,7 +290,7 @@ export class Holmes {
 
   getCitation(evidence) {
     const citations = [];
-    for (const [kind, locations] of Object.entries(evidence)) {
+    for (const [_kind, locations] of Object.entries(evidence)) {
       if (locations?.[0]) {
         citations.push(`${locations[0].file}:${locations[0].lines}@${this.sha.substring(0, 7)}`);
         break;
@@ -331,7 +331,7 @@ export class Holmes {
   checkSensitiveFields() {
     let count = 0;
     let unsafe = 0;
-    
+
     for (const uid of Object.keys(this.evidence.evidence || {})) {
       if (uid.includes('password') || uid.includes('sensitive') || uid.includes('pii')) {
         count++;
@@ -342,7 +342,7 @@ export class Holmes {
         }
       }
     }
-    
+
     return {
       count,
       safe: unsafe === 0,

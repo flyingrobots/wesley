@@ -27,7 +27,7 @@ import {
   logical,
   propertyAccess,
   methodCall,
-  forall,
+  forall
 } from './ast.mjs';
 
 /**
@@ -144,7 +144,7 @@ class Parser {
    * Parse comparison (==, !=, <, <=, >, >=)
    */
   parseComparison() {
-    let left = this.parseAdditive();
+    const left = this.parseAdditive();
 
     if (this.match(TokenType.EQ)) {
       const right = this.parseAdditive();

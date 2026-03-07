@@ -2,7 +2,7 @@
  * Safety Validator - Pre-Execution Safety Checks
  * Performs comprehensive pre-execution validation including concurrent operation
  * detection, resource limit validation, permission verification, and dependency validation.
- * 
+ *
  * Licensed under the Apache License, Version 2.0
  */
 
@@ -281,7 +281,7 @@ export class SafetyValidator {
    */
   async validateSafety(context) {
     const result = new ValidationResult();
-    
+
     this.emit(new SafetyValidationStarted(context.operationType, context.toJSON()));
 
     try {
@@ -289,7 +289,7 @@ export class SafetyValidator {
       if (this.options.enableConcurrentOperationCheck) {
         const concurrentCheck = await this.checkConcurrentOperations(context);
         result.addCheck('concurrentOperations', concurrentCheck);
-        
+
         if (!concurrentCheck.passed) {
           result.addError({
             type: 'concurrent_operation_conflict',
@@ -303,7 +303,7 @@ export class SafetyValidator {
       if (this.options.enableResourceLimitCheck) {
         const resourceCheck = await this.checkResourceLimits(context);
         result.addCheck('resourceLimits', resourceCheck);
-        
+
         if (!resourceCheck.passed) {
           result.addError({
             type: 'resource_limit_exceeded',
@@ -311,7 +311,7 @@ export class SafetyValidator {
             details: resourceCheck.violations
           });
         }
-        
+
         // Add warnings for high resource usage
         resourceCheck.warnings.forEach(warning => result.addWarning(warning));
       }
@@ -320,7 +320,7 @@ export class SafetyValidator {
       if (this.options.enablePermissionCheck) {
         const permissionCheck = await this.checkPermissions(context);
         result.addCheck('permissions', permissionCheck);
-        
+
         if (!permissionCheck.passed) {
           result.addError({
             type: 'permission_denied',
@@ -334,7 +334,7 @@ export class SafetyValidator {
       if (this.options.enableDependencyValidation) {
         const dependencyCheck = await this.validateDependencyChain(context);
         result.addCheck('dependencies', dependencyCheck);
-        
+
         if (!dependencyCheck.passed) {
           result.addError({
             type: 'dependency_validation_failed',
@@ -342,7 +342,7 @@ export class SafetyValidator {
             details: dependencyCheck.issues
           });
         }
-        
+
         // Add recommendations
         dependencyCheck.recommendations.forEach(rec => result.addRecommendation(rec));
       }
@@ -350,16 +350,16 @@ export class SafetyValidator {
       // Determine overall result
       const hasErrors = result.hasErrors();
       const hasWarnings = result.hasWarnings();
-      
+
       if (hasErrors) {
         result.setOverall('failed');
-        
+
         if (this.options.strictMode) {
           const error = new SafetyValidationError('Safety validation failed', 'VALIDATION_FAILED', {
             errors: result.errors,
             context: context.toJSON()
           });
-          
+
           this.emit(new SafetyValidationFailed(context.operationType, result.errors, context.toJSON()));
           throw error;
         }
@@ -370,7 +370,7 @@ export class SafetyValidator {
       }
 
       this.emit(new SafetyValidationCompleted(context.operationType, result.toJSON()));
-      
+
       return result;
 
     } catch (error) {
@@ -380,13 +380,13 @@ export class SafetyValidator {
         message: error.message,
         details: { error: error.message }
       });
-      
+
       this.emit(new SafetyValidationFailed(context.operationType, [error.message], context.toJSON()));
-      
+
       if (error instanceof SafetyValidationError) {
         throw error;
       } else {
-        throw new SafetyValidationError('Safety validation encountered an error', 'VALIDATION_ERROR', { 
+        throw new SafetyValidationError('Safety validation encountered an error', 'VALIDATION_ERROR', {
           originalError: error.message,
           context: context.toJSON()
         });
@@ -425,11 +425,11 @@ export class SafetyValidator {
       const conflicts = this.findOperationConflicts(context.operationType, activeOps);
       if (conflicts.length > 0) {
         result.passed = false;
-        result.message = `Conflicting concurrent operations detected`;
+        result.message = 'Conflicting concurrent operations detected';
         result.conflicts.push(...conflicts);
-        
+
         this.emit(new ConcurrentOperationDetected(context.operationType, conflicts));
-        
+
         if (this.options.strictMode) {
           throw new ConcurrentOperationError(context.operationType, conflicts);
         }
@@ -447,7 +447,7 @@ export class SafetyValidator {
         type: 'check_error',
         error: error.message
       });
-      
+
       // Re-throw if it's a ConcurrentOperationError (strict mode case)
       if (error instanceof ConcurrentOperationError) {
         throw error;
@@ -505,7 +505,7 @@ export class SafetyValidator {
               percentage: usagePercentage,
               threshold: warningThreshold
             };
-            
+
             result.warnings.push(warning);
             this.emit(new ResourceLimitWarning(resource, projected, limit, warningThreshold));
           }
@@ -514,7 +514,7 @@ export class SafetyValidator {
 
       if (result.violations.length > 0) {
         result.message = `Resource limit violations: ${result.violations.map(v => v.resource).join(', ')}`;
-        
+
         if (this.options.strictMode) {
           const violation = result.violations[0];
           throw new ResourceLimitExceededError(violation.resource, violation.limit, violation.projected);
@@ -524,7 +524,7 @@ export class SafetyValidator {
     } catch (error) {
       result.passed = false;
       result.message = `Resource limit check failed: ${error.message}`;
-      
+
       if (error instanceof ResourceLimitExceededError) {
         throw error;
       }
@@ -548,7 +548,7 @@ export class SafetyValidator {
     try {
       // Determine required permissions for operation type
       result.requiredPermissions = this.getRequiredPermissions(context.operationType);
-      
+
       // Check if user has required permissions
       for (const required of result.requiredPermissions) {
         if (!this.hasPermission(context.permissions, required)) {
@@ -559,13 +559,13 @@ export class SafetyValidator {
       if (result.missingPermissions.length > 0) {
         result.passed = false;
         result.message = `Missing required permissions: ${result.missingPermissions.join(', ')}`;
-        
+
         this.emit(new PermissionCheckCompleted(context.operationType, context.permissions, result));
-        
+
         if (this.options.strictMode) {
           throw new PermissionDeniedError(
-            context.operationType, 
-            result.requiredPermissions, 
+            context.operationType,
+            result.requiredPermissions,
             context.permissions
           );
         }
@@ -576,7 +576,7 @@ export class SafetyValidator {
     } catch (error) {
       result.passed = false;
       result.message = `Permission check failed: ${error.message}`;
-      
+
       if (error instanceof PermissionDeniedError) {
         throw error;
       }
@@ -599,10 +599,10 @@ export class SafetyValidator {
 
     try {
       const dependencies = context.dependencies;
-      
+
       for (const dependency of dependencies) {
         const validation = await this.validateSingleDependency(dependency, context);
-        
+
         if (!validation.isValid) {
           result.issues.push({
             dependency: dependency.name,
@@ -611,7 +611,7 @@ export class SafetyValidator {
             details: validation.details
           });
         }
-        
+
         result.recommendations.push(...validation.recommendations);
       }
 
@@ -628,7 +628,7 @@ export class SafetyValidator {
       if (result.issues.length > 0) {
         result.passed = false;
         result.message = `Dependency validation failed: ${result.issues.length} issues found`;
-        
+
         if (this.options.strictMode) {
           throw new DependencyValidationError('Dependency chain validation failed', result.issues);
         }
@@ -639,7 +639,7 @@ export class SafetyValidator {
     } catch (error) {
       result.passed = false;
       result.message = `Dependency validation failed: ${error.message}`;
-      
+
       if (error instanceof DependencyValidationError) {
         throw error;
       }
@@ -654,10 +654,10 @@ export class SafetyValidator {
   findOperationConflicts(operationType, activeOperations) {
     const conflicts = [];
     const conflictMatrix = this.getOperationConflictMatrix();
-    
+
     for (const activeOp of activeOperations) {
       const conflictTypes = conflictMatrix[operationType] || [];
-      
+
       if (conflictTypes.includes(activeOp.operationType)) {
         conflicts.push({
           type: 'operation_conflict',
@@ -668,7 +668,7 @@ export class SafetyValidator {
         });
       }
     }
-    
+
     return conflicts;
   }
 
@@ -697,7 +697,7 @@ export class SafetyValidator {
       userId: context.userId,
       priority: context.priority
     });
-    
+
     return context.sessionId;
   }
 
@@ -734,7 +734,7 @@ export class SafetyValidator {
       'create_index': ['SCHEMA_MODIFY', 'DDL_EXECUTE'],
       'read_data': ['DATA_ACCESS']
     };
-    
+
     return permissionMap[operationType] || [];
   }
 
@@ -748,7 +748,7 @@ export class SafetyValidator {
   /**
    * Validate single dependency
    */
-  async validateSingleDependency(dependency, context) {
+  async validateSingleDependency(_dependency, _context) {
     return {
       isValid: true,
       type: 'dependency',
@@ -761,7 +761,7 @@ export class SafetyValidator {
   /**
    * Detect circular dependencies
    */
-  detectCircularDependencies(dependencies) {
+  detectCircularDependencies(_dependencies) {
     // Simple cycle detection - in real implementation would use graph algorithms
     return [];
   }

@@ -39,7 +39,7 @@ export async function annotateErrorWithSDL(error, { fs } = {}) {
     const result = findSourceForSql(ev, { file: f, line: loc.line });
     if (result && result.source) {
       const src = result.source;
-      const columns = src.columns ? `, columns ${src.columns}` : '';
+      const _columns = src.columns ? `, columns ${src.columns}` : '';
       return { file: src.file, lines: src.lines, columns: src.columns || null, uid: result.uid, matchedSql: { file: f, line: loc.line } };
     }
   }

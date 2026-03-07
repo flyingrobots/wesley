@@ -10,7 +10,7 @@ import {
   generateManifest,
   generateSchemaJson,
   generateContractsJson,
-  extractTtdSchema,
+  extractTtdSchema
 } from '@wesley/core/ttd';
 import { FakeClock } from '@wesley/core/ports';
 import { testCrypto } from './setup.mjs';

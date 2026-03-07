@@ -4,15 +4,15 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { 
+import {
   BackpressureController,
   BackpressureError,
   CircuitBreakerError,
   RateLimitExceededError,
   ConnectionPoolExhaustedError,
-  BackpressureActivated,
-  BackpressureDeactivated,
-  CircuitBreakerStateChanged,
+  _BackpressureActivated,
+  _BackpressureDeactivated,
+  _CircuitBreakerStateChanged,
   ThrottlingAdjusted,
   CircuitBreakerState
 } from '../src/domain/control/BackpressureController.mjs';
@@ -96,7 +96,7 @@ test('BackpressureController - concurrency limiting', async () => {
 
   // Report completion to free up slot
   await controller.reportCompletion({ success: true, responseTime: 100 });
-  
+
   const status = controller.getStatus();
   assert.equal(status.operations.active, 1, 'Should have one less active operation');
 
@@ -109,7 +109,7 @@ test('BackpressureController - circuit breaker', async () => {
     resetTimeout: 100 // Short for testing
   });
 
-  let stateChanges = [];
+  const stateChanges = [];
   controller.on('circuitBreakerStateChanged', (event) => {
     stateChanges.push(event);
   });
@@ -139,9 +139,9 @@ test('BackpressureController - circuit breaker', async () => {
   // Should transition to half-open and allow limited requests
   const resetPerm = await controller.requestPermission({ id: 'reset-op' });
   assert.equal(resetPerm.granted, true, 'Should grant request after timeout');
-  
+
   const resetStatus = controller.getStatus();
-  assert.equal(resetStatus.circuitBreaker.state, CircuitBreakerState.HALF_OPEN, 
+  assert.equal(resetStatus.circuitBreaker.state, CircuitBreakerState.HALF_OPEN,
     'Circuit breaker should be half-open');
 
   // Report success to close circuit breaker
@@ -163,9 +163,9 @@ test('BackpressureController - operation queuing', async () => {
   controller.metrics.connectionPoolUtilization = 0.9;
 
   // First operation should be queued
-  const permission = await controller.requestPermission({ 
+  const permission = await controller.requestPermission({
     id: 'queued-op',
-    priority: 5 
+    priority: 5
   });
 
   if (permission.queued) {
@@ -189,7 +189,7 @@ test('BackpressureController - adaptive rate limiting', async () => {
     responseTimeWarning: 500
   });
 
-  let throttlingEvents = [];
+  const throttlingEvents = [];
   controller.on('throttlingAdjusted', (event) => {
     throttlingEvents.push(event);
   });
@@ -229,7 +229,7 @@ test('BackpressureController - backpressure activation', async () => {
     queueDepthWarning: 10
   });
 
-  let backpressureEvents = [];
+  const backpressureEvents = [];
   controller.on('backpressureActivated', (event) => {
     backpressureEvents.push(event);
   });
@@ -271,9 +271,9 @@ test('BackpressureController - metrics tracking', async () => {
 
   // Request permission and report completion
   await controller.requestPermission({ id: 'metric-op' });
-  await controller.reportCompletion({ 
-    success: true, 
-    responseTime: 250 
+  await controller.reportCompletion({
+    success: true,
+    responseTime: 250
   });
 
   const updatedMetrics = controller.getStatus().metrics;
@@ -282,9 +282,9 @@ test('BackpressureController - metrics tracking', async () => {
 
   // Report failure
   await controller.requestPermission({ id: 'fail-op' });
-  await controller.reportCompletion({ 
-    success: false, 
-    error: 'Test error' 
+  await controller.reportCompletion({
+    success: false,
+    error: 'Test error'
   });
 
   const failureMetrics = controller.getStatus().metrics;
@@ -334,9 +334,9 @@ test('BackpressureController - graceful shutdown', async () => {
   assert.equal(statusBefore.operations.active, 3, 'Should have active operations');
 
   // Queue an operation
-  controller.queuedOperations.push({ 
-    id: 'queued-shutdown-op', 
-    timestamp: Date.now() 
+  controller.queuedOperations.push({
+    id: 'queued-shutdown-op',
+    timestamp: Date.now()
   });
 
   let shutdownEvent = null;
@@ -537,19 +537,19 @@ test('BackpressureController - event emission comprehensive', async () => {
   });
 
   const events = [];
-  
+
   controller.on('backpressureActivated', (event) => {
     events.push({ type: 'backpressureActivated', payload: event.payload });
   });
-  
+
   controller.on('backpressureDeactivated', (event) => {
     events.push({ type: 'backpressureDeactivated', payload: event.payload });
   });
-  
+
   controller.on('circuitBreakerStateChanged', (event) => {
     events.push({ type: 'circuitBreakerStateChanged', payload: event.payload });
   });
-  
+
   controller.on('throttlingAdjusted', (event) => {
     events.push({ type: 'throttlingAdjusted', payload: event.payload });
   });
@@ -569,13 +569,13 @@ test('BackpressureController - event emission comprehensive', async () => {
   // Trigger throttling adjustment
   const oldRate = controller.currentRateLimit;
   controller.currentRateLimit = oldRate + 5;
-  controller.emit('throttlingAdjusted', 
+  controller.emit('throttlingAdjusted',
     new ThrottlingAdjusted(oldRate, controller.currentRateLimit, 'test'));
 
   // Verify events were emitted
   const backpressureActivated = events.filter(e => e.type === 'backpressureActivated');
   const backpressureDeactivated = events.filter(e => e.type === 'backpressureDeactivated');
-  const circuitBreakerChanged = events.filter(e => e.type === 'circuitBreakerStateChanged');
+  const _circuitBreakerChanged = events.filter(e => e.type === 'circuitBreakerStateChanged');
   const throttlingAdjusted = events.filter(e => e.type === 'throttlingAdjusted');
 
   assert(backpressureActivated.length > 0, 'Should emit backpressure activation events');

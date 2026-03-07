@@ -57,7 +57,7 @@ describe('generated ops helpers (ops.generated.ts)', () => {
         name,
         op_id,
         result_type,
-        args,
+        args
       }))
     );
 

@@ -1,10 +1,10 @@
 /**
  * WatchCommand - File system monitoring with chokidar
- * 
+ *
  * Features:
  * - Watches GraphQL schema files for changes
  * - Debounces rapid changes (500ms)
- * - Triggers regeneration on changes  
+ * - Triggers regeneration on changes
  * - Clear console output between runs
  */
 
@@ -14,14 +14,14 @@ import { EventEmitter } from 'events';
 export class WatchCommand extends EventEmitter {
   constructor(options = {}) {
     super();
-    
+
     this.patterns = options.patterns || ['**/*.graphql', '**/*.gql', '**/*.schema'];
     this.ignored = options.ignored || ['node_modules/**', '.git/**', 'dist/**', 'build/**'];
     this.cwd = options.cwd || process.cwd();
     this.debounceMs = options.debounceMs || 500;
     this.clearConsole = options.clearConsole !== false; // Default to true
     this.onchange = options.onchange || (() => {});
-    
+
     this.watcher = null;
     this.debounceTimer = null;
     this.isRunning = false;
@@ -37,7 +37,7 @@ export class WatchCommand extends EventEmitter {
     }
 
     this.isRunning = true;
-    
+
     const watcherOptions = {
       cwd: this.cwd,
       ignored: this.ignored,
@@ -53,14 +53,14 @@ export class WatchCommand extends EventEmitter {
     };
 
     this.watcher = chokidar.watch(this.patterns, watcherOptions);
-    
+
     // Set up event handlers
     this.watcher.on('add', (path) => this._handleChange('add', path));
     this.watcher.on('change', (path) => this._handleChange('change', path));
     this.watcher.on('unlink', (path) => this._handleChange('unlink', path));
     this.watcher.on('addDir', (path) => this._handleChange('addDir', path));
     this.watcher.on('unlinkDir', (path) => this._handleChange('unlinkDir', path));
-    
+
     this.watcher.on('error', (error) => {
       console.error('Watcher error:', error);
       this.emit('error', { error });
@@ -69,19 +69,19 @@ export class WatchCommand extends EventEmitter {
     this.watcher.on('ready', () => {
       const watchedPaths = this.watcher.getWatched();
       const pathCount = Object.keys(watchedPaths).length;
-      
+
       console.log(`📁 Watching ${pathCount} directories for changes...`);
       console.log(`🔍 Patterns: ${this.patterns.join(', ')}`);
       console.log(`⏱️  Debounce: ${this.debounceMs}ms`);
       console.log('🎯 Ready for changes!\n');
-      
+
       this.emit('ready', { pathCount, patterns: this.patterns });
     });
 
     // Handle process termination gracefully
     process.on('SIGINT', () => this.stop());
     process.on('SIGTERM', () => this.stop());
-    
+
     return new Promise((resolve, reject) => {
       this.watcher.on('ready', resolve);
       this.watcher.on('error', reject);
@@ -98,7 +98,7 @@ export class WatchCommand extends EventEmitter {
     }
 
     this.isRunning = false;
-    
+
     if (this.debounceTimer) {
       clearTimeout(this.debounceTimer);
       this.debounceTimer = null;
@@ -108,7 +108,7 @@ export class WatchCommand extends EventEmitter {
       await this.watcher.close();
       this.watcher = null;
     }
-    
+
     console.log('\n👋 Watcher stopped');
     this.emit('stopped');
   }
@@ -129,16 +129,16 @@ export class WatchCommand extends EventEmitter {
     if (!this.watcher) {
       return [];
     }
-    
+
     const watched = this.watcher.getWatched();
     const files = [];
-    
+
     for (const [dir, filenames] of Object.entries(watched)) {
       for (const filename of filenames) {
         files.push(`${dir}/${filename}`.replace(/\/+/g, '/'));
       }
     }
-    
+
     return files.sort();
   }
 
@@ -160,12 +160,12 @@ export class WatchCommand extends EventEmitter {
     if (this.clearConsole) {
       this._clearConsole();
     }
-    
+
     const timestamp = new Date().toLocaleTimeString();
     const changeIcon = this._getChangeIcon(eventType);
-    
+
     console.log(`${changeIcon} [${timestamp}] ${this._formatEventType(eventType)}: ${filePath}`);
-    
+
     // Emit change event
     this.emit('change', {
       eventType,
@@ -185,7 +185,7 @@ export class WatchCommand extends EventEmitter {
   _clearConsole() {
     // Clear console with ANSI escape codes (works on most terminals)
     process.stdout.write('\x1Bc');
-    
+
     // Alternative method for Windows
     if (process.platform === 'win32') {
       process.stdout.write('\x1B[2J\x1B[0f');
@@ -243,13 +243,13 @@ export async function watch(patterns, onchange, options = {}) {
   if (typeof patterns === 'string') {
     patterns = [patterns];
   }
-  
+
   const watcher = new WatchCommand({
     ...options,
     patterns,
     onchange
   });
-  
+
   await watcher.start();
   return watcher;
 }

@@ -6,8 +6,8 @@ import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-async function sh(cmd, args, opts = {}) {
-  return await new Promise((resolve, reject) => {
+async function _sh(cmd, args, opts = {}) {
+  return new Promise((resolve, reject) => {
     const p = spawn(cmd, args, { stdio: 'inherit', ...opts });
     p.on('error', (err) => reject(err));
     p.on('exit', (code, signal) =>
@@ -21,7 +21,7 @@ async function sh(cmd, args, opts = {}) {
 // Run a subprocess but mirror its stdout/stderr to this process's stderr so
 // our stdout stays clean JSON for Bats parsing.
 async function shToStderr(cmd, args, opts = {}) {
-  return await new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     const p = spawn(cmd, args, { stdio: ['ignore', 'pipe', 'pipe'], ...opts });
     p.stdout?.on('data', (d) => process.stderr.write(d));
     p.stderr?.on('data', (d) => process.stderr.write(d));
@@ -117,7 +117,7 @@ async function main() {
   try {
     await waitFor(`http://127.0.0.1:${port}`);
   } catch (e) {
-    try { srv.kill('SIGTERM'); await sleep(1000); if (!srv.killed) srv.kill('SIGKILL'); } catch {}
+    try { srv.kill('SIGTERM'); await sleep(1000); if (!srv.killed) srv.kill('SIGKILL'); } catch { /* empty */ }
     const err = new Error(`Static server failed to start: ${e?.message || e}\n${srvErr}`);
     throw err;
   }
@@ -131,8 +131,8 @@ async function main() {
       if (existsSync(browsersPath)) {
         haveChromium = readdirSync(browsersPath).some((n) => n.startsWith('chromium'));
       }
-    } catch {}
-    const PWV = process.env.PLAYWRIGHT_VERSION || '1.49.0';
+    } catch { /* empty */ }
+    const _PWV = process.env.PLAYWRIGHT_VERSION || '1.49.0';
     if (!haveChromium) {
       // Use workspace-installed @playwright/test to install browsers
       await shToStderr('pnpm', ['exec', 'playwright', 'install', 'chromium']);
@@ -173,7 +173,7 @@ async function main() {
     }
     process.stdout.write(json + '\n');
   } finally {
-    try { srv.kill('SIGTERM'); await sleep(1000); if (!srv.killed) srv.kill('SIGKILL'); } catch {}
+    try { srv.kill('SIGTERM'); await sleep(1000); if (!srv.killed) srv.kill('SIGKILL'); } catch { /* empty */ }
   }
 }
 

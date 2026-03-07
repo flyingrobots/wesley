@@ -65,8 +65,8 @@ export class QirValidateCommand extends WesleyCommand {
     // Dispatch to the appropriate validation path
     const kind = options.envelope ? 'envelope'
       : options.manifest ? 'ops-manifest'
-      : options.registry ? 'ops-registry'
-      : 'qir';
+        : options.registry ? 'ops-registry'
+          : 'qir';
 
     const data = JSON.parse(await fs.read(input));
     await this._validate(kind, data, input);
@@ -74,34 +74,34 @@ export class QirValidateCommand extends WesleyCommand {
     return { valid: true, file: input, kind };
   }
 
-  async _validate(kind, data, file) {
+  async _validate(kind, data, _file) {
     const ajv = await createAjv();
     switch (kind) {
-      case 'envelope': {
-        const [ir, qir, envSchema] = await Promise.all([
-          loadSchemaFile(this.ctx, 'ir.schema.json'),
-          loadSchemaFile(this.ctx, 'qir.schema.json'),
-          loadSchemaFile(this.ctx, 'ir-envelope.schema.json'),
-        ]);
-        ajv.addSchema(JSON.parse(ir));
-        ajv.addSchema(JSON.parse(qir));
-        const validate = ajv.compile(JSON.parse(envSchema));
-        if (!validate(data)) {
-          const e = new Error('IR envelope validation failed');
-          e.code = 'VALIDATION_FAILED';
-          e.meta = { errors: validate.errors };
-          throw e;
-        }
-        break;
+    case 'envelope': {
+      const [ir, qir, envSchema] = await Promise.all([
+        loadSchemaFile(this.ctx, 'ir.schema.json'),
+        loadSchemaFile(this.ctx, 'qir.schema.json'),
+        loadSchemaFile(this.ctx, 'ir-envelope.schema.json')
+      ]);
+      ajv.addSchema(JSON.parse(ir));
+      ajv.addSchema(JSON.parse(qir));
+      const validate = ajv.compile(JSON.parse(envSchema));
+      if (!validate(data)) {
+        const e = new Error('IR envelope validation failed');
+        e.code = 'VALIDATION_FAILED';
+        e.meta = { errors: validate.errors };
+        throw e;
       }
-      case 'ops-manifest':
-        await assertValid(this.ctx, 'ops-manifest.schema.json', data, 'Ops manifest', ajv);
-        break;
-      case 'ops-registry':
-        await assertValid(this.ctx, 'ops-registry.schema.json', data, 'Ops registry', ajv);
-        break;
-      default:
-        await assertValid(this.ctx, 'qir.schema.json', data, 'QIR', ajv);
+      break;
+    }
+    case 'ops-manifest':
+      await assertValid(this.ctx, 'ops-manifest.schema.json', data, 'Ops manifest', ajv);
+      break;
+    case 'ops-registry':
+      await assertValid(this.ctx, 'ops-registry.schema.json', data, 'Ops registry', ajv);
+      break;
+    default:
+      await assertValid(this.ctx, 'qir.schema.json', data, 'QIR', ajv);
     }
   }
 }

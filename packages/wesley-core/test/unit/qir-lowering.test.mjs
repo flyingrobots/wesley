@@ -8,8 +8,8 @@ import {
   ProjectionItem,
   ColumnRef,
   AliasAllocator,
-  Predicate,
-  OrderBy,
+  _Predicate,
+  OrderBy
 } from '../../src/domain/qir/Nodes.mjs';
 
 import { lowerToSQL } from '../../src/domain/qir/lowerToSQL.mjs';
@@ -45,7 +45,7 @@ test('lowerToSQL: flat select with IS NULL and deterministic order by tie-breake
   assert.ok(sql.includes('LIMIT 5'));
 });
 
-test('lowerToSQL: JsonAgg gets COALESCE(..., \"[]\"::jsonb)', () => {
+test('lowerToSQL: JsonAgg gets COALESCE(..., "[]"::jsonb)', () => {
   const aa = new AliasAllocator('t');
   const root = new TableNode('organization', aa.next());
 

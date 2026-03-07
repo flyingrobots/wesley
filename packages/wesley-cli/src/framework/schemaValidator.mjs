@@ -19,7 +19,7 @@ export async function createAjv() {
   if (!_ajvFactory) {
     _ajvFactory = Promise.all([
       import('ajv'),
-      import('ajv-formats'),
+      import('ajv-formats')
     ]);
   }
   const [{ default: Ajv }, { default: addFormats }] = await _ajvFactory;
@@ -51,7 +51,7 @@ export async function loadSchemaFile(ctx, name) {
     const modDir = dirname(fileURLToPath(import.meta.url));
     const fallbackRoot = pres(modDir, '../../../..');
     // packages/wesley-cli/src/framework/ → src/ → wesley-cli/ → packages/ → repo root
-    return await ctx.fs.read(pres(fallbackRoot, 'schemas', name));
+    return ctx.fs.read(pres(fallbackRoot, 'schemas', name));
   }
 }
 

@@ -1,12 +1,12 @@
 /**
  * BatchOptimizer - Performance & Testing Component
- * 
+ *
  * Intelligent operation batching for performance optimization
- * - Minimize lock contention through ordering  
+ * - Minimize lock contention through ordering
  * - Combine compatible operations
  * - Optimize transaction boundaries
  * - Memory-aware batch sizing
- * 
+ *
  * Licensed under Apache-2.0
  */
 
@@ -92,22 +92,22 @@ export class BatchOptimizer {
     this._emit(new BatchOptimizationRequested(operations, options));
 
     const startTime = performance.now();
-    
+
     // Step 1: Analyze operation dependencies and conflicts
     const analysis = this._analyzeOperations(operations);
-    
+
     // Step 2: Sort operations to minimize lock contention
     const sortedOperations = this._sortForLockMinimization(operations, analysis);
-    
+
     // Step 3: Group compatible operations
     const groups = this._groupCompatibleOperations(sortedOperations, analysis);
-    
+
     // Step 4: Create memory-aware batches
     const batches = this._createMemoryAwareBatches(groups);
-    
+
     // Step 5: Optimize transaction boundaries
     const optimizedBatches = this._optimizeTransactionBoundaries(batches);
-    
+
     const endTime = performance.now();
     const metrics = {
       originalOperationCount: operations.length,
@@ -150,9 +150,9 @@ export class BatchOptimizer {
 
     try {
       // Execute with timeout protection
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Batch execution timeout')), 
-                  options.timeout || this.lockTimeout);
+      const timeoutPromise = new Promise((_resolve, reject) => {
+        setTimeout(() => reject(new Error('Batch execution timeout')),
+          options.timeout || this.lockTimeout);
       });
 
       const executionPromise = executor(batch, {
@@ -191,7 +191,7 @@ export class BatchOptimizer {
       };
 
       this._emit(new BatchExecutionCompleted(batchId, null, metrics));
-      
+
       throw new BatchOptimizationError(`Batch execution failed: ${error.message}`, {
         batchId,
         originalError: error,
@@ -216,7 +216,7 @@ export class BatchOptimizer {
 
     for (let i = 0; i < operations.length; i++) {
       const op = operations[i];
-      
+
       // Track operations by table
       const table = op.table || op.schema || 'global';
       if (!analysis.tableOperations.has(table)) {
@@ -284,7 +284,7 @@ export class BatchOptimizer {
    * Group compatible operations that can be batched together
    * @private
    */
-  _groupCompatibleOperations(operations, analysis) {
+  _groupCompatibleOperations(operations, _analysis) {
     const groups = [];
     let currentGroup = [];
 
@@ -297,7 +297,7 @@ export class BatchOptimizer {
       }
 
       // Check if operation is compatible with current group
-      const compatible = currentGroup.every(groupOp => 
+      const compatible = currentGroup.every(groupOp =>
         this._areCompatible(groupOp, operation)
       );
 
@@ -333,7 +333,7 @@ export class BatchOptimizer {
         const opMemory = this._estimateOperationMemory(operation);
 
         if (currentBatch.length === 0 ||
-            (currentMemory + opMemory <= this.maxMemoryMB && 
+            (currentMemory + opMemory <= this.maxMemoryMB &&
              currentBatch.length < this.maxBatchSize)) {
           currentBatch.push(operation);
           currentMemory += opMemory;
@@ -369,8 +369,8 @@ export class BatchOptimizer {
   _optimizeTransactionBoundaries(batches) {
     return batches.map(batch => {
       const hasSchemaChanges = batch.operations.some(op => this._isSchemaChange(op));
-      const hasDataChanges = batch.operations.some(op => this._isDataChange(op));
-      const hasRiskyOperations = batch.operations.some(op => 
+      const _hasDataChanges = batch.operations.some(op => this._isDataChange(op));
+      const hasRiskyOperations = batch.operations.some(op =>
         this._calculateOperationRisk(op) >= 50
       );
 
@@ -396,13 +396,13 @@ export class BatchOptimizer {
       const prevOp = previousOperations[i];
 
       // Table creation dependency
-      if (operation.table && prevOp.kind === 'create_table' && 
+      if (operation.table && prevOp.kind === 'create_table' &&
           prevOp.table === operation.table) {
         dependencies.push(i);
       }
 
       // Foreign key dependency
-      if (operation.kind === 'add_constraint' && 
+      if (operation.kind === 'add_constraint' &&
           operation.constraintType === 'foreign_key' &&
           prevOp.kind === 'create_table' &&
           prevOp.table === operation.references) {
@@ -411,7 +411,7 @@ export class BatchOptimizer {
 
       // Column dependency
       if (operation.column && prevOp.kind === 'add_column' &&
-          prevOp.table === operation.table && 
+          prevOp.table === operation.table &&
           prevOp.column === operation.column) {
         dependencies.push(i);
       }
@@ -473,7 +473,7 @@ export class BatchOptimizer {
     // High-risk operations should be isolated
     const risk1 = this._calculateOperationRisk(op1);
     const risk2 = this._calculateOperationRisk(op2);
-    
+
     if (risk1 >= 80 || risk2 >= 80) {
       return false;
     }
@@ -590,9 +590,9 @@ export class BatchOptimizer {
   _calculateLockReduction(analysis) {
     const totalConflicts = Array.from(analysis.conflicts.values())
       .reduce((sum, conflicts) => sum + conflicts.length, 0);
-    
+
     if (totalConflicts === 0) return 0;
-    
+
     // Estimate reduction based on ordering and grouping
     return Math.min(75, totalConflicts * 5); // Up to 75% reduction
   }
@@ -605,7 +605,7 @@ export class BatchOptimizer {
     const totalMemory = batches.reduce((sum, batch) => sum + batch.estimatedMemoryMB, 0);
     const avgMemoryPerBatch = totalMemory / batches.length;
     const efficiency = (avgMemoryPerBatch / this.maxMemoryMB) * 100;
-    
+
     return Math.min(100, efficiency);
   }
 

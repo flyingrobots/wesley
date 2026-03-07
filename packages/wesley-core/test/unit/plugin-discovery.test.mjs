@@ -22,7 +22,7 @@ function makeFakePlugin(overrides = {}) {
     init() {},
     async plan() { return { artifacts: [{ path: 'out.txt' }] }; },
     async generate() { return { 'out.txt': 'hello' }; },
-    ...overrides,
+    ...overrides
   };
 }
 
@@ -34,7 +34,7 @@ const nullLogger = {
   debug() {},
   child() { return nullLogger; },
   setLevel() {},
-  async flush() {},
+  async flush() {}
 };
 
 /** Collecting logger that stores warn/debug calls */
@@ -48,7 +48,7 @@ function collectingLogger() {
     debug(...args) { debugs.push(args); },
     child() { return logger; },
     setLevel() {},
-    async flush() {},
+    async flush() {}
   };
   return { logger, warnings, debugs };
 }
@@ -80,8 +80,8 @@ test('validateConfig — accepts valid generators array', () => {
   const result = validateConfig({
     generators: [
       { package: '@wesley/generator-echo', config: { key: 'val' } },
-      { package: './my-plugin', enabled: false },
-    ],
+      { package: './my-plugin', enabled: false }
+    ]
   });
   assert.equal(result.valid, true);
   assert.equal(result.errors.length, 0);
@@ -165,14 +165,14 @@ test('discoverPlugins — loads two generators, both returned', async () => {
   const pluginB = makeFakePlugin({ name: 'beta' });
   const resolve = mockResolve({
     'pkg-alpha': { default: pluginA },
-    'pkg-beta': { default: pluginB },
+    'pkg-beta': { default: pluginB }
   });
 
   const config = {
     generators: [
       { package: 'pkg-alpha' },
-      { package: 'pkg-beta' },
-    ],
+      { package: 'pkg-beta' }
+    ]
   };
 
   const result = await discoverPlugins(config, { resolve, logger: nullLogger });
@@ -186,14 +186,14 @@ test('discoverPlugins — enabled: false skips generator entirely', async () => 
   const pluginB = makeFakePlugin({ name: 'beta' });
   const resolve = mockResolve({
     'pkg-alpha': { default: pluginA },
-    'pkg-beta': { default: pluginB },
+    'pkg-beta': { default: pluginB }
   });
 
   const config = {
     generators: [
       { package: 'pkg-alpha', enabled: false },
-      { package: 'pkg-beta' },
-    ],
+      { package: 'pkg-beta' }
+    ]
   };
 
   const result = await discoverPlugins(config, { resolve, logger: nullLogger });
@@ -214,7 +214,7 @@ test('discoverPlugins — plugin config forwarded to init() verbatim', async () 
   let receivedConfig;
   const plugin = makeFakePlugin({
     name: 'cfg-test',
-    init(config) { receivedConfig = config; },
+    init(config) { receivedConfig = config; }
   });
   const resolve = mockResolve({ 'pkg-cfg': { default: plugin } });
 
@@ -229,7 +229,7 @@ test('discoverPlugins — init() is NOT called when no config provided', async (
   let initCalled = false;
   const plugin = makeFakePlugin({
     name: 'no-cfg',
-    init() { initCalled = true; },
+    init() { initCalled = true; }
   });
   const resolve = mockResolve({ 'pkg-nocfg': { default: plugin } });
 
@@ -241,12 +241,12 @@ test('discoverPlugins — init() is NOT called when no config provided', async (
 test('discoverPlugins — experimental flags parsed and validated', async () => {
   const config = {
     generators: [],
-    experimental: { irV2: true, rawLe: false, join: false },
+    experimental: { irV2: true, rawLe: false, join: false }
   };
 
   const result = await discoverPlugins(config, {
     resolve: mockResolve({}),
-    logger: nullLogger,
+    logger: nullLogger
   });
 
   assert.equal(result.experimental.irV2, true);
@@ -258,12 +258,12 @@ test('discoverPlugins — unknown experimental flag produces warning', async () 
   const { logger, warnings } = collectingLogger();
   const config = {
     generators: [],
-    experimental: { irV2: true, newThing: true },
+    experimental: { irV2: true, newThing: true }
   };
 
   const result = await discoverPlugins(config, {
     resolve: mockResolve({}),
-    logger,
+    logger
   });
 
   // Warning from validateConfig propagated to result
@@ -276,7 +276,7 @@ test('discoverPlugins — experimental defaults to all-false when absent', async
   const config = { generators: [] };
   const result = await discoverPlugins(config, {
     resolve: mockResolve({}),
-    logger: nullLogger,
+    logger: nullLogger
   });
 
   for (const flag of KNOWN_EXPERIMENTAL_FLAGS) {
@@ -368,7 +368,7 @@ test('discoverPlugins — throws on missing logger dependency', async () => {
 test('discoverPlugins — empty generators array returns empty plugins', async () => {
   const result = await discoverPlugins(
     { generators: [] },
-    { resolve: mockResolve({}), logger: nullLogger },
+    { resolve: mockResolve({}), logger: nullLogger }
   );
   assert.equal(result.plugins.length, 0);
 });
@@ -376,7 +376,7 @@ test('discoverPlugins — empty generators array returns empty plugins', async (
 test('discoverPlugins — no generators key is valid (defaults to empty)', async () => {
   const result = await discoverPlugins(
     {},
-    { resolve: mockResolve({}), logger: nullLogger },
+    { resolve: mockResolve({}), logger: nullLogger }
   );
   assert.equal(result.plugins.length, 0);
   assert.equal(result.warnings.length, 0);

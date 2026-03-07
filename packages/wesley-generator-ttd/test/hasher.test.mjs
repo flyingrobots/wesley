@@ -12,7 +12,7 @@ import {
   hashOp,
   hashChannel,
   canonicalizeObject,
-  hashString,
+  hashString
 } from '@wesley/core/ttd';
 import { testCrypto } from './setup.mjs';
 
@@ -83,8 +83,8 @@ describe('TTD Canonical Hasher', () => {
         name: 'Counter',
         fields: [
           { name: 'id', type: 'ID', required: true },
-          { name: 'value', type: 'Int', required: true },
-        ],
+          { name: 'value', type: 'Int', required: true }
+        ]
       };
 
       const hash1 = hashType(typeDef, deps);
@@ -98,16 +98,16 @@ describe('TTD Canonical Hasher', () => {
         name: 'Counter',
         fields: [
           { name: 'id', type: 'ID', required: true },
-          { name: 'value', type: 'Int', required: true },
-        ],
+          { name: 'value', type: 'Int', required: true }
+        ]
       };
 
       const typeDef2 = {
         fields: [
           { name: 'value', type: 'Int', required: true },
-          { name: 'id', type: 'ID', required: true },
+          { name: 'id', type: 'ID', required: true }
         ],
-        name: 'Counter',
+        name: 'Counter'
       };
 
       const hash1 = hashType(typeDef1, deps);
@@ -119,12 +119,12 @@ describe('TTD Canonical Hasher', () => {
     it('produces different hash when type changes', () => {
       const typeDef1 = {
         name: 'Counter',
-        fields: [{ name: 'value', type: 'Int', required: true }],
+        fields: [{ name: 'value', type: 'Int', required: true }]
       };
 
       const typeDef2 = {
         name: 'Counter',
-        fields: [{ name: 'value', type: 'Int', required: false }],
+        fields: [{ name: 'value', type: 'Int', required: false }]
       };
 
       const hash1 = hashType(typeDef1, deps);
@@ -140,9 +140,9 @@ describe('TTD Canonical Hasher', () => {
         name: 'increment',
         args: [
           { name: 'counterId', type: 'ID', required: true },
-          { name: 'amount', type: 'Int', required: true },
+          { name: 'amount', type: 'Int', required: true }
         ],
-        resultType: 'Counter',
+        resultType: 'Counter'
       };
 
       const hash1 = hashOp(op, deps);
@@ -155,13 +155,13 @@ describe('TTD Canonical Hasher', () => {
       const op1 = {
         name: 'increment',
         args: [{ name: 'amount', type: 'Int', required: true }],
-        resultType: 'Counter',
+        resultType: 'Counter'
       };
 
       const op2 = {
         name: 'increment',
         args: [{ name: 'amount', type: 'Int', required: false }],
-        resultType: 'Counter',
+        resultType: 'Counter'
       };
 
       expect(hashOp(op1, deps)).not.toBe(hashOp(op2, deps));
@@ -175,7 +175,7 @@ describe('TTD Canonical Hasher', () => {
         version: 1,
         eventTypes: ['CounterIncremented', 'CounterDecremented'],
         ordered: true,
-        persistent: false,
+        persistent: false
       };
 
       const hash1 = hashChannel(channel, deps);
@@ -188,13 +188,13 @@ describe('TTD Canonical Hasher', () => {
       const channel1 = {
         name: 'counter',
         version: 1,
-        eventTypes: ['EventA'],
+        eventTypes: ['EventA']
       };
 
       const channel2 = {
         name: 'counter',
         version: 1,
-        eventTypes: ['EventB'],
+        eventTypes: ['EventB']
       };
 
       expect(hashChannel(channel1, deps)).not.toBe(hashChannel(channel2, deps));
@@ -226,7 +226,7 @@ describe('TTD Canonical Hasher', () => {
     });
 
     it('ignores whitespace differences', () => {
-      const sdl1 = `type Query { hello: String! }`;
+      const sdl1 = 'type Query { hello: String! }';
       const sdl2 = `
         type Query {
           hello: String!
@@ -237,7 +237,7 @@ describe('TTD Canonical Hasher', () => {
     });
 
     it('ignores comment differences', () => {
-      const sdl1 = `type Query { hello: String! }`;
+      const sdl1 = 'type Query { hello: String! }';
       const sdl2 = `
         # This is a comment
         type Query {
@@ -250,8 +250,8 @@ describe('TTD Canonical Hasher', () => {
     });
 
     it('is sensitive to type name changes', () => {
-      const sdl1 = `type Counter { value: Int! }`;
-      const sdl2 = `type CounterV2 { value: Int! }`;
+      const sdl1 = 'type Counter { value: Int! }';
+      const sdl2 = 'type CounterV2 { value: Int! }';
 
       expect(hashSchema(sdl1, deps)).not.toBe(hashSchema(sdl2, deps));
     });

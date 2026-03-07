@@ -6,14 +6,14 @@
 export default {
   // Version of this config format
   version: '1.0.0',
-  
+
   // Scoring thresholds for production readiness
   thresholds: {
     scs: 0.8,  // Schema Coverage Score - 80% required
     tci: 0.7,  // Test Confidence Index - 70% required
     mri: 0.4   // Migration Risk Index - max 40% risk allowed
   },
-  
+
   // Default weights for directives when not specified
   weights: {
     defaults: {
@@ -26,7 +26,7 @@ export default {
       '@index': 5,
       'default': 3  // Default field weight
     },
-    
+
     // Infer weights from field names
     inference: {
       'password': 10,
@@ -45,7 +45,7 @@ export default {
       'preference': 2
     }
   },
-  
+
   // Output paths
   paths: {
     output: 'out',
@@ -60,7 +60,7 @@ export default {
       ops: 'ops'
     }
   },
-  
+
   // Generator settings
   generators: {
     sql: {
@@ -86,50 +86,50 @@ export default {
       securityDefiner: true
     }
   },
-  
+
   // Security settings
   security: {
     // Enforce constraints on sensitive fields
     enforcePasswordConstraints: true,
     passwordMinLength: 60, // bcrypt hash length
-    
+
     // Require RLS for tables with PII
     requireRLSForPII: true,
-    
+
     // Block generation if security issues found
     blockOnSecurityIssues: true
   },
-  
+
   // Migration settings
   migrations: {
     // Safety checks
     requireBackup: true,
     allowDataLoss: false,
     maxRiskScore: 0.4,
-    
+
     // Naming
     namePattern: 'YYYYMMDD_HHmmss',
     autoName: true
   },
-  
+
   // CI/CD settings
   ci: {
     // Fail CI if thresholds not met
     failOnThresholds: true,
-    
+
     // Output formats
     outputFormat: ['console', 'json', 'junit'],
-    
+
     // Artifact validation
     validateBundles: true,
     schemasPath: './schemas'
   },
-  
+
   // Supabase integration
   supabase: {
     enabled: true,
     projectRef: process.env.SUPABASE_PROJECT_REF,
-    
+
     // Feature flags
     features: {
       rls: true,
@@ -138,11 +138,11 @@ export default {
       edge: true
     }
   },
-  
+
   // Development settings
   development: {
     watch: true,
     verbose: true,
     prettify: true
   }
-}
+};

@@ -15,7 +15,7 @@ import {
   execute,
   verify,
   verifyAll,
-  VmError,
+  _VmError,
   compileObligation,
   compileObligations,
   generateVerificationManifest,
@@ -26,7 +26,7 @@ import {
   Verifier,
   createVerifier,
   generateTsVerifier,
-  generateReport,
+  generateReport
 } from '@wesley/core/ttd/invariants';
 import { testCrypto } from './setup.mjs';
 
@@ -134,7 +134,7 @@ describe('Invariant Expression Lexer', () => {
         TokenType.IDENTIFIER,
         TokenType.GTE,
         TokenType.NUMBER,
-        TokenType.EOF,
+        TokenType.EOF
       ]);
     });
 
@@ -470,7 +470,7 @@ describe('Golden Test Vectors', () => {
       const vectors = generateGoldenVectors([
         { name: 'simple_true', expr: 'true' },
         { name: 'simple_false', expr: 'false' },
-        { name: 'comparison', expr: '5 > 3' },
+        { name: 'comparison', expr: '5 > 3' }
       ], deps);
 
       expect(vectors).toHaveLength(3);
@@ -495,7 +495,7 @@ describe('Golden Test Vectors', () => {
       const vectors = generateGoldenVectors([
         { name: 'always_true', expr: 'true' },
         { name: 'always_false', expr: 'false' },
-        { name: 'static_compare', expr: '10 > 5' },
+        { name: 'static_compare', expr: '10 > 5' }
       ], deps);
 
       expect(vectors[0].expectedResult).toBe(true);
@@ -505,7 +505,7 @@ describe('Golden Test Vectors', () => {
 
     it('marks dynamic expressions as needing runtime evaluation', () => {
       const vectors = generateGoldenVectors([
-        { name: 'forall', expr: 'forall c in Counter: c.value >= 0' },
+        { name: 'forall', expr: 'forall c in Counter: c.value >= 0' }
       ], deps);
 
       expect(vectors[0].requiresRuntime).toBe(true);
@@ -620,7 +620,7 @@ describe('VM Execution', () => {
       const ast = parseExpr('x >= 0');
       const bytecode = compileToBytecode(ast);
       const result = execute(bytecode, {
-        variables: { x: 10 },
+        variables: { x: 10 }
       });
 
       expect(result.ok).toBe(true);
@@ -630,7 +630,7 @@ describe('VM Execution', () => {
       const ast = parseExpr('x >= 0');
       const bytecode = compileToBytecode(ast);
       const result = execute(bytecode, {
-        variables: { x: -5 },
+        variables: { x: -5 }
       });
 
       expect(result.ok).toBe(false);
@@ -644,9 +644,9 @@ describe('VM Execution', () => {
           Counter: [
             { value: 0 },
             { value: 10 },
-            { value: 100 },
-          ],
-        },
+            { value: 100 }
+          ]
+        }
       });
 
       expect(result.ok).toBe(true);
@@ -660,9 +660,9 @@ describe('VM Execution', () => {
           Counter: [
             { value: 10 },
             { value: -1 }, // This should fail
-            { value: 100 },
-          ],
-        },
+            { value: 100 }
+          ]
+        }
       });
 
       expect(result.ok).toBe(false);
@@ -673,8 +673,8 @@ describe('VM Execution', () => {
       const bytecode = compileToBytecode(ast);
       const result = execute(bytecode, {
         collections: {
-          Counter: [],
-        },
+          Counter: []
+        }
       });
 
       // forall on empty set is vacuously true
@@ -710,7 +710,7 @@ describe('VM Execution', () => {
       const ast = parseExpr('op.name == "increment"');
       const bytecode = compileToBytecode(ast);
       const result = execute(bytecode, {
-        op: { name: 'increment' },
+        op: { name: 'increment' }
       });
 
       expect(result.ok).toBe(true);
@@ -731,7 +731,7 @@ describe('VM Execution', () => {
     it('verifies multiple invariants', () => {
       const invariants = [
         { name: 'positive', bytecode: compileToBytecode(parseExpr('x > 0')) },
-        { name: 'small', bytecode: compileToBytecode(parseExpr('x < 100')) },
+        { name: 'small', bytecode: compileToBytecode(parseExpr('x < 100')) }
       ];
 
       const results = verifyAll(invariants, { variables: { x: 50 } });
@@ -743,7 +743,7 @@ describe('VM Execution', () => {
     it('reports individual failures', () => {
       const invariants = [
         { name: 'positive', bytecode: compileToBytecode(parseExpr('x > 0')) },
-        { name: 'small', bytecode: compileToBytecode(parseExpr('x < 10')) },
+        { name: 'small', bytecode: compileToBytecode(parseExpr('x < 10')) }
       ];
 
       const results = verifyAll(invariants, { variables: { x: 50 } });
@@ -760,7 +760,7 @@ describe('Obligation Spec Compiler', () => {
       const invariant = {
         name: 'counter_non_negative',
         expr: 'forall c in Counter: c.value >= 0',
-        severity: 'ERROR',
+        severity: 'ERROR'
       };
 
       const spec = compileObligation(invariant, { crypto: testCrypto });
@@ -778,7 +778,7 @@ describe('Obligation Spec Compiler', () => {
     it('extracts dependencies from expression', () => {
       const invariant = {
         name: 'tick_emits',
-        expr: 'tick.mustEmit("state")',
+        expr: 'tick.mustEmit("state")'
       };
 
       const spec = compileObligation(invariant, { crypto: testCrypto });
@@ -789,7 +789,7 @@ describe('Obligation Spec Compiler', () => {
     it('extracts collection dependencies from forall', () => {
       const invariant = {
         name: 'all_counters',
-        expr: 'forall c in Counter: c.value >= 0',
+        expr: 'forall c in Counter: c.value >= 0'
       };
 
       const spec = compileObligation(invariant, { crypto: testCrypto });
@@ -800,7 +800,7 @@ describe('Obligation Spec Compiler', () => {
     it('infers TICK kind from tick reference', () => {
       const invariant = {
         name: 'tick_check',
-        expr: 'tick.count > 0',
+        expr: 'tick.count > 0'
       };
 
       const spec = compileObligation(invariant, { crypto: testCrypto });
@@ -811,7 +811,7 @@ describe('Obligation Spec Compiler', () => {
     it('infers EVENTUAL kind from within clause', () => {
       const invariant = {
         name: 'eventual_check',
-        expr: 'op.produce().within(100)',
+        expr: 'op.produce().within(100)'
       };
 
       const spec = compileObligation(invariant, { crypto: testCrypto });
@@ -823,7 +823,7 @@ describe('Obligation Spec Compiler', () => {
     it('throws on invalid expression', () => {
       const invariant = {
         name: 'bad',
-        expr: 'this is not valid !!!',
+        expr: 'this is not valid !!!'
       };
 
       expect(() => compileObligation(invariant, { crypto: testCrypto }))
@@ -833,7 +833,7 @@ describe('Obligation Spec Compiler', () => {
     it('generates deterministic hashes', () => {
       const invariant = {
         name: 'test',
-        expr: 'x > 0',
+        expr: 'x > 0'
       };
 
       const spec1 = compileObligation(invariant, { crypto: testCrypto });
@@ -850,8 +850,8 @@ describe('Obligation Spec Compiler', () => {
         invariants: [
           { name: 'inv1', expr: 'true', severity: 'INFO' },
           { name: 'inv2', expr: 'x > 0', severity: 'ERROR' },
-          { name: 'inv3', expr: 'forall c in C: c.ok', severity: 'FATAL' },
-        ],
+          { name: 'inv3', expr: 'forall c in C: c.ok', severity: 'FATAL' }
+        ]
       };
 
       const specs = compileObligations(schema, { crypto: testCrypto });
@@ -885,8 +885,8 @@ describe('Obligation Spec Compiler', () => {
         invariants: [
           { name: 'tick_inv', expr: 'tick.ok', severity: 'ERROR', kind: 'TICK' },
           { name: 'eventual_inv', expr: 'op.done().within(10)', severity: 'WARN' },
-          { name: 'safety_inv', expr: 'x >= 0', severity: 'FATAL', kind: 'SAFETY' },
-        ],
+          { name: 'safety_inv', expr: 'x >= 0', severity: 'FATAL', kind: 'SAFETY' }
+        ]
       };
 
       const specs = compileObligations(schema, { crypto: testCrypto });
@@ -903,8 +903,8 @@ describe('Obligation Spec Compiler', () => {
         invariants: [
           { name: 'tick1', expr: 'tick.a', kind: 'TICK' },
           { name: 'tick2', expr: 'tick.b', kind: 'TICK' },
-          { name: 'safety1', expr: 'x > 0', kind: 'SAFETY' },
-        ],
+          { name: 'safety1', expr: 'x > 0', kind: 'SAFETY' }
+        ]
       };
 
       const specs = compileObligations(schema, { crypto: testCrypto });
@@ -920,8 +920,8 @@ describe('Obligation Spec Compiler', () => {
           { name: 'info', expr: 'true', severity: 'INFO' },
           { name: 'warn', expr: 'true', severity: 'WARN' },
           { name: 'error', expr: 'true', severity: 'ERROR' },
-          { name: 'fatal', expr: 'true', severity: 'FATAL' },
-        ],
+          { name: 'fatal', expr: 'true', severity: 'FATAL' }
+        ]
       };
 
       const specs = compileObligations(schema, { crypto: testCrypto });
@@ -938,8 +938,8 @@ describe('Obligation Spec Compiler', () => {
     it('round-trips through serialize/deserialize', () => {
       const schema = {
         invariants: [
-          { name: 'test', expr: 'x > 0', severity: 'ERROR' },
-        ],
+          { name: 'test', expr: 'x > 0', severity: 'ERROR' }
+        ]
       };
 
       const specs = compileObligations(schema, { crypto: testCrypto });
@@ -957,8 +957,8 @@ describe('Obligation Spec Compiler', () => {
       const schema = {
         invariants: [
           { name: 'a', expr: 'true' },
-          { name: 'b', expr: 'false' },
-        ],
+          { name: 'b', expr: 'false' }
+        ]
       };
 
       const specs = compileObligations(schema, { crypto: testCrypto });
@@ -992,8 +992,8 @@ describe('Verifier', () => {
     invariants: [
       { name: 'counter_positive', expr: 'forall c in Counter: c.value >= 0', severity: 'ERROR', kind: 'ALWAYS' },
       { name: 'tick_check', expr: 'tick.count > 0', severity: 'WARN', kind: 'TICK' },
-      { name: 'safety_check', expr: 'x >= 0', severity: 'FATAL', kind: 'SAFETY' },
-    ],
+      { name: 'safety_check', expr: 'x >= 0', severity: 'FATAL', kind: 'SAFETY' }
+    ]
   };
 
   describe('createVerifier', () => {
@@ -1012,7 +1012,7 @@ describe('Verifier', () => {
 
       const result = verifier.verifyAll({
         collections: { Counter: [{ value: 10 }, { value: 20 }] },
-        variables: { x: 5, tick: { count: 1 } },
+        variables: { x: 5, tick: { count: 1 } }
       });
 
       expect(result.totalChecked).toBe(3);
@@ -1025,7 +1025,7 @@ describe('Verifier', () => {
 
       const result = verifier.verifyAll({
         collections: { Counter: [{ value: -5 }] }, // This fails counter_positive
-        variables: { x: -1, tick: { count: 0 } },  // x < 0 fails safety, count <= 0 fails tick
+        variables: { x: -1, tick: { count: 0 } }  // x < 0 fails safety, count <= 0 fails tick
       });
 
       expect(result.passed).toBe(false);
@@ -1036,8 +1036,8 @@ describe('Verifier', () => {
     it('returns passed=true when all pass', () => {
       const simpleSchema = {
         invariants: [
-          { name: 'always_true', expr: 'true' },
-        ],
+          { name: 'always_true', expr: 'true' }
+        ]
       };
       const verifier = createVerifier(simpleSchema, { crypto: testCrypto });
 
@@ -1055,7 +1055,7 @@ describe('Verifier', () => {
       const spec = verifier.specs[0];
 
       const result = verifier.verifyOne(spec.id, {
-        collections: { Counter: [{ value: 100 }] },
+        collections: { Counter: [{ value: 100 }] }
       });
 
       expect(result.id).toBe(spec.id);
@@ -1076,7 +1076,7 @@ describe('Verifier', () => {
       const verifier = createVerifier(schema, { crypto: testCrypto });
 
       const result = verifier.verifyTick({
-        variables: { tick: { count: 5 } },
+        variables: { tick: { count: 5 } }
       });
 
       expect(result.totalChecked).toBe(1);
@@ -1086,7 +1086,7 @@ describe('Verifier', () => {
       const verifier = createVerifier(schema, { crypto: testCrypto });
 
       const result = verifier.verifySafety({
-        variables: { x: 10 },
+        variables: { x: 10 }
       });
 
       expect(result.totalChecked).toBe(1);
@@ -1125,14 +1125,14 @@ describe('generateTsVerifier', () => {
   it('generates valid TypeScript code', () => {
     const schema = {
       invariants: [
-        { name: 'test', expr: 'x > 0', severity: 'ERROR' },
-      ],
+        { name: 'test', expr: 'x > 0', severity: 'ERROR' }
+      ]
     };
     const specs = compileObligations(schema, { crypto: testCrypto });
 
     const code = generateTsVerifier(specs);
 
-    expect(code).toContain("import { Verifier }");
+    expect(code).toContain('import { Verifier }');
     expect(code).toContain('const specs =');
     expect(code).toContain('export const verifier');
     expect(code).toContain('export function verifyAll');
@@ -1143,8 +1143,8 @@ describe('generateTsVerifier', () => {
   it('includes obligation specs in output', () => {
     const schema = {
       invariants: [
-        { name: 'my_invariant', expr: 'true', severity: 'WARN' },
-      ],
+        { name: 'my_invariant', expr: 'true', severity: 'WARN' }
+      ]
     };
     const specs = compileObligations(schema, { crypto: testCrypto });
 
@@ -1164,7 +1164,7 @@ describe('generateReport', () => {
       totalFailed: 0,
       failures: [],
       timestamp: '2026-01-25T00:00:00Z',
-      durationMs: 10,
+      durationMs: 10
     };
 
     const report = generateReport(result);
@@ -1188,11 +1188,11 @@ describe('generateReport', () => {
           name: 'counter_check',
           expr: 'x >= 0',
           severity: 'ERROR',
-          error: 'Verification failed',
-        },
+          error: 'Verification failed'
+        }
       ],
       timestamp: '2026-01-25T00:00:00Z',
-      durationMs: 5,
+      durationMs: 5
     };
 
     const report = generateReport(result);
@@ -1215,11 +1215,11 @@ describe('generateReport', () => {
           name: 'test',
           expr: 'x > 0',
           severity: 'ERROR',
-          value: -5,
-        },
+          value: -5
+        }
       ],
       timestamp: '2026-01-25T00:00:00Z',
-      durationMs: 1,
+      durationMs: 1
     };
 
     const report = generateReport(result, { verbose: true });

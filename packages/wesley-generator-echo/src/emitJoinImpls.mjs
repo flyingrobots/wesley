@@ -11,7 +11,7 @@ import { RustWriter } from './rust-writer.mjs';
  */
 export function emitJoinImpls(ir) {
   const joinTypes = (ir.types ?? []).filter(
-    (t) => t.kind === 'OBJECT' && t.has_join === true,
+    (t) => t.kind === 'OBJECT' && t.has_join === true
   );
 
   if (joinTypes.length === 0) return null;
@@ -61,14 +61,14 @@ export function emitJoinImpls(ir) {
  */
 function joinExpr(strategy, field) {
   switch (strategy) {
-    case 'union':
-      return `lattice::union(&self.${field}, &other.${field})`;
-    case 'max':
-      return `lattice::max(self.${field}, other.${field})`;
-    case 'lww':
-      return `lattice::lww(self.${field}.clone(), other.${field}.clone())`;
-    default:
-      throw new Error(`Unknown join strategy: ${strategy}`);
+  case 'union':
+    return `lattice::union(&self.${field}, &other.${field})`;
+  case 'max':
+    return `lattice::max(self.${field}, other.${field})`;
+  case 'lww':
+    return `lattice::lww(self.${field}.clone(), other.${field}.clone())`;
+  default:
+    throw new Error(`Unknown join strategy: ${strategy}`);
   }
 }
 

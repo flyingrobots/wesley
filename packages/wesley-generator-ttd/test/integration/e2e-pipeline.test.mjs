@@ -10,12 +10,12 @@ import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import {
   compileTtdProtocol,
-  extractTtdSchema,
+  extractTtdSchema
 } from '@wesley/core/ttd';
 import { createVerifier } from '@wesley/core/ttd/invariants';
 import { FakeClock } from '@wesley/core/ports';
 import { testCrypto } from '../setup.mjs';
-import { normalizeOutputTree, assertNoAbsolutePaths } from '../helpers/normalize.mjs';
+import { _normalizeOutputTree, assertNoAbsolutePaths } from '../helpers/normalize.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const fixtureDir = join(__dirname, '../fixtures/basic-protocol');
@@ -30,7 +30,7 @@ describe('E2E Pipeline Integration', () => {
       const result = await compileTtdProtocol({
         sdl: basicProtocolSdl,
         targets: ['manifest', 'typescript'],
-        deps,
+        deps
       });
 
       expect(result.files.length).toBeGreaterThan(0);
@@ -42,7 +42,7 @@ describe('E2E Pipeline Integration', () => {
       const result = await compileTtdProtocol({
         sdl: basicProtocolSdl,
         targets: ['manifest'],
-        deps,
+        deps
       });
 
       const paths = result.files.map(f => f.path);
@@ -56,7 +56,7 @@ describe('E2E Pipeline Integration', () => {
       const result = await compileTtdProtocol({
         sdl: basicProtocolSdl,
         targets: ['typescript'],
-        deps,
+        deps
       });
 
       const paths = result.files.map(f => f.path);
@@ -70,7 +70,7 @@ describe('E2E Pipeline Integration', () => {
       const result = await compileTtdProtocol({
         sdl: basicProtocolSdl,
         targets: ['manifest', 'typescript'],
-        deps,
+        deps
       });
 
       // Should not throw
@@ -83,7 +83,7 @@ describe('E2E Pipeline Integration', () => {
       const result = await compileTtdProtocol({
         sdl: basicProtocolSdl,
         targets: ['manifest'],
-        deps,
+        deps
       });
 
       const schemaFile = result.files.find(f => f.path === 'manifest/schema.json');
@@ -102,7 +102,7 @@ describe('E2E Pipeline Integration', () => {
       const result = await compileTtdProtocol({
         sdl: basicProtocolSdl,
         targets: ['manifest'],
-        deps,
+        deps
       });
 
       const schemaFile = result.files.find(f => f.path === 'manifest/schema.json');
@@ -117,7 +117,7 @@ describe('E2E Pipeline Integration', () => {
       const result = await compileTtdProtocol({
         sdl: basicProtocolSdl,
         targets: ['manifest'],
-        deps,
+        deps
       });
 
       const schemaFile = result.files.find(f => f.path === 'manifest/schema.json');
@@ -133,7 +133,7 @@ describe('E2E Pipeline Integration', () => {
       const result = await compileTtdProtocol({
         sdl: basicProtocolSdl,
         targets: ['manifest'],
-        deps,
+        deps
       });
 
       const schemaFile = result.files.find(f => f.path === 'manifest/schema.json');
@@ -150,7 +150,7 @@ describe('E2E Pipeline Integration', () => {
       const result = await compileTtdProtocol({
         sdl: basicProtocolSdl,
         targets: ['typescript'],
-        deps,
+        deps
       });
 
       const typesFile = result.files.find(f => f.path === 'typescript/types.ts');
@@ -166,7 +166,7 @@ describe('E2E Pipeline Integration', () => {
       const result = await compileTtdProtocol({
         sdl: basicProtocolSdl,
         targets: ['typescript'],
-        deps,
+        deps
       });
 
       const typesContent = result.files.find(f => f.path === 'typescript/types.ts').content;
@@ -187,7 +187,7 @@ describe('E2E Pipeline Integration', () => {
       const result = await compileTtdProtocol({
         sdl: basicProtocolSdl,
         targets: ['typescript'],
-        deps,
+        deps
       });
 
       const registryFile = result.files.find(f => f.path === 'typescript/registry.ts');
@@ -201,7 +201,7 @@ describe('E2E Pipeline Integration', () => {
       const result = await compileTtdProtocol({
         sdl: basicProtocolSdl,
         targets: ['typescript'],
-        deps,
+        deps
       });
 
       const registryFile = result.files.find(f => f.path === 'typescript/registry.ts');
@@ -218,7 +218,7 @@ describe('E2E Pipeline Integration', () => {
       const result = await compileTtdProtocol({
         sdl: basicProtocolSdl,
         targets: ['manifest'],
-        deps,
+        deps
       });
 
       const schemaFile = result.files.find(f => f.path === 'manifest/schema.json');
@@ -238,7 +238,7 @@ describe('E2E Pipeline Integration', () => {
       const result = await compileTtdProtocol({
         sdl: basicProtocolSdl,
         targets: ['manifest'],
-        deps,
+        deps
       });
 
       const schemaFile = result.files.find(f => f.path === 'manifest/schema.json');
@@ -311,14 +311,14 @@ describe('E2E Pipeline Integration', () => {
 /**
  * Compile TypeScript code and return diagnostics
  */
-function compileTypeScript(code, filename = 'test.ts') {
+function _compileTypeScript(code, filename = 'test.ts') {
   const compilerOptions = {
     noEmit: true,
     strict: true,
     target: ts.ScriptTarget.ES2020,
     module: ts.ModuleKind.ESNext,
     moduleResolution: ts.ModuleResolutionKind.NodeJs,
-    skipLibCheck: true,
+    skipLibCheck: true
   };
 
   // Create a virtual file system for the compiler
@@ -339,7 +339,7 @@ function compileTypeScript(code, filename = 'test.ts') {
     useCaseSensitiveFileNames: () => true,
     getNewLine: () => '\n',
     fileExists: (f) => f === filename,
-    readFile: () => undefined,
+    readFile: () => undefined
   };
 
   const program = ts.createProgram([filename], compilerOptions, host);
@@ -347,6 +347,6 @@ function compileTypeScript(code, filename = 'test.ts') {
 
   return diagnostics.map(d => ({
     message: ts.flattenDiagnosticMessageText(d.messageText, '\n'),
-    line: d.start ? sourceFile.getLineAndCharacterOfPosition(d.start).line : 0,
+    line: d.start ? sourceFile.getLineAndCharacterOfPosition(d.start).line : 0
   }));
 }

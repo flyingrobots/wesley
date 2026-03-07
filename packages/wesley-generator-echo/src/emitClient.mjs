@@ -1,7 +1,7 @@
-export function emitClient(ir) {
+export function emitClient(_ir) {
   const lines = [];
   lines.push('// AUTO-GENERATED. DO NOT EDIT.');
-  lines.push(`export interface RegistryInfo { schema_sha256: string; codec_id: string; registry_version: number; }`);
+  lines.push('export interface RegistryInfo { schema_sha256: string; codec_id: string; registry_version: number; }');
   lines.push(`export interface EchoWasm {
   encode_command(op_id: number, payload: Uint8Array): Uint8Array;
   encode_query_vars(query_id: number, payload: Uint8Array): Uint8Array;

@@ -5,14 +5,14 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { 
+import {
   LockMonitor,
   MonitorError,
   DeadlockDetectedEvent,
   LockWaitDetected,
   PerformanceThresholdExceeded,
   LockContentionAlert,
-  LockWaitState
+  _LockWaitState
 } from '../src/domain/locks/LockMonitor.mjs';
 
 // Mock database client with configurable lock data
@@ -38,7 +38,7 @@ class MockClient {
         // Waiting queries query
         return { rows: this.mockWaitingQueries };
       } else if (sql.includes('COUNT(blocked.pid)')) {
-        // Blocking queries query  
+        // Blocking queries query
         return { rows: this.mockBlockingQueries };
       } else {
         // Current locks query
@@ -178,7 +178,7 @@ test('LockMonitor - initialization and configuration', () => {
     maxWaitTime: 60000,
     maxBlockedQueries: 20
   });
-  
+
   assert.equal(monitor.monitoringInterval, 10000);
   assert.equal(monitor.deadlockCheckInterval, 15000);
   assert.equal(monitor.performanceThresholds.maxWaitTime, 60000);
@@ -189,14 +189,14 @@ test('LockMonitor - initialization and configuration', () => {
 test('LockMonitor - start and stop monitoring', async () => {
   const client = new MockClient();
   const monitor = new LockMonitor({ monitoringInterval: 100, deadlockCheckInterval: 200 });
-  
+
   assert.equal(monitor.isMonitoring, false);
-  
+
   await monitor.startMonitoring(client);
   assert.equal(monitor.isMonitoring, true);
   assert(monitor.monitoringTimer !== null);
   assert(monitor.deadlockTimer !== null);
-  
+
   await monitor.stopMonitoring();
   assert.equal(monitor.isMonitoring, false);
   assert.equal(monitor.monitoringTimer, null);
@@ -206,22 +206,22 @@ test('LockMonitor - start and stop monitoring', async () => {
 test('LockMonitor - getCurrentLocks parsing', async () => {
   const client = new MockClient();
   const monitor = new LockMonitor();
-  
+
   const mockLocks = [
     createMockLock({ pid: 1001, mode: 'ExclusiveLock', granted: true }),
     createMockLock({ pid: 1002, mode: 'ShareLock', granted: false, wait_duration_ms: 5000 })
   ];
-  
+
   client.setMockLocks(mockLocks);
-  
+
   const locks = await monitor.getCurrentLocks();
-  
+
   assert.equal(locks.length, 2);
   assert.equal(locks[0].pid, 1001);
   assert.equal(locks[0].mode, 'ExclusiveLock');
   assert.equal(locks[0].granted, true);
   assert.equal(locks[0].waitDuration, 0);
-  
+
   assert.equal(locks[1].pid, 1002);
   assert.equal(locks[1].mode, 'ShareLock');
   assert.equal(locks[1].granted, false);
@@ -231,7 +231,7 @@ test('LockMonitor - getCurrentLocks parsing', async () => {
 test('LockMonitor - getWaitingQueries parsing', async () => {
   const client = new MockClient();
   const monitor = new LockMonitor();
-  
+
   const mockWaiting = [
     createMockWaitingQuery({
       blocked_pid: 1001,
@@ -239,11 +239,11 @@ test('LockMonitor - getWaitingQueries parsing', async () => {
       wait_time_ms: 8000
     })
   ];
-  
+
   client.setMockWaitingQueries(mockWaiting);
-  
+
   const waitingQueries = await monitor.getWaitingQueries();
-  
+
   assert.equal(waitingQueries.length, 1);
   assert.equal(waitingQueries[0].blockedPid, 1001);
   assert.equal(waitingQueries[0].blockingPid, 1002);
@@ -255,7 +255,7 @@ test('LockMonitor - getWaitingQueries parsing', async () => {
 test('LockMonitor - getBlockingQueries parsing', async () => {
   const client = new MockClient();
   const monitor = new LockMonitor();
-  
+
   const mockBlocking = [
     createMockBlockingQuery({
       pid: 1002,
@@ -264,11 +264,11 @@ test('LockMonitor - getBlockingQueries parsing', async () => {
       avg_wait_time: 8000
     })
   ];
-  
+
   client.setMockBlockingQueries(mockBlocking);
-  
+
   const blockingQueries = await monitor.getBlockingQueries();
-  
+
   assert.equal(blockingQueries.length, 1);
   assert.equal(blockingQueries[0].blockingPid, 1002);
   assert.equal(blockingQueries[0].blockedCount, 5);
@@ -281,7 +281,7 @@ test('LockMonitor - deadlock detection with simple cycle', async () => {
   const client = new MockClient();
   const eventEmitter = new MockEventEmitter();
   const monitor = new LockMonitor({ eventEmitter });
-  
+
   // Create a simple A -> B -> A deadlock
   const mockWaiting = [
     createMockWaitingQuery({
@@ -293,22 +293,22 @@ test('LockMonitor - deadlock detection with simple cycle', async () => {
     createMockWaitingQuery({
       blocked_pid: 1002,
       blocking_pid: 1001,
-      blocked_query: 'UPDATE table2 SET y = 2', 
+      blocked_query: 'UPDATE table2 SET y = 2',
       wait_time_ms: 3000
     })
   ];
-  
+
   client.setMockWaitingQueries(mockWaiting);
-  
+
   const deadlocks = await monitor.detectDeadlocks();
-  
+
   assert.equal(deadlocks.length, 1);
   const deadlock = deadlocks[0];
   assert.equal(deadlock.cycleLength, 2);
   assert.equal(deadlock.processes.length, 2);
   assert(deadlock.totalWaitTime > 0);
   assert(deadlock.detectedAt instanceof Date);
-  
+
   // Check event was emitted
   const deadlockEvents = eventEmitter.getEventsOfType(DeadlockDetectedEvent);
   assert.equal(deadlockEvents.length, 1);
@@ -317,7 +317,7 @@ test('LockMonitor - deadlock detection with simple cycle', async () => {
 test('LockMonitor - deadlock detection with complex cycle', async () => {
   const client = new MockClient();
   const monitor = new LockMonitor();
-  
+
   // Create A -> B -> C -> A deadlock
   const mockWaiting = [
     createMockWaitingQuery({
@@ -336,11 +336,11 @@ test('LockMonitor - deadlock detection with complex cycle', async () => {
       wait_time_ms: 4000
     })
   ];
-  
+
   client.setMockWaitingQueries(mockWaiting);
-  
+
   const deadlocks = await monitor.detectDeadlocks();
-  
+
   assert.equal(deadlocks.length, 1);
   assert.equal(deadlocks[0].cycleLength, 3);
   assert.equal(deadlocks[0].processes.length, 3);
@@ -350,7 +350,7 @@ test('LockMonitor - deadlock detection with complex cycle', async () => {
 test('LockMonitor - no deadlock with linear chain', async () => {
   const client = new MockClient();
   const monitor = new LockMonitor();
-  
+
   // Create A -> B -> C (no cycle)
   const mockWaiting = [
     createMockWaitingQuery({
@@ -362,11 +362,11 @@ test('LockMonitor - no deadlock with linear chain', async () => {
       blocking_pid: 1003
     })
   ];
-  
+
   client.setMockWaitingQueries(mockWaiting);
-  
+
   const deadlocks = await monitor.detectDeadlocks();
-  
+
   assert.equal(deadlocks.length, 0);
 });
 
@@ -374,7 +374,7 @@ test('LockMonitor - lock contention analysis', async () => {
   const client = new MockClient();
   const eventEmitter = new MockEventEmitter();
   const monitor = new LockMonitor({ eventEmitter });
-  
+
   const mockLocks = [createMockLock()];
   const mockWaiting = [
     createMockWaitingQuery({
@@ -394,13 +394,13 @@ test('LockMonitor - lock contention analysis', async () => {
     })
   ];
   const mockBlocking = [createMockBlockingQuery()];
-  
+
   client.setMockLocks(mockLocks);
   client.setMockWaitingQueries(mockWaiting);
   client.setMockBlockingQueries(mockBlocking);
-  
+
   const contention = await monitor.analyzeLockContention(mockLocks, mockWaiting, mockBlocking);
-  
+
   assert.equal(contention.length, 1);
   const hotspot = contention[0];
   assert.equal(hotspot.relation, 12345);
@@ -408,16 +408,16 @@ test('LockMonitor - lock contention analysis', async () => {
   assert.equal(hotspot.totalWaitTime, 24000);
   assert.equal(hotspot.maxWaitTime, 10000);
   assert.equal(hotspot.avgWaitTime, 8000);
-  
+
   // Should trigger contention alert
   const contentionEvents = eventEmitter.getEventsOfType(LockContentionAlert);
   assert.equal(contentionEvents.length, 1);
 });
 
 test('LockMonitor - performance metrics tracking', async () => {
-  const client = new MockClient();
+  const _client = new MockClient();
   const monitor = new LockMonitor();
-  
+
   const mockWaiting = [
     createMockWaitingQuery({ wait_time_ms: 5000 }),
     createMockWaitingQuery({ wait_time_ms: 3000 }),
@@ -426,9 +426,9 @@ test('LockMonitor - performance metrics tracking', async () => {
   const mockBlocking = [
     createMockBlockingQuery({ blocked_count: '2' })
   ];
-  
+
   await monitor.updatePerformanceMetrics(mockWaiting, mockBlocking);
-  
+
   const metrics = monitor.performanceMetrics;
   assert.equal(metrics.totalQueries, 4); // 3 waiting + 1 blocking
   assert.equal(metrics.blockedQueries, 3);
@@ -438,7 +438,7 @@ test('LockMonitor - performance metrics tracking', async () => {
 });
 
 test('LockMonitor - performance threshold alerts', async () => {
-  const client = new MockClient();
+  const _client = new MockClient();
   const eventEmitter = new MockEventEmitter();
   const monitor = new LockMonitor({
     eventEmitter,
@@ -448,34 +448,34 @@ test('LockMonitor - performance threshold alerts', async () => {
       maxLockHoldTime: 20000
     }
   });
-  
+
   const mockWaiting = [
     createMockWaitingQuery({ wait_time_ms: 5000 }), // Exceeds maxWaitTime
     createMockWaitingQuery({ wait_time_ms: 6000 }), // Exceeds maxWaitTime
     createMockWaitingQuery({ wait_time_ms: 2000 })  // Under threshold
   ];
   const mockBlocking = [
-    createMockBlockingQuery({ 
+    createMockBlockingQuery({
       blocked_count: '1',
       blocking_duration_ms: 25000  // Exceeds maxLockHoldTime
     })
   ];
-  
+
   await monitor.checkPerformanceThresholds(mockWaiting, mockBlocking);
-  
+
   const events = eventEmitter.getEvents();
-  
+
   // Should have 2 wait time alerts + 1 blocked queries alert + 1 lock hold time alert
-  const waitAlerts = events.filter(e => 
+  const waitAlerts = events.filter(e =>
     e.event instanceof LockWaitDetected && e.event.payload.type === 'long_wait'
   );
   assert.equal(waitAlerts.length, 2);
-  
+
   const blockedQueryAlerts = events.filter(e =>
     e.event instanceof PerformanceThresholdExceeded && e.event.payload.type === 'blocked_queries'
   );
   assert.equal(blockedQueryAlerts.length, 1);
-  
+
   const lockHoldAlerts = events.filter(e =>
     e.event instanceof PerformanceThresholdExceeded && e.event.payload.type === 'long_lock_hold'
   );
@@ -485,27 +485,27 @@ test('LockMonitor - performance threshold alerts', async () => {
 test('LockMonitor - comprehensive lock report', async () => {
   const client = new MockClient();
   const monitor = new LockMonitor();
-  
+
   const mockLocks = [
     createMockLock({ granted: true }),
     createMockLock({ granted: false })
   ];
   const mockWaiting = [createMockWaitingQuery()];
   const mockBlocking = [createMockBlockingQuery()];
-  
+
   client.setMockLocks(mockLocks);
   client.setMockWaitingQueries(mockWaiting);
   client.setMockBlockingQueries(mockBlocking);
-  
+
   const report = await monitor.getLockReport();
-  
+
   assert(report.timestamp instanceof Date);
   assert.equal(report.summary.totalLocks, 2);
   assert.equal(report.summary.grantedLocks, 1);
   assert.equal(report.summary.waitingQueries, 1);
   assert.equal(report.summary.blockingQueries, 1);
   assert.equal(report.summary.deadlocks, 0);
-  
+
   assert.equal(report.locks.length, 2);
   assert.equal(report.waitingQueries.length, 1);
   assert.equal(report.blockingQueries.length, 1);
@@ -518,18 +518,18 @@ test('LockMonitor - monitoring cycle execution', async () => {
   const client = new MockClient();
   const eventEmitter = new MockEventEmitter();
   const monitor = new LockMonitor({ eventEmitter });
-  
+
   // Set up some mock data
   client.setMockLocks([createMockLock()]);
   client.setMockWaitingQueries([createMockWaitingQuery()]);
   client.setMockBlockingQueries([createMockBlockingQuery()]);
-  
+
   await monitor.performMonitoringCycle();
-  
+
   // Should have executed three main queries
   const queries = client.getQueries();
   assert(queries.length >= 3);
-  
+
   // Performance metrics should be updated
   assert(monitor.performanceMetrics.totalQueries > 0);
 });
@@ -537,9 +537,9 @@ test('LockMonitor - monitoring cycle execution', async () => {
 test('LockMonitor - error handling in monitoring cycle', async () => {
   const client = new MockClient();
   const monitor = new LockMonitor();
-  
+
   client.setShouldFail(true);
-  
+
   await assert.rejects(
     monitor.performMonitoringCycle(),
     MonitorError
@@ -548,7 +548,7 @@ test('LockMonitor - error handling in monitoring cycle', async () => {
 
 test('LockMonitor - generate lock ID consistency', () => {
   const monitor = new LockMonitor();
-  
+
   const lockRow1 = {
     locktype: 'relation',
     database: '12345',
@@ -558,14 +558,14 @@ test('LockMonitor - generate lock ID consistency', () => {
     virtualxid: null,
     transactionid: null
   };
-  
+
   const lockRow2 = { ...lockRow1 };
   const lockRow3 = { ...lockRow1, relation: '99999' };
-  
+
   const id1 = monitor.generateLockId(lockRow1);
   const id2 = monitor.generateLockId(lockRow2);
   const id3 = monitor.generateLockId(lockRow3);
-  
+
   assert.equal(id1, id2); // Same lock should have same ID
   assert(id1 !== id3);    // Different lock should have different ID
 });
@@ -576,9 +576,9 @@ test('LockMonitor - monitoring status and configuration', () => {
     deadlockCheckInterval: 10000,
     maxWaitTime: 30000
   });
-  
+
   const status = monitor.getMonitoringStatus();
-  
+
   assert.equal(status.isMonitoring, false);
   assert.equal(status.monitoringInterval, 5000);
   assert.equal(status.deadlockCheckInterval, 10000);
@@ -587,42 +587,42 @@ test('LockMonitor - monitoring status and configuration', () => {
 });
 
 test('LockMonitor - reset metrics', async () => {
-  const client = new MockClient();
+  const _client = new MockClient();
   const monitor = new LockMonitor();
-  
+
   // Simulate some activity
   const mockWaiting = [createMockWaitingQuery({ wait_time_ms: 5000 })];
   await monitor.updatePerformanceMetrics(mockWaiting, []);
-  
+
   assert(monitor.performanceMetrics.avgWaitTime > 0);
   assert(monitor.performanceMetrics.contentionEvents > 0);
-  
+
   monitor.resetMetrics();
-  
+
   assert.equal(monitor.performanceMetrics.avgWaitTime, 0);
   assert.equal(monitor.performanceMetrics.contentionEvents, 0);
   assert.equal(monitor.performanceMetrics.totalQueries, 0);
 });
 
-test('LockMonitor - automatic monitoring cycles', async (t) => {
+test('LockMonitor - automatic monitoring cycles', async (_t) => {
   const client = new MockClient();
-  const monitor = new LockMonitor({ 
+  const monitor = new LockMonitor({
     monitoringInterval: 50,  // Very short for testing
-    deadlockCheckInterval: 100 
+    deadlockCheckInterval: 100
   });
-  
+
   // Set up mock data
   client.setMockLocks([createMockLock()]);
   client.setMockWaitingQueries([]);
   client.setMockBlockingQueries([]);
-  
+
   await monitor.startMonitoring(client);
-  
+
   // Wait for a few cycles
   await new Promise(resolve => setTimeout(resolve, 120));
-  
+
   await monitor.stopMonitoring();
-  
+
   // Should have executed multiple monitoring cycles
   const queries = client.getQueries();
   assert(queries.length > 3); // Should have multiple query cycles
@@ -631,11 +631,11 @@ test('LockMonitor - automatic monitoring cycles', async (t) => {
 test('LockMonitor - event emission configuration', async () => {
   const eventEmitter = new MockEventEmitter();
   const monitor = new LockMonitor({ eventEmitter });
-  
+
   // Manually emit an event to test the mechanism
   const testEvent = new DeadlockDetectedEvent({ test: 'data' });
   monitor.emitEvent(testEvent);
-  
+
   const events = eventEmitter.getEvents();
   assert.equal(events.length, 1);
   assert.equal(events[0].eventType, 'monitor_event');

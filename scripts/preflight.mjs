@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readdirSync, statSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readdirSync, _statSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
@@ -109,7 +109,7 @@ runOrFail(
 // 8) ESLint core purity (use repo's ESLint version, flat-config compatible)
 try {
   const flatConfigPath = resolve(tmpdir(), `eslint.core-purity.${Date.now()}.config.mjs`);
-  const cfg = `export default [{\n    files: [\"packages/wesley-core/src/**/*.mjs\"],\n    languageOptions: { ecmaVersion: 2022, sourceType: 'module' },\n    rules: {\n      'no-restricted-imports': [\n        'error',\n        {\n          patterns: [ { group: ['node:*'], message: 'Do not use Node built-ins in core (keep it pure).' } ],\n          paths: [\n            { name: 'fs', message: 'Use ports/adapters; no fs in core.' },\n            { name: 'path', message: 'Use ports/adapters; no path in core.' },\n            { name: 'process', message: 'Do not use process in core.' },\n            { name: 'child_process', message: 'No child_process in core.' },\n            { name: 'os', message: 'No os in core.' },\n            { name: 'buffer', message: 'No Buffer usage in core.' }\n          ]\n        }\n      ]\n    }\n  }];\n`;
+  const cfg = 'export default [{\n    files: ["packages/wesley-core/src/**/*.mjs"],\n    languageOptions: { ecmaVersion: 2022, sourceType: \'module\' },\n    rules: {\n      \'no-restricted-imports\': [\n        \'error\',\n        {\n          patterns: [ { group: [\'node:*\'], message: \'Do not use Node built-ins in core (keep it pure).\' } ],\n          paths: [\n            { name: \'fs\', message: \'Use ports/adapters; no fs in core.\' },\n            { name: \'path\', message: \'Use ports/adapters; no path in core.\' },\n            { name: \'process\', message: \'Do not use process in core.\' },\n            { name: \'child_process\', message: \'No child_process in core.\' },\n            { name: \'os\', message: \'No os in core.\' },\n            { name: \'buffer\', message: \'No Buffer usage in core.\' }\n          ]\n        }\n      ]\n    }\n  }];\n';
   writeFileSync(flatConfigPath, cfg, 'utf8');
   runOrFail('pnpm', ['exec', 'eslint', '--config', flatConfigPath, 'packages/wesley-core/src/**/*.mjs', '--max-warnings=0'], 'ESLint core purity check failed');
 } catch (e) {
@@ -125,8 +125,8 @@ try {
   for (const d of deps) {
     if (badDeps.has(d)) fail(`@wesley/core must not depend on '${d}' (host-specific).`);
   }
-  if (core.engines && core.engines.node) fail(`@wesley/core must not declare engines.node; keep hosts portable.`);
-} catch (e) {
+  if (core.engines && core.engines.node) fail('@wesley/core must not declare engines.node; keep hosts portable.');
+} catch (_e) {
   // If core package missing, skip
 }
 
@@ -210,7 +210,7 @@ try {
   try {
     const mb = spawnSync('git', ['merge-base', base, 'HEAD'], { encoding: 'utf8' });
     if (mb.status === 0) baseSha = (mb.stdout || '').trim();
-  } catch {}
+  } catch { /* empty */ }
   const diffArgs = baseSha ? ['diff', '--name-only', '--diff-filter=ACMRTUXB', baseSha] : ['ls-files'];
   const df = spawnSync('git', diffArgs, { encoding: 'utf8' });
   if (df.status !== 0) {
@@ -260,7 +260,7 @@ try {
         if (r.status !== 0) fail(`Ops registry validation failed for ${reg}`);
       }
     }
-  } catch (e) {
+  } catch (_e) {
     // Non-fatal: registry may not exist in all runs
   }
 } catch (e) {

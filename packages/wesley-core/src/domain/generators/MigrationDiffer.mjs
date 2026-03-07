@@ -108,46 +108,46 @@ export class MigrationSQLGenerator {
 
     for (const step of diff.steps) {
       switch (step.kind) {
-        case 'create_table':
+      case 'create_table':
+        statements.push(
+          `-- Table ${step.table} was added. Re-run "wesley generate" to emit full CREATE statement.`
+        );
+        break;
+
+      case 'add_column':
+        statements.push(
+          `ALTER TABLE "${step.table}" ADD COLUMN "${step.column}" ${this.mapType(step.field)};`
+        );
+        break;
+
+      case 'drop_column':
+        statements.push(
+          `ALTER TABLE "${step.table}" DROP COLUMN "${step.column}";`
+        );
+        break;
+
+      case 'alter_type':
+        statements.push(
+          `ALTER TABLE "${step.table}" ALTER COLUMN "${step.column}" TYPE ${this.mapType(step.to)};`
+        );
+        if (step.to.nonNull && !step.from.nonNull) {
           statements.push(
-            `-- Table ${step.table} was added. Re-run "wesley generate" to emit full CREATE statement.`
+            `ALTER TABLE "${step.table}" ALTER COLUMN "${step.column}" SET NOT NULL;`
           );
-          break;
-
-        case 'add_column':
+        }
+        if (!step.to.nonNull && step.from.nonNull) {
           statements.push(
-            `ALTER TABLE "${step.table}" ADD COLUMN "${step.column}" ${this.mapType(step.field)};`
+            `ALTER TABLE "${step.table}" ALTER COLUMN "${step.column}" DROP NOT NULL;`
           );
-          break;
+        }
+        break;
 
-        case 'drop_column':
-          statements.push(
-            `ALTER TABLE "${step.table}" DROP COLUMN "${step.column}";`
-          );
-          break;
+      case 'drop_table':
+        statements.push(`DROP TABLE IF EXISTS "${step.table}";`);
+        break;
 
-        case 'alter_type':
-          statements.push(
-            `ALTER TABLE "${step.table}" ALTER COLUMN "${step.column}" TYPE ${this.mapType(step.to)};`
-          );
-          if (step.to.nonNull && !step.from.nonNull) {
-            statements.push(
-              `ALTER TABLE "${step.table}" ALTER COLUMN "${step.column}" SET NOT NULL;`
-            );
-          }
-          if (!step.to.nonNull && step.from.nonNull) {
-            statements.push(
-              `ALTER TABLE "${step.table}" ALTER COLUMN "${step.column}" DROP NOT NULL;`
-            );
-          }
-          break;
-
-        case 'drop_table':
-          statements.push(`DROP TABLE IF EXISTS "${step.table}";`);
-          break;
-
-        default:
-          statements.push(`-- Unsupported migration step: ${step.kind}`);
+      default:
+        statements.push(`-- Unsupported migration step: ${step.kind}`);
       }
     }
 

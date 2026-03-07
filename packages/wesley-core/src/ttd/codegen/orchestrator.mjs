@@ -62,17 +62,17 @@ export async function compileTtdProtocol({ sdl, targets = ['manifest', 'typescri
 
     files.push({
       path: 'manifest/schema.json',
-      content: JSON.stringify(schemaJson, null, 2),
+      content: JSON.stringify(schemaJson, null, 2)
     });
 
     files.push({
       path: 'manifest/contracts.json',
-      content: JSON.stringify(contractsJson, null, 2),
+      content: JSON.stringify(contractsJson, null, 2)
     });
 
     files.push({
       path: 'manifest/manifest.json',
-      content: JSON.stringify(manifest, null, 2),
+      content: JSON.stringify(manifest, null, 2)
     });
 
     // Also output the raw TTD IR for external tools (like echo-ttd-gen)
@@ -84,10 +84,10 @@ export async function compileTtdProtocol({ sdl, targets = ['manifest', 'typescri
         generated_at: clock.now(),
         generated_by: {
           tool: '@wesley/generator-ttd',
-          version: '0.1.0',
+          version: '0.1.0'
         },
-        ...schema,
-      }, null, 2),
+        ...schema
+      }, null, 2)
     });
   }
 
@@ -95,17 +95,17 @@ export async function compileTtdProtocol({ sdl, targets = ['manifest', 'typescri
   if (targets.includes('typescript')) {
     files.push({
       path: 'typescript/types.ts',
-      content: generateTsTypes(schema),
+      content: generateTsTypes(schema)
     });
 
     files.push({
       path: 'typescript/zod.ts',
-      content: generateTsZod(schema),
+      content: generateTsZod(schema)
     });
 
     files.push({
       path: 'typescript/registry.ts',
-      content: generateTsRegistry(schema),
+      content: generateTsRegistry(schema)
     });
 
     // Index file
@@ -121,7 +121,7 @@ export async function compileTtdProtocol({ sdl, targets = ['manifest', 'typescri
 export * from './types';
 export * from './zod';
 export * from './registry';
-`,
+`
     });
   }
 
@@ -151,7 +151,7 @@ This architecture ensures:
 3. Target-language tools can evolve independently
 
 See: https://github.com/flyingrobots/echo/tree/main/crates/echo-ttd-gen
-`,
+`
     });
   }
 
@@ -159,7 +159,7 @@ See: https://github.com/flyingrobots/echo/tree/main/crates/echo-ttd-gen
     files,
     schemaHash: schema.schemaHash,
     validation,
-    schema, // Include extracted schema for inspection
+    schema // Include extracted schema for inspection
   };
 }
 

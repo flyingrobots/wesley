@@ -18,7 +18,7 @@ export const RESERVED = new Set([
   'like','limit','localtime','localtimestamp','natural','not','null','offset','on','or','order',
   'outer','primary','references','returning','revoke','right','select','session_user','set',
   'some','table','then','to','trigger','true','union','unique','update','user','using','values',
-  'view','when','where','window','with',
+  'view','when','where','window','with'
 ]);
 
 const IDENT_SAFE_RE = /^[a-z_][a-z0-9_]*$/; // canonical unquoted identifier

@@ -14,7 +14,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
     super(ctx, 'generate', 'Generate SQL, tests, and more from GraphQL schema');
     this.requiresSchema = true;
   }
-  
+
   // Configure Commander options
   configureCommander(cmd) {
     return cmd
@@ -63,7 +63,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
     if (options.stdin) {
       options.schema = '-';
     }
-    
+
     // Safety: require clean git working tree unless explicitly allowed
     const env = this.ctx.env || {};
     if (shouldEnforceClean(env, options) && !options.allowDirty) {
@@ -104,7 +104,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
     // support --unit filtering, --dry-run, --print-ir, and --print-composed-sdl.
     const needsSequentialPipeline = options.unit || options.dryRun || options.printIr || options.printComposedSdl;
     if (planner && runner && planner.buildPlan && runner.run && !needsSequentialPipeline) {
-      return await this.executeWithTasksAndSlaps(context);
+      return this.executeWithTasksAndSlaps(context);
     }
 
     // Otherwise, simple sequential execution
@@ -137,13 +137,13 @@ export class GeneratePipelineCommand extends WesleyCommand {
         return { artifacts: 0, dryRun: true };
       }
     }
-    
+
     // Generate DDL
     const ddlResult = generators.sql.emitDDL(ir);
     if (ddlResult && ddlResult.files) {
       artifacts.push(...ddlResult.files);
     }
-    
+
     // Generate RLS if Supabase flag
     if (options.supabase && generators.sql.emitRLS) {
       const rlsResult = generators.sql.emitRLS(ir);
@@ -151,7 +151,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
         artifacts.push(...rlsResult.files);
       }
     }
-    
+
     // Generate tests
     if (generators.tests && generators.tests.emitPgTap) {
       const testResult = generators.tests.emitPgTap(ir);
@@ -159,7 +159,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
         artifacts.push(...testResult.files);
       }
     }
-    
+
     // Write files
     if (!options.dryRun && writer && writer.writeFiles) {
       await writer.writeFiles(artifacts, options.outDir);
@@ -175,7 +175,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
         logger.warn('Could not write IR snapshot: ' + (e?.message || e));
       }
     }
-    
+
     // Optionally emit a minimal evidence bundle for HOLMES sidecar
     if (options.emitBundle && !options.dryRun) {
       try {
@@ -185,7 +185,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
           const out = await (this.ctx.shell?.exec?.('git rev-parse HEAD'));
           const s = out?.stdout?.trim();
           if (s) sha = s;
-        } catch {}
+        } catch { /* empty */ }
 
         const timestamp = new Date().toISOString();
         // Minimal scoring heuristic (placeholder until full evidence pipeline)
@@ -271,12 +271,12 @@ export class GeneratePipelineCommand extends WesleyCommand {
           const day = Math.floor(Date.now() / 86400000);
           const nextPoints = mergeHistoryPoints(history.points, [{ day, timestamp, scs, tci, mri }]);
           await this.ctx.fs.write('.wesley/history.json', JSON.stringify({ points: nextPoints }, null, 2));
-        } catch {}
+        } catch { /* empty */ }
       } catch (e) {
         logger.warn('Could not emit HOLMES evidence bundle: ' + (e?.message || e));
       }
     }
-    
+
     if (!options.dryRun) {
       await this.compileOpsIfRequested(context);
     }
@@ -295,14 +295,14 @@ export class GeneratePipelineCommand extends WesleyCommand {
     return {
       artifacts: artifacts.length,
       outDir: options.outDir,
-      dryRun: options.dryRun || false,
+      dryRun: options.dryRun || false
     };
   }
 
   async executeWithTasksAndSlaps(context) {
     const { schemaContent, options, logger } = context;
     const { planner, runner, generators, writer } = this.ctx;
-    
+
     // Build task graph
     const nodes = [
       { id: 'parse', op: 'parse_schema', args: { sdl: schemaContent } },
@@ -312,7 +312,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
       { id: 'gen_tests', op: 'emit_tests', needs: ['validate'] },
       { id: 'write', op: 'write_files', needs: ['gen_ddl', 'gen_rls', 'gen_tests'], args: { out: options.outDir } }
     ].filter(n => !n.skip);
-    
+
     const edges = [];
     for (const node of nodes) {
       if (node.needs) {
@@ -321,13 +321,13 @@ export class GeneratePipelineCommand extends WesleyCommand {
         }
       }
     }
-    
+
     const plan = planner.buildPlan(nodes, edges, { versions: {} });
-    
+
     if (options.showPlan) {
       logger.info({ plan }, 'Execution plan:');
     }
-    
+
     // Define handlers
     const handlers = {
       parse_schema: async (n) => ({ ir: this.ctx.parsers.graphql.parse(n.args.sdl) }),
@@ -344,16 +344,16 @@ export class GeneratePipelineCommand extends WesleyCommand {
         return writer.writeFiles(artifacts, n.args.out);
       }
     };
-    
+
     // Execute with S.L.A.P.S.
     const result = await runner.run(plan, { handlers, logger });
 
     await this.compileOpsIfRequested(context);
-    
+
     if (!options.quiet && !options.json) {
       logger.info('✨ Generation complete!');
     }
-    
+
     return result;
   }
 
@@ -484,7 +484,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
       }
       if (compiledOps.length) {
         compiledOps.sort((a, b) => a.order - b.order);
-        const orderedOps = compiledOps.map(({ order, ...rest }) => rest);
+        const orderedOps = compiledOps.map(({ _order, ...rest }) => rest);
         const security = String(options.opsSecurity || 'invoker').toLowerCase();
         if (security !== 'invoker' && security !== 'definer') {
           throw new OpsError('OPS_INVALID_SECURITY', `Invalid --ops-security value "${options.opsSecurity}"; must be "invoker" or "definer"`);
@@ -660,7 +660,7 @@ function emitOpArtifacts(compiledOps, targetSchema, logger, pkResolver, { securi
   // Normalize schema name to match emit.mjs's sanitizeIdentBase lowercasing,
   // ensuring CREATE SCHEMA and emitted function schemas stay in sync.
   const normalizedSchema = sanitizeIdentBase(targetSchema, 'wes_ops');
-  const deployChunks = [`BEGIN;`, `CREATE SCHEMA IF NOT EXISTS ${quoteIdent(normalizedSchema)};`];
+  const deployChunks = ['BEGIN;', `CREATE SCHEMA IF NOT EXISTS ${quoteIdent(normalizedSchema)};`];
   const registry = { version: '1.0.0', schema: normalizedSchema, ops: [] };
   for (const entry of compiledOps) {
     ordinal += 1;
@@ -726,7 +726,7 @@ function emitOpArtifacts(compiledOps, targetSchema, logger, pkResolver, { securi
     }
   }
   deployChunks.push('COMMIT;');
-  outFiles.push({ name: `ops/ops_deploy.sql`, content: deployChunks.join('\n\n') + '\n' });
+  outFiles.push({ name: 'ops/ops_deploy.sql', content: deployChunks.join('\n\n') + '\n' });
   // Emit registry.json next to SQL outputs
   try {
     const registryStr = JSON.stringify({
@@ -734,7 +734,7 @@ function emitOpArtifacts(compiledOps, targetSchema, logger, pkResolver, { securi
       schema: registry.schema,
       ops: registry.ops.sort((a, b) => a.name.localeCompare(b.name))
     }, null, 2) + '\n';
-    outFiles.push({ name: `ops/registry.json`, content: registryStr });
+    outFiles.push({ name: 'ops/registry.json', content: registryStr });
   } catch (e) {
     logger.warn({ error: e?.message }, 'Failed to emit ops registry');
   }

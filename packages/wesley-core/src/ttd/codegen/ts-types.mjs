@@ -13,7 +13,7 @@ function mapType(gqlType, required, list) {
     String: 'string',
     Int: 'number',
     Float: 'number',
-    Boolean: 'boolean',
+    Boolean: 'boolean'
   };
 
   let tsType = typeMap[gqlType] || gqlType;
@@ -41,9 +41,9 @@ export function generateTsTypes(schema) {
 
   // Generate enums
   for (const enumDef of schema.enums || []) {
-    lines.push(`/**`);
+    lines.push('/**');
     lines.push(` * ${enumDef.name} enum`);
-    lines.push(` */`);
+    lines.push(' */');
     lines.push(`export enum ${enumDef.name} {`);
     for (const value of enumDef.values) {
       lines.push(`  ${value} = '${value}',`);
@@ -54,12 +54,12 @@ export function generateTsTypes(schema) {
 
   // Generate interfaces for types
   for (const typeDef of schema.types || []) {
-    lines.push(`/**`);
+    lines.push('/**');
     lines.push(` * ${typeDef.name} interface`);
     if (typeDef.version) {
       lines.push(` * @version ${typeDef.version.major}.${typeDef.version.minor}.${typeDef.version.patch || 0}`);
     }
-    lines.push(` */`);
+    lines.push(' */');
     lines.push(`export interface ${typeDef.name} {`);
 
     for (const field of typeDef.fields || []) {
@@ -76,9 +76,9 @@ export function generateTsTypes(schema) {
   for (const op of schema.ops || []) {
     if (op.args && op.args.length > 0) {
       const interfaceName = `${op.name.charAt(0).toUpperCase()}${op.name.slice(1)}Args`;
-      lines.push(`/**`);
+      lines.push('/**');
       lines.push(` * Arguments for ${op.name} operation`);
-      lines.push(` */`);
+      lines.push(' */');
       lines.push(`export interface ${interfaceName} {`);
 
       for (const arg of op.args) {

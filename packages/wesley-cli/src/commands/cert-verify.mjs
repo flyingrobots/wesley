@@ -24,7 +24,7 @@ export class CertVerifyCommand extends WesleyCommand {
     const ajv = await createAjv();
     const [realmSchema, shipmeSchema] = await Promise.all([
       loadSchemaFile(this.ctx, 'realm.schema.json'),
-      loadSchemaFile(this.ctx, 'shipme.schema.json'),
+      loadSchemaFile(this.ctx, 'shipme.schema.json')
     ]);
     ajv.addSchema(JSON.parse(realmSchema));
     const validate = ajv.compile(JSON.parse(shipmeSchema));

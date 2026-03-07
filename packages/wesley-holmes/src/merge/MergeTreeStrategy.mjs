@@ -23,7 +23,7 @@ export class MergeTreeStrategy {
     const remoteBase = baseRef.startsWith('origin/') ? baseRef : `origin/${baseRef}`;
 
     // Make a best effort to fetch the base ref
-    try { execSync(`git fetch --prune origin ${baseRef}:${'refs/remotes/origin/' + baseRef}`, { stdio: 'ignore', cwd: this.repoRoot }); } catch {}
+    try { execSync(`git fetch --prune origin ${baseRef}:${'refs/remotes/origin/' + baseRef}`, { stdio: 'ignore', cwd: this.repoRoot }); } catch { /* empty */ }
 
     let mergeBase = null;
     try {
@@ -45,8 +45,8 @@ export class MergeTreeStrategy {
     // Collect comparison info
     let headTree = null;
     let baseTree = null;
-    try { headTree = execSync('git rev-parse HEAD^{tree}', { encoding: 'utf8', cwd: this.repoRoot }).trim(); } catch {}
-    try { baseTree = execSync(`git rev-parse ${remoteBase}^{tree}`, { encoding: 'utf8', cwd: this.repoRoot }).trim(); } catch {}
+    try { headTree = execSync('git rev-parse HEAD^{tree}', { encoding: 'utf8', cwd: this.repoRoot }).trim(); } catch { /* empty */ }
+    try { baseTree = execSync(`git rev-parse ${remoteBase}^{tree}`, { encoding: 'utf8', cwd: this.repoRoot }).trim(); } catch { /* empty */ }
 
     const equalToHead = headTree && mergedTree && headTree === mergedTree;
     const equalToBase = baseTree && mergedTree && baseTree === mergedTree;

@@ -9,7 +9,7 @@ import {
   checkHash,
   checkExperimental,
   formatText,
-  formatJson,
+  formatJson
 } from '../src/commands/doctor-checks.mjs';
 
 // ── checkNodeVersion ───────────────────────────────────────────────
@@ -52,8 +52,8 @@ test('checkNodeVersion fails for unparseable version', () => {
 test('checkHash passes when crypto.sha256 works', () => {
   const ctx = {
     crypto: {
-      sha256: () => 'a'.repeat(64),
-    },
+      sha256: () => 'a'.repeat(64)
+    }
   };
   const r = checkHash(ctx);
   assert.equal(r.status, 'pass');
@@ -68,8 +68,8 @@ test('checkHash fails when crypto is missing', () => {
 test('checkHash fails when sha256 throws', () => {
   const ctx = {
     crypto: {
-      sha256: () => { throw new Error('boom'); },
-    },
+      sha256: () => { throw new Error('boom'); }
+    }
   };
   const r = checkHash(ctx);
   assert.equal(r.status, 'fail');
@@ -79,8 +79,8 @@ test('checkHash fails when sha256 throws', () => {
 test('checkHash fails when digest has wrong length', () => {
   const ctx = {
     crypto: {
-      sha256: () => 'short',
-    },
+      sha256: () => 'short'
+    }
   };
   const r = checkHash(ctx);
   assert.equal(r.status, 'fail');
@@ -100,8 +100,8 @@ test('checkExperimental lists flags from env', () => {
     env: {
       WESLEY_EXPERIMENTAL_IRV2: '1',
       WESLEY_EXPERIMENTAL_RAWLE: 'false',
-      OTHER_VAR: 'ignored',
-    },
+      OTHER_VAR: 'ignored'
+    }
   };
   const r = checkExperimental(ctx);
   assert.equal(r.status, 'info');
@@ -116,7 +116,7 @@ test('formatText renders [pass], [fail], [info] prefixes', () => {
   const results = [
     { name: 'A', status: 'pass', message: 'all good' },
     { name: 'B', status: 'fail', message: 'broken' },
-    { name: 'C', status: 'info', message: 'fyi' },
+    { name: 'C', status: 'info', message: 'fyi' }
   ];
   const text = formatText(results);
   const lines = text.split('\n');
@@ -131,7 +131,7 @@ test('formatText renders [pass], [fail], [info] prefixes', () => {
 test('formatJson produces valid JSON with ok: true when all pass', () => {
   const results = [
     { name: 'A', status: 'pass', message: 'ok' },
-    { name: 'B', status: 'info', message: 'fyi' },
+    { name: 'B', status: 'info', message: 'fyi' }
   ];
   const parsed = JSON.parse(formatJson(results));
   assert.equal(parsed.ok, true);
@@ -141,7 +141,7 @@ test('formatJson produces valid JSON with ok: true when all pass', () => {
 test('formatJson produces ok: false when any fail', () => {
   const results = [
     { name: 'A', status: 'pass', message: 'ok' },
-    { name: 'B', status: 'fail', message: 'bad' },
+    { name: 'B', status: 'fail', message: 'bad' }
   ];
   const parsed = JSON.parse(formatJson(results));
   assert.equal(parsed.ok, false);

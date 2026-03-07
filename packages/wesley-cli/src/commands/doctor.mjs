@@ -18,7 +18,7 @@ import {
   checkHash,
   checkExperimental,
   formatText,
-  formatJson,
+  formatJson
 } from './doctor-checks.mjs';
 
 export class DoctorCommand extends WesleyCommand {

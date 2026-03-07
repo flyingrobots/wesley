@@ -72,7 +72,7 @@ export class DeadlockDetected extends DomainEvent {
  */
 export const IsolationLevel = {
   READ_UNCOMMITTED: 'READ UNCOMMITTED',
-  READ_COMMITTED: 'READ COMMITTED', 
+  READ_COMMITTED: 'READ COMMITTED',
   REPEATABLE_READ: 'REPEATABLE READ',
   SERIALIZABLE: 'SERIALIZABLE'
 };
@@ -88,7 +88,7 @@ export class TransactionManager {
     this.defaultIsolationLevel = options.defaultIsolationLevel || IsolationLevel.READ_COMMITTED;
     this.deadlockTimeout = options.deadlockTimeout || 30000; // 30 seconds
     this.eventEmitter = options.eventEmitter || null;
-    
+
     // Active transactions and savepoints
     this.activeTransactions = new Map();
     this.savepointStack = new Map(); // transactionId -> savepoint stack
@@ -104,7 +104,7 @@ export class TransactionManager {
 
     try {
       await client.query('BEGIN');
-      
+
       if (isolationLevel !== IsolationLevel.READ_COMMITTED) {
         await client.query(`SET TRANSACTION ISOLATION LEVEL ${isolationLevel}`);
       }
@@ -145,7 +145,7 @@ export class TransactionManager {
     try {
       const startTime = transaction.startTime;
       await transaction.client.query('COMMIT');
-      
+
       const duration = Date.now() - startTime;
       transaction.status = 'committed';
 
@@ -206,7 +206,7 @@ export class TransactionManager {
 
     try {
       await transaction.client.query(`SAVEPOINT ${name}`);
-      
+
       const savepoint = {
         name,
         createdAt: new Date(),
@@ -235,7 +235,7 @@ export class TransactionManager {
 
     const savepoints = this.savepointStack.get(transactionId);
     const savepointIndex = savepoints.findIndex(sp => sp.name === savepointName);
-    
+
     if (savepointIndex === -1) {
       throw new SavepointError(`Savepoint ${savepointName} not found in transaction ${transactionId}`, savepointName);
     }
@@ -266,7 +266,7 @@ export class TransactionManager {
 
     const savepoints = this.savepointStack.get(transactionId);
     const savepointIndex = savepoints.findIndex(sp => sp.name === savepointName);
-    
+
     if (savepointIndex === -1) {
       throw new SavepointError(`Savepoint ${savepointName} not found`, savepointName);
     }
@@ -297,13 +297,13 @@ export class TransactionManager {
       } catch (error) {
         if (this.isDeadlockError(error) && retryCount < maxRetries) {
           retryCount++;
-          
+
           this.emitEvent(new DeadlockDetected(transactionId, retryCount, maxRetries));
 
           // Exponential backoff with jitter
           const delay = this.retryDelay * Math.pow(2, retryCount - 1) + Math.random() * 100;
           await this.sleep(delay);
-          
+
           continue;
         }
 
@@ -387,7 +387,7 @@ export class TransactionManager {
    */
   isDeadlockError(error) {
     return error.code === '40P01' || // deadlock_detected
-           error.code === '40001' || // serialization_failure  
+           error.code === '40001' || // serialization_failure
            (error.message && error.message.includes('deadlock'));
   }
 
@@ -419,7 +419,7 @@ export class TransactionManager {
    */
   async cleanup() {
     const activeIds = Array.from(this.activeTransactions.keys());
-    
+
     for (const transactionId of activeIds) {
       try {
         await this.rollbackTransaction(transactionId, 'Cleanup on shutdown');

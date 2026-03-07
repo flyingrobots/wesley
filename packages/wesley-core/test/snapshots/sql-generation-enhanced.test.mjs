@@ -4,7 +4,7 @@
  */
 
 import { test, describe } from 'node:test';
-import assert from 'node:assert';
+import _assert from 'node:assert';
 import { writeFileSync, readFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -26,16 +26,16 @@ if (!existsSync(snapshotsDir)) {
 function toMatchSnapshot(actual, testName, snapshotName = 'default') {
   const fileName = `${testName}.${snapshotName}.snap`;
   const filePath = join(snapshotsDir, fileName);
-  
+
   // Normalize line endings and whitespace for consistent snapshots
   const normalizedActual = actual
     .replace(/\r\n/g, '\n')
     .replace(/\s+$/gm, '') // Remove trailing whitespace
     .trim();
-  
+
   if (existsSync(filePath)) {
     const expectedContent = readFileSync(filePath, 'utf-8').trim();
-    
+
     if (normalizedActual !== expectedContent) {
       // Update snapshot if UPDATE_SNAPSHOTS env var is set
       if (process.env.UPDATE_SNAPSHOTS) {
@@ -43,14 +43,14 @@ function toMatchSnapshot(actual, testName, snapshotName = 'default') {
         console.log(`Updated snapshot: ${fileName}`);
         return;
       }
-      
+
       // Provide detailed diff information
       console.log('\nSnapshot mismatch:');
       console.log('Expected:');
       console.log(expectedContent);
       console.log('\nActual:');
       console.log(normalizedActual);
-      
+
       throw new Error(`Snapshot mismatch for ${fileName}. Set UPDATE_SNAPSHOTS=1 to update.`);
     }
   } else {
@@ -285,7 +285,7 @@ describe('SQL Generation Snapshots', () => {
             name: 'orgId',
             type: 'UUID',
             nonNull: true,
-            directives: { 
+            directives: {
               '@tenant': { column: 'orgId' },
               '@foreignKey': { ref: 'Organization.id' }
             }
@@ -342,7 +342,7 @@ describe('SQL Generation Snapshots', () => {
             name: 'status',
             type: 'String',
             nonNull: true,
-            directives: { 
+            directives: {
               '@default': { value: "'draft'" },
               '@index': { where: "status = 'published'" }
             }
@@ -490,7 +490,7 @@ describe('SQL Generation Snapshots', () => {
             name: 'tenantId',
             type: 'UUID',
             nonNull: true,
-            directives: { 
+            directives: {
               '@tenant': { column: 'tenantId' },
               '@foreignKey': { ref: 'Tenant.id' },
               '@index': {}
@@ -522,7 +522,7 @@ describe('SQL Generation Snapshots', () => {
             name: 'tenantId',
             type: 'UUID',
             nonNull: true,
-            directives: { 
+            directives: {
               '@tenant': { column: 'tenantId' },
               '@foreignKey': { ref: 'Tenant.id' },
               '@index': {}
@@ -532,7 +532,7 @@ describe('SQL Generation Snapshots', () => {
             name: 'ownerId',
             type: 'UUID',
             nonNull: true,
-            directives: { 
+            directives: {
               '@owner': { column: 'ownerId' },
               '@foreignKey': { ref: 'User.id' },
               '@index': {}
@@ -557,10 +557,10 @@ describe('SQL Generation Snapshots', () => {
 test('snapshot-testing-utility-works', () => {
   const testContent = `SELECT * FROM users WHERE id = 1;
 SELECT * FROM posts WHERE author_id = 1;`;
-  
+
   // This should create a snapshot file
   toMatchSnapshot(testContent, 'snapshot-utility-test');
-  
+
   // Second call should match the snapshot
   toMatchSnapshot(testContent, 'snapshot-utility-test');
 });

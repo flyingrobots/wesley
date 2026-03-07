@@ -38,29 +38,29 @@ function nfc(s) {
  */
 function extractValue(node) {
   switch (node.kind) {
-    case 'StringValue':
-      return nfc(node.value);
-    case 'IntValue':
-      return parseInt(node.value, 10);
-    case 'FloatValue':
-      return parseFloat(node.value);
-    case 'BooleanValue':
-      return node.value;
-    case 'NullValue':
-      return null;
-    case 'EnumValue':
-      return nfc(node.value);
-    case 'ListValue':
-      return node.values.map(extractValue);
-    case 'ObjectValue': {
-      const obj = {};
-      for (const field of [...node.fields].sort((a, b) => codePointCompare(a.name.value, b.name.value))) {
-        obj[nfc(field.name.value)] = extractValue(field.value);
-      }
-      return obj;
+  case 'StringValue':
+    return nfc(node.value);
+  case 'IntValue':
+    return parseInt(node.value, 10);
+  case 'FloatValue':
+    return parseFloat(node.value);
+  case 'BooleanValue':
+    return node.value;
+  case 'NullValue':
+    return null;
+  case 'EnumValue':
+    return nfc(node.value);
+  case 'ListValue':
+    return node.values.map(extractValue);
+  case 'ObjectValue': {
+    const obj = {};
+    for (const field of [...node.fields].sort((a, b) => codePointCompare(a.name.value, b.name.value))) {
+      obj[nfc(field.name.value)] = extractValue(field.value);
     }
-    default:
-      throw new Error(`Unknown AST value kind: ${node.kind}`);
+    return obj;
+  }
+  default:
+    throw new Error(`Unknown AST value kind: ${node.kind}`);
   }
 }
 
@@ -77,7 +77,7 @@ function canonicalDirective(dir) {
   if (args.length > 0) {
     result.arguments = args.map(a => ({
       name: nfc(a.name.value),
-      value: extractValue(a.value),
+      value: extractValue(a.value)
     }));
   }
   return result;
@@ -119,14 +119,14 @@ function sortDirectives(directives) {
  */
 function canonicalType(typeNode) {
   switch (typeNode.kind) {
-    case 'NamedType':
-      return { kind: 'Named', name: nfc(typeNode.name.value) };
-    case 'ListType':
-      return { kind: 'List', type: canonicalType(typeNode.type) };
-    case 'NonNullType':
-      return { kind: 'NonNull', type: canonicalType(typeNode.type) };
-    default:
-      throw new Error(`Unknown type kind: ${typeNode.kind}`);
+  case 'NamedType':
+    return { kind: 'Named', name: nfc(typeNode.name.value) };
+  case 'ListType':
+    return { kind: 'List', type: canonicalType(typeNode.type) };
+  case 'NonNullType':
+    return { kind: 'NonNull', type: canonicalType(typeNode.type) };
+  default:
+    throw new Error(`Unknown type kind: ${typeNode.kind}`);
   }
 }
 
@@ -138,7 +138,7 @@ function canonicalType(typeNode) {
 function canonicalInputValue(node) {
   const result = {
     name: nfc(node.name.value),
-    type: canonicalType(node.type),
+    type: canonicalType(node.type)
   };
   if (node.defaultValue) {
     result.defaultValue = extractValue(node.defaultValue);
@@ -157,7 +157,7 @@ function canonicalInputValue(node) {
 function canonicalFieldDef(field) {
   const result = {
     name: nfc(field.name.value),
-    type: canonicalType(field.type),
+    type: canonicalType(field.type)
   };
   // Arguments sorted by name
   if (field.arguments && field.arguments.length > 0) {
@@ -195,7 +195,7 @@ const EXTENSION_MAP = {
   UnionTypeExtension: 'UnionTypeDefinition',
   EnumTypeExtension: 'EnumTypeDefinition',
   InputObjectTypeExtension: 'InputObjectTypeDefinition',
-  ScalarTypeExtension: 'ScalarTypeDefinition',
+  ScalarTypeExtension: 'ScalarTypeDefinition'
 };
 
 /**
@@ -290,7 +290,7 @@ function mergeExtension(base, ext) {
 function canonicalObjectType(def) {
   const result = {
     kind: def.kind === 'InterfaceTypeDefinition' ? 'InterfaceTypeDefinition' : 'ObjectTypeDefinition',
-    name: nfc(def.name.value),
+    name: nfc(def.name.value)
   };
   if (def.interfaces && def.interfaces.length > 0) {
     result.interfaces = [...def.interfaces]
@@ -311,7 +311,7 @@ function canonicalObjectType(def) {
 function canonicalUnionType(def) {
   const result = {
     kind: 'UnionTypeDefinition',
-    name: nfc(def.name.value),
+    name: nfc(def.name.value)
   };
   if (def.types && def.types.length > 0) {
     result.members = [...def.types]
@@ -327,7 +327,7 @@ function canonicalUnionType(def) {
 function canonicalEnumType(def) {
   const result = {
     kind: 'EnumTypeDefinition',
-    name: nfc(def.name.value),
+    name: nfc(def.name.value)
   };
   if (def.values && def.values.length > 0) {
     result.values = [...def.values]
@@ -343,7 +343,7 @@ function canonicalEnumType(def) {
 function canonicalInputObjectType(def) {
   const result = {
     kind: 'InputObjectTypeDefinition',
-    name: nfc(def.name.value),
+    name: nfc(def.name.value)
   };
   if (def.fields && def.fields.length > 0) {
     result.fields = [...def.fields]
@@ -359,7 +359,7 @@ function canonicalInputObjectType(def) {
 function canonicalScalarType(def) {
   const result = {
     kind: 'ScalarTypeDefinition',
-    name: nfc(def.name.value),
+    name: nfc(def.name.value)
   };
   if (def.directives && def.directives.length > 0) {
     result.directives = sortDirectives(def.directives);
@@ -375,7 +375,7 @@ function canonicalSchemaDefinition(def) {
   if (ops.length > 0) {
     result.operationTypes = ops.map(op => ({
       operation: op.operation,
-      type: nfc(op.type.name.value),
+      type: nfc(op.type.name.value)
     }));
   }
   if (def.directives && def.directives.length > 0) {
@@ -387,7 +387,7 @@ function canonicalSchemaDefinition(def) {
 function canonicalDirectiveDefinition(def) {
   const result = {
     kind: 'DirectiveDefinition',
-    name: nfc(def.name.value),
+    name: nfc(def.name.value)
   };
   if (def.arguments && def.arguments.length > 0) {
     result.arguments = [...def.arguments]
@@ -412,23 +412,23 @@ function canonicalDirectiveDefinition(def) {
  */
 function canonicalDefinition(def) {
   switch (def.kind) {
-    case 'ObjectTypeDefinition':
-    case 'InterfaceTypeDefinition':
-      return canonicalObjectType(def);
-    case 'UnionTypeDefinition':
-      return canonicalUnionType(def);
-    case 'EnumTypeDefinition':
-      return canonicalEnumType(def);
-    case 'InputObjectTypeDefinition':
-      return canonicalInputObjectType(def);
-    case 'ScalarTypeDefinition':
-      return canonicalScalarType(def);
-    case 'SchemaDefinition':
-      return canonicalSchemaDefinition(def);
-    case 'DirectiveDefinition':
-      return canonicalDirectiveDefinition(def);
-    default:
-      throw new Error(`Unsupported definition kind: ${def.kind}`);
+  case 'ObjectTypeDefinition':
+  case 'InterfaceTypeDefinition':
+    return canonicalObjectType(def);
+  case 'UnionTypeDefinition':
+    return canonicalUnionType(def);
+  case 'EnumTypeDefinition':
+    return canonicalEnumType(def);
+  case 'InputObjectTypeDefinition':
+    return canonicalInputObjectType(def);
+  case 'ScalarTypeDefinition':
+    return canonicalScalarType(def);
+  case 'SchemaDefinition':
+    return canonicalSchemaDefinition(def);
+  case 'DirectiveDefinition':
+    return canonicalDirectiveDefinition(def);
+  default:
+    throw new Error(`Unsupported definition kind: ${def.kind}`);
   }
 }
 

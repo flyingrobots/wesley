@@ -9,7 +9,7 @@ import { Field } from '../../src/domain/Schema.mjs';
 
 test('calculates field weights correctly', () => {
   const strategy = new TestDepthStrategy();
-  
+
   // Primary key field - high weight
   const pkField = new Field({
     name: 'id',
@@ -17,24 +17,24 @@ test('calculates field weights correctly', () => {
     nonNull: true,
     directives: { '@primaryKey': {} }
   });
-  
+
   const pkWeight = strategy.calculateFieldWeight(pkField);
   assert(pkWeight >= 40, 'Primary key should have high weight');
-  
+
   // Critical + sensitive field - very high weight
   const criticalField = new Field({
     name: 'password_hash',
     type: 'String',
     nonNull: true,
-    directives: { 
+    directives: {
       '@critical': {},
       '@sensitive': {}
     }
   });
-  
+
   const criticalWeight = strategy.calculateFieldWeight(criticalField);
   assert(criticalWeight >= 80, 'Critical sensitive field should have very high weight');
-  
+
   // Simple nullable field - low weight
   const simpleField = new Field({
     name: 'description',
@@ -42,10 +42,10 @@ test('calculates field weights correctly', () => {
     nonNull: false,
     directives: {}
   });
-  
+
   const simpleWeight = strategy.calculateFieldWeight(simpleField);
   assert(simpleWeight < 30, 'Simple field should have low weight');
-  
+
   // Foreign key with index - medium-high weight
   const fkField = new Field({
     name: 'user_id',
@@ -56,7 +56,7 @@ test('calculates field weights correctly', () => {
       '@index': {}
     }
   });
-  
+
   const fkWeight = strategy.calculateFieldWeight(fkField);
   assert(fkWeight >= 50 && fkWeight <= 70, 'FK with index should have medium-high weight');
 });
@@ -67,7 +67,7 @@ test('determines correct test depth based on weight', () => {
     standardThreshold: 50,
     comprehensiveThreshold: 80
   });
-  
+
   // Low weight field
   const lowWeightField = { directives: {} };
   const lowDepth = strategy.getFieldTestDepth({
@@ -79,7 +79,7 @@ test('determines correct test depth based on weight', () => {
     getDefault: () => null
   });
   assert.equal(lowDepth, 'minimal');
-  
+
   // Medium weight field (FK)
   const mediumWeightField = {
     directives: {},
@@ -92,7 +92,7 @@ test('determines correct test depth based on weight', () => {
   };
   const mediumDepth = strategy.getFieldTestDepth(mediumWeightField);
   assert.equal(mediumDepth, 'comprehensive');
-  
+
   // High weight field (PK + Critical)
   const highWeightField = {
     directives: { '@critical': {} },
@@ -109,15 +109,15 @@ test('determines correct test depth based on weight', () => {
 
 test('generates minimal tests for low-weight fields', () => {
   const strategy = new TestDepthStrategy();
-  
+
   const field = new Field({
     name: 'notes',
     type: 'String',
     nonNull: false
   });
-  
+
   const tests = strategy.generateMinimalTests(field, 'users');
-  
+
   // Should only have existence and type tests
   assert(tests.some(t => t.includes('has_column')), 'Should test column existence');
   assert(tests.some(t => t.includes('col_type_is')), 'Should test column type');
@@ -126,7 +126,7 @@ test('generates minimal tests for low-weight fields', () => {
 
 test('generates standard tests including constraints', () => {
   const strategy = new TestDepthStrategy();
-  
+
   const field = new Field({
     name: 'email',
     type: 'String',
@@ -135,16 +135,16 @@ test('generates standard tests including constraints', () => {
       '@unique': {}
     }
   });
-  
+
   const tests = strategy.generateStandardTests(field, 'users');
-  
+
   assert(tests.some(t => t.includes('col_not_null')), 'Should test not null');
   assert(tests.some(t => t.includes('col_is_unique')), 'Should test unique constraint');
 });
 
 test('generates comprehensive tests including behavior', () => {
   const strategy = new TestDepthStrategy();
-  
+
   const field = new Field({
     name: 'email',
     type: 'String',
@@ -153,21 +153,21 @@ test('generates comprehensive tests including behavior', () => {
       '@default': { value: 'noreply@example.com' }
     }
   });
-  
+
   const tests = strategy.generateComprehensiveTests(field, 'users');
-  
+
   // Should include email validation tests
   assert(tests.some(t => t.includes('email format validation')), 'Should test email format');
   assert(tests.some(t => t.includes('valid@example.com')), 'Should test valid email');
   assert(tests.some(t => t.includes('invalid-email')), 'Should test invalid email');
-  
+
   // Should include default value test
   assert(tests.some(t => t.includes('default value')), 'Should test default value');
 });
 
 test('generates exhaustive tests including performance', () => {
   const strategy = new TestDepthStrategy();
-  
+
   const field = new Field({
     name: 'tags',
     type: 'String',
@@ -178,24 +178,24 @@ test('generates exhaustive tests including performance', () => {
       '@critical': {}
     }
   });
-  
+
   const tests = strategy.generateExhaustiveTests(field, 'posts');
-  
+
   // Should include index performance test
   assert(tests.some(t => t.includes('index performance')), 'Should test index performance');
   assert(tests.some(t => t.includes('Index Scan')), 'Should verify index usage');
-  
+
   // Should include array element tests
   assert(tests.some(t => t.includes('array field')), 'Should test array field');
   assert(tests.some(t => t.includes('NULL elements')), 'Should test non-null array elements');
-  
+
   // Should include concurrency tests for critical fields
   assert(tests.some(t => t.includes('concurrent access')), 'Should test concurrent access');
 });
 
 test('generates appropriate test summary', () => {
   const strategy = new TestDepthStrategy();
-  
+
   const field = new Field({
     name: 'user_id',
     type: 'ID',
@@ -206,11 +206,11 @@ test('generates appropriate test summary', () => {
       '@critical': {}
     }
   });
-  
+
   const weight = strategy.calculateFieldWeight(field);
   const depth = strategy.getFieldTestDepth(field);
   const summary = strategy.generateTestSummary(field, depth, weight);
-  
+
   assert(summary.includes('Field: user_id'), 'Should include field name');
   assert(summary.includes('Weight:'), 'Should include weight');
   assert(summary.includes('Test Depth:'), 'Should include depth level');
@@ -225,7 +225,7 @@ test('respects custom thresholds', () => {
     standardThreshold: 30,
     comprehensiveThreshold: 60
   });
-  
+
   // Field with weight around 40
   const field = {
     directives: {},
@@ -236,14 +236,14 @@ test('respects custom thresholds', () => {
     getDefault: () => null,
     nonNull: false
   };
-  
+
   const depth = strategy.getFieldTestDepth(field);
   assert.equal(depth, 'comprehensive', 'Should use custom threshold (40 > 30 but < 60)');
 });
 
 test('caps weight at 100', () => {
   const strategy = new TestDepthStrategy();
-  
+
   // Field with all the things
   const overloadedField = new Field({
     name: 'super_field',
@@ -263,7 +263,7 @@ test('caps weight at 100', () => {
       '@weight': { value: 100 }
     }
   });
-  
+
   const weight = strategy.calculateFieldWeight(overloadedField);
   assert.equal(weight, 100, 'Weight should be capped at 100');
 });

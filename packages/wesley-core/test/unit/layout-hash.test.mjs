@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {
   buildLayoutDescriptor,
   computeLayoutHash,
-  encodingForType,
+  encodingForType
 } from '../../src/domain/layoutHash.mjs';
 
 // ─── encodingForType mapping ────────────────────────────────────────
@@ -57,8 +57,8 @@ test('buildLayoutDescriptor: OBJECT fields sorted alphabetically', () => {
     kind: 'OBJECT',
     fields: [
       { name: 'z_field', type: 'Int', required: true, list: false },
-      { name: 'a_field', type: 'String', required: true, list: false },
-    ],
+      { name: 'a_field', type: 'String', required: true, list: false }
+    ]
   });
   assert.equal(desc.fields[0].name, 'a_field');
   assert.equal(desc.fields[1].name, 'z_field');
@@ -68,7 +68,7 @@ test('buildLayoutDescriptor: ENUM has sorted variants', () => {
   const desc = buildLayoutDescriptor({
     name: 'Direction',
     kind: 'ENUM',
-    values: ['SOUTH', 'NORTH', 'EAST', 'WEST'],
+    values: ['SOUTH', 'NORTH', 'EAST', 'WEST']
   });
   assert.deepEqual(desc.variants, ['EAST', 'NORTH', 'SOUTH', 'WEST']);
   assert.equal(desc.variant_encoding, 'enum_u32_le');
@@ -78,7 +78,7 @@ test('buildLayoutDescriptor: includes format and endian', () => {
   const desc = buildLayoutDescriptor({
     name: 'X',
     kind: 'OBJECT',
-    fields: [],
+    fields: []
   });
   assert.equal(desc.format, 'raw_le/v1');
   assert.equal(desc.endian, 'little');
@@ -87,15 +87,15 @@ test('buildLayoutDescriptor: includes format and endian', () => {
 
 test('buildLayoutDescriptor: resolves enum field kind via typeIndex', () => {
   const typeIndex = new Map([
-    ['Status', { name: 'Status', kind: 'ENUM', values: ['A', 'B'] }],
+    ['Status', { name: 'Status', kind: 'ENUM', values: ['A', 'B'] }]
   ]);
   const desc = buildLayoutDescriptor(
     {
       name: 'User',
       kind: 'OBJECT',
-      fields: [{ name: 'status', type: 'Status', required: true, list: false }],
+      fields: [{ name: 'status', type: 'Status', required: true, list: false }]
     },
-    typeIndex,
+    typeIndex
   );
   assert.equal(desc.fields[0].encoding, 'enum_u32_le');
 });
@@ -106,7 +106,7 @@ test('computeLayoutHash: returns 64-char lowercase hex', async () => {
   const desc = buildLayoutDescriptor({
     name: 'Foo',
     kind: 'OBJECT',
-    fields: [{ name: 'x', type: 'Int', required: true, list: false }],
+    fields: [{ name: 'x', type: 'Int', required: true, list: false }]
   });
   const hash = await computeLayoutHash(desc);
   assert.match(hash, /^[0-9a-f]{64}$/);
@@ -116,7 +116,7 @@ test('computeLayoutHash: deterministic — same descriptor → same hash', async
   const desc = buildLayoutDescriptor({
     name: 'Foo',
     kind: 'OBJECT',
-    fields: [{ name: 'x', type: 'Int', required: true, list: false }],
+    fields: [{ name: 'x', type: 'Int', required: true, list: false }]
   });
   const a = await computeLayoutHash(desc);
   const b = await computeLayoutHash(desc);
@@ -129,7 +129,7 @@ test('adding a field → different hash', async () => {
   const base = { name: 'T', kind: 'OBJECT', fields: [{ name: 'a', type: 'Int', required: true, list: false }] };
   const extended = { name: 'T', kind: 'OBJECT', fields: [
     { name: 'a', type: 'Int', required: true, list: false },
-    { name: 'b', type: 'String', required: true, list: false },
+    { name: 'b', type: 'String', required: true, list: false }
   ]};
   const a = await computeLayoutHash(buildLayoutDescriptor(base));
   const b = await computeLayoutHash(buildLayoutDescriptor(extended));
@@ -139,7 +139,7 @@ test('adding a field → different hash', async () => {
 test('removing a field → different hash', async () => {
   const full = { name: 'T', kind: 'OBJECT', fields: [
     { name: 'a', type: 'Int', required: true, list: false },
-    { name: 'b', type: 'String', required: true, list: false },
+    { name: 'b', type: 'String', required: true, list: false }
   ]};
   const partial = { name: 'T', kind: 'OBJECT', fields: [{ name: 'a', type: 'Int', required: true, list: false }] };
   const a = await computeLayoutHash(buildLayoutDescriptor(full));
@@ -165,11 +165,11 @@ test('changing type name → different hash', async () => {
 test('same fields different declaration order → same hash (alphabetical sort)', async () => {
   const orderA = { name: 'T', kind: 'OBJECT', fields: [
     { name: 'b', type: 'String', required: true, list: false },
-    { name: 'a', type: 'Int', required: true, list: false },
+    { name: 'a', type: 'Int', required: true, list: false }
   ]};
   const orderB = { name: 'T', kind: 'OBJECT', fields: [
     { name: 'a', type: 'Int', required: true, list: false },
-    { name: 'b', type: 'String', required: true, list: false },
+    { name: 'b', type: 'String', required: true, list: false }
   ]};
   const a = await computeLayoutHash(buildLayoutDescriptor(orderA));
   const b = await computeLayoutHash(buildLayoutDescriptor(orderB));
@@ -192,8 +192,8 @@ test('golden: simple-object (Foo with age:Int, name:String)', async () => {
     kind: 'OBJECT',
     fields: [
       { name: 'age', type: 'Int', required: true, list: false },
-      { name: 'name', type: 'String', required: true, list: false },
-    ],
+      { name: 'name', type: 'String', required: true, list: false }
+    ]
   });
   const hash = await computeLayoutHash(desc);
   assert.equal(hash, '18855c79f3f2992b7f32a992bb2b2458b14822eeed8f4eefedb53bb6ea754fc0');
@@ -205,8 +205,8 @@ test('golden: object-with-optional (Bar with active:Boolean!, score:Float?)', as
     kind: 'OBJECT',
     fields: [
       { name: 'score', type: 'Float', required: false, list: false },
-      { name: 'active', type: 'Boolean', required: true, list: false },
-    ],
+      { name: 'active', type: 'Boolean', required: true, list: false }
+    ]
   });
   const hash = await computeLayoutHash(desc);
   assert.equal(hash, '9287dde957145246c01bfa2977c42ff364b9e9adcb1a77abb7a3f0f6bac7c15e');
@@ -216,7 +216,7 @@ test('golden: enum-type (Status)', async () => {
   const desc = buildLayoutDescriptor({
     name: 'Status',
     kind: 'ENUM',
-    values: ['ACTIVE', 'INACTIVE', 'PENDING'],
+    values: ['ACTIVE', 'INACTIVE', 'PENDING']
   });
   const hash = await computeLayoutHash(desc);
   assert.equal(hash, '834e09cac92029e872d78a3da5844ccc631c81bc0ded1b5fcb530e1aa679ad09');
@@ -228,8 +228,8 @@ test('golden: object-with-list (Inventory with id:ID!, tags:[String]!)', async (
     kind: 'OBJECT',
     fields: [
       { name: 'tags', type: 'String', required: true, list: true },
-      { name: 'id', type: 'ID', required: true, list: false },
-    ],
+      { name: 'id', type: 'ID', required: true, list: false }
+    ]
   });
   const hash = await computeLayoutHash(desc);
   assert.equal(hash, '2059a166bf17d4ed7322cdd46c2e99a621e797c5fd446af8c5a2b4918070700f');
@@ -241,8 +241,8 @@ test('golden: object-with-nested (Order with item:Product!, quantity:Int!)', asy
     kind: 'OBJECT',
     fields: [
       { name: 'item', type: 'Product', required: true, list: false },
-      { name: 'quantity', type: 'Int', required: true, list: false },
-    ],
+      { name: 'quantity', type: 'Int', required: true, list: false }
+    ]
   });
   const hash = await computeLayoutHash(desc);
   assert.equal(hash, 'b9b819b4c1430e257e33416babc0bd8126b48802ddd81daf6cd2051723f5af2c');

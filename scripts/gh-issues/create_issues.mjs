@@ -37,20 +37,20 @@ function ghGraphQL(query, variables) {
 function tryDeleteProjectField(projectId, fieldId) {
   // Attempt common deletion shapes; ignore failures (idempotent behavior)
   try {
-    const m1 = `mutation($projectId:ID!,$fieldId:ID!){ deleteProjectV2Field(input:{ projectId:$projectId, fieldId:$fieldId }){ projectV2{ id } } }`;
+    const m1 = 'mutation($projectId:ID!,$fieldId:ID!){ deleteProjectV2Field(input:{ projectId:$projectId, fieldId:$fieldId }){ projectV2{ id } } }';
     ghGraphQL(m1, { projectId, fieldId });
     return true;
-  } catch {}
+  } catch { /* empty */ }
   try {
-    const m2 = `mutation($fieldId:ID!){ deleteProjectV2Field(input:{ fieldId:$fieldId }){ projectV2{ id } } }`;
+    const m2 = 'mutation($fieldId:ID!){ deleteProjectV2Field(input:{ fieldId:$fieldId }){ projectV2{ id } } }';
     ghGraphQL(m2, { fieldId });
     return true;
-  } catch {}
+  } catch { /* empty */ }
   return false;
 }
 
 function getRepoId(owner, repo) {
-  const q = `query($owner:String!,$repo:String!){ repository(owner:$owner,name:$repo){ id } }`;
+  const q = 'query($owner:String!,$repo:String!){ repository(owner:$owner,name:$repo){ id } }';
   const r = ghGraphQL(q, { owner, repo });
   const id = r?.data?.repository?.id;
   if (!id) throw new Error('Unable to resolve repository id');
@@ -60,14 +60,14 @@ function getRepoId(owner, repo) {
 function getProjectId({ owner, repo, projectTitle, projectId, isOrg }) {
   if (projectId) return projectId;
   if (isOrg) {
-    const q = `query($owner:String!,$title:String!){ organization(login:$owner){ projectsV2(first:50, query:$title){ nodes{ id title number } } } }`;
+    const q = 'query($owner:String!,$title:String!){ organization(login:$owner){ projectsV2(first:50, query:$title){ nodes{ id title number } } } }';
     const r = ghGraphQL(q, { owner, title: projectTitle });
     const nodes = r?.data?.organization?.projectsV2?.nodes || [];
     const node = nodes.find(n => n.title === projectTitle) || nodes[0];
     if (!node) throw new Error(`Org project not found: ${projectTitle}`);
     return node.id;
   }
-  const q = `query($owner:String!,$repo:String!,$title:String!){ repository(owner:$owner,name:$repo){ projectsV2(first:50, query:$title){ nodes{ id title number } } } }`;
+  const q = 'query($owner:String!,$repo:String!,$title:String!){ repository(owner:$owner,name:$repo){ projectsV2(first:50, query:$title){ nodes{ id title number } } } }';
   const r = ghGraphQL(q, { owner, repo, title: projectTitle });
   const nodes = r?.data?.repository?.projectsV2?.nodes || [];
   const node = nodes.find(n => n.title === projectTitle) || nodes[0];
@@ -76,7 +76,7 @@ function getProjectId({ owner, repo, projectTitle, projectId, isOrg }) {
 }
 
 function getOrCreateFields(projectId) {
-  const q = `query($id:ID!){ node(id:$id){ ... on ProjectV2 { fields(first:100){ nodes{ id name dataType ... on ProjectV2SingleSelectField { options{ id name } } } } } } }`;
+  const q = 'query($id:ID!){ node(id:$id){ ... on ProjectV2 { fields(first:100){ nodes{ id name dataType ... on ProjectV2SingleSelectField { options{ id name } } } } } } }';
   const r = ghGraphQL(q, { id: projectId });
   const fields = (r?.data?.node?.fields?.nodes || []).map(f => ({ id: f.id, name: f.name, dataType: f.dataType, options: f.options }));
 
@@ -90,7 +90,7 @@ function getOrCreateFields(projectId) {
   const fieldsAfter = (rAfter?.data?.node?.fields?.nodes || []).map(f => ({ id: f.id, name: f.name, dataType: f.dataType, options: f.options }));
   let priorityLabel = fieldsAfter.find(f => f.name === 'Priority' && f.dataType === 'SINGLE_SELECT');
   if (!priorityLabel) {
-    const m = `mutation($projectId:ID!){ createProjectV2Field(input:{ projectId:$projectId, dataType:SINGLE_SELECT, name:\"Priority\", options:[{name:\"P0\"},{name:\"P1\"},{name:\"P2\"},{name:\"P3\"},{name:\"P4\"}]}){ projectV2Field{ id name } } }`;
+    const m = 'mutation($projectId:ID!){ createProjectV2Field(input:{ projectId:$projectId, dataType:SINGLE_SELECT, name:"Priority", options:[{name:"P0"},{name:"P1"},{name:"P2"},{name:"P3"},{name:"P4"}]}){ projectV2Field{ id name } } }';
     ghGraphQL(m, { projectId });
   }
   // Re-fetch to get option ids
@@ -117,17 +117,17 @@ function getOrCreateFields(projectId) {
         const existing = current.find(o => o.name?.startsWith(d.code));
         return existing ? { id: existing.id, name: d.name } : { name: d.name };
       });
-      const mUp = `mutation($projectId:ID!,$fieldId:ID!,$options:[ProjectV2SingleSelectFieldOptionInput!]!){ updateProjectV2Field(input:{ projectId:$projectId, fieldId:$fieldId, name:\"Priority\", dataType:SINGLE_SELECT, singleSelectOptions:$options }){ projectV2Field{ id name } } }`;
+      const mUp = 'mutation($projectId:ID!,$fieldId:ID!,$options:[ProjectV2SingleSelectFieldOptionInput!]!){ updateProjectV2Field(input:{ projectId:$projectId, fieldId:$fieldId, name:"Priority", dataType:SINGLE_SELECT, singleSelectOptions:$options }){ projectV2Field{ id name } } }';
       ghGraphQL(mUp, { projectId, fieldId: priorityLabel.id, options: composed });
       const r3 = ghGraphQL(q, { id: projectId });
       const fields3 = (r3?.data?.node?.fields?.nodes || []);
       priorityLabel = fields3.find(f => f.name === 'Priority' && f.dataType === 'SINGLE_SELECT');
     }
-  } catch {}
+  } catch { /* empty */ }
 
   let estimate = fields.find(f => f.name === 'Estimate (human hours)' && f.dataType === 'NUMBER');
   if (!estimate) {
-    const m = `mutation($projectId:ID!){ createProjectV2Field(input:{ projectId:$projectId, dataType:NUMBER, name:\"Estimate (human hours)\"}){ projectV2Field{ id name } } }`;
+    const m = 'mutation($projectId:ID!){ createProjectV2Field(input:{ projectId:$projectId, dataType:NUMBER, name:"Estimate (human hours)"}){ projectV2Field{ id name } } }';
     const res = ghGraphQL(m, { projectId });
     estimate = { id: res?.data?.createProjectV2Field?.projectV2Field?.id, name: 'Estimate (human hours)', dataType: 'NUMBER' };
   }
@@ -141,24 +141,24 @@ function getOrCreateFields(projectId) {
 }
 
 function createIssue(repoId, title, body) {
-  const m = `mutation($repoId:ID!,$title:String!,$body:String!){ createIssue(input:{repositoryId:$repoId,title:$title,body:$body}){ issue{ id number url } } }`;
+  const m = 'mutation($repoId:ID!,$title:String!,$body:String!){ createIssue(input:{repositoryId:$repoId,title:$title,body:$body}){ issue{ id number url } } }';
   const r = ghGraphQL(m, { repoId, title, body });
   return r?.data?.createIssue?.issue;
 }
 
 function addToProject(projectId, contentId) {
-  const m = `mutation($projectId:ID!,$contentId:ID!){ addProjectV2ItemById(input:{ projectId:$projectId, contentId:$contentId }){ item{ id } } }`;
+  const m = 'mutation($projectId:ID!,$contentId:ID!){ addProjectV2ItemById(input:{ projectId:$projectId, contentId:$contentId }){ item{ id } } }';
   const r = ghGraphQL(m, { projectId, contentId });
   return r?.data?.addProjectV2ItemById?.item?.id;
 }
 
 function setProjectNumber(projectId, itemId, fieldId, numberValue) {
-  const m = `mutation($projectId:ID!,$itemId:ID!,$fieldId:ID!,$value:Float!){ updateProjectV2ItemFieldValue(input:{ projectId:$projectId, itemId:$itemId, fieldId:$fieldId, value:{ number:$value }}){ projectV2Item{ id } } }`;
+  const m = 'mutation($projectId:ID!,$itemId:ID!,$fieldId:ID!,$value:Float!){ updateProjectV2ItemFieldValue(input:{ projectId:$projectId, itemId:$itemId, fieldId:$fieldId, value:{ number:$value }}){ projectV2Item{ id } } }';
   ghGraphQL(m, { projectId, itemId, fieldId, value: Number(numberValue) });
 }
 
 function setProjectSingleSelect(projectId, itemId, fieldId, optionId) {
-  const m = `mutation($projectId:ID!,$itemId:ID!,$fieldId:ID!,$optionId:String!){ updateProjectV2ItemFieldValue(input:{ projectId:$projectId, itemId:$itemId, fieldId:$fieldId, value:{ singleSelectOptionId:$optionId }}){ projectV2Item{ id } } }`;
+  const m = 'mutation($projectId:ID!,$itemId:ID!,$fieldId:ID!,$optionId:String!){ updateProjectV2ItemFieldValue(input:{ projectId:$projectId, itemId:$itemId, fieldId:$fieldId, value:{ singleSelectOptionId:$optionId }}){ projectV2Item{ id } } }';
   ghGraphQL(m, { projectId, itemId, fieldId, optionId });
 }
 
@@ -168,7 +168,7 @@ function ensureLabels(owner, repo, labels) {
   const existing = new Set((list || []).map(l => l.name));
   for (const name of labels) {
     if (!existing.has(name)) {
-      try { sh(`gh api -X POST repos/${owner}/${repo}/labels -f name='${name}' -f color=0366d6`); } catch {}
+      try { sh(`gh api -X POST repos/${owner}/${repo}/labels -f name='${name}' -f color=0366d6`); } catch { /* empty */ }
     }
   }
 }
@@ -192,21 +192,21 @@ function ensurePriorityLabels(owner, repo) {
   for (const [name, meta] of Object.entries(palette)) {
     const existing = byName.get(name);
     if (!existing) {
-      try { sh(`gh api -X POST repos/${owner}/${repo}/labels -f name='${name}' -f color='${meta.color}' -f description='${meta.description}'`); } catch {}
+      try { sh(`gh api -X POST repos/${owner}/${repo}/labels -f name='${name}' -f color='${meta.color}' -f description='${meta.description}'`); } catch { /* empty */ }
     } else if (existing.color.toLowerCase() !== meta.color.toLowerCase()) {
       // Update color for consistency (best effort)
-      try { sh(`gh api -X PATCH repos/${owner}/${repo}/labels/${encodeURIComponent(name)} -f color='${meta.color}'`); } catch {}
+      try { sh(`gh api -X PATCH repos/${owner}/${repo}/labels/${encodeURIComponent(name)} -f color='${meta.color}'`); } catch { /* empty */ }
     }
   }
 }
 
 function linkIssuesGraphQL(sourceId, targetId, type) {
   // Attempt GraphQL linked-issues (BLOCKS/BLOCKED_BY/RELATES_TO), may not be enabled for all accounts.
-  const m = `mutation($sourceId:ID!,$targetId:ID!,$type:IssueLinkType!){ createIssueLink(input:{ sourceId:$sourceId, targetId:$targetId, type:$type }){ issueLink{ id, type } } }`;
+  const m = 'mutation($sourceId:ID!,$targetId:ID!,$type:IssueLinkType!){ createIssueLink(input:{ sourceId:$sourceId, targetId:$targetId, type:$type }){ issueLink{ id, type } } }';
   try {
     ghGraphQL(m, { sourceId, targetId, type });
     return true;
-  } catch (e) {
+  } catch (_e) {
     return false;
   }
 }
@@ -251,7 +251,7 @@ function main() {
     if (estimateFieldId) setProjectNumber(projectId, projectItemId, estimateFieldId, item.estimateHours);
     addLabels(owner, repo, issue.number, [...defaultLabels, prLabel]);
     created[item.key] = { ...issue, projectItemId };
-    // eslint-disable-next-line no-console
+
     console.log(`Created ${item.key} → #${issue.number} ${issue.url}`);
   }
 
@@ -265,7 +265,7 @@ function main() {
       let linked = false;
       if (linkMethod === 'graphql') linked = linkIssuesGraphQL(source.id, target.id, 'BLOCKED_BY');
       if (!linked) linkIssuesREST(owner, repo, source.number, target.number, 'blocked_by');
-      // eslint-disable-next-line no-console
+
       console.log(`Linked ${item.key} blocked_by ${depKey}`);
     }
   }

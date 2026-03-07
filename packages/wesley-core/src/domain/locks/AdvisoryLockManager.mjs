@@ -81,7 +81,7 @@ export class AdvisoryLockManager {
     this.retryDelay = options.retryDelay || 1000; // 1 second
     this.lockPrefix = options.lockPrefix || 'wesley';
     this.eventEmitter = options.eventEmitter || null;
-    
+
     // Track active locks by session
     this.activeLocks = new Map(); // sessionId -> Set of lockKeys
     this.lockMetadata = new Map(); // lockKey -> metadata
@@ -94,13 +94,13 @@ export class AdvisoryLockManager {
   generateLockKey(identifier) {
     const fullIdentifier = `${this.lockPrefix}:${identifier}`;
     let hash = 0;
-    
+
     for (let i = 0; i < fullIdentifier.length; i++) {
       const char = fullIdentifier.charCodeAt(i);
       hash = ((hash << 5) - hash) + char;
       hash = hash & hash; // Convert to 32-bit signed integer
     }
-    
+
     // Ensure we're within PostgreSQL's bigint range
     return Math.abs(hash);
   }
@@ -157,9 +157,9 @@ export class AdvisoryLockManager {
       const acquired = await this.executeWithTimeout(async () => {
         if (twoPartKey) {
           const { key1, key2 } = this.generateTwoPartKey(twoPartKey.namespace, twoPartKey.identifier);
-          return await this.executeLockQuery(client, key1, key2, lockType, false);
+          return this.executeLockQuery(client, key1, key2, lockType, false);
         } else {
-          return await this.executeLockQuery(client, lockKey, null, lockType, false);
+          return this.executeLockQuery(client, lockKey, null, lockType, false);
         }
       }, timeout);
 
@@ -244,12 +244,12 @@ export class AdvisoryLockManager {
     const sessionId = await this.getSessionId(client);
 
     try {
-      const result = await client.query('SELECT pg_advisory_unlock_all()');
-      
+      const _result = await client.query('SELECT pg_advisory_unlock_all()');
+
       // Clean up tracking
       const sessionLocks = this.activeLocks.get(sessionId) || new Set();
       const totalReleased = sessionLocks.size;
-      
+
       for (const lockKey of sessionLocks) {
         await this.unregisterLock(sessionId, lockKey);
       }
@@ -344,7 +344,7 @@ export class AdvisoryLockManager {
     if (key2 !== null) {
       // Two-part key
       if (tryOnly) {
-        query = isShared ? 
+        query = isShared ?
           'SELECT pg_try_advisory_lock_shared($1, $2) as acquired' :
           'SELECT pg_try_advisory_lock($1, $2) as acquired';
       } else {
@@ -397,7 +397,7 @@ export class AdvisoryLockManager {
     try {
       const result = await client.query('SELECT pg_backend_pid() as session_id');
       return result.rows[0]?.session_id.toString() || 'unknown';
-    } catch (error) {
+    } catch (_error) {
       return 'unknown';
     }
   }
@@ -409,9 +409,9 @@ export class AdvisoryLockManager {
     if (!this.activeLocks.has(sessionId)) {
       this.activeLocks.set(sessionId, new Set());
     }
-    
+
     this.activeLocks.get(sessionId).add(lockKey);
-    
+
     this.lockMetadata.set(lockKey, {
       identifier,
       lockType,
@@ -443,19 +443,19 @@ export class AdvisoryLockManager {
    * Execute with timeout
    */
   async executeWithTimeout(operation, timeoutMs) {
-    return new Promise(async (resolve, reject) => {
+    return new Promise((resolve, reject) => {
       const timeoutHandle = setTimeout(() => {
         reject(new LockTimeoutError(`Operation timed out after ${timeoutMs}ms`));
       }, timeoutMs);
 
-      try {
-        const result = await operation();
+      Promise.resolve().then(() => operation()).then(result => {
         clearTimeout(timeoutHandle);
         resolve(result);
-      } catch (error) {
+        return undefined;
+      }).catch(error => {
         clearTimeout(timeoutHandle);
         reject(error);
-      }
+      });
     });
   }
 
@@ -466,7 +466,7 @@ export class AdvisoryLockManager {
     const totalSessions = this.activeLocks.size;
     const totalLocks = Array.from(this.activeLocks.values())
       .reduce((sum, locks) => sum + locks.size, 0);
-    
+
     const locksByType = {};
     for (const metadata of this.lockMetadata.values()) {
       locksByType[metadata.lockType] = (locksByType[metadata.lockType] || 0) + 1;
@@ -485,7 +485,7 @@ export class AdvisoryLockManager {
    */
   getLockDetails() {
     const locks = [];
-    
+
     for (const [lockKey, metadata] of this.lockMetadata.entries()) {
       locks.push({
         lockKey,

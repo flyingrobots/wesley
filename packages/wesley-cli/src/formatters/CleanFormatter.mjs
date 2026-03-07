@@ -16,7 +16,7 @@ export class CleanFormatter extends EventEmitter {
       verbose: options.verbose || false,
       ...options
     };
-    
+
     this.startTime = Date.now();
     this.operations = new Map();
     this.completedCount = 0;
@@ -100,12 +100,12 @@ export class CleanFormatter extends EventEmitter {
     const timestamp = this.formatTimestamp();
     const arrow = this.colors.cyan(this.symbols.arrow);
     const name = this.colors.bold(migrationName);
-    
+
     let message = `${timestamp}${arrow} Starting migration: ${name}`;
     if (totalOperations > 0) {
       message += ` ${this.colors.dim(`(${totalOperations} operations)`)}`;
     }
-    
+
     console.log(message);
     console.log(this.colors.dim('─'.repeat(Math.min(this.options.width, 60))));
   }
@@ -118,31 +118,31 @@ export class CleanFormatter extends EventEmitter {
     let symbol, colorFn;
 
     switch (status) {
-      case 'start':
-        symbol = this.symbols.progress;
-        colorFn = this.colors.info;
-        break;
-      case 'success':
-        symbol = this.symbols.success;
-        colorFn = this.colors.success;
-        this.completedCount++;
-        break;
-      case 'error':
-        symbol = this.symbols.error;
-        colorFn = this.colors.error;
-        this.failedCount++;
-        break;
-      case 'warning':
-        symbol = this.symbols.warning;
-        colorFn = this.colors.warning;
-        break;
-      default:
-        symbol = this.symbols.info;
-        colorFn = this.colors.info;
+    case 'start':
+      symbol = this.symbols.progress;
+      colorFn = this.colors.info;
+      break;
+    case 'success':
+      symbol = this.symbols.success;
+      colorFn = this.colors.success;
+      this.completedCount++;
+      break;
+    case 'error':
+      symbol = this.symbols.error;
+      colorFn = this.colors.error;
+      this.failedCount++;
+      break;
+    case 'warning':
+      symbol = this.symbols.warning;
+      colorFn = this.colors.warning;
+      break;
+    default:
+      symbol = this.symbols.info;
+      colorFn = this.colors.info;
     }
 
     let output = `${timestamp}${colorFn(symbol)} ${message}`;
-    
+
     if (details.duration) {
       output += ` ${this.colors.dim(`(${details.duration}ms)`)}`;
     }
@@ -180,46 +180,46 @@ export class CleanFormatter extends EventEmitter {
   formatMigrationSummary(migrationName, stats = {}) {
     const duration = Date.now() - this.startTime;
     const durationSeconds = (duration / 1000).toFixed(2);
-    
+
     console.log();
     console.log(this.colors.dim('─'.repeat(Math.min(this.options.width, 60))));
-    
+
     const success = this.completedCount > 0;
     const symbol = success ? this.symbols.success : this.symbols.error;
     const colorFn = success ? this.colors.success : this.colors.error;
     const status = success ? 'COMPLETED' : 'FAILED';
-    
+
     console.log(`${colorFn(symbol)} Migration ${status}: ${this.colors.bold(migrationName)}`);
-    
+
     // Statistics
     console.log();
     console.log(this.colors.bold('Summary:'));
     console.log(`  ${this.colors.bullet} Operations completed: ${this.colors.green(this.completedCount)}`);
-    
+
     if (this.failedCount > 0) {
       console.log(`  ${this.colors.bullet} Operations failed: ${this.colors.red(this.failedCount)}`);
     }
-    
+
     console.log(`  ${this.colors.bullet} Duration: ${this.colors.cyan(`${durationSeconds}s`)}`);
-    
+
     if (stats.tablesCreated) {
       console.log(`  ${this.colors.bullet} Tables created: ${this.colors.info(stats.tablesCreated)}`);
     }
-    
+
     if (stats.indexesCreated) {
       console.log(`  ${this.colors.bullet} Indexes created: ${this.colors.info(stats.indexesCreated)}`);
     }
-    
+
     if (stats.functionsCreated) {
       console.log(`  ${this.colors.bullet} Functions created: ${this.colors.info(stats.functionsCreated)}`);
     }
 
     console.log();
-    
+
     // Show failed operations if any
     if (this.failedCount > 0) {
       console.log(this.colors.red('Failed Operations:'));
-      for (const [id, op] of this.operations) {
+      for (const [_id, op] of this.operations) {
         if (op.status === 'error') {
           console.log(`  ${this.symbols.error} ${op.message}`);
           if (op.error && !this.options.verbose) {
@@ -239,15 +239,15 @@ export class CleanFormatter extends EventEmitter {
   formatError(error, context = {}) {
     const timestamp = this.formatTimestamp();
     console.log(`${timestamp}${this.colors.error(this.symbols.error)} ${this.colors.red('ERROR:')} ${error.message}`);
-    
+
     if (context.operation) {
       console.log(`  ${this.colors.dim('Operation:')} ${context.operation}`);
     }
-    
+
     if (context.details && this.options.verbose) {
       console.log(`  ${this.colors.dim('Details:')} ${context.details}`);
     }
-    
+
     if (error.stack && this.options.verbose) {
       const stackLines = error.stack.split('\n').slice(1, 5); // Show top 4 stack frames
       stackLines.forEach(line => {
@@ -294,7 +294,7 @@ class ProgressBar {
   update(current, message = '') {
     this.current = Math.min(current, this.total);
     const now = Date.now();
-    
+
     // Throttle updates to avoid overwhelming the terminal
     if (now - this.lastUpdate < 100 && this.current < this.total) {
       return;
@@ -313,28 +313,28 @@ class ProgressBar {
     const barLength = Math.min(30, this.options.width - 50);
     const filled = Math.floor(barLength * percent);
     const empty = barLength - filled;
-    
-    const bar = this.options.colors !== false 
+
+    const bar = this.options.colors !== false
       ? `\u001b[32m${'█'.repeat(filled)}\u001b[0m${'░'.repeat(empty)}`
       : `${'#'.repeat(filled)}${'.'.repeat(empty)}`;
-    
+
     const percentText = `${(percent * 100).toFixed(1)}%`.padStart(6);
     const progress = `${this.current}/${this.total}`.padStart(10);
-    
+
     // Calculate ETA
     const elapsed = now - this.startTime;
     const eta = percent > 0 ? ((elapsed / percent) - elapsed) : 0;
     const etaText = eta > 0 ? this.formatDuration(eta) : '--:--';
-    
+
     let line = `${this.label}: [${bar}] ${percentText} ${progress} ETA: ${etaText}`;
-    
+
     if (message) {
       line += ` | ${message}`;
     }
 
     // Clear line and write new content
     process.stdout.write(`\r${line.slice(0, this.options.width - 1)}`);
-    
+
     if (this.current >= this.total) {
       process.stdout.write('\n');
     }

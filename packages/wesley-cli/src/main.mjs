@@ -10,8 +10,8 @@ import { AutomaticallyRegisteredProgram, formatError, exitCodeFor } from './fram
 import './commands.mjs';
 
 export async function main(argv, adapters) {
-  const { logger, fileSystem, process } = adapters;
-  
+  const { logger, _fileSystem, process } = adapters;
+
   // Store adapters globally for command access
   globalThis.__WESLEY_ADAPTERS = adapters;
   globalThis.__WESLEY_LOGGER = logger;
@@ -63,13 +63,13 @@ export async function main(argv, adapters) {
 
   // Set up flush on exit handlers
   process.on('beforeExit', () => logger?.flush?.());
-  process.on('SIGINT', async () => { 
-    await logger?.flush?.(); 
-    process.exit(130); 
+  process.on('SIGINT', async () => {
+    await logger?.flush?.();
+    process.exit(130);
   });
-  process.on('SIGTERM', async () => { 
-    await logger?.flush?.(); 
-    process.exit(143); 
+  process.on('SIGTERM', async () => {
+    await logger?.flush?.();
+    process.exit(143);
   });
 
   // Parse CLI arguments

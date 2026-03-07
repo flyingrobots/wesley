@@ -20,7 +20,7 @@ import {
   parseEmitsToDirective,
   parseMustEmitDirective,
   extractTtdDirectives,
-  isTtdDirective,
+  isTtdDirective
 } from '@wesley/core/ttd';
 
 describe('TTD Directive Parsing', () => {

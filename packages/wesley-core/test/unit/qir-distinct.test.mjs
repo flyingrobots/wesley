@@ -8,7 +8,7 @@ test('lowerToSQL: DISTINCT ON prefixes orderBy and renders clause', () => {
   const root = new TableNode('organization', 't0');
   const proj = new Projection([
     new ProjectionItem('id', new ColumnRef('t0', 'id')),
-    new ProjectionItem('name', new ColumnRef('t0', 'name')),
+    new ProjectionItem('name', new ColumnRef('t0', 'name'))
   ]);
   const plan = new QueryPlan(root, proj, {
     distinctOn: [ new ColumnRef('t0','name') ],

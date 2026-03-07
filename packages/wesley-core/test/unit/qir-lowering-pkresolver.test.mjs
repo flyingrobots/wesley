@@ -10,7 +10,7 @@ test('lowerToSQL: pkResolver supplies non-id tie-breaker (plain object plan)', (
     projection: { items: [ { alias: 'name', expr: { kind: 'ColumnRef', table: 't0', column: 'name' } } ] },
     orderBy: [ { expr: { kind: 'ColumnRef', table: 't0', column: 'name' }, direction: 'asc' } ],
     limit: null,
-    offset: null,
+    offset: null
   };
   const pkResolver = () => ({ kind: 'ColumnRef', table: 't0', column: 'uuid' });
   const sql = lowerToSQL(plan, null, { identPolicy: 'minimal', pkResolver });
@@ -22,7 +22,7 @@ test('lowerToSQL: pkResolver supplies non-id tie-breaker (builder plan)', () => 
     name: 'things',
     table: 'thing',
     columns: ['name'],
-    orderBy: [{ column: 'name', dir: 'asc' }],
+    orderBy: [{ column: 'name', dir: 'asc' }]
   };
   const plan = buildPlanFromJson(op);
   const pkResolver = () => ({ kind: 'ColumnRef', table: 't0', column: 'uuid' });

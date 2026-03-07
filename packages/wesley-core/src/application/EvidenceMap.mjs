@@ -27,12 +27,12 @@ export class EvidenceMap {
     if (!this.map.has(uid)) {
       this.map.set(uid, {});
     }
-    
+
     const element = this.map.get(uid);
     if (!element[kind]) {
       element[kind] = [];
     }
-    
+
     element[kind].push({
       file: location.file,
       lines: location.lines,
@@ -54,8 +54,8 @@ export class EvidenceMap {
   getCitation(uid, kind) {
     const evidence = this.getEvidence(uid);
     const locations = evidence[kind] || [];
-    
-    return locations.map(loc => 
+
+    return locations.map(loc =>
       `${loc.file}:${loc.lines}@${loc.sha.substring(0, 7)}`
     );
   }
@@ -79,7 +79,7 @@ export class EvidenceMap {
       callback(uid, evidence);
     }
   }
-  
+
   /**
    * Record an error for a schema element
    */
@@ -87,7 +87,7 @@ export class EvidenceMap {
     if (!this.errors.has(uid)) {
       this.errors.set(uid, []);
     }
-    
+
     this.errors.get(uid).push({
       message: error.message,
       type: error.type || 'validation',
@@ -97,7 +97,7 @@ export class EvidenceMap {
       stack: error.stack
     });
   }
-  
+
   /**
    * Record a warning for a schema element
    */
@@ -105,7 +105,7 @@ export class EvidenceMap {
     if (!this.warnings.has(uid)) {
       this.warnings.set(uid, []);
     }
-    
+
     this.warnings.get(uid).push({
       message: warning.message,
       type: warning.type || 'validation',
@@ -114,28 +114,28 @@ export class EvidenceMap {
       timestamp: new Date().toISOString()
     });
   }
-  
+
   /**
    * Get all errors for a schema element
    */
   getErrors(uid) {
     return this.errors.get(uid) || [];
   }
-  
+
   /**
    * Get all warnings for a schema element
    */
   getWarnings(uid) {
     return this.warnings.get(uid) || [];
   }
-  
+
   /**
    * Check if any errors exist
    */
   hasErrors() {
     return this.errors.size > 0;
   }
-  
+
   /**
    * Get all errors as an array
    */
@@ -148,7 +148,7 @@ export class EvidenceMap {
     }
     return allErrors;
   }
-  
+
   /**
    * Get all warnings as an array
    */
@@ -169,19 +169,19 @@ export class EvidenceMap {
     const result = {};
     const errors = {};
     const warnings = {};
-    
+
     for (const [uid, evidence] of this.map) {
       result[uid] = evidence;
     }
-    
+
     for (const [uid, errorList] of this.errors) {
       errors[uid] = errorList;
     }
-    
+
     for (const [uid, warningList] of this.warnings) {
       warnings[uid] = warningList;
     }
-    
+
     return {
       version: this.version,
       sha: this.sha,
@@ -200,11 +200,11 @@ export class EvidenceMap {
     map.version = json.version || '1.0.0';
     map.sha = json.sha;
     map.timestamp = json.timestamp;
-    
+
     for (const [uid, evidence] of Object.entries(json.evidence || {})) {
       map.map.set(uid, evidence);
     }
-    
+
     return map;
   }
 }

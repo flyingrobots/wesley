@@ -11,7 +11,7 @@ export class PostgreSQLAstBuilder {
   constructor() {
     this.statements = [];
   }
-  
+
   /**
    * Build PostgreSQL AST from Wesley Domain IR
    * Using pg-parser's AST structure
@@ -21,18 +21,18 @@ export class PostgreSQLAstBuilder {
       version: 160001, // PostgreSQL 16
       stmts: []
     };
-    
+
     // Build CREATE TABLE statements
     for (const table of schema.getTables()) {
       ast.stmts.push(this.buildCreateTableStmt(table));
-      
+
       // Add indexes
       for (const field of table.getFields()) {
         if (field.isIndexed()) {
           ast.stmts.push(this.buildCreateIndexStmt(table, field));
         }
       }
-      
+
       // Add RLS policies
       const rlsConfig = table.directives?.['@rls'];
       if (rlsConfig) {
@@ -40,10 +40,10 @@ export class PostgreSQLAstBuilder {
         ast.stmts.push(...this.buildRLSPolicies(table, rlsConfig));
       }
     }
-    
+
     return ast;
   }
-  
+
   /**
    * Build CREATE TABLE statement AST node
    * Following pg-parser's AST structure
@@ -76,16 +76,16 @@ export class PostgreSQLAstBuilder {
       }
     };
   }
-  
+
   /**
    * Build table elements (columns and constraints)
    */
   buildTableElements(table) {
     const elements = [];
-    
+
     for (const field of table.getFields()) {
       if (field.isVirtual()) continue;
-      
+
       elements.push({
         ColumnDef: {
           colname: field.name,
@@ -108,13 +108,13 @@ export class PostgreSQLAstBuilder {
         }
       });
     }
-    
+
     // Add table constraints
     elements.push(...this.buildTableConstraints(table));
-    
+
     return elements;
   }
-  
+
   /**
    * Build type name AST node
    */
@@ -129,9 +129,9 @@ export class PostgreSQLAstBuilder {
       'DateTime': ['pg_catalog', 'timestamptz'],
       'JSON': ['pg_catalog', 'jsonb']
     };
-    
+
     const [schema, typename] = typeMap[field.type] || ['pg_catalog', 'text'];
-    
+
     return {
       TypeName: {
         names: [
@@ -148,7 +148,7 @@ export class PostgreSQLAstBuilder {
       }
     };
   }
-  
+
   /**
    * Build default expression AST
    */
@@ -179,16 +179,16 @@ export class PostgreSQLAstBuilder {
         }
       };
     }
-    
+
     return null;
   }
-  
+
   /**
    * Build column constraints
    */
   buildColumnConstraints(field) {
     const constraints = [];
-    
+
     if (field.isPrimaryKey()) {
       constraints.push({
         Constraint: {
@@ -225,7 +225,7 @@ export class PostgreSQLAstBuilder {
         }
       });
     }
-    
+
     if (field.isUnique()) {
       constraints.push({
         Constraint: {
@@ -237,7 +237,7 @@ export class PostgreSQLAstBuilder {
         }
       });
     }
-    
+
     const fkRef = field.getForeignKeyRef();
     if (fkRef) {
       const [refTable, refColumn] = fkRef.split('.');
@@ -263,7 +263,7 @@ export class PostgreSQLAstBuilder {
         }
       });
     }
-    
+
     // Check constraints for @sensitive fields
     if (field.directives?.['@sensitive'] && field.name.includes('password')) {
       constraints.push({
@@ -284,22 +284,22 @@ export class PostgreSQLAstBuilder {
         }
       });
     }
-    
+
     return constraints;
   }
-  
+
   /**
    * Build table-level constraints
    */
-  buildTableConstraints(table) {
+  buildTableConstraints(_table) {
     const constraints = [];
-    
+
     // Add composite primary keys, unique constraints, etc.
     // This would be expanded based on directives
-    
+
     return constraints;
   }
-  
+
   /**
    * Build CREATE INDEX statement
    */
@@ -354,7 +354,7 @@ export class PostgreSQLAstBuilder {
       }
     };
   }
-  
+
   /**
    * Build ALTER TABLE ENABLE RLS statement
    */
@@ -389,16 +389,16 @@ export class PostgreSQLAstBuilder {
       }
     };
   }
-  
+
   /**
    * Build RLS policy statements
    */
   buildRLSPolicies(table, rlsConfig) {
     const policies = [];
-    
+
     // Create policy for each operation
     const operations = ['select', 'insert', 'update', 'delete'];
-    
+
     for (const op of operations) {
       if (rlsConfig[op]) {
         policies.push({
@@ -424,10 +424,10 @@ export class PostgreSQLAstBuilder {
         });
       }
     }
-    
+
     return policies;
   }
-  
+
   /**
    * Parse expression string to AST
    * This is simplified - pg-parser would handle this properly
@@ -441,7 +441,7 @@ export class PostgreSQLAstBuilder {
     if (expr === 'false') {
       return { A_Const: { val: { Boolean: { boolval: false } } } };
     }
-    
+
     // For auth.uid() expressions
     if (expr.includes('auth.uid()')) {
       return {
@@ -454,22 +454,22 @@ export class PostgreSQLAstBuilder {
         }
       };
     }
-    
+
     // Would parse complex expressions properly with pg-parser
     return { A_Expr: { kind: 'AEXPR_OP' } };
   }
-  
+
   /**
    * Convert AST back to SQL using pg-parser's deparse
    */
-  toSQL(ast) {
+  toSQL(_ast) {
     // This would use: return deparse(ast);
     // For demonstration, we'll return a placeholder
     return '-- SQL would be generated here using pg-parser deparse()';
   }
-  
+
   // Helper methods
-  
+
   parseFunctionName(expr) {
     // Extract function name from expression like "gen_random_uuid()"
     const match = expr.match(/^(\w+)\(/);
@@ -478,7 +478,7 @@ export class PostgreSQLAstBuilder {
     }
     return [{ String: { sval: expr } }];
   }
-  
+
   buildConstValue(value) {
     if (typeof value === 'string') {
       return { String: { sval: value } };

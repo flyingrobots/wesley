@@ -28,7 +28,7 @@ export function emitFunction(opName, plan, {
   identPolicy = 'strict',
   pkResolver = null,
   security = 'invoker',
-  setSearchPath = null,
+  setSearchPath = null
 } = {}) {
   const name = qualifiedOpName(schema, opName);
   const paramEnv = collectParams(plan);
@@ -49,11 +49,11 @@ export function emitFunction(opName, plan, {
 
   return [
     `CREATE OR REPLACE FUNCTION ${name}(${params})`,
-    `RETURNS SETOF jsonb`,
+    'RETURNS SETOF jsonb',
     ...attrs,
-    `AS $$`,
+    'AS $$',
     body,
-    `$$;`
+    '$$;'
   ].join('\n');
 }
 

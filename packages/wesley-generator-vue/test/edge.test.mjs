@@ -12,10 +12,10 @@ describe('generateVue edge cases', () => {
             { name: 'id', type: 'ID', required: true },
             { name: 'maybe', type: 'String', required: false },
             { name: 'flag', type: 'Boolean', required: true },
-            { name: 'count', type: 'Int', required: true },
-          ],
-        },
-      ],
+            { name: 'count', type: 'Int', required: true }
+          ]
+        }
+      ]
     };
 
     const result = await generateVue(ir);
@@ -35,10 +35,10 @@ describe('generateVue edge cases', () => {
           kind: 'OBJECT',
           fields: [
             { name: 'tags', type: 'String', required: true, list: true },
-            { name: 'mystery', type: 'NotInIR', required: true },
-          ],
-        },
-      ],
+            { name: 'mystery', type: 'NotInIR', required: true }
+          ]
+        }
+      ]
     };
 
     const result = await generateVue(ir);

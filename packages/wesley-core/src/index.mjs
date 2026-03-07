@@ -20,19 +20,19 @@ export * from './domain/Events.mjs';
 
 // Note: SQLExecutor moved to host-node adapters per ENSIGN reorganization
 
-export { 
-  MigrationExplainer, 
-  MigrationOperation, 
+export {
+  MigrationExplainer,
+  MigrationOperation,
   MigrationAnalysisSummary,
-  PostgreSQLLockLevels 
+  PostgreSQLLockLevels
 } from './domain/explainer/MigrationExplainer.mjs';
 
-export { 
-  CICOrchestrator, 
-  CICOperation, 
+export {
+  CICOrchestrator,
+  CICOperation,
   CICExecutionStrategy,
   CICProgressTracker,
-  CICOperationResult 
+  CICOperationResult
 } from './domain/orchestrator/CICOrchestrator.mjs';
 
 // Application Layer
@@ -47,14 +47,14 @@ export { discoverPlugins } from './application/PluginDiscovery.mjs';
 export { validateConfig, KNOWN_EXPERIMENTAL_FLAGS } from './application/ConfigValidator.mjs';
 
 // Safety Components (Wave 3)
-export { 
+export {
   ConcurrentSafetyAnalyzer,
   ConcurrentSafetyError,
   RaceConditionError,
   LockEscalationError
 } from './domain/analyzer/ConcurrentSafetyAnalyzer.mjs';
 
-export { 
+export {
   BackpressureController,
   BackpressureError,
   CircuitBreakerError,
@@ -72,7 +72,7 @@ export { TestGeneratorPort } from './ports/testgen.mjs';
 export { DiffEnginePort } from './ports/diff.mjs';
 export { WriterPort } from './ports/writer.mjs';
 export { FileSystemPort } from './ports/fs.mjs';
-// Fixed case sensitivity: logger.mjs -> Logger.mjs  
+// Fixed case sensitivity: logger.mjs -> Logger.mjs
 export { LoggerPort } from './ports/Logger.mjs';
 export { ClockPort, SystemClock, FakeClock, systemClock } from './ports/clock.mjs';
 export { GeneratorPlugin, validatePlugin, validatePlan, SUPPORTED_API_VERSIONS } from './ports/GeneratorPlugin.mjs';

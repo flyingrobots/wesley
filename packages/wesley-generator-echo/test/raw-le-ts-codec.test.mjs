@@ -92,7 +92,7 @@ describe('raw_le_codec.generated.ts file generation', () => {
 
   // 2. No file when no types
   it('omits raw_le_codec.generated.ts when no OBJECT or ENUM types', async () => {
-    const sdl = `type Query { hello: String! }`;
+    const sdl = 'type Query { hello: String! }';
     const result = await generateEcho({ sdl });
     const file = result.files.find((f) => f.path === 'raw_le_codec.generated.ts');
     expect(file).toBeUndefined();
@@ -283,8 +283,8 @@ describe('Optional list fields', () => {
       types: [{
         name: 'OptList',
         kind: 'OBJECT',
-        fields: [{ name: 'items', type: 'String', required: false, list: true }],
-      }],
+        fields: [{ name: 'items', type: 'String', required: false, list: true }]
+      }]
     });
     expect(ts).toContain('_encodeOption');
     expect(ts).toContain('_encodeList');
@@ -381,8 +381,8 @@ describe('Nested object decode offset advancement', () => {
     const ts = emitRawLeTsCodec({
       types: [
         { name: 'Child', kind: 'OBJECT', fields: [{ name: 'val', type: 'Int', required: true, list: false }] },
-        { name: 'Parent', kind: 'OBJECT', fields: [{ name: 'children', type: 'Child', required: true, list: true }] },
-      ],
+        { name: 'Parent', kind: 'OBJECT', fields: [{ name: 'children', type: 'Child', required: true, list: true }] }
+      ]
     });
     // The decode list closure for Child must advance offset
     expect(ts).not.toMatch(/=>\s*decodeChild\(bytes,\s*off\.v\)\.value[^;]*[,)]/);

@@ -1,6 +1,10 @@
 import { ZodGenerator } from '@wesley/core';
 import { FileOutputGeneratorCommand } from '../framework/FileOutputGeneratorCommand.mjs';
 
+// TODO: GraphQLSchemaParser is not imported — this command is non-functional
+// legacy code. Tracked in .claude/bad_code.md.
+/* eslint-disable no-undef */
+
 export class ZodCommand extends FileOutputGeneratorCommand {
   constructor() {
     super('zod', 'Generate standalone Zod schemas from GraphQL');

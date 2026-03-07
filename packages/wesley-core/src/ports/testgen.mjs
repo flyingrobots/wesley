@@ -6,7 +6,7 @@ export class TestGeneratorPort {
    * @param {object} opts - Generation options
    * @returns {Promise<{testsSql: string, evidence?: any[]}>}
    */
-  async generate(ir, opts) { 
-    throw new Error('TestGeneratorPort.generate() must be implemented'); 
+  async generate(_ir, _opts) {
+    throw new Error('TestGeneratorPort.generate() must be implemented');
   }
 }

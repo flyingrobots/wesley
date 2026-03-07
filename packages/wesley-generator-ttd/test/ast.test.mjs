@@ -12,7 +12,7 @@ import {
   createFootprint,
   createRegistryEntry,
   createCodecSpec,
-  TtdAstKind,
+  TtdAstKind
 } from '@wesley/core/ttd';
 import { testCrypto } from './setup.mjs';
 
@@ -25,7 +25,7 @@ describe('TTD AST Types', () => {
       const channel = createChannel({
         name: 'counter',
         version: 1,
-        eventTypes: ['CounterIncremented', 'CounterDecremented'],
+        eventTypes: ['CounterIncremented', 'CounterDecremented']
       });
 
       expect(channel.kind).toBe(TtdAstKind.CHANNEL);
@@ -42,7 +42,7 @@ describe('TTD AST Types', () => {
         version: 2,
         eventTypes: ['AuditEvent'],
         ordered: false,
-        persistent: true,
+        persistent: true
       });
 
       expect(channel.ordered).toBe(false);
@@ -56,9 +56,9 @@ describe('TTD AST Types', () => {
         name: 'increment',
         args: [
           { name: 'counterId', type: 'ID', required: true },
-          { name: 'amount', type: 'Int', required: true },
+          { name: 'amount', type: 'Int', required: true }
         ],
-        resultType: 'Counter',
+        resultType: 'Counter'
       }, deps);
 
       expect(op.kind).toBe(TtdAstKind.OP);
@@ -74,7 +74,7 @@ describe('TTD AST Types', () => {
         name: 'increment',
         args: [],
         resultType: 'Counter',
-        namespace: 'Mutation',
+        namespace: 'Mutation'
       }, deps);
 
       // op_id should be a 32-bit hash of namespace:name
@@ -87,7 +87,7 @@ describe('TTD AST Types', () => {
         name: 'getCounter',
         args: [{ name: 'id', type: 'ID', required: true }],
         resultType: 'Counter',
-        readonly: true,
+        readonly: true
       }, deps);
 
       expect(op.readonly).toBe(true);
@@ -99,7 +99,7 @@ describe('TTD AST Types', () => {
       const rule = createRule({
         name: 'idle_to_counting',
         from: ['IDLE'],
-        to: 'COUNTING',
+        to: 'COUNTING'
       });
 
       expect(rule.kind).toBe(TtdAstKind.RULE);
@@ -114,7 +114,7 @@ describe('TTD AST Types', () => {
         name: 'decrement_rule',
         from: ['COUNTING'],
         to: 'COUNTING',
-        guard: 'value >= amount',
+        guard: 'value >= amount'
       });
 
       expect(rule.guard).toBe('value >= amount');
@@ -124,7 +124,7 @@ describe('TTD AST Types', () => {
       const rule = createRule({
         name: 'reset_to_idle',
         from: ['COUNTING', 'PAUSED'],
-        to: 'IDLE',
+        to: 'IDLE'
       });
 
       expect(rule.from).toEqual(['COUNTING', 'PAUSED']);
@@ -135,7 +135,7 @@ describe('TTD AST Types', () => {
     it('creates an invariant with expression', () => {
       const inv = createInvariant({
         name: 'value_non_negative',
-        expr: 'forall c in Counter: c.value >= 0',
+        expr: 'forall c in Counter: c.value >= 0'
       });
 
       expect(inv.kind).toBe(TtdAstKind.INVARIANT);
@@ -148,7 +148,7 @@ describe('TTD AST Types', () => {
       const inv = createInvariant({
         name: 'soft_limit',
         expr: 'counter.value < 500000',
-        severity: 'warning',
+        severity: 'warning'
       });
 
       expect(inv.severity).toBe('warning');
@@ -160,7 +160,7 @@ describe('TTD AST Types', () => {
       const emission = createEmission({
         channel: 'counter',
         event: 'CounterIncremented',
-        opName: 'increment',
+        opName: 'increment'
       });
 
       expect(emission.kind).toBe(TtdAstKind.EMISSION);
@@ -174,7 +174,7 @@ describe('TTD AST Types', () => {
         channel: 'counter',
         event: 'CounterDecremented',
         opName: 'decrement',
-        condition: 'amount > 0',
+        condition: 'amount > 0'
       });
 
       expect(emission.condition).toBe('amount > 0');
@@ -185,7 +185,7 @@ describe('TTD AST Types', () => {
         channel: 'counter',
         event: 'CounterIncremented',
         opName: 'increment',
-        withinMs: 100,
+        withinMs: 100
       });
 
       expect(emission.withinMs).toBe(100);
@@ -197,7 +197,7 @@ describe('TTD AST Types', () => {
       const fp = createFootprint({
         opName: 'increment',
         reads: ['Counter'],
-        writes: ['Counter'],
+        writes: ['Counter']
       });
 
       expect(fp.kind).toBe(TtdAstKind.FOOTPRINT);
@@ -214,7 +214,7 @@ describe('TTD AST Types', () => {
         reads: [],
         writes: [],
         creates: ['Counter'],
-        deletes: [],
+        deletes: []
       });
 
       expect(fp.creates).toEqual(['Counter']);
@@ -225,7 +225,7 @@ describe('TTD AST Types', () => {
     it('creates a registry entry with explicit id', () => {
       const entry = createRegistryEntry({
         typeName: 'CounterIncremented',
-        id: 1,
+        id: 1
       });
 
       expect(entry.kind).toBe(TtdAstKind.REGISTRY_ENTRY);
@@ -239,7 +239,7 @@ describe('TTD AST Types', () => {
         typeName: 'OldEvent',
         id: 100,
         deprecated: true,
-        deprecatedBy: 'NewEvent',
+        deprecatedBy: 'NewEvent'
       });
 
       expect(entry.deprecated).toBe(true);
@@ -252,7 +252,7 @@ describe('TTD AST Types', () => {
       const codec = createCodecSpec({
         typeName: 'CounterIncremented',
         format: 'cbor',
-        canonical: true,
+        canonical: true
       });
 
       expect(codec.kind).toBe(TtdAstKind.CODEC);
@@ -264,7 +264,7 @@ describe('TTD AST Types', () => {
     it('creates a JSON codec spec', () => {
       const codec = createCodecSpec({
         typeName: 'DebugInfo',
-        format: 'json',
+        format: 'json'
       });
 
       expect(codec.format).toBe('json');

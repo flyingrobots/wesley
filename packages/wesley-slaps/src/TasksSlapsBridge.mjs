@@ -1,6 +1,6 @@
 /**
  * T.A.S.K.S. / S.L.A.P.S. Integration Bridge
- * 
+ *
  * Connects the task scheduling system (T.A.S.K.S.) with the execution engine (S.L.A.P.S.)
  * to provide comprehensive orchestration of Wesley operations.
  */
@@ -17,42 +17,42 @@ export class TasksSlapsBridge {
     this.failedTasks = new Map();
     this.taskHistory = [];
   }
-  
+
   /**
    * Execute a task graph with full orchestration
    */
   async executeTaskGraph(taskGraph, options = {}) {
     const startTime = Date.now();
     const results = new Map();
-    
+
     try {
       // Validate task graph
       const cycles = taskGraph.detectCycles();
       if (cycles.length > 0) {
         throw new Error(`Circular dependencies detected: ${cycles.map(c => c.join(' -> ')).join(', ')}`);
       }
-      
+
       // Get execution order with dependency resolution
-      const executionOrder = taskGraph.getExecutionOrder();
-      
+      const _executionOrder = taskGraph.getExecutionOrder();
+
       // Execute tasks with concurrency control
       while (this.completedTasks.size < taskGraph.tasks.size) {
         const readyTasks = taskGraph.getReadyTasks(this.completedTasks);
-        const availableTasks = readyTasks.filter(task => 
-          !this.runningTasks.has(task.id) && 
+        const availableTasks = readyTasks.filter(task =>
+          !this.runningTasks.has(task.id) &&
           !this.completedTasks.has(task.id) &&
           !this.failedTasks.has(task.id)
         );
-        
+
         // Start new tasks up to concurrency limit
         const slotsAvailable = this.maxConcurrentTasks - this.runningTasks.size;
         const tasksToStart = availableTasks.slice(0, slotsAvailable);
-        
+
         // Start tasks
-        const taskPromises = tasksToStart.map(task => 
+        const taskPromises = tasksToStart.map(task =>
           this.executeTask(task, options)
         );
-        
+
         if (taskPromises.length === 0 && this.runningTasks.size === 0) {
           // No tasks running and none can start - check for failures
           if (this.failedTasks.size > 0) {
@@ -60,16 +60,16 @@ export class TasksSlapsBridge {
           }
           break;
         }
-        
+
         // Wait for at least one task to complete
         if (this.runningTasks.size > 0) {
           await Promise.race(Array.from(this.runningTasks.values()));
         }
-        
+
         // Small delay to prevent tight loop
         await this.sleep(10);
       }
-      
+
       return {
         success: true,
         duration: Date.now() - startTime,
@@ -77,7 +77,7 @@ export class TasksSlapsBridge {
         failedTasks: this.failedTasks.size,
         results: Object.fromEntries(results)
       };
-      
+
     } catch (error) {
       return {
         success: false,
@@ -89,63 +89,63 @@ export class TasksSlapsBridge {
       };
     }
   }
-  
+
   /**
    * Execute a single task with S.L.A.P.S. orchestration
    */
   async executeTask(taskDef, options = {}) {
     const taskId = taskDef.id;
     const startTime = Date.now();
-    
+
     try {
       // Create task execution promise
       const executionPromise = this.performTaskExecution(taskDef, options);
       this.runningTasks.set(taskId, executionPromise);
-      
+
       // Execute with timeout
-      const timeoutPromise = new Promise((_, reject) => {
+      const timeoutPromise = new Promise((_resolve, reject) => {
         setTimeout(() => reject(new Error(`Task ${taskId} timed out`)), taskDef.timeout);
       });
-      
+
       const result = await Promise.race([executionPromise, timeoutPromise]);
-      
+
       // Mark as completed
       this.completedTasks.add(taskId);
       this.runningTasks.delete(taskId);
-      
+
       // Record success
       this.recordTaskResult(taskDef, 'success', Date.now() - startTime, result);
-      
+
       return result;
-      
+
     } catch (error) {
       // Mark as failed
       this.failedTasks.set(taskId, error);
       this.runningTasks.delete(taskId);
-      
+
       // Record failure
       this.recordTaskResult(taskDef, 'failed', Date.now() - startTime, null, error);
-      
+
       // Decide if we should retry
       const retryCount = (taskDef.metadata.retryCount || 0);
       if (retryCount < taskDef.maxRetries) {
         // Exponential backoff
         const delay = Math.pow(2, retryCount) * 1000;
         await this.sleep(delay);
-        
+
         // Create retry task
         const retryTask = taskDef.extend({
           metadata: { ...taskDef.metadata, retryCount: retryCount + 1 }
         });
-        
+
         this.failedTasks.delete(taskId); // Remove from failed to allow retry
         return this.executeTask(retryTask, options);
       }
-      
+
       throw error;
     }
   }
-  
+
   /**
    * Perform the actual task execution logic
    */
@@ -153,30 +153,30 @@ export class TasksSlapsBridge {
     const context = {
       taskId: taskDef.id,
       metadata: taskDef.metadata,
-      options: options
+      options
     };
-    
+
     // Determine execution strategy based on task type
     const taskType = taskDef.metadata.type || 'sql';
-    
+
     switch (taskType) {
-      case 'sql':
-        return this.executeSQLTask(taskDef, context);
-        
-      case 'migration':
-        return this.executeMigrationTask(taskDef, context);
-        
-      case 'generation':
-        return this.executeGenerationTask(taskDef, context);
-        
-      case 'validation':
-        return this.executeValidationTask(taskDef, context);
-        
-      default:
-        throw new Error(`Unknown task type: ${taskType}`);
+    case 'sql':
+      return this.executeSQLTask(taskDef, context);
+
+    case 'migration':
+      return this.executeMigrationTask(taskDef, context);
+
+    case 'generation':
+      return this.executeGenerationTask(taskDef, context);
+
+    case 'validation':
+      return this.executeValidationTask(taskDef, context);
+
+    default:
+      throw new Error(`Unknown task type: ${taskType}`);
     }
   }
-  
+
   /**
    * Execute SQL-based task
    */
@@ -187,33 +187,33 @@ export class TasksSlapsBridge {
       params: taskDef.metadata.params || [],
       transaction: taskDef.metadata.transaction || false
     };
-    
+
     return this.executor.execute(operation, context);
   }
-  
+
   /**
    * Execute migration task
    */
   async executeMigrationTask(taskDef, context) {
     const operations = taskDef.metadata.operations || [];
     const results = [];
-    
+
     for (const op of operations) {
       const result = await this.executor.execute(op, context);
       results.push(result);
     }
-    
+
     return { operations: results.length, results };
   }
-  
+
   /**
    * Execute code generation task
    */
-  async executeGenerationTask(taskDef, context) {
+  async executeGenerationTask(taskDef, _context) {
     // This would integrate with Wesley's generators
     const generatorType = taskDef.metadata.generator;
-    const schema = taskDef.metadata.schema;
-    
+    const _schema = taskDef.metadata.schema;
+
     // For now, simulate generation
     return {
       generator: generatorType,
@@ -221,23 +221,23 @@ export class TasksSlapsBridge {
       timestamp: new Date().toISOString()
     };
   }
-  
+
   /**
    * Execute validation task
    */
-  async executeValidationTask(taskDef, context) {
+  async executeValidationTask(taskDef, _context) {
     const validationType = taskDef.metadata.validationType;
-    
+
     switch (validationType) {
-      case 'schema':
-        return this.validateSchema(taskDef.metadata.schema);
-      case 'migration':
-        return this.validateMigration(taskDef.metadata.migration);
-      default:
-        throw new Error(`Unknown validation type: ${validationType}`);
+    case 'schema':
+      return this.validateSchema(taskDef.metadata.schema);
+    case 'migration':
+      return this.validateMigration(taskDef.metadata.migration);
+    default:
+      throw new Error(`Unknown validation type: ${validationType}`);
     }
   }
-  
+
   /**
    * Validate schema
    */
@@ -249,7 +249,7 @@ export class TasksSlapsBridge {
       errors: []
     };
   }
-  
+
   /**
    * Validate migration
    */
@@ -265,7 +265,7 @@ export class TasksSlapsBridge {
       }
     };
   }
-  
+
   /**
    * Record task execution result
    */
@@ -280,20 +280,20 @@ export class TasksSlapsBridge {
       error: error ? error.message : null,
       retryCount: taskDef.metadata.retryCount || 0
     });
-    
+
     // Keep only last 1000 task results
     if (this.taskHistory.length > 1000) {
       this.taskHistory.shift();
     }
   }
-  
+
   /**
    * Get orchestration statistics
    */
   getStats() {
     const now = Date.now();
     const recentTasks = this.taskHistory.filter(task => now - task.timestamp < 60000); // Last minute
-    
+
     return {
       runningTasks: this.runningTasks.size,
       completedTasks: this.completedTasks.size,
@@ -304,7 +304,7 @@ export class TasksSlapsBridge {
       executorStats: this.executor.getStats()
     };
   }
-  
+
   /**
    * Graceful shutdown
    */
@@ -312,23 +312,23 @@ export class TasksSlapsBridge {
     // Wait for running tasks to complete (with timeout)
     const shutdownTimeout = 30000; // 30 seconds
     const startTime = Date.now();
-    
+
     while (this.runningTasks.size > 0 && (Date.now() - startTime) < shutdownTimeout) {
       await this.sleep(100);
     }
-    
+
     // Force cleanup of remaining tasks
-    for (const [taskId, promise] of this.runningTasks) {
+    for (const [_taskId, promise] of this.runningTasks) {
       try {
         promise.catch(() => {}); // Ignore errors during shutdown
-      } catch (e) {
+      } catch (_e) {
         // Ignore
       }
     }
-    
+
     this.runningTasks.clear();
   }
-  
+
   /**
    * Utility sleep function
    */

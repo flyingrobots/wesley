@@ -55,16 +55,14 @@ export class CompileTtdCommand extends WesleyCommand {
         composeUnits,
         buildDemangleMap,
         demangleSdl,
-        validateFilteredSdl,
+        validateFilteredSdl
       } = await import('@wesley/core/domain/SchemaResolver');
 
       // Apply --unit filter if specified
       const unitFilter = options.unit ? options.unit.flatMap(u => u.split(',')).map(s => s.trim()).filter(Boolean) : null;
-      let activeUnits = context.units;
       if (unitFilter) {
         const composed = composeUnits(context.units, unitFilter);
         effectiveSdl = composed.sdl;
-        activeUnits = composed.units;
       }
 
       // Demangle type names for clean TTD output (unless --qualified-names).
@@ -85,10 +83,10 @@ export class CompileTtdCommand extends WesleyCommand {
               : `  ${m.type} (unknown source)`
           );
           const e = new Error(
-            `Filtered SDL references types not included in the selected units:\n` +
+            'Filtered SDL references types not included in the selected units:\n' +
             lines.join('\n') + '\n\n' +
             `You asked for units: ${unitFilter?.join(', ')}\n` +
-            `Add the missing units with --unit or compile the full schema.`
+            'Add the missing units with --unit or compile the full schema.'
           );
           e.code = 'SCHEMA_RESOLUTION_FAILED';
           throw e;
@@ -96,7 +94,7 @@ export class CompileTtdCommand extends WesleyCommand {
       }
     } else if (options.unit) {
       const e = new Error(
-        `--unit requires a composed schema (with @wes_import/@wes_package directives).\n` +
+        '--unit requires a composed schema (with @wes_import/@wes_package directives).\n' +
         `The schema at ${schemaPath} has no composition directives.`
       );
       e.code = 'UNSUPPORTED_OPTION';
@@ -130,7 +128,7 @@ export class CompileTtdCommand extends WesleyCommand {
       result = await compileTtdProtocol({
         sdl: effectiveSdl,
         targets,
-        deps,
+        deps
       });
     } catch (error) {
       const e = new Error(`TTD compilation failed: ${error.message}`);
@@ -181,11 +179,11 @@ export class CompileTtdCommand extends WesleyCommand {
       schemaHash: result.schemaHash,
       files: result.files.map(f => ({
         path: options.dryRun ? f.path : `${outDir}/${f.path}`,
-        size: f.content.length,
+        size: f.content.length
       })),
       targets,
       validation: result.validation,
-      dryRun: options.dryRun || false,
+      dryRun: options.dryRun || false
     };
 
     if (!options.quiet && !options.json && !debugDump) {

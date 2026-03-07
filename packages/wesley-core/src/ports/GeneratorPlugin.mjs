@@ -68,7 +68,7 @@ export class GeneratorPlugin {
    * @param {PluginContext} context
    * @returns {Promise<GenerationPlan>}
    */
-  plan(schema, context) {
+  plan(_schema, _context) {
     throw new Error('GeneratorPlugin.plan() must be implemented');
   }
 
@@ -78,7 +78,7 @@ export class GeneratorPlugin {
    * @param {PluginContext} context
    * @returns {Promise<Record<string, string|Uint8Array>>}
    */
-  generate(plan, context) {
+  generate(_plan, _context) {
     throw new Error('GeneratorPlugin.generate() must be implemented');
   }
 }

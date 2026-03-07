@@ -1,9 +1,9 @@
 /**
  * DefaultAnalyzer - Analyzes PostgreSQL column defaults for optimization opportunities
- * 
+ *
  * Implements WP2.T004: Instant column default detection
  * - Detects PostgreSQL 11+ instant default capability via pg_catalog.pg_attribute.atthasmissing
- * - Distinguishes between constant and volatile defaults  
+ * - Distinguishes between constant and volatile defaults
  * - Provides fallback analysis for older PostgreSQL versions
  */
 
@@ -18,14 +18,14 @@ export class DefaultAnalyzer {
    * Analyze a column default value for optimization opportunities
    * @param {Object} columnInfo - Column metadata
    * @param {string} columnInfo.table_name - Table name
-   * @param {string} columnInfo.column_name - Column name  
+   * @param {string} columnInfo.column_name - Column name
    * @param {string} columnInfo.default_value - Default expression
    * @param {string} columnInfo.data_type - PostgreSQL data type
    * @returns {Promise<Object>} Analysis result
    */
   async analyzeDefault(columnInfo) {
     const { table_name, column_name, default_value, data_type } = columnInfo;
-    
+
     if (!default_value) {
       return {
         hasDefault: false,
@@ -39,10 +39,10 @@ export class DefaultAnalyzer {
     // Check PostgreSQL version and instant default capability
     const versionInfo = await this.getPostgreSQLVersionInfo();
     const defaultType = this.categorizeDefault(default_value, data_type);
-    
+
     // Check if column already has missing values optimization
     const hasMissingOptimization = await this.checkMissingValuesOptimization(
-      table_name, 
+      table_name,
       column_name
     );
 
@@ -59,8 +59,8 @@ export class DefaultAnalyzer {
       volatileFunctions: defaultType.volatileFunctions,
       recommendation: this.generateRecommendation(defaultType, versionInfo, hasMissingOptimization),
       optimizationPotential: this.assessOptimizationPotential(
-        defaultType, 
-        versionInfo, 
+        defaultType,
+        versionInfo,
         hasMissingOptimization
       )
     };
@@ -83,12 +83,12 @@ export class DefaultAnalyzer {
       const versionResult = await this.db.query('SELECT version()');
       const versionString = versionResult.rows[0].version;
       const versionMatch = versionString.match(/PostgreSQL (\d+)\.(\d+)/);
-      
+
       if (versionMatch) {
         const majorVersion = parseInt(versionMatch[1]);
         const minorVersion = parseInt(versionMatch[2]);
         this.postgresqlVersion = `${majorVersion}.${minorVersion}`;
-        
+
         // PostgreSQL 11+ supports instant defaults via atthasmissing
         this.supportsInstantDefaults = majorVersion >= 11;
       } else {
@@ -106,11 +106,11 @@ export class DefaultAnalyzer {
             AND table_name = 'pg_attribute' 
             AND column_name = 'atthasmissing'
           `);
-          
+
           if (attrCheck.rows.length === 0) {
             this.supportsInstantDefaults = false;
           }
-        } catch (error) {
+        } catch (_error) {
           // If we can't check, assume no support
           this.supportsInstantDefaults = false;
         }
@@ -120,11 +120,11 @@ export class DefaultAnalyzer {
         version: this.postgresqlVersion,
         supportsInstantDefaults: this.supportsInstantDefaults
       };
-    } catch (error) {
+    } catch (_error) {
       // Fallback for connection issues
       this.postgresqlVersion = 'unknown';
       this.supportsInstantDefaults = false;
-      
+
       return {
         version: 'unknown',
         supportsInstantDefaults: false
@@ -138,9 +138,9 @@ export class DefaultAnalyzer {
    * @param {string} dataType - Column data type
    * @returns {Object} Categorization result
    */
-  categorizeDefault(defaultValue, dataType) {
+  categorizeDefault(defaultValue, _dataType) {
     const normalizedDefault = defaultValue.toLowerCase().trim();
-    
+
     // Known volatile functions
     const volatileFunctions = [
       'now()', 'current_timestamp', 'current_date', 'current_time',
@@ -150,12 +150,12 @@ export class DefaultAnalyzer {
     ];
 
     // Check for volatile functions
-    const foundVolatileFunctions = volatileFunctions.filter(func => 
+    const foundVolatileFunctions = volatileFunctions.filter(func =>
       normalizedDefault.includes(func.toLowerCase())
     );
 
     const isVolatile = foundVolatileFunctions.length > 0;
-    
+
     // Additional patterns that indicate volatility
     const volatilePatterns = [
       /\bnow\s*\(/i,
@@ -168,7 +168,7 @@ export class DefaultAnalyzer {
       /\bsetval\s*\(/i
     ];
 
-    const hasVolatilePattern = volatilePatterns.some(pattern => 
+    const hasVolatilePattern = volatilePatterns.some(pattern =>
       pattern.test(normalizedDefault)
     );
 
@@ -183,7 +183,7 @@ export class DefaultAnalyzer {
       /^array\[\].*$/i       // Empty array literals
     ];
 
-    const isLiteralConstant = constantPatterns.some(pattern => 
+    const isLiteralConstant = constantPatterns.some(pattern =>
       pattern.test(normalizedDefault)
     );
 
@@ -225,13 +225,13 @@ export class DefaultAnalyzer {
       `;
 
       const result = await this.db.query(query, [tableName, columnName]);
-      
+
       if (result.rows.length > 0) {
         return result.rows[0].atthasmissing === true;
       }
 
       return false;
-    } catch (error) {
+    } catch (_error) {
       // If we can't check, assume no optimization
       return false;
     }
@@ -263,7 +263,7 @@ export class DefaultAnalyzer {
   /**
    * Assess optimization potential and benefits
    * @param {Object} defaultType - Default categorization
-   * @param {Object} versionInfo - PostgreSQL version info  
+   * @param {Object} versionInfo - PostgreSQL version info
    * @param {boolean} hasMissingOptimization - Current optimization status
    * @returns {Object} Optimization assessment
    */
@@ -330,7 +330,7 @@ export class DefaultAnalyzer {
       totalColumns: columns.length,
       constantDefaults: results.filter(r => r.isConstant).length,
       volatileDefaults: results.filter(r => r.isVolatile).length,
-      instantOptimizable: results.filter(r => r.isInstant && 
+      instantOptimizable: results.filter(r => r.isInstant &&
         r.recommendation === 'instant-default-recommended').length,
       alreadyOptimized: results.filter(r => r.hasMissingOptimization).length,
       details: results
@@ -357,7 +357,7 @@ export class DefaultAnalyzer {
 
     let sql;
     let strategy;
-    let warnings = [];
+    const warnings = [];
 
     if (analysis.isInstant) {
       // Use instant default optimization

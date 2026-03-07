@@ -37,12 +37,12 @@ export function encodingForType(graphqlType, { required = true, list = false, ki
 function baseEncoding(typeName, kind) {
   if (kind === 'ENUM') return 'enum_u32_le';
   switch (typeName) {
-    case 'Boolean': return 'bool_u8';
-    case 'Int':     return 'i32_le';
-    case 'Float':   return 'f32_le';
-    case 'String':  return 'len_prefix_utf8';
-    case 'ID':      return 'len_prefix_utf8';
-    default:        return `nested_${typeName}`;
+  case 'Boolean': return 'bool_u8';
+  case 'Int':     return 'i32_le';
+  case 'Float':   return 'f32_le';
+  case 'String':  return 'len_prefix_utf8';
+  case 'ID':      return 'len_prefix_utf8';
+  default:        return `nested_${typeName}`;
   }
 }
 
@@ -60,7 +60,7 @@ export function buildLayoutDescriptor(irType, typeIndex) {
   const descriptor = {
     format: 'raw_le/v1',
     endian: 'little',
-    type_name: irType.name,
+    type_name: irType.name
   };
 
   if (irType.kind === 'ENUM') {
@@ -77,7 +77,7 @@ export function buildLayoutDescriptor(irType, typeIndex) {
           name: f.name,
           type: f.type,
           required: f.required,
-          encoding: encodingForType(f.type, { required: f.required, list: f.list, kind: fieldKind }),
+          encoding: encodingForType(f.type, { required: f.required, list: f.list, kind: fieldKind })
         };
       });
     descriptor.fields = fields;

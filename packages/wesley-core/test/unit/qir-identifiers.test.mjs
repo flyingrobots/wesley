@@ -9,7 +9,7 @@ const planBase = () => ({
   projection: { items: [ { alias: 'id', expr: { kind: 'ColumnRef', table: 't0', column: 'id' } } ] },
   orderBy: [],
   limit: null,
-  offset: null,
+  offset: null
 });
 
 test('ident policy minimal: quotes only when needed', () => {

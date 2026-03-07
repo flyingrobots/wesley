@@ -113,7 +113,7 @@ export class PluginRunner {
         logger: childLogger,
         clock: this._clock,
         config: frozenConfig,
-        runId,
+        runId
       });
 
       // Phase: init
@@ -163,7 +163,7 @@ export class PluginRunner {
       if (artifacts == null || typeof artifacts !== 'object' || Array.isArray(artifacts)) {
         const typeLabel = artifacts === null ? 'null'
           : Array.isArray(artifacts) ? 'Array'
-          : typeof artifacts;
+            : typeof artifacts;
         const msg = `Plugin "${pluginName}" generate() must return a Record<string, string|Uint8Array> (got ${typeLabel})`;
         const cause = new Error(msg);
         cause.code = 'WPLY003';
@@ -194,7 +194,7 @@ export class PluginRunner {
         status: 'ok',
         artifacts,
         artifactCount,
-        durationMs: Date.now() - startMs,
+        durationMs: Date.now() - startMs
       });
     }
 
@@ -236,7 +236,7 @@ function _errorResult(plugin, phase, cause, startMs) {
     errorCode: cause.code || 'WPLY002',
     errorMessage: cause.message,
     phase,
-    durationMs: Date.now() - startMs,
+    durationMs: Date.now() - startMs
   };
 }
 

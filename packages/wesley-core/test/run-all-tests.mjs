@@ -142,7 +142,7 @@ async function runTestSuite(suiteName, config, options = {}) {
  */
 async function runTestsParallel(suiteNames, options = {}) {
   console.log(`🚀 Running tests in parallel: ${suiteNames.join(', ')}`);
-  
+
   const promises = suiteNames.map(suiteName => {
     const config = testConfigs[suiteName];
     if (!config) {
@@ -152,7 +152,7 @@ async function runTestsParallel(suiteNames, options = {}) {
   });
 
   const results = await Promise.allSettled(promises);
-  
+
   // Report results
   console.log('\n📊 Parallel Test Results:');
   results.forEach((result, index) => {
@@ -165,7 +165,7 @@ async function runTestsParallel(suiteNames, options = {}) {
     }
   });
 
-  const failedCount = results.filter(r => 
+  const failedCount = results.filter(r =>
     r.status === 'rejected' || r.value?.status === 'failed'
   ).length;
 
@@ -173,23 +173,23 @@ async function runTestsParallel(suiteNames, options = {}) {
 }
 
 /**
- * Run tests sequentially 
+ * Run tests sequentially
  */
 async function runTestsSequential(suiteNames, options = {}) {
   console.log(`🐌 Running tests sequentially: ${suiteNames.join(', ')}`);
-  
+
   const results = [];
-  
+
   for (const suiteName of suiteNames) {
     const config = testConfigs[suiteName];
     if (!config) {
       throw new Error(`Unknown test suite: ${suiteName}`);
     }
-    
+
     try {
       const result = await runTestSuite(suiteName, config, options);
       results.push(result);
-      
+
       if (result.status === 'failed' && options.bailOnFail) {
         break;
       }
@@ -200,14 +200,14 @@ async function runTestsSequential(suiteNames, options = {}) {
       }
     }
   }
-  
+
   // Report results
   console.log('\n📊 Sequential Test Results:');
   results.forEach(result => {
     console.log(`   ${result.suite}: ${result.status}`);
   });
 
-  const failedCount = results.filter(r => 
+  const failedCount = results.filter(r =>
     r.status === 'failed' || r.status === 'error'
   ).length;
 
@@ -219,7 +219,7 @@ async function runTestsSequential(suiteNames, options = {}) {
  */
 async function main() {
   const args = process.argv.slice(2);
-  
+
   // Parse command line options
   const options = {
     coverage: args.includes('--coverage'),
@@ -233,11 +233,11 @@ async function main() {
 
   // Parse test suite selection
   let selectedSuites = Object.keys(testConfigs);
-  
+
   const suiteArgs = args.filter(arg => !arg.startsWith('--'));
   if (suiteArgs.length > 0) {
     selectedSuites = suiteArgs.filter(suite => testConfigs[suite]);
-    
+
     // Warn about unknown suites
     const unknownSuites = suiteArgs.filter(suite => !testConfigs[suite]);
     if (unknownSuites.length > 0) {
@@ -253,21 +253,21 @@ async function main() {
     process.exit(1);
   }
 
-  console.log(`\n🎯 Wesley Core Test Suite`);
+  console.log('\n🎯 Wesley Core Test Suite');
   console.log(`   Selected: ${selectedSuites.join(', ')}`);
   console.log(`   Mode: ${options.parallel ? 'parallel' : 'sequential'}`);
-  if (options.coverage) console.log(`   Coverage: enabled`);
-  if (options.updateSnapshots) console.log(`   Snapshots: update mode`);
+  if (options.coverage) console.log('   Coverage: enabled');
+  if (options.updateSnapshots) console.log('   Snapshots: update mode');
 
   try {
     const runFunction = options.parallel ? runTestsParallel : runTestsSequential;
     const results = await runFunction(selectedSuites, options);
-    
-    console.log(`\n🏁 Test Summary:`);
+
+    console.log('\n🏁 Test Summary:');
     console.log(`   Total suites: ${results.total}`);
     console.log(`   Failed suites: ${results.failed}`);
     console.log(`   Success rate: ${((results.total - results.failed) / results.total * 100).toFixed(1)}%`);
-    
+
     if (results.failed > 0) {
       console.log('\n❌ Some tests failed');
       process.exit(1);

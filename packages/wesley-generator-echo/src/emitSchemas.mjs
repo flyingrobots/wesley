@@ -7,12 +7,12 @@ function zLiteralEnum(values) {
 function zTypeForField(t, enumMap) {
   if (enumMap.has(t)) return enumMap.get(t);
   switch (t) {
-    case 'Boolean': return z.boolean();
-    case 'String': return z.string();
-    case 'Int': return z.number().int();
-    case 'Float': return z.number();
-    case 'ID': return z.string();
-    default: return z.any();
+  case 'Boolean': return z.boolean();
+  case 'String': return z.string();
+  case 'Int': return z.number().int();
+  case 'Float': return z.number();
+  case 'ID': return z.string();
+  default: return z.any();
   }
 }
 
@@ -54,7 +54,7 @@ export function emitSchemas(ir) {
   for (const [name, _schema] of objects) {
     const t = (ir.types ?? []).find((x) => x.name === name);
     const fields = t?.fields ?? [];
-    const body = fields.map((f) => {
+    const _body = fields.map((f) => {
       let zref = zTypeForField(f.type, enums);
       if (f.list) zref = z.array(zref);
       if (!f.required) zref = zref.optional();
@@ -62,9 +62,9 @@ export function emitSchemas(ir) {
     });
     // Fallback: if z.toString() is not helpful, emit simple JSON string placeholders.
     const props = fields.map((f) => {
-      let ref = f.type;
+      const ref = f.type;
       // Build the inner type schema
-      let innerSchema = ref === 'String' ? 'z.string()' : ref === 'Boolean' ? 'z.boolean()' : ref === 'Int' ? 'z.number().int()' : ref === 'Float' ? 'z.number()' : enums.has(ref) ? `${ref}Enum` : 'z.any()';
+      const innerSchema = ref === 'String' ? 'z.string()' : ref === 'Boolean' ? 'z.boolean()' : ref === 'Int' ? 'z.number().int()' : ref === 'Float' ? 'z.number()' : enums.has(ref) ? `${ref}Enum` : 'z.any()';
       // Wrap with z.array() only for list fields
       let zcall = f.list ? `z.array(${innerSchema})` : innerSchema;
       // Append .optional() if not required

@@ -3,12 +3,12 @@
  * Commands that orchestrate domain operations
  */
 
-import { 
-  SchemaParsed, 
-  SQLGenerated, 
+import {
+  SchemaParsed,
+  SQLGenerated,
   TypeScriptGenerated,
   MigrationDiffCalculated,
-  MigrationSQLGenerated 
+  MigrationSQLGenerated
 } from '../domain/Events.mjs';
 
 export class ParseSchemaUseCase {

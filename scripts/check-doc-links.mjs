@@ -28,7 +28,7 @@ walk(root);
 // Matches [text](link) but not images; does not handle nested/escaped brackets
 // in link text or parentheses inside URLs. Good enough for our docs; improve
 // with a markdown parser if these edge cases arise.
-const linkRe = /(?<!\!)\[[^\]]+\]\(([^)]+)\)/g; // [text](link), not images
+const linkRe = /(?<!!)\[[^\]]+\]\(([^)]+)\)/g; // [text](link), not images
 const issues = [];
 
 for (const file of mdFiles) {

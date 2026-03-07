@@ -24,7 +24,7 @@ export class ErrorRecovery extends EventEmitter {
     this.operations = new Map();
     this.errorCategorizer = new ErrorCategorizer();
     this.retryStrategies = new Map();
-    
+
     this.setupDefaultStrategies();
   }
 
@@ -49,7 +49,7 @@ export class ErrorRecovery extends EventEmitter {
       });
 
       const result = await this.executeWithRetry(recoveryContext);
-      
+
       this.emit('operation:succeeded', {
         operationId,
         result: result.metadata || {}
@@ -95,7 +95,7 @@ export class ErrorRecovery extends EventEmitter {
     for (let attempt = 1; attempt <= this.options.maxRetries; attempt++) {
       try {
         recoveryContext.attempts = attempt;
-        
+
         // Create checkpoint before each attempt (except first)
         if (attempt > 1) {
           await recoveryContext.createCheckpoint(`attempt_${attempt}`);
@@ -108,7 +108,7 @@ export class ErrorRecovery extends EventEmitter {
         });
 
         const result = await this.executeOperationWithTimeout(operation, recoveryContext);
-        
+
         this.emit('retry:succeeded', {
           operationId,
           attempt,
@@ -119,7 +119,7 @@ export class ErrorRecovery extends EventEmitter {
 
       } catch (error) {
         lastError = error;
-        
+
         const errorCategory = this.errorCategorizer.categorize(error);
         const shouldRetry = this.shouldRetry(error, attempt, errorCategory);
 
@@ -162,6 +162,7 @@ export class ErrorRecovery extends EventEmitter {
         .then(result => {
           clearTimeout(timeoutId);
           resolve(result);
+          return undefined;
         })
         .catch(error => {
           clearTimeout(timeoutId);
@@ -179,19 +180,19 @@ export class ErrorRecovery extends EventEmitter {
     }
 
     switch (errorCategory.type) {
-      case 'network':
-      case 'timeout':
-      case 'rate_limit':
-        return errorCategory.retryable;
-      case 'database':
-        return errorCategory.retryable && !errorCategory.fatal;
-      case 'system':
-        return errorCategory.retryable;
-      case 'validation':
-      case 'business_logic':
-        return false; // Don't retry logical errors
-      default:
-        return errorCategory.retryable;
+    case 'network':
+    case 'timeout':
+    case 'rate_limit':
+      return errorCategory.retryable;
+    case 'database':
+      return errorCategory.retryable && !errorCategory.fatal;
+    case 'system':
+      return errorCategory.retryable;
+    case 'validation':
+    case 'business_logic':
+      return false; // Don't retry logical errors
+    default:
+      return errorCategory.retryable;
     }
   }
 
@@ -202,7 +203,7 @@ export class ErrorRecovery extends EventEmitter {
     const baseDelay = this.options.retryDelayMs;
     const multiplier = Math.pow(this.options.backoffMultiplier, attempt - 1);
     const delay = Math.min(baseDelay * multiplier, this.options.maxBackoffMs);
-    
+
     // Add jitter to prevent thundering herd
     const jitter = Math.random() * 0.1 * delay;
     return Math.floor(delay + jitter);
@@ -239,16 +240,16 @@ export class ErrorRecovery extends EventEmitter {
    */
   getStrategyForError(errorCategory) {
     switch (errorCategory.type) {
-      case 'network':
-        return 'network_recovery';
-      case 'database':
-        return 'database_recovery';
-      case 'rate_limit':
-        return 'rate_limit_recovery';
-      case 'timeout':
-        return 'timeout_recovery';
-      default:
-        return 'default_recovery';
+    case 'network':
+      return 'network_recovery';
+    case 'database':
+      return 'database_recovery';
+    case 'rate_limit':
+      return 'rate_limit_recovery';
+    case 'timeout':
+      return 'timeout_recovery';
+    default:
+      return 'default_recovery';
     }
   }
 
@@ -276,7 +277,7 @@ export class ErrorRecovery extends EventEmitter {
 
       // Restore state
       const restored = await this.checkpointManager.restoreCheckpoint(checkpoint.id);
-      
+
       // Apply rollback operations if provided
       if (recoveryContext.context.rollbackOperation) {
         await recoveryContext.context.rollbackOperation(restored.state, recoveryContext);
@@ -314,13 +315,13 @@ export class ErrorRecovery extends EventEmitter {
    */
   setupDefaultStrategies() {
     // Network recovery strategy
-    this.registerRetryStrategy('network_recovery', async (context, error, category) => {
+    this.registerRetryStrategy('network_recovery', async (context, _error, _category) => {
       // Reset network connections, clear caches, etc.
       this.emit('strategy:network_reset', { operationId: context.operationId });
     });
 
-    // Database recovery strategy  
-    this.registerRetryStrategy('database_recovery', async (context, error, category) => {
+    // Database recovery strategy
+    this.registerRetryStrategy('database_recovery', async (context, _error, _category) => {
       // Reset database connections, clear transaction state
       this.emit('strategy:database_reset', { operationId: context.operationId });
     });
@@ -333,7 +334,7 @@ export class ErrorRecovery extends EventEmitter {
     });
 
     // Timeout recovery strategy
-    this.registerRetryStrategy('timeout_recovery', async (context, error, category) => {
+    this.registerRetryStrategy('timeout_recovery', async (context, _error, _category) => {
       // Increase timeout for next attempt
       if (context.context.timeoutMs) {
         context.context.timeoutMs *= 1.5;
@@ -341,7 +342,7 @@ export class ErrorRecovery extends EventEmitter {
     });
 
     // Default recovery strategy
-    this.registerRetryStrategy('default_recovery', async (context, error, category) => {
+    this.registerRetryStrategy('default_recovery', async (context, _error, _category) => {
       // Basic cleanup and reset
       this.emit('strategy:default_cleanup', { operationId: context.operationId });
     });
@@ -402,7 +403,7 @@ class RecoveryContext {
       checkpointData,
       { attempt: this.attempts, name }
     );
-    
+
     this.checkpoints.push({ id: checkpointId, name, timestamp: Date.now() });
     return checkpointId;
   }
@@ -411,7 +412,7 @@ class RecoveryContext {
    * Restore from a specific checkpoint
    */
   async restoreCheckpoint(checkpointId) {
-    return await this.checkpointManager.restoreCheckpoint(checkpointId);
+    return this.checkpointManager.restoreCheckpoint(checkpointId);
   }
 
   /**
@@ -440,7 +441,7 @@ class ErrorCategorizer {
    */
   categorize(error) {
     const category = this.determineCategory(error);
-    
+
     // Update statistics
     const current = this.stats.get(category.type) || 0;
     this.stats.set(category.type, current + 1);
@@ -525,7 +526,7 @@ class ErrorCategorizer {
       'econnreset', 'enotfound', 'etimedout', 'econnrefused'
     ];
     const networkCodes = ['ECONNRESET', 'ENOTFOUND', 'ETIMEDOUT', 'ECONNREFUSED'];
-    
+
     return networkPatterns.some(pattern => message.includes(pattern)) ||
            networkCodes.includes(code);
   }
@@ -533,7 +534,7 @@ class ErrorCategorizer {
   isDatabaseError(message, code) {
     const dbPatterns = ['database', 'sql', 'postgres', 'connection pool', 'deadlock'];
     const dbCodes = ['23000', '23001', '23505', '40001', '40P01'];
-    
+
     return dbPatterns.some(pattern => message.includes(pattern)) ||
            dbCodes.includes(code);
   }
@@ -541,12 +542,12 @@ class ErrorCategorizer {
   isDatabaseRetryable(message, code) {
     const retryableCodes = ['40001', '40P01']; // Deadlock, serialization failure
     const nonRetryablePatterns = ['unique constraint', 'foreign key', 'check constraint'];
-    
-    return retryableCodes.includes(code) && 
+
+    return retryableCodes.includes(code) &&
            !nonRetryablePatterns.some(pattern => message.includes(pattern));
   }
 
-  isDatabaseFatal(message, code) {
+  isDatabaseFatal(message, _code) {
     const fatalPatterns = ['syntax error', 'permission denied', 'does not exist'];
     return fatalPatterns.some(pattern => message.includes(pattern));
   }
@@ -556,7 +557,7 @@ class ErrorCategorizer {
   }
 
   isRateLimitError(message, code) {
-    return message.includes('rate limit') || 
+    return message.includes('rate limit') ||
            message.includes('too many requests') ||
            code === '429';
   }
@@ -564,12 +565,12 @@ class ErrorCategorizer {
   isValidationError(message, code) {
     const validationPatterns = ['validation', 'invalid', 'required', 'format'];
     const validationCodes = ['400', '422'];
-    
+
     return validationPatterns.some(pattern => message.includes(pattern)) ||
            validationCodes.includes(String(code));
   }
 
-  isSystemError(message, code) {
+  isSystemError(message, _code) {
     const systemPatterns = ['memory', 'disk space', 'file system', 'permission'];
     return systemPatterns.some(pattern => message.includes(pattern));
   }

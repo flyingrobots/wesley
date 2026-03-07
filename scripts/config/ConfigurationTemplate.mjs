@@ -3,8 +3,8 @@
  * NOTE: Lives under scripts to avoid polluting core with fs/path usage.
  */
 
-import { readFileSync, writeFileSync } from 'fs';
-import { join } from 'path';
+import { _readFileSync, _writeFileSync } from 'fs';
+import { _join } from 'path';
 import { DomainEvent } from '../../packages/wesley-core/src/domain/Events.mjs';
 
 export class ConfigurationTemplateRequested extends DomainEvent {

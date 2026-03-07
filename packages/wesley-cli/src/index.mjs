@@ -1,6 +1,6 @@
 /**
  * Wesley CLI Library - Platform-agnostic command interface
- * 
+ *
  * Exports the core CLI framework without Node.js dependencies.
  * The host platform (wesley-host-node) dependency injects adapters.
  */

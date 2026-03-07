@@ -30,22 +30,22 @@ function expectWithDump(cond, message, json) {
     assert.ok(cond, message);
   } catch (err) {
     // Dump the most relevant pieces for quick diagnosis
-    // eslint-disable-next-line no-console
+
     console.error('\n— DEBUG: velocity.gitActivityIndex —', json?.velocity?.gitActivityIndex);
-    // eslint-disable-next-line no-console
+
     console.error('— DEBUG: gitActivity —\n', JSON.stringify(json?.gitActivity, null, 2));
     throw err;
   }
 }
 
 test('scenario 1: tiny change after long quiet → plateau detected', () => {
-  const { tmp, wes } = mkBundleDir();
+  const { tmp, _wes } = mkBundleDir();
   const day0 = Math.trunc((Date.now() - 3*86400000)/86400000);
   const day3 = day0 + 3;
   writeHistory(tmp, [
     { day: day0, scs: 0.82, tci: 0.75, mri: 0.2 },
     { day: day0 + 1, scs: 0.82, tci: 0.75, mri: 0.2 },
-    { day: day3, scs: 0.82, tci: 0.75, mri: 0.2 },
+    { day: day3, scs: 0.82, tci: 0.75, mri: 0.2 }
   ]);
   writeContext(tmp, { ci: { stability: 0.95 }, timeframeHours: 168, baseRef: 'main' });
 
@@ -74,7 +74,7 @@ test('scenario 2: one massive commit → no plateau, confidence penalized', () =
   writeHistory(tmp, [
     { day: day0, scs: 0.60, tci: 0.60, mri: 0.20 },
     { day: day0 + 0.5, scs: 0.60, tci: 0.60, mri: 0.20 },
-    { day: day1, scs: 0.60, tci: 0.60, mri: 0.20 },
+    { day: day1, scs: 0.60, tci: 0.60, mri: 0.20 }
   ]);
 
   const ts = nowSecs();
@@ -101,7 +101,7 @@ test('scenario 4: many commits, SCS unchanged → no plateau, no ETA', () => {
   const baseDay = Math.trunc((Date.now() - 1*86400000)/86400000);
   writeHistory(tmp, [
     { day: baseDay, scs: 0.60, tci: 0.60, mri: 0.20 },
-    { day: baseDay+1, scs: 0.60, tci: 0.60, mri: 0.20 },
+    { day: baseDay+1, scs: 0.60, tci: 0.60, mri: 0.20 }
   ]);
   const ts = nowSecs();
   // Regular, modest commits — stable cadence; ensure deterministic spacing
@@ -126,7 +126,7 @@ test('scenario 13: SCS high, TCI low → TEST_LAG pattern and EXPLAIN TCI FAIL',
     { day: baseDay+1, scs: 0.75, tci: 0.55, mri: 0.20 },
     { day: baseDay+2, scs: 0.80, tci: 0.50, mri: 0.20 },
     { day: baseDay+3, scs: 0.82, tci: 0.48, mri: 0.20 },
-    { day: baseDay+4, scs: 0.85, tci: 0.45, mri: 0.20 },
+    { day: baseDay+4, scs: 0.85, tci: 0.45, mri: 0.20 }
   ];
   writeHistory(tmp, pts);
   const log = buildLog([{ ts: nowSecs(), files: [ { a: 5, d: 0, file: 'tests/foo.pgtap' } ] }]);
@@ -145,7 +145,7 @@ test('scenario 25: High SCS/TCI but MRI spike → EXPLAIN MRI FAIL', () => {
   const baseDay = Math.trunc((Date.now() - 2*86400000)/86400000);
   writeHistory(tmp, [
     { day: baseDay, scs: 0.85, tci: 0.80, mri: 0.20 },
-    { day: baseDay+1, scs: 0.86, tci: 0.82, mri: 0.55 },
+    { day: baseDay+1, scs: 0.86, tci: 0.82, mri: 0.55 }
   ]);
   const log = buildLog([{ ts: nowSecs(), files: [ { a: 10, d: 200, file: 'out/ddl/schema.sql' } ] }]);
   withFakeGit({ mergeBase: 'deadbeef', sinceLog: log, prLog: log }, () => {
@@ -166,7 +166,7 @@ test('scenario 8: velocity cliff pattern appears', () => {
     { day: baseDay+1, scs: 0.40, tci: 0.35, mri: 0.19 },
     { day: baseDay+2, scs: 0.55, tci: 0.40, mri: 0.18 },
     { day: baseDay+3, scs: 0.56, tci: 0.42, mri: 0.18 },
-    { day: baseDay+4, scs: 0.57, tci: 0.44, mri: 0.18 },
+    { day: baseDay+4, scs: 0.57, tci: 0.44, mri: 0.18 }
   ]);
   const log = buildLog([{ ts: nowSecs(), files: [ { a: 20, d: 0, file: 'schema.graphql' } ] }]);
   withFakeGit({ mergeBase: 'deadbeef', sinceLog: log, prLog: log }, () => {

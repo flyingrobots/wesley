@@ -11,16 +11,16 @@ import { fc } from 'fast-check';
 export const propertyConfig = {
   // Number of test cases to generate
   numRuns: 100,
-  
+
   // Timeout for each property test
   timeout: 5000,
-  
+
   // Seed for reproducible tests (can be overridden)
   seed: 42,
-  
+
   // Shrinking attempts on failure
   maxSkipsPerRun: 100,
-  
+
   // Enable verbose output on failure
   verbose: true
 };
@@ -36,7 +36,7 @@ export const graphQLGenerators = {
     fc.char().filter(c => /[a-zA-Z_]/.test(c)),
     { minLength: 1, maxLength: 50 }
   ).filter(name => name.length > 0 && /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name)),
-  
+
   /**
    * Generates valid GraphQL type names
    */
@@ -44,7 +44,7 @@ export const graphQLGenerators = {
     fc.char().filter(c => /[a-zA-Z_]/.test(c)),
     { minLength: 1, maxLength: 50 }
   ).filter(name => name.length > 0 && /^[A-Z][a-zA-Z0-9_]*$/.test(name)),
-  
+
   /**
    * Generates scalar types
    */
@@ -52,7 +52,7 @@ export const graphQLGenerators = {
     'String', 'Int', 'Float', 'Boolean', 'ID', 'UUID', 'DateTime', 'Date', 'Time',
     'JSON', 'Decimal', 'BigInt'
   ),
-  
+
   /**
    * Generates list types with nullability
    */
@@ -62,7 +62,7 @@ export const graphQLGenerators = {
     nonNull: fc.boolean(),
     itemNonNull: fc.boolean()
   }),
-  
+
   /**
    * Generates field types (scalar or list)
    */
@@ -70,7 +70,7 @@ export const graphQLGenerators = {
     graphQLGenerators.scalarType(),
     graphQLGenerators.listType()
   ),
-  
+
   /**
    * Generates GraphQL directives
    */
@@ -82,7 +82,7 @@ export const graphQLGenerators = {
       preset: fc.option(fc.constantFrom('owner', 'tenant', 'public-read', 'authenticated'))
     }, { requiredKeys: [] })
   }),
-  
+
   /**
    * Generates GraphQL field definitions
    */
@@ -105,7 +105,7 @@ export const sqlGenerators = {
     fc.char().filter(c => /[a-zA-Z0-9_]/.test(c)),
     { minLength: 1, maxLength: 63 }
   ).filter(name => /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name) && name.length <= 63),
-  
+
   /**
    * Generates PostgreSQL column types
    */
@@ -113,7 +113,7 @@ export const sqlGenerators = {
     'text', 'varchar(255)', 'integer', 'bigint', 'decimal(10,2)', 'boolean',
     'uuid', 'timestamptz', 'jsonb', 'text[]', 'integer[]', 'inet', 'cidr'
   ),
-  
+
   /**
    * Generates SQL constraints
    */
@@ -123,7 +123,7 @@ export const sqlGenerators = {
     columns: fc.array(sqlGenerators.identifier(), { minLength: 1, maxLength: 3 }),
     expression: fc.option(fc.string({ minLength: 1, maxLength: 100 }))
   }),
-  
+
   /**
    * Generates table definitions
    */
@@ -137,7 +137,7 @@ export const sqlGenerators = {
     }), { minLength: 1, maxLength: 10 }),
     constraints: fc.array(sqlGenerators.constraint(), { maxLength: 5 })
   }),
-  
+
   /**
    * Generates migration operations
    */
@@ -147,13 +147,13 @@ export const sqlGenerators = {
       type: fc.constant('create_table'),
       table: sqlGenerators.table()
     }),
-    
+
     // DROP TABLE
     fc.record({
       type: fc.constant('drop_table'),
       tableName: sqlGenerators.identifier()
     }),
-    
+
     // ADD COLUMN
     fc.record({
       type: fc.constant('add_column'),
@@ -164,7 +164,7 @@ export const sqlGenerators = {
         nullable: fc.boolean()
       })
     }),
-    
+
     // DROP COLUMN
     fc.record({
       type: fc.constant('drop_column'),
@@ -186,20 +186,20 @@ export const schemaGenerators = {
       name: graphQLGenerators.typeName(),
       fields: fc.array(graphQLGenerators.field(), { minLength: 1, maxLength: 10 })
     }), { minLength: 1, maxLength: 5 }),
-    
+
     queries: fc.array(fc.record({
       name: graphQLGenerators.fieldName(),
       args: fc.array(graphQLGenerators.field(), { maxLength: 3 }),
       returnType: graphQLGenerators.typeName()
     }), { maxLength: 10 }),
-    
+
     mutations: fc.array(fc.record({
       name: graphQLGenerators.fieldName(),
       args: fc.array(graphQLGenerators.field(), { maxLength: 5 }),
       returnType: graphQLGenerators.typeName()
     }), { maxLength: 10 })
   }),
-  
+
   /**
    * Generates schema evolution scenarios
    */
@@ -220,20 +220,20 @@ export const invariants = {
   schemaIdempotent: (schema, generator) => {
     const result1 = generator.generate(schema);
     const result2 = generator.generate(schema);
-    
+
     return JSON.stringify(result1) === JSON.stringify(result2);
   },
-  
+
   /**
    * Migration generation should be deterministic
    */
   migrationDeterministic: (fromSchema, toSchema, differ) => {
     const migration1 = differ.diff(fromSchema, toSchema);
     const migration2 = differ.diff(fromSchema, toSchema);
-    
+
     return JSON.stringify(migration1) === JSON.stringify(migration2);
   },
-  
+
   /**
    * Round-trip property: applying then reversing a migration should yield original schema
    */
@@ -241,11 +241,11 @@ export const invariants = {
     const modifiedSchema = await applier.apply(schema, migration);
     const reverseMigration = await applier.generateReverse(migration);
     const revertedSchema = await applier.apply(modifiedSchema, reverseMigration);
-    
+
     // Note: This is approximate due to metadata differences
     return schema.tables.length === revertedSchema.tables.length;
   },
-  
+
   /**
    * SQL generation should produce parseable SQL
    */
@@ -253,31 +253,31 @@ export const invariants = {
     try {
       const sql = backend.toSQL(ast);
       return typeof sql === 'string' && sql.length > 0;
-    } catch (error) {
+    } catch (_error) {
       return false;
     }
   },
-  
+
   /**
    * Type mappings should be consistent
    */
   typeConsistent: (graphqlType, sqlType, mapper) => {
     const mapped1 = mapper.mapType(graphqlType);
     const mapped2 = mapper.mapType(graphqlType);
-    
+
     return mapped1 === mapped2;
   },
-  
+
   /**
    * Lock levels should be correctly ordered
    */
   lockLevelsOrdered: (operations, lockCalculator) => {
     const locks = operations.map(op => lockCalculator.calculateLock(op));
-    
+
     // Ensure DDL operations have appropriate lock levels
-    return locks.every(lock => 
-      ['ACCESS_SHARE', 'ROW_SHARE', 'ROW_EXCLUSIVE', 'SHARE_UPDATE_EXCLUSIVE', 
-       'SHARE', 'SHARE_ROW_EXCLUSIVE', 'EXCLUSIVE', 'ACCESS_EXCLUSIVE'].includes(lock)
+    return locks.every(lock =>
+      ['ACCESS_SHARE', 'ROW_SHARE', 'ROW_EXCLUSIVE', 'SHARE_UPDATE_EXCLUSIVE',
+        'SHARE', 'SHARE_ROW_EXCLUSIVE', 'EXCLUSIVE', 'ACCESS_EXCLUSIVE'].includes(lock)
     );
   }
 };
@@ -307,7 +307,7 @@ export const wesleyArbitraries = {
       })
     )
   }),
-  
+
   /**
    * Generates tenant/ownership scenarios
    */
@@ -321,7 +321,7 @@ export const wesleyArbitraries = {
       roles: fc.option(fc.array(fc.string(), { maxLength: 3 }))
     }), { maxLength: 5 })
   }),
-  
+
   /**
    * Generates test generation scenarios
    */
@@ -342,7 +342,7 @@ export const propertyHelpers = {
    */
   async runProperty(name, arbitrary, predicate, config = {}) {
     const testConfig = { ...propertyConfig, ...config };
-    
+
     return fc.assert(
       fc.property(arbitrary, predicate),
       {
@@ -352,13 +352,13 @@ export const propertyHelpers = {
       }
     );
   },
-  
+
   /**
    * Runs a async property test
    */
   async runAsyncProperty(name, arbitrary, asyncPredicate, config = {}) {
     const testConfig = { ...propertyConfig, ...config };
-    
+
     return fc.assert(
       fc.asyncProperty(arbitrary, asyncPredicate),
       {
@@ -368,7 +368,7 @@ export const propertyHelpers = {
       }
     );
   },
-  
+
   /**
    * Creates a shrinking example for debugging
    */

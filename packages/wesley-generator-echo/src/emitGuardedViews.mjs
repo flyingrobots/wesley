@@ -15,7 +15,7 @@ import { RustWriter } from './rust-writer.mjs';
  */
 export function emitGuardedViews(ir) {
   const viewTypes = (ir.types ?? []).filter(
-    (t) => t.kind === 'OBJECT' && (t.fields ?? []).some((f) => f.views !== null),
+    (t) => t.kind === 'OBJECT' && (t.fields ?? []).some((f) => f.views !== null)
   );
 
   if (viewTypes.length === 0) return null;
@@ -172,17 +172,17 @@ function mapRustType(field) {
  */
 function scalarToRust(typeName) {
   switch (typeName) {
-    case 'Boolean':
-      return 'bool';
-    case 'Int':
-      return 'i32';
-    case 'Float':
-      return 'f32';
-    case 'String':
-    case 'ID':
-      return 'String';
-    default:
-      return typeName;
+  case 'Boolean':
+    return 'bool';
+  case 'Int':
+    return 'i32';
+  case 'Float':
+    return 'f32';
+  case 'String':
+  case 'ID':
+    return 'String';
+  default:
+    return typeName;
   }
 }
 
@@ -197,13 +197,13 @@ function needsClone(field) {
 
   // For required non-list scalars, only Copy types don't need clone
   switch (field.type) {
-    case 'Boolean':
-    case 'Int':
-    case 'Float':
-      return false;
-    default:
-      // String, ID, and nested objects need clone
-      return true;
+  case 'Boolean':
+  case 'Int':
+  case 'Float':
+    return false;
+  default:
+    // String, ID, and nested objects need clone
+    return true;
   }
 }
 

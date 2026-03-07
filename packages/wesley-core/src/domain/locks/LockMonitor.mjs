@@ -69,7 +69,7 @@ export class LockMonitor {
       ...options.performanceThresholds
     };
     this.eventEmitter = options.eventEmitter || null;
-    
+
     // State tracking
     this.isMonitoring = false;
     this.monitoringTimer = null;
@@ -438,12 +438,12 @@ export class LockMonitor {
    */
   buildDeadlockInfo(cycle, waitingQueries) {
     const processes = [];
-    
+
     for (let i = 0; i < cycle.length; i++) {
       const currentPid = cycle[i];
       const nextPid = cycle[(i + 1) % cycle.length];
-      
-      const waitInfo = waitingQueries.find(q => 
+
+      const waitInfo = waitingQueries.find(q =>
         q.blockedPid === currentPid && q.blockingPid === nextPid
       );
 
@@ -472,7 +472,7 @@ export class LockMonitor {
   /**
    * Analyze lock contention patterns
    */
-  async analyzeLockContention(locks, waitingQueries, blockingQueries) {
+  async analyzeLockContention(locks, waitingQueries, _blockingQueries) {
     const contentionHotspots = new Map(); // relation -> contention info
 
     // Analyze table/index contention

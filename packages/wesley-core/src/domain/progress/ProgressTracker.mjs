@@ -20,7 +20,7 @@ export class ProgressTracker extends EventEmitter {
     this.history = [];
     this.globalStartTime = Date.now();
     this.metrics = new PerformanceMetrics();
-    
+
     // Auto-cleanup timer
     this.cleanupInterval = setInterval(() => this.cleanup(), 60000);
   }
@@ -40,7 +40,7 @@ export class ProgressTracker extends EventEmitter {
     });
 
     this.operations.set(operationId, operation);
-    
+
     this.emit('operation:started', {
       operationId,
       operation: operation.getSnapshot()
@@ -63,7 +63,7 @@ export class ProgressTracker extends EventEmitter {
     }
 
     operation.updateProgress(progress, message, details);
-    
+
     this.emit('progress:updated', {
       operationId,
       progress: operation.getSnapshot(),
@@ -85,10 +85,10 @@ export class ProgressTracker extends EventEmitter {
     }
 
     operation.complete(result);
-    
+
     // Add to history
     this.addToHistory(operation.getSnapshot());
-    
+
     this.emit('operation:completed', {
       operationId,
       operation: operation.getSnapshot(),
@@ -110,10 +110,10 @@ export class ProgressTracker extends EventEmitter {
     }
 
     operation.fail(error);
-    
+
     // Add to history
     this.addToHistory(operation.getSnapshot());
-    
+
     this.emit('operation:failed', {
       operationId,
       operation: operation.getSnapshot(),
@@ -196,7 +196,7 @@ export class ProgressTracker extends EventEmitter {
 
     const avgDuration = recentCompletions.reduce((sum, op) => sum + op.duration, 0) / recentCompletions.length;
     const remainingOperations = operations.filter(op => op.status !== 'completed').length;
-    
+
     return Math.round((remainingOperations * avgDuration) / (1 - overallProgress));
   }
 
@@ -216,7 +216,7 @@ export class ProgressTracker extends EventEmitter {
    */
   getHistory(category = null, limit = null) {
     let filtered = this.history;
-    
+
     if (category) {
       filtered = filtered.filter(op => op.category === category);
     }
@@ -255,9 +255,9 @@ export class ProgressTracker extends EventEmitter {
    */
   cleanup() {
     const cutoff = Date.now() - (5 * 60 * 1000); // 5 minutes ago
-    
+
     for (const [id, operation] of this.operations) {
-      if ((operation.status === 'completed' || operation.status === 'failed') && 
+      if ((operation.status === 'completed' || operation.status === 'failed') &&
           operation.endTime < cutoff) {
         this.operations.delete(id);
       }
@@ -277,7 +277,7 @@ export class ProgressTracker extends EventEmitter {
     this.history = [];
     this.globalStartTime = Date.now();
     this.metrics.reset();
-    
+
     this.emit('tracker:reset');
   }
 
@@ -305,17 +305,17 @@ class OperationProgress {
     this.weight = config.weight;
     this.category = config.category;
     this.metadata = config.metadata;
-    
+
     this.status = 'active';
     this.progress = 0;
     this.currentStep = 0;
     this.message = '';
     this.details = {};
-    
+
     this.startTime = Date.now();
     this.endTime = null;
     this.duration = 0;
-    
+
     // ETA calculation
     this.progressHistory = [];
     this.smoothingFactor = config.smoothingFactor;
@@ -327,8 +327,8 @@ class OperationProgress {
    */
   updateProgress(progress, message = '', details = {}) {
     const now = Date.now();
-    const oldProgress = this.progress;
-    
+    const _oldProgress = this.progress;
+
     this.progress = Math.max(0, Math.min(1, progress));
     this.message = message;
     this.details = { ...this.details, ...details };
@@ -348,7 +348,7 @@ class OperationProgress {
    */
   updateProgressHistory(timestamp, progress) {
     this.progressHistory.push({ timestamp, progress });
-    
+
     // Keep only last 10 data points for smooth calculation
     if (this.progressHistory.length > 10) {
       this.progressHistory = this.progressHistory.slice(-10);
@@ -370,7 +370,7 @@ class OperationProgress {
     for (let i = 1; i < recent.length; i++) {
       const timeDiff = recent[i].timestamp - recent[i-1].timestamp;
       const progressDiff = recent[i].progress - recent[i-1].progress;
-      
+
       if (timeDiff > 0 && progressDiff > 0) {
         const rate = progressDiff / timeDiff; // progress per millisecond
         totalRate += rate;
@@ -380,7 +380,7 @@ class OperationProgress {
 
     if (validPoints > 0) {
       const newRate = totalRate / validPoints;
-      this.estimatedRate = this.estimatedRate === 0 ? newRate : 
+      this.estimatedRate = this.estimatedRate === 0 ? newRate :
         (this.smoothingFactor * this.estimatedRate) + ((1 - this.smoothingFactor) * newRate);
     }
   }
@@ -461,7 +461,7 @@ class PerformanceMetrics {
 
   recordOperationStart(operationId, category) {
     this.operationCount++;
-    
+
     if (!this.categoryStats.has(category)) {
       this.categoryStats.set(category, {
         count: 0,
@@ -470,12 +470,12 @@ class PerformanceMetrics {
         totalDuration: 0
       });
     }
-    
+
     const stats = this.categoryStats.get(category);
     stats.count++;
   }
 
-  recordProgressUpdate(operationId, progress) {
+  recordProgressUpdate(_operationId, _progress) {
     // Could track progress velocity here if needed
   }
 
@@ -490,7 +490,7 @@ class PerformanceMetrics {
   getSnapshot() {
     const now = Date.now();
     const totalTime = now - this.startTime;
-    
+
     const categoryData = {};
     for (const [category, stats] of this.categoryStats) {
       categoryData[category] = {

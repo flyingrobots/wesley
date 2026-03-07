@@ -58,7 +58,7 @@ export function hashType(typeDef, deps = {}) {
   // Sort fields by name for consistent hashing
   const normalized = {
     name: typeDef.name,
-    fields: [...(typeDef.fields || [])].sort((a, b) => a.name.localeCompare(b.name)),
+    fields: [...(typeDef.fields || [])].sort((a, b) => a.name.localeCompare(b.name))
   };
 
   const canonical = canonicalizeObject(normalized);
@@ -76,7 +76,7 @@ export function hashOp(op, deps = {}) {
   const normalized = {
     name: op.name,
     args: [...(op.args || [])].sort((a, b) => a.name.localeCompare(b.name)),
-    resultType: op.resultType,
+    resultType: op.resultType
   };
 
   const canonical = canonicalizeObject(normalized);
@@ -96,7 +96,7 @@ export function hashChannel(channel, deps = {}) {
     version: channel.version,
     eventTypes: [...(channel.eventTypes || [])].sort(),
     ordered: channel.ordered,
-    persistent: channel.persistent,
+    persistent: channel.persistent
   };
 
   const canonical = canonicalizeObject(normalized);
@@ -135,7 +135,7 @@ export function hashSchema(sdl, deps = {}) {
   // Print normalized SDL
   const normalizedSdl = print({
     kind: 'Document',
-    definitions: sortedDefs,
+    definitions: sortedDefs
   });
 
   return hashString(normalizedSdl, deps);

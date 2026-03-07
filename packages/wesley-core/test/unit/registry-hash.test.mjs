@@ -78,10 +78,10 @@ test('registryHash: removing a field changes hash', async () => {
 
 test('registryHash: nested key order does not affect hash', async () => {
   const a = await registryHash({
-    types: [{ fields: [{ name: 'id', type: 'ID' }], name: 'User', kind: 'OBJECT' }],
+    types: [{ fields: [{ name: 'id', type: 'ID' }], name: 'User', kind: 'OBJECT' }]
   });
   const b = await registryHash({
-    types: [{ kind: 'OBJECT', name: 'User', fields: [{ type: 'ID', name: 'id' }] }],
+    types: [{ kind: 'OBJECT', name: 'User', fields: [{ type: 'ID', name: 'id' }] }]
   });
   assert.equal(a, b);
 });
@@ -99,21 +99,21 @@ const GOLDEN_VECTORS = [
     name: 'empty-registry',
     data: { ops: [], types: [] },
     // canonical: {"ops":[],"types":[]}
-    hash: null, // computed below
+    hash: null // computed below
   },
   {
     name: 'single-type',
     data: { types: [{ kind: 'OBJECT', name: 'User', fields: [{ name: 'id', type: 'ID', required: true, list: false }] }] },
-    hash: null,
+    hash: null
   },
   {
     name: 'with-ops',
     data: {
       types: [{ kind: 'ENUM', name: 'Status', values: ['ACTIVE', 'INACTIVE'] }],
-      ops: [{ kind: 'QUERY', name: 'getStatus', op_id: 12345, args: [], result_type: 'Status' }],
+      ops: [{ kind: 'QUERY', name: 'getStatus', op_id: 12345, args: [], result_type: 'Status' }]
     },
-    hash: null,
-  },
+    hash: null
+  }
 ];
 
 // Pre-compute golden hashes on first run, then pin them.

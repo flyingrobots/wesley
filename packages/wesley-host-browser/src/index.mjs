@@ -86,32 +86,32 @@ export async function compileSchemaInBrowser(inputFiles) {
         // BrowserParserPort detects primaryKey and puts it on the table object
         // It might also be on the column directive, but let's check table.primaryKey
         if (table.primaryKey === col.name || col.directives?.pk || col.directives?.wes_pk) {
-             if (!def.includes('PRIMARY KEY')) def += ' PRIMARY KEY';
+          if (!def.includes('PRIMARY KEY')) def += ' PRIMARY KEY';
         }
         if (col.default) {
-            // Re-quote string values for SQL (directive parsing strips quotes)
-            let val = col.default;
-            // Check if value needs SQL string quoting:
-            // - Not a number (integer or decimal)
-            // - Not already quoted
-            // - Not a SQL expression (containing parentheses like NOW())
-            const isNumeric = /^-?\d+(\.\d+)?$/.test(val);
-            const isAlreadyQuoted = /^'.*'$/.test(val);
-            const isExpression = /[()]/.test(val);
-            const isBoolean = /^(true|false)$/i.test(val);
-            const isNull = /^null$/i.test(val);
-            if (!isNumeric && !isAlreadyQuoted && !isExpression && !isBoolean && !isNull) {
-                // Escape single quotes in the value and wrap in SQL quotes
-                val = `'${val.replace(/'/g, "''")}'`;
-            }
-            def += ` DEFAULT ${val}`;
+          // Re-quote string values for SQL (directive parsing strips quotes)
+          let val = col.default;
+          // Check if value needs SQL string quoting:
+          // - Not a number (integer or decimal)
+          // - Not already quoted
+          // - Not a SQL expression (containing parentheses like NOW())
+          const isNumeric = /^-?\d+(\.\d+)?$/.test(val);
+          const isAlreadyQuoted = /^'.*'$/.test(val);
+          const isExpression = /[()]/.test(val);
+          const isBoolean = /^(true|false)$/i.test(val);
+          const isNull = /^null$/i.test(val);
+          if (!isNumeric && !isAlreadyQuoted && !isExpression && !isBoolean && !isNull) {
+            // Escape single quotes in the value and wrap in SQL quotes
+            val = `'${val.replace(/'/g, "''")}'`;
+          }
+          def += ` DEFAULT ${val}`;
         }
         return def;
       }).join(',\n');
-      
+
       return `CREATE TABLE "${table.name}" (\n${columns}\n);`;
     }).join('\n\n');
-    
+
     // Add a dummy SQL migration file as output
     result.outputFiles.push({ file: 'migrations.sql', body: generatedSql || '-- No migrations generated yet.' });
     result.outputFiles.push({ file: 'schema.sql', body: JSON.stringify(bundle.schema, null, 2) });
@@ -119,14 +119,14 @@ export async function compileSchemaInBrowser(inputFiles) {
 
     result.ok = true;
     result.tables = tables;
-    
+
     // Check for errors in the bundle
     if (bundle.errors && bundle.errors.length > 0) {
-        result.ok = false;
-        result.errors = bundle.errors.map(err => ({ message: err.message || String(err) }));
+      result.ok = false;
+      result.errors = bundle.errors.map(err => ({ message: err.message || String(err) }));
     } else if (tables === 0 && schemaSDL.includes('type ')) {
-       // Fallback: if we have types but 0 tables, something might be wrong with parsing/bundle
-       // console.log('DEBUG: Bundle schema:', JSON.stringify(bundle.schema, null, 2));
+      // Fallback: if we have types but 0 tables, something might be wrong with parsing/bundle
+      // console.log('DEBUG: Bundle schema:', JSON.stringify(bundle.schema, null, 2));
     }
 
     return result;
@@ -140,4 +140,4 @@ export async function compileSchemaInBrowser(inputFiles) {
 
 // Re-export runInBrowser for any existing uses, if necessary, or remove if compileSchemaInBrowser is the sole entry.
 // For now, keep it for compatibility until we confirm no other parts rely on it.
-// export { runInBrowser } from './index.mjs'; 
+// export { runInBrowser } from './index.mjs';

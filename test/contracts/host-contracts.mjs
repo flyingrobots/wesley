@@ -24,7 +24,7 @@ function sanitizeGraphQL(sdl, maxBytes = 5 * 1024 * 1024) {
 
 function detectTables(sdl) {
   const out = [];
-  const re = /\btype\s+([A-Za-z_][A-Za-z0-9_]*)\s*([^\{]*)\{/g;
+  const re = /\btype\s+([A-Za-z_][A-Za-z0-9_]*)\s*([^{]*)\{/g;
   let m;
   while ((m = re.exec(sdl)) !== null) {
     const name = m[1];
@@ -45,8 +45,8 @@ export async function runAll(opts = {}) {
 
   // Case 1: minimal schema with two tables
   try {
-    const sdl = `type Org @wes_table { id: ID! @wes_pk }\n` +
-                `type User @wes_table { id: ID! @wes_pk, org_id: ID! @wes_fk(ref: "Org.id") }`;
+    const sdl = 'type Org @wes_table { id: ID! @wes_pk }\n' +
+                'type User @wes_table { id: ID! @wes_pk, org_id: ID! @wes_fk(ref: "Org.id") }';
     const clean = sanitizeGraphQL(sdl, opts.maxBytes ?? 1024 * 1024);
     const tables = detectTables(clean);
     const token = await makeToken({ tables: tables.map(t => t.name).sort() });
@@ -82,6 +82,6 @@ export async function runAll(opts = {}) {
 // If executed directly under Node/Bun/Deno (not imported), run and print JSON
 if (import.meta.main || (typeof Deno !== 'undefined' && Deno?.mainModule === import.meta.url)) {
   const out = await runAll();
-  // eslint-disable-next-line no-console
+
   console.log(JSON.stringify(out));
 }

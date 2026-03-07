@@ -33,7 +33,7 @@ function encodeClaimRecord(v) {
     ...encodeOptionalString(v.private_ref),
     ...encodeOptionalString(v.proof_hash),
     ...encodeString(v.scheme_id),
-    ...encodeString(v.statement_hash),
+    ...encodeString(v.statement_hash)
   ];
 }
 
@@ -45,7 +45,7 @@ function encodePrivateAtomRefV1(v) {
     ...encodeOptionalString(v.opaque_ref),
     ...encodeString(v.policy_hash),
     ...encodeString(v.statement_hash),
-    ...encodeOptionalString(v.zk_evidence),
+    ...encodeOptionalString(v.zk_evidence)
   ];
 }
 
@@ -57,7 +57,7 @@ function encodeOpaqueRefV1(v) {
     ...encodeString(v.commit),
     ...encodeString(v.locator),
     ...encodeString(v.policy_hash),
-    ...encodeString(v.vault_id),
+    ...encodeString(v.vault_id)
   ];
 }
 
@@ -99,7 +99,7 @@ function decodeClaimRecord(bytes) {
     private_ref: private_ref.value,
     proof_hash: proof_hash.value,
     scheme_id: scheme_id.value,
-    statement_hash: statement_hash.value,
+    statement_hash: statement_hash.value
   };
 }
 
@@ -115,7 +115,7 @@ function decodePrivateAtomRefV1(bytes) {
     opaque_ref: opaque_ref.value,
     policy_hash: policy_hash.value,
     statement_hash: statement_hash.value,
-    zk_evidence: zk_evidence.value,
+    zk_evidence: zk_evidence.value
   };
 }
 
@@ -131,7 +131,7 @@ function decodeOpaqueRefV1(bytes) {
     commit: commit.value,
     locator: locator.value,
     policy_hash: policy_hash.value,
-    vault_id: vault_id.value,
+    vault_id: vault_id.value
   };
 }
 
@@ -153,27 +153,27 @@ function hexToBytes(hex) {
 
 function encodeByType(type, value) {
   switch (type) {
-    case 'ClaimRecord':
-      return encodeClaimRecord(value);
-    case 'PrivateAtomRefV1':
-      return encodePrivateAtomRefV1(value);
-    case 'OpaqueRefV1':
-      return encodeOpaqueRefV1(value);
-    default:
-      throw new Error(`Unknown type: ${type}`);
+  case 'ClaimRecord':
+    return encodeClaimRecord(value);
+  case 'PrivateAtomRefV1':
+    return encodePrivateAtomRefV1(value);
+  case 'OpaqueRefV1':
+    return encodeOpaqueRefV1(value);
+  default:
+    throw new Error(`Unknown type: ${type}`);
   }
 }
 
 function decodeByType(type, bytes) {
   switch (type) {
-    case 'ClaimRecord':
-      return decodeClaimRecord(bytes);
-    case 'PrivateAtomRefV1':
-      return decodePrivateAtomRefV1(bytes);
-    case 'OpaqueRefV1':
-      return decodeOpaqueRefV1(bytes);
-    default:
-      throw new Error(`Unknown type: ${type}`);
+  case 'ClaimRecord':
+    return decodeClaimRecord(bytes);
+  case 'PrivateAtomRefV1':
+    return decodePrivateAtomRefV1(bytes);
+  case 'OpaqueRefV1':
+    return decodeOpaqueRefV1(bytes);
+  default:
+    throw new Error(`Unknown type: ${type}`);
   }
 }
 
@@ -182,7 +182,7 @@ function decodeByType(type, bytes) {
 // ---------------------------------------------------------------------------
 
 const vectorFile = JSON.parse(
-  readFileSync(join(__dirname, 'golden-vectors', 'privacy-types.json'), 'utf-8'),
+  readFileSync(join(__dirname, 'golden-vectors', 'privacy-types.json'), 'utf-8')
 );
 
 // ---------------------------------------------------------------------------

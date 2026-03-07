@@ -16,7 +16,7 @@ test('all directives in schema are registered', () => {
   // Load the canonical directives
   const directivesPath = join(__dirname, '../../../../schemas/directives.graphql');
   const directivesContent = readFileSync(directivesPath, 'utf8');
-  
+
   // Parse registered directives
   const registeredDirectives = new Set();
   const directiveRegex = /directive\s+@(\w+)/g;
@@ -24,11 +24,11 @@ test('all directives in schema are registered', () => {
   while ((match = directiveRegex.exec(directivesContent)) !== null) {
     registeredDirectives.add(match[1]);
   }
-  
+
   // Load example schemas to check
   const exampleSchemaPath = join(__dirname, '../../../../test/fixtures/examples/ecommerce.graphql');
   const exampleContent = readFileSync(exampleSchemaPath, 'utf8');
-  
+
   // Find all used directives in schema
   const usedDirectives = new Set();
   const usageRegex = /@(\w+)(?:\s*\(|[\s\n])/g;
@@ -38,7 +38,7 @@ test('all directives in schema are registered', () => {
       usedDirectives.add(match[1]);
     }
   }
-  
+
   // Check every used directive is registered
   const unregistered = [];
   for (const directive of usedDirectives) {
@@ -46,7 +46,7 @@ test('all directives in schema are registered', () => {
       unregistered.push(directive);
     }
   }
-  
+
   if (unregistered.length > 0) {
     assert.fail(`Unregistered directives used in schema: ${unregistered.join(', ')}
     
@@ -56,18 +56,18 @@ Add the following to directives.graphql:
 ${unregistered.map(d => `directive @${d} on FIELD_DEFINITION | OBJECT`).join('\n')}
 `);
   }
-  
+
   // Logging removed to avoid node:test runner serialization flakes in CI
 });
 
 test('directive processor handles all registered directives', () => {
   // This would import the DirectiveProcessor from core
   // and verify it has handlers for all registered directives
-  
+
   // For now, just check that critical directives are known
   const criticalDirectives = [
     'table',
-    'primaryKey', 
+    'primaryKey',
     'foreignKey',
     'unique',
     'index',
@@ -78,12 +78,12 @@ test('directive processor handles all registered directives', () => {
     'weight',
     'rls'
   ];
-  
+
   // In real implementation, would check DirectiveProcessor.knownDirectives
   // For now, just assert they exist in registry
   const directivesPath = join(__dirname, '../../../../schemas/directives.graphql');
   const directivesContent = readFileSync(directivesPath, 'utf8');
-  
+
   for (const directive of criticalDirectives) {
     assert(
       directivesContent.includes(`directive @${directive}`),

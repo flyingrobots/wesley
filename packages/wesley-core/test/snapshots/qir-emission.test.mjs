@@ -7,7 +7,7 @@ import {
   Projection,
   ProjectionItem,
   ColumnRef,
-  OrderBy,
+  OrderBy
 } from '../../src/domain/qir/Nodes.mjs';
 
 import { emitView, emitFunction } from '../../src/domain/qir/emit.mjs';
@@ -16,7 +16,7 @@ test('emitFunction: generates deterministic function with params and jsonb rows'
   const root = new TableNode('organization', 't0');
   const proj = new Projection([
     new ProjectionItem('id', new ColumnRef('t0', 'id')),
-    new ProjectionItem('name', new ColumnRef('t0', 'name')),
+    new ProjectionItem('name', new ColumnRef('t0', 'name'))
   ]);
   // Filter with IN param
   const filter = {
@@ -40,7 +40,7 @@ test('emitView: wraps lowered SQL in CREATE VIEW', () => {
   const root = new TableNode('organization', 't0');
   const proj = new Projection([
     new ProjectionItem('id', new ColumnRef('t0', 'id')),
-    new ProjectionItem('name', new ColumnRef('t0', 'name')),
+    new ProjectionItem('name', new ColumnRef('t0', 'name'))
   ]);
   const plan = new QueryPlan(root, proj, { orderBy: [ new OrderBy(new ColumnRef('t0','name'), 'asc') ] });
 
@@ -61,7 +61,7 @@ test('emitFunction: preserves jsonb_agg COALESCE inside wrapper', () => {
 test('emitFunction: supports SECURITY and SET search_path', () => {
   const root = new TableNode('organization', 't0');
   const proj = new Projection([
-    new ProjectionItem('id', new ColumnRef('t0', 'id')),
+    new ProjectionItem('id', new ColumnRef('t0', 'id'))
   ]);
   const plan = new QueryPlan(root, proj, {});
   const sql = emitFunction('secure', plan, { security: 'definer', setSearchPath: ['pg_catalog', 'wes_ops'] });
@@ -72,7 +72,7 @@ test('emitFunction: supports SECURITY and SET search_path', () => {
 test('emitFunction: renderSearchPath preserves $user and pg_temp verbatim', () => {
   const root = new TableNode('organization', 't0');
   const proj = new Projection([
-    new ProjectionItem('id', new ColumnRef('t0', 'id')),
+    new ProjectionItem('id', new ColumnRef('t0', 'id'))
   ]);
   const plan = new QueryPlan(root, proj, {});
   const sql = emitFunction('sp_test', plan, { setSearchPath: ['$user', 'pg_temp', 'my_schema'] });

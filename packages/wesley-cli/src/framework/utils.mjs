@@ -20,13 +20,13 @@ export function formatError(err, options = {}) {
 
 export function exitCodeFor(err) {
   switch (err?.code) {
-    case 'PARSE_FAILED': return 3;
-    case 'GENERATION_FAILED': return 4;
-    case 'DIFF_FAILED': return 5;
-    case 'PIPELINE_EXEC_FAILED': return 6;
-    case 'EEMPTYSCHEMA': return 2;
-    case 'ENOENT': return 2;
-    default: return 1;
+  case 'PARSE_FAILED': return 3;
+  case 'GENERATION_FAILED': return 4;
+  case 'DIFF_FAILED': return 5;
+  case 'PIPELINE_EXEC_FAILED': return 6;
+  case 'EEMPTYSCHEMA': return 2;
+  case 'ENOENT': return 2;
+  default: return 1;
   }
 }
 

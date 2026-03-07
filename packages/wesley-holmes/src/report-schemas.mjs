@@ -267,57 +267,57 @@ function validateNode(schema, value, path, errors) {
   const location = path || 'root';
 
   switch (schema.type) {
-    case 'object': {
-      if (!isObject(value)) {
-        errors.push(`${location} expected object`);
-        return;
-      }
-      const required = schema.required || [];
-      for (const key of required) {
-        if (!(key in value)) {
-          errors.push(`${location}.${key} missing`);
-        }
-      }
-      const props = schema.properties || {};
-      for (const [key, childSchema] of Object.entries(props)) {
-        if (key in value) {
-          validateNode(childSchema, value[key], `${location}.${key}`, errors);
-        }
-      }
+  case 'object': {
+    if (!isObject(value)) {
+      errors.push(`${location} expected object`);
       return;
     }
-    case 'array': {
-      if (!Array.isArray(value)) {
-        errors.push(`${location} expected array`);
-        return;
+    const required = schema.required || [];
+    for (const key of required) {
+      if (!(key in value)) {
+        errors.push(`${location}.${key} missing`);
       }
-      if (schema.items) {
-        value.forEach((item, index) => {
-          validateNode(schema.items, item, `${location}[${index}]`, errors);
-        });
+    }
+    const props = schema.properties || {};
+    for (const [key, childSchema] of Object.entries(props)) {
+      if (key in value) {
+        validateNode(childSchema, value[key], `${location}.${key}`, errors);
       }
+    }
+    return;
+  }
+  case 'array': {
+    if (!Array.isArray(value)) {
+      errors.push(`${location} expected array`);
       return;
     }
-    case 'string': {
-      if (typeof value !== 'string') {
-        errors.push(`${location} expected string`);
-      }
-      return;
+    if (schema.items) {
+      value.forEach((item, index) => {
+        validateNode(schema.items, item, `${location}[${index}]`, errors);
+      });
     }
-    case 'number': {
-      if (typeof value !== 'number' || Number.isNaN(value)) {
-        errors.push(`${location} expected number`);
-      }
-      return;
+    return;
+  }
+  case 'string': {
+    if (typeof value !== 'string') {
+      errors.push(`${location} expected string`);
     }
-    case 'boolean': {
-      if (typeof value !== 'boolean') {
-        errors.push(`${location} expected boolean`);
-      }
-      return;
+    return;
+  }
+  case 'number': {
+    if (typeof value !== 'number' || Number.isNaN(value)) {
+      errors.push(`${location} expected number`);
     }
-    default:
-      return;
+    return;
+  }
+  case 'boolean': {
+    if (typeof value !== 'boolean') {
+      errors.push(`${location} expected boolean`);
+    }
+    return;
+  }
+  default:
+    return;
   }
 }
 

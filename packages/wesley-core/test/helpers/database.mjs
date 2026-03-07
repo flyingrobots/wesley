@@ -11,7 +11,7 @@ import { createHash } from 'node:crypto';
 export const testDatabaseConfig = {
   // Use a test-specific database URL or in-memory DB
   url: process.env.TEST_DATABASE_URL || 'postgresql://test:test@localhost:5432/wesley_test',
-  
+
   // Connection pool settings for tests
   pool: {
     min: 1,
@@ -19,7 +19,7 @@ export const testDatabaseConfig = {
     idleTimeoutMillis: 10000,
     connectionTimeoutMillis: 5000
   },
-  
+
   // Test-specific settings
   schema: 'test_schema',
   isolationLevel: 'READ_COMMITTED',
@@ -36,7 +36,7 @@ export function createTestSchema(testName) {
     .update(testName + Date.now() + Math.random())
     .digest('hex')
     .substring(0, 8);
-  
+
   return `test_${hash}`;
 }
 
@@ -48,27 +48,27 @@ export const testSQL = {
    * Creates a test schema
    */
   createSchema: (schemaName) => `CREATE SCHEMA IF NOT EXISTS "${schemaName}"`,
-  
+
   /**
    * Drops a test schema
    */
   dropSchema: (schemaName) => `DROP SCHEMA IF EXISTS "${schemaName}" CASCADE`,
-  
+
   /**
    * Sets search path for test isolation
    */
   setSearchPath: (schemaName) => `SET search_path TO "${schemaName}", public`,
-  
+
   /**
    * Enables RLS for testing
    */
   enableRLS: (tableName) => `ALTER TABLE "${tableName}" ENABLE ROW LEVEL SECURITY`,
-  
+
   /**
    * Creates a test role
    */
   createRole: (roleName) => `CREATE ROLE "${roleName}" NOINHERIT`,
-  
+
   /**
    * Drops a test role
    */
@@ -88,13 +88,13 @@ export class MockDatabase {
     this.errorMessage = 'Mock database error';
     this.failNext = false; // one-shot error flag
   }
-  
+
   /**
    * Mock query execution
    */
   async query(sql, params = []) {
     this.queries.push({ sql, params, timestamp: new Date() });
-    
+
     // One-shot failure takes precedence to simulate a single failing statement
     if (this.failNext) {
       this.failNext = false;
@@ -104,13 +104,13 @@ export class MockDatabase {
     if (this.shouldError) {
       throw new Error(this.errorMessage);
     }
-    
+
     // Return first matching configured result (substring match on normalized SQL)
     const norm = this.normalizeSQL(sql);
     const entry = this.results.find(r => norm.includes(r.pattern));
     return entry?.result || { rows: [], rowCount: 0 };
   }
-  
+
   /**
    * Mock transaction begin
    */
@@ -118,7 +118,7 @@ export class MockDatabase {
     this.transactionDepth++;
     await this.query('BEGIN');
   }
-  
+
   /**
    * Mock transaction commit
    */
@@ -128,7 +128,7 @@ export class MockDatabase {
       await this.query('COMMIT');
     }
   }
-  
+
   /**
    * Mock transaction rollback
    */
@@ -138,7 +138,7 @@ export class MockDatabase {
       await this.query('ROLLBACK');
     }
   }
-  
+
   /**
    * Configure mock to return specific result for a query
    */
@@ -146,7 +146,7 @@ export class MockDatabase {
     const pattern = this.normalizeSQL(sql);
     this.results.push({ pattern, result });
   }
-  
+
   /**
    * Configure mock to throw error on next query
    */
@@ -154,7 +154,7 @@ export class MockDatabase {
     this.errorMessage = message;
     this.failNext = true;
   }
-  
+
   /**
    * Reset mock state
    */
@@ -164,21 +164,21 @@ export class MockDatabase {
     this.transactionDepth = 0;
     this.shouldError = false;
   }
-  
+
   /**
    * Get all executed queries
    */
   getQueries() {
     return [...this.queries];
   }
-  
+
   /**
    * Get queries matching pattern
    */
   getQueriesMatching(pattern) {
     return this.queries.filter(q => pattern.test(q.sql));
   }
-  
+
   /**
    * Normalize SQL for consistent matching
    */
@@ -208,7 +208,7 @@ export const testFixtures = {
       { name: 'users_insert', operation: 'INSERT', check: 'auth.uid() = id' }
     ]
   },
-  
+
   /**
    * Multi-tenant organization table
    */
@@ -227,7 +227,7 @@ export const testFixtures = {
       { name: 'org_owner_all', operation: 'ALL', using: 'owner_id = auth.uid()' }
     ]
   },
-  
+
   /**
    * Complex table with various field types
    */
@@ -267,12 +267,12 @@ export const dbAssert = {
       SELECT 1 FROM information_schema.tables 
       WHERE table_schema = $1 AND table_name = $2
     `, [schemaName, tableName]);
-    
+
     if (result.rows.length === 0) {
       throw new Error(`Table ${schemaName}.${tableName} does not exist`);
     }
   },
-  
+
   /**
    * Assert that a column exists with expected properties
    */
@@ -282,18 +282,18 @@ export const dbAssert = {
       FROM information_schema.columns 
       WHERE table_schema = $1 AND table_name = $2 AND column_name = $3
     `, [schemaName, tableName, columnName]);
-    
+
     if (result.rows.length === 0) {
       throw new Error(`Column ${tableName}.${columnName} does not exist`);
     }
-    
+
     if (expectedType && !result.rows[0].data_type.includes(expectedType)) {
       throw new Error(
         `Column ${tableName}.${columnName} has type ${result.rows[0].data_type}, expected ${expectedType}`
       );
     }
   },
-  
+
   /**
    * Assert that an index exists
    */
@@ -302,12 +302,12 @@ export const dbAssert = {
       SELECT 1 FROM pg_indexes 
       WHERE schemaname = $1 AND indexname = $2
     `, [schemaName, indexName]);
-    
+
     if (result.rows.length === 0) {
       throw new Error(`Index ${indexName} does not exist in schema ${schemaName}`);
     }
   },
-  
+
   /**
    * Assert that a policy exists
    */
@@ -316,7 +316,7 @@ export const dbAssert = {
       SELECT 1 FROM pg_policies 
       WHERE schemaname = $1 AND tablename = $2 AND policyname = $3
     `, [schemaName, tableName, policyName]);
-    
+
     if (result.rows.length === 0) {
       throw new Error(`Policy ${policyName} does not exist on table ${schemaName}.${tableName}`);
     }

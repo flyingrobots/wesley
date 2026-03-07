@@ -40,16 +40,16 @@ export class CompilerPort {
    * @param {CompileContext} ctx
    * @returns {Promise<CompileResult>}
    */
-  async compile(input, ctx) { 
-    throw new Error('CompilerPort.compile() must be implemented'); 
+  async compile(_input, _ctx) {
+    throw new Error('CompilerPort.compile() must be implemented');
   }
 
   /** Optional additional ops the CLI may expose */
-  async validateBundle(path) { 
-    throw new Error('CompilerPort.validateBundle() must be implemented'); 
+  async validateBundle(_path) {
+    throw new Error('CompilerPort.validateBundle() must be implemented');
   }
-  
-  async runTests(opts) { 
-    throw new Error('CompilerPort.runTests() must be implemented'); 
+
+  async runTests(_opts) {
+    throw new Error('CompilerPort.runTests() must be implemented');
   } // wire pgTAP later
 }

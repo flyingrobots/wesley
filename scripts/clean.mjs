@@ -10,14 +10,14 @@ const directories = [
   'tests/generated',
   'test/fixtures/examples/.wesley',
   'test/fixtures/examples/out',
-  'test/fixtures/blade/out',
+  'test/fixtures/blade/out'
 ];
 
 const filePatterns = [
   {
     directory: 'test/fixtures/blade',
-    shouldRemove: (name) => name.endsWith('.key') || name.endsWith('.pub'),
-  },
+    shouldRemove: (name) => name.endsWith('.key') || name.endsWith('.pub')
+  }
 ];
 
 async function removePath(path) {
@@ -35,7 +35,7 @@ async function removePattern({ directory, shouldRemove }) {
     await Promise.all(
       entries
         .filter((entry) => entry.isFile() && shouldRemove(entry.name))
-        .map((entry) => removePath(join(directory, entry.name))),
+        .map((entry) => removePath(join(directory, entry.name)))
     );
   } catch (error) {
     if (error.code !== 'ENOENT') {

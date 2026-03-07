@@ -61,7 +61,7 @@ export const TokenType = {
   SEMICOLON: 'SEMICOLON',
 
   // End of file
-  EOF: 'EOF',
+  EOF: 'EOF'
 };
 
 /**
@@ -79,7 +79,7 @@ const KEYWORDS = {
   mustEmit: TokenType.MUST_EMIT,
   produces: TokenType.PRODUCES,
   emitsTo: TokenType.EMITS_TO,
-  within: TokenType.WITHIN,
+  within: TokenType.WITHIN
 };
 
 /**
@@ -117,7 +117,7 @@ export function tokenize(source) {
     return char;
   }
 
-  function match(expected) {
+  function _match(expected) {
     if (peek() === expected) {
       advance();
       return true;
@@ -152,13 +152,13 @@ export function tokenize(source) {
         advance();
         const escaped = advance();
         switch (escaped) {
-          case 'n': value += '\n'; break;
-          case 't': value += '\t'; break;
-          case 'r': value += '\r'; break;
-          case '\\': value += '\\'; break;
-          case '"': value += '"'; break;
-          case "'": value += "'"; break;
-          default: value += escaped;
+        case 'n': value += '\n'; break;
+        case 't': value += '\t'; break;
+        case 'r': value += '\r'; break;
+        case '\\': value += '\\'; break;
+        case '"': value += '"'; break;
+        case "'": value += "'"; break;
+        default: value += escaped;
         }
       } else {
         value += advance();
@@ -267,23 +267,23 @@ export function tokenize(source) {
     // Single-character tokens
     advance();
     switch (c) {
-      case '+': tokens.push(token(TokenType.PLUS, '+', startLine, startColumn)); break;
-      case '-': tokens.push(token(TokenType.MINUS, '-', startLine, startColumn)); break;
-      case '*': tokens.push(token(TokenType.STAR, '*', startLine, startColumn)); break;
-      case '/': tokens.push(token(TokenType.SLASH, '/', startLine, startColumn)); break;
-      case '!': tokens.push(token(TokenType.BANG, '!', startLine, startColumn)); break;
-      case '<': tokens.push(token(TokenType.LT, '<', startLine, startColumn)); break;
-      case '>': tokens.push(token(TokenType.GT, '>', startLine, startColumn)); break;
-      case '(': tokens.push(token(TokenType.LPAREN, '(', startLine, startColumn)); break;
-      case ')': tokens.push(token(TokenType.RPAREN, ')', startLine, startColumn)); break;
-      case '[': tokens.push(token(TokenType.LBRACKET, '[', startLine, startColumn)); break;
-      case ']': tokens.push(token(TokenType.RBRACKET, ']', startLine, startColumn)); break;
-      case '.': tokens.push(token(TokenType.DOT, '.', startLine, startColumn)); break;
-      case ',': tokens.push(token(TokenType.COMMA, ',', startLine, startColumn)); break;
-      case ':': tokens.push(token(TokenType.COLON, ':', startLine, startColumn)); break;
-      case ';': tokens.push(token(TokenType.SEMICOLON, ';', startLine, startColumn)); break;
-      default:
-        throw new Error(`Unexpected character '${c}' at line ${startLine}, column ${startColumn}`);
+    case '+': tokens.push(token(TokenType.PLUS, '+', startLine, startColumn)); break;
+    case '-': tokens.push(token(TokenType.MINUS, '-', startLine, startColumn)); break;
+    case '*': tokens.push(token(TokenType.STAR, '*', startLine, startColumn)); break;
+    case '/': tokens.push(token(TokenType.SLASH, '/', startLine, startColumn)); break;
+    case '!': tokens.push(token(TokenType.BANG, '!', startLine, startColumn)); break;
+    case '<': tokens.push(token(TokenType.LT, '<', startLine, startColumn)); break;
+    case '>': tokens.push(token(TokenType.GT, '>', startLine, startColumn)); break;
+    case '(': tokens.push(token(TokenType.LPAREN, '(', startLine, startColumn)); break;
+    case ')': tokens.push(token(TokenType.RPAREN, ')', startLine, startColumn)); break;
+    case '[': tokens.push(token(TokenType.LBRACKET, '[', startLine, startColumn)); break;
+    case ']': tokens.push(token(TokenType.RBRACKET, ']', startLine, startColumn)); break;
+    case '.': tokens.push(token(TokenType.DOT, '.', startLine, startColumn)); break;
+    case ',': tokens.push(token(TokenType.COMMA, ',', startLine, startColumn)); break;
+    case ':': tokens.push(token(TokenType.COLON, ':', startLine, startColumn)); break;
+    case ';': tokens.push(token(TokenType.SEMICOLON, ';', startLine, startColumn)); break;
+    default:
+      throw new Error(`Unexpected character '${c}' at line ${startLine}, column ${startColumn}`);
     }
   }
 

@@ -19,7 +19,7 @@ export const ObligationSeverity = {
   INFO: 'INFO',
   WARN: 'WARN',
   ERROR: 'ERROR',
-  FATAL: 'FATAL',
+  FATAL: 'FATAL'
 };
 
 /**
@@ -29,7 +29,7 @@ export const ObligationKind = {
   TICK: 'TICK',         // Verify every tick
   EVENTUAL: 'EVENTUAL', // Verify eventually (within N ticks)
   SAFETY: 'SAFETY',     // Verify on state transitions
-  ALWAYS: 'ALWAYS',     // Verify continuously
+  ALWAYS: 'ALWAYS'     // Verify continuously
 };
 
 /**
@@ -55,39 +55,39 @@ function extractDependencies(ast, deps = new Set()) {
   if (!ast || typeof ast !== 'object') return deps;
 
   switch (ast.kind) {
-    case 'IDENTIFIER':
-      // Subject keywords are dependencies
-      if (['tick', 'op', 'channel', 'rule'].includes(ast.name)) {
-        deps.add(ast.name);
-      }
-      break;
+  case 'IDENTIFIER':
+    // Subject keywords are dependencies
+    if (['tick', 'op', 'channel', 'rule'].includes(ast.name)) {
+      deps.add(ast.name);
+    }
+    break;
 
-    case 'FORALL':
-      deps.add(`collection:${ast.collection}`);
-      extractDependencies(ast.body, deps);
-      break;
+  case 'FORALL':
+    deps.add(`collection:${ast.collection}`);
+    extractDependencies(ast.body, deps);
+    break;
 
-    case 'METHOD_CALL':
-      extractDependencies(ast.receiver, deps);
-      for (const arg of ast.args || []) {
-        extractDependencies(arg, deps);
-      }
-      break;
+  case 'METHOD_CALL':
+    extractDependencies(ast.receiver, deps);
+    for (const arg of ast.args || []) {
+      extractDependencies(arg, deps);
+    }
+    break;
 
-    case 'PROPERTY_ACCESS':
-      extractDependencies(ast.object, deps);
-      break;
+  case 'PROPERTY_ACCESS':
+    extractDependencies(ast.object, deps);
+    break;
 
-    case 'BINARY':
-    case 'COMPARISON':
-    case 'LOGICAL':
-      extractDependencies(ast.left, deps);
-      extractDependencies(ast.right, deps);
-      break;
+  case 'BINARY':
+  case 'COMPARISON':
+  case 'LOGICAL':
+    extractDependencies(ast.left, deps);
+    extractDependencies(ast.right, deps);
+    break;
 
-    case 'UNARY':
-      extractDependencies(ast.operand, deps);
-      break;
+  case 'UNARY':
+    extractDependencies(ast.operand, deps);
+    break;
   }
 
   return deps;
@@ -153,7 +153,7 @@ export function compileObligation(invariant, deps = {}) {
   const content = JSON.stringify({
     name: invariant.name,
     expr: invariant.expr,
-    bytecode,
+    bytecode
   });
   const hash = crypto.sha256(content);
 
@@ -170,7 +170,7 @@ export function compileObligation(invariant, deps = {}) {
     kind: parseKind(invariant),
     withinTicks: parseWithinTicks(invariant.expr),
     dependencies,
-    hash,
+    hash
   };
 }
 
@@ -212,7 +212,7 @@ export function generateVerificationManifest(specs, deps = {}) {
     [ObligationKind.TICK]: [],
     [ObligationKind.EVENTUAL]: [],
     [ObligationKind.SAFETY]: [],
-    [ObligationKind.ALWAYS]: [],
+    [ObligationKind.ALWAYS]: []
   };
 
   for (const spec of specs) {
@@ -225,7 +225,7 @@ export function generateVerificationManifest(specs, deps = {}) {
   // Generate manifest hash
   const manifestContent = JSON.stringify({
     specs: specs.map(s => ({ id: s.id, hash: s.hash })),
-    byKind,
+    byKind
   });
   const manifestHash = crypto.sha256(manifestContent);
 
@@ -238,7 +238,7 @@ export function generateVerificationManifest(specs, deps = {}) {
       [ObligationSeverity.INFO]: specs.filter(s => s.severity === ObligationSeverity.INFO).map(s => s.id),
       [ObligationSeverity.WARN]: specs.filter(s => s.severity === ObligationSeverity.WARN).map(s => s.id),
       [ObligationSeverity.ERROR]: specs.filter(s => s.severity === ObligationSeverity.ERROR).map(s => s.id),
-      [ObligationSeverity.FATAL]: specs.filter(s => s.severity === ObligationSeverity.FATAL).map(s => s.id),
+      [ObligationSeverity.FATAL]: specs.filter(s => s.severity === ObligationSeverity.FATAL).map(s => s.id)
     },
     obligations: specs.map(spec => ({
       id: spec.id,
@@ -249,8 +249,8 @@ export function generateVerificationManifest(specs, deps = {}) {
       withinTicks: spec.withinTicks,
       dependencies: spec.dependencies,
       hash: spec.hash,
-      bytecodeLength: spec.bytecode.instructions.length,
-    })),
+      bytecodeLength: spec.bytecode.instructions.length
+    }))
   };
 }
 
@@ -270,7 +270,7 @@ export function serializeObligations(specs) {
     kind: spec.kind,
     withinTicks: spec.withinTicks,
     dependencies: spec.dependencies,
-    hash: spec.hash,
+    hash: spec.hash
   })), null, 2);
 }
 
@@ -285,6 +285,6 @@ export function deserializeObligations(json) {
   return data.map(spec => ({
     ...spec,
     // Re-parse AST from expression (not stored in serialized form)
-    ast: parseExpr(spec.expr),
+    ast: parseExpr(spec.expr)
   }));
 }

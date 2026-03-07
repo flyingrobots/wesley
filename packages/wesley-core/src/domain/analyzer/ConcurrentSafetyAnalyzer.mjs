@@ -2,7 +2,7 @@
  * Concurrent Safety Analyzer
  * Analyzes operations for concurrent execution safety, detects race conditions,
  * and provides recommendations for safe parallelism levels
- * 
+ *
  * @license Apache-2.0
  */
 
@@ -72,7 +72,7 @@ export class ConcurrentSafetyAnalyzer extends EventEmitter {
     this.lockTimeout = options.lockTimeout || 30000; // 30 seconds
     this.raceConditionThreshold = options.raceConditionThreshold || 0.7;
     this.enable = options.enable ?? true;
-    
+
     // Lock priority mapping
     this.lockPriorities = {
       'ACCESS_EXCLUSIVE': 8,
@@ -111,19 +111,19 @@ export class ConcurrentSafetyAnalyzer extends EventEmitter {
     try {
       // Extract resource dependencies from operations
       const dependencies = this.extractDependencies(operations);
-      
+
       // Build dependency graph
       const dependencyGraph = this.buildDependencyGraph(dependencies);
-      
+
       // Detect race conditions
       const raceConditions = this.detectRaceConditions(dependencies, dependencyGraph);
-      
+
       // Identify lock escalation risks
       const lockEscalationRisks = this.identifyLockEscalationRisks(dependencies);
-      
+
       // Calculate safe parallelism levels
       const parallelismAnalysis = this.calculateParallelismLevels(dependencies, raceConditions);
-      
+
       // Generate execution strategies
       const executionStrategies = this.generateExecutionStrategies(dependencies, raceConditions, parallelismAnalysis);
 
@@ -166,14 +166,14 @@ export class ConcurrentSafetyAnalyzer extends EventEmitter {
       const operation = operations[i];
       const dependency = {
         operationId: i,
-        operation: operation,
+        operation,
         resources: this.extractResourcesFromOperation(operation),
         lockType: this.determineLockType(operation),
         accessPattern: this.analyzeAccessPattern(operation),
         transactionScope: operation.transactionScope || 'auto',
         priority: operation.priority || 0
       };
-      
+
       dependencies.push(dependency);
     }
 
@@ -187,14 +187,14 @@ export class ConcurrentSafetyAnalyzer extends EventEmitter {
    */
   extractResourcesFromOperation(operation) {
     const resources = [];
-    
+
     if (!operation.sql && !operation.ast) {
       return resources;
     }
 
     // Analyze SQL or AST to extract resource references
     const sql = operation.sql || '';
-    const lowerSql = sql.toLowerCase();
+    const _lowerSql = sql.toLowerCase();
 
     // Extract table names from common SQL patterns
     const tablePatterns = [
@@ -211,7 +211,7 @@ export class ConcurrentSafetyAnalyzer extends EventEmitter {
           type: this.inferResourceType(sql, match[1]),
           schema: operation.schema || 'public'
         };
-        
+
         // Avoid duplicates
         if (!resources.find(r => r.name === resource.name && r.type === resource.type)) {
           resources.push(resource);
@@ -228,34 +228,34 @@ export class ConcurrentSafetyAnalyzer extends EventEmitter {
    * @param {string} resourceName - Name of the resource
    * @returns {string} Resource type
    */
-  inferResourceType(sql, resourceName) {
+  inferResourceType(sql, _resourceName) {
     const lowerSql = sql.toLowerCase();
-    
+
     if (lowerSql.includes('create index') || lowerSql.includes('drop index')) {
       return 'index';
     }
-    
+
     if (lowerSql.includes('create sequence') || lowerSql.includes('alter sequence')) {
       return 'sequence';
     }
-    
+
     if (lowerSql.includes('add constraint') || lowerSql.includes('drop constraint')) {
       return 'constraint';
     }
-    
+
     if (lowerSql.includes('create function') || lowerSql.includes('create or replace function')) {
       return 'function';
     }
-    
+
     if (lowerSql.includes('create view') || lowerSql.includes('create or replace view')) {
       return 'view';
     }
-    
-    if (lowerSql.includes('create table') || lowerSql.includes('alter table') || 
+
+    if (lowerSql.includes('create table') || lowerSql.includes('alter table') ||
         lowerSql.includes('drop table')) {
       return 'table';
     }
-    
+
     // Default to table for most operations
     return 'table';
   }
@@ -267,43 +267,43 @@ export class ConcurrentSafetyAnalyzer extends EventEmitter {
    */
   determineLockType(operation) {
     const sql = (operation.sql || '').toLowerCase();
-    
+
     if (sql.includes('drop table') || sql.includes('truncate')) {
       return 'ACCESS_EXCLUSIVE';
     }
-    
+
     if (sql.includes('create index') || sql.includes('drop index')) {
       return 'EXCLUSIVE';
     }
-    
+
     if (sql.includes('create unique index')) {
       return 'SHARE_UPDATE_EXCLUSIVE';
     }
-    
+
     if (sql.includes('alter table') && sql.includes('add constraint')) {
       return 'SHARE_UPDATE_EXCLUSIVE';
     }
-    
+
     if (sql.includes('alter table')) {
       return 'SHARE_UPDATE_EXCLUSIVE';
     }
-    
+
     if (sql.includes('insert') || sql.includes('update') || sql.includes('delete')) {
       return 'ROW_EXCLUSIVE';
     }
-    
+
     if (sql.includes('select') && sql.includes('for update')) {
       return 'ROW_EXCLUSIVE';
     }
-    
+
     if (sql.includes('select') && sql.includes('for share')) {
       return 'ROW_SHARE';
     }
-    
+
     if (sql.includes('select')) {
       return 'ACCESS_SHARE';
     }
-    
+
     // Default for DDL operations
     return 'SHARE_UPDATE_EXCLUSIVE';
   }
@@ -315,7 +315,7 @@ export class ConcurrentSafetyAnalyzer extends EventEmitter {
    */
   analyzeAccessPattern(operation) {
     const sql = (operation.sql || '').toLowerCase();
-    
+
     return {
       reads: sql.includes('select'),
       writes: sql.includes('insert') || sql.includes('update') || sql.includes('delete'),
@@ -391,7 +391,7 @@ export class ConcurrentSafetyAnalyzer extends EventEmitter {
               type: resource1.type,
               severity: lockConflict.severity
             });
-            
+
             if (lockConflict.severity > maxSeverity) {
               maxSeverity = lockConflict.severity;
               conflictType = lockConflict.type;
@@ -430,7 +430,7 @@ export class ConcurrentSafetyAnalyzer extends EventEmitter {
 
     const compatible = lockCompatibility[lock1] || [];
     const hasConflict = !compatible.includes(lock2);
-    
+
     if (!hasConflict) {
       return { hasConflict: false, severity: 0, type: 'none' };
     }
@@ -490,7 +490,7 @@ export class ConcurrentSafetyAnalyzer extends EventEmitter {
           visited.delete(w);
           component.push(w);
         } while (w !== nodeId);
-        
+
         if (component.length > 1) {
           components.push(component);
         }
@@ -564,7 +564,7 @@ export class ConcurrentSafetyAnalyzer extends EventEmitter {
     // 4. No explicit ordering is defined
 
     const hasWrite = dep1.accessPattern.writes || dep2.accessPattern.writes;
-    const canExecuteConcurrently = dep1.transactionScope !== dep2.transactionScope || 
+    const canExecuteConcurrently = dep1.transactionScope !== dep2.transactionScope ||
                                    (dep1.transactionScope === 'auto' && dep2.transactionScope === 'auto');
 
     // Lower the severity threshold and ensure we check for concurrent write scenarios
@@ -625,11 +625,11 @@ export class ConcurrentSafetyAnalyzer extends EventEmitter {
     if (dep1.accessPattern.reads && dep2.accessPattern.writes) {
       return 'Use REPEATABLE READ isolation or explicit locking';
     }
-    
+
     if (dep1.accessPattern.writes && dep2.accessPattern.writes) {
       return 'Serialize write operations or use optimistic locking';
     }
-    
+
     return 'Review operation ordering and consider explicit synchronization';
   }
 
@@ -679,10 +679,10 @@ export class ConcurrentSafetyAnalyzer extends EventEmitter {
       if (locks.length > 1) {
         const [resourceName, resourceType] = resourceKey.split(':');
         const resourceConfig = this.resourceTypes[resourceType];
-        
+
         if (resourceConfig && resourceConfig.lockEscalation) {
           const totalBatchSize = locks.reduce((sum, lock) => sum + (lock.batchSize || 1), 0);
-          
+
           if (totalBatchSize > 1000 || locks.length > 5) {
             risks.push({
               resource: resourceName,
@@ -711,15 +711,15 @@ export class ConcurrentSafetyAnalyzer extends EventEmitter {
     if (batchSize > 10000) {
       return 'Break into smaller batches or use bulk operations';
     }
-    
+
     if (resourceType === 'table') {
       return 'Consider partitioning or using advisory locks';
     }
-    
+
     if (resourceType === 'index') {
       return 'Use CREATE INDEX CONCURRENTLY or schedule during low traffic';
     }
-    
+
     return 'Monitor lock wait times and consider operation scheduling';
   }
 
@@ -739,7 +739,7 @@ export class ConcurrentSafetyAnalyzer extends EventEmitter {
 
     // Group operations by resource usage
     const resourceGroups = this.groupOperationsByResource(dependencies);
-    
+
     // Calculate constraints for each resource
     for (const [resourceKey, ops] of Object.entries(resourceGroups)) {
       const [resourceName, resourceType] = resourceKey.split(':');
@@ -787,7 +787,7 @@ export class ConcurrentSafetyAnalyzer extends EventEmitter {
    */
   groupOperationsByResource(dependencies) {
     const groups = {};
-    
+
     for (const dep of dependencies) {
       for (const resource of dep.resources) {
         const key = `${resource.name}:${resource.type}`;
@@ -797,7 +797,7 @@ export class ConcurrentSafetyAnalyzer extends EventEmitter {
         groups[key].push(dep.operationId);
       }
     }
-    
+
     return groups;
   }
 
@@ -815,15 +815,15 @@ export class ConcurrentSafetyAnalyzer extends EventEmitter {
     }
 
     let parallelism = Math.min(this.maxParallelism, totalOps);
-    
+
     // Reduce parallelism for write-heavy operations
     if (writeOps > 0) {
       parallelism = Math.max(1, Math.ceil(parallelism * (1 - (writeOps / totalOps) * 0.7)));
     }
-    
+
     // Apply resource-specific constraints
     parallelism = Math.ceil(parallelism * resourceConfig.conflictWeight);
-    
+
     return Math.max(1, parallelism);
   }
 
@@ -956,7 +956,7 @@ export class ConcurrentSafetyAnalyzer extends EventEmitter {
       groupId: 0,
       operations: dependencies.map((_, index) => index),
       parallelism: dependencies.length,
-      dependencies: dependencies
+      dependencies
     }];
   }
 

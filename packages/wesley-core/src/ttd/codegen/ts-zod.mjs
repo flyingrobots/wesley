@@ -13,7 +13,7 @@ function mapTypeToZod(gqlType) {
     String: 'z.string()',
     Int: 'z.number().int()',
     Float: 'z.number()',
-    Boolean: 'z.boolean()',
+    Boolean: 'z.boolean()'
   };
 
   return typeMap[gqlType] || `${gqlType}Schema`;
@@ -77,9 +77,9 @@ export function generateTsZod(schema) {
   // Generate enum schemas
   for (const enumDef of schema.enums || []) {
     const values = enumDef.values.map(v => `'${v}'`).join(', ');
-    lines.push(`/**`);
+    lines.push('/**');
     lines.push(` * Zod schema for ${enumDef.name}`);
-    lines.push(` */`);
+    lines.push(' */');
     lines.push(`export const ${enumDef.name}Schema = z.enum([${values}]);`);
     lines.push(`export type ${enumDef.name} = z.infer<typeof ${enumDef.name}Schema>;`);
     lines.push('');
@@ -87,9 +87,9 @@ export function generateTsZod(schema) {
 
   // Generate object schemas
   for (const typeDef of schema.types || []) {
-    lines.push(`/**`);
+    lines.push('/**');
     lines.push(` * Zod schema for ${typeDef.name}`);
-    lines.push(` */`);
+    lines.push(' */');
     lines.push(`export const ${typeDef.name}Schema = z.object({`);
 
     for (const field of typeDef.fields || []) {
@@ -123,9 +123,9 @@ export function generateTsZod(schema) {
   for (const op of schema.ops || []) {
     if (op.args && op.args.length > 0) {
       const schemaName = `${op.name.charAt(0).toUpperCase()}${op.name.slice(1)}ArgsSchema`;
-      lines.push(`/**`);
+      lines.push('/**');
       lines.push(` * Zod schema for ${op.name} arguments`);
-      lines.push(` */`);
+      lines.push(' */');
       lines.push(`export const ${schemaName} = z.object({`);
 
       for (const arg of op.args) {

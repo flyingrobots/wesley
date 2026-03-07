@@ -7,7 +7,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { SUPPORTED_API_VERSIONS, validatePlugin } from '@wesley/core/ports';
+import { _SUPPORTED_API_VERSIONS, validatePlugin } from '@wesley/core/ports';
 
 // ── Check 1: Node.js version ───────────────────────────────────────
 
@@ -29,7 +29,7 @@ export function checkNodeVersion(versionString) {
     status: ok ? 'pass' : 'fail',
     message: ok
       ? `Node.js ${versionString} (>=18.17)`
-      : `Node.js ${versionString} does not meet >=18.17`,
+      : `Node.js ${versionString} does not meet >=18.17`
   };
 }
 
@@ -40,7 +40,7 @@ export function checkNodeVersion(versionString) {
  * @param {{ config: unknown }} ctx
  * @returns {Promise<{ name: string, status: string, message: string }>}
  */
-export async function checkConfig(ctx) {
+export async function checkConfig(_ctx) {
   const configPath = resolve(process.cwd(), 'wesley.config.mjs');
   const found = existsSync(configPath);
   if (!found) {
@@ -61,12 +61,12 @@ export async function checkConfig(ctx) {
  * Well-known generator package names (workspace packages).
  * In a future iteration these could be read from config.generators.
  */
-const WELL_KNOWN_GENERATORS = [
+const _WELL_KNOWN_GENERATORS = [
   '@wesley/generator-supabase',
   '@wesley/generator-js',
   '@wesley/generator-echo',
   '@wesley/generator-ttd',
-  '@wesley/generator-vue',
+  '@wesley/generator-vue'
 ];
 
 /**
@@ -96,12 +96,12 @@ function discoverGeneratorPackages() {
       const main = pkgJson.main || pkgJson.exports?.['.'] || 'src/index.mjs';
       entries.push({
         name: pkgJson.name || `@wesley/${d.name.replace('wesley-', '')}`,
-        entryPoint: resolve(packagesDir, d.name, main),
+        entryPoint: resolve(packagesDir, d.name, main)
       });
     } catch {
       entries.push({
         name: `@wesley/${d.name.replace('wesley-', '')}`,
-        entryPoint: resolve(packagesDir, d.name, 'src/index.mjs'),
+        entryPoint: resolve(packagesDir, d.name, 'src/index.mjs')
       });
     }
   }
@@ -131,7 +131,7 @@ export async function checkPlugins(ctx) {
     results.push({
       name: 'Plugins',
       status: 'info',
-      message: 'Plugins: no generator packages found',
+      message: 'Plugins: no generator packages found'
     });
     return results;
   }
@@ -142,7 +142,7 @@ export async function checkPlugins(ctx) {
       results.push({
         name: `Plugin: ${pkg}`,
         status: 'fail',
-        message: `Plugin: ${pkg} — entry point missing (${entryPoint})`,
+        message: `Plugin: ${pkg} — entry point missing (${entryPoint})`
       });
       continue;
     }
@@ -159,21 +159,21 @@ export async function checkPlugins(ctx) {
         results.push({
           name: `Plugin: ${pkg}`,
           status: 'pass',
-          message: `Plugin: ${pkg} (apiVersion: ${instance.apiVersion})`,
+          message: `Plugin: ${pkg} (apiVersion: ${instance.apiVersion})`
         });
       } else {
         // Package exists but has no GeneratorPlugin — OK for legacy generators
         results.push({
           name: `Plugin: ${pkg}`,
           status: 'pass',
-          message: `Plugin: ${pkg} (legacy — no GeneratorPlugin export)`,
+          message: `Plugin: ${pkg} (legacy — no GeneratorPlugin export)`
         });
       }
     } catch (err) {
       results.push({
         name: `Plugin: ${pkg}`,
         status: 'fail',
-        message: `Plugin: ${pkg} — ${err.message}`,
+        message: `Plugin: ${pkg} — ${err.message}`
       });
     }
   }

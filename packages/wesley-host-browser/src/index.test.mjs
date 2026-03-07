@@ -44,7 +44,7 @@ describe('compileSchemaInBrowser', () => {
 
     // The current BrowserParserPort is regex-based and skips non-matching parts.
     // So it won't throw, but it won't find any tables.
-    expect(result.ok).toBe(true); 
+    expect(result.ok).toBe(true);
     expect(result.tables).toBe(0);
   });
 
@@ -69,11 +69,11 @@ describe('compileSchemaInBrowser', () => {
     const inputFiles = [
       {
         file: 'user.graphql',
-        body: `type User { id: ID! name: String }`
+        body: 'type User { id: ID! name: String }'
       },
       {
         file: 'product.graphql',
-        body: `type Product { id: ID! name: String price: Float }`
+        body: 'type Product { id: ID! name: String price: Float }'
       }
     ];
 

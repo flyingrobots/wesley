@@ -97,7 +97,7 @@ export function buildPlanFromJson(op) {
       for (const ob of orderDefs) {
         const col = (typeof ob.column === 'string' && ob.column.trim()) ? ob.column.trim() : '';
         if (!col) throw new Error(`lists[].orderBy entry missing valid column: ${JSON.stringify(ob)}`);
-        let dir = ob.dir ? String(ob.dir).toLowerCase() : 'asc';
+        const dir = ob.dir ? String(ob.dir).toLowerCase() : 'asc';
         if (dir !== 'asc' && dir !== 'desc') {
           throw new Error(`lists[].orderBy.dir must be "asc" or "desc". Received: ${JSON.stringify(ob.dir)}`);
         }
@@ -140,7 +140,7 @@ export function buildPlanFromJson(op) {
   for (const ob of orderList) {
     const col = (typeof ob.column === 'string' && ob.column.trim()) || null;
     if (!col) throw new Error(`orderBy entry missing valid column: ${JSON.stringify(ob)}`);
-    let dir = String(ob.dir || 'asc').toLowerCase();
+    const dir = String(ob.dir || 'asc').toLowerCase();
     if (dir !== 'asc' && dir !== 'desc') {
       throw new Error(`orderBy.dir must be "asc" or "desc". Received: ${JSON.stringify(ob.dir)}`);
     }
@@ -167,7 +167,7 @@ export function buildPlanFromJson(op) {
   const plan = new QueryPlan(rel, proj, {
     orderBy: order,
     limit: toPosInt(op.limit, 'limit', false),
-    offset: toPosInt(op.offset, 'offset', true),
+    offset: toPosInt(op.offset, 'offset', true)
   });
   return plan;
 }
@@ -248,7 +248,7 @@ function buildRightExpr(param, value, op) {
   }
   // Fallback to literal value
   if (op === 'in') {
-    throw new Error(`IN operator requires a parameter with explicit array type (e.g., text[])`);
+    throw new Error('IN operator requires a parameter with explicit array type (e.g., text[])');
   }
   return { kind: 'Literal', value };
 }

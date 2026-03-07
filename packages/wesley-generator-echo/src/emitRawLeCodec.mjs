@@ -17,7 +17,7 @@ import { RustWriter } from './rust-writer.mjs';
  */
 export function emitRawLeCodec(ir) {
   const encodableTypes = (ir.types ?? []).filter(
-    (t) => t.kind === 'OBJECT' || t.kind === 'ENUM',
+    (t) => t.kind === 'OBJECT' || t.kind === 'ENUM'
   );
 
   if (encodableTypes.length === 0) return null;
@@ -354,72 +354,72 @@ function emitObjectCodec(w, type) {
 
 const SCALAR_TYPES = new Set(['Boolean', 'Int', 'Float', 'String', 'ID']);
 
-function isScalar(typeName) {
+function _isScalar(typeName) {
   return SCALAR_TYPES.has(typeName);
 }
 
 function encodeExprForScalar(typeName, accessor) {
   switch (typeName) {
-    case 'Boolean':
-      return `buf.push(encode_bool(${accessor}));`;
-    case 'Int':
-      return `buf.extend_from_slice(&encode_i32_le(${accessor}));`;
-    case 'Float':
-      return `buf.extend_from_slice(&encode_f32_le(${accessor}));`;
-    case 'String':
-    case 'ID':
-      return `buf.extend(encode_string(&${accessor}));`;
-    default:
-      // nested object / enum — call its encode_raw_le
-      return `buf.extend(${accessor}.encode_raw_le());`;
+  case 'Boolean':
+    return `buf.push(encode_bool(${accessor}));`;
+  case 'Int':
+    return `buf.extend_from_slice(&encode_i32_le(${accessor}));`;
+  case 'Float':
+    return `buf.extend_from_slice(&encode_f32_le(${accessor}));`;
+  case 'String':
+  case 'ID':
+    return `buf.extend(encode_string(&${accessor}));`;
+  default:
+    // nested object / enum — call its encode_raw_le
+    return `buf.extend(${accessor}.encode_raw_le());`;
   }
 }
 
 function encodeClosureForType(typeName) {
   switch (typeName) {
-    case 'Boolean':
-      return '|v| vec![encode_bool(*v)]';
-    case 'Int':
-      return '|v| encode_i32_le(*v).to_vec()';
-    case 'Float':
-      return '|v| encode_f32_le(*v).to_vec()';
-    case 'String':
-    case 'ID':
-      return '|v| encode_string(v)';
-    default:
-      return '|v| v.encode_raw_le()';
+  case 'Boolean':
+    return '|v| vec![encode_bool(*v)]';
+  case 'Int':
+    return '|v| encode_i32_le(*v).to_vec()';
+  case 'Float':
+    return '|v| encode_f32_le(*v).to_vec()';
+  case 'String':
+  case 'ID':
+    return '|v| encode_string(v)';
+  default:
+    return '|v| v.encode_raw_le()';
   }
 }
 
 function decodeCallForType(typeName) {
   switch (typeName) {
-    case 'Boolean':
-      return 'decode_bool(bytes, &mut offset)?';
-    case 'Int':
-      return 'decode_i32_le(bytes, &mut offset)?';
-    case 'Float':
-      return 'decode_f32_le(bytes, &mut offset)?';
-    case 'String':
-    case 'ID':
-      return 'decode_string(bytes, &mut offset)?';
-    default:
-      return `${typeName}::decode_raw_le_at(bytes, &mut offset)?`;
+  case 'Boolean':
+    return 'decode_bool(bytes, &mut offset)?';
+  case 'Int':
+    return 'decode_i32_le(bytes, &mut offset)?';
+  case 'Float':
+    return 'decode_f32_le(bytes, &mut offset)?';
+  case 'String':
+  case 'ID':
+    return 'decode_string(bytes, &mut offset)?';
+  default:
+    return `${typeName}::decode_raw_le_at(bytes, &mut offset)?`;
   }
 }
 
 function decodeClosureForType(typeName) {
   switch (typeName) {
-    case 'Boolean':
-      return 'decode_bool';
-    case 'Int':
-      return 'decode_i32_le';
-    case 'Float':
-      return 'decode_f32_le';
-    case 'String':
-    case 'ID':
-      return 'decode_string';
-    default:
-      return `${typeName}::decode_raw_le_at`;
+  case 'Boolean':
+    return 'decode_bool';
+  case 'Int':
+    return 'decode_i32_le';
+  case 'Float':
+    return 'decode_f32_le';
+  case 'String':
+  case 'ID':
+    return 'decode_string';
+  default:
+    return `${typeName}::decode_raw_le_at`;
   }
 }
 

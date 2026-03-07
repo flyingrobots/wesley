@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { ArtifactWriter } from '../../src/application/ArtifactWriter.mjs';
 import {
   ArtifactWriterPort,
-  detectConflicts,
+  detectConflicts
 } from '../../src/ports/ArtifactWriter.mjs';
 
 // ---------------------------------------------------------------------------
@@ -70,7 +70,7 @@ function createMemoryFs() {
       for (const key of [...dirs]) {
         if (key.startsWith(path)) dirs.delete(key);
       }
-    },
+    }
   };
 }
 
@@ -81,13 +81,13 @@ function makeRunResult(pluginArtifacts = []) {
     status: 'ok',
     artifacts,
     artifactCount: Object.keys(artifacts).length,
-    durationMs: 1,
+    durationMs: 1
   }));
   return {
     results,
     success: true,
     totalArtifacts: results.reduce((sum, r) => sum + r.artifactCount, 0),
-    runId: 'run-test-abc123',
+    runId: 'run-test-abc123'
   };
 }
 
@@ -98,7 +98,7 @@ const nullLogger = {
   debug() {},
   child() { return nullLogger; },
   setLevel() {},
-  async flush() {},
+  async flush() {}
 };
 
 /** Collecting logger that stores warn calls */
@@ -111,7 +111,7 @@ function collectingLogger() {
     debug() {},
     child() { return logger; },
     setLevel() {},
-    async flush() {},
+    async flush() {}
   };
   return { logger, warnings };
 }
@@ -133,7 +133,7 @@ test('ArtifactWriterPort — abstract method throws', async () => {
 test('detectConflicts — no conflicts when plugins have disjoint paths', () => {
   const runResult = makeRunResult([
     { name: 'alpha', artifacts: { 'a.txt': 'aaa' } },
-    { name: 'beta', artifacts: { 'b.txt': 'bbb' } },
+    { name: 'beta', artifacts: { 'b.txt': 'bbb' } }
   ]);
   const conflicts = detectConflicts(runResult);
   assert.equal(conflicts.length, 0);
@@ -142,7 +142,7 @@ test('detectConflicts — no conflicts when plugins have disjoint paths', () => 
 test('detectConflicts — detects conflict when two plugins share a path', () => {
   const runResult = makeRunResult([
     { name: 'alpha', artifacts: { 'shared.txt': 'from-alpha' } },
-    { name: 'beta', artifacts: { 'shared.txt': 'from-beta' } },
+    { name: 'beta', artifacts: { 'shared.txt': 'from-beta' } }
   ]);
   const conflicts = detectConflicts(runResult);
   assert.equal(conflicts.length, 1);
@@ -154,11 +154,11 @@ test('detectConflicts — skips error results', () => {
   const runResult = {
     results: [
       { name: 'ok-plugin', status: 'ok', artifacts: { 'a.txt': 'aaa' } },
-      { name: 'err-plugin', status: 'error', artifacts: { 'a.txt': 'eee' } },
+      { name: 'err-plugin', status: 'error', artifacts: { 'a.txt': 'eee' } }
     ],
     success: true,
     totalArtifacts: 1,
-    runId: 'run-test-123',
+    runId: 'run-test-123'
   };
   const conflicts = detectConflicts(runResult);
   assert.equal(conflicts.length, 0);
@@ -174,7 +174,7 @@ test('detectConflicts — three plugins on same path', () => {
   const runResult = makeRunResult([
     { name: 'a', artifacts: { 'x.txt': '1' } },
     { name: 'b', artifacts: { 'x.txt': '2' } },
-    { name: 'c', artifacts: { 'x.txt': '3' } },
+    { name: 'c', artifacts: { 'x.txt': '3' } }
   ]);
   const conflicts = detectConflicts(runResult);
   assert.equal(conflicts.length, 1);
@@ -215,7 +215,7 @@ test('ArtifactWriter — golden path: writes artifacts from RunResult', async ()
 
   const runResult = makeRunResult([
     { name: 'gen-sql', artifacts: { 'schema.sql': 'CREATE TABLE t();' } },
-    { name: 'gen-ts', artifacts: { 'types.ts': 'export type T = {};' } },
+    { name: 'gen-ts', artifacts: { 'types.ts': 'export type T = {};' } }
   ]);
 
   const result = await writer.writeArtifacts(runResult, '/output');
@@ -235,7 +235,7 @@ test('ArtifactWriter — writes binary Uint8Array artifacts', async () => {
 
   const binaryData = new Uint8Array([0x00, 0xFF, 0x42]);
   const runResult = makeRunResult([
-    { name: 'gen-bin', artifacts: { 'data.bin': binaryData } },
+    { name: 'gen-bin', artifacts: { 'data.bin': binaryData } }
   ]);
 
   const result = await writer.writeArtifacts(runResult, '/out');
@@ -250,7 +250,7 @@ test('ArtifactWriter — handles nested artifact paths', async () => {
   const writer = new ArtifactWriter({ fs: memFs, logger: nullLogger });
 
   const runResult = makeRunResult([
-    { name: 'gen', artifacts: { 'deep/nested/file.txt': 'content' } },
+    { name: 'gen', artifacts: { 'deep/nested/file.txt': 'content' } }
   ]);
 
   const result = await writer.writeArtifacts(runResult, '/out');
@@ -269,7 +269,7 @@ test('ArtifactWriter — reports conflicts but writes last-wins by default', asy
 
   const runResult = makeRunResult([
     { name: 'alpha', artifacts: { 'shared.txt': 'from-alpha' } },
-    { name: 'beta', artifacts: { 'shared.txt': 'from-beta' } },
+    { name: 'beta', artifacts: { 'shared.txt': 'from-beta' } }
   ]);
 
   const result = await writer.writeArtifacts(runResult, '/out');
@@ -291,7 +291,7 @@ test('ArtifactWriter — dry run: reports but writes nothing', async () => {
   const writer = new ArtifactWriter({ fs: memFs, logger: nullLogger });
 
   const runResult = makeRunResult([
-    { name: 'gen', artifacts: { 'a.txt': 'aaa', 'b.txt': 'bbb' } },
+    { name: 'gen', artifacts: { 'a.txt': 'aaa', 'b.txt': 'bbb' } }
   ]);
 
   const result = await writer.writeArtifacts(runResult, '/out', { dryRun: true });
@@ -308,7 +308,7 @@ test('ArtifactWriter — dry run still reports conflicts', async () => {
 
   const runResult = makeRunResult([
     { name: 'a', artifacts: { 'x.txt': '1' } },
-    { name: 'b', artifacts: { 'x.txt': '2' } },
+    { name: 'b', artifacts: { 'x.txt': '2' } }
   ]);
 
   const result = await writer.writeArtifacts(runResult, '/out', { dryRun: true });
@@ -326,7 +326,7 @@ test('ArtifactWriter — overwrite=true (default) overwrites existing files', as
   const writer = new ArtifactWriter({ fs: memFs, logger: nullLogger });
 
   const runResult = makeRunResult([
-    { name: 'gen', artifacts: { 'existing.txt': 'new-content' } },
+    { name: 'gen', artifacts: { 'existing.txt': 'new-content' } }
   ]);
 
   const result = await writer.writeArtifacts(runResult, '/out', { overwrite: true });
@@ -341,7 +341,7 @@ test('ArtifactWriter — overwrite=false skips existing files', async () => {
   const writer = new ArtifactWriter({ fs: memFs, logger: nullLogger });
 
   const runResult = makeRunResult([
-    { name: 'gen', artifacts: { 'existing.txt': 'new-content', 'fresh.txt': 'brand-new' } },
+    { name: 'gen', artifacts: { 'existing.txt': 'new-content', 'fresh.txt': 'brand-new' } }
   ]);
 
   const result = await writer.writeArtifacts(runResult, '/out', { overwrite: false });
@@ -372,7 +372,7 @@ test('ArtifactWriter — cleans up temp dir on write failure', async () => {
   const writer = new ArtifactWriter({ fs: memFs, logger: nullLogger });
 
   const runResult = makeRunResult([
-    { name: 'gen', artifacts: { 'a.txt': 'aaa', 'b.txt': 'bbb' } },
+    { name: 'gen', artifacts: { 'a.txt': 'aaa', 'b.txt': 'bbb' } }
   ]);
 
   const err = await catchReject(() => writer.writeArtifacts(runResult, '/out'));
@@ -406,11 +406,11 @@ test('ArtifactWriter — skips error-status plugins in RunResult', async () => {
   const runResult = {
     results: [
       { name: 'good', status: 'ok', artifacts: { 'a.txt': 'ok' }, artifactCount: 1, durationMs: 1 },
-      { name: 'bad', status: 'error', artifactCount: 0, errorCode: 'WPLY002', errorMessage: 'boom', phase: 'plan', durationMs: 1 },
+      { name: 'bad', status: 'error', artifactCount: 0, errorCode: 'WPLY002', errorMessage: 'boom', phase: 'plan', durationMs: 1 }
     ],
     success: true,
     totalArtifacts: 1,
-    runId: 'run-test-err',
+    runId: 'run-test-err'
   };
 
   const result = await writer.writeArtifacts(runResult, '/out');
@@ -439,7 +439,7 @@ test('ArtifactWriter — works without logger (uses internal noop)', async () =>
   const writer = new ArtifactWriter({ fs: memFs });
 
   const runResult = makeRunResult([
-    { name: 'gen', artifacts: { 'a.txt': 'hello' } },
+    { name: 'gen', artifacts: { 'a.txt': 'hello' } }
   ]);
 
   const result = await writer.writeArtifacts(runResult, '/out');
@@ -452,7 +452,7 @@ test('ArtifactWriter — works without fs.rm (cleanup is best-effort)', async ()
   const writer = new ArtifactWriter({ fs: memFs, logger: nullLogger });
 
   const runResult = makeRunResult([
-    { name: 'gen', artifacts: { 'a.txt': 'hello' } },
+    { name: 'gen', artifacts: { 'a.txt': 'hello' } }
   ]);
 
   // Should not throw even though rm is not available
@@ -469,7 +469,7 @@ test('ArtifactWriter — rejects artifact keys with path traversal (..)', async 
   const writer = new ArtifactWriter({ fs: memFs, logger: nullLogger });
 
   const runResult = makeRunResult([
-    { name: 'evil', artifacts: { '../../etc/passwd': 'pwned' } },
+    { name: 'evil', artifacts: { '../../etc/passwd': 'pwned' } }
   ]);
 
   const err = await catchReject(() => writer.writeArtifacts(runResult, '/out'));
@@ -481,7 +481,7 @@ test('ArtifactWriter — rejects absolute artifact paths', async () => {
   const writer = new ArtifactWriter({ fs: memFs, logger: nullLogger });
 
   const runResult = makeRunResult([
-    { name: 'evil', artifacts: { '/etc/passwd': 'pwned' } },
+    { name: 'evil', artifacts: { '/etc/passwd': 'pwned' } }
   ]);
 
   const err = await catchReject(() => writer.writeArtifacts(runResult, '/out'));
@@ -493,7 +493,7 @@ test('ArtifactWriter — allows legitimate nested paths', async () => {
   const writer = new ArtifactWriter({ fs: memFs, logger: nullLogger });
 
   const runResult = makeRunResult([
-    { name: 'gen', artifacts: { 'sub/dir/file.txt': 'ok' } },
+    { name: 'gen', artifacts: { 'sub/dir/file.txt': 'ok' } }
   ]);
 
   const result = await writer.writeArtifacts(runResult, '/out');
@@ -507,7 +507,7 @@ test('ArtifactWriter — works without fs.stat (overwrite=false always writes)',
   const writer = new ArtifactWriter({ fs: memFs, logger: nullLogger });
 
   const runResult = makeRunResult([
-    { name: 'gen', artifacts: { 'a.txt': 'hello' } },
+    { name: 'gen', artifacts: { 'a.txt': 'hello' } }
   ]);
 
   // Without stat, cannot detect existing files, so always writes

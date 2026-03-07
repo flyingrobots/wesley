@@ -1,6 +1,6 @@
 /**
  * Example integration showing how Wave 2 components work together
- * This demonstrates the integration between CleanFormatter, ProgressTracker, 
+ * This demonstrates the integration between CleanFormatter, ProgressTracker,
  * CheckpointManager, and ErrorRecovery
  */
 
@@ -30,9 +30,9 @@ export class MigrationOrchestrator {
    */
   async executeMigration(migrationName, operations) {
     this.formatter.formatMigrationStart(migrationName, operations.length);
-    
+
     const migrationId = `migration_${Date.now()}`;
-    const globalProgress = this.progressTracker.startOperation(migrationId, {
+    const _globalProgress = this.progressTracker.startOperation(migrationId, {
       name: migrationName,
       totalSteps: operations.length,
       category: 'migration'
@@ -40,11 +40,11 @@ export class MigrationOrchestrator {
 
     try {
       const results = [];
-      
+
       for (let i = 0; i < operations.length; i++) {
         const operation = operations[i];
         const operationId = `${migrationId}_op_${i}`;
-        
+
         // Execute operation with error recovery
         const result = await this.errorRecovery.executeWithRecovery(
           operationId,
@@ -58,7 +58,7 @@ export class MigrationOrchestrator {
 
             // Update progress
             this.progressTracker.updateProgress(
-              migrationId, 
+              migrationId,
               i / operations.length,
               `Executing: ${operation.name}`
             );
@@ -84,7 +84,7 @@ export class MigrationOrchestrator {
           {
             timeoutMs: operation.timeoutMs || 30000,
             metadata: { operationName: operation.name },
-            rollbackOperation: async (state, context) => {
+            rollbackOperation: async (state, _context) => {
               // Custom rollback logic for this operation
               await this.rollbackOperation(operation, state);
             }
@@ -123,10 +123,10 @@ export class MigrationOrchestrator {
    */
   async executeOperation(operation) {
     const startTime = Date.now();
-    
+
     // Simulate operation execution
     await this.sleep(operation.duration || 1000);
-    
+
     // Simulate random failures for demonstration
     if (Math.random() < 0.1) { // 10% failure rate
       throw new Error(`Operation ${operation.name} failed: Simulated database error`);
@@ -143,13 +143,13 @@ export class MigrationOrchestrator {
   /**
    * Rollback operation (placeholder)
    */
-  async rollbackOperation(operation, state) {
+  async rollbackOperation(operation, _state) {
     this.formatter.formatOperationProgress(
       `rollback_${operation.name}`,
       'warning',
       `Rolling back: ${operation.name}`
     );
-    
+
     // Implement actual rollback logic here
     await this.sleep(500);
   }
@@ -159,14 +159,14 @@ export class MigrationOrchestrator {
    */
   setupEventHandlers() {
     // Progress tracker events -> formatter updates
-    this.progressTracker.on('progress:updated', ({ operationId, progress }) => {
+    this.progressTracker.on('progress:updated', ({ _operationId, progress }) => {
       if (progress.message) {
         // Update live progress display
         console.log(`Progress: ${(progress.progress * 100).toFixed(1)}% - ${progress.message}`);
       }
     });
 
-    // Error recovery events -> formatter updates  
+    // Error recovery events -> formatter updates
     this.errorRecovery.on('retry:attempting', ({ operationId, attempt, maxAttempts }) => {
       this.formatter.formatOperationProgress(
         operationId,
@@ -223,20 +223,20 @@ export class MigrationOrchestrator {
 // Example usage function
 export async function exampleMigrationRun() {
   const orchestrator = new MigrationOrchestrator({
-    formatter: { 
-      colors: true, 
+    formatter: {
+      colors: true,
       verbose: true,
-      showTimestamps: true 
+      showTimestamps: true
     },
-    progress: { 
-      enableMetrics: true 
+    progress: {
+      enableMetrics: true
     },
-    checkpoints: { 
-      maxCheckpoints: 20 
+    checkpoints: {
+      maxCheckpoints: 20
     },
-    recovery: { 
+    recovery: {
       maxRetries: 3,
-      enableAutoRollback: true 
+      enableAutoRollback: true
     }
   });
 

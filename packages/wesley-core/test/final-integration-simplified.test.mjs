@@ -1,12 +1,12 @@
 /**
  * Simplified Final Integration Tests - End-to-End Wesley System Testing
- * 
+ *
  * Focused integration tests covering Wave 4 finalization:
  * - CLIEnhancer integration with core components
  * - Performance benchmarks validation
  * - Safety feature verification
  * - Error handling and recovery
- * 
+ *
  * @license Apache-2.0
  */
 
@@ -44,7 +44,7 @@ describe('Wesley Wave 4 Final Integration Tests', () => {
 
   afterEach(() => {
     cliEnhancer?.removeAllListeners();
-    
+
     // Force garbage collection if available for memory tests
     if (global.gc) {
       global.gc();
@@ -54,9 +54,9 @@ describe('Wesley Wave 4 Final Integration Tests', () => {
   describe('CLIEnhancer Core Functionality', () => {
     test('should initialize within performance threshold', async () => {
       const startTime = performance.now();
-      
+
       await cliEnhancer.initialize();
-      
+
       const duration = performance.now() - startTime;
       assert(duration < PERFORMANCE_THRESHOLDS.cliInitialization,
         `CLI initialization took ${duration}ms, expected < ${PERFORMANCE_THRESHOLDS.cliInitialization}ms`);
@@ -64,15 +64,15 @@ describe('Wesley Wave 4 Final Integration Tests', () => {
 
     test('should process commands within performance threshold', async () => {
       await cliEnhancer.initialize();
-      
+
       const startTime = performance.now();
-      
+
       const result = await cliEnhancer.processCommand('generate', ['sql']);
-      
+
       const duration = performance.now() - startTime;
       assert(duration < PERFORMANCE_THRESHOLDS.commandProcessing,
         `Command processing took ${duration}ms, expected < ${PERFORMANCE_THRESHOLDS.commandProcessing}ms`);
-      
+
       assert(result.processed);
       assert.strictEqual(result.command, 'generate');
       assert.deepStrictEqual(result.args, ['sql']);
@@ -80,15 +80,15 @@ describe('Wesley Wave 4 Final Integration Tests', () => {
 
     test('should provide shell completion within performance threshold', async () => {
       await cliEnhancer.initialize();
-      
+
       const startTime = performance.now();
-      
+
       const completions = await cliEnhancer.getCompletions('gen', 3);
-      
+
       const duration = performance.now() - startTime;
       assert(duration < PERFORMANCE_THRESHOLDS.completionResponse,
         `Completion response took ${duration}ms, expected < ${PERFORMANCE_THRESHOLDS.completionResponse}ms`);
-      
+
       assert(Array.isArray(completions));
       const generateCompletion = completions.find(c => c.value === 'generate');
       assert(generateCompletion, 'Should provide generate command completion');
@@ -96,13 +96,13 @@ describe('Wesley Wave 4 Final Integration Tests', () => {
 
     test('should track progress within performance threshold', async () => {
       await cliEnhancer.initialize();
-      
+
       const startTime = performance.now();
-      
+
       cliEnhancer.startProgress('test-operation', 100);
       cliEnhancer.updateProgress(50, 'halfway');
       cliEnhancer.completeProgress({ success: true });
-      
+
       const duration = performance.now() - startTime;
       assert(duration < PERFORMANCE_THRESHOLDS.progressTracking,
         `Progress tracking took ${duration}ms, expected < ${PERFORMANCE_THRESHOLDS.progressTracking}ms`);
@@ -110,7 +110,7 @@ describe('Wesley Wave 4 Final Integration Tests', () => {
 
     test('should maintain memory usage within threshold', async () => {
       await cliEnhancer.initialize();
-      
+
       // Perform memory-intensive operations
       for (let i = 0; i < 100; i++) {
         await cliEnhancer.processCommand(`command${i}`, [`arg${i}`]);
@@ -119,10 +119,10 @@ describe('Wesley Wave 4 Final Integration Tests', () => {
         cliEnhancer.updateProgress(5);
         cliEnhancer.completeProgress();
       }
-      
+
       const currentMemory = process.memoryUsage().heapUsed;
       const memoryIncrease = currentMemory - startMemory;
-      
+
       assert(memoryIncrease < PERFORMANCE_THRESHOLDS.memoryUsage,
         `Memory usage increased by ${memoryIncrease} bytes, expected < ${PERFORMANCE_THRESHOLDS.memoryUsage} bytes`);
     });
@@ -193,7 +193,7 @@ describe('Wesley Wave 4 Final Integration Tests', () => {
 
       for (const testCase of testCases) {
         const result = await cliEnhancer.performDryRun(testCase.command, testCase.args);
-        
+
         assert(result.dryRun, `${testCase.command} should be marked as dry-run`);
         assert.strictEqual(result.analysis.type, testCase.expectedType,
           `${testCase.command} should have type ${testCase.expectedType}`);
@@ -206,7 +206,7 @@ describe('Wesley Wave 4 Final Integration Tests', () => {
 
     test('should bypass confirmation with force flags', () => {
       const forceFlags = ['--force', '-f', '--yes', '-y'];
-      
+
       forceFlags.forEach(flag => {
         assert(!cliEnhancer.requiresInteraction('migrate', ['up', flag]),
           `migrate up ${flag} should not require interaction`);
@@ -236,7 +236,7 @@ describe('Wesley Wave 4 Final Integration Tests', () => {
 
       const history = cliEnhancer.getHistory();
       assert.strictEqual(history.length, commands.length);
-      
+
       // Check history order and content
       commands.forEach(([expectedCmd, expectedArgs], index) => {
         assert.strictEqual(history[index].command, expectedCmd);
@@ -289,7 +289,7 @@ describe('Wesley Wave 4 Final Integration Tests', () => {
       const originalArgs = ['sql'];
 
       await cliEnhancer.processCommand(originalCommand, originalArgs);
-      
+
       const replayResult = await cliEnhancer.replayCommand(0);
       assert.strictEqual(replayResult.command, originalCommand);
       assert.deepStrictEqual(replayResult.args, originalArgs);
@@ -297,7 +297,7 @@ describe('Wesley Wave 4 Final Integration Tests', () => {
 
     test('should limit history size', async () => {
       const historySize = cliEnhancer.options.historySize;
-      
+
       // Add more commands than history allows
       for (let i = 0; i < historySize + 10; i++) {
         await cliEnhancer.processCommand(`command${i}`, []);
@@ -305,7 +305,7 @@ describe('Wesley Wave 4 Final Integration Tests', () => {
 
       const history = cliEnhancer.getHistory();
       assert.strictEqual(history.length, historySize);
-      
+
       // Should contain the most recent commands
       assert(history[history.length - 1].command.includes('command'));
     });
@@ -318,7 +318,7 @@ describe('Wesley Wave 4 Final Integration Tests', () => {
 
     test('should emit proper event sequence for command execution', async () => {
       const events = [];
-      
+
       cliEnhancer.on('commandExecuted', (event) => events.push({ type: 'command', event }));
       cliEnhancer.on('progressStarted', (event) => events.push({ type: 'progress_start', event }));
       cliEnhancer.on('progressUpdated', (event) => events.push({ type: 'progress_update', event }));
@@ -347,10 +347,8 @@ describe('Wesley Wave 4 Final Integration Tests', () => {
     });
 
     test('should handle event emission errors gracefully', async () => {
-      let errorCaught = false;
-      
       cliEnhancer.on('error', () => {
-        errorCaught = true;
+        // error handler intentionally empty for test
       });
 
       // This should not crash the CLI enhancer
@@ -358,7 +356,7 @@ describe('Wesley Wave 4 Final Integration Tests', () => {
 
       // Wait for async error handling
       await new Promise(resolve => setTimeout(resolve, 10));
-      
+
       // The CLI enhancer should still be functional
       const result = await cliEnhancer.processCommand('help', []);
       assert(result.processed);
@@ -380,13 +378,13 @@ describe('Wesley Wave 4 Final Integration Tests', () => {
       ];
 
       const startTime = performance.now();
-      
+
       const results = await Promise.all(
         commands.map(([cmd, args]) => cliEnhancer.processCommand(cmd, args))
       );
-      
+
       const duration = performance.now() - startTime;
-      
+
       assert.strictEqual(results.length, commands.length);
       results.forEach((result, index) => {
         assert(result.processed);
@@ -407,13 +405,13 @@ describe('Wesley Wave 4 Final Integration Tests', () => {
       ];
 
       const startTime = performance.now();
-      
+
       const results = await Promise.all(
         completionRequests.map(partial => cliEnhancer.getCompletions(partial, partial.length))
       );
-      
+
       const duration = performance.now() - startTime;
-      
+
       assert.strictEqual(results.length, completionRequests.length);
       results.forEach(completions => {
         assert(Array.isArray(completions));
@@ -456,7 +454,7 @@ describe('Wesley Wave 4 Final Integration Tests', () => {
       cliEnhancer.commands = null; // This will cause an error
 
       const completions = await cliEnhancer.getCompletions('test', 4);
-      
+
       // Should return empty array on error, not crash
       assert(Array.isArray(completions));
       assert.strictEqual(completions.length, 0);

@@ -6,7 +6,7 @@ export class DiffEnginePort {
    * @param {string} currentSql - Current SQL schema
    * @returns {Promise<{migrationSql: string|null, manifest: object|null}>}
    */
-  async diff(prevSql, currentSql) { 
-    throw new Error('DiffEnginePort.diff() must be implemented'); 
+  async diff(_prevSql, _currentSql) {
+    throw new Error('DiffEnginePort.diff() must be implemented');
   }
 }

@@ -7,9 +7,9 @@ test('collectParams: unrecognized predicate kind throws (M8)', () => {
     root: {
       kind: 'Filter',
       input: { kind: 'Table', table: 'users', alias: 't0' },
-      predicate: { kind: 'Bogus', left: { kind: 'ColumnRef', table: 't0', column: 'id' } },
+      predicate: { kind: 'Bogus', left: { kind: 'ColumnRef', table: 't0', column: 'id' } }
     },
-    projection: { items: [] },
+    projection: { items: [] }
   };
   assert.throws(() => collectParams(plan), /unsupported predicate kind/i);
 });

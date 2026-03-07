@@ -13,7 +13,7 @@ export default {
       acceptable: 60, // >= 60 is acceptable
       poor: 40        // < 40 is poor
     },
-    
+
     // Migration Risk Index thresholds
     mri: {
       low: 20,        // <= 20 is low risk
@@ -21,7 +21,7 @@ export default {
       high: 75,       // <= 75 is high risk
       critical: 100   // > 75 is critical risk
     },
-    
+
     // Test Confidence Index thresholds
     tci: {
       excellent: 85,  // >= 85 is excellent test coverage
@@ -30,7 +30,7 @@ export default {
       poor: 30        // < 30 is poor
     }
   },
-  
+
   // Scoring weights for different aspects
   weights: {
     // SCS component weights
@@ -41,7 +41,7 @@ export default {
       tests: 0.15,    // Test generation weight
       docs: 0.1       // Documentation weight
     },
-    
+
     // MRI risk factor weights
     mri: {
       dropTable: 100,    // Dropping a table
@@ -53,7 +53,7 @@ export default {
       createIndex: 10,   // Creating index (blocking)
       addColumn: 5       // Adding nullable column
     },
-    
+
     // TCI test type weights
     tci: {
       unitTests: 0.3,      // Unit test coverage
@@ -62,7 +62,7 @@ export default {
       e2eTests: 0.1        // End-to-end tests
     }
   },
-  
+
   // Generation options
   generation: {
     // SQL generation
@@ -73,7 +73,7 @@ export default {
       generateComments: true,
       useTransactions: true
     },
-    
+
     // TypeScript generation
     typescript: {
       generateTypes: true,
@@ -81,7 +81,7 @@ export default {
       generateClient: true,
       strictNullChecks: true
     },
-    
+
     // Test generation
     tests: {
       generatePgTAP: true,
@@ -90,7 +90,7 @@ export default {
       includeSensitiveTests: true,
       testTimeout: 30000
     },
-    
+
     // RPC generation
     rpc: {
       paramStrategy: 'jsonb', // 'jsonb' | 'discrete' | 'composite'
@@ -99,7 +99,7 @@ export default {
       volatility: 'VOLATILE'
     }
   },
-  
+
   // Naming strategies
   naming: {
     strategy: 'snake_case', // 'preserve' | 'snake_case' | 'lower' | 'upper'
@@ -108,7 +108,7 @@ export default {
     constraintPrefix: '',
     policyPrefix: 'policy_'
   },
-  
+
   // Validation rules
   validation: {
     requirePrimaryKey: true,
@@ -119,7 +119,7 @@ export default {
     maxTableNameLength: 63,
     maxColumnNameLength: 63
   },
-  
+
   // Feature flags
   features: {
     enableHolmes: true,      // Enable Holmes evidence tracking
@@ -128,7 +128,7 @@ export default {
     enableAutoMigration: false, // Auto-generate migrations
     enableDryRun: true       // Enable dry-run mode by default
   },
-  
+
   // Output paths
   paths: {
     output: './generated',

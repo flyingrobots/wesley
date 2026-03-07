@@ -9,7 +9,7 @@ import { Logger } from '@wesley/core';
 export class PinoLogger extends Logger {
   constructor(options = {}) {
     super();
-    
+
     const {
       name = 'wesley',
       level = 'info',

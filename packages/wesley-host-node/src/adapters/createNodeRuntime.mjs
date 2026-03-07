@@ -4,7 +4,7 @@
  * NO top-level imports of generator packages!
  */
 
-import * as fs from 'node:fs/promises';
+import * as _fs from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import pino from 'pino';
@@ -16,18 +16,18 @@ import { nodeCrypto } from './NodeCrypto.mjs';
 
 // Stub generators for fallback when packages are broken
 const stub = {
-  sql: { 
-    emitDDL: () => ({ label: 'ddl', files: [] }), 
-    emitRLS: () => ({ label: 'rls', files: [] }), 
-    emitMigrations: () => ({ label: 'migrations', files: [] }) 
+  sql: {
+    emitDDL: () => ({ label: 'ddl', files: [] }),
+    emitRLS: () => ({ label: 'rls', files: [] }),
+    emitMigrations: () => ({ label: 'migrations', files: [] })
   },
-  tests: { 
-    emitPgTap: () => ({ label: 'pgtap', files: [] }) 
+  tests: {
+    emitPgTap: () => ({ label: 'pgtap', files: [] })
   },
-  js: { 
-    emitModels: () => ({ label: 'models', files: [] }), 
-    emitZod: () => ({ label: 'zod', files: [] }), 
-    emitNextApi: () => ({ label: 'api', files: [] }) 
+  js: {
+    emitModels: () => ({ label: 'models', files: [] }),
+    emitZod: () => ({ label: 'zod', files: [] }),
+    emitNextApi: () => ({ label: 'api', files: [] })
   }
 };
 
@@ -36,47 +36,47 @@ export async function createNodeRuntime() {
   let sqlGen = stub.sql;
   let testGen = stub.tests;
   let jsGen = stub.js;
-  
+
   try {
     const supa = await import('@wesley/generator-supabase');
-    sqlGen = { 
-      emitDDL: supa.emitDDL || stub.sql.emitDDL, 
-      emitRLS: supa.emitRLS || stub.sql.emitRLS, 
-      emitMigrations: supa.emitMigrations || stub.sql.emitMigrations 
+    sqlGen = {
+      emitDDL: supa.emitDDL || stub.sql.emitDDL,
+      emitRLS: supa.emitRLS || stub.sql.emitRLS,
+      emitMigrations: supa.emitMigrations || stub.sql.emitMigrations
     };
-    testGen = { 
-      emitPgTap: supa.emitPgTap || stub.tests.emitPgTap 
+    testGen = {
+      emitPgTap: supa.emitPgTap || stub.tests.emitPgTap
     };
-  } catch (e) {
+  } catch (_e) {
     console.warn('Warning: @wesley/generator-supabase not available, using stubs');
   }
-  
+
   try {
     const js = await import('@wesley/generator-js');
-    jsGen = { 
-      emitModels: js.emitModels || stub.js.emitModels, 
-      emitZod: js.emitZod || stub.js.emitZod, 
-      emitNextApi: js.emitNextApi || stub.js.emitNextApi 
+    jsGen = {
+      emitModels: js.emitModels || stub.js.emitModels,
+      emitZod: js.emitZod || stub.js.emitZod,
+      emitNextApi: js.emitNextApi || stub.js.emitNextApi
     };
-  } catch (e) {
+  } catch (_e) {
     console.warn('Warning: @wesley/generator-js not available, using stubs');
   }
 
   // Try to load planner and runner
   let planner = null;
   let runner = null;
-  
+
   try {
     planner = await import('@wesley/tasks');
-  } catch (e) {
+  } catch (_e) {
     if (process.env.WESLEY_WARN_MISSING === '1') {
       console.warn('Warning: @wesley/tasks not available');
     }
   }
-  
+
   try {
     runner = await import('@wesley/slaps');
-  } catch (e) {
+  } catch (_e) {
     if (process.env.WESLEY_WARN_MISSING === '1') {
       console.warn('Warning: @wesley/slaps not available');
     }
@@ -85,8 +85,8 @@ export async function createNodeRuntime() {
   // Create a wrapper that respects quiet mode
   const isDevelopment = (process.env.NODE_ENV || 'development') === 'development';
   const usePretty = isDevelopment && process.env.WESLEY_LOG_FORMAT !== 'json';
-  const pinoLogger = pino({ 
-    name: 'Wesley', 
+  const pinoLogger = pino({
+    name: 'Wesley',
     level: process.env.WESLEY_LOG_LEVEL || 'info',
     // Use pino-pretty for readable logs in development; undefined lets pino use its default transport in other environments for performance
     transport: usePretty ? {
@@ -164,19 +164,19 @@ export async function createNodeRuntime() {
         }
       }
     },
-    
+
     // Generators (lazy-loaded)
-    generators: { 
-      sql: sqlGen, 
-      tests: testGen, 
-      js: jsGen 
+    generators: {
+      sql: sqlGen,
+      tests: testGen,
+      js: jsGen
     },
 
     // Shell exec wrapper (host-only)
     shell: {
       exec: async (cmd, options = {}) => {
         const { exec } = await import('node:child_process');
-        return await new Promise((resolve, reject) => {
+        return new Promise((resolve, reject) => {
           const child = exec(cmd, { ...options }, (error, stdout, stderr) => {
             if (error) {
               error.stdout = stdout;
@@ -200,7 +200,7 @@ export async function createNodeRuntime() {
     // Planning and execution (may be null)
     planner,
     runner,
-    
+
     // File writer
     writer: {
       writeFiles: async (artifacts, baseDir) => {
@@ -223,7 +223,7 @@ export async function createNodeRuntime() {
         }
       }
     },
-    
+
     // Clock
     clock: {
       now: () => new Date()
@@ -246,6 +246,7 @@ function sanitizeGraphQL(sdl, env) {
     throw e;
   }
   // Strip BOM and null bytes
-  let out = sdl.replace(/^\uFEFF/, '').replace(/\u0000/g, '');
+  // eslint-disable-next-line no-control-regex -- null byte detection is intentional
+  const out = sdl.replace(/^\uFEFF/, '').replace(/\u0000/g, '');
   return out;
 }

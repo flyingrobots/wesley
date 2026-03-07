@@ -5,7 +5,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import http from 'node:http';
 
 async function sh(cmd, args, opts = {}) {
-  return await new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     const p = spawn(cmd, args, { stdio: 'inherit', ...opts });
     p.on('error', (err) => reject(err));
     p.on('exit', (code, signal) => {
@@ -43,7 +43,7 @@ async function main() {
       srv.kill('SIGTERM');
       await sleep(1000);
       if (!srv.killed) srv.kill('SIGKILL');
-    } catch {}
+    } catch { /* empty */ }
     throw e;
   }
 
@@ -60,7 +60,7 @@ async function main() {
       srv.kill('SIGTERM');
       await sleep(1000);
       if (!srv.killed) srv.kill('SIGKILL');
-    } catch {}
+    } catch { /* empty */ }
   }
 }
 

@@ -100,28 +100,28 @@ const GOLDEN_VECTORS = [
   {
     name: 'minimal',
     sdl: 'type Query { hello: String }',
-    hash: 'a50aeaeccad12d82ccafa5d7f8b56a95de2a629ec04097aff87d3606f56f724e',
+    hash: 'a50aeaeccad12d82ccafa5d7f8b56a95de2a629ec04097aff87d3606f56f724e'
   },
   {
     name: 'two-types',
     sdl: 'type Query { id: ID! } type User { name: String email: String! }',
-    hash: 'bdb6ec1f84809f15eb5cb3d0e4a76bda5316b8607f0422e514e245129df69579',
+    hash: 'bdb6ec1f84809f15eb5cb3d0e4a76bda5316b8607f0422e514e245129df69579'
   },
   {
     name: 'enum',
     sdl: 'enum Status { ACTIVE INACTIVE PENDING }',
-    hash: '442b13f4da05c8273ac6923d3cc6dbc5028cf834db04ea52c268bd41b2457967',
+    hash: '442b13f4da05c8273ac6923d3cc6dbc5028cf834db04ea52c268bd41b2457967'
   },
   {
     name: 'input-and-mutation',
     sdl: 'input CreateUserInput { name: String! email: String! } type Mutation { createUser(input: CreateUserInput!): User } type User { id: ID! name: String }',
-    hash: '9b3b779bf841b67129ef03c83c18ff1a5ae6e7b8c3268647e96bd05f1d239437',
+    hash: '9b3b779bf841b67129ef03c83c18ff1a5ae6e7b8c3268647e96bd05f1d239437'
   },
   {
     name: 'with-directive',
     sdl: 'directive @auth(requires: String!) on FIELD_DEFINITION\ntype Query { secret: String @auth(requires: "ADMIN") }',
-    hash: '95bb01c19ee38de5cd4a604096d026613beec2a467ced46453bc210a1625e210',
-  },
+    hash: '95bb01c19ee38de5cd4a604096d026613beec2a467ced46453bc210a1625e210'
+  }
 ];
 
 for (const { name, sdl, hash } of GOLDEN_VECTORS) {
@@ -135,6 +135,6 @@ for (const { name, sdl, hash } of GOLDEN_VECTORS) {
 
 test('schemaHash: invalid SDL throws', async () => {
   await assert.rejects(() => schemaHash('not valid graphql !!!'), {
-    name: 'GraphQLError',
+    name: 'GraphQLError'
   });
 });

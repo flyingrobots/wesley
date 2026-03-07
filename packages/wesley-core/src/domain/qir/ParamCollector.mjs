@@ -32,75 +32,75 @@ export function collectParams(plan) {
   const visitRelation = (r) => {
     if (!r) return;
     switch (r.kind) {
-      case 'Join':
-        visitRelation(r.left);
-        visitRelation(r.right);
-        if (r.on) visitPredicate(r.on);
-        break;
-      case 'Lateral':
-      case 'Subquery':
-        visitPlan(r.plan);
-        break;
-      case 'Filter':
-        visitRelation(r.input);
-        if (r.predicate) visitPredicate(r.predicate);
-        break;
-      default:
-        // Table: nothing else to traverse
-        break;
+    case 'Join':
+      visitRelation(r.left);
+      visitRelation(r.right);
+      if (r.on) visitPredicate(r.on);
+      break;
+    case 'Lateral':
+    case 'Subquery':
+      visitPlan(r.plan);
+      break;
+    case 'Filter':
+      visitRelation(r.input);
+      if (r.predicate) visitPredicate(r.predicate);
+      break;
+    default:
+      // Table: nothing else to traverse
+      break;
     }
   };
 
   const visitPredicate = (p) => {
     if (!p) return;
     switch (p.kind) {
-      case 'Exists':
-        if (p.subquery) visitPlan(p.subquery);
-        break;
-      case 'Not':
-        visitPredicate(p.left);
-        break;
-      case 'And':
-      case 'Or':
-        visitPredicate(p.left);
-        visitPredicate(p.right);
-        break;
-      case 'Compare':
-        // Special null operators carry only left expr
-        if (p.op === 'isNull' || p.op === 'isNotNull') {
-          visitExpr(p.left);
-        } else {
-          visitExpr(p.left);
-          visitExpr(p.right);
-        }
-        break;
-      default:
-        throw new Error(`Unsupported predicate kind: ${p.kind}`);
+    case 'Exists':
+      if (p.subquery) visitPlan(p.subquery);
+      break;
+    case 'Not':
+      visitPredicate(p.left);
+      break;
+    case 'And':
+    case 'Or':
+      visitPredicate(p.left);
+      visitPredicate(p.right);
+      break;
+    case 'Compare':
+      // Special null operators carry only left expr
+      if (p.op === 'isNull' || p.op === 'isNotNull') {
+        visitExpr(p.left);
+      } else {
+        visitExpr(p.left);
+        visitExpr(p.right);
+      }
+      break;
+    default:
+      throw new Error(`Unsupported predicate kind: ${p.kind}`);
     }
   };
 
   const visitExpr = (e) => {
     if (!e) return;
     switch (e.kind) {
-      case 'ParamRef':
-        recordParam(e);
-        break;
-      case 'JsonBuildObject':
-        for (const f of e.fields || []) visitExpr(f.value);
-        break;
-      case 'JsonAgg':
-        visitExpr(e.value);
-        if (e.orderBy) for (const ob of e.orderBy) visitExpr(ob.expr);
-        break;
-      case 'FuncCall':
-        for (const a of e.args || []) visitExpr(a);
-        break;
-      case 'ScalarSubquery':
-        if (e.plan) visitPlan(e.plan);
-        break;
-      default:
-        // ColumnRef | Literal or unknown — nothing to do
-        break;
+    case 'ParamRef':
+      recordParam(e);
+      break;
+    case 'JsonBuildObject':
+      for (const f of e.fields || []) visitExpr(f.value);
+      break;
+    case 'JsonAgg':
+      visitExpr(e.value);
+      if (e.orderBy) for (const ob of e.orderBy) visitExpr(ob.expr);
+      break;
+    case 'FuncCall':
+      for (const a of e.args || []) visitExpr(a);
+      break;
+    case 'ScalarSubquery':
+      if (e.plan) visitPlan(e.plan);
+      break;
+    default:
+      // ColumnRef | Literal or unknown — nothing to do
+      break;
     }
   };
 

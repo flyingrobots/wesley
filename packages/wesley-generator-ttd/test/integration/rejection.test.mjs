@@ -12,7 +12,7 @@ import {
   validateChannel,
   validateOp,
   validateRegistry,
-  validateInvariant,
+  validateInvariant
 } from '@wesley/core/ttd';
 import { FakeClock } from '@wesley/core/ports';
 import { testCrypto } from '../setup.mjs';

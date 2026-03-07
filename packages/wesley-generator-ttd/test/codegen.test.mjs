@@ -16,7 +16,7 @@ import {
   generateTsTypes,
   generateTsZod,
   generateTsRegistry,
-  compileTtdProtocol,
+  compileTtdProtocol
 } from '@wesley/core/ttd';
 import { FakeClock } from '@wesley/core';
 import { testCrypto } from './setup.mjs';
@@ -167,7 +167,7 @@ describe('compileTtdProtocol (orchestrator)', () => {
     const result = await compileTtdProtocol({
       sdl: basicProtocolSdl,
       targets: ['typescript'],
-      deps: cryptoDeps,
+      deps: cryptoDeps
     });
 
     const paths = result.files.map(f => f.path);
@@ -181,7 +181,7 @@ describe('compileTtdProtocol (orchestrator)', () => {
     const result = await compileTtdProtocol({
       sdl: basicProtocolSdl,
       targets: ['manifest'],
-      deps: cryptoDeps,
+      deps: cryptoDeps
     });
 
     const paths = result.files.map(f => f.path);
@@ -195,7 +195,7 @@ describe('compileTtdProtocol (orchestrator)', () => {
     const result = await compileTtdProtocol({
       sdl: basicProtocolSdl,
       targets: ['manifest'],
-      deps: cryptoDeps,
+      deps: cryptoDeps
     });
 
     const irFile = result.files.find(f => f.path === 'manifest/ttd-ir.json');
@@ -210,7 +210,7 @@ describe('compileTtdProtocol (orchestrator)', () => {
   it('generates manifest and typescript by default', async () => {
     const result = await compileTtdProtocol({
       sdl: basicProtocolSdl,
-      deps: cryptoDeps,
+      deps: cryptoDeps
     });
 
     const paths = result.files.map(f => f.path);
@@ -224,7 +224,7 @@ describe('compileTtdProtocol (orchestrator)', () => {
     const result = await compileTtdProtocol({
       sdl: basicProtocolSdl,
       targets: ['rust'],
-      deps: cryptoDeps,
+      deps: cryptoDeps
     });
 
     const readme = result.files.find(f => f.path === 'rust/README.md');
@@ -236,7 +236,7 @@ describe('compileTtdProtocol (orchestrator)', () => {
   it('includes schema hash in result', async () => {
     const result = await compileTtdProtocol({
       sdl: basicProtocolSdl,
-      deps: cryptoDeps,
+      deps: cryptoDeps
     });
 
     expect(result.schemaHash).toBeDefined();
@@ -273,7 +273,7 @@ describe('compileTtdProtocol (orchestrator)', () => {
   it('includes validation result in output', async () => {
     const result = await compileTtdProtocol({
       sdl: basicProtocolSdl,
-      deps: cryptoDeps,
+      deps: cryptoDeps
     });
 
     expect(result.validation).toBeDefined();

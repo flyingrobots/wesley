@@ -6,18 +6,18 @@
 import { readFile, writeFile, access, mkdir, readdir } from 'node:fs/promises';
 import { constants } from 'node:fs';
 import { dirname, resolve, join as pathJoin } from 'node:path';
-import { createReadStream } from 'node:fs';
+import { _createReadStream } from 'node:fs';
 
 export class NodeFileSystem {
   async read(path) {
-    return await readFile(path, 'utf8');
+    return readFile(path, 'utf8');
   }
 
   async write(path, content) {
     // Ensure directory exists
     const dir = dirname(path);
     await this.mkdir(dir, { recursive: true });
-    
+
     await writeFile(path, content, 'utf8');
   }
 
@@ -68,7 +68,7 @@ export class NodeFileSystem {
   }
 
   async readFile(path, encoding = 'utf8') {
-    return await readFile(path, encoding);
+    return readFile(path, encoding);
   }
 
   async readStdin() {

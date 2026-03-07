@@ -1,6 +1,6 @@
 /**
  * AutomaticallyRegisteredProgram - Factory pattern for Commander.js programs
- * 
+ *
  * Subclasses automatically register themselves with Commander by virtue of being declared.
  * This eliminates the need for a large wesley.mjs registration file.
  */
@@ -13,7 +13,7 @@ export class AutomaticallyRegisteredProgram {
     this.name = name;
     this.description = description;
     this.aliases = [];
-    
+
     // Auto-register this program
     if (!registeredPrograms.has(name)) {
       registeredPrograms.set(name, this);

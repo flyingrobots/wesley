@@ -13,12 +13,12 @@ const nullLogger = Object.freeze({
   debug() {},
   child() { return nullLogger; },
   setLevel() {},
-  async flush() {},
+  async flush() {}
 });
 
 /** Deterministic fake clock for snapshot-friendly output. */
 const fakeClock = Object.freeze({
-  now() { return '2020-01-01T00:00:00.000Z'; },
+  now() { return '2020-01-01T00:00:00.000Z'; }
 });
 
 /**
@@ -31,7 +31,7 @@ function buildContext(config) {
     logger: nullLogger,
     clock: fakeClock,
     config: Object.freeze(structuredClone(config)),
-    runId: 'test-run-0',
+    runId: 'test-run-0'
   });
 }
 
@@ -61,7 +61,7 @@ export async function testGenerator(plugin, sdl, config = {}) {
   if (artifacts == null || typeof artifacts !== 'object' || Array.isArray(artifacts)) {
     const label = artifacts === null ? 'null'
       : Array.isArray(artifacts) ? 'Array'
-      : typeof artifacts;
+        : typeof artifacts;
     throw new Error(
       `Plugin "${plugin.name}" generate() must return Record<string, string|Uint8Array> (got ${label})`
     );
@@ -148,6 +148,6 @@ export function expectArtifact(artifacts, path) {
           `Artifact "${path}" JSON mismatch.\nExpected:\n${expectedJson}\nActual:\n${actualJson}`
         );
       }
-    },
+    }
   };
 }

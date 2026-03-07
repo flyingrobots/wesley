@@ -88,7 +88,7 @@ describe('raw_le_codec file generation', () => {
   });
 
   it('omits raw_le_codec.generated.rs when no OBJECT or ENUM types', async () => {
-    const sdl = `type Query { hello: String! }`;
+    const sdl = 'type Query { hello: String! }';
     const result = await generateEcho({ sdl });
     const file = result.files.find((f) => f.path === 'raw_le_codec.generated.rs');
     // Query/Mutation types are excluded from IR types, so no encodable types
@@ -415,7 +415,7 @@ describe('emitRawLeCodec edge cases', () => {
 
   it('handles enum with single variant', () => {
     const rs = emitRawLeCodec({
-      types: [{ name: 'Single', kind: 'ENUM', values: ['ONLY'] }],
+      types: [{ name: 'Single', kind: 'ENUM', values: ['ONLY'] }]
     });
     expect(rs).toContain('Self::ONLY => 0,');
   });
@@ -425,8 +425,8 @@ describe('emitRawLeCodec edge cases', () => {
       types: [{
         name: 'WithId',
         kind: 'OBJECT',
-        fields: [{ name: 'uid', type: 'ID', required: true, list: false }],
-      }],
+        fields: [{ name: 'uid', type: 'ID', required: true, list: false }]
+      }]
     });
     expect(rs).toContain('encode_string(&self.uid)');
   });
@@ -436,8 +436,8 @@ describe('emitRawLeCodec edge cases', () => {
       types: [{
         name: 'OptList',
         kind: 'OBJECT',
-        fields: [{ name: 'items', type: 'String', required: false, list: true }],
-      }],
+        fields: [{ name: 'items', type: 'String', required: false, list: true }]
+      }]
     });
     expect(rs).toContain('encode_option(&self.items');
     expect(rs).toContain('encode_list');

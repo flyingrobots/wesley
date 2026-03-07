@@ -1,6 +1,6 @@
 /**
  * CLIEnhancer - Command Line Interface Enhancement System
- * 
+ *
  * Provides advanced CLI features including:
  * - Interactive mode with prompts for complex operations
  * - Command aliases and shortcuts
@@ -8,7 +8,7 @@
  * - Dry-run mode for destructive operations
  * - Progress bars and spinners for long operations
  * - Shell completion for commands
- * 
+ *
  * @license Apache-2.0
  * @author Wesley Team
  */
@@ -87,7 +87,7 @@ export class CompletionError extends CLIError {
 export class CLIEnhancer extends EventEmitter {
   constructor(options = {}) {
     super();
-    
+
     this.options = {
       historySize: options.historySize || 100,
       enableInteractiveMode: options.enableInteractiveMode !== false,
@@ -116,7 +116,7 @@ export class CLIEnhancer extends EventEmitter {
 
     // Available commands for completion
     this.commands = new Map([
-      ['generate', { 
+      ['generate', {
         description: 'Generate SQL, TypeScript, or migrations',
         subcommands: ['sql', 'typescript', 'zod', 'migration', 'all'],
         options: ['--dry-run', '--output', '--verbose']
@@ -158,12 +158,12 @@ export class CLIEnhancer extends EventEmitter {
    */
   async initialize() {
     try {
-      this.emit('cliInitialized', { 
+      this.emit('cliInitialized', {
         features: Object.keys(this.options).filter(k => this.options[k]),
         aliasCount: this.aliases.size,
         commandCount: this.commands.size
       });
-      
+
       return true;
     } catch (error) {
       const cliError = new CLIError(`Failed to initialize CLI enhancer: ${error.message}`);
@@ -179,16 +179,16 @@ export class CLIEnhancer extends EventEmitter {
     try {
       // Resolve aliases
       const resolvedCommand = this.resolveAlias(command);
-      
+
       // Check for dry-run mode
       const isDryRun = options.dryRun || args.includes('--dry-run');
-      
+
       // Add to history
       this.addToHistory(resolvedCommand, args);
-      
+
       // Emit command execution event
       this.emit('commandExecuted', new CLICommandExecuted(resolvedCommand, args, isDryRun));
-      
+
       if (isDryRun) {
         return this.performDryRun(resolvedCommand, args);
       }
@@ -225,7 +225,7 @@ export class CLIEnhancer extends EventEmitter {
 
     try {
       this.emit('interactiveModeStarted');
-      
+
       // This would typically connect to a readline interface
       // For Wesley, we emit an event that adapters can handle
       this.emit('interactionRequested', new CLIInteractionRequested(
@@ -251,7 +251,7 @@ export class CLIEnhancer extends EventEmitter {
 
       for (const prompt of prompts) {
         this.emit('interactionRequested', new CLIInteractionRequested(prompt.message, prompt.options));
-        
+
         // In a real implementation, this would wait for user input
         // For now, we simulate the interaction structure
         responses[prompt.key] = await this.waitForResponse(prompt);
@@ -308,8 +308,8 @@ export class CLIEnhancer extends EventEmitter {
       this.activeProgress.message = message;
 
       this.emit('progressUpdated', new CLIProgressUpdate(
-        current, 
-        this.activeProgress.total, 
+        current,
+        this.activeProgress.total,
         message
       ));
 
@@ -329,7 +329,7 @@ export class CLIEnhancer extends EventEmitter {
     try {
       const operation = this.activeProgress.operation;
       const duration = Date.now() - this.activeProgress.startTime;
-      
+
       this.emit('progressCompleted', new CLIProgressCompleted(operation, {
         result,
         duration,
@@ -386,7 +386,7 @@ export class CLIEnhancer extends EventEmitter {
       else if (parts.length === 2) {
         const command = this.resolveAlias(parts[0]);
         const commandInfo = this.commands.get(command);
-        
+
         if (commandInfo) {
           for (const subcommand of commandInfo.subcommands) {
             if (subcommand.startsWith(currentPart)) {
@@ -403,7 +403,7 @@ export class CLIEnhancer extends EventEmitter {
       else if (currentPart.startsWith('-')) {
         const command = this.resolveAlias(parts[0]);
         const commandInfo = this.commands.get(command);
-        
+
         if (commandInfo) {
           for (const option of commandInfo.options) {
             if (option.startsWith(currentPart)) {
@@ -418,7 +418,7 @@ export class CLIEnhancer extends EventEmitter {
       }
 
       this.emit('completionRequested', new CLICompletionRequested(line, position));
-      
+
       return completions.sort((a, b) => a.value.localeCompare(b.value));
 
     } catch (error) {
@@ -476,7 +476,7 @@ export class CLIEnhancer extends EventEmitter {
 
       this.aliases.set(alias, command);
       this.emit('aliasAdded', { alias, command });
-      
+
       return true;
     } catch (error) {
       this.emit('error', error);
@@ -506,7 +506,7 @@ export class CLIEnhancer extends EventEmitter {
   async performDryRun(command, args) {
     try {
       const analysis = this.analyzeCommand(command, args);
-      
+
       return {
         command,
         args,
@@ -553,7 +553,7 @@ export class CLIEnhancer extends EventEmitter {
     const destructiveCommands = ['migrate', 'rollback', 'drop', 'delete', 'remove'];
     const hasForceFlag = args.includes('--force') || args.includes('-f');
     const hasYesFlag = args.includes('--yes') || args.includes('-y');
-    
+
     return destructiveCommands.includes(command) && !hasForceFlag && !hasYesFlag;
   }
 
@@ -587,7 +587,7 @@ export class CLIEnhancer extends EventEmitter {
   /**
    * Wait for user response (adapter hook)
    */
-  async waitForResponse(prompt) {
+  async waitForResponse(_prompt) {
     // This would be implemented by adapters
     // For now, return a mock response for testing
     return { confirmed: true };
@@ -609,30 +609,30 @@ export class CLIEnhancer extends EventEmitter {
 
     // Analyze based on command type
     switch (command) {
-      case 'generate':
-        analysis.type = 'generation';
-        analysis.filesAffected = ['SQL files', 'TypeScript files', 'Migration files'];
-        analysis.estimatedDuration = '5-30 seconds';
-        break;
+    case 'generate':
+      analysis.type = 'generation';
+      analysis.filesAffected = ['SQL files', 'TypeScript files', 'Migration files'];
+      analysis.estimatedDuration = '5-30 seconds';
+      break;
 
-      case 'migrate':
-        analysis.type = 'migration';
-        analysis.destructive = !args.includes('status');
-        analysis.databaseChanges = true;
-        analysis.estimatedDuration = '10-300 seconds';
-        break;
+    case 'migrate':
+      analysis.type = 'migration';
+      analysis.destructive = !args.includes('status');
+      analysis.databaseChanges = true;
+      analysis.estimatedDuration = '10-300 seconds';
+      break;
 
-      case 'rollback':
-        analysis.type = 'rollback';
-        analysis.destructive = true;
-        analysis.databaseChanges = true;
-        analysis.estimatedDuration = '5-60 seconds';
-        break;
+    case 'rollback':
+      analysis.type = 'rollback';
+      analysis.destructive = true;
+      analysis.databaseChanges = true;
+      analysis.estimatedDuration = '5-60 seconds';
+      break;
 
-      case 'test':
-        analysis.type = 'testing';
-        analysis.estimatedDuration = '30-180 seconds';
-        break;
+    case 'test':
+      analysis.type = 'testing';
+      analysis.estimatedDuration = '30-180 seconds';
+      break;
     }
 
     return analysis;

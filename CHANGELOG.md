@@ -126,6 +126,15 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **CR-16:** `assertCleanGit` prefers async `shell.exec()` over awaiting synchronous `execSync`
 - **CR-34:** `lockFor` in `_migration-plan.mjs` — add clarifying comment explaining PG 11+ ADD COLUMN lock behavior
 
+#### ESLint Fixes — Promise, Async, and Misc Rules
+
+- Fix `promise/param-names` in `BatchOptimizer.mjs` and `TasksSlapsBridge.mjs` — rename unused resolve parameter from `_` to `_resolve`
+- Fix `promise/always-return` in `ErrorRecovery.mjs` and `DocumentationGenerator.mjs` — add `return undefined` in `.then()` callbacks
+- Fix `no-async-promise-executor` in `AdvisoryLockManager.mjs` — replace async executor with `Promise.resolve().then()` chain
+- Fix `no-constant-binary-expression` in `StandardSanitizer.mjs` — remove redundant constant `\`SET ${nextTok}\`` on left side of `&&`
+- Fix `no-return-await` in `sql-executor.test.mjs` — remove redundant `await` from `return await`
+- Fix `no-control-regex` in `createNodeRuntime.mjs` — add `eslint-disable-next-line` comment for intentional null byte detection
+
 #### QIR Phase C — Self-Review Round 3
 
 - **SR-M1:** `lowerToSQL` LIMIT/OFFSET now requires integer values (`Number.isInteger`) — fractional values like `5.5` are rejected instead of producing invalid SQL

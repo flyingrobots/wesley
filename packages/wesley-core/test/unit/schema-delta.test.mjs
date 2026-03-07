@@ -8,7 +8,7 @@ import { computeDelta } from '../../src/domain/schemaDelta.mjs';
 function emptyDelta() {
   return {
     added_types: [], removed_types: [], modified_types: [],
-    added_ops: [], removed_ops: [], modified_ops: [],
+    added_ops: [], removed_ops: [], modified_ops: []
   };
 }
 

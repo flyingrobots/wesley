@@ -84,7 +84,7 @@ const BASE_DEF_KINDS = new Set([
   Kind.INTERFACE_TYPE_DEFINITION,
   Kind.UNION_TYPE_DEFINITION,
   Kind.ENUM_TYPE_DEFINITION,
-  Kind.SCALAR_TYPE_DEFINITION,
+  Kind.SCALAR_TYPE_DEFINITION
 ]);
 
 const EXT_DEF_KINDS = new Set([
@@ -93,7 +93,7 @@ const EXT_DEF_KINDS = new Set([
   Kind.INTERFACE_TYPE_EXTENSION,
   Kind.UNION_TYPE_EXTENSION,
   Kind.ENUM_TYPE_EXTENSION,
-  Kind.SCALAR_TYPE_EXTENSION,
+  Kind.SCALAR_TYPE_EXTENSION
 ]);
 
 // ─── Resolution error ────────────────────────────────────────────────────────
@@ -156,7 +156,7 @@ export async function resolve(entryPath, readFileFn, rootDir, opts = {}) {
       rawSdl: unit.rawSdl,
       imports: unit.importPaths.map(p => pathToId.get(p)),
       definitions: unit.definitions,
-      hash: simpleHash(unit.rawSdl),
+      hash: simpleHash(unit.rawSdl)
     });
   }
 
@@ -226,7 +226,7 @@ async function discover(entryPath, readFileFn, rootDir, units, pathToId, resolve
           kind: def.kind,
           unitPath: absPath,
           package: pkg,
-          line: loc ? loc.startToken.line : null,
+          line: loc ? loc.startToken.line : null
         });
       } else if (EXT_DEF_KINDS.has(def.kind)) {
         extensions.push({
@@ -234,7 +234,7 @@ async function discover(entryPath, readFileFn, rootDir, units, pathToId, resolve
           kind: def.kind,
           unitPath: absPath,
           package: pkg,
-          line: def.loc ? def.loc.startToken.line : null,
+          line: def.loc ? def.loc.startToken.line : null
         });
       }
     }
@@ -266,7 +266,7 @@ async function discover(entryPath, readFileFn, rootDir, units, pathToId, resolve
       ast,
       definitions,
       extensions,
-      importPaths,
+      importPaths
     });
 
     // Enqueue imports for discovery
@@ -280,7 +280,7 @@ async function discover(entryPath, readFileFn, rootDir, units, pathToId, resolve
 
 // ─── Step 2: Validation ──────────────────────────────────────────────────────
 
-function buildAdjacencyList(units, pathToId) {
+function buildAdjacencyList(units, _pathToId) {
   // adj[absPath] = [absPath of dependencies]
   const adj = new Map();
   for (const [absPath, unit] of units) {
@@ -342,7 +342,7 @@ function detectDuplicateDefinitions(units) {
       typeDefs.get(name).push({
         unitPath: absPath,
         unitId: null, // filled below
-        line: def.line,
+        line: def.line
       });
     }
   }
@@ -367,7 +367,7 @@ function detectDuplicateDefinitions(units) {
 
 // ─── Step 3: Topological sort ────────────────────────────────────────────────
 
-function topologicalSort(adj, pathToId) {
+function topologicalSort(adj, _pathToId) {
   // Kahn's algorithm with sorted adjacency for determinism.
   // adj[A] = [B, ...] means A depends on B (A imports B), so B must come before A.
   // For Kahn's algorithm: inDeg[A] = adj[A].length (number of dependencies).
@@ -446,7 +446,7 @@ function buildResolutionMaps(sorted, units, pathToId, adj) {
 
   // Collect all definitions per package (across all units in that package)
   const packageDefs = new Map(); // pkg → Map<shortName, {unitPath, line, kind}>
-  for (const [absPath, unit] of units) {
+  for (const [_absPath, unit] of units) {
     const pkg = unit.package || '';
     if (!packageDefs.has(pkg)) packageDefs.set(pkg, new Map());
     const defs = packageDefs.get(pkg);
@@ -457,7 +457,7 @@ function buildResolutionMaps(sorted, units, pathToId, adj) {
 
   for (const absPath of sorted) {
     const unit = units.get(absPath);
-    const unitId = pathToId.get(absPath);
+    const _unitId = pathToId.get(absPath);
     const ownPkg = unit.package || '';
 
     // Gather all reachable packages
@@ -506,8 +506,8 @@ function buildResolutionMaps(sorted, units, pathToId, adj) {
             throw new SchemaResolutionError(
               `"${shortName}" is defined locally in package ${localPkg || '(root)'} (${localUnit.split('/').pop()}) ` +
               `and also imported from package ${importedPkg || '(root)'} (${importedUnit.split('/').pop()}).\n` +
-              `Local type shadows import — this is an error.\n` +
-              `Rename one type (recommended), or use import aliasing (not yet supported).`
+              'Local type shadows import — this is an error.\n' +
+              'Rename one type (recommended), or use import aliasing (not yet supported).'
             );
           }
 
@@ -522,7 +522,7 @@ function buildResolutionMaps(sorted, units, pathToId, adj) {
           throw new SchemaResolutionError(
             `"${shortName}" is defined in both ${pkg1} (${file1}:${line1}) ` +
             `and ${pkg2} (${file2}:${line2}).\n` +
-            `Rename one type (recommended), or use import aliasing (not yet supported).`
+            'Rename one type (recommended), or use import aliasing (not yet supported).'
           );
         }
 
@@ -530,7 +530,7 @@ function buildResolutionMaps(sorted, units, pathToId, adj) {
           package: def.package,
           mangledName,
           unitPath: def.unitPath,
-          line: def.line,
+          line: def.line
         });
       }
     }
@@ -555,7 +555,7 @@ function rewriteAST(unit, resMap) {
       if (resolved.mangledName === name) return undefined; // no change needed
       return {
         ...node,
-        name: { ...node.name, value: resolved.mangledName },
+        name: { ...node.name, value: resolved.mangledName }
       };
     },
 
@@ -581,7 +581,7 @@ function rewriteAST(unit, resMap) {
       );
       if (hasWesDir) return null; // remove from AST
       return undefined;
-    },
+    }
   });
 
   return { doc: rewritten, sdl: print(rewritten) };
@@ -595,7 +595,7 @@ function rewriteDefName(node, resMap) {
   if (resolved.mangledName === name) return undefined;
   return {
     ...node,
-    name: { ...node.name, value: resolved.mangledName },
+    name: { ...node.name, value: resolved.mangledName }
   };
 }
 
@@ -707,7 +707,7 @@ export function demangleSdl(sdl, demangleMap) {
     EnumTypeDefinition(node) { return _demangleNode(node, demangleMap); },
     EnumTypeExtension(node) { return _demangleNode(node, demangleMap); },
     ScalarTypeDefinition(node) { return _demangleNode(node, demangleMap); },
-    ScalarTypeExtension(node) { return _demangleNode(node, demangleMap); },
+    ScalarTypeExtension(node) { return _demangleNode(node, demangleMap); }
   });
 
   return print(rewritten);
@@ -747,7 +747,7 @@ export function validateFilteredSdl(sdl, allUnits, selectedUnitIds) {
   visit(doc, {
     NamedType(node) {
       referenced.add(node.name.value);
-    },
+    }
   });
 
   // Find missing references

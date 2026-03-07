@@ -22,7 +22,7 @@ export class CheckpointManager extends EventEmitter {
     this.checkpoints = new Map();
     this.operationStack = [];
     this.currentOperation = null;
-    
+
     // Auto-cleanup timer
     if (this.options.autoCleanup) {
       this.cleanupInterval = setInterval(() => this.cleanup(), 60000);
@@ -48,7 +48,7 @@ export class CheckpointManager extends EventEmitter {
 
     // Store in memory
     this.checkpoints.set(checkpoint.id, checkpoint);
-    
+
     // Track operation stack
     this.operationStack.push({
       checkpointId: checkpoint.id,
@@ -78,7 +78,7 @@ export class CheckpointManager extends EventEmitter {
    */
   async restoreCheckpoint(checkpointId) {
     let checkpoint = this.checkpoints.get(checkpointId);
-    
+
     // Try loading from disk if not in memory
     if (!checkpoint && this.options.persistToDisk) {
       checkpoint = await this.loadCheckpoint(checkpointId);
@@ -91,7 +91,7 @@ export class CheckpointManager extends EventEmitter {
     // Verify checkpoint integrity
     const restoredState = await this.deserializeState(checkpoint.state);
     const currentHash = this.generateStateHash(restoredState);
-    
+
     if (currentHash !== checkpoint.hash) {
       throw new Error(`Checkpoint ${checkpointId} integrity check failed`);
     }
@@ -134,7 +134,7 @@ export class CheckpointManager extends EventEmitter {
    */
   clearOperationCheckpoints(operationId) {
     const removed = [];
-    
+
     for (const [checkpointId, checkpoint] of this.checkpoints) {
       if (checkpoint.operationId === operationId) {
         this.checkpoints.delete(checkpointId);
@@ -171,8 +171,8 @@ export class CheckpointManager extends EventEmitter {
     // Create individual checkpoints for each state
     for (const [key, state] of Object.entries(states)) {
       const checkpointId = await this.createCheckpoint(
-        `${operationId}:${key}`, 
-        state, 
+        `${operationId}:${key}`,
+        state,
         { recoveryPointId: recoveryPoint.id, stateKey: key }
       );
       recoveryPoint.checkpoints.push({ key, checkpointId });
@@ -220,7 +220,7 @@ export class CheckpointManager extends EventEmitter {
   getStatistics() {
     const checkpoints = Array.from(this.checkpoints.values());
     const totalSize = checkpoints.reduce((sum, cp) => sum + (cp.metadata.size || 0), 0);
-    
+
     const operationCounts = {};
     checkpoints.forEach(cp => {
       operationCounts[cp.operationId] = (operationCounts[cp.operationId] || 0) + 1;
@@ -231,9 +231,9 @@ export class CheckpointManager extends EventEmitter {
       totalSize,
       averageSize: checkpoints.length > 0 ? Math.round(totalSize / checkpoints.length) : 0,
       operationCounts,
-      oldestCheckpoint: checkpoints.length > 0 ? 
+      oldestCheckpoint: checkpoints.length > 0 ?
         Math.min(...checkpoints.map(cp => cp.timestamp)) : null,
-      newestCheckpoint: checkpoints.length > 0 ? 
+      newestCheckpoint: checkpoints.length > 0 ?
         Math.max(...checkpoints.map(cp => cp.timestamp)) : null
     };
   }
@@ -280,9 +280,9 @@ export class CheckpointManager extends EventEmitter {
    */
   async serializeState(state) {
     const serialized = JSON.stringify(state);
-    
+
     // Compression disabled in pure core to avoid platform APIs
-    
+
     return serialized;
   }
 
@@ -291,7 +291,7 @@ export class CheckpointManager extends EventEmitter {
    */
   async deserializeState(serializedState) {
     // Compression disabled in pure core
-    
+
     return JSON.parse(serializedState);
   }
 
@@ -327,9 +327,9 @@ export class CheckpointManager extends EventEmitter {
     // Remove oldest checkpoints
     const sorted = Array.from(this.checkpoints.entries())
       .sort(([,a], [,b]) => a.timestamp - b.timestamp);
-    
+
     const toRemove = sorted.slice(0, this.checkpoints.size - this.options.maxCheckpoints);
-    
+
     toRemove.forEach(([checkpointId]) => {
       this.checkpoints.delete(checkpointId);
     });
@@ -370,7 +370,7 @@ export class CheckpointManager extends EventEmitter {
       clearInterval(this.cleanupInterval);
       this.cleanupInterval = null;
     }
-    
+
     this.checkpoints.clear();
     this.operationStack = [];
     this.removeAllListeners();

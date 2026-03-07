@@ -130,7 +130,7 @@ export const validateUpdate = <T>(schema: z.ZodSchema<T>, data: unknown): T => {
       JSON: 'z.record(z.any())',
       Inet: 'z.string().ip()',
       CIDR: 'z.string()',
-      MacAddr: "z.string().regex(/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/)",
+      MacAddr: 'z.string().regex(/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/)',
       BigInt: 'z.bigint()',
       // Use Uint8Array for isomorphic binary representation
       Bytes: 'z.instanceof(Uint8Array)'
@@ -179,7 +179,7 @@ export const validateUpdate = <T>(schema: z.ZodSchema<T>, data: unknown): T => {
     }
 
     if (directives['@critical']) {
-      schema += `.brand<'critical'>()`;
+      schema += '.brand<\'critical\'>()';
     }
 
     return schema;

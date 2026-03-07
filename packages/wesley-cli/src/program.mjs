@@ -48,7 +48,7 @@ export async function program(argv, ctx) {
   // new ModelsCommand(ctx);
   // new TypeScriptCommand(ctx);
   // new ZodCommand(ctx);
-  
+
   // Create main program
   const program = new Command()
     .name('wesley')
@@ -58,10 +58,10 @@ export async function program(argv, ctx) {
     .option('--debug', 'Debug mode with stack traces')
     .option('-q, --quiet', 'Suppress all output')
     .option('--json', 'Output JSON');
-  
+
   // Register all commands from the registry
   WesleyCommand.registerAll(program);
-  
+
   // Parse and execute
   try {
     await program.parseAsync(argv, { from: 'node' });

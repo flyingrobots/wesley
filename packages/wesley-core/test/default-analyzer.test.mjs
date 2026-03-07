@@ -27,10 +27,10 @@ class MockDatabaseConnection {
       } else {
         // Check specific column optimization
         const [tableName, columnName] = params;
-        const isOptimized = this.mockOptimizedColumns.some(col => 
+        const isOptimized = this.mockOptimizedColumns.some(col =>
           col.table === tableName && col.column === columnName
         );
-        return { 
+        return {
           rows: isOptimized ? [{ atthasmissing: true, attmissingval: 'test' }] : []
         };
       }
@@ -43,22 +43,22 @@ class MockDatabaseConnection {
 test('detects PostgreSQL version correctly', async () => {
   const db = new MockDatabaseConnection({ version: 'PostgreSQL 13.1' });
   const analyzer = new DefaultAnalyzer(db);
-  
+
   const versionInfo = await analyzer.getPostgreSQLVersionInfo();
-  
+
   assert.equal(versionInfo.version, '13.1');
   assert.equal(versionInfo.supportsInstantDefaults, true);
 });
 
 test('handles older PostgreSQL versions', async () => {
-  const db = new MockDatabaseConnection({ 
+  const db = new MockDatabaseConnection({
     version: 'PostgreSQL 10.5',
-    supportsAttHasMissing: false 
+    supportsAttHasMissing: false
   });
   const analyzer = new DefaultAnalyzer(db);
-  
+
   const versionInfo = await analyzer.getPostgreSQLVersionInfo();
-  
+
   assert.equal(versionInfo.version, '10.5');
   assert.equal(versionInfo.supportsInstantDefaults, false);
 });
@@ -66,7 +66,7 @@ test('handles older PostgreSQL versions', async () => {
 test('categorizes constant defaults correctly', async () => {
   const db = new MockDatabaseConnection();
   const analyzer = new DefaultAnalyzer(db);
-  
+
   // Test string literal
   const stringDefault = analyzer.categorizeDefault("'default_value'", 'text');
   assert.equal(stringDefault.isConstant, true);
@@ -92,7 +92,7 @@ test('categorizes constant defaults correctly', async () => {
 test('categorizes volatile defaults correctly', async () => {
   const db = new MockDatabaseConnection();
   const analyzer = new DefaultAnalyzer(db);
-  
+
   // Test timestamp functions
   const nowDefault = analyzer.categorizeDefault('now()', 'timestamptz');
   assert.equal(nowDefault.isConstant, false);
@@ -121,7 +121,7 @@ test('categorizes volatile defaults correctly', async () => {
 test('analyzes column defaults for instant optimization', async () => {
   const db = new MockDatabaseConnection();
   const analyzer = new DefaultAnalyzer(db);
-  
+
   const columnInfo = {
     table_name: 'users',
     column_name: 'status',
@@ -130,7 +130,7 @@ test('analyzes column defaults for instant optimization', async () => {
   };
 
   const analysis = await analyzer.analyzeDefault(columnInfo);
-  
+
   assert.equal(analysis.hasDefault, true);
   assert.equal(analysis.isConstant, true);
   assert.equal(analysis.isVolatile, false);
@@ -143,7 +143,7 @@ test('analyzes column defaults for instant optimization', async () => {
 test('handles volatile defaults properly', async () => {
   const db = new MockDatabaseConnection();
   const analyzer = new DefaultAnalyzer(db);
-  
+
   const columnInfo = {
     table_name: 'users',
     column_name: 'created_at',
@@ -152,7 +152,7 @@ test('handles volatile defaults properly', async () => {
   };
 
   const analysis = await analyzer.analyzeDefault(columnInfo);
-  
+
   assert.equal(analysis.hasDefault, true);
   assert.equal(analysis.isConstant, false);
   assert.equal(analysis.isVolatile, true);
@@ -167,7 +167,7 @@ test('detects already optimized columns', async () => {
     optimizedColumns: [{ table: 'users', column: 'status' }]
   });
   const analyzer = new DefaultAnalyzer(db);
-  
+
   const columnInfo = {
     table_name: 'users',
     column_name: 'status',
@@ -176,7 +176,7 @@ test('detects already optimized columns', async () => {
   };
 
   const analysis = await analyzer.analyzeDefault(columnInfo);
-  
+
   assert.equal(analysis.hasMissingOptimization, true);
   assert.equal(analysis.recommendation, 'already-optimized');
   assert.equal(analysis.optimizationPotential.potential, 'none');
@@ -184,12 +184,12 @@ test('detects already optimized columns', async () => {
 });
 
 test('handles old PostgreSQL versions gracefully', async () => {
-  const db = new MockDatabaseConnection({ 
+  const db = new MockDatabaseConnection({
     version: 'PostgreSQL 9.6',
-    supportsAttHasMissing: false 
+    supportsAttHasMissing: false
   });
   const analyzer = new DefaultAnalyzer(db);
-  
+
   const columnInfo = {
     table_name: 'users',
     column_name: 'status',
@@ -198,7 +198,7 @@ test('handles old PostgreSQL versions gracefully', async () => {
   };
 
   const analysis = await analyzer.analyzeDefault(columnInfo);
-  
+
   assert.equal(analysis.isConstant, true);
   assert.equal(analysis.isInstant, false);
   assert.equal(analysis.supportsInstantDefaults, false);
@@ -210,7 +210,7 @@ test('handles old PostgreSQL versions gracefully', async () => {
 test('analyzes batch of columns', async () => {
   const db = new MockDatabaseConnection();
   const analyzer = new DefaultAnalyzer(db);
-  
+
   const columns = [
     { table_name: 'users', column_name: 'status', default_value: "'active'", data_type: 'text' },
     { table_name: 'users', column_name: 'created_at', default_value: 'now()', data_type: 'timestamptz' },
@@ -219,7 +219,7 @@ test('analyzes batch of columns', async () => {
   ];
 
   const batchAnalysis = await analyzer.analyzeBatch(columns);
-  
+
   assert.equal(batchAnalysis.totalColumns, 4);
   assert.equal(batchAnalysis.constantDefaults, 2); // 'active' and '0'
   assert.equal(batchAnalysis.volatileDefaults, 2); // now() and gen_random_uuid()
@@ -231,11 +231,11 @@ test('analyzes batch of columns', async () => {
 test('generates optimal column SQL for instant defaults', async () => {
   const db = new MockDatabaseConnection();
   const analyzer = new DefaultAnalyzer(db);
-  
+
   const result = await analyzer.generateOptimalColumnSQL(
     'users', 'status', 'text', "'active'"
   );
-  
+
   assert.equal(result.strategy, 'instant-default');
   assert.ok(result.sql.includes('ALTER TABLE "users" ADD COLUMN "status" text DEFAULT \'active\';'));
   assert.equal(result.warnings.length, 0);
@@ -245,11 +245,11 @@ test('generates optimal column SQL for instant defaults', async () => {
 test('generates three-step SQL for volatile defaults', async () => {
   const db = new MockDatabaseConnection();
   const analyzer = new DefaultAnalyzer(db);
-  
+
   const result = await analyzer.generateOptimalColumnSQL(
     'users', 'created_at', 'timestamptz', 'now()'
   );
-  
+
   assert.equal(result.strategy, 'three-step-volatile');
   assert.ok(result.sql.includes('ADD COLUMN "created_at" timestamptz;'));
   assert.ok(result.sql.includes('SET DEFAULT now()'));
@@ -259,16 +259,16 @@ test('generates three-step SQL for volatile defaults', async () => {
 });
 
 test('generates traditional SQL for old PostgreSQL', async () => {
-  const db = new MockDatabaseConnection({ 
+  const db = new MockDatabaseConnection({
     version: 'PostgreSQL 10.5',
-    supportsAttHasMissing: false 
+    supportsAttHasMissing: false
   });
   const analyzer = new DefaultAnalyzer(db);
-  
+
   const result = await analyzer.generateOptimalColumnSQL(
     'users', 'status', 'text', "'active'"
   );
-  
+
   assert.equal(result.strategy, 'traditional-constant');
   assert.ok(result.sql.includes('ALTER TABLE "users" ADD COLUMN "status" text DEFAULT \'active\';'));
   assert.equal(result.warnings.length, 1);
@@ -282,10 +282,10 @@ test('handles database connection errors gracefully', async () => {
       throw new Error('Connection failed');
     }
   };
-  
+
   const analyzer = new DefaultAnalyzer(errorDb);
   const versionInfo = await analyzer.getPostgreSQLVersionInfo();
-  
+
   assert.equal(versionInfo.version, 'unknown');
   assert.equal(versionInfo.supportsInstantDefaults, false);
 });
@@ -293,13 +293,13 @@ test('handles database connection errors gracefully', async () => {
 test('validates complex default expressions', async () => {
   const db = new MockDatabaseConnection();
   const analyzer = new DefaultAnalyzer(db);
-  
+
   // Test JSON default (with cast it's not recognized as literal)
   const jsonDefault = analyzer.categorizeDefault("'{}'::jsonb", 'jsonb');
   assert.equal(jsonDefault.isVolatile, false);
 
   // Test array with null check
-  const arrayDefault = analyzer.categorizeDefault("ARRAY[]::integer[]", 'integer[]');
+  const arrayDefault = analyzer.categorizeDefault('ARRAY[]::integer[]', 'integer[]');
   assert.equal(arrayDefault.isConstant, true);
 
   // Test computed expression with functions - CASE statements are not simple literals
