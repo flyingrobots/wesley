@@ -6,7 +6,7 @@
 
 import { Schema, Table, Field } from './Schema.mjs';
 import { getLocation } from 'graphql';
-import { _VALID_JOIN_STRATEGIES, validateJoinDirective } from '../ttd/directives.mjs';
+import { validateJoinDirective } from '../ttd/directives.mjs';
 
 function locSpan(node) {
   try {

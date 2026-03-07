@@ -7,7 +7,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { _SUPPORTED_API_VERSIONS, validatePlugin } from '@wesley/core/ports';
+import { validatePlugin } from '@wesley/core/ports';
 
 // ── Check 1: Node.js version ───────────────────────────────────────
 

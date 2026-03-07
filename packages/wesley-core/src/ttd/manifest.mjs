@@ -7,7 +7,7 @@
  * - manifest.json: Registry and lookup tables
  */
 
-import { _hashSchema, hashType, hashOp, hashChannel, canonicalizeObject } from './hasher.mjs';
+import { hashType, hashOp, hashChannel, canonicalizeObject } from './hasher.mjs';
 import { systemClock } from '../ports/clock.mjs';
 import { defaultCrypto } from '../ports/crypto.mjs';
 

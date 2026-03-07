@@ -3,7 +3,7 @@
  * Loads and validates Wesley configuration
  */
 
-import { _readFileSync, existsSync } from 'fs';
+import { existsSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 

@@ -6,8 +6,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
 import { RepairGenerator } from '../src/domain/generators/RepairGenerator.mjs';
-import { _DifferentialValidator } from '../src/domain/validation/DifferentialValidator.mjs';
-import { _Schema, Table, Field } from '../src/domain/Schema.mjs';
+import { Table, Field } from '../src/domain/Schema.mjs';
 
 // Test Data Factory
 function createField(options = {}) {

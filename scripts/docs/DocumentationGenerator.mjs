@@ -4,8 +4,8 @@
  * NOTE: This script lives outside core packages to preserve core purity.
  */
 
-import { readFileSync, writeFileSync, _statSync, readdirSync } from 'fs';
-import { join, _dirname, relative, _extname } from 'path';
+import { readFileSync, writeFileSync, readdirSync } from 'fs';
+import { join, relative } from 'path';
 import { fileURLToPath } from 'url';
 // Import DomainEvent type for structured events (from core)
 import { DomainEvent } from '../../packages/wesley-core/src/domain/Events.mjs';

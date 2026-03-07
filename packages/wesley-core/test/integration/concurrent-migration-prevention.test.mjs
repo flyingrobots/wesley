@@ -5,7 +5,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { MockDatabase, _createTestSchema } from '../helpers/database.mjs';
+import { MockDatabase } from '../helpers/database.mjs';
 
 /**
  * Migration lock manager for preventing concurrent migrations

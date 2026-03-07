@@ -8,8 +8,8 @@
  * - Create verification reports
  */
 
-import { verify, _verifyAll } from './vm.mjs';
-import { compileObligations, generateVerificationManifest, ObligationKind, _ObligationSeverity } from './obligations.mjs';
+import { verify } from './vm.mjs';
+import { compileObligations, generateVerificationManifest, ObligationKind } from './obligations.mjs';
 import { systemClock } from '../../ports/clock.mjs';
 import { defaultCrypto } from '../../ports/crypto.mjs';
 

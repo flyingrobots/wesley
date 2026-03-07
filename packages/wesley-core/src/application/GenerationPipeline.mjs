@@ -5,7 +5,6 @@
 
 import { EvidenceMap } from './EvidenceMap.mjs';
 import { ScoringEngine, BUNDLE_VERSION } from './Scoring.mjs';
-import { _DirectiveProcessor } from '../domain/Directives.mjs';
 
 export class GenerationPipeline {
   constructor(ports) {

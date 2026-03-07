@@ -9,7 +9,7 @@
  */
 
 import { promises as fs } from 'fs';
-import { join, _dirname } from 'path';
+import { join } from 'path';
 import { randomBytes } from 'crypto';
 
 export class CheckpointManager {

@@ -7,7 +7,7 @@ import { test } from 'node:test';
 import assert from 'node:assert';
 import { createHash } from 'node:crypto';
 import { Schema, Table, Field } from '../../src/domain/Schema.mjs';
-import { MockDatabase, _createTestSchema } from '../helpers/database.mjs';
+import { MockDatabase } from '../helpers/database.mjs';
 
 /**
  * Checkpoint manager for managing migration checkpoints

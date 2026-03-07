@@ -8,7 +8,6 @@ import {
   ProjectionItem,
   ColumnRef,
   AliasAllocator,
-  _Predicate,
   OrderBy
 } from '../../src/domain/qir/Nodes.mjs';
 

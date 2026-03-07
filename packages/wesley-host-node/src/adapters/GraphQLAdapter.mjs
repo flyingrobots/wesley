@@ -3,8 +3,8 @@
  * This is the ONLY place where we depend on the graphql npm package
  */
 
-import { parse, _print, Kind, buildSchema, _buildASTSchema, validate, Source } from 'graphql';
-import { mangle, _demangle } from '@wesley/core/domain/SchemaResolver';
+import { parse, Kind, buildSchema, validate, Source } from 'graphql';
+import { mangle } from '@wesley/core/domain/SchemaResolver';
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';

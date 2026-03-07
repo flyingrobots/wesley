@@ -15,7 +15,7 @@ import {
 import { createVerifier } from '@wesley/core/ttd/invariants';
 import { FakeClock } from '@wesley/core/ports';
 import { testCrypto } from '../setup.mjs';
-import { _normalizeOutputTree, assertNoAbsolutePaths } from '../helpers/normalize.mjs';
+import { assertNoAbsolutePaths } from '../helpers/normalize.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const fixtureDir = join(__dirname, '../fixtures/basic-protocol');

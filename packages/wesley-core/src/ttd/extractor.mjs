@@ -20,18 +20,7 @@ import {
   createCodecSpec
 } from './ast.mjs';
 import {
-  extractTtdDirectives,
-  _parseChannelDirective,
-  _parseOpDirective,
-  _parseRuleDirective,
-  _parseInvariantDirective,
-  _parseEmissionDirective,
-  _parseFootprintDirective,
-  _parseCodecDirective,
-  _parseRegistryDirective,
-  _parseConstraintDirective,
-  _parseStateFieldDirective,
-  _parseVersionDirective
+  extractTtdDirectives
 } from './directives.mjs';
 
 /**

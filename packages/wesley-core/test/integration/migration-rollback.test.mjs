@@ -7,7 +7,7 @@ import { test } from 'node:test';
 import assert from 'node:assert';
 import { MigrationDiffer } from '../../src/domain/generators/MigrationDiffer.mjs';
 import { Schema, Table, Field } from '../../src/domain/Schema.mjs';
-import { MockDatabase, createTestSchema, _testSQL } from '../helpers/database.mjs';
+import { MockDatabase, createTestSchema } from '../helpers/database.mjs';
 
 test('rollback: simple table creation rollback', async () => {
   const db = new MockDatabase();

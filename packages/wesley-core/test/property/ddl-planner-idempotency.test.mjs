@@ -7,7 +7,7 @@ import { test } from 'node:test';
 import fc from 'fast-check';
 import { PostgreSQLGenerator } from '../../src/domain/generators/PostgreSQLGenerator.mjs';
 import { Schema, Table, Field } from '../../src/domain/Schema.mjs';
-import { wesleyArbitraries, propertyHelpers, _invariants } from '../helpers/property-testing.mjs';
+import { wesleyArbitraries, propertyHelpers } from '../helpers/property-testing.mjs';
 
 test('DDL generation is idempotent for same schema', async () => {
   await propertyHelpers.runAsyncProperty(

@@ -2,7 +2,7 @@
  * Tests for SQLExecutor domain component
  */
 
-import { test, describe, _before, _after, beforeEach } from 'node:test';
+import { test, describe, beforeEach } from 'node:test';
 import assert from 'node:assert';
 import { EventEmitter } from 'node:events';
 

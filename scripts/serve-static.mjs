@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Minimal static file server for CI smokes
 import http from 'node:http';
-import { _readFileSync, existsSync, statSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import { createReadStream } from 'node:fs';
 import { resolve, join, extname, relative, isAbsolute } from 'node:path';
 

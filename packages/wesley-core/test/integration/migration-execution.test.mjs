@@ -8,7 +8,7 @@ import assert from 'node:assert';
 import { MigrationDiffer } from '../../src/domain/generators/MigrationDiffer.mjs';
 import { PostgreSQLGenerator } from '../../src/domain/generators/PostgreSQLGenerator.mjs';
 import { Schema, Table, Field } from '../../src/domain/Schema.mjs';
-import { MockDatabase, _testFixtures, _dbAssert } from '../helpers/database.mjs';
+import { MockDatabase } from '../helpers/database.mjs';
 
 test('migration execution: create table end-to-end', async () => {
   const db = new MockDatabase();
