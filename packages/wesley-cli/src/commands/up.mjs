@@ -92,7 +92,9 @@ export class UpCommand extends WesleyCommand {
   output(obj, options) {
     if (options.json) {
       this.ctx.stdout.write(JSON.stringify(obj, null, 2) + '\n');
-    } else if (!options.quiet) {
+      return;
+    }
+    if (!options.quiet) {
       const logger = this.makeLogger(options, { phase: 'up' });
       if (obj.mode === 'bootstrap') logger.info('🚀 Bootstrapped dev database');
       if (obj.mode === 'migrate') logger.info(`🚀 Applied ${obj.steps} migration step(s)`);

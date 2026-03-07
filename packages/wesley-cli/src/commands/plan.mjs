@@ -62,7 +62,7 @@ export class PlanCommand extends WesleyCommand {
       const report = { plan, explain, mapping, radar };
       await assertValid(this.ctx, 'plan-report.schema.json', report, 'Plan report');
       this.ctx.stdout.write(JSON.stringify(report, null, 2) + '\n');
-      return { phases: plan.phases.length, steps: explain.steps.length };
+      return;
     }
 
     if (options.explain) {

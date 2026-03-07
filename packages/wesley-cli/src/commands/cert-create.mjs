@@ -39,7 +39,7 @@ export class CertCreateCommand extends WesleyCommand {
 
     if (options.json) {
       this.ctx.stdout.write(JSON.stringify(cert, null, 2) + '\n');
-      return { ok: true, sha };
+      return;
     }
 
     const content = renderSHIPME(cert);

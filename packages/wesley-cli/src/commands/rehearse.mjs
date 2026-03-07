@@ -45,6 +45,7 @@ export class RehearseCommand extends WesleyCommand {
         const report = { plan, explain, mapping: [], radar: { lines: [], counts: {} } };
         await assertValid(this.ctx, 'plan-report.schema.json', report, 'Dry-run plan');
         this.ctx.stdout.write(JSON.stringify(report, null, 2) + '\n');
+        return;
       } else {
         logger.info('🧭 REALM Dry Run');
         for (const line of explain.lines) logger.info(line);
@@ -95,6 +96,7 @@ export class RehearseCommand extends WesleyCommand {
       if (options.json) {
         await assertValid(this.ctx, 'realm.schema.json', realm, 'REALM report');
         this.ctx.stdout.write(JSON.stringify(realm, null, 2) + '\n');
+        return;
       }
       return realm;
     } catch (error) {

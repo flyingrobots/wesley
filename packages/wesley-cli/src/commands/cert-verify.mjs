@@ -53,7 +53,7 @@ export class CertVerifyCommand extends WesleyCommand {
     if (!ok) {
       const e = new Error('Certificate verification failed'); e.code = 'CERT_INVALID'; throw e;
     }
-    return result;
+    return options.json ? undefined : result;
   }
 }
 
