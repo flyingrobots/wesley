@@ -16,7 +16,7 @@ export function extractJsonBlock(md) {
   const fenceEnd = md.indexOf('```', fence + JSON_FENCE_LEN);
   const end = md.indexOf('<!-- WESLEY_CERT:END -->', fenceEnd);
   if (begin === -1 || fence === -1 || fenceEnd === -1 || end === -1) throw new Error('Invalid SHIPME.md format');
-  if (!(begin < fence && fence < fenceEnd && fenceEnd < end)) return null;
+  if (!(begin < fence && fence < fenceEnd && fenceEnd < end)) throw new Error('SHIPME.md certificate markers are out of order');
   const pre = md.slice(0, fence + JSON_FENCE_LEN) + '\n';
   const jsonStr = md.slice(fence + JSON_FENCE_LEN, fenceEnd).trim();
   const post = '\n```\n' + md.slice(end);
