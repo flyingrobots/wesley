@@ -272,8 +272,8 @@ function renderParam(p, params, forceCast = false) {
   // forceCast=true call re-rendering the same param with an array type suffix.
   // Risk: if two params share a name but differ only in special/typeHint, the
   // name-only lookup silently binds to whichever was collected first.
-  const discoveredIndex = idx || findIndexByNameOnly(params, name) || 0;
-  if (!discoveredIndex) throw new Error(`Param not collected for '${name}'`);
+  const discoveredIndex = idx ?? findIndexByNameOnly(params, name);
+  if (discoveredIndex == null) throw new Error(`Param not collected for '${name}'`);
 
   if (typeHint && !SAFE_TYPE_RE.test(String(typeHint))) {
     throw new Error(`Unsafe SQL type hint on ParamRef: ${typeHint}`);
@@ -283,9 +283,9 @@ function renderParam(p, params, forceCast = false) {
 }
 
 function findIndexByNameOnly(params, name) {
-  if (!params?.ordered) return 0;
+  if (!params?.ordered) return null;
   const i = params.ordered.findIndex(p => p.name === name);
-  return i >= 0 ? i + 1 : 0;
+  return i >= 0 ? i + 1 : null;
 }
 
 function guessPrimaryKeyRef(plan) {
