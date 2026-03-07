@@ -100,7 +100,7 @@ export class PgTAPTestGenerator {
         }
 
         if (isCritical) {
-          tests.push(`-- CRITICAL FIELD: Additional safety checks`);
+          tests.push('-- CRITICAL FIELD: Additional safety checks');
 
           if (DirectiveProcessor.isSensitive(field.directives)) {
             if (field.name.includes('password')) {
@@ -227,7 +227,7 @@ export class PgTAPTestGenerator {
         tests.push(`SELECT has_index('${table.name}', '${indexName}', 'Index ${indexName} should exist');`);
 
         if (field.directives?.['@index']?.where) {
-          tests.push(`-- Conditional index present with WHERE clause`);
+          tests.push('-- Conditional index present with WHERE clause');
         }
 
         tests.push('');
@@ -338,38 +338,39 @@ export class PgTAPTestGenerator {
       tests.push(`-- Migration step: ${step.kind}`);
 
       switch (step.kind) {
-        case 'add_column':
-          tests.push(`-- Verify column ${step.column} exists after migration`);
-          tests.push(`SELECT has_column('${step.table}', '${step.column}', 'Column should exist after migration');`);
-          if (step.field?.nonNull) {
-            tests.push(`-- Verify NOT NULL constraint holds`);
-            tests.push(`SELECT col_not_null('${step.table}', '${step.column}', 'Column should be NOT NULL after migration');`);
-          }
-          break;
+      case 'add_column':
+        tests.push(`-- Verify column ${step.column} exists after migration`);
+        tests.push(`SELECT has_column('${step.table}', '${step.column}', 'Column should exist after migration');`);
+        if (step.field?.nonNull) {
+          tests.push('-- Verify NOT NULL constraint holds');
+          tests.push(`SELECT col_not_null('${step.table}', '${step.column}', 'Column should be NOT NULL after migration');`);
+        }
+        break;
 
-        case 'drop_column':
-          tests.push(`-- Verify column ${step.column} no longer exists`);
-          tests.push(`SELECT NOT has_column('${step.table}', '${step.column}', 'Column should be dropped by migration');`);
-          break;
+      case 'drop_column':
+        tests.push(`-- Verify column ${step.column} no longer exists`);
+        tests.push(`SELECT NOT has_column('${step.table}', '${step.column}', 'Column should be dropped by migration');`);
+        break;
 
-        case 'alter_type':
-          tests.push(`-- Verify column ${step.column} type change`);
-          const sqlType = this.mapToSQLType(step.to || {});
-          tests.push(`SELECT col_type_is('${step.table}', '${step.column}', '${sqlType}', 'Column type should match migration');`);
-          break;
+      case 'alter_type': {
+        tests.push(`-- Verify column ${step.column} type change`);
+        const sqlType = this.mapToSQLType(step.to || {});
+        tests.push(`SELECT col_type_is('${step.table}', '${step.column}', '${sqlType}', 'Column type should match migration');`);
+        break;
+      }
 
-        case 'create_table':
-          tests.push(`-- Verify table ${step.table} exists`);
-          tests.push(`SELECT has_table('${step.table}', 'Table should exist after migration');`);
-          break;
+      case 'create_table':
+        tests.push(`-- Verify table ${step.table} exists`);
+        tests.push(`SELECT has_table('${step.table}', 'Table should exist after migration');`);
+        break;
 
-        case 'drop_table':
-          tests.push(`-- Verify table ${step.table} no longer exists`);
-          tests.push(`SELECT NOT has_table('${step.table}', 'Table should be dropped by migration');`);
-          break;
+      case 'drop_table':
+        tests.push(`-- Verify table ${step.table} no longer exists`);
+        tests.push(`SELECT NOT has_table('${step.table}', 'Table should be dropped by migration');`);
+        break;
 
-        default:
-          tests.push(`-- Unsupported migration step in tests: ${step.kind}`);
+      default:
+        tests.push(`-- Unsupported migration step in tests: ${step.kind}`);
       }
 
       tests.push('');
@@ -389,7 +390,7 @@ export class PgTAPTestGenerator {
 
   wrapTestSuite(content) {
     const lines = [];
-    lines.push(`-- Wesley Database Test Suite`);
+    lines.push('-- Wesley Database Test Suite');
     lines.push(`-- Generated at ${new Date().toISOString()}`);
     lines.push('SET client_min_messages = warning;');
     lines.push('SELECT plan(1000); -- dynamic plan, adjusted at runtime');

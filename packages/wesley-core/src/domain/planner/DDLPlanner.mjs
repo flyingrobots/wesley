@@ -1,6 +1,6 @@
 /**
  * DDL Planner - Classifies DDL operations by PostgreSQL lock levels
- * 
+ *
  * PostgreSQL Lock Hierarchy (from weakest to strongest):
  * 1. ACCESS SHARE - Reading only
  * 2. ROW SHARE - SELECT with FOR UPDATE/SHARE
@@ -17,7 +17,7 @@ export class DDLPlanner {
     // Define lock levels in hierarchy order (1 = weakest, 8 = strongest)
     this.LOCK_LEVELS = {
       ACCESS_SHARE: 1,
-      ROW_SHARE: 2, 
+      ROW_SHARE: 2,
       ROW_EXCLUSIVE: 3,
       SHARE_UPDATE_EXCLUSIVE: 4,
       SHARE: 5,
@@ -40,17 +40,17 @@ export class DDLPlanner {
    */
   planMigration(migrationSteps) {
     const annotatedSteps = migrationSteps.map(step => this.annotateStep(step));
-    
+
     // Group steps by execution phase
     const transactionalSteps = annotatedSteps.filter(step => !step.nonTransactional);
     const nonTransactionalSteps = annotatedSteps.filter(step => step.nonTransactional);
-    
+
     // Sort transactional steps by lock level (safest first)
     const sortedTransactionalSteps = this.sortByLockLevel(transactionalSteps);
-    
+
     // Detect potential lock conflicts
     const lockConflicts = this.detectLockConflicts(annotatedSteps);
-    
+
     return {
       phases: {
         preTransactional: nonTransactionalSteps.filter(s => s.phase === 'pre'),
@@ -70,7 +70,7 @@ export class DDLPlanner {
    */
   annotateStep(step) {
     const lockInfo = this.getLockInfoForStep(step);
-    
+
     return {
       ...step,
       lockLevel: lockInfo.lockLevel,
@@ -91,135 +91,136 @@ export class DDLPlanner {
    */
   getLockInfoForStep(step) {
     switch (step.kind) {
-      case 'create_table':
-        return {
-          lockLevel: this.LOCK_LEVELS.EXCLUSIVE,
-          lockLevelName: 'EXCLUSIVE',
-          description: 'Creates new table - blocks concurrent reads/writes during creation',
-          estimatedDuration: 'instant',
-          canRunConcurrently: true
-        };
+    case 'create_table':
+      return {
+        lockLevel: this.LOCK_LEVELS.EXCLUSIVE,
+        lockLevelName: 'EXCLUSIVE',
+        description: 'Creates new table - blocks concurrent reads/writes during creation',
+        estimatedDuration: 'instant',
+        canRunConcurrently: true
+      };
 
-      case 'drop_table':
-        return {
-          lockLevel: this.LOCK_LEVELS.ACCESS_EXCLUSIVE,
-          lockLevelName: 'ACCESS_EXCLUSIVE',
-          description: 'Drops table - blocks all concurrent access',
-          estimatedDuration: 'instant',
-          dataPreservation: true
-        };
+    case 'drop_table':
+      return {
+        lockLevel: this.LOCK_LEVELS.ACCESS_EXCLUSIVE,
+        lockLevelName: 'ACCESS_EXCLUSIVE',
+        description: 'Drops table - blocks all concurrent access',
+        estimatedDuration: 'instant',
+        dataPreservation: true
+      };
 
-      case 'add_column':
-        const addColumnLock = this.getAddColumnLockLevel(step);
-        return {
-          lockLevel: addColumnLock.level,
-          lockLevelName: addColumnLock.name,
-          description: addColumnLock.description,
-          estimatedDuration: addColumnLock.duration,
-          canRunConcurrently: false
-        };
+    case 'add_column': {
+      const addColumnLock = this.getAddColumnLockLevel(step);
+      return {
+        lockLevel: addColumnLock.level,
+        lockLevelName: addColumnLock.name,
+        description: addColumnLock.description,
+        estimatedDuration: addColumnLock.duration,
+        canRunConcurrently: false
+      };
+    }
 
-      case 'drop_column':
-        return {
-          lockLevel: this.LOCK_LEVELS.ACCESS_EXCLUSIVE,
-          lockLevelName: 'ACCESS_EXCLUSIVE',
-          description: 'Drops column - requires full table lock',
-          estimatedDuration: 'table-scan',
-          dataPreservation: true
-        };
+    case 'drop_column':
+      return {
+        lockLevel: this.LOCK_LEVELS.ACCESS_EXCLUSIVE,
+        lockLevelName: 'ACCESS_EXCLUSIVE',
+        description: 'Drops column - requires full table lock',
+        estimatedDuration: 'table-scan',
+        dataPreservation: true
+      };
 
-      case 'alter_type':
-        return this.getAlterTypeLockLevel(step);
+    case 'alter_type':
+      return this.getAlterTypeLockLevel(step);
 
-      case 'create_index':
-        return {
-          lockLevel: this.LOCK_LEVELS.SHARE,
-          lockLevelName: 'SHARE',
-          description: 'Creates index - blocks writes during creation',
-          estimatedDuration: 'table-scan'
-        };
+    case 'create_index':
+      return {
+        lockLevel: this.LOCK_LEVELS.SHARE,
+        lockLevelName: 'SHARE',
+        description: 'Creates index - blocks writes during creation',
+        estimatedDuration: 'table-scan'
+      };
 
-      case 'create_index_concurrently':
-        return {
-          lockLevel: this.LOCK_LEVELS.SHARE_UPDATE_EXCLUSIVE,
-          lockLevelName: 'SHARE_UPDATE_EXCLUSIVE',
-          description: 'Creates index concurrently - minimal blocking',
-          estimatedDuration: 'table-scan',
-          nonTransactional: true,
-          phase: 'post',
-          canRunConcurrently: true
-        };
+    case 'create_index_concurrently':
+      return {
+        lockLevel: this.LOCK_LEVELS.SHARE_UPDATE_EXCLUSIVE,
+        lockLevelName: 'SHARE_UPDATE_EXCLUSIVE',
+        description: 'Creates index concurrently - minimal blocking',
+        estimatedDuration: 'table-scan',
+        nonTransactional: true,
+        phase: 'post',
+        canRunConcurrently: true
+      };
 
-      case 'drop_index':
-        return {
-          lockLevel: this.LOCK_LEVELS.EXCLUSIVE,
-          lockLevelName: 'EXCLUSIVE',
-          description: 'Drops index - brief exclusive lock',
-          estimatedDuration: 'instant'
-        };
+    case 'drop_index':
+      return {
+        lockLevel: this.LOCK_LEVELS.EXCLUSIVE,
+        lockLevelName: 'EXCLUSIVE',
+        description: 'Drops index - brief exclusive lock',
+        estimatedDuration: 'instant'
+      };
 
-      case 'add_constraint':
-        return this.getConstraintLockLevel(step);
+    case 'add_constraint':
+      return this.getConstraintLockLevel(step);
 
-      case 'drop_constraint':
-        return {
-          lockLevel: this.LOCK_LEVELS.EXCLUSIVE,
-          lockLevelName: 'EXCLUSIVE',
-          description: 'Drops constraint - requires exclusive access',
-          estimatedDuration: 'instant'
-        };
+    case 'drop_constraint':
+      return {
+        lockLevel: this.LOCK_LEVELS.EXCLUSIVE,
+        lockLevelName: 'EXCLUSIVE',
+        description: 'Drops constraint - requires exclusive access',
+        estimatedDuration: 'instant'
+      };
 
       // Row Level Security operations
-      case 'enable_rls':
-        return {
-          lockLevel: this.LOCK_LEVELS.EXCLUSIVE,
-          lockLevelName: 'EXCLUSIVE',
-          description: 'Enables RLS - requires exclusive table access',
-          estimatedDuration: 'instant'
-        };
+    case 'enable_rls':
+      return {
+        lockLevel: this.LOCK_LEVELS.EXCLUSIVE,
+        lockLevelName: 'EXCLUSIVE',
+        description: 'Enables RLS - requires exclusive table access',
+        estimatedDuration: 'instant'
+      };
 
-      case 'create_policy':
-        return {
-          lockLevel: this.LOCK_LEVELS.ROW_EXCLUSIVE,
-          lockLevelName: 'ROW_EXCLUSIVE',
-          description: 'Creates RLS policy - minimal locking',
-          estimatedDuration: 'instant'
-        };
+    case 'create_policy':
+      return {
+        lockLevel: this.LOCK_LEVELS.ROW_EXCLUSIVE,
+        lockLevelName: 'ROW_EXCLUSIVE',
+        description: 'Creates RLS policy - minimal locking',
+        estimatedDuration: 'instant'
+      };
 
       // Partitioning operations
-      case 'create_partition':
-        return {
-          lockLevel: this.LOCK_LEVELS.EXCLUSIVE,
-          lockLevelName: 'EXCLUSIVE',
-          description: 'Creates table partition - requires parent table lock',
-          estimatedDuration: 'instant'
-        };
+    case 'create_partition':
+      return {
+        lockLevel: this.LOCK_LEVELS.EXCLUSIVE,
+        lockLevelName: 'EXCLUSIVE',
+        description: 'Creates table partition - requires parent table lock',
+        estimatedDuration: 'instant'
+      };
 
-      case 'attach_partition':
-        return {
-          lockLevel: this.LOCK_LEVELS.SHARE_UPDATE_EXCLUSIVE,
-          lockLevelName: 'SHARE_UPDATE_EXCLUSIVE',
-          description: 'Attaches partition - requires constraint validation',
-          estimatedDuration: 'table-scan'
-        };
+    case 'attach_partition':
+      return {
+        lockLevel: this.LOCK_LEVELS.SHARE_UPDATE_EXCLUSIVE,
+        lockLevelName: 'SHARE_UPDATE_EXCLUSIVE',
+        description: 'Attaches partition - requires constraint validation',
+        estimatedDuration: 'table-scan'
+      };
 
-      case 'detach_partition':
-        return {
-          lockLevel: this.LOCK_LEVELS.ACCESS_EXCLUSIVE,
-          lockLevelName: 'ACCESS_EXCLUSIVE',
-          description: 'Detaches partition - blocks all access during operation',
-          estimatedDuration: 'instant',
-          dataPreservation: true
-        };
+    case 'detach_partition':
+      return {
+        lockLevel: this.LOCK_LEVELS.ACCESS_EXCLUSIVE,
+        lockLevelName: 'ACCESS_EXCLUSIVE',
+        description: 'Detaches partition - blocks all access during operation',
+        estimatedDuration: 'instant',
+        dataPreservation: true
+      };
 
-      default:
-        // Unknown operation - assume highest lock level for safety
-        return {
-          lockLevel: this.LOCK_LEVELS.ACCESS_EXCLUSIVE,
-          lockLevelName: 'ACCESS_EXCLUSIVE',
-          description: `Unknown operation: ${step.kind} - using maximum lock level for safety`,
-          estimatedDuration: 'unknown'
-        };
+    default:
+      // Unknown operation - assume highest lock level for safety
+      return {
+        lockLevel: this.LOCK_LEVELS.ACCESS_EXCLUSIVE,
+        lockLevelName: 'ACCESS_EXCLUSIVE',
+        description: `Unknown operation: ${step.kind} - using maximum lock level for safety`,
+        estimatedDuration: 'unknown'
+      };
     }
   }
 
@@ -230,7 +231,7 @@ export class DDLPlanner {
    */
   getAddColumnLockLevel(step) {
     const field = step.field;
-    
+
     // Adding nullable column is fast
     if (!field.nonNull && !field.getDefault()) {
       return {
@@ -240,7 +241,7 @@ export class DDLPlanner {
         duration: 'instant'
       };
     }
-    
+
     // Adding NOT NULL column with default requires table rewrite
     if (field.nonNull && field.getDefault()) {
       return {
@@ -250,17 +251,17 @@ export class DDLPlanner {
         duration: 'table-rewrite'
       };
     }
-    
+
     // Adding NOT NULL column without default is problematic
     if (field.nonNull && !field.getDefault()) {
       return {
         level: this.LOCK_LEVELS.ACCESS_EXCLUSIVE,
-        name: 'ACCESS_EXCLUSIVE', 
+        name: 'ACCESS_EXCLUSIVE',
         description: 'Adds NOT NULL column without default - unsafe operation',
         duration: 'table-scan'
       };
     }
-    
+
     // Default case
     return {
       level: this.LOCK_LEVELS.EXCLUSIVE,
@@ -278,7 +279,7 @@ export class DDLPlanner {
   getAlterTypeLockLevel(step) {
     const fromType = this.normalizeType(step.from.type);
     const toType = this.normalizeType(step.to.type);
-    
+
     // Compatible type changes (no rewrite needed)
     const compatibleChanges = [
       ['varchar', 'text'],
@@ -291,11 +292,11 @@ export class DDLPlanner {
       ['bool', 'bool'], // same type
       ['timestamptz', 'timestamptz'] // same type
     ];
-    
-    const isCompatible = compatibleChanges.some(([from, to]) => 
+
+    const isCompatible = compatibleChanges.some(([from, to]) =>
       fromType === from && toType === to
     );
-    
+
     if (isCompatible) {
       return {
         lockLevel: this.LOCK_LEVELS.EXCLUSIVE,
@@ -304,7 +305,7 @@ export class DDLPlanner {
         estimatedDuration: 'instant'
       };
     }
-    
+
     // Incompatible type changes require table rewrite
     return {
       lockLevel: this.LOCK_LEVELS.ACCESS_EXCLUSIVE,
@@ -321,39 +322,39 @@ export class DDLPlanner {
    */
   getConstraintLockLevel(step) {
     const constraintType = step.constraintType || 'unknown';
-    
+
     switch (constraintType) {
-      case 'check':
-        return {
-          lockLevel: this.LOCK_LEVELS.SHARE_ROW_EXCLUSIVE,
-          lockLevelName: 'SHARE_ROW_EXCLUSIVE',
-          description: 'Adds CHECK constraint - validates existing data',
-          estimatedDuration: 'table-scan'
-        };
-        
-      case 'foreign_key':
-        return {
-          lockLevel: this.LOCK_LEVELS.SHARE_ROW_EXCLUSIVE,
-          lockLevelName: 'SHARE_ROW_EXCLUSIVE',
-          description: 'Adds foreign key - validates referential integrity',
-          estimatedDuration: 'table-scan'
-        };
-        
-      case 'unique':
-        return {
-          lockLevel: this.LOCK_LEVELS.SHARE,
-          lockLevelName: 'SHARE',
-          description: 'Adds unique constraint - creates supporting index',
-          estimatedDuration: 'table-scan'
-        };
-        
-      default:
-        return {
-          lockLevel: this.LOCK_LEVELS.EXCLUSIVE,
-          lockLevelName: 'EXCLUSIVE',
-          description: `Adds ${constraintType} constraint - requires exclusive access`,
-          estimatedDuration: 'instant'
-        };
+    case 'check':
+      return {
+        lockLevel: this.LOCK_LEVELS.SHARE_ROW_EXCLUSIVE,
+        lockLevelName: 'SHARE_ROW_EXCLUSIVE',
+        description: 'Adds CHECK constraint - validates existing data',
+        estimatedDuration: 'table-scan'
+      };
+
+    case 'foreign_key':
+      return {
+        lockLevel: this.LOCK_LEVELS.SHARE_ROW_EXCLUSIVE,
+        lockLevelName: 'SHARE_ROW_EXCLUSIVE',
+        description: 'Adds foreign key - validates referential integrity',
+        estimatedDuration: 'table-scan'
+      };
+
+    case 'unique':
+      return {
+        lockLevel: this.LOCK_LEVELS.SHARE,
+        lockLevelName: 'SHARE',
+        description: 'Adds unique constraint - creates supporting index',
+        estimatedDuration: 'table-scan'
+      };
+
+    default:
+      return {
+        lockLevel: this.LOCK_LEVELS.EXCLUSIVE,
+        lockLevelName: 'EXCLUSIVE',
+        description: `Adds ${constraintType} constraint - requires exclusive access`,
+        estimatedDuration: 'instant'
+      };
     }
   }
 
@@ -371,7 +372,7 @@ export class DDLPlanner {
       'Boolean': 'bool',
       'DateTime': 'timestamptz'
     };
-    
+
     return typeMap[type] || type.toLowerCase();
   }
 
@@ -386,12 +387,12 @@ export class DDLPlanner {
       if (a.lockLevel !== b.lockLevel) {
         return a.lockLevel - b.lockLevel;
       }
-      
+
       // Secondary sort: non-data-preserving operations first (safer)
       if (a.dataPreservation !== b.dataPreservation) {
         return a.dataPreservation ? 1 : -1;
       }
-      
+
       // Tertiary sort: faster operations first
       const durationOrder = {
         'instant': 1,
@@ -399,7 +400,7 @@ export class DDLPlanner {
         'table-rewrite': 3,
         'unknown': 4
       };
-      
+
       return (durationOrder[a.estimatedDuration] || 4) - (durationOrder[b.estimatedDuration] || 4);
     });
   }
@@ -411,28 +412,28 @@ export class DDLPlanner {
    */
   detectLockConflicts(steps) {
     const conflicts = [];
-    
+
     // Look for operations on the same table
     const operationsByTable = new Map();
-    
+
     steps.forEach(step => {
       const tableName = step.table;
       if (!tableName) return;
-      
+
       if (!operationsByTable.has(tableName)) {
         operationsByTable.set(tableName, []);
       }
       operationsByTable.get(tableName).push(step);
     });
-    
+
     // Check each table for conflicts
     operationsByTable.forEach((tableOps, tableName) => {
       if (tableOps.length <= 1) return;
-      
+
       // Check for high-lock operations mixed with others
       const highLockOps = tableOps.filter(op => op.lockLevel >= this.LOCK_LEVELS.EXCLUSIVE);
       const lowLockOps = tableOps.filter(op => op.lockLevel < this.LOCK_LEVELS.EXCLUSIVE);
-      
+
       if (highLockOps.length > 0 && lowLockOps.length > 0) {
         conflicts.push({
           type: 'lock_escalation',
@@ -442,7 +443,7 @@ export class DDLPlanner {
           suggestion: 'Consider separating operations into different migration phases'
         });
       }
-      
+
       // Check for multiple table rewrites
       const rewriteOps = tableOps.filter(op => op.estimatedDuration === 'table-rewrite');
       if (rewriteOps.length > 1) {
@@ -455,37 +456,37 @@ export class DDLPlanner {
         });
       }
     });
-    
+
     return conflicts;
   }
 
   /**
    * Calculate overall risk level for the migration
-   * @param {Array} steps - Annotated migration steps  
+   * @param {Array} steps - Annotated migration steps
    * @returns {String} Risk level: 'low', 'medium', 'high', 'critical'
    */
   calculateRiskLevel(steps) {
     // Empty migration has no risk
     if (steps.length === 0) return 'low';
-    
+
     let riskScore = 0;
-    
+
     steps.forEach(step => {
       // Base risk by lock level
       riskScore += step.lockLevel;
-      
+
       // Additional risk factors
       if (step.estimatedDuration === 'table-rewrite') riskScore += 10;
       if (step.dataPreservation) riskScore += 5;
       if (step.lockLevel >= this.LOCK_LEVELS.ACCESS_EXCLUSIVE) riskScore += 8;
       if (step.nonTransactional) riskScore += 3;
     });
-    
+
     // Normalize risk score
     const avgRisk = riskScore / steps.length;
-    
+
     if (avgRisk <= 3) return 'low';
-    if (avgRisk <= 6) return 'medium';  
+    if (avgRisk <= 6) return 'medium';
     if (avgRisk <= 10) return 'high';
     return 'critical';
   }
@@ -497,7 +498,7 @@ export class DDLPlanner {
    */
   generateRecommendations(plan) {
     const recommendations = [];
-    
+
     // Recommend maintenance window for high-risk migrations
     if (plan.riskLevel === 'high' || plan.riskLevel === 'critical') {
       recommendations.push({
@@ -506,17 +507,17 @@ export class DDLPlanner {
         message: 'Consider running during maintenance window due to high lock levels'
       });
     }
-    
+
     // Recommend concurrent index creation
     const indexCreations = plan.phases.transactional.filter(s => s.kind === 'create_index');
     if (indexCreations.length > 0) {
       recommendations.push({
         type: 'concurrent_indexes',
-        priority: 'medium', 
+        priority: 'medium',
         message: `Consider using CREATE INDEX CONCURRENTLY for ${indexCreations.length} indexes`
       });
     }
-    
+
     // Warn about data loss potential
     const dataLossOps = plan.phases.transactional.filter(s => s.dataPreservation);
     if (dataLossOps.length > 0) {
@@ -526,9 +527,9 @@ export class DDLPlanner {
         message: `${dataLossOps.length} operations may result in data loss - ensure backups`
       });
     }
-    
+
     // Recommend batching for large operations
-    const tableRewrites = plan.phases.transactional.filter(s => 
+    const tableRewrites = plan.phases.transactional.filter(s =>
       s.estimatedDuration === 'table-rewrite'
     );
     if (tableRewrites.length > 0) {
@@ -538,7 +539,7 @@ export class DDLPlanner {
         message: 'Large table operations detected - consider batching for large tables'
       });
     }
-    
+
     return recommendations;
   }
 }

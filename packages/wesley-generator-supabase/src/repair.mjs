@@ -35,7 +35,7 @@ export class RepairGenerator {
 
     // Filter differences to only safe operations
     const safeOperations = this.filterSafeOperations(driftReport.differences);
-    const unsafeOperations = driftReport.differences.filter(diff => 
+    const unsafeOperations = driftReport.differences.filter(diff =>
       !safeOperations.includes(diff)
     );
 
@@ -49,7 +49,7 @@ export class RepairGenerator {
     const sqlStatements = await this.generateSQLStatements(repairSteps);
 
     // Handle constraint violations
-    const constraintHandling = this.enableConstraintHandling 
+    const constraintHandling = this.enableConstraintHandling
       ? await this.generateConstraintHandling(repairSteps, driftReport)
       : null;
 
@@ -74,8 +74,8 @@ export class RepairGenerator {
       },
       repairSteps,
       safeOperations: safeOperations.map(op => ({ type: op.type, description: op.description })),
-      unsafeOperations: unsafeOperations.map(op => ({ 
-        type: op.type, 
+      unsafeOperations: unsafeOperations.map(op => ({
+        type: op.type,
         description: op.description,
         reason: this.getUnsafeReason(op)
       })),
@@ -106,20 +106,20 @@ export class RepairGenerator {
 
       // Additional safety checks
       switch (diff.type) {
-        case 'missing_field':
-          return this.isSafeColumnAddition(diff);
-          
-        case 'nullability_mismatch':
-          return this.isSafeNullabilityChange(diff);
-          
-        case 'missing_directive':
-          return this.isSafeDirectiveAddition(diff);
-          
-        case 'extra_field':
-          return false; // Always unsafe - dropping columns causes data loss
-          
-        default:
-          return false;
+      case 'missing_field':
+        return this.isSafeColumnAddition(diff);
+
+      case 'nullability_mismatch':
+        return this.isSafeNullabilityChange(diff);
+
+      case 'missing_directive':
+        return this.isSafeDirectiveAddition(diff);
+
+      case 'extra_field':
+        return false; // Always unsafe - dropping columns causes data loss
+
+      default:
+        return false;
       }
     });
   }
@@ -129,7 +129,7 @@ export class RepairGenerator {
    */
   isSafeColumnAddition(diff) {
     const field = diff.expectedValue;
-    
+
     // Safe if nullable or has default value
     if (!field.nonNull || field.getDefault()) {
       return true;
@@ -171,7 +171,7 @@ export class RepairGenerator {
 
     for (let level = 0; level < dependencyLevels.length; level++) {
       const levelOperations = dependencyLevels[level];
-      
+
       for (const operation of levelOperations) {
         const step = await this.createRepairStep(operation, level);
         if (step) {
@@ -188,26 +188,26 @@ export class RepairGenerator {
    */
   analyzeDependencies(operations) {
     const levels = [];
-    const processed = new Set();
-    
+    const _processed = new Set();
+
     // Simple dependency analysis - more complex dependencies would need graph traversal
     const tableCreations = operations.filter(op => op.type === 'missing_table');
     const columnAdditions = operations.filter(op => op.type === 'missing_field');
     const constraintAdditions = operations.filter(op => op.type === 'missing_directive');
     const nullabilityChanges = operations.filter(op => op.type === 'nullability_mismatch');
-    
+
     if (tableCreations.length > 0) {
       levels.push(tableCreations);
     }
-    
+
     if (columnAdditions.length > 0) {
       levels.push(columnAdditions);
     }
-    
+
     if (nullabilityChanges.length > 0) {
       levels.push(nullabilityChanges);
     }
-    
+
     if (constraintAdditions.length > 0) {
       levels.push(constraintAdditions);
     }
@@ -256,20 +256,20 @@ export class RepairGenerator {
    */
   async generateStepSQL(operation) {
     switch (operation.repairAction) {
-      case 'add_column':
-        return this.generateAddColumnSQL(operation);
-        
-      case 'add_not_null':
-        return this.generateAddNotNullSQL(operation);
-        
-      case 'add_directive':
-        return this.generateAddDirectiveSQL(operation);
-        
-      case 'drop_column':
-        return this.safeMode ? null : this.generateDropColumnSQL(operation);
-        
-      default:
-        return `-- Unsupported repair action: ${operation.repairAction}`;
+    case 'add_column':
+      return this.generateAddColumnSQL(operation);
+
+    case 'add_not_null':
+      return this.generateAddNotNullSQL(operation);
+
+    case 'add_directive':
+      return this.generateAddDirectiveSQL(operation);
+
+    case 'drop_column':
+      return this.safeMode ? null : this.generateDropColumnSQL(operation);
+
+    default:
+      return `-- Unsupported repair action: ${operation.repairAction}`;
     }
   }
 
@@ -280,12 +280,12 @@ export class RepairGenerator {
     const field = operation.expectedValue;
     const tableName = operation.table;
     const columnName = operation.column;
-    
+
     const columnType = this.mapFieldToPostgreSQLType(field);
     const nullable = field.nonNull ? ' NOT NULL' : '';
     const defaultDirective = field.getDefault();
     const defaultValue = defaultDirective ? ` DEFAULT ${this.formatDefaultValue(defaultDirective.value || defaultDirective)}` : '';
-    
+
     return `ALTER TABLE "${tableName}" ADD COLUMN "${columnName}" ${columnType}${nullable}${defaultValue};`;
   }
 
@@ -295,11 +295,11 @@ export class RepairGenerator {
   generateAddNotNullSQL(operation) {
     const tableName = operation.table;
     const columnName = operation.column;
-    
+
     return [
-      `-- First, update any NULL values to prevent constraint violation`,
+      '-- First, update any NULL values to prevent constraint violation',
       `UPDATE "${tableName}" SET "${columnName}" = 'DEFAULT_VALUE' WHERE "${columnName}" IS NULL;`,
-      `-- Then add NOT NULL constraint`,
+      '-- Then add NOT NULL constraint',
       `ALTER TABLE "${tableName}" ALTER COLUMN "${columnName}" SET NOT NULL;`
     ].join('\n');
   }
@@ -313,19 +313,21 @@ export class RepairGenerator {
     const directiveData = operation.expectedValue;
 
     switch (directive) {
-      case '@index':
-        const indexName = `idx_${tableName}_${operation.column || 'multi'}`;
-        return `CREATE INDEX CONCURRENTLY "${indexName}" ON "${tableName}" ("${operation.column}");`;
-        
-      case '@check':
-        const constraintName = `chk_${tableName}_${operation.column}`;
-        return `ALTER TABLE "${tableName}" ADD CONSTRAINT "${constraintName}" CHECK (${directiveData.expr});`;
-        
-      case '@default':
-        return `ALTER TABLE "${tableName}" ALTER COLUMN "${operation.column}" SET DEFAULT ${this.formatDefaultValue(directiveData)};`;
-        
-      default:
-        return `-- Unsupported directive: ${directive}`;
+    case '@index': {
+      const indexName = `idx_${tableName}_${operation.column || 'multi'}`;
+      return `CREATE INDEX CONCURRENTLY "${indexName}" ON "${tableName}" ("${operation.column}");`;
+    }
+
+    case '@check': {
+      const constraintName = `chk_${tableName}_${operation.column}`;
+      return `ALTER TABLE "${tableName}" ADD CONSTRAINT "${constraintName}" CHECK (${directiveData.expr});`;
+    }
+
+    case '@default':
+      return `ALTER TABLE "${tableName}" ALTER COLUMN "${operation.column}" SET DEFAULT ${this.formatDefaultValue(directiveData)};`;
+
+    default:
+      return `-- Unsupported directive: ${directive}`;
     }
   }
 
@@ -335,10 +337,10 @@ export class RepairGenerator {
   generateDropColumnSQL(operation) {
     const tableName = operation.table;
     const columnName = operation.column;
-    
+
     return [
-      `-- WARNING: This will permanently delete data`,
-      `-- Backup recommended before execution`,
+      '-- WARNING: This will permanently delete data',
+      '-- Backup recommended before execution',
       `ALTER TABLE "${tableName}" DROP COLUMN "${columnName}";`
     ].join('\n');
   }
@@ -346,7 +348,7 @@ export class RepairGenerator {
   /**
    * Generate constraint violation handling
    */
-  async generateConstraintHandling(repairSteps, driftReport) {
+  async generateConstraintHandling(repairSteps, _driftReport) {
     const constraintChecks = [];
     const violationHandlers = [];
 
@@ -428,7 +430,7 @@ HAVING COUNT(*) > 1;`
   generateNullConstraintHandler(step) {
     return {
       type: 'null_constraint_handler',
-      description: `Handle NULL values before adding NOT NULL constraint`,
+      description: 'Handle NULL values before adding NOT NULL constraint',
       sql: `
 -- Count NULL values that need to be handled
 SELECT COUNT(*) as null_count
@@ -493,7 +495,7 @@ WHERE "${step.target.column}" IS NULL;
   /**
    * Generate rollback plan
    */
-  generateRollbackPlan(repairSteps, safeOperations) {
+  generateRollbackPlan(repairSteps, _safeOperations) {
     const rollbackSteps = [];
 
     // Reverse order for rollback
@@ -509,7 +511,7 @@ WHERE "${step.target.column}" IS NULL;
         riskScore: this.safety.assessStepRisk({ kind: this.getRollbackOperation(step.operation) }).score,
         warnings: this.generateRollbackWarnings(step)
       };
-      
+
       rollbackSteps.push(rollbackStep);
     }
 
@@ -530,7 +532,7 @@ WHERE "${step.target.column}" IS NULL;
    */
   async generateSQLStatements(repairSteps) {
     const statements = [];
-    
+
     // Group by transaction mode
     if (this.transactionMode === 'single') {
       statements.push('BEGIN;');
@@ -545,7 +547,7 @@ WHERE "${step.target.column}" IS NULL;
       statements.push('');
       statements.push(`-- Step: ${step.description}`);
       statements.push(`-- Risk Score: ${step.riskScore}`);
-      
+
       // Add pre-conditions
       if (step.preConditions.length > 0) {
         statements.push('-- Pre-conditions:');
@@ -579,21 +581,21 @@ WHERE "${step.target.column}" IS NULL;
    * Utility methods for type mapping and formatting
    */
   mapFieldToPostgreSQLType(field) {
-    const typeMap = { 
-      ID: 'uuid', 
-      String: 'text', 
-      Int: 'integer', 
-      Float: 'double precision', 
-      Boolean: 'boolean', 
-      DateTime: 'timestamptz' 
+    const typeMap = {
+      ID: 'uuid',
+      String: 'text',
+      Int: 'integer',
+      Float: 'double precision',
+      Boolean: 'boolean',
+      DateTime: 'timestamptz'
     };
-    
+
     let pgType = typeMap[field.type] || 'text';
-    
+
     if (field.list) {
       pgType += '[]';
     }
-    
+
     return pgType;
   }
 
@@ -623,7 +625,7 @@ WHERE "${step.target.column}" IS NULL;
 
     for (const step of repairSteps) {
       totalRiskScore += step.riskScore;
-      
+
       if (step.riskScore >= 50) {
         riskFactors.push({
           step: step.id,
@@ -668,7 +670,7 @@ WHERE "${step.target.column}" IS NULL;
     for (const step of repairSteps) {
       const duration = step.estimatedDuration || this.estimateStepDuration(step.repairAction);
       totalDuration += duration;
-      
+
       stepMetrics.push({
         stepId: step.id,
         estimatedDuration: duration,
@@ -727,11 +729,11 @@ WHERE "${step.target.column}" IS NULL;
 
   generateSafetyChecks(operation) {
     const checks = [`Verify ${operation.table} table exists`];
-    
+
     if (operation.column) {
       checks.push(`Check column ${operation.column} constraints`);
     }
-    
+
     return checks;
   }
 
@@ -748,12 +750,12 @@ WHERE "${step.target.column}" IS NULL;
 
   generateRollbackSQL(operation) {
     switch (operation.repairAction) {
-      case 'add_column':
-        return `ALTER TABLE "${operation.table}" DROP COLUMN "${operation.column}";`;
-      case 'add_not_null':
-        return `ALTER TABLE "${operation.table}" ALTER COLUMN "${operation.column}" DROP NOT NULL;`;
-      default:
-        return '-- No automatic rollback available';
+    case 'add_column':
+      return `ALTER TABLE "${operation.table}" DROP COLUMN "${operation.column}";`;
+    case 'add_not_null':
+      return `ALTER TABLE "${operation.table}" ALTER COLUMN "${operation.column}" DROP NOT NULL;`;
+    default:
+      return '-- No automatic rollback available';
     }
   }
 
@@ -781,7 +783,7 @@ WHERE "${step.target.column}" IS NULL;
     return 'low';
   }
 
-  generateMigrationRollback(sqlStatements) {
+  generateMigrationRollback(_sqlStatements) {
     // Simple rollback generation - could be enhanced with proper parsing
     return [
       '-- Automatic rollback not available for all operations',
@@ -791,36 +793,36 @@ WHERE "${step.target.column}" IS NULL;
 
   generateConstraintRecommendations(checks, handlers) {
     const recommendations = [];
-    
+
     if (checks.length > 0) {
       recommendations.push('Execute pre-flight constraint checks before repair');
     }
-    
+
     if (handlers.length > 0) {
       recommendations.push('Handle constraint violations before applying changes');
     }
-    
+
     recommendations.push('Backup affected tables before executing repair');
-    
+
     return recommendations;
   }
 
   generateWarnings(repairSteps, unsafeOperations) {
     const warnings = [];
-    
+
     if (unsafeOperations.length > 0) {
       warnings.push(`${unsafeOperations.length} operations were excluded due to safety concerns`);
     }
-    
+
     const highRiskSteps = repairSteps.filter(step => step.riskScore >= 50);
     if (highRiskSteps.length > 0) {
       warnings.push(`${highRiskSteps.length} high-risk operations require manual review`);
     }
-    
+
     if (repairSteps.some(step => step.operation === 'nullability_mismatch')) {
       warnings.push('NOT NULL constraint additions may fail if NULL values exist');
     }
-    
+
     return warnings;
   }
 }

@@ -6,7 +6,7 @@
 
 import { Schema, Table, Field } from './Schema.mjs';
 import { getLocation } from 'graphql';
-import { VALID_JOIN_STRATEGIES, validateJoinDirective } from '../ttd/directives.mjs';
+import { _VALID_JOIN_STRATEGIES, validateJoinDirective } from '../ttd/directives.mjs';
 
 function locSpan(node) {
   try {
@@ -28,7 +28,7 @@ export class GraphQLSchemaBuilder {
   constructor(evidenceMap) {
     this.evidenceMap = evidenceMap;
   }
-  
+
   /**
    * Build Wesley schema from GraphQL AST
    * @param {Object} ast - Parsed GraphQL AST (from graphql-js or similar)
@@ -38,7 +38,7 @@ export class GraphQLSchemaBuilder {
     const tables = {};
     const mutations = [];
     const queries = [];
-    
+
     // Process each definition in the AST
     for (const def of ast.definitions || []) {
       if (def.kind === 'ObjectTypeDefinition') {
@@ -51,14 +51,14 @@ export class GraphQLSchemaBuilder {
         }
       }
     }
-    
+
     const schema = new Schema(tables);
     schema.mutations = mutations;
     schema.queries = queries;
-    
+
     return schema;
   }
-  
+
   /**
    * Build a Table from an ObjectTypeDefinition
    */
@@ -88,7 +88,7 @@ export class GraphQLSchemaBuilder {
         this.evidenceMap.record(tableUid, 'source', loc);
       }
     }
-    
+
     // Check for duplicate type names
     if (fields[tableName]) {
       if (this.evidenceMap) {
@@ -99,16 +99,16 @@ export class GraphQLSchemaBuilder {
         });
       }
     }
-    
+
     for (const fieldNode of node.fields || []) {
       const typeInfo = this.unwrapType(fieldNode.type);
       const fieldName = fieldNode.name.value;
       const fieldUid = `col:${tableName}.${fieldName}`;
-      
+
       // Validate directive arguments
       const directives = this.extractDirectives(fieldNode);
       this.validateDirectives(directives, fieldUid, fieldName, typeInfo);
-      
+
       fields[fieldName] = new Field({
         name: fieldName,
         type: typeInfo.base,
@@ -124,7 +124,7 @@ export class GraphQLSchemaBuilder {
         if (floc) this.evidenceMap.record(fieldUid, 'source', floc);
       }
     }
-    
+
     if (tableDirectives['@rls']) {
       tableDirectives['@rls'] = this.parseRLSConfig(tableDirectives['@rls']);
     }
@@ -135,7 +135,7 @@ export class GraphQLSchemaBuilder {
       fields
     });
   }
-  
+
   /**
    * Validate directive arguments and record errors
    * @param {Object} directives - Extracted directives
@@ -173,7 +173,7 @@ export class GraphQLSchemaBuilder {
         });
       }
     }
-    
+
     // Validate @index arguments
     if (directives['@index']) {
       const indexDef = directives['@index'];
@@ -185,7 +185,7 @@ export class GraphQLSchemaBuilder {
         });
       }
     }
-    
+
     // Validate @default value
     if (directives['@default']) {
       const defaultValue = directives['@default'].value;
@@ -197,12 +197,12 @@ export class GraphQLSchemaBuilder {
         });
       }
     }
-    
+
     // Validate @rls configuration
     if (directives['@rls']) {
       const rls = directives['@rls'];
       const validOperations = ['select', 'insert', 'update', 'delete'];
-      
+
       for (const op of validOperations) {
         if (rls[op] && typeof rls[op] !== 'string') {
           this.evidenceMap.recordError(uid, {
@@ -214,17 +214,17 @@ export class GraphQLSchemaBuilder {
       }
     }
   }
-  
+
   /**
    * Build operations (mutations/queries) from type definition
    */
   buildOperations(node) {
     const operations = [];
-    
+
     for (const field of node.fields || []) {
       const returnType = this.unwrapType(field.type);
       const args = this.extractArguments(field.arguments);
-      
+
       operations.push({
         name: field.name.value,
         args,
@@ -232,16 +232,16 @@ export class GraphQLSchemaBuilder {
         directives: this.extractDirectives(field)
       });
     }
-    
+
     return operations;
   }
-  
+
   /**
    * Extract arguments from a field
    */
   extractArguments(args) {
     if (!args) return [];
-    
+
     return args.map(arg => {
       const typeInfo = this.unwrapType(arg.type);
       return {
@@ -253,42 +253,42 @@ export class GraphQLSchemaBuilder {
       };
     });
   }
-  
+
   /**
    * Check if a node has a specific directive
    */
   hasDirective(node, name) {
     return node.directives?.some(d => d.name.value === name) || false;
   }
-  
+
   /**
    * Check if Query type has custom RPC queries
    */
   hasCustomQueries(node) {
     return node.fields?.some(f => this.hasDirective(f, 'rpc')) || false;
   }
-  
+
   /**
    * Extract all directives from a node
    */
   extractDirectives(node) {
     const directives = {};
-    
+
     for (const dir of node.directives || []) {
       const args = {};
-      
+
       for (const arg of dir.arguments || []) {
         args[arg.name.value] = this.extractValue(arg.value);
       }
-      
+
       // Normalize directive name with aliases
       const normalizedName = this.normalizeDirectiveName(dir.name.value);
       directives[normalizedName] = args;
     }
-    
+
     return directives;
   }
-  
+
   /**
    * Normalize directive names to canonical form
    * This allows using aliases like @pk for @primaryKey
@@ -334,45 +334,46 @@ export class GraphQLSchemaBuilder {
 
       // Echo lattice/CRDT join
       'wes_join': '@join',
-      'join': '@join',
+      'join': '@join'
     };
-    
+
     // Remove @ if present in the input
     const cleanName = name.startsWith('@') ? name.substring(1) : name;
     return aliases[cleanName] || `@${cleanName}`;
   }
-  
+
   /**
    * Extract value from AST value node
    */
   extractValue(valueNode) {
     switch (valueNode.kind) {
-      case 'StringValue':
-        return valueNode.value;
-      case 'IntValue':
-        return parseInt(valueNode.value, 10);
-      case 'FloatValue':
-        return parseFloat(valueNode.value);
-      case 'BooleanValue':
-        return valueNode.value;
-      case 'EnumValue':
-        return valueNode.value;
-      case 'NullValue':
-        return null;
-      case 'ListValue':
-        return valueNode.values.map(v => this.extractValue(v));
-      case 'ObjectValue':
-        const obj = {};
-        for (const field of valueNode.fields) {
-          obj[field.name.value] = this.extractValue(field.value);
-        }
-        return obj;
-      default:
-        // Alpha Blocker #2: Remove silent coercion in value extraction
-        throw new Error(`Unknown value node kind: ${valueNode.kind}. Value node: ${JSON.stringify(valueNode)}`);
+    case 'StringValue':
+      return valueNode.value;
+    case 'IntValue':
+      return parseInt(valueNode.value, 10);
+    case 'FloatValue':
+      return parseFloat(valueNode.value);
+    case 'BooleanValue':
+      return valueNode.value;
+    case 'EnumValue':
+      return valueNode.value;
+    case 'NullValue':
+      return null;
+    case 'ListValue':
+      return valueNode.values.map(v => this.extractValue(v));
+    case 'ObjectValue': {
+      const obj = {};
+      for (const field of valueNode.fields) {
+        obj[field.name.value] = this.extractValue(field.value);
+      }
+      return obj;
+    }
+    default:
+      // Alpha Blocker #2: Remove silent coercion in value extraction
+      throw new Error(`Unknown value node kind: ${valueNode.kind}. Value node: ${JSON.stringify(valueNode)}`);
     }
   }
-  
+
   /**
    * Unwrap GraphQL type to get base type and modifiers
    */
@@ -382,25 +383,25 @@ export class GraphQLSchemaBuilder {
     let list = false;
     let itemNonNull = false;
     let current = typeNode;
-    
+
     // Unwrap outer NonNull wrapper (field nullability)
     if (current.kind === 'NonNullType') {
       nonNull = true;
       current = current.type;
     }
-    
+
     // Check for List type
     if (current.kind === 'ListType') {
       list = true;
       current = current.type;
-      
+
       // Check if list items are NonNull
       if (current.kind === 'NonNullType') {
         itemNonNull = true;
         current = current.type;
       }
     }
-    
+
     // Get the base type name
     if (current.kind === 'NamedType') {
       base = current.name.value;
@@ -408,10 +409,10 @@ export class GraphQLSchemaBuilder {
       // Alpha Blocker #2: Remove silent type coercion
       throw new Error(`Unknown GraphQL type kind: ${current.kind}. Type node: ${JSON.stringify(current)}`);
     }
-    
+
     return { base, nonNull, list, itemNonNull };
   }
-  
+
   /**
    * Parse RLS configuration from directive arguments
    */
@@ -424,18 +425,18 @@ export class GraphQLSchemaBuilder {
       delete: args.delete || 'false',
       roles: args.roles || ['authenticated']
     };
-    
+
     // Preserve preset configuration (string or object with name/options)
     if (args.preset !== undefined) {
       config.preset = args.preset;
     }
-    
+
     // Parse role-specific settings if provided
     if (args.selectRoles) config.selectRoles = args.selectRoles;
     if (args.insertRoles) config.insertRoles = args.insertRoles;
     if (args.updateRoles) config.updateRoles = args.updateRoles;
     if (args.deleteRoles) config.deleteRoles = args.deleteRoles;
-    
+
     return config;
   }
 }
