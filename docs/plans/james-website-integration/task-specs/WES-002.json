@@ -1,0 +1,71 @@
+{
+  "taskId": "WES-002",
+  "taskDescription": "Generate integration-ready TS runtime client/pump",
+  "project": "wesley",
+  "priority": "P0",
+  "status": "UPSTREAM_ACTIVE",
+  "track": "REAL_WAY",
+  "dependencies": [
+    "WES-001"
+  ],
+  "requirements": [
+    "All prerequisite tasks are marked DONE in the selected execution path: WES-001.",
+    "Owning repository has an active branch with contract/codegen artifacts synchronized to current baselines."
+  ],
+  "userStory": {
+    "role": "Wesley Runtime Client Engineer",
+    "desire": "As a Wesley Runtime Client Engineer, I want generated TypeScript runtime clients and pump helpers to be integration-ready with no post-processing.",
+    "motivation": {
+      "summary": "Ready-to-use host clients shrink app-level glue and reduce long-lived workaround debt.",
+      "supportsOrUnblocks": [
+        "Directly unblocks JWE-006, JWE-007, and X-001.",
+        "Creates a stable generated seam for intent/query transport and view-op decoding."
+      ]
+    }
+  },
+  "acceptanceCriteria": [
+    "Generated TypeScript runtime client includes typed dispatch/query APIs plus canonical pump loop.",
+    "Pump logic decodes view ops and routes envelopes without requiring handwritten patch scripts.",
+    "Generated client exposes registry handshake constants used by integration gates."
+  ],
+  "testPlan": {
+    "assertions": [
+      "Generated client compiles in strict TypeScript mode with no manual edits.",
+      "Pump integration test validates decode + route of mixed view-op fixtures.",
+      "Handshake constant test verifies generated values align with protocol artifacts."
+    ],
+    "goldenPath": [
+      "Generate client, import into sample app, dispatch intent, run pump, and render decoded view ops.",
+      "Execute typed query method and verify result decoding round-trip."
+    ],
+    "edgeCases": [
+      "Empty view-op buffers return cleanly without emitting stale callbacks.",
+      "Unknown op id in pump stream is surfaced to diagnostics channel with raw payload context."
+    ],
+    "fuzzScale": [
+      "Pump high-volume mixed op streams and verify stable throughput without dropped envelopes."
+    ],
+    "failureCases": [
+      "Malformed binary payload fails decode with deterministic error object.",
+      "Missing runtime port methods fail generated client initialization with explicit contract message."
+    ]
+  },
+  "scope": {
+    "inScope": [
+      "Code, tests, and docs directly required to complete WES-002: Generate integration-ready TS runtime client/pump.",
+      "Boundary contracts and adapters touched by this task within project ownership.",
+      "Task-level observability needed to debug deterministic behavior and integration outcomes."
+    ],
+    "outOfScope": [
+      "Unrelated feature work outside dependency chain impact.",
+      "Broad redesigns not required to satisfy acceptance criteria for this task.",
+      "Cross-repo migration work not explicitly referenced by this task dependencies."
+    ]
+  },
+  "definitionOfDone": [
+    "All acceptance criteria are satisfied with linked test evidence.",
+    "Task metadata is updated to DONE in DAG source for WES-002.",
+    "Any architecture exceptions are either removed or documented with owner + expiry.",
+    "No workaround-only seams were introduced to complete this task."
+  ]
+}

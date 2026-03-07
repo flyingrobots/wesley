@@ -1,0 +1,72 @@
+{
+  "taskId": "WES-004",
+  "taskDescription": "One-pass app codegen profile (schema -> ir/rust/ts)",
+  "project": "wesley",
+  "priority": "P0",
+  "status": "UPSTREAM_ACTIVE",
+  "track": "REAL_WAY",
+  "dependencies": [
+    "WES-002",
+    "WES-003"
+  ],
+  "requirements": [
+    "All prerequisite tasks are marked DONE in the selected execution path: WES-002, WES-003.",
+    "Owning repository has an active branch with contract/codegen artifacts synchronized to current baselines."
+  ],
+  "userStory": {
+    "role": "Codegen Pipeline Architect",
+    "desire": "As a Codegen Pipeline Architect, I want one-pass schema-to-IR/Rust/TS generation so output parity is guaranteed and maintenance overhead drops.",
+    "motivation": {
+      "summary": "One-pass codegen removes duplicate transformation paths and enforces cross-artifact parity.",
+      "supportsOrUnblocks": [
+        "Directly unblocks ECO-003, ECO-004, and X-003.",
+        "Improves determinism by centralizing ordering and emission logic."
+      ]
+    }
+  },
+  "acceptanceCriteria": [
+    "Single codegen profile emits IR, Rust, and TypeScript outputs in one deterministic pass.",
+    "One-pass workflow eliminates duplicate intermediate transforms between per-language generators.",
+    "Profile integrates with sync tooling expectations for downstream repos."
+  ],
+  "testPlan": {
+    "assertions": [
+      "One-pass generation test verifies all expected artifact sets are produced atomically.",
+      "Cross-artifact parity test verifies op ids/schema hashes align across IR/Rust/TS outputs.",
+      "Performance baseline test verifies one-pass generation outperforms or matches prior multi-pass flow."
+    ],
+    "goldenPath": [
+      "Run one-pass profile on canonical schema and consume emitted IR/Rust/TS artifacts directly.",
+      "Trigger downstream build in sample app to verify generated artifacts are integration-ready."
+    ],
+    "edgeCases": [
+      "Partial generation failure cleans up incomplete output sets.",
+      "Feature-flagged schema sections include/exclude deterministically across all artifact targets."
+    ],
+    "fuzzScale": [
+      "Generate large schema graphs through one-pass profile and verify bounded memory and stable timing."
+    ],
+    "failureCases": [
+      "Failure in any emitter stage aborts full profile with stage-specific diagnostics.",
+      "Mismatch in cross-artifact schema hash fails generation and blocks publish."
+    ]
+  },
+  "scope": {
+    "inScope": [
+      "Code, tests, and docs directly required to complete WES-004: One-pass app codegen profile (schema -> ir/rust/ts).",
+      "Boundary contracts and adapters touched by this task within project ownership.",
+      "Task-level observability needed to debug deterministic behavior and integration outcomes."
+    ],
+    "outOfScope": [
+      "Unrelated feature work outside dependency chain impact.",
+      "Broad redesigns not required to satisfy acceptance criteria for this task.",
+      "Cross-repo migration work not explicitly referenced by this task dependencies."
+    ]
+  },
+  "definitionOfDone": [
+    "All acceptance criteria are satisfied with linked test evidence.",
+    "Task metadata is updated to DONE in DAG source for WES-004.",
+    "Any architecture exceptions are either removed or documented with owner + expiry.",
+    "No workaround-only seams were introduced to complete this task."
+  ]
+}
