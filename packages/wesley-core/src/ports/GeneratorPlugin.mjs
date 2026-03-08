@@ -189,6 +189,69 @@ export function validatePlugin(plugin) {
 }
 
 /**
+ * @typedef {Object} NormalizedGenerateResult
+ * @property {Record<string, string|Uint8Array>} artifacts - File artifacts
+ * @property {Record<string, object>|null} evidence - Per-element evidence (null for legacy shape)
+ */
+
+/**
+ * Validates and normalizes the return value of generate(). Throws with
+ * code WPLY003 if the result is not a valid shape.
+ *
+ * Supports two shapes:
+ *   - Legacy: Record<string, string|Uint8Array> (plain file map)
+ *   - Transmutation-aware: { files: Record, evidence: Record }
+ *
+ * Returns a normalized `{ artifacts, evidence }` object regardless of
+ * which shape was provided.
+ *
+ * @param {unknown} result
+ * @param {string} [pluginName]
+ * @returns {NormalizedGenerateResult}
+ * @throws {{ message: string, code: string }}
+ */
+export function validateGenerateResult(result, pluginName) {
+  const label = pluginName ? ` "${pluginName}"` : '';
+
+  // Top-level: must be non-null, non-array object
+  if (result == null || typeof result !== 'object' || Array.isArray(result)) {
+    const typeLabel = result === null ? 'null'
+      : Array.isArray(result) ? 'Array'
+        : typeof result;
+    fail(
+      `Plugin${label} generate() must return a Record<string, string|Uint8Array> (got ${typeLabel})`,
+      'WPLY003'
+    );
+  }
+
+  // New transmutation-aware shape: { files, evidence }
+  if ('files' in result && 'evidence' in result) {
+    if (result.files == null || typeof result.files !== 'object' || Array.isArray(result.files)) {
+      const filesLabel = result.files === null ? 'null'
+        : Array.isArray(result.files) ? 'Array'
+          : typeof result.files;
+      fail(
+        `Plugin${label} generate() returned { files, evidence } but files is ${filesLabel} (expected Record<string, string|Uint8Array>)`,
+        'WPLY003'
+      );
+    }
+    if (result.evidence == null || typeof result.evidence !== 'object' || Array.isArray(result.evidence)) {
+      const evLabel = result.evidence === null ? 'null'
+        : Array.isArray(result.evidence) ? 'Array'
+          : typeof result.evidence;
+      fail(
+        `Plugin${label} generate() returned { files, evidence } but evidence is ${evLabel} (expected Record<string, object>)`,
+        'WPLY003'
+      );
+    }
+    return { artifacts: result.files, evidence: result.evidence };
+  }
+
+  // Legacy shape: plain Record<string, content>
+  return { artifacts: result, evidence: null };
+}
+
+/**
  * Validates the return value of plan(). Throws with code WPLY004 if the
  * plan doesn't contain a valid artifacts array.
  *

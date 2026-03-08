@@ -1,6 +1,6 @@
 // wesley-core/src/application/PluginRunner.mjs
 
-import { validatePlugin, validatePlan } from '../ports/GeneratorPlugin.mjs';
+import { validatePlugin, validatePlan, validateGenerateResult } from '../ports/GeneratorPlugin.mjs';
 
 /**
  * @typedef {Object} PluginResult
@@ -149,29 +149,15 @@ export class PluginRunner {
       // Phase: generate
       let artifacts;
       try {
-        artifacts = await plugin.generate(plan, context);
+        const raw = await plugin.generate(plan, context);
+        ({ artifacts } = validateGenerateResult(raw, pluginName));
       } catch (cause) {
+        const code = cause.code === 'WPLY003' ? 'WPLY003' : 'WPLY002';
         const result = _errorResult(plugin, 'generate', cause, startMs);
+        result.errorCode = code;
         results.push(result);
         if (!this._bestEffort) {
-          _throwRunError(cause.message, 'WPLY002', plugin, 'generate', results, startMs, cause);
-        }
-        continue;
-      }
-
-      // Validate generate() return type
-      if (artifacts == null || typeof artifacts !== 'object' || Array.isArray(artifacts)) {
-        const typeLabel = artifacts === null ? 'null'
-          : Array.isArray(artifacts) ? 'Array'
-            : typeof artifacts;
-        const msg = `Plugin "${pluginName}" generate() must return a Record<string, string|Uint8Array> (got ${typeLabel})`;
-        const cause = new Error(msg);
-        cause.code = 'WPLY003';
-        const result = _errorResult(plugin, 'generate', cause, startMs);
-        result.errorCode = 'WPLY003';
-        results.push(result);
-        if (!this._bestEffort) {
-          _throwRunError(msg, 'WPLY003', plugin, 'generate', results, startMs, cause);
+          _throwRunError(cause.message, code, plugin, 'generate', results, startMs, cause);
         }
         continue;
       }

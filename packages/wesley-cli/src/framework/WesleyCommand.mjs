@@ -4,6 +4,8 @@
  * Best of both worlds: Rich CLI features + Pure architecture
  */
 
+import { exitCodeFor } from '@wesley/core/domain/ExitCodes';
+
 export class WesleyCommand {
   /** @param {{ logger:any, fs:any, env:any, stdin:any, stdout:any, stderr:any, parsers:any, generators:any, planner:any, runner:any, writer:any, clock:any }} ctx */
   constructor(ctx, name, description) {
@@ -273,39 +275,9 @@ export class WesleyCommand {
     return message;
   }
 
-  // Exit code mapping
+  // Exit code mapping — delegates to the core registry (single source of truth)
   exitCodeFor(error) {
-    const codeMap = {
-      'ENOENT': 2,
-      'EEMPTYSCHEMA': 2,
-      'EEXIST': 2,
-      'EARGS': 2,
-      'EUSAGE': 2,
-      'ERR_MISSING_ARGUMENT': 2,
-      'DIRTY_WORKTREE': 2,
-      'NO_DSN': 2,
-      'INVALID_TARGET': 2,
-      'PARSE_FAILED': 3,
-      'SCHEMA_RESOLUTION_FAILED': 3,
-      'GENERATION_FAILED': 4,
-      'REALM_FAILED': 4,
-      'TTD_COMPILE_FAILED': 4,
-      'VALIDATION_FAILED': 5,
-      'CERT_INVALID': 5,
-      'OPS_MANIFEST_INVALID': 5,
-      'OPS_COLLISION': 3,
-      'OPS_IDENTIFIER_TOO_LONG': 3,
-      'OPS_EMPTY_SET': 4,
-      'OPS_COMPILE_FAILED': 5,
-      'OPS_ALLOW_ERRORS_FORBIDDEN': 2,
-      'UNSUPPORTED_OPTION': 2,
-      'INVALID_LOG_FORMAT': 2,
-      'WPLY001': 4,
-      'WPLY002': 4,
-      'WPLY003': 4,
-      'WPLY004': 4
-    };
-    return codeMap[error.code] || 1;
+    return exitCodeFor(error.code);
   }
 
   // Helpful hints for common errors

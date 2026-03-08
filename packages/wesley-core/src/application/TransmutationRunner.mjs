@@ -10,10 +10,10 @@
  * collects per-element evidence from each generator, and scores the result.
  */
 
-import { validatePlugin, validatePlan } from '../ports/GeneratorPlugin.mjs';
+import { validatePlugin, validatePlan, validateGenerateResult } from '../ports/GeneratorPlugin.mjs';
 import { EvidenceMap } from './EvidenceMap.mjs';
 import { ScoringEngine, BUNDLE_VERSION } from './Scoring.mjs';
-import { PluginError } from '../domain/WesleyError.mjs';
+
 
 /**
  * Deep-freeze an object and all nested objects.
@@ -261,55 +261,15 @@ export class TransmutationRunner {
     }
 
     // Phase: generate
-    let generateResult;
-    try {
-      generateResult = await plugin.generate(plan, context);
-    } catch (cause) {
-      return this._errorResult(plugin, 'generate', cause, startMs);
-    }
-
-    // Support both old-style (Record<string, content>) and new-style ({ files, evidence })
     let artifacts;
     let pluginEvidence = null;
-
-    if (generateResult != null && typeof generateResult === 'object' && !Array.isArray(generateResult)) {
-      if ('files' in generateResult && 'evidence' in generateResult) {
-        // New transmutation-aware return shape — validate files payload
-        if (generateResult.files == null || typeof generateResult.files !== 'object' || Array.isArray(generateResult.files)) {
-          const label = generateResult.files === null ? 'null'
-            : Array.isArray(generateResult.files) ? 'Array'
-              : typeof generateResult.files;
-          return this._errorResult(
-            plugin, 'generate',
-            new PluginError('WPLY003', `Plugin "${pluginName}" generate() returned { files, evidence } but files is ${label} (expected Record<string, string|Uint8Array>)`, { plugin: pluginName }),
-            startMs
-          );
-        }
-        if (generateResult.evidence == null || typeof generateResult.evidence !== 'object' || Array.isArray(generateResult.evidence)) {
-          const label = generateResult.evidence === null ? 'null'
-            : Array.isArray(generateResult.evidence) ? 'Array'
-              : typeof generateResult.evidence;
-          return this._errorResult(
-            plugin, 'generate',
-            new PluginError('WPLY003', `Plugin "${pluginName}" generate() returned { files, evidence } but evidence is ${label} (expected Record<string, object>)`, { plugin: pluginName }),
-            startMs
-          );
-        }
-        artifacts = generateResult.files;
-        pluginEvidence = generateResult.evidence;
-      } else {
-        // Legacy GeneratorPlugin return shape: plain Record<string, content>
-        artifacts = generateResult;
-      }
-    } else {
-      const typeLabel = generateResult === null ? 'null'
-        : Array.isArray(generateResult) ? 'Array'
-          : typeof generateResult;
-      return this._errorResult(
-        plugin, 'generate',
-        new PluginError('WPLY003', `Plugin "${pluginName}" generate() must return a Record<string, string|Uint8Array> (got ${typeLabel})`, { plugin: pluginName }),
-        startMs
-      );
+    try {
+      const raw = await plugin.generate(plan, context);
+      const normalized = validateGenerateResult(raw, pluginName);
+      artifacts = normalized.artifacts;
+      pluginEvidence = normalized.evidence;
+    } catch (cause) {
+      return this._errorResult(plugin, 'generate', cause, startMs);
     }
 
     // Warn on undeclared artifact paths

@@ -40,6 +40,18 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   collection, evidence merging, and `buildTaskGraph()` DAG descriptor.
 - **`irToSchema` in core**: Adapter moved from CLI into `@wesley/core`. CLI re-exports.
 
+- **Exit code registry** (`@wesley/core`): `ExitCodes.mjs` is the single source of
+  truth for error-code → exit-code mappings. `exitCodeFor()`, `isRegistered()`,
+  and `getRegistry()` exported from `@wesley/core/domain/ExitCodes`. Both
+  `WesleyCommand.exitCodeFor()` and the legacy `utils.exitCodeFor()` now delegate
+  to the core registry instead of maintaining independent switch/map copies.
+- **`validateGenerateResult()` port function** (`@wesley/core`): Extracted inline
+  generate-result validation from `PluginRunner` and `TransmutationRunner` into a
+  reusable port function in `GeneratorPlugin.mjs`, following the `validatePlan()`
+  pattern. Validates both legacy `Record<string, content>` and transmutation-aware
+  `{ files, evidence }` shapes, returning a normalized `{ artifacts, evidence }`
+  object. WPLY003 errors are thrown consistently via the port.
+
 ### Fixed
 
 - **`TransmutationRunner`**: Full null-safety at plugin return shape boundaries.
