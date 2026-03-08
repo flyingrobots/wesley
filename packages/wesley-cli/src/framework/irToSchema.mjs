@@ -15,7 +15,10 @@ const PG_TO_GQL = {
   'integer': 'Int',
   'double precision': 'Float',
   'boolean': 'Boolean',
-  'timestamptz': 'DateTime'
+  'timestamptz': 'DateTime',
+  'date': 'Date',
+  'time with time zone': 'Time',
+  'jsonb': 'JSON'
 };
 
 function pgTypeToGraphQL(pgType) {
