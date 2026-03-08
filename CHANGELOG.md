@@ -8,6 +8,17 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+#### WES-005 — Unify generator-vue Ownership/Entrypoint
+- **A:** `VuePlugin` class implementing `GeneratorPlugin` contract — canonical unified entrypoint
+- **A:** Package exports `./plugin` subpath for plugin-based invocation
+- **A:** Vue plugin test suite (`vue-plugin.test.mjs`) with 12 tests covering contract, lifecycle, capabilities, and backward compatibility
+- **C:** Legacy `generateVue()` function remains available but documented as non-primary path
+
+#### WES-004 — One-Pass App Codegen Profile (schema → IR/Rust/TS)
+- **A:** `profile` metadata in `generateEcho()` output describing artifact sets (IR, TS, Rust targets)
+- **A:** Types sorted alphabetically in IR for deterministic output independent of SDL declaration order
+- **A:** One-pass profile test suite (`one-pass-profile.test.mjs`) with 15 tests covering atomic generation, cross-artifact parity, no-duplicate-transform verification, and performance baseline
+
 #### WES-003 — Artifact Contract Versioning + Deterministic Output Tests
 - **A:** `contract_version` (semver) field added to IR, `ops.generated.ts`, and `client.generated.ts` HANDSHAKE
 - **A:** Types in IR now sorted alphabetically for ordering stability across SDL variations

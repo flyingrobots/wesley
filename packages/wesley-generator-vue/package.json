@@ -5,7 +5,8 @@
   "type": "module",
   "main": "src/index.mjs",
   "exports": {
-    ".": "./src/index.mjs"
+    ".": "./src/index.mjs",
+    "./plugin": "./src/VuePlugin.mjs"
   },
   "files": [
     "src"

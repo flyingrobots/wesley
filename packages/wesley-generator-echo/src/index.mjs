@@ -61,6 +61,9 @@ export async function generateEcho({ sdl, ir, mutationIdNamespace = 'Mutation', 
     ops
   };
 
+  // One-pass profile: emit all artifact targets (IR + Rust + TS) from the
+  // same fullIr in a single deterministic pass. No intermediate transforms
+  // are duplicated — each emitter reads the shared IR directly.
   const files = [
     { path: 'ir.json', content: JSON.stringify(fullIr, null, 2) },
     { path: 'ops.generated.ts', content: emitOps(fullIr) },
@@ -88,7 +91,18 @@ export async function generateEcho({ sdl, ir, mutationIdNamespace = 'Mutation', 
     files.push({ path: 'guarded_views.generated.rs', content: guardedViews });
   }
 
-  return { files };
+  // Profile metadata: record which artifact sets were produced in this pass
+  const profile = {
+    name: 'app',
+    targets: {
+      ir: ['ir.json'],
+      typescript: files.filter((f) => f.path.endsWith('.ts')).map((f) => f.path),
+      rust: files.filter((f) => f.path.endsWith('.rs')).map((f) => f.path)
+    },
+    artifact_count: files.length
+  };
+
+  return { files, profile };
 }
 
 function buildOpsFromSDL(sdl, mutationNs, queryNs) {
