@@ -10,7 +10,7 @@ import { emitGuardedViews } from './emitGuardedViews.mjs';
 import { buildLayoutDescriptor, computeLayoutHash } from '@wesley/core';
 
 const PKG_VERSION = '0.1.0'; // keep simple: avoid package.json import in node CLI
-const CONTRACT_VERSION = '1.0.0'; // semver — bump major on breaking artifact schema changes
+const CONTRACT_VERSION = '1.1.0'; // semver — bump major on breaking artifact schema changes
 
 /**
  * Generator for Echo (Rust/WASM) artifacts.

@@ -13,7 +13,7 @@
 export function emitClient(ir) {
   const lines = [];
   const ops = ir.ops ?? [];
-  const contractVersion = ir.contract_version ?? '1.0.0';
+  const contractVersion = ir.contract_version ?? '1.1.0';
   const schemaSha = ir.schema_sha256 ?? '';
   const codecId = ir.codec_id ?? 'cbor-canon-v1';
   const registryVersion = ir.registry_version ?? 1;

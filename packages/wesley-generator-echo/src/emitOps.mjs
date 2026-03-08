@@ -1,7 +1,7 @@
 export function emitOps(ir) {
   const lines = [];
   lines.push('// AUTO-GENERATED. DO NOT EDIT.');
-  lines.push(`export const CONTRACT_VERSION = "${ir.contract_version || '1.0.0'}";`);
+  lines.push(`export const CONTRACT_VERSION = "${ir.contract_version || '1.1.0'}";`);
   lines.push(`export const SCHEMA_SHA256 = "${ir.schema_sha256 || ''}";`);
   lines.push(`export const REGISTRY_VERSION = ${ir.registry_version ?? 1};`);
   lines.push(`export const CODEC_ID = "${ir.codec_id || 'cbor-canon-v1'}";`);

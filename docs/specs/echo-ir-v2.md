@@ -119,7 +119,7 @@ This ensures consumers can distinguish "not yet computed" from "field does not e
   "ir_version": "echo-ir/v2",
   "codec_id": "cbor-canon-v1",
   "registry_version": 1,
-  "contract_version": "1.0.0",
+  "contract_version": "1.1.0",
   "generated_by": {
     "tool": "@wesley/generator-echo",
     "version": "0.1.0"
