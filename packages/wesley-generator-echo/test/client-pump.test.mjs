@@ -1,4 +1,8 @@
 import { describe, it, expect } from 'vitest';
+import { execFileSync } from 'node:child_process';
+import { writeFileSync, unlinkSync, mkdtempSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import { generateEcho } from '../src/index.mjs';
 
 const schemaSDL = /* GraphQL */ `
@@ -38,7 +42,6 @@ async function getIr() {
 describe('generated client — strict TypeScript compilation', () => {
   it('emits valid TypeScript with no syntax errors', async () => {
     const content = await getClientContent();
-    // Must contain key TypeScript constructs
     expect(content).toContain('export class WesleyClient');
     expect(content).toContain('export interface RegistryInfo');
     expect(content).toContain('export interface EchoWasm');
@@ -48,8 +51,27 @@ describe('generated client — strict TypeScript compilation', () => {
 
   it('does not contain import statements requiring external modules', async () => {
     const content = await getClientContent();
-    // Self-contained: no import statements
     expect(content).not.toMatch(/^import\s/m);
+  });
+
+  it('compiles under tsc --noEmit with strict mode', async () => {
+    const content = await getClientContent();
+    const dir = mkdtempSync(join(tmpdir(), 'wesley-tsc-'));
+    const filePath = join(dir, 'client.generated.ts');
+    writeFileSync(filePath, content);
+    try {
+      execFileSync('tsc', [
+        '--noEmit',
+        '--strict',
+        '--target', 'ES2020',
+        '--module', 'ES2020',
+        '--moduleResolution', 'node',
+        '--skipLibCheck',
+        filePath
+      ], { encoding: 'utf8', timeout: 15_000 });
+    } finally {
+      unlinkSync(filePath);
+    }
   });
 });
 
