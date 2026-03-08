@@ -119,14 +119,14 @@ each step.
 - [ ] **T-10.2** Update `packages/wesley-host-node/test/parser-ir.test.mjs`
   Update assertions: `table.fields`, `field.type.base`, etc.
 
-- [ ] **T-10.3** Update `test/browser/contracts/main.js`
+- [x] **T-10.3** Update `test/browser/contracts/main.js`
   `u.columns` → `u.fields`
 
 - [ ] **T-10.4** Update `packages/wesley-host-browser/src/index.test.mjs`
   Review SQL output assertions for any indirect IR shape dependency.
 
-- [ ] **T-10.5** Review `packages/wesley-core/test/wave3-safety-integration.test.mjs`
-  Uses `columns` in test model — verify if it touches IR or domain objects.
+- [x] **T-10.5** Review `packages/wesley-core/test/wave3-safety-integration.test.mjs`
+  Uses `columns` in its own test model for ConcurrentSafetyAnalyzer — NOT Wesley IR. No change needed.
 
 ## Phase 11 — Extract Shared Type Mapping Utility
 
