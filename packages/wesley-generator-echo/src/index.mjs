@@ -44,7 +44,14 @@ export async function generateEcho({ sdl, ir, mutationIdNamespace = 'Mutation', 
 
   const ops = buildOpsFromSDL(sdl, mutationIdNamespace, queryNamespace);
   const sdlHash = sdl ? sha256hex(sdl) : null;
+  // Normalize type ordering for deterministic output, regardless of IR source
+  if (baseIr.types) {
+    baseIr.types.sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
+  }
+
+  // Spread baseIr first so canonical metadata always wins
   const fullIr = {
+    ...baseIr,
     ir_version: 'echo-ir/v2',
     codec_id: 'cbor-canon-v1',
     registry_version: 1,
@@ -57,7 +64,6 @@ export async function generateEcho({ sdl, ir, mutationIdNamespace = 'Mutation', 
     schema_hash: sdlHash,        // v2 canonical name
     registry_hash: null,         // placeholder — EchoPlugin overwrites with canonical value
     hash_chain: null,            // placeholder — EchoPlugin overwrites after bundle hash
-    ...baseIr,
     ops
   };
 

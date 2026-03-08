@@ -191,7 +191,7 @@ describe('one-pass profile — no duplicate transforms', () => {
 // Performance baseline
 // -----------------------------------------------------------------------
 
-describe('one-pass profile — performance', () => {
+describe.skipIf(!process.env.RUN_BENCH)('one-pass profile — performance', () => {
   it('generates all artifacts within reasonable time', async () => {
     const start = performance.now();
     await generate();

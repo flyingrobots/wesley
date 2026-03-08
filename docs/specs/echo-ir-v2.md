@@ -84,6 +84,8 @@ Each entry in `ops` (unchanged from v1):
 | `op_id` | `number` | Stable 32-bit hash of `namespace:name` |
 | `args` | `Arg[]` | Operation arguments |
 | `result_type` | `string` | Return type name |
+| `result_required` | `boolean` | Whether the result is non-null (`true` for `Type!`) |
+| `result_list` | `boolean` | Whether the result is a list (`true` for `[Type]`) |
 
 ## Ordering
 
@@ -128,13 +130,6 @@ This ensures consumers can distinguish "not yet computed" from "field does not e
   "hash_chain": null,
   "types": [
     {
-      "name": "Theme",
-      "kind": "ENUM",
-      "type_id": "Theme",
-      "layout_hash": null,
-      "values": ["LIGHT", "DARK", "SYSTEM"]
-    },
-    {
       "name": "AppState",
       "kind": "OBJECT",
       "type_id": "AppState",
@@ -145,6 +140,13 @@ This ensures consumers can distinguish "not yet computed" from "field does not e
         { "name": "navOpen", "type": "Boolean", "required": true, "list": false, "join": null, "views": null },
         { "name": "routePath", "type": "String", "required": true, "list": false, "join": null, "views": null }
       ]
+    },
+    {
+      "name": "Theme",
+      "kind": "ENUM",
+      "type_id": "Theme",
+      "layout_hash": null,
+      "values": ["LIGHT", "DARK", "SYSTEM"]
     }
   ],
   "ops": [
@@ -153,7 +155,9 @@ This ensures consumers can distinguish "not yet computed" from "field does not e
       "name": "appState",
       "op_id": 190543078,
       "args": [],
-      "result_type": "AppState"
+      "result_type": "AppState",
+      "result_required": true,
+      "result_list": false
     }
   ]
 }

@@ -52,12 +52,16 @@ const unionSDL = /* GraphQL */ `
 
 async function getSchemaContent(sdl) {
   const result = await generateEcho({ sdl });
-  return result.files.find((f) => f.path === 'schemas.generated.ts').content;
+  const file = result.files.find((f) => f.path === 'schemas.generated.ts');
+  if (!file) throw new Error('schemas.generated.ts not found in generated files');
+  return file.content;
 }
 
 async function getIr(sdl) {
   const result = await generateEcho({ sdl });
-  return JSON.parse(result.files.find((f) => f.path === 'ir.json').content);
+  const file = result.files.find((f) => f.path === 'ir.json');
+  if (!file) throw new Error('ir.json not found in generated files');
+  return JSON.parse(file.content);
 }
 
 describe('per-op var/result schema completeness', () => {
@@ -180,6 +184,12 @@ describe('per-op schema ordering stability', () => {
     const opVarsIdx = lines.findIndex((l) => l.includes('VarsSchema'));
     const opResultIdx = lines.findIndex((l) => l.includes('ResultSchema'));
     const registryIdx = lines.findIndex((l) => l.includes('OP_SCHEMAS'));
+
+    expect(enumIdx, 'ThemeEnum not found').toBeGreaterThan(-1);
+    expect(objectIdx, 'AppStateSchema not found').toBeGreaterThan(-1);
+    expect(opVarsIdx, 'VarsSchema not found').toBeGreaterThan(-1);
+    expect(opResultIdx, 'ResultSchema not found').toBeGreaterThan(-1);
+    expect(registryIdx, 'OP_SCHEMAS not found').toBeGreaterThan(-1);
 
     expect(enumIdx).toBeLessThan(objectIdx);
     expect(objectIdx).toBeLessThan(opVarsIdx);

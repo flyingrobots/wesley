@@ -154,10 +154,13 @@ export function generateTsZod(schema) {
     const rt = op.result_type ?? op.resultType;
     if (rt) {
       const resultSchemaName = `${pascal}ResultSchema`;
+      let resultZod = mapTypeToZod(rt);
+      if (op.result_list) resultZod = `z.array(${resultZod})`;
+      if (op.result_required === false) resultZod += '.optional()';
       lines.push('/**');
       lines.push(` * Zod schema for ${op.name} result`);
       lines.push(' */');
-      lines.push(`export const ${resultSchemaName} = ${mapTypeToZod(rt)};`);
+      lines.push(`export const ${resultSchemaName} = ${resultZod};`);
       lines.push(`export type ${pascal}Result = z.infer<typeof ${resultSchemaName}>;`);
       lines.push('');
     }

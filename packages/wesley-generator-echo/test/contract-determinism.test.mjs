@@ -255,8 +255,12 @@ describe('stable ordering', () => {
 
     // Both should produce a ThemeEnum with the same set of values (order may differ)
     const enumMatch = (s) => s.match(/ThemeEnum = z\.enum\((\[.*?\])\)/);
-    const origValues = JSON.parse(enumMatch(schemasOrig)[1]).sort();
-    const reordValues = JSON.parse(enumMatch(schemasReord)[1]).sort();
+    const mOrig = enumMatch(schemasOrig);
+    const mReord = enumMatch(schemasReord);
+    expect(mOrig, 'ThemeEnum not found in original schemas').not.toBeNull();
+    expect(mReord, 'ThemeEnum not found in reordered schemas').not.toBeNull();
+    const origValues = JSON.parse(mOrig[1]).sort();
+    const reordValues = JSON.parse(mReord[1]).sort();
     expect(origValues).toEqual(reordValues);
   });
 
@@ -305,11 +309,13 @@ describe('determinism edge cases', () => {
     const irComm = JSON.parse(commented.get('ir.json'));
 
     // Op IDs must be identical (derived from namespace:name, not SDL content)
+    expect(irOrig.ops.length, 'ops count mismatch').toBe(irComm.ops.length);
     for (let i = 0; i < irOrig.ops.length; i++) {
       expect(irOrig.ops[i].op_id).toBe(irComm.ops[i].op_id);
     }
 
     // Layout hashes must be identical (derived from field structure, not SDL)
+    expect(irOrig.types.length, 'types count mismatch').toBe(irComm.types.length);
     for (let i = 0; i < irOrig.types.length; i++) {
       expect(irOrig.types[i].layout_hash).toBe(irComm.types[i].layout_hash);
     }
@@ -390,9 +396,11 @@ describe('version bump policy', () => {
    * - Comment/whitespace changes in generated output
    * - Internal refactors with identical output
    */
-  it('contract_version is documented with bump policy', () => {
-    // This test exists to ensure the policy comment above is maintained.
-    // The policy is codified in this test file as the canonical reference.
-    expect(true).toBe(true);
+  it('contract_version bump policy is anchored in this file', async () => {
+    const { readFileSync } = await import('node:fs');
+    const source = readFileSync(new URL(import.meta.url), 'utf8');
+    expect(source).toContain('MAJOR bump');
+    expect(source).toContain('MINOR bump');
+    expect(source).toContain('PATCH bump');
   });
 });

@@ -44,7 +44,15 @@ The generator is intentionally strict: it will throw if `ir` is missing or `ir.t
 
 ## Output
 
-Returns:
+**`VuePlugin.generate()`** returns an artifacts map:
+
+```js
+{
+  "types.generated.ts": "// AUTO-GENERATED...\nexport enum Theme { ... }"
+}
+```
+
+**`generateVue()`** (legacy) returns the original file-array shape:
 
 ```js
 {

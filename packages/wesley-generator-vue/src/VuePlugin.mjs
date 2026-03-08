@@ -65,3 +65,5 @@ export class VuePlugin extends GeneratorPlugin {
     return artifacts;
   }
 }
+
+export default VuePlugin;
