@@ -58,7 +58,7 @@ each step.
 
 ## Phase 4 — Migrate `host-node/index.mjs`
 
-- [ ] **T-4.1** Update `GraphQLSchemaParser.convertIRToSchema()`
+- [x] **T-4.1** Update `GraphQLSchemaParser.convertIRToSchema()`
   `packages/wesley-host-node/src/index.mjs`
   - `tableData.columns` → `tableData.fields`
   - `postgresqlToGraphQLType()` no longer needed — `field.type.base` is already GraphQL
