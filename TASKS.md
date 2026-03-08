@@ -40,11 +40,12 @@ each step.
 
 ## Phase 2 — Update JSON Schema
 
-- [ ] **T-2.1** Rewrite `schemas/ir.schema.json` to match `WesleyIR.schema.ts`
+- [x] **T-2.1** Rewrite `schemas/ir.schema.json` to match `WesleyIR.schema.ts`
   Add `version`, `metadata`, change `columns` → `fields`, type string → `FieldType`
   object, add `enums`, `scalars`, `relationships`.
 
-- [ ] **T-2.2** Update `schemas/ir-envelope.schema.json` if needed
+- [x] **T-2.2** Update `schemas/ir-envelope.schema.json` if needed
+  Verified — $ref to ir.schema.json still resolves correctly.
   Verify `$ref` still resolves correctly.
 
 ## Phase 3 — Migrate `irToSchema.mjs`
