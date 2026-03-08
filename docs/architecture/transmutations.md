@@ -739,23 +739,154 @@ HOLMES PR comments become contextual — one section per transmutation:
 
 ## Implementation Phases
 
+### Phase 0: Structural Prerequisites
+
+Foundational cleanup that must land before transmutation work begins. These address existing structural debt that would otherwise compound during the redesign.
+
+#### 0a. Unify generator input signatures
+
+**Problem**: Generators accept incompatible inputs — Echo takes `{ sdl, ir }`, JS generators take domain `Schema` objects (via `irToSchema()` adapter in the CLI), Supabase takes raw IR. The adapter logic lives in CLI commands, not in the generators.
+
+**Fix**: All transmutation modules accept a standard input:
+
+```javascript
+{
+  sdl: string,       // raw GraphQL SDL
+  ir: WesleyIR,      // parsed intermediate representation
+  config: object,    // generator-specific overrides from wesley.config.mjs
+}
+```
+
+If a generator needs a domain-specific shape (e.g., JS generators need `Schema`), the adapter lives inside the transmutation module — not in the CLI command. This makes generators self-contained and testable in isolation.
+
+**Files**:
+- `packages/wesley-generator-echo/src/index.mjs` — align `generateEcho()` signature
+- `packages/wesley-generator-js/src/index.mjs` — internalize `irToSchema()` conversion
+- `packages/wesley-generator-supabase/src/index.mjs` — align `emitDDL()` etc.
+- `packages/wesley-cli/src/framework/irToSchema.mjs` — move into `@wesley/core` as a shared adapter
+- `packages/wesley-cli/src/commands/typescript.mjs`, `zod.mjs` — remove inline adapter calls
+
+#### 0b. Merge GenerationPipeline / PluginRunner duality
+
+**Problem**: Two overlapping orchestration systems in `@wesley/core/application/`:
+
+| System | Owns | Missing |
+|--------|------|---------|
+| `GenerationPipeline` | Evidence collection, scoring, artifact bundling | Plugin isolation, error recovery |
+| `PluginRunner` | Plugin validation, `--best-effort` isolation | Evidence wiring, scoring |
+
+Neither is complete. Commands use them inconsistently.
+
+**Fix**: Merge into a single **TransmutationRunner** that:
+
+1. Validates plugins via `PluginRunner.validatePlugin()` (keep this logic)
+2. Runs each plugin with error isolation and `--best-effort` support (keep this)
+3. Collects evidence per-plugin into a merged `EvidenceMap` (from `GenerationPipeline`)
+4. Computes scores from the evidence map (from `GenerationPipeline`)
+
+```mermaid
+graph LR
+    subgraph "Before (two systems)"
+        GP["GenerationPipeline<br/>evidence + scoring"]
+        PR["PluginRunner<br/>isolation + validation"]
+    end
+
+    subgraph "After (one system)"
+        TR["TransmutationRunner<br/>validation + isolation + evidence + scoring"]
+    end
+
+    GP --> TR
+    PR --> TR
+```
+
+**Files**:
+- `packages/wesley-core/src/application/GenerationPipeline.mjs` — absorb into TransmutationRunner
+- `packages/wesley-core/src/application/PluginRunner.mjs` — absorb into TransmutationRunner
+- `packages/wesley-core/src/application/EvidenceMap.mjs` — wire into runner
+- `packages/wesley-core/src/application/Scoring.mjs` — wire into runner
+
+#### 0c. Wire T.A.S.K.S. into transmutation execution
+
+**Problem**: `@wesley/tasks` has a complete DAG engine (`TaskDefinition`, `TaskDependency`, `TaskGraph`). `@wesley/slaps` has lock-aware execution (`LockAwareExecutor`, `TasksSlapsBridge`). Both are implemented, tested, and sitting unused. Meanwhile, the CLI's `generate` command runs generators in a hardcoded sequence.
+
+**Fix**: Each transmutation becomes a `TaskGraph`:
+
+```mermaid
+graph LR
+    P["parse SDL → IR"] --> G1["gen_ddl"]
+    P --> G2["gen_types"]
+    P --> G3["gen_tests"]
+    G1 --> E["evidence_collect"]
+    G2 --> E
+    G3 --> E
+```
+
+The `TransmutationRunner` builds this graph from the transmutation config, then executes via `TasksSlapsBridge`. Benefits:
+
+- **Parallelism**: Independent generators run concurrently (DDL and types don't depend on each other)
+- **`--dry-run` for free**: Render the task graph without executing it
+- **Lock awareness**: S.L.A.P.S. handles migration locking when multiple transmutations touch the same database
+- **Evidence per task**: Each task completion emits an evidence record
+
+**Files**:
+- `packages/wesley-tasks/src/TaskDefinition.mjs` — ready, use as-is
+- `packages/wesley-slaps/src/TasksSlapsBridge.mjs` — integrate as executor
+- `packages/wesley-slaps/src/LockAwareExecutor.mjs` — ready, use as-is
+- New: `packages/wesley-core/src/application/TransmutationRunner.mjs` — orchestrator
+
+#### 0d. Standardize named exports (resolves CR-33)
+
+**Problem**: Several command files have both `export class FooCommand` and `export default FooCommand`. Only the default is consumed. The dual pattern creates dead code risk and inconsistent import styles.
+
+**Fix**: Named exports only, project-wide. Drop all `export default` from command files. Update the CLI loader to use named imports.
+
+**Files**: `qir-validate.mjs`, `rehearse.mjs`, `cert-sign.mjs`, and any other files with dual exports.
+
+#### 0e. Unify error construction (resolves CR-24)
+
+**Problem**: Three different error patterns coexist:
+- `OpsError` (structured, with code + metadata)
+- Manual `e.code = 'WFOO'` mutation after construction
+- Manual `err.meta = { ... }` assignment
+
+Transmutation evidence needs to capture errors structurally. Inconsistent shapes make that unreliable.
+
+**Fix**: Introduce `WesleyError` base class in `@wesley/core`:
+
+```javascript
+class WesleyError extends Error {
+  constructor(code, message, meta = {}) {
+    super(message);
+    this.code = code;
+    this.meta = meta;
+  }
+}
+```
+
+All error construction converges on this. `OpsError` extends it. No more manual property mutation.
+
+**Files**: `generate.mjs`, `cert-verify.mjs`, `rehearse.mjs`, `qir-validate.mjs`, and any other sites with ad-hoc error construction.
+
+---
+
 ### Phase 1: Config + Transmutation Runner
 - Add `transmutations` key to `wesley.config.mjs` schema
-- Build transmutation runner in CLI (source resolution, generator dispatch)
+- Build `TransmutationRunner` in core (replaces merged GenerationPipeline/PluginRunner)
+- Source resolution, generator dispatch via T.A.S.K.S. task graphs
 - Backward-compatible implicit transmutation when key is absent
-- Tests: config parsing, source glob resolution, generator selection
+- Tests: config parsing, source glob resolution, generator selection, task graph construction
 
 ### Phase 2: Evidence Contracts
 - Extend `GeneratorPlugin` with `evidenceContract` getter
 - Modify `generate()` return type to include evidence
 - Implement evidence collection in `transmute-supabase` (first mover)
-- Implement evidence merge logic in transmutation runner
+- Implement evidence merge logic in `TransmutationRunner`
 - Tests: evidence shape validation, per-element tracking
 
 ### Phase 3: Real HOLMES Scoring
 - Replace placeholder heuristics with evidence-based SCS/TCI/MRI
 - Wire HOLMES investigation to transmutation context
-- Update Watson to verify real citations
+- Update Watson to verify real citations with precise line ranges
 - Tests: scoring accuracy against known evidence bundles
 
 ### Phase 4: Moriarty Dual-Layer
