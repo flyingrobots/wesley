@@ -10,6 +10,6 @@ export function emitOps(ir) {
     lines.push(`  { kind: "${op.kind}", name: "${op.name}", op_id: ${op.op_id}, result_type: "${op.result_type}", args: ${JSON.stringify(op.args ?? [])} },`);
   }
   lines.push('];');
-  lines.push(`export const findOpId = (name) => { const op = OPS.find(o => o.name === name); if (!op) throw new Error(\`Unknown op name: ${'${'}name${'}'}\`); return op.op_id; };`);
+  lines.push(`export const findOpId = (kind, name) => { const op = OPS.find(o => o.kind === kind && o.name === name); if (!op) throw new Error(\`Unknown op: ${'${'}kind${'}'}:${'${'}name${'}'}\`); return op.op_id; };`);
   return lines.join('\n');
 }
