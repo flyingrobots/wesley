@@ -342,8 +342,7 @@ function extractGeneratedFn(clientSource, fnName, deps = []) {
       .replace(/:\s*number/g, '')
       .replace(/:\s*void/g, '')
       .replace(/:\s*string\s*\|\s*undefined/g, '')
-      .replace(/\)\s*:\s*\([^)]*\)\s*=>\s*\w+/g, ')')  // return type ): (...) => void
-      ;
+      .replace(/\)\s*:\s*\([^)]*\)\s*=>\s*\w+/g, ')');  // return type ): (...) => void
     return fn;
   };
 
