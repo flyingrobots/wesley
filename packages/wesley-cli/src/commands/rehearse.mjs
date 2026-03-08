@@ -145,5 +145,4 @@ async function execSql(db, dsn, sql) {
   return db.query(dsn, sql);
 }
 
-export default RehearseCommand;
 

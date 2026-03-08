@@ -229,4 +229,3 @@ function emitMigrations(plan) {
   return files;
 }
 
-export default UpCommand;

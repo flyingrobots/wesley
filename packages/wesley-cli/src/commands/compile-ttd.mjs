@@ -219,4 +219,3 @@ export class CompileTtdCommand extends WesleyCommand {
   }
 }
 
-export default CompileTtdCommand;

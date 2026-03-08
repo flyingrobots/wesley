@@ -69,4 +69,3 @@ async function verifySig(fs, pubPath, data, b64sig) {
   }
 }
 
-export default CertVerifyCommand;

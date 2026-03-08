@@ -26,4 +26,3 @@ function extractJsonBlock(md) {
   return { json };
 }
 
-export default CertBadgeCommand;

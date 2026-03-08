@@ -101,4 +101,3 @@ async function hashArtifacts(ctx, outDir) {
   return res;
 }
 
-export default CertCreateCommand;

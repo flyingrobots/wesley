@@ -51,4 +51,3 @@ export class CertSignCommand extends WesleyCommand {
   }
 }
 
-export default CertSignCommand;

@@ -153,7 +153,6 @@ function bar(n){
   return max > 0 ? ' ' + '▓'.repeat(max) : '';
 }
 
-export default PlanCommand;
 
 // Git cleanliness check
 function shouldEnforceCleanPlan(env) {

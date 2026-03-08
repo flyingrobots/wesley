@@ -526,9 +526,6 @@ export class GeneratePipelineCommand extends WesleyCommand {
   }
 }
 
-// Export for testing
-export default GeneratePipelineCommand;
-
 // Limit concurrent file I/O to balance throughput with resource usage.
 const CONCURRENCY_LIMIT = 8;
 // PostgreSQL truncates identifiers to 63 bytes (NAMEDATALEN - 1) and counts UTF-8 byte length.

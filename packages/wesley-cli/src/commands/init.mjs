@@ -59,5 +59,4 @@ export class InitCommand extends WesleyCommand {
   }
 }
 
-export default InitCommand;
 

@@ -29,4 +29,3 @@ export class TypeScriptCommand extends FileOutputGeneratorCommand {
   }
 }
 
-export default TypeScriptCommand;

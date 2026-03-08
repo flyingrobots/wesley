@@ -102,4 +102,3 @@ export class QirValidateCommand extends WesleyCommand {
   }
 }
 
-export default QirValidateCommand;

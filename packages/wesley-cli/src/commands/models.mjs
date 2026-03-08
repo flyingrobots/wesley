@@ -35,4 +35,3 @@ export class ModelsCommand extends GeneratorCommand {
   }
 }
 
-export default ModelsCommand;

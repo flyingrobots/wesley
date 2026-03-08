@@ -209,4 +209,3 @@ export class DiffCommand extends WesleyCommand {
 // Also export helpers for testing
 export { flattenChanges, formatText, formatSummary };
 
-export default DiffCommand;

@@ -64,4 +64,3 @@ export class DoctorCommand extends WesleyCommand {
   }
 }
 
-export default DoctorCommand;
