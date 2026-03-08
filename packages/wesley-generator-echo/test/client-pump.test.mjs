@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { writeFileSync, unlinkSync, mkdtempSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import ts from 'typescript';
 import { generateEcho } from '../src/index.mjs';
 
 const schemaSDL = /* GraphQL */ `
@@ -289,7 +290,7 @@ describe('generated client — pump integration', () => {
 });
 
 /**
- * Extract a named function from generated TS source, strip type annotations,
+ * Extract a named function from generated TS source, transpile to JS,
  * and return an evaluable JS function.
  */
 function extractGeneratedFn(clientSource, fnName, deps = []) {
@@ -305,25 +306,20 @@ function extractGeneratedFn(clientSource, fnName, deps = []) {
       if (src[i] === '}') { depth--; }
       if (opened && depth === 0) { end = i + 1; break; }
     }
-    let fn = src.slice(start, end);
-    // Strip TS type annotations from function signatures and bodies
-    fn = fn
-      .replace(/:\s*ViewOpEnvelope\[\]/g, '')
-      .replace(/:\s*Uint8Array/g, '')
-      .replace(/:\s*Map<[^>]+>/g, '')
-      .replace(/\w+\?\s*:\s*\w+/g, (m) => m.split('?')[0])  // optional params: diagnostics?: Type → diagnostics
-      .replace(/:\s*DiagnosticsChannel/g, '')
-      .replace(/:\s*number/g, '')
-      .replace(/:\s*void/g, '')
-      .replace(/:\s*string\s*\|\s*undefined/g, '')
-      .replace(/\)\s*:\s*\([^)]*\)\s*=>\s*\w+/g, ')');  // return type ): (...) => void
-    return fn;
+    return src.slice(start, end);
   };
 
   const parts = deps.map((d) => extractBody(clientSource, d));
   parts.push(extractBody(clientSource, fnName));
-  parts.push(`return ${fnName};`);
-  return new Function(parts.join('\n'))();
+
+  const { outputText } = ts.transpileModule(parts.join('\n'), {
+    compilerOptions: {
+      target: ts.ScriptTarget.ESNext,
+      module: ts.ModuleKind.ESNext
+    }
+  });
+
+  return new Function(`${outputText}\nreturn ${fnName};`)();
 }
 
 describe('generated client — parseViewOps trailing bytes rejection', () => {
