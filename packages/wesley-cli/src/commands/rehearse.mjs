@@ -113,7 +113,7 @@ export class RehearseCommand extends WesleyCommand {
         try { await assertValid(this.ctx, 'realm.schema.json', realm, 'REALM report'); } catch (ve) { logger.warn('REALM validation failed in error path: ' + (ve?.message || ve)); }
         this.ctx.stdout.write(JSON.stringify(realm, null, 2) + '\n');
       }
-      throw new WesleyError('REALM_FAILED', 'REALM rehearsal failed: ' + error.message);
+      throw new WesleyError('REALM_FAILED', 'REALM rehearsal failed: ' + error.message, {}, error);
     }
   }
 }

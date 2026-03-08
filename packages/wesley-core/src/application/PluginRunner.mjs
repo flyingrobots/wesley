@@ -1,6 +1,7 @@
 // wesley-core/src/application/PluginRunner.mjs
 
 import { validatePlugin, validatePlan, validateGenerateResult } from '../ports/GeneratorPlugin.mjs';
+import { deepFreeze } from '../util/deepFreeze.mjs';
 
 /**
  * @typedef {Object} PluginResult
@@ -21,23 +22,6 @@ import { validatePlugin, validatePlan, validateGenerateResult } from '../ports/G
  * @property {number} totalArtifacts
  * @property {string} runId
  */
-
-/**
- * Deep-freeze an object and all nested objects. Pure utility (no node:* imports).
- * @param {T} obj
- * @returns {Readonly<T>}
- * @template T
- */
-function deepFreeze(obj) {
-  if (obj == null || typeof obj !== 'object') return obj;
-  Object.freeze(obj);
-  for (const val of Object.values(obj)) {
-    if (val != null && typeof val === 'object' && !Object.isFrozen(val)) {
-      deepFreeze(val);
-    }
-  }
-  return obj;
-}
 
 /**
  * PluginRunner - Orchestrates plugin execution with error isolation.
@@ -108,7 +92,7 @@ export class PluginRunner {
         ? this._logger.child({ plugin: pluginName })
         : this._logger;
 
-      const frozenConfig = deepFreeze(JSON.parse(JSON.stringify(this._config)));
+      const frozenConfig = deepFreeze(structuredClone(this._config));
       const context = Object.freeze({
         logger: childLogger,
         clock: this._clock,

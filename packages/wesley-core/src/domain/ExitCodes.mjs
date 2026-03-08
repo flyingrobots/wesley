@@ -62,7 +62,7 @@ const EXIT_CODE_MAP = Object.freeze({
  * Returns 1 (generic error) for unregistered codes.
  *
  * @param {string} errorCode - Machine-readable error code (e.g. 'PARSE_FAILED')
- * @returns {number} Process exit code (1–6)
+ * @returns {number} Process exit code
  */
 export function exitCodeFor(errorCode) {
   return EXIT_CODE_MAP[errorCode] ?? 1;
