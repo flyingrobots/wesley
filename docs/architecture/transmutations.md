@@ -378,9 +378,127 @@ For each citation { file, lines, sha }:
 
 This works because generators now produce **precise line ranges** rather than `1-9999`.
 
-### Moriarty Prediction
+### Moriarty: Dual-Layer Prediction
 
-Moriarty's math is already real (EMA, linear regression, variance). With real scores flowing in from real evidence, its predictions become meaningful. No changes needed to Moriarty itself — just real input data.
+Moriarty operates at two levels: **per-transmutation trend lines** and a **project-level oracle**. The per-transmutation layer feeds the project layer.
+
+#### Per-Transmutation Moriarty
+
+Each transmutation maintains its own score history in `.wesley/evidence/<name>/history.json`. After every `--certify` run, the new scores are appended:
+
+```json
+{
+  "transmutation": "backend",
+  "history": [
+    { "timestamp": "2026-03-01T...", "scs": 0.65, "tci": 0.40, "mri": 0.30, "ref": "abc123" },
+    { "timestamp": "2026-03-03T...", "scs": 0.72, "tci": 0.55, "mri": 0.25, "ref": "def456" },
+    { "timestamp": "2026-03-08T...", "scs": 0.82, "tci": 0.70, "mri": 0.15, "ref": "789abc" }
+  ]
+}
+```
+
+Moriarty computes per-transmutation:
+
+- **Velocity** — EMA of score deltas (how fast is this transmutation improving?)
+- **Slope** — linear regression over the score window (accelerating or decelerating?)
+- **ETA** — projected PRs/days until thresholds are met
+- **Plateau detection** — is velocity near zero despite activity?
+- **Confidence** — based on variance and burstiness of the score series
+
+This appears in PR comments scoped to the transmutation:
+
+```
+📊 backend: SCS 0.82 (+0.10), on track for certification in ~1 PR
+📊 echo: TCI plateauing at 0.68 — 3 PRs with no movement
+📊 ui: SCS accelerating (+0.12/PR), ETA ~3 PRs to certification
+```
+
+#### Project-Level Moriarty
+
+The project-level oracle sits above all transmutations. It reads every transmutation's history and computes aggregate intelligence:
+
+```mermaid
+graph TB
+    subgraph "Per-Transmutation Histories"
+        H1[".wesley/evidence/backend/history.json"]
+        H2[".wesley/evidence/echo/history.json"]
+        H3[".wesley/evidence/ui/history.json"]
+    end
+
+    subgraph "Project-Level Moriarty"
+        AGG["Aggregate Analyzer"]
+        DEP["Cross-Transmutation Dependencies"]
+        PROJ["Project Readiness Projection"]
+    end
+
+    H1 --> AGG
+    H2 --> AGG
+    H3 --> AGG
+
+    AGG --> DEP
+    AGG --> PROJ
+
+    PROJ --> R["Project Certification ETA"]
+    DEP --> B["Bottleneck Detection"]
+```
+
+**Project readiness** is gated on the *slowest* transmutation. Moriarty identifies the bottleneck:
+
+```
+🔮 Project certification ETA: ~4 PRs
+   Bottleneck: ui transmutation (SCS 0.71, needs 0.80)
+   backend: ✅ already certified
+   echo: ✅ already certified
+   ui: ETA ~4 PRs at current velocity (+0.03/PR)
+```
+
+**Cross-transmutation correlation** — Moriarty detects when progress in one transmutation stalls another. For example, if `echo` and `backend` share source schemas, a burst of backend work might correlate with echo regression (schema changes breaking layout hashes). Moriarty flags this:
+
+```
+⚠️ echo MRI spiked 0.05 → 0.35 after backend schema changes in PR #412
+   3 layout hashes invalidated by field reordering in User type
+```
+
+**Aggregate metrics**:
+
+| Metric | Computation |
+|--------|-------------|
+| Project velocity | Weighted average of per-transmutation velocities (weight = distance from threshold) |
+| Convergence score | Are transmutations moving toward certification together or diverging? |
+| Bottleneck identification | Which transmutation is furthest from its threshold relative to its velocity? |
+| Risk forecast | Which transmutation is most likely to *regress* based on MRI trends? |
+
+#### CLI
+
+```
+wesley moriarty                          # project-level forecast
+wesley moriarty --transmutation backend  # single transmutation trend
+wesley moriarty --format json            # machine-readable output
+```
+
+#### Architecture
+
+Moriarty stays in `@wesley/holmes` — the trio remains together. Holmes and Watson are *invoked* per-transmutation (they need the evidence bundle), but they live in the shared package. Moriarty is invoked at both levels:
+
+```mermaid
+sequenceDiagram
+    participant CLI as wesley generate --certify
+    participant TX as Transmutation Runner
+    participant HW as Holmes + Watson
+    participant M as Moriarty
+
+    loop each transmutation
+        TX->>HW: investigate + verify (transmutation bundle)
+        HW-->>TX: scores, citations
+        TX->>M: append to transmutation history
+        M-->>TX: per-transmutation forecast
+    end
+
+    TX->>M: project-level analysis (all histories)
+    M-->>CLI: project forecast + bottleneck report
+```
+
+The key insight: Holmes and Watson answer *"what is true right now?"* — Moriarty answers *"what will be true soon, and what's in the way?"*
 
 ---
 
@@ -640,15 +758,24 @@ HOLMES PR comments become contextual — one section per transmutation:
 - Update Watson to verify real citations
 - Tests: scoring accuracy against known evidence bundles
 
-### Phase 4: Package Reorganization
+### Phase 4: Moriarty Dual-Layer
+- Per-transmutation history: append scores after each `--certify` run
+- Per-transmutation predictions: velocity, slope, ETA, plateau detection
+- Project-level oracle: aggregate analysis, bottleneck identification, convergence scoring
+- Cross-transmutation correlation: detect when one transmutation's changes regress another
+- `wesley moriarty` CLI command (project-level and `--transmutation` scoped)
+- Tests: multi-transmutation forecast scenarios, bottleneck detection, correlation detection
+
+### Phase 5: Package Reorganization
 - Rename `generator-*` → `transmute-*`
 - Group hosts and stacks into subdirectories
 - Update workspace config, imports, CI workflows
 - Tests: all existing tests pass under new paths
 
-### Phase 5: Certification + CI
+### Phase 6: Certification + CI
 - Implement per-transmutation certification stamps
 - Project-level certification aggregation
 - `--certify` and `--fail-on-threshold` CLI flags
-- GitHub Actions workflow for PR reporting
+- GitHub Actions workflow for PR reporting with per-transmutation sections
+- Moriarty project forecast in PR comments (bottleneck callout)
 - Tests: certification logic, CI gate behavior
