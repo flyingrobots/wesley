@@ -171,10 +171,14 @@ export class TransmutationRunner {
     });
 
     // One node per plugin, all depend on parse
+    const seenNames = new Map();
     for (const plugin of plugins) {
       let pluginName;
       try { pluginName = plugin.name; } catch { pluginName = '<unknown>'; }
-      const nodeId = `${name}:gen:${pluginName}`;
+      const count = seenNames.get(pluginName) ?? 0;
+      seenNames.set(pluginName, count + 1);
+      const suffix = count > 0 ? `:${count}` : '';
+      const nodeId = `${name}:gen:${pluginName}${suffix}`;
 
       nodes.push({
         id: nodeId,
@@ -313,14 +317,12 @@ export class TransmutationRunner {
    */
   _computeScores(schema, evidenceMap, options = {}) {
     const scoringEngine = new ScoringEngine(evidenceMap);
+    const diffSteps = options.diff?.steps || [];
+    const testResults = options.testResults || {};
 
     try {
       if (schema && typeof schema.getTables === 'function') {
-        return scoringEngine.exportScores(
-          schema,
-          options.diff?.steps || [],
-          options.testResults || {}
-        );
+        return scoringEngine.exportScores(schema, diffSteps, testResults);
       }
     } catch (err) {
       this._logger.warn?.('[scoring] Failed to compute scores:', err?.message || err);
@@ -328,7 +330,7 @@ export class TransmutationRunner {
 
     // Minimal fallback
     try {
-      const mri = scoringEngine.calculateMRIDetails(options.diff?.steps || []);
+      const mri = scoringEngine.calculateMRIDetails(diffSteps);
       const zero = 0;
       const readiness = scoringEngine.calculateReadiness(zero, mri.score, zero);
 
@@ -341,8 +343,8 @@ export class TransmutationRunner {
         readiness,
         metadata: {
           tables: 0,
-          migrationSteps: (options.diff?.steps || []).length,
-          testsRun: (options.testResults && options.testResults.total) || 0
+          migrationSteps: diffSteps.length,
+          testsRun: testResults.total || 0
         }
       };
     } catch (fallbackErr) {

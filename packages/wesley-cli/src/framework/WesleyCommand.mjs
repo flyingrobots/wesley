@@ -279,7 +279,7 @@ export class WesleyCommand {
 
   // Exit code mapping — delegates to the core registry (single source of truth)
   exitCodeFor(error) {
-    return exitCodeFor(error.code);
+    return exitCodeFor(error?.code);
   }
 
   // Helpful hints for common errors

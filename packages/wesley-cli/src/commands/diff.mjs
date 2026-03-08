@@ -144,16 +144,18 @@ export class DiffCommand extends WesleyCommand {
     let oldSDL, newSDL;
     try {
       oldSDL = readFileSync(oldPath, 'utf-8');
-    } catch (_e) {
-      const err = new WesleyError('ENOENT', `Cannot read old schema: ${oldPath}`);
+    } catch (fsErr) {
+      const code = fsErr.code || 'ENOENT';
+      const err = new WesleyError(code, `Cannot read old schema: ${oldPath} (${code})`, { cause: fsErr });
       this.ctx.stderr.write(err.message + '\n');
 
       throw new ExitError(exitCodeFor(err.code), err);
     }
     try {
       newSDL = readFileSync(newPath, 'utf-8');
-    } catch (_e) {
-      const err = new WesleyError('ENOENT', `Cannot read new schema: ${newPath}`);
+    } catch (fsErr) {
+      const code = fsErr.code || 'ENOENT';
+      const err = new WesleyError(code, `Cannot read new schema: ${newPath} (${code})`, { cause: fsErr });
       this.ctx.stderr.write(err.message + '\n');
 
       throw new ExitError(exitCodeFor(err.code), err);

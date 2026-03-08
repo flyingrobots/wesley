@@ -33,7 +33,7 @@ export class UpCommand extends WesleyCommand {
       dsn = dsn || defaultDsnFor('postgres', env);
     }
     if (!dsn) {
-      throw new WesleyError('NO_DSN', 'No DSN provided. Pass --dsn or set SUPABASE_DB_URL/SUPABASE_POSTGRES_URL.');
+      throw new WesleyError('NO_DSN', 'No DSN provided. Pass --dsn, --provider, or set SUPABASE_DB_URL/POSTGRES_URL/DATABASE_URL.');
     }
 
     // Parse current schema → IR

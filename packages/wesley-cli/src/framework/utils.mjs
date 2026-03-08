@@ -1,3 +1,5 @@
+import { exitCodeFor as coreExitCodeFor } from '@wesley/core/domain/ExitCodes';
+
 // Remove Node.js coupling - delegate to host adapter
 export function readStdinUtf8() {
   // This will be injected by the command context
@@ -18,8 +20,6 @@ export function formatError(err, options = {}) {
   return out;
 }
 
-import { exitCodeFor as coreExitCodeFor } from '@wesley/core/domain/ExitCodes';
-
 export function exitCodeFor(err) {
   return coreExitCodeFor(err?.code);
 }
@@ -30,4 +30,3 @@ export function resolveLevel(opts = {}) {
   if (opts.verbose) return 'debug';
   return process.env.WESLEY_LOG_LEVEL || 'info';
 }
-

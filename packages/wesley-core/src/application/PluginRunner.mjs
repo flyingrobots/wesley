@@ -183,7 +183,7 @@ export class PluginRunner {
  */
 function _generateRunId() {
   const ts = Date.now().toString(36);
-  const rand = Math.random().toString(36).slice(2, 8);
+  const rand = Math.random().toString(36).slice(2, 8).padEnd(6, '0');
   return `run-${ts}-${rand}`;
 }
 

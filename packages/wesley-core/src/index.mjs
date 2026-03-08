@@ -17,6 +17,9 @@ export { GQL_TO_PG, PG_TO_GQL, fieldTypeToPg, gqlScalarToPg } from './domain/typ
 // Domain Errors
 export { WesleyError, OpsError, PluginError } from './domain/WesleyError.mjs';
 
+// Exit codes
+export { exitCodeFor, isRegistered, getRegistry } from './domain/ExitCodes.mjs';
+
 // Domain Events
 export * from './domain/Events.mjs';
 
