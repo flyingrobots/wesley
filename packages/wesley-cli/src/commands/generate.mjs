@@ -415,7 +415,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
           await assertValid(this.ctx, 'ops-manifest.schema.json', manifest, 'Ops manifest');
         } catch (e) {
           if (!(e instanceof WesleyError)) {
-            const wrapped = new OpsError('OPS_MANIFEST_INVALID', e.message, { errors: e.errors, file: manifestPath });
+            const wrapped = new OpsError('OPS_MANIFEST_INVALID', e.message, { errors: e.meta?.errors ?? e.errors, file: manifestPath });
             logger.error(wrapped.meta, wrapped.message);
             throw wrapped;
           }

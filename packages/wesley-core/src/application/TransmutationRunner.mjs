@@ -272,7 +272,14 @@ export class TransmutationRunner {
 
     if (generateResult != null && typeof generateResult === 'object' && !Array.isArray(generateResult)) {
       if ('files' in generateResult && 'evidence' in generateResult) {
-        // New transmutation-aware return shape
+        // New transmutation-aware return shape — validate files payload
+        if (generateResult.files == null || typeof generateResult.files !== 'object') {
+          return this._errorResult(
+            plugin, 'generate',
+            new PluginError('WPLY003', `Plugin "${pluginName}" generate() returned { files, evidence } but files is ${generateResult.files === null ? 'null' : typeof generateResult.files}`, { plugin: pluginName }),
+            startMs
+          );
+        }
         artifacts = generateResult.files;
         pluginEvidence = generateResult.evidence;
       } else {

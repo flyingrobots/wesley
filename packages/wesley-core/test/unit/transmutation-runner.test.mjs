@@ -332,6 +332,28 @@ test('TransmutationRunner — buildTaskGraph metadata carries transmutation name
 });
 
 // ---------------------------------------------------------------------------
+// Null files in new-style return shape (P1 — Codex review)
+// ---------------------------------------------------------------------------
+
+test('TransmutationRunner — { files: null, evidence: {} } produces WPLY003 error, not unguarded throw', async () => {
+  const runner = makeRunner({ bestEffort: true });
+  const plugin = makePlugin({
+    name: 'null-files',
+    async plan() { return { artifacts: [{ path: 'x.sql' }] }; },
+    async generate() { return { files: null, evidence: {} }; }
+  });
+  const good = makePlugin({ name: 'good' });
+
+  const result = await runner.run('test', [plugin, good], {});
+
+  // The null-files plugin should produce a structured error, not crash the run
+  assert.equal(result.results[0].status, 'error');
+  assert.equal(result.results[0].errorCode, 'WPLY003');
+  // Best-effort: the good plugin should still run
+  assert.equal(result.results[1].status, 'ok');
+});
+
+// ---------------------------------------------------------------------------
 // Empty plugins
 // ---------------------------------------------------------------------------
 

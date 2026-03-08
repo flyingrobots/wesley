@@ -38,6 +38,14 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   `GenerationPipeline` and `PluginRunner`. Named transmutations, per-element evidence
   collection, evidence merging, and `buildTaskGraph()` DAG descriptor.
 - **`irToSchema` in core**: Adapter moved from CLI into `@wesley/core`. CLI re-exports.
+
+### Fixed
+
+- **`TransmutationRunner`**: Plugins returning `{ files: null, evidence: {} }` now
+  produce a structured `WPLY003` error instead of crashing with an unguarded
+  `Object.keys(null)` throw.
+- **Ops manifest validation**: `OpsError` wrapping now reads AJV errors from
+  `e.meta.errors` (where `assertValid` puts them) instead of `e.errors`.
 - **CLI**: Named exports standardized across all 19 command files (removed `export default`).
 - **CLI**: Revived `models`, `typescript` (alias `ts`), and `zod` commands,
   wired to existing generators in `@wesley/generator-js`:
