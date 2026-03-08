@@ -54,6 +54,19 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **`up.mjs` migration helpers**: Eliminated diverged local copies of
+  `buildAdditivePlan`, `explainPlan`, `lockFor`, and `emitMigrations` in favor
+  of the shared `_migration-plan.mjs` module. The local copies had silently
+  diverged, introducing 4 bugs:
+  1. Index dedup ignored USING method — two indexes on the same fields with
+     different methods (btree vs gin) were silently skipped.
+  2. Falsy default coercion — `lockFor` used truthiness check instead of
+     `!= null`, so defaults of `0`, `false`, `''` triggered ACCESS EXCLUSIVE
+     instead of SHARE ROW EXCLUSIVE.
+  3. NOT NULL / DEFAULT coupling — DEFAULT was only emitted when the column was
+     also NOT NULL, and NOT NULL was never emitted at all.
+  4. No SQL injection guards — shared module validates `s.type`, `s.using`, and
+     `s.default` against safe regexes; local copies had zero validation.
 - **`TransmutationRunner`**: Full null-safety at plugin return shape boundaries.
   `files` validated as non-null, non-array object; `evidence` validated as
   non-null, non-array object; evidence entries with missing/invalid `.artifacts`
