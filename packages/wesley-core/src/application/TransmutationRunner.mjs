@@ -159,6 +159,57 @@ export class TransmutationRunner {
   }
 
   /**
+   * Build a task graph descriptor for this transmutation.
+   * Returns a plain object describing the DAG — no dependency on @wesley/tasks.
+   * Hosts can feed this into TaskGraph + TasksSlapsBridge for concurrent execution.
+   *
+   * @param {string} name - Transmutation name
+   * @param {object[]} plugins - Array of GeneratorPlugin-conforming objects
+   * @returns {{ nodes: Array<{ id: string, name: string, dependencies: string[], metadata: object }>, edges: Array<[string, string]> }}
+   */
+  buildTaskGraph(name, plugins) {
+    const nodes = [];
+    const edges = [];
+
+    // Root node: parse
+    nodes.push({
+      id: `${name}:parse`,
+      name: `Parse ${name} sources`,
+      dependencies: [],
+      metadata: { type: 'parse', transmutation: name }
+    });
+
+    // One node per plugin, all depend on parse
+    for (const plugin of plugins) {
+      let pluginName;
+      try { pluginName = plugin.name; } catch { pluginName = '<unknown>'; }
+      const nodeId = `${name}:gen:${pluginName}`;
+
+      nodes.push({
+        id: nodeId,
+        name: `Generate ${pluginName}`,
+        dependencies: [`${name}:parse`],
+        metadata: { type: 'generation', transmutation: name, plugin: pluginName }
+      });
+      edges.push([`${name}:parse`, nodeId]);
+    }
+
+    // Evidence collection node: depends on all generators
+    const genNodeIds = nodes.filter(n => n.metadata.type === 'generation').map(n => n.id);
+    nodes.push({
+      id: `${name}:evidence`,
+      name: `Collect ${name} evidence`,
+      dependencies: genNodeIds,
+      metadata: { type: 'evidence', transmutation: name }
+    });
+    for (const genId of genNodeIds) {
+      edges.push([genId, `${name}:evidence`]);
+    }
+
+    return { nodes, edges };
+  }
+
+  /**
    * Execute a single plugin through its lifecycle: validate → init → plan → generate.
    * Collects evidence from the plugin's output if provided.
    * @private

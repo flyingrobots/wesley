@@ -277,6 +277,61 @@ test('TransmutationRunner — context is frozen (plugin cannot mutate it)', asyn
 });
 
 // ---------------------------------------------------------------------------
+// Task graph generation (Phase 0c)
+// ---------------------------------------------------------------------------
+
+test('TransmutationRunner — buildTaskGraph produces DAG with parse → generators → evidence', () => {
+  const runner = makeRunner();
+  const plugins = [
+    makePlugin({ name: 'supabase' }),
+    makePlugin({ name: 'js' })
+  ];
+
+  const graph = runner.buildTaskGraph('backend', plugins);
+
+  // Should have: parse, supabase, js, evidence = 4 nodes
+  assert.equal(graph.nodes.length, 4);
+  assert.ok(graph.nodes.find(n => n.id === 'backend:parse'));
+  assert.ok(graph.nodes.find(n => n.id === 'backend:gen:supabase'));
+  assert.ok(graph.nodes.find(n => n.id === 'backend:gen:js'));
+  assert.ok(graph.nodes.find(n => n.id === 'backend:evidence'));
+
+  // Parse has no dependencies
+  const parse = graph.nodes.find(n => n.id === 'backend:parse');
+  assert.deepEqual(parse.dependencies, []);
+
+  // Generators depend on parse
+  const supabase = graph.nodes.find(n => n.id === 'backend:gen:supabase');
+  assert.deepEqual(supabase.dependencies, ['backend:parse']);
+
+  // Evidence depends on all generators
+  const evidence = graph.nodes.find(n => n.id === 'backend:evidence');
+  assert.ok(evidence.dependencies.includes('backend:gen:supabase'));
+  assert.ok(evidence.dependencies.includes('backend:gen:js'));
+
+  // Edges match
+  assert.ok(graph.edges.some(([from, to]) => from === 'backend:parse' && to === 'backend:gen:supabase'));
+  assert.ok(graph.edges.some(([from, to]) => from === 'backend:gen:js' && to === 'backend:evidence'));
+});
+
+test('TransmutationRunner — buildTaskGraph with single plugin', () => {
+  const runner = makeRunner();
+  const graph = runner.buildTaskGraph('echo', [makePlugin({ name: 'echo-gen' })]);
+
+  assert.equal(graph.nodes.length, 3); // parse, echo-gen, evidence
+  assert.equal(graph.edges.length, 2); // parse→gen, gen→evidence
+});
+
+test('TransmutationRunner — buildTaskGraph metadata carries transmutation name', () => {
+  const runner = makeRunner();
+  const graph = runner.buildTaskGraph('ui', [makePlugin({ name: 'vue' })]);
+
+  for (const node of graph.nodes) {
+    assert.equal(node.metadata.transmutation, 'ui');
+  }
+});
+
+// ---------------------------------------------------------------------------
 // Empty plugins
 // ---------------------------------------------------------------------------
 
