@@ -995,7 +995,7 @@
 ▌
 ▌ ---
 ▌
-▌ _git-mind is open source under [LicenseRef-MIND-UCAL-1.0](../../LICENSE)_
+▌ _git-mind is open source under [Apache-2.0](../../LICENSE)_
 ▌ _© J. Kirby Ross • [flyingrobots.dev](https://flyingrobots.dev/)_
 ▌
 

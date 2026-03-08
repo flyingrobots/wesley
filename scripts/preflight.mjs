@@ -130,7 +130,7 @@ try {
   // If core package missing, skip
 }
 
-// 10) License audit — ensure all packages use MIND-UCAL (dynamic discovery)
+// 10) License audit — ensure all packages use Apache-2.0 (dynamic discovery)
 try {
   const ls = spawnSync('pnpm', ['ls', '-r', '--json', '--depth=-1'], { encoding: 'utf8' });
   if (ls.status !== 0) throw new Error(`pnpm ls failed with code ${ls.status}`);
@@ -149,7 +149,7 @@ try {
       fail(`License audit: failed to read ${p}: ${err?.message || err}`);
       continue;
     }
-    if (content.license !== 'LicenseRef-MIND-UCAL-1.0') {
+    if (content.license !== 'Apache-2.0') {
       fail(`License mismatch in ${p}: ${content.license}`);
     }
   }
