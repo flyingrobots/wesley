@@ -25,7 +25,6 @@ export class UpCommand extends WesleyCommand {
 
   async executeCore({ options, schemaContent, logger }) {
     const env = this.ctx.env || {};
-    const _outDir = options.outDir || 'out';
     let dsn = options.dsn || pickDsn(options, env, this.makeLogger(options, { phase: 'up' }));
 
     if (options.docker) {
@@ -46,7 +45,11 @@ export class UpCommand extends WesleyCommand {
       const snap = await this.ctx.fs.read('.wesley/snapshot.json');
       previous = JSON.parse(snap);
       hadSnapshot = true;
-    } catch { /* empty */ }
+    } catch (e) {
+      if (e?.code !== 'ENOENT' && e?.code !== 'ERR_MODULE_NOT_FOUND') {
+        logger.warn('Could not read snapshot: ' + (e?.message || ''));
+      }
+    }
 
     if (!hadSnapshot) {
       // Bootstrap: emit full DDL and apply

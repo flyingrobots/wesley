@@ -77,7 +77,7 @@ test('isRegistered — returns false for unknown codes', () => {
 test('getRegistry — returns an object with all known codes', () => {
   const registry = getRegistry();
   assert.equal(typeof registry, 'object');
-  assert.ok(Object.keys(registry).length >= 30, 'should have at least 30 registered codes');
+  assert.equal(Object.keys(registry).length, 30, 'should have exactly 30 registered codes');
 });
 
 test('getRegistry — registry is immutable (frozen object)', () => {

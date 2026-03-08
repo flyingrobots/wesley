@@ -6,6 +6,8 @@
 
 import { exitCodeFor } from '@wesley/core/domain/ExitCodes';
 
+const LOG_LEVELS = { trace: 5, debug: 10, info: 30, warn: 40, error: 50, fatal: 60, silent: 100 };
+
 export class WesleyCommand {
   /** @param {{ logger:any, fs:any, env:any, stdin:any, stdout:any, stderr:any, parsers:any, generators:any, planner:any, runner:any, writer:any, clock:any }} ctx */
   constructor(ctx, name, description) {
@@ -89,7 +91,7 @@ export class WesleyCommand {
 
   // Read schema from file or stdin (ASYNC - keeping the improvement)
   async readSchemaFromOptions(options) {
-    const { fs, _stdin } = this.ctx;
+    const { fs } = this.ctx;
     const fromStdin = options.schema === '-' || options.stdin === true;
 
     if (fromStdin) {
@@ -289,6 +291,3 @@ export class WesleyCommand {
     return `echo "type Query { hello: String }" | wesley ${this.name} --schema -`;
   }
 }
-
-export default WesleyCommand;
-const LOG_LEVELS = { trace: 5, debug: 10, info: 30, warn: 40, error: 50, fatal: 60, silent: 100 };

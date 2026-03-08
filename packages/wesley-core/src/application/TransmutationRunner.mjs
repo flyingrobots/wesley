@@ -8,6 +8,12 @@
  * Each transmutation is a named compilation unit: sources → generators → evidence.
  * The runner validates plugins, executes them sequentially with error isolation,
  * collects per-element evidence from each generator, and scores the result.
+ *
+ * Contract difference from PluginRunner: TransmutationRunner.run() never throws
+ * on plugin failures — it always returns a TransmutationResult with success=false.
+ * PluginRunner.run() throws on first failure (unless bestEffort=true). This is
+ * intentional: TransmutationRunner callers inspect result.success and the evidence
+ * bundle, while PluginRunner callers use try/catch with error.pluginResults.
  */
 
 import { validatePlugin, validatePlan, validateGenerateResult } from '../ports/GeneratorPlugin.mjs';
