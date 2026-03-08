@@ -118,7 +118,7 @@ function buildOpsFromSDL(sdl, mutationNs, queryNs) {
   const extract = (def, kind, ns) => {
     if (!def) return;
     for (const f of def.fields ?? []) {
-      const { typeName: resultType } = unwrapType(f.type);
+      const { typeName: resultType, required: resultRequired, list: resultList } = unwrapType(f.type);
       const args = (f.arguments ?? []).map((a) => {
         const { typeName, required, list } = unwrapType(a.type);
         return {
@@ -133,7 +133,9 @@ function buildOpsFromSDL(sdl, mutationNs, queryNs) {
         name: f.name.value,
         op_id: hash32(`${ns}:${f.name.value}`),
         args,
-        result_type: resultType
+        result_type: resultType,
+        result_required: resultRequired,
+        result_list: resultList
       });
     }
   };

@@ -63,7 +63,9 @@
       "name": "appState",
       "op_id": 190543078,
       "args": [],
-      "result_type": "AppState"
+      "result_type": "AppState",
+      "result_required": true,
+      "result_list": false
     },
     {
       "kind": "MUTATION",
@@ -77,14 +79,18 @@
           "list": false
         }
       ],
-      "result_type": "AppState"
+      "result_type": "AppState",
+      "result_required": true,
+      "result_list": false
     },
     {
       "kind": "MUTATION",
       "name": "toggleNav",
       "op_id": 3272403183,
       "args": [],
-      "result_type": "AppState"
+      "result_type": "AppState",
+      "result_required": true,
+      "result_list": false
     }
   ]
 }

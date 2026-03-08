@@ -6,6 +6,12 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Fixed
+
+- **F:** Per-op `ResultSchema` now wraps list result types with `z.array()` and nullable results with `.optional()` — previously `buildOpsFromSDL` dropped `list`/`required` metadata from result types, causing e.g. `listUsers: [User!]!` to generate `ListUsersResultSchema = UserSchema` instead of `z.array(UserSchema)`
+- **F:** Generated `parseViewOps` now throws on trailing garbage bytes (1–7 bytes after the last complete envelope) instead of silently accepting them — critical for deterministic replay and envelope integrity
+- **F:** Client/pump integration tests now `eval` the actual generated `parseViewOps`/`createPump` functions instead of reimplementing parsing logic inline, ensuring regressions in generated client behavior are caught
+
 ### Added
 
 #### WES — Documentation & Compatibility

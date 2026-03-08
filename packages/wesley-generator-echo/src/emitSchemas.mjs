@@ -92,10 +92,14 @@ export function emitSchemas(ir) {
       lines.push(`export const ${pascal}VarsSchema = z.object({}).strict();`);
     }
 
-    // Result schema referencing the result type
+    // Result schema referencing the result type, wrapped for list/nullable
     const rt = op.resultType ?? op.result_type;
     if (rt) {
-      const resultRef = rt === 'String' ? 'z.string()' : rt === 'Boolean' ? 'z.boolean()' : rt === 'Int' ? 'z.number().int()' : rt === 'Float' ? 'z.number()' : enums.has(rt) ? `${rt}Enum` : objects.has(rt) ? `${rt}Schema` : 'z.any()';
+      const innerRef = rt === 'String' ? 'z.string()' : rt === 'Boolean' ? 'z.boolean()' : rt === 'Int' ? 'z.number().int()' : rt === 'Float' ? 'z.number()' : enums.has(rt) ? `${rt}Enum` : objects.has(rt) ? `${rt}Schema` : 'z.any()';
+      const resultList = op.resultList ?? op.result_list ?? false;
+      const resultRequired = op.resultRequired ?? op.result_required ?? true;
+      let resultRef = resultList ? `z.array(${innerRef})` : innerRef;
+      if (!resultRequired) resultRef += '.optional()';
       lines.push(`export const ${pascal}ResultSchema = ${resultRef};`);
     }
   }

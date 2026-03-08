@@ -140,6 +140,28 @@ describe('per-op schema edge cases', () => {
   });
 });
 
+describe('per-op result schema wrappers (list/nullable)', () => {
+  it('wraps list result types with z.array()', async () => {
+    const content = await getSchemaContent(unionSDL);
+    // listUsers returns [User!]! — ResultSchema must be z.array(UserSchema)
+    expect(content).toContain('ListUsersResultSchema = z.array(UserSchema)');
+  });
+
+  it('preserves result_list and result_required in IR ops', async () => {
+    const ir = await getIr(unionSDL);
+    const listUsersOp = ir.ops.find((op) => op.name === 'listUsers');
+    expect(listUsersOp.result_list).toBe(true);
+    expect(listUsersOp.result_required).toBe(true);
+  });
+
+  it('non-list result types remain unwrapped', async () => {
+    const content = await getSchemaContent(unionSDL);
+    // getUser returns User! — ResultSchema should be UserSchema (no array)
+    expect(content).toContain('GetUserResultSchema = UserSchema');
+    expect(content).not.toContain('GetUserResultSchema = z.array');
+  });
+});
+
 describe('per-op schema ordering stability', () => {
   it('produces identical schema output across repeated generations', async () => {
     const first = await getSchemaContent(schemaSDL);

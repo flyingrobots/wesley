@@ -292,6 +292,132 @@ describe('generated client — pump integration', () => {
   });
 });
 
+/**
+ * Extract a named function from generated TS source, strip type annotations,
+ * and return an evaluable JS function.
+ */
+function extractGeneratedFn(clientSource, fnName, deps = []) {
+  const extractBody = (src, name) => {
+    const marker = `function ${name}(`;
+    const start = src.indexOf(marker);
+    if (start === -1) throw new Error(`Cannot find ${name} in generated client`);
+    let depth = 0;
+    let end = start;
+    let opened = false;
+    for (let i = start; i < src.length; i++) {
+      if (src[i] === '{') { depth++; opened = true; }
+      if (src[i] === '}') { depth--; }
+      if (opened && depth === 0) { end = i + 1; break; }
+    }
+    let fn = src.slice(start, end);
+    // Strip TS type annotations from function signatures and bodies
+    fn = fn
+      .replace(/:\s*ViewOpEnvelope\[\]/g, '')
+      .replace(/:\s*Uint8Array/g, '')
+      .replace(/:\s*Map<[^>]+>/g, '')
+      .replace(/\w+\?\s*:\s*\w+/g, (m) => m.split('?')[0])  // optional params: diagnostics?: Type → diagnostics
+      .replace(/:\s*DiagnosticsChannel/g, '')
+      .replace(/:\s*number/g, '')
+      .replace(/:\s*void/g, '')
+      .replace(/:\s*string\s*\|\s*undefined/g, '')
+      .replace(/\)\s*:\s*\([^)]*\)\s*=>\s*\w+/g, ')')  // return type ): (...) => void
+      ;
+    return fn;
+  };
+
+  const parts = deps.map((d) => extractBody(clientSource, d));
+  parts.push(extractBody(clientSource, fnName));
+  parts.push(`return ${fnName};`);
+  return new Function(parts.join('\n'))();
+}
+
+describe('generated client — parseViewOps trailing bytes rejection', () => {
+  it('throws on trailing garbage bytes (< 8 bytes after last envelope)', async () => {
+    const { emitClient } = await import('../src/emitClient.mjs');
+    const ir = await getIr();
+    const clientSource = emitClient(ir);
+    const parseViewOps = extractGeneratedFn(clientSource, 'parseViewOps');
+
+    // Build a valid envelope then append 3 garbage bytes
+    const header = new ArrayBuffer(8);
+    const dv = new DataView(header);
+    dv.setUint32(0, 1, true);   // opId
+    dv.setUint32(4, 2, true);   // payloadLen = 2
+    const valid = new Uint8Array(8 + 2 + 3); // 8 header + 2 payload + 3 garbage
+    valid.set(new Uint8Array(header), 0);
+    valid[8] = 0xAA;
+    valid[9] = 0xBB;
+    valid[10] = 0xDE; // garbage
+    valid[11] = 0xAD; // garbage
+    valid[12] = 0xFF; // garbage
+
+    expect(() => parseViewOps(valid)).toThrow(/Trailing 3 byte/);
+  });
+});
+
+describe('generated client — eval generated parseViewOps', () => {
+  function buildViewOpBuffer(envelopes) {
+    const chunks = [];
+    for (const { opId, payload } of envelopes) {
+      const header = new ArrayBuffer(8);
+      const dv = new DataView(header);
+      dv.setUint32(0, opId, true);
+      dv.setUint32(4, payload.length, true);
+      chunks.push(new Uint8Array(header));
+      chunks.push(payload);
+    }
+    const total = chunks.reduce((s, c) => s + c.length, 0);
+    const buf = new Uint8Array(total);
+    let off = 0;
+    for (const c of chunks) {
+      buf.set(c, off);
+      off += c.length;
+    }
+    return buf;
+  }
+
+  it('generated parseViewOps correctly decodes envelopes', async () => {
+    const { emitClient } = await import('../src/emitClient.mjs');
+    const ir = await getIr();
+    const clientSource = emitClient(ir);
+    const parseViewOps = extractGeneratedFn(clientSource, 'parseViewOps');
+
+    const payload1 = new Uint8Array([0x01, 0x02, 0x03]);
+    const payload2 = new Uint8Array([0x04, 0x05]);
+    const buffer = buildViewOpBuffer([
+      { opId: 42, payload: payload1 },
+      { opId: 99, payload: payload2 }
+    ]);
+
+    const envelopes = parseViewOps(buffer);
+    expect(envelopes).toHaveLength(2);
+    expect(envelopes[0].opId).toBe(42);
+    expect(envelopes[0].payload).toEqual(payload1);
+    expect(envelopes[1].opId).toBe(99);
+    expect(envelopes[1].payload).toEqual(payload2);
+  });
+
+  it('generated createPump routes to handlers', async () => {
+    const { emitClient } = await import('../src/emitClient.mjs');
+    const ir = await getIr();
+    const clientSource = emitClient(ir);
+    const createPump = extractGeneratedFn(clientSource, 'createPump', ['parseViewOps']);
+
+    const handled = [];
+    const handlers = new Map();
+    handlers.set(42, (payload) => handled.push({ id: 42, payload }));
+
+    const pump = createPump(handlers);
+    const buffer = buildViewOpBuffer([
+      { opId: 42, payload: new Uint8Array([0xAA]) }
+    ]);
+    pump(buffer);
+
+    expect(handled).toHaveLength(1);
+    expect(handled[0].id).toBe(42);
+  });
+});
+
 describe('generated client — determinism', () => {
   it('produces identical client output across repeated generations', async () => {
     const first = await getClientContent();

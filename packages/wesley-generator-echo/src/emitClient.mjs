@@ -178,6 +178,9 @@ export function emitClient(ir) {
   lines.push('    envelopes.push({ opId, payload: buffer.subarray(offset, offset + payloadLen) });');
   lines.push('    offset += payloadLen;');
   lines.push('  }');
+  lines.push('  if (offset !== buffer.length) {');
+  lines.push('    throw new Error(`Trailing ${buffer.length - offset} byte(s) after last view-op envelope`);');
+  lines.push('  }');
   lines.push('  return envelopes;');
   lines.push('}');
   lines.push('');
