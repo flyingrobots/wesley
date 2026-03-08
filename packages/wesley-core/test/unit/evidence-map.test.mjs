@@ -78,6 +78,7 @@ test('EvidenceMap.fromJSON — full round-trip preserves all data', () => {
   assert.deepEqual(roundTripped.warnings, json.warnings);
   assert.equal(roundTripped.sha, json.sha);
   assert.equal(roundTripped.version, json.version);
+  assert.equal(roundTripped.timestamp, json.timestamp);
 });
 
 test('EvidenceMap.fromJSON — handles empty errors/warnings gracefully', () => {
