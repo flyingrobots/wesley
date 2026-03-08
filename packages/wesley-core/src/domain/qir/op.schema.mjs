@@ -63,7 +63,7 @@ export const opJsonSchema = {
       allOf: [
         // For isNull/isNotNull, disallow param/value
         {
-          if: { properties: { op: { enum: ['isNull','isNotNull'] } } },
+          if: { required: ['op'], properties: { op: { enum: ['isNull','isNotNull'] } } },
           then: {
             not: {
               anyOf: [
@@ -75,7 +75,7 @@ export const opJsonSchema = {
         },
         // For other ops, require param or value (at least one)
         {
-          if: { properties: { op: { enum: ['eq','ne','lt','lte','gt','gte','like','ilike','contains','in'] } } },
+          if: { required: ['op'], properties: { op: { enum: ['eq','ne','lt','lte','gt','gte','like','ilike','contains','in'] } } },
           then: {
             anyOf: [ { required: ['param'] }, { required: ['value'] } ]
           }
@@ -132,7 +132,8 @@ export const opJsonSchema = {
           type: 'array',
           minItems: 2,
           maxItems: 2,
-          items: [ { type: 'string', minLength: 1 }, { type: 'string', minLength: 1 } ]
+          prefixItems: [ { type: 'string', minLength: 1 }, { type: 'string', minLength: 1 } ],
+          items: false
         }
       ]
     },
