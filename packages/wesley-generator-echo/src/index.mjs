@@ -10,6 +10,7 @@ import { emitGuardedViews } from './emitGuardedViews.mjs';
 import { buildLayoutDescriptor, computeLayoutHash } from '@wesley/core';
 
 const PKG_VERSION = '0.1.0'; // keep simple: avoid package.json import in node CLI
+const CONTRACT_VERSION = '1.0.0'; // semver — bump major on breaking artifact schema changes
 
 /**
  * Generator for Echo (Rust/WASM) artifacts.
@@ -47,6 +48,7 @@ export async function generateEcho({ sdl, ir, mutationIdNamespace = 'Mutation', 
     ir_version: 'echo-ir/v2',
     codec_id: 'cbor-canon-v1',
     registry_version: 1,
+    contract_version: CONTRACT_VERSION,
     generated_by: {
       tool: '@wesley/generator-echo',
       version: PKG_VERSION
@@ -183,6 +185,7 @@ function parseGraphQLToEchoIR(sdl) {
     }
   }
 
+  types.sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
   return { types };
 }
 

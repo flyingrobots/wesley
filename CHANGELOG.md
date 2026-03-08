@@ -8,6 +8,20 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+#### WES-003 — Artifact Contract Versioning + Deterministic Output Tests
+- **A:** `contract_version` (semver) field added to IR, `ops.generated.ts`, and `client.generated.ts` HANDSHAKE
+- **A:** Types in IR now sorted alphabetically for ordering stability across SDL variations
+- **A:** Contract determinism test suite (`contract-determinism.test.mjs`) with 22 tests covering byte-for-byte stability, ordering, edge cases, and version bump policy
+- **A:** Version bump policy codified in tests (major/minor/patch rules)
+
+#### WES-002 — Integration-Ready TS Runtime Client/Pump
+- **A:** Complete `emitClient.mjs` rewrite — generates self-contained TypeScript client with typed dispatch/query APIs
+- **A:** Canonical pump loop (`createPump`) for view-op envelope parsing and routing
+- **A:** `parseViewOps` for binary envelope decoding (u32le op_id + u32le length + payload)
+- **A:** `HANDSHAKE` constants exported for registry handshake / integration gates
+- **A:** `DiagnosticsChannel` interface for unknown op / decode error surfacing
+- **A:** Client/pump test suite (`client-pump.test.mjs`) with 22 tests covering compilation, dispatch, query, pump routing, and edge cases
+
 #### WES-001 — Per-Op Var/Result Schema Wiring
 - **A:** `emitSchemas.mjs` now generates `VarsSchema` and `ResultSchema` for every operation in the ops catalog
 - **A:** `OP_SCHEMAS` registry map exported for runtime op-to-schema lookup
