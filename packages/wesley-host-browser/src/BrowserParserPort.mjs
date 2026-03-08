@@ -5,7 +5,7 @@
  * Limitations: not a full GraphQL parser; designed to be tiny and safe.
  *
  * Emits the canonical WesleyIR shape: structured FieldType, FieldDirectives,
- * TableDirectives, plus backward-compat shim properties.
+ * and TableDirectives.
  */
 
 function stripComments(s) {

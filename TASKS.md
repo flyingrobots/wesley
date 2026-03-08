@@ -15,8 +15,8 @@ each step.
   `field.type.isList`, `field.directives.pk`, `table.directives.table`,
   `ir.version === '1.0.0'`, `ir.metadata.generatedAt`, `ir.relationships` array.
 
-- [ ] **T-0.2** Create `packages/wesley-host-browser/test/parser-ir-v2.test.mjs`
-  Same shape assertions for browser parser.
+- [x] **T-0.2** Create `packages/wesley-host-browser/src/BrowserParserPort.test.mjs`
+  22 tests asserting canonical WesleyIR shape from the browser parser.
 
 ## Phase 1 — Update Primary Producer + Backward-Compat Shim
 
@@ -115,7 +115,9 @@ each step.
 
 ## Phase 10 — Update Fixtures and Tests
 
-- [ ] **T-10.1** Rewrite `test/fixtures/examples/.wesley/snapshot.json` to new shape
+- [x] **T-10.1** `test/fixtures/examples/.wesley/snapshot.json` — gitignored, generated at
+  runtime by CLI commands. Already emits new shape (`{ irVersion, tables }` with
+  `table.fields`). No manual rewrite needed.
 
 - [x] **T-10.2** Update `packages/wesley-host-node/test/parser-ir.test.mjs`
   Update assertions: `table.fields`, `field.type.base`, etc.
@@ -123,8 +125,9 @@ each step.
 - [x] **T-10.3** Update `test/browser/contracts/main.js`
   `u.columns` → `u.fields`
 
-- [ ] **T-10.4** Update `packages/wesley-host-browser/src/index.test.mjs`
-  Review SQL output assertions for any indirect IR shape dependency.
+- [x] **T-10.4** Reviewed `packages/wesley-host-browser/src/index.test.mjs`
+  Tests assert SQL output strings and table counts only — no IR shape dependency.
+  No changes needed.
 
 - [x] **T-10.5** Review `packages/wesley-core/test/wave3-safety-integration.test.mjs`
   Uses `columns` in its own test model for ConcurrentSafetyAnalyzer — NOT Wesley IR. No change needed.
