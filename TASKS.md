@@ -10,7 +10,7 @@ each step.
 
 ## Phase 0 — Failing Tests
 
-- [ ] **T-0.1** Create `packages/wesley-host-node/test/parser-ir-v2.test.mjs`
+- [x] **T-0.1** Create `packages/wesley-host-node/test/parser-ir-v2.test.mjs`
   Assert new IR shape: `table.fields` (not `columns`), `field.type.base === 'ID'`,
   `field.type.isList`, `field.directives.pk`, `table.directives.table`,
   `ir.version === '1.0.0'`, `ir.metadata.generatedAt`, `ir.relationships` array.
@@ -20,7 +20,7 @@ each step.
 
 ## Phase 1 — Update Primary Producer + Backward-Compat Shim
 
-- [ ] **T-1.1** Rewrite `GraphQLAdapter.buildIRFromAST()` to emit new shape
+- [x] **T-1.1** Rewrite `GraphQLAdapter.buildIRFromAST()` to emit new shape
   `packages/wesley-host-node/src/adapters/GraphQLAdapter.mjs`
   - Return `{ version: "1.0.0", metadata: { sourceHash, generatedAt }, tables, enums: [], scalars: [], relationships }`
   - `buildTable()` → `{ name, directives: TableDirectives, fields: Field[], indexes: Index[], constraints: Constraint[] }`
@@ -28,14 +28,14 @@ each step.
   - Stop calling `mapGraphQLTypeToPostgreSQL()` — keep GraphQL scalar as `type.base`
   - Synthesize `relationships[]` from `@fk` directives in a second pass
 
-- [ ] **T-1.2** Add backward-compat shim after `buildIRFromAST()`
+- [x] **T-1.2** Add backward-compat shim after `buildIRFromAST()`
   Compute `table.columns = table.fields`, `table.primaryKey`, `table.foreignKeys`,
   `table.tenantBy` from the new shape so existing consumers survive the transition.
 
-- [ ] **T-1.3** Update `parseComposed()` for new shape
+- [x] **T-1.3** Update `parseComposed()` for new shape
   Use `table.fields` not `table.columns`, structured directives, etc.
 
-- [ ] **T-1.4** Update `validateForeignKeys()` for new shape
+- [x] **T-1.4** Update `validateForeignKeys()` for new shape
   Use `table.fields` and `field.directives.fk`.
 
 ## Phase 2 — Update JSON Schema

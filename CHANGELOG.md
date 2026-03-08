@@ -11,6 +11,13 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **License**: Standardized all `package.json` files to `Apache-2.0`, matching
   the project's `LICENSE` file. Removed appended MIND-UCAL text from `LICENSE`.
   Added `NOTICE` file per Apache 2.0 requirements.
+- **IR**: `GraphQLAdapter.parseSDL()` now emits the `WesleyIR.schema.ts` shape:
+  structured `FieldType` objects (`{ base, isList, listItemNullable }`),
+  structured `TableDirectives`/`FieldDirectives`, top-level `version`,
+  `metadata`, `enums`, `scalars`, `relationships`, and `table.fields` (not
+  `columns`). A backward-compat shim provides legacy `table.columns`,
+  `table.primaryKey`, `table.foreignKeys`, and `table.tenantBy` during
+  consumer migration.
 
 ### Added
 
