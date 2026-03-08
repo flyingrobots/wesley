@@ -58,7 +58,10 @@
   },
   "pnpm": {
     "overrides": {
-      "vite": "npm:rolldown-vite@7.1.14"
+      "vite": "npm:rolldown-vite@7.1.14",
+      "ts-morph>minimatch": ">=10.2.3",
+      "js-yaml@>=4.0.0": ">=4.1.1",
+      "markdown-it@>=13.0.0": ">=14.1.1"
     }
   },
   "dependencies": {
@@ -68,9 +71,9 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.38.0",
-    "@playwright/test": "1.49.0",
+    "@playwright/test": "1.58.2",
     "autoprefixer": "^10.4.21",
-    "dependency-cruiser": "17.1.0",
+    "dependency-cruiser": "17.3.8",
     "eslint": "^9.38.0",
     "eslint-plugin-promise": "^7.2.1",
     "globals": "^16.4.0",

@@ -10,6 +10,7 @@ import { emitGuardedViews } from './emitGuardedViews.mjs';
 import { buildLayoutDescriptor, computeLayoutHash } from '@wesley/core';
 
 const PKG_VERSION = '0.1.0'; // keep simple: avoid package.json import in node CLI
+const CONTRACT_VERSION = '1.1.0'; // semver — bump major on breaking artifact schema changes
 
 /**
  * Generator for Echo (Rust/WASM) artifacts.
@@ -43,10 +44,18 @@ export async function generateEcho({ sdl, ir, mutationIdNamespace = 'Mutation', 
 
   const ops = buildOpsFromSDL(sdl, mutationIdNamespace, queryNamespace);
   const sdlHash = sdl ? sha256hex(sdl) : null;
+  // Normalize type ordering for deterministic output, regardless of IR source
+  if (baseIr.types) {
+    baseIr.types.sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
+  }
+
+  // Spread baseIr first so canonical metadata always wins
   const fullIr = {
+    ...baseIr,
     ir_version: 'echo-ir/v2',
     codec_id: 'cbor-canon-v1',
     registry_version: 1,
+    contract_version: CONTRACT_VERSION,
     generated_by: {
       tool: '@wesley/generator-echo',
       version: PKG_VERSION
@@ -55,10 +64,12 @@ export async function generateEcho({ sdl, ir, mutationIdNamespace = 'Mutation', 
     schema_hash: sdlHash,        // v2 canonical name
     registry_hash: null,         // placeholder — EchoPlugin overwrites with canonical value
     hash_chain: null,            // placeholder — EchoPlugin overwrites after bundle hash
-    ...baseIr,
     ops
   };
 
+  // One-pass profile: emit all artifact targets (IR + Rust + TS) from the
+  // same fullIr in a single deterministic pass. No intermediate transforms
+  // are duplicated — each emitter reads the shared IR directly.
   const files = [
     { path: 'ir.json', content: JSON.stringify(fullIr, null, 2) },
     { path: 'ops.generated.ts', content: emitOps(fullIr) },
@@ -86,7 +97,18 @@ export async function generateEcho({ sdl, ir, mutationIdNamespace = 'Mutation', 
     files.push({ path: 'guarded_views.generated.rs', content: guardedViews });
   }
 
-  return { files };
+  // Profile metadata: record which artifact sets were produced in this pass
+  const profile = {
+    name: 'app',
+    targets: {
+      ir: ['ir.json'],
+      typescript: files.filter((f) => f.path.endsWith('.ts')).map((f) => f.path),
+      rust: files.filter((f) => f.path.endsWith('.rs')).map((f) => f.path)
+    },
+    artifact_count: files.length
+  };
+
+  return { files, profile };
 }
 
 function buildOpsFromSDL(sdl, mutationNs, queryNs) {
@@ -102,7 +124,7 @@ function buildOpsFromSDL(sdl, mutationNs, queryNs) {
   const extract = (def, kind, ns) => {
     if (!def) return;
     for (const f of def.fields ?? []) {
-      const { typeName: resultType } = unwrapType(f.type);
+      const { typeName: resultType, required: resultRequired, list: resultList } = unwrapType(f.type);
       const args = (f.arguments ?? []).map((a) => {
         const { typeName, required, list } = unwrapType(a.type);
         return {
@@ -117,7 +139,9 @@ function buildOpsFromSDL(sdl, mutationNs, queryNs) {
         name: f.name.value,
         op_id: hash32(`${ns}:${f.name.value}`),
         args,
-        result_type: resultType
+        result_type: resultType,
+        result_required: resultRequired,
+        result_list: resultList
       });
     }
   };
@@ -183,6 +207,7 @@ function parseGraphQLToEchoIR(sdl) {
     }
   }
 
+  types.sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
   return { types };
 }
 

@@ -1,5 +1,8 @@
 /**
  * Generator function for Vue artifacts.
+ *
+ * For plugin-based invocation (PluginRunner, CLI), use VuePlugin instead:
+ *   import { VuePlugin } from '@wesley/generator-vue/plugin';
  */
 export async function generateVue(ir, options = {}) {
   if (!ir || typeof ir !== 'object') {

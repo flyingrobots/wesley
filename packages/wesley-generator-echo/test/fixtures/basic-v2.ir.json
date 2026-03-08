@@ -2,6 +2,7 @@
   "ir_version": "echo-ir/v2",
   "codec_id": "cbor-canon-v1",
   "registry_version": 1,
+  "contract_version": "1.1.0",
   "generated_by": {
     "tool": "@wesley/generator-echo",
     "version": "0.1.0"
@@ -11,17 +12,6 @@
   "registry_hash": null,
   "hash_chain": null,
   "types": [
-    {
-      "name": "Theme",
-      "kind": "ENUM",
-      "type_id": "Theme",
-      "layout_hash": "a7e0be4c0f3502645a4a55b1b7f2ab3d43510b26666b0ba0885278b6c210ed23",
-      "values": [
-        "LIGHT",
-        "DARK",
-        "SYSTEM"
-      ]
-    },
     {
       "name": "AppState",
       "kind": "OBJECT",
@@ -54,6 +44,17 @@
           "views": null
         }
       ]
+    },
+    {
+      "name": "Theme",
+      "kind": "ENUM",
+      "type_id": "Theme",
+      "layout_hash": "a7e0be4c0f3502645a4a55b1b7f2ab3d43510b26666b0ba0885278b6c210ed23",
+      "values": [
+        "LIGHT",
+        "DARK",
+        "SYSTEM"
+      ]
     }
   ],
   "ops": [
@@ -62,7 +63,9 @@
       "name": "appState",
       "op_id": 190543078,
       "args": [],
-      "result_type": "AppState"
+      "result_type": "AppState",
+      "result_required": true,
+      "result_list": false
     },
     {
       "kind": "MUTATION",
@@ -76,14 +79,18 @@
           "list": false
         }
       ],
-      "result_type": "AppState"
+      "result_type": "AppState",
+      "result_required": true,
+      "result_list": false
     },
     {
       "kind": "MUTATION",
       "name": "toggleNav",
       "op_id": 3272403183,
       "args": [],
-      "result_type": "AppState"
+      "result_type": "AppState",
+      "result_required": true,
+      "result_list": false
     }
   ]
 }

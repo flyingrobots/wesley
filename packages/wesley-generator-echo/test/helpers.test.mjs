@@ -61,9 +61,9 @@ describe('generated ops helpers (ops.generated.ts)', () => {
       }))
     );
 
-    // Helper behavior: lookups by name return the frozen op ID.
-    expect(opsModule.findOpId('setTheme')).toBe(hash32('Mutation', 'setTheme'));
-    expect(opsModule.findOpId('appState')).toBe(hash32('Query', 'appState'));
+    // Helper behavior: lookups by kind+name return the frozen op ID.
+    expect(opsModule.findOpId('MUTATION', 'setTheme')).toBe(hash32('Mutation', 'setTheme'));
+    expect(opsModule.findOpId('QUERY', 'appState')).toBe(hash32('Query', 'appState'));
   });
 
   it('throws on unknown op name (known failure mode)', async () => {
@@ -71,7 +71,7 @@ describe('generated ops helpers (ops.generated.ts)', () => {
     const opsSource = out.files.find((f) => f.path === 'ops.generated.ts').content;
 
     const opsModule = evalOpsGeneratedTs(opsSource);
-    expect(() => opsModule.findOpId('doesNotExist')).toThrow(/unknown op name/i);
+    expect(() => opsModule.findOpId('MUTATION', 'doesNotExist')).toThrow(/unknown op/i);
   });
 
   it('is deterministic across SDL field order (edge case)', async () => {

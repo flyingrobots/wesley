@@ -2,6 +2,7 @@
   "ir_version": "echo-ir/v2",
   "codec_id": "cbor-canon-v1",
   "registry_version": 1,
+  "contract_version": "1.1.0",
   "generated_by": {
     "tool": "@wesley/generator-echo",
     "version": "0.1.0"
@@ -65,7 +66,9 @@
       "name": "game",
       "op_id": 278791367,
       "args": [],
-      "result_type": "GameState"
+      "result_type": "GameState",
+      "result_required": true,
+      "result_list": false
     }
   ]
 }

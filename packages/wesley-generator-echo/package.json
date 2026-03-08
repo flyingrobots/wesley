@@ -20,6 +20,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "typescript": "^5.7.0",
     "vitest": "^4.0.3"
   },
   "author": "Wesley Authors <oss@flyingrobots.dev>",

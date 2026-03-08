@@ -64,7 +64,7 @@ export function emitSchemas(ir) {
     const props = fields.map((f) => {
       const ref = f.type;
       // Build the inner type schema
-      const innerSchema = ref === 'String' ? 'z.string()' : ref === 'Boolean' ? 'z.boolean()' : ref === 'Int' ? 'z.number().int()' : ref === 'Float' ? 'z.number()' : enums.has(ref) ? `${ref}Enum` : 'z.any()';
+      const innerSchema = ref === 'String' ? 'z.string()' : ref === 'Boolean' ? 'z.boolean()' : ref === 'Int' ? 'z.number().int()' : ref === 'Float' ? 'z.number()' : ref === 'ID' ? 'z.string()' : enums.has(ref) ? `${ref}Enum` : 'z.any()';
       // Wrap with z.array() only for list fields
       let zcall = f.list ? `z.array(${innerSchema})` : innerSchema;
       // Append .optional() if not required
@@ -74,8 +74,44 @@ export function emitSchemas(ir) {
     lines.push(`export const ${name}Schema = z.object({\n${props}\n}).strict();`);
   }
 
-  // Exports of op var/result schemas (wired later when ops know var/result types)
-  lines.push('// TODO: per-op var/result schemas wired from ops.catalog');
+  // Per-op var/result schemas wired from ops catalog
+  for (const op of ir.ops ?? []) {
+    const pascal = op.name.charAt(0).toUpperCase() + op.name.slice(1);
+
+    // Vars schema from op args
+    if (op.args && op.args.length > 0) {
+      const argProps = op.args.map((a) => {
+        const ref = a.type;
+        const innerSchema = ref === 'String' ? 'z.string()' : ref === 'Boolean' ? 'z.boolean()' : ref === 'Int' ? 'z.number().int()' : ref === 'Float' ? 'z.number()' : ref === 'ID' ? 'z.string()' : enums.has(ref) ? `${ref}Enum` : objects.has(ref) ? `${ref}Schema` : 'z.any()';
+        let zcall = a.list ? `z.array(${innerSchema})` : innerSchema;
+        if (!a.required) zcall += '.optional()';
+        return `  ${a.name}: ${zcall}`;
+      }).join(',\n');
+      lines.push(`export const ${pascal}VarsSchema = z.object({\n${argProps}\n}).strict();`);
+    } else {
+      lines.push(`export const ${pascal}VarsSchema = z.object({}).strict();`);
+    }
+
+    // Result schema referencing the result type, wrapped for list/nullable
+    const rt = op.result_type;
+    if (rt) {
+      const innerRef = rt === 'String' ? 'z.string()' : rt === 'Boolean' ? 'z.boolean()' : rt === 'Int' ? 'z.number().int()' : rt === 'Float' ? 'z.number()' : rt === 'ID' ? 'z.string()' : enums.has(rt) ? `${rt}Enum` : objects.has(rt) ? `${rt}Schema` : 'z.any()';
+      const resultList = op.result_list ?? false;
+      const resultRequired = op.result_required ?? true;
+      let resultRef = resultList ? `z.array(${innerRef})` : innerRef;
+      if (!resultRequired) resultRef += '.nullish()';
+      lines.push(`export const ${pascal}ResultSchema = ${resultRef};`);
+    }
+  }
+
+  // Op schema registry map
+  if ((ir.ops ?? []).length > 0) {
+    const entries = (ir.ops ?? []).map((op) => {
+      const pascal = op.name.charAt(0).toUpperCase() + op.name.slice(1);
+      return `  ${JSON.stringify(op.name)}: { vars: ${pascal}VarsSchema, result: ${pascal}ResultSchema }`;
+    }).join(',\n');
+    lines.push(`export const OP_SCHEMAS = {\n${entries}\n};`);
+  }
 
   return lines.join('\n');
 }

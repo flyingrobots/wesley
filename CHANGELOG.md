@@ -6,7 +6,62 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Security
+
+- **S:** Resolved 15 GitHub dependabot alerts (11 high, 4 moderate) — bumped `@playwright/test` 1.49→1.58.2 (SSL cert verification), `dependency-cruiser` 17.1→17.3.8, `ajv` ^8.12→^8.18 in `@wesley/cli` (ReDoS); added pnpm overrides for transitive `minimatch` (ReDoS), `js-yaml` (prototype pollution), `markdown-it` (ReDoS)
+
+### Fixed
+
+- **F:** Per-op `ResultSchema` now wraps list result types with `z.array()` and nullable results with `.optional()` — previously `buildOpsFromSDL` dropped `list`/`required` metadata from result types, causing e.g. `listUsers: [User!]!` to generate `ListUsersResultSchema = UserSchema` instead of `z.array(UserSchema)`
+- **F:** Generated `parseViewOps` now throws on trailing garbage bytes (1–7 bytes after the last complete envelope) instead of silently accepting them — critical for deterministic replay and envelope integrity
+- **F:** Client/pump integration tests now `eval` the actual generated `parseViewOps`/`createPump` functions instead of reimplementing parsing logic inline, ensuring regressions in generated client behavior are caught
+- **F:** `EchoPlugin.plan()` now declares all 8 potential artifacts (was missing conditional Rust/TS codecs, joins, guarded views)
+- **F:** `emitOps.mjs` `findOpId(name)` aligned to two-arg `findOpId(kind, name)` matching `emitClient.mjs` — one-arg form could collide when a Query and Mutation share the same field name
+
 ### Added
+
+#### Utility Helpers
+- **A:** `mustFind()` and `mustMatch()` guard helpers in `@wesley/core` — centralise the recurring find-or-throw and match-or-throw pattern
+
+#### WES — Documentation & Compatibility
+- **A:** Updated `README.md` for `@wesley/generator-echo` — documents one-pass profile, full artifact list, client/pump API, contract versioning, plugin usage
+- **A:** Updated `README.md` for `@wesley/generator-vue` — documents unified `VuePlugin` entrypoint, legacy function API
+- **A:** Updated `docs/specs/echo-ir-v2.md` — documents `contract_version` field, type/op ordering rules, version bump policy
+
+#### WES-005 — Unify generator-vue Ownership/Entrypoint
+- **A:** `VuePlugin` class implementing `GeneratorPlugin` contract — canonical unified entrypoint
+- **A:** Package exports `./plugin` subpath for plugin-based invocation
+- **A:** Vue plugin test suite (`vue-plugin.test.mjs`) with 12 tests covering contract, lifecycle, capabilities, and backward compatibility
+
+### Changed
+
+- **C:** `CONTRACT_VERSION` bumped from `1.0.0` to `1.1.0` — reflects `KIND:name` keyed `OP_INDEX` and two-arg `findOpId(kind, name)` in generated artifacts
+- **C:** Legacy `generateVue()` function remains available but documented as non-primary path
+
+#### WES-004 — One-Pass App Codegen Profile (schema → IR/Rust/TS)
+- **A:** `profile` metadata in `generateEcho()` output describing artifact sets (IR, TS, Rust targets)
+- **A:** Types sorted alphabetically in IR for deterministic output independent of SDL declaration order
+- **A:** One-pass profile test suite (`one-pass-profile.test.mjs`) with 15 tests covering atomic generation, cross-artifact parity, no-duplicate-transform verification, and performance baseline
+
+#### WES-003 — Artifact Contract Versioning + Deterministic Output Tests
+- **A:** `contract_version` (semver) field added to IR, `ops.generated.ts`, and `client.generated.ts` HANDSHAKE
+- **A:** Types in IR now sorted alphabetically for ordering stability across SDL variations
+- **A:** Contract determinism test suite (`contract-determinism.test.mjs`) with 22 tests covering byte-for-byte stability, ordering, edge cases, and version bump policy
+- **A:** Version bump policy codified in tests (major/minor/patch rules)
+
+#### WES-002 — Integration-Ready TS Runtime Client/Pump
+- **A:** Complete `emitClient.mjs` rewrite — generates self-contained TypeScript client with typed dispatch/query APIs
+- **A:** Canonical pump loop (`createPump`) for view-op envelope parsing and routing
+- **A:** `parseViewOps` for binary envelope decoding (u32le op_id + u32le length + payload)
+- **A:** `HANDSHAKE` constants exported for registry handshake / integration gates
+- **A:** `DiagnosticsChannel` interface for unknown op / decode error surfacing
+- **A:** Client/pump test suite (`client-pump.test.mjs`) with 22 tests covering compilation, dispatch, query, pump routing, and edge cases
+
+#### WES-001 — Per-Op Var/Result Schema Wiring
+- **A:** `emitSchemas.mjs` now generates `VarsSchema` and `ResultSchema` for every operation in the ops catalog
+- **A:** `OP_SCHEMAS` registry map exported for runtime op-to-schema lookup
+- **A:** TTD `ts-zod.mjs` now emits per-op result schemas alongside existing args schemas
+- **A:** Schema completeness test suite (`schema-completeness.test.mjs`) with 11 tests covering completeness, edge cases, and ordering stability
 
 #### Alpha Playground — Browser-Based "Try Wesley"
 - **A:** `/try` route, TryNow page, workspace state, file tree UI, Tiptap-based schema editor with GraphQL highlighting

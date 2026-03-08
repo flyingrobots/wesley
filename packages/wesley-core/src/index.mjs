@@ -78,6 +78,9 @@ export { ClockPort, SystemClock, FakeClock, systemClock } from './ports/clock.mj
 export { GeneratorPlugin, validatePlugin, validatePlan, SUPPORTED_API_VERSIONS } from './ports/GeneratorPlugin.mjs';
 export { ArtifactWriterPort, detectConflicts } from './ports/ArtifactWriter.mjs';
 
+// Utility helpers
+export { mustFind, mustMatch } from './util/guards.mjs';
+
 // Testing helpers
 export { testGenerator, testGeneratorPlan, expectArtifact } from './testing/testGenerator.mjs';
 
