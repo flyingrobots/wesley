@@ -51,7 +51,9 @@ export class CertVerifyCommand extends WesleyCommand {
     if (!ok) {
       throw new WesleyError('CERT_INVALID', 'Certificate verification failed');
     }
-    return options.json ? undefined : result;
+    // In JSON mode we already wrote to stdout above; return null to
+    // prevent WesleyCommand.execute() from emitting a duplicate wrapper.
+    return options.json ? null : result;
   }
 }
 

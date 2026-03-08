@@ -111,7 +111,7 @@ export class WesleyCommand {
       content = await fs.read(schemaPath);
     } catch (error) {
       if (error.code === 'ENOENT' || error.message?.includes('ENOENT')) {
-        const err = new Error(`Schema file not found: ${options.schema}`);
+        const err = new Error(`Schema file not found: ${schemaPath}`);
         err.code = 'ENOENT';
         throw err;
       }

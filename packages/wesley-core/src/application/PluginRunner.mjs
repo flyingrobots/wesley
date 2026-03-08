@@ -1,6 +1,7 @@
 // wesley-core/src/application/PluginRunner.mjs
 
 import { validatePlugin, validatePlan, validateGenerateResult } from '../ports/GeneratorPlugin.mjs';
+import { PluginError } from '../domain/WesleyError.mjs';
 import { deepFreeze } from '../util/deepFreeze.mjs';
 
 /**
@@ -222,12 +223,15 @@ function _throwRunError(message, code, plugin, phase, pluginResults, startMs, ca
   } catch {
     // Getter may throw — keep '<unknown>'
   }
-  const err = new Error(`Plugin "${pluginName}" failed in ${phase}: ${message}`);
-  err.code = code;
+  const err = new PluginError(
+    code,
+    `Plugin "${pluginName}" failed in ${phase}: ${message}`,
+    { plugin: pluginName, phase },
+    cause
+  );
   err.plugin = pluginName;
   err.phase = phase;
   err.pluginResults = pluginResults;
   err.durationMs = Date.now() - startMs;
-  if (cause) err.cause = cause;
   throw err;
 }

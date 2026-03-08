@@ -29,6 +29,7 @@ const EXIT_CODE_MAP = Object.freeze({
   'UNSUPPORTED_OPTION': 2,
   'INVALID_LOG_FORMAT': 2,
   'OPS_ALLOW_ERRORS_FORBIDDEN': 2,
+  'OPS_INVALID_SECURITY': 2,
 
   // 3 — Parsing / schema resolution
   'PARSE_FAILED': 3,

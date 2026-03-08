@@ -327,23 +327,36 @@ export class TransmutationRunner {
     }
 
     // Minimal fallback
-    const mri = scoringEngine.calculateMRIDetails(options.diff?.steps || []);
-    const zero = 0;
-    const readiness = scoringEngine.calculateReadiness(zero, mri.score, zero);
+    try {
+      const mri = scoringEngine.calculateMRIDetails(options.diff?.steps || []);
+      const zero = 0;
+      const readiness = scoringEngine.calculateReadiness(zero, mri.score, zero);
 
-    return {
-      version: BUNDLE_VERSION,
-      timestamp: this._clock.now(),
-      commit: evidenceMap.sha,
-      scores: { scs: zero, mri: mri.score, tci: zero },
-      breakdown: { scs: {}, mri: mri.breakdown, tci: {} },
-      readiness,
-      metadata: {
-        tables: 0,
-        migrationSteps: (options.diff?.steps || []).length,
-        testsRun: (options.testResults && options.testResults.total) || 0
-      }
-    };
+      return {
+        version: BUNDLE_VERSION,
+        timestamp: this._clock.now(),
+        commit: evidenceMap.sha,
+        scores: { scs: zero, mri: mri.score, tci: zero },
+        breakdown: { scs: {}, mri: mri.breakdown, tci: {} },
+        readiness,
+        metadata: {
+          tables: 0,
+          migrationSteps: (options.diff?.steps || []).length,
+          testsRun: (options.testResults && options.testResults.total) || 0
+        }
+      };
+    } catch (fallbackErr) {
+      this._logger.warn?.('[scoring] Fallback scoring failed:', fallbackErr?.message || fallbackErr);
+      return {
+        version: BUNDLE_VERSION,
+        timestamp: this._clock.now(),
+        commit: evidenceMap.sha,
+        scores: { scs: 0, mri: 0, tci: 0 },
+        breakdown: { scs: {}, mri: {}, tci: {} },
+        readiness: { verdict: 'UNKNOWN', reason: 'scoring-failed' },
+        metadata: { tables: 0, migrationSteps: 0, testsRun: 0 }
+      };
+    }
   }
 
   /**

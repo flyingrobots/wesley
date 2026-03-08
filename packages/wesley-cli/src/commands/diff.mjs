@@ -186,12 +186,10 @@ export class DiffCommand extends WesleyCommand {
 
     this.ctx.stdout.write(output + '\n');
 
-    // Exit code
-    const hasBreaking = changes.some((c) => c.breaking) ||
-      delta.removed_types.length > 0 ||
-      delta.removed_ops.length > 0 ||
-      delta.modified_types.some((m) => m.breaking) ||
-      delta.modified_ops.some((m) => m.breaking);
+    // Exit code — use unfiltered changes for the breaking check so
+    // --breaking-only doesn't mask the exit code decision.
+    const allChanges = flattenChanges(delta);
+    const hasBreaking = allChanges.some((c) => c.breaking);
 
     if (options.exitCode && hasBreaking) {
 

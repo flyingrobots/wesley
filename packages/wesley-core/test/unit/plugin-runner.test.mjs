@@ -9,6 +9,7 @@ import {
   SUPPORTED_API_VERSIONS
 } from '../../src/ports/GeneratorPlugin.mjs';
 import { PluginRunner } from '../../src/application/PluginRunner.mjs';
+import { PluginError } from '../../src/domain/WesleyError.mjs';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -544,4 +545,22 @@ test('validateGenerateResult — rejects { files: {}, evidence: 42 } (WPLY003)',
 test('validateGenerateResult — includes plugin name in error messages', () => {
   const err = catchError(() => validateGenerateResult(null, 'my-plugin'));
   assert.match(err.message, /"my-plugin"/);
+});
+
+// ===========================================================================
+// PluginRunner error type
+// ===========================================================================
+
+test('PluginRunner — thrown errors are PluginError instances', async () => {
+  const runner = makeRunner();
+  const plugin = makePlugin({
+    async generate() { throw new Error('boom'); }
+  });
+
+  const err = await catchReject(() => runner.run([plugin], {}));
+  assert.ok(err instanceof PluginError, 'should be PluginError');
+  assert.equal(err.name, 'PluginError');
+  assert.equal(err.code, 'WPLY002');
+  assert.ok(err.cause instanceof Error, 'should chain original error as cause');
+  assert.equal(err.cause.message, 'boom');
 });
