@@ -28,8 +28,8 @@ export async function createBunRuntime(){
   // - Used only for smoke-level tests to keep the bundle small
   const parsers = { graphql: { async parse(sdl){
     const re = /\btype\s+([A-Za-z_][A-Za-z0-9_]*)\s*([^{]*)\{/g; const tables=[]; let m;
-    while((m=re.exec(sdl))!==null){ if(/@wes_table\b|@wesley_table\b|\b@table\b/.test(m[2]||'')) tables.push({ name:m[1] }); }
-    return { tables, toJSON(){ return { tables }; } };
+    while((m=re.exec(sdl))!==null){ if(/@wes_table\b|@wesley_table\b|\b@table\b/.test(m[2]||'')) tables.push({ name:m[1], directives: { table: true }, fields: [], indexes: [], constraints: [] }); }
+    return { version: '1.0.0', metadata: { generatedAt: new Date().toISOString() }, tables, enums: [], scalars: [], relationships: [], toJSON(){ return { version: '1.0.0', tables }; } };
   } } };
   return { logger, fs, clock, crypto:{ sha256Hex }, parsers };
 }

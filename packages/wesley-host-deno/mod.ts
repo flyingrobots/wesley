@@ -32,12 +32,12 @@ export async function createDenoRuntime(){
       async parse(sdl:string){
         // ultra-minimal detector for @wes_table types
         const re = /\btype\s+([A-Za-z_][A-Za-z0-9_]*)\s*([^\{]*)\{/g;
-        const tables: Array<{ name: string }> = [];
+        const tables: Array<{ name: string; directives: { table: boolean }; fields: never[]; indexes: never[]; constraints: never[] }> = [];
         let m: RegExpExecArray | null;
         while ((m = re.exec(sdl)) !== null) {
-          if (/@wes_table\b|@wesley_table\b|\b@table\b/.test(m[2] || '')) tables.push({ name: m[1] });
+          if (/@wes_table\b|@wesley_table\b|\b@table\b/.test(m[2] || '')) tables.push({ name: m[1], directives: { table: true }, fields: [], indexes: [], constraints: [] });
         }
-        return { tables, toJSON(){ return { tables }; } };
+        return { version: '1.0.0' as const, metadata: { generatedAt: new Date().toISOString() }, tables, enums: [] as never[], scalars: [] as never[], relationships: [] as never[], toJSON(){ return { version: '1.0.0', tables }; } };
       }
     }
   };

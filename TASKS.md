@@ -98,18 +98,18 @@ each step.
 
 ## Phase 8 — Migrate Browser Host
 
-- [ ] **T-8.1** Update `packages/wesley-host-browser/src/BrowserParserPort.mjs`
+- [x] **T-8.1** Update `packages/wesley-host-browser/src/BrowserParserPort.mjs`
   Emit `fields` with structured `FieldType` instead of `columns` with PG strings.
 
-- [ ] **T-8.2** Update `packages/wesley-host-browser/src/index.mjs`
+- [x] **T-8.2** Update `packages/wesley-host-browser/src/index.mjs`
   `compileSchemaInBrowser()` reads `table.fields`, maps types.
 
 ## Phase 9 — Migrate Bun and Deno Hosts
 
-- [ ] **T-9.1** Update `packages/wesley-host-bun/src/index.mjs`
+- [x] **T-9.1** Update `packages/wesley-host-bun/src/index.mjs`
   Emit `fields: []` (or structured) instead of minimal `{ tables: [{ name }] }`.
 
-- [ ] **T-9.2** Update `packages/wesley-host-deno/mod.ts`
+- [x] **T-9.2** Update `packages/wesley-host-deno/mod.ts`
   Same as T-9.1.
 
 ## Phase 10 — Update Fixtures and Tests
