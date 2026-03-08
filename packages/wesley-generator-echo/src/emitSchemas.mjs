@@ -99,7 +99,7 @@ export function emitSchemas(ir) {
       const resultList = op.result_list ?? false;
       const resultRequired = op.result_required ?? true;
       let resultRef = resultList ? `z.array(${innerRef})` : innerRef;
-      if (!resultRequired) resultRef += '.optional()';
+      if (!resultRequired) resultRef += '.nullish()';
       lines.push(`export const ${pascal}ResultSchema = ${resultRef};`);
     }
   }

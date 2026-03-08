@@ -33,6 +33,7 @@ export function emitClient(ir) {
 
   // --- Interfaces ---
   lines.push('export interface RegistryInfo {');
+  lines.push('  contract_version?: string;');
   lines.push('  schema_sha256: string;');
   lines.push('  codec_id: string;');
   lines.push('  registry_version: number;');
@@ -65,10 +66,12 @@ export function emitClient(ir) {
   lines.push('');
 
   // --- Embedded op index ---
-  lines.push('/** Op metadata indexed by name. */');
+  // Keyed by "KIND:name" to avoid collisions when a Query and Mutation
+  // share the same field name (valid in GraphQL).
+  lines.push('/** Op metadata indexed by "KIND:name". */');
   lines.push('const OP_INDEX = new Map<string, { kind: string; op_id: number; result_type: string }>([');
   for (const op of ops) {
-    lines.push(`  [${JSON.stringify(op.name)}, { kind: ${JSON.stringify(op.kind)}, op_id: ${op.op_id}, result_type: ${JSON.stringify(op.result_type)} }],`);
+    lines.push(`  [${JSON.stringify(`${op.kind}:${op.name}`)}, { kind: ${JSON.stringify(op.kind)}, op_id: ${op.op_id}, result_type: ${JSON.stringify(op.result_type)} }],`);
   }
   lines.push(']);');
   lines.push('');
@@ -103,6 +106,9 @@ export function emitClient(ir) {
 
   lines.push('  /** Verify remote registry info matches generated contract. */');
   lines.push('  verifyRegistry(info: RegistryInfo): void {');
+  lines.push('    if (info.contract_version !== undefined && info.contract_version !== HANDSHAKE.contract_version) {');
+  lines.push('      throw new Error(`Contract version mismatch: expected ${HANDSHAKE.contract_version}, got ${info.contract_version}`);');
+  lines.push('    }');
   lines.push('    if (info.schema_sha256 !== HANDSHAKE.schema_sha256) {');
   lines.push('      throw new Error(`Schema hash mismatch: expected ${HANDSHAKE.schema_sha256}, got ${info.schema_sha256}`);');
   lines.push('    }');
@@ -122,9 +128,8 @@ export function emitClient(ir) {
   lines.push('   * @returns Encoded command bytes ready for transport.');
   lines.push('   */');
   lines.push('  dispatch(opName: string, payload: Uint8Array): Uint8Array {');
-  lines.push('    const op = OP_INDEX.get(opName);');
-  lines.push('    if (!op) throw new Error(`Unknown operation: ${opName}`);');
-  lines.push('    if (op.kind !== "MUTATION") throw new Error(`${opName} is a ${op.kind}, not a MUTATION — use query() instead`);');
+  lines.push('    const op = OP_INDEX.get(`MUTATION:${opName}`);');
+  lines.push('    if (!op) throw new Error(`Unknown mutation: ${opName}`);');
   lines.push('    return this.wasm.encode_command(op.op_id, payload);');
   lines.push('  }');
   lines.push('');
@@ -136,17 +141,16 @@ export function emitClient(ir) {
   lines.push('   * @returns Raw result bytes from WASM execution.');
   lines.push('   */');
   lines.push('  query(queryName: string, vars: Uint8Array): Uint8Array {');
-  lines.push('    const op = OP_INDEX.get(queryName);');
+  lines.push('    const op = OP_INDEX.get(`QUERY:${queryName}`);');
   lines.push('    if (!op) throw new Error(`Unknown query: ${queryName}`);');
-  lines.push('    if (op.kind !== "QUERY") throw new Error(`${queryName} is a ${op.kind}, not a QUERY — use dispatch() instead`);');
   lines.push('    return this.wasm.execute_query(op.op_id, vars);');
   lines.push('  }');
   lines.push('');
 
-  lines.push('  /** Look up an op_id by name. Throws if unknown. */');
-  lines.push('  findOpId(name: string): number {');
-  lines.push('    const op = OP_INDEX.get(name);');
-  lines.push('    if (!op) throw new Error(`Unknown op name: ${name}`);');
+  lines.push('  /** Look up an op_id by kind and name. Throws if unknown. */');
+  lines.push('  findOpId(kind: string, name: string): number {');
+  lines.push('    const op = OP_INDEX.get(`${kind}:${name}`);');
+  lines.push('    if (!op) throw new Error(`Unknown op: ${kind}:${name}`);');
   lines.push('    return op.op_id;');
   lines.push('  }');
   lines.push('');
@@ -203,7 +207,16 @@ export function emitClient(ir) {
   lines.push('): (buffer: Uint8Array) => void {');
   lines.push('  return function pump(buffer: Uint8Array): void {');
   lines.push('    if (buffer.length === 0) return;');
-  lines.push('    const envelopes = parseViewOps(buffer);');
+  lines.push('    let envelopes: ViewOpEnvelope[];');
+  lines.push('    try {');
+  lines.push('      envelopes = parseViewOps(buffer);');
+  lines.push('    } catch (err) {');
+  lines.push('      if (diagnostics?.decodeError) {');
+  lines.push('        diagnostics.decodeError(err instanceof Error ? err : new Error(String(err)), buffer);');
+  lines.push('        return;');
+  lines.push('      }');
+  lines.push('      throw err;');
+  lines.push('    }');
   lines.push('    for (const { opId, payload } of envelopes) {');
   lines.push('      const handler = handlers.get(opId);');
   lines.push('      if (handler) {');

@@ -115,7 +115,7 @@ describe('generated client — dispatch/query API', () => {
 
   it('provides findOpId and resolveOpName helpers', async () => {
     const content = await getClientContent();
-    expect(content).toContain('findOpId(name: string): number');
+    expect(content).toContain('findOpId(kind: string, name: string): number');
     expect(content).toContain('resolveOpName(opId: number): string | undefined');
   });
 
@@ -124,14 +124,14 @@ describe('generated client — dispatch/query API', () => {
     expect(content).toContain('must implement EchoWasm interface');
   });
 
-  it('rejects dispatch on QUERY ops', async () => {
+  it('dispatch rejects unknown mutation names', async () => {
     const content = await getClientContent();
-    expect(content).toContain('not a MUTATION');
+    expect(content).toContain('Unknown mutation');
   });
 
-  it('rejects query on MUTATION ops', async () => {
+  it('query rejects unknown query names', async () => {
     const content = await getClientContent();
-    expect(content).toContain('not a QUERY');
+    expect(content).toContain('Unknown query');
   });
 });
 
