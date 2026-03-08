@@ -5,6 +5,8 @@
 
 export const opJsonSchema = {
   $id: 'https://wesley.dev/schemas/op.schema.json',
+  $schema: 'https://json-schema.org/draft/2020-12/schema',
+  title: 'Wesley Operation (MVP)',
   type: 'object',
   additionalProperties: false,
   required: ['table'],
@@ -77,7 +79,7 @@ export const opJsonSchema = {
         {
           if: { required: ['op'], properties: { op: { enum: ['eq','ne','lt','lte','gt','gte','like','ilike','contains','in'] } } },
           then: {
-            anyOf: [ { required: ['param'] }, { required: ['value'] } ]
+            oneOf: [ { required: ['param'] }, { required: ['value'] } ]
           }
         }
       ]

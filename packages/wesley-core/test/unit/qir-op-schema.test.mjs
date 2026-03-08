@@ -16,6 +16,16 @@ function readFixture(rel) {
 const ajv = new Ajv2020({ strict: true, strictRequired: false, allErrors: true });
 const validate = ajv.compile(opJsonSchema);
 
+/** Assert validation fails and at least one error matches the given keyword. */
+function assertRejects(data, keyword, msg) {
+  assert.equal(validate(data), false, `expected rejection: ${msg}`);
+  const keywords = validate.errors.map((e) => e.keyword);
+  assert.ok(
+    keywords.includes(keyword),
+    `expected keyword "${keyword}" among [${keywords.join(', ')}]: ${msg}`
+  );
+}
+
 // ─── Smoke ──────────────────────────────────────────────────────────
 
 test('opJsonSchema compiles under Ajv 2020-12', () => {
@@ -51,16 +61,16 @@ test('filter without op but with value is valid', () => {
 // ─── Invalid ops (rejection) ───────────────────────────────────────
 
 test('missing table is rejected', () => {
-  assert.equal(validate({ columns: ['id'] }), false);
+  assertRejects({ columns: ['id'] }, 'required', 'table is required');
 });
 
 test('extra unknown property is rejected', () => {
-  assert.equal(validate({ table: 't', bogus: true }), false);
+  assertRejects({ table: 't', bogus: true }, 'additionalProperties', 'bogus key');
 });
 
 test('invalid filter op enum is rejected', () => {
   const op = { table: 't', filters: [{ column: 'x', op: 'banana', value: 1 }] };
-  assert.equal(validate(op), false);
+  assertRejects(op, 'enum', 'op must be a known operator');
 });
 
 test('invalid param type pattern is rejected', () => {
@@ -68,12 +78,12 @@ test('invalid param type pattern is rejected', () => {
     table: 't',
     filters: [{ column: 'x', op: 'eq', param: { name: 'x', type: 'varchar' } }]
   };
-  assert.equal(validate(op), false);
+  assertRejects(op, 'pattern', 'type must match allowed SQL types');
 });
 
 test('isNull filter with value present is rejected', () => {
   const op = { table: 't', filters: [{ column: 'x', op: 'isNull', value: true }] };
-  assert.equal(validate(op), false);
+  assertRejects(op, 'not', 'isNull must not have value');
 });
 
 test('colRef tuple with 3 elements is rejected', () => {
@@ -84,7 +94,20 @@ test('colRef tuple with 3 elements is rejected', () => {
       on: { left: ['a', 'b', 'c'] }
     }]
   };
-  assert.equal(validate(op), false);
+  assertRejects(op, 'maxItems', 'colRef tuple allows exactly 2 elements');
+});
+
+test('filter with both param and value is rejected (oneOf)', () => {
+  const op = {
+    table: 't',
+    filters: [{
+      column: 'x',
+      op: 'eq',
+      param: { name: 'x' },
+      value: 1
+    }]
+  };
+  assertRejects(op, 'oneOf', 'exactly one of param or value');
 });
 
 // ─── Regression guards (Codex fixes) ───────────────────────────────
@@ -113,5 +136,5 @@ test('regression: colRef as 3-element tuple is rejected', () => {
       on: { left: ['a', 'b', 'c'] }
     }]
   };
-  assert.equal(validate(op), false);
+  assertRejects(op, 'maxItems', 'colRef tuple allows exactly 2 elements');
 });

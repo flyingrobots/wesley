@@ -245,7 +245,9 @@ function sanitizeGraphQL(sdl, env) {
     e.code = 'EINPUTSIZE';
     throw e;
   }
-  // Strip BOM only; do not embed control characters in regexes.
-  // If callers provide inputs containing null bytes, let downstream parsing fail clearly.
-  return sdl.replace(/^\uFEFF/, '');
+  // Strip BOM and null bytes (matches browser runtime behaviour).
+  let out = sdl;
+  if (out.length && out.charCodeAt(0) === 0xFEFF) out = out.slice(1);
+  if (out.indexOf('\0') !== -1) out = out.split('\0').join('');
+  return out;
 }

@@ -16,7 +16,7 @@ docker compose -f "$COMPOSE_FILE" up -d postgres-fixture --remove-orphans >/dev/
 echo "Waiting for Postgres fixture container to become ready..."
 ready=0
 for attempt in {1..30}; do
-  if docker compose -f "$COMPOSE_FILE" exec postgres-fixture pg_isready -U wesley -d wesley_test >/dev/null 2>&1; then
+  if docker compose -f "$COMPOSE_FILE" exec -T postgres-fixture pg_isready -U wesley -d wesley_test >/dev/null 2>&1; then
     ready=1
     break
   fi
@@ -29,7 +29,7 @@ if [[ $ready -ne 1 ]]; then
 fi
 
 echo "Checking seeded extensions..."
-extensions=$(docker compose -f "$COMPOSE_FILE" exec postgres-fixture psql -U wesley -d wesley_test -Atc "SELECT extname FROM pg_extension WHERE extname IN ('pgcrypto','uuid-ossp','pg_trgm') ORDER BY extname;")
+extensions=$(docker compose -f "$COMPOSE_FILE" exec -T postgres-fixture psql -U wesley -d wesley_test -Atc "SELECT extname FROM pg_extension WHERE extname IN ('pgcrypto','uuid-ossp','pg_trgm') ORDER BY extname;")
 expected=$'pg_trgm\npgcrypto\nuuid-ossp'
 if [[ "$extensions" != "$expected" ]]; then
   echo "Unexpected extension list:" >&2

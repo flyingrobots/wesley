@@ -14,7 +14,7 @@ services:
       timeout: 5s
       retries: 5
     ports:
-      - "${FIXTURE_POSTGRES_PORT:-65432}:5432"
+      - "127.0.0.1:${FIXTURE_POSTGRES_PORT:-65432}:5432"
     volumes:
       - ./test/fixtures/postgres/00-extensions.sql:/docker-entrypoint-initdb.d/00-extensions.sql:ro
     restart: "no"

@@ -51,7 +51,7 @@
         },
         {
           "if": { "required": ["op"], "properties": { "op": { "enum": ["eq","ne","lt","lte","gt","gte","like","ilike","contains","in"] } } },
-          "then": { "anyOf": [ { "required": ["param"] }, { "required": ["value"] } ] }
+          "then": { "oneOf": [ { "required": ["param"] }, { "required": ["value"] } ] }
         }
       ]
     },
