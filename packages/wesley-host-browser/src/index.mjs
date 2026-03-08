@@ -2,7 +2,7 @@
  * Browser host public API
  */
 
-import { GenerationPipeline } from '@wesley/core';
+import { GenerationPipeline, fieldTypeToPg } from '@wesley/core';
 import { createBrowserRuntime } from './createBrowserRuntime.mjs';
 import { MemoryFileSystem } from './createBrowserRuntime.mjs'; // Import MemoryFileSystem
 
@@ -78,17 +78,10 @@ export async function compileSchemaInBrowser(inputFiles) {
     const bundle = await pipeline.execute(schemaSDL, { sha: 'browser-playground' });
     const tables = Array.isArray(bundle?.schema?.tables) ? bundle.schema.tables.length : 0;
 
-    // GQL→PG type mapping for SQL emission
-    const GQL_TO_PG = {
-      'ID': 'uuid', 'UUID': 'uuid', 'String': 'text', 'Int': 'integer',
-      'Float': 'double precision', 'Boolean': 'boolean', 'DateTime': 'timestamptz',
-      'Date': 'date', 'Time': 'time with time zone', 'JSON': 'jsonb'
-    };
-
     // Generate SQL from the parsed schema bundle
     const generatedSql = (bundle.schema?.tables || []).map(table => {
       const columns = (table.fields || []).map(field => {
-        const pgType = (GQL_TO_PG[field.type.base] || 'text') + (field.type.isList ? '[]' : '');
+        const pgType = fieldTypeToPg(field.type);
         let def = `  "${field.name}" ${pgType}`;
         if (!field.nullable) def += ' NOT NULL';
         if (field.directives?.pk) {

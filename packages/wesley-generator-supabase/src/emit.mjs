@@ -3,25 +3,7 @@
  * Side-effect free exports for lazy loading
  */
 
-const GQL_TO_PG = {
-  'ID': 'uuid',
-  'UUID': 'uuid',
-  'String': 'text',
-  'Int': 'integer',
-  'Float': 'double precision',
-  'Boolean': 'boolean',
-  'DateTime': 'timestamptz',
-  'Date': 'date',
-  'Time': 'time with time zone',
-  'JSON': 'jsonb',
-  'Decimal': 'numeric',
-  'BigInt': 'bigint'
-};
-
-function gqlToPgType(fieldType) {
-  const pgBase = GQL_TO_PG[fieldType.base] || 'text';
-  return fieldType.isList ? `${pgBase}[]` : pgBase;
-}
+import { fieldTypeToPg } from '@wesley/core';
 
 /**
  * Emit PostgreSQL DDL from Wesley IR
@@ -41,7 +23,7 @@ export function emitDDL(ir) {
     const tbl = tname(table.name);
     const colLines = [];
     for (const field of table.fields) {
-      const parts = [q(field.name), gqlToPgType(field.type)];
+      const parts = [q(field.name), fieldTypeToPg(field.type)];
       if (field.nullable === false) parts.push('NOT NULL');
       if (field.directives.default) parts.push('DEFAULT ' + field.directives.default.value);
       colLines.push('  ' + parts.join(' '));
