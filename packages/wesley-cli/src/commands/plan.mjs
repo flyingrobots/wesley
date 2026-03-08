@@ -37,7 +37,11 @@ export class PlanCommand extends WesleyCommand {
     // Enforce clean tree only in strict policy; default: allow
     const env = this.ctx.env || {};
     if (shouldEnforceCleanPlan(env) && !options.allowDirty) {
-      try { await assertCleanGit(this.ctx.shell); } catch (e) { throw e instanceof WesleyError ? e : new WesleyError(e.code || 'DIRTY_WORKTREE', e.message); }
+      try {
+        await assertCleanGit(this.ctx.shell);
+      } catch (e) {
+        throw e instanceof WesleyError ? e : new WesleyError(e.code || 'DIRTY_WORKTREE', e.message);
+      }
     }
 
     const current = this.ctx.parsers.graphql.parse(schemaContent);

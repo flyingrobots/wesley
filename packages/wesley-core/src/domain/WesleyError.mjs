@@ -10,9 +10,10 @@ export class WesleyError extends Error {
    * @param {string} code  - Machine-readable error code (e.g. 'GENERATION_FAILED')
    * @param {string} message - Human-readable description
    * @param {Record<string, unknown>} [meta] - Structured metadata for logging/evidence
+   * @param {Error} [cause] - Original error for native ES2022 cause chain
    */
-  constructor(code, message, meta = {}) {
-    super(message);
+  constructor(code, message, meta = {}, cause) {
+    super(message, cause !== undefined ? { cause } : undefined);
     this.name = 'WesleyError';
     this.code = code;
     this.meta = meta;
@@ -23,8 +24,8 @@ export class WesleyError extends Error {
  * OpsError - Errors originating from the ops compilation pipeline.
  */
 export class OpsError extends WesleyError {
-  constructor(code, message, meta = {}) {
-    super(code, message, meta);
+  constructor(code, message, meta = {}, cause) {
+    super(code, message, meta, cause);
     this.name = 'OpsError';
   }
 }
@@ -38,8 +39,8 @@ export class PluginError extends WesleyError {
    * @param {string} message
    * @param {{ plugin?: string, phase?: string }} [meta]
    */
-  constructor(code, message, meta = {}) {
-    super(code, message, meta);
+  constructor(code, message, meta = {}, cause) {
+    super(code, message, meta, cause);
     this.name = 'PluginError';
   }
 }

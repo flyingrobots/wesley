@@ -21,4 +21,3 @@ export class TransformPipelineCommand extends WesleyCommand {
   }
 }
 
-

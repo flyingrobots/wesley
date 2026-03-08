@@ -38,3 +38,28 @@ test('WesleyError has a stack trace', () => {
   assert.ok(typeof err.stack === 'string');
   assert.ok(err.stack.includes('WesleyError'));
 });
+
+test('WesleyError forwards cause to native Error cause chain', () => {
+  const original = new Error('root cause');
+  const err = new WesleyError('WRAP', 'wrapped', { file: 'x.mjs' }, original);
+  assert.equal(err.cause, original);
+  assert.equal(err.message, 'wrapped');
+  assert.deepEqual(err.meta, { file: 'x.mjs' });
+});
+
+test('WesleyError cause defaults to undefined when omitted', () => {
+  const err = new WesleyError('CODE', 'msg');
+  assert.equal(err.cause, undefined);
+});
+
+test('OpsError forwards cause', () => {
+  const original = new Error('db down');
+  const err = new OpsError('OPS_FAIL', 'op broke', { op: 'foo' }, original);
+  assert.equal(err.cause, original);
+});
+
+test('PluginError forwards cause', () => {
+  const original = new TypeError('bad input');
+  const err = new PluginError('WPLY002', 'crashed', { plugin: 'x' }, original);
+  assert.equal(err.cause, original);
+});

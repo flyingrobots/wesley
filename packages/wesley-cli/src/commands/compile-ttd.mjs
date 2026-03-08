@@ -126,7 +126,7 @@ export class CompileTtdCommand extends WesleyCommand {
         deps
       });
     } catch (error) {
-      throw error instanceof WesleyError ? error : new WesleyError('TTD_COMPILE_FAILED', `TTD compilation failed: ${error.message}`, { cause: error });
+      throw error instanceof WesleyError ? error : new WesleyError('TTD_COMPILE_FAILED', `TTD compilation failed: ${error.message}`, {}, error);
     }
 
     // ── Debug: print IR ──

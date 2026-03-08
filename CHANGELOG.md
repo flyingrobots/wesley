@@ -32,7 +32,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **Transmutations architecture spec**: Design doc at `docs/architecture/transmutations.md`
   covering source-to-generator mappings, per-element evidence tracking, contextual
   HOLMES scoring, and Moriarty dual-layer prediction (Phase 0–6).
-- **`WesleyError` base class** (`@wesley/core`): Structured error with `code` and `meta`.
+- **`WesleyError` base class** (`@wesley/core`): Structured error with `code`, `meta`,
+  and optional `cause` (forwarded to native ES2022 `Error.cause` chain).
   `OpsError` and `PluginError` extend it. Replaces ad-hoc `e.code =` patterns.
 - **`TransmutationRunner`** (`@wesley/core`): Unified orchestrator merging
   `GenerationPipeline` and `PluginRunner`. Named transmutations, per-element evidence
