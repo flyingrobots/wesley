@@ -68,7 +68,7 @@ export function emitClient(ir) {
   lines.push('/** Op metadata indexed by name. */');
   lines.push('const OP_INDEX = new Map<string, { kind: string; op_id: number; result_type: string }>([');
   for (const op of ops) {
-    lines.push(`  [${JSON.stringify(op.name)}, { kind: ${JSON.stringify(op.kind)}, op_id: ${op.op_id}, result_type: ${JSON.stringify(op.resultType ?? op.result_type)} }],`);
+    lines.push(`  [${JSON.stringify(op.name)}, { kind: ${JSON.stringify(op.kind)}, op_id: ${op.op_id}, result_type: ${JSON.stringify(op.result_type)} }],`);
   }
   lines.push(']);');
   lines.push('');
