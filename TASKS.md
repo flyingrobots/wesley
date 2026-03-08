@@ -1,3 +1,117 @@
+# Architecture Audit — Immediate Priority
+
+Results of a comprehensive hexagonal architecture, SOLID, DRY, and test quality
+audit conducted 2026-03-08. All four items are **immediate priority**.
+
+---
+
+## ARC-1 — Consolidate Duplicated Generators (2,029 lines)
+
+Three generators exist as byte-for-byte copies in both `wesley-core` and
+`wesley-generator-supabase`. Every bug fix or enhancement must be applied twice.
+
+| Generator | Lines (per copy) | Core Location | Supabase Location |
+|---|---|---|---|
+| `RepairGenerator` | 831 | `core/src/domain/generators/RepairGenerator.mjs` | `generator-supabase/src/repair.mjs` |
+| `TriggerGenerator` | 599 | `core/src/domain/generators/TriggerGenerator.mjs` | `generator-supabase/src/trigger.mjs` |
+| `RollbackGenerator` | 599 | `core/src/domain/generators/RollbackGenerator.mjs` | `generator-supabase/src/rollback.mjs` |
+
+**Plan:**
+- [ ] Decide canonical home (core vs generator-supabase vs shared package)
+- [ ] Make the non-canonical location import and re-export from canonical
+- [ ] Verify all tests pass with single source of truth
+- [ ] Remove the duplicate source files
+
+---
+
+## ARC-2 — Create `@wesley/test-fixtures` Package
+
+~5,000 lines of inline GraphQL test schemas (User, Product, Order, Org) are
+duplicated across ~90 test files. `MockDatabase`, `testFixtures`, and `dbAssert`
+live in `wesley-core/test/helpers/` but aren't available to other packages.
+
+**Plan:**
+- [ ] Create `packages/wesley-test-fixtures/` with `package.json`
+- [ ] Move `MockDatabase`, `testFixtures`, `dbAssert` from `wesley-core/test/helpers/database.mjs`
+- [ ] Move `propertyHelpers`, `sqlGenerators` from `wesley-core/test/helpers/property-testing.mjs`
+- [ ] Add parameterized schema builders: `userSchema()`, `productSchema()`, `orderSchema()`, `orgSchema()`
+- [ ] Migrate test files to import from `@wesley/test-fixtures` instead of inline definitions
+- [ ] Add tests for untested packages (`generator-js`, `host-bun`, `scaffold-multitenant`, `slaps`)
+
+---
+
+## ARC-3 — Consolidate Error Hierarchies into Shared `DomainError`
+
+Three modules independently define identical error base class patterns
+(~250 lines total duplication):
+
+- `ConcurrentSafetyAnalyzer` → `ConcurrentSafetyError` + 2 subclasses
+- `BackpressureController` → `BackpressureError` + 3 subclasses
+- `SafetyValidator` → `SafetyValidationError` + 3 subclasses
+
+All follow identical constructor: `(message, code, context = {})`.
+
+**Plan:**
+- [ ] Create `packages/wesley-core/src/domain/errors/DomainError.mjs` with shared base class
+- [ ] Define reusable subclass categories: `ValidationError`, `ConflictError`, `ResourceError`
+- [ ] Migrate `ConcurrentSafetyAnalyzer` errors to extend `DomainError`
+- [ ] Migrate `BackpressureController` errors to extend `DomainError`
+- [ ] Migrate `SafetyValidator` errors to extend `DomainError`
+- [ ] Extract domain event lifecycle boilerplate into a factory (Started/Completed/Failed pattern repeated in 5+ modules)
+
+---
+
+## ARC-4 — Fix Command Auto-Discovery (Open/Closed Violation)
+
+`packages/wesley-cli/src/commands.mjs` manually imports each command file despite
+`AutomaticallyRegisteredProgram` already supporting auto-registration via import
+side effects. Adding a command requires editing `commands.mjs`.
+
+**Plan:**
+- [ ] Replace hardcoded imports with directory scanning (`readdirSync` + dynamic `import()`)
+- [ ] Verify all existing commands still register correctly
+- [ ] Add a test: dropping a new `.mjs` file in `commands/` auto-registers without editing `commands.mjs`
+
+---
+
+## Backlog — Additional Audit Findings
+
+Lower priority items identified in the same audit. Not blocking, but worth
+scheduling after the immediate items above.
+
+### SRP — God Objects to Decompose
+
+These classes exceed 750 lines with 40+ methods spanning 5-6 responsibilities
+each. Should be split into focused collaborators behind a facade.
+
+- [ ] `ConcurrentSafetyAnalyzer` (1,081 lines) → RaceConditionDetector, LockConflictAnalyzer, DependencyGraphBuilder, ExecutionStrategyGenerator, SafetyScorer
+- [ ] `BackpressureController` (793 lines) → CircuitBreaker, AdaptiveRateLimiter, PoolMonitor, RecoveryManager
+- [ ] `RepairGenerator` (831 lines) → SafeOperationFilter, RepairStepGenerator, RepairSQLGenerator, RollbackPlanner
+- [ ] `SafetyValidator` (782 lines) → ConcurrentOperationValidator, ResourceLimitValidator, PermissionValidator
+- [ ] `DifferentialValidator` (634 lines) → SchemaDriftDetector, DiffReportGenerator, ImpactAssessor
+
+### Dependency Inversion
+
+- [ ] Domain classes extend concrete `EventEmitter` — extract `EventPublisher` port, inject via constructor
+- [ ] `RepairGenerator` instantiates `new MigrationSafety()` directly — accept via constructor injection
+- [ ] Normalize `GeneratorPlugin.generate()` return shape — deprecate legacy `Record<string, string>`, require `{ files, evidence }`
+
+### Test Coverage Gaps
+
+- [ ] `wesley-generator-js` — 4 source files, 0 tests
+- [ ] `wesley-host-bun` — 1 source file, 0 tests
+- [ ] `wesley-scaffold-multitenant` — 1 source file, 0 tests
+- [ ] `wesley-slaps` — 3 source files, 0 tests
+- [ ] `wesley-host-browser` — only 2 tests, needs worker lifecycle + async loading + error scenarios
+
+### Dead Dependency
+
+- [ ] `@wesley/generator-echo` declares `@wesley/host-node` in `package.json` but no imports found — verify and remove
+
+---
+
+---
+
 # IR Schema Reconciliation — Promote `WesleyIR.schema.ts` to Runtime Truth
 
 Tracked in branch `revive-dead-code` (PR #400 follow-up).
