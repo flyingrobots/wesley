@@ -7,8 +7,8 @@ import { GeneratorCommand } from './GeneratorCommand.mjs';
  * generate single files (like zod, typescript) vs directories (like models)
  */
 export class FileOutputGeneratorCommand extends GeneratorCommand {
-  constructor(name, description) {
-    super(name, description);
+  constructor(ctx, name, description) {
+    super(ctx, name, description);
   }
 
   configureCommander(cmd) {

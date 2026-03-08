@@ -148,11 +148,11 @@ teardown() {
 }
 
 @test "package exports work correctly" {
-    # Test that we can import from @wesley/host-node (run from packages directory)
+    # Test that generators are importable from @wesley/generator-js
     cd packages/wesley-cli
     run node -e "
-    const imports = await import('@wesley/host-node');
-    const requiredExports = ['GraphQLAdapter', 'ModelGenerator', 'GraphQLSchemaParser'];
+    const imports = await import('@wesley/generator-js');
+    const requiredExports = ['ModelGenerator', 'TypeScriptGenerator', 'ZodGenerator'];
     const missing = requiredExports.filter(exp => !imports[exp]);
     if (missing.length > 0) {
       console.error('Missing exports:', missing);

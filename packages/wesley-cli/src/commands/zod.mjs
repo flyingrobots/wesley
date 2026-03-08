@@ -1,34 +1,28 @@
-import { ZodGenerator } from '@wesley/core';
+import { ZodGenerator } from '@wesley/generator-js';
 import { FileOutputGeneratorCommand } from '../framework/FileOutputGeneratorCommand.mjs';
-
-// TODO: GraphQLSchemaParser is not imported — this command is non-functional
-// legacy code. Tracked in .claude/bad_code.md.
-/* eslint-disable no-undef */
+import { irToSchema } from '../framework/irToSchema.mjs';
 
 export class ZodCommand extends FileOutputGeneratorCommand {
-  constructor() {
-    super('zod', 'Generate standalone Zod schemas from GraphQL');
+  constructor(ctx) {
+    super(ctx, 'zod', 'Generate standalone Zod validation schemas from GraphQL');
   }
 
-  async executeCore(ctx) {
-    const { schemaContent, options, fileSystem } = ctx;
+  async executeCore(context) {
+    const { schemaContent, options } = context;
 
-    const parser = new GraphQLSchemaParser();
-    const schema = await parser.parse(schemaContent);
+    const ir = this.ctx.parsers.graphql.parse(schemaContent);
+    const schema = irToSchema(ir);
 
     const generator = new ZodGenerator(null);
     const zodCode = generator.generate(schema);
 
     const outFile = options.outFile;
-    const written = await this.writeOutput({ code: zodCode, outFile, options, fileSystem });
+    const written = await this.writeOutput({ code: zodCode, outFile, options });
     if (!options.quiet && outFile) {
-      console.log(`✨ Generated Zod schemas: ${written}`);
+      console.log(`Generated Zod schemas: ${written}`);
     }
     return { outFile: written };
   }
 }
 
 export default ZodCommand;
-
-// Auto-register this command by creating an instance
-new ZodCommand();

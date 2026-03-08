@@ -1,12 +1,9 @@
 import { GeneratorCommand } from '../framework/GeneratorCommand.mjs';
-
-// TODO: GraphQLAdapter and ModelGenerator are not imported — this command
-// is non-functional legacy code. Tracked in .claude/bad_code.md.
-/* eslint-disable no-undef */
+import { ModelGenerator } from '@wesley/generator-js';
 
 export class ModelsCommand extends GeneratorCommand {
-  constructor() {
-    super('models', 'Generate model classes with Zod validation');
+  constructor(ctx) {
+    super(ctx, 'models', 'Generate TypeScript/JavaScript model classes with Zod validation');
   }
 
   configureCommander(cmd) {
@@ -15,11 +12,10 @@ export class ModelsCommand extends GeneratorCommand {
       .option('--out-dir <dir>', 'Output directory', 'src/models');
   }
 
-  async executeCore(ctx) {
-    const { schemaContent, options } = ctx;
+  async executeCore(context) {
+    const { schemaContent, options } = context;
 
-    const adapter = new GraphQLAdapter();
-    const ir = adapter.parseSDL(schemaContent);
+    const ir = this.ctx.parsers.graphql.parse(schemaContent);
 
     const generator = new ModelGenerator({
       target: options.target,
@@ -29,15 +25,12 @@ export class ModelsCommand extends GeneratorCommand {
     const result = await generator.generate(ir, { outDir: options.outDir });
 
     if (!options.quiet) {
-      console.log('✨ Generated model classes:');
-      result.files.forEach((file) => console.log(`  ✓ ${file}`));
-      console.log(`\n📁 Target: ${result.target} (${result.outputDir})`);
+      console.log('Generated model classes:');
+      result.files.forEach((file) => console.log(`  ${file}`));
+      console.log(`\nTarget: ${result.target} (${result.outputDir})`);
     }
     return result;
   }
 }
 
 export default ModelsCommand;
-
-// Auto-register this command by creating an instance
-new ModelsCommand();
