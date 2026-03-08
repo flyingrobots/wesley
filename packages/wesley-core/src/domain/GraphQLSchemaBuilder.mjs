@@ -118,7 +118,7 @@ export class GraphQLSchemaBuilder {
         directives
       });
 
-      // Record SDL source location for field
+      // Record SDL source location for field (evidence)
       if (this.evidenceMap) {
         const floc = locSpan(fieldNode);
         if (floc) this.evidenceMap.record(fieldUid, 'source', floc);
