@@ -1,504 +1,177 @@
-# PR #392 Self-Code Review — Fix Tracker (Round 6)
+# IR Schema Reconciliation — Promote `WesleyIR.schema.ts` to Runtime Truth
 
-Round 5 covered 37 issues (all resolved). Round 6 addresses 26 unresolved
-CodeRabbit review threads (2 critical, 9 major, 4 minor, 9 trivial/nit,
-plus 2 false-positive P1/P2 from chatgpt-codex-connector).
+Tracked in branch `revive-dead-code` (PR #400 follow-up).
 
----
-
-## Critical
-
-- [x] **CR-1 — `s.default` SQL injection guard is insufficient**
-  `packages/wesley-cli/src/commands/_migration-plan.mjs:107-108`
-  Only rejects semicolons. Clause injection possible without statement termination.
-  **Fix:** Use a stricter validation — e.g., reject any value containing `'`, `--`, or `/*`, or require
-  the default to match a safe literal pattern (numeric, quoted string literal, function call).
-
-- [x] **CR-2 — `s.table` interpolated raw into SQL comment (newline breakout)**
-  `packages/wesley-cli/src/commands/_migration-plan.mjs:105`
-  `-- create table ${s.table}` — newline in `s.table` breaks out of the comment.
-  **Fix:** Sanitize table name in comment: replace newlines/control chars, or use `tname(s.table)`.
-
-- [x] **CR-3 — `process.env` still used directly in ~8 new code paths**
-  `generate.mjs:402,415,462` | `cert-verify.mjs:26` | `rehearse.mjs:244` |
-  `plan.mjs:61` | `qir-validate.mjs:69,94,113,132`
-  **Fix:** Replace all `process.env.WESLEY_REPO_ROOT || process.cwd()` with a helper or
-  use `this.ctx.env?.WESLEY_REPO_ROOT || process.cwd()` consistently. For `qir-validate.mjs`,
-  pass env through context.
-
-## Major
-
-- [x] **CR-4 — `extractJsonBlock` duplicated with divergent implementations**
-  `cert-sign.mjs:54-67` vs `cert-verify.mjs:79-88`
-  **Fix:** Extract to a shared helper (e.g., `_cert-utils.mjs`). Both files import from there.
-
-- [x] **CR-5 — `canonicalize` duplicated between cert-sign and cert-verify**
-  `cert-sign.mjs:69-78` vs `cert-verify.mjs:90-93`
-  **Fix:** Move to the same shared `_cert-utils.mjs`.
-
-- [x] **CR-6 — AJV instantiation pattern duplicated ~8 times**
-  `cert-verify.mjs`, `generate.mjs` (×3), `plan.mjs`, `rehearse.mjs` (×2), `qir-validate.mjs`
-  **Fix:** Extract `createAjv()` helper to a shared utility, lazy-importing ajv + ajv-formats.
-
-- [x] **CR-7 — `resolveManifestEntries` calls `fs.readDir` without `?.`**
-  `generate.mjs:~604`
-  **Fix:** Add `?.` to match `findOpFiles` pattern: `await fs.readDir?.(dir)`.
-
-- [x] **CR-8 — Directory detection crashes on undefined `readDir`**
-  `generate.mjs:~613`
-  `fs.readDir?.(path).then(...)` — `?.` returns `undefined`, `.then()` on `undefined` throws.
-  **Fix:** Guard: `const isDir = fs.readDir ? await fs.readDir(path).then(()=>true).catch(()=>false) : false;`
-
-- [x] **CR-9 — Silent `catch {}` swallows GraphQL parse errors in ops compilation**
-  `generate.mjs:~377-380`
-  **Fix:** Log a warning: `catch (e) { logger.warn(...) }`.
-
-- [x] **CR-10 — CHANGELOG has duplicate `### Fixed` sections**
-  `CHANGELOG.md:9,111`
-  **Fix:** Merge both into a single `### Fixed` section.
-
-- [x] **CR-11 — CHANGELOG section ordering violates convention**
-  **Fix:** Reorder to: Added → Changed → Fixed.
-
-- [x] **CR-12 — CHANGELOG missing `n4` entry**
-  TASKS.md marks n4 completed but CHANGELOG has no entry.
-  **Fix:** The plan said "n4 — Moot — no change needed" because emit.mjs's RESERVED was removed
-  in Commit 1. Add a note or uncheck in TASKS.md. Simplest: add a CHANGELOG line noting n4 is moot
-  due to m5 (the private RESERVED set was removed when sanitizeIdentBase was consolidated).
-
-- [x] **CR-13 — `qir-ops.md` contradicts itself on discovery status**
-  `docs/guides/qir-ops.md:93` vs `:214`
-  **Fix:** Remove or rewrite the "Discovery Modes (planned)" section. Update stale "Constraints
-  and behavior" text (line 24, 27). Remove stale Roadmap bullets (220-221). Remove references to
-  non-existent `--ops-allow-empty` and `--ops-glob` flags.
-
-- [x] **CR-14 — `qir-ops.md` registry example fails its own schema**
-  `docs/guides/qir-ops.md:134-147`
-  **Fix:** Add `"version": "1.0.0"` to the example registry JSON.
-
-- [x] **CR-15 — BACKLOG.md contains stale items completed in this PR**
-  `BACKLOG.md:9-10`
-  **Fix:** Check off or remove the two completed items.
-
-## Minor
-
-- [x] **CR-16 — `assertCleanGit` awaits synchronous `execSync`**
-  `generate.mjs:769`
-  **Fix:** Use `shell?.exec?.()` (async) consistently, or remove `await`.
-
-- [x] **CR-17 — `ir-family.md` sections lack heading markers**
-  `docs/spec/ir-family.md:12,16,20,24`
-  **Fix:** Add `## ` prefix to "Cross‑references", "Versioning", "Validation", "Envelope".
-
-- [x] **CR-18 — `qir.md` missing blank lines after all headings**
-  `docs/spec/qir.md:10,17,24,29,34,37,42,46`
-  **Fix:** Insert blank line after each `##` heading.
-
-- [x] **CR-19 — `qir.md` omits `distinctOn` from the spec**
-  `docs/spec/qir.md:11-15`
-  **Fix:** Add `distinctOn` to the "Top Level" section.
-
-- [x] **CR-20 — `qir-ops.md` stale "Constraints and behavior" text**
-  `docs/guides/qir-ops.md:24,27`
-  **Fix:** Update to reflect that PK resolver and strict validation are shipped.
-
-- [x] **CR-21 — `qir-ops.md` stale Roadmap bullets**
-  `docs/guides/qir-ops.md:220-221`
-  **Fix:** Remove or mark done. (May overlap with CR-13 fix.)
-
-- [x] **CR-22 — `plan-report.schema.json` missing `additionalProperties: false` on 4 defs**
-  `schemas/plan-report.schema.json:15-24,38-45,47-54,58-76`
-  **Fix:** This is intentional for Step/StepWithLock due to `allOf` interaction in draft-07.
-  Add `additionalProperties: false` to Phase items, mapping items, and radar.
-  Leave Step/StepWithLock as-is but add a comment in the schema explaining why.
-
-- [x] **CR-23 — Inconsistent `$ref` style across schemas**
-  `shipme.schema.json` (absolute) vs `ir-envelope.schema.json` (relative)
-  **Fix:** Normalize to relative `$ref`s in both (matching the pattern used by `ir-envelope`).
-
-- [x] **CR-24 — Inconsistent error construction patterns**
-  Mix of `OpsError`, manual `e.code = ...`, `err.meta = ...`
-  **Fix:** This is a larger refactor. Logged to `.claude/bad_code.md`.
-
-- [x] **CR-25 — `qir-validate.mjs` executeCore is ~80 lines of copy-paste**
-  **Fix:** Logged to `.claude/bad_code.md`. The current code works; refactoring is non-trivial.
-
-- [x] **CR-26 — Ops registry validation logs misleading "skipped" then throws**
-  `generate.mjs:~527`
-  **Fix:** Already fixed in prior commit — message now says `'Ops registry validated'` (success) or propagates `OpsError` (failure).
-
-- [x] **CR-27 — Manifest validation catch mutates error code blindly**
-  `generate.mjs:~416`
-  **Fix:** Already fixed in prior commit — guard `if (e instanceof Error && !e.code)` is in place.
-
-- [x] **CR-28 — Two overlapping IR family docs without cross-links**
-  **Fix:** Add a cross-reference line at the top of each file pointing to the other.
-
-- [x] **CR-29 — `docs/README.md` does not link to new spec documents**
-  **Fix:** Add links to `ir-family-spec.md`, `ir-family.md`, `qir.md` in the docs README.
-
-## Nits
-
-- [x] **CR-30 — Extra trailing newlines in 8 JSON files**
-  **Fix:** Strip trailing blank lines from each file.
-
-- [x] **CR-31 — CHANGELOG missing comparison URLs**
-  **Fix:** Add `[Unreleased]: https://github.com/flyingrobots/wesley/compare/v0.1.0...HEAD` at bottom.
-
-- [x] **CR-32 — Mermaid `\n` in node labels may not render as linebreaks**
-  `docs/spec/ir-family-spec.md:14-19`
-  **Fix:** Replace `\n` with `<br/>` in Mermaid node labels.
-
-- [x] **CR-33 — `export default` alongside named `export class` (dead code)**
-  `qir-validate.mjs:155`, `rehearse.mjs:237`, `cert-sign.mjs:82`
-  **Fix:** Logged to `.claude/bad_code.md` — this is a project-wide convention issue.
-
-- [x] **CR-34 — `lockFor` condition is correct but confusing**
-  `_migration-plan.mjs:74`
-  **Fix:** Add a clarifying comment explaining the PG 11+ behavior.
-
-- [x] **CR-35 — `qir.schema.json` Literal.value `oneOf` lists all 6 JSON types**
-  **Fix:** Replace `oneOf` with `{}` (accept any JSON value).
-
-- [x] **CR-36 — Misleading "validation skipped" in rehearse error path**
-  `rehearse.mjs:122`
-  **Fix:** Already fixed in prior commit — message now says `'REALM validation failed in error path'`.
-
-- [x] **CR-37 — `ir-family-spec.md` heading still says "(proposed)" in mermaid**
-  **Fix:** Already fixed for the section heading but the Plan IR Mermaid node should also reflect
-  this is shipped. Check if the Mermaid diagram label needs updating.
-  **Result:** Verified — no "(proposed)" text in any Mermaid node labels; no change needed.
+**Goal:** Make the parser emit IR matching the TypeScript schema, update JSON
+schema to match, migrate all consumers. The shim strategy keeps tests green at
+each step.
 
 ---
 
-## Round 6 — CodeRabbit Unresolved Threads
+## Phase 0 — Failing Tests
 
-### Critical
+- [x] **T-0.1** Create `packages/wesley-host-node/test/parser-ir-v2.test.mjs`
+  Assert new IR shape: `table.fields` (not `columns`), `field.type.base === 'ID'`,
+  `field.type.isList`, `field.directives.pk`, `table.directives.table`,
+  `ir.version === '1.0.0'`, `ir.metadata.generatedAt`, `ir.relationships` array.
 
-- [x] **CR-R6-1 — `renderSearchPath` destroys `$user`/`pg_temp`**
-  `emit.mjs:118-125` — `sanitizeIdentBase` mangles PostgreSQL special search_path entries.
-  **Fix:** Allowlist `$user` and `pg_temp`; emit verbatim.
+- [x] **T-0.2** Create `packages/wesley-host-browser/src/BrowserParserPort.test.mjs`
+  22 tests asserting canonical WesleyIR shape from the browser parser.
 
-### P1 (chatgpt-codex-connector)
+## Phase 1 — Update Primary Producer + Backward-Compat Shim
 
-- [x] **CR-R6-P1 — Forward strict options into recursive lowerToSQL**
-  `lowerToSQL.mjs` — **FALSE POSITIVE.** Current code already passes `opts` (with
-  `identPolicy` + `pkResolver`) to all recursive `lowerToSQL` calls. The `identOpts`
-  shorthand is only used for identifier rendering within the same call frame.
+- [x] **T-1.1** Rewrite `GraphQLAdapter.buildIRFromAST()` to emit new shape
+  `packages/wesley-host-node/src/adapters/GraphQLAdapter.mjs`
+  - Return `{ version: "1.0.0", metadata: { sourceHash, generatedAt }, tables, enums: [], scalars: [], relationships }`
+  - `buildTable()` → `{ name, directives: TableDirectives, fields: Field[], indexes: Index[], constraints: Constraint[] }`
+  - `buildColumn()` → `buildField()` returning `{ name, type: { base, isList, listItemNullable }, nullable, directives: FieldDirectives }`
+  - Stop calling `mapGraphQLTypeToPostgreSQL()` — keep GraphQL scalar as `type.base`
+  - Synthesize `relationships[]` from `@fk` directives in a second pass
 
-### P2 (chatgpt-codex-connector)
+- [x] **T-1.2** Add backward-compat shim after `buildIRFromAST()`
+  Compute `table.columns = table.fields`, `table.primaryKey`, `table.foreignKeys`,
+  `table.tenantBy` from the new shape so existing consumers survive the transition.
 
-- [x] **CR-R6-P2 — Normalize schema name before emitting CREATE SCHEMA**
-  `generate.mjs:681` — `quoteIdent(targetSchema)` preserves case while `emit.mjs`
-  lowercases via `sanitizeIdentBase`. Fix: normalize `targetSchema` before quoting.
+- [x] **T-1.3** Update `parseComposed()` for new shape
+  Use `table.fields` not `table.columns`, structured directives, etc.
 
-### Major
+- [x] **T-1.4** Update `validateForeignKeys()` for new shape
+  Use `table.fields` and `field.directives.fk`.
 
-- [x] **CR-R6-3 — Ajv boilerplate copy-pasted across 5+ commands**
-  `cert-verify`, `generate`, `plan`, `qir-validate`, `rehearse`.
-  **Fix:** Extract `schemaValidator.mjs` shared helper.
+## Phase 2 — Update JSON Schema
 
-- [x] **CR-R6-6 — generate.mjs: Ajv duplicated + misleading error message**
-  **Fix:** Replaced with `assertValid()` calls.
+- [x] **T-2.1** Rewrite `schemas/ir.schema.json` to match `WesleyIR.schema.ts`
+  Add `version`, `metadata`, change `columns` → `fields`, type string → `FieldType`
+  object, add `enums`, `scalars`, `relationships`.
 
-- [x] **CR-R6-7 — plan.mjs: overly broad catch masks infrastructure errors**
-  **Fix:** Replace try/catch with direct `assertValid()` call.
+- [x] **T-2.2** Update `schemas/ir-envelope.schema.json` if needed
+  Verified — $ref to ir.schema.json still resolves correctly.
+  Verify `$ref` still resolves correctly.
 
-- [x] **CR-R6-10 — qir-validate.mjs: four identical validation branches**
-  **Fix:** Refactored into `_validate()` dispatcher method.
+## Phase 3 — Migrate `irToSchema.mjs`
 
-- [x] **CR-R6-14 — OpPlanBuilder: ambiguity diagnostic scoped to 'id' only**
-  **Fix:** Now catches all unqualified string refs in join.on.
+- [x] **T-3.1** Rewrite `packages/wesley-cli/src/framework/irToSchema.mjs`
+  - `t.columns` → `t.fields`
+  - `pgTypeToGraphQL(c.type)` → `c.type.base` (already GraphQL scalar)
+  - `c.type.includes('[]')` → `c.type.isList`
+  - `buildFieldDirectives()` simplifies: `field.directives.pk`, `.fk`, `.unique`, `.default`, `.index` are already structured
+  - Remove `PG_TO_GQL` map entirely
 
-- [x] **CR-R6-21 — rehearse.mjs: validated shape ≠ emitted shape**
-  **Fix:** Now validates and emits the same full plan-report shape.
+## Phase 4 — Migrate `host-node/index.mjs`
 
-- [x] **CR-R6-22 — rehearse.mjs: catch-all mislabels non-validation errors**
-  **Fix:** Replaced with `assertValid()` — non-validation errors propagate naturally.
+- [x] **T-4.1** Update `GraphQLSchemaParser.convertIRToSchema()`
+  `packages/wesley-host-node/src/index.mjs`
+  - `tableData.columns` → `tableData.fields`
+  - `postgresqlToGraphQLType()` no longer needed — `field.type.base` is already GraphQL
+  - Read directives from structured `field.directives` directly
 
-- [x] **CR-R6-23 — rehearse.mjs: Ajv boilerplate duplicated**
-  **Fix:** Replaced with shared `schemaValidator.mjs`.
+## Phase 5 — Migrate Supabase Generator
 
-- [x] **CR-R6-25 — emit.mjs: collectParams called twice**
-  **Fix:** Call once, pass result as `paramEnv` to `lowerToSQL`.
+- [x] **T-5.1** Update `emitDDL()` and `emitRLS()` in `packages/wesley-generator-supabase/src/emit.mjs`
+  - `table.columns` → `table.fields`
+  - `col.type` (PG string) → map `field.type.base` from GraphQL to PG (move mapping here or shared util)
+  - `col.nullable`, `.default`, `.unique` → read from `field.directives`
+  - `table.primaryKey` → find field where `field.directives.pk === true`
+  - `table.foreignKeys` → collect fields with `field.directives.fk`
+  - `t.tenantBy` → `t.directives.tenant?.field`
+  - `t.directives['wes_rls']` → `t.directives.rls`
 
-### Minor
+## Phase 6 — Migrate JS Model Generator
 
-- [x] **CR-R6-4 — cert-verify.mjs: ctx.fs analysis chain**
-  **Fix:** Addressed via shared helper — dual-path schema resolution with
-  `import.meta.url` fallback eliminates the concern.
+- [x] **T-6.1** Update `ModelGenerator.generate()` in `packages/wesley-generator-js/src/model.mjs`
+  - `table.columns` → `table.fields`
+  - `column.type` (PG string) → map from `field.type.base` (GraphQL scalar)
+  - `column.default` → `field.directives.default?.value`
 
-- [x] **CR-R6-8 — plan.mjs: WESLEY_REPO_ROOT / process.cwd() fragile**
-  **Fix:** Addressed via shared helper with `import.meta.url` fallback.
+## Phase 7 — Migrate Migration Plan Helpers
 
-- [x] **CR-R6-9 — plan.mjs: inconsistent return shape**
-  **Fix:** Non-JSON path now returns `{ phases, steps }`.
+- [x] **T-7.1** Update `packages/wesley-cli/src/commands/_migration-plan.mjs`
+  - `t.columns` → `t.fields`
+  - `c.type` → map `field.type.base` to PG type for SQL emission
+  - `t.foreignKeys` → collect from `field.directives.fk`
 
-- [x] **CR-R6-13 — Cursor.mjs: decodeCursor returns non-object values**
-  **Fix:** Returns `{}` for arrays, primitives, null.
+- [x] **T-7.2** Update `packages/wesley-cli/src/commands/up.mjs`
+  Has its own copy of `buildAdditivePlan` — same changes as T-7.1.
+  Also update snapshot writes.
 
-- [x] **CR-R6-20 — qir-ops.md: missing blank line after fenced code block**
-  **Fix:** Added blank line per MD031.
+- [x] **T-7.3** Update `packages/wesley-cli/src/commands/generate.mjs`
+  `ir.tables`, `t.primaryKey` (for PK map), snapshot writes.
 
-### Trivial / Nit
+## Phase 8 — Migrate Browser Host
 
-- [x] **CR-R6-5 — pkResolver silently returns null**
-  **Fix:** Added JSDoc documenting the limitation.
+- [x] **T-8.1** Update `packages/wesley-host-browser/src/BrowserParserPort.mjs`
+  Emit `fields` with structured `FieldType` instead of `columns` with PG strings.
 
-- [x] **CR-R6-11 — plan-report-schema.bats: exit-status-only validation**
-  **Fix:** Added output content assertions.
+- [x] **T-8.2** Update `packages/wesley-host-browser/src/index.mjs`
+  `compileSchemaInBrowser()` reads `table.fields`, maps types.
 
-- [x] **CR-R6-12 — realm-schema.bats: exit-status-only validation**
-  **Fix:** Added output content assertions.
+## Phase 9 — Migrate Bun and Deno Hosts
 
-- [x] **CR-R6-15 — cursor.test.mjs: thin coverage**
-  **Fix:** Added null, undefined, array, primitive, string edge cases.
+- [x] **T-9.1** Update `packages/wesley-host-bun/src/index.mjs`
+  Emit `fields: []` (or structured) instead of minimal `{ tables: [{ name }] }`.
 
-- [x] **CR-R6-16 — op-join-diagnostics.test.mjs: no positive-path test**
-  **Fix:** Added qualified dot-notation and object-form tests.
+- [x] **T-9.2** Update `packages/wesley-host-deno/mod.ts`
+  Same as T-9.1.
 
-- [x] **CR-R6-17 — qir-lowering-pkresolver.test.mjs: inconsistent plan construction**
-  **Fix:** Added builder-based test alongside plain-object test.
+## Phase 10 — Update Fixtures and Tests
 
-- [x] **CR-R6-18 — qir-op-plan-builder.test.mjs: missing LIKE/CONTAINS tests**
-  **Fix:** Added LIKE and CONTAINS negative and positive path tests.
+- [x] **T-10.1** `test/fixtures/examples/.wesley/snapshot.json` — gitignored, generated at
+  runtime by CLI commands. Already emits new shape (`{ irVersion, tables }` with
+  `table.fields`). No manual rewrite needed.
 
-- [x] **CR-R6-19 — ops-registry.schema.json: no param name uniqueness**
-  **Fix:** Added description noting JSON Schema limitation; emitter enforces at generation time.
+- [x] **T-10.2** Update `packages/wesley-host-node/test/parser-ir.test.mjs`
+  Update assertions: `table.fields`, `field.type.base`, etc.
 
-- [x] **CR-R6-24 — emit.mjs: identPolicy default mismatch**
-  **Fix:** Added clarifying comment above `emitView`.
+- [x] **T-10.3** Update `test/browser/contracts/main.js`
+  `u.columns` → `u.fields`
+
+- [x] **T-10.4** Reviewed `packages/wesley-host-browser/src/index.test.mjs`
+  Tests assert SQL output strings and table counts only — no IR shape dependency.
+  No changes needed.
+
+- [x] **T-10.5** Review `packages/wesley-core/test/wave3-safety-integration.test.mjs`
+  Uses `columns` in its own test model for ConcurrentSafetyAnalyzer — NOT Wesley IR. No change needed.
+
+## Phase 11 — Extract Shared Type Mapping Utility
+
+- [x] **T-11.1** Create shared GQL↔PG type mapping in `@wesley/core`
+  `{ ID: 'uuid', String: 'text', Int: 'integer', Float: 'double precision', ... }`
+  Replaces duplicated mappings in: `GraphQLAdapter.mapGraphQLTypeToPostgreSQL`,
+  `irToSchema.PG_TO_GQL`, `host-node/index.postgresqlToGraphQLType`,
+  `BrowserParserPort`, `emit.mjs`, `model.mjs`.
+
+## Phase 12 — Remove Backward-Compat Shim
+
+- [x] **T-12.1** Remove shim from `GraphQLAdapter` and `BrowserParserPort` (added in T-1.2)
+  All consumers now use the new shape directly. Removed `applyBackwardCompatShim`,
+  `mapGraphQLTypeToPostgreSQL_fromFieldType`, `gqlScalarToPostgreSQL`, `flattenFieldDirectives`.
+  Also removed shim `foreignKeys` loop from `parseComposed()` and `GQL_TO_PG` from BrowserParserPort.
+
+## Phase 13 — Clean Up Old Tests
+
+- [x] **T-13.1** Updated `parser-ir.test.mjs` to assert new IR shape (fields, FieldType, directives)
+- [x] **T-13.2** Updated `parser-ir-v2.test.mjs`: replaced backward-compat shim tests with
+  a negative assertion confirming legacy properties are absent
 
 ---
 
-## Round 7 — Self-Code Review
+## Consumer Inventory
 
-### Major (13)
+Files that read raw IR (must be migrated):
 
-- [x] **SR-M1 — LIMIT/OFFSET accepts fractional values**
-  `packages/wesley-core/src/domain/qir/lowerToSQL.mjs:71-79`
-  `Number.isFinite(n) && n >= 0` never checks `Number.isInteger(n)`. `LIMIT 5.5` produces
-  invalid SQL. Inconsistent with `OpPlanBuilder.toPosInt` which validates integers.
-  **Fix:** Add `!Number.isInteger(n)` to both LIMIT and OFFSET checks. Add test for fractional values.
+| File | Properties accessed | Phase |
+|---|---|---|
+| `packages/wesley-cli/src/framework/irToSchema.mjs` | `t.columns`, `c.type` (PG), `table.primaryKey`, `table.foreignKeys`, `table.indexes` | 3 |
+| `packages/wesley-host-node/src/index.mjs` | `tableData.columns`, `columnData.type` (PG), `tableData.primaryKey`, `tableData.foreignKeys`, `tableData.indexes`, `tableData.tenantBy` | 4 |
+| `packages/wesley-generator-supabase/src/emit.mjs` | `table.columns`, `col.type` (PG), `table.primaryKey`, `table.foreignKeys`, `table.indexes`, `t.tenantBy` | 5 |
+| `packages/wesley-generator-js/src/model.mjs` | `table.columns`, `column.type` (PG), `column.default` | 6 |
+| `packages/wesley-cli/src/commands/_migration-plan.mjs` | `t.columns`, `t.indexes`, `t.foreignKeys`, `c.type` | 7 |
+| `packages/wesley-cli/src/commands/up.mjs` | `t.columns`, `t.indexes`, `t.foreignKeys`, `c.type` | 7 |
+| `packages/wesley-cli/src/commands/generate.mjs` | `ir.tables`, `t.primaryKey` | 7 |
+| `packages/wesley-host-browser/src/BrowserParserPort.mjs` | Producer — emits `columns` with PG strings | 8 |
+| `packages/wesley-host-browser/src/index.mjs` | `table.columns`, `col.type` (PG) | 8 |
+| `packages/wesley-host-bun/src/index.mjs` | Producer — emits minimal `{ tables: [{ name }] }` | 9 |
+| `packages/wesley-host-deno/mod.ts` | Producer — emits minimal `{ tables: [{ name }] }` | 9 |
 
-- [x] **SR-M2 — `renderLiteral` emits NaN/Infinity as SQL literals**
-  `packages/wesley-core/src/domain/qir/lowerToSQL.mjs:211`
-  `String(NaN)` → `"NaN"`, `String(Infinity)` → `"Infinity"` — neither valid SQL.
-  **Fix:** Add `Number.isFinite` guard before the number branch. Add test.
-
-- [x] **SR-M3 — DISTINCT ON splice produces duplicate ORDER BY entries**
-  `packages/wesley-core/src/domain/qir/lowerToSQL.mjs:46-57`
-  When `distinctOn: [a, b]` and `orderBy: [b DESC, a ASC]`, the splice-in-a-forward-loop
-  inserts a duplicate without checking if the expression already exists elsewhere.
-  **Fix:** Deduplicate after splicing, or check existence before inserting. Add test with reversed orderBy.
-
-- [x] **SR-M4 — `encodeCursor` crashes on multi-byte Unicode**
-  `packages/wesley-core/src/domain/qir/Cursor.mjs:7-11`
-  `btoa(json)` only supports Latin1 (codepoints 0–255). Emoji/CJK payloads throw at runtime.
-  **Fix:** Use TextEncoder/TextDecoder pipeline for UTF-8-safe base64. Add Unicode tests.
-
-- [x] **SR-M5 — Nullable columns with defaults silently lose DEFAULT clause**
-  `packages/wesley-cli/src/commands/_migration-plan.mjs:120-121`
-  `DEFAULT` only emitted when `s.nullable === false && s.default`. Nullable + default → dropped.
-  **Fix:** Emit DEFAULT for any column that has a default value, not only NOT NULL columns.
-
-- [x] **SR-M6 — `_migration-plan.mjs` default value denylist insufficient (Security)**
-  `packages/wesley-cli/src/commands/_migration-plan.mjs:117`
-  Denylist regex `/[;'"\\]|--|\/\*/` is fragile. Values like `now() OR 1=1` pass.
-  **Fix:** Switch to strict allowlist: numeric literals, booleans, bare function calls, quoted strings.
-
-- [x] **SR-M7 — `loadMoriartyHistory` uses `process.env` directly**
-  `packages/wesley-cli/src/commands/generate.mjs:797-801`
-  Reads `WESLEY_BASE_REF`, `GITHUB_BASE_REF`, etc. from `process.env` instead of injected `ctx.env`.
-  **Fix:** Pass `env` parameter into `loadMoriartyHistory`; remove `process.env` fallback.
-
-- [x] **SR-M8 — `loadMoriartyHistory` uses `console.warn` directly**
-  `packages/wesley-cli/src/commands/generate.mjs:778,790,806,820`
-  Four `console.warn` calls bypass injected logger.
-  **Fix:** Pass `logger` parameter; replace `console.warn` with `logger.warn`.
-
-- [x] **SR-M9 — `plan.mjs` `assertCleanGit` uses `globalThis` and sync shell**
-  `packages/wesley-cli/src/commands/plan.mjs:158-167`
-  Uses `globalThis?.wesleyCtx?.shell` instead of injected context; uses sync `execSync`.
-  **Fix:** Accept `shell` parameter from `this.ctx.shell`; use async `shell.exec()`.
-
-- [x] **SR-M10 — `schemaValidator.mjs` falls back to `process.cwd()`**
-  `packages/wesley-cli/src/framework/schemaValidator.mjs:43`
-  Host-layer concern leaking into framework code.
-  **Fix:** Replace with `ctx.cwd?.() || process.cwd()`.
-
-- [x] **SR-M11 — Mixed JSON Schema drafts without documentation**
-  `schemas/evidence-map.schema.json` uses draft 2020-12; 7 others use draft-07. Not documented.
-  **Fix:** Add documentation in `docs/spec/ir-family-spec.md` noting the draft split. Log
-  unification to BACKLOG.md.
-
-- [x] **SR-M12 — `plan-report.schema.json` missing `additionalProperties: false`**
-  `schemas/plan-report.schema.json:8-36`
-  The `plan` and `explain` wrapper objects (and top-level root) accept extra keys silently.
-  **Fix:** Add `additionalProperties: false` to `plan`, `explain`, and root objects.
-
-- [x] **SR-M13 — `realm-schema.bats` asserts wrong shape**
-  `packages/wesley-cli/test/realm-schema.bats:16-17`
-  Test claims "validates against realm.schema.json" but asserts plan-report keys.
-  **Fix:** Rename test / fix assertions to reflect actual dry-run output shape (plan-report).
-
-### Minor (20)
-
-- [x] **SR-m1 — `renderParam` name-only fallback could bind wrong placeholder**
-  `packages/wesley-core/src/domain/qir/lowerToSQL.mjs:249-265`
-  **Fix:** Log warning or throw if key-based lookup fails but name-only fallback succeeds.
-
-- [x] **SR-m2 — `renderExpr` default duck-typing fallbacks undermine type discipline**
-  `packages/wesley-core/src/domain/qir/lowerToSQL.mjs:192-202`
-  **Fix:** Log to `.claude/bad_code.md`. Add comment marking as backward-compat shim.
-
-- [x] **SR-m3 — `identifiers.mjs` RESERVED set missing common PG keywords**
-  `packages/wesley-core/src/domain/qir/identifiers.mjs:12-20`
-  Missing `with`, `window`, `grant`, `revoke`, `role`, `trigger`, `index`, `type`, etc.
-  **Fix:** Update to PostgreSQL 16 fully-reserved list. Already tracked in BACKLOG.
-
-- [x] **SR-m4 — `ParamCollector` does not visit `distinctOn` expressions**
-  `packages/wesley-core/src/domain/qir/ParamCollector.mjs:13-26`
-  **Fix:** Add `distinctOn` traversal between `orderBy` and `root`.
-
-- [x] **SR-m5 — Two separate RESERVED sets (emit.mjs vs identifiers.mjs)**
-  `packages/wesley-core/src/domain/qir/emit.mjs:20-22`
-  **Fix:** Import `RESERVED` from `identifiers.mjs` for param-name collision check.
-
-- [x] **SR-m6 — `OpPlanBuilder` array-form join ref accepts empty-string table**
-  `packages/wesley-core/src/domain/qir/OpPlanBuilder.mjs:196-218`
-  **Fix:** Validate that `r[0]` is non-empty when provided.
-
-- [x] **SR-m7 — `cert-verify.mjs` bare `catch {}` swallows infra errors**
-  `packages/wesley-cli/src/commands/cert-verify.mjs:60-69`
-  **Fix:** Distinguish crypto verification failures from infrastructure errors; re-throw non-verification errors.
-
-- [x] **SR-m8 — `extractJsonBlock` doesn't assert marker ordering**
-  `packages/wesley-cli/src/commands/_cert-utils.mjs:13-23`
-  **Fix:** Assert `begin < fence < fenceEnd < end` after finding positions.
-
-- [x] **SR-m9 — `cert-sign.mjs` uses `Buffer.from()` despite M6 migration**
-  `packages/wesley-cli/src/commands/cert-sign.mjs:34`
-  **Fix:** Replace with `TextEncoder` for UTF-8 data paths. Keep `Buffer` for base64 with comment.
-
-- [x] **SR-m10 — `qir-validate.mjs` no-subcommand path throws instead of showing help**
-  `packages/wesley-cli/src/commands/qir-validate.mjs:9-51`
-  **Fix:** Handle no-subcommand case by showing help text.
-
-- [x] **SR-m11 — `qir-validate.mjs` hardcoded parent depth for global opts**
-  `packages/wesley-cli/src/commands/qir-validate.mjs:15-17`
-  **Fix:** Walk parent chain dynamically to find root command.
-
-- [x] **SR-m12 — `rehearse.mjs` health probe SQL injection via `t.name`**
-  `packages/wesley-cli/src/commands/rehearse.mjs:79`
-  **Fix:** Use `q()` quoting function or inline double-quote escaping.
-
-- [x] **SR-m13 — `generate.mjs` `process.cwd()` fallback for `repoRoot`**
-  `packages/wesley-cli/src/commands/generate.mjs:417`
-  **Fix:** Use shared `resolveRepoRoot(ctx)` or `ctx.cwd?.()`.
-
-- [x] **SR-m14 — `generate.mjs` `.toString('utf8')` on potentially-string `fs.read`**
-  `packages/wesley-cli/src/commands/generate.mjs:505`
-  **Fix:** Use `String(...)` consistently or call `JSON.parse` directly.
-
-- [x] **SR-m15 — Registry uses raw `targetSchema` instead of `normalizedSchema`**
-  `packages/wesley-cli/src/commands/generate.mjs:664`
-  **Fix:** Use `normalizedSchema` for `registry.schema` and `entry.sql.schema`.
-
-- [x] **SR-m16 — `docs/spec/ir-family.md` missing Plan IR, REALM IR, and Ops coverage**
-  **Fix:** Add bullet points for Plan IR, REALM IR, Ops schemas.
-
-- [x] **SR-m17 — `docs/guides/qir-ops.md` dangling "See also" reference**
-  `docs/guides/qir-ops.md:221`
-  **Fix:** Verify target file exists; remove or update if broken.
-
-- [x] **SR-m18 — Silent `catch {}` on `snapshot.json` read in plan.mjs and rehearse.mjs**
-  **Fix:** Distinguish ENOENT from parse errors; warn on corrupt JSON.
-
-- [x] **SR-m19 — `qir-envelope-schema.bats` only asserts exit code, no output**
-  **Fix:** Add output content assertion for success message.
-
-- [x] **SR-m20 — Inconsistent pnpm version pinning across CI workflows**
-  `.github/workflows/pkg-host-deno.yml` vs `.github/actions/holmes-setup/action.yml`
-  **Fix:** Pin version consistently or omit in both (relying on `packageManager`).
-
-### Nit (23)
-
-- [x] **SR-n1 — Cursor proto-pollution guard only covers `__proto__`**
-  **Fix:** Use `JSON.parse` reviver or `Object.create(null)` + copy.
-
-- [x] **SR-n2 — Hardcoded unquoted alias `q` in `AS q` despite strict ident policy**
-  `packages/wesley-core/src/domain/qir/emit.mjs:44`
-  **Fix:** Use `renderIdent('q', identOpts)` for consistency.
-
-- [x] **SR-n3 — Dead code: `!/::/.test(typeHint)` after SAFE_TYPE_RE validation**
-  `packages/wesley-core/src/domain/qir/lowerToSQL.mjs:263`
-  **Fix:** Remove redundant check.
-
-- [x] **SR-n4 — `PredicateCompiler.mjs` not re-exported from barrel `index.mjs`**
-  **Fix:** Add `export * from './PredicateCompiler.mjs'` or document exclusion.
-
-- [x] **SR-n5 — Default join alias `j_${table.slice(0,1)}` collides for same-letter tables**
-  `packages/wesley-core/src/domain/qir/OpPlanBuilder.mjs:54`
-  **Fix:** Use `j_${table}` or `j${joinIndex}`.
-
-- [x] **SR-n6 — `renderSearchPath` lowercases schema names via sanitizeIdentBase**
-  `packages/wesley-core/src/domain/qir/emit.mjs:126-135`
-  **Fix:** Document lowercase-folding behavior or allow raw names through.
-
-- [x] **SR-n7 — `canonicalize` uses `.sort()` without explicit comparator**
-  `packages/wesley-cli/src/commands/_cert-utils.mjs:34`
-  **Fix:** Use explicit comparator for locale-independent ordering.
-
-- [x] **SR-n8 — `hashArtifacts` hardcodes `['schema.sql']`; empty `catch {}`**
-  `packages/wesley-cli/src/commands/cert-create.mjs:87-100`
-  **Fix:** Log debug message when file is skipped.
-
-- [x] **SR-n9 — Dynamic `import('node:crypto')` inconsistent with DI pattern**
-  `packages/wesley-cli/src/commands/cert-create.mjs:88`
-  **Fix:** Use static import since CLI-only code.
-
-- [x] **SR-n10 — `-v, --verbose` defined on both root program and `generate` subcommand**
-  `packages/wesley-cli/src/program.mjs:57`
-  **Fix:** Remove from `generate` subcommand.
-
-- [x] **SR-n11 — Index dedup signature doesn't include `using` method**
-  `packages/wesley-cli/src/commands/_migration-plan.mjs:42`
-  **Fix:** Include `using` in signature: `join('|') + ':' + (i.using || 'btree')`.
-
-- [x] **SR-n12 — `WesleyCommand.mjs` mutates `process.env.WESLEY_LOG_FORMAT`**
-  **Fix:** Store in `ctx` instead of mutating `process.env`.
-
-- [x] **SR-n13 — `plan-report.schema.json` Step lacks explanatory comment**
-  **Fix:** Add `description` explaining why `additionalProperties` is omitted.
-
-- [x] **SR-n14 — `realm.schema.json` `if` condition missing `required: ["verdict"]`**
-  **Fix:** Add `required` to make the condition fully explicit.
-
-- [x] **SR-n15 — `qir.schema.json` root self-reference `"QueryPlan": { "$ref": "#" }`**
-  **Fix:** Log to BACKLOG for future tooling compatibility.
-
-- [x] **SR-n16 — `shipme.schema.json` `alg` field has no enum constraint**
-  **Fix:** Add `enum: ["ed25519", null]` or document supported values.
-
-- [x] **SR-n17 — `ops-explain.bats` undocumented `--i-know-what-im-doing` flag**
-  **Fix:** Add comment explaining why the flag is needed.
-
-- [x] **SR-n18 — `cert-e2e.bats` fragile jq assertion using `empty` as else**
-  **Fix:** Replace with direct assertion: `jq -e '.validSignatures == 2'`.
-
-- [x] **SR-n19 — `qir-schema.bats` doesn't load bats-support/bats-assert plugins**
-  **Fix:** Add standard `load` lines; use `assert_success`/`assert_output`.
-
-- [x] **SR-n20 — `docs/build-artifacts.md` says "Experimental" but ops is "Enabled"**
-  **Fix:** Remove or soften "Experimental" to match `qir-ops.md`.
-
-- [x] **SR-n21 — `TASKS.md` is ephemeral PR tracker committed to repo**
-  **Fix:** Consider moving to PR body or `.github/` after merge.
-
-- [x] **SR-n22 — Extra trailing blank lines in 4 fixture JSON files**
-  `sample-flat.qir.json`, `sample-envelope.json`, `ops.manifest.json`, `products_by_name.op.json`
-  **Fix:** Strip extra trailing blank lines.
-
-- [x] **SR-n23 — Extra trailing blank lines in `docs/spec/*.md` files**
-  **Fix:** Strip extra trailing blank lines at EOF.
+Files that use domain `Schema` objects (NOT affected):
+`PostgreSQLGenerator`, `TriggerGenerator`, `MigrationDiffer`, `RollbackGenerator`, `CICOrchestrator`

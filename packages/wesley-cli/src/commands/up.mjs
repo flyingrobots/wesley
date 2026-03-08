@@ -3,6 +3,7 @@
  */
 
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
+import { fieldTypeToPg } from '@wesley/core';
 
 export class UpCommand extends WesleyCommand {
   constructor(ctx) {
@@ -169,16 +170,16 @@ function buildAdditivePlan(prev, curr) {
     const old = pmap.get(name);
     if (!old) {
       phases[0].steps.push({ op: 'create_table', table: name });
-      for (const idx of t.indexes || []) phases[0].steps.push({ op: 'create_index_concurrently', table: name, columns: idx.columns, using: idx.using, name: idx.name });
-      for (const fk of t.foreignKeys || []) { phases[0].steps.push({ op: 'add_fk_not_valid', table: name, column: fk.column, refTable: fk.refTable, refColumn: fk.refColumn }); phases[1].steps.push({ op: 'validate_fk', table: name, column: fk.column }); }
+      for (const idx of t.indexes || []) phases[0].steps.push({ op: 'create_index_concurrently', table: name, columns: idx.fields, using: idx.using, name: idx.name });
+      for (const f of t.fields || []) { if (!f.directives.fk) continue; phases[0].steps.push({ op: 'add_fk_not_valid', table: name, column: f.name, refTable: f.directives.fk.targetTable, refColumn: f.directives.fk.targetField }); phases[1].steps.push({ op: 'validate_fk', table: name, column: f.name }); }
       continue;
     }
-    const oldCols = new Set((old.columns || []).map(c => c.name));
-    for (const c of t.columns || []) if (!oldCols.has(c.name)) phases[0].steps.push({ op: 'add_column', table: name, column: c.name, type: c.type, nullable: c.nullable, default: c.default });
-    const oldIdxSig = new Set((old.indexes || []).map(i => (i.columns||[]).join('|')));
-    for (const idx of t.indexes || []) { const sig = (idx.columns||[]).join('|'); if (!oldIdxSig.has(sig)) phases[0].steps.push({ op: 'create_index_concurrently', table: name, columns: idx.columns, using: idx.using, name: idx.name }); }
-    const oldFks = new Set((old.foreignKeys||[]).map(f => `${f.column}->${f.refTable}.${f.refColumn}`));
-    for (const fk of t.foreignKeys || []) { const key = `${fk.column}->${fk.refTable}.${fk.refColumn}`; if (!oldFks.has(key)) { phases[0].steps.push({ op: 'add_fk_not_valid', table: name, column: fk.column, refTable: fk.refTable, refColumn: fk.refColumn }); phases[1].steps.push({ op: 'validate_fk', table: name, column: fk.column }); } }
+    const oldFields = new Set((old.fields || []).map(f => f.name));
+    for (const f of t.fields || []) if (!oldFields.has(f.name)) phases[0].steps.push({ op: 'add_column', table: name, column: f.name, type: fieldTypeToPg(f.type), nullable: f.nullable, default: f.directives.default?.value ?? null });
+    const oldIdxSig = new Set((old.indexes || []).map(i => (i.fields||[]).join('|')));
+    for (const idx of t.indexes || []) { const sig = (idx.fields||[]).join('|'); if (!oldIdxSig.has(sig)) phases[0].steps.push({ op: 'create_index_concurrently', table: name, columns: idx.fields, using: idx.using, name: idx.name }); }
+    const oldFks = new Set((old.fields||[]).filter(f => f.directives.fk).map(f => `${f.name}->${f.directives.fk.targetTable}.${f.directives.fk.targetField}`));
+    for (const f of t.fields || []) { if (!f.directives.fk) continue; const key = `${f.name}->${f.directives.fk.targetTable}.${f.directives.fk.targetField}`; if (!oldFks.has(key)) { phases[0].steps.push({ op: 'add_fk_not_valid', table: name, column: f.name, refTable: f.directives.fk.targetTable, refColumn: f.directives.fk.targetField }); phases[1].steps.push({ op: 'validate_fk', table: name, column: f.name }); } }
   }
   return { phases };
 }

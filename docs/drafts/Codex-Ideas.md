@@ -995,8 +995,8 @@
 ▌
 ▌ ---
 ▌
-▌ _git-mind is open source under [LicenseRef-MIND-UCAL-1.0](../../LICENSE)_
-▌ _© J. Kirby Ross • [flyingrobots.dev](https://flyingrobots.dev/)_
+▌ *git-mind is open source under [Apache-2.0](../../LICENSE)*
+▌ *© J. Kirby Ross • [flyingrobots.dev](https://flyingrobots.dev/)*
 ▌
 
 > Below is a bold blueprint for the “Triple Threat Combo”—Wesley (compiler-grade schema deploys) + Shiplog (Git-native flight recorder) + git-

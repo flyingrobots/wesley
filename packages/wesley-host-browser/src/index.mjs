@@ -2,7 +2,7 @@
  * Browser host public API
  */
 
-import { GenerationPipeline } from '@wesley/core';
+import { GenerationPipeline, fieldTypeToPg } from '@wesley/core';
 import { createBrowserRuntime } from './createBrowserRuntime.mjs';
 import { MemoryFileSystem } from './createBrowserRuntime.mjs'; // Import MemoryFileSystem
 
@@ -80,28 +80,21 @@ export async function compileSchemaInBrowser(inputFiles) {
 
     // Generate SQL from the parsed schema bundle
     const generatedSql = (bundle.schema?.tables || []).map(table => {
-      const columns = table.columns.map(col => {
-        let def = `  "${col.name}" ${col.type}`;
-        if (!col.nullable) def += ' NOT NULL';
-        // BrowserParserPort detects primaryKey and puts it on the table object
-        // It might also be on the column directive, but let's check table.primaryKey
-        if (table.primaryKey === col.name || col.directives?.pk || col.directives?.wes_pk) {
+      const columns = (table.fields || []).map(field => {
+        const pgType = fieldTypeToPg(field.type);
+        let def = `  "${field.name}" ${pgType}`;
+        if (!field.nullable) def += ' NOT NULL';
+        if (field.directives?.pk) {
           if (!def.includes('PRIMARY KEY')) def += ' PRIMARY KEY';
         }
-        if (col.default) {
-          // Re-quote string values for SQL (directive parsing strips quotes)
-          let val = col.default;
-          // Check if value needs SQL string quoting:
-          // - Not a number (integer or decimal)
-          // - Not already quoted
-          // - Not a SQL expression (containing parentheses like NOW())
+        if (field.directives?.default) {
+          let val = field.directives.default.value;
           const isNumeric = /^-?\d+(\.\d+)?$/.test(val);
           const isAlreadyQuoted = /^'.*'$/.test(val);
           const isExpression = /[()]/.test(val);
           const isBoolean = /^(true|false)$/i.test(val);
           const isNull = /^null$/i.test(val);
           if (!isNumeric && !isAlreadyQuoted && !isExpression && !isBoolean && !isNull) {
-            // Escape single quotes in the value and wrap in SQL quotes
             val = `'${val.replace(/'/g, "''")}'`;
           }
           def += ` DEFAULT ${val}`;

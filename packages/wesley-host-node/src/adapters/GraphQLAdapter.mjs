@@ -114,6 +114,7 @@ class GraphQLSchemaParser {
 
   /**
    * Build Wesley IR from GraphQL AST
+   * Returns IR matching the WesleyIR.schema.ts shape.
    */
   buildIRFromAST(ast) {
     const tables = [];
@@ -140,89 +141,83 @@ class GraphQLSchemaParser {
     // Second pass: validate foreign key references
     this.validateForeignKeys(tables);
 
-    return { tables };
+    // Synthesize top-level relationships from field-level @fk directives
+    const relationships = this.synthesizeRelationships(tables);
+
+    return {
+      version: '1.0.0',
+      metadata: {
+        generatedAt: new Date().toISOString()
+      },
+      tables,
+      enums: [],
+      scalars: [],
+      relationships
+    };
   }
 
   /**
-   * Build table from GraphQL object type definition
+   * Build table from GraphQL object type definition.
+   * Returns structured TableDirectives and Field[] (not columns).
    */
   buildTable(typeDef, tableName) {
     if (!typeDef.fields || typeDef.fields.length === 0) {
       throw new WesleyParseError(`Table ${tableName} must have at least one field`);
     }
 
-    const columns = [];
-    const foreignKeys = [];
+    const fields = [];
     const indexes = [];
-    let primaryKey = null;
-    let tenantBy = null;
+    const constraints = [];
+    let hasPrimaryKey = false;
 
-    // Process tenant directive first
-    const tenantDirective = this.findDirective(typeDef.directives, 'wes_tenant');
-    if (tenantDirective) {
-      tenantBy = this.getDirectiveArgument(tenantDirective, 'by');
-      if (!tenantBy) {
-        throw new WesleyParseError('@wes_tenant directive requires \'by\' argument', 'wes_tenant');
-      }
-    }
+    // Build structured table directives
+    const tableDirectives = this.buildTableDirectives(typeDef.directives);
+    const tenantBy = tableDirectives.tenant?.field || null;
 
     // Process fields
-    for (const field of typeDef.fields) {
+    for (const fieldDef of typeDef.fields) {
       // Skip relation-only fields (object types without explicit FK directive)
-      if (this.isRelationOnlyField(field)) {
+      if (this.isRelationOnlyField(fieldDef)) {
         continue;
       }
 
-      const column = this.buildColumn(field, tableName);
-      columns.push(column);
+      const field = this.buildField(fieldDef, tableName);
+      fields.push(field);
 
-      // Check for primary key
-      if (this.findDirective(field.directives, 'wes_pk')) {
-        if (primaryKey) {
+      // Validate primary key
+      if (field.directives.pk) {
+        if (hasPrimaryKey) {
           throw new WesleyParseError(`Table ${tableName} can have at most one primary key`);
         }
-        if (!this.isNonNullType(field.type)) {
-          throw new WesleyParseError(`Primary key field ${field.name.value} must be NonNull (end with !)`, 'wes_pk', field.name.value);
+        if (field.nullable) {
+          throw new WesleyParseError(`Primary key field ${field.name} must be NonNull (end with !)`, 'wes_pk', field.name);
         }
-        primaryKey = field.name.value;
+        hasPrimaryKey = true;
       }
 
-      // Check for foreign key
-      const fkDirective = this.findDirective(field.directives, 'wes_fk');
-      if (fkDirective) {
-        const ref = this.getDirectiveArgument(fkDirective, 'ref');
-        if (!ref) {
-          throw new WesleyParseError('@wes_fk directive requires \'ref\' argument', 'wes_fk', field.name.value);
-        }
-
-        const [refTable, refColumn] = ref.split('.');
-        if (!refTable || !refColumn) {
-          throw new WesleyParseError(`Foreign key ref must be in format 'Table.column', got: ${ref}`, 'wes_fk', field.name.value);
-        }
-
-        foreignKeys.push({
-          column: field.name.value,
-          refTable,
-          refColumn
-        });
+      // Validate foreign key format
+      if (field.directives.fk) {
+        // Already validated in buildField; no extra work needed
       }
 
-      // Check for index
-      const indexDirective = this.findDirective(field.directives, 'wes_index');
-      if (indexDirective) {
-        const indexName = this.getDirectiveArgument(indexDirective, 'name');
-        const using = this.getDirectiveArgument(indexDirective, 'using');
+      // Collect indexes
+      if (field.directives.index) {
+        const indexDirective = this.findDirective(fieldDef.directives, 'wes_index');
+        const indexName = indexDirective ? this.getDirectiveArgument(indexDirective, 'name') : null;
+        const using = indexDirective ? this.getDirectiveArgument(indexDirective, 'using') : null;
         indexes.push({
-          columns: [field.name.value],
-          name: indexName,
-          using
+          fields: [field.name],
+          name: indexName || null,
+          table: tableName,
+          unique: false,
+          using: using || null
         });
       }
     }
 
     // Validate tenant field exists
     if (tenantBy) {
-      const tenantField = columns.find(col => col.name === tenantBy);
+      const tenantField = fields.find(f => f.name === tenantBy);
       if (!tenantField) {
         throw new WesleyParseError(`@wes_tenant(by: "${tenantBy}") field must exist on table ${tableName}`, 'wes_tenant');
       }
@@ -230,95 +225,150 @@ class GraphQLSchemaParser {
 
     return {
       name: tableName,
-      columns,
-      primaryKey,
-      foreignKeys,
+      directives: tableDirectives,
+      fields,
       indexes,
-      tenantBy,
-      directives: this.extractDirectives(typeDef.directives)
+      constraints
     };
   }
 
   /**
-   * Build column from GraphQL field definition
+   * Build structured TableDirectives from raw AST directives.
    */
-  buildColumn(field, _tableName) {
-    const name = field.name.value;
-    const nullable = !this.isNonNullType(field.type);
-    const type = this.mapGraphQLTypeToPostgreSQL(field.type);
+  buildTableDirectives(directives) {
+    const result = {
+      table: !!this.findDirective(directives, 'wes_table')
+    };
 
-    const column = {
+    const rlsDirective = this.findDirective(directives, 'wes_rls');
+    if (rlsDirective) {
+      result.rls = { enable: true };
+    }
+
+    const tenantDirective = this.findDirective(directives, 'wes_tenant');
+    if (tenantDirective) {
+      const by = this.getDirectiveArgument(tenantDirective, 'by');
+      if (!by) {
+        throw new WesleyParseError('@wes_tenant directive requires \'by\' argument', 'wes_tenant');
+      }
+      result.tenant = { field: by };
+    }
+
+    return result;
+  }
+
+  /**
+   * Build field with structured FieldType and FieldDirectives.
+   */
+  buildField(fieldDef, tableName) {
+    const name = fieldDef.name.value;
+    const nullable = !this.isNonNullType(fieldDef.type);
+    const type = {
+      base: this.getBaseType(fieldDef.type),
+      isList: this.isListType(fieldDef.type)
+    };
+
+    // Add listItemNullable only for list types
+    if (type.isList) {
+      type.listItemNullable = this.isListItemNullable(fieldDef.type);
+    }
+
+    const fieldDirectives = this.buildFieldDirectives(fieldDef, tableName);
+
+    return {
       name,
       type,
       nullable,
-      directives: this.extractDirectives(field.directives)
+      directives: fieldDirectives
     };
+  }
 
-    // Process directives
-    const defaultDirective = this.findDirective(field.directives, 'wes_default');
+  /**
+   * Build structured FieldDirectives from raw AST field directives.
+   */
+  buildFieldDirectives(fieldDef, _tableName) {
+    const directives = {};
+
+    if (this.findDirective(fieldDef.directives, 'wes_pk')) {
+      directives.pk = true;
+    }
+
+    if (this.findDirective(fieldDef.directives, 'wes_unique')) {
+      directives.unique = true;
+    }
+
+    if (this.findDirective(fieldDef.directives, 'wes_index')) {
+      directives.index = true;
+    }
+
+    const defaultDirective = this.findDirective(fieldDef.directives, 'wes_default');
     if (defaultDirective) {
       const value = this.getDirectiveArgumentAny(defaultDirective, ['value', 'expr']);
       if (value === undefined || value === null) {
-        throw new WesleyParseError('@wes_default directive requires \'value\' (or \'expr\') argument', 'wes_default', name);
+        throw new WesleyParseError('@wes_default directive requires \'value\' (or \'expr\') argument', 'wes_default', fieldDef.name.value);
       }
-      column.default = value;
+      directives.default = { value };
     }
 
-    const uniqueDirective = this.findDirective(field.directives, 'wes_unique');
-    if (uniqueDirective) {
-      column.unique = true;
+    const fkDirective = this.findDirective(fieldDef.directives, 'wes_fk');
+    if (fkDirective) {
+      const ref = this.getDirectiveArgument(fkDirective, 'ref');
+      if (!ref) {
+        throw new WesleyParseError('@wes_fk directive requires \'ref\' argument', 'wes_fk', fieldDef.name.value);
+      }
+      const [targetTable, targetField] = ref.split('.');
+      if (!targetTable || !targetField) {
+        throw new WesleyParseError(`Foreign key ref must be in format 'Table.column', got: ${ref}`, 'wes_fk', fieldDef.name.value);
+      }
+      directives.fk = { targetTable, targetField };
     }
 
-    return column;
+    return directives;
   }
 
   /**
-   * Map GraphQL types to PostgreSQL types
+   * Synthesize top-level relationships from field-level @fk directives.
    */
-  mapGraphQLTypeToPostgreSQL(type) {
-    const baseType = this.getBaseType(type);
-    const isArray = this.isListType(type);
-
-    let pgType;
-    switch (baseType) {
-    case 'ID': pgType = 'uuid'; break;
-    case 'UUID': pgType = 'uuid'; break;
-    case 'String': pgType = 'text'; break;
-    case 'Int': pgType = 'integer'; break;
-    case 'Float': pgType = 'double precision'; break;
-    case 'Boolean': pgType = 'boolean'; break;
-    case 'DateTime': pgType = 'timestamptz'; break;
-    case 'Date': pgType = 'date'; break;
-    case 'Time': pgType = 'time with time zone'; break;
-    case 'JSON': pgType = 'jsonb'; break;
-    default: pgType = 'text'; // fallback
+  synthesizeRelationships(tables) {
+    const relationships = [];
+    for (const table of tables) {
+      for (const field of table.fields) {
+        if (field.directives.fk) {
+          relationships.push({
+            type: 'one-to-many',
+            from: { table: table.name, field: field.name },
+            to: { table: field.directives.fk.targetTable, field: field.directives.fk.targetField }
+          });
+        }
+      }
     }
-
-    return isArray ? `${pgType}[]` : pgType;
+    return relationships;
   }
 
   /**
-   * Validate foreign key references
+   * Validate foreign key references using new IR shape (fields + structured directives).
    */
   validateForeignKeys(tables) {
     const tableMap = new Map(tables.map(t => [t.name, t]));
 
     for (const table of tables) {
-      for (const fk of table.foreignKeys) {
-        const refTable = tableMap.get(fk.refTable);
+      for (const field of table.fields) {
+        if (!field.directives.fk) continue;
+
+        const fk = field.directives.fk;
+        const refTable = tableMap.get(fk.targetTable);
         if (!refTable) {
-          throw new WesleyParseError(`Foreign key ${table.name}.${fk.column} references non-existent table: ${fk.refTable}`);
+          throw new WesleyParseError(`Foreign key ${table.name}.${field.name} references non-existent table: ${fk.targetTable}`);
         }
 
-        const refColumn = refTable.columns.find(col => col.name === fk.refColumn);
-        if (!refColumn) {
-          throw new WesleyParseError(`Foreign key ${table.name}.${fk.column} references non-existent column: ${fk.refTable}.${fk.refColumn}`);
+        const refField = refTable.fields.find(f => f.name === fk.targetField);
+        if (!refField) {
+          throw new WesleyParseError(`Foreign key ${table.name}.${field.name} references non-existent column: ${fk.targetTable}.${fk.targetField}`);
         }
 
         // Type compatibility check (basic)
-        const sourceColumn = table.columns.find(col => col.name === fk.column);
-        if (sourceColumn && this.getBasePostgreSQLType(sourceColumn.type) !== this.getBasePostgreSQLType(refColumn.type)) {
-          console.warn(`Warning: Foreign key ${table.name}.${fk.column} type '${sourceColumn.type}' may be incompatible with ${fk.refTable}.${fk.refColumn} type '${refColumn.type}'`);
+        if (field.type.base !== refField.type.base) {
+          console.warn(`Warning: Foreign key ${table.name}.${field.name} type '${field.type.base}' may be incompatible with ${fk.targetTable}.${fk.targetField} type '${refField.type.base}'`);
         }
       }
     }
@@ -376,31 +426,6 @@ class GraphQLSchemaParser {
   }
 
   /**
-   * Extract all directive information
-   */
-  extractDirectives(directives) {
-    if (!directives) return {};
-
-    const result = {};
-    for (const directive of directives) {
-      const name = directive.name.value;
-      const args = {};
-
-      if (directive.arguments) {
-        for (const arg of directive.arguments) {
-          if (arg.value.kind === Kind.STRING) {
-            args[arg.name.value] = arg.value.value;
-          }
-        }
-      }
-
-      result[name] = args;
-    }
-
-    return result;
-  }
-
-  /**
    * Check if GraphQL type is NonNull
    */
   isNonNullType(type) {
@@ -418,6 +443,21 @@ class GraphQLSchemaParser {
   }
 
   /**
+   * Check if list items are nullable: [Type] → true, [Type!] → false
+   */
+  isListItemNullable(type) {
+    // Unwrap NonNull wrapper if present: [Type!]! → [Type!] → Type!
+    let inner = type;
+    if (inner.kind === Kind.NON_NULL_TYPE) inner = inner.type;
+    // Now at ListType: [Type] or [Type!]
+    if (inner.kind === Kind.LIST_TYPE) {
+      // Inner item is nullable unless wrapped in NonNull
+      return inner.type.kind !== Kind.NON_NULL_TYPE;
+    }
+    return true;
+  }
+
+  /**
    * Get base type name from GraphQL type
    */
   getBaseType(type) {
@@ -428,13 +468,6 @@ class GraphQLSchemaParser {
       return this.getBaseType(type.type);
     }
     return type.name.value;
-  }
-
-  /**
-   * Get base PostgreSQL type (strip array suffix)
-   */
-  getBasePostgreSQLType(pgType) {
-    return pgType.replace('[]', '');
   }
 
   /**
@@ -525,12 +558,23 @@ class GraphQLSchemaParser {
           table.sourceUnit = prov.sourceUnit;
           table.package = prov.package;
         }
-        if (table.foreignKeys) {
-          for (const fk of table.foreignKeys) {
-            const fkProv = defLookup.get(fk.refTable);
-            if (fkProv) fk.refTable = fkProv.shortName;
+        // Update field-level fk targetTable references
+        for (const field of table.fields) {
+          if (field.directives.fk) {
+            const fkProv = defLookup.get(field.directives.fk.targetTable);
+            if (fkProv) field.directives.fk.targetTable = fkProv.shortName;
           }
         }
+      }
+    }
+
+    // Update top-level relationships
+    if (ir.relationships) {
+      for (const rel of ir.relationships) {
+        const fromProv = defLookup.get(rel.from.table);
+        if (fromProv) rel.from.table = fromProv.shortName;
+        const toProv = defLookup.get(rel.to.table);
+        if (toProv) rel.to.table = toProv.shortName;
       }
     }
 

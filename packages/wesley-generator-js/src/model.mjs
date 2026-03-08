@@ -95,20 +95,18 @@ export class ModelGenerator {
     // Build schema object
     const schemaProperties = [];
 
-    for (const column of table.columns) {
-      let zodType = this.mapPostgreSQLToZod(column.type);
+    for (const field of table.fields) {
+      let zodType = this.mapGraphQLToZod(field.type);
 
-      // Handle nullable fields
-      if (column.nullable) {
+      if (field.nullable) {
         zodType += '.nullable()';
       }
 
-      // Handle default values
-      if (column.default) {
-        zodType += `.default(${this.formatDefaultValue(column.default, column.type)})`;
+      if (field.directives.default) {
+        zodType += `.default(${this.formatDefaultValue(field.directives.default.value, field.type.base)})`;
       }
 
-      schemaProperties.push(`  ${column.name}: ${zodType}`);
+      schemaProperties.push(`  ${field.name}: ${zodType}`);
     }
 
     // Create the schema constant
@@ -141,9 +139,9 @@ export class ModelGenerator {
 
     // Add @typedef for the main type (JS only)
     if (this.target === 'js') {
-      const typedefProperties = table.columns.map(column => {
-        const jsType = this.mapPostgreSQLToJSType(column.type, column.nullable);
-        return ` * @property {${jsType}} ${column.name}`;
+      const typedefProperties = table.fields.map(field => {
+        const jsType = this.mapGraphQLToJSType(field.type, field.nullable);
+        return ` * @property {${jsType}} ${field.name}`;
       }).join('\n');
 
       sourceFile.insertText(sourceFile.getEnd(), `\n/**\n * @typedef {Object} ${className}Type\n${typedefProperties}\n */\n\n`);
@@ -177,11 +175,11 @@ export class ModelGenerator {
     }
 
     // Add instance properties
-    for (const column of table.columns) {
-      const jsType = this.mapPostgreSQLToJSType(column.type, column.nullable);
+    for (const field of table.fields) {
+      const jsType = this.mapGraphQLToJSType(field.type, field.nullable);
 
       const prop = classDecl.addProperty({
-        name: column.name,
+        name: field.name,
         type: this.target === 'ts' ? jsType : undefined
       });
 
@@ -222,9 +220,9 @@ export class ModelGenerator {
     }
 
     // Constructor body
-    const assignments = table.columns.map(column => {
-      const defaultValue = this.getDefaultValueForType(column.type, column.nullable);
-      return `        this.${column.name} = data?.${column.name} ?? ${defaultValue};`;
+    const assignments = table.fields.map(field => {
+      const defaultValue = this.getDefaultValueForType(field.type, field.nullable);
+      return `        this.${field.name} = data?.${field.name} ?? ${defaultValue};`;
     });
 
     constructor.setBodyText(assignments.join('\n'));
@@ -302,7 +300,7 @@ export class ModelGenerator {
       returnType: this.target === 'ts' ? 'Record<string, any>' : undefined,
       statements: [
         'return {',
-        ...table.columns.map(col => `  ${col.name}: this.${col.name},`),
+        ...table.fields.map(f => `  ${f.name}: this.${f.name},`),
         '};'
       ]
     });
@@ -377,10 +375,10 @@ export class ModelGenerator {
     });
 
     // Add instance properties
-    for (const column of table.columns) {
-      const jsType = this.mapPostgreSQLToJSType(column.type, column.nullable);
+    for (const field of table.fields) {
+      const jsType = this.mapGraphQLToJSType(field.type, field.nullable);
       classDecl.addProperty({
-        name: column.name,
+        name: field.name,
         type: jsType
       });
     }
@@ -452,65 +450,75 @@ export class ModelGenerator {
   }
 
   /**
-   * Map PostgreSQL types to Zod types
+   * Map GraphQL FieldType to Zod type expression
    */
-  mapPostgreSQLToZod(pgType) {
-    const baseType = pgType.replace('[]', '');
-    const isArray = pgType.includes('[]');
-
+  mapGraphQLToZod(fieldType) {
     let zodType;
-    switch (baseType) {
-    case 'uuid':
-    case 'text':
+    switch (fieldType.base) {
+    case 'ID':
+    case 'UUID':
+    case 'String':
       zodType = 'z.string()';
       break;
-    case 'integer':
+    case 'Int':
+    case 'BigInt':
       zodType = 'z.number().int()';
       break;
-    case 'double precision':
+    case 'Float':
+    case 'Decimal':
       zodType = 'z.number()';
       break;
-    case 'boolean':
+    case 'Boolean':
       zodType = 'z.boolean()';
       break;
-    case 'timestamptz':
+    case 'DateTime':
+    case 'Date':
+    case 'Time':
       zodType = 'z.date()';
+      break;
+    case 'JSON':
+      zodType = 'z.unknown()';
       break;
     default:
       zodType = 'z.string()';
     }
 
-    return isArray ? `z.array(${zodType})` : zodType;
+    return fieldType.isList ? `z.array(${zodType})` : zodType;
   }
 
   /**
-   * Map PostgreSQL types to TypeScript/JSDoc types
+   * Map GraphQL FieldType to TypeScript/JSDoc type
    */
-  mapPostgreSQLToJSType(pgType, nullable = false) {
-    const baseType = pgType.replace('[]', '');
-    const isArray = pgType.includes('[]');
-
+  mapGraphQLToJSType(fieldType, nullable = false) {
     let jsType;
-    switch (baseType) {
-    case 'uuid':
-    case 'text':
+    switch (fieldType.base) {
+    case 'ID':
+    case 'UUID':
+    case 'String':
       jsType = 'string';
       break;
-    case 'integer':
-    case 'double precision':
+    case 'Int':
+    case 'Float':
+    case 'Decimal':
+    case 'BigInt':
       jsType = 'number';
       break;
-    case 'boolean':
+    case 'Boolean':
       jsType = 'boolean';
       break;
-    case 'timestamptz':
+    case 'DateTime':
+    case 'Date':
+    case 'Time':
       jsType = 'Date';
+      break;
+    case 'JSON':
+      jsType = 'unknown';
       break;
     default:
       jsType = 'string';
     }
 
-    if (isArray) {
+    if (fieldType.isList) {
       jsType = `${jsType}[]`;
     }
 
@@ -524,20 +532,21 @@ export class ModelGenerator {
   /**
    * Format default value for Zod schema
    */
-  formatDefaultValue(defaultValue, pgType) {
+  formatDefaultValue(defaultValue, gqlBase) {
     if (defaultValue === 'now()') {
       return '() => new Date()';
     }
 
-    const baseType = pgType.replace('[]', '');
-    switch (baseType) {
-    case 'text':
-    case 'uuid':
+    switch (gqlBase) {
+    case 'String':
+    case 'ID':
+    case 'UUID':
       return `"${defaultValue}"`;
-    case 'boolean':
-      return defaultValue;
-    case 'integer':
-    case 'double precision':
+    case 'Boolean':
+    case 'Int':
+    case 'Float':
+    case 'Decimal':
+    case 'BigInt':
       return defaultValue;
     default:
       return `"${defaultValue}"`;
@@ -547,29 +556,33 @@ export class ModelGenerator {
   /**
    * Get default value for constructor
    */
-  getDefaultValueForType(pgType, nullable = false) {
+  getDefaultValueForType(fieldType, nullable = false) {
     if (nullable) {
       return 'null';
     }
 
-    const baseType = pgType.replace('[]', '');
-    const isArray = pgType.includes('[]');
-
-    if (isArray) {
+    if (fieldType.isList) {
       return '[]';
     }
 
-    switch (baseType) {
-    case 'text':
-    case 'uuid':
+    switch (fieldType.base) {
+    case 'String':
+    case 'ID':
+    case 'UUID':
       return '""';
-    case 'integer':
-    case 'double precision':
+    case 'Int':
+    case 'Float':
+    case 'Decimal':
+    case 'BigInt':
       return '0';
-    case 'boolean':
+    case 'Boolean':
       return 'false';
-    case 'timestamptz':
+    case 'DateTime':
+    case 'Date':
+    case 'Time':
       return 'new Date()';
+    case 'JSON':
+      return 'null';
     default:
       return '""';
     }

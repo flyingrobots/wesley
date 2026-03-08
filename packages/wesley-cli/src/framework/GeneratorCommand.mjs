@@ -9,8 +9,8 @@ import { WesleyCommand } from './WesleyCommand.mjs';
  * - Support common CLI flags (verbose, quiet, json, etc.)
  */
 export class GeneratorCommand extends WesleyCommand {
-  constructor(name, description) {
-    super(name, description);
+  constructor(ctx, name, description) {
+    super(ctx, name, description);
     this.requiresSchema = true;
   }
 

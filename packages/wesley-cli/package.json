@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@wesley/core": "workspace:*",
+    "@wesley/generator-js": "workspace:*",
     "ajv": "^8.18.0",
     "ajv-formats": "^3.0.1",
     "chokidar": "^4.0.3",
@@ -34,7 +35,7 @@
     "generator"
   ],
   "author": "Wesley Authors <oss@flyingrobots.dev>",
-  "license": "LicenseRef-MIND-UCAL-1.0",
+  "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/flyingrobots/wesley.git",

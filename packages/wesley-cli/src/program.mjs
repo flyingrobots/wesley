@@ -1,13 +1,13 @@
 /**
  * Wesley CLI Program
- * Uses Commander with auto-registration
- * Commands register themselves when imported
+ * Uses Commander with constructor-based registration.
+ * Commands register themselves when instantiated.
  */
 
 import { Command } from 'commander';
 import { WesleyCommand } from './framework/WesleyCommand.mjs';
 
-// Import commands to trigger auto-registration
+// Import commands (registration happens on instantiation below)
 import { GeneratePipelineCommand } from './commands/generate.mjs';
 import { TransformPipelineCommand } from './commands/transform.mjs';
 import { PlanCommand } from './commands/plan.mjs';
@@ -24,6 +24,9 @@ import { CompileTtdCommand } from './commands/compile-ttd.mjs';
 import { DoctorCommand } from './commands/doctor.mjs';
 import { DiffCommand } from './commands/diff.mjs';
 import { QirValidateCommand } from './commands/qir-validate.mjs';
+import { ModelsCommand } from './commands/models.mjs';
+import { TypeScriptCommand } from './commands/typescript.mjs';
+import { ZodCommand } from './commands/zod.mjs';
 
 export async function program(argv, ctx) {
   // Create commands with context (auto-registers them)
@@ -43,11 +46,9 @@ export async function program(argv, ctx) {
   new DoctorCommand(ctx);
   new DiffCommand(ctx);
   new QirValidateCommand(ctx);
-
-  // TODO: Add other commands when they're updated
-  // new ModelsCommand(ctx);
-  // new TypeScriptCommand(ctx);
-  // new ZodCommand(ctx);
+  new ModelsCommand(ctx);
+  new TypeScriptCommand(ctx);
+  new ZodCommand(ctx);
 
   // Create main program
   const program = new Command()

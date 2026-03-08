@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "description": "Template stack (Supabase + Next.js). Placeholder package for CI structure checks.",
-  "license": "LicenseRef-MIND-UCAL-1.0",
+  "license": "Apache-2.0",
   "type": "module",
   "repository": {
     "type": "git",

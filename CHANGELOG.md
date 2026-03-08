@@ -6,6 +6,47 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Changed
+
+- **License**: Standardized all `package.json` files to `Apache-2.0`, matching
+  the project's `LICENSE` file. Removed appended MIND-UCAL text from `LICENSE`.
+  Added `NOTICE` file per Apache 2.0 requirements.
+- **IR**: `GraphQLAdapter.parseSDL()` now emits the `WesleyIR.schema.ts` shape:
+  structured `FieldType` objects (`{ base, isList, listItemNullable }`),
+  structured `TableDirectives`/`FieldDirectives`, top-level `version`,
+  `metadata`, `enums`, `scalars`, `relationships`, and `table.fields` (not
+  `columns`). The backward-compat shim (`table.columns`, `table.primaryKey`,
+  `table.foreignKeys`, `table.tenantBy`) has been removed — all consumers
+  now use the new shape directly.
+
+### Removed
+
+- **IR**: Backward-compat shim properties (`table.columns`, `table.primaryKey`,
+  `table.foreignKeys`, `table.tenantBy`) removed from `GraphQLAdapter`,
+  `BrowserParserPort`, and `ir.schema.json`. Legacy helper methods
+  (`applyBackwardCompatShim`, `mapGraphQLTypeToPostgreSQL_fromFieldType`,
+  `gqlScalarToPostgreSQL`, `flattenFieldDirectives`) deleted.
+
+### Added
+
+- **CLI**: Revived `models`, `typescript` (alias `ts`), and `zod` commands,
+  wired to existing generators in `@wesley/generator-js`:
+  - `wesley models --schema <file> --target ts|js --out-dir <dir>`
+  - `wesley typescript --schema <file> [--out-file <file>]`
+  - `wesley zod --schema <file> [--out-file <file>]`
+- **CLI framework**: `irToSchema` adapter bridging parser IR to core domain
+  `Schema`/`Table`/`Field` objects for TypeScript and Zod generators.
+
+### Fixed
+
+- `GeneratorCommand` and `FileOutputGeneratorCommand` constructors now accept
+  DI context as first argument, matching `WesleyCommand`.
+
+### Removed
+
+- **host-node**: Removed public `MigrationDiffEngine` export from `index.mjs`.
+  The internal stub in `adapters/index.mjs` is unchanged.
+
 ### Security
 
 - **S:** Resolved 15 GitHub dependabot alerts (11 high, 4 moderate) — bumped `@playwright/test` 1.49→1.58.2 (SSL cert verification), `dependency-cruiser` 17.1→17.3.8, `ajv` ^8.12→^8.18 in `@wesley/cli` (ReDoS); added pnpm overrides for transitive `minimatch` (ReDoS), `js-yaml` (prototype pollution), `markdown-it` (ReDoS)

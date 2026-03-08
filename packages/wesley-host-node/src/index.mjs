@@ -77,138 +77,48 @@ export class GraphQLSchemaParser {
     const tables = {};
 
     for (const tableData of ir.tables) {
-      // Convert columns to Field objects
       const fields = {};
-      for (const columnData of tableData.columns) {
-        const field = new Field({
-          name: columnData.name,
-          type: this.postgresqlToGraphQLType(columnData.type),
-          nonNull: !columnData.nullable,
-          list: columnData.type.includes('[]'),
-          directives: this.convertDirectivesToExpectedFormat(columnData, tableData)
+      for (const f of tableData.fields) {
+        const directives = {};
+        if (f.directives.pk) directives['@primaryKey'] = {};
+        if (f.directives.fk) {
+          directives['@foreignKey'] = {
+            ref: `${f.directives.fk.targetTable}.${f.directives.fk.targetField}`
+          };
+        }
+        if (f.directives.unique) directives['@unique'] = {};
+        if (f.directives.default) directives['@default'] = { expr: f.directives.default.value };
+        if (f.directives.index) {
+          const idx = tableData.indexes?.find(i => i.fields?.includes(f.name));
+          if (idx) directives['@index'] = { name: idx.name, using: idx.using };
+          else directives['@index'] = {};
+        }
+
+        fields[f.name] = new Field({
+          name: f.name,
+          type: f.type.base,
+          nonNull: !f.nullable,
+          list: f.type.isList,
+          directives
         });
-        fields[field.name] = field;
       }
 
-      // Create Table object
-      const table = new Table({
+      const tableDirectives = { '@table': {} };
+      if (tableData.directives.tenant) {
+        tableDirectives['@tenant'] = { by: tableData.directives.tenant.field };
+      }
+      if (tableData.directives.rls) {
+        tableDirectives['@rls'] = tableData.directives.rls;
+      }
+
+      tables[tableData.name] = new Table({
         name: tableData.name,
-        directives: this.convertTableDirectivesToExpectedFormat(tableData),
+        directives: tableDirectives,
         fields
       });
-
-      tables[table.name] = table;
     }
 
     return new Schema(tables);
   }
-
-  /**
-   * Convert PostgreSQL type back to GraphQL type (best effort)
-   */
-  postgresqlToGraphQLType(pgType) {
-    const baseType = pgType.replace('[]', '');
-    switch (baseType) {
-    case 'uuid': return 'ID';
-    case 'text': return 'String';
-    case 'integer': return 'Int';
-    case 'double precision': return 'Float';
-    case 'boolean': return 'Boolean';
-    case 'timestamptz': return 'DateTime';
-    default: return 'String';
-    }
-  }
-
-  /**
-   * Convert Wesley directives to expected format for fields
-   */
-  convertDirectivesToExpectedFormat(columnData, tableData) {
-    const directives = {};
-
-    // Check for primary key
-    if (tableData.primaryKey === columnData.name) {
-      directives['@primaryKey'] = {};
-    }
-
-    // Check for foreign keys
-    const fk = tableData.foreignKeys.find(fk => fk.column === columnData.name);
-    if (fk) {
-      directives['@foreignKey'] = { ref: `${fk.refTable}.${fk.refColumn}` };
-    }
-
-    // Check for unique constraint
-    if (columnData.unique) {
-      directives['@unique'] = {};
-    }
-
-    // Check for default value
-    if (columnData.default) {
-      directives['@default'] = { expr: columnData.default };
-    }
-
-    // Check for indexes
-    const index = tableData.indexes.find(idx => idx.columns.includes(columnData.name));
-    if (index) {
-      directives['@index'] = { name: index.name, using: index.using };
-    }
-
-    return directives;
-  }
-
-  /**
-   * Convert Wesley table directives to expected format
-   */
-  convertTableDirectivesToExpectedFormat(tableData) {
-    const directives = { '@table': {} };
-
-    if (tableData.tenantBy) {
-      directives['@tenant'] = { by: tableData.tenantBy };
-    }
-
-    // Handle RLS directives - check for both new and legacy names
-    const rlsDirective = tableData.directives?.['wes_rls'] || tableData.directives?.['rls'];
-    if (rlsDirective) {
-      directives['@rls'] = rlsDirective;
-    }
-
-    return directives;
-  }
 }
 
-export class MigrationDiffEngine {
-  constructor(options = {}) {
-    this.options = options;
-  }
-
-  async diff(_fromSchema, _toSchema) {
-    // Stub implementation - should generate migration SQL
-    console.warn('MigrationDiffEngine.diff: Using stub implementation');
-    return {
-      steps: [],
-      operations: [],
-      sql: '-- No migration generated (stub implementation)',
-      manifest: { kind: 'noop' }
-    };
-  }
-
-  async generateMigration(diff) {
-    // Stub implementation - should generate actual migration files
-    console.warn('MigrationDiffEngine.generateMigration: Using stub implementation');
-    return {
-      filename: `migration_${Date.now()}.sql`,
-      content: diff.sql || '-- No migration content'
-    };
-  }
-
-  async plan(_operations) {
-    // Stub implementation - should plan migration phases
-    console.warn('MigrationDiffEngine.plan: Using stub implementation');
-    return {
-      expand: [],
-      backfill: [],
-      validate: [],
-      switch: [],
-      contract: []
-    };
-  }
-}

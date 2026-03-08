@@ -66,7 +66,7 @@ async function verifyIr() {
       errors.push('missing table: User');
     } else {
       const missing = [];
-      if (!Array.isArray(u.columns) || !u.columns.some(c => c.name === 'id')) missing.push('id');
+      if (!Array.isArray(u.fields) || !u.fields.some(f => f.name === 'id')) missing.push('id');
       if (missing.length) {
         details.missingColumns['User'] = missing;
         errors.push(`User missing columns: ${missing.join(', ')}`);

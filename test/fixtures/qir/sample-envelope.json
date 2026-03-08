@@ -1,16 +1,25 @@
 {
   "version": "0.1",
   "schema": {
-    "version": "0.1",
+    "version": "1.0.0",
     "tables": [
       {
         "name": "organization",
-        "columns": [
-          { "name": "id", "type": "uuid", "nullable": false },
-          { "name": "name", "type": "text", "nullable": false }
+        "directives": { "table": true },
+        "fields": [
+          {
+            "name": "id",
+            "type": { "base": "ID", "isList": false },
+            "nullable": false,
+            "directives": { "pk": true }
+          },
+          {
+            "name": "name",
+            "type": { "base": "String", "isList": false },
+            "nullable": false,
+            "directives": {}
+          }
         ],
-        "primaryKey": "id",
-        "foreignKeys": [],
         "indexes": []
       }
     ]

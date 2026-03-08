@@ -2,62 +2,240 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://wesley.dev/schemas/ir.schema.json",
   "title": "Wesley Canonical IR",
-  "description": "Canonical intermediate representation produced from GraphQL SDL and consumed by generators and planners.",
+  "description": "Canonical intermediate representation produced from GraphQL SDL and consumed by generators and planners. Matches WesleyIR.schema.ts.",
   "type": "object",
-  "required": ["tables"],
+  "required": ["version", "tables"],
   "properties": {
-    "version": { "type": ["string", "null"], "description": "Optional IR version identifier" },
+    "version": { "type": "string", "const": "1.0.0" },
+    "metadata": { "$ref": "#/definitions/Metadata" },
     "tables": {
       "type": "array",
       "items": { "$ref": "#/definitions/Table" }
+    },
+    "enums": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/Enum" },
+      "default": []
+    },
+    "scalars": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/CustomScalar" },
+      "default": []
+    },
+    "relationships": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/Relationship" },
+      "default": []
     }
   },
   "additionalProperties": false,
   "definitions": {
-    "Table": {
+    "Metadata": {
       "type": "object",
-      "required": ["name", "columns"],
       "properties": {
-        "name": { "type": "string" },
-        "directives": { "type": "object", "additionalProperties": true },
-        "columns": { "type": "array", "items": { "$ref": "#/definitions/Column" } },
-        "primaryKey": { "type": ["string", "null"] },
-        "foreignKeys": { "type": "array", "items": { "$ref": "#/definitions/ForeignKey" }, "default": [] },
-        "indexes": { "type": "array", "items": { "$ref": "#/definitions/Index" }, "default": [] },
-        "tenantBy": { "type": ["string", "null"] }
+        "sourceHash": { "type": "string" },
+        "generatedAt": { "type": "string", "format": "date-time" },
+        "schemaName": { "type": "string" },
+        "units": { "type": "array", "items": { "$ref": "#/definitions/CompilationUnitMeta" } },
+        "composedHash": { "type": "string" }
       },
       "additionalProperties": false
     },
-    "Column": {
+    "CompilationUnitMeta": {
       "type": "object",
-      "required": ["name", "type", "nullable"],
+      "required": ["id", "hash"],
+      "properties": {
+        "id": { "type": "string" },
+        "package": { "type": ["string", "null"] },
+        "hash": { "type": "string" },
+        "imports": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "Table": {
+      "type": "object",
+      "required": ["name", "directives", "fields"],
       "properties": {
         "name": { "type": "string" },
-        "type": { "type": "string", "description": "PostgreSQL type, arrays indicated with [] suffix" },
+        "description": { "type": "string" },
+        "directives": { "$ref": "#/definitions/TableDirectives" },
+        "fields": { "type": "array", "items": { "$ref": "#/definitions/Field" } },
+        "indexes": { "type": "array", "items": { "$ref": "#/definitions/Index" }, "default": [] },
+        "constraints": { "type": "array", "items": { "$ref": "#/definitions/Constraint" }, "default": [] },
+        "sourceUnit": { "type": "string" },
+        "package": { "type": "string" },
+        "qualifiedName": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "TableDirectives": {
+      "type": "object",
+      "properties": {
+        "table": { "type": "boolean" },
+        "rls": { "$ref": "#/definitions/RLSConfig" },
+        "tenant": { "$ref": "#/definitions/TenantConfig" },
+        "audit": { "type": "boolean" },
+        "softDelete": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "Field": {
+      "type": "object",
+      "required": ["name", "type", "nullable", "directives"],
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "$ref": "#/definitions/FieldType" },
         "nullable": { "type": "boolean" },
-        "default": { "type": ["string", "null"] },
-        "unique": { "type": ["boolean", "null"] },
-        "directives": { "type": "object", "additionalProperties": true }
+        "directives": { "$ref": "#/definitions/FieldDirectives" },
+        "description": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "FieldType": {
+      "type": "object",
+      "required": ["base", "isList"],
+      "properties": {
+        "base": { "type": "string", "description": "GraphQL scalar name (ID, String, Int, etc.) or custom type reference" },
+        "isList": { "type": "boolean" },
+        "listItemNullable": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "FieldDirectives": {
+      "type": "object",
+      "properties": {
+        "pk": { "type": "boolean" },
+        "unique": { "type": "boolean" },
+        "index": { "type": "boolean" },
+        "default": { "$ref": "#/definitions/DefaultValue" },
+        "check": { "type": "string" },
+        "fk": { "$ref": "#/definitions/ForeignKey" },
+        "computed": { "$ref": "#/definitions/ComputedField" }
+      },
+      "additionalProperties": false
+    },
+    "DefaultValue": {
+      "type": "object",
+      "required": ["value"],
+      "properties": {
+        "value": {},
+        "isSQL": { "type": "boolean" }
       },
       "additionalProperties": false
     },
     "ForeignKey": {
       "type": "object",
-      "required": ["column", "refTable", "refColumn"],
+      "required": ["targetTable", "targetField"],
       "properties": {
-        "column": { "type": "string" },
-        "refTable": { "type": "string" },
-        "refColumn": { "type": "string" }
+        "targetTable": { "type": "string" },
+        "targetField": { "type": "string" },
+        "onDelete": { "type": "string", "enum": ["CASCADE", "RESTRICT", "SET NULL", "SET DEFAULT"] },
+        "onUpdate": { "type": "string", "enum": ["CASCADE", "RESTRICT", "SET NULL", "SET DEFAULT"] }
+      },
+      "additionalProperties": false
+    },
+    "ComputedField": {
+      "type": "object",
+      "required": ["expression", "stored"],
+      "properties": {
+        "expression": { "type": "string" },
+        "stored": { "type": "boolean" }
       },
       "additionalProperties": false
     },
     "Index": {
       "type": "object",
-      "required": ["columns"],
+      "required": ["fields"],
       "properties": {
-        "columns": { "type": "array", "items": { "type": "string" } },
+        "fields": { "type": "array", "items": { "type": "string" } },
         "name": { "type": ["string", "null"] },
-        "using": { "type": ["string", "null"] }
+        "table": { "type": "string" },
+        "unique": { "type": "boolean" },
+        "where": { "type": "string" },
+        "using": { "type": ["string", "null"], "enum": ["btree", "hash", "gin", "gist", null] }
+      },
+      "additionalProperties": false
+    },
+    "Constraint": {
+      "type": "object",
+      "required": ["name", "type", "table", "definition"],
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["unique", "check", "foreign_key", "primary_key"] },
+        "table": { "type": "string" },
+        "definition": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "Relationship": {
+      "type": "object",
+      "required": ["type", "from", "to"],
+      "properties": {
+        "type": { "type": "string", "enum": ["one-to-one", "one-to-many", "many-to-many"] },
+        "from": { "$ref": "#/definitions/TableFieldRef" },
+        "to": { "$ref": "#/definitions/TableFieldRef" },
+        "through": {
+          "type": "object",
+          "properties": {
+            "table": { "type": "string" },
+            "fromField": { "type": "string" },
+            "toField": { "type": "string" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "TableFieldRef": {
+      "type": "object",
+      "required": ["table", "field"],
+      "properties": {
+        "table": { "type": "string" },
+        "field": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "RLSConfig": {
+      "type": "object",
+      "properties": {
+        "enable": { "type": "boolean" },
+        "policies": { "type": "array" },
+        "defaultPolicy": { "type": "string", "enum": ["permissive", "restrictive"] }
+      },
+      "additionalProperties": false
+    },
+    "TenantConfig": {
+      "type": "object",
+      "required": ["field"],
+      "properties": {
+        "field": { "type": "string" },
+        "global": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "Enum": {
+      "type": "object",
+      "required": ["name", "values"],
+      "properties": {
+        "name": { "type": "string" },
+        "values": { "type": "array", "items": { "type": "string" } },
+        "description": { "type": "string" },
+        "sourceUnit": { "type": "string" },
+        "package": { "type": "string" },
+        "qualifiedName": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "CustomScalar": {
+      "type": "object",
+      "required": ["name", "sqlType"],
+      "properties": {
+        "name": { "type": "string" },
+        "sqlType": { "type": "string" },
+        "description": { "type": "string" },
+        "sourceUnit": { "type": "string" },
+        "package": { "type": "string" },
+        "qualifiedName": { "type": "string" }
       },
       "additionalProperties": false
     }

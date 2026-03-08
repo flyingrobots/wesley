@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { GraphQLAdapter } from '../src/adapters/GraphQLAdapter.mjs';
 
-test('GraphQLAdapter.parseSDL produces canonical-like IR for simple table', async () => {
+test('GraphQLAdapter.parseSDL produces canonical IR for simple table', async () => {
   const sdl = /* GraphQL */ `
     type User @wes_table {
       id: ID! @wes_pk
@@ -19,14 +19,13 @@ test('GraphQLAdapter.parseSDL produces canonical-like IR for simple table', asyn
 
   const table = ir.tables[0];
   assert.equal(table.name, 'User');
-  assert.ok(Array.isArray(table.columns));
-  const id = table.columns.find((c) => c.name === 'id');
-  const email = table.columns.find((c) => c.name === 'email');
-  assert.ok(id, 'id column present');
-  assert.ok(email, 'email column present');
-  assert.equal(id.type, 'uuid');
+  assert.ok(Array.isArray(table.fields));
+  const id = table.fields.find((f) => f.name === 'id');
+  const email = table.fields.find((f) => f.name === 'email');
+  assert.ok(id, 'id field present');
+  assert.ok(email, 'email field present');
+  assert.deepEqual(id.type, { base: 'ID', isList: false });
   assert.equal(id.nullable, false);
-  assert.equal(email.type, 'text');
+  assert.deepEqual(email.type, { base: 'String', isList: false });
   assert.equal(email.nullable, false);
 });
-
