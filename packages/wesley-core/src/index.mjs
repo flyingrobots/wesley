@@ -12,6 +12,7 @@ export { registryHash, canonicalizeJSON } from './domain/registryHash.mjs';
 export { computeLayoutHash, buildLayoutDescriptor, encodingForType } from './domain/layoutHash.mjs';
 export { computeHashChain, computeSdlHash, computeIrHash, computeBundleHash } from './domain/hashChain.mjs';
 export { computeDelta } from './domain/schemaDelta.mjs';
+export { GQL_TO_PG, PG_TO_GQL, fieldTypeToPg, gqlScalarToPg } from './domain/typeMapping.mjs';
 
 // Domain Events
 export * from './domain/Events.mjs';

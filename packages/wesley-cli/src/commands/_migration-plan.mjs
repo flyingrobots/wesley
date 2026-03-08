@@ -5,6 +5,8 @@
  * single location (M3).
  */
 
+import { fieldTypeToPg } from '@wesley/core';
+
 // ── Validation regexes (M3) ─────────────────────────────────────────────────
 const SAFE_PG_TYPE_RE = /^[a-zA-Z_][a-zA-Z0-9_ [\](),.]*$/;
 const SAFE_USING_RE = /^(btree|hash|gin|gist|spgist|brin)$/i;
@@ -13,6 +15,7 @@ const SAFE_DEFAULT_RE = /^(-?\d+(\.\d+)?|true|false|'[^']*'|[a-zA-Z_][a-zA-Z0-9_
 
 /**
  * Build an additive-only migration plan: tables/columns/indexes/fks.
+ * Reads the new IR shape (table.fields with structured FieldType and directives).
  */
 export function buildAdditivePlan(prev, curr) {
   const pmap = new Map((prev.tables || []).map(t => [t.name, t]));
@@ -25,36 +28,39 @@ export function buildAdditivePlan(prev, curr) {
     if (!old) {
       phases[0].steps.push({ op: 'create_table', table: name });
       for (const idx of t.indexes || []) {
-        phases[0].steps.push({ op: 'create_index_concurrently', table: name, columns: idx.columns, using: idx.using, name: idx.name });
+        phases[0].steps.push({ op: 'create_index_concurrently', table: name, columns: idx.fields, using: idx.using, name: idx.name });
       }
-      for (const fk of t.foreignKeys || []) {
-        phases[0].steps.push({ op: 'add_fk_not_valid', table: name, column: fk.column, refTable: fk.refTable, refColumn: fk.refColumn });
-        phases[1].steps.push({ op: 'validate_fk', table: name, column: fk.column });
+      for (const f of t.fields || []) {
+        if (!f.directives.fk) continue;
+        phases[0].steps.push({ op: 'add_fk_not_valid', table: name, column: f.name, refTable: f.directives.fk.targetTable, refColumn: f.directives.fk.targetField });
+        phases[1].steps.push({ op: 'validate_fk', table: name, column: f.name });
       }
       continue;
     }
-    // New columns
-    const oldCols = new Set((old.columns || []).map(c => c.name));
-    for (const c of t.columns || []) {
-      if (!oldCols.has(c.name)) {
-        phases[0].steps.push({ op: 'add_column', table: name, column: c.name, type: c.type, nullable: c.nullable, default: c.default });
+    // New fields
+    const oldFields = new Set((old.fields || []).map(f => f.name));
+    for (const f of t.fields || []) {
+      if (!oldFields.has(f.name)) {
+        const defaultVal = f.directives.default?.value ?? null;
+        phases[0].steps.push({ op: 'add_column', table: name, column: f.name, type: fieldTypeToPg(f.type), nullable: f.nullable, default: defaultVal });
       }
     }
     // New indexes
-    const oldIdxSig = new Set((old.indexes || []).map(i => (i.columns || []).join('|') + ':' + (i.using || 'btree')));
+    const oldIdxSig = new Set((old.indexes || []).map(i => (i.fields || []).join('|') + ':' + (i.using || 'btree')));
     for (const idx of t.indexes || []) {
-      const sig = (idx.columns || []).join('|') + ':' + (idx.using || 'btree');
+      const sig = (idx.fields || []).join('|') + ':' + (idx.using || 'btree');
       if (!oldIdxSig.has(sig)) {
-        phases[0].steps.push({ op: 'create_index_concurrently', table: name, columns: idx.columns, using: idx.using, name: idx.name });
+        phases[0].steps.push({ op: 'create_index_concurrently', table: name, columns: idx.fields, using: idx.using, name: idx.name });
       }
     }
     // New FKs
-    const oldFks = new Set((old.foreignKeys || []).map(f => `${f.column}->${f.refTable}.${f.refColumn}`));
-    for (const fk of t.foreignKeys || []) {
-      const key = `${fk.column}->${fk.refTable}.${fk.refColumn}`;
+    const oldFks = new Set((old.fields || []).filter(f => f.directives.fk).map(f => `${f.name}->${f.directives.fk.targetTable}.${f.directives.fk.targetField}`));
+    for (const f of t.fields || []) {
+      if (!f.directives.fk) continue;
+      const key = `${f.name}->${f.directives.fk.targetTable}.${f.directives.fk.targetField}`;
       if (!oldFks.has(key)) {
-        phases[0].steps.push({ op: 'add_fk_not_valid', table: name, column: fk.column, refTable: fk.refTable, refColumn: fk.refColumn });
-        phases[1].steps.push({ op: 'validate_fk', table: name, column: fk.column });
+        phases[0].steps.push({ op: 'add_fk_not_valid', table: name, column: f.name, refTable: f.directives.fk.targetTable, refColumn: f.directives.fk.targetField });
+        phases[1].steps.push({ op: 'validate_fk', table: name, column: f.name });
       }
     }
   }

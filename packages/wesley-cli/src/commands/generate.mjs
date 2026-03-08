@@ -385,7 +385,8 @@ export class GeneratePipelineCommand extends WesleyCommand {
       const pkMap = new Map();
       if (ir && Array.isArray(ir.tables)) {
         for (const t of ir.tables) {
-          if (t?.name && t?.primaryKey) pkMap.set(String(t.name), String(t.primaryKey));
+          const pkField = t?.fields?.find(f => f.directives?.pk);
+          if (t?.name && pkField) pkMap.set(String(t.name), String(pkField.name));
         }
       }
       /**

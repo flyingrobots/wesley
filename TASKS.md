@@ -84,16 +84,16 @@ each step.
 
 ## Phase 7 — Migrate Migration Plan Helpers
 
-- [ ] **T-7.1** Update `packages/wesley-cli/src/commands/_migration-plan.mjs`
+- [x] **T-7.1** Update `packages/wesley-cli/src/commands/_migration-plan.mjs`
   - `t.columns` → `t.fields`
   - `c.type` → map `field.type.base` to PG type for SQL emission
   - `t.foreignKeys` → collect from `field.directives.fk`
 
-- [ ] **T-7.2** Update `packages/wesley-cli/src/commands/up.mjs`
+- [x] **T-7.2** Update `packages/wesley-cli/src/commands/up.mjs`
   Has its own copy of `buildAdditivePlan` — same changes as T-7.1.
   Also update snapshot writes.
 
-- [ ] **T-7.3** Update `packages/wesley-cli/src/commands/generate.mjs`
+- [x] **T-7.3** Update `packages/wesley-cli/src/commands/generate.mjs`
   `ir.tables`, `t.primaryKey` (for PK map), snapshot writes.
 
 ## Phase 8 — Migrate Browser Host
@@ -130,7 +130,7 @@ each step.
 
 ## Phase 11 — Extract Shared Type Mapping Utility
 
-- [ ] **T-11.1** Create shared GQL↔PG type mapping in `@wesley/core`
+- [x] **T-11.1** Create shared GQL↔PG type mapping in `@wesley/core`
   `{ ID: 'uuid', String: 'text', Int: 'integer', Float: 'double precision', ... }`
   Replaces duplicated mappings in: `GraphQLAdapter.mapGraphQLTypeToPostgreSQL`,
   `irToSchema.PG_TO_GQL`, `host-node/index.postgresqlToGraphQLType`,
