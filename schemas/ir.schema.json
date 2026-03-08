@@ -64,11 +64,7 @@
         "constraints": { "type": "array", "items": { "$ref": "#/definitions/Constraint" }, "default": [] },
         "sourceUnit": { "type": "string" },
         "package": { "type": "string" },
-        "qualifiedName": { "type": "string" },
-        "columns": { "description": "Backward-compat shim (deprecated). Use 'fields' instead.", "type": "array" },
-        "primaryKey": { "description": "Backward-compat shim (deprecated). Use field.directives.pk instead.", "type": ["string", "null"] },
-        "foreignKeys": { "description": "Backward-compat shim (deprecated). Use field.directives.fk instead.", "type": "array" },
-        "tenantBy": { "description": "Backward-compat shim (deprecated). Use table.directives.tenant instead.", "type": ["string", "null"] }
+        "qualifiedName": { "type": "string" }
       },
       "additionalProperties": false
     },

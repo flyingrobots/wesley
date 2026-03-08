@@ -144,11 +144,6 @@ class GraphQLSchemaParser {
     // Synthesize top-level relationships from field-level @fk directives
     const relationships = this.synthesizeRelationships(tables);
 
-    // Apply backward-compat shim (removed in Phase 12)
-    for (const table of tables) {
-      this.applyBackwardCompatShim(table);
-    }
-
     return {
       version: '1.0.0',
       metadata: {
@@ -348,82 +343,6 @@ class GraphQLSchemaParser {
       }
     }
     return relationships;
-  }
-
-  /**
-   * Backward-compat shim: add legacy properties derived from the new shape.
-   * Consumers can migrate off these one at a time (Phases 3–9).
-   * This entire method is removed in Phase 12.
-   */
-  applyBackwardCompatShim(table) {
-    // Legacy: table.columns mirrors table.fields with PG type strings
-    table.columns = table.fields.map(f => {
-      const col = {
-        name: f.name,
-        type: this.mapGraphQLTypeToPostgreSQL_fromFieldType(f.type),
-        nullable: f.nullable,
-        directives: this.flattenFieldDirectives(f.directives)
-      };
-      if (f.directives.default) col.default = f.directives.default.value;
-      if (f.directives.unique) col.unique = true;
-      return col;
-    });
-
-    // Legacy: table.primaryKey
-    const pkField = table.fields.find(f => f.directives.pk);
-    table.primaryKey = pkField ? pkField.name : null;
-
-    // Legacy: table.foreignKeys
-    table.foreignKeys = table.fields
-      .filter(f => f.directives.fk)
-      .map(f => ({
-        column: f.name,
-        refTable: f.directives.fk.targetTable,
-        refColumn: f.directives.fk.targetField
-      }));
-
-    // Legacy: table.tenantBy
-    table.tenantBy = table.directives.tenant?.field || null;
-  }
-
-  /**
-   * Convert structured FieldType back to PG type string (for backward-compat shim).
-   */
-  mapGraphQLTypeToPostgreSQL_fromFieldType(fieldType) {
-    const pgType = this.gqlScalarToPostgreSQL(fieldType.base);
-    return fieldType.isList ? `${pgType}[]` : pgType;
-  }
-
-  /**
-   * Map a single GraphQL scalar name to PostgreSQL type.
-   */
-  gqlScalarToPostgreSQL(scalarName) {
-    switch (scalarName) {
-    case 'ID': return 'uuid';
-    case 'UUID': return 'uuid';
-    case 'String': return 'text';
-    case 'Int': return 'integer';
-    case 'Float': return 'double precision';
-    case 'Boolean': return 'boolean';
-    case 'DateTime': return 'timestamptz';
-    case 'Date': return 'date';
-    case 'Time': return 'time with time zone';
-    case 'JSON': return 'jsonb';
-    default: return 'text';
-    }
-  }
-
-  /**
-   * Flatten structured FieldDirectives back to generic object (for backward-compat shim).
-   */
-  flattenFieldDirectives(fieldDirectives) {
-    const flat = {};
-    if (fieldDirectives.pk) flat.wes_pk = {};
-    if (fieldDirectives.unique) flat.wes_unique = {};
-    if (fieldDirectives.index) flat.wes_index = {};
-    if (fieldDirectives.default) flat.wes_default = { value: fieldDirectives.default.value };
-    if (fieldDirectives.fk) flat.wes_fk = { ref: `${fieldDirectives.fk.targetTable}.${fieldDirectives.fk.targetField}` };
-    return flat;
   }
 
   /**
@@ -701,13 +620,6 @@ class GraphQLSchemaParser {
           if (field.directives.fk) {
             const fkProv = defLookup.get(field.directives.fk.targetTable);
             if (fkProv) field.directives.fk.targetTable = fkProv.shortName;
-          }
-        }
-        // Update shim foreignKeys
-        if (table.foreignKeys) {
-          for (const fk of table.foreignKeys) {
-            const fkProv = defLookup.get(fk.refTable);
-            if (fkProv) fk.refTable = fkProv.shortName;
           }
         }
       }

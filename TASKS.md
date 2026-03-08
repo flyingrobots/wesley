@@ -117,7 +117,7 @@ each step.
 
 - [ ] **T-10.1** Rewrite `test/fixtures/examples/.wesley/snapshot.json` to new shape
 
-- [ ] **T-10.2** Update `packages/wesley-host-node/test/parser-ir.test.mjs`
+- [x] **T-10.2** Update `packages/wesley-host-node/test/parser-ir.test.mjs`
   Update assertions: `table.fields`, `field.type.base`, etc.
 
 - [x] **T-10.3** Update `test/browser/contracts/main.js`
@@ -139,13 +139,16 @@ each step.
 
 ## Phase 12 — Remove Backward-Compat Shim
 
-- [ ] **T-12.1** Remove shim from `GraphQLAdapter` (added in T-1.2)
-  All consumers now use the new shape directly.
+- [x] **T-12.1** Remove shim from `GraphQLAdapter` and `BrowserParserPort` (added in T-1.2)
+  All consumers now use the new shape directly. Removed `applyBackwardCompatShim`,
+  `mapGraphQLTypeToPostgreSQL_fromFieldType`, `gqlScalarToPostgreSQL`, `flattenFieldDirectives`.
+  Also removed shim `foreignKeys` loop from `parseComposed()` and `GQL_TO_PG` from BrowserParserPort.
 
 ## Phase 13 — Clean Up Old Tests
 
-- [ ] **T-13.1** Merge or delete `parser-ir.test.mjs` if `parser-ir-v2.test.mjs` covers it
-- [ ] **T-13.2** Delete `parser-ir-v2.test.mjs` rename — just use `parser-ir.test.mjs`
+- [x] **T-13.1** Updated `parser-ir.test.mjs` to assert new IR shape (fields, FieldType, directives)
+- [x] **T-13.2** Updated `parser-ir-v2.test.mjs`: replaced backward-compat shim tests with
+  a negative assertion confirming legacy properties are absent
 
 ---
 

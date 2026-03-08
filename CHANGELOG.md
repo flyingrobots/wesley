@@ -15,9 +15,17 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   structured `FieldType` objects (`{ base, isList, listItemNullable }`),
   structured `TableDirectives`/`FieldDirectives`, top-level `version`,
   `metadata`, `enums`, `scalars`, `relationships`, and `table.fields` (not
-  `columns`). A backward-compat shim provides legacy `table.columns`,
-  `table.primaryKey`, `table.foreignKeys`, and `table.tenantBy` during
-  consumer migration.
+  `columns`). The backward-compat shim (`table.columns`, `table.primaryKey`,
+  `table.foreignKeys`, `table.tenantBy`) has been removed — all consumers
+  now use the new shape directly.
+
+### Removed
+
+- **IR**: Backward-compat shim properties (`table.columns`, `table.primaryKey`,
+  `table.foreignKeys`, `table.tenantBy`) removed from `GraphQLAdapter`,
+  `BrowserParserPort`, and `ir.schema.json`. Legacy helper methods
+  (`applyBackwardCompatShim`, `mapGraphQLTypeToPostgreSQL_fromFieldType`,
+  `gqlScalarToPostgreSQL`, `flattenFieldDirectives`) deleted.
 
 ### Added
 

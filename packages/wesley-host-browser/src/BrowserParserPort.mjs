@@ -37,12 +37,6 @@ function parseRawDirectives(head) {
 
 const SCALAR_SET = new Set(['ID','UUID','String','Int','Float','Boolean','DateTime','Date','Time','JSON']);
 
-const GQL_TO_PG = {
-  'ID': 'uuid', 'UUID': 'uuid', 'String': 'text', 'Int': 'integer',
-  'Float': 'double precision', 'Boolean': 'boolean', 'DateTime': 'timestamptz',
-  'Date': 'date', 'Time': 'time with time zone', 'JSON': 'jsonb'
-};
-
 function parseFields(body) {
   const lines = body.split(/\r?\n|\r/).map(s => s.trim()).filter(Boolean);
   const fields = [];
@@ -140,21 +134,6 @@ export class BrowserParserPort {
       }
 
       const table = { name, directives: tableDirectives, fields, indexes, constraints };
-
-      // Backward-compat shim
-      table.columns = fields.map(f => {
-        const col = {
-          name: f.name,
-          type: (GQL_TO_PG[f.type.base] || 'text') + (f.type.isList ? '[]' : ''),
-          nullable: f.nullable,
-          directives: rawDirs
-        };
-        if (f.directives.default) col.default = f.directives.default.value;
-        if (f.directives.unique) col.unique = true;
-        return col;
-      });
-      const pkField = fields.find(f => f.directives.pk);
-      table.primaryKey = pkField ? pkField.name : null;
 
       tables.push(table);
     }

@@ -249,45 +249,19 @@ test('foreign keys produce top-level relationships', () => {
   assert.equal(rel.to.field, 'id');
 });
 
-// ---------- Backward compat during migration ----------
+// ---------- No legacy shim properties ----------
 
-test('backward-compat shim: table.columns mirrors table.fields', () => {
-  const ir = parseSDL('type User @wes_table { id: ID! @wes_pk }');
-  const table = ir.tables[0];
-  // During migration, table.columns should be provided as a shim
-  assert.ok(Array.isArray(table.columns), 'table.columns shim should exist');
-  assert.equal(table.columns.length, table.fields.length);
-});
-
-test('backward-compat shim: table.primaryKey is derived from field directives', () => {
-  const ir = parseSDL('type User @wes_table { id: ID! @wes_pk }');
-  const table = ir.tables[0];
-  assert.equal(table.primaryKey, 'id');
-});
-
-test('backward-compat shim: table.foreignKeys is derived from field directives', () => {
+test('table does NOT have legacy shim properties (columns, primaryKey, foreignKeys, tenantBy)', () => {
   const ir = parseSDL(`
     type Org @wes_table { id: ID! @wes_pk }
-    type User @wes_table {
+    type User @wes_table @wes_tenant(by: "org_id") {
       id: ID! @wes_pk
       org_id: ID! @wes_fk(ref: "Org.id")
     }
   `);
   const user = ir.tables.find(t => t.name === 'User');
-  assert.ok(Array.isArray(user.foreignKeys));
-  assert.equal(user.foreignKeys.length, 1);
-  assert.equal(user.foreignKeys[0].column, 'org_id');
-  assert.equal(user.foreignKeys[0].refTable, 'Org');
-  assert.equal(user.foreignKeys[0].refColumn, 'id');
-});
-
-test('backward-compat shim: table.tenantBy is derived from table directives', () => {
-  const ir = parseSDL(`
-    type User @wes_table @wes_tenant(by: "org_id") {
-      id: ID! @wes_pk
-      org_id: ID!
-    }
-  `);
-  const table = ir.tables[0];
-  assert.equal(table.tenantBy, 'org_id');
+  assert.equal(user.columns, undefined, 'table.columns shim should be removed');
+  assert.equal(user.primaryKey, undefined, 'table.primaryKey shim should be removed');
+  assert.equal(user.foreignKeys, undefined, 'table.foreignKeys shim should be removed');
+  assert.equal(user.tenantBy, undefined, 'table.tenantBy shim should be removed');
 });
