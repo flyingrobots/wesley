@@ -24,7 +24,7 @@
     "vitest": "^4.0.3"
   },
   "author": "Wesley Authors <oss@flyingrobots.dev>",
-  "license": "LicenseRef-MIND-UCAL-1.0",
+  "license": "Apache-2.0",
   "engines": {
     "node": ">=18.17"
   },
