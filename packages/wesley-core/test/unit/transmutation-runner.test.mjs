@@ -228,11 +228,12 @@ test('TransmutationRunner — bad generate() return type produces WPLY003', asyn
   assert.equal(result.results[0].errorCode, 'WPLY003');
 });
 
-test('TransmutationRunner — null plugin in array produces WPLY001', async () => {
+test('TransmutationRunner — null plugin in array produces WPLY001 at validate phase', async () => {
   const runner = makeRunner({ bestEffort: true });
   const result = await runner.run('test', [null, makePlugin()], {});
   assert.equal(result.results[0].status, 'error');
   assert.equal(result.results[0].errorCode, 'WPLY001');
+  assert.equal(result.results[0].phase, 'validate');
   assert.equal(result.results[1].status, 'ok');
 });
 
@@ -424,6 +425,61 @@ test('TransmutationRunner — evidence entry without .artifacts is silently skip
 // ---------------------------------------------------------------------------
 // Empty plugins
 // ---------------------------------------------------------------------------
+
+test('TransmutationRunner — runId has consistent length (padded random segment)', async () => {
+  const runner = makeRunner();
+  const results = [];
+  for (let i = 0; i < 20; i++) {
+    const result = await runner.run('test', [], {});
+    results.push(result.runId);
+  }
+  // All runIds should have a 6-char random suffix after the last hyphen
+  for (const runId of results) {
+    const parts = runId.split('-');
+    // Format: run-<ts>-<rand6>
+    assert.equal(parts.length, 3, `runId "${runId}" should have 3 parts`);
+    assert.equal(parts[2].length, 6, `random segment of "${runId}" should be 6 chars`);
+  }
+});
+
+test('TransmutationRunner — bundle.evidence and result.evidence are the same serialized object', async () => {
+  const runner = makeRunner();
+  const result = await runner.run('backend', [makeEvidencePlugin()], { sha: 'abc123' });
+
+  // They should be deeply equal (same serialization)
+  assert.deepEqual(result.bundle.evidence, result.evidence);
+});
+
+test('TransmutationRunner — plugin evidence errors and warnings are forwarded to evidenceMap', async () => {
+  const runner = makeRunner();
+  const plugin = {
+    apiVersion: '1',
+    name: 'err-warn-plugin',
+    async plan() { return { artifacts: [{ path: 'x.sql' }] }; },
+    async generate() {
+      return {
+        files: { 'x.sql': 'CREATE TABLE ...' },
+        evidence: {
+          'col:User.id': {
+            artifacts: { ddl: { file: 'x.sql', lines: [1, 1], sha: 'abc' } },
+            errors: [{ message: 'Missing NOT NULL', type: 'constraint', severity: 'error' }],
+            warnings: [{ message: 'Consider adding index', type: 'performance', severity: 'warning' }]
+          }
+        }
+      };
+    }
+  };
+
+  const result = await runner.run('test', [plugin], {});
+  assert.equal(result.success, true);
+
+  // Errors and warnings should appear in serialized evidence
+  const evidenceJson = result.evidence;
+  assert.ok(evidenceJson.errors['col:User.id'], 'should have errors for col:User.id');
+  assert.equal(evidenceJson.errors['col:User.id'].length, 1);
+  assert.ok(evidenceJson.warnings['col:User.id'], 'should have warnings for col:User.id');
+  assert.equal(evidenceJson.warnings['col:User.id'].length, 1);
+});
 
 test('TransmutationRunner — empty plugins array returns success', async () => {
   const runner = makeRunner();

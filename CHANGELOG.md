@@ -49,6 +49,19 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   `WPLY003` errors that respect best-effort mode.
 - **Ops manifest validation**: `OpsError` wrapping now reads AJV errors from
   `e.meta.errors` (where `assertValid` puts them) instead of `e.errors`.
+- **Exit code mappings**: Added 11 missing error codes (`DIRTY_WORKTREE`,
+  `CERT_INVALID`, `EEXIST`, `EARGS`, `EUSAGE`, `ERR_MISSING_ARGUMENT`,
+  `NO_DSN`, `REALM_FAILED`, `OPS_MANIFEST_INVALID`, `INVALID_TARGET`,
+  `TTD_COMPILE_FAILED`) so CLI exits with stable, semantic exit codes.
+- **`TransmutationRunner`**: Validate phase correctly labeled `'validate'`
+  (was `'init'`). `generateRunId` pads to consistent 6-char suffix.
+  `evidenceMap.toJSON()` serialized once. `structuredClone` replaces
+  `JSON.parse(JSON.stringify(...))` for config cloning. Plugin evidence
+  `errors` and `warnings` forwarded to `EvidenceMap`.
+- **`irToSchema`**: Preserves `listItemNullable` → `itemNonNull` on `Field`
+  construction (was silently dropped, widening `[T!]` to `[T]`).
+- **`assertCleanGit` wrappers**: Removed redundant try/catch in `generate.mjs`
+  and `plan.mjs` since `assertCleanGit` now throws `WesleyError` directly.
 - **CLI**: Named exports standardized across all 19 command files (removed `export default`).
 - **CLI**: Revived `models`, `typescript` (alias `ts`), and `zod` commands,
   wired to existing generators in `@wesley/generator-js`:

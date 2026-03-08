@@ -66,7 +66,7 @@ test('irToSchema handles nullable fields', () => {
   assert.equal(role.nonNull, false);
 });
 
-test('irToSchema maps foreign key directives', () => {
+test('irToSchema maps foreign key directives with ref', () => {
   const ir = {
     tables: [{
       name: 'Post',
@@ -86,4 +86,50 @@ test('irToSchema maps foreign key directives', () => {
   const post = schema.getTables()[0];
   const authorId = post.getFields()[0];
   assert.ok(authorId.isForeignKey());
+  assert.equal(authorId.getForeignKeyRef(), 'User.id');
+});
+
+test('irToSchema maps list fields with itemNonNull', () => {
+  const ir = {
+    tables: [{
+      name: 'Config',
+      directives: {},
+      fields: [
+        {
+          name: 'tags',
+          type: { base: 'String', isList: true, listItemNullable: false },
+          nullable: true,
+          directives: {}
+        },
+        {
+          name: 'labels',
+          type: { base: 'String', isList: true, listItemNullable: true },
+          nullable: true,
+          directives: {}
+        },
+        {
+          name: 'plain_list',
+          type: { base: 'Int', isList: true },
+          nullable: false,
+          directives: {}
+        }
+      ]
+    }]
+  };
+
+  const schema = irToSchema(ir);
+  const config = schema.getTables()[0];
+  const fields = config.getFields();
+
+  const tags = fields.find(f => f.name === 'tags');
+  assert.equal(tags.list, true, 'tags should be a list');
+  assert.equal(tags.itemNonNull, true, 'tags items should be non-null');
+
+  const labels = fields.find(f => f.name === 'labels');
+  assert.equal(labels.list, true, 'labels should be a list');
+  assert.equal(labels.itemNonNull, false, 'labels items should be nullable');
+
+  const plainList = fields.find(f => f.name === 'plain_list');
+  assert.equal(plainList.list, true, 'plain_list should be a list');
+  assert.equal(plainList.itemNonNull, false, 'plain_list items should default to nullable');
 });

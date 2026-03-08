@@ -68,11 +68,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
     // Safety: require clean git working tree unless explicitly allowed
     const env = this.ctx.env || {};
     if (shouldEnforceClean(env, options) && !options.allowDirty) {
-      try {
-        await assertCleanGit(this.ctx.shell);
-      } catch (e) {
-        throw e instanceof WesleyError ? e : new WesleyError(e.code || 'DIRTY_WORKTREE', e.message);
-      }
+      await assertCleanGit(this.ctx.shell);
     }
 
     const debugDump = options.printComposedSdl || options.printIr;

@@ -37,7 +37,7 @@ function deepFreeze(obj) {
  */
 function generateRunId() {
   const ts = Date.now().toString(36);
-  const rand = Math.random().toString(36).slice(2, 8);
+  const rand = Math.random().toString(36).slice(2, 8).padEnd(6, '0');
   return `run-${ts}-${rand}`;
 }
 
@@ -62,7 +62,7 @@ function generateRunId() {
  * @property {number} artifactCount
  * @property {string} [errorCode]
  * @property {string} [errorMessage]
- * @property {'init'|'plan'|'generate'} [phase]
+ * @property {'validate'|'init'|'plan'|'generate'} [phase]
  * @property {number} durationMs
  */
 
@@ -131,12 +131,14 @@ export class TransmutationRunner {
     // Compute scores from evidence
     const scores = this._computeScores(schema, evidenceMap, options);
 
+    const evidenceJson = evidenceMap.toJSON();
+
     const bundle = {
       bundleVersion: BUNDLE_VERSION,
       transmutation: name,
       sha: options.sha || 'uncommitted',
       timestamp: this._clock.now(),
-      evidence: evidenceMap.toJSON(),
+      evidence: evidenceJson,
       scores,
       artifacts: results
         .filter(r => r.status === 'ok')
@@ -153,7 +155,7 @@ export class TransmutationRunner {
       results,
       totalArtifacts,
       scores,
-      evidence: evidenceMap.toJSON(),
+      evidence: evidenceJson,
       bundle
     };
   }
@@ -221,7 +223,7 @@ export class TransmutationRunner {
     try {
       validatePlugin(plugin);
     } catch (cause) {
-      return this._errorResult(plugin, 'init', cause, startMs);
+      return this._errorResult(plugin, 'validate', cause, startMs);
     }
 
     const pluginName = plugin.name;
@@ -229,7 +231,7 @@ export class TransmutationRunner {
       ? this._logger.child({ plugin: pluginName })
       : this._logger;
 
-    const frozenConfig = deepFreeze(JSON.parse(JSON.stringify(this._config)));
+    const frozenConfig = deepFreeze(structuredClone(this._config));
     const context = Object.freeze({
       logger: childLogger,
       clock: this._clock,
@@ -324,10 +326,21 @@ export class TransmutationRunner {
     // Merge plugin evidence into the transmutation evidence map
     if (pluginEvidence) {
       for (const [uid, entry] of Object.entries(pluginEvidence)) {
-        if (entry != null && typeof entry === 'object' &&
-            entry.artifacts != null && typeof entry.artifacts === 'object' && !Array.isArray(entry.artifacts)) {
-          for (const [kind, location] of Object.entries(entry.artifacts)) {
-            evidenceMap.record(uid, kind, location);
+        if (entry != null && typeof entry === 'object') {
+          if (entry.artifacts != null && typeof entry.artifacts === 'object' && !Array.isArray(entry.artifacts)) {
+            for (const [kind, location] of Object.entries(entry.artifacts)) {
+              evidenceMap.record(uid, kind, location);
+            }
+          }
+          if (Array.isArray(entry.errors)) {
+            for (const err of entry.errors) {
+              evidenceMap.recordError(uid, err);
+            }
+          }
+          if (Array.isArray(entry.warnings)) {
+            for (const warn of entry.warnings) {
+              evidenceMap.recordWarning(uid, warn);
+            }
           }
         }
       }

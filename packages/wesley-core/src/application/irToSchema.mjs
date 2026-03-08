@@ -56,6 +56,7 @@ export function irToSchema(ir) {
         type: f.type.base,
         nonNull: !f.nullable,
         list: f.type.isList,
+        itemNonNull: f.type.isList && f.type.listItemNullable === false,
         directives: buildFieldDirectives(f, t)
       });
     }
