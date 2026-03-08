@@ -47,6 +47,7 @@ export { irToSchema } from './application/irToSchema.mjs';
 export { EvidenceMap } from './application/EvidenceMap.mjs';
 export { ScoringEngine } from './application/Scoring.mjs';
 export { PluginRunner } from './application/PluginRunner.mjs';
+export { TransmutationRunner } from './application/TransmutationRunner.mjs';
 export { ArtifactWriter } from './application/ArtifactWriter.mjs';
 export { discoverPlugins } from './application/PluginDiscovery.mjs';
 export { validateConfig, KNOWN_EXPERIMENTAL_FLAGS } from './application/ConfigValidator.mjs';
