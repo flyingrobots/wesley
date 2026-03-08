@@ -1,13 +1,13 @@
 /**
  * Wesley CLI Program
- * Uses Commander with auto-registration
- * Commands register themselves when imported
+ * Uses Commander with constructor-based registration.
+ * Commands register themselves when instantiated.
  */
 
 import { Command } from 'commander';
 import { WesleyCommand } from './framework/WesleyCommand.mjs';
 
-// Import commands to trigger auto-registration
+// Import commands (registration happens on instantiation below)
 import { GeneratePipelineCommand } from './commands/generate.mjs';
 import { TransformPipelineCommand } from './commands/transform.mjs';
 import { PlanCommand } from './commands/plan.mjs';

@@ -50,9 +50,11 @@ function buildFieldDirectives(column, table) {
     directives['@default'] = { expr: column.default };
   }
 
-  const idx = table.indexes?.find(i => i.columns?.includes(column.name));
-  if (idx) {
-    directives['@index'] = { name: idx.name, using: idx.using };
+  const indexes = table.indexes?.filter(i => i.columns?.includes(column.name));
+  if (indexes?.length === 1) {
+    directives['@index'] = { name: indexes[0].name, using: indexes[0].using };
+  } else if (indexes?.length > 1) {
+    directives['@index'] = indexes.map(i => ({ name: i.name, using: i.using }));
   }
 
   return directives;

@@ -26,7 +26,9 @@ export class ModelsCommand extends GeneratorCommand {
 
     if (!options.quiet && !options.json) {
       logger.info('Generated model classes:');
-      result.files.forEach((file) => logger.info(`  ${file}`));
+      for (const file of result.files) {
+        logger.info(`  ${file}`);
+      }
       logger.info(`Target: ${result.target} (${result.outputDir})`);
     }
     return result;

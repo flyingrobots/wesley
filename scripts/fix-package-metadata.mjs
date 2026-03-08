@@ -28,7 +28,7 @@ for (const entry of packages) {
     const pkgData = JSON.parse(await fs.readFile(pkgPath, 'utf8'));
 
     pkgData.author = author;
-    pkgData.license = pkgData.license ?? 'Apache-2.0';
+    pkgData.license = 'Apache-2.0';
     pkgData.repository = {
       type: 'git',
       url: repoUrl,
