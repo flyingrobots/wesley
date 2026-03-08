@@ -1,6 +1,6 @@
 # echo-ir/v2 Specification
 
-Revision: 2026-02-11 (E1.5)
+Revision: 2026-03-07 (WES-001–005)
 
 ## Overview
 
@@ -15,6 +15,7 @@ per-type identity/layout metadata, and per-field join strategy annotations.
 | `ir_version` | `string` | Always `"echo-ir/v2"` | Changed |
 | `codec_id` | `string` | Canonical codec identifier (e.g. `"cbor-canon-v1"`) | No |
 | `registry_version` | `number` | Monotonic registry version | No |
+| `contract_version` | `string` | Semver contract version (e.g. `"1.0.0"`) | Yes |
 | `generated_by` | `{ tool: string, version: string }` | Generator metadata | No |
 | `schema_sha256` | `string` (64-char hex) | SHA-256 of the SDL (kept for v1 compat) | No |
 | `schema_hash` | `string` (64-char hex) | Same value as `schema_sha256`; canonical v2 name | Yes |
@@ -84,6 +85,20 @@ Each entry in `ops` (unchanged from v1):
 | `args` | `Arg[]` | Operation arguments |
 | `result_type` | `string` | Return type name |
 
+## Ordering
+
+- `types[]` is sorted alphabetically by `name` for deterministic output independent of SDL declaration order.
+- `ops[]` is sorted alphabetically by `name`.
+- Fields within each type are emitted in declaration order (codecs sort fields alphabetically independently).
+
+## Contract Version
+
+The `contract_version` field follows semver. The bump policy:
+
+- **Major** (e.g. `1.0.0` → `2.0.0`) — envelope wire format changes, op ID hashing algorithm changes, codec field ordering changes, or IR schema removes/renames required fields.
+- **Minor** (e.g. `1.0.0` → `1.1.0`) — new optional IR fields, new artifact files, new metadata in generated TS.
+- **Patch** (e.g. `1.0.0` → `1.0.1`) — bug fixes in codegen with no artifact schema change, comment/whitespace changes, internal refactors with identical output.
+
 ## Null-field Convention
 
 All v2 fields that are not yet populated use explicit `null`, never absent keys.
@@ -102,6 +117,7 @@ This ensures consumers can distinguish "not yet computed" from "field does not e
   "ir_version": "echo-ir/v2",
   "codec_id": "cbor-canon-v1",
   "registry_version": 1,
+  "contract_version": "1.0.0",
   "generated_by": {
     "tool": "@wesley/generator-echo",
     "version": "0.1.0"

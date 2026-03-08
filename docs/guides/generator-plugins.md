@@ -269,12 +269,13 @@ Plugin discovery resolves each package, looks for a `default`, `plugin`, or `Plu
 
 ## Real-World Example: EchoPlugin
 
-The `EchoPlugin` in `packages/wesley-generator-echo/src/EchoPlugin.mjs` is a production generator that compiles GraphQL SDL into Echo IR and TypeScript client code. Key patterns to learn from:
+The `EchoPlugin` in `packages/wesley-generator-echo/src/EchoPlugin.mjs` is a production generator that compiles GraphQL SDL into Echo IR, TypeScript client/schemas, and Rust codecs — all in a single one-pass profile. Key patterns to learn from:
 
 - **Private fields** for configuration state (`#mutationIdNamespace`, `#queryNamespace`)
 - **`init()`** to accept config overrides
-- **`plan()`** declares four artifacts and stores SDL + config in `metadata`
+- **`plan()`** declares all potential artifacts (including conditional ones) and stores SDL + config in `metadata`
 - **`generate()`** delegates to the existing `generateEcho()` function and reshapes the output into `Record<string, string>`
+- **Post-processing**: computes canonical hashes and hash chain after generation
 - **Adapter pattern**: wraps a legacy `{ files: [{path, content}] }` API into the plugin contract without breaking backward compatibility
 
 ```mjs
@@ -287,8 +288,12 @@ export class EchoPlugin extends GeneratorPlugin {
   async plan(schema, context) {
     return {
       artifacts: [
-        { path: 'ir.json', reason: 'Echo IR (echo-ir/v1)' },
+        { path: 'ir.json', reason: 'Echo IR (echo-ir/v2)' },
         { path: 'ops.generated.ts', reason: 'Operation IDs and metadata' },
+        { path: 'schemas.generated.ts', reason: 'Validation schemas' },
+        { path: 'client.generated.ts', reason: 'Type-safe client helpers' },
+        { path: 'raw_le_codec.generated.ts', reason: 'TS binary codec (conditional)' },
+        { path: 'raw_le_codec.generated.rs', reason: 'Rust binary codec (conditional)' },
         // ...
       ],
       metadata: { sdl: schema.sdl },
@@ -308,3 +313,16 @@ export class EchoPlugin extends GeneratorPlugin {
 ```
 
 See the full source at [`packages/wesley-generator-echo/src/EchoPlugin.mjs`](../../packages/wesley-generator-echo/src/EchoPlugin.mjs).
+
+## Real-World Example: VuePlugin
+
+The `VuePlugin` in `packages/wesley-generator-vue/src/VuePlugin.mjs` is a simpler example that wraps the `generateVue()` function:
+
+```mjs
+import { VuePlugin } from '@wesley/generator-vue/plugin';
+
+const plugin = new VuePlugin();
+plugin.init({ outPath: 'custom/types.ts' }); // optional
+```
+
+See the full source at [`packages/wesley-generator-vue/src/VuePlugin.mjs`](../../packages/wesley-generator-vue/src/VuePlugin.mjs).

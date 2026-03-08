@@ -8,6 +8,12 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+#### WES — Documentation & Compatibility
+- **A:** Updated `README.md` for `@wesley/generator-echo` — documents one-pass profile, full artifact list, client/pump API, contract versioning, plugin usage
+- **A:** Updated `README.md` for `@wesley/generator-vue` — documents unified `VuePlugin` entrypoint, legacy function API
+- **A:** Updated `docs/specs/echo-ir-v2.md` — documents `contract_version` field, type/op ordering rules, version bump policy
+- **F:** `EchoPlugin.plan()` now declares all 8 potential artifacts (was missing conditional Rust/TS codecs, joins, guarded views)
+
 #### WES-005 — Unify generator-vue Ownership/Entrypoint
 - **A:** `VuePlugin` class implementing `GeneratorPlugin` contract — canonical unified entrypoint
 - **A:** Package exports `./plugin` subpath for plugin-based invocation

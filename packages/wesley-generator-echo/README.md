@@ -5,10 +5,7 @@
 
 Wesley generator for **Echo/WARP** artifacts.
 
-This package turns GraphQL SDL into a small, deterministic “Echo IR” (`echo-ir/v1`) suitable for:
-
-- Rust-side generation via `echo-wesley-gen` (in the Echo repo)
-- Host-side TypeScript constants (op IDs, registry metadata)
+This package turns GraphQL SDL into a deterministic "Echo IR" (`echo-ir/v2`) and a complete set of host-side artifacts (TypeScript + Rust), all produced in a single one-pass codegen profile.
 
 ## Input
 
@@ -28,18 +25,56 @@ Returns:
     { path: "ir.json", content: "{ ... }" },
     { path: "ops.generated.ts", content: "..." },
     { path: "schemas.generated.ts", content: "..." },
-    { path: "client.generated.ts", content: "..." }
-  ]
+    { path: "client.generated.ts", content: "..." },
+    // Conditional (when IR has encodable types):
+    { path: "raw_le_codec.generated.ts", content: "..." },
+    { path: "raw_le_codec.generated.rs", content: "..." },
+    // Conditional (when IR has @wes_join directives):
+    { path: "join.generated.rs", content: "..." },
+    // Conditional (when IR has @wes_view directives):
+    { path: "guarded_views.generated.rs", content: "..." }
+  ],
+  profile: {
+    name: "app",
+    targets: { ir: [...], typescript: [...], rust: [...] },
+    artifact_count: 6
+  }
 }
 ```
 
+All artifacts are emitted from a single shared IR in one deterministic pass — no duplicate intermediate transforms.
+
 ### Host helper outputs
 
-The generator emits a small set of host-side helpers driven by the ops catalog:
+- **`ops.generated.ts`**: exports `CONTRACT_VERSION`, `SCHEMA_SHA256`, `CODEC_ID`, `REGISTRY_VERSION`, `OPS`, and `findOpId(name)`
+- **`schemas.generated.ts`**: Zod schemas for types (enums + objects), per-op `VarsSchema` and `ResultSchema`, and `OP_SCHEMAS` registry map
+- **`client.generated.ts`**: self-contained TypeScript runtime client with:
+  - `HANDSHAKE` constants (contract version, schema hash, codec, registry version)
+  - `WesleyClient` class with typed `dispatch()` and `query()` methods
+  - `createPump()` for view-op envelope parsing and routing
+  - `parseViewOps()` for binary envelope decoding
+  - `DiagnosticsChannel` for unknown op / decode error surfacing
+- **`raw_le_codec.generated.ts`**: browser-safe binary encode/decode per type (DataView/Uint8Array)
+- **`raw_le_codec.generated.rs`**: Rust binary encode/decode per type (byte-identical to TS codec)
 
-- `ops.generated.ts`: exports `SCHEMA_SHA256`, `CODEC_ID`, `REGISTRY_VERSION`, `OPS`, and `findOpId(name)`
-- `schemas.generated.ts`: Zod schemas for types (enums + objects); op var/result schemas are wired later
-- `client.generated.ts`: minimal client skeleton (registry verification, wasm interface)
+### Plugin usage
+
+For plugin-based invocation via `PluginRunner`:
+
+```js
+import { EchoPlugin } from '@wesley/generator-echo';
+
+const plugin = new EchoPlugin();
+plugin.init({ mutationIdNamespace: 'Mutation', queryNamespace: 'Query' });
+```
+
+### Contract versioning
+
+Generated artifacts include a `contract_version` field (semver) in the IR and emitted files. The version bump policy:
+
+- **Major** — envelope wire format, op ID hashing, or codec field ordering changes
+- **Minor** — new optional IR fields, new artifact files, or new metadata in generated TS
+- **Patch** — bug fixes, comment changes, or internal refactors with identical output
 
 ### Op ID derivation (frozen rule)
 
@@ -51,7 +86,7 @@ Namespaces default to:
 - `Mutation` for mutations
 - `Query` for queries
 
-The `ops[]` list is sorted by `(op_id, name)` to guarantee stable output even if SDL field order changes.
+The `ops[]` list is sorted alphabetically by name. Types in the IR are also sorted alphabetically for deterministic output independent of SDL declaration order.
 
 ## Dev
 
