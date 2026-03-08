@@ -6,4 +6,5 @@ export * from './OpPlanBuilder.mjs';
 export * from './identifiers.mjs';
 export * from './Cursor.mjs';
 export * from './PredicateCompiler.mjs';
+export { opJsonSchema } from './op.schema.mjs';
 

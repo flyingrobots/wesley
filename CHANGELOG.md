@@ -17,11 +17,25 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **F:** Client/pump integration tests now `eval` the actual generated `parseViewOps`/`createPump` functions instead of reimplementing parsing logic inline, ensuring regressions in generated client behavior are caught
 - **F:** `EchoPlugin.plan()` now declares all 8 potential artifacts (was missing conditional Rust/TS codecs, joins, guarded views)
 - **F:** `emitOps.mjs` `findOpId(name)` aligned to two-arg `findOpId(kind, name)` matching `emitClient.mjs` — one-arg form could collide when a Query and Mutation share the same field name
+- **F:** `evidenceMap.record()` for field source locations moved inside `buildTable` field loop (was misplaced at module scope) — fixes #337
+- **F:** `sanitizeGraphQL()` in Node host aligned with browser runtime — BOM and null byte stripping now use identical char-code logic instead of regex with embedded control characters
 
 ### Added
 
 #### Utility Helpers
+
 - **A:** `mustFind()` and `mustMatch()` guard helpers in `@wesley/core` — centralise the recurring find-or-throw and match-or-throw pattern
+
+#### Ops DSL
+
+- **A:** `schemas/op.schema.json` — JSON Schema for `*.op.json` ops DSL (filters, joins, lists, params)
+- **A:** `packages/wesley-core/src/domain/qir/op.schema.mjs` — ESM companion for runtime Ajv validation, re-exported from `qir/index.mjs`
+- **A:** `example/ops/all_products.op.json` — example op fixture
+- **A:** `scripts/dev/setup-bats-plugins.sh` — pinned installer for bats test plugins (bats-support, bats-assert, bats-file)
+
+#### Infrastructure
+
+- **A:** Docker Compose fixture + `scripts/smoke/postgres-fixture.sh` for Postgres fixture smoke tests (`pnpm run smoke:postgres-fixture`)
 
 #### WES — Documentation & Compatibility
 - **A:** Updated `README.md` for `@wesley/generator-echo` — documents one-pass profile, full artifact list, client/pump API, contract versioning, plugin usage

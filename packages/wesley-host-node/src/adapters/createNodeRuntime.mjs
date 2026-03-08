@@ -245,8 +245,9 @@ function sanitizeGraphQL(sdl, env) {
     e.code = 'EINPUTSIZE';
     throw e;
   }
-  // Strip BOM and null bytes
-  // eslint-disable-next-line no-control-regex -- null byte detection is intentional
-  const out = sdl.replace(/^\uFEFF/, '').replace(/\u0000/g, '');
+  // Strip BOM and null bytes (matches browser runtime behaviour).
+  let out = sdl;
+  if (out.length && out.charCodeAt(0) === 0xFEFF) out = out.slice(1);
+  if (out.indexOf('\0') !== -1) out = out.split('\0').join('');
   return out;
 }
