@@ -47,7 +47,11 @@ export class EchoPlugin extends GeneratorPlugin {
         { path: 'ir.json', reason: 'Echo IR (echo-ir/v2)' },
         { path: 'ops.generated.ts', reason: 'Operation IDs and metadata' },
         { path: 'schemas.generated.ts', reason: 'Validation schemas' },
-        { path: 'client.generated.ts', reason: 'Type-safe client helpers' }
+        { path: 'client.generated.ts', reason: 'Type-safe client helpers' },
+        { path: 'raw_le_codec.generated.ts', reason: 'TypeScript binary codec (conditional on encodable types)' },
+        { path: 'raw_le_codec.generated.rs', reason: 'Rust binary codec (conditional on encodable types)' },
+        { path: 'join.generated.rs', reason: 'Rust join implementations (conditional on @wes_join directives)' },
+        { path: 'guarded_views.generated.rs', reason: 'Rust guarded view structs (conditional on @wes_view directives)' }
       ],
       metadata: {
         sdl: schema.sdl,
