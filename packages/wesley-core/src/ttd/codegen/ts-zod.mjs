@@ -119,10 +119,13 @@ export function generateTsZod(schema) {
     lines.push('');
   }
 
-  // Generate operation argument schemas
+  // Generate per-op var/result schemas
   for (const op of schema.ops || []) {
+    const pascal = `${op.name.charAt(0).toUpperCase()}${op.name.slice(1)}`;
+
+    // Vars (args) schema
     if (op.args && op.args.length > 0) {
-      const schemaName = `${op.name.charAt(0).toUpperCase()}${op.name.slice(1)}ArgsSchema`;
+      const schemaName = `${pascal}ArgsSchema`;
       lines.push('/**');
       lines.push(` * Zod schema for ${op.name} arguments`);
       lines.push(' */');
@@ -143,7 +146,19 @@ export function generateTsZod(schema) {
       }
 
       lines.push('});');
-      lines.push(`export type ${op.name.charAt(0).toUpperCase()}${op.name.slice(1)}Args = z.infer<typeof ${schemaName}>;`);
+      lines.push(`export type ${pascal}Args = z.infer<typeof ${schemaName}>;`);
+      lines.push('');
+    }
+
+    // Result schema
+    const rt = op.result_type ?? op.resultType;
+    if (rt) {
+      const resultSchemaName = `${pascal}ResultSchema`;
+      lines.push('/**');
+      lines.push(` * Zod schema for ${op.name} result`);
+      lines.push(' */');
+      lines.push(`export const ${resultSchemaName} = ${mapTypeToZod(rt)};`);
+      lines.push(`export type ${pascal}Result = z.infer<typeof ${resultSchemaName}>;`);
       lines.push('');
     }
   }

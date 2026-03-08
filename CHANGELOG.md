@@ -8,6 +8,12 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+#### WES-001 — Per-Op Var/Result Schema Wiring
+- **A:** `emitSchemas.mjs` now generates `VarsSchema` and `ResultSchema` for every operation in the ops catalog
+- **A:** `OP_SCHEMAS` registry map exported for runtime op-to-schema lookup
+- **A:** TTD `ts-zod.mjs` now emits per-op result schemas alongside existing args schemas
+- **A:** Schema completeness test suite (`schema-completeness.test.mjs`) with 11 tests covering completeness, edge cases, and ordering stability
+
 #### Alpha Playground — Browser-Based "Try Wesley"
 - **A:** `/try` route, TryNow page, workspace state, file tree UI, Tiptap-based schema editor with GraphQL highlighting
 - **B:** `compileSchemaInBrowser()` API in `@wesley/host-browser` — regex-based parser, in-memory pipeline, SQL migration generation
