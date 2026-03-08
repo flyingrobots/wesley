@@ -16,6 +16,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **F:** Generated `parseViewOps` now throws on trailing garbage bytes (1–7 bytes after the last complete envelope) instead of silently accepting them — critical for deterministic replay and envelope integrity
 - **F:** Client/pump integration tests now `eval` the actual generated `parseViewOps`/`createPump` functions instead of reimplementing parsing logic inline, ensuring regressions in generated client behavior are caught
 - **F:** `EchoPlugin.plan()` now declares all 8 potential artifacts (was missing conditional Rust/TS codecs, joins, guarded views)
+- **F:** `emitOps.mjs` `findOpId(name)` aligned to two-arg `findOpId(kind, name)` matching `emitClient.mjs` — one-arg form could collide when a Query and Mutation share the same field name
 
 ### Added
 
@@ -34,6 +35,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Changed
 
+- **C:** `CONTRACT_VERSION` bumped from `1.0.0` to `1.1.0` — reflects `KIND:name` keyed `OP_INDEX` and two-arg `findOpId(kind, name)` in generated artifacts
 - **C:** Legacy `generateVue()` function remains available but documented as non-primary path
 
 #### WES-004 — One-Pass App Codegen Profile (schema → IR/Rust/TS)

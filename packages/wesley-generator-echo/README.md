@@ -46,7 +46,7 @@ All artifacts are emitted from a single shared IR in one deterministic pass — 
 
 ### Host helper outputs
 
-- **`ops.generated.ts`**: exports `CONTRACT_VERSION`, `SCHEMA_SHA256`, `CODEC_ID`, `REGISTRY_VERSION`, `OPS`, and `findOpId(name)`
+- **`ops.generated.ts`**: exports `CONTRACT_VERSION`, `SCHEMA_SHA256`, `CODEC_ID`, `REGISTRY_VERSION`, `OPS`, and `findOpId(kind, name)`
 - **`schemas.generated.ts`**: Zod schemas for types (enums + objects), per-op `VarsSchema` and `ResultSchema`, and `OP_SCHEMAS` registry map
 - **`client.generated.ts`**: self-contained TypeScript runtime client with:
   - `HANDSHAKE` constants (contract version, schema hash, codec, registry version)
