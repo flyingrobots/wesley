@@ -3,7 +3,7 @@
  */
 
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
-import { fieldTypeToPg } from '@wesley/core';
+import { fieldTypeToPg, WesleyError } from '@wesley/core';
 
 export class UpCommand extends WesleyCommand {
   constructor(ctx) {
@@ -33,9 +33,7 @@ export class UpCommand extends WesleyCommand {
       dsn = dsn || defaultDsnFor('postgres', env);
     }
     if (!dsn) {
-      const e = new Error('No DSN provided. Pass --dsn or set SUPABASE_DB_URL/SUPABASE_POSTGRES_URL.');
-      e.code = 'NO_DSN';
-      throw e;
+      throw new WesleyError('NO_DSN', 'No DSN provided. Pass --dsn or set SUPABASE_DB_URL/SUPABASE_POSTGRES_URL.');
     }
 
     // Parse current schema → IR
@@ -54,9 +52,7 @@ export class UpCommand extends WesleyCommand {
       // Bootstrap: emit full DDL and apply
       const ddl = (this.ctx.generators?.sql?.emitDDL?.(current)?.files?.[0]?.content) || '';
       if (!ddl) {
-        const e = new Error('Could not emit DDL for bootstrap');
-        e.code = 'GENERATION_FAILED';
-        throw e;
+        throw new WesleyError('GENERATION_FAILED', 'Could not emit DDL for bootstrap');
       }
       if (options.dryRun) {
         return this.output({ mode: 'bootstrap', statements: 1 }, options);

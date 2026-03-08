@@ -9,7 +9,7 @@
  */
 
 import { readFileSync } from 'node:fs';
-import { computeDelta } from '@wesley/core';
+import { computeDelta, WesleyError } from '@wesley/core';
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import { ExitError } from '../framework/errors.mjs';
 
@@ -133,8 +133,7 @@ export class DiffCommand extends WesleyCommand {
   async _run(oldPath, newPath, options) {
     // Validate arguments
     if (!oldPath || !newPath) {
-      const err = new Error('Two schema file paths are required: wesley diff <old-schema> <new-schema>');
-      err.code = 'EUSAGE';
+      const err = new WesleyError('EUSAGE', 'Two schema file paths are required: wesley diff <old-schema> <new-schema>');
       this.ctx.stderr.write(err.message + '\n');
 
       throw new ExitError(1, err);
@@ -145,8 +144,7 @@ export class DiffCommand extends WesleyCommand {
     try {
       oldSDL = readFileSync(oldPath, 'utf-8');
     } catch (_e) {
-      const err = new Error(`Cannot read old schema: ${oldPath}`);
-      err.code = 'ENOENT';
+      const err = new WesleyError('ENOENT', `Cannot read old schema: ${oldPath}`);
       this.ctx.stderr.write(err.message + '\n');
 
       throw new ExitError(2, err);
@@ -154,8 +152,7 @@ export class DiffCommand extends WesleyCommand {
     try {
       newSDL = readFileSync(newPath, 'utf-8');
     } catch (_e) {
-      const err = new Error(`Cannot read new schema: ${newPath}`);
-      err.code = 'ENOENT';
+      const err = new WesleyError('ENOENT', `Cannot read new schema: ${newPath}`);
       this.ctx.stderr.write(err.message + '\n');
 
       throw new ExitError(2, err);

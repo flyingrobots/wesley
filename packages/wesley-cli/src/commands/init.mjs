@@ -3,6 +3,7 @@
  */
 
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
+import { WesleyError } from '@wesley/core';
 
 export class InitCommand extends WesleyCommand {
   constructor(ctx) {
@@ -23,9 +24,7 @@ export class InitCommand extends WesleyCommand {
 
     const exists = await fs.exists(schemaPath).catch(() => false);
     if (exists && !options.force) {
-      const e = new Error(`Schema already exists: ${schemaPath}. Use --force to overwrite.`);
-      e.code = 'EEXIST';
-      throw e;
+      throw new WesleyError('EEXIST', `Schema already exists: ${schemaPath}. Use --force to overwrite.`);
     }
 
     // Minimal canonical schema (v1 baseline)

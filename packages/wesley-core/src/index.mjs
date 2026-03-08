@@ -14,6 +14,9 @@ export { computeHashChain, computeSdlHash, computeIrHash, computeBundleHash } fr
 export { computeDelta } from './domain/schemaDelta.mjs';
 export { GQL_TO_PG, PG_TO_GQL, fieldTypeToPg, gqlScalarToPg } from './domain/typeMapping.mjs';
 
+// Domain Errors
+export { WesleyError, OpsError, PluginError } from './domain/WesleyError.mjs';
+
 // Domain Events
 export * from './domain/Events.mjs';
 

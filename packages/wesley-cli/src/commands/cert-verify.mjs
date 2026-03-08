@@ -4,6 +4,7 @@
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import { extractJsonBlock, canonicalize } from './_cert-utils.mjs';
 import { createAjv, loadSchemaFile } from '../framework/schemaValidator.mjs';
+import { WesleyError } from '@wesley/core';
 
 export class CertVerifyCommand extends WesleyCommand {
   constructor(ctx) {
@@ -30,10 +31,7 @@ export class CertVerifyCommand extends WesleyCommand {
     const validate = ajv.compile(JSON.parse(shipmeSchema));
     const schemaOk = validate(json);
     if (!schemaOk) {
-      const e = new Error('Certificate JSON failed schema validation');
-      e.code = 'VALIDATION_FAILED';
-      e.meta = validate.errors;
-      throw e;
+      throw new WesleyError('VALIDATION_FAILED', 'Certificate JSON failed schema validation', { errors: validate.errors });
     }
     const canonical = canonicalize({ ...json, signatures: [] });
     const pubs = options.pub || [];
@@ -51,7 +49,7 @@ export class CertVerifyCommand extends WesleyCommand {
     if (options.json) this.ctx.stdout.write(JSON.stringify(result, null, 2) + '\n');
     else this.ctx.stdout.write(badge + '\n');
     if (!ok) {
-      const e = new Error('Certificate verification failed'); e.code = 'CERT_INVALID'; throw e;
+      throw new WesleyError('CERT_INVALID', 'Certificate verification failed');
     }
     return options.json ? undefined : result;
   }
