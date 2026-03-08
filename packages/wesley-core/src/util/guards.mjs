@@ -7,6 +7,9 @@
 /**
  * Like `Array.prototype.find`, but throws when no element matches.
  *
+ * Caveat: arrays containing `undefined` as a value are not supported —
+ * a matched `undefined` element is indistinguishable from no match.
+ *
  * @template T
  * @param {T[]}                   arr       Array to search.
  * @param {(item: T) => boolean}  predicate Test applied to each element.

@@ -189,13 +189,11 @@ describe('generated client — pump integration', () => {
   }
 
   it('parseViewOps decodes mixed view-op fixtures', async () => {
-    // We test the envelope parsing logic directly by evaluating
-    // the generated parseViewOps function
     const { emitClient } = await import('../src/emitClient.mjs');
     const ir = await getIr();
-    const _clientSource = emitClient(ir);
+    const clientSource = emitClient(ir);
+    const parseViewOps = extractGeneratedFn(clientSource, 'parseViewOps');
 
-    // Build a buffer with two envelopes
     const payload1 = new Uint8Array([0x01, 0x02, 0x03]);
     const payload2 = new Uint8Array([0x04, 0x05]);
     const buffer = buildViewOpBuffer([
@@ -203,19 +201,7 @@ describe('generated client — pump integration', () => {
       { opId: 99, payload: payload2 }
     ]);
 
-    // Parse using the envelope format: [u32le opId][u32le len][bytes payload]
-    const envelopes = [];
-    let offset = 0;
-    while (offset + 8 <= buffer.length) {
-      const dv = new DataView(buffer.buffer, buffer.byteOffset + offset, 8);
-      const opId = dv.getUint32(0, true);
-      const payloadLen = dv.getUint32(4, true);
-      offset += 8;
-      const payload = buffer.subarray(offset, offset + payloadLen);
-      envelopes.push({ opId, payload });
-      offset += payloadLen;
-    }
-
+    const envelopes = parseViewOps(buffer);
     expect(envelopes).toHaveLength(2);
     expect(envelopes[0].opId).toBe(42);
     expect(envelopes[0].payload).toEqual(payload1);
@@ -223,78 +209,71 @@ describe('generated client — pump integration', () => {
     expect(envelopes[1].payload).toEqual(payload2);
   });
 
-  it('pump routes envelopes to correct handlers', () => {
+  it('pump routes envelopes to correct handlers', async () => {
+    const { emitClient } = await import('../src/emitClient.mjs');
+    const ir = await getIr();
+    const clientSource = emitClient(ir);
+    const createPump = extractGeneratedFn(clientSource, 'createPump', ['parseViewOps']);
+
     const handled = [];
     const handlers = new Map();
     handlers.set(42, (payload) => handled.push({ id: 42, payload }));
     handlers.set(99, (payload) => handled.push({ id: 99, payload }));
 
-    const payload1 = new Uint8Array([0xAA]);
-    const payload2 = new Uint8Array([0xBB, 0xCC]);
+    const pump = createPump(handlers);
     const buffer = buildViewOpBuffer([
-      { opId: 42, payload: payload1 },
-      { opId: 99, payload: payload2 }
+      { opId: 42, payload: new Uint8Array([0xAA]) },
+      { opId: 99, payload: new Uint8Array([0xBB, 0xCC]) }
     ]);
-
-    // Simulate pump logic
-    let offset = 0;
-    while (offset + 8 <= buffer.length) {
-      const dv = new DataView(buffer.buffer, buffer.byteOffset + offset, 8);
-      const opId = dv.getUint32(0, true);
-      const payloadLen = dv.getUint32(4, true);
-      offset += 8;
-      const payload = buffer.subarray(offset, offset + payloadLen);
-      const handler = handlers.get(opId);
-      if (handler) handler(payload);
-      offset += payloadLen;
-    }
+    pump(buffer);
 
     expect(handled).toHaveLength(2);
     expect(handled[0].id).toBe(42);
     expect(handled[1].id).toBe(99);
   });
 
-  it('unknown op id surfaced to diagnostics channel', () => {
+  it('unknown op id surfaced to diagnostics channel', async () => {
+    const { emitClient } = await import('../src/emitClient.mjs');
+    const ir = await getIr();
+    const clientSource = emitClient(ir);
+    const createPump = extractGeneratedFn(clientSource, 'createPump', ['parseViewOps']);
+
     const unknowns = [];
     const handlers = new Map();
     const diagnostics = { unknownOp: (opId, raw) => unknowns.push({ opId, raw }) };
 
+    const pump = createPump(handlers, diagnostics);
     const buffer = buildViewOpBuffer([
       { opId: 999, payload: new Uint8Array([0xFF]) }
     ]);
-
-    let offset = 0;
-    while (offset + 8 <= buffer.length) {
-      const dv = new DataView(buffer.buffer, buffer.byteOffset + offset, 8);
-      const opId = dv.getUint32(0, true);
-      const payloadLen = dv.getUint32(4, true);
-      offset += 8;
-      const payload = buffer.subarray(offset, offset + payloadLen);
-      const handler = handlers.get(opId);
-      if (handler) {
-        handler(payload);
-      } else if (diagnostics.unknownOp) {
-        diagnostics.unknownOp(opId, payload);
-      }
-      offset += payloadLen;
-    }
+    pump(buffer);
 
     expect(unknowns).toHaveLength(1);
     expect(unknowns[0].opId).toBe(999);
   });
 
-  it('empty buffer returns cleanly without callbacks', () => {
-    const buffer = new Uint8Array(0);
-    const envelopes = [];
-    let offset = 0;
-    while (offset + 8 <= buffer.length) {
-      // Would push envelopes but loop body never executes
-      offset += 8;
-    }
-    expect(envelopes).toHaveLength(0);
+  it('empty buffer returns cleanly without callbacks', async () => {
+    const { emitClient } = await import('../src/emitClient.mjs');
+    const ir = await getIr();
+    const clientSource = emitClient(ir);
+    const createPump = extractGeneratedFn(clientSource, 'createPump', ['parseViewOps']);
+
+    const handled = [];
+    const handlers = new Map();
+    handlers.set(1, (payload) => handled.push(payload));
+
+    const pump = createPump(handlers);
+    pump(new Uint8Array(0));
+
+    expect(handled).toHaveLength(0);
   });
 
-  it('truncated payload throws deterministic error', () => {
+  it('truncated payload throws deterministic error', async () => {
+    const { emitClient } = await import('../src/emitClient.mjs');
+    const ir = await getIr();
+    const clientSource = emitClient(ir);
+    const parseViewOps = extractGeneratedFn(clientSource, 'parseViewOps');
+
     // Build a header that claims 100 bytes of payload but only has 2
     const header = new ArrayBuffer(8);
     const dv = new DataView(header);
@@ -305,12 +284,7 @@ describe('generated client — pump integration', () => {
     buffer[8] = 0xAA;
     buffer[9] = 0xBB;
 
-    let offset = 0;
-    const headerDv = new DataView(buffer.buffer, buffer.byteOffset + offset, 8);
-    const payloadLen = headerDv.getUint32(4, true);
-    offset += 8;
-
-    expect(offset + payloadLen).toBeGreaterThan(buffer.length);
+    expect(() => parseViewOps(buffer)).toThrow(/Truncated/);
   });
 });
 

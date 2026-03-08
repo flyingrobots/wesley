@@ -6,6 +6,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Security
+
+- **S:** Resolved 15 GitHub dependabot alerts (11 high, 4 moderate) — bumped `@playwright/test` 1.49→1.58.2 (SSL cert verification), `dependency-cruiser` 17.1→17.3.8, `ajv` ^8.12→^8.18 in `@wesley/cli` (ReDoS); added pnpm overrides for transitive `minimatch` (ReDoS), `js-yaml` (prototype pollution), `markdown-it` (ReDoS)
+
 ### Fixed
 
 - **F:** Per-op `ResultSchema` now wraps list result types with `z.array()` and nullable results with `.optional()` — previously `buildOpsFromSDL` dropped `list`/`required` metadata from result types, causing e.g. `listUsers: [User!]!` to generate `ListUsersResultSchema = UserSchema` instead of `z.array(UserSchema)`
@@ -14,6 +18,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **F:** `EchoPlugin.plan()` now declares all 8 potential artifacts (was missing conditional Rust/TS codecs, joins, guarded views)
 
 ### Added
+
+#### Utility Helpers
+- **A:** `mustFind()` and `mustMatch()` guard helpers in `@wesley/core` — centralise the recurring find-or-throw and match-or-throw pattern
 
 #### WES — Documentation & Compatibility
 - **A:** Updated `README.md` for `@wesley/generator-echo` — documents one-pass profile, full artifact list, client/pump API, contract versioning, plugin usage
