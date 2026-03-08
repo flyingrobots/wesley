@@ -1,8 +1,8 @@
 /**
  * Standard SQL Sanitization using PostgreSQL built-ins and established libraries
- * 
+ *
  * MISSION: Use industry-standard approaches for SQL safety
- * APPROACH: 
+ * APPROACH:
  * - Parameterized queries for runtime operations (PREFERRED)
  * - PostgreSQL's built-in escaping for schema generation (FALLBACK)
  * - Validation for structure integrity (DEFENSE IN DEPTH)
@@ -11,7 +11,7 @@
 /**
  * Creates safe parameterized queries using PostgreSQL standard approach
  * This is the GOLD STANDARD for preventing SQL injection
- * 
+ *
  * @param {string} sql - SQL with $1, $2, etc. placeholders
  * @param {Array} params - Parameters to bind safely
  * @returns {Object} Query ready for execution
@@ -31,19 +31,19 @@ export function createSafeQuery(sql, params = []) {
     const placeholderCount = indices.size;
     throw new Error(`Parameter mismatch: ${placeholderCount} placeholders (expect 1..${max}), ${params.length} parameters`);
   }
-  
+
   // Ensure no template literals (common injection vector)
   if (sql.includes('${') || sql.includes('`')) {
     throw new Error('SQL contains template literal syntax - security violation');
   }
-  
+
   return { sql, params };
 }
 
 /**
  * PostgreSQL-compatible identifier quoting
  * Based on PostgreSQL's pg_escape_identifier() behavior
- * 
+ *
  * @param {string} identifier - Table/column name to quote
  * @returns {string} Safely quoted identifier
  */
@@ -51,7 +51,7 @@ export function quoteIdentifier(identifier) {
   if (!identifier || typeof identifier !== 'string') {
     throw new Error('Identifier must be a non-empty string');
   }
-  
+
   // PostgreSQL standard: double quotes, escape internal quotes
   return `"${identifier.replace(/"/g, '""')}"`;
 }
@@ -59,7 +59,7 @@ export function quoteIdentifier(identifier) {
 /**
  * PostgreSQL-compatible literal quoting
  * Based on PostgreSQL's pg_escape_literal() behavior
- * 
+ *
  * @param {*} value - Value to quote safely
  * @returns {string} Safely quoted literal
  */
@@ -67,30 +67,30 @@ export function quoteLiteral(value) {
   if (value === null || value === undefined) {
     return 'NULL';
   }
-  
+
   if (typeof value === 'number') {
     if (!Number.isFinite(value)) {
       throw new Error('Cannot quote non-finite number');
     }
     return value.toString();
   }
-  
+
   if (typeof value === 'boolean') {
     return value.toString();
   }
-  
+
   if (typeof value === 'string') {
     // PostgreSQL standard: single quotes, escape internal quotes
     return `'${value.replace(/'/g, "''")}'`;
   }
-  
+
   throw new Error(`Cannot quote value of type ${typeof value}`);
 }
 
 /**
  * Lightweight validation for PostgreSQL identifiers
  * Prevents obvious injection attacks while allowing valid names
- * 
+ *
  * @param {string} name - Identifier to validate
  * @param {string} context - Context for error messages
  */
@@ -98,23 +98,23 @@ export function validateIdentifier(name, context = 'identifier') {
   if (!name || typeof name !== 'string') {
     throw new Error(`${context} must be a non-empty string`);
   }
-  
+
   // Length check (PostgreSQL limit)
   if (name.length > 63) {
     throw new Error(`${context} too long (max 63 characters)`);
   }
-  
+
   // Block obvious injection patterns
   const dangerousPatterns = [
     /;/,                 // Semicolon
     /--/,                // SQL comments
-    /\/\*/,              // Block comments  
+    /\/\*/,              // Block comments
     /\b(?:DROP|DELETE|INSERT|UPDATE|CREATE|ALTER|GRANT|REVOKE)\b/i  // DDL/DML keywords
   ];
   if (String(name).includes('\0')) {
     throw new Error(`${context} contains null byte`);
   }
-  
+
   for (const pattern of dangerousPatterns) {
     if (pattern.test(name)) {
       throw new Error(`${context} contains dangerous pattern: ${name}`);
@@ -125,8 +125,8 @@ export function validateIdentifier(name, context = 'identifier') {
 /**
  * Standard approach: Build DDL using template + safe parameters
  * This mimics what ORMs like Prisma, TypeORM, etc. do internally
- * 
- * @param {string} template - DDL template with {table}, {column} placeholders  
+ *
+ * @param {string} template - DDL template with {table}, {column} placeholders
  * @param {Object} values - Values to substitute safely
  * @returns {string} Safe DDL statement
  */
@@ -185,7 +185,7 @@ export function buildDDL(template, values = {}) {
     return up;
   };
 
-  const sanitizeConstraintFragment = (expr) => {
+  const _sanitizeConstraintFragment = (expr) => {
     _validateConstraintExpression(String(expr));
     return String(expr);
   };
@@ -200,7 +200,7 @@ export function buildDDL(template, values = {}) {
     let inDQ = false; // "
     for (let i = 0; i < s.length; i++) {
       const ch = s[i];
-      const prev = s[i - 1];
+      const _prev = s[i - 1];
       if (!inSQ && ch === '"') inDQ = !inDQ;
       else if (!inDQ && ch === '\'') inSQ = !inSQ;
       else if (!inSQ && !inDQ && ch === '(') depth++;
@@ -278,7 +278,7 @@ export function buildDDL(template, values = {}) {
     if (!isWord(tokens[i], 'REFERENCES')) return { consumed: 0, text: '' };
     i++;
     if (i >= tokens.length) throw new Error('REFERENCES requires table identifier');
-    let tableTok = tokens[i++];
+    const tableTok = tokens[i++];
     // Allow schema.table or quoted identifiers
     const quoteStrip = (t) => t.startsWith('"') && t.endsWith('"') ? t.slice(1, -1).replace(/""/g, '"') : t;
     const parts = tableTok.split('.').map(quoteStrip);
@@ -302,7 +302,7 @@ export function buildDDL(template, values = {}) {
         const actionTok = upper(tokens[i++] || '');
         const nextTok = upper(tokens[i] || '');
         const action = (actionTok === 'SET' && (nextTok === 'NULL' || nextTok === 'DEFAULT'))
-          ? `SET ${nextTok}` && (i++, `SET ${nextTok}`)
+          ? (i++, `SET ${nextTok}`)
           : (['NO', 'RESTRICT', 'CASCADE'].includes(actionTok) ? (actionTok === 'NO' ? (i++, 'NO ACTION') : actionTok) : null);
         const resolved = action || actionTok;
         const allowed = new Set(['NO ACTION', 'RESTRICT', 'CASCADE', 'SET NULL', 'SET DEFAULT']);
@@ -413,39 +413,39 @@ export function buildDDL(template, values = {}) {
 
     let replacement;
     switch (key) {
-      case 'table':
-      case 'column':
-      case 'index':
-      case 'policy':
-      case 'schema':
-        replacement = sanitizeIdent(value, key);
-        break;
-      case 'columns':
-        replacement = sanitizeIdentList(value, 'columns');
-        break;
-      case 'column_defs':
-        replacement = sanitizeColumnDefs(value);
-        break;
-      case 'roles':
-        replacement = sanitizeRoles(value);
-        break;
-      case 'type':
-        replacement = sanitizeType(value);
-        break;
-      case 'operation':
-        replacement = sanitizeOperation(value);
-        break;
-      case 'expression':
-        replacement = sanitizePolicyExpression(value);
-        break;
-      case 'using':
-        replacement = sanitizePolicyExpression(value);
-        break;
-      case 'check':
-        replacement = sanitizePolicyExpression(value);
-        break;
-      default:
-        throw new Error(`Unsupported placeholder: {${key}}`);
+    case 'table':
+    case 'column':
+    case 'index':
+    case 'policy':
+    case 'schema':
+      replacement = sanitizeIdent(value, key);
+      break;
+    case 'columns':
+      replacement = sanitizeIdentList(value, 'columns');
+      break;
+    case 'column_defs':
+      replacement = sanitizeColumnDefs(value);
+      break;
+    case 'roles':
+      replacement = sanitizeRoles(value);
+      break;
+    case 'type':
+      replacement = sanitizeType(value);
+      break;
+    case 'operation':
+      replacement = sanitizeOperation(value);
+      break;
+    case 'expression':
+      replacement = sanitizePolicyExpression(value);
+      break;
+    case 'using':
+      replacement = sanitizePolicyExpression(value);
+      break;
+    case 'check':
+      replacement = sanitizePolicyExpression(value);
+      break;
+    default:
+      throw new Error(`Unsupported placeholder: {${key}}`);
     }
 
     sql = sql.replace(new RegExp(`\\{${key}\\}`, 'g'), () => replacement);
@@ -480,7 +480,7 @@ export const DDL_TEMPLATES = {
   DROP_COLUMN: 'ALTER TABLE {table} DROP COLUMN IF EXISTS {column}',
   CREATE_INDEX: 'CREATE INDEX IF NOT EXISTS {index} ON {table} ({columns})',
   DROP_INDEX: 'DROP INDEX IF EXISTS {index}',
-  
+
   // RLS Templates (safer than string building)
   ENABLE_RLS: 'ALTER TABLE {table} ENABLE ROW LEVEL SECURITY',
   // Create policy variants to cover USING / WITH CHECK forms
@@ -491,7 +491,7 @@ export const DDL_TEMPLATES = {
 
 /**
  * Example usage for Wesley generators:
- * 
+ *
  * // GOOD: Using templates + validation
  * const sql = buildDDL(DDL_TEMPLATES.CREATE_TABLE, {
  *   table: tableName,              // identifier → quoted automatically
@@ -500,7 +500,7 @@ export const DDL_TEMPLATES = {
  *     '"email" text NOT NULL'
  *   ]
  * });
- * 
+ *
  * // RLS: INSERT policy (WITH CHECK only)
  * const insertPolicy = buildDDL(DDL_TEMPLATES.CREATE_POLICY_WITH_CHECK, {
  *   policy: 'p_insert_owner',
@@ -509,7 +509,7 @@ export const DDL_TEMPLATES = {
  *   roles: ['PUBLIC'],
  *   check: "auth.uid() = owner_id"
  * });
- * 
+ *
  * // RLS: UPDATE policy (USING + WITH CHECK)
  * const updatePolicy = buildDDL(DDL_TEMPLATES.CREATE_POLICY_USING_WITH_CHECK, {
  *   policy: 'p_update_owner',
@@ -519,13 +519,13 @@ export const DDL_TEMPLATES = {
  *   using: "auth.uid() = owner_id",
  *   check: "auth.uid() = owner_id"
  * });
- * 
- * // GOOD: Using parameterized queries for runtime operations  
+ *
+ * // GOOD: Using parameterized queries for runtime operations
  * const query = createSafeQuery(
  *   'SELECT * FROM pg_indexes WHERE indexname = $1',
  *   [indexName]
  * );
- * 
+ *
  * // BAD: String interpolation (what we're replacing)
  * const sql = `CREATE TABLE ${tableName} (${columns})`;
  */

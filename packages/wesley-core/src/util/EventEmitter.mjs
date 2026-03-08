@@ -14,7 +14,7 @@ export class EventEmitter {
   }
   emit(event, payload) {
     const set = this._listeners.get(event) || this._listeners.get(event.type);
-    if (set) for (const fn of Array.from(set)) try { fn(payload); } catch {}
+    if (set) for (const fn of Array.from(set)) try { fn(payload); } catch { /* empty */ }
     return this;
   }
 }

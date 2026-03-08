@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://wesley.dev/schemas/shipme.schema.json",
+  "title": "Wesley SHIPME Certificate",
+  "type": "object",
+  "required": ["sha", "timestamp", "realm"],
+  "properties": {
+    "version": { "type": "string" },
+    "sha": { "type": "string", "pattern": "^([0-9a-f]{40}([0-9a-f]{24})?|uncommitted)$" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "environment": { "type": ["string", "null"] },
+    "scores": { "type": ["object", "null"] },
+    "realm": {
+      "anyOf": [ { "$ref": "realm.schema.json#" }, { "type": "null" } ]
+    },
+    "artifacts": { "type": ["object", "null"] },
+    "signatures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["signer", "keyId", "signature"],
+        "properties": {
+          "signer": { "type": "string", "minLength": 1 },
+          "keyId": { "type": "string", "minLength": 1 },
+          "signature": { "type": "string", "minLength": 1 },
+          "createdAt": { "type": ["string", "null"], "format": "date-time" },
+          "alg": { "type": ["string", "null"], "description": "Signing algorithm. Supported values: \"ed25519\", or null when unsigned." }
+        },
+        "additionalProperties": false
+      },
+      "default": []
+    }
+  },
+  "additionalProperties": false
+}

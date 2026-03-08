@@ -17,21 +17,10 @@ import {
   createEmission,
   createFootprint,
   createRegistryEntry,
-  createCodecSpec,
+  createCodecSpec
 } from './ast.mjs';
 import {
-  extractTtdDirectives,
-  parseChannelDirective,
-  parseOpDirective,
-  parseRuleDirective,
-  parseInvariantDirective,
-  parseEmissionDirective,
-  parseFootprintDirective,
-  parseCodecDirective,
-  parseRegistryDirective,
-  parseConstraintDirective,
-  parseStateFieldDirective,
-  parseVersionDirective,
+  extractTtdDirectives
 } from './directives.mjs';
 
 /**
@@ -40,7 +29,7 @@ import {
  * @param {string} name - Operation name
  * @param {import('../ports/crypto.mjs').CryptoPort} crypto - Crypto port
  */
-function computeOpId(namespace, name, crypto) {
+function _computeOpId(namespace, name, crypto) {
   const bytes = crypto.sha256Bytes(`${namespace}:${name}`);
   // Read first 4 bytes as little-endian uint32 (>>> 0 converts to unsigned)
   return (bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24)) >>> 0;
@@ -96,8 +85,8 @@ export function extractTtdSchema(sdl, deps = {}) {
     enums: [],
     metadata: {
       extractedAt: clock.now(),
-      ttdVersion: '1.0.0',
-    },
+      ttdVersion: '1.0.0'
+    }
   };
 
   // Maps for lookups
@@ -109,7 +98,7 @@ export function extractTtdSchema(sdl, deps = {}) {
     if (def.kind === Kind.ENUM_TYPE_DEFINITION) {
       schema.enums.push({
         name: def.name.value,
-        values: def.values?.map(v => v.name.value) ?? [],
+        values: def.values?.map(v => v.name.value) ?? []
       });
     }
 
@@ -130,7 +119,7 @@ export function extractTtdSchema(sdl, deps = {}) {
           version: directives.channel.version,
           ordered: directives.channel.ordered,
           persistent: directives.channel.persistent,
-          eventTypes,
+          eventTypes
         });
 
         schema.channels.push(channel);
@@ -142,7 +131,7 @@ export function extractTtdSchema(sdl, deps = {}) {
         schema.invariants.push(createInvariant({
           name: inv.name,
           expr: inv.expr,
-          severity: inv.severity,
+          severity: inv.severity
         }));
       }
 
@@ -153,9 +142,9 @@ export function extractTtdSchema(sdl, deps = {}) {
           version: directives.version ? {
             major: directives.version.major,
             minor: directives.version.minor,
-            patch: directives.version.patch,
+            patch: directives.version.patch
           } : undefined,
-          fields: [],
+          fields: []
         };
 
         for (const field of def.fields ?? []) {
@@ -176,7 +165,7 @@ export function extractTtdSchema(sdl, deps = {}) {
             list,
             stateField: fieldDirectives.stateField,
             constraint: fieldDirectives.constraint,
-            registry: fieldDirectives.registry,
+            registry: fieldDirectives.registry
           });
         }
 
@@ -187,7 +176,7 @@ export function extractTtdSchema(sdl, deps = {}) {
           schema.codecs.push(createCodecSpec({
             typeName,
             format: directives.codec.format,
-            canonical: directives.codec.canonical,
+            canonical: directives.codec.canonical
           }));
         }
 
@@ -197,7 +186,7 @@ export function extractTtdSchema(sdl, deps = {}) {
             typeName,
             id: directives.registry.id,
             deprecated: directives.registry.deprecated,
-            deprecatedBy: directives.registry.deprecatedBy,
+            deprecatedBy: directives.registry.deprecatedBy
           }));
         }
       }
@@ -226,7 +215,7 @@ export function extractTtdSchema(sdl, deps = {}) {
           name: a.name.value,
           type: argType,
           required,
-          list,
+          list
         };
       });
 
@@ -239,7 +228,7 @@ export function extractTtdSchema(sdl, deps = {}) {
         namespace,
         idempotent: opInfo.idempotent ?? false,
         readonly: isQuery || (opInfo.readonly ?? false),
-        timeout: opInfo.timeout,
+        timeout: opInfo.timeout
       }, { crypto });
 
       // Attach rules to op
@@ -252,7 +241,7 @@ export function extractTtdSchema(sdl, deps = {}) {
           from: ruleInfo.from,
           to: ruleInfo.to,
           guard: ruleInfo.guard,
-          opName: op.name,
+          opName: op.name
         });
         schema.rules.push(rule);
         op.rules.push(rule);
@@ -264,7 +253,7 @@ export function extractTtdSchema(sdl, deps = {}) {
           channel: emInfo.channel,
           event: emInfo.event,
           opName: op.name,
-          condition: emInfo.condition,
+          condition: emInfo.condition
         });
         schema.emissions.push(emission);
       }
@@ -292,7 +281,7 @@ export function extractTtdSchema(sdl, deps = {}) {
               channel,
               event,
               opName: op.name,
-              withinMs,
+              withinMs
             });
             schema.emissions.push(emission);
           }
@@ -306,7 +295,7 @@ export function extractTtdSchema(sdl, deps = {}) {
           reads: directives.footprint.reads,
           writes: directives.footprint.writes,
           creates: directives.footprint.creates,
-          deletes: directives.footprint.deletes,
+          deletes: directives.footprint.deletes
         });
         schema.footprints.push(fp);
       }

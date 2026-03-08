@@ -11,35 +11,49 @@
 
 import { lowerToSQL } from './lowerToSQL.mjs';
 import { collectParams } from './ParamCollector.mjs';
+import { sanitizeIdentBase as _sanitizeIdentBase, RESERVED } from './identifiers.mjs';
 
 const DEFAULT_SCHEMA = 'wes_ops';
 
-// Minimal reserved keyword list (PostgreSQL core). Not exhaustive; used to avoid
-// accidental collisions for unquoted identifiers (e.g., parameter names).
-const RESERVED = new Set([
-  'select','insert','update','delete','from','where','group','order','by','limit','offset','join','left','right','on','and','or','not','null','true','false','table','view','function','schema','user'
-]);
-
-export function emitView(opName, plan, { schema = DEFAULT_SCHEMA } = {}) {
+// identPolicy defaults to 'strict' here (ops emission is always strict) whereas
+// lowerToSQL defaults to 'minimal' for backward-compat with direct callers.
+export function emitView(opName, plan, { schema = DEFAULT_SCHEMA, identPolicy = 'strict', pkResolver = null } = {}) {
   const name = qualifiedOpName(schema, opName);
-  const selectSql = lowerToSQL(plan);
+  const selectSql = lowerToSQL(plan, null, { identPolicy, pkResolver });
   return `CREATE OR REPLACE VIEW ${name} AS\n${selectSql};`;
 }
 
-export function emitFunction(opName, plan, { schema = DEFAULT_SCHEMA } = {}) {
+export function emitFunction(opName, plan, {
+  schema = DEFAULT_SCHEMA,
+  identPolicy = 'strict',
+  pkResolver = null,
+  security = 'invoker',
+  setSearchPath = null
+} = {}) {
   const name = qualifiedOpName(schema, opName);
-  const { ordered } = collectParams(plan);
+  const paramEnv = collectParams(plan);
+  const { ordered } = paramEnv;
   const params = uniqueParamNames(ordered).map(({ display, type }) => `${display} ${type || 'text'}`).join(', ');
-  const selectSql = lowerToSQL(plan);
-  const body = `SELECT to_jsonb(q.*) FROM (\n${selectSql}\n) AS q`;
+  const selectSql = lowerToSQL(plan, paramEnv, { identPolicy, pkResolver });
+  const body = `SELECT to_jsonb(${sqlQuoteIdent('q')}.*) FROM (\n${selectSql}\n) AS ${sqlQuoteIdent('q')}`;
+  const attrs = [];
+  // Language and volatility first
+  attrs.push('LANGUAGE sql');
+  attrs.push('STABLE');
+  // SECURITY { INVOKER | DEFINER }
+  const sec = String(security || 'invoker').toLowerCase() === 'definer' ? 'SECURITY DEFINER' : 'SECURITY INVOKER';
+  attrs.push(sec);
+  // Optional: SET search_path = <list>
+  const sp = renderSearchPath(setSearchPath);
+  if (sp) attrs.push(`SET search_path = ${sp}`);
+
   return [
     `CREATE OR REPLACE FUNCTION ${name}(${params})`,
-    `RETURNS SETOF jsonb`,
-    `LANGUAGE sql`,
-    `STABLE`,
-    `AS $$`,
+    'RETURNS SETOF jsonb',
+    ...attrs,
+    'AS $$',
     body,
-    `$$;`
+    '$$;'
   ].join('\n');
 }
 
@@ -49,24 +63,11 @@ function qualifiedOpName(schema, opName) {
 
 /**
  * Normalize a string into a safe SQL identifier base (unquoted).
- * - Lowercases, replaces non-alphanumerics with underscores, trims leading/trailing underscores.
- * - Returns `fallback` if the normalized base is empty.
- * - Validates length per PostgreSQL's 63-character identifier limit.
- *
- * Note: Callers that add prefixes (e.g., `op_`, `p_`) should ensure the final
- * identifier including the prefix also satisfies the length limit.
- *
- * @param {string} s input string to normalize
- * @param {string} fallback fallback value if result is empty
- * @returns {string} normalized identifier base (not quoted)
- * @throws {Error} if normalized identifier exceeds 63 characters
+ * Delegates to the shared `sanitizeIdentBase` from identifiers.mjs,
+ * then enforces PostgreSQL's 63-character identifier limit.
  */
 function sanitizeIdentBase(s, fallback) {
-  const base = String(s || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '_')
-    .replace(/^_+|_+$/g, '');
-  const result = base || fallback;
+  const result = _sanitizeIdentBase(s, fallback);
   if (result.length > 63) {
     throw new Error(`Identifier base exceeds PostgreSQL's 63-character limit: "${result}"`);
   }
@@ -109,4 +110,26 @@ function uniqueParamNames(ordered) {
     out.push({ display, type: p.typeHint || 'text' });
   }
   return out;
+}
+
+// PostgreSQL special search_path entries that must be emitted verbatim (unquoted).
+// $user resolves to the session user's default schema; pg_temp is the per-session
+// temp schema. Both are pseudo-identifiers that cannot survive sanitizeIdentBase.
+const PG_SPECIAL_SEARCH_PATH = new Set(['$user', 'pg_temp']);
+
+/**
+ * Render SET search_path value. Non-special entries are lowercased via
+ * sanitizeIdentBase and double-quoted. PostgreSQL special variables ($user,
+ * pg_temp) are emitted verbatim. Note: case-sensitive schema names are
+ * folded to lowercase by sanitizeIdentBase.
+ */
+function renderSearchPath(sp) {
+  if (!sp) return '';
+  let parts = Array.isArray(sp) ? sp : String(sp).split(',');
+  parts = parts.map((p) => String(p).trim()).filter(Boolean);
+  if (parts.length === 0) return '';
+  return parts.map((p) => {
+    if (PG_SPECIAL_SEARCH_PATH.has(p)) return p;
+    return sqlQuoteIdent(sanitizeIdentBase(p, 'public'));
+  }).join(', ');
 }

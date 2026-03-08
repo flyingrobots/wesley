@@ -61,7 +61,7 @@ export function emitDDL(ir) {
  */
 export function emitRLS(ir) {
   const lines = [];
-  const q = (id) => '"' + String(id).replace(/\"/g, '""').toLowerCase() + '"';
+  const q = (id) => '"' + String(id).replace(/"/g, '""').toLowerCase() + '"';
   for (const t of ir.tables || []) {
     const rls = (t.directives || {})['wes_rls'] || (t.directives || {})['rls'];
     if (rls || t.tenantBy) {
@@ -85,7 +85,7 @@ export function emitRLS(ir) {
 /**
  * Emit migrations (placeholder, plan will emit phased files)
  */
-export function emitMigrations(ir) {
+export function emitMigrations(_ir) {
   return {
     label: 'migrations',
     files: [
@@ -97,7 +97,7 @@ export function emitMigrations(ir) {
 /**
  * Emit pgTAP tests (basic)
  */
-export function emitPgTap(ir) {
+export function emitPgTap(_ir) {
   return {
     label: 'pgtap',
     files: [

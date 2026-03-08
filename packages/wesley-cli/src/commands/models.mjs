@@ -1,5 +1,9 @@
 import { GeneratorCommand } from '../framework/GeneratorCommand.mjs';
 
+// TODO: GraphQLAdapter and ModelGenerator are not imported — this command
+// is non-functional legacy code. Tracked in .claude/bad_code.md.
+/* eslint-disable no-undef */
+
 export class ModelsCommand extends GeneratorCommand {
   constructor() {
     super('models', 'Generate model classes with Zod validation');

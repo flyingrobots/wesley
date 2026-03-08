@@ -33,7 +33,7 @@ export class ArtifactWriterPort {
    * @param {WriteOptions} [options]
    * @returns {Promise<WriteResult>}
    */
-  async writeArtifacts(runResult, outputDir, options) {
+  async writeArtifacts(_runResult, _outputDir, _options) {
     throw new Error('ArtifactWriterPort.writeArtifacts() must be implemented');
   }
 }

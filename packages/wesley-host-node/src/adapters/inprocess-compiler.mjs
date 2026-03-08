@@ -1,12 +1,13 @@
 // wesley-core/src/compiler/inprocess.js
 import { CompilerPort } from '@wesley/core';
+import { CompilerError } from '@wesley/core/ports/compiler';
 
 export class InProcessCompiler extends CompilerPort {
-  constructor(deps) { 
-    super(); 
-    this.d = deps; 
+  constructor(deps) {
+    super();
+    this.d = deps;
   }
-  
+
   async compile({ sdl, flags }, { sha, outDir }) {
     const { parser, sqlGenerator, testGenerator, diffEngine, fileSystem, logger, clock } = this.d;
     const log = logger.child?.({ mod: 'compiler', sha }) ?? logger;

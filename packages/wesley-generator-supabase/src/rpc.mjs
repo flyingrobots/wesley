@@ -10,13 +10,13 @@ export class RPCFunctionGenerator {
 
   async generate(schema) {
     const functions = [];
-    
+
     // Process mutations
     const mutations = schema.getMutations?.() || [];
     for (const mutation of mutations) {
       functions.push(this.generateMutationFunction(mutation));
     }
-    
+
     // Process custom queries that need RPC
     const queries = schema.getQueries?.() || [];
     for (const query of queries) {
@@ -24,15 +24,15 @@ export class RPCFunctionGenerator {
         functions.push(this.generateQueryFunction(query));
       }
     }
-    
+
     return functions.join('\n\n');
   }
-  
+
   generateMutationFunction(mutation) {
     const funcName = this.toSnakeCase(mutation.name);
     const params = this.generateParameters(mutation.args);
     const returnType = this.getReturnType(mutation.returnType);
-    
+
     // Generate function based on mutation type
     if (mutation.name.startsWith('create')) {
       return this.generateCreateFunction(funcName, params, returnType, mutation);
@@ -44,11 +44,11 @@ export class RPCFunctionGenerator {
       return this.generateCustomFunction(funcName, params, returnType, mutation);
     }
   }
-  
+
   generateCreateFunction(name, params, returnType, mutation) {
     const tableName = this.extractTableName(mutation);
     const fields = this.extractFieldsFromInput(mutation.args);
-    
+
     return `-- RPC function for ${mutation.name}
 CREATE OR REPLACE FUNCTION ${name}(${params})
 RETURNS ${returnType}
@@ -76,10 +76,10 @@ $$;
 -- Grant execute permission to authenticated users
 GRANT EXECUTE ON FUNCTION ${name} TO authenticated;`;
   }
-  
+
   generateUpdateFunction(name, params, returnType, mutation) {
     const tableName = this.extractTableName(mutation);
-    
+
     return `-- RPC function for ${mutation.name}
 CREATE OR REPLACE FUNCTION ${name}(${params})
 RETURNS ${returnType}
@@ -113,10 +113,10 @@ $$;
 -- Grant execute permission to authenticated users
 GRANT EXECUTE ON FUNCTION ${name} TO authenticated;`;
   }
-  
+
   generateDeleteFunction(name, params, returnType, mutation) {
     const tableName = this.extractTableName(mutation);
-    
+
     return `-- RPC function for ${mutation.name}
 CREATE OR REPLACE FUNCTION ${name}(record_id uuid)
 RETURNS boolean
@@ -146,11 +146,11 @@ $$;
 -- Grant execute permission to authenticated users
 GRANT EXECUTE ON FUNCTION ${name} TO authenticated;`;
   }
-  
+
   generateCustomFunction(name, params, returnType, mutation) {
     // Handle custom business logic functions
     const logic = mutation.directives?.['@function']?.logic || 'NULL';
-    
+
     return `-- RPC function for ${mutation.name}
 CREATE OR REPLACE FUNCTION ${name}(${params})
 RETURNS ${returnType}
@@ -170,12 +170,12 @@ $$;
 -- Grant execute permission based on directive
 GRANT EXECUTE ON FUNCTION ${name} TO ${mutation.directives?.['@grant']?.to || 'authenticated'};`;
   }
-  
+
   generateQueryFunction(query) {
     const funcName = this.toSnakeCase(query.name);
     const params = this.generateParameters(query.args);
     const returnType = this.getReturnType(query.returnType);
-    
+
     return `-- RPC function for custom query ${query.name}
 CREATE OR REPLACE FUNCTION ${funcName}(${params})
 RETURNS ${returnType}
@@ -194,23 +194,23 @@ $$;
 -- Grant execute permission
 GRANT EXECUTE ON FUNCTION ${funcName} TO ${query.directives?.['@grant']?.to || 'authenticated'};`;
   }
-  
+
   generateParameters(args) {
     if (!args || args.length === 0) return '';
-    
+
     return args.map(arg => {
       const pgType = this.graphqlToPgType(arg.type);
       return `${this.toSnakeCase(arg.name)} ${pgType}`;
     }).join(', ');
   }
-  
+
   getReturnType(type) {
     if (type.list) {
       return `SETOF ${this.graphqlToPgType(type.type)}`;
     }
     return this.graphqlToPgType(type.type);
   }
-  
+
   graphqlToPgType(type) {
     const typeMap = {
       'ID': 'uuid',
@@ -221,29 +221,29 @@ GRANT EXECUTE ON FUNCTION ${funcName} TO ${query.directives?.['@grant']?.to || '
       'DateTime': 'timestamptz',
       'JSON': 'jsonb'
     };
-    
+
     return typeMap[type] || type.toLowerCase();
   }
-  
+
   toSnakeCase(str) {
     return str.replace(/([A-Z])/g, '_$1').toLowerCase().replace(/^_/, '');
   }
-  
+
   extractTableName(mutation) {
     // Extract table name from mutation name or directive
     if (mutation.directives?.['@table']) {
       return mutation.directives['@table'].name;
     }
-    
+
     // Infer from mutation name (e.g., createUser -> User)
     const match = mutation.name.match(/^(create|update|delete)(.+)$/);
     if (match) {
       return match[2];
     }
-    
+
     return 'unknown';
   }
-  
+
   extractFieldsFromInput(args) {
     // Extract field names from input type
     const inputArg = args?.find(a => a.name === 'input');
@@ -252,7 +252,7 @@ GRANT EXECUTE ON FUNCTION ${funcName} TO ${query.directives?.['@grant']?.to || '
     }
     return [];
   }
-  
+
   generateUpdateSet(args) {
     const inputArg = args?.find(a => a.name === 'input');
     if (inputArg?.fields) {

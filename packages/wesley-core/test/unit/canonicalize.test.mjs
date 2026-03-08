@@ -30,7 +30,7 @@ test('canonicalize: determinism — calling twice yields identical bytes', () =>
 
 test('canonicalize: invalid SDL throws', () => {
   assert.throws(() => canonicalize('not valid graphql !!!'), {
-    name: 'GraphQLError',
+    name: 'GraphQLError'
   });
 });
 
@@ -48,7 +48,7 @@ test('canonicalize: different formatting → identical bytes', () => {
 });
 
 test('canonicalize: with/without comments → identical bytes', () => {
-  const withComments = `
+  const _withComments = `
     # This is a comment
     type Query {
       """Documentation"""

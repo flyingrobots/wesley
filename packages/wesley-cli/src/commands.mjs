@@ -1,6 +1,6 @@
 /**
  * Command Auto-Registration Module
- * 
+ *
  * Importing this module triggers auto-registration of all CLI commands
  * with the AutomaticallyRegisteredProgram registry.
  */

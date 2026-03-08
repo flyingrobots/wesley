@@ -4,8 +4,8 @@
  * NOTE: This script lives outside core packages to preserve core purity.
  */
 
-import { readFileSync, writeFileSync, statSync, readdirSync } from 'fs';
-import { join, dirname, relative, extname } from 'path';
+import { readFileSync, writeFileSync, readdirSync } from 'fs';
+import { join, relative } from 'path';
 import { fileURLToPath } from 'url';
 // Import DomainEvent type for structured events (from core)
 import { DomainEvent } from '../../packages/wesley-core/src/domain/Events.mjs';
@@ -156,7 +156,7 @@ export class DocumentationGenerator {
     });
   }
 
-  async parseFile(filePath, config) {
+  async parseFile(filePath, _config) {
     const content = readFileSync(filePath, 'utf8');
     // Very lightweight parse: capture exported symbols and JSDoc blocks
     const exports = Array.from(content.matchAll(/export\s+(?:class|function|const|let|var)\s+([A-Za-z0-9_]+)/g)).map(m => m[1]);
@@ -176,7 +176,7 @@ export class DocumentationGenerator {
   buildDependencyGraph(sourceFiles) {
     for (const f of sourceFiles) {
       const content = readFileSync(f, 'utf8');
-      const imports = Array.from(content.matchAll(/import\s+.*?from\s+['\"](.*?)['\"]/g)).map(m => m[1]);
+      const imports = Array.from(content.matchAll(/import\s+.*?from\s+['"](.*?)['"]/g)).map(m => m[1]);
       this.dependencies.set(f, imports);
     }
   }
@@ -210,6 +210,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === fileURLToPath(process.
   gen.generate(src).then(doc => {
     writeFileSync(out, doc.content, 'utf8');
     console.log(`Wrote ${out}`);
+    return undefined;
   }).catch(err => {
     console.error(err);
     process.exit(1);

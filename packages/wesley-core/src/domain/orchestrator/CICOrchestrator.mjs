@@ -1,6 +1,6 @@
 /**
  * CICOrchestrator - CREATE INDEX CONCURRENTLY execution orchestrator
- * 
+ *
  * Features:
  * - Enforces PostgreSQL CIC execution rules
  * - Runs CIC operations outside transactions
@@ -8,7 +8,7 @@
  * - Progress tracking and error handling
  * - Automatic cleanup of failed indexes
  * - Retry logic with exponential backoff
- * 
+ *
  * Design Philosophy:
  * - Safety first - prevent database deadlocks
  * - Never run CIC inside transactions
@@ -21,7 +21,7 @@ import { DomainEvent } from '../Events.mjs';
 
 export class CICOrchestrationStarted extends DomainEvent {
   constructor(operations, strategy) {
-    super('CIC_ORCHESTRATION_STARTED', { 
+    super('CIC_ORCHESTRATION_STARTED', {
       operationCount: operations.length,
       strategy,
       affectedTables: [...new Set(operations.map(op => op.tableName))]
@@ -31,7 +31,7 @@ export class CICOrchestrationStarted extends DomainEvent {
 
 export class CICOperationStarted extends DomainEvent {
   constructor(operation, position, total) {
-    super('CIC_OPERATION_STARTED', { 
+    super('CIC_OPERATION_STARTED', {
       indexName: operation.indexName,
       tableName: operation.tableName,
       position,
@@ -43,7 +43,7 @@ export class CICOperationStarted extends DomainEvent {
 
 export class CICOperationCompleted extends DomainEvent {
   constructor(operation, duration, retryCount) {
-    super('CIC_OPERATION_COMPLETED', { 
+    super('CIC_OPERATION_COMPLETED', {
       indexName: operation.indexName,
       tableName: operation.tableName,
       duration,
@@ -54,7 +54,7 @@ export class CICOperationCompleted extends DomainEvent {
 
 export class CICOperationFailed extends DomainEvent {
   constructor(operation, error, retryCount, willRetry) {
-    super('CIC_OPERATION_FAILED', { 
+    super('CIC_OPERATION_FAILED', {
       indexName: operation.indexName,
       tableName: operation.tableName,
       error: error.message,
@@ -66,7 +66,7 @@ export class CICOperationFailed extends DomainEvent {
 
 export class CICOperationSkipped extends DomainEvent {
   constructor(operation, reason) {
-    super('CIC_OPERATION_SKIPPED', { 
+    super('CIC_OPERATION_SKIPPED', {
       indexName: operation.indexName,
       tableName: operation.tableName,
       reason
@@ -76,7 +76,7 @@ export class CICOperationSkipped extends DomainEvent {
 
 export class CICCleanupStarted extends DomainEvent {
   constructor(invalidIndexes) {
-    super('CIC_CLEANUP_STARTED', { 
+    super('CIC_CLEANUP_STARTED', {
       invalidIndexCount: invalidIndexes.length,
       indexNames: invalidIndexes.map(idx => idx.name)
     });
@@ -85,7 +85,7 @@ export class CICCleanupStarted extends DomainEvent {
 
 export class CICOrchestrationCompleted extends DomainEvent {
   constructor(results, totalDuration) {
-    super('CIC_ORCHESTRATION_COMPLETED', { 
+    super('CIC_ORCHESTRATION_COMPLETED', {
       totalOperations: results.length,
       successful: results.filter(r => r.status === 'completed').length,
       failed: results.filter(r => r.status === 'failed').length,
@@ -116,7 +116,7 @@ export class CICOperation {
       timeoutMs: 600000, // 10 minutes default
       ...metadata
     };
-    
+
     // Execution tracking
     this.status = 'pending';
     this.startTime = null;
@@ -125,7 +125,7 @@ export class CICOperation {
     this.error = null;
     this.createdIndexName = null; // Actual name if PostgreSQL renames it
   }
-  
+
   /**
    * Extract index name from CREATE INDEX statement
    */
@@ -133,7 +133,7 @@ export class CICOperation {
     const match = sql.match(/CREATE\s+(?:UNIQUE\s+)?INDEX\s+(?:CONCURRENTLY\s+)?(?:IF\s+NOT\s+EXISTS\s+)?(?:"?([^"]+)"?|([^\s]+))/i);
     return match ? (match[1] || match[2]) : 'unknown_index';
   }
-  
+
   /**
    * Extract table name from CREATE INDEX statement
    */
@@ -141,20 +141,20 @@ export class CICOperation {
     const match = sql.match(/ON\s+(?:"?([^"]+)"?\.)?(?:"?([^"]+)"?|([^\s(]+))/i);
     return match ? (match[2] || match[3]) : 'unknown_table';
   }
-  
+
   /**
    * Extract column names from CREATE INDEX statement
    */
   extractColumns(sql) {
     const match = sql.match(/\(([^)]+)\)/);
     if (!match) return [];
-    
+
     return match[1]
       .split(',')
       .map(col => col.trim().replace(/["'`]/g, ''))
       .filter(col => col.length > 0);
   }
-  
+
   /**
    * Extract WHERE predicate for partial indexes
    */
@@ -162,7 +162,7 @@ export class CICOperation {
     const match = sql.match(/WHERE\s+(.+?)(?:$|;)/i);
     return match ? match[1].trim() : null;
   }
-  
+
   /**
    * Extract index method (btree, gin, gist, etc.)
    */
@@ -170,7 +170,7 @@ export class CICOperation {
     const match = sql.match(/USING\s+(\w+)/i);
     return match ? match[1].toLowerCase() : 'btree';
   }
-  
+
   /**
    * Get operation priority for scheduling
    */
@@ -179,13 +179,13 @@ export class CICOperation {
     if (this.method === 'gin' || this.method === 'gist') return 'MEDIUM';
     return this.metadata.priority;
   }
-  
+
   /**
    * Estimate operation duration based on table size and index complexity
    */
   getEstimatedDuration() {
     let baseMs = 60000; // 1 minute base
-    
+
     // Adjust for estimated table size
     if (this.metadata.estimatedRows) {
       const rows = this.metadata.estimatedRows;
@@ -194,22 +194,22 @@ export class CICOperation {
       else if (rows > 100000) baseMs *= 3;    // 100K+ rows
       else if (rows > 10000) baseMs *= 1.5;   // 10K+ rows
     }
-    
+
     // Adjust for index complexity
     if (this.method === 'gin' || this.method === 'gist') baseMs *= 2;
     if (this.columns.length > 3) baseMs *= 1.5;
     if (this.isPartial) baseMs *= 0.8; // Partial indexes are faster
-    
+
     return Math.min(baseMs, this.metadata.timeoutMs);
   }
-  
+
   /**
    * Generate cleanup SQL for failed index
    */
   getCleanupSql() {
     return `DROP INDEX CONCURRENTLY IF EXISTS "${this.indexName}";`;
   }
-  
+
   /**
    * Check if this operation conflicts with another
    */
@@ -218,12 +218,12 @@ export class CICOperation {
     if (this.tableName === otherOperation.tableName) {
       return true;
     }
-    
+
     // Same index name - conflicts
     if (this.indexName === otherOperation.indexName) {
       return true;
     }
-    
+
     return false;
   }
 }
@@ -235,7 +235,7 @@ export class CICExecutionStrategy {
   static SEQUENTIAL = 'SEQUENTIAL';           // One at a time globally
   static TABLE_PARALLEL = 'TABLE_PARALLEL';   // Parallel across tables, serial per table
   static PRIORITY_BASED = 'PRIORITY_BASED';   // High priority first
-  
+
   constructor(type = CICExecutionStrategy.TABLE_PARALLEL) {
     this.type = type;
     this.maxParallelTables = 3;
@@ -257,11 +257,11 @@ export class CICProgressTracker {
     this.inProgress = new Set();
     this.startTime = Date.now();
   }
-  
+
   startOperation(operation) {
     this.inProgress.add(operation.indexName);
   }
-  
+
   completeOperation(operation, success = true) {
     this.inProgress.delete(operation.indexName);
     if (success) {
@@ -270,11 +270,11 @@ export class CICProgressTracker {
       this.failed++;
     }
   }
-  
-  skipOperation(operation) {
+
+  skipOperation(_operation) {
     this.skipped++;
   }
-  
+
   getProgress() {
     const processed = this.completed + this.failed + this.skipped;
     return {
@@ -302,15 +302,15 @@ export class CICOperationResult {
     this.retryCount = operation.retryCount;
     this.timestamp = new Date().toISOString();
   }
-  
+
   isSuccess() {
     return this.status === 'completed';
   }
-  
+
   isFailure() {
     return this.status === 'failed';
   }
-  
+
   wasSkipped() {
     return this.status === 'skipped';
   }
@@ -329,7 +329,7 @@ export class CICOrchestrator {
     this.activeOperations = new Map(); // table -> operation
     this.operationQueue = [];
   }
-  
+
   /**
    * Emit domain event
    */
@@ -338,7 +338,7 @@ export class CICOrchestrator {
       this.eventEmitter.emit('domain-event', event);
     }
   }
-  
+
   /**
    * Set execution strategy
    */
@@ -346,7 +346,7 @@ export class CICOrchestrator {
     this.strategy = strategy;
     return this;
   }
-  
+
   /**
    * Orchestrate execution of CIC operations
    */
@@ -354,39 +354,39 @@ export class CICOrchestrator {
     if (strategy) {
       this.setStrategy(strategy);
     }
-    
+
     const startTime = Date.now();
     this.progressTracker = new CICProgressTracker(operations.length);
     this.results = [];
     this.operationQueue = [...operations];
-    
+
     this.emit(new CICOrchestrationStarted(operations, this.strategy.type));
-    
+
     try {
       // Validate operations first
       await this.validateOperations(operations);
-      
+
       // Execute based on strategy
       switch (this.strategy.type) {
-        case CICExecutionStrategy.SEQUENTIAL:
-          await this.executeSequentially();
-          break;
-        case CICExecutionStrategy.TABLE_PARALLEL:
-          await this.executeTableParallel();
-          break;
-        case CICExecutionStrategy.PRIORITY_BASED:
-          await this.executePriorityBased();
-          break;
-        default:
-          throw new Error(`Unknown execution strategy: ${this.strategy.type}`);
+      case CICExecutionStrategy.SEQUENTIAL:
+        await this.executeSequentially();
+        break;
+      case CICExecutionStrategy.TABLE_PARALLEL:
+        await this.executeTableParallel();
+        break;
+      case CICExecutionStrategy.PRIORITY_BASED:
+        await this.executePriorityBased();
+        break;
+      default:
+        throw new Error(`Unknown execution strategy: ${this.strategy.type}`);
       }
-      
+
       // Clean up any failed indexes
       await this.cleanupFailedIndexes();
-      
+
       const totalDuration = Date.now() - startTime;
       this.emit(new CICOrchestrationCompleted(this.results, totalDuration));
-      
+
       return this.results;
     } catch (error) {
       this.emit(new CICOperationFailed(
@@ -398,34 +398,34 @@ export class CICOrchestrator {
       throw error;
     }
   }
-  
+
   /**
    * Validate operations before execution
    */
   async validateOperations(operations) {
     for (const operation of operations) {
       // Check for duplicate index names
-      const duplicates = operations.filter(op => 
+      const duplicates = operations.filter(op =>
         op !== operation && op.indexName === operation.indexName
       );
-      
+
       if (duplicates.length > 0) {
         this.results.push(new CICOperationResult(
-          operation, 
-          'skipped', 
-          null, 
+          operation,
+          'skipped',
+          null,
           new Error('Duplicate index name')
         ));
         this.emit(new CICOperationSkipped(operation, 'Duplicate index name'));
         continue;
       }
-      
+
       // Check if index already exists
       if (await this.indexExists(operation.indexName)) {
         this.results.push(new CICOperationResult(
-          operation, 
-          'skipped', 
-          null, 
+          operation,
+          'skipped',
+          null,
           new Error('Index already exists')
         ));
         this.emit(new CICOperationSkipped(operation, 'Index already exists'));
@@ -433,74 +433,74 @@ export class CICOrchestrator {
       }
     }
   }
-  
+
   /**
    * Execute operations sequentially (one at a time)
    */
   async executeSequentially() {
     for (let i = 0; i < this.operationQueue.length; i++) {
       const operation = this.operationQueue[i];
-      
+
       // Skip if already processed
       if (this.results.find(r => r.operation.indexName === operation.indexName)) {
         continue;
       }
-      
+
       const result = await this.executeSingleOperation(operation, i + 1, this.operationQueue.length);
       this.results.push(result);
     }
   }
-  
+
   /**
    * Execute operations with table-level parallelization
    */
   async executeTableParallel() {
-    const remainingOperations = this.operationQueue.filter(op => 
+    const remainingOperations = this.operationQueue.filter(op =>
       !this.results.find(r => r.operation.indexName === op.indexName)
     );
-    
+
     while (remainingOperations.length > 0) {
       const availableOperations = remainingOperations.filter(op => {
         // Skip if table is already being processed
         return !this.activeOperations.has(op.tableName);
       });
-      
+
       if (availableOperations.length === 0) {
         // Wait for some operations to complete
         await this.waitForAnyCompletion();
         continue;
       }
-      
+
       // Start up to maxParallelTables operations
       const toStart = availableOperations.slice(0, this.strategy.maxParallelTables);
       const promises = toStart.map(async (operation, index) => {
         const result = await this.executeSingleOperation(
-          operation, 
-          this.results.length + index + 1, 
+          operation,
+          this.results.length + index + 1,
           this.operationQueue.length
         );
-        
+
         // Remove from remaining and active
         const remainingIndex = remainingOperations.indexOf(operation);
         if (remainingIndex >= 0) {
           remainingOperations.splice(remainingIndex, 1);
         }
         this.activeOperations.delete(operation.tableName);
-        
+
         return result;
       });
-      
+
       // Mark tables as active
       toStart.forEach(op => {
         this.activeOperations.set(op.tableName, op);
       });
-      
+
       // Wait for all to complete
       const batchResults = await Promise.all(promises);
       this.results.push(...batchResults);
     }
   }
-  
+
   /**
    * Execute operations based on priority
    */
@@ -512,7 +512,7 @@ export class CICOrchestrator {
       const bPriority = priorityOrder[b.getPriority()] || 2;
       return bPriority - aPriority;
     });
-    
+
     // Group by priority and execute each group with table parallelization
     const priorityGroups = {};
     sortedOperations.forEach(op => {
@@ -522,34 +522,34 @@ export class CICOrchestrator {
       }
       priorityGroups[priority].push(op);
     });
-    
+
     for (const priority of ['HIGH', 'MEDIUM', 'NORMAL', 'LOW']) {
       const group = priorityGroups[priority];
       if (!group || group.length === 0) continue;
-      
+
       // Execute this priority group with table parallelization
       this.operationQueue = group;
       await this.executeTableParallel();
     }
   }
-  
+
   /**
    * Execute a single CIC operation with retry logic
    */
   async executeSingleOperation(operation, position, total) {
     this.emit(new CICOperationStarted(operation, position, total));
     this.progressTracker.startOperation(operation);
-    
+
     const maxRetries = this.strategy.maxRetriesPerOperation;
     let lastError = null;
-    
+
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       operation.retryCount = attempt;
-      
+
       try {
         const startTime = Date.now();
         operation.status = 'running';
-        
+
         // Execute the CREATE INDEX CONCURRENTLY
         await this.sqlExecutor.executeOperation({
           sql: operation.sql,
@@ -559,40 +559,40 @@ export class CICOrchestrator {
             timeoutMs: operation.getEstimatedDuration()
           }
         });
-        
+
         const duration = Date.now() - startTime;
         operation.status = 'completed';
-        
+
         this.emit(new CICOperationCompleted(operation, duration, attempt));
         this.progressTracker.completeOperation(operation, true);
-        
+
         return new CICOperationResult(operation, 'completed', duration);
       } catch (error) {
         lastError = error;
         const willRetry = attempt < maxRetries;
-        
+
         this.emit(new CICOperationFailed(operation, error, attempt, willRetry));
-        
+
         if (willRetry) {
           // Calculate backoff delay
           const baseDelay = this.strategy.backoffMultiplier ** attempt * 1000;
           const delay = Math.min(baseDelay, this.strategy.maxBackoffMs);
-          
+
           await new Promise(resolve => setTimeout(resolve, delay));
         } else {
           operation.status = 'failed';
           operation.error = error;
           this.progressTracker.completeOperation(operation, false);
-          
+
           return new CICOperationResult(operation, 'failed', null, error);
         }
       }
     }
-    
+
     // This should never be reached, but just in case
     return new CICOperationResult(operation, 'failed', null, lastError);
   }
-  
+
   /**
    * Wait for any active operation to complete
    */
@@ -606,7 +606,7 @@ export class CICOrchestrator {
       }, 1000);
     });
   }
-  
+
   /**
    * Check if an index already exists
    */
@@ -617,32 +617,32 @@ export class CICOrchestrator {
         WHERE indexname = $1 
         LIMIT 1;
       `;
-      
+
       const result = await this.sqlExecutor.executeOperation({
         sql: sql.replace('$1', `'${indexName}'`),
         metadata: { operation: 'CHECK_INDEX_EXISTS' }
       });
-      
+
       return result.includes('1 row');
-    } catch (error) {
+    } catch (_error) {
       // If we can't check, assume it doesn't exist
       return false;
     }
   }
-  
+
   /**
    * Clean up failed indexes that are in invalid state
    */
   async cleanupFailedIndexes() {
     const failedOperations = this.results.filter(r => r.isFailure());
     if (failedOperations.length === 0) return;
-    
+
     // Find invalid indexes
     const invalidIndexes = [];
-    
+
     for (const result of failedOperations) {
       const operation = result.operation;
-      
+
       try {
         const sql = `
           SELECT indexname 
@@ -650,30 +650,30 @@ export class CICOrchestrator {
           WHERE indexname = '${operation.indexName}' 
           AND NOT indisvalid;
         `;
-        
+
         const checkResult = await this.sqlExecutor.executeOperation({
           sql,
           metadata: { operation: 'CHECK_INVALID_INDEX' }
         });
-        
+
         if (checkResult.includes(operation.indexName)) {
           invalidIndexes.push({ name: operation.indexName, operation });
         }
-      } catch (error) {
+      } catch (_error) {
         // Ignore errors during cleanup check
       }
     }
-    
+
     if (invalidIndexes.length === 0) return;
-    
+
     this.emit(new CICCleanupStarted(invalidIndexes));
-    
+
     // Clean up invalid indexes
     for (const invalid of invalidIndexes) {
       try {
         await this.sqlExecutor.executeOperation({
           sql: invalid.operation.getCleanupSql(),
-          metadata: { 
+          metadata: {
             operation: 'CLEANUP_INVALID_INDEX',
             originalOperation: invalid.name
           }
@@ -689,7 +689,7 @@ export class CICOrchestrator {
       }
     }
   }
-  
+
   /**
    * Get current orchestration status
    */
@@ -697,10 +697,10 @@ export class CICOrchestrator {
     if (!this.progressTracker) {
       return { status: 'not_started' };
     }
-    
+
     const progress = this.progressTracker.getProgress();
     const isComplete = progress.processed === progress.total;
-    
+
     return {
       status: isComplete ? 'completed' : 'running',
       progress,
@@ -715,7 +715,7 @@ export class CICOrchestrator {
       }))
     };
   }
-  
+
   /**
    * Cancel orchestration (best effort)
    */
@@ -723,10 +723,10 @@ export class CICOrchestrator {
     // Note: CIC operations cannot be cancelled once started
     // We can only prevent new operations from starting
     this.operationQueue = [];
-    
+
     // Wait for active operations to complete naturally
     const activeOps = Array.from(this.activeOperations.values());
-    
+
     return {
       message: 'Orchestration cancelled - active operations will complete naturally',
       activeOperations: activeOps.map(op => ({

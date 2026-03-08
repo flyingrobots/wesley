@@ -28,13 +28,13 @@ describe('Determinism', () => {
       const result1 = await compileTtdProtocol({
         sdl: basicProtocolSdl,
         targets: ['manifest', 'typescript'],
-        deps: { clock: clock1, crypto: testCrypto },
+        deps: { clock: clock1, crypto: testCrypto }
       });
 
       const result2 = await compileTtdProtocol({
         sdl: basicProtocolSdl,
         targets: ['manifest', 'typescript'],
-        deps: { clock: clock2, crypto: testCrypto },
+        deps: { clock: clock2, crypto: testCrypto }
       });
 
       // Schema hashes must match
@@ -153,13 +153,13 @@ describe('Determinism', () => {
       const result1 = await compileTtdProtocol({
         sdl: basicProtocolSdl,
         targets: ['manifest'],
-        deps: { clock: clock1, crypto: testCrypto },
+        deps: { clock: clock1, crypto: testCrypto }
       });
 
       const result2 = await compileTtdProtocol({
         sdl: basicProtocolSdl,
         targets: ['manifest'],
-        deps: { clock: clock2, crypto: testCrypto },
+        deps: { clock: clock2, crypto: testCrypto }
       });
 
       // Schema hash should be the same (doesn't include timestamp)
@@ -178,13 +178,13 @@ describe('Determinism', () => {
       const result1 = await compileTtdProtocol({
         sdl: basicProtocolSdl,
         targets: ['manifest'],
-        deps: { clock: clock1, crypto: testCrypto },
+        deps: { clock: clock1, crypto: testCrypto }
       });
 
       const result2 = await compileTtdProtocol({
         sdl: basicProtocolSdl,
         targets: ['manifest'],
-        deps: { clock: clock2, crypto: testCrypto },
+        deps: { clock: clock2, crypto: testCrypto }
       });
 
       // Schema hash should be identical regardless of timestamp

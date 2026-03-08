@@ -18,19 +18,19 @@ test('generateSQL flag controls DDL generation', async () => {
       }
     })
   });
-  
+
   // Test with generateSQL = false
-  const orchestrator1 = new WesleyOrchestrator({ 
+  const orchestrator1 = new WesleyOrchestrator({
     generateSQL: false,
-    enableRLS: true 
+    enableRLS: true
   });
   const result1 = await orchestrator1.orchestrate(schema);
   assert.strictEqual(result1.artifacts.sql, undefined, 'Should not generate SQL when generateSQL is false');
-  
+
   // Test with generateSQL = true
-  const orchestrator2 = new WesleyOrchestrator({ 
+  const orchestrator2 = new WesleyOrchestrator({
     generateSQL: true,
-    enableRLS: false 
+    enableRLS: false
   });
   const result2 = await orchestrator2.orchestrate(schema);
   assert(result2.artifacts.sql, 'Should generate SQL when generateSQL is true');
@@ -54,21 +54,21 @@ test('enableRLS flag controls RLS policy generation', async () => {
       }
     })
   });
-  
+
   // Test with enableRLS = false
-  const orchestrator1 = new WesleyOrchestrator({ 
+  const orchestrator1 = new WesleyOrchestrator({
     generateSQL: true,
-    enableRLS: false 
+    enableRLS: false
   });
   const result1 = await orchestrator1.orchestrate(schema);
   assert(result1.artifacts.sql, 'Should generate SQL');
   assert(!result1.artifacts.sql.includes('CREATE POLICY'), 'Should not generate RLS policies when enableRLS is false');
   assert(!result1.artifacts.sql.includes('ENABLE ROW LEVEL SECURITY'), 'Should not enable RLS when flag is false');
-  
+
   // Test with enableRLS = true
-  const orchestrator2 = new WesleyOrchestrator({ 
+  const orchestrator2 = new WesleyOrchestrator({
     generateSQL: true,
-    enableRLS: true 
+    enableRLS: true
   });
   const result2 = await orchestrator2.orchestrate(schema);
   assert(result2.artifacts.sql, 'Should generate SQL');
@@ -92,7 +92,7 @@ test('flags work independently', async () => {
       }
     })
   });
-  
+
   // Test all combinations
   const testCases = [
     { generateSQL: false, enableRLS: false, expectSQL: false, expectRLS: false },
@@ -100,18 +100,18 @@ test('flags work independently', async () => {
     { generateSQL: true,  enableRLS: false, expectSQL: true,  expectRLS: false },
     { generateSQL: true,  enableRLS: true,  expectSQL: true,  expectRLS: true }
   ];
-  
+
   for (const testCase of testCases) {
-    const orchestrator = new WesleyOrchestrator({ 
+    const orchestrator = new WesleyOrchestrator({
       generateSQL: testCase.generateSQL,
-      enableRLS: testCase.enableRLS 
+      enableRLS: testCase.enableRLS
     });
     const result = await orchestrator.orchestrate(schema);
-    
+
     if (testCase.expectSQL) {
       assert(result.artifacts.sql, `Should generate SQL with generateSQL=${testCase.generateSQL}`);
       assert(result.artifacts.sql.includes('CREATE TABLE'), 'Should contain DDL');
-      
+
       if (testCase.expectRLS) {
         assert(result.artifacts.sql.includes('CREATE POLICY'), `Should include RLS with enableRLS=${testCase.enableRLS}`);
       } else {

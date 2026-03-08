@@ -21,7 +21,7 @@ export class WesleyOrchestrator {
     this.enableTests = options.enableTests ?? true;
     this.enableMigrations = options.enableMigrations ?? true;
   }
-  
+
   /**
    * Orchestrate the complete generation pipeline
    * Returns all artifacts as pure data (no file I/O)
@@ -29,10 +29,10 @@ export class WesleyOrchestrator {
   async orchestrate(schema, previousSchema = null, options = {}) {
     const sha = options.sha || 'uncommitted';
     const timestamp = new Date().toISOString();
-    
+
     // Create evidence map
     const evidenceMap = new EvidenceMap(sha);
-    
+
     // Initialize generators with evidence map
     const sqlGenerator = new PostgreSQLGenerator(evidenceMap);
     const testGenerator = new PgTAPTestGenerator(evidenceMap);
@@ -45,16 +45,16 @@ export class WesleyOrchestrator {
       generateSnapshots: options.generateSnapshots ?? true,
       riskThreshold: options.riskThreshold || 50
     });
-    
+
     // Generate artifacts
     const artifacts = {};
-    
+
     // 1. Generate SQL DDL
     if (this.generateSQL) {
       const gen = await sqlGenerator.generate(schema, { enableRLS: this.enableRLS });
       artifacts.sql = typeof gen === 'string' ? gen : gen.sql;
     }
-    
+
     // 2. Generate pgTAP tests
     let diffForTests = null;
     if (previousSchema) {
@@ -67,27 +67,27 @@ export class WesleyOrchestrator {
         migrationSteps: diffForTests ? diffForTests.steps : null
       });
     }
-    
+
     // 3. Generate Zod schemas
     artifacts.zod = await zodGenerator.generate(schema);
-    
+
     // 4. Generate RPC functions from mutations
     if (this.enableRPC && schema.getMutations) {
       artifacts.rpcFunctions = await rpcGenerator.generate(schema);
     }
-    
+
     // 5. Generate migrations if previous schema exists
     if (this.enableMigrations && previousSchema) {
       const diff = diffForTests ?? await migrationEngine.diff(previousSchema, schema);
-      
+
       // Check for blocked operations
       if (diff.safetyAnalysis?.blockedOperations?.length > 0) {
         throw new Error(
           `Migration blocked: ${diff.safetyAnalysis.blockedOperations[0].reason}\n` +
-          `Use --allow-destructive flag to proceed with destructive operations.`
+          'Use --allow-destructive flag to proceed with destructive operations.'
         );
       }
-      
+
       if (diff.steps.length > 0) {
         artifacts.migration = {
           steps: diff.steps,
@@ -99,7 +99,7 @@ export class WesleyOrchestrator {
         };
       }
     }
-    
+
     // 5. Calculate scores with breakdown
     const scoring = new ScoringEngine(evidenceMap);
     const migrationSteps = artifacts.migration?.steps || (diffForTests ? diffForTests.steps : []);
@@ -108,10 +108,10 @@ export class WesleyOrchestrator {
       migrationSteps,
       options.testResults || { passed: 0, failed: 0, total: 0, suites: [] }
     );
-    
+
     // 6. Determine readiness (backwards compatibility for legacy consumers)
-    const readiness = scoreDetails.readiness;
-    
+    const _readiness = scoreDetails.readiness;
+
     // Return complete bundle
     return {
       timestamp,
@@ -130,42 +130,42 @@ export class WesleyOrchestrator {
       }
     };
   }
-  
+
   /**
    * Calculate Migration Risk Index
    */
   calculateMRI(steps) {
     let riskPoints = 0;
-    
+
     for (const step of steps) {
       switch (step.kind) {
-        case 'drop_table':
-          riskPoints += 40; // Very high risk
-          break;
-        case 'drop_column':
-          riskPoints += 25; // High risk
-          break;
-        case 'alter_type':
-          riskPoints += step.unsafe ? 30 : 10;
-          break;
-        case 'add_column':
-          riskPoints += step.field?.nonNull && !step.field?.default ? 15 : 5;
-          break;
-        case 'create_table':
-          riskPoints += 5; // Low risk
-          break;
-        case 'create_index':
-          riskPoints += 10; // Can be blocking
-          break;
-        default:
-          riskPoints += 5;
+      case 'drop_table':
+        riskPoints += 40; // Very high risk
+        break;
+      case 'drop_column':
+        riskPoints += 25; // High risk
+        break;
+      case 'alter_type':
+        riskPoints += step.unsafe ? 30 : 10;
+        break;
+      case 'add_column':
+        riskPoints += step.field?.nonNull && !step.field?.default ? 15 : 5;
+        break;
+      case 'create_table':
+        riskPoints += 5; // Low risk
+        break;
+      case 'create_index':
+        riskPoints += 10; // Can be blocking
+        break;
+      default:
+        riskPoints += 5;
       }
     }
-    
+
     // Normalize to 0-1
     return Math.min(riskPoints / 100, 1);
   }
-  
+
   /**
    * Determine production readiness
    */
@@ -175,9 +175,9 @@ export class WesleyOrchestrator {
       mri: { required: 0.4, actual: scores.mri },
       tci: { required: 0.7, actual: scores.tci }
     };
-    
+
     const allPass = Object.values(thresholds).every(t => t.actual >= t.required);
-    
+
     let verdict = 'NOT READY';
     if (allPass) {
       verdict = 'READY FOR PRODUCTION';
@@ -186,7 +186,7 @@ export class WesleyOrchestrator {
     } else if (scores.scs >= 0.5) {
       verdict = 'IN PROGRESS';
     }
-    
+
     return {
       verdict,
       confidence: this.calculateConfidence(scores),
@@ -194,15 +194,15 @@ export class WesleyOrchestrator {
       recommendations: this.getRecommendations(scores)
     };
   }
-  
+
   calculateConfidence(scores) {
     // Weighted confidence based on all scores
     return (scores.scs * 0.4 + (1 - scores.mri) * 0.3 + scores.tci * 0.3);
   }
-  
+
   getRecommendations(scores) {
     const recommendations = [];
-    
+
     if (scores.scs < 0.8) {
       recommendations.push('Increase schema coverage by adding missing artifacts');
     }
@@ -212,7 +212,7 @@ export class WesleyOrchestrator {
     if (scores.tci < 0.7) {
       recommendations.push('Add more tests for critical fields');
     }
-    
+
     return recommendations;
   }
 }

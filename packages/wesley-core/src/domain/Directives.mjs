@@ -29,12 +29,12 @@ export class DirectiveProcessor {
     if (directives?.[WEIGHT_DIRECTIVE]) {
       return parseInt(directives[WEIGHT_DIRECTIVE].value || 5);
     }
-    
+
     // Critical fields get high weight
     if (directives?.[CRITICAL_DIRECTIVE]) {
       return 10;
     }
-    
+
     // Infer from other directives
     if (directives?.['@primaryKey']) return 10;
     if (directives?.['@foreignKey']) return 8;
@@ -42,7 +42,7 @@ export class DirectiveProcessor {
     if (directives?.[SENSITIVE_DIRECTIVE]) return 9;
     if (directives?.[PII_DIRECTIVE]) return 8;
     if (directives?.['@index']) return 5;
-    
+
     // Default weight
     return 3;
   }
@@ -52,7 +52,7 @@ export class DirectiveProcessor {
   }
 
   static isCritical(directives) {
-    return !!(directives?.[CRITICAL_DIRECTIVE] || 
+    return !!(directives?.[CRITICAL_DIRECTIVE] ||
               directives?.['@primaryKey'] ||
               this.isSensitive(directives));
   }

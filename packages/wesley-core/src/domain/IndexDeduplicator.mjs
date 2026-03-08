@@ -9,7 +9,7 @@ export class IndexDeduplicator {
     this.primaryKeys = new Map(); // tableName -> column(s)
     this.uniqueConstraints = new Map(); // tableName -> Set of columns
   }
-  
+
   /**
    * Register a primary key constraint
    */
@@ -17,7 +17,7 @@ export class IndexDeduplicator {
     const cols = Array.isArray(columns) ? columns : [columns];
     this.primaryKeys.set(tableName, cols);
   }
-  
+
   /**
    * Register a unique constraint
    */
@@ -28,13 +28,13 @@ export class IndexDeduplicator {
     }
     this.uniqueConstraints.get(tableName).add(cols.join(','));
   }
-  
+
   /**
    * Check if an index is redundant
    */
   isRedundant(tableName, columns, options = {}) {
     const cols = Array.isArray(columns) ? columns : [columns];
-    
+
     // Check if covered by primary key
     const pk = this.primaryKeys.get(tableName);
     if (pk && this.isPrefix(cols, pk) && !options.where) {
@@ -43,7 +43,7 @@ export class IndexDeduplicator {
         reason: `Index on ${cols.join(',')} is covered by primary key on ${pk.join(',')}`
       };
     }
-    
+
     // Check if covered by unique constraint
     const uniques = this.uniqueConstraints.get(tableName);
     if (uniques) {
@@ -57,7 +57,7 @@ export class IndexDeduplicator {
         }
       }
     }
-    
+
     // Check if duplicate index already exists
     const signature = this.getIndexSignature(tableName, cols, options);
     if (this.indexes.has(tableName) && this.indexes.get(tableName).has(signature)) {
@@ -66,23 +66,23 @@ export class IndexDeduplicator {
         reason: `Duplicate index on ${cols.join(',')} already exists`
       };
     }
-    
+
     return { redundant: false };
   }
-  
+
   /**
    * Register an index
    */
   registerIndex(tableName, columns, options = {}) {
     const cols = Array.isArray(columns) ? columns : [columns];
     const signature = this.getIndexSignature(tableName, cols, options);
-    
+
     if (!this.indexes.has(tableName)) {
       this.indexes.set(tableName, new Set());
     }
     this.indexes.get(tableName).add(signature);
   }
-  
+
   /**
    * Get unique signature for an index
    */
@@ -95,7 +95,7 @@ export class IndexDeduplicator {
     ];
     return parts.filter(Boolean).join('::');
   }
-  
+
   /**
    * Check if arr1 is a prefix of arr2
    */
@@ -106,14 +106,14 @@ export class IndexDeduplicator {
     }
     return true;
   }
-  
+
   /**
    * Deduplicate a list of index statements
    */
   deduplicateIndexes(schema) {
     const statements = [];
     const deduper = new IndexDeduplicator();
-    
+
     // First pass: register all PKs and unique constraints
     for (const table of schema.getTables()) {
       for (const field of table.getFields()) {
@@ -125,7 +125,7 @@ export class IndexDeduplicator {
         }
       }
     }
-    
+
     // Second pass: generate non-redundant indexes
     for (const table of schema.getTables()) {
       for (const field of table.getFields()) {
@@ -136,12 +136,12 @@ export class IndexDeduplicator {
             unique: indexDef.unique || false,
             where: indexDef.where || null
           };
-          
+
           const check = deduper.isRedundant(table.name, columns, options);
           if (!check.redundant) {
             // Generate index statement
             const indexName = `idx_${table.name}_${field.name}`;
-            let stmt = `CREATE INDEX`;
+            let stmt = 'CREATE INDEX';
             if (options.unique) stmt += ' UNIQUE';
             stmt += ` IF NOT EXISTS "${indexName}"`;
             stmt += ` ON "${table.name}" ("${field.name}")`;
@@ -149,12 +149,12 @@ export class IndexDeduplicator {
               stmt += ` WHERE ${options.where}`;
             }
             stmt += ';';
-            
+
             statements.push({
               statement: stmt,
               reason: `Index for ${table.name}.${field.name}`
             });
-            
+
             deduper.registerIndex(table.name, columns, options);
           } else {
             // Record skipped index for evidence
@@ -167,7 +167,7 @@ export class IndexDeduplicator {
         }
       }
     }
-    
+
     return statements;
   }
 }

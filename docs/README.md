@@ -13,6 +13,9 @@ Wesley inverts the entire database development paradigm. While everyone else gen
 - [Architecture Overview](./architecture/overview.md) - Hexagonal, event-driven, command pattern design
 - [The Algorithm](./architecture/algorithm.md) - How GraphQL becomes SQL, TypeScript, Zod, and more
 - [Test Generation](./architecture/test-generation.md) - Automatic pgTAP tests from migrations
+- [IR Family Overview](./spec/ir-family.md) - Concise reference of Wesley's IR family
+- [IR Family Specification](./spec/ir-family-spec.md) - Full prose specification and design
+- [QIR Specification](./spec/qir.md) - Query Intermediate Representation spec
 
 ### 🔧 Implementation
 - [Internals Deep Dive](./internals/deep-dive.md) - How Wesley works under the hood
@@ -22,7 +25,7 @@ Wesley inverts the entire database development paradigm. While everyone else gen
 
 ### 📖 Guides
 - [Quick Start](./guides/quick-start.md) - Get running in 60 seconds
-- [Query Operations (QIR)](./guides/qir-ops.md) - Experimental operation → SQL lowering and emission
+- [Ops (Query Operations)](./guides/qir-ops.md) - Author ops plans, manifest, discovery, validation, and SQL emission
 - [Extending Wesley](./guides/extending.md) - Add new generators and adapters
 - [Migration Strategies](./guides/migrations.md) - Managing schema evolution
 

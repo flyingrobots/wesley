@@ -1,9 +1,9 @@
 /**
  * TriggerGenerator - Generates PostgreSQL triggers for computed columns
- * 
+ *
  * Implements WP2.T007: Computed column trigger generation
  * - Generate triggers for cross-table computed columns
- * - Support same-row GENERATED columns  
+ * - Support same-row GENERATED columns
  * - Create trigger functions with update cascading
  * - Performance-optimized trigger design
  */
@@ -61,7 +61,7 @@ export class TriggerGenerator {
   findComputedFields(table) {
     return table.getFields().filter(field => {
       const computedDirective = field.directives?.['@computed'];
-      const generatedDirective = field.directives?.['@generated']; 
+      const generatedDirective = field.directives?.['@generated'];
       return computedDirective || generatedDirective;
     });
   }
@@ -75,7 +75,7 @@ export class TriggerGenerator {
   generateFieldTrigger(table, field) {
     const computedDirective = field.directives?.['@computed'];
     const generatedDirective = field.directives?.['@generated'];
-    
+
     // Determine computation strategy
     if (generatedDirective) {
       return this.generateGeneratedColumnTrigger(table, field, generatedDirective);
@@ -95,7 +95,7 @@ export class TriggerGenerator {
    */
   generateGeneratedColumnTrigger(table, field, directive) {
     const { expression, stored = true } = directive;
-    
+
     if (!expression) {
       throw new Error(`@generated field '${field.name}' missing expression`);
     }
@@ -111,7 +111,7 @@ export class TriggerGenerator {
     // Validate expression references only same-row columns
     const referencedTables = this.extractTableReferences(expression);
     const crossTableRefs = referencedTables.filter(ref => ref !== table.name);
-    
+
     if (crossTableRefs.length > 0) {
       // GENERATED columns cannot reference other tables, fall back to trigger
       return this.generateComputedColumnTrigger(table, field, {
@@ -136,20 +136,20 @@ export class TriggerGenerator {
 
   /**
    * Generate trigger-based computed column
-   * @param {Object} table - Table model  
+   * @param {Object} table - Table model
    * @param {Object} field - Computed field
    * @param {Object} directive - @computed directive
    * @returns {Object} Trigger definition
    */
   generateComputedColumnTrigger(table, field, directive) {
     const { expression, dependencies = [], when = 'BEFORE' } = directive;
-    
+
     if (!expression) {
       throw new Error(`@computed field '${field.name}' missing expression`);
     }
 
     // Extract dependencies from expression if not explicitly provided
-    const extractedDeps = dependencies.length > 0 ? 
+    const extractedDeps = dependencies.length > 0 ?
       dependencies : this.extractDependencies(expression);
 
     const functionName = `compute_${table.name}_${field.name}`;
@@ -197,14 +197,14 @@ export class TriggerGenerator {
    */
   generateTriggerFunction(table, field, expression, dependencies, functionName) {
     const sqlType = this.getSQLType(field);
-    
+
     // Generate change detection logic for performance
     let changeDetection = '';
     if (this.options.optimizePerformance && dependencies.length > 0) {
-      const checks = dependencies.map(dep => 
+      const checks = dependencies.map(dep =>
         `OLD."${dep}" IS DISTINCT FROM NEW."${dep}"`
       ).join(' OR ');
-      
+
       changeDetection = `
     -- Performance optimization: only compute if dependencies changed
     IF TG_OP = 'UPDATE' AND NOT (${checks}) THEN
@@ -293,7 +293,7 @@ CREATE TRIGGER ${triggerName}
 
     for (const table of this.schema.getTables()) {
       const computedFields = this.findComputedFields(table);
-      
+
       for (const field of computedFields) {
         const directive = field.directives?.['@computed'] || field.directives?.['@generated'];
         if (!directive?.expression) continue;
@@ -322,19 +322,19 @@ CREATE TRIGGER ${triggerName}
    */
   generateCascadeTrigger(dependency) {
     const { sourceTable, targetTable, targetField } = dependency;
-    
+
     const functionName = `cascade_update_${sourceTable}_to_${targetTable}_${targetField}`;
     const triggerName = `trigger_cascade_${sourceTable}_to_${targetTable}_${targetField}`;
 
     // Extract foreign key relationships to determine update scope
     const fkRelations = this.findForeignKeyRelations(sourceTable, targetTable);
-    
+
     if (fkRelations.length === 0) {
       // Cannot cascade without FK relationship
       return null;
     }
 
-    const updateConditions = fkRelations.map(fk => 
+    const updateConditions = fkRelations.map(fk =>
       `"${targetTable}"."${fk.foreignKey}" = OLD."${fk.primaryKey}"`
     ).join(' AND ');
 
@@ -409,14 +409,14 @@ CREATE TRIGGER ${triggerName}
    */
   extractDependencies(expression) {
     const dependencies = new Set();
-    
+
     // Extract column references (both qualified and unqualified)
     const columnRegex = /(?:^|\W)(?:(?:[a-zA-Z_][a-zA-Z0-9_]*\.)?([a-zA-Z_][a-zA-Z0-9_]*))(?=\W|$)/g;
     let match;
 
     while ((match = columnRegex.exec(expression)) !== null) {
       const columnName = match[1];
-      
+
       // Filter out SQL keywords and functions
       if (!this.isSQLKeyword(columnName)) {
         dependencies.add(columnName);
@@ -445,7 +445,7 @@ CREATE TRIGGER ${triggerName}
   rewriteCrossTableExpression(expression, currentTable) {
     // Replace table.column with subqueries or JOINs as needed
     // This is a simplified implementation - real world would need more sophisticated parsing
-    
+
     const tableRefs = this.extractTableReferences(expression);
     let rewritten = expression;
 
@@ -465,13 +465,13 @@ CREATE TRIGGER ${triggerName}
   /**
    * Find foreign key relations between tables
    * @param {string} sourceTable - Source table name
-   * @param {string} targetTable - Target table name  
+   * @param {string} targetTable - Target table name
    * @returns {Array<Object>} FK relations
    */
   findForeignKeyRelations(sourceTable, targetTable) {
     const relations = [];
     const targetTableModel = this.schema.getTable(targetTable);
-    
+
     if (!targetTableModel) return relations;
 
     for (const field of targetTableModel.getFields()) {
@@ -505,7 +505,7 @@ CREATE TRIGGER ${triggerName}
     if (isCrossTable) {
       return 'moderate'; // Cross-table queries are slower
     }
-    
+
     if (dependencies.length > 5) {
       return 'moderate'; // Many dependencies may impact performance
     }
@@ -516,7 +516,7 @@ CREATE TRIGGER ${triggerName}
       'jsonb_', 'json_', 'array_agg', 'string_agg'
     ];
 
-    const hasExpensiveOps = expensiveOps.some(op => 
+    const hasExpensiveOps = expensiveOps.some(op =>
       expression.toLowerCase().includes(op)
     );
 
@@ -531,7 +531,7 @@ CREATE TRIGGER ${triggerName}
   getSQLType(field) {
     const scalarMap = {
       ID: 'uuid',
-      String: 'text', 
+      String: 'text',
       Int: 'integer',
       Float: 'double precision',
       Boolean: 'boolean',
@@ -558,7 +558,7 @@ CREATE TRIGGER ${triggerName}
       'case', 'when', 'then', 'else', 'end', 'as', 'distinct', 'count',
       'sum', 'avg', 'min', 'max', 'coalesce', 'nullif', 'greatest', 'least'
     ];
-    
+
     return keywords.includes(identifier.toLowerCase());
   }
 
@@ -572,7 +572,7 @@ CREATE TRIGGER ${triggerName}
     const warnings = [];
 
     // Basic syntax checks
-    const parenCount = (expression.match(/\(/g) || []).length - 
+    const parenCount = (expression.match(/\(/g) || []).length -
                       (expression.match(/\)/g) || []).length;
     if (parenCount !== 0) {
       errors.push('Mismatched parentheses in expression');

@@ -20,7 +20,7 @@ export class WorktreeStrategy {
     const remoteBase = baseRef.startsWith('origin/') ? baseRef : `origin/${baseRef}`;
 
     function safe(cmd, opts) {
-      try { return execSync(cmd, { encoding: 'utf8', ...opts }); } catch (e) { return null; }
+      try { return execSync(cmd, { encoding: 'utf8', ...opts }); } catch (_e) { return null; }
     }
 
     try {
@@ -79,8 +79,8 @@ export class WorktreeStrategy {
     } catch (e) {
       return { status: 'error', reason: e?.message || String(e), merge: { baseRef, mergeBase, strategy: 'worktree' } };
     } finally {
-      try { execSync(`git worktree remove --force "${wtDir}"`, { cwd: this.repoRoot, stdio: 'ignore' }); } catch {}
-      try { rmSync(wtDir, { recursive: true, force: true }); } catch {}
+      try { execSync(`git worktree remove --force "${wtDir}"`, { cwd: this.repoRoot, stdio: 'ignore' }); } catch { /* empty */ }
+      try { rmSync(wtDir, { recursive: true, force: true }); } catch { /* empty */ }
     }
   }
 }

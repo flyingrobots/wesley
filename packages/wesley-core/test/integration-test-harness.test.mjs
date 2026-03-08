@@ -10,17 +10,17 @@ import {
   DatabaseSnapshot,
   TestConfig,
   IntegrationTestError,
-  TestSetupError,
-  TestExecutionError,
-  PerformanceRegressionError,
+  _TestSetupError,
+  _TestExecutionError,
+  _PerformanceRegressionError,
   RollbackVerificationError,
-  TestSuiteStarted,
-  TestStarted,
-  TestCompleted,
-  TestFailed,
-  SnapshotCreated,
-  FailureInjected,
-  PerformanceBaseline,
+  _TestSuiteStarted,
+  _TestStarted,
+  _TestCompleted,
+  _TestFailed,
+  _SnapshotCreated,
+  _FailureInjected,
+  _PerformanceBaseline,
   createBasicTest,
   createPerformanceTest,
   createStressTest,
@@ -62,7 +62,7 @@ class MockDatabaseAdapter {
 
   async executeOperation(operation, options = {}) {
     this.operationHistory.push({ operation, options, timestamp: Date.now() });
-    
+
     if (this.shouldFail && operation.kind === 'drop_table') {
       throw new Error(`Mock failure for ${operation.kind}`);
     }
@@ -90,7 +90,7 @@ class MockDatabaseAdapter {
     return this.tables.map(t => ({ name: t.name, columns: t.columns.length }));
   }
 
-  async getTableData(tableName, options = {}) {
+  async getTableData(tableName, _options = {}) {
     const table = this.tables.find(t => t.name === tableName);
     if (!table) {
       throw new Error(`Table ${tableName} not found`);
@@ -125,18 +125,18 @@ class MockDatabaseAdapter {
     };
   }
 
-  async setupTestEnvironment(options = {}) {
+  async setupTestEnvironment(_options = {}) {
     // Mock setup
   }
 
-  async cleanupTestEnvironment(options = {}) {
+  async cleanupTestEnvironment(_options = {}) {
     // Mock cleanup
   }
 }
 
 test('IntegrationTestHarness constructor with default options', async () => {
   const harness = new IntegrationTestHarness();
-  
+
   assert.equal(harness.databaseAdapter, null);
   assert.equal(harness.eventEmitter, null);
   assert(harness.performanceBaselines instanceof Map);
@@ -158,7 +158,7 @@ test('IntegrationTestHarness constructor with custom options', async () => {
     defaultTimeout: 30000,
     snapshotRetention: 5
   });
-  
+
   assert.equal(harness.databaseAdapter, databaseAdapter);
   assert.equal(harness.eventEmitter, eventEmitter);
   assert.equal(harness.concurrencyPool, 8);
@@ -187,7 +187,7 @@ test('TestConfig creation and validation', async () => {
 });
 
 test('DatabaseSnapshot creation and data management', async () => {
-  const snapshot = new DatabaseSnapshot('test-snapshot-1', { 
+  const snapshot = new DatabaseSnapshot('test-snapshot-1', {
     name: 'Test Snapshot',
     strategy: 'full'
   });
@@ -212,19 +212,19 @@ test('DatabaseSnapshot creation and data management', async () => {
 test('DatabaseSnapshot comparison functionality', async () => {
   const snapshot1 = new DatabaseSnapshot('snap1');
   snapshot1.addTableData('users', [{ id: 1 }], 1);
-  
+
   const snapshot2 = new DatabaseSnapshot('snap2');
   snapshot2.addTableData('users', [{ id: 1 }, { id: 2 }], 2);
-  
+
   const comparison = snapshot1.compare(snapshot2);
-  
+
   assert.equal(comparison.identical, false);
   assert(comparison.differences.tables.length > 0);
-  
+
   // Test with identical snapshots
   const snapshot3 = new DatabaseSnapshot('snap3');
   snapshot3.addTableData('users', [{ id: 1 }], 1);
-  
+
   const identicalComparison = snapshot1.compare(snapshot3);
   assert.equal(identicalComparison.identical, true);
 });
@@ -241,7 +241,7 @@ test('createSnapshot with full strategy', async () => {
 
   assert(typeof snapshotId === 'string');
   assert(harness.activeSnapshots.has(snapshotId));
-  
+
   const snapshot = harness.activeSnapshots.get(snapshotId);
   assert(snapshot.schema);
   assert(snapshot.tables.size > 0);
@@ -384,7 +384,7 @@ test('executeTest with before and after hooks', async () => {
   const testConfig = new TestConfig({
     name: 'Hook Test',
     beforeHooks: [
-      async (harness, config) => {
+      async (_harness, _config) => {
         beforeHookCalled = true;
       }
     ],
@@ -609,9 +609,9 @@ test('performance baseline management', async () => {
 
 test('snapshot retention management', async () => {
   const databaseAdapter = new MockDatabaseAdapter();
-  const harness = new IntegrationTestHarness({ 
-    databaseAdapter, 
-    snapshotRetention: 3 
+  const harness = new IntegrationTestHarness({
+    databaseAdapter,
+    snapshotRetention: 3
   });
 
   // Create more snapshots than retention limit
@@ -714,12 +714,12 @@ test('complex integration scenario with all features', async () => {
       timeout: { probability: 0.1, delay: 50 }
     },
     beforeHooks: [
-      async (harness, config) => {
+      async (_harness, _config) => {
         // Setup hook
       }
     ],
     afterHooks: [
-      async (harness, config, result) => {
+      async (_harness, _config, _result) => {
         // Cleanup hook
       }
     ],
@@ -755,9 +755,9 @@ test('complex integration scenario with all features', async () => {
 
 test('singleton export functionality', async () => {
   const { integrationTestHarness } = await import('../src/testing/IntegrationTestHarness.mjs');
-  
+
   assert(integrationTestHarness instanceof IntegrationTestHarness);
-  
+
   // Should have default configuration
   assert.equal(integrationTestHarness.concurrencyPool, 4);
   assert.equal(integrationTestHarness.defaultTimeout, 60000);
@@ -786,7 +786,7 @@ test('failure injector creation and execution', async () => {
   // Test timeout injector
   const timeoutInjector = harness.failureInjectors.get('timeout');
   assert(timeoutInjector);
-  
+
   const indexOperation = { kind: 'create_index', table: 'test' };
   const shouldInject = timeoutInjector.shouldInject(indexOperation);
   assert(shouldInject === true); // Should inject for target operation
@@ -867,9 +867,9 @@ test('snapshot comparison with complex differences', async () => {
   const comparison = snapshot1.compare(snapshot2);
 
   assert.equal(comparison.identical, false);
-  
+
   // Should detect row count difference
-  const usersDiff = comparison.differences.tables.find(d => 
+  const usersDiff = comparison.differences.tables.find(d =>
     d.table === 'users' && d.type === 'row_count_mismatch'
   );
   assert(usersDiff);
@@ -877,13 +877,13 @@ test('snapshot comparison with complex differences', async () => {
   assert.equal(usersDiff.actual, 3);
 
   // Should detect missing table in other
-  const postsMissing = comparison.differences.tables.find(d => 
+  const postsMissing = comparison.differences.tables.find(d =>
     d.table === 'posts' && d.type === 'missing_in_other'
   );
   assert(postsMissing);
 
   // Should detect missing table in this
-  const ordersMissing = comparison.differences.tables.find(d => 
+  const ordersMissing = comparison.differences.tables.find(d =>
     d.table === 'orders' && d.type === 'missing_in_this'
   );
   assert(ordersMissing);

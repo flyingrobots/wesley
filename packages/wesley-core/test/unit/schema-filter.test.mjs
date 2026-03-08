@@ -8,10 +8,10 @@ test('filterIRByUnits: keeps only tables matching unit IDs', () => {
     tables: [
       { name: 'Widget', sourceUnit: 'core.graphql' },
       { name: 'Player', sourceUnit: 'game.graphql' },
-      { name: 'Item', sourceUnit: 'core.graphql' },
+      { name: 'Item', sourceUnit: 'core.graphql' }
     ],
     enums: [],
-    scalars: [],
+    scalars: []
   };
 
   const filtered = filterIRByUnits(ir, ['core.graphql']);
@@ -23,16 +23,16 @@ test('filterIRByUnits: keeps only tables matching unit IDs', () => {
 test('filterIRByUnits: filters enums and scalars too', () => {
   const ir = {
     tables: [
-      { name: 'Widget', sourceUnit: 'core.graphql' },
+      { name: 'Widget', sourceUnit: 'core.graphql' }
     ],
     enums: [
       { name: 'Color', sourceUnit: 'core.graphql' },
-      { name: 'Status', sourceUnit: 'game.graphql' },
+      { name: 'Status', sourceUnit: 'game.graphql' }
     ],
     scalars: [
       { name: 'Timestamp', sourceUnit: 'core.graphql' },
-      { name: 'Money', sourceUnit: 'game.graphql' },
-    ],
+      { name: 'Money', sourceUnit: 'game.graphql' }
+    ]
   };
 
   const filtered = filterIRByUnits(ir, ['game.graphql']);
@@ -48,10 +48,10 @@ test('filterIRByUnits: multiple unit IDs', () => {
     tables: [
       { name: 'A', sourceUnit: 'a.graphql' },
       { name: 'B', sourceUnit: 'b.graphql' },
-      { name: 'C', sourceUnit: 'c.graphql' },
+      { name: 'C', sourceUnit: 'c.graphql' }
     ],
     enums: [],
-    scalars: [],
+    scalars: []
   };
 
   const filtered = filterIRByUnits(ir, ['a.graphql', 'c.graphql']);
@@ -64,7 +64,7 @@ test('filterIRByUnits: empty unit list → empty result', () => {
   const ir = {
     tables: [{ name: 'Widget', sourceUnit: 'core.graphql' }],
     enums: [],
-    scalars: [],
+    scalars: []
   };
 
   const filtered = filterIRByUnits(ir, []);
@@ -78,7 +78,7 @@ test('filterIRByUnits: preserves non-filtered properties', () => {
     tables: [{ name: 'Widget', sourceUnit: 'core.graphql' }],
     enums: [],
     scalars: [],
-    relationships: [{ type: 'one-to-many' }],
+    relationships: [{ type: 'one-to-many' }]
   };
 
   const filtered = filterIRByUnits(ir, ['core.graphql']);
@@ -89,7 +89,7 @@ test('filterIRByUnits: preserves non-filtered properties', () => {
 
 test('filterIRByUnits: handles missing collections gracefully', () => {
   const ir = {
-    tables: [{ name: 'Widget', sourceUnit: 'core.graphql' }],
+    tables: [{ name: 'Widget', sourceUnit: 'core.graphql' }]
   };
 
   const filtered = filterIRByUnits(ir, ['core.graphql']);

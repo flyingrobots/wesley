@@ -153,4 +153,16 @@ else
   echo "✅ pnpm-lock.yaml already up to date"
 fi
 
+# ── Lint guard ──────────────────────────────────────────────────────────────
+# Skip with: WESLEY_SKIP_LINT_HOOK=1
+
+if [[ "${WESLEY_SKIP_LINT_HOOK:-0}" == "1" ]]; then
+  echo "⚠️  Skipping lint guard (WESLEY_SKIP_LINT_HOOK=1)."
+  exit 0
+fi
+
+echo "🔎 Running lint..."
+pnpm lint || { echo "❌ Lint failed." >&2; exit 1; }
+echo "✅ Lint passed"
+
 exit 0

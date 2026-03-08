@@ -8,7 +8,7 @@ export class RLSPresets {
     this.presets = new Map();
     this.initializePresets();
   }
-  
+
   /**
    * Initialize built-in presets
    */
@@ -26,7 +26,7 @@ export class RLSPresets {
       helperFunctions: [],
       indexes: ['{owner_column}']
     });
-    
+
     // Tenant isolation pattern
     this.register('tenant', {
       description: 'Tenant-scoped access with membership check',
@@ -72,7 +72,7 @@ export class RLSPresets {
         }
       ]
     });
-    
+
     // Public read, owner write pattern
     this.register('public-read', {
       description: 'Public read access, owner-only write',
@@ -86,7 +86,7 @@ export class RLSPresets {
       helperFunctions: [],
       indexes: ['{owner_column}']
     });
-    
+
     // Authenticated-only pattern
     this.register('authenticated', {
       description: 'Authenticated users only',
@@ -100,7 +100,7 @@ export class RLSPresets {
       helperFunctions: [],
       indexes: []
     });
-    
+
     // Admin-only pattern
     this.register('admin-only', {
       description: 'Admin role required for all operations',
@@ -126,7 +126,7 @@ export class RLSPresets {
       ],
       indexes: []
     });
-    
+
     // Soft delete aware pattern
     this.register('soft-delete', {
       description: 'Respects soft deletes in all queries',
@@ -145,7 +145,7 @@ export class RLSPresets {
         }
       ]
     });
-    
+
     // Time-based access pattern
     this.register('time-window', {
       description: 'Access limited to time window',
@@ -159,7 +159,7 @@ export class RLSPresets {
       helperFunctions: [],
       indexes: ['{start_column}', '{end_column}']
     });
-    
+
     // Hierarchical organization pattern
     this.register('hierarchical', {
       description: 'Access to org and all child orgs',
@@ -201,28 +201,28 @@ export class RLSPresets {
       indexes: ['{org_column}']
     });
   }
-  
+
   /**
    * Register a custom preset
    */
   register(name, definition) {
     this.presets.set(name, definition);
   }
-  
+
   /**
    * Get a preset by name
    */
   get(name) {
     return this.presets.get(name);
   }
-  
+
   /**
    * Check if preset exists
    */
   has(name) {
     return this.presets.has(name);
   }
-  
+
   /**
    * Apply a preset to a table
    */
@@ -231,32 +231,32 @@ export class RLSPresets {
     if (!preset) {
       throw new Error(`Unknown RLS preset: ${presetName}`);
     }
-    
+
     // Validate required fields
     for (const required of preset.requires) {
       if (!options[required]) {
         throw new Error(`Preset '${presetName}' requires option: ${required}`);
       }
     }
-    
+
     // Replace placeholders in policies
     const policies = {};
     for (const [operation, expression] of Object.entries(preset.policies)) {
       policies[operation] = this.replacePlaceholders(expression, options);
     }
-    
+
     // Replace placeholders in helper functions
     const helperFunctions = preset.helperFunctions.map(func => ({
       ...func,
       sql: this.replacePlaceholders(func.sql, options)
     }));
-    
+
     // Replace placeholders in views
     const views = (preset.views || []).map(view => ({
       ...view,
       sql: this.replacePlaceholders(view.sql, options)
     }));
-    
+
     // Generate indexes with placeholders replaced
     const indexes = preset.indexes.map(index => {
       if (typeof index === 'string') {
@@ -267,7 +267,7 @@ export class RLSPresets {
         where: index.where ? this.replacePlaceholders(index.where, options) : null
       };
     });
-    
+
     return {
       policies,
       helperFunctions,
@@ -276,7 +276,7 @@ export class RLSPresets {
       description: preset.description
     };
   }
-  
+
   /**
    * Replace placeholders in template strings
    */
@@ -288,36 +288,36 @@ export class RLSPresets {
       throw new Error(`Missing value for placeholder: ${key}`);
     });
   }
-  
+
   /**
    * Generate SQL for a preset application
    */
   generateSQL(presetName, tableName, options = {}) {
     const applied = this.apply(presetName, tableName, options);
     const statements = [];
-    
+
     // Generate helper functions first
     for (const func of applied.helperFunctions) {
       statements.push(func.sql);
     }
-    
+
     // Generate views
     for (const view of applied.views) {
       statements.push(view.sql);
     }
-    
+
     // Enable RLS
     statements.push(`ALTER TABLE "${tableName}" ENABLE ROW LEVEL SECURITY;`);
     statements.push(`ALTER TABLE "${tableName}" FORCE ROW LEVEL SECURITY;`);
-    
+
     // Generate policies
     for (const [operation, expression] of Object.entries(applied.policies)) {
       const policyName = `policy_${tableName}_${presetName}_${operation}`;
-      
+
       statements.push(`DROP POLICY IF EXISTS "${policyName}" ON "${tableName}";`);
-      
+
       let policySQL = `CREATE POLICY "${policyName}" ON "${tableName}"\n  FOR ${operation.toUpperCase()}`;
-      
+
       if (operation === 'select' || operation === 'delete') {
         policySQL += `\n  USING (${expression});`;
       } else if (operation === 'insert') {
@@ -325,10 +325,10 @@ export class RLSPresets {
       } else if (operation === 'update') {
         policySQL += `\n  USING (${expression})\n  WITH CHECK (${expression});`;
       }
-      
+
       statements.push(policySQL);
     }
-    
+
     // Generate indexes
     for (const index of applied.indexes) {
       if (typeof index === 'string') {
@@ -345,17 +345,17 @@ export class RLSPresets {
         statements.push(indexSQL);
       }
     }
-    
+
     return statements.join('\n\n');
   }
-  
+
   /**
    * Generate tests for a preset application
    */
   generateTests(presetName, tableName, options = {}) {
-    const applied = this.apply(presetName, tableName, options);
+    const _applied = this.apply(presetName, tableName, options);
     const tests = [];
-    
+
     // Test policy existence
     tests.push(`
 -- Test: ${presetName} policies exist for ${tableName}
@@ -364,11 +364,11 @@ SELECT has_table_privilege('${tableName}', 'INSERT');
 SELECT has_table_privilege('${tableName}', 'UPDATE');
 SELECT has_table_privilege('${tableName}', 'DELETE');
 `);
-    
+
     // Test specific preset behaviors
     switch (presetName) {
-      case 'owner':
-        tests.push(`
+    case 'owner':
+      tests.push(`
 -- Test: Owner can access their records
 SET LOCAL request.jwt.claim.sub TO 'owner_user_id';
 SELECT lives_ok(
@@ -382,10 +382,10 @@ SELECT is_empty(
   $$SELECT * FROM ${tableName} WHERE ${options.owner_column} = 'owner_user_id'$$,
   'Non-owner cannot see other records'
 );`);
-        break;
-        
-      case 'tenant':
-        tests.push(`
+      break;
+
+    case 'tenant':
+      tests.push(`
 -- Test: Member can access tenant resources
 SET LOCAL request.jwt.claim.sub TO 'member_user_id';
 SELECT lives_ok(
@@ -399,10 +399,10 @@ SELECT is_empty(
   $$SELECT * FROM ${tableName} WHERE ${options.tenant_column} = 'test_org_id'$$,
   'Non-member cannot access tenant resources'
 );`);
-        break;
-        
-      case 'public-read':
-        tests.push(`
+      break;
+
+    case 'public-read':
+      tests.push(`
 -- Test: Anonymous can read
 SET LOCAL request.jwt.claim.sub TO NULL;
 SELECT lives_ok(
@@ -416,12 +416,12 @@ SELECT throws_ok(
   'new row violates row-level security policy',
   'Anonymous cannot insert'
 );`);
-        break;
+      break;
     }
-    
+
     return tests.join('\n');
   }
-  
+
   /**
    * List all available presets
    */

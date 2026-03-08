@@ -11,7 +11,7 @@ export class WesleyCommand {
     this.name = name;
     this.description = description;
     this.requiresSchema = false;
-    
+
     // Auto-register on construction (if registry exists)
     if (WesleyCommand.registry) {
       WesleyCommand.registry.set(name, this);
@@ -20,7 +20,7 @@ export class WesleyCommand {
 
   // Static registry for auto-registration
   static registry = new Map();
-  
+
   // Register all commands with a Commander program
   static registerAll(program) {
     for (const [name, cmd] of this.registry) {
@@ -36,15 +36,15 @@ export class WesleyCommand {
   }
 
   // Subclasses override to add command-specific options
-  configureCommander(cmd) { 
-    return cmd; 
+  configureCommander(cmd) {
+    return cmd;
   }
 
   // Create logger with proper context
   makeLogger(options = {}, bindings = {}) {
     const logger = this.ctx.logger;
     const level = this.resolveLogLevel(options);
-    
+
     // If quiet mode, return no-op logger
     if (options.quiet) {
       return {
@@ -55,16 +55,16 @@ export class WesleyCommand {
         fatal: () => {}
       };
     }
-    
+
     // If logger supports child/level setting
     if (logger && logger.child) {
-      return logger.child({ 
-        cmd: this.name, 
+      return logger.child({
+        cmd: this.name,
         ...bindings,
-        level 
+        level
       });
     }
-    
+
     // Fallback to console with level filtering
     return {
       debug: level <= 10 ? console.log : () => {},
@@ -87,7 +87,7 @@ export class WesleyCommand {
 
   // Read schema from file or stdin (ASYNC - keeping the improvement)
   async readSchemaFromOptions(options) {
-    const { fs, stdin } = this.ctx;
+    const { fs, _stdin } = this.ctx;
     const fromStdin = options.schema === '-' || options.stdin === true;
 
     if (fromStdin) {
@@ -155,7 +155,7 @@ export class WesleyCommand {
   // Write output to file or stdout
   async writeOutput({ code, outFile, options }) {
     const { fs, stdout } = this.ctx;
-    
+
     if (outFile) {
       await fs.write(outFile, code);
       if (!options.quiet) {
@@ -179,28 +179,30 @@ export class WesleyCommand {
     options.logFormat = requestedFormat;
     if (requestedFormat === 'json') {
       options.json = true;
+      // Known DI violation tracked in BACKLOG: mutating process.env is needed
+      // for compatibility with pino's log format detection during initialization.
       process.env.WESLEY_LOG_FORMAT = 'json';
     }
 
     const logger = this.makeLogger(options);
-    
+
     try {
-      const context = { 
-        options, 
+      const context = {
+        options,
         logger,
         fs: this.ctx.fs,
-        command 
+        command
       };
-      
+
       // Read schema if required
       if (this.requiresSchema) {
         const schemaData = await this.readSchemaFromOptions(options);
         Object.assign(context, schemaData);
       }
-      
+
       // Execute the command logic
       const result = await this.executeCore(context);
-      
+
       // Handle JSON output mode
       if (options.json && result) {
         this.ctx.stdout.write(JSON.stringify({
@@ -209,9 +211,9 @@ export class WesleyCommand {
           timestamp: new Date().toISOString()
         }, null, 2) + '\n');
       }
-      
+
       return result;
-      
+
     } catch (error) {
       // Handle errors properly
       const exitCode = this.exitCodeFor(error);
@@ -224,7 +226,7 @@ export class WesleyCommand {
         if (ann && ann.file && ann.lines) {
           sdlNote = `${ann.file}:${ann.lines}`;
         }
-      } catch {}
+      } catch { /* empty */ }
 
       if (options.json) {
         this.ctx.stderr.write(JSON.stringify({
@@ -238,7 +240,7 @@ export class WesleyCommand {
         const msg = this.formatError(error, options);
         const annotated = sdlNote ? `${msg}\n   SDL: ${sdlNote}` : msg;
         this.ctx.stderr.write(annotated + '\n');
-        
+
         // Add helpful hints
         if (error.code === 'ENOENT') {
           const hint = this.missingSchemaHint();
@@ -256,7 +258,7 @@ export class WesleyCommand {
   }
 
   // Subclasses must implement
-  async executeCore(context) {
+  async executeCore(_context) {
     throw new Error('executeCore must be implemented by subclasses');
   }
 
@@ -264,7 +266,7 @@ export class WesleyCommand {
   formatError(error, options) {
     const code = error.code ? `[${error.code}] ` : '';
     const message = `❌ ${code}${error.message}`;
-    
+
     if (options.debug || options.verbose) {
       return message + '\n' + error.stack;
     }

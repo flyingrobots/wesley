@@ -23,14 +23,14 @@ test('generates owner preset RLS policies', async () => {
       name: String!
     }
   `;
-  
+
   const ast = parse(schema);
   const builder = new GraphQLSchemaBuilder();
   const wesleySchema = builder.buildFromAST(ast);
-  
+
   const generator = new PostgreSQLGenerator();
   const sql = await generator.generate(wesleySchema);
-  
+
   // Check for owner-based policies
   assert(sql.includes('auth.uid() = created_by'), 'Should use owner column in policies');
   assert(sql.includes('FOR SELECT'), 'Should have SELECT policy');
@@ -63,18 +63,18 @@ test('generates tenant preset with auto-detection', async () => {
       id: ID! @primaryKey
     }
   `;
-  
+
   const ast = parse(schema);
   const builder = new GraphQLSchemaBuilder();
   const wesleySchema = builder.buildFromAST(ast);
-  
+
   const generator = new PostgreSQLGenerator();
   const sql = await generator.generate(wesleySchema);
-  
+
   // Check for tenant helper functions
   assert(sql.includes('wesley.is_member_of'), 'Should create membership check function');
   assert(sql.includes('wesley.has_role_in'), 'Should create role check function');
-  
+
   // Check it detected org_id column
   assert(sql.includes('is_member_of(org_id)'), 'Should use detected org_id column');
 });
@@ -93,14 +93,14 @@ test('generates public-read preset', async () => {
       id: ID! @primaryKey
     }
   `;
-  
+
   const ast = parse(schema);
   const builder = new GraphQLSchemaBuilder();
   const wesleySchema = builder.buildFromAST(ast);
-  
+
   const generator = new PostgreSQLGenerator();
   const sql = await generator.generate(wesleySchema);
-  
+
   // Check for public read, owner write
   assert(sql.includes('USING (true)'), 'Should allow public SELECT');
   assert(sql.includes('auth.uid() = author_id'), 'Should restrict writes to owner');
@@ -127,14 +127,14 @@ test('supports preset with custom options', async () => {
       id: ID! @primaryKey
     }
   `;
-  
+
   const ast = parse(schema);
   const builder = new GraphQLSchemaBuilder();
   const wesleySchema = builder.buildFromAST(ast);
-  
+
   const generator = new PostgreSQLGenerator();
   const sql = await generator.generate(wesleySchema);
-  
+
   // Check it uses custom owner column
   assert(sql.includes('auth.uid() = document_owner'), 'Should use custom owner column');
 });
@@ -142,7 +142,7 @@ test('supports preset with custom options', async () => {
 test('lists all available presets', () => {
   const presets = new RLSPresets();
   const list = presets.list();
-  
+
   assert(list.find(p => p.name === 'owner'), 'Should have owner preset');
   assert(list.find(p => p.name === 'tenant'), 'Should have tenant preset');
   assert(list.find(p => p.name === 'public-read'), 'Should have public-read preset');
@@ -154,11 +154,11 @@ test('lists all available presets', () => {
 
 test('validates required options', () => {
   const presets = new RLSPresets();
-  
+
   assert.throws(() => {
     presets.apply('owner', 'test_table', {});
   }, /requires option: owner_column/);
-  
+
   assert.throws(() => {
     presets.apply('tenant', 'test_table', { tenant_column: 'org_id' });
   }, /requires option: membership_table/);
@@ -166,36 +166,36 @@ test('validates required options', () => {
 
 test('generates pgTAP tests for presets', () => {
   const presets = new RLSPresets();
-  
+
   const tests = presets.generateTests('owner', 'posts', {
     owner_column: 'author_id'
   });
-  
+
   assert(tests.includes('Owner can select their records'), 'Should test owner access');
   assert(tests.includes('Non-owner cannot see other records'), 'Should test non-owner restriction');
 });
 
 test('handles custom preset registration', () => {
   const presets = new RLSPresets();
-  
+
   presets.register('custom-preset', {
     description: 'Custom security pattern',
     requires: ['custom_field'],
     policies: {
       select: '{custom_field} = true',
       insert: 'false',
-      update: 'false', 
+      update: 'false',
       delete: 'false'
     },
     helperFunctions: [],
     indexes: ['{custom_field}']
   });
-  
+
   assert(presets.has('custom-preset'), 'Should register custom preset');
-  
+
   const sql = presets.generateSQL('custom-preset', 'test_table', {
     custom_field: 'is_public'
   });
-  
+
   assert(sql.includes('is_public = true'), 'Should use custom field in policy');
 });

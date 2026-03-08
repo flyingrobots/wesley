@@ -17,13 +17,13 @@
 export function normalizeOutputTree(files, options = {}) {
   const {
     freezeTimestamps = true,
-    canonicalizeJson = true,
+    canonicalizeJson = true
   } = options;
 
   return files
     .map(f => ({
       path: normalizePath(f.path),
-      content: normalizeContent(f.content, f.path, { freezeTimestamps, canonicalizeJson }),
+      content: normalizeContent(f.content, f.path, { freezeTimestamps, canonicalizeJson })
     }))
     .sort((a, b) => a.path.localeCompare(b.path));
 }
@@ -206,7 +206,7 @@ export function assertNoAbsolutePaths(files) {
     /^\/home\//,
     /^\/tmp\//,
     /^[A-Z]:\\/,
-    /\/var\/folders\//,
+    /\/var\/folders\//
   ];
 
   for (const file of files) {
@@ -248,6 +248,6 @@ export function compareOutputTrees(tree1, tree2) {
     identical,
     onlyIn1,
     onlyIn2,
-    contentDiffs,
+    contentDiffs
   };
 }

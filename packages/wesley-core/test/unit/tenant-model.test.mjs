@@ -33,14 +33,14 @@ test('generates tenant model SQL for @tenant directive', async () => {
       created_by: ID! @foreignKey(ref: "User.id")
     }
   `;
-  
+
   const ast = parse(schema);
   const builder = new GraphQLSchemaBuilder();
   const wesleySchema = builder.buildFromAST(ast);
-  
+
   const generator = new PostgreSQLGenerator();
   const sql = await generator.generate(wesleySchema);
-  
+
   // Check for tenant model components
   assert(sql.includes('TENANT MODEL SUPPORT'), 'Should have tenant model section');
   assert(sql.includes('wesley_user_orgs'), 'Should create membership view');
@@ -63,14 +63,14 @@ test('generates owner policies for @owner directive', async () => {
       name: String!
     }
   `;
-  
+
   const ast = parse(schema);
   const builder = new GraphQLSchemaBuilder();
   const wesleySchema = builder.buildFromAST(ast);
-  
+
   const generator = new PostgreSQLGenerator();
   const sql = await generator.generate(wesleySchema);
-  
+
   // Check for owner-based functions
   assert(sql.includes('wesley.is_owner'), 'Should create owner check function');
 });
@@ -91,14 +91,14 @@ test('detects membership table pattern automatically', async () => {
       id: ID! @primaryKey
     }
   `;
-  
+
   const ast = parse(schema);
   const builder = new GraphQLSchemaBuilder();
   const wesleySchema = builder.buildFromAST(ast);
-  
+
   const generator = new PostgreSQLGenerator();
-  const sql = await generator.generate(wesleySchema);
-  
+  const _sql = await generator.generate(wesleySchema);
+
   // Even without @tenant directive, should detect membership pattern
   // (This test might fail until we add auto-detection logic)
 });

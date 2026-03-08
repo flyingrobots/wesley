@@ -33,7 +33,7 @@ export function normalizeWeightConfig(raw) {
   if (looksLikeFlatMap) {
     for (const [key, value] of Object.entries(raw)) {
       if (key === 'default') {
-        config.default = coerceNumber(value, config.default, `'default' weight`);
+        config.default = coerceNumber(value, config.default, '\'default\' weight');
       } else {
         config.substrings[key.toLowerCase()] = coerceNumber(value, config.substrings[key.toLowerCase()] ?? config.default, `substring weight for "${key}"`);
       }
@@ -42,7 +42,7 @@ export function normalizeWeightConfig(raw) {
   }
 
   if ('default' in raw) {
-    config.default = coerceNumber(raw.default, config.default, `'default' weight`);
+    config.default = coerceNumber(raw.default, config.default, '\'default\' weight');
   }
 
   if (raw.substrings && typeof raw.substrings === 'object' && !Array.isArray(raw.substrings)) {

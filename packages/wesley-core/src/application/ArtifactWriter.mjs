@@ -29,7 +29,7 @@ const noopLogger = {
   debug() {},
   child() { return noopLogger; },
   setLevel() {},
-  async flush() {},
+  async flush() {}
 };
 
 /**
@@ -136,7 +136,7 @@ export class ArtifactWriter {
       // Move staged files to final location
       await this._fs.mkdir(outputDir, { recursive: true });
 
-      for (const [relPath, { data }] of artifactMap) {
+      for (const [relPath] of artifactMap) {
         const finalPath = _joinPath(outputDir, relPath);
         const tmpPath = _joinPath(tmpDir, relPath);
 

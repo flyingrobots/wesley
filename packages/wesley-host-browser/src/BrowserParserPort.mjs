@@ -38,50 +38,50 @@ function parseFields(body) {
   const fields = [];
   for (const line of lines) {
     if (line.startsWith('}')) break;
-    
+
     // Simplified regex: Name : EverythingElse
     const m = line.match(/^([A-Za-z_]\w*)\s*:\s*(.+)$/);
     if (!m) {
-        console.warn('[BrowserParserPort] Failed to match line:', line);
-        continue;
+      console.warn('[BrowserParserPort] Failed to match line:', line);
+      continue;
     }
     const name = m[1];
-    let remainder = m[2].trim();
-    
+    const remainder = m[2].trim();
+
     // Split typeSpec from directives
     let typeSpec = remainder;
     let head = '';
     const atIndex = remainder.indexOf('@');
     if (atIndex !== -1) {
-        typeSpec = remainder.substring(0, atIndex).trim();
-        head = remainder.substring(atIndex);
+      typeSpec = remainder.substring(0, atIndex).trim();
+      head = remainder.substring(atIndex);
     }
 
     const directives = parseDirectives(head);
-    
+
     // detect scalar vs relation (very small whitelist)
-    const base = typeSpec.replace(/[\[\]!]/g, '');
+    const base = typeSpec.replace(/[[\]!]/g, '');
     const scalar = new Set(['ID','UUID','String','Int','Float','Boolean','DateTime','Date','Time','JSON']).has(base);
     const hasFk = directives['wes_fk'] || directives['wesley_fk'] || directives['fk'];
-    
+
     // console.log('[BrowserParserPort] Field:', name, 'Type:', typeSpec, 'Base:', base, 'Scalar:', scalar, 'FK:', !!hasFk);
 
     if (!scalar && !hasFk) continue; // relation-only
-    
+
     const nullable = !typeSpec.endsWith('!');
     const pgType = (() => {
       switch (base) {
-        case 'ID':
-        case 'UUID': return 'uuid';
-        case 'String': return 'text';
-        case 'Int': return 'integer';
-        case 'Float': return 'double precision';
-        case 'Boolean': return 'boolean';
-        case 'DateTime': return 'timestamptz';
-        case 'Date': return 'date';
-        case 'Time': return 'time with time zone';
-        case 'JSON': return 'jsonb';
-        default: return 'text';
+      case 'ID':
+      case 'UUID': return 'uuid';
+      case 'String': return 'text';
+      case 'Int': return 'integer';
+      case 'Float': return 'double precision';
+      case 'Boolean': return 'boolean';
+      case 'DateTime': return 'timestamptz';
+      case 'Date': return 'date';
+      case 'Time': return 'time with time zone';
+      case 'JSON': return 'jsonb';
+      default: return 'text';
       }
     })();
     const column = { name, type: pgType, nullable, directives };
@@ -99,7 +99,7 @@ export class BrowserParserPort {
     if (typeof sdl !== 'string') throw new Error('Schema must be a string');
     const input = stripComments(sdl);
     const tables = [];
-    const typeRe = /\btype\s+([A-Za-z_][A-Za-z0-9_]*)\s*([^\{]*)\{([\s\S]*?)\}/g;
+    const typeRe = /\btype\s+([A-Za-z_][A-Za-z0-9_]*)\s*([^{]*)\{([\s\S]*?)\}/g;
     let m;
     while ((m = typeRe.exec(input)) !== null) {
       const name = m[1];

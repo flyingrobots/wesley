@@ -121,50 +121,50 @@ export function execute(bytecode, context = {}, options = {}) {
   function callMethod(receiver, methodName, args) {
     // Built-in methods for invariant checking
     switch (methodName) {
-      case 'mustEmit':
-        // Check if operation emits to specified channel/event
-        return {
-          __mustEmit: true,
-          receiver,
-          event: args[0],
-        };
+    case 'mustEmit':
+      // Check if operation emits to specified channel/event
+      return {
+        __mustEmit: true,
+        receiver,
+        event: args[0]
+      };
 
-      case 'produces':
-        // Check if operation produces specified output
-        return {
-          __produces: true,
-          receiver,
-          output: args[0],
-        };
+    case 'produces':
+      // Check if operation produces specified output
+      return {
+        __produces: true,
+        receiver,
+        output: args[0]
+      };
 
-      case 'emitsTo':
-        // Check if operation emits to channel
-        return {
-          __emitsTo: true,
-          receiver,
-          channel: args[0],
-          ...(args[1] !== undefined && { within: args[1] }),
-        };
+    case 'emitsTo':
+      // Check if operation emits to channel
+      return {
+        __emitsTo: true,
+        receiver,
+        channel: args[0],
+        ...(args[1] !== undefined && { within: args[1] })
+      };
 
-      case 'within':
-        // Add timing constraint to previous constraint
-        if (receiver && receiver.__mustEmit) {
-          return { ...receiver, within: args[0] };
-        }
-        if (receiver && receiver.__produces) {
-          return { ...receiver, within: args[0] };
-        }
-        if (receiver && receiver.__emitsTo) {
-          return { ...receiver, within: args[0] };
-        }
-        throw new VmError(`within() can only be called on mustEmit/produces/emitsTo`, { pc, stack });
+    case 'within':
+      // Add timing constraint to previous constraint
+      if (receiver && receiver.__mustEmit) {
+        return { ...receiver, within: args[0] };
+      }
+      if (receiver && receiver.__produces) {
+        return { ...receiver, within: args[0] };
+      }
+      if (receiver && receiver.__emitsTo) {
+        return { ...receiver, within: args[0] };
+      }
+      throw new VmError('within() can only be called on mustEmit/produces/emitsTo', { pc, stack });
 
-      default:
-        // Try calling method on receiver
-        if (typeof receiver?.[methodName] === 'function') {
-          return receiver[methodName](...args);
-        }
-        throw new VmError(`Unknown method: ${methodName}`, { pc, stack });
+    default:
+      // Try calling method on receiver
+      if (typeof receiver?.[methodName] === 'function') {
+        return receiver[methodName](...args);
+      }
+      throw new VmError(`Unknown method: ${methodName}`, { pc, stack });
     }
   }
 
@@ -191,232 +191,232 @@ export function execute(bytecode, context = {}, options = {}) {
       instructionsExecuted++;
 
       switch (opcode) {
-        case Opcode.NOP:
-          break;
+      case Opcode.NOP:
+        break;
 
-        case Opcode.PUSH_CONST:
-          push(constants[operand]);
-          break;
+      case Opcode.PUSH_CONST:
+        push(constants[operand]);
+        break;
 
-        case Opcode.LOAD_VAR: {
-          const value = variables.get(operand);
-          if (value === undefined && !variables.has(operand)) {
-            throw new VmError(`Undefined variable at index ${operand}`, { pc, stack });
-          }
-          push(value);
-          break;
+      case Opcode.LOAD_VAR: {
+        const value = variables.get(operand);
+        if (value === undefined && !variables.has(operand)) {
+          throw new VmError(`Undefined variable at index ${operand}`, { pc, stack });
         }
+        push(value);
+        break;
+      }
 
-        case Opcode.STORE_VAR:
-          variables.set(operand, pop());
-          break;
+      case Opcode.STORE_VAR:
+        variables.set(operand, pop());
+        break;
 
-        case Opcode.POP:
-          pop();
-          break;
+      case Opcode.POP:
+        pop();
+        break;
 
-        case Opcode.DUP:
-          push(peek());
-          break;
+      case Opcode.DUP:
+        push(peek());
+        break;
 
         // Comparison
-        case Opcode.CMP_EQ: {
-          const right = pop();
-          const left = pop();
-          push(left === right);
-          break;
-        }
+      case Opcode.CMP_EQ: {
+        const right = pop();
+        const left = pop();
+        push(left === right);
+        break;
+      }
 
-        case Opcode.CMP_NEQ: {
-          const right = pop();
-          const left = pop();
-          push(left !== right);
-          break;
-        }
+      case Opcode.CMP_NEQ: {
+        const right = pop();
+        const left = pop();
+        push(left !== right);
+        break;
+      }
 
-        case Opcode.CMP_LT: {
-          const right = pop();
-          const left = pop();
-          push(left < right);
-          break;
-        }
+      case Opcode.CMP_LT: {
+        const right = pop();
+        const left = pop();
+        push(left < right);
+        break;
+      }
 
-        case Opcode.CMP_LTE: {
-          const right = pop();
-          const left = pop();
-          push(left <= right);
-          break;
-        }
+      case Opcode.CMP_LTE: {
+        const right = pop();
+        const left = pop();
+        push(left <= right);
+        break;
+      }
 
-        case Opcode.CMP_GT: {
-          const right = pop();
-          const left = pop();
-          push(left > right);
-          break;
-        }
+      case Opcode.CMP_GT: {
+        const right = pop();
+        const left = pop();
+        push(left > right);
+        break;
+      }
 
-        case Opcode.CMP_GTE: {
-          const right = pop();
-          const left = pop();
-          push(left >= right);
-          break;
-        }
+      case Opcode.CMP_GTE: {
+        const right = pop();
+        const left = pop();
+        push(left >= right);
+        break;
+      }
 
-        // Logical
-        case Opcode.AND: {
-          const right = pop();
-          const left = pop();
-          push(left && right);
-          break;
-        }
+      // Logical
+      case Opcode.AND: {
+        const right = pop();
+        const left = pop();
+        push(left && right);
+        break;
+      }
 
-        case Opcode.OR: {
-          const right = pop();
-          const left = pop();
-          push(left || right);
-          break;
-        }
+      case Opcode.OR: {
+        const right = pop();
+        const left = pop();
+        push(left || right);
+        break;
+      }
 
-        case Opcode.NOT:
-          push(!pop());
-          break;
+      case Opcode.NOT:
+        push(!pop());
+        break;
 
         // Arithmetic
-        case Opcode.ADD: {
-          const right = pop();
-          const left = pop();
-          push(left + right);
-          break;
+      case Opcode.ADD: {
+        const right = pop();
+        const left = pop();
+        push(left + right);
+        break;
+      }
+
+      case Opcode.SUB: {
+        const right = pop();
+        const left = pop();
+        push(left - right);
+        break;
+      }
+
+      case Opcode.MUL: {
+        const right = pop();
+        const left = pop();
+        push(left * right);
+        break;
+      }
+
+      case Opcode.DIV: {
+        const right = pop();
+        const left = pop();
+        if (right === 0) {
+          throw new VmError('Division by zero', { pc, stack });
         }
+        push(left / right);
+        break;
+      }
 
-        case Opcode.SUB: {
-          const right = pop();
-          const left = pop();
-          push(left - right);
-          break;
+      // Control flow
+      case Opcode.JUMP:
+        pc = operand - 1; // -1 because we increment at end of loop
+        break;
+
+      case Opcode.JUMP_IF_TRUE:
+        if (peek()) {
+          pc = operand - 1;
         }
+        break;
 
-        case Opcode.MUL: {
-          const right = pop();
-          const left = pop();
-          push(left * right);
-          break;
+      case Opcode.JUMP_IF_FALSE:
+        if (!peek()) {
+          pc = operand - 1;
         }
-
-        case Opcode.DIV: {
-          const right = pop();
-          const left = pop();
-          if (right === 0) {
-            throw new VmError('Division by zero', { pc, stack });
-          }
-          push(left / right);
-          break;
-        }
-
-        // Control flow
-        case Opcode.JUMP:
-          pc = operand - 1; // -1 because we increment at end of loop
-          break;
-
-        case Opcode.JUMP_IF_TRUE:
-          if (peek()) {
-            pc = operand - 1;
-          }
-          break;
-
-        case Opcode.JUMP_IF_FALSE:
-          if (!peek()) {
-            pc = operand - 1;
-          }
-          break;
+        break;
 
         // Iteration
-        case Opcode.ITER_BEGIN: {
-          const collectionName = pop();
-          const items = getCollection(collectionName);
-          iteratorStack.push({
-            items,
-            index: 0,
-          });
-          break;
-        }
+      case Opcode.ITER_BEGIN: {
+        const collectionName = pop();
+        const items = getCollection(collectionName);
+        iteratorStack.push({
+          items,
+          index: 0
+        });
+        break;
+      }
 
-        case Opcode.ITER_NEXT: {
-          const iter = iteratorStack[iteratorStack.length - 1];
-          if (!iter) {
-            throw new VmError('ITER_NEXT without ITER_BEGIN', { pc, stack });
-          }
-          if (iter.index < iter.items.length) {
-            push(iter.items[iter.index]);
-            iter.index++;
-            push(true); // More items available
-          } else {
-            push(false); // No more items
-          }
-          break;
+      case Opcode.ITER_NEXT: {
+        const iter = iteratorStack[iteratorStack.length - 1];
+        if (!iter) {
+          throw new VmError('ITER_NEXT without ITER_BEGIN', { pc, stack });
         }
+        if (iter.index < iter.items.length) {
+          push(iter.items[iter.index]);
+          iter.index++;
+          push(true); // More items available
+        } else {
+          push(false); // No more items
+        }
+        break;
+      }
 
-        case Opcode.ITER_END:
-          iteratorStack.pop();
-          break;
+      case Opcode.ITER_END:
+        iteratorStack.pop();
+        break;
 
         // Property access
-        case Opcode.GET_PROP: {
-          const propName = constants[operand];
-          const obj = pop();
-          push(getProperty(obj, propName));
-          break;
+      case Opcode.GET_PROP: {
+        const propName = constants[operand];
+        const obj = pop();
+        push(getProperty(obj, propName));
+        break;
+      }
+
+      // Method calls
+      case Opcode.CALL_METHOD: {
+        const methodName = constants[operand];
+        // Pop args in reverse order (they were pushed left to right)
+        // We need to know arg count - for now assume it's encoded
+        // Actually, the compiler should emit arg count, but it doesn't
+        // For simplicity, scan back to find receiver
+        // This is a limitation - we'll assume single-arg methods for now
+        // TODO: Encode arg count in instruction
+        const args = [];
+        // Look at stack - receiver is below args
+        // For now, just pop one arg if stack has enough
+        if (stack.length >= 2) {
+          args.unshift(pop()); // Single arg
         }
+        const receiver = pop();
+        push(callMethod(receiver, methodName, args));
+        break;
+      }
 
-        // Method calls
-        case Opcode.CALL_METHOD: {
-          const methodName = constants[operand];
-          // Pop args in reverse order (they were pushed left to right)
-          // We need to know arg count - for now assume it's encoded
-          // Actually, the compiler should emit arg count, but it doesn't
-          // For simplicity, scan back to find receiver
-          // This is a limitation - we'll assume single-arg methods for now
-          // TODO: Encode arg count in instruction
-          const args = [];
-          // Look at stack - receiver is below args
-          // For now, just pop one arg if stack has enough
-          if (stack.length >= 2) {
-            args.unshift(pop()); // Single arg
-          }
-          const receiver = pop();
-          push(callMethod(receiver, methodName, args));
-          break;
-        }
+      case Opcode.LOAD_OP:
+        push(context.op ?? { __op: true });
+        break;
 
-        case Opcode.LOAD_OP:
-          push(context.op ?? { __op: true });
-          break;
-
-        case Opcode.LOAD_CHANNEL:
-          push(context.channel ?? { __channel: true });
-          break;
+      case Opcode.LOAD_CHANNEL:
+        push(context.channel ?? { __channel: true });
+        break;
 
         // Result
-        case Opcode.RETURN: {
-          const result = stack.length > 0 ? pop() : undefined;
-          return {
-            ok: Boolean(result),
-            value: result,
-            instructionsExecuted,
-            maxStackDepth: maxStackReached,
-          };
-        }
+      case Opcode.RETURN: {
+        const result = stack.length > 0 ? pop() : undefined;
+        return {
+          ok: Boolean(result),
+          value: result,
+          instructionsExecuted,
+          maxStackDepth: maxStackReached
+        };
+      }
 
-        case Opcode.HALT:
-          return {
-            ok: true,
-            value: undefined,
-            instructionsExecuted,
-            maxStackDepth: maxStackReached,
-          };
+      case Opcode.HALT:
+        return {
+          ok: true,
+          value: undefined,
+          instructionsExecuted,
+          maxStackDepth: maxStackReached
+        };
 
-        default:
-          throw new VmError(`Unknown opcode: 0x${opcode.toString(16)}`, { pc, opcode, stack });
+      default:
+        throw new VmError(`Unknown opcode: 0x${opcode.toString(16)}`, { pc, opcode, stack });
       }
 
       pc++;
@@ -428,7 +428,7 @@ export function execute(bytecode, context = {}, options = {}) {
       ok: Boolean(result),
       value: result,
       instructionsExecuted,
-      maxStackDepth: maxStackReached,
+      maxStackDepth: maxStackReached
     };
 
   } catch (error) {
@@ -438,7 +438,7 @@ export function execute(bytecode, context = {}, options = {}) {
         value: undefined,
         error: error.message,
         instructionsExecuted,
-        maxStackDepth: maxStackReached,
+        maxStackDepth: maxStackReached
       };
     }
     throw error;

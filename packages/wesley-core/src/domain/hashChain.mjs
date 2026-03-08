@@ -117,7 +117,7 @@ export async function computeHashChain({ sdl, canonicalBytes, irData, registryDa
     globalThis.crypto.subtle.digest('SHA-256', canonicalBytes),
     computeIrHash(irData),
     globalThis.crypto.subtle.digest('SHA-256', encoder.encode(canonicalizeJSON(registryData))),
-    computeBundleHash(artifacts),
+    computeBundleHash(artifacts)
   ]);
 
   return {
@@ -125,6 +125,6 @@ export async function computeHashChain({ sdl, canonicalBytes, irData, registryDa
     schema_hash: hexFromBuffer(schema_hash_buf),
     ir_hash,
     registry_hash: hexFromBuffer(registry_hash_buf),
-    bundle_hash,
+    bundle_hash
   };
 }

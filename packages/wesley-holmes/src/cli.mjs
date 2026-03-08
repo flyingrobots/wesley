@@ -253,7 +253,7 @@ Requires:
       const target = options.file || targetArg || '.wesley/weights.json';
       try {
         const { config } = readWeightConfig(target, { required: true });
-        // eslint-disable-next-line no-console
+
         console.log('weights configuration valid');
         if (options.json) {
           writeFileSync(options.json, JSON.stringify(config, null, 2));

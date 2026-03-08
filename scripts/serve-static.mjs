@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Minimal static file server for CI smokes
 import http from 'node:http';
-import { readFileSync, existsSync, statSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import { createReadStream } from 'node:fs';
 import { resolve, join, extname, relative, isAbsolute } from 'node:path';
 
@@ -47,11 +47,11 @@ const server = http.createServer((req, res) => {
   {
     const segments = rel.split('/').filter(Boolean);
     if (segments.some(s => s === '..')) {
-      try { console.error(`[serve-static] deny traversal: url=${url} rel=${rel}`); } catch {}
+      try { console.error(`[serve-static] deny traversal: url=${url} rel=${rel}`); } catch { /* empty */ }
       res.writeHead(403); res.end('Forbidden'); return;
     }
   }
-  try { console.error(`[serve-static] url=${url} rel=${rel}`); } catch {}
+  try { console.error(`[serve-static] url=${url} rel=${rel}`); } catch { /* empty */ }
   const filePath = resolve(join(root, rel));
   // Ensure resolved path is within root using a robust relative check
   if (!isPathWithinRoot(root, filePath)) {
@@ -65,7 +65,7 @@ const server = http.createServer((req, res) => {
     createReadStream(filePath).pipe(res);
   } catch (e) {
     // Do not leak internal errors to clients; log server-side instead
-    try { console.error('[serve-static] error:', e?.stack || e); } catch {}
+    try { console.error('[serve-static] error:', e?.stack || e); } catch { /* empty */ }
     res.writeHead(500); res.end('Internal Server Error');
   }
 });

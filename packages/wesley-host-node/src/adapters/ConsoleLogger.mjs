@@ -8,11 +8,11 @@ export class ConsoleLogger {
     this.prefix = prefix;
     this.level = options.level || 'info';
     this.quiet = options.quiet || false;
-    
+
     // Log levels in order of verbosity
     this.levels = {
       'error': 0,
-      'warn': 1, 
+      'warn': 1,
       'info': 2,
       'debug': 3
     };
@@ -27,7 +27,7 @@ export class ConsoleLogger {
 
   log(message, level = 'info') {
     if (!this.shouldLog(level)) return;
-    
+
     const timestamp = new Date().toISOString();
     console.log(`[${timestamp}] ${this.prefix}: ${message}`);
   }
@@ -44,14 +44,14 @@ export class ConsoleLogger {
 
   warn(message) {
     if (!this.shouldLog('warn')) return;
-    
+
     const timestamp = new Date().toISOString();
     console.warn(`[${timestamp}] ${this.prefix} WARN: ${message}`);
   }
 
   debug(message) {
     if (!this.shouldLog('debug')) return;
-    
+
     const timestamp = new Date().toISOString();
     console.debug(`[${timestamp}] ${this.prefix} DEBUG: ${message}`);
   }

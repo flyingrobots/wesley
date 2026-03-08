@@ -4,12 +4,13 @@
  */
 
 export class QueryPlan {
-  constructor(root, projection, { orderBy = [], limit = null, offset = null } = {}) {
+  constructor(root, projection, { orderBy = [], limit = null, offset = null, distinctOn = [] } = {}) {
     this.root = root; // RelationNode
     this.projection = projection; // Projection
     this.orderBy = orderBy; // OrderBy[]
     this.limit = limit; // number|null
     this.offset = offset; // number|null
+    this.distinctOn = distinctOn; // Expr[]
   }
 }
 
@@ -78,8 +79,8 @@ export class Predicate {
   static or(left, right) { return { kind: 'Or', left, right }; }
   static not(inner) { return { kind: 'Not', left: inner }; }
   static exists(subqueryPlan) { return { kind: 'Exists', subquery: subqueryPlan }; }
-  static isNull(expr) { return { kind: 'IsNull', left: expr }; }
-  static isNotNull(expr) { return { kind: 'IsNotNull', left: expr }; }
+  static isNull(expr) { return { kind: 'Compare', left: expr, op: 'isNull' }; }
+  static isNotNull(expr) { return { kind: 'Compare', left: expr, op: 'isNotNull' }; }
 }
 
 export class OrderBy { constructor(expr, direction = 'asc', nulls = null) { this.expr = expr; this.direction = direction; this.nulls = nulls; } }
@@ -89,4 +90,3 @@ export class AliasAllocator {
   constructor(prefix = 't') { this.prefix = prefix; this.count = 0; }
   next() { return `${this.prefix}${this.count++}`; }
 }
-

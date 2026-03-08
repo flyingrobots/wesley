@@ -1,0 +1,71 @@
+{
+  "taskId": "WES-005",
+  "taskDescription": "Unify generator-vue ownership/entrypoint",
+  "project": "wesley",
+  "priority": "P1",
+  "status": "PLANNED",
+  "track": "REAL_WAY",
+  "dependencies": [
+    "WES-002"
+  ],
+  "requirements": [
+    "All prerequisite tasks are marked DONE in the selected execution path: WES-002.",
+    "Owning repository has an active branch with contract/codegen artifacts synchronized to current baselines."
+  ],
+  "userStory": {
+    "role": "Generator Platform Maintainer",
+    "desire": "As a Generator Platform Maintainer, I want one clear generator-vue ownership/entrypoint model so consumers are not split across competing invocation paths.",
+    "motivation": {
+      "summary": "Ownership clarity keeps generator evolution coherent and easier to support.",
+      "supportsOrUnblocks": [
+        "Reduces operational ambiguity for teams adopting Wesley generators.",
+        "Prevents reintroduction of ad-hoc script wrappers around multiple entrypoints."
+      ]
+    }
+  },
+  "acceptanceCriteria": [
+    "Generator-vue ownership and entrypoint are unified under one supported invocation path.",
+    "Legacy overlapping entrypoints are deprecated or removed with migration notes.",
+    "CI uses the unified entrypoint for generation validation."
+  ],
+  "testPlan": {
+    "assertions": [
+      "CLI tests verify unified entrypoint covers previous generator-vue capabilities.",
+      "Repository docs/tests reference only the unified entrypoint.",
+      "Deprecation tests ensure old entrypoints fail with clear redirect message."
+    ],
+    "goldenPath": [
+      "Run unified entrypoint in a Vue consumer and verify artifacts compile without manual adaptation.",
+      "Execute CI generation workflow and confirm unified path is exercised."
+    ],
+    "edgeCases": [
+      "Existing consumer configs migrate with compatibility shim where necessary.",
+      "Unknown legacy flags fail with actionable mapping to new flags."
+    ],
+    "fuzzScale": [
+      "Run unified entrypoint across multiple consumer templates to verify broad compatibility."
+    ],
+    "failureCases": [
+      "Broken migration mapping fails quickly with per-flag guidance.",
+      "Entry-point resolution conflict fails startup with deterministic error."
+    ]
+  },
+  "scope": {
+    "inScope": [
+      "Code, tests, and docs directly required to complete WES-005: Unify generator-vue ownership/entrypoint.",
+      "Boundary contracts and adapters touched by this task within project ownership.",
+      "Task-level observability needed to debug deterministic behavior and integration outcomes."
+    ],
+    "outOfScope": [
+      "Unrelated feature work outside dependency chain impact.",
+      "Broad redesigns not required to satisfy acceptance criteria for this task.",
+      "Cross-repo migration work not explicitly referenced by this task dependencies."
+    ]
+  },
+  "definitionOfDone": [
+    "All acceptance criteria are satisfied with linked test evidence.",
+    "Task metadata is updated to DONE in DAG source for WES-005.",
+    "Any architecture exceptions are either removed or documented with owner + expiry.",
+    "No workaround-only seams were introduced to complete this task."
+  ]
+}

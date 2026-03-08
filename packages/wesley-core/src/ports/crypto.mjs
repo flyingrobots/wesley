@@ -10,7 +10,7 @@ export class CryptoPort {
    * @param {string} data - Data to hash
    * @returns {string} Hex-encoded hash
    */
-  sha256(data) {
+  sha256(_data) {
     throw new Error('CryptoPort.sha256() must be implemented by platform host');
   }
 
@@ -19,7 +19,7 @@ export class CryptoPort {
    * @param {string} data - Data to hash
    * @returns {Uint8Array} Raw hash bytes
    */
-  sha256Bytes(data) {
+  sha256Bytes(_data) {
     throw new Error('CryptoPort.sha256Bytes() must be implemented by platform host');
   }
 }
@@ -56,14 +56,14 @@ export class FakeCrypto extends CryptoPort {
  * Null Crypto - Throws error indicating missing platform adapter
  */
 class NullCrypto extends CryptoPort {
-  sha256(data) {
+  sha256(_data) {
     throw new Error(
       'No crypto adapter configured. ' +
       'Platform host must inject a CryptoPort implementation via dependencies.'
     );
   }
 
-  sha256Bytes(data) {
+  sha256Bytes(_data) {
     throw new Error(
       'No crypto adapter configured. ' +
       'Platform host must inject a CryptoPort implementation via dependencies.'

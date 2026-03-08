@@ -1,6 +1,6 @@
 /**
  * SQLDeparser - Custom PostgreSQL AST to SQL deparser
- * 
+ *
  * The @supabase/pg-parser only provides parsing (SQL -> AST) but no deparser (AST -> SQL).
  * This custom deparser handles the Supabase parser's AST format and converts it back to SQL.
  */
@@ -100,7 +100,7 @@ export class SQLDeparser {
     if (!createStmt) return '';
 
     const parts = ['CREATE TABLE'];
-    
+
     // Handle IF NOT EXISTS
     if (createStmt.if_not_exists) {
       parts.push('IF NOT EXISTS');
@@ -206,7 +206,7 @@ export class SQLDeparser {
         }
         return '';
       }).filter(Boolean);
-      
+
       if (mods.length > 0) {
         typeStr += `(${mods.join(', ')})`;
       }
@@ -223,43 +223,43 @@ export class SQLDeparser {
     if (!constr) return '';
 
     switch (constr.contype) {
-      case 'CONSTR_NOTNULL':
-      case 1: // CONSTR_NOTNULL
-        return 'NOT NULL';
-      
-      case 'CONSTR_NULL':
-      case 2: // CONSTR_NULL
-        return 'NULL';
-      
-      case 'CONSTR_DEFAULT':
-      case 3: // CONSTR_DEFAULT
-        if (constr.raw_expr) {
-          return `DEFAULT ${this.deparseExpr(constr.raw_expr)}`;
-        }
-        return '';
-      
-      case 'CONSTR_PRIMARY':
-      case 4: // CONSTR_PRIMARY
-        return 'PRIMARY KEY';
-      
-      case 'CONSTR_UNIQUE':
-      case 5: // CONSTR_UNIQUE
-        return 'UNIQUE';
-      
-      case 'CONSTR_FOREIGN':
-      case 7: // CONSTR_FOREIGN
-        return this.deparseForeignKey(constr);
-      
-      case 'CONSTR_CHECK':
-      case 6: // CONSTR_CHECK
-        if (constr.raw_expr) {
-          return `CHECK (${this.deparseExpr(constr.raw_expr)})`;
-        }
-        return '';
-      
-      default:
-        console.warn('SQLDeparser: Unknown constraint type:', constr.contype);
-        return '';
+    case 'CONSTR_NOTNULL':
+    case 1: // CONSTR_NOTNULL
+      return 'NOT NULL';
+
+    case 'CONSTR_NULL':
+    case 2: // CONSTR_NULL
+      return 'NULL';
+
+    case 'CONSTR_DEFAULT':
+    case 3: // CONSTR_DEFAULT
+      if (constr.raw_expr) {
+        return `DEFAULT ${this.deparseExpr(constr.raw_expr)}`;
+      }
+      return '';
+
+    case 'CONSTR_PRIMARY':
+    case 4: // CONSTR_PRIMARY
+      return 'PRIMARY KEY';
+
+    case 'CONSTR_UNIQUE':
+    case 5: // CONSTR_UNIQUE
+      return 'UNIQUE';
+
+    case 'CONSTR_FOREIGN':
+    case 7: // CONSTR_FOREIGN
+      return this.deparseForeignKey(constr);
+
+    case 'CONSTR_CHECK':
+    case 6: // CONSTR_CHECK
+      if (constr.raw_expr) {
+        return `CHECK (${this.deparseExpr(constr.raw_expr)})`;
+      }
+      return '';
+
+    default:
+      console.warn('SQLDeparser: Unknown constraint type:', constr.contype);
+      return '';
     }
   }
 
@@ -270,10 +270,10 @@ export class SQLDeparser {
     if (!constr.pktable) return '';
 
     const parts = ['REFERENCES'];
-    
+
     // Referenced table
     parts.push(this.deparseRangeVar(constr.pktable));
-    
+
     // Referenced columns
     if (constr.pk_attrs && Array.isArray(constr.pk_attrs)) {
       const columns = constr.pk_attrs.map(attr => this.quoteIdentifier(attr.String?.str || '')).filter(Boolean);
@@ -281,7 +281,7 @@ export class SQLDeparser {
         parts.push(`(${columns.join(', ')})`);
       }
     }
-    
+
     // ON DELETE/UPDATE actions
     if (constr.fk_del_action) {
       parts.push(`ON DELETE ${this.deparseReferenceAction(constr.fk_del_action)}`);
@@ -289,7 +289,7 @@ export class SQLDeparser {
     if (constr.fk_upd_action) {
       parts.push(`ON UPDATE ${this.deparseReferenceAction(constr.fk_upd_action)}`);
     }
-    
+
     return parts.join(' ');
   }
 
@@ -299,7 +299,7 @@ export class SQLDeparser {
   deparseReferenceAction(action) {
     const actions = {
       'a': 'NO ACTION',
-      'r': 'RESTRICT', 
+      'r': 'RESTRICT',
       'c': 'CASCADE',
       'n': 'SET NULL',
       'd': 'SET DEFAULT'
@@ -315,38 +315,38 @@ export class SQLDeparser {
     if (!indexStmt) return '';
 
     const parts = ['CREATE'];
-    
+
     // UNIQUE index
     if (indexStmt.unique) {
       parts.push('UNIQUE');
     }
-    
+
     parts.push('INDEX');
-    
+
     // CONCURRENTLY
     if (indexStmt.concurrent) {
       parts.push('CONCURRENTLY');
     }
-    
+
     // IF NOT EXISTS
     if (indexStmt.if_not_exists) {
       parts.push('IF NOT EXISTS');
     }
-    
+
     // Index name
     if (indexStmt.idxname) {
       parts.push(this.quoteIdentifier(indexStmt.idxname));
     }
-    
+
     // ON table
     parts.push('ON');
     parts.push(this.deparseRangeVar(indexStmt.relation));
-    
+
     // USING method
     if (indexStmt.accessMethod) {
       parts.push(`USING ${indexStmt.accessMethod}`);
     }
-    
+
     // Index elements
     if (indexStmt.indexParams && Array.isArray(indexStmt.indexParams)) {
       const columns = indexStmt.indexParams.map(param => this.deparseIndexElem(param)).filter(Boolean);
@@ -354,7 +354,7 @@ export class SQLDeparser {
         parts.push(`(${columns.join(', ')})`);
       }
     }
-    
+
     return parts.join(' ') + ';';
   }
 
@@ -363,16 +363,16 @@ export class SQLDeparser {
    */
   deparseIndexElem(param) {
     if (!param || !param.IndexElem) return '';
-    
+
     const elem = param.IndexElem;
     let result = '';
-    
+
     if (elem.name) {
       result = this.quoteIdentifier(elem.name);
     } else if (elem.expr) {
       result = this.deparseExpr(elem.expr);
     }
-    
+
     // Collation
     if (elem.collation && Array.isArray(elem.collation)) {
       const collName = elem.collation.map(c => c.String?.str).filter(Boolean).join('.');
@@ -380,31 +380,31 @@ export class SQLDeparser {
         result += ` COLLATE ${collName}`;
       }
     }
-    
+
     // Sort order
     if (elem.ordering) {
       switch (elem.ordering) {
-        case 1: // SORTBY_ASC
-          result += ' ASC';
-          break;
-        case 2: // SORTBY_DESC
-          result += ' DESC';
-          break;
+      case 1: // SORTBY_ASC
+        result += ' ASC';
+        break;
+      case 2: // SORTBY_DESC
+        result += ' DESC';
+        break;
       }
     }
-    
+
     // NULLS FIRST/LAST
     if (elem.nulls_ordering) {
       switch (elem.nulls_ordering) {
-        case 1: // SORTBY_NULLS_FIRST
-          result += ' NULLS FIRST';
-          break;
-        case 2: // SORTBY_NULLS_LAST
-          result += ' NULLS LAST';
-          break;
+      case 1: // SORTBY_NULLS_FIRST
+        result += ' NULLS FIRST';
+        break;
+      case 2: // SORTBY_NULLS_LAST
+        result += ' NULLS LAST';
+        break;
       }
     }
-    
+
     return result;
   }
 
@@ -416,28 +416,28 @@ export class SQLDeparser {
     if (!policyStmt) return '';
 
     const parts = ['CREATE POLICY'];
-    
+
     // Policy name
     if (policyStmt.policy_name) {
       parts.push(this.quoteIdentifier(policyStmt.policy_name));
     }
-    
+
     // ON table
     parts.push('ON');
     parts.push(this.deparseRangeVar(policyStmt.table));
-    
+
     // AS PERMISSIVE/RESTRICTIVE
     if (policyStmt.permissive !== undefined) {
       parts.push('AS');
       parts.push(policyStmt.permissive ? 'PERMISSIVE' : 'RESTRICTIVE');
     }
-    
+
     // FOR command
     if (policyStmt.cmd_name) {
       parts.push('FOR');
       parts.push(policyStmt.cmd_name.toUpperCase());
     }
-    
+
     // TO roles
     if (policyStmt.roles && Array.isArray(policyStmt.roles)) {
       const roles = policyStmt.roles.map(role => this.deparseRoleSpec(role)).filter(Boolean);
@@ -446,19 +446,19 @@ export class SQLDeparser {
         parts.push(roles.join(', '));
       }
     }
-    
+
     // USING expression
     if (policyStmt.qual) {
       parts.push('USING');
       parts.push(`(${this.deparseExpr(policyStmt.qual)})`);
     }
-    
+
     // WITH CHECK expression
     if (policyStmt.with_check) {
       parts.push('WITH CHECK');
       parts.push(`(${this.deparseExpr(policyStmt.with_check)})`);
     }
-    
+
     return parts.join(' ') + ';';
   }
 
@@ -583,16 +583,16 @@ export class SQLDeparser {
     if (!boolExpr.args || !Array.isArray(boolExpr.args)) return '';
 
     const args = boolExpr.args.map(arg => this.deparseExpr(arg)).filter(Boolean);
-    
+
     switch (boolExpr.boolop) {
-      case 0: // AND_EXPR
-        return args.join(' AND ');
-      case 1: // OR_EXPR
-        return args.join(' OR ');
-      case 2: // NOT_EXPR
-        return `NOT (${args.join(' AND ')})`;
-      default:
-        return args.join(' AND ');
+    case 0: // AND_EXPR
+      return args.join(' AND ');
+    case 1: // OR_EXPR
+      return args.join(' OR ');
+    case 2: // NOT_EXPR
+      return `NOT (${args.join(' AND ')})`;
+    default:
+      return args.join(' AND ');
     }
   }
 
@@ -603,11 +603,11 @@ export class SQLDeparser {
     if (!rangeVar) return '';
 
     let result = '';
-    
+
     if (rangeVar.schemaname) {
       result += this.quoteIdentifier(rangeVar.schemaname) + '.';
     }
-    
+
     if (rangeVar.relname) {
       result += this.quoteIdentifier(rangeVar.relname);
     }
@@ -620,12 +620,12 @@ export class SQLDeparser {
    */
   quoteIdentifier(name) {
     if (!name) return '';
-    
+
     // Check if identifier needs quoting
     if (/^[a-z_][a-z0-9_]*$/.test(name) && !this.isReservedWord(name)) {
       return name;
     }
-    
+
     return `"${name.replace(/"/g, '""')}"`;
   }
 
@@ -643,7 +643,7 @@ export class SQLDeparser {
       'between', 'like', 'ilike', 'similar', 'to', 'and', 'or', 'not', 'is',
       'true', 'false', 'unknown'
     ]);
-    
+
     return reserved.has(word.toLowerCase());
   }
 
@@ -658,7 +658,7 @@ export class SQLDeparser {
   /**
    * Deparse ALTER TABLE statement
    */
-  deparseAlterTable(stmt) {
+  deparseAlterTable(_stmt) {
     // Stub implementation - can be expanded if needed
     return 'ALTER TABLE ...;';
   }
@@ -666,7 +666,7 @@ export class SQLDeparser {
   /**
    * Deparse COMMENT statement
    */
-  deparseComment(stmt) {
+  deparseComment(_stmt) {
     // Stub implementation - can be expanded if needed
     return 'COMMENT ON ...;';
   }

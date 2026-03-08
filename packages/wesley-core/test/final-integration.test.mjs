@@ -1,6 +1,6 @@
 /**
  * Final Integration Tests - End-to-End Wesley System Testing
- * 
+ *
  * Comprehensive integration tests covering all Wave 1-4 components:
  * - Complete migration workflow testing
  * - Performance benchmarks validation
@@ -8,7 +8,7 @@
  * - Safety feature verification
  * - Concurrent migration execution
  * - Rollback capability validation
- * 
+ *
  * @license Apache-2.0
  */
 
@@ -29,13 +29,13 @@ import {
   EvidenceMap,
   ScoringEngine,
   ParseSchemaCommand,
-  GenerateSQLCommand,
-  GenerateAllCommand,
-  CalculateMigrationCommand,
+  _GenerateSQLCommand,
+  _GenerateAllCommand,
+  _CalculateMigrationCommand,
   SchemaParseRequested,
   SchemaParsed,
   SQLGenerated,
-  MigrationDiffCalculated
+  _MigrationDiffCalculated
 } from '../src/index.mjs';
 
 import { CLIEnhancer } from '../src/cli/CLIEnhancer.mjs';
@@ -92,11 +92,11 @@ class MockLogger {
   }
 
   error(message, error) {
-    this.logs.push({ 
-      level: 'error', 
-      message, 
-      error: error?.message || error, 
-      timestamp: new Date() 
+    this.logs.push({
+      level: 'error',
+      message,
+      error: error?.message || error,
+      timestamp: new Date()
     });
   }
 
@@ -180,7 +180,7 @@ const SAMPLE_SCHEMA_SDL = `
   }
 `;
 
-const UPDATED_SCHEMA_SDL = `
+const _UPDATED_SCHEMA_SDL = `
   type User {
     id: ID! @primary
     email: String! @unique
@@ -273,10 +273,10 @@ describe('Wesley Final Integration Tests', () => {
       // Step 1: Parse initial schema
       const parseStartTime = performance.now();
       const schema = new Schema();
-      
+
       // Add User table
-      const userTable = new Table({ 
-        name: 'User', 
+      const userTable = new Table({
+        name: 'User',
         fields: {
           id: new Field({ name: 'id', type: 'ID', directives: { '@primaryKey': {} } }),
           email: new Field({ name: 'email', type: 'String', directives: { '@unique': {} } }),
@@ -286,8 +286,8 @@ describe('Wesley Final Integration Tests', () => {
       const schemaWithUser = schema.addTable(userTable);
 
       // Add Post table
-      const postTable = new Table({ 
-        name: 'Post', 
+      const postTable = new Table({
+        name: 'Post',
         fields: {
           id: new Field({ name: 'id', type: 'ID', directives: { '@primaryKey': {} } }),
           title: new Field({ name: 'title', type: 'String' }),
@@ -298,14 +298,14 @@ describe('Wesley Final Integration Tests', () => {
       const finalSchema = schemaWithUser.addTable(postTable);
 
       const parseTime = performance.now() - parseStartTime;
-      assert(parseTime < PERFORMANCE_THRESHOLDS.schemaParseTime, 
+      assert(parseTime < PERFORMANCE_THRESHOLDS.schemaParseTime,
         `Schema parsing took ${parseTime}ms, expected < ${PERFORMANCE_THRESHOLDS.schemaParseTime}ms`);
 
       // Step 2: Generate SQL
       const sqlStartTime = performance.now();
       const sqlGenerator = new PostgreSQLGenerator();
       const sql = await sqlGenerator.generate(finalSchema);
-      
+
       const sqlTime = performance.now() - sqlStartTime;
       assert(sqlTime < PERFORMANCE_THRESHOLDS.sqlGenerationTime,
         `SQL generation took ${sqlTime}ms, expected < ${PERFORMANCE_THRESHOLDS.sqlGenerationTime}ms`);
@@ -322,8 +322,8 @@ describe('Wesley Final Integration Tests', () => {
       assert(tests.includes('SELECT plan('));
 
       // Step 4: Create updated schema
-      const updatedUserTable = new Table({ 
-        name: 'User', 
+      const updatedUserTable = new Table({
+        name: 'User',
         fields: {
           id: new Field({ name: 'id', type: 'ID', directives: { '@primaryKey': {} } }),
           email: new Field({ name: 'email', type: 'String', directives: { '@unique': {} } }),
@@ -332,8 +332,8 @@ describe('Wesley Final Integration Tests', () => {
         }
       });
 
-      const updatedPostTable = new Table({ 
-        name: 'Post', 
+      const updatedPostTable = new Table({
+        name: 'Post',
         fields: {
           id: new Field({ name: 'id', type: 'ID', directives: { '@primaryKey': {} } }),
           title: new Field({ name: 'title', type: 'String' }),
@@ -342,14 +342,14 @@ describe('Wesley Final Integration Tests', () => {
           authorId: new Field({ name: 'authorId', type: 'ID', directives: { '@foreignKey': { ref: 'User.id' } } })
         }
       });
-      
+
       const updatedSchema = new Schema().addTable(updatedUserTable).addTable(updatedPostTable);
 
       // Step 5: Generate migration diff
       const diffStartTime = performance.now();
       const migrationDiffer = new MigrationDiffer();
       const diff = await migrationDiffer.diff(finalSchema, updatedSchema);
-      
+
       const diffTime = performance.now() - diffStartTime;
       assert(diffTime < PERFORMANCE_THRESHOLDS.migrationDiffTime,
         `Migration diff took ${diffTime}ms, expected < ${PERFORMANCE_THRESHOLDS.migrationDiffTime}ms`);
@@ -381,12 +381,12 @@ describe('Wesley Final Integration Tests', () => {
       const updatedUserTable = new Table('User');
       updatedUserTable.addField(new Field('id', 'ID', { primary: true }));
       updatedUserTable.addField(new Field('newField', 'Integer', {}));
-      
+
       // Add new table
       const newTable = new Table('Profile');
       newTable.addField(new Field('id', 'ID', { primary: true }));
       newTable.addField(new Field('userId', 'ID', { references: 'User.id' }));
-      
+
       updatedSchema.addTable(updatedUserTable);
       updatedSchema.addTable(newTable);
 
@@ -394,7 +394,7 @@ describe('Wesley Final Integration Tests', () => {
       const diff = await migrationDiffer.diff(initialSchema, updatedSchema);
 
       assert(diff.length > 0);
-      
+
       // Should detect field removal, field addition, and table addition
       const operations = diff.map(d => d.type);
       assert(operations.includes('DROP_COLUMN') || operations.includes('ADD_COLUMN'));
@@ -414,7 +414,7 @@ describe('Wesley Final Integration Tests', () => {
       assert.strictEqual(schema.name, 'IntegrationTest');
       assert.strictEqual(schema.tables.size, 1);
       assert(schema.tables.has('TestTable'));
-      
+
       const retrievedTable = schema.tables.get('TestTable');
       assert.strictEqual(retrievedTable.name, 'TestTable');
       assert.strictEqual(retrievedTable.fields.size, 1);
@@ -423,7 +423,7 @@ describe('Wesley Final Integration Tests', () => {
 
     test('should integrate directive processing', async () => {
       const processor = new DirectiveProcessor();
-      
+
       const field = new Field('email', 'String', {});
       const processedField = processor.processField(field, [
         { name: 'unique', args: {} },
@@ -442,7 +442,7 @@ describe('Wesley Final Integration Tests', () => {
       schema.addTable(table);
 
       const pipeline = new GenerationPipeline();
-      
+
       // Mock the generators
       pipeline.generators = {
         sql: new PostgreSQLGenerator(),
@@ -451,7 +451,7 @@ describe('Wesley Final Integration Tests', () => {
       };
 
       const results = await pipeline.generateAll(schema);
-      
+
       assert(results.sql);
       assert(results.test);
       assert(results.rpc);
@@ -481,7 +481,7 @@ describe('Wesley Final Integration Tests', () => {
 
       const command = new ParseSchemaCommand(SAMPLE_SCHEMA_SDL);
       const event = new SchemaParseRequested(SAMPLE_SCHEMA_SDL);
-      
+
       await eventPublisher.publish(event);
 
       assert(eventReceived);
@@ -515,7 +515,7 @@ describe('Wesley Final Integration Tests', () => {
       await cliEnhancer.initialize();
 
       const dryRunResult = await cliEnhancer.processCommand('migrate', ['up', '--dry-run']);
-      
+
       assert(dryRunResult.dryRun);
       assert(dryRunResult.analysis);
       assert.strictEqual(dryRunResult.analysis.type, 'migration');
@@ -527,7 +527,7 @@ describe('Wesley Final Integration Tests', () => {
 
       const completions = await cliEnhancer.getCompletions('gen', 3);
       const generateCompletion = completions.find(c => c.value === 'generate');
-      
+
       assert(generateCompletion);
       assert.strictEqual(generateCompletion.type, 'command');
     });
@@ -568,7 +568,7 @@ describe('Wesley Final Integration Tests', () => {
       const startTime = performance.now();
 
       const operations = [];
-      
+
       // Create concurrent schema parsing operations
       for (let i = 0; i < 5; i++) {
         operations.push(
@@ -579,7 +579,7 @@ describe('Wesley Final Integration Tests', () => {
             schema.addTable(table);
 
             const generator = new PostgreSQLGenerator();
-            return await generator.generate(schema);
+            return generator.generate(schema);
           })()
         );
       }
@@ -612,7 +612,7 @@ describe('Wesley Final Integration Tests', () => {
             schema.addTable(table);
 
             const testGenerator = new PgTAPTestGenerator();
-            return await testGenerator.generate(schema);
+            return testGenerator.generate(schema);
           })()
         );
       }
@@ -630,10 +630,10 @@ describe('Wesley Final Integration Tests', () => {
 
   describe('Failure Recovery Scenarios', () => {
     test('should handle schema parsing failures gracefully', async () => {
-      const invalidSchema = 'invalid schema syntax {}}';
-      
+      const _invalidSchema = 'invalid schema syntax {}}';
+
       try {
-        const schema = new Schema('FailureTest');
+        const _schema = new Schema('FailureTest');
         // Simulate parsing failure
         throw new Error('Invalid schema syntax');
       } catch (error) {
@@ -664,7 +664,7 @@ describe('Wesley Final Integration Tests', () => {
       }
 
       const failingGenerator = new FailingGenerator();
-      
+
       try {
         await failingGenerator.generate(schema);
         assert.fail('Should have thrown an error');
@@ -708,13 +708,13 @@ describe('Wesley Final Integration Tests', () => {
               const table = new Table('SharedTable');
               table.addField(new Field('id', 'ID', { primary: true }));
               schema.addTable(table);
-              
+
               // Simulate conflict detection
               if (i === 1) {
                 conflictDetected = true;
                 throw new Error('Concurrent modification detected');
               }
-              
+
               return schema;
             } catch (error) {
               return { error: error.message };
@@ -724,7 +724,7 @@ describe('Wesley Final Integration Tests', () => {
       }
 
       const results = await Promise.all(operations);
-      
+
       assert(conflictDetected);
       assert(results.some(r => r.error && r.error.includes('Concurrent modification')));
       assert(results.some(r => r instanceof Schema));
@@ -738,11 +738,11 @@ describe('Wesley Final Integration Tests', () => {
       // Test destructive command requires confirmation
       assert(cliEnhancer.requiresInteraction('migrate', ['up']));
       assert(cliEnhancer.requiresInteraction('rollback', []));
-      
+
       // Test non-destructive commands don't require confirmation
       assert(!cliEnhancer.requiresInteraction('generate', ['sql']));
       assert(!cliEnhancer.requiresInteraction('test', ['unit']));
-      
+
       // Test force flags bypass confirmation
       assert(!cliEnhancer.requiresInteraction('migrate', ['up', '--force']));
     });
@@ -751,7 +751,7 @@ describe('Wesley Final Integration Tests', () => {
       await cliEnhancer.initialize();
 
       const dryRunResult = await cliEnhancer.processCommand('migrate', ['up', '--dry-run']);
-      
+
       assert(dryRunResult.dryRun);
       assert(dryRunResult.analysis.wouldExecute);
       assert.strictEqual(dryRunResult.analysis.destructive, true);
@@ -773,7 +773,7 @@ describe('Wesley Final Integration Tests', () => {
       modifiedSchema.addTable(modifiedUserTable);
 
       const migrationDiffer = new MigrationDiffer();
-      
+
       // Forward migration
       const forwardDiff = await migrationDiffer.diff(initialSchema, modifiedSchema);
       assert(forwardDiff.length > 0);
@@ -789,7 +789,7 @@ describe('Wesley Final Integration Tests', () => {
     test('should validate transaction safety', async () => {
       // This would test that operations are wrapped in transactions
       // For now, we test the concept with mock operations
-      
+
       const operations = [
         { type: 'CREATE_TABLE', table: 'Users' },
         { type: 'ADD_COLUMN', table: 'Users', column: 'email' },
@@ -808,7 +808,7 @@ describe('Wesley Final Integration Tests', () => {
           }
           appliedOperations.push(operation);
         }
-      } catch (error) {
+      } catch (_error) {
         allOperationsSucceeded = false;
         // In a real transaction, all operations would be rolled back
         appliedOperations.length = 0;
@@ -823,7 +823,7 @@ describe('Wesley Final Integration Tests', () => {
     test('should handle multiple migration processes', async () => {
       const schema1 = new Schema('Migration1');
       const schema2 = new Schema('Migration2');
-      
+
       const table1 = new Table('Table1');
       table1.addField(new Field('id', 'ID', { primary: true }));
       schema1.addTable(table1);
@@ -833,7 +833,7 @@ describe('Wesley Final Integration Tests', () => {
       schema2.addTable(table2);
 
       const generator = new PostgreSQLGenerator();
-      
+
       const startTime = performance.now();
       const [sql1, sql2] = await Promise.all([
         generator.generate(schema1),
@@ -845,7 +845,7 @@ describe('Wesley Final Integration Tests', () => {
       assert(typeof sql2 === 'string');
       assert(sql1.includes('Table1'));
       assert(sql2.includes('Table2'));
-      
+
       assert(duration < 500, `Concurrent migrations took ${duration}ms`);
     });
 
@@ -870,7 +870,7 @@ describe('Wesley Final Integration Tests', () => {
       schema2.addTable(table2);
 
       const migrationDiffer = new MigrationDiffer();
-      
+
       const diff1 = await migrationDiffer.diff(baseSchema, schema1);
       const diff2 = await migrationDiffer.diff(baseSchema, schema2);
 
@@ -917,7 +917,7 @@ describe('Wesley Final Integration Tests', () => {
 
       // Simulate processing
       const startTime = performance.now();
-      
+
       const schema = new Schema('MetricsTest');
       const table = new Table('TestTable');
       table.addField(new Field('id', 'ID', { primary: true }));
@@ -927,11 +927,11 @@ describe('Wesley Final Integration Tests', () => {
 
       const generator = new PostgreSQLGenerator();
       await generator.generate(schema);
-      
+
       metrics.migrationsGenerated++;
-      
+
       const processingTime = performance.now() - startTime;
-      metrics.averageProcessingTime = 
+      metrics.averageProcessingTime =
         (metrics.averageProcessingTime + processingTime) / 2;
 
       assert.strictEqual(metrics.schemasProcessed, 1);
@@ -948,7 +948,7 @@ describe('Wesley Final Integration Tests', () => {
 
       const logs = logger.getLogs();
       assert.strictEqual(logs.length, 4);
-      
+
       const levels = logs.map(log => log.level);
       assert(levels.includes('info'));
       assert(levels.includes('warn'));
@@ -963,7 +963,7 @@ describe('Wesley Final Integration Tests', () => {
       eventPublisher.on('SQL_GENERATED', (event) => events.push(event));
 
       const schema = new Schema('EventTest');
-      
+
       await eventPublisher.publish(new SchemaParsed(schema));
       await eventPublisher.publish(new SQLGenerated('CREATE TABLE...', schema));
 
@@ -982,7 +982,7 @@ describe('Wesley Final Integration Tests', () => {
       assert(typeof PostgreSQLGenerator === 'function');
       assert(typeof MigrationDiffer === 'function');
       assert(typeof ParseSchemaCommand === 'function');
-      
+
       // Test constructor compatibility
       const schema = new Schema('CompatibilityTest');
       assert(schema instanceof Schema);
@@ -1019,10 +1019,10 @@ describe('Wesley Final Integration Tests', () => {
   describe('Edge Cases and Boundary Conditions', () => {
     test('should handle empty schemas', async () => {
       const emptySchema = new Schema('EmptyTest');
-      
+
       const generator = new PostgreSQLGenerator();
       const sql = await generator.generate(emptySchema);
-      
+
       // Should generate valid SQL even for empty schema
       assert(typeof sql === 'string');
       // Might be empty or contain schema setup
@@ -1030,7 +1030,7 @@ describe('Wesley Final Integration Tests', () => {
 
     test('should handle very large schemas', async () => {
       const largeSchema = new Schema('LargeTest');
-      
+
       // Create 50 tables with 20 fields each
       for (let i = 0; i < 50; i++) {
         const table = new Table(`Table${i}`);
@@ -1052,11 +1052,11 @@ describe('Wesley Final Integration Tests', () => {
 
     test('should handle schema with circular references', () => {
       const schema = new Schema('CircularTest');
-      
+
       const userTable = new Table('User');
       userTable.addField(new Field('id', 'ID', { primary: true }));
       userTable.addField(new Field('managerId', 'ID', { references: 'User.id' }));
-      
+
       const postTable = new Table('Post');
       postTable.addField(new Field('id', 'ID', { primary: true }));
       postTable.addField(new Field('authorId', 'ID', { references: 'User.id' }));

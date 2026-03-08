@@ -2,7 +2,7 @@ import { WesleyCommand } from './WesleyCommand.mjs';
 
 /**
  * GeneratorCommand - Base class for schema-based generator commands
- * 
+ *
  * Provides common options for commands that:
  * - Take a GraphQL schema as input
  * - Generate code/files as output
@@ -17,7 +17,7 @@ export class GeneratorCommand extends WesleyCommand {
   configureCommander(cmd) {
     // Let parent configure first
     const baseCmd = super.configureCommander(cmd);
-    
+
     // Add common generator options
     return baseCmd
       .requiredOption('--schema <path>', 'Path to GraphQL schema file (use "-" for stdin)')

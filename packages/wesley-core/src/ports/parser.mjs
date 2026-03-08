@@ -5,7 +5,7 @@ export class ParserPort {
    * @param {string} sdl
    * @returns {Promise<{getTables(): Array, toJSON(): object}>}
    */
-  async parse(sdl) { 
-    throw new Error('ParserPort.parse() must be implemented'); 
+  async parse(_sdl) {
+    throw new Error('ParserPort.parse() must be implemented');
   }
 }

@@ -23,7 +23,7 @@ describe('🛡️ SQL Injection Security Tests', () => {
         "users\"; INSERT INTO admin VALUES ('hacker'); --",
         "users' UNION SELECT password FROM secrets --",
         "users'; CREATE USER hacker SUPERUSER; --",
-        "users\\\"; DELETE FROM * --"
+        'users\\"; DELETE FROM * --'
       ];
       for (const maliciousName of maliciousInputs) {
         const mockSchema = {
@@ -44,7 +44,7 @@ describe('🛡️ SQL Injection Security Tests', () => {
         expect(sql).not.toContain('INSERT INTO admin');
         expect(sql).not.toContain('CREATE USER');
         expect(sql).not.toContain('UNION SELECT');
-        expect(sql).toMatch(/"[^\"]+"/);
+        expect(sql).toMatch(/"[^"]+"/);
       }
     });
 
@@ -52,7 +52,7 @@ describe('🛡️ SQL Injection Security Tests', () => {
       const generator = new PostgreSQLGenerator();
       const maliciousFields = [
         "id'; DROP SCHEMA public CASCADE; --",
-        "password\"; GRANT ALL ON ALL TABLES TO PUBLIC; --",
+        'password"; GRANT ALL ON ALL TABLES TO PUBLIC; --',
         "email' OR 1=1 --"
       ];
       for (const maliciousField of maliciousFields) {
@@ -107,7 +107,7 @@ describe('🛡️ SQL Injection Security Tests', () => {
       const rlsPresets = new RLSPresets();
       const maliciousTables = [
         "users'; DROP POLICY ON users; --",
-        "posts\"; CREATE POLICY bypass ON users FOR ALL TO PUBLIC USING (true); --"
+        'posts"; CREATE POLICY bypass ON users FOR ALL TO PUBLIC USING (true); --'
       ];
       for (const maliciousTable of maliciousTables) {
         expect(() => {
@@ -124,7 +124,7 @@ describe('🛡️ SQL Injection Security Tests', () => {
       const rlsPresets = new RLSPresets();
       const maliciousColumns = [
         "user_id'; DELETE FROM users; --",
-        "owner_id OR true --"
+        'owner_id OR true --'
       ];
       for (const maliciousColumn of maliciousColumns) {
         const sql = rlsPresets.generateSQL('owner', 'posts', { owner_column: maliciousColumn });
@@ -136,8 +136,8 @@ describe('🛡️ SQL Injection Security Tests', () => {
     test('emits INSERT/UPDATE policies with WITH CHECK and USING', () => {
       const rlsPresets = new RLSPresets();
       const sql = rlsPresets.generateSQL('owner', 'posts', { owner_column: 'user_id' });
-      expect(sql).toMatch(/CREATE POLICY \"policy_posts_owner_insert\"[\s\S]*FOR INSERT[\s\S]*WITH CHECK \(auth\.uid\(\) = user_id\)/);
-      expect(sql).toMatch(/CREATE POLICY \"policy_posts_owner_update\"[\s\S]*FOR UPDATE[\s\S]*USING \(auth\.uid\(\) = user_id\)[\s\S]*WITH CHECK \(auth\.uid\(\) = user_id\)/);
+      expect(sql).toMatch(/CREATE POLICY "policy_posts_owner_insert"[\s\S]*FOR INSERT[\s\S]*WITH CHECK \(auth\.uid\(\) = user_id\)/);
+      expect(sql).toMatch(/CREATE POLICY "policy_posts_owner_update"[\s\S]*FOR UPDATE[\s\S]*USING \(auth\.uid\(\) = user_id\)[\s\S]*WITH CHECK \(auth\.uid\(\) = user_id\)/);
     });
   });
 
@@ -146,7 +146,7 @@ describe('🛡️ SQL Injection Security Tests', () => {
       const generator = new TriggerGenerator();
       const maliciousNames = [
         "audit_trigger'; DROP FUNCTION audit_log(); --",
-        "update_trigger\"; CREATE OR REPLACE FUNCTION backdoor() RETURNS TRIGGER AS $$ BEGIN RETURN NULL; END; $$ LANGUAGE plpgsql; --"
+        'update_trigger"; CREATE OR REPLACE FUNCTION backdoor() RETURNS TRIGGER AS $$ BEGIN RETURN NULL; END; $$ LANGUAGE plpgsql; --'
       ];
       for (const maliciousName of maliciousNames) {
         const trigger = { name: maliciousName, table: 'users', events: ['INSERT', 'UPDATE'], function: 'audit_changes' };
@@ -163,7 +163,7 @@ describe('🛡️ SQL Injection Security Tests', () => {
       const generator = new RPCFunctionGeneratorV2();
       const maliciousParams = [
         { name: "user_id'; DROP TABLE users; --", type: 'uuid' },
-        { name: "email\"; GRANT SUPERUSER TO current_user; --", type: 'text' }
+        { name: 'email"; GRANT SUPERUSER TO current_user; --', type: 'text' }
       ];
       for (const maliciousParam of maliciousParams) {
         const mockFunction = { name: 'get_user', parameters: [maliciousParam], returnType: 'users', body: 'SELECT * FROM users WHERE id = user_id' };
@@ -177,7 +177,7 @@ describe('🛡️ SQL Injection Security Tests', () => {
   describe('pgTAP Test Generator Security', () => {
     test('should sanitize test data', () => {
       const generator = new PgTAPTestGeneratorV2();
-      const maliciousTestData = { table: "users'; DROP TABLE IF EXISTS users CASCADE; --", field: "email\"; DELETE FROM users; --" };
+      const maliciousTestData = { table: "users'; DROP TABLE IF EXISTS users CASCADE; --", field: 'email"; DELETE FROM users; --' };
       const tests = generator.generateConstraintTests(maliciousTestData);
       expect(tests).not.toContain('DROP TABLE');
       expect(tests).not.toContain('DELETE FROM');
@@ -189,8 +189,8 @@ describe('🛡️ SQL Injection Security Tests', () => {
     test('should handle null bytes and special characters', async () => {
       const generator = new PostgreSQLGenerator();
       const edgeCases = [
-        "table\x00name", "table\r\nname", "table\tname", "table\\name",
-        "table'name", 'table"name', "table;name", "table/*comment*/name"
+        'table\x00name', 'table\r\nname', 'table\tname', 'table\\name',
+        "table'name", 'table"name', 'table;name', 'table/*comment*/name'
       ];
       for (const edgeCase of edgeCases) {
         const mockSchema = { getTables: () => [{ name: edgeCase, directives: {}, getFields: () => [] }] };
@@ -203,7 +203,7 @@ describe('🛡️ SQL Injection Security Tests', () => {
     test('should prevent second-order SQL injection', async () => {
       const generator = new PostgreSQLGenerator();
       const secondOrderPayloads = [
-        "safe_table_name_with_encoded_%27%3b_DROP_TABLE_users%3b--",
+        'safe_table_name_with_encoded_%27%3b_DROP_TABLE_users%3b--',
         "normal_name_but_then_\\'; DROP SCHEMA public; --"
       ];
       for (const payload of secondOrderPayloads) {

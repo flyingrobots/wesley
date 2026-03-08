@@ -88,14 +88,14 @@ const DEFAULT_ROOT_NAMES = { query: 'Query', mutation: 'Mutation', subscription:
  */
 function typeToString(typeNode) {
   switch (typeNode.kind) {
-    case 'NamedType':
-      return typeNode.name.value;
-    case 'ListType':
-      return `[${typeToString(typeNode.type)}]`;
-    case 'NonNullType':
-      return `${typeToString(typeNode.type)}!`;
-    default:
-      return '?';
+  case 'NamedType':
+    return typeNode.name.value;
+  case 'ListType':
+    return `[${typeToString(typeNode.type)}]`;
+  case 'NonNullType':
+    return `${typeToString(typeNode.type)}!`;
+  default:
+    return '?';
   }
 }
 
@@ -128,14 +128,14 @@ function directiveToKey(dir) {
  */
 function valueToString(node) {
   switch (node.kind) {
-    case 'StringValue': return `"${node.value}"`;
-    case 'IntValue': case 'FloatValue': case 'EnumValue': return node.value;
-    case 'BooleanValue': return String(node.value);
-    case 'NullValue': return 'null';
-    case 'ListValue': return `[${node.values.map(valueToString).join(',')}]`;
-    case 'ObjectValue':
-      return `{${node.fields.map(f => `${f.name.value}:${valueToString(f.value)}`).sort().join(',')}}`;
-    default: return '?';
+  case 'StringValue': return `"${node.value}"`;
+  case 'IntValue': case 'FloatValue': case 'EnumValue': return node.value;
+  case 'BooleanValue': return String(node.value);
+  case 'NullValue': return 'null';
+  case 'ListValue': return `[${node.values.map(valueToString).join(',')}]`;
+  case 'ObjectValue':
+    return `{${node.fields.map(f => `${f.name.value}:${valueToString(f.value)}`).sort().join(',')}}`;
+  default: return '?';
   }
 }
 
@@ -171,7 +171,7 @@ function buildMaps(definitions) {
     UnionTypeExtension: 'UnionTypeDefinition',
     EnumTypeExtension: 'EnumTypeDefinition',
     InputObjectTypeExtension: 'InputObjectTypeDefinition',
-    ScalarTypeExtension: 'ScalarTypeDefinition',
+    ScalarTypeExtension: 'ScalarTypeDefinition'
   };
 
   // Collect base definitions
@@ -309,7 +309,7 @@ function diffFields(oldDef, newDef, typeName) {
       if (enumMode) {
         changes.push({
           name, kind: 'added', breaking: false,
-          description: `Enum value "${name}" added to ${typeName}`,
+          description: `Enum value "${name}" added to ${typeName}`
         });
       } else {
         const req = isNonNull(field.type);
@@ -318,7 +318,7 @@ function diffFields(oldDef, newDef, typeName) {
           breaking: req,
           description: req
             ? `Required field "${name}" added to ${typeName} (breaking)`
-            : `Optional field "${name}" added to ${typeName}`,
+            : `Optional field "${name}" added to ${typeName}`
         });
       }
     }
@@ -329,12 +329,12 @@ function diffFields(oldDef, newDef, typeName) {
       if (enumMode) {
         changes.push({
           name, kind: 'removed', breaking: true,
-          description: `Enum value "${name}" removed from ${typeName}`,
+          description: `Enum value "${name}" removed from ${typeName}`
         });
       } else {
         changes.push({
           name, kind: 'removed', breaking: true,
-          description: `Field "${name}" removed from ${typeName}`,
+          description: `Field "${name}" removed from ${typeName}`
         });
       }
     }
@@ -350,7 +350,7 @@ function diffFields(oldDef, newDef, typeName) {
         if (oldType !== newType) {
           changes.push({
             name, kind: 'changed', breaking: true,
-            description: `Field "${name}" on ${typeName} changed type from ${oldType} to ${newType}`,
+            description: `Field "${name}" on ${typeName} changed type from ${oldType} to ${newType}`
           });
         }
       }
@@ -381,7 +381,7 @@ function diffArgs(oldField, newField, opName) {
         breaking: req,
         description: req
           ? `Required argument "${name}" added to ${opName} (breaking)`
-          : `Optional argument "${name}" added to ${opName}`,
+          : `Optional argument "${name}" added to ${opName}`
       });
     }
   }
@@ -390,7 +390,7 @@ function diffArgs(oldField, newField, opName) {
     if (!newArgs.has(name)) {
       changes.push({
         name, kind: 'removed', breaking: true,
-        description: `Argument "${name}" removed from ${opName}`,
+        description: `Argument "${name}" removed from ${opName}`
       });
     }
   }
@@ -403,7 +403,7 @@ function diffArgs(oldField, newField, opName) {
       if (oldType !== newType) {
         changes.push({
           name, kind: 'changed', breaking: true,
-          description: `Argument "${name}" on ${opName} changed type from ${oldType} to ${newType}`,
+          description: `Argument "${name}" on ${opName} changed type from ${oldType} to ${newType}`
         });
       }
     }
@@ -465,7 +465,7 @@ export function computeDelta(oldSDL, newSDL) {
         breaking,
         description: `Type "${name}" modified: ${parts.join(', ')}`,
         fieldChanges,
-        directiveChanges,
+        directiveChanges
       });
     }
   }
@@ -513,7 +513,7 @@ export function computeDelta(oldSDL, newSDL) {
         breaking,
         description: `Operation "${name}" modified: ${parts.join(', ')}`,
         argChanges,
-        returnTypeChange,
+        returnTypeChange
       });
     }
   }
@@ -524,6 +524,6 @@ export function computeDelta(oldSDL, newSDL) {
     modified_types,
     added_ops,
     removed_ops,
-    modified_ops,
+    modified_ops
   };
 }

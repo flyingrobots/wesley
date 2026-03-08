@@ -2,7 +2,7 @@
  * Performance Monitor - Query and Resource Tracking
  * Monitors query execution times, resource usage, slow queries,
  * index usage statistics, and connection pool health.
- * 
+ *
  * Licensed under the Apache License, Version 2.0
  */
 
@@ -248,7 +248,7 @@ export class PerformanceMonitor {
       const resourceInterval = setInterval(() => {
         this.collectResourceMetrics();
       }, this.options.resourceSamplingInterval);
-      
+
       this.intervals.set('resource', resourceInterval);
     }
 
@@ -257,7 +257,7 @@ export class PerformanceMonitor {
       const indexInterval = setInterval(() => {
         this.analyzeIndexUsage();
       }, this.options.indexAnalysisInterval);
-      
+
       this.intervals.set('index', indexInterval);
     }
 
@@ -266,7 +266,7 @@ export class PerformanceMonitor {
       const poolInterval = setInterval(() => {
         this.checkConnectionPool();
       }, this.options.connectionPoolCheckInterval);
-      
+
       this.intervals.set('pool', poolInterval);
     }
 
@@ -284,7 +284,7 @@ export class PerformanceMonitor {
     this.isMonitoring = false;
 
     // Clear all intervals
-    for (const [name, interval] of this.intervals) {
+    for (const [_name, interval] of this.intervals) {
       clearInterval(interval);
     }
     this.intervals.clear();
@@ -323,7 +323,7 @@ export class PerformanceMonitor {
   recordQueryMetrics(metrics) {
     // Add to history
     this.queryHistory.push(metrics);
-    
+
     // Maintain history limit
     if (this.queryHistory.length > this.options.queryHistoryLimit) {
       this.queryHistory.shift();
@@ -335,7 +335,7 @@ export class PerformanceMonitor {
     // Check for slow query
     if (metrics.executionTime > this.options.slowQueryThreshold) {
       this.emit(new SlowQueryDetected(metrics.queryId, metrics.toJSON(), this.options.slowQueryThreshold));
-      
+
       if (this.options.strictMode) {
         throw new SlowQueryDetectedError(metrics.sql, metrics.executionTime, this.options.slowQueryThreshold);
       }
@@ -350,9 +350,9 @@ export class PerformanceMonitor {
   async collectResourceMetrics() {
     try {
       const metrics = await this.gatherResourceMetrics();
-      
+
       this.resourceHistory.push(metrics);
-      
+
       // Maintain history limit (keep last hour at 5-second intervals)
       const maxHistory = 720; // 1 hour
       if (this.resourceHistory.length > maxHistory) {
@@ -361,9 +361,9 @@ export class PerformanceMonitor {
 
       // Check thresholds
       this.checkResourceThresholds(metrics);
-      
+
       return metrics;
-      
+
     } catch (error) {
       throw new PerformanceMonitoringError('Failed to collect resource metrics', 'RESOURCE_COLLECTION_FAILED', { error: error.message });
     }
@@ -375,7 +375,7 @@ export class PerformanceMonitor {
   async gatherResourceMetrics() {
     // In real implementation, this would use system APIs
     const metrics = new ResourceMetrics();
-    
+
     // Mock data for demonstration
     metrics.cpu.usage = Math.random() * 100;
     metrics.memory.used = Math.random() * 8000000000;
@@ -383,7 +383,7 @@ export class PerformanceMonitor {
     metrics.memory.free = metrics.memory.total - metrics.memory.used;
     metrics.io.reads = Math.floor(Math.random() * 1000);
     metrics.io.writes = Math.floor(Math.random() * 500);
-    
+
     return metrics;
   }
 
@@ -392,21 +392,21 @@ export class PerformanceMonitor {
    */
   checkResourceThresholds(metrics) {
     const { resourceThresholds } = this.options;
-    
+
     // Check CPU usage
     if (metrics.cpu.usage > resourceThresholds.cpu) {
       this.emit(new ResourceUsageAlert('cpu', metrics.cpu.usage, resourceThresholds.cpu));
-      
+
       if (this.options.strictMode) {
         throw new ResourceThresholdExceededError('cpu', resourceThresholds.cpu, metrics.cpu.usage);
       }
     }
-    
+
     // Check memory usage
     const memoryUsagePercent = (metrics.memory.used / metrics.memory.total) * 100;
     if (memoryUsagePercent > resourceThresholds.memory) {
       this.emit(new ResourceUsageAlert('memory', memoryUsagePercent, resourceThresholds.memory));
-      
+
       if (this.options.strictMode) {
         throw new ResourceThresholdExceededError('memory', resourceThresholds.memory, memoryUsagePercent);
       }
@@ -421,7 +421,7 @@ export class PerformanceMonitor {
       const analysis = await this.performIndexAnalysis();
       this.emit(new IndexUsageAnalyzed(analysis));
       return analysis;
-      
+
     } catch (error) {
       throw new PerformanceMonitoringError('Index analysis failed', 'INDEX_ANALYSIS_FAILED', { error: error.message });
     }
@@ -449,17 +449,17 @@ export class PerformanceMonitor {
       const status = await this.gatherConnectionPoolStats();
       this.connectionPoolStats = status;
       this.emit(new ConnectionPoolStatus(status));
-      
+
       // Check connection threshold
       const { resourceThresholds } = this.options;
       const connectionUsage = (status.activeConnections / status.maxConnections) * 100;
-      
+
       if (connectionUsage > resourceThresholds.connections) {
         this.emit(new ResourceUsageAlert('connections', connectionUsage, resourceThresholds.connections));
       }
-      
+
       return status;
-      
+
     } catch (error) {
       throw new PerformanceMonitoringError('Connection pool check failed', 'CONNECTION_POOL_CHECK_FAILED', { error: error.message });
     }
@@ -495,7 +495,7 @@ export class PerformanceMonitor {
    */
   getQueryStats() {
     const queries = this.queryHistory;
-    
+
     if (queries.length === 0) {
       return {
         totalQueries: 0,
@@ -508,14 +508,14 @@ export class PerformanceMonitor {
 
     const executionTimes = queries.map(q => q.executionTime).filter(t => t !== null);
     const slowQueries = queries.filter(q => q.executionTime > this.options.slowQueryThreshold);
-    
+
     return {
       totalQueries: queries.length,
       averageExecutionTime: executionTimes.reduce((sum, time) => sum + time, 0) / executionTimes.length,
       slowQueries: slowQueries.length,
-      fastestQuery: queries.reduce((fastest, query) => 
+      fastestQuery: queries.reduce((fastest, query) =>
         !fastest || (query.executionTime && query.executionTime < fastest.executionTime) ? query : fastest, null),
-      slowestQuery: queries.reduce((slowest, query) => 
+      slowestQuery: queries.reduce((slowest, query) =>
         !slowest || (query.executionTime && query.executionTime > slowest.executionTime) ? query : slowest, null)
     };
   }
@@ -535,7 +535,7 @@ export class PerformanceMonitor {
 
     const cpuUsages = this.resourceHistory.map(r => r.cpu.usage);
     const memoryUsages = this.resourceHistory.map(r => (r.memory.used / r.memory.total) * 100);
-    
+
     return {
       samples: this.resourceHistory.length,
       cpu: {
@@ -571,7 +571,7 @@ export class PerformanceMonitor {
   /**
    * Generate unique query ID
    */
-  generateQueryId(sql) {
+  generateQueryId(_sql) {
     return `query_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 

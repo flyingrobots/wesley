@@ -14,27 +14,27 @@ import { ExprKind } from './ast.mjs';
  */
 function isStatic(ast) {
   switch (ast.kind) {
-    case ExprKind.LITERAL:
-      return true;
+  case ExprKind.LITERAL:
+    return true;
 
-    case ExprKind.IDENTIFIER:
-      return false; // Variables need runtime context
+  case ExprKind.IDENTIFIER:
+    return false; // Variables need runtime context
 
-    case ExprKind.BINARY:
-    case ExprKind.COMPARISON:
-    case ExprKind.LOGICAL:
-      return isStatic(ast.left) && isStatic(ast.right);
+  case ExprKind.BINARY:
+  case ExprKind.COMPARISON:
+  case ExprKind.LOGICAL:
+    return isStatic(ast.left) && isStatic(ast.right);
 
-    case ExprKind.UNARY:
-      return isStatic(ast.operand);
+  case ExprKind.UNARY:
+    return isStatic(ast.operand);
 
-    case ExprKind.PROPERTY_ACCESS:
-    case ExprKind.METHOD_CALL:
-    case ExprKind.FORALL:
-      return false; // These need runtime context
+  case ExprKind.PROPERTY_ACCESS:
+  case ExprKind.METHOD_CALL:
+  case ExprKind.FORALL:
+    return false; // These need runtime context
 
-    default:
-      return false;
+  default:
+    return false;
   }
 }
 
@@ -43,59 +43,59 @@ function isStatic(ast) {
  */
 function evaluateStatic(ast) {
   switch (ast.kind) {
-    case ExprKind.LITERAL:
-      return ast.value;
+  case ExprKind.LITERAL:
+    return ast.value;
 
-    case ExprKind.BINARY: {
-      const left = evaluateStatic(ast.left);
-      const right = evaluateStatic(ast.right);
-      switch (ast.operator) {
-        case '+': return left + right;
-        case '-': return left - right;
-        case '*': return left * right;
-        case '/':
-          if (right === 0) {
-            throw new Error('Division by zero in static evaluation');
-          }
-          return left / right;
-        default: throw new Error(`Unknown binary operator: ${ast.operator}`);
+  case ExprKind.BINARY: {
+    const left = evaluateStatic(ast.left);
+    const right = evaluateStatic(ast.right);
+    switch (ast.operator) {
+    case '+': return left + right;
+    case '-': return left - right;
+    case '*': return left * right;
+    case '/':
+      if (right === 0) {
+        throw new Error('Division by zero in static evaluation');
       }
+      return left / right;
+    default: throw new Error(`Unknown binary operator: ${ast.operator}`);
     }
+  }
 
-    case ExprKind.COMPARISON: {
-      const left = evaluateStatic(ast.left);
-      const right = evaluateStatic(ast.right);
-      switch (ast.operator) {
-        case '==': return left === right;
-        case '!=': return left !== right;
-        case '<': return left < right;
-        case '<=': return left <= right;
-        case '>': return left > right;
-        case '>=': return left >= right;
-        default: throw new Error(`Unknown comparison operator: ${ast.operator}`);
-      }
+  case ExprKind.COMPARISON: {
+    const left = evaluateStatic(ast.left);
+    const right = evaluateStatic(ast.right);
+    switch (ast.operator) {
+    case '==': return left === right;
+    case '!=': return left !== right;
+    case '<': return left < right;
+    case '<=': return left <= right;
+    case '>': return left > right;
+    case '>=': return left >= right;
+    default: throw new Error(`Unknown comparison operator: ${ast.operator}`);
     }
+  }
 
-    case ExprKind.LOGICAL: {
-      const left = evaluateStatic(ast.left);
-      switch (ast.operator) {
-        case '&&': return left && evaluateStatic(ast.right);
-        case '||': return left || evaluateStatic(ast.right);
-        default: throw new Error(`Unknown logical operator: ${ast.operator}`);
-      }
+  case ExprKind.LOGICAL: {
+    const left = evaluateStatic(ast.left);
+    switch (ast.operator) {
+    case '&&': return left && evaluateStatic(ast.right);
+    case '||': return left || evaluateStatic(ast.right);
+    default: throw new Error(`Unknown logical operator: ${ast.operator}`);
     }
+  }
 
-    case ExprKind.UNARY: {
-      const operand = evaluateStatic(ast.operand);
-      switch (ast.operator) {
-        case '!': return !operand;
-        case '-': return -operand;
-        default: throw new Error(`Unknown unary operator: ${ast.operator}`);
-      }
+  case ExprKind.UNARY: {
+    const operand = evaluateStatic(ast.operand);
+    switch (ast.operator) {
+    case '!': return !operand;
+    case '-': return -operand;
+    default: throw new Error(`Unknown unary operator: ${ast.operator}`);
     }
+  }
 
-    default:
-      throw new Error(`Cannot evaluate non-static expression: ${ast.kind}`);
+  default:
+    throw new Error(`Cannot evaluate non-static expression: ${ast.kind}`);
   }
 }
 
@@ -120,7 +120,7 @@ export function generateGoldenVectors(specs, deps = {}) {
       expr: spec.expr,
       ast,
       astHash,
-      requiresRuntime: !isStatic(ast),
+      requiresRuntime: !isStatic(ast)
     };
 
     // For static expressions, compute expected result
@@ -194,7 +194,7 @@ export const Opcode = {
 
   // Result
   RETURN: 0xF0,
-  HALT: 0xFF,
+  HALT: 0xFF
 };
 
 export const VmSpec = {
@@ -204,8 +204,8 @@ export const VmSpec = {
   timeoutMs: 5000,
   instructionFormat: {
     opcodeBytes: 1,
-    operandBytes: 4,
-  },
+    operandBytes: 4
+  }
 };
 
 /**
@@ -251,168 +251,168 @@ export function compileToBytecode(ast) {
 
   function compile(node) {
     switch (node.kind) {
-      case ExprKind.LITERAL:
-        emit(Opcode.PUSH_CONST, addConstant(node.value));
-        break;
+    case ExprKind.LITERAL:
+      emit(Opcode.PUSH_CONST, addConstant(node.value));
+      break;
 
-      case ExprKind.IDENTIFIER:
-        // Check for subject keywords
-        if (node.name === 'op') {
-          emit(Opcode.LOAD_OP);
-        } else if (node.name === 'channel') {
-          emit(Opcode.LOAD_CHANNEL);
-        } else {
-          emit(Opcode.LOAD_VAR, addVariable(node.name));
-        }
-        break;
-
-      case ExprKind.BINARY:
-        compile(node.left);
-        compile(node.right);
-        switch (node.operator) {
-          case '+': emit(Opcode.ADD); break;
-          case '-': emit(Opcode.SUB); break;
-          case '*': emit(Opcode.MUL); break;
-          case '/': emit(Opcode.DIV); break;
-          default: throw new Error(`Unknown binary operator: ${node.operator}`);
-        }
-        break;
-
-      case ExprKind.COMPARISON:
-        compile(node.left);
-        compile(node.right);
-        switch (node.operator) {
-          case '==': emit(Opcode.CMP_EQ); break;
-          case '!=': emit(Opcode.CMP_NEQ); break;
-          case '<': emit(Opcode.CMP_LT); break;
-          case '<=': emit(Opcode.CMP_LTE); break;
-          case '>': emit(Opcode.CMP_GT); break;
-          case '>=': emit(Opcode.CMP_GTE); break;
-          default: throw new Error(`Unknown comparison operator: ${node.operator}`);
-        }
-        break;
-
-      case ExprKind.LOGICAL:
-        compile(node.left);
-        if (node.operator === '&&') {
-          // Short-circuit AND: if left is false, result is false (left stays on stack)
-          // If left is true, discard it and result is right
-          emit(Opcode.DUP); // duplicate left for potential result
-          const jumpIdx = instructions.length;
-          emit(Opcode.JUMP_IF_FALSE, 0); // placeholder - jump to end if false
-          emit(Opcode.POP); // discard duplicated left (it was true)
-          emit(Opcode.POP); // discard original left
-          compile(node.right);
-          // Right value is now the result, jump past the "false case"
-          const skipFalseIdx = instructions.length;
-          emit(Opcode.JUMP, 0); // placeholder
-          // False case: we jumped here with [false, false] on stack from DUP
-          instructions[jumpIdx].operand = instructions.length;
-          emit(Opcode.POP); // discard duplicated false, keep original false as result
-          // End
-          instructions[skipFalseIdx].operand = instructions.length;
-        } else if (node.operator === '||') {
-          // Short-circuit OR: if left is true, result is true (left stays on stack)
-          // If left is false, discard it and result is right
-          emit(Opcode.DUP); // duplicate left for potential result
-          const jumpIdx = instructions.length;
-          emit(Opcode.JUMP_IF_TRUE, 0); // placeholder - jump to end if true
-          emit(Opcode.POP); // discard duplicated left (it was false)
-          emit(Opcode.POP); // discard original left
-          compile(node.right);
-          // Right value is now the result, jump past the "true case"
-          const skipTrueIdx = instructions.length;
-          emit(Opcode.JUMP, 0); // placeholder
-          // True case: we jumped here with [true, true] on stack from DUP
-          instructions[jumpIdx].operand = instructions.length;
-          emit(Opcode.POP); // discard duplicated true, keep original true as result
-          // End
-          instructions[skipTrueIdx].operand = instructions.length;
-        }
-        break;
-
-      case ExprKind.UNARY:
-        compile(node.operand);
-        switch (node.operator) {
-          case '!': emit(Opcode.NOT); break;
-          case '-': emit(Opcode.PUSH_CONST, addConstant(-1)); emit(Opcode.MUL); break;
-          default: throw new Error(`Unknown unary operator: ${node.operator}`);
-        }
-        break;
-
-      case ExprKind.PROPERTY_ACCESS:
-        compile(node.object);
-        emit(Opcode.GET_PROP, addConstant(node.property));
-        break;
-
-      case ExprKind.METHOD_CALL:
-        compile(node.receiver);
-        // Push arguments
-        for (const arg of node.args) {
-          compile(arg);
-        }
-        emit(Opcode.CALL_METHOD, addConstant(node.method));
-        break;
-
-      case ExprKind.FORALL: {
-        // Store collection reference
-        addCollection(node.collection);
-        addVariable(node.variable);
-
-        // Setup iteration
-        emit(Opcode.PUSH_CONST, addConstant(node.collection));
-        emit(Opcode.ITER_BEGIN);
-
-        // Loop start
-        const loopStart = instructions.length;
-        emit(Opcode.ITER_NEXT);
-        // Stack now has: [item, hasMore] when items exist, or [false] when empty
-
-        // If no more items, jump to success
-        const jumpToSuccess = instructions.length;
-        emit(Opcode.JUMP_IF_FALSE, 0); // placeholder - checks hasMore/false
-
-        // Pop the hasMore flag (true), leaving item on stack
-        emit(Opcode.POP);
-
-        // Store current item in variable
-        emit(Opcode.STORE_VAR, addVariable(node.variable));
-
-        // Compile body
-        compile(node.body);
-
-        // If body is false, fail fast
-        const failFastJump = instructions.length;
-        emit(Opcode.JUMP_IF_FALSE, 0); // placeholder
-        emit(Opcode.POP);
-
-        // Jump back to loop start
-        emit(Opcode.JUMP, loopStart);
-
-        // Success case - all iterations passed
-        const successLabel = instructions.length;
-        emit(Opcode.ITER_END);
-        emit(Opcode.PUSH_CONST, addConstant(true)); // forall succeeded
-        const jumpPastFail = instructions.length;
-        emit(Opcode.JUMP, 0); // placeholder - jump past fail case
-
-        // Fail case
-        const failLabel = instructions.length;
-        emit(Opcode.ITER_END);
-        emit(Opcode.PUSH_CONST, addConstant(false)); // forall failed
-
-        // End label (after both success and fail)
-        const endLabel = instructions.length;
-
-        // Patch jump targets
-        instructions[jumpToSuccess].operand = successLabel;
-        instructions[failFastJump].operand = failLabel;
-        instructions[jumpPastFail].operand = endLabel;
-        break;
+    case ExprKind.IDENTIFIER:
+      // Check for subject keywords
+      if (node.name === 'op') {
+        emit(Opcode.LOAD_OP);
+      } else if (node.name === 'channel') {
+        emit(Opcode.LOAD_CHANNEL);
+      } else {
+        emit(Opcode.LOAD_VAR, addVariable(node.name));
       }
+      break;
 
-      default:
-        throw new Error(`Unknown AST node kind: ${node.kind}`);
+    case ExprKind.BINARY:
+      compile(node.left);
+      compile(node.right);
+      switch (node.operator) {
+      case '+': emit(Opcode.ADD); break;
+      case '-': emit(Opcode.SUB); break;
+      case '*': emit(Opcode.MUL); break;
+      case '/': emit(Opcode.DIV); break;
+      default: throw new Error(`Unknown binary operator: ${node.operator}`);
+      }
+      break;
+
+    case ExprKind.COMPARISON:
+      compile(node.left);
+      compile(node.right);
+      switch (node.operator) {
+      case '==': emit(Opcode.CMP_EQ); break;
+      case '!=': emit(Opcode.CMP_NEQ); break;
+      case '<': emit(Opcode.CMP_LT); break;
+      case '<=': emit(Opcode.CMP_LTE); break;
+      case '>': emit(Opcode.CMP_GT); break;
+      case '>=': emit(Opcode.CMP_GTE); break;
+      default: throw new Error(`Unknown comparison operator: ${node.operator}`);
+      }
+      break;
+
+    case ExprKind.LOGICAL:
+      compile(node.left);
+      if (node.operator === '&&') {
+        // Short-circuit AND: if left is false, result is false (left stays on stack)
+        // If left is true, discard it and result is right
+        emit(Opcode.DUP); // duplicate left for potential result
+        const jumpIdx = instructions.length;
+        emit(Opcode.JUMP_IF_FALSE, 0); // placeholder - jump to end if false
+        emit(Opcode.POP); // discard duplicated left (it was true)
+        emit(Opcode.POP); // discard original left
+        compile(node.right);
+        // Right value is now the result, jump past the "false case"
+        const skipFalseIdx = instructions.length;
+        emit(Opcode.JUMP, 0); // placeholder
+        // False case: we jumped here with [false, false] on stack from DUP
+        instructions[jumpIdx].operand = instructions.length;
+        emit(Opcode.POP); // discard duplicated false, keep original false as result
+        // End
+        instructions[skipFalseIdx].operand = instructions.length;
+      } else if (node.operator === '||') {
+        // Short-circuit OR: if left is true, result is true (left stays on stack)
+        // If left is false, discard it and result is right
+        emit(Opcode.DUP); // duplicate left for potential result
+        const jumpIdx = instructions.length;
+        emit(Opcode.JUMP_IF_TRUE, 0); // placeholder - jump to end if true
+        emit(Opcode.POP); // discard duplicated left (it was false)
+        emit(Opcode.POP); // discard original left
+        compile(node.right);
+        // Right value is now the result, jump past the "true case"
+        const skipTrueIdx = instructions.length;
+        emit(Opcode.JUMP, 0); // placeholder
+        // True case: we jumped here with [true, true] on stack from DUP
+        instructions[jumpIdx].operand = instructions.length;
+        emit(Opcode.POP); // discard duplicated true, keep original true as result
+        // End
+        instructions[skipTrueIdx].operand = instructions.length;
+      }
+      break;
+
+    case ExprKind.UNARY:
+      compile(node.operand);
+      switch (node.operator) {
+      case '!': emit(Opcode.NOT); break;
+      case '-': emit(Opcode.PUSH_CONST, addConstant(-1)); emit(Opcode.MUL); break;
+      default: throw new Error(`Unknown unary operator: ${node.operator}`);
+      }
+      break;
+
+    case ExprKind.PROPERTY_ACCESS:
+      compile(node.object);
+      emit(Opcode.GET_PROP, addConstant(node.property));
+      break;
+
+    case ExprKind.METHOD_CALL:
+      compile(node.receiver);
+      // Push arguments
+      for (const arg of node.args) {
+        compile(arg);
+      }
+      emit(Opcode.CALL_METHOD, addConstant(node.method));
+      break;
+
+    case ExprKind.FORALL: {
+      // Store collection reference
+      addCollection(node.collection);
+      addVariable(node.variable);
+
+      // Setup iteration
+      emit(Opcode.PUSH_CONST, addConstant(node.collection));
+      emit(Opcode.ITER_BEGIN);
+
+      // Loop start
+      const loopStart = instructions.length;
+      emit(Opcode.ITER_NEXT);
+      // Stack now has: [item, hasMore] when items exist, or [false] when empty
+
+      // If no more items, jump to success
+      const jumpToSuccess = instructions.length;
+      emit(Opcode.JUMP_IF_FALSE, 0); // placeholder - checks hasMore/false
+
+      // Pop the hasMore flag (true), leaving item on stack
+      emit(Opcode.POP);
+
+      // Store current item in variable
+      emit(Opcode.STORE_VAR, addVariable(node.variable));
+
+      // Compile body
+      compile(node.body);
+
+      // If body is false, fail fast
+      const failFastJump = instructions.length;
+      emit(Opcode.JUMP_IF_FALSE, 0); // placeholder
+      emit(Opcode.POP);
+
+      // Jump back to loop start
+      emit(Opcode.JUMP, loopStart);
+
+      // Success case - all iterations passed
+      const successLabel = instructions.length;
+      emit(Opcode.ITER_END);
+      emit(Opcode.PUSH_CONST, addConstant(true)); // forall succeeded
+      const jumpPastFail = instructions.length;
+      emit(Opcode.JUMP, 0); // placeholder - jump past fail case
+
+      // Fail case
+      const failLabel = instructions.length;
+      emit(Opcode.ITER_END);
+      emit(Opcode.PUSH_CONST, addConstant(false)); // forall failed
+
+      // End label (after both success and fail)
+      const endLabel = instructions.length;
+
+      // Patch jump targets
+      instructions[jumpToSuccess].operand = successLabel;
+      instructions[failFastJump].operand = failLabel;
+      instructions[jumpPastFail].operand = endLabel;
+      break;
+    }
+
+    default:
+      throw new Error(`Unknown AST node kind: ${node.kind}`);
     }
   }
 
@@ -424,6 +424,6 @@ export function compileToBytecode(ast) {
     instructions,
     constants,
     variables,
-    collections,
+    collections
   };
 }

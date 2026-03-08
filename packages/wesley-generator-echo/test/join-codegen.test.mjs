@@ -164,7 +164,7 @@ describe('emitJoinImpls edge cases', () => {
 
   it('returns null for IR with only ENUM types', () => {
     expect(emitJoinImpls({
-      types: [{ name: 'Status', kind: 'ENUM', has_join: false, values: ['A', 'B'] }],
+      types: [{ name: 'Status', kind: 'ENUM', has_join: false, values: ['A', 'B'] }]
     })).toBeNull();
   });
 
@@ -174,8 +174,8 @@ describe('emitJoinImpls edge cases', () => {
         name: 'Foo',
         kind: 'OBJECT',
         has_join: false,
-        fields: [{ name: 'x', join: null }],
-      }],
+        fields: [{ name: 'x', join: null }]
+      }]
     })).toBeNull();
   });
 
@@ -186,8 +186,8 @@ describe('emitJoinImpls edge cases', () => {
           name: 'Bad',
           kind: 'OBJECT',
           has_join: true,
-          fields: [{ name: 'x', join: { strategy: 'unknown_strat' } }],
-        }],
+          fields: [{ name: 'x', join: { strategy: 'unknown_strat' } }]
+        }]
       })
     ).toThrow(/Unknown join strategy/);
   });
@@ -198,8 +198,8 @@ describe('emitJoinImpls edge cases', () => {
         name: 'T',
         kind: 'OBJECT',
         has_join: true,
-        fields: [{ name: 'x', join: { strategy: 'max' } }],
-      }],
+        fields: [{ name: 'x', join: { strategy: 'max' } }]
+      }]
     });
     expect(result).toContain('DO NOT EDIT');
   });

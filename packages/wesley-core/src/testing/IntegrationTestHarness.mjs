@@ -1,13 +1,13 @@
 /**
  * IntegrationTestHarness - Testing Component
- * 
+ *
  * End-to-end migration testing framework with:
  * - Concurrent execution simulation
- * - Failure injection capabilities  
+ * - Failure injection capabilities
  * - Performance regression detection
  * - Database state snapshots
  * - Rollback verification
- * 
+ *
  * Licensed under Apache-2.0
  */
 
@@ -117,8 +117,8 @@ export class DatabaseSnapshot {
 
   addTableData(tableName, data, rowCount) {
     this.tables.set(tableName, {
-      data: data,
-      rowCount: rowCount,
+      data,
+      rowCount,
       capturedAt: new Date().toISOString()
     });
   }
@@ -151,7 +151,7 @@ export class DatabaseSnapshot {
     // Compare tables
     for (const [tableName, tableData] of this.tables) {
       const otherTable = otherSnapshot.tables.get(tableName);
-      
+
       if (!otherTable) {
         differences.tables.push({
           table: tableName,
@@ -292,7 +292,7 @@ export class IntegrationTestHarness {
    * @param {Object} options - Execution options
    * @returns {Object} Test result
    */
-  async executeTest(testConfig, operations, options = {}) {
+  async executeTest(testConfig, operations, _options = {}) {
     if (!(testConfig instanceof TestConfig)) {
       throw new IntegrationTestError('testConfig must be an instance of TestConfig');
     }
@@ -436,13 +436,13 @@ export class IntegrationTestHarness {
       // Capture data if full snapshot
       if (options.strategy === 'full' && options.includeData) {
         const tables = await this.databaseAdapter.getTables();
-        
+
         for (const table of tables) {
           const data = await this.databaseAdapter.getTableData(table.name, {
             limit: 1000, // Reasonable limit for testing
             includeSchema: true
           });
-          
+
           const rowCount = await this.databaseAdapter.getRowCount(table.name);
           snapshot.addTableData(table.name, data, rowCount);
         }
@@ -488,7 +488,7 @@ export class IntegrationTestHarness {
       if (injectors[failureType]) {
         const injector = injectors[failureType].call(this, config);
         this.failureInjectors.set(failureType, injector);
-        
+
         this._emit(new FailureInjected(failureType, config.targetOperation, config));
       }
     }
@@ -506,7 +506,7 @@ export class IntegrationTestHarness {
 
     const concurrency = Math.min(testConfig.maxConcurrency, operations.length);
     const batches = this._createConcurrentBatches(operations, concurrency);
-    
+
     const results = await Promise.allSettled(
       batches.map(async (batch, batchIndex) => {
         return this._executeConcurrentBatch(batch, batchIndex, testConfig);
@@ -542,22 +542,22 @@ export class IntegrationTestHarness {
     }
 
     const originalSnapshot = this.activeSnapshots.get(snapshotId);
-    
+
     try {
       // Create current state snapshot
       const currentSnapshotId = await this.createSnapshot(`${testConfig.name}_before_rollback`);
-      
+
       // Execute rollback operations (reverse of original operations)
       const rollbackOperations = this._generateRollbackOperations(operations);
       await this._executeSequentialOperations(rollbackOperations, testConfig);
-      
+
       // Create post-rollback snapshot
       const rolledBackSnapshotId = await this.createSnapshot(`${testConfig.name}_after_rollback`);
       const rolledBackSnapshot = this.activeSnapshots.get(rolledBackSnapshotId);
-      
+
       // Compare with original snapshot
       const comparison = originalSnapshot.compare(rolledBackSnapshot);
-      
+
       if (!comparison.identical) {
         throw new RollbackVerificationError(
           `Rollback verification failed: ${JSON.stringify(comparison.differences)}`,
@@ -654,7 +654,7 @@ export class IntegrationTestHarness {
    */
   async _executeConcurrentOperations(operations, testConfig) {
     const result = await this.simulateConcurrentExecution(operations, testConfig);
-    
+
     if (result.failed > 0) {
       throw new TestExecutionError(
         `${result.failed} concurrent batches failed`,
@@ -672,11 +672,11 @@ export class IntegrationTestHarness {
    */
   async _analyzePerformance(testConfig, executionTime) {
     const baseline = this.getPerformanceBaseline(testConfig.name);
-    
+
     if (baseline && testConfig.performanceThreshold) {
       const threshold = testConfig.performanceThreshold;
       const regressionLimit = baseline.executionTime * (1 + threshold / 100);
-      
+
       if (executionTime > regressionLimit) {
         throw new PerformanceRegressionError(
           testConfig.name,
@@ -713,11 +713,11 @@ export class IntegrationTestHarness {
   _createConcurrentBatches(operations, concurrency) {
     const batches = [];
     const batchSize = Math.ceil(operations.length / concurrency);
-    
+
     for (let i = 0; i < operations.length; i += batchSize) {
       batches.push(operations.slice(i, i + batchSize));
     }
-    
+
     return batches;
   }
 
@@ -727,7 +727,7 @@ export class IntegrationTestHarness {
    */
   async _executeConcurrentBatch(batch, batchIndex, testConfig) {
     const batchStartTime = performance.now();
-    
+
     try {
       for (const operation of batch) {
         await this.databaseAdapter.executeOperation(operation, {
@@ -780,12 +780,12 @@ export class IntegrationTestHarness {
    */
   async _executeSequentialTests(tests, options) {
     const results = [];
-    
+
     for (const testConfig of tests) {
       const result = await this.executeTest(testConfig, options.operations || [], options);
       results.push(result);
     }
-    
+
     return results;
   }
 
@@ -796,23 +796,23 @@ export class IntegrationTestHarness {
   async _executeConcurrentTests(tests, options) {
     const concurrency = Math.min(options.maxConcurrency || this.concurrencyPool, tests.length);
     const results = [];
-    
+
     for (let i = 0; i < tests.length; i += concurrency) {
       const batch = tests.slice(i, i + concurrency);
       const batchResults = await Promise.allSettled(
-        batch.map(testConfig => 
+        batch.map(testConfig =>
           this.executeTest(testConfig, options.operations || [], options)
         )
       );
-      
-      results.push(...batchResults.map(r => 
-        r.status === 'fulfilled' ? r.value : { 
-          status: 'failed', 
-          error: r.reason?.message || 'Unknown error' 
+
+      results.push(...batchResults.map(r =>
+        r.status === 'fulfilled' ? r.value : {
+          status: 'failed',
+          error: r.reason?.message || 'Unknown error'
         }
       ));
     }
-    
+
     return results;
   }
 
@@ -824,9 +824,9 @@ export class IntegrationTestHarness {
     if (this.activeSnapshots.size > this.snapshotRetention) {
       const snapshots = Array.from(this.activeSnapshots.entries())
         .sort(([, a], [, b]) => new Date(a.timestamp) - new Date(b.timestamp));
-      
+
       const toDelete = snapshots.slice(0, snapshots.length - this.snapshotRetention);
-      
+
       for (const [snapshotId] of toDelete) {
         this.activeSnapshots.delete(snapshotId);
       }
@@ -854,7 +854,7 @@ export class IntegrationTestHarness {
    * @private
    */
   async _checkFailureInjection(operation) {
-    for (const [failureType, injector] of this.failureInjectors) {
+    for (const [_failureType, injector] of this.failureInjectors) {
       if (injector.shouldInject(operation)) {
         await injector.inject(operation);
       }
@@ -868,7 +868,7 @@ export class IntegrationTestHarness {
   _createTimeoutInjector(config) {
     return {
       shouldInject: (operation) => {
-        return config.targetOperation ? 
+        return config.targetOperation ?
           operation.kind === config.targetOperation :
           Math.random() < (config.probability || 0.1);
       },
@@ -887,7 +887,7 @@ export class IntegrationTestHarness {
    */
   _createConnectionFailureInjector(config) {
     return {
-      shouldInject: (operation) => {
+      shouldInject: (_operation) => {
         return Math.random() < (config.probability || 0.05);
       },
       inject: async (operation) => {
@@ -903,7 +903,7 @@ export class IntegrationTestHarness {
   _createConstraintViolationInjector(config) {
     return {
       shouldInject: (operation) => {
-        return operation.kind === 'add_constraint' && 
+        return operation.kind === 'add_constraint' &&
                Math.random() < (config.probability || 0.1);
       },
       inject: async (operation) => {
@@ -954,8 +954,8 @@ export class IntegrationTestHarness {
         return operation.kind === 'create_index' &&
                Math.random() < (config.probability || 0.05);
       },
-      inject: async (operation) => {
-        throw new Error(`Simulated out of memory error during index creation`);
+      inject: async (_operation) => {
+        throw new Error('Simulated out of memory error during index creation');
       }
     };
   }
@@ -992,7 +992,7 @@ export class IntegrationTestHarness {
    * @private
    */
   async _testRollbackCapability(snapshotId, operations, testConfig) {
-    return await this.verifyRollback(snapshotId, operations, testConfig);
+    return this.verifyRollback(snapshotId, operations, testConfig);
   }
 
   /**

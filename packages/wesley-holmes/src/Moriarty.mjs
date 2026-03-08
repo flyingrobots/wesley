@@ -316,11 +316,11 @@ export class Moriarty {
     let emaSCS = null;
     let emaTCI = null;
     const series = [];
-    
+
     for (const point of this.history.points) {
       emaSCS = emaSCS === null ? point.scs : (this.alpha * point.scs + (1 - this.alpha) * emaSCS);
       emaTCI = emaTCI === null ? point.tci : (this.alpha * point.tci + (1 - this.alpha) * emaTCI);
-      
+
       series.push({
         day: point.day,
         scs: emaSCS,
@@ -328,27 +328,27 @@ export class Moriarty {
         mri: point.mri
       });
     }
-    
+
     return series;
   }
 
   calculateSlope(series) {
     if (series.length < 2) return { scs: 0, tci: 0 };
-    
+
     const n = series.length;
     const xs = series.map(s => s.day);
     const scsList = series.map(s => s.scs);
     const tciList = series.map(s => s.tci);
-    
+
     const xBar = xs.reduce((a, b) => a + b, 0) / n;
     const scsBar = scsList.reduce((a, b) => a + b, 0) / n;
     const tciBar = tciList.reduce((a, b) => a + b, 0) / n;
-    
+
     const denominator = xs.reduce((acc, x) => acc + Math.pow(x - xBar, 2), 0) || 1e-9;
-    
+
     const scsSlope = xs.reduce((acc, x, i) => acc + (x - xBar) * (scsList[i] - scsBar), 0) / denominator;
     const tciSlope = xs.reduce((acc, x, i) => acc + (x - xBar) * (tciList[i] - tciBar), 0) / denominator;
-    
+
     return { scs: scsSlope, tci: tciSlope };
   }
 
@@ -370,40 +370,40 @@ export class Moriarty {
 
   calculateVariance(series) {
     if (series.length < 2) return 1;
-    
+
     const mean = series.reduce((acc, s) => acc + s.scs, 0) / series.length;
     const variance = series.reduce((acc, s) => acc + Math.pow(s.scs - mean, 2), 0) / (series.length - 1);
-    
+
     return Math.sqrt(variance);
   }
 
   detectPatterns() {
     const patterns = [];
-    
+
     if (this.history.points.length >= 5) {
       const recent = this.history.points.slice(-5);
       const velocities = [];
-      
+
       for (let i = 1; i < recent.length; i++) {
         const daysDiff = recent[i].day - recent[i-1].day || 1;
         const scsDiff = recent[i].scs - recent[i-1].scs;
         velocities.push(scsDiff / daysDiff);
       }
-      
+
       // Check for velocity decay
       const firstHalf = velocities.slice(0, 2);
       const secondHalf = velocities.slice(2);
-      
+
       const firstAvg = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
       const secondAvg = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
-      
+
       if (secondAvg < firstAvg * 0.6) {
         patterns.push({
           type: 'VELOCITY_CLIFF',
           description: 'Progress rate dropped 40%+ - exhaustion detected'
         });
       }
-      
+
       // Check for test lag
       const latest = this.history.points[this.history.points.length - 1];
       if (latest.scs > 0.7 && latest.tci < 0.5) {
@@ -413,7 +413,7 @@ export class Moriarty {
         });
       }
     }
-    
+
     return patterns;
   }
 

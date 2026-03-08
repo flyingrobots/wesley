@@ -8,13 +8,13 @@ export class InProcessCompiler extends CompilerPort {
    *   logger, fileSystem, scorer?, evidence?, clock?
    * }} deps
    */
-  constructor(deps) { 
-    super(); 
-    this.d = deps; 
+  constructor(deps) {
+    super();
+    this.d = deps;
   }
 
-  async compile({ sdl, flags }, { sha, outDir }) {
-    const { parser, sqlGenerator, testGenerator, diffEngine, fileSystem, logger, scorer, evidence, clock } = this.d;
+  async compile({ sdl, flags }, { sha, _outDir }) {
+    const { parser, sqlGenerator, testGenerator, diffEngine, _fileSystem, logger, scorer, evidence, _clock } = this.d;
     const t0 = Date.now();
     const log = logger.child?.({ mod: 'compiler', sha }) ?? logger;
 
@@ -27,11 +27,11 @@ export class InProcessCompiler extends CompilerPort {
     // Generate SQL + tests
     const sql = await sqlGenerator.generate(ir, { ...flags, enableRLS: flags.supabase });
     log.debug({ lines: sql?.split('\n').length || 0 }, 'SQL generated');
-    
-    const testsSql = await testGenerator.generate(ir, { 
-      evidenceMap: evidence, 
+
+    const testsSql = await testGenerator.generate(ir, {
+      evidenceMap: evidence,
       migrationSteps: [],
-      supabase: flags.supabase 
+      supabase: flags.supabase
     });
     log.debug({ testLines: testsSql?.split('\n').length || 0 }, 'Tests generated');
 
@@ -63,18 +63,18 @@ export class InProcessCompiler extends CompilerPort {
       migration: migrationSql ? { sql: migrationSql, manifest } : null
       // typescript: (later)
     };
-    const ev = [...(ev1||[])]; // attach more evidence as you add recorders
+    const ev = [...(evidence||[])]; // attach more evidence as you add recorders
 
     log.info({ ms: Date.now() - t0, artifactCount: Object.keys(artifacts).filter(k => artifacts[k]).length }, 'Compile done');
     return { artifacts, evidence: ev, scores, meta };
   }
 
-  async validateBundle({ bundleDir }) {
+  async validateBundle({ _bundleDir }) {
     // call into your ValidateBundleCommand or a port—kept here so CLI still only depends on CompilerPort
     throw new Error('InProcessCompiler.validateBundle() NOT_IMPLEMENTED');
   }
-  
-  async runTests(opts) {
+
+  async runTests(_opts) {
     // wire pgTAP later
     throw new Error('InProcessCompiler.runTests() NOT_IMPLEMENTED');
   }

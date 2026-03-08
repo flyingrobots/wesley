@@ -23,12 +23,12 @@ class ZodSchemaGenerator {
   }
 
   async generate(schema) {
-    const imports = [`import { z } from 'zod';`];
+    const imports = ['import { z } from \'zod\';'];
     const schemas = [];
     const inputSchemas = [];
     const refinements = [];
 
-    for (const [tableName, table] of Object.entries(schema.tables)) {
+    for (const [_tableName, table] of Object.entries(schema.tables)) {
       // Generate main entity schema
       const entitySchema = this.generateEntitySchema(table);
       schemas.push(entitySchema);
@@ -53,7 +53,7 @@ class ZodSchemaGenerator {
       '// Entity Schemas',
       ...schemas,
       '',
-      '// Input Schemas', 
+      '// Input Schemas',
       ...inputSchemas,
       '',
       '// Refinements and Custom Validations',
@@ -72,8 +72,8 @@ class ZodSchemaGenerator {
     const fields = Object.values(table.fields).map(field => {
       const zodType = this.mapFieldToZod(field);
       const fieldComment = this.generateFieldComment(field);
-      
-      return fieldComment ? 
+
+      return fieldComment ?
         `  // ${fieldComment}\n  ${field.name}: ${zodType}` :
         `  ${field.name}: ${zodType}`;
     });
@@ -91,7 +91,7 @@ export type ${table.name} = z.infer<typeof ${table.name}Schema>;`;
       .map(field => {
         const zodType = this.mapFieldToZod(field, 'create');
         const fieldComment = this.generateFieldComment(field);
-        
+
         return fieldComment ?
           `  // ${fieldComment}\n  ${field.name}: ${zodType}` :
           `  ${field.name}: ${zodType}`;
@@ -162,7 +162,7 @@ export const ${table.name}SensitiveDataSchema = ${table.name}Schema.refine(
   mapFieldToZod(field, context = 'entity') {
     const baseType = this.mapTypeToZod(field.type, field.nonNull, field.itemNonNull);
     const validations = this.generateFieldValidations(field, context);
-    
+
     return validations ? `${baseType}${validations}` : baseType;
   }
 
@@ -209,7 +209,7 @@ export const ${table.name}SensitiveDataSchema = ${table.name}Schema.refine(
       if (this.hasDirective(field, '@unique')) {
         validations.push('.min(1, "Required for unique field")');
       }
-      
+
       // Email validation
       if (field.name.toLowerCase().includes('email')) {
         validations.push('.email("Invalid email format")');
@@ -224,7 +224,7 @@ export const ${table.name}SensitiveDataSchema = ${table.name}Schema.refine(
       if (field.name.toLowerCase().includes('name')) {
         validations.push('.min(1, "Name cannot be empty").max(100, "Name too long")');
       }
-      
+
       if (field.name.toLowerCase().includes('description') || field.name.toLowerCase().includes('content')) {
         validations.push('.max(10000, "Content too long")');
       }
@@ -235,11 +235,11 @@ export const ${table.name}SensitiveDataSchema = ${table.name}Schema.refine(
       if (field.name.toLowerCase().includes('age')) {
         validations.push('.min(0, "Age cannot be negative").max(150, "Invalid age")');
       }
-      
+
       if (field.name.toLowerCase().includes('price') || field.name.toLowerCase().includes('amount')) {
         validations.push('.min(0, "Price cannot be negative")');
       }
-      
+
       if (field.name.toLowerCase().includes('count') || field.name.toLowerCase().includes('quantity')) {
         validations.push('.min(0, "Count cannot be negative")');
       }
@@ -263,7 +263,7 @@ export const ${table.name}SensitiveDataSchema = ${table.name}Schema.refine(
 
   generateFieldComment(field) {
     const comments = [];
-    
+
     if (this.hasDirective(field, '@sensitive')) {
       comments.push('Sensitive data - handle with care');
     }
@@ -307,28 +307,28 @@ if (!existsSync(snapshotsDir)) {
 function toMatchSnapshot(actual, testName, snapshotName = 'default') {
   const fileName = `${testName}.${snapshotName}.snap`;
   const filePath = join(snapshotsDir, fileName);
-  
+
   const normalizedActual = actual
     .replace(/\r\n/g, '\n')
     .replace(/\s+$/gm, '')
     .trim();
-  
+
   if (existsSync(filePath)) {
     const expectedContent = readFileSync(filePath, 'utf-8').trim();
-    
+
     if (normalizedActual !== expectedContent) {
       if (process.env.UPDATE_SNAPSHOTS) {
         writeFileSync(filePath, normalizedActual + '\n');
         console.log(`Updated snapshot: ${fileName}`);
         return;
       }
-      
+
       console.log('\nZod Snapshot mismatch:');
       console.log('Expected:');
       console.log(expectedContent);
       console.log('\nActual:');
       console.log(normalizedActual);
-      
+
       throw new Error(`Snapshot mismatch for ${fileName}. Set UPDATE_SNAPSHOTS=1 to update.`);
     }
   } else {

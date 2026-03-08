@@ -23,6 +23,7 @@ import { UpCommand } from './commands/up.mjs';
 import { CompileTtdCommand } from './commands/compile-ttd.mjs';
 import { DoctorCommand } from './commands/doctor.mjs';
 import { DiffCommand } from './commands/diff.mjs';
+import { QirValidateCommand } from './commands/qir-validate.mjs';
 
 export async function program(argv, ctx) {
   // Create commands with context (auto-registers them)
@@ -41,12 +42,13 @@ export async function program(argv, ctx) {
   new CompileTtdCommand(ctx);
   new DoctorCommand(ctx);
   new DiffCommand(ctx);
+  new QirValidateCommand(ctx);
 
   // TODO: Add other commands when they're updated
   // new ModelsCommand(ctx);
   // new TypeScriptCommand(ctx);
   // new ZodCommand(ctx);
-  
+
   // Create main program
   const program = new Command()
     .name('wesley')
@@ -56,10 +58,10 @@ export async function program(argv, ctx) {
     .option('--debug', 'Debug mode with stack traces')
     .option('-q, --quiet', 'Suppress all output')
     .option('--json', 'Output JSON');
-  
+
   // Register all commands from the registry
   WesleyCommand.registerAll(program);
-  
+
   // Parse and execute
   try {
     await program.parseAsync(argv, { from: 'node' });

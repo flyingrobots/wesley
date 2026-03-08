@@ -36,13 +36,13 @@ export class DifferentialValidator {
 
     // Perform comprehensive drift detection
     const driftAnalysis = await this.detectDrift(expectedSchema, actualSchema);
-    
+
     // Generate detailed diff report
     const diffReport = this.generateDetailedDiff(driftAnalysis);
-    
+
     // Assess drift severity and impact
     const impactAssessment = this.assessDriftImpact(driftAnalysis);
-    
+
     // Track modifications if enabled
     if (this.trackModifications && driftAnalysis.hasDrift) {
       this.recordModification(context, driftAnalysis);
@@ -166,7 +166,7 @@ export class DifferentialValidator {
     const actualFieldNames = Object.keys(actualFields);
 
     // Missing fields
-    const missingFields = expectedFieldNames.filter(name => 
+    const missingFields = expectedFieldNames.filter(name =>
       !actualFields[name] && !expectedFields[name].isVirtual()
     );
     for (const fieldName of missingFields) {
@@ -290,7 +290,7 @@ export class DifferentialValidator {
    */
   detectDirectiveDifferences(tableName, expectedDirectives, actualDirectives) {
     const differences = [];
-    
+
     if (!this.tolerance.constraintValidation) {
       return differences;
     }
@@ -340,17 +340,17 @@ export class DifferentialValidator {
     if (expectedType === actualType) return true;
 
     switch (this.tolerance.typeCompatibility) {
-      case 'strict':
-        return false;
-        
-      case 'compatible':
-        return this.isTypeCompatible(expectedType, actualType);
-        
-      case 'loose':
-        return this.isTypeLooselyCompatible(expectedType, actualType);
-        
-      default:
-        return false;
+    case 'strict':
+      return false;
+
+    case 'compatible':
+      return this.isTypeCompatible(expectedType, actualType);
+
+    case 'loose':
+      return this.isTypeLooselyCompatible(expectedType, actualType);
+
+    default:
+      return false;
     }
   }
 
@@ -380,10 +380,10 @@ export class DifferentialValidator {
     // In loose mode, most types can be converted
     const stringLike = ['String', 'text', 'varchar', 'char', 'ID'];
     const numberLike = ['Int', 'Float', 'integer', 'real', 'numeric', 'decimal'];
-    
+
     if (stringLike.includes(expected) && stringLike.includes(actual)) return true;
     if (numberLike.includes(expected) && numberLike.includes(actual)) return true;
-    
+
     return this.isTypeCompatible(expected, actual);
   }
 
@@ -418,27 +418,27 @@ export class DifferentialValidator {
 
     for (const diff of differences) {
       switch (diff.type) {
-        case 'missing_table':
-        case 'extra_table':
-        case 'missing_field':
-        case 'extra_field':
-          categories.structural.push(diff);
-          break;
-          
-        case 'missing_directive':
-        case 'extra_directive':
-          categories.behavioral.push(diff);
-          break;
-          
-        case 'field_type_mismatch':
-        case 'nullability_mismatch':
-        case 'array_item_nullability_mismatch':
-        case 'list_property_mismatch':
-          categories.semantic.push(diff);
-          break;
-          
-        default:
-          categories.cosmetic.push(diff);
+      case 'missing_table':
+      case 'extra_table':
+      case 'missing_field':
+      case 'extra_field':
+        categories.structural.push(diff);
+        break;
+
+      case 'missing_directive':
+      case 'extra_directive':
+        categories.behavioral.push(diff);
+        break;
+
+      case 'field_type_mismatch':
+      case 'nullability_mismatch':
+      case 'array_item_nullability_mismatch':
+      case 'list_property_mismatch':
+        categories.semantic.push(diff);
+        break;
+
+      default:
+        categories.cosmetic.push(diff);
       }
     }
 
@@ -450,7 +450,7 @@ export class DifferentialValidator {
    */
   generateDetailedDiff(driftAnalysis) {
     const { differences, driftCategories } = driftAnalysis;
-    
+
     const report = {
       summary: `Found ${differences.length} schema differences`,
       categories: Object.entries(driftCategories).map(([category, diffs]) => ({
@@ -475,13 +475,13 @@ export class DifferentialValidator {
    */
   assessDriftImpact(driftAnalysis) {
     const { differences } = driftAnalysis;
-    
+
     const criticalCount = differences.filter(d => d.severity === 'critical').length;
     const highCount = differences.filter(d => d.severity === 'high').length;
     const breakingChanges = differences.filter(d => d.impact === 'breaking').length;
-    
+
     let severity, repairComplexity;
-    
+
     if (criticalCount > 0 || breakingChanges > 0) {
       severity = 'critical';
       repairComplexity = 'high';
@@ -515,7 +515,7 @@ export class DifferentialValidator {
    */
   generateRepairRecommendations(driftAnalysis) {
     const { differences } = driftAnalysis;
-    
+
     const recommendations = {
       immediate: [],
       planned: [],
@@ -548,16 +548,16 @@ export class DifferentialValidator {
    */
   generateRepairHint(difference) {
     switch (difference.repairAction) {
-      case 'create_table':
-        return `-- Use wesley generate to create full table schema`;
-      case 'add_column':
-        return `ALTER TABLE "${difference.table}" ADD COLUMN "${difference.column}" ${this.inferColumnType(difference.expectedValue)};`;
-      case 'drop_column':
-        return `ALTER TABLE "${difference.table}" DROP COLUMN "${difference.column}";`;
-      case 'alter_column_type':
-        return `ALTER TABLE "${difference.table}" ALTER COLUMN "${difference.column}" TYPE ${difference.expectedValue};`;
-      default:
-        return `-- Manual intervention required for ${difference.repairAction}`;
+    case 'create_table':
+      return '-- Use wesley generate to create full table schema';
+    case 'add_column':
+      return `ALTER TABLE "${difference.table}" ADD COLUMN "${difference.column}" ${this.inferColumnType(difference.expectedValue)};`;
+    case 'drop_column':
+      return `ALTER TABLE "${difference.table}" DROP COLUMN "${difference.column}";`;
+    case 'alter_column_type':
+      return `ALTER TABLE "${difference.table}" ALTER COLUMN "${difference.column}" TYPE ${difference.expectedValue};`;
+    default:
+      return `-- Manual intervention required for ${difference.repairAction}`;
     }
   }
 
@@ -570,7 +570,7 @@ export class DifferentialValidator {
 
   recordModification(context, driftAnalysis) {
     if (!this.modificationHistory) return;
-    
+
     this.modificationHistory.push({
       ...context,
       driftCount: driftAnalysis.differences.length,
@@ -617,13 +617,13 @@ export class DifferentialValidator {
   }
 
   inferColumnType(field) {
-    const typeMap = { 
-      ID: 'uuid', 
-      String: 'text', 
-      Int: 'integer', 
-      Float: 'double precision', 
-      Boolean: 'boolean', 
-      DateTime: 'timestamptz' 
+    const typeMap = {
+      ID: 'uuid',
+      String: 'text',
+      Int: 'integer',
+      Float: 'double precision',
+      Boolean: 'boolean',
+      DateTime: 'timestamptz'
     };
     const pgType = typeMap[field.type] || 'text';
     return field.nonNull ? `${pgType} NOT NULL` : pgType;

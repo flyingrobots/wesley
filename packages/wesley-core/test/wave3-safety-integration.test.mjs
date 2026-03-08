@@ -4,7 +4,7 @@
  * - MigrationSafety (risk analysis and snapshots)
  * - BatchOptimizer (performance optimization)
  * - IntegrationTestHarness (end-to-end testing)
- * 
+ *
  * This test suite validates the complete safety infrastructure for Wesley migrations.
  */
 
@@ -14,10 +14,10 @@ import assert from 'node:assert';
 // Wave 3 Safety Components
 import { MigrationSafety } from '../src/domain/MigrationSafety.mjs';
 import { BatchOptimizer } from '../src/domain/optimizer/BatchOptimizer.mjs';
-import { 
+import {
   IntegrationTestHarness,
   TestConfig,
-  DatabaseSnapshot,
+  _DatabaseSnapshot,
   createBasicTest,
   createPerformanceTest,
   createStressTest,
@@ -54,39 +54,39 @@ class AdvancedMockDatabaseAdapter {
     this.failureTypes = options.failureTypes || [];
     this.performanceVariation = options.performanceVariation || 0.1;
     this.lockContentionRate = options.lockContentionRate || 0.05;
-    
+
     // Initial database state
     this.tables = new Map([
-      ['users', { 
+      ['users', {
         columns: ['id', 'email', 'name', 'created_at'],
         rows: 1000,
         data: this._generateMockData('users', 1000)
       }],
-      ['posts', { 
+      ['posts', {
         columns: ['id', 'title', 'content', 'user_id', 'published'],
         rows: 5000,
         data: this._generateMockData('posts', 5000)
       }],
-      ['comments', { 
+      ['comments', {
         columns: ['id', 'content', 'post_id', 'user_id'],
         rows: 15000,
         data: this._generateMockData('comments', 15000)
       }]
     ]);
-    
+
     this.constraints = [
       { name: 'posts_user_id_fk', table: 'posts', type: 'foreign_key', references: 'users' },
       { name: 'comments_post_id_fk', table: 'comments', type: 'foreign_key', references: 'posts' },
       { name: 'comments_user_id_fk', table: 'comments', type: 'foreign_key', references: 'users' }
     ];
-    
+
     this.indexes = [
       { name: 'users_email_idx', table: 'users', columns: ['email'], unique: true },
       { name: 'posts_user_id_idx', table: 'posts', columns: ['user_id'] },
       { name: 'posts_published_idx', table: 'posts', columns: ['published'] },
       { name: 'comments_post_id_idx', table: 'comments', columns: ['post_id'] }
     ];
-    
+
     this.operationHistory = [];
     this.transactionLog = [];
     this.lockLog = [];
@@ -94,12 +94,12 @@ class AdvancedMockDatabaseAdapter {
 
   async executeOperation(operation, options = {}) {
     const startTime = performance.now();
-    
+
     // Simulate performance variation
     const baseDelay = this.operationDelay;
     const variation = (Math.random() - 0.5) * 2 * this.performanceVariation * baseDelay;
     const actualDelay = Math.max(1, baseDelay + variation);
-    
+
     // Simulate lock contention
     const hasLockContention = Math.random() < this.lockContentionRate;
     if (hasLockContention) {
@@ -131,66 +131,66 @@ class AdvancedMockDatabaseAdapter {
     }
 
     // Execute the operation
-    return await this._performOperation(operation, options);
+    return this._performOperation(operation, options);
   }
 
-  async _performOperation(operation, options) {
+  async _performOperation(operation, _options) {
     switch (operation.kind) {
-      case 'create_table':
-        this.tables.set(operation.table, {
-          columns: operation.columns || ['id'],
-          rows: 0,
-          data: []
-        });
-        break;
-        
-      case 'drop_table':
-        if (this.tables.has(operation.table)) {
-          this.tables.delete(operation.table);
+    case 'create_table':
+      this.tables.set(operation.table, {
+        columns: operation.columns || ['id'],
+        rows: 0,
+        data: []
+      });
+      break;
+
+    case 'drop_table':
+      if (this.tables.has(operation.table)) {
+        this.tables.delete(operation.table);
+      }
+      break;
+
+    case 'add_column':
+      if (this.tables.has(operation.table)) {
+        const table = this.tables.get(operation.table);
+        if (!table.columns.includes(operation.column)) {
+          table.columns.push(operation.column);
         }
-        break;
-        
-      case 'add_column':
-        if (this.tables.has(operation.table)) {
-          const table = this.tables.get(operation.table);
-          if (!table.columns.includes(operation.column)) {
-            table.columns.push(operation.column);
-          }
-        }
-        break;
-        
-      case 'drop_column':
-        if (this.tables.has(operation.table)) {
-          const table = this.tables.get(operation.table);
-          table.columns = table.columns.filter(col => col !== operation.column);
-        }
-        break;
-        
-      case 'create_index':
-        this.indexes.push({
-          name: operation.name || `${operation.table}_${operation.columns.join('_')}_idx`,
-          table: operation.table,
-          columns: operation.columns,
-          unique: operation.unique || false
-        });
-        break;
-        
-      case 'add_constraint':
-        this.constraints.push({
-          name: operation.constraint,
-          table: operation.table,
-          type: operation.constraintType,
-          references: operation.references
-        });
-        break;
-        
-      default:
-        // Handle other operations
-        break;
+      }
+      break;
+
+    case 'drop_column':
+      if (this.tables.has(operation.table)) {
+        const table = this.tables.get(operation.table);
+        table.columns = table.columns.filter(col => col !== operation.column);
+      }
+      break;
+
+    case 'create_index':
+      this.indexes.push({
+        name: operation.name || `${operation.table}_${operation.columns.join('_')}_idx`,
+        table: operation.table,
+        columns: operation.columns,
+        unique: operation.unique || false
+      });
+      break;
+
+    case 'add_constraint':
+      this.constraints.push({
+        name: operation.constraint,
+        table: operation.table,
+        type: operation.constraintType,
+        references: operation.references
+      });
+      break;
+
+    default:
+      // Handle other operations
+      break;
     }
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       operation: operation.kind,
       table: operation.table,
       executionTime: this.operationHistory[this.operationHistory.length - 1].executionTime
@@ -198,7 +198,7 @@ class AdvancedMockDatabaseAdapter {
   }
 
   _shouldFailOperation(operation) {
-    return this.failureTypes.includes(operation.kind) || 
+    return this.failureTypes.includes(operation.kind) ||
            (this.failureTypes.includes('random') && Math.random() < 0.1);
   }
 
@@ -206,9 +206,9 @@ class AdvancedMockDatabaseAdapter {
     const failureMessages = {
       'drop_table': `Cannot drop table ${operation.table}: table has dependent objects`,
       'drop_column': `Cannot drop column ${operation.column}: column is referenced by constraints`,
-      'alter_type': `Cannot alter column type: incompatible data types`,
-      'add_constraint': `Constraint violation: existing data violates constraint`,
-      'create_index': `Cannot create index: insufficient disk space`
+      'alter_type': 'Cannot alter column type: incompatible data types',
+      'add_constraint': 'Constraint violation: existing data violates constraint',
+      'create_index': 'Cannot create index: insufficient disk space'
     };
 
     const message = failureMessages[operation.kind] || `Operation ${operation.kind} failed`;
@@ -221,31 +221,31 @@ class AdvancedMockDatabaseAdapter {
     const data = [];
     for (let i = 1; i <= Math.min(count, 100); i++) { // Limit to 100 for performance
       switch (tableName) {
-        case 'users':
-          data.push({
-            id: i,
-            email: `user${i}@example.com`,
-            name: `User ${i}`,
-            created_at: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString()
-          });
-          break;
-        case 'posts':
-          data.push({
-            id: i,
-            title: `Post Title ${i}`,
-            content: `Content for post ${i}`,
-            user_id: Math.ceil(Math.random() * 100),
-            published: Math.random() > 0.3
-          });
-          break;
-        case 'comments':
-          data.push({
-            id: i,
-            content: `Comment content ${i}`,
-            post_id: Math.ceil(Math.random() * 500),
-            user_id: Math.ceil(Math.random() * 100)
-          });
-          break;
+      case 'users':
+        data.push({
+          id: i,
+          email: `user${i}@example.com`,
+          name: `User ${i}`,
+          created_at: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString()
+        });
+        break;
+      case 'posts':
+        data.push({
+          id: i,
+          title: `Post Title ${i}`,
+          content: `Content for post ${i}`,
+          user_id: Math.ceil(Math.random() * 100),
+          published: Math.random() > 0.3
+        });
+        break;
+      case 'comments':
+        data.push({
+          id: i,
+          content: `Comment content ${i}`,
+          post_id: Math.ceil(Math.random() * 500),
+          user_id: Math.ceil(Math.random() * 100)
+        });
+        break;
       }
     }
     return data;
@@ -301,7 +301,7 @@ class AdvancedMockDatabaseAdapter {
       totalConstraints: this.constraints.length,
       totalIndexes: this.indexes.length,
       totalOperations: this.operationHistory.length,
-      averageOperationTime: this.operationHistory.length > 0 
+      averageOperationTime: this.operationHistory.length > 0
         ? this.operationHistory.reduce((sum, op) => sum + op.executionTime, 0) / this.operationHistory.length
         : 0,
       lockContentionEvents: this.lockLog.length,
@@ -309,11 +309,11 @@ class AdvancedMockDatabaseAdapter {
     };
   }
 
-  async setupTestEnvironment(options = {}) {
+  async setupTestEnvironment(_options = {}) {
     this.transactionLog.push({ type: 'setup', timestamp: Date.now() });
   }
 
-  async cleanupTestEnvironment(options = {}) {
+  async cleanupTestEnvironment(_options = {}) {
     this.transactionLog.push({ type: 'cleanup', timestamp: Date.now() });
   }
 
@@ -338,7 +338,7 @@ class AdvancedMockDatabaseAdapter {
 test('Wave 3 Complete Safety Pipeline - Low Risk Migration', async () => {
   const eventEmitter = new MockEventEmitter();
   const databaseAdapter = new AdvancedMockDatabaseAdapter();
-  
+
   // Initialize all Wave 3 components
   const migrationSafety = new MigrationSafety({
     allowDestructive: false,
@@ -376,9 +376,9 @@ test('Wave 3 Complete Safety Pipeline - Low Risk Migration', async () => {
   const optimizationResult = await batchOptimizer.optimizeOperations(operations);
   assert(optimizationResult.batches.length > 0, 'Should create optimized batches');
   assert.equal(optimizationResult.metrics.originalOperationCount, operations.length);
-  
+
   // Verify lock contention minimization
-  const createTableBatch = optimizationResult.batches.find(b => 
+  const createTableBatch = optimizationResult.batches.find(b =>
     b.operations.some(op => op.kind === 'create_table')
   );
   assert(createTableBatch, 'Should have batch with table creation');
@@ -392,7 +392,7 @@ test('Wave 3 Complete Safety Pipeline - Low Risk Migration', async () => {
   const testResult = await testHarness.executeTest(testConfig, operations);
   assert.equal(testResult.status, 'passed', 'Integration test should pass');
   assert(testResult.snapshots.length > 0, 'Should create snapshots');
-  
+
   // Step 4: Verify event emission across all components
   const events = eventEmitter.getAllEvents();
   assert(events.some(e => e.type === 'BATCH_OPTIMIZATION_REQUESTED'), 'Should emit batch optimization events');
@@ -401,14 +401,14 @@ test('Wave 3 Complete Safety Pipeline - Low Risk Migration', async () => {
   assert(events.some(e => e.type === 'SNAPSHOT_CREATED'), 'Should emit snapshot events');
 
   // Verify end-to-end integration
-  assert(safetyAnalysis.risks.length < optimizationResult.batches.length * 2, 
+  assert(safetyAnalysis.risks.length < optimizationResult.batches.length * 2,
     'Risk count should be manageable relative to batches');
 });
 
 test('Wave 3 Complete Safety Pipeline - High Risk Migration', async () => {
   const eventEmitter = new MockEventEmitter();
   const databaseAdapter = new AdvancedMockDatabaseAdapter();
-  
+
   // Initialize components with stricter settings for high-risk operations
   const migrationSafety = new MigrationSafety({
     allowDestructive: true, // Allow but analyze
@@ -442,7 +442,7 @@ test('Wave 3 Complete Safety Pipeline - High Risk Migration', async () => {
   assert.equal(safetyAnalysis.isDestructive, true, 'Migration should be flagged as destructive');
   assert(safetyAnalysis.totalRiskScore >= 100, 'Risk score should be high');
   assert(safetyAnalysis.requiresConfirmation, 'Should require confirmation');
-  
+
   // Verify Holmes risk scoring
   const holmesScore = migrationSafety.calculateHolmesRiskScore(riskyOperations);
   assert(holmesScore.mri >= 100, 'Migration Risk Index should be high');
@@ -456,12 +456,12 @@ test('Wave 3 Complete Safety Pipeline - High Risk Migration', async () => {
 
   // Step 3: Batch Optimization - Should isolate risky operations
   const optimizationResult = await batchOptimizer.optimizeOperations(riskyOperations);
-  
+
   // Verify risky operations are properly handled
   const riskyBatches = optimizationResult.batches.filter(batch =>
     batch.operations.some(op => ['drop_table', 'drop_column', 'alter_type'].includes(op.kind))
   );
-  
+
   riskyBatches.forEach(batch => {
     assert.equal(batch.transactionMode, 'explicit', 'Risky operations should use explicit transactions');
     assert.equal(batch.rollbackPolicy, 'immediate', 'Should have immediate rollback policy');
@@ -478,7 +478,7 @@ test('Wave 3 Complete Safety Pipeline - High Risk Migration', async () => {
   });
 
   const stressResult = await testHarness.executeTest(stressTestConfig, riskyOperations);
-  
+
   // May pass or fail due to injected failures, but should handle gracefully
   assert(['passed', 'failed'].includes(stressResult.status), 'Should handle stress test execution');
   assert(stressResult.phases.length >= 4, 'Should execute all test phases');
@@ -486,19 +486,19 @@ test('Wave 3 Complete Safety Pipeline - High Risk Migration', async () => {
   // Step 5: Rollback Verification
   if (stressResult.snapshots.length > 0) {
     const rollbackResult = await testHarness.verifyRollback(
-      stressResult.snapshots[0], 
-      riskyOperations, 
+      stressResult.snapshots[0],
+      riskyOperations,
       stressTestConfig
     );
-    
+
     // Should successfully generate rollback operations
     assert(rollbackResult, 'Should complete rollback verification process');
   }
 
   // Verify safety pipeline coordination
   const allEvents = eventEmitter.getAllEvents();
-  const failureEvents = allEvents.filter(e => e.type === 'FAILURE_INJECTED');
-  
+  const _failureEvents = allEvents.filter(e => e.type === 'FAILURE_INJECTED');
+
   // Should have comprehensive event coverage
   assert(allEvents.length > 10, 'Should emit comprehensive event stream');
 });
@@ -522,13 +522,13 @@ test('Wave 3 Performance Regression Detection', async () => {
   // Step 1: Establish baseline
   const baselineConfig = createPerformanceTest('Performance Baseline', operations);
   const baselineResult = await testHarness.executeTest(baselineConfig, operations);
-  
+
   assert.equal(baselineResult.status, 'passed', 'Baseline test should pass');
   const baselineTime = baselineResult.metrics.executionTime;
-  
+
   // Set performance baseline
-  testHarness.setPerformanceBaseline('Performance Test', { 
-    executionTime: baselineTime 
+  testHarness.setPerformanceBaseline('Performance Test', {
+    executionTime: baselineTime
   });
 
   // Step 2: Test with performance regression (slower database)
@@ -536,15 +536,15 @@ test('Wave 3 Performance Regression Detection', async () => {
     operationDelay: 150, // Much slower
     performanceVariation: 0.1
   });
-  
-  const regressionHarness = new IntegrationTestHarness({ 
-    databaseAdapter: slowDatabaseAdapter, 
-    eventEmitter 
+
+  const regressionHarness = new IntegrationTestHarness({
+    databaseAdapter: slowDatabaseAdapter,
+    eventEmitter
   });
-  
+
   // Copy baseline to new harness
-  regressionHarness.setPerformanceBaseline('Performance Test', { 
-    executionTime: baselineTime 
+  regressionHarness.setPerformanceBaseline('Performance Test', {
+    executionTime: baselineTime
   });
 
   const regressionConfig = createPerformanceTest('Performance Test', operations, baselineTime, {
@@ -552,19 +552,19 @@ test('Wave 3 Performance Regression Detection', async () => {
   });
 
   const regressionResult = await regressionHarness.executeTest(regressionConfig, operations);
-  
+
   // Should detect performance regression
   assert.equal(regressionResult.status, 'failed', 'Should fail due to performance regression');
-  assert(regressionResult.error.message.includes('Performance regression'), 
+  assert(regressionResult.error.message.includes('Performance regression'),
     'Should indicate performance regression');
 
   // Step 3: Verify batch optimization helps with performance
   const optimizationResult = await batchOptimizer.optimizeOperations(operations);
-  
+
   // Should optimize for performance
   assert(optimizationResult.metrics.memoryEfficiency > 0, 'Should report memory efficiency');
   assert(optimizationResult.metrics.lockConflictReduction >= 0, 'Should reduce lock conflicts');
-  
+
   // Index creation operations should be batched efficiently
   const indexBatches = optimizationResult.batches.filter(batch =>
     batch.operations.every(op => op.kind === 'create_index')
@@ -601,14 +601,14 @@ test('Wave 3 Concurrent Execution Safety', async () => {
 
   // Step 1: Optimize for concurrent safety
   const optimizationResult = await batchOptimizer.optimizeOperations(mixedOperations);
-  
+
   // Should separate potentially conflicting operations
   assert(optimizationResult.analysis.conflicts.size >= 0, 'Should analyze conflicts');
-  
+
   // Verify transaction safety configuration
   optimizationResult.batches.forEach(batch => {
     if (batch.operations.some(op => op.kind === 'create_table')) {
-      assert.equal(batch.requiresExclusiveLock, true, 
+      assert.equal(batch.requiresExclusiveLock, true,
         'Schema operations should require exclusive locks');
     }
   });
@@ -621,7 +621,7 @@ test('Wave 3 Concurrent Execution Safety', async () => {
   });
 
   const concurrentResult = await testHarness.simulateConcurrentExecution(
-    mixedOperations, 
+    mixedOperations,
     concurrentConfig
   );
 
@@ -633,16 +633,16 @@ test('Wave 3 Concurrent Execution Safety', async () => {
   // Step 3: Verify lock contention handling
   const lockEvents = databaseAdapter.getLockContentionEvents();
   const operationHistory = databaseAdapter.getOperationHistory();
-  
+
   // Should track lock contention
   if (lockEvents.length > 0) {
-    assert(lockEvents.every(event => event.contentionTime > 0), 
+    assert(lockEvents.every(event => event.contentionTime > 0),
       'Lock contention events should have timing data');
   }
-  
+
   // Operations should complete despite contention
   assert(operationHistory.length > 0, 'Should execute operations');
-  assert(operationHistory.every(op => op.executionTime >= 0), 
+  assert(operationHistory.every(op => op.executionTime >= 0),
     'All operations should have execution times');
 
   // Step 4: Integration test with concurrent safety
@@ -670,9 +670,9 @@ test('Wave 3 Comprehensive Failure Recovery', async () => {
   });
 
   const batchOptimizer = new BatchOptimizer({ eventEmitter });
-  const testHarness = new IntegrationTestHarness({ 
-    databaseAdapter: failingAdapter, 
-    eventEmitter 
+  const testHarness = new IntegrationTestHarness({
+    databaseAdapter: failingAdapter,
+    eventEmitter
   });
 
   const operationsWithFailures = [
@@ -689,12 +689,12 @@ test('Wave 3 Comprehensive Failure Recovery', async () => {
 
   // Step 2: Batch optimization should isolate risky operations
   const optimizationResult = await batchOptimizer.optimizeOperations(operationsWithFailures);
-  
+
   // Find batches with operations that will fail
   const riskyBatches = optimizationResult.batches.filter(batch =>
     batch.operations.some(op => ['drop_table', 'alter_type'].includes(op.kind))
   );
-  
+
   assert(riskyBatches.length > 0, 'Should have batches with risky operations');
 
   // Step 3: Test failure recovery
@@ -707,13 +707,13 @@ test('Wave 3 Comprehensive Failure Recovery', async () => {
   });
 
   const failureResult = await testHarness.executeTest(failureConfig, operationsWithFailures);
-  
+
   // Should handle failures gracefully
   assert(['passed', 'failed'].includes(failureResult.status), 'Should complete test execution');
-  
+
   if (failureResult.status === 'failed') {
     assert(failureResult.error, 'Failed test should have error information');
-    
+
     // Verify failure was properly captured
     const executionPhase = failureResult.phases.find(p => p.name === 'execution');
     if (executionPhase && executionPhase.status === 'failed') {
@@ -729,24 +729,24 @@ test('Wave 3 Comprehensive Failure Recovery', async () => {
         shouldFail: false,
         operationDelay: 10
       });
-      
-      const rollbackHarness = new IntegrationTestHarness({ 
+
+      const rollbackHarness = new IntegrationTestHarness({
         databaseAdapter: stableAdapter,
-        eventEmitter 
+        eventEmitter
       });
-      
+
       // Copy snapshot to new harness
       const originalSnapshot = testHarness.activeSnapshots.get(failureResult.snapshots[0]);
       rollbackHarness.activeSnapshots.set(failureResult.snapshots[0], originalSnapshot);
-      
+
       const rollbackResult = await rollbackHarness.verifyRollback(
         failureResult.snapshots[0],
         operationsWithFailures.filter(op => !['drop_table', 'alter_type'].includes(op.kind)), // Only successful ops
         failureConfig
       );
-      
+
       assert(rollbackResult.success, 'Should successfully verify rollback capability');
-      
+
     } catch (rollbackError) {
       // Rollback testing itself might fail in complex scenarios
       console.warn('Rollback verification failed:', rollbackError.message);
@@ -794,22 +794,22 @@ test('Wave 3 End-to-End Real-World Migration Scenario', async () => {
     // Phase 1: New feature preparation
     { kind: 'create_table', table: 'user_preferences', columns: ['id', 'user_id', 'preferences'] },
     { kind: 'add_column', table: 'users', column: 'preference_id' },
-    
+
     // Phase 2: Performance improvements
     { kind: 'create_index', table: 'posts', columns: ['created_at'], name: 'posts_created_at_idx' },
     { kind: 'create_index', table: 'comments', columns: ['created_at'], name: 'comments_created_at_idx' },
     { kind: 'create_index', table: 'user_preferences', columns: ['user_id'], name: 'user_prefs_user_id_idx' },
-    
+
     // Phase 3: Data cleanup (risky)
     { kind: 'drop_column', table: 'users', column: 'old_status' },
     { kind: 'alter_type', table: 'posts', column: 'view_count', from: 'varchar', to: 'integer' },
-    
+
     // Phase 4: Constraints and relationships
-    { kind: 'add_constraint', table: 'user_preferences', constraint: 'user_prefs_user_fk', 
+    { kind: 'add_constraint', table: 'user_preferences', constraint: 'user_prefs_user_fk',
       constraintType: 'foreign_key', references: 'users' },
-    { kind: 'add_constraint', table: 'users', constraint: 'users_pref_fk', 
+    { kind: 'add_constraint', table: 'users', constraint: 'users_pref_fk',
       constraintType: 'foreign_key', references: 'user_preferences' },
-    
+
     // Phase 5: Final cleanup
     { kind: 'drop_table', table: 'deprecated_logs' }
   ];
@@ -819,51 +819,51 @@ test('Wave 3 End-to-End Real-World Migration Scenario', async () => {
   // Step 1: Comprehensive Safety Analysis
   console.log('📊 Phase 1: Safety Analysis');
   const safetyAnalysis = migrationSafety.analyzeMigration(realWorldMigration);
-  
+
   console.log(`   Risk Score: ${safetyAnalysis.totalRiskScore}`);
   console.log(`   Destructive: ${safetyAnalysis.isDestructive}`);
   console.log(`   Requires Confirmation: ${safetyAnalysis.requiresConfirmation}`);
   console.log(`   Risk Count: ${safetyAnalysis.risks.length}`);
-  
+
   assert(safetyAnalysis.totalRiskScore > 0, 'Should have calculated risk score');
   assert(safetyAnalysis.isDestructive, 'Migration should be flagged as destructive');
 
   // Step 2: Advanced Batch Optimization
   console.log('\n⚡ Phase 2: Batch Optimization');
   const optimizationResult = await batchOptimizer.optimizeOperations(realWorldMigration);
-  
+
   console.log(`   Original Operations: ${optimizationResult.metrics.originalOperationCount}`);
   console.log(`   Optimized Batches: ${optimizationResult.metrics.batchCount}`);
   console.log(`   Average Batch Size: ${optimizationResult.metrics.averageBatchSize.toFixed(2)}`);
   console.log(`   Lock Conflict Reduction: ${optimizationResult.metrics.lockConflictReduction}%`);
   console.log(`   Memory Efficiency: ${optimizationResult.metrics.memoryEfficiency.toFixed(1)}%`);
-  
+
   assert(optimizationResult.batches.length > 0, 'Should create optimized batches');
   assert(optimizationResult.metrics.batchCount > 1, 'Complex migration should require multiple batches');
 
   // Step 3: Pre-flight Snapshot Generation
   console.log('\n📸 Phase 3: Pre-flight Snapshot Generation');
   const preFlightSnapshot = migrationSafety.generatePreFlightSnapshot({}, realWorldMigration);
-  
+
   assert(preFlightSnapshot.includes('Pre-flight pgTAP snapshot'), 'Should generate snapshot SQL');
   assert(preFlightSnapshot.includes('SELECT plan(999)'), 'Should include pgTAP test plan');
   console.log('   ✅ Pre-flight snapshot generated successfully');
 
   // Step 4: Multi-phase Integration Testing
   console.log('\n🧪 Phase 4: Multi-phase Integration Testing');
-  
+
   // Test Suite: Multiple test scenarios
   const testSuite = [
     createBasicTest('Real-World Basic Test', realWorldMigration, {
       timeout: 20000,
       snapshotStrategy: 'full'
     }),
-    
+
     createPerformanceTest('Real-World Performance Test', realWorldMigration, 2000, {
       performanceThreshold: 50,
       timeout: 15000
     }),
-    
+
     createStressTest('Real-World Stress Test', realWorldMigration, {
       timeout: 25000,
       maxConcurrency: 2,
@@ -879,19 +879,19 @@ test('Wave 3 End-to-End Real-World Migration Scenario', async () => {
 
   console.log(`   Suite Results: ${suiteResult.summary.passed}/${suiteResult.summary.total} passed`);
   console.log(`   Total Time: ${suiteResult.summary.totalTime.toFixed(2)}ms`);
-  
+
   assert(suiteResult.summary.total === 3, 'Should run all test configurations');
   assert(suiteResult.summary.passed >= 2, 'At least 2 out of 3 tests should pass');
 
   // Step 5: Holmes Risk Scoring Integration
   console.log('\n🔍 Phase 5: Holmes Risk Scoring');
   const holmesScore = migrationSafety.calculateHolmesRiskScore(realWorldMigration);
-  
+
   console.log(`   MRI (Migration Risk Index): ${holmesScore.mri}`);
   console.log(`   Evidence Count: ${holmesScore.evidence.length}`);
   console.log(`   Requires Review: ${holmesScore.requiresReview}`);
   console.log(`   Block Deployment: ${holmesScore.blockDeployment}`);
-  
+
   assert(holmesScore.mri > 0, 'Should calculate Migration Risk Index');
   assert(holmesScore.evidence.length > 0, 'Should provide risk evidence');
 
@@ -900,11 +900,11 @@ test('Wave 3 End-to-End Real-World Migration Scenario', async () => {
   const databaseStats = await databaseAdapter.getDatabaseStatistics();
   const operationHistory = databaseAdapter.getOperationHistory();
   const lockEvents = databaseAdapter.getLockContentionEvents();
-  
+
   console.log(`   Total Operations Executed: ${operationHistory.length}`);
   console.log(`   Average Operation Time: ${databaseStats.averageOperationTime.toFixed(2)}ms`);
   console.log(`   Lock Contention Events: ${lockEvents.length}`);
-  
+
   // Verify performance tracking
   assert(operationHistory.length > 0, 'Should have executed operations');
   assert(databaseStats.averageOperationTime >= 0, 'Should track operation performance');
@@ -913,34 +913,34 @@ test('Wave 3 End-to-End Real-World Migration Scenario', async () => {
   console.log('\n📡 Phase 7: Event Stream Analysis');
   const allEvents = eventEmitter.getAllEvents();
   const eventTypes = [...new Set(allEvents.map(e => e.type))];
-  
+
   console.log(`   Total Events: ${allEvents.length}`);
   console.log(`   Event Types: ${eventTypes.length}`);
   console.log(`   Event Categories: ${eventTypes.join(', ')}`);
-  
+
   // Verify comprehensive event coverage
   const expectedEventTypes = [
     'BATCH_OPTIMIZATION_REQUESTED',
-    'BATCH_OPTIMIZED', 
+    'BATCH_OPTIMIZED',
     'TEST_SUITE_STARTED',
     'TEST_STARTED',
     'SNAPSHOT_CREATED'
   ];
-  
+
   expectedEventTypes.forEach(eventType => {
-    assert(allEvents.some(e => e.type === eventType), 
+    assert(allEvents.some(e => e.type === eventType),
       `Should emit ${eventType} events`);
   });
 
   // Step 8: Final Integration Verification
   console.log('\n✅ Phase 8: Integration Verification');
-  
+
   // Verify all Wave 3 components worked together
   const integrationChecks = {
     safetyAnalysisComplete: safetyAnalysis.totalRiskScore > 0,
     batchOptimizationComplete: optimizationResult.batches.length > 0,
     testExecutionComplete: suiteResult.summary.total > 0,
-    snapshotsGenerated: testSuite.some(test => 
+    snapshotsGenerated: testSuite.some(test =>
       suiteResult.tests.find(result => result.name === test.name)?.snapshots?.length > 0
     ),
     eventsEmitted: allEvents.length > 20,
@@ -953,7 +953,7 @@ test('Wave 3 End-to-End Real-World Migration Scenario', async () => {
   });
 
   console.log('\n🎉 Wave 3 End-to-End Real-World Migration Test Completed Successfully!');
-  
+
   // Return comprehensive results for further analysis
   return {
     safetyAnalysis,
@@ -969,7 +969,7 @@ test('Wave 3 End-to-End Real-World Migration Scenario', async () => {
 test('Wave 3 Memory and Resource Management', async () => {
   const eventEmitter = new MockEventEmitter();
   const databaseAdapter = new AdvancedMockDatabaseAdapter();
-  
+
   // Test with constrained resources
   const batchOptimizer = new BatchOptimizer({
     maxBatchSize: 3, // Very small batches
@@ -993,10 +993,10 @@ test('Wave 3 Memory and Resource Management', async () => {
 
   // Step 1: Verify memory-aware batching
   const optimizationResult = await batchOptimizer.optimizeOperations(memoryIntensiveOperations);
-  
+
   // Should create many small batches due to memory constraints
   assert(optimizationResult.batches.length >= 5, 'Should create multiple small batches');
-  
+
   optimizationResult.batches.forEach(batch => {
     assert(batch.operations.length <= 3, 'Batches should respect size limit');
     assert(batch.estimatedMemoryMB <= 32, 'Batches should respect memory limit');
@@ -1020,8 +1020,8 @@ test('Wave 3 Memory and Resource Management', async () => {
     'Should respect snapshot retention limits');
 
   // Step 3: Verify resource cleanup
-  const initialSnapshotCount = testHarness.activeSnapshots.size;
-  
+  const _initialSnapshotCount = testHarness.activeSnapshots.size;
+
   // Force snapshot creation beyond retention
   await testHarness.createSnapshot('cleanup-test-1');
   await testHarness.createSnapshot('cleanup-test-2');
@@ -1033,7 +1033,7 @@ test('Wave 3 Memory and Resource Management', async () => {
 });
 
 // Helper function to summarize test results
-function summarizeWave3Results(results) {
+function _summarizeWave3Results(results) {
   return {
     totalTests: results.length,
     passed: results.filter(r => r.status === 'passed').length,
@@ -1041,7 +1041,7 @@ function summarizeWave3Results(results) {
     averageExecutionTime: results.reduce((sum, r) => sum + (r.executionTime || 0), 0) / results.length,
     componentsValidated: [
       'MigrationSafety',
-      'BatchOptimizer', 
+      'BatchOptimizer',
       'IntegrationTestHarness'
     ],
     featuresValidated: [
@@ -1058,7 +1058,7 @@ function summarizeWave3Results(results) {
 
 test('Wave 3 Safety Integration - Summary and Validation', async () => {
   console.log('\n🔬 Wave 3 Safety Integration - Final Validation\n');
-  
+
   // This test serves as a final validation of all Wave 3 components
   const validationChecks = [
     {
@@ -1067,7 +1067,7 @@ test('Wave 3 Safety Integration - Summary and Validation', async () => {
       validated: true
     },
     {
-      component: 'BatchOptimizer', 
+      component: 'BatchOptimizer',
       features: ['Operation Batching', 'Lock Minimization', 'Memory Management', 'Transaction Optimization'],
       validated: true
     },
@@ -1087,14 +1087,14 @@ test('Wave 3 Safety Integration - Summary and Validation', async () => {
   });
 
   // Verify all components are properly integrated
-  assert(validationChecks.every(check => check.validated), 
+  assert(validationChecks.every(check => check.validated),
     'All Wave 3 safety components should be validated');
 
   console.log('\n🎯 Wave 3 Safety Integration Test Suite: COMPLETE');
   console.log('   All safety features implemented and tested');
-  console.log('   Components work together seamlessly'); 
+  console.log('   Components work together seamlessly');
   console.log('   Production-ready migration safety achieved');
-  
+
   // Final assertion - Wave 3 safety infrastructure is complete
   assert(true, 'Wave 3 Safety Integration Test Suite completed successfully');
 });

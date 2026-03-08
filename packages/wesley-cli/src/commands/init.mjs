@@ -29,11 +29,11 @@ export class InitCommand extends WesleyCommand {
     }
 
     // Minimal canonical schema (v1 baseline)
-    const schema = `# Wesley minimal schema (v1 baseline)\n\n` +
-      `type User @wes_table {\n` +
-      `  id: ID! @wes_pk\n` +
-      `  email: String! @wes_unique\n` +
-      `}\n`;
+    const schema = '# Wesley minimal schema (v1 baseline)\n\n' +
+      'type User @wes_table {\n' +
+      '  id: ID! @wes_pk\n' +
+      '  email: String! @wes_unique\n' +
+      '}\n';
 
     await fs.write(schemaPath, schema);
 
@@ -52,7 +52,7 @@ export class InitCommand extends WesleyCommand {
           }
         }
         if (changed) await fs.write(giPath, content);
-      } catch {}
+      } catch { /* empty */ }
     }
 
     if (logger) logger.info(`✨ Initialized Wesley project. Schema: ${schemaPath}`);

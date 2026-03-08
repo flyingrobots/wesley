@@ -80,7 +80,7 @@ function createFixture({ includeBundle = true, includeHistory = true, corruptBun
 
   mkdirSync(bundleDir, { recursive: true });
   mkdirSync(schemaDir, { recursive: true });
-  writeFileSync(schemaPath, `type Query { hello: String }\\n`);
+  writeFileSync(schemaPath, 'type Query { hello: String }\\n');
 
   if (includeBundle) {
     const bundlePath = path.join(bundleDir, 'bundle.json');
@@ -196,7 +196,7 @@ test('holmes CLI predict accepts explicit history file', () => {
 
 test('holmes CLI report emits combined JSON with overrides', () => {
   const { stdout, json } = runCli('report', { jsonName: 'combined-report' });
-  assert.ok(stdout.includes('The Case of Schema Investigation')); 
+  assert.ok(stdout.includes('The Case of Schema Investigation'));
   assert.ok(json?.holmes, 'Combined report should include HOLMES data');
   assert.ok(json?.watson, 'Combined report should include WATSON data');
   assert.ok(json?.moriarty, 'Combined report should include MORIARTY data');

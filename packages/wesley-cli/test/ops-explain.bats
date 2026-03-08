@@ -1,0 +1,38 @@
+#!/usr/bin/env bats
+
+load 'bats-plugins/bats-support/load'
+load 'bats-plugins/bats-assert/load'
+load 'bats-plugins/bats-file/load'
+
+setup() {
+  ROOT_DIR="${WESLEY_REPO_ROOT:-$(cd "$BATS_TEST_DIRNAME/../../.." && pwd)}"
+  CLI="$ROOT_DIR/packages/wesley-host-node/bin/wesley.mjs"
+  OUT="$ROOT_DIR/out/examples"
+  rm -rf "$OUT"
+}
+
+teardown() {
+  rm -rf "$OUT"
+}
+
+@test "ops: emits mock EXPLAIN JSON snapshots with --ops-explain mock" {
+  run node "$CLI" generate \
+    --schema "$ROOT_DIR/test/fixtures/examples/ecommerce.graphql" \
+    --out-dir "$OUT" \
+    --ops "$ROOT_DIR/test/fixtures/examples/ops" \
+    --ops-explain mock \
+    --ops-allow-errors \
+    --i-know-what-im-doing `# Bypass safety prompt for automated testing` \
+    --allow-dirty
+
+  assert_success
+
+  REG="$OUT/ops/registry.json"
+  EXPL="$OUT/ops/explain/products_by_name.explain.json"
+
+  assert_file_exists "$REG"
+  assert_file_exists "$EXPL"
+
+  run jq -e '.Plan | type == "object" and (."Node Type" != null)' "$EXPL"
+  assert_success
+}

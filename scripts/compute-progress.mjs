@@ -13,7 +13,7 @@ const argv = Array.from(process.argv || []);
 const DRY_RUN = argv.includes('--dry-run') || /^(1|true)$/i.test(String(process.env.DRY_RUN || ''));
 
 if (argv.includes('--help') || argv.includes('-h')) {
-  console.log(`Usage: node scripts/compute-progress.mjs [--dry-run]\n\nOptions:\n  --dry-run   Compute and print a summary; do not write files.`);
+  console.log('Usage: node scripts/compute-progress.mjs [--dry-run]\n\nOptions:\n  --dry-run   Compute and print a summary; do not write files.');
   process.exit(0);
 }
 
@@ -81,7 +81,7 @@ function computeStageAndProgress(pkg, passRate, docs, milestones) {
   const base = inferBaseStage(pkg.status);
   let stage = base;
   let progress = 0; // % to next stage
-  const nstage = nextStage(stage);
+  const _nstage = nextStage(stage);
 
   // MVP gates → Alpha
   // - passRate >= 0.9
@@ -148,7 +148,7 @@ async function main() {
         const sum = JSON.parse(readFileSync(resolve(baseDir, 'coverage/coverage-summary.json'), 'utf8'));
         coverage = sum.total?.lines?.pct ?? null;
       }
-    } catch {}
+    } catch { /* empty */ }
     results.push({ name: p.name, status: p.status, stage, progress, next, passRate, docs, milestones, coverage });
   }
 

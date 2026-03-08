@@ -33,26 +33,26 @@ export function compileFilter(input, env) {
   const type = normalizeScalar(col.type);
 
   switch (op) {
-    case 'in': {
-      if (!Array.isArray(rhsVal) || rhsVal.length === 0) {
-        // FALSE = TRUE (we will collapse later). Keeps AST simple.
-        return { kind: 'Compare', left: { kind: 'Literal', value: false }, op: 'eq', right: { kind: 'Literal', value: true } };
-      }
-      const arrType = type.endsWith('[]') ? type : `${type}[]`;
-      return { kind: 'Compare', left: lhs, op: 'in', right: param(field, arrType) };
+  case 'in': {
+    if (!Array.isArray(rhsVal) || rhsVal.length === 0) {
+      // FALSE = TRUE (we will collapse later). Keeps AST simple.
+      return { kind: 'Compare', left: { kind: 'Literal', value: false }, op: 'eq', right: { kind: 'Literal', value: true } };
     }
-    case 'contains': {
-      if (type === 'jsonb' || type.endsWith('[]')) return { kind: 'Compare', left: lhs, op: 'contains', right: param(field, type) };
-      // Fallback for text contains → ILIKE
-      return { kind: 'Compare', left: lhs, op: 'ilike', right: param(field, 'text') };
-    }
-    case 'ilike':
-    case 'like':
-      return { kind: 'Compare', left: lhs, op, right: param(field, 'text') };
-    case 'eq': case 'ne': case 'lt': case 'lte': case 'gt': case 'gte':
-      return { kind: 'Compare', left: lhs, op, right: param(field, type) };
-    default:
-      throw new Error(`Unsupported operator '${op}' on ${field}`);
+    const arrType = type.endsWith('[]') ? type : `${type}[]`;
+    return { kind: 'Compare', left: lhs, op: 'in', right: param(field, arrType) };
+  }
+  case 'contains': {
+    if (type === 'jsonb' || type.endsWith('[]')) return { kind: 'Compare', left: lhs, op: 'contains', right: param(field, type) };
+    // Fallback for text contains → ILIKE
+    return { kind: 'Compare', left: lhs, op: 'ilike', right: param(field, 'text') };
+  }
+  case 'ilike':
+  case 'like':
+    return { kind: 'Compare', left: lhs, op, right: param(field, 'text') };
+  case 'eq': case 'ne': case 'lt': case 'lte': case 'gt': case 'gte':
+    return { kind: 'Compare', left: lhs, op, right: param(field, type) };
+  default:
+    throw new Error(`Unsupported operator '${op}' on ${field}`);
   }
 }
 

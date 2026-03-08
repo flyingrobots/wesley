@@ -9,7 +9,7 @@
 let program;
 try {
   ({ program } = await import('@wesley/cli/src/program.mjs'));
-} catch (e) {
+} catch (_e) {
   ({ program } = await import('../../wesley-cli/src/program.mjs'));
 }
 import { createNodeRuntime } from '../src/adapters/createNodeRuntime.mjs';

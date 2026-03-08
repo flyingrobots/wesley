@@ -1,0 +1,54 @@
+{
+  "root": {
+    "kind": "Join",
+    "left": { "kind": "Table", "table": "organization", "alias": "o" },
+    "right": {
+      "kind": "Lateral",
+      "plan": {
+        "root": { "kind": "Table", "table": "membership", "alias": "m" },
+        "projection": {
+          "items": [
+            {
+              "alias": "_",
+              "expr": {
+                "kind": "JsonBuildObject",
+                "fields": [ { "key": "user_id", "value": { "kind": "ColumnRef", "table": "m", "column": "user_id" } } ]
+              }
+            }
+          ]
+        }
+      },
+      "alias": "l0"
+    },
+    "joinType": "LEFT",
+    "on": { "kind": "Compare", "op": "eq", "left": { "kind": "Literal", "value": true }, "right": { "kind": "Literal", "value": true } }
+  },
+  "projection": {
+    "items": [
+      { "alias": "id", "expr": { "kind": "ColumnRef", "table": "o", "column": "id" } },
+      {
+        "alias": "members",
+        "expr": {
+          "kind": "JsonAgg",
+          "value": {
+            "kind": "ScalarSubquery",
+            "plan": {
+              "root": { "kind": "Table", "table": "membership", "alias": "m" },
+              "projection": {
+                "items": [
+                  {
+                    "alias": "member",
+                    "expr": {
+                      "kind": "JsonBuildObject",
+                      "fields": [ { "key": "user_id", "value": { "kind": "ColumnRef", "table": "m", "column": "user_id" } } ]
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

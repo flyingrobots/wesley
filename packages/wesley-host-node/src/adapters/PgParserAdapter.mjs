@@ -5,8 +5,8 @@
 
 // @supabase/pg-parser doesn't export parse/deparse directly
 // Stub implementation for now
-const parse = (sql) => ({ stmts: [] });
-const deparse = (ast) => '-- deparse not implemented';
+const parse = (_sql) => ({ stmts: [] });
+const deparse = (_ast) => '-- deparse not implemented';
 
 export class PgParserAdapter {
   /**
@@ -19,7 +19,7 @@ export class PgParserAdapter {
       throw new Error(`Failed to parse SQL: ${error.message}`);
     }
   }
-  
+
   /**
    * Convert AST back to SQL
    */
@@ -30,7 +30,7 @@ export class PgParserAdapter {
       throw new Error(`Failed to deparse AST: ${error.message}`);
     }
   }
-  
+
   /**
    * Validate SQL syntax
    */

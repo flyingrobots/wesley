@@ -51,7 +51,7 @@ export function buildPlanFromJson(op) {
       const table = (typeof j.table === 'string' && j.table.trim()) || null;
       if (!table) throw new Error(`join.table must be a non-empty string: ${JSON.stringify(j)}`);
       if (!j.on) throw new Error('join.on is required for joins');
-      const jAlias = j.alias || `j_${table.slice(0,1)}`;
+      const jAlias = j.alias || `j_${table}`;
       const right = new TableNode(table, jAlias);
       const jt = String(j.type || 'INNER').toUpperCase();
       const joinType = jt === 'LEFT' ? 'LEFT' : 'INNER';
@@ -97,7 +97,7 @@ export function buildPlanFromJson(op) {
       for (const ob of orderDefs) {
         const col = (typeof ob.column === 'string' && ob.column.trim()) ? ob.column.trim() : '';
         if (!col) throw new Error(`lists[].orderBy entry missing valid column: ${JSON.stringify(ob)}`);
-        let dir = ob.dir ? String(ob.dir).toLowerCase() : 'asc';
+        const dir = ob.dir ? String(ob.dir).toLowerCase() : 'asc';
         if (dir !== 'asc' && dir !== 'desc') {
           throw new Error(`lists[].orderBy.dir must be "asc" or "desc". Received: ${JSON.stringify(ob.dir)}`);
         }
@@ -140,7 +140,7 @@ export function buildPlanFromJson(op) {
   for (const ob of orderList) {
     const col = (typeof ob.column === 'string' && ob.column.trim()) || null;
     if (!col) throw new Error(`orderBy entry missing valid column: ${JSON.stringify(ob)}`);
-    let dir = String(ob.dir || 'asc').toLowerCase();
+    const dir = String(ob.dir || 'asc').toLowerCase();
     if (dir !== 'asc' && dir !== 'desc') {
       throw new Error(`orderBy.dir must be "asc" or "desc". Received: ${JSON.stringify(ob.dir)}`);
     }
@@ -167,7 +167,7 @@ export function buildPlanFromJson(op) {
   const plan = new QueryPlan(rel, proj, {
     orderBy: order,
     limit: toPosInt(op.limit, 'limit', false),
-    offset: toPosInt(op.offset, 'offset', true),
+    offset: toPosInt(op.offset, 'offset', true)
   });
   return plan;
 }
@@ -197,11 +197,24 @@ function buildOnPredicate(on, leftDefault, rightAlias) {
   if (!on) throw new Error('Join requires an "on" condition. Provide { left, right, op }');
   const parseRef = (r) => {
     let table, column;
-    if (Array.isArray(r)) { table = r[0] || leftDefault; column = r[1]; }
+    if (Array.isArray(r)) {
+      if (r[0] !== undefined && r[0] !== null && r[0] !== '' && typeof r[0] === 'string') {
+        table = r[0];
+      } else {
+        table = leftDefault;
+      }
+      column = r[1];
+    }
     else if (typeof r === 'string') { const m = r.split('.'); if (m.length === 2) { table = m[0]; column = m[1]; } else { table = leftDefault; column = r; } }
     else { table = r?.table || leftDefault; column = r?.column; }
     if (!table || typeof table !== 'string' || !column || typeof column !== 'string') {
       throw new Error(`Invalid column reference in join.on: ${JSON.stringify(r)}`);
+    }
+    // Diagnostics: discourage ambiguous unqualified column refs in joins.
+    // Any bare string without a dot is resolved against a default alias which
+    // may silently pick the wrong table — require explicit qualification.
+    if (typeof r === 'string' && r.indexOf('.') === -1) {
+      throw new Error(`Ambiguous join reference '${r}'. Qualify as '<alias>.${r}' or pass { table, column } to join.on`);
     }
     return new ColumnRef(table, column);
   };
@@ -215,14 +228,27 @@ function buildRightExpr(param, value, op) {
   if (param && param.name) {
     const name = String(param.name);
     let typeHint = param.type ? String(param.type) : undefined;
+    // Security hardening: require explicit types for risky operators
+    if (op === 'in') {
+      if (!typeHint) throw new Error(`Param '${name}' requires an explicit array type for IN (e.g., text[])`);
+      if (!typeHint.endsWith('[]')) typeHint = typeHint + '[]';
+    }
+    if (op === 'like' || op === 'ilike') {
+      if (!typeHint) throw new Error(`Param '${name}' requires an explicit type for ${op.toUpperCase()} (e.g., text)`);
+    }
+    if (op === 'contains' && !typeHint) {
+      throw new Error(`Param '${name}' requires an explicit type for CONTAINS (e.g., jsonb or text[])`);
+    }
     if (typeHint && !ALLOWED_PARAM_TYPES.has(typeHint.replace(/\[\]$/, ''))) {
       throw new Error(`Unsupported param type: ${typeHint} for ${name}`);
     }
-    if (op === 'in' && typeHint && !typeHint.endsWith('[]')) typeHint = typeHint + '[]';
     const p = new ParamRef(name);
     if (typeHint) p.typeHint = typeHint;
     return p;
   }
   // Fallback to literal value
+  if (op === 'in') {
+    throw new Error('IN operator requires a parameter with explicit array type (e.g., text[])');
+  }
   return { kind: 'Literal', value };
 }

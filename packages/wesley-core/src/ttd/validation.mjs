@@ -8,7 +8,7 @@
 export const ValidationSeverity = {
   ERROR: 'error',
   WARNING: 'warning',
-  INFO: 'info',
+  INFO: 'info'
 };
 
 /**
@@ -19,7 +19,7 @@ function error(code, message, details = {}) {
     severity: ValidationSeverity.ERROR,
     code,
     message,
-    details,
+    details
   };
 }
 
@@ -31,7 +31,7 @@ function warning(code, message, details = {}) {
     severity: ValidationSeverity.WARNING,
     code,
     message,
-    details,
+    details
   };
 }
 
@@ -338,6 +338,6 @@ export function validateTtdSchema(schema) {
   return {
     valid: errors.length === 0,
     errors,
-    warnings,
+    warnings
   };
 }

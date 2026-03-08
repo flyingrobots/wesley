@@ -25,7 +25,7 @@ const TTD_DIRECTIVES = new Set([
   'wes_version',
   'wes_tick',
   'wes_effect',
-  'wes_join',
+  'wes_join'
 ]);
 
 /**
@@ -43,29 +43,29 @@ function getArgValue(arg) {
 
   const val = arg.value;
   switch (val.kind) {
-    case 'StringValue':
-      return val.value;
-    case 'IntValue':
-      return parseInt(val.value, 10);
-    case 'FloatValue':
-      return parseFloat(val.value);
-    case 'BooleanValue':
-      return val.value;
-    case 'NullValue':
-      return null;
-    case 'ListValue':
-      return val.values.map(v => getArgValue({ value: v }));
-    case 'EnumValue':
-      return val.value;
-    case 'ObjectValue': {
-      const obj = {};
-      for (const field of val.fields) {
-        obj[field.name.value] = getArgValue({ value: field.value });
-      }
-      return obj;
+  case 'StringValue':
+    return val.value;
+  case 'IntValue':
+    return parseInt(val.value, 10);
+  case 'FloatValue':
+    return parseFloat(val.value);
+  case 'BooleanValue':
+    return val.value;
+  case 'NullValue':
+    return null;
+  case 'ListValue':
+    return val.values.map(v => getArgValue({ value: v }));
+  case 'EnumValue':
+    return val.value;
+  case 'ObjectValue': {
+    const obj = {};
+    for (const field of val.fields) {
+      obj[field.name.value] = getArgValue({ value: field.value });
     }
-    default:
-      return val.value;
+    return obj;
+  }
+  default:
+    return val.value;
   }
 }
 
@@ -85,7 +85,7 @@ export function parseChannelDirective(directive, defaultName = '') {
     name: getArg(directive, 'name') ?? defaultName,
     version: getArg(directive, 'version') ?? 1,
     ordered: getArg(directive, 'ordered') ?? true,
-    persistent: getArg(directive, 'persistent') ?? false,
+    persistent: getArg(directive, 'persistent') ?? false
   };
 }
 
@@ -97,7 +97,7 @@ export function parseOpDirective(directive, defaultName = '') {
     name: getArg(directive, 'name') ?? defaultName,
     idempotent: getArg(directive, 'idempotent') ?? false,
     readonly: getArg(directive, 'readonly') ?? false,
-    timeout: getArg(directive, 'timeout'),
+    timeout: getArg(directive, 'timeout')
   };
 }
 
@@ -109,7 +109,7 @@ export function parseRuleDirective(directive) {
     name: getArg(directive, 'name'),
     from: getArg(directive, 'from'),
     to: getArg(directive, 'to'),
-    guard: getArg(directive, 'guard'),
+    guard: getArg(directive, 'guard')
   };
 }
 
@@ -120,7 +120,7 @@ export function parseInvariantDirective(directive) {
   return {
     name: getArg(directive, 'name'),
     expr: getArg(directive, 'expr'),
-    severity: getArg(directive, 'severity') ?? 'error',
+    severity: getArg(directive, 'severity') ?? 'error'
   };
 }
 
@@ -131,7 +131,7 @@ export function parseEmissionDirective(directive) {
   return {
     channel: getArg(directive, 'channel'),
     event: getArg(directive, 'event'),
-    condition: getArg(directive, 'condition'),
+    condition: getArg(directive, 'condition')
   };
 }
 
@@ -143,7 +143,7 @@ export function parseFootprintDirective(directive) {
     reads: getArg(directive, 'reads') ?? [],
     writes: getArg(directive, 'writes') ?? [],
     creates: getArg(directive, 'creates') ?? [],
-    deletes: getArg(directive, 'deletes') ?? [],
+    deletes: getArg(directive, 'deletes') ?? []
   };
 }
 
@@ -155,7 +155,7 @@ export function parseCodecDirective(directive) {
   const canonical = getArg(directive, 'canonical');
   return {
     format,
-    canonical: canonical ?? (format === 'cbor'),
+    canonical: canonical ?? (format === 'cbor')
   };
 }
 
@@ -166,7 +166,7 @@ export function parseRegistryDirective(directive) {
   return {
     id: getArg(directive, 'id'),
     deprecated: getArg(directive, 'deprecated') ?? false,
-    deprecatedBy: getArg(directive, 'deprecatedBy'),
+    deprecatedBy: getArg(directive, 'deprecatedBy')
   };
 }
 
@@ -180,7 +180,7 @@ export function parseConstraintDirective(directive) {
     minLength: getArg(directive, 'minLength'),
     maxLength: getArg(directive, 'maxLength'),
     pattern: getArg(directive, 'pattern'),
-    oneOf: getArg(directive, 'oneOf'),
+    oneOf: getArg(directive, 'oneOf')
   };
 }
 
@@ -191,7 +191,7 @@ export function parseStateFieldDirective(directive) {
   return {
     key: getArg(directive, 'key') ?? false,
     derived: getArg(directive, 'derived') ?? false,
-    derivation: getArg(directive, 'derivation'),
+    derivation: getArg(directive, 'derivation')
   };
 }
 
@@ -202,7 +202,7 @@ export function parseRequiresDirective(directive) {
   return {
     ops: getArg(directive, 'ops'),
     state: getArg(directive, 'state'),
-    permissions: getArg(directive, 'permissions'),
+    permissions: getArg(directive, 'permissions')
   };
 }
 
@@ -212,7 +212,7 @@ export function parseRequiresDirective(directive) {
 export function parseProducesDirective(directive) {
   return {
     events: getArg(directive, 'events'),
-    state: getArg(directive, 'state'),
+    state: getArg(directive, 'state')
   };
 }
 
@@ -222,7 +222,7 @@ export function parseProducesDirective(directive) {
 export function parseEmitsToDirective(directive) {
   return {
     channel: getArg(directive, 'channel'),
-    within: getArg(directive, 'within'),
+    within: getArg(directive, 'within')
   };
 }
 
@@ -232,7 +232,7 @@ export function parseEmitsToDirective(directive) {
 export function parseMustEmitDirective(directive) {
   return {
     event: getArg(directive, 'event'),
-    within: getArg(directive, 'within'),
+    within: getArg(directive, 'within')
   };
 }
 
@@ -243,7 +243,7 @@ export function parseVersionDirective(directive) {
   return {
     major: getArg(directive, 'major'),
     minor: getArg(directive, 'minor'),
-    patch: getArg(directive, 'patch') ?? 0,
+    patch: getArg(directive, 'patch') ?? 0
   };
 }
 
@@ -253,7 +253,7 @@ export function parseVersionDirective(directive) {
 export function parseTickDirective(directive) {
   return {
     interval: getArg(directive, 'interval'),
-    jitter: getArg(directive, 'jitter'),
+    jitter: getArg(directive, 'jitter')
   };
 }
 
@@ -263,7 +263,7 @@ export function parseTickDirective(directive) {
 export function parseEffectDirective(directive) {
   return {
     type: getArg(directive, 'type'),
-    description: getArg(directive, 'description'),
+    description: getArg(directive, 'description')
   };
 }
 
@@ -277,7 +277,7 @@ export const VALID_JOIN_STRATEGIES = ['union', 'max', 'lww'];
  */
 export function parseJoinDirective(directive) {
   return {
-    strategy: getArg(directive, 'strategy'),
+    strategy: getArg(directive, 'strategy')
   };
 }
 
@@ -333,7 +333,7 @@ export function extractTtdDirectives(directives) {
     version: undefined,
     tick: undefined,
     effects: [],
-    join: undefined,
+    join: undefined
   };
 
   if (!directives) return result;
@@ -342,60 +342,60 @@ export function extractTtdDirectives(directives) {
     const name = d.name.value;
 
     switch (name) {
-      case 'wes_channel':
-        result.channel = parseChannelDirective(d);
-        break;
-      case 'wes_op':
-        result.op = parseOpDirective(d);
-        break;
-      case 'wes_rule':
-        result.rules.push(parseRuleDirective(d));
-        break;
-      case 'wes_invariant':
-        result.invariants.push(parseInvariantDirective(d));
-        break;
-      case 'wes_emission':
-        result.emissions.push(parseEmissionDirective(d));
-        break;
-      case 'wes_footprint':
-        result.footprint = parseFootprintDirective(d);
-        break;
-      case 'wes_codec':
-        result.codec = parseCodecDirective(d);
-        break;
-      case 'wes_registry':
-        result.registry = parseRegistryDirective(d);
-        break;
-      case 'wes_constraint':
-        result.constraint = parseConstraintDirective(d);
-        break;
-      case 'wes_stateField':
-        result.stateField = parseStateFieldDirective(d);
-        break;
-      case 'wes_requires':
-        result.requires = parseRequiresDirective(d);
-        break;
-      case 'wes_produces':
-        result.produces = parseProducesDirective(d);
-        break;
-      case 'wes_emitsTo':
-        result.emitsTo = parseEmitsToDirective(d);
-        break;
-      case 'wes_mustEmit':
-        result.mustEmit = parseMustEmitDirective(d);
-        break;
-      case 'wes_version':
-        result.version = parseVersionDirective(d);
-        break;
-      case 'wes_tick':
-        result.tick = parseTickDirective(d);
-        break;
-      case 'wes_effect':
-        result.effects.push(parseEffectDirective(d));
-        break;
-      case 'wes_join':
-        result.join = parseJoinDirective(d);
-        break;
+    case 'wes_channel':
+      result.channel = parseChannelDirective(d);
+      break;
+    case 'wes_op':
+      result.op = parseOpDirective(d);
+      break;
+    case 'wes_rule':
+      result.rules.push(parseRuleDirective(d));
+      break;
+    case 'wes_invariant':
+      result.invariants.push(parseInvariantDirective(d));
+      break;
+    case 'wes_emission':
+      result.emissions.push(parseEmissionDirective(d));
+      break;
+    case 'wes_footprint':
+      result.footprint = parseFootprintDirective(d);
+      break;
+    case 'wes_codec':
+      result.codec = parseCodecDirective(d);
+      break;
+    case 'wes_registry':
+      result.registry = parseRegistryDirective(d);
+      break;
+    case 'wes_constraint':
+      result.constraint = parseConstraintDirective(d);
+      break;
+    case 'wes_stateField':
+      result.stateField = parseStateFieldDirective(d);
+      break;
+    case 'wes_requires':
+      result.requires = parseRequiresDirective(d);
+      break;
+    case 'wes_produces':
+      result.produces = parseProducesDirective(d);
+      break;
+    case 'wes_emitsTo':
+      result.emitsTo = parseEmitsToDirective(d);
+      break;
+    case 'wes_mustEmit':
+      result.mustEmit = parseMustEmitDirective(d);
+      break;
+    case 'wes_version':
+      result.version = parseVersionDirective(d);
+      break;
+    case 'wes_tick':
+      result.tick = parseTickDirective(d);
+      break;
+    case 'wes_effect':
+      result.effects.push(parseEffectDirective(d));
+      break;
+    case 'wes_join':
+      result.join = parseJoinDirective(d);
+      break;
     }
   }
 

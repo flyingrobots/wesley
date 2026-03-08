@@ -8,8 +8,8 @@
  * - Create verification reports
  */
 
-import { verify, verifyAll } from './vm.mjs';
-import { compileObligations, generateVerificationManifest, ObligationKind, ObligationSeverity } from './obligations.mjs';
+import { verify } from './vm.mjs';
+import { compileObligations, generateVerificationManifest, ObligationKind } from './obligations.mjs';
 import { systemClock } from '../../ports/clock.mjs';
 import { defaultCrypto } from '../../ports/crypto.mjs';
 
@@ -46,7 +46,7 @@ export class Verifier {
     this.#byId = new Map(specs.map(s => [s.id, s]));
     this.#deps = {
       clock: deps.clock ?? systemClock,
-      crypto: deps.crypto ?? defaultCrypto,
+      crypto: deps.crypto ?? defaultCrypto
     };
   }
 
@@ -91,7 +91,7 @@ export class Verifier {
       passed: result.ok,
       value: result.value,
       error: result.error,
-      severity: spec.severity,
+      severity: spec.severity
     };
   }
 
@@ -161,7 +161,7 @@ export class Verifier {
           expr: spec.expr,
           severity: spec.severity,
           error: result.error,
-          value: result.value,
+          value: result.value
         });
       }
     }
@@ -175,7 +175,7 @@ export class Verifier {
       totalFailed: failures.length,
       failures,
       timestamp: this.#deps.clock.now(),
-      durationMs: endTime - startTime,
+      durationMs: endTime - startTime
     };
   }
 }
@@ -220,7 +220,7 @@ export function generateTsVerifier(specs) {
     kind: s.kind,
     withinTicks: s.withinTicks,
     dependencies: s.dependencies,
-    hash: s.hash,
+    hash: s.hash
   })), null, 2)};`);
   lines.push('');
   lines.push('// Create verifier instance');

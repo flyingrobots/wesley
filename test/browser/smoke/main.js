@@ -8,7 +8,7 @@ const schema = /* GraphQL */ `
 async function main() {
   const el = document.getElementById('result');
   if (!el) {
-    window.__WESLEY_TEST_SMOKE = { ok: false, error: "missing #result" };
+    window.__WESLEY_TEST_SMOKE = { ok: false, error: 'missing #result' };
     return;
   }
   try {

@@ -41,19 +41,19 @@ export class EchoPlugin extends GeneratorPlugin {
    * @param {import('@wesley/core').PluginContext} context
    * @returns {Promise<import('@wesley/core').GenerationPlan>}
    */
-  async plan(schema, context) {
+  async plan(schema, _context) {
     return {
       artifacts: [
         { path: 'ir.json', reason: 'Echo IR (echo-ir/v2)' },
         { path: 'ops.generated.ts', reason: 'Operation IDs and metadata' },
         { path: 'schemas.generated.ts', reason: 'Validation schemas' },
-        { path: 'client.generated.ts', reason: 'Type-safe client helpers' },
+        { path: 'client.generated.ts', reason: 'Type-safe client helpers' }
       ],
       metadata: {
         sdl: schema.sdl,
         mutationIdNamespace: this.#mutationIdNamespace,
-        queryNamespace: this.#queryNamespace,
-      },
+        queryNamespace: this.#queryNamespace
+      }
     };
   }
 
@@ -62,13 +62,13 @@ export class EchoPlugin extends GeneratorPlugin {
    * @param {import('@wesley/core').PluginContext} context
    * @returns {Promise<Record<string, string>>}
    */
-  async generate(plan, context) {
+  async generate(plan, _context) {
     const { sdl, mutationIdNamespace, queryNamespace } = plan.metadata;
     const result = await generateEcho({ sdl, mutationIdNamespace, queryNamespace });
 
     if (result == null || !Array.isArray(result.files)) {
       throw new Error(
-        `generateEcho() returned unexpected shape: expected { files: Array }, ` +
+        'generateEcho() returned unexpected shape: expected { files: Array }, ' +
         `got ${result == null ? String(result) : JSON.stringify(Object.keys(result))}`
       );
     }
@@ -110,7 +110,7 @@ export class EchoPlugin extends GeneratorPlugin {
         canonicalBytes,
         irData: irBlob,
         registryData: registryBlob,
-        artifacts,
+        artifacts
       });
 
       parsedIr.hash_chain = hashChain;

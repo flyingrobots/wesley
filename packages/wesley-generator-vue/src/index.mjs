@@ -3,10 +3,10 @@
  */
 export async function generateVue(ir, options = {}) {
   if (!ir || typeof ir !== 'object') {
-    throw new Error("generateVue: expected an IR object");
+    throw new Error('generateVue: expected an IR object');
   }
   if (!Array.isArray(ir.types)) {
-    throw new Error("generateVue: expected ir.types to be an array");
+    throw new Error('generateVue: expected ir.types to be an array');
   }
 
   const outPath = options.outPath ?? 'types.generated.ts';
@@ -17,7 +17,7 @@ export async function generateVue(ir, options = {}) {
     'Int',
     'Float',
     'ID',
-    ...ir.types.map((t) => t?.name).filter(Boolean),
+    ...ir.types.map((t) => t?.name).filter(Boolean)
   ]);
 
   const lines = [];
@@ -61,22 +61,22 @@ export async function generateVue(ir, options = {}) {
   }
 
   return {
-    files: [{ path: outPath, content: lines.join('\n') }],
+    files: [{ path: outPath, content: lines.join('\n') }]
   };
 }
 
 function tsTypeForGql(typeName, { knownTypes }) {
   switch (typeName) {
-    case 'Boolean':
-      return 'boolean';
-    case 'String':
-    case 'ID':
-      return 'string';
-    case 'Int':
-    case 'Float':
-      return 'number';
-    default:
-      return knownTypes.has(typeName) ? typeName : 'any';
+  case 'Boolean':
+    return 'boolean';
+  case 'String':
+  case 'ID':
+    return 'string';
+  case 'Int':
+  case 'Float':
+    return 'number';
+  default:
+    return knownTypes.has(typeName) ? typeName : 'any';
   }
 }
 

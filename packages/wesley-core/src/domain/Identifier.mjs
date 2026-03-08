@@ -7,7 +7,7 @@ export class Identifier {
   constructor(strategy = 'snake_case') {
     this.strategy = strategy; // 'preserve', 'snake_case', 'lower', 'upper'
   }
-  
+
   /**
    * Table name mapping: snake_case + naive pluralization (append 's' if absent)
    */
@@ -22,49 +22,49 @@ export class Identifier {
    */
   toSQL(graphqlName) {
     switch (this.strategy) {
-      case 'snake_case':
-        return this.toSnakeCase(graphqlName);
-      case 'lower':
-        return graphqlName.toLowerCase();
-      case 'upper':
-        return graphqlName.toUpperCase();
-      case 'preserve':
-      default:
-        return graphqlName;
+    case 'snake_case':
+      return this.toSnakeCase(graphqlName);
+    case 'lower':
+      return graphqlName.toLowerCase();
+    case 'upper':
+      return graphqlName.toUpperCase();
+    case 'preserve':
+    default:
+      return graphqlName;
     }
   }
-  
+
   /**
    * Convert SQL identifier back to GraphQL name
    */
   fromSQL(sqlName) {
     switch (this.strategy) {
-      case 'snake_case':
-        return this.fromSnakeCase(sqlName);
-      case 'lower':
-        // Assuming original had PascalCase
-        return this.toPascalCase(sqlName);
-      case 'upper':
-        return this.toPascalCase(sqlName.toLowerCase());
-      case 'preserve':
-      default:
-        return sqlName;
+    case 'snake_case':
+      return this.fromSnakeCase(sqlName);
+    case 'lower':
+      // Assuming original had PascalCase
+      return this.toPascalCase(sqlName);
+    case 'upper':
+      return this.toPascalCase(sqlName.toLowerCase());
+    case 'preserve':
+    default:
+      return sqlName;
     }
   }
-  
+
   /**
    * Quote identifier for SQL if needed
    */
   quote(identifier) {
     // PostgreSQL requires quotes for mixed case or reserved words
-    const needsQuoting = 
+    const needsQuoting =
       identifier !== identifier.toLowerCase() ||
       this.isReservedWord(identifier) ||
       /[^a-z0-9_]/.test(identifier);
-    
+
     return needsQuoting ? `"${identifier}"` : identifier;
   }
-  
+
   /**
    * Convert to snake_case
    */
@@ -74,7 +74,7 @@ export class Identifier {
       .toLowerCase()
       .replace(/^_/, '');
   }
-  
+
   /**
    * Convert from snake_case to PascalCase
    */
@@ -84,7 +84,7 @@ export class Identifier {
       .map(part => part.charAt(0).toUpperCase() + part.slice(1))
       .join('');
   }
-  
+
   /**
    * Convert to PascalCase
    */
@@ -92,7 +92,7 @@ export class Identifier {
     return str
       .replace(/(?:^|_)([a-z])/g, (_, char) => char.toUpperCase());
   }
-  
+
   /**
    * Check if word is PostgreSQL reserved
    */
@@ -104,10 +104,10 @@ export class Identifier {
       'between', 'like', 'in', 'exists', 'case', 'when', 'then',
       'else', 'end', 'and', 'or', 'not', 'null', 'true', 'false'
     ];
-    
+
     return reserved.includes(word.toLowerCase());
   }
-  
+
   /**
    * Generate index name
    */
@@ -116,7 +116,7 @@ export class Identifier {
     const column = this.toSQL(columnName);
     return `${type}_${table}_${column}`;
   }
-  
+
   /**
    * Generate constraint name
    */
@@ -125,7 +125,7 @@ export class Identifier {
     const column = this.toSQL(columnName);
     return `${table}_${column}_${type}`;
   }
-  
+
   /**
    * Generate policy name with UID
    */
@@ -134,7 +134,7 @@ export class Identifier {
     const op = operation.toLowerCase();
     return `policy_${table}_${op}_${uid}`;
   }
-  
+
   /**
    * Set naming strategy
    */
@@ -145,7 +145,7 @@ export class Identifier {
     this.strategy = strategy;
     return this;
   }
-  
+
   /**
    * Get current strategy
    */

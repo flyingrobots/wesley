@@ -15,7 +15,7 @@
  */
 export function emitRawLeTsCodec(ir) {
   const encodableTypes = (ir.types ?? []).filter(
-    (t) => t.kind === 'OBJECT' || t.kind === 'ENUM',
+    (t) => t.kind === 'OBJECT' || t.kind === 'ENUM'
   );
 
   if (encodableTypes.length === 0) return null;
@@ -59,25 +59,25 @@ function emitEnumType(lines, type) {
   lines.push('');
 }
 
-function tsTypeForField(fieldType, required, list, encodableTypes) {
+function tsTypeForField(fieldType, required, list, _encodableTypes) {
   let tsType;
   switch (fieldType) {
-    case 'Boolean':
-      tsType = 'boolean';
-      break;
-    case 'Int':
-    case 'Float':
-      tsType = 'number';
-      break;
-    case 'String':
-    case 'ID':
-      tsType = 'string';
-      break;
-    default: {
-      // Could be an enum or object type
-      tsType = fieldType;
-      break;
-    }
+  case 'Boolean':
+    tsType = 'boolean';
+    break;
+  case 'Int':
+  case 'Float':
+    tsType = 'number';
+    break;
+  case 'String':
+  case 'ID':
+    tsType = 'string';
+    break;
+  default: {
+    // Could be an enum or object type
+    tsType = fieldType;
+    break;
+  }
   }
   if (list) tsType = `${tsType}[]`;
   if (!required) tsType = `${tsType} | null | undefined`;
@@ -229,7 +229,7 @@ function emitHelpers(lines) {
 
 const SCALAR_TYPES = new Set(['Boolean', 'Int', 'Float', 'String', 'ID']);
 
-function isScalar(typeName) {
+function _isScalar(typeName) {
   return SCALAR_TYPES.has(typeName);
 }
 
@@ -249,7 +249,7 @@ function emitEnumCodec(lines, type) {
   sorted.forEach((v, i) => {
     lines.push(`    case '${v}': idx = ${i}; break;`);
   });
-  lines.push(`    default: throw new Error('invalid enum variant: ' + value);`);
+  lines.push('    default: throw new Error(\'invalid enum variant: \' + value);');
   lines.push('  }');
   lines.push('  tmp.setUint32(0, idx, true);');
   lines.push('  for (let i = 0; i < 4; i++) buf.push(tmp.getUint8(i));');
@@ -309,10 +309,10 @@ function emitObjectCodec(lines, type) {
     emitFieldDecode(lines, field);
   }
 
-  lines.push(`  return {`);
+  lines.push('  return {');
   lines.push(`    value: { ${fields.map((f) => f.name).join(', ')} },`);
-  lines.push(`    bytesRead: off.v - (offset ?? 0),`);
-  lines.push(`  };`);
+  lines.push('    bytesRead: off.v - (offset ?? 0),');
+  lines.push('  };');
   lines.push('}');
   lines.push('');
 }
@@ -323,34 +323,34 @@ function emitObjectCodec(lines, type) {
 
 function encodeCallForScalar(typeName, accessor) {
   switch (typeName) {
-    case 'Boolean':
-      return `_encodeBool(buf, ${accessor});`;
-    case 'Int':
-      return `_encodeI32(buf, ${accessor});`;
-    case 'Float':
-      return `_encodeF32(buf, ${accessor});`;
-    case 'String':
-    case 'ID':
-      return `_encodeString(buf, ${accessor});`;
-    default:
-      // Nested object — encode in-place, no intermediate allocation
-      return `_encode${typeName}(buf, ${accessor});`;
+  case 'Boolean':
+    return `_encodeBool(buf, ${accessor});`;
+  case 'Int':
+    return `_encodeI32(buf, ${accessor});`;
+  case 'Float':
+    return `_encodeF32(buf, ${accessor});`;
+  case 'String':
+  case 'ID':
+    return `_encodeString(buf, ${accessor});`;
+  default:
+    // Nested object — encode in-place, no intermediate allocation
+    return `_encode${typeName}(buf, ${accessor});`;
   }
 }
 
 function encodeInnerClosureForType(typeName) {
   switch (typeName) {
-    case 'Boolean':
-      return '_encodeBool';
-    case 'Int':
-      return '_encodeI32';
-    case 'Float':
-      return '_encodeF32';
-    case 'String':
-    case 'ID':
-      return '_encodeString';
-    default:
-      return `(buf, v) => _encode${typeName}(buf, v)`;
+  case 'Boolean':
+    return '_encodeBool';
+  case 'Int':
+    return '_encodeI32';
+  case 'Float':
+    return '_encodeF32';
+  case 'String':
+  case 'ID':
+    return '_encodeString';
+  default:
+    return `(buf, v) => _encode${typeName}(buf, v)`;
   }
 }
 
@@ -374,35 +374,35 @@ function emitFieldEncode(lines, field, accessor) {
 
 function decodeCallForType(typeName) {
   switch (typeName) {
-    case 'Boolean':
-      return '_decodeBool';
-    case 'Int':
-      return '_decodeI32';
-    case 'Float':
-      return '_decodeF32';
-    case 'String':
-    case 'ID':
-      return '_decodeString';
-    default:
-      return `(bytes, off) => { const _r = decode${typeName}(bytes, off.v); off.v += _r.bytesRead; return _r.value; }`;
+  case 'Boolean':
+    return '_decodeBool';
+  case 'Int':
+    return '_decodeI32';
+  case 'Float':
+    return '_decodeF32';
+  case 'String':
+  case 'ID':
+    return '_decodeString';
+  default:
+    return `(bytes, off) => { const _r = decode${typeName}(bytes, off.v); off.v += _r.bytesRead; return _r.value; }`;
   }
 }
 
 function decodeDirectCallForType(typeName, fieldName) {
   switch (typeName) {
-    case 'Boolean':
-      return `const ${fieldName} = _decodeBool(bytes, off);`;
-    case 'Int':
-      return `const ${fieldName} = _decodeI32(bytes, off);`;
-    case 'Float':
-      return `const ${fieldName} = _decodeF32(bytes, off);`;
-    case 'String':
-    case 'ID':
-      return `const ${fieldName} = _decodeString(bytes, off);`;
-    default: {
-      // Nested object — use its decode function, advance offset
-      return `const _${fieldName}Res = decode${typeName}(bytes, off.v); const ${fieldName} = _${fieldName}Res.value; off.v += _${fieldName}Res.bytesRead;`;
-    }
+  case 'Boolean':
+    return `const ${fieldName} = _decodeBool(bytes, off);`;
+  case 'Int':
+    return `const ${fieldName} = _decodeI32(bytes, off);`;
+  case 'Float':
+    return `const ${fieldName} = _decodeF32(bytes, off);`;
+  case 'String':
+  case 'ID':
+    return `const ${fieldName} = _decodeString(bytes, off);`;
+  default: {
+    // Nested object — use its decode function, advance offset
+    return `const _${fieldName}Res = decode${typeName}(bytes, off.v); const ${fieldName} = _${fieldName}Res.value; off.v += _${fieldName}Res.bytesRead;`;
+  }
   }
 }
 

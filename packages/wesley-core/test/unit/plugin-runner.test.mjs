@@ -5,7 +5,7 @@ import {
   GeneratorPlugin,
   validatePlugin,
   validatePlan,
-  SUPPORTED_API_VERSIONS,
+  SUPPORTED_API_VERSIONS
 } from '../../src/ports/GeneratorPlugin.mjs';
 import { PluginRunner } from '../../src/application/PluginRunner.mjs';
 
@@ -37,7 +37,7 @@ function makePlugin(overrides = {}) {
     async generate() {
       return { 'out.txt': 'hello' };
     },
-    ...overrides,
+    ...overrides
   };
 }
 
@@ -57,7 +57,7 @@ const nullLogger = {
   debug() {},
   child() { return nullLogger; },
   setLevel() {},
-  async flush() {},
+  async flush() {}
 };
 
 /** Collecting logger that stores warn calls */
@@ -70,7 +70,7 @@ function collectingLogger() {
     debug() {},
     child() { return logger; },
     setLevel() {},
-    async flush() {},
+    async flush() {}
   };
   return { logger, warnings };
 }
@@ -82,7 +82,7 @@ function makeRunner(overrides = {}) {
     logger: nullLogger,
     clock: fakeClock,
     config: {},
-    ...overrides,
+    ...overrides
   });
 }
 
@@ -160,7 +160,7 @@ test('validatePlugin — rejects non-function generate (WPLY001)', () => {
 
 test('validatePlan — accepts valid plan with artifacts array', () => {
   assert.doesNotThrow(() => validatePlan({
-    artifacts: [{ path: 'a.txt' }, { path: 'b.txt', reason: 'test', binary: true }],
+    artifacts: [{ path: 'a.txt' }, { path: 'b.txt', reason: 'test', binary: true }]
   }));
 });
 
@@ -203,7 +203,7 @@ test('PluginRunner — golden path: runs plugin, returns artifacts with ok statu
 test('PluginRunner — error isolation: failing plugin produces error result with phase', async () => {
   const runner = makeRunner();
   const plugin = makePlugin({
-    async plan() { throw new Error('boom'); },
+    async plan() { throw new Error('boom'); }
   });
 
   const err = await catchReject(() => runner.run([plugin], {}));
@@ -218,7 +218,7 @@ test('PluginRunner — best-effort: continues after failure, success=true if at 
   const runner = makeRunner({ bestEffort: true });
   const failing = makePlugin({
     name: 'fail-plugin',
-    async plan() { throw new Error('boom'); },
+    async plan() { throw new Error('boom'); }
   });
   const good = makePlugin({ name: 'good-plugin' });
 
@@ -234,7 +234,7 @@ test('PluginRunner — best-effort: continues after failure, success=true if at 
 test('PluginRunner — bad return type from generate() → WPLY003', async () => {
   const runner = makeRunner();
   const plugin = makePlugin({
-    async generate() { return 'not-an-object'; },
+    async generate() { return 'not-an-object'; }
   });
 
   const err = await catchReject(() => runner.run([plugin], {}));
@@ -244,7 +244,7 @@ test('PluginRunner — bad return type from generate() → WPLY003', async () =>
 test('PluginRunner — bad plan return → WPLY004', async () => {
   const runner = makeRunner();
   const plugin = makePlugin({
-    async plan() { return null; },
+    async plan() { return null; }
   });
 
   const err = await catchReject(() => runner.run([plugin], {}));
@@ -271,7 +271,7 @@ test('PluginRunner — context is frozen (plugin cannot mutate it)', async () =>
       assert.throws(() => { context.config.key = 'hacked'; }, TypeError);
       return { artifacts: [{ path: 'out.txt' }] };
     },
-    async generate() { return { 'out.txt': 'ok' }; },
+    async generate() { return { 'out.txt': 'ok' }; }
   });
 
   const result = await runner.run([plugin], {});
@@ -285,7 +285,7 @@ test('PluginRunner — determinism: same plugin + schema → identical artifacts
   let callCount = 0;
   const plugin = makePlugin({
     async plan() { return { artifacts: [{ path: 'det.txt' }] }; },
-    async generate() { callCount++; return { 'det.txt': 'deterministic' }; },
+    async generate() { callCount++; return { 'det.txt': 'deterministic' }; }
   });
 
   const r1 = await runner.run([plugin], { sdl: 'same' });
@@ -299,7 +299,7 @@ test('PluginRunner — empty generate() return {} is valid (no-op plugin)', asyn
   const runner = makeRunner();
   const plugin = makePlugin({
     async plan() { return { artifacts: [] }; },
-    async generate() { return {}; },
+    async generate() { return {}; }
   });
 
   const result = await runner.run([plugin], {});
@@ -313,7 +313,7 @@ test('PluginRunner — undeclared artifact paths → logged as warning', async (
 
   const plugin = makePlugin({
     async plan() { return { artifacts: [{ path: 'a.txt' }] }; },
-    async generate() { return { 'a.txt': 'ok', 'b.txt': 'undeclared' }; },
+    async generate() { return { 'a.txt': 'ok', 'b.txt': 'undeclared' }; }
   });
 
   const result = await runner.run([plugin], {});
@@ -333,7 +333,7 @@ test('PluginRunner — runId present in results', async () => {
 test('PluginRunner — init failure in default mode throws with pluginResults', async () => {
   const runner = makeRunner();
   const plugin = makePlugin({
-    init() { throw new Error('init-boom'); },
+    init() { throw new Error('init-boom'); }
   });
 
   const err = await catchReject(() => runner.run([plugin], {}));
@@ -345,7 +345,7 @@ test('PluginRunner — init failure in default mode throws with pluginResults', 
 test('PluginRunner — generate failure in default mode throws with phase generate', async () => {
   const runner = makeRunner();
   const plugin = makePlugin({
-    async generate() { throw new Error('gen-boom'); },
+    async generate() { throw new Error('gen-boom'); }
   });
 
   const err = await catchReject(() => runner.run([plugin], {}));
@@ -356,7 +356,7 @@ test('PluginRunner — generate failure in default mode throws with phase genera
 test('PluginRunner — best-effort all fail → success=false', async () => {
   const runner = makeRunner({ bestEffort: true });
   const plugin = makePlugin({
-    async plan() { throw new Error('boom'); },
+    async plan() { throw new Error('boom'); }
   });
 
   const result = await runner.run([plugin], {});
@@ -434,7 +434,7 @@ test('PluginRunner — empty plugins array returns consistent success regardless
 test('PluginRunner — null generate() return produces error mentioning null, not object', async () => {
   const runner = makeRunner({ bestEffort: true });
   const plugin = makePlugin({
-    async generate() { return null; },
+    async generate() { return null; }
   });
   const result = await runner.run([plugin], {});
   assert.equal(result.results[0].status, 'error');
@@ -449,7 +449,7 @@ test('PluginRunner — deep-frozen config prevents nested mutation', async () =>
       assert.throws(() => { context.config.nested.key = 'hacked'; }, TypeError);
       return { artifacts: [{ path: 'out.txt' }] };
     },
-    async generate() { return { 'out.txt': 'ok' }; },
+    async generate() { return { 'out.txt': 'ok' }; }
   });
   const result = await runner.run([plugin], {});
   assert.equal(result.success, true);

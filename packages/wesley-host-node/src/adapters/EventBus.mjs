@@ -13,7 +13,7 @@ export class EventBus {
       this.handlers.set(eventType, []);
     }
     this.handlers.get(eventType).push(handler);
-    
+
     // Return unsubscribe function
     return () => {
       const handlers = this.handlers.get(eventType);
@@ -28,18 +28,18 @@ export class EventBus {
     const handlers = this.handlers.get(event.type) || [];
     const wildcardHandlers = this.handlers.get('*') || [];
     const allHandlers = [...handlers, ...wildcardHandlers];
-    
+
     // Execute all handlers in parallel
     const results = await Promise.allSettled(
       allHandlers.map(handler => handler(event))
     );
-    
+
     // Check for any failures
     const failures = results.filter(r => r.status === 'rejected');
     if (failures.length > 0) {
       console.error(`Event handling failures for ${event.type}:`, failures);
     }
-    
+
     return results;
   }
 

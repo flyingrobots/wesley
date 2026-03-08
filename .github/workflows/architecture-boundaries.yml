@@ -93,7 +93,7 @@ jobs:
     - name: Run ESLint for core (purity rules)
       run: |
         echo "🔎 Running ESLint restricted-imports check for wesley-core..."
-        pnpm dlx eslint@8.57.0 --no-eslintrc -c packages/wesley-core/.eslintrc.cjs "packages/wesley-core/src/**/*.mjs" --max-warnings=0
+        pnpm exec eslint "packages/wesley-core/src/**/*.mjs" --max-warnings=0
     
     - name: Validate ENSIGN structure
       run: |

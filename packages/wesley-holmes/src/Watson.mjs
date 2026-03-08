@@ -121,7 +121,7 @@ export class Watson {
     let verified = 0;
     let failed = 0;
     let unverified = 0;
-    
+
     for (const evidence of Object.values(this.evidence.evidence || {})) {
       for (const locations of Object.values(evidence)) {
         for (const loc of locations) {
@@ -172,46 +172,46 @@ export class Watson {
     // Recalculate SCS independently
     let totalWeight = 0;
     let earnedWeight = 0;
-    
+
     for (const [uid, evidence] of Object.entries(this.evidence.evidence || {})) {
       const weight = this.inferWeight(uid);
       totalWeight += weight;
-      
+
       // Check if has required artifacts
       if (evidence.sql && evidence.tests) {
         earnedWeight += weight;
       }
     }
-    
+
     const scs = totalWeight > 0 ? earnedWeight / totalWeight : 0;
-    
+
     return { scs };
   }
 
   checkInconsistencies() {
     const issues = [];
-    
+
     const scs = this.bundle.scores.scores.scs;
     const tci = this.bundle.scores.scores.tci;
     const mri = this.bundle.scores.scores.mri;
-    
+
     // High completion but low tests
     if (scs > 0.8 && tci < 0.5) {
       issues.push('High schema coverage (SCS) but low test confidence (TCI)');
     }
-    
+
     // Low risk but low completion
     if (mri < 0.2 && scs < 0.5) {
       issues.push('Low migration risk claimed but schema incomplete');
     }
-    
+
     // Check for sensitive fields without tests
     for (const [uid, evidence] of Object.entries(this.evidence.evidence || {})) {
       if ((uid.includes('password') || uid.includes('sensitive')) && !evidence.tests) {
         issues.push(`Sensitive field ${uid} lacks test coverage`);
       }
     }
-    
+
     return issues;
   }
 

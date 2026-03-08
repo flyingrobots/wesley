@@ -1,6 +1,10 @@
 import { TypeScriptGenerator } from '@wesley/core';
 import { FileOutputGeneratorCommand } from '../framework/FileOutputGeneratorCommand.mjs';
 
+// TODO: GraphQLSchemaParser is not imported — this command is non-functional
+// legacy code. Tracked in .claude/bad_code.md.
+/* eslint-disable no-undef */
+
 export class TypeScriptCommand extends FileOutputGeneratorCommand {
   constructor() {
     super('typescript', 'Generate TypeScript interfaces from GraphQL');

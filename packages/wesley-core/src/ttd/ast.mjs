@@ -19,7 +19,7 @@ export const TtdAstKind = {
   REGISTRY_ENTRY: 'REGISTRY_ENTRY',
   CODEC: 'CODEC',
   STATE_FIELD: 'STATE_FIELD',
-  CONSTRAINT: 'CONSTRAINT',
+  CONSTRAINT: 'CONSTRAINT'
 };
 
 /**
@@ -42,7 +42,7 @@ export function createChannel({
   version = 1,
   eventTypes = [],
   ordered = true,
-  persistent = false,
+  persistent = false
 }) {
   return {
     kind: TtdAstKind.CHANNEL,
@@ -50,7 +50,7 @@ export function createChannel({
     version,
     eventTypes,
     ordered,
-    persistent,
+    persistent
   };
 }
 
@@ -68,7 +68,7 @@ export function createOp({
   idempotent = false,
   readonly = false,
   timeout,
-  op_id,
+  op_id
 }, deps = {}) {
   const crypto = deps.crypto ?? defaultCrypto;
   return {
@@ -80,7 +80,7 @@ export function createOp({
     readonly,
     timeout,
     op_id: op_id ?? computeOpId(namespace, name, crypto),
-    rules: [],
+    rules: []
   };
 }
 
@@ -92,7 +92,7 @@ export function createRule({
   from,
   to,
   guard,
-  opName,
+  opName
 }) {
   return {
     kind: TtdAstKind.RULE,
@@ -100,7 +100,7 @@ export function createRule({
     from,
     to,
     guard,
-    opName,
+    opName
   };
 }
 
@@ -110,13 +110,13 @@ export function createRule({
 export function createInvariant({
   name,
   expr,
-  severity = 'error',
+  severity = 'error'
 }) {
   return {
     kind: TtdAstKind.INVARIANT,
     name,
     expr,
-    severity,
+    severity
   };
 }
 
@@ -128,7 +128,7 @@ export function createEmission({
   event,
   opName,
   condition,
-  withinMs,
+  withinMs
 }) {
   return {
     kind: TtdAstKind.EMISSION,
@@ -136,7 +136,7 @@ export function createEmission({
     event,
     opName,
     condition,
-    withinMs,
+    withinMs
   };
 }
 
@@ -148,7 +148,7 @@ export function createFootprint({
   reads = [],
   writes = [],
   creates = [],
-  deletes = [],
+  deletes = []
 }) {
   return {
     kind: TtdAstKind.FOOTPRINT,
@@ -156,7 +156,7 @@ export function createFootprint({
     reads,
     writes,
     creates,
-    deletes,
+    deletes
   };
 }
 
@@ -167,14 +167,14 @@ export function createRegistryEntry({
   typeName,
   id,
   deprecated = false,
-  deprecatedBy,
+  deprecatedBy
 }) {
   return {
     kind: TtdAstKind.REGISTRY_ENTRY,
     typeName,
     id,
     deprecated,
-    deprecatedBy,
+    deprecatedBy
   };
 }
 
@@ -184,12 +184,12 @@ export function createRegistryEntry({
 export function createCodecSpec({
   typeName,
   format,
-  canonical,
+  canonical
 }) {
   return {
     kind: TtdAstKind.CODEC,
     typeName,
     format,
-    canonical: canonical ?? (format === 'cbor'),
+    canonical: canonical ?? (format === 'cbor')
   };
 }

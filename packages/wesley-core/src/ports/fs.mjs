@@ -5,8 +5,8 @@ export class FileSystemPort {
    * @param {string} path
    * @returns {Promise<boolean>}
    */
-  async exists(path) { 
-    throw new Error('FileSystemPort.exists() must be implemented'); 
+  async exists(_path) {
+    throw new Error('FileSystemPort.exists() must be implemented');
   }
 
   /**
@@ -14,8 +14,8 @@ export class FileSystemPort {
    * @param {string} path
    * @returns {Promise<string>}
    */
-  async read(path) { 
-    throw new Error('FileSystemPort.read() must be implemented'); 
+  async read(_path) {
+    throw new Error('FileSystemPort.read() must be implemented');
   }
 
   /**
@@ -24,7 +24,7 @@ export class FileSystemPort {
    * @param {string} content
    * @returns {Promise<void>}
    */
-  async write(path, content) { 
-    throw new Error('FileSystemPort.write() must be implemented'); 
+  async write(_path, _content) {
+    throw new Error('FileSystemPort.write() must be implemented');
   }
 }

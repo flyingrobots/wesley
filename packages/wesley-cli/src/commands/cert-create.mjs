@@ -1,6 +1,7 @@
 /**
  * Cert Create - Assemble SHIPME.md certificate from evidence/realm
  */
+import { createHash } from 'node:crypto';
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 
 export class CertCreateCommand extends WesleyCommand {
@@ -38,7 +39,7 @@ export class CertCreateCommand extends WesleyCommand {
 
     if (options.json) {
       this.ctx.stdout.write(JSON.stringify(cert, null, 2) + '\n');
-      return { ok: true, sha };
+      return;
     }
 
     const content = renderSHIPME(cert);
@@ -72,8 +73,9 @@ function fmt(v){ if (v==null) return 'n/a'; return typeof v==='number' ? Number(
 
 async function gitSha(ctx) {
   try {
-    const execSync = this.ctx.shell.execSync;
-    return execSync('git rev-parse HEAD', { encoding: 'utf8' }).trim();
+    const out = await ctx.shell.exec('git rev-parse HEAD');
+    const s = out?.stdout?.trim();
+    return s || ctx.env?.GITHUB_SHA || null;
   } catch {
     return ctx.env?.GITHUB_SHA || null;
   }
@@ -84,16 +86,17 @@ async function readJsonSafe(ctx, path) {
 }
 
 async function hashArtifacts(ctx, outDir) {
-  const crypto = await import('node:crypto');
   const fs = ctx.fs;
   const res = {};
   for (const f of ['schema.sql']) {
     try {
       const p = `${outDir}/${f}`;
       const buf = await fs.read(p);
-      const h = crypto.createHash('sha256').update(buf).digest('hex');
+      const h = createHash('sha256').update(buf).digest('hex');
       res[f] = { sha256: h };
-    } catch {}
+    } catch (e) {
+      ctx.logger?.debug?.('hashArtifacts: could not hash %s: %s', f, e?.message || e);
+    }
   }
   return res;
 }

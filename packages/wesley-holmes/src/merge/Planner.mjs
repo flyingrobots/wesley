@@ -23,7 +23,7 @@ export class MergePlanner {
       status: 'planned',
       baseRef,
       strategy: 'deferred',
-      notes: 'MP-01..03 stub: strategy execution deferred to MP-04+',
+      notes: 'MP-01..03 stub: strategy execution deferred to MP-04+'
     };
   }
 }

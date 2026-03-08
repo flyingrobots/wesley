@@ -5,11 +5,11 @@
  */
 
 // Export emit functions for lazy loading
-export { 
-  emitDDL, 
-  emitRLS, 
-  emitMigrations, 
-  emitPgTap 
+export {
+  emitDDL,
+  emitRLS,
+  emitMigrations,
+  emitPgTap
 } from './emit.mjs';
 
 // The SQLDeparser is available if needed directly

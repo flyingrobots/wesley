@@ -2,7 +2,7 @@
  * Backpressure Controller
  * Adaptive rate limiting based on database load, connection pool pressure monitoring,
  * and automatic throttling during high load conditions
- * 
+ *
  * @license Apache-2.0
  */
 
@@ -232,7 +232,7 @@ export class BackpressureController extends EventEmitter {
     // Permission granted
     this.activeOperations++;
     this.consumeRateLimitToken();
-    
+
     return {
       granted: true,
       delay: 0,
@@ -283,25 +283,25 @@ export class BackpressureController extends EventEmitter {
     const now = Date.now();
 
     switch (this.circuitBreakerState) {
-      case CircuitBreakerState.CLOSED:
+    case CircuitBreakerState.CLOSED:
+      return { allowed: true };
+
+    case CircuitBreakerState.OPEN:
+      if (now - this.circuitBreakerLastFailureTime >= this.circuitBreakerOptions.resetTimeout) {
+        this.transitionCircuitBreaker(CircuitBreakerState.HALF_OPEN, 'timeout_expired');
         return { allowed: true };
+      }
+      return { allowed: false, reason: 'circuit_breaker_open' };
 
-      case CircuitBreakerState.OPEN:
-        if (now - this.circuitBreakerLastFailureTime >= this.circuitBreakerOptions.resetTimeout) {
-          this.transitionCircuitBreaker(CircuitBreakerState.HALF_OPEN, 'timeout_expired');
-          return { allowed: true };
-        }
-        return { allowed: false, reason: 'circuit_breaker_open' };
+    case CircuitBreakerState.HALF_OPEN:
+      if (this.circuitBreakerHalfOpenCalls < this.circuitBreakerOptions.halfOpenMaxCalls) {
+        this.circuitBreakerHalfOpenCalls++;
+        return { allowed: true };
+      }
+      return { allowed: false, reason: 'half_open_limit_exceeded' };
 
-      case CircuitBreakerState.HALF_OPEN:
-        if (this.circuitBreakerHalfOpenCalls < this.circuitBreakerOptions.halfOpenMaxCalls) {
-          this.circuitBreakerHalfOpenCalls++;
-          return { allowed: true };
-        }
-        return { allowed: false, reason: 'half_open_limit_exceeded' };
-
-      default:
-        return { allowed: false, reason: 'unknown_circuit_breaker_state' };
+    default:
+      return { allowed: false, reason: 'unknown_circuit_breaker_state' };
     }
   }
 
@@ -433,7 +433,7 @@ export class BackpressureController extends EventEmitter {
     this.circuitBreakerState = newState;
     this.circuitBreakerHalfOpenCalls = 0;
 
-    this.emit('circuitBreakerStateChanged', 
+    this.emit('circuitBreakerStateChanged',
       new CircuitBreakerStateChanged(previousState, newState, reason));
   }
 
@@ -461,7 +461,7 @@ export class BackpressureController extends EventEmitter {
    * Update error rate metrics
    */
   updateErrorRate() {
-    this.metrics.errorRate = this.metrics.totalOperations > 0 
+    this.metrics.errorRate = this.metrics.totalOperations > 0
       ? this.metrics.failedOperations / this.metrics.totalOperations
       : 0;
 
@@ -537,7 +537,7 @@ export class BackpressureController extends EventEmitter {
     ];
 
     let maxLevel = 0;
-    let triggeringConditions = [];
+    const triggeringConditions = [];
 
     for (const condition of conditions) {
       let level = 0;
@@ -566,7 +566,7 @@ export class BackpressureController extends EventEmitter {
 
     if (!wasActive && this.isBackpressureActive) {
       this.backpressureStartTime = Date.now();
-      this.emit('backpressureActivated', 
+      this.emit('backpressureActivated',
         new BackpressureActivated(maxLevel, triggeringConditions));
     } else if (wasActive && !this.isBackpressureActive) {
       const duration = Date.now() - (this.backpressureStartTime || Date.now());
@@ -597,7 +597,7 @@ export class BackpressureController extends EventEmitter {
 
     if (newRate !== previousRate) {
       this.currentRateLimit = newRate;
-      this.emit('throttlingAdjusted', 
+      this.emit('throttlingAdjusted',
         new ThrottlingAdjusted(previousRate, newRate, 'adaptive_adjustment'));
     }
   }
@@ -760,11 +760,11 @@ export class BackpressureController extends EventEmitter {
    */
   async shutdown() {
     this.stopMonitoring();
-    
+
     // Wait for active operations to complete (with timeout)
     const shutdownTimeout = 30000; // 30 seconds
     const startTime = Date.now();
-    
+
     while (this.activeOperations > 0 && (Date.now() - startTime) < shutdownTimeout) {
       await this.sleep(100);
     }
@@ -773,7 +773,7 @@ export class BackpressureController extends EventEmitter {
     this.queuedOperations = [];
     this.metrics.queueDepth = 0;
 
-    this.emit('shutdown', { 
+    this.emit('shutdown', {
       remainingOperations: this.activeOperations,
       forcedShutdown: this.activeOperations > 0
     });

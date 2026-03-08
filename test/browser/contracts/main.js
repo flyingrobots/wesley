@@ -23,7 +23,7 @@ const CSS_CLASSES = Object.freeze({
 
 // Robust HTML escaping (based on OWASP XSS Prevention Cheat Sheet)
 // Escapes & < > " ' and / — safe to use when building strings that will be inserted as text
-function escapeHtml(str) {
+function _escapeHtml(str) {
   const map = {
     '&': '&amp;',
     '<': '&lt;',
@@ -32,15 +32,15 @@ function escapeHtml(str) {
     "'": '&#39;',
     '/': '&#x2F;'
   };
-  return String(str).replace(/[&<>"'\/]/g, (ch) => map[ch]);
+  return String(str).replace(/[&<>"'/]/g, (ch) => map[ch]);
 }
 
 // verifyIr now returns structured diagnostics with rich context
 async function verifyIr() {
   const { createBrowserRuntime } = await import('../../../packages/wesley-host-browser/src/createBrowserRuntime.mjs');
   const rt = await createBrowserRuntime();
-  const sdl = `type Org @wes_table { id: ID! @wes_pk }\n`+
-              `type User @wes_table { id: ID! @wes_pk, org_id: ID! @wes_fk(ref: "Org.id") }`;
+  const sdl = 'type Org @wes_table { id: ID! @wes_pk }\n'+
+              'type User @wes_table { id: ID! @wes_pk, org_id: ID! @wes_fk(ref: "Org.id") }';
   const ir = await rt.parsers.graphql.parse(sdl);
   const expectedTableCount = 2;
   const errors = [];

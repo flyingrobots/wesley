@@ -9,7 +9,7 @@ export class MigrationDiffer {
   constructor(options = {}) {
     this.safety = new MigrationSafety(options);
   }
-  
+
   async diff(previousSchema, currentSchema) {
     const steps = [];
 
@@ -33,11 +33,11 @@ export class MigrationDiffer {
         const prevField = prevFields[fieldName];
 
         if (!prevField && !currField.isVirtual()) {
-          steps.push({ 
-            kind: 'add_column', 
-            table: tableName, 
-            column: fieldName, 
-            field: currField 
+          steps.push({
+            kind: 'add_column',
+            table: tableName,
+            column: fieldName,
+            field: currField
           });
         } else if (prevField && currField) {
           // Check for type changes (including array and item nullability)
@@ -45,14 +45,14 @@ export class MigrationDiffer {
           const nullChanged = prevField.nonNull !== currField.nonNull;
           const listChanged = prevField.list !== currField.list;
           const itemNullChanged = prevField.itemNonNull !== currField.itemNonNull;
-          
+
           if (typeChanged || nullChanged || listChanged || itemNullChanged) {
-            steps.push({ 
-              kind: 'alter_type', 
-              table: tableName, 
-              column: fieldName, 
-              from: prevField, 
-              to: currField 
+            steps.push({
+              kind: 'alter_type',
+              table: tableName,
+              column: fieldName,
+              from: prevField,
+              to: currField
             });
           }
         }
@@ -61,10 +61,10 @@ export class MigrationDiffer {
       // Find removed fields
       for (const fieldName of Object.keys(prevFields)) {
         if (!currFields[fieldName]) {
-          steps.push({ 
-            kind: 'drop_column', 
-            table: tableName, 
-            column: fieldName 
+          steps.push({
+            kind: 'drop_column',
+            table: tableName,
+            column: fieldName
           });
         }
       }
@@ -79,17 +79,17 @@ export class MigrationDiffer {
 
     // Analyze migration safety
     const safetyAnalysis = this.safety.analyzeMigration(steps);
-    
+
     // Generate pre-flight snapshot if risky
     let preFlightSnapshot = null;
     if (safetyAnalysis.totalRiskScore >= 20 && this.safety.generateSnapshots) {
       preFlightSnapshot = this.safety.generatePreFlightSnapshot(currentSchema, steps);
     }
-    
+
     // Calculate Holmes risk score
     const holmesScore = this.safety.calculateHolmesRiskScore(steps);
 
-    return { 
+    return {
       steps,
       safetyAnalysis,
       preFlightSnapshot,
@@ -101,63 +101,64 @@ export class MigrationDiffer {
 export class MigrationSQLGenerator {
   async generate(diff) {
     const statements = [];
-    
+
     for (const step of diff.steps) {
       switch (step.kind) {
-        case 'create_table':
+      case 'create_table':
+        statements.push(
+          `-- Table ${step.table} was added. Re-run "wesley generate" to emit full CREATE statement.`
+        );
+        break;
+
+      case 'add_column': {
+        const type = this.mapType(step.field);
+        statements.push(
+          `ALTER TABLE "${step.table}" ADD COLUMN "${step.column}" ${type};`
+        );
+        break;
+      }
+
+      case 'drop_column':
+        statements.push(
+          `ALTER TABLE "${step.table}" DROP COLUMN "${step.column}";`
+        );
+        break;
+
+      case 'alter_type':
+        statements.push(
+          `ALTER TABLE "${step.table}" ALTER COLUMN "${step.column}" TYPE ${this.mapType(step.to)};`
+        );
+        if (step.to.nonNull && !step.from.nonNull) {
           statements.push(
-            `-- Table ${step.table} was added. Re-run "wesley generate" to emit full CREATE statement.`
+            `ALTER TABLE "${step.table}" ALTER COLUMN "${step.column}" SET NOT NULL;`
           );
-          break;
-          
-        case 'add_column':
-          const type = this.mapType(step.field);
+        }
+        if (!step.to.nonNull && step.from.nonNull) {
           statements.push(
-            `ALTER TABLE "${step.table}" ADD COLUMN "${step.column}" ${type};`
+            `ALTER TABLE "${step.table}" ALTER COLUMN "${step.column}" DROP NOT NULL;`
           );
-          break;
-          
-        case 'drop_column':
-          statements.push(
-            `ALTER TABLE "${step.table}" DROP COLUMN "${step.column}";`
-          );
-          break;
-          
-        case 'alter_type':
-          statements.push(
-            `ALTER TABLE "${step.table}" ALTER COLUMN "${step.column}" TYPE ${this.mapType(step.to)};`
-          );
-          if (step.to.nonNull && !step.from.nonNull) {
-            statements.push(
-              `ALTER TABLE "${step.table}" ALTER COLUMN "${step.column}" SET NOT NULL;`
-            );
-          }
-          if (!step.to.nonNull && step.from.nonNull) {
-            statements.push(
-              `ALTER TABLE "${step.table}" ALTER COLUMN "${step.column}" DROP NOT NULL;`
-            );
-          }
-          break;
-          
-        case 'drop_table':
-          statements.push(
-            `DROP TABLE IF EXISTS "${step.table}";`
-          );
-          break;
+        }
+        break;
+
+      case 'drop_table':
+        statements.push(
+          `DROP TABLE IF EXISTS "${step.table}";`
+        );
+        break;
       }
     }
-    
+
     return statements.join('\n');
   }
 
   mapType(field) {
-    const typeMap = { 
-      ID: 'uuid', 
-      String: 'text', 
-      Int: 'integer', 
-      Float: 'double precision', 
-      Boolean: 'boolean', 
-      DateTime: 'timestamptz' 
+    const typeMap = {
+      ID: 'uuid',
+      String: 'text',
+      Int: 'integer',
+      Float: 'double precision',
+      Boolean: 'boolean',
+      DateTime: 'timestamptz'
     };
     const pgType = typeMap[field.type] || 'text';
     return field.nonNull ? `${pgType} NOT NULL` : pgType;

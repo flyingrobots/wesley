@@ -81,6 +81,8 @@ runs:
 
     - name: Ensure HOLMES bundle
       shell: bash
+      env:
+        WESLEY_REPO_ROOT: ${{ github.workspace }}
       run: |
         if [ ! -f "${{ inputs.bundle-dir }}/bundle.json" ]; then
           SCHEMA_DIR="$(dirname "${{ inputs.schema }}")"
@@ -98,6 +100,8 @@ runs:
     - name: Force regeneration
       if: ${{ inputs.always-generate == 'true' }}
       shell: bash
+      env:
+        WESLEY_REPO_ROOT: ${{ github.workspace }}
       run: |
         SCHEMA_DIR="$(dirname "${{ inputs.schema }}")"
         SCHEMA_FILE="$(basename "${{ inputs.schema }}")"

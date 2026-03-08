@@ -23,7 +23,7 @@ export const ExprKind = {
   METHOD_CALL: 'METHOD_CALL',
 
   // Quantifiers
-  FORALL: 'FORALL',
+  FORALL: 'FORALL'
 };
 
 /**
@@ -33,7 +33,7 @@ export function literal(value, valueType) {
   return {
     kind: ExprKind.LITERAL,
     value,
-    valueType, // 'number', 'string', 'boolean'
+    valueType // 'number', 'string', 'boolean'
   };
 }
 
@@ -43,7 +43,7 @@ export function literal(value, valueType) {
 export function identifier(name) {
   return {
     kind: ExprKind.IDENTIFIER,
-    name,
+    name
   };
 }
 
@@ -55,7 +55,7 @@ export function binary(operator, left, right) {
     kind: ExprKind.BINARY,
     operator,
     left,
-    right,
+    right
   };
 }
 
@@ -66,7 +66,7 @@ export function unary(operator, operand) {
   return {
     kind: ExprKind.UNARY,
     operator,
-    operand,
+    operand
   };
 }
 
@@ -78,7 +78,7 @@ export function comparison(operator, left, right) {
     kind: ExprKind.COMPARISON,
     operator,
     left,
-    right,
+    right
   };
 }
 
@@ -90,7 +90,7 @@ export function logical(operator, left, right) {
     kind: ExprKind.LOGICAL,
     operator,
     left,
-    right,
+    right
   };
 }
 
@@ -101,7 +101,7 @@ export function propertyAccess(object, property) {
   return {
     kind: ExprKind.PROPERTY_ACCESS,
     object,
-    property,
+    property
   };
 }
 
@@ -113,7 +113,7 @@ export function methodCall(receiver, method, args) {
     kind: ExprKind.METHOD_CALL,
     receiver,
     method,
-    args,
+    args
   };
 }
 
@@ -125,6 +125,6 @@ export function forall(variable, collection, body) {
     kind: ExprKind.FORALL,
     variable,
     collection,
-    body,
+    body
   };
 }

@@ -11,12 +11,12 @@ export class PostgreSQLGenerator {
   constructor() {
     this.deparser = new SQLDeparser();
   }
-  
-  async generate(schema) {
+
+  async generate(_schema) {
     // For now, generate a simple hardcoded SQL that demonstrates our deparser works
     // In a real implementation, this would build an AST from the Wesley schema
     // and then deparse it to SQL
-    
+
     return `-- Generated SQL from Wesley schema
 CREATE TABLE IF NOT EXISTS "users" (
   "id" uuid PRIMARY KEY,
@@ -68,8 +68,8 @@ CREATE POLICY "policy_posts_delete" ON "posts"
 
 export class PgTAPTestGenerator {
   constructor() {}
-  
-  async generate(schema) {
+
+  async generate(_schema) {
     return `-- Generated pgTAP tests
 BEGIN;
 SELECT plan(6);

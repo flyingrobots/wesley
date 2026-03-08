@@ -135,7 +135,7 @@ test('computeHashChain: sdl_hash differs from schema_hash for whitespace-varying
     canonicalBytes,
     irData: {},
     registryData: {},
-    artifacts: { 'x.txt': '' },
+    artifacts: { 'x.txt': '' }
   });
   assert.notEqual(chain.sdl_hash, chain.schema_hash);
 });

@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {
   testGenerator,
   testGeneratorPlan,
-  expectArtifact,
+  expectArtifact
 } from '../../src/testing/testGenerator.mjs';
 
 // ---------------------------------------------------------------------------
@@ -16,16 +16,16 @@ function makePlugin(overrides = {}) {
     apiVersion: '1',
     name: 'harness-test',
     init() {},
-    async plan(schema, context) {
+    async plan(schema, _context) {
       return {
         artifacts: [{ path: 'out.txt', reason: 'test output' }],
-        metadata: { sdl: schema.sdl },
+        metadata: { sdl: schema.sdl }
       };
     },
     async generate(plan) {
       return { 'out.txt': `generated:${plan.metadata.sdl}` };
     },
-    ...overrides,
+    ...overrides
   };
 }
 
@@ -42,7 +42,7 @@ test('testGenerator — golden path returns artifacts', async () => {
 test('testGenerator — config forwarded to init', async () => {
   let receivedConfig;
   const plugin = makePlugin({
-    init(config) { receivedConfig = config; },
+    init(config) { receivedConfig = config; }
   });
 
   await testGenerator(plugin, 'type Query { x: Int }', { flavor: 'vanilla' });
@@ -52,7 +52,7 @@ test('testGenerator — config forwarded to init', async () => {
 test('testGenerator — default config is empty object', async () => {
   let receivedConfig;
   const plugin = makePlugin({
-    init(config) { receivedConfig = config; },
+    init(config) { receivedConfig = config; }
   });
 
   await testGenerator(plugin, 'type Query { x: Int }');
@@ -66,42 +66,42 @@ test('testGenerator — rejects invalid plugin (no name)', async () => {
 
 test('testGenerator — rejects invalid plan (no artifacts array)', async () => {
   const plugin = makePlugin({
-    async plan() { return { artifacts: 'nope' }; },
+    async plan() { return { artifacts: 'nope' }; }
   });
   await assert.rejects(() => testGenerator(plugin, 'x'), /artifacts/i);
 });
 
 test('testGenerator — rejects non-object generate return', async () => {
   const plugin = makePlugin({
-    async generate() { return 'bad'; },
+    async generate() { return 'bad'; }
   });
   await assert.rejects(() => testGenerator(plugin, 'x'), /Record/);
 });
 
 test('testGenerator — rejects null generate return', async () => {
   const plugin = makePlugin({
-    async generate() { return null; },
+    async generate() { return null; }
   });
   await assert.rejects(() => testGenerator(plugin, 'x'), /null/);
 });
 
 test('testGenerator — rejects array generate return', async () => {
   const plugin = makePlugin({
-    async generate() { return []; },
+    async generate() { return []; }
   });
   await assert.rejects(() => testGenerator(plugin, 'x'), /Array/);
 });
 
 test('testGenerator — propagates error thrown in generate', async () => {
   const plugin = makePlugin({
-    async generate() { throw new Error('kaboom'); },
+    async generate() { throw new Error('kaboom'); }
   });
   await assert.rejects(() => testGenerator(plugin, 'x'), /kaboom/);
 });
 
 test('testGenerator — propagates error thrown in plan', async () => {
   const plugin = makePlugin({
-    async plan() { throw new Error('plan-fail'); },
+    async plan() { throw new Error('plan-fail'); }
   });
   await assert.rejects(() => testGenerator(plugin, 'x'), /plan-fail/);
 });
@@ -110,7 +110,7 @@ test('testGenerator — supports binary (Uint8Array) artifacts', async () => {
   const binary = new Uint8Array([0x00, 0xFF, 0x42]);
   const plugin = makePlugin({
     async plan() { return { artifacts: [{ path: 'bin.dat', binary: true }] }; },
-    async generate() { return { 'bin.dat': binary }; },
+    async generate() { return { 'bin.dat': binary }; }
   });
   const artifacts = await testGenerator(plugin, 'x');
   assert.ok(artifacts['bin.dat'] instanceof Uint8Array);
@@ -131,7 +131,7 @@ test('testGenerator — no filesystem I/O (context has null logger, fake clock)'
       capturedContext = context;
       return { artifacts: [{ path: 'out.txt' }] };
     },
-    async generate() { return { 'out.txt': 'ok' }; },
+    async generate() { return { 'out.txt': 'ok' }; }
   });
 
   await testGenerator(plugin, 'x');
@@ -151,7 +151,7 @@ test('testGenerator — context is frozen', async () => {
       capturedContext = context;
       return { artifacts: [{ path: 'out.txt' }] };
     },
-    async generate() { return { 'out.txt': 'ok' }; },
+    async generate() { return { 'out.txt': 'ok' }; }
   });
 
   await testGenerator(plugin, 'x');
@@ -173,7 +173,7 @@ test('testGeneratorPlan — returns validated plan', async () => {
 test('testGeneratorPlan — forwards config to init', async () => {
   let receivedConfig;
   const plugin = makePlugin({
-    init(config) { receivedConfig = config; },
+    init(config) { receivedConfig = config; }
   });
   await testGeneratorPlan(plugin, 'x', { key: 'val' });
   assert.equal(receivedConfig.key, 'val');
@@ -181,7 +181,7 @@ test('testGeneratorPlan — forwards config to init', async () => {
 
 test('testGeneratorPlan — rejects invalid plan', async () => {
   const plugin = makePlugin({
-    async plan() { return null; },
+    async plan() { return null; }
   });
   await assert.rejects(() => testGeneratorPlan(plugin, 'x'), /Plan/i);
 });

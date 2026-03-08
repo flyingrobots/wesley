@@ -13,7 +13,7 @@ import { NodeCrypto, nodeCrypto } from './NodeCrypto.mjs';
 
 // Stub migration diff engine
 class StubMigrationDiffEngine {
-  async diff(fromSchema, toSchema) {
+  async diff(_fromSchema, _toSchema) {
     return {
       steps: [],
       operations: [],
@@ -25,13 +25,13 @@ class StubMigrationDiffEngine {
 
 // Temporary stub generators until imports are fixed
 class StubPostgreSQLGenerator {
-  async generate(schema) {
+  async generate(_schema) {
     return 'CREATE TABLE test (id uuid PRIMARY KEY);';
   }
 }
 
 class StubPgTAPTestGenerator {
-  async generate(schema) {
+  async generate(_schema) {
     return 'SELECT plan(1); SELECT ok(true, "Test");';
   }
 }
@@ -39,7 +39,7 @@ class StubPgTAPTestGenerator {
 export function createAdapters() {
   const logger = createPinoLogger();
   const fileSystem = new NodeFileSystem();
-  
+
   // Process adapter - wraps Node.js process
   const processAdapter = {
     argv: process.argv,
@@ -55,7 +55,7 @@ export function createAdapters() {
   const postgreSQLGenerator = new StubPostgreSQLGenerator();
   const pgTAPTestGenerator = new StubPgTAPTestGenerator();
   const migrationDiffEngine = new StubMigrationDiffEngine();
-  
+
   // File writer adapter
   const wesleyFileWriter = {
     create: (options) => new WesleyFileWriter(options)
@@ -71,7 +71,7 @@ export function createAdapters() {
     migrationDiffEngine,
     wesleyFileWriter,
     InProcessCompiler,
-    crypto: nodeCrypto,
+    crypto: nodeCrypto
   };
 }
 

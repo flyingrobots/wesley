@@ -5,22 +5,27 @@
  */
 
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
-import { buildPlanFromJson, emitFunction, emitView, collectParams } from '@wesley/core/domain/qir';
+import { buildPlanFromJson, emitFunction, emitView, collectParams, quoteIdent, sanitizeIdentBase } from '@wesley/core/domain/qir';
 import { filterIRByUnits } from '@wesley/core/domain/SchemaFilter';
+import { assertValid } from '../framework/schemaValidator.mjs';
 
 export class GeneratePipelineCommand extends WesleyCommand {
   constructor(ctx) {
     super(ctx, 'generate', 'Generate SQL, tests, and more from GraphQL schema');
     this.requiresSchema = true;
   }
-  
+
   // Configure Commander options
   configureCommander(cmd) {
     return cmd
       .option('-s, --schema <path>', 'GraphQL schema file. Use "-" for stdin', 'schema.graphql')
       .option('--stdin', 'Read schema from stdin (alias for --schema -)')
       .option('--ops <dir>', 'Experimental: directory containing *.op.json files to compile (omit to disable)')
+      .option('--ops-manifest <path>', 'Path to ops manifest JSON file (auto-detected if omitted)')
       .option('--ops-schema <name>', 'Schema name for emitted ops SQL (default wes_ops)', 'wes_ops')
+      .option('--ops-security <mode>', 'Security for emitted functions: invoker|definer', 'invoker')
+      .option('--ops-search-path <list>', 'Comma-separated search_path for ops functions (e.g., "pg_catalog, wes_ops")')
+      .option('--ops-explain <mode>', 'Emit EXPLAIN JSON snapshots for ops: mock', '')
       .option('--ops-allow-errors', 'Continue compiling remaining ops even if some fail validation (not allowed in CI without override)')
       .option('--emit-bundle', 'Emit .wesley/ evidence bundle')
       .option('--supabase', 'Enable Supabase features (RLS tests)')
@@ -28,7 +33,6 @@ export class GeneratePipelineCommand extends WesleyCommand {
       .option('--dry-run', 'Show what would be generated without writing files')
       .option('--allow-dirty', 'Allow running with a dirty git working tree (not recommended)')
       .option('--i-know-what-im-doing', 'Acknowledge hazardous flags in CI environments')
-      .option('-v, --verbose', 'More logs (level=debug)')
       .option('--debug', 'Debug output with stack traces')
       .option('-q, --quiet', 'Silence logs (level=silent)')
       .option('--json', 'Emit newline-delimited JSON logs')
@@ -59,11 +63,11 @@ export class GeneratePipelineCommand extends WesleyCommand {
     if (options.stdin) {
       options.schema = '-';
     }
-    
+
     // Safety: require clean git working tree unless explicitly allowed
     const env = this.ctx.env || {};
     if (shouldEnforceClean(env, options) && !options.allowDirty) {
-      try { await assertCleanGit(); } catch (e) { e.code = e.code || 'DIRTY_WORKTREE'; throw e; }
+      try { await assertCleanGit(this.ctx.shell); } catch (e) { e.code = e.code || 'DIRTY_WORKTREE'; throw e; }
     }
 
     const debugDump = options.printComposedSdl || options.printIr;
@@ -100,7 +104,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
     // support --unit filtering, --dry-run, --print-ir, and --print-composed-sdl.
     const needsSequentialPipeline = options.unit || options.dryRun || options.printIr || options.printComposedSdl;
     if (planner && runner && planner.buildPlan && runner.run && !needsSequentialPipeline) {
-      return await this.executeWithTasksAndSlaps(context);
+      return this.executeWithTasksAndSlaps(context);
     }
 
     // Otherwise, simple sequential execution
@@ -133,13 +137,13 @@ export class GeneratePipelineCommand extends WesleyCommand {
         return { artifacts: 0, dryRun: true };
       }
     }
-    
+
     // Generate DDL
     const ddlResult = generators.sql.emitDDL(ir);
     if (ddlResult && ddlResult.files) {
       artifacts.push(...ddlResult.files);
     }
-    
+
     // Generate RLS if Supabase flag
     if (options.supabase && generators.sql.emitRLS) {
       const rlsResult = generators.sql.emitRLS(ir);
@@ -147,7 +151,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
         artifacts.push(...rlsResult.files);
       }
     }
-    
+
     // Generate tests
     if (generators.tests && generators.tests.emitPgTap) {
       const testResult = generators.tests.emitPgTap(ir);
@@ -155,7 +159,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
         artifacts.push(...testResult.files);
       }
     }
-    
+
     // Write files
     if (!options.dryRun && writer && writer.writeFiles) {
       await writer.writeFiles(artifacts, options.outDir);
@@ -171,17 +175,17 @@ export class GeneratePipelineCommand extends WesleyCommand {
         logger.warn('Could not write IR snapshot: ' + (e?.message || e));
       }
     }
-    
+
     // Optionally emit a minimal evidence bundle for HOLMES sidecar
     if (options.emitBundle && !options.dryRun) {
       try {
         // Resolve current commit SHA (fallback to env or unknown)
-        let sha = process.env.GITHUB_SHA || 'unknown';
+        let sha = (this.ctx.env || {}).GITHUB_SHA || 'unknown';
         try {
-          const out = await (globalThis?.wesleyCtx?.shell?.exec?.('git rev-parse HEAD'));
+          const out = await (this.ctx.shell?.exec?.('git rev-parse HEAD'));
           const s = out?.stdout?.trim();
           if (s) sha = s;
-        } catch {}
+        } catch { /* empty */ }
 
         const timestamp = new Date().toISOString();
         // Minimal scoring heuristic (placeholder until full evidence pipeline)
@@ -252,25 +256,27 @@ export class GeneratePipelineCommand extends WesleyCommand {
 
         // Append a tiny history for MORIARTY (hydrate from merge-base if available)
         try {
+          const ctxEnv = this.ctx.env || {};
           const history = await loadMoriartyHistory({
             fs: this.ctx.fs,
-            shell: globalThis?.wesleyCtx?.shell,
+            shell: this.ctx.shell,
+            logger,
             defaultBase:
-              process.env.WESLEY_BASE_REF ||
-              process.env.GITHUB_BASE_REF ||
-              process.env.WESLEY_DEFAULT_BRANCH ||
-              process.env.GITHUB_DEFAULT_BRANCH ||
+              ctxEnv.WESLEY_BASE_REF ||
+              ctxEnv.GITHUB_BASE_REF ||
+              ctxEnv.WESLEY_DEFAULT_BRANCH ||
+              ctxEnv.GITHUB_DEFAULT_BRANCH ||
               'main'
           });
           const day = Math.floor(Date.now() / 86400000);
           const nextPoints = mergeHistoryPoints(history.points, [{ day, timestamp, scs, tci, mri }]);
           await this.ctx.fs.write('.wesley/history.json', JSON.stringify({ points: nextPoints }, null, 2));
-        } catch {}
+        } catch { /* empty */ }
       } catch (e) {
         logger.warn('Could not emit HOLMES evidence bundle: ' + (e?.message || e));
       }
     }
-    
+
     if (!options.dryRun) {
       await this.compileOpsIfRequested(context);
     }
@@ -289,14 +295,14 @@ export class GeneratePipelineCommand extends WesleyCommand {
     return {
       artifacts: artifacts.length,
       outDir: options.outDir,
-      dryRun: options.dryRun || false,
+      dryRun: options.dryRun || false
     };
   }
 
   async executeWithTasksAndSlaps(context) {
     const { schemaContent, options, logger } = context;
     const { planner, runner, generators, writer } = this.ctx;
-    
+
     // Build task graph
     const nodes = [
       { id: 'parse', op: 'parse_schema', args: { sdl: schemaContent } },
@@ -306,7 +312,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
       { id: 'gen_tests', op: 'emit_tests', needs: ['validate'] },
       { id: 'write', op: 'write_files', needs: ['gen_ddl', 'gen_rls', 'gen_tests'], args: { out: options.outDir } }
     ].filter(n => !n.skip);
-    
+
     const edges = [];
     for (const node of nodes) {
       if (node.needs) {
@@ -315,13 +321,13 @@ export class GeneratePipelineCommand extends WesleyCommand {
         }
       }
     }
-    
+
     const plan = planner.buildPlan(nodes, edges, { versions: {} });
-    
+
     if (options.showPlan) {
       logger.info({ plan }, 'Execution plan:');
     }
-    
+
     // Define handlers
     const handlers = {
       parse_schema: async (n) => ({ ir: this.ctx.parsers.graphql.parse(n.args.sdl) }),
@@ -338,26 +344,92 @@ export class GeneratePipelineCommand extends WesleyCommand {
         return writer.writeFiles(artifacts, n.args.out);
       }
     };
-    
+
     // Execute with S.L.A.P.S.
     const result = await runner.run(plan, { handlers, logger });
 
     await this.compileOpsIfRequested(context);
-    
+
     if (!options.quiet && !options.json) {
       logger.info('✨ Generation complete!');
     }
-    
+
     return result;
   }
 
   async compileOpsIfRequested(context) {
     const { options, logger } = context;
-    const opsDir = options.ops;
-    if (!opsDir) return;
+    // Discovery: prefer explicit --ops or --ops-manifest, otherwise auto-detect conventional paths
+    let opsDir = options.ops || null;
+    let manifestPath = options.opsManifest || null;
     try {
       const fs = this.ctx.fs;
-      const files = await findOpFiles(fs, opsDir, logger);
+      if (!manifestPath && !opsDir) {
+        for (const c of ['ops/ops.manifest.json', 'ops.manifest.json', 'ops-manifest.json']) {
+          if (await fs.exists(c)) { manifestPath = c; break; }
+        }
+      }
+      if (!opsDir && !manifestPath) {
+        if (await fs.exists('ops')) opsDir = 'ops';
+      }
+      if (!opsDir && !manifestPath) return;
+      // Build PK map from IR so ops emission can derive deterministic tie-breakers from real keys
+      let ir = context.ir;
+      try {
+        if (!ir && context.schemaContent) {
+          ir = this.ctx.parsers.graphql.parse(context.schemaContent);
+        }
+      } catch (parseErr) {
+        logger.warn({ error: parseErr?.message }, 'Could not parse schema for PK map; ops will use heuristic tie-breakers');
+      }
+      const pkMap = new Map();
+      if (ir && Array.isArray(ir.tables)) {
+        for (const t of ir.tables) {
+          if (t?.name && t?.primaryKey) pkMap.set(String(t.name), String(t.primaryKey));
+        }
+      }
+      /**
+       * Resolve the primary-key ColumnRef for ORDER BY tie-breaking.
+       * Only handles single-table and left-deep join trees; returns null for
+       * lateral/subquery plans (lowerToSQL falls back to guessPrimaryKeyRef).
+       */
+      const pkResolver = (plan) => {
+        let r = plan?.root;
+        while (r && r.kind === 'Filter') r = r.input;
+        while (r && r.kind === 'Join') r = r.left;
+        if (r && r.kind === 'Table' && r.alias && r.table) {
+          const pk = pkMap.get(String(r.table));
+          if (pk) return { kind: 'ColumnRef', table: r.alias, column: pk };
+        }
+        return null;
+      };
+      let files = [];
+      if (manifestPath) {
+        const manifest = JSON.parse(await fs.read(manifestPath));
+        // Validate manifest
+        try {
+          await assertValid(this.ctx, 'ops-manifest.schema.json', manifest, 'Ops manifest');
+        } catch (e) {
+          if (e instanceof Error && !e.code) e.code = 'OPS_MANIFEST_INVALID';
+          logger.error({ code: e.code, errors: e.meta?.errors, file: manifestPath }, e.message);
+          throw e;
+        }
+        const repoRoot = (this.ctx.env || {}).WESLEY_REPO_ROOT || this.ctx.cwd?.() || process.cwd();
+        const resolvedIncludes = await Promise.all(
+          (manifest.include || []).map(p => fs.join(repoRoot, p))
+        );
+        const resolvedExcludes = await Promise.all(
+          (manifest.exclude || []).map(p => fs.join(repoRoot, p))
+        );
+        files = await resolveManifestEntries(fs, resolvedIncludes, resolvedExcludes, logger);
+        if (files.length === 0 && !manifest.allowEmpty) {
+          const err = new OpsError('OPS_EMPTY_SET', 'Ops manifest produced no files and allowEmpty=false', { file: manifestPath });
+          logger.error(err.meta, err.message);
+          throw err;
+        }
+      } else {
+        files = await findOpFiles(fs, opsDir, logger);
+      }
       if (files.length === 0) {
         return;
       }
@@ -412,11 +484,32 @@ export class GeneratePipelineCommand extends WesleyCommand {
       }
       if (compiledOps.length) {
         compiledOps.sort((a, b) => a.order - b.order);
-        const orderedOps = compiledOps.map(({ order, ...rest }) => rest);
-        const outFiles = emitOpArtifacts(orderedOps, targetSchema, logger);
+        const orderedOps = compiledOps.map(({ _order, ...rest }) => rest);
+        const security = String(options.opsSecurity || 'invoker').toLowerCase();
+        if (security !== 'invoker' && security !== 'definer') {
+          throw new OpsError('OPS_INVALID_SECURITY', `Invalid --ops-security value "${options.opsSecurity}"; must be "invoker" or "definer"`);
+        }
+        const setSearchPath = options.opsSearchPath
+          ? String(options.opsSearchPath).split(',').map(s => s.trim()).filter(Boolean)
+          : null;
+        const explainMode = (options.opsExplain || '').toLowerCase();
+        const outFiles = emitOpArtifacts(orderedOps, targetSchema, logger, pkResolver, { security, setSearchPath, allowErrors: !!options.opsAllowErrors, explainMode });
         await this.ctx.writer.writeFiles(outFiles, outDir);
         const opsOutputDir = await fs.join(outDir, 'ops');
         logger.info({ count: outFiles.length, dir: opsOutputDir }, 'Compiled operations (experimental)');
+
+        // Validate generated registry.json against schema
+        try {
+          const registryPath = await this.ctx.fs.join(opsOutputDir, 'registry.json');
+          if (await this.ctx.fs.exists(registryPath)) {
+            const reg = JSON.parse(String(await this.ctx.fs.read(registryPath)));
+            await assertValid(this.ctx, 'ops-registry.schema.json', reg, 'Ops registry');
+            logger.info({ file: registryPath }, 'Ops registry validated');
+          }
+        } catch (ve) {
+          logger.warn({ error: ve?.message }, 'Ops registry validation failed');
+          if (!options.opsAllowErrors) throw ve;
+        }
       }
     } catch (e) {
       logger.error({ code: e?.code, error: e?.message }, 'Experimental --ops failed');
@@ -467,21 +560,53 @@ async function findOpFiles(fs, opsDir, logger) {
     logger.info({ opsDir }, 'Experimental --ops: directory not found; skipping');
     return [];
   }
-  const dirEntries = await fs.readDir?.(opsDir);
-  if (!Array.isArray(dirEntries)) {
+  const acc = [];
+  const walk = async (dir) => {
+    const entries = await fs.readDir?.(dir);
+    if (!Array.isArray(entries)) return;
+    for (const e of entries) {
+      if (e.isDirectory) {
+        await walk(e.path);
+      } else if (e.isFile && e.name?.endsWith?.('.op.json')) {
+        acc.push(e.path || await fs.join(dir, e.name));
+      }
+    }
+  };
+  await walk(opsDir);
+  acc.sort(); // locale-invariant deterministic ordering
+  if (acc.length === 0) {
     logger.info({ opsDir }, 'Experimental --ops: no *.op.json files found; skipping');
-    return [];
   }
-  const candidates = dirEntries.filter(entry => entry.name?.endsWith?.('.op.json'));
-  if (candidates.length === 0) {
-    logger.info({ opsDir }, 'Experimental --ops: no *.op.json files found; skipping');
-    return [];
+  return acc;
+}
+
+async function resolveManifestEntries(fs, includes = [], excludes = [], logger) {
+  const acc = new Set();
+  const addDir = async (dir) => {
+    const entries = await fs.readDir?.(dir);
+    if (!Array.isArray(entries)) return;
+    for (const e of entries) {
+      if (e.isDirectory) await addDir(e.path);
+      else if (e.isFile && e.name?.endsWith?.('.op.json')) acc.add(e.path);
+    }
+  };
+  for (const entry of includes) {
+    if (!entry) continue;
+    const isDir = fs.readDir ? await fs.readDir(entry).then(() => true).catch(() => false) : false;
+    if (isDir) await addDir(entry);
+    else if (await fs.exists(entry)) acc.add(entry);
   }
-  const files = await Promise.all(
-    candidates.map(async entry => entry.path || await fs.join(opsDir, entry.name))
-  );
-  files.sort(); // Use default code-point ordering for locale-invariant sorting.
-  return files;
+  const normalize = (v) => String(v || '').replace(/\\/g, '/').replace(/\/+$/g, '');
+  const excluded = (p) => {
+    const np = normalize(p);
+    return excludes.some((ex) => {
+      const ne = normalize(ex);
+      return np === ne || np.startsWith(`${ne}/`);
+    });
+  };
+  const list = Array.from(acc).filter(p => !excluded(p)).sort();
+  if (list.length === 0) logger.info({ includes, excludes }, 'ops manifest resolved no files');
+  return list;
 }
 
 async function compileOpFile(fs, path, collisions, logger) {
@@ -528,23 +653,90 @@ async function compileOpFile(fs, path, collisions, logger) {
   return { baseName, plan, isParamless: paramCount === 0, path };
 }
 
-function emitOpArtifacts(compiledOps, targetSchema, logger) {
+function emitOpArtifacts(compiledOps, targetSchema, logger, pkResolver, { security = 'invoker', setSearchPath = null, allowErrors = false, explainMode = '' } = {}) {
   const outFiles = [];
   const total = compiledOps.length;
   let ordinal = 0;
+  // Normalize schema name to match emit.mjs's sanitizeIdentBase lowercasing,
+  // ensuring CREATE SCHEMA and emitted function schemas stay in sync.
+  const normalizedSchema = sanitizeIdentBase(targetSchema, 'wes_ops');
+  const deployChunks = ['BEGIN;', `CREATE SCHEMA IF NOT EXISTS ${quoteIdent(normalizedSchema)};`];
+  const registry = { version: '1.0.0', schema: normalizedSchema, ops: [] };
   for (const entry of compiledOps) {
     ordinal += 1;
     const { baseName, plan, isParamless, path } = entry;
-    const fnSql = emitFunction(baseName, plan, { schema: targetSchema });
-    if (isParamless) {
-      const viewSql = emitView(baseName, plan, { schema: targetSchema });
-      outFiles.push({ name: `ops/${baseName}.view.sql`, content: `${viewSql}\n` });
+    let emitted = false;
+    try {
+      const fnSql = emitFunction(baseName, plan, { schema: targetSchema, identPolicy: 'strict', pkResolver, security, setSearchPath });
+      if (isParamless) {
+        const viewSql = emitView(baseName, plan, { schema: targetSchema, identPolicy: 'strict', pkResolver });
+        outFiles.push({ name: `ops/${baseName}.view.sql`, content: `${viewSql}\n` });
+        deployChunks.push(viewSql);
+      }
+      outFiles.push({ name: `ops/${baseName}.fn.sql`, content: `${fnSql}\n` });
+      deployChunks.push(fnSql);
+      emitted = true;
+    } catch (e) {
+      if (!allowErrors) throw e;
+      logger.warn({ op: baseName, file: path, error: e?.message }, 'Skipping op during emission due to error');
     }
-    outFiles.push({ name: `ops/${baseName}.fn.sql`, content: `${fnSql}\n` });
-    logger.info(
-      { ordinal, total, sanitized: baseName, file: path, schema: targetSchema, code: 'OPS_DISCOVERY' },
-      'ops: compiled operation'
-    );
+    if (emitted) {
+      logger.info(
+        { ordinal, total, sanitized: baseName, file: path, schema: targetSchema, code: 'OPS_DISCOVERY' },
+        'ops: compiled operation'
+      );
+    }
+
+    // Build registry entry (deterministic)
+    try {
+      const params = (collectParams(plan)?.ordered || []).map(p => ({ name: String(p.name), type: p.typeHint || 'text' }));
+      const projItems = Array.isArray(plan?.projection?.items) ? plan.projection.items.map(i => String(i?.alias || '')).filter(Boolean) : [];
+      const opId = derivePrefixedIdentifier(baseName);
+      const entryJson = {
+        name: baseName,
+        sql: {
+          schema: normalizedSchema,
+          function: opId,
+          view: isParamless ? opId : null
+        },
+        params,
+        projection: {
+          star: projItems.length === 0,
+          items: projItems
+        },
+        files: {
+          function: `${baseName}.fn.sql`,
+          view: isParamless ? `${baseName}.view.sql` : null
+        },
+        sourceFile: path
+      };
+      if (emitted) registry.ops.push(entryJson);
+    } catch (e) {
+      logger.warn({ file: path, error: e?.message }, 'Failed to record registry entry');
+    }
+
+    // Optional EXPLAIN JSON snapshot (mock only for now)
+    if (emitted && String(explainMode).toLowerCase() === 'mock') {
+      const explain = {
+        Plan: { 'Node Type': 'Result', Plans: [] },
+        Mock: true,
+        Version: 1
+      };
+      outFiles.push({ name: `ops/explain/${baseName}.explain.json`, content: JSON.stringify(explain, null, 2) + '\n' });
+    }
+  }
+  deployChunks.push('COMMIT;');
+  outFiles.push({ name: 'ops/ops_deploy.sql', content: deployChunks.join('\n\n') + '\n' });
+  // Emit registry.json next to SQL outputs
+  try {
+    const registryStr = JSON.stringify({
+      version: registry.version,
+      schema: registry.schema,
+      ops: registry.ops.sort((a, b) => a.name.localeCompare(b.name))
+    }, null, 2) + '\n';
+    outFiles.push({ name: 'ops/registry.json', content: registryStr });
+  } catch (e) {
+    logger.warn({ error: e?.message }, 'Failed to emit ops registry');
   }
   return outFiles;
 }
@@ -557,13 +749,16 @@ function shouldEnforceClean(env, options) {
   // default policy: enforce only when producing bundle/certs
   return !!options.emitBundle;
 }
-async function assertCleanGit() {
+async function assertCleanGit(shell) {
   try {
-    await (globalThis?.wesleyCtx?.shell?.execSync?.('git rev-parse --is-inside-work-tree', { stdio: 'ignore' }));
+    const result = shell?.exec
+      ? await shell.exec('git rev-parse --is-inside-work-tree', { stdio: 'ignore' })
+      : shell?.execSync?.('git rev-parse --is-inside-work-tree', { stdio: 'ignore' });
+    if (!result && !shell?.exec && !shell?.execSync) return;
   } catch {
     return; // Not a git repo: skip
   }
-  const out = (await globalThis?.wesleyCtx?.shell?.exec?.('git status --porcelain')).stdout.trim();
+  const out = (await shell?.exec?.('git status --porcelain'))?.stdout?.trim?.() || '';
   if (out.length > 0) {
     const err = new Error('Working tree has uncommitted changes. Commit or stash before running, or pass --allow-dirty.');
     err.code = 'DIRTY_WORKTREE';
@@ -571,16 +766,17 @@ async function assertCleanGit() {
   }
 }
 
-async function loadMoriartyHistory({ fs, shell, defaultBase }) {
+async function loadMoriartyHistory({ fs, shell, defaultBase, logger: log }) {
+  const warn = log?.warn ? log.warn.bind(log) : () => {};
   let points = [];
   try {
     const raw = await fs.read('.wesley/history.json');
-    const parsed = JSON.parse(raw.toString('utf8'));
+    const parsed = JSON.parse(String(raw));
     if (Array.isArray(parsed?.points)) {
       points = mergeHistoryPoints(points, parsed.points);
     }
   } catch (err) {
-    console.warn('[Moriarty] Unable to read local history:', err?.message);
+    warn('[Moriarty] Unable to read local history: ' + (err?.message || ''));
   }
 
   const gitShell = shell?.exec ? shell : null;
@@ -592,23 +788,17 @@ async function loadMoriartyHistory({ fs, shell, defaultBase }) {
     const inside = await gitShell.exec('git rev-parse --is-inside-work-tree');
     if (!inside?.stdout?.trim()) return { points };
   } catch (err) {
-    console.warn('[Moriarty] Git repo check failed:', err?.message);
+    warn('[Moriarty] Git repo check failed: ' + (err?.message || ''));
     return { points };
   }
 
   let mergeBase;
-  const fallbackBase =
-    defaultBase ||
-    process.env.WESLEY_BASE_REF ||
-    process.env.GITHUB_BASE_REF ||
-    process.env.WESLEY_DEFAULT_BRANCH ||
-    process.env.GITHUB_DEFAULT_BRANCH ||
-    'main';
+  const fallbackBase = defaultBase || 'main';
   try {
     const mb = await gitShell.exec(`git merge-base HEAD ${fallbackBase}`);
     mergeBase = mb?.stdout?.trim();
   } catch (err) {
-    console.warn('[Moriarty] merge-base lookup failed:', err?.message);
+    warn('[Moriarty] merge-base lookup failed: ' + (err?.message || ''));
     return { points };
   }
   if (!mergeBase) return { points };
@@ -622,7 +812,7 @@ async function loadMoriartyHistory({ fs, shell, defaultBase }) {
       }
     }
   } catch (err) {
-    console.warn('[Moriarty] No history at merge-base:', err?.message);
+    warn('[Moriarty] No history at merge-base: ' + (err?.message || ''));
     // merge-base history missing or unreadable; ignore
   }
 

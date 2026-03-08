@@ -1,6 +1,6 @@
 /**
  * Wesley S.L.A.P.S. - Strategic Lock-Aware PostgreSQL System
- * 
+ *
  * Provides runtime execution engine for T.A.S.K.S. with PostgreSQL-specific
  * lock awareness, backpressure control, and concurrent operation safety.
  */

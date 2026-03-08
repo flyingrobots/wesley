@@ -30,7 +30,7 @@ export function generateTsRegistry(schema) {
 
   // Schema hash constant
   if (schema.schemaHash) {
-    lines.push(`/** SHA-256 hash of the source schema */`);
+    lines.push('/** SHA-256 hash of the source schema */');
     lines.push(`export const SCHEMA_HASH = '${schema.schemaHash}';`);
     lines.push('');
   }

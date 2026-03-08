@@ -5,18 +5,18 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { 
-  MigrationVerifier, 
-  MigrationVerificationError, 
-  ChecksumMismatchError, 
+import {
+  MigrationVerifier,
+  _MigrationVerificationError,
+  ChecksumMismatchError,
   SchemaComparisonError,
   DataIntegrityError,
-  migrationVerifier 
+  migrationVerifier
 } from '../src/domain/verification/MigrationVerifier.mjs';
 
 test('MigrationVerifier can be constructed with default options', () => {
   const verifier = new MigrationVerifier();
-  
+
   assert.equal(verifier.options.checksumAlgorithm, 'sha256');
   assert.equal(verifier.options.enableSchemaComparison, true);
   assert.equal(verifier.options.enableDataIntegrityChecks, true);
@@ -32,7 +32,7 @@ test('MigrationVerifier can be constructed with custom options', () => {
     strictMode: true,
     timeout: 60000
   });
-  
+
   assert.equal(verifier.options.checksumAlgorithm, 'sha1');
   assert.equal(verifier.options.enableSchemaComparison, false);
   assert.equal(verifier.options.strictMode, true);
@@ -41,7 +41,7 @@ test('MigrationVerifier can be constructed with custom options', () => {
 
 test('verifyMigration performs complete verification', async () => {
   const verifier = new MigrationVerifier();
-  
+
   const migrationContext = {
     migrationId: 'test_migration_001',
     beforeSnapshot: {
@@ -56,8 +56,8 @@ test('verifyMigration performs complete verification', async () => {
     afterSnapshot: {
       schema: {
         users: {
-          columns: { 
-            id: { type: 'INTEGER' }, 
+          columns: {
+            id: { type: 'INTEGER' },
             email: { type: 'VARCHAR' },
             name: { type: 'VARCHAR' }  // Added column
           },
@@ -70,7 +70,7 @@ test('verifyMigration performs complete verification', async () => {
   };
 
   const result = await verifier.verifyMigration(migrationContext);
-  
+
   assert.equal(result.migrationId, 'test_migration_001');
   assert(['passed', 'passed_with_warnings', 'partial'].includes(result.overall));
   assert(result.schemaComparison);
@@ -81,17 +81,17 @@ test('verifyMigration performs complete verification', async () => {
 
 test('checksum validation passes with correct checksum', async () => {
   const verifier = new MigrationVerifier();
-  
+
   const snapshot = {
     schema: { users: { columns: { id: { type: 'INTEGER' } } } },
     metadata: { timestamp: Date.now() }
   };
-  
+
   // Calculate expected checksum
   const expectedChecksum = await verifier.calculateSchemaChecksum(snapshot);
-  
+
   const result = await verifier.validateChecksums(snapshot, expectedChecksum);
-  
+
   assert.equal(result.status, 'passed');
   assert.equal(result.expected, expectedChecksum);
   assert.equal(result.actual, expectedChecksum);
@@ -99,16 +99,16 @@ test('checksum validation passes with correct checksum', async () => {
 
 test('checksum validation fails with incorrect checksum', async () => {
   const verifier = new MigrationVerifier();
-  
+
   const snapshot = {
     schema: { users: { columns: { id: { type: 'INTEGER' } } } },
     metadata: { timestamp: Date.now() }
   };
-  
+
   const wrongChecksum = 'incorrect_checksum_value';
-  
+
   const result = await verifier.validateChecksums(snapshot, wrongChecksum);
-  
+
   assert.equal(result.status, 'failed');
   assert.equal(result.expected, wrongChecksum);
   assert.notEqual(result.actual, wrongChecksum);
@@ -116,12 +116,12 @@ test('checksum validation fails with incorrect checksum', async () => {
 
 test('checksum validation throws in strict mode', async () => {
   const verifier = new MigrationVerifier({ strictMode: true });
-  
+
   const snapshot = {
     schema: { users: { columns: { id: { type: 'INTEGER' } } } },
     metadata: { timestamp: Date.now() }
   };
-  
+
   await assert.rejects(
     async () => {
       await verifier.validateChecksums(snapshot, 'wrong_checksum');
@@ -132,22 +132,22 @@ test('checksum validation throws in strict mode', async () => {
 
 test('schema comparison detects added tables', async () => {
   const verifier = new MigrationVerifier();
-  
+
   const beforeSnapshot = {
     schema: {
       users: { columns: { id: { type: 'INTEGER' } }, constraints: [] }
     }
   };
-  
+
   const afterSnapshot = {
     schema: {
       users: { columns: { id: { type: 'INTEGER' } }, constraints: [] },
       posts: { columns: { id: { type: 'INTEGER' }, title: { type: 'VARCHAR' } }, constraints: [] }
     }
   };
-  
+
   const result = await verifier.compareSchemas(beforeSnapshot, afterSnapshot);
-  
+
   assert.equal(result.status, 'changes_detected');
   assert.equal(result.addedTables.length, 1);
   assert.equal(result.addedTables[0].table, 'posts');
@@ -156,22 +156,22 @@ test('schema comparison detects added tables', async () => {
 
 test('schema comparison detects dropped tables', async () => {
   const verifier = new MigrationVerifier();
-  
+
   const beforeSnapshot = {
     schema: {
       users: { columns: { id: { type: 'INTEGER' } }, constraints: [] },
       old_table: { columns: { id: { type: 'INTEGER' } }, constraints: [] }
     }
   };
-  
+
   const afterSnapshot = {
     schema: {
       users: { columns: { id: { type: 'INTEGER' } }, constraints: [] }
     }
   };
-  
+
   const result = await verifier.compareSchemas(beforeSnapshot, afterSnapshot);
-  
+
   assert.equal(result.status, 'changes_detected');
   assert.equal(result.droppedTables.length, 1);
   assert.equal(result.droppedTables[0].table, 'old_table');
@@ -179,28 +179,28 @@ test('schema comparison detects dropped tables', async () => {
 
 test('schema comparison detects modified tables', async () => {
   const verifier = new MigrationVerifier();
-  
+
   const beforeSnapshot = {
     schema: {
       users: { columns: { id: { type: 'INTEGER' }, email: { type: 'VARCHAR' } }, constraints: [] }
     }
   };
-  
+
   const afterSnapshot = {
     schema: {
-      users: { 
-        columns: { 
-          id: { type: 'INTEGER' }, 
+      users: {
+        columns: {
+          id: { type: 'INTEGER' },
           email: { type: 'VARCHAR' },
           name: { type: 'VARCHAR' }  // Added column
-        }, 
-        constraints: [] 
+        },
+        constraints: []
       }
     }
   };
-  
+
   const result = await verifier.compareSchemas(beforeSnapshot, afterSnapshot);
-  
+
   assert.equal(result.status, 'changes_detected');
   assert.equal(result.modifiedTables.length, 1);
   assert.equal(result.modifiedTables[0].table, 'users');
@@ -210,15 +210,15 @@ test('schema comparison detects modified tables', async () => {
 
 test('schema comparison reports no changes for identical schemas', async () => {
   const verifier = new MigrationVerifier();
-  
+
   const schema = {
     schema: {
       users: { columns: { id: { type: 'INTEGER' }, email: { type: 'VARCHAR' } }, constraints: [] }
     }
   };
-  
+
   const result = await verifier.compareSchemas(schema, schema);
-  
+
   assert.equal(result.status, 'no_changes');
   assert.equal(result.differences.length, 0);
   assert.equal(result.addedTables.length, 0);
@@ -228,7 +228,7 @@ test('schema comparison reports no changes for identical schemas', async () => {
 
 test('data integrity check passes with valid data', async () => {
   const verifier = new MigrationVerifier();
-  
+
   const snapshot = {
     schema: {
       users: {
@@ -239,25 +239,25 @@ test('data integrity check passes with valid data', async () => {
       }
     }
   };
-  
+
   const result = await verifier.verifyDataIntegrity(snapshot);
-  
+
   assert.equal(result.status, 'passed');
   assert.equal(result.violations.length, 0);
 });
 
 test('rollback validation checks trigger validity', async () => {
   const verifier = new MigrationVerifier();
-  
+
   const migrationContext = {
     rollbackTriggers: [
       { name: 'rollback_001', type: 'sql_trigger' },
       { name: 'rollback_002', type: 'function_trigger' }
     ]
   };
-  
+
   const result = await verifier.validateRollbackTriggers(migrationContext);
-  
+
   assert.equal(result.status, 'passed');
   assert.equal(result.validTriggers, 2);
   assert.equal(result.invalidTriggers, 0);
@@ -266,7 +266,7 @@ test('rollback validation checks trigger validity', async () => {
 
 test('performance baseline comparison detects improvements', async () => {
   const verifier = new MigrationVerifier();
-  
+
   const migrationContext = {
     performanceBaseline: {
       queries: {
@@ -281,9 +281,9 @@ test('performance baseline comparison detects improvements', async () => {
       }
     }
   };
-  
+
   const result = await verifier.comparePerformanceBaselines(migrationContext);
-  
+
   assert.equal(result.status, 'passed');
   assert.equal(result.comparison.improvements.length, 2);
   assert.equal(result.comparison.regressions.length, 0);
@@ -291,7 +291,7 @@ test('performance baseline comparison detects improvements', async () => {
 
 test('performance baseline comparison detects regressions', async () => {
   const verifier = new MigrationVerifier();
-  
+
   const migrationContext = {
     performanceBaseline: {
       queries: {
@@ -306,9 +306,9 @@ test('performance baseline comparison detects regressions', async () => {
       }
     }
   };
-  
+
   const result = await verifier.comparePerformanceBaselines(migrationContext);
-  
+
   assert.equal(result.status, 'degraded');
   assert.equal(result.comparison.regressions.length, 1);
   assert.equal(result.comparison.regressions[0].query, 'select_users');
@@ -316,7 +316,7 @@ test('performance baseline comparison detects regressions', async () => {
 
 test('calculateOverallResult determines correct status', () => {
   const verifier = new MigrationVerifier();
-  
+
   // All passed
   let results = {
     checksumValidation: { status: 'passed' },
@@ -326,15 +326,15 @@ test('calculateOverallResult determines correct status', () => {
     performanceBaseline: { status: 'passed' }
   };
   assert.equal(verifier.calculateOverallResult(results), 'passed');
-  
+
   // One failed
   results.checksumValidation.status = 'failed';
   assert.equal(verifier.calculateOverallResult(results), 'failed');
-  
+
   // One error
   results.checksumValidation.status = 'error';
   assert.equal(verifier.calculateOverallResult(results), 'error');
-  
+
   // Mixed results
   results = {
     checksumValidation: { status: 'passed' },
@@ -346,15 +346,15 @@ test('calculateOverallResult determines correct status', () => {
 test('event emission works correctly', async () => {
   const verifier = new MigrationVerifier();
   const events = [];
-  
+
   verifier.on('MIGRATION_VERIFICATION_STARTED', (event) => {
     events.push(event.type);
   });
-  
+
   verifier.on('MIGRATION_VERIFICATION_COMPLETED', (event) => {
     events.push(event.type);
   });
-  
+
   const migrationContext = {
     migrationId: 'test_migration_events',
     beforeSnapshot: { schema: {}, metadata: {} },
@@ -362,7 +362,7 @@ test('event emission works correctly', async () => {
   };
 
   await verifier.verifyMigration(migrationContext);
-  
+
   assert.equal(events.length, 2);
   assert.equal(events[0], 'MIGRATION_VERIFICATION_STARTED');
   assert.equal(events[1], 'MIGRATION_VERIFICATION_COMPLETED');
@@ -370,7 +370,7 @@ test('event emission works correctly', async () => {
 
 test('table structure comparison detects column changes', () => {
   const verifier = new MigrationVerifier();
-  
+
   const before = {
     columns: {
       id: { type: 'INTEGER' },
@@ -378,7 +378,7 @@ test('table structure comparison detects column changes', () => {
       old_field: { type: 'TEXT' }
     }
   };
-  
+
   const after = {
     columns: {
       id: { type: 'INTEGER' },
@@ -386,9 +386,9 @@ test('table structure comparison detects column changes', () => {
       email: { type: 'VARCHAR' }       // Added
     }
   };
-  
+
   const diff = verifier.compareTableStructure(before, after);
-  
+
   assert.equal(diff.hasChanges, true);
   assert.equal(diff.addedColumns.length, 1);
   assert.equal(diff.addedColumns[0], 'email');
@@ -400,17 +400,17 @@ test('table structure comparison detects column changes', () => {
 
 test('schema checksum calculation is deterministic', async () => {
   const verifier = new MigrationVerifier();
-  
+
   const snapshot = {
     schema: {
       users: { columns: { id: { type: 'INTEGER' }, email: { type: 'VARCHAR' } } },
       posts: { columns: { id: { type: 'INTEGER' }, title: { type: 'VARCHAR' } } }
     }
   };
-  
+
   const checksum1 = await verifier.calculateSchemaChecksum(snapshot);
   const checksum2 = await verifier.calculateSchemaChecksum(snapshot);
-  
+
   assert.equal(checksum1, checksum2);
   assert(typeof checksum1 === 'string');
   assert(checksum1.length > 0);
@@ -428,12 +428,12 @@ test('custom error types have correct properties', () => {
   assert.equal(checksumError.details.expected, 'expected');
   assert.equal(checksumError.details.actual, 'actual');
   assert.equal(checksumError.details.table, 'users');
-  
+
   const schemaError = new SchemaComparisonError('Schema mismatch', ['diff1'], { context: 'test' });
   assert.equal(schemaError.name, 'MigrationVerificationError');
   assert.equal(schemaError.code, 'SCHEMA_COMPARISON_ERROR');
   assert.deepEqual(schemaError.details.differences, ['diff1']);
-  
+
   const integrityError = new DataIntegrityError('Data violation', ['violation1'], { table: 'users' });
   assert.equal(integrityError.name, 'MigrationVerificationError');
   assert.equal(integrityError.code, 'DATA_INTEGRITY_ERROR');
@@ -442,7 +442,7 @@ test('custom error types have correct properties', () => {
 
 test('strict mode throws on validation failures', async () => {
   const verifier = new MigrationVerifier({ strictMode: true });
-  
+
   const migrationContext = {
     migrationId: 'strict_test',
     beforeSnapshot: { schema: {}, metadata: {} },

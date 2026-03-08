@@ -26,7 +26,7 @@ class TypeScriptGenerator {
     const interfaces = [];
     const enums = [];
 
-    for (const [tableName, table] of Object.entries(schema.tables)) {
+    for (const [_tableName, table] of Object.entries(schema.tables)) {
       // Generate interface for each table
       const interfaceContent = this.generateInterface(table);
       interfaces.push(interfaceContent);
@@ -54,7 +54,7 @@ class TypeScriptGenerator {
       const tsType = this.mapTypeToTypeScript(field.type, field.nonNull, field.itemNonNull);
       const optional = field.nonNull ? '' : '?';
       const comment = this.generateFieldComment(field);
-      
+
       return `  ${comment ? `${comment}\n  ` : ''}${field.name}${optional}: ${tsType};`;
     }).join('\n');
 
@@ -69,7 +69,7 @@ ${fields}
       .map(field => {
         const tsType = this.mapTypeToTypeScript(field.type, false, field.itemNonNull); // All inputs optional by default
         const comment = this.generateFieldComment(field);
-        
+
         return `  ${comment ? `${comment}\n  ` : ''}${field.name}?: ${tsType};`;
       }).join('\n');
 
@@ -80,9 +80,9 @@ ${fields}
 
   generateCreateType(table) {
     const requiredFields = Object.values(table.fields)
-      .filter(field => 
-        field.nonNull && 
-        !this.hasDirective(field, '@primaryKey') && 
+      .filter(field =>
+        field.nonNull &&
+        !this.hasDirective(field, '@primaryKey') &&
         !this.hasDirective(field, '@default')
       )
       .map(field => {
@@ -91,8 +91,8 @@ ${fields}
       });
 
     const optionalFields = Object.values(table.fields)
-      .filter(field => 
-        !field.nonNull || 
+      .filter(field =>
+        !field.nonNull ||
         this.hasDirective(field, '@default') ||
         this.hasDirective(field, '@primaryKey')
       )
@@ -123,7 +123,7 @@ ${fields}
 
   generateFieldComment(field) {
     const comments = [];
-    
+
     if (this.hasDirective(field, '@sensitive')) {
       comments.push('@sensitive - Contains sensitive data');
     }
@@ -133,7 +133,7 @@ ${fields}
     if (this.hasDirective(field, '@index')) {
       comments.push('@indexed - Database index exists');
     }
-    
+
     const defaultValue = this.getDirectiveArg(field, '@default', 'value');
     if (defaultValue) {
       comments.push(`@default ${defaultValue}`);
@@ -198,28 +198,28 @@ if (!existsSync(snapshotsDir)) {
 function toMatchSnapshot(actual, testName, snapshotName = 'default') {
   const fileName = `${testName}.${snapshotName}.snap`;
   const filePath = join(snapshotsDir, fileName);
-  
+
   const normalizedActual = actual
     .replace(/\r\n/g, '\n')
     .replace(/\s+$/gm, '')
     .trim();
-  
+
   if (existsSync(filePath)) {
     const expectedContent = readFileSync(filePath, 'utf-8').trim();
-    
+
     if (normalizedActual !== expectedContent) {
       if (process.env.UPDATE_SNAPSHOTS) {
         writeFileSync(filePath, normalizedActual + '\n');
         console.log(`Updated snapshot: ${fileName}`);
         return;
       }
-      
+
       console.log('\nTypeScript Snapshot mismatch:');
       console.log('Expected:');
       console.log(expectedContent);
       console.log('\nActual:');
       console.log(normalizedActual);
-      
+
       throw new Error(`Snapshot mismatch for ${fileName}. Set UPDATE_SNAPSHOTS=1 to update.`);
     }
   } else {
@@ -560,7 +560,7 @@ describe('TypeScript Generation Snapshots', () => {
             name: 'orgId',
             type: 'UUID',
             nonNull: true,
-            directives: { 
+            directives: {
               '@tenant': { column: 'orgId' },
               '@foreignKey': { references: 'Organization.id' }
             }
@@ -597,7 +597,7 @@ describe('TypeScript Generation Snapshots', () => {
             name: 'orgId',
             type: 'UUID',
             nonNull: true,
-            directives: { 
+            directives: {
               '@tenant': { column: 'orgId' },
               '@foreignKey': { references: 'Organization.id' }
             }
@@ -606,7 +606,7 @@ describe('TypeScript Generation Snapshots', () => {
             name: 'ownerId',
             type: 'UUID',
             nonNull: true,
-            directives: { 
+            directives: {
               '@owner': { column: 'ownerId' },
               '@foreignKey': { references: 'User.id' }
             }
@@ -620,8 +620,8 @@ describe('TypeScript Generation Snapshots', () => {
   });
 
   test('strict-null-checks-disabled', async () => {
-    const generatorNonStrict = new TypeScriptGenerator({ 
-      strictNullChecks: false 
+    const generatorNonStrict = new TypeScriptGenerator({
+      strictNullChecks: false
     });
 
     const schema = new Schema({

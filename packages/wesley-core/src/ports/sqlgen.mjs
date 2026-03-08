@@ -6,7 +6,7 @@ export class SqlGeneratorPort {
    * @param {object} opts - Generation options
    * @returns {Promise<{sql: string, evidence?: any[]}>}
    */
-  async generate(ir, opts) { 
-    throw new Error('SqlGeneratorPort.generate() must be implemented'); 
+  async generate(_ir, _opts) {
+    throw new Error('SqlGeneratorPort.generate() must be implemented');
   }
 }

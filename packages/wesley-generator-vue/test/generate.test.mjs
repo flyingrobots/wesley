@@ -24,7 +24,7 @@ describe('generateVue', () => {
 
     const result = await generateVue(ir);
     const tsFile = result.files.find(f => f.path.endsWith('.ts'));
-    
+
     expect(tsFile).toBeDefined();
     expect(tsFile.content).toContain('export interface AppState');
     expect(tsFile.content).toContain('export enum Theme');

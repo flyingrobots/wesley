@@ -5,15 +5,15 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { 
-  AdvisoryLockManager, 
-  LockError, 
-  LockTimeoutError, 
-  LockConflictError,
+import {
+  AdvisoryLockManager,
+  _LockError,
+  LockTimeoutError,
+  _LockConflictError,
   LockType,
   LockAcquired,
   LockReleased,
-  LockTimeout,
+  _LockTimeout,
   LockAttempt
 } from '../src/domain/locks/AdvisoryLockManager.mjs';
 
@@ -151,11 +151,11 @@ class MockEventEmitter {
 
 test('AdvisoryLockManager - basic lock key generation', () => {
   const manager = new AdvisoryLockManager({ lockPrefix: 'test' });
-  
+
   const key1 = manager.generateLockKey('user:123');
   const key2 = manager.generateLockKey('user:456');
   const key3 = manager.generateLockKey('user:123'); // Same identifier
-  
+
   assert(typeof key1 === 'number');
   assert(typeof key2 === 'number');
   assert(key1 !== key2); // Different identifiers should have different keys
@@ -164,9 +164,9 @@ test('AdvisoryLockManager - basic lock key generation', () => {
 
 test('AdvisoryLockManager - two-part key generation', () => {
   const manager = new AdvisoryLockManager();
-  
+
   const twoPartKey = manager.generateTwoPartKey('users', '123');
-  
+
   assert(typeof twoPartKey.key1 === 'number');
   assert(typeof twoPartKey.key2 === 'number');
   assert(twoPartKey.key1 !== twoPartKey.key2);
@@ -176,25 +176,25 @@ test('AdvisoryLockManager - acquire exclusive lock success', async () => {
   const client = new MockClient();
   const eventEmitter = new MockEventEmitter();
   const manager = new AdvisoryLockManager({ eventEmitter });
-  
+
   const identifier = 'test-resource';
   const lockKey = manager.generateLockKey(identifier);
   client.setLockResult(lockKey, true);
-  
+
   const result = await manager.acquireExclusiveLock(client, identifier);
-  
+
   assert(result.acquired);
   assert.equal(result.lockKey, lockKey);
   assert.equal(result.sessionId, client.sessionId);
-  
+
   // Check query was executed
   const queries = client.getQueries();
   assert(queries.some(q => q.sql.includes('pg_advisory_lock') && !q.sql.includes('try')));
-  
+
   // Check events
   const events = eventEmitter.getEventsOfType(LockAttempt);
   assert.equal(events.length, 1);
-  
+
   const acquiredEvents = eventEmitter.getEventsOfType(LockAcquired);
   assert.equal(acquiredEvents.length, 1);
   assert.equal(acquiredEvents[0].event.payload.lockType, LockType.EXCLUSIVE);
@@ -204,20 +204,20 @@ test('AdvisoryLockManager - acquire shared lock success', async () => {
   const client = new MockClient();
   const eventEmitter = new MockEventEmitter();
   const manager = new AdvisoryLockManager({ eventEmitter });
-  
+
   const identifier = 'shared-resource';
   const lockKey = manager.generateLockKey(identifier);
   client.setLockResult(lockKey, true);
-  
+
   const result = await manager.acquireSharedLock(client, identifier);
-  
+
   assert(result.acquired);
   assert.equal(result.lockKey, lockKey);
-  
+
   // Check shared lock query
   const queries = client.getQueries();
   assert(queries.some(q => q.sql.includes('pg_advisory_lock_shared')));
-  
+
   const acquiredEvents = eventEmitter.getEventsOfType(LockAcquired);
   assert.equal(acquiredEvents.length, 1);
   assert.equal(acquiredEvents[0].event.payload.lockType, LockType.SHARED);
@@ -226,16 +226,16 @@ test('AdvisoryLockManager - acquire shared lock success', async () => {
 test('AdvisoryLockManager - try acquire lock without blocking', async () => {
   const client = new MockClient();
   const manager = new AdvisoryLockManager();
-  
+
   const identifier = 'busy-resource';
   const lockKey = manager.generateLockKey(identifier);
   client.setLockResult(lockKey, false); // Lock not available
-  
+
   const result = await manager.tryAcquireExclusiveLock(client, identifier);
-  
+
   assert(!result.acquired);
   assert.equal(result.lockKey, lockKey);
-  
+
   // Check try query was used
   const queries = client.getQueries();
   assert(queries.some(q => q.sql.includes('pg_try_advisory_lock')));
@@ -244,10 +244,10 @@ test('AdvisoryLockManager - try acquire lock without blocking', async () => {
 test('AdvisoryLockManager - lock timeout handling', async () => {
   const client = new MockClient();
   const manager = new AdvisoryLockManager({ defaultTimeout: 100 }); // Very short timeout
-  
+
   const identifier = 'timeout-resource';
-  const lockKey = manager.generateLockKey(identifier);
-  
+  const _lockKey = manager.generateLockKey(identifier);
+
   // Mock a slow operation that exceeds timeout
   const originalQuery = client.query.bind(client);
   client.query = async (sql, params) => {
@@ -258,7 +258,7 @@ test('AdvisoryLockManager - lock timeout handling', async () => {
     }
     return originalQuery(sql, params);
   };
-  
+
   await assert.rejects(
     manager.acquireExclusiveLock(client, identifier),
     LockTimeoutError
@@ -268,20 +268,20 @@ test('AdvisoryLockManager - lock timeout handling', async () => {
 test('AdvisoryLockManager - custom timeout', async () => {
   const client = new MockClient();
   const manager = new AdvisoryLockManager();
-  
+
   const identifier = 'fast-timeout-resource';
   const lockKey = manager.generateLockKey(identifier);
   client.setLockResult(lockKey, true);
-  
+
   const result = await manager.acquireExclusiveLock(client, identifier, { timeout: 100 });
-  
+
   assert(result.acquired);
 });
 
 test('AdvisoryLockManager - two-part key locking', async () => {
   const client = new MockClient();
   const manager = new AdvisoryLockManager();
-  
+
   const identifier = 'two-part-resource';
   const twoPartOptions = {
     twoPartKey: {
@@ -289,14 +289,14 @@ test('AdvisoryLockManager - two-part key locking', async () => {
       identifier: '123'
     }
   };
-  
+
   const twoPartKey = manager.generateTwoPartKey('users', '123');
   client.setLockResult(twoPartKey.key1, true);
-  
+
   const result = await manager.acquireExclusiveLock(client, identifier, twoPartOptions);
-  
+
   assert(result.acquired);
-  
+
   // Check two-part key query
   const queries = client.getQueries();
   const lockQuery = queries.find(q => q.sql.includes('pg_advisory_lock'));
@@ -309,24 +309,24 @@ test('AdvisoryLockManager - release lock', async () => {
   const client = new MockClient();
   const eventEmitter = new MockEventEmitter();
   const manager = new AdvisoryLockManager({ eventEmitter });
-  
+
   const identifier = 'release-resource';
   const lockKey = manager.generateLockKey(identifier);
-  
+
   // First acquire the lock
   client.setLockResult(lockKey, true);
   await manager.acquireExclusiveLock(client, identifier);
-  
+
   // Then release it
   const result = await manager.releaseLock(client, identifier);
-  
+
   assert(result.released);
   assert.equal(result.lockKey, lockKey);
-  
+
   // Check unlock query
   const queries = client.getQueries();
   assert(queries.some(q => q.sql.includes('pg_advisory_unlock')));
-  
+
   // Check release event
   const releaseEvents = eventEmitter.getEventsOfType(LockReleased);
   assert.equal(releaseEvents.length, 1);
@@ -335,7 +335,7 @@ test('AdvisoryLockManager - release lock', async () => {
 test('AdvisoryLockManager - release all locks', async () => {
   const client = new MockClient();
   const manager = new AdvisoryLockManager();
-  
+
   // Acquire multiple locks
   const identifiers = ['lock1', 'lock2', 'lock3'];
   for (const identifier of identifiers) {
@@ -343,12 +343,12 @@ test('AdvisoryLockManager - release all locks', async () => {
     client.setLockResult(lockKey, true);
     await manager.acquireExclusiveLock(client, identifier);
   }
-  
+
   const result = await manager.releaseAllLocks(client);
-  
+
   assert.equal(result.totalReleased, identifiers.length);
   assert.equal(result.sessionId, client.sessionId);
-  
+
   // Check unlock all query
   const queries = client.getQueries();
   assert(queries.some(q => q.sql.includes('pg_advisory_unlock_all')));
@@ -357,15 +357,15 @@ test('AdvisoryLockManager - release all locks', async () => {
 test('AdvisoryLockManager - check lock status', async () => {
   const client = new MockClient();
   const manager = new AdvisoryLockManager();
-  
+
   const identifier = 'status-resource';
   const lockKey = manager.generateLockKey(identifier);
-  
+
   // Initially not held
   client.setLockResult(lockKey, false);
   let isHeld = await manager.isLockHeld(client, identifier);
   assert(!isHeld);
-  
+
   // After acquisition
   client.setLockResult(lockKey, true);
   isHeld = await manager.isLockHeld(client, identifier);
@@ -375,19 +375,19 @@ test('AdvisoryLockManager - check lock status', async () => {
 test('AdvisoryLockManager - get session locks', async () => {
   const client = new MockClient();
   const manager = new AdvisoryLockManager();
-  
+
   // Set up mock to return some locks
   const lockKey1 = manager.generateLockKey('session-lock1');
   const lockKey2 = manager.generateLockKey('session-lock2');
-  
+
   client.setLockResult(lockKey1, true);
   client.setLockResult(lockKey2, true);
-  
+
   const sessionLocks = await manager.getSessionLocks(client);
-  
+
   // Debug what we're getting
   // console.log('sessionLocks:', JSON.stringify(sessionLocks, null, 2));
-  
+
   // Should return the mocked locks - test based on actual returned data
   if (sessionLocks.length > 0) {
     // Check if all locks have the expected properties
@@ -406,22 +406,22 @@ test('AdvisoryLockManager - lock statistics', async () => {
   client1.setSessionId('111');
   client2.setSessionId('222');
   const manager = new AdvisoryLockManager();
-  
+
   // Acquire locks from different sessions
   const lockKey1 = manager.generateLockKey('stats-lock1');
   const lockKey2 = manager.generateLockKey('stats-lock2');
   const lockKey3 = manager.generateLockKey('stats-lock3');
-  
+
   client1.setLockResult(lockKey1, true);
   client1.setLockResult(lockKey2, true);
   client2.setLockResult(lockKey3, true);
-  
+
   await manager.acquireExclusiveLock(client1, 'stats-lock1');
   await manager.acquireSharedLock(client1, 'stats-lock2');
   await manager.acquireExclusiveLock(client2, 'stats-lock3');
-  
+
   const stats = manager.getLockStatistics();
-  
+
   assert.equal(stats.totalSessions, 2);
   assert.equal(stats.totalLocks, 3);
   assert.equal(stats.locksByType[LockType.EXCLUSIVE], 2);
@@ -433,19 +433,19 @@ test('AdvisoryLockManager - lock statistics', async () => {
 test('AdvisoryLockManager - lock details', async () => {
   const client = new MockClient();
   const manager = new AdvisoryLockManager();
-  
+
   const identifier = 'details-lock';
   const lockKey = manager.generateLockKey(identifier);
   client.setLockResult(lockKey, true);
-  
+
   const startTime = Date.now();
   await manager.acquireExclusiveLock(client, identifier);
-  
+
   // Wait a bit to have measurable duration
   await new Promise(resolve => setTimeout(resolve, 10));
-  
+
   const details = manager.getLockDetails();
-  
+
   assert.equal(details.length, 1);
   const lock = details[0];
   assert.equal(lock.lockKey, lockKey);
@@ -460,11 +460,11 @@ test('AdvisoryLockManager - lock details', async () => {
 test('AdvisoryLockManager - error handling for invalid operations', async () => {
   const client = new MockClient();
   const manager = new AdvisoryLockManager();
-  
+
   // Try to release a lock that was never acquired
   const result = await manager.releaseLock(client, 'never-acquired');
   assert(!result.released);
-  
+
   // Try to rollback to non-existent savepoint should not throw in lock manager
   // (that's TransactionManager's responsibility)
 });
@@ -472,21 +472,21 @@ test('AdvisoryLockManager - error handling for invalid operations', async () => 
 test('AdvisoryLockManager - cleanup', async () => {
   const client = new MockClient();
   const manager = new AdvisoryLockManager();
-  
+
   // Acquire some locks
   const lockKey1 = manager.generateLockKey('cleanup1');
   const lockKey2 = manager.generateLockKey('cleanup2');
   client.setLockResult(lockKey1, true);
   client.setLockResult(lockKey2, true);
-  
+
   await manager.acquireExclusiveLock(client, 'cleanup1');
   await manager.acquireExclusiveLock(client, 'cleanup2');
-  
+
   assert.equal(manager.getLockStatistics().totalLocks, 2);
-  
+
   // Cleanup should clear tracking (but not actually release DB locks - that's session-dependent)
   await manager.cleanup();
-  
+
   assert.equal(manager.getLockStatistics().totalLocks, 0);
   assert.equal(manager.getLockStatistics().totalSessions, 0);
 });
@@ -495,13 +495,13 @@ test('AdvisoryLockManager - concurrent lock attempts simulation', async () => {
   const client = new MockClient();
   const eventEmitter = new MockEventEmitter();
   const manager = new AdvisoryLockManager({ eventEmitter });
-  
+
   const identifier = 'concurrent-resource';
   const lockKey = manager.generateLockKey(identifier);
-  
+
   // First attempt succeeds, second fails
   client.setLockResult(lockKey, true);  // Initially available
-  
+
   let queryCount = 0;
   const originalQuery = client.query.bind(client);
   client.query = async (sql, params) => {
@@ -513,20 +513,20 @@ test('AdvisoryLockManager - concurrent lock attempts simulation', async () => {
     }
     return originalQuery(sql, params);
   };
-  
+
   // Try to acquire the same lock concurrently
   const [result1, result2] = await Promise.all([
     manager.tryAcquireExclusiveLock(client, identifier),
     manager.tryAcquireExclusiveLock(client, identifier)
   ]);
-  
+
   // One should succeed, one should fail
   const successes = [result1, result2].filter(r => r.acquired);
   const failures = [result1, result2].filter(r => !r.acquired);
-  
+
   assert.equal(successes.length, 1);
   assert.equal(failures.length, 1);
-  
+
   // Should have multiple attempt events
   const attemptEvents = eventEmitter.getEventsOfType(LockAttempt);
   assert.equal(attemptEvents.length, 2);
@@ -535,11 +535,11 @@ test('AdvisoryLockManager - concurrent lock attempts simulation', async () => {
 test('AdvisoryLockManager - lock prefix configuration', () => {
   const manager1 = new AdvisoryLockManager({ lockPrefix: 'app1' });
   const manager2 = new AdvisoryLockManager({ lockPrefix: 'app2' });
-  
+
   const identifier = 'same-resource';
   const key1 = manager1.generateLockKey(identifier);
   const key2 = manager2.generateLockKey(identifier);
-  
+
   // Different prefixes should generate different keys
   assert(key1 !== key2);
 });
@@ -547,11 +547,11 @@ test('AdvisoryLockManager - lock prefix configuration', () => {
 test('AdvisoryLockManager - session ID handling', async () => {
   const client = new MockClient();
   const manager = new AdvisoryLockManager();
-  
+
   // Test getting session ID
   const sessionId = await manager.getSessionId(client);
   assert.equal(sessionId, client.sessionId);
-  
+
   // Test with different session ID
   client.setSessionId('999');
   const newSessionId = await manager.getSessionId(client);

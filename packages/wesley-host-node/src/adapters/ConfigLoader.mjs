@@ -3,7 +3,7 @@
  * Loads and validates Wesley configuration
  */
 
-import { readFileSync, existsSync } from 'fs';
+import { existsSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -15,7 +15,7 @@ export class ConfigLoader {
     this.userConfig = null;
     this.mergedConfig = null;
   }
-  
+
   /**
    * Load configuration from default and user files
    */
@@ -27,7 +27,7 @@ export class ConfigLoader {
     } else {
       this.defaultConfig = this.getBuiltInDefaults();
     }
-    
+
     // Load user config if provided
     if (configPath && existsSync(configPath)) {
       this.userConfig = (await import(configPath)).default;
@@ -38,16 +38,16 @@ export class ConfigLoader {
         this.userConfig = (await import(cwdConfig)).default;
       }
     }
-    
+
     // Merge configs
     this.mergedConfig = this.mergeConfigs(this.defaultConfig, this.userConfig);
-    
+
     // Validate config
     this.validateConfig(this.mergedConfig);
-    
+
     return this.mergedConfig;
   }
-  
+
   /**
    * Get built-in default configuration
    */
@@ -94,7 +94,7 @@ export class ConfigLoader {
         folder: 'ops',                 // location of .graphql operation docs
         target: 'function',            // 'function' | 'view'
         nestedList: { requireLimit: true, requireOrderBy: true },
-        rlsReliance: 'prefer',         // 'prefer' (RLS-first) | 'derive' (inject from directives if absent)
+        rlsReliance: 'prefer'         // 'prefer' (RLS-first) | 'derive' (inject from directives if absent)
       },
       naming: {
         strategy: 'snake_case', tablePrefix: '',
@@ -118,15 +118,15 @@ export class ConfigLoader {
       }
     };
   }
-  
+
   /**
    * Deep merge two config objects
    */
   mergeConfigs(base, override) {
     if (!override) return base;
-    
+
     const merged = { ...base };
-    
+
     for (const key in override) {
       if (typeof override[key] === 'object' && !Array.isArray(override[key])) {
         merged[key] = this.mergeConfigs(base[key] || {}, override[key]);
@@ -134,10 +134,10 @@ export class ConfigLoader {
         merged[key] = override[key];
       }
     }
-    
+
     return merged;
   }
-  
+
   /**
    * Validate configuration
    */
@@ -147,30 +147,30 @@ export class ConfigLoader {
       if (!config.thresholds[metric]) {
         throw new Error(`Missing thresholds for ${metric}`);
       }
-      
+
       for (const [level, value] of Object.entries(config.thresholds[metric])) {
         if (value < 0 || value > 100) {
           throw new Error(`Invalid threshold ${metric}.${level}: ${value}. Must be 0-100`);
         }
       }
     }
-    
+
     // Validate weights sum to 1
     for (const metric of ['scs', 'tci']) {
       const weights = Object.values(config.weights[metric]);
       const sum = weights.reduce((a, b) => a + b, 0);
-      
+
       if (Math.abs(sum - 1.0) > 0.01) {
         throw new Error(`Weights for ${metric} must sum to 1.0, got ${sum}`);
       }
     }
-    
+
     // Validate naming strategy
     const validStrategies = ['preserve', 'snake_case', 'lower', 'upper'];
     if (!validStrategies.includes(config.naming.strategy)) {
       throw new Error(`Invalid naming strategy: ${config.naming.strategy}`);
     }
-    
+
     // Validate RPC param strategy
     const validParamStrategies = ['jsonb', 'discrete', 'composite'];
     if (!validParamStrategies.includes(config.generation.rpc.paramStrategy)) {
@@ -194,7 +194,7 @@ export class ConfigLoader {
       throw new Error(`Invalid ops.rlsReliance: ${ops.rlsReliance}. Expected 'prefer' or 'derive'`);
     }
   }
-  
+
   /**
    * Get a specific configuration value
    */
@@ -202,25 +202,25 @@ export class ConfigLoader {
     if (!this.mergedConfig) {
       throw new Error('Configuration not loaded. Call load() first');
     }
-    
+
     const parts = path.split('.');
     let value = this.mergedConfig;
-    
+
     for (const part of parts) {
       value = value[part];
       if (value === undefined) return undefined;
     }
-    
+
     return value;
   }
-  
+
   /**
    * Get scoring interpretation for a value
    */
   getScoreInterpretation(metric, value) {
     const thresholds = this.get(`thresholds.${metric}`);
     if (!thresholds) return 'unknown';
-    
+
     // For MRI, lower is better
     if (metric === 'mri') {
       if (value <= thresholds.low) return 'low';
@@ -228,44 +228,44 @@ export class ConfigLoader {
       if (value <= thresholds.high) return 'high';
       return 'critical';
     }
-    
+
     // For SCS and TCI, higher is better
     if (value >= thresholds.excellent) return 'excellent';
     if (value >= thresholds.good) return 'good';
     if (value >= thresholds.acceptable) return 'acceptable';
     return 'poor';
   }
-  
+
   /**
    * Get explanation for why a score failed
    */
   getScoreExplanation(metric, value) {
     const interpretation = this.getScoreInterpretation(metric, value);
     const thresholds = this.get(`thresholds.${metric}`);
-    
+
     switch (metric) {
-      case 'scs':
-        if (interpretation === 'poor') {
-          return `Schema Coverage Score (${value}) is below acceptable threshold (${thresholds.acceptable}). ` +
-                 `More schema elements need to be generated.`;
-        }
-        break;
-        
-      case 'mri':
-        if (interpretation === 'critical' || interpretation === 'high') {
-          return `Migration Risk Index (${value}) exceeds safe threshold (${thresholds.medium}). ` +
-                 `Consider breaking into smaller, safer migrations.`;
-        }
-        break;
-        
-      case 'tci':
-        if (interpretation === 'poor') {
-          return `Test Confidence Index (${value}) is below acceptable threshold (${thresholds.acceptable}). ` +
-                 `More test coverage is needed for production readiness.`;
-        }
-        break;
+    case 'scs':
+      if (interpretation === 'poor') {
+        return `Schema Coverage Score (${value}) is below acceptable threshold (${thresholds.acceptable}). ` +
+                 'More schema elements need to be generated.';
+      }
+      break;
+
+    case 'mri':
+      if (interpretation === 'critical' || interpretation === 'high') {
+        return `Migration Risk Index (${value}) exceeds safe threshold (${thresholds.medium}). ` +
+                 'Consider breaking into smaller, safer migrations.';
+      }
+      break;
+
+    case 'tci':
+      if (interpretation === 'poor') {
+        return `Test Confidence Index (${value}) is below acceptable threshold (${thresholds.acceptable}). ` +
+                 'More test coverage is needed for production readiness.';
+      }
+      break;
     }
-    
+
     return null;
   }
 }

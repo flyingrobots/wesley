@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://wesley.dev/schemas/realm.schema.json",
+  "title": "Wesley REALM Rehearsal Report",
+  "type": "object",
+  "required": ["verdict", "timestamp"],
+  "properties": {
+    "provider": { "type": ["string", "null"] },
+    "verdict": { "type": "string", "enum": ["PASS", "FAIL"] },
+    "duration_ms": { "type": ["integer", "null"], "minimum": 0 },
+    "steps": { "type": ["integer", "null"], "minimum": 0 },
+    "error": { "type": ["string", "null"] },
+    "timestamp": { "type": "string", "format": "date-time" }
+  },
+  "if": { "required": ["verdict"], "properties": { "verdict": { "const": "FAIL" } } },
+  "then": { "required": ["error"], "properties": { "error": { "type": "string", "minLength": 1 } } },
+  "additionalProperties": false
+}

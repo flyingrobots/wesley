@@ -13,7 +13,7 @@ import {
   validateFootprint,
   validateRegistry,
   validateStateMachine,
-  ValidationSeverity,
+  ValidationSeverity
 } from '@wesley/core/ttd';
 
 describe('TTD Validation Rules', () => {
@@ -24,7 +24,7 @@ describe('TTD Validation Rules', () => {
         version: 1,
         eventTypes: ['Created', 'Updated'],
         ordered: true,
-        persistent: false,
+        persistent: false
       };
 
       const errors = validateChannel(channel);
@@ -61,7 +61,7 @@ describe('TTD Validation Rules', () => {
         name: 'increment',
         op_id: 12345,
         args: [{ name: 'id', type: 'ID', required: true }],
-        resultType: 'Counter',
+        resultType: 'Counter'
       };
 
       const errors = validateOp(op);
@@ -91,9 +91,9 @@ describe('TTD Validation Rules', () => {
         op_id: 1,
         args: [
           { name: 'id', type: 'ID', required: true },
-          { name: 'id', type: 'String', required: false },
+          { name: 'id', type: 'String', required: false }
         ],
-        resultType: 'Void',
+        resultType: 'Void'
       };
 
       const errors = validateOp(op);
@@ -113,7 +113,7 @@ describe('TTD Validation Rules', () => {
       const rule = {
         name: 'idle_to_active',
         from: ['IDLE'],
-        to: 'ACTIVE',
+        to: 'ACTIVE'
       };
       const validStates = ['IDLE', 'ACTIVE', 'COMPLETED'];
 
@@ -164,7 +164,7 @@ describe('TTD Validation Rules', () => {
       const inv = {
         name: 'positive_balance',
         expr: 'account.balance >= 0',
-        severity: 'error',
+        severity: 'error'
       };
 
       const errors = validateInvariant(inv);
@@ -198,7 +198,7 @@ describe('TTD Validation Rules', () => {
       const emission = {
         channel: 'events',
         event: 'Created',
-        opName: 'create',
+        opName: 'create'
       };
       const channels = [{ name: 'events', eventTypes: ['Created', 'Updated'] }];
 
@@ -236,7 +236,7 @@ describe('TTD Validation Rules', () => {
         channel: 'events',
         event: 'Created',
         opName: 'create',
-        withinMs: -100,
+        withinMs: -100
       };
       const channels = [{ name: 'events', eventTypes: ['Created'] }];
 
@@ -252,7 +252,7 @@ describe('TTD Validation Rules', () => {
         reads: ['Entity'],
         writes: ['Entity'],
         creates: ['Entity'],
-        deletes: [],
+        deletes: []
       };
       const knownTypes = ['Entity', 'Other'];
 
@@ -296,7 +296,7 @@ describe('TTD Validation Rules', () => {
     it('passes for valid registry', () => {
       const entries = [
         { typeName: 'EventA', id: 1 },
-        { typeName: 'EventB', id: 2 },
+        { typeName: 'EventB', id: 2 }
       ];
 
       const errors = validateRegistry(entries);
@@ -306,7 +306,7 @@ describe('TTD Validation Rules', () => {
     it('fails on duplicate registry IDs', () => {
       const entries = [
         { typeName: 'EventA', id: 1 },
-        { typeName: 'EventB', id: 1 },
+        { typeName: 'EventB', id: 1 }
       ];
 
       const errors = validateRegistry(entries);
@@ -316,7 +316,7 @@ describe('TTD Validation Rules', () => {
     it('fails on duplicate type names', () => {
       const entries = [
         { typeName: 'EventA', id: 1 },
-        { typeName: 'EventA', id: 2 },
+        { typeName: 'EventA', id: 2 }
       ];
 
       const errors = validateRegistry(entries);
@@ -344,7 +344,7 @@ describe('TTD Validation Rules', () => {
     it('passes for valid state machine', () => {
       const rules = [
         { name: 'start', from: ['IDLE'], to: 'RUNNING' },
-        { name: 'stop', from: ['RUNNING'], to: 'STOPPED' },
+        { name: 'stop', from: ['RUNNING'], to: 'STOPPED' }
       ];
       const states = ['IDLE', 'RUNNING', 'STOPPED'];
 
@@ -367,7 +367,7 @@ describe('TTD Validation Rules', () => {
     it('warns on terminal state with no explicit marking', () => {
       const rules = [
         { name: 'start', from: ['IDLE'], to: 'RUNNING' },
-        { name: 'complete', from: ['RUNNING'], to: 'DONE' },
+        { name: 'complete', from: ['RUNNING'], to: 'DONE' }
       ];
       const states = ['IDLE', 'RUNNING', 'DONE'];
 
@@ -399,30 +399,30 @@ describe('TTD Validation Rules', () => {
             version: 1,
             eventTypes: ['Created', 'Updated'],
             ordered: true,
-            persistent: false,
-          },
+            persistent: false
+          }
         ],
         ops: [
           {
             name: 'create',
             op_id: 12345,
             args: [{ name: 'data', type: 'Input', required: true }],
-            resultType: 'Entity',
-          },
+            resultType: 'Entity'
+          }
         ],
         rules: [{ name: 'activate', from: ['DRAFT'], to: 'ACTIVE' }],
         invariants: [
-          { name: 'positive', expr: 'entity.value >= 0', severity: 'error' },
+          { name: 'positive', expr: 'entity.value >= 0', severity: 'error' }
         ],
         emissions: [
-          { channel: 'events', event: 'Created', opName: 'create', withinMs: 100 },
+          { channel: 'events', event: 'Created', opName: 'create', withinMs: 100 }
         ],
         footprints: [
-          { opName: 'create', reads: [], writes: ['Entity'], creates: ['Entity'], deletes: [] },
+          { opName: 'create', reads: [], writes: ['Entity'], creates: ['Entity'], deletes: [] }
         ],
         registry: [{ typeName: 'Created', id: 1 }],
         types: [{ name: 'Entity', fields: [] }],
-        enums: [{ name: 'State', values: ['DRAFT', 'ACTIVE'] }],
+        enums: [{ name: 'State', values: ['DRAFT', 'ACTIVE'] }]
       };
 
       const result = validateTtdSchema(schema);
@@ -441,7 +441,7 @@ describe('TTD Validation Rules', () => {
         footprints: [],
         registry: [],
         types: [],
-        enums: [],
+        enums: []
       };
 
       const result = validateTtdSchema(schema);
@@ -462,7 +462,7 @@ describe('TTD Validation Rules', () => {
         footprints: [],
         registry: [],
         types: [],
-        enums: [],
+        enums: []
       };
 
       const result = validateTtdSchema(schema);

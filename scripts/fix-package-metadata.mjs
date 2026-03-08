@@ -13,7 +13,7 @@ const engines = { node: '>=18.17' };
 
 const packages = await fs.readdir(packagesDir, { withFileTypes: true });
 
-function sortKeys(obj) {
+function _sortKeys(obj) {
   const ordered = {};
   Object.keys(obj).sort().forEach((key) => {
     ordered[key] = obj[key];

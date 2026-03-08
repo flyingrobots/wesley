@@ -39,7 +39,7 @@ export class RustWriter {
       this.writeLine(`${variant},`);
     }
     this.dedent();
-    this.writeLine(`}`);
+    this.writeLine('}');
     this.writeLine();
   }
 
@@ -52,7 +52,7 @@ export class RustWriter {
       this.writeLine(`pub ${field.name}: ${typeStr},`);
     }
     this.dedent();
-    this.writeLine(`}`);
+    this.writeLine('}');
     this.writeLine();
   }
 

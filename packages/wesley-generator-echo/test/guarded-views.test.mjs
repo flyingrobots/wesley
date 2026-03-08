@@ -134,8 +134,8 @@ describe('GuardedView absent when no views', () => {
       types: [{
         name: 'Plain',
         kind: 'OBJECT',
-        fields: [{ name: 'x', type: 'String', required: true, list: false, views: null }],
-      }],
+        fields: [{ name: 'x', type: 'String', required: true, list: false, views: null }]
+      }]
     });
     expect(result).toBeNull();
   });
@@ -368,7 +368,7 @@ describe('GuardedView IR views property', () => {
     const idField = player.fields.find((f) => f.name === 'id');
     expect(idField.views).toEqual([
       { rule: 'owner', access: 'READ' },
-      { rule: 'admin', access: 'READ' },
+      { rule: 'admin', access: 'READ' }
     ]);
   });
 

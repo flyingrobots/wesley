@@ -38,27 +38,27 @@ export class ScaffoldCommand {
   constructor(options = {}) {
     this.options = options;
   }
-  
+
   /**
    * List available scaffolds
    */
   list() {
     console.log('\nAvailable Wesley Scaffolds:\n');
-    
+
     for (const [key, scaffold] of Object.entries(SCAFFOLDS)) {
       console.log(`  ${key.padEnd(15)} - ${scaffold.name}`);
       console.log(`  ${' '.repeat(15)}   ${scaffold.description}\n`);
     }
-    
+
     console.log('Usage: wesley scaffold <type> [--output <file>]\n');
   }
-  
+
   /**
    * Generate a scaffold
    */
   generate(type, outputPath) {
     const scaffold = SCAFFOLDS[type];
-    
+
     if (!scaffold) {
       console.error(`Unknown scaffold type: ${type}`);
       console.log('\nAvailable types:');
@@ -67,22 +67,22 @@ export class ScaffoldCommand {
       }
       process.exit(1);
     }
-    
+
     // Check if output file exists
     if (existsSync(outputPath) && !this.options.force) {
       console.error(`File already exists: ${outputPath}`);
       console.log('Use --force to overwrite');
       process.exit(1);
     }
-    
+
     // Read scaffold file
     const scaffoldPath = join(__dirname, '..', 'scaffolds', scaffold.file);
-    
+
     if (!existsSync(scaffoldPath)) {
       // If scaffold doesn't exist yet, create a placeholder
       console.log(`Scaffold '${type}' is coming soon!`);
-      console.log(`For now, using multi-tenant as template...`);
-      
+      console.log('For now, using multi-tenant as template...');
+
       const multiTenantPath = join(__dirname, '..', 'scaffolds', 'multi-tenant.graphql');
       if (existsSync(multiTenantPath)) {
         const content = readFileSync(multiTenantPath, 'utf-8');
@@ -93,19 +93,19 @@ export class ScaffoldCommand {
       }
       return;
     }
-    
+
     const content = readFileSync(scaffoldPath, 'utf-8');
-    
+
     // Customize content based on options
     let customized = content;
-    
+
     if (this.options.projectName) {
       customized = customized.replace(
         /# Wesley .* Starter Schema/,
         `# ${this.options.projectName} Schema`
       );
     }
-    
+
     if (this.options.minimal) {
       // Remove optional sections for minimal setup
       customized = customized.replace(
@@ -113,17 +113,17 @@ export class ScaffoldCommand {
         ''
       );
     }
-    
+
     // Write output file
     writeFileSync(outputPath, customized);
-    
+
     console.log(`✨ Created ${scaffold.name} schema at: ${outputPath}`);
     console.log('\nNext steps:');
-    console.log(`  1. Review and customize the schema`);
+    console.log('  1. Review and customize the schema');
     console.log(`  2. Generate SQL: wesley generate --schema ${outputPath}`);
-    console.log(`  3. Run migrations: wesley migrate up`);
-    console.log(`  4. Generate TypeScript types: wesley generate --types`);
-    
+    console.log('  3. Run migrations: wesley migrate up');
+    console.log('  4. Generate TypeScript types: wesley generate --types');
+
     if (type === 'multi-tenant') {
       console.log('\n💡 Multi-tenant tips:');
       console.log('  - The Membership table is automatically detected');
@@ -132,18 +132,18 @@ export class ScaffoldCommand {
       console.log('  - Helper functions are generated in wesley schema');
     }
   }
-  
+
   /**
    * Run the scaffold command
    */
   run(type, options = {}) {
     this.options = options;
-    
+
     if (!type || type === 'list') {
       this.list();
       return;
     }
-    
+
     const outputPath = options.output || `${type}.graphql`;
     this.generate(type, outputPath);
   }
@@ -158,7 +158,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     minimal: process.argv.includes('--minimal'),
     projectName: process.argv.find(arg => arg.startsWith('--name='))?.split('=')[1]
   };
-  
+
   const command = new ScaffoldCommand();
   command.run(type, options);
 }

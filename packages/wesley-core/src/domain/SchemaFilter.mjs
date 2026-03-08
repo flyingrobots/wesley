@@ -27,7 +27,7 @@ export function filterIRByUnits(ir, unitIds) {
     ...ir,
     tables: (ir.tables || []).filter(pred),
     enums: (ir.enums || []).filter(pred),
-    scalars: (ir.scalars || []).filter(pred),
+    scalars: (ir.scalars || []).filter(pred)
     // TODO: When new top-level IR collections are added, update this filter in the same commit.
   };
 }

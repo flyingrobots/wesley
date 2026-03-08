@@ -1,16 +1,16 @@
 /**
  * CLIEnhancer Tests
  * Comprehensive test suite for CLI enhancement functionality
- * 
+ *
  * @license Apache-2.0
  */
 
 import { test, describe, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
-import { 
-  CLIEnhancer, 
-  CLIError, 
-  InteractionError, 
+import {
+  CLIEnhancer,
+  CLIError,
+  InteractionError,
   CompletionError,
   CLIInteractionRequested,
   CLICommandExecuted,
@@ -38,7 +38,7 @@ describe('CLIEnhancer', () => {
     test('should initialize with default options', async () => {
       const defaultEnhancer = new CLIEnhancer();
       await defaultEnhancer.initialize();
-      
+
       assert.strictEqual(defaultEnhancer.options.historySize, 100);
       assert.strictEqual(defaultEnhancer.options.enableInteractiveMode, true);
       assert.strictEqual(defaultEnhancer.options.enableDryRun, true);
@@ -52,9 +52,9 @@ describe('CLIEnhancer', () => {
         enableInteractiveMode: false,
         aliases: { 'g': 'generate' }
       });
-      
+
       await customEnhancer.initialize();
-      
+
       assert.strictEqual(customEnhancer.options.historySize, 50);
       assert.strictEqual(customEnhancer.options.enableInteractiveMode, false);
       assert.strictEqual(customEnhancer.aliases.get('g'), 'generate');
@@ -81,7 +81,7 @@ describe('CLIEnhancer', () => {
 
     test('should process basic command', async () => {
       const result = await enhancer.processCommand('generate', ['sql']);
-      
+
       assert.strictEqual(result.command, 'generate');
       assert.deepStrictEqual(result.args, ['sql']);
       assert.strictEqual(result.processed, true);
@@ -90,13 +90,13 @@ describe('CLIEnhancer', () => {
 
     test('should resolve aliases', async () => {
       const result = await enhancer.processCommand('g', ['sql']);
-      
+
       assert.strictEqual(result.command, 'generate');
     });
 
     test('should handle dry-run mode', async () => {
       const result = await enhancer.processCommand('migrate', ['up', '--dry-run']);
-      
+
       assert.strictEqual(result.dryRun, true);
       assert(result.analysis);
       assert.strictEqual(result.analysis.wouldExecute, true);
@@ -105,7 +105,7 @@ describe('CLIEnhancer', () => {
     test('should add commands to history', async () => {
       await enhancer.processCommand('generate', ['sql']);
       await enhancer.processCommand('test', []);
-      
+
       const history = enhancer.getHistory();
       assert.strictEqual(history.length, 2);
       assert.strictEqual(history[0].command, 'generate');
@@ -165,7 +165,7 @@ describe('CLIEnhancer', () => {
 
     test('should throw error when interactive mode disabled', async () => {
       enhancer.options.enableInteractiveMode = false;
-      
+
       await assert.rejects(
         enhancer.startInteractiveMode(),
         (error) => {
@@ -178,7 +178,7 @@ describe('CLIEnhancer', () => {
 
     test('should handle interaction for destructive commands', async () => {
       const result = await enhancer.handleInteraction('migrate', ['up']);
-      
+
       assert(typeof result.confirmed === 'boolean');
       assert(typeof result.responses === 'object');
     });
@@ -205,7 +205,7 @@ describe('CLIEnhancer', () => {
       });
 
       const progress = enhancer.startProgress('test-operation', 100);
-      
+
       assert(progress);
       assert.strictEqual(progress.operation, 'test-operation');
       assert.strictEqual(progress.total, 100);
@@ -224,7 +224,7 @@ describe('CLIEnhancer', () => {
 
       enhancer.startProgress('test-operation', 100);
       enhancer.updateProgress(50, 'halfway done');
-      
+
       assert(progressUpdated);
     });
 
@@ -239,14 +239,14 @@ describe('CLIEnhancer', () => {
 
       enhancer.startProgress('test-operation', 100);
       enhancer.completeProgress({ success: true });
-      
+
       assert(progressCompleted);
       assert.strictEqual(enhancer.activeProgress, null);
     });
 
     test('should not track progress when disabled', () => {
       enhancer.options.enableProgress = false;
-      
+
       const progress = enhancer.startProgress('test-operation', 100);
       assert.strictEqual(progress, null);
     });
@@ -259,7 +259,7 @@ describe('CLIEnhancer', () => {
 
     test('should provide command completions', async () => {
       const completions = await enhancer.getCompletions('gen', 3);
-      
+
       const generateCompletion = completions.find(c => c.value === 'generate');
       assert(generateCompletion);
       assert.strictEqual(generateCompletion.type, 'command');
@@ -268,7 +268,7 @@ describe('CLIEnhancer', () => {
 
     test('should provide alias completions', async () => {
       const completions = await enhancer.getCompletions('g', 1);
-      
+
       const aliasCompletion = completions.find(c => c.value === 'g');
       assert(aliasCompletion);
       assert.strictEqual(aliasCompletion.type, 'alias');
@@ -277,7 +277,7 @@ describe('CLIEnhancer', () => {
 
     test('should provide subcommand completions', async () => {
       const completions = await enhancer.getCompletions('generate s', 11);
-      
+
       const sqlCompletion = completions.find(c => c.value === 'sql');
       assert(sqlCompletion);
       assert.strictEqual(sqlCompletion.type, 'subcommand');
@@ -285,7 +285,7 @@ describe('CLIEnhancer', () => {
 
     test('should provide option completions', async () => {
       const completions = await enhancer.getCompletions('generate sql --dry', 19);
-      
+
       const dryRunCompletion = completions.find(c => c.value === '--dry-run');
       assert(dryRunCompletion);
       assert.strictEqual(dryRunCompletion.type, 'option');
@@ -293,7 +293,7 @@ describe('CLIEnhancer', () => {
 
     test('should return empty array when completion disabled', async () => {
       enhancer.options.enableCompletion = false;
-      
+
       const completions = await enhancer.getCompletions('gen', 3);
       assert.strictEqual(completions.length, 0);
     });
@@ -320,7 +320,7 @@ describe('CLIEnhancer', () => {
     test('should maintain command history', async () => {
       await enhancer.processCommand('generate', ['sql']);
       await enhancer.processCommand('test', ['unit']);
-      
+
       const history = enhancer.getHistory();
       assert.strictEqual(history.length, 2);
       assert.strictEqual(history[0].command, 'generate');
@@ -332,14 +332,14 @@ describe('CLIEnhancer', () => {
       for (let i = 0; i < 15; i++) {
         await enhancer.processCommand(`command${i}`, []);
       }
-      
+
       const history = enhancer.getHistory();
       assert.strictEqual(history.length, enhancer.options.historySize);
     });
 
     test('should replay commands from history', async () => {
       await enhancer.processCommand('generate', ['sql']);
-      
+
       const result = await enhancer.replayCommand(0);
       assert.strictEqual(result.command, 'generate');
       assert.deepStrictEqual(result.args, ['sql']);
@@ -394,7 +394,7 @@ describe('CLIEnhancer', () => {
 
     test('should remove aliases', () => {
       enhancer.addAlias('temp-alias', 'temp-command');
-      
+
       let eventEmitted = false;
       enhancer.on('aliasRemoved', (data) => {
         eventEmitted = true;
@@ -415,7 +415,7 @@ describe('CLIEnhancer', () => {
 
     test('should analyze generate command', async () => {
       const result = await enhancer.performDryRun('generate', ['sql']);
-      
+
       assert.strictEqual(result.dryRun, true);
       assert.strictEqual(result.analysis.type, 'generation');
       assert.strictEqual(result.analysis.destructive, false);
@@ -425,7 +425,7 @@ describe('CLIEnhancer', () => {
 
     test('should analyze migration command', async () => {
       const result = await enhancer.performDryRun('migrate', ['up']);
-      
+
       assert.strictEqual(result.analysis.type, 'migration');
       assert.strictEqual(result.analysis.destructive, true);
       assert.strictEqual(result.analysis.databaseChanges, true);
@@ -433,7 +433,7 @@ describe('CLIEnhancer', () => {
 
     test('should analyze rollback command', async () => {
       const result = await enhancer.performDryRun('rollback', []);
-      
+
       assert.strictEqual(result.analysis.type, 'rollback');
       assert.strictEqual(result.analysis.destructive, true);
       assert.strictEqual(result.analysis.databaseChanges, true);
@@ -441,7 +441,7 @@ describe('CLIEnhancer', () => {
 
     test('should analyze test command', async () => {
       const result = await enhancer.performDryRun('test', ['unit']);
-      
+
       assert.strictEqual(result.analysis.type, 'testing');
       assert.strictEqual(result.analysis.destructive, false);
       assert.strictEqual(result.analysis.databaseChanges, false);
@@ -481,7 +481,7 @@ describe('CLIEnhancer', () => {
       // The updateProgress should trigger an error event internally
       // Wait a bit for async operations
       await new Promise(resolve => setTimeout(resolve, 10));
-      
+
       // If no error was emitted from updateProgress, manually trigger one to test the mechanism
       if (!errorEmitted) {
         const testError = new CLIError('Test error emission');
@@ -499,7 +499,7 @@ describe('CLIEnhancer', () => {
 
     test('should emit CLI events with proper structure', async () => {
       const events = [];
-      
+
       enhancer.on('commandExecuted', (event) => events.push(event));
       enhancer.on('progressStarted', (event) => events.push(event));
       enhancer.on('progressCompleted', (event) => events.push(event));
@@ -509,7 +509,7 @@ describe('CLIEnhancer', () => {
       enhancer.completeProgress();
 
       assert.strictEqual(events.length, 3);
-      
+
       // All events should have proper structure
       events.forEach(event => {
         assert(event.type);

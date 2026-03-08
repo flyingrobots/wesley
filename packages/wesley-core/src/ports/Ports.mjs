@@ -5,79 +5,79 @@
 
 // Input Ports (Primary/Driving)
 export class SchemaParser {
-  async parse(sdl) {
+  async parse(_sdl) {
     throw new Error('SchemaParser.parse() must be implemented');
   }
 }
 
 export class CommandHandler {
-  async handle(command) {
+  async handle(_command) {
     throw new Error('CommandHandler.handle() must be implemented');
   }
 }
 
 export class EventPublisher {
-  async publish(event) {
+  async publish(_event) {
     throw new Error('EventPublisher.publish() must be implemented');
   }
 }
 
 // Output Ports (Secondary/Driven)
 export class SQLGenerator {
-  async generate(schema) {
+  async generate(_schema) {
     throw new Error('SQLGenerator.generate() must be implemented');
   }
 }
 
 export class TypeScriptGenerator {
-  async generate(schema) {
+  async generate(_schema) {
     throw new Error('TypeScriptGenerator.generate() must be implemented');
   }
 }
 
 export class ZodGenerator {
-  async generate(schema) {
+  async generate(_schema) {
     throw new Error('ZodGenerator.generate() must be implemented');
   }
 }
 
 export class MigrationDiffer {
-  async diff(previousSchema, currentSchema) {
+  async diff(_previousSchema, _currentSchema) {
     throw new Error('MigrationDiffer.diff() must be implemented');
   }
 }
 
 export class MigrationSQLGenerator {
-  async generate(diff) {
+  async generate(_diff) {
     throw new Error('MigrationSQLGenerator.generate() must be implemented');
   }
 }
 
 export class FileSystem {
-  async read(path) {
+  async read(_path) {
     throw new Error('FileSystem.read() must be implemented');
   }
 
-  async write(path, content) {
+  async write(_path, _content) {
     throw new Error('FileSystem.write() must be implemented');
   }
 
-  async exists(path) {
+  async exists(_path) {
     throw new Error('FileSystem.exists() must be implemented');
   }
 
-  async mkdir(path, options = {}) {
+  async mkdir(path, _options = {}) {
     throw new Error('FileSystem.mkdir() must be implemented');
   }
 }
 
 export class LoggerPort {
-  info(o, m) { throw new Error('LoggerPort.info() must be implemented'); }
-  warn(o, m) { throw new Error('LoggerPort.warn() must be implemented'); }
-  error(o, m) { throw new Error('LoggerPort.error() must be implemented'); }
-  debug(o, m) { throw new Error('LoggerPort.debug() must be implemented'); }
-  child(b) { throw new Error('LoggerPort.child() must be implemented'); }
-  setLevel(l) { throw new Error('LoggerPort.setLevel() must be implemented'); }
+  info(_o, _m) { throw new Error('LoggerPort.info() must be implemented'); }
+  warn(_o, _m) { throw new Error('LoggerPort.warn() must be implemented'); }
+  error(_o, _m) { throw new Error('LoggerPort.error() must be implemented'); }
+  debug(_o, _m) { throw new Error('LoggerPort.debug() must be implemented'); }
+  child(_b) { throw new Error('LoggerPort.child() must be implemented'); }
+  setLevel(_l) { throw new Error('LoggerPort.setLevel() must be implemented'); }
   async flush() { throw new Error('LoggerPort.flush() must be implemented'); }
 }
 

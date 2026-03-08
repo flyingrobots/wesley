@@ -136,7 +136,7 @@ const SCALAR_ENCODERS = {
   Int: refEncodeI32,
   Float: refEncodeF32,
   String: refEncodeString,
-  ID: refEncodeString,
+  ID: refEncodeString
 };
 
 /**

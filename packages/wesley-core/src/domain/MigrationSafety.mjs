@@ -11,14 +11,14 @@ export class MigrationSafety {
     this.generateSnapshots = options.generateSnapshots ?? true;
     this.riskThreshold = options.riskThreshold || 50;
   }
-  
+
   /**
    * Analyze migration for risky operations
    */
   analyzeMigration(migrationSteps) {
     const risks = [];
     let totalRiskScore = 0;
-    
+
     for (const step of migrationSteps) {
       const risk = this.assessStepRisk(step);
       if (risk.score > 0) {
@@ -26,7 +26,7 @@ export class MigrationSafety {
         totalRiskScore += risk.score;
       }
     }
-    
+
     return {
       risks,
       totalRiskScore,
@@ -127,7 +127,7 @@ export class MigrationSafety {
     }
     return Array.from(buckets.values());
   }
-  
+
   /**
    * Assess risk for a single migration step
    */
@@ -144,9 +144,9 @@ export class MigrationSafety {
       'add_column': 5,
       'add_constraint': 5
     };
-    
+
     const score = riskScores[step.kind] || 0;
-    
+
     return {
       step: step.kind,
       target: step.table || step.column,
@@ -155,7 +155,7 @@ export class MigrationSafety {
       mitigation: this.getMitigation(step.kind)
     };
   }
-  
+
   /**
    * Get severity level from risk score
    */
@@ -166,7 +166,7 @@ export class MigrationSafety {
     if (score > 0) return 'low';
     return 'none';
   }
-  
+
   /**
    * Get mitigation suggestion for operation
    */
@@ -181,10 +181,10 @@ export class MigrationSafety {
       'drop_constraint': 'Verify constraint is not enforcing critical business rules',
       'create_index': 'Consider CREATE INDEX CONCURRENTLY for large tables'
     };
-    
+
     return mitigations[operation] || 'Review operation carefully';
   }
-  
+
   /**
    * Check if migration has destructive operations
    */
@@ -192,7 +192,7 @@ export class MigrationSafety {
     const destructive = ['drop_table', 'drop_column', 'drop_constraint'];
     return steps.some(step => destructive.includes(step.kind));
   }
-  
+
   /**
    * Get operations that should be blocked without flag
    */
@@ -200,35 +200,35 @@ export class MigrationSafety {
     if (this.allowDestructive) {
       return [];
     }
-    
+
     const blocked = [];
     const destructive = ['drop_table', 'drop_column'];
-    
+
     for (const step of steps) {
       if (destructive.includes(step.kind)) {
         blocked.push({
           operation: step.kind,
           target: step.table || step.column,
-          reason: `Destructive operation requires --allow-destructive flag`
+          reason: 'Destructive operation requires --allow-destructive flag'
         });
       }
     }
-    
+
     return blocked;
   }
-  
+
   /**
    * Generate pre-flight pgTAP snapshot
    */
   generatePreFlightSnapshot(schema, migrationSteps) {
     const snapshots = [];
     const riskySteps = migrationSteps.filter(s => this.assessStepRisk(s).score >= 20);
-    
+
     snapshots.push('-- Pre-flight pgTAP snapshot for risky migration');
     snapshots.push('-- Capture current state before applying changes');
     snapshots.push('BEGIN;');
     snapshots.push('');
-    
+
     // Generate snapshots for risky operations
     for (const step of riskySteps) {
       if (step.kind === 'drop_table') {
@@ -243,12 +243,12 @@ export class MigrationSafety {
         snapshots.push(this.generateColumnMetadataSnapshot(step.table, step.column));
       }
     }
-    
+
     // Add verification tests
     snapshots.push('');
     snapshots.push('-- Verification tests');
     snapshots.push('SELECT plan(999);');
-    
+
     for (const step of riskySteps) {
       if (step.kind === 'drop_table') {
         snapshots.push(`SELECT has_table('${step.table}', 'Table ${step.table} should exist before drop');`);
@@ -258,13 +258,13 @@ export class MigrationSafety {
         snapshots.push(`SELECT col_type_is('${step.table}', '${step.column}', pg_typeof(${step.column})::text);`);
       }
     }
-    
+
     snapshots.push('SELECT * FROM finish();');
     snapshots.push('ROLLBACK;');
-    
+
     return snapshots.join('\n');
   }
-  
+
   /**
    * Generate snapshot for table data
    */
@@ -289,7 +289,7 @@ FROM information_schema.columns
 WHERE table_name = '${tableName}'
 ORDER BY ordinal_position;`;
   }
-  
+
   /**
    * Generate snapshot for column data
    */
@@ -311,7 +311,7 @@ FROM "${tableName}"
 WHERE "${columnName}" IS NULL
 \\gset snapshot_${tableName}_${columnName}_null_`;
   }
-  
+
   /**
    * Generate snapshot for column type
    */
@@ -328,7 +328,7 @@ WHERE table_name = '${tableName}'
   AND column_name = '${columnName}'
 \\gset snapshot_${tableName}_${columnName}_type_`;
   }
-  
+
   /**
    * Generate snapshot for table structure
    */
@@ -350,7 +350,7 @@ FROM pg_indexes
 WHERE tablename = '${tableName}'
 ORDER BY indexname;`;
   }
-  
+
   /**
    * Generate snapshot for column metadata
    */
@@ -367,18 +367,18 @@ FROM information_schema.columns
 WHERE table_name = '${tableName}'
   AND column_name = '${columnName}';`;
   }
-  
+
   /**
    * Hook to Holmes risk scoring
    */
   calculateHolmesRiskScore(migrationSteps) {
     let score = 0;
     const evidence = [];
-    
+
     for (const step of migrationSteps) {
       const risk = this.assessStepRisk(step);
       score += risk.score;
-      
+
       if (risk.score > 0) {
         evidence.push({
           operation: step.kind,
@@ -389,7 +389,7 @@ WHERE table_name = '${tableName}'
         });
       }
     }
-    
+
     return {
       mri: score, // Migration Risk Index
       evidence,
@@ -398,7 +398,7 @@ WHERE table_name = '${tableName}'
       blockDeployment: score >= 100 && !this.allowDestructive
     };
   }
-  
+
   /**
    * Get impact description for a step
    */
@@ -413,10 +413,10 @@ WHERE table_name = '${tableName}'
       'drop_constraint': 'May allow invalid data to be inserted',
       'create_index': 'May lock table during creation on large datasets'
     };
-    
+
     return impacts[step.kind] || 'Unknown impact';
   }
-  
+
   /**
    * Get recommendation based on risk score
    */

@@ -44,7 +44,7 @@ describe('echo-core-types SDL → IR', () => {
     const ir = await getIR();
     const coreNames = [
       'FieldPatch', 'WorldlineTickPatchV1', 'SnapshotManifest',
-      'ClaimRecord', 'PrivateAtomRefV1', 'OpaqueRefV1',
+      'ClaimRecord', 'PrivateAtomRefV1', 'OpaqueRefV1'
     ];
     for (const name of coreNames) {
       const t = ir.types.find((x) => x.name === name);

@@ -41,7 +41,7 @@ export class PostgreSQLGenerator {
     for (const table of schema.getTables()) {
       const sqlTable = (await import('../Identifier.mjs')).identifier.toTableSQLName(table.name);
       const tableUid = DirectiveProcessor.getUid(table.directives) || `tbl:${table.name}`;
-      const tableStartLine = this.currentLine;
+      const _tableStartLine = this.currentLine;
 
       const cols = [];
       const constraints = [];
@@ -140,13 +140,13 @@ export class PostgreSQLGenerator {
             const indexName = `${sqlTable}_${idf.toSQL(field.name)}_idx`;
             const indexUid = field.directives?.['@uid'] ? `idx_${field.directives['@uid']}` : `idx_${sqlTable}_${idf.toSQL(field.name)}`;
 
-            let indexStmt = `CREATE`;
-            if (options.unique) indexStmt += ` UNIQUE`;
+            let indexStmt = 'CREATE';
+            if (options.unique) indexStmt += ' UNIQUE';
             indexStmt += ` INDEX IF NOT EXISTS "${indexName}" ON "${sqlTable}" ("${idf.toSQL(field.name)}")`;
             if (options.where) {
               indexStmt += ` WHERE ${options.where}`;
             }
-            indexStmt += `;`;
+            indexStmt += ';';
 
             statements.push(indexStmt);
             statements.push(`COMMENT ON INDEX "${indexName}" IS 'uid: ${indexUid}';`);
@@ -191,52 +191,54 @@ export class PostgreSQLGenerator {
    */
   async generateMigration(diff) {
     const statements = [];
-    
+
     for (const operation of diff) {
       switch (operation.type) {
-        case 'ADD_TABLE':
-          statements.push(await this.generate(operation.schema));
-          break;
-          
-        case 'DROP_TABLE':
-          statements.push(`DROP TABLE IF EXISTS "${operation.table}";`);
-          break;
-          
-        case 'ADD_COLUMN':
-          statements.push(`ALTER TABLE "${operation.table}" ADD COLUMN "${operation.column.name}" ${this.getSQLType(operation.column)};`);
-          break;
-          
-        case 'DROP_COLUMN':
-          statements.push(`ALTER TABLE "${operation.table}" DROP COLUMN IF EXISTS "${operation.column}";`);
-          break;
-          
-        case 'RENAME_COLUMN':
-          statements.push(`ALTER TABLE "${operation.table}" RENAME COLUMN "${operation.oldName}" TO "${operation.newName}";`);
-          break;
-          
-        case 'ALTER_COLUMN':
-          const sqlType = this.getSQLType(operation.column);
-          statements.push(`ALTER TABLE "${operation.table}" ALTER COLUMN "${operation.column.name}" TYPE ${sqlType};`);
-          break;
-          
-        case 'ADD_INDEX':
-          const indexName = `${operation.table}_${operation.columns.join('_')}_idx`;
-          let indexStmt = `CREATE`;
-          if (operation.unique) indexStmt += ` UNIQUE`;
-          indexStmt += ` INDEX "${indexName}" ON "${operation.table}" (${operation.columns.map(c => `"${c}"`).join(', ')});`;
-          statements.push(indexStmt);
-          break;
-          
-        case 'DROP_INDEX':
-          statements.push(`DROP INDEX IF EXISTS "${operation.indexName}";`);
-          break;
-          
-        default:
-          // Add comment for unknown operations
-          statements.push(`-- Unknown operation: ${operation.type}`);
+      case 'ADD_TABLE':
+        statements.push(await this.generate(operation.schema));
+        break;
+
+      case 'DROP_TABLE':
+        statements.push(`DROP TABLE IF EXISTS "${operation.table}";`);
+        break;
+
+      case 'ADD_COLUMN':
+        statements.push(`ALTER TABLE "${operation.table}" ADD COLUMN "${operation.column.name}" ${this.getSQLType(operation.column)};`);
+        break;
+
+      case 'DROP_COLUMN':
+        statements.push(`ALTER TABLE "${operation.table}" DROP COLUMN IF EXISTS "${operation.column}";`);
+        break;
+
+      case 'RENAME_COLUMN':
+        statements.push(`ALTER TABLE "${operation.table}" RENAME COLUMN "${operation.oldName}" TO "${operation.newName}";`);
+        break;
+
+      case 'ALTER_COLUMN': {
+        const sqlType = this.getSQLType(operation.column);
+        statements.push(`ALTER TABLE "${operation.table}" ALTER COLUMN "${operation.column.name}" TYPE ${sqlType};`);
+        break;
+      }
+
+      case 'ADD_INDEX': {
+        const indexName = `${operation.table}_${operation.columns.join('_')}_idx`;
+        let indexStmt = 'CREATE';
+        if (operation.unique) indexStmt += ' UNIQUE';
+        indexStmt += ` INDEX "${indexName}" ON "${operation.table}" (${operation.columns.map(c => `"${c}"`).join(', ')});`;
+        statements.push(indexStmt);
+        break;
+      }
+
+      case 'DROP_INDEX':
+        statements.push(`DROP INDEX IF EXISTS "${operation.indexName}";`);
+        break;
+
+      default:
+        // Add comment for unknown operations
+        statements.push(`-- Unknown operation: ${operation.type}`);
       }
     }
-    
+
     return statements.join('\n\n');
   }
 
@@ -245,7 +247,7 @@ export class PostgreSQLGenerator {
 
     if (field.list) {
       const arrayType = `${baseType}[]`;
-      let sqlType = field.nonNull ? `${arrayType} NOT NULL` : arrayType;
+      const sqlType = field.nonNull ? `${arrayType} NOT NULL` : arrayType;
       return sqlType;
     }
 

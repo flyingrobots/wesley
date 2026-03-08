@@ -38,7 +38,7 @@ export async function generateEcho({ sdl, ir, mutationIdNamespace = 'Mutation', 
     (baseIr.types ?? []).map(async (t) => {
       const descriptor = buildLayoutDescriptor(t, typeIndex);
       t.layout_hash = await computeLayoutHash(descriptor);
-    }),
+    })
   );
 
   const ops = buildOpsFromSDL(sdl, mutationIdNamespace, queryNamespace);
@@ -56,14 +56,14 @@ export async function generateEcho({ sdl, ir, mutationIdNamespace = 'Mutation', 
     registry_hash: null,         // placeholder — EchoPlugin overwrites with canonical value
     hash_chain: null,            // placeholder — EchoPlugin overwrites after bundle hash
     ...baseIr,
-    ops,
+    ops
   };
 
   const files = [
     { path: 'ir.json', content: JSON.stringify(fullIr, null, 2) },
     { path: 'ops.generated.ts', content: emitOps(fullIr) },
     { path: 'schemas.generated.ts', content: emitSchemas(fullIr) },
-    { path: 'client.generated.ts', content: emitClient(fullIr) },
+    { path: 'client.generated.ts', content: emitClient(fullIr) }
   ];
 
   const joinRust = emitJoinImpls(fullIr);
@@ -109,7 +109,7 @@ function buildOpsFromSDL(sdl, mutationNs, queryNs) {
           name: a.name.value,
           type: typeName,
           required,
-          list,
+          list
         };
       });
       ops.push({
@@ -117,7 +117,7 @@ function buildOpsFromSDL(sdl, mutationNs, queryNs) {
         name: f.name.value,
         op_id: hash32(`${ns}:${f.name.value}`),
         args,
-        result_type: resultType,
+        result_type: resultType
       });
     }
   };
@@ -150,7 +150,7 @@ function parseGraphQLToEchoIR(sdl) {
         kind: 'ENUM',
         type_id: def.name.value,
         layout_hash: null,
-        values: def.values?.map((v) => v.name.value) ?? [],
+        values: def.values?.map((v) => v.name.value) ?? []
       });
     }
 
@@ -166,7 +166,7 @@ function parseGraphQLToEchoIR(sdl) {
           required,
           list,
           join: extractJoinDirective(f),
-          views: extractViewDirectives(f),
+          views: extractViewDirectives(f)
         };
       });
 
@@ -178,7 +178,7 @@ function parseGraphQLToEchoIR(sdl) {
         type_id: def.name.value,
         layout_hash: null,
         has_join: hasJoin,
-        fields,
+        fields
       });
     }
   }

@@ -11,7 +11,7 @@ import {
   composeUnits,
   buildDemangleMap,
   demangleSdl,
-  validateFilteredSdl,
+  validateFilteredSdl
 } from '../../src/domain/SchemaResolver.mjs';
 
 // ─── Escape helpers ──────────────────────────────────────────────────────────
@@ -98,7 +98,7 @@ test('resolve: single file, no imports, no package → 1 unit, no mangling', asy
         id: ID! @wes_pk
         name: String!
       }
-    `,
+    `
   };
 
   const units = await resolve('/root/schema.graphql', (p) => files[p], '/root');
@@ -119,7 +119,7 @@ test('resolve: single file with @wes_package → type names mangled', async () =
         id: ID! @wes_pk
         name: String!
       }
-    `,
+    `
   };
 
   const units = await resolve('/root/core.graphql', (p) => files[p], '/root');
@@ -147,7 +147,7 @@ test('resolve: linear chain A imports B → [B, A] topological order', async () 
       type Player {
         pos: Motion
       }
-    `,
+    `
   };
 
   const units = await resolve('/root/game.graphql', (p) => files[p], '/root');
@@ -183,7 +183,7 @@ test('resolve: diamond (A imports B + C, both import D) → deduped', async () =
       extend schema @wes_import(from: "b.graphql")
       extend schema @wes_import(from: "c.graphql")
       type Top { m1: Middle1, m2: Middle2 }
-    `,
+    `
   };
 
   const units = await resolve('/root/a.graphql', (p) => files[p], '/root');
@@ -208,7 +208,7 @@ test('resolve: multiple files in same package → no collision', async () => {
       extend schema @wes_package(name: "pkg")
       extend schema @wes_import(from: "core1.graphql")
       type Bar { foo: Foo }
-    `,
+    `
   };
 
   const units = await resolve('/root/core2.graphql', (p) => files[p], '/root');
@@ -230,7 +230,7 @@ test('resolve: collision when two packages define same type name → error', asy
       extend schema @wes_package(name: "beta")
       extend schema @wes_import(from: "a.graphql")
       type Widget { id: ID! }
-    `,
+    `
   };
 
   await assert.rejects(
@@ -256,7 +256,7 @@ test('resolve: local type shadows imported type → error', async () => {
       extend schema @wes_package(name: "local")
       extend schema @wes_import(from: "imported.graphql")
       type Health { hp: Int! }
-    `,
+    `
   };
 
   await assert.rejects(
@@ -281,7 +281,7 @@ test('resolve: duplicate definition in same package → error with hint', async 
       extend schema @wes_package(name: "pkg")
       extend schema @wes_import(from: "a.graphql")
       type Widget { id: ID! }
-    `,
+    `
   };
 
   await assert.rejects(
@@ -308,7 +308,7 @@ test('resolve: cycle detection → descriptive error', async () => {
       extend schema @wes_package(name: "b")
       extend schema @wes_import(from: "a.graphql")
       type B { id: ID! }
-    `,
+    `
   };
 
   await assert.rejects(
@@ -328,7 +328,7 @@ test('resolve: missing file → error with path', async () => {
       extend schema @wes_package(name: "a")
       extend schema @wes_import(from: "nonexistent.graphql")
       type A { id: ID! }
-    `,
+    `
   };
 
   await assert.rejects(
@@ -354,7 +354,7 @@ test('resolve: root namespace (no @wes_package) → types unchanged', async () =
     '/root/plain.graphql': `
       type Foo { id: ID! }
       type Bar { foo: Foo }
-    `,
+    `
   };
 
   const units = await resolve('/root/plain.graphql', (p) => files[p], '/root');
@@ -382,7 +382,7 @@ test('resolve: transitive visibility (A imports B, B imports C) → A sees C typ
       extend schema @wes_package(name: "a")
       extend schema @wes_import(from: "b.graphql")
       type Top { deep: Deep, mid: Middle }
-    `,
+    `
   };
 
   const units = await resolve('/root/a.graphql', (p) => files[p], '/root');
@@ -409,7 +409,7 @@ test('resolve: extend type across units in same package → works', async () => 
       extend type Widget {
         name: String
       }
-    `,
+    `
   };
 
   const units = await resolve('/root/ext.graphql', (p) => files[p], '/root');
@@ -431,7 +431,7 @@ test('resolve: all definition kinds (type, input, interface, union, enum, scalar
       union Uni = Obj
       enum Color { RED GREEN }
       scalar MyDate
-    `,
+    `
   };
 
   const units = await resolve('/root/all.graphql', (p) => files[p], '/root');
@@ -452,7 +452,7 @@ test('resolve: custom scalar is namespaced like any other type', async () => {
     '/root/s.graphql': `
       extend schema @wes_package(name: "echo")
       scalar Timestamp
-    `,
+    `
   };
 
   const units = await resolve('/root/s.graphql', (p) => files[p], '/root');
@@ -472,7 +472,7 @@ test('resolve: built-in scalars (String, Int, Float, Boolean, ID) are never mang
         b: Boolean!
         id: ID!
       }
-    `,
+    `
   };
 
   const units = await resolve('/root/builtins.graphql', (p) => files[p], '/root');
@@ -502,7 +502,7 @@ test('resolve: units have correct metadata', async () => {
       extend schema @wes_package(name: "main")
       extend schema @wes_import(from: "dep.graphql")
       type Container { item: Item }
-    `,
+    `
   };
 
   const units = await resolve('/root/main.graphql', (p) => files[p], '/root');
@@ -524,7 +524,7 @@ test('resolve: @wes_package and @wes_import are stripped from output SDL', async
     '/root/a.graphql': `
       extend schema @wes_package(name: "a")
       type Foo { id: ID! }
-    `,
+    `
   };
 
   const units = await resolve('/root/a.graphql', (p) => files[p], '/root');
@@ -542,7 +542,7 @@ test('resolve: non-composition directives are preserved', async () => {
       type Widget @wes_table {
         id: ID! @wes_pk
       }
-    `,
+    `
   };
 
   const units = await resolve('/root/a.graphql', (p) => files[p], '/root');
@@ -558,7 +558,7 @@ test('resolve: mangled names are valid GraphQL identifiers (re-parseable)', asyn
       extend schema @wes_package(name: "echo.core")
       type Motion { x: Float!, y: Float! }
       scalar Timestamp
-    `,
+    `
   };
 
   const units = await resolve('/root/a.graphql', (p) => files[p], '/root');
@@ -575,7 +575,7 @@ test('resolve: units have doc (AST DocumentNode) alongside sdl', async () => {
     '/root/a.graphql': `
       extend schema @wes_package(name: "pkg")
       type Foo { id: ID! }
-    `,
+    `
   };
 
   const units = await resolve('/root/a.graphql', (p) => files[p], '/root');
@@ -596,7 +596,7 @@ test('composeUnits: filters to selected unit IDs', async () => {
       extend schema @wes_package(name: "game")
       extend schema @wes_import(from: "core.graphql")
       type Player { widget: Widget }
-    `,
+    `
   };
 
   const units = await resolve('/root/game.graphql', (p) => files[p], '/root');
@@ -617,7 +617,7 @@ test('composeUnits: comma-separated IDs are expanded', async () => {
       extend schema @wes_package(name: "game")
       extend schema @wes_import(from: "core.graphql")
       type Player { widget: Widget }
-    `,
+    `
   };
 
   const units = await resolve('/root/game.graphql', (p) => files[p], '/root');
@@ -630,7 +630,7 @@ test('composeUnits: throws on no matching units', async () => {
     '/root/a.graphql': `
       extend schema @wes_package(name: "a")
       type Foo { id: ID! }
-    `,
+    `
   };
 
   const units = await resolve('/root/a.graphql', (p) => files[p], '/root');
@@ -652,7 +652,7 @@ test('buildDemangleMap: builds correct mangled→short mapping', async () => {
       extend schema @wes_package(name: "echo.core")
       type Motion { x: Float! }
       scalar Timestamp
-    `,
+    `
   };
 
   const units = await resolve('/root/core.graphql', (p) => files[p], '/root');
@@ -666,7 +666,7 @@ test('buildDemangleMap: skips unpackaged units', async () => {
   const files = {
     '/root/plain.graphql': `
       type Widget { id: ID! }
-    `,
+    `
   };
 
   const units = await resolve('/root/plain.graphql', (p) => files[p], '/root');
@@ -683,7 +683,7 @@ test('demangleSdl: restores short names in SDL', async () => {
       extend schema @wes_package(name: "test")
       type Widget { id: ID!, name: String! }
       type Player { widget: Widget }
-    `,
+    `
   };
 
   const units = await resolve('/root/core.graphql', (p) => files[p], '/root');
@@ -720,7 +720,7 @@ test('validateFilteredSdl: returns null when all types are present', async () =>
       extend schema @wes_package(name: "game")
       extend schema @wes_import(from: "core.graphql")
       type Player { widget: Widget }
-    `,
+    `
   };
 
   const units = await resolve('/root/game.graphql', (p) => files[p], '/root');
@@ -740,7 +740,7 @@ test('validateFilteredSdl: detects missing types from excluded units', async () 
       extend schema @wes_package(name: "game")
       extend schema @wes_import(from: "core.graphql")
       type Player { widget: Widget }
-    `,
+    `
   };
 
   const units = await resolve('/root/game.graphql', (p) => files[p], '/root');

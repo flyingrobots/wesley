@@ -23,24 +23,24 @@ export function withFakeGit(config, fn) {
   const stubDir = makeTempDir('gitstub-');
   const gitPath = path.join(stubDir, 'git');
   const cfgPath = path.join(stubDir, 'config.json');
-  const script = `#!/usr/bin/env node\n` +
-`const fs = require('fs');\n` +
-`const path = require('path');\n` +
-`const cfgPath = path.join(path.dirname(process.argv[1]), 'config.json');\n` +
-`let cfg = {};\n` +
-`try { cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf8')); } catch {}\n` +
-`const args = process.argv.slice(2);\n` +
-`function out(s){ if (s) process.stdout.write(String(s)); }\n` +
-`if (args[0] === 'rev-parse' && args.includes('--is-inside-work-tree')) { out('true\\n'); process.exit(0); }\n` +
-`if (args[0] === 'merge-base') { out((cfg.mergeBase || 'deadbeef') + '\\n'); process.exit(0); }\n` +
-`if (args[0] === 'fetch') { process.exit(0); }\n` +
-`if (args[0] === 'log') {\n` +
-`  const sinceArg = args.find(a => a.startsWith('--since='));\n` +
-`  if (sinceArg) { out(cfg.sinceLog || ''); process.exit(0); }\n` +
-`  const range = args.find(a => a.includes('..HEAD'));\n` +
-`  if (range) { out(cfg.prLog || ''); process.exit(0); }\n` +
-`}\n` +
-`process.exit(0);\n`;
+  const script = '#!/usr/bin/env node\n' +
+'const fs = require(\'fs\');\n' +
+'const path = require(\'path\');\n' +
+'const cfgPath = path.join(path.dirname(process.argv[1]), \'config.json\');\n' +
+'let cfg = {};\n' +
+'try { cfg = JSON.parse(fs.readFileSync(cfgPath, \'utf8\')); } catch {}\n' +
+'const args = process.argv.slice(2);\n' +
+'function out(s){ if (s) process.stdout.write(String(s)); }\n' +
+'if (args[0] === \'rev-parse\' && args.includes(\'--is-inside-work-tree\')) { out(\'true\\n\'); process.exit(0); }\n' +
+'if (args[0] === \'merge-base\') { out((cfg.mergeBase || \'deadbeef\') + \'\\n\'); process.exit(0); }\n' +
+'if (args[0] === \'fetch\') { process.exit(0); }\n' +
+'if (args[0] === \'log\') {\n' +
+'  const sinceArg = args.find(a => a.startsWith(\'--since=\'));\n' +
+'  if (sinceArg) { out(cfg.sinceLog || \'\'); process.exit(0); }\n' +
+'  const range = args.find(a => a.includes(\'..HEAD\'));\n' +
+'  if (range) { out(cfg.prLog || \'\'); process.exit(0); }\n' +
+'}\n' +
+'process.exit(0);\n';
   writeFileSync(gitPath, script, { mode: 0o755 });
   writeFileSync(cfgPath, JSON.stringify(config || {}, null, 2));
   const oldPath = process.env.PATH;

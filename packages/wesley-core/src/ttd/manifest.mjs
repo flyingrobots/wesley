@@ -7,7 +7,7 @@
  * - manifest.json: Registry and lookup tables
  */
 
-import { hashSchema, hashType, hashOp, hashChannel, canonicalizeObject } from './hasher.mjs';
+import { hashType, hashOp, hashChannel, canonicalizeObject } from './hasher.mjs';
 import { systemClock } from '../ports/clock.mjs';
 import { defaultCrypto } from '../ports/crypto.mjs';
 
@@ -32,12 +32,12 @@ export function generateSchemaJson(schema, deps = {}) {
       resultType: o.resultType,
       idempotent: o.idempotent,
       readonly: o.readonly,
-      rules: o.rules?.map(r => r.name) ?? [],
+      rules: o.rules?.map(r => r.name) ?? []
     })),
     rules: schema.rules.map(r => canonicalizeObject(r)),
     invariants: schema.invariants.map(i => canonicalizeObject(i)),
     types: schema.types.map(t => canonicalizeObject(t)),
-    enums: schema.enums.map(e => canonicalizeObject(e)),
+    enums: schema.enums.map(e => canonicalizeObject(e))
   };
 
   return canonicalizeObject(schemaJson);
@@ -83,8 +83,8 @@ export function generateContractsJson(schema) {
         from: r.from,
         to: r.to,
         guard: r.guard,
-        opName: r.opName,
-      })),
+        opName: r.opName
+      }))
     });
   }
 
@@ -94,21 +94,21 @@ export function generateContractsJson(schema) {
       event: e.event,
       opName: e.opName,
       condition: e.condition,
-      withinMs: e.withinMs,
+      withinMs: e.withinMs
     })),
     invariants: schema.invariants.map(i => canonicalizeObject({
       name: i.name,
       expr: i.expr,
-      severity: i.severity,
+      severity: i.severity
     })),
     footprints: schema.footprints.map(f => canonicalizeObject({
       opName: f.opName,
       reads: f.reads,
       writes: f.writes,
       creates: f.creates,
-      deletes: f.deletes,
+      deletes: f.deletes
     })),
-    stateMachines: stateMachines.map(sm => canonicalizeObject(sm)),
+    stateMachines: stateMachines.map(sm => canonicalizeObject(sm))
   };
 
   return canonicalizeObject(contracts);
@@ -144,16 +144,16 @@ export function generateManifest(schema, deps = {}) {
           typeName: entry.typeName,
           deprecated: entry.deprecated,
           deprecatedBy: entry.deprecatedBy,
-          typeHash: hashType(typeObj, hashDeps),
+          typeHash: hashType(typeObj, hashDeps)
         };
-      }),
+      })
     },
     ops: sortedOps.map(op => ({
       name: op.name,
       op_id: op.op_id,
       args: op.args,
       resultType: op.resultType,
-      signatureHash: hashOp(op, hashDeps),
+      signatureHash: hashOp(op, hashDeps)
     })),
     channels: [...schema.channels].sort((a, b) => a.name.localeCompare(b.name)).map(c => ({
       name: c.name,
@@ -161,13 +161,13 @@ export function generateManifest(schema, deps = {}) {
       ordered: c.ordered,
       persistent: c.persistent,
       eventTypes: c.eventTypes,
-      channelHash: hashChannel(c, hashDeps),
+      channelHash: hashChannel(c, hashDeps)
     })),
     codecs: schema.codecs.map(c => canonicalizeObject({
       typeName: c.typeName,
       format: c.format,
-      canonical: c.canonical,
-    })),
+      canonical: c.canonical
+    }))
   };
 
   return canonicalizeObject(manifest);

@@ -48,16 +48,16 @@ export class GraphQLSchemaParser {
 
       // Parse SDL to Wesley IR using the real parser
       const wesleyIR = this.adapter.parseSDL(schemaSource);
-      
+
       // Convert Wesley IR to Wesley domain model objects
       const schema = this.convertIRToSchema(wesleyIR);
-      
+
       // Return Wesley schema object with expected interface
       return {
         getTables: () => schema.getTables(),
-        toJSON: () => ({ 
+        toJSON: () => ({
           tables: schema.getTables().map(t => t.toJSON ? t.toJSON() : t),
-          raw: schemaSource 
+          raw: schemaSource
         }),
         raw: schemaSource
       };
@@ -75,7 +75,7 @@ export class GraphQLSchemaParser {
    */
   convertIRToSchema(ir) {
     const tables = {};
-    
+
     for (const tableData of ir.tables) {
       // Convert columns to Field objects
       const fields = {};
@@ -89,88 +89,88 @@ export class GraphQLSchemaParser {
         });
         fields[field.name] = field;
       }
-      
+
       // Create Table object
       const table = new Table({
         name: tableData.name,
         directives: this.convertTableDirectivesToExpectedFormat(tableData),
-        fields: fields
+        fields
       });
-      
+
       tables[table.name] = table;
     }
-    
+
     return new Schema(tables);
   }
-  
+
   /**
    * Convert PostgreSQL type back to GraphQL type (best effort)
    */
   postgresqlToGraphQLType(pgType) {
     const baseType = pgType.replace('[]', '');
     switch (baseType) {
-      case 'uuid': return 'ID';
-      case 'text': return 'String';
-      case 'integer': return 'Int';
-      case 'double precision': return 'Float';
-      case 'boolean': return 'Boolean';
-      case 'timestamptz': return 'DateTime';
-      default: return 'String';
+    case 'uuid': return 'ID';
+    case 'text': return 'String';
+    case 'integer': return 'Int';
+    case 'double precision': return 'Float';
+    case 'boolean': return 'Boolean';
+    case 'timestamptz': return 'DateTime';
+    default: return 'String';
     }
   }
-  
+
   /**
    * Convert Wesley directives to expected format for fields
    */
   convertDirectivesToExpectedFormat(columnData, tableData) {
     const directives = {};
-    
+
     // Check for primary key
     if (tableData.primaryKey === columnData.name) {
       directives['@primaryKey'] = {};
     }
-    
+
     // Check for foreign keys
     const fk = tableData.foreignKeys.find(fk => fk.column === columnData.name);
     if (fk) {
       directives['@foreignKey'] = { ref: `${fk.refTable}.${fk.refColumn}` };
     }
-    
+
     // Check for unique constraint
     if (columnData.unique) {
       directives['@unique'] = {};
     }
-    
+
     // Check for default value
     if (columnData.default) {
       directives['@default'] = { expr: columnData.default };
     }
-    
+
     // Check for indexes
     const index = tableData.indexes.find(idx => idx.columns.includes(columnData.name));
     if (index) {
       directives['@index'] = { name: index.name, using: index.using };
     }
-    
+
     return directives;
   }
-  
+
   /**
    * Convert Wesley table directives to expected format
    */
   convertTableDirectivesToExpectedFormat(tableData) {
     const directives = { '@table': {} };
-    
+
     if (tableData.tenantBy) {
       directives['@tenant'] = { by: tableData.tenantBy };
     }
-    
+
     // Handle RLS directives - check for both new and legacy names
     const rlsDirective = tableData.directives?.['wes_rls'] || tableData.directives?.['rls'];
     if (rlsDirective) {
       directives['@rls'] = rlsDirective;
     }
-    
+
     return directives;
   }
 }
@@ -180,7 +180,7 @@ export class MigrationDiffEngine {
     this.options = options;
   }
 
-  async diff(fromSchema, toSchema) {
+  async diff(_fromSchema, _toSchema) {
     // Stub implementation - should generate migration SQL
     console.warn('MigrationDiffEngine.diff: Using stub implementation');
     return {
@@ -200,7 +200,7 @@ export class MigrationDiffEngine {
     };
   }
 
-  async plan(operations) {
+  async plan(_operations) {
     // Stub implementation - should plan migration phases
     console.warn('MigrationDiffEngine.plan: Using stub implementation');
     return {

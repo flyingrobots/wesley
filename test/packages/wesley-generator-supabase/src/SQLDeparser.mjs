@@ -1,6 +1,6 @@
 /**
  * PostgreSQL AST to SQL Deparser
- * 
+ *
  * Converts @supabase/pg-parser AST back to SQL strings.
  * Handles Supabase-specific extensions and Wesley formatting preferences.
  */
@@ -20,7 +20,7 @@ export class SQLDeparser {
       throw new Error('Invalid parse result structure');
     }
 
-    const statements = parseResult.tree.stmts.map(stmt => 
+    const statements = parseResult.tree.stmts.map(stmt =>
       this.deparseStatement(stmt.stmt)
     );
 
@@ -35,21 +35,21 @@ export class SQLDeparser {
     const stmtData = stmt[stmtType];
 
     switch (stmtType) {
-      case 'CreateStmt':
-        return this.deparseCreateTable(stmtData);
-      case 'CreateIndexStmt':
-        return this.deparseCreateIndex(stmtData);
-      case 'AlterTableStmt':
-        return this.deparseAlterTable(stmtData);
-      case 'DropStmt':
-        return this.deparseDropStatement(stmtData);
-      case 'CommentStmt':
-        return this.deparseComment(stmtData);
-      case 'CreatePolicyStmt':
-        return this.deparseCreatePolicy(stmtData);
-      default:
-        console.warn(`Unknown statement type: ${stmtType}`);
-        return `-- Unknown statement: ${stmtType}`;
+    case 'CreateStmt':
+      return this.deparseCreateTable(stmtData);
+    case 'CreateIndexStmt':
+      return this.deparseCreateIndex(stmtData);
+    case 'AlterTableStmt':
+      return this.deparseAlterTable(stmtData);
+    case 'DropStmt':
+      return this.deparseDropStatement(stmtData);
+    case 'CommentStmt':
+      return this.deparseComment(stmtData);
+    case 'CreatePolicyStmt':
+      return this.deparseCreatePolicy(stmtData);
+    default:
+      console.warn(`Unknown statement type: ${stmtType}`);
+      return `-- Unknown statement: ${stmtType}`;
     }
   }
 
@@ -58,7 +58,7 @@ export class SQLDeparser {
    */
   deparseCreateTable(stmt) {
     let sql = 'CREATE TABLE';
-    
+
     if (stmt.if_not_exists) {
       sql += ' IF NOT EXISTS';
     }
@@ -67,7 +67,7 @@ export class SQLDeparser {
 
     if (stmt.tableElts && stmt.tableElts.length > 0) {
       sql += ' (\n';
-      
+
       const elements = stmt.tableElts.map(elt => {
         if (elt.ColumnDef) {
           return this.deparseColumnDef(elt.ColumnDef);
@@ -136,14 +136,14 @@ export class SQLDeparser {
    */
   deparseColumnConstraint(constraint) {
     switch (constraint.contype) {
-      case 'CONSTR_PRIMARY':
-        return 'PRIMARY KEY';
-      case 'CONSTR_UNIQUE':
-        return 'UNIQUE';
-      case 'CONSTR_NOTNULL':
-        return 'NOT NULL';
-      default:
-        return '';
+    case 'CONSTR_PRIMARY':
+      return 'PRIMARY KEY';
+    case 'CONSTR_UNIQUE':
+      return 'UNIQUE';
+    case 'CONSTR_NOTNULL':
+      return 'NOT NULL';
+    default:
+      return '';
     }
   }
 
@@ -152,14 +152,16 @@ export class SQLDeparser {
    */
   deparseTableConstraint(constraint) {
     switch (constraint.contype) {
-      case 'CONSTR_PRIMARY':
-        const pkCols = constraint.keys.map(key => `"${key.String.sval}"`).join(', ');
-        return `PRIMARY KEY (${pkCols})`;
-      case 'CONSTR_UNIQUE':
-        const uniqueCols = constraint.keys.map(key => `"${key.String.sval}"`).join(', ');
-        return `UNIQUE (${uniqueCols})`;
-      default:
-        return '';
+    case 'CONSTR_PRIMARY': {
+      const pkCols = constraint.keys.map(key => `"${key.String.sval}"`).join(', ');
+      return `PRIMARY KEY (${pkCols})`;
+    }
+    case 'CONSTR_UNIQUE': {
+      const uniqueCols = constraint.keys.map(key => `"${key.String.sval}"`).join(', ');
+      return `UNIQUE (${uniqueCols})`;
+    }
+    default:
+      return '';
     }
   }
 
@@ -168,27 +170,27 @@ export class SQLDeparser {
    */
   deparseCreateIndex(stmt) {
     let sql = 'CREATE';
-    
+
     if (stmt.unique) {
       sql += ' UNIQUE';
     }
-    
+
     sql += ' INDEX';
-    
+
     if (stmt.concurrent) {
       sql += ' CONCURRENTLY';
     }
-    
+
     if (stmt.if_not_exists) {
       sql += ' IF NOT EXISTS';
     }
-    
+
     if (stmt.idxname) {
       sql += ` "${stmt.idxname}"`;
     }
-    
+
     sql += ` ON "${stmt.relation.relname}"`;
-    
+
     // Index columns - simplified
     if (stmt.indexParams && stmt.indexParams.length > 0) {
       const columns = stmt.indexParams.map(param => `"${param.IndexElem.name}"`);
@@ -203,31 +205,31 @@ export class SQLDeparser {
    */
   deparseCreatePolicy(stmt) {
     let sql = `CREATE POLICY "${stmt.policy_name}" ON "${stmt.table.relname}"`;
-    
+
     if (stmt.cmd_name) {
       sql += ` FOR ${stmt.cmd_name}`;
     }
-    
+
     if (stmt.roles && stmt.roles.length > 0) {
-      const roles = stmt.roles.map(role => 'authenticated');
+      const roles = stmt.roles.map(_role => 'authenticated');
       sql += ` TO ${roles.join(', ')}`;
     }
-    
+
     if (stmt.using_expr) {
-      sql += ` USING (true)`; // Simplified for now
+      sql += ' USING (true)'; // Simplified for now
     }
-    
+
     if (stmt.check_expr) {
-      sql += ` WITH CHECK (true)`; // Simplified for now
+      sql += ' WITH CHECK (true)'; // Simplified for now
     }
-    
+
     return sql;
   }
 
   /**
    * Deparse COMMENT statement
    */
-  deparseComment(stmt) {
-    return `COMMENT ON TABLE example IS 'example comment'`; // Simplified
+  deparseComment(_stmt) {
+    return 'COMMENT ON TABLE example IS \'example comment\''; // Simplified
   }
 }

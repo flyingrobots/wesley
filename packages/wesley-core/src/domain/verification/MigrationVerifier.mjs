@@ -2,7 +2,7 @@
  * Migration Verifier - Post-Migration Validation
  * Provides comprehensive verification of migration execution with checksums,
  * schema comparison, data integrity checks, and performance baselines.
- * 
+ *
  * Licensed under the Apache License, Version 2.0
  */
 
@@ -98,7 +98,7 @@ export class MigrationVerifier {
       timeout: 300000, // 5 minutes
       ...options
     };
-    
+
     this.listeners = new Map();
   }
 
@@ -129,9 +129,9 @@ export class MigrationVerifier {
    */
   async verifyMigration(migrationContext) {
     const { migrationId, beforeSnapshot, afterSnapshot, expectedChecksum } = migrationContext;
-    
+
     this.emit(new MigrationVerificationStarted(migrationId, this.options));
-    
+
     const results = {
       migrationId,
       timestamp: new Date().toISOString(),
@@ -171,11 +171,11 @@ export class MigrationVerifier {
 
       // Determine overall result
       results.overall = this.calculateOverallResult(results);
-      
+
       this.emit(new MigrationVerificationCompleted(migrationId, results));
-      
+
       return results;
-      
+
     } catch (error) {
       results.overall = 'failed';
       results.error = {
@@ -183,13 +183,13 @@ export class MigrationVerifier {
         code: error.code,
         details: error.details
       };
-      
+
       this.emit(new MigrationVerificationFailed(migrationId, error, results));
-      
+
       if (this.options.strictMode) {
         throw error;
       }
-      
+
       return results;
     }
   }
@@ -208,21 +208,21 @@ export class MigrationVerifier {
     try {
       // Calculate checksum of the current state
       result.actual = await this.calculateSchemaChecksum(snapshot);
-      
+
       this.emit(new ChecksumCalculated('schema', result.actual, snapshot.metadata));
-      
+
       if (result.actual === expectedChecksum) {
         result.status = 'passed';
         result.details.message = 'Checksum validation successful';
       } else {
         result.status = 'failed';
         result.details.message = 'Checksum mismatch detected';
-        
+
         if (this.options.strictMode) {
           throw new ChecksumMismatchError(expectedChecksum, result.actual, snapshot.metadata);
         }
       }
-      
+
     } catch (error) {
       result.status = 'error';
       result.details.error = error.message;
@@ -248,7 +248,7 @@ export class MigrationVerifier {
     try {
       const before = beforeSnapshot.schema || {};
       const after = afterSnapshot.schema || {};
-      
+
       // Find added tables
       for (const tableName in after) {
         if (!(tableName in before)) {
@@ -259,7 +259,7 @@ export class MigrationVerifier {
           });
         }
       }
-      
+
       // Find dropped tables
       for (const tableName in before) {
         if (!(tableName in after)) {
@@ -270,7 +270,7 @@ export class MigrationVerifier {
           });
         }
       }
-      
+
       // Find modified tables
       for (const tableName in before) {
         if (tableName in after) {
@@ -283,18 +283,18 @@ export class MigrationVerifier {
           }
         }
       }
-      
+
       result.differences = [
         ...result.addedTables.map(t => ({ type: 'table_added', ...t })),
         ...result.droppedTables.map(t => ({ type: 'table_dropped', ...t })),
         ...result.modifiedTables.map(t => ({ type: 'table_modified', ...t }))
       ];
-      
+
       result.status = result.differences.length === 0 ? 'no_changes' : 'changes_detected';
       result.details.totalChanges = result.differences.length;
-      
+
       this.emit(new SchemaComparisonResult(result, result.differences));
-      
+
     } catch (error) {
       result.status = 'error';
       result.details.error = error.message;
@@ -319,16 +319,16 @@ export class MigrationVerifier {
 
     try {
       const schema = snapshot.schema || {};
-      
+
       for (const tableName in schema) {
         const table = schema[tableName];
-        
+
         // Check foreign key integrity
         if (table.foreignKeys) {
           for (const fk of table.foreignKeys) {
             const fkResult = await this.validateForeignKeyIntegrity(tableName, fk, snapshot);
             result.foreignKeyChecks.push(fkResult);
-            
+
             if (fkResult.violations > 0) {
               result.violations.push({
                 type: 'foreign_key_violation',
@@ -339,13 +339,13 @@ export class MigrationVerifier {
             }
           }
         }
-        
+
         // Check unique constraints
         if (table.uniqueConstraints) {
           for (const unique of table.uniqueConstraints) {
             const uniqueResult = await this.validateUniqueConstraint(tableName, unique, snapshot);
             result.uniqueConstraintChecks.push(uniqueResult);
-            
+
             if (uniqueResult.violations > 0) {
               result.violations.push({
                 type: 'unique_constraint_violation',
@@ -356,13 +356,13 @@ export class MigrationVerifier {
             }
           }
         }
-        
+
         // Check CHECK constraints
         if (table.checkConstraints) {
           for (const check of table.checkConstraints) {
             const checkResult = await this.validateCheckConstraint(tableName, check, snapshot);
             result.checkConstraintChecks.push(checkResult);
-            
+
             if (checkResult.violations > 0) {
               result.violations.push({
                 type: 'check_constraint_violation',
@@ -374,18 +374,18 @@ export class MigrationVerifier {
           }
         }
       }
-      
+
       result.status = result.violations.length === 0 ? 'passed' : 'failed';
       result.details.totalViolations = result.violations.length;
-      
+
       if (result.violations.length > 0 && this.options.strictMode) {
         throw new DataIntegrityError('Data integrity violations detected', result.violations);
       }
-      
+
     } catch (error) {
       result.status = 'error';
       result.details.error = error.message;
-      
+
       if (error instanceof DataIntegrityError) {
         throw error;
       } else {
@@ -410,21 +410,21 @@ export class MigrationVerifier {
 
     try {
       const { rollbackTriggers = [] } = migrationContext;
-      
+
       for (const trigger of rollbackTriggers) {
         const triggerResult = await this.validateSingleRollbackTrigger(trigger, migrationContext);
         result.triggers.push(triggerResult);
-        
+
         if (triggerResult.isValid) {
           result.validTriggers++;
         } else {
           result.invalidTriggers++;
         }
       }
-      
+
       result.status = result.invalidTriggers === 0 ? 'passed' : 'failed';
       result.details.totalTriggers = rollbackTriggers.length;
-      
+
     } catch (error) {
       result.status = 'error';
       result.details.error = error.message;
@@ -449,29 +449,29 @@ export class MigrationVerifier {
 
     try {
       const { performanceBaseline, currentPerformance } = migrationContext;
-      
+
       if (!performanceBaseline || !currentPerformance) {
         result.status = 'skipped';
         result.details.reason = 'Missing performance data';
         return result;
       }
-      
+
       result.baseline = performanceBaseline;
       result.current = currentPerformance;
-      
+
       // Compare query execution times
       const queryComparison = this.compareQueryPerformance(
         performanceBaseline.queries || {},
         currentPerformance.queries || {}
       );
-      
+
       result.comparison = queryComparison;
       result.regressions = queryComparison.regressions;
       result.improvements = queryComparison.improvements;
-      
+
       result.status = result.regressions.length === 0 ? 'passed' : 'degraded';
       result.details.totalQueries = Object.keys(currentPerformance.queries || {}).length;
-      
+
     } catch (error) {
       result.status = 'error';
       result.details.error = error.message;
@@ -495,15 +495,15 @@ export class MigrationVerifier {
     if (checks.some(status => status === 'error')) {
       return 'error';
     }
-    
+
     if (checks.some(status => status === 'failed')) {
       return 'failed';
     }
-    
+
     if (checks.every(status => ['passed', 'no_changes', 'skipped'].includes(status))) {
       return 'passed';
     }
-    
+
     return 'partial';
   }
 
@@ -559,7 +559,7 @@ export class MigrationVerifier {
   /**
    * Validate foreign key integrity (mock implementation)
    */
-  async validateForeignKeyIntegrity(tableName, foreignKey, snapshot) {
+  async validateForeignKeyIntegrity(tableName, foreignKey, _snapshot) {
     // In real implementation, this would execute SQL queries
     return {
       constraint: foreignKey.name,
@@ -572,7 +572,7 @@ export class MigrationVerifier {
   /**
    * Validate unique constraint (mock implementation)
    */
-  async validateUniqueConstraint(tableName, uniqueConstraint, snapshot) {
+  async validateUniqueConstraint(tableName, uniqueConstraint, _snapshot) {
     return {
       constraint: uniqueConstraint.name,
       table: tableName,
@@ -584,7 +584,7 @@ export class MigrationVerifier {
   /**
    * Validate CHECK constraint (mock implementation)
    */
-  async validateCheckConstraint(tableName, checkConstraint, snapshot) {
+  async validateCheckConstraint(tableName, checkConstraint, _snapshot) {
     return {
       constraint: checkConstraint.name,
       table: tableName,
@@ -596,7 +596,7 @@ export class MigrationVerifier {
   /**
    * Validate single rollback trigger
    */
-  async validateSingleRollbackTrigger(trigger, migrationContext) {
+  async validateSingleRollbackTrigger(trigger, _migrationContext) {
     return {
       name: trigger.name,
       type: trigger.type,

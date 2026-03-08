@@ -4,14 +4,14 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { 
+import {
   ConcurrentSafetyAnalyzer,
   ConcurrentSafetyError,
   RaceConditionError,
   LockEscalationError,
-  ConcurrentAnalysisStarted,
-  RaceConditionDetected,
-  SafetyAnalysisCompleted
+  _ConcurrentAnalysisStarted,
+  _RaceConditionDetected,
+  _SafetyAnalysisCompleted
 } from '../src/domain/analyzer/ConcurrentSafetyAnalyzer.mjs';
 
 test('ConcurrentSafetyAnalyzer - basic functionality', async () => {
@@ -27,7 +27,7 @@ test('ConcurrentSafetyAnalyzer - basic functionality', async () => {
       type: 'query'
     },
     {
-      id: 'op2', 
+      id: 'op2',
       sql: 'INSERT INTO posts (title, user_id) VALUES ($1, $2)',
       type: 'mutation'
     }
@@ -48,7 +48,7 @@ test('ConcurrentSafetyAnalyzer - basic functionality', async () => {
 
 test('ConcurrentSafetyAnalyzer - disabled mode', async () => {
   const analyzer = new ConcurrentSafetyAnalyzer({ enable: false });
-  
+
   const operations = [
     { sql: 'DROP TABLE users', type: 'ddl' },
     { sql: 'DROP TABLE posts', type: 'ddl' }
@@ -83,7 +83,7 @@ test('ConcurrentSafetyAnalyzer - resource extraction', () => {
   const dependencies = analyzer.extractDependencies(operations);
 
   assert.equal(dependencies.length, 3, 'Should extract all operations');
-  
+
   // Check first operation resources
   const op1Resources = dependencies[0].resources;
   assert(op1Resources.some(r => r.name === 'users' && r.type === 'table'), 'Should extract users table');
@@ -147,7 +147,7 @@ test('ConcurrentSafetyAnalyzer - lock escalation detection', async () => {
   const analysis = await analyzer.analyzeOperations(operations);
 
   assert(analysis.lockEscalationRisks.length > 0, 'Should detect lock escalation risks');
-  
+
   const risk = analysis.lockEscalationRisks[0];
   assert.equal(risk.resource, 'users', 'Should identify users table as at risk');
   assert.equal(risk.type, 'table', 'Should identify resource type');
@@ -188,11 +188,11 @@ test('ConcurrentSafetyAnalyzer - dependency graph construction', async () => {
   assert(graph.nodes[2], 'Should have node for third operation');
 
   // Check edges (conflicts between operations) - with DDL operations there should be conflicts
-  const userTableConflicts = graph.edges.filter(edge => 
+  const userTableConflicts = graph.edges.filter(edge =>
     edge.resources.some(r => r.resource === 'users')
   );
   assert(userTableConflicts.length >= 0, 'Should check for conflicts on users table');
-  
+
   // At minimum, should build the graph structure correctly
   assert(graph.nodes[0].resources.length > 0, 'Should extract resources for operations');
 });
@@ -286,13 +286,13 @@ test('ConcurrentSafetyAnalyzer - safety score calculation', async () => {
 
   // Risky operations - use DDL that would actually conflict
   const riskyOps = [
-    { 
-      sql: 'DROP TABLE users', 
+    {
+      sql: 'DROP TABLE users',
       type: 'ddl',
       transactionScope: 'auto'
     },
-    { 
-      sql: 'ALTER TABLE users ADD COLUMN new_field TEXT', 
+    {
+      sql: 'ALTER TABLE users ADD COLUMN new_field TEXT',
       type: 'ddl',
       transactionScope: 'auto'
     }
@@ -300,7 +300,7 @@ test('ConcurrentSafetyAnalyzer - safety score calculation', async () => {
 
   const riskyAnalysis = await analyzer.analyzeOperations(riskyOps);
   // Since these are high-conflict DDL operations, safety score should be lower than read-only operations
-  assert(riskyAnalysis.safetyScore <= safeAnalysis.safetyScore, 
+  assert(riskyAnalysis.safetyScore <= safeAnalysis.safetyScore,
     'DDL operations should have lower or equal safety score compared to read-only operations');
   assert(typeof riskyAnalysis.safetyScore === 'number', 'Should calculate safety score as number');
   assert(riskyAnalysis.safetyScore >= 0, 'Safety score should be non-negative');
@@ -377,10 +377,10 @@ test('ConcurrentSafetyAnalyzer - strongly connected components detection', async
   ];
 
   const analysis = await analyzer.analyzeOperations(operations);
-  
+
   // Check if potential deadlock is detected
   const deadlockRaces = analysis.raceConditions.filter(rc => rc.type === 'potential_deadlock');
-  
+
   if (deadlockRaces.length > 0) {
     const deadlock = deadlockRaces[0];
     assert(Array.isArray(deadlock.operations), 'Should identify operations in deadlock');
@@ -429,7 +429,7 @@ test('ConcurrentSafetyAnalyzer - recommendations generation', async () => {
   const recommendations = analysis.recommendations;
 
   assert(Array.isArray(recommendations), 'Should provide recommendations');
-  
+
   if (recommendations.length > 0) {
     const recommendation = recommendations[0];
     assert(typeof recommendation.type === 'string', 'Should have recommendation type');
@@ -457,7 +457,7 @@ test('ConcurrentSafetyAnalyzer - resource type inference', () => {
 
   for (const testCase of testCases) {
     const resourceType = analyzer.inferResourceType(testCase.sql, 'test');
-    assert.equal(resourceType, testCase.expected, 
+    assert.equal(resourceType, testCase.expected,
       `Should infer ${testCase.expected} for: ${testCase.sql}`);
   }
 });

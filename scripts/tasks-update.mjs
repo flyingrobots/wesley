@@ -9,7 +9,7 @@ const text = readFileSync(path, 'utf8');
 
 // Split sections by headings starting with '## [' and stop at '## Follow-ups'
 const parts = text.split(/\n## \[/g);
-let preamble = parts[0];
+const _preamble = parts[0];
 const sectionsRaw = parts.slice(1);
 const sections = [];
 for (const raw of sectionsRaw) {
@@ -24,7 +24,7 @@ let resolved = 0;
 for (const s of sections) {
   const body = s.body;
   const successBlock = body.includes('[!success]- **Outcome**');
-  const checked = /\- \[x\] Issue resolved/i.test(body);
+  const checked = /- \[x\] Issue resolved/i.test(body);
   if (successBlock && checked) resolved++;
 }
 

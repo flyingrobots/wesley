@@ -37,7 +37,7 @@ function makeCtx() {
     stderr,
     logger: { debug() {}, info() {}, warn() {}, error() {} },
     fs: {},
-    env: {},
+    env: {}
   };
 }
 
@@ -155,7 +155,7 @@ test('diff: --exit-code returns 1 on breaking changes', async () => {
     await assert.rejects(
       () => cmd._run(old, nu, { format: 'text', exitCode: true }),
       (err) => err.name === 'ExitError' && err.exitCode === 1,
-      'should throw ExitError(1) on breaking changes',
+      'should throw ExitError(1) on breaking changes'
     );
   } finally {
     teardown();
@@ -191,7 +191,7 @@ test('diff: missing old file gives clear error', async () => {
     await assert.rejects(
       () => cmd._run('/nonexistent/old.graphql', nu, { format: 'text' }),
       (err) => err.name === 'ExitError',
-      'should throw ExitError for missing file',
+      'should throw ExitError for missing file'
     );
     const errOutput = ctx.stderr.chunks.join('');
     assert.ok(errOutput.includes('Cannot read old schema'), 'error message mentions old schema');
@@ -209,7 +209,7 @@ test('diff: missing new file gives clear error', async () => {
     await assert.rejects(
       () => cmd._run(old, '/nonexistent/new.graphql', { format: 'text' }),
       (err) => err.name === 'ExitError',
-      'should throw ExitError for missing file',
+      'should throw ExitError for missing file'
     );
     const errOutput = ctx.stderr.chunks.join('');
     assert.ok(errOutput.includes('Cannot read new schema'), 'error message mentions new schema');
@@ -244,7 +244,7 @@ test('diff: missing arguments gives usage error', async () => {
   await assert.rejects(
     () => cmd._run(null, null, {}),
     (err) => err.name === 'ExitError',
-    'should throw ExitError for missing args',
+    'should throw ExitError for missing args'
   );
   const errOutput = ctx.stderr.chunks.join('');
   assert.ok(errOutput.includes('Two schema file paths are required'), 'shows usage hint');
@@ -261,11 +261,11 @@ test('flattenChanges: flattens SchemaDelta correctly', () => {
       breaking: true,
       description: 'Type "Baz" modified: 1 field change(s)',
       fieldChanges: [{ name: 'x', kind: 'removed', breaking: true, description: 'Field "x" removed from Baz' }],
-      directiveChanges: [],
+      directiveChanges: []
     }],
     added_ops: [],
     removed_ops: [],
-    modified_ops: [],
+    modified_ops: []
   };
   const changes = flattenChanges(delta);
   assert.equal(changes.length, 3);
@@ -281,7 +281,7 @@ test('formatText: no changes message', () => {
 test('formatText: BREAKING and safe tags', () => {
   const changes = [
     { breaking: true, description: 'Removed type: X' },
-    { breaking: false, description: 'Added type: Y' },
+    { breaking: false, description: 'Added type: Y' }
   ];
   const text = formatText(changes);
   assert.ok(text.includes('BREAKING'));
@@ -291,7 +291,7 @@ test('formatText: BREAKING and safe tags', () => {
 test('formatSummary: counts breaking and safe', () => {
   const changes = [
     { breaking: true }, { breaking: true },
-    { breaking: false },
+    { breaking: false }
   ];
   const summary = formatSummary(changes);
   assert.ok(summary.includes('2 breaking'));

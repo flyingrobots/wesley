@@ -2,6 +2,8 @@
  * Cert Verify - Validate SHIPME signatures and realm verdict
  */
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
+import { extractJsonBlock, canonicalize } from './_cert-utils.mjs';
+import { createAjv, loadSchemaFile } from '../framework/schemaValidator.mjs';
 
 export class CertVerifyCommand extends WesleyCommand {
   constructor(ctx) {
@@ -18,6 +20,21 @@ export class CertVerifyCommand extends WesleyCommand {
   async executeCore({ options }) {
     const md = await this.ctx.fs.read(options.in);
     const { json } = extractJsonBlock(md);
+    // Validate SHIPME certificate schema first (drift guard)
+    const ajv = await createAjv();
+    const [realmSchema, shipmeSchema] = await Promise.all([
+      loadSchemaFile(this.ctx, 'realm.schema.json'),
+      loadSchemaFile(this.ctx, 'shipme.schema.json')
+    ]);
+    ajv.addSchema(JSON.parse(realmSchema));
+    const validate = ajv.compile(JSON.parse(shipmeSchema));
+    const schemaOk = validate(json);
+    if (!schemaOk) {
+      const e = new Error('Certificate JSON failed schema validation');
+      e.code = 'VALIDATION_FAILED';
+      e.meta = validate.errors;
+      throw e;
+    }
     const canonical = canonicalize({ ...json, signatures: [] });
     const pubs = options.pub || [];
     let validCount = 0;
@@ -36,35 +53,21 @@ export class CertVerifyCommand extends WesleyCommand {
     if (!ok) {
       const e = new Error('Certificate verification failed'); e.code = 'CERT_INVALID'; throw e;
     }
-    return result;
+    return options.json ? undefined : result;
   }
-}
-
-function extractJsonBlock(md) {
-  const begin = md.indexOf('<!-- WESLEY_CERT:BEGIN -->');
-  const fence = md.indexOf('```json', begin);
-  const fenceEnd = md.indexOf('```', fence + 1);
-  const end = md.indexOf('<!-- WESLEY_CERT:END -->', fenceEnd);
-  if (begin === -1 || fence === -1 || fenceEnd === -1 || end === -1) throw new Error('Invalid SHIPME.md format');
-  const jsonStr = md.slice(fence + 7, fenceEnd).trim();
-  const json = JSON.parse(jsonStr);
-  return { json };
-}
-
-function canonicalize(obj) {
-  const sort = (x) => Array.isArray(x) ? x.map(sort) : (x && typeof x==='object') ? Object.keys(x).sort().reduce((a,k)=>{a[k]=sort(x[k]);return a;},{}) : x;
-  return JSON.stringify(sort(obj));
 }
 
 async function verifySig(fs, pubPath, data, b64sig) {
   const { createPublicKey, verify } = await import('node:crypto');
   try {
-    const pem = await fs.readFile(pubPath);
+    const pem = await fs.read(pubPath);
     const key = createPublicKey(pem);
     const ok = verify(null, Buffer.from(data), key, Buffer.from(b64sig, 'base64'));
     return !!ok;
-  } catch {
-    return false;
+  } catch (err) {
+    // Crypto verification mismatch returns false; infrastructure errors propagate
+    if (err?.code === 'ERR_CRYPTO_SIGN_MISMATCH' || err?.message?.includes?.('Signature')) return false;
+    throw err;
   }
 }
 
