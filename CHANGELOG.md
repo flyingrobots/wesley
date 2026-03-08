@@ -6,23 +6,6 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
-### Fixed
-
-#### PR Self-Review (qir/phase-c)
-- **Double JSON output**: Commands that write their own JSON (cert-verify, cert-create, plan, rehearse, up) no longer trigger the framework's duplicate JSON wrapper, fixing `jq` pipeline breakage and cert-e2e test failures
-- **SHIPME.md marker ordering**: `extractJsonBlock()` now throws a descriptive error instead of returning null when certificate markers are present but out of order
-- **SQL comment injection**: `emitMigrations()` quotes table names in SQL comments using the same `q()` function used for all other identifiers
-- **Param index lookup**: `lowerToSQL` uses nullish coalescing (`??`) instead of `||` for parameter index lookups, preventing index `0` from being swallowed
-- **Missing imports**: Fixed `CompilerError` import in inprocess-compiler, `ev1` typo in compiler-inprocess, removed unreachable code in GraphQLAdapter
-
-### Changed
-
-#### PR Self-Review (qir/phase-c)
-- **Cursor encoding**: Use `charCodeAt()` instead of `codePointAt()` for Latin1 binary string decoding (atob output is always 0-255)
-- **Lock-level readability**: Break dense `add_column` lock ternary into named boolean (`canAvoidRewrite`) with multi-line conditional; also fixes `step.default` truthy check (`0`/`''` are valid defaults)
-- **ESLint flat config**: Migrate from legacy `.eslintrc.json` to `eslint.config.js` for ESLint 9 compatibility; install missing `eslint-plugin-promise`; fix all 612 pre-existing lint errors across the codebase
-- **Pre-commit hook**: Add lint enforcement guard to `.githooks/pre-commit` (skippable via `WESLEY_SKIP_LINT_HOOK=1`)
-
 ### Added
 
 #### Alpha Playground — Browser-Based "Try Wesley"
@@ -94,6 +77,14 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - CI: Ubuntu-only CLI matrix; stabilized architecture-boundaries workflow
 
 ### Changed
+
+#### PR Self-Review (qir/phase-c)
+- **Cursor encoding**: Use `charCodeAt()` instead of `codePointAt()` for Latin1 binary string decoding (atob output is always 0-255)
+- **Lock-level readability**: Break dense `add_column` lock ternary into named boolean (`canAvoidRewrite`) with multi-line conditional; also fixes `step.default` truthy check (`0`/`''` are valid defaults)
+- **ESLint flat config**: Migrate from legacy `.eslintrc.json` to `eslint.config.js` for ESLint 9 compatibility; install missing `eslint-plugin-promise`; fix all 612 pre-existing lint errors across the codebase
+- **Pre-commit hook**: Add lint enforcement guard to `.githooks/pre-commit` (skippable via `WESLEY_SKIP_LINT_HOOK=1`)
+
+#### Other
 - `generator-echo` now emits `echo-ir/v2` (was `echo-ir/v1`)
 - `schema_sha256` in IR uses canonical AST hash (was raw SDL hash)
 - **CR-13/14/20/21:** `docs/guides/qir-ops.md` — remove stale "Discovery Modes (planned)" section, add `version` field to registry example, update shipped features to present tense, prune shipped roadmap bullets
@@ -105,6 +96,13 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **CR-29:** `docs/README.md` — add IR Family Overview, IR Family Specification, and QIR Specification links under Core Concepts
 
 ### Fixed
+
+#### PR Self-Review (qir/phase-c)
+- **Double JSON output**: Commands that write their own JSON (cert-verify, cert-create, plan, rehearse, up) no longer trigger the framework's duplicate JSON wrapper, fixing `jq` pipeline breakage and cert-e2e test failures
+- **SHIPME.md marker ordering**: `extractJsonBlock()` now throws a descriptive error instead of returning null when certificate markers are present but out of order
+- **SQL comment injection**: `emitMigrations()` quotes table names in SQL comments using the same `q()` function used for all other identifiers
+- **Param index lookup**: `lowerToSQL` uses nullish coalescing (`??`) instead of `||` for parameter index lookups, preventing index `0` from being swallowed
+- **Missing imports**: Fixed `CompilerError` import in inprocess-compiler, `ev1` typo in compiler-inprocess, removed unreachable code in GraphQLAdapter
 
 #### QIR Phase C — Self-Code Review (PR #392)
 

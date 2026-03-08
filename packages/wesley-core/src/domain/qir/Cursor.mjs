@@ -32,8 +32,8 @@ export function decodeCursor(str) {
     return parsed;
   } catch (e) {
     if (e instanceof SyntaxError) return {};
-    // Re-throw unexpected errors (e.g., atob on truly invalid input also
-    // throws DOMException / Error depending on platform — treat as bad input)
+    // Treat all parse failures as bad input (e.g., atob on truly invalid
+    // input throws DOMException / Error depending on platform)
     return {};
   }
 }

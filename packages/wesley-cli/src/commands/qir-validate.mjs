@@ -74,7 +74,7 @@ export class QirValidateCommand extends WesleyCommand {
     return { valid: true, file: input, kind };
   }
 
-  async _validate(kind, data, _file) {
+  async _validate(kind, data, file) {
     const ajv = await createAjv();
     switch (kind) {
     case 'envelope': {
@@ -87,9 +87,9 @@ export class QirValidateCommand extends WesleyCommand {
       ajv.addSchema(JSON.parse(qir));
       const validate = ajv.compile(JSON.parse(envSchema));
       if (!validate(data)) {
-        const e = new Error('IR envelope validation failed');
+        const e = new Error(`IR envelope validation failed: ${file}`);
         e.code = 'VALIDATION_FAILED';
-        e.meta = { errors: validate.errors };
+        e.meta = { file, errors: validate.errors };
         throw e;
       }
       break;

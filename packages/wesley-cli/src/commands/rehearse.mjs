@@ -109,7 +109,7 @@ export class RehearseCommand extends WesleyCommand {
       };
       await this.ctx.fs.write('.wesley/realm.json', JSON.stringify(realm, null, 2));
       if (!options.json) logger.error('🕶️ REALM verdict: FAIL - ' + error.message);
-      if (hooks.postDown) try { await runHook(this.ctx, hooks.postDown, logger); } catch { /* empty */ }
+      if (hooks.postDown) try { await runHook(this.ctx, hooks.postDown, logger); } catch (e) { logger.debug?.('postDown hook failed: ' + e?.message); }
       if (options.json) {
         try { await assertValid(this.ctx, 'realm.schema.json', realm, 'REALM report'); } catch (ve) { logger.warn('REALM validation failed in error path: ' + (ve?.message || ve)); }
         this.ctx.stdout.write(JSON.stringify(realm, null, 2) + '\n');
