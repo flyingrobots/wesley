@@ -56,4 +56,4 @@ Need a scripted, showcase flow? Run the [BLADE Demo](../blade.md).
 
 > ℹ️ **Local Postgres fixtures**
 >
-> The repo seeds the Dockerised PostgreSQL instance with SQL stored in `test/fixtures/postgres/`. Those files are version-controlled so every developer gets the same extensions and baseline objects the first time the container starts.
+> The repo seeds the Dockerised PostgreSQL instance with SQL stored in `test/fixtures/postgres/`. Those files are version-controlled so every developer gets the same extensions and baseline objects the first time the container starts. Run `pnpm run smoke:postgres-fixture` whenever you want to verify the mount and extensions locally.

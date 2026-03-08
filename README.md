@@ -239,6 +239,9 @@ if (mapped?.source) {
 }
 ```
 
+> [!NOTE]
+> The Docker setup seeds PostgreSQL using the version-controlled fixtures in `test/fixtures/postgres/`. Those scripts provision extensions and baseline tables the first time the container starts. Edit or extend them when you need deterministic demo data, and run `pnpm run smoke:postgres-fixture` if you need to confirm the mount still works locally.
+
 ---
 
 ## Comparison

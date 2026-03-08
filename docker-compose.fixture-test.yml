@@ -1,0 +1,20 @@
+services:
+  postgres-fixture:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: wesley
+      POSTGRES_PASSWORD: wesley_test
+      POSTGRES_DB: wesley_test
+      POSTGRES_HOST_AUTH_METHOD: trust
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U wesley -d wesley_test
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "${FIXTURE_POSTGRES_PORT:-65432}:5432"
+    volumes:
+      - ./test/fixtures/postgres/00-extensions.sql:/docker-entrypoint-initdb.d/00-extensions.sql:ro
+    restart: "no"
