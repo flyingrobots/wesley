@@ -30,7 +30,7 @@ fetch_plugin() {
 
 # Versions pinned for determinism
 fetch_plugin bats-support https://github.com/bats-core/bats-support/archive/refs/tags/v0.3.0.tar.gz
-fetch_plugin bats-assert  https://github.com/bats-core/bats-assert/archive/refs/tags/v2.1.0.tar.gz
+fetch_plugin bats-assert  https://github.com/bats-core/bats-assert/archive/refs/tags/v2.2.3.tar.gz
 fetch_plugin bats-file    https://github.com/bats-core/bats-file/archive/refs/tags/v0.4.0.tar.gz
 
 echo "All bats plugins ready in $PLUGINS_DIR"
