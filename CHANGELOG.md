@@ -29,6 +29,16 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- **Transmutations architecture spec**: Design doc at `docs/architecture/transmutations.md`
+  covering source-to-generator mappings, per-element evidence tracking, contextual
+  HOLMES scoring, and Moriarty dual-layer prediction (Phase 0–6).
+- **`WesleyError` base class** (`@wesley/core`): Structured error with `code` and `meta`.
+  `OpsError` and `PluginError` extend it. Replaces ad-hoc `e.code =` patterns.
+- **`TransmutationRunner`** (`@wesley/core`): Unified orchestrator merging
+  `GenerationPipeline` and `PluginRunner`. Named transmutations, per-element evidence
+  collection, evidence merging, and `buildTaskGraph()` DAG descriptor.
+- **`irToSchema` in core**: Adapter moved from CLI into `@wesley/core`. CLI re-exports.
+- **CLI**: Named exports standardized across all 19 command files (removed `export default`).
 - **CLI**: Revived `models`, `typescript` (alias `ts`), and `zod` commands,
   wired to existing generators in `@wesley/generator-js`:
   - `wesley models --schema <file> --target ts|js --out-dir <dir>`
