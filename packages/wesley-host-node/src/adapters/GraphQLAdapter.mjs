@@ -346,31 +346,6 @@ class GraphQLSchemaParser {
   }
 
   /**
-   * Map GraphQL types to PostgreSQL types
-   */
-  mapGraphQLTypeToPostgreSQL(type) {
-    const baseType = this.getBaseType(type);
-    const isArray = this.isListType(type);
-
-    let pgType;
-    switch (baseType) {
-    case 'ID': pgType = 'uuid'; break;
-    case 'UUID': pgType = 'uuid'; break;
-    case 'String': pgType = 'text'; break;
-    case 'Int': pgType = 'integer'; break;
-    case 'Float': pgType = 'double precision'; break;
-    case 'Boolean': pgType = 'boolean'; break;
-    case 'DateTime': pgType = 'timestamptz'; break;
-    case 'Date': pgType = 'date'; break;
-    case 'Time': pgType = 'time with time zone'; break;
-    case 'JSON': pgType = 'jsonb'; break;
-    default: pgType = 'text'; // fallback
-    }
-
-    return isArray ? `${pgType}[]` : pgType;
-  }
-
-  /**
    * Validate foreign key references using new IR shape (fields + structured directives).
    */
   validateForeignKeys(tables) {
@@ -451,31 +426,6 @@ class GraphQLSchemaParser {
   }
 
   /**
-   * Extract all directive information
-   */
-  extractDirectives(directives) {
-    if (!directives) return {};
-
-    const result = {};
-    for (const directive of directives) {
-      const name = directive.name.value;
-      const args = {};
-
-      if (directive.arguments) {
-        for (const arg of directive.arguments) {
-          if (arg.value.kind === Kind.STRING) {
-            args[arg.name.value] = arg.value.value;
-          }
-        }
-      }
-
-      result[name] = args;
-    }
-
-    return result;
-  }
-
-  /**
    * Check if GraphQL type is NonNull
    */
   isNonNullType(type) {
@@ -518,13 +468,6 @@ class GraphQLSchemaParser {
       return this.getBaseType(type.type);
     }
     return type.name.value;
-  }
-
-  /**
-   * Get base PostgreSQL type (strip array suffix)
-   */
-  getBasePostgreSQLType(pgType) {
-    return pgType.replace('[]', '');
   }
 
   /**
