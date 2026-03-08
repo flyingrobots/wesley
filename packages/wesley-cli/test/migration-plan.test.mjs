@@ -10,7 +10,7 @@ import assert from 'node:assert/strict';
 import {
   buildAdditivePlan,
   lockFor,
-  emitMigrations,
+  emitMigrations
 } from '../src/commands/_migration-plan.mjs';
 
 // ── Bug 1: Index dedup ignores USING method ─────────────────────────
@@ -20,8 +20,8 @@ test('buildAdditivePlan distinguishes indexes with different USING methods', () 
     tables: [{
       name: 'events',
       fields: [],
-      indexes: [{ fields: ['payload'], using: 'btree' }],
-    }],
+      indexes: [{ fields: ['payload'], using: 'btree' }]
+    }]
   };
   const curr = {
     tables: [{
@@ -29,9 +29,9 @@ test('buildAdditivePlan distinguishes indexes with different USING methods', () 
       fields: [],
       indexes: [
         { fields: ['payload'], using: 'btree' },
-        { fields: ['payload'], using: 'gin' },
-      ],
-    }],
+        { fields: ['payload'], using: 'gin' }
+      ]
+    }]
   };
 
   const plan = buildAdditivePlan(prev, curr);
@@ -61,9 +61,9 @@ test('emitMigrations emits NOT NULL and DEFAULT independently', () => {
       name: 'expand',
       steps: [{
         op: 'add_column', table: 'users', column: 'score',
-        type: 'integer', nullable: true, default: 0,
-      }],
-    }],
+        type: 'integer', nullable: true, default: 0
+      }]
+    }]
   };
   const filesA = emitMigrations(planA);
   const sqlA = filesA[0].content;
@@ -76,9 +76,9 @@ test('emitMigrations emits NOT NULL and DEFAULT independently', () => {
       name: 'expand',
       steps: [{
         op: 'add_column', table: 'users', column: 'name',
-        type: 'text', nullable: false, default: null,
-      }],
-    }],
+        type: 'text', nullable: false, default: null
+      }]
+    }]
   };
   const filesB = emitMigrations(planB);
   const sqlB = filesB[0].content;
@@ -94,8 +94,8 @@ test('emitMigrations rejects unsafe type, using, and default values', () => {
     emitMigrations({
       phases: [{
         name: 'expand',
-        steps: [{ op: 'add_column', table: 't', column: 'c', type: "text; DROP TABLE users--", nullable: true, default: null }],
-      }],
+        steps: [{ op: 'add_column', table: 't', column: 'c', type: 'text; DROP TABLE users--', nullable: true, default: null }]
+      }]
     });
   }, /Unsafe PostgreSQL type/);
 
@@ -104,8 +104,8 @@ test('emitMigrations rejects unsafe type, using, and default values', () => {
     emitMigrations({
       phases: [{
         name: 'expand',
-        steps: [{ op: 'create_index_concurrently', table: 't', columns: ['c'], using: "btree; DROP TABLE users--" }],
-      }],
+        steps: [{ op: 'create_index_concurrently', table: 't', columns: ['c'], using: 'btree; DROP TABLE users--' }]
+      }]
     });
   }, /Unsafe index method/);
 
@@ -114,8 +114,8 @@ test('emitMigrations rejects unsafe type, using, and default values', () => {
     emitMigrations({
       phases: [{
         name: 'expand',
-        steps: [{ op: 'add_column', table: 't', column: 'c', type: 'text', nullable: true, default: "'; DROP TABLE users--" }],
-      }],
+        steps: [{ op: 'add_column', table: 't', column: 'c', type: 'text', nullable: true, default: "'; DROP TABLE users--" }]
+      }]
     });
   }, /Unsafe DEFAULT value/);
 });

@@ -9,9 +9,9 @@ import {
   ConcurrentSafetyError,
   RaceConditionError,
   LockEscalationError,
-  _ConcurrentAnalysisStarted,
-  _RaceConditionDetected,
-  _SafetyAnalysisCompleted
+  ConcurrentAnalysisStarted as _ConcurrentAnalysisStarted,
+  RaceConditionDetected as _RaceConditionDetected,
+  SafetyAnalysisCompleted as _SafetyAnalysisCompleted
 } from '../src/domain/analyzer/ConcurrentSafetyAnalyzer.mjs';
 
 test('ConcurrentSafetyAnalyzer - basic functionality', async () => {

@@ -1,0 +1,32 @@
+{
+  "name": "@wesley/test-fixtures",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "description": "Shared test fixtures, mocks, and schema builders for the Wesley monorepo",
+  "main": "./src/index.mjs",
+  "exports": {
+    ".": "./src/index.mjs",
+    "./database": "./src/database.mjs",
+    "./schemas": "./src/schemas.mjs",
+    "./property-testing": "./src/property-testing.mjs"
+  },
+  "files": [
+    "src/"
+  ],
+  "keywords": [
+    "test",
+    "fixtures",
+    "wesley"
+  ],
+  "author": "Wesley Authors <oss@flyingrobots.dev>",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/flyingrobots/wesley.git",
+    "directory": "packages/wesley-test-fixtures"
+  },
+  "dependencies": {
+    "fast-check": "^4.3.0"
+  }
+}

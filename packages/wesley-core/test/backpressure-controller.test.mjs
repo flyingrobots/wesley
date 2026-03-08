@@ -10,9 +10,9 @@ import {
   CircuitBreakerError,
   RateLimitExceededError,
   ConnectionPoolExhaustedError,
-  _BackpressureActivated,
-  _BackpressureDeactivated,
-  _CircuitBreakerStateChanged,
+  BackpressureActivated as _BackpressureActivated,
+  BackpressureDeactivated as _BackpressureDeactivated,
+  CircuitBreakerStateChanged as _CircuitBreakerStateChanged,
   ThrottlingAdjusted,
   CircuitBreakerState
 } from '../src/domain/control/BackpressureController.mjs';

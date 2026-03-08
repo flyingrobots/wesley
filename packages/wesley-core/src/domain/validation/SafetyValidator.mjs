@@ -7,15 +7,15 @@
  */
 
 import { DomainEvent } from '../Events.mjs';
+import { WesleyError } from '../WesleyError.mjs';
 
 /**
  * Custom error types for safety validation
  */
-export class SafetyValidationError extends Error {
+export class SafetyValidationError extends WesleyError {
   constructor(message, code, details = {}) {
-    super(message);
+    super(code, message, details);
     this.name = 'SafetyValidationError';
-    this.code = code;
     this.details = details;
   }
 }

@@ -8,15 +8,15 @@
 
 import { EventEmitter } from '../../util/EventEmitter.mjs';
 import { DomainEvent } from '../Events.mjs';
+import { WesleyError } from '../WesleyError.mjs';
 
 /**
  * Custom error types for backpressure control
  */
-export class BackpressureError extends Error {
+export class BackpressureError extends WesleyError {
   constructor(message, code, context = {}) {
-    super(message);
+    super(code, message, context);
     this.name = 'BackpressureError';
-    this.code = code;
     this.context = context;
   }
 }

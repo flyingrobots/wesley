@@ -17,10 +17,12 @@ Three generators exist as byte-for-byte copies in both `wesley-core` and
 | `RollbackGenerator` | 599 | `core/src/domain/generators/RollbackGenerator.mjs` | `generator-supabase/src/rollback.mjs` |
 
 **Plan:**
-- [ ] Decide canonical home (core vs generator-supabase vs shared package)
-- [ ] Make the non-canonical location import and re-export from canonical
-- [ ] Verify all tests pass with single source of truth
-- [ ] Remove the duplicate source files
+- [x] Decide canonical home (core vs generator-supabase vs shared package)
+  → Canonical home is `wesley-core`. Supabase copies were dead code (not imported/exported).
+- [x] Make the non-canonical location import and re-export from canonical
+  → N/A — supabase copies were unused.
+- [x] Verify all tests pass with single source of truth
+- [x] Remove the duplicate source files
 
 ---
 
@@ -31,10 +33,12 @@ duplicated across ~90 test files. `MockDatabase`, `testFixtures`, and `dbAssert`
 live in `wesley-core/test/helpers/` but aren't available to other packages.
 
 **Plan:**
-- [ ] Create `packages/wesley-test-fixtures/` with `package.json`
-- [ ] Move `MockDatabase`, `testFixtures`, `dbAssert` from `wesley-core/test/helpers/database.mjs`
-- [ ] Move `propertyHelpers`, `sqlGenerators` from `wesley-core/test/helpers/property-testing.mjs`
-- [ ] Add parameterized schema builders: `userSchema()`, `productSchema()`, `orderSchema()`, `orgSchema()`
+- [x] Create `packages/wesley-test-fixtures/` with `package.json`
+- [x] Move `MockDatabase`, `testFixtures`, `dbAssert` from `wesley-core/test/helpers/database.mjs`
+  → Re-exported via `@wesley/test-fixtures/database`; originals kept in place for zero-disruption.
+- [x] Move `propertyHelpers`, `sqlGenerators` from `wesley-core/test/helpers/property-testing.mjs`
+  → Re-exported via `@wesley/test-fixtures/property-testing`; originals kept in place.
+- [x] Add parameterized schema builders: `simpleUser()`, `ecommerce()`, `multiTenant()`, `allDataTypes()`, etc.
 - [ ] Migrate test files to import from `@wesley/test-fixtures` instead of inline definitions
 - [ ] Add tests for untested packages (`generator-js`, `host-bun`, `scaffold-multitenant`, `slaps`)
 
@@ -52,11 +56,13 @@ Three modules independently define identical error base class patterns
 All follow identical constructor: `(message, code, context = {})`.
 
 **Plan:**
-- [ ] Create `packages/wesley-core/src/domain/errors/DomainError.mjs` with shared base class
+- [x] ~~Create `packages/wesley-core/src/domain/errors/DomainError.mjs` with shared base class~~
+  → `WesleyError` already exists at `packages/wesley-core/src/domain/WesleyError.mjs` with
+    `(code, message, meta)` — used that instead.
 - [ ] Define reusable subclass categories: `ValidationError`, `ConflictError`, `ResourceError`
-- [ ] Migrate `ConcurrentSafetyAnalyzer` errors to extend `DomainError`
-- [ ] Migrate `BackpressureController` errors to extend `DomainError`
-- [ ] Migrate `SafetyValidator` errors to extend `DomainError`
+- [x] Migrate `ConcurrentSafetyAnalyzer` errors to extend `WesleyError`
+- [x] Migrate `BackpressureController` errors to extend `WesleyError`
+- [x] Migrate `SafetyValidator` errors to extend `WesleyError`
 - [ ] Extract domain event lifecycle boilerplate into a factory (Started/Completed/Failed pattern repeated in 5+ modules)
 
 ---
@@ -68,8 +74,11 @@ All follow identical constructor: `(message, code, context = {})`.
 side effects. Adding a command requires editing `commands.mjs`.
 
 **Plan:**
-- [ ] Replace hardcoded imports with directory scanning (`readdirSync` + dynamic `import()`)
-- [ ] Verify all existing commands still register correctly
+- [x] Replace hardcoded imports with directory scanning (`readdirSync` + dynamic `import()`)
+  → `program.mjs` now uses `discoverCommands()` which scans `commands/` directory,
+    dynamically imports all `.mjs` files (skipping `_`-prefixed helpers and `index.mjs`),
+    and instantiates any export that extends `WesleyCommand`.
+- [x] Verify all existing commands still register correctly
 - [ ] Add a test: dropping a new `.mjs` file in `commands/` auto-registers without editing `commands.mjs`
 
 ---

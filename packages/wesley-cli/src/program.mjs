@@ -1,54 +1,43 @@
 /**
  * Wesley CLI Program
  * Uses Commander with constructor-based registration.
- * Commands register themselves when instantiated.
+ * Commands auto-register when instantiated via directory discovery.
  */
 
+import { readdirSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { Command } from 'commander';
 import { WesleyCommand } from './framework/WesleyCommand.mjs';
 
-// Import commands (registration happens on instantiation below)
-import { GeneratePipelineCommand } from './commands/generate.mjs';
-import { TransformPipelineCommand } from './commands/transform.mjs';
-import { PlanCommand } from './commands/plan.mjs';
-import { RehearseCommand } from './commands/rehearse.mjs';
-import { CertCreateCommand } from './commands/cert-create.mjs';
-import { CertSignCommand } from './commands/cert-sign.mjs';
-import { CertVerifyCommand } from './commands/cert-verify.mjs';
-import { CertBadgeCommand } from './commands/cert-badge.mjs';
-import { ValidateBundleCommand } from './commands/validate-bundle.mjs';
-import { BladeCommand } from './commands/blade.mjs';
-import { InitCommand } from './commands/init.mjs';
-import { UpCommand } from './commands/up.mjs';
-import { CompileTtdCommand } from './commands/compile-ttd.mjs';
-import { DoctorCommand } from './commands/doctor.mjs';
-import { DiffCommand } from './commands/diff.mjs';
-import { QirValidateCommand } from './commands/qir-validate.mjs';
-import { ModelsCommand } from './commands/models.mjs';
-import { TypeScriptCommand } from './commands/typescript.mjs';
-import { ZodCommand } from './commands/zod.mjs';
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const commandsDir = join(__dirname, 'commands');
+
+/**
+ * Auto-discover and instantiate all WesleyCommand subclasses from the
+ * commands/ directory. Files prefixed with `_` are private helpers;
+ * `index.mjs` is a re-export barrel — both are skipped.
+ */
+async function discoverCommands(ctx) {
+  const files = readdirSync(commandsDir)
+    .filter(f => f.endsWith('.mjs') && !f.startsWith('_') && f !== 'index.mjs');
+
+  for (const file of files) {
+    const mod = await import(join(commandsDir, file));
+    for (const exported of Object.values(mod)) {
+      if (
+        typeof exported === 'function' &&
+        exported.prototype instanceof WesleyCommand
+      ) {
+        new exported(ctx);
+      }
+    }
+  }
+}
 
 export async function program(argv, ctx) {
-  // Create commands with context (auto-registers them)
-  new GeneratePipelineCommand(ctx);
-  new TransformPipelineCommand(ctx);
-  new PlanCommand(ctx);
-  new RehearseCommand(ctx);
-  new CertCreateCommand(ctx);
-  new CertSignCommand(ctx);
-  new CertVerifyCommand(ctx);
-  new CertBadgeCommand(ctx);
-  new ValidateBundleCommand(ctx);
-  new BladeCommand(ctx);
-  new InitCommand(ctx);
-  new UpCommand(ctx);
-  new CompileTtdCommand(ctx);
-  new DoctorCommand(ctx);
-  new DiffCommand(ctx);
-  new QirValidateCommand(ctx);
-  new ModelsCommand(ctx);
-  new TypeScriptCommand(ctx);
-  new ZodCommand(ctx);
+  // Auto-discover and register all commands
+  await discoverCommands(ctx);
 
   // Create main program
   const program = new Command()

@@ -3,9 +3,13 @@
  *
  * Importing this module triggers auto-registration of all CLI commands
  * with the AutomaticallyRegisteredProgram registry.
+ *
+ * NOTE: The primary entry point is program.mjs which uses WesleyCommand
+ * auto-discovery. This file exists for the legacy main.mjs entry point
+ * that uses AutomaticallyRegisteredProgram.
  */
 
-// Import all command classes to trigger auto-registration
+// Import all command files to trigger side-effect registration
 import './commands/generate.mjs';
 import './commands/models.mjs';
 import './commands/typescript.mjs';

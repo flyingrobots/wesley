@@ -6,6 +6,31 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Added
+- `@wesley/test-fixtures` package with shared test schema builders (`simpleUser`,
+  `userWithProfile`, `multiTenant`, `ecommerce`, `allDataTypes`, `empty`,
+  `circularForeignKeys`), re-exported `MockDatabase`, `testFixtures`, `dbAssert`,
+  and property-testing utilities for cross-package use.
+- CLI command auto-discovery in `program.mjs` — new commands are registered
+  automatically by dropping a `.mjs` file in `commands/` without editing any
+  registration file (fixes Open/Closed principle violation).
+
+### Changed
+- `ConcurrentSafetyError`, `BackpressureError`, and `SafetyValidationError` now
+  extend `WesleyError` instead of bare `Error`, unifying the error hierarchy
+  under a single base class with `code` + `meta` semantics. Backward-compatible:
+  `.context` / `.details` properties preserved.
+
+### Removed
+- Dead duplicate generators in `wesley-generator-supabase`: `repair.mjs`,
+  `trigger.mjs`, `rollback.mjs` (byte-for-byte copies of the canonical files
+  in `wesley-core/src/domain/generators/`, never imported or exported).
+
+### Fixed
+- `backpressure-controller.test.mjs` and `concurrent-safety-analyzer.test.mjs`
+  imported nonexistent underscore-prefixed exports (`_BackpressureActivated`,
+  `_ConcurrentAnalysisStarted`, etc.) — corrected to match actual export names.
+
 ### Changed
 
 - **License**: Standardized all `package.json` files to `Apache-2.0`, matching
