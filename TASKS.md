@@ -49,7 +49,7 @@ each step.
 
 ## Phase 3 — Migrate `irToSchema.mjs`
 
-- [ ] **T-3.1** Rewrite `packages/wesley-cli/src/framework/irToSchema.mjs`
+- [x] **T-3.1** Rewrite `packages/wesley-cli/src/framework/irToSchema.mjs`
   - `t.columns` → `t.fields`
   - `pgTypeToGraphQL(c.type)` → `c.type.base` (already GraphQL scalar)
   - `c.type.includes('[]')` → `c.type.isList`
