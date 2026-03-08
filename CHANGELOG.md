@@ -41,9 +41,11 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
-- **`TransmutationRunner`**: Plugins returning `{ files: null, evidence: {} }` now
-  produce a structured `WPLY003` error instead of crashing with an unguarded
-  `Object.keys(null)` throw.
+- **`TransmutationRunner`**: Full null-safety at plugin return shape boundaries.
+  `files` validated as non-null, non-array object; `evidence` validated as
+  non-null, non-array object; evidence entries with missing/invalid `.artifacts`
+  silently skipped instead of throwing. All invalid shapes produce structured
+  `WPLY003` errors that respect best-effort mode.
 - **Ops manifest validation**: `OpsError` wrapping now reads AJV errors from
   `e.meta.errors` (where `assertValid` puts them) instead of `e.errors`.
 - **CLI**: Named exports standardized across all 19 command files (removed `export default`).

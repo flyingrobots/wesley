@@ -332,7 +332,7 @@ test('TransmutationRunner — buildTaskGraph metadata carries transmutation name
 });
 
 // ---------------------------------------------------------------------------
-// Null files in new-style return shape (P1 — Codex review)
+// Null-safety at shape boundaries
 // ---------------------------------------------------------------------------
 
 test('TransmutationRunner — { files: null, evidence: {} } produces WPLY003 error, not unguarded throw', async () => {
@@ -346,11 +346,79 @@ test('TransmutationRunner — { files: null, evidence: {} } produces WPLY003 err
 
   const result = await runner.run('test', [plugin, good], {});
 
-  // The null-files plugin should produce a structured error, not crash the run
   assert.equal(result.results[0].status, 'error');
   assert.equal(result.results[0].errorCode, 'WPLY003');
-  // Best-effort: the good plugin should still run
   assert.equal(result.results[1].status, 'ok');
+});
+
+test('TransmutationRunner — { files: [], evidence: {} } (array) produces WPLY003', async () => {
+  const runner = makeRunner();
+  const plugin = makePlugin({
+    name: 'array-files',
+    async plan() { return { artifacts: [{ path: 'x.sql' }] }; },
+    async generate() { return { files: ['not', 'a', 'record'], evidence: {} }; }
+  });
+
+  const result = await runner.run('test', [plugin], {});
+
+  assert.equal(result.results[0].status, 'error');
+  assert.equal(result.results[0].errorCode, 'WPLY003');
+});
+
+test('TransmutationRunner — non-object evidence produces WPLY003', async () => {
+  const runner = makeRunner({ bestEffort: true });
+  const plugin = makePlugin({
+    name: 'bad-evidence',
+    async plan() { return { artifacts: [{ path: 'x.sql' }] }; },
+    async generate() { return { files: { 'x.sql': 'CREATE TABLE ...' }, evidence: 42 }; }
+  });
+  const good = makePlugin({ name: 'good' });
+
+  const result = await runner.run('test', [plugin, good], {});
+
+  assert.equal(result.results[0].status, 'error');
+  assert.equal(result.results[0].errorCode, 'WPLY003');
+  assert.equal(result.results[1].status, 'ok');
+});
+
+test('TransmutationRunner — null evidence produces WPLY003', async () => {
+  const runner = makeRunner();
+  const plugin = makePlugin({
+    name: 'null-evidence',
+    async plan() { return { artifacts: [{ path: 'x.sql' }] }; },
+    async generate() { return { files: { 'x.sql': 'ok' }, evidence: null }; }
+  });
+
+  const result = await runner.run('test', [plugin], {});
+
+  assert.equal(result.results[0].status, 'error');
+  assert.equal(result.results[0].errorCode, 'WPLY003');
+});
+
+test('TransmutationRunner — evidence entry without .artifacts is silently skipped', async () => {
+  const runner = makeRunner();
+  const plugin = makePlugin({
+    name: 'sparse-evidence',
+    async plan() { return { artifacts: [{ path: 'x.sql' }] }; },
+    async generate() {
+      return {
+        files: { 'x.sql': 'CREATE TABLE ...' },
+        evidence: {
+          'col:User.id': { /* no artifacts key */ },
+          'col:User.email': { artifacts: null },
+          'col:User.name': { artifacts: { ddl: { file: 'x.sql', lines: [1, 1], sha: 'abc' } } }
+        }
+      };
+    }
+  });
+
+  const result = await runner.run('test', [plugin], {});
+
+  assert.equal(result.success, true);
+  assert.equal(result.results[0].status, 'ok');
+  // Only col:User.name should have recorded evidence
+  const evidence = result.evidence;
+  assert.ok(evidence.evidence['col:User.name']);
 });
 
 // ---------------------------------------------------------------------------

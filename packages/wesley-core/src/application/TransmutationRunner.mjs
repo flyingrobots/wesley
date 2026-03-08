@@ -273,10 +273,23 @@ export class TransmutationRunner {
     if (generateResult != null && typeof generateResult === 'object' && !Array.isArray(generateResult)) {
       if ('files' in generateResult && 'evidence' in generateResult) {
         // New transmutation-aware return shape — validate files payload
-        if (generateResult.files == null || typeof generateResult.files !== 'object') {
+        if (generateResult.files == null || typeof generateResult.files !== 'object' || Array.isArray(generateResult.files)) {
+          const label = generateResult.files === null ? 'null'
+            : Array.isArray(generateResult.files) ? 'Array'
+              : typeof generateResult.files;
           return this._errorResult(
             plugin, 'generate',
-            new PluginError('WPLY003', `Plugin "${pluginName}" generate() returned { files, evidence } but files is ${generateResult.files === null ? 'null' : typeof generateResult.files}`, { plugin: pluginName }),
+            new PluginError('WPLY003', `Plugin "${pluginName}" generate() returned { files, evidence } but files is ${label} (expected Record<string, string|Uint8Array>)`, { plugin: pluginName }),
+            startMs
+          );
+        }
+        if (generateResult.evidence == null || typeof generateResult.evidence !== 'object' || Array.isArray(generateResult.evidence)) {
+          const label = generateResult.evidence === null ? 'null'
+            : Array.isArray(generateResult.evidence) ? 'Array'
+              : typeof generateResult.evidence;
+          return this._errorResult(
+            plugin, 'generate',
+            new PluginError('WPLY003', `Plugin "${pluginName}" generate() returned { files, evidence } but evidence is ${label} (expected Record<string, object>)`, { plugin: pluginName }),
             startMs
           );
         }
@@ -311,7 +324,8 @@ export class TransmutationRunner {
     // Merge plugin evidence into the transmutation evidence map
     if (pluginEvidence) {
       for (const [uid, entry] of Object.entries(pluginEvidence)) {
-        if (entry.artifacts) {
+        if (entry != null && typeof entry === 'object' &&
+            entry.artifacts != null && typeof entry.artifacts === 'object' && !Array.isArray(entry.artifacts)) {
           for (const [kind, location] of Object.entries(entry.artifacts)) {
             evidenceMap.record(uid, kind, location);
           }
