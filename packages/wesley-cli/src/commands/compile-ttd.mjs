@@ -8,6 +8,7 @@
 
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import { compileTtdProtocol } from '@wesley/core/ttd';
+import { WesleyError } from '@wesley/core';
 
 export class CompileTtdCommand extends WesleyCommand {
   constructor(ctx) {
@@ -40,9 +41,7 @@ export class CompileTtdCommand extends WesleyCommand {
     const validTargets = ['manifest', 'typescript', 'rust'];
     for (const t of targets) {
       if (!validTargets.includes(t)) {
-        const e = new Error(`Invalid target: "${t}". Valid targets: ${validTargets.join(', ')}`);
-        e.code = 'INVALID_TARGET';
-        throw e;
+        throw new WesleyError('INVALID_TARGET', `Invalid target: "${t}". Valid targets: ${validTargets.join(', ')}`);
       }
     }
 
@@ -82,23 +81,19 @@ export class CompileTtdCommand extends WesleyCommand {
               ? `  ${m.type} (defined in ${m.definedIn})`
               : `  ${m.type} (unknown source)`
           );
-          const e = new Error(
+          throw new WesleyError('SCHEMA_RESOLUTION_FAILED',
             'Filtered SDL references types not included in the selected units:\n' +
             lines.join('\n') + '\n\n' +
             `You asked for units: ${unitFilter?.join(', ')}\n` +
             'Add the missing units with --unit or compile the full schema.'
           );
-          e.code = 'SCHEMA_RESOLUTION_FAILED';
-          throw e;
         }
       }
     } else if (options.unit) {
-      const e = new Error(
+      throw new WesleyError('UNSUPPORTED_OPTION',
         '--unit requires a composed schema (with @wes_import/@wes_package directives).\n' +
         `The schema at ${schemaPath} has no composition directives.`
       );
-      e.code = 'UNSUPPORTED_OPTION';
-      throw e;
     }
 
     // ── Debug: print composed SDL ──
@@ -131,10 +126,7 @@ export class CompileTtdCommand extends WesleyCommand {
         deps
       });
     } catch (error) {
-      const e = new Error(`TTD compilation failed: ${error.message}`);
-      e.code = 'TTD_COMPILE_FAILED';
-      e.cause = error;
-      throw e;
+      throw error instanceof WesleyError ? error : new WesleyError('TTD_COMPILE_FAILED', `TTD compilation failed: ${error.message}`, {}, error);
     }
 
     // ── Debug: print IR ──
@@ -227,4 +219,3 @@ export class CompileTtdCommand extends WesleyCommand {
   }
 }
 
-export default CompileTtdCommand;

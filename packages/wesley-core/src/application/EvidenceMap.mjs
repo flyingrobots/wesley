@@ -205,6 +205,14 @@ export class EvidenceMap {
       map.map.set(uid, evidence);
     }
 
+    for (const [uid, errorList] of Object.entries(json.errors || {})) {
+      map.errors.set(uid, errorList);
+    }
+
+    for (const [uid, warningList] of Object.entries(json.warnings || {})) {
+      map.warnings.set(uid, warningList);
+    }
+
     return map;
   }
 }

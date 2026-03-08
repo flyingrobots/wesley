@@ -81,4 +81,3 @@ export class BladeCommand extends WesleyCommand {
   }
 }
 
-export default BladeCommand;

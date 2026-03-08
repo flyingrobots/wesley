@@ -8,6 +8,7 @@ import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import { buildPlanFromJson, emitFunction, emitView, collectParams, quoteIdent, sanitizeIdentBase } from '@wesley/core/domain/qir';
 import { filterIRByUnits } from '@wesley/core/domain/SchemaFilter';
 import { assertValid } from '../framework/schemaValidator.mjs';
+import { WesleyError, OpsError } from '@wesley/core';
 
 export class GeneratePipelineCommand extends WesleyCommand {
   constructor(ctx) {
@@ -67,7 +68,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
     // Safety: require clean git working tree unless explicitly allowed
     const env = this.ctx.env || {};
     if (shouldEnforceClean(env, options) && !options.allowDirty) {
-      try { await assertCleanGit(this.ctx.shell); } catch (e) { e.code = e.code || 'DIRTY_WORKTREE'; throw e; }
+      await assertCleanGit(this.ctx.shell);
     }
 
     const debugDump = options.printComposedSdl || options.printIr;
@@ -80,9 +81,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
 
     // Check if we have what we need
     if (!generators || !generators.sql) {
-      const err = new Error('SQL generator not available');
-      err.code = 'GENERATION_FAILED';
-      throw err;
+      throw new WesleyError('GENERATION_FAILED', 'SQL generator not available');
     }
 
     // Handle --print-composed-sdl debug flag
@@ -411,7 +410,11 @@ export class GeneratePipelineCommand extends WesleyCommand {
         try {
           await assertValid(this.ctx, 'ops-manifest.schema.json', manifest, 'Ops manifest');
         } catch (e) {
-          if (e instanceof Error && !e.code) e.code = 'OPS_MANIFEST_INVALID';
+          if (!(e instanceof WesleyError)) {
+            const wrapped = new OpsError('OPS_MANIFEST_INVALID', e.message, { errors: e.meta?.errors ?? e.errors, file: manifestPath }, e);
+            logger.error(wrapped.meta, wrapped.message);
+            throw wrapped;
+          }
           logger.error({ code: e.code, errors: e.meta?.errors, file: manifestPath }, e.message);
           throw e;
         }
@@ -485,7 +488,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
       }
       if (compiledOps.length) {
         compiledOps.sort((a, b) => a.order - b.order);
-        const orderedOps = compiledOps.map(({ _order, ...rest }) => rest);
+        const orderedOps = compiledOps.map(({ order, ...rest }) => rest);
         const security = String(options.opsSecurity || 'invoker').toLowerCase();
         if (security !== 'invoker' && security !== 'definer') {
           throw new OpsError('OPS_INVALID_SECURITY', `Invalid --ops-security value "${options.opsSecurity}"; must be "invoker" or "definer"`);
@@ -519,23 +522,13 @@ export class GeneratePipelineCommand extends WesleyCommand {
   }
 }
 
-// Export for testing
-export default GeneratePipelineCommand;
-
 // Limit concurrent file I/O to balance throughput with resource usage.
 const CONCURRENCY_LIMIT = 8;
 // PostgreSQL truncates identifiers to 63 bytes (NAMEDATALEN - 1) and counts UTF-8 byte length.
 // See: https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS
 const POSTGRESQL_IDENTIFIER_LIMIT = 63;
 
-class OpsError extends Error {
-  constructor(code, message, meta = {}) {
-    super(message);
-    this.name = 'OpsError';
-    this.code = code;
-    this.meta = { code, ...meta };
-  }
-}
+// OpsError imported from @wesley/core
 
 function sanitizeOpIdentifier(name) {
   const normalized = (name ?? 'unnamed').normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
@@ -761,9 +754,7 @@ async function assertCleanGit(shell) {
   }
   const out = (await shell?.exec?.('git status --porcelain'))?.stdout?.trim?.() || '';
   if (out.length > 0) {
-    const err = new Error('Working tree has uncommitted changes. Commit or stash before running, or pass --allow-dirty.');
-    err.code = 'DIRTY_WORKTREE';
-    throw err;
+    throw new WesleyError('DIRTY_WORKTREE', 'Working tree has uncommitted changes. Commit or stash before running, or pass --allow-dirty.');
   }
 }
 

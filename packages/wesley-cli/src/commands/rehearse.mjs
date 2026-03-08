@@ -5,6 +5,7 @@
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import { buildAdditivePlan, explainPlan, emitMigrations } from './_migration-plan.mjs';
 import { assertValid } from '../framework/schemaValidator.mjs';
+import { WesleyError } from '@wesley/core';
 
 export class RehearseCommand extends WesleyCommand {
   constructor(ctx) {
@@ -68,9 +69,7 @@ export class RehearseCommand extends WesleyCommand {
     if (hooks.preUp) await runHook(this.ctx, hooks.preUp, logger);
 
     if (!dsn) {
-      const e = new Error('No DSN provided for rehearsal. Pass --dsn or configure realm.dsn.');
-      e.code = 'NO_DSN';
-      throw e;
+      throw new WesleyError('NO_DSN', 'No DSN provided for rehearsal. Pass --dsn or configure realm.dsn.');
     }
 
     const start = Date.now();
@@ -114,9 +113,7 @@ export class RehearseCommand extends WesleyCommand {
         try { await assertValid(this.ctx, 'realm.schema.json', realm, 'REALM report'); } catch (ve) { logger.warn('REALM validation failed in error path: ' + (ve?.message || ve)); }
         this.ctx.stdout.write(JSON.stringify(realm, null, 2) + '\n');
       }
-      const e = new Error('REALM rehearsal failed: ' + error.message);
-      e.code = 'REALM_FAILED';
-      throw e;
+      throw new WesleyError('REALM_FAILED', 'REALM rehearsal failed: ' + error.message, {}, error);
     }
   }
 }
@@ -147,6 +144,4 @@ async function execSql(db, dsn, sql) {
   // naive split not used; rely on pg handling multiple statements
   return db.query(dsn, sql);
 }
-
-export default RehearseCommand;
 

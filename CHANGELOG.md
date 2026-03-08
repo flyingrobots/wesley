@@ -29,6 +29,65 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- **Transmutations architecture spec**: Design doc at `docs/architecture/transmutations.md`
+  covering source-to-generator mappings, per-element evidence tracking, contextual
+  HOLMES scoring, and Moriarty dual-layer prediction (Phase 0–6).
+- **`WesleyError` base class** (`@wesley/core`): Structured error with `code`, `meta`,
+  and optional `cause` (forwarded to native ES2022 `Error.cause` chain).
+  `OpsError` and `PluginError` extend it. Replaces ad-hoc `e.code =` patterns.
+- **`TransmutationRunner`** (`@wesley/core`): Unified orchestrator merging
+  `GenerationPipeline` and `PluginRunner`. Named transmutations, per-element evidence
+  collection, evidence merging, and `buildTaskGraph()` DAG descriptor.
+- **`irToSchema` in core**: Adapter moved from CLI into `@wesley/core`. CLI re-exports.
+
+- **Exit code registry** (`@wesley/core`): `ExitCodes.mjs` is the single source of
+  truth for error-code → exit-code mappings. `exitCodeFor()`, `isRegistered()`,
+  and `getRegistry()` exported from `@wesley/core/domain/ExitCodes`. Both
+  `WesleyCommand.exitCodeFor()` and the legacy `utils.exitCodeFor()` now delegate
+  to the core registry instead of maintaining independent switch/map copies.
+- **`validateGenerateResult()` port function** (`@wesley/core`): Extracted inline
+  generate-result validation from `PluginRunner` and `TransmutationRunner` into a
+  reusable port function in `GeneratorPlugin.mjs`, following the `validatePlan()`
+  pattern. Validates both legacy `Record<string, content>` and transmutation-aware
+  `{ files, evidence }` shapes, returning a normalized `{ artifacts, evidence }`
+  object. WPLY003 errors are thrown consistently via the port.
+
+### Fixed
+
+- **`up.mjs` migration helpers**: Eliminated diverged local copies of
+  `buildAdditivePlan`, `explainPlan`, `lockFor`, and `emitMigrations` in favor
+  of the shared `_migration-plan.mjs` module. The local copies had silently
+  diverged, introducing 4 bugs:
+  1. Index dedup ignored USING method — two indexes on the same fields with
+     different methods (btree vs gin) were silently skipped.
+  2. Falsy default coercion — `lockFor` used truthiness check instead of
+     `!= null`, so defaults of `0`, `false`, `''` triggered ACCESS EXCLUSIVE
+     instead of SHARE ROW EXCLUSIVE.
+  3. NOT NULL / DEFAULT coupling — DEFAULT was only emitted when the column was
+     also NOT NULL, and NOT NULL was never emitted at all.
+  4. No SQL injection guards — shared module validates `s.type`, `s.using`, and
+     `s.default` against safe regexes; local copies had zero validation.
+- **`TransmutationRunner`**: Full null-safety at plugin return shape boundaries.
+  `files` validated as non-null, non-array object; `evidence` validated as
+  non-null, non-array object; evidence entries with missing/invalid `.artifacts`
+  silently skipped instead of throwing. All invalid shapes produce structured
+  `WPLY003` errors that respect best-effort mode.
+- **Ops manifest validation**: `OpsError` wrapping now reads AJV errors from
+  `e.meta.errors` (where `assertValid` puts them) instead of `e.errors`.
+- **Exit code mappings**: Added 11 missing error codes (`DIRTY_WORKTREE`,
+  `CERT_INVALID`, `EEXIST`, `EARGS`, `EUSAGE`, `ERR_MISSING_ARGUMENT`,
+  `NO_DSN`, `REALM_FAILED`, `OPS_MANIFEST_INVALID`, `INVALID_TARGET`,
+  `TTD_COMPILE_FAILED`) so CLI exits with stable, semantic exit codes.
+- **`TransmutationRunner`**: Validate phase correctly labeled `'validate'`
+  (was `'init'`). `generateRunId` pads to consistent 6-char suffix.
+  `evidenceMap.toJSON()` serialized once. `structuredClone` replaces
+  `JSON.parse(JSON.stringify(...))` for config cloning. Plugin evidence
+  `errors` and `warnings` forwarded to `EvidenceMap`.
+- **`irToSchema`**: Preserves `listItemNullable` → `itemNonNull` on `Field`
+  construction (was silently dropped, widening `[T!]` to `[T]`).
+- **`assertCleanGit` wrappers**: Removed redundant try/catch in `generate.mjs`
+  and `plan.mjs` since `assertCleanGit` now throws `WesleyError` directly.
+- **CLI**: Named exports standardized across all 19 command files (removed `export default`).
 - **CLI**: Revived `models`, `typescript` (alias `ts`), and `zod` commands,
   wired to existing generators in `@wesley/generator-js`:
   - `wesley models --schema <file> --target ts|js --out-dir <dir>`

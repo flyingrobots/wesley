@@ -3,6 +3,7 @@
  */
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import { extractJsonBlock, canonicalize } from './_cert-utils.mjs';
+import { WesleyError } from '@wesley/core';
 
 export class CertSignCommand extends WesleyCommand {
   constructor(ctx) {
@@ -18,7 +19,7 @@ export class CertSignCommand extends WesleyCommand {
 
   async executeCore({ options, logger }) {
     if (!options.key) {
-      const e = new Error('Missing --key'); e.code = 'EARGS'; throw e;
+      throw new WesleyError('EARGS', 'Missing --key');
     }
     const md = await this.ctx.fs.read(options.in);
     const { pre, json, post } = extractJsonBlock(md);
@@ -27,9 +28,7 @@ export class CertSignCommand extends WesleyCommand {
     const pem = await this.ctx.fs.read(options.key);
     const key = createPrivateKey(pem);
     if (key.asymmetricKeyType !== 'ed25519') {
-      const e = new Error(`Unsupported key type: ${key.asymmetricKeyType} (expected ed25519)`);
-      e.code = 'EARGS';
-      throw e;
+      throw new WesleyError('EARGS', `Unsupported key type: ${key.asymmetricKeyType} (expected ed25519)`);
     }
     const sig = sign(null, new TextEncoder().encode(canonical), key).toString('base64');
     // Derive a deterministic keyId from the public key (SPKI DER → SHA-256 hex)
@@ -52,4 +51,3 @@ export class CertSignCommand extends WesleyCommand {
   }
 }
 
-export default CertSignCommand;

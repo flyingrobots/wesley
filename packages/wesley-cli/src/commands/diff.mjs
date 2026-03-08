@@ -9,7 +9,8 @@
  */
 
 import { readFileSync } from 'node:fs';
-import { computeDelta } from '@wesley/core';
+import { computeDelta, WesleyError } from '@wesley/core';
+import { exitCodeFor } from '@wesley/core/domain/ExitCodes';
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import { ExitError } from '../framework/errors.mjs';
 
@@ -125,7 +126,7 @@ export class DiffCommand extends WesleyCommand {
     } catch (error) {
       if (error.name === 'ExitError') throw error;
 
-      throw new ExitError(error.exitCode ?? 1, error);
+      throw new ExitError(exitCodeFor(error.code), error);
     }
   }
 
@@ -133,32 +134,31 @@ export class DiffCommand extends WesleyCommand {
   async _run(oldPath, newPath, options) {
     // Validate arguments
     if (!oldPath || !newPath) {
-      const err = new Error('Two schema file paths are required: wesley diff <old-schema> <new-schema>');
-      err.code = 'EUSAGE';
+      const err = new WesleyError('EUSAGE', 'Two schema file paths are required: wesley diff <old-schema> <new-schema>');
       this.ctx.stderr.write(err.message + '\n');
 
-      throw new ExitError(1, err);
+      throw new ExitError(exitCodeFor(err.code), err);
     }
 
     // Read files
     let oldSDL, newSDL;
     try {
       oldSDL = readFileSync(oldPath, 'utf-8');
-    } catch (_e) {
-      const err = new Error(`Cannot read old schema: ${oldPath}`);
-      err.code = 'ENOENT';
+    } catch (fsErr) {
+      const code = fsErr.code || 'ENOENT';
+      const err = new WesleyError(code, `Cannot read old schema: ${oldPath} (${code})`, { cause: fsErr });
       this.ctx.stderr.write(err.message + '\n');
 
-      throw new ExitError(2, err);
+      throw new ExitError(exitCodeFor(err.code), err);
     }
     try {
       newSDL = readFileSync(newPath, 'utf-8');
-    } catch (_e) {
-      const err = new Error(`Cannot read new schema: ${newPath}`);
-      err.code = 'ENOENT';
+    } catch (fsErr) {
+      const code = fsErr.code || 'ENOENT';
+      const err = new WesleyError(code, `Cannot read new schema: ${newPath} (${code})`, { cause: fsErr });
       this.ctx.stderr.write(err.message + '\n');
 
-      throw new ExitError(2, err);
+      throw new ExitError(exitCodeFor(err.code), err);
     }
 
     // Compute delta
@@ -188,12 +188,10 @@ export class DiffCommand extends WesleyCommand {
 
     this.ctx.stdout.write(output + '\n');
 
-    // Exit code
-    const hasBreaking = changes.some((c) => c.breaking) ||
-      delta.removed_types.length > 0 ||
-      delta.removed_ops.length > 0 ||
-      delta.modified_types.some((m) => m.breaking) ||
-      delta.modified_ops.some((m) => m.breaking);
+    // Exit code — use unfiltered changes for the breaking check so
+    // --breaking-only doesn't mask the exit code decision.
+    const allChanges = flattenChanges(delta);
+    const hasBreaking = allChanges.some((c) => c.breaking);
 
     if (options.exitCode && hasBreaking) {
 
@@ -212,4 +210,3 @@ export class DiffCommand extends WesleyCommand {
 // Also export helpers for testing
 export { flattenChanges, formatText, formatSummary };
 
-export default DiffCommand;

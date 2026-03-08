@@ -1,5 +1,6 @@
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import { createAjv, loadSchemaFile, assertValid } from '../framework/schemaValidator.mjs';
+import { WesleyError } from '@wesley/core';
 
 export class QirValidateCommand extends WesleyCommand {
   constructor(ctx) {
@@ -57,9 +58,7 @@ export class QirValidateCommand extends WesleyCommand {
     const { options } = context;
     const input = options.file;
     if (!input) {
-      const e = new Error('Expected a path to a QIR JSON file');
-      e.code = 'ERR_MISSING_ARGUMENT';
-      throw e;
+      throw new WesleyError('ERR_MISSING_ARGUMENT', 'Expected a path to a QIR JSON file');
     }
 
     // Dispatch to the appropriate validation path
@@ -87,10 +86,7 @@ export class QirValidateCommand extends WesleyCommand {
       ajv.addSchema(JSON.parse(qir));
       const validate = ajv.compile(JSON.parse(envSchema));
       if (!validate(data)) {
-        const e = new Error(`IR envelope validation failed: ${file}`);
-        e.code = 'VALIDATION_FAILED';
-        e.meta = { file, errors: validate.errors };
-        throw e;
+        throw new WesleyError('VALIDATION_FAILED', `IR envelope validation failed: ${file}`, { file, errors: validate.errors });
       }
       break;
     }
@@ -106,4 +102,3 @@ export class QirValidateCommand extends WesleyCommand {
   }
 }
 
-export default QirValidateCommand;

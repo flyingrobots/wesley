@@ -3,7 +3,7 @@
  */
 
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
-import GeneratePipelineCommand from './generate.mjs';
+import { GeneratePipelineCommand } from './generate.mjs';
 
 export class TransformPipelineCommand extends WesleyCommand {
   constructor(ctx) {
@@ -20,6 +20,4 @@ export class TransformPipelineCommand extends WesleyCommand {
     return this._delegate.executeCore(context);
   }
 }
-
-export default TransformPipelineCommand;
 

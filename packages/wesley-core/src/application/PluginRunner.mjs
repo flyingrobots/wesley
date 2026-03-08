@@ -1,6 +1,8 @@
 // wesley-core/src/application/PluginRunner.mjs
 
-import { validatePlugin, validatePlan } from '../ports/GeneratorPlugin.mjs';
+import { validatePlugin, validatePlan, validateGenerateResult } from '../ports/GeneratorPlugin.mjs';
+import { PluginError } from '../domain/WesleyError.mjs';
+import { deepFreeze } from '../util/deepFreeze.mjs';
 
 /**
  * @typedef {Object} PluginResult
@@ -21,23 +23,6 @@ import { validatePlugin, validatePlan } from '../ports/GeneratorPlugin.mjs';
  * @property {number} totalArtifacts
  * @property {string} runId
  */
-
-/**
- * Deep-freeze an object and all nested objects. Pure utility (no node:* imports).
- * @param {T} obj
- * @returns {Readonly<T>}
- * @template T
- */
-function deepFreeze(obj) {
-  if (obj == null || typeof obj !== 'object') return obj;
-  Object.freeze(obj);
-  for (const val of Object.values(obj)) {
-    if (val != null && typeof val === 'object' && !Object.isFrozen(val)) {
-      deepFreeze(val);
-    }
-  }
-  return obj;
-}
 
 /**
  * PluginRunner - Orchestrates plugin execution with error isolation.
@@ -108,7 +93,7 @@ export class PluginRunner {
         ? this._logger.child({ plugin: pluginName })
         : this._logger;
 
-      const frozenConfig = deepFreeze(JSON.parse(JSON.stringify(this._config)));
+      const frozenConfig = deepFreeze(structuredClone(this._config));
       const context = Object.freeze({
         logger: childLogger,
         clock: this._clock,
@@ -149,29 +134,15 @@ export class PluginRunner {
       // Phase: generate
       let artifacts;
       try {
-        artifacts = await plugin.generate(plan, context);
+        const raw = await plugin.generate(plan, context);
+        ({ artifacts } = validateGenerateResult(raw, pluginName));
       } catch (cause) {
+        const code = cause.code === 'WPLY003' ? 'WPLY003' : 'WPLY002';
         const result = _errorResult(plugin, 'generate', cause, startMs);
+        result.errorCode = code;
         results.push(result);
         if (!this._bestEffort) {
-          _throwRunError(cause.message, 'WPLY002', plugin, 'generate', results, startMs, cause);
-        }
-        continue;
-      }
-
-      // Validate generate() return type
-      if (artifacts == null || typeof artifacts !== 'object' || Array.isArray(artifacts)) {
-        const typeLabel = artifacts === null ? 'null'
-          : Array.isArray(artifacts) ? 'Array'
-            : typeof artifacts;
-        const msg = `Plugin "${pluginName}" generate() must return a Record<string, string|Uint8Array> (got ${typeLabel})`;
-        const cause = new Error(msg);
-        cause.code = 'WPLY003';
-        const result = _errorResult(plugin, 'generate', cause, startMs);
-        result.errorCode = 'WPLY003';
-        results.push(result);
-        if (!this._bestEffort) {
-          _throwRunError(msg, 'WPLY003', plugin, 'generate', results, startMs, cause);
+          _throwRunError(cause.message, code, plugin, 'generate', results, startMs, cause);
         }
         continue;
       }
@@ -212,7 +183,7 @@ export class PluginRunner {
  */
 function _generateRunId() {
   const ts = Date.now().toString(36);
-  const rand = Math.random().toString(36).slice(2, 8);
+  const rand = Math.random().toString(36).slice(2, 8).padEnd(6, '0');
   return `run-${ts}-${rand}`;
 }
 
@@ -252,12 +223,15 @@ function _throwRunError(message, code, plugin, phase, pluginResults, startMs, ca
   } catch {
     // Getter may throw — keep '<unknown>'
   }
-  const err = new Error(`Plugin "${pluginName}" failed in ${phase}: ${message}`);
-  err.code = code;
+  const err = new PluginError(
+    code,
+    `Plugin "${pluginName}" failed in ${phase}: ${message}`,
+    { plugin: pluginName, phase },
+    cause
+  );
   err.plugin = pluginName;
   err.phase = phase;
   err.pluginResults = pluginResults;
   err.durationMs = Date.now() - startMs;
-  if (cause) err.cause = cause;
   throw err;
 }

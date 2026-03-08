@@ -1,3 +1,5 @@
+import { exitCodeFor as coreExitCodeFor } from '@wesley/core/domain/ExitCodes';
+
 // Remove Node.js coupling - delegate to host adapter
 export function readStdinUtf8() {
   // This will be injected by the command context
@@ -19,15 +21,7 @@ export function formatError(err, options = {}) {
 }
 
 export function exitCodeFor(err) {
-  switch (err?.code) {
-  case 'PARSE_FAILED': return 3;
-  case 'GENERATION_FAILED': return 4;
-  case 'DIFF_FAILED': return 5;
-  case 'PIPELINE_EXEC_FAILED': return 6;
-  case 'EEMPTYSCHEMA': return 2;
-  case 'ENOENT': return 2;
-  default: return 1;
-  }
+  return coreExitCodeFor(err?.code);
 }
 
 export function resolveLevel(opts = {}) {
@@ -36,4 +30,3 @@ export function resolveLevel(opts = {}) {
   if (opts.verbose) return 'debug';
   return process.env.WESLEY_LOG_LEVEL || 'info';
 }
-

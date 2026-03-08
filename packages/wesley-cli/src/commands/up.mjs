@@ -3,7 +3,8 @@
  */
 
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
-import { fieldTypeToPg } from '@wesley/core';
+import { WesleyError } from '@wesley/core';
+import { buildAdditivePlan, explainPlan, emitMigrations } from './_migration-plan.mjs';
 
 export class UpCommand extends WesleyCommand {
   constructor(ctx) {
@@ -25,7 +26,6 @@ export class UpCommand extends WesleyCommand {
 
   async executeCore({ options, schemaContent, logger }) {
     const env = this.ctx.env || {};
-    const _outDir = options.outDir || 'out';
     let dsn = options.dsn || pickDsn(options, env, this.makeLogger(options, { phase: 'up' }));
 
     if (options.docker) {
@@ -33,9 +33,7 @@ export class UpCommand extends WesleyCommand {
       dsn = dsn || defaultDsnFor('postgres', env);
     }
     if (!dsn) {
-      const e = new Error('No DSN provided. Pass --dsn or set SUPABASE_DB_URL/SUPABASE_POSTGRES_URL.');
-      e.code = 'NO_DSN';
-      throw e;
+      throw new WesleyError('NO_DSN', 'No DSN provided. Pass --dsn, --provider, or set SUPABASE_DB_URL/POSTGRES_URL/DATABASE_URL.');
     }
 
     // Parse current schema → IR
@@ -48,15 +46,17 @@ export class UpCommand extends WesleyCommand {
       const snap = await this.ctx.fs.read('.wesley/snapshot.json');
       previous = JSON.parse(snap);
       hadSnapshot = true;
-    } catch { /* empty */ }
+    } catch (e) {
+      if (e?.code !== 'ENOENT' && e?.code !== 'ERR_MODULE_NOT_FOUND') {
+        logger.warn('Could not read snapshot: ' + (e?.message || ''));
+      }
+    }
 
     if (!hadSnapshot) {
       // Bootstrap: emit full DDL and apply
       const ddl = (this.ctx.generators?.sql?.emitDDL?.(current)?.files?.[0]?.content) || '';
       if (!ddl) {
-        const e = new Error('Could not emit DDL for bootstrap');
-        e.code = 'GENERATION_FAILED';
-        throw e;
+        throw new WesleyError('GENERATION_FAILED', 'Could not emit DDL for bootstrap');
       }
       if (options.dryRun) {
         return this.output({ mode: 'bootstrap', statements: 1 }, options);
@@ -161,76 +161,3 @@ async function execSql(db, dsn, sql) {
   return db.query(dsn, sql);
 }
 
-// NOTE: Helpers duplicated from plan/rehearse for now; consider extracting.
-function buildAdditivePlan(prev, curr) {
-  const pmap = new Map((prev.tables || []).map(t => [t.name, t]));
-  const cmap = new Map((curr.tables || []).map(t => [t.name, t]));
-  const phases = [ { name: 'expand', steps: [] }, { name: 'validate', steps: [] } ];
-  for (const [name, t] of cmap) {
-    const old = pmap.get(name);
-    if (!old) {
-      phases[0].steps.push({ op: 'create_table', table: name });
-      for (const idx of t.indexes || []) phases[0].steps.push({ op: 'create_index_concurrently', table: name, columns: idx.fields, using: idx.using, name: idx.name });
-      for (const f of t.fields || []) { if (!f.directives.fk) continue; phases[0].steps.push({ op: 'add_fk_not_valid', table: name, column: f.name, refTable: f.directives.fk.targetTable, refColumn: f.directives.fk.targetField }); phases[1].steps.push({ op: 'validate_fk', table: name, column: f.name }); }
-      continue;
-    }
-    const oldFields = new Set((old.fields || []).map(f => f.name));
-    for (const f of t.fields || []) if (!oldFields.has(f.name)) phases[0].steps.push({ op: 'add_column', table: name, column: f.name, type: fieldTypeToPg(f.type), nullable: f.nullable, default: f.directives.default?.value ?? null });
-    const oldIdxSig = new Set((old.indexes || []).map(i => (i.fields||[]).join('|')));
-    for (const idx of t.indexes || []) { const sig = (idx.fields||[]).join('|'); if (!oldIdxSig.has(sig)) phases[0].steps.push({ op: 'create_index_concurrently', table: name, columns: idx.fields, using: idx.using, name: idx.name }); }
-    const oldFks = new Set((old.fields||[]).filter(f => f.directives.fk).map(f => `${f.name}->${f.directives.fk.targetTable}.${f.directives.fk.targetField}`));
-    for (const f of t.fields || []) { if (!f.directives.fk) continue; const key = `${f.name}->${f.directives.fk.targetTable}.${f.directives.fk.targetField}`; if (!oldFks.has(key)) { phases[0].steps.push({ op: 'add_fk_not_valid', table: name, column: f.name, refTable: f.directives.fk.targetTable, refColumn: f.directives.fk.targetField }); phases[1].steps.push({ op: 'validate_fk', table: name, column: f.name }); } }
-  }
-  return { phases };
-}
-
-function explainPlan(plan) {
-  const lines = [];
-  const steps = [];
-  for (const phase of plan.phases) {
-    lines.push(`• ${phase.name}`);
-    for (const s of phase.steps) { const lock = lockFor(s); lines.push(`   - ${s.op} on ${s.table}${s.column?'.'+s.column:''} [${lock.name}]`); steps.push({ ...s, lock }); }
-  }
-  return { lines, steps };
-}
-function lockFor(step){ switch(step.op){ case 'create_table': return L('ACCESS EXCLUSIVE', true, true); case 'add_column': return step.nullable!==false||step.default?L('SHARE ROW EXCLUSIVE',true,false):L('ACCESS EXCLUSIVE',true,true); case 'create_index_concurrently': return L('SHARE UPDATE EXCLUSIVE',true,false); case 'add_fk_not_valid': return L('SHARE ROW EXCLUSIVE',true,false); case 'validate_fk': return L('SHARE ROW EXCLUSIVE',true,false); default: return L('EXCLUSIVE',true,false);} }
-function L(name,blocksWrites,blocksReads){return {name,blocksWrites,blocksReads};}
-
-function emitMigrations(plan) {
-  const files = [];
-  const expand = [];
-  const validate = [];
-  const q = (id) => '"' + id.replace(/"/g, '""') + '"';
-  const tname = (n) => n.toLowerCase();
-  for (const phase of plan.phases) {
-    for (const s of phase.steps) {
-      if (s.op === 'create_table') {
-        expand.push(`-- create table ${s.table}`);
-      }
-      if (s.op === 'add_column') {
-        const parts = [`ALTER TABLE ${q(tname(s.table))} ADD COLUMN ${q(s.column)} ${s.type}`];
-        if (s.nullable === false && s.default) parts.push('DEFAULT ' + s.default);
-        expand.push(parts.join(' ') + ';');
-      }
-      if (s.op === 'create_index_concurrently') {
-        const idxName = s.name || `idx_${tname(s.table)}_${(s.columns || []).join('_')}`;
-        const using = s.using ? ` USING ${s.using}` : '';
-        const cols = (s.columns || []).map((c)=> q(c)).join(', ');
-        expand.push(`CREATE INDEX CONCURRENTLY IF NOT EXISTS ${q(idxName)} ON ${q(tname(s.table))}${using} (${cols});`);
-      }
-      if (s.op === 'add_fk_not_valid') {
-        const cname = `fk_${tname(s.table)}_${s.column}`;
-        expand.push(`ALTER TABLE ${q(tname(s.table))} ADD CONSTRAINT ${q(cname)} FOREIGN KEY (${q(s.column)}) REFERENCES ${q(tname(s.refTable))} (${q(s.refColumn)}) NOT VALID;`);
-      }
-      if (s.op === 'validate_fk') {
-        const cname = `fk_${tname(s.table)}_${s.column}`;
-        validate.push(`ALTER TABLE ${q(tname(s.table))} VALIDATE CONSTRAINT ${q(cname)};`);
-      }
-    }
-  }
-  if (expand.length) files.push({ name: '001_expand.sql', content: expand.join('\n') + '\n' });
-  if (validate.length) files.push({ name: '002_validate.sql', content: validate.join('\n') + '\n' });
-  return files;
-}
-
-export default UpCommand;

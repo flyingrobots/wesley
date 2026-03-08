@@ -5,9 +5,11 @@ import {
   GeneratorPlugin,
   validatePlugin,
   validatePlan,
+  validateGenerateResult,
   SUPPORTED_API_VERSIONS
 } from '../../src/ports/GeneratorPlugin.mjs';
 import { PluginRunner } from '../../src/application/PluginRunner.mjs';
+import { PluginError } from '../../src/domain/WesleyError.mjs';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -461,4 +463,104 @@ test('PluginRunner — null plugin in array produces WPLY001, not TypeError', as
   assert.equal(result.results[0].status, 'error');
   assert.equal(result.results[0].errorCode, 'WPLY001');
   assert.equal(result.results[1].status, 'ok');
+});
+
+// ===========================================================================
+// validateGenerateResult
+// ===========================================================================
+
+test('validateGenerateResult — accepts legacy Record<string, content> shape', () => {
+  const result = validateGenerateResult({ 'a.txt': 'hello', 'b.txt': 'world' });
+  assert.deepEqual(result.artifacts, { 'a.txt': 'hello', 'b.txt': 'world' });
+  assert.equal(result.evidence, null);
+});
+
+test('validateGenerateResult — accepts transmutation-aware { files, evidence } shape', () => {
+  const input = {
+    files: { 'x.sql': 'CREATE TABLE ...' },
+    evidence: { 'col:User.id': { artifacts: {} } }
+  };
+  const result = validateGenerateResult(input);
+  assert.deepEqual(result.artifacts, { 'x.sql': 'CREATE TABLE ...' });
+  assert.deepEqual(result.evidence, { 'col:User.id': { artifacts: {} } });
+});
+
+test('validateGenerateResult — accepts empty Record (no-op plugin)', () => {
+  const result = validateGenerateResult({});
+  assert.deepEqual(result.artifacts, {});
+  assert.equal(result.evidence, null);
+});
+
+test('validateGenerateResult — rejects null (WPLY003)', () => {
+  const err = catchError(() => validateGenerateResult(null, 'test'));
+  assert.equal(err.code, 'WPLY003');
+  assert.match(err.message, /null/);
+});
+
+test('validateGenerateResult — rejects Array (WPLY003)', () => {
+  const err = catchError(() => validateGenerateResult(['not', 'valid']));
+  assert.equal(err.code, 'WPLY003');
+  assert.match(err.message, /Array/);
+});
+
+test('validateGenerateResult — rejects string (WPLY003)', () => {
+  const err = catchError(() => validateGenerateResult('not-an-object'));
+  assert.equal(err.code, 'WPLY003');
+  assert.match(err.message, /string/);
+});
+
+test('validateGenerateResult — rejects undefined (WPLY003)', () => {
+  const err = catchError(() => validateGenerateResult(undefined));
+  assert.equal(err.code, 'WPLY003');
+});
+
+test('validateGenerateResult — rejects { files: null, evidence: {} } (WPLY003)', () => {
+  const err = catchError(() => validateGenerateResult({ files: null, evidence: {} }, 'test'));
+  assert.equal(err.code, 'WPLY003');
+  assert.match(err.message, /files/);
+  assert.match(err.message, /null/);
+});
+
+test('validateGenerateResult — rejects { files: [], evidence: {} } (WPLY003)', () => {
+  const err = catchError(() => validateGenerateResult({ files: [], evidence: {} }));
+  assert.equal(err.code, 'WPLY003');
+  assert.match(err.message, /files/);
+  assert.match(err.message, /Array/);
+});
+
+test('validateGenerateResult — rejects { files: {}, evidence: null } (WPLY003)', () => {
+  const err = catchError(() => validateGenerateResult({ files: {}, evidence: null }));
+  assert.equal(err.code, 'WPLY003');
+  assert.match(err.message, /evidence/);
+  assert.match(err.message, /null/);
+});
+
+test('validateGenerateResult — rejects { files: {}, evidence: 42 } (WPLY003)', () => {
+  const err = catchError(() => validateGenerateResult({ files: {}, evidence: 42 }));
+  assert.equal(err.code, 'WPLY003');
+  assert.match(err.message, /evidence/);
+  assert.match(err.message, /number/);
+});
+
+test('validateGenerateResult — includes plugin name in error messages', () => {
+  const err = catchError(() => validateGenerateResult(null, 'my-plugin'));
+  assert.match(err.message, /"my-plugin"/);
+});
+
+// ===========================================================================
+// PluginRunner error type
+// ===========================================================================
+
+test('PluginRunner — thrown errors are PluginError instances', async () => {
+  const runner = makeRunner();
+  const plugin = makePlugin({
+    async generate() { throw new Error('boom'); }
+  });
+
+  const err = await catchReject(() => runner.run([plugin], {}));
+  assert.ok(err instanceof PluginError, 'should be PluginError');
+  assert.equal(err.name, 'PluginError');
+  assert.equal(err.code, 'WPLY002');
+  assert.ok(err.cause instanceof Error, 'should chain original error as cause');
+  assert.equal(err.cause.message, 'boom');
 });

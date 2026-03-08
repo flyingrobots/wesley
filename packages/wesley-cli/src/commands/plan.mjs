@@ -6,6 +6,7 @@ import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import { buildOutputPathMap, resolveFilePath } from '../utils/output-paths.mjs';
 import { buildAdditivePlan, explainPlan, emitMigrations } from './_migration-plan.mjs';
 import { assertValid } from '../framework/schemaValidator.mjs';
+import { WesleyError } from '@wesley/core';
 
 export class PlanCommand extends WesleyCommand {
   constructor(ctx) {
@@ -36,7 +37,7 @@ export class PlanCommand extends WesleyCommand {
     // Enforce clean tree only in strict policy; default: allow
     const env = this.ctx.env || {};
     if (shouldEnforceCleanPlan(env) && !options.allowDirty) {
-      try { await assertCleanGit(this.ctx.shell); } catch (e) { e.code = e.code || 'DIRTY_WORKTREE'; throw e; }
+      await assertCleanGit(this.ctx.shell);
     }
 
     const current = this.ctx.parsers.graphql.parse(schemaContent);
@@ -152,7 +153,6 @@ function bar(n){
   return max > 0 ? ' ' + '▓'.repeat(max) : '';
 }
 
-export default PlanCommand;
 
 // Git cleanliness check
 function shouldEnforceCleanPlan(env) {
@@ -164,9 +164,7 @@ async function assertCleanGit(shell) {
   try { await shell.exec('git rev-parse --is-inside-work-tree'); } catch { return; }
   const out = (await shell.exec('git status --porcelain'))?.stdout?.trim?.() || '';
   if (out) {
-    const err = new Error('Working tree has uncommitted changes. Commit or stash before running, or pass --allow-dirty.');
-    err.code = 'DIRTY_WORKTREE';
-    throw err;
+    throw new WesleyError('DIRTY_WORKTREE', 'Working tree has uncommitted changes. Commit or stash before running, or pass --allow-dirty.');
   }
 }
 

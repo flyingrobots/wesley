@@ -104,7 +104,6 @@ export class ValidateBundleCommand extends WesleyCommand {
   }
 }
 
-export default ValidateBundleCommand;
 
 // Auto-register this command by creating an instance
 new ValidateBundleCommand();

@@ -25,4 +25,3 @@ export class ZodCommand extends FileOutputGeneratorCommand {
   }
 }
 
-export default ZodCommand;

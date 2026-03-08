@@ -14,6 +14,12 @@ export { computeHashChain, computeSdlHash, computeIrHash, computeBundleHash } fr
 export { computeDelta } from './domain/schemaDelta.mjs';
 export { GQL_TO_PG, PG_TO_GQL, fieldTypeToPg, gqlScalarToPg } from './domain/typeMapping.mjs';
 
+// Domain Errors
+export { WesleyError, OpsError, PluginError } from './domain/WesleyError.mjs';
+
+// Exit codes
+export { exitCodeFor, isRegistered, getRegistry } from './domain/ExitCodes.mjs';
+
 // Domain Events
 export * from './domain/Events.mjs';
 
@@ -40,9 +46,11 @@ export {
 export * from './application/Commands.mjs';
 export * from './application/UseCases.mjs';
 export { GenerationPipeline } from './application/GenerationPipeline.mjs';
+export { irToSchema } from './application/irToSchema.mjs';
 export { EvidenceMap } from './application/EvidenceMap.mjs';
 export { ScoringEngine } from './application/Scoring.mjs';
 export { PluginRunner } from './application/PluginRunner.mjs';
+export { TransmutationRunner } from './application/TransmutationRunner.mjs';
 export { ArtifactWriter } from './application/ArtifactWriter.mjs';
 export { discoverPlugins } from './application/PluginDiscovery.mjs';
 export { validateConfig, KNOWN_EXPERIMENTAL_FLAGS } from './application/ConfigValidator.mjs';
@@ -76,7 +84,7 @@ export { FileSystemPort } from './ports/fs.mjs';
 // Fixed case sensitivity: logger.mjs -> Logger.mjs
 export { LoggerPort } from './ports/Logger.mjs';
 export { ClockPort, SystemClock, FakeClock, systemClock } from './ports/clock.mjs';
-export { GeneratorPlugin, validatePlugin, validatePlan, SUPPORTED_API_VERSIONS } from './ports/GeneratorPlugin.mjs';
+export { GeneratorPlugin, validatePlugin, validatePlan, validateGenerateResult, SUPPORTED_API_VERSIONS } from './ports/GeneratorPlugin.mjs';
 export { ArtifactWriterPort, detectConflicts } from './ports/ArtifactWriter.mjs';
 
 // Utility helpers
