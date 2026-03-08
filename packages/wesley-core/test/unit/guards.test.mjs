@@ -13,14 +13,14 @@ test('mustFind: returns the matching element', () => {
 test('mustFind: throws with the provided message when no element matches', () => {
   assert.throws(
     () => mustFind([1, 2, 3], (n) => n > 10, 'too small'),
-    { message: 'too small' },
+    { message: 'too small' }
   );
 });
 
 test('mustFind: throws an Error instance', () => {
   assert.throws(
     () => mustFind([], () => true, 'empty'),
-    Error,
+    Error
   );
 });
 
@@ -44,14 +44,14 @@ test('mustMatch: returns the match array on success', () => {
 test('mustMatch: throws with the provided message when the pattern does not match', () => {
   assert.throws(
     () => mustMatch('hello', /\d+/, 'expected digits'),
-    { message: 'expected digits' },
+    { message: 'expected digits' }
   );
 });
 
 test('mustMatch: throws an Error instance', () => {
   assert.throws(
     () => mustMatch('', /x/, 'miss'),
-    Error,
+    Error
   );
 });
 
@@ -70,7 +70,7 @@ test('mustMatch: supports capture groups', () => {
   const result = mustMatch(
     'col_name INTEGER NOT NULL',
     /^(\w+)\s+(\w+)/,
-    'bad column def',
+    'bad column def'
   );
   assert.equal(result[1], 'col_name');
   assert.equal(result[2], 'INTEGER');
