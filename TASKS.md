@@ -66,7 +66,7 @@ each step.
 
 ## Phase 5 — Migrate Supabase Generator
 
-- [ ] **T-5.1** Update `emitDDL()` and `emitRLS()` in `packages/wesley-generator-supabase/src/emit.mjs`
+- [x] **T-5.1** Update `emitDDL()` and `emitRLS()` in `packages/wesley-generator-supabase/src/emit.mjs`
   - `table.columns` → `table.fields`
   - `col.type` (PG string) → map `field.type.base` from GraphQL to PG (move mapping here or shared util)
   - `col.nullable`, `.default`, `.unique` → read from `field.directives`
@@ -77,7 +77,7 @@ each step.
 
 ## Phase 6 — Migrate JS Model Generator
 
-- [ ] **T-6.1** Update `ModelGenerator.generate()` in `packages/wesley-generator-js/src/model.mjs`
+- [x] **T-6.1** Update `ModelGenerator.generate()` in `packages/wesley-generator-js/src/model.mjs`
   - `table.columns` → `table.fields`
   - `column.type` (PG string) → map from `field.type.base` (GraphQL scalar)
   - `column.default` → `field.directives.default?.value`

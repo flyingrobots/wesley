@@ -3,9 +3,29 @@
  * Side-effect free exports for lazy loading
  */
 
+const GQL_TO_PG = {
+  'ID': 'uuid',
+  'UUID': 'uuid',
+  'String': 'text',
+  'Int': 'integer',
+  'Float': 'double precision',
+  'Boolean': 'boolean',
+  'DateTime': 'timestamptz',
+  'Date': 'date',
+  'Time': 'time with time zone',
+  'JSON': 'jsonb',
+  'Decimal': 'numeric',
+  'BigInt': 'bigint'
+};
+
+function gqlToPgType(fieldType) {
+  const pgBase = GQL_TO_PG[fieldType.base] || 'text';
+  return fieldType.isList ? `${pgBase}[]` : pgBase;
+}
+
 /**
- * Emit PostgreSQL DDL from canonical IR
- * @param {object} ir - { tables: [...] }
+ * Emit PostgreSQL DDL from Wesley IR
+ * @param {object} ir - Wesley IR with structured fields and directives
  */
 export function emitDDL(ir) {
   const q = (id) => '"' + String(id).replace(/"/g, '""') + '"';
@@ -13,21 +33,24 @@ export function emitDDL(ir) {
 
   const tables = ir.tables || [];
   const create = [];
-  const indexes = [];
+  const indexStmts = [];
   const fks = [];
 
   // Pass 1: CREATE TABLE only (with PK/UNIQUE)
   for (const table of tables) {
     const tbl = tname(table.name);
     const colLines = [];
-    for (const col of table.columns || []) {
-      const parts = [q(col.name), col.type];
-      if (col.nullable === false) parts.push('NOT NULL');
-      if (col.default) parts.push('DEFAULT ' + col.default);
+    for (const field of table.fields) {
+      const parts = [q(field.name), gqlToPgType(field.type)];
+      if (field.nullable === false) parts.push('NOT NULL');
+      if (field.directives.default) parts.push('DEFAULT ' + field.directives.default.value);
       colLines.push('  ' + parts.join(' '));
     }
-    if (table.primaryKey) colLines.push(`  PRIMARY KEY (${q(table.primaryKey)})`);
-    for (const col of table.columns || []) if (col.unique) colLines.push(`  UNIQUE (${q(col.name)})`);
+    const pkField = table.fields.find(f => f.directives.pk);
+    if (pkField) colLines.push(`  PRIMARY KEY (${q(pkField.name)})`);
+    for (const field of table.fields) {
+      if (field.directives.unique) colLines.push(`  UNIQUE (${q(field.name)})`);
+    }
     create.push(`CREATE TABLE IF NOT EXISTS ${q(tbl)} (\n${colLines.join(',\n')}\n);`);
   }
 
@@ -35,36 +58,39 @@ export function emitDDL(ir) {
   for (const table of tables) {
     const tbl = tname(table.name);
     for (const idx of table.indexes || []) {
-      const idxName = idx.name || `idx_${tbl}_${(idx.columns || []).join('_')}`;
+      const cols = (idx.fields || []);
+      const idxName = idx.name || `idx_${tbl}_${cols.join('_')}`;
       const using = idx.using ? ` USING ${idx.using}` : '';
-      const cols = (idx.columns || []).map((c) => q(c)).join(', ');
-      indexes.push(`CREATE INDEX CONCURRENTLY IF NOT EXISTS ${q(idxName)} ON ${q(tbl)}${using} (${cols});`);
+      indexStmts.push(`CREATE INDEX CONCURRENTLY IF NOT EXISTS ${q(idxName)} ON ${q(tbl)}${using} (${cols.map(c => q(c)).join(', ')});`);
     }
   }
 
   // Pass 3: FKs (NOT VALID)
   for (const table of tables) {
     const tbl = tname(table.name);
-    for (const fk of table.foreignKeys || []) {
-      const cname = `fk_${tbl}_${fk.column}`;
-      const refTable = tname(fk.refTable);
-      fks.push(`ALTER TABLE ${q(tbl)} ADD CONSTRAINT ${q(cname)} FOREIGN KEY (${q(fk.column)}) REFERENCES ${q(refTable)} (${q(fk.refColumn)}) NOT VALID;`);
+    for (const field of table.fields) {
+      if (!field.directives.fk) continue;
+      const fk = field.directives.fk;
+      const cname = `fk_${tbl}_${field.name}`;
+      const refTable = tname(fk.targetTable);
+      fks.push(`ALTER TABLE ${q(tbl)} ADD CONSTRAINT ${q(cname)} FOREIGN KEY (${q(field.name)}) REFERENCES ${q(refTable)} (${q(fk.targetField)}) NOT VALID;`);
     }
   }
 
-  const content = [create.join('\n'), indexes.join('\n'), fks.join('\n')].filter(Boolean).join('\n\n') + '\n';
+  const content = [create.join('\n'), indexStmts.join('\n'), fks.join('\n')].filter(Boolean).join('\n\n') + '\n';
   return { label: 'ddl', files: [{ name: 'schema.sql', content }] };
 }
 
 /**
- * Emit RLS policies (stub for MVP)
+ * Emit RLS policies
  */
 export function emitRLS(ir) {
   const lines = [];
   const q = (id) => '"' + String(id).replace(/"/g, '""').toLowerCase() + '"';
   for (const t of ir.tables || []) {
-    const rls = (t.directives || {})['wes_rls'] || (t.directives || {})['rls'];
-    if (rls || t.tenantBy) {
+    const rls = t.directives?.rls;
+    const tenantField = t.directives?.tenant?.field;
+    if (rls || tenantField) {
       lines.push(`-- RLS for ${t.name}`);
       lines.push(`ALTER TABLE ${q(t.name)} ENABLE ROW LEVEL SECURITY;`);
       const map = [ ['select','SELECT'], ['insert','INSERT'], ['update','UPDATE'], ['delete','DELETE'] ];
