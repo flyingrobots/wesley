@@ -23,11 +23,15 @@ const PG_TO_GQL = {
 
 function pgTypeToGraphQL(pgType) {
   const base = pgType.replace('[]', '');
-  return PG_TO_GQL[base] || 'String';
+  const mapped = PG_TO_GQL[base];
+  if (!mapped) {
+    throw new Error(`irToSchema: unmapped PostgreSQL type "${pgType}" — add it to PG_TO_GQL`);
+  }
+  return mapped;
 }
 
 function buildFieldDirectives(column, table) {
-  const directives = {};
+  const directives = { ...(column.directives || {}) };
 
   if (table.primaryKey === column.name) {
     directives['@primaryKey'] = {};
@@ -68,7 +72,11 @@ export function irToSchema(ir) {
         directives: buildFieldDirectives(c, t)
       });
     }
-    tables[t.name] = new Table({ name: t.name, directives: {}, fields });
+    tables[t.name] = new Table({
+      name: t.name,
+      directives: t.directives || {},
+      fields
+    });
   }
 
   return new Schema(tables);

@@ -18,8 +18,8 @@ export class ZodCommand extends FileOutputGeneratorCommand {
 
     const outFile = options.outFile;
     const written = await this.writeOutput({ code: zodCode, outFile, options });
-    if (!options.quiet && outFile) {
-      console.log(`Generated Zod schemas: ${written}`);
+    if (!options.quiet && !options.json && outFile) {
+      context.logger.info(`Generated Zod schemas: ${written}`);
     }
     return { outFile: written };
   }

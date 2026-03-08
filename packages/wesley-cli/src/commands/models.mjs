@@ -13,7 +13,7 @@ export class ModelsCommand extends GeneratorCommand {
   }
 
   async executeCore(context) {
-    const { schemaContent, options } = context;
+    const { schemaContent, options, logger } = context;
 
     const ir = this.ctx.parsers.graphql.parse(schemaContent);
 
@@ -24,10 +24,10 @@ export class ModelsCommand extends GeneratorCommand {
 
     const result = await generator.generate(ir, { outDir: options.outDir });
 
-    if (!options.quiet) {
-      console.log('Generated model classes:');
-      result.files.forEach((file) => console.log(`  ${file}`));
-      console.log(`\nTarget: ${result.target} (${result.outputDir})`);
+    if (!options.quiet && !options.json) {
+      logger.info('Generated model classes:');
+      result.files.forEach((file) => logger.info(`  ${file}`));
+      logger.info(`Target: ${result.target} (${result.outputDir})`);
     }
     return result;
   }

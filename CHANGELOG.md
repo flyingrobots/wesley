@@ -29,7 +29,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Removed
 
-- **host-node**: Removed unused `MigrationDiffEngine` stub from `index.mjs`.
+- **host-node**: Removed public `MigrationDiffEngine` export from `index.mjs`.
+  The internal stub in `adapters/index.mjs` is unchanged.
 
 ### Security
 

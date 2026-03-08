@@ -150,7 +150,7 @@ teardown() {
 @test "package exports work correctly" {
     # Test that generators are importable from @wesley/generator-js
     cd packages/wesley-cli
-    run node -e "
+    run node --input-type=module -e "
     const imports = await import('@wesley/generator-js');
     const requiredExports = ['ModelGenerator', 'TypeScriptGenerator', 'ZodGenerator'];
     const missing = requiredExports.filter(exp => !imports[exp]);
