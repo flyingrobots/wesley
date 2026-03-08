@@ -6,6 +6,31 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Changed
+
+- **License**: Standardized all `package.json` files to `Apache-2.0`, matching
+  the project's `LICENSE` file. Removed appended MIND-UCAL text from `LICENSE`.
+  Added `NOTICE` file per Apache 2.0 requirements.
+
+### Added
+
+- **CLI**: Revived `models`, `typescript` (alias `ts`), and `zod` commands,
+  wired to existing generators in `@wesley/generator-js`:
+  - `wesley models --schema <file> --target ts|js --out-dir <dir>`
+  - `wesley typescript --schema <file> [--out-file <file>]`
+  - `wesley zod --schema <file> [--out-file <file>]`
+- **CLI framework**: `irToSchema` adapter bridging parser IR to core domain
+  `Schema`/`Table`/`Field` objects for TypeScript and Zod generators.
+
+### Fixed
+
+- `GeneratorCommand` and `FileOutputGeneratorCommand` constructors now accept
+  DI context as first argument, matching `WesleyCommand`.
+
+### Removed
+
+- **host-node**: Removed unused `MigrationDiffEngine` stub from `index.mjs`.
+
 ### Security
 
 - **S:** Resolved 15 GitHub dependabot alerts (11 high, 4 moderate) — bumped `@playwright/test` 1.49→1.58.2 (SSL cert verification), `dependency-cruiser` 17.1→17.3.8, `ajv` ^8.12→^8.18 in `@wesley/cli` (ReDoS); added pnpm overrides for transitive `minimatch` (ReDoS), `js-yaml` (prototype pollution), `markdown-it` (ReDoS)
