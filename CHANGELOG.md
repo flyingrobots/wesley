@@ -9,6 +9,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 ### Added
 
 #### WASM ABI Codec Generation
+
 - **`emitWasmAbiCodec`**: Generates `wasm_abi_codec.generated.rs` with deterministic
   binary encode/decode for all Echo WASM FFI response types (`DispatchResponse`,
   `HeadInfo`, `StepResponse`, `ChannelData`, `DrainResponse`, `RegistryInfo`,
@@ -53,6 +54,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **`EchoPlugin.plan()`** now declares 10 potential artifacts (was 8)
 
 #### Other
+
 - `@wesley/test-fixtures` package with shared test schema builders (`simpleUser`,
   `userWithProfile`, `multiTenant`, `ecommerce`, `allDataTypes`, `empty`,
   `circularForeignKeys`), re-exported `MockDatabase`, `testFixtures`, `dbAssert`,

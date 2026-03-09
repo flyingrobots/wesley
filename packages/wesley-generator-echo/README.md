@@ -40,7 +40,7 @@ Returns:
   profile: {
     name: "app",
     targets: { ir: [...], typescript: [...], rust: [...] },
-    artifact_count: 8  // varies by schema (6 always + conditionals)
+    artifact_count: 10  // varies by schema (6 always + 4 conditionals max)
   }
 }
 ```
