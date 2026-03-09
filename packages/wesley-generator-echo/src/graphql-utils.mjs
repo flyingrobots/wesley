@@ -33,6 +33,13 @@ export function unwrapType(typeNode) {
     }
   }
 
-  const typeName = node.name?.value ?? (node.type?.name?.value ?? 'Unknown');
-  return { typeName, required, list };
+  if (node.kind === Kind.LIST_TYPE || node.kind === Kind.NON_NULL_TYPE) {
+    throw new Error(`unwrapType: unsupported nested type wrapper (kind=${node.kind})`);
+  }
+
+  if (!node.name?.value) {
+    throw new Error(`unwrapType: reached terminal node without a name (kind=${node.kind})`);
+  }
+
+  return { typeName: node.name.value, required, list };
 }

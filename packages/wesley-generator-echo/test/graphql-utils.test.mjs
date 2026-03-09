@@ -49,16 +49,19 @@ describe('unwrapType', () => {
     expect(unwrapType(node)).toEqual({ typeName: 'Baz', required: true, list: true });
   });
 
-  it('falls back to "Unknown" for a node with no name', () => {
+  it('throws for a terminal node without a name', () => {
     const node = { kind: 'SomeWeirdKind' };
-    expect(unwrapType(node)).toEqual({ typeName: 'Unknown', required: false, list: false });
+    expect(() => unwrapType(node)).toThrow(/terminal node without a name/);
   });
 
-  it('falls back through node.type.name when node.name is absent', () => {
+  it('rejects nested list types instead of flattening them', () => {
     const node = {
-      kind: Kind.NAMED_TYPE,
-      type: { name: { value: 'Fallback' } },
+      kind: Kind.LIST_TYPE,
+      type: {
+        kind: Kind.LIST_TYPE,
+        type: { kind: Kind.NAMED_TYPE, name: { value: 'Nested' } },
+      },
     };
-    expect(unwrapType(node)).toEqual({ typeName: 'Fallback', required: false, list: false });
+    expect(() => unwrapType(node)).toThrow(/unsupported nested type wrapper/);
   });
 });
