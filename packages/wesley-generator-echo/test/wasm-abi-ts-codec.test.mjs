@@ -1,53 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { emitWasmAbiCodecTs } from '../src/emitWasmAbiCodecTs.mjs';
-
-// ---------------------------------------------------------------------------
-// Fixtures
-// ---------------------------------------------------------------------------
-
-const ABI_SDL = /* GraphQL */ `
-  scalar Hash32
-  scalar Bytes
-  scalar U32
-  scalar U64
-
-  type DispatchResponse {
-    accepted: Boolean!
-    intentId: Hash32!
-  }
-
-  type HeadInfo {
-    commitId: Hash32!
-    stateRoot: Hash32!
-    tick: U64!
-  }
-
-  type StepResponse {
-    head: HeadInfo!
-    ticksExecuted: U32!
-  }
-
-  type ChannelData {
-    channelId: Hash32!
-    data: Bytes!
-  }
-
-  type DrainResponse {
-    channels: [ChannelData!]!
-  }
-
-  type RegistryInfo {
-    abiVersion: U32!
-    codecId: String
-    registryVersion: String
-    schemaSha256Hex: String
-  }
-
-  type AbiError {
-    code: U32!
-    message: String!
-  }
-`;
+import { ABI_SDL } from './fixtures/wasm-abi-sdl.mjs';
 
 // ---------------------------------------------------------------------------
 // Basic generation
@@ -97,11 +50,14 @@ describe('interface generation', () => {
     expect(ts).toContain('channels: ChannelData[];');
   });
 
-  it('marks optional fields with ? modifier', () => {
+  it('marks optional fields with ? modifier and | null', () => {
     const ts = emitWasmAbiCodecTs(ABI_SDL);
     expect(ts).toContain('codecId?:');
     expect(ts).toContain('registryVersion?:');
     expect(ts).toContain('schemaSha256Hex?:');
+    // Should use | null, not | null | undefined (? already implies undefined)
+    expect(ts).toContain('| null;');
+    expect(ts).not.toContain('| null | undefined');
   });
 });
 
@@ -116,6 +72,15 @@ describe('AbiResult type', () => {
     expect(ts).toContain('ok: true');
     expect(ts).toContain('ok: false');
     expect(ts).toContain('error: AbiError');
+  });
+
+  it('emits AbiError interface before AbiResult', () => {
+    const ts = emitWasmAbiCodecTs(ABI_SDL);
+    const errorIdx = ts.indexOf('export interface AbiError');
+    const resultIdx = ts.indexOf('export type AbiResult');
+    expect(errorIdx).toBeGreaterThan(-1);
+    expect(resultIdx).toBeGreaterThan(-1);
+    expect(errorIdx).toBeLessThan(resultIdx);
   });
 });
 
@@ -220,7 +185,7 @@ describe('envelope', () => {
     expect(ts).toContain('export function encodeErr(');
   });
 
-  it('emits convenience envelope decoders per type', () => {
+  it('emits convenience envelope decoders per response type', () => {
     const ts = emitWasmAbiCodecTs(ABI_SDL);
     expect(ts).toContain('export function decodeDispatchResponseEnvelope(');
     expect(ts).toContain('export function decodeStepResponseEnvelope(');
@@ -236,14 +201,17 @@ describe('envelope', () => {
 describe('Hash32 TypeScript handling', () => {
   it('encodes Hash32 as fixed 32 bytes without length prefix', () => {
     const ts = emitWasmAbiCodecTs(ABI_SDL);
-    // _encodeHash32 should copy exactly 32 bytes
-    const encodeBlock = ts.slice(ts.indexOf('function _encodeHash32'));
+    const idx = ts.indexOf('function _encodeHash32');
+    expect(idx).toBeGreaterThan(-1);
+    const encodeBlock = ts.slice(idx);
     expect(encodeBlock).toContain('32');
   });
 
   it('decodes Hash32 as fixed 32 bytes', () => {
     const ts = emitWasmAbiCodecTs(ABI_SDL);
-    const decodeBlock = ts.slice(ts.indexOf('function _decodeHash32'));
+    const idx = ts.indexOf('function _decodeHash32');
+    expect(idx).toBeGreaterThan(-1);
+    const decodeBlock = ts.slice(idx);
     expect(decodeBlock).toContain('32');
   });
 });
@@ -255,8 +223,9 @@ describe('Hash32 TypeScript handling', () => {
 describe('alphabetical field order', () => {
   it('encodes fields in alphabetical order', () => {
     const ts = emitWasmAbiCodecTs(ABI_SDL);
-    // In _encodeDispatchResponse: accepted before intentId
-    const encBlock = ts.slice(ts.indexOf('function _encodeDispatchResponse'));
+    const idx = ts.indexOf('function _encodeDispatchResponse');
+    expect(idx).toBeGreaterThan(-1);
+    const encBlock = ts.slice(idx);
     const acceptedIdx = encBlock.indexOf('value.accepted');
     const intentIdx = encBlock.indexOf('value.intentId');
     expect(acceptedIdx).toBeLessThan(intentIdx);

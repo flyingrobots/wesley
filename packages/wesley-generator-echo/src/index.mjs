@@ -147,6 +147,8 @@ export async function generateEcho({ sdl, ir, mutationIdNamespace = 'Mutation', 
     files.push({ path: 'guarded_views.generated.rs', content: guardedViews });
   }
 
+  // WASM ABI codecs are always emitted (WASM_ABI_SDL is a hardcoded constant with
+  // object types, so emitters never return null). Guards kept for defensive safety.
   const abiRust = emitWasmAbiCodec(WASM_ABI_SDL);
   if (abiRust) {
     files.push({ path: 'wasm_abi_codec.generated.rs', content: abiRust });

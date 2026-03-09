@@ -1,54 +1,12 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { emitWasmAbiCodec } from '../src/emitWasmAbiCodec.mjs';
 import { generateEcho } from '../src/index.mjs';
+import { ABI_SDL } from './fixtures/wasm-abi-sdl.mjs';
 
-// ---------------------------------------------------------------------------
-// Fixtures
-// ---------------------------------------------------------------------------
-
-const ABI_SDL = /* GraphQL */ `
-  scalar Hash32
-  scalar Bytes
-  scalar U32
-  scalar U64
-
-  type DispatchResponse {
-    accepted: Boolean!
-    intentId: Hash32!
-  }
-
-  type HeadInfo {
-    commitId: Hash32!
-    stateRoot: Hash32!
-    tick: U64!
-  }
-
-  type StepResponse {
-    head: HeadInfo!
-    ticksExecuted: U32!
-  }
-
-  type ChannelData {
-    channelId: Hash32!
-    data: Bytes!
-  }
-
-  type DrainResponse {
-    channels: [ChannelData!]!
-  }
-
-  type RegistryInfo {
-    abiVersion: U32!
-    codecId: String
-    registryVersion: String
-    schemaSha256Hex: String
-  }
-
-  type AbiError {
-    code: U32!
-    message: String!
-  }
-`;
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // ---------------------------------------------------------------------------
 // Basic generation
@@ -78,11 +36,12 @@ describe('wasm_abi_codec Rust generation', () => {
 // ---------------------------------------------------------------------------
 
 describe('AbiDecodeError', () => {
-  it('emits AbiDecodeError enum', () => {
+  it('emits AbiDecodeError enum with all variants', () => {
     const rs = emitWasmAbiCodec(ABI_SDL);
     expect(rs).toContain('pub enum AbiDecodeError {');
     expect(rs).toContain('UnexpectedEof');
     expect(rs).toContain('InvalidOptionTag');
+    expect(rs).toContain('InvalidEnvelopeTag');
     expect(rs).toContain('Utf8Error');
     expect(rs).toContain('ErrorResponse { code: u32, message: String }');
   });
@@ -133,7 +92,6 @@ describe('struct generation', () => {
 describe('Hash32 encoding', () => {
   it('encodes Hash32 as raw 32 bytes without length prefix', () => {
     const rs = emitWasmAbiCodec(ABI_SDL);
-    // extend_from_slice for fixed-size — no encode_bytes call
     expect(rs).toContain('buf.extend_from_slice(&self.intent_id);');
   });
 
@@ -182,6 +140,7 @@ describe('Bytes encoding', () => {
   it('uses u32 LE length prefix for Bytes', () => {
     const rs = emitWasmAbiCodec(ABI_SDL);
     const encodeBytesIdx = rs.indexOf('fn encode_bytes');
+    expect(encodeBytesIdx).toBeGreaterThan(-1);
     const block = rs.slice(encodeBytesIdx, rs.indexOf('}', encodeBytesIdx + 50) + 1);
     expect(block).toContain('(v.len() as u32).to_le_bytes()');
   });
@@ -204,11 +163,12 @@ describe('envelope functions', () => {
     expect(rs).toContain('buf.push(0x00);');
   });
 
-  it('emits decode_envelope', () => {
+  it('emits decode_envelope with InvalidEnvelopeTag for unknown tags', () => {
     const rs = emitWasmAbiCodec(ABI_SDL);
     expect(rs).toContain('pub fn decode_envelope(');
     expect(rs).toContain('0x01 => Ok(&bytes[1..]),');
     expect(rs).toContain('0x00 => {');
+    expect(rs).toContain('AbiDecodeError::InvalidEnvelopeTag(t)');
   });
 });
 
@@ -242,7 +202,32 @@ describe('nested struct encoding', () => {
 
   it('emits decode_raw_le_at for nested struct decoding', () => {
     const rs = emitWasmAbiCodec(ABI_SDL);
-    expect(rs).toContain('HeadInfo::decode_raw_le_at(bytes, &mut offset)');
+    expect(rs).toContain('HeadInfo::decode_raw_le_at(bytes,');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// decode_raw_le_at offset correctness
+// ---------------------------------------------------------------------------
+
+describe('decode_raw_le_at offset handling', () => {
+  it('uses bare offset (not &mut offset) in decode_raw_le_at', () => {
+    const rs = emitWasmAbiCodec(ABI_SDL);
+    // Find DispatchResponse's decode_raw_le_at (has bool + hash32 fields)
+    const implIdx = rs.indexOf('impl DispatchResponse');
+    expect(implIdx).toBeGreaterThan(-1);
+    const implBlock = rs.slice(implIdx);
+    const atMethodIdx = implBlock.indexOf('pub fn decode_raw_le_at(');
+    expect(atMethodIdx).toBeGreaterThan(-1);
+    // Extract just the decode_raw_le_at method body (ends at next closing brace block)
+    const methodStart = implBlock.slice(atMethodIdx);
+    const methodEnd = methodStart.indexOf('Ok(Self {');
+    const methodBody = methodStart.slice(0, methodEnd);
+    // In decode_raw_le_at, offset is already &mut usize — should NOT use &mut offset
+    expect(methodBody).not.toContain('&mut offset');
+    // Should contain bare offset calls (decode_bool takes offset directly)
+    expect(methodBody).toContain('decode_bool(bytes, offset)');
+    expect(methodBody).toContain('decode_hash32(bytes, offset)');
   });
 });
 
@@ -269,8 +254,9 @@ describe('list encoding', () => {
 describe('alphabetical field order', () => {
   it('encodes fields in alphabetical order', () => {
     const rs = emitWasmAbiCodec(ABI_SDL);
-    // In DispatchResponse: accepted (a) before intentId (i)
-    const dispatchBlock = rs.slice(rs.indexOf('impl DispatchResponse'));
+    const implIdx = rs.indexOf('impl DispatchResponse');
+    expect(implIdx).toBeGreaterThan(-1);
+    const dispatchBlock = rs.slice(implIdx);
     const acceptedIdx = dispatchBlock.indexOf('self.accepted');
     const intentIdx = dispatchBlock.indexOf('self.intent_id');
     expect(acceptedIdx).toBeLessThan(intentIdx);
@@ -278,8 +264,9 @@ describe('alphabetical field order', () => {
 
   it('sorts struct fields alphabetically', () => {
     const rs = emitWasmAbiCodec(ABI_SDL);
-    // In HeadInfo struct: commitId before stateRoot before tick
-    const headBlock = rs.slice(rs.indexOf('pub struct HeadInfo'));
+    const structIdx = rs.indexOf('pub struct HeadInfo');
+    expect(structIdx).toBeGreaterThan(-1);
+    const headBlock = rs.slice(structIdx);
     const commitIdx = headBlock.indexOf('commit_id');
     const stateIdx = headBlock.indexOf('state_root');
     const tickIdx = headBlock.indexOf('tick');
@@ -306,5 +293,36 @@ describe('integration with generateEcho', () => {
     const file = result.files.find((f) => f.path === 'wasm_abi_codec.generated.ts');
     expect(file).toBeDefined();
     expect(file.content.length).toBeGreaterThan(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Schema drift detection
+// ---------------------------------------------------------------------------
+
+describe('schema drift detection', () => {
+  it('embedded WASM_ABI_SDL matches canonical schemas/echo-wasm-abi.graphql', async () => {
+    const canonicalPath = join(__dirname, '..', '..', '..', 'schemas', 'echo-wasm-abi.graphql');
+    const canonical = readFileSync(canonicalPath, 'utf8');
+
+    // Normalize: strip comments and collapse whitespace for comparison
+    const normalize = (s) => s
+      .replace(/#[^\n]*/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    const result = await generateEcho({ sdl: 'type Query { hello: String! }' });
+    const rsFile = result.files.find((f) => f.path === 'wasm_abi_codec.generated.rs');
+
+    // The generated Rust code should contain all type names from the canonical schema
+    const typeNames = canonical.match(/^type\s+(\w+)/gm)?.map((m) => m.replace(/^type\s+/, ''));
+    for (const name of typeNames ?? []) {
+      expect(rsFile.content).toContain(`pub struct ${name}`);
+    }
+
+    // The canonical file should parse to the same types as the embedded SDL
+    const canonicalTypes = normalize(canonical);
+    const embeddedTypes = normalize(ABI_SDL);
+    expect(canonicalTypes).toBe(embeddedTypes);
   });
 });

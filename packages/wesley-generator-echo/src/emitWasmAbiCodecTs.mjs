@@ -63,6 +63,9 @@ function parseAbiTypes(sdl) {
   return types;
 }
 
+// ABI schema invariant: list items are always non-null (e.g. [ChannelData!]!).
+// Inner nullability is intentionally discarded — Array<T | null> is not a valid
+// ABI wire type. If this changes, capture listItemRequired here.
 function unwrapType(typeNode) {
   let required = false;
   let list = false;
@@ -115,7 +118,7 @@ function tsTypeForField(fieldType, required, list) {
     break;
   }
   if (list) tsType = `${tsType}[]`;
-  if (!required) tsType = `${tsType} | null | undefined`;
+  if (!required) tsType = `${tsType} | null`;
   return tsType;
 }
 
@@ -184,7 +187,7 @@ function emitHelpers(lines) {
   lines.push('}');
   lines.push('');
 
-  lines.push('function _encodeOption<T>(buf: number[], v: T | null | undefined, encodeInner: (buf: number[], v: T) => void): void {');
+  lines.push('function _encodeOption<T>(buf: number[], v: T | null, encodeInner: (buf: number[], v: T) => void): void {');
   lines.push('  if (v == null) {');
   lines.push('    buf.push(0x00);');
   lines.push('  } else {');

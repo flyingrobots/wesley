@@ -25,10 +25,29 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   `U32`/`U64` as unsigned little-endian integers
 - **Envelope wire format**: Success `[0x01][payload...]`, Error
   `[0x00][u32 LE code][u32 LE msg_len][UTF-8 msg...]`
-- 50 tests (28 Rust codec, 22 TypeScript codec) covering struct generation, scalar
-  encoding, envelope functions, optional/nested/list field handling, and integration
+- 53 tests (30 Rust codec, 23 TypeScript codec) covering struct generation, scalar
+  encoding, envelope functions, optional/nested/list field handling, schema drift,
+  and integration
+
+### Fixed
+
+- **Rust codec `decode_raw_le_at`**: offset parameter now correctly uses `&mut`
+  instead of by-value, matching the mutable-offset convention used by all other
+  decode helpers
+- **`InvalidEnvelopeTag`** error variant added to Rust `AbiError` enum for
+  exhaustive envelope tag matching
+- **`toSnakeCase`** now correctly handles consecutive capitals (e.g.
+  `schemaSha256Hex` → `schema_sha256_hex` instead of `schema_sh_a256_hex`)
+- **TS codec**: removed redundant `| undefined` from optional interface
+  properties (the `?` modifier already implies `undefined`)
+- **TS codec `_encodeOption`**: signature changed from `T | null | undefined` to
+  `T | null` for consistency with interface types
+- **Shared SDL fixture**: test suites now import from a single canonical
+  `test/fixtures/wasm-abi-sdl.mjs` to prevent schema drift between Rust and TS
+  codec tests
 
 ### Changed
+
 - **`CONTRACT_VERSION`** bumped from `1.1.0` to `1.2.0` — reflects new WASM ABI
   codec artifact files (`wasm_abi_codec.generated.rs`, `wasm_abi_codec.generated.ts`)
 - **`EchoPlugin.plan()`** now declares 10 potential artifacts (was 8)

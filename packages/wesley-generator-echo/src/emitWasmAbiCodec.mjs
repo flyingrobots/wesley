@@ -66,6 +66,9 @@ function parseAbiTypes(sdl) {
   return types;
 }
 
+// ABI schema invariant: list items are always non-null (e.g. [ChannelData!]!).
+// Inner nullability is intentionally discarded — Vec<Option<T>> is not a valid
+// ABI wire type. If this changes, capture listItemRequired here.
 function unwrapType(typeNode) {
   let required = false;
   let list = false;
@@ -99,6 +102,7 @@ function emitDecodeError(w) {
   w.writeLine('UnexpectedEof,');
   w.writeLine('InvalidOptionTag(u8),');
   w.writeLine('Utf8Error(std::string::FromUtf8Error),');
+  w.writeLine('InvalidEnvelopeTag(u8),');
   w.writeLine('ErrorResponse { code: u32, message: String },');
   w.dedent();
   w.writeLine('}');
@@ -113,6 +117,7 @@ function emitDecodeError(w) {
   w.writeLine('AbiDecodeError::UnexpectedEof => write!(f, "unexpected end of input"),');
   w.writeLine('AbiDecodeError::InvalidOptionTag(t) => write!(f, "invalid option tag: {}", t),');
   w.writeLine('AbiDecodeError::Utf8Error(e) => write!(f, "utf8 error: {}", e),');
+  w.writeLine('AbiDecodeError::InvalidEnvelopeTag(t) => write!(f, "invalid envelope tag: {}", t),');
   w.writeLine('AbiDecodeError::ErrorResponse { code, message } => write!(f, "ABI error {}: {}", code, message),');
   w.dedent();
   w.writeLine('}');
@@ -422,22 +427,22 @@ function encodeClosureForType(typeName) {
   }
 }
 
-function decodeCallForType(typeName) {
+function decodeCallForType(typeName, offsetExpr = '&mut offset') {
   switch (typeName) {
   case 'Boolean':
-    return 'decode_bool(bytes, &mut offset)?';
+    return `decode_bool(bytes, ${offsetExpr})?`;
   case 'U32':
-    return 'decode_u32_le(bytes, &mut offset)?';
+    return `decode_u32_le(bytes, ${offsetExpr})?`;
   case 'U64':
-    return 'decode_u64_le(bytes, &mut offset)?';
+    return `decode_u64_le(bytes, ${offsetExpr})?`;
   case 'String':
-    return 'decode_string(bytes, &mut offset)?';
+    return `decode_string(bytes, ${offsetExpr})?`;
   case 'Hash32':
-    return 'decode_hash32(bytes, &mut offset)?';
+    return `decode_hash32(bytes, ${offsetExpr})?`;
   case 'Bytes':
-    return 'decode_bytes(bytes, &mut offset)?';
+    return `decode_bytes(bytes, ${offsetExpr})?`;
   default:
-    return `${typeName}::decode_raw_le_at(bytes, &mut offset)?`;
+    return `${typeName}::decode_raw_le_at(bytes, ${offsetExpr})?`;
   }
 }
 
@@ -474,17 +479,17 @@ function emitFieldEncode(w, field, snake) {
   }
 }
 
-function emitFieldDecode(w, field, snake) {
+function emitFieldDecode(w, field, snake, offsetExpr = '&mut offset') {
   const { type, required, list } = field;
 
   if (list && required) {
-    w.writeLine(`let ${snake} = decode_list(bytes, &mut offset, ${decodeClosureForType(type)})?;`);
+    w.writeLine(`let ${snake} = decode_list(bytes, ${offsetExpr}, ${decodeClosureForType(type)})?;`);
   } else if (list && !required) {
-    w.writeLine(`let ${snake} = decode_option(bytes, &mut offset, |b, o| decode_list(b, o, ${decodeClosureForType(type)}))?;`);
+    w.writeLine(`let ${snake} = decode_option(bytes, ${offsetExpr}, |b, o| decode_list(b, o, ${decodeClosureForType(type)}))?;`);
   } else if (!required) {
-    w.writeLine(`let ${snake} = decode_option(bytes, &mut offset, ${decodeClosureForType(type)})?;`);
+    w.writeLine(`let ${snake} = decode_option(bytes, ${offsetExpr}, ${decodeClosureForType(type)})?;`);
   } else {
-    w.writeLine(`let ${snake} = ${decodeCallForType(type)};`);
+    w.writeLine(`let ${snake} = ${decodeCallForType(type, offsetExpr)};`);
   }
 }
 
@@ -532,7 +537,7 @@ function emitObjectImpl(w, type) {
   w.indent();
   for (const field of fields) {
     const snake = toSnakeCase(field.name);
-    emitFieldDecode(w, field, snake);
+    emitFieldDecode(w, field, snake, 'offset');
   }
   w.writeLine('Ok(Self {');
   w.indent();
@@ -598,7 +603,7 @@ function emitEnvelope(w) {
   w.writeLine('Err(AbiDecodeError::ErrorResponse { code, message })');
   w.dedent();
   w.writeLine('}');
-  w.writeLine('_ => Err(AbiDecodeError::UnexpectedEof),');
+  w.writeLine('t => Err(AbiDecodeError::InvalidEnvelopeTag(t)),');
   w.dedent();
   w.writeLine('}');
   w.dedent();
@@ -616,5 +621,8 @@ function emitEnvelope(w) {
  * @returns {string}
  */
 function toSnakeCase(name) {
-  return name.replace(/([A-Z])/g, '_$1').toLowerCase().replace(/^_/, '');
+  return name
+    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2')
+    .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+    .toLowerCase();
 }
