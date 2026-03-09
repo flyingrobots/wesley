@@ -51,7 +51,9 @@ export class EchoPlugin extends GeneratorPlugin {
         { path: 'raw_le_codec.generated.ts', reason: 'TypeScript binary codec (conditional on encodable types)' },
         { path: 'raw_le_codec.generated.rs', reason: 'Rust binary codec (conditional on encodable types)' },
         { path: 'join.generated.rs', reason: 'Rust join implementations (conditional on @wes_join directives)' },
-        { path: 'guarded_views.generated.rs', reason: 'Rust guarded view structs (conditional on @wes_view directives)' }
+        { path: 'guarded_views.generated.rs', reason: 'Rust guarded view structs (conditional on @wes_view directives)' },
+        { path: 'wasm_abi_codec.generated.rs', reason: 'Rust WASM ABI boundary codec (always emitted)' },
+        { path: 'wasm_abi_codec.generated.ts', reason: 'TypeScript WASM ABI boundary codec (always emitted)' }
       ],
       metadata: {
         sdl: schema.sdl,

@@ -32,12 +32,15 @@ Returns:
     // Conditional (when IR has @wes_join directives):
     { path: "join.generated.rs", content: "..." },
     // Conditional (when IR has @wes_view directives):
-    { path: "guarded_views.generated.rs", content: "..." }
+    { path: "guarded_views.generated.rs", content: "..." },
+    // Always emitted (WASM ABI boundary codecs):
+    { path: "wasm_abi_codec.generated.rs", content: "..." },
+    { path: "wasm_abi_codec.generated.ts", content: "..." }
   ],
   profile: {
     name: "app",
     targets: { ir: [...], typescript: [...], rust: [...] },
-    artifact_count: 6
+    artifact_count: 10  // varies by schema (6 always + 4 conditionals max)
   }
 }
 ```
@@ -56,6 +59,8 @@ All artifacts are emitted from a single shared IR in one deterministic pass — 
   - `DiagnosticsChannel` for unknown op / decode error surfacing
 - **`raw_le_codec.generated.ts`**: browser-safe binary encode/decode per type (DataView/Uint8Array)
 - **`raw_le_codec.generated.rs`**: Rust binary encode/decode per type (byte-identical to TS codec)
+- **`wasm_abi_codec.generated.rs`**: Rust encode/decode for WASM ABI response types (`DispatchResponse`, `StepResponse`, `DrainResponse`, `RegistryInfo`, `AbiError`) with binary envelope (`encode_ok`/`encode_err`/`decode_envelope`)
+- **`wasm_abi_codec.generated.ts`**: TypeScript encode/decode for WASM ABI response types with `AbiResult<T>` type, `decodeEnvelope()` generic decoder, and per-response-type convenience decoders
 
 ### Plugin usage
 
