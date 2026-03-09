@@ -7,10 +7,60 @@ import { emitJoinImpls } from './emitJoinImpls.mjs';
 import { emitRawLeCodec } from './emitRawLeCodec.mjs';
 import { emitRawLeTsCodec } from './emitRawLeTsCodec.mjs';
 import { emitGuardedViews } from './emitGuardedViews.mjs';
+import { emitWasmAbiCodec } from './emitWasmAbiCodec.mjs';
+import { emitWasmAbiCodecTs } from './emitWasmAbiCodecTs.mjs';
 import { buildLayoutDescriptor, computeLayoutHash } from '@wesley/core';
 
 const PKG_VERSION = '0.1.0'; // keep simple: avoid package.json import in node CLI
-const CONTRACT_VERSION = '1.1.0'; // semver — bump major on breaking artifact schema changes
+const CONTRACT_VERSION = '1.2.0'; // semver — bump major on breaking artifact schema changes
+
+/**
+ * WASM ABI response type definitions for Echo's WASM FFI boundary.
+ * Canonical source: schemas/echo-wasm-abi.graphql
+ */
+const WASM_ABI_SDL = /* GraphQL */ `
+  scalar Hash32
+  scalar Bytes
+  scalar U32
+  scalar U64
+
+  type DispatchResponse {
+    accepted: Boolean!
+    intentId: Hash32!
+  }
+
+  type HeadInfo {
+    commitId: Hash32!
+    stateRoot: Hash32!
+    tick: U64!
+  }
+
+  type StepResponse {
+    head: HeadInfo!
+    ticksExecuted: U32!
+  }
+
+  type ChannelData {
+    channelId: Hash32!
+    data: Bytes!
+  }
+
+  type DrainResponse {
+    channels: [ChannelData!]!
+  }
+
+  type RegistryInfo {
+    abiVersion: U32!
+    codecId: String
+    registryVersion: String
+    schemaSha256Hex: String
+  }
+
+  type AbiError {
+    code: U32!
+    message: String!
+  }
+`;
 
 /**
  * Generator for Echo (Rust/WASM) artifacts.
@@ -95,6 +145,16 @@ export async function generateEcho({ sdl, ir, mutationIdNamespace = 'Mutation', 
   const guardedViews = emitGuardedViews(fullIr);
   if (guardedViews) {
     files.push({ path: 'guarded_views.generated.rs', content: guardedViews });
+  }
+
+  const abiRust = emitWasmAbiCodec(WASM_ABI_SDL);
+  if (abiRust) {
+    files.push({ path: 'wasm_abi_codec.generated.rs', content: abiRust });
+  }
+
+  const abiTs = emitWasmAbiCodecTs(WASM_ABI_SDL);
+  if (abiTs) {
+    files.push({ path: 'wasm_abi_codec.generated.ts', content: abiTs });
   }
 
   // Profile metadata: record which artifact sets were produced in this pass

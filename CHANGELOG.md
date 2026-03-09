@@ -7,6 +7,33 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 ## [Unreleased]
 
 ### Added
+
+#### WASM ABI Codec Generation
+- **`emitWasmAbiCodec`**: Generates `wasm_abi_codec.generated.rs` with deterministic
+  binary encode/decode for all Echo WASM FFI response types (`DispatchResponse`,
+  `HeadInfo`, `StepResponse`, `ChannelData`, `DrainResponse`, `RegistryInfo`,
+  `AbiError`), plus binary envelope helpers (`encode_ok`, `encode_err`,
+  `decode_envelope`) — replaces CBOR encoding at the WASM boundary
+- **`emitWasmAbiCodecTs`**: Generates matching `wasm_abi_codec.generated.ts` with
+  TypeScript encode/decode functions (byte-identical wire format to Rust),
+  `AbiResult<T>` discriminated union, `decodeEnvelope` generic decoder, and
+  per-response-type convenience envelope decoders
+- **`schemas/echo-wasm-abi.graphql`**: Canonical GraphQL schema defining WASM ABI
+  response types with custom scalars (`Hash32`, `Bytes`, `U32`, `U64`)
+- **Custom ABI scalar wire formats**: `Hash32` encodes as raw 32 bytes (no length
+  prefix — fixed-size BLAKE3 hashes), `Bytes` as u32 LE length-prefixed blob,
+  `U32`/`U64` as unsigned little-endian integers
+- **Envelope wire format**: Success `[0x01][payload...]`, Error
+  `[0x00][u32 LE code][u32 LE msg_len][UTF-8 msg...]`
+- 50 tests (28 Rust codec, 22 TypeScript codec) covering struct generation, scalar
+  encoding, envelope functions, optional/nested/list field handling, and integration
+
+### Changed
+- **`CONTRACT_VERSION`** bumped from `1.1.0` to `1.2.0` — reflects new WASM ABI
+  codec artifact files (`wasm_abi_codec.generated.rs`, `wasm_abi_codec.generated.ts`)
+- **`EchoPlugin.plan()`** now declares 10 potential artifacts (was 8)
+
+#### Other
 - `@wesley/test-fixtures` package with shared test schema builders (`simpleUser`,
   `userWithProfile`, `multiTenant`, `ecommerce`, `allDataTypes`, `empty`,
   `circularForeignKeys`), re-exported `MockDatabase`, `testFixtures`, `dbAssert`,
