@@ -1,4 +1,5 @@
 import { parse, Kind } from 'graphql';
+import { unwrapType } from './graphql-utils.mjs';
 
 /**
  * Emit `wasm_abi_codec.generated.ts` containing TypeScript encode/decode
@@ -63,30 +64,6 @@ function parseAbiTypes(sdl) {
   return types;
 }
 
-// ABI schema invariant: list items are always non-null (e.g. [ChannelData!]!).
-// Inner nullability is intentionally discarded — Array<T | null> is not a valid
-// ABI wire type. If this changes, capture listItemRequired here.
-function unwrapType(typeNode) {
-  let required = false;
-  let list = false;
-  let node = typeNode;
-
-  if (node.kind === Kind.NON_NULL_TYPE) {
-    required = true;
-    node = node.type;
-  }
-
-  if (node.kind === Kind.LIST_TYPE) {
-    list = true;
-    node = node.type;
-    if (node.kind === Kind.NON_NULL_TYPE) {
-      node = node.type;
-    }
-  }
-
-  const typeName = node.name?.value ?? 'Unknown';
-  return { typeName, required, list };
-}
 
 // ---------------------------------------------------------------------------
 // Interface emission
