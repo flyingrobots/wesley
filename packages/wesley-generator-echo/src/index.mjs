@@ -10,6 +10,7 @@ import { emitGuardedViews } from './emitGuardedViews.mjs';
 import { emitWasmAbiCodec } from './emitWasmAbiCodec.mjs';
 import { emitWasmAbiCodecTs } from './emitWasmAbiCodecTs.mjs';
 import { buildLayoutDescriptor, computeLayoutHash } from '@wesley/core';
+import { unwrapType } from './graphql-utils.mjs';
 
 const PKG_VERSION = '0.1.0'; // keep simple: avoid package.json import in node CLI
 const CONTRACT_VERSION = '1.2.0'; // semver — bump major on breaking artifact schema changes
@@ -302,28 +303,6 @@ function extractViewDirectives(fieldNode) {
     }
   }
   return views.length > 0 ? views : null;
-}
-
-function unwrapType(typeNode) {
-  let required = false;
-  let list = false;
-  let node = typeNode;
-
-  if (node.kind === Kind.NON_NULL_TYPE) {
-    required = true;
-    node = node.type;
-  }
-
-  if (node.kind === Kind.LIST_TYPE) {
-    list = true;
-    node = node.type;
-    if (node.kind === Kind.NON_NULL_TYPE) {
-      node = node.type; // element non-null; outer required already tracked
-    }
-  }
-
-  const typeName = node.name?.value ?? (node.type?.name?.value ?? 'Unknown');
-  return { typeName, required, list };
 }
 
 export { EchoPlugin } from './EchoPlugin.mjs';

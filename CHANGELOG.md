@@ -6,6 +6,12 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Refactored
+
+- **`unwrapType`**: extracted from three inline copies in `generator-echo`
+  (`index.mjs`, `emitWasmAbiCodec.mjs`, `emitWasmAbiCodecTs.mjs`) into shared
+  `src/graphql-utils.mjs` with 7 dedicated tests
+
 ### Added
 
 #### WASM ABI Codec Generation
