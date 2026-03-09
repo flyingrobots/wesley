@@ -13,6 +13,7 @@
 
 import { collectParams } from './ParamCollector.mjs';
 import { renderIdent } from './identifiers.mjs';
+import { ColumnRef } from './Nodes.mjs';
 
 const SAFE_FUNC_RE = /^[a-zA-Z_][a-zA-Z0-9_.]*$/;
 const SAFE_TYPE_RE = /^[a-zA-Z_][a-zA-Z0-9_ [\]]*$/;
@@ -123,8 +124,6 @@ function renderRelation(r, params, whereParts, identOpts, opts) {
     return renderRelation(r.input, params, whereParts, identOpts, opts);
   }
   default:
-    // Fallback: assume table-like
-    if (r.table && r.alias) return `${renderIdent(r.table, identOpts)} ${renderIdent(r.alias, identOpts)}`;
     throw new Error(`Unsupported relation kind: ${r.kind}`);
   }
 }
@@ -197,17 +196,6 @@ function renderExpr(e, params, identOpts, opts) {
   case 'JsonAgg':
     return renderJsonAgg(e, params, identOpts, opts);
   default:
-    // Backward-compat shims: duck-type plain objects that lack an explicit
-    // `kind` tag but structurally match known expression shapes. These
-    // fallbacks exist for legacy callers that construct raw objects instead
-    // of using Nodes.mjs constructors. Tracked in .claude/bad_code.md.
-    if (isObject(e.left) && e.op) return renderPredicate(e, params, identOpts, opts);
-    if (e.table && e.column) return `${renderIdent(e.table, identOpts)}.${renderIdent(e.column, identOpts)}`;
-    if (e.name && e.args) {
-      const fn2 = String(e.name);
-      if (!SAFE_FUNC_RE.test(fn2)) throw new Error(`Unsafe SQL function name: ${fn2}`);
-      return `${fn2}(${(e.args||[]).map(a => renderExpr(a, params, identOpts, opts)).join(', ')})`;
-    }
     throw new Error(`Unsupported expr kind '${e.kind}'`);
   }
 }
@@ -293,7 +281,7 @@ function guessPrimaryKeyRef(plan) {
   let r = plan.root;
   while (r && r.kind === 'Filter') r = r.input;
   while (r && r.kind === 'Join') r = r.left; // leftmost
-  if (r && r.alias) return { kind: 'ColumnRef', table: r.alias, column: 'id' };
+  if (r && r.alias) return new ColumnRef(r.alias, 'id');
   return null;
 }
 

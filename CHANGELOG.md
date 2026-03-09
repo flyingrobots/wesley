@@ -6,7 +6,19 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Removed
+
+- **QIR duck-typing fallbacks (SR-m2)**: Removed 3 duck-typing fallbacks from
+  `renderExpr` and 1 from `renderRelation` in `lowerToSQL.mjs`. Objects without
+  explicit `kind` tags now throw `Unsupported expr kind` / `Unsupported relation
+  kind` instead of being silently accepted via structural duck-typing. All
+  current callers already use proper `Nodes.mjs` constructors — no behavioral
+  change for well-formed input.
+
 ### Refactored
+
+- **`guessPrimaryKeyRef`**: Uses `new ColumnRef(alias, 'id')` constructor
+  instead of a raw object literal, consistent with the rest of the QIR codebase.
 
 - **`unwrapType`**: extracted from three inline copies in `generator-echo`
   (`index.mjs`, `emitWasmAbiCodec.mjs`, `emitWasmAbiCodecTs.mjs`) into shared

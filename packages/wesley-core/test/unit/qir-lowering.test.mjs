@@ -65,6 +65,44 @@ test('lowerToSQL: JsonAgg gets COALESCE(..., "[]"::jsonb)', () => {
   assert.ok(sql.includes("COALESCE(jsonb_agg(jsonb_build_object('id', t0.id, 'name', t0.name)), '[]'::jsonb)"));
 });
 
+test('renderExpr rejects duck-typed ColumnRef (no kind)', () => {
+  const aa = new AliasAllocator('t');
+  const root = new TableNode('organization', aa.next());
+  const proj = new Projection([
+    new ProjectionItem('col', { table: 't0', column: 'id' }) // no kind
+  ]);
+  const plan = new QueryPlan(root, proj, {});
+  assert.throws(() => lowerToSQL(plan), /Unsupported expr kind/);
+});
+
+test('renderExpr rejects duck-typed FuncCall (no kind)', () => {
+  const aa = new AliasAllocator('t');
+  const root = new TableNode('organization', aa.next());
+  const proj = new Projection([
+    new ProjectionItem('fn', { name: 'count', args: [] }) // no kind
+  ]);
+  const plan = new QueryPlan(root, proj, {});
+  assert.throws(() => lowerToSQL(plan), /Unsupported expr kind/);
+});
+
+test('renderExpr rejects duck-typed predicate in expr position (no kind)', () => {
+  const aa = new AliasAllocator('t');
+  const root = new TableNode('organization', aa.next());
+  const proj = new Projection([
+    new ProjectionItem('pred', { left: new ColumnRef('t0', 'id'), op: 'eq' }) // no kind
+  ]);
+  const plan = new QueryPlan(root, proj, {});
+  assert.throws(() => lowerToSQL(plan), /Unsupported expr kind/);
+});
+
+test('renderRelation rejects duck-typed table (no kind)', () => {
+  const proj = new Projection([
+    new ProjectionItem('id', new ColumnRef('t0', 'id'))
+  ]);
+  const plan = new QueryPlan({ table: 'organization', alias: 't0' }, proj, {}); // no kind
+  assert.throws(() => lowerToSQL(plan), /Unsupported relation kind/);
+});
+
 test('lowerToSQL: IN uses = ANY($n::<type[]>)', () => {
   const aa = new AliasAllocator('t');
   const root = new TableNode('organization', aa.next());
