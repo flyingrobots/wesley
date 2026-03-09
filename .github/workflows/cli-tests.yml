@@ -93,7 +93,7 @@ jobs:
         pnpm test:tap > cli-test-results.tap
 
     - name: Upload TAP test results
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v7
       if: always()
       with:
         name: cli-test-results-${{ matrix.os }}-node${{ matrix.node-version }}
