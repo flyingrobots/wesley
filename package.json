@@ -71,7 +71,7 @@
     "vite": "^7.1.12"
   },
   "devDependencies": {
-    "@eslint/js": "^9.38.0",
+    "@eslint/js": "^9.39.4",
     "@playwright/test": "1.58.2",
     "autoprefixer": "^10.4.21",
     "dependency-cruiser": "17.3.8",
