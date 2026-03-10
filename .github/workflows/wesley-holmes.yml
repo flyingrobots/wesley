@@ -396,7 +396,7 @@ jobs:
           # Ops emission targets schema wes_ops; create it if missing
           PGPASSWORD=postgres psql -h localhost -U postgres -d test -c 'CREATE SCHEMA IF NOT EXISTS wes_ops;'
       
-      - name: "📦 Apply Ops SQL (functions only)"
+      - name: "📦 Apply Ops SQL (views + functions)"
         env:
           WESLEY_OUT_DIR: out
         run: |
@@ -407,32 +407,66 @@ jobs:
             echo "No ops SQL directory found; skipping"
             exit 0
           fi
-          files=("$OPS_DIR"/*.fn.sql)
-          if [ ${#files[@]} -eq 0 ]; then
-            echo "No ops function SQL files found; nothing to apply"
-            exit 0
-          fi
-          for f in "${files[@]}"; do
-            if [ ! -s "$f" ]; then
-              echo "Skipping empty file: $f"
+          # Apply views first, then functions
+          for pattern in "*.view.sql" "*.fn.sql"; do
+            files=("$OPS_DIR"/$pattern)
+            if [ ${#files[@]} -eq 0 ]; then
+              echo "No $pattern files found; skipping"
               continue
             fi
-            echo "Applying $f (single transaction)..."
-            PGPASSWORD=postgres psql -1 -v ON_ERROR_STOP=1 -h localhost -U postgres -d test -f "$f"
+            for f in "${files[@]}"; do
+              if [ ! -s "$f" ]; then
+                echo "Skipping empty file: $f"
+                continue
+              fi
+              echo "Applying $f (single transaction)..."
+              PGPASSWORD=postgres psql -1 -v ON_ERROR_STOP=1 -h localhost -U postgres -d test -f "$f"
+            done
           done
 
       - name: "🌱 Seed minimal data for ops"
         run: |
           set -euo pipefail
-          # Seed a couple of products (one published, one not) and run in a single transaction
+          # Seed products, a user, an order, and order items with deterministic UUIDs
           PGPASSWORD=postgres psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d test <<'SQL'
           BEGIN;
-          insert into product (id, sku, name, slug, price_cents, stock_quantity, published, created_at)
-          values (gen_random_uuid(), 'SKU1', 'Alpha', 'alpha', 100, 10, true, now())
-          on conflict do nothing;
-          insert into product (id, sku, name, slug, price_cents, stock_quantity, published, created_at)
-          values (gen_random_uuid(), 'SKU2', 'Beta', 'beta', 200, 0, false, now())
-          on conflict do nothing;
+
+          -- Products: Alpha (published, matches 'Al%'), Beta (unpublished)
+          INSERT INTO product (id, sku, name, slug, price_cents, stock_quantity, published, created_at)
+          VALUES
+            ('00000000-0000-0000-0000-000000000101'::uuid, 'SKU1', 'Alpha', 'alpha', 100, 10, true, now()),
+            ('00000000-0000-0000-0000-000000000102'::uuid, 'SKU2', 'Beta',  'beta',  200,  0, false, now())
+          ON CONFLICT DO NOTHING;
+
+          -- User
+          INSERT INTO "user" (id, email, password_hash, full_name, created_at)
+          VALUES (
+            '00000000-0000-0000-0000-000000000001'::uuid,
+            'alice@example.com', 'hash_placeholder', 'Alice Test', now()
+          ) ON CONFLICT DO NOTHING;
+
+          -- Order linked to user
+          INSERT INTO "order" (id, order_number, user_id, status, total_cents, created_at)
+          VALUES (
+            '00000000-0000-0000-0000-000000000201'::uuid,
+            'ORD-001',
+            '00000000-0000-0000-0000-000000000001'::uuid,
+            'confirmed', 300, now()
+          ) ON CONFLICT DO NOTHING;
+
+          -- Order items (2 items in that order)
+          INSERT INTO orderitem (id, order_id, product_id, quantity, unit_price_cents)
+          VALUES
+            ('00000000-0000-0000-0000-000000000301'::uuid,
+             '00000000-0000-0000-0000-000000000201'::uuid,
+             '00000000-0000-0000-0000-000000000101'::uuid,
+             2, 100),
+            ('00000000-0000-0000-0000-000000000302'::uuid,
+             '00000000-0000-0000-0000-000000000201'::uuid,
+             '00000000-0000-0000-0000-000000000102'::uuid,
+             1, 200)
+          ON CONFLICT DO NOTHING;
+
           COMMIT;
           SQL
 
@@ -444,7 +478,9 @@ jobs:
           mkdir -p test/fixtures/examples/${WESLEY_OUT_DIR}/ops/explain
           # EXPLAIN (FORMAT JSON) for function calls
           PGPASSWORD=postgres psql -h localhost -U postgres -d test -t -A -c "EXPLAIN (FORMAT JSON) SELECT * FROM wes_ops.op_products_by_name('Al%')" > test/fixtures/examples/${WESLEY_OUT_DIR}/ops/explain/products_by_name.explain.json
-          PGPASSWORD=postgres psql -h localhost -U postgres -d test -t -A -c "EXPLAIN (FORMAT JSON) SELECT * FROM wes_ops.op_orders_by_user('00000000-0000-0000-0000-000000000000')" > test/fixtures/examples/${WESLEY_OUT_DIR}/ops/explain/orders_by_user.explain.json
+          PGPASSWORD=postgres psql -h localhost -U postgres -d test -t -A -c "EXPLAIN (FORMAT JSON) SELECT * FROM wes_ops.op_orders_by_user('00000000-0000-0000-0000-000000000001'::uuid)" > test/fixtures/examples/${WESLEY_OUT_DIR}/ops/explain/orders_by_user.explain.json
+          PGPASSWORD=postgres psql -h localhost -U postgres -d test -t -A -c "EXPLAIN (FORMAT JSON) SELECT * FROM wes_ops.op_orders_with_items_by_user('00000000-0000-0000-0000-000000000001'::uuid)" > test/fixtures/examples/${WESLEY_OUT_DIR}/ops/explain/orders_with_items_by_user.explain.json
+          PGPASSWORD=postgres psql -h localhost -U postgres -d test -t -A -c "EXPLAIN (FORMAT JSON) SELECT * FROM wes_ops.op_all_products()" > test/fixtures/examples/${WESLEY_OUT_DIR}/ops/explain/all_products.explain.json
 
       - name: "⬆️ Upload EXPLAIN snapshots"
         uses: actions/upload-artifact@v7
@@ -461,7 +497,16 @@ jobs:
           HAS_PGTAP=$(PGPASSWORD=postgres psql -h localhost -U postgres -d test -t -A -c "SELECT 1 FROM pg_available_extensions WHERE name='pgtap'" || echo '')
           if [ "$RUN_PGTAP" = "true" ] && [ "$HAS_PGTAP" = "1" ]; then
             PGPASSWORD=postgres psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d test -c 'CREATE EXTENSION IF NOT EXISTS pgtap;'
-            PGPASSWORD=postgres psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d test -f test/fixtures/examples/tests/ops.pgtap.sql
+            shopt -s nullglob
+            files=(test/fixtures/examples/tests/*.pgtap.sql)
+            if [ ${#files[@]} -eq 0 ]; then
+              echo "No pgTAP test files found"
+              exit 1
+            fi
+            for f in "${files[@]}"; do
+              echo "Running $f ..."
+              PGPASSWORD=postgres psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d test -f "$f"
+            done
           else
             echo "pgtap extension not available; skipping pgTAP tests"
           fi

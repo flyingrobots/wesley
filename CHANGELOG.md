@@ -8,6 +8,16 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- **pgTAP smoke tests for emitted ops** (#416): Three pgTAP test files replacing
+  the skeleton `ops.pgtap.sql` — `ops-parameterless-view` (view + zero-arg
+  function), `ops-parameterized-fn` (ILIKE filter with text param), and
+  `ops-nested-lateral` (LATERAL join with nested jsonb arrays). CI seed data
+  expanded with deterministic UUIDs (user, order, order items). CI workflow
+  updated to apply `*.view.sql` alongside `*.fn.sql` and run all `*.pgtap.sql`
+  files. EXPLAIN snapshots now cover all 4 ops.
+
+### Added
+
 - **QIR Dialect Abstraction** (`@wesley/core`): Introduced `SqlDialect` abstract
   interface and `PostgresDialect` implementation that extracts all
   PostgreSQL-specific rendering (jsonb functions, `@>` containment, `ILIKE`,
