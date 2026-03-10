@@ -4,7 +4,7 @@
 -- is lowercased and non-alpha chars stripped by sanitizeIdentBase).
 
 BEGIN;
-SELECT plan(6);
+SELECT plan(7);
 
 -- 1. Schema exists
 SELECT has_schema('wes_ops', 'wes_ops schema exists');
@@ -25,7 +25,14 @@ SELECT is(
   'op_allproducts view returns all seeded products'
 );
 
--- 5–6. Each row has expected jsonb keys (id, name, slug, price_cents)
+-- 5. View and function return the same row count (parity check)
+SELECT is(
+  (SELECT count(*)::bigint FROM wes_ops.op_allproducts),
+  (SELECT count(*)::bigint FROM wes_ops.op_allproducts()),
+  'op_allproducts view and function return the same row count'
+);
+
+-- 6–7. Each row has expected jsonb keys (id, name, slug, price_cents)
 SELECT ok(
   (SELECT bool_and(
     row_data ? 'id'

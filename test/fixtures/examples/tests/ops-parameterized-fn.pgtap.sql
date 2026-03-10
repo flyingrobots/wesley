@@ -2,7 +2,7 @@
 -- Tests that a parameterized operation emits a function with correct signature.
 
 BEGIN;
-SELECT plan(5);
+SELECT plan(6);
 
 -- 1. Schema exists
 SELECT has_schema('wes_ops', 'wes_ops schema exists');
@@ -27,7 +27,14 @@ SELECT is(
   'op_products_by_name(NOPE%) returns 0 rows'
 );
 
--- 5. Returned jsonb has exactly the projected keys (id, name, slug — no price_cents)
+-- 5. Published filter: 'Be%' matches seeded unpublished 'Beta' but should return 0
+SELECT is(
+  (SELECT count(*)::bigint FROM wes_ops.op_products_by_name('Be%')),
+  0::bigint,
+  'op_products_by_name(Be%) returns 0 — Beta is unpublished'
+);
+
+-- 6. Returned jsonb has exactly the projected keys (id, name, slug — no price_cents)
 SELECT ok(
   (SELECT bool_and(
     row_data ? 'id'

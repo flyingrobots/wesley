@@ -14,7 +14,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   `ops-nested-lateral` (LATERAL join with nested jsonb arrays). CI seed data
   expanded with deterministic UUIDs (user, order, order items). CI workflow
   updated to apply `*.view.sql` alongside `*.fn.sql` and run all `*.pgtap.sql`
-  files. EXPLAIN snapshots now cover all 4 ops.
+  files. EXPLAIN snapshots now cover all 4 ops. TAP output is now parsed for
+  assertion failures so CI exits non-zero on test regressions. Negative-case
+  and shape assertions added per CodeRabbit review feedback.
 - **`graphql` dependency for `@wesley/cli`**: Added `graphql` as a direct
   dependency of `@wesley/cli` so that `.graphql` ops compilation works under
   pnpm's strict module resolution. Previously the dynamic `import('graphql')`
