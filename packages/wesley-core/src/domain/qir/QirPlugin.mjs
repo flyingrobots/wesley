@@ -61,18 +61,33 @@ export class QirPlugin extends GeneratorPlugin {
 
     const artifacts = [];
     const opsMeta = [];
+    const seenNames = new Set();
 
     for (const op of ops) {
+      const name = op.name;
+
+      // Reject unsafe names that could escape the ops/ namespace
+      if (!name || typeof name !== 'string') {
+        throw new Error('QirPlugin: op name must be a non-empty string');
+      }
+      if (/[/\\]|\.\./.test(name)) {
+        throw new Error(`QirPlugin: op name "${name}" contains path-traversal characters`);
+      }
+      if (seenNames.has(name)) {
+        throw new Error(`QirPlugin: duplicate op name "${name}"`);
+      }
+      seenNames.add(name);
+
       const paramEnv = collectParams(op.plan);
       const isParamless = paramEnv.ordered.length === 0;
 
-      artifacts.push({ path: `ops/${op.name}.fn.sql`, reason: `SQL function for op "${op.name}"` });
+      artifacts.push({ path: `ops/${name}.fn.sql`, reason: `SQL function for op "${name}"` });
 
       if (isParamless) {
-        artifacts.push({ path: `ops/${op.name}.view.sql`, reason: `SQL view for parameterless op "${op.name}"` });
+        artifacts.push({ path: `ops/${name}.view.sql`, reason: `SQL view for parameterless op "${name}"` });
       }
 
-      opsMeta.push({ name: op.name, plan: op.plan, isParamless });
+      opsMeta.push({ name, plan: op.plan, isParamless });
     }
 
     return { artifacts, metadata: { ops: opsMeta } };

@@ -150,6 +150,11 @@ test('PostgresDialect: createFunction renders definer + search_path', () => {
   assert.ok(result.includes('SET search_path = "wes_ops", "public"'));
 });
 
+test('PostgresDialect: jsonBuildObject with empty fields', () => {
+  const pg = new PostgresDialect();
+  assert.equal(pg.jsonBuildObject([]), 'jsonb_build_object()');
+});
+
 test('PostgresDialect: is an instanceof SqlDialect', () => {
   const pg = new PostgresDialect();
   assert.ok(pg instanceof SqlDialect);

@@ -153,7 +153,7 @@ function renderPredicate(p, params, identOpts, dialect, opts) {
 
     if (op === 'in') {
       const left = renderExpr(p.left, params, identOpts, dialect, opts);
-      const paramSql = renderParam(p.right, params, /*forceCast*/true);
+      const paramSql = renderParam(p.right, params, dialect, /*forceCast*/true);
       return dialect.arrayIn(left, paramSql);
     }
 
@@ -184,7 +184,7 @@ function renderExpr(e, params, identOpts, dialect, opts) {
   case 'ColumnRef':
     return `${renderIdent(e.table, identOpts)}.${renderIdent(e.column, identOpts)}`;
   case 'ParamRef':
-    return renderParam(e, params);
+    return renderParam(e, params, dialect);
   case 'Literal':
     return renderLiteral(e.value, e.type);
   case 'FuncCall': {
@@ -251,7 +251,7 @@ function renderOrderBy(ob, params, identOpts, dialect, opts) {
   return `${renderExpr(ob.expr, params, identOpts, dialect, opts)} ${dir}${nulls}`;
 }
 
-function renderParam(p, params, _forceCast = false) {
+function renderParam(p, params, dialect, _forceCast = false) {
   const name = p.name ?? p.param ?? 'p';
   const typeHint = p.typeHint || null;
   const special = p.special || '';
@@ -271,7 +271,7 @@ function renderParam(p, params, _forceCast = false) {
     throw new Error(`Unsafe SQL type hint on ParamRef: ${typeHint}`);
   }
   const cast = typeHint ? `::${typeHint}` : '';
-  return `$${discoveredIndex}${cast}`;
+  return `${dialect.paramPlaceholder(discoveredIndex)}${cast}`;
 }
 
 function findIndexByNameOnly(params, name) {

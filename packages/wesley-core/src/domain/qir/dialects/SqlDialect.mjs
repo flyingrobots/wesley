@@ -17,7 +17,7 @@ export class SqlDialect {
    * @returns {string}
    */
   get name() {
-    throw new Error('SqlDialect.name must be implemented');
+    throw new Error(`${this.constructor.name}.name must be implemented`);
   }
 
   /**

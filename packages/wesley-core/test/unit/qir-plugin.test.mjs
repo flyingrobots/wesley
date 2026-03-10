@@ -208,8 +208,43 @@ test('QirPlugin: respects custom schema option', async () => {
   const genPlan = await plugin.plan({ ops: [{ name: 'all_users', plan: qirPlan }] }, ctx);
   const result = await plugin.generate(genPlan, ctx);
 
-  const fnSql = result.files['ops/all_users.fn.sql'];
+  const normalized = validateGenerateResult(result, 'qir');
+  const fnSql = normalized.artifacts['ops/all_users.fn.sql'];
   assert.ok(fnSql.includes('"custom_schema"'));
+});
+
+test('QirPlugin.plan: rejects duplicate op names', async () => {
+  const plugin = new QirPlugin();
+  const ctx = makeContext();
+  const plan = makeParamlessPlan();
+  await assert.rejects(
+    () => plugin.plan({ ops: [{ name: 'dup', plan }, { name: 'dup', plan }] }, ctx),
+    /duplicate op name "dup"/
+  );
+});
+
+test('QirPlugin.plan: rejects path-traversal op names', async () => {
+  const plugin = new QirPlugin();
+  const ctx = makeContext();
+  const plan = makeParamlessPlan();
+  await assert.rejects(
+    () => plugin.plan({ ops: [{ name: '../escape', plan }] }, ctx),
+    /path-traversal/
+  );
+  await assert.rejects(
+    () => plugin.plan({ ops: [{ name: 'foo/bar', plan }] }, ctx),
+    /path-traversal/
+  );
+});
+
+test('QirPlugin.plan: rejects empty op name', async () => {
+  const plugin = new QirPlugin();
+  const ctx = makeContext();
+  const plan = makeParamlessPlan();
+  await assert.rejects(
+    () => plugin.plan({ ops: [{ name: '', plan }] }, ctx),
+    /non-empty string/
+  );
 });
 
 test('QirPlugin: respects security=definer option', async () => {
@@ -219,6 +254,7 @@ test('QirPlugin: respects security=definer option', async () => {
   const genPlan = await plugin.plan({ ops: [{ name: 'all_users', plan: qirPlan }] }, ctx);
   const result = await plugin.generate(genPlan, ctx);
 
-  const fnSql = result.files['ops/all_users.fn.sql'];
+  const normalized = validateGenerateResult(result, 'qir');
+  const fnSql = normalized.artifacts['ops/all_users.fn.sql'];
   assert.ok(fnSql.includes('SECURITY DEFINER'));
 });

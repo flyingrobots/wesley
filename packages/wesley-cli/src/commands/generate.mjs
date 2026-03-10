@@ -278,6 +278,9 @@ export class GeneratePipelineCommand extends WesleyCommand {
     }
 
     if (!options.dryRun) {
+      // Persist finalized IR on context so compileOpsIfRequested uses the
+      // same IR that DDL/tests were generated from (post-compose, post-filter).
+      context.ir = ir;
       await this.compileOpsIfRequested(context);
     }
 
@@ -441,6 +444,11 @@ export class GeneratePipelineCommand extends WesleyCommand {
       const outDir = options.outDir || 'out';
       const targetSchema = options.opsSchema || 'wes_ops';
       const allowErrors = Boolean(options.opsAllowErrors);
+      // Validate --ops-target early to fail fast before any compilation
+      const opsTarget = String(options.opsTarget || 'postgres').toLowerCase();
+      if (opsTarget !== 'postgres' && opsTarget !== 'supabase') {
+        throw new OpsError('OPS_INVALID_TARGET', `Invalid --ops-target value "${options.opsTarget}"; must be "postgres" or "supabase"`);
+      }
       const compiledOps = [];
       const collisions = new Map();
       const compileErrors = [];
@@ -453,7 +461,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
           if (idx >= files.length) break;
           const path = files[idx];
           try {
-            const compiled = await compileOpFile(fs, path, collisions, logger, { ir, target: options.opsTarget });
+            const compiled = await compileOpFile(fs, path, collisions, logger, { ir, target: opsTarget });
             compiledOps.push({ order: idx, ...compiled });
           } catch (e) {
             if (e?.code === 'OPS_IDENTIFIER_TOO_LONG') {
@@ -493,10 +501,6 @@ export class GeneratePipelineCommand extends WesleyCommand {
         const security = String(options.opsSecurity || 'invoker').toLowerCase();
         if (security !== 'invoker' && security !== 'definer') {
           throw new OpsError('OPS_INVALID_SECURITY', `Invalid --ops-security value "${options.opsSecurity}"; must be "invoker" or "definer"`);
-        }
-        const opsTarget = String(options.opsTarget || 'postgres').toLowerCase();
-        if (opsTarget !== 'postgres' && opsTarget !== 'supabase') {
-          throw new OpsError('OPS_INVALID_TARGET', `Invalid --ops-target value "${options.opsTarget}"; must be "postgres" or "supabase"`);
         }
         const setSearchPath = options.opsSearchPath
           ? String(options.opsSearchPath).split(',').map(s => s.trim()).filter(Boolean)
@@ -623,14 +627,20 @@ async function compileOpFile(fs, path, collisions, logger, { ir, target = 'postg
     // Extract operation name and root type from the GraphQL document
     const { parse: parseGQL } = await import('graphql');
     const doc = parseGQL(gql);
-    const opDef = doc.definitions.find(d => d.kind === 'OperationDefinition');
-    if (!opDef) throw new OpsError('OPS_NO_OPERATION', 'No operation definition found in .graphql file', { file: path });
+    const opDefs = doc.definitions.filter(d => d.kind === 'OperationDefinition');
+    if (opDefs.length === 0) throw new OpsError('OPS_NO_OPERATION', 'No operation definition found in .graphql file', { file: path });
+    if (opDefs.length > 1) throw new OpsError('OPS_MULTIPLE_OPERATIONS', `Expected exactly one operation definition but found ${opDefs.length}; split into separate files`, { file: path, count: opDefs.length });
 
+    const opDef = opDefs[0];
     const opName = opDef.name?.value || 'unnamed';
-    const rootField = opDef.selectionSet?.selections?.[0];
-    if (!rootField || rootField.kind !== 'Field') {
+    const rootFields = (opDef.selectionSet?.selections || []).filter(s => s.kind === 'Field');
+    if (rootFields.length === 0) {
       throw new OpsError('OPS_NO_ROOT_FIELD', 'No root field found in operation', { file: path });
     }
+    if (rootFields.length > 1) {
+      throw new OpsError('OPS_MULTIPLE_ROOT_FIELDS', `Expected exactly one root field but found ${rootFields.length}; split into separate operations`, { file: path, count: rootFields.length });
+    }
+    const rootField = rootFields[0];
 
     // Resolve root type: match the root field name to an IR table
     const rootFieldName = rootField.name.value;
@@ -857,16 +867,46 @@ async function loadMoriartyHistory({ fs, shell, defaultBase, logger: log }) {
 function resolveRootType(ir, rootFieldName) {
   if (!ir || !Array.isArray(ir.tables)) return null;
   const fieldLower = rootFieldName.toLowerCase();
-  const fieldSingular = fieldLower.replace(/s$/, '');
+  const singularCandidates = singularize(fieldLower);
 
   for (const table of ir.tables) {
     const tableLower = table.name.toLowerCase();
-    if (tableLower === fieldLower || tableLower === fieldSingular ||
-        fieldLower === tableLower + 's') {
-      return table.name;
-    }
+    if (tableLower === fieldLower) return table.name;
+    if (singularCandidates.includes(tableLower)) return table.name;
+    // Reverse: field is singular, table might match a plural form
+    const tablePlurals = pluralize(tableLower);
+    if (tablePlurals.includes(fieldLower)) return table.name;
   }
   return null;
+}
+
+/**
+ * Naive singularization candidates. Returns an array so callers can try all.
+ * Covers the most common English inflections without a full NLP library.
+ */
+function singularize(plural) {
+  const candidates = [];
+  if (plural.endsWith('ies')) candidates.push(plural.slice(0, -3) + 'y');   // categories → category
+  if (plural.endsWith('ses')) candidates.push(plural.slice(0, -2));          // addresses → address
+  if (plural.endsWith('es')) candidates.push(plural.slice(0, -2));           // statuses → status
+  if (plural.endsWith('s') && !plural.endsWith('ss')) candidates.push(plural.slice(0, -1)); // products → product
+  return candidates;
+}
+
+/**
+ * Naive pluralization candidates for reverse matching.
+ */
+function pluralize(singular) {
+  const candidates = [];
+  if (singular.endsWith('y') && !/[aeiou]y$/.test(singular)) {
+    candidates.push(singular.slice(0, -1) + 'ies');   // category → categories
+  }
+  if (singular.endsWith('s') || singular.endsWith('x') || singular.endsWith('z') ||
+      singular.endsWith('ch') || singular.endsWith('sh')) {
+    candidates.push(singular + 'es');                   // address → addresses
+  }
+  candidates.push(singular + 's');                       // product → products
+  return candidates;
 }
 
 function mergeHistoryPoints(...pointArrays) {
