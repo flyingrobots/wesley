@@ -860,10 +860,10 @@ function resolveRootType(ir, rootFieldName) {
  */
 function singularize(plural) {
   const candidates = [];
-  if (plural.endsWith('ies')) candidates.push(plural.slice(0, -3) + 'y');   // categories → category
-  if (plural.endsWith('ses')) candidates.push(plural.slice(0, -2));          // addresses → address
-  if (plural.endsWith('es')) candidates.push(plural.slice(0, -2));           // statuses → status
-  if (plural.endsWith('s') && !plural.endsWith('ss')) candidates.push(plural.slice(0, -1)); // products → product
+  if (plural.endsWith('ies')) candidates.push(plural.slice(0, -3) + 'y');        // categories → category
+  else if (plural.endsWith('ses')) candidates.push(plural.slice(0, -2));          // addresses → address
+  else if (plural.endsWith('es')) candidates.push(plural.slice(0, -2));           // statuses → status
+  else if (plural.endsWith('s') && !plural.endsWith('ss')) candidates.push(plural.slice(0, -1)); // products → product
   return candidates;
 }
 
@@ -874,12 +874,12 @@ function pluralize(singular) {
   const candidates = [];
   if (singular.endsWith('y') && !/[aeiou]y$/.test(singular)) {
     candidates.push(singular.slice(0, -1) + 'ies');   // category → categories
-  }
-  if (singular.endsWith('s') || singular.endsWith('x') || singular.endsWith('z') ||
+  } else if (singular.endsWith('s') || singular.endsWith('x') || singular.endsWith('z') ||
       singular.endsWith('ch') || singular.endsWith('sh')) {
     candidates.push(singular + 'es');                   // address → addresses
+  } else {
+    candidates.push(singular + 's');                    // product → products
   }
-  candidates.push(singular + 's');                       // product → products
   return candidates;
 }
 

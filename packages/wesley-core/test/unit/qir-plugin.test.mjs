@@ -248,7 +248,7 @@ test('QirPlugin.plan: rejects empty op name', async () => {
 });
 
 test('QirPlugin: respects security=definer option', async () => {
-  const plugin = new QirPlugin({ security: 'definer' });
+  const plugin = new QirPlugin({ security: 'definer', setSearchPath: ['wes_ops', 'pg_catalog'] });
   const ctx = makeContext();
   const qirPlan = makeParamlessPlan();
   const genPlan = await plugin.plan({ ops: [{ name: 'all_users', plan: qirPlan }] }, ctx);
@@ -257,4 +257,28 @@ test('QirPlugin: respects security=definer option', async () => {
   const normalized = validateGenerateResult(result, 'qir');
   const fnSql = normalized.artifacts['ops/all_users.fn.sql'];
   assert.ok(fnSql.includes('SECURITY DEFINER'));
+  assert.ok(fnSql.includes('SET search_path'));
+});
+
+test('QirPlugin: rejects definer without setSearchPath', () => {
+  assert.throws(
+    () => new QirPlugin({ security: 'definer' }),
+    /requires a non-empty setSearchPath/
+  );
+  assert.throws(
+    () => new QirPlugin({ security: 'definer', setSearchPath: [] }),
+    /requires a non-empty setSearchPath/
+  );
+});
+
+test('QirPlugin: rejects op names exceeding identifier limit', async () => {
+  const plugin = new QirPlugin();
+  const ctx = makeContext();
+  const qirPlan = makeParamlessPlan();
+  // 64 chars exceeds PostgreSQL's 63-byte limit
+  const longName = 'a'.repeat(64);
+  await assert.rejects(
+    () => plugin.plan({ ops: [{ name: longName, plan: qirPlan }] }, ctx),
+    /exceeds identifier limit/
+  );
 });

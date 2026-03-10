@@ -14,7 +14,7 @@ import { GeneratorPlugin } from '../../ports/GeneratorPlugin.mjs';
 import { emitView, emitFunction } from './emit.mjs';
 import { collectParams } from './ParamCollector.mjs';
 import { PostgresDialect } from './dialects/PostgresDialect.mjs';
-import { assertSafeOpName, sanitizeOpName } from './validateOpName.mjs';
+import { assertSafeOpName, sanitizeOpName, assertOpNameFitsLimit } from './validateOpName.mjs';
 
 export class QirPlugin extends GeneratorPlugin {
   /**
@@ -32,6 +32,10 @@ export class QirPlugin extends GeneratorPlugin {
     this._security = options.security || 'invoker';
     this._setSearchPath = options.setSearchPath || null;
     this._pkResolver = options.pkResolver || null;
+
+    if (this._security === 'definer' && (!Array.isArray(this._setSearchPath) || this._setSearchPath.length === 0)) {
+      throw new Error('QirPlugin: security="definer" requires a non-empty setSearchPath to prevent search_path hijacking');
+    }
   }
 
   get apiVersion() {
@@ -67,6 +71,7 @@ export class QirPlugin extends GeneratorPlugin {
     for (const op of ops) {
       assertSafeOpName(op.name);
       const name = sanitizeOpName(op.name);
+      assertOpNameFitsLimit(name, this._dialect.identifierLimit());
 
       if (seenNames.has(name)) {
         throw new Error(`QirPlugin: duplicate op name "${name}"`);
