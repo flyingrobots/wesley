@@ -44,15 +44,13 @@ SELECT ok(
   'every row has id, order_number, status, items keys'
 );
 
--- 6. Nested items array has 2 order items
-SELECT is(
-  (SELECT jsonb_array_length(row_data -> 'items')
+-- 6. Every order's nested items array has 2 order items
+SELECT ok(
+  (SELECT bool_and(jsonb_array_length(row_data -> 'items') = 2)
    FROM wes_ops.op_orders_with_items_by_user(
      '00000000-0000-0000-0000-000000000001'::uuid
-   ) AS row_data
-   LIMIT 1),
-  2,
-  'nested items array has 2 order items'
+   ) AS row_data),
+  'all orders have exactly 2 items'
 );
 
 -- 7. Each nested item has required keys (id, product_id, quantity)
