@@ -366,7 +366,7 @@ test('Translator: auth_uid compiles to current_setting for postgres target', () 
 
 test('Translator: throws on unknown root type', () => {
   const env = new TranslateEnv(ecommerceIR());
-  const gql = `query { widgets { id } }`;
+  const gql = 'query { widgets { id } }';
   assert.throws(
     () => translateOperation(gql, env, { rootTypeName: 'Widget' }),
     /unknown type/i

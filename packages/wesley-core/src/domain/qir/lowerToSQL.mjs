@@ -35,10 +35,10 @@ export function lowerToSQL(plan, paramsEnv = null, opts = {}) {
     : collectParams(plan);
 
   // Build DISTINCT ON (optional) and SELECT list
-  const selectList = (plan.projection?.items || []).map(pi => `${renderExpr(pi.expr, params, identOpts, dialect)} AS ${renderIdent(pi.alias, identOpts)}`).join(', ');
+  const selectList = (plan.projection?.items || []).map(pi => `${renderExpr(pi.expr, params, identOpts, dialect, opts)} AS ${renderIdent(pi.alias, identOpts)}`).join(', ');
   const projectionSQL = selectList.length > 0 ? selectList : '*';
   const distinctExprs = Array.isArray(plan.distinctOn) ? plan.distinctOn : [];
-  const distinctSQL = distinctExprs.length ? `DISTINCT ON (${distinctExprs.map(e => renderExpr(e, params, identOpts, dialect)).join(', ')}) ` : '';
+  const distinctSQL = distinctExprs.length ? `DISTINCT ON (${distinctExprs.map(e => renderExpr(e, params, identOpts, dialect, opts)).join(', ')}) ` : '';
 
   // Render FROM and gather WHERE predicates from Filter nodes embedded in relation tree
   const whereParts = [];
@@ -68,11 +68,11 @@ export function lowerToSQL(plan, paramsEnv = null, opts = {}) {
     }
   }
   if (orderItems.length > 0) {
-    const rendered = orderItems.map(ob => renderOrderBy(ob, params, identOpts, dialect));
+    const rendered = orderItems.map(ob => renderOrderBy(ob, params, identOpts, dialect, opts));
     // Append tie-breaker if primary key (id) not already present
     const pkRef = typeof opts.pkResolver === 'function' ? opts.pkResolver(plan) : guessPrimaryKeyRef(plan);
     if (pkRef && !orderMentionsExpr(orderItems, pkRef)) {
-      rendered.push(`${renderExpr(pkRef, params, identOpts, dialect)} ASC`);
+      rendered.push(`${renderExpr(pkRef, params, identOpts, dialect, opts)} ASC`);
     }
     orderSQL = `\nORDER BY ${rendered.join(', ')}`;
   }
@@ -148,17 +148,17 @@ function renderPredicate(p, params, identOpts, dialect, opts) {
   case 'Compare': {
     const { op } = p;
     // Null checks
-    if (op === 'isNull')    return `${renderExpr(p.left, params, identOpts, dialect)} IS NULL`;
-    if (op === 'isNotNull') return `${renderExpr(p.left, params, identOpts, dialect)} IS NOT NULL`;
+    if (op === 'isNull')    return `${renderExpr(p.left, params, identOpts, dialect, opts)} IS NULL`;
+    if (op === 'isNotNull') return `${renderExpr(p.left, params, identOpts, dialect, opts)} IS NOT NULL`;
 
     if (op === 'in') {
-      const left = renderExpr(p.left, params, identOpts, dialect);
+      const left = renderExpr(p.left, params, identOpts, dialect, opts);
       const paramSql = renderParam(p.right, params, /*forceCast*/true);
       return dialect.arrayIn(left, paramSql);
     }
 
-    const left = renderExpr(p.left, params, identOpts, dialect);
-    const right = renderExpr(p.right, params, identOpts, dialect);
+    const left = renderExpr(p.left, params, identOpts, dialect, opts);
+    const right = renderExpr(p.right, params, identOpts, dialect, opts);
     switch (op) {
     case 'eq':  return `${left} = ${right}`;
     case 'ne':  return `${left} <> ${right}`;
@@ -178,7 +178,7 @@ function renderPredicate(p, params, identOpts, dialect, opts) {
   }
 }
 
-function renderExpr(e, params, identOpts, dialect) {
+function renderExpr(e, params, identOpts, dialect, opts) {
   if (!e) return 'NULL';
   switch (e.kind) {
   case 'ColumnRef':
@@ -190,15 +190,15 @@ function renderExpr(e, params, identOpts, dialect) {
   case 'FuncCall': {
     const fn = String(e.name);
     if (!SAFE_FUNC_RE.test(fn)) throw new Error(`Unsafe SQL function name: ${fn}`);
-    const args = (e.args || []).map(a => renderExpr(a, params, identOpts, dialect)).join(', ');
+    const args = (e.args || []).map(a => renderExpr(a, params, identOpts, dialect, opts)).join(', ');
     return `${fn}(${args})`;
   }
   case 'ScalarSubquery':
-    return `(\n${lowerToSQL(e.plan, params, { dialect })}\n)`;
+    return `(\n${lowerToSQL(e.plan, params, opts || {})}\n)`;
   case 'JsonBuildObject':
-    return renderJsonBuildObject(e, params, identOpts, dialect);
+    return renderJsonBuildObject(e, params, identOpts, dialect, opts);
   case 'JsonAgg':
-    return renderJsonAgg(e, params, identOpts, dialect);
+    return renderJsonAgg(e, params, identOpts, dialect, opts);
   default:
     throw new Error(`Unsupported expr kind '${e.kind}'`);
   }
@@ -221,24 +221,24 @@ function renderLiteral(v, type = null) {
   return `'${escString(v)}'${type ? `::${type}` : ''}`;
 }
 
-function renderJsonBuildObject(e, params, identOpts, dialect) {
+function renderJsonBuildObject(e, params, identOpts, dialect, opts) {
   // fields: [{ key, value }] → [{key, valueSql}] for dialect
   const fields = (e.fields || []).map(({ key, value }) => ({
     key,
-    valueSql: renderExpr(value, params, identOpts, dialect)
+    valueSql: renderExpr(value, params, identOpts, dialect, opts)
   }));
   return dialect.jsonBuildObject(fields);
 }
 
-function renderJsonAgg(e, params, identOpts, dialect) {
-  const inner = renderExpr(e.value, params, identOpts, dialect);
+function renderJsonAgg(e, params, identOpts, dialect, opts) {
+  const inner = renderExpr(e.value, params, identOpts, dialect, opts);
   const orderBySql = (e.orderBy || []).length
-    ? 'ORDER BY ' + e.orderBy.map(ob => renderOrderBy(ob, params, identOpts, dialect)).join(', ')
+    ? 'ORDER BY ' + e.orderBy.map(ob => renderOrderBy(ob, params, identOpts, dialect, opts)).join(', ')
     : '';
   return dialect.jsonAgg(inner, orderBySql);
 }
 
-function renderOrderBy(ob, params, identOpts, dialect) {
+function renderOrderBy(ob, params, identOpts, dialect, opts) {
   const dir = ob.direction && String(ob.direction).toLowerCase() === 'desc' ? 'DESC' : 'ASC';
   let nulls = '';
   if (ob.nulls) {
@@ -248,7 +248,7 @@ function renderOrderBy(ob, params, identOpts, dialect) {
     }
     nulls = ` NULLS ${n.toUpperCase()}`;
   }
-  return `${renderExpr(ob.expr, params, identOpts, dialect)} ${dir}${nulls}`;
+  return `${renderExpr(ob.expr, params, identOpts, dialect, opts)} ${dir}${nulls}`;
 }
 
 function renderParam(p, params, _forceCast = false) {
