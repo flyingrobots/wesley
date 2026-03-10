@@ -1,18 +1,18 @@
 {
-  "generatedAt": "2026-03-08T07:16:48.055Z",
+  "generatedAt": "2026-03-09T07:27:48.349Z",
   "overall": {
     "stage": "MVP",
     "next": "Alpha",
-    "progress": 16
+    "progress": 35
   },
   "results": [
     {
       "name": "@wesley/core",
       "status": "Active",
       "stage": "MVP",
-      "progress": 14,
+      "progress": 35,
       "next": "Alpha",
-      "passRate": 0.2857142857142857,
+      "passRate": 0.7,
       "docs": {
         "hasStatus": true,
         "hasUsage": false,
@@ -29,9 +29,9 @@
       "name": "@wesley/cli",
       "status": "Active",
       "stage": "MVP",
-      "progress": 34,
+      "progress": 55,
       "next": "Alpha",
-      "passRate": 0.2857142857142857,
+      "passRate": 0.7,
       "docs": {
         "hasStatus": true,
         "hasUsage": true,
@@ -48,9 +48,9 @@
       "name": "@wesley/host-node",
       "status": "Active",
       "stage": "MVP",
-      "progress": 8,
+      "progress": 25,
       "next": "Alpha",
-      "passRate": 0.16666666666666666,
+      "passRate": 0.5,
       "docs": {
         "hasStatus": true,
         "hasUsage": false,
@@ -86,9 +86,9 @@
       "name": "@wesley/generator-js",
       "status": "Active",
       "stage": "MVP",
-      "progress": 8,
+      "progress": 25,
       "next": "Alpha",
-      "passRate": 0.16666666666666666,
+      "passRate": 0.5,
       "docs": {
         "hasStatus": true,
         "hasUsage": false,
@@ -105,9 +105,9 @@
       "name": "@wesley/generator-supabase",
       "status": "Active",
       "stage": "MVP",
-      "progress": 8,
+      "progress": 25,
       "next": "Alpha",
-      "passRate": 0.16666666666666666,
+      "passRate": 0.5,
       "docs": {
         "hasStatus": true,
         "hasUsage": false,
@@ -124,9 +124,9 @@
       "name": "@wesley/holmes",
       "status": "Active",
       "stage": "MVP",
-      "progress": 28,
+      "progress": 45,
       "next": "Alpha",
-      "passRate": 0.16666666666666666,
+      "passRate": 0.5,
       "docs": {
         "hasStatus": true,
         "hasUsage": true,
@@ -143,9 +143,9 @@
       "name": "@wesley/tasks",
       "status": "Active",
       "stage": "MVP",
-      "progress": 8,
+      "progress": 25,
       "next": "Alpha",
-      "passRate": 0.16666666666666666,
+      "passRate": 0.5,
       "docs": {
         "hasStatus": true,
         "hasUsage": false,
@@ -162,9 +162,9 @@
       "name": "@wesley/slaps",
       "status": "Active",
       "stage": "MVP",
-      "progress": 8,
+      "progress": 25,
       "next": "Alpha",
-      "passRate": 0.16666666666666666,
+      "passRate": 0.5,
       "docs": {
         "hasStatus": true,
         "hasUsage": false,
