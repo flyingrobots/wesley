@@ -5,7 +5,7 @@
  */
 
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
-import { buildPlanFromJson, emitFunction, emitView, collectParams, quoteIdent, sanitizeIdentBase, translateOperation, TranslateEnv } from '@wesley/core/domain/qir';
+import { buildPlanFromJson, emitFunction, emitView, collectParams, quoteIdent, sanitizeIdentBase, translateOperation, TranslateEnv, sanitizeOpName as coreSanitizeOpName, derivePrefixedOpName, assertOpNameFitsLimit } from '@wesley/core/domain/qir';
 import { filterIRByUnits } from '@wesley/core/domain/SchemaFilter';
 import { assertValid } from '../framework/schemaValidator.mjs';
 import { WesleyError, OpsError } from '@wesley/core';
@@ -537,25 +537,10 @@ const CONCURRENCY_LIMIT = 8;
 // See: https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS
 const POSTGRESQL_IDENTIFIER_LIMIT = 63;
 
-// OpsError imported from @wesley/core
-
-function sanitizeOpIdentifier(name) {
-  const normalized = (name ?? 'unnamed').normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
-  const raw = normalized.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
-  let sanitized = raw || 'unnamed';
-  if (/^[0-9]/.test(sanitized)) sanitized = `_${sanitized}`;
-  return sanitized;
-}
-
-function derivePrefixedIdentifier(baseName) {
-  const normalized = String(baseName || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '_')
-    .replace(/^_+|_+$/g, '');
-  const effective = normalized || 'op';
-  const suffix = effective === 'op' ? 'unnamed' : effective;
-  return `op_${suffix}`;
-}
+// Shared op name utilities imported from @wesley/core (coreSanitizeOpName, derivePrefixedOpName,
+// assertOpNameFitsLimit). Local aliases for backward compat in this file:
+const sanitizeOpIdentifier = coreSanitizeOpName;
+const derivePrefixedIdentifier = derivePrefixedOpName;
 
 async function findOpFiles(fs, opsDir, logger) {
   const exists = await fs.exists(opsDir);
@@ -657,29 +642,7 @@ async function compileOpFile(fs, path, collisions, logger, { ir, target = 'postg
     plan = buildPlanFromJson(op);
     baseName = sanitizeOpIdentifier(op.name);
   }
-  const byteLength = Buffer.byteLength(baseName, 'utf8');
-  if (byteLength > POSTGRESQL_IDENTIFIER_LIMIT) {
-    throw new OpsError(
-      'OPS_IDENTIFIER_TOO_LONG',
-      `Sanitized op name "${baseName}" from ${path} exceeds PostgreSQL identifier limit (bytes=${byteLength}, limit=${POSTGRESQL_IDENTIFIER_LIMIT})`,
-      { file: path, sanitized: baseName, bytes: byteLength, limit: POSTGRESQL_IDENTIFIER_LIMIT }
-    );
-  }
-  const emittedIdentifier = derivePrefixedIdentifier(baseName);
-  const emittedByteLength = Buffer.byteLength(emittedIdentifier, 'utf8');
-  if (emittedByteLength > POSTGRESQL_IDENTIFIER_LIMIT) {
-    throw new OpsError(
-      'OPS_IDENTIFIER_TOO_LONG',
-      `Prefixed op identifier "${emittedIdentifier}" from ${path} exceeds PostgreSQL identifier limit (bytes=${emittedByteLength}, limit=${POSTGRESQL_IDENTIFIER_LIMIT})`,
-      {
-        file: path,
-        sanitized: emittedIdentifier,
-        base: baseName,
-        bytes: emittedByteLength,
-        limit: POSTGRESQL_IDENTIFIER_LIMIT
-      }
-    );
-  }
+  assertOpNameFitsLimit(baseName, POSTGRESQL_IDENTIFIER_LIMIT, path);
   const seen = collisions.get(baseName) || [];
   seen.push(path);
   collisions.set(baseName, seen);

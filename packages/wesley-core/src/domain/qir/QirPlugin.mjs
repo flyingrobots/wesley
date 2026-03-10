@@ -14,6 +14,7 @@ import { GeneratorPlugin } from '../../ports/GeneratorPlugin.mjs';
 import { emitView, emitFunction } from './emit.mjs';
 import { collectParams } from './ParamCollector.mjs';
 import { PostgresDialect } from './dialects/PostgresDialect.mjs';
+import { assertSafeOpName } from './validateOpName.mjs';
 
 export class QirPlugin extends GeneratorPlugin {
   /**
@@ -66,13 +67,7 @@ export class QirPlugin extends GeneratorPlugin {
     for (const op of ops) {
       const name = op.name;
 
-      // Reject unsafe names that could escape the ops/ namespace
-      if (!name || typeof name !== 'string') {
-        throw new Error('QirPlugin: op name must be a non-empty string');
-      }
-      if (/[/\\]|\.\./.test(name)) {
-        throw new Error(`QirPlugin: op name "${name}" contains path-traversal characters`);
-      }
+      assertSafeOpName(name);
       if (seenNames.has(name)) {
         throw new Error(`QirPlugin: duplicate op name "${name}"`);
       }
