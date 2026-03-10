@@ -565,7 +565,7 @@ function emitEnvelope(w) {
 
   w.writeLine('/// Decode the ABI envelope tag byte.');
   w.writeLine('/// Returns Ok(payload_slice) for success (0x01) or Err(AbiDecodeError::ErrorResponse) for error (0x00).');
-  w.writeLine("pub fn decode_envelope(bytes: &[u8]) -> Result<&[u8], AbiDecodeError> {");
+  w.writeLine('pub fn decode_envelope(bytes: &[u8]) -> Result<&[u8], AbiDecodeError> {');
   w.indent();
   w.writeLine('if bytes.is_empty() { return Err(AbiDecodeError::UnexpectedEof); }');
   w.writeLine('match bytes[0] {');

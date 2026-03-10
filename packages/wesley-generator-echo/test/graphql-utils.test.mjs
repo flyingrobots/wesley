@@ -11,7 +11,7 @@ describe('unwrapType', () => {
   it('unwraps NonNullType wrapping a named type', () => {
     const node = {
       kind: Kind.NON_NULL_TYPE,
-      type: { kind: Kind.NAMED_TYPE, name: { value: 'Int' } },
+      type: { kind: Kind.NAMED_TYPE, name: { value: 'Int' } }
     };
     expect(unwrapType(node)).toEqual({ typeName: 'Int', required: true, list: false });
   });
@@ -23,9 +23,9 @@ describe('unwrapType', () => {
         kind: Kind.LIST_TYPE,
         type: {
           kind: Kind.NON_NULL_TYPE,
-          type: { kind: Kind.NAMED_TYPE, name: { value: 'Foo' } },
-        },
-      },
+          type: { kind: Kind.NAMED_TYPE, name: { value: 'Foo' } }
+        }
+      }
     };
     expect(unwrapType(node)).toEqual({ typeName: 'Foo', required: true, list: true });
   });
@@ -33,7 +33,7 @@ describe('unwrapType', () => {
   it('unwraps an optional list: [Bar]', () => {
     const node = {
       kind: Kind.LIST_TYPE,
-      type: { kind: Kind.NAMED_TYPE, name: { value: 'Bar' } },
+      type: { kind: Kind.NAMED_TYPE, name: { value: 'Bar' } }
     };
     expect(unwrapType(node)).toEqual({ typeName: 'Bar', required: false, list: true });
   });
@@ -43,8 +43,8 @@ describe('unwrapType', () => {
       kind: Kind.NON_NULL_TYPE,
       type: {
         kind: Kind.LIST_TYPE,
-        type: { kind: Kind.NAMED_TYPE, name: { value: 'Baz' } },
-      },
+        type: { kind: Kind.NAMED_TYPE, name: { value: 'Baz' } }
+      }
     };
     expect(unwrapType(node)).toEqual({ typeName: 'Baz', required: true, list: true });
   });
@@ -59,8 +59,8 @@ describe('unwrapType', () => {
       kind: Kind.LIST_TYPE,
       type: {
         kind: Kind.LIST_TYPE,
-        type: { kind: Kind.NAMED_TYPE, name: { value: 'Nested' } },
-      },
+        type: { kind: Kind.NAMED_TYPE, name: { value: 'Nested' } }
+      }
     };
     expect(() => unwrapType(node)).toThrow(/unsupported nested type wrapper/);
   });
