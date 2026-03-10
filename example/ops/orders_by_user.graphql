@@ -1,0 +1,13 @@
+query OrdersByUser($user_id: UUID!) {
+  orders(where: { user_id: { eq: $user_id } }, orderBy: [{ order_number: asc }]) {
+    id
+    order_number
+    status
+    total_cents
+    items {
+      id
+      quantity
+      unit_price_cents
+    }
+  }
+}

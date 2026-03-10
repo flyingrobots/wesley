@@ -9,4 +9,7 @@ export * from './PredicateCompiler.mjs';
 export * from './TranslateEnv.mjs';
 export * from './Translator.mjs';
 export { opJsonSchema } from './op.schema.mjs';
-
+export { SqlDialect } from './dialects/SqlDialect.mjs';
+export { PostgresDialect } from './dialects/PostgresDialect.mjs';
+export { QirPlugin } from './QirPlugin.mjs';
+export { assertSafeOpName, sanitizeOpName, derivePrefixedOpName, assertOpNameFitsLimit } from './validateOpName.mjs';

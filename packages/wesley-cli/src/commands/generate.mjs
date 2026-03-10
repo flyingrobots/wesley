@@ -5,7 +5,7 @@
  */
 
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
-import { buildPlanFromJson, emitFunction, emitView, collectParams, quoteIdent, sanitizeIdentBase } from '@wesley/core/domain/qir';
+import { buildPlanFromJson, emitFunction, emitView, collectParams, quoteIdent, sanitizeIdentBase, translateOperation, TranslateEnv, sanitizeOpName as coreSanitizeOpName, derivePrefixedOpName, assertOpNameFitsLimit } from '@wesley/core/domain/qir';
 import { filterIRByUnits } from '@wesley/core/domain/SchemaFilter';
 import { assertValid } from '../framework/schemaValidator.mjs';
 import { WesleyError, OpsError } from '@wesley/core';
@@ -26,6 +26,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
       .option('--ops-schema <name>', 'Schema name for emitted ops SQL (default wes_ops)', 'wes_ops')
       .option('--ops-security <mode>', 'Security for emitted functions: invoker|definer', 'invoker')
       .option('--ops-search-path <list>', 'Comma-separated search_path for ops functions (e.g., "pg_catalog, wes_ops")')
+      .option('--ops-target <platform>', 'Target platform for ops: postgres|supabase (affects auth variable compilation)', 'postgres')
       .option('--ops-explain <mode>', 'Emit EXPLAIN JSON snapshots for ops: mock', '')
       .option('--ops-allow-errors', 'Continue compiling remaining ops even if some fail validation (not allowed in CI without override)')
       .option('--emit-bundle', 'Emit .wesley/ evidence bundle')
@@ -277,6 +278,9 @@ export class GeneratePipelineCommand extends WesleyCommand {
     }
 
     if (!options.dryRun) {
+      // Persist finalized IR on context so compileOpsIfRequested uses the
+      // same IR that DDL/tests were generated from (post-compose, post-filter).
+      context.ir = ir;
       await this.compileOpsIfRequested(context);
     }
 
@@ -440,6 +444,11 @@ export class GeneratePipelineCommand extends WesleyCommand {
       const outDir = options.outDir || 'out';
       const targetSchema = options.opsSchema || 'wes_ops';
       const allowErrors = Boolean(options.opsAllowErrors);
+      // Validate --ops-target early to fail fast before any compilation
+      const opsTarget = String(options.opsTarget || 'postgres').toLowerCase();
+      if (opsTarget !== 'postgres' && opsTarget !== 'supabase') {
+        throw new OpsError('OPS_INVALID_TARGET', `Invalid --ops-target value "${options.opsTarget}"; must be "postgres" or "supabase"`);
+      }
       const compiledOps = [];
       const collisions = new Map();
       const compileErrors = [];
@@ -452,7 +461,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
           if (idx >= files.length) break;
           const path = files[idx];
           try {
-            const compiled = await compileOpFile(fs, path, collisions, logger);
+            const compiled = await compileOpFile(fs, path, collisions, logger, { ir, target: opsTarget });
             compiledOps.push({ order: idx, ...compiled });
           } catch (e) {
             if (e?.code === 'OPS_IDENTIFIER_TOO_LONG') {
@@ -528,24 +537,20 @@ const CONCURRENCY_LIMIT = 8;
 // See: https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS
 const POSTGRESQL_IDENTIFIER_LIMIT = 63;
 
-// OpsError imported from @wesley/core
+// Shared op name utilities imported from @wesley/core (coreSanitizeOpName, derivePrefixedOpName,
+// assertOpNameFitsLimit). Local aliases for backward compat in this file:
+const sanitizeOpIdentifier = coreSanitizeOpName;
+const derivePrefixedIdentifier = derivePrefixedOpName;
 
-function sanitizeOpIdentifier(name) {
-  const normalized = (name ?? 'unnamed').normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
-  const raw = normalized.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
-  let sanitized = raw || 'unnamed';
-  if (/^[0-9]/.test(sanitized)) sanitized = `_${sanitized}`;
-  return sanitized;
-}
-
-function derivePrefixedIdentifier(baseName) {
-  const normalized = String(baseName || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '_')
-    .replace(/^_+|_+$/g, '');
-  const effective = normalized || 'op';
-  const suffix = effective === 'op' ? 'unnamed' : effective;
-  return `op_${suffix}`;
+// Lazily-resolved GraphQL parser; hoisted out of compileOpFile to avoid
+// per-file async import overhead (Node caches modules, but resolution isn't free).
+let _parseGQL;
+async function getGraphQLParser() {
+  if (!_parseGQL) {
+    const gql = await import('graphql');
+    _parseGQL = gql.parse;
+  }
+  return _parseGQL;
 }
 
 async function findOpFiles(fs, opsDir, logger) {
@@ -561,7 +566,7 @@ async function findOpFiles(fs, opsDir, logger) {
     for (const e of entries) {
       if (e.isDirectory) {
         await walk(e.path);
-      } else if (e.isFile && e.name?.endsWith?.('.op.json')) {
+      } else if (e.isFile && (e.name?.endsWith?.('.op.json') || e.name?.endsWith?.('.graphql'))) {
         acc.push(e.path || await fs.join(dir, e.name));
       }
     }
@@ -569,7 +574,7 @@ async function findOpFiles(fs, opsDir, logger) {
   await walk(opsDir);
   acc.sort(); // locale-invariant deterministic ordering
   if (acc.length === 0) {
-    logger.info({ opsDir }, 'Experimental --ops: no *.op.json files found; skipping');
+    logger.info({ opsDir }, 'Experimental --ops: no *.op.json or *.graphql files found; skipping');
   }
   return acc;
 }
@@ -581,7 +586,7 @@ async function resolveManifestEntries(fs, includes = [], excludes = [], logger) 
     if (!Array.isArray(entries)) return;
     for (const e of entries) {
       if (e.isDirectory) await addDir(e.path);
-      else if (e.isFile && e.name?.endsWith?.('.op.json')) acc.add(e.path);
+      else if (e.isFile && (e.name?.endsWith?.('.op.json') || e.name?.endsWith?.('.graphql'))) acc.add(e.path);
     }
   };
   for (const entry of includes) {
@@ -603,34 +608,52 @@ async function resolveManifestEntries(fs, includes = [], excludes = [], logger) 
   return list;
 }
 
-async function compileOpFile(fs, path, collisions, logger) {
+async function compileOpFile(fs, path, collisions, logger, { ir, target = 'postgres' } = {}) {
   const raw = await fs.read(path);
-  const op = JSON.parse(String(raw));
-  const plan = buildPlanFromJson(op);
-  const baseName = sanitizeOpIdentifier(op.name);
-  const byteLength = Buffer.byteLength(baseName, 'utf8');
-  if (byteLength > POSTGRESQL_IDENTIFIER_LIMIT) {
-    throw new OpsError(
-      'OPS_IDENTIFIER_TOO_LONG',
-      `Sanitized op name "${baseName}" from ${path} exceeds PostgreSQL identifier limit (bytes=${byteLength}, limit=${POSTGRESQL_IDENTIFIER_LIMIT})`,
-      { file: path, sanitized: baseName, bytes: byteLength, limit: POSTGRESQL_IDENTIFIER_LIMIT }
-    );
+  let plan, baseName;
+
+  if (path.endsWith('.graphql')) {
+    // GraphQL operation file → translator pipeline
+    if (!ir) {
+      throw new OpsError('OPS_NO_IR', 'Cannot compile .graphql ops without a parsed schema IR. Ensure --schema is provided.', { file: path });
+    }
+    const gql = String(raw);
+    const env = new TranslateEnv(ir);
+
+    // Extract operation name and root type from the GraphQL document
+    const parseGQL = await getGraphQLParser();
+    const doc = parseGQL(gql);
+    const opDefs = doc.definitions.filter(d => d.kind === 'OperationDefinition');
+    if (opDefs.length === 0) throw new OpsError('OPS_NO_OPERATION', 'No operation definition found in .graphql file', { file: path });
+    if (opDefs.length > 1) throw new OpsError('OPS_MULTIPLE_OPERATIONS', `Expected exactly one operation definition but found ${opDefs.length}; split into separate files`, { file: path, count: opDefs.length });
+
+    const opDef = opDefs[0];
+    const opName = opDef.name?.value || 'unnamed';
+    const rootFields = (opDef.selectionSet?.selections || []).filter(s => s.kind === 'Field');
+    if (rootFields.length === 0) {
+      throw new OpsError('OPS_NO_ROOT_FIELD', 'No root field found in operation', { file: path });
+    }
+    if (rootFields.length > 1) {
+      throw new OpsError('OPS_MULTIPLE_ROOT_FIELDS', `Expected exactly one root field but found ${rootFields.length}; split into separate operations`, { file: path, count: rootFields.length });
+    }
+    const rootField = rootFields[0];
+
+    // Resolve root type: match the root field name to an IR table
+    const rootFieldName = rootField.name.value;
+    const rootType = resolveRootType(ir, rootFieldName);
+    if (!rootType) {
+      throw new OpsError('OPS_UNKNOWN_ROOT', `Cannot resolve root field '${rootFieldName}' to a known table type`, { file: path, field: rootFieldName });
+    }
+
+    plan = translateOperation(gql, env, { rootTypeName: rootType, target });
+    baseName = sanitizeOpIdentifier(opName);
+  } else {
+    // JSON DSL file (.op.json) → OpPlanBuilder pipeline
+    const op = JSON.parse(String(raw));
+    plan = buildPlanFromJson(op);
+    baseName = sanitizeOpIdentifier(op.name);
   }
-  const emittedIdentifier = derivePrefixedIdentifier(baseName);
-  const emittedByteLength = Buffer.byteLength(emittedIdentifier, 'utf8');
-  if (emittedByteLength > POSTGRESQL_IDENTIFIER_LIMIT) {
-    throw new OpsError(
-      'OPS_IDENTIFIER_TOO_LONG',
-      `Prefixed op identifier "${emittedIdentifier}" from ${path} exceeds PostgreSQL identifier limit (bytes=${emittedByteLength}, limit=${POSTGRESQL_IDENTIFIER_LIMIT})`,
-      {
-        file: path,
-        sanitized: emittedIdentifier,
-        base: baseName,
-        bytes: emittedByteLength,
-        limit: POSTGRESQL_IDENTIFIER_LIMIT
-      }
-    );
-  }
+  assertOpNameFitsLimit(baseName, POSTGRESQL_IDENTIFIER_LIMIT, path);
   const seen = collisions.get(baseName) || [];
   seen.push(path);
   collisions.set(baseName, seen);
@@ -809,6 +832,55 @@ async function loadMoriartyHistory({ fs, shell, defaultBase, logger: log }) {
   }
 
   return { points };
+}
+
+/**
+ * Resolve a GraphQL root field name (e.g., "products", "orders") to an IR type name.
+ * Matches by lowercase comparison against table names, trying plural and singular forms.
+ */
+function resolveRootType(ir, rootFieldName) {
+  if (!ir || !Array.isArray(ir.tables)) return null;
+  const fieldLower = rootFieldName.toLowerCase();
+  const singularCandidates = singularize(fieldLower);
+
+  for (const table of ir.tables) {
+    const tableLower = table.name.toLowerCase();
+    if (tableLower === fieldLower) return table.name;
+    if (singularCandidates.includes(tableLower)) return table.name;
+    // Reverse: field is singular, table might match a plural form
+    const tablePlurals = pluralize(tableLower);
+    if (tablePlurals.includes(fieldLower)) return table.name;
+  }
+  return null;
+}
+
+/**
+ * Naive singularization candidates. Returns an array so callers can try all.
+ * Covers the most common English inflections without a full NLP library.
+ */
+function singularize(plural) {
+  const candidates = [];
+  if (plural.endsWith('ies')) candidates.push(plural.slice(0, -3) + 'y');        // categories → category
+  else if (plural.endsWith('ses')) candidates.push(plural.slice(0, -2));          // addresses → address
+  else if (plural.endsWith('es')) candidates.push(plural.slice(0, -2));           // statuses → status
+  else if (plural.endsWith('s') && !plural.endsWith('ss')) candidates.push(plural.slice(0, -1)); // products → product
+  return candidates;
+}
+
+/**
+ * Naive pluralization candidates for reverse matching.
+ */
+function pluralize(singular) {
+  const candidates = [];
+  if (singular.endsWith('y') && !/[aeiou]y$/.test(singular)) {
+    candidates.push(singular.slice(0, -1) + 'ies');   // category → categories
+  } else if (singular.endsWith('s') || singular.endsWith('x') || singular.endsWith('z') ||
+      singular.endsWith('ch') || singular.endsWith('sh')) {
+    candidates.push(singular + 'es');                   // address → addresses
+  } else {
+    candidates.push(singular + 's');                    // product → products
+  }
+  return candidates;
 }
 
 function mergeHistoryPoints(...pointArrays) {

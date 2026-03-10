@@ -3,17 +3,18 @@
  * Pure string renderer for SELECT-style queries from QIR Nodes.
  * - Handles Table/Subquery/Lateral/Join relations
  * - Supports WHERE, ORDER BY, LIMIT/OFFSET
- * - JSON helpers: jsonb_build_object, jsonb_agg with COALESCE([])
- * - Predicate mapping incl. NULL semantics and IN → = ANY($n::<arr>)
+ * - JSON helpers delegated to SqlDialect (default: PostgresDialect)
+ * - Predicate mapping incl. NULL semantics and IN → dialect.arrayIn()
  *
  * This module intentionally avoids Node built-ins; consumers pass in
  * a QueryPlan shaped as defined in qir/Nodes.mjs. Parameter placeholders
- * use $1, $2… in deterministic order via collectParams().
+ * use dialect-specific format (PG: $1, $2…) via collectParams().
  */
 
 import { collectParams } from './ParamCollector.mjs';
 import { renderIdent } from './identifiers.mjs';
 import { ColumnRef } from './Nodes.mjs';
+import { PostgresDialect } from './dialects/PostgresDialect.mjs';
 
 const SAFE_FUNC_RE = /^[a-zA-Z_][a-zA-Z0-9_.]*$/;
 const SAFE_TYPE_RE = /^[a-zA-Z_][a-zA-Z0-9_ [\]]*$/;
@@ -22,23 +23,26 @@ const SAFE_TYPE_RE = /^[a-zA-Z_][a-zA-Z0-9_ [\]]*$/;
 const isObject = (v) => v && typeof v === 'object';
 const escString = (s) => String(s).replace(/'/g, "''");
 
+const DEFAULT_DIALECT = new PostgresDialect();
+
 export function lowerToSQL(plan, paramsEnv = null, opts = {}) {
   if (!plan || !plan.root) throw new Error('lowerToSQL: invalid plan');
   const identOpts = { policy: opts.identPolicy || 'minimal' };
+  const dialect = opts.dialect || DEFAULT_DIALECT;
 
   const params = paramsEnv && paramsEnv.ordered && paramsEnv.indexByName
     ? paramsEnv
     : collectParams(plan);
 
   // Build DISTINCT ON (optional) and SELECT list
-  const selectList = (plan.projection?.items || []).map(pi => `${renderExpr(pi.expr, params, identOpts)} AS ${renderIdent(pi.alias, identOpts)}`).join(', ');
+  const selectList = (plan.projection?.items || []).map(pi => `${renderExpr(pi.expr, params, identOpts, dialect, opts)} AS ${renderIdent(pi.alias, identOpts)}`).join(', ');
   const projectionSQL = selectList.length > 0 ? selectList : '*';
   const distinctExprs = Array.isArray(plan.distinctOn) ? plan.distinctOn : [];
-  const distinctSQL = distinctExprs.length ? `DISTINCT ON (${distinctExprs.map(e => renderExpr(e, params, identOpts)).join(', ')}) ` : '';
+  const distinctSQL = distinctExprs.length ? `DISTINCT ON (${distinctExprs.map(e => renderExpr(e, params, identOpts, dialect, opts)).join(', ')}) ` : '';
 
   // Render FROM and gather WHERE predicates from Filter nodes embedded in relation tree
   const whereParts = [];
-  const fromSQL = renderRelation(plan.root, params, whereParts, identOpts, opts);
+  const fromSQL = renderRelation(plan.root, params, whereParts, identOpts, opts, dialect);
 
   // WHERE
   const whereSQL = whereParts.length ? `\nWHERE ${whereParts.join(' AND ')}` : '';
@@ -64,11 +68,11 @@ export function lowerToSQL(plan, paramsEnv = null, opts = {}) {
     }
   }
   if (orderItems.length > 0) {
-    const rendered = orderItems.map(ob => renderOrderBy(ob, params, identOpts, opts));
+    const rendered = orderItems.map(ob => renderOrderBy(ob, params, identOpts, dialect, opts));
     // Append tie-breaker if primary key (id) not already present
     const pkRef = typeof opts.pkResolver === 'function' ? opts.pkResolver(plan) : guessPrimaryKeyRef(plan);
     if (pkRef && !orderMentionsExpr(orderItems, pkRef)) {
-      rendered.push(`${renderExpr(pkRef, params, identOpts)} ASC`);
+      rendered.push(`${renderExpr(pkRef, params, identOpts, dialect, opts)} ASC`);
     }
     orderSQL = `\nORDER BY ${rendered.join(', ')}`;
   }
@@ -92,7 +96,7 @@ export function lowerToSQL(plan, paramsEnv = null, opts = {}) {
 
 // ────────────────────────────────────────────────────────────────────────────
 // Relation rendering
-function renderRelation(r, params, whereParts, identOpts, opts) {
+function renderRelation(r, params, whereParts, identOpts, opts, dialect) {
   if (!r) return '';
   switch (r.kind) {
   case 'Table':
@@ -106,8 +110,8 @@ function renderRelation(r, params, whereParts, identOpts, opts) {
     return `LATERAL (\n${sql}\n) ${renderIdent(r.alias, identOpts)}`;
   }
   case 'Join': {
-    const left = renderRelation(r.left, params, whereParts, identOpts, opts);
-    const right = renderRelation(r.right, params, whereParts, identOpts, opts);
+    const left = renderRelation(r.left, params, whereParts, identOpts, opts, dialect);
+    const right = renderRelation(r.right, params, whereParts, identOpts, opts, dialect);
     let jt;
     switch (String(r.joinType || 'INNER').toUpperCase()) {
     case 'LEFT':  jt = 'LEFT JOIN';  break;
@@ -115,13 +119,13 @@ function renderRelation(r, params, whereParts, identOpts, opts) {
     default:
       throw new Error(`Unsupported join type: ${r.joinType}`);
     }
-    const on = r.on ? renderPredicate(r.on, params, identOpts, opts) : 'TRUE';
+    const on = r.on ? renderPredicate(r.on, params, identOpts, dialect, opts) : 'TRUE';
     return `${left} ${jt} ${right} ON ${on}`;
   }
   case 'Filter': {
     // Non-canonical node used in tests; extract predicate into WHERE
-    if (r.predicate) whereParts.push(renderPredicate(r.predicate, params, identOpts, opts));
-    return renderRelation(r.input, params, whereParts, identOpts, opts);
+    if (r.predicate) whereParts.push(renderPredicate(r.predicate, params, identOpts, dialect, opts));
+    return renderRelation(r.input, params, whereParts, identOpts, opts, dialect);
   }
   default:
     throw new Error(`Unsupported relation kind: ${r.kind}`);
@@ -130,31 +134,31 @@ function renderRelation(r, params, whereParts, identOpts, opts) {
 
 // ────────────────────────────────────────────────────────────────────────────
 // Predicates & expressions
-function renderPredicate(p, params, identOpts, opts) {
+function renderPredicate(p, params, identOpts, dialect, opts) {
   if (!p) return 'TRUE';
   switch (p.kind) {
   case 'Exists':
     return `EXISTS (\n${lowerToSQL(p.subquery, params, opts || {})}\n)`;
   case 'Not':
-    return `(NOT ${renderPredicate(p.left, params, identOpts, opts)})`;
+    return `(NOT ${renderPredicate(p.left, params, identOpts, dialect, opts)})`;
   case 'And':
-    return `(${renderPredicate(p.left, params, identOpts, opts)} AND ${renderPredicate(p.right, params, identOpts, opts)})`;
+    return `(${renderPredicate(p.left, params, identOpts, dialect, opts)} AND ${renderPredicate(p.right, params, identOpts, dialect, opts)})`;
   case 'Or':
-    return `(${renderPredicate(p.left, params, identOpts, opts)} OR ${renderPredicate(p.right, params, identOpts, opts)})`;
+    return `(${renderPredicate(p.left, params, identOpts, dialect, opts)} OR ${renderPredicate(p.right, params, identOpts, dialect, opts)})`;
   case 'Compare': {
     const { op } = p;
     // Null checks
-    if (op === 'isNull')    return `${renderExpr(p.left, params, identOpts, opts)} IS NULL`;
-    if (op === 'isNotNull') return `${renderExpr(p.left, params, identOpts, opts)} IS NOT NULL`;
+    if (op === 'isNull')    return `${renderExpr(p.left, params, identOpts, dialect, opts)} IS NULL`;
+    if (op === 'isNotNull') return `${renderExpr(p.left, params, identOpts, dialect, opts)} IS NOT NULL`;
 
     if (op === 'in') {
-      const left = renderExpr(p.left, params, identOpts, opts);
-      const paramSql = renderParam(p.right, params, /*forceCast*/true);
-      return `${left} = ANY(${paramSql})`;
+      const left = renderExpr(p.left, params, identOpts, dialect, opts);
+      const paramSql = renderParam(p.right, params, dialect, /*forceCast*/true);
+      return dialect.arrayIn(left, paramSql);
     }
 
-    const left = renderExpr(p.left, params, identOpts, opts);
-    const right = renderExpr(p.right, params, identOpts, opts);
+    const left = renderExpr(p.left, params, identOpts, dialect, opts);
+    const right = renderExpr(p.right, params, identOpts, dialect, opts);
     switch (op) {
     case 'eq':  return `${left} = ${right}`;
     case 'ne':  return `${left} <> ${right}`;
@@ -163,8 +167,8 @@ function renderPredicate(p, params, identOpts, opts) {
     case 'gt':  return `${left} > ${right}`;
     case 'gte': return `${left} >= ${right}`;
     case 'like': return `${left} LIKE ${right}`;
-    case 'ilike': return `${left} ILIKE ${right}`;
-    case 'contains': return `${left} @> ${right}`;
+    case 'ilike': return dialect.ilike(left, right);
+    case 'contains': return dialect.arrayContains(left, right);
     default:
       throw new Error(`Unsupported compare op '${op}'`);
     }
@@ -174,33 +178,33 @@ function renderPredicate(p, params, identOpts, opts) {
   }
 }
 
-function renderExpr(e, params, identOpts, opts) {
+function renderExpr(e, params, identOpts, dialect, opts) {
   if (!e) return 'NULL';
   switch (e.kind) {
   case 'ColumnRef':
     return `${renderIdent(e.table, identOpts)}.${renderIdent(e.column, identOpts)}`;
   case 'ParamRef':
-    return renderParam(e, params);
+    return renderParam(e, params, dialect);
   case 'Literal':
-    return renderLiteral(e.value, e.type);
+    return renderLiteral(e.value, e.type, dialect);
   case 'FuncCall': {
     const fn = String(e.name);
     if (!SAFE_FUNC_RE.test(fn)) throw new Error(`Unsafe SQL function name: ${fn}`);
-    const args = (e.args || []).map(a => renderExpr(a, params, identOpts, opts)).join(', ');
+    const args = (e.args || []).map(a => renderExpr(a, params, identOpts, dialect, opts)).join(', ');
     return `${fn}(${args})`;
   }
   case 'ScalarSubquery':
     return `(\n${lowerToSQL(e.plan, params, opts || {})}\n)`;
   case 'JsonBuildObject':
-    return renderJsonBuildObject(e, params, identOpts, opts);
+    return renderJsonBuildObject(e, params, identOpts, dialect, opts);
   case 'JsonAgg':
-    return renderJsonAgg(e, params, identOpts, opts);
+    return renderJsonAgg(e, params, identOpts, dialect, opts);
   default:
     throw new Error(`Unsupported expr kind '${e.kind}'`);
   }
 }
 
-function renderLiteral(v, type = null) {
+function renderLiteral(v, type = null, dialect = DEFAULT_DIALECT) {
   if (v === null || v === undefined) return 'NULL';
   if (type != null && !SAFE_TYPE_RE.test(String(type))) {
     throw new Error(`Unsafe SQL type cast in Literal: ${type}`);
@@ -211,30 +215,30 @@ function renderLiteral(v, type = null) {
     return String(v);
   }
   if (Array.isArray(v) || isObject(v)) {
-    const json = JSON.stringify(v);
-    return `'${escString(json)}'::${type || 'jsonb'}`;
+    return dialect.jsonLiteral(JSON.stringify(v), type);
   }
-  return `'${escString(v)}'${type ? `::${type}` : ''}`;
+  const strLiteral = `'${escString(v)}'`;
+  return type ? dialect.castExpression(strLiteral, type) : strLiteral;
 }
 
-function renderJsonBuildObject(e, params, identOpts, opts) {
-  // fields: [{ key, value }]
-  const pairs = (e.fields || []).flatMap(({ key, value }) => [
-    `'${escString(String(key))}'`,
-    renderExpr(value, params, identOpts, opts)
-  ]);
-  return `jsonb_build_object(${pairs.join(', ')})`;
+function renderJsonBuildObject(e, params, identOpts, dialect, opts) {
+  // fields: [{ key, value }] → [{key, valueSql}] for dialect
+  const fields = (e.fields || []).map(({ key, value }) => ({
+    key,
+    valueSql: renderExpr(value, params, identOpts, dialect, opts)
+  }));
+  return dialect.jsonBuildObject(fields);
 }
 
-function renderJsonAgg(e, params, identOpts, opts) {
-  const inner = renderExpr(e.value, params, identOpts, opts);
-  const order = (e.orderBy || []).length
-    ? ' ORDER BY ' + e.orderBy.map(ob => renderOrderBy(ob, params, identOpts, opts)).join(', ')
+function renderJsonAgg(e, params, identOpts, dialect, opts) {
+  const inner = renderExpr(e.value, params, identOpts, dialect, opts);
+  const orderBySql = (e.orderBy || []).length
+    ? 'ORDER BY ' + e.orderBy.map(ob => renderOrderBy(ob, params, identOpts, dialect, opts)).join(', ')
     : '';
-  return `COALESCE(jsonb_agg(${inner}${order}), '[]'::jsonb)`;
+  return dialect.jsonAgg(inner, orderBySql);
 }
 
-function renderOrderBy(ob, params, identOpts, opts) {
+function renderOrderBy(ob, params, identOpts, dialect, opts) {
   const dir = ob.direction && String(ob.direction).toLowerCase() === 'desc' ? 'DESC' : 'ASC';
   let nulls = '';
   if (ob.nulls) {
@@ -244,10 +248,10 @@ function renderOrderBy(ob, params, identOpts, opts) {
     }
     nulls = ` NULLS ${n.toUpperCase()}`;
   }
-  return `${renderExpr(ob.expr, params, identOpts, opts)} ${dir}${nulls}`;
+  return `${renderExpr(ob.expr, params, identOpts, dialect, opts)} ${dir}${nulls}`;
 }
 
-function renderParam(p, params, _forceCast = false) {
+function renderParam(p, params, dialect, _forceCast = false) {
   const name = p.name ?? p.param ?? 'p';
   const typeHint = p.typeHint || null;
   const special = p.special || '';
@@ -266,8 +270,8 @@ function renderParam(p, params, _forceCast = false) {
   if (typeHint && !SAFE_TYPE_RE.test(String(typeHint))) {
     throw new Error(`Unsafe SQL type hint on ParamRef: ${typeHint}`);
   }
-  const cast = typeHint ? `::${typeHint}` : '';
-  return `$${discoveredIndex}${cast}`;
+  const placeholder = dialect.paramPlaceholder(discoveredIndex);
+  return typeHint ? dialect.castExpression(placeholder, typeHint) : placeholder;
 }
 
 function findIndexByNameOnly(params, name) {

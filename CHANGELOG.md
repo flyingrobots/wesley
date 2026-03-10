@@ -8,6 +8,25 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- **QIR Dialect Abstraction** (`@wesley/core`): Introduced `SqlDialect` abstract
+  interface and `PostgresDialect` implementation that extracts all
+  PostgreSQL-specific rendering (jsonb functions, `@>` containment, `ILIKE`,
+  `= ANY()`, `CREATE VIEW`/`CREATE FUNCTION` DDL) from `lowerToSQL.mjs` and
+  `emit.mjs` into a pluggable dialect layer. Both modules now accept an optional
+  `opts.dialect` parameter (defaulting to `PostgresDialect`) — existing behaviour
+  is identical. This creates the seam for future MySQL/SQLite/CockroachDB
+  backends without touching the dialect-neutral QIR core.
+- **QirPlugin** (`@wesley/core`): `GeneratorPlugin` wrapper for the QIR ops
+  pipeline. Wraps translate → lower → emit as a first-class transmutation
+  participant with per-op evidence tracking. Passes `validatePlugin` contract
+  and supports configurable dialect, schema, security, and search_path options.
+- **CLI `.graphql` ops support**: `wesley generate --ops` now discovers and
+  compiles `.graphql` operation files alongside `.op.json` files. GraphQL
+  operations are translated via `TranslateEnv` + `translateOperation` into QIR
+  plans and emitted as SQL views/functions. New `--ops-target` flag selects
+  `postgres` (default) or `supabase` for auth variable compilation.
+- **Example `.graphql` ops**: `example/ops/orders_by_user.graphql` (parameterized
+  with nested items) and `example/ops/all_products.graphql` (parameterless).
 - **QIR Translator** (`@wesley/core`): GraphQL operation documents → QIR query
   plans. `translateOperation(gql, env, options)` parses a GraphQL operation
   string and compiles it into a `QueryPlan` using the Wesley IR for schema
