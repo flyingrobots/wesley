@@ -8,6 +8,14 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- **CLI `.graphql` ops support**: `wesley generate --ops` now discovers and
+  compiles `.graphql` operation files alongside `.op.json` files. GraphQL
+  operations are translated via `TranslateEnv` + `translateOperation` into QIR
+  plans and emitted as SQL views/functions. New `--ops-target` flag selects
+  `postgres` (default) or `supabase` for auth variable compilation.
+- **Example `.graphql` ops**: `example/ops/orders_by_user.graphql` (parameterized
+  with nested items) and `example/ops/all_products_with_items.graphql`
+  (parameterless).
 - **QIR Translator** (`@wesley/core`): GraphQL operation documents → QIR query
   plans. `translateOperation(gql, env, options)` parses a GraphQL operation
   string and compiles it into a `QueryPlan` using the Wesley IR for schema

@@ -1,0 +1,8 @@
+query AllProductsWithItems {
+  products(orderBy: [{ name: asc }]) {
+    id
+    name
+    slug
+    price_cents
+  }
+}

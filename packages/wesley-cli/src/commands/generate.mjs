@@ -5,7 +5,7 @@
  */
 
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
-import { buildPlanFromJson, emitFunction, emitView, collectParams, quoteIdent, sanitizeIdentBase } from '@wesley/core/domain/qir';
+import { buildPlanFromJson, emitFunction, emitView, collectParams, quoteIdent, sanitizeIdentBase, translateOperation, TranslateEnv } from '@wesley/core/domain/qir';
 import { filterIRByUnits } from '@wesley/core/domain/SchemaFilter';
 import { assertValid } from '../framework/schemaValidator.mjs';
 import { WesleyError, OpsError } from '@wesley/core';
@@ -26,6 +26,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
       .option('--ops-schema <name>', 'Schema name for emitted ops SQL (default wes_ops)', 'wes_ops')
       .option('--ops-security <mode>', 'Security for emitted functions: invoker|definer', 'invoker')
       .option('--ops-search-path <list>', 'Comma-separated search_path for ops functions (e.g., "pg_catalog, wes_ops")')
+      .option('--ops-target <platform>', 'Target platform for ops: postgres|supabase (affects auth variable compilation)', 'postgres')
       .option('--ops-explain <mode>', 'Emit EXPLAIN JSON snapshots for ops: mock', '')
       .option('--ops-allow-errors', 'Continue compiling remaining ops even if some fail validation (not allowed in CI without override)')
       .option('--emit-bundle', 'Emit .wesley/ evidence bundle')
@@ -452,7 +453,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
           if (idx >= files.length) break;
           const path = files[idx];
           try {
-            const compiled = await compileOpFile(fs, path, collisions, logger);
+            const compiled = await compileOpFile(fs, path, collisions, logger, { ir, target: options.opsTarget });
             compiledOps.push({ order: idx, ...compiled });
           } catch (e) {
             if (e?.code === 'OPS_IDENTIFIER_TOO_LONG') {
@@ -492,6 +493,10 @@ export class GeneratePipelineCommand extends WesleyCommand {
         const security = String(options.opsSecurity || 'invoker').toLowerCase();
         if (security !== 'invoker' && security !== 'definer') {
           throw new OpsError('OPS_INVALID_SECURITY', `Invalid --ops-security value "${options.opsSecurity}"; must be "invoker" or "definer"`);
+        }
+        const opsTarget = String(options.opsTarget || 'postgres').toLowerCase();
+        if (opsTarget !== 'postgres' && opsTarget !== 'supabase') {
+          throw new OpsError('OPS_INVALID_TARGET', `Invalid --ops-target value "${options.opsTarget}"; must be "postgres" or "supabase"`);
         }
         const setSearchPath = options.opsSearchPath
           ? String(options.opsSearchPath).split(',').map(s => s.trim()).filter(Boolean)
@@ -561,7 +566,7 @@ async function findOpFiles(fs, opsDir, logger) {
     for (const e of entries) {
       if (e.isDirectory) {
         await walk(e.path);
-      } else if (e.isFile && e.name?.endsWith?.('.op.json')) {
+      } else if (e.isFile && (e.name?.endsWith?.('.op.json') || e.name?.endsWith?.('.graphql'))) {
         acc.push(e.path || await fs.join(dir, e.name));
       }
     }
@@ -569,7 +574,7 @@ async function findOpFiles(fs, opsDir, logger) {
   await walk(opsDir);
   acc.sort(); // locale-invariant deterministic ordering
   if (acc.length === 0) {
-    logger.info({ opsDir }, 'Experimental --ops: no *.op.json files found; skipping');
+    logger.info({ opsDir }, 'Experimental --ops: no *.op.json or *.graphql files found; skipping');
   }
   return acc;
 }
@@ -581,7 +586,7 @@ async function resolveManifestEntries(fs, includes = [], excludes = [], logger) 
     if (!Array.isArray(entries)) return;
     for (const e of entries) {
       if (e.isDirectory) await addDir(e.path);
-      else if (e.isFile && e.name?.endsWith?.('.op.json')) acc.add(e.path);
+      else if (e.isFile && (e.name?.endsWith?.('.op.json') || e.name?.endsWith?.('.graphql'))) acc.add(e.path);
     }
   };
   for (const entry of includes) {
@@ -603,11 +608,45 @@ async function resolveManifestEntries(fs, includes = [], excludes = [], logger) 
   return list;
 }
 
-async function compileOpFile(fs, path, collisions, logger) {
+async function compileOpFile(fs, path, collisions, logger, { ir, target = 'postgres' } = {}) {
   const raw = await fs.read(path);
-  const op = JSON.parse(String(raw));
-  const plan = buildPlanFromJson(op);
-  const baseName = sanitizeOpIdentifier(op.name);
+  let plan, baseName;
+
+  if (path.endsWith('.graphql')) {
+    // GraphQL operation file → translator pipeline
+    if (!ir) {
+      throw new OpsError('OPS_NO_IR', 'Cannot compile .graphql ops without a parsed schema IR. Ensure --schema is provided.', { file: path });
+    }
+    const gql = String(raw);
+    const env = new TranslateEnv(ir);
+
+    // Extract operation name and root type from the GraphQL document
+    const { parse: parseGQL } = await import('graphql');
+    const doc = parseGQL(gql);
+    const opDef = doc.definitions.find(d => d.kind === 'OperationDefinition');
+    if (!opDef) throw new OpsError('OPS_NO_OPERATION', 'No operation definition found in .graphql file', { file: path });
+
+    const opName = opDef.name?.value || 'unnamed';
+    const rootField = opDef.selectionSet?.selections?.[0];
+    if (!rootField || rootField.kind !== 'Field') {
+      throw new OpsError('OPS_NO_ROOT_FIELD', 'No root field found in operation', { file: path });
+    }
+
+    // Resolve root type: match the root field name to an IR table
+    const rootFieldName = rootField.name.value;
+    const rootType = resolveRootType(ir, rootFieldName);
+    if (!rootType) {
+      throw new OpsError('OPS_UNKNOWN_ROOT', `Cannot resolve root field '${rootFieldName}' to a known table type`, { file: path, field: rootFieldName });
+    }
+
+    plan = translateOperation(gql, env, { rootTypeName: rootType, target });
+    baseName = sanitizeOpIdentifier(opName);
+  } else {
+    // JSON DSL file (.op.json) → OpPlanBuilder pipeline
+    const op = JSON.parse(String(raw));
+    plan = buildPlanFromJson(op);
+    baseName = sanitizeOpIdentifier(op.name);
+  }
   const byteLength = Buffer.byteLength(baseName, 'utf8');
   if (byteLength > POSTGRESQL_IDENTIFIER_LIMIT) {
     throw new OpsError(
@@ -809,6 +848,25 @@ async function loadMoriartyHistory({ fs, shell, defaultBase, logger: log }) {
   }
 
   return { points };
+}
+
+/**
+ * Resolve a GraphQL root field name (e.g., "products", "orders") to an IR type name.
+ * Matches by lowercase comparison against table names, trying plural and singular forms.
+ */
+function resolveRootType(ir, rootFieldName) {
+  if (!ir || !Array.isArray(ir.tables)) return null;
+  const fieldLower = rootFieldName.toLowerCase();
+  const fieldSingular = fieldLower.replace(/s$/, '');
+
+  for (const table of ir.tables) {
+    const tableLower = table.name.toLowerCase();
+    if (tableLower === fieldLower || tableLower === fieldSingular ||
+        fieldLower === tableLower + 's') {
+      return table.name;
+    }
+  }
+  return null;
 }
 
 function mergeHistoryPoints(...pointArrays) {
