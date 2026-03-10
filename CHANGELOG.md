@@ -15,6 +15,11 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   expanded with deterministic UUIDs (user, order, order items). CI workflow
   updated to apply `*.view.sql` alongside `*.fn.sql` and run all `*.pgtap.sql`
   files. EXPLAIN snapshots now cover all 4 ops.
+- **`graphql` dependency for `@wesley/cli`**: Added `graphql` as a direct
+  dependency of `@wesley/cli` so that `.graphql` ops compilation works under
+  pnpm's strict module resolution. Previously the dynamic `import('graphql')`
+  in `generate.mjs` relied on transitive resolution through `@wesley/core`,
+  which pnpm disallows.
 
 ### Added
 

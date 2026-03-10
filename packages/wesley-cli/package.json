@@ -26,7 +26,8 @@
     "ajv": "^8.18.0",
     "ajv-formats": "^3.0.1",
     "chokidar": "^4.0.3",
-    "commander": "^14.0.2"
+    "commander": "^14.0.2",
+    "graphql": "^16.11.0"
   },
   "keywords": [
     "cli",
