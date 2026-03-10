@@ -8,6 +8,20 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- **QIR Translator** (`@wesley/core`): GraphQL operation documents → QIR query
+  plans. `translateOperation(gql, env, options)` parses a GraphQL operation
+  string and compiles it into a `QueryPlan` using the Wesley IR for schema
+  introspection. Supports scalar projection, belongsTo (many:1) via LEFT JOIN
+  with `JsonBuildObject`, hasMany (1:N) via LATERAL + `JsonAgg`, WHERE filters
+  (eq/ne/lt/lte/gt/gte/ilike/isNull/isNotNull, AND/OR/NOT, EXISTS via
+  some/none), ORDER BY, LIMIT/OFFSET, and auth variable compilation per target
+  platform (Supabase `auth.uid()` vs vanilla PostgreSQL `current_setting`).
+- **`TranslateEnv`** (`@wesley/core`): Schema introspection layer that wraps
+  the Wesley IR and provides query-time lookups — `resolveTable`, `resolveColumn`
+  (with GQL→PG type mapping), `resolveRelation` (belongsTo/hasMany detection via
+  FK directives and naming heuristics), `pkField`, `rlsEnabled`, `tenantField`,
+  and deterministic alias generation.
+
 - **Master Roadmap (`ROADMAP_2.md`)**: Consolidated strategic roadmap that
   supersedes `ROADMAP.md` and absorbs `BACKLOG.md`. Maps all 15 active GitHub
   milestones to workstreams, defines Alpha blockers, critical path (5 phases),
