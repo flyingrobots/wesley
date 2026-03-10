@@ -27,14 +27,15 @@ SELECT is(
   'op_products_by_name(NOPE%) returns 0 rows'
 );
 
--- 5. Returned jsonb has expected keys (id, name, slug)
+-- 5. Returned jsonb has exactly the projected keys (id, name, slug — no price_cents)
 SELECT ok(
   (SELECT bool_and(
     row_data ? 'id'
     AND row_data ? 'name'
     AND row_data ? 'slug'
+    AND NOT (row_data ? 'price_cents')
   ) FROM wes_ops.op_products_by_name('Al%') AS row_data),
-  'every row from op_products_by_name has id, name, slug keys'
+  'every row from op_products_by_name has id, name, slug (no price_cents)'
 );
 
 SELECT finish();

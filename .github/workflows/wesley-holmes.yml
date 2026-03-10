@@ -480,7 +480,7 @@ jobs:
           PGPASSWORD=postgres psql -h localhost -U postgres -d test -t -A -c "EXPLAIN (FORMAT JSON) SELECT * FROM wes_ops.op_products_by_name('Al%')" > test/fixtures/examples/${WESLEY_OUT_DIR}/ops/explain/products_by_name.explain.json
           PGPASSWORD=postgres psql -h localhost -U postgres -d test -t -A -c "EXPLAIN (FORMAT JSON) SELECT * FROM wes_ops.op_orders_by_user('00000000-0000-0000-0000-000000000001'::uuid)" > test/fixtures/examples/${WESLEY_OUT_DIR}/ops/explain/orders_by_user.explain.json
           PGPASSWORD=postgres psql -h localhost -U postgres -d test -t -A -c "EXPLAIN (FORMAT JSON) SELECT * FROM wes_ops.op_orders_with_items_by_user('00000000-0000-0000-0000-000000000001'::uuid)" > test/fixtures/examples/${WESLEY_OUT_DIR}/ops/explain/orders_with_items_by_user.explain.json
-          PGPASSWORD=postgres psql -h localhost -U postgres -d test -t -A -c "EXPLAIN (FORMAT JSON) SELECT * FROM wes_ops.op_all_products()" > test/fixtures/examples/${WESLEY_OUT_DIR}/ops/explain/all_products.explain.json
+          PGPASSWORD=postgres psql -h localhost -U postgres -d test -t -A -c "EXPLAIN (FORMAT JSON) SELECT * FROM wes_ops.op_allproducts()" > test/fixtures/examples/${WESLEY_OUT_DIR}/ops/explain/allproducts.explain.json
 
       - name: "⬆️ Upload EXPLAIN snapshots"
         uses: actions/upload-artifact@v7

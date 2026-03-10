@@ -1,5 +1,7 @@
 -- pgTAP smoke tests: parameterless view (all_products.graphql)
 -- Tests that a parameterless operation emits both a view and a zero-arg function.
+-- Sanitized name: "allproducts" (no underscore — GraphQL operation name "AllProducts"
+-- is lowercased and non-alpha chars stripped by sanitizeIdentBase).
 
 BEGIN;
 SELECT plan(6);
@@ -8,19 +10,19 @@ SELECT plan(6);
 SELECT has_schema('wes_ops', 'wes_ops schema exists');
 
 -- 2. View exists
-SELECT has_view('wes_ops', 'op_all_products', 'op_all_products view exists');
+SELECT has_view('wes_ops', 'op_allproducts', 'op_allproducts view exists');
 
 -- 3. Zero-arg function exists
 SELECT has_function(
-  'wes_ops', 'op_all_products', '{}'::text[],
-  'op_all_products() function exists with zero params'
+  'wes_ops', 'op_allproducts', '{}'::text[],
+  'op_allproducts() function exists with zero params'
 );
 
--- 4. View returns seeded rows (2 products: Alpha published, Beta unpublished)
+-- 4. View returns seeded rows (2 products total — no published filter in this op)
 SELECT is(
-  (SELECT count(*)::bigint FROM wes_ops.op_all_products),
+  (SELECT count(*)::bigint FROM wes_ops.op_allproducts),
   2::bigint,
-  'op_all_products view returns all seeded products'
+  'op_allproducts view returns all seeded products'
 );
 
 -- 5–6. Each row has expected jsonb keys (id, name, slug, price_cents)
@@ -30,8 +32,8 @@ SELECT ok(
     AND row_data ? 'name'
     AND row_data ? 'slug'
     AND row_data ? 'price_cents'
-  ) FROM wes_ops.op_all_products() AS row_data),
-  'every row from op_all_products() has id, name, slug, price_cents keys'
+  ) FROM wes_ops.op_allproducts() AS row_data),
+  'every row from op_allproducts() has id, name, slug, price_cents keys'
 );
 
 SELECT ok(
@@ -40,8 +42,8 @@ SELECT ok(
     AND row_data ? 'name'
     AND row_data ? 'slug'
     AND row_data ? 'price_cents'
-  ) FROM (SELECT to_jsonb(v.*) AS row_data FROM wes_ops.op_all_products v) sub),
-  'every row from op_all_products view has id, name, slug, price_cents keys'
+  ) FROM (SELECT to_jsonb(v.*) AS row_data FROM wes_ops.op_allproducts v) sub),
+  'every row from op_allproducts view has id, name, slug, price_cents keys'
 );
 
 SELECT finish();
