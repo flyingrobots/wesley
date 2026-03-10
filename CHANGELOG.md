@@ -6,6 +6,15 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Added
+
+- **Master Roadmap (`ROADMAP_2.md`)**: Consolidated strategic roadmap that
+  supersedes `ROADMAP.md` and absorbs `BACKLOG.md`. Maps all 15 active GitHub
+  milestones to workstreams, defines Alpha blockers, critical path (5 phases),
+  and Go Public gate checklist. Includes progress snapshot from
+  `meta/progress.json`, deferred/speculative items with provenance tags,
+  completed milestone archive, and artifact map for all planning documents.
+
 ### Removed
 
 - **QIR duck-typing fallbacks (SR-m2)**: Removed 3 duck-typing fallbacks from

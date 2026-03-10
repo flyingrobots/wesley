@@ -23,5 +23,5 @@ Transform → Plan → Rehearse → Ship lifecycle.
 | DevOps & Docs Polish | Future | Docker scaffolding, security/CI hardening, docs site refresh |
 
 For the detailed status, task lists, and deferred items see
-[ROADMAP.md](https://github.com/flyingrobots/wesley/blob/main/ROADMAP.md)
+[ROADMAP_2.md](https://github.com/flyingrobots/wesley/blob/main/ROADMAP_2.md)
 in the repository.

@@ -1,5 +1,9 @@
 # Backlog
 
+> [!WARNING]
+> Absorbed into `ROADMAP_2.md`.
+> This file is retained for historical reference only.
+
 Items tracked from PR reviews, retrospectives, and ongoing development.
 Sorted by effort-vs-payoff: low-effort/high-payoff first, high-effort/lower-payoff last.
 

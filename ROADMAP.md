@@ -1,5 +1,9 @@
 # Roadmap
 
+> [!WARNING]
+> Superseded by `ROADMAP_2.md`.
+> This file is retained for historical reference only.
+
 > Single source of truth for remaining work.
 > Completed milestones live in `CHANGELOG.md`.
 
