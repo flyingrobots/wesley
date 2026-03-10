@@ -66,13 +66,15 @@ services:
         PASS=0; FAIL=0
         for f in /tests/*.pgtap.sql; do
           echo "==> $$f"
-          if psql -v ON_ERROR_STOP=1 -f "$$f"; then
-            PASS=$$((PASS + 1))
-          else
-            FAIL=$$((FAIL + 1))
-          fi
+          OUTPUT=$$(psql -v ON_ERROR_STOP=1 -f "$$f" 2>&1)
+          echo "$$OUTPUT"
+          # Parse TAP output: count "not ok" lines (TAP failures don't cause psql to exit non-zero)
+          FILE_FAIL=$$(echo "$$OUTPUT" | grep -c '^not ok' || true)
+          FILE_PASS=$$(echo "$$OUTPUT" | grep -c '^ok' || true)
+          PASS=$$((PASS + FILE_PASS))
+          FAIL=$$((FAIL + FILE_FAIL))
         done
-        echo "--- Results: $$PASS passed, $$FAIL failed ---"
+        echo "--- TAP Results: $$PASS passed, $$FAIL failed ---"
         [ "$$FAIL" -eq 0 ]
 
 volumes:

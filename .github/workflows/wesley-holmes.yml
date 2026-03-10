@@ -505,10 +505,22 @@ jobs:
               echo "No pgTAP test files found"
               exit 1
             fi
+            TOTAL_PASS=0; TOTAL_FAIL=0
             for f in "${files[@]}"; do
               echo "Running $f ..."
-              PGPASSWORD=postgres psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d test -f "$f"
+              OUTPUT=$(PGPASSWORD=postgres psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d test -f "$f" 2>&1)
+              echo "$OUTPUT"
+              # Parse TAP output: count "not ok" lines (TAP failures don't cause psql to exit non-zero)
+              FILE_FAIL=$(echo "$OUTPUT" | grep -c '^not ok' || true)
+              FILE_PASS=$(echo "$OUTPUT" | grep -c '^ok' || true)
+              TOTAL_PASS=$((TOTAL_PASS + FILE_PASS))
+              TOTAL_FAIL=$((TOTAL_FAIL + FILE_FAIL))
             done
+            echo "--- TAP Results: $TOTAL_PASS passed, $TOTAL_FAIL failed ---"
+            if [ "$TOTAL_FAIL" -gt 0 ]; then
+              echo "pgTAP assertion failures detected" >&2
+              exit 1
+            fi
           else
             echo "pgtap extension not available; skipping pgTAP tests"
           fi
