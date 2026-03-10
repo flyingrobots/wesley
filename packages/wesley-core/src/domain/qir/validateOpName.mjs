@@ -32,7 +32,7 @@ export function assertSafeOpName(name) {
  * - Ensures the result doesn't start with a digit
  * - Falls back to 'unnamed' for empty input
  *
- * @param {string} name
+ * @param {string|null|undefined} name — null/undefined are treated as 'unnamed'
  * @returns {string} sanitized identifier base
  */
 export function sanitizeOpName(name) {
@@ -50,11 +50,7 @@ export function sanitizeOpName(name) {
  * @returns {string} prefixed identifier
  */
 export function derivePrefixedOpName(baseName) {
-  const normalized = String(baseName || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '_')
-    .replace(/^_+|_+$/g, '');
-  const effective = normalized || 'op';
+  const effective = sanitizeOpName(baseName);
   const suffix = effective === 'op' ? 'unnamed' : effective;
   return `op_${suffix}`;
 }

@@ -52,6 +52,14 @@ export class PostgresDialect extends SqlDialect {
     return 63;
   }
 
+  castExpression(sql, typeName) {
+    return `${sql}::${typeName}`;
+  }
+
+  jsonLiteral(jsonString, explicitType = null) {
+    return `'${escString(jsonString)}'::${explicitType || 'jsonb'}`;
+  }
+
   wrapToJsonb(alias) {
     return `to_jsonb(${this.quoteIdent(alias)}.*)`;
   }

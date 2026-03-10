@@ -24,6 +24,8 @@ test('SqlDialect: all rendering methods throw', () => {
     ['paramPlaceholder', [1]],
     ['quoteIdent', ['x']],
     ['identifierLimit', []],
+    ['castExpression', ['$1', 'text']],
+    ['jsonLiteral', ['{"a":1}', null]],
     ['wrapToJsonb', ['q']],
     ['createView', ['v', 'SELECT 1']],
     ['createFunction', [{}]]
@@ -153,6 +155,18 @@ test('PostgresDialect: createFunction renders definer + search_path', () => {
 test('PostgresDialect: jsonBuildObject with empty fields', () => {
   const pg = new PostgresDialect();
   assert.equal(pg.jsonBuildObject([]), 'jsonb_build_object()');
+});
+
+test('PostgresDialect: castExpression renders :: cast', () => {
+  const pg = new PostgresDialect();
+  assert.equal(pg.castExpression('$1', 'text'), '$1::text');
+  assert.equal(pg.castExpression("'hello'", 'varchar'), "'hello'::varchar");
+});
+
+test('PostgresDialect: jsonLiteral renders jsonb cast', () => {
+  const pg = new PostgresDialect();
+  assert.equal(pg.jsonLiteral('{"a":1}', null), "'{\"a\":1}'::jsonb");
+  assert.equal(pg.jsonLiteral('[1,2]', 'json'), "'[1,2]'::json");
 });
 
 test('PostgresDialect: is an instanceof SqlDialect', () => {

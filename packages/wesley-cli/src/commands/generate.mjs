@@ -542,6 +542,17 @@ const POSTGRESQL_IDENTIFIER_LIMIT = 63;
 const sanitizeOpIdentifier = coreSanitizeOpName;
 const derivePrefixedIdentifier = derivePrefixedOpName;
 
+// Lazily-resolved GraphQL parser; hoisted out of compileOpFile to avoid
+// per-file async import overhead (Node caches modules, but resolution isn't free).
+let _parseGQL;
+async function getGraphQLParser() {
+  if (!_parseGQL) {
+    const gql = await import('graphql');
+    _parseGQL = gql.parse;
+  }
+  return _parseGQL;
+}
+
 async function findOpFiles(fs, opsDir, logger) {
   const exists = await fs.exists(opsDir);
   if (!exists) {
@@ -610,7 +621,7 @@ async function compileOpFile(fs, path, collisions, logger, { ir, target = 'postg
     const env = new TranslateEnv(ir);
 
     // Extract operation name and root type from the GraphQL document
-    const { parse: parseGQL } = await import('graphql');
+    const parseGQL = await getGraphQLParser();
     const doc = parseGQL(gql);
     const opDefs = doc.definitions.filter(d => d.kind === 'OperationDefinition');
     if (opDefs.length === 0) throw new OpsError('OPS_NO_OPERATION', 'No operation definition found in .graphql file', { file: path });

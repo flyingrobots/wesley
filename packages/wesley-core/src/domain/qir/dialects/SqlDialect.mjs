@@ -96,6 +96,26 @@ export class SqlDialect {
   }
 
   /**
+   * Render a type cast expression.
+   * @param {string} _sql - The expression to cast
+   * @param {string} _typeName - The target type (e.g. 'text', 'jsonb', 'text[]')
+   * @returns {string} e.g. `$1::text`, `CAST($1 AS text)`
+   */
+  castExpression(_sql, _typeName) {
+    throw new Error(`${this.constructor.name}.castExpression() must be implemented`);
+  }
+
+  /**
+   * Render a JSON/JSONB literal from a serialized JSON string.
+   * @param {string} _jsonString - Already-escaped JSON string (e.g. `'{"a":1}'`)
+   * @param {string|null} _explicitType - Optional explicit type override
+   * @returns {string} e.g. `'{"a":1}'::jsonb`
+   */
+  jsonLiteral(_jsonString, _explicitType) {
+    throw new Error(`${this.constructor.name}.jsonLiteral() must be implemented`);
+  }
+
+  /**
    * Wrap a subquery alias to produce a JSON/JSONB row.
    * @param {string} _alias - The subquery alias
    * @returns {string} e.g. `to_jsonb("q".*)`

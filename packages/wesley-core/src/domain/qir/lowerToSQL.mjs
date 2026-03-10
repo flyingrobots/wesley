@@ -186,7 +186,7 @@ function renderExpr(e, params, identOpts, dialect, opts) {
   case 'ParamRef':
     return renderParam(e, params, dialect);
   case 'Literal':
-    return renderLiteral(e.value, e.type);
+    return renderLiteral(e.value, e.type, dialect);
   case 'FuncCall': {
     const fn = String(e.name);
     if (!SAFE_FUNC_RE.test(fn)) throw new Error(`Unsafe SQL function name: ${fn}`);
@@ -204,7 +204,7 @@ function renderExpr(e, params, identOpts, dialect, opts) {
   }
 }
 
-function renderLiteral(v, type = null) {
+function renderLiteral(v, type = null, dialect = DEFAULT_DIALECT) {
   if (v === null || v === undefined) return 'NULL';
   if (type != null && !SAFE_TYPE_RE.test(String(type))) {
     throw new Error(`Unsafe SQL type cast in Literal: ${type}`);
@@ -215,10 +215,10 @@ function renderLiteral(v, type = null) {
     return String(v);
   }
   if (Array.isArray(v) || isObject(v)) {
-    const json = JSON.stringify(v);
-    return `'${escString(json)}'::${type || 'jsonb'}`;
+    return dialect.jsonLiteral(JSON.stringify(v), type);
   }
-  return `'${escString(v)}'${type ? `::${type}` : ''}`;
+  const strLiteral = `'${escString(v)}'`;
+  return type ? dialect.castExpression(strLiteral, type) : strLiteral;
 }
 
 function renderJsonBuildObject(e, params, identOpts, dialect, opts) {
@@ -270,8 +270,8 @@ function renderParam(p, params, dialect, _forceCast = false) {
   if (typeHint && !SAFE_TYPE_RE.test(String(typeHint))) {
     throw new Error(`Unsafe SQL type hint on ParamRef: ${typeHint}`);
   }
-  const cast = typeHint ? `::${typeHint}` : '';
-  return `${dialect.paramPlaceholder(discoveredIndex)}${cast}`;
+  const placeholder = dialect.paramPlaceholder(discoveredIndex);
+  return typeHint ? dialect.castExpression(placeholder, typeHint) : placeholder;
 }
 
 function findIndexByNameOnly(params, name) {
