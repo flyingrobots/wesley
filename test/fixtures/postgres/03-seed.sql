@@ -1,5 +1,7 @@
 -- Deterministic seed data for pgTAP smoke tests.
 -- UUIDs use a fixed pattern so assertions are stable.
+-- NOTE: A copy of this data is inlined in .github/workflows/wesley-holmes.yml
+--       (the "Seed minimal data for ops" step). Keep both in sync.
 
 -- Products: Alpha (published, matches 'Al%'), Beta (unpublished)
 INSERT INTO product (id, sku, name, slug, price_cents, stock_quantity, published, created_at)

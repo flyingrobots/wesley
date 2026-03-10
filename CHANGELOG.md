@@ -20,9 +20,6 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   pnpm's strict module resolution. Previously the dynamic `import('graphql')`
   in `generate.mjs` relied on transitive resolution through `@wesley/core`,
   which pnpm disallows.
-
-### Added
-
 - **QIR Dialect Abstraction** (`@wesley/core`): Introduced `SqlDialect` abstract
   interface and `PostgresDialect` implementation that extracts all
   PostgreSQL-specific rendering (jsonb functions, `@>` containment, `ILIKE`,

@@ -428,6 +428,8 @@ jobs:
         run: |
           set -euo pipefail
           # Seed products, a user, an order, and order items with deterministic UUIDs
+          # NOTE: This data is duplicated in test/fixtures/postgres/03-seed.sql
+          #       (used by docker-compose). Keep both in sync.
           PGPASSWORD=postgres psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d test <<'SQL'
           BEGIN;
 
