@@ -409,7 +409,7 @@ Badges for key packages:
 
 <!-- BEGIN:OVERALL_STATUS -->
 Stage: MVP  \
-Progress: 35% → Alpha
+Progress: 61% → Alpha
 <!-- END:OVERALL_STATUS -->
 
 ## Package Matrix
@@ -419,15 +419,15 @@ Note: In local runs where `GITHUB_REPOSITORY` is unset, the CI badge column rend
 <!-- BEGIN:PACKAGE_MATRIX -->
 | Package | Status | Stage | Progress | CI | Notes |
 | --- | --- | --- | --- | --- | --- |
-| `@wesley/core` | Active | MVP | 35% → Alpha | ![pkg-core.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-core.yml/badge.svg?branch=main) | Pure domain logic, no Node builtins |
-| `@wesley/cli` | Active | MVP | 55% → Alpha | ![pkg-cli.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-cli.yml/badge.svg?branch=main) | CLI + Bats suites |
-| `@wesley/host-node` | Active | MVP | 25% → Alpha | ![pkg-host-node.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-host-node.yml/badge.svg?branch=main) | Node adapters + binary |
-| `@wesley/host-browser` | Experimental | MVP | 50% → Alpha | ![browser-smoke.yml](https://github.com/flyingrobots/wesley/actions/workflows/browser-smoke.yml/badge.svg?branch=main) | Pure ESM; in-memory FS; minimal parser; smoke-level only |
-| `@wesley/generator-js` | Active | MVP | 25% → Alpha | ![pkg-generator-js.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-generator-js.yml/badge.svg?branch=main) | TS/Zod emitters |
-| `@wesley/generator-supabase` | Active | MVP | 25% → Alpha | ![pkg-generator-supabase.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-generator-supabase.yml/badge.svg?branch=main) | SQL/RLS/pgTAP emitters |
-| `@wesley/holmes` | Active | MVP | 45% → Alpha | ![pkg-holmes.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-holmes.yml/badge.svg?branch=main) | Evidence scoring |
-| `@wesley/tasks` | Active | MVP | 25% → Alpha | ![pkg-tasks.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-tasks.yml/badge.svg?branch=main) | Planner utilities |
-| `@wesley/slaps` | Active | MVP | 25% → Alpha | ![pkg-slaps.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-slaps.yml/badge.svg?branch=main) | Scheduling/core utils |
+| `@wesley/core` | Active | MVP | 50% → Alpha | ![pkg-core.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-core.yml/badge.svg?branch=main) | Pure domain logic, no Node builtins |
+| `@wesley/cli` | Active | Alpha | 50% → Beta | ![pkg-cli.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-cli.yml/badge.svg?branch=main) | CLI + Bats suites |
+| `@wesley/host-node` | Active | MVP | 50% → Alpha | ![pkg-host-node.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-host-node.yml/badge.svg?branch=main) | Node adapters + binary |
+| `@wesley/host-browser` | Experimental | MVP | 30% → Alpha | ![browser-smoke.yml](https://github.com/flyingrobots/wesley/actions/workflows/browser-smoke.yml/badge.svg?branch=main) | Pure ESM; in-memory FS; minimal parser; smoke-level only |
+| `@wesley/generator-js` | Active | MVP | 50% → Alpha | ![pkg-generator-js.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-generator-js.yml/badge.svg?branch=main) | TS/Zod emitters |
+| `@wesley/generator-supabase` | Active | MVP | 50% → Alpha | ![pkg-generator-supabase.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-generator-supabase.yml/badge.svg?branch=main) | SQL/RLS/pgTAP emitters |
+| `@wesley/holmes` | Active | Alpha | 50% → Beta | ![pkg-holmes.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-holmes.yml/badge.svg?branch=main) | Evidence scoring |
+| `@wesley/tasks` | Active | MVP | 50% → Alpha | ![pkg-tasks.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-tasks.yml/badge.svg?branch=main) | Planner utilities |
+| `@wesley/slaps` | Active | MVP | 50% → Alpha | ![pkg-slaps.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-slaps.yml/badge.svg?branch=main) | Scheduling/core utils |
 | `@wesley/host-deno` | Experimental | Alpha | 50% → Beta | ![pkg-host-deno.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-host-deno.yml/badge.svg?branch=main) | Deno host runtime (demo) |
 | `@wesley/host-bun` | Experimental | Alpha | 50% → Beta | ![pkg-host-bun.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-host-bun.yml/badge.svg?branch=main) | Bun host runtime (demo) |
 | `@wesley/scaffold-multitenant` | Too soon | Prototype | 50% → MVP | — | Early scaffold, no CI yet |
