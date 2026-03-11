@@ -8,6 +8,21 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- **pgTAP smoke tests for emitted ops** (#416): Three pgTAP test files replacing
+  the skeleton `ops.pgtap.sql` — `ops-parameterless-view` (view + zero-arg
+  function), `ops-parameterized-fn` (ILIKE filter with text param), and
+  `ops-nested-lateral` (LATERAL join with nested jsonb arrays). CI seed data
+  expanded with deterministic UUIDs (user, order, order items). CI workflow
+  updated to apply `*.view.sql` alongside `*.fn.sql` and run all `*.pgtap.sql`
+  files. EXPLAIN snapshots now cover all 4 ops. TAP output is now parsed for
+  assertion failures so CI exits non-zero on test regressions. Negative-case
+  and shape assertions added per CodeRabbit review feedback. CI seed step now
+  reads `test/fixtures/postgres/03-seed.sql` directly instead of inlining a copy.
+- **`graphql` dependency for `@wesley/cli`**: Added `graphql` as a direct
+  dependency of `@wesley/cli` so that `.graphql` ops compilation works under
+  pnpm's strict module resolution. Previously the dynamic `import('graphql')`
+  in `generate.mjs` relied on transitive resolution through `@wesley/core`,
+  which pnpm disallows.
 - **QIR Dialect Abstraction** (`@wesley/core`): Introduced `SqlDialect` abstract
   interface and `PostgresDialect` implementation that extracts all
   PostgreSQL-specific rendering (jsonb functions, `@>` containment, `ILIKE`,
