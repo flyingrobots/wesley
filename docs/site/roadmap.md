@@ -6,7 +6,7 @@ title: Roadmap
 # Roadmap
 
 The canonical roadmap of record lives at the repository root:
-[ROADMAP_2.md](https://github.com/flyingrobots/wesley/blob/main/ROADMAP_2.md).
+[ROADMAP.md](https://github.com/flyingrobots/wesley/blob/main/ROADMAP.md).
 
 That document owns:
 
@@ -15,7 +15,8 @@ That document owns:
 - release markers
 - execution governance
 - compatibility windows
-- V2.x backlog
+- the current phase model
 
 Use this page as a pointer, not a duplicate summary. The root roadmap is the
-single source of truth for what V2 means and how it ships.
+single source of truth for what V2 means and how it ships; GitHub Issues and
+Milestones own the active execution queue.

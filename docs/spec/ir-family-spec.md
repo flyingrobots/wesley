@@ -124,7 +124,7 @@ The schemas currently use two different JSON Schema drafts:
 - **Draft 2020-12**: `evidence-map.schema.json`, `scores.schema.json` — these use `$defs` and the modern `$id` resolution.
 - **Draft-07**: all other schemas (`qir`, `ir`, `ir-envelope`, `plan-report`, `realm`, `shipme`, `ops-manifest`, `ops-registry`) — these use `definitions`.
 
-This split exists because the evidence schemas were authored first under draft 2020-12. The newer schemas use draft-07 for Ajv compatibility with `allOf` composition patterns. Do not cross-reference between the two groups without testing resolution. Unification to a single draft is tracked in BACKLOG.md.
+This split exists because the evidence schemas were authored first under draft 2020-12. The newer schemas use draft-07 for Ajv compatibility with `allOf` composition patterns. Do not cross-reference between the two groups without testing resolution. Unification to a single draft is tracked in GitHub issue [#456](https://github.com/flyingrobots/wesley/issues/456).
 
 ## Versioning and compatibility
 
@@ -139,4 +139,3 @@ The IR family actively narrows the surface for mistakes. QIR uses explicit `Para
 Plan IR and REALM IR complete the family’s developer loop. The CLI validates `plan --explain --json` and `rehearse --dry-run --json` against their schemas in tests. The Ops Manifest schema supports curated discovery in large repos.
 
 The total surface is a modest set of JSON Schemas, referenced by the CLI and by docs, moving in lockstep with the code. It’s deliberately small and intentionally boring—exactly the point for infrastructure we intend to trust.
-
