@@ -21,7 +21,7 @@
   },
   "devDependencies": {
     "typescript": "^5.7.0",
-    "vitest": "^4.0.18"
+    "vitest": "^4.1.0"
   },
   "author": "Wesley Authors <oss@flyingrobots.dev>",
   "license": "Apache-2.0",
