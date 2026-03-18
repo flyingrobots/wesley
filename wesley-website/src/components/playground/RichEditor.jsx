@@ -71,7 +71,7 @@ export default function RichEditor({ value, onChange }) {
   React.useEffect(() => {
     if (editor && editor.getText() !== value) {
       // Force update into code block structure
-      editor.commands.setContent(createCodeDocument(value), false, { preserveCursor: true });
+      editor.commands.setContent(createCodeDocument(value), false);
     }
   }, [value, editor]);
 

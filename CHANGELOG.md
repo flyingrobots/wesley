@@ -63,6 +63,18 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   `meta/progress.json`, deferred/speculative items with provenance tags,
   completed milestone archive, and artifact map for all planning documents.
 
+### Fixed
+
+- **SHIPME PR comment matching**: Hardened the certificate workflow to anchor
+  bot comments with a stable HTML marker, paginate comment lookup, and target
+  `github-actions[bot]` explicitly before updating an existing PR comment.
+- **`@wesley/core` npm lockfile drift**: Regenerated
+  `packages/wesley-core/package-lock.json` so the npm lockfile now matches the
+  `@supabase/pg-parser` `^0.1.7` dependency declared in `package.json`.
+- **Website TipTap content sync**: Removed the unsupported `preserveCursor`
+  option from the `RichEditor` `setContent()` call and added a regression test
+  so future TipTap bumps do not silently reintroduce the unsupported API usage.
+
 ### Removed
 
 - **QIR duck-typing fallbacks (SR-m2)**: Removed 3 duck-typing fallbacks from
