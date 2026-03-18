@@ -38,3 +38,4 @@ packages/wesley-cli/test/bats-plugins/
 
 .claude/
 .ignore
+.audit_reports/
