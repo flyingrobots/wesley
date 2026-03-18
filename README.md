@@ -27,7 +27,7 @@ type Document @wes_table @wes_tenant(by: "org_id") @wes_rls {
 }
 ```
 
-Directive support is broader in the registry than it is on the current hot path. Use [docs/DIRECTIVES.md](/Users/james/git/wesley/docs/DIRECTIVES.md) for the current support matrix before leaning on non-core directives in happy-path schemas.
+Directive support is broader in the registry than it is on the current hot path. Use [docs/DIRECTIVES.md](docs/DIRECTIVES.md) for the current support matrix before leaning on non-core directives in happy-path schemas.
 
 ## TL;DR – Getting Started
 

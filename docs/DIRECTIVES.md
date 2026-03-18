@@ -3,7 +3,7 @@
 
 This page describes the directive support Wesley actually ships today.
 
-The repo-wide directive registry in [schemas/directives.graphql](/Users/james/git/wesley/schemas/directives.graphql) is broader than the main `generate -> plan -> rehearse -> certify` path. The current Node hot path is grounded in the GraphQL adapter at [packages/wesley-host-node/src/adapters/GraphQLAdapter.mjs](/Users/james/git/wesley/packages/wesley-host-node/src/adapters/GraphQLAdapter.mjs), so this document classifies directives by what that path truly parses and lowers today.
+The repo-wide directive registry in [schemas/directives.graphql](../schemas/directives.graphql) is broader than the main `generate -> plan -> rehearse -> certify` path. The current Node hot path is grounded in the GraphQL adapter at [packages/wesley-host-node/src/adapters/GraphQLAdapter.mjs](../packages/wesley-host-node/src/adapters/GraphQLAdapter.mjs), so this document classifies directives by what that path truly parses and lowers today.
 
 ## Support Levels
 
@@ -33,7 +33,7 @@ These are current, but they belong to schema composition rather than table/colum
 
 | Directive | Status | Current lowering | Notes |
 | --- | --- | --- | --- |
-| `@wes_package(name: "...")` | `current` | Used by composition and name-mangling flows | Supported through [packages/wesley-core/src/domain/SchemaResolver.mjs](/Users/james/git/wesley/packages/wesley-core/src/domain/SchemaResolver.mjs). |
+| `@wes_package(name: "...")` | `current` | Used by composition and name-mangling flows | Supported through [packages/wesley-core/src/domain/SchemaResolver.mjs](../packages/wesley-core/src/domain/SchemaResolver.mjs). |
 | `@wes_import(from: "...")` | `current` | Used to resolve composed schema units | Current for composed-schema flows such as `generate --schema-root` and `compile-ttd --schema-root`. |
 
 ## Experimental Or Partial Directive Families
@@ -52,7 +52,7 @@ These directives are real in the Typed Transition Dynamics path, but they are no
 
 | Directive family | Status | Current command surface |
 | --- | --- | --- |
-| `@wes_channel`, `@wes_op`, `@wes_rule`, `@wes_invariant` | `ttd-only` | Parsed by the TTD compiler in [packages/wesley-cli/src/commands/compile-ttd.mjs](/Users/james/git/wesley/packages/wesley-cli/src/commands/compile-ttd.mjs) and [packages/wesley-core/src/ttd/directives.mjs](/Users/james/git/wesley/packages/wesley-core/src/ttd/directives.mjs). |
+| `@wes_channel`, `@wes_op`, `@wes_rule`, `@wes_invariant` | `ttd-only` | Parsed by the TTD compiler in [packages/wesley-cli/src/commands/compile-ttd.mjs](../packages/wesley-cli/src/commands/compile-ttd.mjs) and [packages/wesley-core/src/ttd/directives.mjs](../packages/wesley-core/src/ttd/directives.mjs). |
 | `@wes_emission`, `@wes_footprint`, `@wes_requires`, `@wes_produces`, `@wes_emitsTo`, `@wes_mustEmit` | `ttd-only` | Current in the TTD extraction/manifest path, not in the database compiler hot path. |
 | `@wes_codec`, `@wes_version` | `ttd-only` | Current for TTD/type-registry compilation paths and related manifests, not for the main SDL-to-DDL flow. |
 
