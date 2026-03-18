@@ -19,13 +19,15 @@ Wesley inverts the entire database development paradigm. While everyone else gen
 **Stop maintaining schemas in 5 places. Start shipping with confidence.**
 
 ```graphql
-type Document @wes_table @wes_tenant(by: "org_id") @wes_rls(enabled: true) {
+type Document @wes_table @wes_tenant(by: "org_id") @wes_rls {
   id: ID! @wes_pk
   title: String!
   org_id: ID! @wes_fk(ref: "Org.id")
   created_by: ID! @wes_fk(ref: "User.id")
 }
 ```
+
+Directive support is broader in the registry than it is on the current hot path. Use [docs/DIRECTIVES.md](/Users/james/git/wesley/docs/DIRECTIVES.md) for the current support matrix before leaning on non-core directives in happy-path schemas.
 
 ## TL;DR – Getting Started
 
@@ -263,7 +265,7 @@ if (mapped?.source) {
 ### Define your schema (v1):
 
 ```graphql
-type User @wes_table @wes_rls(enabled: true) {
+type User @wes_table @wes_rls {
   id: ID! @wes_pk
   email: String! @wes_unique
 }
@@ -272,13 +274,13 @@ type User @wes_table @wes_rls(enabled: true) {
 ### Evolve your schema (v2):
 
 ```graphql
-type User @wes_table @wes_rls(enabled: true) {
+type User @wes_table @wes_rls {
   id: ID! @wes_pk
   email: String! @wes_unique
-  posts: [Post!]! @wes_hasMany  # New relationship
+  display_name: String
 }
 
-type Post @wes_table @wes_rls(enabled: true) {
+type Post @wes_table @wes_rls {
   id: ID! @wes_pk
   title: String!
   author_id: ID! @wes_fk(ref: "User.id")
@@ -302,7 +304,7 @@ wesley deploy                    # Applies to production
 
 Wesley ensures a safe, zero-downtime deployment by automatically creating:
 
-- The new `posts` table with the foreign key and RLS policies.
+- The new `Post` table with its foreign key and RLS policies.
 - **All** required TypeScript types and Zod schemas.
 - **All** pgTAP tests to validate the new structure and security.
 

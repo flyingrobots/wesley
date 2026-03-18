@@ -1,286 +1,92 @@
-# Wesley GraphQL Directives Specification
+# Wesley Directive Truth Table
+<!-- docs-truth: status=current owner=@flyingrobots -->
 
-Wesley extends GraphQL with custom directives that control how schemas are compiled to database DDL, TypeScript types, and other outputs.
+This page describes the directive support Wesley actually ships today.
 
-## Canonical Directive Set
+The repo-wide directive registry in [schemas/directives.graphql](/Users/james/git/wesley/schemas/directives.graphql) is broader than the main `generate -> plan -> rehearse -> certify` path. The current Node hot path is grounded in the GraphQL adapter at [packages/wesley-host-node/src/adapters/GraphQLAdapter.mjs](/Users/james/git/wesley/packages/wesley-host-node/src/adapters/GraphQLAdapter.mjs), so this document classifies directives by what that path truly parses and lowers today.
 
-**Namespace**: `@wes_*` (canonical, preferred)
+## Support Levels
 
-```graphql
-# Core table directives
-directive @wes_table(name: String) on OBJECT
-directive @wes_pk on FIELD_DEFINITION
-directive @wes_fk(ref: String!) on FIELD_DEFINITION        # "Table.column"
-directive @wes_unique on FIELD_DEFINITION
-directive @wes_index(name: String, using: String) on FIELD_DEFINITION | OBJECT
-directive @wes_tenant(by: String!) on OBJECT
-directive @wes_default(value: String) on FIELD_DEFINITION
-```
+- `current`: parsed from SDL and used by a shipped command path today.
+- `experimental`: present in fixtures, legacy IR consumers, or downstream generators, but not guaranteed end-to-end on the main SDL hot path.
+- `ttd-only`: supported by `wesley compile-ttd`, not by the main database compiler path.
+- `deferred`: declared in the registry or docs, but not yet part of a stable public contract.
 
-## Alias Support (Temporary)
+## Current On The Main Database Compiler Path
 
-For migration convenience, Wesley accepts these aliases with deprecation warnings:
+These directives are the stable SDL surface for the current `generate`, `plan`, `rehearse`, `transform`, and `certify`-adjacent database/compiler flow.
 
-**Long aliases**:
-```graphql
-directive @wesley_table(name: String) on OBJECT
-directive @wesley_pk on FIELD_DEFINITION
-# ... etc (full @wesley_* variants)
-```
+| Directive | Status | Current lowering | Aliases accepted by current parser | Notes |
+| --- | --- | --- | --- | --- |
+| `@wes_table` | `current` | Marks an object type as a table | `@wesley_table`, `@table` | Required to turn an object into a table in the main IR. |
+| `@wes_pk` | `current` | Marks the primary key field | `@wesley_pk`, `@pk`, `@primaryKey` | Enforced as at most one per table; field must be non-null. |
+| `@wes_fk(ref: "Table.column")` | `current` | Lowers to structured foreign-key metadata | `@wesley_fk`, `@fk`, `@foreignKey` | Main path validates the `Table.column` format and target existence. |
+| `@wes_unique` | `current` | Lowers to a field uniqueness flag | `@wesley_unique`, `@unique` | Used by SQL/test generation paths. |
+| `@wes_index` | `current` | Lowers to a field index flag | `@wesley_index`, `@index` | Field-level indexing is current; richer table/composite semantics are still limited. |
+| `@wes_tenant(by: "...")` | `current` | Lowers to tenant metadata on the table | `@wesley_tenant`, `@tenant` | The `by` field must exist on the same type. |
+| `@wes_default(value: "...")` | `current` | Lowers to a field default expression/value | `@wesley_default`, `@default` | Canonical argument is `value`; the parser still accepts legacy `expr` on the hot path. |
+| `@wes_rls` | `current` | Presence is lowered into table RLS metadata | `@wesley_rls`, `@rls` | Treat this as an enable/presence marker today; full option semantics are not yet a stable hot-path contract. |
 
-**Legacy short names**:
-```graphql
-directive @table on OBJECT
-directive @pk on FIELD_DEFINITION
-# ... etc (bare names)
-```
+### Composition Directives
 
-**Deprecation Policy**: Aliases will be removed in v0.3. Use `@wes_*` in new schemas.
+These are current, but they belong to schema composition rather than table/column compilation:
 
-## Directive Reference
+| Directive | Status | Current lowering | Notes |
+| --- | --- | --- | --- |
+| `@wes_package(name: "...")` | `current` | Used by composition and name-mangling flows | Supported through [packages/wesley-core/src/domain/SchemaResolver.mjs](/Users/james/git/wesley/packages/wesley-core/src/domain/SchemaResolver.mjs). |
+| `@wes_import(from: "...")` | `current` | Used to resolve composed schema units | Current for composed-schema flows such as `generate --schema-root` and `compile-ttd --schema-root`. |
 
-### `@wes_table`
-**Location**: OBJECT  
-**Purpose**: Marks a GraphQL type as a database table
+## Experimental Or Partial Directive Families
 
-```graphql
-type User @wes_table {
-  id: ID! @wes_pk
-  email: String!
-}
+These directives exist in the registry and some downstream code paths, but they are not yet a stable, end-to-end SDL contract on the main database compiler path.
 
-# Custom table name
-type UserProfile @wes_table(name: "user_profiles") {
-  id: ID! @wes_pk
-}
-```
+| Directive family | Status | Reality today |
+| --- | --- | --- |
+| `@wes_uid`, `@wes_weight`, `@wes_critical`, `@wes_sensitive`, `@wes_pii` | `experimental` | Legacy/domain consumers such as HOLMES/test-depth, EvidenceMap, SQL/Zod generators, and internal fixtures still understand the older `@uid`, `@weight`, `@critical`, `@sensitive`, and `@pii` shapes once they are already present in IR/domain objects. The current GraphQL adapter does not canonically lower the `@wes_*` forms of these directives into the main IR. |
+| `@wes_hasMany`, `@wes_belongsTo` | `experimental` | Relationship hints exist in the registry and legacy/domain consumers such as `OperationRegistry`, but the main GraphQL SDL hot path does not lower canonical `@wes_hasMany` / `@wes_belongsTo` into stable relationship semantics. Some older bare names still act as relation-only hints in limited parser code paths. |
+| `@wes_owner`, `@wes_grant`, `@wes_noRPC` | `experimental` | RPC/policy generators and tenant helpers consume these directives when they already exist on domain tables, but the current GraphQL SDL hot path does not guarantee canonical end-to-end support for them. |
 
-### `@wes_pk`
-**Location**: FIELD_DEFINITION  
-**Purpose**: Designates the primary key field
+## TTD-Only Directives
 
-**Rules**:
-- At most one `@wes_pk` per table
-- Primary key field must be `NonNull` (end with `!`)
+These directives are real in the Typed Transition Dynamics path, but they are not part of the main database compiler contract. Use them with `wesley compile-ttd`, not as assumptions about `wesley generate`.
 
-```graphql
-type User @wes_table {
-  id: ID! @wes_pk        # ✓ Valid
-  uuid: String @wes_pk   # ✗ Not NonNull
-}
-```
+| Directive family | Status | Current command surface |
+| --- | --- | --- |
+| `@wes_channel`, `@wes_op`, `@wes_rule`, `@wes_invariant` | `ttd-only` | Parsed by the TTD compiler in [packages/wesley-cli/src/commands/compile-ttd.mjs](/Users/james/git/wesley/packages/wesley-cli/src/commands/compile-ttd.mjs) and [packages/wesley-core/src/ttd/directives.mjs](/Users/james/git/wesley/packages/wesley-core/src/ttd/directives.mjs). |
+| `@wes_emission`, `@wes_footprint`, `@wes_requires`, `@wes_produces`, `@wes_emitsTo`, `@wes_mustEmit` | `ttd-only` | Current in the TTD extraction/manifest path, not in the database compiler hot path. |
+| `@wes_codec`, `@wes_version` | `ttd-only` | Current for TTD/type-registry compilation paths and related manifests, not for the main SDL-to-DDL flow. |
 
-### `@wes_fk`
-**Location**: FIELD_DEFINITION  
-**Purpose**: Creates foreign key relationship
+## Deferred Or Unstable Surface
 
-**Format**: `@wes_fk(ref: "Table.column")`
+The directive registry and draft docs still contain broader semantics than the main compiler path currently guarantees.
 
-```graphql
-type Account @wes_table {
-  id: ID! @wes_pk
-  org_id: ID! @wes_fk(ref: "Org.id")
-  owner_id: ID! @wes_fk(ref: "User.id")
-}
-```
+| Surface | Status | Notes |
+| --- | --- | --- |
+| Full `@wes_rls(...)` option matrix | `deferred` | The registry exposes a broad option shape, but the stable hot-path contract today is the presence of `@wes_rls`, not the full option matrix. |
+| Broad alias support beyond the core compiler directives | `deferred` | The registry declares many alias forms, but the current parser alias map only covers the core compiler directives plus `@wes_rls`. |
+| “Everything in `schemas/directives.graphql` is supported by `generate`” | `deferred` | That is not true today and should not be assumed. |
 
-**Rules**:
-- Referenced table and column must exist
-- Field types should be compatible (same base scalar)
+## Practical Guidance
 
-### `@wes_unique`
-**Location**: FIELD_DEFINITION  
-**Purpose**: Creates unique constraint on field
+- If you want the boring, reproducible happy path today, use only the core compiler directives plus optional `@wes_package` / `@wes_import`.
+- Prefer canonical `@wes_*` names in new schemas, even where older aliases still parse.
+- Use `@wes_default(value: "...")` in docs and new examples. The parser still accepts `expr`, but that is a compatibility affordance, not the canonical form.
+- Treat the identity, scoring, relation, RPC, and policy hint directives as experimental unless the specific command path you are using proves support end to end.
+- If you are working on protocol/TTD flows, use `wesley compile-ttd`; do not assume TTD directives are part of `wesley generate`.
 
-```graphql
-type User @wes_table {
-  id: ID! @wes_pk
-  email: String! @wes_unique    # UNIQUE INDEX on email
-  username: String! @wes_unique # UNIQUE INDEX on username
-}
-```
-
-### `@wes_index`
-**Location**: FIELD_DEFINITION | OBJECT  
-**Purpose**: Creates database index
-
-```graphql
-# Field-level index
-type User @wes_table {
-  id: ID! @wes_pk
-  email: String! @wes_index            # Simple index
-  status: String! @wes_index(using: "hash")  # Hash index
-}
-
-# Table-level index (future: multi-column)
-type Account @wes_table @wes_index(name: "idx_composite") {
-  # Will support composite indexes in future versions
-}
-```
-
-### `@wes_tenant`
-**Location**: OBJECT  
-**Purpose**: Multi-tenant table configuration
-
-```graphql
-type Account @wes_table @wes_tenant(by: "org_id") {
-  id: ID! @wes_pk
-  org_id: ID! @wes_fk(ref: "Org.id")    # Must exist as field
-  name: String!
-}
-```
-
-**Rules**:
-- `by` field must exist on the same type
-- Enables automatic tenant-aware RLS policy generation
-
-### `@wes_default`
-**Location**: FIELD_DEFINITION  
-**Purpose**: Sets default value for column
-
-```graphql
-type User @wes_table {
-  id: ID! @wes_pk
-  created_at: DateTime! @wes_default(value: "now()")
-  active: Boolean! @wes_default(value: "true")
-  status: String! @wes_default(value: "pending")
-}
-```
-
-## Type Mapping
-
-Wesley maps GraphQL scalars to PostgreSQL types:
-
-| GraphQL Type | PostgreSQL Type |
-|--------------|-----------------|
-| `ID`         | `uuid`          |
-| `String`     | `text`          |
-| `Int`        | `integer`       |
-| `Float`      | `double precision` |
-| `Boolean`    | `boolean`       |
-| `DateTime`   | `timestamptz`   |
-| `[T]`        | `<T>[]`         |
-
-**Nullability**: `!` suffix makes column `NOT NULL`
-
-## Generated IR Format
-
-Wesley parses GraphQL schemas into this intermediate representation:
-
-```typescript
-type IR = {
-  tables: Array<{
-    name: string
-    columns: Array<{
-      name: string
-      type: string              // PostgreSQL type
-      nullable: boolean
-      default?: string
-      unique?: boolean
-      directives: Record<string, any>
-    }>
-    primaryKey?: string
-    foreignKeys: Array<{ 
-      column: string
-      refTable: string
-      refColumn: string 
-    }>
-    indexes: Array<{ 
-      columns: string[]
-      name?: string
-      using?: string 
-    }>
-    tenantBy?: string           // from @wes_tenant(by:"...")
-    directives: Record<string, any>
-  }>
-}
-```
-
-## Validation Rules
-
-Wesley validates directive usage and throws `PARSE_FAILED` errors on:
-
-**Table-level**:
-- Must have at least one field
-- Table names must be unique
-- `@wes_tenant(by: "field")` must reference existing column
-
-**Primary Keys**:
-- At most one `@wes_pk` per table
-- Primary key field must be `NonNull` (end with `!`)
-
-**Foreign Keys**:
-- `@wes_fk(ref: "Table.column")` must point to existing table/column
-- Field types should be compatible (same base scalar)
-
-**General**:
-- Directive arguments must match expected format
-- No duplicate unique/index constraints on same column
-
-## Example Schema
+## Minimal Happy-Path Example
 
 ```graphql
 type Organization @wes_table {
   id: ID! @wes_pk
-  name: String! @wes_unique
   slug: String! @wes_unique @wes_index
   created_at: DateTime! @wes_default(value: "now()")
 }
 
-type Account @wes_table @wes_tenant(by: "org_id") {
+type Account @wes_table @wes_tenant(by: "org_id") @wes_rls {
   id: ID! @wes_pk
   org_id: ID! @wes_fk(ref: "Organization.id") @wes_index
   email: String! @wes_unique
-  name: String!
   active: Boolean! @wes_default(value: "true")
-  created_at: DateTime! @wes_default(value: "now()")
-  updated_at: DateTime! @wes_default(value: "now()")
-}
-
-type Project @wes_table @wes_tenant(by: "org_id") {
-  id: ID! @wes_pk
-  org_id: ID! @wes_fk(ref: "Organization.id")
-  account_id: ID! @wes_fk(ref: "Account.id") @wes_index
-  name: String!
-  status: String! @wes_default(value: "active") @wes_index
-  created_at: DateTime! @wes_default(value: "now()")
 }
 ```
-
-## Migration Guide
-
-### From Legacy Directives
-
-```bash
-# Automated migration (crude but effective)
-sed -E -i '' \
-  -e 's/@wesley_/@wes_/g' \
-  -e 's/@table/@wes_table/g' \
-  -e 's/@pk/@wes_pk/g' \
-  -e 's/@fk\(/@wes_fk(/g' \
-  -e 's/@unique/@wes_unique/g' \
-  -e 's/@index/@wes_index/g' \
-  -e 's/@tenant/@wes_tenant/g' \
-  -e 's/@default/@wes_default/g' \
-  $(git ls-files '*.graphql')
-```
-
-### Strict Mode
-
-Enable `strictDirectives: true` in compiler options to reject all non-canonical directives:
-
-```javascript
-await compiler.compile(
-  { sdl: schemaContent, flags: { strictDirectives: true } },
-  { outDir: 'generated' }
-);
-```
-
-## Implementation Notes
-
-- **Namespace choice**: `@wes_` chosen for ergonomics (short, readable, low collision risk)
-- **Backwards compatibility**: Aliases supported with deprecation warnings
-- **Validation**: Strict validation prevents common configuration errors
-- **Extensibility**: Directive registry allows easy addition of new directives
-
-Future directives may include: `@wes_check`, `@wes_enum`, `@wes_json`, `@wes_generated`, etc.

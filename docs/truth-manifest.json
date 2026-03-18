@@ -12,6 +12,11 @@
       "owner": "@flyingrobots"
     },
     {
+      "path": "docs/DIRECTIVES.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
       "path": "docs/roadmap.md",
       "status": "current",
       "owner": "@flyingrobots"

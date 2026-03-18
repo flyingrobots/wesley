@@ -10,13 +10,13 @@ pnpm install
 
 ## Create a schema
 
-Create `schema.graphql` with canonical `@wes_*` directives:
+Create `schema.graphql` with the current hot-path directive subset:
 
 ```graphql
-type User @wes_table @critical {
-  id: ID! @wes_pk @wes_default(expr: "gen_random_uuid()")
+type User @wes_table {
+  id: ID! @wes_pk @wes_default(value: "gen_random_uuid()")
   email: String! @wes_unique
-  created_at: DateTime! @wes_default(expr: "now()")
+  created_at: DateTime! @wes_default(value: "now()")
 }
 ```
 
@@ -78,4 +78,5 @@ bash test/fixtures/blade/run.sh
 
 - Use canonical directives (`@wes_table`, `@wes_pk`, `@wes_fk`, `@wes_index`, `@wes_default`, `@wes_tenant`).
 - Aliases (e.g., `@table`, `@pk`) are accepted but deprecated.
+- Use [the directive truth table](../DIRECTIVES.md) when you need to know whether a directive is current, experimental, or TTD-only.
 - In CI, use the same entrypoint: `node packages/wesley-host-node/bin/wesley.mjs`.

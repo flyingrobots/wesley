@@ -13,6 +13,7 @@ Wesley inverts the entire database development paradigm. While everyone else gen
 - [The Paradigm Shift](./architecture/paradigm-shift.md) - Why GraphQL should be your source of truth
 - [Architecture Overview](./architecture/overview.md) - Hexagonal, event-driven, command pattern design
 - [The Algorithm](./architecture/algorithm.md) - How GraphQL becomes SQL, TypeScript, Zod, and more
+- [Directive Truth Table](./DIRECTIVES.md) - What the shipped parser/compiler path actually supports today
 - [Test Generation](./architecture/test-generation.md) - Automatic pgTAP tests from migrations
 - [IR Family Overview](./spec/ir-family.md) - Concise reference of Wesley's IR family
 - [IR Family Specification](./spec/ir-family-spec.md) - Full prose specification and design
