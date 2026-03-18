@@ -3,10 +3,17 @@ name: install-bats
 on:
   workflow_call:
 
+permissions:
+  contents: read
+
 jobs:
   install:
     runs-on: ubuntu-latest
     steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594
+        with:
+          egress-policy: audit
       - name: Install bats and jq
         run: |
           sudo apt-get update

@@ -10,6 +10,9 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+permissions:
+  contents: read
+
 env:
   FORCE_COLOR: 1
 
@@ -17,92 +20,99 @@ jobs:
   quick-cli-test:
     name: Quick CLI Test
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v5
-      with:
-        submodules: recursive  # For Bats plugins
+      - name: Harden runner
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594
+        with:
+          egress-policy: audit
 
-    - name: Detect CLI changes
-      id: changes
-      uses: dorny/paths-filter@v3
-      with:
-        filters: |
-          cli:
-            - 'packages/wesley-cli/**'
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd
+        with:
+          submodules: recursive  # For Bats plugins
 
-    - name: Skip check (no CLI changes)
-      if: steps.changes.outputs.cli != 'true'
-      run: |
-        echo "No changes under packages/wesley-cli; skipping quick CLI tests."
-        echo "::notice title=Quick Check Skipped::No CLI changes detected"
+      - name: Detect CLI changes
+        id: changes
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36
+        with:
+          filters: |
+            cli:
+              - 'packages/wesley-cli/**'
 
-    - name: Setup pnpm
-      if: steps.changes.outputs.cli == 'true'
-      uses: pnpm/action-setup@v4
-    - name: Verify pnpm version
-      run: |
-        echo "pnpm: $(pnpm --version)"
-        node -v
+      - name: Skip check (no CLI changes)
+        if: steps.changes.outputs.cli != 'true'
+        run: |
+          echo "No changes under packages/wesley-cli; skipping quick CLI tests."
+          echo "::notice title=Quick Check Skipped::No CLI changes detected"
 
-    - name: Setup Node.js (LTS)
-      if: steps.changes.outputs.cli == 'true'
-      uses: actions/setup-node@v6
-      with:
-        node-version: '20'
-        cache: 'pnpm'
+      - name: Setup pnpm
+        if: steps.changes.outputs.cli == 'true'
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320
 
-    - name: Install Bats
-      if: steps.changes.outputs.cli == 'true'
-      run: |
-        curl -LO https://github.com/bats-core/bats-core/archive/v1.12.0.tar.gz
-        tar -xzf v1.12.0.tar.gz
-        sudo ./bats-core-1.12.0/install.sh /usr/local
-        echo "/usr/local/bin" >> $GITHUB_PATH
+      - name: Verify pnpm version
+        run: |
+          echo "pnpm: $(pnpm --version)"
+          node -v
 
-    - name: Install dependencies
-      if: steps.changes.outputs.cli == 'true'
-      run: |
-        pnpm install --frozen-lockfile
-    - name: Verify lockfile unchanged
-      run: git diff --exit-code -- pnpm-lock.yaml
+      - name: Setup Node.js (LTS)
+        if: steps.changes.outputs.cli == 'true'
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f
+        with:
+          node-version: '20'
+          cache: 'pnpm'
 
-    - name: Initialize git for CLI tests
-      if: steps.changes.outputs.cli == 'true'
-      run: |
-        cd packages/wesley-cli  
-        git init .
-        git config user.name "CI Test"
-        git config user.email "test@ci.com"
-        git add .
-        git commit -m "CI test commit" || echo "Nothing to commit"
+      - name: Install Bats
+        if: steps.changes.outputs.cli == 'true'
+        run: |
+          curl -LO https://github.com/bats-core/bats-core/archive/v1.12.0.tar.gz
+          tar -xzf v1.12.0.tar.gz
+          sudo ./bats-core-1.12.0/install.sh /usr/local
+          echo "/usr/local/bin" >> $GITHUB_PATH
 
-    - name: Run CLI tests
-      if: steps.changes.outputs.cli == 'true'
-      run: |
-        cd packages/wesley-cli
-        echo "🧪 Running Wesley CLI Tests..."
-        pnpm test
+      - name: Install dependencies
+        if: steps.changes.outputs.cli == 'true'
+        run: |
+          pnpm install --frozen-lockfile
 
-    - name: Smoke test CLI functionality
-      if: steps.changes.outputs.cli == 'true'
-      run: |
-        cd packages/wesley-cli
-        echo ""
-        echo "🔥 Smoke testing CLI commands..."
-        echo "Version check:"
-        node ../wesley-host-node/bin/wesley.mjs --version
-        echo ""
-        echo "Help check:"  
-        node ../wesley-host-node/bin/wesley.mjs --help | head -5
-        echo ""
-        echo "stdin support check:"
-        echo 'type Query { hello: String }' | node ../wesley-host-node/bin/wesley.mjs generate --schema - --json --quiet || echo "✓ Expected parser failure" || true
+      - name: Verify lockfile unchanged
+        run: git diff --exit-code -- pnpm-lock.yaml
 
-    - name: Success notification
-      if: steps.changes.outputs.cli == 'true'
-      run: |
-        echo "✅ Wesley CLI quick check passed!"
-        echo "All 12 end-to-end tests successful"
-        echo "::notice title=Quick Check Passed::Wesley CLI ready for review"
+      - name: Initialize git for CLI tests
+        if: steps.changes.outputs.cli == 'true'
+        run: |
+          cd packages/wesley-cli
+          git init .
+          git config user.name "CI Test"
+          git config user.email "test@ci.com"
+          git add .
+          git commit -m "CI test commit" || echo "Nothing to commit"
+
+      - name: Run CLI tests
+        if: steps.changes.outputs.cli == 'true'
+        run: |
+          cd packages/wesley-cli
+          echo "🧪 Running Wesley CLI Tests..."
+          pnpm test
+
+      - name: Smoke test CLI functionality
+        if: steps.changes.outputs.cli == 'true'
+        run: |
+          cd packages/wesley-cli
+          echo ""
+          echo "🔥 Smoke testing CLI commands..."
+          echo "Version check:"
+          node ../wesley-host-node/bin/wesley.mjs --version
+          echo ""
+          echo "Help check:"
+          node ../wesley-host-node/bin/wesley.mjs --help | head -5
+          echo ""
+          echo "stdin support check:"
+          echo 'type Query { hello: String }' | node ../wesley-host-node/bin/wesley.mjs generate --schema - --json --quiet || echo "✓ Expected parser failure" || true
+
+      - name: Success notification
+        if: steps.changes.outputs.cli == 'true'
+        run: |
+          echo "✅ Wesley CLI quick check passed!"
+          echo "All 12 end-to-end tests successful"
+          echo "::notice title=Quick Check Passed::Wesley CLI ready for review"

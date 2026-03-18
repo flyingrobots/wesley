@@ -13,12 +13,18 @@ on:
       - '.github/**'
       - '.github/workflows/cert-shipme.yml'
 
+permissions:
+  contents: read
+
 jobs:
   cert:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
     services:
       postgres:
-        image: postgres:15
+        image: postgres:15@sha256:c635fa3e3b7421a659d34abdfd6d492f679cbe8149e261a501237b55c5a94212
         env:
           POSTGRES_USER: wesley
           POSTGRES_PASSWORD: wesley_test
@@ -31,9 +37,13 @@ jobs:
           --health-timeout 5s
           --health-retries 30
     steps:
-      - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
+      - name: Harden runner
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f
         with: { node-version: 20, cache: 'pnpm' }
       - run: pnpm install --no-frozen-lockfile
 
@@ -69,7 +79,7 @@ jobs:
         run: node packages/wesley-host-node/bin/wesley.mjs cert-verify --in SHIPME.md --pub pub.pem
 
       - name: Upload SHIPME
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
         with:
           name: SHIPME
           path: SHIPME.md
@@ -82,7 +92,7 @@ jobs:
       
       - name: Create/Update PR Comment
         if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]'
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
         with:
           script: |
             const badge = process.env.BADGE || '${{ steps.badge.outputs.BADGE }}';

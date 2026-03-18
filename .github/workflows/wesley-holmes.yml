@@ -13,14 +13,28 @@ env:
   HOLMES_OUT_DIR: out
   HOLMES_ARTIFACT: wesley-bundle
 
+permissions:
+  contents: read
+
+permissions:
+  contents: read
+
 jobs:
   wesley-generate:
     name: "🚀 Wesley Generation"
     runs-on: ubuntu-latest
     
     steps:
+    
+      - name: Harden runner
+    
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594
+    
+        with:
+    
+          egress-policy: audit
       - name: "📦 Checkout Repository"
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd
         with:
           fetch-depth: 0
 
@@ -69,7 +83,7 @@ jobs:
           fi
 
       - name: "📤 Upload Dashboard Template"
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
         with:
           name: dashboard-template
           path: docs/holmes-dashboard
@@ -81,7 +95,7 @@ jobs:
           test -f "$HOLMES_BUNDLE_DIR/bundle.json"
 
       - name: "💾 Upload Bundle"
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
         with:
           name: ${{ env.HOLMES_ARTIFACT }}
           path: |
@@ -96,8 +110,16 @@ jobs:
     needs: wesley-generate
     
     steps:
+    
+      - name: Harden runner
+    
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594
+    
+        with:
+    
+          egress-policy: audit
       - name: "📦 Checkout Repository"
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd
       
       - name: "🛠️ Setup HOLMES environment"
         uses: ./.github/actions/holmes-setup
@@ -118,7 +140,7 @@ jobs:
           bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
 
       - name: "💾 Save Report"
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
         with:
           name: holmes-report
           path: reports/holmes
@@ -130,8 +152,16 @@ jobs:
     needs: holmes-investigate
     
     steps:
+    
+      - name: Harden runner
+    
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594
+    
+        with:
+    
+          egress-policy: audit
       - name: "📦 Checkout Repository"
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd
         
       - name: "🛠️ Setup HOLMES environment"
         uses: ./.github/actions/holmes-setup
@@ -152,7 +182,7 @@ jobs:
           bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
 
       - name: "💾 Save Report"
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
         with:
           name: watson-report
           path: reports/watson
@@ -164,8 +194,16 @@ jobs:
     needs: watson-verify
     
     steps:
+    
+      - name: Harden runner
+    
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594
+    
+        with:
+    
+          egress-policy: audit
       - name: "📦 Checkout Repository"
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd
         with:
           fetch-depth: 0
         
@@ -189,7 +227,7 @@ jobs:
           git fetch --prune origin '+refs/heads/*:refs/remotes/origin/*' || true
 
       - name: "🧮 Compute MORIARTY context (issues/PRs/CI)"
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b
         continue-on-error: true
         env:
           BUNDLE_DIR: ${{ env.HOLMES_BUNDLE_DIR }}
@@ -307,7 +345,7 @@ jobs:
           MORIARTY_ACTIVITY_RELEVANT_PER_DAY: "4"
 
       - name: "💾 Save Report"
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
         with:
           name: moriarty-report
           path: reports/moriarty
@@ -320,7 +358,7 @@ jobs:
     
     services:
       postgres:
-        image: postgres:15
+        image: postgres:15@sha256:c635fa3e3b7421a659d34abdfd6d492f679cbe8149e261a501237b55c5a94212
         env:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: test
@@ -333,14 +371,22 @@ jobs:
           - 5432:5432
           
     steps:
+          
+      - name: Harden runner
+          
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594
+          
+        with:
+          
+          egress-policy: audit
       - name: "📦 Checkout Repository"
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd
         
       - name: "🔧 Setup pnpm"
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320
 
       - name: "🔧 Setup Node.js"
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f
         with:
           node-version: '20'
           cache: 'pnpm'
@@ -444,7 +490,7 @@ jobs:
           PGPASSWORD=postgres psql -h localhost -U postgres -d test -t -A -c "EXPLAIN (FORMAT JSON) SELECT * FROM wes_ops.op_allproducts()" > test/fixtures/examples/${WESLEY_OUT_DIR}/ops/explain/allproducts.explain.json
 
       - name: "⬆️ Upload EXPLAIN snapshots"
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
         with:
           name: ops-explain
           path: test/fixtures/examples/out/ops/explain/
@@ -502,17 +548,26 @@ jobs:
       MORIARTY_STATUS: ${{ needs.moriarty-predict.result }}
     
     permissions:
+      issues: write
       pull-requests: write
       
     steps:
+      
+      - name: Harden runner
+      
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594
+      
+        with:
+      
+          egress-policy: audit
       - name: "📥 Download Reports"
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           merge-multiple: true
           path: reports
 
       - name: "📥 Download Dashboard Template"
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           name: dashboard-template
           path: dashboard-template
@@ -545,14 +600,14 @@ jobs:
           fi
 
       - name: "📤 Upload Dashboard"
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
         with:
           name: holmes-dashboard
           path: dashboard
           if-no-files-found: error
 
       - name: "📝 Create Comment"
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
         with:
           script: |
             const fs = require('fs');

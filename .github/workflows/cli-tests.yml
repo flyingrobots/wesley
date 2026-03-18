@@ -2,7 +2,7 @@ name: Wesley CLI Tests
 
 on:
   push:
-    branches: [ main, dev, 'feat/*', 'fix/*' ]
+    branches: [main, dev, 'feat/*', 'fix/*']
     paths:
       - 'packages/wesley-cli/**'
       - 'packages/wesley-core/**'
@@ -14,6 +14,9 @@ on:
       - 'packages/wesley-core/**'
       - 'packages/wesley-host-node/**'
       - '.github/workflows/cli-tests.yml'
+
+permissions:
+  contents: read
 
 env:
   FORCE_COLOR: 1
@@ -29,102 +32,114 @@ jobs:
       fail-fast: false
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v5
-      with:
-        submodules: recursive  # For Bats plugins
+      - name: Harden runner
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594
+        with:
+          egress-policy: audit
 
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v4
-    - name: Verify pnpm version
-      run: |
-        echo "pnpm: $(pnpm --version)"
-        node -v
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd
+        with:
+          submodules: recursive  # For Bats plugins
 
-    - name: Setup Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v6
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'pnpm'
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320
 
-    - name: Install Bats (Ubuntu)
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        # Install Bats from GitHub releases (more reliable than apt)
-        curl -LO https://github.com/bats-core/bats-core/archive/v1.12.0.tar.gz
-        tar -xzf v1.12.0.tar.gz
-        sudo ./bats-core-1.12.0/install.sh /usr/local
-        echo "/usr/local/bin" >> $GITHUB_PATH
+      - name: Verify pnpm version
+        run: |
+          echo "pnpm: $(pnpm --version)"
+          node -v
 
-    - name: Verify Bats installation
-      run: |
-        bats --version
-        which bats
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
 
-    - name: Install dependencies
-      run: |
-        pnpm install --frozen-lockfile
-    - name: Verify lockfile unchanged
-      run: git diff --exit-code -- pnpm-lock.yaml
+      - name: Install Bats (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          # Install Bats from GitHub releases (more reliable than apt)
+          curl -LO https://github.com/bats-core/bats-core/archive/v1.12.0.tar.gz
+          tar -xzf v1.12.0.tar.gz
+          sudo ./bats-core-1.12.0/install.sh /usr/local
+          echo "/usr/local/bin" >> $GITHUB_PATH
 
-    - name: Build packages
-      run: |
-        pnpm --filter @wesley/core build || echo "No build script for core"
-        pnpm --filter @wesley/host-node build || echo "No build script for host-node"
+      - name: Verify Bats installation
+        run: |
+          bats --version
+          which bats
 
-    - name: Initialize git repository for CLI tests
-      run: |
-        # CLI tests expect git repo for SHA calculation
-        cd packages/wesley-cli
-        git init .
-        git config user.name "CI Test"
-        git config user.email "test@ci.com"
-        git add .
-        git commit -m "CI test commit" || echo "Nothing to commit"
+      - name: Install dependencies
+        run: |
+          pnpm install --frozen-lockfile
 
-    - name: Run CLI tests
-      run: |
-        cd packages/wesley-cli
-        pnpm test
+      - name: Verify lockfile unchanged
+        run: git diff --exit-code -- pnpm-lock.yaml
 
-    - name: Run CLI tests with TAP output
-      run: |
-        cd packages/wesley-cli
-        pnpm test:tap > cli-test-results.tap
+      - name: Build packages
+        run: |
+          pnpm --filter @wesley/core build || echo "No build script for core"
+          pnpm --filter @wesley/host-node build || echo "No build script for host-node"
 
-    - name: Upload TAP test results
-      uses: actions/upload-artifact@v7
-      if: always()
-      with:
-        name: cli-test-results-${{ matrix.os }}-node${{ matrix.node-version }}
-        path: packages/wesley-cli/cli-test-results.tap
+      - name: Initialize git repository for CLI tests
+        run: |
+          # CLI tests expect git repo for SHA calculation
+          cd packages/wesley-cli
+          git init .
+          git config user.name "CI Test"
+          git config user.email "test@ci.com"
+          git add .
+          git commit -m "CI test commit" || echo "Nothing to commit"
 
-    - name: Run CLI tests with verbose output (on failure)
-      if: failure()
-      run: |
-        cd packages/wesley-cli
-        echo "=== VERBOSE TEST OUTPUT ==="
-        pnpm test:verbose || true
-        echo ""
-        echo "=== CLI MANUAL TEST ==="
-        node wesley.mjs --version
-        node wesley.mjs --help
-        echo 'type Query { hello: String }' | node wesley.mjs generate --schema - --json --quiet || echo "Expected to fail with stub parser"
+      - name: Run CLI tests
+        run: |
+          cd packages/wesley-cli
+          pnpm test
+
+      - name: Run CLI tests with TAP output
+        run: |
+          cd packages/wesley-cli
+          pnpm test:tap > cli-test-results.tap
+
+      - name: Upload TAP test results
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        if: always()
+        with:
+          name: cli-test-results-${{ matrix.os }}-node${{ matrix.node-version }}
+          path: packages/wesley-cli/cli-test-results.tap
+
+      - name: Run CLI tests with verbose output (on failure)
+        if: failure()
+        run: |
+          cd packages/wesley-cli
+          echo "=== VERBOSE TEST OUTPUT ==="
+          pnpm test:verbose || true
+          echo ""
+          echo "=== CLI MANUAL TEST ==="
+          node wesley.mjs --version
+          node wesley.mjs --help
+          echo 'type Query { hello: String }' | node wesley.mjs generate --schema - --json --quiet || echo "Expected to fail with stub parser"
 
   test-summary:
     name: Test Summary
     runs-on: ubuntu-latest
     needs: cli-tests
     if: always()
-    
+
     steps:
-    - name: Check test results
-      run: |
-        if [[ "${{ needs.cli-tests.result }}" == "success" ]]; then
-          echo "✅ All CLI tests passed across all environments!"
-          echo "::notice title=Tests Passed::All CLI end-to-end tests completed successfully"
-        else
-          echo "❌ Some CLI tests failed"
-          echo "::error title=Tests Failed::CLI end-to-end tests failed in one or more environments"
-          exit 1
-        fi
+      - name: Harden runner
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594
+        with:
+          egress-policy: audit
+
+      - name: Check test results
+        run: |
+          if [[ "${{ needs.cli-tests.result }}" == "success" ]]; then
+            echo "✅ All CLI tests passed across all environments!"
+            echo "::notice title=Tests Passed::All CLI end-to-end tests completed successfully"
+          else
+            echo "❌ Some CLI tests failed"
+            echo "::error title=Tests Failed::CLI end-to-end tests failed in one or more environments"
+            exit 1
+          fi
