@@ -33,7 +33,7 @@ type Document @wes_table @wes_tenant(by: "org_id") @wes_rls(enabled: true) {
 | --- | --- | --- |
 | Try the browser playground (Alpha) | `http://localhost:5173/try` (local dev) | **[Try Wesley Now](https://flyingrobots.github.io/wesley/try)** – Edit schemas, compile to SQL, and run queries in-browser (PGLite). No install required. |
 | Install tooling & sanity-check repo | `pnpm install`<br>`pnpm run bootstrap` | Bootstraps dependencies, runs preflight, executes workspace tests. |
-| Generate everything from the example schema | `node packages/wesley-host-node/bin/wesley.mjs generate --schema test/fixtures/examples/schema.graphql --ops test/fixtures/examples/ops --emit-bundle --out-dir out/examples` | Produces SQL, pgTAP, ops SQL, and a `.wesley/` evidence bundle. |
+| Generate everything from the example schema | `node packages/wesley-host-node/bin/wesley.mjs generate --schema test/fixtures/examples/ecommerce.graphql --ops test/fixtures/examples/ops --emit-bundle --out-dir out/examples` | Produces SQL, pgTAP, ops SQL, and a `.wesley/` evidence bundle using the schema that matches the example ops set. |
 | Preview migration plan & rehearsal | `node packages/wesley-host-node/bin/wesley.mjs plan --schema test/fixtures/examples/schema.graphql --explain`<br>`node packages/wesley-host-node/bin/wesley.mjs rehearse --schema test/fixtures/examples/schema.graphql --dry-run --json` | No database required for `--dry-run`; inspect JSON for lock levels and REALM verdicts. |
 | Run HOLMES evidence checks | `pnpm --filter @wesley/holmes exec node packages/wesley-host-node/bin/wesley.mjs generate --schema test/fixtures/examples/schema.graphql --emit-bundle --out-dir out/examples`<br>`pnpm --filter @wesley/holmes exec node packages/wesley-holmes/src/cli.mjs investigate --json holmes.json > holmes.md` | Generates scores + markdown report; see [Evidence, HOLMES, and Observability](#evidence-holmes-and-observability). |
 | Experience the Daywalker (BLADE) demo | `node packages/wesley-host-node/bin/wesley.mjs blade --schema test/fixtures/blade/schema-v2.graphql --out-dir out/blade --dry-run` | Uses curated fixtures to demonstrate the zero-downtime flow end-to-end. |
@@ -162,7 +162,7 @@ pnpm wesley deploy
 ```bash
 # Generate everything for the example schema
 node packages/wesley-host-node/bin/wesley.mjs generate \
-  --schema test/fixtures/examples/schema.graphql \
+  --schema test/fixtures/examples/ecommerce.graphql \
   --ops test/fixtures/examples/ops \
   --emit-bundle \
   --out-dir out/examples

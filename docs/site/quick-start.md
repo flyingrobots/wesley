@@ -22,7 +22,7 @@ Compile the example schema and operation plans:
 
 ```bash
 node packages/wesley-host-node/bin/wesley.mjs generate \
-  --schema test/fixtures/examples/schema.graphql \
+  --schema test/fixtures/examples/ecommerce.graphql \
   --ops test/fixtures/examples/ops \
   --emit-bundle \
   --out-dir out/examples

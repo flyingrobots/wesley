@@ -20,6 +20,10 @@ node packages/wesley-host-node/bin/wesley.mjs generate \
 
 Outputs land in `out/examples/ops/` as both a `CREATE VIEW` and a `CREATE FUNCTION` per operation.
 
+This directory is a happy-path fixture set for `ecommerce.graphql`. If you want
+an explicit schema mismatch, use `test/fixtures/examples/ops-negative/`
+instead.
+
 ## DSL Reference (MVP)
 
 ```json

@@ -43,14 +43,16 @@ Evidence bundle lives under `.wesley/` and is validated against JSON Schemas in 
 
 ### Experimental: Operation Documents (QIR)
 
-You can start placing GraphQL operation documents (queries) in an `ops/` folder and pass `--ops ops/` to `generate`. In this MVP, the flag is a no‑op validator; future versions compile these operations to SQL via the QIR pipeline proposed in docs/drafts/2025-10-03-rfc-query-ops-to-sql-qir.md.
+You can place GraphQL operation documents or `*.op.json` plans in an `ops/`
+folder and pass `--ops ops/` to `generate`. The current CLI compiles those
+operations into SQL artifacts; it is no longer just a no-op validator.
 
 Example:
 
 ```bash
 node packages/wesley-host-node/bin/wesley.mjs generate \
-  --schema schema.graphql \
-  --ops ops/ \
+  --schema test/fixtures/examples/ecommerce.graphql \
+  --ops test/fixtures/examples/ops \
   --emit-bundle
 ```
 
