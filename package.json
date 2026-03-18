@@ -78,7 +78,7 @@
     "dependency-cruiser": "17.3.8",
     "eslint": "^9.38.0",
     "eslint-plugin-promise": "^7.2.1",
-    "globals": "^16.4.0",
+    "globals": "^17.4.0",
     "postcss": "^8.5.6",
     "postcss-nesting": "^13.0.2"
   }
