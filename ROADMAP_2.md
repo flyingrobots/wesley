@@ -317,3 +317,7 @@ Any budget regression requires an ADR or a budget reset justified by a new repre
 - External plugin SDK
 - Multi-host parity beyond Node
 - Remote/shared execution
+- Chronicle append helper that enforces whole-second UTC timestamps and append-only correction entries
+- PR review-thread helper for deterministic `gh` reply/resolve flows without ad hoc shell quoting
+- Exact-span HOLMES/WATSON evidence so certification stops relying on coarse placeholder citations
+- Workflow-policy regression coverage for bot comment updaters, rollback metadata, and lockfile drift guards
