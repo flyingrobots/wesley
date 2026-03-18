@@ -66,6 +66,7 @@ EOF
     assert_success
     assert_output --partial "Generate SQL, tests, and more"
     assert_output --partial "stdin"
+    assert_output --partial "--transmutation"
 }
 
 @test "missing schema file exits 2" {

@@ -25,7 +25,8 @@ EOF
 @test "transform help works" {
   run node "$CLI_PATH" transform --help
   assert_success
-  assert_output --partial "Transform GraphQL schema"
+  assert_output --partial "Run a named transmutation"
+  assert_output --partial "--transmutation"
 }
 
 @test "transform missing schema exits 2" {
@@ -35,7 +36,15 @@ EOF
 
 @test "transform runs successfully on minimal schema" {
   create_min_schema
-  run node "$CLI_PATH" transform --schema schema.graphql --out-dir out
+  run node "$CLI_PATH" transform --schema schema.graphql --transmutation legacy-supabase --out-dir out
   assert_success
   # Out directory should exist (writer stubs may create files)
+}
+
+@test "transform rejects unknown transmutation" {
+  create_min_schema
+  run node "$CLI_PATH" transform --schema schema.graphql --transmutation nope
+  assert_failure 2
+  assert_output --partial "UNKNOWN_TRANSMUTATION"
+  assert_output --partial "legacy-supabase"
 }
