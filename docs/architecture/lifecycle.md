@@ -1,4 +1,5 @@
 # Wesley Delivery Lifecycle
+<!-- docs-truth: status=experimental owner=@flyingrobots -->
 
 Wesley’s tooling still revolves around the heartbeat we built for the MVP: **Transform → Plan → Rehearse → Ship**. Each milestone in the roadmap adds capabilities to one or more steps in that ladder.
 

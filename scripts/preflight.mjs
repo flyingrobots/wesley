@@ -75,6 +75,10 @@ try {
 const linkChk = spawnSync(process.execPath, ['scripts/check-doc-links.mjs'], { stdio: 'inherit' });
 if (linkChk.status !== 0) fail('Docs link check failed');
 
+// 5b) Docs truth check
+const truthChk = spawnSync(process.execPath, ['scripts/check-doc-truth.mjs'], { stdio: 'inherit' });
+if (truthChk.status !== 0) fail('Docs truth check failed');
+
 // 6) pnpm version consistency
 try {
   const pkg = JSON.parse(readFileSync(resolve('package.json'), 'utf8'));

@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "documents": [
+    {
+      "path": "README.md",
+      "status": "experimental",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/README.md",
+      "status": "experimental",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/roadmap.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/site/index.md",
+      "status": "experimental",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/site/quick-start.md",
+      "status": "experimental",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/site/roadmap.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/site/scripts.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/architecture/lifecycle.md",
+      "status": "experimental",
+      "owner": "@flyingrobots"
+    }
+  ]
+}

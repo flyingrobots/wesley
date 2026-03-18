@@ -1,6 +1,7 @@
 ---
 title: Workspace Scripts
 ---
+<!-- docs-truth: status=current owner=@flyingrobots -->
 
 # Workspace Scripts
 

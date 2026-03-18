@@ -16,7 +16,7 @@ on:
       - 'scripts/check-doc-links.mjs'
 
 jobs:
-  link-check:
+  docs-checks:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -25,3 +25,5 @@ jobs:
           node-version: 20
       - name: Check markdown links (relative only)
         run: node scripts/check-doc-links.mjs
+      - name: Check docs truth manifest
+        run: node scripts/check-doc-truth.mjs

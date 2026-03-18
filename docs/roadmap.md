@@ -1,4 +1,5 @@
 # Roadmap
+<!-- docs-truth: status=current owner=@flyingrobots -->
 
 The canonical roadmap lives at the repo root: [ROADMAP_2.md](../ROADMAP_2.md).
 
