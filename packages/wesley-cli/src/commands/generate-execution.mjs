@@ -186,7 +186,8 @@ async function executeLegacySupabaseTransmutation({ ctx, context, ir }) {
   const result = await runner.run(
     LEGACY_SUPABASE_TRANSMUTATION,
     [plugin],
-    { ir, sdl: context.schemaContent }
+    { ir, sdl: context.schemaContent },
+    { runId: options.runId }
   );
 
   if (!result.success) {

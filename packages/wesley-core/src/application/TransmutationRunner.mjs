@@ -24,7 +24,7 @@ import { deepFreeze } from '../util/deepFreeze.mjs';
 /**
  * Generate a simple unique run ID.
  */
-function generateRunId() {
+export function createRunId() {
   const ts = Date.now().toString(36);
   const rand = Math.random().toString(36).slice(2, 8).padEnd(6, '0');
   return `run-${ts}-${rand}`;
@@ -80,6 +80,7 @@ export class TransmutationRunner {
    * @param {object[]} plugins - Array of GeneratorPlugin-conforming objects
    * @param {object} schema - Schema input (e.g. { sdl, ir })
    * @param {object} [options]
+   * @param {string} [options.runId] - Caller-supplied run identifier
    * @param {string} [options.sha] - Git commit SHA for evidence tracking
    * @param {object} [options.diff] - Migration diff for MRI scoring
    * @param {object} [options.testResults] - Test results for TCI scoring
@@ -93,7 +94,9 @@ export class TransmutationRunner {
       throw new TypeError("TransmutationRunner.run: 'schema' is required");
     }
 
-    const runId = generateRunId();
+    const runId = typeof options.runId === 'string' && options.runId.trim()
+      ? options.runId.trim()
+      : createRunId();
     const evidenceMap = new EvidenceMap();
     evidenceMap.setSha(options.sha || 'uncommitted');
 

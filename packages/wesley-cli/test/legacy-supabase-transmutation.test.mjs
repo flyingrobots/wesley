@@ -110,6 +110,53 @@ test('runSequentialGeneration executes the legacy supabase transmutation by defa
   assert.equal(compiledOps, true);
 });
 
+test('runSequentialGeneration preserves a caller-supplied runId', async () => {
+  const ir = {
+    tables: [{ name: 'User', fields: [], indexes: [], directives: {} }]
+  };
+  const ctx = {
+    parsers: {
+      graphql: {
+        parse: () => ir
+      }
+    },
+    generators: makeGenerators(),
+    writer: {
+      writeFiles: async () => {}
+    },
+    fs: {
+      write: async () => {}
+    },
+    stderr: { write() {} },
+    stdout: { write() {} },
+    clock: { now: () => '2026-03-18T12:00:00.000Z' },
+    config: { paths: {} }
+  };
+  const context = {
+    schemaContent: 'type User @wes_table { id: ID! @wes_pk }',
+    schemaPath: 'schema.graphql',
+    options: {
+      outDir: 'out',
+      supabase: false,
+      dryRun: false,
+      quiet: true,
+      json: false,
+      emitBundle: false,
+      runId: 'run-cli-123'
+    },
+    logger: noopLogger
+  };
+
+  const result = await runSequentialGeneration({
+    ctx,
+    context,
+    compileOpsIfRequested: async () => {}
+  });
+
+  assert.equal(result.runId, 'run-cli-123');
+  assert.equal(context.transmutationRun.runId, 'run-cli-123');
+});
+
 test('runSequentialGeneration keeps dry-run side effects disabled', async () => {
   const writes = [];
   let compiledOps = false;

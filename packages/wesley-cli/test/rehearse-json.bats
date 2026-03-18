@@ -30,3 +30,14 @@ EOF
   echo "$json" | jq -e '.plan and .explain' >/dev/null
   echo "$json" | jq -e '.explain.steps | length >= 1' >/dev/null
 }
+
+@test "rehearse --dry-run --json carries transmutation and runId metadata" {
+  create_schema
+  run node "$CLI_PATH" rehearse --schema schema.graphql --dry-run --json --transmutation legacy-supabase --run-id run-rehearse-123
+  assert_success
+  local json
+  json=$(echo "$output" | jq -s 'map(select(has("plan"))) | first')
+  [[ -n "$json" ]] || fail "No JSON output with plan data"
+  echo "$json" | jq -e '.transmutation == "legacy-supabase"' >/dev/null
+  echo "$json" | jq -e '.runId == "run-rehearse-123"' >/dev/null
+}

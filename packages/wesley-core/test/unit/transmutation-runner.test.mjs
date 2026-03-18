@@ -113,6 +113,13 @@ test('TransmutationRunner — runs a plugin and returns transmutation result', a
   assert.ok(result.bundle);
 });
 
+test('TransmutationRunner — preserves caller-supplied runId', async () => {
+  const runner = makeRunner();
+  const result = await runner.run('backend', [makePlugin()], {}, { runId: 'run-manual-001' });
+
+  assert.equal(result.runId, 'run-manual-001');
+});
+
 test('TransmutationRunner — bundle includes transmutation name', async () => {
   const runner = makeRunner();
   const result = await runner.run('echo', [makePlugin()], {});

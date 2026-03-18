@@ -27,6 +27,7 @@ EOF
   assert_success
   assert_output --partial "Run a named transmutation"
   assert_output --partial "--transmutation"
+  assert_output --partial "--run-id"
 }
 
 @test "transform missing schema exits 2" {
@@ -39,6 +40,17 @@ EOF
   run node "$CLI_PATH" transform --schema schema.graphql --transmutation legacy-supabase --out-dir out
   assert_success
   # Out directory should exist (writer stubs may create files)
+}
+
+@test "transform --json preserves caller-supplied runId" {
+  create_min_schema
+  run node "$CLI_PATH" transform --schema schema.graphql --transmutation legacy-supabase --run-id run-transform-123 --out-dir out --json --quiet
+  assert_success
+  local json
+  json=$(printf '%s' "$output" | jq '.')
+  [[ -n "$json" ]] || fail "No JSON output with result payload"
+  echo "$json" | jq -e '.result.transmutation == "legacy-supabase"' >/dev/null
+  echo "$json" | jq -e '.result.runId == "run-transform-123"' >/dev/null
 }
 
 @test "transform rejects unknown transmutation" {

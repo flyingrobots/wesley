@@ -34,3 +34,14 @@ EOF
   # Contains validate_fk step
   echo "$json" | jq -e '.explain.steps | map(select(.op=="validate_fk")) | length > 0' >/dev/null
 }
+
+@test "plan --json carries transmutation and runId metadata" {
+  create_schema
+  run node "$CLI_PATH" plan --schema schema.graphql --json --transmutation legacy-supabase --run-id run-plan-123
+  assert_success
+  local json
+  json=$(echo "$output" | jq -s 'map(select(has("plan"))) | first')
+  [[ -n "$json" ]] || fail "No JSON output with plan data"
+  echo "$json" | jq -e '.transmutation == "legacy-supabase"' >/dev/null
+  echo "$json" | jq -e '.runId == "run-plan-123"' >/dev/null
+}

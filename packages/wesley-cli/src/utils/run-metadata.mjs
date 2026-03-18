@@ -1,0 +1,16 @@
+import { createRunId } from '@wesley/core';
+import { LEGACY_SUPABASE_TRANSMUTATION } from '../transmutations/legacy-supabase.mjs';
+import { resolveTransmutationName } from '../transmutations/registry.mjs';
+
+export function resolveRunMetadata(options = {}) {
+  return {
+    transmutation: resolveTransmutationName(options.transmutation || LEGACY_SUPABASE_TRANSMUTATION),
+    runId: normalizeRunId(options.runId) || createRunId()
+  };
+}
+
+function normalizeRunId(runId) {
+  if (typeof runId !== 'string') return null;
+  const trimmed = runId.trim();
+  return trimmed || null;
+}

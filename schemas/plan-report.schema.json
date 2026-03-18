@@ -5,6 +5,8 @@
   "type": "object",
   "required": ["plan", "explain", "mapping", "radar"],
   "properties": {
+    "transmutation": { "type": "string" },
+    "runId": { "type": "string", "minLength": 1 },
     "plan": {
       "type": "object",
       "required": ["phases"],

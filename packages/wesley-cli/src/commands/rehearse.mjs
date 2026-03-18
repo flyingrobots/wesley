@@ -6,6 +6,7 @@ import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import { buildAdditivePlan, explainPlan, emitMigrations } from './_migration-plan.mjs';
 import { assertValid } from '../framework/schemaValidator.mjs';
 import { WesleyError } from '@wesley/core';
+import { resolveRunMetadata } from '../utils/run-metadata.mjs';
 
 export class RehearseCommand extends WesleyCommand {
   constructor(ctx) {
@@ -23,10 +24,13 @@ export class RehearseCommand extends WesleyCommand {
       .option('--dry-run', 'Explain without executing')
       .option('--keep', 'Keep temporary schema for inspection')
       .option('--timeout <ms>', 'Timeout in ms', '300000')
+      .option('--transmutation <name>', 'Transmutation to associate with this rehearsal', 'legacy-supabase')
+      .option('--run-id <id>', 'Associate this rehearsal with a specific run ID')
       .option('--json', 'Emit JSON');
   }
 
   async executeCore({ options, schemaContent, logger }) {
+    const run = resolveRunMetadata(options);
     const ir = this.ctx.parsers.graphql.parse(schemaContent);
 
     let previous = { tables: [] };
@@ -43,7 +47,14 @@ export class RehearseCommand extends WesleyCommand {
       if (options.json) {
         // Validate and emit the same shape — include mapping/radar stubs so
         // the output conforms to plan-report.schema.json.
-        const report = { plan, explain, mapping: [], radar: { lines: [], counts: {} } };
+        const report = {
+          transmutation: run.transmutation,
+          runId: run.runId,
+          plan,
+          explain,
+          mapping: [],
+          radar: { lines: [], counts: {} }
+        };
         await assertValid(this.ctx, 'plan-report.schema.json', report, 'Dry-run plan');
         this.ctx.stdout.write(JSON.stringify(report, null, 2) + '\n');
         return;
@@ -83,6 +94,8 @@ export class RehearseCommand extends WesleyCommand {
         await execSql(this.ctx.db, dsn, `SELECT 1 FROM "${t.name.toLowerCase().replace(/"/g, '""')}" LIMIT 1;`).catch(()=>{});
       }
       const realm = {
+        transmutation: run.transmutation,
+        runId: run.runId,
         provider,
         verdict: 'PASS',
         duration_ms: Date.now() - start,
@@ -100,6 +113,8 @@ export class RehearseCommand extends WesleyCommand {
       return realm;
     } catch (error) {
       const realm = {
+        transmutation: run.transmutation,
+        runId: run.runId,
         provider,
         verdict: 'FAIL',
         duration_ms: Date.now() - start,
@@ -144,4 +159,3 @@ async function execSql(db, dsn, sql) {
   // naive split not used; rely on pg handling multiple statements
   return db.query(dsn, sql);
 }
-

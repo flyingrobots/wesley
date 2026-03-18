@@ -40,6 +40,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
       .option('--allow-dirty', 'Allow running with a dirty git working tree (not recommended)')
       .option('--i-know-what-im-doing', 'Acknowledge hazardous flags in CI environments')
       .option('--transmutation <name>', 'Transmutation to execute', LEGACY_SUPABASE_TRANSMUTATION)
+      .option('--run-id <id>', 'Associate this execution with a specific run ID')
       .option('--debug', 'Debug output with stack traces')
       .option('-q, --quiet', 'Silence logs (level=silent)')
       .option('--json', 'Emit newline-delimited JSON logs')

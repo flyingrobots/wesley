@@ -7,6 +7,7 @@ import { buildOutputPathMap, resolveFilePath } from '../utils/output-paths.mjs';
 import { buildAdditivePlan, explainPlan, emitMigrations } from './_migration-plan.mjs';
 import { assertValid } from '../framework/schemaValidator.mjs';
 import { WesleyError } from '@wesley/core';
+import { resolveRunMetadata } from '../utils/run-metadata.mjs';
 
 export class PlanCommand extends WesleyCommand {
   constructor(ctx) {
@@ -23,12 +24,15 @@ export class PlanCommand extends WesleyCommand {
       .option('--radar', 'Show lock radar summary')
       .option('--map', 'Show mapping from GraphQL/IR changes to migration steps')
       .option('--allow-dirty', 'Allow running with a dirty git working tree (not recommended)')
+      .option('--transmutation <name>', 'Transmutation to associate with this plan', 'legacy-supabase')
+      .option('--run-id <id>', 'Associate this plan with a specific run ID')
       .option('--write', 'Write migration files to out-dir/migrations')
       .option('--json', 'Emit JSON plan');
   }
 
   async executeCore(context) {
     const { options, schemaContent, logger } = context;
+    const run = resolveRunMetadata(options);
     const configPaths = this.ctx?.config?.paths || {};
     const baseOutDir = options.outDir || configPaths.output || 'out';
     const outputPaths = buildOutputPathMap(configPaths, baseOutDir);
@@ -60,7 +64,7 @@ export class PlanCommand extends WesleyCommand {
 
     if (options.json) {
       // Validate JSON against schema to prevent drift
-      const report = { plan, explain, mapping, radar };
+      const report = { transmutation: run.transmutation, runId: run.runId, plan, explain, mapping, radar };
       await assertValid(this.ctx, 'plan-report.schema.json', report, 'Plan report');
       this.ctx.stdout.write(JSON.stringify(report, null, 2) + '\n');
       return;
@@ -98,7 +102,12 @@ export class PlanCommand extends WesleyCommand {
       if (!options.quiet) logger.info(`✍️ Wrote ${files.length} migration file(s) to ${outputPaths.migrationsDir}`);
     }
 
-    return { phases: plan.phases.length, steps: explain.steps.length };
+    return {
+      transmutation: run.transmutation,
+      runId: run.runId,
+      phases: plan.phases.length,
+      steps: explain.steps.length
+    };
   }
 }
 

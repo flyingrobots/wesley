@@ -5,6 +5,8 @@
   "type": "object",
   "required": ["verdict", "timestamp"],
   "properties": {
+    "transmutation": { "type": ["string", "null"] },
+    "runId": { "type": ["string", "null"], "minLength": 1 },
     "provider": { "type": ["string", "null"] },
     "verdict": { "type": "string", "enum": ["PASS", "FAIL"] },
     "duration_ms": { "type": ["integer", "null"], "minimum": 0 },
