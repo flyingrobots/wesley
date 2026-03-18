@@ -97,14 +97,18 @@ jobs:
         with:
           script: |
             const badge = process.env.BADGE || '${{ steps.badge.outputs.BADGE }}';
-            const body = `\n### 🚢 SHIPME\n\n${badge}\n`;
+            const marker = '<!-- SHIPME_COMMENT -->';
+            const body = `${marker}\n### 🚢 SHIPME\n\n${badge}\n`;
             try {
-              const { data: comments } = await github.rest.issues.listComments({
+              const comments = await github.paginate(github.rest.issues.listComments, {
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.issue.number,
+                per_page: 100,
               });
-              const botComment = comments.find(c => c.user.type === 'Bot' && c.body.includes('### 🚢 SHIPME'));
+              const botComment = comments.find(
+                (c) => c.user?.login === 'github-actions[bot]' && c.body?.includes(marker)
+              );
               if (botComment) {
                 await github.rest.issues.updateComment({ owner: context.repo.owner, repo: context.repo.repo, comment_id: botComment.id, body });
               } else {

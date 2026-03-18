@@ -13,3 +13,17 @@ load 'bats-plugins/bats-assert/load'
   # One per job (deno, bun, node)
   [ "$output" -ge 1 ]
 }
+
+@test "cert-shipme anchors and paginates bot comments" {
+  run bash -lc "grep -F '<!-- SHIPME_COMMENT -->' .github/workflows/cert-shipme.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F \"github-actions[bot]\" .github/workflows/cert-shipme.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'per_page: 100' .github/workflows/cert-shipme.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+}
