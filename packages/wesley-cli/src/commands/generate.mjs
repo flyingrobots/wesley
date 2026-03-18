@@ -84,7 +84,8 @@ export class GeneratePipelineCommand extends WesleyCommand {
     }
 
     const needsSequentialPipeline = options.unit || options.dryRun || options.printIr || options.printComposedSdl;
-    if (planner && runner && planner.buildPlan && runner.run && !needsSequentialPipeline) {
+    const useExperimentalTasksRunner = String(this.ctx?.env?.WESLEY_EXPERIMENTAL_TASKS || '') === '1';
+    if (planner && runner && planner.buildPlan && runner.run && useExperimentalTasksRunner && !needsSequentialPipeline) {
       return this.executeWithTasksAndSlaps(context);
     }
 

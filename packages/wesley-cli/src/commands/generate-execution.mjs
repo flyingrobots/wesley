@@ -1,5 +1,10 @@
 import { filterIRByUnits } from '@wesley/core/domain/SchemaFilter';
-import { WesleyError } from '@wesley/core';
+import { TransmutationRunner, WesleyError } from '@wesley/core';
+import {
+  LEGACY_SUPABASE_TRANSMUTATION,
+  LegacySupabaseGeneratorPlugin,
+  flattenTransmutationArtifacts
+} from '../transmutations/legacy-supabase.mjs';
 
 export async function ensureGeneratePreconditions({ env, options, shell }) {
   if (shouldEnforceClean(env, options) && !options.allowDirty) {
@@ -10,8 +15,7 @@ export async function ensureGeneratePreconditions({ env, options, shell }) {
 export async function runSequentialGeneration({ ctx, context, compileOpsIfRequested }) {
   const { schemaContent, schemaPath, options, logger } = context;
   const debugDump = options.printComposedSdl || options.printIr;
-  const { generators, writer } = ctx;
-  const artifacts = [];
+  const { writer } = ctx;
 
   if (options.printComposedSdl) {
     if (!context.units) {
@@ -49,24 +53,8 @@ export async function runSequentialGeneration({ ctx, context, compileOpsIfReques
     }
   }
 
-  const ddlResult = generators.sql.emitDDL(ir);
-  if (ddlResult?.files) {
-    artifacts.push(...ddlResult.files);
-  }
-
-  if (options.supabase && generators.sql.emitRLS) {
-    const rlsResult = generators.sql.emitRLS(ir);
-    if (rlsResult?.files) {
-      artifacts.push(...rlsResult.files);
-    }
-  }
-
-  if (generators.tests?.emitPgTap) {
-    const testResult = generators.tests.emitPgTap(ir);
-    if (testResult?.files) {
-      artifacts.push(...testResult.files);
-    }
-  }
+  const transmutationResult = await executeLegacySupabaseTransmutation({ ctx, context, ir });
+  const artifacts = flattenTransmutationArtifacts(transmutationResult);
 
   if (!options.dryRun && writer?.writeFiles) {
     await writer.writeFiles(artifacts, options.outDir);
@@ -77,6 +65,7 @@ export async function runSequentialGeneration({ ctx, context, compileOpsIfReques
 
   if (!options.dryRun) {
     context.ir = ir;
+    context.transmutationRun = transmutationResult;
     await compileOpsIfRequested({ ctx, context });
   }
 
@@ -91,6 +80,8 @@ export async function runSequentialGeneration({ ctx, context, compileOpsIfReques
   }
 
   return {
+    transmutation: transmutationResult.transmutation,
+    runId: transmutationResult.runId,
     artifacts: artifacts.length,
     outDir: options.outDir,
     dryRun: options.dryRun || false
@@ -160,6 +151,65 @@ async function persistSnapshot({ ctx, ir, logger, dryRun }) {
   } catch (e) {
     logger.warn('Could not write IR snapshot: ' + (e?.message || e));
   }
+}
+
+async function executeLegacySupabaseTransmutation({ ctx, context, ir }) {
+  const { logger, options } = context;
+  const plugin = new LegacySupabaseGeneratorPlugin({
+    generators: ctx.generators,
+    enableRls: options.supabase
+  });
+  const runner = new TransmutationRunner({
+    logger,
+    clock: createRunnerClock(ctx.clock),
+    config: {
+      paths: ctx.config?.paths || {},
+      transmutation: {
+        name: LEGACY_SUPABASE_TRANSMUTATION,
+        supabase: Boolean(options.supabase)
+      }
+    }
+  });
+
+  if (options.showPlan) {
+    const plan = runner.buildTaskGraph(LEGACY_SUPABASE_TRANSMUTATION, [plugin]);
+    logger.info({ transmutation: LEGACY_SUPABASE_TRANSMUTATION, plan }, 'Execution plan:');
+  }
+
+  const result = await runner.run(
+    LEGACY_SUPABASE_TRANSMUTATION,
+    [plugin],
+    { ir, sdl: context.schemaContent }
+  );
+
+  if (!result.success) {
+    throw transmutationFailure(result);
+  }
+
+  return result;
+}
+
+function createRunnerClock(clock) {
+  return {
+    now() {
+      const value = typeof clock?.now === 'function' ? clock.now() : new Date().toISOString();
+      if (typeof value === 'string') return value;
+      if (value && typeof value.toISOString === 'function') return value.toISOString();
+      return new Date().toISOString();
+    }
+  };
+}
+
+function transmutationFailure(result) {
+  const failed = result?.results?.find(entry => entry.status === 'error');
+  if (!failed) {
+    return new WesleyError('GENERATION_FAILED', `Transmutation "${result?.transmutation || LEGACY_SUPABASE_TRANSMUTATION}" failed`);
+  }
+
+  return new WesleyError(
+    failed.errorCode || 'GENERATION_FAILED',
+    `Transmutation "${result.transmutation}" failed in plugin "${failed.name}" during ${failed.phase}: ${failed.errorMessage}`
+  );
 }
 
 async function emitPlaceholderBundle({ ctx, artifacts, outDir, logger, options }) {
