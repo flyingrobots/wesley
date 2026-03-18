@@ -222,13 +222,16 @@ function transmutationFailure(result) {
 async function emitPlaceholderBundle({ ctx, artifacts, outDir, logger, options }) {
   if (!options.emitBundle || options.dryRun) return;
   try {
-    let sha = (ctx.env || {}).GITHUB_SHA || 'unknown';
+    let sha = 'unknown';
+    const envSha = (ctx.env || {}).GITHUB_SHA || '';
     try {
       const out = await (ctx.shell?.exec?.('git rev-parse HEAD'));
       const s = out?.stdout?.trim();
       if (s) sha = s;
-    } catch {
-      // Best-effort only; bundle generation falls back to "unknown" when git SHA is unavailable.
+      else if (envSha) sha = envSha;
+    } catch (error) {
+      if (envSha) sha = envSha;
+      logger.debug?.({ err: error }, 'Could not resolve git SHA for placeholder bundle; falling back to env/unknown.');
     }
 
     const timestamp = new Date().toISOString();
@@ -303,8 +306,8 @@ async function emitPlaceholderBundle({ ctx, artifacts, outDir, logger, options }
       const day = Math.floor(Date.now() / 86400000);
       const nextPoints = mergeHistoryPoints(history.points, [{ day, timestamp, scs, tci, mri }]);
       await ctx.fs.write('.wesley/history.json', JSON.stringify({ points: nextPoints }, null, 2));
-    } catch {
-      // Placeholder bundle history is best-effort and should not block artifact emission.
+    } catch (error) {
+      logger.debug?.({ err: error }, 'Could not refresh Moriarty history while emitting placeholder bundle.');
     }
   } catch (e) {
     logger.warn('Could not emit HOLMES evidence bundle: ' + (e?.message || e));
