@@ -11,4 +11,4 @@ The MVP vertical slice (Transform → Plan → Rehearse → Certify) is complete
 
 ## Roadmap
 
-See the [canonical roadmap](../../ROADMAP.md) for remaining work.
+See the [canonical roadmap](../../ROADMAP_2.md) for remaining work.

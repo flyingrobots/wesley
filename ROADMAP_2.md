@@ -1,401 +1,319 @@
-# Wesley — Master Roadmap
+# Wesley V2 — Roadmap of Record
 
-> Strategic source of truth for priorities, sequencing, and Alpha readiness.
-> Supersedes `ROADMAP.md` and `BACKLOG.md`.
-
----
-
-## 1. Scope and Governance
-
-### What this document owns
-
-- Strategic priorities and workstream grouping
-- Dependency ordering between workstreams
-- Alpha definition and blocker identification
-- Active / deferred / completed categorization
-- Primary home for each GitHub milestone
-
-### What this document does not own
-
-- Issue-level implementation state — **GitHub Issues + milestones**
-- Exact task completion details — **GitHub Issues**
-- Design specifications — **ADRs + specialized plan docs** (e.g., `docs/architecture/transmutations.md`)
-- Milestone execution status beyond summarized state — **GitHub milestones**
-- Idea capture — **`.claude/cool_ideas.md`**
-- Package-level progress data — **`meta/progress.json`**
-
-### How to update
-
-1. When a workstream's strategic state changes (e.g., "not started" → "in flight"), update the Progress Snapshot and the workstream section.
-2. When a milestone is created, closed, or reassigned, update the milestone mapping.
-3. When a new planning artifact is created, add it to the Artifact Map (§9).
-4. Do not hand-author percentages — derive from `meta/progress.json` or closed/total GitHub issues.
-
-### Anti-entropy contract
-
-- Every active GitHub milestone maps to exactly one primary workstream or to the deferred/completed section.
-- Absorbed items carry provenance tags (e.g., "from BACKLOG.md", "from .claude/cool_ideas.md").
-- ROADMAP.md and BACKLOG.md are superseded — strategic changes go here, not there.
+> Canonical strategic roadmap for Wesley V2.
+> Supersedes the earlier Alpha-centric master roadmap and absorbs the approved
+> V2 sequencing, fixed contracts, and execution governance.
 
 ---
 
-## 2. Progress Snapshot
+## 1. Ideal V2
 
-Data sources: `meta/progress.json` (generated 2026-03-09), GitHub milestone issue counts.
+Ideal V2 means:
 
-| Package / Workstream | Stage | Progress | Tracking |
-| -------------------- | ----- | -------- | -------- |
-| `@wesley/core` | MVP | 35% (progress.json) | Active development |
-| `@wesley/cli` | MVP | 55% (progress.json) | Active development |
-| `@wesley/host-node` | MVP | 25% (progress.json) | Active development |
-| `@wesley/host-browser` | MVP | 50% (progress.json) | Active development |
-| `@wesley/generator-js` | MVP | 25% (progress.json) | Active development |
-| `@wesley/generator-supabase` | MVP | 25% (progress.json) | Active development |
-| `@wesley/holmes` | MVP | 45% (progress.json) | Active development |
-| `@wesley/tasks` | MVP | 25% (progress.json) | Active development |
-| `@wesley/slaps` | MVP | 25% (progress.json) | Active development |
-| `@wesley/host-deno` | Alpha | 50% (progress.json) | Experimental |
-| `@wesley/host-bun` | Alpha | 50% (progress.json) | Experimental |
-| `@wesley/scaffold-multitenant` | Prototype | 50% (progress.json) | Too soon |
-| `@wesley/stack-supabase-nextjs` | Prototype | 50% (progress.json) | Too soon |
+- `transform` is the one true orchestration path.
+- The append-only ledger is runtime truth; `.wesley/` and `out/` are projections and materializations.
+- Plugins are pure, plans are deterministic and hashable, reducers are pure, and materialization is atomic.
+- HOLMES, WATSON, and MORIARTY only consume certified evidence from real runs.
+- Multi-transmutation workspaces are explicit, isolated, and ownership-checked.
+- `plan`, `rehearse`, `certify`, `replay`, and `moriarty` all operate over the same run model.
+- Docs stop presenting proposed behavior as if it were already shipped.
 
-**Overall:** MVP stage, 35% toward Alpha.
+This order is driven by repo reality: the current center of gravity is still the
+imperative CLI/compiler seam, not the full transmutation story; evidence on the
+main path is still coarse; ops behavior is inconsistent across GraphQL and JSON;
+and change concentrates in a narrow hotspot.
 
 ---
 
-## 3. Alpha Definition
+## 2. Fixed Contracts
 
-Alpha = the project is usable, testable, and open for external contributors.
+- `transform` is canonical. `generate` becomes a noisy alias in Phase 1 and is removed in Phase 9.
+- By the end of Phase 2, `transform`, `plan`, `rehearse`, `certify`, and `moriarty` are all ledger-backed flows over the same run model and all accept `--transmutation` and `--run-id`.
+- The ledger is runtime truth. Snapshots are caches. Replay performs zero writes by default.
+- `.wesley/snapshot.json` becomes a ledger-derived `SnapshotProjection` by the end of Phase 2 or it stops existing; it is never again an independent source of migration truth.
+- External config uses singular `plugin` through Phases 1-5. Internally the runner may remain list-capable, but public config must not imply multi-plugin transmutations are already real.
+- Reducers are pure. Materialization is separate, atomic, and idempotent. No reducer writes files.
+- `EventStorePort` and `RunSchedulerPort` are real ports. Use a reducer registry plus materializers; do not add a `ProjectionPort`.
+- No replay writes by default. Ever.
+- No new directive semantics ship unless parser, IR, evidence, tests, and docs land together.
+- No package rename lands before the old path is deleted.
 
-### Alpha checklist
+### Event Envelope
 
-- [ ] **QIR complete**: translator, pgTAP smoke, real EXPLAIN snapshots
-- [ ] **DDL full lifecycle**: backfill/switch/contract SQL, drift detection, `plan --explain`
-- [ ] **CI hardened**: all test suites in CI, required checks on default branch
-- [ ] **Public-ready**: README explains problem/architecture/install/quickstart, contributor guide exists
-- [ ] **Config/Init**: `wesley.config` generation, `wesley init` wizard functional
-- [ ] **No blocker-grade security issues open**
+Every stored event must carry:
 
-### Alpha non-goals
+- `eventId`
+- `streamId`
+- `sequence`
+- `schemaVersion`
+- `timestamp`
+- `causationId`
+- `correlationId`
+- `idempotencyKey`
+- `runId`
+- `transmutation`
+- `planHash`
+- `inputDigest`
+- provenance digests for config, Wesley version, plugin versions, git SHA, and dirty state
 
-- Multi-language generators (Prisma, Drizzle, etc.)
-- Frontend adapter scaffolding
-- Supabase platform features (Storage, Realtime, Edge Functions)
-- Shadow REALM production readiness
-- HOLMES merge projection
-- Echo post-E4 work
+Required event types:
 
----
-
-## 4. Alpha Blockers Now
-
-These workstreams must complete before Alpha can ship.
-
-### QIR Phase C — 3 remaining items
-
-- [ ] Translator: map GraphQL operations → QIR plans (selections, joins, filters, order, pagination, nested lists)
-- [ ] pgTAP smoke tests for emitted ops
-- [ ] Real EXPLAIN snapshots (branch only has mock mode)
-
-Tracking: [#160](https://github.com/flyingrobots/wesley/issues/160), [#159](https://github.com/flyingrobots/wesley/issues/159)
-
-### DDL Planner Phase B — 6 open issues
-
-- [ ] Backfill/switch/contract SQL emission (per-phase files for rehearsal)
-- [ ] Drift detection between live schema and Wesley-managed state
-- [ ] `wesley plan --explain` coverage for new phases
-
-Tracking: [Milestone #7](https://github.com/flyingrobots/wesley/milestone/7) (0/6)
-
-### Docs IA Consolidation — 2 in-flight items
-
-- [ ] Finish IA reorganization: Concepts / How-To / Reference / Internals / Roadmap
-- [ ] Prune remaining dead links
-
----
-
-## 5. Critical Path to Alpha
-
-```mermaid
-graph TD
-    A["Phase A: Finish Blockers"] --> B["Phase B: Parallel Hardening"]
-    B --> C["Phase C: Go Public Gate"]
-    C --> D["Phase D: Post-Public Core Expansion"]
-    D --> E["Phase E: Platform Expansion"]
-
-    A1["QIR Phase C<br/>(3 items)"] --> A
-    A2["DDL Planner Phase B<br/>(6 issues)"] --> A
-    A3["Docs IA Consolidation<br/>(2 items)"] --> A
-
-    B1["QIR Finish<br/>(32 issues)"] --> B
-    B2["Security & CI Hardening<br/>(13 issues)"] --> B
-    B3["Architecture Audit<br/>(TASKS.md)"] --> B
-
-    C1["Go Public Checklist<br/>(§6.6)"] --> C
-
-    D1["Shadow REALM Core<br/>(7 issues)"] --> D
-    D2["Config & Init<br/>(6 issues)"] --> D
-    D3["HOLMES Enhancements<br/>(22 issues)"] --> D
-
-    E1["Multi-language Generators"] --> E
-    E2["Frontend Adapters"] --> E
-    E3["Supabase Platform"] --> E
-```
-
-### Phase A — Finish blockers
-
-Complete QIR Phase C, DDL Planner Phase B, and Docs IA Consolidation. These are serial dependencies — the translator must land before QIR Finish can absorb the remaining 32 issues.
-
-### Phase B — Parallel hardening
-
-QIR Finish (32 issues), Security & CI Hardening (13 issues), and architecture audit remainders run in parallel. All must be green before the Go Public gate.
-
-### Phase C — Go Public gate
-
-A pass/fail checklist (§6.6). The repository flips from private to public.
-
-### Phase D — Post-public core expansion
-
-Shadow REALM Core, Config & Init, and HOLMES Scoring Enhancements run in parallel after the project is public. These deepen the product without gating external access.
-
-### Phase E — Platform expansion
-
-Multi-language generators, frontend adapters, Supabase platform, adapter/generator demos. These extend Wesley's reach but are not Alpha requirements.
+- `RunRequested`
+- `SourcesResolved`
+- `IRParsed`
+- `TaskGraphBuilt`
+- `TaskStarted`
+- `TaskCompleted`
+- `TaskFailed`
+- `TaskSkipped`
+- `RunResumed`
+- `ArtifactsMaterialized`
+- `EvidenceMerged`
+- `ScoresComputed`
+- `CertificateIssued`
+- `RunCompleted`
+- `RunFailed`
+- `RunCancelled`
 
 ---
 
-## 6. Active Workstreams
+## 3. Phase Roadmap
 
-Each workstream uses a uniform template:
-**Objective** | **Current state** | **Milestones** | **Dependencies** | **Tracking** | **Absorbed items** | **Exit condition**
+### Phase 0 — Stop Lying
 
----
+- Freeze a parity corpus for DDL, RLS, pgTAP, ops artifacts, snapshot state, and current bundle outputs.
+- Add a docs truth manifest with `current`, `experimental`, and `proposed`, enforced in CI.
+- Define and freeze the V2 glossary: `runId`, `streamId`, `transmutation`, `planHash`, `inputDigest`, `ownership`, `replay`, `resume`, `certified`.
+- Publish a directive truth table covering real, deferred, and dead semantics.
+- Split the current `generate` hotspot into phase modules immediately without changing behavior.
+- Split example ops fixtures into schema-valid examples and explicit negative tests; stop treating the mixed example directory as a happy path.
 
-### 6.1 Core Compiler (QIR + DDL)
+Gate:
 
-**Objective:** Complete the query-to-SQL pipeline and migration planner.
+- Parity corpus 100% green.
+- Every public doc page has a truth label and owner.
+- Directive truth table is published and CI-enforced.
+- No mixed example “happy path” contains known-invalid ops.
 
-**Current state:** QIR Phase C is 3 items from done (translator, pgTAP, real EXPLAIN). DDL Planner Phase B has not started. QIR Finish and Shadow REALM Core are queued behind Phase C.
+### Phase 1 — Move the Control Plane
 
-**Milestones:**
+- Make `TransmutationRunner` the only orchestration kernel.
+- Keep `generate` as a noisy alias while `transform` becomes the real path.
+- Introduce `legacy-supabase` as a shim transmutation that reuses the current DDL/RLS/pgTAP emitters through the new runner.
+- Replace command-level writes with `event emission -> pure reduction -> materialization`.
+- Keep execution deterministic and serial-over-DAG only.
 
-| Milestone | Issues | State |
-| --------- | ------ | ----- |
-| QIR Phase C | 1/4 closed | in flight |
-| QIR Finish | 1/33 closed | not started (blocked on Phase C) |
-| DDL Planner Phase B | 0/6 | not started |
-| Shadow REALM Core | 0/7 | not started |
+Gate:
 
-**Dependencies:** QIR Phase C → QIR Finish. DDL Planner Phase B is independent.
+- `transform --transmutation legacy-supabase` reproduces current outputs byte-for-byte on the parity corpus.
+- Zero direct artifact writes remain in command handlers.
 
-**Tracking:** GitHub milestones #2, #16, #7, #3
+### Phase 2 — Make It Durable
 
-**Absorbed items:**
-- Consolidate RESERVED keyword set *(from BACKLOG.md — "Do First")*
-- Schema-aware `search_path` generation *(from BACKLOG.md — "Do Next")*
-- QIR `schemas/qir.schema.json` root self-reference *(from BACKLOG.md — "Park")*
+- Add `EventStorePort` with `MemoryEventStore` and `GitWarpEventStore`.
+- Treat `git-warp` as the default dev/CI backend behind the port, not as architecture doctrine.
+- Add reducer snapshots and compaction so replay stays bounded.
+- Ship `wesley runs status`, `wesley runs inspect`, `wesley runs replay`, and `wesley runs doctor`.
+- Make resume depend on deterministic task keys, atomic writes, and idempotent materialization.
+- Make `plan`, `rehearse`, `certify`, and `moriarty` ledger-backed flows over the same run model.
+- Add `WESLEY_CRASH_AFTER_EVENT=n` fault injection.
 
-**Exit condition:** All four milestones closed. `wesley compile --ops` produces deployable SQL from any valid SDL + ops manifest.
+Gate:
 
----
+- Crash-at-every-boundary matrix 100% green.
+- Replay performs zero writes by default.
+- Resume completes idempotently after injected crashes.
+- All run-oriented commands accept `--transmutation` and `--run-id`.
+- `.wesley/snapshot.json` is projection-only or deleted.
 
-### 6.2 Observability & Trust (HOLMES + Certs)
+### Phase 3 — Make It Truthful
 
-**Objective:** Strengthen confidence scoring, evidence tracking, and merge projection.
+- Upgrade the plugin contract to API v2 with machine-checkable evidence primitives.
+- Require exact source spans, artifact spans, source digests, artifact digests, claim kind, and plan linkage.
+- Delete placeholder bundle synthesis from the main path.
+- Make HOLMES and WATSON operate only on certified evidence bundles.
+- Make MORIARTY learn only from certified runs with real provenance.
+- Wire chosen directive semantics through parser -> IR -> evidence -> scoring, or demote them from docs.
 
-**Current state:** HOLMES Scoring Enhancements milestone is open with 22 issues. Merge projection plan is documented but not started.
+Gate:
 
-**Milestones:**
+- 100% of certified claims are WATSON-verifiable.
+- Zero placeholder spans survive in certified bundles.
+- Docs/runtime agree on every scoring-relevant directive.
 
-| Milestone | Issues | State |
-| --------- | ------ | ----- |
-| HOLMES Scoring Enhancements | 2/24 closed | not started |
+### Phase 4 — Make It Native
 
-**Dependencies:** None blocking Alpha.
+- Replace `legacy-supabase` with a native Supabase transmutation plugin.
+- Add plugin capability descriptors such as `requiresSchema`, `requiresOps`, `touchesDatabase`, `producesEvidence`, and `resourceClasses`.
+- Require plans to be serializable, deterministic, and hashable.
+- Add a plugin conformance suite for parity, purity, evidence, digest stability, and replay safety.
+- Migrate a second in-tree plugin through the full contract.
 
-**Tracking:** GitHub milestone #4; `docs/holmes-merge-projection-plan.md` (implementation plan for merge projection, 4 phases)
+Gate:
 
-**Absorbed items:**
-- Negative-path cert tests: wrong key type, missing key, corrupt SHIPME format *(from BACKLOG.md — "Do Next")*
-- "Schema surface" integration test: validate all JSON artifacts against schemas *(from BACKLOG.md — "Do Next")*
-- Watson schema-twin verification *(from .claude/cool_ideas.md — deferred, speculative)*
+- Native Supabase passes conformance.
+- A second in-tree plugin passes the same conformance suite.
+- No CLI orchestration path depends on old direct-emitter wiring.
 
-**Exit condition:** HOLMES milestone closed. Moriarty reports are actionable and trust scores are derived from evidence.
+### Phase 5 — Make Ops Consistent
 
----
+- Unify GraphQL ops and JSON ops under one schema-aware planning and validation contract.
+- Make one op IR and one failure model.
+- Route op emission through the same runtime, reducers, materializer, evidence, and certification path.
+- Make op registries and op artifacts projections, not bespoke side writes.
+- Ensure ops compile once per transmutation context and inherit ownership and evidence rules.
 
-### 6.3 Developer Experience (CLI + Config + Docs)
+Gate:
 
-**Objective:** Make Wesley installable, configurable, and well-documented for external users.
+- One shared validator/planner package serves both GraphQL and JSON ops.
+- Equivalent invalid GraphQL and JSON ops both fail.
+- Equivalent valid GraphQL and JSON ops both pass.
+- No schema-agnostic JSON escape hatch remains.
 
-**Current state:** Config & Init has not started. Docs & Process Polish is active (4/29 closed). Wesley in the Browser is active (5/30 closed). Docs IA Consolidation has 2 in-flight items.
+### Phase 6 — Make It a Real Platform
 
-**Milestones:**
+- Make the transmutations map fully first-class: `inputs`, `outDir`, `dependsOn`, `ownership`, and optional imports/exports.
+- Validate ownership up front for schema namespaces, artifact roots, and later resource classes.
+- Introduce a parent workspace run with child per-transmutation streams.
+- Add shared source parsing and caching where safe, while keeping output, evidence, and certification isolated.
+- Emit a workspace manifest that references per-transmutation artifacts and certificates.
+- If real composition pressure exists here, this is the first phase allowed to introduce public plural `plugins` plus a config migration.
 
-| Milestone | Issues | State |
-| --------- | ------ | ----- |
-| Config & Init | 0/6 | not started |
-| Docs & Process Polish | 4/29 closed | in flight |
-| Wesley in the Browser | 5/30 closed | in flight |
+Gate:
 
-**Dependencies:** Docs IA Consolidation is an Alpha blocker.
+- One run can execute multiple transmutations with clean isolation.
+- Ownership conflicts fail at config validation time.
+- Workspace outputs, manifests, and certificates are per-stream and coherent.
 
-**Tracking:** GitHub milestones #5, #14, #15
+### Phase 7 — Make Change Safe
 
-**Absorbed items:** *(none from BACKLOG.md or cool_ideas.md beyond what's already tracked)*
+- Port the current additive planner fully onto the new runtime first.
+- Then extend the plan model to `expand`, `backfill`, `validate`, `switch`, and `contract`.
+- Add rename detection, destructive-change linting, lock estimation, and risk classification.
+- Make `rehearse` execute the same plan model against disposable realms.
+- Make `certify` consume the same plan model and real rehearsal evidence.
 
-**Exit condition:** `wesley init` works. Docs are link-clean and organized. Browser playground is stable.
+Gate:
 
----
+- Additive, destructive, rename, backfill, and contract scenario corpus is 100% green.
+- `plan`, `rehearse`, and `certify` all consume the same underlying plan representation.
 
-### 6.4 Platform & Ecosystem
+### Phase 8 — Make It Fast Without Making It Weird
 
-**Objective:** Extend Wesley to multiple ORMs, frontend frameworks, and Supabase platform features.
+- Implement `RunSchedulerPort` with the real T.A.S.K.S./S.L.A.P.S. backend.
+- Add resource-aware locking, leases, cancellation, and backpressure.
+- Parallelize only tasks declared safe by capability and resource metadata.
+- Keep DB-touching work serialized by resource class unless proven safe.
+- Add content-addressed artifact caching only after plan hashes and materialization semantics are stable.
 
-**Current state:** All milestones are not started. These are post-Alpha.
+Gate:
 
-**Milestones:**
+- Serial and parallel artifact digests match exactly.
+- Serial and parallel evidence digests match exactly.
+- Lock-contention matrix is green.
+- Reruns are faster without determinism regressions.
 
-| Milestone | Issues | State |
-| --------- | ------ | ----- |
-| Multi-language Generators | 0/10 | not started |
-| Frontend Adapters | 0/4 | not started |
-| Supabase Platform | 0/4 | not started |
-| Adapter Demos | 0/4 | not started |
-| Generator Demos | 0/4 | not started |
+### Phase 9 — Make It Boring
 
-**Dependencies:** Requires stable QIR and DDL pipeline (§6.1).
+- Remove the `generate` alias.
+- Remove the V1 config path and all silent compatibility behavior.
+- Rename `generator-*` packages to `transmute-*`.
+- Delete legacy snapshot/bundle synthesis branches and dead detours.
+- Freeze the public V2 contract and publish the migration guide.
 
-**Tracking:** GitHub milestones #10, #8, #6, #9, #11
+Gate:
 
-**Exit condition:** At least two generators and two adapters ship with working demos.
+- One command surface remains.
+- One config model remains.
+- One naming scheme remains.
+- Zero dual-architecture compatibility branches remain in runtime code.
 
----
+### Phase 10 — V2.x Horizons
 
-### 6.5 Infrastructure & Quality
+These are explicitly post-GA, not identity-critical:
 
-**Objective:** Harden CI, address architecture debt, and shore up test coverage.
+- Additional durable backends such as SQLite or Postgres
+- `wesley runs diff <a> <b>`
+- Digest-tree certificates
+- External plugin SDK
+- Multi-host parity beyond Node
+- Remote/shared execution
 
-**Current state:** Security & CI Hardening has 13 open issues. DevOps Scaffolding has 2 open issues. Architecture audit from `TASKS.md` has several open remainders.
+Gate:
 
-**Milestones:**
-
-| Milestone | Issues | State |
-| --------- | ------ | ----- |
-| Security & CI Hardening | 0/13 | not started |
-| DevOps Scaffolding | 0/2 | not started |
-
-**Architecture audit remainders** (tracked in `TASKS.md`):
-
-- [ ] ARC-2: Migrate test files to import from `@wesley/test-fixtures` (package created, migration pending)
-- [ ] ARC-2: Add tests for untested packages (`generator-js`, `host-bun`, `scaffold-multitenant`, `slaps`)
-- [ ] ARC-3: Define reusable `ValidationError`, `ConflictError`, `ResourceError` subclasses
-- [ ] ARC-3: Extract domain event lifecycle boilerplate into a factory
-- [ ] ARC-4: Add test — dropping a `.mjs` file in `commands/` auto-registers
-- [ ] SRP decomposition: `ConcurrentSafetyAnalyzer` (1,081 lines), `BackpressureController` (793 lines), `RepairGenerator` (831 lines), `SafetyValidator` (782 lines), `DifferentialValidator` (634 lines)
-- [ ] Dependency inversion: `EventEmitter` port extraction, `RepairGenerator` DI, `GeneratorPlugin.generate()` return shape normalization
-- [ ] Test coverage gaps: `generator-js` (0 tests), `host-bun` (0 tests), `scaffold-multitenant` (0 tests), `slaps` (0 tests), `host-browser` (partial)
-- [ ] Dead dependency: `@wesley/generator-echo` declares `@wesley/host-node` but no imports found
-
-**Absorbed items:**
-- Vendor Bats plugins into `test/vendor/` *(from BACKLOG.md — "Do First")*
-- Schema twin drift CI check *(from BACKLOG.md — "Do First")*
-- `--strict-ident` integration test for PG16 reserved keywords *(from BACKLOG.md — "Do Next")*
-- Ajv → compiled validators at build time *(from BACKLOG.md — "Park")*
-- Shared `generateRunId` utility *(from .claude/cool_ideas.md)*
-
-**Tracking:** GitHub milestones #13, #12; `TASKS.md` (architecture audit)
-
-**Exit condition:** CI passes all test suites. No security advisories. Architecture audit backlog is triaged.
-
----
-
-### 6.6 Go Public
-
-Explicit pass/fail checklist — all items must be green before flipping the repository from private to public.
-
-- [ ] README explains problem, architecture, install, and quickstart
-- [ ] Contributor guide exists (`CONTRIBUTING.md`)
-- [ ] License and legal posture reviewed (Apache 2.0 + `NOTICE`)
-- [ ] CI checks required for default branch
-- [ ] Branch protections configured
-- [ ] No-milestone issues triaged, assigned, deferred, or closed
-- [ ] Public docs are link-clean
-- [ ] No blocker-grade security issues open
-- [ ] Issue templates and labels are minimally sane
-
-**Dependencies:** Phase A blockers (§4) and Phase B hardening (§5) must complete first.
-
-**Tracking:** Not a GitHub milestone — tracked here as a gate.
-
----
-
-## 7. Deferred / Speculative
-
-Each item has a reason for deferral.
-
-| Item | Reason | Provenance |
-| ---- | ------ | ---------- |
-| SHA-256 → BLAKE3 migration | Breaking change to hash chains — coordinated across Wesley + Echo repos. Post-Alpha. | ROADMAP.md |
-| Cross-platform CI matrix (Linux/macOS/Windows) | Nice-to-have after Go Public. Requires musl/glibc golden-vector verification. | ROADMAP.md |
-| `echo-ttd-gen` Rust crate | Blocked on TTD protocol stabilization. May fold into `echo-wesley-gen`. | ROADMAP.md |
-| Supabase/PG target for Echo | PG-backed storage for Echo schemas — speculative. | ROADMAP.md |
-| RFC #365 — provenance | Blocked on design clarity. | GitHub |
-| RFC #366 — SDL loop | Blocked on design clarity. | GitHub |
-| Cross-language codec fuzzing | Post-Alpha nice-to-have. Property-based Rust↔TS round-trip tests. | .claude/cool_ideas.md |
-| ABI codec versioning via schema hash | Speculative. Only relevant if WASM ABI types evolve. | .claude/cool_ideas.md |
-| "Wesley Explain" visual mode | Blocked on real EXPLAIN snapshots (currently mock-only). | BACKLOG.md |
-| `wesley explain` via T.A.S.K.S. DAGs | Blocked on transmutation wiring (Phase 0c). | .claude/cool_ideas.md |
-| Reconcile `WesleyIR.schema.ts` with runtime IR | Completed — IR schema reconciliation landed (T-0 through T-13). | .claude/cool_ideas.md (stale) |
-| Unify generator input signatures | Planned as Phase 0a of transmutations redesign. | .claude/cool_ideas.md |
+- None for V2 GA. Each item must justify itself with a concrete operational or adoption win before entering the active roadmap.
 
 ---
 
-## 8. Completed Milestones
+## 4. Release Markers
 
-Compact archive — name, completion state, link, one-line significance.
-
-| Milestone | State | Reference | Significance |
-| --------- | ----- | --------- | ------------ |
-| Echo E0 — Plugin Pipeline | Complete | CHANGELOG.md | `GeneratorPlugin` contract, `ArtifactWriter`, plugin discovery |
-| Echo E1 — Boundary Grammar | Complete | CHANGELOG.md | Canonical SDL, schema hash, hash chains, `wesley diff` |
-| Echo E2a — Canonical Encodings | Complete | CHANGELOG.md | Raw LE codec (Rust + TS), layout hashes |
-| Echo E2b — Core Type Schemas | Complete | CHANGELOG.md | Echo storage types in Wesley SDL |
-| Echo E2c — Guarded Views | Complete | CHANGELOG.md | `@wes_view` directive, read/write view codegen |
-| Echo E2d — Cross-Platform Determinism | Complete | CHANGELOG.md | 44 golden vectors across 12 fixture files |
-| Echo E3 — @wes_join Directive | Complete | CHANGELOG.md | Join strategies (union/max/lww), Rust `JoinFn` codegen |
-| Echo E4 — Privacy Types | Complete | CHANGELOG.md | Privacy type canonical encoding verification |
-| Alpha Playground | Complete (343/343) | CHANGELOG.md | Browser-based "Try Wesley" with PGLite |
-| TTD Protocol Compiler | Complete | `docs/plans/ttd-protocol-compiler.md` | TTD protocol compilation pipeline |
-| WES-001 — Per-Op Var/Result Schema | Complete | `docs/plans/james-website-integration/` | Zod schemas for every operation |
-| WES-002 — TS Runtime Client/Pump | Complete | `docs/plans/james-website-integration/` | Self-contained TypeScript client with dispatch/query APIs |
-| WES-003 — Contract Versioning | Complete | `docs/plans/james-website-integration/` | `contract_version` field, deterministic output tests |
-| WES-004 — One-Pass Codegen Profile | Complete | `docs/plans/james-website-integration/` | Atomic schema → IR/Rust/TS generation |
-| WES-005 — Unify generator-vue | Complete | `docs/plans/james-website-integration/` | `VuePlugin` canonical entrypoint |
-| IR Schema Reconciliation (T-0 – T-13) | Complete | `TASKS.md` | Parser emits `WesleyIR.schema.ts` shape, shim removed |
-| ARC-1 — Duplicate Generators | Complete | `TASKS.md` | Removed dead supabase generator copies |
-| ARC-4 — Command Auto-Discovery | Complete | `TASKS.md` | CLI commands auto-register from `commands/` directory |
-| WASM ABI Codec Generation | Complete | CHANGELOG.md | Deterministic binary encode/decode for Echo WASM FFI |
+- **Alpha:** end of Phase 3. One transmutation path is real, durable, and evidence-truthful.
+- **Beta:** end of Phase 6. Multi-transmutation workspace semantics are real.
+- **RC:** end of Phase 8. Migration lifecycle and scheduler are proven.
+- **GA:** end of Phase 9. Old path removed. V2 is no longer half-pregnant.
 
 ---
 
-## 9. Artifact Map
+## 5. Execution Appendix
 
-Reference table for all planning documents.
+### 5.1 Execution Governance
 
-| Artifact | Purpose | Status |
-| -------- | ------- | ------ |
-| `ROADMAP_2.md` | Master strategic roadmap | **Active** — canonical |
-| `ROADMAP.md` | Original roadmap | **Superseded** by ROADMAP_2.md |
-| `BACKLOG.md` | PR review and retrospective items | **Absorbed** into ROADMAP_2.md |
-| `TASKS.md` | Architecture audit findings and IR reconciliation | **Active** — specialized audit doc |
-| `CHANGELOG.md` | Version history | **Active** |
-| `meta/progress.json` | Per-package progress data | **Active** — data source for §2 |
-| `docs/holmes-merge-projection-plan.md` | HOLMES merge projection design | **Active** — implementation plan |
-| `docs/plans/ttd-protocol-compiler.md` | TTD protocol compiler plan | **Complete** |
-| `docs/plans/james-website-integration/` | WES-001 through WES-005 task specs | **Complete** |
-| `docs/architecture/transmutations.md` | Transmutations architecture spec | **Active** — design doc |
-| `docs/drafts/Codex-Ideas.md` | Think-piece / brainstorming | **Active** — not a plan doc |
-| `.claude/cool_ideas.md` | Speculative ideas capture | **Active** — idea space |
-| `.claude/bad_code.md` | Code smell journal | **Active** — all current items resolved |
-| `docs/site/roadmap.md` | Public-facing roadmap page | **Active** — points to ROADMAP_2.md |
+Before any phase starts, create an ADR for that phase boundary. The ADR must name:
+
+- exactly one DRI
+- the phase boundary being authorized
+- the proof artifacts and tests that define the gate
+- the legacy code that must be deleted before the phase is complete
+
+The roadmap gate is not considered satisfied until the listed deletion has happened.
+
+### 5.2 Compatibility Policy
+
+| Compatibility Surface | Policy Window |
+| --------------------- | ------------- |
+| `generate` command | Accepted through Phase 8 / RC; removed in Phase 9 / GA |
+| V1 config | Accepted through Phase 8 / RC; removed in Phase 9 / GA |
+| Plugin API v1 | Accepted through Phase 3 / Alpha; removed when native API v2 plugins become required in Phase 4 |
+| Singular public `plugin` | Enforced starting Phase 1; plural public `plugins` not allowed before Phase 6 |
+| Ledger-backed `plan`, `rehearse`, `certify`, `moriarty` | Required starting Phase 2 and mandatory for every release marker after Alpha |
+
+`wesley migrate-config --dry-run --write --check` must ship before any compatibility surface is removed.
+
+### 5.3 Event Evolution Policy
+
+- Stored event schema changes are additive-only.
+- Old events remain supported through explicit upcasters.
+- Snapshots are always disposable and rehydratable from the ledger.
+- Replay semantics cannot depend on snapshot shape.
+- If a non-additive event change is ever unavoidable, it requires a dedicated ADR and a new stream version rather than silent mutation.
+
+### 5.4 Runtime Budgets
+
+These budgets are phase gates, not aspirations:
+
+- Representative replay time: `<= 10s` local dev, `<= 30s` CI
+- Resume time after injected crash: `<= 15s` local dev, `<= 45s` CI
+- Parity-suite runtime: `<= 10 minutes` in CI
+- Materialization drift between serial and parallel execution: `0` digest delta
+- WATSON verification rate for certified bundles: `100%` of certified claims
+
+Any budget regression requires an ADR or a budget reset justified by a new representative workload.
+
+### 5.5 Hard Red Lines
+
+- Do not reintroduce public plural plugins before Phase 6.
+- Do not let `.wesley/snapshot.json` survive as a second source of truth after Phase 2.
+- Do not let replay write by default.
+- Do not let Phase 8 scheduler work leak into earlier phases because it seems like “just a small optimization.”
+- Do not ship new directive semantics unless parser, IR, evidence, tests, and docs land together.
+
+---
+
+## 6. Backlog
+
+- Additional durable backends such as SQLite or Postgres
+- `wesley runs diff <a> <b>`
+- Digest-tree certificates
+- External plugin SDK
+- Multi-host parity beyond Node
+- Remote/shared execution
