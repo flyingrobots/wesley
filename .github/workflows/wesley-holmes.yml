@@ -16,9 +16,6 @@ env:
 permissions:
   contents: read
 
-permissions:
-  contents: read
-
 jobs:
   wesley-generate:
     name: "🚀 Wesley Generation"
