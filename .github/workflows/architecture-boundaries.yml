@@ -6,24 +6,32 @@ on:
   pull_request:
     branches: [ main, develop ]
 
+permissions:
+  contents: read
+
 jobs:
   enforce-boundaries:
     runs-on: ubuntu-latest
     name: Enforce Hexagonal Architecture Boundaries
     
     steps:
+    - name: Harden the runner (Audit all outbound calls)
+      uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
+      with:
+        egress-policy: audit
+
     - name: Checkout code
-      uses: actions/checkout@v5
+      uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
       with:
         fetch-depth: 0
     
     - name: Install pnpm (pinned)
-      uses: pnpm/action-setup@v4
+      uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
       with:
         version: 9.15.9
     
     - name: Setup Node.js
-      uses: actions/setup-node@v6
+      uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
       with:
         node-version: '20'
         cache: 'pnpm'
@@ -43,7 +51,7 @@ jobs:
           --output-type archi packages/ > architecture.svg
         
     - name: Upload architecture diagram
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
       if: always()
       with:
         name: architecture-diagram
@@ -176,7 +184,7 @@ jobs:
         EOF
         
     - name: Upload boundary report
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
       if: always()
       with:
         name: boundary-report

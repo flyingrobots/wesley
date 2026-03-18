@@ -18,6 +18,9 @@ on:
 env:
   FORCE_COLOR: 1
 
+permissions:
+  contents: read
+
 jobs:
   cli-tests:
     name: CLI End-to-End Tests
@@ -29,20 +32,25 @@ jobs:
       fail-fast: false
 
     steps:
+    - name: Harden the runner (Audit all outbound calls)
+      uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
+      with:
+        egress-policy: audit
+
     - name: Checkout repository
-      uses: actions/checkout@v5
+      uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
       with:
         submodules: recursive  # For Bats plugins
 
     - name: Setup pnpm
-      uses: pnpm/action-setup@v4
+      uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
     - name: Verify pnpm version
       run: |
         echo "pnpm: $(pnpm --version)"
         node -v
 
     - name: Setup Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v6
+      uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'pnpm'
@@ -93,7 +101,7 @@ jobs:
         pnpm test:tap > cli-test-results.tap
 
     - name: Upload TAP test results
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
       if: always()
       with:
         name: cli-test-results-${{ matrix.os }}-node${{ matrix.node-version }}
@@ -118,6 +126,11 @@ jobs:
     if: always()
     
     steps:
+    - name: Harden the runner (Audit all outbound calls)
+      uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
+      with:
+        egress-policy: audit
+
     - name: Check test results
       run: |
         if [[ "${{ needs.cli-tests.result }}" == "success" ]]; then

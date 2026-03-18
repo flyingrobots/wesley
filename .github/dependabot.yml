@@ -16,3 +16,108 @@ updates:
     target-branch: "main"
     labels:
       - "dependencies"
+
+  - package-ecosystem: docker
+    directory: /.devcontainer
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /packages/wesley-cli
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /packages/wesley-core
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /packages/wesley-generator-echo
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /packages/wesley-generator-js
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /packages/wesley-generator-supabase
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /packages/wesley-generator-ttd
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /packages/wesley-generator-vue
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /packages/wesley-holmes
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /packages/wesley-host-browser
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /packages/wesley-host-bun
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /packages/wesley-host-deno
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /packages/wesley-host-node
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /packages/wesley-scaffold-multitenant
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /packages/wesley-slaps
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /packages/wesley-stack-supabase-nextjs
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /packages/wesley-tasks
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /packages/wesley-test-fixtures
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /test/packages/wesley-generator-js
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /test/packages/wesley-generator-supabase
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /wesley-website
+    schedule:
+      interval: daily
