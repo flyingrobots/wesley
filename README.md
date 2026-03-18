@@ -412,7 +412,7 @@ Badges for key packages:
 
 <!-- BEGIN:OVERALL_STATUS -->
 Stage: MVP  \
-Progress: 59% → Alpha
+Progress: 49% → Alpha
 <!-- END:OVERALL_STATUS -->
 
 ## Package Matrix
@@ -422,9 +422,9 @@ Note: In local runs where `GITHUB_REPOSITORY` is unset, the CI badge column rend
 <!-- BEGIN:PACKAGE_MATRIX -->
 | Package | Status | Stage | Progress | CI | Notes |
 | --- | --- | --- | --- | --- | --- |
-| `@wesley/core` | Active | MVP | 45% → Alpha | ![pkg-core.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-core.yml/badge.svg?branch=main) | Pure domain logic, no Node builtins |
-| `@wesley/cli` | Active | Alpha | 50% → Beta | ![pkg-cli.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-cli.yml/badge.svg?branch=main) | CLI + Bats suites |
-| `@wesley/host-node` | Active | MVP | 50% → Alpha | ![pkg-host-node.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-host-node.yml/badge.svg?branch=main) | Node adapters + binary |
+| `@wesley/core` | Active | MVP | 40% → Alpha | ![pkg-core.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-core.yml/badge.svg?branch=main) | Pure domain logic, no Node builtins |
+| `@wesley/cli` | Active | MVP | 65% → Alpha | ![pkg-cli.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-cli.yml/badge.svg?branch=main) | CLI + Bats suites |
+| `@wesley/host-node` | Active | MVP | 45% → Alpha | ![pkg-host-node.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-host-node.yml/badge.svg?branch=main) | Node adapters + binary |
 | `@wesley/host-browser` | Experimental | MVP | 40% → Alpha | ![browser-smoke.yml](https://github.com/flyingrobots/wesley/actions/workflows/browser-smoke.yml/badge.svg?branch=main) | Pure ESM; in-memory FS; minimal parser; smoke-level only |
 | `@wesley/generator-js` | Active | MVP | 50% → Alpha | ![pkg-generator-js.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-generator-js.yml/badge.svg?branch=main) | TS/Zod emitters |
 | `@wesley/generator-supabase` | Active | MVP | 50% → Alpha | ![pkg-generator-supabase.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-generator-supabase.yml/badge.svg?branch=main) | SQL/RLS/pgTAP emitters |

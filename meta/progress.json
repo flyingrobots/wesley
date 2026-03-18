@@ -1,18 +1,18 @@
 {
-  "generatedAt": "2026-03-18T12:00:58.183Z",
+  "generatedAt": "2026-03-18T13:47:54.574Z",
   "overall": {
     "stage": "MVP",
     "next": "Alpha",
-    "progress": 59
+    "progress": 49
   },
   "results": [
     {
       "name": "@wesley/core",
       "status": "Active",
       "stage": "MVP",
-      "progress": 45,
+      "progress": 40,
       "next": "Alpha",
-      "passRate": 0.9,
+      "passRate": 0.8,
       "docs": {
         "hasStatus": true,
         "hasUsage": false,
@@ -28,10 +28,10 @@
     {
       "name": "@wesley/cli",
       "status": "Active",
-      "stage": "Alpha",
-      "progress": 50,
-      "next": "Beta",
-      "passRate": 1,
+      "stage": "MVP",
+      "progress": 65,
+      "next": "Alpha",
+      "passRate": 0.9,
       "docs": {
         "hasStatus": true,
         "hasUsage": true,
@@ -48,9 +48,9 @@
       "name": "@wesley/host-node",
       "status": "Active",
       "stage": "MVP",
-      "progress": 50,
+      "progress": 45,
       "next": "Alpha",
-      "passRate": 1,
+      "passRate": 0.9,
       "docs": {
         "hasStatus": true,
         "hasUsage": false,
