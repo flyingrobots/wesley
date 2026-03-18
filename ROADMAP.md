@@ -319,4 +319,6 @@ Active execution tracking now lives in GitHub:
 
 The backlog previously spread across `BACKLOG.md` and the roadmap appendix has
 been migrated into GitHub Issues `#436` through `#456`. This file is now the
-strategy and policy document; GitHub is the queue.
+strategy and policy document; GitHub is the queue. The pre-V2 milestone slate
+was retired after its remaining open issues were rehomed into the V2 phase
+milestones or closed when they were only tracker/progress artifacts.
