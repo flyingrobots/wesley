@@ -322,3 +322,7 @@ been migrated into GitHub Issues `#436` through `#456`. This file is now the
 strategy and policy document; GitHub is the queue. The pre-V2 milestone slate
 was retired after its remaining open issues were rehomed into the V2 phase
 milestones or closed when they were only tracker/progress artifacts.
+
+Open issues must either live on a V2 phase milestone or remain explicitly
+unmilestoned with the `out-of-band` label for tactical maintenance that does
+not belong on the phased roadmap.
