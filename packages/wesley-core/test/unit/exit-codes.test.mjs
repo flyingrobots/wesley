@@ -12,6 +12,7 @@ test('exitCodeFor — returns 2 for configuration/input errors', () => {
     'ENOENT', 'EEMPTYSCHEMA', 'EEXIST', 'EARGS', 'EUSAGE',
     'ERR_MISSING_ARGUMENT', 'DIRTY_WORKTREE', 'NO_DSN',
     'INVALID_TARGET', 'UNSUPPORTED_OPTION', 'INVALID_LOG_FORMAT',
+    'UNKNOWN_TRANSMUTATION',
     'OPS_ALLOW_ERRORS_FORBIDDEN', 'OPS_INVALID_SECURITY'
   ]) {
     assert.equal(exitCodeFor(code), 2, `${code} should map to exit code 2`);
@@ -77,7 +78,8 @@ test('isRegistered — returns false for unknown codes', () => {
 test('getRegistry — returns an object with all known codes', () => {
   const registry = getRegistry();
   assert.equal(typeof registry, 'object');
-  assert.equal(Object.keys(registry).length, 31, 'should have exactly 31 registered codes');
+  assert.equal(Object.keys(registry).length, 32, 'should have exactly 32 registered codes');
+  assert.equal(registry.UNKNOWN_TRANSMUTATION, 2);
 });
 
 test('getRegistry — registry is immutable (frozen object)', () => {

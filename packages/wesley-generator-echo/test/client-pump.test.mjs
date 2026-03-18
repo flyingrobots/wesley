@@ -1,5 +1,4 @@
 import { describe, it, expect } from 'vitest';
-import { execFileSync } from 'node:child_process';
 import { writeFileSync, unlinkSync, mkdtempSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -61,15 +60,19 @@ describe('generated client — strict TypeScript compilation', () => {
     const filePath = join(dir, 'client.generated.ts');
     writeFileSync(filePath, content);
     try {
-      execFileSync('tsc', [
-        '--noEmit',
-        '--strict',
-        '--target', 'ES2020',
-        '--module', 'ES2020',
-        '--moduleResolution', 'node',
-        '--skipLibCheck',
-        filePath
-      ], { encoding: 'utf8', timeout: 15_000 });
+      const program = ts.createProgram([filePath], {
+        noEmit: true,
+        strict: true,
+        target: ts.ScriptTarget.ES2020,
+        module: ts.ModuleKind.ES2020,
+        moduleResolution: ts.ModuleResolutionKind.Node10,
+        skipLibCheck: true
+      });
+      const diagnostics = ts.getPreEmitDiagnostics(program);
+      const formatted = diagnostics.map((diag) =>
+        ts.flattenDiagnosticMessageText(diag.messageText, '\n')
+      );
+      expect(formatted).toEqual([]);
     } finally {
       unlinkSync(filePath);
     }
