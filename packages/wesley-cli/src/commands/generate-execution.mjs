@@ -155,6 +155,13 @@ async function persistSnapshot({ ctx, ir, logger, dryRun }) {
 
 async function executeLegacySupabaseTransmutation({ ctx, context, ir }) {
   const { logger, options } = context;
+  const requestedTransmutation = options.transmutation || LEGACY_SUPABASE_TRANSMUTATION;
+  if (requestedTransmutation !== LEGACY_SUPABASE_TRANSMUTATION) {
+    throw new WesleyError(
+      'UNKNOWN_TRANSMUTATION',
+      `The current sequential runtime only supports transmutation "${LEGACY_SUPABASE_TRANSMUTATION}", got "${requestedTransmutation}".`
+    );
+  }
   const plugin = new LegacySupabaseGeneratorPlugin({
     generators: ctx.generators,
     enableRls: options.supabase

@@ -1,5 +1,5 @@
 /**
- * Transform Command - Alias of Generate, new primary verb
+ * Transform Command - Primary transmutation verb
  */
 
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
@@ -7,7 +7,7 @@ import { GeneratePipelineCommand } from './generate.mjs';
 
 export class TransformPipelineCommand extends WesleyCommand {
   constructor(ctx) {
-    super(ctx, 'transform', 'Transform GraphQL schema into SQL/Types/Zod/pgTAP');
+    super(ctx, 'transform', 'Run a named transmutation against a GraphQL schema');
     this.requiresSchema = true;
     this._delegate = new GeneratePipelineCommand(ctx);
   }
@@ -20,4 +20,3 @@ export class TransformPipelineCommand extends WesleyCommand {
     return this._delegate.executeCore(context);
   }
 }
-

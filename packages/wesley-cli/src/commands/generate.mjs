@@ -12,6 +12,8 @@ import {
   runTasksAndSlapsGeneration
 } from './generate-execution.mjs';
 import { compileOpsIfRequested } from './generate-ops.mjs';
+import { LEGACY_SUPABASE_TRANSMUTATION } from '../transmutations/legacy-supabase.mjs';
+import { resolveTransmutationName } from '../transmutations/registry.mjs';
 
 export class GeneratePipelineCommand extends WesleyCommand {
   constructor(ctx) {
@@ -37,6 +39,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
       .option('--dry-run', 'Show what would be generated without writing files')
       .option('--allow-dirty', 'Allow running with a dirty git working tree (not recommended)')
       .option('--i-know-what-im-doing', 'Acknowledge hazardous flags in CI environments')
+      .option('--transmutation <name>', 'Transmutation to execute', LEGACY_SUPABASE_TRANSMUTATION)
       .option('--debug', 'Debug output with stack traces')
       .option('-q, --quiet', 'Silence logs (level=silent)')
       .option('--json', 'Emit newline-delimited JSON logs')
@@ -66,6 +69,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
     if (options.stdin) {
       options.schema = '-';
     }
+    options.transmutation = resolveTransmutationName(options.transmutation);
 
     await ensureGeneratePreconditions({
       env: this.ctx.env || {},
