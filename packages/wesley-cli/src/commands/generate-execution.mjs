@@ -227,7 +227,9 @@ async function emitPlaceholderBundle({ ctx, artifacts, outDir, logger, options }
       const out = await (ctx.shell?.exec?.('git rev-parse HEAD'));
       const s = out?.stdout?.trim();
       if (s) sha = s;
-    } catch {}
+    } catch {
+      // Best-effort only; bundle generation falls back to "unknown" when git SHA is unavailable.
+    }
 
     const timestamp = new Date().toISOString();
     const scs = Math.min(1, Math.max(0, (artifacts.length > 0 ? 0.6 : 0.3)));
@@ -301,7 +303,9 @@ async function emitPlaceholderBundle({ ctx, artifacts, outDir, logger, options }
       const day = Math.floor(Date.now() / 86400000);
       const nextPoints = mergeHistoryPoints(history.points, [{ day, timestamp, scs, tci, mri }]);
       await ctx.fs.write('.wesley/history.json', JSON.stringify({ points: nextPoints }, null, 2));
-    } catch {}
+    } catch {
+      // Placeholder bundle history is best-effort and should not block artifact emission.
+    }
   } catch (e) {
     logger.warn('Could not emit HOLMES evidence bundle: ' + (e?.message || e));
   }

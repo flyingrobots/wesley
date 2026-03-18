@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { readFileSync, existsSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { resolve } from 'node:path';
 
 const root = resolve('.');
 const manifestPath = resolve(root, 'docs/truth-manifest.json');
