@@ -7,7 +7,21 @@ import { buildAdditivePlan, explainPlan, emitMigrations } from './_migration-pla
 import { assertValid } from '../framework/schemaValidator.mjs';
 import { WesleyError } from '@wesley/core';
 import { resolveRunMetadata } from '../utils/run-metadata.mjs';
-import { createCommandEventCollector } from '../utils/runtime-events.mjs';
+import {
+  attachRunFailure,
+  createCommandEventCollector,
+  createCommandEventScope,
+  emitArtifactsMaterialized,
+  emitIrParsed,
+  emitPlanBuilt,
+  emitRunCompleted,
+  emitRunFailed,
+  emitRunRequested,
+  emitSourcesResolved,
+  emitTaskCompleted,
+  emitTaskFailed,
+  emitTaskStarted
+} from '../utils/runtime-events.mjs';
 import {
   buildRealmProjection,
   readSnapshotProjection,
@@ -39,18 +53,15 @@ export class RehearseCommand extends WesleyCommand {
   async executeCore({ options, schemaContent, schemaPath, logger }) {
     const run = resolveRunMetadata(options);
     const eventCollector = createCommandEventCollector(this.ctx, run);
-    eventCollector.emit('RunRequested', {
+    const scope = createCommandEventScope(run, 'rehearse');
+    emitRunRequested(eventCollector, scope, {
       command: 'rehearse',
       schemaPath,
       dryRun: Boolean(options.dryRun)
-    }, {
-      idempotencyKey: `${run.transmutation}:rehearse:requested`
     });
     const ir = this.ctx.parsers.graphql.parse(schemaContent);
-    eventCollector.emit('IRParsed', {
+    emitIrParsed(eventCollector, scope, {
       tableCount: Array.isArray(ir?.tables) ? ir.tables.length : 0
-    }, {
-      idempotencyKey: `${run.transmutation}:rehearse:ir`
     });
 
     let previous = { tables: [] };
@@ -66,30 +77,24 @@ export class RehearseCommand extends WesleyCommand {
         logger.warn('Could not read snapshot: ' + (e?.message || ''));
       }
     }
-    eventCollector.emit('SourcesResolved', {
+    emitSourcesResolved(eventCollector, scope, {
       schemaPath,
       hadSnapshot
-    }, {
-      idempotencyKey: `${run.transmutation}:rehearse:sources`
     });
 
     const plan = buildAdditivePlan(previous, ir);
     const explain = explainPlan(plan);
-    eventCollector.emit('PlanBuilt', {
+    emitPlanBuilt(eventCollector, scope, {
       phaseCount: plan.phases.length,
       stepCount: explain.steps.length
-    }, {
-      idempotencyKey: `${run.transmutation}:rehearse:plan`
     });
 
     if (options.dryRun) {
       if (options.json) {
-        eventCollector.emit('RunCompleted', {
+        emitRunCompleted(eventCollector, scope, {
           command: 'rehearse',
           dryRun: true,
           stepCount: explain.steps.length
-        }, {
-          idempotencyKey: `${run.transmutation}:rehearse:completed`
         });
         const report = {
           transmutation: run.transmutation,
@@ -107,12 +112,10 @@ export class RehearseCommand extends WesleyCommand {
         logger.info('🧭 REALM Dry Run');
         for (const line of explain.lines) logger.info(line);
       }
-      eventCollector.emit('RunCompleted', {
+      emitRunCompleted(eventCollector, scope, {
         command: 'rehearse',
         dryRun: true,
         stepCount: explain.steps.length
-      }, {
-        idempotencyKey: `${run.transmutation}:rehearse:completed`
       });
       return { dryRun: true, steps: explain.steps.length, events: eventCollector.events };
     }
@@ -132,27 +135,20 @@ export class RehearseCommand extends WesleyCommand {
     if (hooks.preUp) await runHook(this.ctx, hooks.preUp, logger);
 
     if (!dsn) {
-      eventCollector.emit('RunFailed', {
+      emitRunFailed(eventCollector, scope, {
         command: 'rehearse',
         code: 'NO_DSN',
         message: 'No DSN provided for rehearsal. Pass --dsn or configure realm.dsn.'
-      }, {
-        idempotencyKey: `${run.transmutation}:rehearse:failed`
       });
       const error = new WesleyError('NO_DSN', 'No DSN provided for rehearsal. Pass --dsn or configure realm.dsn.');
-      error.events = eventCollector.events;
-      error.runId = run.runId;
-      error.transmutation = run.transmutation;
-      throw error;
+      throw attachRunFailure(error, eventCollector, run);
     }
 
     const start = Date.now();
     const taskId = `${run.transmutation}:rehearse:apply`;
-    eventCollector.emit('TaskStarted', {
+    emitTaskStarted(eventCollector, taskId, {
       taskId,
       provider
-    }, {
-      idempotencyKey: `${taskId}:started`
     });
     try {
       const files = emitMigrations(plan);
@@ -172,27 +168,21 @@ export class RehearseCommand extends WesleyCommand {
         steps: explain.steps.length,
         timestamp: new Date().toISOString()
       });
-      eventCollector.emit('TaskCompleted', {
+      emitTaskCompleted(eventCollector, taskId, {
         taskId,
         provider,
         stepCount: explain.steps.length,
         durationMs: Date.now() - start
-      }, {
-        idempotencyKey: `${taskId}:completed`
       });
       await writeRealmProjection(this.ctx.fs, realm, REALM_PROJECTION_PATH);
-      eventCollector.emit('ArtifactsMaterialized', {
+      emitArtifactsMaterialized(eventCollector, scope, {
         artifactCount: 1,
         path: REALM_PROJECTION_PATH
-      }, {
-        idempotencyKey: `${run.transmutation}:rehearse:realm`
       });
-      eventCollector.emit('RunCompleted', {
+      emitRunCompleted(eventCollector, scope, {
         command: 'rehearse',
         verdict: realm.verdict,
         stepCount: explain.steps.length
-      }, {
-        idempotencyKey: `${run.transmutation}:rehearse:completed`
       });
       const realmReport = { ...realm, events: eventCollector.events };
       if (!options.json) logger.info('🕶️ REALM verdict: PASS');
@@ -213,29 +203,23 @@ export class RehearseCommand extends WesleyCommand {
         error: error.message,
         timestamp: new Date().toISOString()
       });
-      eventCollector.emit('TaskFailed', {
+      emitTaskFailed(eventCollector, taskId, {
         taskId,
         provider,
         errorCode: error.code || 'REALM_FAILED',
         errorMessage: error.message,
         durationMs: Date.now() - start
-      }, {
-        idempotencyKey: `${taskId}:failed`
       });
       await writeRealmProjection(this.ctx.fs, realm, REALM_PROJECTION_PATH);
-      eventCollector.emit('ArtifactsMaterialized', {
+      emitArtifactsMaterialized(eventCollector, scope, {
         artifactCount: 1,
         path: REALM_PROJECTION_PATH
-      }, {
-        idempotencyKey: `${run.transmutation}:rehearse:realm`
       });
-      eventCollector.emit('RunFailed', {
+      emitRunFailed(eventCollector, scope, {
         command: 'rehearse',
         verdict: realm.verdict,
         code: error.code || 'REALM_FAILED',
         message: error.message
-      }, {
-        idempotencyKey: `${run.transmutation}:rehearse:failed`
       });
       const realmReport = { ...realm, events: eventCollector.events };
       if (!options.json) logger.error('🕶️ REALM verdict: FAIL - ' + error.message);
@@ -245,10 +229,7 @@ export class RehearseCommand extends WesleyCommand {
         this.ctx.stdout.write(JSON.stringify(realmReport, null, 2) + '\n');
       }
       const wrapped = new WesleyError('REALM_FAILED', 'REALM rehearsal failed: ' + error.message, {}, error);
-      wrapped.events = eventCollector.events;
-      wrapped.runId = run.runId;
-      wrapped.transmutation = run.transmutation;
-      throw wrapped;
+      throw attachRunFailure(wrapped, eventCollector, run);
     }
   }
 }

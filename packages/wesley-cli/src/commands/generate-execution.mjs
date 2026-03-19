@@ -1,11 +1,22 @@
 import { filterIRByUnits } from '@wesley/core/domain/SchemaFilter';
-import { TransmutationRunner, WesleyError, createRunId, createRuntimeEventCollector } from '@wesley/core';
+import { TransmutationRunner, WesleyError, createRunId } from '@wesley/core';
 import {
   LEGACY_SUPABASE_TRANSMUTATION,
   LegacySupabaseGeneratorPlugin,
   flattenTransmutationArtifacts
 } from '../transmutations/legacy-supabase.mjs';
 import { writeSnapshotProjection } from '../utils/runtime-projections.mjs';
+import {
+  attachRunFailure,
+  createCommandEventCollector,
+  createCommandEventScope,
+  emitArtifactsMaterialized,
+  emitIrParsed,
+  emitRunCompleted,
+  emitRunFailed,
+  emitRunRequested,
+  emitSourcesResolved
+} from '../utils/runtime-events.mjs';
 
 export async function ensureGeneratePreconditions({ env, options, shell }) {
   if (shouldEnforceClean(env, options) && !options.allowDirty) {
@@ -21,25 +32,19 @@ export async function runSequentialGeneration({ ctx, context, compileOpsIfReques
   const runId = typeof options.runId === 'string' && options.runId.trim()
     ? options.runId.trim()
     : createRunId();
-  const eventCollector = createRuntimeEventCollector({
-    clock: createRunnerClock(ctx.clock),
-    runId,
-    transmutation
-  });
+  const run = { runId, transmutation };
+  const scope = createCommandEventScope(run, 'generate');
+  const eventCollector = createCommandEventCollector(ctx, run);
 
-  eventCollector.emit('RunRequested', {
+  emitRunRequested(eventCollector, scope, {
     schemaPath,
     outDir: options.outDir,
     dryRun: Boolean(options.dryRun)
-  }, {
-    idempotencyKey: `${transmutation}:run-requested`
   });
-  eventCollector.emit('SourcesResolved', {
+  emitSourcesResolved(eventCollector, scope, {
     schemaPath,
     composed: Boolean(context.units),
     unitCount: context.units?.length ?? 1
-  }, {
-    idempotencyKey: `${transmutation}:sources`
   });
 
   if (options.printComposedSdl) {
@@ -51,11 +56,9 @@ export async function runSequentialGeneration({ ctx, context, compileOpsIfReques
       : schemaContent;
     ctx.stdout.write(sdl + '\n');
     if (options.dryRun) {
-      eventCollector.emit('RunCompleted', {
+      emitRunCompleted(eventCollector, scope, {
         artifactCount: 0,
         dryRun: true
-      }, {
-        idempotencyKey: `${transmutation}:completed`
       });
       return { transmutation, runId, artifacts: 0, dryRun: true, events: eventCollector.events };
     }
@@ -71,11 +74,9 @@ export async function runSequentialGeneration({ ctx, context, compileOpsIfReques
   if (unitFilter) {
     ir = filterIRByUnits(ir, unitFilter);
   }
-  eventCollector.emit('IRParsed', {
+  emitIrParsed(eventCollector, scope, {
     tableCount: Array.isArray(ir?.tables) ? ir.tables.length : 0,
     unitFilterCount: unitFilter?.length ?? 0
-  }, {
-    idempotencyKey: `${transmutation}:ir`
   });
 
   if (options.printIr) {
@@ -86,11 +87,9 @@ export async function runSequentialGeneration({ ctx, context, compileOpsIfReques
       return val;
     }, 2) + '\n');
     if (options.dryRun) {
-      eventCollector.emit('RunCompleted', {
+      emitRunCompleted(eventCollector, scope, {
         artifactCount: 0,
         dryRun: true
-      }, {
-        idempotencyKey: `${transmutation}:completed`
       });
       return { transmutation, runId, artifacts: 0, dryRun: true, events: eventCollector.events };
     }
@@ -101,11 +100,9 @@ export async function runSequentialGeneration({ ctx, context, compileOpsIfReques
 
     if (!options.dryRun && writer?.writeFiles) {
       await writer.writeFiles(artifacts, options.outDir);
-      eventCollector.emit('ArtifactsMaterialized', {
+      emitArtifactsMaterialized(eventCollector, scope, {
         artifactCount: artifacts.length,
         outDir: options.outDir
-      }, {
-        idempotencyKey: `${transmutation}:artifacts`
       });
     }
 
@@ -118,11 +115,9 @@ export async function runSequentialGeneration({ ctx, context, compileOpsIfReques
       await compileOpsIfRequested({ ctx, context });
     }
 
-    eventCollector.emit('RunCompleted', {
+    emitRunCompleted(eventCollector, scope, {
       artifactCount: artifacts.length,
       dryRun: Boolean(options.dryRun)
-    }, {
-      idempotencyKey: `${transmutation}:completed`
     });
 
     if (!options.quiet && !options.json && !debugDump) {
@@ -144,16 +139,11 @@ export async function runSequentialGeneration({ ctx, context, compileOpsIfReques
       events: eventCollector.events
     };
   } catch (error) {
-    eventCollector.emit('RunFailed', {
+    emitRunFailed(eventCollector, scope, {
       code: error.code || 'GENERATION_FAILED',
       message: error.message
-    }, {
-      idempotencyKey: `${transmutation}:failed`
     });
-    error.runId = runId;
-    error.transmutation = transmutation;
-    error.events = eventCollector.events;
-    throw error;
+    throw attachRunFailure(error, eventCollector, run);
   }
 }
 

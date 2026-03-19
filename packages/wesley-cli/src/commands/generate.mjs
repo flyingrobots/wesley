@@ -14,7 +14,14 @@ import {
 import { compileOpsIfRequested } from './generate-ops.mjs';
 import { LEGACY_SUPABASE_TRANSMUTATION } from '../transmutations/legacy-supabase.mjs';
 import { resolveTransmutationName } from '../transmutations/registry.mjs';
-import { createCommandEventCollector } from '../utils/runtime-events.mjs';
+import {
+  attachRunFailure,
+  createCommandEventCollector,
+  createCommandEventScope,
+  emitRunFailed,
+  emitRunRequested,
+  emitSourcesResolved
+} from '../utils/runtime-events.mjs';
 
 export class GeneratePipelineCommand extends WesleyCommand {
   constructor(ctx) {
@@ -79,34 +86,27 @@ export class GeneratePipelineCommand extends WesleyCommand {
       options.transmutation = resolveTransmutationName(requestedTransmutation);
       options.runId = requestedRunId;
     } catch (error) {
-      const eventCollector = createCommandEventCollector(this.ctx, {
+      const run = {
         transmutation: requestedTransmutation,
         runId: requestedRunId
-      });
-      eventCollector.emit('RunRequested', {
+      };
+      const scope = createCommandEventScope(run, this.name);
+      const eventCollector = createCommandEventCollector(this.ctx, run);
+      emitRunRequested(eventCollector, scope, {
         command: this.name,
         schemaPath,
         outDir,
         dryRun: Boolean(options.dryRun)
-      }, {
-        idempotencyKey: `${requestedTransmutation}:requested`
       });
-      eventCollector.emit('SourcesResolved', {
+      emitSourcesResolved(eventCollector, scope, {
         schemaPath
-      }, {
-        idempotencyKey: `${requestedTransmutation}:sources`
       });
-      eventCollector.emit('RunFailed', {
+      emitRunFailed(eventCollector, scope, {
         command: this.name,
         code: error.code || 'UNKNOWN_TRANSMUTATION',
         message: error.message
-      }, {
-        idempotencyKey: `${requestedTransmutation}:failed`
       });
-      error.runId = requestedRunId;
-      error.transmutation = requestedTransmutation;
-      error.events = eventCollector.events;
-      throw error;
+      throw attachRunFailure(error, eventCollector, run);
     }
 
     await ensureGeneratePreconditions({

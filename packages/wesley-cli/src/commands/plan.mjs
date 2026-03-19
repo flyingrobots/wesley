@@ -8,7 +8,18 @@ import { buildAdditivePlan, explainPlan, emitMigrations } from './_migration-pla
 import { assertValid } from '../framework/schemaValidator.mjs';
 import { WesleyError } from '@wesley/core';
 import { resolveRunMetadata } from '../utils/run-metadata.mjs';
-import { createCommandEventCollector } from '../utils/runtime-events.mjs';
+import {
+  attachRunFailure,
+  createCommandEventCollector,
+  createCommandEventScope,
+  emitArtifactsMaterialized,
+  emitIrParsed,
+  emitPlanBuilt,
+  emitRunCompleted,
+  emitRunFailed,
+  emitRunRequested,
+  emitSourcesResolved
+} from '../utils/runtime-events.mjs';
 
 export class PlanCommand extends WesleyCommand {
   constructor(ctx) {
@@ -35,17 +46,16 @@ export class PlanCommand extends WesleyCommand {
     const { options, schemaContent, schemaPath, logger } = context;
     const run = resolveRunMetadata(options);
     const eventCollector = createCommandEventCollector(this.ctx, run);
+    const scope = createCommandEventScope(run, 'plan');
     const configPaths = this.ctx?.config?.paths || {};
     const baseOutDir = options.outDir || configPaths.output || 'out';
     const outputPaths = buildOutputPathMap(configPaths, baseOutDir);
     options.outDir = outputPaths.baseDir;
-    eventCollector.emit('RunRequested', {
+    emitRunRequested(eventCollector, scope, {
       command: 'plan',
       schemaPath,
       outDir: options.outDir,
       write: Boolean(options.write)
-    }, {
-      idempotencyKey: `${run.transmutation}:plan:requested`
     });
 
     // Enforce clean tree only in strict policy; default: allow
@@ -56,10 +66,8 @@ export class PlanCommand extends WesleyCommand {
 
     try {
       const current = this.ctx.parsers.graphql.parse(schemaContent);
-      eventCollector.emit('IRParsed', {
+      emitIrParsed(eventCollector, scope, {
         tableCount: Array.isArray(current?.tables) ? current.tables.length : 0
-      }, {
-        idempotencyKey: `${run.transmutation}:plan:ir`
       });
 
       let previous = { tables: [] };
@@ -74,32 +82,26 @@ export class PlanCommand extends WesleyCommand {
           logger.warn('Could not read snapshot: ' + (e?.message || ''));
         }
       }
-      eventCollector.emit('SourcesResolved', {
+      emitSourcesResolved(eventCollector, scope, {
         schemaPath,
         bundleDir: outputPaths.bundleDir,
         hadSnapshot
-      }, {
-        idempotencyKey: `${run.transmutation}:plan:sources`
       });
 
       const plan = buildAdditivePlan(previous, current);
       const explain = explainPlan(plan);
       const radar = buildLockRadar(explain, plan);
       const mapping = buildMapping(plan);
-      eventCollector.emit('PlanBuilt', {
+      emitPlanBuilt(eventCollector, scope, {
         phaseCount: plan.phases.length,
         stepCount: explain.steps.length
-      }, {
-        idempotencyKey: `${run.transmutation}:plan:built`
       });
 
       if (options.json) {
-        eventCollector.emit('RunCompleted', {
+        emitRunCompleted(eventCollector, scope, {
           command: 'plan',
           phaseCount: plan.phases.length,
           stepCount: explain.steps.length
-        }, {
-          idempotencyKey: `${run.transmutation}:plan:completed`
         });
         const report = {
           transmutation: run.transmutation,
@@ -144,21 +146,17 @@ export class PlanCommand extends WesleyCommand {
           const targetPath = resolveFilePath(outputPaths.migrationsDir, f.name);
           await this.ctx.fs.write(targetPath, f.content);
         }
-        eventCollector.emit('ArtifactsMaterialized', {
+        emitArtifactsMaterialized(eventCollector, scope, {
           artifactCount: files.length,
           outDir: outputPaths.migrationsDir
-        }, {
-          idempotencyKey: `${run.transmutation}:plan:artifacts`
         });
         if (!options.quiet) logger.info(`✍️ Wrote ${files.length} migration file(s) to ${outputPaths.migrationsDir}`);
       }
 
-      eventCollector.emit('RunCompleted', {
+      emitRunCompleted(eventCollector, scope, {
         command: 'plan',
         phaseCount: plan.phases.length,
         stepCount: explain.steps.length
-      }, {
-        idempotencyKey: `${run.transmutation}:plan:completed`
       });
 
       return {
@@ -169,17 +167,12 @@ export class PlanCommand extends WesleyCommand {
         events: eventCollector.events
       };
     } catch (error) {
-      eventCollector.emit('RunFailed', {
+      emitRunFailed(eventCollector, scope, {
         command: 'plan',
         code: error.code || 'PLAN_FAILED',
         message: error.message
-      }, {
-        idempotencyKey: `${run.transmutation}:plan:failed`
       });
-      error.events = eventCollector.events;
-      error.runId = run.runId;
-      error.transmutation = run.transmutation;
-      throw error;
+      throw attachRunFailure(error, eventCollector, run);
     }
   }
 }
