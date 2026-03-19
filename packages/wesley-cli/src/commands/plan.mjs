@@ -8,6 +8,7 @@ import { buildAdditivePlan, explainPlan, emitMigrations } from './_migration-pla
 import { assertValid } from '../framework/schemaValidator.mjs';
 import { WesleyError } from '@wesley/core';
 import { resolveRunMetadata } from '../utils/run-metadata.mjs';
+import { createCommandEventCollector } from '../utils/runtime-events.mjs';
 
 export class PlanCommand extends WesleyCommand {
   constructor(ctx) {
@@ -31,12 +32,21 @@ export class PlanCommand extends WesleyCommand {
   }
 
   async executeCore(context) {
-    const { options, schemaContent, logger } = context;
+    const { options, schemaContent, schemaPath, logger } = context;
     const run = resolveRunMetadata(options);
+    const eventCollector = createCommandEventCollector(this.ctx, run);
     const configPaths = this.ctx?.config?.paths || {};
     const baseOutDir = options.outDir || configPaths.output || 'out';
     const outputPaths = buildOutputPathMap(configPaths, baseOutDir);
     options.outDir = outputPaths.baseDir;
+    eventCollector.emit('RunRequested', {
+      command: 'plan',
+      schemaPath,
+      outDir: options.outDir,
+      write: Boolean(options.write)
+    }, {
+      idempotencyKey: `${run.transmutation}:plan:requested`
+    });
 
     // Enforce clean tree only in strict policy; default: allow
     const env = this.ctx.env || {};
@@ -44,70 +54,133 @@ export class PlanCommand extends WesleyCommand {
       await assertCleanGit(this.ctx.shell);
     }
 
-    const current = this.ctx.parsers.graphql.parse(schemaContent);
-
-    let previous = { tables: [] };
     try {
-      const snapshotPath = resolveFilePath(outputPaths.bundleDir, 'snapshot.json');
-      const snap = await this.ctx.fs.read(snapshotPath);
-      previous = JSON.parse(snap);
-    } catch (e) {
-      if (e?.code !== 'ENOENT' && e?.code !== 'ERR_MODULE_NOT_FOUND') {
-        logger.warn('Could not read snapshot: ' + (e?.message || ''));
+      const current = this.ctx.parsers.graphql.parse(schemaContent);
+      eventCollector.emit('IRParsed', {
+        tableCount: Array.isArray(current?.tables) ? current.tables.length : 0
+      }, {
+        idempotencyKey: `${run.transmutation}:plan:ir`
+      });
+
+      let previous = { tables: [] };
+      let hadSnapshot = false;
+      try {
+        const snapshotPath = resolveFilePath(outputPaths.bundleDir, 'snapshot.json');
+        const snap = await this.ctx.fs.read(snapshotPath);
+        previous = JSON.parse(snap);
+        hadSnapshot = true;
+      } catch (e) {
+        if (e?.code !== 'ENOENT' && e?.code !== 'ERR_MODULE_NOT_FOUND') {
+          logger.warn('Could not read snapshot: ' + (e?.message || ''));
+        }
       }
-    }
+      eventCollector.emit('SourcesResolved', {
+        schemaPath,
+        bundleDir: outputPaths.bundleDir,
+        hadSnapshot
+      }, {
+        idempotencyKey: `${run.transmutation}:plan:sources`
+      });
 
-    const plan = buildAdditivePlan(previous, current);
-    const explain = explainPlan(plan);
-    const radar = buildLockRadar(explain, plan);
-    const mapping = buildMapping(plan);
+      const plan = buildAdditivePlan(previous, current);
+      const explain = explainPlan(plan);
+      const radar = buildLockRadar(explain, plan);
+      const mapping = buildMapping(plan);
+      eventCollector.emit('PlanBuilt', {
+        phaseCount: plan.phases.length,
+        stepCount: explain.steps.length
+      }, {
+        idempotencyKey: `${run.transmutation}:plan:built`
+      });
 
-    if (options.json) {
-      // Validate JSON against schema to prevent drift
-      const report = { transmutation: run.transmutation, runId: run.runId, plan, explain, mapping, radar };
-      await assertValid(this.ctx, 'plan-report.schema.json', report, 'Plan report');
-      this.ctx.stdout.write(JSON.stringify(report, null, 2) + '\n');
-      return;
-    }
-
-    if (options.explain) {
-      logger.info('🧭 Migration Plan (additive)');
-      for (const line of explain.lines) logger.info(line);
-    }
-
-    if (options.radar && !options.json) {
-      logger.info('');
-      logger.info('🔭 Lock Radar');
-      for (const line of radar.lines) logger.info(line);
-      if (radar.notes?.length) {
-        logger.info('Notes:');
-        for (const n of radar.notes) logger.info(' - ' + n);
+      if (options.json) {
+        eventCollector.emit('RunCompleted', {
+          command: 'plan',
+          phaseCount: plan.phases.length,
+          stepCount: explain.steps.length
+        }, {
+          idempotencyKey: `${run.transmutation}:plan:completed`
+        });
+        const report = {
+          transmutation: run.transmutation,
+          runId: run.runId,
+          plan,
+          explain,
+          mapping,
+          radar,
+          events: eventCollector.events
+        };
+        await assertValid(this.ctx, 'plan-report.schema.json', report, 'Plan report');
+        this.ctx.stdout.write(JSON.stringify(report, null, 2) + '\n');
+        return;
       }
-    }
 
-    if (options.map && !options.json) {
-      logger.info('');
-      logger.info('🔎 Change Mapping (GraphQL/IR → Steps)');
-      for (const item of mapping) {
-        logger.info(`Δ ${item.change} → ${item.steps.map(s=> s.op + ' ' + s.table + (s.column?'.'+s.column:'' )).join(', ')}`);
+      if (options.explain) {
+        logger.info('🧭 Migration Plan (additive)');
+        for (const line of explain.lines) logger.info(line);
       }
-    }
 
-    if (options.write) {
-      const files = emitMigrations(plan);
-      for (const f of files) {
-        const targetPath = resolveFilePath(outputPaths.migrationsDir, f.name);
-        await this.ctx.fs.write(targetPath, f.content);
+      if (options.radar && !options.json) {
+        logger.info('');
+        logger.info('🔭 Lock Radar');
+        for (const line of radar.lines) logger.info(line);
+        if (radar.notes?.length) {
+          logger.info('Notes:');
+          for (const n of radar.notes) logger.info(' - ' + n);
+        }
       }
-      if (!options.quiet) logger.info(`✍️ Wrote ${files.length} migration file(s) to ${outputPaths.migrationsDir}`);
-    }
 
-    return {
-      transmutation: run.transmutation,
-      runId: run.runId,
-      phases: plan.phases.length,
-      steps: explain.steps.length
-    };
+      if (options.map && !options.json) {
+        logger.info('');
+        logger.info('🔎 Change Mapping (GraphQL/IR → Steps)');
+        for (const item of mapping) {
+          logger.info(`Δ ${item.change} → ${item.steps.map(s=> s.op + ' ' + s.table + (s.column?'.'+s.column:'' )).join(', ')}`);
+        }
+      }
+
+      if (options.write) {
+        const files = emitMigrations(plan);
+        for (const f of files) {
+          const targetPath = resolveFilePath(outputPaths.migrationsDir, f.name);
+          await this.ctx.fs.write(targetPath, f.content);
+        }
+        eventCollector.emit('ArtifactsMaterialized', {
+          artifactCount: files.length,
+          outDir: outputPaths.migrationsDir
+        }, {
+          idempotencyKey: `${run.transmutation}:plan:artifacts`
+        });
+        if (!options.quiet) logger.info(`✍️ Wrote ${files.length} migration file(s) to ${outputPaths.migrationsDir}`);
+      }
+
+      eventCollector.emit('RunCompleted', {
+        command: 'plan',
+        phaseCount: plan.phases.length,
+        stepCount: explain.steps.length
+      }, {
+        idempotencyKey: `${run.transmutation}:plan:completed`
+      });
+
+      return {
+        transmutation: run.transmutation,
+        runId: run.runId,
+        phases: plan.phases.length,
+        steps: explain.steps.length,
+        events: eventCollector.events
+      };
+    } catch (error) {
+      eventCollector.emit('RunFailed', {
+        command: 'plan',
+        code: error.code || 'PLAN_FAILED',
+        message: error.message
+      }, {
+        idempotencyKey: `${run.transmutation}:plan:failed`
+      });
+      error.events = eventCollector.events;
+      error.runId = run.runId;
+      error.transmutation = run.transmutation;
+      throw error;
+    }
   }
 }
 

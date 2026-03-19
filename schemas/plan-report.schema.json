@@ -7,6 +7,10 @@
   "properties": {
     "transmutation": { "type": "string" },
     "runId": { "type": "string", "minLength": 1 },
+    "events": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/RuntimeEvent" }
+    },
     "plan": {
       "type": "object",
       "required": ["phases"],
@@ -102,6 +106,37 @@
           }
         }
       ]
+    },
+    "RuntimeEvent": {
+      "type": "object",
+      "required": [
+        "eventId",
+        "type",
+        "streamId",
+        "sequence",
+        "schemaVersion",
+        "timestamp",
+        "correlationId",
+        "idempotencyKey",
+        "runId",
+        "transmutation",
+        "payload"
+      ],
+      "properties": {
+        "eventId": { "type": "string", "minLength": 1 },
+        "type": { "type": "string", "minLength": 1 },
+        "streamId": { "type": "string", "minLength": 1 },
+        "sequence": { "type": "integer", "minimum": 1 },
+        "schemaVersion": { "type": "string", "minLength": 1 },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "causationId": { "type": ["string", "null"] },
+        "correlationId": { "type": ["string", "null"] },
+        "idempotencyKey": { "type": "string", "minLength": 1 },
+        "runId": { "type": "string", "minLength": 1 },
+        "transmutation": { "type": "string", "minLength": 1 },
+        "payload": { "type": "object" }
+      },
+      "additionalProperties": false
     }
   }
 }

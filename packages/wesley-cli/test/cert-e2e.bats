@@ -76,6 +76,7 @@ JSON
   echo "$output" | jq -e '.runId == "run-realm-123"' >/dev/null
   echo "$output" | jq -e '.realm.transmutation == "legacy-supabase"' >/dev/null
   echo "$output" | jq -e '.realm.runId == "run-realm-123"' >/dev/null
+  echo "$output" | jq -e '.events | map(.type) == ["RunRequested","SourcesResolved","CertificateIssued","RunCompleted"]' >/dev/null
 }
 
 @test "cert create + sign + verify succeeds with PASS realm" {

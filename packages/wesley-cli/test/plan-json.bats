@@ -44,4 +44,5 @@ EOF
   [[ -n "$json" ]] || fail "No JSON output with plan data"
   echo "$json" | jq -e '.transmutation == "legacy-supabase"' >/dev/null
   echo "$json" | jq -e '.runId == "run-plan-123"' >/dev/null
+  echo "$json" | jq -e '.events | map(.type) == ["RunRequested","IRParsed","SourcesResolved","PlanBuilt","RunCompleted"]' >/dev/null
 }

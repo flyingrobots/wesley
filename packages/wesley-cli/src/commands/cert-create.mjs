@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto';
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import { resolveRunMetadata } from '../utils/run-metadata.mjs';
 import { readRealmProjection } from '../utils/runtime-projections.mjs';
+import { createCommandEventCollector } from '../utils/runtime-events.mjs';
 
 export class CertCreateCommand extends WesleyCommand {
   constructor(ctx) {
@@ -28,31 +29,94 @@ export class CertCreateCommand extends WesleyCommand {
     const scores = await readJsonSafe(this.ctx, '.wesley/scores.json');
     const realm = await readWithFallback(() => readRealmProjection(this.ctx.fs));
     const run = resolveRunMetadata(options, realm || {});
-
-    const artifacts = await hashArtifacts(this.ctx, this.ctx?.config?.paths?.output || 'out');
-
-    const cert = {
-      version: '1.0.0',
-      transmutation: run.transmutation,
-      runId: run.runId,
-      sha,
+    const eventCollector = createCommandEventCollector(this.ctx, run);
+    eventCollector.emit('RunRequested', {
+      command: 'cert-create',
       environment: env,
-      timestamp: now,
-      scores: scores?.scores || null,
-      realm: realm || null,
-      artifacts,
-      signatures: []
-    };
+      out: options.out,
+      json: Boolean(options.json)
+    }, {
+      idempotencyKey: `${run.transmutation}:cert:requested`
+    });
 
-    if (options.json) {
-      this.ctx.stdout.write(JSON.stringify(cert, null, 2) + '\n');
-      return;
+    try {
+      const artifacts = await hashArtifacts(this.ctx, this.ctx?.config?.paths?.output || 'out');
+      eventCollector.emit('SourcesResolved', {
+        hasRealm: Boolean(realm),
+        hasScores: Boolean(scores?.scores),
+        artifactCount: Object.keys(artifacts).length
+      }, {
+        idempotencyKey: `${run.transmutation}:cert:sources`
+      });
+
+      const cert = {
+        version: '1.0.0',
+        transmutation: run.transmutation,
+        runId: run.runId,
+        sha,
+        environment: env,
+        timestamp: now,
+        scores: scores?.scores || null,
+        realm: realm || null,
+        artifacts,
+        signatures: []
+      };
+      eventCollector.emit('CertificateIssued', {
+        environment: env,
+        artifactCount: Object.keys(artifacts).length,
+        hasRealm: Boolean(realm),
+        hasScores: Boolean(scores?.scores)
+      }, {
+        idempotencyKey: `${run.transmutation}:cert:issued`
+      });
+
+      if (options.json) {
+        eventCollector.emit('RunCompleted', {
+          command: 'cert-create',
+          json: true
+        }, {
+          idempotencyKey: `${run.transmutation}:cert:completed`
+        });
+        this.ctx.stdout.write(JSON.stringify({ ...cert, events: eventCollector.events }, null, 2) + '\n');
+        return;
+      }
+
+      const content = renderSHIPME(cert);
+      await this.ctx.fs.write(options.out, content);
+      eventCollector.emit('ArtifactsMaterialized', {
+        artifactCount: 1,
+        path: options.out
+      }, {
+        idempotencyKey: `${run.transmutation}:cert:artifact`
+      });
+      eventCollector.emit('RunCompleted', {
+        command: 'cert-create',
+        json: false,
+        file: options.out
+      }, {
+        idempotencyKey: `${run.transmutation}:cert:completed`
+      });
+      if (!options.quiet) logger.info(`✍️  Wrote ${options.out}`);
+      return {
+        ok: true,
+        file: options.out,
+        transmutation: run.transmutation,
+        runId: run.runId,
+        events: eventCollector.events
+      };
+    } catch (error) {
+      eventCollector.emit('RunFailed', {
+        command: 'cert-create',
+        code: error.code || 'CERT_CREATE_FAILED',
+        message: error.message
+      }, {
+        idempotencyKey: `${run.transmutation}:cert:failed`
+      });
+      error.events = eventCollector.events;
+      error.runId = run.runId;
+      error.transmutation = run.transmutation;
+      throw error;
     }
-
-    const content = renderSHIPME(cert);
-    await this.ctx.fs.write(options.out, content);
-    if (!options.quiet) logger.info(`✍️  Wrote ${options.out}`);
-    return { ok: true, file: options.out };
   }
 }
 
