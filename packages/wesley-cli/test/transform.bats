@@ -61,3 +61,14 @@ EOF
   assert_output --partial "UNKNOWN_TRANSMUTATION"
   assert_output --partial "legacy-supabase"
 }
+
+@test "transform --json failure preserves run envelope" {
+  create_min_schema
+  run node "$CLI_PATH" transform --schema schema.graphql --transmutation nope --run-id run-transform-fail-123 --json --quiet
+  assert_failure 2
+  echo "$output" | jq -e '.success == false' >/dev/null
+  echo "$output" | jq -e '.code == "UNKNOWN_TRANSMUTATION"' >/dev/null
+  echo "$output" | jq -e '.runId == "run-transform-fail-123"' >/dev/null
+  echo "$output" | jq -e '.transmutation == "nope"' >/dev/null
+  echo "$output" | jq -e '.events | map(.type) == ["RunRequested","SourcesResolved","RunFailed"]' >/dev/null
+}

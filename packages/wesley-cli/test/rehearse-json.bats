@@ -42,3 +42,14 @@ EOF
   echo "$json" | jq -e '.runId == "run-rehearse-123"' >/dev/null
   echo "$json" | jq -e '.events | map(.type) == ["RunRequested","IRParsed","SourcesResolved","PlanBuilt","RunCompleted"]' >/dev/null
 }
+
+@test "rehearse --json failure preserves run envelope" {
+  create_schema
+  run node "$CLI_PATH" rehearse --schema schema.graphql --provider supabase --json --transmutation legacy-supabase --run-id run-rehearse-fail-123
+  assert_failure 2
+  echo "$output" | jq -e '.success == false' >/dev/null
+  echo "$output" | jq -e '.code == "NO_DSN"' >/dev/null
+  echo "$output" | jq -e '.runId == "run-rehearse-fail-123"' >/dev/null
+  echo "$output" | jq -e '.transmutation == "legacy-supabase"' >/dev/null
+  echo "$output" | jq -e '.events | map(.type) == ["RunRequested","IRParsed","SourcesResolved","PlanBuilt","RunFailed"]' >/dev/null
+}

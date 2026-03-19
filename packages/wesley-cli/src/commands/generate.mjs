@@ -5,7 +5,7 @@
  */
 
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
-import { WesleyError, OpsError } from '@wesley/core';
+import { WesleyError, OpsError, createRunId } from '@wesley/core';
 import {
   ensureGeneratePreconditions,
   runSequentialGeneration,
@@ -14,6 +14,7 @@ import {
 import { compileOpsIfRequested } from './generate-ops.mjs';
 import { LEGACY_SUPABASE_TRANSMUTATION } from '../transmutations/legacy-supabase.mjs';
 import { resolveTransmutationName } from '../transmutations/registry.mjs';
+import { createCommandEventCollector } from '../utils/runtime-events.mjs';
 
 export class GeneratePipelineCommand extends WesleyCommand {
   constructor(ctx) {
@@ -56,6 +57,10 @@ export class GeneratePipelineCommand extends WesleyCommand {
     const { schemaPath, options, logger } = context;
     const outDir = options.outDir || this.ctx?.config?.paths?.output || 'out';
     options.outDir = outDir;
+    const requestedTransmutation = String(options.transmutation || LEGACY_SUPABASE_TRANSMUTATION).trim() || LEGACY_SUPABASE_TRANSMUTATION;
+    const requestedRunId = typeof options.runId === 'string' && options.runId.trim()
+      ? options.runId.trim()
+      : createRunId();
 
     const isCI = String(this.ctx?.env?.CI || '').toLowerCase() === 'true' || this.ctx?.env?.CI === '1';
     const canAllowErrors = !isCI || options.iKnowWhatImDoing;
@@ -70,7 +75,39 @@ export class GeneratePipelineCommand extends WesleyCommand {
     if (options.stdin) {
       options.schema = '-';
     }
-    options.transmutation = resolveTransmutationName(options.transmutation);
+    try {
+      options.transmutation = resolveTransmutationName(requestedTransmutation);
+      options.runId = requestedRunId;
+    } catch (error) {
+      const eventCollector = createCommandEventCollector(this.ctx, {
+        transmutation: requestedTransmutation,
+        runId: requestedRunId
+      });
+      eventCollector.emit('RunRequested', {
+        command: this.name,
+        schemaPath,
+        outDir,
+        dryRun: Boolean(options.dryRun)
+      }, {
+        idempotencyKey: `${requestedTransmutation}:requested`
+      });
+      eventCollector.emit('SourcesResolved', {
+        schemaPath
+      }, {
+        idempotencyKey: `${requestedTransmutation}:sources`
+      });
+      eventCollector.emit('RunFailed', {
+        command: this.name,
+        code: error.code || 'UNKNOWN_TRANSMUTATION',
+        message: error.message
+      }, {
+        idempotencyKey: `${requestedTransmutation}:failed`
+      });
+      error.runId = requestedRunId;
+      error.transmutation = requestedTransmutation;
+      error.events = eventCollector.events;
+      throw error;
+    }
 
     await ensureGeneratePreconditions({
       env: this.ctx.env || {},

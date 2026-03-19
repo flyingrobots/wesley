@@ -132,7 +132,18 @@ export class RehearseCommand extends WesleyCommand {
     if (hooks.preUp) await runHook(this.ctx, hooks.preUp, logger);
 
     if (!dsn) {
-      throw new WesleyError('NO_DSN', 'No DSN provided for rehearsal. Pass --dsn or configure realm.dsn.');
+      eventCollector.emit('RunFailed', {
+        command: 'rehearse',
+        code: 'NO_DSN',
+        message: 'No DSN provided for rehearsal. Pass --dsn or configure realm.dsn.'
+      }, {
+        idempotencyKey: `${run.transmutation}:rehearse:failed`
+      });
+      const error = new WesleyError('NO_DSN', 'No DSN provided for rehearsal. Pass --dsn or configure realm.dsn.');
+      error.events = eventCollector.events;
+      error.runId = run.runId;
+      error.transmutation = run.transmutation;
+      throw error;
     }
 
     const start = Date.now();

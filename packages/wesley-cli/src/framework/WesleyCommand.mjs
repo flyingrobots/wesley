@@ -233,13 +233,23 @@ export class WesleyCommand {
       } catch { /* empty */ }
 
       if (options.json) {
-        this.ctx.stderr.write(JSON.stringify({
+        const fallbackRunId = typeof options.runId === 'string' && options.runId.trim()
+          ? options.runId.trim()
+          : null;
+        const fallbackTransmutation = typeof options.transmutation === 'string' && options.transmutation.trim()
+          ? options.transmutation.trim()
+          : null;
+        const errorPayload = {
           success: false,
           code: error.code || 'ERROR',
           error: sdlNote ? `${error.message} (SDL: ${sdlNote})` : error.message,
+          runId: error.runId || fallbackRunId,
+          transmutation: error.transmutation || fallbackTransmutation,
+          events: Array.isArray(error.events) ? error.events : [],
           stack: (options.debug || options.verbose) ? error.stack : undefined,
           timestamp: new Date().toISOString()
-        }, null, 2) + '\n');
+        };
+        this.ctx.stderr.write(JSON.stringify(errorPayload, null, 2) + '\n');
       } else if (!options.quiet) {
         const msg = this.formatError(error, options);
         const annotated = sdlNote ? `${msg}\n   SDL: ${sdlNote}` : msg;
