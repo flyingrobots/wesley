@@ -3,6 +3,7 @@
  */
 import { createHash } from 'node:crypto';
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
+import { resolveRunMetadata } from '../utils/run-metadata.mjs';
 
 export class CertCreateCommand extends WesleyCommand {
   constructor(ctx) {
@@ -13,6 +14,8 @@ export class CertCreateCommand extends WesleyCommand {
     return cmd
       .option('--env <name>', 'Target environment', 'production')
       .option('--out <file>', 'Output file', '.wesley/SHIPME.md')
+      .option('--transmutation <name>', 'Transmutation to associate with this certificate')
+      .option('--run-id <id>', 'Associate this certificate with a specific run ID')
       .option('--json', 'Emit JSON to stdout (no file)');
   }
 
@@ -23,11 +26,14 @@ export class CertCreateCommand extends WesleyCommand {
 
     const scores = await readJsonSafe(this.ctx, '.wesley/scores.json');
     const realm = await readJsonSafe(this.ctx, '.wesley/realm.json');
+    const run = resolveRunMetadata(options, realm || {});
 
     const artifacts = await hashArtifacts(this.ctx, this.ctx?.config?.paths?.output || 'out');
 
     const cert = {
       version: '1.0.0',
+      transmutation: run.transmutation,
+      runId: run.runId,
       sha,
       environment: env,
       timestamp: now,
@@ -53,6 +59,8 @@ function renderSHIPME(cert) {
   const human = [
     '# SHIPME Certificate',
     '',
+    `- Transmutation: ${cert.transmutation}`,
+    `- Run ID: ${cert.runId}`,
     `- Commit: ${cert.sha}`,
     `- Environment: ${cert.environment}`,
     `- Timestamp: ${cert.timestamp}`,
@@ -100,4 +108,3 @@ async function hashArtifacts(ctx, outDir) {
   }
   return res;
 }
-

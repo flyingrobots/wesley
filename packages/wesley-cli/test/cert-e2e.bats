@@ -24,6 +24,8 @@ create_realm_pass() {
   mkdir -p .wesley
   cat > .wesley/realm.json << 'JSON'
 {
+  "transmutation": "legacy-supabase",
+  "runId": "run-realm-123",
   "provider": "postgres",
   "verdict": "PASS",
   "duration_ms": 10,
@@ -63,6 +65,17 @@ JSON
   run node "$CLI_PATH" cert-verify --in .wesley/SHIPME.md --pub alice.pub bob.pub --json
   assert_success
   echo "$output" | jq -e '.validSignatures == 2' >/dev/null
+}
+
+@test "cert-create --json carries transmutation and runId metadata" {
+  create_realm_pass
+
+  run node "$CLI_PATH" cert-create --env test --json
+  assert_success
+  echo "$output" | jq -e '.transmutation == "legacy-supabase"' >/dev/null
+  echo "$output" | jq -e '.runId == "run-realm-123"' >/dev/null
+  echo "$output" | jq -e '.realm.transmutation == "legacy-supabase"' >/dev/null
+  echo "$output" | jq -e '.realm.runId == "run-realm-123"' >/dev/null
 }
 
 @test "cert create + sign + verify succeeds with PASS realm" {

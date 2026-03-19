@@ -6,6 +6,8 @@
   "required": ["sha", "timestamp", "realm"],
   "properties": {
     "version": { "type": "string" },
+    "transmutation": { "type": "string" },
+    "runId": { "type": "string", "minLength": 1 },
     "sha": { "type": "string", "pattern": "^([0-9a-f]{40}([0-9a-f]{24})?|uncommitted)$" },
     "timestamp": { "type": "string", "format": "date-time" },
     "environment": { "type": ["string", "null"] },
