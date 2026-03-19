@@ -65,9 +65,9 @@ export async function loadSchemaFile(ctx, name) {
  */
 export async function compileSchema(ctx, name, ajv) {
   if (!ajv) ajv = await createAjv();
-  const raw = await loadSchemaFile(ctx, name);
-  const schema = JSON.parse(raw);
-  const validate = ajv.compile(schema);
+  const schema = await registerSchemaTree(ctx, ajv, name);
+  const schemaKey = schema.$id || name;
+  const validate = ajv.getSchema(schemaKey) || ajv.compile(schema);
   return { ajv, validate };
 }
 
@@ -90,5 +90,54 @@ export async function assertValid(ctx, name, data, label, ajv) {
     e.code = 'VALIDATION_FAILED';
     e.meta = { errors: result.validate.errors };
     throw e;
+  }
+}
+
+async function registerSchemaTree(ctx, ajv, name, seen = new Set()) {
+  if (seen.has(name)) {
+    return loadSchemaObject(ctx, name);
+  }
+  seen.add(name);
+
+  const schema = await loadSchemaObject(ctx, name);
+  const refs = findLocalSchemaRefs(schema);
+  for (const refName of refs) {
+    await registerSchemaTree(ctx, ajv, refName, seen);
+  }
+
+  const schemaKey = schema.$id || name;
+  if (!ajv.getSchema(schemaKey)) {
+    ajv.addSchema(schema, schemaKey);
+  }
+  return schema;
+}
+
+async function loadSchemaObject(ctx, name) {
+  const raw = await loadSchemaFile(ctx, name);
+  return JSON.parse(raw);
+}
+
+function findLocalSchemaRefs(schema) {
+  const refs = new Set();
+  visitSchemaNode(schema, value => {
+    if (typeof value !== 'string') return;
+    if (!/^[^:/?#]+\.json(?:#.*)?$/.test(value)) return;
+    refs.add(value.split('#')[0]);
+  });
+  return refs;
+}
+
+function visitSchemaNode(node, visitor) {
+  if (Array.isArray(node)) {
+    for (const item of node) visitSchemaNode(item, visitor);
+    return;
+  }
+  if (!node || typeof node !== 'object') return;
+  for (const [key, value] of Object.entries(node)) {
+    if (key === '$ref') {
+      visitor(value);
+      continue;
+    }
+    visitSchemaNode(value, visitor);
   }
 }

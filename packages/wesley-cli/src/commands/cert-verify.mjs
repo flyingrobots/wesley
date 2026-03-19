@@ -3,7 +3,7 @@
  */
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import { extractJsonBlock, canonicalize } from './_cert-utils.mjs';
-import { createAjv, loadSchemaFile } from '../framework/schemaValidator.mjs';
+import { createAjv, compileSchema } from '../framework/schemaValidator.mjs';
 import { WesleyError } from '@wesley/core';
 
 export class CertVerifyCommand extends WesleyCommand {
@@ -23,12 +23,7 @@ export class CertVerifyCommand extends WesleyCommand {
     const { json } = extractJsonBlock(md);
     // Validate SHIPME certificate schema first (drift guard)
     const ajv = await createAjv();
-    const [realmSchema, shipmeSchema] = await Promise.all([
-      loadSchemaFile(this.ctx, 'realm.schema.json'),
-      loadSchemaFile(this.ctx, 'shipme.schema.json')
-    ]);
-    ajv.addSchema(JSON.parse(realmSchema));
-    const validate = ajv.compile(JSON.parse(shipmeSchema));
+    const { validate } = await compileSchema(this.ctx, 'shipme.schema.json', ajv);
     const schemaOk = validate(json);
     if (!schemaOk) {
       throw new WesleyError('VALIDATION_FAILED', 'Certificate JSON failed schema validation', { errors: validate.errors });
@@ -70,4 +65,3 @@ async function verifySig(fs, pubPath, data, b64sig) {
     throw err;
   }
 }
-
