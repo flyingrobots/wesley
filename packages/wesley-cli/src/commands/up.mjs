@@ -6,7 +6,7 @@ import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import { WesleyError } from '@wesley/core';
 import { buildAdditivePlan, explainPlan, emitMigrations } from './_migration-plan.mjs';
 import {
-  SNAPSHOT_PROJECTION_PATH,
+  readSnapshotProjection,
   writeSnapshotProjection
 } from '../utils/runtime-projections.mjs';
 
@@ -47,9 +47,11 @@ export class UpCommand extends WesleyCommand {
     let previous = { tables: [] };
     let hadSnapshot = false;
     try {
-      const snap = await this.ctx.fs.read(SNAPSHOT_PROJECTION_PATH);
-      previous = JSON.parse(snap);
-      hadSnapshot = true;
+      const snapshot = await readSnapshotProjection(this.ctx.fs);
+      if (snapshot) {
+        previous = snapshot;
+        hadSnapshot = true;
+      }
     } catch (e) {
       if (e?.code !== 'ENOENT' && e?.code !== 'ERR_MODULE_NOT_FOUND') {
         logger.warn('Could not read snapshot: ' + (e?.message || ''));
@@ -90,7 +92,7 @@ export class UpCommand extends WesleyCommand {
 
   async writeSnapshot(ir) {
     try {
-      await writeSnapshotProjection(this.ctx.fs, ir, SNAPSHOT_PROJECTION_PATH);
+      await writeSnapshotProjection(this.ctx.fs, ir);
     } catch { /* empty */ }
   }
 

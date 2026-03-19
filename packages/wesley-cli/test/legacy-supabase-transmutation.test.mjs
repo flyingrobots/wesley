@@ -5,6 +5,7 @@ import {
   LegacySupabaseGeneratorPlugin
 } from '../src/transmutations/legacy-supabase.mjs';
 import { runSequentialGeneration } from '../src/commands/generate-execution.mjs';
+import { SNAPSHOT_PROJECTION_PATH } from '../src/utils/runtime-projections.mjs';
 
 const noopLogger = {
   info() {},
@@ -105,7 +106,7 @@ test('runSequentialGeneration executes the legacy supabase transmutation by defa
     writes[0].artifacts.map(file => file.name),
     ['schema.sql', 'rls.sql', 'tests.sql']
   );
-  assert.ok(fsWrites.some(entry => entry.path === '.wesley/snapshot.json'));
+  assert.ok(fsWrites.some(entry => entry.path === SNAPSHOT_PROJECTION_PATH));
   assert.equal(context.transmutationRun.transmutation, LEGACY_SUPABASE_TRANSMUTATION);
   assert.equal(compiledOps, true);
 });

@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 
 import {
   buildSnapshotProjection,
-  buildRealmProjection
+  buildRealmProjection,
+  readRealmProjection,
+  readSnapshotProjection
 } from '../src/utils/runtime-projections.mjs';
 
 test('buildSnapshotProjection returns the canonical snapshot shape', () => {
@@ -52,4 +54,43 @@ test('buildRealmProjection omits nullish optional fields', () => {
 
   assert.equal(projection.steps, undefined);
   assert.equal(projection.error, 'boom');
+});
+
+test('readSnapshotProjection parses the canonical snapshot file shape', async () => {
+  const projection = await readSnapshotProjection({
+    async read(path) {
+      assert.equal(path, '.wesley/snapshot.json');
+      return JSON.stringify({ irVersion: '1.0.0', tables: [{ name: 'User', fields: [] }] });
+    }
+  });
+
+  assert.deepEqual(projection, {
+    irVersion: '1.0.0',
+    tables: [{ name: 'User', fields: [] }]
+  });
+});
+
+test('readRealmProjection parses the canonical realm file shape', async () => {
+  const projection = await readRealmProjection({
+    async read(path) {
+      assert.equal(path, '.wesley/realm.json');
+      return JSON.stringify({
+        transmutation: 'legacy-supabase',
+        runId: 'run-realm-789',
+        provider: 'postgres',
+        verdict: 'PASS',
+        duration_ms: 30,
+        timestamp: '2026-03-19T05:00:02.000Z'
+      });
+    }
+  });
+
+  assert.deepEqual(projection, {
+    transmutation: 'legacy-supabase',
+    runId: 'run-realm-789',
+    provider: 'postgres',
+    verdict: 'PASS',
+    duration_ms: 30,
+    timestamp: '2026-03-19T05:00:02.000Z'
+  });
 });

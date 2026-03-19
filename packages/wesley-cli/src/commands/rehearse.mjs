@@ -9,8 +9,8 @@ import { WesleyError } from '@wesley/core';
 import { resolveRunMetadata } from '../utils/run-metadata.mjs';
 import {
   buildRealmProjection,
+  readSnapshotProjection,
   REALM_PROJECTION_PATH,
-  SNAPSHOT_PROJECTION_PATH,
   writeRealmProjection
 } from '../utils/runtime-projections.mjs';
 
@@ -40,7 +40,7 @@ export class RehearseCommand extends WesleyCommand {
     const ir = this.ctx.parsers.graphql.parse(schemaContent);
 
     let previous = { tables: [] };
-    try { previous = JSON.parse(await this.ctx.fs.read(SNAPSHOT_PROJECTION_PATH)); } catch (e) {
+    try { previous = await readSnapshotProjection(this.ctx.fs) || previous; } catch (e) {
       if (e?.code !== 'ENOENT' && e?.code !== 'ERR_MODULE_NOT_FOUND') {
         logger.warn('Could not read snapshot: ' + (e?.message || ''));
       }

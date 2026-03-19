@@ -38,7 +38,20 @@ export async function writeRealmProjection(fs, projection, path = REALM_PROJECTI
   await writeProjectionFile(fs, path, projection);
 }
 
+export async function readSnapshotProjection(fs, path = SNAPSHOT_PROJECTION_PATH) {
+  return readProjectionFile(fs, path);
+}
+
+export async function readRealmProjection(fs, path = REALM_PROJECTION_PATH) {
+  return readProjectionFile(fs, path);
+}
+
 async function writeProjectionFile(fs, path, projection) {
   if (!fs?.write) return;
   await fs.write(path, JSON.stringify(projection, null, 2));
+}
+
+async function readProjectionFile(fs, path) {
+  if (!fs?.read) return null;
+  return JSON.parse(await fs.read(path));
 }

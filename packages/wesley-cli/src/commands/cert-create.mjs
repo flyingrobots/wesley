@@ -4,6 +4,7 @@
 import { createHash } from 'node:crypto';
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import { resolveRunMetadata } from '../utils/run-metadata.mjs';
+import { readRealmProjection } from '../utils/runtime-projections.mjs';
 
 export class CertCreateCommand extends WesleyCommand {
   constructor(ctx) {
@@ -25,7 +26,7 @@ export class CertCreateCommand extends WesleyCommand {
     const sha = await gitSha(this.ctx) || 'uncommitted';
 
     const scores = await readJsonSafe(this.ctx, '.wesley/scores.json');
-    const realm = await readJsonSafe(this.ctx, '.wesley/realm.json');
+    const realm = await readWithFallback(() => readRealmProjection(this.ctx.fs));
     const run = resolveRunMetadata(options, realm || {});
 
     const artifacts = await hashArtifacts(this.ctx, this.ctx?.config?.paths?.output || 'out');
@@ -91,6 +92,10 @@ async function gitSha(ctx) {
 
 async function readJsonSafe(ctx, path) {
   try { const s = await ctx.fs.read(path); return JSON.parse(s); } catch { return null; }
+}
+
+async function readWithFallback(fn) {
+  try { return await fn(); } catch { return null; }
 }
 
 async function hashArtifacts(ctx, outDir) {
