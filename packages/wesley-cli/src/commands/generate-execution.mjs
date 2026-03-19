@@ -5,6 +5,7 @@ import {
   LegacySupabaseGeneratorPlugin,
   flattenTransmutationArtifacts
 } from '../transmutations/legacy-supabase.mjs';
+import { writeSnapshotProjection } from '../utils/runtime-projections.mjs';
 
 export async function ensureGeneratePreconditions({ env, options, shell }) {
   if (shouldEnforceClean(env, options) && !options.allowDirty) {
@@ -146,7 +147,7 @@ async function persistSnapshot({ ctx, ir, logger, dryRun }) {
   if (dryRun) return;
   try {
     if (ctx.fs && ir?.tables) {
-      await ctx.fs.write('.wesley/snapshot.json', JSON.stringify({ irVersion: '1.0.0', tables: ir.tables }, null, 2));
+      await writeSnapshotProjection(ctx.fs, ir);
     }
   } catch (e) {
     logger.warn('Could not write IR snapshot: ' + (e?.message || e));

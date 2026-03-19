@@ -5,6 +5,10 @@
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import { WesleyError } from '@wesley/core';
 import { buildAdditivePlan, explainPlan, emitMigrations } from './_migration-plan.mjs';
+import {
+  SNAPSHOT_PROJECTION_PATH,
+  writeSnapshotProjection
+} from '../utils/runtime-projections.mjs';
 
 export class UpCommand extends WesleyCommand {
   constructor(ctx) {
@@ -43,7 +47,7 @@ export class UpCommand extends WesleyCommand {
     let previous = { tables: [] };
     let hadSnapshot = false;
     try {
-      const snap = await this.ctx.fs.read('.wesley/snapshot.json');
+      const snap = await this.ctx.fs.read(SNAPSHOT_PROJECTION_PATH);
       previous = JSON.parse(snap);
       hadSnapshot = true;
     } catch (e) {
@@ -86,7 +90,7 @@ export class UpCommand extends WesleyCommand {
 
   async writeSnapshot(ir) {
     try {
-      await this.ctx.fs.write('.wesley/snapshot.json', JSON.stringify({ irVersion: '1.0.0', tables: ir.tables }, null, 2));
+      await writeSnapshotProjection(this.ctx.fs, ir, SNAPSHOT_PROJECTION_PATH);
     } catch { /* empty */ }
   }
 
@@ -160,4 +164,3 @@ async function tryStartDocker(ctx, logger) {
 async function execSql(db, dsn, sql) {
   return db.query(dsn, sql);
 }
-

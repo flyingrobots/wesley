@@ -7,6 +7,12 @@ import { buildAdditivePlan, explainPlan, emitMigrations } from './_migration-pla
 import { assertValid } from '../framework/schemaValidator.mjs';
 import { WesleyError } from '@wesley/core';
 import { resolveRunMetadata } from '../utils/run-metadata.mjs';
+import {
+  buildRealmProjection,
+  REALM_PROJECTION_PATH,
+  SNAPSHOT_PROJECTION_PATH,
+  writeRealmProjection
+} from '../utils/runtime-projections.mjs';
 
 export class RehearseCommand extends WesleyCommand {
   constructor(ctx) {
@@ -34,7 +40,7 @@ export class RehearseCommand extends WesleyCommand {
     const ir = this.ctx.parsers.graphql.parse(schemaContent);
 
     let previous = { tables: [] };
-    try { previous = JSON.parse(await this.ctx.fs.read('.wesley/snapshot.json')); } catch (e) {
+    try { previous = JSON.parse(await this.ctx.fs.read(SNAPSHOT_PROJECTION_PATH)); } catch (e) {
       if (e?.code !== 'ENOENT' && e?.code !== 'ERR_MODULE_NOT_FOUND') {
         logger.warn('Could not read snapshot: ' + (e?.message || ''));
       }
@@ -93,16 +99,16 @@ export class RehearseCommand extends WesleyCommand {
       for (const t of ir.tables || []) {
         await execSql(this.ctx.db, dsn, `SELECT 1 FROM "${t.name.toLowerCase().replace(/"/g, '""')}" LIMIT 1;`).catch(()=>{});
       }
-      const realm = {
+      const realm = buildRealmProjection({
         transmutation: run.transmutation,
         runId: run.runId,
         provider,
         verdict: 'PASS',
-        duration_ms: Date.now() - start,
+        durationMs: Date.now() - start,
         steps: explain.steps.length,
         timestamp: new Date().toISOString()
-      };
-      await this.ctx.fs.write('.wesley/realm.json', JSON.stringify(realm, null, 2));
+      });
+      await writeRealmProjection(this.ctx.fs, realm, REALM_PROJECTION_PATH);
       if (!options.json) logger.info('🕶️ REALM verdict: PASS');
       if (hooks.postDown) await runHook(this.ctx, hooks.postDown, logger);
       if (options.json) {
@@ -112,16 +118,16 @@ export class RehearseCommand extends WesleyCommand {
       }
       return realm;
     } catch (error) {
-      const realm = {
+      const realm = buildRealmProjection({
         transmutation: run.transmutation,
         runId: run.runId,
         provider,
         verdict: 'FAIL',
-        duration_ms: Date.now() - start,
+        durationMs: Date.now() - start,
         error: error.message,
         timestamp: new Date().toISOString()
-      };
-      await this.ctx.fs.write('.wesley/realm.json', JSON.stringify(realm, null, 2));
+      });
+      await writeRealmProjection(this.ctx.fs, realm, REALM_PROJECTION_PATH);
       if (!options.json) logger.error('🕶️ REALM verdict: FAIL - ' + error.message);
       if (hooks.postDown) try { await runHook(this.ctx, hooks.postDown, logger); } catch (e) { logger.debug?.('postDown hook failed: ' + e?.message); }
       if (options.json) {
