@@ -1,5 +1,5 @@
 import { filterIRByUnits } from '@wesley/core/domain/SchemaFilter';
-import { TransmutationRunner, WesleyError } from '@wesley/core';
+import { TransmutationRunner, WesleyError, createRunId, createRuntimeEventCollector } from '@wesley/core';
 import {
   LEGACY_SUPABASE_TRANSMUTATION,
   LegacySupabaseGeneratorPlugin,
@@ -17,6 +17,30 @@ export async function runSequentialGeneration({ ctx, context, compileOpsIfReques
   const { schemaContent, schemaPath, options, logger } = context;
   const debugDump = options.printComposedSdl || options.printIr;
   const { writer } = ctx;
+  const transmutation = options.transmutation || LEGACY_SUPABASE_TRANSMUTATION;
+  const runId = typeof options.runId === 'string' && options.runId.trim()
+    ? options.runId.trim()
+    : createRunId();
+  const eventCollector = createRuntimeEventCollector({
+    clock: createRunnerClock(ctx.clock),
+    runId,
+    transmutation
+  });
+
+  eventCollector.emit('RunRequested', {
+    schemaPath,
+    outDir: options.outDir,
+    dryRun: Boolean(options.dryRun)
+  }, {
+    idempotencyKey: `${transmutation}:run-requested`
+  });
+  eventCollector.emit('SourcesResolved', {
+    schemaPath,
+    composed: Boolean(context.units),
+    unitCount: context.units?.length ?? 1
+  }, {
+    idempotencyKey: `${transmutation}:sources`
+  });
 
   if (options.printComposedSdl) {
     if (!context.units) {
@@ -27,7 +51,13 @@ export async function runSequentialGeneration({ ctx, context, compileOpsIfReques
       : schemaContent;
     ctx.stdout.write(sdl + '\n');
     if (options.dryRun) {
-      return { artifacts: 0, dryRun: true };
+      eventCollector.emit('RunCompleted', {
+        artifactCount: 0,
+        dryRun: true
+      }, {
+        idempotencyKey: `${transmutation}:completed`
+      });
+      return { transmutation, runId, artifacts: 0, dryRun: true, events: eventCollector.events };
     }
   }
 
@@ -41,6 +71,12 @@ export async function runSequentialGeneration({ ctx, context, compileOpsIfReques
   if (unitFilter) {
     ir = filterIRByUnits(ir, unitFilter);
   }
+  eventCollector.emit('IRParsed', {
+    tableCount: Array.isArray(ir?.tables) ? ir.tables.length : 0,
+    unitFilterCount: unitFilter?.length ?? 0
+  }, {
+    idempotencyKey: `${transmutation}:ir`
+  });
 
   if (options.printIr) {
     ctx.stdout.write(JSON.stringify(ir, (key, val) => {
@@ -50,43 +86,75 @@ export async function runSequentialGeneration({ ctx, context, compileOpsIfReques
       return val;
     }, 2) + '\n');
     if (options.dryRun) {
-      return { artifacts: 0, dryRun: true };
+      eventCollector.emit('RunCompleted', {
+        artifactCount: 0,
+        dryRun: true
+      }, {
+        idempotencyKey: `${transmutation}:completed`
+      });
+      return { transmutation, runId, artifacts: 0, dryRun: true, events: eventCollector.events };
     }
   }
+  try {
+    const transmutationResult = await executeLegacySupabaseTransmutation({ ctx, context, ir, runId, eventCollector });
+    const artifacts = flattenTransmutationArtifacts(transmutationResult);
 
-  const transmutationResult = await executeLegacySupabaseTransmutation({ ctx, context, ir });
-  const artifacts = flattenTransmutationArtifacts(transmutationResult);
-
-  if (!options.dryRun && writer?.writeFiles) {
-    await writer.writeFiles(artifacts, options.outDir);
-  }
-
-  await persistSnapshot({ ctx, ir, logger, dryRun: options.dryRun });
-  await emitPlaceholderBundle({ ctx, artifacts, outDir: options.outDir, logger, options });
-
-  if (!options.dryRun) {
-    context.ir = ir;
-    context.transmutationRun = transmutationResult;
-    await compileOpsIfRequested({ ctx, context });
-  }
-
-  if (!options.quiet && !options.json && !debugDump) {
-    const action = options.dryRun ? 'Would generate' : 'Generated';
-    logger.info('');
-    logger.info(`${action}:`);
-    for (const file of artifacts) {
-      logger.info(`  ${file.name}`);
+    if (!options.dryRun && writer?.writeFiles) {
+      await writer.writeFiles(artifacts, options.outDir);
+      eventCollector.emit('ArtifactsMaterialized', {
+        artifactCount: artifacts.length,
+        outDir: options.outDir
+      }, {
+        idempotencyKey: `${transmutation}:artifacts`
+      });
     }
-    logger.info('');
-  }
 
-  return {
-    transmutation: transmutationResult.transmutation,
-    runId: transmutationResult.runId,
-    artifacts: artifacts.length,
-    outDir: options.outDir,
-    dryRun: options.dryRun || false
-  };
+    await persistSnapshot({ ctx, ir, logger, dryRun: options.dryRun });
+    await emitPlaceholderBundle({ ctx, artifacts, outDir: options.outDir, logger, options });
+
+    if (!options.dryRun) {
+      context.ir = ir;
+      context.transmutationRun = transmutationResult;
+      await compileOpsIfRequested({ ctx, context });
+    }
+
+    eventCollector.emit('RunCompleted', {
+      artifactCount: artifacts.length,
+      dryRun: Boolean(options.dryRun)
+    }, {
+      idempotencyKey: `${transmutation}:completed`
+    });
+
+    if (!options.quiet && !options.json && !debugDump) {
+      const action = options.dryRun ? 'Would generate' : 'Generated';
+      logger.info('');
+      logger.info(`${action}:`);
+      for (const file of artifacts) {
+        logger.info(`  ${file.name}`);
+      }
+      logger.info('');
+    }
+
+    return {
+      transmutation: transmutationResult.transmutation,
+      runId: transmutationResult.runId,
+      artifacts: artifacts.length,
+      outDir: options.outDir,
+      dryRun: options.dryRun || false,
+      events: eventCollector.events
+    };
+  } catch (error) {
+    eventCollector.emit('RunFailed', {
+      code: error.code || 'GENERATION_FAILED',
+      message: error.message
+    }, {
+      idempotencyKey: `${transmutation}:failed`
+    });
+    error.runId = runId;
+    error.transmutation = transmutation;
+    error.events = eventCollector.events;
+    throw error;
+  }
 }
 
 export async function runTasksAndSlapsGeneration({ ctx, context, compileOpsIfRequested }) {
@@ -154,7 +222,7 @@ async function persistSnapshot({ ctx, ir, logger, dryRun }) {
   }
 }
 
-async function executeLegacySupabaseTransmutation({ ctx, context, ir }) {
+async function executeLegacySupabaseTransmutation({ ctx, context, ir, runId, eventCollector }) {
   const { logger, options } = context;
   const requestedTransmutation = options.transmutation || LEGACY_SUPABASE_TRANSMUTATION;
   if (requestedTransmutation !== LEGACY_SUPABASE_TRANSMUTATION) {
@@ -188,7 +256,7 @@ async function executeLegacySupabaseTransmutation({ ctx, context, ir }) {
     LEGACY_SUPABASE_TRANSMUTATION,
     [plugin],
     { ir, sdl: context.schemaContent },
-    { runId: options.runId }
+    { runId, eventCollector }
   );
 
   if (!result.success) {

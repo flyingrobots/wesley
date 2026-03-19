@@ -108,7 +108,77 @@ test('runSequentialGeneration executes the legacy supabase transmutation by defa
   );
   assert.ok(fsWrites.some(entry => entry.path === SNAPSHOT_PROJECTION_PATH));
   assert.equal(context.transmutationRun.transmutation, LEGACY_SUPABASE_TRANSMUTATION);
+  assert.ok(Array.isArray(context.transmutationRun.events));
   assert.equal(compiledOps, true);
+});
+
+test('runSequentialGeneration emits structured lifecycle events', async () => {
+  const ir = {
+    tables: [{ name: 'User', fields: [], indexes: [], directives: {} }]
+  };
+  const ctx = {
+    parsers: {
+      graphql: {
+        parse: () => ir
+      }
+    },
+    generators: makeGenerators(),
+    writer: {
+      writeFiles: async () => {}
+    },
+    fs: {
+      write: async () => {}
+    },
+    stderr: { write() {} },
+    stdout: { write() {} },
+    clock: { now: () => '2026-03-19T09:45:00.000Z' },
+    config: { paths: {} }
+  };
+  const context = {
+    schemaContent: 'type User @wes_table { id: ID! @wes_pk }',
+    schemaPath: 'schema.graphql',
+    options: {
+      outDir: 'out',
+      supabase: true,
+      dryRun: false,
+      quiet: true,
+      json: false,
+      emitBundle: false,
+      runId: 'run-events-123'
+    },
+    logger: noopLogger
+  };
+
+  const result = await runSequentialGeneration({
+    ctx,
+    context,
+    compileOpsIfRequested: async () => {}
+  });
+
+  assert.deepEqual(
+    result.events.map(event => event.type),
+    [
+      'RunRequested',
+      'SourcesResolved',
+      'IRParsed',
+      'TaskGraphBuilt',
+      'TaskStarted',
+      'TaskCompleted',
+      'EvidenceMerged',
+      'ScoresComputed',
+      'ArtifactsMaterialized',
+      'RunCompleted'
+    ]
+  );
+  assert.deepEqual(
+    result.events.map(event => event.sequence),
+    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  );
+  result.events.forEach(event => {
+    assert.equal(event.runId, 'run-events-123');
+    assert.equal(event.transmutation, LEGACY_SUPABASE_TRANSMUTATION);
+    assert.equal(event.streamId, `transmutation:${LEGACY_SUPABASE_TRANSMUTATION}:run-events-123`);
+  });
 });
 
 test('runSequentialGeneration preserves a caller-supplied runId', async () => {

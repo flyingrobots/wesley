@@ -19,6 +19,7 @@
 import { validatePlugin, validatePlan, validateGenerateResult } from '../ports/GeneratorPlugin.mjs';
 import { EvidenceMap } from './EvidenceMap.mjs';
 import { ScoringEngine, BUNDLE_VERSION } from './Scoring.mjs';
+import { createRuntimeEventCollector } from './RuntimeEvents.mjs';
 import { deepFreeze } from '../util/deepFreeze.mjs';
 
 /**
@@ -40,6 +41,7 @@ export function createRunId() {
  * @property {Object} [scores] - SCS/TCI/MRI scores (if schema supports scoring)
  * @property {Object} [evidence] - Evidence map JSON
  * @property {Object} [bundle] - Full evidence bundle
+ * @property {Object[]} events - In-memory lifecycle events for this transmutation run
  */
 
 /**
@@ -84,6 +86,7 @@ export class TransmutationRunner {
    * @param {string} [options.sha] - Git commit SHA for evidence tracking
    * @param {object} [options.diff] - Migration diff for MRI scoring
    * @param {object} [options.testResults] - Test results for TCI scoring
+   * @param {{ emit(type:string, payload?:object, metadata?:object): object, events: object[] }} [options.eventCollector]
    * @returns {Promise<TransmutationResult>}
    */
   async run(name, plugins, schema, options = {}) {
@@ -97,15 +100,31 @@ export class TransmutationRunner {
     const runId = typeof options.runId === 'string' && options.runId.trim()
       ? options.runId.trim()
       : createRunId();
+    const eventCollector = options.eventCollector || createRuntimeEventCollector({
+      clock: this._clock,
+      runId,
+      transmutation: name
+    });
     const evidenceMap = new EvidenceMap();
     evidenceMap.setSha(options.sha || 'uncommitted');
 
     const results = [];
     let totalArtifacts = 0;
+    const taskGraph = this.buildTaskGraph(name, plugins);
+    const generationNodes = taskGraph.nodes.filter(node => node.metadata?.type === 'generation');
+
+    eventCollector.emit('TaskGraphBuilt', {
+      nodeCount: taskGraph.nodes.length,
+      edgeCount: taskGraph.edges.length,
+      taskIds: taskGraph.nodes.map(node => node.id)
+    }, {
+      idempotencyKey: `${name}:task-graph`
+    });
 
     // Execute plugins sequentially (deterministic contract)
-    for (const plugin of plugins) {
-      const result = await this._executePlugin(plugin, schema, runId, evidenceMap);
+    for (const [index, plugin] of plugins.entries()) {
+      const taskId = generationNodes[index]?.id || `${name}:gen:${index}`;
+      const result = await this._executePlugin(plugin, schema, runId, evidenceMap, eventCollector, taskId);
       results.push(result);
 
       if (result.status === 'ok') {
@@ -124,6 +143,21 @@ export class TransmutationRunner {
     const scores = this._computeScores(schema, evidenceMap, options);
 
     const evidenceJson = evidenceMap.toJSON();
+    eventCollector.emit('EvidenceMerged', {
+      subjectCount: Object.keys(evidenceJson.evidence || {}).length,
+      errorCount: Object.keys(evidenceJson.errors || {}).length,
+      warningCount: Object.keys(evidenceJson.warnings || {}).length
+    }, {
+      idempotencyKey: `${name}:evidence`
+    });
+    eventCollector.emit('ScoresComputed', {
+      scs: scores?.scores?.scs ?? null,
+      mri: scores?.scores?.mri ?? null,
+      tci: scores?.scores?.tci ?? null,
+      readiness: scores?.readiness?.verdict ?? null
+    }, {
+      idempotencyKey: `${name}:scores`
+    });
 
     const bundle = {
       bundleVersion: BUNDLE_VERSION,
@@ -148,7 +182,8 @@ export class TransmutationRunner {
       totalArtifacts,
       scores,
       evidence: evidenceJson,
-      bundle
+      bundle,
+      events: eventCollector.events
     };
   }
 
@@ -212,17 +247,31 @@ export class TransmutationRunner {
    * Collects evidence from the plugin's output if provided.
    * @private
    */
-  async _executePlugin(plugin, schema, runId, evidenceMap) {
+  async _executePlugin(plugin, schema, runId, evidenceMap, eventCollector, taskId) {
     const startMs = Date.now();
+    let pluginName = '<unknown>';
+    try {
+      if (plugin != null && typeof plugin === 'object' && typeof plugin.name === 'string') {
+        pluginName = plugin.name;
+      }
+    } catch {
+      // Getter may throw — keep '<unknown>'
+    }
+    eventCollector.emit('TaskStarted', {
+      taskId,
+      plugin: pluginName
+    }, {
+      idempotencyKey: `${taskId}:started`
+    });
 
     // Phase: validate
     try {
       validatePlugin(plugin);
     } catch (cause) {
-      return this._errorResult(plugin, 'validate', cause, startMs);
+      return this._errorResult(plugin, 'validate', cause, startMs, eventCollector, taskId);
     }
 
-    const pluginName = plugin.name;
+    pluginName = plugin.name;
     const childLogger = typeof this._logger.child === 'function'
       ? this._logger.child({ plugin: pluginName })
       : this._logger;
@@ -241,7 +290,7 @@ export class TransmutationRunner {
         await plugin.init(context.config);
       }
     } catch (cause) {
-      return this._errorResult(plugin, 'init', cause, startMs);
+      return this._errorResult(plugin, 'init', cause, startMs, eventCollector, taskId);
     }
 
     // Phase: plan
@@ -251,7 +300,7 @@ export class TransmutationRunner {
       validatePlan(plan, pluginName);
     } catch (cause) {
       const code = cause.code === 'WPLY004' ? 'WPLY004' : 'WPLY002';
-      const result = this._errorResult(plugin, 'plan', cause, startMs);
+      const result = this._errorResult(plugin, 'plan', cause, startMs, eventCollector, taskId);
       result.errorCode = code;
       return result;
     }
@@ -265,7 +314,7 @@ export class TransmutationRunner {
       artifacts = normalized.artifacts;
       pluginEvidence = normalized.evidence;
     } catch (cause) {
-      return this._errorResult(plugin, 'generate', cause, startMs);
+      return this._errorResult(plugin, 'generate', cause, startMs, eventCollector, taskId);
     }
 
     // Warn on undeclared artifact paths
@@ -303,6 +352,14 @@ export class TransmutationRunner {
     }
 
     const artifactCount = Object.keys(artifacts).length;
+    eventCollector.emit('TaskCompleted', {
+      taskId,
+      plugin: pluginName,
+      artifactCount,
+      durationMs: Date.now() - startMs
+    }, {
+      idempotencyKey: `${taskId}:completed`
+    });
     return {
       name: pluginName,
       status: 'ok',
@@ -368,7 +425,7 @@ export class TransmutationRunner {
    * Build an error result entry for a plugin.
    * @private
    */
-  _errorResult(plugin, phase, cause, startMs) {
+  _errorResult(plugin, phase, cause, startMs, eventCollector, taskId) {
     let name = '<unknown>';
     try {
       if (plugin != null && typeof plugin === 'object' && typeof plugin.name === 'string') {
@@ -377,6 +434,16 @@ export class TransmutationRunner {
     } catch {
       // Getter may throw — keep '<unknown>'
     }
+    eventCollector?.emit('TaskFailed', {
+      taskId,
+      plugin: name,
+      phase,
+      errorCode: cause.code || 'WPLY002',
+      errorMessage: cause.message,
+      durationMs: Date.now() - startMs
+    }, {
+      idempotencyKey: `${taskId}:failed`
+    });
     return {
       name,
       status: 'error',

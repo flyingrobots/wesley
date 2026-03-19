@@ -51,6 +51,7 @@ EOF
   [[ -n "$json" ]] || fail "No JSON output with result payload"
   echo "$json" | jq -e '.result.transmutation == "legacy-supabase"' >/dev/null
   echo "$json" | jq -e '.result.runId == "run-transform-123"' >/dev/null
+  echo "$json" | jq -e '.result.events | map(.type) == ["RunRequested","SourcesResolved","IRParsed","TaskGraphBuilt","TaskStarted","TaskCompleted","EvidenceMerged","ScoresComputed","ArtifactsMaterialized","RunCompleted"]' >/dev/null
 }
 
 @test "transform rejects unknown transmutation" {

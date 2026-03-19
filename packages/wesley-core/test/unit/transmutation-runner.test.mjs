@@ -128,6 +128,27 @@ test('TransmutationRunner — bundle includes transmutation name', async () => {
   assert.equal(result.bundle.bundleVersion, '2.0.0');
 });
 
+test('TransmutationRunner — emits lifecycle events with a runtime envelope', async () => {
+  const runner = makeRunner();
+  const result = await runner.run('backend', [makePlugin()], {});
+
+  assert.deepEqual(
+    result.events.map(event => event.type),
+    ['TaskGraphBuilt', 'TaskStarted', 'TaskCompleted', 'EvidenceMerged', 'ScoresComputed']
+  );
+  assert.deepEqual(
+    result.events.map(event => event.sequence),
+    [1, 2, 3, 4, 5]
+  );
+  result.events.forEach(event => {
+    assert.equal(event.runId, result.runId);
+    assert.equal(event.transmutation, 'backend');
+    assert.match(event.eventId, new RegExp(`^${event.streamId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}:\\d+$`));
+    assert.equal(event.correlationId, result.runId);
+    assert.equal(event.schemaVersion, '1.0.0');
+  });
+});
+
 // ---------------------------------------------------------------------------
 // Evidence collection
 // ---------------------------------------------------------------------------
@@ -209,6 +230,11 @@ test('TransmutationRunner — plugin failure stops execution by default', async 
   assert.equal(result.results.length, 1); // stopped after failure
   assert.equal(result.results[0].status, 'error');
   assert.equal(result.results[0].phase, 'plan');
+  assert.deepEqual(
+    result.events.map(event => event.type),
+    ['TaskGraphBuilt', 'TaskStarted', 'TaskFailed', 'EvidenceMerged', 'ScoresComputed']
+  );
+  assert.equal(result.events[2].payload.phase, 'plan');
 });
 
 test('TransmutationRunner — best-effort continues after failure', async () => {
