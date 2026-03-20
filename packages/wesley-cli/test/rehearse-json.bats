@@ -58,3 +58,34 @@ EOF
   echo "$output" | jq -e '.run.failure.code == "NO_DSN"' >/dev/null
   echo "$output" | jq -e '.events | map(.type) == ["RunRequested","IRParsed","SourcesResolved","PlanBuilt","RunFailed"]' >/dev/null
 }
+
+@test "rehearse --dry-run --resume completes a partial run without duplicating events" {
+  create_schema
+
+  run env WESLEY_CRASH_AFTER_EVENT=4 node "$CLI_PATH" rehearse --schema schema.graphql --dry-run --json --transmutation legacy-supabase --run-id run-rehearse-resume-123
+  assert_failure 6
+
+  run node "$CLI_PATH" rehearse --schema schema.graphql --dry-run --json --transmutation legacy-supabase --run-id run-rehearse-resume-123 --resume
+  assert_success
+  local json
+  json=$(echo "$output" | jq -s 'map(select(has("plan"))) | first')
+  [[ -n "$json" ]] || fail "No JSON output with resumed rehearsal data"
+  echo "$json" | jq -e '.resumed == true' >/dev/null
+  echo "$json" | jq -e '.shortCircuited == false' >/dev/null
+  echo "$json" | jq -e '.run.status == "completed"' >/dev/null
+  echo "$json" | jq -e '.events | map(.type) == ["RunRequested","IRParsed","SourcesResolved","PlanBuilt","RunCompleted"]' >/dev/null
+}
+
+@test "rehearse --dry-run --resume short-circuits an already completed run" {
+  create_schema
+
+  run node "$CLI_PATH" rehearse --schema schema.graphql --dry-run --json --transmutation legacy-supabase --run-id run-rehearse-shortcircuit-123
+  assert_success
+
+  run node "$CLI_PATH" rehearse --schema schema.graphql --dry-run --json --transmutation legacy-supabase --run-id run-rehearse-shortcircuit-123 --resume
+  assert_success
+  echo "$output" | jq -e '.result.resumed == true' >/dev/null
+  echo "$output" | jq -e '.result.shortCircuited == true' >/dev/null
+  echo "$output" | jq -e '.result.run.status == "completed"' >/dev/null
+  echo "$output" | jq -e '.result.events | length == 5' >/dev/null
+}

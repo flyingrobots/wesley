@@ -7,6 +7,8 @@
   "properties": {
     "transmutation": { "type": "string" },
     "runId": { "type": "string", "minLength": 1 },
+    "resumed": { "type": "boolean" },
+    "shortCircuited": { "type": "boolean" },
     "run": { "$ref": "runtime-run.schema.json#" },
     "events": {
       "type": "array",

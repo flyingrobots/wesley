@@ -7,6 +7,7 @@ import { buildAdditivePlan, explainPlan, emitMigrations } from './_migration-pla
 import { assertValid } from '../framework/schemaValidator.mjs';
 import { WesleyError } from '@wesley/core';
 import { resolveRunMetadata } from '../utils/run-metadata.mjs';
+import { assertResumeRequestedRunId, resolveResumeState } from '../utils/runtime-resume.mjs';
 import {
   attachRunFailure,
   buildCommandRunReport,
@@ -49,11 +50,27 @@ export class RehearseCommand extends WesleyCommand {
       .option('--timeout <ms>', 'Timeout in ms', '300000')
       .option('--transmutation <name>', 'Transmutation to associate with this rehearsal', 'legacy-supabase')
       .option('--run-id <id>', 'Associate this rehearsal with a specific run ID')
+      .option('--resume', 'Resume a previously started rehearsal run with the same transmutation and run ID')
       .option('--json', 'Emit JSON');
   }
 
   async executeCore({ options, schemaContent, schemaPath, logger }) {
+    assertResumeRequestedRunId(options);
     const run = resolveRunMetadata(options);
+    const resumeState = options.resume
+      ? resolveResumeState(this.ctx?.eventStore, run)
+      : null;
+    if (resumeState?.shortCircuited) {
+      return {
+        transmutation: resumeState.run.transmutation,
+        runId: resumeState.run.runId,
+        resumed: true,
+        shortCircuited: true,
+        events: resumeState.events,
+        run: resumeState.run,
+        replay: resumeState.replay
+      };
+    }
     const eventCollector = createCommandEventCollector(this.ctx, run);
     const scope = createCommandEventScope(run, 'rehearse');
     emitRunRequested(eventCollector, scope, {
@@ -101,6 +118,8 @@ export class RehearseCommand extends WesleyCommand {
         const report = {
           transmutation: run.transmutation,
           runId: run.runId,
+          resumed: Boolean(resumeState),
+          shortCircuited: false,
           run: buildCommandRunReport(eventCollector, run),
           plan,
           explain,
@@ -121,6 +140,10 @@ export class RehearseCommand extends WesleyCommand {
         stepCount: explain.steps.length
       });
       return {
+        transmutation: run.transmutation,
+        runId: run.runId,
+        resumed: Boolean(resumeState),
+        shortCircuited: false,
         dryRun: true,
         steps: explain.steps.length,
         events: eventCollector.events,
@@ -194,6 +217,8 @@ export class RehearseCommand extends WesleyCommand {
       });
       const realmReport = {
         ...realm,
+        resumed: Boolean(resumeState),
+        shortCircuited: false,
         events: eventCollector.events,
         run: buildCommandRunReport(eventCollector, run)
       };
@@ -238,6 +263,8 @@ export class RehearseCommand extends WesleyCommand {
       });
       const realmReport = {
         ...realm,
+        resumed: Boolean(resumeState),
+        shortCircuited: false,
         events: eventCollector.events,
         run: buildCommandRunReport(eventCollector, run)
       };

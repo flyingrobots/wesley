@@ -8,6 +8,7 @@ import { buildAdditivePlan, explainPlan, emitMigrations } from './_migration-pla
 import { assertValid } from '../framework/schemaValidator.mjs';
 import { WesleyError } from '@wesley/core';
 import { resolveRunMetadata } from '../utils/run-metadata.mjs';
+import { assertResumeRequestedRunId, resolveResumeState } from '../utils/runtime-resume.mjs';
 import {
   attachRunFailure,
   buildCommandRunReport,
@@ -40,13 +41,32 @@ export class PlanCommand extends WesleyCommand {
       .option('--allow-dirty', 'Allow running with a dirty git working tree (not recommended)')
       .option('--transmutation <name>', 'Transmutation to associate with this plan', 'legacy-supabase')
       .option('--run-id <id>', 'Associate this plan with a specific run ID')
+      .option('--resume', 'Resume a previously started plan run with the same transmutation and run ID')
       .option('--write', 'Write migration files to out-dir/migrations')
       .option('--json', 'Emit JSON plan');
   }
 
   async executeCore(context) {
     const { options, schemaContent, schemaPath, logger } = context;
+    assertResumeRequestedRunId(options);
     const run = resolveRunMetadata(options);
+    const resumeState = options.resume
+      ? resolveResumeState(this.ctx?.eventStore, run)
+      : null;
+    if (resumeState?.shortCircuited) {
+      return {
+        transmutation: resumeState.run.transmutation,
+        runId: resumeState.run.runId,
+        resumed: true,
+        shortCircuited: true,
+        events: resumeState.events,
+        run: resumeState.run,
+        replay: resumeState.replay
+      };
+    }
+    if (resumeState) {
+      context.resumeState = resumeState;
+    }
     const eventCollector = createCommandEventCollector(this.ctx, run);
     const scope = createCommandEventScope(run, 'plan');
     const configPaths = this.ctx?.config?.paths || {};
@@ -108,6 +128,8 @@ export class PlanCommand extends WesleyCommand {
         const report = {
           transmutation: run.transmutation,
           runId: run.runId,
+          resumed: Boolean(resumeState),
+          shortCircuited: false,
           run: buildCommandRunReport(eventCollector, run),
           plan,
           explain,
@@ -165,6 +187,8 @@ export class PlanCommand extends WesleyCommand {
       return {
         transmutation: run.transmutation,
         runId: run.runId,
+        resumed: Boolean(resumeState),
+        shortCircuited: false,
         run: buildCommandRunReport(eventCollector, run),
         phases: plan.phases.length,
         steps: explain.steps.length,

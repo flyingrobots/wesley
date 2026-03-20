@@ -48,3 +48,36 @@ EOF
   echo "$json" | jq -e '.run.status == "completed"' >/dev/null
   echo "$json" | jq -e '.events | map(.type) == ["RunRequested","IRParsed","SourcesResolved","PlanBuilt","RunCompleted"]' >/dev/null
 }
+
+@test "plan --resume completes a partial persisted plan run without duplicating events" {
+  create_schema
+
+  run env WESLEY_CRASH_AFTER_EVENT=4 node "$CLI_PATH" plan --schema schema.graphql --json --transmutation legacy-supabase --run-id run-plan-resume-123
+  assert_failure 6
+
+  run node "$CLI_PATH" plan --schema schema.graphql --json --transmutation legacy-supabase --run-id run-plan-resume-123 --resume
+  assert_success
+  local json
+  json=$(echo "$output" | jq -s 'map(select(has("plan"))) | first')
+  [[ -n "$json" ]] || fail "No JSON output with resumed plan data"
+  echo "$json" | jq -e '.resumed == true' >/dev/null
+  echo "$json" | jq -e '.shortCircuited == false' >/dev/null
+  echo "$json" | jq -e '.run.status == "completed"' >/dev/null
+  echo "$json" | jq -e '.events | map(.type) == ["RunRequested","IRParsed","SourcesResolved","PlanBuilt","RunCompleted"]' >/dev/null
+}
+
+@test "plan --resume short-circuits an already completed run" {
+  create_schema
+
+  run node "$CLI_PATH" plan --schema schema.graphql --json --transmutation legacy-supabase --run-id run-plan-shortcircuit-123
+  assert_success
+
+  run node "$CLI_PATH" plan --schema schema.graphql --json --transmutation legacy-supabase --run-id run-plan-shortcircuit-123 --resume
+  assert_success
+  local json
+  json=$(echo "$output" | jq '.')
+  echo "$json" | jq -e '.result.resumed == true' >/dev/null
+  echo "$json" | jq -e '.result.shortCircuited == true' >/dev/null
+  echo "$json" | jq -e '.result.run.status == "completed"' >/dev/null
+  echo "$json" | jq -e '.result.events | length == 5' >/dev/null
+}
