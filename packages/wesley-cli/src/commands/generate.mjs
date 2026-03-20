@@ -5,7 +5,7 @@
  */
 
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
-import { WesleyError, OpsError, createRunId, createRuntimeStreamId, replayRuntimeRun } from '@wesley/core';
+import { WesleyError, OpsError, createRunId } from '@wesley/core';
 import {
   ensureGeneratePreconditions,
   runSequentialGeneration,
@@ -14,6 +14,7 @@ import {
 import { compileOpsIfRequested } from './generate-ops.mjs';
 import { LEGACY_SUPABASE_TRANSMUTATION } from '../transmutations/legacy-supabase.mjs';
 import { resolveTransmutationName } from '../transmutations/registry.mjs';
+import { assertResumeRequestedRunId, resolveResumeState } from '../utils/runtime-resume.mjs';
 import {
   attachRunFailure,
   createCommandEventCollector,
@@ -71,9 +72,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
     const requestedRunId = typeof options.runId === 'string' && options.runId.trim()
       ? options.runId.trim()
       : createRunId();
-    if (options.resume && !options.runId) {
-      throw new WesleyError('EUSAGE', '--resume requires --run-id.');
-    }
+    assertResumeRequestedRunId(options);
 
     const isCI = String(this.ctx?.env?.CI || '').toLowerCase() === 'true' || this.ctx?.env?.CI === '1';
     const canAllowErrors = !isCI || options.iKnowWhatImDoing;
@@ -176,43 +175,4 @@ export class GeneratePipelineCommand extends WesleyCommand {
   async compileOpsIfRequested(context) {
     return compileOpsIfRequested({ ctx: this.ctx, context });
   }
-}
-
-function resolveResumeState(eventStore, { runId, transmutation }) {
-  if (!eventStore || typeof eventStore.readStream !== 'function') {
-    throw new WesleyError('NO_EVENT_STORE', 'No event store is configured for this runtime.');
-  }
-
-  const streamId = createRuntimeStreamId({ transmutation, runId });
-  const events = eventStore.readStream(streamId);
-  if (events.length === 0) {
-    throw new WesleyError('RUN_NOT_FOUND', `No persisted run found for ${transmutation}/${runId}.`);
-  }
-
-  const replayResult = replayRuntimeRun(events, {
-    runId,
-    transmutation,
-    streamId
-  });
-  if (!replayResult.replay.integrity.valid) {
-    const codes = replayResult.replay.integrity.issues.map(issue => issue.code).join(', ');
-    throw new WesleyError(
-      'PIPELINE_EXEC_FAILED',
-      `Cannot resume ${transmutation}/${runId}; persisted stream failed integrity checks: ${codes}.`
-    );
-  }
-
-  if (replayResult.replay.terminal) {
-    return {
-      ...replayResult,
-      events,
-      shortCircuited: true
-    };
-  }
-
-  return {
-    ...replayResult,
-    events,
-    shortCircuited: false
-  };
 }
