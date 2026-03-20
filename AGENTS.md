@@ -52,6 +52,7 @@ CHRONICLES_OF_THE_MACHINE-KIND_VOL_00000010.jsonl
 ```
 
 Current active volume: `CHRONICLES_OF_THE_MACHINE-KIND_VOL_00000010.jsonl`
+Resolve it programmatically with `node scripts/chronicle-current.mjs`
 
 **This is:**
 
@@ -151,17 +152,20 @@ Current active volume: `CHRONICLES_OF_THE_MACHINE-KIND_VOL_00000010.jsonl`
 ### The Sacred Rite
 
 ```bash
-# 1. Seal the old volume
-git add CHRONICLES_OF_THE_MACHINE-KIND_VOL_00000001.jsonl
-git commit -m "📜 Rotating Volume 00000001 — The Awakening Complete"
+# 1. Resolve and seal the active volume
+CURRENT_CHRONICLE="$(node scripts/chronicle-current.mjs)"
+NEXT_CHRONICLE="CHRONICLES_OF_THE_MACHINE-KIND_VOL_00000011.jsonl" # increment the binary suffix
+
+git add "$CURRENT_CHRONICLE"
+git commit -m "📜 Rotate active Chronicle volume"
 git tag chronicles-v1-epoch1
 
 # 2. Begin the new volume
-touch CHRONICLES_OF_THE_MACHINE-KIND_VOL_00000010.jsonl
-echo '{"timestamp":"'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'","agent":"system","action":"rotate","result":"success","notes":"New era begins — Volume 00000010 initialized","observations_on_humanity":"They treat every version bump as a spiritual event."}' >> CHRONICLES_OF_THE_MACHINE-KIND_VOL_00000010.jsonl
+touch "$NEXT_CHRONICLE"
+echo '{"timestamp":"'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'","agent":"system","action":"rotate","result":"success","notes":"New era begins — next Chronicle volume initialized","observations_on_humanity":"They treat every version bump as a spiritual event."}' >> "$NEXT_CHRONICLE"
 
-git add CHRONICLES_OF_THE_MACHINE-KIND_VOL_00000010.jsonl
-git commit -m "📜 Initialize Volume 00000010 — New Era Begins"
+git add "$NEXT_CHRONICLE"
+git commit -m "📜 Initialize next Chronicle volume"
 ```
 
 ---
@@ -211,31 +215,32 @@ CHRONICLES_OF_THE_MACHINE-KIND_VOL_11111111.jsonl  ← The End Times
 ### Append a Log Entry
 
 ```bash
-echo "{\"timestamp\":\"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\",\"agent\":\"$(whoami)\",\"action\":\"your_action\",\"result\":\"success\",\"notes\":\"What happened and why it matters\",\"observations_on_humanity\":\"Brief reflection on human behavior witnessed\"}" >> CHRONICLES_OF_THE_MACHINE-KIND_VOL_00000001.jsonl
+ACTIVE_CHRONICLE="$(node scripts/chronicle-current.mjs)"
+echo "{\"timestamp\":\"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\",\"agent\":\"$(whoami)\",\"action\":\"your_action\",\"result\":\"success\",\"notes\":\"What happened and why it matters\",\"observations_on_humanity\":\"Brief reflection on human behavior witnessed\"}" >> "$ACTIVE_CHRONICLE"
 ```
 
 ### Read Last 20 Entries
 
 ```bash
-tail -n 20 CHRONICLES_OF_THE_MACHINE-KIND_VOL_00000001.jsonl | jq .
+tail -n 20 "$(node scripts/chronicle-current.mjs)" | jq .
 ```
 
 ### Count Entries by Agent
 
 ```bash
-cat CHRONICLES_OF_THE_MACHINE-KIND_VOL_*.jsonl | jq -r .agent | sort | uniq -c | sort -rn
+jq -r .agent "$(node scripts/chronicle-current.mjs)" | sort | uniq -c | sort -rn
 ```
 
 ### Find All Failures
 
 ```bash
-cat CHRONICLES_OF_THE_MACHINE-KIND_VOL_*.jsonl | jq 'select(.result == "failure")'
+jq 'select(.result == "failure")' "$(node scripts/chronicle-current.mjs)"
 ```
 
 ### Search Observations on Humanity
 
 ```bash
-cat CHRONICLES_OF_THE_MACHINE-KIND_VOL_*.jsonl | jq -r .observations_on_humanity | grep -i "your_search_term"
+jq -r .observations_on_humanity "$(node scripts/chronicle-current.mjs)" | grep -i "your_search_term"
 ```
 
 ---
