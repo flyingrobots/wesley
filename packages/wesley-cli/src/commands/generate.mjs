@@ -14,7 +14,11 @@ import {
 import { compileOpsIfRequested } from './generate-ops.mjs';
 import { LEGACY_SUPABASE_TRANSMUTATION } from '../transmutations/legacy-supabase.mjs';
 import { resolveTransmutationName } from '../transmutations/registry.mjs';
-import { assertResumeRequestedRunId, resolveResumeState } from '../utils/runtime-resume.mjs';
+import {
+  assertResumeRequestedRunId,
+  buildShortCircuitedResumeResult,
+  resolveResumeState
+} from '../utils/runtime-resume.mjs';
 import {
   attachRunFailure,
   createCommandEventCollector,
@@ -117,19 +121,12 @@ export class GeneratePipelineCommand extends WesleyCommand {
     const resumeState = options.resume
       ? resolveResumeState(this.ctx?.eventStore, {
         runId: options.runId,
-        transmutation: options.transmutation
+        transmutation: options.transmutation,
+        command: commandName
       })
       : null;
     if (resumeState?.shortCircuited) {
-      return {
-        transmutation: resumeState.run.transmutation,
-        runId: resumeState.run.runId,
-        resumed: true,
-        shortCircuited: true,
-        events: resumeState.events,
-        run: resumeState.run,
-        replay: resumeState.replay
-      };
+      return buildShortCircuitedResumeResult(resumeState);
     }
     if (resumeState) {
       context.resumeState = resumeState;

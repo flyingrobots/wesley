@@ -7,7 +7,12 @@ import { buildAdditivePlan, explainPlan, emitMigrations } from './_migration-pla
 import { assertValid } from '../framework/schemaValidator.mjs';
 import { WesleyError } from '@wesley/core';
 import { resolveRunMetadata } from '../utils/run-metadata.mjs';
-import { assertResumeRequestedRunId, resolveResumeState } from '../utils/runtime-resume.mjs';
+import {
+  applyResumeMetadata,
+  assertResumeRequestedRunId,
+  buildShortCircuitedResumeResult,
+  resolveResumeState
+} from '../utils/runtime-resume.mjs';
 import {
   attachRunFailure,
   buildCommandRunReport,
@@ -58,18 +63,10 @@ export class RehearseCommand extends WesleyCommand {
     assertResumeRequestedRunId(options);
     const run = resolveRunMetadata(options);
     const resumeState = options.resume
-      ? resolveResumeState(this.ctx?.eventStore, run)
+      ? resolveResumeState(this.ctx?.eventStore, { ...run, command: 'rehearse' })
       : null;
     if (resumeState?.shortCircuited) {
-      return {
-        transmutation: resumeState.run.transmutation,
-        runId: resumeState.run.runId,
-        resumed: true,
-        shortCircuited: true,
-        events: resumeState.events,
-        run: resumeState.run,
-        replay: resumeState.replay
-      };
+      return buildShortCircuitedResumeResult(resumeState);
     }
     const eventCollector = createCommandEventCollector(this.ctx, run);
     const scope = createCommandEventScope(run, 'rehearse');
@@ -115,18 +112,16 @@ export class RehearseCommand extends WesleyCommand {
           dryRun: true,
           stepCount: explain.steps.length
         });
-        const report = {
+        const report = applyResumeMetadata({
           transmutation: run.transmutation,
           runId: run.runId,
-          resumed: Boolean(resumeState),
-          shortCircuited: false,
           run: buildCommandRunReport(eventCollector, run),
           plan,
           explain,
           mapping: [],
           radar: { lines: [], counts: {} },
           events: eventCollector.events
-        };
+        }, resumeState);
         await assertValid(this.ctx, 'plan-report.schema.json', report, 'Dry-run plan');
         this.ctx.stdout.write(JSON.stringify(report, null, 2) + '\n');
         return;
@@ -139,16 +134,14 @@ export class RehearseCommand extends WesleyCommand {
         dryRun: true,
         stepCount: explain.steps.length
       });
-      return {
+      return applyResumeMetadata({
         transmutation: run.transmutation,
         runId: run.runId,
-        resumed: Boolean(resumeState),
-        shortCircuited: false,
         dryRun: true,
         steps: explain.steps.length,
         events: eventCollector.events,
         run: buildCommandRunReport(eventCollector, run)
-      };
+      }, resumeState);
     }
 
     const provider = (options.provider || this.ctx?.config?.realm?.provider || 'postgres').toLowerCase();
@@ -215,13 +208,11 @@ export class RehearseCommand extends WesleyCommand {
         verdict: realm.verdict,
         stepCount: explain.steps.length
       });
-      const realmReport = {
+      const realmReport = applyResumeMetadata({
         ...realm,
-        resumed: Boolean(resumeState),
-        shortCircuited: false,
         events: eventCollector.events,
         run: buildCommandRunReport(eventCollector, run)
-      };
+      }, resumeState);
       if (!options.json) logger.info('🕶️ REALM verdict: PASS');
       if (hooks.postDown) await runHook(this.ctx, hooks.postDown, logger);
       if (options.json) {
@@ -261,13 +252,11 @@ export class RehearseCommand extends WesleyCommand {
         code: error.code || 'REALM_FAILED',
         message: error.message
       });
-      const realmReport = {
+      const realmReport = applyResumeMetadata({
         ...realm,
-        resumed: Boolean(resumeState),
-        shortCircuited: false,
         events: eventCollector.events,
         run: buildCommandRunReport(eventCollector, run)
-      };
+      }, resumeState);
       if (!options.json) logger.error('🕶️ REALM verdict: FAIL - ' + error.message);
       if (hooks.postDown) try { await runHook(this.ctx, hooks.postDown, logger); } catch (e) { logger.debug?.('postDown hook failed: ' + e?.message); }
       if (options.json) {

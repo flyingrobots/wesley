@@ -6,15 +6,22 @@ export function assertResumeRequestedRunId(options = {}) {
   }
 }
 
-export function resolveResumeState(eventStore, { runId, transmutation }) {
+export function resolveResumeState(eventStore, { runId, transmutation, command = null }) {
   if (!eventStore || typeof eventStore.readStream !== 'function') {
     throw new WesleyError('NO_EVENT_STORE', 'No event store is configured for this runtime.');
   }
 
   const streamId = createRuntimeStreamId({ transmutation, runId });
-  const events = eventStore.readStream(streamId);
-  if (events.length === 0) {
+  const streamEvents = eventStore.readStream(streamId);
+  if (streamEvents.length === 0) {
     throw new WesleyError('RUN_NOT_FOUND', `No persisted run found for ${transmutation}/${runId}.`);
+  }
+
+  const events = command
+    ? filterCommandEvents(streamEvents, { command, transmutation })
+    : streamEvents;
+  if (command && events.length === 0) {
+    return null;
   }
 
   const replayResult = replayRuntimeRun(events, {
@@ -33,7 +40,28 @@ export function resolveResumeState(eventStore, { runId, transmutation }) {
   return {
     ...replayResult,
     events,
+    streamEvents,
     shortCircuited: replayResult.replay.terminal
+  };
+}
+
+export function buildShortCircuitedResumeResult(resumeState) {
+  return {
+    transmutation: resumeState.run.transmutation,
+    runId: resumeState.run.runId,
+    resumed: true,
+    shortCircuited: true,
+    events: resumeState.events,
+    run: resumeState.run,
+    replay: resumeState.replay
+  };
+}
+
+export function applyResumeMetadata(payload, resumeState) {
+  return {
+    ...payload,
+    resumed: Boolean(resumeState),
+    shortCircuited: false
   };
 }
 
@@ -41,4 +69,29 @@ function normalizeRunId(runId) {
   if (typeof runId !== 'string') return null;
   const trimmed = runId.trim();
   return trimmed || null;
+}
+
+function filterCommandEvents(events, { command, transmutation }) {
+  return events.filter(event => eventBelongsToCommand(event, { command, transmutation }));
+}
+
+function eventBelongsToCommand(event, { command, transmutation }) {
+  const payloadCommand = normalizeRunId(event?.payload?.command);
+  if (payloadCommand === command) {
+    return true;
+  }
+
+  const idempotencyKey = typeof event?.idempotencyKey === 'string' ? event.idempotencyKey : '';
+  if (idempotencyKey.startsWith(`${transmutation}:${command}:`)) {
+    return true;
+  }
+
+  if (command === 'transform' || command === 'generate') {
+    if (idempotencyKey === `${transmutation}:task-graph`) return true;
+    if (idempotencyKey === `${transmutation}:evidence`) return true;
+    if (idempotencyKey === `${transmutation}:scores`) return true;
+    if (idempotencyKey.startsWith(`${transmutation}:gen:`)) return true;
+  }
+
+  return false;
 }

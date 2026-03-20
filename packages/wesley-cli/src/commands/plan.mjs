@@ -8,7 +8,12 @@ import { buildAdditivePlan, explainPlan, emitMigrations } from './_migration-pla
 import { assertValid } from '../framework/schemaValidator.mjs';
 import { WesleyError } from '@wesley/core';
 import { resolveRunMetadata } from '../utils/run-metadata.mjs';
-import { assertResumeRequestedRunId, resolveResumeState } from '../utils/runtime-resume.mjs';
+import {
+  applyResumeMetadata,
+  assertResumeRequestedRunId,
+  buildShortCircuitedResumeResult,
+  resolveResumeState
+} from '../utils/runtime-resume.mjs';
 import {
   attachRunFailure,
   buildCommandRunReport,
@@ -51,18 +56,10 @@ export class PlanCommand extends WesleyCommand {
     assertResumeRequestedRunId(options);
     const run = resolveRunMetadata(options);
     const resumeState = options.resume
-      ? resolveResumeState(this.ctx?.eventStore, run)
+      ? resolveResumeState(this.ctx?.eventStore, { ...run, command: 'plan' })
       : null;
     if (resumeState?.shortCircuited) {
-      return {
-        transmutation: resumeState.run.transmutation,
-        runId: resumeState.run.runId,
-        resumed: true,
-        shortCircuited: true,
-        events: resumeState.events,
-        run: resumeState.run,
-        replay: resumeState.replay
-      };
+      return buildShortCircuitedResumeResult(resumeState);
     }
     if (resumeState) {
       context.resumeState = resumeState;
@@ -125,18 +122,16 @@ export class PlanCommand extends WesleyCommand {
           phaseCount: plan.phases.length,
           stepCount: explain.steps.length
         });
-        const report = {
+        const report = applyResumeMetadata({
           transmutation: run.transmutation,
           runId: run.runId,
-          resumed: Boolean(resumeState),
-          shortCircuited: false,
           run: buildCommandRunReport(eventCollector, run),
           plan,
           explain,
           mapping,
           radar,
           events: eventCollector.events
-        };
+        }, resumeState);
         await assertValid(this.ctx, 'plan-report.schema.json', report, 'Plan report');
         this.ctx.stdout.write(JSON.stringify(report, null, 2) + '\n');
         return;
@@ -184,16 +179,14 @@ export class PlanCommand extends WesleyCommand {
         stepCount: explain.steps.length
       });
 
-      return {
+      return applyResumeMetadata({
         transmutation: run.transmutation,
         runId: run.runId,
-        resumed: Boolean(resumeState),
-        shortCircuited: false,
         run: buildCommandRunReport(eventCollector, run),
         phases: plan.phases.length,
         steps: explain.steps.length,
         events: eventCollector.events
-      };
+      }, resumeState);
     } catch (error) {
       if (isInjectedCrash(error)) {
         throw attachRunFailure(error, eventCollector, run);

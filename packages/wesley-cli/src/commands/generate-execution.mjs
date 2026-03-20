@@ -19,6 +19,7 @@ import {
   emitSourcesResolved,
   isInjectedCrash
 } from '../utils/runtime-events.mjs';
+import { applyResumeMetadata } from '../utils/runtime-resume.mjs';
 
 export async function ensureGeneratePreconditions({ env, options, shell }) {
   if (shouldEnforceClean(env, options) && !options.allowDirty) {
@@ -35,7 +36,6 @@ export async function runSequentialGeneration({ ctx, context, compileOpsIfReques
   const runId = typeof options.runId === 'string' && options.runId.trim()
     ? options.runId.trim()
     : createRunId();
-  const resumed = Boolean(context.resumeState);
   const run = { runId, transmutation };
   const scope = createCommandEventScope(run, commandName);
   const eventCollector = createCommandEventCollector(ctx, run);
@@ -65,15 +65,14 @@ export async function runSequentialGeneration({ ctx, context, compileOpsIfReques
         artifactCount: 0,
         dryRun: true
       });
-      return {
+      return applyResumeMetadata({
         transmutation,
         runId,
-        resumed,
         artifacts: 0,
         dryRun: true,
         events: eventCollector.events,
         run: buildCommandRunReport(eventCollector, run)
-      };
+      }, context.resumeState);
     }
   }
 
@@ -104,15 +103,14 @@ export async function runSequentialGeneration({ ctx, context, compileOpsIfReques
         artifactCount: 0,
         dryRun: true
       });
-      return {
+      return applyResumeMetadata({
         transmutation,
         runId,
-        resumed,
         artifacts: 0,
         dryRun: true,
         events: eventCollector.events,
         run: buildCommandRunReport(eventCollector, run)
-      };
+      }, context.resumeState);
     }
   }
   try {
@@ -151,17 +149,15 @@ export async function runSequentialGeneration({ ctx, context, compileOpsIfReques
       logger.info('');
     }
 
-    return {
+    return applyResumeMetadata({
       transmutation: transmutationResult.transmutation,
       runId: transmutationResult.runId,
-      resumed,
-      shortCircuited: false,
       artifacts: artifacts.length,
       outDir: options.outDir,
       dryRun: options.dryRun || false,
       events: eventCollector.events,
       run: buildCommandRunReport(eventCollector, run)
-    };
+    }, context.resumeState);
   } catch (error) {
     if (isInjectedCrash(error)) {
       throw attachRunFailure(error, eventCollector, run);
