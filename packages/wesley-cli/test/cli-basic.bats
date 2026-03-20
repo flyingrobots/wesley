@@ -90,6 +90,13 @@ EOF
     assert_output --partial "--run-id"
 }
 
+@test "runs doctor help works" {
+    run node "$CLI_PATH" runs doctor --help
+    assert_success
+    assert_output --partial "Check persisted runtime runs for ledger health issues"
+    assert_output --partial "--limit"
+}
+
 @test "missing schema file exits 2" {
     run node "$CLI_PATH" generate --schema ./nonexistent.graphql
     assert_failure 2

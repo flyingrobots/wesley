@@ -92,3 +92,28 @@ EOF
   echo "$output" | jq -e '.replay.terminal == false' >/dev/null
   echo "$output" | jq -e '.replay.appliedEventCount == 4' >/dev/null
 }
+
+@test "runs doctor flags non-terminal and malformed streams" {
+  create_schema
+
+  run node "$CLI_PATH" transform --schema schema.graphql --transmutation legacy-supabase --run-id run-doctor-ok --out-dir out --json --quiet
+  assert_success
+
+  run env WESLEY_CRASH_AFTER_EVENT=4 node "$CLI_PATH" transform --schema schema.graphql --transmutation legacy-supabase --run-id run-doctor-crash --out-dir out --json --quiet
+  assert_failure 6
+
+  mkdir -p .wesley/ledger/streams
+  cat > .wesley/ledger/streams/broken-stream.jsonl <<'EOF'
+{"this":"is not valid jsonl"
+EOF
+
+  run node "$CLI_PATH" runs doctor --json
+  assert_success
+  echo "$output" | jq -e '.summary.streamCount == 3' >/dev/null
+  echo "$output" | jq -e '.summary.healthyStreams == 1' >/dev/null
+  echo "$output" | jq -e '.summary.unhealthyStreams == 2' >/dev/null
+  echo "$output" | jq -e '.summary.nonTerminalStreams == 1' >/dev/null
+  echo "$output" | jq -e '.summary.readErrorStreams == 1' >/dev/null
+  echo "$output" | jq -e '.streams[] | select(.run.runId == "run-doctor-crash") | .findings[] | select(.code == "RUN_NON_TERMINAL")' >/dev/null
+  echo "$output" | jq -e '.streams[] | select(.streamId == "broken-stream") | .findings[] | select(.code == "STREAM_READ_FAILED")' >/dev/null
+}

@@ -13,6 +13,20 @@ export class RunsCommand extends WesleyCommand {
 
   configureCommander(cmd) {
     cmd
+      .command('doctor')
+      .description('Check persisted runtime runs for ledger health issues')
+      .option('--transmutation <name>', 'Filter runs by transmutation name')
+      .option('--limit <n>', 'Maximum number of streams to inspect', '100')
+      .option('--json', 'Emit JSON')
+      .action((options, command) => {
+        return this.execute({
+          ...mergeCommandOptions(command),
+          ...options,
+          _runsSubcommand: 'doctor'
+        }, command);
+      });
+
+    cmd
       .command('status')
       .description('List persisted runtime runs from the ledger')
       .option('--transmutation <name>', 'Filter runs by transmutation name')
@@ -59,6 +73,9 @@ export class RunsCommand extends WesleyCommand {
   }
 
   async executeCore(context) {
+    if (context.options._runsSubcommand === 'doctor') {
+      return this.executeDoctor(context);
+    }
     if (context.options._runsSubcommand === 'status') {
       return this.executeStatus(context);
     }
@@ -71,6 +88,45 @@ export class RunsCommand extends WesleyCommand {
 
     context.command?.outputHelp?.();
     return;
+  }
+
+  async executeDoctor({ options, logger }) {
+    const eventStore = this.requireEventStore();
+    const filters = {
+      transmutation: normalizeOptionalString(options.transmutation),
+      limit: parseLimit(options.limit, 100)
+    };
+    const streams = this.inspectRunStreams(eventStore, filters);
+    const summary = summarizeDoctorResult(streams);
+    const payload = { summary, streams };
+
+    if (options.json) {
+      this.ctx.stdout.write(JSON.stringify(payload, null, 2) + '\n');
+      return;
+    }
+
+    logger.info(
+      `Ledger health: ${summary.healthyStreams}/${summary.streamCount} healthy, ${summary.unhealthyStreams} unhealthy`
+    );
+    if (summary.readErrorStreams > 0) {
+      logger.info(`Read errors: ${summary.readErrorStreams}`);
+    }
+    if (summary.nonTerminalStreams > 0) {
+      logger.info(`Non-terminal streams: ${summary.nonTerminalStreams}`);
+    }
+    if (summary.integrityIssueStreams > 0) {
+      logger.info(`Integrity issue streams: ${summary.integrityIssueStreams}`);
+    }
+
+    for (const stream of streams.filter(entry => !entry.healthy)) {
+      logger.info(`Stream: ${stream.streamId}`);
+      logger.info(`  run=${stream.run?.runId || 'n/a'} transmutation=${stream.run?.transmutation || 'n/a'} status=${stream.run?.status || 'unknown'}`);
+      for (const finding of stream.findings) {
+        logger.info(`  ${finding.code}: ${finding.message}`);
+      }
+    }
+
+    return payload;
   }
 
   async executeStatus({ options, logger }) {
@@ -206,21 +262,10 @@ export class RunsCommand extends WesleyCommand {
   }
 
   listRunReports(eventStore, filters = {}) {
-    const streamIds = typeof eventStore.listStreams === 'function'
-      ? eventStore.listStreams()
-      : [];
-
     const runs = [];
-    for (const streamId of streamIds) {
-      const events = eventStore.readStream(streamId);
-      if (events.length === 0) continue;
-      const first = events[0] || {};
-      const last = events.at(-1) || {};
-      const run = buildRuntimeRunReport(events, {
-        runId: last.runId ?? first.runId ?? null,
-        transmutation: last.transmutation ?? first.transmutation ?? null,
-        streamId
-      });
+    for (const stream of this.inspectRunStreams(eventStore, filters)) {
+      const run = stream.run;
+      if (!run) continue;
       if (!run.runId) continue;
       if (filters.transmutation && run.transmutation !== filters.transmutation) continue;
       if (filters.status && run.status !== filters.status) continue;
@@ -232,6 +277,72 @@ export class RunsCommand extends WesleyCommand {
       return runs.slice(0, filters.limit);
     }
     return runs;
+  }
+
+  inspectRunStreams(eventStore, filters = {}) {
+    const streamIds = typeof eventStore.listStreams === 'function'
+      ? eventStore.listStreams()
+      : [];
+    const results = [];
+
+    for (const streamId of streamIds) {
+      const stream = this.inspectSingleStream(eventStore, streamId);
+      if (filters.transmutation && stream.run?.transmutation !== filters.transmutation) continue;
+      results.push(stream);
+    }
+
+    results.sort((left, right) => compareRunsDescending(left.run || {}, right.run || {}));
+    if (Number.isInteger(filters.limit) && filters.limit >= 0) {
+      return results.slice(0, filters.limit);
+    }
+    return results;
+  }
+
+  inspectSingleStream(eventStore, streamId) {
+    try {
+      const events = eventStore.readStream(streamId);
+      const first = events[0] || {};
+      const last = events.at(-1) || {};
+      const replay = replayRuntimeRun(events, {
+        runId: last.runId ?? first.runId ?? null,
+        transmutation: last.transmutation ?? first.transmutation ?? null,
+        streamId
+      });
+      const findings = [];
+      if (!replay.replay.terminal) {
+        findings.push({
+          code: 'RUN_NON_TERMINAL',
+          message: `Run ${replay.run.runId || streamId} is non-terminal with status ${replay.run.status}.`
+        });
+      }
+      for (const issue of replay.replay.integrity.issues) {
+        findings.push({
+          code: issue.code,
+          message: issue.message
+        });
+      }
+
+      return {
+        streamId,
+        run: replay.run,
+        replay: replay.replay,
+        events,
+        findings,
+        healthy: findings.length === 0
+      };
+    } catch (error) {
+      return {
+        streamId,
+        run: null,
+        replay: null,
+        events: [],
+        findings: [{
+          code: 'STREAM_READ_FAILED',
+          message: error.message
+        }],
+        healthy: false
+      };
+    }
   }
 
   resolveRunStream(eventStore, runId, transmutation) {
@@ -285,9 +396,9 @@ function compareTimestampDescending(left, right) {
   return rightTs - leftTs;
 }
 
-function parseLimit(value) {
+function parseLimit(value, fallback = 20) {
   const parsed = Number.parseInt(String(value || ''), 10);
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 20;
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
 }
 
 function normalizeOptionalString(value) {
@@ -309,4 +420,35 @@ function mergeCommandOptions(command) {
     current = current.parent;
   }
   return merged;
+}
+
+function summarizeDoctorResult(streams) {
+  const summary = {
+    streamCount: streams.length,
+    healthyStreams: 0,
+    unhealthyStreams: 0,
+    nonTerminalStreams: 0,
+    integrityIssueStreams: 0,
+    readErrorStreams: 0
+  };
+
+  for (const stream of streams) {
+    if (stream.healthy) {
+      summary.healthyStreams += 1;
+    } else {
+      summary.unhealthyStreams += 1;
+    }
+
+    if (stream.findings.some(finding => finding.code === 'RUN_NON_TERMINAL')) {
+      summary.nonTerminalStreams += 1;
+    }
+    if (stream.findings.some(finding => finding.code === 'STREAM_READ_FAILED')) {
+      summary.readErrorStreams += 1;
+    }
+    if (stream.findings.some(finding => !['RUN_NON_TERMINAL', 'STREAM_READ_FAILED'].includes(finding.code))) {
+      summary.integrityIssueStreams += 1;
+    }
+  }
+
+  return summary;
 }
