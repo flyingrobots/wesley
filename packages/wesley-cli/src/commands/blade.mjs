@@ -14,6 +14,7 @@ import { CertVerifyCommand } from './cert-verify.mjs';
 import { CertBadgeCommand } from './cert-badge.mjs';
 import { LEGACY_SUPABASE_TRANSMUTATION } from '../transmutations/legacy-supabase.mjs';
 import { resolveRunMetadata } from '../utils/run-metadata.mjs';
+import { assertResumeRequestedRunId } from '../utils/runtime-resume.mjs';
 
 export class BladeCommand extends WesleyCommand {
   constructor(ctx) {
@@ -33,6 +34,7 @@ export class BladeCommand extends WesleyCommand {
       .option('--env <name>', 'Target environment', 'production')
       .option('--transmutation <name>', 'Transmutation to execute', LEGACY_SUPABASE_TRANSMUTATION)
       .option('--run-id <id>', 'Associate the full BLADE run with a specific run ID')
+      .option('--resume', 'Resume a previously started BLADE run with the same transmutation and run ID')
       .option('--sign-key <path>', 'Private key (PEM) for signing')
       .option('--pub <path>', 'Public key (PEM) for verification')
       .option('--signer <name>', 'Signer label', 'HOLMES')
@@ -41,55 +43,65 @@ export class BladeCommand extends WesleyCommand {
 
   async executeCore(context) {
     const { options } = context;
-    const logger = this.makeLogger(options, { phase: 'blade' });
+    const nestedQuiet = Boolean(options.quiet || options.json);
+    const logger = this.makeLogger({ ...options, quiet: nestedQuiet }, { phase: 'blade' });
     const outDir = options.outDir || 'out';
+    assertResumeRequestedRunId(options);
     const run = resolveRunMetadata(options);
 
     // 1) Transform
     logger.info('🗡️  BLADE: transform');
     const transform = new TransformPipelineCommand(this.ctx);
-    await transform.execute({
+    const transformResult = await executeNestedCommand(transform, {
       schema: options.schema,
       outDir,
       transmutation: run.transmutation,
       runId: run.runId,
+      resume: Boolean(options.resume),
+      quiet: nestedQuiet,
       json: false
     });
 
     // 2) Plan (explain)
     logger.info('🛡️  BLADE: plan (explain)');
     const plan = new PlanCommand(this.ctx);
-    await plan.execute({
+    const planResult = await executeNestedCommand(plan, {
       schema: options.schema,
       outDir,
       explain: true,
       radar: !!options.radar,
       transmutation: run.transmutation,
       runId: run.runId,
+      resume: Boolean(options.resume),
+      quiet: nestedQuiet,
       json: false
     });
 
     // 3) Rehearse (shadow)
     logger.info('🕶️  BLADE: rehearse (shadow)');
     const rehearse = new RehearseCommand(this.ctx);
-    await rehearse.execute({
+    const rehearseResult = await executeNestedCommand(rehearse, {
       schema: options.schema,
       dsn: options.dsn,
       docker: !!options.docker,
       dryRun: !!options.dryRun,
       transmutation: run.transmutation,
       runId: run.runId,
+      resume: Boolean(options.resume),
+      quiet: nestedQuiet,
       json: false
     });
 
     // 4) Cert create
     logger.info('📜 BLADE: certify');
     const certCreate = new CertCreateCommand(this.ctx);
-    await certCreate.execute({
+    const certCreateResult = await executeNestedCommand(certCreate, {
       env: options.env || 'production',
       out: '.wesley/SHIPME.md',
       transmutation: run.transmutation,
       runId: run.runId,
+      resume: Boolean(options.resume),
+      quiet: nestedQuiet,
       json: false
     });
 
@@ -107,9 +119,44 @@ export class BladeCommand extends WesleyCommand {
 
     // Badge output
     const badgeCmd = new CertBadgeCommand(this.ctx);
-    const badge = await badgeCmd.execute({ in: '.wesley/SHIPME.md' });
+    const badge = await executeNestedCommand(badgeCmd, { in: '.wesley/SHIPME.md', quiet: true });
     logger.info('🏁 BLADE badge: ' + (badge?.badge || 'n/a'));
 
-    return { ok: true, transmutation: run.transmutation, runId: run.runId };
+    return {
+      ok: true,
+      transmutation: run.transmutation,
+      runId: run.runId,
+      resumed: Boolean(options.resume),
+      badge: badge?.badge || null,
+      stages: {
+        transform: summarizeStageResult(transformResult),
+        plan: summarizeStageResult(planResult),
+        rehearse: summarizeStageResult(rehearseResult),
+        certCreate: summarizeStageResult(certCreateResult)
+      }
+    };
+  }
+}
+
+function summarizeStageResult(result) {
+  return {
+    ok: result?.ok !== false,
+    resumed: Boolean(result?.resumed),
+    shortCircuited: Boolean(result?.shortCircuited),
+    runId: result?.runId || null,
+    transmutation: result?.transmutation || null,
+    command: result?.run?.command || null,
+    status: result?.run?.status || null
+  };
+}
+
+async function executeNestedCommand(command, options) {
+  try {
+    return await command.execute(options);
+  } catch (error) {
+    if (error?.name === 'ExitError' && error.cause) {
+      throw error.cause;
+    }
+    throw error;
   }
 }

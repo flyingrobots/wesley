@@ -4,13 +4,19 @@ export class CertBadgeCommand extends WesleyCommand {
   constructor(ctx) {
     super(ctx, 'cert-badge', 'Print SHIPME.md badge line');
   }
-  configureCommander(cmd){ return cmd.option('--in <file>', 'Certificate file', '.wesley/SHIPME.md'); }
+  configureCommander(cmd){
+    return cmd
+      .option('--in <file>', 'Certificate file', '.wesley/SHIPME.md')
+      .option('--json', 'Emit JSON badge');
+  }
   async executeCore({ options }){
     const md = await this.ctx.fs.read(options.in);
     const { json } = extractJsonBlock(md);
     const okRealm = json?.realm?.verdict === 'PASS';
     const badge = `[REALM] ${okRealm ? 'PASS' : 'FAIL'} — sha ${json.sha?.slice(0,7) || 'unknown'}`;
-    this.ctx.stdout.write(badge + '\n');
+    if (!options.quiet && !options.json) {
+      this.ctx.stdout.write(badge + '\n');
+    }
     return { badge };
   }
 }
@@ -25,4 +31,3 @@ function extractJsonBlock(md) {
   const json = JSON.parse(jsonStr);
   return { json };
 }
-
