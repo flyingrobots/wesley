@@ -81,6 +81,52 @@ JSON
   echo "$output" | jq -e '.events | map(.type) == ["RunRequested","SourcesResolved","CertificateIssued","RunCompleted"]' >/dev/null
 }
 
+@test "cert-create --resume treats shared transform history as a fresh cert run" {
+  create_schema
+  create_realm_pass
+
+  run node "$CLI_PATH" transform --schema schema.graphql --transmutation legacy-supabase --run-id run-cert-shared-123 --out-dir out --json --quiet
+  assert_success
+
+  run node "$CLI_PATH" cert-create --env test --json --transmutation legacy-supabase --run-id run-cert-shared-123 --resume
+  assert_success
+  echo "$output" | jq -e '.transmutation == "legacy-supabase"' >/dev/null
+  echo "$output" | jq -e '.runId == "run-cert-shared-123"' >/dev/null
+  echo "$output" | jq -e '.resumed == false' >/dev/null
+  echo "$output" | jq -e '.shortCircuited == false' >/dev/null
+  echo "$output" | jq -e '.run.command == "cert-create"' >/dev/null
+  echo "$output" | jq -e '.run.status == "completed"' >/dev/null
+}
+
+@test "cert-create --resume completes a partial cert run without duplicating events" {
+  create_realm_pass
+
+  run env WESLEY_CRASH_AFTER_EVENT=2 node "$CLI_PATH" cert-create --env test --json --transmutation legacy-supabase --run-id run-cert-resume-123
+  assert_failure 6
+
+  run node "$CLI_PATH" cert-create --env test --json --transmutation legacy-supabase --run-id run-cert-resume-123 --resume
+  assert_success
+  echo "$output" | jq -e '.runId == "run-cert-resume-123"' >/dev/null
+  echo "$output" | jq -e '.resumed == true' >/dev/null
+  echo "$output" | jq -e '.shortCircuited == false' >/dev/null
+  echo "$output" | jq -e '.run.status == "completed"' >/dev/null
+  echo "$output" | jq -e '.events | map(.type) == ["RunRequested","SourcesResolved","CertificateIssued","RunCompleted"]' >/dev/null
+}
+
+@test "cert-create --resume short-circuits an already completed cert run" {
+  create_realm_pass
+
+  run node "$CLI_PATH" cert-create --env test --json --transmutation legacy-supabase --run-id run-cert-shortcircuit-123
+  assert_success
+
+  run node "$CLI_PATH" cert-create --env test --json --transmutation legacy-supabase --run-id run-cert-shortcircuit-123 --resume
+  assert_success
+  echo "$output" | jq -e '.result.resumed == true' >/dev/null
+  echo "$output" | jq -e '.result.shortCircuited == true' >/dev/null
+  echo "$output" | jq -e '.result.run.status == "completed"' >/dev/null
+  echo "$output" | jq -e '.result.events | length == 4' >/dev/null
+}
+
 @test "cert create + sign + verify succeeds with PASS realm" {
   create_schema
   create_realm_pass

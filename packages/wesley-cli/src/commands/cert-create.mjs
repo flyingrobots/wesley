@@ -4,6 +4,12 @@
 import { createHash } from 'node:crypto';
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import { resolveRunMetadata } from '../utils/run-metadata.mjs';
+import {
+  applyResumeMetadata,
+  assertResumeRequestedRunId,
+  buildShortCircuitedResumeResult,
+  resolveResumeState
+} from '../utils/runtime-resume.mjs';
 import { readRealmProjection } from '../utils/runtime-projections.mjs';
 import {
   attachRunFailure,
@@ -30,10 +36,12 @@ export class CertCreateCommand extends WesleyCommand {
       .option('--out <file>', 'Output file', '.wesley/SHIPME.md')
       .option('--transmutation <name>', 'Transmutation to associate with this certificate')
       .option('--run-id <id>', 'Associate this certificate with a specific run ID')
+      .option('--resume', 'Resume a previously started certificate run with the same transmutation and run ID')
       .option('--json', 'Emit JSON to stdout (no file)');
   }
 
   async executeCore({ options, logger }) {
+    assertResumeRequestedRunId(options);
     const env = options.env || 'production';
     const now = new Date().toISOString();
     const sha = await gitSha(this.ctx) || 'uncommitted';
@@ -41,6 +49,12 @@ export class CertCreateCommand extends WesleyCommand {
     const scores = await readJsonSafe(this.ctx, '.wesley/scores.json');
     const realm = await readWithFallback(() => readRealmProjection(this.ctx.fs));
     const run = resolveRunMetadata(options, realm || {});
+    const resumeState = options.resume
+      ? resolveResumeState(this.ctx?.eventStore, { ...run, command: 'cert-create' })
+      : null;
+    if (resumeState?.shortCircuited) {
+      return buildShortCircuitedResumeResult(resumeState);
+    }
     const eventCollector = createCommandEventCollector(this.ctx, run);
     const scope = createCommandEventScope(run, 'cert-create');
     emitRunRequested(eventCollector, scope, {
@@ -58,7 +72,7 @@ export class CertCreateCommand extends WesleyCommand {
         artifactCount: Object.keys(artifacts).length
       });
 
-      const cert = {
+      const cert = applyResumeMetadata({
         version: '1.0.0',
         transmutation: run.transmutation,
         runId: run.runId,
@@ -69,7 +83,7 @@ export class CertCreateCommand extends WesleyCommand {
         realm: realm || null,
         artifacts,
         signatures: []
-      };
+      }, resumeState);
       emitCertificateIssued(eventCollector, scope, {
         environment: env,
         artifactCount: Object.keys(artifacts).length,
@@ -107,6 +121,8 @@ export class CertCreateCommand extends WesleyCommand {
         file: options.out,
         transmutation: run.transmutation,
         runId: run.runId,
+        resumed: Boolean(resumeState),
+        shortCircuited: false,
         events: eventCollector.events,
         run: buildCommandRunReport(eventCollector, run)
       };
