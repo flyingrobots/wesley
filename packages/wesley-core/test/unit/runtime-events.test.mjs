@@ -61,3 +61,32 @@ test('createRuntimeEventCollector continues sequence from an existing stream', (
     [1, 2]
   );
 });
+
+test('createRuntimeEventCollector injects a crash after a configured event count', () => {
+  const eventStore = new MemoryEventStore();
+  const collector = createRuntimeEventCollector({
+    clock: fakeClock,
+    runId: 'run-store-003',
+    transmutation: 'legacy-supabase',
+    eventStore,
+    crashAfterEvent: 2
+  });
+
+  collector.emit('RunRequested', { command: 'transform' });
+
+  let error;
+  try {
+    collector.emit('SourcesResolved', { schemaPath: 'schema.graphql' });
+  } catch (cause) {
+    error = cause;
+  }
+
+  assert.ok(error);
+  assert.equal(error.code, 'PIPELINE_EXEC_FAILED');
+  assert.equal(error.injectedCrash, true);
+  assert.equal(error.runId, 'run-store-003');
+  assert.deepEqual(
+    eventStore.readStream(collector.streamId).map(event => event.type),
+    ['RunRequested', 'SourcesResolved']
+  );
+});

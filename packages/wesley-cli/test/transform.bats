@@ -76,3 +76,18 @@ EOF
   echo "$output" | jq -e '.run.status == "failed"' >/dev/null
   echo "$output" | jq -e '.events | map(.type) == ["RunRequested","SourcesResolved","RunFailed"]' >/dev/null
 }
+
+@test "transform fault injection preserves partial persisted run state" {
+  create_min_schema
+  run env WESLEY_CRASH_AFTER_EVENT=4 node "$CLI_PATH" transform --schema schema.graphql --transmutation legacy-supabase --run-id run-transform-crash-123 --out-dir out --json --quiet
+  assert_failure 6
+  echo "$output" | jq -e '.code == "PIPELINE_EXEC_FAILED"' >/dev/null
+  echo "$output" | jq -e '.runId == "run-transform-crash-123"' >/dev/null
+  echo "$output" | jq -e '.run.status == "running"' >/dev/null
+  echo "$output" | jq -e '.events | map(.type) == ["RunRequested","SourcesResolved","IRParsed","TaskGraphBuilt"]' >/dev/null
+
+  run node "$CLI_PATH" runs inspect --run-id run-transform-crash-123 --transmutation legacy-supabase --json
+  assert_success
+  echo "$output" | jq -e '.run.status == "running"' >/dev/null
+  echo "$output" | jq -e '.events | map(.type) == ["RunRequested","SourcesResolved","IRParsed","TaskGraphBuilt"]' >/dev/null
+}

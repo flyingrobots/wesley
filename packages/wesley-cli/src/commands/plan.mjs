@@ -19,7 +19,8 @@ import {
   emitRunCompleted,
   emitRunFailed,
   emitRunRequested,
-  emitSourcesResolved
+  emitSourcesResolved,
+  isInjectedCrash
 } from '../utils/runtime-events.mjs';
 
 export class PlanCommand extends WesleyCommand {
@@ -170,6 +171,9 @@ export class PlanCommand extends WesleyCommand {
         events: eventCollector.events
       };
     } catch (error) {
+      if (isInjectedCrash(error)) {
+        throw attachRunFailure(error, eventCollector, run);
+      }
       emitRunFailed(eventCollector, scope, {
         command: 'plan',
         code: error.code || 'PLAN_FAILED',

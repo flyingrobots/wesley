@@ -105,7 +105,8 @@ export class TransmutationRunner {
       clock: this._clock,
       runId,
       transmutation: name,
-      eventStore: options.eventStore
+      eventStore: options.eventStore,
+      crashAfterEvent: options.crashAfterEvent
     });
     const evidenceMap = new EvidenceMap();
     evidenceMap.setSha(options.sha || 'uncommitted');

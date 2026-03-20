@@ -6,6 +6,7 @@ export function createCommandEventCollector(ctx, run, options = {}) {
     runId: run.runId,
     transmutation: run.transmutation,
     eventStore: options.eventStore ?? ctx?.eventStore,
+    crashAfterEvent: resolveCrashAfterEvent(options.crashAfterEvent ?? ctx?.env?.WESLEY_CRASH_AFTER_EVENT),
     streamId: options.streamId,
     correlationId: options.correlationId
   });
@@ -67,6 +68,10 @@ export function attachRunFailure(error, eventCollector, run) {
   return error;
 }
 
+export function isInjectedCrash(error) {
+  return Boolean(error?.injectedCrash) && error?.code === 'PIPELINE_EXEC_FAILED';
+}
+
 export function buildCommandRunReport(eventCollector, run, seed = {}) {
   return buildRuntimeRunReport(eventCollector?.events || [], {
     runId: run.runId,
@@ -97,4 +102,9 @@ function emitTaskEvent(eventCollector, taskId, type, payload, suffix) {
   return eventCollector.emit(type, payload, {
     idempotencyKey: `${taskId}:${suffix}`
   });
+}
+
+function resolveCrashAfterEvent(value) {
+  const parsed = Number.parseInt(String(value ?? ''), 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 }

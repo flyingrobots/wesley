@@ -13,7 +13,8 @@ export function createRuntimeEventCollector({
   transmutation,
   streamId = createRuntimeStreamId({ transmutation, runId }),
   correlationId = runId,
-  eventStore = new MemoryEventStore()
+  eventStore = new MemoryEventStore(),
+  crashAfterEvent = null
 }) {
   if (!clock || typeof clock.now !== 'function') {
     throw new TypeError('createRuntimeEventCollector requires a clock with now()');
@@ -52,9 +53,35 @@ export function createRuntimeEventCollector({
         transmutation,
         payload
       };
-      return eventStore.append(event);
+      const appended = eventStore.append(event);
+      if (shouldInjectCrash(crashAfterEvent, sequence)) {
+        throw buildInjectedCrashError({
+          crashAfterEvent,
+          eventStore,
+          streamId,
+          runId,
+          transmutation
+        });
+      }
+      return appended;
     }
   };
+}
+
+function shouldInjectCrash(crashAfterEvent, sequence) {
+  return Number.isInteger(crashAfterEvent) && crashAfterEvent > 0 && sequence === crashAfterEvent;
+}
+
+function buildInjectedCrashError({ crashAfterEvent, eventStore, streamId, runId, transmutation }) {
+  const error = new Error(`Injected crash after event ${crashAfterEvent} for stream ${streamId}.`);
+  error.name = 'InjectedRuntimeCrashError';
+  error.code = 'PIPELINE_EXEC_FAILED';
+  error.injectedCrash = true;
+  error.runId = runId;
+  error.transmutation = transmutation;
+  error.streamId = streamId;
+  error.events = eventStore.readStream(streamId);
+  return error;
 }
 
 function normalizeTimestamp(value) {

@@ -19,6 +19,7 @@ import {
   emitRunFailed,
   emitRunRequested,
   emitSourcesResolved,
+  isInjectedCrash,
   emitTaskCompleted,
   emitTaskFailed,
   emitTaskStarted
@@ -205,6 +206,9 @@ export class RehearseCommand extends WesleyCommand {
       }
       return realmReport;
     } catch (error) {
+      if (isInjectedCrash(error)) {
+        throw attachRunFailure(error, eventCollector, run);
+      }
       const realm = buildRealmProjection({
         transmutation: run.transmutation,
         runId: run.runId,

@@ -16,7 +16,8 @@ import {
   emitRunCompleted,
   emitRunFailed,
   emitRunRequested,
-  emitSourcesResolved
+  emitSourcesResolved,
+  isInjectedCrash
 } from '../utils/runtime-events.mjs';
 
 export async function ensureGeneratePreconditions({ env, options, shell }) {
@@ -157,6 +158,9 @@ export async function runSequentialGeneration({ ctx, context, compileOpsIfReques
       run: buildCommandRunReport(eventCollector, run)
     };
   } catch (error) {
+    if (isInjectedCrash(error)) {
+      throw attachRunFailure(error, eventCollector, run);
+    }
     emitRunFailed(eventCollector, scope, {
       code: error.code || 'GENERATION_FAILED',
       message: error.message

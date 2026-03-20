@@ -15,7 +15,8 @@ import {
   emitRunCompleted,
   emitRunFailed,
   emitRunRequested,
-  emitSourcesResolved
+  emitSourcesResolved,
+  isInjectedCrash
 } from '../utils/runtime-events.mjs';
 
 export class CertCreateCommand extends WesleyCommand {
@@ -110,6 +111,9 @@ export class CertCreateCommand extends WesleyCommand {
         run: buildCommandRunReport(eventCollector, run)
       };
     } catch (error) {
+      if (isInjectedCrash(error)) {
+        throw attachRunFailure(error, eventCollector, run);
+      }
       emitRunFailed(eventCollector, scope, {
         command: 'cert-create',
         code: error.code || 'CERT_CREATE_FAILED',
