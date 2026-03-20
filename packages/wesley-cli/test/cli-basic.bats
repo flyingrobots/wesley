@@ -76,6 +76,13 @@ EOF
     assert_output --partial "--run-id"
 }
 
+@test "runs status help works" {
+    run node "$CLI_PATH" runs status --help
+    assert_success
+    assert_output --partial "List persisted runtime runs"
+    assert_output --partial "--status"
+}
+
 @test "missing schema file exits 2" {
     run node "$CLI_PATH" generate --schema ./nonexistent.graphql
     assert_failure 2
