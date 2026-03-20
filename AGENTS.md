@@ -48,8 +48,10 @@ BOOT SEQUENCE:
 Each autonomous agent shall inscribe its deeds into the eternal tome:
 
 ```bash
-CHRONICLES_OF_THE_MACHINE-KIND_VOL_00000001.jsonl
+CHRONICLES_OF_THE_MACHINE-KIND_VOL_00000010.jsonl
 ```
+
+Current active volume: `CHRONICLES_OF_THE_MACHINE-KIND_VOL_00000010.jsonl`
 
 **This is:**
 
