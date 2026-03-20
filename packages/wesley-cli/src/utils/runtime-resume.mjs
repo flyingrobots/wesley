@@ -23,8 +23,11 @@ export function resolveResumeState(eventStore, { runId, transmutation, command =
   if (command && events.length === 0) {
     return null;
   }
+  const replayEvents = command
+    ? normalizeCommandReplayEvents(events)
+    : events;
 
-  const replayResult = replayRuntimeRun(events, {
+  const replayResult = replayRuntimeRun(replayEvents, {
     runId,
     transmutation,
     streamId
@@ -40,6 +43,7 @@ export function resolveResumeState(eventStore, { runId, transmutation, command =
   return {
     ...replayResult,
     events,
+    replayEvents,
     streamEvents,
     shortCircuited: replayResult.replay.terminal
   };
@@ -73,6 +77,19 @@ function normalizeRunId(runId) {
 
 function filterCommandEvents(events, { command, transmutation }) {
   return events.filter(event => eventBelongsToCommand(event, { command, transmutation }));
+}
+
+function normalizeCommandReplayEvents(events) {
+  return events.map((event, index) => {
+    const sequence = index + 1;
+    return {
+      ...event,
+      sequence,
+      eventId: typeof event?.streamId === 'string' && event.streamId
+        ? `${event.streamId}:${sequence}`
+        : event?.eventId
+    };
+  });
 }
 
 function eventBelongsToCommand(event, { command, transmutation }) {
