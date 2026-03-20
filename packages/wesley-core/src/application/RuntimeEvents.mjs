@@ -38,23 +38,24 @@ export function createRuntimeEventCollector({
       return eventStore.readStream(streamId);
     },
     emit(type, payload = {}, metadata = {}) {
-      sequence += 1;
+      const nextSequence = sequence + 1;
       const event = {
-        eventId: `${streamId}:${sequence}`,
+        eventId: `${streamId}:${nextSequence}`,
         type,
         streamId,
-        sequence,
+        sequence: nextSequence,
         schemaVersion: RUNTIME_EVENT_SCHEMA_VERSION,
         timestamp: normalizeTimestamp(clock.now()),
         causationId: metadata.causationId ?? null,
         correlationId: metadata.correlationId ?? correlationId,
-        idempotencyKey: metadata.idempotencyKey ?? `${streamId}:${type}:${sequence}`,
+        idempotencyKey: metadata.idempotencyKey ?? `${streamId}:${type}:${nextSequence}`,
         runId,
         transmutation,
         payload
       };
       const appended = eventStore.append(event);
-      if (shouldInjectCrash(crashAfterEvent, sequence)) {
+      sequence = Number.isInteger(appended?.sequence) ? appended.sequence : nextSequence;
+      if (appended === event && shouldInjectCrash(crashAfterEvent, sequence)) {
         throw buildInjectedCrashError({
           crashAfterEvent,
           eventStore,

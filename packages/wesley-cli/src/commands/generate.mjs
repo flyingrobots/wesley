@@ -5,7 +5,7 @@
  */
 
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
-import { WesleyError, OpsError, createRunId } from '@wesley/core';
+import { WesleyError, OpsError, createRunId, createRuntimeStreamId, replayRuntimeRun } from '@wesley/core';
 import {
   ensureGeneratePreconditions,
   runSequentialGeneration,
@@ -49,6 +49,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
       .option('--i-know-what-im-doing', 'Acknowledge hazardous flags in CI environments')
       .option('--transmutation <name>', 'Transmutation to execute', LEGACY_SUPABASE_TRANSMUTATION)
       .option('--run-id <id>', 'Associate this execution with a specific run ID')
+      .option('--resume', 'Resume a previously started run with the same transmutation and run ID')
       .option('--debug', 'Debug output with stack traces')
       .option('-q, --quiet', 'Silence logs (level=silent)')
       .option('--json', 'Emit newline-delimited JSON logs')
@@ -70,6 +71,9 @@ export class GeneratePipelineCommand extends WesleyCommand {
     const requestedRunId = typeof options.runId === 'string' && options.runId.trim()
       ? options.runId.trim()
       : createRunId();
+    if (options.resume && !options.runId) {
+      throw new WesleyError('EUSAGE', '--resume requires --run-id.');
+    }
 
     const isCI = String(this.ctx?.env?.CI || '').toLowerCase() === 'true' || this.ctx?.env?.CI === '1';
     const canAllowErrors = !isCI || options.iKnowWhatImDoing;
@@ -111,6 +115,27 @@ export class GeneratePipelineCommand extends WesleyCommand {
       throw attachRunFailure(error, eventCollector, run);
     }
 
+    const resumeState = options.resume
+      ? resolveResumeState(this.ctx?.eventStore, {
+        runId: options.runId,
+        transmutation: options.transmutation
+      })
+      : null;
+    if (resumeState?.shortCircuited) {
+      return {
+        transmutation: resumeState.run.transmutation,
+        runId: resumeState.run.runId,
+        resumed: true,
+        shortCircuited: true,
+        events: resumeState.events,
+        run: resumeState.run,
+        replay: resumeState.replay
+      };
+    }
+    if (resumeState) {
+      context.resumeState = resumeState;
+    }
+
     await ensureGeneratePreconditions({
       env: this.ctx.env || {},
       options,
@@ -129,7 +154,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
 
     const needsSequentialPipeline = options.unit || options.dryRun || options.printIr || options.printComposedSdl;
     const useExperimentalTasksRunner = String(this.ctx?.env?.WESLEY_EXPERIMENTAL_TASKS || '') === '1';
-    if (planner && runner && planner.buildPlan && runner.run && useExperimentalTasksRunner && !needsSequentialPipeline) {
+    if (planner && runner && planner.buildPlan && runner.run && useExperimentalTasksRunner && !needsSequentialPipeline && !options.resume) {
       return this.executeWithTasksAndSlaps(context);
     }
 
@@ -151,4 +176,43 @@ export class GeneratePipelineCommand extends WesleyCommand {
   async compileOpsIfRequested(context) {
     return compileOpsIfRequested({ ctx: this.ctx, context });
   }
+}
+
+function resolveResumeState(eventStore, { runId, transmutation }) {
+  if (!eventStore || typeof eventStore.readStream !== 'function') {
+    throw new WesleyError('NO_EVENT_STORE', 'No event store is configured for this runtime.');
+  }
+
+  const streamId = createRuntimeStreamId({ transmutation, runId });
+  const events = eventStore.readStream(streamId);
+  if (events.length === 0) {
+    throw new WesleyError('RUN_NOT_FOUND', `No persisted run found for ${transmutation}/${runId}.`);
+  }
+
+  const replayResult = replayRuntimeRun(events, {
+    runId,
+    transmutation,
+    streamId
+  });
+  if (!replayResult.replay.integrity.valid) {
+    const codes = replayResult.replay.integrity.issues.map(issue => issue.code).join(', ');
+    throw new WesleyError(
+      'PIPELINE_EXEC_FAILED',
+      `Cannot resume ${transmutation}/${runId}; persisted stream failed integrity checks: ${codes}.`
+    );
+  }
+
+  if (replayResult.replay.terminal) {
+    return {
+      ...replayResult,
+      events,
+      shortCircuited: true
+    };
+  }
+
+  return {
+    ...replayResult,
+    events,
+    shortCircuited: false
+  };
 }

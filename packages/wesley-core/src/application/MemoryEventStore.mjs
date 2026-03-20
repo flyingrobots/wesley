@@ -16,6 +16,11 @@ export class MemoryEventStore extends EventStorePort {
 
     const streamId = event.streamId;
     const stream = this._streams.get(streamId);
+    const existing = findExistingByIdempotencyKey(stream, event.idempotencyKey);
+    if (existing) {
+      return existing;
+    }
+
     if (stream) {
       stream.push(event);
     } else {
@@ -34,4 +39,14 @@ export class MemoryEventStore extends EventStorePort {
   listStreams() {
     return [...this._streams.keys()];
   }
+}
+
+function findExistingByIdempotencyKey(stream, idempotencyKey) {
+  if (!Array.isArray(stream)) {
+    return null;
+  }
+  if (typeof idempotencyKey !== 'string' || !idempotencyKey.trim()) {
+    return null;
+  }
+  return stream.find(entry => entry?.idempotencyKey === idempotencyKey) || null;
 }

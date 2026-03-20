@@ -28,6 +28,7 @@ EOF
   assert_output --partial "Run a named transmutation"
   assert_output --partial "--transmutation"
   assert_output --partial "--run-id"
+  assert_output --partial "--resume"
 }
 
 @test "transform missing schema exits 2" {
@@ -90,4 +91,38 @@ EOF
   assert_success
   echo "$output" | jq -e '.run.status == "running"' >/dev/null
   echo "$output" | jq -e '.events | map(.type) == ["RunRequested","SourcesResolved","IRParsed","TaskGraphBuilt"]' >/dev/null
+}
+
+@test "transform --resume completes a partial persisted run without duplicating events" {
+  create_min_schema
+
+  run env WESLEY_CRASH_AFTER_EVENT=4 node "$CLI_PATH" transform --schema schema.graphql --transmutation legacy-supabase --run-id run-transform-resume-123 --out-dir out --json --quiet
+  assert_failure 6
+
+  run node "$CLI_PATH" transform --schema schema.graphql --transmutation legacy-supabase --run-id run-transform-resume-123 --resume --out-dir out --json --quiet
+  assert_success
+  echo "$output" | jq -e '.result.resumed == true' >/dev/null
+  echo "$output" | jq -e '.result.shortCircuited == false' >/dev/null
+  echo "$output" | jq -e '.result.run.status == "completed"' >/dev/null
+  echo "$output" | jq -e '.result.events | map(.type) == ["RunRequested","SourcesResolved","IRParsed","TaskGraphBuilt","TaskStarted","TaskCompleted","EvidenceMerged","ScoresComputed","ArtifactsMaterialized","RunCompleted"]' >/dev/null
+
+  run node "$CLI_PATH" runs replay --run-id run-transform-resume-123 --transmutation legacy-supabase --json
+  assert_success
+  echo "$output" | jq -e '.run.status == "completed"' >/dev/null
+  echo "$output" | jq -e '.replay.integrity.valid == true' >/dev/null
+  echo "$output" | jq -e '.replay.appliedEventCount == 10' >/dev/null
+}
+
+@test "transform --resume short-circuits an already completed run" {
+  create_min_schema
+
+  run node "$CLI_PATH" transform --schema schema.graphql --transmutation legacy-supabase --run-id run-transform-shortcircuit-123 --out-dir out --json --quiet
+  assert_success
+
+  run node "$CLI_PATH" transform --schema schema.graphql --transmutation legacy-supabase --run-id run-transform-shortcircuit-123 --resume --out-dir out --json --quiet
+  assert_success
+  echo "$output" | jq -e '.result.resumed == true' >/dev/null
+  echo "$output" | jq -e '.result.shortCircuited == true' >/dev/null
+  echo "$output" | jq -e '.result.run.status == "completed"' >/dev/null
+  echo "$output" | jq -e '.result.events | length == 10' >/dev/null
 }

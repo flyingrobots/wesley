@@ -35,6 +35,7 @@ export async function runSequentialGeneration({ ctx, context, compileOpsIfReques
   const runId = typeof options.runId === 'string' && options.runId.trim()
     ? options.runId.trim()
     : createRunId();
+  const resumed = Boolean(context.resumeState);
   const run = { runId, transmutation };
   const scope = createCommandEventScope(run, commandName);
   const eventCollector = createCommandEventCollector(ctx, run);
@@ -67,6 +68,7 @@ export async function runSequentialGeneration({ ctx, context, compileOpsIfReques
       return {
         transmutation,
         runId,
+        resumed,
         artifacts: 0,
         dryRun: true,
         events: eventCollector.events,
@@ -105,6 +107,7 @@ export async function runSequentialGeneration({ ctx, context, compileOpsIfReques
       return {
         transmutation,
         runId,
+        resumed,
         artifacts: 0,
         dryRun: true,
         events: eventCollector.events,
@@ -151,6 +154,8 @@ export async function runSequentialGeneration({ ctx, context, compileOpsIfReques
     return {
       transmutation: transmutationResult.transmutation,
       runId: transmutationResult.runId,
+      resumed,
+      shortCircuited: false,
       artifacts: artifacts.length,
       outDir: options.outDir,
       dryRun: options.dryRun || false,

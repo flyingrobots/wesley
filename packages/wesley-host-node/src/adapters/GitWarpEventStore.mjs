@@ -22,6 +22,10 @@ export class GitWarpEventStore extends EventStorePort {
     }
 
     this._ensureReady();
+    const existing = findExistingByIdempotencyKey(this.readStream(event.streamId), event.idempotencyKey);
+    if (existing) {
+      return existing;
+    }
     appendFileSync(this._streamPath(event.streamId), `${JSON.stringify(event)}\n`, 'utf8');
     return event;
   }
@@ -75,4 +79,14 @@ export class GitWarpEventStore extends EventStorePort {
   _streamPath(streamId) {
     return path.join(this.streamsDir, `${encodeURIComponent(streamId)}${STREAM_FILE_SUFFIX}`);
   }
+}
+
+function findExistingByIdempotencyKey(events, idempotencyKey) {
+  if (!Array.isArray(events)) {
+    return null;
+  }
+  if (typeof idempotencyKey !== 'string' || !idempotencyKey.trim()) {
+    return null;
+  }
+  return events.find(event => event?.idempotencyKey === idempotencyKey) || null;
 }
