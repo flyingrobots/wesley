@@ -9,6 +9,7 @@ import { WesleyError } from '@wesley/core';
 import { resolveRunMetadata } from '../utils/run-metadata.mjs';
 import {
   attachRunFailure,
+  buildCommandRunReport,
   createCommandEventCollector,
   createCommandEventScope,
   emitArtifactsMaterialized,
@@ -99,6 +100,7 @@ export class RehearseCommand extends WesleyCommand {
         const report = {
           transmutation: run.transmutation,
           runId: run.runId,
+          run: buildCommandRunReport(eventCollector, run),
           plan,
           explain,
           mapping: [],
@@ -117,7 +119,12 @@ export class RehearseCommand extends WesleyCommand {
         dryRun: true,
         stepCount: explain.steps.length
       });
-      return { dryRun: true, steps: explain.steps.length, events: eventCollector.events };
+      return {
+        dryRun: true,
+        steps: explain.steps.length,
+        events: eventCollector.events,
+        run: buildCommandRunReport(eventCollector, run)
+      };
     }
 
     const provider = (options.provider || this.ctx?.config?.realm?.provider || 'postgres').toLowerCase();
@@ -184,7 +191,11 @@ export class RehearseCommand extends WesleyCommand {
         verdict: realm.verdict,
         stepCount: explain.steps.length
       });
-      const realmReport = { ...realm, events: eventCollector.events };
+      const realmReport = {
+        ...realm,
+        events: eventCollector.events,
+        run: buildCommandRunReport(eventCollector, run)
+      };
       if (!options.json) logger.info('🕶️ REALM verdict: PASS');
       if (hooks.postDown) await runHook(this.ctx, hooks.postDown, logger);
       if (options.json) {
@@ -221,7 +232,11 @@ export class RehearseCommand extends WesleyCommand {
         code: error.code || 'REALM_FAILED',
         message: error.message
       });
-      const realmReport = { ...realm, events: eventCollector.events };
+      const realmReport = {
+        ...realm,
+        events: eventCollector.events,
+        run: buildCommandRunReport(eventCollector, run)
+      };
       if (!options.json) logger.error('🕶️ REALM verdict: FAIL - ' + error.message);
       if (hooks.postDown) try { await runHook(this.ctx, hooks.postDown, logger); } catch (e) { logger.debug?.('postDown hook failed: ' + e?.message); }
       if (options.json) {

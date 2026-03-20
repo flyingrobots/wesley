@@ -4,6 +4,7 @@
  * Best of both worlds: Rich CLI features + Pure architecture
  */
 
+import { buildRuntimeRunReport } from '@wesley/core';
 import { exitCodeFor } from '@wesley/core/domain/ExitCodes';
 
 const LOG_LEVELS = { trace: 5, debug: 10, info: 30, warn: 40, error: 50, fatal: 60, silent: 100 };
@@ -239,12 +240,21 @@ export class WesleyCommand {
         const fallbackTransmutation = typeof options.transmutation === 'string' && options.transmutation.trim()
           ? options.transmutation.trim()
           : null;
+        const fallbackRun = error.run || (
+          Array.isArray(error.events) && error.events.length > 0
+            ? buildRuntimeRunReport(error.events, {
+              runId: error.runId || fallbackRunId,
+              transmutation: error.transmutation || fallbackTransmutation
+            })
+            : null
+        );
         const errorPayload = {
           success: false,
           code: error.code || 'ERROR',
           error: sdlNote ? `${error.message} (SDL: ${sdlNote})` : error.message,
           runId: error.runId || fallbackRunId,
           transmutation: error.transmutation || fallbackTransmutation,
+          run: fallbackRun,
           events: Array.isArray(error.events) ? error.events : [],
           stack: (options.debug || options.verbose) ? error.stack : undefined,
           timestamp: new Date().toISOString()

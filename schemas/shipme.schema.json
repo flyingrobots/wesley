@@ -8,6 +8,7 @@
     "version": { "type": "string" },
     "transmutation": { "type": "string" },
     "runId": { "type": "string", "minLength": 1 },
+    "run": { "$ref": "runtime-run.schema.json#" },
     "events": {
       "type": "array",
       "items": { "$ref": "runtime-event.schema.json#" }

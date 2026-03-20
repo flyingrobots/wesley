@@ -50,6 +50,7 @@ export { irToSchema } from './application/irToSchema.mjs';
 export { EvidenceMap } from './application/EvidenceMap.mjs';
 export { MemoryEventStore } from './application/MemoryEventStore.mjs';
 export { createRuntimeEventCollector, createRuntimeStreamId, RUNTIME_EVENT_SCHEMA_VERSION } from './application/RuntimeEvents.mjs';
+export { buildRuntimeRunReport, applyRuntimeEvent } from './application/RuntimeRunReport.mjs';
 export { ScoringEngine } from './application/Scoring.mjs';
 export { PluginRunner } from './application/PluginRunner.mjs';
 export { TransmutationRunner, createRunId } from './application/TransmutationRunner.mjs';

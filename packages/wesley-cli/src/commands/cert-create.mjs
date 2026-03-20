@@ -7,6 +7,7 @@ import { resolveRunMetadata } from '../utils/run-metadata.mjs';
 import { readRealmProjection } from '../utils/runtime-projections.mjs';
 import {
   attachRunFailure,
+  buildCommandRunReport,
   createCommandEventCollector,
   createCommandEventScope,
   emitArtifactsMaterialized,
@@ -80,7 +81,11 @@ export class CertCreateCommand extends WesleyCommand {
           command: 'cert-create',
           json: true
         });
-        this.ctx.stdout.write(JSON.stringify({ ...cert, events: eventCollector.events }, null, 2) + '\n');
+        this.ctx.stdout.write(JSON.stringify({
+          ...cert,
+          events: eventCollector.events,
+          run: buildCommandRunReport(eventCollector, run)
+        }, null, 2) + '\n');
         return;
       }
 
@@ -101,7 +106,8 @@ export class CertCreateCommand extends WesleyCommand {
         file: options.out,
         transmutation: run.transmutation,
         runId: run.runId,
-        events: eventCollector.events
+        events: eventCollector.events,
+        run: buildCommandRunReport(eventCollector, run)
       };
     } catch (error) {
       emitRunFailed(eventCollector, scope, {

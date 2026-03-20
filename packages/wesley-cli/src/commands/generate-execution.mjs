@@ -10,6 +10,7 @@ import {
   attachRunFailure,
   createCommandEventCollector,
   createCommandEventScope,
+  buildCommandRunReport,
   emitArtifactsMaterialized,
   emitIrParsed,
   emitRunCompleted,
@@ -28,15 +29,17 @@ export async function runSequentialGeneration({ ctx, context, compileOpsIfReques
   const { schemaContent, schemaPath, options, logger } = context;
   const debugDump = options.printComposedSdl || options.printIr;
   const { writer } = ctx;
+  const commandName = options.commandName || 'generate';
   const transmutation = options.transmutation || LEGACY_SUPABASE_TRANSMUTATION;
   const runId = typeof options.runId === 'string' && options.runId.trim()
     ? options.runId.trim()
     : createRunId();
   const run = { runId, transmutation };
-  const scope = createCommandEventScope(run, 'generate');
+  const scope = createCommandEventScope(run, commandName);
   const eventCollector = createCommandEventCollector(ctx, run);
 
   emitRunRequested(eventCollector, scope, {
+    command: commandName,
     schemaPath,
     outDir: options.outDir,
     dryRun: Boolean(options.dryRun)
@@ -60,7 +63,14 @@ export async function runSequentialGeneration({ ctx, context, compileOpsIfReques
         artifactCount: 0,
         dryRun: true
       });
-      return { transmutation, runId, artifacts: 0, dryRun: true, events: eventCollector.events };
+      return {
+        transmutation,
+        runId,
+        artifacts: 0,
+        dryRun: true,
+        events: eventCollector.events,
+        run: buildCommandRunReport(eventCollector, run)
+      };
     }
   }
 
@@ -91,7 +101,14 @@ export async function runSequentialGeneration({ ctx, context, compileOpsIfReques
         artifactCount: 0,
         dryRun: true
       });
-      return { transmutation, runId, artifacts: 0, dryRun: true, events: eventCollector.events };
+      return {
+        transmutation,
+        runId,
+        artifacts: 0,
+        dryRun: true,
+        events: eventCollector.events,
+        run: buildCommandRunReport(eventCollector, run)
+      };
     }
   }
   try {
@@ -136,7 +153,8 @@ export async function runSequentialGeneration({ ctx, context, compileOpsIfReques
       artifacts: artifacts.length,
       outDir: options.outDir,
       dryRun: options.dryRun || false,
-      events: eventCollector.events
+      events: eventCollector.events,
+      run: buildCommandRunReport(eventCollector, run)
     };
   } catch (error) {
     emitRunFailed(eventCollector, scope, {

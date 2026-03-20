@@ -7,6 +7,7 @@
   "properties": {
     "transmutation": { "type": ["string", "null"] },
     "runId": { "type": ["string", "null"], "minLength": 1 },
+    "run": { "anyOf": [ { "$ref": "runtime-run.schema.json#" }, { "type": "null" } ] },
     "events": {
       "type": "array",
       "items": { "$ref": "runtime-event.schema.json#" }

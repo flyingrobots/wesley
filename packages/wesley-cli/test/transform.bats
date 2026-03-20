@@ -51,6 +51,8 @@ EOF
   [[ -n "$json" ]] || fail "No JSON output with result payload"
   echo "$json" | jq -e '.result.transmutation == "legacy-supabase"' >/dev/null
   echo "$json" | jq -e '.result.runId == "run-transform-123"' >/dev/null
+  echo "$json" | jq -e '.result.run.command == "transform"' >/dev/null
+  echo "$json" | jq -e '.result.run.status == "completed"' >/dev/null
   echo "$json" | jq -e '.result.events | map(.type) == ["RunRequested","SourcesResolved","IRParsed","TaskGraphBuilt","TaskStarted","TaskCompleted","EvidenceMerged","ScoresComputed","ArtifactsMaterialized","RunCompleted"]' >/dev/null
 }
 
@@ -70,5 +72,7 @@ EOF
   echo "$output" | jq -e '.code == "UNKNOWN_TRANSMUTATION"' >/dev/null
   echo "$output" | jq -e '.runId == "run-transform-fail-123"' >/dev/null
   echo "$output" | jq -e '.transmutation == "nope"' >/dev/null
+  echo "$output" | jq -e '.run.command == "transform"' >/dev/null
+  echo "$output" | jq -e '.run.status == "failed"' >/dev/null
   echo "$output" | jq -e '.events | map(.type) == ["RunRequested","SourcesResolved","RunFailed"]' >/dev/null
 }

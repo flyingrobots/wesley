@@ -17,6 +17,7 @@ export class TransformPipelineCommand extends WesleyCommand {
   }
 
   async executeCore(context) {
+    context.options.commandName = 'transform';
     return this._delegate.executeCore(context);
   }
 }

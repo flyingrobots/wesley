@@ -10,6 +10,7 @@ import { WesleyError } from '@wesley/core';
 import { resolveRunMetadata } from '../utils/run-metadata.mjs';
 import {
   attachRunFailure,
+  buildCommandRunReport,
   createCommandEventCollector,
   createCommandEventScope,
   emitArtifactsMaterialized,
@@ -106,6 +107,7 @@ export class PlanCommand extends WesleyCommand {
         const report = {
           transmutation: run.transmutation,
           runId: run.runId,
+          run: buildCommandRunReport(eventCollector, run),
           plan,
           explain,
           mapping,
@@ -162,6 +164,7 @@ export class PlanCommand extends WesleyCommand {
       return {
         transmutation: run.transmutation,
         runId: run.runId,
+        run: buildCommandRunReport(eventCollector, run),
         phases: plan.phases.length,
         steps: explain.steps.length,
         events: eventCollector.events

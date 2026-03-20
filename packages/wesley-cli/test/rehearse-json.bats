@@ -40,6 +40,8 @@ EOF
   [[ -n "$json" ]] || fail "No JSON output with plan data"
   echo "$json" | jq -e '.transmutation == "legacy-supabase"' >/dev/null
   echo "$json" | jq -e '.runId == "run-rehearse-123"' >/dev/null
+  echo "$json" | jq -e '.run.command == "rehearse"' >/dev/null
+  echo "$json" | jq -e '.run.status == "completed"' >/dev/null
   echo "$json" | jq -e '.events | map(.type) == ["RunRequested","IRParsed","SourcesResolved","PlanBuilt","RunCompleted"]' >/dev/null
 }
 
@@ -51,5 +53,8 @@ EOF
   echo "$output" | jq -e '.code == "NO_DSN"' >/dev/null
   echo "$output" | jq -e '.runId == "run-rehearse-fail-123"' >/dev/null
   echo "$output" | jq -e '.transmutation == "legacy-supabase"' >/dev/null
+  echo "$output" | jq -e '.run.command == "rehearse"' >/dev/null
+  echo "$output" | jq -e '.run.status == "failed"' >/dev/null
+  echo "$output" | jq -e '.run.failure.code == "NO_DSN"' >/dev/null
   echo "$output" | jq -e '.events | map(.type) == ["RunRequested","IRParsed","SourcesResolved","PlanBuilt","RunFailed"]' >/dev/null
 }

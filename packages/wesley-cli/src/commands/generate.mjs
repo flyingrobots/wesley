@@ -62,6 +62,8 @@ export class GeneratePipelineCommand extends WesleyCommand {
 
   async executeCore(context) {
     const { schemaPath, options, logger } = context;
+    options.commandName = options.commandName || this.name;
+    const commandName = options.commandName;
     const outDir = options.outDir || this.ctx?.config?.paths?.output || 'out';
     options.outDir = outDir;
     const requestedTransmutation = String(options.transmutation || LEGACY_SUPABASE_TRANSMUTATION).trim() || LEGACY_SUPABASE_TRANSMUTATION;
@@ -90,10 +92,10 @@ export class GeneratePipelineCommand extends WesleyCommand {
         transmutation: requestedTransmutation,
         runId: requestedRunId
       };
-      const scope = createCommandEventScope(run, this.name);
+      const scope = createCommandEventScope(run, commandName);
       const eventCollector = createCommandEventCollector(this.ctx, run);
       emitRunRequested(eventCollector, scope, {
-        command: this.name,
+        command: commandName,
         schemaPath,
         outDir,
         dryRun: Boolean(options.dryRun)
@@ -102,7 +104,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
         schemaPath
       });
       emitRunFailed(eventCollector, scope, {
-        command: this.name,
+        command: commandName,
         code: error.code || 'UNKNOWN_TRANSMUTATION',
         message: error.message
       });

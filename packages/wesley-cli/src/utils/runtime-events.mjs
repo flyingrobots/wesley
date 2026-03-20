@@ -1,4 +1,4 @@
-import { createRuntimeEventCollector } from '@wesley/core';
+import { buildRuntimeRunReport, createRuntimeEventCollector } from '@wesley/core';
 
 export function createCommandEventCollector(ctx, run, options = {}) {
   return createRuntimeEventCollector({
@@ -63,7 +63,17 @@ export function attachRunFailure(error, eventCollector, run) {
   error.events = eventCollector.events;
   error.runId = run.runId;
   error.transmutation = run.transmutation;
+  error.run = buildCommandRunReport(eventCollector, run);
   return error;
+}
+
+export function buildCommandRunReport(eventCollector, run, seed = {}) {
+  return buildRuntimeRunReport(eventCollector?.events || [], {
+    runId: run.runId,
+    transmutation: run.transmutation,
+    streamId: eventCollector?.streamId ?? null,
+    ...seed
+  });
 }
 
 function createCommandEventClock(clock) {
