@@ -1,13 +1,13 @@
 /**
- * Runs Command - Inspect persisted runtime runs
+ * Runs Command - Inspect and replay persisted runtime runs
  */
 
-import { buildRuntimeRunReport, createRuntimeStreamId, WesleyError } from '@wesley/core';
+import { buildRuntimeRunReport, createRuntimeStreamId, replayRuntimeRun, WesleyError } from '@wesley/core';
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 
 export class RunsCommand extends WesleyCommand {
   constructor(ctx) {
-    super(ctx, 'runs', 'Inspect persisted runtime runs');
+    super(ctx, 'runs', 'Inspect and replay persisted runtime runs');
     this.requiresSchema = false;
   }
 
@@ -24,6 +24,20 @@ export class RunsCommand extends WesleyCommand {
           ...mergeCommandOptions(command),
           ...options,
           _runsSubcommand: 'status'
+        }, command);
+      });
+
+    cmd
+      .command('replay')
+      .description('Replay a persisted runtime run from the ledger')
+      .requiredOption('--run-id <id>', 'Run ID to replay')
+      .option('--transmutation <name>', 'Transmutation name for direct stream lookup')
+      .option('--json', 'Emit JSON')
+      .action((options, command) => {
+        return this.execute({
+          ...mergeCommandOptions(command),
+          ...options,
+          _runsSubcommand: 'replay'
         }, command);
       });
 
@@ -47,6 +61,9 @@ export class RunsCommand extends WesleyCommand {
   async executeCore(context) {
     if (context.options._runsSubcommand === 'status') {
       return this.executeStatus(context);
+    }
+    if (context.options._runsSubcommand === 'replay') {
+      return this.executeReplay(context);
     }
     if (context.options._runsSubcommand === 'inspect') {
       return this.executeInspect(context);
@@ -96,6 +113,46 @@ export class RunsCommand extends WesleyCommand {
       }
       if (run.failure?.code) {
         logger.info(`  failure=${run.failure.code}${run.failure.message ? ` ${run.failure.message}` : ''}`);
+      }
+    }
+
+    return payload;
+  }
+
+  async executeReplay({ options, logger }) {
+    const eventStore = this.requireEventStore();
+    const runId = String(options.runId || '').trim();
+    const transmutation = normalizeOptionalString(options.transmutation);
+    if (!runId) {
+      throw new WesleyError('EUSAGE', 'runs replay requires --run-id.');
+    }
+
+    const { streamId, events } = this.resolveRunStream(eventStore, runId, transmutation);
+    const payload = {
+      ...replayRuntimeRun(events, {
+        runId,
+        transmutation: transmutation || events[0]?.transmutation || null,
+        streamId
+      }),
+      events
+    };
+
+    if (options.json) {
+      this.ctx.stdout.write(JSON.stringify(payload, null, 2) + '\n');
+      return;
+    }
+
+    logger.info(`Run: ${payload.run.runId}`);
+    logger.info(`Transmutation: ${payload.run.transmutation}`);
+    logger.info(`Status: ${payload.run.status}`);
+    logger.info(`Replay valid: ${payload.replay.integrity.valid ? 'yes' : 'no'}`);
+    logger.info(`Applied events: ${payload.replay.appliedEventCount}/${payload.replay.eventCount}`);
+    logger.info(`Terminal: ${payload.replay.terminal ? 'yes' : 'no'}`);
+    logger.info(`Stream: ${payload.run.streamId}`);
+    if (payload.replay.integrity.issues.length > 0) {
+      logger.info('Replay issues:');
+      for (const issue of payload.replay.integrity.issues) {
+        logger.info(`  ${issue.code}: ${issue.message}`);
       }
     }
 

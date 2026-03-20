@@ -63,3 +63,32 @@ EOF
   echo "$output" | jq -e '.runs[0].runId == "run-status-fail"' >/dev/null
   echo "$output" | jq -e '.runs[0].status == "failed"' >/dev/null
 }
+
+@test "runs replay rebuilds a completed run from persisted events" {
+  create_schema
+
+  run node "$CLI_PATH" transform --schema schema.graphql --transmutation legacy-supabase --run-id run-replay-ok --out-dir out --json --quiet
+  assert_success
+
+  run node "$CLI_PATH" runs replay --run-id run-replay-ok --json
+  assert_success
+  echo "$output" | jq -e '.run.runId == "run-replay-ok"' >/dev/null
+  echo "$output" | jq -e '.run.status == "completed"' >/dev/null
+  echo "$output" | jq -e '.replay.integrity.valid == true' >/dev/null
+  echo "$output" | jq -e '.replay.appliedEventCount == 10' >/dev/null
+  echo "$output" | jq -e '.replay.terminal == true' >/dev/null
+}
+
+@test "runs replay reports partial non-terminal streams after injected crash" {
+  create_schema
+
+  run env WESLEY_CRASH_AFTER_EVENT=4 node "$CLI_PATH" transform --schema schema.graphql --transmutation legacy-supabase --run-id run-replay-crash --out-dir out --json --quiet
+  assert_failure 6
+
+  run node "$CLI_PATH" runs replay --run-id run-replay-crash --transmutation legacy-supabase --json
+  assert_success
+  echo "$output" | jq -e '.run.status == "running"' >/dev/null
+  echo "$output" | jq -e '.replay.integrity.valid == true' >/dev/null
+  echo "$output" | jq -e '.replay.terminal == false' >/dev/null
+  echo "$output" | jq -e '.replay.appliedEventCount == 4' >/dev/null
+}

@@ -83,6 +83,13 @@ EOF
     assert_output --partial "--status"
 }
 
+@test "runs replay help works" {
+    run node "$CLI_PATH" runs replay --help
+    assert_success
+    assert_output --partial "Replay a persisted runtime run"
+    assert_output --partial "--run-id"
+}
+
 @test "missing schema file exits 2" {
     run node "$CLI_PATH" generate --schema ./nonexistent.graphql
     assert_failure 2
