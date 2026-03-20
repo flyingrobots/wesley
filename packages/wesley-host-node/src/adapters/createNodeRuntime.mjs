@@ -11,6 +11,7 @@ import pino from 'pino';
 import { NodeFileSystem } from './NodeFileSystem.mjs';
 import { ConfigLoader } from './ConfigLoader.mjs';
 import { DbAdapter } from './DbAdapter.mjs';
+import { GitWarpEventStore } from './GitWarpEventStore.mjs';
 import { GraphQLAdapter } from './GraphQLAdapter.mjs';
 import { nodeCrypto } from './NodeCrypto.mjs';
 
@@ -130,6 +131,10 @@ export async function createNodeRuntime() {
     console.warn('Warning: could not load Wesley config:', e?.message || e);
   }
 
+  const eventStore = new GitWarpEventStore({
+    rootDir: config?.ledger?.repoPath || '.wesley/ledger'
+  });
+
   return {
     // Core utilities
     logger,
@@ -139,6 +144,7 @@ export async function createNodeRuntime() {
     stdout: process.stdout,
     stderr: process.stderr,
     config,
+    eventStore,
     db: new DbAdapter(),
 
     // Parsers

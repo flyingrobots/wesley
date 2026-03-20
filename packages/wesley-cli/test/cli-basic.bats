@@ -69,6 +69,13 @@ EOF
     assert_output --partial "--transmutation"
 }
 
+@test "runs inspect help works" {
+    run node "$CLI_PATH" runs inspect --help
+    assert_success
+    assert_output --partial "Inspect a persisted runtime run"
+    assert_output --partial "--run-id"
+}
+
 @test "missing schema file exits 2" {
     run node "$CLI_PATH" generate --schema ./nonexistent.graphql
     assert_failure 2

@@ -6,6 +6,7 @@ export * from './generate.mjs';
 export * from './models.mjs';
 export * from './plan.mjs';
 export * from './rehearse.mjs';
+export * from './runs.mjs';
 export * from './transform.mjs';
 export * from './typescript.mjs';
 export * from './validate-bundle.mjs';

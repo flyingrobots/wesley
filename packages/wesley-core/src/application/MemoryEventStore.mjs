@@ -30,4 +30,8 @@ export class MemoryEventStore extends EventStorePort {
     }
     return [...(this._streams.get(streamId) || [])];
   }
+
+  listStreams() {
+    return [...this._streams.keys()];
+  }
 }

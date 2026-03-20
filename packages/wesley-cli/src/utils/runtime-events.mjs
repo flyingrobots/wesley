@@ -5,7 +5,7 @@ export function createCommandEventCollector(ctx, run, options = {}) {
     clock: createCommandEventClock(ctx?.clock),
     runId: run.runId,
     transmutation: run.transmutation,
-    eventStore: options.eventStore,
+    eventStore: options.eventStore ?? ctx?.eventStore,
     streamId: options.streamId,
     correlationId: options.correlationId
   });
