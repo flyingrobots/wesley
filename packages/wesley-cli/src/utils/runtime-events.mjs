@@ -1,10 +1,13 @@
 import { createRuntimeEventCollector } from '@wesley/core';
 
-export function createCommandEventCollector(ctx, run) {
+export function createCommandEventCollector(ctx, run, options = {}) {
   return createRuntimeEventCollector({
     clock: createCommandEventClock(ctx?.clock),
     runId: run.runId,
-    transmutation: run.transmutation
+    transmutation: run.transmutation,
+    eventStore: options.eventStore,
+    streamId: options.streamId,
+    correlationId: options.correlationId
   });
 }
 

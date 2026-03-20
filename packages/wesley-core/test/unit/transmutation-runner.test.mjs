@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { MemoryEventStore } from '../../src/application/MemoryEventStore.mjs';
+import { createRuntimeStreamId } from '../../src/application/RuntimeEvents.mjs';
 import { TransmutationRunner } from '../../src/application/TransmutationRunner.mjs';
 
 // ---------------------------------------------------------------------------
@@ -147,6 +149,22 @@ test('TransmutationRunner — emits lifecycle events with a runtime envelope', a
     assert.equal(event.correlationId, result.runId);
     assert.equal(event.schemaVersion, '1.0.0');
   });
+});
+
+test('TransmutationRunner — can write events through a supplied event store', async () => {
+  const runner = makeRunner();
+  const eventStore = new MemoryEventStore();
+  const result = await runner.run(
+    'backend',
+    [makePlugin()],
+    {},
+    { runId: 'run-store-backend', eventStore }
+  );
+
+  assert.deepEqual(
+    eventStore.readStream(createRuntimeStreamId({ transmutation: 'backend', runId: 'run-store-backend' })),
+    result.events
+  );
 });
 
 // ---------------------------------------------------------------------------

@@ -1,3 +1,6 @@
+import { assertEventStorePort } from '../ports/EventStore.mjs';
+import { MemoryEventStore } from './MemoryEventStore.mjs';
+
 export const RUNTIME_EVENT_SCHEMA_VERSION = '1.0.0';
 
 export function createRuntimeStreamId({ transmutation, runId }) {
@@ -9,7 +12,8 @@ export function createRuntimeEventCollector({
   runId,
   transmutation,
   streamId = createRuntimeStreamId({ transmutation, runId }),
-  correlationId = runId
+  correlationId = runId,
+  eventStore = new MemoryEventStore()
 }) {
   if (!clock || typeof clock.now !== 'function') {
     throw new TypeError('createRuntimeEventCollector requires a clock with now()');
@@ -20,15 +24,18 @@ export function createRuntimeEventCollector({
   if (typeof transmutation !== 'string' || !transmutation.trim()) {
     throw new TypeError('createRuntimeEventCollector requires a non-empty transmutation');
   }
-
-  let sequence = 0;
-  const events = [];
+  assertEventStorePort(eventStore);
+  const existingEvents = eventStore.readStream(streamId);
+  let sequence = existingEvents.at(-1)?.sequence ?? 0;
 
   return {
     runId,
     transmutation,
     streamId,
-    events,
+    eventStore,
+    get events() {
+      return eventStore.readStream(streamId);
+    },
     emit(type, payload = {}, metadata = {}) {
       sequence += 1;
       const event = {
@@ -45,8 +52,7 @@ export function createRuntimeEventCollector({
         transmutation,
         payload
       };
-      events.push(event);
-      return event;
+      return eventStore.append(event);
     }
   };
 }

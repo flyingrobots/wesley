@@ -81,14 +81,15 @@ export class TransmutationRunner {
    * @param {string} name - Transmutation name (e.g. 'backend', 'echo')
    * @param {object[]} plugins - Array of GeneratorPlugin-conforming objects
    * @param {object} schema - Schema input (e.g. { sdl, ir })
-   * @param {object} [options]
-   * @param {string} [options.runId] - Caller-supplied run identifier
-   * @param {string} [options.sha] - Git commit SHA for evidence tracking
-   * @param {object} [options.diff] - Migration diff for MRI scoring
-   * @param {object} [options.testResults] - Test results for TCI scoring
-   * @param {{ emit(type:string, payload?:object, metadata?:object): object, events: object[] }} [options.eventCollector]
-   * @returns {Promise<TransmutationResult>}
-   */
+ * @param {object} [options]
+ * @param {string} [options.runId] - Caller-supplied run identifier
+ * @param {string} [options.sha] - Git commit SHA for evidence tracking
+ * @param {object} [options.diff] - Migration diff for MRI scoring
+ * @param {object} [options.testResults] - Test results for TCI scoring
+ * @param {{ append(event:object): object, readStream(streamId:string): object[] }} [options.eventStore]
+ * @param {{ emit(type:string, payload?:object, metadata?:object): object, events: object[] }} [options.eventCollector]
+ * @returns {Promise<TransmutationResult>}
+ */
   async run(name, plugins, schema, options = {}) {
     if (!Array.isArray(plugins)) {
       throw new TypeError("TransmutationRunner.run: 'plugins' must be an array");
@@ -103,7 +104,8 @@ export class TransmutationRunner {
     const eventCollector = options.eventCollector || createRuntimeEventCollector({
       clock: this._clock,
       runId,
-      transmutation: name
+      transmutation: name,
+      eventStore: options.eventStore
     });
     const evidenceMap = new EvidenceMap();
     evidenceMap.setSha(options.sha || 'uncommitted');
