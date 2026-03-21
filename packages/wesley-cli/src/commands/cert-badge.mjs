@@ -1,4 +1,5 @@
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
+import { GENERATED_SHIPME_PATH } from '@wesley/core';
 
 export class CertBadgeCommand extends WesleyCommand {
   constructor(ctx) {
@@ -6,7 +7,7 @@ export class CertBadgeCommand extends WesleyCommand {
   }
   configureCommander(cmd){
     return cmd
-      .option('--in <file>', 'Certificate file', '.wesley/SHIPME.md')
+      .option('--in <file>', 'Certificate file', GENERATED_SHIPME_PATH)
       .option('--json', 'Emit JSON badge');
   }
   async executeCore({ options }){

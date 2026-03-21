@@ -1,13 +1,13 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { EventStorePort, buildRuntimeRunSnapshot } from '@wesley/core';
+import { EventStorePort, GENERATED_LEDGER_DIR, buildRuntimeRunSnapshot } from '@wesley/core';
 
 const STREAM_FILE_SUFFIX = '.jsonl';
 const SNAPSHOT_FILE_SUFFIX = '.json';
 
 export class GitWarpEventStore extends EventStorePort {
-  constructor({ rootDir = '.wesley/ledger' } = {}) {
+  constructor({ rootDir = GENERATED_LEDGER_DIR } = {}) {
     super();
     this.rootDir = rootDir;
     this.streamsDir = path.join(rootDir, 'streams');

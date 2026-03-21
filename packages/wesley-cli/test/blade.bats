@@ -24,8 +24,7 @@ EOF
 
 write_holmes_policy() {
   local gate_mode="${1:-audit}"
-  mkdir -p .wesley
-  cat > .wesley/holmes-policy.json << JSON
+  cat > wesley.holmes-policy.json << JSON
 {
   "version": 2,
   "counterfactual": {
@@ -55,20 +54,20 @@ JSON
   assert_output --partial "--resume"
 }
 
-@test "blade dry-run completes and writes cert in .wesley" {
+@test "blade dry-run completes and writes cert in .wesley-cache" {
   create_min_schema
   run node "$CLI_PATH" blade --schema schema.graphql --out-dir out --dry-run
   assert_success
-  assert_file_exist .wesley/SHIPME.md
+  assert_file_exist .wesley-cache/SHIPME.md
 }
 
 @test "blade dry-run carries run metadata into SHIPME" {
   create_min_schema
   run node "$CLI_PATH" blade --schema schema.graphql --out-dir out --dry-run --transmutation legacy-supabase --run-id run-blade-123
   assert_success
-  assert_file_exist .wesley/SHIPME.md
+  assert_file_exist .wesley-cache/SHIPME.md
   local json
-  json=$(sed -n '/```json/,/```/p' .wesley/SHIPME.md | sed '1d;$d')
+  json=$(sed -n '/```json/,/```/p' .wesley-cache/SHIPME.md | sed '1d;$d')
   [[ -n "$json" ]] || fail "No embedded SHIPME JSON block found"
   echo "$json" | jq -e '.transmutation == "legacy-supabase"' >/dev/null
   echo "$json" | jq -e '.runId == "run-blade-123"' >/dev/null
@@ -81,12 +80,12 @@ JSON
 
   run node "$CLI_PATH" blade --schema schema.graphql --out-dir out --dry-run --counterfactual main --json --quiet
   assert_success
-  assert_file_exist .wesley/SHIPME.md
-  assert_file_exist .wesley/counterfactual/current.json
+  assert_file_exist .wesley-cache/SHIPME.md
+  assert_file_exist .wesley-cache/counterfactual/current.json
   echo "$output" | jq -e '.result.stages.counterfactual.gate == "audit"' >/dev/null
   echo "$output" | jq -e '.result.stages.counterfactual.wouldFail == true' >/dev/null
   local json
-  json=$(sed -n '/```json/,/```/p' .wesley/SHIPME.md | sed '1d;$d')
+  json=$(sed -n '/```json/,/```/p' .wesley-cache/SHIPME.md | sed '1d;$d')
   echo "$json" | jq -e '.counterfactual.gate == "audit"' >/dev/null
   echo "$json" | jq -e '.counterfactual.wouldFail == true' >/dev/null
 }

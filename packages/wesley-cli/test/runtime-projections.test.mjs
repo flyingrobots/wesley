@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { GENERATED_REALM_PATH, GENERATED_SNAPSHOT_PATH } from '@wesley/core';
 
 import {
   buildSnapshotProjection,
@@ -59,7 +60,7 @@ test('buildRealmProjection omits nullish optional fields', () => {
 test('readSnapshotProjection parses the canonical snapshot file shape', async () => {
   const projection = await readSnapshotProjection({
     async read(path) {
-      assert.equal(path, '.wesley/snapshot.json');
+      assert.equal(path, GENERATED_SNAPSHOT_PATH);
       return JSON.stringify({ irVersion: '1.0.0', tables: [{ name: 'User', fields: [] }] });
     }
   });
@@ -73,7 +74,7 @@ test('readSnapshotProjection parses the canonical snapshot file shape', async ()
 test('readRealmProjection parses the canonical realm file shape', async () => {
   const projection = await readRealmProjection({
     async read(path) {
-      assert.equal(path, '.wesley/realm.json');
+      assert.equal(path, GENERATED_REALM_PATH);
       return JSON.stringify({
         transmutation: 'legacy-supabase',
         runId: 'run-realm-789',

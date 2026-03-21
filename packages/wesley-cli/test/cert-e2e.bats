@@ -21,8 +21,8 @@ EOF
 }
 
 create_realm_pass() {
-  mkdir -p .wesley
-  cat > .wesley/realm.json << 'JSON'
+  mkdir -p .wesley-cache
+  cat > .wesley-cache/realm.json << 'JSON'
 {
   "transmutation": "legacy-supabase",
   "runId": "run-realm-123",
@@ -38,8 +38,8 @@ JSON
 create_counterfactual_summary() {
   local gate="${1:-audit}"
   local would_fail="${2:-true}"
-  mkdir -p .wesley/counterfactual
-  cat > .wesley/counterfactual/current.json << JSON
+  mkdir -p .wesley-cache/counterfactual
+  cat > .wesley-cache/counterfactual/current.json << JSON
 {
   "provider": "git-warp",
   "providerPackageVersion": "14.16.2",
@@ -65,14 +65,14 @@ create_counterfactual_summary() {
       "factKind": "coordinate-comparison",
       "factDigest": "cmp-123",
       "changed": true,
-      "file": ".wesley/counterfactual/comparison.cmp-123.json"
+      "file": ".wesley-cache/counterfactual/comparison.cmp-123.json"
     },
     "transferPlan": {
       "exportVersion": "1",
       "factKind": "coordinate-transfer-plan",
       "factDigest": "xfer-123",
       "changed": true,
-      "file": ".wesley/counterfactual/transfer.xfer-123.json"
+      "file": ".wesley-cache/counterfactual/transfer.xfer-123.json"
     },
     "normalizedScope": null
   },
@@ -96,7 +96,7 @@ JSON
   run node "$CLI_PATH" transform --schema schema.graphql --out-dir out
   assert_success
 
-  run node "$CLI_PATH" cert-create --env test --out .wesley/SHIPME.md
+  run node "$CLI_PATH" cert-create --env test --out .wesley-cache/SHIPME.md
   assert_success
 
   command -v openssl >/dev/null || skip "openssl not available"
@@ -108,15 +108,15 @@ JSON
   openssl pkey -in bob.key -pubout -out bob.pub >/dev/null 2>&1
 
   # First signature
-  run node "$CLI_PATH" cert-sign --in .wesley/SHIPME.md --key alice.key --signer ALICE
+  run node "$CLI_PATH" cert-sign --in .wesley-cache/SHIPME.md --key alice.key --signer ALICE
   assert_success
 
   # Second signature
-  run node "$CLI_PATH" cert-sign --in .wesley/SHIPME.md --key bob.key --signer BOB
+  run node "$CLI_PATH" cert-sign --in .wesley-cache/SHIPME.md --key bob.key --signer BOB
   assert_success
 
   # Verify both signatures pass (variadic --pub takes space-separated values)
-  run node "$CLI_PATH" cert-verify --in .wesley/SHIPME.md --pub alice.pub bob.pub --json
+  run node "$CLI_PATH" cert-verify --in .wesley-cache/SHIPME.md --pub alice.pub bob.pub --json
   assert_success
   echo "$output" | jq -e '.validSignatures == 2' >/dev/null
 }
@@ -200,9 +200,9 @@ JSON
   assert_success
 
   # create SHIPME
-  run node "$CLI_PATH" cert-create --env test --out .wesley/SHIPME.md
+  run node "$CLI_PATH" cert-create --env test --out .wesley-cache/SHIPME.md
   assert_success
-  assert_file_exist .wesley/SHIPME.md
+  assert_file_exist .wesley-cache/SHIPME.md
 
   # if openssl missing, skip signing
   command -v openssl >/dev/null || skip "openssl not available"
@@ -212,11 +212,11 @@ JSON
   openssl pkey -in holmes.key -pubout -out holmes.pub >/dev/null 2>&1
 
   # sign
-  run node "$CLI_PATH" cert-sign --in .wesley/SHIPME.md --key holmes.key --signer HOLMES
+  run node "$CLI_PATH" cert-sign --in .wesley-cache/SHIPME.md --key holmes.key --signer HOLMES
   assert_success
 
   # verify
-  run node "$CLI_PATH" cert-verify --in .wesley/SHIPME.md --pub holmes.pub --json
+  run node "$CLI_PATH" cert-verify --in .wesley-cache/SHIPME.md --pub holmes.pub --json
   assert_success
   echo "$output" | jq -e '.ok == true' >/dev/null
 }
@@ -229,17 +229,17 @@ JSON
   run node "$CLI_PATH" transform --schema schema.graphql --out-dir out
   assert_success
 
-  run node "$CLI_PATH" cert-create --env test --out .wesley/SHIPME.md
+  run node "$CLI_PATH" cert-create --env test --out .wesley-cache/SHIPME.md
   assert_success
 
   command -v openssl >/dev/null || skip "openssl not available"
   openssl genpkey -algorithm ed25519 -out holmes.key >/dev/null 2>&1
   openssl pkey -in holmes.key -pubout -out holmes.pub >/dev/null 2>&1
 
-  run node "$CLI_PATH" cert-sign --in .wesley/SHIPME.md --key holmes.key --signer HOLMES
+  run node "$CLI_PATH" cert-sign --in .wesley-cache/SHIPME.md --key holmes.key --signer HOLMES
   assert_success
 
-  run node "$CLI_PATH" cert-verify --in .wesley/SHIPME.md --pub holmes.pub --json
+  run node "$CLI_PATH" cert-verify --in .wesley-cache/SHIPME.md --pub holmes.pub --json
   assert_failure 5
   echo "$output" | jq -e 'select(has("counterfactualGate")) | .counterfactualGate == "fail"' >/dev/null
 }

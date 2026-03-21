@@ -1,11 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync, rmSync, mkdirSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 
 import {
   DEFAULT_WEIGHT_CONFIG,
+  HOLMES_WEIGHT_CONFIG_PATH,
   loadWeightConfig,
   normalizeWeightConfig,
   readWeightConfig
@@ -28,11 +29,9 @@ test('loadWeightConfig returns defaults when nothing defined', () => {
   });
 });
 
-test('loadWeightConfig reads .wesley/weights.json', () => {
+test('loadWeightConfig reads wesley.weights.json', () => {
   withTempDir((dir) => {
-    const weightsDir = join(dir, '.wesley');
-    mkdirSync(weightsDir);
-    writeFileSync(join(weightsDir, 'weights.json'), JSON.stringify({
+    writeFileSync(join(dir, HOLMES_WEIGHT_CONFIG_PATH), JSON.stringify({
       default: 7,
       substrings: { foo: 9 },
       directives: { sensitive: 11 },
@@ -44,15 +43,13 @@ test('loadWeightConfig reads .wesley/weights.json', () => {
     assert.equal(config.substrings.foo, 9);
     assert.equal(config.directives.sensitive, 11);
     assert.equal(config.overrides['col:User.email'], 13);
-    assert.ok(source.endsWith('.wesley/weights.json'));
+    assert.ok(source.endsWith(HOLMES_WEIGHT_CONFIG_PATH));
   });
 });
 
 test('environment JSON overrides file', () => {
   withTempDir((dir) => {
-    const weightsDir = join(dir, '.wesley');
-    mkdirSync(weightsDir);
-    writeFileSync(join(weightsDir, 'weights.json'), JSON.stringify({ default: 3 }));
+    writeFileSync(join(dir, HOLMES_WEIGHT_CONFIG_PATH), JSON.stringify({ default: 3 }));
 
     const json = JSON.stringify({ default: 2, substrings: { user: 8 } });
     const { config, source } = loadWeightConfig({ cwd: dir, env: { WESLEY_HOLMES_WEIGHTS: json } });

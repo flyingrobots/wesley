@@ -3,13 +3,14 @@ import assert from 'node:assert/strict';
 import os from 'node:os';
 import path from 'node:path';
 import { mkdtemp, rm } from 'node:fs/promises';
+import { GENERATED_LEDGER_DIR } from '@wesley/core';
 import { GitWarpEventStore } from '../src/adapters/GitWarpEventStore.mjs';
 
 test('GitWarpEventStore appends and reads a stream', async () => {
   const tempDir = await mkdtemp(path.join(os.tmpdir(), 'wesley-ledger-'));
   try {
     const store = new GitWarpEventStore({
-      rootDir: path.join(tempDir, '.wesley/ledger')
+      rootDir: path.join(tempDir, GENERATED_LEDGER_DIR)
     });
     const event = {
       streamId: 'transmutation:legacy-supabase:run-ledger-001',
@@ -34,7 +35,7 @@ test('GitWarpEventStore persists terminal snapshots and can read stream tails', 
   const tempDir = await mkdtemp(path.join(os.tmpdir(), 'wesley-ledger-'));
   try {
     const store = new GitWarpEventStore({
-      rootDir: path.join(tempDir, '.wesley/ledger')
+      rootDir: path.join(tempDir, GENERATED_LEDGER_DIR)
     });
     const streamId = 'transmutation:legacy-supabase:run-ledger-002';
 

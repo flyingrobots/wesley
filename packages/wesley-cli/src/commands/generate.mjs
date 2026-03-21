@@ -46,7 +46,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
       .option('--ops-target <platform>', 'Target platform for ops: postgres|supabase (affects auth variable compilation)', 'postgres')
       .option('--ops-explain <mode>', 'Emit EXPLAIN JSON snapshots for ops: mock', '')
       .option('--ops-allow-errors', 'Continue compiling remaining ops even if some fail validation (not allowed in CI without override)')
-      .option('--emit-bundle', 'Emit .wesley/ evidence bundle')
+      .option('--emit-bundle', 'Emit .wesley-cache/ evidence bundle')
       .option('--supabase', 'Enable Supabase features (RLS tests)')
       .option('--out-dir <dir>', 'Output directory', 'out')
       .option('--dry-run', 'Show what would be generated without writing files')

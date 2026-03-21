@@ -1,8 +1,8 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
-export const HOLMES_POLICY_PATH = '.wesley/holmes-policy.json';
-export const HOLMES_POLICY_LOCAL_PATH = '.wesley/holmes-policy.local.json';
+export { HOLMES_POLICY_LOCAL_PATH, HOLMES_POLICY_PATH } from '../config-paths.mjs';
+import { HOLMES_POLICY_LOCAL_PATH, HOLMES_POLICY_PATH } from '../config-paths.mjs';
 
 export function defaultCounterfactualPolicy() {
   return {

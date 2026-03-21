@@ -9,6 +9,7 @@ import { promises as fs } from 'fs';
 import { join } from 'path';
 import { CheckpointManager } from '../src/domain/checkpoint/CheckpointManager.mjs';
 import { WatchCommand } from '../src/cli/WatchCommand.mjs';
+import { GENERATED_CHECKPOINTS_DIR } from '../src/application/GeneratedArtifactPaths.mjs';
 
 const demoDir = '.wesley-demo';
 const schemaFile = join(demoDir, 'schema.graphql');
@@ -38,7 +39,7 @@ async function demo() {
   await createDemoFiles();
 
   // Initialize checkpoint manager
-  const checkpointManager = new CheckpointManager('.wesley/checkpoints');
+  const checkpointManager = new CheckpointManager(GENERATED_CHECKPOINTS_DIR);
 
   // Create initial checkpoint
   const initialState = {
@@ -167,7 +168,7 @@ type Query {
 async function demonstrateRecovery() {
   console.log('\n🔄 Demonstrating checkpoint recovery...');
 
-  const checkpointManager = new CheckpointManager('.wesley/checkpoints');
+  const checkpointManager = new CheckpointManager(GENERATED_CHECKPOINTS_DIR);
   const checkpoints = await checkpointManager.list();
 
   console.log('\n📋 Available checkpoints:');

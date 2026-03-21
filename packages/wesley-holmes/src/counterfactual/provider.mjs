@@ -18,12 +18,16 @@ import WarpGraph, {
   exportCoordinateTransferPlanFact,
   normalizeVisibleStateScopeV1
 } from '@git-stunts/git-warp';
+import {
+  GENERATED_COUNTERFACTUAL_CURRENT_PATH,
+  GENERATED_COUNTERFACTUAL_DIR
+} from '@wesley/core';
 import { ensureCounterfactualWorkspaceArtifacts } from '@wesley/runtime-node';
 
 export const COUNTERFACTUAL_GRAPH_NAME = 'wesley-counterfactual-v1';
 export const COUNTERFACTUAL_SURFACE_VERSION = 'wesley-counterfactual-v1';
-export const COUNTERFACTUAL_DIR = '.wesley/counterfactual';
-export const COUNTERFACTUAL_CURRENT_PATH = '.wesley/counterfactual/current.json';
+export const COUNTERFACTUAL_DIR = GENERATED_COUNTERFACTUAL_DIR;
+export const COUNTERFACTUAL_CURRENT_PATH = GENERATED_COUNTERFACTUAL_CURRENT_PATH;
 export const GIT_WARP_PROVIDER_VERSION = '14.16.2';
 
 export async function analyzeCounterfactual({

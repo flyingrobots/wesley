@@ -48,6 +48,22 @@ export * from './application/UseCases.mjs';
 export { GenerationPipeline } from './application/GenerationPipeline.mjs';
 export { irToSchema } from './application/irToSchema.mjs';
 export { EvidenceMap } from './application/EvidenceMap.mjs';
+export {
+  GENERATED_ARTIFACT_DIR,
+  LEGACY_GENERATED_ARTIFACT_DIR,
+  GENERATED_BUNDLE_PATH,
+  GENERATED_HISTORY_PATH,
+  GENERATED_SCORES_PATH,
+  GENERATED_SNAPSHOT_PATH,
+  GENERATED_REALM_PATH,
+  GENERATED_SHIPME_PATH,
+  GENERATED_COUNTERFACTUAL_DIR,
+  GENERATED_COUNTERFACTUAL_CURRENT_PATH,
+  GENERATED_LEDGER_DIR,
+  GENERATED_CHECKPOINTS_DIR,
+  legacyGeneratedArtifactPath,
+  generatedArtifactPathCandidates
+} from './application/GeneratedArtifactPaths.mjs';
 export { buildAdditivePlan, explainPlan, lockFor, emitMigrations } from './application/MigrationPlan.mjs';
 export { MemoryEventStore } from './application/MemoryEventStore.mjs';
 export { createRuntimeEventCollector, createRuntimeStreamId, RUNTIME_EVENT_SCHEMA_VERSION } from './application/RuntimeEvents.mjs';

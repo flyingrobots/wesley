@@ -2,6 +2,11 @@
  * Cert Create - Assemble SHIPME.md certificate from evidence/realm
  */
 import { createHash } from 'node:crypto';
+import {
+  GENERATED_SCORES_PATH,
+  GENERATED_SHIPME_PATH,
+  generatedArtifactPathCandidates
+} from '@wesley/core';
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import { resolveRunMetadata } from '../utils/run-metadata.mjs';
 import {
@@ -37,7 +42,7 @@ export class CertCreateCommand extends WesleyCommand {
   configureCommander(cmd) {
     return cmd
       .option('--env <name>', 'Target environment', 'production')
-      .option('--out <file>', 'Output file', '.wesley/SHIPME.md')
+      .option('--out <file>', 'Output file', GENERATED_SHIPME_PATH)
       .option('--transmutation <name>', 'Transmutation to associate with this certificate')
       .option('--run-id <id>', 'Associate this certificate with a specific run ID')
       .option('--resume', 'Resume a previously started certificate run with the same transmutation and run ID')
@@ -50,7 +55,7 @@ export class CertCreateCommand extends WesleyCommand {
     const now = new Date().toISOString();
     const sha = await gitSha(this.ctx) || 'uncommitted';
 
-    const scores = await readJsonSafe(this.ctx, '.wesley/scores.json');
+    const scores = await readGeneratedJsonSafe(this.ctx, GENERATED_SCORES_PATH);
     const realm = await readWithFallback(() => readRealmProjection(this.ctx.fs));
     const counterfactual = buildShipmeCounterfactualSummary(
       await readCurrentCounterfactualSummary(this.ctx.fs)
@@ -183,8 +188,16 @@ async function gitSha(ctx) {
   }
 }
 
-async function readJsonSafe(ctx, path) {
-  try { const s = await ctx.fs.read(path); return JSON.parse(s); } catch { return null; }
+async function readGeneratedJsonSafe(ctx, currentPath) {
+  for (const candidate of generatedArtifactPathCandidates(currentPath)) {
+    try {
+      const content = await ctx.fs.read(candidate);
+      return JSON.parse(content);
+    } catch {
+      continue;
+    }
+  }
+  return null;
 }
 
 async function readWithFallback(fn) {

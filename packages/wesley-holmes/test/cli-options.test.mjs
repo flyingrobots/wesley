@@ -76,7 +76,7 @@ const sampleHistory = {
 
 function createFixture({ includeBundle = true, includeHistory = true, corruptBundle = false } = {}) {
   const tempDir = mkdtempSync(path.join(tmpdir(), 'holmes-cli-'));
-  const bundleDir = path.join(tempDir, '.wesley');
+  const bundleDir = path.join(tempDir, '.wesley-cache');
   const schemaDir = path.join(tempDir, 'schema');
   const schemaPath = path.join(schemaDir, 'schema.graphql');
 
@@ -117,15 +117,15 @@ function initGitFixture(tempDir) {
   runGit(tempDir, 'checkout', '-b', 'feature');
   mkdirSync(path.join(tempDir, 'out'), { recursive: true });
   writeFileSync(path.join(tempDir, 'out', 'schema.sql'), '-- feature branch surface\n');
-  writeFileSync(path.join(tempDir, '.wesley', 'plan-report.json'), JSON.stringify({
+  writeFileSync(path.join(tempDir, '.wesley-cache', 'plan-report.json'), JSON.stringify({
     plan: { phases: [{ phase: 1 }] },
     explain: { steps: [{ op: 'alter_table' }] }
   }, null, 2));
-  const bundle = JSON.parse(readFileSync(path.join(tempDir, '.wesley', 'bundle.json'), 'utf8'));
+  const bundle = JSON.parse(readFileSync(path.join(tempDir, '.wesley-cache', 'bundle.json'), 'utf8'));
   bundle.evidence.evidence['artifact:out/schema.sql'] = {
     sql: [{ file: 'out/schema.sql', lines: '1-1' }]
   };
-  writeFileSync(path.join(tempDir, '.wesley', 'bundle.json'), JSON.stringify(bundle, null, 2));
+  writeFileSync(path.join(tempDir, '.wesley-cache', 'bundle.json'), JSON.stringify(bundle, null, 2));
   runGit(tempDir, 'add', '.');
   runGit(tempDir, 'commit', '-m', 'feature');
 }

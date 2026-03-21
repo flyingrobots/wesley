@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { GENERATED_LEDGER_DIR } from '@wesley/core';
 
 export async function resolveLedgerRootDir({
   repoRoot = process.cwd(),
@@ -21,7 +22,7 @@ export async function resolveLedgerRootDir({
     }
   }
 
-  return path.join(repoRoot, '.wesley', 'ledger');
+  return path.join(repoRoot, GENERATED_LEDGER_DIR);
 }
 
 async function resolveConfigPath(repoRoot, configPath) {

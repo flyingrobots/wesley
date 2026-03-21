@@ -107,7 +107,8 @@ EOF
 
   local encoded
   encoded="$(node -e "process.stdout.write(encodeURIComponent(process.argv[1]))" "transmutation:legacy-supabase:run-bad-snapshot")"
-  cat > ".wesley/ledger/snapshots/${encoded}.json" <<'EOF'
+  mkdir -p .wesley-cache/ledger/snapshots
+  cat > ".wesley-cache/ledger/snapshots/${encoded}.json" <<'EOF'
 {"not":"valid snapshot"
 EOF
 
@@ -127,8 +128,8 @@ EOF
   run env WESLEY_CRASH_AFTER_EVENT=4 node "$CLI_PATH" transform --schema schema.graphql --transmutation legacy-supabase --run-id run-doctor-crash --out-dir out --json --quiet
   assert_failure 6
 
-  mkdir -p .wesley/ledger/streams
-  cat > .wesley/ledger/streams/broken-stream.jsonl <<'EOF'
+  mkdir -p .wesley-cache/ledger/streams
+  cat > .wesley-cache/ledger/streams/broken-stream.jsonl <<'EOF'
 {"this":"is not valid jsonl"
 EOF
 

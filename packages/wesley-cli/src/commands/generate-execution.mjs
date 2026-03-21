@@ -1,5 +1,13 @@
 import { filterIRByUnits } from '@wesley/core/domain/SchemaFilter';
-import { TransmutationRunner, WesleyError, createRunId } from '@wesley/core';
+import {
+  GENERATED_BUNDLE_PATH,
+  GENERATED_HISTORY_PATH,
+  GENERATED_SCORES_PATH,
+  TransmutationRunner,
+  WesleyError,
+  createRunId,
+  generatedArtifactPathCandidates
+} from '@wesley/core';
 import {
   LEGACY_SUPABASE_TRANSMUTATION,
   LegacySupabaseGeneratorPlugin,
@@ -370,8 +378,8 @@ async function emitPlaceholderBundle({ ctx, artifacts, outDir, logger, options }
     };
 
     const bundle = { sha, timestamp, bundleVersion: '2.0.0', evidence, scores };
-    await ctx.fs.write('.wesley/scores.json', JSON.stringify(scores, null, 2));
-    await ctx.fs.write('.wesley/bundle.json', JSON.stringify(bundle, null, 2));
+    await ctx.fs.write(GENERATED_SCORES_PATH, JSON.stringify(scores, null, 2));
+    await ctx.fs.write(GENERATED_BUNDLE_PATH, JSON.stringify(bundle, null, 2));
 
     try {
       const ctxEnv = ctx.env || {};
@@ -388,7 +396,7 @@ async function emitPlaceholderBundle({ ctx, artifacts, outDir, logger, options }
       });
       const day = Math.floor(Date.now() / 86400000);
       const nextPoints = mergeHistoryPoints(history.points, [{ day, timestamp, scs, tci, mri }]);
-      await ctx.fs.write('.wesley/history.json', JSON.stringify({ points: nextPoints }, null, 2));
+      await ctx.fs.write(GENERATED_HISTORY_PATH, JSON.stringify({ points: nextPoints }, null, 2));
     } catch (error) {
       logger.debug?.({ err: error }, 'Could not refresh Moriarty history while emitting placeholder bundle.');
     }
@@ -423,10 +431,17 @@ async function loadMoriartyHistory({ fs, shell, defaultBase, logger: log }) {
   const warn = log?.warn ? log.warn.bind(log) : () => {};
   let points = [];
   try {
-    const raw = await fs.read('.wesley/history.json');
-    const parsed = JSON.parse(String(raw));
-    if (Array.isArray(parsed?.points)) {
-      points = mergeHistoryPoints(points, parsed.points);
+    for (const candidate of generatedArtifactPathCandidates(GENERATED_HISTORY_PATH)) {
+      try {
+        const raw = await fs.read(candidate);
+        const parsed = JSON.parse(String(raw));
+        if (Array.isArray(parsed?.points)) {
+          points = mergeHistoryPoints(points, parsed.points);
+          break;
+        }
+      } catch {
+        continue;
+      }
     }
   } catch (err) {
     warn('[Moriarty] Unable to read local history: ' + (err?.message || ''));
@@ -455,11 +470,18 @@ async function loadMoriartyHistory({ fs, shell, defaultBase, logger: log }) {
   if (!mergeBase) return { points };
 
   try {
-    const show = await gitShell.exec(`git show ${mergeBase}:.wesley/history.json`);
-    if (show?.stdout) {
-      const parsed = JSON.parse(show.stdout);
-      if (Array.isArray(parsed?.points)) {
-        points = mergeHistoryPoints(parsed.points, points);
+    for (const candidate of generatedArtifactPathCandidates(GENERATED_HISTORY_PATH)) {
+      try {
+        const show = await gitShell.exec(`git show ${mergeBase}:${candidate}`);
+        if (show?.stdout) {
+          const parsed = JSON.parse(show.stdout);
+          if (Array.isArray(parsed?.points)) {
+            points = mergeHistoryPoints(parsed.points, points);
+            break;
+          }
+        }
+      } catch {
+        continue;
       }
     }
   } catch (err) {

@@ -6,12 +6,13 @@ import { mkdtemp } from 'node:fs/promises';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 
 import { GitWarpEventStore, resolveLedgerRootDir } from '../src/index.mjs';
+import { GENERATED_LEDGER_DIR } from '@wesley/core';
 
 test('GitWarpEventStore appends and reads a stream', async () => {
   const tempDir = await mkdtemp(path.join(os.tmpdir(), 'wesley-ledger-'));
 
   const store = new GitWarpEventStore({
-    rootDir: path.join(tempDir, '.wesley/ledger')
+    rootDir: path.join(tempDir, GENERATED_LEDGER_DIR)
   });
 
   store.append({
@@ -34,7 +35,7 @@ test('GitWarpEventStore persists terminal snapshots and can read stream tails', 
   const tempDir = await mkdtemp(path.join(os.tmpdir(), 'wesley-ledger-'));
 
   const store = new GitWarpEventStore({
-    rootDir: path.join(tempDir, '.wesley/ledger')
+    rootDir: path.join(tempDir, GENERATED_LEDGER_DIR)
   });
   const streamId = 'transmutation:legacy-supabase:run-ledger-002';
 
@@ -102,4 +103,13 @@ test('resolveLedgerRootDir respects env and repo config', async () => {
 
   assert.ok(existsSync(path.join(tempDir, 'wesley.config.mjs')));
   assert.equal(readFileSync(path.join(tempDir, 'wesley.config.mjs'), 'utf8').includes('custom-ledger'), true);
+});
+
+test('resolveLedgerRootDir defaults to .wesley-cache/ledger when no override exists', async () => {
+  const tempDir = await mkdtemp(path.join(os.tmpdir(), 'wesley-ledger-default-'));
+
+  assert.equal(
+    await resolveLedgerRootDir({ repoRoot: tempDir, configPath: 'missing.config.mjs', env: {} }),
+    path.join(tempDir, GENERATED_LEDGER_DIR)
+  );
 });

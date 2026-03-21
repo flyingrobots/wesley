@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { HOLMES_WEIGHT_CONFIG_PATH } from './config-paths.mjs';
 
 const DEFAULT_SUBSTRINGS = {
   password: 10,
@@ -16,6 +17,8 @@ export const DEFAULT_WEIGHT_CONFIG = {
   directives: {},
   overrides: {}
 };
+
+export { HOLMES_WEIGHT_CONFIG_PATH };
 
 const DEFAULT_SOURCE = 'defaults';
 
@@ -70,7 +73,7 @@ export function normalizeWeightConfig(raw) {
 export function loadWeightConfig({ cwd = process.cwd(), env = process.env } = {}) {
   const fileFromEnv = env.WESLEY_HOLMES_WEIGHT_FILE;
   const jsonEnv = env.WESLEY_HOLMES_WEIGHTS;
-  const defaultPath = resolve(cwd, '.wesley/weights.json');
+  const defaultPath = resolve(cwd, HOLMES_WEIGHT_CONFIG_PATH);
 
   // Highest precedence: explicit JSON string via env
   if (jsonEnv) {
@@ -97,13 +100,13 @@ export function loadWeightConfig({ cwd = process.cwd(), env = process.env } = {}
     }
   }
 
-  // Finally: repository default .wesley/weights.json
+  // Finally: repository default wesley.weights.json
   if (existsSync(defaultPath)) {
     try {
       const parsed = JSON.parse(readFileSync(defaultPath, 'utf8'));
       return { config: normalizeWeightConfig(parsed), source: `file:${defaultPath}` };
     } catch (err) {
-      console.warn('[Holmes] Failed to load .wesley/weights.json:', err?.message);
+      console.warn(`[Holmes] Failed to load ${HOLMES_WEIGHT_CONFIG_PATH}:`, err?.message);
     }
   }
 

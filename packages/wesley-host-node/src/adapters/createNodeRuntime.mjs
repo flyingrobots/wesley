@@ -8,6 +8,7 @@ import * as _fs from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import pino from 'pino';
+import { GENERATED_LEDGER_DIR } from '@wesley/core';
 import { GitWarpEventStore, GraphQLAdapter } from '@wesley/runtime-node';
 import { NodeFileSystem } from './NodeFileSystem.mjs';
 import { ConfigLoader } from './ConfigLoader.mjs';
@@ -131,7 +132,7 @@ export async function createNodeRuntime() {
   }
 
   const eventStore = new GitWarpEventStore({
-    rootDir: config?.ledger?.repoPath || '.wesley/ledger'
+    rootDir: config?.ledger?.repoPath || GENERATED_LEDGER_DIR
   });
 
   return {

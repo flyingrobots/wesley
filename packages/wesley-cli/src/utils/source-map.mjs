@@ -1,4 +1,4 @@
-import { EvidenceMap } from '@wesley/core';
+import { EvidenceMap, GENERATED_BUNDLE_PATH, generatedArtifactPathCandidates } from '@wesley/core';
 // Deep import: helper is not re-exported at core index
 import { findSourceForSql } from '@wesley/core/src/application/SourceMap.mjs';
 
@@ -11,18 +11,18 @@ function tryParseSqlLocation(error) {
 }
 
 async function tryLoadEvidenceMap(fs) {
-  try {
-    // Prefer bundle in project root .wesley/bundle.json
-    const path = '.wesley/bundle.json';
-    const raw = await fs.read(path);
-    const json = JSON.parse(String(raw));
-    // Accept either { evidence: { ... } } or { evidence: { evidence: { ... } } }
-    const payload = json?.evidence?.evidence ? json.evidence : json;
-    if (!payload?.evidence) return null;
-    return EvidenceMap.fromJSON(payload);
-  } catch {
-    return null;
+  for (const candidate of generatedArtifactPathCandidates(GENERATED_BUNDLE_PATH)) {
+    try {
+      const raw = await fs.read(candidate);
+      const json = JSON.parse(String(raw));
+      const payload = json?.evidence?.evidence ? json.evidence : json;
+      if (!payload?.evidence) return null;
+      return EvidenceMap.fromJSON(payload);
+    } catch {
+      continue;
+    }
   }
+  return null;
 }
 
 export async function annotateErrorWithSDL(error, { fs } = {}) {
@@ -45,4 +45,3 @@ export async function annotateErrorWithSDL(error, { fs } = {}) {
   }
   return null;
 }
-

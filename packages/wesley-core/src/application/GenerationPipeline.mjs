@@ -4,6 +4,7 @@
  */
 
 import { EvidenceMap } from './EvidenceMap.mjs';
+import { GENERATED_SNAPSHOT_PATH, generatedArtifactPathCandidates } from './GeneratedArtifactPaths.mjs';
 import { ScoringEngine, BUNDLE_VERSION } from './Scoring.mjs';
 
 export class GenerationPipeline {
@@ -176,8 +177,15 @@ export class GenerationPipeline {
     }
 
     try {
-      const content = await this.fileSystem.read('.wesley/snapshot.json');
-      return JSON.parse(content);
+      for (const candidate of generatedArtifactPathCandidates(GENERATED_SNAPSHOT_PATH)) {
+        try {
+          const content = await this.fileSystem.read(candidate);
+          return JSON.parse(content);
+        } catch {
+          continue;
+        }
+      }
+      return { tables: {} };
     } catch {
       return { tables: {} };
     }

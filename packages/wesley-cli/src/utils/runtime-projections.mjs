@@ -1,5 +1,11 @@
-export const SNAPSHOT_PROJECTION_PATH = '.wesley/snapshot.json';
-export const REALM_PROJECTION_PATH = '.wesley/realm.json';
+import {
+  GENERATED_REALM_PATH,
+  GENERATED_SNAPSHOT_PATH,
+  generatedArtifactPathCandidates
+} from '@wesley/core';
+
+export const SNAPSHOT_PROJECTION_PATH = GENERATED_SNAPSHOT_PATH;
+export const REALM_PROJECTION_PATH = GENERATED_REALM_PATH;
 
 export function buildSnapshotProjection(ir = {}) {
   return {
@@ -53,5 +59,13 @@ async function writeProjectionFile(fs, path, projection) {
 
 async function readProjectionFile(fs, path) {
   if (!fs?.read) return null;
-  return JSON.parse(await fs.read(path));
+  let lastError = null;
+  for (const candidate of generatedArtifactPathCandidates(path)) {
+    try {
+      return JSON.parse(await fs.read(candidate));
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError;
 }

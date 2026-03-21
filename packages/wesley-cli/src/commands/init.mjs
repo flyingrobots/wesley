@@ -3,7 +3,7 @@
  */
 
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
-import { WesleyError } from '@wesley/core';
+import { GENERATED_ARTIFACT_DIR, WesleyError } from '@wesley/core';
 
 export class InitCommand extends WesleyCommand {
   constructor(ctx) {
@@ -15,7 +15,7 @@ export class InitCommand extends WesleyCommand {
     return cmd
       .option('--schema <path>', 'Schema filepath to create', 'schema.graphql')
       .option('--force', 'Overwrite existing files if present')
-      .option('--gitignore', 'Add .gitignore entries for out/ and .wesley/', true);
+      .option('--gitignore', `Add .gitignore entries for out/ and ${GENERATED_ARTIFACT_DIR}/`, true);
   }
 
   async executeCore({ options, logger }) {
@@ -42,7 +42,7 @@ export class InitCommand extends WesleyCommand {
         const giPath = '.gitignore';
         let content = '';
         if (await fs.exists(giPath)) content = await fs.read(giPath);
-        const needed = ['out/', '.wesley/'];
+        const needed = ['out/', `${GENERATED_ARTIFACT_DIR}/`, 'wesley.holmes-policy.local.json'];
         let changed = false;
         for (const entry of needed) {
           if (!content.split('\n').some((l) => l.trim() === entry)) {
@@ -58,4 +58,3 @@ export class InitCommand extends WesleyCommand {
     return { ok: true, schemaPath };
   }
 }
-

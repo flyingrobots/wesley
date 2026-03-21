@@ -5,6 +5,7 @@
  */
 
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
+import { GENERATED_SHIPME_PATH } from '@wesley/core';
 import { TransformPipelineCommand } from './transform.mjs';
 import { PlanCommand } from './plan.mjs';
 import { RehearseCommand } from './rehearse.mjs';
@@ -116,7 +117,7 @@ export class BladeCommand extends WesleyCommand {
     const certCreate = new CertCreateCommand(this.ctx);
     const certCreateResult = await executeNestedCommand(certCreate, {
       env: options.env || 'production',
-      out: '.wesley/SHIPME.md',
+      out: GENERATED_SHIPME_PATH,
       transmutation: run.transmutation,
       runId: run.runId,
       resume: Boolean(options.resume),
@@ -128,17 +129,17 @@ export class BladeCommand extends WesleyCommand {
     if (options.signKey) {
       logger.info(`🔏 BLADE: sign (${options.signer || 'HOLMES'})`);
       const certSign = new CertSignCommand(this.ctx);
-      await certSign.execute({ in: '.wesley/SHIPME.md', key: options.signKey, signer: options.signer || 'HOLMES' });
+      await certSign.execute({ in: GENERATED_SHIPME_PATH, key: options.signKey, signer: options.signer || 'HOLMES' });
       if (options.pub) {
         logger.info('✅ BLADE: verify');
         const certVerify = new CertVerifyCommand(this.ctx);
-        await certVerify.execute({ in: '.wesley/SHIPME.md', pub: [options.pub], json: false });
+        await certVerify.execute({ in: GENERATED_SHIPME_PATH, pub: [options.pub], json: false });
       }
     }
 
     // Badge output
     const badgeCmd = new CertBadgeCommand(this.ctx);
-    const badge = await executeNestedCommand(badgeCmd, { in: '.wesley/SHIPME.md', quiet: true });
+    const badge = await executeNestedCommand(badgeCmd, { in: GENERATED_SHIPME_PATH, quiet: true });
     logger.info('🏁 BLADE badge: ' + (badge?.badge || 'n/a'));
 
     return {

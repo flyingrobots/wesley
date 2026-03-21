@@ -5,15 +5,16 @@
  * - Atomic writes using write-rename pattern
  * - JSON format with versioning
  * - Recovery from any checkpoint with verification
- * - State serialized to filesystem in .wesley/checkpoints/
+ * - State serialized to filesystem in .wesley-cache/checkpoints/
  */
 
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { randomBytes } from 'crypto';
+import { GENERATED_CHECKPOINTS_DIR } from '@wesley/core';
 
 export class CheckpointManager {
-  constructor(baseDir = '.wesley/checkpoints') {
+  constructor(baseDir = GENERATED_CHECKPOINTS_DIR) {
     this.baseDir = baseDir;
     this.version = '1.0.0';
   }

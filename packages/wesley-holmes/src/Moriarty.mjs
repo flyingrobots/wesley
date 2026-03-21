@@ -520,7 +520,7 @@ export class Moriarty {
     const uniqueRelevantFilesSet = new Set();
     const isRelevant = (file) => {
       const f = String(file || '').toLowerCase();
-      return f.endsWith('.graphql') || f.includes('/ddl/') || f.includes('pgtap') || f.endsWith('.sql') || f.includes('/schema') || f.includes('.wesley/bundle.json') || f.includes('.wesley/history.json');
+      return f.endsWith('.graphql') || f.includes('/ddl/') || f.includes('pgtap') || f.endsWith('.sql') || f.includes('/schema') || f.includes('.wesley-cache/bundle.json') || f.includes('.wesley-cache/history.json') || f.includes('.wesley/bundle.json') || f.includes('.wesley/history.json');
     };
 
     for (const line of lines) {
@@ -632,7 +632,7 @@ export class Moriarty {
       const uniqueRelevantFilesSet = new Set();
       const isRelevant = (file) => {
         const f = String(file || '').toLowerCase();
-        return f.endsWith('.graphql') || f.includes('/ddl/') || f.endsWith('.sql') || f.includes('pgtap') || f.includes('/schema') || f.includes('.wesley/bundle.json') || f.includes('.wesley/history.json');
+        return f.endsWith('.graphql') || f.includes('/ddl/') || f.endsWith('.sql') || f.includes('pgtap') || f.includes('/schema') || f.includes('.wesley-cache/bundle.json') || f.includes('.wesley-cache/history.json') || f.includes('.wesley/bundle.json') || f.includes('.wesley/history.json');
       };
       for (const line of lines) {
         if (line.startsWith('--')) {

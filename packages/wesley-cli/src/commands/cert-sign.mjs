@@ -3,7 +3,7 @@
  */
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import { extractJsonBlock, canonicalize } from './_cert-utils.mjs';
-import { WesleyError } from '@wesley/core';
+import { GENERATED_SHIPME_PATH, WesleyError } from '@wesley/core';
 
 export class CertSignCommand extends WesleyCommand {
   constructor(ctx) {
@@ -12,7 +12,7 @@ export class CertSignCommand extends WesleyCommand {
 
   configureCommander(cmd) {
     return cmd
-      .option('--in <file>', 'Certificate file', '.wesley/SHIPME.md')
+      .option('--in <file>', 'Certificate file', GENERATED_SHIPME_PATH)
       .option('--key <path>', 'Private key (PEM)')
       .option('--signer <name>', 'Signer label', 'HOLMES');
   }
@@ -50,4 +50,3 @@ export class CertSignCommand extends WesleyCommand {
     return { ok: true };
   }
 }
-
