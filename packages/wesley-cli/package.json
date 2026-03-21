@@ -23,6 +23,7 @@
   "dependencies": {
     "@wesley/core": "workspace:*",
     "@wesley/generator-js": "workspace:*",
+    "@wesley/holmes": "workspace:^",
     "ajv": "^8.18.0",
     "ajv-formats": "^3.0.1",
     "chokidar": "^4.0.3",

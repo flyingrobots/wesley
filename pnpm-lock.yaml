@@ -60,6 +60,9 @@ importers:
       '@wesley/generator-js':
         specifier: workspace:*
         version: link:../wesley-generator-js
+      '@wesley/holmes':
+        specifier: workspace:^
+        version: link:../wesley-holmes
       ajv:
         specifier: ^8.18.0
         version: 8.18.0

@@ -54,6 +54,7 @@ const EXIT_CODE_MAP = Object.freeze({
   // 5 — Validation / certification
   'VALIDATION_FAILED': 5,
   'CERT_INVALID': 5,
+  'COUNTERFACTUAL_GATE_FAILED': 5,
   'OPS_MANIFEST_INVALID': 5,
   'OPS_COMPILE_FAILED': 5,
   'DIFF_FAILED': 5,

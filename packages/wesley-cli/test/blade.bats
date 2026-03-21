@@ -22,6 +22,30 @@ type User @wes_table {
 EOF
 }
 
+write_holmes_policy() {
+  local gate_mode="${1:-audit}"
+  mkdir -p .wesley
+  cat > .wesley/holmes-policy.json << JSON
+{
+  "version": 2,
+  "counterfactual": {
+    "enabled": true,
+    "provider": "git-warp",
+    "baseRef": "main",
+    "headRef": "HEAD",
+    "braidRefs": [],
+    "scope": null,
+    "gateMode": "$gate_mode",
+    "penalties": {
+      "divergence": 10,
+      "destructiveTransfer": 30,
+      "providerUnavailable": 50
+    }
+  }
+}
+JSON
+}
+
 @test "blade help works" {
   run node "$CLI_PATH" blade --help
   assert_success
@@ -49,6 +73,31 @@ EOF
   echo "$json" | jq -e '.transmutation == "legacy-supabase"' >/dev/null
   echo "$json" | jq -e '.runId == "run-blade-123"' >/dev/null
   echo "$json" | jq -e '.realm == null' >/dev/null
+}
+
+@test "blade counterfactual audit mode writes summary and keeps going" {
+  create_min_schema
+  write_holmes_policy audit
+
+  run node "$CLI_PATH" blade --schema schema.graphql --out-dir out --dry-run --counterfactual main --json --quiet
+  assert_success
+  assert_file_exist .wesley/SHIPME.md
+  assert_file_exist .wesley/counterfactual/current.json
+  echo "$output" | jq -e '.result.stages.counterfactual.gate == "audit"' >/dev/null
+  echo "$output" | jq -e '.result.stages.counterfactual.wouldFail == true' >/dev/null
+  local json
+  json=$(sed -n '/```json/,/```/p' .wesley/SHIPME.md | sed '1d;$d')
+  echo "$json" | jq -e '.counterfactual.gate == "audit"' >/dev/null
+  echo "$json" | jq -e '.counterfactual.wouldFail == true' >/dev/null
+}
+
+@test "blade counterfactual hard gate fails through judgment gate only" {
+  create_min_schema
+  write_holmes_policy hard
+
+  run node "$CLI_PATH" blade --schema schema.graphql --out-dir out --dry-run --counterfactual main --json --quiet
+  assert_failure 5
+  echo "$output" | jq -e '.code == "COUNTERFACTUAL_GATE_FAILED"' >/dev/null
 }
 
 @test "blade --resume requires --run-id" {

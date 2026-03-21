@@ -22,6 +22,46 @@
     "realm": {
       "anyOf": [ { "$ref": "realm.schema.json#" }, { "type": "null" } ]
     },
+    "counterfactual": {
+      "anyOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": [
+            "laneFingerprint",
+            "composition",
+            "comparisonFactDigest",
+            "transferFactDigest",
+            "riskClass",
+            "gate",
+            "wouldFail",
+            "reasons",
+            "providerPackageVersion",
+            "surfaceVersion",
+            "comparisonExportVersion",
+            "transferExportVersion"
+          ],
+          "properties": {
+            "laneFingerprint": { "type": "string", "minLength": 1 },
+            "composition": { "type": "string", "minLength": 1 },
+            "comparisonFactDigest": { "type": ["string", "null"] },
+            "transferFactDigest": { "type": ["string", "null"] },
+            "riskClass": { "type": "string", "enum": ["none", "low", "high"] },
+            "gate": { "type": "string", "enum": ["pass", "audit", "fail"] },
+            "wouldFail": { "type": "boolean" },
+            "reasons": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "providerPackageVersion": { "type": "string", "minLength": 1 },
+            "surfaceVersion": { "type": "string", "minLength": 1 },
+            "comparisonExportVersion": { "type": ["string", "null"] },
+            "transferExportVersion": { "type": ["string", "null"] }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
     "artifacts": { "type": ["object", "null"] },
     "signatures": {
       "type": "array",

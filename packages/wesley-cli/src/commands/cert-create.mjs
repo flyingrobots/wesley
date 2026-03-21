@@ -12,6 +12,10 @@ import {
 } from '../utils/runtime-resume.mjs';
 import { readRealmProjection } from '../utils/runtime-projections.mjs';
 import {
+  buildShipmeCounterfactualSummary,
+  readCurrentCounterfactualSummary
+} from '../utils/counterfactual.mjs';
+import {
   attachRunFailure,
   buildCommandRunReport,
   createCommandEventCollector,
@@ -48,6 +52,9 @@ export class CertCreateCommand extends WesleyCommand {
 
     const scores = await readJsonSafe(this.ctx, '.wesley/scores.json');
     const realm = await readWithFallback(() => readRealmProjection(this.ctx.fs));
+    const counterfactual = buildShipmeCounterfactualSummary(
+      await readCurrentCounterfactualSummary(this.ctx.fs)
+    );
     const run = resolveRunMetadata(options, realm || {});
     const resumeState = options.resume
       ? resolveResumeState(this.ctx?.eventStore, { ...run, command: 'cert-create' })
@@ -81,6 +88,7 @@ export class CertCreateCommand extends WesleyCommand {
         timestamp: now,
         scores: scores?.scores || null,
         realm: realm || null,
+        counterfactual,
         artifacts,
         signatures: []
       }, resumeState);
@@ -151,6 +159,7 @@ function renderSHIPME(cert) {
     `- Timestamp: ${cert.timestamp}`,
     cert.realm ? `- REALM: ${cert.realm.verdict} (${cert.realm.duration_ms}ms)` : '- REALM: n/a',
     cert.scores ? `- Scores: SCS=${fmt(cert.scores.scs)} MRI=${fmt(cert.scores.mri)} TCI=${fmt(cert.scores.tci)}` : '- Scores: n/a',
+    cert.counterfactual ? `- Counterfactual: ${cert.counterfactual.gate} (${cert.counterfactual.riskClass})` : '- Counterfactual: n/a',
     '',
     '<!-- WESLEY_CERT:BEGIN -->',
     '```json',

@@ -15,6 +15,10 @@ import { CertBadgeCommand } from './cert-badge.mjs';
 import { LEGACY_SUPABASE_TRANSMUTATION } from '../transmutations/legacy-supabase.mjs';
 import { resolveRunMetadata } from '../utils/run-metadata.mjs';
 import { assertResumeRequestedRunId } from '../utils/runtime-resume.mjs';
+import {
+  assertCounterfactualGate,
+  maybeAnalyzeCounterfactual
+} from '../utils/counterfactual.mjs';
 
 export class BladeCommand extends WesleyCommand {
   constructor(ctx) {
@@ -35,6 +39,8 @@ export class BladeCommand extends WesleyCommand {
       .option('--transmutation <name>', 'Transmutation to execute', LEGACY_SUPABASE_TRANSMUTATION)
       .option('--run-id <id>', 'Associate the full BLADE run with a specific run ID')
       .option('--resume', 'Resume a previously started BLADE run with the same transmutation and run ID')
+      .option('--counterfactual [baseRef]', 'Analyze a git-warp counterfactual lane against a base ref')
+      .option('--counterfactual-braid <ref>', 'Add a braid support ref for the counterfactual lane', collectValues, [])
       .option('--sign-key <path>', 'Private key (PEM) for signing')
       .option('--pub <path>', 'Public key (PEM) for verification')
       .option('--signer <name>', 'Signer label', 'HOLMES')
@@ -57,6 +63,7 @@ export class BladeCommand extends WesleyCommand {
       outDir,
       transmutation: run.transmutation,
       runId: run.runId,
+      emitBundle: typeof options.counterfactual !== 'undefined',
       resume: Boolean(options.resume),
       quiet: nestedQuiet,
       json: false
@@ -91,6 +98,18 @@ export class BladeCommand extends WesleyCommand {
       quiet: nestedQuiet,
       json: false
     });
+
+    let counterfactualResult = null;
+    if (typeof options.counterfactual !== 'undefined' || Array.isArray(options.counterfactualBraid) && options.counterfactualBraid.length > 0) {
+      logger.info('🪞 BLADE: counterfactual');
+      counterfactualResult = await maybeAnalyzeCounterfactual({
+        options,
+        schemaPath: options.schema,
+        outDir,
+        transmutation: run.transmutation
+      });
+      assertCounterfactualGate(counterfactualResult);
+    }
 
     // 4) Cert create
     logger.info('📜 BLADE: certify');
@@ -132,6 +151,7 @@ export class BladeCommand extends WesleyCommand {
         transform: summarizeStageResult(transformResult),
         plan: summarizeStageResult(planResult),
         rehearse: summarizeStageResult(rehearseResult),
+        counterfactual: summarizeCounterfactual(counterfactualResult),
         certCreate: summarizeStageResult(certCreateResult)
       }
     };
@@ -148,6 +168,23 @@ function summarizeStageResult(result) {
     command: result?.run?.command || null,
     status: result?.run?.status || null
   };
+}
+
+function summarizeCounterfactual(result) {
+  if (!result) return null;
+  return {
+    laneFingerprint: result.laneFingerprint,
+    composition: result.composition,
+    gate: result?.judgment?.gate || 'pass',
+    wouldFail: Boolean(result?.judgment?.wouldFail),
+    riskClass: result?.judgment?.riskClass || 'none',
+    status: result?.judgment?.status || 'clean'
+  };
+}
+
+function collectValues(value, previous) {
+  previous.push(value);
+  return previous;
 }
 
 async function executeNestedCommand(command, options) {

@@ -35,6 +35,60 @@ create_realm_pass() {
 JSON
 }
 
+create_counterfactual_summary() {
+  local gate="${1:-audit}"
+  local would_fail="${2:-true}"
+  mkdir -p .wesley/counterfactual
+  cat > .wesley/counterfactual/current.json << JSON
+{
+  "provider": "git-warp",
+  "providerPackageVersion": "14.16.2",
+  "surfaceVersion": "wesley-counterfactual-v1",
+  "laneFingerprint": "lane-123",
+  "composition": "merge",
+  "requested": {
+    "baseRef": "main",
+    "headRef": "HEAD",
+    "braidRefs": []
+  },
+  "resolved": {
+    "baseRef": "main",
+    "baseSha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "headRef": "HEAD",
+    "headSha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "braidRefs": [],
+    "liveWorkspace": true
+  },
+  "facts": {
+    "comparison": {
+      "exportVersion": "1",
+      "factKind": "coordinate-comparison",
+      "factDigest": "cmp-123",
+      "changed": true,
+      "file": ".wesley/counterfactual/comparison.cmp-123.json"
+    },
+    "transferPlan": {
+      "exportVersion": "1",
+      "factKind": "coordinate-transfer-plan",
+      "factDigest": "xfer-123",
+      "changed": true,
+      "file": ".wesley/counterfactual/transfer.xfer-123.json"
+    },
+    "normalizedScope": null
+  },
+  "judgment": {
+    "status": "unsupported",
+    "signals": ["provider_unavailable"],
+    "riskClass": "high",
+    "confidenceAdjustment": -50,
+    "gate": "$gate",
+    "wouldFail": $would_fail,
+    "reasons": ["Counterfactual test summary"]
+  }
+}
+JSON
+}
+
 @test "cert sign + verify with two different keys (C5 multi-sig)" {
   create_schema
   create_realm_pass
@@ -79,6 +133,17 @@ JSON
   echo "$output" | jq -e '.run.command == "cert-create"' >/dev/null
   echo "$output" | jq -e '.run.status == "completed"' >/dev/null
   echo "$output" | jq -e '.events | map(.type) == ["RunRequested","SourcesResolved","CertificateIssued","RunCompleted"]' >/dev/null
+}
+
+@test "cert-create embeds counterfactual summary when present" {
+  create_realm_pass
+  create_counterfactual_summary audit true
+
+  run node "$CLI_PATH" cert-create --env test --json
+  assert_success
+  echo "$output" | jq -e '.counterfactual.gate == "audit"' >/dev/null
+  echo "$output" | jq -e '.counterfactual.riskClass == "high"' >/dev/null
+  echo "$output" | jq -e '.counterfactual.comparisonFactDigest == "cmp-123"' >/dev/null
 }
 
 @test "cert-create --resume treats shared transform history as a fresh cert run" {
@@ -154,4 +219,27 @@ JSON
   run node "$CLI_PATH" cert-verify --in .wesley/SHIPME.md --pub holmes.pub --json
   assert_success
   echo "$output" | jq -e '.ok == true' >/dev/null
+}
+
+@test "cert-verify fails when embedded counterfactual gate is fail" {
+  create_schema
+  create_realm_pass
+  create_counterfactual_summary fail true
+
+  run node "$CLI_PATH" transform --schema schema.graphql --out-dir out
+  assert_success
+
+  run node "$CLI_PATH" cert-create --env test --out .wesley/SHIPME.md
+  assert_success
+
+  command -v openssl >/dev/null || skip "openssl not available"
+  openssl genpkey -algorithm ed25519 -out holmes.key >/dev/null 2>&1
+  openssl pkey -in holmes.key -pubout -out holmes.pub >/dev/null 2>&1
+
+  run node "$CLI_PATH" cert-sign --in .wesley/SHIPME.md --key holmes.key --signer HOLMES
+  assert_success
+
+  run node "$CLI_PATH" cert-verify --in .wesley/SHIPME.md --pub holmes.pub --json
+  assert_failure 5
+  echo "$output" | jq -e 'select(has("counterfactualGate")) | .counterfactualGate == "fail"' >/dev/null
 }

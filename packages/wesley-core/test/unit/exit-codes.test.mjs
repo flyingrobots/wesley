@@ -40,7 +40,7 @@ test('exitCodeFor — returns 4 for generation/plugin errors', () => {
 
 test('exitCodeFor — returns 5 for validation/certification errors', () => {
   for (const code of [
-    'VALIDATION_FAILED', 'CERT_INVALID',
+    'VALIDATION_FAILED', 'CERT_INVALID', 'COUNTERFACTUAL_GATE_FAILED',
     'OPS_MANIFEST_INVALID', 'OPS_COMPILE_FAILED', 'DIFF_FAILED'
   ]) {
     assert.equal(exitCodeFor(code), 5, `${code} should map to exit code 5`);
@@ -79,11 +79,12 @@ test('isRegistered — returns false for unknown codes', () => {
 test('getRegistry — returns an object with all known codes', () => {
   const registry = getRegistry();
   assert.equal(typeof registry, 'object');
-  assert.equal(Object.keys(registry).length, 35, 'should have exactly 35 registered codes');
+  assert.equal(Object.keys(registry).length, 36, 'should have exactly 36 registered codes');
   assert.equal(registry.UNKNOWN_TRANSMUTATION, 2);
   assert.equal(registry.NO_EVENT_STORE, 2);
   assert.equal(registry.RUN_NOT_FOUND, 2);
   assert.equal(registry.RUN_AMBIGUOUS, 2);
+  assert.equal(registry.COUNTERFACTUAL_GATE_FAILED, 5);
 });
 
 test('getRegistry — registry is immutable (frozen object)', () => {
