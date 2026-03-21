@@ -33,6 +33,8 @@ EOF
   echo "$output" | jq -e '.run.transmutation == "legacy-supabase"' >/dev/null
   echo "$output" | jq -e '.run.command == "transform"' >/dev/null
   echo "$output" | jq -e '.run.status == "completed"' >/dev/null
+  echo "$output" | jq -e '.snapshot.lastSequence == 10' >/dev/null
+  echo "$output" | jq -e '.tailEvents | length == 0' >/dev/null
   echo "$output" | jq -e '.events | map(.type) == ["RunRequested","SourcesResolved","IRParsed","TaskGraphBuilt","TaskStarted","TaskCompleted","EvidenceMerged","ScoresComputed","ArtifactsMaterialized","RunCompleted"]' >/dev/null
 }
 
@@ -74,6 +76,9 @@ EOF
   assert_success
   echo "$output" | jq -e '.run.runId == "run-replay-ok"' >/dev/null
   echo "$output" | jq -e '.run.status == "completed"' >/dev/null
+  echo "$output" | jq -e '.snapshot.lastSequence == 10' >/dev/null
+  echo "$output" | jq -e '.tailEvents | length == 0' >/dev/null
+  echo "$output" | jq -e '.replay.snapshot.used == true' >/dev/null
   echo "$output" | jq -e '.replay.integrity.valid == true' >/dev/null
   echo "$output" | jq -e '.replay.appliedEventCount == 10' >/dev/null
   echo "$output" | jq -e '.replay.terminal == true' >/dev/null
@@ -88,9 +93,29 @@ EOF
   run node "$CLI_PATH" runs replay --run-id run-replay-crash --transmutation legacy-supabase --json
   assert_success
   echo "$output" | jq -e '.run.status == "running"' >/dev/null
+  echo "$output" | jq -e '.snapshot == null' >/dev/null
   echo "$output" | jq -e '.replay.integrity.valid == true' >/dev/null
   echo "$output" | jq -e '.replay.terminal == false' >/dev/null
   echo "$output" | jq -e '.replay.appliedEventCount == 4' >/dev/null
+}
+
+@test "runs inspect ignores malformed snapshot cache and falls back to raw events" {
+  create_schema
+
+  run node "$CLI_PATH" transform --schema schema.graphql --transmutation legacy-supabase --run-id run-bad-snapshot --out-dir out --json --quiet
+  assert_success
+
+  local encoded
+  encoded="$(node -e "process.stdout.write(encodeURIComponent(process.argv[1]))" "transmutation:legacy-supabase:run-bad-snapshot")"
+  cat > ".wesley/ledger/snapshots/${encoded}.json" <<'EOF'
+{"not":"valid snapshot"
+EOF
+
+  run node "$CLI_PATH" runs inspect --run-id run-bad-snapshot --json
+  assert_success
+  echo "$output" | jq -e '.run.runId == "run-bad-snapshot"' >/dev/null
+  echo "$output" | jq -e '.snapshot == null' >/dev/null
+  echo "$output" | jq -e '.events | length == 10' >/dev/null
 }
 
 @test "runs doctor flags non-terminal and malformed streams" {

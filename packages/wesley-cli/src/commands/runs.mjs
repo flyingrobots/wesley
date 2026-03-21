@@ -2,7 +2,7 @@
  * Runs Command - Inspect and replay persisted runtime runs
  */
 
-import { buildRuntimeRunReport, createRuntimeStreamId, replayRuntimeRun, WesleyError } from '@wesley/core';
+import { createRuntimeStreamId, replayRuntimeRun, WesleyError } from '@wesley/core';
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 
 export class RunsCommand extends WesleyCommand {
@@ -183,14 +183,18 @@ export class RunsCommand extends WesleyCommand {
       throw new WesleyError('EUSAGE', 'runs replay requires --run-id.');
     }
 
-    const { streamId, events } = this.resolveRunStream(eventStore, runId, transmutation);
+    const { streamId } = this.resolveRunStream(eventStore, runId, transmutation);
+    const record = this.readRunRecord(eventStore, streamId, {
+      runId,
+      transmutation,
+      includeEvents: true
+    });
     const payload = {
-      ...replayRuntimeRun(events, {
-        runId,
-        transmutation: transmutation || events[0]?.transmutation || null,
-        streamId
-      }),
-      events
+      run: record.run,
+      replay: record.replay,
+      snapshot: record.snapshot,
+      tailEvents: record.tailEvents,
+      events: record.events
     };
 
     if (options.json) {
@@ -205,6 +209,7 @@ export class RunsCommand extends WesleyCommand {
     logger.info(`Applied events: ${payload.replay.appliedEventCount}/${payload.replay.eventCount}`);
     logger.info(`Terminal: ${payload.replay.terminal ? 'yes' : 'no'}`);
     logger.info(`Stream: ${payload.run.streamId}`);
+    logger.info(`Snapshot: ${payload.snapshot ? `yes (seq=${payload.snapshot.lastSequence})` : 'no'}`);
     if (payload.replay.integrity.issues.length > 0) {
       logger.info('Replay issues:');
       for (const issue of payload.replay.integrity.issues) {
@@ -224,30 +229,36 @@ export class RunsCommand extends WesleyCommand {
       throw new WesleyError('EUSAGE', 'runs inspect requires --run-id.');
     }
 
-    const { streamId, events } = this.resolveRunStream(eventStore, runId, transmutation);
-    const run = buildRuntimeRunReport(events, {
+    const { streamId } = this.resolveRunStream(eventStore, runId, transmutation);
+    const record = this.readRunRecord(eventStore, streamId, {
       runId,
-      transmutation: transmutation || events[0]?.transmutation || null,
-      streamId
+      transmutation,
+      includeEvents: true
     });
-    const payload = { run, events };
+    const payload = {
+      run: record.run,
+      snapshot: record.snapshot,
+      tailEvents: record.tailEvents,
+      events: record.events
+    };
 
     if (options.json) {
       this.ctx.stdout.write(JSON.stringify(payload, null, 2) + '\n');
       return;
     }
 
-    logger.info(`Run: ${run.runId}`);
-    logger.info(`Transmutation: ${run.transmutation}`);
-    logger.info(`Command: ${run.command || 'n/a'}`);
-    logger.info(`Status: ${run.status}`);
-    logger.info(`Stream: ${run.streamId}`);
-    logger.info(`Events: ${run.eventCount}`);
-    logger.info(`Artifacts: ${run.artifactCount}`);
-    if (run.startedAt) logger.info(`Started: ${run.startedAt}`);
-    if (run.completedAt) logger.info(`Completed: ${run.completedAt}`);
-    if (run.failure?.code) {
-      logger.info(`Failure: ${run.failure.code}${run.failure.message ? ` - ${run.failure.message}` : ''}`);
+    logger.info(`Run: ${record.run.runId}`);
+    logger.info(`Transmutation: ${record.run.transmutation}`);
+    logger.info(`Command: ${record.run.command || 'n/a'}`);
+    logger.info(`Status: ${record.run.status}`);
+    logger.info(`Stream: ${record.run.streamId}`);
+    logger.info(`Events: ${record.run.eventCount}`);
+    logger.info(`Artifacts: ${record.run.artifactCount}`);
+    logger.info(`Snapshot: ${record.snapshot ? `yes (seq=${record.snapshot.lastSequence})` : 'no'}`);
+    if (record.run.startedAt) logger.info(`Started: ${record.run.startedAt}`);
+    if (record.run.completedAt) logger.info(`Completed: ${record.run.completedAt}`);
+    if (record.run.failure?.code) {
+      logger.info(`Failure: ${record.run.failure.code}${record.run.failure.message ? ` - ${record.run.failure.message}` : ''}`);
     }
 
     return payload;
@@ -300,22 +311,17 @@ export class RunsCommand extends WesleyCommand {
 
   inspectSingleStream(eventStore, streamId) {
     try {
-      const events = eventStore.readStream(streamId);
-      const first = events[0] || {};
-      const last = events.at(-1) || {};
-      const replay = replayRuntimeRun(events, {
-        runId: last.runId ?? first.runId ?? null,
-        transmutation: last.transmutation ?? first.transmutation ?? null,
-        streamId
+      const record = this.readRunRecord(eventStore, streamId, {
+        includeEvents: false
       });
       const findings = [];
-      if (!replay.replay.terminal) {
+      if (!record.replay.terminal) {
         findings.push({
           code: 'RUN_NON_TERMINAL',
-          message: `Run ${replay.run.runId || streamId} is non-terminal with status ${replay.run.status}.`
+          message: `Run ${record.run.runId || streamId} is non-terminal with status ${record.run.status}.`
         });
       }
-      for (const issue of replay.replay.integrity.issues) {
+      for (const issue of record.replay.integrity.issues) {
         findings.push({
           code: issue.code,
           message: issue.message
@@ -324,9 +330,11 @@ export class RunsCommand extends WesleyCommand {
 
       return {
         streamId,
-        run: replay.run,
-        replay: replay.replay,
-        events,
+        run: record.run,
+        replay: record.replay,
+        snapshot: record.snapshot,
+        events: record.events,
+        tailEvents: record.tailEvents,
         findings,
         healthy: findings.length === 0
       };
@@ -348,11 +356,10 @@ export class RunsCommand extends WesleyCommand {
   resolveRunStream(eventStore, runId, transmutation) {
     if (transmutation) {
       const streamId = createRuntimeStreamId({ transmutation, runId });
-      const events = eventStore.readStream(streamId);
-      if (events.length === 0) {
+      if (!this.streamExists(eventStore, streamId)) {
         throw new WesleyError('RUN_NOT_FOUND', `No persisted run found for ${transmutation}/${runId}.`);
       }
-      return { streamId, events };
+      return { streamId };
     }
 
     const streamIds = typeof eventStore.listStreams === 'function'
@@ -361,9 +368,15 @@ export class RunsCommand extends WesleyCommand {
     const matches = [];
 
     for (const streamId of streamIds) {
+      const snapshot = this.readSnapshot(eventStore, streamId);
+      if (snapshot?.runId === runId) {
+        matches.push({ streamId });
+        continue;
+      }
+
       const events = eventStore.readStream(streamId);
       if (events.some(event => event.runId === runId)) {
-        matches.push({ streamId, events });
+        matches.push({ streamId });
       }
     }
 
@@ -375,6 +388,55 @@ export class RunsCommand extends WesleyCommand {
     }
 
     return matches[0];
+  }
+
+  readRunRecord(eventStore, streamId, { runId = null, transmutation = null, includeEvents = false } = {}) {
+    const snapshot = this.readSnapshot(eventStore, streamId);
+    const tailEvents = snapshot
+      ? this.readStreamSince(eventStore, streamId, snapshot.lastSequence)
+      : eventStore.readStream(streamId);
+    const first = tailEvents[0] || {};
+    const last = tailEvents.at(-1) || {};
+    const replay = replayRuntimeRun(tailEvents, {
+      runId: runId || snapshot?.runId || last.runId || first.runId || null,
+      transmutation: transmutation || snapshot?.transmutation || last.transmutation || first.transmutation || null,
+      streamId,
+      snapshot
+    });
+    return {
+      run: replay.run,
+      replay: replay.replay,
+      snapshot,
+      tailEvents,
+      events: includeEvents ? eventStore.readStream(streamId) : tailEvents
+    };
+  }
+
+  readSnapshot(eventStore, streamId) {
+    if (typeof eventStore.readSnapshot !== 'function') {
+      return null;
+    }
+    try {
+      return eventStore.readSnapshot(streamId);
+    } catch {
+      return null;
+    }
+  }
+
+  readStreamSince(eventStore, streamId, afterSequence = 0) {
+    if (typeof eventStore.readStreamSince === 'function') {
+      return eventStore.readStreamSince(streamId, afterSequence);
+    }
+    return eventStore.readStream(streamId).filter(event => {
+      return Number.isInteger(event?.sequence) ? event.sequence > afterSequence : true;
+    });
+  }
+
+  streamExists(eventStore, streamId) {
+    if (this.readSnapshot(eventStore, streamId)) {
+      return true;
+    }
+    return eventStore.readStream(streamId).length > 0;
   }
 }
 
