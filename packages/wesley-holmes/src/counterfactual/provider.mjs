@@ -6,6 +6,7 @@ import {
   readFile,
   readdir,
   rm,
+  stat,
   writeFile
 } from 'node:fs/promises';
 import os from 'node:os';
@@ -19,6 +20,7 @@ import WarpGraph, {
   normalizeVisibleStateScopeV1
 } from '@git-stunts/git-warp';
 import {
+  GENERATED_ARTIFACT_DIR,
   GENERATED_COUNTERFACTUAL_CURRENT_PATH,
   GENERATED_COUNTERFACTUAL_DIR
 } from '@wesley/core';
@@ -29,13 +31,17 @@ export const COUNTERFACTUAL_SURFACE_VERSION = 'wesley-counterfactual-v1';
 export const COUNTERFACTUAL_DIR = GENERATED_COUNTERFACTUAL_DIR;
 export const COUNTERFACTUAL_CURRENT_PATH = GENERATED_COUNTERFACTUAL_CURRENT_PATH;
 export const GIT_WARP_PROVIDER_VERSION = '14.16.2';
+export const COUNTERFACTUAL_STORE_LEASE_VERSION = 1;
+
+const DEFAULT_COUNTERFACTUAL_CACHE_TTL_HOURS = 72;
 
 export async function analyzeCounterfactual({
   repoRoot,
   lane,
   includeTransferPlan = true,
   policy,
-  surface = {}
+  surface = {},
+  env = process.env
 } = {}) {
   const requestedLane = {
     baseRef: String(lane?.baseRef || 'main'),
@@ -49,7 +55,16 @@ export async function analyzeCounterfactual({
   const artifactRoot = path.join(workspaceRoot, COUNTERFACTUAL_DIR);
   const currentPath = path.join(workspaceRoot, COUNTERFACTUAL_CURRENT_PATH);
   const storeRoot = path.join(artifactRoot, 'store');
+  const cachePolicy = resolveCounterfactualCachePolicy(env);
+  const now = new Date().toISOString();
   const scope = normalizeScope(requestedLane.scope);
+  await pruneCounterfactualCache({
+    artifactRoot,
+    currentPath,
+    storeRoot,
+    now,
+    cachePolicy
+  });
   const store = await openProviderStore(storeRoot);
   const cleanupDirs = [];
 
@@ -78,7 +93,9 @@ export async function analyzeCounterfactual({
       workspaceDir: headWorkspace,
       sourceSha: resolved.headSha,
       sourceId: requestedLane.headRef === 'HEAD' ? `workspace:${resolved.headSha}` : `ref:${resolved.headSha}`,
-      surface
+      surface,
+      now,
+      cachePolicy
     });
     const baseSurface = await ensureEncodedSurface({
       store,
@@ -86,7 +103,9 @@ export async function analyzeCounterfactual({
       workspaceDir: baseWorkspace,
       sourceSha: resolved.baseSha,
       sourceId: `ref:${resolved.baseSha}`,
-      surface
+      surface,
+      now,
+      cachePolicy
     });
     const braidSurfaces = [];
     for (const braid of braidWorkspaces) {
@@ -96,7 +115,9 @@ export async function analyzeCounterfactual({
         workspaceDir: braid.workspace,
         sourceSha: braid.sha,
         sourceId: `braid:${braid.sha}`,
-        surface
+        surface,
+        now,
+        cachePolicy
       }));
     }
 
@@ -184,10 +205,22 @@ export async function analyzeCounterfactual({
       },
       judgment
     };
+    summary.cache = {
+      generatedAt: now,
+      lastUsedAt: now,
+      expiresAt: computeExpiry(now, cachePolicy.ttlMs),
+      storeLeaseVersion: COUNTERFACTUAL_STORE_LEASE_VERSION,
+      surfaceKeys: [headSurface.surfaceKey, baseSurface.surfaceKey, ...braidSurfaces.map(item => item.surfaceKey)]
+    };
 
     const summaryPath = path.join(laneDir, 'summary.json');
     await writeFile(summaryPath, JSON.stringify(summary, null, 2));
     await writeFile(currentPath, JSON.stringify({ ...summary, summaryPath: path.relative(workspaceRoot, summaryPath) }, null, 2));
+    await writeStoreLease(storeRoot, {
+      now,
+      cachePolicy,
+      lastLaneFingerprint: laneFingerprint
+    });
     return summary;
   } catch (error) {
     const fallback = buildProviderFailure({
@@ -330,7 +363,7 @@ function resolveLaneRefs(repoRoot, lane) {
   return { baseSha, headSha, braids };
 }
 
-async function ensureEncodedSurface({ store, repoRoot, workspaceDir, sourceSha, sourceId, surface }) {
+async function ensureEncodedSurface({ store, repoRoot, workspaceDir, sourceSha, sourceId, surface, now, cachePolicy }) {
   const surfaceModel = await collectSurfaceModel({ repoRoot, workspaceDir, sourceSha, surface });
   const surfaceDigest = hashObject({
     sourceId,
@@ -344,7 +377,16 @@ async function ensureEncodedSurface({ store, repoRoot, workspaceDir, sourceSha, 
   const metadataPath = path.join(store.root, 'surfaces', `${surfaceKey}.json`);
   const cached = await readJson(metadataPath);
   if (cached?.writerId && cached?.patchSha) {
-    return cached;
+    const refreshed = {
+      ...cached,
+      surfaceKey,
+      sourceSha,
+      sourceId,
+      lastUsedAt: now,
+      expiresAt: computeExpiry(now, cachePolicy.ttlMs)
+    };
+    await writeFile(metadataPath, JSON.stringify(refreshed, null, 2));
+    return refreshed;
   }
 
   await mkdir(path.dirname(metadataPath), { recursive: true });
@@ -369,15 +411,20 @@ async function ensureEncodedSurface({ store, repoRoot, workspaceDir, sourceSha, 
   const metadata = {
     writerId,
     patchSha,
+    surfaceKey,
     surfaceDigest,
-    summary: surfaceModel.summary
+    sourceSha,
+    sourceId,
+    summary: surfaceModel.summary,
+    lastUsedAt: now,
+    expiresAt: computeExpiry(now, cachePolicy.ttlMs)
   };
   await writeFile(metadataPath, JSON.stringify(metadata, null, 2));
   return metadata;
 }
 
 async function collectSurfaceModel({ repoRoot, workspaceDir, sourceSha, surface }) {
-  const bundleDir = resolveWorkspacePath(workspaceDir, surface.bundleDir || '.wesley');
+  const bundleDir = resolveWorkspacePath(workspaceDir, surface.bundleDir || GENERATED_ARTIFACT_DIR);
   const outDir = resolveWorkspacePath(workspaceDir, surface.outDir || 'out');
   const schemaPath = resolveSchemaPath(workspaceDir, surface.schemaPath);
   await ensureWorkspaceArtifacts({
@@ -464,6 +511,86 @@ async function openProviderStore(storeRoot) {
     writerId: 'observer'
   });
   return { root: storeRoot, persistence, observer };
+}
+
+async function pruneCounterfactualCache({ artifactRoot, currentPath, storeRoot, now, cachePolicy }) {
+  await mkdir(artifactRoot, { recursive: true });
+  if (await shouldResetStoreLease(storeRoot, now)) {
+    await rm(storeRoot, { recursive: true, force: true });
+  }
+  await pruneLaneArtifacts({ artifactRoot, now, cachePolicy });
+  const current = await readJson(currentPath);
+  if (!current?.summaryPath) {
+    return;
+  }
+  const workspaceRoot = path.resolve(artifactRoot, '..', '..');
+  const summaryPath = path.resolve(workspaceRoot, current.summaryPath);
+  if (!existsSync(summaryPath)) {
+    await rm(currentPath, { force: true });
+  }
+}
+
+async function shouldResetStoreLease(storeRoot, now) {
+  const lease = await readJson(path.join(storeRoot, 'lease.json'));
+  if (!lease) {
+    return false;
+  }
+  if (lease.leaseVersion !== COUNTERFACTUAL_STORE_LEASE_VERSION) {
+    return true;
+  }
+  const expiresAt = Date.parse(lease.expiresAt || '');
+  if (Number.isNaN(expiresAt)) {
+    return false;
+  }
+  return expiresAt <= Date.parse(now);
+}
+
+async function pruneLaneArtifacts({ artifactRoot, now, cachePolicy }) {
+  const entries = await readdir(artifactRoot, { withFileTypes: true });
+  for (const entry of entries) {
+    if (!entry.isDirectory() || entry.name === 'store') {
+      continue;
+    }
+    const laneDir = path.join(artifactRoot, entry.name);
+    const summaryPath = path.join(laneDir, 'summary.json');
+    const summary = await readJson(summaryPath);
+    if (await isExpiredLaneSummary(summaryPath, summary, now, cachePolicy)) {
+      await rm(laneDir, { recursive: true, force: true });
+    }
+  }
+}
+
+async function isExpiredLaneSummary(summaryPath, summary, now, cachePolicy) {
+  const summaryExpiry = Date.parse(summary?.cache?.expiresAt || '');
+  if (!Number.isNaN(summaryExpiry)) {
+    return summaryExpiry <= Date.parse(now);
+  }
+  try {
+    const summaryStat = await stat(summaryPath);
+    return summaryStat.mtimeMs <= Date.parse(now) - cachePolicy.ttlMs;
+  } catch {
+    return true;
+  }
+}
+
+async function writeStoreLease(storeRoot, { now, cachePolicy, lastLaneFingerprint }) {
+  await mkdir(storeRoot, { recursive: true });
+  const leasePath = path.join(storeRoot, 'lease.json');
+  const existing = await readJson(leasePath);
+  const lease = {
+    leaseVersion: COUNTERFACTUAL_STORE_LEASE_VERSION,
+    graphName: COUNTERFACTUAL_GRAPH_NAME,
+    provider: 'git-warp',
+    providerPackageVersion: GIT_WARP_PROVIDER_VERSION,
+    surfaceVersion: COUNTERFACTUAL_SURFACE_VERSION,
+    createdAt: existing?.createdAt || now,
+    lastUsedAt: now,
+    expiresAt: computeExpiry(now, cachePolicy.ttlMs),
+    ttlHours: cachePolicy.ttlHours,
+    lastLaneFingerprint: lastLaneFingerprint || existing?.lastLaneFingerprint || null
+  };
+  await writeFile(leasePath, JSON.stringify(lease, null, 2));
+  return lease;
 }
 
 function ensureGitRepo(storeRoot) {
@@ -588,6 +715,19 @@ async function readJson(filePath) {
   } catch {
     return null;
   }
+}
+
+function resolveCounterfactualCachePolicy(env = process.env) {
+  const parsed = Number.parseInt(String(env?.WESLEY_COUNTERFACTUAL_CACHE_TTL_HOURS ?? ''), 10);
+  const ttlHours = Number.isInteger(parsed) && parsed > 0 ? parsed : DEFAULT_COUNTERFACTUAL_CACHE_TTL_HOURS;
+  return {
+    ttlHours,
+    ttlMs: ttlHours * 60 * 60 * 1000
+  };
+}
+
+function computeExpiry(now, ttlMs) {
+  return new Date(Date.parse(now) + ttlMs).toISOString();
 }
 
 function hashObject(value) {
