@@ -199,23 +199,6 @@ export async function analyzeCounterfactual({
   }
 }
 
-export function createProjectionCompatibility(counterfactual) {
-  if (!counterfactual) return null;
-  const penalty = Math.max(0, -Number(counterfactual?.judgment?.confidenceAdjustment || 0));
-  return {
-    status: counterfactual?.judgment?.status || 'unknown',
-    merge: {
-      baseRef: counterfactual?.requested?.baseRef || 'main',
-      strategy: 'git-warp-counterfactual',
-      composition: counterfactual?.composition || 'merge'
-    },
-    impact: { confidencePenalty: penalty },
-    notes: Array.isArray(counterfactual?.judgment?.reasons)
-      ? counterfactual.judgment.reasons.join('; ')
-      : ''
-  };
-}
-
 function buildProviderFailure({ repoRoot, lane, error, policy }) {
   const penalties = policy?.counterfactual?.penalties || {};
   const gateMode = policy?.counterfactual?.gateMode || 'off';

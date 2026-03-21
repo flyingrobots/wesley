@@ -12,7 +12,6 @@ export {
   COUNTERFACTUAL_DIR,
   COUNTERFACTUAL_GRAPH_NAME,
   COUNTERFACTUAL_SURFACE_VERSION,
-  createProjectionCompatibility,
   GIT_WARP_PROVIDER_VERSION
 } from './counterfactual/provider.mjs';
 export {

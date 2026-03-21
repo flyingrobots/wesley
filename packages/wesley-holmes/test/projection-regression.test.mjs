@@ -5,8 +5,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import {
-  analyzeCounterfactual,
-  createProjectionCompatibility
+  analyzeCounterfactual
 } from '../src/index.mjs';
 import { MergePlanner } from '../src/merge/Planner.mjs';
 import { MergeTreeStrategy } from '../src/merge/MergeTreeStrategy.mjs';
@@ -129,8 +128,7 @@ async function runCounterfactual(repoRoot, baseRef = 'main') {
     policy
   });
   return {
-    counterfactual,
-    projection: createProjectionCompatibility(counterfactual)
+    counterfactual
   };
 }
 
@@ -146,12 +144,10 @@ test('legacy projection harness matches counterfactual compatibility on a clean 
     assert.equal(legacy.worktree.status, 'clean');
     assert.ok(['clean', 'error'].includes(legacy.mergeTree.status));
     assert.equal(modern.counterfactual.judgment.status, 'divergent');
-    assert.equal(modern.projection.status, 'divergent');
     assert.notEqual(modern.counterfactual.judgment.gate, 'fail');
     assert.ok(['none', 'low'].includes(modern.counterfactual.judgment.riskClass));
-    assert.equal(modern.projection.merge.baseRef, legacy.plan.baseRef);
-    assert.equal(modern.projection.merge.composition, 'merge');
-    assert.equal(modern.projection.merge.strategy, 'git-warp-counterfactual');
+    assert.equal(modern.counterfactual.requested.baseRef, legacy.plan.baseRef);
+    assert.equal(modern.counterfactual.composition, 'merge');
   } finally {
     fixture.cleanup();
   }
@@ -166,7 +162,6 @@ test('legacy projection harness keeps conflict fixtures visible beside counterfa
     const modern = await runCounterfactual(fixture.work);
 
     assert.equal(legacy.worktree.status, 'conflicts');
-    assert.notEqual(modern.projection.status, 'clean');
     assert.notEqual(modern.counterfactual.judgment.status, 'clean');
     assert.ok(Array.isArray(modern.counterfactual.judgment.reasons));
     assert.ok(modern.counterfactual.judgment.reasons.length > 0);

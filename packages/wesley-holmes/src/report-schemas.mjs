@@ -311,9 +311,6 @@ export const moriartyReportSchema = {
         ledgerDir: stringField
       }
     },
-    projection: {
-      type: 'object'
-    },
     counterfactual: {
       type: 'object',
       required: ['provider', 'providerPackageVersion', 'surfaceVersion', 'laneFingerprint', 'composition', 'requested', 'resolved', 'facts', 'judgment'],

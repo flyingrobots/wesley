@@ -364,26 +364,6 @@ export class Moriarty {
       }
     }
 
-    if (data.projection) {
-      report.push('');
-      report.push('---');
-      report.push('');
-      report.push('## 🔭 Projection Compatibility');
-      const p = data.projection;
-      report.push(`Status: ${p.status || 'unknown'}`);
-      if (p.merge) {
-        report.push(`Base: ${p.merge.baseRef || 'main'} · Strategy: ${p.merge.strategy || 'tbd'} · Composition: ${p.merge.composition || 'merge'}`);
-      }
-      if (p.mergedTree) {
-        report.push(`Merged tree: ${p.mergedTree}`);
-      }
-      if (p.impact?.confidencePenalty) {
-        report.push(`Impact: -${p.impact.confidencePenalty} confidence due to projection issues`);
-      }
-      if (typeof p.notes === 'string' && p.notes) {
-        report.push(p.notes);
-      }
-    }
     return report.join('\n');
   }
 

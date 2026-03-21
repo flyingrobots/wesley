@@ -13,7 +13,6 @@ import { attachRuntimeRun, loadRuntimeRunRecord } from './runtime-run.mjs';
 import { readWeightConfig } from './weight-config.mjs';
 import {
   analyzeCounterfactual,
-  createProjectionCompatibility,
   loadHolmesCounterfactualPolicy,
   resolveCounterfactualLaneRequest
 } from './index.mjs';
@@ -100,7 +99,6 @@ async function attachCounterfactual(data, {
   data.counterfactual = explain
     ? counterfactual
     : { ...counterfactual };
-  data.projection = createProjectionCompatibility(counterfactual);
   data.warnings = Array.isArray(data.warnings) ? data.warnings : [];
   if (deprecatedAlias) {
     data.warnings.push('Deprecated: --project-merge now routes through the git-warp counterfactual provider and will be removed after the short deprecation window.');

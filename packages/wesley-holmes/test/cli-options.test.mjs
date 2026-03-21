@@ -257,7 +257,7 @@ test('holmes CLI report emits combined JSON with overrides', () => {
   assert.ok(json?.moriarty, 'Combined report should include MORIARTY data');
 });
 
-test('holmes CLI predict emits counterfactual report and compatibility projection', () => {
+test('holmes CLI predict emits counterfactual report without projection alias', () => {
   const fixture = createFixture();
   initGitFixture(fixture.tempDir);
   const jsonPath = path.join(fixture.schemaDir, 'moriarty-counterfactual.json');
@@ -278,9 +278,9 @@ test('holmes CLI predict emits counterfactual report and compatibility projectio
     assert.equal(result.status, 0, result.stderr);
     const json = JSON.parse(readFileSync(jsonPath, 'utf8'));
     assert.ok(json.counterfactual, 'Counterfactual data should be present');
-    assert.ok(json.projection, 'Compatibility projection should still be present');
-    assert.equal(json.projection.merge.strategy, 'git-warp-counterfactual');
+    assert.equal('projection' in json, false, 'Projection compatibility alias should be removed');
     assert.ok(result.stdout.includes('Counterfactual Analysis'));
+    assert.equal(result.stdout.includes('Projection Compatibility'), false);
   } finally {
     fixture.cleanup();
   }
