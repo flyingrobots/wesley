@@ -144,6 +144,7 @@ Implemented now
 - git-warp provider and canonical fact persistence
 - Moriarty report `runtime` block sourced from the run ledger
 - Moriarty report `counterfactual` block plus compatibility `projection` alias
+- legacy merge-tree/worktree projection retained in tests only as a regression harness
 - BLADE counterfactual stage
 - SHIPME embedding of compact counterfactual summary
 - BLADE hard/audit/off behavior via `judgment.gate`

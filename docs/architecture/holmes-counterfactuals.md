@@ -147,6 +147,7 @@ Moriarty
   - `runtime`
   - `counterfactual`
   - temporary compatibility `projection`
+- Legacy merge-tree/worktree projection code remains in tests only as a one-release regression harness.
 
 BLADE
 - new stage between `rehearse` and `cert-create`
