@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { replayRuntimeRun } from '../../src/application/RuntimeRunReplay.mjs';
+import { buildRuntimeRunSnapshot } from '../../src/application/RuntimeRunSnapshot.mjs';
 
 test('replayRuntimeRun rehydrates a valid completed run', () => {
   const events = [
@@ -105,4 +106,67 @@ test('replayRuntimeRun reports stream integrity issues', () => {
     result.replay.integrity.issues.map(issue => issue.code),
     ['SEQUENCE_START', 'SEQUENCE_GAP', 'STREAM_MISMATCH', 'TRANSMUTATION_MISMATCH', 'SEQUENCE_GAP']
   );
+});
+
+test('replayRuntimeRun can continue from a stored snapshot and tail events', () => {
+  const snapshot = buildRuntimeRunSnapshot([
+    {
+      eventId: 'transmutation:legacy-supabase:run-replay-003:1',
+      type: 'RunRequested',
+      streamId: 'transmutation:legacy-supabase:run-replay-003',
+      sequence: 1,
+      schemaVersion: '1.0.0',
+      timestamp: '2026-03-20T03:22:00.000Z',
+      causationId: null,
+      correlationId: 'run-replay-003',
+      idempotencyKey: 'legacy-supabase:transform:requested',
+      runId: 'run-replay-003',
+      transmutation: 'legacy-supabase',
+      payload: { command: 'transform' }
+    },
+    {
+      eventId: 'transmutation:legacy-supabase:run-replay-003:2',
+      type: 'ArtifactsMaterialized',
+      streamId: 'transmutation:legacy-supabase:run-replay-003',
+      sequence: 2,
+      schemaVersion: '1.0.0',
+      timestamp: '2026-03-20T03:22:01.000Z',
+      causationId: null,
+      correlationId: 'run-replay-003',
+      idempotencyKey: 'legacy-supabase:transform:artifacts',
+      runId: 'run-replay-003',
+      transmutation: 'legacy-supabase',
+      payload: { artifactCount: 1 }
+    }
+  ]);
+
+  const result = replayRuntimeRun([
+    {
+      eventId: 'transmutation:legacy-supabase:run-replay-003:3',
+      type: 'RunCompleted',
+      streamId: 'transmutation:legacy-supabase:run-replay-003',
+      sequence: 3,
+      schemaVersion: '1.0.0',
+      timestamp: '2026-03-20T03:22:02.000Z',
+      causationId: null,
+      correlationId: 'run-replay-003',
+      idempotencyKey: 'legacy-supabase:transform:completed',
+      runId: 'run-replay-003',
+      transmutation: 'legacy-supabase',
+      payload: { command: 'transform' }
+    }
+  ], {
+    runId: 'run-replay-003',
+    transmutation: 'legacy-supabase',
+    streamId: 'transmutation:legacy-supabase:run-replay-003',
+    snapshot
+  });
+
+  assert.equal(result.run.status, 'completed');
+  assert.equal(result.run.artifactCount, 1);
+  assert.equal(result.replay.snapshot.used, true);
+  assert.equal(result.replay.snapshot.lastSequence, 2);
+  assert.equal(result.replay.appliedEventCount, 3);
+  assert.equal(result.replay.eventCount, 3);
+  assert.equal(result.replay.integrity.valid, true);
 });

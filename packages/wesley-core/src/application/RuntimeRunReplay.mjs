@@ -1,29 +1,43 @@
 import { applyRuntimeEvent, buildRuntimeRunReport } from './RuntimeRunReport.mjs';
+import { createRuntimeRunSnapshot } from './RuntimeRunSnapshot.mjs';
 
 export function replayRuntimeRun(events, seed = {}) {
-  const run = buildRuntimeRunReport([], seed);
+  const snapshot = seed.snapshot ? createRuntimeRunSnapshot(seed.snapshot) : null;
+  const run = snapshot ? createSnapshotRunSeed(snapshot) : buildRuntimeRunReport([], seed);
   const replay = {
-    eventCount: Array.isArray(events) ? events.length : 0,
-    appliedEventCount: 0,
-    terminal: false,
+    eventCount: normalizeEventCount(snapshot) + (Array.isArray(events) ? events.length : 0),
+    appliedEventCount: normalizeEventCount(snapshot),
+    terminal: isTerminal(run.status),
     integrity: {
       valid: true,
       issues: []
     },
-    firstSequence: null,
-    lastSequence: null
+    firstSequence: snapshot ? snapshot.lastSequence + 1 : null,
+    lastSequence: snapshot?.lastSequence ?? null,
+    snapshot: {
+      used: Boolean(snapshot),
+      eventCount: normalizeEventCount(snapshot),
+      lastSequence: snapshot?.lastSequence ?? null,
+      updatedAt: snapshot?.updatedAt ?? null
+    }
   };
+
+  if (snapshot) {
+    validateSnapshotSeed(snapshot, seed, replay);
+  }
 
   if (!Array.isArray(events) || events.length === 0) {
     return { run, replay };
   }
 
-  run.status = 'running';
+  if (!isTerminal(run.status)) {
+    run.status = 'running';
+  }
 
-  let expectedStreamId = seed.streamId ?? null;
-  let expectedRunId = seed.runId ?? null;
-  let expectedTransmutation = seed.transmutation ?? null;
-  let expectedSequence = 1;
+  let expectedStreamId = seed.streamId ?? snapshot?.streamId ?? null;
+  let expectedRunId = seed.runId ?? snapshot?.runId ?? null;
+  let expectedTransmutation = seed.transmutation ?? snapshot?.transmutation ?? null;
+  let expectedSequence = snapshot ? snapshot.lastSequence + 1 : 1;
 
   for (const [index, event] of events.entries()) {
     if (!event || typeof event !== 'object') {
@@ -62,8 +76,13 @@ export function replayRuntimeRun(events, seed = {}) {
     } else {
       if (replay.firstSequence == null) replay.firstSequence = sequence;
       replay.lastSequence = sequence;
-      if (index === 0 && sequence !== 1) {
-        pushReplayIssue(replay, 'SEQUENCE_START', `First event starts at sequence ${sequence}, expected 1.`, { index, sequence });
+      if (index === 0 && sequence !== expectedSequence) {
+        pushReplayIssue(
+          replay,
+          'SEQUENCE_START',
+          `First event starts at sequence ${sequence}, expected ${expectedSequence}.`,
+          { index, sequence }
+        );
       }
       if (sequence !== expectedSequence) {
         pushReplayIssue(
@@ -97,6 +116,43 @@ export function replayRuntimeRun(events, seed = {}) {
   replay.terminal = isTerminal(run.status);
   replay.integrity.valid = replay.integrity.issues.length === 0;
   return { run, replay };
+}
+
+function createSnapshotRunSeed(snapshot) {
+  return createRuntimeRunSnapshot(snapshot).run;
+}
+
+function normalizeEventCount(snapshot) {
+  return Number.isInteger(snapshot?.eventCount) && snapshot.eventCount >= 0
+    ? snapshot.eventCount
+    : 0;
+}
+
+function validateSnapshotSeed(snapshot, seed, replay) {
+  const expectedStreamId = seed.streamId ?? null;
+  const expectedRunId = seed.runId ?? null;
+  const expectedTransmutation = seed.transmutation ?? null;
+  if (expectedStreamId && snapshot.streamId && snapshot.streamId !== expectedStreamId) {
+    pushReplayIssue(
+      replay,
+      'SNAPSHOT_STREAM_MISMATCH',
+      `Snapshot belongs to stream ${snapshot.streamId}, expected ${expectedStreamId}.`
+    );
+  }
+  if (expectedRunId && snapshot.runId && snapshot.runId !== expectedRunId) {
+    pushReplayIssue(
+      replay,
+      'SNAPSHOT_RUN_MISMATCH',
+      `Snapshot belongs to runId ${snapshot.runId}, expected ${expectedRunId}.`
+    );
+  }
+  if (expectedTransmutation && snapshot.transmutation && snapshot.transmutation !== expectedTransmutation) {
+    pushReplayIssue(
+      replay,
+      'SNAPSHOT_TRANSMUTATION_MISMATCH',
+      `Snapshot belongs to transmutation ${snapshot.transmutation}, expected ${expectedTransmutation}.`
+    );
+  }
 }
 
 function pushReplayIssue(replay, code, message, extra = {}) {
