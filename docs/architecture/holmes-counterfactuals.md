@@ -51,6 +51,7 @@ Current rule
 - these remain independent entry points
 - Holmes/Moriarty may consume Wesley artifacts and the shared run ledger, but they must not shell out to the `wesley` CLI just to inspect persisted run state
 - Holmes counterfactual analysis materializes missing surfaces in-process through shared Node adapters, not by invoking another entry point
+- Holmes and Moriarty emit their own command streams into the shared ledger under command-specific transmutation names instead of appending events onto a bound Wesley runtime stream
 
 Runtime storage
 
