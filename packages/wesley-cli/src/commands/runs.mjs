@@ -2,7 +2,14 @@
  * Runs Command - Inspect and replay persisted runtime runs
  */
 
-import { createRuntimeStreamId, replayRuntimeRun, WesleyError } from '@wesley/core';
+import {
+  inspectRuntimeRunStreams,
+  listRuntimeRunReports,
+  readRuntimeRunRecord,
+  resolveRuntimeRunStream,
+  summarizeRuntimeRunDoctor,
+  WesleyError
+} from '@wesley/core';
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 
 export class RunsCommand extends WesleyCommand {
@@ -97,7 +104,7 @@ export class RunsCommand extends WesleyCommand {
       limit: parseLimit(options.limit, 100)
     };
     const streams = this.inspectRunStreams(eventStore, filters);
-    const summary = summarizeDoctorResult(streams);
+    const summary = summarizeRuntimeRunDoctor(streams);
     const payload = { summary, streams };
 
     if (options.json) {
@@ -183,8 +190,8 @@ export class RunsCommand extends WesleyCommand {
       throw new WesleyError('EUSAGE', 'runs replay requires --run-id.');
     }
 
-    const { streamId } = this.resolveRunStream(eventStore, runId, transmutation);
-    const record = this.readRunRecord(eventStore, streamId, {
+    const { streamId } = resolveRuntimeRunStream(eventStore, { runId, transmutation });
+    const record = readRuntimeRunRecord(eventStore, streamId, {
       runId,
       transmutation,
       includeEvents: true
@@ -229,8 +236,8 @@ export class RunsCommand extends WesleyCommand {
       throw new WesleyError('EUSAGE', 'runs inspect requires --run-id.');
     }
 
-    const { streamId } = this.resolveRunStream(eventStore, runId, transmutation);
-    const record = this.readRunRecord(eventStore, streamId, {
+    const { streamId } = resolveRuntimeRunStream(eventStore, { runId, transmutation });
+    const record = readRuntimeRunRecord(eventStore, streamId, {
       runId,
       transmutation,
       includeEvents: true
@@ -273,190 +280,14 @@ export class RunsCommand extends WesleyCommand {
   }
 
   listRunReports(eventStore, filters = {}) {
-    const runs = [];
-    for (const stream of this.inspectRunStreams(eventStore, filters)) {
-      const run = stream.run;
-      if (!run) continue;
-      if (!run.runId) continue;
-      if (filters.transmutation && run.transmutation !== filters.transmutation) continue;
-      if (filters.status && run.status !== filters.status) continue;
-      runs.push(run);
-    }
-
-    runs.sort((left, right) => compareRunsDescending(left, right));
-    if (Number.isInteger(filters.limit) && filters.limit >= 0) {
-      return runs.slice(0, filters.limit);
-    }
-    return runs;
+    return listRuntimeRunReports(eventStore, filters);
   }
 
   inspectRunStreams(eventStore, filters = {}) {
-    const streamIds = typeof eventStore.listStreams === 'function'
-      ? eventStore.listStreams()
-      : [];
-    const results = [];
-
-    for (const streamId of streamIds) {
-      const stream = this.inspectSingleStream(eventStore, streamId);
-      if (filters.transmutation && stream.run?.transmutation !== filters.transmutation) continue;
-      results.push(stream);
-    }
-
-    results.sort((left, right) => compareRunsDescending(left.run || {}, right.run || {}));
-    if (Number.isInteger(filters.limit) && filters.limit >= 0) {
-      return results.slice(0, filters.limit);
-    }
-    return results;
-  }
-
-  inspectSingleStream(eventStore, streamId) {
-    try {
-      const record = this.readRunRecord(eventStore, streamId, {
-        includeEvents: false
-      });
-      const findings = [];
-      if (!record.replay.terminal) {
-        findings.push({
-          code: 'RUN_NON_TERMINAL',
-          message: `Run ${record.run.runId || streamId} is non-terminal with status ${record.run.status}.`
-        });
-      }
-      for (const issue of record.replay.integrity.issues) {
-        findings.push({
-          code: issue.code,
-          message: issue.message
-        });
-      }
-
-      return {
-        streamId,
-        run: record.run,
-        replay: record.replay,
-        snapshot: record.snapshot,
-        events: record.events,
-        tailEvents: record.tailEvents,
-        findings,
-        healthy: findings.length === 0
-      };
-    } catch (error) {
-      return {
-        streamId,
-        run: null,
-        replay: null,
-        events: [],
-        findings: [{
-          code: 'STREAM_READ_FAILED',
-          message: error.message
-        }],
-        healthy: false
-      };
-    }
-  }
-
-  resolveRunStream(eventStore, runId, transmutation) {
-    if (transmutation) {
-      const streamId = createRuntimeStreamId({ transmutation, runId });
-      if (!this.streamExists(eventStore, streamId)) {
-        throw new WesleyError('RUN_NOT_FOUND', `No persisted run found for ${transmutation}/${runId}.`);
-      }
-      return { streamId };
-    }
-
-    const streamIds = typeof eventStore.listStreams === 'function'
-      ? eventStore.listStreams()
-      : [];
-    const matches = [];
-
-    for (const streamId of streamIds) {
-      const snapshot = this.readSnapshot(eventStore, streamId);
-      if (snapshot?.runId === runId) {
-        matches.push({ streamId });
-        continue;
-      }
-
-      const events = eventStore.readStream(streamId);
-      if (events.some(event => event.runId === runId)) {
-        matches.push({ streamId });
-      }
-    }
-
-    if (matches.length === 0) {
-      throw new WesleyError('RUN_NOT_FOUND', `No persisted run found for runId ${runId}.`);
-    }
-    if (matches.length > 1) {
-      throw new WesleyError('RUN_AMBIGUOUS', `Multiple persisted runs match ${runId}; pass --transmutation.`);
-    }
-
-    return matches[0];
-  }
-
-  readRunRecord(eventStore, streamId, { runId = null, transmutation = null, includeEvents = false } = {}) {
-    const snapshot = this.readSnapshot(eventStore, streamId);
-    const tailEvents = snapshot
-      ? this.readStreamSince(eventStore, streamId, snapshot.lastSequence)
-      : eventStore.readStream(streamId);
-    const first = tailEvents[0] || {};
-    const last = tailEvents.at(-1) || {};
-    const replay = replayRuntimeRun(tailEvents, {
-      runId: runId || snapshot?.runId || last.runId || first.runId || null,
-      transmutation: transmutation || snapshot?.transmutation || last.transmutation || first.transmutation || null,
-      streamId,
-      snapshot
-    });
-    return {
-      run: replay.run,
-      replay: replay.replay,
-      snapshot,
-      tailEvents,
-      events: includeEvents ? eventStore.readStream(streamId) : tailEvents
-    };
-  }
-
-  readSnapshot(eventStore, streamId) {
-    if (typeof eventStore.readSnapshot !== 'function') {
-      return null;
-    }
-    try {
-      return eventStore.readSnapshot(streamId);
-    } catch {
-      return null;
-    }
-  }
-
-  readStreamSince(eventStore, streamId, afterSequence = 0) {
-    if (typeof eventStore.readStreamSince === 'function') {
-      return eventStore.readStreamSince(streamId, afterSequence);
-    }
-    return eventStore.readStream(streamId).filter(event => {
-      return Number.isInteger(event?.sequence) ? event.sequence > afterSequence : true;
-    });
-  }
-
-  streamExists(eventStore, streamId) {
-    if (this.readSnapshot(eventStore, streamId)) {
-      return true;
-    }
-    return eventStore.readStream(streamId).length > 0;
+    return inspectRuntimeRunStreams(eventStore, filters);
   }
 }
-
 const RUNTIME_RUN_STATUSES = new Set(['pending', 'running', 'completed', 'failed', 'cancelled']);
-
-function compareRunsDescending(left, right) {
-  return compareTimestampDescending(
-    left.lastEventAt || left.completedAt || left.startedAt,
-    right.lastEventAt || right.completedAt || right.startedAt
-  ) || String(right.runId || '').localeCompare(String(left.runId || ''));
-}
-
-function compareTimestampDescending(left, right) {
-  const leftTs = Date.parse(left || '');
-  const rightTs = Date.parse(right || '');
-  if (Number.isNaN(leftTs) && Number.isNaN(rightTs)) return 0;
-  if (Number.isNaN(leftTs)) return 1;
-  if (Number.isNaN(rightTs)) return -1;
-  return rightTs - leftTs;
-}
 
 function parseLimit(value, fallback = 20) {
   const parsed = Number.parseInt(String(value || ''), 10);
@@ -482,35 +313,4 @@ function mergeCommandOptions(command) {
     current = current.parent;
   }
   return merged;
-}
-
-function summarizeDoctorResult(streams) {
-  const summary = {
-    streamCount: streams.length,
-    healthyStreams: 0,
-    unhealthyStreams: 0,
-    nonTerminalStreams: 0,
-    integrityIssueStreams: 0,
-    readErrorStreams: 0
-  };
-
-  for (const stream of streams) {
-    if (stream.healthy) {
-      summary.healthyStreams += 1;
-    } else {
-      summary.unhealthyStreams += 1;
-    }
-
-    if (stream.findings.some(finding => finding.code === 'RUN_NON_TERMINAL')) {
-      summary.nonTerminalStreams += 1;
-    }
-    if (stream.findings.some(finding => finding.code === 'STREAM_READ_FAILED')) {
-      summary.readErrorStreams += 1;
-    }
-    if (stream.findings.some(finding => !['RUN_NON_TERMINAL', 'STREAM_READ_FAILED'].includes(finding.code))) {
-      summary.integrityIssueStreams += 1;
-    }
-  }
-
-  return summary;
 }

@@ -58,6 +58,18 @@ export {
   buildRuntimeRunSnapshot
 } from './application/RuntimeRunSnapshot.mjs';
 export { replayRuntimeRun } from './application/RuntimeRunReplay.mjs';
+export {
+  inspectRuntimeRunStream,
+  inspectRuntimeRunStreams,
+  listRuntimeRunReports,
+  listRuntimeRunStreamIds,
+  readRuntimeRunRecord,
+  readRuntimeRunSnapshot,
+  readRuntimeRunStreamSince,
+  resolveRuntimeRunStream,
+  runtimeRunStreamExists,
+  summarizeRuntimeRunDoctor
+} from './application/RuntimeRunStore.mjs';
 export { ScoringEngine } from './application/Scoring.mjs';
 export { PluginRunner } from './application/PluginRunner.mjs';
 export { TransmutationRunner, createRunId } from './application/TransmutationRunner.mjs';
