@@ -40,6 +40,7 @@ Current implementation
 - policy loader: `src/counterfactual/policy.mjs`
 - provider: `src/counterfactual/provider.mjs`
 - runtime run lookup: shared `@wesley/core` run-store use cases plus the shared `@wesley/runtime-node` ledger adapter
+- surface materialization: shared `@wesley/runtime-node` GraphQL/materialization adapters
 
 Entrypoints
 - `wesley`
@@ -49,6 +50,7 @@ Entrypoints
 Current rule
 - these remain independent entry points
 - Holmes/Moriarty may consume Wesley artifacts and the shared run ledger, but they must not shell out to the `wesley` CLI just to inspect persisted run state
+- Holmes counterfactual analysis materializes missing surfaces in-process through shared Node adapters, not by invoking another entry point
 
 Runtime storage
 

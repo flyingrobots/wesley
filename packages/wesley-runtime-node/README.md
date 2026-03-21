@@ -11,4 +11,6 @@ This package exists to keep the architecture hexagonal:
 Current exports:
 
 - `GitWarpEventStore`
+- `GraphQLAdapter`
+- `ensureCounterfactualWorkspaceArtifacts`
 - `resolveLedgerRootDir`

@@ -11,7 +11,7 @@ import {
   defaultCounterfactualPolicy
 } from '../src/index.mjs';
 
-function createRepoFixture({ withBraid = false } = {}) {
+function createRepoFixture({ withBraid = false, prebuildSurface = true } = {}) {
   const tempDir = mkdtempSync(path.join(tmpdir(), 'wesley-counterfactual-'));
   mkdirSync(path.join(tempDir, '.wesley'), { recursive: true });
   mkdirSync(path.join(tempDir, 'out'), { recursive: true });
@@ -28,10 +28,12 @@ function createRepoFixture({ withBraid = false } = {}) {
       { day: 1, scs: 0.5, tci: 0.4, mri: 0.2 }
     ]
   }, null, 2));
-  writeSurface(tempDir, {
-    sql: 'create table users (id text primary key);',
-    plan: { plan: { phases: [] }, explain: { steps: [] } }
-  });
+  if (prebuildSurface) {
+    writeSurface(tempDir, {
+      sql: 'create table users (id text primary key);',
+      plan: { plan: { phases: [] }, explain: { steps: [] } }
+    });
+  }
 
   git(tempDir, 'init', '--initial-branch=main');
   git(tempDir, 'config', 'user.email', 'wesley-tests@example.com');
@@ -41,6 +43,13 @@ function createRepoFixture({ withBraid = false } = {}) {
 
   if (withBraid) {
     git(tempDir, 'checkout', '-b', 'support');
+    writeFileSync(path.join(tempDir, 'schema.graphql'), [
+      'type User @wes_table {',
+      '  id: ID! @wes_pk',
+      '  support: String',
+      '}',
+      ''
+    ].join('\n'));
     writeSurface(tempDir, {
       sql: 'create table users (id text primary key, support text);',
       plan: { plan: { phases: [{ phase: 1 }] }, explain: { steps: [{ op: 'support' }] } }
@@ -51,10 +60,19 @@ function createRepoFixture({ withBraid = false } = {}) {
   }
 
   git(tempDir, 'checkout', '-b', 'feature');
-  writeSurface(tempDir, {
-    sql: 'create table users (id text primary key, email text not null);',
-    plan: { plan: { phases: [{ phase: 1 }] }, explain: { steps: [{ op: 'alter_table' }] } }
-  });
+  writeFileSync(path.join(tempDir, 'schema.graphql'), [
+    'type User @wes_table {',
+    '  id: ID! @wes_pk',
+    '  email: String!',
+    '}',
+    ''
+  ].join('\n'));
+  if (prebuildSurface) {
+    writeSurface(tempDir, {
+      sql: 'create table users (id text primary key, email text not null);',
+      plan: { plan: { phases: [{ phase: 1 }] }, explain: { steps: [{ op: 'alter_table' }] } }
+    });
+  }
   git(tempDir, 'add', '.');
   git(tempDir, 'commit', '-m', 'feature');
 
@@ -167,6 +185,46 @@ test('analyzeCounterfactual supports braid lanes and marks braid signals', async
     assert.equal(report.composition, 'braid');
     assert.equal(report.resolved.braidRefs.length, 1);
     assert.ok(report.judgment.signals.includes('braid_present'));
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test('analyzeCounterfactual materializes missing workspace artifacts in process', async () => {
+  const fixture = createRepoFixture({ prebuildSurface: false });
+  const policy = defaultCounterfactualPolicy();
+  policy.counterfactual.enabled = true;
+
+  try {
+    const report = await analyzeCounterfactual({
+      repoRoot: fixture.tempDir,
+      lane: {
+        baseRef: 'main',
+        headRef: 'HEAD',
+        braidRefs: [],
+        composition: 'merge'
+      },
+      policy,
+      surface: {
+        bundleDir: '.wesley',
+        outDir: 'out',
+        schemaPath: 'schema.graphql'
+      }
+    });
+
+    assert.ok(report.facts.comparison.factDigest);
+    assert.equal(
+      readFileSync(path.join(fixture.tempDir, '.wesley', 'bundle.json'), 'utf8').includes('"bundleVersion": "counterfactual-v1"'),
+      true
+    );
+    assert.equal(
+      JSON.parse(readFileSync(path.join(fixture.tempDir, '.wesley', 'plan-report.json'), 'utf8')).transmutation,
+      'legacy-supabase'
+    );
+    assert.equal(
+      readFileSync(path.join(fixture.tempDir, 'out', 'schema.sql'), 'utf8').includes('CREATE TABLE IF NOT EXISTS'),
+      true
+    );
   } finally {
     fixture.cleanup();
   }

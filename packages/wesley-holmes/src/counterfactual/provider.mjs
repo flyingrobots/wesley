@@ -18,7 +18,7 @@ import WarpGraph, {
   exportCoordinateTransferPlanFact,
   normalizeVisibleStateScopeV1
 } from '@git-stunts/git-warp';
-import { resolveWesleyExecutable, runNodeCommand } from '../wesley-exec.mjs';
+import { ensureCounterfactualWorkspaceArtifacts } from '@wesley/runtime-node';
 
 export const COUNTERFACTUAL_GRAPH_NAME = 'wesley-counterfactual-v1';
 export const COUNTERFACTUAL_SURFACE_VERSION = 'wesley-counterfactual-v1';
@@ -72,6 +72,7 @@ export async function analyzeCounterfactual({
       store,
       repoRoot: workspaceRoot,
       workspaceDir: headWorkspace,
+      sourceSha: resolved.headSha,
       sourceId: requestedLane.headRef === 'HEAD' ? `workspace:${resolved.headSha}` : `ref:${resolved.headSha}`,
       surface
     });
@@ -79,6 +80,7 @@ export async function analyzeCounterfactual({
       store,
       repoRoot: workspaceRoot,
       workspaceDir: baseWorkspace,
+      sourceSha: resolved.baseSha,
       sourceId: `ref:${resolved.baseSha}`,
       surface
     });
@@ -88,6 +90,7 @@ export async function analyzeCounterfactual({
         store,
         repoRoot: workspaceRoot,
         workspaceDir: braid.workspace,
+        sourceSha: braid.sha,
         sourceId: `braid:${braid.sha}`,
         surface
       }));
@@ -323,8 +326,8 @@ function resolveLaneRefs(repoRoot, lane) {
   return { baseSha, headSha, braids };
 }
 
-async function ensureEncodedSurface({ store, repoRoot, workspaceDir, sourceId, surface }) {
-  const surfaceModel = await collectSurfaceModel({ repoRoot, workspaceDir, surface });
+async function ensureEncodedSurface({ store, repoRoot, workspaceDir, sourceSha, sourceId, surface }) {
+  const surfaceModel = await collectSurfaceModel({ repoRoot, workspaceDir, sourceSha, surface });
   const surfaceDigest = hashObject({
     sourceId,
     surfaceVersion: COUNTERFACTUAL_SURFACE_VERSION,
@@ -369,7 +372,7 @@ async function ensureEncodedSurface({ store, repoRoot, workspaceDir, sourceId, s
   return metadata;
 }
 
-async function collectSurfaceModel({ repoRoot, workspaceDir, surface }) {
+async function collectSurfaceModel({ repoRoot, workspaceDir, sourceSha, surface }) {
   const bundleDir = resolveWorkspacePath(workspaceDir, surface.bundleDir || '.wesley');
   const outDir = resolveWorkspacePath(workspaceDir, surface.outDir || 'out');
   const schemaPath = resolveSchemaPath(workspaceDir, surface.schemaPath);
@@ -379,6 +382,7 @@ async function collectSurfaceModel({ repoRoot, workspaceDir, surface }) {
     bundleDir,
     outDir,
     schemaPath,
+    sourceSha,
     transmutation: surface.transmutation || 'legacy-supabase'
   });
 
@@ -433,41 +437,16 @@ async function collectSurfaceModel({ repoRoot, workspaceDir, surface }) {
   return { nodeSpecs, summary };
 }
 
-async function ensureWorkspaceArtifacts({ repoRoot, workspaceDir, bundleDir, outDir, schemaPath, transmutation }) {
-  const needsTransform = !existsSync(path.join(bundleDir, 'bundle.json')) || !existsSync(path.join(outDir, 'schema.sql'));
-  const needsPlan = !existsSync(path.join(bundleDir, 'plan-report.json'));
-  if ((!needsTransform && !needsPlan) || !schemaPath) return;
-
-  const wesleyExec = resolveWesleyExecutable(repoRoot);
-  if (!wesleyExec) return;
-
-  if (needsTransform) {
-    const args = [
-      wesleyExec.entry,
-      'transform',
-      '--schema', schemaPath,
-      '--out-dir', outDir,
-      '--emit-bundle',
-      '--transmutation', transmutation,
-      '--allow-dirty',
-      '--quiet'
-    ];
-    runNodeCommand(args, workspaceDir, wesleyExec.env);
-  }
-
-  if (needsPlan) {
-    const args = [
-      wesleyExec.entry,
-      'plan',
-      '--schema', schemaPath,
-      '--out-dir', outDir,
-      '--json',
-      '--quiet'
-    ];
-    const result = runNodeCommand(args, workspaceDir, wesleyExec.env);
-    await mkdir(bundleDir, { recursive: true });
-    await writeFile(path.join(bundleDir, 'plan-report.json'), result.stdout);
-  }
+async function ensureWorkspaceArtifacts({ workspaceDir, bundleDir, outDir, schemaPath, sourceSha, transmutation }) {
+  if (!schemaPath) return;
+  await ensureCounterfactualWorkspaceArtifacts({
+    workspaceDir,
+    bundleDir,
+    outDir,
+    schemaPath,
+    sourceSha,
+    transmutation
+  });
 }
 
 async function openProviderStore(storeRoot) {
