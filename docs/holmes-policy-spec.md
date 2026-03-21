@@ -13,6 +13,8 @@ Files
 CLI
 - `holmes predict --counterfactual [baseRef]`
 - `holmes report --counterfactual [baseRef]`
+- `holmes predict --counterfactual-braid <ref>`
+- `holmes report --counterfactual-braid <ref>`
 
 Notes
 - Policy v1 is still read, but it is upcast into the v2 counterfactual shape at runtime. New policy files should use v2 directly.
@@ -139,6 +141,7 @@ Runtime defaults if no policy file exists:
 
 Implemented now
 - Holmes/Moriarty `--counterfactual`
+- Holmes `--counterfactual-braid` on `predict` and `report`
 - Holmes/Moriarty `--run-id` and `--transmutation` for persisted run binding
 - git-warp provider and canonical fact persistence
 - Moriarty report `runtime` block sourced from the run ledger

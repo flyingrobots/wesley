@@ -156,6 +156,8 @@ Current signals
 Moriarty
 - `holmes predict --counterfactual [baseRef]`
 - `holmes report --counterfactual [baseRef]`
+- `holmes predict --counterfactual-braid <ref>`
+- `holmes report --counterfactual-braid <ref>`
 - `holmes predict --run-id <id> [--transmutation <name>]`
 - `holmes report --run-id <id> [--transmutation <name>]`
 - Report output:
