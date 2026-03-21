@@ -5,6 +5,8 @@
   "description": "SHA-lock HOLMES - Schema intelligence sidecar for Wesley",
   "main": "./src/index.mjs",
   "bin": {
+    "holmes": "./src/cli.mjs",
+    "moriarty": "./src/moriarty-cli.mjs",
     "wesley-holmes": "./src/cli.mjs"
   },
   "exports": "./src/index.mjs",
@@ -21,6 +23,7 @@
     "@git-stunts/git-warp": "14.16.2",
     "@git-stunts/plumbing": "2.8.0",
     "@wesley/core": "workspace:*",
+    "@wesley/runtime-node": "workspace:*",
     "commander": "^14.0.2"
   },
   "keywords": [

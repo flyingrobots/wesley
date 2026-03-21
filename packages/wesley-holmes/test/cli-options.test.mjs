@@ -16,6 +16,7 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const repoRoot = path.resolve(path.dirname(__filename), '..', '..', '..');
 const cliPath = path.join(repoRoot, 'packages', 'wesley-holmes', 'src', 'cli.mjs');
+const moriartyCliPath = path.join(repoRoot, 'packages', 'wesley-holmes', 'src', 'moriarty-cli.mjs');
 const wesleyCliPath = path.join(repoRoot, 'packages', 'wesley-host-node', 'bin', 'wesley.mjs');
 
 const sampleBundle = {
@@ -247,6 +248,30 @@ test('holmes CLI verify accepts explicit bundle directory', () => {
 test('holmes CLI predict accepts explicit history file', () => {
   const { stdout } = runCli('predict', { jsonName: 'moriarty-report' });
   assert.ok(stdout.includes('Professor Moriarty'), 'Prediction output should mention Moriarty');
+});
+
+test('moriarty entry point runs independently of holmes CLI', () => {
+  const fixture = createFixture();
+  const jsonPath = path.join(fixture.schemaDir, 'moriarty-standalone.json');
+  const result = spawnSync(process.execPath, [
+    moriartyCliPath,
+    '--bundle-dir', fixture.bundleDir,
+    '--history-file', fixture.historyPath,
+    '--json', jsonPath
+  ], {
+    cwd: fixture.tempDir,
+    encoding: 'utf8',
+    env: { ...process.env, MORIARTY_USE_GIT: '0' }
+  });
+
+  try {
+    assert.equal(result.status, 0, result.stderr);
+    assert.ok(result.stdout.includes('Professor Moriarty'));
+    const json = JSON.parse(readFileSync(jsonPath, 'utf8'));
+    assert.equal(json.status, 'OK');
+  } finally {
+    fixture.cleanup();
+  }
 });
 
 test('holmes CLI report emits combined JSON with overrides', () => {

@@ -1,5 +1,6 @@
 import path from 'node:path';
-import { runNodeCommand, resolveWesleyExecutable } from './wesley-exec.mjs';
+import { readRuntimeRunRecord, resolveRuntimeRunStream } from '@wesley/core';
+import { GitWarpEventStore, resolveLedgerRootDir } from '@wesley/runtime-node';
 
 export async function loadRuntimeRunRecord({ repoRoot, runId, transmutation = null }) {
   const requestedRunId = typeof runId === 'string' ? runId.trim() : '';
@@ -11,28 +12,21 @@ export async function loadRuntimeRunRecord({ repoRoot, runId, transmutation = nu
     return null;
   }
 
-  const wesleyExec = resolveWesleyExecutable(repoRoot);
-  if (!wesleyExec) {
-    throw new Error(`Unable to locate the Wesley runtime for run lookup under ${repoRoot}.`);
-  }
+  const workspaceRoot = path.resolve(repoRoot || process.cwd());
+  const ledgerDir = await resolveLedgerRootDir({ repoRoot: workspaceRoot });
+  const eventStore = new GitWarpEventStore({ rootDir: ledgerDir });
 
-  const args = [
-    wesleyExec.entry,
-    'runs',
-    'replay',
-    '--run-id',
-    requestedRunId,
-    '--json',
-    '--quiet'
-  ];
-  if (requestedTransmutation) {
-    args.push('--transmutation', requestedTransmutation);
-  }
-
-  let payload;
+  let record;
   try {
-    const result = runNodeCommand(args, repoRoot, wesleyExec.env);
-    payload = JSON.parse(result.stdout);
+    const { streamId } = resolveRuntimeRunStream(eventStore, {
+      runId: requestedRunId,
+      transmutation: requestedTransmutation
+    });
+    record = readRuntimeRunRecord(eventStore, streamId, {
+      runId: requestedRunId,
+      transmutation: requestedTransmutation,
+      includeEvents: false
+    });
   } catch (error) {
     throw normalizeRuntimeLookupError(error);
   }
@@ -42,21 +36,21 @@ export async function loadRuntimeRunRecord({ repoRoot, runId, transmutation = nu
       runId: requestedRunId,
       transmutation: requestedTransmutation
     },
-    run: payload.run,
-    snapshot: payload.snapshot
+    run: record.run,
+    snapshot: record.snapshot
       ? {
         used: true,
-        lastSequence: payload.snapshot.lastSequence ?? null,
-        updatedAt: payload.snapshot.updatedAt ?? null,
-        eventCount: payload.snapshot.eventCount ?? null
+        lastSequence: record.snapshot.lastSequence ?? null,
+        updatedAt: record.snapshot.updatedAt ?? null,
+        eventCount: record.snapshot.eventCount ?? null
       }
       : null,
     replay: {
-      terminal: Boolean(payload.replay?.terminal),
-      valid: Boolean(payload.replay?.integrity?.valid),
-      issueCount: Array.isArray(payload.replay?.integrity?.issues) ? payload.replay.integrity.issues.length : 0
+      terminal: Boolean(record.replay?.terminal),
+      valid: Boolean(record.replay?.integrity?.valid),
+      issueCount: Array.isArray(record.replay?.integrity?.issues) ? record.replay.integrity.issues.length : 0
     },
-    ledgerDir: path.join(repoRoot, '.wesley', 'ledger')
+    ledgerDir
   };
 }
 
@@ -92,32 +86,5 @@ export function attachRuntimeRun(data, runtimeRecord) {
 }
 
 function normalizeRuntimeLookupError(error) {
-  const message = typeof error?.message === 'string' ? error.message : '';
-  for (const candidate of extractJsonObjects(message)) {
-    if (typeof candidate?.message === 'string' && candidate.message.trim()) {
-      return new Error(candidate.message.trim());
-    }
-    if (typeof candidate?.error === 'string' && candidate.error.trim()) {
-      return new Error(candidate.error.trim());
-    }
-  }
   return error instanceof Error ? error : new Error(String(error));
-}
-
-function extractJsonObjects(message) {
-  const results = [];
-  const candidates = [message];
-  const start = message.indexOf('{');
-  const end = message.lastIndexOf('}');
-  if (start >= 0 && end > start) {
-    candidates.push(message.slice(start, end + 1));
-  }
-  for (const candidate of candidates) {
-    try {
-      results.push(JSON.parse(candidate));
-    } catch (_error) {
-      // Ignore non-JSON fragments while searching for structured CLI errors.
-    }
-  }
-  return results;
 }
