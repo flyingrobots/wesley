@@ -11,6 +11,12 @@ import { Watson } from './Watson.mjs';
 import { Moriarty } from './Moriarty.mjs';
 import { readWeightConfig } from './weight-config.mjs';
 import {
+  analyzeCounterfactual,
+  createProjectionCompatibility,
+  loadHolmesCounterfactualPolicy,
+  resolveCounterfactualLaneRequest
+} from './index.mjs';
+import {
   holmesReportSchema,
   watsonReportSchema,
   moriartyReportSchema,
@@ -58,6 +64,53 @@ function ensureValidReport(label, schema, data) {
   if (!valid) {
     const detail = errors.map(err => ` - ${err}`).join('\n');
     throw new Error(`[${label}] report validation failed:\n${detail}`);
+  }
+}
+
+async function attachCounterfactual(data, {
+  bundleDir,
+  outDir,
+  schemaPath,
+  baseRef,
+  braidRefs = [],
+  explain = false,
+  deprecatedAlias = false
+}) {
+  const repoRoot = path.resolve(bundleDir, '..');
+  const policy = await loadHolmesCounterfactualPolicy({ repoRoot, env: process.env });
+  const lane = resolveCounterfactualLaneRequest({
+    policy,
+    baseRef,
+    braidRefs
+  });
+  const counterfactual = await analyzeCounterfactual({
+    repoRoot,
+    lane,
+    includeTransferPlan: true,
+    policy,
+    surface: {
+      bundleDir,
+      outDir,
+      schemaPath
+    }
+  });
+  data.counterfactual = explain
+    ? counterfactual
+    : { ...counterfactual };
+  data.projection = createProjectionCompatibility(counterfactual);
+  data.warnings = Array.isArray(data.warnings) ? data.warnings : [];
+  if (deprecatedAlias) {
+    data.warnings.push('Deprecated: --project-merge now routes through the git-warp counterfactual provider and will be removed after the short deprecation window.');
+  }
+  if (typeof data.confidence === 'number' && Number.isFinite(counterfactual?.judgment?.confidenceAdjustment)) {
+    data.confidence = Math.max(0, Math.min(100, data.confidence + counterfactual.judgment.confidenceAdjustment));
+  }
+  if (counterfactual?.judgment?.status && counterfactual.judgment.status !== 'clean') {
+    data.patterns = Array.isArray(data.patterns) ? data.patterns : [];
+    data.patterns.push({
+      type: 'COUNTERFACTUAL_ISSUE',
+      description: counterfactual.judgment.reasons.join(' ')
+    });
   }
 }
 
@@ -117,7 +170,9 @@ Requires:
     .command('predict')
     .description('Run MORIARTY predictions')
     .option('--json <file>', 'Write prediction JSON to file')
-    .option('--project-merge [baseRef]', 'Simulate PR merge and include projected results (MP-01..03: stub only)')
+    .option('--counterfactual [baseRef]', 'Analyze a git-warp counterfactual lane against a base ref')
+    .option('--project-merge [baseRef]', 'Deprecated alias for --counterfactual [baseRef]')
+    .option('--explain', 'Show resolved refs, digests, and counterfactual details')
     .action(async options => {
       const opts = program.optsWithGlobals();
       const bundleDir = resolvePath(opts.bundleDir, '.wesley');
@@ -125,41 +180,20 @@ Requires:
       const ctx = loadMoriartyContext(bundleDir);
       const moriarty = new Moriarty(history, ctx);
       const data = moriarty.predictionData();
-      if (typeof options.projectMerge !== 'undefined') {
-        const baseRef = typeof options.projectMerge === 'string' && options.projectMerge.length > 0
-          ? options.projectMerge
-          : (process.env.MORIARTY_BASE_REF || process.env.GITHUB_BASE_REF || 'main');
-        try {
-          const { MergePlanner } = await import('./merge/Planner.mjs');
-          const { MergeTreeStrategy } = await import('./merge/MergeTreeStrategy.mjs');
-          const { WorktreeStrategy } = await import('./merge/WorktreeStrategy.mjs');
-          const planner = new MergePlanner({ repoRoot: process.cwd() });
-          const plan = planner.plan({ baseRef });
-          let result = new MergeTreeStrategy({ repoRoot: process.cwd() }).execute(plan);
-          if (!result || result.status === 'error') {
-            result = new WorktreeStrategy({ repoRoot: process.cwd() }).execute(plan);
-          }
-          data.projection = { ...result };
-          // MP-06 (partial): penalize readiness confidence if projection cannot be built
-          if (data.projection?.status && data.projection.status !== 'clean') {
-            const penalty = data.projection.status === 'conflicts' ? 30 : 50; // big hit on unknown/error
-            if (typeof data.confidence === 'number') {
-              data.confidence = Math.max(0, data.confidence - penalty);
-            }
-            data.projection.impact = { confidencePenalty: penalty };
-            data.patterns = Array.isArray(data.patterns) ? data.patterns : [];
-            const desc = data.projection.status === 'conflicts'
-              ? 'Merge conflicts detected in projection: readiness uncertain'
-              : 'Projection failed: inability to build projected bundle reduces readiness confidence';
-            data.patterns.push({ type: 'MERGE_PROJECTION_ISSUE', description: desc });
-          }
-        } catch (e) {
-          data.projection = {
-            status: 'error',
-            merge: { baseRef, strategy: 'merge-tree' },
-            notes: `Projection failed early: ${e?.message || e}`
-          };
-        }
+      if (typeof options.counterfactual !== 'undefined' || typeof options.projectMerge !== 'undefined') {
+        const baseRef = typeof options.counterfactual === 'string' && options.counterfactual.length > 0
+          ? options.counterfactual
+          : (typeof options.projectMerge === 'string' && options.projectMerge.length > 0
+            ? options.projectMerge
+            : (process.env.MORIARTY_BASE_REF || process.env.GITHUB_BASE_REF || 'main'));
+        await attachCounterfactual(data, {
+          bundleDir,
+          outDir: path.resolve(path.dirname(bundleDir), 'out'),
+          schemaPath: path.resolve(path.dirname(bundleDir), 'schema.graphql'),
+          baseRef,
+          explain: Boolean(options.explain),
+          deprecatedAlias: typeof options.projectMerge !== 'undefined'
+        });
       }
       ensureValidReport('MORIARTY', moriartyReportSchema, data);
       if (options.json) {
@@ -172,7 +206,9 @@ Requires:
     .command('report')
     .description('Generate combined HOLMES, WATSON, and MORIARTY report')
     .option('--json <file>', 'Write combined JSON to file')
-    .option('--project-merge [baseRef]', 'Simulate PR merge and include projected results (MP-01..03: stub only)')
+    .option('--counterfactual [baseRef]', 'Analyze a git-warp counterfactual lane against a base ref')
+    .option('--project-merge [baseRef]', 'Deprecated alias for --counterfactual [baseRef]')
+    .option('--explain', 'Show resolved refs, digests, and counterfactual details')
     .action(async options => {
       const opts = program.optsWithGlobals();
       const bundleDir = resolvePath(opts.bundleDir, '.wesley');
@@ -186,40 +222,20 @@ Requires:
       const holmesData = holmes.investigationData();
       const watsonData = watson.verificationData();
       const moriartyData = moriarty.predictionData();
-      if (typeof options.projectMerge !== 'undefined') {
-        const baseRef = typeof options.projectMerge === 'string' && options.projectMerge.length > 0
-          ? options.projectMerge
-          : (process.env.MORIARTY_BASE_REF || process.env.GITHUB_BASE_REF || 'main');
-        try {
-          const { MergePlanner } = await import('./merge/Planner.mjs');
-          const { MergeTreeStrategy } = await import('./merge/MergeTreeStrategy.mjs');
-          const { WorktreeStrategy } = await import('./merge/WorktreeStrategy.mjs');
-          const planner = new MergePlanner({ repoRoot: process.cwd() });
-          const plan = planner.plan({ baseRef });
-          let result = new MergeTreeStrategy({ repoRoot: process.cwd() }).execute(plan);
-          if (!result || result.status === 'error') {
-            result = new WorktreeStrategy({ repoRoot: process.cwd() }).execute(plan);
-          }
-          moriartyData.projection = { ...result };
-          if (moriartyData.projection?.status && moriartyData.projection.status !== 'clean') {
-            const penalty = moriartyData.projection.status === 'conflicts' ? 30 : 50;
-            if (typeof moriartyData.confidence === 'number') {
-              moriartyData.confidence = Math.max(0, moriartyData.confidence - penalty);
-            }
-            moriartyData.projection.impact = { confidencePenalty: penalty };
-            moriartyData.patterns = Array.isArray(moriartyData.patterns) ? moriartyData.patterns : [];
-            const desc = moriartyData.projection.status === 'conflicts'
-              ? 'Merge conflicts detected in projection: readiness uncertain'
-              : 'Projection failed: inability to build projected bundle reduces readiness confidence';
-            moriartyData.patterns.push({ type: 'MERGE_PROJECTION_ISSUE', description: desc });
-          }
-        } catch (e) {
-          moriartyData.projection = {
-            status: 'error',
-            merge: { baseRef, strategy: 'merge-tree' },
-            notes: `Projection failed early: ${e?.message || e}`
-          };
-        }
+      if (typeof options.counterfactual !== 'undefined' || typeof options.projectMerge !== 'undefined') {
+        const baseRef = typeof options.counterfactual === 'string' && options.counterfactual.length > 0
+          ? options.counterfactual
+          : (typeof options.projectMerge === 'string' && options.projectMerge.length > 0
+            ? options.projectMerge
+            : (process.env.MORIARTY_BASE_REF || process.env.GITHUB_BASE_REF || 'main'));
+        await attachCounterfactual(moriartyData, {
+          bundleDir,
+          outDir: path.resolve(path.dirname(bundleDir), 'out'),
+          schemaPath: path.resolve(path.dirname(bundleDir), 'schema.graphql'),
+          baseRef,
+          explain: Boolean(options.explain),
+          deprecatedAlias: typeof options.projectMerge !== 'undefined'
+        });
       }
 
       ensureValidReport('HOLMES', holmesReportSchema, holmesData);

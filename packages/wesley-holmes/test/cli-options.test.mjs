@@ -106,6 +106,38 @@ function createFixture({ includeBundle = true, includeHistory = true, corruptBun
   };
 }
 
+function initGitFixture(tempDir) {
+  runGit(tempDir, 'init', '--initial-branch=main');
+  runGit(tempDir, 'config', 'user.email', 'wesley-tests@example.com');
+  runGit(tempDir, 'config', 'user.name', 'Wesley Tests');
+  runGit(tempDir, 'add', '.');
+  runGit(tempDir, 'commit', '-m', 'base');
+  runGit(tempDir, 'checkout', '-b', 'feature');
+  mkdirSync(path.join(tempDir, 'out'), { recursive: true });
+  writeFileSync(path.join(tempDir, 'out', 'schema.sql'), '-- feature branch surface\n');
+  writeFileSync(path.join(tempDir, '.wesley', 'plan-report.json'), JSON.stringify({
+    plan: { phases: [{ phase: 1 }] },
+    explain: { steps: [{ op: 'alter_table' }] }
+  }, null, 2));
+  const bundle = JSON.parse(readFileSync(path.join(tempDir, '.wesley', 'bundle.json'), 'utf8'));
+  bundle.evidence.evidence['artifact:out/schema.sql'] = {
+    sql: [{ file: 'out/schema.sql', lines: '1-1' }]
+  };
+  writeFileSync(path.join(tempDir, '.wesley', 'bundle.json'), JSON.stringify(bundle, null, 2));
+  runGit(tempDir, 'add', '.');
+  runGit(tempDir, 'commit', '-m', 'feature');
+}
+
+function runGit(cwd, ...args) {
+  const result = spawnSync('git', ['-C', cwd, ...args], {
+    encoding: 'utf8'
+  });
+  if (result.status !== 0) {
+    throw new Error(result.stderr || `git ${args.join(' ')} failed`);
+  }
+  return result.stdout;
+}
+
 function runCli(command, {
   jsonName = `${command}-report`,
   extraArgs = [],
@@ -200,6 +232,63 @@ test('holmes CLI report emits combined JSON with overrides', () => {
   assert.ok(json?.holmes, 'Combined report should include HOLMES data');
   assert.ok(json?.watson, 'Combined report should include WATSON data');
   assert.ok(json?.moriarty, 'Combined report should include MORIARTY data');
+});
+
+test('holmes CLI predict emits counterfactual report and compatibility projection', () => {
+  const fixture = createFixture();
+  initGitFixture(fixture.tempDir);
+  const jsonPath = path.join(fixture.schemaDir, 'moriarty-counterfactual.json');
+  const result = spawnSync(process.execPath, [
+    cliPath,
+    'predict',
+    '--bundle-dir', fixture.bundleDir,
+    '--history-file', fixture.historyPath,
+    '--json', jsonPath,
+    '--counterfactual', 'main'
+  ], {
+    cwd: fixture.tempDir,
+    encoding: 'utf8',
+    env: { ...process.env, MORIARTY_USE_GIT: '0' }
+  });
+
+  try {
+    assert.equal(result.status, 0, result.stderr);
+    const json = JSON.parse(readFileSync(jsonPath, 'utf8'));
+    assert.ok(json.counterfactual, 'Counterfactual data should be present');
+    assert.ok(json.projection, 'Compatibility projection should still be present');
+    assert.equal(json.projection.merge.strategy, 'git-warp-counterfactual');
+    assert.ok(result.stdout.includes('Counterfactual Analysis'));
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test('holmes CLI project-merge warns and routes through counterfactual provider', () => {
+  const fixture = createFixture();
+  initGitFixture(fixture.tempDir);
+  const jsonPath = path.join(fixture.schemaDir, 'moriarty-project-merge.json');
+  const result = spawnSync(process.execPath, [
+    cliPath,
+    'predict',
+    '--bundle-dir', fixture.bundleDir,
+    '--history-file', fixture.historyPath,
+    '--json', jsonPath,
+    '--project-merge', 'main'
+  ], {
+    cwd: fixture.tempDir,
+    encoding: 'utf8',
+    env: { ...process.env, MORIARTY_USE_GIT: '0' }
+  });
+
+  try {
+    assert.equal(result.status, 0, result.stderr);
+    const json = JSON.parse(readFileSync(jsonPath, 'utf8'));
+    assert.ok(Array.isArray(json.warnings));
+    assert.ok(json.warnings.some(item => item.includes('Deprecated: --project-merge')));
+    assert.ok(json.counterfactual, 'Deprecated alias should still produce counterfactual data');
+  } finally {
+    fixture.cleanup();
+  }
 });
 
 test('weights command validates custom configuration', () => {

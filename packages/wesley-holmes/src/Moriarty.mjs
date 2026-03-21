@@ -258,6 +258,15 @@ export class Moriarty {
       }
     }
 
+    if (Array.isArray(data.warnings) && data.warnings.length > 0) {
+      report.push('');
+      report.push('## ⚠️ Warnings');
+      report.push('');
+      for (const warning of data.warnings) {
+        report.push(`- ${warning}`);
+      }
+    }
+
     // Readiness EXPLAIN (clarify inputs/thresholds that imply "prod-ready")
     if (data.explain) {
       report.push('');
@@ -288,16 +297,52 @@ export class Moriarty {
     report.push('*"Every problem becomes elementary when reduced to mathematics"*');
     report.push('— Professor Moriarty');
 
-    // Optional: Projection section (MP-01..03 stub)
+    if (data.counterfactual) {
+      const c = data.counterfactual;
+      report.push('');
+      report.push('---');
+      report.push('');
+      report.push('## 🪞 Counterfactual Analysis');
+      report.push('');
+      report.push(`Composition: ${c.composition || 'merge'}`);
+      report.push(`Base: ${c.requested?.baseRef || 'main'} → ${c.resolved?.baseSha || 'unknown'}`);
+      report.push(`Head: ${c.requested?.headRef || 'HEAD'} → ${c.resolved?.headSha || 'unknown'}`);
+      if (Array.isArray(c.resolved?.braidRefs) && c.resolved.braidRefs.length > 0) {
+        report.push(`Braids: ${c.resolved.braidRefs.map(item => `${item.ref}@${item.sha.slice(0, 7)}`).join(', ')}`);
+      }
+      report.push(`Lane Fingerprint: ${c.laneFingerprint}`);
+      report.push(`Status: ${c.judgment?.status || 'unknown'}`);
+      report.push(`Gate: ${c.judgment?.gate || 'pass'}${c.judgment?.wouldFail ? ' (would fail under hard gating)' : ''}`);
+      report.push(`Risk: ${c.judgment?.riskClass || 'none'}`);
+      if (Number.isFinite(c.judgment?.confidenceAdjustment)) {
+        report.push(`Confidence Adjustment: ${c.judgment.confidenceAdjustment >= 0 ? '+' : ''}${c.judgment.confidenceAdjustment}`);
+      }
+      if (Array.isArray(c.judgment?.signals) && c.judgment.signals.length > 0) {
+        report.push(`Signals: ${c.judgment.signals.join(', ')}`);
+      }
+      if (c.facts?.comparison?.factDigest) {
+        report.push(`Comparison Fact: ${c.facts.comparison.factDigest}`);
+      }
+      if (c.facts?.transferPlan?.factDigest) {
+        report.push(`Transfer Fact: ${c.facts.transferPlan.factDigest}`);
+      }
+      if (Array.isArray(c.judgment?.reasons) && c.judgment.reasons.length > 0) {
+        report.push('');
+        for (const reason of c.judgment.reasons) {
+          report.push(`- ${reason}`);
+        }
+      }
+    }
+
     if (data.projection) {
       report.push('');
       report.push('---');
       report.push('');
-      report.push('## 🔭 Projected After Merge (stub)');
+      report.push('## 🔭 Projection Compatibility');
       const p = data.projection;
       report.push(`Status: ${p.status || 'unknown'}`);
       if (p.merge) {
-        report.push(`Base: ${p.merge.baseRef || 'main'} · Strategy: ${p.merge.strategy || 'tbd'}`);
+        report.push(`Base: ${p.merge.baseRef || 'main'} · Strategy: ${p.merge.strategy || 'tbd'} · Composition: ${p.merge.composition || 'merge'}`);
       }
       if (p.mergedTree) {
         report.push(`Merged tree: ${p.mergedTree}`);

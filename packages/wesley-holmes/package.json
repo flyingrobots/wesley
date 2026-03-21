@@ -18,6 +18,8 @@
     "test": "node --test"
   },
   "dependencies": {
+    "@git-stunts/git-warp": "14.16.2",
+    "@git-stunts/plumbing": "2.8.0",
     "@wesley/core": "workspace:*",
     "commander": "^14.0.2"
   },

@@ -254,6 +254,121 @@ export const moriartyReportSchema = {
     confidence: numberField,
     patterns: {
       type: 'array'
+    },
+    warnings: {
+      type: 'array',
+      items: stringField
+    },
+    projection: {
+      type: 'object'
+    },
+    counterfactual: {
+      type: 'object',
+      required: ['provider', 'providerPackageVersion', 'surfaceVersion', 'laneFingerprint', 'composition', 'requested', 'resolved', 'facts', 'judgment'],
+      properties: {
+        provider: stringField,
+        providerPackageVersion: stringField,
+        surfaceVersion: stringField,
+        laneFingerprint: stringField,
+        composition: stringField,
+        requested: {
+          type: 'object',
+          required: ['baseRef', 'headRef', 'braidRefs'],
+          properties: {
+            baseRef: stringField,
+            headRef: stringField,
+            braidRefs: {
+              type: 'array',
+              items: stringField
+            }
+          }
+        },
+        resolved: {
+          type: 'object',
+          required: ['baseRef', 'baseSha', 'headRef', 'headSha', 'braidRefs', 'liveWorkspace'],
+          properties: {
+            baseRef: stringField,
+            baseSha: { anyOf: [stringField, { type: 'null' }] },
+            headRef: stringField,
+            headSha: { anyOf: [stringField, { type: 'null' }] },
+            braidRefs: {
+              type: 'array',
+              items: {
+                type: 'object',
+                required: ['ref', 'sha'],
+                properties: {
+                  ref: stringField,
+                  sha: stringField
+                }
+              }
+            },
+            liveWorkspace: booleanField
+          }
+        },
+        facts: {
+          type: 'object',
+          required: ['comparison', 'transferPlan', 'normalizedScope'],
+          properties: {
+            comparison: {
+              anyOf: [
+                { type: 'null' },
+                {
+                  type: 'object',
+                  required: ['exportVersion', 'factKind', 'factDigest', 'changed', 'file'],
+                  properties: {
+                    exportVersion: stringField,
+                    factKind: stringField,
+                    factDigest: stringField,
+                    changed: booleanField,
+                    file: stringField
+                  }
+                }
+              ]
+            },
+            transferPlan: {
+              anyOf: [
+                { type: 'null' },
+                {
+                  type: 'object',
+                  required: ['exportVersion', 'factKind', 'factDigest', 'changed', 'file'],
+                  properties: {
+                    exportVersion: stringField,
+                    factKind: stringField,
+                    factDigest: stringField,
+                    changed: booleanField,
+                    file: stringField
+                  }
+                }
+              ]
+            },
+            normalizedScope: {
+              anyOf: [
+                { type: 'null' },
+                { type: 'object' }
+              ]
+            }
+          }
+        },
+        judgment: {
+          type: 'object',
+          required: ['status', 'signals', 'riskClass', 'confidenceAdjustment', 'gate', 'wouldFail', 'reasons'],
+          properties: {
+            status: stringField,
+            signals: {
+              type: 'array',
+              items: stringField
+            },
+            riskClass: stringField,
+            confidenceAdjustment: numberField,
+            gate: stringField,
+            wouldFail: booleanField,
+            reasons: {
+              type: 'array',
+              items: stringField
+            }
+          }
+        }
+      }
     }
   }
 };
