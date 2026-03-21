@@ -184,7 +184,7 @@ function runCli(command, {
   args.push(...extraArgs);
 
   const result = spawnSync(process.execPath, args, {
-    cwd: repoRoot,
+    cwd: fixture.tempDir,
     encoding: 'utf8',
     env: { ...process.env, MORIARTY_USE_GIT: '0' }
   });
@@ -207,6 +207,44 @@ function runCli(command, {
   } finally {
     fixture.cleanup();
   }
+}
+
+function inspectPersistedRun(fixture, runId, transmutation) {
+  const result = spawnSync(process.execPath, [
+    wesleyCliPath,
+    'runs',
+    'inspect',
+    '--run-id', runId,
+    '--transmutation', transmutation,
+    '--json'
+  ], {
+    cwd: fixture.tempDir,
+    encoding: 'utf8',
+    env: { ...process.env }
+  });
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  return JSON.parse(result.stdout);
+}
+
+function listPersistedRuns(fixture, transmutation, status = null) {
+  const args = [
+    wesleyCliPath,
+    'runs',
+    'status',
+    '--transmutation', transmutation,
+    '--limit', '10',
+    '--json'
+  ];
+  if (status) {
+    args.push('--status', status);
+  }
+  const result = spawnSync(process.execPath, args, {
+    cwd: fixture.tempDir,
+    encoding: 'utf8',
+    env: { ...process.env }
+  });
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  return JSON.parse(result.stdout);
 }
 
 function runWeights(options = {}) {
@@ -255,8 +293,6 @@ test('moriarty entry point runs independently of holmes CLI', () => {
   const jsonPath = path.join(fixture.schemaDir, 'moriarty-standalone.json');
   const result = spawnSync(process.execPath, [
     moriartyCliPath,
-    '--bundle-dir', fixture.bundleDir,
-    '--history-file', fixture.historyPath,
     '--json', jsonPath
   ], {
     cwd: fixture.tempDir,
@@ -269,6 +305,10 @@ test('moriarty entry point runs independently of holmes CLI', () => {
     assert.ok(result.stdout.includes('Professor Moriarty'));
     const json = JSON.parse(readFileSync(jsonPath, 'utf8'));
     assert.equal(json.status, 'OK');
+    assert.equal(json.commandRun.run.transmutation, 'moriarty-predict');
+    const inspected = inspectPersistedRun(fixture, json.commandRun.run.runId, json.commandRun.run.transmutation);
+    assert.equal(inspected.run.command, 'predict');
+    assert.equal(inspected.run.status, 'completed');
   } finally {
     fixture.cleanup();
   }
@@ -361,7 +401,63 @@ test('holmes CLI predict attaches persisted runtime run context', () => {
     assert.equal(json.runtime.run.runId, 'run-holmes-ledger-123');
     assert.equal(json.runtime.run.status, 'completed');
     assert.equal(json.runtime.replay.valid, true);
+    assert.notEqual(json.commandRun.run.runId, 'run-holmes-ledger-123');
+    assert.equal(json.commandRun.run.transmutation, 'moriarty-predict');
     assert.ok(result.stdout.includes('Runtime Run Context'));
+    const inspected = inspectPersistedRun(fixture, json.commandRun.run.runId, json.commandRun.run.transmutation);
+    assert.equal(inspected.run.command, 'predict');
+    assert.equal(inspected.run.status, 'completed');
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test('holmes CLI investigate emits its own command run into the shared ledger', () => {
+  const fixture = createFixture();
+  const jsonPath = path.join(fixture.schemaDir, 'holmes-investigation.json');
+  const result = spawnSync(process.execPath, [
+    cliPath,
+    'investigate',
+    '--bundle-dir', fixture.bundleDir,
+    '--json', jsonPath
+  ], {
+    cwd: fixture.tempDir,
+    encoding: 'utf8',
+    env: { ...process.env, MORIARTY_USE_GIT: '0' }
+  });
+
+  try {
+    assert.equal(result.status, 0, result.stderr);
+    const json = JSON.parse(readFileSync(jsonPath, 'utf8'));
+    assert.equal(json.commandRun.run.transmutation, 'holmes-investigate');
+    const inspected = inspectPersistedRun(fixture, json.commandRun.run.runId, json.commandRun.run.transmutation);
+    assert.equal(inspected.run.command, 'investigate');
+    assert.equal(inspected.run.status, 'completed');
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test('holmes CLI investigate records failed command runs on bundle errors', () => {
+  const fixture = createFixture({ includeBundle: false });
+  const result = spawnSync(process.execPath, [
+    cliPath,
+    'investigate',
+    '--bundle-dir', fixture.bundleDir
+  ], {
+    cwd: fixture.tempDir,
+    encoding: 'utf8',
+    env: { ...process.env, MORIARTY_USE_GIT: '0' }
+  });
+
+  try {
+    assert.notEqual(result.status, 0);
+    assert.ok(result.stderr.includes('No Wesley bundle found'));
+    assert.ok(result.stderr.includes('holmes-investigate/'));
+    const status = listPersistedRuns(fixture, 'holmes-investigate', 'failed');
+    assert.equal(status.count, 1);
+    assert.equal(status.runs[0].command, 'investigate');
+    assert.equal(status.runs[0].status, 'failed');
   } finally {
     fixture.cleanup();
   }

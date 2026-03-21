@@ -3,8 +3,18 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { Command } from 'commander';
+import {
+  GENERATED_ARTIFACT_DIR,
+  generatedArtifactPathCandidates
+} from '@wesley/core';
 
 import { Moriarty } from './Moriarty.mjs';
+import {
+  attachCommandRun,
+  formatCommandRunFailureLabel,
+  formatCommandRunMarkdown,
+  withCommandRun
+} from './command-run.mjs';
 import { attachRuntimeRun, loadRuntimeRunRecord } from './runtime-run.mjs';
 import {
   analyzeCounterfactual,
@@ -19,22 +29,28 @@ function resolvePath(target, fallback) {
 }
 
 function loadHistory(historyPath, bundleDir) {
-  const defaultHistory = path.join(bundleDir ?? '.wesley', 'history.json');
+  const defaultHistory = path.join(bundleDir ?? GENERATED_ARTIFACT_DIR, 'history.json');
   const resolved = resolvePath(historyPath, path.resolve(defaultHistory));
-  try {
-    return JSON.parse(readFileSync(resolved, 'utf8'));
-  } catch {
-    return { points: [] };
+  for (const candidate of generatedArtifactPathCandidates(resolved)) {
+    try {
+      return JSON.parse(readFileSync(candidate, 'utf8'));
+    } catch {
+      continue;
+    }
   }
+  return { points: [] };
 }
 
 function loadMoriartyContext(bundleDir) {
-  try {
-    const contextPath = resolvePath(null, path.join(bundleDir ?? '.wesley', 'moriarty-context.json'));
-    return JSON.parse(readFileSync(contextPath, 'utf8'));
-  } catch {
-    return {};
+  const contextPath = resolvePath(null, path.join(bundleDir ?? GENERATED_ARTIFACT_DIR, 'moriarty-context.json'));
+  for (const candidate of generatedArtifactPathCandidates(contextPath)) {
+    try {
+      return JSON.parse(readFileSync(candidate, 'utf8'));
+    } catch {
+      continue;
+    }
   }
+  return {};
 }
 
 function ensureValidReport(label, schema, data) {
@@ -107,7 +123,7 @@ async function main() {
     .name('moriarty')
     .description('Professor Moriarty - Wesley deployment predictions')
     .showHelpAfterError()
-    .option('--bundle-dir <path>', 'Path to Wesley bundle directory', '.wesley')
+    .option('--bundle-dir <path>', 'Path to Wesley bundle directory', GENERATED_ARTIFACT_DIR)
     .option('--history-file <path>', 'Path to MORIARTY history file')
     .option('--json <file>', 'Write prediction JSON to file')
     .option('--run-id <id>', 'Bind prediction context to a persisted Wesley run')
@@ -116,35 +132,56 @@ async function main() {
     .option('--explain', 'Show resolved refs, digests, and counterfactual details')
     .option('--counterfactual-braid <ref>', 'Add a braid ref to the counterfactual lane', collectRepeatableOption, [])
     .action(async options => {
-      const bundleDir = resolvePath(options.bundleDir, '.wesley');
-      const history = loadHistory(options.historyFile, bundleDir);
-      const ctx = loadMoriartyContext(bundleDir);
-      const moriarty = new Moriarty(history, ctx);
-      const data = moriarty.predictionData();
-      const runtime = await attachRuntime(data, {
-        bundleDir,
-        runId: options.runId,
-        transmutation: options.transmutation
-      });
-      if (typeof options.counterfactual !== 'undefined') {
-        const baseRef = typeof options.counterfactual === 'string' && options.counterfactual.length > 0
-          ? options.counterfactual
-          : (process.env.MORIARTY_BASE_REF || process.env.GITHUB_BASE_REF || 'main');
-        await attachCounterfactual(data, {
+      const bundleDir = resolvePath(options.bundleDir, GENERATED_ARTIFACT_DIR);
+      const execution = await withCommandRun({
+        repoRoot: path.resolve(bundleDir, '..'),
+        command: 'predict',
+        sources: {
           bundleDir,
-          outDir: path.resolve(path.dirname(bundleDir), 'out'),
-          schemaPath: path.resolve(path.dirname(bundleDir), 'schema.graphql'),
-          transmutation: runtime?.run?.transmutation || options.transmutation,
-          baseRef,
-          braidRefs: options.counterfactualBraid,
-          explain: Boolean(options.explain)
-        });
-      }
-      ensureValidReport('MORIARTY', moriartyReportSchema, data);
+          historyFile: resolvePath(options.historyFile, path.join(bundleDir, 'history.json')),
+          requestedRunId: options.runId || null,
+          requestedTransmutation: options.transmutation || null,
+          counterfactual: typeof options.counterfactual !== 'undefined',
+          braidCount: Array.isArray(options.counterfactualBraid) ? options.counterfactualBraid.length : 0
+        },
+        task: async () => {
+          const history = loadHistory(options.historyFile, bundleDir);
+          const ctx = loadMoriartyContext(bundleDir);
+          const moriarty = new Moriarty(history, ctx);
+          const data = moriarty.predictionData();
+          const runtime = await attachRuntime(data, {
+            bundleDir,
+            runId: options.runId,
+            transmutation: options.transmutation
+          });
+          if (typeof options.counterfactual !== 'undefined') {
+            const baseRef = typeof options.counterfactual === 'string' && options.counterfactual.length > 0
+              ? options.counterfactual
+              : (process.env.MORIARTY_BASE_REF || process.env.GITHUB_BASE_REF || 'main');
+            await attachCounterfactual(data, {
+              bundleDir,
+              outDir: path.resolve(path.dirname(bundleDir), 'out'),
+              schemaPath: path.resolve(path.dirname(bundleDir), 'schema.graphql'),
+              transmutation: runtime?.run?.transmutation || options.transmutation,
+              baseRef,
+              braidRefs: options.counterfactualBraid,
+              explain: Boolean(options.explain)
+            });
+          }
+          ensureValidReport('MORIARTY', moriartyReportSchema, data);
+          return {
+            data,
+            output: moriarty.renderPrediction(data)
+          };
+        }
+      });
+      attachCommandRun(execution.data, execution.commandRun);
       if (options.json) {
-        writeFileSync(options.json, JSON.stringify(data, null, 2));
+        writeFileSync(options.json, JSON.stringify(execution.data, null, 2));
       }
-      console.log(moriarty.renderPrediction(data));
+      console.log(execution.output);
+      console.log('');
+      console.log(formatCommandRunMarkdown(execution.commandRun));
     });
 
   await program.parseAsync(process.argv);
@@ -156,6 +193,6 @@ function collectRepeatableOption(value, previous = []) {
 }
 
 main().catch(error => {
-  console.error('Prediction failed:', error.message);
+  console.error(`Prediction failed${formatCommandRunFailureLabel(error)}:`, error.message);
   process.exit(1);
 });

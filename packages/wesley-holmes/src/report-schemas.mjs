@@ -10,6 +10,29 @@ const stringField = { type: 'string' };
 const numberField = { type: 'number' };
 const booleanField = { type: 'boolean' };
 
+function commandRunSchema() {
+  return {
+    type: 'object',
+    required: ['ledgerDir', 'run'],
+    properties: {
+      ledgerDir: stringField,
+      run: {
+        type: 'object',
+        required: ['runId', 'transmutation', 'streamId', 'command', 'status', 'eventCount', 'artifactCount'],
+        properties: {
+          runId: stringField,
+          transmutation: { anyOf: [stringField, { type: 'null' }] },
+          streamId: { anyOf: [stringField, { type: 'null' }] },
+          command: { anyOf: [stringField, { type: 'null' }] },
+          status: stringField,
+          eventCount: numberField,
+          artifactCount: numberField
+        }
+      }
+    }
+  };
+}
+
 function scsComponentSchema() {
   return {
     type: 'object',
@@ -64,7 +87,9 @@ export const holmesReportSchema = {
         weightedCompletion: numberField,
         tci: numberField,
         mri: numberField,
-        bundleVersion: stringField
+        bundleVersion: stringField,
+        commandRunId: { anyOf: [stringField, { type: 'null' }] },
+        commandTransmutation: { anyOf: [stringField, { type: 'null' }] }
       }
     },
     scores: {
@@ -162,7 +187,8 @@ export const holmesReportSchema = {
         message: stringField,
         markdown: stringField
       }
-    }
+    },
+    commandRun: commandRunSchema()
   }
 };
 
@@ -175,7 +201,9 @@ export const watsonReportSchema = {
       required: ['examinedAt', 'sha'],
       properties: {
         examinedAt: stringField,
-        sha: stringField
+        sha: stringField,
+        commandRunId: { anyOf: [stringField, { type: 'null' }] },
+        commandTransmutation: { anyOf: [stringField, { type: 'null' }] }
       }
     },
     citations: {
@@ -211,7 +239,8 @@ export const watsonReportSchema = {
         message: stringField,
         markdown: stringField
       }
-    }
+    },
+    commandRun: commandRunSchema()
   }
 };
 
@@ -223,7 +252,9 @@ export const moriartyReportSchema = {
       type: 'object',
       required: ['analysisAt'],
       properties: {
-        analysisAt: stringField
+        analysisAt: stringField,
+        commandRunId: { anyOf: [stringField, { type: 'null' }] },
+        commandTransmutation: { anyOf: [stringField, { type: 'null' }] }
       }
     },
     status: stringField,
@@ -418,7 +449,8 @@ export const moriartyReportSchema = {
           }
         }
       }
-    }
+    },
+    commandRun: commandRunSchema()
   }
 };
 

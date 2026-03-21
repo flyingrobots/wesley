@@ -14,6 +14,12 @@ import {
 import { Holmes } from './Holmes.mjs';
 import { Watson } from './Watson.mjs';
 import { Moriarty } from './Moriarty.mjs';
+import {
+  attachCommandRun,
+  formatCommandRunFailureLabel,
+  formatCommandRunMarkdown,
+  withCommandRun
+} from './command-run.mjs';
 import { attachRuntimeRun, loadRuntimeRunRecord } from './runtime-run.mjs';
 import { readWeightConfig } from './weight-config.mjs';
 import { HOLMES_WEIGHT_CONFIG_PATH } from './config-paths.mjs';
@@ -162,34 +168,68 @@ Requires:
     .command('investigate')
     .description('Run HOLMES investigation on Wesley generated artifacts')
     .option('--json <file>', 'Write investigation JSON to file')
-    .action(options => {
+    .action(async options => {
       const opts = program.optsWithGlobals();
-      const bundlePath = path.join(resolvePath(opts.bundleDir, GENERATED_ARTIFACT_DIR), 'bundle.json');
-      const bundle = loadBundle(bundlePath);
-      const holmes = new Holmes(bundle);
-      const data = holmes.investigationData();
-      ensureValidReport('HOLMES', holmesReportSchema, data);
+      const bundleDir = resolvePath(opts.bundleDir, GENERATED_ARTIFACT_DIR);
+      const execution = await withCommandRun({
+        repoRoot: path.resolve(bundleDir, '..'),
+        command: 'investigate',
+        sources: {
+          bundleDir,
+          bundlePath: path.join(bundleDir, 'bundle.json')
+        },
+        task: async () => {
+          const bundle = loadBundle(path.join(bundleDir, 'bundle.json'));
+          const holmes = new Holmes(bundle);
+          const data = holmes.investigationData();
+          ensureValidReport('HOLMES', holmesReportSchema, data);
+          return {
+            data,
+            output: holmes.renderInvestigation(data)
+          };
+        }
+      });
+      attachCommandRun(execution.data, execution.commandRun);
       if (options.json) {
-        writeFileSync(options.json, JSON.stringify(data, null, 2));
+        writeFileSync(options.json, JSON.stringify(execution.data, null, 2));
       }
-      console.log(holmes.renderInvestigation(data));
+      console.log(execution.output);
+      console.log('');
+      console.log(formatCommandRunMarkdown(execution.commandRun));
     });
 
   program
     .command('verify')
     .description('Run WATSON verification')
     .option('--json <file>', 'Write verification JSON to file')
-    .action(options => {
+    .action(async options => {
       const opts = program.optsWithGlobals();
-      const bundlePath = path.join(resolvePath(opts.bundleDir, GENERATED_ARTIFACT_DIR), 'bundle.json');
-      const bundle = loadBundle(bundlePath);
-      const watson = new Watson(bundle);
-      const data = watson.verificationData();
-      ensureValidReport('WATSON', watsonReportSchema, data);
+      const bundleDir = resolvePath(opts.bundleDir, GENERATED_ARTIFACT_DIR);
+      const execution = await withCommandRun({
+        repoRoot: path.resolve(bundleDir, '..'),
+        command: 'verify',
+        sources: {
+          bundleDir,
+          bundlePath: path.join(bundleDir, 'bundle.json')
+        },
+        task: async () => {
+          const bundle = loadBundle(path.join(bundleDir, 'bundle.json'));
+          const watson = new Watson(bundle);
+          const data = watson.verificationData();
+          ensureValidReport('WATSON', watsonReportSchema, data);
+          return {
+            data,
+            output: watson.renderVerification(data)
+          };
+        }
+      });
+      attachCommandRun(execution.data, execution.commandRun);
       if (options.json) {
-        writeFileSync(options.json, JSON.stringify(data, null, 2));
+        writeFileSync(options.json, JSON.stringify(execution.data, null, 2));
       }
-      console.log(watson.renderVerification(data));
+      console.log(execution.output);
+      console.log('');
+      console.log(formatCommandRunMarkdown(execution.commandRun));
     });
 
   program
@@ -203,33 +243,53 @@ Requires:
     .action(async options => {
       const opts = program.optsWithGlobals();
       const bundleDir = resolvePath(opts.bundleDir, GENERATED_ARTIFACT_DIR);
-      const history = loadHistory(opts.historyFile, bundleDir);
-      const ctx = loadMoriartyContext(bundleDir);
-      const moriarty = new Moriarty(history, ctx);
-      const data = moriarty.predictionData();
-      const runtime = await attachRuntime(data, {
-        bundleDir,
-        runId: options.runId,
-        transmutation: options.transmutation
-      });
-      if (typeof options.counterfactual !== 'undefined') {
-        const baseRef = typeof options.counterfactual === 'string' && options.counterfactual.length > 0
-          ? options.counterfactual
-          : (process.env.MORIARTY_BASE_REF || process.env.GITHUB_BASE_REF || 'main');
-        await attachCounterfactual(data, {
+      const execution = await withCommandRun({
+        repoRoot: path.resolve(bundleDir, '..'),
+        command: 'predict',
+        sources: {
           bundleDir,
-          outDir: path.resolve(path.dirname(bundleDir), 'out'),
-          schemaPath: path.resolve(path.dirname(bundleDir), 'schema.graphql'),
-          transmutation: runtime?.run?.transmutation || options.transmutation,
-          baseRef,
-          explain: Boolean(options.explain)
-        });
-      }
-      ensureValidReport('MORIARTY', moriartyReportSchema, data);
+          historyFile: resolvePath(opts.historyFile, path.join(bundleDir, 'history.json')),
+          requestedRunId: options.runId || null,
+          requestedTransmutation: options.transmutation || null,
+          counterfactual: typeof options.counterfactual !== 'undefined'
+        },
+        task: async () => {
+          const history = loadHistory(opts.historyFile, bundleDir);
+          const ctx = loadMoriartyContext(bundleDir);
+          const moriarty = new Moriarty(history, ctx);
+          const data = moriarty.predictionData();
+          const runtime = await attachRuntime(data, {
+            bundleDir,
+            runId: options.runId,
+            transmutation: options.transmutation
+          });
+          if (typeof options.counterfactual !== 'undefined') {
+            const baseRef = typeof options.counterfactual === 'string' && options.counterfactual.length > 0
+              ? options.counterfactual
+              : (process.env.MORIARTY_BASE_REF || process.env.GITHUB_BASE_REF || 'main');
+            await attachCounterfactual(data, {
+              bundleDir,
+              outDir: path.resolve(path.dirname(bundleDir), 'out'),
+              schemaPath: path.resolve(path.dirname(bundleDir), 'schema.graphql'),
+              transmutation: runtime?.run?.transmutation || options.transmutation,
+              baseRef,
+              explain: Boolean(options.explain)
+            });
+          }
+          ensureValidReport('MORIARTY', moriartyReportSchema, data);
+          return {
+            data,
+            output: moriarty.renderPrediction(data)
+          };
+        }
+      });
+      attachCommandRun(execution.data, execution.commandRun);
       if (options.json) {
-        writeFileSync(options.json, JSON.stringify(data, null, 2));
+        writeFileSync(options.json, JSON.stringify(execution.data, null, 2));
       }
-      console.log(moriarty.renderPrediction(data));
+      console.log(execution.output);
+      console.log('');
+      console.log(formatCommandRunMarkdown(execution.commandRun));
     });
 
   program
@@ -243,53 +303,82 @@ Requires:
     .action(async options => {
       const opts = program.optsWithGlobals();
       const bundleDir = resolvePath(opts.bundleDir, GENERATED_ARTIFACT_DIR);
-      const bundlePath = path.join(bundleDir, 'bundle.json');
-      const bundle = loadBundle(bundlePath);
-      const history = loadHistory(opts.historyFile, bundleDir);
-      const ctx = loadMoriartyContext(bundleDir);
-      const holmes = new Holmes(bundle);
-      const watson = new Watson(bundle);
-      const moriarty = new Moriarty(history, ctx);
-      const holmesData = holmes.investigationData();
-      const watsonData = watson.verificationData();
-      const moriartyData = moriarty.predictionData();
-      const runtime = await attachRuntime(moriartyData, {
-        bundleDir,
-        runId: options.runId,
-        transmutation: options.transmutation
-      });
-      if (typeof options.counterfactual !== 'undefined') {
-        const baseRef = typeof options.counterfactual === 'string' && options.counterfactual.length > 0
-          ? options.counterfactual
-          : (process.env.MORIARTY_BASE_REF || process.env.GITHUB_BASE_REF || 'main');
-        await attachCounterfactual(moriartyData, {
+      const execution = await withCommandRun({
+        repoRoot: path.resolve(bundleDir, '..'),
+        command: 'report',
+        sources: {
           bundleDir,
-          outDir: path.resolve(path.dirname(bundleDir), 'out'),
-          schemaPath: path.resolve(path.dirname(bundleDir), 'schema.graphql'),
-          transmutation: runtime?.run?.transmutation || options.transmutation,
-          baseRef,
-          explain: Boolean(options.explain)
-        });
-      }
+          bundlePath: path.join(bundleDir, 'bundle.json'),
+          historyFile: resolvePath(opts.historyFile, path.join(bundleDir, 'history.json')),
+          requestedRunId: options.runId || null,
+          requestedTransmutation: options.transmutation || null,
+          counterfactual: typeof options.counterfactual !== 'undefined'
+        },
+        task: async () => {
+          const bundle = loadBundle(path.join(bundleDir, 'bundle.json'));
+          const history = loadHistory(opts.historyFile, bundleDir);
+          const ctx = loadMoriartyContext(bundleDir);
+          const holmes = new Holmes(bundle);
+          const watson = new Watson(bundle);
+          const moriarty = new Moriarty(history, ctx);
+          const holmesData = holmes.investigationData();
+          const watsonData = watson.verificationData();
+          const moriartyData = moriarty.predictionData();
+          const runtime = await attachRuntime(moriartyData, {
+            bundleDir,
+            runId: options.runId,
+            transmutation: options.transmutation
+          });
+          if (typeof options.counterfactual !== 'undefined') {
+            const baseRef = typeof options.counterfactual === 'string' && options.counterfactual.length > 0
+              ? options.counterfactual
+              : (process.env.MORIARTY_BASE_REF || process.env.GITHUB_BASE_REF || 'main');
+            await attachCounterfactual(moriartyData, {
+              bundleDir,
+              outDir: path.resolve(path.dirname(bundleDir), 'out'),
+              schemaPath: path.resolve(path.dirname(bundleDir), 'schema.graphql'),
+              transmutation: runtime?.run?.transmutation || options.transmutation,
+              baseRef,
+              explain: Boolean(options.explain)
+            });
+          }
 
-      ensureValidReport('HOLMES', holmesReportSchema, holmesData);
-      ensureValidReport('WATSON', watsonReportSchema, watsonData);
-      ensureValidReport('MORIARTY', moriartyReportSchema, moriartyData);
+          ensureValidReport('HOLMES', holmesReportSchema, holmesData);
+          ensureValidReport('WATSON', watsonReportSchema, watsonData);
+          ensureValidReport('MORIARTY', moriartyReportSchema, moriartyData);
 
+          return {
+            data: {
+              holmes: holmesData,
+              watson: watsonData,
+              moriarty: moriartyData
+            },
+            output: [
+              '# The Case of Schema Investigation',
+              '',
+              holmes.renderInvestigation(holmesData),
+              '',
+              '---',
+              '',
+              watson.renderVerification(watsonData),
+              '',
+              '---',
+              '',
+              moriarty.renderPrediction(moriartyData)
+            ].join('\n')
+          };
+        }
+      });
       if (options.json) {
         writeFileSync(options.json, JSON.stringify({
-          holmes: holmesData,
-          watson: watsonData,
-          moriarty: moriartyData
+          ...execution.data,
+          commandRun: execution.commandRun
         }, null, 2));
       }
 
-      console.log('# The Case of Schema Investigation\n');
-      console.log(holmes.renderInvestigation(holmesData));
-      console.log('\n---\n');
-      console.log(watson.renderVerification(watsonData));
-      console.log('\n---\n');
-      console.log(moriarty.renderPrediction(moriartyData));
+      console.log(execution.output);
+      console.log('');
+      console.log(formatCommandRunMarkdown(execution.commandRun));
     });
 
   program
@@ -317,6 +406,6 @@ Requires:
 }
 
 main().catch(error => {
-  console.error('Investigation failed:', error.message);
+  console.error(`Investigation failed${formatCommandRunFailureLabel(error)}:`, error.message);
   process.exit(1);
 });
