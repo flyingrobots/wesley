@@ -143,7 +143,7 @@ Implemented now
 - Deprecated `--project-merge` alias
 - git-warp provider and canonical fact persistence
 - Moriarty report `runtime` block sourced from the run ledger
-- Moriarty report `counterfactual` block plus compatibility `projection` alias
+- Moriarty report `counterfactual` block
 - legacy merge-tree/worktree projection retained in tests only as a regression harness
 - BLADE counterfactual stage
 - SHIPME embedding of compact counterfactual summary
@@ -154,7 +154,6 @@ Not yet implemented
 - user-facing scope controls
 - public braid CLI for HOLMES
 - provider-owned working-set lifecycle beyond the current coordinate-frontier path
-- removal of the compatibility `projection` alias
 
 ## Sources
 
