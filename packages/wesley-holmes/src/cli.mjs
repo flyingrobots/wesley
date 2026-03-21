@@ -74,8 +74,7 @@ async function attachCounterfactual(data, {
   transmutation,
   baseRef,
   braidRefs = [],
-  explain = false,
-  deprecatedAlias = false
+  explain = false
 }) {
   const repoRoot = path.resolve(bundleDir, '..');
   const policy = await loadHolmesCounterfactualPolicy({ repoRoot, env: process.env });
@@ -100,9 +99,6 @@ async function attachCounterfactual(data, {
     ? counterfactual
     : { ...counterfactual };
   data.warnings = Array.isArray(data.warnings) ? data.warnings : [];
-  if (deprecatedAlias) {
-    data.warnings.push('Deprecated: --project-merge now routes through the git-warp counterfactual provider and will be removed after the short deprecation window.');
-  }
   if (typeof data.confidence === 'number' && Number.isFinite(counterfactual?.judgment?.confidenceAdjustment)) {
     data.confidence = Math.max(0, Math.min(100, data.confidence + counterfactual.judgment.confidenceAdjustment));
   }
@@ -192,7 +188,6 @@ Requires:
     .option('--run-id <id>', 'Bind prediction context to a persisted Wesley run')
     .option('--transmutation <name>', 'Disambiguate the persisted run stream by transmutation')
     .option('--counterfactual [baseRef]', 'Analyze a git-warp counterfactual lane against a base ref')
-    .option('--project-merge [baseRef]', 'Deprecated alias for --counterfactual [baseRef]')
     .option('--explain', 'Show resolved refs, digests, and counterfactual details')
     .action(async options => {
       const opts = program.optsWithGlobals();
@@ -206,20 +201,17 @@ Requires:
         runId: options.runId,
         transmutation: options.transmutation
       });
-      if (typeof options.counterfactual !== 'undefined' || typeof options.projectMerge !== 'undefined') {
+      if (typeof options.counterfactual !== 'undefined') {
         const baseRef = typeof options.counterfactual === 'string' && options.counterfactual.length > 0
           ? options.counterfactual
-          : (typeof options.projectMerge === 'string' && options.projectMerge.length > 0
-            ? options.projectMerge
-            : (process.env.MORIARTY_BASE_REF || process.env.GITHUB_BASE_REF || 'main'));
+          : (process.env.MORIARTY_BASE_REF || process.env.GITHUB_BASE_REF || 'main');
         await attachCounterfactual(data, {
           bundleDir,
           outDir: path.resolve(path.dirname(bundleDir), 'out'),
           schemaPath: path.resolve(path.dirname(bundleDir), 'schema.graphql'),
           transmutation: runtime?.run?.transmutation || options.transmutation,
           baseRef,
-          explain: Boolean(options.explain),
-          deprecatedAlias: typeof options.projectMerge !== 'undefined'
+          explain: Boolean(options.explain)
         });
       }
       ensureValidReport('MORIARTY', moriartyReportSchema, data);
@@ -236,7 +228,6 @@ Requires:
     .option('--run-id <id>', 'Bind MORIARTY context to a persisted Wesley run')
     .option('--transmutation <name>', 'Disambiguate the persisted run stream by transmutation')
     .option('--counterfactual [baseRef]', 'Analyze a git-warp counterfactual lane against a base ref')
-    .option('--project-merge [baseRef]', 'Deprecated alias for --counterfactual [baseRef]')
     .option('--explain', 'Show resolved refs, digests, and counterfactual details')
     .action(async options => {
       const opts = program.optsWithGlobals();
@@ -256,20 +247,17 @@ Requires:
         runId: options.runId,
         transmutation: options.transmutation
       });
-      if (typeof options.counterfactual !== 'undefined' || typeof options.projectMerge !== 'undefined') {
+      if (typeof options.counterfactual !== 'undefined') {
         const baseRef = typeof options.counterfactual === 'string' && options.counterfactual.length > 0
           ? options.counterfactual
-          : (typeof options.projectMerge === 'string' && options.projectMerge.length > 0
-            ? options.projectMerge
-            : (process.env.MORIARTY_BASE_REF || process.env.GITHUB_BASE_REF || 'main'));
+          : (process.env.MORIARTY_BASE_REF || process.env.GITHUB_BASE_REF || 'main');
         await attachCounterfactual(moriartyData, {
           bundleDir,
           outDir: path.resolve(path.dirname(bundleDir), 'out'),
           schemaPath: path.resolve(path.dirname(bundleDir), 'schema.graphql'),
           transmutation: runtime?.run?.transmutation || options.transmutation,
           baseRef,
-          explain: Boolean(options.explain),
-          deprecatedAlias: typeof options.projectMerge !== 'undefined'
+          explain: Boolean(options.explain)
         });
       }
 

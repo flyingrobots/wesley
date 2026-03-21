@@ -286,16 +286,13 @@ test('holmes CLI predict emits counterfactual report without projection alias', 
   }
 });
 
-test('holmes CLI project-merge warns and routes through counterfactual provider', () => {
+test('holmes CLI rejects removed project-merge flag', () => {
   const fixture = createFixture();
-  initGitFixture(fixture.tempDir);
-  const jsonPath = path.join(fixture.schemaDir, 'moriarty-project-merge.json');
   const result = spawnSync(process.execPath, [
     cliPath,
     'predict',
     '--bundle-dir', fixture.bundleDir,
     '--history-file', fixture.historyPath,
-    '--json', jsonPath,
     '--project-merge', 'main'
   ], {
     cwd: fixture.tempDir,
@@ -304,11 +301,9 @@ test('holmes CLI project-merge warns and routes through counterfactual provider'
   });
 
   try {
-    assert.equal(result.status, 0, result.stderr);
-    const json = JSON.parse(readFileSync(jsonPath, 'utf8'));
-    assert.ok(Array.isArray(json.warnings));
-    assert.ok(json.warnings.some(item => item.includes('Deprecated: --project-merge')));
-    assert.ok(json.counterfactual, 'Deprecated alias should still produce counterfactual data');
+    assert.notEqual(result.status, 0);
+    assert.ok(result.stderr.includes('unknown option'));
+    assert.ok(result.stderr.includes('--project-merge'));
   } finally {
     fixture.cleanup();
   }
