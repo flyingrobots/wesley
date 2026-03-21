@@ -259,6 +259,58 @@ export const moriartyReportSchema = {
       type: 'array',
       items: stringField
     },
+    runtime: {
+      type: 'object',
+      required: ['requested', 'run', 'snapshot', 'replay', 'ledgerDir'],
+      properties: {
+        requested: {
+          type: 'object',
+          required: ['runId', 'transmutation'],
+          properties: {
+            runId: stringField,
+            transmutation: { anyOf: [stringField, { type: 'null' }] }
+          }
+        },
+        run: {
+          type: 'object',
+          required: ['runId', 'transmutation', 'streamId', 'command', 'status', 'eventCount', 'artifactCount'],
+          properties: {
+            runId: stringField,
+            transmutation: { anyOf: [stringField, { type: 'null' }] },
+            streamId: { anyOf: [stringField, { type: 'null' }] },
+            command: { anyOf: [stringField, { type: 'null' }] },
+            status: stringField,
+            eventCount: numberField,
+            artifactCount: numberField
+          }
+        },
+        snapshot: {
+          anyOf: [
+            { type: 'null' },
+            {
+              type: 'object',
+              required: ['used', 'lastSequence', 'updatedAt', 'eventCount'],
+              properties: {
+                used: booleanField,
+                lastSequence: { anyOf: [numberField, { type: 'null' }] },
+                updatedAt: { anyOf: [stringField, { type: 'null' }] },
+                eventCount: { anyOf: [numberField, { type: 'null' }] }
+              }
+            }
+          ]
+        },
+        replay: {
+          type: 'object',
+          required: ['terminal', 'valid', 'issueCount'],
+          properties: {
+            terminal: booleanField,
+            valid: booleanField,
+            issueCount: numberField
+          }
+        },
+        ledgerDir: stringField
+      }
+    },
     projection: {
       type: 'object'
     },

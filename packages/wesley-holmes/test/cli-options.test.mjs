@@ -16,6 +16,7 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const repoRoot = path.resolve(path.dirname(__filename), '..', '..', '..');
 const cliPath = path.join(repoRoot, 'packages', 'wesley-holmes', 'src', 'cli.mjs');
+const wesleyCliPath = path.join(repoRoot, 'packages', 'wesley-host-node', 'bin', 'wesley.mjs');
 
 const sampleBundle = {
   sha: 'abcdef1234567890abcdef1234567890abcdef12',
@@ -80,7 +81,7 @@ function createFixture({ includeBundle = true, includeHistory = true, corruptBun
 
   mkdirSync(bundleDir, { recursive: true });
   mkdirSync(schemaDir, { recursive: true });
-  writeFileSync(schemaPath, 'type Query { hello: String }\\n');
+  writeFileSync(schemaPath, 'type Query { hello: String }\n');
 
   if (includeBundle) {
     const bundlePath = path.join(bundleDir, 'bundle.json');
@@ -136,6 +137,28 @@ function runGit(cwd, ...args) {
     throw new Error(result.stderr || `git ${args.join(' ')} failed`);
   }
   return result.stdout;
+}
+
+function persistTransformRun(fixture, runId, extraArgs = []) {
+  const outDir = path.join(fixture.tempDir, 'out');
+  mkdirSync(outDir, { recursive: true });
+  const result = spawnSync(process.execPath, [
+    wesleyCliPath,
+    'transform',
+    '--schema', fixture.schemaPath,
+    '--out-dir', outDir,
+    '--transmutation', 'legacy-supabase',
+    '--run-id', runId,
+    '--emit-bundle',
+    '--json',
+    '--quiet',
+    ...extraArgs
+  ], {
+    cwd: fixture.tempDir,
+    encoding: 'utf8',
+    env: { ...process.env }
+  });
+  assert.equal(result.status, 0, result.stderr || result.stdout);
 }
 
 function runCli(command, {
@@ -286,6 +309,64 @@ test('holmes CLI project-merge warns and routes through counterfactual provider'
     assert.ok(Array.isArray(json.warnings));
     assert.ok(json.warnings.some(item => item.includes('Deprecated: --project-merge')));
     assert.ok(json.counterfactual, 'Deprecated alias should still produce counterfactual data');
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test('holmes CLI predict attaches persisted runtime run context', () => {
+  const fixture = createFixture();
+  persistTransformRun(fixture, 'run-holmes-ledger-123');
+  const jsonPath = path.join(fixture.schemaDir, 'moriarty-runtime.json');
+
+  const result = spawnSync(process.execPath, [
+    cliPath,
+    'predict',
+    '--bundle-dir', fixture.bundleDir,
+    '--history-file', fixture.historyPath,
+    '--json', jsonPath,
+    '--run-id', 'run-holmes-ledger-123',
+    '--transmutation', 'legacy-supabase'
+  ], {
+    cwd: fixture.tempDir,
+    encoding: 'utf8',
+    env: { ...process.env, MORIARTY_USE_GIT: '0' }
+  });
+
+  try {
+    assert.equal(result.status, 0, result.stderr);
+    const json = JSON.parse(readFileSync(jsonPath, 'utf8'));
+    assert.equal(json.metadata.runId, 'run-holmes-ledger-123');
+    assert.equal(json.metadata.transmutation, 'legacy-supabase');
+    assert.equal(json.runtime.run.runId, 'run-holmes-ledger-123');
+    assert.equal(json.runtime.run.status, 'completed');
+    assert.equal(json.runtime.replay.valid, true);
+    assert.ok(result.stdout.includes('Runtime Run Context'));
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test('holmes CLI predict fails when requested runtime run is missing', () => {
+  const fixture = createFixture();
+  const jsonPath = path.join(fixture.schemaDir, 'moriarty-runtime-missing.json');
+  const result = spawnSync(process.execPath, [
+    cliPath,
+    'predict',
+    '--bundle-dir', fixture.bundleDir,
+    '--history-file', fixture.historyPath,
+    '--json', jsonPath,
+    '--run-id', 'run-holmes-missing',
+    '--transmutation', 'legacy-supabase'
+  ], {
+    cwd: fixture.tempDir,
+    encoding: 'utf8',
+    env: { ...process.env, MORIARTY_USE_GIT: '0' }
+  });
+
+  try {
+    assert.notEqual(result.status, 0);
+    assert.ok(result.stderr.includes('No persisted run found'));
   } finally {
     fixture.cleanup();
   }

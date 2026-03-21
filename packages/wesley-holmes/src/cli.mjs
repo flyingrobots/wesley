@@ -9,6 +9,7 @@ import { Command } from 'commander';
 import { Holmes } from './Holmes.mjs';
 import { Watson } from './Watson.mjs';
 import { Moriarty } from './Moriarty.mjs';
+import { attachRuntimeRun, loadRuntimeRunRecord } from './runtime-run.mjs';
 import { readWeightConfig } from './weight-config.mjs';
 import {
   analyzeCounterfactual,
@@ -71,6 +72,7 @@ async function attachCounterfactual(data, {
   bundleDir,
   outDir,
   schemaPath,
+  transmutation,
   baseRef,
   braidRefs = [],
   explain = false,
@@ -91,7 +93,8 @@ async function attachCounterfactual(data, {
     surface: {
       bundleDir,
       outDir,
-      schemaPath
+      schemaPath,
+      transmutation
     }
   });
   data.counterfactual = explain
@@ -112,6 +115,24 @@ async function attachCounterfactual(data, {
       description: counterfactual.judgment.reasons.join(' ')
     });
   }
+}
+
+async function attachRuntime(data, {
+  bundleDir,
+  runId,
+  transmutation
+}) {
+  if (typeof runId !== 'string' || !runId.trim()) {
+    return null;
+  }
+
+  const runtimeRecord = await loadRuntimeRunRecord({
+    repoRoot: path.resolve(bundleDir, '..'),
+    runId,
+    transmutation
+  });
+  attachRuntimeRun(data, runtimeRecord);
+  return runtimeRecord;
 }
 
 async function main() {
@@ -170,6 +191,8 @@ Requires:
     .command('predict')
     .description('Run MORIARTY predictions')
     .option('--json <file>', 'Write prediction JSON to file')
+    .option('--run-id <id>', 'Bind prediction context to a persisted Wesley run')
+    .option('--transmutation <name>', 'Disambiguate the persisted run stream by transmutation')
     .option('--counterfactual [baseRef]', 'Analyze a git-warp counterfactual lane against a base ref')
     .option('--project-merge [baseRef]', 'Deprecated alias for --counterfactual [baseRef]')
     .option('--explain', 'Show resolved refs, digests, and counterfactual details')
@@ -180,6 +203,11 @@ Requires:
       const ctx = loadMoriartyContext(bundleDir);
       const moriarty = new Moriarty(history, ctx);
       const data = moriarty.predictionData();
+      const runtime = await attachRuntime(data, {
+        bundleDir,
+        runId: options.runId,
+        transmutation: options.transmutation
+      });
       if (typeof options.counterfactual !== 'undefined' || typeof options.projectMerge !== 'undefined') {
         const baseRef = typeof options.counterfactual === 'string' && options.counterfactual.length > 0
           ? options.counterfactual
@@ -190,6 +218,7 @@ Requires:
           bundleDir,
           outDir: path.resolve(path.dirname(bundleDir), 'out'),
           schemaPath: path.resolve(path.dirname(bundleDir), 'schema.graphql'),
+          transmutation: runtime?.run?.transmutation || options.transmutation,
           baseRef,
           explain: Boolean(options.explain),
           deprecatedAlias: typeof options.projectMerge !== 'undefined'
@@ -206,6 +235,8 @@ Requires:
     .command('report')
     .description('Generate combined HOLMES, WATSON, and MORIARTY report')
     .option('--json <file>', 'Write combined JSON to file')
+    .option('--run-id <id>', 'Bind MORIARTY context to a persisted Wesley run')
+    .option('--transmutation <name>', 'Disambiguate the persisted run stream by transmutation')
     .option('--counterfactual [baseRef]', 'Analyze a git-warp counterfactual lane against a base ref')
     .option('--project-merge [baseRef]', 'Deprecated alias for --counterfactual [baseRef]')
     .option('--explain', 'Show resolved refs, digests, and counterfactual details')
@@ -222,6 +253,11 @@ Requires:
       const holmesData = holmes.investigationData();
       const watsonData = watson.verificationData();
       const moriartyData = moriarty.predictionData();
+      const runtime = await attachRuntime(moriartyData, {
+        bundleDir,
+        runId: options.runId,
+        transmutation: options.transmutation
+      });
       if (typeof options.counterfactual !== 'undefined' || typeof options.projectMerge !== 'undefined') {
         const baseRef = typeof options.counterfactual === 'string' && options.counterfactual.length > 0
           ? options.counterfactual
@@ -232,6 +268,7 @@ Requires:
           bundleDir,
           outDir: path.resolve(path.dirname(bundleDir), 'out'),
           schemaPath: path.resolve(path.dirname(bundleDir), 'schema.graphql'),
+          transmutation: runtime?.run?.transmutation || options.transmutation,
           baseRef,
           explain: Boolean(options.explain),
           deprecatedAlias: typeof options.projectMerge !== 'undefined'

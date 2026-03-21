@@ -182,6 +182,12 @@ export class Moriarty {
     report.push('_The Mathematics of Inevitability_');
     report.push('');
     report.push(`- Analysis Date: ${data.metadata.analysisAt}`);
+    if (data.metadata.runId) {
+      report.push(`- Run ID: ${data.metadata.runId}`);
+    }
+    if (data.metadata.transmutation) {
+      report.push(`- Transmutation: ${data.metadata.transmutation}`);
+    }
     report.push('');
 
     if (data.status === 'INSUFFICIENT_DATA') {
@@ -264,6 +270,30 @@ export class Moriarty {
       report.push('');
       for (const warning of data.warnings) {
         report.push(`- ${warning}`);
+      }
+    }
+
+    if (data.runtime?.run) {
+      report.push('');
+      report.push('## 🧾 Runtime Run Context');
+      report.push('');
+      report.push(`- Run ID: ${data.runtime.run.runId}`);
+      report.push(`- Transmutation: ${data.runtime.run.transmutation || 'n/a'}`);
+      report.push(`- Command: ${data.runtime.run.command || 'n/a'}`);
+      report.push(`- Status: ${data.runtime.run.status}`);
+      report.push(`- Stream: ${data.runtime.run.streamId || 'n/a'}`);
+      report.push(`- Events: ${data.runtime.run.eventCount}`);
+      report.push(`- Artifacts: ${data.runtime.run.artifactCount}`);
+      if (data.runtime.snapshot) {
+        report.push(`- Snapshot: yes (seq=${data.runtime.snapshot.lastSequence ?? 'n/a'})`);
+      } else {
+        report.push('- Snapshot: no');
+      }
+      if (data.runtime.replay) {
+        report.push(`- Replay: ${data.runtime.replay.valid ? 'valid' : 'invalid'} · ${data.runtime.replay.terminal ? 'terminal' : 'non-terminal'}`);
+      }
+      if (data.runtime.run.failure?.code) {
+        report.push(`- Failure: ${data.runtime.run.failure.code}${data.runtime.run.failure.message ? ` - ${data.runtime.run.failure.message}` : ''}`);
       }
     }
 

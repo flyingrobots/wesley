@@ -10,7 +10,6 @@ import {
 } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import GitPlumbing from '@git-stunts/plumbing';
 import WarpGraph, {
@@ -19,6 +18,7 @@ import WarpGraph, {
   exportCoordinateTransferPlanFact,
   normalizeVisibleStateScopeV1
 } from '@git-stunts/git-warp';
+import { resolveWesleyExecutable, runNodeCommand } from '../wesley-exec.mjs';
 
 export const COUNTERFACTUAL_GRAPH_NAME = 'wesley-counterfactual-v1';
 export const COUNTERFACTUAL_SURFACE_VERSION = 'wesley-counterfactual-v1';
@@ -485,31 +485,6 @@ async function ensureWorkspaceArtifacts({ repoRoot, workspaceDir, bundleDir, out
     await mkdir(bundleDir, { recursive: true });
     await writeFile(path.join(bundleDir, 'plan-report.json'), result.stdout);
   }
-}
-
-function resolveWesleyExecutable(repoRoot) {
-  const candidates = [
-    path.resolve(repoRoot, 'packages/wesley-host-node/bin/wesley.mjs'),
-    path.resolve(fileURLToPath(new URL('../../../../wesley-host-node/bin/wesley.mjs', import.meta.url)))
-  ];
-  for (const candidate of candidates) {
-    if (existsSync(candidate)) {
-      return { entry: candidate, env: { ...process.env } };
-    }
-  }
-  return null;
-}
-
-function runNodeCommand(args, cwd, env) {
-  const result = spawnSync(process.execPath, args, {
-    cwd,
-    env,
-    encoding: 'utf8'
-  });
-  if (result.status !== 0) {
-    throw new Error(result.stderr || result.stdout || `Command failed: node ${args.join(' ')}`);
-  }
-  return result;
 }
 
 async function openProviderStore(storeRoot) {
