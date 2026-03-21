@@ -239,6 +239,7 @@ Requires:
     .option('--run-id <id>', 'Bind prediction context to a persisted Wesley run')
     .option('--transmutation <name>', 'Disambiguate the persisted run stream by transmutation')
     .option('--counterfactual [baseRef]', 'Analyze a git-warp counterfactual lane against a base ref')
+    .option('--counterfactual-braid <ref>', 'Add a braid ref to the counterfactual lane', collectRepeatableOption, [])
     .option('--explain', 'Show resolved refs, digests, and counterfactual details')
     .action(async options => {
       const opts = program.optsWithGlobals();
@@ -251,7 +252,8 @@ Requires:
           historyFile: resolvePath(opts.historyFile, path.join(bundleDir, 'history.json')),
           requestedRunId: options.runId || null,
           requestedTransmutation: options.transmutation || null,
-          counterfactual: typeof options.counterfactual !== 'undefined'
+          counterfactual: typeof options.counterfactual !== 'undefined',
+          braidCount: Array.isArray(options.counterfactualBraid) ? options.counterfactualBraid.length : 0
         },
         task: async () => {
           const history = loadHistory(opts.historyFile, bundleDir);
@@ -273,6 +275,7 @@ Requires:
               schemaPath: path.resolve(path.dirname(bundleDir), 'schema.graphql'),
               transmutation: runtime?.run?.transmutation || options.transmutation,
               baseRef,
+              braidRefs: options.counterfactualBraid,
               explain: Boolean(options.explain)
             });
           }
@@ -299,6 +302,7 @@ Requires:
     .option('--run-id <id>', 'Bind MORIARTY context to a persisted Wesley run')
     .option('--transmutation <name>', 'Disambiguate the persisted run stream by transmutation')
     .option('--counterfactual [baseRef]', 'Analyze a git-warp counterfactual lane against a base ref')
+    .option('--counterfactual-braid <ref>', 'Add a braid ref to the counterfactual lane', collectRepeatableOption, [])
     .option('--explain', 'Show resolved refs, digests, and counterfactual details')
     .action(async options => {
       const opts = program.optsWithGlobals();
@@ -312,7 +316,8 @@ Requires:
           historyFile: resolvePath(opts.historyFile, path.join(bundleDir, 'history.json')),
           requestedRunId: options.runId || null,
           requestedTransmutation: options.transmutation || null,
-          counterfactual: typeof options.counterfactual !== 'undefined'
+          counterfactual: typeof options.counterfactual !== 'undefined',
+          braidCount: Array.isArray(options.counterfactualBraid) ? options.counterfactualBraid.length : 0
         },
         task: async () => {
           const bundle = loadBundle(path.join(bundleDir, 'bundle.json'));
@@ -339,6 +344,7 @@ Requires:
               schemaPath: path.resolve(path.dirname(bundleDir), 'schema.graphql'),
               transmutation: runtime?.run?.transmutation || options.transmutation,
               baseRef,
+              braidRefs: options.counterfactualBraid,
               explain: Boolean(options.explain)
             });
           }
@@ -403,6 +409,11 @@ Requires:
     });
 
   await program.parseAsync(process.argv);
+}
+
+function collectRepeatableOption(value, previous = []) {
+  previous.push(value);
+  return previous;
 }
 
 main().catch(error => {

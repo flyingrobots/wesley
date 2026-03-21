@@ -322,6 +322,42 @@ test('holmes CLI report emits combined JSON with overrides', () => {
   assert.ok(json?.moriarty, 'Combined report should include MORIARTY data');
 });
 
+test('holmes CLI report passes braid refs through to combined moriarty output', () => {
+  const fixture = createFixture();
+  initGitFixture(fixture.tempDir);
+  runGit(fixture.tempDir, 'checkout', '-b', 'support', 'main');
+  writeFileSync(path.join(fixture.tempDir, 'schema.graphql'), 'type Query { hello: String support: String }\n');
+  runGit(fixture.tempDir, 'add', 'schema.graphql');
+  runGit(fixture.tempDir, 'commit', '-m', 'support lane');
+  runGit(fixture.tempDir, 'checkout', 'feature');
+
+  const jsonPath = path.join(fixture.schemaDir, 'combined-braid-report.json');
+  const result = spawnSync(process.execPath, [
+    cliPath,
+    'report',
+    '--bundle-dir', fixture.bundleDir,
+    '--history-file', fixture.historyPath,
+    '--json', jsonPath,
+    '--counterfactual', 'main',
+    '--counterfactual-braid', 'support'
+  ], {
+    cwd: fixture.tempDir,
+    encoding: 'utf8',
+    env: { ...process.env, MORIARTY_USE_GIT: '0' }
+  });
+
+  try {
+    assert.equal(result.status, 0, result.stderr);
+    const json = JSON.parse(readFileSync(jsonPath, 'utf8'));
+    assert.equal(json.moriarty.counterfactual.composition, 'braid');
+    assert.equal(json.moriarty.counterfactual.resolved.braidRefs.length, 1);
+    assert.ok(json.moriarty.counterfactual.judgment.signals.includes('braid_present'));
+    assert.ok(result.stdout.includes('Counterfactual Analysis'));
+  } finally {
+    fixture.cleanup();
+  }
+});
+
 test('holmes CLI predict emits counterfactual report without projection alias', () => {
   const fixture = createFixture();
   initGitFixture(fixture.tempDir);
@@ -346,6 +382,41 @@ test('holmes CLI predict emits counterfactual report without projection alias', 
     assert.equal('projection' in json, false, 'Projection compatibility alias should be removed');
     assert.ok(result.stdout.includes('Counterfactual Analysis'));
     assert.equal(result.stdout.includes('Projection Compatibility'), false);
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test('holmes CLI predict accepts braid refs on the public counterfactual lane', () => {
+  const fixture = createFixture();
+  initGitFixture(fixture.tempDir);
+  runGit(fixture.tempDir, 'checkout', '-b', 'support', 'main');
+  writeFileSync(path.join(fixture.tempDir, 'schema.graphql'), 'type Query { hello: String support: String }\n');
+  runGit(fixture.tempDir, 'add', 'schema.graphql');
+  runGit(fixture.tempDir, 'commit', '-m', 'support lane');
+  runGit(fixture.tempDir, 'checkout', 'feature');
+
+  const jsonPath = path.join(fixture.schemaDir, 'moriarty-braid.json');
+  const result = spawnSync(process.execPath, [
+    cliPath,
+    'predict',
+    '--bundle-dir', fixture.bundleDir,
+    '--history-file', fixture.historyPath,
+    '--json', jsonPath,
+    '--counterfactual', 'main',
+    '--counterfactual-braid', 'support'
+  ], {
+    cwd: fixture.tempDir,
+    encoding: 'utf8',
+    env: { ...process.env, MORIARTY_USE_GIT: '0' }
+  });
+
+  try {
+    assert.equal(result.status, 0, result.stderr);
+    const json = JSON.parse(readFileSync(jsonPath, 'utf8'));
+    assert.equal(json.counterfactual.composition, 'braid');
+    assert.equal(json.counterfactual.resolved.braidRefs.length, 1);
+    assert.ok(json.counterfactual.judgment.signals.includes('braid_present'));
   } finally {
     fixture.cleanup();
   }
