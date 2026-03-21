@@ -1,13 +1,10 @@
 # Customising HOLMES Weighting
 
-HOLMES assigns a weight to each schema element when it assembles an investigation. By default it biases toward sensitive data (`password`, `email`, etc.), but teams often need to tune those priorities. The recommended approach is to check in `.wesley/weights.json` alongside your schema so configuration is version-controlled and reproducible.
+HOLMES assigns a weight to each schema element when it assembles an investigation. By default it biases toward sensitive data (`password`, `email`, etc.), but teams often need to tune those priorities. The recommended approach is to check in `wesley.weights.json` alongside your schema so configuration is version-controlled and reproducible.
 
 ## Configuration format
 
-```
-.wesley/
-  weights.json
-```
+`wesley.weights.json`
 
 ```json
 {
@@ -47,14 +44,14 @@ In CI or ad-hoc runs you can override the file without editing the repo:
 | `WESLEY_HOLMES_WEIGHTS` | Inline JSON string (highest precedence). |
 | `WESLEY_HOLMES_WEIGHT_FILE` | Alternative path to a JSON file. |
 
-If neither variable is set HOLMES looks for `.wesley/weights.json`; if it is missing the built-in defaults are used.
+If neither variable is set HOLMES looks for `wesley.weights.json`; if it is missing the built-in defaults are used.
 
 ## Validation
 
 Use the CLI to lint configuration files locally:
 
 ```bash
-holmes weights:validate              # validates .wesley/weights.json
+holmes weights:validate              # validates wesley.weights.json
 holmes weights:validate --file my-config.json
 holmes weights:validate --file my-config.json --json output.json
 ```
@@ -72,6 +69,6 @@ Older configs that used a simple map (`{"password": 12, "default": 4}`) still wo
 
 ## Tips
 
-- Keep `.wesley/weights.json` in version control and review changes alongside schema updates.
+- Keep `wesley.weights.json` in version control and review changes alongside schema updates.
 - Prefer overrides or directives for deterministic behaviour; substrings are best for broad heuristics.
 - Document the intent of high weights in code review so future maintainers know why a field is considered high risk.

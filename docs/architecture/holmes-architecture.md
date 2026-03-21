@@ -20,7 +20,7 @@ The CLI uses Commander to provide subcommands that wrap each investigator and a 
 - `holmes report [--json <file>]`
 - `holmes weights [--file <path>] [--json <file>]`
 
-Each command loads the required `.wesley` artifacts (`bundle.json`, `history.json`, optional `weights.json`), validates the generated report structure, and optionally writes structured JSON alongside the human-readable Markdown output. Unknown commands automatically fall back to Commander’s help, which still prints the original banner, requirements list, and quote block.
+Each command loads the required generated artifacts (`.wesley-cache/bundle.json`, `.wesley-cache/history.json`) plus visible Holmes config such as `wesley.weights.json`, validates the generated report structure, and optionally writes structured JSON alongside the human-readable Markdown output. Unknown commands automatically fall back to Commander’s help, which still prints the original banner, requirements list, and quote block.
 
 ## Holmes Investigator
 
@@ -41,7 +41,7 @@ Watson independently replays Holmes’s claims:
 
 ## Moriarty Predictor
 
-Moriarty performs trend analysis over `.wesley/history.json`:
+Moriarty performs trend analysis over `.wesley-cache/history.json`:
 
 - Historical points are normalized, then exponential moving averages (EMA) and slope calculations estimate recent and blended velocities.
 - `predictionData()` flags plateaus/regressions, derives optimistic/realistic/pessimistic ETAs when velocity is sufficient, gauges confidence via variance, and runs lightweight pattern detectors (velocity cliffs, test lag).
@@ -51,7 +51,7 @@ Moriarty performs trend analysis over `.wesley/history.json`:
 
 Moriarty’s goal is to forecast when a feature branch becomes “ship-ready,” not to grade the whole organization’s commit volume. Its core signal is change in SCS (schema coverage), but it also considers developer activity to avoid false “plateau” flags when SCS hasn’t moved yet:
 
-- Primary: SCS velocity from `.wesley/history.json` (EMA-smoothed).
+- Primary: SCS velocity from `.wesley-cache/history.json` (EMA-smoothed).
 - Secondary: Recent Git activity for the current PR branch (commits and relevant file changes) derived from the PR graph (`merge-base .. HEAD`).
 - Tertiary: Time-window git activity as a fallback (e.g., last 24h) when PR graph is unavailable.
 
@@ -66,7 +66,7 @@ Environment knobs (see CI wiring for defaults):
 
 Design constraints:
 - Team-wide commits on the base branch do not penalize the PR’s forecast.
-- Activity is weighted by relevance (schema/DDL/tests/.wesley artifacts > docs/random).
+- Activity is weighted by relevance (schema/DDL/tests/generated artifacts > docs/random).
 - When Git is missing or shallow, Moriarty gracefully falls back to SCS-only velocity.
 
 ### Readiness “EXPLAIN”
@@ -89,7 +89,7 @@ Before printing, each CLI command validates the structured data against bespoke 
 `weight-config.mjs` normalizes weighting inputs from multiple sources:
 
 - Environment variables `WESLEY_HOLMES_WEIGHTS` (inline JSON) and `WESLEY_HOLMES_WEIGHT_FILE` override defaults.
-- `.wesley/weights.json` provides repository-specific tuning.
+- `wesley.weights.json` provides repository-specific tuning.
 - The normalizer accepts both flat key/value weight maps and structured `default/substrings/directives/overrides` documents, coercing values to finite numbers and canonicalizing directive keys.
 
 Holmes records the resolved source (defaults, env, or file path) alongside the investigation summary so operators can trace which policy shaped the report.

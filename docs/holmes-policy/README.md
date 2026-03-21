@@ -9,8 +9,8 @@ This directory documents how to configure HOLMES/Moriarty’s git-warp-backed co
   - Trunk‑based defaults and stricter hard-gate defaults
 
 Quick start
-- Copy a template to `.wesley/holmes-policy.json` at your repo root and tweak as needed.
-- Optional developer overrides go in `.wesley/holmes-policy.local.json` (gitignored).
+- Copy a template to `wesley.holmes-policy.json` at your repo root and tweak as needed.
+- Optional developer overrides go in `wesley.holmes-policy.local.json` (gitignored).
 - Run `holmes predict --counterfactual` (or `report`) to see counterfactual results.
 
 Notes

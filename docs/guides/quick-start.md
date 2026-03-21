@@ -35,11 +35,11 @@ node packages/wesley-host-node/bin/wesley.mjs plan --schema schema.graphql --exp
 node packages/wesley-host-node/bin/wesley.mjs rehearse --schema schema.graphql --dsn $TEST_DATABASE_URL --json
 
 # Create and verify SHIPME certificate
-node packages/wesley-host-node/bin/wesley.mjs cert-create --out .wesley/SHIPME.md
-node packages/wesley-host-node/bin/wesley.mjs cert-verify --in .wesley/SHIPME.md
+node packages/wesley-host-node/bin/wesley.mjs cert-create --out .wesley-cache/SHIPME.md
+node packages/wesley-host-node/bin/wesley.mjs cert-verify --in .wesley-cache/SHIPME.md
 ```
 
-Evidence bundle lives under `.wesley/` and is validated against JSON Schemas in `schemas/`.
+Generated runtime state lives under `.wesley-cache/` and is validated against JSON Schemas in `schemas/`.
 
 ### Experimental: Operation Documents (QIR)
 
@@ -63,7 +63,7 @@ From the repo root:
 ```bash
 node packages/wesley-holmes/src/cli.mjs investigate
 node packages/wesley-holmes/src/cli.mjs verify
-node packages/wesley-holmes/src/cli.mjs predict --from .wesley/scores.json
+node packages/wesley-holmes/src/cli.mjs predict --from .wesley-cache/scores.json
 ```
 
 ## Demo (BLADE)

@@ -1,7 +1,7 @@
 # HOLMES Policy Templates
 <!-- docs-truth: status=current owner=@flyingrobots -->
 
-Copy one of these JSON files into your repo as `.wesley/holmes-policy.json` and adjust as needed.
+Copy one of these JSON files into your repo as `wesley.holmes-policy.json` and adjust as needed.
 
 Templates
 - github-pr-default.json — audit-mode counterfactuals against `main`
@@ -14,6 +14,6 @@ Templates
 
 Usage
 - Start with the provider template that matches your CI.
-- Save it as `.wesley/holmes-policy.json` in your repo root.
-- Optional: add `.wesley/holmes-policy.local.json` (gitignored) for per‑developer overrides.
+- Save it as `wesley.holmes-policy.json` in your repo root.
+- Optional: add `wesley.holmes-policy.local.json` (gitignored) for per‑developer overrides.
 - `holmes predict --counterfactual` and `holmes report --counterfactual` consume these files now.

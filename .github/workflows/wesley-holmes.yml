@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 env:
-  HOLMES_BUNDLE_DIR: test/fixtures/examples/.wesley
+  HOLMES_BUNDLE_DIR: test/fixtures/examples/.wesley-cache
   HOLMES_SCHEMA: test/fixtures/examples/ecommerce.graphql
   HOLMES_OPS_DIR: ./ops
   HOLMES_OUT_DIR: out
@@ -54,7 +54,7 @@ jobs:
             schema="${picked:-$HOLMES_SCHEMA}"
           fi
           base_dir="$(dirname "$schema")"
-          bundle_dir="$base_dir/.wesley"
+          bundle_dir="$base_dir/.wesley-cache"
           echo "schema=$schema" >> "$GITHUB_OUTPUT"
           echo "bundle_dir=$bundle_dir" >> "$GITHUB_OUTPUT"
           echo "Detected schema: $schema"

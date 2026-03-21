@@ -15,7 +15,7 @@ Wesley uses `pnpm run <script>` to provide a common set of maintenance, test, an
 | `pnpm run format` / `format:check` | Prettier formatting helpers. | `format` rewrites files, `format:check` is read-only. |
 | `pnpm run validate` | Convenience chain: `lint`, `format:check`, `test`. | Use before opening a PR. |
 | `pnpm run preflight` | Repository hygiene checks (docs links, dependency boundaries, ESLint core purity, license audit). | Mirrors the CI preflight workflow. |
-| `pnpm run clean` | Remove generated artifacts (`out/`, `.wesley/`, coverage, etc.). | See `scripts/clean.mjs` for the exact list. |
+| `pnpm run clean` | Remove generated artifacts (`out/`, `.wesley-cache/`, coverage, etc.). | See `scripts/clean.mjs` for the exact list. |
 
 ## Project Maintenance
 

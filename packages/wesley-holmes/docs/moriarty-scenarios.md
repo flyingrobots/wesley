@@ -8,15 +8,15 @@ Key signals (quick refresher):
 - MRI – Migration Risk (0..1; lower is better)
 - Activity Index – 0..1 blend of PR-graph (preferred) and 24h window activity
   - Components: commits/day, relevant commits/day, relevant LOC/day, relevant files/day
-  - Relevant = GraphQL, SQL/DDL, pgTAP, `.wesley/*` artifacts
+  - Relevant = GraphQL, SQL/DDL, pgTAP, `.wesley-cache/*` artifacts
 - Plateau rule – plateauDetected when `|blendedVelocity| < 0.01` AND `activityIndex < 0.35`
 - Confidence – derived from series variance; penalized by commit-size “burstiness”
 - Readiness EXPLAIN (informational) – PASS/FAIL lines for thresholds:
   - SCS ≥ 0.80, TCI ≥ 0.70, MRI ≤ 0.40, CI stability ≥ 0.90
 
 Test harness knobs:
-- History points: `.wesley/history.json`
-- Context: `.wesley/moriarty-context.json` (issues closed, PRs merged, CI stability)
+- History points: `.wesley-cache/history.json`
+- Context: `.wesley-cache/moriarty-context.json` (issues closed, PRs merged, CI stability)
 - Git activity: parse of `git log` and `git merge-base` (we can stub `git` via PATH)
 - CLI: `packages/wesley-holmes/src/cli.mjs predict --json out.json`
 - Env tuning (optional): `MORIARTY_*` variables (see docs/architecture/holmes-architecture.md)
@@ -27,8 +27,8 @@ General test strategies:
   - `git merge-base HEAD origin/<base>`
   - `git log <range> --pretty=--%ct --numstat --no-merges`
   - `git fetch ...` (no-op success)
-- Write minimal `.wesley/history.json` with desired day/timestamp points.
-- Optionally write `.wesley/moriarty-context.json` with fields `{ issuesClosed, prsMerged, ci: { stability }, timeframeHours, baseRef }`.
+- Write minimal `.wesley-cache/history.json` with desired day/timestamp points.
+- Optionally write `.wesley-cache/moriarty-context.json` with fields `{ issuesClosed, prsMerged, ci: { stability }, timeframeHours, baseRef }`.
 - Run CLI with `spawnSync(node, [cli, 'predict', '--bundle-dir', tmpWesley, '--json', outPath], { env: { ...process.env, PATH: fakePath } })`.
 - Parse JSON and assert on: `status`, `velocity.recent`, `velocity.gitActivityIndex`, `plateauDetected`, `eta` presence, `confidence`, `gitActivity`, `patterns`, `explain.*`.
 
@@ -189,8 +189,8 @@ Each scenario below includes: intent, minimal setup, expected outcomes, and conc
 ## Concrete Test Recipes
 
 Utility fixture writers (proposed):
-- `writeHistory(dir, points)` → writes `.wesley/history.json` with `{ points }`
-- `writeContext(dir, ctx)` → writes `.wesley/moriarty-context.json`
+- `writeHistory(dir, points)` → writes `.wesley-cache/history.json` with `{ points }`
+- `writeContext(dir, ctx)` → writes `.wesley-cache/moriarty-context.json`
 - `withFakeGit(scripts, fn)` → prepends a temp dir to PATH containing a `git` script that inspects `process.argv` and prints canned outputs for commands used by Moriarty
 
 Git outputs format examples:
@@ -227,4 +227,3 @@ Assertions to standardize:
 - Repository-configurable “relevant file” overrides for activity parsing.
 
 When these land, update the scenarios and test recipes accordingly.
-

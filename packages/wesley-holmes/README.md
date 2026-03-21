@@ -16,11 +16,11 @@ pnpm --filter @wesley/holmes exec node src/cli.mjs investigate --help
 pnpm --filter @wesley/holmes exec node src/moriarty-cli.mjs --help
 ```
 
-Artifacts are persisted under `.wesley/` (e.g., `scores.json`, markdown reports) and consumed by the CI workflows.
+Generated artifacts are persisted under `.wesley-cache/` (for example `scores.json`, `history.json`, `SHIPME.md`, counterfactual summaries, and ledger state) and consumed by the CI workflows.
 
 ## Status
 
 Status: Active
 ![pkg-holmes](https://github.com/flyingrobots/wesley/actions/workflows/pkg-holmes.yml/badge.svg?branch=main)
 
-Production ready; weighting configuration is extensible via `.wesley/weights.json`.
+Production ready; weighting configuration is extensible via `wesley.weights.json`.

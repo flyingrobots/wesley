@@ -21,7 +21,7 @@
 
 ## EvidenceMap / SourceMap (if applicable)
 - Confirm UIDs use `tbl:Table` and `col:Table.field`.
-- If mapping SQL→SDL, verify `.wesley/bundle.json` exists and SourceMap finds SDL.
+- If mapping SQL→SDL, verify `.wesley-cache/bundle.json` exists and SourceMap finds SDL.
 
 ## Screenshots / Logs (optional)
 

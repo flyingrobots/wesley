@@ -116,7 +116,7 @@ import { EvidenceMap } from '@wesley/core';
 import { findSourceForSql } from '@wesley/core/src/application/SourceMap.mjs';
 
 // Load bundle produced by: wesley generate --emit-bundle
-const raw = await fs.readFile('.wesley/bundle.json', 'utf8');
+const raw = await fs.readFile('.wesley-cache/bundle.json', 'utf8');
 const bundle = JSON.parse(raw);
 
 // Accept either flat { evidence: {...} } or nested { evidence: { evidence: {...} } }

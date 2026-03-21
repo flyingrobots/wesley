@@ -51,9 +51,9 @@ graph TB
     end
 
     subgraph Evidence
-        E1[".wesley/evidence/backend/"]
-        E2[".wesley/evidence/echo/"]
-        E3[".wesley/evidence/ui/"]
+        E1[".wesley-cache/evidence/backend/"]
+        E2[".wesley-cache/evidence/echo/"]
+        E3[".wesley-cache/evidence/ui/"]
     end
 
     S1 --> T1
@@ -235,7 +235,7 @@ graph LR
         JG["js generator"] --> |"typescript, zod"| EM
     end
 
-    EM --> |"per-element merge"| B[".wesley/evidence/backend/bundle.json"]
+    EM --> |"per-element merge"| B[".wesley-cache/evidence/backend/bundle.json"]
 ```
 
 A single element like `col:User.email` ends up with citations from every generator that touched it.
@@ -279,7 +279,7 @@ sequenceDiagram
         end
 
         TX->>TX: write artifacts to out/<name>/
-        TX->>EV: write .wesley/evidence/<name>/bundle.json
+        TX->>EV: write .wesley-cache/evidence/<name>/bundle.json
     end
 
     opt --certify
@@ -384,7 +384,7 @@ Moriarty operates at two levels: **per-transmutation trend lines** and a **proje
 
 #### Per-Transmutation Moriarty
 
-Each transmutation maintains its own score history in `.wesley/evidence/<name>/history.json`. After every `--certify` run, the new scores are appended:
+Each transmutation maintains its own score history in `.wesley-cache/evidence/<name>/history.json`. After every `--certify` run, the new scores are appended:
 
 ```json
 {
@@ -420,9 +420,9 @@ The project-level oracle sits above all transmutations. It reads every transmuta
 ```mermaid
 graph TB
     subgraph "Per-Transmutation Histories"
-        H1[".wesley/evidence/backend/history.json"]
-        H2[".wesley/evidence/echo/history.json"]
-        H3[".wesley/evidence/ui/history.json"]
+        H1[".wesley-cache/evidence/backend/history.json"]
+        H2[".wesley-cache/evidence/echo/history.json"]
+        H3[".wesley-cache/evidence/ui/history.json"]
     end
 
     subgraph "Project-Level Moriarty"

@@ -14,11 +14,12 @@ const failures = [];
 
 function fail(msg) { ok = false; failures.push(msg); }
 
-// 1) .gitignore contains .wesley/ and out/
+// 1) .gitignore contains .wesley-cache/ and out/
 try {
   const gi = readFileSync(resolve('.gitignore'), 'utf8');
-  if (!gi.match(/^\.wesley\//m)) fail('Missing .wesley/ in .gitignore');
-  if (!gi.match(/^test\/fixtures\/examples\/\.wesley\//m)) fail('Missing test/fixtures/examples/.wesley/ in .gitignore');
+  if (!gi.match(/^\.wesley-cache\//m)) fail('Missing .wesley-cache/ in .gitignore');
+  if (!gi.match(/^test\/fixtures\/examples\/\.wesley-cache\//m)) fail('Missing test/fixtures/examples/.wesley-cache/ in .gitignore');
+  if (!gi.match(/^wesley\.holmes-policy\.local\.json$/m)) fail('Missing wesley.holmes-policy.local.json in .gitignore');
   if (!gi.match(/^out\//m)) fail('Missing out/ in .gitignore (covers generated outputs)');
   if (!gi.match(/^test\/fixtures\/examples\/out\//m)) fail('Missing test/fixtures/examples/out/ in .gitignore');
   if (!gi.match(/^test\/fixtures\/blade\/out\//m)) fail('Missing test/fixtures/blade/out/ in .gitignore');

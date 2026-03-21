@@ -55,7 +55,7 @@ Current rule
 Runtime storage
 
 ```text
-.wesley/counterfactual/
+.wesley-cache/counterfactual/
   current.json
   <laneFingerprint>/
     summary.json

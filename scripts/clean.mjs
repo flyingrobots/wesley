@@ -3,11 +3,13 @@ import { rm, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 
 const directories = [
+  '.wesley-cache',
   '.wesley',
   'out',
   'coverage',
   'dist',
   'tests/generated',
+  'test/fixtures/examples/.wesley-cache',
   'test/fixtures/examples/.wesley',
   'test/fixtures/examples/out',
   'test/fixtures/blade/out'

@@ -1,13 +1,14 @@
 node_modules/
 pnpm-lock.yaml
-.wesley/
-test/fixtures/examples/.wesley/
+.wesley-cache/
+test/fixtures/examples/.wesley-cache/
 dist/
 *.log
 coverage/
 .DS_Store
 .env
 .env.local
+wesley.holmes-policy.local.json
 .vscode/
 .idea/
 *.swp

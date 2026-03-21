@@ -57,7 +57,7 @@ wesley blade --schema test/fixtures/blade/schema-v2.graphql \
 
 ## What to watch
 - Plan explains: CREATE INDEX CONCURRENTLY; FK NOT VALID → VALIDATE.
-- Rehearsal verdict: PASS with timings in `.wesley/realm.json`.
+- Rehearsal verdict: PASS with timings in `.wesley-cache/realm.json`.
 - SHIPME.md: human header + canonical JSON + optional signatures.
 - Badge: printed line with status and sha.
 

@@ -68,10 +68,10 @@ Suggestions to enhance the show:
 
 ## Evidence + Certificate
 
-- `wesley cert-create` renders `.wesley/SHIPME.md` with a canonical JSON block
-- `wesley blade --counterfactual [baseRef]` writes counterfactual artifacts under `.wesley/counterfactual/`
-- `wesley cert-sign` adds signatures (e.g., HOLMES) to `.wesley/SHIPME.md`
-- `wesley cert-verify` prints a badge from `.wesley/SHIPME.md`: `[REALM] PASS — sha abc1234`
+- `wesley cert-create` renders `.wesley-cache/SHIPME.md` with a canonical JSON block
+- `wesley blade --counterfactual [baseRef]` writes counterfactual artifacts under `.wesley-cache/counterfactual/`
+- `wesley cert-sign` adds signatures (e.g., HOLMES) to `.wesley-cache/SHIPME.md`
+- `wesley cert-verify` prints a badge from `.wesley-cache/SHIPME.md`: `[REALM] PASS — sha abc1234`
 - In hard-gate mode, BLADE blocks only when the embedded `judgment.gate` says `fail`
 
 ## FAQ

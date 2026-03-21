@@ -2,9 +2,9 @@ name: Setup HOLMES Environment
 description: Install dependencies, restore Moriarty history, download bundle, regenerate if missing.
 inputs:
   bundle-dir:
-    description: Path to the .wesley bundle directory
+    description: Path to the generated HOLMES bundle directory
     required: false
-    default: test/fixtures/examples/.wesley
+    default: test/fixtures/examples/.wesley-cache
   schema:
     description: Path to the schema SDL used for generation
     required: false

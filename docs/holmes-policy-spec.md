@@ -7,8 +7,8 @@ Purpose
 - Separate substrate facts from Wesley judgment.
 
 Files
-- `.wesley/holmes-policy.json` — checked in, reviewed in PRs
-- `.wesley/holmes-policy.local.json` — optional developer override, gitignored
+- `wesley.holmes-policy.json` — checked in, reviewed in PRs
+- `wesley.holmes-policy.local.json` — optional developer override, gitignored
 
 CLI
 - `holmes predict --counterfactual [baseRef]`
@@ -102,7 +102,7 @@ The important rule is simple:
 Counterfactual artifacts live under:
 
 ```text
-.wesley/counterfactual/
+.wesley-cache/counterfactual/
   current.json
   <laneFingerprint>/
     summary.json

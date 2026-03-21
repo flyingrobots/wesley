@@ -25,7 +25,7 @@ graph TB
     subgraph "Evidence System"
         EvidenceMap[Evidence Map]
         Scores[SCS/MRI/TCI]
-        Bundle[.wesley/bundle]
+        Bundle[.wesley-cache/bundle]
     end
     
     subgraph "SHA-lock HOLMES"
@@ -95,7 +95,7 @@ type User @table @critical {
 
 ## The Evidence Map
 
-Every `wesley generate` now produces `.wesley/evidence-map.json`:
+Every `wesley generate` now produces generated evidence artifacts under `.wesley-cache/`:
 
 ```json
 {
@@ -212,10 +212,10 @@ TCI = 0.83 (83%)
 
 ## The Truth Bundle
 
-Every `wesley generate` creates `.wesley/` bundle:
+Every `wesley generate` creates a `.wesley-cache/` bundle:
 
 ```
-.wesley/
+.wesley-cache/
 ├── schema.ast.json       # Normalized AST (sorted)
 ├── schema.ir.json        # Wesley domain IR
 ├── artifacts.json        # {artifact: [files]} with hashes
@@ -379,12 +379,12 @@ These files live under the HOLMES workflow artifacts (flat files, no subdirector
 
 ## History Hydration & Caching
 
-- Each `wesley generate --emit-bundle` appends a point to `.wesley/history.json` (day, timestamp, SCS/TCI/MRI).
-- When MORIARTY runs in CI, the CLI merges local history, the merge-base snapshot (`git show <merge-base>:.wesley/history.json`), and a GitHub Actions cache keyed by commit SHA (with branch/base fallbacks). This gives predictions continuity across branch reruns.
+- Each `wesley generate --emit-bundle` appends a point to `.wesley-cache/history.json` (day, timestamp, SCS/TCI/MRI).
+- When MORIARTY runs in CI, the CLI merges local history, the merge-base snapshot (`git show <merge-base>:.wesley-cache/history.json`), and a GitHub Actions cache keyed by commit SHA (with branch/base fallbacks). This gives predictions continuity across branch reruns.
 
 ## Customising Weighting
 
-HOLMES now loads weights from `.wesley/weights.json`. Use the following structure (all numeric weights):
+HOLMES now loads weights from `wesley.weights.json`. Use the following structure (all numeric weights):
 
 ```json
 {
