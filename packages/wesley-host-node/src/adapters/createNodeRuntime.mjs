@@ -8,11 +8,10 @@ import * as _fs from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import pino from 'pino';
-import { GitWarpEventStore } from '@wesley/runtime-node';
+import { GitWarpEventStore, GraphQLAdapter } from '@wesley/runtime-node';
 import { NodeFileSystem } from './NodeFileSystem.mjs';
 import { ConfigLoader } from './ConfigLoader.mjs';
 import { DbAdapter } from './DbAdapter.mjs';
-import { GraphQLAdapter } from './GraphQLAdapter.mjs';
 import { nodeCrypto } from './NodeCrypto.mjs';
 
 // Stub generators for fallback when packages are broken

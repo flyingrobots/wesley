@@ -48,6 +48,7 @@ export * from './application/UseCases.mjs';
 export { GenerationPipeline } from './application/GenerationPipeline.mjs';
 export { irToSchema } from './application/irToSchema.mjs';
 export { EvidenceMap } from './application/EvidenceMap.mjs';
+export { buildAdditivePlan, explainPlan, lockFor, emitMigrations } from './application/MigrationPlan.mjs';
 export { MemoryEventStore } from './application/MemoryEventStore.mjs';
 export { createRuntimeEventCollector, createRuntimeStreamId, RUNTIME_EVENT_SCHEMA_VERSION } from './application/RuntimeEvents.mjs';
 export { buildRuntimeRunReport, applyRuntimeEvent } from './application/RuntimeRunReport.mjs';

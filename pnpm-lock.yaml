@@ -246,6 +246,12 @@ importers:
       '@wesley/core':
         specifier: workspace:*
         version: link:../wesley-core
+      '@wesley/generator-supabase':
+        specifier: workspace:*
+        version: link:../wesley-generator-supabase
+      graphql:
+        specifier: ^16.9.0
+        version: 16.11.0
 
   packages/wesley-scaffold-multitenant:
     dependencies:

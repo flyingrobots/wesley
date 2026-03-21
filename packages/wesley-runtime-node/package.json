@@ -14,7 +14,9 @@
     "test": "node --test"
   },
   "dependencies": {
-    "@wesley/core": "workspace:*"
+    "@wesley/core": "workspace:*",
+    "@wesley/generator-supabase": "workspace:*",
+    "graphql": "^16.9.0"
   },
   "engines": {
     "node": ">=22.0.0"

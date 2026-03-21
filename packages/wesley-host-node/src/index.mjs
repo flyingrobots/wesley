@@ -9,14 +9,14 @@ export { ConsoleLogger } from './adapters/console-compat-logger.mjs';
 
 // Export other adapters
 export { EventBus } from './adapters/EventBus.mjs';
-export { GraphQLAdapter } from './adapters/GraphQLAdapter.mjs';
+export { GraphQLAdapter } from '@wesley/runtime-node';
 export { NodeFileSystem } from './adapters/NodeFileSystem.mjs';
 export { PgParserAdapter } from './adapters/PgParserAdapter.mjs';
 export { PostgreSQLAdapter } from './adapters/PostgreSQLAdapter.mjs';
 export { WesleyFileWriter } from './adapters/WesleyFileWriter.mjs';
 
 // Import GraphQLAdapter for use in GraphQLSchemaParser
-import { GraphQLAdapter } from './adapters/GraphQLAdapter.mjs';
+import { GraphQLAdapter } from '@wesley/runtime-node';
 
 // Re-export generators from proper packages
 // TODO: Fix missing dependencies in generator packages
@@ -121,4 +121,3 @@ export class GraphQLSchemaParser {
     return new Schema(tables);
   }
 }
-
