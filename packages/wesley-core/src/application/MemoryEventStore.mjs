@@ -1,9 +1,11 @@
 import { EventStorePort } from '../ports/EventStore.mjs';
+import { buildRuntimeRunSnapshot } from './RuntimeRunSnapshot.mjs';
 
 export class MemoryEventStore extends EventStorePort {
   constructor() {
     super();
     this._streams = new Map();
+    this._snapshots = new Map();
   }
 
   append(event) {
@@ -26,6 +28,9 @@ export class MemoryEventStore extends EventStorePort {
     } else {
       this._streams.set(streamId, [event]);
     }
+    if (isTerminalRuntimeEvent(event.type)) {
+      this.writeSnapshot(streamId, buildRuntimeRunSnapshot(this.readStream(streamId)));
+    }
     return event;
   }
 
@@ -39,6 +44,29 @@ export class MemoryEventStore extends EventStorePort {
   listStreams() {
     return [...this._streams.keys()];
   }
+
+  readStreamSince(streamId, afterSequence = 0) {
+    return this.readStream(streamId).filter(event => {
+      return Number.isInteger(event?.sequence) ? event.sequence > afterSequence : true;
+    });
+  }
+
+  readSnapshot(streamId) {
+    if (typeof streamId !== 'string' || !streamId.trim()) {
+      throw new TypeError('MemoryEventStore.readSnapshot() requires a non-empty streamId');
+    }
+    const snapshot = this._snapshots.get(streamId);
+    return snapshot ? cloneSnapshot(snapshot) : null;
+  }
+
+  writeSnapshot(streamId, snapshot) {
+    if (typeof streamId !== 'string' || !streamId.trim()) {
+      throw new TypeError('MemoryEventStore.writeSnapshot() requires a non-empty streamId');
+    }
+    const cloned = cloneSnapshot(snapshot);
+    this._snapshots.set(streamId, cloned);
+    return cloneSnapshot(cloned);
+  }
 }
 
 function findExistingByIdempotencyKey(stream, idempotencyKey) {
@@ -49,4 +77,12 @@ function findExistingByIdempotencyKey(stream, idempotencyKey) {
     return null;
   }
   return stream.find(entry => entry?.idempotencyKey === idempotencyKey) || null;
+}
+
+function isTerminalRuntimeEvent(type) {
+  return type === 'RunCompleted' || type === 'RunFailed' || type === 'RunCancelled';
+}
+
+function cloneSnapshot(snapshot) {
+  return snapshot ? JSON.parse(JSON.stringify(snapshot)) : snapshot;
 }

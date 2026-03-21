@@ -24,6 +24,40 @@ export class EventStorePort {
   readStream(_streamId) {
     throw new Error('EventStorePort.readStream() must be implemented');
   }
+
+  /**
+   * Read one event stream after a specific sequence number.
+   * Default implementation derives from readStream().
+   * @param {string} streamId
+   * @param {number} afterSequence
+   * @returns {object[]}
+   */
+  readStreamSince(streamId, afterSequence = 0) {
+    return this.readStream(streamId).filter(event => {
+      return Number.isInteger(event?.sequence) ? event.sequence > afterSequence : true;
+    });
+  }
+
+  /**
+   * Read a cached snapshot for a stream, if available.
+   * Snapshots are disposable caches and may be missing.
+   * @param {string} _streamId
+   * @returns {object|null}
+   */
+  readSnapshot(_streamId) {
+    return null;
+  }
+
+  /**
+   * Persist a cached snapshot for a stream.
+   * Default implementation is a no-op.
+   * @param {string} _streamId
+   * @param {object} snapshot
+   * @returns {object}
+   */
+  writeSnapshot(_streamId, snapshot) {
+    return snapshot;
+  }
 }
 
 export function assertEventStorePort(store) {

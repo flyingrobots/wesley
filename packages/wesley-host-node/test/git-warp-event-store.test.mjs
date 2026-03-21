@@ -29,3 +29,49 @@ test('GitWarpEventStore appends and reads a stream', async () => {
     await rm(tempDir, { recursive: true, force: true });
   }
 });
+
+test('GitWarpEventStore persists terminal snapshots and can read stream tails', async () => {
+  const tempDir = await mkdtemp(path.join(os.tmpdir(), 'wesley-ledger-'));
+  try {
+    const store = new GitWarpEventStore({
+      rootDir: path.join(tempDir, '.wesley/ledger')
+    });
+    const streamId = 'transmutation:legacy-supabase:run-ledger-002';
+
+    store.append({
+      streamId,
+      sequence: 1,
+      runId: 'run-ledger-002',
+      transmutation: 'legacy-supabase',
+      type: 'RunRequested',
+      timestamp: '2026-03-20T06:00:00.000Z',
+      payload: { command: 'transform' }
+    });
+    store.append({
+      streamId,
+      sequence: 2,
+      runId: 'run-ledger-002',
+      transmutation: 'legacy-supabase',
+      type: 'ArtifactsMaterialized',
+      timestamp: '2026-03-20T06:00:01.000Z',
+      payload: { artifactCount: 1 }
+    });
+    store.append({
+      streamId,
+      sequence: 3,
+      runId: 'run-ledger-002',
+      transmutation: 'legacy-supabase',
+      type: 'RunCompleted',
+      timestamp: '2026-03-20T06:00:02.000Z',
+      payload: { command: 'transform' }
+    });
+
+    const snapshot = store.readSnapshot(streamId);
+    assert.ok(snapshot);
+    assert.equal(snapshot.lastSequence, 3);
+    assert.equal(snapshot.run.status, 'completed');
+    assert.deepEqual(store.readStreamSince(streamId, 3), []);
+  } finally {
+    await rm(tempDir, { recursive: true, force: true });
+  }
+});

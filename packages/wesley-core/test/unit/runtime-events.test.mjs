@@ -90,3 +90,24 @@ test('createRuntimeEventCollector injects a crash after a configured event count
     ['RunRequested', 'SourcesResolved']
   );
 });
+
+test('createRuntimeEventCollector persists a terminal snapshot in the backing event store', () => {
+  const eventStore = new MemoryEventStore();
+  const collector = createRuntimeEventCollector({
+    clock: fakeClock,
+    runId: 'run-store-004',
+    transmutation: 'legacy-supabase',
+    eventStore
+  });
+
+  collector.emit('RunRequested', { command: 'transform' });
+  collector.emit('ArtifactsMaterialized', { artifactCount: 2 });
+  collector.emit('RunCompleted', { command: 'transform' });
+
+  const snapshot = eventStore.readSnapshot(collector.streamId);
+  assert.ok(snapshot);
+  assert.equal(snapshot.runId, 'run-store-004');
+  assert.equal(snapshot.lastSequence, 3);
+  assert.equal(snapshot.run.status, 'completed');
+  assert.equal(snapshot.run.artifactCount, 2);
+});
