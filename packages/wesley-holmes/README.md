@@ -5,13 +5,15 @@ Implements SHA-lock investigative tooling for Wesley deployments.
 - **Holmes** – Inspects evidence bundles, computes scores, and produces machine-readable + markdown reports.
 - **Watson** – Verifies evidence maps against expectations and surfaces human-friendly commentary.
 - **Moriarty** – Generates predictions using historical deployment data.
-- **CLI** – `packages/wesley-holmes/src/cli.mjs` exposes `investigate`, `verify`, and `predict` commands used in CI.
+- **Entry points** – `holmes` remains the multi-tool CLI, while `moriarty` is a dedicated prediction entry point.
+- **Runtime binding** – HOLMES/Moriarty read the Wesley run ledger directly through shared core use cases plus the shared Node runtime adapter package. They do not shell out to the `wesley` executable for run inspection anymore.
 
 ## Usage
 
 ```bash
 pnpm --filter @wesley/holmes test           # Run the full HOLMES suite
 pnpm --filter @wesley/holmes exec node src/cli.mjs investigate --help
+pnpm --filter @wesley/holmes exec node src/moriarty-cli.mjs --help
 ```
 
 Artifacts are persisted under `.wesley/` (e.g., `scores.json`, markdown reports) and consumed by the CI workflows.

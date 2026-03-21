@@ -39,6 +39,16 @@ Current implementation
 - package: `packages/wesley-holmes`
 - policy loader: `src/counterfactual/policy.mjs`
 - provider: `src/counterfactual/provider.mjs`
+- runtime run lookup: shared `@wesley/core` run-store use cases plus the shared `@wesley/runtime-node` ledger adapter
+
+Entrypoints
+- `wesley`
+- `holmes`
+- `moriarty`
+
+Current rule
+- these remain independent entry points
+- Holmes/Moriarty may consume Wesley artifacts and the shared run ledger, but they must not shell out to the `wesley` CLI just to inspect persisted run state
 
 Runtime storage
 
