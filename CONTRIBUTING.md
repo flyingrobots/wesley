@@ -197,5 +197,5 @@ questions (conduct or security), email `oss@flyingrobots.dev`
 - CI: A `Preflight` workflow runs on PRs and main pushes and should pass before merging.
 
 ### Node / Runtimes
-- Recommended Node: 20 LTS (CI uses Node 20).
+- Recommended Node: 22 LTS (CI uses Node 22).
 - macOS runners are removed from CI to control cost; Linux environments are primary.

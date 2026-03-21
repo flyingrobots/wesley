@@ -19,6 +19,6 @@
   },
   "author": "Wesley Authors <oss@flyingrobots.dev>",
   "engines": {
-    "node": ">=18.17"
+    "node": ">=22.0.0"
   }
 }

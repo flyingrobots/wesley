@@ -41,6 +41,6 @@
     "url": "https://github.com/flyingrobots/wesley/issues"
   },
   "engines": {
-    "node": ">=18.17"
+    "node": ">=22.0.0"
   }
 }

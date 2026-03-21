@@ -35,7 +35,7 @@ Wesley CLI uses two GitHub Actions workflows for comprehensive testing:
 
 **Matrix Coverage**:
 - **OS**: Ubuntu Latest
-- **Node.js**: 18.x, 20.x, 22.x
+- **Node.js**: 22.x
 - **Total**: 3 combinations
 
 **Features**:

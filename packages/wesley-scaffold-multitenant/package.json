@@ -39,6 +39,6 @@
   },
   "homepage": "https://github.com/flyingrobots/wesley/tree/main/packages/wesley-scaffold-multitenant#readme",
   "engines": {
-    "node": ">=18.17"
+    "node": ">=22.0.0"
   }
 }

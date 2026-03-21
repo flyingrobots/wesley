@@ -529,7 +529,7 @@ WESLEY_TEST_DSN=postgresql://...
 
 ## Compatibility
 
-- **Node.js**: 18.x, 20.x, 22.x (CI uses Node 20 LTS)
+- **Node.js**: 22.x (CI uses Node 22)
 - **Package manager**: pnpm 9 (workspace pinned)
 - **CI runners**: Ubuntu (macOS removed to control costs)
 - **Development**: Works on macOS/Windows, but CI targets Ubuntu

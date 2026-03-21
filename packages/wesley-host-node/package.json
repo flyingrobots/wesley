@@ -30,7 +30,7 @@
     "pino": "^10.1.0"
   },
   "engines": {
-    "node": ">=18.17"
+    "node": ">=22.0.0"
   },
   "keywords": [
     "graphql",

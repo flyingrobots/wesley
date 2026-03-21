@@ -27,7 +27,7 @@ flowchart LR
 ```
 
 ## Technology Decisions (MVP)
-- Node 18+, pnpm; pino logger
+- Node 22+, pnpm; pino logger
 - graphql-js in GraphQLAdapter; ajv for schema validation
 - pgTAP for DB tests; Postgres for rehearsal
 
@@ -42,4 +42,3 @@ flowchart LR
 ## ADRs (Pointers)
 - ADR-0001: GraphQL as single source of truth
 - ADR-0002: Additive-only diffs for MVP
-

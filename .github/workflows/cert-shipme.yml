@@ -44,7 +44,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
       - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f
-        with: { node-version: 20, cache: 'pnpm' }
+        with: { node-version: 22, cache: 'pnpm' }
       - run: pnpm install --no-frozen-lockfile
 
       - name: Transform

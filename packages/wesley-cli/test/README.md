@@ -23,7 +23,7 @@ pnpm test:tap
 pnpm run setup:bats-plugins
 ```
 
-To avoid polluting your host environment, you can also launch the repo’s dev container (`.devcontainer/`) which boots with Node 20, pnpm, bats, jq, and the plugins preinstalled.
+To avoid polluting your host environment, you can also launch the repo’s dev container (`.devcontainer/`) which boots with Node 22, pnpm, bats, jq, and the plugins preinstalled.
 
 ## Test Structure
 

@@ -12,7 +12,7 @@ import { validatePlugin } from '@wesley/core/ports';
 // ── Check 1: Node.js version ───────────────────────────────────────
 
 /**
- * Verify Node.js version meets >=18.17.
+ * Verify Node.js version meets >=22.0.0.
  * @param {string} versionString - e.g. "v22.1.0"
  * @returns {{ name: string, status: string, message: string }}
  */
@@ -23,13 +23,13 @@ export function checkNodeVersion(versionString) {
   }
   const major = Number(match[1]);
   const minor = Number(match[2]);
-  const ok = major > 18 || (major === 18 && minor >= 17);
+  const ok = major > 22 || (major === 22 && minor >= 0);
   return {
     name: 'Node.js',
     status: ok ? 'pass' : 'fail',
     message: ok
-      ? `Node.js ${versionString} (>=18.17)`
-      : `Node.js ${versionString} does not meet >=18.17`
+      ? `Node.js ${versionString} (>=22.0.0)`
+      : `Node.js ${versionString} does not meet >=22.0.0`
   };
 }
 

@@ -20,13 +20,13 @@ test('checkNodeVersion passes for v22.1.0', () => {
   assert.match(r.message, /Node\.js v22\.1\.0/);
 });
 
-test('checkNodeVersion passes for v18.17.0', () => {
-  const r = checkNodeVersion('v18.17.0');
+test('checkNodeVersion passes for v22.0.0', () => {
+  const r = checkNodeVersion('v22.0.0');
   assert.equal(r.status, 'pass');
 });
 
-test('checkNodeVersion passes for v20.0.0', () => {
-  const r = checkNodeVersion('v20.0.0');
+test('checkNodeVersion passes for v25.0.0', () => {
+  const r = checkNodeVersion('v25.0.0');
   assert.equal(r.status, 'pass');
 });
 
@@ -36,8 +36,8 @@ test('checkNodeVersion fails for v16.20.0', () => {
   assert.match(r.message, /does not meet/);
 });
 
-test('checkNodeVersion fails for v18.16.0', () => {
-  const r = checkNodeVersion('v18.16.0');
+test('checkNodeVersion fails for v21.9.0', () => {
+  const r = checkNodeVersion('v21.9.0');
   assert.equal(r.status, 'fail');
 });
 

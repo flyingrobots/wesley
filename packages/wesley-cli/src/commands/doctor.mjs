@@ -2,7 +2,7 @@
  * Doctor Command - Diagnose Wesley installation health
  *
  * Checks:
- *  1. Node.js version >= 18.17
+ *  1. Node.js version >= 22.0.0
  *  2. wesley.config.mjs present and parseable
  *  3. Declared generator packages resolve
  *  4. Resolved plugins export valid GeneratorPlugin with supported apiVersion
@@ -63,4 +63,3 @@ export class DoctorCommand extends WesleyCommand {
     throw new Error('DoctorCommand.execute is overridden; executeCore should not be called');
   }
 }
-
