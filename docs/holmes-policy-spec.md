@@ -109,6 +109,8 @@ Counterfactual artifacts live under:
     comparison.<factDigest>.json
     transfer.<factDigest>.json
   store/
+    lease.json
+    surfaces/*.json
 ```
 
 Rules
@@ -116,6 +118,7 @@ Rules
 - `transfer.<factDigest>.json` contains the exact canonical fact bytes from git-warp export.
 - `summary.json` carries digests, resolved refs, versions, and Wesley judgment.
 - `current.json` points to the latest lane summary for downstream consumers like `cert-create`.
+- `store/lease.json` expires provider-owned git-warp cache state, and expired lane summaries are pruned on the next analysis pass.
 
 ## Defaults
 

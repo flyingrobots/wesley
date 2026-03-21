@@ -63,9 +63,12 @@ Runtime storage
     comparison.<factDigest>.json
     transfer.<factDigest>.json
   store/
+    lease.json
+    surfaces/*.json
 ```
 
 The `store/` subtree is a Holmes counterfactual cache. It is not part of the Wesley run ledger.
+`lease.json` governs store expiry, and stale lane summaries plus expired store state are pruned on the next counterfactual analysis run.
 
 ## Surface Encoding
 
