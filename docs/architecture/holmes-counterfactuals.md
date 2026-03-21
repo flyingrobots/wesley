@@ -140,8 +140,11 @@ Current signals
 Moriarty
 - `holmes predict --counterfactual [baseRef]`
 - `holmes report --counterfactual [baseRef]`
+- `holmes predict --run-id <id> [--transmutation <name>]`
+- `holmes report --run-id <id> [--transmutation <name>]`
 - Deprecated alias: `--project-merge`
 - Report output:
+  - `runtime`
   - `counterfactual`
   - temporary compatibility `projection`
 

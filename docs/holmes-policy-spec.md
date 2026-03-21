@@ -139,8 +139,10 @@ Runtime defaults if no policy file exists:
 
 Implemented now
 - Holmes/Moriarty `--counterfactual`
+- Holmes/Moriarty `--run-id` and `--transmutation` for persisted run binding
 - Deprecated `--project-merge` alias
 - git-warp provider and canonical fact persistence
+- Moriarty report `runtime` block sourced from the run ledger
 - Moriarty report `counterfactual` block plus compatibility `projection` alias
 - BLADE counterfactual stage
 - SHIPME embedding of compact counterfactual summary
