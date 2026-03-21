@@ -17,4 +17,3 @@ Usage
 - Save it as `.wesley/holmes-policy.json` in your repo root.
 - Optional: add `.wesley/holmes-policy.local.json` (gitignored) for per‑developer overrides.
 - `holmes predict --counterfactual` and `holmes report --counterfactual` consume these files now.
-- `--project-merge` is deprecated and routes through the same counterfactual provider.

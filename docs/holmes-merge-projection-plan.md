@@ -10,6 +10,5 @@ Use these documents instead:
 - `docs/holmes-policy-spec.md`
 
 Compatibility note
-- The CLI still accepts `--project-merge` for a short deprecation window.
-- That flag no longer runs the old projection code path.
-- It routes through the counterfactual provider and emits a deprecation warning.
+- The old `--project-merge` flag has been removed.
+- Legacy merge-tree/worktree projection logic remains only in tests as a regression harness.

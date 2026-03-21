@@ -13,11 +13,8 @@ Files
 CLI
 - `holmes predict --counterfactual [baseRef]`
 - `holmes report --counterfactual [baseRef]`
-- `holmes predict --project-merge [baseRef]`
-- `holmes report --project-merge [baseRef]`
 
 Notes
-- `--project-merge` is a deprecated alias. It now routes through the counterfactual provider and emits a warning.
 - Policy v1 is still read, but it is upcast into the v2 counterfactual shape at runtime. New policy files should use v2 directly.
 
 ## JSON Shape
@@ -140,7 +137,6 @@ Runtime defaults if no policy file exists:
 Implemented now
 - Holmes/Moriarty `--counterfactual`
 - Holmes/Moriarty `--run-id` and `--transmutation` for persisted run binding
-- Deprecated `--project-merge` alias
 - git-warp provider and canonical fact persistence
 - Moriarty report `runtime` block sourced from the run ledger
 - Moriarty report `counterfactual` block

@@ -12,7 +12,6 @@ Quick start
 - Copy a template to `.wesley/holmes-policy.json` at your repo root and tweak as needed.
 - Optional developer overrides go in `.wesley/holmes-policy.local.json` (gitignored).
 - Run `holmes predict --counterfactual` (or `report`) to see counterfactual results.
-- `--project-merge` still works for a short deprecation window, but it is now an alias to the counterfactual path.
 
 Notes
 - Policies are JSON only (no code execution) and validated at runtime.
