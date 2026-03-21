@@ -1,105 +1,161 @@
-# HOLMES/Moriarty Policy Spec (v1)
+# HOLMES/Moriarty Counterfactual Policy Spec (v2)
+<!-- docs-truth: status=current owner=@flyingrobots -->
 
 Purpose
-- Make projected-merge intelligence host‑agnostic and configurable without code changes.
-- Let teams teach HOLMES/Moriarty their workflow (when to project, what base to use, and how projection affects readiness).
-
-What This Controls
-- Whether to run merge projection (auto | on | off | pseudo)
-- How to select the base ref (CI env, default branch, literal ref)
-- Penalties and readiness impact when we cannot produce a clean projection
-- Optional strict trunk policies (pseudo projection on default branch)
+- Configure git-warp-backed counterfactual analysis without changing code.
+- Keep the policy surface small and reviewed in-repo.
+- Separate substrate facts from Wesley judgment.
 
 Files
-- `.wesley/holmes-policy.json` (checked in; reviewed in PRs)
-- `.wesley/holmes-policy.local.json` (developer overrides; gitignored)
+- `.wesley/holmes-policy.json` — checked in, reviewed in PRs
+- `.wesley/holmes-policy.local.json` — optional developer override, gitignored
 
-CLI / Env
-- Flags
-  - `--project-merge=auto|on|off|pseudo` (default: auto)
-  - `--base-ref <ref>` (literal override)
-  - `--policy <path>` (optional; otherwise autodetected)
-- Env
-  - `MORIARTY_PROJECT_MERGE_MODE=auto|on|off|pseudo`
-  - `MORIARTY_BASE_REF=<ref>`
-  - `MORIARTY_POLICY_FILE=<path>`
+CLI
+- `holmes predict --counterfactual [baseRef]`
+- `holmes report --counterfactual [baseRef]`
+- `holmes predict --project-merge [baseRef]`
+- `holmes report --project-merge [baseRef]`
 
-JSON Schema (v1)
-- Top-level
-  - `version` (number, required; current: 1)
-  - `defaults` (object)
-  - `rules` (array; first match wins)
-- defaults
-  - `mode`: "auto" | "on" | "off" | "pseudo" (default: "auto")
-  - `assumeDefaultBranch`: string (default: "main")
-  - `penalties`: { `projectionError`: number, `projectionConflicts`: number } (default 50/30)
-  - `fetchBase`: boolean (default true) – allow `git fetch` of base
-  - `useProviderAPI`: boolean (default false) – allow host API lookup if token present
-  - `pseudoAgainst`: string (default "HEAD~1") – used when `mode=pseudo`
-- rules[] (first match wins)
-  - when
-    - `event`: "pull_request" | "push" | "manual" | "ci" | "local"
-    - `provider`: "github" | "gitlab" | "bitbucket" | "azure" | "gitea" | "unknown"
-    - `branchEquals`: string
-    - `branchMatches`: string | string[] (gitignore‑style; supports !negation)
-    - `env`: object map of NAME → "exact" or "/regex/"
-    - `fileExists`: string | string[] (relative paths)
-  - then
-    - `mode`: "auto" | "on" | "off" | "pseudo"
-    - `baseFrom`: "ci_env" | "default_branch" | "open_pr_base_or_default" | "literal"
-    - `baseRef`: string (used when `baseFrom="literal"`)
-    - `penalties`: { `projectionError`?: number, `projectionConflicts`?: number }
-    - `enforceOnDefault`: boolean
-    - `pseudoAgainst`: string
-    - `readinessImpact`: { `confidencePenalty`?: number, `confidenceMin`?: number, `gateFail`?: boolean }
-    - `notes`: string
+Notes
+- `--project-merge` is a deprecated alias. It now routes through the counterfactual provider and emits a warning.
+- Policy v1 is still read, but it is upcast into the v2 counterfactual shape at runtime. New policy files should use v2 directly.
 
-Auto Mode (Host‑Agnostic)
-- Context detection (no network required):
-  - provider: inferred from CI env presence (github, gitlab, bitbucket, azure, gitea) else "unknown"
-  - event: pull_request if a known PR env var exists; push if push; local otherwise
-  - branch: `git rev-parse --abbrev-ref HEAD`
-  - defaultBranch: `git symbolic-ref refs/remotes/origin/HEAD` → `origin/main`; fallback = `defaults.assumeDefaultBranch`
-- Decision (defaults):
-  - On PR: `mode=on`, `baseRef` from CI env
-  - On non‑default branch w/o PR: `mode=on`, `baseRef=defaultBranch`
-  - On default branch: `mode=off` (n/a) unless policy sets `pseudo`
+## JSON Shape
 
-CI Env → baseRef mapping (read only)
-- GitHub: `GITHUB_BASE_REF`
-- GitLab: `CI_MERGE_REQUEST_TARGET_BRANCH_NAME`
-- Bitbucket: `BITBUCKET_PR_DESTINATION_BRANCH`
-- Azure DevOps: `SYSTEM_PULLREQUEST_TARGETBRANCH`
-- Gitea/Drone: `DRONE_TARGET_BRANCH`
-- Fallback: `MORIARTY_BASE_REF` or policy default
+```json
+{
+  "version": 2,
+  "counterfactual": {
+    "enabled": true,
+    "provider": "git-warp",
+    "baseRef": "main",
+    "headRef": "HEAD",
+    "braidRefs": [],
+    "scope": null,
+    "gateMode": "audit",
+    "penalties": {
+      "divergence": 10,
+      "destructiveTransfer": 30,
+      "providerUnavailable": 50
+    }
+  }
+}
+```
 
-Execution Semantics
-- If `mode` is `on` or `pseudo`:
-  - Try merge‑tree → fallback to worktree
-  - status=clean: record mergedTree; later phases compute `projection.scores` + `projection.delta`
-  - status=conflicts or error: apply penalties from policy (default: −30/−50), add `MERGE_PROJECTION_ISSUE` pattern
-- If `mode` is `off`:
-  - `projection.status = "n/a"` with reason; never penalize
+## Fields
 
-Readiness Impact (extensible)
-- Today: confidence penalties on non‑clean/projection failure
-- Optional (future): clamp `confidenceMin` and/or add a readiness gate `Projection Clean`
+Top level
+- `version`: number, required, currently `2`
+- `counterfactual`: object, required
 
-Developer UX
-- (Future) `holmes policy init` — scaffold a policy from templates
-- `holmes policy validate` — validate file against the JSON schema
-- `holmes policy explain` — print matched rule, decision (mode, baseRef), and reasons (env/branch)
+`counterfactual`
+- `enabled`: boolean
+  - Enables counterfactual analysis when the command is policy-driven rather than flag-driven.
+- `provider`: string
+  - Current value: `git-warp`
+- `baseRef`: string
+  - Base branch or ref to compare against.
+- `headRef`: string
+  - Defaults to `HEAD`.
+- `braidRefs`: string[]
+  - Optional overlay refs for braid lanes.
+- `scope`: object or `null`
+  - Internal visible-state scope passed through to git-warp normalization.
+- `gateMode`: `"off" | "audit" | "hard"`
+  - `off`: never block
+  - `audit`: record `wouldFail`, never block
+  - `hard`: fail when `judgment.gate === "fail"`
+- `penalties`
+  - `divergence`: number
+  - `destructiveTransfer`: number
+  - `providerUnavailable`: number
 
-Validation & Safety
-- Strict JSON validation; if invalid, fall back to defaults and record a diagnostic pattern
-- No code execution in policy files
-- No host API calls unless `useProviderAPI=true` and token present (never default)
+## Judgment Model
 
-Templates
-- Ready‑to‑use policy templates live under `docs/templates/holmes-policy/` for GitHub, GitLab, Bitbucket, Azure DevOps, Gitea, and trunk‑based flows. Copy the closest template to `.wesley/holmes-policy.json` and tweak as needed.
+git-warp produces substrate facts. Wesley derives judgment from those facts.
 
-Implementation Phases
-- A: Policy loader + auto mode + CLI wiring (no behavior change without policy or flag)
-- B: Materialize merged tree + generate projected bundle + compute `projection.scores` + `projection.delta`
-- C: Docs & templates (this doc); optional policy CLI helpers
+Counterfactual reports persist:
+- `facts.comparison`
+- `facts.transferPlan`
+- `facts.normalizedScope`
+- `judgment.status`
+- `judgment.signals[]`
+- `judgment.riskClass`
+- `judgment.confidenceAdjustment`
+- `judgment.gate`
+- `judgment.wouldFail`
+- `judgment.reasons[]`
 
+Gate states
+- `pass`
+- `audit`
+- `fail`
+
+Risk classes
+- `none`
+- `low`
+- `high`
+
+The important rule is simple:
+- BLADE and cert consumers must use `judgment.gate` as the only authority.
+- They must not re-derive gate semantics from raw substrate status.
+
+## Artifact Layout
+
+Counterfactual artifacts live under:
+
+```text
+.wesley/counterfactual/
+  current.json
+  <laneFingerprint>/
+    summary.json
+    comparison.<factDigest>.json
+    transfer.<factDigest>.json
+  store/
+```
+
+Rules
+- `comparison.<factDigest>.json` contains the exact canonical fact bytes from git-warp export.
+- `transfer.<factDigest>.json` contains the exact canonical fact bytes from git-warp export.
+- `summary.json` carries digests, resolved refs, versions, and Wesley judgment.
+- `current.json` points to the latest lane summary for downstream consumers like `cert-create`.
+
+## Defaults
+
+Runtime defaults if no policy file exists:
+- `enabled: false`
+- `provider: "git-warp"`
+- `baseRef: "main"`
+- `headRef: "HEAD"`
+- `braidRefs: []`
+- `scope: null`
+- `gateMode: "off"`
+- penalties:
+  - divergence: `10`
+  - destructiveTransfer: `30`
+  - providerUnavailable: `50`
+
+## Current Implementation
+
+Implemented now
+- Holmes/Moriarty `--counterfactual`
+- Deprecated `--project-merge` alias
+- git-warp provider and canonical fact persistence
+- Moriarty report `counterfactual` block plus compatibility `projection` alias
+- BLADE counterfactual stage
+- SHIPME embedding of compact counterfactual summary
+- BLADE hard/audit/off behavior via `judgment.gate`
+- `cert-verify` respects embedded `counterfactual.gate`
+
+Not yet implemented
+- user-facing scope controls
+- public braid CLI for HOLMES
+- provider-owned working-set lifecycle beyond the current coordinate-frontier path
+- removal of the compatibility `projection` alias
+
+## Sources
+
+- [git-warp v14.16.2 package.json](https://raw.githubusercontent.com/git-stunts/git-warp/v14.16.2/package.json)
+- [git-warp v14.16.2 index.d.ts](https://raw.githubusercontent.com/git-stunts/git-warp/v14.16.2/index.d.ts)
+- [git-warp v14.16.2 ARCHITECTURE.md](https://raw.githubusercontent.com/git-stunts/git-warp/v14.16.2/ARCHITECTURE.md)
+- [git-warp v14.16.2 WORKING_SETS.md](https://raw.githubusercontent.com/git-stunts/git-warp/v14.16.2/docs/WORKING_SETS.md)

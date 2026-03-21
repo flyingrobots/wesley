@@ -45,6 +45,36 @@
       "path": "docs/architecture/lifecycle.md",
       "status": "experimental",
       "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/architecture/holmes-counterfactuals.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/holmes-policy-spec.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/holmes-policy/README.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/templates/holmes-policy/README.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/holmes-merge-projection-plan.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/blade.md",
+      "status": "current",
+      "owner": "@flyingrobots"
     }
   ]
 }

@@ -1,4 +1,5 @@
 # BLADE — Daywalker Deploys
+<!-- docs-truth: status=current owner=@flyingrobots -->
 
 BLADE: Boring, Lock‑Aware, Audited Deployments, Effortless.
 
@@ -25,6 +26,7 @@ A memorable, end‑to‑end demo and storytelling wrapper for Wesley that dramat
 - Schema‑first workflow (GraphQL → SQL/DDL/migrations/tests)
 - Lock‑aware planning (expand/validate phases; CIC + NOT VALID)
 - Shadow rehearsal (REALM) with JSON verdict
+- Counterfactual lane analysis backed by git-warp
 - Evidence and certification (SHIPME.md + signatures + badge)
 
 ## One‑Shot Flow (CLI)
@@ -35,11 +37,12 @@ wesley blade \
   --out-dir out/blade \
   --docker \
   --env production \
+  --counterfactual main \
   [--sign-key holmes.key --pub holmes.pub --signer HOLMES]
 ```
 
 What happens under the hood:
-- transform → plan --explain → rehearse (shadow) → cert-create → [optional sign/verify] → badge
+- transform → plan --explain → rehearse (shadow) → counterfactual → cert-create → [optional sign/verify] → badge
 
 Wrapper command location:
 - `packages/wesley-cli/src/commands/blade.mjs`
@@ -66,8 +69,10 @@ Suggestions to enhance the show:
 ## Evidence + Certificate
 
 - `wesley cert-create` renders `.wesley/SHIPME.md` with a canonical JSON block
+- `wesley blade --counterfactual [baseRef]` writes counterfactual artifacts under `.wesley/counterfactual/`
 - `wesley cert-sign` adds signatures (e.g., HOLMES) to `.wesley/SHIPME.md`
 - `wesley cert-verify` prints a badge from `.wesley/SHIPME.md`: `[REALM] PASS — sha abc1234`
+- In hard-gate mode, BLADE blocks only when the embedded `judgment.gate` says `fail`
 
 ## FAQ
 
