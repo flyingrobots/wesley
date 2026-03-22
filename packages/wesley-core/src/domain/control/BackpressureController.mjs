@@ -7,6 +7,7 @@
  */
 
 import { EventEmitter } from '../../util/EventEmitter.mjs';
+import { systemClock } from '../../ports/clock.mjs';
 import { DomainEvent } from '../Events.mjs';
 import { WesleyError } from '../WesleyError.mjs';
 
@@ -91,6 +92,8 @@ export const CircuitBreakerState = {
 export class BackpressureController extends EventEmitter {
   constructor(options = {}) {
     super();
+    this.clock = options.clock ?? systemClock;
+    this.operationSequence = 0;
 
     // Configuration
     this.maxConcurrentOperations = options.maxConcurrentOperations || 50;
@@ -144,7 +147,7 @@ export class BackpressureController extends EventEmitter {
       queueDepth: 0,
       errorRate: 0,
       throughput: 0,
-      lastUpdateTime: Date.now(),
+      lastUpdateTime: this.clock.nowMs(),
       responseTimeHistory: [],
       errorHistory: [],
       throughputHistory: []
@@ -152,7 +155,7 @@ export class BackpressureController extends EventEmitter {
 
     // Rate limiting state
     this.rateLimitTokens = this.baseRateLimit;
-    this.rateLimitLastRefill = Date.now();
+    this.rateLimitLastRefill = this.clock.nowMs();
 
     // Periodic monitoring
     this.monitoringInterval = null;
@@ -169,7 +172,7 @@ export class BackpressureController extends EventEmitter {
       return;
     }
 
-    this.monitoringInterval = setInterval(() => {
+    this.monitoringInterval = this.clock.setInterval(() => {
       this.updateMetrics();
       this.evaluateBackpressure();
       this.adjustRateLimit();
@@ -182,7 +185,7 @@ export class BackpressureController extends EventEmitter {
    */
   stopMonitoring() {
     if (this.monitoringInterval) {
-      clearInterval(this.monitoringInterval);
+      this.clock.clearInterval(this.monitoringInterval);
       this.monitoringInterval = null;
     }
   }
@@ -280,7 +283,7 @@ export class BackpressureController extends EventEmitter {
    * @returns {Object} Circuit breaker result
    */
   checkCircuitBreaker() {
-    const now = Date.now();
+    const now = this.clock.nowMs();
 
     switch (this.circuitBreakerState) {
     case CircuitBreakerState.CLOSED:
@@ -355,7 +358,7 @@ export class BackpressureController extends EventEmitter {
   async enqueueOperation(operation) {
     const queuedOperation = {
       operation,
-      timestamp: Date.now(),
+      timestamp: this.clock.nowMs(),
       priority: operation.priority || 0,
       id: operation.id || this.generateOperationId()
     };
@@ -391,7 +394,7 @@ export class BackpressureController extends EventEmitter {
       this.activeOperations++;
       this.emit('queuedOperationProcessed', {
         operationId: queuedOp.id,
-        queueTime: Date.now() - queuedOp.timestamp
+        queueTime: this.clock.nowMs() - queuedOp.timestamp
       });
     }
   }
@@ -414,7 +417,7 @@ export class BackpressureController extends EventEmitter {
    */
   recordCircuitBreakerFailure() {
     this.circuitBreakerFailures++;
-    this.circuitBreakerLastFailureTime = Date.now();
+    this.circuitBreakerLastFailureTime = this.clock.nowMs();
 
     if (this.circuitBreakerState === CircuitBreakerState.HALF_OPEN) {
       this.transitionCircuitBreaker(CircuitBreakerState.OPEN, 'failure_in_half_open');
@@ -443,7 +446,7 @@ export class BackpressureController extends EventEmitter {
    */
   updateResponseTimeMetrics(responseTime) {
     this.metrics.responseTimeHistory.push({
-      time: Date.now(),
+      time: this.clock.nowMs(),
       value: responseTime
     });
 
@@ -466,12 +469,12 @@ export class BackpressureController extends EventEmitter {
       : 0;
 
     this.metrics.errorHistory.push({
-      time: Date.now(),
+      time: this.clock.nowMs(),
       rate: this.metrics.errorRate
     });
 
     // Keep only last hour of data
-    const oneHourAgo = Date.now() - 3600000;
+    const oneHourAgo = this.clock.nowMs() - 3600000;
     this.metrics.errorHistory = this.metrics.errorHistory.filter(entry => entry.time > oneHourAgo);
   }
 
@@ -479,7 +482,7 @@ export class BackpressureController extends EventEmitter {
    * Update system metrics
    */
   updateMetrics() {
-    const now = Date.now();
+    const now = this.clock.nowMs();
     const timeDiff = now - this.metrics.lastUpdateTime;
 
     // Calculate throughput (operations per second)
@@ -565,11 +568,11 @@ export class BackpressureController extends EventEmitter {
     this.backpressureLevel = maxLevel;
 
     if (!wasActive && this.isBackpressureActive) {
-      this.backpressureStartTime = Date.now();
+      this.backpressureStartTime = this.clock.nowMs();
       this.emit('backpressureActivated',
         new BackpressureActivated(maxLevel, triggeringConditions));
     } else if (wasActive && !this.isBackpressureActive) {
-      const duration = Date.now() - (this.backpressureStartTime || Date.now());
+      const duration = this.clock.nowMs() - (this.backpressureStartTime || this.clock.nowMs());
       this.backpressureStartTime = null;
       this.emit('backpressureDeactivated', new BackpressureDeactivated(duration));
     }
@@ -606,7 +609,7 @@ export class BackpressureController extends EventEmitter {
    * Refill rate limiting tokens
    */
   refillRateLimitTokens() {
-    const now = Date.now();
+    const now = this.clock.nowMs();
     const timeDiff = now - this.rateLimitLastRefill;
     const tokensToAdd = Math.floor((timeDiff / 1000) * this.currentRateLimit);
 
@@ -654,7 +657,7 @@ export class BackpressureController extends EventEmitter {
    * @returns {number} Delay in milliseconds
    */
   calculateConcurrencyDelay() {
-    const excessOperations = this.activeOperations - this.maxConcurrentOperations;
+    const excessOperations = Math.max(1, this.activeOperations - this.maxConcurrentOperations + 1);
     return Math.min(5000, excessOperations * 100); // 100ms per excess operation, max 5s
   }
 
@@ -674,7 +677,8 @@ export class BackpressureController extends EventEmitter {
    * @returns {string} Operation ID
    */
   generateOperationId() {
-    return `op_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    this.operationSequence += 1;
+    return `op_${this.clock.nowMs()}_${this.operationSequence}`;
   }
 
   /**
@@ -683,7 +687,7 @@ export class BackpressureController extends EventEmitter {
    * @returns {Promise} Promise that resolves after delay
    */
   sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return this.clock.sleep(ms);
   }
 
   /**
@@ -696,7 +700,7 @@ export class BackpressureController extends EventEmitter {
       backpressure: {
         active: this.isBackpressureActive,
         level: this.backpressureLevel,
-        duration: this.backpressureStartTime ? Date.now() - this.backpressureStartTime : 0
+        duration: this.backpressureStartTime ? this.clock.nowMs() - this.backpressureStartTime : 0
       },
       circuitBreaker: {
         state: this.circuitBreakerState,
@@ -744,7 +748,7 @@ export class BackpressureController extends EventEmitter {
       queueDepth: 0,
       errorRate: 0,
       throughput: 0,
-      lastUpdateTime: Date.now(),
+      lastUpdateTime: this.clock.nowMs(),
       responseTimeHistory: [],
       errorHistory: [],
       throughputHistory: []
@@ -752,7 +756,7 @@ export class BackpressureController extends EventEmitter {
 
     // Reset rate limiting
     this.rateLimitTokens = this.baseRateLimit;
-    this.rateLimitLastRefill = Date.now();
+    this.rateLimitLastRefill = this.clock.nowMs();
   }
 
   /**
@@ -763,9 +767,9 @@ export class BackpressureController extends EventEmitter {
 
     // Wait for active operations to complete (with timeout)
     const shutdownTimeout = 30000; // 30 seconds
-    const startTime = Date.now();
+    const startTime = this.clock.nowMs();
 
-    while (this.activeOperations > 0 && (Date.now() - startTime) < shutdownTimeout) {
+    while (this.activeOperations > 0 && (this.clock.nowMs() - startTime) < shutdownTimeout) {
       await this.sleep(100);
     }
 

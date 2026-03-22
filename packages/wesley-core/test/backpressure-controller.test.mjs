@@ -16,12 +16,27 @@ import {
   ThrottlingAdjusted,
   CircuitBreakerState
 } from '../src/domain/control/BackpressureController.mjs';
+import { FakeClock } from '../src/index.mjs';
 
-// Helper function to sleep
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+function createController(options = {}) {
+  const clock = options.clock ?? new FakeClock('2026-03-22T00:00:00.000Z');
+  const controller = new BackpressureController({
+    ...options,
+    clock
+  });
+  return { controller, clock };
+}
+
+async function shutdownController(controller, result = { success: true }) {
+  while (controller.activeOperations > 0) {
+    await controller.reportCompletion(result);
+  }
+
+  await controller.shutdown();
+}
 
 test('BackpressureController - basic functionality', async () => {
-  const controller = new BackpressureController({
+  const { controller } = createController({
     maxConcurrentOperations: 5,
     baseRateLimit: 10
   });
@@ -32,11 +47,11 @@ test('BackpressureController - basic functionality', async () => {
   assert.equal(status.rateLimit.base, 10, 'Should set base rate limit');
   assert.equal(status.circuitBreaker.state, CircuitBreakerState.CLOSED, 'Circuit breaker should start closed');
 
-  await controller.shutdown();
+  await shutdownController(controller);
 });
 
 test('BackpressureController - disabled mode', async () => {
-  const controller = new BackpressureController({ enable: false });
+  const { controller } = createController({ enable: false });
 
   const permission = await controller.requestPermission({ id: 'test-op' });
   assert.equal(permission.granted, true, 'Should grant permission when disabled');
@@ -45,11 +60,11 @@ test('BackpressureController - disabled mode', async () => {
   await controller.reportCompletion({ success: true });
   // Should not throw errors when disabled
 
-  await controller.shutdown();
+  await shutdownController(controller);
 });
 
 test('BackpressureController - rate limiting', async () => {
-  const controller = new BackpressureController({
+  const { controller, clock } = createController({
     baseRateLimit: 2, // Very low for testing
     adaptiveRateLimiting: false
   });
@@ -63,7 +78,9 @@ test('BackpressureController - rate limiting', async () => {
 
   // Third request should be rate limited or delayed
   try {
-    const perm3 = await controller.requestPermission({ id: 'op3' });
+    const thirdPermission = controller.requestPermission({ id: 'op3' });
+    await clock.advanceBy(1000);
+    const perm3 = await thirdPermission;
     if (perm3.granted && perm3.delay > 0) {
       assert(perm3.delay > 0, 'Should have delay when rate limited');
     }
@@ -72,11 +89,11 @@ test('BackpressureController - rate limiting', async () => {
     assert.equal(error.code, 'RATE_LIMIT_EXCEEDED');
   }
 
-  await controller.shutdown();
+  await shutdownController(controller);
 });
 
 test('BackpressureController - concurrency limiting', async () => {
-  const controller = new BackpressureController({
+  const { controller } = createController({
     maxConcurrentOperations: 2,
     baseRateLimit: 100 // High rate limit to focus on concurrency
   });
@@ -100,11 +117,11 @@ test('BackpressureController - concurrency limiting', async () => {
   const status = controller.getStatus();
   assert.equal(status.operations.active, 1, 'Should have one less active operation');
 
-  await controller.shutdown();
+  await shutdownController(controller);
 });
 
 test('BackpressureController - circuit breaker', async () => {
-  const controller = new BackpressureController({
+  const { controller, clock } = createController({
     failureThreshold: 3,
     resetTimeout: 100 // Short for testing
   });
@@ -134,7 +151,7 @@ test('BackpressureController - circuit breaker', async () => {
   }
 
   // Wait for reset timeout
-  await sleep(150);
+  await clock.advanceBy(150);
 
   // Should transition to half-open and allow limited requests
   const resetPerm = await controller.requestPermission({ id: 'reset-op' });
@@ -149,11 +166,11 @@ test('BackpressureController - circuit breaker', async () => {
 
   assert(stateChanges.length >= 2, 'Should emit state change events');
 
-  await controller.shutdown();
+  await shutdownController(controller);
 });
 
 test('BackpressureController - operation queuing', async () => {
-  const controller = new BackpressureController({
+  const { controller } = createController({
     maxConcurrentOperations: 1,
     maxConnectionPoolSize: 1,
     connectionPoolCritical: 0.5 // Force queuing
@@ -179,11 +196,11 @@ test('BackpressureController - operation queuing', async () => {
     assert(status.operations.queued >= 1, 'Should track queued operations');
   }
 
-  await controller.shutdown();
+  await shutdownController(controller);
 });
 
 test('BackpressureController - adaptive rate limiting', async () => {
-  const controller = new BackpressureController({
+  const { controller } = createController({
     baseRateLimit: 10,
     adaptiveRateLimiting: true,
     responseTimeWarning: 500
@@ -218,11 +235,11 @@ test('BackpressureController - adaptive rate limiting', async () => {
   const recoveredRate = controller.currentRateLimit;
   assert(recoveredRate >= adjustedRate, 'Rate limit should recover when conditions improve');
 
-  await controller.shutdown();
+  await shutdownController(controller);
 });
 
 test('BackpressureController - backpressure activation', async () => {
-  const controller = new BackpressureController({
+  const { controller } = createController({
     connectionPoolWarning: 0.6,
     connectionPoolCritical: 0.8,
     responseTimeWarning: 500,
@@ -259,11 +276,11 @@ test('BackpressureController - backpressure activation', async () => {
 
   assert(backpressureEvents.length >= 1, 'Should emit backpressure events');
 
-  await controller.shutdown();
+  await shutdownController(controller);
 });
 
 test('BackpressureController - metrics tracking', async () => {
-  const controller = new BackpressureController();
+  const { controller } = createController();
 
   const initialMetrics = controller.getStatus().metrics;
   assert.equal(initialMetrics.totalOperations, 0, 'Should start with zero operations');
@@ -291,11 +308,11 @@ test('BackpressureController - metrics tracking', async () => {
   assert.equal(failureMetrics.failedOperations, 1, 'Should track failed operations');
   assert(failureMetrics.errorRate > 0, 'Should calculate error rate');
 
-  await controller.shutdown();
+  await shutdownController(controller);
 });
 
 test('BackpressureController - token bucket rate limiting', async () => {
-  const controller = new BackpressureController({
+  const { controller, clock } = createController({
     baseRateLimit: 5 // 5 tokens per second
   });
 
@@ -308,17 +325,17 @@ test('BackpressureController - token bucket rate limiting', async () => {
   assert.equal(status.rateLimit.tokensRemaining, 0, 'Should consume all tokens');
 
   // Refill tokens
-  await sleep(1100); // Wait over 1 second
+  await clock.advanceBy(1100);
   controller.refillRateLimitTokens();
 
   const refillStatus = controller.getStatus();
   assert(refillStatus.rateLimit.tokensRemaining > 0, 'Should refill tokens over time');
 
-  await controller.shutdown();
+  await shutdownController(controller);
 });
 
 test('BackpressureController - graceful shutdown', async () => {
-  const controller = new BackpressureController({
+  const { controller, clock } = createController({
     maxConcurrentOperations: 10
   });
 
@@ -336,7 +353,7 @@ test('BackpressureController - graceful shutdown', async () => {
   // Queue an operation
   controller.queuedOperations.push({
     id: 'queued-shutdown-op',
-    timestamp: Date.now()
+    timestamp: clock.nowMs()
   });
 
   let shutdownEvent = null;
@@ -345,13 +362,16 @@ test('BackpressureController - graceful shutdown', async () => {
   });
 
   // Complete operations quickly
-  setTimeout(() => {
+  clock.setTimeout(() => {
+    controller.reportCompletion({ success: true });
     controller.reportCompletion({ success: true });
     controller.reportCompletion({ success: true });
     controller.reportCompletion({ success: true });
   }, 10);
 
-  await controller.shutdown();
+  const shutdownPromise = controller.shutdown();
+  await clock.advanceBy(100);
+  await shutdownPromise;
 
   const statusAfter = controller.getStatus();
   assert.equal(statusAfter.operations.queued, 0, 'Should clear queued operations');
@@ -362,7 +382,7 @@ test('BackpressureController - graceful shutdown', async () => {
 });
 
 test('BackpressureController - error handling', async () => {
-  const controller = new BackpressureController();
+  const { controller } = createController();
 
   // Test custom error types
   const backpressureError = new BackpressureError('Test error', 'TEST_CODE', { test: true });
@@ -382,11 +402,11 @@ test('BackpressureController - error handling', async () => {
   assert.equal(poolError.name, 'BackpressureError');
   assert.equal(poolError.code, 'POOL_EXHAUSTED');
 
-  await controller.shutdown();
+  await shutdownController(controller);
 });
 
 test('BackpressureController - reset functionality', async () => {
-  const controller = new BackpressureController();
+  const { controller } = createController();
 
   // Modify state
   controller.activeOperations = 5;
@@ -408,11 +428,11 @@ test('BackpressureController - reset functionality', async () => {
   assert.equal(controller.circuitBreakerFailures, 0, 'Should reset failures');
   assert.equal(controller.metrics.totalOperations, 0, 'Should reset metrics');
 
-  await controller.shutdown();
+  await shutdownController(controller);
 });
 
 test('BackpressureController - priority queue processing', async () => {
-  const controller = new BackpressureController({
+  const { controller } = createController({
     maxConcurrentOperations: 1
   });
 
@@ -424,12 +444,9 @@ test('BackpressureController - priority queue processing', async () => {
   const highPriorityOp = { id: 'high', priority: 10 };
   const mediumPriorityOp = { id: 'medium', priority: 5 };
 
-  // Simulate queuing (would normally happen in enqueueOperation)
-  controller.queuedOperations.push(
-    { operation: lowPriorityOp, priority: 1, timestamp: Date.now(), id: 'low' },
-    { operation: highPriorityOp, priority: 10, timestamp: Date.now(), id: 'high' },
-    { operation: mediumPriorityOp, priority: 5, timestamp: Date.now(), id: 'medium' }
-  );
+  await controller.enqueueOperation(lowPriorityOp);
+  await controller.enqueueOperation(highPriorityOp);
+  await controller.enqueueOperation(mediumPriorityOp);
 
   // Complete blocking operation to trigger queue processing
   controller.activeOperations = 0; // Simulate completion
@@ -439,11 +456,11 @@ test('BackpressureController - priority queue processing', async () => {
   assert.equal(controller.queuedOperations.length, 2, 'Should process one operation');
   assert(controller.queuedOperations[0].priority <= 5, 'Should process highest priority first');
 
-  await controller.shutdown();
+  await shutdownController(controller);
 });
 
 test('BackpressureController - connection pool pressure monitoring', async () => {
-  const controller = new BackpressureController({
+  const { controller } = createController({
     maxConnectionPoolSize: 10,
     connectionPoolWarning: 0.7,
     connectionPoolCritical: 0.9
@@ -461,15 +478,15 @@ test('BackpressureController - connection pool pressure monitoring', async () =>
   assert.equal(criticalResult.allowed, false, 'Should block operations at critical level');
   assert(criticalResult.canQueue, 'Should allow queuing at critical level');
 
-  await controller.shutdown();
+  await shutdownController(controller);
 });
 
 test('BackpressureController - throughput calculation', async () => {
-  const controller = new BackpressureController();
+  const { controller, clock } = createController();
 
   // Simulate operations over time
   controller.metrics.totalOperations = 50;
-  controller.metrics.lastUpdateTime = Date.now() - 5000; // 5 seconds ago
+  controller.metrics.lastUpdateTime = clock.nowMs() - 5000; // 5 seconds ago
 
   controller.updateMetrics();
 
@@ -479,19 +496,19 @@ test('BackpressureController - throughput calculation', async () => {
 
   // Test current rate calculation with history
   controller.metrics.throughputHistory = [
-    { time: Date.now() - 1000, value: 10 },
-    { time: Date.now() - 2000, value: 8 },
-    { time: Date.now() - 3000, value: 12 }
+    { time: clock.nowMs() - 1000, value: 10 },
+    { time: clock.nowMs() - 2000, value: 8 },
+    { time: clock.nowMs() - 3000, value: 12 }
   ];
 
   const currentRate = controller.calculateCurrentRate();
   assert(typeof currentRate === 'number', 'Should calculate current rate');
 
-  await controller.shutdown();
+  await shutdownController(controller);
 });
 
 test('BackpressureController - delay calculations', async () => {
-  const controller = new BackpressureController({
+  const { controller } = createController({
     currentRateLimit: 5,
     maxConcurrentOperations: 3
   });
@@ -507,11 +524,11 @@ test('BackpressureController - delay calculations', async () => {
   assert(concurrencyDelay > 0, 'Should calculate delay for concurrency limit');
   assert(concurrencyDelay <= 5000, 'Should cap concurrency delay');
 
-  await controller.shutdown();
+  await shutdownController(controller);
 });
 
 test('BackpressureController - monitoring lifecycle', async () => {
-  const controller = new BackpressureController();
+  const { controller } = createController();
 
   // Should start monitoring on creation
   assert(controller.monitoringInterval !== null, 'Should start monitoring');
@@ -527,11 +544,11 @@ test('BackpressureController - monitoring lifecycle', async () => {
   controller.startMonitoring();
   assert.equal(controller.monitoringInterval, firstInterval, 'Should not create duplicate intervals');
 
-  await controller.shutdown();
+  await shutdownController(controller);
 });
 
 test('BackpressureController - event emission comprehensive', async () => {
-  const controller = new BackpressureController({
+  const { controller } = createController({
     failureThreshold: 2,
     connectionPoolWarning: 0.5
   });
@@ -586,7 +603,7 @@ test('BackpressureController - event emission comprehensive', async () => {
 });
 
 test('BackpressureController - destroy cleanup', async () => {
-  const controller = new BackpressureController();
+  const { controller } = createController();
 
   // Add some state
   controller.queuedOperations.push({ id: 'test' });
