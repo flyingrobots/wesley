@@ -12,6 +12,7 @@
  */
 
 import { DomainEvent } from '../domain/Events.mjs';
+import { systemClock } from '../ports/clock.mjs';
 
 /**
  * Custom error types for integration testing
@@ -104,9 +105,10 @@ export class PerformanceBaseline extends DomainEvent {
  * Database snapshot for state verification
  */
 export class DatabaseSnapshot {
-  constructor(id, metadata = {}) {
+  constructor(id, metadata = {}, clock = systemClock) {
     this.id = id;
-    this.timestamp = new Date().toISOString();
+    this.clock = clock;
+    this.timestamp = this.clock.now();
     this.metadata = metadata;
     this.tables = new Map();
     this.schema = null;
@@ -119,7 +121,7 @@ export class DatabaseSnapshot {
     this.tables.set(tableName, {
       data,
       rowCount,
-      capturedAt: new Date().toISOString()
+      capturedAt: this.clock.now()
     });
   }
 
@@ -217,6 +219,8 @@ export class IntegrationTestHarness {
   constructor(options = {}) {
     this.databaseAdapter = options.databaseAdapter || null;
     this.eventEmitter = options.eventEmitter || null;
+    this.clock = options.clock ?? systemClock;
+    this.random = options.random ?? Math.random;
     this.performanceBaselines = new Map();
     this.activeSnapshots = new Map();
     this.testResults = new Map();
@@ -224,6 +228,7 @@ export class IntegrationTestHarness {
     this.concurrencyPool = options.concurrencyPool || 4;
     this.defaultTimeout = options.defaultTimeout || 60000; // 1 minute
     this.snapshotRetention = options.snapshotRetention || 10; // Keep 10 snapshots max
+    this.snapshotSequence = 0;
   }
 
   /**
@@ -238,13 +243,13 @@ export class IntegrationTestHarness {
     }
 
     const suiteName = options.name || 'Integration Test Suite';
-    const suiteStartTime = performance.now();
+    const suiteStartTime = this.clock.nowMs();
 
     this._emit(new TestSuiteStarted(suiteName, tests.length));
 
     const results = {
       suiteName,
-      startTime: new Date().toISOString(),
+      startTime: this.clock.now(),
       tests: [],
       summary: {
         total: tests.length,
@@ -270,7 +275,7 @@ export class IntegrationTestHarness {
       results.summary.passed = results.tests.filter(t => t.status === 'passed').length;
       results.summary.failed = results.tests.filter(t => t.status === 'failed').length;
       results.summary.skipped = results.tests.filter(t => t.status === 'skipped').length;
-      results.summary.totalTime = performance.now() - suiteStartTime;
+      results.summary.totalTime = this.clock.nowMs() - suiteStartTime;
 
     } catch (error) {
       throw new IntegrationTestError(`Test suite execution failed: ${error.message}`, {
@@ -297,12 +302,12 @@ export class IntegrationTestHarness {
       throw new IntegrationTestError('testConfig must be an instance of TestConfig');
     }
 
-    const testStartTime = performance.now();
+    const testStartTime = this.clock.nowMs();
     this._emit(new TestStarted(testConfig.name, testConfig));
 
     const result = {
       name: testConfig.name,
-      startTime: new Date().toISOString(),
+      startTime: this.clock.now(),
       status: 'running',
       phases: [],
       snapshots: [],
@@ -363,7 +368,7 @@ export class IntegrationTestHarness {
 
       // Phase 5: Performance analysis
       await this._executeTestPhase(result, 'performance', async () => {
-        const executionTime = performance.now() - testStartTime;
+        const executionTime = this.clock.nowMs() - testStartTime;
         result.metrics.executionTime = executionTime;
 
         await this._analyzePerformance(testConfig, executionTime);
@@ -394,8 +399,8 @@ export class IntegrationTestHarness {
       // Cleanup failure injections
       await this._cleanupFailureInjection();
 
-      result.endTime = new Date().toISOString();
-      result.duration = performance.now() - testStartTime;
+      result.endTime = this.clock.now();
+      result.duration = this.clock.nowMs() - testStartTime;
     }
 
     this._emit(new TestCompleted(testConfig.name, result, result.metrics));
@@ -413,16 +418,20 @@ export class IntegrationTestHarness {
       throw new IntegrationTestError('Database adapter is required for snapshots');
     }
 
-    const snapshotId = `${name}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const strategy = options.strategy || 'full';
+    const includeData = options.includeData ?? strategy === 'full';
+
+    this.snapshotSequence += 1;
+    const snapshotId = `${name}_${this.clock.nowMs()}_${this.snapshotSequence}`;
     const snapshot = new DatabaseSnapshot(snapshotId, {
       name,
-      strategy: options.strategy || 'full',
+      strategy,
       createdBy: 'IntegrationTestHarness'
-    });
+    }, this.clock);
 
     try {
       // Capture schema information
-      if (options.strategy === 'full' || options.strategy === 'schema-only') {
+      if (strategy === 'full' || strategy === 'schema-only') {
         const schema = await this.databaseAdapter.getSchema();
         snapshot.setSchema(schema);
 
@@ -434,7 +443,7 @@ export class IntegrationTestHarness {
       }
 
       // Capture data if full snapshot
-      if (options.strategy === 'full' && options.includeData) {
+      if (strategy === 'full' && includeData) {
         const tables = await this.databaseAdapter.getTables();
 
         for (const table of tables) {
@@ -589,7 +598,7 @@ export class IntegrationTestHarness {
   setPerformanceBaseline(testName, metrics) {
     this.performanceBaselines.set(testName, {
       ...metrics,
-      setAt: new Date().toISOString()
+      setAt: this.clock.now()
     });
 
     this._emit(new PerformanceBaseline(testName, metrics));
@@ -609,10 +618,10 @@ export class IntegrationTestHarness {
    * @private
    */
   async _executeTestPhase(result, phaseName, phaseFunction) {
-    const phaseStartTime = performance.now();
+    const phaseStartTime = this.clock.nowMs();
     const phase = {
       name: phaseName,
-      startTime: new Date().toISOString(),
+      startTime: this.clock.now(),
       status: 'running'
     };
 
@@ -626,8 +635,8 @@ export class IntegrationTestHarness {
       phase.error = error.message;
       throw new TestExecutionError(error.message, result.name, phaseName);
     } finally {
-      phase.endTime = new Date().toISOString();
-      phase.duration = performance.now() - phaseStartTime;
+      phase.endTime = this.clock.now();
+      phase.duration = this.clock.nowMs() - phaseStartTime;
     }
   }
 
@@ -726,7 +735,7 @@ export class IntegrationTestHarness {
    * @private
    */
   async _executeConcurrentBatch(batch, batchIndex, testConfig) {
-    const batchStartTime = performance.now();
+    const batchStartTime = this.clock.nowMs();
 
     try {
       for (const operation of batch) {
@@ -739,7 +748,7 @@ export class IntegrationTestHarness {
       return {
         batchIndex,
         operations: batch.length,
-        executionTime: performance.now() - batchStartTime,
+        executionTime: this.clock.nowMs() - batchStartTime,
         success: true
       };
 
@@ -747,7 +756,7 @@ export class IntegrationTestHarness {
       return {
         batchIndex,
         operations: batch.length,
-        executionTime: performance.now() - batchStartTime,
+        executionTime: this.clock.nowMs() - batchStartTime,
         success: false,
         error: error.message
       };
@@ -870,10 +879,10 @@ export class IntegrationTestHarness {
       shouldInject: (operation) => {
         return config.targetOperation ?
           operation.kind === config.targetOperation :
-          Math.random() < (config.probability || 0.1);
+          this._chance(config.probability || 0.1);
       },
       inject: async (operation) => {
-        await new Promise(resolve => setTimeout(resolve, config.delay || 5000));
+        await this._sleep(config.delay || 5000);
         if (config.shouldFail) {
           throw new Error(`Simulated timeout for operation ${operation.kind}`);
         }
@@ -888,7 +897,7 @@ export class IntegrationTestHarness {
   _createConnectionFailureInjector(config) {
     return {
       shouldInject: (_operation) => {
-        return Math.random() < (config.probability || 0.05);
+        return this._chance(config.probability || 0.05);
       },
       inject: async (operation) => {
         throw new Error(`Simulated connection failure during ${operation.kind}`);
@@ -904,7 +913,7 @@ export class IntegrationTestHarness {
     return {
       shouldInject: (operation) => {
         return operation.kind === 'add_constraint' &&
-               Math.random() < (config.probability || 0.1);
+               this._chance(config.probability || 0.1);
       },
       inject: async (operation) => {
         throw new Error(`Simulated constraint violation for ${operation.constraint}`);
@@ -920,7 +929,7 @@ export class IntegrationTestHarness {
     return {
       shouldInject: (operation) => {
         return ['drop_table', 'alter_type'].includes(operation.kind) &&
-               Math.random() < (config.probability || 0.05);
+               this._chance(config.probability || 0.05);
       },
       inject: async (operation) => {
         throw new Error(`Simulated lock timeout for ${operation.kind} on ${operation.table}`);
@@ -936,7 +945,7 @@ export class IntegrationTestHarness {
     return {
       shouldInject: (operation) => {
         return ['create_table', 'add_column'].includes(operation.kind) &&
-               Math.random() < (config.probability || 0.02);
+               this._chance(config.probability || 0.02);
       },
       inject: async (operation) => {
         throw new Error(`Simulated disk full error during ${operation.kind}`);
@@ -952,7 +961,7 @@ export class IntegrationTestHarness {
     return {
       shouldInject: (operation) => {
         return operation.kind === 'create_index' &&
-               Math.random() < (config.probability || 0.05);
+               this._chance(config.probability || 0.05);
       },
       inject: async (_operation) => {
         throw new Error('Simulated out of memory error during index creation');
@@ -1003,6 +1012,19 @@ export class IntegrationTestHarness {
     if (this.eventEmitter && typeof this.eventEmitter.emit === 'function') {
       this.eventEmitter.emit(event.type, event);
     }
+  }
+
+  _chance(probability) {
+    return this.random() < probability;
+  }
+
+  async _sleep(ms) {
+    if (typeof this.clock.advanceBy === 'function') {
+      await this.clock.advanceBy(ms);
+      return;
+    }
+
+    await this.clock.sleep(ms);
   }
 }
 
