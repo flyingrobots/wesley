@@ -20,7 +20,7 @@ Wesley currently runs all enabled generators in sequence against all source file
 
 2. **HOLMES scores are context-free.** SCS/TCI/MRI are computed via placeholder heuristics (`MRI = 0.2`, always). There is no mechanism for generators to report what they actually produced.
 
-3. **Evidence is coarse-grained.** The evidence map cites entire files with dummy line ranges (`1-9999`) rather than per-field, per-artifact citations.
+3. **Evidence is still coarse-grained.** Wesley now emits exact whole-file spans on the active placeholder and counterfactual bundle paths, but it still lacks per-field, per-artifact citations across the system.
 
 Transmutations solve all three by making the compilation unit explicit, giving generators an evidence contract, and tracking coverage per source file.
 
@@ -376,7 +376,7 @@ For each citation { file, lines, sha }:
   verify actual_lines contain the expected artifact
 ```
 
-This works because generators now produce **precise line ranges** rather than `1-9999`.
+This works because the active bundle paths now emit exact whole-file spans and generators can produce **precise line ranges** instead of dummy placeholders.
 
 ### Moriarty: Dual-Layer Prediction
 
