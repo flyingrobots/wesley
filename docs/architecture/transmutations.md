@@ -8,7 +8,7 @@ This document specifies the transmutation system: how projects declare what they
 
 ## Status
 
-**Draft** — proposed architecture, not yet implemented.
+**Implemented in part** — the active `legacy-supabase` hot path now runs through transmutation-aware evidence and evidence-based SCS/TCI/MRI, but the broader generator surface still has follow-on work.
 
 ---
 
@@ -18,7 +18,7 @@ Wesley currently runs all enabled generators in sequence against all source file
 
 1. **No source-to-generator mapping.** An Echo project compiles Rust codecs but Wesley still checks for pgTAP tests. A Supabase project generates DDL but gets scored on layout hashes it never produces.
 
-2. **HOLMES scores are context-free.** SCS/TCI/MRI are computed via placeholder heuristics (`MRI = 0.2`, always). There is no mechanism for generators to report what they actually produced.
+2. **Transmutation truth is still uneven.** The active `legacy-supabase` path now computes SCS/TCI/MRI from real generator evidence, but other surfaces still need to carry the same evidence contract all the way through.
 
 3. **Evidence is still coarse-grained.** Wesley now emits exact whole-file spans on the active placeholder, counterfactual, and QIR bundle paths, and Holmes/Watson distinguish exact subrange, whole-file, and coarse citations, but the system still lacks per-field, per-artifact citations across the broader generator surface.
 
@@ -884,7 +884,7 @@ All error construction converges on this. `OpsError` extends it. No more manual 
 - Tests: evidence shape validation, per-element tracking
 
 ### Phase 3: Real HOLMES Scoring
-- Replace placeholder heuristics with evidence-based SCS/TCI/MRI
+- Extend evidence-based SCS/TCI/MRI beyond the active `legacy-supabase` hot path
 - Wire HOLMES investigation to transmutation context
 - Update Watson to verify real citations with precise line ranges
 - Tests: scoring accuracy against known evidence bundles
