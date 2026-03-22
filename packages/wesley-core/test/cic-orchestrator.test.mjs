@@ -5,6 +5,7 @@
 import { test, describe, beforeEach } from 'node:test';
 import assert from 'node:assert';
 import { EventEmitter } from 'node:events';
+import { FakeClock } from '../src/index.mjs';
 
 import {
   CICOrchestrator,
@@ -23,7 +24,8 @@ import {
  * Mock SQLExecutor for CIC testing
  */
 class MockSQLExecutor {
-  constructor() {
+  constructor(options = {}) {
+    this.clock = options.clock ?? new FakeClock('2026-03-22T00:00:00.000Z');
     this.operations = [];
     this.failures = new Map();
     this.delays = new Map();
@@ -37,7 +39,7 @@ class MockSQLExecutor {
 
     // Simulate delays
     if (this.delays.has(sql)) {
-      await new Promise(resolve => setTimeout(resolve, this.delays.get(sql)));
+      await this._advanceClock(this.delays.get(sql));
     }
 
     // Simulate failures
@@ -88,6 +90,15 @@ class MockSQLExecutor {
     this.failures.clear();
     this.delays.clear();
     this.existingIndexes.clear();
+  }
+
+  async _advanceClock(ms) {
+    if (typeof this.clock.advanceBy === 'function') {
+      await this.clock.advanceBy(ms);
+      return;
+    }
+
+    await this.clock.sleep(ms);
   }
 }
 
@@ -289,15 +300,17 @@ describe('CICOrchestrator', () => {
   let eventEmitter;
   let orchestrator;
   let events;
+  let clock;
 
   beforeEach(() => {
-    mockExecutor = new MockSQLExecutor();
+    clock = new FakeClock('2026-03-22T00:00:00.000Z');
+    mockExecutor = new MockSQLExecutor({ clock });
     eventEmitter = new EventEmitter();
     events = [];
 
     eventEmitter.on('domain-event', (event) => events.push(event));
 
-    orchestrator = new CICOrchestrator(mockExecutor, eventEmitter);
+    orchestrator = new CICOrchestrator(mockExecutor, eventEmitter, { clock });
   });
 
   test('should orchestrate simple sequential execution', async () => {
@@ -335,7 +348,8 @@ describe('CICOrchestrator', () => {
     assert.ok(results.every(r => r.isSuccess()));
 
     // The last operation (users table) should have been executed after the first one completed
-    const executedOps = mockExecutor.getExecutedOperations();
+    const executedOps = mockExecutor.getExecutedOperations()
+      .filter(op => op.sql.includes('CREATE INDEX CONCURRENTLY'));
     assert.strictEqual(executedOps.length, 4);
   });
 
@@ -352,7 +366,8 @@ describe('CICOrchestrator', () => {
     assert.strictEqual(results.length, 3);
 
     // All should be on same table, so executed sequentially in priority order
-    const executedOps = mockExecutor.getExecutedOperations();
+    const executedOps = mockExecutor.getExecutedOperations()
+      .filter(op => /CREATE(?: UNIQUE)? INDEX CONCURRENTLY/.test(op.sql));
     assert.ok(executedOps[0].sql.includes('UNIQUE')); // HIGH priority first
     assert.ok(executedOps[1].sql.includes('gin'));    // MEDIUM priority second
     assert.ok(executedOps[2].sql.includes('name'));   // NORMAL priority last
@@ -398,13 +413,14 @@ describe('CICOrchestrator', () => {
 
     // Set up to fail twice, then succeed
     let attemptCount = 0;
-    mockExecutor.setFailure(operation.sql, new Error('Temporary failure'));
 
     // Override executeOperation to succeed on third attempt
     const originalExecuteOperation = mockExecutor.executeOperation.bind(mockExecutor);
     mockExecutor.executeOperation = async (op) => {
-      attemptCount++;
-      if (attemptCount <= 2) {
+      if (op.sql === operation.sql) {
+        attemptCount++;
+      }
+      if (op.sql === operation.sql && attemptCount <= 2) {
         throw new Error('Temporary failure');
       }
       return originalExecuteOperation(op);
@@ -444,6 +460,7 @@ describe('CICOrchestrator', () => {
     // Mock the index as existing but invalid (failed CIC leaves invalid index)
     const originalExecuteOperation = mockExecutor.executeOperation.bind(mockExecutor);
     mockExecutor.executeOperation = async (op) => {
+      mockExecutor.operations.push(op);
       if (op.sql.includes('CREATE INDEX CONCURRENTLY')) {
         throw new Error('Index creation failed');
       } else if (op.sql.includes('NOT indisvalid')) {
@@ -471,19 +488,31 @@ describe('CICOrchestrator', () => {
       new CICOperation('CREATE INDEX CONCURRENTLY idx_orders_date ON orders (created_at);')
     ];
 
-    // Add delay to first operation so we can check status
-    mockExecutor.setDelay(operations[0].sql, 100);
+    let releaseFirstOperation;
+    const firstOperationGate = new Promise((resolve) => {
+      releaseFirstOperation = resolve;
+    });
+    const originalExecuteOperation = mockExecutor.executeOperation.bind(mockExecutor);
+    let firstCreateOperation = true;
+    mockExecutor.executeOperation = async (operation) => {
+      if (firstCreateOperation && operation.sql.includes('CREATE INDEX CONCURRENTLY')) {
+        firstCreateOperation = false;
+        await firstOperationGate;
+      }
+      return originalExecuteOperation(operation);
+    };
 
     const orchestratePromise = orchestrator.orchestrate(operations);
+    await Promise.resolve();
 
     // Check status while running
-    await new Promise(resolve => setTimeout(resolve, 50));
     const status = orchestrator.getStatus();
 
-    assert.ok(['running', 'completed'].includes(status.status));
+    assert.strictEqual(status.status, 'running');
     assert.ok(status.progress);
     assert.strictEqual(status.strategy, 'TABLE_PARALLEL');
 
+    releaseFirstOperation();
     await orchestratePromise;
 
     const finalStatus = orchestrator.getStatus();
@@ -532,7 +561,6 @@ describe('CICOrchestrator', () => {
     ];
 
     // Simulate one failure and retry
-    mockExecutor.setFailure(operations[2].sql, new Error('Temporary lock conflict'));
     let failureCount = 0;
     const originalExecuteOperation = mockExecutor.executeOperation.bind(mockExecutor);
     mockExecutor.executeOperation = async (op) => {
@@ -557,7 +585,8 @@ describe('CICOrchestrator', () => {
     assert.strictEqual(failed.length, 0);
 
     // Check that high priority operations were executed first
-    const executedOps = mockExecutor.getExecutedOperations();
+    const executedOps = mockExecutor.getExecutedOperations()
+      .filter(op => /CREATE(?: UNIQUE)? INDEX CONCURRENTLY/.test(op.sql));
     const firstTwo = executedOps.slice(0, 2);
     assert.ok(firstTwo.every(op => op.sql.includes('UNIQUE')));
 
@@ -573,10 +602,12 @@ describe('CICOrchestrator', () => {
 describe('CICOrchestrator Edge Cases', () => {
   let mockExecutor;
   let orchestrator;
+  let clock;
 
   beforeEach(() => {
-    mockExecutor = new MockSQLExecutor();
-    orchestrator = new CICOrchestrator(mockExecutor);
+    clock = new FakeClock('2026-03-22T00:00:00.000Z');
+    mockExecutor = new MockSQLExecutor({ clock });
+    orchestrator = new CICOrchestrator(mockExecutor, null, { clock });
   });
 
   test('should handle empty operation list', async () => {
@@ -600,16 +631,10 @@ describe('CICOrchestrator Edge Cases', () => {
     const strategy = new CICExecutionStrategy(CICExecutionStrategy.TABLE_PARALLEL);
     strategy.maxParallelTables = 3;
 
-    const startTime = Date.now();
     const results = await orchestrator.orchestrate(operations, strategy);
-    const duration = Date.now() - startTime;
 
     assert.strictEqual(results.length, 5);
     assert.ok(results.every(r => r.isSuccess()));
-
-    // Should complete faster than sequential due to parallelization
-    // (This is a rough check - actual timing depends on system)
-    assert.ok(duration < 1000); // Should be very fast with mocks
   });
 
   test('should handle mixed success and failure scenarios', async () => {
@@ -649,7 +674,8 @@ describe('CICOrchestrator Edge Cases', () => {
     // but the timeout value should be passed to the executor
     assert.strictEqual(results.length, 1);
 
-    const executedOps = mockExecutor.getExecutedOperations();
-    assert.strictEqual(executedOps[0].metadata.timeoutMs, 1000);
+    const executedOp = mockExecutor.getExecutedOperations()
+      .find((op) => op.sql.includes('CREATE INDEX CONCURRENTLY'));
+    assert.strictEqual(executedOp.metadata.timeoutMs, 1000);
   });
 });

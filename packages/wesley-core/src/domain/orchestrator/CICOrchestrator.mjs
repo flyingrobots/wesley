@@ -18,6 +18,7 @@
  */
 
 import { DomainEvent } from '../Events.mjs';
+import { systemClock } from '../../ports/clock.mjs';
 
 export class CICOrchestrationStarted extends DomainEvent {
   constructor(operations, strategy) {
@@ -130,7 +131,9 @@ export class CICOperation {
    * Extract index name from CREATE INDEX statement
    */
   extractIndexName(sql) {
-    const match = sql.match(/CREATE\s+(?:UNIQUE\s+)?INDEX\s+(?:CONCURRENTLY\s+)?(?:IF\s+NOT\s+EXISTS\s+)?(?:"?([^"]+)"?|([^\s]+))/i);
+    const match = sql.match(
+      /CREATE\s+(?:UNIQUE\s+)?INDEX\s+(?:CONCURRENTLY\s+)?(?:IF\s+NOT\s+EXISTS\s+)?(?:"([^"]+)"|([A-Za-z0-9_.]+))/i
+    );
     return match ? (match[1] || match[2]) : 'unknown_index';
   }
 
@@ -138,21 +141,76 @@ export class CICOperation {
    * Extract table name from CREATE INDEX statement
    */
   extractTableName(sql) {
-    const match = sql.match(/ON\s+(?:"?([^"]+)"?\.)?(?:"?([^"]+)"?|([^\s(]+))/i);
-    return match ? (match[2] || match[3]) : 'unknown_table';
+    const match = sql.match(/ON\s+((?:"[^"]+"|[A-Za-z0-9_]+)(?:\.(?:"[^"]+"|[A-Za-z0-9_]+))?)/i);
+    if (!match) {
+      return 'unknown_table';
+    }
+
+    const segments = match[1].split('.');
+    return segments[segments.length - 1].replace(/^"|"$/g, '');
   }
 
   /**
    * Extract column names from CREATE INDEX statement
    */
   extractColumns(sql) {
-    const match = sql.match(/\(([^)]+)\)/);
-    if (!match) return [];
+    const start = sql.indexOf('(');
+    if (start < 0) return [];
 
-    return match[1]
-      .split(',')
-      .map(col => col.trim().replace(/["'`]/g, ''))
-      .filter(col => col.length > 0);
+    const columns = [];
+    let depth = 0;
+    let current = '';
+
+    for (let i = start; i < sql.length; i++) {
+      const char = sql[i];
+
+      if (char === '(') {
+        depth++;
+        if (depth > 1) {
+          current += char;
+        }
+        continue;
+      }
+
+      if (char === ')') {
+        depth--;
+        if (depth === 0) {
+          const normalized = this.normalizeColumnExpression(current);
+          if (normalized.length > 0) {
+            columns.push(normalized);
+          }
+          break;
+        }
+        current += char;
+        continue;
+      }
+
+      if (char === ',' && depth === 1) {
+        const normalized = this.normalizeColumnExpression(current);
+        if (normalized.length > 0) {
+          columns.push(normalized);
+        }
+        current = '';
+        continue;
+      }
+
+      if (depth >= 1) {
+        current += char;
+      }
+    }
+
+    return columns;
+  }
+
+  normalizeColumnExpression(expression) {
+    const trimmed = expression.trim();
+    const simpleIdentifier = /^["'`][^"'`]+["'`]$/;
+
+    if (simpleIdentifier.test(trimmed)) {
+      return trimmed.slice(1, -1);
+    }
+
+    return trimmed;
   }
 
   /**
@@ -249,13 +307,14 @@ export class CICExecutionStrategy {
  * Progress tracker for CIC orchestration
  */
 export class CICProgressTracker {
-  constructor(totalOperations) {
+  constructor(totalOperations, clock = systemClock) {
     this.totalOperations = totalOperations;
+    this.clock = clock;
     this.completed = 0;
     this.failed = 0;
     this.skipped = 0;
     this.inProgress = new Set();
-    this.startTime = Date.now();
+    this.startTime = this.clock.nowMs();
   }
 
   startOperation(operation) {
@@ -285,7 +344,7 @@ export class CICProgressTracker {
       failed: this.failed,
       skipped: this.skipped,
       percentage: this.totalOperations > 0 ? (processed / this.totalOperations) * 100 : 0,
-      elapsedMs: Date.now() - this.startTime
+      elapsedMs: this.clock.nowMs() - this.startTime
     };
   }
 }
@@ -294,13 +353,13 @@ export class CICProgressTracker {
  * Result of a CIC operation execution
  */
 export class CICOperationResult {
-  constructor(operation, status, duration = null, error = null) {
+  constructor(operation, status, duration = null, error = null, clock = systemClock) {
     this.operation = operation;
     this.status = status; // 'completed', 'failed', 'skipped'
     this.duration = duration;
     this.error = error;
     this.retryCount = operation.retryCount;
-    this.timestamp = new Date().toISOString();
+    this.timestamp = clock.now();
   }
 
   isSuccess() {
@@ -320,9 +379,10 @@ export class CICOperationResult {
  * Main CIC Orchestrator class
  */
 export class CICOrchestrator {
-  constructor(sqlExecutor, eventEmitter = null) {
+  constructor(sqlExecutor, eventEmitter = null, options = {}) {
     this.sqlExecutor = sqlExecutor;
     this.eventEmitter = eventEmitter;
+    this.clock = options.clock ?? systemClock;
     this.strategy = new CICExecutionStrategy();
     this.progressTracker = null;
     this.results = [];
@@ -355,8 +415,8 @@ export class CICOrchestrator {
       this.setStrategy(strategy);
     }
 
-    const startTime = Date.now();
-    this.progressTracker = new CICProgressTracker(operations.length);
+    const startTime = this.clock.nowMs();
+    this.progressTracker = new CICProgressTracker(operations.length, this.clock);
     this.results = [];
     this.operationQueue = [...operations];
 
@@ -384,7 +444,7 @@ export class CICOrchestrator {
       // Clean up any failed indexes
       await this.cleanupFailedIndexes();
 
-      const totalDuration = Date.now() - startTime;
+      const totalDuration = this.clock.nowMs() - startTime;
       this.emit(new CICOrchestrationCompleted(this.results, totalDuration));
 
       return this.results;
@@ -403,18 +463,19 @@ export class CICOrchestrator {
    * Validate operations before execution
    */
   async validateOperations(operations) {
-    for (const operation of operations) {
-      // Check for duplicate index names
-      const duplicates = operations.filter(op =>
-        op !== operation && op.indexName === operation.indexName
-      );
+    for (const [index, operation] of operations.entries()) {
+      // Skip later operations that reuse an earlier index name
+      const hasEarlierDuplicate = operations
+        .slice(0, index)
+        .some(op => op.indexName === operation.indexName);
 
-      if (duplicates.length > 0) {
+      if (hasEarlierDuplicate) {
         this.results.push(new CICOperationResult(
           operation,
           'skipped',
           null,
-          new Error('Duplicate index name')
+          new Error('Duplicate index name'),
+          this.clock
         ));
         this.emit(new CICOperationSkipped(operation, 'Duplicate index name'));
         continue;
@@ -426,7 +487,8 @@ export class CICOrchestrator {
           operation,
           'skipped',
           null,
-          new Error('Index already exists')
+          new Error('Index already exists'),
+          this.clock
         ));
         this.emit(new CICOperationSkipped(operation, 'Index already exists'));
         this.progressTracker.skipOperation(operation);
@@ -442,7 +504,7 @@ export class CICOrchestrator {
       const operation = this.operationQueue[i];
 
       // Skip if already processed
-      if (this.results.find(r => r.operation.indexName === operation.indexName)) {
+      if (this.results.find(r => r.operation === operation)) {
         continue;
       }
 
@@ -456,7 +518,7 @@ export class CICOrchestrator {
    */
   async executeTableParallel() {
     const remainingOperations = this.operationQueue.filter(op =>
-      !this.results.find(r => r.operation.indexName === op.indexName)
+      !this.results.find(r => r.operation === op)
     );
 
     while (remainingOperations.length > 0) {
@@ -547,7 +609,7 @@ export class CICOrchestrator {
       operation.retryCount = attempt;
 
       try {
-        const startTime = Date.now();
+        const startTime = this.clock.nowMs();
         operation.status = 'running';
 
         // Execute the CREATE INDEX CONCURRENTLY
@@ -560,13 +622,13 @@ export class CICOrchestrator {
           }
         });
 
-        const duration = Date.now() - startTime;
+        const duration = this.clock.nowMs() - startTime;
         operation.status = 'completed';
 
         this.emit(new CICOperationCompleted(operation, duration, attempt));
         this.progressTracker.completeOperation(operation, true);
 
-        return new CICOperationResult(operation, 'completed', duration);
+        return new CICOperationResult(operation, 'completed', duration, null, this.clock);
       } catch (error) {
         lastError = error;
         const willRetry = attempt < maxRetries;
@@ -578,33 +640,28 @@ export class CICOrchestrator {
           const baseDelay = this.strategy.backoffMultiplier ** attempt * 1000;
           const delay = Math.min(baseDelay, this.strategy.maxBackoffMs);
 
-          await new Promise(resolve => setTimeout(resolve, delay));
+          await this._sleep(delay);
         } else {
           operation.status = 'failed';
           operation.error = error;
           this.progressTracker.completeOperation(operation, false);
 
-          return new CICOperationResult(operation, 'failed', null, error);
+          return new CICOperationResult(operation, 'failed', null, error, this.clock);
         }
       }
     }
 
     // This should never be reached, but just in case
-    return new CICOperationResult(operation, 'failed', null, lastError);
+    return new CICOperationResult(operation, 'failed', null, lastError, this.clock);
   }
 
   /**
    * Wait for any active operation to complete
    */
   async waitForAnyCompletion() {
-    return new Promise(resolve => {
-      const checkInterval = setInterval(() => {
-        if (this.activeOperations.size < this.strategy.maxParallelTables) {
-          clearInterval(checkInterval);
-          resolve();
-        }
-      }, 1000);
-    });
+    while (this.activeOperations.size >= this.strategy.maxParallelTables) {
+      await this._sleep(1000);
+    }
   }
 
   /**
@@ -732,8 +789,17 @@ export class CICOrchestrator {
       activeOperations: activeOps.map(op => ({
         indexName: op.indexName,
         tableName: op.tableName,
-        estimatedCompletion: new Date(Date.now() + op.getEstimatedDuration())
+        estimatedCompletion: new Date(this.clock.nowMs() + op.getEstimatedDuration())
       }))
     };
+  }
+
+  async _sleep(ms) {
+    if (typeof this.clock.advanceBy === 'function') {
+      await this.clock.advanceBy(ms);
+      return;
+    }
+
+    await this.clock.sleep(ms);
   }
 }
