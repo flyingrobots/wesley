@@ -120,8 +120,22 @@ const moriartySample = {
   },
   status: 'OK',
   history: [
-    { timestamp: '2025-10-12T00:00:00.000Z', scs: 0.8, tci: 0.7, mri: 0.2 },
-    { timestamp: '2025-10-13T00:00:00.000Z', scs: 0.85, tci: 0.72, mri: 0.18 }
+    {
+      timestamp: '2025-10-12T00:00:00.000Z',
+      scs: 0.8,
+      tci: 0.7,
+      mri: 0.2,
+      evidenceTrust: 'strong',
+      evidenceTrustReasons: ['All citations resolve to exact line spans.']
+    },
+    {
+      timestamp: '2025-10-13T00:00:00.000Z',
+      scs: 0.85,
+      tci: 0.72,
+      mri: 0.18,
+      evidenceTrust: 'moderate',
+      evidenceTrustReasons: ['1 whole-file citation still relies on broad file-level proof.']
+    }
   ],
   latest: {
     scs: 0.85,

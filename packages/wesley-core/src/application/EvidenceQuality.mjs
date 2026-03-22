@@ -122,6 +122,31 @@ export function assessEvidenceTrust(summary) {
   };
 }
 
+export function evidenceTrustMeetsThreshold(level, threshold = 'moderate') {
+  const levelRank = evidenceTrustRank(level);
+  const thresholdRank = evidenceTrustRank(threshold);
+  if (levelRank === null || thresholdRank === null) return false;
+  return levelRank >= thresholdRank;
+}
+
+export function confidencePenaltyForEvidenceTrust(level) {
+  switch (level) {
+  case 'weak':
+    return 12;
+  case 'missing':
+    return 20;
+  default:
+    return 0;
+  }
+}
+
+export function adjustReadinessVerdictForEvidenceTrust(verdict, level) {
+  if (level === 'weak' || level === 'missing') {
+    return verdict === 'ELEMENTARY' ? 'REQUIRES INVESTIGATION' : verdict;
+  }
+  return verdict;
+}
+
 export function strongestEvidenceStrength(summary) {
   if (!summary) return 'missing';
   if (Number(summary.exact || 0) > 0) return 'exact';
@@ -162,6 +187,21 @@ function determineEvidenceTrustLevel(summary) {
   if (Number(summary.coarse || 0) > 0) return 'weak';
   if (Number(summary.wholeFile || 0) > 0) return 'moderate';
   return 'strong';
+}
+
+function evidenceTrustRank(level) {
+  switch (level) {
+  case 'strong':
+    return 3;
+  case 'moderate':
+    return 2;
+  case 'weak':
+    return 1;
+  case 'missing':
+    return 0;
+  default:
+    return null;
+  }
 }
 
 function plural(value) {

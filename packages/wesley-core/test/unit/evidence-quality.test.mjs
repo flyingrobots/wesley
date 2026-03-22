@@ -2,8 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  adjustReadinessVerdictForEvidenceTrust,
   assessEvidenceTrust,
   classifyEvidenceLocation,
+  confidencePenaltyForEvidenceTrust,
+  evidenceTrustMeetsThreshold,
   pickBestEvidenceLocation,
   strongestEvidenceStrength,
   summarizeEvidenceQuality,
@@ -68,6 +71,22 @@ test('assessEvidenceTrust downgrades coarse citation mixes and explains why', ()
       reasons: ['1 coarse citation remains unpinned to exact line spans.']
     }
   );
+});
+
+test('evidence trust helpers drive readiness and confidence decisions', () => {
+  assert.equal(evidenceTrustMeetsThreshold('strong'), true);
+  assert.equal(evidenceTrustMeetsThreshold('moderate'), true);
+  assert.equal(evidenceTrustMeetsThreshold('weak'), false);
+  assert.equal(evidenceTrustMeetsThreshold('missing'), false);
+
+  assert.equal(confidencePenaltyForEvidenceTrust('strong'), 0);
+  assert.equal(confidencePenaltyForEvidenceTrust('moderate'), 0);
+  assert.equal(confidencePenaltyForEvidenceTrust('weak'), 12);
+  assert.equal(confidencePenaltyForEvidenceTrust('missing'), 20);
+
+  assert.equal(adjustReadinessVerdictForEvidenceTrust('ELEMENTARY', 'weak'), 'REQUIRES INVESTIGATION');
+  assert.equal(adjustReadinessVerdictForEvidenceTrust('ELEMENTARY', 'missing'), 'REQUIRES INVESTIGATION');
+  assert.equal(adjustReadinessVerdictForEvidenceTrust('REQUIRES INVESTIGATION', 'weak'), 'REQUIRES INVESTIGATION');
 });
 
 test('pickBestEvidenceLocation prefers narrow exact citations over whole-file and coarse fallbacks', () => {

@@ -287,7 +287,12 @@ export const moriartyReportSchema = {
           timestamp: stringField,
           scs: numberField,
           tci: numberField,
-          mri: numberField
+          mri: numberField,
+          evidenceTrust: stringField,
+          evidenceTrustReasons: {
+            type: 'array',
+            items: stringField
+          }
         }
       }
     },

@@ -157,6 +157,48 @@ test('scenario 25: High SCS/TCI but MRI spike → EXPLAIN MRI FAIL', () => {
   });
 });
 
+test('scenario 28: weak evidence trust lowers confidence and fails the readiness explain check', () => {
+  const strongFixture = mkBundleDir();
+  const weakFixture = mkBundleDir();
+  const baseDay = Math.trunc((Date.now() - 2 * 86400000) / 86400000);
+  const strongPoints = [
+    {
+      day: baseDay,
+      scs: 0.72,
+      tci: 0.71,
+      mri: 0.2,
+      evidenceTrust: 'strong',
+      evidenceTrustReasons: ['All citations resolve to exact line spans.']
+    },
+    {
+      day: baseDay + 1,
+      scs: 0.86,
+      tci: 0.76,
+      mri: 0.18,
+      evidenceTrust: 'strong',
+      evidenceTrustReasons: ['All citations resolve to exact line spans.']
+    }
+  ];
+  const weakPoints = structuredClone(strongPoints);
+  weakPoints[1].evidenceTrust = 'weak';
+  weakPoints[1].evidenceTrustReasons = ['1 coarse citation remains unpinned to exact line spans.'];
+
+  writeHistory(strongFixture.tmp, strongPoints);
+  writeHistory(weakFixture.tmp, weakPoints);
+
+  const strong = runPredict(repoRoot, strongFixture.tmp, { MORIARTY_USE_GIT: '0' });
+  const weak = runPredict(repoRoot, weakFixture.tmp, { MORIARTY_USE_GIT: '0' });
+
+  assert.equal(strong.explain.readiness.evidenceTrust.pass, true);
+  assert.equal(weak.explain.readiness.evidenceTrust.pass, false);
+  assert.equal(weak.explain.readiness.evidenceTrust.value, 'weak');
+  assert.ok(weak.confidence < strong.confidence, 'weak evidence trust should reduce confidence');
+  assert.ok(
+    Array.isArray(weak.warnings) && weak.warnings.some((warning) => warning.includes('Evidence trust is weak')),
+    'weak trust should surface a warning'
+  );
+});
+
 test('scenario 8: velocity cliff pattern appears', () => {
   const { tmp } = mkBundleDir();
   const baseDay = Math.trunc((Date.now() - 5*86400000)/86400000);

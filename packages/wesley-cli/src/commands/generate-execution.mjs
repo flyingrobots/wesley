@@ -1,5 +1,7 @@
 import { filterIRByUnits } from '@wesley/core/domain/SchemaFilter';
 import {
+  adjustReadinessVerdictForEvidenceTrust,
+  assessEvidenceTrust,
   GENERATED_BUNDLE_PATH,
   GENERATED_HISTORY_PATH,
   GENERATED_SCORES_PATH,
@@ -7,7 +9,8 @@ import {
   WesleyError,
   createRunId,
   lineSpanForContent,
-  generatedArtifactPathCandidates
+  generatedArtifactPathCandidates,
+  summarizeEvidenceQuality
 } from '@wesley/core';
 import {
   LEGACY_SUPABASE_TRANSMUTATION,
@@ -330,9 +333,6 @@ async function emitPlaceholderBundle({ ctx, artifacts, outDir, logger, options }
     const scs = Math.min(1, Math.max(0, (artifacts.length > 0 ? 0.6 : 0.3)));
     const tci = artifacts.some(a => a.name?.includes('tests')) ? 0.7 : 0.4;
     const mri = 0.2;
-    const readiness = {
-      verdict: (scs > 0.75 && tci > 0.6 ? 'ELEMENTARY' : (scs > 0.4 ? 'REQUIRES INVESTIGATION' : 'YOU SHALL NOT PASS'))
-    };
 
     const scores = {
       version: '2.0.0',
@@ -361,7 +361,6 @@ async function emitPlaceholderBundle({ ctx, artifacts, outDir, logger, options }
           totalPoints: Math.round(mri * 100)
         }
       },
-      readiness,
       metadata: {
         tables: 0,
         migrationSteps: 0,
@@ -393,6 +392,29 @@ async function emitPlaceholderBundle({ ctx, artifacts, outDir, logger, options }
       }
     };
 
+    const citationQuality = summarizeEvidenceQuality(
+      evidence,
+      createGeneratedArtifactResolver(artifacts, outDir)
+    );
+    const evidenceTrust = assessEvidenceTrust(citationQuality);
+    const baseVerdict = (scs > 0.75 && tci > 0.6
+      ? 'ELEMENTARY'
+      : (scs > 0.4 ? 'REQUIRES INVESTIGATION' : 'YOU SHALL NOT PASS'));
+    const readiness = {
+      verdict: adjustReadinessVerdictForEvidenceTrust(baseVerdict, evidenceTrust.level),
+      baseVerdict,
+      evidenceTrust: evidenceTrust.level,
+      evidenceTrustReasons: evidenceTrust.reasons
+    };
+
+    scores.readiness = readiness;
+    scores.metadata = {
+      ...scores.metadata,
+      citationQuality,
+      evidenceTrust: evidenceTrust.level,
+      evidenceTrustReasons: evidenceTrust.reasons
+    };
+
     const bundle = { sha, timestamp, bundleVersion: '2.0.0', evidence, scores };
     await ctx.fs.write(GENERATED_SCORES_PATH, JSON.stringify(scores, null, 2));
     await ctx.fs.write(GENERATED_BUNDLE_PATH, JSON.stringify(bundle, null, 2));
@@ -411,7 +433,15 @@ async function emitPlaceholderBundle({ ctx, artifacts, outDir, logger, options }
           'main'
       });
       const day = Math.floor(Date.now() / 86400000);
-      const nextPoints = mergeHistoryPoints(history.points, [{ day, timestamp, scs, tci, mri }]);
+      const nextPoints = mergeHistoryPoints(history.points, [{
+        day,
+        timestamp,
+        scs,
+        tci,
+        mri,
+        evidenceTrust: evidenceTrust.level,
+        evidenceTrustReasons: evidenceTrust.reasons
+      }]);
       await ctx.fs.write(GENERATED_HISTORY_PATH, JSON.stringify({ points: nextPoints }, null, 2));
     } catch (error) {
       logger.debug?.({ err: error }, 'Could not refresh Moriarty history while emitting placeholder bundle.');
@@ -419,6 +449,17 @@ async function emitPlaceholderBundle({ ctx, artifacts, outDir, logger, options }
   } catch (e) {
     logger.warn('Could not emit HOLMES evidence bundle: ' + (e?.message || e));
   }
+}
+
+function createGeneratedArtifactResolver(artifacts, outDir) {
+  const contentByFile = new Map();
+  for (const artifact of artifacts || []) {
+    if (typeof artifact?.name !== 'string' || artifact.name.length === 0) continue;
+    if (typeof artifact?.content !== 'string') continue;
+    contentByFile.set(artifact.name, artifact.content);
+    contentByFile.set(`${outDir}/${artifact.name}`, artifact.content);
+  }
+  return (file) => contentByFile.get(file) ?? null;
 }
 
 function shouldEnforceClean(env, options) {

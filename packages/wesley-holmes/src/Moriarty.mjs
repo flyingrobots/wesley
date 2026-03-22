@@ -3,6 +3,10 @@
  * Predictive analytics for schema completion
  */
 
+import {
+  confidencePenaltyForEvidenceTrust,
+  evidenceTrustMeetsThreshold
+} from '@wesley/core';
 import { realGitAdapter } from './ports/git.mjs';
 
 export class Moriarty {
@@ -40,12 +44,20 @@ export class Moriarty {
   predictionData() {
     const analysisAt = new Date().toISOString();
     const historyPoints = Array.isArray(this.history?.points) ? this.history.points : [];
-    const recentHistory = historyPoints.slice(-7).map(point => ({
-      timestamp: point.timestamp ?? this.formatDateString(point.day),
-      scs: point.scs ?? 0,
-      tci: point.tci ?? 0,
-      mri: point.mri ?? 0
-    }));
+    const recentHistory = historyPoints.slice(-7).map(point => {
+      const normalizedTrust = normalizeEvidenceTrustLevel(point.evidenceTrust);
+      const normalizedReasons = normalizedTrust
+        ? normalizeEvidenceTrustReasons(point.evidenceTrustReasons, normalizedTrust)
+        : [];
+      return {
+        timestamp: point.timestamp ?? this.formatDateString(point.day),
+        scs: point.scs ?? 0,
+        tci: point.tci ?? 0,
+        mri: point.mri ?? 0,
+        ...(normalizedTrust ? { evidenceTrust: normalizedTrust } : {}),
+        ...(normalizedReasons.length > 0 ? { evidenceTrustReasons: normalizedReasons } : {})
+      };
+    });
     const base = {
       metadata: {
         analysisAt
@@ -53,7 +65,8 @@ export class Moriarty {
       history: recentHistory,
       plateauDetected: false,
       regressionDetected: false,
-      patterns: []
+      patterns: [],
+      warnings: []
     };
 
     if (!historyPoints || historyPoints.length < 2) {
@@ -68,6 +81,10 @@ export class Moriarty {
     const slope = this.calculateSlope(series);
     const recentVelocity = this.calculateRecentVelocity(series);
     const latest = this.history.points[this.history.points.length - 1];
+    const latestEvidenceTrust = normalizeEvidenceTrustLevel(latest?.evidenceTrust);
+    const latestEvidenceTrustReasons = latestEvidenceTrust
+      ? normalizeEvidenceTrustReasons(latest?.evidenceTrustReasons, latestEvidenceTrust)
+      : [];
     // Optional: blend SCS velocity with Git activity to avoid false plateaus
     let gitActivity = null;
     let activityIndex = 0;
@@ -124,6 +141,17 @@ export class Moriarty {
       }
     }
 
+    const warnings = [];
+    if (latestEvidenceTrust) {
+      const trustPenalty = confidencePenaltyForEvidenceTrust(latestEvidenceTrust);
+      if (confidence !== null && trustPenalty > 0) {
+        confidence = Math.max(0, confidence - trustPenalty);
+      }
+      if (!evidenceTrustMeetsThreshold(latestEvidenceTrust, 'moderate')) {
+        warnings.push(`Evidence trust is ${latestEvidenceTrust}; ${latestEvidenceTrustReasons[0]}`);
+      }
+    }
+
     const result = {
       ...base,
       status: 'OK',
@@ -137,7 +165,8 @@ export class Moriarty {
       gitActivity: gitActivity ? { ...gitActivity, burstinessIndex } : undefined,
       plateauDetected: plateau,
       regressionDetected: regression,
-      patterns: this.detectPatterns()
+      patterns: this.detectPatterns(),
+      warnings
     };
 
     // Readiness EXPLAIN (non-blocking): clarify what "prod-ready" means
@@ -145,7 +174,8 @@ export class Moriarty {
       scs: Number(process.env.MORIARTY_READY_SCS || '0.8'),
       tci: Number(process.env.MORIARTY_READY_TCI || '0.7'),
       mri: Number(process.env.MORIARTY_READY_MRI || '0.4'),
-      ci: Number(process.env.MORIARTY_READY_CI_STABILITY || '0.9')
+      ci: Number(process.env.MORIARTY_READY_CI_STABILITY || '0.9'),
+      evidenceTrust: process.env.MORIARTY_READY_EVIDENCE_TRUST || 'moderate'
     };
     const ci = this.context?.ci || {};
     const readiness = {
@@ -154,6 +184,14 @@ export class Moriarty {
       mri: { value: latest.mri ?? 0, pass: (latest.mri ?? 0) <= thresholds.mri, threshold: thresholds.mri },
       ci:  { value: Number(ci.stability ?? 0), pass: Number(ci.stability ?? 0) >= thresholds.ci, threshold: thresholds.ci, windowHours: this.context?.timeframeHours }
     };
+    if (latestEvidenceTrust) {
+      readiness.evidenceTrust = {
+        value: latestEvidenceTrust,
+        pass: evidenceTrustMeetsThreshold(latestEvidenceTrust, thresholds.evidenceTrust),
+        threshold: thresholds.evidenceTrust,
+        reasons: latestEvidenceTrustReasons
+      };
+    }
     result.explain = {
       thresholds,
       readiness,
@@ -204,6 +242,9 @@ export class Moriarty {
     report.push(`**SCS**: ${this.makeProgressBar(latest.scs)} ${(latest.scs * 100).toFixed(1)}%`);
     report.push(`**TCI**: ${this.makeProgressBar(latest.tci)} ${(latest.tci * 100).toFixed(1)}%`);
     report.push(`**MRI**: ${(latest.mri * 100).toFixed(1)}% risk`);
+    if (latest.evidenceTrust) {
+      report.push(`**Evidence Trust**: ${latest.evidenceTrust}`);
+    }
     report.push('');
 
     report.push('## 📈 Velocity Analysis');
@@ -308,6 +349,12 @@ export class Moriarty {
       report.push(`- MRI ≤ ${(data.explain.thresholds.mri*100).toFixed(0)}% → ${r.mri.pass ? 'PASS ✅' : 'FAIL ❌'} (actual ${(r.mri.value*100).toFixed(1)}%)`);
       if (Number.isFinite(r.ci.value)) {
         report.push(`- CI Stability ≥ ${(data.explain.thresholds.ci*100).toFixed(0)}% (branch ${this.context?.ci?.branch || 'base'}) → ${r.ci.pass ? 'PASS ✅' : 'FAIL ❌'} (actual ${(r.ci.value*100).toFixed(0)}% over ~${r.ci.windowHours ?? '?'}h)`);
+      }
+      if (r.evidenceTrust) {
+        const reason = Array.isArray(r.evidenceTrust.reasons) && r.evidenceTrust.reasons.length > 0
+          ? ` — ${r.evidenceTrust.reasons[0]}`
+          : '';
+        report.push(`- Evidence Trust ≥ ${r.evidenceTrust.threshold} → ${r.evidenceTrust.pass ? 'PASS ✅' : 'FAIL ❌'} (actual ${r.evidenceTrust.value})${reason}`);
       }
       if (data.explain.delivery) {
         report.push(`- Delivery context (last ${this.context?.timeframeHours ?? 168}h): ${data.explain.delivery.issuesClosed} issues closed · ${data.explain.delivery.prsMerged} PRs merged (informational, not gating)`);
@@ -701,5 +748,34 @@ export class Moriarty {
     const cv = sd / mean; // coefficient of variation
     // Map CV to 0..1 with a soft cap; CV≈2 or more → ~1
     return Math.min(1, cv / 2);
+  }
+}
+
+function normalizeEvidenceTrustLevel(level) {
+  switch (level) {
+  case 'strong':
+  case 'moderate':
+  case 'weak':
+  case 'missing':
+    return level;
+  default:
+    return null;
+  }
+}
+
+function normalizeEvidenceTrustReasons(reasons, level) {
+  if (Array.isArray(reasons) && reasons.length > 0) {
+    return reasons.filter((reason) => typeof reason === 'string' && reason.length > 0);
+  }
+
+  switch (level) {
+  case 'moderate':
+    return ['Whole-file citations still rely on broad file-level proof.'];
+  case 'weak':
+    return ['Coarse citations remain unpinned to exact line spans.'];
+  case 'missing':
+    return ['No evidence citations were available for trust analysis.'];
+  default:
+    return ['All citations resolve to exact line spans.'];
   }
 }

@@ -1,6 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { GENERATED_BUNDLE_PATH } from '@wesley/core';
+import {
+  GENERATED_BUNDLE_PATH,
+  GENERATED_HISTORY_PATH,
+  GENERATED_SCORES_PATH
+} from '@wesley/core';
 import {
   LEGACY_SUPABASE_TRANSMUTATION,
   LegacySupabaseGeneratorPlugin
@@ -285,10 +289,27 @@ test('runSequentialGeneration emits exact whole-file spans in the placeholder bu
   });
 
   const bundleWrite = fsWrites.find((entry) => entry.path === GENERATED_BUNDLE_PATH);
+  const scoresWrite = fsWrites.find((entry) => entry.path === GENERATED_SCORES_PATH);
+  const historyWrite = fsWrites.find((entry) => entry.path === GENERATED_HISTORY_PATH);
   assert.ok(bundleWrite, 'expected placeholder bundle write');
+  assert.ok(scoresWrite, 'expected placeholder scores write');
+  assert.ok(historyWrite, 'expected placeholder history write');
   const bundle = JSON.parse(bundleWrite.content);
+  const scores = JSON.parse(scoresWrite.content);
+  const history = JSON.parse(historyWrite.content);
   assert.equal(bundle.evidence.evidence.schema.sql[0].lines, '1-2');
   assert.equal(bundle.evidence.evidence.schema.tests[0].lines, '1-2');
+  assert.deepEqual(scores.metadata.citationQuality, {
+    exact: 0,
+    wholeFile: 2,
+    coarse: 0
+  });
+  assert.equal(scores.metadata.evidenceTrust, 'moderate');
+  assert.equal(scores.readiness.evidenceTrust, 'moderate');
+  assert.equal(history.points.at(-1).evidenceTrust, 'moderate');
+  assert.deepEqual(history.points.at(-1).evidenceTrustReasons, [
+    '2 whole-file citations still rely on broad file-level proof.'
+  ]);
 });
 
 test('runSequentialGeneration keeps dry-run side effects disabled', async () => {
