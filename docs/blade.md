@@ -69,6 +69,7 @@ Suggestions to enhance the show:
 ## Evidence + Certificate
 
 - `wesley cert-create` renders `.wesley-cache/SHIPME.md` with a canonical JSON block
+- SHIPME includes an evidence-quality summary, so exact citations, whole-file fallbacks, and coarse citations remain visible in the certificate
 - `wesley blade --counterfactual [baseRef]` writes counterfactual artifacts under `.wesley-cache/counterfactual/`
 - `wesley cert-sign` adds signatures (e.g., HOLMES) to `.wesley-cache/SHIPME.md`
 - `wesley cert-verify` prints a badge from `.wesley-cache/SHIPME.md`: `[REALM] PASS — sha abc1234`
