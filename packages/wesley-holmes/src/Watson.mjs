@@ -5,7 +5,11 @@
 
 import { existsSync, readFileSync } from 'node:fs';
 import { execSync } from 'node:child_process';
-import { extractContentForLineSpan, isExactLineSpan } from '@wesley/core';
+import {
+  extractContentForLineSpan,
+  isExactLineSpan,
+  isWholeFileLineSpan
+} from '@wesley/core';
 
 export class Watson {
   constructor(bundle) {
@@ -38,6 +42,9 @@ export class Watson {
         verified: citations.verified,
         failed: citations.failed,
         unverified: citations.unverified,
+        exact: citations.exact,
+        wholeFile: citations.wholeFile,
+        coarse: citations.coarse,
         rate: verificationRate
       },
       math: {
@@ -68,6 +75,9 @@ export class Watson {
     report.push(`- **Verified**: ${data.citations.verified} ✅`);
     report.push(`- **Failed**: ${data.citations.failed} ❌`);
     report.push(`- **Unable to Verify**: ${data.citations.unverified}`);
+    report.push(`- **Exact Subrange Citations**: ${data.citations.exact}`);
+    report.push(`- **Whole-file Citations**: ${data.citations.wholeFile}`);
+    report.push(`- **Coarse Citations**: ${data.citations.coarse}`);
     report.push('');
     report.push(`**Verification Rate**: ${(data.citations.rate * 100).toFixed(1)}%`);
     report.push('');
@@ -122,6 +132,9 @@ export class Watson {
     let verified = 0;
     let failed = 0;
     let unverified = 0;
+    let exact = 0;
+    let wholeFile = 0;
+    let coarse = 0;
 
     for (const evidence of Object.values(this.evidence.evidence || {})) {
       for (const locations of Object.values(evidence)) {
@@ -145,8 +158,14 @@ export class Watson {
           }
           const gitContent = snapshot.content;
           if (!isExactLineSpan(loc.lines)) {
+            coarse++;
             unverified++;
             continue;
+          }
+          if (isWholeFileLineSpan(gitContent, loc.lines)) {
+            wholeFile++;
+          } else {
+            exact++;
           }
           const gitSpan = extractContentForLineSpan(gitContent, loc.lines);
           if (gitSpan === null) {
@@ -178,7 +197,7 @@ export class Watson {
       }
     }
 
-    return { total, verified, failed, unverified };
+    return { total, verified, failed, unverified, exact, wholeFile, coarse };
   }
 
   verifyMath() {

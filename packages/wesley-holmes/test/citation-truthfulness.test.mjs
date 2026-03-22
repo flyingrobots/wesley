@@ -32,6 +32,52 @@ test('Holmes prefers exact citations over wildcard spans', () => {
     holmes.getCitation(holmes.evidence.evidence.schema),
     'ops/all_users.view.sql:4-4@abcdef1'
   );
+  assert.equal(holmes.getEvidenceStrength(holmes.evidence.evidence.schema), 'exact');
+});
+
+test('Holmes prefers a narrow exact span over a whole-file span', () => {
+  const tempDir = mkdtempSync(path.join(tmpdir(), 'holmes-citation-'));
+  const previousCwd = process.cwd();
+  try {
+    process.chdir(tempDir);
+    writeFileSync('schema.sql', ['one', 'two', 'three', ''].join('\n'));
+    writeFileSync('tests.sql', ['test line', 'second test line', ''].join('\n'));
+
+    const sha = 'abcdef1234567890abcdef1234567890abcdef12';
+    const holmes = new Holmes({
+      sha,
+      timestamp: '2026-03-21T00:00:00.000Z',
+      bundleVersion: '2.0.0',
+      evidence: {
+        evidence: {
+          schema: {
+            sql: [{ file: 'schema.sql', lines: '1-3', sha }],
+            tests: [{ file: 'tests.sql', lines: '1-1', sha }]
+          }
+        }
+      },
+      scores: {
+        scores: { scs: 0.5, tci: 0.5, mri: 0.1 },
+        readiness: { verdict: 'REQUIRES INVESTIGATION' }
+      }
+    });
+
+    assert.equal(
+      holmes.getCitation(holmes.evidence.evidence.schema),
+      'tests.sql:1-1@abcdef1'
+    );
+    const data = holmes.investigationData();
+    assert.deepEqual(data.metadata.citationQuality, {
+      exact: 1,
+      wholeFile: 1,
+      coarse: 0
+    });
+    assert.equal(data.evidence[0].evidenceStrength, 'exact');
+    assert.equal(data.evidence[0].status, '⚠️ Whole-file/mixed SQL & tests');
+  } finally {
+    process.chdir(previousCwd);
+    rmSync(tempDir, { recursive: true, force: true });
+  }
 });
 
 test('Watson verifies the cited span instead of requiring the full file to match', () => {
@@ -70,7 +116,10 @@ test('Watson verifies the cited span instead of requiring the full file to match
       total: 1,
       verified: 1,
       failed: 0,
-      unverified: 0
+      unverified: 0,
+      exact: 1,
+      wholeFile: 0,
+      coarse: 0
     });
   } finally {
     process.chdir(previousCwd);
@@ -112,7 +161,10 @@ test('Watson leaves wildcard citations unverified', () => {
       total: 1,
       verified: 0,
       failed: 0,
-      unverified: 1
+      unverified: 1,
+      exact: 0,
+      wholeFile: 0,
+      coarse: 1
     });
   } finally {
     process.chdir(previousCwd);

@@ -30,6 +30,22 @@ export function isExactLineSpan(lines) {
   return parseLineSpan(lines) !== null;
 }
 
+export function lineSpanWidth(lines) {
+  const range = parseLineSpan(lines);
+  if (!range) return null;
+  return (range.end - range.start) + 1;
+}
+
+export function isWholeFileLineSpan(content, lines) {
+  const range = parseLineSpan(lines);
+  if (!range) return false;
+
+  const fullRange = parseLineSpan(lineSpanForContent(content));
+  return fullRange !== null
+    && range.start === fullRange.start
+    && range.end === fullRange.end;
+}
+
 export function extractContentForLineSpan(content, lines) {
   const range = parseLineSpan(lines);
   if (!range) return null;

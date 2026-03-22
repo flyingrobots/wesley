@@ -17,7 +17,12 @@ const holmesSample = {
     weightedCompletion: 0.9,
     tci: 0.8,
     mri: 0.1,
-    bundleVersion: '2.0.0'
+    bundleVersion: '2.0.0',
+    citationQuality: {
+      exact: 1,
+      wholeFile: 0,
+      coarse: 0
+    }
   },
   scores: {
     scs: 0.9,
@@ -55,8 +60,9 @@ const holmesSample = {
     {
       element: 'schema',
       weight: 5,
-      status: '✅ SQL & tests',
+      status: '✅ Exact SQL & tests',
       evidence: 'schema.sql:1-5@abc123',
+      evidenceStrength: 'exact',
       deduction: 'Elementary!'
     }
   ],
@@ -85,6 +91,9 @@ const watsonSample = {
     verified: 4,
     failed: 0,
     unverified: 0,
+    exact: 3,
+    wholeFile: 1,
+    coarse: 0,
     rate: 1
   },
   math: {

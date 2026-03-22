@@ -4,7 +4,11 @@
  */
 
 import { existsSync, readFileSync } from 'node:fs';
-import { isExactLineSpan } from '@wesley/core';
+import {
+  pickBestEvidenceLocation,
+  summarizeEvidenceKinds,
+  summarizeEvidenceQuality
+} from './evidence-selection.mjs';
 
 const DEFAULT_WEIGHTS = {
   password: 10,
@@ -43,7 +47,8 @@ export class Holmes {
       verificationStatus: this.scores?.readiness?.verdict ?? 'UNKNOWN',
       tci: scores.tci,
       mri: scores.mri,
-      bundleVersion: this.bundle.bundleVersion || this.scores?.version || '1.0.0'
+      bundleVersion: this.bundle.bundleVersion || this.scores?.version || '1.0.0',
+      citationQuality: summarizeEvidenceQuality(this.evidence)
     };
 
     const elements = [];
@@ -53,8 +58,9 @@ export class Holmes {
       const weightSource = typeof w === 'object' ? w.source : undefined;
       const status = this.getStatus(evidence);
       const citation = this.getCitation(evidence);
+      const evidenceStrength = this.getEvidenceStrength(evidence);
       const deduction = this.makeDeduction(uid, status);
-      const row = { element: uid, weight, status, evidence: citation, deduction };
+      const row = { element: uid, weight, status, evidence: citation, evidenceStrength, deduction };
       if (weightSource) row.weightSource = weightSource;
       elements.push(row);
     }
@@ -121,6 +127,9 @@ export class Holmes {
     lines.push(`**Weighted Completion**: ${this.progressBar(metadata.weightedCompletion)} ${(metadata.weightedCompletion * 100).toFixed(1)}%`);
     lines.push(`**Scores**: SCS ${(scores.scs * 100).toFixed(1)}% · TCI ${(scores.tci * 100).toFixed(1)}% · MRI ${(scores.mri * 100).toFixed(1)}%`);
     lines.push(`**Verification Status**: ${metadata.verificationCount} claims verified`);
+    if (metadata.citationQuality) {
+      lines.push(`**Citation Quality**: ${metadata.citationQuality.exact} exact · ${metadata.citationQuality.wholeFile} whole-file · ${metadata.citationQuality.coarse} coarse`);
+    }
     lines.push(`**Ship Verdict**: ${metadata.verificationStatus}`);
     lines.push('');
 
@@ -170,10 +179,10 @@ export class Holmes {
     lines.push('');
     lines.push('"Observe, Watson, how not all features carry equal importance..."');
     lines.push('');
-    lines.push('| Element | Weight | Status | Evidence | Deduction |');
-    lines.push('|---------|--------|--------|----------|-----------|');
+    lines.push('| Element | Weight | Status | Evidence | Strength | Deduction |');
+    lines.push('|---------|--------|--------|----------|----------|-----------|');
     for (const row of evidence) {
-      lines.push(`| ${row.element} | ${row.weight} | ${row.status} | ${row.evidence} | ${row.deduction} |`);
+      lines.push(`| ${row.element} | ${row.weight} | ${row.status} | ${row.evidence} | ${row.evidenceStrength} | ${row.deduction} |`);
     }
     lines.push('');
 
@@ -280,30 +289,39 @@ export class Holmes {
   }
 
   getStatus(evidence) {
-    const hasSQL = evidence.sql?.length > 0;
-    const hasTests = evidence.tests?.length > 0;
+    const quality = summarizeEvidenceKinds(evidence);
+    const hasSQL = hasAnyEvidence(quality.sql);
+    const hasTests = hasAnyEvidence(quality.tests);
+    const exactSQL = hasExactSubrange(quality.sql);
+    const exactTests = hasExactSubrange(quality.tests);
+    const structuredSQL = hasStructuredEvidence(quality.sql);
+    const structuredTests = hasStructuredEvidence(quality.tests);
 
-    if (hasSQL && hasTests) return '✅ SQL & tests';
-    if (hasSQL) return '⚠️ SQL only';
-    if (hasTests) return '⚠️ Tests only';
+    if (exactSQL && exactTests) return '✅ Exact SQL & tests';
+    if (structuredSQL && structuredTests) return '⚠️ Whole-file/mixed SQL & tests';
+    if (hasSQL && hasTests) return '⚠️ Coarse/mixed SQL & tests';
+    if (hasSQL) return structuredSQL ? '⚠️ Whole-file/mixed SQL only' : '⚠️ Coarse SQL only';
+    if (hasTests) return structuredTests ? '⚠️ Whole-file/mixed tests only' : '⚠️ Coarse tests only';
     return '⛔ Missing';
   }
 
   getCitation(evidence) {
-    let fallback = null;
-    for (const [_kind, locations] of Object.entries(evidence)) {
-      for (const location of locations || []) {
-        if (!location?.file) continue;
-        const rendered = `${location.file}:${location.lines}@${this.sha.substring(0, 7)}`;
-        if (isExactLineSpan(location.lines)) {
-          return rendered;
-        }
-        if (!fallback) {
-          fallback = rendered;
-        }
-      }
+    const best = pickBestEvidenceLocation(evidence);
+    if (!best) return 'No evidence';
+    return `${best.location.file}:${best.location.lines}@${this.sha.substring(0, 7)}`;
+  }
+
+  getEvidenceStrength(evidence) {
+    const best = pickBestEvidenceLocation(evidence);
+    if (!best) return 'missing';
+    switch (best.classification.strength) {
+    case 'exact':
+      return 'exact';
+    case 'wholeFile':
+      return 'whole-file';
+    default:
+      return 'coarse';
     }
-    return fallback || 'No evidence';
   }
 
   makeDeduction(uid, status) {
@@ -375,6 +393,18 @@ export class Holmes {
     }
     return weights;
   }
+}
+
+function hasAnyEvidence(summary) {
+  return Boolean(summary) && (summary.exact + summary.wholeFile + summary.coarse) > 0;
+}
+
+function hasStructuredEvidence(summary) {
+  return Boolean(summary) && (summary.exact + summary.wholeFile) > 0;
+}
+
+function hasExactSubrange(summary) {
+  return Boolean(summary) && summary.exact > 0;
 }
 
 function normalizeBreakdown(b) {

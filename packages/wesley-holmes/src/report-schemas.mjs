@@ -88,6 +88,15 @@ export const holmesReportSchema = {
         tci: numberField,
         mri: numberField,
         bundleVersion: stringField,
+        citationQuality: {
+          type: 'object',
+          required: ['exact', 'wholeFile', 'coarse'],
+          properties: {
+            exact: numberField,
+            wholeFile: numberField,
+            coarse: numberField
+          }
+        },
         commandRunId: { anyOf: [stringField, { type: 'null' }] },
         commandTransmutation: { anyOf: [stringField, { type: 'null' }] }
       }
@@ -156,12 +165,13 @@ export const holmesReportSchema = {
       type: 'array',
       items: {
         type: 'object',
-        required: ['element', 'weight', 'status', 'evidence', 'deduction'],
+        required: ['element', 'weight', 'status', 'evidence', 'evidenceStrength', 'deduction'],
         properties: {
           element: stringField,
           weight: numberField,
           status: stringField,
           evidence: stringField,
+          evidenceStrength: stringField,
           deduction: stringField
         }
       }
@@ -208,12 +218,15 @@ export const watsonReportSchema = {
     },
     citations: {
       type: 'object',
-      required: ['total', 'verified', 'failed', 'unverified', 'rate'],
+      required: ['total', 'verified', 'failed', 'unverified', 'exact', 'wholeFile', 'coarse', 'rate'],
       properties: {
         total: numberField,
         verified: numberField,
         failed: numberField,
         unverified: numberField,
+        exact: numberField,
+        wholeFile: numberField,
+        coarse: numberField,
         rate: numberField
       }
     },

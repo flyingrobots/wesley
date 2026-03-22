@@ -52,6 +52,8 @@ export {
   countContentLines,
   extractContentForLineSpan,
   isExactLineSpan,
+  isWholeFileLineSpan,
+  lineSpanWidth,
   lineSpanForContent,
   parseLineSpan
 } from './application/EvidenceSpans.mjs';
