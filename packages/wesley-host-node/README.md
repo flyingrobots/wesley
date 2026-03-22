@@ -10,6 +10,7 @@ Node.js host runtime that wires the pure `@wesley/core` engine into CLI adapters
 - Filesystem and shell adapters for CLI commands.
 - Entry binary (`bin/wesley.mjs`) invoked by `pnpm wesley …`.
 - Streaming logs, error handling, and environment guards (dirty workspace detection, etc.).
+- Host-side composition through injected runners, not ambient `globalThis` CLI state.
 
 ## Development
 

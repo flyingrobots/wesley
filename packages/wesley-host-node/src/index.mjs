@@ -14,6 +14,7 @@ export { NodeFileSystem } from './adapters/NodeFileSystem.mjs';
 export { PgParserAdapter } from './adapters/PgParserAdapter.mjs';
 export { PostgreSQLAdapter } from './adapters/PostgreSQLAdapter.mjs';
 export { WesleyFileWriter } from './adapters/WesleyFileWriter.mjs';
+export { runWesleyCli } from './runWesleyCli.mjs';
 
 // Import GraphQLAdapter for use in GraphQLSchemaParser
 import { GraphQLAdapter } from '@wesley/runtime-node';

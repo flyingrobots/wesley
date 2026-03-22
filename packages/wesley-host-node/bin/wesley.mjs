@@ -13,17 +13,10 @@ try {
   ({ program } = await import('../../wesley-cli/src/program.mjs'));
 }
 import { createNodeRuntime } from '../src/adapters/createNodeRuntime.mjs';
+import { runWesleyCli } from '../src/runWesleyCli.mjs';
 
-// Compose at the edge
-const ctx = await createNodeRuntime();
-// Expose context to CLI utilities that cannot receive DI directly
-globalThis.wesleyCtx = ctx;
-
-// Run the pure CLI with injected dependencies - pass full argv for Commander
-try {
-  const exitCode = await program(process.argv, ctx);
-  process.exit(exitCode || 0);
-} catch (error) {
-  console.error(error?.stack || error);
-  process.exit(1);
-}
+await runWesleyCli({
+  argv: process.argv,
+  createRuntime: createNodeRuntime,
+  runProgram: program
+});
