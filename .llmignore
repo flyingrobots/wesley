@@ -1,8 +1,8 @@
 .git/
 node_modules/
-.wesley/
+.wesley-cache/
 out/
-test/fixtures/examples/.wesley/
+test/fixtures/examples/.wesley-cache/
 test/fixtures/examples/out/
 test/fixtures/blade/out/
 coverage/

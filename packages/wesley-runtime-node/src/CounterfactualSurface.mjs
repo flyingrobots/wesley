@@ -2,7 +2,18 @@ import { existsSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import { buildAdditivePlan, explainPlan, lineSpanForContent } from '@wesley/core';
+import {
+  GENERATED_ARTIFACT_DIR,
+  EvidenceMap,
+  ScoringEngine,
+  buildAdditivePlan,
+  createGeneratedArtifactResolver,
+  enrichBundleWithEvidenceTruth,
+  explainPlan,
+  irToSchema,
+  lineSpanForContent,
+  mergePluginEvidenceIntoMap
+} from '@wesley/core';
 import { emitDDL, emitPgTap, emitRLS } from '@wesley/generator-supabase';
 
 import { GraphQLAdapter } from './GraphQLAdapter.mjs';
@@ -11,7 +22,7 @@ const DEFAULT_BUNDLE_TIMESTAMP = '1970-01-01T00:00:00.000Z';
 
 export async function ensureCounterfactualWorkspaceArtifacts({
   workspaceDir,
-  bundleDir = '.wesley',
+  bundleDir = GENERATED_ARTIFACT_DIR,
   outDir = 'out',
   schemaPath,
   sourceSha = 'unknown',
@@ -39,9 +50,11 @@ export async function ensureCounterfactualWorkspaceArtifacts({
   await mkdir(resolvedOutDir, { recursive: true });
 
   if (needsTransform) {
-    const ddl = await emitDDL(ir, { outDir: resolvedOutDir });
-    const rls = await emitRLS(ir, { outDir: resolvedOutDir });
-    const tests = await emitPgTap(ir, { outDir: resolvedOutDir });
+    const schema = irToSchema(ir);
+    const generatedOutDir = normalizeRelativePath(path.relative(resolvedWorkspaceDir, resolvedOutDir)) || 'out';
+    const ddl = await emitDDL(ir, { outDir: generatedOutDir });
+    const rls = await emitRLS(ir, { outDir: generatedOutDir });
+    const tests = await emitPgTap(ir, { outDir: generatedOutDir });
     const emitted = [
       ...normalizeEmittedFiles(ddl, resolvedWorkspaceDir, resolvedOutDir),
       ...normalizeEmittedFiles(rls, resolvedWorkspaceDir, resolvedOutDir),
@@ -56,6 +69,9 @@ export async function ensureCounterfactualWorkspaceArtifacts({
     const bundle = buildCounterfactualBundle({
       workspaceDir: resolvedWorkspaceDir,
       artifacts: emitted,
+      schema,
+      pluginEvidence: [ddl?.evidence, rls?.evidence, tests?.evidence],
+      outDir: generatedOutDir,
       sourceSha
     });
     await writeFile(bundlePath, JSON.stringify(bundle, null, 2));
@@ -90,35 +106,68 @@ function normalizeEmittedFiles(emitted, workspaceDir, outDir) {
   }));
 }
 
-function buildCounterfactualBundle({ workspaceDir, artifacts, sourceSha }) {
-  const evidence = {};
-  for (const artifact of artifacts) {
-    const rel = normalizeRelativePath(path.relative(workspaceDir, artifact.absolutePath));
-    evidence[`artifact:${rel}`] = {
-      generated: [
-        {
-          file: rel,
-          lines: lineSpanForContent(artifact.content),
-          sha: sourceSha
-        }
-      ]
-    };
+function buildCounterfactualBundle({ workspaceDir, artifacts, schema, pluginEvidence = [], outDir = 'out', sourceSha, transmutation = 'legacy-supabase' }) {
+  const evidenceMap = new EvidenceMap();
+  evidenceMap.setSha(sourceSha);
+  evidenceMap.timestamp = DEFAULT_BUNDLE_TIMESTAMP;
+
+  for (const entry of pluginEvidence) {
+    mergePluginEvidenceIntoMap(evidenceMap, entry, {
+      timestampOverride: DEFAULT_BUNDLE_TIMESTAMP
+    });
   }
 
-  return {
+  for (const artifact of artifacts) {
+    const rel = normalizeRelativePath(path.relative(workspaceDir, artifact.absolutePath));
+    const uid = `artifact:${rel}`;
+    if (evidenceMap.hasArtifact(uid, 'generated')) continue;
+    evidenceMap.record(uid, 'generated', {
+      file: rel,
+      lines: lineSpanForContent(artifact.content),
+      sha: sourceSha,
+      timestamp: DEFAULT_BUNDLE_TIMESTAMP
+    });
+  }
+
+  const scoring = new ScoringEngine(evidenceMap).exportScores(
+    schema,
+    [],
+    {},
+    { scs: legacySupabaseScoringOptions() }
+  );
+  scoring.timestamp = DEFAULT_BUNDLE_TIMESTAMP;
+
+  const baseBundle = {
+    bundleVersion: scoring.version,
+    transmutation,
     sha: sourceSha,
     timestamp: DEFAULT_BUNDLE_TIMESTAMP,
-    bundleVersion: 'counterfactual-v1',
-    evidence: {
-      evidence
+    evidence: evidenceMap.toJSON(),
+    scores: scoring
+  };
+
+  return enrichBundleWithEvidenceTruth({
+    bundle: baseBundle,
+    scores: scoring,
+    artifacts: artifacts.map((artifact) => ({
+      name: artifact.name,
+      content: artifact.content
+    })),
+    outDir,
+    resolver: createGeneratedArtifactResolver(
+      artifacts.map((artifact) => ({ name: artifact.name, content: artifact.content })),
+      outDir
+    )
+  }).bundle;
+}
+
+function legacySupabaseScoringOptions() {
+  return {
+    artifactGroups: {
+      sql: ['sql'],
+      tests: ['test']
     },
-    scores: {
-      scores: {
-        scs: 0,
-        tci: 0,
-        mri: 0
-      }
-    }
+    rollupGroups: ['sql']
   };
 }
 

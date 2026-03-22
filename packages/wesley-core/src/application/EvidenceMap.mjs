@@ -37,7 +37,7 @@ export class EvidenceMap {
       file: location.file,
       lines: location.lines,
       sha: this.sha || 'uncommitted',
-      timestamp: new Date().toISOString()
+      timestamp: location.timestamp || new Date().toISOString()
     });
   }
 
@@ -93,7 +93,7 @@ export class EvidenceMap {
       type: error.type || 'validation',
       severity: error.severity || 'error',
       context: error.context || {},
-      timestamp: new Date().toISOString(),
+      timestamp: error.timestamp || new Date().toISOString(),
       stack: error.stack
     });
   }
@@ -111,7 +111,7 @@ export class EvidenceMap {
       type: warning.type || 'validation',
       severity: warning.severity || 'warning',
       context: warning.context || {},
-      timestamp: new Date().toISOString()
+      timestamp: warning.timestamp || new Date().toISOString()
     });
   }
 
@@ -215,4 +215,48 @@ export class EvidenceMap {
 
     return map;
   }
+}
+
+export function mergePluginEvidenceIntoMap(evidenceMap, pluginEvidence, options = {}) {
+  if (!pluginEvidence || typeof pluginEvidence !== 'object') {
+    return evidenceMap;
+  }
+
+  const timestampOverride = typeof options.timestampOverride === 'string' && options.timestampOverride
+    ? options.timestampOverride
+    : null;
+
+  for (const [uid, entry] of Object.entries(pluginEvidence)) {
+    if (!entry || typeof entry !== 'object') continue;
+
+    if (entry.artifacts && typeof entry.artifacts === 'object' && !Array.isArray(entry.artifacts)) {
+      for (const [kind, location] of Object.entries(entry.artifacts)) {
+        if (!location || typeof location !== 'object') continue;
+        evidenceMap.record(uid, kind, {
+          ...location,
+          ...(timestampOverride ? { timestamp: timestampOverride } : {})
+        });
+      }
+    }
+
+    if (Array.isArray(entry.errors)) {
+      for (const error of entry.errors) {
+        evidenceMap.recordError(uid, {
+          ...error,
+          ...(timestampOverride ? { timestamp: timestampOverride } : {})
+        });
+      }
+    }
+
+    if (Array.isArray(entry.warnings)) {
+      for (const warning of entry.warnings) {
+        evidenceMap.recordWarning(uid, {
+          ...warning,
+          ...(timestampOverride ? { timestamp: timestampOverride } : {})
+        });
+      }
+    }
+  }
+
+  return evidenceMap;
 }

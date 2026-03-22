@@ -1,16 +1,15 @@
 import { filterIRByUnits } from '@wesley/core/domain/SchemaFilter';
 import {
-  adjustReadinessVerdictForEvidenceTrust,
-  assessEvidenceTrust,
   GENERATED_BUNDLE_PATH,
   GENERATED_HISTORY_PATH,
   GENERATED_SCORES_PATH,
   TransmutationRunner,
   WesleyError,
+  createGeneratedArtifactResolver,
   createRunId,
+  enrichBundleWithEvidenceTruth,
   irToSchema,
-  generatedArtifactPathCandidates,
-  summarizeEvidenceQuality
+  generatedArtifactPathCandidates
 } from '@wesley/core';
 import {
   LEGACY_SUPABASE_TRANSMUTATION,
@@ -365,32 +364,13 @@ async function resolveSourceSha(ctx, logger) {
 async function persistTransmutationArtifacts({ ctx, transmutationResult, artifacts, outDir, logger, options }) {
   if (!options.emitBundle || options.dryRun) return;
   try {
-    const scores = structuredClone(transmutationResult.scores || {});
-    const bundle = structuredClone(transmutationResult.bundle || {});
-    const citationQuality = summarizeEvidenceQuality(
-      bundle.evidence,
-      createGeneratedArtifactResolver(artifacts, outDir)
-    );
-    const evidenceTrust = assessEvidenceTrust(citationQuality);
-    const baseVerdict = scores.readiness?.baseVerdict || scores.readiness?.verdict || 'UNKNOWN';
-    const readiness = {
-      ...(scores.readiness || {}),
-      verdict: adjustReadinessVerdictForEvidenceTrust(baseVerdict, evidenceTrust.level),
-      baseVerdict,
-      ready: adjustReadinessVerdictForEvidenceTrust(baseVerdict, evidenceTrust.level) === 'ELEMENTARY',
-      evidenceTrust: evidenceTrust.level,
-      evidenceTrustReasons: evidenceTrust.reasons
-    };
-
-    scores.readiness = readiness;
-    scores.metadata = {
-      ...scores.metadata,
-      citationQuality,
-      evidenceTrust: evidenceTrust.level,
-      evidenceTrustReasons: evidenceTrust.reasons
-    };
-
-    bundle.scores = scores;
+    const { bundle, scores, evidenceTrust } = enrichBundleWithEvidenceTruth({
+      bundle: transmutationResult.bundle,
+      scores: transmutationResult.scores,
+      artifacts,
+      outDir,
+      resolver: createGeneratedArtifactResolver(artifacts, outDir)
+    });
     transmutationResult.scores = scores;
     transmutationResult.bundle = bundle;
     await ctx.fs.write(GENERATED_SCORES_PATH, JSON.stringify(scores, null, 2));
@@ -426,18 +406,6 @@ async function persistTransmutationArtifacts({ ctx, transmutationResult, artifac
   } catch (e) {
     logger.warn('Could not emit HOLMES evidence bundle: ' + (e?.message || e));
   }
-}
-
-function createGeneratedArtifactResolver(artifacts, outDir) {
-  const contentByFile = new Map();
-  for (const artifact of artifacts || []) {
-    if (typeof artifact?.name !== 'string' || artifact.name.length === 0) continue;
-    if (typeof artifact?.content !== 'string') continue;
-    contentByFile.set(artifact.name, artifact.content);
-    contentByFile.set(`${outDir}/${artifact.name}`, artifact.content);
-    contentByFile.set(`out/${artifact.name}`, artifact.content);
-  }
-  return (file) => contentByFile.get(file) ?? null;
 }
 
 function shouldEnforceClean(env, options) {

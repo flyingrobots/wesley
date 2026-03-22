@@ -17,7 +17,7 @@
  */
 
 import { validatePlugin, validatePlan, validateGenerateResult } from '../ports/GeneratorPlugin.mjs';
-import { EvidenceMap } from './EvidenceMap.mjs';
+import { EvidenceMap, mergePluginEvidenceIntoMap } from './EvidenceMap.mjs';
 import { ScoringEngine, BUNDLE_VERSION } from './Scoring.mjs';
 import { createRuntimeEventCollector } from './RuntimeEvents.mjs';
 import { deepFreeze } from '../util/deepFreeze.mjs';
@@ -332,27 +332,7 @@ export class TransmutationRunner {
     }
 
     // Merge plugin evidence into the transmutation evidence map
-    if (pluginEvidence) {
-      for (const [uid, entry] of Object.entries(pluginEvidence)) {
-        if (entry != null && typeof entry === 'object') {
-          if (entry.artifacts != null && typeof entry.artifacts === 'object' && !Array.isArray(entry.artifacts)) {
-            for (const [kind, location] of Object.entries(entry.artifacts)) {
-              evidenceMap.record(uid, kind, location);
-            }
-          }
-          if (Array.isArray(entry.errors)) {
-            for (const err of entry.errors) {
-              evidenceMap.recordError(uid, err);
-            }
-          }
-          if (Array.isArray(entry.warnings)) {
-            for (const warn of entry.warnings) {
-              evidenceMap.recordWarning(uid, warn);
-            }
-          }
-        }
-      }
-    }
+    mergePluginEvidenceIntoMap(evidenceMap, pluginEvidence);
 
     const artifactCount = Object.keys(artifacts).length;
     eventCollector.emit('TaskCompleted', {

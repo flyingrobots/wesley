@@ -50,6 +50,8 @@ export * from './application/UseCases.mjs';
 export { GenerationPipeline } from './application/GenerationPipeline.mjs';
 export { irToSchema } from './application/irToSchema.mjs';
 export { EvidenceMap } from './application/EvidenceMap.mjs';
+export { mergePluginEvidenceIntoMap } from './application/EvidenceMap.mjs';
+export { createGeneratedArtifactResolver, enrichBundleWithEvidenceTruth } from './application/GeneratedBundle.mjs';
 export {
   adjustReadinessVerdictForEvidenceTrust,
   assessEvidenceTrust,

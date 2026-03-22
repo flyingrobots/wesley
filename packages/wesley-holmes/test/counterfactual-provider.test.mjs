@@ -236,7 +236,7 @@ test('analyzeCounterfactual materializes missing workspace artifacts in process'
 
     assert.ok(report.facts.comparison.factDigest);
     assert.equal(
-      readFileSync(path.join(fixture.tempDir, GENERATED_ARTIFACT_DIR, 'bundle.json'), 'utf8').includes('"bundleVersion": "counterfactual-v1"'),
+      readFileSync(path.join(fixture.tempDir, GENERATED_ARTIFACT_DIR, 'bundle.json'), 'utf8').includes('"bundleVersion": "2.0.0"'),
       true
     );
     assert.equal(
