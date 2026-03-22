@@ -6,6 +6,7 @@ import {
   TransmutationRunner,
   WesleyError,
   createRunId,
+  lineSpanForContent,
   generatedArtifactPathCandidates
 } from '@wesley/core';
 import {
@@ -368,12 +369,27 @@ async function emitPlaceholderBundle({ ctx, artifacts, outDir, logger, options }
       }
     };
 
+    const schemaEvidence = {};
+    const schemaArtifact = artifacts.find((artifact) => artifact.name === 'schema.sql');
+    if (schemaArtifact) {
+      schemaEvidence.sql = [{
+        file: `${outDir}/schema.sql`,
+        lines: lineSpanForContent(schemaArtifact.content),
+        sha
+      }];
+    }
+    const testsArtifact = artifacts.find((artifact) => artifact.name === 'tests.sql');
+    if (testsArtifact) {
+      schemaEvidence.tests = [{
+        file: `${outDir}/tests.sql`,
+        lines: lineSpanForContent(testsArtifact.content),
+        sha
+      }];
+    }
+
     const evidence = {
       evidence: {
-        schema: {
-          sql: [{ file: `${outDir}/schema.sql`, lines: '1-9999', sha }],
-          tests: [{ file: `${outDir}/tests.sql`, lines: '1-9999', sha }]
-        }
+        schema: schemaEvidence
       }
     };
 

@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { GENERATED_BUNDLE_PATH } from '@wesley/core';
 import {
   LEGACY_SUPABASE_TRANSMUTATION,
   LegacySupabaseGeneratorPlugin
@@ -226,6 +227,68 @@ test('runSequentialGeneration preserves a caller-supplied runId', async () => {
 
   assert.equal(result.runId, 'run-cli-123');
   assert.equal(context.transmutationRun.runId, 'run-cli-123');
+});
+
+test('runSequentialGeneration emits exact whole-file spans in the placeholder bundle', async () => {
+  const fsWrites = [];
+  const ctx = {
+    parsers: {
+      graphql: {
+        parse: () => ({
+          tables: [{ name: 'User', fields: [], indexes: [], directives: {} }]
+        })
+      }
+    },
+    generators: {
+      sql: {
+        emitDDL: () => ({ files: [{ name: 'schema.sql', content: '-- ddl\ncreate table users ();' }] }),
+        emitRLS: () => ({ files: [{ name: 'rls.sql', content: '-- rls' }] })
+      },
+      tests: {
+        emitPgTap: () => ({ files: [{ name: 'tests.sql', content: '-- tests\nselect plan(1);' }] })
+      }
+    },
+    writer: {
+      writeFiles: async () => {}
+    },
+    fs: {
+      write: async (targetPath, content) => {
+        fsWrites.push({ path: targetPath, content });
+      }
+    },
+    stderr: { write() {} },
+    stdout: { write() {} },
+    shell: {
+      exec: async () => ({ stdout: 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeef\n' })
+    },
+    clock: { now: () => '2026-03-18T12:00:00.000Z' },
+    config: { paths: {} }
+  };
+  const context = {
+    schemaContent: 'type User @wes_table { id: ID! @wes_pk }',
+    schemaPath: 'schema.graphql',
+    options: {
+      outDir: 'out',
+      supabase: true,
+      dryRun: false,
+      quiet: true,
+      json: false,
+      emitBundle: true
+    },
+    logger: noopLogger
+  };
+
+  await runSequentialGeneration({
+    ctx,
+    context,
+    compileOpsIfRequested: async () => {}
+  });
+
+  const bundleWrite = fsWrites.find((entry) => entry.path === GENERATED_BUNDLE_PATH);
+  assert.ok(bundleWrite, 'expected placeholder bundle write');
+  const bundle = JSON.parse(bundleWrite.content);
+  assert.equal(bundle.evidence.evidence.schema.sql[0].lines, '1-2');
+  assert.equal(bundle.evidence.evidence.schema.tests[0].lines, '1-2');
 });
 
 test('runSequentialGeneration keeps dry-run side effects disabled', async () => {

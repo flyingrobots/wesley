@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import { buildAdditivePlan, explainPlan } from '@wesley/core';
+import { buildAdditivePlan, explainPlan, lineSpanForContent } from '@wesley/core';
 import { emitDDL, emitPgTap, emitRLS } from '@wesley/generator-supabase';
 
 import { GraphQLAdapter } from './GraphQLAdapter.mjs';
@@ -95,7 +95,7 @@ function buildCounterfactualBundle({ workspaceDir, artifacts, sourceSha }) {
       generated: [
         {
           file: rel,
-          lines: '1-9999',
+          lines: lineSpanForContent(artifact.content),
           sha: sourceSha
         }
       ]
