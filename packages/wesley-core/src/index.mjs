@@ -51,6 +51,11 @@ export { GenerationPipeline } from './application/GenerationPipeline.mjs';
 export { irToSchema } from './application/irToSchema.mjs';
 export { EvidenceMap } from './application/EvidenceMap.mjs';
 export { mergePluginEvidenceIntoMap } from './application/EvidenceMap.mjs';
+export {
+  collectCounterfactualSurfaceModel,
+  ensureCounterfactualWorkspaceArtifacts,
+  resolveCounterfactualSchemaPath
+} from './application/CounterfactualSurface.mjs';
 export { createGeneratedArtifactResolver, enrichBundleWithEvidenceTruth } from './application/GeneratedBundle.mjs';
 export {
   adjustReadinessVerdictForEvidenceTrust,
@@ -152,6 +157,7 @@ export { LoggerPort } from './ports/Logger.mjs';
 export { ClockPort, SystemClock, FakeClock, systemClock } from './ports/clock.mjs';
 export { GeneratorPlugin, validatePlugin, validatePlan, validateGenerateResult, SUPPORTED_API_VERSIONS } from './ports/GeneratorPlugin.mjs';
 export { ArtifactWriterPort, detectConflicts } from './ports/ArtifactWriter.mjs';
+export { assertCounterfactualSurfacePort } from './ports/CounterfactualSurface.mjs';
 export { EventStorePort, assertEventStorePort } from './ports/EventStore.mjs';
 
 // Utility helpers

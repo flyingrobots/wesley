@@ -19,12 +19,8 @@ import WarpGraph, {
   exportCoordinateTransferPlanFact,
   normalizeVisibleStateScopeV1
 } from '@git-stunts/git-warp';
-import {
-  GENERATED_ARTIFACT_DIR,
-  GENERATED_COUNTERFACTUAL_CURRENT_PATH,
-  GENERATED_COUNTERFACTUAL_DIR
-} from '@wesley/core';
-import { ensureCounterfactualWorkspaceArtifacts } from '@wesley/runtime-node';
+import { GENERATED_COUNTERFACTUAL_CURRENT_PATH, GENERATED_COUNTERFACTUAL_DIR } from '@wesley/core';
+import { collectCounterfactualSurfaceModel } from '@wesley/runtime-node';
 
 export const COUNTERFACTUAL_GRAPH_NAME = 'wesley-counterfactual-v1';
 export const COUNTERFACTUAL_SURFACE_VERSION = 'wesley-counterfactual-v1';
@@ -89,7 +85,6 @@ export async function analyzeCounterfactual({
 
     const headSurface = await ensureEncodedSurface({
       store,
-      repoRoot: workspaceRoot,
       workspaceDir: headWorkspace,
       sourceSha: resolved.headSha,
       sourceId: requestedLane.headRef === 'HEAD' ? `workspace:${resolved.headSha}` : `ref:${resolved.headSha}`,
@@ -99,7 +94,6 @@ export async function analyzeCounterfactual({
     });
     const baseSurface = await ensureEncodedSurface({
       store,
-      repoRoot: workspaceRoot,
       workspaceDir: baseWorkspace,
       sourceSha: resolved.baseSha,
       sourceId: `ref:${resolved.baseSha}`,
@@ -111,7 +105,6 @@ export async function analyzeCounterfactual({
     for (const braid of braidWorkspaces) {
       braidSurfaces.push(await ensureEncodedSurface({
         store,
-        repoRoot: workspaceRoot,
         workspaceDir: braid.workspace,
         sourceSha: braid.sha,
         sourceId: `braid:${braid.sha}`,
@@ -363,8 +356,8 @@ function resolveLaneRefs(repoRoot, lane) {
   return { baseSha, headSha, braids };
 }
 
-async function ensureEncodedSurface({ store, repoRoot, workspaceDir, sourceSha, sourceId, surface, now, cachePolicy }) {
-  const surfaceModel = await collectSurfaceModel({ repoRoot, workspaceDir, sourceSha, surface });
+async function ensureEncodedSurface({ store, workspaceDir, sourceSha, sourceId, surface, now, cachePolicy }) {
+  const surfaceModel = await collectCounterfactualSurfaceModel({ workspaceDir, sourceSha, surface });
   const surfaceDigest = hashObject({
     sourceId,
     surfaceVersion: COUNTERFACTUAL_SURFACE_VERSION,
@@ -421,83 +414,6 @@ async function ensureEncodedSurface({ store, repoRoot, workspaceDir, sourceSha, 
   };
   await writeFile(metadataPath, JSON.stringify(metadata, null, 2));
   return metadata;
-}
-
-async function collectSurfaceModel({ repoRoot, workspaceDir, sourceSha, surface }) {
-  const bundleDir = resolveWorkspacePath(workspaceDir, surface.bundleDir || GENERATED_ARTIFACT_DIR);
-  const outDir = resolveWorkspacePath(workspaceDir, surface.outDir || 'out');
-  const schemaPath = resolveSchemaPath(workspaceDir, surface.schemaPath);
-  await ensureWorkspaceArtifacts({
-    repoRoot,
-    workspaceDir,
-    bundleDir,
-    outDir,
-    schemaPath,
-    sourceSha,
-    transmutation: surface.transmutation || 'legacy-supabase'
-  });
-
-  const nodeSpecs = [];
-  const summary = {
-    artifactCount: 0,
-    evidenceCount: 0,
-    planCount: 0,
-    realmCount: 0
-  };
-  const seen = new Set();
-
-  const bundlePath = path.join(bundleDir, 'bundle.json');
-  if (existsSync(bundlePath)) {
-    const bundleBuffer = await readFile(bundlePath);
-    nodeSpecs.push(fileNodeSpec(workspaceDir, 'evidence:bundle', 'evidence', bundlePath, bundleBuffer));
-    summary.evidenceCount += 1;
-    seen.add(path.resolve(bundlePath));
-    const bundle = JSON.parse(bundleBuffer.toString('utf8'));
-    for (const rel of extractBundleFileReferences(bundle)) {
-      const abs = path.resolve(workspaceDir, rel);
-      if (!existsSync(abs) || seen.has(abs)) continue;
-      const content = await readFile(abs);
-      nodeSpecs.push(fileNodeSpec(workspaceDir, `artifact:${normalizeRelativePath(path.relative(workspaceDir, abs))}`, 'artifact', abs, content));
-      summary.artifactCount += 1;
-      seen.add(abs);
-    }
-  }
-
-  for (const abs of await listFilesRecursive(outDir)) {
-    if (seen.has(abs)) continue;
-    const content = await readFile(abs);
-    nodeSpecs.push(fileNodeSpec(workspaceDir, `artifact:${normalizeRelativePath(path.relative(workspaceDir, abs))}`, 'artifact', abs, content));
-    summary.artifactCount += 1;
-    seen.add(abs);
-  }
-
-  const planPath = path.join(bundleDir, 'plan-report.json');
-  if (existsSync(planPath)) {
-    const content = await readFile(planPath);
-    nodeSpecs.push(fileNodeSpec(workspaceDir, 'plan:report', 'plan', planPath, content));
-    summary.planCount += 1;
-  }
-
-  const realmPath = path.join(bundleDir, 'realm.json');
-  if (existsSync(realmPath)) {
-    const content = await readFile(realmPath);
-    nodeSpecs.push(fileNodeSpec(workspaceDir, 'realm:report', 'realm', realmPath, content));
-    summary.realmCount += 1;
-  }
-
-  return { nodeSpecs, summary };
-}
-
-async function ensureWorkspaceArtifacts({ workspaceDir, bundleDir, outDir, schemaPath, sourceSha, transmutation }) {
-  if (!schemaPath) return;
-  await ensureCounterfactualWorkspaceArtifacts({
-    workspaceDir,
-    bundleDir,
-    outDir,
-    schemaPath,
-    sourceSha,
-    transmutation
-  });
 }
 
 async function openProviderStore(storeRoot) {
@@ -631,82 +547,6 @@ function execGitChecked(cwd, args) {
     throw new Error(result.stderr || `git ${args.join(' ')} failed`);
   }
   return result.stdout;
-}
-
-function resolveWorkspacePath(workspaceDir, target) {
-  return path.isAbsolute(target) ? target : path.join(workspaceDir, target);
-}
-
-function resolveSchemaPath(workspaceDir, schemaPath) {
-  if (schemaPath) {
-    const resolved = resolveWorkspacePath(workspaceDir, schemaPath);
-    return existsSync(resolved) ? resolved : null;
-  }
-  const defaults = [
-    path.join(workspaceDir, 'schema.graphql'),
-    path.join(workspaceDir, 'schema', 'schema.graphql')
-  ];
-  return defaults.find(candidate => existsSync(candidate)) || null;
-}
-
-function fileNodeSpec(workspaceDir, nodeId, family, absolutePath, content) {
-  const rel = normalizeRelativePath(path.relative(workspaceDir, absolutePath));
-  const sha256 = createHash('sha256').update(content).digest('hex');
-  return {
-    id: nodeId,
-    mime: inferMimeType(absolutePath),
-    content,
-    properties: {
-      family,
-      path: rel,
-      sha256,
-      size: content.length
-    }
-  };
-}
-
-function inferMimeType(filePath) {
-  if (filePath.endsWith('.json')) return 'application/json';
-  if (filePath.endsWith('.sql')) return 'text/plain';
-  if (filePath.endsWith('.graphql')) return 'text/plain';
-  if (filePath.endsWith('.md')) return 'text/markdown';
-  return 'application/octet-stream';
-}
-
-function normalizeRelativePath(value) {
-  return String(value).split(path.sep).join('/');
-}
-
-function extractBundleFileReferences(bundle) {
-  const files = new Set();
-  visit(bundle);
-  return Array.from(files).sort();
-
-  function visit(value) {
-    if (Array.isArray(value)) {
-      for (const item of value) visit(item);
-      return;
-    }
-    if (!value || typeof value !== 'object') return;
-    if (typeof value.file === 'string') files.add(value.file);
-    for (const child of Object.values(value)) visit(child);
-  }
-}
-
-async function listFilesRecursive(root) {
-  if (!existsSync(root)) return [];
-  const entries = await readdir(root, { withFileTypes: true });
-  const files = [];
-  for (const entry of entries) {
-    const abs = path.join(root, entry.name);
-    if (entry.isDirectory()) {
-      files.push(...await listFilesRecursive(abs));
-    } else if (entry.isFile()) {
-      files.push(abs);
-    }
-  }
-  files.sort();
-  return files;
 }
 
 async function readJson(filePath) {

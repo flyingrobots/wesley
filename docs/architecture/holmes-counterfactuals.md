@@ -40,7 +40,7 @@ Current implementation
 - policy loader: `src/counterfactual/policy.mjs`
 - provider: `src/counterfactual/provider.mjs`
 - runtime run lookup: shared `@wesley/core` run-store use cases plus the shared `@wesley/runtime-node` ledger adapter
-- surface materialization: shared `@wesley/runtime-node` GraphQL/materialization adapters
+- surface materialization: shared `@wesley/core` counterfactual surface use cases plus shared `@wesley/runtime-node` Node adapters
 
 Entrypoints
 - `wesley`
