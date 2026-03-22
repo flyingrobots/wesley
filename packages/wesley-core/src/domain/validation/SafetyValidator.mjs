@@ -8,6 +8,7 @@
 
 import { DomainEvent } from '../Events.mjs';
 import { WesleyError } from '../WesleyError.mjs';
+import { EventEmitter } from '../../util/EventEmitter.mjs';
 
 /**
  * Custom error types for safety validation
@@ -223,8 +224,9 @@ export class ValidationResult {
 /**
  * SafetyValidator - Core validation logic
  */
-export class SafetyValidator {
+export class SafetyValidator extends EventEmitter {
   constructor(options = {}) {
+    super();
     this.options = {
       enableConcurrentOperationCheck: true,
       enableResourceLimitCheck: true,
@@ -247,31 +249,10 @@ export class SafetyValidator {
       ...options
     };
 
-    this.listeners = new Map();
     this.activeOperations = new Map();
     this.resourceUsage = new Map();
     this.permissionCache = new Map();
     this.dependencyGraph = new Map();
-  }
-
-  /**
-   * Add event listener
-   */
-  on(event, listener) {
-    if (!this.listeners.has(event)) {
-      this.listeners.set(event, []);
-    }
-    this.listeners.get(event).push(listener);
-    return this;
-  }
-
-  /**
-   * Emit domain event
-   */
-  emit(event) {
-    const listeners = this.listeners.get(event.type) || [];
-    listeners.forEach(listener => listener(event));
-    return this;
   }
 
   /**

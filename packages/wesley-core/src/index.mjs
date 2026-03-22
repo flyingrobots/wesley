@@ -161,6 +161,7 @@ export { assertCounterfactualSurfacePort } from './ports/CounterfactualSurface.m
 export { EventStorePort, assertEventStorePort } from './ports/EventStore.mjs';
 
 // Utility helpers
+export { EventEmitter } from './util/EventEmitter.mjs';
 export { mustFind, mustMatch } from './util/guards.mjs';
 
 // Testing helpers

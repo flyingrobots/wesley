@@ -3,7 +3,7 @@
  * Provides color-coded status messages, progress bars, and summary statistics
  */
 
-import { EventEmitter } from 'events';
+import { EventEmitter } from '@wesley/core';
 
 export class CleanFormatter extends EventEmitter {
   constructor(options = {}) {

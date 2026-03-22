@@ -9,7 +9,7 @@
  */
 
 import chokidar from 'chokidar';
-import { EventEmitter } from 'events';
+import { EventEmitter } from '@wesley/core';
 
 export class WatchCommand extends EventEmitter {
   constructor(options = {}) {

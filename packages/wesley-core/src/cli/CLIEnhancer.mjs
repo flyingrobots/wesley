@@ -13,7 +13,7 @@
  * @author Wesley Team
  */
 
-import { EventEmitter } from 'events';
+import { EventEmitter } from '../util/EventEmitter.mjs';
 import { DomainEvent } from '../domain/Events.mjs';
 
 /**
