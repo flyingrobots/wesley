@@ -20,7 +20,7 @@ Wesley currently runs all enabled generators in sequence against all source file
 
 2. **HOLMES scores are context-free.** SCS/TCI/MRI are computed via placeholder heuristics (`MRI = 0.2`, always). There is no mechanism for generators to report what they actually produced.
 
-3. **Evidence is still coarse-grained.** Wesley now emits exact whole-file spans on the active placeholder, counterfactual, and QIR bundle paths, but it still lacks per-field, per-artifact citations across the system.
+3. **Evidence is still coarse-grained.** Wesley now emits exact whole-file spans on the active placeholder, counterfactual, and QIR bundle paths, and Holmes/Watson distinguish exact subrange, whole-file, and coarse citations, but the system still lacks per-field, per-artifact citations across the broader generator surface.
 
 Transmutations solve all three by making the compilation unit explicit, giving generators an evidence contract, and tracking coverage per source file.
 
@@ -376,7 +376,7 @@ For each citation { file, lines, sha }:
   verify actual_lines contain the expected artifact
 ```
 
-This works because the active bundle paths now emit exact whole-file spans, generators can produce **precise line ranges** instead of dummy placeholders, and Watson leaves wildcard citations unverified.
+This works because the active bundle paths now emit exact whole-file spans, generators can produce **precise line ranges** instead of dummy placeholders, and Watson leaves wildcard citations unverified. Holmes and Watson now surface citation quality explicitly, separating exact subrange citations from whole-file and coarse fallbacks instead of blending them together.
 
 ### Moriarty: Dual-Layer Prediction
 
