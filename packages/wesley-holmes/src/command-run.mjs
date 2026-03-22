@@ -13,6 +13,10 @@ const COMMAND_TRANSMUTATIONS = Object.freeze({
   report: 'holmes-report'
 });
 
+export const HOLMES_COMMAND_TRANSMUTATIONS = Object.freeze(
+  Array.from(new Set(Object.values(COMMAND_TRANSMUTATIONS)))
+);
+
 export async function withCommandRun({
   repoRoot,
   command,

@@ -1,6 +1,11 @@
 import path from 'node:path';
-import { readRuntimeRunRecord, resolveRuntimeRunStream } from '@wesley/core';
+import {
+  listRuntimeRunReports,
+  readRuntimeRunRecord,
+  resolveRuntimeRunStream
+} from '@wesley/core';
 import { GitWarpEventStore, resolveLedgerRootDir } from '@wesley/runtime-node';
+import { HOLMES_COMMAND_TRANSMUTATIONS } from './command-run.mjs';
 
 export async function loadRuntimeRunRecord({ repoRoot, runId, transmutation = null }) {
   const requestedRunId = typeof runId === 'string' ? runId.trim() : '';
@@ -12,9 +17,7 @@ export async function loadRuntimeRunRecord({ repoRoot, runId, transmutation = nu
     return null;
   }
 
-  const workspaceRoot = path.resolve(repoRoot || process.cwd());
-  const ledgerDir = await resolveLedgerRootDir({ repoRoot: workspaceRoot });
-  const eventStore = new GitWarpEventStore({ rootDir: ledgerDir });
+  const { eventStore, ledgerDir } = await openRuntimeLedger({ repoRoot });
 
   let record;
   try {
@@ -54,6 +57,75 @@ export async function loadRuntimeRunRecord({ repoRoot, runId, transmutation = nu
   };
 }
 
+export async function inspectPersistedRuntimeRun({ repoRoot, runId, transmutation = null }) {
+  const requestedRunId = typeof runId === 'string' ? runId.trim() : '';
+  const requestedTransmutation = typeof transmutation === 'string' && transmutation.trim()
+    ? transmutation.trim()
+    : null;
+
+  if (!requestedRunId) {
+    return null;
+  }
+
+  const { eventStore, ledgerDir } = await openRuntimeLedger({ repoRoot });
+
+  let record;
+  try {
+    const { streamId } = resolveRuntimeRunStream(eventStore, {
+      runId: requestedRunId,
+      transmutation: requestedTransmutation
+    });
+    record = readRuntimeRunRecord(eventStore, streamId, {
+      runId: requestedRunId,
+      transmutation: requestedTransmutation,
+      includeEvents: true
+    });
+  } catch (error) {
+    throw normalizeRuntimeLookupError(error);
+  }
+
+  return {
+    ledgerDir,
+    run: record.run,
+    replay: record.replay,
+    snapshot: record.snapshot,
+    tailEvents: record.tailEvents,
+    events: record.events
+  };
+}
+
+export async function listPersistedRuntimeRuns({
+  repoRoot,
+  transmutation = null,
+  status = null,
+  limit = 20,
+  includeAll = false
+} = {}) {
+  const { eventStore, ledgerDir } = await openRuntimeLedger({ repoRoot });
+  const requestedTransmutation = typeof transmutation === 'string' && transmutation.trim()
+    ? transmutation.trim()
+    : null;
+  const requestedStatus = typeof status === 'string' && status.trim()
+    ? status.trim()
+    : null;
+
+  let runs = listRuntimeRunReports(eventStore, {
+    transmutation: requestedTransmutation,
+    status: requestedStatus
+  });
+
+  if (!requestedTransmutation && !includeAll) {
+    runs = runs.filter(run => HOLMES_COMMAND_TRANSMUTATIONS.includes(run.transmutation));
+  }
+
+  const capped = Number.isInteger(limit) && limit >= 0 ? runs.slice(0, limit) : runs;
+  return {
+    ledgerDir,
+    count: capped.length,
+    runs: capped
+  };
+}
+
 export function attachRuntimeRun(data, runtimeRecord) {
   if (!runtimeRecord) {
     return;
@@ -87,4 +159,11 @@ export function attachRuntimeRun(data, runtimeRecord) {
 
 function normalizeRuntimeLookupError(error) {
   return error instanceof Error ? error : new Error(String(error));
+}
+
+async function openRuntimeLedger({ repoRoot }) {
+  const workspaceRoot = path.resolve(repoRoot || process.cwd());
+  const ledgerDir = await resolveLedgerRootDir({ repoRoot: workspaceRoot });
+  const eventStore = new GitWarpEventStore({ rootDir: ledgerDir });
+  return { workspaceRoot, ledgerDir, eventStore };
 }

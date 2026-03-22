@@ -18,9 +18,15 @@ import {
   attachCommandRun,
   formatCommandRunFailureLabel,
   formatCommandRunMarkdown,
+  HOLMES_COMMAND_TRANSMUTATIONS,
   withCommandRun
 } from './command-run.mjs';
-import { attachRuntimeRun, loadRuntimeRunRecord } from './runtime-run.mjs';
+import {
+  attachRuntimeRun,
+  inspectPersistedRuntimeRun,
+  listPersistedRuntimeRuns,
+  loadRuntimeRunRecord
+} from './runtime-run.mjs';
 import { readWeightConfig } from './weight-config.mjs';
 import { HOLMES_WEIGHT_CONFIG_PATH } from './config-paths.mjs';
 import {
@@ -163,6 +169,85 @@ Requires:
 
 "When you have eliminated the impossible, whatever remains,
  however improbable, must be the deployable."`);
+
+  const runsCommand = program
+    .command('runs')
+    .description('Inspect persisted HOLMES and MORIARTY command runs');
+
+  runsCommand
+    .command('status')
+    .description('List persisted HOLMES-family runtime runs from the ledger')
+    .option('--transmutation <name>', `Filter runs by transmutation name (${HOLMES_COMMAND_TRANSMUTATIONS.join(', ')})`)
+    .option('--status <state>', 'Filter runs by status: pending|running|completed|failed|cancelled')
+    .option('--limit <n>', 'Maximum number of runs to return', '20')
+    .option('--all', 'Show all persisted runs instead of Holmes-family runs only')
+    .option('--json', 'Emit JSON')
+    .action(async options => {
+      const payload = await listPersistedRuntimeRuns({
+        repoRoot: process.cwd(),
+        transmutation: normalizeOptionalString(options.transmutation),
+        status: normalizeOptionalString(options.status),
+        limit: parseLimit(options.limit, 20),
+        includeAll: Boolean(options.all)
+      });
+
+      if (options.json) {
+        console.log(JSON.stringify(payload, null, 2));
+        return;
+      }
+
+      if (payload.runs.length === 0) {
+        console.log('No persisted Holmes-family runs found.');
+        return;
+      }
+
+      console.log(`Persisted runs: ${payload.count}`);
+      for (const run of payload.runs) {
+        console.log(
+          `${run.runId}  ${run.transmutation || 'n/a'}  ${run.command || 'n/a'}  ${run.status}  events=${run.eventCount} artifacts=${run.artifactCount}`
+        );
+        if (run.lastEventAt) {
+          console.log(`  last=${run.lastEventAt} stream=${run.streamId}`);
+        }
+        if (run.failure?.code) {
+          console.log(`  failure=${run.failure.code}${run.failure.message ? ` ${run.failure.message}` : ''}`);
+        }
+      }
+    });
+
+  runsCommand
+    .command('inspect')
+    .description('Inspect one persisted runtime run from the shared ledger')
+    .requiredOption('--run-id <id>', 'Run ID to inspect')
+    .option('--transmutation <name>', 'Transmutation name for direct stream lookup')
+    .option('--json', 'Emit JSON')
+    .action(async options => {
+      const payload = await inspectPersistedRuntimeRun({
+        repoRoot: process.cwd(),
+        runId: String(options.runId || '').trim(),
+        transmutation: normalizeOptionalString(options.transmutation)
+      });
+
+      if (options.json) {
+        console.log(JSON.stringify(payload, null, 2));
+        return;
+      }
+
+      console.log(`Run: ${payload.run.runId}`);
+      console.log(`Transmutation: ${payload.run.transmutation}`);
+      console.log(`Command: ${payload.run.command || 'n/a'}`);
+      console.log(`Status: ${payload.run.status}`);
+      console.log(`Stream: ${payload.run.streamId}`);
+      console.log(`Events: ${payload.run.eventCount}`);
+      console.log(`Artifacts: ${payload.run.artifactCount}`);
+      console.log(`Ledger: ${payload.ledgerDir}`);
+      console.log(`Snapshot: ${payload.snapshot ? `yes (seq=${payload.snapshot.lastSequence})` : 'no'}`);
+      if (payload.run.startedAt) console.log(`Started: ${payload.run.startedAt}`);
+      if (payload.run.completedAt) console.log(`Completed: ${payload.run.completedAt}`);
+      if (payload.run.failure?.code) {
+        console.log(`Failure: ${payload.run.failure.code}${payload.run.failure.message ? ` - ${payload.run.failure.message}` : ''}`);
+      }
+    });
 
   program
     .command('investigate')
@@ -414,6 +499,15 @@ Requires:
 function collectRepeatableOption(value, previous = []) {
   previous.push(value);
   return previous;
+}
+
+function parseLimit(value, fallback = 20) {
+  const parsed = Number.parseInt(String(value || ''), 10);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+}
+
+function normalizeOptionalString(value) {
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
 }
 
 main().catch(error => {

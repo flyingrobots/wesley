@@ -247,6 +247,39 @@ function listPersistedRuns(fixture, transmutation, status = null) {
   return JSON.parse(result.stdout);
 }
 
+function runHolmesRunsStatus(fixture, extraArgs = []) {
+  const result = spawnSync(process.execPath, [
+    cliPath,
+    'runs',
+    'status',
+    '--json',
+    ...extraArgs
+  ], {
+    cwd: fixture.tempDir,
+    encoding: 'utf8',
+    env: { ...process.env, MORIARTY_USE_GIT: '0' }
+  });
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  return JSON.parse(result.stdout);
+}
+
+function runHolmesRunsInspect(fixture, runId, transmutation) {
+  const result = spawnSync(process.execPath, [
+    cliPath,
+    'runs',
+    'inspect',
+    '--run-id', runId,
+    '--transmutation', transmutation,
+    '--json'
+  ], {
+    cwd: fixture.tempDir,
+    encoding: 'utf8',
+    env: { ...process.env, MORIARTY_USE_GIT: '0' }
+  });
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  return JSON.parse(result.stdout);
+}
+
 function runWeights(options = {}) {
   const tempDir = mkdtempSync(path.join(tmpdir(), 'holmes-weights-'));
   const weightsPath = path.join(tempDir, 'weights.json');
@@ -504,6 +537,61 @@ test('holmes CLI investigate emits its own command run into the shared ledger', 
     const inspected = inspectPersistedRun(fixture, json.commandRun.run.runId, json.commandRun.run.transmutation);
     assert.equal(inspected.run.command, 'investigate');
     assert.equal(inspected.run.status, 'completed');
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test('holmes runs status defaults to holmes-family runs and can inspect them natively', () => {
+  const fixture = createFixture();
+  persistTransformRun(fixture, 'run-holmes-native-status');
+
+  const investigateJsonPath = path.join(fixture.schemaDir, 'holmes-native-investigate.json');
+  const predictJsonPath = path.join(fixture.schemaDir, 'holmes-native-predict.json');
+
+  const investigate = spawnSync(process.execPath, [
+    cliPath,
+    'investigate',
+    '--bundle-dir', fixture.bundleDir,
+    '--json', investigateJsonPath
+  ], {
+    cwd: fixture.tempDir,
+    encoding: 'utf8',
+    env: { ...process.env, MORIARTY_USE_GIT: '0' }
+  });
+  const predict = spawnSync(process.execPath, [
+    cliPath,
+    'predict',
+    '--bundle-dir', fixture.bundleDir,
+    '--history-file', fixture.historyPath,
+    '--json', predictJsonPath
+  ], {
+    cwd: fixture.tempDir,
+    encoding: 'utf8',
+    env: { ...process.env, MORIARTY_USE_GIT: '0' }
+  });
+
+  try {
+    assert.equal(investigate.status, 0, investigate.stderr);
+    assert.equal(predict.status, 0, predict.stderr);
+
+    const status = runHolmesRunsStatus(fixture);
+    assert.equal(status.count, 2);
+    assert.deepEqual(
+      status.runs.map(run => run.transmutation).sort(),
+      ['holmes-investigate', 'moriarty-predict']
+    );
+
+    const inspect = runHolmesRunsInspect(
+      fixture,
+      status.runs.find(run => run.transmutation === 'holmes-investigate').runId,
+      'holmes-investigate'
+    );
+    assert.equal(inspect.run.command, 'investigate');
+    assert.equal(inspect.run.status, 'completed');
+
+    const allStatus = runHolmesRunsStatus(fixture, ['--all']);
+    assert.ok(allStatus.runs.some(run => run.transmutation === 'legacy-supabase'));
   } finally {
     fixture.cleanup();
   }
