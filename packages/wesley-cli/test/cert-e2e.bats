@@ -190,6 +190,8 @@ JSON
   echo "$output" | jq -e '.evidence.wholeFile == 1' >/dev/null
   echo "$output" | jq -e '.evidence.coarse == 1' >/dev/null
   echo "$output" | jq -e '.evidence.strongestCitation == "exact"' >/dev/null
+  echo "$output" | jq -e '.evidence.trust == "weak"' >/dev/null
+  echo "$output" | jq -e '.evidence.reasons[0] | test("coarse citation")' >/dev/null
 }
 
 @test "cert-create --resume treats shared transform history as a fresh cert run" {
@@ -267,6 +269,7 @@ JSON
   assert_success
   echo "$output" | jq -e '.ok == true' >/dev/null
   echo "$output" | jq -e '.evidence.coarse == 1' >/dev/null
+  echo "$output" | jq -e '.evidence.trust == "weak"' >/dev/null
 }
 
 @test "cert-verify fails when embedded counterfactual gate is fail" {

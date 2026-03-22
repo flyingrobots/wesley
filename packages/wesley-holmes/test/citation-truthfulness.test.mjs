@@ -80,6 +80,38 @@ test('Holmes prefers a narrow exact span over a whole-file span', () => {
   }
 });
 
+test('Holmes downgrades an elemental verdict when coarse citations remain', () => {
+  const sha = 'abcdef1234567890abcdef1234567890abcdef12';
+  const holmes = new Holmes({
+    sha,
+    timestamp: '2026-03-21T00:00:00.000Z',
+    bundleVersion: '2.0.0',
+    evidence: {
+      evidence: {
+        schema: {
+          sql: [
+            { file: 'schema.sql', lines: '1-*', sha }
+          ],
+          tests: [
+            { file: 'tests.sql', lines: '1-1', sha }
+          ]
+        }
+      }
+    },
+    scores: {
+      scores: { scs: 0.95, tci: 0.95, mri: 0.05 },
+      readiness: { verdict: 'ELEMENTARY' }
+    }
+  });
+
+  const data = holmes.investigationData();
+  assert.equal(data.metadata.readinessStatus, 'ELEMENTARY');
+  assert.equal(data.metadata.verificationStatus, 'REQUIRES INVESTIGATION');
+  assert.equal(data.metadata.evidenceTrust, 'weak');
+  assert.equal(data.verdict.code, 'REQUIRES INVESTIGATION');
+  assert.equal(data.gates.find((gate) => gate.gate === 'Evidence Quality').status, '⚠️');
+});
+
 test('Watson verifies the cited span instead of requiring the full file to match', () => {
   const tempDir = mkdtempSync(path.join(tmpdir(), 'watson-citation-'));
   const previousCwd = process.cwd();
@@ -166,6 +198,52 @@ test('Watson leaves wildcard citations unverified', () => {
       wholeFile: 0,
       coarse: 1
     });
+  } finally {
+    process.chdir(previousCwd);
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test('Watson flags concerns when coarse citations survive at a borderline pass rate', () => {
+  const tempDir = mkdtempSync(path.join(tmpdir(), 'watson-citation-'));
+  const previousCwd = process.cwd();
+  try {
+    git(tempDir, 'init', '--initial-branch=main');
+    git(tempDir, 'config', 'user.email', 'wesley-tests@example.com');
+    git(tempDir, 'config', 'user.name', 'Wesley Tests');
+
+    const target = path.join(tempDir, 'schema.sql');
+    writeFileSync(target, ['one', 'two', 'three', 'four', 'five', ''].join('\n'));
+    git(tempDir, 'add', 'schema.sql');
+    git(tempDir, 'commit', '-m', 'base');
+    const sha = git(tempDir, 'rev-parse', 'HEAD');
+
+    process.chdir(tempDir);
+    const watson = new Watson({
+      sha,
+      evidence: {
+        evidence: {
+          schema: {
+            sql: [
+              { file: 'schema.sql', lines: '1-1', sha },
+              { file: 'schema.sql', lines: '2-2', sha },
+              { file: 'schema.sql', lines: '3-3', sha },
+              { file: 'schema.sql', lines: '4-4', sha },
+              { file: 'schema.sql', lines: '1-*', sha }
+            ]
+          }
+        }
+      },
+      scores: {
+        scores: { scs: 0.9, tci: 0.9, mri: 0.1 }
+      }
+    });
+
+    const data = watson.verificationData();
+    assert.equal(data.citations.rate, 0.8);
+    assert.equal(data.citations.trust, 'weak');
+    assert.equal(data.opinion.verdict, 'CONCERNS');
+    assert.match(data.opinion.message, /coarse citation/i);
   } finally {
     process.chdir(previousCwd);
     rmSync(tempDir, { recursive: true, force: true });

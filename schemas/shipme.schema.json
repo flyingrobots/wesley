@@ -24,7 +24,7 @@
         { "type": "null" },
         {
           "type": "object",
-          "required": ["totalCitations", "exact", "wholeFile", "coarse", "strongestCitation"],
+          "required": ["totalCitations", "exact", "wholeFile", "coarse", "strongestCitation", "trust", "reasons"],
           "properties": {
             "totalCitations": { "type": "number", "minimum": 0 },
             "exact": { "type": "number", "minimum": 0 },
@@ -33,6 +33,14 @@
             "strongestCitation": {
               "type": "string",
               "enum": ["exact", "whole-file", "coarse", "missing"]
+            },
+            "trust": {
+              "type": "string",
+              "enum": ["strong", "moderate", "weak", "missing"]
+            },
+            "reasons": {
+              "type": "array",
+              "items": { "type": "string" }
             }
           },
           "additionalProperties": false

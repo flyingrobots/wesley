@@ -50,6 +50,15 @@ test('compileSchema resolves nested local refs for shipme + realm + runtime-even
     timestamp: '2026-03-19T10:30:00.000Z',
     environment: 'test',
     scores: null,
+    evidence: {
+      totalCitations: 3,
+      exact: 1,
+      wholeFile: 1,
+      coarse: 1,
+      strongestCitation: 'exact',
+      trust: 'weak',
+      reasons: ['1 coarse citation remains unpinned to exact line spans.']
+    },
     realm: {
       transmutation: 'legacy-supabase',
       runId: 'run-123',

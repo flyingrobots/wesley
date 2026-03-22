@@ -83,11 +83,13 @@ export const holmesReportSchema = {
         generatedAt: stringField,
         sha: stringField,
         verificationStatus: stringField,
+        readinessStatus: stringField,
         verificationCount: numberField,
         weightedCompletion: numberField,
         tci: numberField,
         mri: numberField,
         bundleVersion: stringField,
+        evidenceTrust: stringField,
         citationQuality: {
           type: 'object',
           required: ['exact', 'wholeFile', 'coarse'],
@@ -218,7 +220,7 @@ export const watsonReportSchema = {
     },
     citations: {
       type: 'object',
-      required: ['total', 'verified', 'failed', 'unverified', 'exact', 'wholeFile', 'coarse', 'rate'],
+      required: ['total', 'verified', 'failed', 'unverified', 'exact', 'wholeFile', 'coarse', 'trust', 'reasons', 'rate'],
       properties: {
         total: numberField,
         verified: numberField,
@@ -227,6 +229,11 @@ export const watsonReportSchema = {
         exact: numberField,
         wholeFile: numberField,
         coarse: numberField,
+        trust: stringField,
+        reasons: {
+          type: 'array',
+          items: stringField
+        },
         rate: numberField
       }
     },

@@ -6,6 +6,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import {
+  assessEvidenceTrust,
   extractContentForLineSpan,
   isExactLineSpan,
   isWholeFileLineSpan
@@ -29,9 +30,10 @@ export class Watson {
     const examinedAt = new Date().toISOString();
     const citations = this.verifyCitations();
     const verificationRate = citations.total > 0 ? citations.verified / citations.total : 0;
+    const evidenceTrust = assessEvidenceTrust(citations);
     const mathCheck = this.verifyMath();
     const inconsistencies = this.checkInconsistencies();
-    const opinion = this.buildOpinion(verificationRate, inconsistencies.length === 0);
+    const opinion = this.buildOpinion(verificationRate, inconsistencies.length === 0, evidenceTrust);
     return {
       metadata: {
         examinedAt,
@@ -45,6 +47,8 @@ export class Watson {
         exact: citations.exact,
         wholeFile: citations.wholeFile,
         coarse: citations.coarse,
+        trust: evidenceTrust.level,
+        reasons: evidenceTrust.reasons,
         rate: verificationRate
       },
       math: {
@@ -78,6 +82,10 @@ export class Watson {
     report.push(`- **Exact Subrange Citations**: ${data.citations.exact}`);
     report.push(`- **Whole-file Citations**: ${data.citations.wholeFile}`);
     report.push(`- **Coarse Citations**: ${data.citations.coarse}`);
+    report.push(`- **Evidence Trust**: ${data.citations.trust}`);
+    for (const reason of data.citations.reasons || []) {
+      report.push(`- **Trust Note**: ${reason}`);
+    }
     report.push('');
     report.push(`**Verification Rate**: ${(data.citations.rate * 100).toFixed(1)}%`);
     report.push('');
@@ -111,8 +119,8 @@ export class Watson {
     return report.join('\n');
   }
 
-  buildOpinion(rate, noIssues) {
-    const passed = rate >= 0.8 && noIssues;
+  buildOpinion(rate, noIssues, evidenceTrust = { level: 'strong', reasons: [] }) {
+    const passed = rate >= 0.8 && noIssues && evidenceTrust.level !== 'weak' && evidenceTrust.level !== 'missing';
     if (passed) {
       return {
         verdict: 'PASSED',
@@ -120,10 +128,15 @@ export class Watson {
         markdown: '**VERIFICATION: PASSED** ✅\n\n"I have examined Holmes\'s evidence independently and concur with his"\n"deductions. The investigation is thorough and the conclusions sound."'
       };
     }
+    const trustReason = evidenceTrust.reasons[0];
     return {
       verdict: 'CONCERNS',
-      message: 'Discrepancies detected; further investigation recommended.',
-      markdown: '**VERIFICATION: CONCERNS NOTED** ⚠️\n\n"While Holmes\'s methods are generally sound, I have noted some"\n"discrepancies that warrant further investigation."'
+      message: trustReason
+        ? `Discrepancies detected; further investigation recommended. ${trustReason}`
+        : 'Discrepancies detected; further investigation recommended.',
+      markdown: trustReason
+        ? `**VERIFICATION: CONCERNS NOTED** ⚠️\n\n"While Holmes's methods are generally sound, I have noted some"\n"discrepancies that warrant further investigation. ${trustReason}"`
+        : '**VERIFICATION: CONCERNS NOTED** ⚠️\n\n"While Holmes\'s methods are generally sound, I have noted some"\n"discrepancies that warrant further investigation."'
     };
   }
 

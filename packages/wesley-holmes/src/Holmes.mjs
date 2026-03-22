@@ -4,6 +4,7 @@
  */
 
 import { existsSync, readFileSync } from 'node:fs';
+import { assessEvidenceTrust } from '@wesley/core';
 import {
   pickBestEvidenceLocation,
   summarizeEvidenceKinds,
@@ -39,16 +40,21 @@ export class Holmes {
 
   investigationData() {
     const scores = this.extractScores();
+    const citationQuality = summarizeEvidenceQuality(this.evidence);
+    const evidenceTrust = assessEvidenceTrust(citationQuality);
+    const readinessStatus = this.scores?.readiness?.verdict ?? 'UNKNOWN';
     const summary = {
       generatedAt: this.bundle.timestamp,
       sha: this.sha,
       weightedCompletion: scores.scs,
       verificationCount: this.countVerifications(),
-      verificationStatus: this.scores?.readiness?.verdict ?? 'UNKNOWN',
+      readinessStatus,
+      verificationStatus: readinessStatus,
       tci: scores.tci,
       mri: scores.mri,
       bundleVersion: this.bundle.bundleVersion || this.scores?.version || '1.0.0',
-      citationQuality: summarizeEvidenceQuality(this.evidence)
+      citationQuality,
+      evidenceTrust: evidenceTrust.level
     };
 
     const elements = [];
@@ -72,8 +78,17 @@ export class Holmes {
     gates.push({ gate: 'Test Coverage', status: tci > 0.7 ? '✅' : '⚠️', evidence: `TCI: ${(tci * 100).toFixed(1)}%`, ruling: this.assessTests(tci) });
     const sensitive = this.checkSensitiveFields();
     gates.push({ gate: 'Sensitive Fields', status: sensitive.safe ? '✅' : '⛔', evidence: `${sensitive.count} fields`, ruling: sensitive.ruling });
+    gates.push({
+      gate: 'Evidence Quality',
+      status: evidenceTrust.level === 'strong'
+        ? '✅'
+        : (evidenceTrust.level === 'missing' ? '⛔' : '⚠️'),
+      evidence: `${citationQuality.exact} exact · ${citationQuality.wholeFile} whole-file · ${citationQuality.coarse} coarse`,
+      ruling: evidenceTrust.reasons.join(' ')
+    });
 
-    const verdict = this.buildVerdict(summary.verificationStatus);
+    const verdict = this.buildVerdict(readinessStatus, evidenceTrust);
+    summary.verificationStatus = verdict.code;
 
     const rawBreakdown = this.scores?.breakdown || this.scores?.scores?.breakdown || {};
     const breakdown = normalizeBreakdown(rawBreakdown);
@@ -129,6 +144,12 @@ export class Holmes {
     lines.push(`**Verification Status**: ${metadata.verificationCount} claims verified`);
     if (metadata.citationQuality) {
       lines.push(`**Citation Quality**: ${metadata.citationQuality.exact} exact · ${metadata.citationQuality.wholeFile} whole-file · ${metadata.citationQuality.coarse} coarse`);
+    }
+    if (metadata.evidenceTrust) {
+      lines.push(`**Evidence Trust**: ${metadata.evidenceTrust}`);
+    }
+    if (metadata.readinessStatus && metadata.readinessStatus !== metadata.verificationStatus) {
+      lines.push(`**Base Readiness**: ${metadata.readinessStatus}`);
     }
     lines.push(`**Ship Verdict**: ${metadata.verificationStatus}`);
     lines.push('');
@@ -208,7 +229,18 @@ export class Holmes {
     return lines.join('\n');
   }
 
-  buildVerdict(code) {
+  buildVerdict(code, evidenceTrust = { level: 'strong', reasons: [] }) {
+    if (
+      code === 'ELEMENTARY'
+      && (evidenceTrust.level === 'weak' || evidenceTrust.level === 'missing')
+    ) {
+      const reason = evidenceTrust.reasons[0] || 'Citation quality is too coarse to call this conclusive.';
+      return {
+        code: 'REQUIRES INVESTIGATION',
+        message: `Further investigation required before shipping. ${reason}`,
+        markdown: `⚠️ **REQUIRES FURTHER INVESTIGATION**\n"Some clues remain too coarse to trust blindly. ${reason}"`
+      };
+    }
     switch (code) {
     case 'ELEMENTARY': {
       const message = 'Ship immediately! The evidence is conclusive.';

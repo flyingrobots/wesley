@@ -13,11 +13,13 @@ const holmesSample = {
     generatedAt: '2025-10-13T20:00:00.000Z',
     sha: 'abc123',
     verificationStatus: 'ELEMENTARY',
+    readinessStatus: 'ELEMENTARY',
     verificationCount: 4,
     weightedCompletion: 0.9,
     tci: 0.8,
     mri: 0.1,
     bundleVersion: '2.0.0',
+    evidenceTrust: 'strong',
     citationQuality: {
       exact: 1,
       wholeFile: 0,
@@ -94,6 +96,8 @@ const watsonSample = {
     exact: 3,
     wholeFile: 1,
     coarse: 0,
+    trust: 'moderate',
+    reasons: ['1 whole-file citation still relies on broad file-level proof.'],
     rate: 1
   },
   math: {

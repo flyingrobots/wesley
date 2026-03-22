@@ -3,6 +3,7 @@
  */
 import { createHash } from 'node:crypto';
 import {
+  assessEvidenceTrust,
   GENERATED_BUNDLE_PATH,
   GENERATED_SCORES_PATH,
   GENERATED_SHIPME_PATH,
@@ -179,6 +180,9 @@ function renderSHIPME(cert) {
     cert.evidence
       ? `- Evidence: ${cert.evidence.totalCitations} citations (${cert.evidence.exact} exact · ${cert.evidence.wholeFile} whole-file · ${cert.evidence.coarse} coarse; strongest ${cert.evidence.strongestCitation})`
       : '- Evidence: n/a',
+    cert.evidence
+      ? `- Evidence Trust: ${cert.evidence.trust}${cert.evidence.reasons.length > 0 ? ` (${cert.evidence.reasons[0]})` : ''}`
+      : '- Evidence Trust: n/a',
     cert.counterfactual ? `- Counterfactual: ${cert.counterfactual.gate} (${cert.counterfactual.riskClass})` : '- Counterfactual: n/a',
     '',
     '<!-- WESLEY_CERT:BEGIN -->',
@@ -254,12 +258,15 @@ async function buildShipmeEvidenceSummary(ctx, bundle) {
   );
   const total = totalEvidenceCitations(citationQuality);
   if (total === 0) return null;
+  const trust = assessEvidenceTrust(citationQuality);
 
   return {
     totalCitations: total,
     exact: citationQuality.exact,
     wholeFile: citationQuality.wholeFile,
     coarse: citationQuality.coarse,
-    strongestCitation: strongestEvidenceStrength(citationQuality)
+    strongestCitation: strongestEvidenceStrength(citationQuality),
+    trust: trust.level,
+    reasons: trust.reasons
   };
 }

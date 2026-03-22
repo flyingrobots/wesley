@@ -49,6 +49,7 @@ export { GenerationPipeline } from './application/GenerationPipeline.mjs';
 export { irToSchema } from './application/irToSchema.mjs';
 export { EvidenceMap } from './application/EvidenceMap.mjs';
 export {
+  assessEvidenceTrust,
   classifyEvidenceLocation,
   createEvidenceQualitySummary,
   listEvidenceFiles,

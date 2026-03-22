@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  assessEvidenceTrust,
   classifyEvidenceLocation,
   pickBestEvidenceLocation,
   strongestEvidenceStrength,
@@ -49,6 +50,24 @@ test('summarizeEvidenceQuality and helpers produce cert-friendly totals', () => 
   });
   assert.equal(totalEvidenceCitations(summary), 3);
   assert.equal(strongestEvidenceStrength(summary), 'exact');
+});
+
+test('assessEvidenceTrust downgrades coarse citation mixes and explains why', () => {
+  assert.deepEqual(
+    assessEvidenceTrust({ exact: 2, wholeFile: 1, coarse: 0 }),
+    {
+      level: 'moderate',
+      reasons: ['1 whole-file citation still relies on broad file-level proof.']
+    }
+  );
+
+  assert.deepEqual(
+    assessEvidenceTrust({ exact: 1, wholeFile: 0, coarse: 1 }),
+    {
+      level: 'weak',
+      reasons: ['1 coarse citation remains unpinned to exact line spans.']
+    }
+  );
 });
 
 test('pickBestEvidenceLocation prefers narrow exact citations over whole-file and coarse fallbacks', () => {

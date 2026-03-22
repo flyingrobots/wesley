@@ -96,6 +96,32 @@ export function totalEvidenceCitations(summary) {
   return Number(summary.exact || 0) + Number(summary.wholeFile || 0) + Number(summary.coarse || 0);
 }
 
+export function assessEvidenceTrust(summary) {
+  const total = totalEvidenceCitations(summary);
+  if (total === 0) {
+    return {
+      level: 'missing',
+      reasons: ['No evidence citations were available for trust analysis.']
+    };
+  }
+
+  const reasons = [];
+  if (Number(summary.coarse || 0) > 0) {
+    reasons.push(`${summary.coarse} coarse citation${plural(summary.coarse)} ${verb(summary.coarse, 'remains', 'remain')} unpinned to exact line spans.`);
+  }
+  if (Number(summary.wholeFile || 0) > 0) {
+    reasons.push(`${summary.wholeFile} whole-file citation${plural(summary.wholeFile)} ${verb(summary.wholeFile, 'still relies', 'still rely')} on broad file-level proof.`);
+  }
+  if (reasons.length === 0 && Number(summary.exact || 0) > 0) {
+    reasons.push(`All ${summary.exact} citation${plural(summary.exact)} resolve to exact line spans.`);
+  }
+
+  return {
+    level: determineEvidenceTrustLevel(summary),
+    reasons
+  };
+}
+
 export function strongestEvidenceStrength(summary) {
   if (!summary) return 'missing';
   if (Number(summary.exact || 0) > 0) return 'exact';
@@ -129,4 +155,19 @@ function strengthRank(strength) {
   default:
     return 2;
   }
+}
+
+function determineEvidenceTrustLevel(summary) {
+  if (totalEvidenceCitations(summary) === 0) return 'missing';
+  if (Number(summary.coarse || 0) > 0) return 'weak';
+  if (Number(summary.wholeFile || 0) > 0) return 'moderate';
+  return 'strong';
+}
+
+function plural(value) {
+  return Number(value) === 1 ? '' : 's';
+}
+
+function verb(value, singular, pluralForm) {
+  return Number(value) === 1 ? singular : pluralForm;
 }
