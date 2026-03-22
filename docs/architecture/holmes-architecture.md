@@ -27,7 +27,7 @@ Each command loads the required generated artifacts (`.wesley-cache/bundle.json`
 Holmes consumes the bundle’s evidence map, scores, schema metadata, and weight configuration to build an investigation report:
 
 1. **Initialization** – The constructor extracts the bundle SHA, evidence, score breakdowns, and resolves weight configuration from environment variables, filesystem overrides, or defaults. It also indexes schema directives so directive-specific weights can be applied. 
-2. **Investigation Data** – `investigationData()` aggregates summary metadata, iterates through every UID in the evidence map to determine status, source citations, and deductions, and constructs “gate” verdicts for migration risk, test coverage, and sensitive field hygiene.
+2. **Investigation Data** – `investigationData()` aggregates summary metadata, iterates through every UID in the evidence map to determine status, source citations, and deductions, classifies citation quality (exact vs whole-file vs coarse), and constructs “gate” verdicts for migration risk, test coverage, sensitive field hygiene, and evidence trust.
 3. **Rendering** – `renderInvestigation()` assembles a Markdown report including executive summary, score breakdown tables, evidence table, gates, and final verdict signed by Holmes.
 4. **Weighting Logic** – Helpers such as `inferWeight()`, `matchOverride()`, `matchDirective()`, and `matchSubstring()` determine each UID’s weight based on overrides, schema directives, substring heuristics, or defaults. Sensitive-field checks and gating heuristics add opinionated guardrails to the investigation.
 
@@ -35,7 +35,7 @@ Holmes consumes the bundle’s evidence map, scores, schema metadata, and weight
 
 Watson independently replays Holmes’s claims:
 
-- `verificationData()` timestamps the audit, iterates through every evidence citation to confirm on-disk or git-tracked content, recomputes schema coverage (SCS) using a simplified weighting heuristic, and collates logical inconsistencies between SCS/TCI/MRI scores or missing tests on sensitive fields.
+- `verificationData()` timestamps the audit, iterates through every evidence citation to confirm on-disk or git-tracked content, classifies the resulting evidence trust level, recomputes schema coverage (SCS) using a simplified weighting heuristic, and collates logical inconsistencies between SCS/TCI/MRI scores or missing tests on sensitive fields.
 - Git lookups run through `safeGitShow()` to tolerate missing repositories or absent commits without aborting the run.
 - `renderVerification()` formats the medical-style report and surfaces whether discrepancies require further investigation.
 
