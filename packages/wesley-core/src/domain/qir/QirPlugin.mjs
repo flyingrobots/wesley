@@ -11,6 +11,7 @@
  */
 
 import { GeneratorPlugin } from '../../ports/GeneratorPlugin.mjs';
+import { lineSpanForContent } from '../../application/EvidenceSpans.mjs';
 import { emitView, emitFunction } from './emit.mjs';
 import { collectParams } from './ParamCollector.mjs';
 import { PostgresDialect } from './dialects/PostgresDialect.mjs';
@@ -121,7 +122,7 @@ export class QirPlugin extends GeneratorPlugin {
 
       const evidenceEntry = {
         artifacts: {
-          sql: { file: fnPath, lines: '1-*' }
+          sql: { file: fnPath, lines: lineSpanForContent(files[fnPath]) }
         }
       };
 
@@ -129,7 +130,10 @@ export class QirPlugin extends GeneratorPlugin {
         const viewSql = emitView(op.name, op.plan, emitOpts);
         const viewPath = `ops/${op.name}.view.sql`;
         files[viewPath] = `${viewSql}\n`;
-        evidenceEntry.artifacts.view = { file: viewPath, lines: '1-*' };
+        evidenceEntry.artifacts.view = {
+          file: viewPath,
+          lines: lineSpanForContent(files[viewPath])
+        };
       }
 
       evidence[`op:${op.name}`] = evidenceEntry;

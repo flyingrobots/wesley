@@ -5,6 +5,7 @@
 
 import { existsSync, readFileSync } from 'node:fs';
 import { execSync } from 'node:child_process';
+import { extractContentForLineSpan, isExactLineSpan } from '@wesley/core';
 
 export class Watson {
   constructor(bundle) {
@@ -143,6 +144,15 @@ export class Watson {
             continue;
           }
           const gitContent = snapshot.content;
+          if (!isExactLineSpan(loc.lines)) {
+            unverified++;
+            continue;
+          }
+          const gitSpan = extractContentForLineSpan(gitContent, loc.lines);
+          if (gitSpan === null) {
+            failed++;
+            continue;
+          }
 
           let localContent = null;
           if (existsSync(loc.file)) {
@@ -153,13 +163,16 @@ export class Watson {
             }
           }
 
-          if (localContent !== null && localContent === gitContent) {
-            verified++;
-          } else if (localContent === null) {
+          if (localContent !== null) {
+            const localSpan = extractContentForLineSpan(localContent, loc.lines);
+            if (localSpan !== null && localSpan === gitSpan) {
+              verified++;
+            } else {
+              failed++;
+            }
+          } else {
             // We trust the git snapshot even if workspace lacks the file
             unverified++;
-          } else {
-            failed++;
           }
         }
       }

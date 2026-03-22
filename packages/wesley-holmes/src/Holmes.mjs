@@ -4,6 +4,7 @@
  */
 
 import { existsSync, readFileSync } from 'node:fs';
+import { isExactLineSpan } from '@wesley/core';
 
 const DEFAULT_WEIGHTS = {
   password: 10,
@@ -289,14 +290,20 @@ export class Holmes {
   }
 
   getCitation(evidence) {
-    const citations = [];
+    let fallback = null;
     for (const [_kind, locations] of Object.entries(evidence)) {
-      if (locations?.[0]) {
-        citations.push(`${locations[0].file}:${locations[0].lines}@${this.sha.substring(0, 7)}`);
-        break;
+      for (const location of locations || []) {
+        if (!location?.file) continue;
+        const rendered = `${location.file}:${location.lines}@${this.sha.substring(0, 7)}`;
+        if (isExactLineSpan(location.lines)) {
+          return rendered;
+        }
+        if (!fallback) {
+          fallback = rendered;
+        }
       }
     }
-    return citations[0] || 'No evidence';
+    return fallback || 'No evidence';
   }
 
   makeDeduction(uid, status) {

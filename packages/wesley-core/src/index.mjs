@@ -48,7 +48,13 @@ export * from './application/UseCases.mjs';
 export { GenerationPipeline } from './application/GenerationPipeline.mjs';
 export { irToSchema } from './application/irToSchema.mjs';
 export { EvidenceMap } from './application/EvidenceMap.mjs';
-export { countContentLines, lineSpanForContent } from './application/EvidenceSpans.mjs';
+export {
+  countContentLines,
+  extractContentForLineSpan,
+  isExactLineSpan,
+  lineSpanForContent,
+  parseLineSpan
+} from './application/EvidenceSpans.mjs';
 export {
   GENERATED_ARTIFACT_DIR,
   LEGACY_GENERATED_ARTIFACT_DIR,

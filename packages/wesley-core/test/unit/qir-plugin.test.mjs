@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { lineSpanForContent } from '../../src/application/EvidenceSpans.mjs';
 import { QirPlugin } from '../../src/domain/qir/QirPlugin.mjs';
 import { validatePlugin, validatePlan, validateGenerateResult } from '../../src/ports/GeneratorPlugin.mjs';
 import {
@@ -189,6 +190,14 @@ test('QirPlugin.generate: produces evidence per op', async () => {
   assert.ok(normalized.evidence !== null);
   assert.ok('op:all_users' in normalized.evidence);
   assert.ok(normalized.evidence['op:all_users'].artifacts.sql);
+  assert.equal(
+    normalized.evidence['op:all_users'].artifacts.sql.lines,
+    lineSpanForContent(normalized.artifacts['ops/all_users.fn.sql'])
+  );
+  assert.equal(
+    normalized.evidence['op:all_users'].artifacts.view.lines,
+    lineSpanForContent(normalized.artifacts['ops/all_users.view.sql'])
+  );
 });
 
 test('QirPlugin.generate: empty plan produces empty files', async () => {
