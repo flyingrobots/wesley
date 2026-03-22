@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { emitDDL } from '../src/emit.mjs';
 
-test('emitDDL orders table creates before FKs', () => {
+test('emitDDL emits real DDL with per-field evidence', async () => {
   const ir = {
     tables: [
       {
@@ -24,12 +24,14 @@ test('emitDDL orders table creates before FKs', () => {
       }
     ]
   };
-  const out = emitDDL(ir);
+  const out = await emitDDL(ir, { outDir: 'out' });
   const sql = out.files[0].content;
-  const posCreateB = sql.indexOf('CREATE TABLE IF NOT EXISTS "b"');
-  const posCreateA = sql.indexOf('CREATE TABLE IF NOT EXISTS "a"');
-  const posFk = sql.indexOf('ALTER TABLE "a" ADD CONSTRAINT');
+  const posCreateB = sql.indexOf('CREATE TABLE IF NOT EXISTS "bs"');
+  const posCreateA = sql.indexOf('CREATE TABLE IF NOT EXISTS "as"');
+  const posFk = sql.indexOf('FOREIGN KEY ("b_id") REFERENCES "bs"("id")');
   assert.ok(posCreateA !== -1 && posCreateB !== -1 && posFk !== -1, 'expected statements');
   assert.ok(posCreateA > -1 && posCreateB > -1, 'create statements exist');
-  assert.ok(posFk > posCreateA && posFk > posCreateB, 'FK emitted after both tables');
+  assert.ok(posCreateB < posCreateA, 'referenced table should be emitted before the dependent table');
+  assert.deepEqual(out.evidence['col:A.b_id'].artifacts.sql.file, 'out/schema.sql');
+  assert.match(out.evidence['col:A.b_id'].artifacts.sql.lines, /^\d+-\d+$/);
 });

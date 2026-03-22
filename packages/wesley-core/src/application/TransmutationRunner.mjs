@@ -385,7 +385,7 @@ export class TransmutationRunner {
 
     try {
       if (schema && typeof schema.getTables === 'function') {
-        return scoringEngine.exportScores(schema, diffSteps, testResults);
+        return scoringEngine.exportScores(schema, diffSteps, testResults, options.scoring || {});
       }
     } catch (err) {
       this._logger.warn?.('[scoring] Failed to compute scores:', err?.message || err);

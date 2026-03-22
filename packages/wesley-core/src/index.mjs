@@ -24,6 +24,8 @@ export { exitCodeFor, isRegistered, getRegistry } from './domain/ExitCodes.mjs';
 export * from './domain/Events.mjs';
 
 // Note: Generators moved to dedicated packages per ENSIGN reorganization
+export { PostgreSQLGenerator } from './domain/generators/PostgreSQLGenerator.mjs';
+export { PgTAPTestGenerator } from './domain/generators/PgTAPTestGenerator.mjs';
 
 // Note: SQLExecutor moved to host-node adapters per ENSIGN reorganization
 

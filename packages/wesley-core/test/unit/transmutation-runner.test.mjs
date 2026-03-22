@@ -217,6 +217,72 @@ test('TransmutationRunner — merges evidence from multiple plugins', async () =
   assert.ok(userIdEvidence.typescript, 'should have typescript evidence');
 });
 
+test('TransmutationRunner — accepts transmutation-specific SCS scoring options', async () => {
+  const runner = makeRunner();
+  const schema = {
+    getTables: () => [{
+      name: 'User',
+      directives: {},
+      getFields: () => [{
+        name: 'id',
+        directives: { '@primaryKey': {} },
+        isVirtual: () => false,
+        isPrimaryKey: () => true,
+        isForeignKey: () => false,
+        isUnique: () => false,
+        isIndexed: () => false
+      }]
+    }]
+  };
+  const plugin = {
+    apiVersion: '1',
+    name: 'legacy-supabase-plugin',
+    async plan() {
+      return { artifacts: [{ path: 'schema.sql' }, { path: 'tests.sql' }] };
+    },
+    async generate() {
+      return {
+        files: {
+          'schema.sql': '-- ddl',
+          'tests.sql': '-- tests'
+        },
+        evidence: {
+          'col:User.id': {
+            artifacts: {
+              sql: { file: 'out/schema.sql', lines: '1-1', sha: 'abc123' },
+              test: { file: 'out/tests.sql', lines: '1-1', sha: 'abc123' }
+            }
+          },
+          'col:User.id.pk': {
+            artifacts: {
+              test: { file: 'out/tests.sql', lines: '1-1', sha: 'abc123' }
+            }
+          }
+        }
+      };
+    }
+  };
+
+  const result = await runner.run(
+    'legacy-supabase',
+    [plugin],
+    schema,
+    {
+      scoring: {
+        scs: {
+          artifactGroups: {
+            sql: ['sql'],
+            tests: ['test']
+          },
+          rollupGroups: ['sql']
+        }
+      }
+    }
+  );
+
+  assert.equal(result.scores.scores.scs, 1);
+});
+
 // ---------------------------------------------------------------------------
 // Legacy plugin support
 // ---------------------------------------------------------------------------

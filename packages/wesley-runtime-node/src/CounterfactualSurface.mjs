@@ -39,10 +39,13 @@ export async function ensureCounterfactualWorkspaceArtifacts({
   await mkdir(resolvedOutDir, { recursive: true });
 
   if (needsTransform) {
+    const ddl = await emitDDL(ir, { outDir: resolvedOutDir });
+    const rls = await emitRLS(ir, { outDir: resolvedOutDir });
+    const tests = await emitPgTap(ir, { outDir: resolvedOutDir });
     const emitted = [
-      ...normalizeEmittedFiles(emitDDL(ir), resolvedWorkspaceDir, resolvedOutDir),
-      ...normalizeEmittedFiles(emitRLS(ir), resolvedWorkspaceDir, resolvedOutDir),
-      ...normalizeEmittedFiles(emitPgTap(ir), resolvedWorkspaceDir, resolvedOutDir)
+      ...normalizeEmittedFiles(ddl, resolvedWorkspaceDir, resolvedOutDir),
+      ...normalizeEmittedFiles(rls, resolvedWorkspaceDir, resolvedOutDir),
+      ...normalizeEmittedFiles(tests, resolvedWorkspaceDir, resolvedOutDir)
     ];
 
     for (const artifact of emitted) {

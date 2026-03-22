@@ -34,6 +34,70 @@ function makeGenerators() {
   };
 }
 
+function makeGeneratorsWithEvidence() {
+  return {
+    sql: {
+      emitDDL: async (_ir, { outDir } = {}) => ({
+        files: [{ name: 'schema.sql', content: '-- ddl\ncreate table users ();' }],
+        evidence: {
+          'col:User.id': {
+            artifacts: {
+              sql: {
+                file: `${outDir || 'out'}/schema.sql`,
+                lines: '2-2'
+              }
+            }
+          }
+        }
+      }),
+      emitRLS: async (_ir, { outDir } = {}) => ({
+        files: [{ name: 'rls.sql', content: '-- rls' }],
+        evidence: {
+          'tbl:User.rls': {
+            artifacts: {
+              sql: {
+                file: `${outDir || 'out'}/rls.sql`,
+                lines: '1-1'
+              }
+            }
+          }
+        }
+      })
+    },
+    tests: {
+      emitPgTap: async (_ir, { outDir } = {}) => ({
+        files: [{ name: 'tests.sql', content: '-- tests\nselect plan(1);' }],
+        evidence: {
+          'tbl:User': {
+            artifacts: {
+              test: {
+                file: `${outDir || 'out'}/tests.sql`,
+                lines: '2-2'
+              }
+            }
+          },
+          'col:User.id': {
+            artifacts: {
+              test: {
+                file: `${outDir || 'out'}/tests.sql`,
+                lines: '2-2'
+              }
+            }
+          },
+          'col:User.id.pk': {
+            artifacts: {
+              test: {
+                file: `${outDir || 'out'}/tests.sql`,
+                lines: '2-2'
+              }
+            }
+          }
+        }
+      })
+    }
+  };
+}
+
 test('legacy supabase plugin plans only the current artifact set', async () => {
   const plugin = new LegacySupabaseGeneratorPlugin({
     generators: makeGenerators(),
@@ -233,25 +297,22 @@ test('runSequentialGeneration preserves a caller-supplied runId', async () => {
   assert.equal(context.transmutationRun.runId, 'run-cli-123');
 });
 
-test('runSequentialGeneration emits exact whole-file spans in the placeholder bundle', async () => {
+test('runSequentialGeneration persists real evidence-backed bundle metadata', async () => {
   const fsWrites = [];
   const ctx = {
     parsers: {
       graphql: {
         parse: () => ({
-          tables: [{ name: 'User', fields: [], indexes: [], directives: {} }]
+          tables: [{
+            name: 'User',
+            fields: [{ name: 'id', type: { base: 'ID', isList: false }, nullable: false, directives: { pk: true } }],
+            indexes: [],
+            directives: {}
+          }]
         })
       }
     },
-    generators: {
-      sql: {
-        emitDDL: () => ({ files: [{ name: 'schema.sql', content: '-- ddl\ncreate table users ();' }] }),
-        emitRLS: () => ({ files: [{ name: 'rls.sql', content: '-- rls' }] })
-      },
-      tests: {
-        emitPgTap: () => ({ files: [{ name: 'tests.sql', content: '-- tests\nselect plan(1);' }] })
-      }
-    },
+    generators: makeGeneratorsWithEvidence(),
     writer: {
       writeFiles: async () => {}
     },
@@ -291,25 +352,27 @@ test('runSequentialGeneration emits exact whole-file spans in the placeholder bu
   const bundleWrite = fsWrites.find((entry) => entry.path === GENERATED_BUNDLE_PATH);
   const scoresWrite = fsWrites.find((entry) => entry.path === GENERATED_SCORES_PATH);
   const historyWrite = fsWrites.find((entry) => entry.path === GENERATED_HISTORY_PATH);
-  assert.ok(bundleWrite, 'expected placeholder bundle write');
-  assert.ok(scoresWrite, 'expected placeholder scores write');
-  assert.ok(historyWrite, 'expected placeholder history write');
+  assert.ok(bundleWrite, 'expected bundle write');
+  assert.ok(scoresWrite, 'expected scores write');
+  assert.ok(historyWrite, 'expected history write');
   const bundle = JSON.parse(bundleWrite.content);
   const scores = JSON.parse(scoresWrite.content);
   const history = JSON.parse(historyWrite.content);
-  assert.equal(bundle.evidence.evidence.schema.sql[0].lines, '1-2');
-  assert.equal(bundle.evidence.evidence.schema.tests[0].lines, '1-2');
+  assert.equal(bundle.evidence.evidence['col:User.id'].sql[0].lines, '2-2');
+  assert.equal(bundle.evidence.evidence['col:User.id'].test[0].lines, '2-2');
   assert.deepEqual(scores.metadata.citationQuality, {
-    exact: 0,
-    wholeFile: 2,
+    exact: 4,
+    wholeFile: 1,
     coarse: 0
   });
   assert.equal(scores.metadata.evidenceTrust, 'moderate');
   assert.equal(scores.readiness.evidenceTrust, 'moderate');
   assert.equal(history.points.at(-1).evidenceTrust, 'moderate');
   assert.deepEqual(history.points.at(-1).evidenceTrustReasons, [
-    '2 whole-file citations still rely on broad file-level proof.'
+    '1 whole-file citation still relies on broad file-level proof.'
   ]);
+  assert.equal(scores.scores.scs, 1);
+  assert.equal(scores.scores.tci, 0.65);
 });
 
 test('runSequentialGeneration keeps dry-run side effects disabled', async () => {

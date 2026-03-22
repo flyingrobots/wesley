@@ -8,7 +8,7 @@ import {
   TransmutationRunner,
   WesleyError,
   createRunId,
-  lineSpanForContent,
+  irToSchema,
   generatedArtifactPathCandidates,
   summarizeEvidenceQuality
 } from '@wesley/core';
@@ -138,7 +138,14 @@ export async function runSequentialGeneration({ ctx, context, compileOpsIfReques
     }
 
     await persistSnapshot({ ctx, ir, logger, dryRun: options.dryRun });
-    await emitPlaceholderBundle({ ctx, artifacts, outDir: options.outDir, logger, options });
+    await persistTransmutationArtifacts({
+      ctx,
+      transmutationResult,
+      artifacts,
+      outDir: options.outDir,
+      logger,
+      options
+    });
 
     if (!options.dryRun) {
       context.ir = ir;
@@ -264,7 +271,10 @@ async function executeLegacySupabaseTransmutation({ ctx, context, ir, runId, eve
     logger,
     clock: createRunnerClock(ctx.clock),
     config: {
-      paths: ctx.config?.paths || {},
+      paths: {
+        ...(ctx.config?.paths || {}),
+        outputDir: options.outDir
+      },
       transmutation: {
         name: LEGACY_SUPABASE_TRANSMUTATION,
         supabase: Boolean(options.supabase)
@@ -277,11 +287,22 @@ async function executeLegacySupabaseTransmutation({ ctx, context, ir, runId, eve
     logger.info({ transmutation: LEGACY_SUPABASE_TRANSMUTATION, plan }, 'Execution plan:');
   }
 
+  const schema = irToSchema(ir);
+  schema.ir = ir;
+  schema.sdl = context.schemaContent;
+  schema.outputDir = options.outDir;
+  const sourceSha = await resolveSourceSha(ctx, logger);
+
   const result = await runner.run(
     LEGACY_SUPABASE_TRANSMUTATION,
     [plugin],
-    { ir, sdl: context.schemaContent },
-    { runId, eventCollector }
+    schema,
+    {
+      runId,
+      eventCollector,
+      sha: sourceSha,
+      scoring: legacySupabaseScoringOptions()
+    }
   );
 
   if (!result.success) {
@@ -314,95 +335,49 @@ function transmutationFailure(result) {
   );
 }
 
-async function emitPlaceholderBundle({ ctx, artifacts, outDir, logger, options }) {
+function legacySupabaseScoringOptions() {
+  return {
+    scs: {
+      artifactGroups: {
+        sql: ['sql'],
+        tests: ['test']
+      },
+      rollupGroups: ['sql']
+    }
+  };
+}
+
+async function resolveSourceSha(ctx, logger) {
+  let sha = 'unknown';
+  const envSha = (ctx.env || {}).GITHUB_SHA || '';
+  try {
+    const out = await ctx.shell?.exec?.('git rev-parse HEAD');
+    const value = out?.stdout?.trim();
+    if (value) return value;
+    if (envSha) return envSha;
+  } catch (error) {
+    logger.debug?.({ err: error }, 'Could not resolve git SHA for transmutation bundle; falling back to env/unknown.');
+  }
+  if (envSha) sha = envSha;
+  return sha;
+}
+
+async function persistTransmutationArtifacts({ ctx, transmutationResult, artifacts, outDir, logger, options }) {
   if (!options.emitBundle || options.dryRun) return;
   try {
-    let sha = 'unknown';
-    const envSha = (ctx.env || {}).GITHUB_SHA || '';
-    try {
-      const out = await (ctx.shell?.exec?.('git rev-parse HEAD'));
-      const s = out?.stdout?.trim();
-      if (s) sha = s;
-      else if (envSha) sha = envSha;
-    } catch (error) {
-      if (envSha) sha = envSha;
-      logger.debug?.({ err: error }, 'Could not resolve git SHA for placeholder bundle; falling back to env/unknown.');
-    }
-
-    const timestamp = new Date().toISOString();
-    const scs = Math.min(1, Math.max(0, (artifacts.length > 0 ? 0.6 : 0.3)));
-    const tci = artifacts.some(a => a.name?.includes('tests')) ? 0.7 : 0.4;
-    const mri = 0.2;
-
-    const scores = {
-      version: '2.0.0',
-      timestamp,
-      commit: sha,
-      scores: { scs, tci, mri },
-      breakdown: {
-        scs: {
-          sql: { score: scs, earnedWeight: parseFloat((scs).toFixed(3)), totalWeight: 1 },
-          types: { score: scs, earnedWeight: parseFloat((scs).toFixed(3)), totalWeight: 1 },
-          validation: { score: scs, earnedWeight: parseFloat((scs).toFixed(3)), totalWeight: 1 },
-          tests: { score: Math.min(1, tci), earnedWeight: parseFloat((Math.min(1, tci)).toFixed(3)), totalWeight: 1 }
-        },
-        tci: {
-          unit_constraints: { score: tci, covered: 1, total: 1 },
-          unit_rls: { score: 0, covered: 0, total: 0 },
-          integration_relations: { score: 0, covered: 0, total: 0 },
-          e2e_ops: { score: 0, covered: 0, total: 0, note: 'Not tracked in quick emit mode' },
-          legacy_components: { structure: tci, constraints: tci, migrations: 0, performance: 0 }
-        },
-        mri: {
-          drops: { score: mri, points: Math.round(mri * 100), count: 0 },
-          renames_without_uid: { score: 0, points: 0, count: 0 },
-          add_not_null_without_default: { score: 0, points: 0, count: 0 },
-          non_concurrent_indexes: { score: 0, points: 0, count: 0 },
-          totalPoints: Math.round(mri * 100)
-        }
-      },
-      metadata: {
-        tables: 0,
-        migrationSteps: 0,
-        testsRun: 0
-      }
-    };
-
-    const schemaEvidence = {};
-    const schemaArtifact = artifacts.find((artifact) => artifact.name === 'schema.sql');
-    if (schemaArtifact) {
-      schemaEvidence.sql = [{
-        file: `${outDir}/schema.sql`,
-        lines: lineSpanForContent(schemaArtifact.content),
-        sha
-      }];
-    }
-    const testsArtifact = artifacts.find((artifact) => artifact.name === 'tests.sql');
-    if (testsArtifact) {
-      schemaEvidence.tests = [{
-        file: `${outDir}/tests.sql`,
-        lines: lineSpanForContent(testsArtifact.content),
-        sha
-      }];
-    }
-
-    const evidence = {
-      evidence: {
-        schema: schemaEvidence
-      }
-    };
-
+    const scores = structuredClone(transmutationResult.scores || {});
+    const bundle = structuredClone(transmutationResult.bundle || {});
     const citationQuality = summarizeEvidenceQuality(
-      evidence,
+      bundle.evidence,
       createGeneratedArtifactResolver(artifacts, outDir)
     );
     const evidenceTrust = assessEvidenceTrust(citationQuality);
-    const baseVerdict = (scs > 0.75 && tci > 0.6
-      ? 'ELEMENTARY'
-      : (scs > 0.4 ? 'REQUIRES INVESTIGATION' : 'YOU SHALL NOT PASS'));
+    const baseVerdict = scores.readiness?.baseVerdict || scores.readiness?.verdict || 'UNKNOWN';
     const readiness = {
+      ...(scores.readiness || {}),
       verdict: adjustReadinessVerdictForEvidenceTrust(baseVerdict, evidenceTrust.level),
       baseVerdict,
+      ready: adjustReadinessVerdictForEvidenceTrust(baseVerdict, evidenceTrust.level) === 'ELEMENTARY',
       evidenceTrust: evidenceTrust.level,
       evidenceTrustReasons: evidenceTrust.reasons
     };
@@ -415,7 +390,9 @@ async function emitPlaceholderBundle({ ctx, artifacts, outDir, logger, options }
       evidenceTrustReasons: evidenceTrust.reasons
     };
 
-    const bundle = { sha, timestamp, bundleVersion: '2.0.0', evidence, scores };
+    bundle.scores = scores;
+    transmutationResult.scores = scores;
+    transmutationResult.bundle = bundle;
     await ctx.fs.write(GENERATED_SCORES_PATH, JSON.stringify(scores, null, 2));
     await ctx.fs.write(GENERATED_BUNDLE_PATH, JSON.stringify(bundle, null, 2));
 
@@ -435,16 +412,16 @@ async function emitPlaceholderBundle({ ctx, artifacts, outDir, logger, options }
       const day = Math.floor(Date.now() / 86400000);
       const nextPoints = mergeHistoryPoints(history.points, [{
         day,
-        timestamp,
-        scs,
-        tci,
-        mri,
+        timestamp: bundle.timestamp || scores.timestamp || new Date().toISOString(),
+        scs: scores.scores?.scs ?? 0,
+        tci: scores.scores?.tci ?? 0,
+        mri: scores.scores?.mri ?? 0,
         evidenceTrust: evidenceTrust.level,
         evidenceTrustReasons: evidenceTrust.reasons
       }]);
       await ctx.fs.write(GENERATED_HISTORY_PATH, JSON.stringify({ points: nextPoints }, null, 2));
     } catch (error) {
-      logger.debug?.({ err: error }, 'Could not refresh Moriarty history while emitting placeholder bundle.');
+      logger.debug?.({ err: error }, 'Could not refresh Moriarty history while persisting the transmutation bundle.');
     }
   } catch (e) {
     logger.warn('Could not emit HOLMES evidence bundle: ' + (e?.message || e));
@@ -458,6 +435,7 @@ function createGeneratedArtifactResolver(artifacts, outDir) {
     if (typeof artifact?.content !== 'string') continue;
     contentByFile.set(artifact.name, artifact.content);
     contentByFile.set(`${outDir}/${artifact.name}`, artifact.content);
+    contentByFile.set(`out/${artifact.name}`, artifact.content);
   }
   return (file) => contentByFile.get(file) ?? null;
 }

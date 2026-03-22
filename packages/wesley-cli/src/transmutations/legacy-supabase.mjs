@@ -39,7 +39,8 @@ export class LegacySupabaseGeneratorPlugin extends GeneratorPlugin {
       artifacts,
       metadata: {
         ir,
-        enableRls: this._enableRls
+        enableRls: this._enableRls,
+        outDir: schema?.outputDir || 'out'
       }
     };
   }
@@ -51,24 +52,48 @@ export class LegacySupabaseGeneratorPlugin extends GeneratorPlugin {
     }
 
     const files = {};
-    mergeFiles(files, this._generators.sql?.emitDDL?.(ir));
+    const evidence = {};
+    const emitOptions = {
+      outDir: plan.metadata.outDir || 'out'
+    };
+    await mergeEmitted(files, evidence, this._generators.sql?.emitDDL?.(ir, emitOptions));
 
     if (plan.metadata.enableRls && typeof this._generators.sql?.emitRLS === 'function') {
-      mergeFiles(files, this._generators.sql.emitRLS(ir));
+      await mergeEmitted(files, evidence, this._generators.sql.emitRLS(ir, emitOptions));
     }
 
     if (typeof this._generators.tests?.emitPgTap === 'function') {
-      mergeFiles(files, this._generators.tests.emitPgTap(ir));
+      await mergeEmitted(files, evidence, this._generators.tests.emitPgTap(ir, emitOptions));
     }
 
-    return files;
+    return { files, evidence };
   }
 }
 
-function mergeFiles(target, emitted) {
+async function mergeEmitted(targetFiles, targetEvidence, emittedPromise) {
+  const emitted = await emittedPromise;
   for (const file of emitted?.files || []) {
     if (!file?.name) continue;
-    target[file.name] = file.content ?? '';
+    targetFiles[file.name] = file.content ?? '';
+  }
+
+  for (const [uid, entry] of Object.entries(emitted?.evidence || {})) {
+    const merged = targetEvidence[uid] || {};
+    if (entry?.artifacts && typeof entry.artifacts === 'object') {
+      merged.artifacts = {
+        ...(merged.artifacts || {}),
+        ...entry.artifacts
+      };
+    }
+    if (Array.isArray(entry?.errors) && entry.errors.length > 0) {
+      merged.errors = [...(merged.errors || []), ...entry.errors];
+    }
+    if (Array.isArray(entry?.warnings) && entry.warnings.length > 0) {
+      merged.warnings = [...(merged.warnings || []), ...entry.warnings];
+    }
+    if (Object.keys(merged).length > 0) {
+      targetEvidence[uid] = merged;
+    }
   }
 }
 

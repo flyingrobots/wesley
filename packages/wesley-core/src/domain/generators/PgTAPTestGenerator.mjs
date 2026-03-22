@@ -18,24 +18,27 @@ export class PgTAPTestGenerator {
 
   generate(schema, options = {}) {
     const suites = [];
+    const suiteBuilders = [
+      () => this.generateStructureTests(schema),
+      () => this.generateConstraintTests(schema),
+      () => this.generateDefaultTests(schema),
+      () => this.generateIndexTests(schema),
+      () => this.generateRLSTests(schema),
+      () => this.generateBehaviorTests(schema),
+      ...(options.migrationSteps ? [() => this.generateMigrationTests(options.migrationSteps)] : [])
+    ];
 
-    suites.push(this.generateStructureTests(schema));
-    suites.push(this.generateConstraintTests(schema));
-    suites.push(this.generateDefaultTests(schema));
-    suites.push(this.generateIndexTests(schema));
+    // wrapTestSuite() prefixes 5 lines before suite content begins.
+    this.currentLine = 5;
 
-    const rlsTests = this.generateRLSTests(schema);
-    if (rlsTests) {
-      suites.push(rlsTests);
+    for (const buildSuite of suiteBuilders) {
+      const suite = buildSuite();
+      if (!suite) continue;
+      suites.push(suite);
+      this.currentLine += countLines(suite) + 2;
     }
 
-    suites.push(this.generateBehaviorTests(schema));
-
-    if (options.migrationSteps) {
-      suites.push(this.generateMigrationTests(options.migrationSteps));
-    }
-
-    return this.wrapTestSuite(suites.filter(Boolean).join('\n\n'));
+    return this.wrapTestSuite(suites.join('\n\n'));
   }
 
   generateStructureTests(schema) {
@@ -444,4 +447,8 @@ export class PgTAPTestGenerator {
     }
     return 'no-evidence';
   }
+}
+
+function countLines(content) {
+  return String(content).split('\n').length;
 }

@@ -10,7 +10,7 @@
 import { Schema, Table, Field } from '../domain/Schema.mjs';
 
 function buildFieldDirectives(field, table) {
-  const directives = {};
+  const directives = { ...(field.directives || {}) };
 
   if (field.directives.pk) {
     directives['@primaryKey'] = {};
@@ -42,7 +42,55 @@ function buildFieldDirectives(field, table) {
     }
   }
 
+  const uidDirective = normalizeUidDirective(field.directives);
+  if (uidDirective) {
+    directives['@uid'] = uidDirective;
+  }
+
   return directives;
+}
+
+function buildTableDirectives(table) {
+  const directives = { ...(table.directives || {}) };
+
+  if (table.directives?.table && !directives['@table']) {
+    directives['@table'] = {};
+  }
+
+  const uidDirective = normalizeUidDirective(table.directives);
+  if (uidDirective) {
+    directives['@uid'] = uidDirective;
+  }
+
+  if (table.directives?.rls && !directives['@rls']) {
+    directives['@rls'] = table.directives.rls;
+  }
+
+  if (table.directives?.tenant && !directives['@tenant']) {
+    directives['@tenant'] = table.directives.tenant;
+  }
+
+  if (table.directives?.owner && !directives['@owner']) {
+    directives['@owner'] = table.directives.owner;
+  }
+
+  return directives;
+}
+
+function normalizeUidDirective(directives) {
+  const raw = directives?.['@uid'] ?? directives?.uid;
+  if (!raw) return null;
+
+  if (typeof raw === 'string') {
+    return { value: raw, uid: raw };
+  }
+
+  const value = raw.value ?? raw.uid;
+  if (typeof value === 'string' && value.length > 0) {
+    return { ...raw, value, uid: raw.uid ?? value };
+  }
+
+  return null;
 }
 
 export function irToSchema(ir) {
@@ -62,7 +110,7 @@ export function irToSchema(ir) {
     }
     tables[t.name] = new Table({
       name: t.name,
-      directives: t.directives || {},
+      directives: buildTableDirectives(t),
       fields
     });
   }

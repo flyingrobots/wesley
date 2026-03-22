@@ -395,15 +395,16 @@ export class ScoringEngine {
   /**
    * Export scores to JSON
    */
-  exportScores(schema, migrationSteps = [], testResults = {}) {
-    const scsDetails = this.calculateSCSDetails(schema);
+  exportScores(schema, migrationSteps = [], testResults = {}, options = {}) {
+    const scsDetails = this.calculateSCSDetails(schema, options.scs || {});
     const mriDetails = this.calculateMRIDetails(migrationSteps);
     const tciDetails = this.calculateTCIDetails(schema, testResults);
 
     const readiness = this.calculateReadiness(
       scsDetails.score,
       mriDetails.score,
-      tciDetails.score
+      tciDetails.score,
+      options.thresholds || {}
     );
 
     return {
