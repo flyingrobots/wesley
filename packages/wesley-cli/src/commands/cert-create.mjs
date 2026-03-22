@@ -3,9 +3,14 @@
  */
 import { createHash } from 'node:crypto';
 import {
+  GENERATED_BUNDLE_PATH,
   GENERATED_SCORES_PATH,
   GENERATED_SHIPME_PATH,
-  generatedArtifactPathCandidates
+  generatedArtifactPathCandidates,
+  listEvidenceFiles,
+  strongestEvidenceStrength,
+  summarizeEvidenceQuality,
+  totalEvidenceCitations
 } from '@wesley/core';
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import { resolveRunMetadata } from '../utils/run-metadata.mjs';
@@ -55,11 +60,13 @@ export class CertCreateCommand extends WesleyCommand {
     const now = new Date().toISOString();
     const sha = await gitSha(this.ctx) || 'uncommitted';
 
+    const bundle = await readGeneratedJsonSafe(this.ctx, GENERATED_BUNDLE_PATH);
     const scores = await readGeneratedJsonSafe(this.ctx, GENERATED_SCORES_PATH);
     const realm = await readWithFallback(() => readRealmProjection(this.ctx.fs));
     const counterfactual = buildShipmeCounterfactualSummary(
       await readCurrentCounterfactualSummary(this.ctx.fs)
     );
+    const evidence = await buildShipmeEvidenceSummary(this.ctx, bundle);
     const run = resolveRunMetadata(options, realm || {});
     const resumeState = options.resume
       ? resolveResumeState(this.ctx?.eventStore, { ...run, command: 'cert-create' })
@@ -81,6 +88,7 @@ export class CertCreateCommand extends WesleyCommand {
       emitSourcesResolved(eventCollector, scope, {
         hasRealm: Boolean(realm),
         hasScores: Boolean(scores?.scores),
+        hasEvidence: Boolean(evidence),
         artifactCount: Object.keys(artifacts).length
       });
 
@@ -92,6 +100,7 @@ export class CertCreateCommand extends WesleyCommand {
         environment: env,
         timestamp: now,
         scores: scores?.scores || null,
+        evidence,
         realm: realm || null,
         counterfactual,
         artifacts,
@@ -101,7 +110,10 @@ export class CertCreateCommand extends WesleyCommand {
         environment: env,
         artifactCount: Object.keys(artifacts).length,
         hasRealm: Boolean(realm),
-        hasScores: Boolean(scores?.scores)
+        hasScores: Boolean(scores?.scores),
+        exactCitations: evidence?.exact || 0,
+        wholeFileCitations: evidence?.wholeFile || 0,
+        coarseCitations: evidence?.coarse || 0
       });
 
       if (options.json) {
@@ -164,6 +176,9 @@ function renderSHIPME(cert) {
     `- Timestamp: ${cert.timestamp}`,
     cert.realm ? `- REALM: ${cert.realm.verdict} (${cert.realm.duration_ms}ms)` : '- REALM: n/a',
     cert.scores ? `- Scores: SCS=${fmt(cert.scores.scs)} MRI=${fmt(cert.scores.mri)} TCI=${fmt(cert.scores.tci)}` : '- Scores: n/a',
+    cert.evidence
+      ? `- Evidence: ${cert.evidence.totalCitations} citations (${cert.evidence.exact} exact · ${cert.evidence.wholeFile} whole-file · ${cert.evidence.coarse} coarse; strongest ${cert.evidence.strongestCitation})`
+      : '- Evidence: n/a',
     cert.counterfactual ? `- Counterfactual: ${cert.counterfactual.gate} (${cert.counterfactual.riskClass})` : '- Counterfactual: n/a',
     '',
     '<!-- WESLEY_CERT:BEGIN -->',
@@ -218,4 +233,33 @@ async function hashArtifacts(ctx, outDir) {
     }
   }
   return res;
+}
+
+async function buildShipmeEvidenceSummary(ctx, bundle) {
+  if (!bundle?.evidence) return null;
+
+  const files = listEvidenceFiles(bundle.evidence);
+  const contentByFile = new Map();
+  for (const file of files) {
+    try {
+      contentByFile.set(file, await ctx.fs.read(file));
+    } catch {
+      continue;
+    }
+  }
+
+  const citationQuality = summarizeEvidenceQuality(
+    bundle.evidence,
+    file => contentByFile.get(file) ?? null
+  );
+  const total = totalEvidenceCitations(citationQuality);
+  if (total === 0) return null;
+
+  return {
+    totalCitations: total,
+    exact: citationQuality.exact,
+    wholeFile: citationQuality.wholeFile,
+    coarse: citationQuality.coarse,
+    strongestCitation: strongestEvidenceStrength(citationQuality)
+  };
 }

@@ -89,6 +89,39 @@ create_counterfactual_summary() {
 JSON
 }
 
+create_bundle_with_citation_quality() {
+  mkdir -p .wesley-cache
+  cat > schema.sql << 'EOF'
+one
+two
+three
+EOF
+  cat > tests.sql << 'EOF'
+test line
+second test line
+EOF
+  cat > .wesley-cache/bundle.json << 'JSON'
+{
+  "bundleVersion": "2.0.0",
+  "sha": "abcdef1234567890abcdef1234567890abcdef12",
+  "timestamp": "2026-03-21T00:00:00.000Z",
+  "evidence": {
+    "evidence": {
+      "schema": {
+        "sql": [
+          { "file": "schema.sql", "lines": "1-3", "sha": "abcdef1234567890abcdef1234567890abcdef12" },
+          { "file": "schema.sql", "lines": "1-*", "sha": "abcdef1234567890abcdef1234567890abcdef12" }
+        ],
+        "tests": [
+          { "file": "tests.sql", "lines": "1-1", "sha": "abcdef1234567890abcdef1234567890abcdef12" }
+        ]
+      }
+    }
+  }
+}
+JSON
+}
+
 @test "cert sign + verify with two different keys (C5 multi-sig)" {
   create_schema
   create_realm_pass
@@ -146,6 +179,19 @@ JSON
   echo "$output" | jq -e '.counterfactual.comparisonFactDigest == "cmp-123"' >/dev/null
 }
 
+@test "cert-create summarizes evidence citation quality in SHIPME JSON" {
+  create_realm_pass
+  create_bundle_with_citation_quality
+
+  run node "$CLI_PATH" cert-create --env test --json
+  assert_success
+  echo "$output" | jq -e '.evidence.totalCitations == 3' >/dev/null
+  echo "$output" | jq -e '.evidence.exact == 1' >/dev/null
+  echo "$output" | jq -e '.evidence.wholeFile == 1' >/dev/null
+  echo "$output" | jq -e '.evidence.coarse == 1' >/dev/null
+  echo "$output" | jq -e '.evidence.strongestCitation == "exact"' >/dev/null
+}
+
 @test "cert-create --resume treats shared transform history as a fresh cert run" {
   create_schema
   create_realm_pass
@@ -198,6 +244,7 @@ JSON
   # transform to produce artifacts
   run node "$CLI_PATH" transform --schema schema.graphql --out-dir out
   assert_success
+  create_bundle_with_citation_quality
 
   # create SHIPME
   run node "$CLI_PATH" cert-create --env test --out .wesley-cache/SHIPME.md
@@ -219,6 +266,7 @@ JSON
   run node "$CLI_PATH" cert-verify --in .wesley-cache/SHIPME.md --pub holmes.pub --json
   assert_success
   echo "$output" | jq -e '.ok == true' >/dev/null
+  echo "$output" | jq -e '.evidence.coarse == 1' >/dev/null
 }
 
 @test "cert-verify fails when embedded counterfactual gate is fail" {

@@ -19,6 +19,26 @@
     "timestamp": { "type": "string", "format": "date-time" },
     "environment": { "type": ["string", "null"] },
     "scores": { "type": ["object", "null"] },
+    "evidence": {
+      "anyOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["totalCitations", "exact", "wholeFile", "coarse", "strongestCitation"],
+          "properties": {
+            "totalCitations": { "type": "number", "minimum": 0 },
+            "exact": { "type": "number", "minimum": 0 },
+            "wholeFile": { "type": "number", "minimum": 0 },
+            "coarse": { "type": "number", "minimum": 0 },
+            "strongestCitation": {
+              "type": "string",
+              "enum": ["exact", "whole-file", "coarse", "missing"]
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
     "realm": {
       "anyOf": [ { "$ref": "realm.schema.json#" }, { "type": "null" } ]
     },

@@ -49,6 +49,16 @@ export { GenerationPipeline } from './application/GenerationPipeline.mjs';
 export { irToSchema } from './application/irToSchema.mjs';
 export { EvidenceMap } from './application/EvidenceMap.mjs';
 export {
+  classifyEvidenceLocation,
+  createEvidenceQualitySummary,
+  listEvidenceFiles,
+  pickBestEvidenceLocation,
+  strongestEvidenceStrength,
+  summarizeEvidenceKinds,
+  summarizeEvidenceQuality,
+  totalEvidenceCitations
+} from './application/EvidenceQuality.mjs';
+export {
   countContentLines,
   extractContentForLineSpan,
   isExactLineSpan,

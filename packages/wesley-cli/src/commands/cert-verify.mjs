@@ -41,7 +41,13 @@ export class CertVerifyCommand extends WesleyCommand {
     const okCounterfactual = !json?.counterfactual || json.counterfactual.gate !== 'fail';
     const ok = validCount > 0 && okRealm && okCounterfactual;
     const badge = `[REALM] ${okRealm ? 'PASS' : 'FAIL'} — sha ${json.sha?.slice(0,7) || 'unknown'}`;
-    const result = { ok, validSignatures: validCount, badge, counterfactualGate: json?.counterfactual?.gate || null };
+    const result = {
+      ok,
+      validSignatures: validCount,
+      badge,
+      counterfactualGate: json?.counterfactual?.gate || null,
+      evidence: json?.evidence || null
+    };
     if (options.json) this.ctx.stdout.write(JSON.stringify(result, null, 2) + '\n');
     else this.ctx.stdout.write(badge + '\n');
     if (!ok) {
