@@ -11,8 +11,10 @@ Key signals (quick refresher):
   - Relevant = GraphQL, SQL/DDL, pgTAP, `.wesley-cache/*` artifacts
 - Plateau rule – plateauDetected when `|blendedVelocity| < 0.01` AND `activityIndex < 0.35`
 - Confidence – derived from series variance; penalized by commit-size “burstiness”
+  - Weak or missing evidence trust on the latest history point also lowers confidence
 - Readiness EXPLAIN (informational) – PASS/FAIL lines for thresholds:
   - SCS ≥ 0.80, TCI ≥ 0.70, MRI ≤ 0.40, CI stability ≥ 0.90
+  - Evidence Trust ≥ moderate when the latest history point carries citation-quality metadata
 
 Test harness knobs:
 - History points: `.wesley-cache/history.json`
@@ -183,6 +185,11 @@ Each scenario below includes: intent, minimal setup, expected outcomes, and conc
 - Setup: many PR commits with relevant files; SCS unchanged over several points.
 - Expect: plateau suppressed; no ETA; (proposed) pattern `EVIDENCE_LAG`.
 - Test: For now assert no ETA; add pattern when implemented.
+
+28) Strong scores, weak proof
+- Setup: history trends upward with SCS/TCI above threshold, but latest point carries `evidenceTrust = weak`.
+- Expect: EXPLAIN evidence-trust line FAILs and confidence is lower than the same score series with `evidenceTrust = strong`.
+- Test: Compare the two forecasts directly and assert the weak-proof run is penalized.
 
 ---
 

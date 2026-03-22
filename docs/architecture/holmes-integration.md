@@ -379,7 +379,7 @@ These files live under the HOLMES workflow artifacts (flat files, no subdirector
 
 ## History Hydration & Caching
 
-- Each `wesley generate --emit-bundle` appends a point to `.wesley-cache/history.json` (day, timestamp, SCS/TCI/MRI).
+- Each `wesley generate --emit-bundle` appends a point to `.wesley-cache/history.json` (day, timestamp, SCS/TCI/MRI, and evidence-trust metadata when citation quality is known).
 - When MORIARTY runs in CI, the CLI merges local history, the merge-base snapshot (`git show <merge-base>:.wesley-cache/history.json`), and a GitHub Actions cache keyed by commit SHA (with branch/base fallbacks). This gives predictions continuity across branch reruns.
 
 ## Customising Weighting
