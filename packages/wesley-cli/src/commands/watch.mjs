@@ -9,7 +9,7 @@
  */
 
 import chokidar from 'chokidar';
-import { EventEmitter } from '@wesley/core';
+import { EventEmitter, systemClock } from '@wesley/core';
 
 export class WatchCommand extends EventEmitter {
   constructor(options = {}) {
@@ -21,6 +21,14 @@ export class WatchCommand extends EventEmitter {
     this.debounceMs = options.debounceMs || 500;
     this.clearConsole = options.clearConsole !== false; // Default to true
     this.onchange = options.onchange || (() => {});
+    this.clock = options.clock ?? systemClock;
+    this.watcherFactory = options.watcherFactory || ((patterns, watcherOptions) => chokidar.watch(patterns, watcherOptions));
+    this.console = options.console || console;
+    this.stdout = options.stdout || process.stdout;
+    this.processRef = options.processRef || process;
+    this.boundStop = () => {
+      void this.stop();
+    };
 
     this.watcher = null;
     this.debounceTimer = null;
@@ -52,7 +60,7 @@ export class WatchCommand extends EventEmitter {
       }
     };
 
-    this.watcher = chokidar.watch(this.patterns, watcherOptions);
+    this.watcher = this.watcherFactory(this.patterns, watcherOptions);
 
     // Set up event handlers
     this.watcher.on('add', (path) => this._handleChange('add', path));
@@ -62,7 +70,7 @@ export class WatchCommand extends EventEmitter {
     this.watcher.on('unlinkDir', (path) => this._handleChange('unlinkDir', path));
 
     this.watcher.on('error', (error) => {
-      console.error('Watcher error:', error);
+      this.console.error('Watcher error:', error);
       this.emit('error', { error });
     });
 
@@ -70,17 +78,17 @@ export class WatchCommand extends EventEmitter {
       const watchedPaths = this.watcher.getWatched();
       const pathCount = Object.keys(watchedPaths).length;
 
-      console.log(`📁 Watching ${pathCount} directories for changes...`);
-      console.log(`🔍 Patterns: ${this.patterns.join(', ')}`);
-      console.log(`⏱️  Debounce: ${this.debounceMs}ms`);
-      console.log('🎯 Ready for changes!\n');
+      this.console.log(`📁 Watching ${pathCount} directories for changes...`);
+      this.console.log(`🔍 Patterns: ${this.patterns.join(', ')}`);
+      this.console.log(`⏱️  Debounce: ${this.debounceMs}ms`);
+      this.console.log('🎯 Ready for changes!\n');
 
       this.emit('ready', { pathCount, patterns: this.patterns });
     });
 
     // Handle process termination gracefully
-    process.on('SIGINT', () => this.stop());
-    process.on('SIGTERM', () => this.stop());
+    this.processRef.on?.('SIGINT', this.boundStop);
+    this.processRef.on?.('SIGTERM', this.boundStop);
 
     return new Promise((resolve, reject) => {
       this.watcher.on('ready', resolve);
@@ -100,7 +108,7 @@ export class WatchCommand extends EventEmitter {
     this.isRunning = false;
 
     if (this.debounceTimer) {
-      clearTimeout(this.debounceTimer);
+      this.clock.clearTimeout(this.debounceTimer);
       this.debounceTimer = null;
     }
 
@@ -109,7 +117,12 @@ export class WatchCommand extends EventEmitter {
       this.watcher = null;
     }
 
-    console.log('\n👋 Watcher stopped');
+    this.processRef.off?.('SIGINT', this.boundStop);
+    this.processRef.off?.('SIGTERM', this.boundStop);
+    this.processRef.removeListener?.('SIGINT', this.boundStop);
+    this.processRef.removeListener?.('SIGTERM', this.boundStop);
+
+    this.console.log('\n👋 Watcher stopped');
     this.emit('stopped');
   }
 
@@ -147,11 +160,11 @@ export class WatchCommand extends EventEmitter {
   _handleChange(eventType, filePath) {
     // Clear existing debounce timer
     if (this.debounceTimer) {
-      clearTimeout(this.debounceTimer);
+      this.clock.clearTimeout(this.debounceTimer);
     }
 
     // Set up new debounced execution
-    this.debounceTimer = setTimeout(() => {
+    this.debounceTimer = this.clock.setTimeout(() => {
       this._executeChange(eventType, filePath);
     }, this.debounceMs);
   }
@@ -161,34 +174,34 @@ export class WatchCommand extends EventEmitter {
       this._clearConsole();
     }
 
-    const timestamp = new Date().toLocaleTimeString();
+    const timestamp = new Date(this.clock.nowMs()).toLocaleTimeString();
     const changeIcon = this._getChangeIcon(eventType);
 
-    console.log(`${changeIcon} [${timestamp}] ${this._formatEventType(eventType)}: ${filePath}`);
+    this.console.log(`${changeIcon} [${timestamp}] ${this._formatEventType(eventType)}: ${filePath}`);
 
     // Emit change event
     this.emit('change', {
       eventType,
       filePath,
-      timestamp: new Date().toISOString()
+      timestamp: this.clock.now()
     });
 
     // Execute the onchange callback
     try {
       this.onchange(eventType, filePath);
     } catch (error) {
-      console.error('Error in change handler:', error);
+      this.console.error('Error in change handler:', error);
       this.emit('error', { error, eventType, filePath });
     }
   }
 
   _clearConsole() {
     // Clear console with ANSI escape codes (works on most terminals)
-    process.stdout.write('\x1Bc');
+    this.stdout.write('\x1Bc');
 
     // Alternative method for Windows
-    if (process.platform === 'win32') {
-      process.stdout.write('\x1B[2J\x1B[0f');
+    if (this.processRef.platform === 'win32') {
+      this.stdout.write('\x1B[2J\x1B[0f');
     }
   }
 
