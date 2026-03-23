@@ -20,10 +20,17 @@ const DEFAULT_DIALECT = new PostgresDialect();
 
 // identPolicy defaults to 'strict' here (ops emission is always strict) whereas
 // lowerToSQL defaults to 'minimal' for backward-compat with direct callers.
-export function emitView(opName, plan, { schema = DEFAULT_SCHEMA, identPolicy = 'strict', pkResolver = null, dialect = DEFAULT_DIALECT } = {}) {
+export function emitView(opName, plan, {
+  schema = DEFAULT_SCHEMA,
+  identPolicy = 'strict',
+  pkResolver = null,
+  setSearchPath = null,
+  dialect = DEFAULT_DIALECT
+} = {}) {
   const name = qualifiedOpName(schema, opName, dialect);
   const selectSql = lowerToSQL(plan, null, { identPolicy, pkResolver, dialect });
-  return dialect.createView(name, selectSql);
+  const sp = renderSearchPath(setSearchPath, dialect);
+  return dialect.createView(name, selectSql, sp);
 }
 
 export function emitFunction(opName, plan, {

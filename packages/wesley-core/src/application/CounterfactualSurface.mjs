@@ -18,7 +18,7 @@ export async function ensureCounterfactualWorkspaceArtifacts({
   transmutation = 'legacy-supabase'
 } = {}, port) {
   const deps = assertCounterfactualSurfacePort(port);
-  const resolvedWorkspaceDir = deps.resolvePath(workspaceDir || process.cwd());
+  const resolvedWorkspaceDir = deps.resolvePath(workspaceDir || '.');
   const resolvedBundleDir = resolveWorkspacePath(resolvedWorkspaceDir, bundleDir, deps);
   const resolvedOutDir = resolveWorkspacePath(resolvedWorkspaceDir, outDir, deps);
   const resolvedSchemaPath = await resolveCounterfactualSchemaPath({
@@ -98,7 +98,7 @@ export async function collectCounterfactualSurfaceModel({
   surface = {}
 } = {}, port) {
   const deps = assertCounterfactualSurfacePort(port);
-  const resolvedWorkspaceDir = deps.resolvePath(workspaceDir || process.cwd());
+  const resolvedWorkspaceDir = deps.resolvePath(workspaceDir || '.');
   const bundleDir = resolveWorkspacePath(resolvedWorkspaceDir, surface.bundleDir || GENERATED_ARTIFACT_DIR, deps);
   const outDir = resolveWorkspacePath(resolvedWorkspaceDir, surface.outDir || 'out', deps);
   const schemaPath = await resolveCounterfactualSchemaPath({

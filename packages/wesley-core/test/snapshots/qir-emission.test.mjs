@@ -49,6 +49,18 @@ test('emitView: wraps lowered SQL in CREATE VIEW', () => {
   assert.ok(sql.includes('SELECT "t0"."id" AS "id", "t0"."name" AS "name"'));
 });
 
+test('emitView: supports SET search_path preamble', () => {
+  const root = new TableNode('organization', 't0');
+  const proj = new Projection([
+    new ProjectionItem('id', new ColumnRef('t0', 'id'))
+  ]);
+  const plan = new QueryPlan(root, proj, {});
+
+  const sql = emitView('org_view_sp', plan, { setSearchPath: ['wes_ops', 'public'] });
+  assert.ok(sql.startsWith('SET search_path = "wes_ops", "public";'));
+  assert.ok(sql.includes('CREATE OR REPLACE VIEW "wes_ops"."op_org_view_sp" AS'));
+});
+
 test('emitFunction: preserves jsonb_agg COALESCE inside wrapper', () => {
   const root = new TableNode('organization', 't0');
   const value = { kind: 'JsonBuildObject', fields: [ { key: 'id', value: new ColumnRef('t0','id') } ] };

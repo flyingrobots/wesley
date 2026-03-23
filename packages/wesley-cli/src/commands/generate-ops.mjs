@@ -304,6 +304,7 @@ function emitOpArtifacts(compiledOps, targetSchema, logger, pkResolver, { securi
   const total = compiledOps.length;
   let ordinal = 0;
   const normalizedSchema = sanitizeIdentBase(targetSchema, 'wes_ops');
+  const effectiveSearchPath = normalizeOpsSearchPath(setSearchPath, normalizedSchema);
   const deployChunks = ['BEGIN;', `CREATE SCHEMA IF NOT EXISTS ${quoteIdent(normalizedSchema)};`];
   const registry = { version: '1.0.0', schema: normalizedSchema, ops: [] };
 
@@ -312,9 +313,20 @@ function emitOpArtifacts(compiledOps, targetSchema, logger, pkResolver, { securi
     const { baseName, plan, isParamless, path } = entry;
     let emitted = false;
     try {
-      const fnSql = emitFunction(baseName, plan, { schema: targetSchema, identPolicy: 'strict', pkResolver, security, setSearchPath });
+      const fnSql = emitFunction(baseName, plan, {
+        schema: targetSchema,
+        identPolicy: 'strict',
+        pkResolver,
+        security,
+        setSearchPath: effectiveSearchPath
+      });
       if (isParamless) {
-        const viewSql = emitView(baseName, plan, { schema: targetSchema, identPolicy: 'strict', pkResolver });
+        const viewSql = emitView(baseName, plan, {
+          schema: targetSchema,
+          identPolicy: 'strict',
+          pkResolver,
+          setSearchPath: effectiveSearchPath
+        });
         outFiles.push({ name: `ops/${baseName}.view.sql`, content: `${viewSql}\n` });
         deployChunks.push(viewSql);
       }
@@ -382,6 +394,13 @@ function emitOpArtifacts(compiledOps, targetSchema, logger, pkResolver, { securi
     logger.warn({ error: e?.message }, 'Failed to emit ops registry');
   }
   return outFiles;
+}
+
+function normalizeOpsSearchPath(setSearchPath, normalizedSchema) {
+  if (Array.isArray(setSearchPath) && setSearchPath.length > 0) {
+    return setSearchPath;
+  }
+  return [normalizedSchema, 'public'];
 }
 
 function resolveRootType(ir, rootFieldName) {

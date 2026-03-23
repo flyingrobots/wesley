@@ -64,8 +64,11 @@ export class PostgresDialect extends SqlDialect {
     return `to_jsonb(${this.quoteIdent(alias)}.*)`;
   }
 
-  createView(qualifiedName, selectSql) {
-    return `CREATE OR REPLACE VIEW ${qualifiedName} AS\n${selectSql};`;
+  createView(qualifiedName, selectSql, searchPathSql = '') {
+    const statements = [];
+    if (searchPathSql) statements.push(`SET search_path = ${searchPathSql};`);
+    statements.push(`CREATE OR REPLACE VIEW ${qualifiedName} AS\n${selectSql};`);
+    return statements.join('\n');
   }
 
   createFunction({ qualifiedName, paramsSql, bodySql, security, searchPathSql }) {
