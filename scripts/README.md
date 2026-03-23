@@ -9,6 +9,7 @@ This directory contains helper scripts that power development workflows. Run the
 | `fix-package-metadata.mjs` | Normalises `package.json` metadata across all workspaces (author, license, repository, etc.). | `pnpm exec node scripts/fix-package-metadata.mjs` (no arguments) |
 | `install-hooks.sh` | Sets `core.hooksPath` to `.githooks`, ensuring local Git hooks run. Safe to rerun. | `bash scripts/install-hooks.sh` |
 | `preflight.mjs` | Runs the repository hygiene suite (docs link check, dependency boundaries, ESLint purity, license audit). | `pnpm run preflight` – respects `SKIP_PREFLIGHT=1` to bypass |
+| `pre-push-sanity.mjs` | Selects targeted sanity checks for the refs being pushed, based on changed files. | `node scripts/pre-push-sanity.mjs --dry-run --files packages/wesley-holmes/src/cli.mjs` (`SKIP_PREPUSH_SANITY=1` bypasses all, `SKIP_HOLMES_OPS_PREPUSH=1` only skips the HOLMES Postgres smoke) |
 | `compute-progress.mjs` | Aggregates package progress → `meta/progress.json` and updates README markers. | `node scripts/compute-progress.mjs [--dry-run]` |
 | `serve-static.mjs` | Tiny static file server used by browser smokes. Exports `contentType()` and `isWithinRoot()`. Hardened against traversal. | `node scripts/serve-static.mjs --dir=... --port=8787` |
 | `host_contracts_browser.mjs` | Orchestrates the browser host-contracts bundle/serve/Playwright run. Honors `OUT_JSON`; test hook `ONLY_PARSE_OUT_JSON=1`. | `node scripts/host_contracts_browser.mjs` |
@@ -17,6 +18,8 @@ This directory contains helper scripts that power development workflows. Run the
 | `tasks-update.mjs` | Recomputes the ASCII progress bar + counts in `tasks-clean.md` based on resolved outcomes. | `pnpm run tasks:update` |
 | `setup-bats-plugins.sh` | Installs pinned Bats testing plugins into `packages/wesley-cli/test/bats-plugins`. | `bash scripts/setup-bats-plugins.sh` |
 | `test-ci-locally.sh` | Simulates the GitHub Actions CLI job locally (installs deps, runs Bats, emits TAP). | `pnpm run test:ci:local` |
+| `smoke/repo-bats-prepush.sh` | Runs the fast repo-level Bats suite used by the smart pre-push hook. | `bash scripts/smoke/repo-bats-prepush.sh` |
+| `smoke/holmes-ops-pgtap.sh` | Regenerates the HOLMES example, boots the Postgres fixture, and applies generated ops SQL to catch pgTAP workflow regressions locally. | `pnpm run smoke:holmes-ops` |
 | _(composite)_ | Convenience bootstrap script that installs dependencies, runs preflight, then runs the workspace tests. | `pnpm run bootstrap` |
 
 > [!tip]

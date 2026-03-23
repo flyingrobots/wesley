@@ -26,6 +26,7 @@
     "generate:example": "cd test/fixtures/examples && node ../../../packages/wesley-host-node/bin/wesley.mjs generate --schema ecommerce.graphql --emit-bundle --out-dir out --allow-dirty",
     "clean": "node scripts/clean.mjs",
     "smoke:postgres-fixture": "bash scripts/smoke/postgres-fixture.sh",
+    "smoke:holmes-ops": "bash scripts/smoke/holmes-ops-pgtap.sh",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
     "docker:test": "docker-compose run pgtap",

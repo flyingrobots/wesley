@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ "${CI:-}" == "true" || "${SKIP_BATS_PREPUSH:-}" == "1" ]]; then
+  exit 0
+fi
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+cd "$ROOT_DIR"
+
+export BATS_LIB_PATH=packages/wesley-cli/test
+export TERM=xterm
+export BATS_NO_COLOR=1
+
+timeout 60s bash scripts/setup-bats-plugins.sh || {
+  echo "[pre-push] Failed to bootstrap Bats plugins (timeout or error)" >&2
+  exit 1
+}
+
+rm -rf test/bats-plugins 2>/dev/null || true
+ln -sfn "$PWD/packages/wesley-cli/test/bats-plugins" test/bats-plugins
+
+files=(
+  test/serve-static-unit.bats
+  test/serve-static-relative-unit.bats
+  test/progress-dry-run.bats
+  test/progress-safety.bats
+  test/ci-browser-smoke.bats
+  test/ci-pkg-core.bats
+  test/ci-pkg-host-bun.bats
+  test/ci-workflows.bats
+  test/deno-host-webcrypto-guard.bats
+)
+
+for f in "${files[@]}"; do
+  echo "[pre-push] bats -t $f"
+  timeout 3m bats -t "$f"
+done
