@@ -5,7 +5,7 @@
 import { test, describe, beforeEach } from 'node:test';
 import assert from 'node:assert';
 import { EventEmitter } from 'node:events';
-import { FakeClock } from '../src/index.mjs';
+import { advanceTestClock, createTestClock } from './helpers/time.mjs';
 
 import {
   CICOrchestrator,
@@ -25,7 +25,7 @@ import {
  */
 class MockSQLExecutor {
   constructor(options = {}) {
-    this.clock = options.clock ?? new FakeClock('2026-03-22T00:00:00.000Z');
+    this.clock = options.clock ?? createTestClock();
     this.operations = [];
     this.failures = new Map();
     this.delays = new Map();
@@ -93,12 +93,7 @@ class MockSQLExecutor {
   }
 
   async _advanceClock(ms) {
-    if (typeof this.clock.advanceBy === 'function') {
-      await this.clock.advanceBy(ms);
-      return;
-    }
-
-    await this.clock.sleep(ms);
+    await advanceTestClock(this.clock, ms);
   }
 }
 
@@ -303,7 +298,7 @@ describe('CICOrchestrator', () => {
   let clock;
 
   beforeEach(() => {
-    clock = new FakeClock('2026-03-22T00:00:00.000Z');
+    clock = createTestClock();
     mockExecutor = new MockSQLExecutor({ clock });
     eventEmitter = new EventEmitter();
     events = [];
@@ -605,7 +600,7 @@ describe('CICOrchestrator Edge Cases', () => {
   let clock;
 
   beforeEach(() => {
-    clock = new FakeClock('2026-03-22T00:00:00.000Z');
+    clock = createTestClock();
     mockExecutor = new MockSQLExecutor({ clock });
     orchestrator = new CICOrchestrator(mockExecutor, null, { clock });
   });

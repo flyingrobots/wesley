@@ -4,6 +4,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert';
+import { createTestClock } from './helpers/time.mjs';
 import {
   BackpressureController,
   BackpressureError,
@@ -16,10 +17,9 @@ import {
   ThrottlingAdjusted,
   CircuitBreakerState
 } from '../src/domain/control/BackpressureController.mjs';
-import { FakeClock } from '../src/index.mjs';
 
 function createController(options = {}) {
-  const clock = options.clock ?? new FakeClock('2026-03-22T00:00:00.000Z');
+  const clock = options.clock ?? createTestClock();
   const controller = new BackpressureController({
     ...options,
     clock

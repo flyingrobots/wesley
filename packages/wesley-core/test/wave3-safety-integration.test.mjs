@@ -22,19 +22,11 @@ import {
   createStressTest,
   createFailureTest
 } from '../src/testing/IntegrationTestHarness.mjs';
-import { FakeClock } from '../src/index.mjs';
-
-function createSeededRandom(seed = 0x5eed1234) {
-  let state = seed >>> 0;
-  return () => {
-    state = (1664525 * state + 1013904223) >>> 0;
-    return state / 0x100000000;
-  };
-}
+import { createSeededRandom, createTestClock } from './helpers/time.mjs';
 
 function createDeterministicContext(seed = 0x5eed1234) {
   return {
-    clock: new FakeClock('2026-03-22T00:00:00.000Z'),
+    clock: createTestClock(),
     random: createSeededRandom(seed),
     harnessRandom: createSeededRandom(seed ^ 0x9e3779b9)
   };
@@ -43,7 +35,7 @@ function createDeterministicContext(seed = 0x5eed1234) {
 // Mock components for comprehensive testing
 class MockEventEmitter {
   constructor(options = {}) {
-    this.clock = options.clock ?? new FakeClock('2026-03-22T00:00:00.000Z');
+    this.clock = options.clock ?? createTestClock();
     this.events = [];
   }
 
@@ -71,7 +63,7 @@ class AdvancedMockDatabaseAdapter {
     this.failureTypes = options.failureTypes || [];
     this.performanceVariation = options.performanceVariation || 0.1;
     this.lockContentionRate = options.lockContentionRate || 0.05;
-    this.clock = options.clock ?? new FakeClock('2026-03-22T00:00:00.000Z');
+    this.clock = options.clock ?? createTestClock();
     this.random = options.random ?? createSeededRandom();
 
     // Initial database state

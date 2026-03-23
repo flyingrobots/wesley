@@ -5,7 +5,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { FakeClock } from '../src/index.mjs';
+import { advanceTestClock, createTestClock } from './helpers/time.mjs';
 import {
   IntegrationTestHarness,
   DatabaseSnapshot,
@@ -22,7 +22,7 @@ import {
 class MockEventEmitter {
   constructor(options = {}) {
     this.events = [];
-    this.clock = options.clock ?? new FakeClock('2026-03-22T00:00:00.000Z');
+    this.clock = options.clock ?? createTestClock();
   }
 
   emit(eventType, event) {
@@ -43,7 +43,7 @@ class MockDatabaseAdapter {
   constructor(options = {}) {
     this.shouldFail = options.shouldFail || false;
     this.operationDelay = options.operationDelay || 10;
-    this.clock = options.clock ?? new FakeClock('2026-03-22T00:00:00.000Z');
+    this.clock = options.clock ?? createTestClock();
     this.tables = options.initialTables || [
       { name: 'users', columns: ['id', 'email', 'name'] },
       { name: 'posts', columns: ['id', 'title', 'user_id'] }
@@ -127,17 +127,12 @@ class MockDatabaseAdapter {
   }
 
   async _advanceClock(ms) {
-    if (typeof this.clock.advanceBy === 'function') {
-      await this.clock.advanceBy(ms);
-      return;
-    }
-
-    await this.clock.sleep(ms);
+    await advanceTestClock(this.clock, ms);
   }
 }
 
 function createHarnessContext(options = {}) {
-  const clock = options.clock ?? new FakeClock('2026-03-22T00:00:00.000Z');
+  const clock = options.clock ?? createTestClock();
   const random = options.random ?? (() => 0.5);
   const databaseAdapter = options.databaseAdapter ?? new MockDatabaseAdapter({ clock, ...options.databaseAdapterOptions });
   const eventEmitter = options.eventEmitter ?? new MockEventEmitter({ clock });
@@ -502,7 +497,7 @@ test('executeTestSuite with empty test array throws error', async () => {
 });
 
 test('setupFailureInjection and failure injection execution', async () => {
-  const clock = new FakeClock('2026-03-22T00:00:00.000Z');
+  const clock = createTestClock();
   const eventEmitter = new MockEventEmitter({ clock });
   const harness = new IntegrationTestHarness({
     eventEmitter,

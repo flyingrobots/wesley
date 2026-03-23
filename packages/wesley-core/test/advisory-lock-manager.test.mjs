@@ -5,7 +5,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { FakeClock } from '../src/index.mjs';
+import { advanceTestClock, createTestClock } from './helpers/time.mjs';
 import {
   AdvisoryLockManager,
   LockTimeoutError,
@@ -18,7 +18,7 @@ import {
 // Mock database client with configurable responses
 class MockClient {
   constructor(options = {}) {
-    this.clock = options.clock ?? new FakeClock('2026-03-22T00:00:00.000Z');
+    this.clock = options.clock ?? createTestClock();
     this.queries = [];
     this.sessionId = '12345';
     this.lockResponses = new Map(); // query -> response
@@ -125,12 +125,7 @@ class MockClient {
   }
 
   async _advanceClock(ms) {
-    if (typeof this.clock.advanceBy === 'function') {
-      await this.clock.advanceBy(ms);
-      return;
-    }
-
-    await this.clock.sleep(ms);
+    await advanceTestClock(this.clock, ms);
   }
 }
 
@@ -138,7 +133,7 @@ class MockClient {
 class MockEventEmitter {
   constructor(options = {}) {
     this.events = [];
-    this.clock = options.clock ?? new FakeClock('2026-03-22T00:00:00.000Z');
+    this.clock = options.clock ?? createTestClock();
   }
 
   emit(eventType, event) {
@@ -159,7 +154,7 @@ class MockEventEmitter {
 }
 
 function createLockTestContext(options = {}) {
-  const clock = options.clock ?? new FakeClock('2026-03-22T00:00:00.000Z');
+  const clock = options.clock ?? createTestClock();
   const client = options.client ?? new MockClient({ clock });
   const eventEmitter = options.eventEmitter ?? new MockEventEmitter({ clock });
   const manager = options.manager ?? new AdvisoryLockManager({
@@ -259,7 +254,7 @@ test('AdvisoryLockManager - try acquire lock without blocking', async () => {
 });
 
 test('AdvisoryLockManager - lock timeout handling', async () => {
-  const clock = new FakeClock('2026-03-22T00:00:00.000Z');
+  const clock = createTestClock();
   const client = new MockClient({ clock });
   const manager = new AdvisoryLockManager({ clock, defaultTimeout: 100 }); // Very short timeout
 
@@ -412,7 +407,7 @@ test('AdvisoryLockManager - get session locks', async () => {
 });
 
 test('AdvisoryLockManager - lock statistics', async () => {
-  const clock = new FakeClock('2026-03-22T00:00:00.000Z');
+  const clock = createTestClock();
   const client1 = new MockClient({ clock });
   const client2 = new MockClient({ clock });
   client1.setSessionId('111');
