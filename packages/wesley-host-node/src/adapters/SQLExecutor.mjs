@@ -16,7 +16,7 @@
  */
 
 import { spawn } from 'child_process';
-import { DomainEvent } from '../Events.mjs';
+import { DomainEvent, systemClock } from '@wesley/core';
 
 export class SQLExecutorStarted extends DomainEvent {
   constructor(connectionString, options) {
@@ -173,23 +173,23 @@ export class SQLOperation {
   /**
    * Mark operation as started
    */
-  start() {
-    this.startTime = Date.now();
+  start(clock = systemClock) {
+    this.startTime = clock.nowMs();
   }
 
   /**
    * Mark operation as completed
    */
-  complete(rowsAffected = 0) {
-    this.endTime = Date.now();
+  complete(rowsAffected = 0, clock = systemClock) {
+    this.endTime = clock.nowMs();
     this.rowsAffected = rowsAffected;
   }
 
   /**
    * Mark operation as failed
    */
-  fail(error) {
-    this.endTime = Date.now();
+  fail(error, clock = systemClock) {
+    this.endTime = clock.nowMs();
     this.error = error;
   }
 
@@ -206,9 +206,10 @@ export class SQLOperation {
  * Main SQLExecutor class for streaming SQL execution
  */
 export class SQLExecutor {
-  constructor(connection, eventEmitter = null) {
+  constructor(connection, eventEmitter = null, options = {}) {
     this.connection = connection;
     this.eventEmitter = eventEmitter;
+    this.clock = options.clock || systemClock;
     this.psqlProcess = null;
     this.operations = [];
     this.currentOperation = null;
@@ -273,21 +274,21 @@ export class SQLExecutor {
    */
   async waitForReady() {
     return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
+      const timeout = this.clock.setTimeout(() => {
         reject(new Error('Timeout waiting for psql process to be ready'));
       }, 5000);
 
       if (this.psqlProcess && this.psqlProcess.pid) {
-        clearTimeout(timeout);
+        this.clock.clearTimeout(timeout);
         resolve();
       } else {
         this.psqlProcess?.on('spawn', () => {
-          clearTimeout(timeout);
+          this.clock.clearTimeout(timeout);
           resolve();
         });
 
         this.psqlProcess?.on('error', (error) => {
-          clearTimeout(timeout);
+          this.clock.clearTimeout(timeout);
           reject(error);
         });
       }
@@ -303,7 +304,7 @@ export class SQLExecutor {
     }
 
     this.currentOperation = operation;
-    operation.start();
+    operation.start(this.clock);
 
     this.emit(new SQLOperationStarted(operation.metadata.operation, operation.getSqlPreview()));
 
@@ -316,7 +317,7 @@ export class SQLExecutor {
 
       // Parse rows affected from psql output
       const rowsAffected = this.parseRowsAffected(result);
-      operation.complete(rowsAffected);
+      operation.complete(rowsAffected, this.clock);
 
       this.emit(new SQLOperationCompleted(
         operation.metadata.operation,
@@ -330,7 +331,7 @@ export class SQLExecutor {
 
       return result;
     } catch (error) {
-      operation.fail(error);
+      operation.fail(error, this.clock);
       this.emit(new SQLExecutorError(error, operation.metadata.operation));
       this.clearOperationTimeout();
       this.currentOperation = null;
@@ -385,7 +386,7 @@ export class SQLExecutor {
             }
           } else {
             // Keep waiting
-            setTimeout(checkComplete, 100);
+            this.clock.setTimeout(checkComplete, 100);
           }
         };
 
@@ -501,13 +502,13 @@ export class SQLExecutor {
    */
   setOperationTimeout(timeoutMs) {
     if (this.timeoutHandle) {
-      clearTimeout(this.timeoutHandle);
+      this.clock.clearTimeout(this.timeoutHandle);
     }
 
-    this.timeoutHandle = setTimeout(() => {
+    this.timeoutHandle = this.clock.setTimeout(() => {
       const error = new Error(`Operation timeout after ${timeoutMs}ms`);
       if (this.currentOperation) {
-        this.currentOperation.fail(error);
+        this.currentOperation.fail(error, this.clock);
         this.emit(new SQLExecutorError(error, this.currentOperation.metadata.operation));
       }
     }, timeoutMs);
@@ -518,7 +519,7 @@ export class SQLExecutor {
    */
   clearOperationTimeout() {
     if (this.timeoutHandle) {
-      clearTimeout(this.timeoutHandle);
+      this.clock.clearTimeout(this.timeoutHandle);
       this.timeoutHandle = null;
     }
   }
@@ -569,15 +570,14 @@ export class SQLExecutor {
 
       // Gracefully close psql process
       if (this.psqlProcess && !this.psqlProcess.killed) {
-        this.psqlProcess.stdin.write('\\q\n');
-
-        // Wait for graceful exit or force kill after 2 seconds
         const exitPromise = new Promise((resolve) => {
           this.psqlProcess.on('exit', resolve);
         });
 
+        this.psqlProcess.stdin.write('\\q\n');
+
         const timeoutPromise = new Promise((resolve) => {
-          setTimeout(() => {
+          this.clock.setTimeout(() => {
             if (!this.psqlProcess.killed) {
               this.abortController.abort();
               this.psqlProcess.kill('SIGTERM');
