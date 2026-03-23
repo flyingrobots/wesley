@@ -25,10 +25,11 @@ export function emitView(opName, plan, {
   identPolicy = 'strict',
   pkResolver = null,
   setSearchPath = null,
+  baseSchema = null,
   dialect = DEFAULT_DIALECT
 } = {}) {
   const name = qualifiedOpName(schema, opName, dialect);
-  const selectSql = lowerToSQL(plan, null, { identPolicy, pkResolver, dialect });
+  const selectSql = lowerToSQL(plan, null, { identPolicy, pkResolver, dialect, tableSchema: baseSchema });
   const sp = renderSearchPath(setSearchPath, dialect);
   return dialect.createView(name, selectSql, sp);
 }
@@ -39,13 +40,14 @@ export function emitFunction(opName, plan, {
   pkResolver = null,
   security = 'invoker',
   setSearchPath = null,
+  baseSchema = null,
   dialect = DEFAULT_DIALECT
 } = {}) {
   const name = qualifiedOpName(schema, opName, dialect);
   const paramEnv = collectParams(plan);
   const { ordered } = paramEnv;
   const params = uniqueParamNames(ordered, dialect).map(({ display, type }) => `${display} ${type || 'text'}`).join(', ');
-  const selectSql = lowerToSQL(plan, paramEnv, { identPolicy, pkResolver, dialect });
+  const selectSql = lowerToSQL(plan, paramEnv, { identPolicy, pkResolver, dialect, tableSchema: baseSchema });
   const body = `SELECT ${dialect.wrapToJsonb('q')} FROM (\n${selectSql}\n) AS ${dialect.quoteIdent('q')}`;
 
   // Optional: SET search_path = <list>

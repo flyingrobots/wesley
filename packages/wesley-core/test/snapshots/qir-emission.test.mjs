@@ -61,6 +61,28 @@ test('emitView: supports SET search_path preamble', () => {
   assert.ok(sql.includes('CREATE OR REPLACE VIEW "wes_ops"."op_org_view_sp" AS'));
 });
 
+test('emitView: can qualify base tables with explicit schema', () => {
+  const root = new TableNode('organization', 't0');
+  const proj = new Projection([
+    new ProjectionItem('id', new ColumnRef('t0', 'id'))
+  ]);
+  const plan = new QueryPlan(root, proj, {});
+
+  const sql = emitView('org_view_public', plan, { baseSchema: 'public' });
+  assert.ok(sql.includes('FROM "public"."organization" "t0"'));
+});
+
+test('emitFunction: can qualify base tables with explicit schema', () => {
+  const root = new TableNode('organization', 't0');
+  const proj = new Projection([
+    new ProjectionItem('id', new ColumnRef('t0', 'id'))
+  ]);
+  const plan = new QueryPlan(root, proj, {});
+
+  const sql = emitFunction('org_fn_public', plan, { baseSchema: 'public' });
+  assert.ok(sql.includes('FROM "public"."organization" "t0"'));
+});
+
 test('emitFunction: preserves jsonb_agg COALESCE inside wrapper', () => {
   const root = new TableNode('organization', 't0');
   const value = { kind: 'JsonBuildObject', fields: [ { key: 'id', value: new ColumnRef('t0','id') } ] };

@@ -100,7 +100,7 @@ function renderRelation(r, params, whereParts, identOpts, opts, dialect) {
   if (!r) return '';
   switch (r.kind) {
   case 'Table':
-    return `${renderIdent(r.table, identOpts)} ${renderIdent(r.alias, identOpts)}`;
+    return `${renderTableRef(r.table, identOpts, opts)} ${renderIdent(r.alias, identOpts)}`;
   case 'Subquery': {
     const sql = lowerToSQL(r.plan, params, opts);
     return `(\n${sql}\n) ${renderIdent(r.alias, identOpts)}`;
@@ -130,6 +130,13 @@ function renderRelation(r, params, whereParts, identOpts, opts, dialect) {
   default:
     throw new Error(`Unsupported relation kind: ${r.kind}`);
   }
+}
+
+function renderTableRef(table, identOpts, opts) {
+  if (!opts?.tableSchema) {
+    return renderIdent(table, identOpts);
+  }
+  return `${renderIdent(opts.tableSchema, identOpts)}.${renderIdent(table, identOpts)}`;
 }
 
 // ────────────────────────────────────────────────────────────────────────────

@@ -305,6 +305,7 @@ function emitOpArtifacts(compiledOps, targetSchema, logger, pkResolver, { securi
   let ordinal = 0;
   const normalizedSchema = sanitizeIdentBase(targetSchema, 'wes_ops');
   const effectiveSearchPath = normalizeOpsSearchPath(setSearchPath, normalizedSchema);
+  const baseSchema = 'public';
   const deployChunks = ['BEGIN;', `CREATE SCHEMA IF NOT EXISTS ${quoteIdent(normalizedSchema)};`];
   const registry = { version: '1.0.0', schema: normalizedSchema, ops: [] };
 
@@ -318,14 +319,16 @@ function emitOpArtifacts(compiledOps, targetSchema, logger, pkResolver, { securi
         identPolicy: 'strict',
         pkResolver,
         security,
-        setSearchPath: effectiveSearchPath
+        setSearchPath: effectiveSearchPath,
+        baseSchema
       });
       if (isParamless) {
         const viewSql = emitView(baseName, plan, {
           schema: targetSchema,
           identPolicy: 'strict',
           pkResolver,
-          setSearchPath: effectiveSearchPath
+          setSearchPath: effectiveSearchPath,
+          baseSchema
         });
         outFiles.push({ name: `ops/${baseName}.view.sql`, content: `${viewSql}\n` });
         deployChunks.push(viewSql);
