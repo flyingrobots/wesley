@@ -4,6 +4,7 @@
  */
 
 import { DomainEvent } from '../Events.mjs';
+import { systemClock } from '../../ports/clock.mjs';
 
 /**
  * Lock error classes
@@ -81,6 +82,7 @@ export class AdvisoryLockManager {
     this.retryDelay = options.retryDelay || 1000; // 1 second
     this.lockPrefix = options.lockPrefix || 'wesley';
     this.eventEmitter = options.eventEmitter || null;
+    this.clock = options.clock ?? systemClock;
 
     // Track active locks by session
     this.activeLocks = new Map(); // sessionId -> Set of lockKeys
@@ -416,7 +418,7 @@ export class AdvisoryLockManager {
       identifier,
       lockType,
       sessionId,
-      acquiredAt: new Date(),
+      acquiredAt: new Date(this.clock.nowMs()),
       lockKey
     });
   }
@@ -426,7 +428,7 @@ export class AdvisoryLockManager {
    */
   async unregisterLock(sessionId, lockKey) {
     const metadata = this.lockMetadata.get(lockKey);
-    const duration = metadata ? Date.now() - metadata.acquiredAt.getTime() : 0;
+    const duration = metadata ? this.clock.nowMs() - metadata.acquiredAt.getTime() : 0;
 
     if (this.activeLocks.has(sessionId)) {
       this.activeLocks.get(sessionId).delete(lockKey);
@@ -444,16 +446,16 @@ export class AdvisoryLockManager {
    */
   async executeWithTimeout(operation, timeoutMs) {
     return new Promise((resolve, reject) => {
-      const timeoutHandle = setTimeout(() => {
+      const timeoutHandle = this.clock.setTimeout(() => {
         reject(new LockTimeoutError(`Operation timed out after ${timeoutMs}ms`));
       }, timeoutMs);
 
       Promise.resolve().then(() => operation()).then(result => {
-        clearTimeout(timeoutHandle);
+        this.clock.clearTimeout(timeoutHandle);
         resolve(result);
         return undefined;
       }).catch(error => {
-        clearTimeout(timeoutHandle);
+        this.clock.clearTimeout(timeoutHandle);
         reject(error);
       });
     });
@@ -493,7 +495,7 @@ export class AdvisoryLockManager {
         lockType: metadata.lockType,
         sessionId: metadata.sessionId,
         acquiredAt: metadata.acquiredAt,
-        duration: Date.now() - metadata.acquiredAt.getTime()
+        duration: this.clock.nowMs() - metadata.acquiredAt.getTime()
       });
     }
 
