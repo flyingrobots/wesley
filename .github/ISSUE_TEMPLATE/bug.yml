@@ -1,27 +1,35 @@
 name: Bug Report
-description: Report a reproducible defect in the system.
+description: Report a reproducible defect in shipped behavior.
 title: "[bug] <short summary>"
 labels: ["bug"]
 assignees: []
 body:
   - type: textarea
-    id: summary
+    id: sponsor_actor
     attributes:
-      label: Summary
-      description: One-sentence description of the bug.
-      placeholder: The build fails on Node 22 with "ERR_MODULE_NOT_FOUND"
+      label: Blocked Actor
+      description: Who is blocked or harmed by this bug?
+      placeholder: "Release owner, maintainer, website user, or CI operator"
     validations:
       required: true
 
   - type: textarea
-    id: repro
+    id: summary
     attributes:
-      label: Steps to Reproduce
-      description: Exact steps, commands, or code to reproduce.
+      label: Broken Behavior
+      description: One sentence describing what is failing.
+    validations:
+      required: true
+
+  - type: textarea
+    id: playback
+    attributes:
+      label: Repro / Playback
+      description: Exact steps, commands, or fixture path that reproduces the issue.
       placeholder: |
         1. Run `pnpm install`
-        2. Run `pnpm exec wesley build`
-        3. Observe error in logs
+        2. Run `pnpm wesley transform --schema ...`
+        3. Observe failure
     validations:
       required: true
 
@@ -29,7 +37,6 @@ body:
     id: expected
     attributes:
       label: Expected Behavior
-      placeholder: Build should succeed on Node 22.
     validations:
       required: true
 
@@ -37,7 +44,20 @@ body:
     id: actual
     attributes:
       label: Actual Behavior
-      placeholder: Error message, screenshots, or logs.
+      description: Include logs, stack traces, screenshots, or CI links.
+    validations:
+      required: true
+
+  - type: textarea
+    id: invariants
+    attributes:
+      label: Invariant Violated
+      description: Which truth or contract is being broken?
+      placeholder: |
+        - ledger truth
+        - evidence truth
+        - deterministic tests
+        - local-first operation
     validations:
       required: true
 
@@ -45,15 +65,6 @@ body:
     id: env
     attributes:
       label: Environment
-      placeholder: "OS: macOS 15.2, Node v22.1.0, pnpm 9.1"
+      placeholder: "OS, Node version, pnpm version, CI link, browser, fixture path"
     validations:
       required: true
-
-  - type: checkboxes
-    id: blockers
-    attributes:
-      label: Is this blocking you?
-      options:
-        - label: Yes, blocks my workflow
-        - label: No, minor inconvenience
-

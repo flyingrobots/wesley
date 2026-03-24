@@ -1,22 +1,68 @@
 name: RFC / Proposal
-description: For larger design changes requiring discussion.
+description: For larger design changes requiring discussion before implementation.
 title: "[rfc] <short title>"
-labels: ["rfc","discussion"]
+labels: ["rfc", "discussion"]
 assignees: []
 body:
-  - type: textarea
-    id: motivation
+  - type: markdown
     attributes:
-      label: Motivation
-      description: Why should we make this change?
+      value: |
+        RFCs are for direction-setting changes. Frame them around the product hill,
+        not just the mechanism.
+
+  - type: textarea
+    id: sponsor_actor
+    attributes:
+      label: Sponsor Actor
+      description: Whose job improves if this design lands?
     validations:
       required: true
 
   - type: textarea
-    id: design
+    id: hill
+    attributes:
+      label: Hill
+      description: One sentence describing the user-relevant outcome.
+    validations:
+      required: true
+
+  - type: textarea
+    id: playback
+    attributes:
+      label: Playback
+      description: What demonstration would prove this design is real?
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Why should Wesley do this?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed_design
     attributes:
       label: Proposed Design
-      description: Include diagrams, examples, or pseudo-code.
+      description: Include diagrams, examples, and boundary decisions.
+    validations:
+      required: true
+
+  - type: textarea
+    id: invariants
+    attributes:
+      label: Invariants To Preserve
+      description: What truths and non-negotiables must survive this design?
+    validations:
+      required: true
+
+  - type: textarea
+    id: non_goals
+    attributes:
+      label: Non-Goals
+      description: What is explicitly out of scope?
     validations:
       required: true
 
@@ -24,21 +70,14 @@ body:
     id: tradeoffs
     attributes:
       label: Tradeoffs / Risks
-      description: What could go wrong? What did you reject?
+      description: What could go wrong? What alternatives were rejected?
     validations:
       required: true
 
   - type: textarea
-    id: migration
+    id: rollout
     attributes:
-      label: Migration / Rollout Plan
-      description: Steps for incremental rollout, backwards compatibility, or flags.
+      label: Rollout / Migration Plan
+      description: How should this land incrementally?
     validations:
       required: false
-
-  - type: textarea
-    id: references
-    attributes:
-      label: References
-      description: Link to related issues, prior art, external docs.
-

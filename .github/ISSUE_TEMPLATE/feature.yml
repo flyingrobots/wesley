@@ -1,51 +1,102 @@
 name: Feature Request
-description: Propose a new feature or enhancement.
+description: Propose a product-facing or capability-creating change.
 title: "[feat] <short summary>"
 labels: ["feature"]
 assignees: []
 body:
+  - type: markdown
+    attributes:
+      value: |
+        Frame feature work around sponsor actors, hills, and playbacks.
+        Read `CONTRIBUTING.md` and `ROADMAP.md` before filing large requests.
+
+  - type: dropdown
+    id: work_type
+    attributes:
+      label: Work Type
+      description: Choose the slice taxonomy for this issue.
+      options:
+        - product
+        - enabler
+        - integrity
+    validations:
+      required: true
+
+  - type: textarea
+    id: sponsor_actor
+    attributes:
+      label: Sponsor Actor
+      description: Whose job gets easier if this lands?
+      placeholder: "Release owner recovering a failed run"
+    validations:
+      required: true
+
+  - type: textarea
+    id: hill
+    attributes:
+      label: Hill
+      description: One sentence describing the user-relevant outcome.
+      placeholder: "A release owner can resume a failed run and produce a trustworthy certificate without manual cleanup."
+    validations:
+      required: true
+
+  - type: textarea
+    id: playback
+    attributes:
+      label: Playback
+      description: How will we demonstrate that the hill is real?
+      placeholder: "Run `wesley blade --resume --counterfactual main` on an injected crash and end with a cert that shows exact evidence and a clear gate decision."
+    validations:
+      required: true
+
   - type: textarea
     id: problem
     attributes:
-      label: Problem Statement
-      description: What problem are you trying to solve?
-      placeholder: Migrating schemas currently requires manual SQL edits.
+      label: Problem
+      description: What is wrong today?
+      placeholder: "Resume exists, but the operator still has to reconstruct trust manually after a failed run."
     validations:
       required: true
 
   - type: textarea
-    id: solution
+    id: proposed_change
     attributes:
-      label: Proposed Solution
-      description: What do you want the system to do?
-      placeholder: Add a CLI command `wesley migrate --dry-run`.
+      label: Proposed Change
+      description: What should Wesley do?
     validations:
       required: true
 
   - type: textarea
-    id: alternatives
+    id: invariants
     attributes:
-      label: Alternatives Considered
+      label: Invariants To Preserve
+      description: List the runtime or product truths this must not violate.
       placeholder: |
-        - Manually editing SQL files
-        - Using external tool `sqitch`
+        - ledger remains runtime truth
+        - replay performs zero writes by default
+        - certified evidence remains exact-span and digest-backed
     validations:
-      required: false
+      required: true
 
-  - type: checkboxes
-    id: impact
+  - type: textarea
+    id: non_goals
     attributes:
-      label: Impact Areas
-      options:
-        - label: CLI
-        - label: Docs
-        - label: API
-        - label: Infra/CI
-        - label: Other
+      label: Non-Goals
+      description: What is explicitly out of scope?
+      placeholder: |
+        - No new remote execution mode
+        - No new directive semantics
+    validations:
+      required: true
 
-  - type: dropdown
-    id: priority
+  - type: textarea
+    id: acceptance
     attributes:
-      label: Priority
-      options: ["Low","Medium","High","Critical"]
-
+      label: Acceptance / Tests
+      description: What executable behavior should prove this is done?
+      placeholder: |
+        - [ ] Acceptance test covers the playback path
+        - [ ] Regression test covers the failure path
+        - [ ] Docs updated to reflect the shipped behavior
+    validations:
+      required: true

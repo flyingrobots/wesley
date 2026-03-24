@@ -1,65 +1,86 @@
 name: Chore
-description: Maintenance, refactor, cleanup, docs, CI, or tooling work.
+description: Maintenance, refactor, docs, CI, or cleanup work.
 title: "[chore] <short summary>"
 labels: ["chore"]
 assignees: []
 body:
+  - type: markdown
+    attributes:
+      value: |
+        Chores still need a hill. If this work does not clearly support a sponsor actor outcome,
+        it probably belongs in the backlog instead of the active queue.
+
+  - type: dropdown
+    id: work_type
+    attributes:
+      label: Work Type
+      description: Most chores are integrity or enabler work.
+      options:
+        - integrity
+        - enabler
+        - product
+    validations:
+      required: true
+
+  - type: textarea
+    id: hill_supported
+    attributes:
+      label: Hill Supported
+      description: Which active or near-term hill does this work serve?
+      placeholder: "Supports the hill that a reviewer can trust a certificate because every claim traces to exact evidence."
+    validations:
+      required: true
+
+  - type: textarea
+    id: sponsor_actor
+    attributes:
+      label: Sponsor Actor
+      description: Whose job gets easier because this cleanup exists?
+      placeholder: "Reviewer, release owner, maintainer, or agent consumer"
+    validations:
+      required: true
+
   - type: textarea
     id: scope
     attributes:
       label: Scope
-      description: What will change? Keep it small and focused.
-      placeholder: "Docs reorg: fix broken links in docs/README.md and add guides/quick-start.md"
+      description: What will change? Keep it small and explicit.
     validations:
       required: true
 
-  - type: checkboxes
-    id: category
+  - type: textarea
+    id: playback_impact
     attributes:
-      label: Category
-      options:
-        - label: Docs
-        - label: CI
-        - label: Refactor
-        - label: Tests
-        - label: Build/Release
-        - label: Security
-        - label: Cleanup
-        - label: Governance
+      label: Playback Impact
+      description: What playback becomes cleaner, safer, or more honest after this lands?
+      placeholder: "The BLADE playback no longer shows provisional evidence in the cert output."
+    validations:
+      required: true
+
+  - type: textarea
+    id: invariants
+    attributes:
+      label: Invariants To Preserve
+      description: What truths or boundaries must this work keep intact?
+    validations:
+      required: true
+
+  - type: textarea
+    id: non_goals
+    attributes:
+      label: Non-Goals
+      description: What cleanup nearby is explicitly not part of this issue?
+    validations:
+      required: true
 
   - type: textarea
     id: tasks
     attributes:
       label: Tasks
-      description: List concrete tasks. Use checklist items.
+      description: Concrete checklist items only.
       placeholder: |
-        - [ ] Update docs links
-        - [ ] Add link checker to CI
-        - [ ] Verify passing CI
+        - [ ] Extract shared use case
+        - [ ] Add deterministic regression coverage
+        - [ ] Update docs to match reality
     validations:
       required: true
-
-  - type: textarea
-    id: rationale
-    attributes:
-      label: Rationale
-      description: Why are we doing this? Expected impact.
-    validations:
-      required: false
-
-  - type: checkboxes
-    id: risk
-    attributes:
-      label: Risk / Impact
-      options:
-        - label: No behavior changes
-        - label: Docs-only change
-        - label: Affects CI or release
-        - label: Might need follow-up PRs
-
-  - type: input
-    id: related
-    attributes:
-      label: Related Issues/PRs
-      placeholder: "#123, #456"
-
