@@ -8,6 +8,8 @@ import {
   evidenceTrustMeetsThreshold
 } from '@wesley/core';
 import { realGitAdapter } from './ports/git.mjs';
+import { createMoriartyConfig } from './moriarty-config.mjs';
+import { renderMoriartyPrediction } from './moriarty-render.mjs';
 
 export class Moriarty {
   /**
@@ -20,18 +22,13 @@ export class Moriarty {
     this.history = history;
     this.context = context || {};
     this.git = options.git || realGitAdapter;
-    this.alpha = 0.4; // EMA smoothing factor
-    this.minSlope = 0.01; // Minimum SCS progress per day to avoid plateau
-    // Git-activity blending (optional, auto-detected when git is available)
-    this.useGitActivity = (process.env.MORIARTY_USE_GIT || '1') !== '0';
-    this.gitWindowHours = Number(process.env.MORIARTY_GIT_WINDOW_HOURS || '24');
-    this.activityPlateauThreshold = Number(process.env.MORIARTY_ACTIVITY_THRESHOLD || '0.35');
-    // Normalization knobs for activity index
-    this.activityCommitThreshold = Number(process.env.MORIARTY_ACTIVITY_COMMITS_PER_DAY || '6');
-    this.activityRelevantCommitThreshold = Number(process.env.MORIARTY_ACTIVITY_RELEVANT_PER_DAY || '4');
-    this.activityLinesPerDayTarget = Number(process.env.MORIARTY_ACTIVITY_LINES_PER_DAY || '400');
-    this.activityFilesPerDayTarget = Number(process.env.MORIARTY_ACTIVITY_FILES_PER_DAY || '10');
-    this.confidenceBurstinessMax = Number(process.env.MORIARTY_CONFIDENCE_BURSTINESS_MAX_PCT || '15');
+    this.config = createMoriartyConfig({ env: options.env });
+    this.clock = options.clock || {
+      nowMs: () => Date.now(),
+      nowIso: () => new Date().toISOString()
+    };
+    this.alpha = this.config.alpha;
+    this.minSlope = this.config.minSlope;
   }
 
   /**
@@ -42,7 +39,7 @@ export class Moriarty {
   }
 
   predictionData() {
-    const analysisAt = new Date().toISOString();
+    const analysisAt = this.clock.nowIso();
     const historyPoints = Array.isArray(this.history?.points) ? this.history.points : [];
     const recentHistory = historyPoints.slice(-7).map(point => {
       const normalizedTrust = normalizeEvidenceTrustLevel(point.evidenceTrust);
@@ -50,7 +47,7 @@ export class Moriarty {
         ? normalizeEvidenceTrustReasons(point.evidenceTrustReasons, normalizedTrust)
         : [];
       return {
-        timestamp: point.timestamp ?? this.formatDateString(point.day),
+        timestamp: point.timestamp ?? formatDateString(point.day),
         scs: point.scs ?? 0,
         tci: point.tci ?? 0,
         mri: point.mri ?? 0,
@@ -90,7 +87,7 @@ export class Moriarty {
     let activityIndex = 0;
     let prActivity = null;
     let prIndex = 0;
-    if (this.useGitActivity) {
+    if (this.config.useGitActivity) {
       // Prefer PR graph activity if base ref is available; blend with time-window activity
       prActivity = this.computeGitPRActivity();
       prIndex = this.normalizeActivity(prActivity);
@@ -104,23 +101,24 @@ export class Moriarty {
       };
     }
     const blendedRecentVelocity = (recentVelocity * 0.7) + (activityIndex * 0.3 * 0.02); // map activity to ~2%/day max
-    const plateau = Math.abs(blendedRecentVelocity) < this.minSlope && (activityIndex < this.activityPlateauThreshold);
+    const plateau = Math.abs(blendedRecentVelocity) < this.config.minSlope && (activityIndex < this.config.activityPlateauThreshold);
     const regression = series.length >= 2 && series[series.length - 1].scs < series[series.length - 2].scs;
 
     let eta = null;
     let confidence = null;
-    if (recentVelocity > this.minSlope) {
+    if (recentVelocity > this.config.minSlope) {
       const daysToComplete = (1 - latest.scs) / recentVelocity;
       const optimistic = Math.ceil(daysToComplete * 0.7);
       const realistic = Math.ceil(daysToComplete);
       const pessimistic = Math.ceil(daysToComplete * 1.5);
+      const nowMs = this.clock.nowMs();
       eta = {
         optimistic,
         realistic,
         pessimistic,
-        optimisticDate: this.formatDate(new Date(Date.now() + optimistic * 24 * 60 * 60 * 1000)),
-        realisticDate: this.formatDate(new Date(Date.now() + realistic * 24 * 60 * 60 * 1000)),
-        pessimisticDate: this.formatDate(new Date(Date.now() + pessimistic * 24 * 60 * 60 * 1000))
+        optimisticDate: formatDate(new Date(nowMs + optimistic * 24 * 60 * 60 * 1000)),
+        realisticDate: formatDate(new Date(nowMs + realistic * 24 * 60 * 60 * 1000)),
+        pessimisticDate: formatDate(new Date(nowMs + pessimistic * 24 * 60 * 60 * 1000))
       };
       const variance = this.calculateVariance(series);
       confidence = Math.max(0, Math.min(100, 100 - variance * 120));
@@ -135,7 +133,7 @@ export class Moriarty {
       if (sizes.length >= 2) {
         burstinessIndex = this.computeBurstinessIndex(sizes);
         if (confidence !== null) {
-          const penalty = Math.min(this.confidenceBurstinessMax, burstinessIndex * this.confidenceBurstinessMax);
+          const penalty = Math.min(this.config.confidenceBurstinessMax, burstinessIndex * this.config.confidenceBurstinessMax);
           confidence = Math.max(0, confidence - penalty);
         }
       }
@@ -170,13 +168,7 @@ export class Moriarty {
     };
 
     // Readiness EXPLAIN (non-blocking): clarify what "prod-ready" means
-    const thresholds = {
-      scs: Number(process.env.MORIARTY_READY_SCS || '0.8'),
-      tci: Number(process.env.MORIARTY_READY_TCI || '0.7'),
-      mri: Number(process.env.MORIARTY_READY_MRI || '0.4'),
-      ci: Number(process.env.MORIARTY_READY_CI_STABILITY || '0.9'),
-      evidenceTrust: process.env.MORIARTY_READY_EVIDENCE_TRUST || 'moderate'
-    };
+    const thresholds = this.config.readinessThresholds;
     const ci = this.context?.ci || {};
     const readiness = {
       scs: { value: latest.scs ?? 0, pass: (latest.scs ?? 0) >= thresholds.scs, threshold: thresholds.scs },
@@ -214,204 +206,10 @@ export class Moriarty {
   }
 
   renderPrediction(data) {
-    const report = [];
-    report.push('### 🧠 Professor Moriarty\'s Temporal Predictions');
-    report.push('');
-    report.push('_The Mathematics of Inevitability_');
-    report.push('');
-    report.push(`- Analysis Date: ${data.metadata.analysisAt}`);
-    if (data.metadata.runId) {
-      report.push(`- Run ID: ${data.metadata.runId}`);
-    }
-    if (data.metadata.transmutation) {
-      report.push(`- Transmutation: ${data.metadata.transmutation}`);
-    }
-    report.push('');
-
-    if (data.status === 'INSUFFICIENT_DATA') {
-      report.push('**INSUFFICIENT DATA**');
-      report.push('');
-      report.push('> "I require at least two data points to predict the future."');
-      report.push('> "Run Wesley generate multiple times to build history."');
-      return report.join('\n');
-    }
-
-    const latest = data.latest;
-    report.push('## 🔮 Current State');
-    report.push('');
-    report.push(`**SCS**: ${this.makeProgressBar(latest.scs)} ${(latest.scs * 100).toFixed(1)}%`);
-    report.push(`**TCI**: ${this.makeProgressBar(latest.tci)} ${(latest.tci * 100).toFixed(1)}%`);
-    report.push(`**MRI**: ${(latest.mri * 100).toFixed(1)}% risk`);
-    if (latest.evidenceTrust) {
-      report.push(`**Evidence Trust**: ${latest.evidenceTrust}`);
-    }
-    report.push('');
-
-    report.push('## 📈 Velocity Analysis');
-    report.push('');
-    report.push(`**SCS Velocity**: ${data.velocity.recent >= 0 ? '+' : ''}${(data.velocity.recent * 100).toFixed(2)}%/day`);
-    if (data.gitActivity?.window) {
-      const w = data.gitActivity.window;
-      const filesPerDay = w.windowHours > 0 ? (w.uniqueRelevantFiles * (24 / w.windowHours)) : w.uniqueRelevantFiles;
-      const relLinesPerDay = w.windowHours > 0 ? (w.relevantLinesChanged * (24 / w.windowHours)) : w.relevantLinesChanged;
-      report.push(`**Git Activity (window)**: ${w.windowHours}h · commits ${w.commits} (${w.relevantCommits} relevant) · ~${w.commitsPerDay.toFixed(2)} commits/day`);
-      report.push(`↳ Magnitude: ~${Math.round(relLinesPerDay)} relevant LOC/day across ~${filesPerDay.toFixed(1)} files/day`);
-    }
-    if (data.gitActivity?.pr) {
-      const p = data.gitActivity.pr;
-      const filesPerDay = p.days > 0 ? (p.uniqueRelevantFiles / p.days) : p.uniqueRelevantFiles;
-      const relLinesPerDay = p.days > 0 ? (p.relevantLinesChanged / p.days) : p.relevantLinesChanged;
-      report.push(`**Git Activity (PR range)**: commits ${p.commits} (${p.relevantCommits} relevant) over ~${p.days.toFixed(2)} days · ~${p.commitsPerDay.toFixed(2)} commits/day`);
-      report.push(`↳ Magnitude: ~${Math.round(relLinesPerDay)} relevant LOC/day across ~${filesPerDay.toFixed(1)} files/day`);
-    }
-    if (data.gitActivity) {
-      const br = data.gitActivity.indexBreakdown || { pr: 0, window: 0 };
-      report.push(`**Activity Index**: ${Math.round((data.velocity.gitActivityIndex || 0) * 100)} / 100  (PR ${Math.round(br.pr*100)}, Window ${Math.round(br.window*100)})`);
-      report.push(`**Blended Velocity**: ${data.velocity.blendedRecent >= 0 ? '+' : ''}${(data.velocity.blendedRecent * 100).toFixed(2)}%/day`);
-      if (Number.isFinite(data.gitActivity.burstinessIndex)) {
-        report.push(`**Commit Size Burstiness**: ${(data.gitActivity.burstinessIndex * 100).toFixed(0)} / 100 (higher = more uneven commit sizes)`);
-      }
-    }
-    if (data.plateauDetected) {
-      report.push('⚠️ **PLATEAU DETECTED** - Low SCS movement and low recent Git activity.');
-    } else if (data.velocity.recent < this.minSlope && data.gitActivity) {
-      report.push('ℹ️ Low SCS movement, but recent Git activity suggests ongoing work. Plateau not flagged.');
-    }
-    if (data.regressionDetected) {
-      report.push('🚨 **REGRESSION DETECTED** - Score decreasing!');
-    }
-    report.push('');
-
-    report.push('## ⏰ Completion Predictions');
-    report.push('');
-    if (data.eta) {
-      report.push(`**Optimistic**: ${data.eta.optimistic} days → ${data.eta.optimisticDate}`);
-      report.push(`**Realistic**: ${data.eta.realistic} days → ${data.eta.realisticDate}`);
-      report.push(`**Pessimistic**: ${data.eta.pessimistic} days → ${data.eta.pessimisticDate}`);
-      report.push('');
-      report.push(`**Confidence**: ${Math.round(data.confidence ?? 0)}%`);
-    } else {
-      report.push('**ETA**: Cannot predict (insufficient velocity)');
-      report.push('');
-      report.push('"At current velocity, completion is... improbable."');
-    }
-
-    if (data.patterns.length > 0) {
-      report.push('');
-      report.push('## 🎭 Crime Patterns Detected');
-      report.push('');
-      for (const pattern of data.patterns) {
-        report.push(`- **${pattern.type}**: ${pattern.description}`);
-      }
-    }
-
-    if (Array.isArray(data.warnings) && data.warnings.length > 0) {
-      report.push('');
-      report.push('## ⚠️ Warnings');
-      report.push('');
-      for (const warning of data.warnings) {
-        report.push(`- ${warning}`);
-      }
-    }
-
-    if (data.runtime?.run) {
-      report.push('');
-      report.push('## 🧾 Runtime Run Context');
-      report.push('');
-      report.push(`- Run ID: ${data.runtime.run.runId}`);
-      report.push(`- Transmutation: ${data.runtime.run.transmutation || 'n/a'}`);
-      report.push(`- Command: ${data.runtime.run.command || 'n/a'}`);
-      report.push(`- Status: ${data.runtime.run.status}`);
-      report.push(`- Stream: ${data.runtime.run.streamId || 'n/a'}`);
-      report.push(`- Events: ${data.runtime.run.eventCount}`);
-      report.push(`- Artifacts: ${data.runtime.run.artifactCount}`);
-      if (data.runtime.snapshot) {
-        report.push(`- Snapshot: yes (seq=${data.runtime.snapshot.lastSequence ?? 'n/a'})`);
-      } else {
-        report.push('- Snapshot: no');
-      }
-      if (data.runtime.replay) {
-        report.push(`- Replay: ${data.runtime.replay.valid ? 'valid' : 'invalid'} · ${data.runtime.replay.terminal ? 'terminal' : 'non-terminal'}`);
-      }
-      if (data.runtime.run.failure?.code) {
-        report.push(`- Failure: ${data.runtime.run.failure.code}${data.runtime.run.failure.message ? ` - ${data.runtime.run.failure.message}` : ''}`);
-      }
-    }
-
-    // Readiness EXPLAIN (clarify inputs/thresholds that imply "prod-ready")
-    if (data.explain) {
-      report.push('');
-      report.push('## 🧪 Readiness EXPLAIN');
-      report.push('');
-      const r = data.explain.readiness;
-      report.push(`- SCS ≥ ${(data.explain.thresholds.scs*100).toFixed(0)}% → ${r.scs.pass ? 'PASS ✅' : 'FAIL ❌'} (actual ${(r.scs.value*100).toFixed(1)}%)`);
-      report.push(`- TCI ≥ ${(data.explain.thresholds.tci*100).toFixed(0)}% → ${r.tci.pass ? 'PASS ✅' : 'FAIL ❌'} (actual ${(r.tci.value*100).toFixed(1)}%)`);
-      report.push(`- MRI ≤ ${(data.explain.thresholds.mri*100).toFixed(0)}% → ${r.mri.pass ? 'PASS ✅' : 'FAIL ❌'} (actual ${(r.mri.value*100).toFixed(1)}%)`);
-      if (Number.isFinite(r.ci.value)) {
-        report.push(`- CI Stability ≥ ${(data.explain.thresholds.ci*100).toFixed(0)}% (branch ${this.context?.ci?.branch || 'base'}) → ${r.ci.pass ? 'PASS ✅' : 'FAIL ❌'} (actual ${(r.ci.value*100).toFixed(0)}% over ~${r.ci.windowHours ?? '?'}h)`);
-      }
-      if (r.evidenceTrust) {
-        const reason = Array.isArray(r.evidenceTrust.reasons) && r.evidenceTrust.reasons.length > 0
-          ? ` — ${r.evidenceTrust.reasons[0]}`
-          : '';
-        report.push(`- Evidence Trust ≥ ${r.evidenceTrust.threshold} → ${r.evidenceTrust.pass ? 'PASS ✅' : 'FAIL ❌'} (actual ${r.evidenceTrust.value})${reason}`);
-      }
-      if (data.explain.delivery) {
-        report.push(`- Delivery context (last ${this.context?.timeframeHours ?? 168}h): ${data.explain.delivery.issuesClosed} issues closed · ${data.explain.delivery.prsMerged} PRs merged (informational, not gating)`);
-      }
-      report.push('');
-      report.push('_Signals blend:_ SCS velocity (70%) + Git activity (30%, branch-first). Activity only suppresses false plateaus; it never inflates readiness.');
-    }
-
-    report.push('');
-    report.push('## 📊 Historical Trajectory');
-    report.push('');
-    for (const point of data.history) {
-      const date = point.timestamp ? new Date(point.timestamp).toISOString().slice(5, 10) : point.day ?? '?';
-      report.push(`${date}: ${this.makeProgressBar(point.scs)} ${(point.scs * 100).toFixed(1)}%`);
-    }
-    report.push('');
-    report.push('*"Every problem becomes elementary when reduced to mathematics"*');
-    report.push('— Professor Moriarty');
-
-    if (data.counterfactual) {
-      const c = data.counterfactual;
-      report.push('');
-      report.push('---');
-      report.push('');
-      report.push('## 🪞 Counterfactual Analysis');
-      report.push('');
-      report.push(`Composition: ${c.composition || 'merge'}`);
-      report.push(`Base: ${c.requested?.baseRef || 'main'} → ${c.resolved?.baseSha || 'unknown'}`);
-      report.push(`Head: ${c.requested?.headRef || 'HEAD'} → ${c.resolved?.headSha || 'unknown'}`);
-      if (Array.isArray(c.resolved?.braidRefs) && c.resolved.braidRefs.length > 0) {
-        report.push(`Braids: ${c.resolved.braidRefs.map(item => `${item.ref}@${item.sha.slice(0, 7)}`).join(', ')}`);
-      }
-      report.push(`Lane Fingerprint: ${c.laneFingerprint}`);
-      report.push(`Status: ${c.judgment?.status || 'unknown'}`);
-      report.push(`Gate: ${c.judgment?.gate || 'pass'}${c.judgment?.wouldFail ? ' (would fail under hard gating)' : ''}`);
-      report.push(`Risk: ${c.judgment?.riskClass || 'none'}`);
-      if (Number.isFinite(c.judgment?.confidenceAdjustment)) {
-        report.push(`Confidence Adjustment: ${c.judgment.confidenceAdjustment >= 0 ? '+' : ''}${c.judgment.confidenceAdjustment}`);
-      }
-      if (Array.isArray(c.judgment?.signals) && c.judgment.signals.length > 0) {
-        report.push(`Signals: ${c.judgment.signals.join(', ')}`);
-      }
-      if (c.facts?.comparison?.factDigest) {
-        report.push(`Comparison Fact: ${c.facts.comparison.factDigest}`);
-      }
-      if (c.facts?.transferPlan?.factDigest) {
-        report.push(`Transfer Fact: ${c.facts.transferPlan.factDigest}`);
-      }
-      if (Array.isArray(c.judgment?.reasons) && c.judgment.reasons.length > 0) {
-        report.push('');
-        for (const reason of c.judgment.reasons) {
-          report.push(`- ${reason}`);
-        }
-      }
-    }
-
-    return report.join('\n');
+    return renderMoriartyPrediction(data, {
+      context: this.context,
+      minSlope: this.config.minSlope
+    });
   }
 
   calculateEMA() {
@@ -420,8 +218,8 @@ export class Moriarty {
     const series = [];
 
     for (const point of this.history.points) {
-      emaSCS = emaSCS === null ? point.scs : (this.alpha * point.scs + (1 - this.alpha) * emaSCS);
-      emaTCI = emaTCI === null ? point.tci : (this.alpha * point.tci + (1 - this.alpha) * emaTCI);
+      emaSCS = emaSCS === null ? point.scs : (this.config.alpha * point.scs + (1 - this.config.alpha) * emaSCS);
+      emaTCI = emaTCI === null ? point.tci : (this.config.alpha * point.tci + (1 - this.config.alpha) * emaTCI);
 
       series.push({
         day: point.day,
@@ -519,32 +317,14 @@ export class Moriarty {
     return patterns;
   }
 
-  makeProgressBar(value) {
-    const clamped = Math.min(Math.max(value, 0), 1);
-    const filled = Math.round(clamped * 10);
-    return '█'.repeat(filled) + '░'.repeat(10 - filled);
-  }
-
-  formatDateString(day) {
-    if (typeof day === 'number' && Number.isFinite(day)) {
-      const millis = day * 24 * 60 * 60 * 1000;
-      return new Date(millis).toISOString();
-    }
-    return new Date(0).toISOString();
-  }
-
-  formatDate(date) {
-    return date.toISOString().slice(0, 10);
-  }
-
   // --- Git activity helpers ---
   computeGitActivityWindow() {
     // Best effort: if git is not available or repo is too shallow, return null
     if (!this.git.isInsideWorkTree()) {
       return null;
     }
-    const windowHours = Math.max(1, Math.floor(this.gitWindowHours));
-    const sinceIso = new Date(Date.now() - windowHours * 3600 * 1000).toISOString();
+    const windowHours = Math.max(1, Math.floor(this.config.gitWindowHours));
+    const sinceIso = new Date(this.clock.nowMs() - windowHours * 3600 * 1000).toISOString();
     // Use a log format that marks commit boundaries so we can parse numstat blocks.
     const raw = this.git.log({ since: sinceIso, format: '--%ct', numstat: true, noMerges: true });
     // Distinguish git failures (null) from genuine no-activity (empty string)
@@ -631,10 +411,10 @@ export class Moriarty {
     const filesPerDay = Number.isFinite(act.windowHours)
       ? (Number.isFinite(act.uniqueRelevantFiles) ? (act.uniqueRelevantFiles * (24 / act.windowHours)) : 0)
       : (Number.isFinite(act.days) && act.days > 0 && Number.isFinite(act.uniqueRelevantFiles) ? act.uniqueRelevantFiles / act.days : 0);
-    const commitScore = Math.min(1, commitsPerDay / this.activityCommitThreshold);
-    const relevantScore = Math.min(1, relPerDay / this.activityRelevantCommitThreshold);
-    const volumeScore = Math.min(1, locPerDay / Math.max(1, this.activityLinesPerDayTarget));
-    const breadthScore = Math.min(1, filesPerDay / Math.max(1, this.activityFilesPerDayTarget));
+    const commitScore = Math.min(1, commitsPerDay / this.config.activityCommitThreshold);
+    const relevantScore = Math.min(1, relPerDay / this.config.activityRelevantCommitThreshold);
+    const volumeScore = Math.min(1, locPerDay / Math.max(1, this.config.activityLinesPerDayTarget));
+    const breadthScore = Math.min(1, filesPerDay / Math.max(1, this.config.activityFilesPerDayTarget));
     // Weight relevant changes a bit more than raw volume
     return (
       (commitScore * 0.25) +
@@ -645,8 +425,7 @@ export class Moriarty {
   }
 
   computeGitPRActivity() {
-    // Use MORIARTY_BASE_REF or GITHUB_BASE_REF as the base; fall back to origin/main
-    const baseRef = process.env.MORIARTY_BASE_REF || process.env.GITHUB_BASE_REF || 'main';
+    const baseRef = this.config.baseRef;
     if (!this.git.isInsideWorkTree()) {
       return null;
     }
@@ -778,4 +557,16 @@ function normalizeEvidenceTrustReasons(reasons, level) {
   default:
     return ['All citations resolve to exact line spans.'];
   }
+}
+
+function formatDateString(day) {
+  if (typeof day === 'number' && Number.isFinite(day)) {
+    const millis = day * 24 * 60 * 60 * 1000;
+    return new Date(millis).toISOString();
+  }
+  return new Date(0).toISOString();
+}
+
+function formatDate(date) {
+  return date.toISOString().slice(0, 10);
 }
