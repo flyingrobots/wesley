@@ -9,6 +9,7 @@ import {
 } from '@wesley/core';
 import { realGitAdapter } from './ports/git.mjs';
 import { createMoriartyConfig } from './moriarty-config.mjs';
+import { analyzeMoriartyGitActivity } from './moriarty-git-activity.mjs';
 import { renderMoriartyPrediction } from './moriarty-render.mjs';
 
 export class Moriarty {
@@ -85,20 +86,16 @@ export class Moriarty {
     // Optional: blend SCS velocity with Git activity to avoid false plateaus
     let gitActivity = null;
     let activityIndex = 0;
-    let prActivity = null;
-    let prIndex = 0;
+    let burstinessIndex = 0;
     if (this.config.useGitActivity) {
-      // Prefer PR graph activity if base ref is available; blend with time-window activity
-      prActivity = this.computeGitPRActivity();
-      prIndex = this.normalizeActivity(prActivity);
-      const windowActivity = this.computeGitActivityWindow();
-      const windowIndex = this.normalizeActivity(windowActivity);
-      activityIndex = (Number.isFinite(prIndex) ? prIndex * 0.6 : 0) + (Number.isFinite(windowIndex) ? windowIndex * 0.4 : 0);
-      gitActivity = {
-        window: windowActivity || undefined,
-        pr: prActivity || undefined,
-        indexBreakdown: { pr: prIndex, window: windowIndex }
-      };
+      const gitAnalysis = analyzeMoriartyGitActivity({
+        git: this.git,
+        clock: this.clock,
+        config: this.config
+      });
+      gitActivity = gitAnalysis.gitActivity;
+      activityIndex = gitAnalysis.activityIndex;
+      burstinessIndex = gitAnalysis.burstinessIndex;
     }
     const blendedRecentVelocity = (recentVelocity * 0.7) + (activityIndex * 0.3 * 0.02); // map activity to ~2%/day max
     const plateau = Math.abs(blendedRecentVelocity) < this.config.minSlope && (activityIndex < this.config.activityPlateauThreshold);
@@ -125,18 +122,9 @@ export class Moriarty {
     }
 
     // Confidence adjuster: penalize bursty commit size distributions
-    let burstinessIndex = 0;
-    if (gitActivity) {
-      const sizes = [];
-      if (gitActivity?.pr?.commitRelevantSizes?.length) sizes.push(...gitActivity.pr.commitRelevantSizes);
-      if (gitActivity?.window?.commitRelevantSizes?.length) sizes.push(...gitActivity.window.commitRelevantSizes);
-      if (sizes.length >= 2) {
-        burstinessIndex = this.computeBurstinessIndex(sizes);
-        if (confidence !== null) {
-          const penalty = Math.min(this.config.confidenceBurstinessMax, burstinessIndex * this.config.confidenceBurstinessMax);
-          confidence = Math.max(0, confidence - penalty);
-        }
-      }
+    if (gitActivity && burstinessIndex > 0 && confidence !== null) {
+      const penalty = Math.min(this.config.confidenceBurstinessMax, burstinessIndex * this.config.confidenceBurstinessMax);
+      confidence = Math.max(0, confidence - penalty);
     }
 
     const warnings = [];
@@ -315,218 +303,6 @@ export class Moriarty {
     }
 
     return patterns;
-  }
-
-  // --- Git activity helpers ---
-  computeGitActivityWindow() {
-    // Best effort: if git is not available or repo is too shallow, return null
-    if (!this.git.isInsideWorkTree()) {
-      return null;
-    }
-    const windowHours = Math.max(1, Math.floor(this.config.gitWindowHours));
-    const sinceIso = new Date(this.clock.nowMs() - windowHours * 3600 * 1000).toISOString();
-    // Use a log format that marks commit boundaries so we can parse numstat blocks.
-    const raw = this.git.log({ since: sinceIso, format: '--%ct', numstat: true, noMerges: true });
-    // Distinguish git failures (null) from genuine no-activity (empty string)
-    if (raw === null) {
-      return null;
-    }
-    if (!raw.trim()) {
-      return { windowHours, commits: 0, relevantCommits: 0, commitsPerDay: 0, linesChanged: 0, relevantLinesChanged: 0 };
-    }
-
-    const lines = raw.split(/\r?\n/);
-    let commits = 0;
-    let relevantCommits = 0;
-    let linesChanged = 0;
-    let relevantLinesChanged = 0;
-    let inCommit = false;
-    let commitRelevant = false;
-    let commitRelevantSize = 0;
-    const commitRelevantSizes = [];
-    const uniqueRelevantFilesSet = new Set();
-    const isRelevant = (file) => {
-      const f = String(file || '').toLowerCase();
-      return f.endsWith('.graphql') || f.includes('/ddl/') || f.includes('pgtap') || f.endsWith('.sql') || f.includes('/schema') || f.includes('.wesley-cache/bundle.json') || f.includes('.wesley-cache/history.json') || f.includes('.wesley/bundle.json') || f.includes('.wesley/history.json');
-    };
-
-    for (const line of lines) {
-      if (line.startsWith('--')) {
-        // Commit boundary
-        if (inCommit) {
-          if (commitRelevant) {
-            relevantCommits++;
-            commitRelevantSizes.push(commitRelevantSize);
-          }
-        }
-        inCommit = true;
-        commitRelevant = false;
-        commitRelevantSize = 0;
-        commits++;
-        continue;
-      }
-      // numstat line: additions deletions path
-      const parts = line.trim().split(/\s+/);
-      if (parts.length >= 3) {
-        const add = parts[0] === '-' ? 0 : parseInt(parts[0], 10) || 0;
-        const del = parts[1] === '-' ? 0 : parseInt(parts[1], 10) || 0;
-        const file = parts.slice(2).join(' ');
-        const delta = add + del;
-        linesChanged += delta;
-        if (isRelevant(file)) {
-          relevantLinesChanged += delta;
-          commitRelevant = true;
-          commitRelevantSize += delta;
-          uniqueRelevantFilesSet.add(file);
-        }
-      }
-    }
-    // Close last commit
-    if (inCommit && commitRelevant) {
-      relevantCommits++;
-      commitRelevantSizes.push(commitRelevantSize);
-    }
-    const commitsPerDay = commits * (24 / windowHours);
-    return {
-      windowHours,
-      commits,
-      relevantCommits,
-      commitsPerDay,
-      linesChanged,
-      relevantLinesChanged,
-      uniqueRelevantFiles: uniqueRelevantFilesSet.size,
-      commitRelevantSizes
-    };
-  }
-
-  normalizeActivity(act) {
-    if (!act) return 0;
-    const commitsPerDay = Number.isFinite(act.commitsPerDay) ? act.commitsPerDay : 0;
-    const relPerDay = Number.isFinite(act.windowHours)
-      ? (act.relevantCommits * (24 / act.windowHours))
-      : (Number.isFinite(act.days) && act.days > 0 ? act.relevantCommits / act.days : 0);
-    const locPerDay = Number.isFinite(act.windowHours)
-      ? (act.relevantLinesChanged * (24 / act.windowHours))
-      : (Number.isFinite(act.days) && act.days > 0 ? act.relevantLinesChanged / act.days : act.relevantLinesChanged);
-    const filesPerDay = Number.isFinite(act.windowHours)
-      ? (Number.isFinite(act.uniqueRelevantFiles) ? (act.uniqueRelevantFiles * (24 / act.windowHours)) : 0)
-      : (Number.isFinite(act.days) && act.days > 0 && Number.isFinite(act.uniqueRelevantFiles) ? act.uniqueRelevantFiles / act.days : 0);
-    const commitScore = Math.min(1, commitsPerDay / this.config.activityCommitThreshold);
-    const relevantScore = Math.min(1, relPerDay / this.config.activityRelevantCommitThreshold);
-    const volumeScore = Math.min(1, locPerDay / Math.max(1, this.config.activityLinesPerDayTarget));
-    const breadthScore = Math.min(1, filesPerDay / Math.max(1, this.config.activityFilesPerDayTarget));
-    // Weight relevant changes a bit more than raw volume
-    return (
-      (commitScore * 0.25) +
-      (relevantScore * 0.35) +
-      (volumeScore * 0.25) +
-      (breadthScore * 0.15)
-    );
-  }
-
-  computeGitPRActivity() {
-    const baseRef = this.config.baseRef;
-    if (!this.git.isInsideWorkTree()) {
-      return null;
-    }
-    try {
-      // Ensure we have the base ref locally
-      this.git.fetch(baseRef);
-      const remoteBase = baseRef.startsWith('origin/') ? baseRef : `origin/${baseRef}`;
-      const mergeBase = this.git.mergeBase('HEAD', remoteBase);
-      if (!mergeBase) return null;
-      // Collect PR-only commits
-      const raw = this.git.log({ range: `${mergeBase}..HEAD`, format: '--%ct', numstat: true, noMerges: true });
-      // Distinguish git failures (null) from genuine no-activity (empty string)
-      if (raw === null) {
-        return null;
-      }
-      if (!raw.trim()) {
-        return { commits: 0, relevantCommits: 0, days: 0, commitsPerDay: 0, linesChanged: 0, relevantLinesChanged: 0 };
-      }
-      const lines = raw.split(/\r?\n/);
-      let commits = 0;
-      let relevantCommits = 0;
-      let linesChanged = 0;
-      let relevantLinesChanged = 0;
-      let inCommit = false;
-      let commitRelevant = false;
-      let firstTs = null;
-      let lastTs = null;
-      let commitRelevantSize = 0;
-      const commitRelevantSizes = [];
-      const uniqueRelevantFilesSet = new Set();
-      const isRelevant = (file) => {
-        const f = String(file || '').toLowerCase();
-        return f.endsWith('.graphql') || f.includes('/ddl/') || f.endsWith('.sql') || f.includes('pgtap') || f.includes('/schema') || f.includes('.wesley-cache/bundle.json') || f.includes('.wesley-cache/history.json') || f.includes('.wesley/bundle.json') || f.includes('.wesley/history.json');
-      };
-      for (const line of lines) {
-        if (line.startsWith('--')) {
-          const ts = Number(line.slice(2).trim());
-          if (Number.isFinite(ts)) {
-            if (firstTs === null) firstTs = ts;
-            lastTs = ts;
-          }
-          if (inCommit) {
-            if (commitRelevant) {
-              relevantCommits++;
-              commitRelevantSizes.push(commitRelevantSize);
-            }
-          }
-          inCommit = true;
-          commitRelevant = false;
-          commitRelevantSize = 0;
-          commits++;
-          continue;
-        }
-        const parts = line.trim().split(/\s+/);
-        if (parts.length >= 3) {
-          const add = parts[0] === '-' ? 0 : parseInt(parts[0], 10) || 0;
-          const del = parts[1] === '-' ? 0 : parseInt(parts[1], 10) || 0;
-          const file = parts.slice(2).join(' ');
-          const delta = add + del;
-          linesChanged += delta;
-          if (isRelevant(file)) {
-            relevantLinesChanged += delta;
-            commitRelevant = true;
-            commitRelevantSize += delta;
-            uniqueRelevantFilesSet.add(file);
-          }
-        }
-      }
-      if (inCommit && commitRelevant) {
-        relevantCommits++;
-        commitRelevantSizes.push(commitRelevantSize);
-      }
-      const spanSecs = firstTs && lastTs ? Math.max(1, Math.abs(lastTs - firstTs)) : 0;
-      const days = spanSecs / 86400 || 0;
-      const commitsPerDay = days > 0 ? commits / days : commits; // if span is too small, assume concentrated activity
-      return {
-        commits,
-        relevantCommits,
-        days,
-        commitsPerDay,
-        linesChanged,
-        relevantLinesChanged,
-        uniqueRelevantFiles: uniqueRelevantFilesSet.size,
-        commitRelevantSizes
-      };
-    } catch {
-      return null;
-    }
-  }
-
-  computeBurstinessIndex(samples) {
-    if (!Array.isArray(samples) || samples.length < 2) return 0;
-    const nums = samples.map((n) => (Number.isFinite(n) ? n : 0)).filter((n) => n > 0);
-    if (nums.length < 2) return 0;
-    const mean = nums.reduce((a,b)=>a+b,0)/nums.length;
-    if (mean <= 0) return 0;
-    const variance = nums.reduce((a,n)=>a+Math.pow(n-mean,2),0)/(nums.length-1);
-    const sd = Math.sqrt(variance);
-    const cv = sd / mean; // coefficient of variation
-    // Map CV to 0..1 with a soft cap; CV≈2 or more → ~1
-    return Math.min(1, cv / 2);
   }
 }
 
