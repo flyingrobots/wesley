@@ -67,16 +67,28 @@ function ecommerceIR() {
   };
 }
 
-test('TranslateEnv: resolveTable maps type name to lowercase table name', () => {
+test('TranslateEnv: resolveTable maps type name to generated SQL table name', () => {
   const env = new TranslateEnv(ecommerceIR());
-  assert.equal(env.resolveTable('User'), 'user');
-  assert.equal(env.resolveTable('Order'), 'order');
-  assert.equal(env.resolveTable('OrderItem'), 'orderitem');
+  assert.equal(env.resolveTable('User'), 'users');
+  assert.equal(env.resolveTable('Order'), 'orders');
+  assert.equal(env.resolveTable('OrderItem'), 'order_items');
+  assert.equal(env.resolveTable('Product'), 'products');
 });
 
 test('TranslateEnv: resolveTable throws on unknown type', () => {
   const env = new TranslateEnv(ecommerceIR());
   assert.throws(() => env.resolveTable('Nonexistent'), /unknown type/i);
+});
+
+test('TranslateEnv: resolveTableRef normalizes logical and physical table references', () => {
+  const env = new TranslateEnv(ecommerceIR());
+  assert.equal(env.resolveTableRef('Product'), 'products');
+  assert.equal(env.resolveTableRef('product'), 'products');
+  assert.equal(env.resolveTableRef('products'), 'products');
+  assert.equal(env.resolveTableRef('OrderItem'), 'order_items');
+  assert.equal(env.resolveTableRef('orderitem'), 'order_items');
+  assert.equal(env.resolveTableRef('order_item'), 'order_items');
+  assert.equal(env.resolveTableRef('order_items'), 'order_items');
 });
 
 test('TranslateEnv: resolveColumn returns table alias, column name, and PG type', () => {

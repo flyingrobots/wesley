@@ -19,8 +19,9 @@ import { QueryPlan, TableNode, JoinNode, LateralNode, Projection, ProjectionItem
 const ALLOWED_FILTER_OPS = new Set(['eq','ne','lt','lte','gt','gte','like','ilike','contains','in','isNull','isNotNull']);
 const ALLOWED_PARAM_TYPES = new Set(['text','uuid','int','bigint','numeric','jsonb','bool','date','timestamp']);
 
-export function buildPlanFromJson(op) {
-  const tableName = (typeof op?.table === 'string' && op.table.trim()) ? op.table.trim() : '';
+export function buildPlanFromJson(op, options = {}) {
+  const { normalizeTableName } = options;
+  const tableName = normalizeTableRef(op?.table, 'op.table', normalizeTableName);
   if (!tableName) throw new Error('op.table is required');
   const alias = (typeof op?.alias === 'string' && op.alias.trim()) ? op.alias.trim() : 't0';
   const root = new TableNode(tableName, alias);
@@ -48,7 +49,7 @@ export function buildPlanFromJson(op) {
   // Optional simple joins (INNER/LEFT) with on clause
   if (Array.isArray(op.joins)) {
     for (const j of op.joins) {
-      const table = (typeof j.table === 'string' && j.table.trim()) || null;
+      const table = normalizeTableRef(j?.table, 'join.table', normalizeTableName) || null;
       if (!table) throw new Error(`join.table must be a non-empty string: ${JSON.stringify(j)}`);
       if (!j.on) throw new Error('join.on is required for joins');
       const jAlias = j.alias || `j_${table}`;
@@ -67,7 +68,7 @@ export function buildPlanFromJson(op) {
       const hasAlias = typeof list.lateralAlias === 'string' && list.lateralAlias.trim().length > 0;
       const lAlias = hasAlias ? list.lateralAlias.trim() : `l${lateralIdx++}`;
       const jsonAlias = (typeof list.alias === 'string' && list.alias.trim()) ? list.alias.trim() : 'items';
-      const tableName = (typeof list.table === 'string' && list.table.trim()) ? list.table.trim() : '';
+      const tableName = normalizeTableRef(list?.table, 'lists[].table', normalizeTableName);
       if (!tableName) throw new Error(`lists[].table must be a non-empty string: ${JSON.stringify(list)}`);
       const lt = tableName;
       const ltAlias = (typeof list.tableAlias === 'string' && list.tableAlias.trim()) ? list.tableAlias.trim() : `${lAlias}_t`;
@@ -170,6 +171,12 @@ export function buildPlanFromJson(op) {
     offset: toPosInt(op.offset, 'offset', true)
   });
   return plan;
+}
+
+function normalizeTableRef(tableRef, label, normalizeTableName) {
+  const ref = typeof tableRef === 'string' && tableRef.trim() ? tableRef.trim() : '';
+  if (!ref) return '';
+  return typeof normalizeTableName === 'function' ? normalizeTableName(ref, label) : ref;
 }
 
 function buildPredicate(alias, filters) {

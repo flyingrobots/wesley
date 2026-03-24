@@ -249,13 +249,13 @@ async function compileOpFile(fs, path, collisions, logger, { ir, target = 'postg
   const raw = await fs.read(path);
   let plan;
   let baseName;
+  const env = ir ? new TranslateEnv(ir) : null;
 
   if (path.endsWith('.graphql')) {
     if (!ir) {
       throw new OpsError('OPS_NO_IR', 'Cannot compile .graphql ops without a parsed schema IR. Ensure --schema is provided.', { file: path });
     }
     const gql = String(raw);
-    const env = new TranslateEnv(ir);
     const parseGQL = await getGraphQLParser();
     const doc = parseGQL(gql);
     const opDefs = doc.definitions.filter(d => d.kind === 'OperationDefinition');
@@ -278,7 +278,9 @@ async function compileOpFile(fs, path, collisions, logger, { ir, target = 'postg
     baseName = sanitizeOpIdentifier(opName);
   } else {
     const op = JSON.parse(String(raw));
-    plan = buildPlanFromJson(op);
+    plan = buildPlanFromJson(op, {
+      normalizeTableName: env ? (tableName) => env.resolveTableRef(tableName) : undefined
+    });
     baseName = sanitizeOpIdentifier(op.name);
   }
 

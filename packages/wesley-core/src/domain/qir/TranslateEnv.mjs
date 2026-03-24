@@ -7,6 +7,7 @@
 
 import { AliasAllocator } from './Nodes.mjs';
 import { fieldTypeToPg } from '../typeMapping.mjs';
+import { Identifier } from '../Identifier.mjs';
 
 export class TranslateEnv {
   /**
@@ -19,14 +20,36 @@ export class TranslateEnv {
     /** @type {Map<string, Map<string, object>>} type name → (field name → field def) */
     this._fields = new Map();
 
+    /** @type {Map<string, string>} normalized table ref → physical SQL table name */
+    this._tableRefs = new Map();
+
     /** @type {import('../WesleyIR.schema').Relationship[]} */
     this._relationships = ir.relationships || [];
 
     /** @type {Map<string, AliasAllocator>} prefix → allocator */
     this._allocators = new Map();
+    this._identifier = new Identifier('snake_case');
 
     for (const table of ir.tables) {
       this._tables.set(table.name, table);
+      const physicalTableName = this._identifier.toTableSQLName(table.name);
+      const singularPhysicalName = physicalTableName.endsWith('s')
+        ? physicalTableName.slice(0, -1)
+        : physicalTableName;
+      const sqlBaseName = this._identifier.toSQL(table.name);
+      const compactSqlBaseName = sqlBaseName.replaceAll('_', '');
+      const refs = [
+        table.name,
+        table.name.toLowerCase(),
+        sqlBaseName,
+        compactSqlBaseName,
+        singularPhysicalName,
+        physicalTableName
+      ];
+      for (const ref of refs) {
+        if (!ref) continue;
+        this._tableRefs.set(String(ref).trim().toLowerCase(), physicalTableName);
+      }
       const fieldMap = new Map();
       for (const field of table.fields) {
         fieldMap.set(field.name, field);
@@ -36,15 +59,31 @@ export class TranslateEnv {
   }
 
   /**
-   * Resolve a GraphQL type name to a PostgreSQL table name (lowercase).
+   * Resolve a GraphQL type name to the generated PostgreSQL table name.
    * @param {string} typeName — e.g., 'User', 'OrderItem'
-   * @returns {string} — e.g., 'user', 'orderitem'
+   * @returns {string} — e.g., 'users', 'order_items'
    */
   resolveTable(typeName) {
     if (!this._tables.has(typeName)) {
       throw new Error(`Unknown type '${typeName}': not found in IR tables`);
     }
-    return typeName.toLowerCase();
+    return this.resolveTableRef(typeName);
+  }
+
+  /**
+   * Resolve either a GraphQL type name or a legacy/physical table reference
+   * to the generated PostgreSQL table name.
+   * @param {string} tableRef
+   * @returns {string}
+   */
+  resolveTableRef(tableRef) {
+    const ref = typeof tableRef === 'string' ? tableRef.trim() : '';
+    if (!ref) throw new Error('Table reference must be a non-empty string');
+    const physicalTableName = this._tableRefs.get(ref.toLowerCase());
+    if (!physicalTableName) {
+      throw new Error(`Unknown table reference '${tableRef}': not found in IR tables`);
+    }
+    return physicalTableName;
   }
 
   /**

@@ -66,8 +66,8 @@ if [[ ! -f "$SCHEMA_SQL" ]]; then
   exit 1
 fi
 
-PGPASSWORD=wesley_test psql -v ON_ERROR_STOP=1 -h localhost -p "$PORT" -U wesley -d wesley_test -f "$SCHEMA_SQL"
-PGPASSWORD=wesley_test psql -v ON_ERROR_STOP=1 -h localhost -p "$PORT" -U wesley -d wesley_test -c 'CREATE SCHEMA IF NOT EXISTS wes_ops;'
+PGPASSWORD=wesley_test psql -X -v ON_ERROR_STOP=1 -h localhost -p "$PORT" -U wesley -d wesley_test -f "$SCHEMA_SQL"
+PGPASSWORD=wesley_test psql -X -v ON_ERROR_STOP=1 -h localhost -p "$PORT" -U wesley -d wesley_test -c 'CREATE SCHEMA IF NOT EXISTS wes_ops;'
 
 if [[ ! -d "$OPS_DIR" ]]; then
   echo "[pre-push] No generated ops directory found; skipping HOLMES ops apply" >&2
@@ -85,7 +85,7 @@ for pattern in "*.view.sql" "*.fn.sql"; do
       continue
     fi
     echo "[pre-push] Applying $f"
-    PGPASSWORD=wesley_test psql -1 -v ON_ERROR_STOP=1 -h localhost -p "$PORT" -U wesley -d wesley_test -f "$f"
+    PGPASSWORD=wesley_test psql -X -1 -v ON_ERROR_STOP=1 -h localhost -p "$PORT" -U wesley -d wesley_test -f "$f"
   done
 done
 

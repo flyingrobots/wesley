@@ -83,3 +83,37 @@ test('OpPlanBuilder: valid CONTAINS with jsonb passes', () => {
   assert.ok(sql.includes('@>'), 'SQL must contain @> operator');
 });
 
+test('OpPlanBuilder: normalizes root, join, and nested list table names', () => {
+  const op = {
+    table: 'order',
+    columns: ['id'],
+    joins: [
+      {
+        table: 'product',
+        alias: 'p',
+        on: { left: 't0.product_id', right: 'p.id', op: 'eq' }
+      }
+    ],
+    lists: [
+      {
+        alias: 'items',
+        table: 'orderitem',
+        match: { local: 'id', foreign: 'order_id' },
+        select: ['id']
+      }
+    ]
+  };
+
+  const plan = buildPlanFromJson(op, {
+    normalizeTableName: (tableName) => ({
+      order: 'orders',
+      product: 'products',
+      orderitem: 'order_items'
+    })[tableName] || tableName
+  });
+  const sql = lowerToSQL(plan);
+
+  assert.ok(sql.includes('FROM orders t0'), 'SQL must reference the normalized root table');
+  assert.ok(sql.includes('JOIN products p'), 'SQL must reference the normalized join table');
+  assert.ok(sql.includes('FROM order_items l0_t'), 'SQL must reference the normalized nested list table');
+});
