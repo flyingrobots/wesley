@@ -29,13 +29,16 @@ type Document @wes_table @wes_tenant(by: "org_id") @wes_rls {
 
 Directive support is broader in the registry than it is on the current hot path. Use [docs/DIRECTIVES.md](docs/DIRECTIVES.md) for the current support matrix before leaning on non-core directives in happy-path schemas.
 
+For project direction and contributor workflow, see [ROADMAP.md](ROADMAP.md) and
+[CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## TL;DR – Getting Started
 
 | Goal | Command(s) | Notes |
 | --- | --- | --- |
 | Try the browser playground (Alpha) | `http://localhost:5173/try` (local dev) | **[Try Wesley Now](https://flyingrobots.github.io/wesley/try)** – Edit schemas, compile to SQL, and run queries in-browser (PGLite). No install required. |
 | Install tooling & sanity-check repo | `pnpm install`<br>`pnpm run bootstrap` | Bootstraps dependencies, runs preflight, executes workspace tests. |
-| Generate everything from the example schema | `node packages/wesley-host-node/bin/wesley.mjs generate --schema test/fixtures/examples/ecommerce.graphql --ops test/fixtures/examples/ops --emit-bundle --out-dir out/examples` | Produces SQL, pgTAP, ops SQL, and a `.wesley/` evidence bundle using the schema that matches the example ops set. |
+| Generate everything from the example schema | `node packages/wesley-host-node/bin/wesley.mjs generate --schema test/fixtures/examples/ecommerce.graphql --ops test/fixtures/examples/ops --emit-bundle --out-dir out/examples` | Produces SQL, pgTAP, ops SQL, and a `.wesley-cache/` evidence bundle using the schema that matches the example ops set. |
 | Preview migration plan & rehearsal | `node packages/wesley-host-node/bin/wesley.mjs plan --schema test/fixtures/examples/schema.graphql --explain`<br>`node packages/wesley-host-node/bin/wesley.mjs rehearse --schema test/fixtures/examples/schema.graphql --dry-run --json` | No database required for `--dry-run`; inspect JSON for lock levels and REALM verdicts. |
 | Run HOLMES evidence checks | `pnpm --filter @wesley/holmes exec node packages/wesley-host-node/bin/wesley.mjs generate --schema test/fixtures/examples/schema.graphql --emit-bundle --out-dir out/examples`<br>`pnpm --filter @wesley/holmes exec node packages/wesley-holmes/src/cli.mjs investigate --json holmes.json > holmes.md` | Generates scores + markdown report; see [Evidence, HOLMES, and Observability](#evidence-holmes-and-observability). |
 | Experience the Daywalker (BLADE) demo | `node packages/wesley-host-node/bin/wesley.mjs blade --schema test/fixtures/blade/schema-v2.graphql --out-dir out/blade --dry-run` | Uses curated fixtures to demonstrate the zero-downtime flow end-to-end. |
@@ -216,7 +219,7 @@ Wesley is engineered for safety, speed, and confidence.
   - Tables: `tbl:TableName`
   - Columns: `col:TableName.columnName`
 - SQL comments like `COMMENT ON COLUMN … IS 'uid: …'` are human-readable hints. Tooling (SourceMap, scoring, HOLMES) reads from EvidenceMap, not from the comment strings.
-- To surface a SQL error in the original GraphQL SDL, load the evidence bundle (`.wesley/bundle.json`) and call `findSourceForSql(evidenceMap, { file, line })`.
+- To surface a SQL error in the original GraphQL SDL, load the evidence bundle (`.wesley-cache/bundle.json`) and call `findSourceForSql(evidenceMap, { file, line })`.
 - Scores (SCS/TCI/MRI) are computed from EvidenceMap; ensure generators record artifacts to keep scores accurate.
 
 Example: map a SQL error back to SDL
@@ -228,7 +231,7 @@ import { EvidenceMap } from '@wesley/core';
 import { findSourceForSql } from '@wesley/core/src/application/SourceMap.mjs';
 
 // Load the bundle written by `wesley generate --emit-bundle`
-const raw = await fs.readFile('.wesley/bundle.json', 'utf8');
+const raw = await fs.readFile('.wesley-cache/bundle.json', 'utf8');
 const bundle = JSON.parse(raw);
 
 // Evidence payload may be nested; normalize it
@@ -330,17 +333,17 @@ See [`docs/guides/qir-ops.md`](docs/guides/qir-ops.md) for details.
 <img width="500" alt="SHA-lock Holmes + Shipme" src="https://github.com/user-attachments/assets/685f9193-f1b3-43ca-9c22-3f3fb2a21fd1" align="right" />
 
 
-The **HOLMES** (Heuristic for Observable Logic, Metrics, and Evidence System) toolkit inspects Wesley's evidence bundles (`.wesley/`) to produce an objective, machine-readable score for deployment readiness.
+The **HOLMES** (Heuristic for Observable Logic, Metrics, and Evidence System) toolkit inspects Wesley's evidence bundles (`.wesley-cache/`) to produce an objective, machine-readable score for deployment readiness.
 
 ```bash
 # Investigate deployment readiness
-holmes investigate --bundle .wesley/
+holmes investigate --bundle-dir .wesley-cache
 
 # Verify against previous deployment
-watson verify --current .wesley/ --baseline .wesley/previous/
+watson verify --current .wesley-cache --baseline .wesley-cache/previous
 
 # Predict migration impact
-moriarty predict --bundle .wesley/
+moriarty --bundle-dir .wesley-cache
 ```
 
 This system allows you to define a minimum confidence score before a deploy can proceed.   
@@ -441,8 +444,9 @@ Note: In local runs where `GITHUB_REPOSITORY` is unset, the CI badge column rend
 - **[Scripts Reference](docs/scripts-reference.md)** — Complete `pnpm run` commands guide
 - **[CI Overview](docs/ci.md)** — How workflows are structured, reusable steps, gating, and artifacts
 - [`scripts/`](scripts/README.md) — Maintenance and automation scripts
-- **[Roadmap](docs/roadmap.md)** — Current focus and upcoming milestones
-- **[SAGENTS Codex](AGENTS.md)** — Protocol for human and AI contributors
+- **[Roadmap](ROADMAP.md)** — Canonical strategy, phases, and release gates
+- **[Contributing](CONTRIBUTING.md)** — Working model, hills, playbacks, and contributor workflow
+- **[Agent Guide](AGENTS.md)** — Repository-specific instructions for autonomous contributors
 
 ### ✅ Testing
 - Quick start
@@ -476,7 +480,7 @@ wesley/
 │   └── fixtures/      # Canonical test inputs
 ├── schemas/           # Reference schemas
 ├── scripts/           # Automation tools
-└── .wesley/           # Build artifacts (gitignored)
+└── .wesley-cache/     # Build artifacts and cache (gitignored)
     ├── snapshot.json  # IR snapshot for diffs
     ├── realm.json     # Rehearsal verdicts
     └── SHIPME.md      # Deployment certificate
