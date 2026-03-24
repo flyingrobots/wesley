@@ -7,6 +7,11 @@ import { realGitAdapter } from './ports/git.mjs';
 import { analyzeMoriartyPredictionCore } from './moriarty-analysis.mjs';
 import { createMoriartyConfig } from './moriarty-config.mjs';
 import { analyzeMoriartyGitActivity } from './moriarty-git-activity.mjs';
+import {
+  normalizeMoriartyEvidenceTrustLevel,
+  normalizeMoriartyEvidenceTrustReasons,
+  normalizeMoriartyHistoryPoints
+} from './moriarty-history.mjs';
 import { renderMoriartyPrediction } from './moriarty-render.mjs';
 
 export class Moriarty {
@@ -39,25 +44,11 @@ export class Moriarty {
   predictionData() {
     const analysisAt = this.clock.nowIso();
     const historyPoints = Array.isArray(this.history?.points) ? this.history.points : [];
-    const recentHistory = historyPoints.slice(-7).map(point => {
-      const normalizedTrust = normalizeEvidenceTrustLevel(point.evidenceTrust);
-      const normalizedReasons = normalizedTrust
-        ? normalizeEvidenceTrustReasons(point.evidenceTrustReasons, normalizedTrust)
-        : [];
-      return {
-        timestamp: point.timestamp ?? formatDateString(point.day),
-        scs: point.scs ?? 0,
-        tci: point.tci ?? 0,
-        mri: point.mri ?? 0,
-        ...(normalizedTrust ? { evidenceTrust: normalizedTrust } : {}),
-        ...(normalizedReasons.length > 0 ? { evidenceTrustReasons: normalizedReasons } : {})
-      };
-    });
     const base = {
       metadata: {
         analysisAt
       },
-      history: recentHistory,
+      history: normalizeMoriartyHistoryPoints(historyPoints),
       plateauDetected: false,
       regressionDetected: false,
       patterns: [],
@@ -73,9 +64,9 @@ export class Moriarty {
     }
 
     const latest = this.history.points[this.history.points.length - 1];
-    const latestEvidenceTrust = normalizeEvidenceTrustLevel(latest?.evidenceTrust);
+    const latestEvidenceTrust = normalizeMoriartyEvidenceTrustLevel(latest?.evidenceTrust);
     const latestEvidenceTrustReasons = latestEvidenceTrust
-      ? normalizeEvidenceTrustReasons(latest?.evidenceTrustReasons, latestEvidenceTrust)
+      ? normalizeMoriartyEvidenceTrustReasons(latest?.evidenceTrustReasons, latestEvidenceTrust)
       : [];
     // Optional: blend SCS velocity with Git activity to avoid false plateaus
     let gitActivity = null;
@@ -118,41 +109,4 @@ export class Moriarty {
       minSlope: this.config.minSlope
     });
   }
-}
-
-function normalizeEvidenceTrustLevel(level) {
-  switch (level) {
-  case 'strong':
-  case 'moderate':
-  case 'weak':
-  case 'missing':
-    return level;
-  default:
-    return null;
-  }
-}
-
-function normalizeEvidenceTrustReasons(reasons, level) {
-  if (Array.isArray(reasons) && reasons.length > 0) {
-    return reasons.filter((reason) => typeof reason === 'string' && reason.length > 0);
-  }
-
-  switch (level) {
-  case 'moderate':
-    return ['Whole-file citations still rely on broad file-level proof.'];
-  case 'weak':
-    return ['Coarse citations remain unpinned to exact line spans.'];
-  case 'missing':
-    return ['No evidence citations were available for trust analysis.'];
-  default:
-    return ['All citations resolve to exact line spans.'];
-  }
-}
-
-function formatDateString(day) {
-  if (typeof day === 'number' && Number.isFinite(day)) {
-    const millis = day * 24 * 60 * 60 * 1000;
-    return new Date(millis).toISOString();
-  }
-  return new Date(0).toISOString();
 }

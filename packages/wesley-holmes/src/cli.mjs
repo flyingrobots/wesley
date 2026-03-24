@@ -13,7 +13,6 @@ import {
 } from '@wesley/core';
 import { Holmes } from './Holmes.mjs';
 import { Watson } from './Watson.mjs';
-import { Moriarty } from './Moriarty.mjs';
 import {
   attachCommandRun,
   formatCommandRunFailureLabel,
@@ -22,22 +21,15 @@ import {
   withCommandRun
 } from './command-run.mjs';
 import {
-  attachRuntimeRun,
   inspectPersistedRuntimeRun,
-  listPersistedRuntimeRuns,
-  loadRuntimeRunRecord
+  listPersistedRuntimeRuns
 } from './runtime-run.mjs';
 import { readWeightConfig } from './weight-config.mjs';
 import { HOLMES_WEIGHT_CONFIG_PATH } from './config-paths.mjs';
-import {
-  analyzeCounterfactual,
-  loadHolmesCounterfactualPolicy,
-  resolveCounterfactualLaneRequest
-} from './index.mjs';
+import { buildMoriartyPrediction, resolveMoriartyExecutionPaths } from './moriarty-predict-workflow.mjs';
 import {
   holmesReportSchema,
   watsonReportSchema,
-  moriartyReportSchema,
   validateReport
 } from './report-schemas.mjs';
 
@@ -60,96 +52,12 @@ function loadBundle(bundlePath) {
   throw new Error(`No Wesley bundle found at ${resolved}. Run "wesley generate --emit-bundle" first.`);
 }
 
-function loadHistory(historyPath, bundleDir) {
-  const defaultHistory = path.join(bundleDir ?? GENERATED_ARTIFACT_DIR, 'history.json');
-  const resolved = resolvePath(historyPath, path.resolve(defaultHistory));
-  for (const candidate of generatedArtifactPathCandidates(resolved)) {
-    try {
-      return JSON.parse(readFileSync(candidate, 'utf8'));
-    } catch {
-      continue;
-    }
-  }
-  return { points: [] };
-}
-
-function loadMoriartyContext(bundleDir) {
-  try {
-    const contextPath = resolvePath(null, path.join(bundleDir ?? GENERATED_ARTIFACT_DIR, 'moriarty-context.json'));
-    return JSON.parse(readFileSync(contextPath, 'utf8'));
-  } catch {
-    return {};
-  }
-}
-
 function ensureValidReport(label, schema, data) {
   const { valid, errors } = validateReport(schema, data);
   if (!valid) {
     const detail = errors.map(err => ` - ${err}`).join('\n');
     throw new Error(`[${label}] report validation failed:\n${detail}`);
   }
-}
-
-async function attachCounterfactual(data, {
-  bundleDir,
-  outDir,
-  schemaPath,
-  transmutation,
-  baseRef,
-  braidRefs = [],
-  explain = false
-}) {
-  const repoRoot = path.resolve(bundleDir, '..');
-  const policy = await loadHolmesCounterfactualPolicy({ repoRoot, env: process.env });
-  const lane = resolveCounterfactualLaneRequest({
-    policy,
-    baseRef,
-    braidRefs
-  });
-  const counterfactual = await analyzeCounterfactual({
-    repoRoot,
-    lane,
-    includeTransferPlan: true,
-    policy,
-    surface: {
-      bundleDir,
-      outDir,
-      schemaPath,
-      transmutation
-    }
-  });
-  data.counterfactual = explain
-    ? counterfactual
-    : { ...counterfactual };
-  data.warnings = Array.isArray(data.warnings) ? data.warnings : [];
-  if (typeof data.confidence === 'number' && Number.isFinite(counterfactual?.judgment?.confidenceAdjustment)) {
-    data.confidence = Math.max(0, Math.min(100, data.confidence + counterfactual.judgment.confidenceAdjustment));
-  }
-  if (counterfactual?.judgment?.status && counterfactual.judgment.status !== 'clean') {
-    data.patterns = Array.isArray(data.patterns) ? data.patterns : [];
-    data.patterns.push({
-      type: 'COUNTERFACTUAL_ISSUE',
-      description: counterfactual.judgment.reasons.join(' ')
-    });
-  }
-}
-
-async function attachRuntime(data, {
-  bundleDir,
-  runId,
-  transmutation
-}) {
-  if (typeof runId !== 'string' || !runId.trim()) {
-    return null;
-  }
-
-  const runtimeRecord = await loadRuntimeRunRecord({
-    repoRoot: path.resolve(bundleDir, '..'),
-    runId,
-    transmutation
-  });
-  attachRuntimeRun(data, runtimeRecord);
-  return runtimeRecord;
 }
 
 async function main() {
@@ -328,48 +236,32 @@ Requires:
     .option('--explain', 'Show resolved refs, digests, and counterfactual details')
     .action(async options => {
       const opts = program.optsWithGlobals();
-      const bundleDir = resolvePath(opts.bundleDir, GENERATED_ARTIFACT_DIR);
+      const paths = resolveMoriartyExecutionPaths({
+        bundleDir: opts.bundleDir,
+        historyFile: opts.historyFile
+      });
+      const bundleDir = paths.bundleDir;
       const execution = await withCommandRun({
-        repoRoot: path.resolve(bundleDir, '..'),
+        repoRoot: paths.repoRoot,
         command: 'predict',
         sources: {
           bundleDir,
-          historyFile: resolvePath(opts.historyFile, path.join(bundleDir, 'history.json')),
+          historyFile: paths.historyFile,
           requestedRunId: options.runId || null,
           requestedTransmutation: options.transmutation || null,
           counterfactual: typeof options.counterfactual !== 'undefined',
           braidCount: Array.isArray(options.counterfactualBraid) ? options.counterfactualBraid.length : 0
         },
-        task: async () => {
-          const history = loadHistory(opts.historyFile, bundleDir);
-          const ctx = loadMoriartyContext(bundleDir);
-          const moriarty = new Moriarty(history, ctx);
-          const data = moriarty.predictionData();
-          const runtime = await attachRuntime(data, {
-            bundleDir,
-            runId: options.runId,
-            transmutation: options.transmutation
-          });
-          if (typeof options.counterfactual !== 'undefined') {
-            const baseRef = typeof options.counterfactual === 'string' && options.counterfactual.length > 0
-              ? options.counterfactual
-              : (process.env.MORIARTY_BASE_REF || process.env.GITHUB_BASE_REF || 'main');
-            await attachCounterfactual(data, {
-              bundleDir,
-              outDir: path.resolve(path.dirname(bundleDir), 'out'),
-              schemaPath: path.resolve(path.dirname(bundleDir), 'schema.graphql'),
-              transmutation: runtime?.run?.transmutation || options.transmutation,
-              baseRef,
-              braidRefs: options.counterfactualBraid,
-              explain: Boolean(options.explain)
-            });
-          }
-          ensureValidReport('MORIARTY', moriartyReportSchema, data);
-          return {
-            data,
-            output: moriarty.renderPrediction(data)
-          };
-        }
+        task: async () => buildMoriartyPrediction({
+          bundleDir: paths.bundleDir,
+          historyFile: paths.historyFile,
+          runId: options.runId,
+          transmutation: options.transmutation,
+          counterfactual: options.counterfactual,
+          braidRefs: options.counterfactualBraid,
+          explain: Boolean(options.explain),
+          env: process.env
+        })
       });
       attachCommandRun(execution.data, execution.commandRun);
       if (options.json) {
@@ -391,14 +283,18 @@ Requires:
     .option('--explain', 'Show resolved refs, digests, and counterfactual details')
     .action(async options => {
       const opts = program.optsWithGlobals();
-      const bundleDir = resolvePath(opts.bundleDir, GENERATED_ARTIFACT_DIR);
+      const paths = resolveMoriartyExecutionPaths({
+        bundleDir: opts.bundleDir,
+        historyFile: opts.historyFile
+      });
+      const bundleDir = paths.bundleDir;
       const execution = await withCommandRun({
-        repoRoot: path.resolve(bundleDir, '..'),
+        repoRoot: paths.repoRoot,
         command: 'report',
         sources: {
           bundleDir,
           bundlePath: path.join(bundleDir, 'bundle.json'),
-          historyFile: resolvePath(opts.historyFile, path.join(bundleDir, 'history.json')),
+          historyFile: paths.historyFile,
           requestedRunId: options.runId || null,
           requestedTransmutation: options.transmutation || null,
           counterfactual: typeof options.counterfactual !== 'undefined',
@@ -406,37 +302,24 @@ Requires:
         },
         task: async () => {
           const bundle = loadBundle(path.join(bundleDir, 'bundle.json'));
-          const history = loadHistory(opts.historyFile, bundleDir);
-          const ctx = loadMoriartyContext(bundleDir);
           const holmes = new Holmes(bundle);
           const watson = new Watson(bundle);
-          const moriarty = new Moriarty(history, ctx);
           const holmesData = holmes.investigationData();
           const watsonData = watson.verificationData();
-          const moriartyData = moriarty.predictionData();
-          const runtime = await attachRuntime(moriartyData, {
-            bundleDir,
+          const moriartyResult = await buildMoriartyPrediction({
+            bundleDir: paths.bundleDir,
+            historyFile: paths.historyFile,
             runId: options.runId,
-            transmutation: options.transmutation
+            transmutation: options.transmutation,
+            counterfactual: options.counterfactual,
+            braidRefs: options.counterfactualBraid,
+            explain: Boolean(options.explain),
+            env: process.env
           });
-          if (typeof options.counterfactual !== 'undefined') {
-            const baseRef = typeof options.counterfactual === 'string' && options.counterfactual.length > 0
-              ? options.counterfactual
-              : (process.env.MORIARTY_BASE_REF || process.env.GITHUB_BASE_REF || 'main');
-            await attachCounterfactual(moriartyData, {
-              bundleDir,
-              outDir: path.resolve(path.dirname(bundleDir), 'out'),
-              schemaPath: path.resolve(path.dirname(bundleDir), 'schema.graphql'),
-              transmutation: runtime?.run?.transmutation || options.transmutation,
-              baseRef,
-              braidRefs: options.counterfactualBraid,
-              explain: Boolean(options.explain)
-            });
-          }
+          const moriartyData = moriartyResult.data;
 
           ensureValidReport('HOLMES', holmesReportSchema, holmesData);
           ensureValidReport('WATSON', watsonReportSchema, watsonData);
-          ensureValidReport('MORIARTY', moriartyReportSchema, moriartyData);
 
           return {
             data: {
@@ -455,7 +338,7 @@ Requires:
               '',
               '---',
               '',
-              moriarty.renderPrediction(moriartyData)
+              moriartyResult.output
             ].join('\n')
           };
         }
