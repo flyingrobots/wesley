@@ -47,6 +47,48 @@
         }
       ]
     },
+    "holmes": {
+      "anyOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": [
+            "generatedAt",
+            "shipVerdict",
+            "baseReadiness",
+            "evidenceTrust",
+            "verificationCount",
+            "gateFailures",
+            "gateWarnings",
+            "blockingGates",
+            "warningGates",
+            "message"
+          ],
+          "properties": {
+            "generatedAt": { "type": ["string", "null"], "format": "date-time" },
+            "shipVerdict": { "type": "string", "minLength": 1 },
+            "baseReadiness": { "type": ["string", "null"] },
+            "evidenceTrust": {
+              "type": "string",
+              "enum": ["strong", "moderate", "weak", "missing"]
+            },
+            "verificationCount": { "type": "number", "minimum": 0 },
+            "gateFailures": { "type": "number", "minimum": 0 },
+            "gateWarnings": { "type": "number", "minimum": 0 },
+            "blockingGates": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "warningGates": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "message": { "type": ["string", "null"] }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
     "realm": {
       "anyOf": [ { "$ref": "realm.schema.json#" }, { "type": "null" } ]
     },

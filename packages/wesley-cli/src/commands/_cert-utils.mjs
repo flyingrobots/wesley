@@ -24,6 +24,17 @@ export function extractJsonBlock(md) {
   return { pre, json, post };
 }
 
+export function buildCertBadge(json) {
+  const okRealm = json?.realm?.verdict === 'PASS';
+  const sha = json?.sha?.slice(0, 7) || 'unknown';
+  const holmesVerdict = normalizeOptionalString(json?.holmes?.shipVerdict);
+  const parts = [`[SHIPME] ${okRealm ? 'PASS' : 'FAIL'}`];
+  if (holmesVerdict) {
+    parts.push(`HOLMES ${holmesVerdict}`);
+  }
+  return `${parts.join(' · ')} — sha ${sha}`;
+}
+
 /**
  * Deterministic JSON canonicalization: sort object keys recursively,
  * then stringify. Used for signing and verification — both MUST use
@@ -38,4 +49,10 @@ export function canonicalize(obj) {
     return x;
   };
   return JSON.stringify(sort(obj));
+}
+
+function normalizeOptionalString(value) {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
 }
