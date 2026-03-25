@@ -5,59 +5,30 @@
 
 import { test, describe } from 'node:test';
 import _assert from 'node:assert';
-import { writeFileSync, readFileSync, existsSync, mkdirSync } from 'node:fs';
+import { mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PostgreSQLGenerator } from '../../src/domain/generators/PostgreSQLGenerator.mjs';
 import { Schema, Table, Field } from '../../src/domain/Schema.mjs';
+import { matchTextSnapshot } from '../helpers/text-snapshots.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const snapshotsDir = join(__dirname, '__snapshots__');
 
-// Ensure snapshots directory exists
-if (!existsSync(snapshotsDir)) {
-  mkdirSync(snapshotsDir, { recursive: true });
-}
+mkdirSync(snapshotsDir, { recursive: true });
 
 /**
  * Snapshot testing utility for Node.js test runner
  */
 function toMatchSnapshot(actual, testName, snapshotName = 'default') {
-  const fileName = `${testName}.${snapshotName}.snap`;
-  const filePath = join(snapshotsDir, fileName);
-
-  // Normalize line endings and whitespace for consistent snapshots
-  const normalizedActual = actual
-    .replace(/\r\n/g, '\n')
-    .replace(/\s+$/gm, '') // Remove trailing whitespace
-    .trim();
-
-  if (existsSync(filePath)) {
-    const expectedContent = readFileSync(filePath, 'utf-8').trim();
-
-    if (normalizedActual !== expectedContent) {
-      // Update snapshot if UPDATE_SNAPSHOTS env var is set
-      if (process.env.UPDATE_SNAPSHOTS) {
-        writeFileSync(filePath, normalizedActual + '\n');
-        console.log(`Updated snapshot: ${fileName}`);
-        return;
-      }
-
-      // Provide detailed diff information
-      console.log('\nSnapshot mismatch:');
-      console.log('Expected:');
-      console.log(expectedContent);
-      console.log('\nActual:');
-      console.log(normalizedActual);
-
-      throw new Error(`Snapshot mismatch for ${fileName}. Set UPDATE_SNAPSHOTS=1 to update.`);
-    }
-  } else {
-    // Create new snapshot
-    writeFileSync(filePath, normalizedActual + '\n');
-    console.log(`Created new snapshot: ${fileName}`);
-  }
+  matchTextSnapshot({
+    snapshotsDir,
+    actual,
+    testName,
+    snapshotName,
+    label: 'Snapshot'
+  });
 }
 
 describe('SQL Generation Snapshots', () => {

@@ -4,10 +4,11 @@
  */
 
 import { test, describe } from 'node:test';
-import { writeFileSync, readFileSync, existsSync, mkdirSync } from 'node:fs';
+import { mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Schema, Table, Field } from '../../src/domain/Schema.mjs';
+import { matchTextSnapshot } from '../helpers/text-snapshots.mjs';
 
 // Mock TypeScript generator (since the actual one may not exist yet)
 class TypeScriptGenerator {
@@ -190,42 +191,16 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const snapshotsDir = join(__dirname, '__snapshots__');
 
-// Ensure snapshots directory exists
-if (!existsSync(snapshotsDir)) {
-  mkdirSync(snapshotsDir, { recursive: true });
-}
+mkdirSync(snapshotsDir, { recursive: true });
 
 function toMatchSnapshot(actual, testName, snapshotName = 'default') {
-  const fileName = `${testName}.${snapshotName}.snap`;
-  const filePath = join(snapshotsDir, fileName);
-
-  const normalizedActual = actual
-    .replace(/\r\n/g, '\n')
-    .replace(/\s+$/gm, '')
-    .trim();
-
-  if (existsSync(filePath)) {
-    const expectedContent = readFileSync(filePath, 'utf-8').trim();
-
-    if (normalizedActual !== expectedContent) {
-      if (process.env.UPDATE_SNAPSHOTS) {
-        writeFileSync(filePath, normalizedActual + '\n');
-        console.log(`Updated snapshot: ${fileName}`);
-        return;
-      }
-
-      console.log('\nTypeScript Snapshot mismatch:');
-      console.log('Expected:');
-      console.log(expectedContent);
-      console.log('\nActual:');
-      console.log(normalizedActual);
-
-      throw new Error(`Snapshot mismatch for ${fileName}. Set UPDATE_SNAPSHOTS=1 to update.`);
-    }
-  } else {
-    writeFileSync(filePath, normalizedActual + '\n');
-    console.log(`Created new snapshot: ${fileName}`);
-  }
+  matchTextSnapshot({
+    snapshotsDir,
+    actual,
+    testName,
+    snapshotName,
+    label: 'TypeScript Snapshot'
+  });
 }
 
 describe('TypeScript Generation Snapshots', () => {

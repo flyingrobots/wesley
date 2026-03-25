@@ -11,6 +11,11 @@
 
 import { test, describe } from 'node:test';
 import assert from 'node:assert';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 describe('Wesley Wave 4 Verification', () => {
   test('should have CLIEnhancer with all required features', async () => {
@@ -202,14 +207,16 @@ describe('Wesley Wave 4 Verification', () => {
   test('should have comprehensive final integration tests', async () => {
     // Verify the final integration test file exists and is properly structured
     const fs = await import('fs/promises');
-
-    const testExists = await fs.access('test/final-integration-simplified.test.mjs')
-      .then(() => true)
-      .catch(() => false);
-
-    assert(testExists, 'Final integration test file should exist');
-
-    const testContent = await fs.readFile('test/final-integration-simplified.test.mjs', 'utf-8');
+    const finalIntegrationPath = join(__dirname, 'final-integration-simplified.test.mjs');
+    let testContent = '';
+    try {
+      testContent = await fs.readFile(finalIntegrationPath, 'utf-8');
+    } catch (error) {
+      if (error?.code === 'ENOENT') {
+        assert.fail('Final integration test file should exist');
+      }
+      throw error;
+    }
 
     // Verify test covers key areas
     const requiredTestAreas = [
