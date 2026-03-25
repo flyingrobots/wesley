@@ -151,7 +151,10 @@ export class DocumentationGenerator {
 
   matchesPatterns(path, patterns) {
     return patterns.some(pattern => {
-      const regex = pattern.replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*').replace(/\./g, '\\.');
+      const regex = pattern
+        .replace(/([.+^${}()|[\]\\])/g, '\\$1')
+        .replace(/\*\*/g, '.*')
+        .replace(/\*/g, '[^/]*');
       return new RegExp(`^${regex}$`).test(path);
     });
   }
@@ -216,4 +219,3 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === fileURLToPath(process.
     process.exit(1);
   });
 }
-

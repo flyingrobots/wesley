@@ -10,6 +10,8 @@ import { DomainEvent } from '../Events.mjs';
 import { WesleyError } from '../WesleyError.mjs';
 import { EventEmitter } from '../../util/EventEmitter.mjs';
 
+let validationSessionSequence = 0;
+
 /**
  * Custom error types for safety validation
  */
@@ -126,7 +128,8 @@ export class ValidationContext {
   }
 
   generateSessionId() {
-    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    validationSessionSequence += 1;
+    return `session_${Date.now()}_${validationSessionSequence.toString(36)}`;
   }
 
   toJSON() {
@@ -693,12 +696,14 @@ export class SafetyValidator extends EventEmitter {
    * Get current resource usage (mock implementation)
    */
   async getCurrentResourceUsage() {
-    // In real implementation, this would gather actual system metrics
+    // In real implementation, this would gather actual system metrics.
+    // Keep the fallback deterministic so validation is reproducible.
+    const limits = this.options.resourceLimits || {};
     return {
-      maxMemory: Math.floor(Math.random() * 1024 * 1024 * 1024), // Random memory usage
-      maxCpu: Math.floor(Math.random() * 50) + 20,               // Random CPU 20-70%
-      maxConnections: Math.floor(Math.random() * 10) + 5,        // Random connections 5-15
-      maxDiskSpace: Math.floor(Math.random() * 5 * 1024 * 1024 * 1024) // Random disk usage
+      maxMemory: Math.floor((limits.maxMemory || 0) * 0.1),
+      maxCpu: Math.floor((limits.maxCpu || 0) * 0.25),
+      maxConnections: Math.floor((limits.maxConnections || 0) * 0.1),
+      maxDiskSpace: Math.floor((limits.maxDiskSpace || 0) * 0.05)
     };
   }
 

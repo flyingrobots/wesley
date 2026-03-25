@@ -4,7 +4,7 @@
  */
 
 import { existsSync, readFileSync } from 'node:fs';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import {
   assessEvidenceTrust,
   extractContentForLineSpan,
@@ -273,10 +273,15 @@ export class Watson {
 
   safeGitShow(sha, file) {
     try {
-      const content = execSync(`git show ${sha}:${file}`, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+      const content = execFileSync('git', ['show', `${sha}:${file}`], {
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe']
+      });
       return { status: 'ok', content };
     } catch (error) {
-      const stderr = error?.stderr ? error.stderr.toString() : '';
+      const stderr = typeof error?.stderr === 'string'
+        ? error.stderr
+        : (error?.stderr ? error.stderr.toString() : '');
       const message = stderr || error?.message || '';
       const nonFatalPatterns = [
         'not a git repository',

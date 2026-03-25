@@ -3,9 +3,9 @@
  * Thin platform layer that writes bundle to disk
  */
 
-import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'node:fs';
+import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 
 export class WesleyFileWriter {
   constructor(options = {}) {
@@ -97,12 +97,10 @@ export class WesleyFileWriter {
     const historyPath = join(this.dirs.wesley, 'history.json');
     let history = { points: [] };
 
-    if (existsSync(historyPath)) {
-      try {
-        history = JSON.parse(readFileSync(historyPath, 'utf8'));
-      } catch {
-        // Start fresh if corrupt
-      }
+    try {
+      history = JSON.parse(readFileSync(historyPath, 'utf8'));
+    } catch {
+      // Start fresh if missing or corrupt
     }
 
     history.points.push({
@@ -127,7 +125,7 @@ export class WesleyFileWriter {
    */
   getCurrentSHA() {
     try {
-      return execSync('git rev-parse HEAD', { encoding: 'utf8' }).trim();
+      return execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
     } catch {
       return 'uncommitted';
     }
@@ -138,9 +136,7 @@ export class WesleyFileWriter {
    */
   ensureDirectories() {
     for (const dir of Object.values(this.dirs)) {
-      if (!existsSync(dir)) {
-        mkdirSync(dir, { recursive: true });
-      }
+      mkdirSync(dir, { recursive: true });
     }
   }
 }

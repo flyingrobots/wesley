@@ -5,7 +5,7 @@
  * Generate starter schemas for common patterns
  */
 
-import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -39,6 +39,29 @@ export class ScaffoldCommand {
     this.options = options;
   }
 
+  readScaffold(fileName) {
+    const filePath = join(__dirname, '..', 'scaffolds', fileName);
+    try {
+      return readFileSync(filePath, 'utf-8');
+    } catch {
+      return null;
+    }
+  }
+
+  writeOutput(outputPath, content) {
+    const flag = this.options.force ? 'w' : 'wx';
+    try {
+      writeFileSync(outputPath, content, { flag });
+    } catch (error) {
+      if (error?.code === 'EEXIST') {
+        console.error(`File already exists: ${outputPath}`);
+        console.log('Use --force to overwrite');
+        process.exit(1);
+      }
+      throw error;
+    }
+  }
+
   /**
    * List available scaffolds
    */
@@ -68,36 +91,19 @@ export class ScaffoldCommand {
       process.exit(1);
     }
 
-    // Check if output file exists
-    if (existsSync(outputPath) && !this.options.force) {
-      console.error(`File already exists: ${outputPath}`);
-      console.log('Use --force to overwrite');
-      process.exit(1);
-    }
-
-    // Read scaffold file
-    const scaffoldPath = join(__dirname, '..', 'scaffolds', scaffold.file);
-
-    if (!existsSync(scaffoldPath)) {
+    const content = this.readScaffold(scaffold.file);
+    let customized = content;
+    if (customized === null) {
       // If scaffold doesn't exist yet, create a placeholder
       console.log(`Scaffold '${type}' is coming soon!`);
       console.log('For now, using multi-tenant as template...');
 
-      const multiTenantPath = join(__dirname, '..', 'scaffolds', 'multi-tenant.graphql');
-      if (existsSync(multiTenantPath)) {
-        const content = readFileSync(multiTenantPath, 'utf-8');
-        writeFileSync(outputPath, content);
-      } else {
+      customized = this.readScaffold('multi-tenant.graphql');
+      if (customized === null) {
         console.error('Scaffold files not found. Please reinstall wesley.');
         process.exit(1);
       }
-      return;
     }
-
-    const content = readFileSync(scaffoldPath, 'utf-8');
-
-    // Customize content based on options
-    let customized = content;
 
     if (this.options.projectName) {
       customized = customized.replace(
@@ -115,7 +121,7 @@ export class ScaffoldCommand {
     }
 
     // Write output file
-    writeFileSync(outputPath, customized);
+    this.writeOutput(outputPath, customized);
 
     console.log(`✨ Created ${scaffold.name} schema at: ${outputPath}`);
     console.log('\nNext steps:');

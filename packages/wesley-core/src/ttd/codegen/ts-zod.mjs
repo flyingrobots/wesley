@@ -41,8 +41,14 @@ function generateConstraints(constraint) {
     validators.push(`.max(${constraint.maxLength})`);
   }
   if (constraint.pattern) {
-    // Escape forward slashes in pattern to prevent regex delimiter breakage
-    const escapedPattern = constraint.pattern.replace(/\//g, '\\/');
+    // Escape characters that would terminate or corrupt the regex literal.
+    const escapedPattern = constraint.pattern
+      .replace(/\\/g, '\\\\')
+      .replace(/\//g, '\\/')
+      .replace(/\r/g, '\\r')
+      .replace(/\n/g, '\\n')
+      .replace(/\u2028/g, '\\u2028')
+      .replace(/\u2029/g, '\\u2029');
     validators.push(`.regex(/${escapedPattern}/)`);
   }
   if (constraint.oneOf && Array.isArray(constraint.oneOf) && constraint.oneOf.length > 0) {

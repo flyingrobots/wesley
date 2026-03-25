@@ -4,7 +4,7 @@
  * without modifying the working tree. Materialization of the tree is deferred to MP-06.
  */
 
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 
 export class MergeTreeStrategy {
   constructor(options = {}) {
@@ -14,7 +14,7 @@ export class MergeTreeStrategy {
   execute(plan) {
     try {
       // Ensure we are inside a git repo
-      execSync('git rev-parse --is-inside-work-tree', { stdio: 'ignore', cwd: this.repoRoot });
+      execFileSync('git', ['rev-parse', '--is-inside-work-tree'], { stdio: 'ignore', cwd: this.repoRoot });
     } catch {
       return { status: 'error', reason: 'Not a git work tree', plan };
     }
@@ -23,11 +23,19 @@ export class MergeTreeStrategy {
     const remoteBase = baseRef.startsWith('origin/') ? baseRef : `origin/${baseRef}`;
 
     // Make a best effort to fetch the base ref
-    try { execSync(`git fetch --prune origin ${baseRef}:${'refs/remotes/origin/' + baseRef}`, { stdio: 'ignore', cwd: this.repoRoot }); } catch { /* empty */ }
+    try {
+      execFileSync('git', ['fetch', '--prune', 'origin', `${baseRef}:refs/remotes/origin/${baseRef}`], {
+        stdio: 'ignore',
+        cwd: this.repoRoot
+      });
+    } catch { /* empty */ }
 
     let mergeBase = null;
     try {
-      mergeBase = execSync(`git merge-base HEAD ${remoteBase}`, { encoding: 'utf8', cwd: this.repoRoot }).trim();
+      mergeBase = execFileSync('git', ['merge-base', 'HEAD', remoteBase], {
+        encoding: 'utf8',
+        cwd: this.repoRoot
+      }).trim();
       if (!mergeBase) return { status: 'error', reason: 'merge-base not found', plan };
     } catch (e) {
       return { status: 'error', reason: 'merge-base failed', error: String(e?.message || e), plan };
@@ -36,7 +44,10 @@ export class MergeTreeStrategy {
     // Compute merged tree id
     let mergedTree = null;
     try {
-      const out = execSync(`git merge-tree --write-tree ${mergeBase} HEAD ${remoteBase}`, { encoding: 'utf8', cwd: this.repoRoot }).trim();
+      const out = execFileSync('git', ['merge-tree', '--write-tree', mergeBase, 'HEAD', remoteBase], {
+        encoding: 'utf8',
+        cwd: this.repoRoot
+      }).trim();
       mergedTree = out.split(/\s+/)[0];
     } catch (e) {
       return { status: 'error', reason: 'merge-tree failed', error: String(e?.message || e), plan, mergeBase };
@@ -45,8 +56,8 @@ export class MergeTreeStrategy {
     // Collect comparison info
     let headTree = null;
     let baseTree = null;
-    try { headTree = execSync('git rev-parse HEAD^{tree}', { encoding: 'utf8', cwd: this.repoRoot }).trim(); } catch { /* empty */ }
-    try { baseTree = execSync(`git rev-parse ${remoteBase}^{tree}`, { encoding: 'utf8', cwd: this.repoRoot }).trim(); } catch { /* empty */ }
+    try { headTree = execFileSync('git', ['rev-parse', 'HEAD^{tree}'], { encoding: 'utf8', cwd: this.repoRoot }).trim(); } catch { /* empty */ }
+    try { baseTree = execFileSync('git', ['rev-parse', `${remoteBase}^{tree}`], { encoding: 'utf8', cwd: this.repoRoot }).trim(); } catch { /* empty */ }
 
     const equalToHead = headTree && mergedTree && headTree === mergedTree;
     const equalToBase = baseTree && mergedTree && baseTree === mergedTree;
