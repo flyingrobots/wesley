@@ -20,6 +20,8 @@ on:
 jobs:
   compute-progress:
     runs-on: ubuntu-latest
+    env:
+      PROGRESS_PR_TOKEN: ${{ secrets.PROGRESS_PR_TOKEN }}
     steps:
       - name: Harden runner
         uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594
@@ -45,10 +47,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node scripts/compute-progress.mjs
       - name: Create progress PR
-        if: ${{ secrets.PROGRESS_PR_TOKEN != '' }}
+        if: ${{ env.PROGRESS_PR_TOKEN != '' }}
         uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0
         with:
-          token: ${{ secrets.PROGRESS_PR_TOKEN }}
+          token: ${{ env.PROGRESS_PR_TOKEN }}
           commit-message: 'docs(progress): update package matrix and progress.json'
           title: 'docs(progress): update package matrix and progress.json'
           body: 'Automated update of Package Matrix and meta/progress.json.'

@@ -40,4 +40,14 @@ load 'bats-plugins/bats-assert/load'
   run bash -lc "grep -F 'PROGRESS_PR_TOKEN' .github/workflows/progress.yml | wc -l"
   assert_success
   [ "$output" -ge 1 ]
+
+  run bash -lc "grep -F 'if:' .github/workflows/progress.yml | grep -F 'env.PROGRESS_PR_TOKEN' | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+}
+
+@test "workflows do not reference secrets directly in if conditionals" {
+  run bash -lc "grep -R -nE 'if:[[:space:]]*\\$\\{\\{[[:space:]]*secrets\\.' .github/workflows || true"
+  assert_success
+  [ -z "$output" ]
 }
