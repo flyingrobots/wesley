@@ -26,6 +26,18 @@ load 'bats-plugins/bats-assert/load'
   run bash -lc "grep -F 'per_page: 100' .github/workflows/cert-shipme.yml | wc -l"
   assert_success
   [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'pull-requests: write' .github/workflows/cert-shipme.yml | wc -l"
+  assert_success
+  [ "$output" -ge 1 ]
+
+  run bash -lc "grep -F 'Run HOLMES investigation' .github/workflows/cert-shipme.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F '.wesley-cache/holmes-report.json' .github/workflows/cert-shipme.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
 }
 
 @test "progress workflow keeps GITHUB_TOKEN read-only and uses opt-in PR token" {
@@ -60,4 +72,22 @@ load 'bats-plugins/bats-assert/load'
   run bash -lc "grep -F 'pnpm --filter @wesley/core test:fuzz' .github/workflows/fuzzing.yml | wc -l"
   assert_success
   [ "$output" -eq 1 ]
+}
+
+@test "wesley-holmes workflow propagates detected schema outputs into analysis jobs" {
+  run bash -lc "grep -F 'outputs:' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -ge 1 ]
+
+  run bash -lc "grep -F 'steps.detect.outputs.schema' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -ge 2 ]
+
+  run bash -lc "grep -F 'needs.wesley-generate.outputs.schema' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -ge 3 ]
+
+  run bash -lc "grep -F 'needs.wesley-generate.outputs.bundle_dir' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -ge 4 ]
 }
