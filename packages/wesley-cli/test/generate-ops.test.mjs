@@ -4,9 +4,11 @@ import assert from 'node:assert/strict';
 import {
   QueryPlan,
   TableNode,
+  JoinNode,
   Projection,
   ProjectionItem,
-  ColumnRef
+  ColumnRef,
+  Predicate
 } from '@wesley/core/domain/qir';
 
 import {
@@ -17,6 +19,21 @@ import {
 function makePlan(table) {
   return new QueryPlan(
     new TableNode(table, 't0'),
+    new Projection([
+      new ProjectionItem('id', new ColumnRef('t0', 'id'))
+    ]),
+    {}
+  );
+}
+
+function makeMixedJoinPlan({ rootTable, joinedTable }) {
+  return new QueryPlan(
+    new JoinNode(
+      new TableNode(rootTable, 't0'),
+      new TableNode(joinedTable, 'j0'),
+      'INNER',
+      Predicate.compare(new ColumnRef('t0', 'id'), 'eq', new ColumnRef('j0', 'product_id'))
+    ),
     new Projection([
       new ProjectionItem('id', new ColumnRef('t0', 'id'))
     ]),
@@ -83,6 +100,47 @@ test('inferOpsSchemaContext: keeps multi-schema plans explicit instead of forcin
   assert.equal(schemaContext.baseSchema, null);
   assert.deepEqual(schemaContext.inferredSchemas, ['billing', 'sales']);
   assert.deepEqual(schemaContext.searchPath, ['pg_catalog', 'wes_ops', 'billing', 'sales']);
+});
+
+test('inferOpsSchemaContext: preserves IR-derived base schema for mixed qualified and unqualified refs', () => {
+  const schemaContext = inferOpsSchemaContext({
+    ir: {
+      metadata: {
+        schemaName: 'app'
+      }
+    },
+    compiledOps: [
+      {
+        plan: makeMixedJoinPlan({
+          rootTable: 'products',
+          joinedTable: 'audit.product_events'
+        })
+      }
+    ],
+    targetSchema: 'wes_ops'
+  });
+
+  assert.equal(schemaContext.baseSchema, 'app');
+  assert.deepEqual(schemaContext.inferredSchemas, ['app', 'audit']);
+  assert.deepEqual(schemaContext.searchPath, ['pg_catalog', 'wes_ops', 'app', 'audit']);
+});
+
+test('inferOpsSchemaContext: falls back to public for mixed refs when no IR schema is available', () => {
+  const schemaContext = inferOpsSchemaContext({
+    compiledOps: [
+      {
+        plan: makeMixedJoinPlan({
+          rootTable: 'products',
+          joinedTable: 'audit.product_events'
+        })
+      }
+    ],
+    targetSchema: 'wes_ops'
+  });
+
+  assert.equal(schemaContext.baseSchema, 'public');
+  assert.deepEqual(schemaContext.inferredSchemas, ['audit']);
+  assert.deepEqual(schemaContext.searchPath, ['pg_catalog', 'wes_ops', 'public', 'audit']);
 });
 
 test('inferOpsSchemaContext: falls back to public when the only schema hint is the ops schema itself', () => {

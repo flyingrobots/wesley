@@ -414,36 +414,38 @@ function normalizeOpsSearchPath(setSearchPath, normalizedSchema) {
 export function inferOpsSchemaContext({ ir = null, compiledOps = [], targetSchema = 'wes_ops', explicitSearchPath = null } = {}) {
   const normalizedSchema = sanitizeIdentBase(targetSchema, 'wes_ops');
   const explicit = parseOpsSearchPath(explicitSearchPath);
-  const planSchemaRefs = new Set();
+  const tableRefUsage = {
+    qualifiedSchemas: new Set(),
+    hasUnqualifiedTableRefs: false
+  };
 
   for (const entry of compiledOps) {
-    collectPlanSchemaRefs(entry?.plan, planSchemaRefs);
+    collectPlanTableRefUsage(entry?.plan, tableRefUsage);
   }
 
   const inferred = new Set();
   const irSchema = sanitizeSchemaName(ir?.metadata?.schemaName, normalizedSchema);
   if (irSchema) inferred.add(irSchema);
-  for (const schemaName of planSchemaRefs) {
+  for (const schemaName of tableRefUsage.qualifiedSchemas) {
     const normalized = sanitizeSchemaName(schemaName, normalizedSchema);
     if (normalized) inferred.add(normalized);
   }
 
   const inferredSchemas = Array.from(inferred).sort();
-  const hasQualifiedTableRefs = planSchemaRefs.size > 0;
-  const baseSchema = hasQualifiedTableRefs
-    ? null
-    : inferredSchemas.length === 1
-      ? inferredSchemas[0]
-      : inferredSchemas.length === 0
-        ? 'public'
-        : null;
+  const hasQualifiedTableRefs = tableRefUsage.qualifiedSchemas.size > 0;
+  const baseSchema = resolveInferredBaseSchema({
+    irSchema,
+    inferredSchemas,
+    hasQualifiedTableRefs,
+    hasUnqualifiedTableRefs: tableRefUsage.hasUnqualifiedTableRefs
+  });
   const searchPath = explicit.length > 0
     ? explicit
-    : dedupeSearchPath([
-      'pg_catalog',
+    : buildInferredSearchPath({
       normalizedSchema,
-      ...(inferredSchemas.length > 0 ? inferredSchemas : ['public'])
-    ]);
+      inferredSchemas,
+      baseSchema
+    });
 
   return {
     baseSchema,
@@ -479,90 +481,121 @@ function dedupeSearchPath(entries) {
   return out;
 }
 
-function collectPlanSchemaRefs(plan, out) {
+function buildInferredSearchPath({ normalizedSchema, inferredSchemas, baseSchema }) {
+  const entries = ['pg_catalog', normalizedSchema];
+  if (baseSchema) entries.push(baseSchema);
+  if (inferredSchemas.length > 0) {
+    entries.push(...inferredSchemas);
+  } else if (!baseSchema) {
+    entries.push('public');
+  }
+  return dedupeSearchPath(entries);
+}
+
+function resolveInferredBaseSchema({
+  irSchema,
+  inferredSchemas,
+  hasQualifiedTableRefs,
+  hasUnqualifiedTableRefs
+}) {
+  if (!hasUnqualifiedTableRefs) {
+    if (hasQualifiedTableRefs) return null;
+    if (inferredSchemas.length === 1) return inferredSchemas[0];
+    if (inferredSchemas.length === 0) return 'public';
+    return null;
+  }
+
+  if (irSchema) return irSchema;
+  if (hasQualifiedTableRefs) return 'public';
+  if (inferredSchemas.length === 1) return inferredSchemas[0];
+  return 'public';
+}
+
+function collectPlanTableRefUsage(plan, usage) {
   if (!plan || typeof plan !== 'object') return;
-  collectRelationSchemaRefs(plan.root, out);
+  collectRelationTableRefUsage(plan.root, usage);
   if (Array.isArray(plan.projection?.items)) {
     for (const item of plan.projection.items) {
-      collectExprSchemaRefs(item?.expr, out);
+      collectExprSchemaRefs(item?.expr, usage);
     }
   }
   if (Array.isArray(plan.orderBy)) {
     for (const order of plan.orderBy) {
-      collectExprSchemaRefs(order?.expr, out);
+      collectExprSchemaRefs(order?.expr, usage);
     }
   }
   if (Array.isArray(plan.distinctOn)) {
     for (const expr of plan.distinctOn) {
-      collectExprSchemaRefs(expr, out);
+      collectExprSchemaRefs(expr, usage);
     }
   }
 }
 
-function collectRelationSchemaRefs(relation, out) {
+function collectRelationTableRefUsage(relation, usage) {
   if (!relation || typeof relation !== 'object') return;
   switch (relation.kind) {
   case 'Table': {
     const schemaName = extractSchemaName(relation.table);
-    if (schemaName) out.add(schemaName);
+    if (schemaName) usage.qualifiedSchemas.add(schemaName);
+    else usage.hasUnqualifiedTableRefs = true;
     break;
   }
   case 'Join':
-    collectRelationSchemaRefs(relation.left, out);
-    collectRelationSchemaRefs(relation.right, out);
-    collectPredicateSchemaRefs(relation.on, out);
+    collectRelationTableRefUsage(relation.left, usage);
+    collectRelationTableRefUsage(relation.right, usage);
+    collectPredicateSchemaRefs(relation.on, usage);
     break;
   case 'Filter':
-    collectRelationSchemaRefs(relation.input, out);
-    collectPredicateSchemaRefs(relation.predicate, out);
+    collectRelationTableRefUsage(relation.input, usage);
+    collectPredicateSchemaRefs(relation.predicate, usage);
     break;
   case 'Subquery':
   case 'Lateral':
-    collectPlanSchemaRefs(relation.plan, out);
+    collectPlanTableRefUsage(relation.plan, usage);
     break;
   default:
     break;
   }
 }
 
-function collectPredicateSchemaRefs(predicate, out) {
+function collectPredicateSchemaRefs(predicate, usage) {
   if (!predicate || typeof predicate !== 'object') return;
   switch (predicate.kind) {
   case 'And':
   case 'Or':
-    collectPredicateSchemaRefs(predicate.left, out);
-    collectPredicateSchemaRefs(predicate.right, out);
+    collectPredicateSchemaRefs(predicate.left, usage);
+    collectPredicateSchemaRefs(predicate.right, usage);
     break;
   case 'Not':
-    collectPredicateSchemaRefs(predicate.left, out);
+    collectPredicateSchemaRefs(predicate.left, usage);
     break;
   case 'Exists':
-    collectPlanSchemaRefs(predicate.subquery, out);
+    collectPlanTableRefUsage(predicate.subquery, usage);
     break;
   case 'Compare':
-    collectExprSchemaRefs(predicate.left, out);
-    collectExprSchemaRefs(predicate.right, out);
+    collectExprSchemaRefs(predicate.left, usage);
+    collectExprSchemaRefs(predicate.right, usage);
     break;
   default:
     break;
   }
 }
 
-function collectExprSchemaRefs(expr, out) {
+function collectExprSchemaRefs(expr, usage) {
   if (!expr || typeof expr !== 'object') return;
   switch (expr.kind) {
   case 'FuncCall':
-    for (const arg of expr.args || []) collectExprSchemaRefs(arg, out);
+    for (const arg of expr.args || []) collectExprSchemaRefs(arg, usage);
     break;
   case 'ScalarSubquery':
-    collectPlanSchemaRefs(expr.plan, out);
+    collectPlanTableRefUsage(expr.plan, usage);
     break;
   case 'JsonBuildObject':
-    for (const field of expr.fields || []) collectExprSchemaRefs(field?.value, out);
+    for (const field of expr.fields || []) collectExprSchemaRefs(field?.value, usage);
     break;
   case 'JsonAgg':
-    collectExprSchemaRefs(expr.value, out);
-    for (const order of expr.orderBy || []) collectExprSchemaRefs(order?.expr, out);
+    collectExprSchemaRefs(expr.value, usage);
+    for (const order of expr.orderBy || []) collectExprSchemaRefs(order?.expr, usage);
     break;
   default:
     break;
