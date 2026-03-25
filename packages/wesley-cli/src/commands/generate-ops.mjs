@@ -424,17 +424,18 @@ export function inferOpsSchemaContext({ ir = null, compiledOps = [], targetSchem
   }
 
   const inferred = new Set();
-  const irSchema = sanitizeSchemaName(ir?.metadata?.schemaName, normalizedSchema);
-  if (irSchema) inferred.add(irSchema);
+  const irBaseSchema = sanitizeSchemaName(ir?.metadata?.schemaName);
+  const irSearchPathSchema = normalizeSearchPathSchema(irBaseSchema, normalizedSchema);
+  if (irSearchPathSchema) inferred.add(irSearchPathSchema);
   for (const schemaName of tableRefUsage.qualifiedSchemas) {
-    const normalized = sanitizeSchemaName(schemaName, normalizedSchema);
+    const normalized = normalizeSearchPathSchema(sanitizeSchemaName(schemaName), normalizedSchema);
     if (normalized) inferred.add(normalized);
   }
 
   const inferredSchemas = Array.from(inferred).sort();
   const hasQualifiedTableRefs = tableRefUsage.qualifiedSchemas.size > 0;
   const baseSchema = resolveInferredBaseSchema({
-    irSchema,
+    irSchema: irBaseSchema,
     inferredSchemas,
     hasQualifiedTableRefs,
     hasUnqualifiedTableRefs: tableRefUsage.hasUnqualifiedTableRefs
@@ -462,11 +463,15 @@ function parseOpsSearchPath(value) {
     .filter(Boolean);
 }
 
-function sanitizeSchemaName(schemaName, normalizedOpsSchema) {
+function sanitizeSchemaName(schemaName) {
   if (typeof schemaName !== 'string' || schemaName.trim().length === 0) return null;
   const normalized = sanitizeIdentBase(schemaName, '');
-  if (!normalized || normalized === normalizedOpsSchema) return null;
-  return normalized;
+  return normalized || null;
+}
+
+function normalizeSearchPathSchema(schemaName, normalizedOpsSchema) {
+  if (!schemaName || schemaName === normalizedOpsSchema) return null;
+  return schemaName;
 }
 
 function dedupeSearchPath(entries) {

@@ -92,6 +92,11 @@ test('TranslateEnv: resolveTableRef normalizes logical and physical table refere
   assert.equal(env.resolveTableRef('order_items'), 'order_items');
 });
 
+test('TranslateEnv: resolveTableRef rejects malformed schema-qualified references', () => {
+  const env = new TranslateEnv(ecommerceIR());
+  assert.throws(() => env.resolveTableRef('app..Product'), /unknown table reference/i);
+});
+
 test('TranslateEnv: resolveColumn returns table alias, column name, and PG type', () => {
   const env = new TranslateEnv(ecommerceIR());
   const col = env.resolveColumn('User', 'email');

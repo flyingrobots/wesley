@@ -94,6 +94,16 @@ test('emitFunction: preserves schema-qualified table refs without a global base 
   assert.ok(sql.includes('FROM "app"."organization" "t0"'));
 });
 
+test('emitFunction: rejects malformed schema-qualified table refs', () => {
+  const root = new TableNode('app..organization', 't0');
+  const proj = new Projection([
+    new ProjectionItem('id', new ColumnRef('t0', 'id'))
+  ]);
+  const plan = new QueryPlan(root, proj, {});
+
+  assert.throws(() => emitFunction('org_fn_invalid', plan), /invalid.*identifier/i);
+});
+
 test('emitFunction: preserves jsonb_agg COALESCE inside wrapper', () => {
   const root = new TableNode('organization', 't0');
   const value = { kind: 'JsonBuildObject', fields: [ { key: 'id', value: new ColumnRef('t0','id') } ] };

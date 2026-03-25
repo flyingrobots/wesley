@@ -144,8 +144,10 @@ function renderTableRef(table, identOpts, opts) {
 }
 
 function splitQualifiedTableRef(table) {
-  const parts = String(table).split('.').map((part) => part.trim()).filter(Boolean);
-  return parts.length === 2 ? parts : null;
+  const parts = String(table).split('.').map((part) => part.trim());
+  if (parts.length !== 2) return null;
+  if (!parts[0] || !parts[1]) return null;
+  return parts;
 }
 
 // ────────────────────────────────────────────────────────────────────────────

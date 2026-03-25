@@ -263,8 +263,14 @@ export class TranslateEnv {
 }
 
 function splitSchemaQualifiedRef(ref) {
-  const parts = String(ref).split('.').map((part) => part.trim()).filter(Boolean);
+  const parts = String(ref).split('.').map((part) => part.trim());
   if (parts.length === 2) {
+    if (!parts[0] || !parts[1]) {
+      return {
+        schemaName: null,
+        baseRef: ref
+      };
+    }
     return {
       schemaName: parts[0],
       baseRef: parts[1]

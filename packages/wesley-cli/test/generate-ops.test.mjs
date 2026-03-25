@@ -125,6 +125,20 @@ test('inferOpsSchemaContext: preserves IR-derived base schema for mixed qualifie
   assert.deepEqual(schemaContext.searchPath, ['pg_catalog', 'wes_ops', 'app', 'audit']);
 });
 
+test('inferOpsSchemaContext: preserves a fallback base schema across a mixed batch of qualified and unqualified ops', () => {
+  const schemaContext = inferOpsSchemaContext({
+    compiledOps: [
+      { plan: makePlan('products') },
+      { plan: makePlan('audit.product_events') }
+    ],
+    targetSchema: 'wes_ops'
+  });
+
+  assert.equal(schemaContext.baseSchema, 'public');
+  assert.deepEqual(schemaContext.inferredSchemas, ['audit']);
+  assert.deepEqual(schemaContext.searchPath, ['pg_catalog', 'wes_ops', 'public', 'audit']);
+});
+
 test('inferOpsSchemaContext: falls back to public for mixed refs when no IR schema is available', () => {
   const schemaContext = inferOpsSchemaContext({
     compiledOps: [
@@ -143,7 +157,7 @@ test('inferOpsSchemaContext: falls back to public for mixed refs when no IR sche
   assert.deepEqual(schemaContext.searchPath, ['pg_catalog', 'wes_ops', 'public', 'audit']);
 });
 
-test('inferOpsSchemaContext: falls back to public when the only schema hint is the ops schema itself', () => {
+test('inferOpsSchemaContext: preserves the inferred base schema when tables live in the ops schema', () => {
   const schemaContext = inferOpsSchemaContext({
     ir: {
       metadata: {
@@ -156,9 +170,9 @@ test('inferOpsSchemaContext: falls back to public when the only schema hint is t
     targetSchema: 'wes_ops'
   });
 
-  assert.equal(schemaContext.baseSchema, 'public');
+  assert.equal(schemaContext.baseSchema, 'wes_ops');
   assert.deepEqual(schemaContext.inferredSchemas, []);
-  assert.deepEqual(schemaContext.searchPath, ['pg_catalog', 'wes_ops', 'public']);
+  assert.deepEqual(schemaContext.searchPath, ['pg_catalog', 'wes_ops']);
 });
 
 test('compileOpsIfRequested: emits inferred search_path and schema-qualified base tables from IR metadata', async () => {
