@@ -3,7 +3,7 @@
 import http from 'node:http';
 import { existsSync, statSync } from 'node:fs';
 import { createReadStream } from 'node:fs';
-import { resolve, join, extname, relative, isAbsolute } from 'node:path';
+import { resolve, join, extname, relative, isAbsolute, posix } from 'node:path';
 
 const args = new Map(process.argv.slice(2).map((a) => {
   const [k, v] = a.split('=');
@@ -35,28 +35,42 @@ export function isPathWithinRoot(rootDir, filePath) {
   return !(isAbsolute(rel) || rel.startsWith('..'));
 }
 
-const server = http.createServer((req, res) => {
-  // Parse path and normalize relative to root to prevent path traversal
-  const url = (req.url || '/').split('?')[0];
-  // Strip leading slashes, decode, and map / -> index.html
-  let clean;
-  try { clean = decodeURIComponent(url); } catch { clean = url || '/'; }
-  clean = clean.replace(/\\+/g, '/');
-  const rel = clean.replace(/^\/+/, '') || 'index.html';
-  // Explicitly deny traversal attempts that introduce '..' path segments after decoding
-  {
-    const segments = rel.split('/').filter(Boolean);
-    if (segments.some(s => s === '..')) {
-      try { console.error(`[serve-static] deny traversal: url=${url} rel=${rel}`); } catch { /* empty */ }
-      res.writeHead(403); res.end('Forbidden'); return;
-    }
+export function resolveRequestPath(rootDir, requestUrl) {
+  const urlPath = (requestUrl || '/').split('?')[0];
+  let decoded;
+  try {
+    decoded = decodeURIComponent(urlPath);
+  } catch {
+    decoded = urlPath || '/';
   }
-  try { console.error(`[serve-static] url=${url} rel=${rel}`); } catch { /* empty */ }
-  const filePath = resolve(join(root, rel));
-  // Ensure resolved path is within root using a robust relative check
-  if (!isPathWithinRoot(root, filePath)) {
+  const slashNormalized = decoded.replace(/\\+/g, '/');
+  if (slashNormalized.includes('\0')) {
+    return { ok: false, reason: 'forbidden', url: urlPath, rel: '' };
+  }
+
+  const rawSegments = slashNormalized.split('/').filter(Boolean);
+  if (rawSegments.some(segment => segment === '.' || segment === '..' || segment.includes('\0'))) {
+    return { ok: false, reason: 'forbidden', url: urlPath, rel: rawSegments.join('/') };
+  }
+
+  const normalized = posix.normalize(`/${slashNormalized}`);
+  const rel = normalized.replace(/^\/+/, '') || 'index.html';
+  const segments = rel.split('/').filter(Boolean);
+  const filePath = join(rootDir, ...segments);
+  if (!isPathWithinRoot(rootDir, filePath)) {
+    return { ok: false, reason: 'forbidden', url: urlPath, rel };
+  }
+  return { ok: true, url: urlPath, rel, filePath };
+}
+
+const server = http.createServer((req, res) => {
+  const resolved = resolveRequestPath(root, req.url || '/');
+  if (!resolved.ok) {
+    try { console.error(`[serve-static] deny traversal: url=${resolved.url} rel=${resolved.rel}`); } catch { /* empty */ }
     res.writeHead(403); res.end('Forbidden'); return;
   }
+  const { url, rel, filePath } = resolved;
+  try { console.error(`[serve-static] url=${url} rel=${rel}`); } catch { /* empty */ }
   try {
     if (!existsSync(filePath) || !statSync(filePath).isFile()) {
       res.writeHead(404); res.end('Not found'); return;

@@ -20,17 +20,24 @@
  */
 
 import { readFileSync } from 'node:fs';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 
-function sh(cmd, inputObj) {
+function runGh(args, inputObj) {
   const input = inputObj ? JSON.stringify(inputObj) : undefined;
-  const out = execSync(cmd, { encoding: 'utf8', input });
+  const out = execFileSync('gh', args, { encoding: 'utf8', input });
   return out.trim();
 }
 
+function ghApi(args, inputObj) {
+  return runGh(['api', ...args], inputObj);
+}
+
 function ghGraphQL(query, variables) {
-  const data = sh('gh api graphql -f query=@- -f variables=@-', { query, variables: JSON.stringify(variables || {}) });
+  const data = ghApi(['graphql', '-f', 'query=@-', '-f', 'variables=@-'], {
+    query,
+    variables: JSON.stringify(variables || {})
+  });
   return JSON.parse(data);
 }
 
@@ -164,19 +171,22 @@ function setProjectSingleSelect(projectId, itemId, fieldId, optionId) {
 
 function ensureLabels(owner, repo, labels) {
   if (!labels?.length) return;
-  const list = JSON.parse(sh(`gh api repos/${owner}/${repo}/labels?per_page=100`));
+  const list = JSON.parse(ghApi([`repos/${owner}/${repo}/labels?per_page=100`]));
   const existing = new Set((list || []).map(l => l.name));
   for (const name of labels) {
     if (!existing.has(name)) {
-      try { sh(`gh api -X POST repos/${owner}/${repo}/labels -f name='${name}' -f color=0366d6`); } catch { /* empty */ }
+      try {
+        ghApi(['-X', 'POST', `repos/${owner}/${repo}/labels`, '-f', `name=${name}`, '-f', 'color=0366d6']);
+      } catch { /* empty */ }
     }
   }
 }
 
 function addLabels(owner, repo, issueNumber, labels) {
   if (!labels?.length) return;
-  const payload = { labels };
-  sh(`gh api -X POST repos/${owner}/${repo}/issues/${issueNumber}/labels -f labels=@-`, payload);
+  const args = ['-X', 'POST', `repos/${owner}/${repo}/issues/${issueNumber}/labels`];
+  for (const label of labels) args.push('-f', `labels[]=${label}`);
+  ghApi(args);
 }
 
 function ensurePriorityLabels(owner, repo) {
@@ -187,15 +197,29 @@ function ensurePriorityLabels(owner, repo) {
     P3: { color: '0e8a16', description: 'Priority P3' },           // green
     P4: { color: '6e7781', description: 'Priority P4 (lowest)' }   // gray
   };
-  const list = JSON.parse(sh(`gh api repos/${owner}/${repo}/labels?per_page=100`));
+  const list = JSON.parse(ghApi([`repos/${owner}/${repo}/labels?per_page=100`]));
   const byName = new Map((list || []).map(l => [l.name, l]));
   for (const [name, meta] of Object.entries(palette)) {
     const existing = byName.get(name);
     if (!existing) {
-      try { sh(`gh api -X POST repos/${owner}/${repo}/labels -f name='${name}' -f color='${meta.color}' -f description='${meta.description}'`); } catch { /* empty */ }
+      try {
+        ghApi([
+          '-X',
+          'POST',
+          `repos/${owner}/${repo}/labels`,
+          '-f',
+          `name=${name}`,
+          '-f',
+          `color=${meta.color}`,
+          '-f',
+          `description=${meta.description}`
+        ]);
+      } catch { /* empty */ }
     } else if (existing.color.toLowerCase() !== meta.color.toLowerCase()) {
       // Update color for consistency (best effort)
-      try { sh(`gh api -X PATCH repos/${owner}/${repo}/labels/${encodeURIComponent(name)} -f color='${meta.color}'`); } catch { /* empty */ }
+      try {
+        ghApi(['-X', 'PATCH', `repos/${owner}/${repo}/labels/${encodeURIComponent(name)}`, '-f', `color=${meta.color}`]);
+      } catch { /* empty */ }
     }
   }
 }
@@ -213,8 +237,15 @@ function linkIssuesGraphQL(sourceId, targetId, type) {
 
 function linkIssuesREST(owner, repo, sourceNumber, targetNumber, relationship) {
   // REST fallback: https://docs.github.com/rest/issues/issues#link-an-issue
-  const cmd = `gh api -X POST repos/${owner}/${repo}/issues/${sourceNumber}/links -f target_issue_number=${targetNumber} -f relationship=${relationship}`;
-  sh(cmd);
+  ghApi([
+    '-X',
+    'POST',
+    `repos/${owner}/${repo}/issues/${sourceNumber}/links`,
+    '-f',
+    `target_issue_number=${targetNumber}`,
+    '-f',
+    `relationship=${relationship}`
+  ]);
 }
 
 function main() {
