@@ -66,6 +66,12 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **HOLMES workflow schema selection and SHIPME cert fixture**: The HOLMES CI
+  workflow now honors `HOLMES_SCHEMA` before falling back to repository-wide
+  GraphQL discovery, TCI now treats “no indexed fields” as a fully covered
+  performance obligation instead of an automatic miss, and the SHIPME workflow
+  now exercises a clean schema fixture that can honestly clear HOLMES before
+  certificate verification.
 - **HOLMES-backed SHIPME certification**: The certificate workflow now emits a
   real Wesley bundle before running HOLMES, `cert-create` builds HOLMES
   summaries from bundle-embedded scores instead of requiring a separate
