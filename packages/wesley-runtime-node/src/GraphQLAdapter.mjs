@@ -618,9 +618,9 @@ class GraphQLSchemaParser {
 }
 
 export class GraphQLAdapter {
-  constructor(options = {}) {
+  constructor() {
     // Use the fully implemented parser above for all logic
-    this.parser = new GraphQLSchemaParser(options);
+    this.parser = new GraphQLSchemaParser();
   }
 
   /**

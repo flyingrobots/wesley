@@ -12,7 +12,7 @@ export class PgTAPTestGenerator {
     this.currentLine = 1;
     this.tests = [];
     this.testCount = 0;
-    this.depthStrategy = new TestDepthStrategy(options.depthThresholds || {});
+    this.depthStrategy = new TestDepthStrategy();
     this.enableDepthTesting = options.enableDepthTesting ?? true;
   }
 

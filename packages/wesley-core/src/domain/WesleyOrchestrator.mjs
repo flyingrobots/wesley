@@ -31,7 +31,8 @@ export class WesleyOrchestrator {
     const timestamp = new Date().toISOString();
 
     // Create evidence map
-    const evidenceMap = new EvidenceMap(sha);
+    const evidenceMap = new EvidenceMap();
+    evidenceMap.setSha(sha);
 
     // Initialize generators with evidence map
     const sqlGenerator = new PostgreSQLGenerator(evidenceMap);
