@@ -160,12 +160,75 @@ create_holmes_summary_inputs() {
 JSON
 }
 
-@test "cert sign + verify with two different keys (C5 multi-sig)" {
-  create_schema
-  create_realm_pass
+create_passing_holmes_summary_inputs() {
+  mkdir -p .wesley-cache
+  cat > schema.sql << 'EOF'
+one
+two
+three
+EOF
+  cat > tests.sql << 'EOF'
+test line
+second test line
+EOF
+  cat > .wesley-cache/bundle.json << 'JSON'
+{
+  "bundleVersion": "2.0.0",
+  "sha": "abcdef1234567890abcdef1234567890abcdef12",
+  "timestamp": "2026-03-21T00:00:00.000Z",
+  "evidence": {
+    "evidence": {
+      "schema": {
+        "sql": [
+          { "file": "schema.sql", "lines": "1-3", "sha": "abcdef1234567890abcdef1234567890abcdef12" }
+        ],
+        "tests": [
+          { "file": "tests.sql", "lines": "1-2", "sha": "abcdef1234567890abcdef1234567890abcdef12" }
+        ]
+      }
+    }
+  }
+}
+JSON
+  cat > .wesley-cache/scores.json << 'JSON'
+{
+  "version": "1.0.0",
+  "scores": {
+    "scs": 0.95,
+    "tci": 0.9,
+    "mri": 0.1
+  },
+  "readiness": {
+    "verdict": "ELEMENTARY"
+  },
+  "breakdown": {
+    "scs": {
+      "sql": { "score": 1, "earnedWeight": 1, "totalWeight": 1 },
+      "types": { "score": 1, "earnedWeight": 1, "totalWeight": 1 },
+      "validation": { "score": 1, "earnedWeight": 1, "totalWeight": 1 },
+      "tests": { "score": 1, "earnedWeight": 1, "totalWeight": 1 }
+    },
+    "tci": {
+      "unit_constraints": { "score": 1, "covered": 1, "total": 1 },
+      "unit_rls": { "score": 1, "covered": 1, "total": 1 },
+      "integration_relations": { "score": 1, "covered": 1, "total": 1 },
+      "e2e_ops": { "score": 0.9, "covered": 9, "total": 10, "note": "fixture" }
+    },
+    "mri": {
+      "drops": { "score": 0, "points": 0, "count": 0 },
+      "renames_without_uid": { "score": 0, "points": 0, "count": 0 },
+      "add_not_null_without_default": { "score": 0.1, "points": 1, "count": 1 },
+      "non_concurrent_indexes": { "score": 0, "points": 0, "count": 0 },
+      "totalPoints": 1
+    }
+  }
+}
+JSON
+}
 
-  run node "$CLI_PATH" transform --schema schema.graphql --out-dir out
-  assert_success
+@test "cert sign + verify with two different keys (C5 multi-sig)" {
+  create_realm_pass
+  create_passing_holmes_summary_inputs
 
   run node "$CLI_PATH" cert-create --env test --out .wesley-cache/SHIPME.md
   assert_success
@@ -293,10 +356,7 @@ JSON
 @test "cert create + sign + verify succeeds with PASS realm" {
   create_schema
   create_realm_pass
-  # transform to produce artifacts
-  run node "$CLI_PATH" transform --schema schema.graphql --out-dir out
-  assert_success
-  create_bundle_with_citation_quality
+  create_passing_holmes_summary_inputs
 
   # create SHIPME
   run node "$CLI_PATH" cert-create --env test --out .wesley-cache/SHIPME.md
@@ -318,11 +378,11 @@ JSON
   run node "$CLI_PATH" cert-verify --in .wesley-cache/SHIPME.md --pub holmes.pub --json
   assert_success
   echo "$output" | jq -e '.ok == true' >/dev/null
-  echo "$output" | jq -e '.evidence.coarse == 1' >/dev/null
-  echo "$output" | jq -e '.evidence.trust == "weak"' >/dev/null
+  echo "$output" | jq -e '.holmesPassed == true' >/dev/null
+  echo "$output" | jq -e '.holmesVerdict == "ELEMENTARY"' >/dev/null
 }
 
-@test "cert-badge includes HOLMES verdict when present" {
+@test "cert-badge fails when HOLMES verdict is not pass" {
   create_realm_pass
   create_holmes_summary_inputs
 
@@ -331,8 +391,54 @@ JSON
 
   run node "$CLI_PATH" cert-badge --in .wesley-cache/SHIPME.md
   assert_success
-  [[ "$output" == *"[SHIPME] PASS"* ]]
+  [[ "$output" == *"[SHIPME] FAIL"* ]]
   [[ "$output" == *"HOLMES REQUIRES INVESTIGATION"* ]]
+}
+
+@test "cert-verify fails when HOLMES verdict is not ELEMENTARY" {
+  create_realm_pass
+  create_holmes_summary_inputs
+
+  run node "$CLI_PATH" cert-create --env test --out .wesley-cache/SHIPME.md
+  assert_success
+
+  command -v openssl >/dev/null || skip "openssl not available"
+  openssl genpkey -algorithm ed25519 -out holmes.key >/dev/null 2>&1
+  openssl pkey -in holmes.key -pubout -out holmes.pub >/dev/null 2>&1
+
+  run node "$CLI_PATH" cert-sign --in .wesley-cache/SHIPME.md --key holmes.key --signer HOLMES
+  assert_success
+
+  run node "$CLI_PATH" cert-verify --in .wesley-cache/SHIPME.md --pub holmes.pub --json
+  assert_failure 5
+  echo "$output" | jq -e 'select(has("holmesPassed")) | .holmesPassed == false' >/dev/null
+  echo "$output" | jq -e 'select(has("holmesVerdict")) | .holmesVerdict == "REQUIRES INVESTIGATION"' >/dev/null
+  echo "$output" | jq -e 'select(has("eligibleToShip")) | .eligibleToShip == false' >/dev/null
+}
+
+@test "cert-verify fails when HOLMES summary is missing" {
+  create_schema
+  create_realm_pass
+
+  run node "$CLI_PATH" transform --schema schema.graphql --out-dir out
+  assert_success
+
+  run node "$CLI_PATH" cert-create --env test --out .wesley-cache/SHIPME.md
+  assert_success
+
+  command -v openssl >/dev/null || skip "openssl not available"
+  openssl genpkey -algorithm ed25519 -out holmes.key >/dev/null 2>&1
+  openssl pkey -in holmes.key -pubout -out holmes.pub >/dev/null 2>&1
+
+  run node "$CLI_PATH" cert-sign --in .wesley-cache/SHIPME.md --key holmes.key --signer HOLMES
+  assert_success
+
+  run node "$CLI_PATH" cert-verify --in .wesley-cache/SHIPME.md --pub holmes.pub --json
+  assert_failure 5
+  echo "$output" | jq -e 'select(has("holmesVerdict")) | .holmesVerdict == null' >/dev/null
+  echo "$output" | jq -e 'select(has("holmesPassed")) | .holmesPassed == false' >/dev/null
+  echo "$output" | jq -e 'select(has("eligibleToShip")) | .eligibleToShip == false' >/dev/null
+  echo "$output" | jq -e 'select(has("reasons")) | .reasons | any(. == "HOLMES verdict is missing.")' >/dev/null
 }
 
 @test "cert-verify fails when embedded counterfactual gate is fail" {

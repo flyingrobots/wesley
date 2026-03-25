@@ -150,7 +150,7 @@ Implemented now
 - BLADE counterfactual stage
 - SHIPME embedding of compact counterfactual summary
 - BLADE hard/audit/off behavior via `judgment.gate`
-- `cert-verify` respects embedded `counterfactual.gate`
+- `cert-verify` respects embedded `counterfactual.gate` and requires `holmes.shipVerdict === "ELEMENTARY"`
 
 Not yet implemented
 - user-facing scope controls

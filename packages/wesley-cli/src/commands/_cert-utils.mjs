@@ -24,14 +24,33 @@ export function extractJsonBlock(md) {
   return { pre, json, post };
 }
 
-export function buildCertBadge(json) {
-  const okRealm = json?.realm?.verdict === 'PASS';
-  const sha = json?.sha?.slice(0, 7) || 'unknown';
+export function evaluateCertificatePolicy(json) {
   const holmesVerdict = normalizeOptionalString(json?.holmes?.shipVerdict);
-  const parts = [`[SHIPME] ${okRealm ? 'PASS' : 'FAIL'}`];
-  if (holmesVerdict) {
-    parts.push(`HOLMES ${holmesVerdict}`);
-  }
+  const okRealm = json?.realm?.verdict === 'PASS';
+  const okHolmes = holmesVerdict === 'ELEMENTARY';
+  const okCounterfactual = !json?.counterfactual || json.counterfactual.gate !== 'fail';
+  const reasons = [];
+
+  if (!okRealm) reasons.push('REALM verdict is not PASS.');
+  if (!holmesVerdict) reasons.push('HOLMES verdict is missing.');
+  else if (!okHolmes) reasons.push(`HOLMES verdict ${holmesVerdict} does not permit shipping.`);
+  if (!okCounterfactual) reasons.push('Counterfactual gate is fail.');
+
+  return {
+    okRealm,
+    okHolmes,
+    okCounterfactual,
+    holmesVerdict,
+    eligibleToShip: okRealm && okHolmes && okCounterfactual,
+    reasons
+  };
+}
+
+export function buildCertBadge(json) {
+  const sha = json?.sha?.slice(0, 7) || 'unknown';
+  const policy = evaluateCertificatePolicy(json);
+  const parts = [`[SHIPME] ${policy.eligibleToShip ? 'PASS' : 'FAIL'}`];
+  parts.push(`HOLMES ${policy.holmesVerdict || 'MISSING'}`);
   return `${parts.join(' · ')} — sha ${sha}`;
 }
 

@@ -72,7 +72,7 @@ Suggestions to enhance the show:
 - SHIPME includes an evidence-quality summary, so exact citations, whole-file fallbacks, and coarse citations remain visible in the certificate
 - `wesley blade --counterfactual [baseRef]` writes counterfactual artifacts under `.wesley-cache/counterfactual/`
 - `wesley cert-sign` adds signatures (e.g., HOLMES) to `.wesley-cache/SHIPME.md`
-- `wesley cert-verify` prints a badge from `.wesley-cache/SHIPME.md`: `[REALM] PASS — sha abc1234`
+- `wesley cert-verify` prints a badge from `.wesley-cache/SHIPME.md` and now requires a shipping HOLMES verdict: `[SHIPME] PASS · HOLMES ELEMENTARY — sha abc1234`
 - In hard-gate mode, BLADE blocks only when the embedded `judgment.gate` says `fail`
 
 ## FAQ
