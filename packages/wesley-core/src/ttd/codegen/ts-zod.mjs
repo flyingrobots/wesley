@@ -19,6 +19,16 @@ function mapTypeToZod(gqlType) {
   return typeMap[gqlType] || `${gqlType}Schema`;
 }
 
+function escapeSingleQuotedJsString(value) {
+  return String(value)
+    .replaceAll('\\', '\\\\')
+    .replaceAll('\'', '\\\'')
+    .replaceAll('\r', '\\r')
+    .replaceAll('\n', '\\n')
+    .replaceAll('\u2028', '\\u2028')
+    .replaceAll('\u2029', '\\u2029');
+}
+
 /**
  * Generate constraint validators
  */
@@ -53,7 +63,7 @@ function generateConstraints(constraint) {
   }
   if (constraint.oneOf && Array.isArray(constraint.oneOf) && constraint.oneOf.length > 0) {
     const serializedValues = constraint.oneOf.map(v =>
-      typeof v === 'string' ? `'${v.replace(/'/g, "\\'")}'` : v
+      typeof v === 'string' ? `'${escapeSingleQuotedJsString(v)}'` : v
     ).join(', ');
     const messageValues = constraint.oneOf.map(v =>
       typeof v === 'string' ? `"${v}"` : v

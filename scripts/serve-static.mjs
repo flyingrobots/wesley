@@ -35,15 +35,6 @@ export function isPathWithinRoot(rootDir, filePath) {
   return !(isAbsolute(rel) || rel.startsWith('..'));
 }
 
-export function sanitizeForLog(value) {
-  let sanitized = String(value ?? '');
-  for (const ch of ['\r', '\n', '\t', '\0', '\b', '\v', '\f']) {
-    sanitized = sanitized.split(ch).join(' ');
-  }
-  sanitized = sanitized.replace(/[^\x20-\x7e]/g, '?');
-  return sanitized.slice(0, 200);
-}
-
 export function resolveRequestPath(rootDir, requestUrl) {
   const urlPath = (requestUrl || '/').split('?')[0];
   let decoded;
@@ -76,15 +67,13 @@ const server = http.createServer((req, res) => {
   const resolved = resolveRequestPath(root, req.url || '/');
   if (!resolved.ok) {
     try {
-      console.error(
-        `[serve-static] deny traversal: url=${sanitizeForLog(resolved.url)} rel=${sanitizeForLog(resolved.rel)}`
-      );
+      console.error('[serve-static] deny traversal');
     } catch { /* empty */ }
     res.writeHead(403); res.end('Forbidden'); return;
   }
-  const { url, rel, filePath } = resolved;
+  const { filePath } = resolved;
   try {
-    console.error(`[serve-static] url=${sanitizeForLog(url)} rel=${sanitizeForLog(rel)}`);
+    console.error('[serve-static] request accepted');
   } catch { /* empty */ }
   try {
     if (!existsSync(filePath) || !statSync(filePath).isFile()) {

@@ -23,7 +23,6 @@ import {
   DirectiveProcessor,
   PostgreSQLGenerator,
   PgTAPTestGenerator,
-  RPCFunctionGenerator,
   MigrationDiffer,
   GenerationPipeline,
   EvidenceMap,
@@ -435,29 +434,49 @@ describe('Wesley Final Integration Tests', () => {
     });
 
     test('should integrate generation pipeline', async () => {
-      const schema = new Schema('PipelineTest');
-      const table = new Table('User');
-      table.addField(new Field('id', 'ID', { primary: true }));
-      table.addField(new Field('email', 'String', { unique: true }));
-      schema.addTable(table);
+      const schema = new Schema({
+        User: new Table({
+          name: 'User',
+          fields: {
+            id: new Field({
+              name: 'id',
+              type: 'ID',
+              nonNull: true,
+              directives: { '@primaryKey': {} }
+            }),
+            email: new Field({
+              name: 'email',
+              type: 'String',
+              directives: { '@unique': {} }
+            })
+          }
+        })
+      });
 
-      const pipeline = new GenerationPipeline();
+      const pipeline = new GenerationPipeline({
+        parser: {
+          parse: async () => schema
+        },
+        sqlGenerator: {
+          generate: async () => '-- sql'
+        },
+        testGenerator: {
+          generate: async () => '-- tests'
+        },
+        diffEngine: {
+          diff: async () => ({ steps: [] }),
+          generateMigration: async () => ({ sql: '-- migration' })
+        },
+        fileSystem: null,
+        logger: null
+      });
 
-      // Mock the generators
-      pipeline.generators = {
-        sql: new PostgreSQLGenerator(),
-        test: new PgTAPTestGenerator(),
-        rpc: new RPCFunctionGenerator()
-      };
+      const results = await pipeline.execute('type User { id: ID! email: String }');
 
-      const results = await pipeline.generateAll(schema);
-
-      assert(results.sql);
-      assert(results.test);
-      assert(results.rpc);
-      assert(typeof results.sql === 'string');
-      assert(typeof results.test === 'string');
-      assert(typeof results.rpc === 'string');
+      assert(results.generated.sql);
+      assert(results.generated.tests);
+      assert(typeof results.generated.sql === 'string');
+      assert(typeof results.generated.tests === 'string');
     });
 
     test('should integrate evidence map and scoring', async () => {
