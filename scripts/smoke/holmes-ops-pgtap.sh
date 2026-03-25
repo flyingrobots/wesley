@@ -12,6 +12,7 @@ FIXTURE_DIR="$ROOT_DIR/test/fixtures/examples"
 OUT_DIR="${HOLMES_OUT_DIR:-out}"
 OPS_DIR="$FIXTURE_DIR/$OUT_DIR/ops"
 SCHEMA_SQL="$FIXTURE_DIR/$OUT_DIR/schema.sql"
+SEED_SQL="$ROOT_DIR/test/fixtures/postgres/03-seed.sql"
 WESLEY_BIN="$ROOT_DIR/packages/wesley-host-node/bin/wesley.mjs"
 
 cleanup() {
@@ -88,5 +89,20 @@ for pattern in "*.view.sql" "*.fn.sql"; do
     PGPASSWORD=wesley_test psql -X -1 -v ON_ERROR_STOP=1 -h localhost -p "$PORT" -U wesley -d wesley_test -f "$f"
   done
 done
+
+if [[ -f "$SEED_SQL" ]]; then
+  echo "[pre-push] Seeding HOLMES fixture data..."
+  PGPASSWORD=wesley_test psql -X -1 -v ON_ERROR_STOP=1 -h localhost -p "$PORT" -U wesley -d wesley_test -f "$SEED_SQL"
+fi
+
+echo "[pre-push] Verifying seeded HOLMES ops queries..."
+PRODUCT_COUNT="$(PGPASSWORD=wesley_test psql -X -t -A -v ON_ERROR_STOP=1 -h localhost -p "$PORT" -U wesley -d wesley_test -c "SELECT count(*) FROM wes_ops.op_products_by_name('Al%')")"
+ORDER_COUNT="$(PGPASSWORD=wesley_test psql -X -t -A -v ON_ERROR_STOP=1 -h localhost -p "$PORT" -U wesley -d wesley_test -c "SELECT count(*) FROM wes_ops.op_orders_by_user('00000000-0000-0000-0000-000000000001'::uuid)")"
+ITEMS_COUNT="$(PGPASSWORD=wesley_test psql -X -t -A -v ON_ERROR_STOP=1 -h localhost -p "$PORT" -U wesley -d wesley_test -c "SELECT count(*) FROM wes_ops.op_orders_with_items_by_user('00000000-0000-0000-0000-000000000001'::uuid)")"
+
+if [[ "$PRODUCT_COUNT" != "1" || "$ORDER_COUNT" != "1" || "$ITEMS_COUNT" != "1" ]]; then
+  echo "[pre-push] Unexpected HOLMES ops seed results: products=$PRODUCT_COUNT orders=$ORDER_COUNT nested=$ITEMS_COUNT" >&2
+  exit 1
+fi
 
 echo "[pre-push] HOLMES ops SQL applied successfully"

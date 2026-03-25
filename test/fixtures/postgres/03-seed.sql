@@ -2,23 +2,25 @@
 -- UUIDs use a fixed pattern so assertions are stable.
 -- Used by both docker-compose (mounted as 03-seed.sql) and CI
 -- (.github/workflows/wesley-holmes.yml "Seed minimal data for ops" step).
+-- Keep this aligned with the generated physical table names emitted for
+-- test/fixtures/examples/ecommerce.graphql.
 
 -- Products: Alpha (published, matches 'Al%'), Beta (unpublished)
-INSERT INTO product (id, sku, name, slug, price_cents, stock_quantity, published, created_at)
+INSERT INTO products (id, sku, name, slug, price_cents, stock_quantity, published, created_at)
 VALUES
   ('00000000-0000-0000-0000-000000000101'::uuid, 'SKU1', 'Alpha', 'alpha', 100, 10, true, now()),
   ('00000000-0000-0000-0000-000000000102'::uuid, 'SKU2', 'Beta',  'beta',  200,  0, false, now())
 ON CONFLICT (id) DO NOTHING;
 
 -- User
-INSERT INTO "user" (id, email, password_hash, full_name, created_at)
+INSERT INTO users (id, email, password_hash, full_name, created_at)
 VALUES (
   '00000000-0000-0000-0000-000000000001'::uuid,
   'alice@example.com', 'hash_placeholder', 'Alice Test', now()
 ) ON CONFLICT (id) DO NOTHING;
 
 -- Order linked to user
-INSERT INTO "order" (id, order_number, user_id, status, total_cents, created_at)
+INSERT INTO orders (id, order_number, user_id, status, total_cents, created_at)
 VALUES (
   '00000000-0000-0000-0000-000000000201'::uuid,
   'ORD-001',
@@ -27,7 +29,7 @@ VALUES (
 ) ON CONFLICT (id) DO NOTHING;
 
 -- Order items (2 items in that order)
-INSERT INTO orderitem (id, order_id, product_id, quantity, unit_price_cents)
+INSERT INTO order_items (id, order_id, product_id, quantity, unit_price_cents)
 VALUES
   ('00000000-0000-0000-0000-000000000301'::uuid,
    '00000000-0000-0000-0000-000000000201'::uuid,
