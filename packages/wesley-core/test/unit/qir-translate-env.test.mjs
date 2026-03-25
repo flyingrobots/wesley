@@ -85,6 +85,7 @@ test('TranslateEnv: resolveTableRef normalizes logical and physical table refere
   assert.equal(env.resolveTableRef('Product'), 'products');
   assert.equal(env.resolveTableRef('product'), 'products');
   assert.equal(env.resolveTableRef('products'), 'products');
+  assert.equal(env.resolveTableRef('app.Product'), 'app.products');
   assert.equal(env.resolveTableRef('OrderItem'), 'order_items');
   assert.equal(env.resolveTableRef('orderitem'), 'order_items');
   assert.equal(env.resolveTableRef('order_item'), 'order_items');

@@ -150,13 +150,17 @@ export async function compileOpsIfRequested({ ctx, context }) {
       if (security !== 'invoker' && security !== 'definer') {
         throw new OpsError('OPS_INVALID_SECURITY', `Invalid --ops-security value "${options.opsSecurity}"; must be "invoker" or "definer"`);
       }
-      const setSearchPath = options.opsSearchPath
-        ? String(options.opsSearchPath).split(',').map(s => s.trim()).filter(Boolean)
-        : null;
+      const schemaContext = inferOpsSchemaContext({
+        ir,
+        compiledOps: orderedOps,
+        targetSchema,
+        explicitSearchPath: options.opsSearchPath
+      });
       const explainMode = (options.opsExplain || '').toLowerCase();
       const outFiles = emitOpArtifacts(orderedOps, targetSchema, logger, pkResolver, {
         security,
-        setSearchPath,
+        setSearchPath: schemaContext.searchPath,
+        baseSchema: schemaContext.baseSchema,
         allowErrors: !!options.opsAllowErrors,
         explainMode
       });
@@ -301,13 +305,12 @@ async function compileOpFile(fs, path, collisions, logger, { ir, target = 'postg
   return { baseName, plan, isParamless: paramCount === 0, path };
 }
 
-function emitOpArtifacts(compiledOps, targetSchema, logger, pkResolver, { security = 'invoker', setSearchPath = null, allowErrors = false, explainMode = '' } = {}) {
+function emitOpArtifacts(compiledOps, targetSchema, logger, pkResolver, { security = 'invoker', setSearchPath = null, baseSchema = 'public', allowErrors = false, explainMode = '' } = {}) {
   const outFiles = [];
   const total = compiledOps.length;
   let ordinal = 0;
   const normalizedSchema = sanitizeIdentBase(targetSchema, 'wes_ops');
   const effectiveSearchPath = normalizeOpsSearchPath(setSearchPath, normalizedSchema);
-  const baseSchema = 'public';
   const deployChunks = ['BEGIN;', `CREATE SCHEMA IF NOT EXISTS ${quoteIdent(normalizedSchema)};`];
   const registry = { version: '1.0.0', schema: normalizedSchema, ops: [] };
 
@@ -405,7 +408,170 @@ function normalizeOpsSearchPath(setSearchPath, normalizedSchema) {
   if (Array.isArray(setSearchPath) && setSearchPath.length > 0) {
     return setSearchPath;
   }
-  return [normalizedSchema, 'public'];
+  return ['pg_catalog', normalizedSchema, 'public'];
+}
+
+export function inferOpsSchemaContext({ ir = null, compiledOps = [], targetSchema = 'wes_ops', explicitSearchPath = null } = {}) {
+  const normalizedSchema = sanitizeIdentBase(targetSchema, 'wes_ops');
+  const explicit = parseOpsSearchPath(explicitSearchPath);
+  const planSchemaRefs = new Set();
+
+  for (const entry of compiledOps) {
+    collectPlanSchemaRefs(entry?.plan, planSchemaRefs);
+  }
+
+  const inferred = new Set();
+  const irSchema = sanitizeSchemaName(ir?.metadata?.schemaName, normalizedSchema);
+  if (irSchema) inferred.add(irSchema);
+  for (const schemaName of planSchemaRefs) {
+    const normalized = sanitizeSchemaName(schemaName, normalizedSchema);
+    if (normalized) inferred.add(normalized);
+  }
+
+  const inferredSchemas = Array.from(inferred).sort();
+  const hasQualifiedTableRefs = planSchemaRefs.size > 0;
+  const baseSchema = hasQualifiedTableRefs
+    ? null
+    : inferredSchemas.length === 1
+      ? inferredSchemas[0]
+      : inferredSchemas.length === 0
+        ? 'public'
+        : null;
+  const searchPath = explicit.length > 0
+    ? explicit
+    : dedupeSearchPath([
+      'pg_catalog',
+      normalizedSchema,
+      ...(inferredSchemas.length > 0 ? inferredSchemas : ['public'])
+    ]);
+
+  return {
+    baseSchema,
+    inferredSchemas,
+    searchPath
+  };
+}
+
+function parseOpsSearchPath(value) {
+  if (!value) return [];
+  return String(value)
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function sanitizeSchemaName(schemaName, normalizedOpsSchema) {
+  if (typeof schemaName !== 'string' || schemaName.trim().length === 0) return null;
+  const normalized = sanitizeIdentBase(schemaName, '');
+  if (!normalized || normalized === normalizedOpsSchema) return null;
+  return normalized;
+}
+
+function dedupeSearchPath(entries) {
+  const seen = new Set();
+  const out = [];
+  for (const entry of entries) {
+    const key = String(entry);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(key);
+  }
+  return out;
+}
+
+function collectPlanSchemaRefs(plan, out) {
+  if (!plan || typeof plan !== 'object') return;
+  collectRelationSchemaRefs(plan.root, out);
+  if (Array.isArray(plan.projection?.items)) {
+    for (const item of plan.projection.items) {
+      collectExprSchemaRefs(item?.expr, out);
+    }
+  }
+  if (Array.isArray(plan.orderBy)) {
+    for (const order of plan.orderBy) {
+      collectExprSchemaRefs(order?.expr, out);
+    }
+  }
+  if (Array.isArray(plan.distinctOn)) {
+    for (const expr of plan.distinctOn) {
+      collectExprSchemaRefs(expr, out);
+    }
+  }
+}
+
+function collectRelationSchemaRefs(relation, out) {
+  if (!relation || typeof relation !== 'object') return;
+  switch (relation.kind) {
+  case 'Table': {
+    const schemaName = extractSchemaName(relation.table);
+    if (schemaName) out.add(schemaName);
+    break;
+  }
+  case 'Join':
+    collectRelationSchemaRefs(relation.left, out);
+    collectRelationSchemaRefs(relation.right, out);
+    collectPredicateSchemaRefs(relation.on, out);
+    break;
+  case 'Filter':
+    collectRelationSchemaRefs(relation.input, out);
+    collectPredicateSchemaRefs(relation.predicate, out);
+    break;
+  case 'Subquery':
+  case 'Lateral':
+    collectPlanSchemaRefs(relation.plan, out);
+    break;
+  default:
+    break;
+  }
+}
+
+function collectPredicateSchemaRefs(predicate, out) {
+  if (!predicate || typeof predicate !== 'object') return;
+  switch (predicate.kind) {
+  case 'And':
+  case 'Or':
+    collectPredicateSchemaRefs(predicate.left, out);
+    collectPredicateSchemaRefs(predicate.right, out);
+    break;
+  case 'Not':
+    collectPredicateSchemaRefs(predicate.left, out);
+    break;
+  case 'Exists':
+    collectPlanSchemaRefs(predicate.subquery, out);
+    break;
+  case 'Compare':
+    collectExprSchemaRefs(predicate.left, out);
+    collectExprSchemaRefs(predicate.right, out);
+    break;
+  default:
+    break;
+  }
+}
+
+function collectExprSchemaRefs(expr, out) {
+  if (!expr || typeof expr !== 'object') return;
+  switch (expr.kind) {
+  case 'FuncCall':
+    for (const arg of expr.args || []) collectExprSchemaRefs(arg, out);
+    break;
+  case 'ScalarSubquery':
+    collectPlanSchemaRefs(expr.plan, out);
+    break;
+  case 'JsonBuildObject':
+    for (const field of expr.fields || []) collectExprSchemaRefs(field?.value, out);
+    break;
+  case 'JsonAgg':
+    collectExprSchemaRefs(expr.value, out);
+    for (const order of expr.orderBy || []) collectExprSchemaRefs(order?.expr, out);
+    break;
+  default:
+    break;
+  }
+}
+
+function extractSchemaName(tableRef) {
+  const parts = String(tableRef).split('.').map((part) => part.trim()).filter(Boolean);
+  return parts.length === 2 ? parts[0] : null;
 }
 
 function resolveRootType(ir, rootFieldName) {

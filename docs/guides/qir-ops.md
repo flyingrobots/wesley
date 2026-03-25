@@ -117,7 +117,6 @@ Generate and emit ops SQL to `out/ops/`:
 node packages/wesley-host-node/bin/wesley.mjs generate \
   --schema test/fixtures/examples/ecommerce.graphql \
   --ops-security invoker \
-  --ops-search-path "pg_catalog, wes_ops" \
   --emit-bundle \
   --out-dir out/examples \
   --allow-dirty
@@ -222,10 +221,19 @@ See also: [RFC — Query Ops to SQL (QIR)](../drafts/2025-10-03-rfc-query-ops-to
 
 ## Security defaults and search_path
 
-By default, emitted functions use `SECURITY INVOKER` and do not modify `search_path`. For hardened deployments you can:
+By default, emitted functions use `SECURITY INVOKER` and now emit an explicit hardened `search_path`.
+
+Default behavior:
+
+- Wesley always includes `pg_catalog` and the ops schema itself.
+- If the IR or compiled plans identify one application schema, Wesley appends that schema automatically.
+- If no schema context is available, Wesley falls back to `public`.
+- If the compiled plans already contain schema-qualified table refs across multiple schemas, Wesley preserves those refs and widens the emitted `search_path` only to the distinct referenced schemas.
+
+For edge cases you can still override the runtime lookup path explicitly:
 
 - Switch to definer: `--ops-security definer` when the op must bypass caller RLS and you’ve audited the body.
-- Pin lookup path: `--ops-search-path "pg_catalog, <your_app_schema>"` to avoid unexpected name resolution via the session’s `search_path`.
+- Override the inferred path: `--ops-search-path "pg_catalog, wes_ops, <your_app_schema>"`.
 
 You can also call `emitFunction(name, plan, { security, setSearchPath })` directly when embedding in custom tooling.
 

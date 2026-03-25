@@ -42,7 +42,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
       .option('--ops-manifest <path>', 'Path to ops manifest JSON file (auto-detected if omitted)')
       .option('--ops-schema <name>', 'Schema name for emitted ops SQL (default wes_ops)', 'wes_ops')
       .option('--ops-security <mode>', 'Security for emitted functions: invoker|definer', 'invoker')
-      .option('--ops-search-path <list>', 'Comma-separated search_path for ops functions (e.g., "pg_catalog, wes_ops")')
+      .option('--ops-search-path <list>', 'Override comma-separated search_path for ops functions (default inferred from IR/schema refs, e.g., "pg_catalog, wes_ops, app")')
       .option('--ops-target <platform>', 'Target platform for ops: postgres|supabase (affects auth variable compilation)', 'postgres')
       .option('--ops-explain <mode>', 'Emit EXPLAIN JSON snapshots for ops: mock', '')
       .option('--ops-allow-errors', 'Continue compiling remaining ops even if some fail validation (not allowed in CI without override)')

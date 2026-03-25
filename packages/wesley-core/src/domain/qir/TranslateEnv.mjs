@@ -79,11 +79,12 @@ export class TranslateEnv {
   resolveTableRef(tableRef) {
     const ref = typeof tableRef === 'string' ? tableRef.trim() : '';
     if (!ref) throw new Error('Table reference must be a non-empty string');
-    const physicalTableName = this._tableRefs.get(ref.toLowerCase());
+    const { schemaName, baseRef } = splitSchemaQualifiedRef(ref);
+    const physicalTableName = this._tableRefs.get(baseRef.toLowerCase());
     if (!physicalTableName) {
       throw new Error(`Unknown table reference '${tableRef}': not found in IR tables`);
     }
-    return physicalTableName;
+    return schemaName ? `${schemaName}.${physicalTableName}` : physicalTableName;
   }
 
   /**
@@ -259,4 +260,18 @@ export class TranslateEnv {
     }
     return this._allocators.get(prefix).next();
   }
+}
+
+function splitSchemaQualifiedRef(ref) {
+  const parts = String(ref).split('.').map((part) => part.trim()).filter(Boolean);
+  if (parts.length === 2) {
+    return {
+      schemaName: parts[0],
+      baseRef: parts[1]
+    };
+  }
+  return {
+    schemaName: null,
+    baseRef: ref
+  };
 }
