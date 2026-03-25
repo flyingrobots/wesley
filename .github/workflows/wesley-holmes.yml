@@ -45,6 +45,8 @@ jobs:
           set -euo pipefail
           if [ -n "${WESLEY_SCHEMA:-}" ] && [ -f "$WESLEY_SCHEMA" ]; then
             schema="$WESLEY_SCHEMA"
+          elif [ -n "${HOLMES_SCHEMA:-}" ] && [ -f "$HOLMES_SCHEMA" ]; then
+            schema="$HOLMES_SCHEMA"
           else
             mapfile -t files < <(git ls-files "**/*.graphql" 2>/dev/null || true)
             picked=""

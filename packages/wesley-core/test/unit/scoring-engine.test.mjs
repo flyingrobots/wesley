@@ -144,3 +144,35 @@ test('TCI incorporates test results health factors', () => {
   assert.ok(tciDegraded < tciHealthy, 'Failing suites should reduce TCI');
   assert.ok(tciDegraded < 0.7, 'Failing suites should reduce TCI');
 });
+
+test('TCI treats missing index obligations as fully covered', () => {
+  const evidence = new EvidenceMap();
+  evidence.setSha('sha-no-indexes');
+
+  const fields = [
+    createField('id', { directives: { '@primaryKey': {} }, primaryKey: true }),
+    createField('email', { directives: { '@unique': {} }, unique: true })
+  ];
+
+  const table = {
+    name: 'Account',
+    directives: {},
+    getFields: () => fields
+  };
+
+  const schema = { getTables: () => [table] };
+  const record = (uid, kind) => evidence.record(uid, kind, { file: `${kind}.sql`, lines: '1-1' });
+  const fieldUid = (field) => `col:${table.name}.${field.name}`;
+
+  record('tbl:Account', 'test');
+  ['sql', 'typescript', 'zod', 'test'].forEach(kind => record(fieldUid(fields[0]), kind));
+  record(`${fieldUid(fields[0])}.pk`, 'test');
+  ['sql', 'typescript', 'zod', 'test'].forEach(kind => record(fieldUid(fields[1]), kind));
+  record(`${fieldUid(fields[1])}.unique`, 'test');
+
+  const scoring = new ScoringEngine(evidence);
+  const tci = scoring.calculateTCI(schema, {});
+
+  assert.equal(scoring.calculateIndexCoverage(schema, []), 1);
+  assert.ok(tci >= 0.7, 'Schemas with no indexed fields should not fail TCI on a non-applicable performance check');
+});

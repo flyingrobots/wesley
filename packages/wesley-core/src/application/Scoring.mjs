@@ -389,7 +389,8 @@ export class ScoringEngine {
       }
     }
 
-    return total > 0 ? covered / total : 0;
+    // No indexed fields means there is no performance-test obligation to satisfy.
+    return total > 0 ? covered / total : 1;
   }
 
   /**

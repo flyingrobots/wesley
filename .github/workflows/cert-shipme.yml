@@ -49,10 +49,10 @@ jobs:
       - run: pnpm install --no-frozen-lockfile
 
       - name: Transform
-        run: node packages/wesley-host-node/bin/wesley.mjs transform --schema test/fixtures/examples/ecommerce.graphql --emit-bundle --out-dir out
+        run: node packages/wesley-host-node/bin/wesley.mjs transform --schema test/fixtures/blade/schema-v1.graphql --emit-bundle --out-dir out
 
       - name: Plan (write)
-        run: node packages/wesley-host-node/bin/wesley.mjs plan --schema test/fixtures/examples/ecommerce.graphql --write --out-dir out
+        run: node packages/wesley-host-node/bin/wesley.mjs plan --schema test/fixtures/blade/schema-v1.graphql --write --out-dir out
 
       - name: Wait for Postgres
         run: |
@@ -64,7 +64,7 @@ jobs:
           PGPASSWORD: wesley_test
 
       - name: Rehearse (REALM)
-        run: node packages/wesley-host-node/bin/wesley.mjs rehearse --schema test/fixtures/examples/ecommerce.graphql --dsn postgres://wesley:wesley_test@localhost:5432/wesley_test --timeout 300000
+        run: node packages/wesley-host-node/bin/wesley.mjs rehearse --schema test/fixtures/blade/schema-v1.graphql --dsn postgres://wesley:wesley_test@localhost:5432/wesley_test --timeout 300000
 
       - name: Run HOLMES investigation
         run: |

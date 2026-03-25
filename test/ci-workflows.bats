@@ -35,7 +35,15 @@ load 'bats-plugins/bats-assert/load'
   assert_success
   [ "$output" -eq 1 ]
 
-  run bash -lc "grep -F 'transform --schema test/fixtures/examples/ecommerce.graphql --emit-bundle --out-dir out' .github/workflows/cert-shipme.yml | wc -l"
+  run bash -lc "grep -F 'transform --schema test/fixtures/blade/schema-v1.graphql --emit-bundle --out-dir out' .github/workflows/cert-shipme.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'plan --schema test/fixtures/blade/schema-v1.graphql --write --out-dir out' .github/workflows/cert-shipme.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'rehearse --schema test/fixtures/blade/schema-v1.graphql' .github/workflows/cert-shipme.yml | wc -l"
   assert_success
   [ "$output" -eq 1 ]
 
@@ -104,6 +112,10 @@ load 'bats-plugins/bats-assert/load'
   [ "$output" -eq 1 ]
 
   run bash -lc "grep -F 'needs: [wesley-generate, watson-verify]' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc 'grep -F '\''elif [ -n "${HOLMES_SCHEMA:-}" ] && [ -f "$HOLMES_SCHEMA" ]; then'\'' .github/workflows/wesley-holmes.yml | wc -l'
   assert_success
   [ "$output" -eq 1 ]
 }
