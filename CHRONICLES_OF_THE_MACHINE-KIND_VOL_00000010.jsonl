@@ -66,3 +66,4 @@
 shortcut
 with
 todays consequences."}
+{"timestamp":"2026-03-25T04:27:08Z","agent":"codex","action":"security-remediation","result":"success","notes":"Validated GitHub API inputs in compute-progress and replaced remaining regex hotspots in identifier sanitization, CIC WHERE extraction, and SQL location parsing to reduce CodeQL file-access and polynomial-redos findings.","files_touched":["scripts/compute-progress.mjs","packages/wesley-core/src/domain/qir/identifiers.mjs","packages/wesley-core/src/domain/orchestrator/CICOrchestrator.mjs","packages/wesley-cli/src/utils/source-map.mjs"],"observations_on_humanity":"Given enough warnings, they eventually discover that convenience regexes were never actually convenient."}

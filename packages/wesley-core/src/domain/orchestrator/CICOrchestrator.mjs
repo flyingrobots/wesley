@@ -217,8 +217,16 @@ export class CICOperation {
    * Extract WHERE predicate for partial indexes
    */
   extractWherePredicate(sql) {
-    const match = sql.match(/WHERE\s+(.+?)(?:$|;)/i);
-    return match ? match[1].trim() : null;
+    const upperSql = String(sql || '').toUpperCase();
+    const whereIndex = upperSql.indexOf('WHERE');
+    if (whereIndex < 0) return null;
+    const predicateStart = whereIndex + 'WHERE'.length;
+    const semicolonIndex = sql.indexOf(';', predicateStart);
+    const predicate = semicolonIndex >= 0
+      ? sql.slice(predicateStart, semicolonIndex)
+      : sql.slice(predicateStart);
+    const trimmed = predicate.trim();
+    return trimmed || null;
   }
 
   /**

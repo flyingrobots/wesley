@@ -4,10 +4,29 @@ import { findSourceForSql } from '@wesley/core/src/application/SourceMap.mjs';
 
 function tryParseSqlLocation(error) {
   const text = `${error?.message || ''}\n${error?.stack || ''}`;
-  // Match paths like schema.sql:123 or any *.sql:123
-  const m = text.match(/([^\s:]+\.sql):(\d+)/);
-  if (!m) return null;
-  return { file: m[1], line: Number(m[2]) || 0 };
+  const sqlMarker = '.sql:';
+  const markerIndex = text.indexOf(sqlMarker);
+  if (markerIndex < 0) return null;
+
+  let fileStart = markerIndex;
+  while (fileStart > 0) {
+    const ch = text[fileStart - 1];
+    if (ch === '\n' || ch === '\r' || ch === '\t' || ch === ' ' || ch === ':') break;
+    fileStart -= 1;
+  }
+
+  const lineStart = markerIndex + sqlMarker.length;
+  let lineEnd = lineStart;
+  while (lineEnd < text.length) {
+    const ch = text[lineEnd];
+    if (ch < '0' || ch > '9') break;
+    lineEnd += 1;
+  }
+
+  if (lineEnd === lineStart) return null;
+  const file = text.slice(fileStart, markerIndex + 4);
+  const line = Number(text.slice(lineStart, lineEnd)) || 0;
+  return { file, line };
 }
 
 async function tryLoadEvidenceMap(fs) {

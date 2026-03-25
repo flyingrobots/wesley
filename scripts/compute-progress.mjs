@@ -20,12 +20,41 @@ if (argv.includes('--help') || argv.includes('-h')) {
 function readJSON(p) { return JSON.parse(readFileSync(resolve(p), 'utf8')); }
 function has(hay, needle) { return hay.toLowerCase().includes(needle.toLowerCase()); }
 
+const SAFE_REPO_RE = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
+const SAFE_WORKFLOW_FILE_RE = /^[A-Za-z0-9_.-]+\.ya?ml$/;
+const SAFE_MILESTONE_RE = /^[A-Za-z0-9_. -]+$/;
+const SAFE_PACKAGE_RE = /^@wesley\/[A-Za-z0-9_.-]+$/;
+
+function sanitizeRepoSlug(value) {
+  const slug = String(value || '');
+  return SAFE_REPO_RE.test(slug) ? slug : null;
+}
+
+function sanitizeWorkflowFile(value) {
+  const file = String(value || '');
+  return SAFE_WORKFLOW_FILE_RE.test(file) ? file : null;
+}
+
+function sanitizePackageName(value) {
+  const pkg = String(value || '');
+  return SAFE_PACKAGE_RE.test(pkg) ? pkg : null;
+}
+
+function sanitizeMilestoneTitle(value) {
+  const title = String(value || '');
+  return SAFE_MILESTONE_RE.test(title) ? title : null;
+}
+
 const cfg = readJSON('meta/progress.config.json');
+const safeRepo = sanitizeRepoSlug(repo);
 
 async function fetchWorkflowPassRate(workflowFile, branch = 'main', take = 10) {
   try {
-    if (!token || !repo || !workflowFile || typeof fetch !== 'function') return null;
-    const url = `https://api.github.com/repos/${repo}/actions/workflows/${workflowFile}/runs?branch=${encodeURIComponent(branch)}&per_page=${take}`;
+    const safeWorkflowFile = sanitizeWorkflowFile(workflowFile);
+    if (!token || !safeRepo || !safeWorkflowFile || typeof fetch !== 'function') return null;
+    const url = new URL(`/repos/${safeRepo}/actions/workflows/${safeWorkflowFile}/runs`, 'https://api.github.com');
+    url.searchParams.set('branch', String(branch || 'main'));
+    url.searchParams.set('per_page', String(take));
     const res = await fetch(url, { headers: { 'authorization': `Bearer ${token}`, 'accept': 'application/vnd.github+json' } });
     if (!res.ok) return null;
     const data = await res.json();
@@ -38,10 +67,14 @@ async function fetchWorkflowPassRate(workflowFile, branch = 'main', take = 10) {
 
 async function fetchMilestoneRatioFor(pkgName, milestoneTitle) {
   try {
-    if (!token || !repo || typeof fetch !== 'function') return null;
-    const qBase = `repo:${repo} label:"pkg:${pkgName}" milestone:"${milestoneTitle}"`;
-    const openUrl = `https://api.github.com/search/issues?q=${encodeURIComponent(qBase + ' is:issue is:open')}`;
-    const closedUrl = `https://api.github.com/search/issues?q=${encodeURIComponent(qBase + ' is:issue is:closed')}`;
+    const safePkgName = sanitizePackageName(pkgName);
+    const safeMilestoneTitle = sanitizeMilestoneTitle(milestoneTitle);
+    if (!token || !safeRepo || !safePkgName || !safeMilestoneTitle || typeof fetch !== 'function') return null;
+    const qBase = `repo:${safeRepo} label:"pkg:${safePkgName}" milestone:"${safeMilestoneTitle}"`;
+    const openUrl = new URL('/search/issues', 'https://api.github.com');
+    const closedUrl = new URL('/search/issues', 'https://api.github.com');
+    openUrl.searchParams.set('q', `${qBase} is:issue is:open`);
+    closedUrl.searchParams.set('q', `${qBase} is:issue is:closed`);
     const headers = { 'authorization': `Bearer ${token}`, 'accept': 'application/vnd.github+json' };
     const [openRes, closedRes] = await Promise.all([fetch(openUrl, { headers }), fetch(closedUrl, { headers })]);
     if (!openRes.ok || !closedRes.ok) return null;
@@ -187,7 +220,7 @@ async function main() {
   const overallProgress = include.length && wsum > 0 ? Math.round((acc / wsum) * 100) : 0;
 
   // When repo is unknown (local runs), continue and render em-dash for CI badges.
-  if (!repo) {
+  if (!safeRepo) {
     console.warn('GITHUB_REPOSITORY not set; CI badge URLs will be disabled (—).');
   }
   const out = { generatedAt: new Date().toISOString(), overall: { stage: overallStage, next: overallNext, progress: overallProgress }, results };

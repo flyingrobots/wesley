@@ -58,10 +58,24 @@ export function renderIdent(ident, { policy = 'minimal' } = {}) {
  * trimmed). Used for op names and parameter bases. Length limit enforced by caller.
  */
 export function sanitizeIdentBase(s, fallback = 'unnamed') {
-  const base = String(s || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '_')
-    .replace(/^_+|_+$/g, '');
-  return base || fallback;
+  const lower = String(s || '').toLowerCase();
+  let out = '';
+  let prevUnderscore = false;
+  for (const ch of lower) {
+    const isAlphaNum =
+      (ch >= 'a' && ch <= 'z') ||
+      (ch >= '0' && ch <= '9');
+    if (isAlphaNum) {
+      out += ch;
+      prevUnderscore = false;
+      continue;
+    }
+    if (!prevUnderscore) {
+      out += '_';
+      prevUnderscore = true;
+    }
+  }
+  while (out.startsWith('_')) out = out.slice(1);
+  while (out.endsWith('_')) out = out.slice(0, -1);
+  return out || fallback;
 }
-
