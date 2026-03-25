@@ -145,7 +145,7 @@ test('TCI incorporates test results health factors', () => {
   assert.ok(tciDegraded < 0.7, 'Failing suites should reduce TCI');
 });
 
-test('TCI treats missing index obligations as fully covered', () => {
+test('TCI treats schemas with no indexed fields as fully covered for performance', () => {
   const evidence = new EvidenceMap();
   evidence.setSha('sha-no-indexes');
 
@@ -175,4 +175,25 @@ test('TCI treats missing index obligations as fully covered', () => {
 
   assert.equal(scoring.calculateIndexCoverage(schema, []), 1);
   assert.ok(tci >= 0.7, 'Schemas with no indexed fields should not fail TCI on a non-applicable performance check');
+});
+
+test('calculateIndexCoverage returns 0 when indexed fields lack test evidence', () => {
+  const evidence = new EvidenceMap();
+  evidence.setSha('sha-with-indexes');
+
+  const fields = [
+    createField('id', { directives: { '@primaryKey': {} }, primaryKey: true }),
+    createField('email', { directives: { '@index': {} }, indexed: true })
+  ];
+
+  const table = {
+    name: 'Widget',
+    directives: {},
+    getFields: () => fields
+  };
+
+  const schema = { getTables: () => [table] };
+  const scoring = new ScoringEngine(evidence);
+
+  assert.equal(scoring.calculateIndexCoverage(schema, []), 0);
 });
