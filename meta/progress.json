@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-18T12:00:58.183Z",
+  "generatedAt": "2026-03-25T04:30:08.085Z",
   "overall": {
     "stage": "MVP",
     "next": "Alpha",
@@ -67,9 +67,9 @@
       "name": "@wesley/host-browser",
       "status": "Experimental",
       "stage": "MVP",
-      "progress": 40,
+      "progress": 45,
       "next": "Alpha",
-      "passRate": 0.8,
+      "passRate": 0.9,
       "docs": {
         "hasStatus": true,
         "hasUsage": false,
