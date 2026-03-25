@@ -1,6 +1,6 @@
 // wesley-website/src/db/pglite.test.js
 import { describe, it, expect, beforeEach } from 'vitest';
-import { DbSession, createDbSession } from './pglite';
+import { createDbSession } from './pglite';
 
 describe('DbSession', () => {
   let dbSession;

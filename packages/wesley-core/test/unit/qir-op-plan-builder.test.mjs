@@ -40,7 +40,7 @@ test('OpPlanBuilder: valid IN with text[] passes', () => {
     filters: [{ column: 'id', op: 'in', param: { name: 'ids', type: 'text[]' } }]
   };
   const plan = buildPlanFromJson(good);
-  assert.ok(plan && plan.root && plan.projection);
+  assert.ok(plan.root && plan.projection);
 });
 
 test('OpPlanBuilder: LIKE requires explicit type', () => {

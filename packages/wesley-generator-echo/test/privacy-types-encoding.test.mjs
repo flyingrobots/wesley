@@ -90,7 +90,7 @@ function decodeClaimRecord(bytes) {
   const private_ref = decodeOptionalStringAt(bytes, offset); offset = private_ref.offset;
   const proof_hash = decodeOptionalStringAt(bytes, offset); offset = proof_hash.offset;
   const scheme_id = decodeStringAt(bytes, offset); offset = scheme_id.offset;
-  const statement_hash = decodeStringAt(bytes, offset); offset = statement_hash.offset;
+  const statement_hash = decodeStringAt(bytes, offset);
   return {
     claim_key: claim_key.value,
     commitment: commitment.value,
@@ -109,7 +109,7 @@ function decodePrivateAtomRefV1(bytes) {
   const opaque_ref = decodeOptionalStringAt(bytes, offset); offset = opaque_ref.offset;
   const policy_hash = decodeStringAt(bytes, offset); offset = policy_hash.offset;
   const statement_hash = decodeStringAt(bytes, offset); offset = statement_hash.offset;
-  const zk_evidence = decodeOptionalStringAt(bytes, offset); offset = zk_evidence.offset;
+  const zk_evidence = decodeOptionalStringAt(bytes, offset);
   return {
     commit: commit.value,
     opaque_ref: opaque_ref.value,
@@ -125,7 +125,7 @@ function decodeOpaqueRefV1(bytes) {
   const commit = decodeStringAt(bytes, offset); offset = commit.offset;
   const locator = decodeStringAt(bytes, offset); offset = locator.offset;
   const policy_hash = decodeStringAt(bytes, offset); offset = policy_hash.offset;
-  const vault_id = decodeStringAt(bytes, offset); offset = vault_id.offset;
+  const vault_id = decodeStringAt(bytes, offset);
   return {
     alg_id: alg_id.value,
     commit: commit.value,

@@ -23,7 +23,7 @@ test('OpPlanBuilder: qualified dot-notation refs do NOT throw', () => {
     ]
   };
   const plan = buildPlanFromJson(op);
-  assert.ok(plan && plan.root, 'Plan should build successfully');
+  assert.ok(plan.root, 'Plan should build successfully');
 });
 
 test('OpPlanBuilder: object-form refs do NOT throw', () => {
@@ -35,6 +35,5 @@ test('OpPlanBuilder: object-form refs do NOT throw', () => {
     ]
   };
   const plan = buildPlanFromJson(op);
-  assert.ok(plan && plan.root, 'Plan should build successfully');
+  assert.ok(plan.root, 'Plan should build successfully');
 });
-

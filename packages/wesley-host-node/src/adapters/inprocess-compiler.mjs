@@ -57,7 +57,7 @@ export class InProcessCompiler extends CompilerPort {
     }
 
     let migrationSql = '';
-    let manifest = { kind: 'noop' };
+    let manifest;
     try {
       const diffRes = await diffEngine.diff(prev, sql);
       migrationSql = diffRes?.migrationSql ?? '';

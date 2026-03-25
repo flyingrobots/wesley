@@ -1,4 +1,4 @@
-import { Card, Code, Container, Stack, Text, Title } from '@mantine/core'
+import { Card, Code, Container, Text, Title } from '@mantine/core'
 
 const snippet = `# Install Wesley
 pnpm add -g @wesley/cli
@@ -38,4 +38,3 @@ export default function GettingStarted() {
     </Container>
   )
 }
-

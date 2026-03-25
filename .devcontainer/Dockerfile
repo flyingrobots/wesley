@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/devcontainers/javascript-node:22
+FROM mcr.microsoft.com/devcontainers/javascript-node:22@sha256:a01a914a47f9693114101e24e1cdede1fa76a286f03ee98d11a373a64dbd0e5e
 
 ENV DEBIAN_FRONTEND=noninteractive
 

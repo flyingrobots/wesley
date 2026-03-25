@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Anchor, Box, Button, Card, Center, Container, Group, Stack, Text, Title } from '@mantine/core'
+import { Box } from '@mantine/core'
 import ThemeLab from './pages/ThemeLab.jsx'
-import TryNow from './pages/TryNow.jsx' // Import TryNow
+import TryNow from './pages/TryNow.jsx'
 import FooterLinks from './components/FooterLinks.jsx'
 import HeroBullets from './components/HeroBullets.jsx'
 import FeaturesTitleWesley from './components/FeaturesTitleWesley.jsx'
@@ -9,7 +9,6 @@ import FeaturesCardsWesley from './components/FeaturesCardsWesley.jsx'
 import GettingStarted from './components/GettingStarted.jsx'
 import FutureSection from './components/FutureSection.jsx'
 import Documentation from './pages/Documentation.jsx'
-import HeaderSearch from './components/HeaderSearch.jsx'
 import { HeaderTabs } from './components/HeaderTabs.jsx'
 
 function usePath() {
@@ -54,7 +53,7 @@ function App() {
           <Documentation />
         ) : path === '/theme-lab' ? (
           <ThemeLab />
-        ) : path === '/try' ? ( // Add new condition for /try path
+        ) : path === '/try' ? (
           <TryNow />
         ) : (
           <HomeContent onNavigate={navigate} />

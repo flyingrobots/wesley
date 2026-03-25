@@ -1,13 +1,11 @@
-import { IconFile, IconCode, IconSearch, IconDatabase } from '@tabler/icons-react';
+import { IconFile, IconSearch, IconDatabase } from '@tabler/icons-react';
 import {
-  Badge,
   Box,
   Code,
   Group,
   Text,
   TextInput,
-  UnstyledButton,
-  ScrollArea
+  UnstyledButton
 } from '@mantine/core';
 import cx from 'clsx';
 import classes from './PlaygroundNavbar.module.css';

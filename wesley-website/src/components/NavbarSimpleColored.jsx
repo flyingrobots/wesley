@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Code, Group, Text } from '@mantine/core'
+import { Code, Group } from '@mantine/core'
 import classes from './NavbarSimpleColored.module.css'
 
 const data = [

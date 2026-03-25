@@ -1,4 +1,4 @@
-import { ActionIcon, Box, Container, Group, Text, Title } from '@mantine/core'
+import { ActionIcon, Box, Container, Group, Text } from '@mantine/core'
 import classes from './FooterLinks.module.css'
 
 const data = [
