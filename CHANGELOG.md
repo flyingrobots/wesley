@@ -66,6 +66,12 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **HOLMES-backed SHIPME certification**: The certificate workflow now emits a
+  real Wesley bundle before running HOLMES, `cert-create` builds HOLMES
+  summaries from bundle-embedded scores instead of requiring a separate
+  `scores.json`, `cert-verify` reports normalized HOLMES verdicts, and the
+  HOLMES workflow jobs now declare the generated bundle/schema dependency
+  explicitly.
 - **SHIPME PR comment matching**: Hardened the certificate workflow to anchor
   bot comments with a stable HTML marker, paginate comment lookup, and target
   `github-actions[bot]` explicitly before updating an existing PR comment.
