@@ -27,3 +27,17 @@ load 'bats-plugins/bats-assert/load'
   assert_success
   [ "$output" -eq 1 ]
 }
+
+@test "progress workflow keeps GITHUB_TOKEN read-only and uses opt-in PR token" {
+  run bash -lc "grep -F 'contents: read' .github/workflows/progress.yml | wc -l"
+  assert_success
+  [ "$output" -ge 1 ]
+
+  run bash -lc "grep -F 'contents: write' .github/workflows/progress.yml | wc -l || true"
+  assert_success
+  [ "$output" -eq 0 ]
+
+  run bash -lc "grep -F 'PROGRESS_PR_TOKEN' .github/workflows/progress.yml | wc -l"
+  assert_success
+  [ "$output" -ge 1 ]
+}
