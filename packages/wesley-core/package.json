@@ -27,6 +27,7 @@
     "test:unit": "node test/run-all-tests.mjs unit",
     "test:integration": "node test/run-all-tests.mjs integration",
     "test:property": "node test/run-all-tests.mjs property",
+    "test:fuzz": "node test/run-all-tests.mjs fuzz",
     "test:snapshots": "node test/run-all-tests.mjs snapshots",
     "test:snapshots:update": "node test/run-all-tests.mjs snapshots --update-snapshots",
     "test:e2e": "node test/run-all-tests.mjs e2e",

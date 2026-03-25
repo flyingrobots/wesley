@@ -1,0 +1,45 @@
+name: Property Fuzzing
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - 'packages/wesley-core/test/fuzz/**'
+      - 'packages/wesley-core/package.json'
+      - 'packages/wesley-core/test/run-all-tests.mjs'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+  pull_request:
+    branches: ["**"]
+    paths:
+      - 'packages/wesley-core/test/fuzz/**'
+      - 'packages/wesley-core/package.json'
+      - 'packages/wesley-core/test/run-all-tests.mjs'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+
+permissions:
+  contents: read
+
+jobs:
+  fast-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320
+        with:
+          version: 9.15.9
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f
+        with:
+          node-version: 22
+      - name: Enable corepack (pnpm)
+        run: corepack enable
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+      - name: Property-based fuzzing with fast-check
+        run: pnpm --filter @wesley/core test:fuzz

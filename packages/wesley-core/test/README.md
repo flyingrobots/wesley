@@ -10,7 +10,8 @@ This document outlines the comprehensive testing strategy for Wesley Core, imple
 test/
 ├── unit/                    # Unit tests for individual modules
 ├── integration/            # Integration tests for component interaction  
-├── property/              # Property-based tests using fast-check
+├── property/              # Legacy property-based tests using fast-check
+├── fuzz/                  # Small stable fuzz/property smoke tests
 ├── snapshots/             # Snapshot tests for generated output
 ├── e2e/                   # End-to-end tests
 ├── helpers/               # Test utilities and helpers
@@ -54,7 +55,7 @@ npm run test:integration
 
 ### 3. Property-Based Tests (`test/property/`)
 
-Uses fast-check for property-based testing to find edge cases.
+Uses fast-check for broader property-based testing to find edge cases.
 
 **Test Files:**
 - `ddl-planner-idempotency.test.mjs` - Tests DDL generation idempotency
@@ -70,6 +71,16 @@ Uses fast-check for property-based testing to find edge cases.
 **Running:**
 ```bash
 npm run test:property
+```
+
+### 3a. Fuzz Tests (`test/fuzz/`)
+
+Small, deterministic fast-check suites that are stable enough to run in CI and
+to satisfy ongoing fuzzing and security checks.
+
+**Running:**
+```bash
+npm run test:fuzz
 ```
 
 ### 4. Snapshot Tests (`test/snapshots/`)

@@ -51,3 +51,13 @@ load 'bats-plugins/bats-assert/load'
   assert_success
   [ -z "$output" ]
 }
+
+@test "property fuzzing workflow runs wesley-core fuzz suite" {
+  run bash -lc "grep -F 'Property-based fuzzing with fast-check' .github/workflows/fuzzing.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'pnpm --filter @wesley/core test:fuzz' .github/workflows/fuzzing.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+}

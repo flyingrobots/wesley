@@ -29,6 +29,11 @@ const testConfigs = {
     description: 'Property-Based Tests',
     timeout: 15000
   },
+  fuzz: {
+    pattern: 'test/fuzz/**/*.test.mjs',
+    description: 'Fuzz Tests',
+    timeout: 15000
+  },
   snapshots: {
     pattern: 'test/snapshots/**/*.test.mjs',
     description: 'Snapshot Tests',
@@ -292,6 +297,7 @@ Test Suites:
   unit         Unit tests for individual modules
   integration  Integration tests for component interaction
   property     Property-based tests using fast-check
+  fuzz         Small stable fuzz tests using fast-check
   snapshots    Snapshot tests for generated output
   e2e          End-to-end tests
   
