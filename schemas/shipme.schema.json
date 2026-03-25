@@ -72,9 +72,9 @@
               "type": "string",
               "enum": ["strong", "moderate", "weak", "missing"]
             },
-            "verificationCount": { "type": "number", "minimum": 0 },
-            "gateFailures": { "type": "number", "minimum": 0 },
-            "gateWarnings": { "type": "number", "minimum": 0 },
+            "verificationCount": { "type": "integer", "minimum": 0 },
+            "gateFailures": { "type": "integer", "minimum": 0 },
+            "gateWarnings": { "type": "integer", "minimum": 0 },
             "blockingGates": {
               "type": "array",
               "items": { "type": "string" }

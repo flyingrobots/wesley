@@ -49,7 +49,7 @@ jobs:
       - run: pnpm install --no-frozen-lockfile
 
       - name: Transform
-        run: node packages/wesley-host-node/bin/wesley.mjs transform --schema test/fixtures/examples/ecommerce.graphql --out-dir out
+        run: node packages/wesley-host-node/bin/wesley.mjs transform --schema test/fixtures/examples/ecommerce.graphql --emit-bundle --out-dir out
 
       - name: Plan (write)
         run: node packages/wesley-host-node/bin/wesley.mjs plan --schema test/fixtures/examples/ecommerce.graphql --write --out-dir out

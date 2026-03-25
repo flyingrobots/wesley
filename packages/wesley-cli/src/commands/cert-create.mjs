@@ -69,7 +69,7 @@ export class CertCreateCommand extends WesleyCommand {
       await readCurrentCounterfactualSummary(this.ctx.fs)
     );
     const evidence = await buildShipmeEvidenceSummary(this.ctx, bundle);
-    const holmes = buildShipmeHolmesSummary(bundle, scores, this.ctx.logger);
+    const holmes = buildShipmeHolmesSummary(bundle, this.ctx.logger);
     const run = resolveRunMetadata(options, realm || {});
     const resumeState = options.resume
       ? resolveResumeState(this.ctx?.eventStore, { ...run, command: 'cert-create' })
@@ -280,14 +280,11 @@ async function buildShipmeEvidenceSummary(ctx, bundle) {
   };
 }
 
-function buildShipmeHolmesSummary(bundle, scores, logger) {
-  if (!bundle?.evidence || !scores) return null;
+function buildShipmeHolmesSummary(bundle, logger) {
+  if (!bundle?.evidence) return null;
 
   try {
-    const investigation = new Holmes({
-      ...bundle,
-      scores
-    }).investigationData();
+    const investigation = new Holmes(bundle).investigationData();
     const gates = Array.isArray(investigation?.gates) ? investigation.gates : [];
     const blockingGates = gates
       .filter(gate => gate?.status === '⛔')

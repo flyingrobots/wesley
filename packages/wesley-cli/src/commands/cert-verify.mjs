@@ -51,7 +51,7 @@ export class CertVerifyCommand extends WesleyCommand {
       badge,
       realmVerdict: json?.realm?.verdict || null,
       counterfactualGate: json?.counterfactual?.gate || null,
-      holmesVerdict: json?.holmes?.shipVerdict || null,
+      holmesVerdict: policy.holmesVerdict,
       holmesPassed: policy.okHolmes,
       eligibleToShip: policy.eligibleToShip,
       reasons: policy.reasons,

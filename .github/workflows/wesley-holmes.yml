@@ -149,7 +149,7 @@ jobs:
   watson-verify:
     name: "🩺 WATSON Verification"
     runs-on: ubuntu-latest
-    needs: holmes-investigate
+    needs: [wesley-generate, holmes-investigate]
     
     steps:
     
@@ -191,7 +191,7 @@ jobs:
   moriarty-predict:
     name: "🔮 MORIARTY Predictions"
     runs-on: ubuntu-latest
-    needs: watson-verify
+    needs: [wesley-generate, watson-verify]
     
     steps:
     
