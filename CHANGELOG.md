@@ -66,6 +66,12 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **PR #463 HOLMES fixture and scoring follow-up**: The cert E2E HOLMES
+  fixtures now share one parameterized builder, preserve the weak-evidence and
+  strong-evidence profiles used by SHIPME coverage, include representative
+  `testResults` payloads, and the scoring tests now pin both sides of index
+  coverage semantics with clearer scenario names and an explicit “indexed but
+  uncovered” regression.
 - **HOLMES workflow schema selection and SHIPME cert fixture**: The HOLMES CI
   workflow now honors `HOLMES_SCHEMA` before falling back to repository-wide
   GraphQL discovery, TCI now treats “no indexed fields” as a fully covered
