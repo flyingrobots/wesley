@@ -452,9 +452,12 @@ create_passing_holmes_summary_inputs() {
 
   run node "$CLI_PATH" cert-verify --in .wesley-cache/SHIPME.md --pub holmes.pub --json
   assert_failure 5
-  echo "$output" | jq -e 'select(has("holmesPassed")) | .holmesPassed == false' >/dev/null
-  echo "$output" | jq -e 'select(has("holmesVerdict")) | .holmesVerdict == "REQUIRES INVESTIGATION"' >/dev/null
-  echo "$output" | jq -e 'select(has("eligibleToShip")) | .eligibleToShip == false' >/dev/null
+  echo "$output" | jq -s -e '.[0] | has("holmesPassed")' >/dev/null
+  echo "$output" | jq -s -e '.[0].holmesPassed == false' >/dev/null
+  echo "$output" | jq -s -e '.[0] | has("holmesVerdict")' >/dev/null
+  echo "$output" | jq -s -e '.[0].holmesVerdict == "REQUIRES INVESTIGATION"' >/dev/null
+  echo "$output" | jq -s -e '.[0] | has("eligibleToShip")' >/dev/null
+  echo "$output" | jq -s -e '.[0].eligibleToShip == false' >/dev/null
 }
 
 @test "cert-verify fails when HOLMES summary is missing" {
@@ -472,10 +475,14 @@ create_passing_holmes_summary_inputs() {
 
   run node "$CLI_PATH" cert-verify --in .wesley-cache/SHIPME.md --pub holmes.pub --json
   assert_failure 5
-  echo "$output" | jq -e 'select(has("holmesVerdict")) | .holmesVerdict == null' >/dev/null
-  echo "$output" | jq -e 'select(has("holmesPassed")) | .holmesPassed == false' >/dev/null
-  echo "$output" | jq -e 'select(has("eligibleToShip")) | .eligibleToShip == false' >/dev/null
-  echo "$output" | jq -e 'select(has("reasons")) | .reasons | any(. == "HOLMES verdict is missing.")' >/dev/null
+  echo "$output" | jq -s -e '.[0] | has("holmesVerdict")' >/dev/null
+  echo "$output" | jq -s -e '.[0].holmesVerdict == null' >/dev/null
+  echo "$output" | jq -s -e '.[0] | has("holmesPassed")' >/dev/null
+  echo "$output" | jq -s -e '.[0].holmesPassed == false' >/dev/null
+  echo "$output" | jq -s -e '.[0] | has("eligibleToShip")' >/dev/null
+  echo "$output" | jq -s -e '.[0].eligibleToShip == false' >/dev/null
+  echo "$output" | jq -s -e '.[0] | has("reasons")' >/dev/null
+  echo "$output" | jq -s -e '.[0].reasons | any(. == "HOLMES verdict is missing.")' >/dev/null
 }
 
 @test "cert-verify fails when embedded counterfactual gate is fail" {
