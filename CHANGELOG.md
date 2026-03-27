@@ -66,6 +66,12 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **PR #463 cert failure JSON assertions**: The HOLMES failure-path cert E2E
+  tests now assert against the first JSON document emitted by `cert-verify
+  --json`, splitting presence and value checks for `holmesPassed`,
+  `holmesVerdict`, `eligibleToShip`, and `reasons`. This keeps the reviewer’s
+  “field exists vs wrong value” distinction while staying robust when the
+  command also emits the framework error envelope.
 - **PR #463 HOLMES fixture and scoring follow-up**: The cert E2E HOLMES
   fixtures now share one parameterized builder, preserve the weak-evidence and
   strong-evidence profiles used by SHIPME coverage, include representative
