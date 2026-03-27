@@ -122,95 +122,13 @@ EOF
 JSON
 }
 
-create_holmes_summary_inputs_with_profile() {
+build_holmes_scores_payload() {
   local tci_score="${1}"
   local tests_score="${2}"
   local e2e_covered="${3}"
   local e2e_total="${4}"
-  local tests_lines="${5}"
-  local write_scores_file="${6:-false}"
-  local include_coarse_schema_sql="${7:-false}"
-  local extra_schema_sql_entry=""
 
-  if [ "$include_coarse_schema_sql" = "true" ]; then
-    extra_schema_sql_entry=$',\n          { "file": "schema.sql", "lines": "1-*", "sha": "abcdef1234567890abcdef1234567890abcdef12" }'
-  fi
-
-  mkdir -p .wesley-cache
-  cat > schema.sql << 'EOF'
-one
-two
-three
-EOF
-  cat > tests.sql << 'EOF'
-test line
-second test line
-EOF
-  cat > .wesley-cache/bundle.json << JSON
-{
-  "bundleVersion": "2.0.0",
-  "sha": "abcdef1234567890abcdef1234567890abcdef12",
-  "timestamp": "2026-03-21T00:00:00.000Z",
-  "testResults": {
-    "verifications": [
-      { "name": "schema-sql", "status": "passed", "file": "schema.sql" }
-    ],
-    "execution": [
-      { "type": "pgtap", "status": "passed", "file": "tests.sql" }
-    ],
-    "conclusions": [
-      { "type": "ship-readiness", "result": "warning" }
-    ]
-  },
-  "scores": {
-    "version": "1.0.0",
-    "scores": {
-      "scs": 0.95,
-      "tci": $tci_score,
-      "mri": 0.1
-    },
-    "readiness": {
-      "verdict": "ELEMENTARY"
-    },
-    "breakdown": {
-      "scs": {
-        "sql": { "score": 1, "earnedWeight": 1, "totalWeight": 1 },
-        "types": { "score": 1, "earnedWeight": 1, "totalWeight": 1 },
-        "validation": { "score": 1, "earnedWeight": 1, "totalWeight": 1 },
-        "tests": { "score": $tests_score, "earnedWeight": $tests_score, "totalWeight": 1 }
-      },
-      "tci": {
-        "unit_constraints": { "score": 1, "covered": 1, "total": 1 },
-        "unit_rls": { "score": 1, "covered": 1, "total": 1 },
-        "integration_relations": { "score": 1, "covered": 1, "total": 1 },
-        "e2e_ops": { "score": $tci_score, "covered": $e2e_covered, "total": $e2e_total, "note": "fixture" }
-      },
-      "mri": {
-        "drops": { "score": 0, "points": 0, "count": 0 },
-        "renames_without_uid": { "score": 0, "points": 0, "count": 0 },
-        "add_not_null_without_default": { "score": 0.1, "points": 1, "count": 1 },
-        "non_concurrent_indexes": { "score": 0, "points": 0, "count": 0 },
-        "totalPoints": 1
-      }
-    }
-  },
-  "evidence": {
-    "evidence": {
-      "schema": {
-        "sql": [
-          { "file": "schema.sql", "lines": "1-3", "sha": "abcdef1234567890abcdef1234567890abcdef12" }$extra_schema_sql_entry
-        ],
-        "tests": [
-          { "file": "tests.sql", "lines": "$tests_lines", "sha": "abcdef1234567890abcdef1234567890abcdef12" }
-        ]
-      }
-    }
-  }
-}
-JSON
-
-  if [ "$write_scores_file" = "true" ]; then
-    cat > .wesley-cache/scores.json << JSON
+  cat <<JSON
 {
   "version": "1.0.0",
   "scores": {
@@ -244,6 +162,69 @@ JSON
   }
 }
 JSON
+}
+
+create_holmes_summary_inputs_with_profile() {
+  local tci_score="${1}"
+  local tests_score="${2}"
+  local e2e_covered="${3}"
+  local e2e_total="${4}"
+  local tests_lines="${5}"
+  local write_scores_file="${6:-false}"
+  local include_coarse_schema_sql="${7:-false}"
+  local extra_schema_sql_entry=""
+  local scores_json
+
+  if [ "$include_coarse_schema_sql" = "true" ]; then
+    extra_schema_sql_entry=$',\n          { "file": "schema.sql", "lines": "1-*", "sha": "abcdef1234567890abcdef1234567890abcdef12" }'
+  fi
+
+  scores_json="$(build_holmes_scores_payload "$tci_score" "$tests_score" "$e2e_covered" "$e2e_total")"
+
+  mkdir -p .wesley-cache
+  cat > schema.sql << 'EOF'
+one
+two
+three
+EOF
+  cat > tests.sql << 'EOF'
+test line
+second test line
+EOF
+  cat > .wesley-cache/bundle.json << JSON
+{
+  "bundleVersion": "2.0.0",
+  "sha": "abcdef1234567890abcdef1234567890abcdef12",
+  "timestamp": "2026-03-21T00:00:00.000Z",
+  "testResults": {
+    "verifications": [
+      { "name": "schema-sql", "status": "passed", "file": "schema.sql" }
+    ],
+    "execution": [
+      { "type": "pgtap", "status": "passed", "file": "tests.sql" }
+    ],
+    "conclusions": [
+      { "type": "ship-readiness", "result": "warning" }
+    ]
+  },
+  "scores": $scores_json,
+  "evidence": {
+    "evidence": {
+      "schema": {
+        "sql": [
+          { "file": "schema.sql", "lines": "1-3", "sha": "abcdef1234567890abcdef1234567890abcdef12" }$extra_schema_sql_entry
+        ],
+        "tests": [
+          { "file": "tests.sql", "lines": "$tests_lines", "sha": "abcdef1234567890abcdef1234567890abcdef12" }
+        ]
+      }
+    }
+  }
+}
+JSON
+
+  if [ "$write_scores_file" = "true" ]; then
+    printf '%s\n' "$scores_json" > .wesley-cache/scores.json
   fi
 }
 
