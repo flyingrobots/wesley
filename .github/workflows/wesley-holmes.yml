@@ -617,6 +617,7 @@ jobs:
           node packages/wesley-holmes/src/pr-comment-cli.mjs \
             --reports-dir reports \
             --pr-number "$PR_NUMBER" \
+            --head-sha "$GITHUB_SHA" \
             --holmes-status "$HOLMES_STATUS" \
             --watson-status "$WATSON_STATUS" \
             --moriarty-status "$MORIARTY_STATUS" \

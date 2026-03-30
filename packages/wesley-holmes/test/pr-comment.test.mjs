@@ -8,7 +8,8 @@ import { fileURLToPath } from 'node:url';
 
 import {
   buildHolmesSuiteComment,
-  HOLMES_SUITE_COMMENT_MARKER
+  HOLMES_SUITE_COMMENT_MARKER,
+  loadHolmesSuiteReports
 } from '../src/pr-comment.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -116,6 +117,7 @@ function sampleMoriartyReport(overrides = {}) {
 test('buildHolmesSuiteComment adds a plain-English summary, next actions, and glossary', () => {
   const comment = buildHolmesSuiteComment({
     pullRequestNumber: 466,
+    headSha: 'feedface1234567890',
     statuses: {
       holmes: 'success',
       watson: 'success',
@@ -130,6 +132,7 @@ test('buildHolmesSuiteComment adds a plain-English summary, next actions, and gl
   });
 
   assert.ok(comment.includes(HOLMES_SUITE_COMMENT_MARKER));
+  assert.ok(comment.includes('<!-- HOLMES_SUITE_SHA:feedface1234567890 -->'));
   assert.ok(comment.includes('## Plain-English Readout'));
   assert.ok(comment.includes('Holmes says this change needs investigation before shipping.'));
   assert.ok(comment.includes('## Suggested next actions'));
@@ -145,6 +148,7 @@ test('buildHolmesSuiteComment adds a plain-English summary, next actions, and gl
 test('buildHolmesSuiteComment explains unavailable reports without crashing the comment', () => {
   const comment = buildHolmesSuiteComment({
     pullRequestNumber: 466,
+    headSha: 'deadbeef1234567890',
     statuses: {
       holmes: 'failure',
       watson: 'success',
@@ -159,13 +163,40 @@ test('buildHolmesSuiteComment explains unavailable reports without crashing the 
   });
 
   assert.ok(comment.includes('The Holmes report is unavailable because the workflow status is failure.'));
+  assert.ok(comment.includes('<!-- HOLMES_SUITE_SHA:deadbeef1234567890 -->'));
   assert.ok(comment.includes('The Moriarty forecast is unavailable because the workflow status is cancelled.'));
   assert.ok(comment.includes('Fix the HOLMES workflow job first so the PR has a real evidence investigation again.'));
+});
+
+test('buildHolmesSuiteComment distinguishes missing and invalid report artifacts from successful workflow status', () => {
+  const reportsDir = mkdtempSync(path.join(os.tmpdir(), 'holmes-pr-comment-load-'));
+  try {
+    writeFileSync(path.join(reportsDir, 'holmes-report.md'), '### holmes raw\n');
+    writeFileSync(path.join(reportsDir, 'watson-report.json'), '{"not":"valid"');
+
+    const comment = buildHolmesSuiteComment({
+      pullRequestNumber: 466,
+      headSha: 'beadfeed1234567890',
+      ...loadHolmesSuiteReports(reportsDir, {
+        holmes: 'success',
+        watson: 'success',
+        moriarty: 'success'
+      })
+    });
+
+    assert.ok(comment.includes('The Holmes report is unavailable because the workflow finished without a readable holmes-report.json artifact.'));
+    assert.ok(comment.includes('The Watson report is unavailable because the watson-report.json artifact could not be parsed as JSON.'));
+    assert.ok(comment.includes('The Moriarty forecast is unavailable because the workflow finished without a readable moriarty-report.json artifact.'));
+    assert.ok(comment.includes('Regenerate the HOLMES artifacts and make sure holmes-report.json is uploaded before trusting this PR summary.'));
+  } finally {
+    rmSync(reportsDir, { recursive: true, force: true });
+  }
 });
 
 test('buildHolmesSuiteComment normalizes repeated whitespace and trailing periods in summaries', () => {
   const comment = buildHolmesSuiteComment({
     pullRequestNumber: 466,
+    headSha: 'cafebabe1234567890',
     statuses: {
       holmes: 'success',
       watson: 'success',
@@ -198,6 +229,7 @@ test('pr-comment CLI builds comment output without external argument parser depe
       prCommentCliPath,
       '--reports-dir', reportsDir,
       '--pr-number', '467',
+      '--head-sha', '0123456789abcdef',
       '--holmes-status', 'failure',
       '--watson-status', 'failure',
       '--moriarty-status', 'failure'
@@ -207,6 +239,7 @@ test('pr-comment CLI builds comment output without external argument parser depe
 
     assert.equal(result.status, 0, result.stderr);
     assert.ok(result.stdout.includes(HOLMES_SUITE_COMMENT_MARKER));
+    assert.ok(result.stdout.includes('<!-- HOLMES_SUITE_SHA:0123456789abcdef -->'));
     assert.ok(result.stdout.includes('The Holmes report is unavailable because the workflow status is failure.'));
   } finally {
     rmSync(reportsDir, { recursive: true, force: true });

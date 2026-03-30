@@ -14,6 +14,7 @@ const reports = loadHolmesSuiteReports(options.reportsDir, {
 
 const body = buildHolmesSuiteComment({
   pullRequestNumber: options.prNumber,
+  headSha: options.headSha,
   ...reports
 });
 
@@ -21,6 +22,7 @@ process.stdout.write(`${body}\n`);
 
 function parseArgs(argv) {
   const options = {
+    headSha: '',
     holmesStatus: 'unknown',
     watsonStatus: 'unknown',
     moriartyStatus: 'unknown'
@@ -44,6 +46,9 @@ function parseArgs(argv) {
       break;
     case 'pr-number':
       options.prNumber = value;
+      break;
+    case 'head-sha':
+      options.headSha = value;
       break;
     case 'holmes-status':
       options.holmesStatus = value;

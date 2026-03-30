@@ -5,7 +5,9 @@ export const HOLMES_SUITE_COMMENT_MARKER = '<!-- HOLMES_SUITE_COMMENT -->';
 
 export function buildHolmesSuiteComment({
   pullRequestNumber,
+  headSha = '',
   statuses = {},
+  reportStates = {},
   holmesReport = null,
   watsonReport = null,
   moriartyReport = null,
@@ -15,6 +17,7 @@ export function buildHolmesSuiteComment({
 }) {
   const lines = [
     HOLMES_SUITE_COMMENT_MARKER,
+    renderCurrentShaMarker(headSha),
     `# 🔍 The Case of Pull Request #${pullRequestNumber}`,
     '',
     '## Plain-English Readout',
@@ -23,14 +26,16 @@ export function buildHolmesSuiteComment({
       holmesReport,
       watsonReport,
       moriartyReport,
-      statuses
+      statuses,
+      reportStates
     }),
     '',
     ...renderNextActions({
       holmesReport,
       watsonReport,
       moriartyReport,
-      statuses
+      statuses,
+      reportStates
     }),
     '',
     ...renderGlossary(),
@@ -60,21 +65,34 @@ export function buildHolmesSuiteComment({
 }
 
 export function loadHolmesSuiteReports(reportsDir, statuses = {}) {
+  const holmesReport = readJsonReport(reportsDir, 'holmes', 'holmes-report.json');
+  const watsonReport = readJsonReport(reportsDir, 'watson', 'watson-report.json');
+  const moriartyReport = readJsonReport(reportsDir, 'moriarty', 'moriarty-report.json');
   return {
     statuses,
-    holmesReport: readJsonReport(reportsDir, 'holmes', 'holmes-report.json'),
-    watsonReport: readJsonReport(reportsDir, 'watson', 'watson-report.json'),
-    moriartyReport: readJsonReport(reportsDir, 'moriarty', 'moriarty-report.json'),
+    reportStates: {
+      holmes: holmesReport.state,
+      watson: watsonReport.state,
+      moriarty: moriartyReport.state
+    },
+    holmesReport: holmesReport.value,
+    watsonReport: watsonReport.value,
+    moriartyReport: moriartyReport.value,
     holmesMarkdown: readTextReport(reportsDir, 'holmes', 'holmes-report.md', statuses.holmes),
     watsonMarkdown: readTextReport(reportsDir, 'watson', 'watson-report.md', statuses.watson),
     moriartyMarkdown: readTextReport(reportsDir, 'moriarty', 'moriarty-report.md', statuses.moriarty)
   };
 }
 
-function renderPlainEnglishReadout({ holmesReport, watsonReport, moriartyReport, statuses }) {
-  const holmes = summarizeHolmes(holmesReport, statuses.holmes);
-  const watson = summarizeWatson(watsonReport, statuses.watson);
-  const moriarty = summarizeMoriarty(moriartyReport, statuses.moriarty);
+function renderCurrentShaMarker(headSha) {
+  const sha = normalizeOptionalString(headSha);
+  return sha ? `<!-- HOLMES_SUITE_SHA:${sha} -->` : '<!-- HOLMES_SUITE_SHA:unknown -->';
+}
+
+function renderPlainEnglishReadout({ holmesReport, watsonReport, moriartyReport, statuses, reportStates }) {
+  const holmes = summarizeHolmes(holmesReport, statuses.holmes, reportStates.holmes);
+  const watson = summarizeWatson(watsonReport, statuses.watson, reportStates.watson);
+  const moriarty = summarizeMoriarty(moriartyReport, statuses.moriarty, reportStates.moriarty);
 
   return [
     `- **Holmes (evidence investigation)**: ${holmes.summary}`,
@@ -83,11 +101,11 @@ function renderPlainEnglishReadout({ holmesReport, watsonReport, moriartyReport,
   ];
 }
 
-function renderNextActions({ holmesReport, watsonReport, moriartyReport, statuses }) {
+function renderNextActions({ holmesReport, watsonReport, moriartyReport, statuses, reportStates }) {
   const actions = dedupeStrings([
-    ...collectHolmesActions(holmesReport, statuses.holmes),
-    ...collectWatsonActions(watsonReport, statuses.watson),
-    ...collectMoriartyActions(moriartyReport, statuses.moriarty)
+    ...collectHolmesActions(holmesReport, statuses.holmes, reportStates.holmes),
+    ...collectWatsonActions(watsonReport, statuses.watson, reportStates.watson),
+    ...collectMoriartyActions(moriartyReport, statuses.moriarty, reportStates.moriarty)
   ]).slice(0, 4);
 
   if (actions.length === 0) {
@@ -132,10 +150,11 @@ function renderReportSection(title, markdown, status, reportName) {
   return `<details><summary>${title} (click to expand)</summary>\n\n${body}\n\n</details>`;
 }
 
-function summarizeHolmes(report, status) {
-  if (status !== 'success' || !report) {
+function summarizeHolmes(report, status, reportState) {
+  const unavailableSummary = buildUnavailableSummary('Holmes report', 'holmes-report.json', status, reportState, report);
+  if (unavailableSummary) {
     return {
-      summary: `The Holmes report is unavailable because the workflow status is ${statusLabel(status)}.`
+      summary: unavailableSummary
     };
   }
 
@@ -148,10 +167,11 @@ function summarizeHolmes(report, status) {
   return { summary: `${message} Main reasons: ${joinPhrases(reasons)}.` };
 }
 
-function summarizeWatson(report, status) {
-  if (status !== 'success' || !report) {
+function summarizeWatson(report, status, reportState) {
+  const unavailableSummary = buildUnavailableSummary('Watson report', 'watson-report.json', status, reportState, report);
+  if (unavailableSummary) {
     return {
-      summary: `The Watson report is unavailable because the workflow status is ${statusLabel(status)}.`
+      summary: unavailableSummary
     };
   }
 
@@ -177,10 +197,11 @@ function summarizeWatson(report, status) {
   };
 }
 
-function summarizeMoriarty(report, status) {
-  if (status !== 'success' || !report) {
+function summarizeMoriarty(report, status, reportState) {
+  const unavailableSummary = buildUnavailableSummary('Moriarty forecast', 'moriarty-report.json', status, reportState, report);
+  if (unavailableSummary) {
     return {
-      summary: `The Moriarty forecast is unavailable because the workflow status is ${statusLabel(status)}.`
+      summary: unavailableSummary
     };
   }
 
@@ -216,9 +237,10 @@ function summarizeMoriarty(report, status) {
   };
 }
 
-function collectHolmesActions(report, status) {
-  if (status !== 'success' || !report) {
-    return ['Fix the HOLMES workflow job first so the PR has a real evidence investigation again.'];
+function collectHolmesActions(report, status, reportState) {
+  const unavailableAction = buildUnavailableAction('HOLMES', 'holmes-report.json', status, reportState, report);
+  if (unavailableAction) {
+    return [unavailableAction];
   }
 
   const actions = [];
@@ -245,14 +267,14 @@ function collectHolmesActions(report, status) {
   return actions;
 }
 
-function collectWatsonActions(report, status) {
-  if (status !== 'success' || !report) return [];
+function collectWatsonActions(report, status, reportState) {
+  if (buildUnavailableSummary('Watson report', 'watson-report.json', status, reportState, report)) return [];
   if (normalizeOptionalString(report?.opinion?.verdict) === 'PASSED') return [];
   return ['Resolve Watson’s verification concerns before trusting the Holmes verdict as final.'];
 }
 
-function collectMoriartyActions(report, status) {
-  if (status !== 'success' || !report) return [];
+function collectMoriartyActions(report, status, reportState) {
+  if (buildUnavailableSummary('Moriarty forecast', 'moriarty-report.json', status, reportState, report)) return [];
   const actions = [];
   if (report.plateauDetected) {
     actions.push('Treat the readiness forecast as stalled until new evidence or real progress moves the trend again.');
@@ -317,11 +339,16 @@ function findReportPath(root, filename, reportName) {
 
 function readJsonReport(root, reportName, filename) {
   const reportPath = findReportPath(root, filename, reportName);
-  if (!reportPath) return null;
+  if (!reportPath) {
+    return { state: 'missing', value: null };
+  }
   try {
-    return JSON.parse(readFileSync(reportPath, 'utf8'));
+    return {
+      state: 'loaded',
+      value: JSON.parse(readFileSync(reportPath, 'utf8'))
+    };
   } catch {
-    return null;
+    return { state: 'invalid', value: null };
   }
 }
 
@@ -391,6 +418,42 @@ function firstNonEmpty(values) {
 
 function statusLabel(status) {
   return normalizeOptionalString(status) || 'unknown';
+}
+
+function buildUnavailableSummary(displayName, artifactName, status, reportState, report) {
+  const effectiveState = resolveReportState(reportState, report, status);
+  if (status !== 'success') {
+    return `The ${displayName} is unavailable because the workflow status is ${statusLabel(status)}.`;
+  }
+  if (effectiveState === 'missing') {
+    return `The ${displayName} is unavailable because the workflow finished without a readable ${artifactName} artifact.`;
+  }
+  if (effectiveState === 'invalid') {
+    return `The ${displayName} is unavailable because the ${artifactName} artifact could not be parsed as JSON.`;
+  }
+  return '';
+}
+
+function resolveReportState(reportState, report, status) {
+  const explicitState = normalizeOptionalString(reportState);
+  if (explicitState) return explicitState;
+  if (report) return 'loaded';
+  if (status === 'success') return 'missing';
+  return 'unavailable';
+}
+
+function buildUnavailableAction(reportLabel, artifactName, status, reportState, report) {
+  const effectiveState = resolveReportState(reportState, report, status);
+  if (status !== 'success') {
+    return `Fix the ${reportLabel} workflow job first so the PR has a real evidence investigation again.`;
+  }
+  if (effectiveState === 'missing') {
+    return `Regenerate the ${reportLabel} artifacts and make sure ${artifactName} is uploaded before trusting this PR summary.`;
+  }
+  if (effectiveState === 'invalid') {
+    return `Fix the ${reportLabel} report generation so ${artifactName} contains valid JSON before trusting this PR summary.`;
+  }
+  return '';
 }
 
 function collapseWhitespace(text) {
