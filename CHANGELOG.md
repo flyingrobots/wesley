@@ -79,7 +79,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   now uses linear whitespace and trailing-period normalization that is pinned by
   direct Holmes comment tests. Successful HOLMES jobs also distinguish missing
   and invalid JSON report artifacts in the plain-English summary instead of
-  blaming a `success` workflow status for unreadable reports.
+  blaming a `success` workflow status for unreadable reports. The expanded raw
+  report sections now tell the same truth about missing markdown artifacts, and
+  unavailable Watson or Moriarty reports now add explicit recovery steps to the
+  suggested next actions list instead of failing silently.
 - **PR #463 cert failure JSON assertions**: The HOLMES failure-path cert E2E
   tests now assert against the first JSON document emitted by `cert-verify
   --json`, splitting presence and value checks for `holmesPassed`,
