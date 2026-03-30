@@ -139,10 +139,9 @@ test('buildHolmesSuiteComment adds a plain-English summary, next actions, and gl
   assert.ok(comment.includes('Tighten citations so the report points to exact lines instead of whole files or coarse references.'));
   assert.ok(comment.includes('<details><summary>📚 Glossary (what the Holmes terms mean)</summary>'));
 
-  const visibleSummary = comment.split('<details><summary>📚 Glossary')[0];
-  assert.equal(visibleSummary.includes('SCS'), false, 'visible summary should avoid unexplained score acronyms');
-  assert.equal(visibleSummary.includes('TCI'), false, 'visible summary should avoid unexplained score acronyms');
-  assert.equal(visibleSummary.includes('MRI'), false, 'visible summary should avoid unexplained score acronyms');
+  const beforeGlossary = comment.split('<details><summary>📚 Glossary')[0];
+  const unexplainedAcronyms = beforeGlossary.match(/\b(SCS|TCI|MRI)\b/gi);
+  assert.equal(unexplainedAcronyms, null, `visible summary should avoid unexplained score acronyms: ${unexplainedAcronyms}`);
 });
 
 test('buildHolmesSuiteComment explains unavailable reports without crashing the comment', () => {
@@ -168,7 +167,7 @@ test('buildHolmesSuiteComment explains unavailable reports without crashing the 
   assert.ok(comment.includes('Fix the HOLMES workflow job first so the PR has a real evidence investigation again.'));
 });
 
-test('buildHolmesSuiteComment distinguishes missing and invalid report artifacts from successful workflow status', () => {
+test('buildHolmesSuiteComment distinguishes missing and invalid report artifacts from successful workflow status', { timeout: 5000 }, () => {
   const reportsDir = mkdtempSync(path.join(os.tmpdir(), 'holmes-pr-comment-load-'));
   try {
     writeFileSync(path.join(reportsDir, 'holmes-report.md'), '### holmes raw\n');
