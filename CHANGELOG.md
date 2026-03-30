@@ -83,6 +83,11 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   report sections now tell the same truth about missing markdown artifacts, and
   unavailable Watson or Moriarty reports now add explicit recovery steps to the
   suggested next actions list instead of failing silently.
+- **PR #467 Holmes comment test hardening**: The Holmes PR comment regression
+  tests now use case-insensitive word-boundary matching to keep unexplained
+  score acronyms out of the visible summary, and the missing-report tempdir
+  fixture test now has an explicit timeout so the suite fails fast instead of
+  hanging on a stuck report loader.
 - **PR #463 cert failure JSON assertions**: The HOLMES failure-path cert E2E
   tests now assert against the first JSON document emitted by `cert-verify
   --json`, splitting presence and value checks for `holmesPassed`,
