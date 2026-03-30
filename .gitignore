@@ -38,5 +38,6 @@ blob-report/
 packages/wesley-cli/test/bats-plugins/
 
 .claude/
+EDITORS-REPORT.md
 .ignore
 .audit_reports/
