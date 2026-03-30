@@ -67,15 +67,19 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 ### Fixed
 
 - **SHIPME PR comment ordering**: The PR badge in
-  `.github/workflows/cert-shipme.yml` now waits for the HOLMES suite comment to
-  appear before posting, so reviewers no longer see a SHIPME certificate badge
-  race ahead of the full Holmes investigation summary on pull requests.
+  `.github/workflows/cert-shipme.yml` now waits for the HOLMES suite comment
+  for the current PR head SHA, checks the live HOLMES workflow state while
+  polling, and fails explicitly if that comment never appears, so reviewers no
+  longer see a SHIPME certificate badge race ahead of the current investigation
+  summary or disappear silently behind a stale timeout.
 - **PR #467 HOLMES comment workflow follow-up**: The PR comment job now checks
   out the repository before building the comment, the `pr-comment-cli` helper
   no longer depends on `commander` so it can run in the lightweight workflow
   job without installing package dependencies, and the comment summary cleanup
   now uses linear whitespace and trailing-period normalization that is pinned by
-  direct Holmes comment tests.
+  direct Holmes comment tests. Successful HOLMES jobs also distinguish missing
+  and invalid JSON report artifacts in the plain-English summary instead of
+  blaming a `success` workflow status for unreadable reports.
 - **PR #463 cert failure JSON assertions**: The HOLMES failure-path cert E2E
   tests now assert against the first JSON document emitted by `cert-verify
   --json`, splitting presence and value checks for `holmesPassed`,
