@@ -66,6 +66,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **SHIPME PR comment ordering**: The PR badge in
+  `.github/workflows/cert-shipme.yml` now waits for the HOLMES suite comment to
+  appear before posting, so reviewers no longer see a SHIPME certificate badge
+  race ahead of the full Holmes investigation summary on pull requests.
 - **PR #467 HOLMES comment workflow follow-up**: The PR comment job now checks
   out the repository before building the comment, the `pr-comment-cli` helper
   no longer depends on `commander` so it can run in the lightweight workflow
