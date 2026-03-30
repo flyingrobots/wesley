@@ -59,6 +59,7 @@ function parseArgs(argv) {
     }
 
     index += 1;
+    // Advance past the consumed value token.
   }
 
   if (!options.reportsDir) {
