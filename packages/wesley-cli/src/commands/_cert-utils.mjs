@@ -24,6 +24,36 @@ export function extractJsonBlock(md) {
   return { pre, json, post };
 }
 
+export function evaluateCertificatePolicy(json) {
+  const holmesVerdict = normalizeOptionalString(json?.holmes?.shipVerdict);
+  const okRealm = json?.realm?.verdict === 'PASS';
+  const okHolmes = holmesVerdict === 'ELEMENTARY';
+  const okCounterfactual = !json?.counterfactual || json.counterfactual.gate !== 'fail';
+  const reasons = [];
+
+  if (!okRealm) reasons.push('REALM verdict is not PASS.');
+  if (!holmesVerdict) reasons.push('HOLMES verdict is missing.');
+  else if (!okHolmes) reasons.push(`HOLMES verdict ${holmesVerdict} does not permit shipping.`);
+  if (!okCounterfactual) reasons.push('Counterfactual gate is fail.');
+
+  return {
+    okRealm,
+    okHolmes,
+    okCounterfactual,
+    holmesVerdict,
+    eligibleToShip: okRealm && okHolmes && okCounterfactual,
+    reasons
+  };
+}
+
+export function buildCertBadge(json) {
+  const sha = json?.sha?.slice(0, 7) || 'unknown';
+  const policy = evaluateCertificatePolicy(json);
+  const parts = [`[SHIPME] ${policy.eligibleToShip ? 'PASS' : 'FAIL'}`];
+  parts.push(`HOLMES ${policy.holmesVerdict || 'MISSING'}`);
+  return `${parts.join(' · ')} — sha ${sha}`;
+}
+
 /**
  * Deterministic JSON canonicalization: sort object keys recursively,
  * then stringify. Used for signing and verification — both MUST use
@@ -38,4 +68,10 @@ export function canonicalize(obj) {
     return x;
   };
   return JSON.stringify(sort(obj));
+}
+
+function normalizeOptionalString(value) {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
 }

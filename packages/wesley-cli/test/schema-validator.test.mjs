@@ -59,6 +59,18 @@ test('compileSchema resolves nested local refs for shipme + realm + runtime-even
       trust: 'weak',
       reasons: ['1 coarse citation remains unpinned to exact line spans.']
     },
+    holmes: {
+      generatedAt: '2026-03-19T10:30:00.000Z',
+      shipVerdict: 'ELEMENTARY',
+      baseReadiness: 'ELEMENTARY',
+      evidenceTrust: 'strong',
+      verificationCount: 3,
+      gateFailures: 0,
+      gateWarnings: 0,
+      blockingGates: [],
+      warningGates: [],
+      message: 'Ship immediately! The evidence is conclusive.'
+    },
     realm: {
       transmutation: 'legacy-supabase',
       runId: 'run-123',

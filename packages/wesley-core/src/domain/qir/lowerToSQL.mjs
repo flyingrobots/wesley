@@ -133,10 +133,21 @@ function renderRelation(r, params, whereParts, identOpts, opts, dialect) {
 }
 
 function renderTableRef(table, identOpts, opts) {
+  const qualified = splitQualifiedTableRef(table);
+  if (qualified) {
+    return qualified.map((part) => renderIdent(part, identOpts)).join('.');
+  }
   if (!opts?.tableSchema) {
     return renderIdent(table, identOpts);
   }
   return `${renderIdent(opts.tableSchema, identOpts)}.${renderIdent(table, identOpts)}`;
+}
+
+function splitQualifiedTableRef(table) {
+  const parts = String(table).split('.').map((part) => part.trim());
+  if (parts.length !== 2) return null;
+  if (!parts[0] || !parts[1]) return null;
+  return parts;
 }
 
 // ────────────────────────────────────────────────────────────────────────────

@@ -150,13 +150,17 @@ export async function compileOpsIfRequested({ ctx, context }) {
       if (security !== 'invoker' && security !== 'definer') {
         throw new OpsError('OPS_INVALID_SECURITY', `Invalid --ops-security value "${options.opsSecurity}"; must be "invoker" or "definer"`);
       }
-      const setSearchPath = options.opsSearchPath
-        ? String(options.opsSearchPath).split(',').map(s => s.trim()).filter(Boolean)
-        : null;
+      const schemaContext = inferOpsSchemaContext({
+        ir,
+        compiledOps: orderedOps,
+        targetSchema,
+        explicitSearchPath: options.opsSearchPath
+      });
       const explainMode = (options.opsExplain || '').toLowerCase();
       const outFiles = emitOpArtifacts(orderedOps, targetSchema, logger, pkResolver, {
         security,
-        setSearchPath,
+        setSearchPath: schemaContext.searchPath,
+        baseSchema: schemaContext.baseSchema,
         allowErrors: !!options.opsAllowErrors,
         explainMode
       });
@@ -301,13 +305,12 @@ async function compileOpFile(fs, path, collisions, logger, { ir, target = 'postg
   return { baseName, plan, isParamless: paramCount === 0, path };
 }
 
-function emitOpArtifacts(compiledOps, targetSchema, logger, pkResolver, { security = 'invoker', setSearchPath = null, allowErrors = false, explainMode = '' } = {}) {
+function emitOpArtifacts(compiledOps, targetSchema, logger, pkResolver, { security = 'invoker', setSearchPath = null, baseSchema = 'public', allowErrors = false, explainMode = '' } = {}) {
   const outFiles = [];
   const total = compiledOps.length;
   let ordinal = 0;
   const normalizedSchema = sanitizeIdentBase(targetSchema, 'wes_ops');
   const effectiveSearchPath = normalizeOpsSearchPath(setSearchPath, normalizedSchema);
-  const baseSchema = 'public';
   const deployChunks = ['BEGIN;', `CREATE SCHEMA IF NOT EXISTS ${quoteIdent(normalizedSchema)};`];
   const registry = { version: '1.0.0', schema: normalizedSchema, ops: [] };
 
@@ -405,7 +408,208 @@ function normalizeOpsSearchPath(setSearchPath, normalizedSchema) {
   if (Array.isArray(setSearchPath) && setSearchPath.length > 0) {
     return setSearchPath;
   }
-  return [normalizedSchema, 'public'];
+  return ['pg_catalog', normalizedSchema, 'public'];
+}
+
+export function inferOpsSchemaContext({ ir = null, compiledOps = [], targetSchema = 'wes_ops', explicitSearchPath = null } = {}) {
+  const normalizedSchema = sanitizeIdentBase(targetSchema, 'wes_ops');
+  const explicit = parseOpsSearchPath(explicitSearchPath);
+  const tableRefUsage = {
+    qualifiedSchemas: new Set(),
+    hasUnqualifiedTableRefs: false
+  };
+
+  for (const entry of compiledOps) {
+    collectPlanTableRefUsage(entry?.plan, tableRefUsage);
+  }
+
+  const inferred = new Set();
+  const irBaseSchema = sanitizeSchemaName(ir?.metadata?.schemaName);
+  const irSearchPathSchema = normalizeSearchPathSchema(irBaseSchema, normalizedSchema);
+  if (irSearchPathSchema) inferred.add(irSearchPathSchema);
+  for (const schemaName of tableRefUsage.qualifiedSchemas) {
+    const normalized = normalizeSearchPathSchema(sanitizeSchemaName(schemaName), normalizedSchema);
+    if (normalized) inferred.add(normalized);
+  }
+
+  const inferredSchemas = Array.from(inferred).sort();
+  const hasQualifiedTableRefs = tableRefUsage.qualifiedSchemas.size > 0;
+  const baseSchema = resolveInferredBaseSchema({
+    irSchema: irBaseSchema,
+    inferredSchemas,
+    hasQualifiedTableRefs,
+    hasUnqualifiedTableRefs: tableRefUsage.hasUnqualifiedTableRefs
+  });
+  const searchPath = explicit.length > 0
+    ? explicit
+    : buildInferredSearchPath({
+      normalizedSchema,
+      inferredSchemas,
+      baseSchema
+    });
+
+  return {
+    baseSchema,
+    inferredSchemas,
+    searchPath
+  };
+}
+
+function parseOpsSearchPath(value) {
+  if (!value) return [];
+  return String(value)
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function sanitizeSchemaName(schemaName) {
+  if (typeof schemaName !== 'string' || schemaName.trim().length === 0) return null;
+  const normalized = sanitizeIdentBase(schemaName, '');
+  return normalized || null;
+}
+
+function normalizeSearchPathSchema(schemaName, normalizedOpsSchema) {
+  if (!schemaName || schemaName === normalizedOpsSchema) return null;
+  return schemaName;
+}
+
+function dedupeSearchPath(entries) {
+  const seen = new Set();
+  const out = [];
+  for (const entry of entries) {
+    const key = String(entry);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(key);
+  }
+  return out;
+}
+
+function buildInferredSearchPath({ normalizedSchema, inferredSchemas, baseSchema }) {
+  const entries = ['pg_catalog', normalizedSchema];
+  if (baseSchema) entries.push(baseSchema);
+  if (inferredSchemas.length > 0) {
+    entries.push(...inferredSchemas);
+  } else if (!baseSchema) {
+    entries.push('public');
+  }
+  return dedupeSearchPath(entries);
+}
+
+function resolveInferredBaseSchema({
+  irSchema,
+  inferredSchemas,
+  hasQualifiedTableRefs,
+  hasUnqualifiedTableRefs
+}) {
+  if (!hasUnqualifiedTableRefs) {
+    if (hasQualifiedTableRefs) return null;
+    if (inferredSchemas.length === 1) return inferredSchemas[0];
+    if (inferredSchemas.length === 0) return 'public';
+    return null;
+  }
+
+  if (irSchema) return irSchema;
+  if (hasQualifiedTableRefs) return 'public';
+  if (inferredSchemas.length === 1) return inferredSchemas[0];
+  return 'public';
+}
+
+function collectPlanTableRefUsage(plan, usage) {
+  if (!plan || typeof plan !== 'object') return;
+  collectRelationTableRefUsage(plan.root, usage);
+  if (Array.isArray(plan.projection?.items)) {
+    for (const item of plan.projection.items) {
+      collectExprSchemaRefs(item?.expr, usage);
+    }
+  }
+  if (Array.isArray(plan.orderBy)) {
+    for (const order of plan.orderBy) {
+      collectExprSchemaRefs(order?.expr, usage);
+    }
+  }
+  if (Array.isArray(plan.distinctOn)) {
+    for (const expr of plan.distinctOn) {
+      collectExprSchemaRefs(expr, usage);
+    }
+  }
+}
+
+function collectRelationTableRefUsage(relation, usage) {
+  if (!relation || typeof relation !== 'object') return;
+  switch (relation.kind) {
+  case 'Table': {
+    const schemaName = extractSchemaName(relation.table);
+    if (schemaName) usage.qualifiedSchemas.add(schemaName);
+    else usage.hasUnqualifiedTableRefs = true;
+    break;
+  }
+  case 'Join':
+    collectRelationTableRefUsage(relation.left, usage);
+    collectRelationTableRefUsage(relation.right, usage);
+    collectPredicateSchemaRefs(relation.on, usage);
+    break;
+  case 'Filter':
+    collectRelationTableRefUsage(relation.input, usage);
+    collectPredicateSchemaRefs(relation.predicate, usage);
+    break;
+  case 'Subquery':
+  case 'Lateral':
+    collectPlanTableRefUsage(relation.plan, usage);
+    break;
+  default:
+    break;
+  }
+}
+
+function collectPredicateSchemaRefs(predicate, usage) {
+  if (!predicate || typeof predicate !== 'object') return;
+  switch (predicate.kind) {
+  case 'And':
+  case 'Or':
+    collectPredicateSchemaRefs(predicate.left, usage);
+    collectPredicateSchemaRefs(predicate.right, usage);
+    break;
+  case 'Not':
+    collectPredicateSchemaRefs(predicate.left, usage);
+    break;
+  case 'Exists':
+    collectPlanTableRefUsage(predicate.subquery, usage);
+    break;
+  case 'Compare':
+    collectExprSchemaRefs(predicate.left, usage);
+    collectExprSchemaRefs(predicate.right, usage);
+    break;
+  default:
+    break;
+  }
+}
+
+function collectExprSchemaRefs(expr, usage) {
+  if (!expr || typeof expr !== 'object') return;
+  switch (expr.kind) {
+  case 'FuncCall':
+    for (const arg of expr.args || []) collectExprSchemaRefs(arg, usage);
+    break;
+  case 'ScalarSubquery':
+    collectPlanTableRefUsage(expr.plan, usage);
+    break;
+  case 'JsonBuildObject':
+    for (const field of expr.fields || []) collectExprSchemaRefs(field?.value, usage);
+    break;
+  case 'JsonAgg':
+    collectExprSchemaRefs(expr.value, usage);
+    for (const order of expr.orderBy || []) collectExprSchemaRefs(order?.expr, usage);
+    break;
+  default:
+    break;
+  }
+}
+
+function extractSchemaName(tableRef) {
+  const parts = String(tableRef).split('.').map((part) => part.trim()).filter(Boolean);
+  return parts.length === 2 ? parts[0] : null;
 }
 
 function resolveRootType(ir, rootFieldName) {

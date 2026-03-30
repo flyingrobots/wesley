@@ -13,6 +13,7 @@ import {
   summarizeEvidenceQuality,
   totalEvidenceCitations
 } from '@wesley/core';
+import { Holmes } from '@wesley/holmes';
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import { resolveRunMetadata } from '../utils/run-metadata.mjs';
 import {
@@ -68,6 +69,7 @@ export class CertCreateCommand extends WesleyCommand {
       await readCurrentCounterfactualSummary(this.ctx.fs)
     );
     const evidence = await buildShipmeEvidenceSummary(this.ctx, bundle);
+    const holmes = buildShipmeHolmesSummary(bundle, this.ctx.logger);
     const run = resolveRunMetadata(options, realm || {});
     const resumeState = options.resume
       ? resolveResumeState(this.ctx?.eventStore, { ...run, command: 'cert-create' })
@@ -102,6 +104,7 @@ export class CertCreateCommand extends WesleyCommand {
         timestamp: now,
         scores: scores?.scores || null,
         evidence,
+        holmes,
         realm: realm || null,
         counterfactual,
         artifacts,
@@ -183,6 +186,12 @@ function renderSHIPME(cert) {
     cert.evidence
       ? `- Evidence Trust: ${cert.evidence.trust}${cert.evidence.reasons.length > 0 ? ` (${cert.evidence.reasons[0]})` : ''}`
       : '- Evidence Trust: n/a',
+    cert.holmes
+      ? `- HOLMES: ${cert.holmes.shipVerdict}${cert.holmes.baseReadiness && cert.holmes.baseReadiness !== cert.holmes.shipVerdict ? ` (base ${cert.holmes.baseReadiness})` : ''}`
+      : '- HOLMES: n/a',
+    cert.holmes
+      ? `- HOLMES Gates: ${cert.holmes.gateFailures} failing · ${cert.holmes.gateWarnings} warnings${cert.holmes.evidenceTrust ? `; evidence trust ${cert.holmes.evidenceTrust}` : ''}`
+      : '- HOLMES Gates: n/a',
     cert.counterfactual ? `- Counterfactual: ${cert.counterfactual.gate} (${cert.counterfactual.riskClass})` : '- Counterfactual: n/a',
     '',
     '<!-- WESLEY_CERT:BEGIN -->',
@@ -269,4 +278,35 @@ async function buildShipmeEvidenceSummary(ctx, bundle) {
     trust: trust.level,
     reasons: trust.reasons
   };
+}
+
+function buildShipmeHolmesSummary(bundle, logger) {
+  if (!bundle?.evidence) return null;
+
+  try {
+    const investigation = new Holmes(bundle).investigationData();
+    const gates = Array.isArray(investigation?.gates) ? investigation.gates : [];
+    const blockingGates = gates
+      .filter(gate => gate?.status === '⛔')
+      .map(gate => gate.gate);
+    const warningGates = gates
+      .filter(gate => gate?.status === '⚠️')
+      .map(gate => gate.gate);
+
+    return {
+      generatedAt: investigation?.metadata?.generatedAt || bundle.timestamp || null,
+      shipVerdict: investigation?.verdict?.code || investigation?.metadata?.verificationStatus || 'UNKNOWN',
+      baseReadiness: investigation?.metadata?.readinessStatus || null,
+      evidenceTrust: investigation?.metadata?.evidenceTrust || 'missing',
+      verificationCount: investigation?.metadata?.verificationCount ?? 0,
+      gateFailures: blockingGates.length,
+      gateWarnings: warningGates.length,
+      blockingGates,
+      warningGates,
+      message: investigation?.verdict?.message || null
+    };
+  } catch (error) {
+    logger?.debug?.('buildShipmeHolmesSummary: unable to summarize HOLMES investigation: %s', error?.message || error);
+    return null;
+  }
 }

@@ -2,7 +2,12 @@
  * Cert Verify - Validate SHIPME signatures and realm verdict
  */
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
-import { extractJsonBlock, canonicalize } from './_cert-utils.mjs';
+import {
+  extractJsonBlock,
+  canonicalize,
+  buildCertBadge,
+  evaluateCertificatePolicy
+} from './_cert-utils.mjs';
 import { createAjv, compileSchema } from '../framework/schemaValidator.mjs';
 import { GENERATED_SHIPME_PATH, WesleyError } from '@wesley/core';
 
@@ -37,15 +42,20 @@ export class CertVerifyCommand extends WesleyCommand {
         if (ok) { validCount++; break; }
       }
     }
-    const okRealm = json?.realm?.verdict === 'PASS';
-    const okCounterfactual = !json?.counterfactual || json.counterfactual.gate !== 'fail';
-    const ok = validCount > 0 && okRealm && okCounterfactual;
-    const badge = `[REALM] ${okRealm ? 'PASS' : 'FAIL'} — sha ${json.sha?.slice(0,7) || 'unknown'}`;
+    const policy = evaluateCertificatePolicy(json);
+    const ok = validCount > 0 && policy.eligibleToShip;
+    const badge = buildCertBadge(json);
     const result = {
       ok,
       validSignatures: validCount,
       badge,
+      realmVerdict: json?.realm?.verdict || null,
       counterfactualGate: json?.counterfactual?.gate || null,
+      holmesVerdict: policy.holmesVerdict,
+      holmesPassed: policy.okHolmes,
+      eligibleToShip: policy.eligibleToShip,
+      reasons: policy.reasons,
+      holmes: json?.holmes || null,
       evidence: json?.evidence || null
     };
     if (options.json) this.ctx.stdout.write(JSON.stringify(result, null, 2) + '\n');

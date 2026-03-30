@@ -389,7 +389,10 @@ export class ScoringEngine {
       }
     }
 
-    return total > 0 ? covered / total : 0;
+    // Index coverage is used as a performance gate, not as a generic presence metric.
+    // When the schema defines no indexed fields, there is no performance-test obligation
+    // to satisfy, so we treat that branch as fully covered instead of penalizing it.
+    return total > 0 ? covered / total : 1;
   }
 
   /**

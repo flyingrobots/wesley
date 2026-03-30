@@ -20,6 +20,9 @@ jobs:
   wesley-generate:
     name: "🚀 Wesley Generation"
     runs-on: ubuntu-latest
+    outputs:
+      schema: ${{ steps.detect.outputs.schema }}
+      bundle_dir: ${{ steps.detect.outputs.bundle_dir }}
     
     steps:
     
@@ -42,6 +45,8 @@ jobs:
           set -euo pipefail
           if [ -n "${WESLEY_SCHEMA:-}" ] && [ -f "$WESLEY_SCHEMA" ]; then
             schema="$WESLEY_SCHEMA"
+          elif [ -n "${HOLMES_SCHEMA:-}" ] && [ -f "$HOLMES_SCHEMA" ]; then
+            schema="$HOLMES_SCHEMA"
           else
             mapfile -t files < <(git ls-files "**/*.graphql" 2>/dev/null || true)
             picked=""
@@ -63,8 +68,8 @@ jobs:
       - name: "🛠️ Setup HOLMES environment"
         uses: ./.github/actions/holmes-setup
         with:
-          bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
-          schema: ${{ env.HOLMES_SCHEMA }}
+          bundle-dir: ${{ steps.detect.outputs.bundle_dir }}
+          schema: ${{ steps.detect.outputs.schema }}
           ops-dir: ${{ env.HOLMES_OPS_DIR }}
           out-dir: ${{ env.HOLMES_OUT_DIR }}
           artifact-name: ${{ env.HOLMES_ARTIFACT }}
@@ -73,8 +78,8 @@ jobs:
       - name: "📊 Display Scores"
         run: |
           echo "## 📊 Generation Scores"
-          if [ -f $HOLMES_BUNDLE_DIR/scores.json ]; then
-            cat $HOLMES_BUNDLE_DIR/scores.json | jq '.scores'
+          if [ -f "${{ steps.detect.outputs.bundle_dir }}/scores.json" ]; then
+            cat "${{ steps.detect.outputs.bundle_dir }}/scores.json" | jq '.scores'
           else
             echo "No scores.json found yet"
           fi
@@ -88,17 +93,17 @@ jobs:
           
       - name: "📦 Prepare Bundle for Upload"
         run: |
-          ls -la $HOLMES_BUNDLE_DIR
-          test -f "$HOLMES_BUNDLE_DIR/bundle.json"
+          ls -la "${{ steps.detect.outputs.bundle_dir }}"
+          test -f "${{ steps.detect.outputs.bundle_dir }}/bundle.json"
 
       - name: "💾 Upload Bundle"
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
         with:
           name: ${{ env.HOLMES_ARTIFACT }}
           path: |
-            ${{ env.HOLMES_BUNDLE_DIR }}/bundle.json
-            ${{ env.HOLMES_BUNDLE_DIR }}/scores.json
-            ${{ env.HOLMES_BUNDLE_DIR }}/history.json
+            ${{ steps.detect.outputs.bundle_dir }}/bundle.json
+            ${{ steps.detect.outputs.bundle_dir }}/scores.json
+            ${{ steps.detect.outputs.bundle_dir }}/history.json
           if-no-files-found: error
           
   holmes-investigate:
@@ -121,8 +126,8 @@ jobs:
       - name: "🛠️ Setup HOLMES environment"
         uses: ./.github/actions/holmes-setup
         with:
-          bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
-          schema: ${{ env.HOLMES_SCHEMA }}
+          bundle-dir: ${{ needs.wesley-generate.outputs.bundle_dir }}
+          schema: ${{ needs.wesley-generate.outputs.schema }}
           ops-dir: ${{ env.HOLMES_OPS_DIR }}
           out-dir: ${{ env.HOLMES_OUT_DIR }}
           artifact-name: ${{ env.HOLMES_ARTIFACT }}
@@ -133,8 +138,8 @@ jobs:
         with:
           command: investigate
           report-name: holmes
-          schema-path: ${{ env.HOLMES_SCHEMA }}
-          bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
+          schema-path: ${{ needs.wesley-generate.outputs.schema }}
+          bundle-dir: ${{ needs.wesley-generate.outputs.bundle_dir }}
 
       - name: "💾 Save Report"
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
@@ -146,7 +151,7 @@ jobs:
   watson-verify:
     name: "🩺 WATSON Verification"
     runs-on: ubuntu-latest
-    needs: holmes-investigate
+    needs: [wesley-generate, holmes-investigate]
     
     steps:
     
@@ -163,8 +168,8 @@ jobs:
       - name: "🛠️ Setup HOLMES environment"
         uses: ./.github/actions/holmes-setup
         with:
-          bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
-          schema: ${{ env.HOLMES_SCHEMA }}
+          bundle-dir: ${{ needs.wesley-generate.outputs.bundle_dir }}
+          schema: ${{ needs.wesley-generate.outputs.schema }}
           ops-dir: ${{ env.HOLMES_OPS_DIR }}
           out-dir: ${{ env.HOLMES_OUT_DIR }}
           artifact-name: ${{ env.HOLMES_ARTIFACT }}
@@ -175,8 +180,8 @@ jobs:
         with:
           command: verify
           report-name: watson
-          schema-path: ${{ env.HOLMES_SCHEMA }}
-          bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
+          schema-path: ${{ needs.wesley-generate.outputs.schema }}
+          bundle-dir: ${{ needs.wesley-generate.outputs.bundle_dir }}
 
       - name: "💾 Save Report"
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
@@ -188,7 +193,7 @@ jobs:
   moriarty-predict:
     name: "🔮 MORIARTY Predictions"
     runs-on: ubuntu-latest
-    needs: watson-verify
+    needs: [wesley-generate, watson-verify]
     
     steps:
     
@@ -207,8 +212,8 @@ jobs:
       - name: "🛠️ Setup HOLMES environment"
         uses: ./.github/actions/holmes-setup
         with:
-          bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
-          schema: ${{ env.HOLMES_SCHEMA }}
+          bundle-dir: ${{ needs.wesley-generate.outputs.bundle_dir }}
+          schema: ${{ needs.wesley-generate.outputs.schema }}
           ops-dir: ${{ env.HOLMES_OPS_DIR }}
           out-dir: ${{ env.HOLMES_OUT_DIR }}
           artifact-name: ${{ env.HOLMES_ARTIFACT }}
@@ -227,7 +232,7 @@ jobs:
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
         continue-on-error: true
         env:
-          BUNDLE_DIR: ${{ env.HOLMES_BUNDLE_DIR }}
+          BUNDLE_DIR: ${{ needs.wesley-generate.outputs.bundle_dir }}
           BASE_REF: ${{ github.base_ref }}
           TIMEFRAME_HOURS: 168
         with:
@@ -331,8 +336,8 @@ jobs:
         with:
           command: predict
           report-name: moriarty
-          schema-path: ${{ env.HOLMES_SCHEMA }}
-          bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
+          schema-path: ${{ needs.wesley-generate.outputs.schema }}
+          bundle-dir: ${{ needs.wesley-generate.outputs.bundle_dir }}
         env:
           MORIARTY_BASE_REF: "${{ github.base_ref }}"
           MORIARTY_USE_GIT: "1"

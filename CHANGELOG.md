@@ -66,6 +66,30 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **PR #463 cert failure JSON assertions**: The HOLMES failure-path cert E2E
+  tests now assert against the first JSON document emitted by `cert-verify
+  --json`, splitting presence and value checks for `holmesPassed`,
+  `holmesVerdict`, `eligibleToShip`, and `reasons`, so missing fields and wrong
+  values fail independently while staying robust when the command also emits
+  the framework error envelope.
+- **PR #463 HOLMES fixture and scoring follow-up**: The cert E2E HOLMES
+  fixtures now share one parameterized builder, preserve the weak-evidence and
+  strong-evidence profiles used by SHIPME coverage, include representative
+  `testResults` payloads, and the scoring tests now pin both sides of index
+  coverage semantics with clearer scenario names and an explicit “indexed but
+  uncovered” regression.
+- **HOLMES workflow schema selection and SHIPME cert fixture**: The HOLMES CI
+  workflow now honors `HOLMES_SCHEMA` before falling back to repository-wide
+  GraphQL discovery, TCI now treats “no indexed fields” as a fully covered
+  performance obligation instead of an automatic miss, and the SHIPME workflow
+  now exercises a clean schema fixture that can honestly clear HOLMES before
+  certificate verification.
+- **HOLMES-backed SHIPME certification**: The certificate workflow now emits a
+  real Wesley bundle before running HOLMES, `cert-create` builds HOLMES
+  summaries from bundle-embedded scores instead of requiring a separate
+  `scores.json`, `cert-verify` reports normalized HOLMES verdicts, and the
+  HOLMES workflow jobs now declare the generated bundle/schema dependency
+  explicitly.
 - **SHIPME PR comment matching**: Hardened the certificate workflow to anchor
   bot comments with a stable HTML marker, paginate comment lookup, and target
   `github-actions[bot]` explicitly before updating an existing PR comment.
