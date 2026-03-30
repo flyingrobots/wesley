@@ -1,10 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
+import { fileURLToPath } from 'node:url';
 
 import {
   buildHolmesSuiteComment,
   HOLMES_SUITE_COMMENT_MARKER
 } from '../src/pr-comment.mjs';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const prCommentCliPath = path.join(__dirname, '..', 'src', 'pr-comment-cli.mjs');
 
 function sampleHolmesReport(overrides = {}) {
   return {
@@ -153,4 +161,54 @@ test('buildHolmesSuiteComment explains unavailable reports without crashing the 
   assert.ok(comment.includes('The Holmes report is unavailable because the workflow status is failure.'));
   assert.ok(comment.includes('The Moriarty forecast is unavailable because the workflow status is cancelled.'));
   assert.ok(comment.includes('Fix the HOLMES workflow job first so the PR has a real evidence investigation again.'));
+});
+
+test('buildHolmesSuiteComment normalizes repeated whitespace and trailing periods in summaries', () => {
+  const comment = buildHolmesSuiteComment({
+    pullRequestNumber: 466,
+    statuses: {
+      holmes: 'success',
+      watson: 'success',
+      moriarty: 'success'
+    },
+    holmesReport: sampleHolmesReport({
+      gates: [
+        { gate: 'Migration Risk', status: '⛔', evidence: 'MRI: 46.0%', ruling: 'HIGH   RISK!....' }
+      ]
+    }),
+    watsonReport: sampleWatsonReport({
+      inconsistencies: ['One   cited span no longer matches the current file contents....']
+    }),
+    moriartyReport: sampleMoriartyReport(),
+    holmesMarkdown: '### raw holmes',
+    watsonMarkdown: '### raw watson',
+    moriartyMarkdown: '### raw moriarty'
+  });
+
+  assert.equal(comment.includes('One   cited span'), false, 'summary should collapse repeated whitespace');
+  assert.equal(comment.includes('current file contents....'), false, 'summary should trim trailing periods from source phrases');
+  assert.ok(comment.includes('Most important concern: One cited span no longer matches the current file contents.'), 'Watson concern should collapse internal whitespace and trim trailing periods');
+});
+
+test('pr-comment CLI builds comment output without external argument parser dependencies', () => {
+  const reportsDir = mkdtempSync(path.join(os.tmpdir(), 'holmes-pr-comment-'));
+  try {
+    writeFileSync(path.join(reportsDir, 'holmes-report.md'), '### holmes raw\n');
+    const result = spawnSync(process.execPath, [
+      prCommentCliPath,
+      '--reports-dir', reportsDir,
+      '--pr-number', '467',
+      '--holmes-status', 'failure',
+      '--watson-status', 'failure',
+      '--moriarty-status', 'failure'
+    ], {
+      encoding: 'utf8'
+    });
+
+    assert.equal(result.status, 0, result.stderr);
+    assert.ok(result.stdout.includes(HOLMES_SUITE_COMMENT_MARKER));
+    assert.ok(result.stdout.includes('The Holmes report is unavailable because the workflow status is failure.'));
+  } finally {
+    rmSync(reportsDir, { recursive: true, force: true });
+  }
 });

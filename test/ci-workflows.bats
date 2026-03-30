@@ -121,6 +121,10 @@ load 'bats-plugins/bats-assert/load'
 }
 
 @test "wesley-holmes workflow builds PR comments via the Holmes comment builder" {
+  run bash -lc "awk '/comment-report:/{flag=1} /📝 Create Comment/{print; exit} flag{print}' .github/workflows/wesley-holmes.yml | grep -F 'actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd' | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
   run bash -lc "grep -F 'packages/wesley-holmes/src/pr-comment-cli.mjs' .github/workflows/wesley-holmes.yml | wc -l"
   assert_success
   [ "$output" -eq 1 ]
@@ -132,4 +136,8 @@ load 'bats-plugins/bats-assert/load'
   run bash -lc "grep -F '<!-- HOLMES_SUITE_COMMENT -->' .github/workflows/wesley-holmes.yml | wc -l"
   assert_success
   [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F \"import { Command } from 'commander';\" packages/wesley-holmes/src/pr-comment-cli.mjs | wc -l || true"
+  assert_success
+  [ "$output" -eq 0 ]
 }

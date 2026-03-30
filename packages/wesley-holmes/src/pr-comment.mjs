@@ -378,7 +378,7 @@ function dedupeStrings(items) {
 function trimSentence(value) {
   const text = normalizeOptionalString(value);
   if (!text) return '';
-  return text.replace(/\s+/g, ' ').replace(/[.]+$/g, '');
+  return stripTrailingPeriods(collapseWhitespace(text));
 }
 
 function normalizeOptionalString(value) {
@@ -391,4 +391,29 @@ function firstNonEmpty(values) {
 
 function statusLabel(status) {
   return normalizeOptionalString(status) || 'unknown';
+}
+
+function collapseWhitespace(text) {
+  let result = '';
+  let previousWasWhitespace = false;
+  for (const char of text) {
+    const isWhitespace = char.trim() === '';
+    if (isWhitespace) {
+      if (!previousWasWhitespace) {
+        result += ' ';
+      }
+    } else {
+      result += char;
+    }
+    previousWasWhitespace = isWhitespace;
+  }
+  return result.trim();
+}
+
+function stripTrailingPeriods(text) {
+  let end = text.length;
+  while (end > 0 && text[end - 1] === '.') {
+    end -= 1;
+  }
+  return text.slice(0, end);
 }
