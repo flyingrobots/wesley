@@ -21,11 +21,11 @@ load 'bats-plugins/bats-assert/load'
 
   run bash -lc "grep -F \"github-actions[bot]\" .github/workflows/cert-shipme.yml | wc -l"
   assert_success
-  [ "$output" -eq 1 ]
+  [ "$output" -ge 1 ]
 
   run bash -lc "grep -F 'per_page: 100' .github/workflows/cert-shipme.yml | wc -l"
   assert_success
-  [ "$output" -eq 1 ]
+  [ "$output" -ge 1 ]
 
   run bash -lc "grep -F 'pull-requests: write' .github/workflows/cert-shipme.yml | wc -l"
   assert_success
@@ -48,6 +48,18 @@ load 'bats-plugins/bats-assert/load'
   [ "$output" -eq 1 ]
 
   run bash -lc "grep -F '.wesley-cache/holmes-report.json' .github/workflows/cert-shipme.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'Wait for HOLMES suite comment' .github/workflows/cert-shipme.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F '<!-- HOLMES_SUITE_COMMENT -->' .github/workflows/cert-shipme.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F \"steps.holmes_comment_wait.outputs.ready == 'true'\" .github/workflows/cert-shipme.yml | wc -l"
   assert_success
   [ "$output" -eq 1 ]
 }

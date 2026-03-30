@@ -97,9 +97,43 @@ jobs:
         id: badge
         run: |
           echo "BADGE=$(node packages/wesley-host-node/bin/wesley.mjs cert-badge --in SHIPME.md)" >> $GITHUB_OUTPUT
+
+      - name: Wait for HOLMES suite comment
+        if: github.event_name == 'pull_request'
+        id: holmes_comment_wait
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
+        with:
+          script: |
+            const marker = '<!-- HOLMES_SUITE_COMMENT -->';
+            const started = Date.now();
+            const timeoutMs = 5 * 60 * 1000;
+            const pollIntervalMs = 15 * 1000;
+
+            while (Date.now() - started < timeoutMs) {
+              const comments = await github.paginate(github.rest.issues.listComments, {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                per_page: 100,
+              });
+
+              const holmesComment = comments.find(
+                (comment) => comment.user?.login === 'github-actions[bot]' && comment.body?.includes(marker)
+              );
+
+              if (holmesComment) {
+                core.setOutput('ready', 'true');
+                return;
+              }
+
+              await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+            }
+
+            core.warning('HOLMES suite comment did not appear before timeout; skipping SHIPME PR comment to avoid racing the investigation summary.');
+            core.setOutput('ready', 'false');
       
       - name: Create/Update PR Comment
-        if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]'
+        if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]' && steps.holmes_comment_wait.outputs.ready == 'true'
         continue-on-error: true
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
         with:
