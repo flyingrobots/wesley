@@ -165,6 +165,18 @@ load 'bats-plugins/bats-assert/load'
   assert_success
   [ "$output" -eq 1 ]
 
+  run bash -lc "grep -F \"comment.user.login === 'github-actions[bot]'\" .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F \"comment.body.includes('The Case of Pull Request')\" .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F \"(comment.body.includes(marker) || comment.body.includes('The Case of Pull Request'))\" .github/workflows/wesley-holmes.yml | wc -l || true"
+  assert_success
+  [ "$output" -eq 0 ]
+
   run bash -lc 'grep -F -- '\''--head-sha "$GITHUB_SHA"'\'' .github/workflows/wesley-holmes.yml | wc -l'
   assert_success
   [ "$output" -eq 1 ]

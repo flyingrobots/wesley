@@ -637,9 +637,18 @@ jobs:
               issue_number: context.issue.number,
             });
 
-            const botComment = comments.find(comment =>
+            const legacyBotComment = comments.find(comment =>
               comment.user.type === 'Bot' &&
-              (comment.body.includes(marker) || comment.body.includes('The Case of Pull Request'))
+              !comment.body.includes(marker) &&
+              comment.body.includes('The Case of Pull Request')
+            );
+            if (legacyBotComment) {
+              core.warning(`Detected a legacy HOLMES-like bot comment without marker at comment ${legacyBotComment.id}; leaving it untouched.`);
+            }
+
+            const botComment = comments.find(comment =>
+              comment.user.login === 'github-actions[bot]' &&
+              comment.body.includes(marker)
             );
 
             if (botComment) {
