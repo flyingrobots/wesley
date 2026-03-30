@@ -88,6 +88,11 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   score acronyms out of the visible summary, and the missing-report tempdir
   fixture test now has an explicit timeout so the suite fails fast instead of
   hanging on a stuck report loader.
+- **PR #467 Holmes comment ownership guard**: The HOLMES PR comment workflow
+  now updates only the marker-tagged `github-actions[bot]` comment, and it
+  warns instead of overwriting legacy bot comments that merely contain the
+  Holmes title text. This prevents the PR comment updater from clobbering
+  unrelated bot comments such as CodeRabbit replies.
 - **PR #463 cert failure JSON assertions**: The HOLMES failure-path cert E2E
   tests now assert against the first JSON document emitted by `cert-verify
   --json`, splitting presence and value checks for `holmesPassed`,
