@@ -608,110 +608,26 @@ jobs:
           path: dashboard
           if-no-files-found: error
 
+      - name: "🧾 Build PR Comment"
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          node packages/wesley-holmes/src/pr-comment-cli.mjs \
+            --reports-dir reports \
+            --pr-number "$PR_NUMBER" \
+            --holmes-status "$HOLMES_STATUS" \
+            --watson-status "$WATSON_STATUS" \
+            --moriarty-status "$MORIARTY_STATUS" \
+            > reports/pr-comment.md
+
       - name: "📝 Create Comment"
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
         with:
           script: |
             const fs = require('fs');
-            const path = require('path');
-
-            const findMatches = (root, filename) => {
-              const results = [];
-              const stack = [root];
-              while (stack.length) {
-                const dir = stack.pop();
-                let entries = [];
-                try {
-                  entries = fs.readdirSync(dir, { withFileTypes: true });
-                } catch {
-                  continue;
-                }
-                for (const entry of entries) {
-                  const fullPath = path.join(dir, entry.name);
-                  if (entry.isDirectory()) {
-                    stack.push(fullPath);
-                  } else if (entry.isFile() && entry.name === filename) {
-                    results.push(fullPath);
-                  }
-                }
-              }
-              return results;
-            };
-
-            const findReportPath = (filename, reportName) => {
-              const matches = findMatches('reports', filename);
-              if (matches.length === 0) {
-                return null;
-              }
-              if (reportName) {
-                const preferred = matches.find((candidate) => {
-                  const parts = candidate.split(path.sep).map((part) => part.toLowerCase());
-                  return parts.includes(reportName.toLowerCase());
-                });
-                if (preferred) {
-                  return preferred;
-                }
-              }
-              return matches[0];
-            };
-
-            const readReport = (status, reportName, filename) => {
-              if (status !== 'success') {
-                return `_Report unavailable: upstream job status **${status}**_`;
-              }
-              const match = findReportPath(filename, reportName);
-              if (!match) {
-                console.warn(`Report not found: ${reportName}/${filename}`);
-                return `_Report missing for ${reportName}_`;
-              }
-              return fs.readFileSync(match, 'utf8');
-            };
-
-            const statuses = {
-              holmes: process.env.HOLMES_STATUS || 'unknown',
-              watson: process.env.WATSON_STATUS || 'unknown',
-              moriarty: process.env.MORIARTY_STATUS || 'unknown'
-            };
-
-            const holmes = readReport(statuses.holmes, 'holmes', 'holmes-report.md');
-            const watson = readReport(statuses.watson, 'watson', 'watson-report.md');
-            const moriarty = readReport(statuses.moriarty, 'moriarty', 'moriarty-report.md');
-
-            const lines = [
-              `# 🔍 The Case of Pull Request #${context.payload.pull_request.number}`,
-              '',
-              '<details><summary>🕵️ SHA-lock HOLMES\'s Investigation (click to expand)</summary>',
-              '',
-              holmes,
-              '',
-              '</details>',
-              '',
-              '---',
-              '',
-              '<details><summary>🩺 Dr. WATSON\'s Verification (click to expand)</summary>',
-              '',
-              watson,
-              '',
-              '</details>',
-              '',
-              '---',
-              '',
-              '<details><summary>🔮 Professor MORIARTY\'s Predictions (click to expand)</summary>',
-              '',
-              moriarty,
-              '',
-              '</details>',
-              '',
-              '---',
-              '',
-              '_Machine-readable reports:_ holmes-report.json · watson-report.json · moriarty-report.json (see workflow artifacts).',
-              '',
-              '---',
-              '',
-              '*Filed at 221B Repository Street*'
-            ];
-
-            const body = lines.join('\n');
+            const marker = '<!-- HOLMES_SUITE_COMMENT -->';
+            const body = fs.readFileSync('reports/pr-comment.md', 'utf8');
 
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
@@ -721,7 +637,7 @@ jobs:
 
             const botComment = comments.find(comment =>
               comment.user.type === 'Bot' &&
-              comment.body.includes('The Case of Pull Request')
+              (comment.body.includes(marker) || comment.body.includes('The Case of Pull Request'))
             );
 
             if (botComment) {
