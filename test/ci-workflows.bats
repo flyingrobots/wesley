@@ -31,6 +31,10 @@ load 'bats-plugins/bats-assert/load'
   assert_success
   [ "$output" -ge 1 ]
 
+  run bash -lc "grep -F 'actions: read' .github/workflows/cert-shipme.yml | wc -l"
+  assert_success
+  [ "$output" -ge 1 ]
+
   run bash -lc "grep -F 'Run HOLMES investigation' .github/workflows/cert-shipme.yml | wc -l"
   assert_success
   [ "$output" -eq 1 ]

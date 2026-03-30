@@ -20,6 +20,7 @@ jobs:
   cert:
     runs-on: ubuntu-latest
     permissions:
+      actions: read
       contents: read
       issues: write
       pull-requests: write

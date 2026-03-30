@@ -188,6 +188,33 @@ test('buildHolmesSuiteComment distinguishes missing and invalid report artifacts
     assert.ok(comment.includes('The Watson report is unavailable because the watson-report.json artifact could not be parsed as JSON.'));
     assert.ok(comment.includes('The Moriarty forecast is unavailable because the workflow finished without a readable moriarty-report.json artifact.'));
     assert.ok(comment.includes('Regenerate the HOLMES artifacts and make sure holmes-report.json is uploaded before trusting this PR summary.'));
+    assert.ok(comment.includes('Fix the WATSON report generation so watson-report.json contains valid JSON before trusting this PR summary.'));
+    assert.ok(comment.includes('Regenerate the MORIARTY artifacts and make sure moriarty-report.json is uploaded before trusting this PR summary.'));
+    assert.ok(comment.includes('_Report unavailable for watson: readable watson-report.md artifact not found._'));
+    assert.ok(comment.includes('_Report unavailable for moriarty: readable moriarty-report.md artifact not found._'));
+  } finally {
+    rmSync(reportsDir, { recursive: true, force: true });
+  }
+});
+
+test('buildHolmesSuiteComment keeps raw report sections honest when markdown artifacts are missing', () => {
+  const reportsDir = mkdtempSync(path.join(os.tmpdir(), 'holmes-pr-comment-markdown-'));
+  try {
+    writeFileSync(path.join(reportsDir, 'holmes-report.json'), JSON.stringify(sampleHolmesReport()));
+
+    const comment = buildHolmesSuiteComment({
+      pullRequestNumber: 466,
+      headSha: '0011223344556677',
+      ...loadHolmesSuiteReports(reportsDir, {
+        holmes: 'success',
+        watson: 'failure',
+        moriarty: 'failure'
+      })
+    });
+
+    assert.ok(comment.includes('Holmes says this change needs investigation before shipping.'));
+    assert.ok(comment.includes('_Report unavailable for holmes: readable holmes-report.md artifact not found._'));
+    assert.equal(comment.includes('job status: success'), false, 'raw section should not blame a success status for a missing markdown artifact');
   } finally {
     rmSync(reportsDir, { recursive: true, force: true });
   }

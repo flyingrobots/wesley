@@ -8,6 +8,7 @@ export function buildHolmesSuiteComment({
   headSha = '',
   statuses = {},
   reportStates = {},
+  markdownStates = {},
   holmesReport = null,
   watsonReport = null,
   moriartyReport = null,
@@ -42,15 +43,15 @@ export function buildHolmesSuiteComment({
     '',
     '---',
     '',
-    renderReportSection('🕵️ SHA-lock HOLMES full report', holmesMarkdown, statuses.holmes, 'holmes'),
+    renderReportSection('🕵️ SHA-lock HOLMES full report', holmesMarkdown, statuses.holmes, 'holmes', 'holmes-report.md', markdownStates.holmes),
     '',
     '---',
     '',
-    renderReportSection('🩺 Dr. WATSON full report', watsonMarkdown, statuses.watson, 'watson'),
+    renderReportSection('🩺 Dr. WATSON full report', watsonMarkdown, statuses.watson, 'watson', 'watson-report.md', markdownStates.watson),
     '',
     '---',
     '',
-    renderReportSection('🔮 Professor MORIARTY full report', moriartyMarkdown, statuses.moriarty, 'moriarty'),
+    renderReportSection('🔮 Professor MORIARTY full report', moriartyMarkdown, statuses.moriarty, 'moriarty', 'moriarty-report.md', markdownStates.moriarty),
     '',
     '---',
     '',
@@ -68,6 +69,9 @@ export function loadHolmesSuiteReports(reportsDir, statuses = {}) {
   const holmesReport = readJsonReport(reportsDir, 'holmes', 'holmes-report.json');
   const watsonReport = readJsonReport(reportsDir, 'watson', 'watson-report.json');
   const moriartyReport = readJsonReport(reportsDir, 'moriarty', 'moriarty-report.json');
+  const holmesMarkdown = readTextReport(reportsDir, 'holmes', 'holmes-report.md', statuses.holmes);
+  const watsonMarkdown = readTextReport(reportsDir, 'watson', 'watson-report.md', statuses.watson);
+  const moriartyMarkdown = readTextReport(reportsDir, 'moriarty', 'moriarty-report.md', statuses.moriarty);
   return {
     statuses,
     reportStates: {
@@ -75,12 +79,17 @@ export function loadHolmesSuiteReports(reportsDir, statuses = {}) {
       watson: watsonReport.state,
       moriarty: moriartyReport.state
     },
+    markdownStates: {
+      holmes: holmesMarkdown.state,
+      watson: watsonMarkdown.state,
+      moriarty: moriartyMarkdown.state
+    },
     holmesReport: holmesReport.value,
     watsonReport: watsonReport.value,
     moriartyReport: moriartyReport.value,
-    holmesMarkdown: readTextReport(reportsDir, 'holmes', 'holmes-report.md', statuses.holmes),
-    watsonMarkdown: readTextReport(reportsDir, 'watson', 'watson-report.md', statuses.watson),
-    moriartyMarkdown: readTextReport(reportsDir, 'moriarty', 'moriarty-report.md', statuses.moriarty)
+    holmesMarkdown: holmesMarkdown.value,
+    watsonMarkdown: watsonMarkdown.value,
+    moriartyMarkdown: moriartyMarkdown.value
   };
 }
 
@@ -143,10 +152,11 @@ function renderGlossary() {
   ];
 }
 
-function renderReportSection(title, markdown, status, reportName) {
+function renderReportSection(title, markdown, status, reportName, artifactName, markdownState) {
+  const unavailableBody = buildReportSectionUnavailableBody(reportName, artifactName, status, markdownState, markdown);
   const body = markdown && markdown.trim()
     ? markdown.trim()
-    : `_Report unavailable for ${reportName} (job status: ${status || 'unknown'})_`;
+    : unavailableBody;
   return `<details><summary>${title} (click to expand)</summary>\n\n${body}\n\n</details>`;
 }
 
@@ -268,13 +278,15 @@ function collectHolmesActions(report, status, reportState) {
 }
 
 function collectWatsonActions(report, status, reportState) {
-  if (buildUnavailableSummary('Watson report', 'watson-report.json', status, reportState, report)) return [];
+  const unavailableAction = buildUnavailableAction('WATSON', 'watson-report.json', status, reportState, report);
+  if (unavailableAction) return [unavailableAction];
   if (normalizeOptionalString(report?.opinion?.verdict) === 'PASSED') return [];
   return ['Resolve Watson’s verification concerns before trusting the Holmes verdict as final.'];
 }
 
 function collectMoriartyActions(report, status, reportState) {
-  if (buildUnavailableSummary('Moriarty forecast', 'moriarty-report.json', status, reportState, report)) return [];
+  const unavailableAction = buildUnavailableAction('MORIARTY', 'moriarty-report.json', status, reportState, report);
+  if (unavailableAction) return [unavailableAction];
   const actions = [];
   if (report.plateauDetected) {
     actions.push('Treat the readiness forecast as stalled until new evidence or real progress moves the trend again.');
@@ -353,10 +365,17 @@ function readJsonReport(root, reportName, filename) {
 }
 
 function readTextReport(root, reportName, filename, status) {
-  if (status !== 'success') return '';
+  if (status !== 'success') {
+    return { state: 'unavailable', value: '' };
+  }
   const reportPath = findReportPath(root, filename, reportName);
-  if (!reportPath) return '';
-  return readFileSync(reportPath, 'utf8');
+  if (!reportPath) {
+    return { state: 'missing', value: '' };
+  }
+  return {
+    state: 'loaded',
+    value: readFileSync(reportPath, 'utf8')
+  };
 }
 
 function verdictToPlainEnglish(verdict) {
@@ -454,6 +473,25 @@ function buildUnavailableAction(reportLabel, artifactName, status, reportState, 
     return `Fix the ${reportLabel} report generation so ${artifactName} contains valid JSON before trusting this PR summary.`;
   }
   return '';
+}
+
+function buildReportSectionUnavailableBody(reportName, artifactName, status, markdownState, markdown) {
+  const effectiveState = resolveArtifactState(markdownState, markdown, status);
+  if (status !== 'success') {
+    return `_Report unavailable for ${reportName} (job status: ${statusLabel(status)})_`;
+  }
+  if (effectiveState === 'missing') {
+    return `_Report unavailable for ${reportName}: readable ${artifactName} artifact not found._`;
+  }
+  return `_Report unavailable for ${reportName}: could not read ${artifactName}._`;
+}
+
+function resolveArtifactState(artifactState, artifactValue, status) {
+  const explicitState = normalizeOptionalString(artifactState);
+  if (explicitState) return explicitState;
+  if (normalizeOptionalString(artifactValue)) return 'loaded';
+  if (status === 'success') return 'missing';
+  return 'unavailable';
 }
 
 function collapseWhitespace(text) {
