@@ -66,6 +66,12 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **PR #467 HOLMES comment workflow follow-up**: The PR comment job now checks
+  out the repository before building the comment, the `pr-comment-cli` helper
+  no longer depends on `commander` so it can run in the lightweight workflow
+  job without installing package dependencies, and the comment summary cleanup
+  now uses linear whitespace and trailing-period normalization that is pinned by
+  direct Holmes comment tests.
 - **PR #463 cert failure JSON assertions**: The HOLMES failure-path cert E2E
   tests now assert against the first JSON document emitted by `cert-verify
   --json`, splitting presence and value checks for `holmesPassed`,
