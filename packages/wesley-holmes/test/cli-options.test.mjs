@@ -413,7 +413,10 @@ test('holmes CLI predict emits counterfactual report without projection alias', 
     const json = JSON.parse(readFileSync(jsonPath, 'utf8'));
     assert.ok(json.counterfactual, 'Counterfactual data should be present');
     assert.equal('projection' in json, false, 'Projection compatibility alias should be removed');
+    assert.ok(json.explain?.readiness?.counterfactual, 'Counterfactual readiness signal should be present in Moriarty EXPLAIN');
+    assert.equal(typeof json.explain.readiness.counterfactual.pass, 'boolean');
     assert.ok(result.stdout.includes('Counterfactual Analysis'));
+    assert.ok(result.stdout.includes('Counterfactual gate must be pass'));
     assert.equal(result.stdout.includes('Projection Compatibility'), false);
   } finally {
     fixture.cleanup();

@@ -13,7 +13,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import GitPlumbing from '@git-stunts/plumbing';
-import WarpGraph, {
+import {
+  WarpCore,
   GitGraphAdapter,
   exportCoordinateComparisonFact,
   exportCoordinateTransferPlanFact,
@@ -26,7 +27,7 @@ export const COUNTERFACTUAL_GRAPH_NAME = 'wesley-counterfactual-v1';
 export const COUNTERFACTUAL_SURFACE_VERSION = 'wesley-counterfactual-v1';
 export const COUNTERFACTUAL_DIR = GENERATED_COUNTERFACTUAL_DIR;
 export const COUNTERFACTUAL_CURRENT_PATH = GENERATED_COUNTERFACTUAL_CURRENT_PATH;
-export const GIT_WARP_PROVIDER_VERSION = '14.16.2';
+export const GIT_WARP_PROVIDER_VERSION = '16.0.0';
 export const COUNTERFACTUAL_STORE_LEASE_VERSION = 1;
 
 const DEFAULT_COUNTERFACTUAL_CACHE_TTL_HOURS = 72;
@@ -384,7 +385,7 @@ async function ensureEncodedSurface({ store, workspaceDir, sourceSha, sourceId, 
 
   await mkdir(path.dirname(metadataPath), { recursive: true });
   const writerId = `surface-${surfaceDigest.slice(0, 16)}`;
-  const graph = await WarpGraph.open({
+  const graph = await WarpCore.open({
     persistence: store.persistence,
     graphName: COUNTERFACTUAL_GRAPH_NAME,
     writerId
@@ -421,7 +422,7 @@ async function openProviderStore(storeRoot) {
   ensureGitRepo(storeRoot);
   const plumbing = GitPlumbing.createDefault({ cwd: storeRoot });
   const persistence = new GitGraphAdapter({ plumbing });
-  const observer = await WarpGraph.open({
+  const observer = await WarpCore.open({
     persistence,
     graphName: COUNTERFACTUAL_GRAPH_NAME,
     writerId: 'observer'

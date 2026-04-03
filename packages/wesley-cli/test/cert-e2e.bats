@@ -42,7 +42,7 @@ create_counterfactual_summary() {
   cat > .wesley-cache/counterfactual/current.json << JSON
 {
   "provider": "git-warp",
-  "providerPackageVersion": "14.16.2",
+  "providerPackageVersion": "16.0.0",
   "surfaceVersion": "wesley-counterfactual-v1",
   "laneFingerprint": "lane-123",
   "composition": "merge",

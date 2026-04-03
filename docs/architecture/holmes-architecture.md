@@ -78,6 +78,7 @@ To clarify why a branch is (or isn’t) “prod-ready,” Moriarty now prints an
 - MRI ≤ 40%
 - CI stability (base branch, recent horizon) ≥ 90%
 - Evidence Trust ≥ `moderate` when the latest history point carries citation-quality metadata
+- Counterfactual gate = `pass` when `--counterfactual` analysis is attached
 
 These thresholds are configurable via `MORIARTY_READY_*` environment variables and are treated as guidance in the report. They do not override Holmes’s verdict gates, but weak or missing evidence trust now lowers Moriarty confidence directly when the history stream includes that signal.
 

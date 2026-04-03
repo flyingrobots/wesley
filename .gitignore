@@ -41,3 +41,6 @@ packages/wesley-cli/test/bats-plugins/
 EDITORS-REPORT.md
 .ignore
 .audit_reports/
+
+# Local architecture scratch notes
+docs/architecture/continuum-stack.tex

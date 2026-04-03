@@ -140,6 +140,22 @@ export function renderMoriartyPrediction(data, { context = {}, minSlope = 0.01 }
         : '';
       report.push(`- Evidence Trust ≥ ${r.evidenceTrust.threshold} → ${r.evidenceTrust.pass ? 'PASS ✅' : 'FAIL ❌'} (actual ${r.evidenceTrust.value})${reason}`);
     }
+    if (r.counterfactual) {
+      const reason = Array.isArray(r.counterfactual.reasons) && r.counterfactual.reasons.length > 0
+        ? ` — ${r.counterfactual.reasons[0]}`
+        : '';
+      const details = [
+        `actual ${r.counterfactual.value}`,
+        `status ${r.counterfactual.status}`,
+        `risk ${r.counterfactual.riskClass}`
+      ];
+      if (r.counterfactual.wouldFail) {
+        details.push('would fail under hard gating');
+      }
+      report.push(
+        `- Counterfactual gate must be ${r.counterfactual.threshold} → ${r.counterfactual.pass ? 'PASS ✅' : 'FAIL ❌'} (${details.join(', ')})${reason}`
+      );
+    }
     if (data.explain.delivery) {
       report.push(`- Delivery context (last ${context?.timeframeHours ?? 168}h): ${data.explain.delivery.issuesClosed} issues closed · ${data.explain.delivery.prsMerged} PRs merged (informational, not gating)`);
     }
