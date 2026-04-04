@@ -1,0 +1,21 @@
+# Backlog
+
+The filesystem is the queue.
+
+Lanes:
+
+- `inbox/` for raw captured ideas
+- `asap/` for work that should be pulled soon
+- `up-next/` for the next likely pull
+- `cool-ideas/` for non-commitment exploration
+- `bad-code/` for tech debt that is worth naming
+
+When an item is pulled into `docs/design/<cycle>/`, the backlog file is removed.
+Work should not live in two places at once.
+
+Prefer legend prefixes when they help:
+
+- `SOURCE_<name>.md`
+- `TRANSMUTE_<name>.md`
+- `RUNTIME_<name>.md`
+- `EVIDENCE_<name>.md`
