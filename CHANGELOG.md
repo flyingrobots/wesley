@@ -93,6 +93,13 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   warns instead of overwriting legacy bot comments that merely contain the
   Holmes title text. This prevents the PR comment updater from clobbering
   unrelated bot comments such as CodeRabbit replies.
+- **PR #467 Holmes next-action and status follow-up**: The Holmes PR comment
+  builder now preserves at least one suggested action from Holmes, Watson, and
+  Moriarty before truncating the visible list, so non-Holmes recovery steps do
+  not disappear behind a Holmes-heavy action queue. Omitted workflow-status
+  flags also no longer masquerade as unknown workflow failures when readable
+  Holmes-suite artifacts are already present, and the regression is pinned by
+  direct comment-builder tests.
 - **PR #463 cert failure JSON assertions**: The HOLMES failure-path cert E2E
   tests now assert against the first JSON document emitted by `cert-verify
   --json`, splitting presence and value checks for `holmesPassed`,

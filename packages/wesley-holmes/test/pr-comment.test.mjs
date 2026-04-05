@@ -247,6 +247,67 @@ test('buildHolmesSuiteComment normalizes repeated whitespace and trailing period
   assert.ok(comment.includes('Most important concern: One cited span no longer matches the current file contents.'), 'Watson concern should collapse internal whitespace and trim trailing periods');
 });
 
+test('buildHolmesSuiteComment preserves at least one next action per suite before truncating to four items', () => {
+  const comment = buildHolmesSuiteComment({
+    pullRequestNumber: 466,
+    headSha: '0123abc456def789',
+    statuses: {
+      holmes: 'success',
+      watson: 'success',
+      moriarty: 'success'
+    },
+    holmesReport: sampleHolmesReport(),
+    watsonReport: sampleWatsonReport(),
+    moriartyReport: sampleMoriartyReport({
+      plateauDetected: true,
+      warnings: []
+    }),
+    holmesMarkdown: '### raw holmes',
+    watsonMarkdown: '### raw watson',
+    moriartyMarkdown: '### raw moriarty'
+  });
+
+  const actionSection = comment
+    .split('## Suggested next actions\n\n')[1]
+    .split('\n\n<details><summary>📚 Glossary')[0]
+    .trim()
+    .split('\n');
+
+  assert.deepEqual(actionSection, [
+    '1. Tighten citations so the report points to exact lines instead of whole files or coarse references.',
+    '2. Resolve Watson’s verification concerns before trusting the Holmes verdict as final.',
+    '3. Treat the readiness forecast as stalled until new evidence or real progress moves the trend again.',
+    '4. Add or strengthen tests for the schema elements and operations HOLMES flagged as weakly proven.'
+  ]);
+});
+
+test('buildHolmesSuiteComment keeps loaded reports visible when workflow statuses are omitted', () => {
+  const reportsDir = mkdtempSync(path.join(os.tmpdir(), 'holmes-pr-comment-implicit-status-'));
+  try {
+    writeFileSync(path.join(reportsDir, 'holmes-report.json'), JSON.stringify(sampleHolmesReport()));
+    writeFileSync(path.join(reportsDir, 'watson-report.json'), JSON.stringify(sampleWatsonReport()));
+    writeFileSync(path.join(reportsDir, 'moriarty-report.json'), JSON.stringify(sampleMoriartyReport()));
+    writeFileSync(path.join(reportsDir, 'holmes-report.md'), '### raw holmes\n');
+    writeFileSync(path.join(reportsDir, 'watson-report.md'), '### raw watson\n');
+    writeFileSync(path.join(reportsDir, 'moriarty-report.md'), '### raw moriarty\n');
+
+    const comment = buildHolmesSuiteComment({
+      pullRequestNumber: 466,
+      headSha: 'statusless1234567890',
+      ...loadHolmesSuiteReports(reportsDir)
+    });
+
+    assert.equal(comment.includes('workflow status is unknown'), false, 'omitted statuses should not hide loaded reports');
+    assert.equal(comment.includes('Fix the HOLMES workflow job first'), false, 'omitted statuses should not trigger workflow-failure actions');
+    assert.ok(comment.includes('Holmes says this change needs investigation before shipping.'));
+    assert.ok(comment.includes('### raw holmes'));
+    assert.ok(comment.includes('### raw watson'));
+    assert.ok(comment.includes('### raw moriarty'));
+  } finally {
+    rmSync(reportsDir, { recursive: true, force: true });
+  }
+});
+
 test('pr-comment CLI builds comment output without external argument parser dependencies', () => {
   const reportsDir = mkdtempSync(path.join(os.tmpdir(), 'holmes-pr-comment-'));
   try {

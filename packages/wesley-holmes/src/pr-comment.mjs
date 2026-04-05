@@ -111,11 +111,12 @@ function renderPlainEnglishReadout({ holmesReport, watsonReport, moriartyReport,
 }
 
 function renderNextActions({ holmesReport, watsonReport, moriartyReport, statuses, reportStates }) {
-  const actions = dedupeStrings([
-    ...collectHolmesActions(holmesReport, statuses.holmes, reportStates.holmes),
-    ...collectWatsonActions(watsonReport, statuses.watson, reportStates.watson),
-    ...collectMoriartyActions(moriartyReport, statuses.moriarty, reportStates.moriarty)
-  ]).slice(0, 4);
+  const actionGroups = [
+    dedupeStrings(collectHolmesActions(holmesReport, statuses.holmes, reportStates.holmes)),
+    dedupeStrings(collectWatsonActions(watsonReport, statuses.watson, reportStates.watson)),
+    dedupeStrings(collectMoriartyActions(moriartyReport, statuses.moriarty, reportStates.moriarty))
+  ];
+  const actions = buildFairActionList(actionGroups, 4);
 
   if (actions.length === 0) {
     return [
@@ -365,7 +366,8 @@ function readJsonReport(root, reportName, filename) {
 }
 
 function readTextReport(root, reportName, filename, status) {
-  if (status !== 'success') {
+  const explicitStatus = normalizeOptionalString(status);
+  if (explicitStatus && explicitStatus !== 'success') {
     return { state: 'unavailable', value: '' };
   }
   const reportPath = findReportPath(root, filename, reportName);
@@ -421,6 +423,36 @@ function dedupeStrings(items) {
   return result;
 }
 
+function buildFairActionList(actionGroups, limit) {
+  const reserved = [];
+  const seen = new Set();
+
+  for (const group of actionGroups) {
+    const action = group.find((candidate) => {
+      const value = normalizeOptionalString(candidate);
+      return value && !seen.has(value.toLowerCase());
+    });
+    if (!action) continue;
+    const key = action.toLowerCase();
+    seen.add(key);
+    reserved.push(action);
+  }
+
+  const remaining = [];
+  for (const group of actionGroups) {
+    for (const action of group) {
+      const value = normalizeOptionalString(action);
+      if (!value) continue;
+      const key = value.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      remaining.push(value);
+    }
+  }
+
+  return dedupeStrings([...reserved, ...remaining]).slice(0, limit);
+}
+
 function trimSentence(value) {
   const text = normalizeOptionalString(value);
   if (!text) return '';
@@ -441,7 +473,8 @@ function statusLabel(status) {
 
 function buildUnavailableSummary(displayName, artifactName, status, reportState, report) {
   const effectiveState = resolveReportState(reportState, report, status);
-  if (status !== 'success') {
+  const explicitStatus = normalizeOptionalString(status);
+  if (explicitStatus && explicitStatus !== 'success' && effectiveState !== 'loaded') {
     return `The ${displayName} is unavailable because the workflow status is ${statusLabel(status)}.`;
   }
   if (effectiveState === 'missing') {
@@ -463,7 +496,8 @@ function resolveReportState(reportState, report, status) {
 
 function buildUnavailableAction(reportLabel, artifactName, status, reportState, report) {
   const effectiveState = resolveReportState(reportState, report, status);
-  if (status !== 'success') {
+  const explicitStatus = normalizeOptionalString(status);
+  if (explicitStatus && explicitStatus !== 'success' && effectiveState !== 'loaded') {
     return `Fix the ${reportLabel} workflow job first so the PR has a real evidence investigation again.`;
   }
   if (effectiveState === 'missing') {
@@ -477,7 +511,8 @@ function buildUnavailableAction(reportLabel, artifactName, status, reportState, 
 
 function buildReportSectionUnavailableBody(reportName, artifactName, status, markdownState, markdown) {
   const effectiveState = resolveArtifactState(markdownState, markdown, status);
-  if (status !== 'success') {
+  const explicitStatus = normalizeOptionalString(status);
+  if (explicitStatus && explicitStatus !== 'success' && effectiveState !== 'loaded') {
     return `_Report unavailable for ${reportName} (job status: ${statusLabel(status)})_`;
   }
   if (effectiveState === 'missing') {
