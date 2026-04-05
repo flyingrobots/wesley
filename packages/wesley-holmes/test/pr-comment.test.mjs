@@ -1,118 +1,24 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import {
   buildHolmesSuiteComment,
   HOLMES_SUITE_COMMENT_MARKER,
   loadHolmesSuiteReports
 } from '../src/pr-comment.mjs';
+import {
+  sampleHolmesReport,
+  sampleMoriartyReport,
+  sampleWatsonReport
+} from './fixtures/sample-reports.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const prCommentCliPath = path.join(__dirname, '..', 'src', 'pr-comment-cli.mjs');
-
-function sampleHolmesReport(overrides = {}) {
-  return {
-    metadata: {
-      generatedAt: '2026-03-30T00:00:00Z',
-      sha: 'abcdef1234567890',
-      verificationStatus: 'REQUIRES INVESTIGATION',
-      readinessStatus: 'ELEMENTARY',
-      verificationCount: 12,
-      weightedCompletion: 0.74,
-      tci: 0.52,
-      mri: 0.46,
-      bundleVersion: '1.0.0',
-      evidenceTrust: 'weak',
-      citationQuality: {
-        exact: 4,
-        wholeFile: 3,
-        coarse: 2
-      }
-    },
-    scores: {
-      scs: 0.74,
-      tci: 0.52,
-      mri: 0.46
-    },
-    gates: [
-      { gate: 'Migration Risk', status: '⛔', evidence: 'MRI: 46.0%', ruling: 'HIGH RISK!' },
-      { gate: 'Test Coverage', status: '⚠️', evidence: 'TCI: 52.0%', ruling: 'Insufficient coverage' },
-      { gate: 'Sensitive Fields', status: '⛔', evidence: '2 fields', ruling: '1 EXPOSED!' },
-      { gate: 'Evidence Quality', status: '⚠️', evidence: '4 exact · 3 whole-file · 2 coarse', ruling: 'Some claims still rely on coarse citations.' }
-    ],
-    verdict: {
-      code: 'REQUIRES INVESTIGATION',
-      message: 'Further investigation required before shipping.',
-      markdown: '⚠️ investigate'
-    },
-    ...overrides
-  };
-}
-
-function sampleWatsonReport(overrides = {}) {
-  return {
-    metadata: {
-      examinedAt: '2026-03-30T00:10:00Z',
-      sha: 'abcdef1234567890'
-    },
-    citations: {
-      total: 10,
-      verified: 6,
-      failed: 1,
-      unverified: 3,
-      exact: 4,
-      wholeFile: 3,
-      coarse: 2,
-      trust: 'weak',
-      reasons: ['Some citations are too coarse to trust blindly.'],
-      rate: 0.6
-    },
-    math: {
-      claimedScs: 0.74,
-      recalculatedScs: 0.74,
-      difference: 0,
-      acceptable: true
-    },
-    inconsistencies: ['One cited span no longer matches the current file contents.'],
-    opinion: {
-      verdict: 'CONCERNS',
-      message: 'Discrepancies detected; further investigation recommended.',
-      markdown: '⚠️ concerns'
-    },
-    ...overrides
-  };
-}
-
-function sampleMoriartyReport(overrides = {}) {
-  return {
-    metadata: { analysisAt: '2026-03-30T00:20:00Z' },
-    status: 'OK',
-    history: [
-      { timestamp: '2026-03-28T00:00:00Z', scs: 0.6, tci: 0.4, mri: 0.5 },
-      { timestamp: '2026-03-29T00:00:00Z', scs: 0.68, tci: 0.48, mri: 0.47 },
-      { timestamp: '2026-03-30T00:00:00Z', scs: 0.74, tci: 0.52, mri: 0.46, evidenceTrust: 'weak', evidenceTrustReasons: ['Citations are still coarse.'] }
-    ],
-    plateauDetected: false,
-    regressionDetected: false,
-    eta: {
-      optimistic: 3,
-      realistic: 5,
-      pessimistic: 8,
-      optimisticDate: '2026-04-02',
-      realisticDate: '2026-04-04',
-      pessimisticDate: '2026-04-07'
-    },
-    confidence: 61,
-    patterns: [],
-    warnings: ['Evidence trust is weak; Citations are still coarse.'],
-    ...overrides
-  };
-}
 
 test('buildHolmesSuiteComment adds a plain-English summary, next actions, and glossary', () => {
   const comment = buildHolmesSuiteComment({
@@ -329,6 +235,71 @@ test('pr-comment CLI builds comment output without external argument parser depe
     assert.ok(result.stdout.includes('<!-- HOLMES_SUITE_SHA:0123456789abcdef -->'));
     assert.ok(result.stdout.includes('The Holmes report is unavailable because the workflow status is failure.'));
   } finally {
+    rmSync(reportsDir, { recursive: true, force: true });
+  }
+});
+
+test('pr-comment CLI can be imported without executing the entrypoint', () => {
+  const result = spawnSync(process.execPath, [
+    '--input-type=module',
+    '-e',
+    `await import(${JSON.stringify(pathToFileURL(prCommentCliPath).href)});`
+  ], {
+    encoding: 'utf8'
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stdout, '');
+  assert.equal(result.stderr, '');
+});
+
+test('pr-comment CLI accepts equals-form options', () => {
+  const reportsDir = mkdtempSync(path.join(os.tmpdir(), 'holmes-pr-comment-equals-'));
+  try {
+    writeFileSync(path.join(reportsDir, 'holmes-report.md'), '### raw holmes\n');
+    const result = spawnSync(process.execPath, [
+      prCommentCliPath,
+      `--reports-dir=${reportsDir}`,
+      '--pr-number=467',
+      '--head-sha=abcdef0123456789',
+      '--holmes-status=failure',
+      '--watson-status=failure',
+      '--moriarty-status=failure'
+    ], {
+      encoding: 'utf8'
+    });
+
+    assert.equal(result.status, 0, result.stderr);
+    assert.ok(result.stdout.includes(HOLMES_SUITE_COMMENT_MARKER));
+    assert.ok(result.stdout.includes('<!-- HOLMES_SUITE_SHA:abcdef0123456789 -->'));
+    assert.ok(result.stdout.includes('The Holmes report is unavailable because the workflow status is failure.'));
+  } finally {
+    rmSync(reportsDir, { recursive: true, force: true });
+  }
+});
+
+test('loadHolmesSuiteReports preserves report and markdown diagnostics without throwing', () => {
+  const reportsDir = mkdtempSync(path.join(os.tmpdir(), 'holmes-pr-comment-errors-'));
+  const unreadableMarkdownPath = path.join(reportsDir, 'holmes-report.md');
+  try {
+    writeFileSync(path.join(reportsDir, 'holmes-report.json'), JSON.stringify(sampleHolmesReport()));
+    writeFileSync(path.join(reportsDir, 'watson-report.json'), '{"not":"valid"');
+    writeFileSync(path.join(reportsDir, 'moriarty-report.json'), JSON.stringify(sampleMoriartyReport()));
+    writeFileSync(unreadableMarkdownPath, '### raw holmes\n');
+    chmodSync(unreadableMarkdownPath, 0o000);
+
+    const reports = loadHolmesSuiteReports(reportsDir, {
+      holmes: 'success',
+      watson: 'success',
+      moriarty: 'success'
+    });
+
+    assert.equal(reports.reportStates.watson, 'invalid');
+    assert.ok(reports.reportErrors.watson.length > 0, 'invalid JSON should preserve a parse error');
+    assert.equal(reports.markdownStates.holmes, 'invalid');
+    assert.ok(reports.markdownErrors.holmes.length > 0, 'unreadable markdown should preserve a read error');
+  } finally {
+    chmodSync(unreadableMarkdownPath, 0o644);
     rmSync(reportsDir, { recursive: true, force: true });
   }
 });

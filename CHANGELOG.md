@@ -100,6 +100,14 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   flags also no longer masquerade as unknown workflow failures when readable
   Holmes-suite artifacts are already present, and the regression is pinned by
   direct comment-builder tests.
+- **PR #467 Holmes workflow and CLI hardening follow-up**: The SHIPME workflow
+  now fails explicitly if no matching `wesley-holmes.yml` run appears after a
+  bounded poll window and no longer double-filters runs by SHA after the API
+  already scoped them. The Holmes PR comment CLI now imports without side
+  effects, accepts both `--flag value` and `--flag=value` forms, and the
+  shared test fixtures plus loader diagnostics now keep comment-builder tests
+  reusable and easier to debug when report artifacts are malformed or
+  unreadable.
 - **PR #463 cert failure JSON assertions**: The HOLMES failure-path cert E2E
   tests now assert against the first JSON document emitted by `cert-verify
   --json`, splitting presence and value checks for `holmesPassed`,

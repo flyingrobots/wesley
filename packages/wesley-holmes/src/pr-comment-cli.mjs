@@ -1,24 +1,36 @@
 #!/usr/bin/env node
 
+import { pathToFileURL } from 'node:url';
+
 import {
   buildHolmesSuiteComment,
   loadHolmesSuiteReports
 } from './pr-comment.mjs';
 
-const options = parseArgs(process.argv.slice(2));
-const reports = loadHolmesSuiteReports(options.reportsDir, {
-  holmes: options.holmesStatus,
-  watson: options.watsonStatus,
-  moriarty: options.moriartyStatus
-});
+if (isDirectExecution()) {
+  main();
+}
 
-const body = buildHolmesSuiteComment({
-  pullRequestNumber: options.prNumber,
-  headSha: options.headSha,
-  ...reports
-});
+function main(argv = process.argv.slice(2)) {
+  const options = parseArgs(argv);
+  const reports = loadHolmesSuiteReports(options.reportsDir, {
+    holmes: options.holmesStatus,
+    watson: options.watsonStatus,
+    moriarty: options.moriartyStatus
+  });
 
-process.stdout.write(`${body}\n`);
+  const body = buildHolmesSuiteComment({
+    pullRequestNumber: options.prNumber,
+    headSha: options.headSha,
+    ...reports
+  });
+
+  process.stdout.write(`${body}\n`);
+}
+
+function isDirectExecution() {
+  return Boolean(process.argv[1]) && import.meta.url === pathToFileURL(process.argv[1]).href;
+}
 
 function parseArgs(argv) {
   const options = {
@@ -34,9 +46,13 @@ function parseArgs(argv) {
       fail(`Unexpected argument: ${token}`);
     }
 
-    const name = token.slice(2);
-    const value = argv[index + 1];
-    if (!value || value.startsWith('--')) {
+    const rawName = token.slice(2);
+    const separatorIndex = rawName.indexOf('=');
+    const consumesNextToken = separatorIndex === -1;
+    const name = consumesNextToken ? rawName : rawName.slice(0, separatorIndex);
+    const value = consumesNextToken ? argv[index + 1] : rawName.slice(separatorIndex + 1);
+
+    if (!value || (consumesNextToken && value.startsWith('--'))) {
       fail(`Missing value for --${name}`);
     }
 
@@ -63,8 +79,10 @@ function parseArgs(argv) {
       fail(`Unknown option: --${name}`);
     }
 
-    index += 1;
-    // Advance past the consumed value token.
+    if (consumesNextToken) {
+      index += 1;
+      // Advance past the consumed value token.
+    }
   }
 
   if (!options.reportsDir) {

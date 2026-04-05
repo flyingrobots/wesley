@@ -110,6 +110,8 @@ jobs:
             const workflowId = 'wesley-holmes.yml';
             const timeoutMs = 2 * 60 * 60 * 1000;
             const pollIntervalMs = 15 * 1000;
+            const maxNoRunFound = 20;
+            let noRunFoundCount = 0;
 
             while (Date.now() - started < timeoutMs) {
               const comments = await github.paginate(github.rest.issues.listComments, {
@@ -141,8 +143,21 @@ jobs:
               );
 
               const currentRun = workflowRunsResponse.data.workflow_runs
-                .filter((run) => run.head_sha === context.sha)
                 .sort((left, right) => new Date(right.created_at) - new Date(left.created_at))[0];
+
+              if (!currentRun) {
+                noRunFoundCount += 1;
+                if (noRunFoundCount > maxNoRunFound) {
+                  core.setOutput('ready', 'false');
+                  core.setFailed(`No wesley-holmes.yml run found for ${context.sha} after ${maxNoRunFound} polls.`);
+                  return;
+                }
+
+                await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+                continue;
+              }
+
+              noRunFoundCount = 0;
 
               if (currentRun?.status === 'completed') {
                 core.setOutput('ready', 'false');

@@ -1,7 +1,12 @@
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 
 export const HOLMES_SUITE_COMMENT_MARKER = '<!-- HOLMES_SUITE_COMMENT -->';
+
+// Keep these thresholds named so review/comment policy stays inspectable.
+const HOLMES_WEAK_TCI_THRESHOLD = 0.7;
+const HOLMES_INCOMPLETE_SCS_THRESHOLD = 0.85;
+const HOLMES_ELEVATED_MRI_THRESHOLD = 0.4;
 
 export function buildHolmesSuiteComment({
   pullRequestNumber,
@@ -79,10 +84,20 @@ export function loadHolmesSuiteReports(reportsDir, statuses = {}) {
       watson: watsonReport.state,
       moriarty: moriartyReport.state
     },
+    reportErrors: {
+      holmes: holmesReport.error || '',
+      watson: watsonReport.error || '',
+      moriarty: moriartyReport.error || ''
+    },
     markdownStates: {
       holmes: holmesMarkdown.state,
       watson: watsonMarkdown.state,
       moriarty: moriartyMarkdown.state
+    },
+    markdownErrors: {
+      holmes: holmesMarkdown.error || '',
+      watson: watsonMarkdown.error || '',
+      moriarty: moriartyMarkdown.error || ''
     },
     holmesReport: holmesReport.value,
     watsonReport: watsonReport.value,
@@ -263,10 +278,10 @@ function collectHolmesActions(report, status, reportState) {
   if (evidenceTrust && evidenceTrust !== 'strong') {
     actions.push('Tighten citations so the report points to exact lines instead of whole files or coarse references.');
   }
-  if ((typeof report?.scores?.tci === 'number' && report.scores.tci < 0.7) || gateNeedsAttention(testCoverageGate)) {
+  if ((typeof report?.scores?.tci === 'number' && report.scores.tci < HOLMES_WEAK_TCI_THRESHOLD) || gateNeedsAttention(testCoverageGate)) {
     actions.push('Add or strengthen tests for the schema elements and operations HOLMES flagged as weakly proven.');
   }
-  if ((typeof report?.scores?.mri === 'number' && report.scores.mri >= 0.4) || gateNeedsAttention(migrationRiskGate)) {
+  if ((typeof report?.scores?.mri === 'number' && report.scores.mri >= HOLMES_ELEVATED_MRI_THRESHOLD) || gateNeedsAttention(migrationRiskGate)) {
     actions.push('Review the migration plan for risky changes such as drops, renames, not-null additions, or index strategy.');
   }
   if (gateNeedsAttention(sensitiveGate)) {
@@ -314,13 +329,13 @@ function collectHolmesReasons(report) {
     ]));
   }
 
-  if ((typeof report?.scores?.tci === 'number' && report.scores.tci < 0.7) || gateNeedsAttention(testCoverageGate)) {
+  if ((typeof report?.scores?.tci === 'number' && report.scores.tci < HOLMES_WEAK_TCI_THRESHOLD) || gateNeedsAttention(testCoverageGate)) {
     reasons.push('test evidence is incomplete');
   }
-  if ((typeof report?.scores?.scs === 'number' && report.scores.scs < 0.85)) {
+  if ((typeof report?.scores?.scs === 'number' && report.scores.scs < HOLMES_INCOMPLETE_SCS_THRESHOLD)) {
     reasons.push('schema coverage is incomplete');
   }
-  if ((typeof report?.scores?.mri === 'number' && report.scores.mri >= 0.4) || gateNeedsAttention(migrationRiskGate)) {
+  if ((typeof report?.scores?.mri === 'number' && report.scores.mri >= HOLMES_ELEVATED_MRI_THRESHOLD) || gateNeedsAttention(migrationRiskGate)) {
     reasons.push(trimSentence(normalizeOptionalString(migrationRiskGate?.ruling)) || 'migration risk is elevated');
   }
   if (gateNeedsAttention(sensitiveGate)) {
@@ -332,10 +347,19 @@ function collectHolmesReasons(report) {
 
 function findReportPath(root, filename, reportName) {
   const matches = [];
+  const visited = new Set();
   const stack = [root];
   while (stack.length > 0) {
     const dir = stack.pop();
     if (!existsSync(dir)) continue;
+    let realDir = '';
+    try {
+      realDir = realpathSync(dir);
+    } catch {
+      continue;
+    }
+    if (visited.has(realDir)) continue;
+    visited.add(realDir);
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
       const fullPath = path.join(dir, entry.name);
       if (entry.isDirectory()) {
@@ -360,8 +384,12 @@ function readJsonReport(root, reportName, filename) {
       state: 'loaded',
       value: JSON.parse(readFileSync(reportPath, 'utf8'))
     };
-  } catch {
-    return { state: 'invalid', value: null };
+  } catch (error) {
+    return {
+      state: 'invalid',
+      value: null,
+      error: error instanceof Error ? error.message : String(error)
+    };
   }
 }
 
@@ -374,10 +402,18 @@ function readTextReport(root, reportName, filename, status) {
   if (!reportPath) {
     return { state: 'missing', value: '' };
   }
-  return {
-    state: 'loaded',
-    value: readFileSync(reportPath, 'utf8')
-  };
+  try {
+    return {
+      state: 'loaded',
+      value: readFileSync(reportPath, 'utf8')
+    };
+  } catch (error) {
+    return {
+      state: 'invalid',
+      value: '',
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
 }
 
 function verdictToPlainEnglish(verdict) {

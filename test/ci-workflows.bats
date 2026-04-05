@@ -75,6 +75,14 @@ load 'bats-plugins/bats-assert/load'
   assert_success
   [ "$output" -eq 1 ]
 
+  run bash -lc "grep -F 'const maxNoRunFound = 20' .github/workflows/cert-shipme.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'No wesley-holmes.yml run found for' .github/workflows/cert-shipme.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
   run bash -lc "grep -F 'core.setFailed(' .github/workflows/cert-shipme.yml | wc -l"
   assert_success
   [ "$output" -ge 1 ]
@@ -149,7 +157,7 @@ load 'bats-plugins/bats-assert/load'
 }
 
 @test "wesley-holmes workflow builds PR comments via the Holmes comment builder" {
-  run bash -lc "awk '/comment-report:/{flag=1} /📝 Create Comment/{print; exit} flag{print}' .github/workflows/wesley-holmes.yml | grep -F 'actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd' | wc -l"
+  run bash -lc "grep -A80 '^  comment-report:' .github/workflows/wesley-holmes.yml | grep -F 'actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd' | wc -l"
   assert_success
   [ "$output" -eq 1 ]
 
@@ -180,8 +188,4 @@ load 'bats-plugins/bats-assert/load'
   run bash -lc 'grep -F -- '\''--head-sha "$GITHUB_SHA"'\'' .github/workflows/wesley-holmes.yml | wc -l'
   assert_success
   [ "$output" -eq 1 ]
-
-  run bash -lc "grep -F \"import { Command } from 'commander';\" packages/wesley-holmes/src/pr-comment-cli.mjs | wc -l || true"
-  assert_success
-  [ "$output" -eq 0 ]
 }
