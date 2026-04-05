@@ -7,6 +7,11 @@ export { Holmes } from './Holmes.mjs';
 export { Watson } from './Watson.mjs';
 export { Moriarty } from './Moriarty.mjs';
 export {
+  buildHolmesSuiteComment,
+  HOLMES_SUITE_COMMENT_MARKER,
+  loadHolmesSuiteReports
+} from './pr-comment.mjs';
+export {
   analyzeCounterfactual,
   COUNTERFACTUAL_CURRENT_PATH,
   COUNTERFACTUAL_DIR,

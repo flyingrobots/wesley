@@ -21,13 +21,17 @@ load 'bats-plugins/bats-assert/load'
 
   run bash -lc "grep -F \"github-actions[bot]\" .github/workflows/cert-shipme.yml | wc -l"
   assert_success
-  [ "$output" -eq 1 ]
+  [ "$output" -ge 1 ]
 
   run bash -lc "grep -F 'per_page: 100' .github/workflows/cert-shipme.yml | wc -l"
   assert_success
-  [ "$output" -eq 1 ]
+  [ "$output" -ge 1 ]
 
   run bash -lc "grep -F 'pull-requests: write' .github/workflows/cert-shipme.yml | wc -l"
+  assert_success
+  [ "$output" -ge 1 ]
+
+  run bash -lc "grep -F 'actions: read' .github/workflows/cert-shipme.yml | wc -l"
   assert_success
   [ "$output" -ge 1 ]
 
@@ -50,6 +54,38 @@ load 'bats-plugins/bats-assert/load'
   run bash -lc "grep -F '.wesley-cache/holmes-report.json' .github/workflows/cert-shipme.yml | wc -l"
   assert_success
   [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'Wait for HOLMES suite comment' .github/workflows/cert-shipme.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'HOLMES_SUITE_SHA:' .github/workflows/cert-shipme.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F \"steps.holmes_comment_wait.outputs.ready == 'true'\" .github/workflows/cert-shipme.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'actions/workflows/{workflow_id}/runs' .github/workflows/cert-shipme.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F '2 * 60 * 60 * 1000' .github/workflows/cert-shipme.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'const maxNoRunFound = 20' .github/workflows/cert-shipme.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'No wesley-holmes.yml run found for' .github/workflows/cert-shipme.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'core.setFailed(' .github/workflows/cert-shipme.yml | wc -l"
+  assert_success
+  [ "$output" -ge 1 ]
 }
 
 @test "progress workflow keeps GITHUB_TOKEN read-only and uses opt-in PR token" {
@@ -116,6 +152,40 @@ load 'bats-plugins/bats-assert/load'
   [ "$output" -eq 1 ]
 
   run bash -lc 'grep -F '\''elif [ -n "${HOLMES_SCHEMA:-}" ] && [ -f "$HOLMES_SCHEMA" ]; then'\'' .github/workflows/wesley-holmes.yml | wc -l'
+  assert_success
+  [ "$output" -eq 1 ]
+}
+
+@test "wesley-holmes workflow builds PR comments via the Holmes comment builder" {
+  run bash -lc "grep -A80 '^  comment-report:' .github/workflows/wesley-holmes.yml | grep -F 'actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd' | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'packages/wesley-holmes/src/pr-comment-cli.mjs' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'reports/pr-comment.md' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -ge 2 ]
+
+  run bash -lc "grep -F '<!-- HOLMES_SUITE_COMMENT -->' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F \"comment.user.login === 'github-actions[bot]'\" .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F \"comment.body.includes('The Case of Pull Request')\" .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F \"(comment.body.includes(marker) || comment.body.includes('The Case of Pull Request'))\" .github/workflows/wesley-holmes.yml | wc -l || true"
+  assert_success
+  [ "$output" -eq 0 ]
+
+  run bash -lc 'grep -F -- '\''--head-sha "$GITHUB_SHA"'\'' .github/workflows/wesley-holmes.yml | wc -l'
   assert_success
   [ "$output" -eq 1 ]
 }

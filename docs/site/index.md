@@ -21,7 +21,8 @@ GraphQL SDL input and the tooling generates:
 🧭 The [delivery lifecycle](../architecture/lifecycle.md) explains how
 Transform → Plan → Rehearse → Ship fit together.
 
-📅 Current release status lives on the [roadmap](roadmap.md).
+📅 Current direction lives in the [roadmap](roadmap.md) and
+[BEARING](../BEARING.md).
 
 ## Quick facts
 

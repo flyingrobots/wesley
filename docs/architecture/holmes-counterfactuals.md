@@ -9,9 +9,9 @@ Scope
 - SHIPME counterfactual summary
 
 Substrate
-- Package: `@git-stunts/git-warp@14.16.2`
+- Package: `@git-stunts/git-warp@16.0.0`
 - Runtime floor: Node 22+
-- Sources in this document are pinned to the `v14.16.2` tag, not `main`
+- Sources in this document are pinned to the `v16.0.0` tag, not `main`
 
 ## Boundary
 
@@ -114,7 +114,7 @@ Resolution flow
 
 Current braid note
 - The current implementation uses coordinate frontiers for braid overlays.
-- It does not yet expose user-facing working-set lifecycle management.
+- It does not yet expose user-facing strand lifecycle management.
 
 ## Facts and Judgment
 
@@ -164,6 +164,7 @@ Moriarty
 - Report output:
   - `runtime`
   - `counterfactual`
+  - `explain.readiness.counterfactual`
 - Legacy merge-tree/worktree projection code remains in tests only as a one-release regression harness.
 
 BLADE
@@ -198,8 +199,8 @@ Current behavior
 
 ## References
 
-- [git-warp v14.16.2 package.json](https://raw.githubusercontent.com/git-stunts/git-warp/v14.16.2/package.json)
-- [git-warp v14.16.2 CHANGELOG.md](https://raw.githubusercontent.com/git-stunts/git-warp/v14.16.2/CHANGELOG.md)
-- [git-warp v14.16.2 ARCHITECTURE.md](https://raw.githubusercontent.com/git-stunts/git-warp/v14.16.2/ARCHITECTURE.md)
-- [git-warp v14.16.2 WORKING_SETS.md](https://raw.githubusercontent.com/git-stunts/git-warp/v14.16.2/docs/WORKING_SETS.md)
-- [git-warp v14.16.2 index.d.ts](https://raw.githubusercontent.com/git-stunts/git-warp/v14.16.2/index.d.ts)
+- [git-warp v16.0.0 package.json](https://raw.githubusercontent.com/git-stunts/git-warp/v16.0.0/package.json)
+- [git-warp v16.0.0 CHANGELOG.md](https://raw.githubusercontent.com/git-stunts/git-warp/v16.0.0/CHANGELOG.md)
+- [git-warp v16.0.0 ARCHITECTURE.md](https://raw.githubusercontent.com/git-stunts/git-warp/v16.0.0/docs/ARCHITECTURE.md)
+- [git-warp v16.0.0 GUIDE.md](https://raw.githubusercontent.com/git-stunts/git-warp/v16.0.0/docs/GUIDE.md)
+- [git-warp v16.0.0 index.d.ts](https://raw.githubusercontent.com/git-stunts/git-warp/v16.0.0/index.d.ts)

@@ -1,9 +1,10 @@
 # Wesley V2 — Roadmap of Record
 
 > Canonical strategic roadmap for Wesley V2.
-> Execution and backlog tracking now live in GitHub Issues and Milestones.
+> Active execution now lives in the repo filesystem through METHOD signposts,
+> backlog lanes, design packets, and retros.
 > This file defines the strategy, fixed contracts, phase order, and release
-> gates that those GitHub trackers execute against.
+> gates that those repo-visible queues execute against.
 
 ---
 
@@ -312,17 +313,14 @@ Any budget regression requires an ADR or a budget reset justified by a new repre
 
 ## 6. Execution Tracking
 
-Active execution tracking now lives in GitHub:
+Active execution tracking now lives in the repo:
 
-- Milestones: <https://github.com/flyingrobots/wesley/milestones>
-- Open issues: <https://github.com/flyingrobots/wesley/issues>
+- Direction: `docs/BEARING.md`
+- Bounded synthesis: `docs/VISION.md`
+- Queue: `docs/method/backlog/`
+- Active cycle packets: `docs/design/`
+- Closed cycle packets: `docs/method/retro/`
 
-The backlog previously spread across `BACKLOG.md` and the roadmap appendix has
-been migrated into GitHub Issues `#436` through `#456`. This file is now the
-strategy and policy document; GitHub is the queue. The pre-V2 milestone slate
-was retired after its remaining open issues were rehomed into the V2 phase
-milestones or closed when they were only tracker/progress artifacts.
-
-Open issues must either live on a V2 phase milestone or remain explicitly
-unmilestoned with the `out-of-band` label for tactical maintenance that does
-not belong on the phased roadmap.
+This file is the strategy and policy document. The filesystem is the queue.
+When work is pulled, it moves into a cycle packet. When work closes, it leaves
+an inspectable retro and witness trail.

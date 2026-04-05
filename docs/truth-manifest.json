@@ -12,12 +12,27 @@
       "owner": "@flyingrobots"
     },
     {
+      "path": "docs/BEARING.md",
+      "status": "experimental",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/VISION.md",
+      "status": "experimental",
+      "owner": "@flyingrobots"
+    },
+    {
       "path": "docs/DIRECTIVES.md",
       "status": "current",
       "owner": "@flyingrobots"
     },
     {
       "path": "docs/roadmap.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/method/process.md",
       "status": "current",
       "owner": "@flyingrobots"
     },

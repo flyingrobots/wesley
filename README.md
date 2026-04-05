@@ -7,9 +7,8 @@
 [![Runtime Smokes](https://github.com/flyingrobots/wesley/actions/workflows/runtime-smokes.yml/badge.svg?branch=main)](https://github.com/flyingrobots/wesley/actions/workflows/runtime-smokes.yml)
 
 > [!note]
-> **Wesley** is pre-alpha. It does work, but it's somewhere between MVP and alpha.  
-> Just being real: probably don't want to use this in prod until _at least_ beta.
-> Star the repo, watch for updates! It's under active development.
+> **Wesley** is experimental and under active development.
+> Follow the repo and docs for updates as the runtime, evidence model, and operator workflows continue to harden.
 > _- flyingrobots_
 
 > **The data layer compiler that turns GraphQL schemas into production-ready PostgreSQL—with zero-downtime migrations, comprehensive tests, and cryptographic deployment proofs.**
@@ -29,8 +28,9 @@ type Document @wes_table @wes_tenant(by: "org_id") @wes_rls {
 
 Directive support is broader in the registry than it is on the current hot path. Use [docs/DIRECTIVES.md](docs/DIRECTIVES.md) for the current support matrix before leaning on non-core directives in happy-path schemas.
 
-For project direction and contributor workflow, see [ROADMAP.md](ROADMAP.md) and
-[CONTRIBUTING.md](CONTRIBUTING.md).
+For project direction and repo workflow, start with [docs/BEARING.md](docs/BEARING.md),
+[docs/VISION.md](docs/VISION.md), [ROADMAP.md](ROADMAP.md), and
+[docs/method/process.md](docs/method/process.md).
 
 ## TL;DR – Getting Started
 
@@ -77,6 +77,27 @@ Modern development forces you to describe the same data shape across multiple do
 **GraphQL is the single source of truth. Everything else is generated and tested.**
 
 Migrations aren't manual tasks—they're diffs you get for free when your schema evolves. Wesley realizes the promise of the _schema-first_ approach: **Schema is the source. Migrations are just artifacts.**
+
+## Core Pillars
+
+Wesley is built around a small set of product pillars:
+
+1. **Source authority**: GraphQL SDL plus explicit Wesley inputs define intended
+   behavior.
+2. **Transmutation breadth**: Wesley should compile that source into many
+   executable artifact domains over time.
+3. **Runtime truth**: when Wesley has a run model, the ledger outranks
+   projections and cache state.
+4. **Evidence truth**: readiness and certification claims must match the actual
+   strength of evidence.
+5. **Local-first operation**: core workflows should work from a local checkout
+   and local runtime state.
+6. **Governed judgment**: Wesley owns product judgment and operator semantics
+   even when substrate tools provide facts.
+
+The important distinction is that not every pillar is an invariant. For
+example, `schema-source-of-truth` is an authority invariant; "GraphQL to
+Anything" is better understood as Wesley's transmutation-breadth pillar.
 
 ## What You Get
 
@@ -444,8 +465,11 @@ Note: In local runs where `GITHUB_REPOSITORY` is unset, the CI badge column rend
 - **[Scripts Reference](docs/scripts-reference.md)** — Complete `pnpm run` commands guide
 - **[CI Overview](docs/ci.md)** — How workflows are structured, reusable steps, gating, and artifacts
 - [`scripts/`](scripts/README.md) — Maintenance and automation scripts
-- **[Roadmap](ROADMAP.md)** — Canonical strategy, phases, and release gates
-- **[Contributing](CONTRIBUTING.md)** — Working model, hills, playbacks, and contributor workflow
+- **[BEARING](docs/BEARING.md)** — Current direction and tensions at cycle boundaries
+- **[VISION](docs/VISION.md)** — Bounded executive synthesis of repo-visible truth
+- **[Roadmap](ROADMAP.md)** — Canonical product strategy, fixed contracts, and phase gates
+- **[METHOD Process](docs/method/process.md)** — Repo workflow, cycle loop, and closeout rules
+- **[Contributing](CONTRIBUTING.md)** — Wesley-specific guide layered on top of METHOD
 - **[Agent Guide](AGENTS.md)** — Repository-specific instructions for autonomous contributors
 
 ### ✅ Testing
@@ -561,15 +585,18 @@ Yes! Wesley generates standard SQL, TypeScript, and Zod schemas that work with a
 
 ## Contributing
 
-Wesley follows the [SAGENTS Codex](AGENTS.md) for contribution guidelines. Whether you're human or machine:
+Wesley uses METHOD for repo workflow. Whether you're human or machine:
 
-1. **Obey repository rules** — Every rule was written for a reason
-2. **Respect `.llmignore`** — It guards focus from noise
-3. **Log your work** — Append to the Chronicles, never alter history
-4. **Test thoroughly** — Run `pnpm run bootstrap` before submitting
-5. **Read `AGENTS.md`** — Guide for AI Agents
+1. **Read the signposts** — Start with `README.md`, `docs/BEARING.md`, `docs/VISION.md`, `ROADMAP.md`, and `docs/method/process.md`
+2. **Use the filesystem queue** — Backlog lives under `docs/method/backlog/`; active cycle packets live under `docs/design/`
+3. **Prove claims with witnesses** — Tests plus reproducible playback beat assertion
+4. **Close the loop in repo files** — Update backlog, design, retro, witness,
+   and signpost surfaces instead of appending to a side log
+5. **Respect repo rules** — `AGENTS.md` and `.llmignore` still apply
 
-See the [roadmap](docs/roadmap.md) for current priorities and the [Wesley Project Board](https://github.com/users/flyingrobots/projects/5) for active work.
+See [docs/BEARING.md](docs/BEARING.md) for current direction,
+[docs/method/backlog/](docs/method/backlog/) for queued work, and
+[CONTRIBUTING.md](CONTRIBUTING.md) for Wesley-specific contribution rules.
 
 ---
 
@@ -612,7 +639,8 @@ Wesley is named after Wesley Crusher, the brilliant ensign who saw possibilities
 - **Website**: https://flyingrobots.github.io/wesley/
 - **GitHub**: https://github.com/flyingrobots/wesley
 - **Issues**: https://github.com/flyingrobots/wesley/issues
-- **Project Board**: https://github.com/users/flyingrobots/projects/5
+- **BEARING**: [docs/BEARING.md](docs/BEARING.md)
+- **VISION**: [docs/VISION.md](docs/VISION.md)
 
 ---
 

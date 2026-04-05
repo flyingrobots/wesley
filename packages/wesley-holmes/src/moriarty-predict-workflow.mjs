@@ -156,20 +156,71 @@ async function attachMoriartyCounterfactual(data, {
       transmutation
     }
   });
-  data.counterfactual = explain
-    ? counterfactual
-    : { ...counterfactual };
+  applyCounterfactualJudgmentToPrediction(data, explain ? counterfactual : { ...counterfactual });
+}
+
+export function applyCounterfactualJudgmentToPrediction(data, counterfactual) {
+  data.counterfactual = counterfactual;
   data.warnings = Array.isArray(data.warnings) ? data.warnings : [];
-  if (typeof data.confidence === 'number' && Number.isFinite(counterfactual?.judgment?.confidenceAdjustment)) {
-    data.confidence = Math.max(0, Math.min(100, data.confidence + counterfactual.judgment.confidenceAdjustment));
+  data.patterns = Array.isArray(data.patterns) ? data.patterns : [];
+  data.explain = data.explain || {};
+  data.explain.readiness = data.explain?.readiness || {};
+
+  const judgment = counterfactual?.judgment || {};
+  const gate = typeof judgment.gate === 'string' && judgment.gate.length > 0
+    ? judgment.gate
+    : 'pass';
+  const status = typeof judgment.status === 'string' && judgment.status.length > 0
+    ? judgment.status
+    : 'unknown';
+  const riskClass = typeof judgment.riskClass === 'string' && judgment.riskClass.length > 0
+    ? judgment.riskClass
+    : 'none';
+  const reasons = Array.isArray(judgment.reasons)
+    ? judgment.reasons.filter(reason => typeof reason === 'string' && reason.length > 0)
+    : [];
+
+  if (typeof data.confidence === 'number' && Number.isFinite(judgment.confidenceAdjustment)) {
+    data.confidence = Math.max(0, Math.min(100, data.confidence + judgment.confidenceAdjustment));
   }
-  if (counterfactual?.judgment?.status && counterfactual.judgment.status !== 'clean') {
-    data.patterns = Array.isArray(data.patterns) ? data.patterns : [];
-    data.patterns.push({
-      type: 'COUNTERFACTUAL_ISSUE',
-      description: Array.isArray(counterfactual.judgment.reasons)
-        ? counterfactual.judgment.reasons.join(' ')
-        : ''
-    });
+
+  data.explain.readiness.counterfactual = {
+    value: gate,
+    pass: gate === 'pass',
+    threshold: 'pass',
+    status,
+    riskClass,
+    wouldFail: Boolean(judgment.wouldFail),
+    reasons
+  };
+
+  if (gate !== 'pass') {
+    pushUniqueString(
+      data.warnings,
+      `Counterfactual gate is ${gate}; the forecast is not ship-ready until the lane judgment is resolved.`
+    );
+  }
+
+  if (status !== 'clean') {
+    pushPattern(
+      data.patterns,
+      gate !== 'pass' || riskClass === 'high'
+        ? 'COUNTERFACTUAL_RISK'
+        : 'COUNTERFACTUAL_DIVERGENCE',
+      reasons[0] || `Counterfactual status is ${status}.`
+    );
+  }
+}
+
+function pushPattern(patterns, type, description) {
+  if (patterns.some(pattern => pattern?.type === type)) {
+    return;
+  }
+  patterns.push({ type, description });
+}
+
+function pushUniqueString(items, value) {
+  if (!items.includes(value)) {
+    items.push(value);
   }
 }

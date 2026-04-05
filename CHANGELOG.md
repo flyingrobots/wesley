@@ -66,6 +66,48 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **SHIPME PR comment ordering**: The PR badge in
+  `.github/workflows/cert-shipme.yml` now waits for the HOLMES suite comment
+  for the current PR head SHA, checks the live HOLMES workflow state while
+  polling, and fails explicitly if that comment never appears, so reviewers no
+  longer see a SHIPME certificate badge race ahead of the current investigation
+  summary or disappear silently behind a stale timeout.
+- **PR #467 HOLMES comment workflow follow-up**: The PR comment job now checks
+  out the repository before building the comment, the `pr-comment-cli` helper
+  no longer depends on `commander` so it can run in the lightweight workflow
+  job without installing package dependencies, and the comment summary cleanup
+  now uses linear whitespace and trailing-period normalization that is pinned by
+  direct Holmes comment tests. Successful HOLMES jobs also distinguish missing
+  and invalid JSON report artifacts in the plain-English summary instead of
+  blaming a `success` workflow status for unreadable reports. The expanded raw
+  report sections now tell the same truth about missing markdown artifacts, and
+  unavailable Watson or Moriarty reports now add explicit recovery steps to the
+  suggested next actions list instead of failing silently.
+- **PR #467 Holmes comment test hardening**: The Holmes PR comment regression
+  tests now use case-insensitive word-boundary matching to keep unexplained
+  score acronyms out of the visible summary, and the missing-report tempdir
+  fixture test now has an explicit timeout so the suite fails fast instead of
+  hanging on a stuck report loader.
+- **PR #467 Holmes comment ownership guard**: The HOLMES PR comment workflow
+  now updates only the marker-tagged `github-actions[bot]` comment, and it
+  warns instead of overwriting legacy bot comments that merely contain the
+  Holmes title text. This prevents the PR comment updater from clobbering
+  unrelated bot comments such as CodeRabbit replies.
+- **PR #467 Holmes next-action and status follow-up**: The Holmes PR comment
+  builder now preserves at least one suggested action from Holmes, Watson, and
+  Moriarty before truncating the visible list, so non-Holmes recovery steps do
+  not disappear behind a Holmes-heavy action queue. Omitted workflow-status
+  flags also no longer masquerade as unknown workflow failures when readable
+  Holmes-suite artifacts are already present, and the regression is pinned by
+  direct comment-builder tests.
+- **PR #467 Holmes workflow and CLI hardening follow-up**: The SHIPME workflow
+  now fails explicitly if no matching `wesley-holmes.yml` run appears after a
+  bounded poll window and no longer double-filters runs by SHA after the API
+  already scoped them. The Holmes PR comment CLI now imports without side
+  effects, accepts both `--flag value` and `--flag=value` forms, and the
+  shared test fixtures plus loader diagnostics now keep comment-builder tests
+  reusable and easier to debug when report artifacts are malformed or
+  unreadable.
 - **PR #463 cert failure JSON assertions**: The HOLMES failure-path cert E2E
   tests now assert against the first JSON document emitted by `cert-verify
   --json`, splitting presence and value checks for `holmesPassed`,

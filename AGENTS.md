@@ -3,10 +3,29 @@
 This file contains repository-specific instructions for autonomous and
 semi-autonomous contributors working in this repo.
 
-For product strategy and development workflow, read:
+For product strategy and repo workflow, read:
 
+- [README.md](README.md)
+- [docs/BEARING.md](docs/BEARING.md)
+- [docs/VISION.md](docs/VISION.md)
 - [ROADMAP.md](ROADMAP.md)
-- [CONTRIBUTING.md](CONTRIBUTING.md)
+- [docs/method/process.md](docs/method/process.md)
+- [docs/method/guide.md](docs/method/guide.md)
+
+## Workflow Surface
+
+Wesley uses METHOD for repo coordination.
+
+The repo-visible working surface is:
+
+- `docs/method/backlog/` for queued work
+- `docs/design/` for active cycle packets
+- `docs/method/retro/` for closed cycle packets
+- `docs/BEARING.md` for direction at cycle boundaries
+- `docs/VISION.md` for bounded executive synthesis
+
+`ROADMAP.md` remains the product strategy and fixed-contract document. The
+filesystem, not an issue tracker, is the queue.
 
 ## Non-Negotiables
 
@@ -21,46 +40,18 @@ For product strategy and development workflow, read:
 - Keep tests deterministic. Prefer fake clocks, seeded randomness, and isolated
   temp state.
 
-## Chronicle Rules
+## Historical Chronicle Archive
 
-Wesley keeps an append-only machine log in the active Chronicle volume.
+The `CHRONICLES_OF_THE_MACHINE-KIND_*.jsonl` files are historical archive, not
+active workflow.
 
-Current active volume:
-
-- `CHRONICLES_OF_THE_MACHINE-KIND_VOL_00000010.jsonl`
-
-Resolve it programmatically with:
-
-```bash
-node scripts/chronicle-current.mjs
-```
-
-Chronicle rules:
-
-- append only, never rewrite prior entries
-- corrections are new entries, not edits
-- log meaningful work, failures, and notable state transitions
-- keep entries specific and useful
-
-Required fields:
-
-```json
-{
-  "timestamp": "2025-10-20T20:00:00Z",
-  "agent": "codex",
-  "action": "refactor",
-  "result": "success",
-  "notes": "What changed and why it matters",
-  "observations_on_humanity": "A concise, candid observation."
-}
-```
-
-Recommended extras:
-
-- `files_touched`
-- `duration_ms`
-- `context`
-- `error_details`
+- Do not append new Chronicle entries.
+- Do not treat the Chronicle as the queue, the witness surface, or the source
+  of current repo truth.
+- If a cycle matters, update the relevant backlog, design, retro, witness, or
+  signpost files directly.
+- Use `codex-think` for agent memory when useful, but keep strong claims
+  anchored to repo-visible files, commands, and tests.
 
 ## Architectural Guardrails
 

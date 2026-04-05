@@ -18,5 +18,12 @@ That document owns:
 - the current phase model
 
 Use this page as a pointer, not a duplicate summary. The root roadmap is the
-single source of truth for what V2 means and how it ships; GitHub Issues and
-Milestones own the active execution queue.
+single source of truth for what V2 means and how it ships.
+
+Repo-visible execution now lives in the filesystem:
+
+- `docs/BEARING.md` for current direction
+- `docs/VISION.md` for bounded synthesis
+- `docs/method/backlog/` for queued work
+- `docs/design/` for active cycle packets
+- `docs/method/retro/` for closed cycle packets

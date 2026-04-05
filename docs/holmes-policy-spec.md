@@ -155,11 +155,11 @@ Implemented now
 Not yet implemented
 - user-facing scope controls
 - public braid CLI for HOLMES
-- provider-owned working-set lifecycle beyond the current coordinate-frontier path
+- provider-owned strand lifecycle beyond the current coordinate-frontier path
 
 ## Sources
 
-- [git-warp v14.16.2 package.json](https://raw.githubusercontent.com/git-stunts/git-warp/v14.16.2/package.json)
-- [git-warp v14.16.2 index.d.ts](https://raw.githubusercontent.com/git-stunts/git-warp/v14.16.2/index.d.ts)
-- [git-warp v14.16.2 ARCHITECTURE.md](https://raw.githubusercontent.com/git-stunts/git-warp/v14.16.2/ARCHITECTURE.md)
-- [git-warp v14.16.2 WORKING_SETS.md](https://raw.githubusercontent.com/git-stunts/git-warp/v14.16.2/docs/WORKING_SETS.md)
+- [git-warp v16.0.0 package.json](https://raw.githubusercontent.com/git-stunts/git-warp/v16.0.0/package.json)
+- [git-warp v16.0.0 index.d.ts](https://raw.githubusercontent.com/git-stunts/git-warp/v16.0.0/index.d.ts)
+- [git-warp v16.0.0 ARCHITECTURE.md](https://raw.githubusercontent.com/git-stunts/git-warp/v16.0.0/docs/ARCHITECTURE.md)
+- [git-warp v16.0.0 GUIDE.md](https://raw.githubusercontent.com/git-stunts/git-warp/v16.0.0/docs/GUIDE.md)

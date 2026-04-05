@@ -175,7 +175,7 @@ test('analyzeCounterfactual persists canonical fact bytes and judgment metadata'
     assert.ok(Array.isArray(summary.cache.surfaceKeys));
     assert.ok(summary.cache.surfaceKeys.length >= 2);
     assert.equal(lease.graphName, 'wesley-counterfactual-v1');
-    assert.equal(lease.providerPackageVersion, '14.16.2');
+    assert.equal(lease.providerPackageVersion, '16.0.0');
   } finally {
     fixture.cleanup();
   }
