@@ -66,6 +66,14 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **PR #472 Continuum review follow-up**: `witness-continuum` now rejects
+  missing canonical Echo schema origins, verifies the Echo IR SDL hash, and
+  reports malformed JSONL rows with line context. `bundle-echo` now reports
+  malformed `ir.json` content clearly and only falls back to the workspace
+  generator when `@wesley/generator-echo` is actually missing. The Continuum
+  signposts, backlog packets, and retro verification docs were also tightened
+  to fix canonical-path drift, define the public-surface matrix shape, and
+  clean up wording inconsistencies raised during PR review.
 - **SHIPME PR comment ordering**: The PR badge in
   `.github/workflows/cert-shipme.yml` now waits for the HOLMES suite comment
   for the current PR head SHA, checks the live HOLMES workflow state while
