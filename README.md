@@ -32,6 +32,11 @@ For project direction and repo workflow, start with [docs/BEARING.md](docs/BEARI
 [docs/VISION.md](docs/VISION.md), [ROADMAP.md](ROADMAP.md), and
 [docs/method/process.md](docs/method/process.md).
 
+Unlike a pure METHOD repo, Wesley intentionally keeps this root `README.md`
+product-facing. Repo workflow doctrine and closeout/release rules live in
+[docs/README.md](docs/README.md), [docs/method/process.md](docs/method/process.md),
+and [docs/method/release.md](docs/method/release.md).
+
 ## TL;DR – Getting Started
 
 | Goal | Command(s) | Notes |
@@ -587,16 +592,19 @@ Yes! Wesley generates standard SQL, TypeScript, and Zod schemas that work with a
 
 Wesley uses METHOD for repo workflow. Whether you're human or machine:
 
-1. **Read the signposts** — Start with `README.md`, `docs/BEARING.md`, `docs/VISION.md`, `ROADMAP.md`, and `docs/method/process.md`
+1. **Read the signposts** — Start with `README.md`, `docs/README.md`, `docs/BEARING.md`, `docs/VISION.md`, `ROADMAP.md`, and `docs/method/process.md`
 2. **Use the filesystem queue** — Backlog lives under `docs/method/backlog/`; active cycle packets live under `docs/design/`
 3. **Prove claims with witnesses** — Tests plus reproducible playback beat assertion
 4. **Close the loop in repo files** — Update backlog, design, retro, witness,
-   and signpost surfaces instead of appending to a side log
+   release, and signpost surfaces instead of appending to a side log
 5. **Respect repo rules** — `AGENTS.md` and `.llmignore` still apply
 
 See [docs/BEARING.md](docs/BEARING.md) for current direction,
 [docs/method/backlog/](docs/method/backlog/) for queued work, and
-[CONTRIBUTING.md](CONTRIBUTING.md) for Wesley-specific contribution rules.
+[docs/method/release.md](docs/method/release.md) plus
+[docs/method/retro/README.md](docs/method/retro/README.md) for closeout and
+release doctrine, and [CONTRIBUTING.md](CONTRIBUTING.md) for Wesley-specific
+contribution rules.
 
 ---
 

@@ -3,11 +3,12 @@
 
 ## Start Here
 
-- [README.md](../README.md) — Product doctrine and repo shape
+- [README.md](../README.md) — Product-facing front door and repo shape
 - [BEARING](./BEARING.md) — Current direction and tensions
 - [VISION](./VISION.md) — Bounded executive synthesis
 - [ROADMAP.md](../ROADMAP.md) — Canonical V2 strategy and fixed contracts
 - [METHOD Process](./method/process.md) — Repo workflow and cycle loop
+- [METHOD Release](./method/release.md) — Release doctrine and versioned release surfaces
 - [Contributing](../CONTRIBUTING.md) — Wesley-specific contributor guide
 - [Agent Guide](../AGENTS.md) — Repo instructions for autonomous contributors
 
@@ -42,6 +43,11 @@
 - [VISION](./VISION.md) — Bounded executive synthesis of repo-visible truth
 - [METHOD Process](./method/process.md) — Pull, design, test, playback, close
 - [METHOD Guide](./method/guide.md) — Practical repo guidance
+- [METHOD Release](./method/release.md) — Release doctrine and scope rules
+- [Retro Packets](./method/retro/README.md) — Cycle closeout packet layout
+- [Internal Releases](./method/releases/README.md) — Versioned internal release packets
+- [Release Notes](./releases/README.md) — User-facing release documentation
+- [Graveyard](./method/graveyard/README.md) — Rejected or retired work with context
 - [Backlog](./method/backlog/README.md) — Filesystem queue and lane semantics
 - [Legends](./method/legends/README.md) — Named domains that guard invariants
 - [Invariants](./invariants/README.md) — Properties that must remain true

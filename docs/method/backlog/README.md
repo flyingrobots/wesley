@@ -13,6 +13,9 @@ Lanes:
 When an item is pulled into `docs/design/<cycle>/`, the backlog file is removed.
 Work should not live in two places at once.
 
+Rejected or retired work does not return to the queue by default. Put a note in
+`docs/method/graveyard/` so the decision stays inspectable.
+
 Prefer legend prefixes when they help:
 
 - `SOURCE_<name>.md`
