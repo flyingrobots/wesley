@@ -6,11 +6,13 @@ semi-autonomous contributors working in this repo.
 For product strategy and repo workflow, read:
 
 - [README.md](README.md)
+- [docs/README.md](docs/README.md)
 - [docs/BEARING.md](docs/BEARING.md)
 - [docs/VISION.md](docs/VISION.md)
 - [ROADMAP.md](ROADMAP.md)
 - [docs/method/process.md](docs/method/process.md)
 - [docs/method/guide.md](docs/method/guide.md)
+- [docs/method/release.md](docs/method/release.md)
 
 ## Workflow Surface
 
@@ -21,11 +23,32 @@ The repo-visible working surface is:
 - `docs/method/backlog/` for queued work
 - `docs/design/` for active cycle packets
 - `docs/method/retro/` for closed cycle packets
+- `docs/method/retro/<cycle>/witness/` for playback and verification proof
+- `docs/method/graveyard/` for rejected or retired work with context
+- `docs/method/releases/` for internal release packets
+- `docs/releases/` for user-facing release notes
 - `docs/BEARING.md` for direction at cycle boundaries
 - `docs/VISION.md` for bounded executive synthesis
 
 `ROADMAP.md` remains the product strategy and fixed-contract document. The
 filesystem, not an issue tracker, is the queue.
+
+Wesley intentionally diverges from a pure METHOD repo in one place: the root
+`README.md` stays product-facing. For workflow doctrine, treat
+`docs/README.md`, `docs/method/process.md`, and `docs/method/release.md` as
+the authoritative front door.
+
+## Closeout Shape
+
+When closing a cycle, prefer one calm filesystem shape:
+
+- `docs/method/retro/<cycle>/<task>.md` for the retro summary
+- `docs/method/retro/<cycle>/witness/README.md` for the witness index
+- `docs/method/retro/<cycle>/witness/playback.md` for playback answers
+- `docs/method/retro/<cycle>/witness/verification.md` for rerunnable commands
+
+If the cycle is doc-only, text artifacts and command output are enough, but the
+proof still needs to be rerunnable.
 
 ## Non-Negotiables
 
@@ -37,6 +60,8 @@ filesystem, not an issue tracker, is the queue.
 - Keep generated runtime state in `.wesley-cache/`. It is cache/output, not
   source code.
 - If docs contradict runtime behavior, fix the docs.
+- Ship surfaces such as `docs/BEARING.md`, `CHANGELOG.md`, and release notes
+  reflect merged `main` state, not branch-local optimism.
 - Keep tests deterministic. Prefer fake clocks, seeded randomness, and isolated
   temp state.
 
@@ -85,6 +110,11 @@ In particular:
 - Prefer behavior over architecture theater.
 - Prefer boring defaults over impressive internals.
 - Prefer explicit semantics at governance boundaries.
+- If a backlog-worthy idea appears during work, capture it in
+  `docs/method/backlog/` instead of leaving it only in chat or burying it in a
+  retro.
+- Do not let rejected work disappear silently. Put a note in
+  `docs/method/graveyard/` when that context matters.
 
 When in doubt:
 
