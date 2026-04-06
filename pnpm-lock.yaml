@@ -58,6 +58,9 @@ importers:
       '@wesley/core':
         specifier: workspace:*
         version: link:../wesley-core
+      '@wesley/generator-echo':
+        specifier: workspace:*
+        version: link:../wesley-generator-echo
       '@wesley/generator-js':
         specifier: workspace:*
         version: link:../wesley-generator-js
