@@ -1,4 +1,4 @@
-# Public Surface Status Matrix
+# Coherent Public Surface Matrix
 
 - Lane: `inbox`
 - Legend: `RUNTIME`
@@ -13,8 +13,8 @@ The old README carried a much larger public surface:
 - broader integration and future platform breadth
 
 The new signposts are more honest, but they no longer carry that whole surface
-as a front-door story. That is good for truthfulness, but it risks losing track
-of the product shape Wesley was trying to present.
+as a front-door story. That is good for truthfulness, but it risks losing the
+coherent public product shape Wesley was trying to present.
 
 ## Hill
 
@@ -31,6 +31,8 @@ The repo has one calm public surface matrix that says which major surfaces are:
 - host/runtime/package surfaces are summarized without a huge badge wall
 - major public surfaces link to their real owning docs
 - future-facing breadth remains visible without being presented as shipped fact
+- the broader coherent product surface remains an explicit target, not a dead
+  README dream
 
 ## Repo Evidence
 

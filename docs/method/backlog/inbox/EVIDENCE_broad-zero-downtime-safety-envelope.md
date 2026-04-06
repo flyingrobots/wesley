@@ -1,4 +1,4 @@
-# Zero-Downtime Safety Claim Witness
+# Broad Zero-Downtime Safety Envelope
 
 - Lane: `inbox`
 - Legend: `EVIDENCE`
@@ -6,17 +6,18 @@
 ## Why now
 
 The old README promised zero-downtime behavior and automatic safety properties
-in strong public language. The roadmap and current docs still show substantial
-future work around safe change semantics, rehearsal depth, and durable proof.
+in strong public language before the repo had one broad, explicit proof
+surface. The roadmap and current docs still show substantial future work around
+safe change semantics, rehearsal depth, and durable proof.
 
-This should become one explicit proof or narrowing task, not a haze of
-half-remembered confidence.
+That overclaim should not make the underlying goal disappear. Wesley should
+still aim to earn a broad, explicit safe-change envelope.
 
 ## Hill
 
-The repo can say exactly which zero-downtime or change-safety claims are proved
-today, which are still target state, and which scenarios remain unsafe or
-unsupported.
+Wesley can say exactly which zero-downtime or change-safety claims are proved
+today, which are still target state, and how the repo intends to widen the safe
+envelope over time.
 
 ## Done looks like
 
@@ -25,7 +26,8 @@ unsupported.
 - the matrix is backed by executable tests, witness flows, or rehearsals rather
   than pure prose
 - front-door docs stop implying universal zero-downtime safety where the proof
-  is still partial
+  is still partial, while still naming the broader goal as something Wesley is
+  trying to earn
 
 ## Repo Evidence
 

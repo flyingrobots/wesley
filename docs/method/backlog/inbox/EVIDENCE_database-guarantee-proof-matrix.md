@@ -1,4 +1,4 @@
-# Database Public Claim Guarantee Matrix
+# Database Guarantee Proof Matrix
 
 - Lane: `inbox`
 - Legend: `EVIDENCE`
@@ -14,12 +14,14 @@ The old README grouped several strong public guarantees together:
 
 Some of those surfaces do exist in the repo. Some are partial. Some are only
 true for narrower paths than the README implied. The repo needs one explicit
-guarantee matrix instead of scattered hints.
+proof matrix so the broader promise can remain a goal instead of decaying into
+folklore.
 
 ## Hill
 
 Wesley can name the exact public guarantees of the current database-change lane
-and map each one to concrete tests, fixtures, or witness commands.
+and map each one to concrete tests, fixtures, or witness commands, while still
+showing which stronger guarantees remain target state.
 
 ## Done looks like
 
@@ -29,7 +31,8 @@ and map each one to concrete tests, fixtures, or witness commands.
   - target state
 - each `proved now` claim links to executable repo evidence
 - test docs and signposts use the same guarantee language
-- over-broad guarantees are narrowed instead of hand-waved
+- the broader public promise remains visible as a target instead of being lost
+  when narrower present-tense wording is required
 
 ## Repo Evidence
 

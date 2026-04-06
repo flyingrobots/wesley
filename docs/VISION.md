@@ -49,6 +49,28 @@ The current center of gravity in the repo, however, is narrower:
 That makes the current hill less about broad platform claims and more about one
 small, inspectable contract-compiler proving move.
 
+## Intended Public Product Shape
+
+The older public README over-claimed some of these ideas as if they were
+already fully true. The direction itself still stands.
+
+Wesley is still trying to earn this broader public shape:
+
+- a release-grade, evidence-backed database lane that can honestly be described
+  as production-ready and battle-tested
+- one boring public operator story:
+  `generate -> plan -> rehearse -> certify -> deploy`
+- a broad, explicit zero-downtime and safe-change envelope with clearly named
+  limits
+- one public proof matrix that bundles comprehensive tests,
+  property-oriented checks, round-trip guarantees, and idempotence claims
+- a broad, calm RLS and data-layer happy path with one canonical schema story
+- a coherent public product surface across playgrounds, packages, hosts, and
+  integrations
+
+Those are goals, not present-tense guarantees. The repo should keep them
+visible without smuggling them back into current-state claims.
+
 ## Repo Working Model
 
 Wesley now uses a METHOD-shaped repo surface:
@@ -75,6 +97,8 @@ Chat, trackers, and PR discussion can help, but they do not outrank the files.
   runtime or CI policy.
 - The METHOD closeout surface is now explicit, but Wesley still needs more real
   retro packets and witness directories before that shape feels fully lived-in.
+- The repo now has a cleaner, more honest front door, but it still has to earn
+  several older north-star promises rather than quietly forgetting them.
 
 ## Limits
 

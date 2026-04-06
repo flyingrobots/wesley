@@ -1,4 +1,4 @@
-# RLS And Directive Happy-Path Contract
+# Broad RLS And Data-Layer Happy Path
 
 - Lane: `inbox`
 - Legend: `SOURCE`
@@ -14,13 +14,14 @@ truth table is more constrained:
 - several older RLS-oriented E2E tests are explicitly skipped or pending
   rewrite
 
-The public contract should be one exact source-level happy path, not a mixture
-of true, partial, and historical surfaces.
+The public contract should become one exact source-level happy path, not remain
+a mixture of true, partial, and historical surfaces.
 
 ## Hill
 
-The repo can define one canonical database SDL happy path, including the exact
-directive and RLS semantics that the main operator flow truly supports today.
+The repo can define and earn one canonical database SDL happy path, including
+the exact directive and RLS semantics that the main operator flow truly
+supports today and the broader shape it is still trying to reach.
 
 ## Done looks like
 
@@ -31,6 +32,7 @@ directive and RLS semantics that the main operator flow truly supports today.
   reflected honestly in docs
 - the front-door product story no longer implies broader directive support than
   `docs/DIRECTIVES.md` can defend
+- the broader calm data-layer story remains visible as a product goal
 
 ## Repo Evidence
 
