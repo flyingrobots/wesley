@@ -23,6 +23,9 @@ and what each neighboring system explicitly does not own.
 
 - one owner is named for each WARP-facing shared noun family Wesley currently
   carries or plans to compile next
+- the ownership map is a table, not only prose; it names at least `Noun`,
+  `Role`, `Owner`, `Authored or generated`, `Source of truth`, `Consumers`,
+  and `Out of scope`
 - Wesley's role is written as contract compilation, publication boundary, and
   judgment bridge, not runtime or storage policy
 - projection nouns such as `Observer` and `Lens` are not casually presented as

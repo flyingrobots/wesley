@@ -19,13 +19,25 @@ ambient network state.
 
 ## Done looks like
 
-- one documented local compile path produces the current shared contract bundle
+- one documented local command chain produces the current shared contract bundle
 - emitted TTD manifest / registry outputs and Echo IR / codec outputs are
   summarized in one inspect surface
 - the output tree is predictable and reviewable
 - the operator gets a short inspection summary, not just a pile of files
 - the workflow stays local-first and deterministic
 - failure messages point at the schema or generated contract surface clearly
+- the happy path is one screen long and does not require repo folklore
+
+## Canonical operator chain
+
+The packet should cash out to a literal boring path:
+
+1. find the canonical schema for the chosen family
+2. run one TTD compile command
+3. run one Echo bundle command for the same schema
+4. inspect one short artifact summary
+5. run one witness command or script
+6. read one proof result
 
 ## Repo Evidence
 

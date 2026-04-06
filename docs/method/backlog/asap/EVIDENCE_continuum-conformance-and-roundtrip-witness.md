@@ -23,9 +23,26 @@ adapter folklore.
 - round-trip checks verify canonical bytes or canonical structured values
   across the generated surfaces Wesley actually publishes today
 - failures identify the contract family and schema hash clearly
-- docs explain what the witness proves and what it does not prove
+- docs explain exactly what the witness proves and what it does not prove
 - the proof lane strengthens `evidence-truth` instead of faking platform
   compatibility
+- the fixture set includes a receipt-versus-witness separation case
+
+## Witness contract
+
+This lane should prove:
+
+- schema-to-artifact consistency for the chosen family
+- manifest and source traceability for emitted surfaces
+- fixture-level conformance for selected examples
+- one explicit receipt-versus-witness separation case
+
+This lane should not claim to prove:
+
+- runtime policy correctness
+- storage semantics
+- debugger semantics
+- full Continuum completeness
 
 ## Repo Evidence
 
