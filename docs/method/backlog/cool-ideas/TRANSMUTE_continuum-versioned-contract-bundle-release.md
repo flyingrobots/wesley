@@ -27,7 +27,7 @@ single consumer-friendly publication surface.
   contracts
 - release naming and semver are driven by contract shape, not by arbitrary repo
   history
-- the publication shape remains honest about foreign authored homes when Wesley
+- the publication shape remains honest about foreign-authored homes when Wesley
   is compiling rather than authoring
 
 ## Repo Evidence
@@ -42,4 +42,3 @@ single consumer-friendly publication surface.
 
 - `#453`
 - `#456`
-

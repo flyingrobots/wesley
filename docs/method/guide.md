@@ -28,7 +28,7 @@ Prefer one calm closeout shape per cycle:
 - `docs/method/retro/<cycle>/<task>.md` for the retro summary
 - `docs/method/retro/<cycle>/witness/README.md` for the witness index
 - `docs/method/retro/<cycle>/witness/playback.md` for playback answers
-- `docs/method/retro/<cycle>/witness/verification.md` for rerunnable commands
+- `docs/method/retro/<cycle>/witness/verification.md` for re-runnable commands
 
 If the cycle is doc-only, the witness can be text-first. A screenshot or one-off
 observation may support the proof, but it should not carry the done-claim alone.

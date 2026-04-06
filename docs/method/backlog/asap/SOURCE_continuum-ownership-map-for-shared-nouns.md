@@ -6,7 +6,7 @@
 ## Why now
 
 The current bearing now names a specific Continuum stack: WARP-facing shared
-contracts, a TTD protocol lane, an Echo codec / decodec lane, and `git-warp`
+contracts, a TTD protocol lane, an Echo codec lane, and `git-warp`
 on the substrate fact side. Without an ownership map, maintainers still have
 to infer which repo owns each shared noun family and which generated surfaces
 are consumer contracts versus local mirrors. The WARP optic framing also raises

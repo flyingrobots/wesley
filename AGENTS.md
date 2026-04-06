@@ -22,7 +22,7 @@ The repo-visible working surface is:
 
 - `docs/method/backlog/` for queued work
 - `docs/design/` for active cycle packets
-- `docs/method/retro/` for closed cycle packets
+- `docs/method/retro/` for closed-cycle packets
 - `docs/method/retro/<cycle>/witness/` for playback and verification proof
 - `docs/method/graveyard/` for rejected or retired work with context
 - `docs/method/releases/` for internal release packets
@@ -45,10 +45,10 @@ When closing a cycle, prefer one calm filesystem shape:
 - `docs/method/retro/<cycle>/<task>.md` for the retro summary
 - `docs/method/retro/<cycle>/witness/README.md` for the witness index
 - `docs/method/retro/<cycle>/witness/playback.md` for playback answers
-- `docs/method/retro/<cycle>/witness/verification.md` for rerunnable commands
+- `docs/method/retro/<cycle>/witness/verification.md` for re-runnable commands
 
 If the cycle is doc-only, text artifacts and command output are enough, but the
-proof still needs to be rerunnable.
+proof still needs to be re-runnable.
 
 ## Non-Negotiables
 
@@ -61,7 +61,7 @@ proof still needs to be rerunnable.
   source code.
 - If docs contradict runtime behavior, fix the docs.
 - Ship surfaces such as `docs/BEARING.md`, `CHANGELOG.md`, and release notes
-  reflect merged `main` state, not branch-local optimism.
+  must reflect merged `main` state, not branch-local optimism.
 - Keep tests deterministic. Prefer fake clocks, seeded randomness, and isolated
   temp state.
 

@@ -82,6 +82,8 @@ following:
 - one witness lane
 - one boring CLI-centered inspection path
 
+### Proof Scope
+
 This cycle proves:
 
 - schema-to-artifact consistency for the chosen family
@@ -144,7 +146,7 @@ done until the whole path is real and inspectable.
 | 3. TTD outputs | `.wesley-cache/continuum/receipt-family/ttd/manifest/{schema.json,contracts.json,manifest.json,ttd-ir.json}` and `.wesley-cache/continuum/receipt-family/ttd/typescript/{types.ts,zod.ts,registry.ts,index.ts}` | output family exists today for current TTD inputs |
 | 4. Echo bundle | `pnpm wesley bundle-echo --schema schemas/continuum-receipt-family.graphql --out-dir .wesley-cache/continuum/receipt-family/echo` writing `.wesley-cache/continuum/receipt-family/echo/{ir.json,ops.generated.ts,schemas.generated.ts,client.generated.ts,raw_le_codec.generated.ts,raw_le_codec.generated.rs,wasm_abi_codec.generated.ts,wasm_abi_codec.generated.rs}` plus `.wesley-cache/continuum/receipt-family/echo/mock/deliveries.jsonl` and `mock/summary.json` | command exists today; chosen family schema and full witness lane do not yet |
 | 5. Fixtures | `test/fixtures/continuum/receipt-family/{minimal,boundary,invalid,receipt-vs-witness}.*` | required work |
-| 6. Witness output | `pnpm wesley witness-continuum --ttd-dir .wesley-cache/continuum/local-inspect/ttd --echo-dir .wesley-cache/continuum/local-inspect/echo --out .wesley-cache/continuum/local-inspect/witness/conformance.json` | command exists today for the current minimum surface; the chosen-family witness lane still requires the authored family schema and family fixtures |
+| 6. Witness output | `pnpm wesley witness-continuum --ttd-dir .wesley-cache/continuum/receipt-family/ttd --echo-dir .wesley-cache/continuum/receipt-family/echo --out .wesley-cache/continuum/receipt-family/witness/conformance.json` | command exists today for the current minimum surface; the chosen-family witness lane still requires the authored family schema and family fixtures |
 
 ## No Shadow Contract Rule
 
@@ -162,19 +164,15 @@ following are machine-checkable:
 
 ## Witness Lane Contract
 
-This witness lane proves:
+The witness lane is the runnable form of the [proof scope](#proof-scope)
+above. It must make that scope machine-checkable without widening it.
 
-- schema-to-artifact consistency for the chosen family
-- manifest and source traceability for emitted surfaces
-- fixture-level conformance for the selected examples
+For this cycle, that means the witness lane has to cash out the proof scope
+through:
+
+- selected fixtures for the chosen family
+- manifest and source traceability in emitted surfaces
 - one explicit receipt-versus-witness separation case
-
-This witness lane does not prove:
-
-- runtime policy correctness
-- storage semantics
-- debugger semantics
-- full Continuum completeness
 
 ## Boring Operator Path
 

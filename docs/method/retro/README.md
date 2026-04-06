@@ -11,7 +11,7 @@ containing:
 - `witness/README.md` for the witness index
 - `witness/playback.md` for the playback answers tied to the hill and playback
   questions
-- `witness/verification.md` for rerunnable commands and interpretation
+- `witness/verification.md` for re-runnable commands and interpretation
 
 If a cycle only changed docs or doctrine, the witness can be text artifacts and
-command output. Proof still needs to be rerunnable.
+command output. Proof still needs to be re-runnable.

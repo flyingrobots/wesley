@@ -5,8 +5,8 @@
 
 ## Why now
 
-The repo now names a real TTD manifest lane and a real Echo codec / decodec
-lane, but Continuum still fails if those generated surfaces are only "supposed
+The repo now names a real TTD manifest lane and a real Echo codec lane, but
+Continuum still fails if those generated surfaces are only "supposed
 to match." Wesley needs a witness lane that proves canonical bytes, registry
 ids, and fixture vectors stay compatible instead of relying on trust.
 
@@ -18,7 +18,7 @@ frozen receipt-family proving lane and real emitted family fixtures.
 ## Hill
 
 Wesley can produce and verify conformance fixtures for the chosen shared
-contract family so TTD manifests, Echo codecs / decodecs, and downstream hot
+contract family so TTD manifests, Echo codecs, and downstream hot
 and cold runtimes have machine-checkable compatibility proof rather than
 adapter folklore.
 

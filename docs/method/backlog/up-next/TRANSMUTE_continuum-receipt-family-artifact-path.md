@@ -28,7 +28,7 @@ surface, into a predictable generated bundle from one schema entry point.
 
 ## Frozen authored home
 
-For this cycle's design packet, the target authored home is:
+When this item becomes the active design packet, the target authored home is:
 
 - `schemas/continuum-receipt-family.graphql`
 

@@ -56,7 +56,7 @@ Current repo-visible evidence:
 Current rule:
 
 - Wesley may compile from an authored home it carries locally or from an
-  explicit foreign authored home.
+  explicit foreign-authored home.
 - Either way, the authored home must be named directly.
 - Generated artifacts may be stable consumer surfaces.
 - Mirrors do not inherit authorship just because they exist.

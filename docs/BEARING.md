@@ -51,7 +51,7 @@ That currently means:
   receipt-family lane the active packet is aiming at.
 - Ownership of shared nouns is clearer than before, but still not enforced by
   one small reusable ownership map and one anti-shadow check.
-- The repo now has a closeout shape, but not yet a deep habit of closed cycle
+- The repo now has a closeout shape, but not yet a deep habit of closed-cycle
   packets and witness directories.
 - Wesley's public identity is still split between the older PostgreSQL-first
   story and the newer Continuum contract-compiler hill. That split is real and

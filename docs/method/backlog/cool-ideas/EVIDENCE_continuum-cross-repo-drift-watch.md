@@ -7,14 +7,14 @@
 
 Wesley is getting clearer about authored homes, publication boundaries, and
 stable consumer surfaces, but drift can still hide in the seams between repos.
-Once a foreign authored home, local generated bundle, and consumer mirror all
+Once a foreign-authored home, local-generated bundle, and consumer mirror all
 exist, maintainers will want a cheap way to tell whether the story is still
 coherent without manually diffing three repositories.
 
 ## Hill
 
 A maintainer can run one drift-watch surface and see whether Wesley's declared
-contract bundle, nearby foreign authored homes, and known consumer mirrors are
+contract bundle, nearby foreign-authored homes, and known consumer mirrors are
 still aligned or have started to diverge.
 
 ## Done looks like
@@ -42,4 +42,3 @@ still aligned or have started to diverge.
 
 - `#365`
 - `#456`
-

@@ -59,8 +59,8 @@ themselves.
 
 ## User-Facing Release Notes
 
-`docs/releases/vX.Y.Z.md` should be documentation, not ledger sludge. At
-minimum it should answer:
+These notes should be documentation, not ledger sludge. At minimum they should
+answer:
 
 - Summary
 - What Changed

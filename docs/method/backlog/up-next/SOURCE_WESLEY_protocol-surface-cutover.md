@@ -9,7 +9,10 @@
 The publication-boundary story is clearer than it was: Wesley's local protocol
 docs are cleaner and `warp-ttd` now states its authored-home rule explicitly.
 The remaining cutover work is still important, but it now sits behind the
-ownership-map and local-proof slices.
+ownership-map, local compile/inspect, and conformance-witness slices already
+named in `SOURCE_continuum-ownership-map-for-shared-nouns.md`,
+`RUNTIME_continuum-local-compile-and-inspect-surface.md`, and
+`EVIDENCE_continuum-conformance-and-roundtrip-witness.md`.
 
 ## Hill
 

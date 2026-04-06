@@ -43,7 +43,7 @@ The packet should cash out to a literal boring path:
 2. run one TTD compile command
 3. run one Echo bundle command for the same schema
 4. inspect one short artifact summary
-5. run one witness command or script
+5. run `wesley witness-continuum`
 6. read one proof result
 
 ## Repo Evidence

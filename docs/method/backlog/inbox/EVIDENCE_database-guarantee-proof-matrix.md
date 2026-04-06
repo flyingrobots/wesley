@@ -12,10 +12,10 @@ The old README grouped several strong public guarantees together:
 - round-trip validation
 - idempotence checks
 
-Some of those surfaces do exist in the repo. Some are partial. Some are only
-true for narrower paths than the README implied. The repo needs one explicit
-proof matrix so the broader promise can remain a goal instead of decaying into
-folklore.
+Those surfaces exist in different states: some are already real, others are
+partial, and others only hold for narrower paths than the README implied. The
+repo needs one explicit proof matrix so the broader promise can remain a goal
+instead of decaying into folklore.
 
 ## Hill
 

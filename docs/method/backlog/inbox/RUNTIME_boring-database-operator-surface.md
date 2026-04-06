@@ -29,9 +29,9 @@ database-change lane and can eventually present the full
 ## Done looks like
 
 - the repo chooses one public operator story and uses it consistently
-- either `certify` / `deploy` return as real commands, or the public docs adopt
-  a different operator story so consistently that the old one can be retired on
-  purpose
+- either `certify` or `deploy` return as real commands, or the public docs
+  adopt a different operator story so consistently that the old one can be
+  deliberately retired
 - quick-start docs, case studies, and command help agree on the same operator
   path
 - the chosen path has one minimal witness or demo that proves it still works
