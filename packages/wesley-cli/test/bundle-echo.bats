@@ -61,3 +61,14 @@ teardown() {
     assert_file_not_exist out/ir.json
     assert_file_not_exist out/mock/deliveries.jsonl
 }
+
+@test "bundle-echo normalizes slash-heavy output paths" {
+    run node "$CLI_PATH" bundle-echo --schema "$ECHO_SCHEMA" --out-dir "out///echo///" --json
+    assert_success
+    echo "$output" | jq -e '.result.outDir == "out///echo///"' >/dev/null
+    echo "$output" | jq -e '.result.mock.outputPath == "out/echo/mock/deliveries.jsonl"' >/dev/null
+    echo "$output" | jq -e '.result.mock.summaryPath == "out/echo/mock/summary.json"' >/dev/null
+
+    assert_file_exist out/echo/ir.json
+    assert_file_exist out/echo/mock/deliveries.jsonl
+}

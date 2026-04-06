@@ -1,6 +1,7 @@
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import { WesleyError, schemaHash } from '@wesley/core';
 import { hashSchema as hashTtdSchema } from '@wesley/core/ttd';
+import { joinPath } from './path-utils.mjs';
 
 const WITNESS_KIND = 'wesley.continuum.conformance.v1';
 const CURRENT_SCOPE = 'current-minimum-shared-surface';
@@ -395,17 +396,4 @@ function createCheck(id, pass, message, details) {
     message,
     details
   };
-}
-
-function joinPath(...parts) {
-  return parts
-    .filter((part) => part != null && String(part).length > 0)
-    .map((part, index) => {
-      const text = String(part);
-      if (index === 0) {
-        return text.replace(/\/+$/g, '');
-      }
-      return text.replace(/^\/+/g, '').replace(/\/+$/g, '');
-    })
-    .join('/');
 }

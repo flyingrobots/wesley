@@ -1,5 +1,6 @@
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import { WesleyError, schemaHash } from '@wesley/core';
+import { joinPath } from './path-utils.mjs';
 
 const MOCK_WARP_COMMAND = 'deliveries';
 const HEAD_ID = 'head:wesley:continuum';
@@ -242,17 +243,4 @@ async function resolveGenerateEcho() {
     const mod = await import('../../../wesley-generator-echo/src/index.mjs');
     return mod.generateEcho;
   }
-}
-
-function joinPath(...parts) {
-  return parts
-    .filter((part) => part != null && String(part).length > 0)
-    .map((part, index) => {
-      const text = String(part);
-      if (index === 0) {
-        return text.replace(/\/+$/g, '');
-      }
-      return text.replace(/^\/+/g, '').replace(/\/+$/g, '');
-    })
-    .join('/');
 }

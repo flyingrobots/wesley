@@ -71,3 +71,19 @@ generate_local_inspect_surfaces() {
     run jq -e '.checks[] | select(.id == "echo.mock-deliveries-summary" and .status == "fail")' out/witness/conformance.json
     assert_success
 }
+
+@test "witness-continuum accepts slash-heavy surface directories" {
+    generate_local_inspect_surfaces
+
+    run node "$CLI_PATH" witness-continuum \
+        --ttd-schema "$TTD_SCHEMA" \
+        --ttd-dir "out/ttd///" \
+        --echo-schema "$ECHO_SCHEMA" \
+        --echo-dir "out/echo///" \
+        --out out/witness/conformance.json \
+        --json
+    assert_success
+    echo "$output" | jq -e '.success == true' >/dev/null
+    echo "$output" | jq -e '.result.status == "pass"' >/dev/null
+    assert_file_exist out/witness/conformance.json
+}
