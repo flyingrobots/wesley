@@ -1,13 +1,14 @@
 # Continuum Receipt Family Artifact Path
 
-- Lane: `asap`
+- Lane: `up-next`
 - Legend: `TRANSMUTE`
 
 ## Why now
 
 The Continuum direction should cash out to one boring artifact family, not just
-platform prose. Wesley already has protocol compiler machinery; the next
-load-bearing move is to drive one shared envelope family through it end to end.
+platform prose. After ownership, local inspectability, and witness surfaces
+are calmer, the next load-bearing move is to drive one shared envelope family
+through the stack end to end.
 
 ## Hill
 

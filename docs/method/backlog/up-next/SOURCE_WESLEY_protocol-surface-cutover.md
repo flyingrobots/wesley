@@ -1,21 +1,22 @@
 # Continuum Protocol Surface Cutover
 
-- Lane: `asap`
+- Lane: `up-next`
 - Legend: `SOURCE`
 - Coordination: `WESLEY_protocol_surface_cutover`
 
 ## Why now
 
-Wesley cannot claim `schema-source-of-truth` for Continuum while it carries
-`schemas/ttd-protocol.graphql` as an implicit source and `warp-ttd` separately
-claims `schemas/warp-ttd-protocol.graphql` as the host-neutral debugger
-protocol source. One of those stories has to become canonical.
+The publication-boundary story is clearer than it was: Wesley's local protocol
+docs are cleaner and `warp-ttd` now states its authored-home rule explicitly.
+The remaining cutover work is still important, but it now sits behind the
+ownership-map and local-proof slices.
 
 ## Hill
 
 A maintainer can name one authored home for the host-neutral TTD protocol, see
 whether Wesley's local schema is authoritative or derived, and trace one
-cutover plan that removes parallel protocol authority without guessing.
+steady-state cutover plan that removes parallel protocol authority without
+guessing.
 
 ## Done looks like
 

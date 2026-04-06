@@ -86,12 +86,11 @@ and no handwritten shadow contracts for the chosen shared nouns.
 
 ## Related Backlog Pull Set
 
-- [Continuum Minimum Shared Contract Surface](../../method/backlog/asap/SOURCE_continuum-minimum-shared-contract-surface.md)
 - [Continuum Ownership Map For Shared Nouns](../../method/backlog/asap/SOURCE_continuum-ownership-map-for-shared-nouns.md)
-- [Continuum Protocol Surface Cutover](../../method/backlog/asap/SOURCE_WESLEY_protocol-surface-cutover.md)
-- [Continuum Receipt Family Artifact Path](../../method/backlog/asap/TRANSMUTE_continuum-receipt-family-artifact-path.md)
-- [Continuum Local Compile And Inspect Surface](../../method/backlog/up-next/RUNTIME_continuum-local-compile-and-inspect-surface.md)
-- [Continuum Conformance And Round-Trip Witness](../../method/backlog/up-next/EVIDENCE_continuum-conformance-and-roundtrip-witness.md)
+- [Continuum Local Compile And Inspect Surface](../../method/backlog/asap/RUNTIME_continuum-local-compile-and-inspect-surface.md)
+- [Continuum Conformance And Round-Trip Witness](../../method/backlog/asap/EVIDENCE_continuum-conformance-and-roundtrip-witness.md)
+- [Continuum Protocol Surface Cutover](../../method/backlog/up-next/SOURCE_WESLEY_protocol-surface-cutover.md)
+- [Continuum Receipt Family Artifact Path](../../method/backlog/up-next/TRANSMUTE_continuum-receipt-family-artifact-path.md)
 
 ## Non-goals
 
