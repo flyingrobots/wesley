@@ -123,7 +123,8 @@ pnpm wesley witness-continuum \
 | [docs/BEARING.md](docs/BEARING.md) | Current direction, active tensions, and what is already real. |
 | [docs/VISION.md](docs/VISION.md) | Bounded executive synthesis grounded in repo-visible truth. |
 | [ROADMAP.md](ROADMAP.md) | Fixed contracts, phase order, and longer-range strategy. |
-| [docs/design/0003-continuum-contract-compiler/continuum-contract-compiler.md](docs/design/0003-continuum-contract-compiler/continuum-contract-compiler.md) | The active Continuum proving packet. |
+| [docs/design/0003-continuum-contract-compiler/continuum-contract-compiler.md](docs/design/0003-continuum-contract-compiler/continuum-contract-compiler.md) | The most recent Continuum proving packet. |
+| [docs/method/retro/0003-continuum-contract-compiler/continuum-contract-compiler.md](docs/method/retro/0003-continuum-contract-compiler/continuum-contract-compiler.md) | The partial closeout for that cycle and its carry-over context. |
 | [docs/method/process.md](docs/method/process.md) | METHOD workflow and cycle closeout rules. |
 
 ## Repo Shape

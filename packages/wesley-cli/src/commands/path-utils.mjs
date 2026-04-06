@@ -7,3 +7,16 @@ export function joinPath(...parts) {
 
   return filtered.length === 0 ? '' : path.posix.join(...filtered);
 }
+
+export function canonicalizeSchemaPath(schemaPath) {
+  if (schemaPath == null) {
+    return null;
+  }
+
+  const text = String(schemaPath).trim();
+  if (text.length === 0 || text === '-' || text === '<stdin>') {
+    return null;
+  }
+
+  return path.resolve(text);
+}

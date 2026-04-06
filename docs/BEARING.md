@@ -34,8 +34,10 @@ That currently means:
   [Continuum Minimum Shared Contract Surface](./architecture/continuum-minimum-shared-contract-surface.md).
 - Wesley's role in Continuum is explicitly bounded in
   [Wesley Role In Continuum](./architecture/continuum-wesley-role.md).
-- The active proving packet is
-  [Continuum Contract Compiler](./design/0003-continuum-contract-compiler/continuum-contract-compiler.md).
+- The most recent Continuum proving packet is
+  [Continuum Contract Compiler](./design/0003-continuum-contract-compiler/continuum-contract-compiler.md),
+  and it closed as a `partial` landing in
+  [its retro packet](./method/retro/0003-continuum-contract-compiler/continuum-contract-compiler.md).
 - Wesley's METHOD closeout and release surfaces are now explicit in
   `docs/method/retro/`, `docs/method/graveyard/`, `docs/method/releases/`, and
   `docs/releases/`.

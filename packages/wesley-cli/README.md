@@ -26,4 +26,6 @@ See `pnpm wesley --help` for the full list of commands (including `blade`, `cert
 Status: Active
 ![pkg-cli](https://github.com/flyingrobots/wesley/actions/workflows/pkg-cli.yml/badge.svg?branch=main)
 
-Production ready; experimental features (`--ops`) are flagged in the CLI help text.
+Experimental package with real working command surfaces. The database-change
+lane is more mature than the Continuum lane, and experimental features
+(`--ops`) remain flagged in the CLI help text.

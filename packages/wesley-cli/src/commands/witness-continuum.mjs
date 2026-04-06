@@ -1,7 +1,8 @@
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import { WesleyError, schemaHash } from '@wesley/core';
 import { hashSchema as hashTtdSchema } from '@wesley/core/ttd';
-import { joinPath } from './path-utils.mjs';
+import path from 'node:path';
+import { canonicalizeSchemaPath, joinPath } from './path-utils.mjs';
 
 const WITNESS_KIND = 'wesley.continuum.conformance.v1';
 const CURRENT_SCOPE = 'current-minimum-shared-surface';
@@ -36,6 +37,17 @@ const RECEIPT_ONLY_FIELDS = [
   'rejectedRewriteCount',
   'counterfactualCount',
   'digest'
+];
+const DELIVERY_OBSERVATION_REQUIRED_FIELDS = [
+  ['observationId', isNonEmptyString],
+  ['emissionId', isNonEmptyString],
+  ['headId', isNonEmptyString],
+  ['frameIndex', Number.isInteger],
+  ['sinkId', isNonEmptyString],
+  ['outcome', isNonEmptyString],
+  ['reason', isNonEmptyString],
+  ['executionMode', isNonEmptyString],
+  ['summary', isNonEmptyString]
 ];
 
 export class WitnessContinuumCommand extends WesleyCommand {
@@ -77,15 +89,22 @@ export class WitnessContinuumCommand extends WesleyCommand {
     }
 
     if (report.status === 'fail') {
+      const guidance = options.dryRun
+        ? ' No report file was written because --dry-run was set.'
+        : ` See ${options.out}.`;
       throw new WesleyError(
         'CONTINUUM_WITNESS_FAILED',
-        `Continuum witness failed ${report.summary.failed} check(s). See ${options.out}.`
+        `Continuum witness failed ${report.summary.failed} check(s).${guidance}`
       );
     }
 
     if (!options.quiet && !options.json) {
       logger?.info?.(`Continuum witness passed (${report.summary.passed}/${report.summary.totalChecks} checks)`);
-      logger?.info?.(`Witness report: ${options.out}`);
+      if (options.dryRun) {
+        logger?.info?.('Witness report not written because --dry-run was set.');
+      } else {
+        logger?.info?.(`Witness report: ${options.out}`);
+      }
     }
 
     return report;
@@ -139,7 +158,7 @@ async function inspectTtdSurface({ fs, crypto, schemaPath, outDir, checks }) {
   const expectedHash = await hashTtdSchema(schemaContent, { crypto });
   const requiredPaths = TTD_REQUIRED_FILES.map((file) => joinPath(outDir, file));
   const missingFiles = await collectMissingFiles(fs, requiredPaths);
-  const missingRelative = missingFiles.map((path) => path.slice(outDir.length + 1));
+  const missingRelative = missingFiles.map((missingPath) => relativePath(outDir, missingPath));
 
   checks.push(createCheck(
     'ttd.required-files',
@@ -222,7 +241,7 @@ async function inspectEchoSurface({ fs, schemaPath, outDir, checks }) {
   const expectedHash = await schemaHash(schemaContent);
   const requiredPaths = ECHO_REQUIRED_FILES.map((file) => joinPath(outDir, file));
   const missingFiles = await collectMissingFiles(fs, requiredPaths);
-  const missingRelative = missingFiles.map((path) => path.slice(outDir.length + 1));
+  const missingRelative = missingFiles.map((missingPath) => relativePath(outDir, missingPath));
 
   checks.push(createCheck(
     'echo.required-files',
@@ -251,21 +270,30 @@ async function inspectEchoSurface({ fs, schemaPath, outDir, checks }) {
   const deliveryLines = await fs.read(joinPath(outDir, 'mock/deliveries.jsonl'));
   const deliveryRows = parseJsonl(deliveryLines);
   const deliveredOutcomes = countDeliveryOutcomes(deliveryRows);
+  const malformedRows = findMalformedDeliveryObservationRows(deliveryRows);
 
+  const expectedCanonicalSchemaPath = canonicalizeSchemaPath(schemaPath);
+  const actualCanonicalSchemaPath = summaryJson.canonicalSchemaPath ??
+    canonicalizeSchemaPath(summaryJson.schemaPath);
   const traceable = summaryJson.kind === 'wesley.echo-bundle.inspect.v1' &&
     summaryJson.schemaHash === expectedHash &&
-    summaryJson.schemaPath === schemaPath;
+    isNonEmptyString(summaryJson.schemaPath) &&
+    (expectedCanonicalSchemaPath == null ||
+      actualCanonicalSchemaPath == null ||
+      actualCanonicalSchemaPath === expectedCanonicalSchemaPath);
   checks.push(createCheck(
     'echo.summary-traceability',
     traceable,
     traceable
-      ? 'Echo inspect summary matches the authored schema path and schema hash.'
+      ? 'Echo inspect summary matches the authored schema hash and records traceable schema origin.'
       : 'Echo inspect summary does not match the authored schema input.',
     {
       expectedHash,
       actualHash: summaryJson.schemaHash,
       expectedSchemaPath: schemaPath,
-      actualSchemaPath: summaryJson.schemaPath
+      actualSchemaPath: summaryJson.schemaPath,
+      expectedCanonicalSchemaPath,
+      actualCanonicalSchemaPath
     }
   ));
 
@@ -290,6 +318,19 @@ async function inspectEchoSurface({ fs, schemaPath, outDir, checks }) {
         summaryOpCount: summaryJson.echo?.ir?.opCount ?? null,
         actualOpCount: irJson.ops?.length ?? null
       }
+    }
+  ));
+
+  const rowsConform = malformedRows.length === 0;
+  checks.push(createCheck(
+    'echo.mock-deliveries-shape',
+    rowsConform,
+    rowsConform
+      ? 'Mocked deliveries rows satisfy the DeliveryObservationSummary shape contract.'
+      : 'Mocked deliveries rows are missing required DeliveryObservationSummary fields.',
+    {
+      requiredFields: DELIVERY_OBSERVATION_REQUIRED_FIELDS.map(([field]) => field),
+      malformedRows
     }
   ));
 
@@ -396,4 +437,44 @@ function createCheck(id, pass, message, details) {
     message,
     details
   };
+}
+
+function relativePath(outDir, targetPath) {
+  return path.posix.relative(joinPath(outDir), targetPath);
+}
+
+function findMalformedDeliveryObservationRows(rows) {
+  return rows.flatMap((row, index) => {
+    const problems = validateDeliveryObservationRow(row);
+    return problems.length === 0 ? [] : [{
+      index,
+      problems
+    }];
+  });
+}
+
+function validateDeliveryObservationRow(row) {
+  const problems = [];
+
+  if (row.envelope !== 'DeliveryObservationSummary') {
+    problems.push('envelope');
+  }
+
+  const data = row?.data;
+  if (data == null || typeof data !== 'object' || Array.isArray(data)) {
+    problems.push('data');
+    return problems;
+  }
+
+  for (const [field, predicate] of DELIVERY_OBSERVATION_REQUIRED_FIELDS) {
+    if (!predicate(data[field])) {
+      problems.push(`data.${field}`);
+    }
+  }
+
+  return problems;
+}
+
+function isNonEmptyString(value) {
+  return typeof value === 'string' && value.trim().length > 0;
 }

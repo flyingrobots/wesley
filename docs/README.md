@@ -19,11 +19,16 @@ which signpost is supposed to answer which question.
 
 ## Current Center Of Gravity
 
-The current active packet is
+The most recent Continuum cycle packet is
 [Continuum Contract Compiler](./design/0003-continuum-contract-compiler/continuum-contract-compiler.md).
-That packet is trying to prove one boring Continuum contract family from schema
-to generated artifacts to conformance witness without letting Wesley absorb
-runtime, storage, or debugger policy.
+It closed as a `partial` landing in
+[its retro packet](./method/retro/0003-continuum-contract-compiler/continuum-contract-compiler.md).
+
+The active carry-over remains in the Continuum `asap/` queue:
+
+- [SOURCE_continuum-ownership-map-for-shared-nouns](./method/backlog/asap/SOURCE_continuum-ownership-map-for-shared-nouns.md)
+- [RUNTIME_continuum-local-compile-and-inspect-surface](./method/backlog/asap/RUNTIME_continuum-local-compile-and-inspect-surface.md)
+- [EVIDENCE_continuum-conformance-and-roundtrip-witness](./method/backlog/asap/EVIDENCE_continuum-conformance-and-roundtrip-witness.md)
 
 The repo already has three important building blocks around that hill:
 
@@ -52,6 +57,7 @@ It also now has a more explicit METHOD closeout surface under
 - [Wesley Role In Continuum](./architecture/continuum-wesley-role.md)
 - [Continuum Minimum Shared Contract Surface](./architecture/continuum-minimum-shared-contract-surface.md)
 - [Continuum Contract Compiler](./design/0003-continuum-contract-compiler/continuum-contract-compiler.md)
+- [0003 Retro](./method/retro/0003-continuum-contract-compiler/continuum-contract-compiler.md)
 
 ### Workflow Orientation
 

@@ -1,6 +1,6 @@
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import { WesleyError, schemaHash } from '@wesley/core';
-import { joinPath } from './path-utils.mjs';
+import { canonicalizeSchemaPath, joinPath } from './path-utils.mjs';
 
 const MOCK_WARP_COMMAND = 'deliveries';
 const HEAD_ID = 'head:wesley:continuum';
@@ -76,11 +76,16 @@ export class BundleEchoCommand extends WesleyCommand {
       const action = options.dryRun ? 'Would generate' : 'Generated';
       logger?.info?.(`${action} Echo bundle (${files.length} files) from ${schemaPath}`);
       logger?.info?.(`Mocked warp-ttd surface: ${MOCK_WARP_COMMAND} (${mock.rows.length} observations)`);
-      logger?.info?.(`Artifact summary: ${mock.summaryPath}`);
+      if (options.dryRun) {
+        logger?.info?.('Artifact summary not written because --dry-run was set.');
+      } else {
+        logger?.info?.(`Artifact summary: ${mock.summaryPath}`);
+      }
     }
 
     return {
       schemaPath,
+      canonicalSchemaPath: canonicalizeSchemaPath(schemaPath),
       schemaHash: hash,
       outDir: options.outDir,
       dryRun: Boolean(options.dryRun),
@@ -113,6 +118,7 @@ function buildBundleSummary({
   return {
     kind: 'wesley.echo-bundle.inspect.v1',
     schemaPath,
+    canonicalSchemaPath: canonicalizeSchemaPath(schemaPath),
     schemaHash: schemaHashHex,
     outDir,
     mockCommand: mock.command,

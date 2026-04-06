@@ -90,7 +90,8 @@ Chat, trackers, and PR discussion can help, but they do not outrank the files.
 ## Current Tensions
 
 - Wesley's older public story is still heavily PostgreSQL-first, while the
-  current active packet is about Continuum contract compilation.
+  most recent cycle packet centered on Continuum contract compilation and
+  closed as `partial`.
 - The repo now has a real minimum-surface witness, but not yet the frozen
   receipt-family proof lane it wants to be judged on.
 - Ownership boundaries are much clearer in doctrine than they are in enforced
