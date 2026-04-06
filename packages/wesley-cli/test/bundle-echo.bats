@@ -9,6 +9,7 @@ setup() {
     cd "$TEST_TEMP_DIR"
 
     CLI_PATH="$BATS_TEST_DIRNAME/../../wesley-host-node/bin/wesley.mjs"
+    BUNDLE_ECHO_MODULE="$BATS_TEST_DIRNAME/../src/commands/bundle-echo.mjs"
     ECHO_SCHEMA="$BATS_TEST_DIRNAME/../../../schemas/echo-core-types.graphql"
 }
 
@@ -45,7 +46,7 @@ teardown() {
     assert_file_exist out/mock/deliveries.jsonl
     assert_file_exist out/mock/summary.json
 
-    run bash -lc "grep -c '\"envelope\":\"DeliveryObservationSummary\"' out/mock/deliveries.jsonl"
+    run grep -c '"envelope":"DeliveryObservationSummary"' out/mock/deliveries.jsonl
     assert_success
     assert_output "4"
 
@@ -71,4 +72,42 @@ teardown() {
 
     assert_file_exist out/echo/ir.json
     assert_file_exist out/echo/mock/deliveries.jsonl
+}
+
+@test "bundle-echo readIr surfaces malformed JSON clearly" {
+    run node --input-type=module - <<EOF
+import { readIr } from '${BUNDLE_ECHO_MODULE}';
+
+try {
+  readIr([{ path: 'ir.json', content: '{' }]);
+  console.error('expected readIr to fail');
+  process.exit(1);
+} catch (error) {
+  console.log(JSON.stringify({
+    code: error.code,
+    message: error.message
+  }));
+}
+EOF
+    assert_success
+    echo "$output" | jq -e '.code == "ECHO_GENERATION_FAILED"' >/dev/null
+    echo "$output" | jq -e '.message | contains("malformed ir.json")' >/dev/null
+}
+
+@test "bundle-echo fallback detector only accepts missing-module import failures" {
+    run node --input-type=module - <<EOF
+import { shouldFallbackGenerateEchoImport } from '${BUNDLE_ECHO_MODULE}';
+
+const missing = Object.assign(new Error("Cannot find package '@wesley/generator-echo' imported from /tmp/test.mjs"), {
+  code: 'ERR_MODULE_NOT_FOUND'
+});
+const syntax = new SyntaxError('Unexpected token');
+
+console.log(JSON.stringify({
+  missing: shouldFallbackGenerateEchoImport(missing),
+  syntax: shouldFallbackGenerateEchoImport(syntax)
+}));
+EOF
+    assert_success
+    echo "$output" | jq -e '.missing == true and .syntax == false' >/dev/null
 }

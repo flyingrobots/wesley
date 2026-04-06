@@ -25,6 +25,13 @@ generate_local_inspect_surfaces() {
     node "$CLI_PATH" bundle-echo --schema "$ECHO_SCHEMA" --out-dir out/echo >/dev/null
 }
 
+run_witness_continuum() {
+    run node "$CLI_PATH" witness-continuum \
+        --ttd-schema "$TTD_SCHEMA" \
+        --echo-schema "$ECHO_SCHEMA" \
+        "$@"
+}
+
 @test "witness-continuum help works" {
     run node "$CLI_PATH" witness-continuum --help
     assert_success
@@ -36,10 +43,8 @@ generate_local_inspect_surfaces() {
 @test "witness-continuum writes a passing conformance report" {
     generate_local_inspect_surfaces
 
-    run node "$CLI_PATH" witness-continuum \
-        --ttd-schema "$TTD_SCHEMA" \
+    run_witness_continuum \
         --ttd-dir out/ttd \
-        --echo-schema "$ECHO_SCHEMA" \
         --echo-dir out/echo \
         --out out/witness/conformance.json \
         --json
@@ -58,10 +63,8 @@ generate_local_inspect_surfaces() {
     jq '.mock.observationCount = 99' out/echo/mock/summary.json > out/echo/mock/summary.tmp
     mv out/echo/mock/summary.tmp out/echo/mock/summary.json
 
-    run node "$CLI_PATH" witness-continuum \
-        --ttd-schema "$TTD_SCHEMA" \
+    run_witness_continuum \
         --ttd-dir out/ttd \
-        --echo-schema "$ECHO_SCHEMA" \
         --echo-dir out/echo \
         --out out/witness/conformance.json
     assert_failure
@@ -91,10 +94,8 @@ const rows = fs.readFileSync('out/echo/mock/deliveries.jsonl', 'utf8')
 fs.writeFileSync('out/echo/mock/deliveries.jsonl', rows.map((row) => JSON.stringify(row)).join('\n') + '\n');
 EOF
 
-    run node "$CLI_PATH" witness-continuum \
-        --ttd-schema "$TTD_SCHEMA" \
+    run_witness_continuum \
         --ttd-dir out/ttd \
-        --echo-schema "$ECHO_SCHEMA" \
         --echo-dir out/echo \
         --out out/witness/conformance.json
     assert_failure
@@ -102,13 +103,41 @@ EOF
     assert_success
 }
 
+@test "witness-continuum fails when Echo summary drops canonical schema origin" {
+    generate_local_inspect_surfaces
+
+    jq 'del(.canonicalSchemaPath) | .schemaPath = "-"' out/echo/mock/summary.json > out/echo/mock/summary.tmp
+    mv out/echo/mock/summary.tmp out/echo/mock/summary.json
+
+    run_witness_continuum \
+        --ttd-dir out/ttd \
+        --echo-dir out/echo \
+        --out out/witness/conformance.json
+    assert_failure
+    run jq -e '.checks[] | select(.id == "echo.summary-traceability" and .status == "fail")' out/witness/conformance.json
+    assert_success
+}
+
+@test "witness-continuum fails when Echo IR hash drifts" {
+    generate_local_inspect_surfaces
+
+    jq '.schema_hash = "0000000000000000000000000000000000000000000000000000000000000000" | .schema_sha256 = "0000000000000000000000000000000000000000000000000000000000000000"' out/echo/ir.json > out/echo/ir.tmp
+    mv out/echo/ir.tmp out/echo/ir.json
+
+    run_witness_continuum \
+        --ttd-dir out/ttd \
+        --echo-dir out/echo \
+        --out out/witness/conformance.json
+    assert_failure
+    run jq -e '.checks[] | select(.id == "echo.ir-traceability" and .status == "fail")' out/witness/conformance.json
+    assert_success
+}
+
 @test "witness-continuum accepts slash-heavy surface directories" {
     generate_local_inspect_surfaces
 
-    run node "$CLI_PATH" witness-continuum \
-        --ttd-schema "$TTD_SCHEMA" \
+    run_witness_continuum \
         --ttd-dir "out/ttd///" \
-        --echo-schema "$ECHO_SCHEMA" \
         --echo-dir "out/echo///" \
         --out out/witness/conformance.json \
         --json
@@ -124,10 +153,8 @@ EOF
     node "$CLI_PATH" bundle-echo --schema schemas/echo-core-types.graphql --out-dir "$TEST_TEMP_DIR/out/echo" >/dev/null
     cd "$TEST_TEMP_DIR"
 
-    run node "$CLI_PATH" witness-continuum \
-        --ttd-schema "$TTD_SCHEMA" \
+    run_witness_continuum \
         --ttd-dir "$TEST_TEMP_DIR/out/ttd" \
-        --echo-schema "$ECHO_SCHEMA" \
         --echo-dir "$TEST_TEMP_DIR/out/echo" \
         --out "$TEST_TEMP_DIR/out/witness/conformance.json" \
         --json
@@ -136,10 +163,8 @@ EOF
 }
 
 @test "witness-continuum reports missing slash-heavy directories cleanly" {
-    run node "$CLI_PATH" witness-continuum \
-        --ttd-schema "$TTD_SCHEMA" \
+    run_witness_continuum \
         --ttd-dir "out/ttd///" \
-        --echo-schema "$ECHO_SCHEMA" \
         --echo-dir "out/echo///" \
         --out out/witness/conformance.json
     assert_failure
@@ -149,11 +174,22 @@ EOF
     assert_success
 }
 
-@test "witness-continuum dry-run failure does not point at a report file that was not written" {
-    run node "$CLI_PATH" witness-continuum \
-        --ttd-schema "$TTD_SCHEMA" \
+@test "witness-continuum reports malformed JSONL line numbers" {
+    generate_local_inspect_surfaces
+
+    printf '%s\n%s\n' '{"envelope":"DeliveryObservationSummary","data":{"outcome":"delivered"}}' '{' > out/echo/mock/deliveries.jsonl
+
+    run_witness_continuum \
         --ttd-dir out/ttd \
-        --echo-schema "$ECHO_SCHEMA" \
+        --echo-dir out/echo \
+        --out out/witness/conformance.json
+    assert_failure
+    assert_output --partial "JSONL parse error at line 2"
+}
+
+@test "witness-continuum dry-run failure does not point at a report file that was not written" {
+    run_witness_continuum \
+        --ttd-dir out/ttd \
         --echo-dir out/echo \
         --out out/witness/conformance.json \
         --dry-run

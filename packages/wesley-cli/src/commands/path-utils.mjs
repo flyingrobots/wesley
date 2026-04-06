@@ -1,9 +1,23 @@
 import path from 'node:path';
 
+/**
+ * Join path segments using POSIX separators.
+ *
+ * Unlike `path.posix.join()`, this deliberately returns an empty string when
+ * every input is nullish or empty after string coercion. That keeps callers
+ * from accidentally materializing `.` when no path segments were provided.
+ */
 export function joinPath(...parts) {
-  const filtered = parts
-    .filter((part) => part != null && String(part).length > 0)
-    .map((part) => String(part));
+  const filtered = [];
+  for (const part of parts) {
+    if (part == null) {
+      continue;
+    }
+    const text = String(part);
+    if (text.length > 0) {
+      filtered.push(text);
+    }
+  }
 
   return filtered.length === 0 ? '' : path.posix.join(...filtered);
 }

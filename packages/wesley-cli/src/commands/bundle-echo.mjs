@@ -233,19 +233,42 @@ function countOutcomes(rows) {
   }, {});
 }
 
-function readIr(files) {
+export function readIr(files) {
   const irFile = files.find((file) => file.path === 'ir.json');
   if (!irFile) {
     throw new WesleyError('ECHO_GENERATION_FAILED', 'Echo generation did not emit ir.json.');
   }
-  return JSON.parse(irFile.content);
+  try {
+    return JSON.parse(irFile.content);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new WesleyError(
+      'ECHO_GENERATION_FAILED',
+      `Echo generation emitted malformed ir.json: ${message}`,
+      { path: 'ir.json' },
+      error instanceof Error ? error : undefined
+    );
+  }
+}
+
+export function shouldFallbackGenerateEchoImport(error) {
+  const code = typeof error?.code === 'string' ? error.code : '';
+  const message = typeof error?.message === 'string' ? error.message : '';
+
+  return code === 'ERR_MODULE_NOT_FOUND' ||
+    code === 'MODULE_NOT_FOUND' ||
+    message.includes("Cannot find package '@wesley/generator-echo'") ||
+    message.includes("Cannot find module '@wesley/generator-echo'");
 }
 
 async function resolveGenerateEcho() {
   try {
     const mod = await import('@wesley/generator-echo');
     return mod.generateEcho;
-  } catch {
+  } catch (error) {
+    if (!shouldFallbackGenerateEchoImport(error)) {
+      throw error;
+    }
     const mod = await import('../../../wesley-generator-echo/src/index.mjs');
     return mod.generateEcho;
   }

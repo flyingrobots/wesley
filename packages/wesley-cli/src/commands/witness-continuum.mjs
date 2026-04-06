@@ -1,5 +1,5 @@
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
-import { WesleyError, schemaHash } from '@wesley/core';
+import { WesleyError, computeSdlHash, schemaHash } from '@wesley/core';
 import { hashSchema as hashTtdSchema } from '@wesley/core/ttd';
 import path from 'node:path';
 import { canonicalizeSchemaPath, joinPath } from './path-utils.mjs';
@@ -239,6 +239,7 @@ async function inspectTtdSurface({ fs, crypto, schemaPath, outDir, checks }) {
 async function inspectEchoSurface({ fs, schemaPath, outDir, checks }) {
   const schemaContent = await fs.read(schemaPath);
   const expectedHash = await schemaHash(schemaContent);
+  const expectedIrHash = await computeSdlHash(schemaContent);
   const requiredPaths = ECHO_REQUIRED_FILES.map((file) => joinPath(outDir, file));
   const missingFiles = await collectMissingFiles(fs, requiredPaths);
   const missingRelative = missingFiles.map((missingPath) => relativePath(outDir, missingPath));
@@ -271,6 +272,7 @@ async function inspectEchoSurface({ fs, schemaPath, outDir, checks }) {
   const deliveryRows = parseJsonl(deliveryLines);
   const deliveredOutcomes = countDeliveryOutcomes(deliveryRows);
   const malformedRows = findMalformedDeliveryObservationRows(deliveryRows);
+  const irHash = irJson.schema_hash ?? irJson.schema_sha256 ?? null;
 
   const expectedCanonicalSchemaPath = canonicalizeSchemaPath(schemaPath);
   const actualCanonicalSchemaPath = summaryJson.canonicalSchemaPath ??
@@ -278,9 +280,10 @@ async function inspectEchoSurface({ fs, schemaPath, outDir, checks }) {
   const traceable = summaryJson.kind === 'wesley.echo-bundle.inspect.v1' &&
     summaryJson.schemaHash === expectedHash &&
     isNonEmptyString(summaryJson.schemaPath) &&
-    (expectedCanonicalSchemaPath == null ||
-      actualCanonicalSchemaPath == null ||
-      actualCanonicalSchemaPath === expectedCanonicalSchemaPath);
+    (expectedCanonicalSchemaPath == null
+      ? actualCanonicalSchemaPath == null
+      : actualCanonicalSchemaPath != null &&
+        actualCanonicalSchemaPath === expectedCanonicalSchemaPath);
   checks.push(createCheck(
     'echo.summary-traceability',
     traceable,
@@ -294,6 +297,19 @@ async function inspectEchoSurface({ fs, schemaPath, outDir, checks }) {
       actualSchemaPath: summaryJson.schemaPath,
       expectedCanonicalSchemaPath,
       actualCanonicalSchemaPath
+    }
+  ));
+
+  const irTraceable = typeof irHash === 'string' && irHash === expectedIrHash;
+  checks.push(createCheck(
+    'echo.ir-traceability',
+    irTraceable,
+    irTraceable
+      ? 'Echo IR SDL hash matches the authored schema input.'
+      : 'Echo IR SDL hash does not match the authored schema input.',
+    {
+      expectedHash: expectedIrHash,
+      actualHash: irHash
     }
   ));
 
@@ -395,11 +411,25 @@ async function readJson(fs, path) {
 }
 
 function parseJsonl(content) {
-  return content
+  const lines = content
     .split('\n')
     .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => JSON.parse(line));
+    .filter(Boolean);
+
+  return lines.map((line, index) => {
+    try {
+      return JSON.parse(line);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const preview = line.length > 120 ? `${line.slice(0, 117)}...` : line;
+      throw new WesleyError(
+        'CONTINUUM_WITNESS_INVALID_JSONL',
+        `JSONL parse error at line ${index + 1}: ${message}. Line: ${preview}`,
+        { lineNumber: index + 1, preview },
+        error instanceof Error ? error : undefined
+      );
+    }
+  });
 }
 
 function countDeliveryOutcomes(rows) {
