@@ -10,6 +10,11 @@ between TTD compile outputs and Echo generator evidence. The next load-bearing
 move is one calm local workflow that emits the current shared contract bundle
 and tells the maintainer what they are looking at.
 
+The repo now has the first Echo-side wrapper step through
+`wesley bundle-echo`, which writes bundle artifacts and a mocked
+`warp-ttd`-style `deliveries` inspect surface. The remaining work is to cash
+that out into the full chosen-family path and witness step.
+
 ## Hill
 
 A maintainer can run one local Wesley workflow for the current Continuum stack,
@@ -43,7 +48,9 @@ The packet should cash out to a literal boring path:
 
 - `docs/architecture/continuum-wesley-role.md`
 - `packages/wesley-cli/src/commands/compile-ttd.mjs`
+- `packages/wesley-cli/src/commands/bundle-echo.mjs`
 - `packages/wesley-cli/test/compile-ttd.bats`
+- `packages/wesley-cli/test/bundle-echo.bats`
 - `packages/wesley-generator-echo/README.md`
 - `packages/wesley-generator-echo/test/core-types.test.mjs`
 - `docs/method/guide.md`

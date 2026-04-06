@@ -59,6 +59,9 @@ This cycle stays brutally narrow.
   `wesley compile-ttd`.
 - Wesley already ships a real Echo schema-to-codec path through
   `@wesley/generator-echo`.
+- Wesley now ships a first repo-visible Echo wrapper through
+  `wesley bundle-echo`, which writes bundle artifacts and a mocked
+  `warp-ttd`-style `deliveries` inspect surface for local review.
 - Wesley does not yet ship the chosen receipt-family schema, one literal
   compile path for that family, one ownership table for it, one witness lane,
   or one anti-shadow enforcement rule.
@@ -135,7 +138,7 @@ done until the whole path is real and inspectable.
 | 1. Authored source | `schemas/continuum-receipt-family.graphql` | chosen cycle target; not yet authored |
 | 2. TTD compile | `pnpm wesley compile-ttd --schema schemas/continuum-receipt-family.graphql --out-dir .wesley-cache/continuum/receipt-family/ttd --target manifest,typescript` | command shape exists today; chosen family schema does not yet |
 | 3. TTD outputs | `.wesley-cache/continuum/receipt-family/ttd/manifest/{schema.json,contracts.json,manifest.json,ttd-ir.json}` and `.wesley-cache/continuum/receipt-family/ttd/typescript/{types.ts,zod.ts,registry.ts,index.ts}` | output family exists today for current TTD inputs |
-| 4. Echo bundle | one repo-visible wrapper over `generateEcho({ sdl })` writing `.wesley-cache/continuum/receipt-family/echo/{ir.json,ops.generated.ts,schemas.generated.ts,client.generated.ts,raw_le_codec.generated.ts,raw_le_codec.generated.rs,wasm_abi_codec.generated.ts,wasm_abi_codec.generated.rs}` | package API exists today; wrapper command is still required work |
+| 4. Echo bundle | `pnpm wesley bundle-echo --schema schemas/continuum-receipt-family.graphql --out-dir .wesley-cache/continuum/receipt-family/echo` writing `.wesley-cache/continuum/receipt-family/echo/{ir.json,ops.generated.ts,schemas.generated.ts,client.generated.ts,raw_le_codec.generated.ts,raw_le_codec.generated.rs,wasm_abi_codec.generated.ts,wasm_abi_codec.generated.rs}` plus `.wesley-cache/continuum/receipt-family/echo/mock/deliveries.jsonl` and `mock/summary.json` | command exists today; chosen family schema and full witness lane do not yet |
 | 5. Fixtures | `test/fixtures/continuum/receipt-family/{minimal,boundary,invalid,receipt-vs-witness}.*` | required work |
 | 6. Witness output | `.wesley-cache/continuum/receipt-family/witness/conformance.json` | required work |
 
@@ -175,7 +178,7 @@ An agent or maintainer should be able to do the following without folklore:
 
 1. find the canonical schema from the ownership table
 2. run the TTD compile command
-3. run one repo-visible Echo bundle command for the same schema
+3. run `wesley bundle-echo` for the same schema
 4. inspect a short emitted artifact summary instead of browsing a raw file tree
 5. run one witness command or script
 6. read one pass/fail proof result
