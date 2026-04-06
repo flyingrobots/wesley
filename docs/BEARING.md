@@ -26,6 +26,11 @@ For now, that means Wesley should align around four near-term moves:
 
 The repo already has a real starting point for this direction:
 
+- the current repo-local minimum shared Continuum surface is now named
+  explicitly in
+  `docs/architecture/continuum-minimum-shared-contract-surface.md`; today that
+  means the authored schema pair `schemas/ttd-protocol.graphql` and
+  `schemas/echo-core-types.graphql`
 - Wesley already ships TTD / protocol-compiler surfaces in
   `schemas/ttd-protocol.graphql`, `packages/wesley-core/src/ttd/`, and
   `packages/wesley-cli/src/commands/compile-ttd.mjs`
@@ -36,8 +41,8 @@ The repo already has a real starting point for this direction:
 
 ## What feels wrong?
 
-- Wesley still lacks one frozen, finite shared contract surface for Continuum
-  nouns.
+- the minimum shared surface is now named, but it is still split across two
+  adjacent schema families instead of one boring receipt-family proving path
 - The repo has protocol-compiler pieces, but not yet one boring receipt-family
   artifact path that proves the whole chain.
 - Ownership of shared nouns is still too easy to infer incorrectly from repo

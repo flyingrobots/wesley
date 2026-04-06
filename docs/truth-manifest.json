@@ -67,6 +67,11 @@
       "owner": "@flyingrobots"
     },
     {
+      "path": "docs/architecture/continuum-minimum-shared-contract-surface.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
       "path": "docs/holmes-policy-spec.md",
       "status": "current",
       "owner": "@flyingrobots"

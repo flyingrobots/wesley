@@ -17,6 +17,13 @@ Wesley proves one boring end-to-end Continuum contract family from schema to
 generated artifacts to conformance witness, with explicit ownership boundaries
 and no handwritten shadow contracts for the chosen shared nouns.
 
+## Current Supporting Note
+
+- [Continuum Minimum Shared Contract Surface](../../architecture/continuum-minimum-shared-contract-surface.md)
+  names the finite repo-local authored surface Wesley currently carries:
+  `schemas/ttd-protocol.graphql` and `schemas/echo-core-types.graphql` under
+  `schemas/`.
+
 ## Playback Questions
 
 ### Human
