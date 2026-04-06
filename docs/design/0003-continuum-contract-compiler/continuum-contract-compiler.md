@@ -23,6 +23,10 @@ and no handwritten shadow contracts for the chosen shared nouns.
   names the finite repo-local authored surface Wesley currently carries:
   `schemas/ttd-protocol.graphql` and `schemas/echo-core-types.graphql` under
   `schemas/`.
+- [Wesley Role In Continuum](../../architecture/continuum-wesley-role.md)
+  states Wesley's current job as contract compiler, publication-boundary
+  manager, conformance anchor, and judgment bridge, with explicit non-ownership
+  around runtime, storage, debugger, and substrate-fact policy.
 
 ## Playback Questions
 

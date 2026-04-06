@@ -15,6 +15,8 @@
 
 - [The Paradigm Shift](./architecture/paradigm-shift.md) — Why GraphQL should be your source of truth
 - [Architecture Overview](./architecture/overview.md) — Hexagonal, event-driven, command pattern design
+- [Wesley Role In Continuum](./architecture/continuum-wesley-role.md) — Wesley's contract, publication-boundary, conformance, and judgment role in the Continuum stack
+- [Continuum Minimum Shared Contract Surface](./architecture/continuum-minimum-shared-contract-surface.md) — The current finite shared noun families Wesley carries locally
 - [The Algorithm](./architecture/algorithm.md) — How GraphQL becomes SQL, TypeScript, Zod, and more
 - [Directive Truth Table](./DIRECTIVES.md) — What the shipped parser/compiler path actually supports today
 - [Test Generation](./architecture/test-generation.md) — Automatic pgTAP tests from migrations

@@ -6,8 +6,9 @@ backlog items, design packets, retros, or CLI status.
 
 ## Where are we going?
 
-Current priority: make Wesley earn its Continuum role as the contract compiler
-for the shared hot/cold causal surface.
+Current priority: make Wesley earn its Continuum role as the contract compiler,
+publication-boundary manager, conformance anchor, and judgment bridge for the
+shared hot/cold causal surface.
 
 For now, that means Wesley should align around four near-term moves:
 
@@ -31,6 +32,10 @@ The repo already has a real starting point for this direction:
   `docs/architecture/continuum-minimum-shared-contract-surface.md`; today that
   means the authored schema pair `schemas/ttd-protocol.graphql` and
   `schemas/echo-core-types.graphql`
+- Wesley's operating role in Continuum is now written down in
+  `docs/architecture/continuum-wesley-role.md`, separating contract
+  compilation, publication boundaries, conformance, and judgment from runtime,
+  storage, debugger, and substrate-fact ownership
 - Wesley already ships TTD / protocol-compiler surfaces in
   `schemas/ttd-protocol.graphql`, `packages/wesley-core/src/ttd/`, and
   `packages/wesley-cli/src/commands/compile-ttd.mjs`
