@@ -12,8 +12,10 @@ and tells the maintainer what they are looking at.
 
 The repo now has the first Echo-side wrapper step through
 `wesley bundle-echo`, which writes bundle artifacts and a mocked
-`warp-ttd`-style `deliveries` inspect surface. The remaining work is to cash
-that out into the full chosen-family path and witness step.
+`warp-ttd`-style `deliveries` inspect surface. The repo also now has a first
+current-state witness through `wesley witness-continuum`. The remaining work is
+to cash those steps out into the full chosen-family path rather than just the
+current minimum surface.
 
 ## Hill
 
@@ -49,8 +51,10 @@ The packet should cash out to a literal boring path:
 - `docs/architecture/continuum-wesley-role.md`
 - `packages/wesley-cli/src/commands/compile-ttd.mjs`
 - `packages/wesley-cli/src/commands/bundle-echo.mjs`
+- `packages/wesley-cli/src/commands/witness-continuum.mjs`
 - `packages/wesley-cli/test/compile-ttd.bats`
 - `packages/wesley-cli/test/bundle-echo.bats`
+- `packages/wesley-cli/test/witness-continuum.bats`
 - `packages/wesley-generator-echo/README.md`
 - `packages/wesley-generator-echo/test/core-types.test.mjs`
 - `docs/method/guide.md`

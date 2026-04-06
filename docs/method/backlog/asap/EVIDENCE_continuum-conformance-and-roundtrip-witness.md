@@ -10,6 +10,11 @@ lane, but Continuum still fails if those generated surfaces are only "supposed
 to match." Wesley needs a witness lane that proves canonical bytes, registry
 ids, and fixture vectors stay compatible instead of relying on trust.
 
+The repo now has a first current-state witness step through
+`wesley witness-continuum`, which proves local coherence for the present TTD
+and Echo minimum surfaces. The remaining work is to move that witness onto the
+frozen receipt-family proving lane and real emitted family fixtures.
+
 ## Hill
 
 Wesley can produce and verify conformance fixtures for the chosen shared
@@ -50,6 +55,8 @@ This lane should not claim to prove:
 - `packages/wesley-generator-ttd/test/integration/determinism.test.mjs`
 - `packages/wesley-generator-echo/test/contract-determinism.test.mjs`
 - `packages/wesley-generator-echo/test/golden-vectors.test.mjs`
+- `packages/wesley-cli/src/commands/witness-continuum.mjs`
+- `packages/wesley-cli/test/witness-continuum.bats`
 - `packages/wesley-core/src/ttd/hasher.mjs`
 - `packages/wesley-core/src/ttd/manifest.mjs`
 - `docs/invariants/evidence-truth.md`

@@ -62,9 +62,13 @@ This cycle stays brutally narrow.
 - Wesley now ships a first repo-visible Echo wrapper through
   `wesley bundle-echo`, which writes bundle artifacts and a mocked
   `warp-ttd`-style `deliveries` inspect surface for local review.
+- Wesley now ships a first current-state witness command through
+  `wesley witness-continuum`, which proves local coherence for the current TTD
+  and Echo minimum surfaces without pretending the frozen receipt-family lane
+  already exists.
 - Wesley does not yet ship the chosen receipt-family schema, one literal
-  compile path for that family, one ownership table for it, one witness lane,
-  or one anti-shadow enforcement rule.
+  compile path for that family, one ownership table for it, the full
+  chosen-family witness lane, or one anti-shadow enforcement rule.
 
 ## Proved This Cycle
 
@@ -140,7 +144,7 @@ done until the whole path is real and inspectable.
 | 3. TTD outputs | `.wesley-cache/continuum/receipt-family/ttd/manifest/{schema.json,contracts.json,manifest.json,ttd-ir.json}` and `.wesley-cache/continuum/receipt-family/ttd/typescript/{types.ts,zod.ts,registry.ts,index.ts}` | output family exists today for current TTD inputs |
 | 4. Echo bundle | `pnpm wesley bundle-echo --schema schemas/continuum-receipt-family.graphql --out-dir .wesley-cache/continuum/receipt-family/echo` writing `.wesley-cache/continuum/receipt-family/echo/{ir.json,ops.generated.ts,schemas.generated.ts,client.generated.ts,raw_le_codec.generated.ts,raw_le_codec.generated.rs,wasm_abi_codec.generated.ts,wasm_abi_codec.generated.rs}` plus `.wesley-cache/continuum/receipt-family/echo/mock/deliveries.jsonl` and `mock/summary.json` | command exists today; chosen family schema and full witness lane do not yet |
 | 5. Fixtures | `test/fixtures/continuum/receipt-family/{minimal,boundary,invalid,receipt-vs-witness}.*` | required work |
-| 6. Witness output | `.wesley-cache/continuum/receipt-family/witness/conformance.json` | required work |
+| 6. Witness output | `pnpm wesley witness-continuum --ttd-dir .wesley-cache/continuum/local-inspect/ttd --echo-dir .wesley-cache/continuum/local-inspect/echo --out .wesley-cache/continuum/local-inspect/witness/conformance.json` | command exists today for the current minimum surface; the chosen-family witness lane still requires the authored family schema and family fixtures |
 
 ## No Shadow Contract Rule
 
@@ -180,10 +184,14 @@ An agent or maintainer should be able to do the following without folklore:
 2. run the TTD compile command
 3. run `wesley bundle-echo` for the same schema
 4. inspect a short emitted artifact summary instead of browsing a raw file tree
-5. run one witness command or script
+5. run `wesley witness-continuum`
 6. read one pass/fail proof result
 
 The cycle is incomplete if that path still depends on repo vibes.
+
+The current witness command proves only the present minimum surface:
+`schemas/ttd-protocol.graphql` and `schemas/echo-core-types.graphql`. It does
+not claim the frozen receipt-family proving lane is already implemented.
 
 ## Playback Questions
 
