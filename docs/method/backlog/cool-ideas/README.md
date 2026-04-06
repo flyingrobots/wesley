@@ -9,3 +9,6 @@ honest.
 - [PR Merge Gate Status Helper](RUNTIME_pr-merge-gate-status-helper.md)
 - [Review Supersession Explainer](RUNTIME_review-supersession-explainer.md)
 - [PR Feedback Session Witness](EVIDENCE_pr-feedback-session-witness.md)
+- [Continuum Contract Bundle Atlas](RUNTIME_continuum-contract-bundle-atlas.md)
+- [Continuum Cross-Repo Drift Watch](EVIDENCE_continuum-cross-repo-drift-watch.md)
+- [Continuum Versioned Contract Bundle Release](TRANSMUTE_continuum-versioned-contract-bundle-release.md)
