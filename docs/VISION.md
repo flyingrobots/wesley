@@ -27,8 +27,10 @@ should stay honest about the strength of its evidence.
   `bundle-echo`, and `witness-continuum`.
 - The current authored Continuum surface now includes
   `schemas/ttd-protocol.graphql`, `schemas/echo-core-types.graphql`, and
-  `schemas/continuum-receipt-family.graphql`, while the current witness-backed
-  minimum subset remains the bounded TTD-plus-Echo pair.
+  `schemas/continuum-receipt-family.graphql`.
+- `witness-continuum` now proves two bounded scopes: the original
+  current-minimum TTD-plus-Echo subset and a fixture-backed
+  `receipt-family` lane for the authored receipt family.
 - Wesley's Continuum role is explicitly bounded to contract compilation,
   publication boundaries, conformance, and judgment rather than runtime,
   storage, debugger, or substrate-fact ownership.
@@ -94,9 +96,9 @@ Chat, trackers, and PR discussion can help, but they do not outrank the files.
 - Wesley's older public story is still heavily PostgreSQL-first, while the
   most recent cycle packet centered on Continuum contract compilation and
   closed as `partial`.
-- The repo now has an authored receipt-family schema and a real minimum-surface
-  witness, but not yet the full receipt-family proof lane it wants to be
-  judged on.
+- The repo now has an authored receipt-family schema and a real local
+  receipt-family witness, but that proof still stops at generated-leg
+  coherence rather than full runtime or debugger semantics.
 - Ownership boundaries are much clearer in doctrine than they are in enforced
   runtime or CI policy.
 - The METHOD closeout surface is now explicit, but Wesley still needs more real

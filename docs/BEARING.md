@@ -29,7 +29,8 @@ That currently means:
   `schemas/echo-core-types.graphql`, `@wesley/generator-echo`, and
   `wesley bundle-echo`.
 - Wesley now has a real current-state conformance witness through
-  `wesley witness-continuum`.
+  `wesley witness-continuum`, including a receipt-family scope at
+  `wesley witness-continuum --scope receipt-family`.
 - The current minimum shared Continuum surface is explicitly named in
   [Continuum Minimum Shared Contract Surface](./architecture/continuum-minimum-shared-contract-surface.md).
 - Wesley's role in Continuum is explicitly bounded in
@@ -44,11 +45,12 @@ That currently means:
 
 ## What Still Feels Wrong
 
-- The first frozen receipt-family proving lane is now authored, but the repo
-  still relies on a bounded TTD-plus-Echo witness subset instead of one boring
-  end-to-end proved family.
-- The current witness proves minimum-surface coherence, not the full frozen
-  receipt-family lane the active packet is aiming at.
+- The first frozen receipt-family proving lane now has a real local witness,
+  but that proof is still bounded to generated-leg coherence rather than
+  runtime, storage, or debugger semantics.
+- The current witness shape is better than before, but it is still carrying
+  two bounded scopes instead of one fully generalized realization manifest and
+  anti-shadow enforcement path.
 - Ownership of shared nouns is clearer than before, but still not enforced by
   one small reusable ownership map and one anti-shadow check.
 - The repo now has a closeout shape, but not yet a deep habit of closed-cycle

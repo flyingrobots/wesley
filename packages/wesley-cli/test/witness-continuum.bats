@@ -12,6 +12,8 @@ setup() {
     REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../../.." && pwd)"
     TTD_SCHEMA="$BATS_TEST_DIRNAME/../../../schemas/ttd-protocol.graphql"
     ECHO_SCHEMA="$BATS_TEST_DIRNAME/../../../schemas/echo-core-types.graphql"
+    RECEIPT_SCHEMA="$BATS_TEST_DIRNAME/../../../schemas/continuum-receipt-family.graphql"
+    RECEIPT_FIXTURE_DIR="$REPO_ROOT/test/fixtures/continuum/receipt-family"
 }
 
 teardown() {
@@ -25,6 +27,11 @@ generate_local_inspect_surfaces() {
     node "$CLI_PATH" bundle-echo --schema "$ECHO_SCHEMA" --out-dir out/echo >/dev/null
 }
 
+generate_receipt_family_surfaces() {
+    node "$CLI_PATH" compile-ttd --schema "$RECEIPT_SCHEMA" --out-dir out/receipt-family/ttd >/dev/null
+    node "$CLI_PATH" bundle-echo --schema "$RECEIPT_SCHEMA" --out-dir out/receipt-family/echo >/dev/null
+}
+
 run_witness_continuum() {
     run node "$CLI_PATH" witness-continuum \
         --ttd-schema "$TTD_SCHEMA" \
@@ -36,6 +43,7 @@ run_witness_continuum() {
     run node "$CLI_PATH" witness-continuum --help
     assert_success
     assert_output --partial "Verify current Continuum minimum-surface coherence"
+    assert_output --partial "--scope"
     assert_output --partial "--ttd-schema"
     assert_output --partial "--echo-dir"
 }
@@ -196,4 +204,69 @@ EOF
     assert_failure
     refute_output --partial "See out/witness/conformance.json"
     assert_file_not_exist out/witness/conformance.json
+}
+
+@test "witness-continuum writes a passing receipt-family conformance report" {
+    generate_receipt_family_surfaces
+
+    run node "$CLI_PATH" witness-continuum \
+        --scope receipt-family \
+        --ttd-schema "$RECEIPT_SCHEMA" \
+        --echo-schema "$RECEIPT_SCHEMA" \
+        --ttd-dir out/receipt-family/ttd \
+        --echo-dir out/receipt-family/echo \
+        --out out/witness/receipt-family.json \
+        --json
+    assert_success
+    echo "$output" | jq -e '.success == true' >/dev/null
+    echo "$output" | jq -e '.result.scope == "receipt-family"' >/dev/null
+    echo "$output" | jq -e '.result.status == "pass"' >/dev/null
+    echo "$output" | jq -e '.result.summary.failed == 0' >/dev/null
+    echo "$output" | jq -e '.result.checks[] | select(.id == "receipt-family.ttd-fixture-shape" and .status == "pass")' >/dev/null
+    echo "$output" | jq -e '.result.checks[] | select(.id == "receipt-family.boundary-fixture" and .status == "pass")' >/dev/null
+    echo "$output" | jq -e '.result.checks[] | select(.id == "receipt-family.receipt-vs-witness-separation" and .status == "pass")' >/dev/null
+    assert_file_exist out/witness/receipt-family.json
+}
+
+@test "witness-continuum receipt-family fails when TTD footprints drift from fixture" {
+    generate_receipt_family_surfaces
+
+    jq '.footprints |= map(if .opName == "witnesses" then .reads = ["Receipt"] else . end)' \
+        out/receipt-family/ttd/manifest/contracts.json > out/receipt-family/ttd/manifest/contracts.tmp
+    mv out/receipt-family/ttd/manifest/contracts.tmp out/receipt-family/ttd/manifest/contracts.json
+
+    run node "$CLI_PATH" witness-continuum \
+        --scope receipt-family \
+        --ttd-schema "$RECEIPT_SCHEMA" \
+        --echo-schema "$RECEIPT_SCHEMA" \
+        --ttd-dir out/receipt-family/ttd \
+        --echo-dir out/receipt-family/echo \
+        --out out/witness/receipt-family.json
+    assert_failure
+    run jq -e '.checks[] | select(.id == "receipt-family.ttd-fixture-shape" and .status == "fail")' out/witness/receipt-family.json
+    assert_success
+}
+
+@test "witness-continuum receipt-family fails when delivery rows absorb receipt or witness residue" {
+    generate_receipt_family_surfaces
+
+    INVALID_FIXTURE="$RECEIPT_FIXTURE_DIR/invalid.json" node - <<'EOF'
+const fs = require('fs');
+const invalid = JSON.parse(fs.readFileSync(process.env.INVALID_FIXTURE, 'utf8')).malformedDeliveryObservationRow;
+const path = 'out/receipt-family/echo/mock/deliveries.jsonl';
+const rows = fs.readFileSync(path, 'utf8').trim().split('\n');
+rows[0] = JSON.stringify(invalid);
+fs.writeFileSync(path, rows.join('\n') + '\n');
+EOF
+
+    run node "$CLI_PATH" witness-continuum \
+        --scope receipt-family \
+        --ttd-schema "$RECEIPT_SCHEMA" \
+        --echo-schema "$RECEIPT_SCHEMA" \
+        --ttd-dir out/receipt-family/ttd \
+        --echo-dir out/receipt-family/echo \
+        --out out/witness/receipt-family.json
+    assert_failure
+    run jq -e '.checks[] | select(.id == "receipt-family.receipt-vs-witness-separation" and .status == "fail")' out/witness/receipt-family.json
+    assert_success
 }

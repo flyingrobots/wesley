@@ -20,11 +20,12 @@ Those files are the current repo-local authored inputs. Generated
 manifests, IR, TypeScript, Rust, codec vectors, and helper registries are
 derived outputs, not peer authorities.
 
-The current witness-backed minimum subset is still the bounded TTD-plus-Echo
-pair. `schemas/continuum-receipt-family.graphql` is now authored locally as the
-frozen proving-family target, but the family-specific fixture and witness lane
-are not yet wired. Pretending the authored schema already implies a finished
-proof lane would blur current state with target-state architecture.
+The original witness-backed minimum subset was the bounded TTD-plus-Echo pair.
+Wesley now also ships a receipt-family witness scope through
+`wesley witness-continuum --scope receipt-family`, backed by local family
+fixtures under `test/fixtures/continuum/receipt-family/`. That witness proves
+generated-leg coherence for the authored receipt family without pretending it
+proves runtime, storage, or debugger semantics.
 
 ## Included Noun Families
 
