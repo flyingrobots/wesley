@@ -40,7 +40,7 @@ jobs:
           --health-retries 30
     steps:
       - name: Harden runner
-        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594
+        uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176
         with:
           egress-policy: audit
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -102,7 +102,7 @@ jobs:
       - name: Wait for HOLMES suite comment
         if: github.event_name == 'pull_request'
         id: holmes_comment_wait
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
         with:
           script: |
             const marker = `<!-- HOLMES_SUITE_SHA:${context.sha} -->`;
@@ -176,7 +176,7 @@ jobs:
       - name: Create/Update PR Comment
         if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]' && steps.holmes_comment_wait.outputs.ready == 'true'
         continue-on-error: true
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
         with:
           script: |
             const badge = process.env.BADGE || '${{ steps.badge.outputs.BADGE }}';

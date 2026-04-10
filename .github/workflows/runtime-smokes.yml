@@ -19,13 +19,13 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Harden runner
-        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594
+        uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176
         with:
           egress-policy: audit
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
       - name: Install bats
         uses: ./.github/actions/install-bats
-      - uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb
+      - uses: denoland/setup-deno@667a34cdef165d8d2b2e98dde39547c9daac7282
         with:
           deno-version: v2.x
       - name: Deno lint (smoke files)
@@ -47,7 +47,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Harden runner
-        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594
+        uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176
         with:
           egress-policy: audit
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -72,7 +72,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Harden runner
-        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594
+        uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176
         with:
           egress-policy: audit
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
