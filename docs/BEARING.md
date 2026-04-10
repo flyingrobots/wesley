@@ -44,9 +44,9 @@ That currently means:
 
 ## What Still Feels Wrong
 
-- The first frozen receipt-family proving lane is not authored yet, so the repo
-  still relies on a bounded two-schema minimum surface instead of one boring
-  end-to-end family.
+- The first frozen receipt-family proving lane is now authored, but the repo
+  still relies on a bounded TTD-plus-Echo witness subset instead of one boring
+  end-to-end proved family.
 - The current witness proves minimum-surface coherence, not the full frozen
   receipt-family lane the active packet is aiming at.
 - Ownership of shared nouns is clearer than before, but still not enforced by
@@ -60,6 +60,7 @@ That currently means:
 ## Near-Term Pulls
 
 - [SOURCE_continuum-ownership-map-for-shared-nouns](./method/backlog/asap/SOURCE_continuum-ownership-map-for-shared-nouns.md)
+- [EVIDENCE_continuum-anti-shadow-publication-boundary-check](./method/backlog/asap/EVIDENCE_continuum-anti-shadow-publication-boundary-check.md)
 - [RUNTIME_continuum-local-compile-and-inspect-surface](./method/backlog/asap/RUNTIME_continuum-local-compile-and-inspect-surface.md)
 - [EVIDENCE_continuum-conformance-and-roundtrip-witness](./method/backlog/asap/EVIDENCE_continuum-conformance-and-roundtrip-witness.md)
 

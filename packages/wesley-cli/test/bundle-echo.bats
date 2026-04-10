@@ -11,6 +11,7 @@ setup() {
     CLI_PATH="$BATS_TEST_DIRNAME/../../wesley-host-node/bin/wesley.mjs"
     BUNDLE_ECHO_MODULE="$BATS_TEST_DIRNAME/../src/commands/bundle-echo.mjs"
     ECHO_SCHEMA="$BATS_TEST_DIRNAME/../../../schemas/echo-core-types.graphql"
+    CONTINUUM_SCHEMA="$BATS_TEST_DIRNAME/../../../schemas/continuum-receipt-family.graphql"
 }
 
 teardown() {
@@ -110,4 +111,17 @@ console.log(JSON.stringify({
 EOF
     assert_success
     echo "$output" | jq -e '.missing == true and .syntax == false' >/dev/null
+}
+
+@test "bundle-echo with continuum receipt family works" {
+    run node "$CLI_PATH" bundle-echo --schema "$CONTINUUM_SCHEMA" --out-dir out --json
+    assert_success
+    echo "$output" | jq -e '.success == true' >/dev/null
+    echo "$output" | jq -e '.result.echo.artifactCount >= 6' >/dev/null
+    echo "$output" | jq -e '.result.echo.ir.opCount == 4' >/dev/null
+    echo "$output" | jq -e '.result.mock.command == "deliveries"' >/dev/null
+
+    assert_file_exist out/ir.json
+    assert_file_exist out/mock/deliveries.jsonl
+    assert_file_exist out/mock/summary.json
 }

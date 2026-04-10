@@ -37,9 +37,9 @@ This cycle stays brutally narrow.
   surface.
 - The cycle target authored home for that family is
   `schemas/continuum-receipt-family.graphql`.
-- The current repo-local minimum shared surface remains
+- The current witness-backed minimum subset remains
   `schemas/ttd-protocol.graphql` and `schemas/echo-core-types.graphql` until
-  the chosen family is actually authored.
+  the chosen family has its own fixture and witness lane.
 - No second family enters the first proof lane this cycle.
 
 ## Glossary
@@ -66,9 +66,9 @@ This cycle stays brutally narrow.
   `wesley witness-continuum`, which proves local coherence for the current TTD
   and Echo minimum surfaces without pretending the frozen receipt-family lane
   already exists.
-- Wesley does not yet ship the chosen receipt-family schema, one literal
-  compile path for that family, one ownership table for it, the full
-  chosen-family witness lane, or one anti-shadow enforcement rule.
+- Wesley now carries the chosen receipt-family schema, but does not yet ship
+  the family-specific fixtures, witness lane, ownership table, or anti-shadow
+  enforcement rule that would make the proving path complete.
 
 ## Proved This Cycle
 
@@ -141,10 +141,10 @@ done until the whole path is real and inspectable.
 
 | Step | Surface | Repo truth |
 | --- | --- | --- |
-| 1. Authored source | `schemas/continuum-receipt-family.graphql` | chosen cycle target; not yet authored |
-| 2. TTD compile | `pnpm wesley compile-ttd --schema schemas/continuum-receipt-family.graphql --out-dir .wesley-cache/continuum/receipt-family/ttd --target manifest,typescript` | command shape exists today; chosen family schema does not yet |
+| 1. Authored source | `schemas/continuum-receipt-family.graphql` | chosen cycle target; now authored locally |
+| 2. TTD compile | `pnpm wesley compile-ttd --schema schemas/continuum-receipt-family.graphql --out-dir .wesley-cache/continuum/receipt-family/ttd --target manifest,typescript` | command shape exists today; chosen family schema now exists |
 | 3. TTD outputs | `.wesley-cache/continuum/receipt-family/ttd/manifest/{schema.json,contracts.json,manifest.json,ttd-ir.json}` and `.wesley-cache/continuum/receipt-family/ttd/typescript/{types.ts,zod.ts,registry.ts,index.ts}` | output family exists today for current TTD inputs |
-| 4. Echo bundle | `pnpm wesley bundle-echo --schema schemas/continuum-receipt-family.graphql --out-dir .wesley-cache/continuum/receipt-family/echo` writing `.wesley-cache/continuum/receipt-family/echo/{ir.json,ops.generated.ts,schemas.generated.ts,client.generated.ts,raw_le_codec.generated.ts,raw_le_codec.generated.rs,wasm_abi_codec.generated.ts,wasm_abi_codec.generated.rs}` plus `.wesley-cache/continuum/receipt-family/echo/mock/deliveries.jsonl` and `mock/summary.json` | command exists today; chosen family schema and full witness lane do not yet |
+| 4. Echo bundle | `pnpm wesley bundle-echo --schema schemas/continuum-receipt-family.graphql --out-dir .wesley-cache/continuum/receipt-family/echo` writing `.wesley-cache/continuum/receipt-family/echo/{ir.json,ops.generated.ts,schemas.generated.ts,client.generated.ts,raw_le_codec.generated.ts,raw_le_codec.generated.rs,wasm_abi_codec.generated.ts,wasm_abi_codec.generated.rs}` plus `.wesley-cache/continuum/receipt-family/echo/mock/deliveries.jsonl` and `mock/summary.json` | command exists today; chosen family schema now exists, but the full witness lane does not yet |
 | 5. Fixtures | `test/fixtures/continuum/receipt-family/{minimal,boundary,invalid,receipt-vs-witness}.*` | required work |
 | 6. Witness output | `pnpm wesley witness-continuum --ttd-dir .wesley-cache/continuum/receipt-family/ttd --echo-dir .wesley-cache/continuum/receipt-family/echo --out .wesley-cache/continuum/receipt-family/witness/conformance.json` | command exists today for the current minimum surface; the chosen-family witness lane still requires the authored family schema and family fixtures |
 
@@ -187,9 +187,10 @@ An agent or maintainer should be able to do the following without folklore:
 
 The cycle is incomplete if that path still depends on repo vibes.
 
-The current witness command proves only the present minimum surface:
-`schemas/ttd-protocol.graphql` and `schemas/echo-core-types.graphql`. It does
-not claim the frozen receipt-family proving lane is already implemented.
+The current witness command still proves only the present minimum subset:
+`schemas/ttd-protocol.graphql` and `schemas/echo-core-types.graphql`. The
+receipt-family schema is now authored locally, but its fixture and witness lane
+are not implemented yet.
 
 ## Playback Questions
 

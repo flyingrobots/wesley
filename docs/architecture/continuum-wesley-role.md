@@ -138,7 +138,8 @@ claim authorship by default.
 
 ## Current Limiting Truth
 
-Wesley's current minimum shared Continuum surface is still a bounded two-file
-surface, not one finished receipt-family contract stack. This note defines
-Wesley's operating role inside Continuum, not the claim that the whole
+Wesley now carries an authored `schemas/continuum-receipt-family.graphql`, but
+the current witness-backed minimum surface is still the bounded TTD-plus-Echo
+subset rather than one finished receipt-family contract stack. This note
+defines Wesley's operating role inside Continuum, not the claim that the whole
 Continuum contract surface is already frozen.

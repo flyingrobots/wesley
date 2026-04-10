@@ -49,18 +49,22 @@ Wesley also now ships a real first Continuum-shaped contract lane:
   and TypeScript outputs
 - `wesley bundle-echo` compiles `schemas/echo-core-types.graphql` into Echo
   bundle artifacts plus a mocked `warp-ttd` deliveries surface
+- Wesley now also carries `schemas/continuum-receipt-family.graphql` as the
+  authored home for the first frozen proving family
 - `wesley witness-continuum` verifies the current minimum TTD-plus-Echo surface
   and writes a local conformance report
 
 This is not yet the full frozen receipt-family proving lane. The current
-minimum shared surface is still the bounded two-schema surface described in
+witness-backed minimum subset is still the bounded TTD-plus-Echo pair
+described in
 [Continuum Minimum Shared Contract Surface](docs/architecture/continuum-minimum-shared-contract-surface.md).
 
 ## Current Limits
 
 - Wesley is not yet one finished Continuum contract platform.
-- The first boring receipt-family proof lane is still target state, not shipped
-  fact.
+- The first boring receipt-family proof lane is now authored as
+  `schemas/continuum-receipt-family.graphql`, but the full artifact, fixture,
+  and witness path is still not shipped fact.
 - Runtime, storage, debugger, and substrate-fact ownership stay outside
   Wesley's claimed authority unless a packet names otherwise explicitly.
 - Directive support is broader in the registry than on the current happy path;
