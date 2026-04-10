@@ -62,7 +62,6 @@ That currently means:
 ## Near-Term Pulls
 
 - [SOURCE_continuum-ownership-map-for-shared-nouns](./method/backlog/asap/SOURCE_continuum-ownership-map-for-shared-nouns.md)
-- [EVIDENCE_continuum-anti-shadow-publication-boundary-check](./method/backlog/asap/EVIDENCE_continuum-anti-shadow-publication-boundary-check.md)
 - [RUNTIME_continuum-local-compile-and-inspect-surface](./method/backlog/asap/RUNTIME_continuum-local-compile-and-inspect-surface.md)
 - [EVIDENCE_continuum-conformance-and-roundtrip-witness](./method/backlog/asap/EVIDENCE_continuum-conformance-and-roundtrip-witness.md)
 

@@ -62,6 +62,8 @@ run_witness_continuum() {
     echo "$output" | jq -e '.result.scope == "current-minimum-shared-surface"' >/dev/null
     echo "$output" | jq -e '.result.summary.failed == 0' >/dev/null
     echo "$output" | jq -e '.result.checks[] | select(.id == "continuum.delivery-vs-receipt-separation" and .status == "pass")' >/dev/null
+    echo "$output" | jq -e '.result.checks[] | select(.id == "publication-boundary.ttd-protocol" and .status == "pass")' >/dev/null
+    echo "$output" | jq -e '.result.checks[] | select(.id == "publication-boundary.echo-core-types" and .status == "pass")' >/dev/null
     assert_file_exist out/witness/conformance.json
 }
 
@@ -206,6 +208,25 @@ EOF
     assert_file_not_exist out/witness/conformance.json
 }
 
+@test "witness-continuum fails when current-minimum families gain a handwritten shadow contract" {
+    generate_local_inspect_surfaces
+
+    mkdir -p shadow
+    cat > shadow/cursor-shadow.graphql <<'EOF'
+type CursorState {
+  fake: String
+}
+EOF
+
+    run_witness_continuum \
+        --ttd-dir out/ttd \
+        --echo-dir out/echo \
+        --out out/witness/conformance.json
+    assert_failure
+    run jq -e '.checks[] | select(.id == "publication-boundary.ttd-protocol" and .status == "fail")' out/witness/conformance.json
+    assert_success
+}
+
 @test "witness-continuum writes a passing receipt-family conformance report" {
     generate_receipt_family_surfaces
 
@@ -225,6 +246,8 @@ EOF
     echo "$output" | jq -e '.result.checks[] | select(.id == "receipt-family.ttd-fixture-shape" and .status == "pass")' >/dev/null
     echo "$output" | jq -e '.result.checks[] | select(.id == "receipt-family.boundary-fixture" and .status == "pass")' >/dev/null
     echo "$output" | jq -e '.result.checks[] | select(.id == "receipt-family.receipt-vs-witness-separation" and .status == "pass")' >/dev/null
+    echo "$output" | jq -e '.result.checks[] | select(.id == "publication-boundary.receipt-family" and .status == "pass")' >/dev/null
+    echo "$output" | jq -e '.result.surfaces.publicationBoundary.rules[] | select(.id == "receipt-family") | .declaredCompatMirrors | length >= 1' >/dev/null
     assert_file_exist out/witness/receipt-family.json
 }
 
@@ -268,5 +291,27 @@ EOF
         --out out/witness/receipt-family.json
     assert_failure
     run jq -e '.checks[] | select(.id == "receipt-family.receipt-vs-witness-separation" and .status == "fail")' out/witness/receipt-family.json
+    assert_success
+}
+
+@test "witness-continuum receipt-family fails when a leaked generated artifact escapes its reserved roots" {
+    generate_receipt_family_surfaces
+
+    mkdir -p leak
+    cat > leak/ops.generated.ts <<'EOF'
+export interface Receipt {
+  receiptId: string;
+}
+EOF
+
+    run node "$CLI_PATH" witness-continuum \
+        --scope receipt-family \
+        --ttd-schema "$RECEIPT_SCHEMA" \
+        --echo-schema "$RECEIPT_SCHEMA" \
+        --ttd-dir out/receipt-family/ttd \
+        --echo-dir out/receipt-family/echo \
+        --out out/witness/receipt-family.json
+    assert_failure
+    run jq -e '.checks[] | select(.id == "publication-boundary.receipt-family" and .status == "fail")' out/witness/receipt-family.json
     assert_success
 }

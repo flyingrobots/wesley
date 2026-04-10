@@ -68,9 +68,9 @@ This cycle stays brutally narrow.
   and Echo minimum surfaces without pretending the frozen receipt-family lane
   already exists.
 - Wesley now carries the chosen receipt-family schema and ships
-  family-specific fixtures plus a real receipt-family witness scope, but it
-  still lacks the ownership-table and anti-shadow enforcement pieces that
-  would make the proving path feel fully boring.
+  family-specific fixtures, a real receipt-family witness scope, and a local
+  anti-shadow publication-boundary check, but it still lacks the ownership
+  table that would make the proving path feel fully boring.
 
 ## Proved This Cycle
 
@@ -226,9 +226,9 @@ scope should be read as proof of runtime, storage, or debugger semantics.
 - [ ] Can I inspect one declared rewrite or contract family and understand the
       compiled outputs as multiple interpretations of one shape rather than as
       unrelated generators?
-- [ ] Can I detect when a proposed change introduces a handwritten shadow
+- [x] Can I detect when a proposed change introduces a handwritten shadow
       contract or blurs substrate facts into Wesley-native judgment?
-- [ ] Can I locate the anti-shadow rule and the failure modes without reading
+- [x] Can I locate the anti-shadow rule and the failure modes without reading
       neighboring repos?
 
 ## Accessibility and Assistive Reading
