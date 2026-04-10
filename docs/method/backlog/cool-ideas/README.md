@@ -3,6 +3,8 @@
 Ideas here are real enough to name, but not committed. Keep them explicit and
 honest.
 
+- [Continuum Realization Profunctor Semantics](SOURCE_continuum-realization-profunctor-semantics.md)
+- [Continuum Generated-Leg Certificates](EVIDENCE_continuum-generated-leg-certificates.md)
 - [Holmes Comment Loader Policy Module](RUNTIME_holmes-comment-loader-policy-module.md)
 - [Workflow YAML Assertion Helper](RUNTIME_workflow-yaml-assertion-helper.md)
 - [Holmes Artifact Diagnostic Sidecar](EVIDENCE_holmes-artifact-diagnostic-sidecar.md)
