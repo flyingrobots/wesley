@@ -28,14 +28,14 @@ teardown() {
     assert_output --partial "--out-dir"
 }
 
-@test "compile writes warp-ttd and Echo targets under one output root" {
+@test "compile writes warp-ttd and Echo targets plus realization manifest under one output root" {
     run node "$CLI_PATH" compile --schema "$CONTINUUM_SCHEMA" --target warp-ttd,echo --out-dir out --json
     assert_success
 
     echo "$output" | jq -e '.success == true' >/dev/null
     echo "$output" | jq -e '.result.targets == ["warp-ttd","echo"]' >/dev/null
-    echo "$output" | jq -e '.result.witness.kind == "wesley.compile.witness.v1"' >/dev/null
-    echo "$output" | jq -e '.result.witnessPath == "out/witness/compile.json"' >/dev/null
+    echo "$output" | jq -e '.result.realizationManifest.kind == "wesley.realization.manifest.v1"' >/dev/null
+    echo "$output" | jq -e '.result.manifestPath == "out/realization/manifest.json"' >/dev/null
     echo "$output" | jq -e '.result.warpTtd.files | map(.path) | index("out/warp-ttd/manifest/manifest.json") != null' >/dev/null
     echo "$output" | jq -e '.result.echo.outDir == "out/echo"' >/dev/null
     echo "$output" | jq -e '.result.schemaHash == .result.warpTtd.schemaHash and .result.schemaHash == .result.echo.schemaHash' >/dev/null
@@ -45,8 +45,8 @@ teardown() {
     assert_file_exist out/echo/ir.json
     assert_file_exist out/echo/mock/deliveries.jsonl
     assert_file_exist out/echo/mock/summary.json
-    assert_file_exist out/witness/compile.json
-    run jq -e '.kind == "wesley.compile.witness.v1" and .targets == ["warp-ttd","echo"] and .generatedLegs.warpTtd != null and .generatedLegs.echo != null' out/witness/compile.json
+    assert_file_exist out/realization/manifest.json
+    run jq -e '.kind == "wesley.realization.manifest.v1" and .targets == ["warp-ttd","echo"] and .generatedLegs.warpTtd != null and .generatedLegs.echo != null' out/realization/manifest.json
     assert_success
 }
 
@@ -57,18 +57,18 @@ teardown() {
     echo "$output" | jq -e '.result.targets == ["echo"]' >/dev/null
     echo "$output" | jq -e '.result.warpTtd == null' >/dev/null
     echo "$output" | jq -e '.result.echo.outDir == "out/echo"' >/dev/null
-    echo "$output" | jq -e '.result.witness.generatedLegs.warpTtd == null and .result.witness.generatedLegs.echo != null' >/dev/null
+    echo "$output" | jq -e '.result.realizationManifest.generatedLegs.warpTtd == null and .result.realizationManifest.generatedLegs.echo != null' >/dev/null
 
     assert_file_not_exist out/warp-ttd/manifest/schema.json
     assert_file_exist out/echo/ir.json
-    assert_file_exist out/witness/compile.json
+    assert_file_exist out/realization/manifest.json
 }
 
-@test "compile dry-run does not write compile witness file" {
+@test "compile dry-run does not write realization manifest file" {
     run node "$CLI_PATH" compile --schema "$CONTINUUM_SCHEMA" --target warp-ttd,echo --out-dir out --dry-run --json
     assert_success
 
     echo "$output" | jq -e '.result.dryRun == true' >/dev/null
-    echo "$output" | jq -e '.result.witness.kind == "wesley.compile.witness.v1"' >/dev/null
-    assert_file_not_exist out/witness/compile.json
+    echo "$output" | jq -e '.result.realizationManifest.kind == "wesley.realization.manifest.v1"' >/dev/null
+    assert_file_not_exist out/realization/manifest.json
 }

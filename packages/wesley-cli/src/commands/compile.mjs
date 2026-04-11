@@ -6,7 +6,7 @@ import { runBundleEcho } from './bundle-echo.mjs';
 
 const VALID_TARGETS = ['warp-ttd', 'echo'];
 const LEGACY_TARGET_ALIASES = new Map([['ttd', 'warp-ttd']]);
-const COMPILE_WITNESS_KIND = 'wesley.compile.witness.v1';
+const REALIZATION_MANIFEST_KIND = 'wesley.realization.manifest.v1';
 
 export class CompileCommand extends WesleyCommand {
   constructor(ctx) {
@@ -25,20 +25,21 @@ export class CompileCommand extends WesleyCommand {
       .option('-o, --out-dir <dir>', 'Root output directory', 'out')
       .option('-t, --target <targets>', 'Comma-separated targets: warp-ttd, echo', 'warp-ttd,echo')
       .option('-e, --emit <targets>', 'Comma-separated warp-ttd emits: manifest, typescript, rust', 'manifest,typescript')
-      .option('--witness-out <path>', 'Compile witness output path (defaults under <out-dir>/witness/compile.json)')
+      .option('--manifest-out <path>', 'Realization manifest output path (defaults under <out-dir>/realization/manifest.json)')
+      .option('--witness-out <path>', 'Deprecated alias for --manifest-out')
       .option('--schema-root <dir>', 'Root directory for resolving @wes_import paths')
       .option('--dry-run', 'Show what would be generated without writing files');
   }
 
   async executeCore(context) {
     const targets = parseTargets(context.options.target);
-    const witnessPath = context.options.witnessOut ?? joinPath(context.options.outDir, 'witness', 'compile.json');
+    const manifestPath = context.options.manifestOut ?? context.options.witnessOut ?? joinPath(context.options.outDir, 'realization', 'manifest.json');
     const summary = {
       schemaPath: context.schemaPath,
       outDir: context.options.outDir,
       dryRun: Boolean(context.options.dryRun),
       targets,
-      witnessPath
+      manifestPath
     };
 
     if (targets.includes('warp-ttd')) {
@@ -81,25 +82,25 @@ export class CompileCommand extends WesleyCommand {
       summary.schemaHash = schemaHashes[0];
     }
 
-    const witness = buildCompileWitness({
+    const realizationManifest = buildRealizationManifest({
       schemaPath: context.schemaPath,
       outDir: context.options.outDir,
       targets,
       summary
     });
-    summary.witness = witness;
+    summary.realizationManifest = realizationManifest;
 
     if (!context.options.dryRun) {
-      await this.ctx.fs.write(witnessPath, JSON.stringify(witness, null, 2) + '\n');
+      await this.ctx.fs.write(manifestPath, JSON.stringify(realizationManifest, null, 2) + '\n');
     }
 
     return summary;
   }
 }
 
-function buildCompileWitness({ schemaPath, outDir, targets, summary }) {
+function buildRealizationManifest({ schemaPath, outDir, targets, summary }) {
   return {
-    kind: COMPILE_WITNESS_KIND,
+    kind: REALIZATION_MANIFEST_KIND,
     schemaPath,
     canonicalSchemaPath: canonicalizeSchemaPath(schemaPath),
     schemaHash: summary.schemaHash ?? null,
@@ -126,7 +127,7 @@ function buildCompileWitness({ schemaPath, outDir, targets, summary }) {
     proves: [
       'one authored schema path was compiled into one or more generated consumer legs',
       'generated legs share one authored schema hash',
-      'the emitted files for each selected target are inspectable from this witness'
+      'the emitted files for each selected target are inspectable from this realization manifest'
     ],
     doesNotProve: [
       'cross-leg conformance beyond shared schema identity',

@@ -26,7 +26,7 @@ That currently means:
   `schemas/ttd-protocol.graphql`, `wesley compile-ttd`, and
   `packages/wesley-core/src/ttd/`.
 - Wesley now has a real compiler-shaped Continuum entry point through
-  `wesley compile`, including a lightweight compile witness under the chosen
+  `wesley compile`, including a lightweight realization manifest under the chosen
   output root.
 - Wesley has a real Echo bundle wrapper through
   `schemas/echo-core-types.graphql`, `@wesley/generator-echo`, and

@@ -47,7 +47,7 @@ Wesley also now ships a real first Continuum-shaped contract lane:
 
 - `wesley compile` treats contract compilation like a compiler surface:
   schema in, consumer targets out, one output root
-- `wesley compile` now also emits a lightweight compile witness under the
+- `wesley compile` now also emits a lightweight realization manifest under the
   output root so generated legs carry build traceability without claiming
   conformance proof
 - `wesley compile-ttd` compiles `schemas/ttd-protocol.graphql` into manifest
@@ -117,8 +117,8 @@ pnpm wesley compile \
   --target warp-ttd,echo \
   --out-dir .wesley-cache/continuum/local-inspect
 
-# compile witness:
-# .wesley-cache/continuum/local-inspect/witness/compile.json
+# realization manifest:
+# .wesley-cache/continuum/local-inspect/realization/manifest.json
 
 pnpm wesley witness-continuum \
   --ttd-dir .wesley-cache/continuum/local-inspect/warp-ttd \
