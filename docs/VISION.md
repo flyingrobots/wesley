@@ -26,8 +26,9 @@ should stay honest about the strength of its evidence.
 - The Continuum lane is now real enough to inspect through `compile-ttd`,
   `bundle-echo`, and `witness-continuum`.
 - The current authored Continuum surface now includes
-  `schemas/ttd-protocol.graphql`, `schemas/echo-core-types.graphql`, and
-  `schemas/continuum-receipt-family.graphql`.
+  `schemas/ttd-protocol.graphql`, `schemas/echo-core-types.graphql`, and the
+  Continuum-authored shared family at
+  `<continuum-root>/schemas/continuum-receipt-family.graphql`.
 - `witness-continuum` now proves two bounded scopes: the original
   current-minimum TTD-plus-Echo subset and a fixture-backed
   `receipt-family` lane for the authored receipt family.

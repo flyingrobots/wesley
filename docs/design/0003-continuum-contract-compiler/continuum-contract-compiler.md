@@ -36,7 +36,7 @@ This cycle stays brutally narrow.
   `DeliveryObservation`, and `Capability`, with a separate `Witness`
   surface.
 - The cycle target authored home for that family is
-  `schemas/continuum-receipt-family.graphql`.
+  `<continuum-root>/schemas/continuum-receipt-family.graphql`.
 - The original witness-backed minimum subset was
   `schemas/ttd-protocol.graphql` plus `schemas/echo-core-types.graphql`; the
   chosen family now has its own fixture-backed witness scope through
@@ -129,9 +129,9 @@ inspectable.
 
 | Noun | Role | Owner | Authored or generated | Source of truth | Consumers | Out of scope |
 | --- | --- | --- | --- | --- | --- | --- |
-| `Receipt` | operational envelope for one realized rewrite | Wesley, for this cycle's proving family | authored target | `schemas/continuum-receipt-family.graphql` | Echo, `warp-ttd`, Holmes-family outputs | runtime policy, storage semantics |
-| `DeliveryObservation` | shared observation envelope adjacent to receipt | Wesley, for this cycle's proving family | authored target | `schemas/continuum-receipt-family.graphql` | Echo, `warp-ttd`, proof surfaces | debugger policy, observer UX |
-| `Capability` | shared declaration contract | Wesley, for this cycle's proving family | authored target | `schemas/continuum-receipt-family.graphql` | Echo, `warp-ttd`, operator-facing judgment | execution semantics |
+| `Receipt` | operational envelope for one realized rewrite | Continuum semantics, Wesley compiler lane | authored target | `<continuum-root>/schemas/continuum-receipt-family.graphql` | Echo, `warp-ttd`, Holmes-family outputs | runtime policy, storage semantics |
+| `DeliveryObservation` | shared observation envelope adjacent to receipt | Continuum semantics, Wesley compiler lane | authored target | `<continuum-root>/schemas/continuum-receipt-family.graphql` | Echo, `warp-ttd`, proof surfaces | debugger policy, observer UX |
+| `Capability` | shared declaration contract | Continuum semantics, Wesley compiler lane | authored target | `<continuum-root>/schemas/continuum-receipt-family.graphql` | Echo, `warp-ttd`, operator-facing judgment | execution semantics |
 | `Witness` | minimal semantic residue for lawful reversibility or reassembly | Wesley, for this cycle's proving family | authored shape plus generated witness surfaces | chosen family schema plus witness lane outputs | conformance checks, proof surfaces | receipt-only operational metadata |
 | `Observer` | projection or aperture over a lane or braid | neighboring observer policy, not Wesley's proving-family authority | foreign noun for this cycle | foreign observer-policy surfaces | `warp-ttd`, readers, debugger surfaces | full rewrite optic, runtime semantics |
 | `TickReceipt` | larger operational shell around a realized step | neighboring runtime or debugger operational surfaces unless explicitly compiled here | operational envelope | foreign or future publication boundary | audit, debugging, scheduling surfaces | minimal witness claim by default |
@@ -143,10 +143,10 @@ done until the whole path is real and inspectable.
 
 | Step | Surface | Repo truth |
 | --- | --- | --- |
-| 1. Authored source | `schemas/continuum-receipt-family.graphql` | chosen cycle target; now authored locally |
-| 2. TTD compile | `pnpm wesley compile-ttd --schema schemas/continuum-receipt-family.graphql --out-dir .wesley-cache/continuum/receipt-family/ttd --target manifest,typescript` | command shape exists today; chosen family schema now exists |
-| 3. TTD outputs | `.wesley-cache/continuum/receipt-family/ttd/manifest/{schema.json,contracts.json,manifest.json,ttd-ir.json}` and `.wesley-cache/continuum/receipt-family/ttd/typescript/{types.ts,zod.ts,registry.ts,index.ts}` | output family exists today for current TTD inputs |
-| 4. Echo bundle | `pnpm wesley bundle-echo --schema schemas/continuum-receipt-family.graphql --out-dir .wesley-cache/continuum/receipt-family/echo` writing `.wesley-cache/continuum/receipt-family/echo/{ir.json,ops.generated.ts,schemas.generated.ts,client.generated.ts,raw_le_codec.generated.ts,raw_le_codec.generated.rs,wasm_abi_codec.generated.ts,wasm_abi_codec.generated.rs}` plus `.wesley-cache/continuum/receipt-family/echo/mock/deliveries.jsonl` and `mock/summary.json` | command and local inspect bundle exist today |
+| 1. Authored source | `<continuum-root>/schemas/continuum-receipt-family.graphql` | chosen cycle target; now authored in Continuum |
+| 2. TTD compile | `pnpm wesley compile --schema <continuum-root>/schemas/continuum-receipt-family.graphql --target warp-ttd --out-dir .wesley-cache/continuum/receipt-family` | command shape exists today; compiler now accepts external authored paths |
+| 3. warp-ttd outputs | `.wesley-cache/continuum/receipt-family/warp-ttd/manifest/{schema.json,contracts.json,manifest.json,ttd-ir.json}` and `.wesley-cache/continuum/receipt-family/warp-ttd/typescript/{types.ts,zod.ts,registry.ts,index.ts}` | output family exists today for current shared contract inputs |
+| 4. Echo bundle | `pnpm wesley compile --schema <continuum-root>/schemas/continuum-receipt-family.graphql --target echo --out-dir .wesley-cache/continuum/receipt-family` writing `.wesley-cache/continuum/receipt-family/echo/{ir.json,ops.generated.ts,schemas.generated.ts,client.generated.ts,raw_le_codec.generated.ts,raw_le_codec.generated.rs,wasm_abi_codec.generated.ts,wasm_abi_codec.generated.rs}` plus `.wesley-cache/continuum/receipt-family/echo/mock/deliveries.jsonl` and `mock/summary.json` | command and local inspect bundle exist today |
 | 5. Fixtures | `test/fixtures/continuum/receipt-family/{minimal,boundary,invalid,receipt-vs-witness}.*` | fixture set now exists and is consumed by the receipt-family witness scope |
 | 6. Witness output | `pnpm wesley witness-continuum --scope receipt-family` with the default `.wesley-cache/continuum/receipt-family/{ttd,echo,witness}` path family | command exists today and proves one bounded local receipt-family conformance lane |
 
@@ -181,8 +181,8 @@ through:
 An agent or maintainer should be able to do the following without folklore:
 
 1. find the canonical schema from the ownership table
-2. run the TTD compile command
-3. run `wesley bundle-echo` for the same schema
+2. run `wesley compile --target warp-ttd` for the schema
+3. run `wesley compile --target echo` for the same schema
 4. inspect a short emitted artifact summary instead of browsing a raw file tree
 5. run `wesley witness-continuum`
 6. read one pass/fail proof result

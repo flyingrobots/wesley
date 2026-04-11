@@ -9,14 +9,22 @@ in
 
 ## Canonical Authored Home
 
-The current authored home for Wesley's minimum shared Continuum surface is the
-`schemas/` directory, specifically:
+Wesley's current minimum shared Continuum surface now spans:
+
+- repo-local schema inputs that Wesley still authors directly under `schemas/`
+- Continuum-authored shared families that Wesley compiles from external paths
+
+The current concrete inputs are:
 
 - `schemas/ttd-protocol.graphql`
 - `schemas/echo-core-types.graphql`
-- `schemas/continuum-receipt-family.graphql`
+- `<continuum-root>/schemas/continuum-receipt-family.graphql`
 
-Those files are the current repo-local authored inputs. Generated
+Wesley still carries a repo-local compatibility copy of the receipt family at
+`schemas/continuum-receipt-family.graphql` while its current local fixtures and
+witness tests catch up, but that copy is no longer the semantic authored home.
+
+Those schema files are the current authored inputs. Generated
 manifests, IR, TypeScript, Rust, codec vectors, and helper registries are
 derived outputs, not peer authorities.
 
@@ -95,7 +103,7 @@ Repo evidence:
 ### 3. Continuum Receipt Family
 
 Authored file:
-- `schemas/continuum-receipt-family.graphql`
+- `<continuum-root>/schemas/continuum-receipt-family.graphql`
 
 Current role:
 - canonical authored home for the first frozen Continuum proving family:
@@ -142,7 +150,10 @@ The following are not part of Wesley's current minimum shared contract surface:
 ## Current Rule
 
 - If a shared noun is in the current minimum surface, edit the authored schema
-  in `schemas/` and regenerate the derived surfaces.
+  in its real authored home:
+  - `schemas/` for Wesley-owned local families
+  - `<continuum-root>/schemas/` for Continuum-owned shared families
+  and regenerate the derived surfaces.
 - If a neighboring repo needs the same noun family, consume generated artifacts
   or an explicit publication boundary instead of re-authoring the contract by
   hand.

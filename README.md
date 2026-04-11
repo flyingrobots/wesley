@@ -51,8 +51,11 @@ Wesley also now ships a real first Continuum-shaped contract lane:
   and TypeScript outputs
 - `wesley bundle-echo` compiles `schemas/echo-core-types.graphql` into Echo
   bundle artifacts plus a mocked `warp-ttd` deliveries surface
-- Wesley now also carries `schemas/continuum-receipt-family.graphql` as the
-  authored home for the first frozen proving family
+- the first shared proving family is now authored in Continuum under
+  `<continuum-root>/schemas/continuum-receipt-family.graphql`
+- Wesley still carries a repo-local compatibility copy of that family under
+  `schemas/continuum-receipt-family.graphql` while tests and witnesses are
+  being cut over
 - `wesley witness-continuum` verifies the current minimum TTD-plus-Echo surface
   and writes a local conformance report
 
@@ -64,9 +67,8 @@ described in
 ## Current Limits
 
 - Wesley is not yet one finished Continuum contract platform.
-- The first boring receipt-family proof lane is now authored as
-  `schemas/continuum-receipt-family.graphql`, but the full artifact, fixture,
-  and witness path is still not shipped fact.
+- The first boring receipt-family proof lane is now Continuum-authored, but
+  the full artifact, fixture, and witness path is still not shipped fact.
 - Runtime, storage, debugger, and substrate-fact ownership stay outside
   Wesley's claimed authority unless a packet names otherwise explicitly.
 - Directive support is broader in the registry than on the current happy path;
@@ -108,7 +110,7 @@ pnpm wesley rehearse \
 
 ```bash
 pnpm wesley compile \
-  --schema schemas/continuum-receipt-family.graphql \
+  --schema <continuum-root>/schemas/continuum-receipt-family.graphql \
   --target warp-ttd,echo \
   --out-dir .wesley-cache/continuum/local-inspect
 
