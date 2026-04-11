@@ -1,10 +1,11 @@
 # TTD Protocol Schema for Echo Time-Travel Debugger
-# Defines channels, operations, rules, and invariants for the TTD system.
+# Repo-local authored input for Wesley's current `compile-ttd` path.
 #
-# This schema is the source of truth for:
-# - Rust types in Echo (via echo-ttd-gen)
-# - TypeScript types in ttd-app (via Wesley compile-ttd)
-# - Manifest files for compliance checking
+# Current source-surface truth in this repo:
+# - this SDL is the authored input Wesley compiles today
+# - manifest JSON and TypeScript outputs are derived artifacts
+# - the cross-repo publication boundary is still tracked separately in
+#   docs/method/backlog/asap/SOURCE_WESLEY_protocol-surface-cutover.md
 
 scalar JSON
 scalar Hash  # SHA-256 hash: 32 bytes binary, 64-character hex string
