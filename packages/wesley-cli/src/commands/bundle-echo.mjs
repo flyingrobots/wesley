@@ -29,81 +29,96 @@ export class BundleEchoCommand extends WesleyCommand {
   }
 
   async executeCore(context) {
-    const { schemaContent, schemaPath, options, logger } = context;
-    const generateEcho = await resolveGenerateEcho();
-    const bundle = await generateEcho({ sdl: schemaContent });
-
-    if (!bundle || !Array.isArray(bundle.files)) {
-      throw new WesleyError(
-        'ECHO_GENERATION_FAILED',
-        'Echo generation returned an unexpected result shape.'
-      );
-    }
-
-    const files = bundle.files.map((file) => ({
-      path: file.path,
-      content: file.content,
-      size: Buffer.byteLength(file.content, 'utf8')
-    }));
-    const hash = await schemaHash(schemaContent);
-    const ir = readIr(files);
-    const mock = buildMockDeliveries({
-      schemaPath,
-      schemaHashHex: hash,
-      files,
-      ir,
-      outDir: options.outDir
+    return runBundleEcho({
+      ctx: this.ctx,
+      schemaContent: context.schemaContent,
+      schemaPath: context.schemaPath,
+      options: context.options,
+      logger: context.logger
     });
-    const summary = buildBundleSummary({
-      schemaPath,
-      schemaHashHex: hash,
-      outDir: options.outDir,
-      files,
-      ir,
-      profile: bundle.profile ?? null,
-      mock
-    });
-
-    if (!options.dryRun) {
-      for (const file of files) {
-        await this.ctx.fs.write(joinPath(options.outDir, file.path), file.content);
-      }
-      await this.ctx.fs.write(mock.outputPath, mock.jsonl);
-      await this.ctx.fs.write(mock.summaryPath, JSON.stringify(summary, null, 2) + '\n');
-    }
-
-    if (!options.quiet && !options.json) {
-      const action = options.dryRun ? 'Would generate' : 'Generated';
-      logger?.info?.(`${action} Echo bundle (${files.length} files) from ${schemaPath}`);
-      logger?.info?.(`Mocked warp-ttd surface: ${MOCK_WARP_COMMAND} (${mock.rows.length} observations)`);
-      if (options.dryRun) {
-        logger?.info?.('Artifact summary not written because --dry-run was set.');
-      } else {
-        logger?.info?.(`Artifact summary: ${mock.summaryPath}`);
-      }
-    }
-
-    return {
-      schemaPath,
-      canonicalSchemaPath: canonicalizeSchemaPath(schemaPath),
-      schemaHash: hash,
-      outDir: options.outDir,
-      dryRun: Boolean(options.dryRun),
-      echo: {
-        artifactCount: files.length,
-        files: files.map(({ path, size }) => ({ path, size })),
-        ir: summarizeIr(ir),
-        profile: bundle.profile ?? null
-      },
-      mock: {
-        command: MOCK_WARP_COMMAND,
-        outputPath: mock.outputPath,
-        summaryPath: mock.summaryPath,
-        observationCount: mock.rows.length,
-        outcomes: countOutcomes(mock.rows)
-      }
-    };
   }
+}
+
+export async function runBundleEcho({
+  ctx,
+  schemaContent,
+  schemaPath,
+  options,
+  logger
+}) {
+  const generateEcho = await resolveGenerateEcho();
+  const bundle = await generateEcho({ sdl: schemaContent });
+
+  if (!bundle || !Array.isArray(bundle.files)) {
+    throw new WesleyError(
+      'ECHO_GENERATION_FAILED',
+      'Echo generation returned an unexpected result shape.'
+    );
+  }
+
+  const files = bundle.files.map((file) => ({
+    path: file.path,
+    content: file.content,
+    size: Buffer.byteLength(file.content, 'utf8')
+  }));
+  const hash = await schemaHash(schemaContent);
+  const ir = readIr(files);
+  const mock = buildMockDeliveries({
+    schemaPath,
+    schemaHashHex: hash,
+    files,
+    ir,
+    outDir: options.outDir
+  });
+  const summary = buildBundleSummary({
+    schemaPath,
+    schemaHashHex: hash,
+    outDir: options.outDir,
+    files,
+    ir,
+    profile: bundle.profile ?? null,
+    mock
+  });
+
+  if (!options.dryRun) {
+    for (const file of files) {
+      await ctx.fs.write(joinPath(options.outDir, file.path), file.content);
+    }
+    await ctx.fs.write(mock.outputPath, mock.jsonl);
+    await ctx.fs.write(mock.summaryPath, JSON.stringify(summary, null, 2) + '\n');
+  }
+
+  if (!options.quiet && !options.json) {
+    const action = options.dryRun ? 'Would generate' : 'Generated';
+    logger?.info?.(`${action} Echo bundle (${files.length} files) from ${schemaPath}`);
+    logger?.info?.(`Mocked warp-ttd surface: ${MOCK_WARP_COMMAND} (${mock.rows.length} observations)`);
+    if (options.dryRun) {
+      logger?.info?.('Artifact summary not written because --dry-run was set.');
+    } else {
+      logger?.info?.(`Artifact summary: ${mock.summaryPath}`);
+    }
+  }
+
+  return {
+    schemaPath,
+    canonicalSchemaPath: canonicalizeSchemaPath(schemaPath),
+    schemaHash: hash,
+    outDir: options.outDir,
+    dryRun: Boolean(options.dryRun),
+    echo: {
+      artifactCount: files.length,
+      files: files.map(({ path, size }) => ({ path, size })),
+      ir: summarizeIr(ir),
+      profile: bundle.profile ?? null
+    },
+    mock: {
+      command: MOCK_WARP_COMMAND,
+      outputPath: mock.outputPath,
+      summaryPath: mock.summaryPath,
+      observationCount: mock.rows.length,
+      outcomes: countOutcomes(mock.rows)
+    }
+  };
 }
 
 function buildBundleSummary({

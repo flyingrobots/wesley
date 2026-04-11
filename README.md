@@ -45,6 +45,8 @@ That lane is still the most mature production-shaped surface in the repo.
 
 Wesley also now ships a real first Continuum-shaped contract lane:
 
+- `wesley compile` treats contract compilation like a compiler surface:
+  schema in, consumer targets out, one output root
 - `wesley compile-ttd` compiles `schemas/ttd-protocol.graphql` into manifest
   and TypeScript outputs
 - `wesley bundle-echo` compiles `schemas/echo-core-types.graphql` into Echo
@@ -105,16 +107,13 @@ pnpm wesley rehearse \
 ### Try The Continuum Surface
 
 ```bash
-pnpm wesley compile-ttd \
-  --schema schemas/ttd-protocol.graphql \
-  --out-dir .wesley-cache/continuum/local-inspect/ttd
-
-pnpm wesley bundle-echo \
-  --schema schemas/echo-core-types.graphql \
-  --out-dir .wesley-cache/continuum/local-inspect/echo
+pnpm wesley compile \
+  --schema schemas/continuum-receipt-family.graphql \
+  --target warp-ttd,echo \
+  --out-dir .wesley-cache/continuum/local-inspect
 
 pnpm wesley witness-continuum \
-  --ttd-dir .wesley-cache/continuum/local-inspect/ttd \
+  --ttd-dir .wesley-cache/continuum/local-inspect/warp-ttd \
   --echo-dir .wesley-cache/continuum/local-inspect/echo \
   --json
 ```

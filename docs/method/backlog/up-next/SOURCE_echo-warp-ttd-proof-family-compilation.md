@@ -20,11 +20,21 @@ contract path.
 
 ## Hill
 
-Wesley compiles one Continuum-authored proof family into:
+Wesley behaves like a compiler, not a ritual collection of bespoke verbs:
 
-- Rust artifacts Echo can compile against
-- TypeScript artifacts `warp-ttd` can import directly
+- one authored schema in
+- one explicit output root
+- one explicit target list
+- generated Rust artifacts for Echo
+- generated TypeScript artifacts for `warp-ttd`
 - codec metadata and schema identity that both sides share
+
+The target language of the CLI should be consumer-facing:
+
+- `echo`
+- `warp-ttd`
+
+not internal lane jargon like `ttd`.
 
 The first proof family should be narrow and boring, but it must cover:
 
@@ -37,7 +47,9 @@ The first proof family should be narrow and boring, but it must cover:
 ## Done looks like
 
 - one Continuum-authored family is selected as the proof slice
-- Wesley emits Rust and TypeScript realizations for that family
+- `wesley compile --schema <family.graphql> --target echo,warp-ttd --out-dir <dir>`
+  is the boring operator path
+- Wesley emits Rust and TypeScript realizations for that family under one root
 - generated codecs are sufficient for the Echo <-> `warp-ttd` transport path
 - Echo can replace proof-slice handwritten DTOs with generated Rust cousins
 - `warp-ttd` can replace proof-slice handwritten TS mirrors with generated

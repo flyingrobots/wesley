@@ -2,6 +2,7 @@ export * from './cert-badge.mjs';
 export * from './cert-create.mjs';
 export * from './cert-sign.mjs';
 export * from './cert-verify.mjs';
+export * from './compile.mjs';
 export * from './generate.mjs';
 export * from './models.mjs';
 export * from './plan.mjs';
