@@ -27,6 +27,20 @@ workflow doctrine lives in [docs/README.md](docs/README.md),
 [docs/method/process.md](docs/method/process.md), and
 [docs/method/release.md](docs/method/release.md).
 
+## Overall Status
+
+<!-- BEGIN:OVERALL_STATUS -->
+Stage: experimental<br>
+Progress: pending
+<!-- END:OVERALL_STATUS -->
+
+## Package Matrix
+
+<!-- BEGIN:PACKAGE_MATRIX -->
+| Package | Status | Stage | Progress | CI | Notes |
+| --- | --- | --- | --- | --- | --- |
+<!-- END:PACKAGE_MATRIX -->
+
 ## What Is Real Today
 
 ### Database-Change Lane
