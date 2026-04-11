@@ -69,9 +69,9 @@
     }
   },
   "dependencies": {
-    "@mantine/hooks": "^9.0.1",
+    "@mantine/hooks": "^8.3.5",
     "@supabase/pg-parser": "^0.1.7",
-    "vite": "^8.0.5"
+    "vite": "^7.1.12"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
