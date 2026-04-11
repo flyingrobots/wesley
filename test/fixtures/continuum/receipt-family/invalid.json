@@ -1,0 +1,19 @@
+{
+  "malformedDeliveryObservationRow": {
+    "envelope": "DeliveryObservationSummary",
+    "data": {
+      "observationId": "deliv:wesley:invalid",
+      "emissionId": "emit:wesley:invalid",
+      "headId": "head:wesley:continuum",
+      "frameIndex": 0,
+      "sinkId": "sink:invalid",
+      "outcome": "delivered",
+      "reason": "This fixture intentionally blurs delivery, receipt, and witness boundaries.",
+      "executionMode": "debug",
+      "summary": "Invalid delivery observation fixture.",
+      "admittedRewriteCount": 1,
+      "digest": "sha256:invalid",
+      "residueHash": "sha256:invalid"
+    }
+  }
+}

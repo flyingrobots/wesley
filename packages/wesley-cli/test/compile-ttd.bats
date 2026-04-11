@@ -18,6 +18,7 @@ setup() {
 
     # Path to TTD test fixture
     TTD_SCHEMA="$BATS_TEST_DIRNAME/../../wesley-generator-ttd/test/fixtures/basic-protocol/basic-protocol.graphql"
+    CONTINUUM_SCHEMA="$BATS_TEST_DIRNAME/../../../schemas/continuum-receipt-family.graphql"
 }
 
 teardown() {
@@ -123,4 +124,25 @@ EOF
     run node "$CLI_PATH" compile-ttd --schema "$TTD_SCHEMA" --dry-run --json
     assert_success
     echo "$output" | jq -e '.result.files | length > 0'
+}
+
+@test "compile-ttd with continuum receipt family works" {
+    run node "$CLI_PATH" compile-ttd --schema "$CONTINUUM_SCHEMA" --dry-run --json
+    assert_success
+    echo "$output" | jq -e '.success == true' >/dev/null
+    echo "$output" | jq -e '.result.schemaHash | length == 64' >/dev/null
+    echo "$output" | jq -e '.result.files | map(.path) | index("manifest/manifest.json") != null' >/dev/null
+    echo "$output" | jq -e '.result.files | map(.path) | index("typescript/types.ts") != null' >/dev/null
+}
+
+@test "compile-ttd and bundle-echo agree on authored schema hash" {
+    run node "$CLI_PATH" compile-ttd --schema "$CONTINUUM_SCHEMA" --dry-run --json
+    assert_success
+    compile_hash="$(echo "$output" | jq -r '.result.schemaHash')"
+
+    run node "$CLI_PATH" bundle-echo --schema "$CONTINUUM_SCHEMA" --out-dir out --json
+    assert_success
+    bundle_hash="$(echo "$output" | jq -r '.result.schemaHash')"
+
+    assert_equal "$compile_hash" "$bundle_hash"
 }

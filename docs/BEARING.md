@@ -2,46 +2,71 @@
 <!-- docs-truth: status=experimental owner=@flyingrobots -->
 
 This signpost summarizes direction. It does not create commitments or replace
-backlog items, design packets, retros, or CLI status.
+backlog items, design packets, retros, witnesses, or CLI status.
 
-## Where are we going?
+## Current Direction
 
-Current priority: make Wesley earn its Continuum role as the contract compiler
-for the shared hot/cold causal surface.
+Current priority: make Wesley's Continuum role boring and inspectable without
+lying about what is already real.
 
-For now, that means Wesley should align around four near-term moves:
+That currently means:
 
-- freeze a minimum shared contract surface for Continuum nouns such as protocol
-  envelopes, causal coordinates, receipts, effect emissions, delivery
-  observations, capability declarations, and manifest / registry identifiers
-- prove one boring end-to-end artifact family, preferably receipts, from Wesley
-  schema to generated Rust, TypeScript, codec contracts, manifests, and
-  fixtures
-- add conformance proof so generated surfaces round-trip canonically instead of
-  relying on repo folklore
-- publish an ownership map that keeps `git-warp`, Echo, `warp-ttd`, and Wesley
-  from drifting into handwritten shadow contracts
+- freeze one shared contract family with one authored home, one ownership map,
+  one compile path, and one witness lane
+- keep the publication boundary explicit between Wesley, Echo, `git-warp`, and
+  `warp-ttd`
+- strengthen anti-shadow rules so generated or mirrored contracts do not become
+  accidental peer authorities
+- keep Wesley on the contract, conformance, and judgment side of the split
+  instead of absorbing runtime, storage, or debugger policy
 
-## What just shipped?
+## What Is Already Real In The Repo
 
-The repo already has a real starting point for this direction:
+- Wesley has a real TTD compile path through
+  `schemas/ttd-protocol.graphql`, `wesley compile-ttd`, and
+  `packages/wesley-core/src/ttd/`.
+- Wesley now has a real compiler-shaped Continuum entry point through
+  `wesley compile`, including a lightweight realization manifest under the chosen
+  output root.
+- Wesley has a real Echo bundle wrapper through
+  `schemas/echo-core-types.graphql`, `@wesley/generator-echo`, and
+  `wesley bundle-echo`.
+- Wesley now has a real current-state conformance witness through
+  `wesley witness`, with `wesley witness-continuum` kept as a compatibility
+  alias, plus explicit `receipt-family` and `settlement-family` scopes.
+- The current minimum shared Continuum surface is explicitly named in
+  [Continuum Minimum Shared Contract Surface](./architecture/continuum-minimum-shared-contract-surface.md).
+- Wesley's role in Continuum is explicitly bounded in
+  [Wesley Role In Continuum](./architecture/continuum-wesley-role.md).
+- The most recent Continuum proving packet is
+  [Continuum Contract Compiler](./design/0003-continuum-contract-compiler/continuum-contract-compiler.md),
+  and it closed as a `partial` landing in
+  [its retro packet](./method/retro/0003-continuum-contract-compiler/continuum-contract-compiler.md).
+- Wesley's METHOD closeout and release surfaces are now explicit in
+  `docs/method/retro/`, `docs/method/graveyard/`, `docs/method/releases/`, and
+  `docs/releases/`.
 
-- Wesley already ships TTD / protocol-compiler surfaces in
-  `schemas/ttd-protocol.graphql`, `packages/wesley-core/src/ttd/`, and
-  `packages/wesley-cli/src/commands/compile-ttd.mjs`
-- Holmes counterfactual work already keeps `git-warp` on the substrate side of
-  the boundary instead of reimplementing it inside Wesley product semantics
-- the GitHub issue queue now lives in the filesystem, so this direction can be
-  carried as METHOD backlog instead of tracker folklore
+## What Still Feels Wrong
 
-## What feels wrong?
+- The first frozen receipt-family proving lane now has a real local witness,
+  but that proof is still bounded to generated-leg coherence rather than
+  runtime, storage, or debugger semantics.
+- The current witness shape is better than before, but it is still carrying
+  two bounded scopes instead of one fully generalized realization manifest and
+  anti-shadow enforcement path.
+- Ownership of shared nouns is clearer than before, but still not enforced by
+  one small reusable ownership map and one anti-shadow check.
+- The repo now has a closeout shape, but not yet a deep habit of closed-cycle
+  packets and witness directories.
+- Wesley's public identity is still split between the older PostgreSQL-first
+  story and the newer Continuum contract-compiler hill. That split is real and
+  should stay honest until one surface clearly dominates.
 
-- Wesley still lacks one frozen, finite shared contract surface for Continuum
-  nouns.
-- The repo has protocol-compiler pieces, but not yet one boring receipt-family
-  artifact path that proves the whole chain.
-- Ownership of shared nouns is still too easy to infer incorrectly from repo
-  habit instead of from explicit doctrine.
-- Too much historical surface area still reads like generic database-change
-  product work when the current bearing is narrower: keep the Continuum
-  contract surface honest.
+## Near-Term Pulls
+
+- [SOURCE_continuum-ownership-map-for-shared-nouns](./method/backlog/asap/SOURCE_continuum-ownership-map-for-shared-nouns.md)
+- [RUNTIME_continuum-local-compile-and-inspect-surface](./method/backlog/asap/RUNTIME_continuum-local-compile-and-inspect-surface.md)
+- [EVIDENCE_continuum-conformance-and-roundtrip-witness](./method/backlog/asap/EVIDENCE_continuum-conformance-and-roundtrip-witness.md)
+
+Those are the next honest moves if Wesley is going to earn the Continuum role
+it is now claiming in the docs.

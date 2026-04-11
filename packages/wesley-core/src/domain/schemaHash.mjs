@@ -11,6 +11,32 @@
 
 import { canonicalize } from './canonicalize.mjs';
 
+const decoder = new TextDecoder();
+
+/**
+ * Convert canonical schema bytes back into their stable UTF-8 string form.
+ *
+ * This text form exists so CryptoPort-based callers can hash the exact same
+ * canonical payload that `schemaHash()` hashes via `crypto.subtle`.
+ *
+ * @param {string} sdl - GraphQL SDL source text
+ * @returns {string}
+ */
+function canonicalSchemaText(sdl) {
+  return decoder.decode(canonicalize(sdl));
+}
+
+/**
+ * Compute the canonical schema hash using an injected CryptoPort.
+ *
+ * @param {string} sdl - GraphQL SDL source text
+ * @param {import('../ports/crypto.mjs').CryptoPort} crypto - Crypto port
+ * @returns {string} 64-char lowercase hex SHA-256 digest
+ */
+export function schemaHashWithCrypto(sdl, crypto) {
+  return crypto.sha256(canonicalSchemaText(sdl));
+}
+
 /**
  * Compute a deterministic SHA-256 hash of a GraphQL SDL schema.
  *
