@@ -24,12 +24,13 @@ should stay honest about the strength of its evidence.
 - The database-change lane remains real through `generate`, `plan`,
   `rehearse`, `blade`, certification, and HOLMES-family evidence work.
 - The Continuum lane is now real enough to inspect through `compile-ttd`,
-  `bundle-echo`, and `witness-continuum`.
+  `bundle-echo`, `witness`, and the compatibility alias
+  `witness-continuum`.
 - The current authored Continuum surface now includes
   `schemas/ttd-protocol.graphql`, `schemas/echo-core-types.graphql`, and the
   Continuum-authored shared family at
   `<continuum-root>/schemas/continuum-receipt-family.graphql`.
-- `witness-continuum` now proves two bounded scopes: the original
+- `witness` now proves two bounded scopes: the original
   current-minimum TTD-plus-Echo subset and a fixture-backed
   `receipt-family` lane for the authored receipt family.
 - Wesley's Continuum role is explicitly bounded to contract compilation,

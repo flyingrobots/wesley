@@ -2,7 +2,6 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WesleyError } from '@wesley/core';
 import {
-  createCheck,
   inspectEchoSurface,
   inspectTtdSurface,
   summarizeChecks
@@ -91,6 +90,7 @@ export async function buildContinuumWitnessReport({
   ttdDir,
   echoSchemaPath,
   echoDir,
+  realizationRoot,
   outputPath,
   proves,
   doesNotProve,
@@ -109,6 +109,7 @@ export async function buildContinuumWitnessReport({
       ttdDir,
       echoSchemaPath,
       echoDir,
+      realizationRoot,
       receiptFamilyFixtureDir
     }),
     checks
@@ -152,6 +153,7 @@ function buildPublicationBoundaryRules({
   ttdDir,
   echoSchemaPath,
   echoDir,
+  realizationRoot,
   receiptFamilyFixtureDir
 }) {
   if (scope === CURRENT_MINIMUM_SCOPE) {
@@ -159,7 +161,7 @@ function buildPublicationBoundaryRules({
       {
         id: 'ttd-protocol',
         authoredHomes: [ttdSchemaPath],
-        generatedRoots: [ttdDir],
+        generatedRoots: [ttdDir].concat(realizationRoot == null ? [] : [realizationRoot]),
         compatRoots: [],
         generatedArtifacts: [
           'manifest/schema.json',
@@ -175,7 +177,7 @@ function buildPublicationBoundaryRules({
       {
         id: 'echo-core-types',
         authoredHomes: [echoSchemaPath],
-        generatedRoots: [echoDir],
+        generatedRoots: [echoDir].concat(realizationRoot == null ? [] : [realizationRoot]),
         compatRoots: [],
         generatedArtifacts: [
           'ir.json',
@@ -197,7 +199,7 @@ function buildPublicationBoundaryRules({
     {
       id: 'receipt-family',
       authoredHomes: [ttdSchemaPath],
-      generatedRoots: [ttdDir, echoDir],
+      generatedRoots: [ttdDir, echoDir].concat(realizationRoot == null ? [] : [realizationRoot]),
       compatRoots: [receiptFamilyFixtureDir],
       generatedArtifacts: [
         'manifest/schema.json',

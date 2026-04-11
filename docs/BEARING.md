@@ -32,8 +32,8 @@ That currently means:
   `schemas/echo-core-types.graphql`, `@wesley/generator-echo`, and
   `wesley bundle-echo`.
 - Wesley now has a real current-state conformance witness through
-  `wesley witness-continuum`, including a receipt-family scope at
-  `wesley witness-continuum --scope receipt-family`.
+  `wesley witness`, with `wesley witness-continuum` kept as a compatibility
+  alias and a receipt-family scope at `wesley witness --scope receipt-family`.
 - The current minimum shared Continuum surface is explicitly named in
   [Continuum Minimum Shared Contract Surface](./architecture/continuum-minimum-shared-contract-surface.md).
 - Wesley's role in Continuum is explicitly bounded in

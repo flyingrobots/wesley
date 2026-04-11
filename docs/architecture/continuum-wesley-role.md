@@ -71,7 +71,8 @@ Wesley therefore carries two different proof-adjacent surfaces:
 
 - a **realization manifest** emitted by `wesley compile`, proving build
   traceability for one authored schema and its generated legs
-- a **conformance witness** emitted by `wesley witness-continuum`, proving one
+- a **conformance witness** emitted by `wesley witness`, with
+  `wesley witness-continuum` kept as a compatibility alias, proving one
   bounded cross-leg coherence and anti-shadow check set
 
 Current repo-visible evidence:
@@ -148,7 +149,7 @@ claim authorship by default.
 
 Wesley now carries an authored `schemas/continuum-receipt-family.graphql` and
 a real receipt-family witness scope through
-`wesley witness-continuum --scope receipt-family`. That means the repo can now
+`wesley witness --scope receipt-family`. That means the repo can now
 prove one local contract-family stack from authored schema through TTD and Echo
 legs to a bounded conformance witness. This note still does not claim that the
 whole Continuum contract surface is frozen, or that Wesley owns runtime,

@@ -17,6 +17,7 @@ import './commands/zod.mjs';
 import './commands/validate-bundle.mjs';
 import './commands/compile.mjs';
 import './commands/bundle-echo.mjs';
+import './commands/witness.mjs';
 import './commands/witness-continuum.mjs';
 
 // Export nothing - this is just for side effects (registration)

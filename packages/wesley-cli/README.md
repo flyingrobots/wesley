@@ -8,7 +8,7 @@ Command-line interface for turning GraphQL schemas into database artifacts (SQL,
 pnpm wesley --help
 pnpm wesley generate --schema path/to/schema.graphql --emit-bundle
 pnpm wesley compile --schema <continuum-root>/schemas/continuum-receipt-family.graphql --target warp-ttd,echo --out-dir .wesley-cache/continuum/local-inspect
-pnpm wesley witness-continuum --ttd-dir .wesley-cache/continuum/local-inspect/warp-ttd --echo-dir .wesley-cache/continuum/local-inspect/echo
+pnpm wesley witness --scope receipt-family --schema <continuum-root>/schemas/continuum-receipt-family.graphql --out-dir .wesley-cache/continuum/local-inspect
 pnpm wesley plan --schema path/to/schema.graphql --explain
 pnpm wesley rehearse --schema path/to/schema.graphql --dry-run --json
 ```

@@ -73,8 +73,9 @@ Wesley also now ships a real first Continuum-shaped contract lane:
 - Wesley still carries a repo-local compatibility copy of that family under
   `schemas/continuum-receipt-family.graphql` while tests and witnesses are
   being cut over
-- `wesley witness-continuum` verifies the current minimum TTD-plus-Echo surface
-  and writes a local conformance report
+- `wesley witness` verifies the current minimum TTD-plus-Echo surface and
+  receipt-family proof scopes, with `wesley witness-continuum` kept as a
+  compatibility alias
 
 This is not yet the full frozen receipt-family proving lane. The current
 witness-backed minimum subset is still the bounded TTD-plus-Echo pair
@@ -134,9 +135,10 @@ pnpm wesley compile \
 # realization manifest:
 # .wesley-cache/continuum/local-inspect/realization/manifest.json
 
-pnpm wesley witness-continuum \
-  --ttd-dir .wesley-cache/continuum/local-inspect/warp-ttd \
-  --echo-dir .wesley-cache/continuum/local-inspect/echo \
+pnpm wesley witness \
+  --scope receipt-family \
+  --schema <continuum-root>/schemas/continuum-receipt-family.graphql \
+  --out-dir .wesley-cache/continuum/local-inspect \
   --json
 ```
 

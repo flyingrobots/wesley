@@ -16,6 +16,7 @@ export * from './zod.mjs';
 export * from './blade.mjs';
 export * from './compile-ttd.mjs';
 export * from './bundle-echo.mjs';
+export * from './witness.mjs';
 export * from './witness-continuum.mjs';
 export * from './doctor.mjs';
 export * from './diff.mjs';
