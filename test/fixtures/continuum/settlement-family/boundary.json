@@ -1,0 +1,77 @@
+{
+  "types": {
+    "ConflictArtifact": [
+      "artifactId",
+      "sourceReceiptId",
+      "sourceLaneId",
+      "targetLaneId",
+      "sourceHeadId",
+      "targetHeadId",
+      "reason",
+      "summary"
+    ],
+    "ContinuumSettlementFamilyInvariants": [
+      "_placeholder"
+    ],
+    "ImportCandidate": [
+      "candidateId",
+      "sourceReceiptId",
+      "sourceLaneId",
+      "targetLaneId",
+      "sourceHeadId",
+      "targetHeadId",
+      "writerId",
+      "digest",
+      "summary"
+    ],
+    "SettlementDecision": [
+      "decisionId",
+      "planId",
+      "orderIndex",
+      "kind",
+      "importCandidateId",
+      "conflictArtifactId",
+      "summary"
+    ],
+    "SettlementDelta": [
+      "deltaId",
+      "requestId",
+      "sourceLaneId",
+      "targetLaneId",
+      "sourceBaseFrameIndex",
+      "sourceTipFrameIndex",
+      "sourceReceiptIds",
+      "targetAnchorFrameIndex",
+      "targetHeadId",
+      "summary"
+    ],
+    "SettlementPlan": [
+      "planId",
+      "requestId",
+      "sourceLaneId",
+      "targetLaneId",
+      "decisionCount",
+      "importCount",
+      "conflictCount",
+      "decisions",
+      "summary"
+    ],
+    "SettlementRequest": [
+      "requestId",
+      "sourceLaneId",
+      "targetLaneId",
+      "sourceHeadId",
+      "targetHeadId",
+      "summary"
+    ],
+    "SettlementResult": [
+      "resultId",
+      "planId",
+      "sourceLaneId",
+      "targetLaneId",
+      "imported",
+      "conflicts",
+      "summary"
+    ]
+  }
+}

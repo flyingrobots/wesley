@@ -4,6 +4,7 @@ import { joinPath } from './path-utils.mjs';
 import {
   CURRENT_MINIMUM_SCOPE,
   RECEIPT_FAMILY_SCOPE,
+  SETTLEMENT_FAMILY_SCOPE,
   buildContinuumWitnessReport,
   resolveContinuumWitnessOptions
 } from './continuum-witness-report.mjs';
@@ -48,6 +49,7 @@ export function configureContinuumWitnessCommander(cmd) {
     .option('--echo-schema <path>', 'Echo schema path')
     .option('--echo-dir <dir>', 'Echo output directory')
     .option('--receipt-family-fixture-dir <dir>', 'Receipt-family fixture directory')
+    .option('--settlement-family-fixture-dir <dir>', 'Settlement-family fixture directory')
     .option('--out <path>', 'Deprecated alias for the conformance witness output path')
     .option('--dry-run', 'Compute the witness without writing the conformance file');
 }
@@ -116,6 +118,9 @@ export async function executeContinuumWitnessCommand({
 }
 
 function defaultOutDirForScope(scope) {
+  if (scope === SETTLEMENT_FAMILY_SCOPE) {
+    return '.wesley-cache/continuum/settlement-family';
+  }
   return scope === RECEIPT_FAMILY_SCOPE
     ? '.wesley-cache/continuum/receipt-family'
     : '.wesley-cache/continuum/local-inspect';
@@ -174,6 +179,7 @@ function ensureRequiredTargets(targets, scope) {
 export {
   CURRENT_MINIMUM_SCOPE,
   RECEIPT_FAMILY_SCOPE,
+  SETTLEMENT_FAMILY_SCOPE,
   buildContinuumWitnessReport,
   resolveContinuumWitnessOptions
 } from './continuum-witness-report.mjs';

@@ -8,14 +8,20 @@ import {
 } from './continuum-witness-support.mjs';
 import { inspectContinuumPublicationBoundary } from './continuum-publication-boundary.mjs';
 import { inspectReceiptFamilySurface } from './continuum-receipt-family-witness.mjs';
+import { inspectSettlementFamilySurface } from './continuum-settlement-family-witness.mjs';
 
 export const CURRENT_MINIMUM_SCOPE = 'current-minimum-shared-surface';
 export const RECEIPT_FAMILY_SCOPE = 'receipt-family';
+export const SETTLEMENT_FAMILY_SCOPE = 'settlement-family';
 
 const WITNESS_KIND = 'wesley.continuum.conformance.v1';
 const RECEIPT_FAMILY_FIXTURE_DIR = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '../../../../test/fixtures/continuum/receipt-family'
+);
+const SETTLEMENT_FAMILY_FIXTURE_DIR = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '../../../../test/fixtures/continuum/settlement-family'
 );
 
 export function resolveContinuumWitnessOptions(options) {
@@ -72,12 +78,40 @@ export function resolveContinuumWitnessOptions(options) {
     };
   }
 
+  if (options.scope === SETTLEMENT_FAMILY_SCOPE) {
+    const schemaPath = options.ttdSchema ?? options.echoSchema ?? 'schemas/continuum-settlement-family.graphql';
+    return {
+      scope: SETTLEMENT_FAMILY_SCOPE,
+      ttdSchemaPath: schemaPath,
+      ttdDir: options.ttdDir ?? '.wesley-cache/continuum/settlement-family/ttd',
+      echoSchemaPath: options.echoSchema ?? options.ttdSchema ?? 'schemas/continuum-settlement-family.graphql',
+      echoDir: options.echoDir ?? '.wesley-cache/continuum/settlement-family/echo',
+      outputPath: options.out ?? '.wesley-cache/continuum/settlement-family/witness/conformance.json',
+      proves: [
+        'schema-to-artifact consistency for the authored settlement-family TTD and Echo legs',
+        'fixture-level conformance for emitted settlement nouns, operations, invariants, and footprints',
+        'cross-leg coherence for the shared settlement family identity and field boundaries',
+        'explicit import-candidate-versus-conflict-artifact separation',
+        'one local publication-boundary anti-shadow check for the authored settlement family'
+      ],
+      doesNotProve: [
+        'runtime settlement correctness',
+        'storage semantics',
+        'debugger semantics',
+        'full Continuum completeness',
+        'observer or substrate semantics outside the authored settlement family'
+      ],
+      receiptFamilyFixtureDir: null,
+      settlementFamilyFixtureDir: options.settlementFamilyFixtureDir ?? SETTLEMENT_FAMILY_FIXTURE_DIR
+    };
+  }
+
   throw new WesleyError(
     'CONTINUUM_WITNESS_INVALID_SCOPE',
-    `Unsupported witness scope "${options.scope}". Expected "${CURRENT_MINIMUM_SCOPE}" or "${RECEIPT_FAMILY_SCOPE}".`,
+    `Unsupported witness scope "${options.scope}". Expected "${CURRENT_MINIMUM_SCOPE}", "${RECEIPT_FAMILY_SCOPE}", or "${SETTLEMENT_FAMILY_SCOPE}".`,
     {
       requestedScope: options.scope,
-      supportedScopes: [CURRENT_MINIMUM_SCOPE, RECEIPT_FAMILY_SCOPE]
+      supportedScopes: [CURRENT_MINIMUM_SCOPE, RECEIPT_FAMILY_SCOPE, SETTLEMENT_FAMILY_SCOPE]
     }
   );
 }
@@ -94,7 +128,8 @@ export async function buildContinuumWitnessReport({
   outputPath,
   proves,
   doesNotProve,
-  receiptFamilyFixtureDir
+  receiptFamilyFixtureDir,
+  settlementFamilyFixtureDir
 }) {
   const checks = [];
   const repoRoot = await resolveRepoRoot(fs);
@@ -110,7 +145,8 @@ export async function buildContinuumWitnessReport({
       echoSchemaPath,
       echoDir,
       realizationRoot,
-      receiptFamilyFixtureDir
+      receiptFamilyFixtureDir,
+      settlementFamilyFixtureDir
     }),
     checks
   });
@@ -127,6 +163,19 @@ export async function buildContinuumWitnessReport({
       checks
     })
     : null;
+  const settlementFamily = scope === SETTLEMENT_FAMILY_SCOPE &&
+    ttdSurface.missingFiles == null &&
+    echoSurface.missingFiles == null
+    ? await inspectSettlementFamilySurface({
+      fs,
+      ttdDir,
+      echoDir,
+      fixtureDir: settlementFamilyFixtureDir,
+      ttdSurface,
+      echoSurface,
+      checks
+    })
+    : null;
 
   const summary = summarizeChecks(checks);
 
@@ -137,9 +186,13 @@ export async function buildContinuumWitnessReport({
     outputPath,
     proves,
     doesNotProve,
-    surfaces: receiptFamily == null
-      ? { ttd: ttdSurface, echo: echoSurface, publicationBoundary }
-      : { ttd: ttdSurface, echo: echoSurface, receiptFamily, publicationBoundary },
+    surfaces: {
+      ttd: ttdSurface,
+      echo: echoSurface,
+      ...(receiptFamily == null ? {} : { receiptFamily }),
+      ...(settlementFamily == null ? {} : { settlementFamily }),
+      publicationBoundary
+    },
     summary,
     checks
   };
@@ -154,7 +207,8 @@ function buildPublicationBoundaryRules({
   echoSchemaPath,
   echoDir,
   realizationRoot,
-  receiptFamilyFixtureDir
+  receiptFamilyFixtureDir,
+  settlementFamilyFixtureDir
 }) {
   if (scope === CURRENT_MINIMUM_SCOPE) {
     return [
@@ -180,6 +234,37 @@ function buildPublicationBoundaryRules({
         generatedRoots: [echoDir].concat(realizationRoot == null ? [] : [realizationRoot]),
         compatRoots: [],
         generatedArtifacts: [
+          'ir.json',
+          'ops.generated.ts',
+          'schemas.generated.ts',
+          'client.generated.ts',
+          'raw_le_codec.generated.ts',
+          'raw_le_codec.generated.rs',
+          'wasm_abi_codec.generated.ts',
+          'wasm_abi_codec.generated.rs',
+          'mock/deliveries.jsonl',
+          'mock/summary.json'
+        ]
+      }
+    ];
+  }
+
+  if (scope === SETTLEMENT_FAMILY_SCOPE) {
+    return [
+      {
+        id: 'settlement-family',
+        authoredHomes: [ttdSchemaPath],
+        generatedRoots: [ttdDir, echoDir].concat(realizationRoot == null ? [] : [realizationRoot]),
+        compatRoots: [settlementFamilyFixtureDir],
+        generatedArtifacts: [
+          'manifest/schema.json',
+          'manifest/contracts.json',
+          'manifest/manifest.json',
+          'manifest/ttd-ir.json',
+          'typescript/types.ts',
+          'typescript/zod.ts',
+          'typescript/registry.ts',
+          'typescript/index.ts',
           'ir.json',
           'ops.generated.ts',
           'schemas.generated.ts',

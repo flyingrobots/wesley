@@ -12,6 +12,7 @@ setup() {
     TTD_SCHEMA="$BATS_TEST_DIRNAME/../../../schemas/ttd-protocol.graphql"
     ECHO_SCHEMA="$BATS_TEST_DIRNAME/../../../schemas/echo-core-types.graphql"
     RECEIPT_SCHEMA="$BATS_TEST_DIRNAME/../../../schemas/continuum-receipt-family.graphql"
+    SETTLEMENT_SCHEMA="$BATS_TEST_DIRNAME/../../../schemas/continuum-settlement-family.graphql"
 }
 
 teardown() {
@@ -63,6 +64,22 @@ teardown() {
     echo "$output" | jq -e '.result.outputPath == "out/current/witness/conformance.json"' >/dev/null
     echo "$output" | jq -e '.result.status == "pass"' >/dev/null
     assert_file_exist out/current/witness/conformance.json
+}
+
+@test "witness verifies a settlement-family output root compiled from one shared schema" {
+    node "$CLI_PATH" compile --schema "$SETTLEMENT_SCHEMA" --target warp-ttd,echo --out-dir out/settlement >/dev/null
+
+    run node "$CLI_PATH" witness \
+        --scope settlement-family \
+        --schema "$SETTLEMENT_SCHEMA" \
+        --out-dir out/settlement \
+        --json
+    assert_success
+    echo "$output" | jq -e '.success == true' >/dev/null
+    echo "$output" | jq -e '.result.scope == "settlement-family"' >/dev/null
+    echo "$output" | jq -e '.result.outputPath == "out/settlement/witness/conformance.json"' >/dev/null
+    echo "$output" | jq -e '.result.status == "pass"' >/dev/null
+    assert_file_exist out/settlement/witness/conformance.json
 }
 
 @test "witness rejects incomplete target sets for cross-leg conformance" {

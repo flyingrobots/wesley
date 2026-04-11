@@ -13,6 +13,7 @@ setup() {
     TTD_SCHEMA="$BATS_TEST_DIRNAME/../../../schemas/ttd-protocol.graphql"
     ECHO_SCHEMA="$BATS_TEST_DIRNAME/../../../schemas/echo-core-types.graphql"
     RECEIPT_SCHEMA="$BATS_TEST_DIRNAME/../../../schemas/continuum-receipt-family.graphql"
+    SETTLEMENT_SCHEMA="$BATS_TEST_DIRNAME/../../../schemas/continuum-settlement-family.graphql"
     RECEIPT_FIXTURE_DIR="$REPO_ROOT/test/fixtures/continuum/receipt-family"
 }
 
@@ -30,6 +31,11 @@ generate_local_inspect_surfaces() {
 generate_receipt_family_surfaces() {
     node "$CLI_PATH" compile-ttd --schema "$RECEIPT_SCHEMA" --out-dir out/receipt-family/ttd >/dev/null
     node "$CLI_PATH" bundle-echo --schema "$RECEIPT_SCHEMA" --out-dir out/receipt-family/echo >/dev/null
+}
+
+generate_settlement_family_surfaces() {
+    node "$CLI_PATH" compile-ttd --schema "$SETTLEMENT_SCHEMA" --out-dir out/settlement-family/ttd >/dev/null
+    node "$CLI_PATH" bundle-echo --schema "$SETTLEMENT_SCHEMA" --out-dir out/settlement-family/echo >/dev/null
 }
 
 run_witness_continuum() {
@@ -313,5 +319,66 @@ EOF
         --out out/witness/receipt-family.json
     assert_failure
     run jq -e '.checks[] | select(.id == "publication-boundary.receipt-family" and .status == "fail")' out/witness/receipt-family.json
+    assert_success
+}
+
+@test "witness-continuum writes a passing settlement-family conformance report" {
+    generate_settlement_family_surfaces
+
+    run node "$CLI_PATH" witness-continuum \
+        --scope settlement-family \
+        --ttd-schema "$SETTLEMENT_SCHEMA" \
+        --echo-schema "$SETTLEMENT_SCHEMA" \
+        --ttd-dir out/settlement-family/ttd \
+        --echo-dir out/settlement-family/echo \
+        --out out/witness/settlement-family.json \
+        --json
+    assert_success
+    echo "$output" | jq -e '.success == true' >/dev/null
+    echo "$output" | jq -e '.result.scope == "settlement-family"' >/dev/null
+    echo "$output" | jq -e '.result.status == "pass"' >/dev/null
+    echo "$output" | jq -e '.result.summary.failed == 0' >/dev/null
+    echo "$output" | jq -e '.result.checks[] | select(.id == "settlement-family.ttd-fixture-shape" and .status == "pass")' >/dev/null
+    echo "$output" | jq -e '.result.checks[] | select(.id == "settlement-family.boundary-fixture" and .status == "pass")' >/dev/null
+    echo "$output" | jq -e '.result.checks[] | select(.id == "settlement-family.decision-separation" and .status == "pass")' >/dev/null
+    echo "$output" | jq -e '.result.checks[] | select(.id == "publication-boundary.settlement-family" and .status == "pass")' >/dev/null
+    assert_file_exist out/witness/settlement-family.json
+}
+
+@test "witness-continuum settlement-family fails when TTD footprints drift from fixture" {
+    generate_settlement_family_surfaces
+
+    jq '.footprints |= map(if .opName == "settleLane" then .writes = ["SettlementResult"] else . end)' \
+        out/settlement-family/ttd/manifest/contracts.json > out/settlement-family/ttd/manifest/contracts.tmp
+    mv out/settlement-family/ttd/manifest/contracts.tmp out/settlement-family/ttd/manifest/contracts.json
+
+    run node "$CLI_PATH" witness-continuum \
+        --scope settlement-family \
+        --ttd-schema "$SETTLEMENT_SCHEMA" \
+        --echo-schema "$SETTLEMENT_SCHEMA" \
+        --ttd-dir out/settlement-family/ttd \
+        --echo-dir out/settlement-family/echo \
+        --out out/witness/settlement-family.json
+    assert_failure
+    run jq -e '.checks[] | select(.id == "settlement-family.ttd-fixture-shape" and .status == "fail")' out/witness/settlement-family.json
+    assert_success
+}
+
+@test "witness-continuum settlement-family fails when import and conflict boundaries blur" {
+    generate_settlement_family_surfaces
+
+    jq '(.types[] | select(.name == "ImportCandidate") | .fields) += [{"name":"reason","type":"ConflictReason","required":true}]' \
+        out/settlement-family/ttd/manifest/schema.json > out/settlement-family/ttd/manifest/schema.tmp
+    mv out/settlement-family/ttd/manifest/schema.tmp out/settlement-family/ttd/manifest/schema.json
+
+    run node "$CLI_PATH" witness-continuum \
+        --scope settlement-family \
+        --ttd-schema "$SETTLEMENT_SCHEMA" \
+        --echo-schema "$SETTLEMENT_SCHEMA" \
+        --ttd-dir out/settlement-family/ttd \
+        --echo-dir out/settlement-family/echo \
+        --out out/witness/settlement-family.json
+    assert_failure
+    run jq -e '.checks[] | select(.id == "settlement-family.decision-separation" and .status == "fail")' out/witness/settlement-family.json
     assert_success
 }

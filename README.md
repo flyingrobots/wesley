@@ -68,14 +68,18 @@ Wesley also now ships a real first Continuum-shaped contract lane:
   and TypeScript outputs
 - `wesley bundle-echo` compiles `schemas/echo-core-types.graphql` into Echo
   bundle artifacts plus a mocked `warp-ttd` deliveries surface
-- the first shared proving family is now authored in Continuum under
-  `<continuum-root>/schemas/continuum-receipt-family.graphql`
-- Wesley still carries a repo-local compatibility copy of that family under
-  `schemas/continuum-receipt-family.graphql` while tests and witnesses are
-  being cut over
-- `wesley witness` verifies the current minimum TTD-plus-Echo surface and
-  receipt-family proof scopes, with `wesley witness-continuum` kept as a
-  compatibility alias
+- Continuum-authored shared families now include:
+  - `<continuum-root>/schemas/continuum-receipt-family.graphql`
+  - `<continuum-root>/schemas/continuum-settlement-family.graphql`
+- Wesley still carries repo-local compatibility copies of those families under
+  `schemas/continuum-receipt-family.graphql` and
+  `schemas/continuum-settlement-family.graphql` while local tests and witnesses
+  are cut over
+- `wesley witness` now verifies three bounded scopes:
+  - the current minimum TTD-plus-Echo surface
+  - the receipt-family proof lane
+  - the settlement-family proof lane
+  `wesley witness-continuum` remains as a compatibility alias
 
 This is not yet the full frozen receipt-family proving lane. The current
 witness-backed minimum subset is still the bounded TTD-plus-Echo pair

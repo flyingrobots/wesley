@@ -148,9 +148,10 @@ claim authorship by default.
 ## Current Limiting Truth
 
 Wesley now carries an authored `schemas/continuum-receipt-family.graphql` and
-a real receipt-family witness scope through
-`wesley witness --scope receipt-family`. That means the repo can now
-prove one local contract-family stack from authored schema through TTD and Echo
-legs to a bounded conformance witness. This note still does not claim that the
-whole Continuum contract surface is frozen, or that Wesley owns runtime,
-storage, debugger, or substrate semantics outside that bounded proof lane.
+`schemas/continuum-settlement-family.graphql`, plus real `receipt-family` and
+`settlement-family` witness scopes through `wesley witness`. That means the
+repo can now prove bounded local contract-family stacks from authored schema
+through TTD and Echo legs to conformance witnesses. This note still does not
+claim that the whole Continuum contract surface is frozen, or that Wesley owns
+runtime, storage, debugger, or substrate semantics outside those bounded proof
+lanes.

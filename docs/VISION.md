@@ -28,11 +28,12 @@ should stay honest about the strength of its evidence.
   `witness-continuum`.
 - The current authored Continuum surface now includes
   `schemas/ttd-protocol.graphql`, `schemas/echo-core-types.graphql`, and the
-  Continuum-authored shared family at
-  `<continuum-root>/schemas/continuum-receipt-family.graphql`.
-- `witness` now proves two bounded scopes: the original
+  Continuum-authored shared families at
+  `<continuum-root>/schemas/continuum-receipt-family.graphql` and
+  `<continuum-root>/schemas/continuum-settlement-family.graphql`.
+- `witness` now proves three bounded scopes: the original
   current-minimum TTD-plus-Echo subset and a fixture-backed
-  `receipt-family` lane for the authored receipt family.
+  `receipt-family` and `settlement-family` lanes for authored shared families.
 - Wesley's Continuum role is explicitly bounded to contract compilation,
   publication boundaries, conformance, and judgment rather than runtime,
   storage, debugger, or substrate-fact ownership.

@@ -1,0 +1,11 @@
+{
+  "importOnlyFields": [
+    "candidateId",
+    "writerId",
+    "digest"
+  ],
+  "conflictOnlyFields": [
+    "artifactId",
+    "reason"
+  ]
+}
