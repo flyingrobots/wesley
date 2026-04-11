@@ -22,11 +22,7 @@ export class WitnessCommand extends WesleyCommand {
   }
 
   configureCommander(cmd) {
-    return configureContinuumWitnessCommander(cmd)
-      .option('--schema <path>', 'Shared authored GraphQL schema path for all selected targets')
-      .option('-o, --out-dir <dir>', 'Root output directory')
-      .option('-t, --target <targets>', 'Comma-separated targets: warp-ttd, echo', 'warp-ttd,echo')
-      .option('--report-out <path>', 'Conformance witness output path (defaults under <out-dir>/witness/conformance.json)');
+    return configureContinuumWitnessCommander(cmd);
   }
 
   async executeCore({ options, logger }) {
@@ -43,6 +39,10 @@ export class WitnessCommand extends WesleyCommand {
 
 export function configureContinuumWitnessCommander(cmd) {
   return cmd
+    .option('--schema <path>', 'Shared authored GraphQL schema path for all selected targets')
+    .option('-o, --out-dir <dir>', 'Root output directory')
+    .option('-t, --target <targets>', 'Comma-separated targets: warp-ttd, echo', 'warp-ttd,echo')
+    .option('--report-out <path>', 'Conformance witness output path (defaults under <out-dir>/witness/conformance.json)')
     .option('--scope <scope>', 'Witness scope', CURRENT_MINIMUM_SCOPE)
     .option('--ttd-schema <path>', 'TTD schema path')
     .option('--ttd-dir <dir>', 'TTD output directory')

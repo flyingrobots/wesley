@@ -3,7 +3,7 @@ import { WesleyError, computeSdlHash, schemaHash } from '@wesley/core';
 import { hashSchema as hashTtdSchema } from '@wesley/core/ttd';
 import { canonicalizeSchemaPath, joinPath } from './path-utils.mjs';
 
-const TTD_REQUIRED_FILES = [
+export const DEFAULT_TTD_REQUIRED_FILES = [
   'manifest/schema.json',
   'manifest/contracts.json',
   'manifest/manifest.json',
@@ -13,7 +13,7 @@ const TTD_REQUIRED_FILES = [
   'typescript/registry.ts',
   'typescript/index.ts'
 ];
-const ECHO_REQUIRED_FILES = [
+export const DEFAULT_ECHO_REQUIRED_FILES = [
   'ir.json',
   'ops.generated.ts',
   'schemas.generated.ts',
@@ -47,10 +47,17 @@ const DELIVERY_OBSERVATION_REQUIRED_FIELDS = [
   ['summary', isNonEmptyString]
 ];
 
-export async function inspectTtdSurface({ fs, crypto, schemaPath, outDir, checks }) {
+export async function inspectTtdSurface({
+  fs,
+  crypto,
+  schemaPath,
+  outDir,
+  checks,
+  requiredFiles = DEFAULT_TTD_REQUIRED_FILES
+}) {
   const schemaContent = await fs.read(schemaPath);
   const expectedHash = hashTtdSchema(schemaContent, { crypto });
-  const requiredPaths = TTD_REQUIRED_FILES.map((file) => joinPath(outDir, file));
+  const requiredPaths = requiredFiles.map((file) => joinPath(outDir, file));
   const missingFiles = await collectMissingFiles(fs, requiredPaths);
   const missingRelative = missingFiles.map((missingPath) => relativePath(outDir, missingPath));
 
@@ -58,11 +65,11 @@ export async function inspectTtdSurface({ fs, crypto, schemaPath, outDir, checks
     'ttd.required-files',
     missingFiles.length === 0,
     missingFiles.length === 0
-      ? `Found all ${TTD_REQUIRED_FILES.length} required TTD artifacts.`
+      ? `Found all ${requiredFiles.length} required TTD artifacts.`
       : `Missing TTD artifacts: ${missingRelative.join(', ')}`,
     {
       outDir,
-      requiredFiles: TTD_REQUIRED_FILES,
+      requiredFiles,
       missingFiles: missingRelative
     }
   ));
@@ -134,7 +141,7 @@ export async function inspectEchoSurface({ fs, schemaPath, outDir, checks }) {
   const schemaContent = await fs.read(schemaPath);
   const expectedHash = await schemaHash(schemaContent);
   const expectedIrHash = await computeSdlHash(schemaContent);
-  const requiredPaths = ECHO_REQUIRED_FILES.map((file) => joinPath(outDir, file));
+  const requiredPaths = DEFAULT_ECHO_REQUIRED_FILES.map((file) => joinPath(outDir, file));
   const missingFiles = await collectMissingFiles(fs, requiredPaths);
   const missingRelative = missingFiles.map((missingPath) => relativePath(outDir, missingPath));
 
@@ -142,11 +149,11 @@ export async function inspectEchoSurface({ fs, schemaPath, outDir, checks }) {
     'echo.required-files',
     missingFiles.length === 0,
     missingFiles.length === 0
-      ? `Found all ${ECHO_REQUIRED_FILES.length} required Echo artifacts and mock outputs.`
+      ? `Found all ${DEFAULT_ECHO_REQUIRED_FILES.length} required Echo artifacts and mock outputs.`
       : `Missing Echo artifacts: ${missingRelative.join(', ')}`,
     {
       outDir,
-      requiredFiles: ECHO_REQUIRED_FILES,
+      requiredFiles: DEFAULT_ECHO_REQUIRED_FILES,
       missingFiles: missingRelative
     }
   ));

@@ -38,6 +38,7 @@ teardown() {
     echo "$output" | jq -e '.result.manifestPath == "out/realization/manifest.json"' >/dev/null
     echo "$output" | jq -e '.result.warpTtd.files | map(.path) | index("out/warp-ttd/manifest/manifest.json") != null' >/dev/null
     echo "$output" | jq -e '.result.echo.outDir == "out/echo"' >/dev/null
+    echo "$output" | jq -e '.result.realizationManifest.generatedLegs.echo.files | map(.path) | index("mock/summary.json") != null' >/dev/null
     echo "$output" | jq -e '.result.schemaHash == .result.warpTtd.schemaHash and .result.schemaHash == .result.echo.schemaHash' >/dev/null
 
     assert_file_exist out/warp-ttd/manifest/schema.json

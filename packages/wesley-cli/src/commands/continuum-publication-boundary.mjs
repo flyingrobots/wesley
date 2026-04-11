@@ -19,9 +19,11 @@ const IGNORED_DIRECTORIES = new Set([
   '.git',
   'node_modules',
   '.pnpm',
+  '.wesley-cache',
   'coverage',
   'dist',
-  '.next'
+  '.next',
+  'out'
 ]);
 const ROOT_OPERATION_TYPE_NAMES = new Set(['Query', 'Mutation', 'Subscription']);
 
@@ -224,7 +226,8 @@ function extractContractNames(schemaContent) {
       definition.kind === Kind.INTERFACE_TYPE_DEFINITION ||
       definition.kind === Kind.INPUT_OBJECT_TYPE_DEFINITION ||
       definition.kind === Kind.UNION_TYPE_DEFINITION ||
-      definition.kind === Kind.ENUM_TYPE_DEFINITION
+      definition.kind === Kind.ENUM_TYPE_DEFINITION ||
+      definition.kind === Kind.SCALAR_TYPE_DEFINITION
     ) {
       if (!ROOT_OPERATION_TYPE_NAMES.has(definition.name.value)) {
         names.push(definition.name.value);

@@ -121,7 +121,7 @@ function buildRealizationManifest({ schemaPath, outDir, targets, summary }) {
           outDir: summary.echo.outDir,
           schemaHash: summary.echo.schemaHash,
           artifactCount: summary.echo.echo.artifactCount,
-          files: summary.echo.echo.files
+          files: buildEchoLegFiles(summary.echo)
         }
     },
     proves: [
@@ -156,4 +156,34 @@ function parseTargets(rawTargets) {
   }
 
   return targets;
+}
+
+function buildEchoLegFiles(echoSummary) {
+  return [
+    ...echoSummary.echo.files,
+    {
+      path: relativeToOutDir(echoSummary.outDir, echoSummary.mock.outputPath),
+      size: null
+    },
+    {
+      path: relativeToOutDir(echoSummary.outDir, echoSummary.mock.summaryPath),
+      size: null
+    }
+  ];
+}
+
+function relativeToOutDir(outDir, targetPath) {
+  if (targetPath == null) {
+    return null;
+  }
+
+  const normalizedOutDir = joinPath(outDir);
+  const normalizedTargetPath = joinPath(targetPath);
+  if (normalizedTargetPath === normalizedOutDir) {
+    return '.';
+  }
+  if (normalizedTargetPath.startsWith(`${normalizedOutDir}/`)) {
+    return normalizedTargetPath.slice(normalizedOutDir.length + 1);
+  }
+  return normalizedTargetPath;
 }

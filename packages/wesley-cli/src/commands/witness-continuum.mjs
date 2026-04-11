@@ -2,7 +2,7 @@ import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import {
   configureContinuumWitnessCommander,
   executeContinuumWitnessCommand,
-  resolveContinuumWitnessOptions
+  resolveGenericContinuumWitnessOptions
 } from './witness.mjs';
 
 export class WitnessContinuumCommand extends WesleyCommand {
@@ -19,7 +19,7 @@ export class WitnessContinuumCommand extends WesleyCommand {
   }
 
   async executeCore({ options, logger }) {
-    const resolved = resolveContinuumWitnessOptions(options);
+    const resolved = resolveGenericContinuumWitnessOptions(options);
     return executeContinuumWitnessCommand({
       ctx: this.ctx,
       options,

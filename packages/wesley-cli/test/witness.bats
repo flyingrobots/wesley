@@ -48,6 +48,50 @@ teardown() {
     assert_file_exist out/proof/witness/conformance.json
 }
 
+@test "witness ignores unrelated generated-looking artifacts under ignored cache and output directories" {
+    node "$CLI_PATH" compile --schema "$RECEIPT_SCHEMA" --target warp-ttd,echo --out-dir out/proof >/dev/null
+
+    mkdir -p .wesley-cache/continuum/external-proof/warp-ttd/typescript out/echo
+    cat > .wesley-cache/continuum/external-proof/warp-ttd/typescript/types.ts <<'EOF'
+export interface Receipt {
+  receiptId: string;
+}
+EOF
+    cat > out/echo/ops.generated.ts <<'EOF'
+export interface Receipt {
+  receiptId: string;
+}
+EOF
+
+    run node "$CLI_PATH" witness \
+        --scope receipt-family \
+        --schema "$RECEIPT_SCHEMA" \
+        --out-dir out/proof \
+        --json
+    assert_success
+    echo "$output" | jq -e '.result.status == "pass"' >/dev/null
+}
+
+@test "witness accepts warp-ttd roots compiled with manifest and rust emits only" {
+    node "$CLI_PATH" compile \
+        --schema "$RECEIPT_SCHEMA" \
+        --target warp-ttd,echo \
+        --emit manifest,rust \
+        --out-dir out/proof >/dev/null
+
+    assert_file_exist out/proof/warp-ttd/manifest/schema.json
+    assert_file_exist out/proof/warp-ttd/rust/README.md
+    assert_file_not_exist out/proof/warp-ttd/typescript/types.ts
+
+    run node "$CLI_PATH" witness \
+        --scope receipt-family \
+        --schema "$RECEIPT_SCHEMA" \
+        --out-dir out/proof \
+        --json
+    assert_success
+    echo "$output" | jq -e '.result.status == "pass"' >/dev/null
+}
+
 @test "witness verifies current-minimum outputs from one root with per-leg schema overrides" {
     node "$CLI_PATH" compile-ttd --schema "$TTD_SCHEMA" --out-dir out/current/warp-ttd >/dev/null
     node "$CLI_PATH" bundle-echo --schema "$ECHO_SCHEMA" --out-dir out/current/echo >/dev/null
@@ -80,6 +124,40 @@ teardown() {
     echo "$output" | jq -e '.result.outputPath == "out/settlement/witness/conformance.json"' >/dev/null
     echo "$output" | jq -e '.result.status == "pass"' >/dev/null
     assert_file_exist out/settlement/witness/conformance.json
+}
+
+@test "witness fails when receipt-family gains a handwritten scalar shadow contract" {
+    node "$CLI_PATH" compile --schema "$RECEIPT_SCHEMA" --target warp-ttd,echo --out-dir out/proof >/dev/null
+
+    mkdir -p shadow
+    cat > shadow/hash-shadow.graphql <<'EOF'
+scalar Hash
+EOF
+
+    run node "$CLI_PATH" witness \
+        --scope receipt-family \
+        --schema "$RECEIPT_SCHEMA" \
+        --out-dir out/proof
+    assert_failure
+    run jq -e '.checks[] | select(.id == "publication-boundary.receipt-family" and .status == "fail")' out/proof/witness/conformance.json
+    assert_success
+}
+
+@test "witness fails when settlement-family gains a handwritten scalar shadow contract" {
+    node "$CLI_PATH" compile --schema "$SETTLEMENT_SCHEMA" --target warp-ttd,echo --out-dir out/settlement >/dev/null
+
+    mkdir -p shadow
+    cat > shadow/hash-shadow.graphql <<'EOF'
+scalar Hash
+EOF
+
+    run node "$CLI_PATH" witness \
+        --scope settlement-family \
+        --schema "$SETTLEMENT_SCHEMA" \
+        --out-dir out/settlement
+    assert_failure
+    run jq -e '.checks[] | select(.id == "publication-boundary.settlement-family" and .status == "fail")' out/settlement/witness/conformance.json
+    assert_success
 }
 
 @test "witness rejects incomplete target sets for cross-leg conformance" {

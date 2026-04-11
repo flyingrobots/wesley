@@ -79,7 +79,7 @@ Wesley also now ships a real first Continuum-shaped contract lane:
   - the current minimum TTD-plus-Echo surface
   - the receipt-family proof lane
   - the settlement-family proof lane
-  `wesley witness-continuum` remains as a compatibility alias
+- `wesley witness-continuum` remains as a compatibility alias
 
 This is not yet the full frozen receipt-family proving lane. The current
 witness-backed minimum subset is still the bounded TTD-plus-Echo pair

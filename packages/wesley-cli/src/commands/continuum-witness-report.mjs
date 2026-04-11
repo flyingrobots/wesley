@@ -1,9 +1,13 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WesleyError } from '@wesley/core';
+import { joinPath } from './path-utils.mjs';
 import {
+  DEFAULT_ECHO_REQUIRED_FILES,
+  DEFAULT_TTD_REQUIRED_FILES,
   inspectEchoSurface,
   inspectTtdSurface,
+  readJson,
   summarizeChecks
 } from './continuum-witness-support.mjs';
 import { inspectContinuumPublicationBoundary } from './continuum-publication-boundary.mjs';
@@ -133,7 +137,20 @@ export async function buildContinuumWitnessReport({
 }) {
   const checks = [];
   const repoRoot = await resolveRepoRoot(fs);
-  const ttdSurface = await inspectTtdSurface({ fs, crypto, schemaPath: ttdSchemaPath, outDir: ttdDir, checks });
+  const realizationManifest = await loadRealizationManifest({ fs, realizationRoot });
+  const ttdRequiredFiles = resolveLegRequiredFiles({
+    leg: realizationManifest?.generatedLegs?.warpTtd,
+    legOutDir: ttdDir,
+    fallback: DEFAULT_TTD_REQUIRED_FILES
+  });
+  const ttdSurface = await inspectTtdSurface({
+    fs,
+    crypto,
+    schemaPath: ttdSchemaPath,
+    outDir: ttdDir,
+    checks,
+    requiredFiles: ttdRequiredFiles
+  });
   const echoSurface = await inspectEchoSurface({ fs, schemaPath: echoSchemaPath, outDir: echoDir, checks });
   const publicationBoundary = await inspectContinuumPublicationBoundary({
     fs,
@@ -145,6 +162,7 @@ export async function buildContinuumWitnessReport({
       echoSchemaPath,
       echoDir,
       realizationRoot,
+      realizationManifest,
       receiptFamilyFixtureDir,
       settlementFamilyFixtureDir
     }),
@@ -207,9 +225,26 @@ function buildPublicationBoundaryRules({
   echoSchemaPath,
   echoDir,
   realizationRoot,
+  realizationManifest,
   receiptFamilyFixtureDir,
   settlementFamilyFixtureDir
 }) {
+  const ttdGeneratedArtifacts = resolveLegGeneratedArtifacts({
+    leg: realizationManifest?.generatedLegs?.warpTtd,
+    legOutDir: ttdDir,
+    fallback: DEFAULT_TTD_REQUIRED_FILES
+  });
+  const echoGeneratedArtifacts = resolveLegGeneratedArtifacts({
+    leg: realizationManifest?.generatedLegs?.echo,
+    legOutDir: echoDir,
+    fallback: DEFAULT_ECHO_REQUIRED_FILES
+  });
+  const generatedArtifacts = [...new Set([
+    ...ttdGeneratedArtifacts,
+    ...echoGeneratedArtifacts,
+    'manifest.json'
+  ])];
+
   if (scope === CURRENT_MINIMUM_SCOPE) {
     return [
       {
@@ -217,34 +252,14 @@ function buildPublicationBoundaryRules({
         authoredHomes: [ttdSchemaPath],
         generatedRoots: [ttdDir].concat(realizationRoot == null ? [] : [realizationRoot]),
         compatRoots: [],
-        generatedArtifacts: [
-          'manifest/schema.json',
-          'manifest/contracts.json',
-          'manifest/manifest.json',
-          'manifest/ttd-ir.json',
-          'typescript/types.ts',
-          'typescript/zod.ts',
-          'typescript/registry.ts',
-          'typescript/index.ts'
-        ]
+        generatedArtifacts: ttdGeneratedArtifacts
       },
       {
         id: 'echo-core-types',
         authoredHomes: [echoSchemaPath],
         generatedRoots: [echoDir].concat(realizationRoot == null ? [] : [realizationRoot]),
         compatRoots: [],
-        generatedArtifacts: [
-          'ir.json',
-          'ops.generated.ts',
-          'schemas.generated.ts',
-          'client.generated.ts',
-          'raw_le_codec.generated.ts',
-          'raw_le_codec.generated.rs',
-          'wasm_abi_codec.generated.ts',
-          'wasm_abi_codec.generated.rs',
-          'mock/deliveries.jsonl',
-          'mock/summary.json'
-        ]
+        generatedArtifacts: echoGeneratedArtifacts
       }
     ];
   }
@@ -256,26 +271,7 @@ function buildPublicationBoundaryRules({
         authoredHomes: [ttdSchemaPath],
         generatedRoots: [ttdDir, echoDir].concat(realizationRoot == null ? [] : [realizationRoot]),
         compatRoots: [settlementFamilyFixtureDir],
-        generatedArtifacts: [
-          'manifest/schema.json',
-          'manifest/contracts.json',
-          'manifest/manifest.json',
-          'manifest/ttd-ir.json',
-          'typescript/types.ts',
-          'typescript/zod.ts',
-          'typescript/registry.ts',
-          'typescript/index.ts',
-          'ir.json',
-          'ops.generated.ts',
-          'schemas.generated.ts',
-          'client.generated.ts',
-          'raw_le_codec.generated.ts',
-          'raw_le_codec.generated.rs',
-          'wasm_abi_codec.generated.ts',
-          'wasm_abi_codec.generated.rs',
-          'mock/deliveries.jsonl',
-          'mock/summary.json'
-        ]
+        generatedArtifacts
       }
     ];
   }
@@ -286,26 +282,7 @@ function buildPublicationBoundaryRules({
       authoredHomes: [ttdSchemaPath],
       generatedRoots: [ttdDir, echoDir].concat(realizationRoot == null ? [] : [realizationRoot]),
       compatRoots: [receiptFamilyFixtureDir],
-      generatedArtifacts: [
-        'manifest/schema.json',
-        'manifest/contracts.json',
-        'manifest/manifest.json',
-        'manifest/ttd-ir.json',
-        'typescript/types.ts',
-        'typescript/zod.ts',
-        'typescript/registry.ts',
-        'typescript/index.ts',
-        'ir.json',
-        'ops.generated.ts',
-        'schemas.generated.ts',
-        'client.generated.ts',
-        'raw_le_codec.generated.ts',
-        'raw_le_codec.generated.rs',
-        'wasm_abi_codec.generated.ts',
-        'wasm_abi_codec.generated.rs',
-        'mock/deliveries.jsonl',
-        'mock/summary.json'
-      ]
+      generatedArtifacts
     }
   ];
 }
@@ -315,4 +292,54 @@ async function resolveRepoRoot(fs) {
     return fs.resolve('.');
   }
   return process.cwd();
+}
+
+async function loadRealizationManifest({ fs, realizationRoot }) {
+  if (realizationRoot == null) {
+    return null;
+  }
+
+  const manifestPath = joinPath(realizationRoot, 'manifest.json');
+  if (!(await fs.exists(manifestPath))) {
+    return null;
+  }
+
+  return readJson(fs, manifestPath);
+}
+
+function resolveLegRequiredFiles({ leg, legOutDir, fallback }) {
+  const files = resolveLegGeneratedArtifacts({ leg, legOutDir, fallback: [] });
+  return files.length === 0 ? fallback : files;
+}
+
+function resolveLegGeneratedArtifacts({ leg, legOutDir, fallback }) {
+  const files = leg?.files
+    ?.map((file) => normalizeLegArtifactPath(file?.path, legOutDir))
+    .filter(Boolean);
+  if (!Array.isArray(files) || files.length === 0) {
+    return fallback;
+  }
+  return [...new Set(files)].sort((left, right) => left.localeCompare(right));
+}
+
+function normalizeLegArtifactPath(filePath, legOutDir) {
+  if (typeof filePath !== 'string' || filePath.trim().length === 0) {
+    return null;
+  }
+
+  const artifactPath = normalizeSeparators(filePath.trim());
+  const resolvedLegOutDir = normalizeSeparators(path.resolve(legOutDir));
+  const resolvedArtifactPath = normalizeSeparators(path.resolve(artifactPath));
+  if (
+    resolvedArtifactPath === resolvedLegOutDir ||
+    resolvedArtifactPath.startsWith(`${resolvedLegOutDir}/`)
+  ) {
+    return normalizeSeparators(path.relative(resolvedLegOutDir, resolvedArtifactPath));
+  }
+
+  return artifactPath.replace(/^\.\//, '');
+}
+
+function normalizeSeparators(value) {
+  return value.replace(/\\/g, '/');
 }

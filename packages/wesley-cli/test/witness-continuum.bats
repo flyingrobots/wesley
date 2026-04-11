@@ -49,9 +49,27 @@ run_witness_continuum() {
     run node "$CLI_PATH" witness-continuum --help
     assert_success
     assert_output --partial "Verify current Continuum minimum-surface coherence"
+    assert_output --partial "--schema"
+    assert_output --partial "--target"
+    assert_output --partial "--out-dir"
+    assert_output --partial "--report-out"
     assert_output --partial "--scope"
     assert_output --partial "--ttd-schema"
     assert_output --partial "--echo-dir"
+}
+
+@test "witness-continuum accepts the root-oriented receipt-family interface" {
+    node "$CLI_PATH" compile --schema "$RECEIPT_SCHEMA" --target warp-ttd,echo --out-dir out/proof >/dev/null
+
+    run node "$CLI_PATH" witness-continuum \
+        --scope receipt-family \
+        --schema "$RECEIPT_SCHEMA" \
+        --out-dir out/proof \
+        --json
+    assert_success
+    echo "$output" | jq -e '.result.scope == "receipt-family"' >/dev/null
+    echo "$output" | jq -e '.result.outputPath == "out/proof/witness/conformance.json"' >/dev/null
+    echo "$output" | jq -e '.result.status == "pass"' >/dev/null
 }
 
 @test "witness-continuum writes a passing conformance report" {
@@ -322,6 +340,26 @@ EOF
     assert_success
 }
 
+@test "witness-continuum receipt-family fails when a handwritten scalar shadow escapes the authored home" {
+    generate_receipt_family_surfaces
+
+    mkdir -p shadow
+    cat > shadow/hash-shadow.graphql <<'EOF'
+scalar Hash
+EOF
+
+    run node "$CLI_PATH" witness-continuum \
+        --scope receipt-family \
+        --ttd-schema "$RECEIPT_SCHEMA" \
+        --echo-schema "$RECEIPT_SCHEMA" \
+        --ttd-dir out/receipt-family/ttd \
+        --echo-dir out/receipt-family/echo \
+        --out out/witness/receipt-family.json
+    assert_failure
+    run jq -e '.checks[] | select(.id == "publication-boundary.receipt-family" and .status == "fail")' out/witness/receipt-family.json
+    assert_success
+}
+
 @test "witness-continuum writes a passing settlement-family conformance report" {
     generate_settlement_family_surfaces
 
@@ -380,5 +418,25 @@ EOF
         --out out/witness/settlement-family.json
     assert_failure
     run jq -e '.checks[] | select(.id == "settlement-family.decision-separation" and .status == "fail")' out/witness/settlement-family.json
+    assert_success
+}
+
+@test "witness-continuum settlement-family fails when a handwritten scalar shadow escapes the authored home" {
+    generate_settlement_family_surfaces
+
+    mkdir -p shadow
+    cat > shadow/hash-shadow.graphql <<'EOF'
+scalar Hash
+EOF
+
+    run node "$CLI_PATH" witness-continuum \
+        --scope settlement-family \
+        --ttd-schema "$SETTLEMENT_SCHEMA" \
+        --echo-schema "$SETTLEMENT_SCHEMA" \
+        --ttd-dir out/settlement-family/ttd \
+        --echo-dir out/settlement-family/echo \
+        --out out/witness/settlement-family.json
+    assert_failure
+    run jq -e '.checks[] | select(.id == "publication-boundary.settlement-family" and .status == "fail")' out/witness/settlement-family.json
     assert_success
 }
