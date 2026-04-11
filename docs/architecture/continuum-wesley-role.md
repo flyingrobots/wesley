@@ -67,6 +67,13 @@ Wesley is responsible for making contract drift inspectable. The compiler path
 is not enough by itself; the repo also needs a witness lane showing that the
 generated surfaces are deterministic and coherent.
 
+Wesley therefore carries two witness strengths:
+
+- a **compile witness** emitted by `wesley compile`, proving build traceability
+  for one authored schema and its generated legs
+- a **conformance witness** emitted by `wesley witness-continuum`, proving one
+  bounded cross-leg coherence and anti-shadow check set
+
 Current repo-visible evidence:
 
 - `packages/wesley-cli/test/compile-ttd.bats`
@@ -79,7 +86,8 @@ Current rule:
 - if a shared noun family is in Wesley's Continuum surface, schema edits happen
   at the authored home and conformance evidence must still pass after
   regeneration
-- witness output is proof of one bounded compile path, not proof that the full
+- compile witness is not conformance witness
+- conformance witness output is proof of one bounded compile path, not proof that the full
   platform is finished
 
 ### 4. Judgment Bridge

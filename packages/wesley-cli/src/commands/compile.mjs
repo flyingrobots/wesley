@@ -1,11 +1,12 @@
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import { WesleyError } from '@wesley/core';
-import { joinPath } from './path-utils.mjs';
+import { canonicalizeSchemaPath, joinPath } from './path-utils.mjs';
 import { runCompileTtd } from './compile-ttd.mjs';
 import { runBundleEcho } from './bundle-echo.mjs';
 
 const VALID_TARGETS = ['warp-ttd', 'echo'];
 const LEGACY_TARGET_ALIASES = new Map([['ttd', 'warp-ttd']]);
+const COMPILE_WITNESS_KIND = 'wesley.compile.witness.v1';
 
 export class CompileCommand extends WesleyCommand {
   constructor(ctx) {
@@ -24,17 +25,20 @@ export class CompileCommand extends WesleyCommand {
       .option('-o, --out-dir <dir>', 'Root output directory', 'out')
       .option('-t, --target <targets>', 'Comma-separated targets: warp-ttd, echo', 'warp-ttd,echo')
       .option('-e, --emit <targets>', 'Comma-separated warp-ttd emits: manifest, typescript, rust', 'manifest,typescript')
+      .option('--witness-out <path>', 'Compile witness output path (defaults under <out-dir>/witness/compile.json)')
       .option('--schema-root <dir>', 'Root directory for resolving @wes_import paths')
       .option('--dry-run', 'Show what would be generated without writing files');
   }
 
   async executeCore(context) {
     const targets = parseTargets(context.options.target);
+    const witnessPath = context.options.witnessOut ?? joinPath(context.options.outDir, 'witness', 'compile.json');
     const summary = {
       schemaPath: context.schemaPath,
       outDir: context.options.outDir,
       dryRun: Boolean(context.options.dryRun),
-      targets
+      targets,
+      witnessPath
     };
 
     if (targets.includes('warp-ttd')) {
@@ -77,8 +81,61 @@ export class CompileCommand extends WesleyCommand {
       summary.schemaHash = schemaHashes[0];
     }
 
+    const witness = buildCompileWitness({
+      schemaPath: context.schemaPath,
+      outDir: context.options.outDir,
+      targets,
+      summary
+    });
+    summary.witness = witness;
+
+    if (!context.options.dryRun) {
+      await this.ctx.fs.write(witnessPath, JSON.stringify(witness, null, 2) + '\n');
+    }
+
     return summary;
   }
+}
+
+function buildCompileWitness({ schemaPath, outDir, targets, summary }) {
+  return {
+    kind: COMPILE_WITNESS_KIND,
+    schemaPath,
+    canonicalSchemaPath: canonicalizeSchemaPath(schemaPath),
+    schemaHash: summary.schemaHash ?? null,
+    outDir,
+    targets,
+    generatedLegs: {
+      warpTtd: summary.warpTtd == null
+        ? null
+        : {
+          outDir: joinPath(outDir, 'warp-ttd'),
+          schemaHash: summary.warpTtd.schemaHash,
+          targets: summary.warpTtd.targets,
+          files: summary.warpTtd.files
+        },
+      echo: summary.echo == null
+        ? null
+        : {
+          outDir: summary.echo.outDir,
+          schemaHash: summary.echo.schemaHash,
+          artifactCount: summary.echo.echo.artifactCount,
+          files: summary.echo.echo.files
+        }
+    },
+    proves: [
+      'one authored schema path was compiled into one or more generated consumer legs',
+      'generated legs share one authored schema hash',
+      'the emitted files for each selected target are inspectable from this witness'
+    ],
+    doesNotProve: [
+      'cross-leg conformance beyond shared schema identity',
+      'runtime semantics',
+      'storage semantics',
+      'debugger semantics',
+      'compile-time footprint safety in neighboring runtimes'
+    ]
+  };
 }
 
 function parseTargets(rawTargets) {
