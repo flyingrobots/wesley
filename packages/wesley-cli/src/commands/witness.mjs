@@ -9,9 +9,6 @@ import {
   resolveContinuumWitnessOptions
 } from './continuum-witness-report.mjs';
 
-const VALID_TARGETS = ['warp-ttd', 'echo'];
-const LEGACY_TARGET_ALIASES = new Map([['ttd', 'warp-ttd']]);
-
 export class WitnessCommand extends WesleyCommand {
   constructor(ctx) {
     super(
@@ -41,7 +38,6 @@ export function configureContinuumWitnessCommander(cmd) {
   return cmd
     .option('--schema <path>', 'Shared authored GraphQL schema path for all selected targets')
     .option('-o, --out-dir <dir>', 'Root output directory')
-    .option('-t, --target <targets>', 'Comma-separated targets: warp-ttd, echo', 'warp-ttd,echo')
     .option('--report-out <path>', 'Conformance witness output path (defaults under <out-dir>/witness/conformance.json)')
     .option('--scope <scope>', 'Witness scope', CURRENT_MINIMUM_SCOPE)
     .option('--ttd-schema <path>', 'TTD schema path')
@@ -57,10 +53,7 @@ export function configureContinuumWitnessCommander(cmd) {
 export function resolveGenericContinuumWitnessOptions(options) {
   const scope = options.scope ?? CURRENT_MINIMUM_SCOPE;
   const outDir = options.outDir ?? defaultOutDirForScope(scope);
-  const targets = parseTargets(options.target ?? 'warp-ttd,echo');
   const sharedSchemaPath = normalizeOptionalPath(options.schema);
-
-  ensureRequiredTargets(targets, scope);
 
   return {
     ...resolveContinuumWitnessOptions({
@@ -73,8 +66,7 @@ export function resolveGenericContinuumWitnessOptions(options) {
       out: options.reportOut ?? options.out ?? joinPath(outDir, 'witness', 'conformance.json')
     }),
     outDir,
-    realizationRoot: joinPath(outDir, 'realization'),
-    targets
+    realizationRoot: joinPath(outDir, 'realization')
   };
 }
 
@@ -132,48 +124,6 @@ function normalizeOptionalPath(value) {
   }
   const text = String(value).trim();
   return text.length === 0 ? undefined : text;
-}
-
-function parseTargets(rawTargets) {
-  const targets = String(rawTargets)
-    .split(',')
-    .map((target) => LEGACY_TARGET_ALIASES.get(target.trim().toLowerCase()) ?? target.trim().toLowerCase())
-    .filter(Boolean);
-
-  if (targets.length === 0) {
-    throw new WesleyError(
-      'CONTINUUM_WITNESS_INVALID_TARGET',
-      `At least one target is required. Valid targets: ${VALID_TARGETS.join(', ')}`
-    );
-  }
-
-  for (const target of targets) {
-    if (!VALID_TARGETS.includes(target)) {
-      throw new WesleyError(
-        'CONTINUUM_WITNESS_INVALID_TARGET',
-        `Invalid target: "${target}". Valid targets: ${VALID_TARGETS.join(', ')}`
-      );
-    }
-  }
-
-  return [...new Set(targets)];
-}
-
-function ensureRequiredTargets(targets, scope) {
-  const missingTargets = VALID_TARGETS.filter((target) => !targets.includes(target));
-  if (missingTargets.length === 0) {
-    return;
-  }
-
-  throw new WesleyError(
-    'CONTINUUM_WITNESS_TARGETS_INCOMPLETE',
-    `Witness scope "${scope}" currently requires both generated legs: ${VALID_TARGETS.join(', ')}.`,
-    {
-      requestedTargets: targets,
-      requiredTargets: VALID_TARGETS,
-      missingTargets
-    }
-  );
 }
 
 export {

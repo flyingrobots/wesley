@@ -23,15 +23,24 @@ const IGNORED_DIRECTORIES = new Set([
   'coverage',
   'dist',
   '.next',
-  'out'
+  'out',
+  'test',
+  'tests'
 ]);
 const ROOT_OPERATION_TYPE_NAMES = new Set(['Query', 'Mutation', 'Subscription']);
 
-export async function inspectContinuumPublicationBoundary({ fs, repoRoot, rules, checks }) {
+export async function inspectContinuumPublicationBoundary({
+  fs,
+  repoRoot,
+  rules,
+  reservedRoots = [],
+  checks
+}) {
   const derivedRules = [];
   for (const rule of rules) {
     derivedRules.push(await deriveRuleMetadata(fs, rule));
   }
+  const derivedReservedRoots = await Promise.all(reservedRoots.map((item) => resolvePath(fs, item)));
 
   const files = await collectCandidateFiles(fs, repoRoot);
   const reservedBoundaries = buildReservedBoundaries(derivedRules);
@@ -46,6 +55,10 @@ export async function inspectContinuumPublicationBoundary({ fs, repoRoot, rules,
     for (const filePath of files) {
       const authority = classifyAuthority(filePath, derived);
       if (authority === 'authored' || authority === 'generated' || authority === 'compat') {
+        continue;
+      }
+
+      if (derivedReservedRoots.some((root) => samePath(filePath, root) || isWithin(filePath, root))) {
         continue;
       }
 
@@ -162,6 +175,17 @@ async function collectCompatMirrorFiles(fs, compatRoots) {
   const seen = new Set();
 
   for (const root of compatRoots) {
+    const normalizedRoot = await canonicalizePath(root);
+    if (seen.has(normalizedRoot) || !(await fs.exists(root))) {
+      continue;
+    }
+
+    if (CONTRACT_FILE_EXTENSIONS.has(path.extname(root))) {
+      seen.add(normalizedRoot);
+      mirrors.push(root);
+      continue;
+    }
+
     const files = await collectCandidateFiles(fs, root);
     for (const filePath of files) {
       const normalized = await canonicalizePath(filePath);

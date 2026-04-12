@@ -15,6 +15,7 @@ setup() {
 
     # Set CLI path
     CLI_PATH="$BATS_TEST_DIRNAME/../../wesley-host-node/bin/wesley.mjs"
+    MAIN_MODULE="$BATS_TEST_DIRNAME/../src/main.mjs"
 
     # Path to TTD test fixture
     TTD_SCHEMA="$BATS_TEST_DIRNAME/../../wesley-generator-ttd/test/fixtures/basic-protocol/basic-protocol.graphql"
@@ -53,6 +54,33 @@ EOF
     assert_output --partial "--out-dir"
     assert_output --partial "--target"
     assert_output --partial "--dry-run"
+}
+
+@test "legacy main surface delegates to the discovered compile-ttd command set" {
+    create_minimal_ttd_schema
+    run node --input-type=module <<EOF
+import { main } from '${MAIN_MODULE}';
+import { createNodeRuntime } from '${BATS_TEST_DIRNAME}/../../wesley-host-node/src/adapters/createNodeRuntime.mjs';
+
+const runtime = await createNodeRuntime();
+const processAdapter = {
+  ...process,
+  on() {},
+  exit() {},
+  stderr: { write(chunk) { process.stdout.write(String(chunk)); } }
+};
+
+const exitCode = await main(['node', 'wesley', 'compile-ttd', '--schema', 'ttd-schema.graphql', '--dry-run', '--json'], {
+  ...runtime,
+  process: processAdapter,
+  logger: runtime.logger.child({ level: 100 })
+});
+
+console.log(JSON.stringify({ exitCode }));
+EOF
+    assert_success
+    assert_output --partial '"schemaHash"'
+    echo "$output" | jq -e '.exitCode == 0' >/dev/null
 }
 
 @test "compile-ttd dry-run shows files" {

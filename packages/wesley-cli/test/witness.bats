@@ -9,6 +9,7 @@ setup() {
     cd "$TEST_TEMP_DIR"
 
     CLI_PATH="$BATS_TEST_DIRNAME/../../wesley-host-node/bin/wesley.mjs"
+    REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../../.." && pwd)"
     TTD_SCHEMA="$BATS_TEST_DIRNAME/../../../schemas/ttd-protocol.graphql"
     ECHO_SCHEMA="$BATS_TEST_DIRNAME/../../../schemas/echo-core-types.graphql"
     RECEIPT_SCHEMA="$BATS_TEST_DIRNAME/../../../schemas/continuum-receipt-family.graphql"
@@ -26,7 +27,6 @@ teardown() {
     assert_success
     assert_output --partial "Verify generated contract legs against one shared Continuum witness scope"
     assert_output --partial "--schema"
-    assert_output --partial "--target"
     assert_output --partial "--out-dir"
     assert_output --partial "--report-out"
 }
@@ -48,6 +48,15 @@ teardown() {
     assert_file_exist out/proof/witness/conformance.json
 }
 
+@test "witness passes from the Wesley repo root against an external Continuum-authored receipt family" {
+    PROOF_ROOT="$TEST_TEMP_DIR/out/root-proof"
+    node "$CLI_PATH" compile --schema "$RECEIPT_SCHEMA" --target warp-ttd,echo --out-dir "$PROOF_ROOT" >/dev/null
+
+    run bash -c "cd '$REPO_ROOT' && node '$CLI_PATH' witness --scope receipt-family --schema '$RECEIPT_SCHEMA' --out-dir '$PROOF_ROOT' --json"
+    assert_success
+    echo "$output" | jq -e '.result.status == "pass"' >/dev/null
+}
+
 @test "witness ignores unrelated generated-looking artifacts under ignored cache and output directories" {
     node "$CLI_PATH" compile --schema "$RECEIPT_SCHEMA" --target warp-ttd,echo --out-dir out/proof >/dev/null
 
@@ -67,6 +76,24 @@ EOF
         --scope receipt-family \
         --schema "$RECEIPT_SCHEMA" \
         --out-dir out/proof \
+        --json
+    assert_success
+    echo "$output" | jq -e '.result.status == "pass"' >/dev/null
+}
+
+@test "witness accepts copied leg overrides alongside a root realization manifest" {
+    node "$CLI_PATH" compile --schema "$RECEIPT_SCHEMA" --target warp-ttd,echo --out-dir out/original >/dev/null
+
+    mkdir -p out/copied
+    cp -R out/original/warp-ttd out/copied/ttd
+    cp -R out/original/echo out/copied/echo
+
+    run node "$CLI_PATH" witness \
+        --scope receipt-family \
+        --schema "$RECEIPT_SCHEMA" \
+        --out-dir out/original \
+        --ttd-dir out/copied/ttd \
+        --echo-dir out/copied/echo \
         --json
     assert_success
     echo "$output" | jq -e '.result.status == "pass"' >/dev/null
@@ -108,6 +135,16 @@ EOF
     echo "$output" | jq -e '.result.outputPath == "out/current/witness/conformance.json"' >/dev/null
     echo "$output" | jq -e '.result.status == "pass"' >/dev/null
     assert_file_exist out/current/witness/conformance.json
+}
+
+@test "witness passes from the Wesley repo root for the current minimum surface" {
+    PROOF_ROOT="$TEST_TEMP_DIR/out/current-root"
+    node "$CLI_PATH" compile-ttd --schema "$TTD_SCHEMA" --out-dir "$PROOF_ROOT/warp-ttd" >/dev/null
+    node "$CLI_PATH" bundle-echo --schema "$ECHO_SCHEMA" --out-dir "$PROOF_ROOT/echo" >/dev/null
+
+    run bash -c "cd '$REPO_ROOT' && node '$CLI_PATH' witness --scope current-minimum-shared-surface --ttd-schema '$TTD_SCHEMA' --echo-schema '$ECHO_SCHEMA' --out-dir '$PROOF_ROOT' --json"
+    assert_success
+    echo "$output" | jq -e '.result.status == "pass"' >/dev/null
 }
 
 @test "witness verifies a settlement-family output root compiled from one shared schema" {
@@ -158,14 +195,4 @@ EOF
     assert_failure
     run jq -e '.checks[] | select(.id == "publication-boundary.settlement-family" and .status == "fail")' out/settlement/witness/conformance.json
     assert_success
-}
-
-@test "witness rejects incomplete target sets for cross-leg conformance" {
-    run node "$CLI_PATH" witness \
-        --scope receipt-family \
-        --schema "$RECEIPT_SCHEMA" \
-        --target warp-ttd \
-        --out-dir out/proof
-    assert_failure
-    assert_output --partial 'requires both generated legs: warp-ttd, echo'
 }

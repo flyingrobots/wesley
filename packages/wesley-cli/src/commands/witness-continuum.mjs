@@ -10,7 +10,7 @@ export class WitnessContinuumCommand extends WesleyCommand {
     super(
       ctx,
       'witness-continuum',
-      'Verify current Continuum minimum-surface coherence and receipt-family witness scopes (compatibility alias for "wesley witness")'
+      'Compatibility alias for "wesley witness" across current-minimum, receipt-family, and settlement-family scopes'
     );
   }
 

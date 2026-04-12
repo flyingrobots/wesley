@@ -140,7 +140,7 @@ export async function buildContinuumWitnessReport({
   const realizationManifest = await loadRealizationManifest({ fs, realizationRoot });
   const ttdRequiredFiles = resolveLegRequiredFiles({
     leg: realizationManifest?.generatedLegs?.warpTtd,
-    legOutDir: ttdDir,
+    currentLegOutDir: ttdDir,
     fallback: DEFAULT_TTD_REQUIRED_FILES
   });
   const ttdSurface = await inspectTtdSurface({
@@ -166,6 +166,7 @@ export async function buildContinuumWitnessReport({
       receiptFamilyFixtureDir,
       settlementFamilyFixtureDir
     }),
+    reservedRoots: buildPublicationBoundaryReservedRoots(scope),
     checks
   });
   const receiptFamily = scope === RECEIPT_FAMILY_SCOPE &&
@@ -231,12 +232,12 @@ function buildPublicationBoundaryRules({
 }) {
   const ttdGeneratedArtifacts = resolveLegGeneratedArtifacts({
     leg: realizationManifest?.generatedLegs?.warpTtd,
-    legOutDir: ttdDir,
+    currentLegOutDir: ttdDir,
     fallback: DEFAULT_TTD_REQUIRED_FILES
   });
   const echoGeneratedArtifacts = resolveLegGeneratedArtifacts({
     leg: realizationManifest?.generatedLegs?.echo,
-    legOutDir: echoDir,
+    currentLegOutDir: echoDir,
     fallback: DEFAULT_ECHO_REQUIRED_FILES
   });
   const generatedArtifacts = [...new Set([
@@ -270,7 +271,7 @@ function buildPublicationBoundaryRules({
         id: 'settlement-family',
         authoredHomes: [ttdSchemaPath],
         generatedRoots: [ttdDir, echoDir].concat(realizationRoot == null ? [] : [realizationRoot]),
-        compatRoots: [settlementFamilyFixtureDir],
+        compatRoots: [settlementFamilyFixtureDir, 'schemas/continuum-settlement-family.graphql'],
         generatedArtifacts
       }
     ];
@@ -281,7 +282,7 @@ function buildPublicationBoundaryRules({
       id: 'receipt-family',
       authoredHomes: [ttdSchemaPath],
       generatedRoots: [ttdDir, echoDir].concat(realizationRoot == null ? [] : [realizationRoot]),
-      compatRoots: [receiptFamilyFixtureDir],
+      compatRoots: [receiptFamilyFixtureDir, 'schemas/continuum-receipt-family.graphql'],
       generatedArtifacts
     }
   ];
@@ -307,14 +308,36 @@ async function loadRealizationManifest({ fs, realizationRoot }) {
   return readJson(fs, manifestPath);
 }
 
-function resolveLegRequiredFiles({ leg, legOutDir, fallback }) {
-  const files = resolveLegGeneratedArtifacts({ leg, legOutDir, fallback: [] });
+function buildPublicationBoundaryReservedRoots(scope) {
+  if (scope === CURRENT_MINIMUM_SCOPE) {
+    return [
+      'schemas/continuum-receipt-family.graphql',
+      'schemas/continuum-settlement-family.graphql',
+      'schemas/directives.graphql'
+    ];
+  }
+
+  return [
+    'schemas/ttd-protocol.graphql',
+    'schemas/echo-core-types.graphql',
+    'schemas/continuum-receipt-family.graphql',
+    'schemas/continuum-settlement-family.graphql',
+    'schemas/directives.graphql'
+  ];
+}
+
+function resolveLegRequiredFiles({ leg, currentLegOutDir, fallback }) {
+  const files = resolveLegGeneratedArtifacts({ leg, currentLegOutDir, fallback: [] });
   return files.length === 0 ? fallback : files;
 }
 
-function resolveLegGeneratedArtifacts({ leg, legOutDir, fallback }) {
+function resolveLegGeneratedArtifacts({ leg, currentLegOutDir, fallback }) {
   const files = leg?.files
-    ?.map((file) => normalizeLegArtifactPath(file?.path, legOutDir))
+    ?.map((file) => normalizeLegArtifactPath({
+      filePath: file?.path,
+      manifestLegOutDir: leg?.outDir,
+      currentLegOutDir
+    }))
     .filter(Boolean);
   if (!Array.isArray(files) || files.length === 0) {
     return fallback;
@@ -322,19 +345,36 @@ function resolveLegGeneratedArtifacts({ leg, legOutDir, fallback }) {
   return [...new Set(files)].sort((left, right) => left.localeCompare(right));
 }
 
-function normalizeLegArtifactPath(filePath, legOutDir) {
+function normalizeLegArtifactPath({
+  filePath,
+  manifestLegOutDir,
+  currentLegOutDir
+}) {
   if (typeof filePath !== 'string' || filePath.trim().length === 0) {
     return null;
   }
 
   const artifactPath = normalizeSeparators(filePath.trim());
-  const resolvedLegOutDir = normalizeSeparators(path.resolve(legOutDir));
+  const resolvedManifestLegOutDir = manifestLegOutDir == null
+    ? null
+    : normalizeSeparators(path.resolve(manifestLegOutDir));
+  const resolvedCurrentLegOutDir = normalizeSeparators(path.resolve(currentLegOutDir));
   const resolvedArtifactPath = normalizeSeparators(path.resolve(artifactPath));
   if (
-    resolvedArtifactPath === resolvedLegOutDir ||
-    resolvedArtifactPath.startsWith(`${resolvedLegOutDir}/`)
+    resolvedManifestLegOutDir != null &&
+    (
+      resolvedArtifactPath === resolvedManifestLegOutDir ||
+      resolvedArtifactPath.startsWith(`${resolvedManifestLegOutDir}/`)
+    )
   ) {
-    return normalizeSeparators(path.relative(resolvedLegOutDir, resolvedArtifactPath));
+    return normalizeSeparators(path.relative(resolvedManifestLegOutDir, resolvedArtifactPath));
+  }
+
+  if (
+    resolvedArtifactPath === resolvedCurrentLegOutDir ||
+    resolvedArtifactPath.startsWith(`${resolvedCurrentLegOutDir}/`)
+  ) {
+    return normalizeSeparators(path.relative(resolvedCurrentLegOutDir, resolvedArtifactPath));
   }
 
   return artifactPath.replace(/^\.\//, '');

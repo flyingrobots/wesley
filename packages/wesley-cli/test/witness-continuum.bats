@@ -48,9 +48,8 @@ run_witness_continuum() {
 @test "witness-continuum help works" {
     run node "$CLI_PATH" witness-continuum --help
     assert_success
-    assert_output --partial "Verify current Continuum minimum-surface coherence"
+    assert_output --partial 'Compatibility alias for "wesley witness"'
     assert_output --partial "--schema"
-    assert_output --partial "--target"
     assert_output --partial "--out-dir"
     assert_output --partial "--report-out"
     assert_output --partial "--scope"
