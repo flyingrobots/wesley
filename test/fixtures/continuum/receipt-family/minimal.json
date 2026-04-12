@@ -1,0 +1,77 @@
+{
+  "objectTypes": [
+    "Capability",
+    "ContinuumReceiptFamilyInvariants",
+    "DeliveryObservation",
+    "Receipt",
+    "Witness"
+  ],
+  "enumTypes": [
+    "CapabilityScope",
+    "DeliveryOutcome",
+    "ExecutionMode",
+    "WitnessKind"
+  ],
+  "ops": [
+    {
+      "name": "capabilities",
+      "resultType": "Capability"
+    },
+    {
+      "name": "deliveryObservations",
+      "resultType": "DeliveryObservation"
+    },
+    {
+      "name": "receipts",
+      "resultType": "Receipt"
+    },
+    {
+      "name": "witnesses",
+      "resultType": "Witness"
+    }
+  ],
+  "invariants": [
+    "delivery_links_receipt",
+    "receipt_input_tick_non_negative",
+    "receipt_output_tick_non_negative",
+    "witness_links_receipt"
+  ],
+  "footprints": [
+    {
+      "opName": "capabilities",
+      "reads": [
+        "Capability"
+      ],
+      "writes": [],
+      "creates": [],
+      "deletes": []
+    },
+    {
+      "opName": "deliveryObservations",
+      "reads": [
+        "DeliveryObservation"
+      ],
+      "writes": [],
+      "creates": [],
+      "deletes": []
+    },
+    {
+      "opName": "receipts",
+      "reads": [
+        "Receipt"
+      ],
+      "writes": [],
+      "creates": [],
+      "deletes": []
+    },
+    {
+      "opName": "witnesses",
+      "reads": [
+        "Witness"
+      ],
+      "writes": [],
+      "creates": [],
+      "deletes": []
+    }
+  ]
+}

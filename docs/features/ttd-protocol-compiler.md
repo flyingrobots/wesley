@@ -6,6 +6,27 @@
 
 The TTD (Type-Driven Development) Protocol Compiler extends Wesley to generate deterministic protocol definitions from annotated GraphQL schemas. It produces typed protocols, registries, enforcement tables, and verification infrastructure for the Echo Time Travel Debugger.
 
+## Current Repo Truth
+
+Wesley's repo-local authored TTD schema currently lives in
+[`schemas/ttd-protocol.graphql`](../../schemas/ttd-protocol.graphql). The
+current local compile path is:
+
+```bash
+pnpm wesley compile-ttd --schema schemas/ttd-protocol.graphql --dry-run --json
+```
+
+That command currently validates the checked-in schema and reports generated
+`manifest/*.json` and `typescript/*.ts` outputs. Those files are derived
+artifacts from SDL, not a second authored source surface.
+
+The shipped directive contract for this path is the `@wes_*` TTD family
+documented in [`docs/DIRECTIVES.md`](../DIRECTIVES.md) and implemented in
+[`packages/wesley-core/src/ttd/directives.mjs`](../../packages/wesley-core/src/ttd/directives.mjs).
+The broader cross-repo publication boundary is still tracked as active backlog
+work in
+[`SOURCE_WESLEY_protocol-surface-cutover`](../method/backlog/up-next/SOURCE_WESLEY_protocol-surface-cutover.md).
+
 ### Key Doctrine
 
 > "schema_hash is the universe identity"
@@ -19,20 +40,23 @@ The TTD (Type-Driven Development) Protocol Compiler extends Wesley to generate d
 ### CLI Usage
 
 ```bash
+# Compile the checked-in Wesley TTD schema
+pnpm wesley compile-ttd --schema schemas/ttd-protocol.graphql --out-dir .wesley-cache/ttd-out
+
 # Basic compilation
-wesley compile-ttd schema.graphql --out-dir ttd-out/
+pnpm wesley compile-ttd --schema schema.graphql --out-dir ttd-out/
 
 # Specify targets
-wesley compile-ttd schema.graphql --target manifest,typescript
+pnpm wesley compile-ttd --schema schema.graphql --target manifest,typescript
 
 # Dry-run to preview
-wesley compile-ttd schema.graphql --dry-run
+pnpm wesley compile-ttd --schema schema.graphql --dry-run
 
 # JSON output for scripting
-wesley compile-ttd schema.graphql --json
+pnpm wesley compile-ttd --schema schema.graphql --dry-run --json
 
 # Read from stdin
-cat schema.graphql | wesley compile-ttd --schema - --out-dir ttd-out/
+cat schema.graphql | pnpm wesley compile-ttd --schema - --out-dir ttd-out/
 ```
 
 ### Simple Schema Example
@@ -77,6 +101,11 @@ type OrderSystem
 
 ## Directives Reference
 
+The current shipped directive surface for `wesley compile-ttd` is the
+`@wes_*` family below. The newer `@channel` / `@op` / `@rule` noun vocabulary
+described in the extracted plan doc is still target-state design work, not the
+checked-in compiler contract on `main`.
+
 ### Channel Directives
 
 | Directive | Purpose | Example |
@@ -109,6 +138,8 @@ type OrderSystem
 | `@wes_invariant` | System-level invariant | `@wes_invariant(name: "bounds", expr: "...", severity: "error")` |
 
 ## Generated Outputs
+
+All generated files in this section are derived outputs from the SDL input.
 
 ### Manifest Files
 

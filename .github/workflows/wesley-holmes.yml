@@ -28,7 +28,7 @@ jobs:
     
       - name: Harden runner
     
-        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594
+        uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176
     
         with:
     
@@ -115,7 +115,7 @@ jobs:
     
       - name: Harden runner
     
-        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594
+        uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176
     
         with:
     
@@ -157,7 +157,7 @@ jobs:
     
       - name: Harden runner
     
-        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594
+        uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176
     
         with:
     
@@ -199,7 +199,7 @@ jobs:
     
       - name: Harden runner
     
-        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594
+        uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176
     
         with:
     
@@ -229,7 +229,7 @@ jobs:
           git fetch --prune origin '+refs/heads/*:refs/remotes/origin/*' || true
 
       - name: "🧮 Compute MORIARTY context (issues/PRs/CI)"
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
         continue-on-error: true
         env:
           BUNDLE_DIR: ${{ needs.wesley-generate.outputs.bundle_dir }}
@@ -376,7 +376,7 @@ jobs:
           
       - name: Harden runner
           
-        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594
+        uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176
           
         with:
           
@@ -556,7 +556,7 @@ jobs:
     steps:
       - name: Harden runner
       
-        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594
+        uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176
       
         with:
       
@@ -624,7 +624,7 @@ jobs:
             > reports/pr-comment.md
 
       - name: "📝 Create Comment"
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
         with:
           script: |
             const fs = require('fs');

@@ -5,7 +5,6 @@
   "description": "Wesley CLI - GraphQL to Everything",
   "exports": {
     ".": "./src/index.mjs",
-    "./src/commands": "./src/commands.mjs",
     "./src/main.mjs": "./src/main.mjs",
     "./src/program.mjs": "./src/program.mjs"
   },
@@ -22,6 +21,7 @@
   },
   "dependencies": {
     "@wesley/core": "workspace:*",
+    "@wesley/generator-echo": "workspace:*",
     "@wesley/generator-js": "workspace:*",
     "@wesley/holmes": "workspace:^",
     "ajv": "^8.18.0",

@@ -6,6 +6,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { schemaHash as computeCanonicalSchemaHash } from '@wesley/core';
 import {
   hashSchema,
   hashType,
@@ -249,6 +250,23 @@ describe('TTD Canonical Hasher', () => {
       expect(hashSchema(sdl1, deps)).toBe(hashSchema(sdl2, deps));
     });
 
+    it('ignores field order differences', () => {
+      const sdl1 = 'type Query { a: String b: Int c: Boolean }';
+      const sdl2 = 'type Query { c: Boolean b: Int a: String }';
+
+      expect(hashSchema(sdl1, deps)).toBe(hashSchema(sdl2, deps));
+    });
+
+    it('folds extend type into the same canonical hash as the flat form', () => {
+      const extended = `
+        type Query { a: String }
+        extend type Query { b: Int }
+      `;
+      const flat = 'type Query { a: String b: Int }';
+
+      expect(hashSchema(extended, deps)).toBe(hashSchema(flat, deps));
+    });
+
     it('is sensitive to type name changes', () => {
       const sdl1 = 'type Counter { value: Int! }';
       const sdl2 = 'type CounterV2 { value: Int! }';
@@ -269,6 +287,13 @@ describe('TTD Canonical Hasher', () => {
       `;
 
       expect(hashSchema(sdl1, deps)).not.toBe(hashSchema(sdl2, deps));
+    });
+
+    it('matches the shared core canonical schema hash', async () => {
+      const direct = hashSchema(basicProtocolSdl, deps);
+      const canonical = await computeCanonicalSchemaHash(basicProtocolSdl);
+
+      expect(direct).toBe(canonical);
     });
   });
 

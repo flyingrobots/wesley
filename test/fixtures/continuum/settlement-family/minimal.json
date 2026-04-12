@@ -1,0 +1,90 @@
+{
+  "objectTypes": [
+    "ConflictArtifact",
+    "ContinuumSettlementFamilyInvariants",
+    "ImportCandidate",
+    "SettlementDecision",
+    "SettlementDelta",
+    "SettlementPlan",
+    "SettlementRequest",
+    "SettlementResult"
+  ],
+  "enumTypes": [
+    "ConflictReason",
+    "SettlementDecisionKind"
+  ],
+  "ops": [
+    {
+      "name": "settlementDeltas",
+      "resultType": "SettlementDelta"
+    },
+    {
+      "name": "settlementPlans",
+      "resultType": "SettlementPlan"
+    },
+    {
+      "name": "settlementResults",
+      "resultType": "SettlementResult"
+    },
+    {
+      "name": "settleLane",
+      "resultType": "SettlementResult"
+    }
+  ],
+  "invariants": [
+    "delta_window_is_non_negative",
+    "plan_decision_count_matches_rows",
+    "result_links_plan"
+  ],
+  "footprints": [
+    {
+      "opName": "settlementDeltas",
+      "reads": [
+        "SettlementDelta"
+      ],
+      "writes": [],
+      "creates": [],
+      "deletes": []
+    },
+    {
+      "opName": "settlementPlans",
+      "reads": [
+        "SettlementPlan",
+        "SettlementDecision",
+        "ImportCandidate",
+        "ConflictArtifact"
+      ],
+      "writes": [],
+      "creates": [],
+      "deletes": []
+    },
+    {
+      "opName": "settlementResults",
+      "reads": [
+        "SettlementResult",
+        "ImportCandidate",
+        "ConflictArtifact"
+      ],
+      "writes": [],
+      "creates": [],
+      "deletes": []
+    },
+    {
+      "opName": "settleLane",
+      "reads": [
+        "SettlementDelta",
+        "SettlementPlan"
+      ],
+      "writes": [
+        "SettlementResult",
+        "ImportCandidate",
+        "ConflictArtifact"
+      ],
+      "creates": [
+        "ImportCandidate",
+        "ConflictArtifact"
+      ],
+      "deletes": []
+    }
+  ]
+}

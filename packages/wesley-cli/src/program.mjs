@@ -35,9 +35,22 @@ async function discoverCommands(ctx) {
   }
 }
 
+function bindWrite(target) {
+  return typeof target?.write === 'function'
+    ? target.write.bind(target)
+    : null;
+}
+
+function resolveOutputWriters(ctx = {}) {
+  const writeOut = bindWrite(ctx.process?.stdout) ?? bindWrite(ctx.stdout) ?? process.stdout.write.bind(process.stdout);
+  const writeErr = bindWrite(ctx.process?.stderr) ?? bindWrite(ctx.stderr) ?? process.stderr.write.bind(process.stderr);
+  return { writeOut, writeErr };
+}
+
 export async function program(argv, ctx) {
   // Auto-discover and register all commands
   await discoverCommands(ctx);
+  const { writeOut, writeErr } = resolveOutputWriters(ctx);
 
   // Create main program
   const program = new Command()
@@ -47,7 +60,13 @@ export async function program(argv, ctx) {
     .option('-v, --verbose', 'Verbose output')
     .option('--debug', 'Debug mode with stack traces')
     .option('-q, --quiet', 'Suppress all output')
-    .option('--json', 'Output JSON');
+    .option('--json', 'Output JSON')
+    .configureOutput({
+      writeOut,
+      writeErr,
+      outputError: (message, write) => write(message)
+    })
+    .exitOverride();
 
   // Register all commands from the registry
   WesleyCommand.registerAll(program);
@@ -61,9 +80,12 @@ export async function program(argv, ctx) {
     if (error && error.name === 'ExitError') {
       return error.exitCode ?? 1;
     }
+    if (error?.code?.startsWith?.('commander.')) {
+      return error.exitCode ?? 1;
+    }
     // Commander-level errors or unexpected issues
     if (!program.opts().quiet) {
-      console.error(error?.stack || error?.message || String(error));
+      writeErr(`${error?.stack || error?.message || String(error)}\n`);
     }
     return 1;
   }

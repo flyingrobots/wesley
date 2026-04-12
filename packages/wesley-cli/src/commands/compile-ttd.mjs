@@ -31,191 +31,186 @@ export class CompileTtdCommand extends WesleyCommand {
   }
 
   async executeCore(context) {
-    const { schemaContent, schemaPath, options, logger } = context;
-    const fs = this.ctx.fs;
-    const clock = this.ctx.clock;
-    const crypto = this.ctx.crypto;
+    return runCompileTtd({
+      ctx: this.ctx,
+      schemaContent: context.schemaContent,
+      schemaPath: context.schemaPath,
+      units: context.units,
+      options: context.options,
+      logger: context.logger
+    });
+  }
+}
 
-    // Parse targets
-    const targets = options.target.split(',').map(t => t.trim().toLowerCase());
-    const validTargets = ['manifest', 'typescript', 'rust'];
-    for (const t of targets) {
-      if (!validTargets.includes(t)) {
-        throw new WesleyError('INVALID_TARGET', `Invalid target: "${t}". Valid targets: ${validTargets.join(', ')}`);
-      }
+export async function runCompileTtd({
+  ctx,
+  schemaContent,
+  schemaPath,
+  units,
+  options,
+  logger
+}) {
+  const fs = ctx.fs;
+  const clock = ctx.clock;
+  const crypto = ctx.crypto;
+
+  const targets = options.target.split(',').map(t => t.trim().toLowerCase());
+  const validTargets = ['manifest', 'typescript', 'rust'];
+  for (const target of targets) {
+    if (!validTargets.includes(target)) {
+      throw new WesleyError('INVALID_TARGET', `Invalid target: "${target}". Valid targets: ${validTargets.join(', ')}`);
     }
-
-    // ── Compute effective SDL: composition filtering + demangling ──
-
-    let effectiveSdl = schemaContent;
-
-    if (context.units) {
-      const {
-        composeUnits,
-        buildDemangleMap,
-        demangleSdl,
-        validateFilteredSdl
-      } = await import('@wesley/core/domain/SchemaResolver');
-
-      // Apply --unit filter if specified
-      const unitFilter = options.unit ? options.unit.flatMap(u => u.split(',')).map(s => s.trim()).filter(Boolean) : null;
-      if (unitFilter) {
-        const composed = composeUnits(context.units, unitFilter);
-        effectiveSdl = composed.sdl;
-      }
-
-      // Demangle type names for clean TTD output (unless --qualified-names).
-      // buildDemangleMap uses the full context.units (not activeUnits) because
-      // demangling must map all mangled symbols across the entire composition.
-      if (!options.qualifiedNames) {
-        const demangleMap = buildDemangleMap(context.units);
-        effectiveSdl = demangleSdl(effectiveSdl, demangleMap);
-      }
-
-      // Validate that the filtered SDL isn't missing types from excluded units
-      if (unitFilter) {
-        const diag = validateFilteredSdl(effectiveSdl, context.units, unitFilter);
-        if (diag) {
-          const lines = diag.missing.map(m =>
-            m.definedIn
-              ? `  ${m.type} (defined in ${m.definedIn})`
-              : `  ${m.type} (unknown source)`
-          );
-          throw new WesleyError('SCHEMA_RESOLUTION_FAILED',
-            'Filtered SDL references types not included in the selected units:\n' +
-            lines.join('\n') + '\n\n' +
-            `You asked for units: ${unitFilter?.join(', ')}\n` +
-            'Add the missing units with --unit or compile the full schema.'
-          );
-        }
-      }
-    } else if (options.unit) {
-      throw new WesleyError('UNSUPPORTED_OPTION',
-        '--unit requires a composed schema (with @wes_import/@wes_package directives).\n' +
-        `The schema at ${schemaPath} has no composition directives.`
-      );
-    }
-
-    // ── Debug: print composed SDL ──
-
-    const debugDump = options.printComposedSdl || options.printIr;
-
-    if (options.printComposedSdl) {
-      this.ctx.stdout.write(effectiveSdl + '\n');
-      if (options.dryRun) {
-        return { files: [], dryRun: true };
-      }
-    }
-
-    if (!options.json && !debugDump) {
-      logger?.info?.(`Compiling TTD protocol from ${schemaPath}`);
-      logger?.debug?.(`Targets: ${targets.join(', ')}`);
-    }
-
-    // ── Compile TTD protocol ──
-
-    const deps = {};
-    if (clock) deps.clock = clock;
-    if (crypto) deps.crypto = crypto;
-
-    let result;
-    try {
-      result = await compileTtdProtocol({
-        sdl: effectiveSdl,
-        targets,
-        deps
-      });
-    } catch (error) {
-      throw error instanceof WesleyError ? error : new WesleyError('TTD_COMPILE_FAILED', `TTD compilation failed: ${error.message}`, {}, error);
-    }
-
-    // ── Debug: print IR ──
-
-    if (options.printIr) {
-      this.ctx.stdout.write(JSON.stringify(result, (key, val) => {
-        // Omit file contents from IR dump to keep output readable
-        if (key === 'content' && typeof val === 'string' && val.length > 200) {
-          return `<${val.length} bytes>`;
-        }
-        return val;
-      }, 2) + '\n');
-      if (options.dryRun) {
-        return { files: result.files.map(f => ({ path: f.path, size: f.content.length })), dryRun: true };
-      }
-    }
-
-    // ── Write files ──
-
-    const outDir = options.outDir;
-    const filesWritten = [];
-
-    if (!options.dryRun) {
-      for (const file of result.files) {
-        const fullPath = `${outDir}/${file.path}`;
-
-        // Ensure directory exists
-        const dir = fullPath.substring(0, fullPath.lastIndexOf('/'));
-        await this.ensureDir(fs, dir);
-
-        await fs.write(fullPath, file.content);
-        filesWritten.push(fullPath);
-        if (!options.json) {
-          logger?.debug?.(`Wrote: ${fullPath}`);
-        }
-      }
-    }
-
-    // ── Report results ──
-
-    const summary = {
-      schemaHash: result.schemaHash,
-      files: result.files.map(f => ({
-        path: options.dryRun ? f.path : `${outDir}/${f.path}`,
-        size: f.content.length
-      })),
-      targets,
-      validation: result.validation,
-      dryRun: options.dryRun || false
-    };
-
-    if (!options.quiet && !options.json && !debugDump) {
-      const action = options.dryRun ? 'Would generate' : 'Generated';
-      logger?.info?.(`\n${action} ${result.files.length} files:`);
-      for (const file of summary.files) {
-        logger?.info?.(`  ${file.path} (${file.size} bytes)`);
-      }
-      logger?.info?.(`\nSchema hash: ${result.schemaHash}`);
-      if (!options.dryRun) {
-        logger?.info?.(`\nOutput directory: ${outDir}`);
-      }
-    }
-
-    return summary;
   }
 
-  /**
-   * Ensure directory exists (recursive mkdir)
-   */
-  async ensureDir(fs, dir) {
-    const parts = dir.split('/').filter(Boolean);
-    let current = dir.startsWith('/') ? '' : '.';
+  let effectiveSdl = schemaContent;
 
-    for (const part of parts) {
-      current = current === '.' ? part : `${current}/${part}`;
+  if (units) {
+    const {
+      composeUnits,
+      buildDemangleMap,
+      demangleSdl,
+      validateFilteredSdl
+    } = await import('@wesley/core/domain/SchemaResolver');
+
+    const unitFilter = options.unit ? options.unit.flatMap(u => u.split(',')).map(s => s.trim()).filter(Boolean) : null;
+    if (unitFilter) {
+      const composed = composeUnits(units, unitFilter);
+      effectiveSdl = composed.sdl;
+    }
+
+    if (!options.qualifiedNames) {
+      const demangleMap = buildDemangleMap(units);
+      effectiveSdl = demangleSdl(effectiveSdl, demangleMap);
+    }
+
+    if (unitFilter) {
+      const diag = validateFilteredSdl(effectiveSdl, units, unitFilter);
+      if (diag) {
+        const lines = diag.missing.map(m =>
+          m.definedIn
+            ? `  ${m.type} (defined in ${m.definedIn})`
+            : `  ${m.type} (unknown source)`
+        );
+        throw new WesleyError(
+          'SCHEMA_RESOLUTION_FAILED',
+          'Filtered SDL references types not included in the selected units:\n' +
+          lines.join('\n') + '\n\n' +
+          `You asked for units: ${unitFilter.join(', ')}\n` +
+          'Add the missing units with --unit or compile the full schema.'
+        );
+      }
+    }
+  } else if (options.unit) {
+    throw new WesleyError(
+      'UNSUPPORTED_OPTION',
+      '--unit requires a composed schema (with @wes_import/@wes_package directives).\n' +
+      `The schema at ${schemaPath} has no composition directives.`
+    );
+  }
+
+  const debugDump = options.printComposedSdl || options.printIr;
+
+  if (options.printComposedSdl) {
+    ctx.stdout.write(effectiveSdl + '\n');
+    if (options.dryRun) {
+      return { files: [], dryRun: true };
+    }
+  }
+
+  if (!options.json && !debugDump) {
+    logger?.info?.(`Compiling TTD protocol from ${schemaPath}`);
+    logger?.debug?.(`Targets: ${targets.join(', ')}`);
+  }
+
+  const deps = {};
+  if (clock) deps.clock = clock;
+  if (crypto) deps.crypto = crypto;
+
+  let result;
+  try {
+    result = await compileTtdProtocol({
+      sdl: effectiveSdl,
+      targets,
+      deps
+    });
+  } catch (error) {
+    throw error instanceof WesleyError
+      ? error
+      : new WesleyError('TTD_COMPILE_FAILED', `TTD compilation failed: ${error.message}`, {}, error);
+  }
+
+  if (options.printIr) {
+    ctx.stdout.write(JSON.stringify(result, (key, value) => {
+      if (key === 'content' && typeof value === 'string' && value.length > 200) {
+        return `<${value.length} bytes>`;
+      }
+      return value;
+    }, 2) + '\n');
+    if (options.dryRun) {
+      return {
+        files: result.files.map(file => ({ path: file.path, size: file.content.length })),
+        dryRun: true
+      };
+    }
+  }
+
+  const outDir = options.outDir;
+
+  if (!options.dryRun) {
+    for (const file of result.files) {
+      const fullPath = `${outDir}/${file.path}`;
+      const dir = fullPath.substring(0, fullPath.lastIndexOf('/'));
+      await ensureDir(fs, dir);
+      await fs.write(fullPath, file.content);
+      if (!options.json) {
+        logger?.debug?.(`Wrote: ${fullPath}`);
+      }
+    }
+  }
+
+  const summary = {
+    schemaHash: result.schemaHash,
+    files: result.files.map(file => ({
+      path: options.dryRun ? file.path : `${outDir}/${file.path}`,
+      size: file.content.length
+    })),
+    targets,
+    validation: result.validation,
+    dryRun: options.dryRun || false
+  };
+
+  if (!options.quiet && !options.json && !debugDump) {
+    const action = options.dryRun ? 'Would generate' : 'Generated';
+    logger?.info?.(`\n${action} ${result.files.length} files:`);
+    for (const file of summary.files) {
+      logger?.info?.(`  ${file.path} (${file.size} bytes)`);
+    }
+    logger?.info?.(`\nSchema hash: ${result.schemaHash}`);
+    if (!options.dryRun) {
+      logger?.info?.(`\nOutput directory: ${outDir}`);
+    }
+  }
+
+  return summary;
+}
+
+async function ensureDir(fs, dir) {
+  const parts = dir.split('/').filter(Boolean);
+  let current = dir.startsWith('/') ? '' : '.';
+
+  for (const part of parts) {
+    current = current === '.' ? part : `${current}/${part}`;
+    try {
+      const exists = await fs.exists(current);
+      if (!exists) {
+        await fs.mkdir?.(current);
+      }
+    } catch {
       try {
-        const exists = await fs.exists(current);
-        if (!exists) {
-          await fs.mkdir?.(current);
-        }
+        await fs.mkdir?.(current);
       } catch {
-        // Try to create anyway - might fail if it exists or can't be created
-        try {
-          await fs.mkdir?.(current);
-        } catch {
-          // Ignore - parent might exist or we'll fail on write
-        }
+        // Ignore - parent might exist or we'll fail on write.
       }
     }
   }
 }
-

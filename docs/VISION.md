@@ -5,86 +5,117 @@ This is a bounded executive synthesis grounded in repo-visible sources.
 
 ## Identity
 
-Wesley is a schema-first, local-first system for trustworthy database change.
-GraphQL is the source of truth. Wesley turns that into PostgreSQL DDL, phased
-migrations, TypeScript types, Zod schemas, RLS policies, tests, evidence
-bundles, and deployment judgments.
+Wesley is a schema-first, local-first compiler repo for trustworthy change and
+shared contracts.
 
-The product is trying to make database change boring without making the
-underlying truth invisible.
+It is not just one thing:
 
-## Core Pillars
+- one real surface compiles GraphQL SDL into PostgreSQL-facing artifacts,
+  migration plans, tests, and evidence
+- another real surface compiles shared GraphQL schemas into TTD manifests,
+  Echo bundle artifacts, and a local Continuum witness
 
-Wesley's current product pillars are:
+Across both surfaces, the governing claim is the same: authored schema is the
+source of truth, derived artifacts are not peer authorities, and judgment
+should stay honest about the strength of its evidence.
 
-- **Source authority**: GraphQL SDL plus explicit Wesley inputs define intended
-  behavior. Generated artifacts are derived. This is the authority claim behind
-  [schema-source-of-truth](./invariants/schema-source-of-truth.md).
-- **Transmutation breadth**: Wesley should be able to compile GraphQL into many
-  executable artifact domains, not just one backend path. The repo's formal
-  name for this is **transmutations**, not "GraphQL to Anything."
-- **Runtime truth**: when Wesley has a run model, the ledger outranks snapshots
-  and materialized outputs.
-- **Evidence truth**: scores, gates, and certs must reflect the actual strength
-  of supporting evidence.
-- **Local-first operation**: core workflows should remain operable from a local
-  checkout and local runtime state.
-- **Governed judgment**: Wesley owns the meaning of readiness, risk, and
-  certification even when substrate tools provide the underlying facts.
+## What Is Already Real
 
-These are not all the same kind of claim. Some are invariants that must remain
-true. Some are product theses that describe the breadth Wesley is trying to
-reach. The distinction matters:
-
-- `schema-source-of-truth` is an invariant about authority.
-- `transmutation breadth` is a product pillar about output scope.
+- The database-change lane remains real through `generate`, `plan`,
+  `rehearse`, `blade`, certification, and HOLMES-family evidence work.
+- The Continuum lane is now real enough to inspect through `compile-ttd`,
+  `bundle-echo`, `witness`, and the compatibility alias
+  `witness-continuum`.
+- The current authored Continuum surface now includes
+  `schemas/ttd-protocol.graphql`, `schemas/echo-core-types.graphql`, and the
+  Continuum-authored shared families at
+  `<continuum-root>/schemas/continuum-receipt-family.graphql` and
+  `<continuum-root>/schemas/continuum-settlement-family.graphql`.
+- `witness` now proves three bounded scopes: the original
+  current-minimum TTD-plus-Echo subset and a fixture-backed
+  `receipt-family` and `settlement-family` lanes for authored shared families.
+- Wesley's Continuum role is explicitly bounded to contract compilation,
+  publication boundaries, conformance, and judgment rather than runtime,
+  storage, debugger, or substrate-fact ownership.
+- The repo now uses METHOD as its visible workflow surface: backlog, design,
+  retro, graveyard, and release files are first-class repo truth.
 
 ## Product Direction
 
-The canonical product strategy still lives in [ROADMAP.md](../ROADMAP.md).
-Today, the center of gravity is:
+The strategy of record still lives in [ROADMAP.md](../ROADMAP.md), especially
+the V2 fixed contracts around runtime truth, evidence truth, and the long move
+toward one durable run model.
 
-- late Phase 2 durability: one run model, honest replay/resume, bounded
-  materialization, and local inspection
-- active Phase 3 truthfulness: exact evidence spans, fewer provisional paths,
-  and tools that do not pretend weak evidence is strong
+The current center of gravity in the repo, however, is narrower:
 
-HOLMES, WATSON, MORIARTY, and certification work matter here because they are
-where Wesley's evidence claims become operator-visible judgment.
+- make Wesley's Continuum role honest
+- freeze one boring shared contract family
+- prove one compile path and one witness lane
+- keep neighboring repo boundaries explicit
+
+That makes the current hill less about broad platform claims and more about one
+small, inspectable contract-compiler proving move.
+
+## Intended Public Product Shape
+
+The older public README over-claimed some of these ideas as if they were
+already fully true. The direction itself still stands.
+
+Wesley is still trying to earn this broader public shape:
+
+- a release-grade, evidence-backed database lane that can honestly be described
+  as production-ready and battle-tested
+- one boring public operator story:
+  `generate -> plan -> rehearse -> certify -> deploy`
+- a broad, explicit zero-downtime and safe-change envelope with clearly named
+  limits
+- one public proof matrix that bundles comprehensive tests,
+  property-oriented checks, round-trip guarantees, and idempotence claims
+- a broad, calm RLS and data-layer happy path with one canonical schema story
+- a coherent public product surface across playgrounds, packages, hosts, and
+  integrations
+
+Those are goals, not present-tense guarantees. The repo should keep them
+visible without smuggling them back into current-state claims.
 
 ## Repo Working Model
 
-This repo now uses METHOD for coordination:
+Wesley now uses a METHOD-shaped repo surface:
 
-- signposts tell you where the repo is pointed
-- backlog lanes tell you what is queued
-- design packets tell you what is actively committed
-- retros and witnesses tell you what was actually proved
+- [README.md](../README.md) is the product-facing front door
+- [docs/BEARING.md](./BEARING.md) carries current direction and tensions
+- [docs/VISION.md](./VISION.md) carries bounded synthesis
+- [docs/method/backlog/](./method/backlog/README.md) is the queue
+- [docs/design/](./design/README.md) carries active committed work
+- [docs/method/retro/](./method/retro/README.md) carries closed-cycle packets
+- [docs/method/releases/](./method/releases/README.md) and
+  [docs/releases/](./releases/README.md) carry release surfaces
 
-The filesystem is the queue and the primary repo-visible history surface.
-Retros, witnesses, and updated signposts carry what was actually proved. The
-Chronicle files are archive only.
-
-The current application legends are:
-
-- `SOURCE`
-- `TRANSMUTE`
-- `RUNTIME`
-- `EVIDENCE`
+The filesystem is the queue and the primary repo-visible coordination surface.
+Chat, trackers, and PR discussion can help, but they do not outrank the files.
 
 ## Current Tensions
 
-- Wesley's product doctrine already values runtime truth and boring operator
-  flows, but the previous workflow surface hid active work behind external
-  trackers and sprawling prose.
-- Product strategy and repo workflow were coupled too loosely: the strategy was
-  visible, but the active queue was not.
-- Evidence work is improving, especially around Holmes/Moriarty
-  counterfactuals, but the repo still needs a calmer, more inspectable way to
-  carry that work from idea to proof.
+- Wesley's older public story is still heavily PostgreSQL-first, while the
+  most recent cycle packet centered on Continuum contract compilation and
+  closed as `partial`.
+- The repo now has an authored receipt-family schema and a real local
+  receipt-family witness, but that proof still stops at generated-leg
+  coherence rather than full runtime or debugger semantics.
+- Ownership boundaries are much clearer in doctrine than they are in enforced
+  runtime or CI policy.
+- The METHOD closeout surface is now explicit, but Wesley still needs more real
+  retro packets and witness directories before that shape feels fully lived-in.
+- The repo now has a cleaner, more honest front door, but it still has to earn
+  several older north-star promises rather than quietly forgetting them.
 
 ## Limits
 
 This document is a bounded synthesis over repo-visible artifacts. It does not
-claim more provenance than the files it names and the branch state that carries
-them.
+claim:
+
+- that the full Continuum contract surface is already frozen
+- that Wesley owns runtime, storage, debugger, or substrate semantics
+- that every older product-facing doc claim has already been retired or
+  rewritten
+- more semantic provenance than the files and commands in the repo can support

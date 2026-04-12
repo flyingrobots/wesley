@@ -3,7 +3,7 @@
 
 # TTD Protocol Compiler Plan
 
-**Status:** Complete (Phase 1a/1b/1c + CLI Integration)
+**Status:** Current repo-local compiler shipped; broader Continuum protocol cutover still open
 **Created:** 2026-01-25
 **Origin:** Extracted from `flyingrobots/echo` TTD Master Plan
 **Scope:** Extend Wesley to compile deterministic protocol schemas for the Echo Time Travel Debugger
@@ -13,6 +13,23 @@
 ## Executive Summary
 
 This plan extends Wesley with a new **TTD Protocol Compiler** capability. The goal is to generate typed protocols, registries, enforcement tables, and verification infrastructure from annotated GraphQL SDL—enabling Echo's Time Travel Debugger to prove determinism through content-addressed, hashable protocol definitions.
+
+## Current Repo Truth
+
+Wesley currently ships a repo-local `compile-ttd` path that parses the
+`@wes_*` TTD directives documented in [`../DIRECTIVES.md`](../DIRECTIVES.md)
+and implemented in
+[`../../packages/wesley-core/src/ttd/directives.mjs`](../../packages/wesley-core/src/ttd/directives.mjs).
+The authored schema Wesley compiles today lives at
+[`../../schemas/ttd-protocol.graphql`](../../schemas/ttd-protocol.graphql),
+and the generated manifest / TypeScript outputs are derived artifacts rather
+than peer authorities.
+
+The sections below describe the extracted target-state design from Echo. They
+are still useful for direction, but they should not be read as proof that
+`main` already accepts the `@channel` / `@op` / `@rule` vocabulary or that the
+cross-repo protocol publication boundary is settled. That cutover is tracked in
+[`SOURCE_WESLEY_protocol-surface-cutover`](../method/backlog/up-next/SOURCE_WESLEY_protocol-surface-cutover.md).
 
 ### Key Doctrine
 
@@ -24,7 +41,7 @@ This plan extends Wesley with a new **TTD Protocol Compiler** capability. The go
 
 ---
 
-## Part 1: New Directive Vocabulary
+## Part 1: Target-State Directive Vocabulary
 
 Wesley's existing `@wes_*` directives handle database DDL. The TTD Protocol Compiler adds a parallel set of directives for **deterministic protocol compilation**.
 
@@ -171,7 +188,7 @@ directive @invariant(
 
 ---
 
-## Part 2: Example Schema Usage
+## Part 2: Target-State Example Schema Usage
 
 ```graphql
 schema
@@ -218,7 +235,7 @@ type RuleContract_MovePlayer
 
 ---
 
-## Part 3: Compiler Outputs
+## Part 3: Target-State Compiler Outputs
 
 ### 3.1 Type/Codegen Outputs (what devs use)
 

@@ -1,12 +1,12 @@
 /**
  * TTD Canonical Hasher
  *
- * Provides deterministic hashing for TTD schemas using canonical
- * JSON serialization and SHA-256 hashing.
+ * Provides deterministic hashing for TTD schema fragments and maps the
+ * public TTD schema hash onto the shared core canonical schema hash.
  */
 
-import { parse, print } from 'graphql';
 import { defaultCrypto } from '../ports/crypto.mjs';
+import { schemaHashWithCrypto } from '../domain/schemaHash.mjs';
 
 /**
  * Compute SHA-256 hash of a string
@@ -106,9 +106,11 @@ export function hashChannel(channel, deps = {}) {
 /**
  * Hash a GraphQL SDL schema
  *
- * The hash is computed from the normalized AST, which means:
+ * The hash is computed from the shared canonical AST payload, which means:
  * - Whitespace differences are ignored
  * - Comment differences are ignored
+ * - Field and definition order differences are ignored
+ * - Equivalent extend-type forms hash identically
  * - The structure and content are preserved
  *
  * @param {string} sdl - GraphQL SDL to hash
@@ -116,27 +118,6 @@ export function hashChannel(channel, deps = {}) {
  * @param {import('../ports/crypto.mjs').CryptoPort} deps.crypto - Crypto port
  */
 export function hashSchema(sdl, deps = {}) {
-  // Parse and re-print to normalize whitespace and remove comments
-  const doc = parse(sdl);
-
-  // Sort definitions by kind and name for deterministic ordering
-  const sortedDefs = [...doc.definitions].sort((a, b) => {
-    const kindOrder = { EnumTypeDefinition: 0, ObjectTypeDefinition: 1 };
-    const kindA = kindOrder[a.kind] ?? 2;
-    const kindB = kindOrder[b.kind] ?? 2;
-
-    if (kindA !== kindB) return kindA - kindB;
-
-    const nameA = a.name?.value ?? '';
-    const nameB = b.name?.value ?? '';
-    return nameA.localeCompare(nameB);
-  });
-
-  // Print normalized SDL
-  const normalizedSdl = print({
-    kind: 'Document',
-    definitions: sortedDefs
-  });
-
-  return hashString(normalizedSdl, deps);
+  const crypto = deps.crypto ?? defaultCrypto;
+  return schemaHashWithCrypto(sdl, crypto);
 }
