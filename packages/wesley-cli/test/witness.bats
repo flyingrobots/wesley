@@ -81,6 +81,26 @@ EOF
     echo "$output" | jq -e '.result.status == "pass"' >/dev/null
 }
 
+@test "witness ignores unrelated manifest.json files outside generated roots" {
+    node "$CLI_PATH" compile --schema "$RECEIPT_SCHEMA" --target warp-ttd,echo --out-dir out/proof >/dev/null
+
+    mkdir -p docs
+    cat > docs/manifest.json <<'EOF'
+{
+  "family": "Hash",
+  "note": "Receipt family design notes, not generated output."
+}
+EOF
+
+    run node "$CLI_PATH" witness \
+        --scope receipt-family \
+        --schema "$RECEIPT_SCHEMA" \
+        --out-dir out/proof \
+        --json
+    assert_success
+    echo "$output" | jq -e '.result.status == "pass"' >/dev/null
+}
+
 @test "witness accepts copied leg overrides alongside a root realization manifest" {
     node "$CLI_PATH" compile --schema "$RECEIPT_SCHEMA" --target warp-ttd,echo --out-dir out/original >/dev/null
 
@@ -161,6 +181,27 @@ EOF
     echo "$output" | jq -e '.result.outputPath == "out/settlement/witness/conformance.json"' >/dev/null
     echo "$output" | jq -e '.result.status == "pass"' >/dev/null
     assert_file_exist out/settlement/witness/conformance.json
+}
+
+@test "witness records a failing report when the authored schema is malformed" {
+    node "$CLI_PATH" compile --schema "$RECEIPT_SCHEMA" --target warp-ttd,echo --out-dir out/proof >/dev/null
+
+    mkdir -p authored
+    cat > authored/bad-receipt.graphql <<'EOF'
+type Receipt {
+  receiptId: ID!
+EOF
+
+    run node "$CLI_PATH" witness \
+        --scope receipt-family \
+        --schema authored/bad-receipt.graphql \
+        --out-dir out/proof
+    assert_failure
+    assert_file_exist out/proof/witness/conformance.json
+    run jq -e '.checks[] | select(.id == "publication-boundary.receipt-family" and .status == "fail")' out/proof/witness/conformance.json
+    assert_success
+    run jq -e '.surfaces.publicationBoundary.rules[] | select(.id == "receipt-family") | .schemaParseFailures | length > 0' out/proof/witness/conformance.json
+    assert_success
 }
 
 @test "witness fails when receipt-family gains a handwritten scalar shadow contract" {

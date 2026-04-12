@@ -49,6 +49,10 @@ export async function inspectContinuumPublicationBoundary({
       .map((item) => describeFile(repoRoot, item));
     const shadowContracts = [];
     const staleGeneratedArtifacts = [];
+    const schemaParseFailures = derived.schemaDiagnostics.map((diagnostic) => ({
+      path: describePath(repoRoot, diagnostic.path),
+      error: diagnostic.error
+    }));
 
     for (const filePath of files) {
       const authority = classifyAuthority(filePath, derived);
@@ -78,7 +82,10 @@ export async function inspectContinuumPublicationBoundary({
       }
     }
 
-    const pass = shadowContracts.length === 0 && staleGeneratedArtifacts.length === 0;
+    const pass =
+      shadowContracts.length === 0 &&
+      staleGeneratedArtifacts.length === 0 &&
+      schemaParseFailures.length === 0;
     checks.push(createCheck(
       `publication-boundary.${derived.id}`,
       pass,
@@ -92,6 +99,7 @@ export async function inspectContinuumPublicationBoundary({
         compatRoots: derived.compatRoots.map((item) => describePath(repoRoot, item)),
         familyNames: [...derived.familyNames].sort(),
         declaredCompatMirrors: compatMirrors,
+        schemaParseFailures,
         shadowContracts,
         staleGeneratedArtifacts
       }
@@ -103,6 +111,7 @@ export async function inspectContinuumPublicationBoundary({
       generatedRoots: derived.generatedRoots.map((item) => describePath(repoRoot, item)),
       compatRoots: derived.compatRoots.map((item) => describePath(repoRoot, item)),
       declaredCompatMirrors: compatMirrors,
+      schemaParseFailures,
       shadowContracts,
       staleGeneratedArtifacts
     });
@@ -119,9 +128,17 @@ async function deriveRuleMetadata(fs, rule) {
   const generatedRoots = await Promise.all((rule.generatedRoots ?? []).map((item) => resolvePath(fs, item)));
   const compatRoots = await Promise.all((rule.compatRoots ?? []).map((item) => resolvePath(fs, item)));
   const familyNames = new Set();
+  const schemaDiagnostics = [];
   for (const authoredHome of authoredHomes) {
     const schemaContent = await fs.read(authoredHome);
-    for (const name of extractContractNames(schemaContent)) {
+    const extraction = extractContractNames(schemaContent);
+    if (extraction.error != null) {
+      schemaDiagnostics.push({
+        path: authoredHome,
+        error: extraction.error
+      });
+    }
+    for (const name of extraction.names) {
       familyNames.add(name);
     }
   }
@@ -131,8 +148,13 @@ async function deriveRuleMetadata(fs, rule) {
     authoredHomes,
     generatedRoots,
     compatRoots,
-    generatedArtifactBasenames: new Set((rule.generatedArtifacts ?? []).map((item) => path.basename(item))),
-    familyNames
+    generatedArtifactPaths: new Set(
+      (rule.generatedArtifactPaths ?? rule.generatedArtifacts ?? [])
+        .map((item) => normalizeArtifactPath(item))
+        .filter(Boolean)
+    ),
+    familyNames,
+    schemaDiagnostics
   };
 }
 
@@ -236,7 +258,15 @@ function classifyAuthority(filePath, rule) {
 }
 
 function extractContractNames(schemaContent) {
-  const document = parse(schemaContent, { noLocation: true });
+  let document;
+  try {
+    document = parse(schemaContent, { noLocation: true });
+  } catch (error) {
+    return {
+      names: [],
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
   const names = [];
   for (const definition of document.definitions) {
     if (!definition.name?.value) {
@@ -256,7 +286,10 @@ function extractContractNames(schemaContent) {
       }
     }
   }
-  return names;
+  return {
+    names,
+    error: null
+  };
 }
 
 function looksLikeShadowContract(filePath, content, familyNames) {
@@ -290,8 +323,9 @@ function declarationPatternForExtension(extension, familyName) {
 
 function looksLikeGeneratedArtifactLeak(filePath, content, rule) {
   const basename = path.basename(filePath);
+  const normalizedPath = normalizeSeparators(filePath);
   const generatedNameMatch =
-    rule.generatedArtifactBasenames.has(basename) ||
+    matchesGeneratedArtifactPath(normalizedPath, rule.generatedArtifactPaths) ||
     basename.endsWith('.generated.ts') ||
     basename.endsWith('.generated.rs');
   if (!generatedNameMatch) {
@@ -303,6 +337,15 @@ function looksLikeGeneratedArtifactLeak(filePath, content, rule) {
   }
 
   return rule.authoredHomes.some((item) => content.includes(path.basename(item)));
+}
+
+function matchesGeneratedArtifactPath(filePath, generatedArtifactPaths) {
+  for (const artifactPath of generatedArtifactPaths) {
+    if (filePath === artifactPath || filePath.endsWith(`/${artifactPath}`)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function containsAny(content, values) {
@@ -339,6 +382,14 @@ function isWithin(candidate, root) {
 
 function normalizeSeparators(value) {
   return value.replace(/\\/g, '/');
+}
+
+function normalizeArtifactPath(value) {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    return null;
+  }
+
+  return normalizeSeparators(value.trim()).replace(/^\.?\//, '');
 }
 
 function escapeRegExp(value) {

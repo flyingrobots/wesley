@@ -49,7 +49,8 @@ export function resolveContinuumWitnessOptions(options) {
         'storage semantics',
         'debugger semantics',
         'full Continuum completeness',
-        'the receipt-family proving lane'
+        'the receipt-family proving lane',
+        'the settlement-family proving lane'
       ],
       receiptFamilyFixtureDir: null
     };
@@ -240,11 +241,9 @@ function buildPublicationBoundaryRules({
     currentLegOutDir: echoDir,
     fallback: DEFAULT_ECHO_REQUIRED_FILES
   });
-  const generatedArtifacts = [...new Set([
-    ...ttdGeneratedArtifacts,
-    ...echoGeneratedArtifacts,
-    'manifest.json'
-  ])];
+  const realizationArtifactPaths = realizationRoot == null
+    ? []
+    : buildGeneratedArtifactPaths(realizationRoot, ['manifest.json']);
 
   if (scope === CURRENT_MINIMUM_SCOPE) {
     return [
@@ -253,14 +252,14 @@ function buildPublicationBoundaryRules({
         authoredHomes: [ttdSchemaPath],
         generatedRoots: [ttdDir].concat(realizationRoot == null ? [] : [realizationRoot]),
         compatRoots: [],
-        generatedArtifacts: ttdGeneratedArtifacts
+        generatedArtifactPaths: buildGeneratedArtifactPaths(ttdDir, ttdGeneratedArtifacts)
       },
       {
         id: 'echo-core-types',
         authoredHomes: [echoSchemaPath],
         generatedRoots: [echoDir].concat(realizationRoot == null ? [] : [realizationRoot]),
         compatRoots: [],
-        generatedArtifacts: echoGeneratedArtifacts
+        generatedArtifactPaths: buildGeneratedArtifactPaths(echoDir, echoGeneratedArtifacts)
       }
     ];
   }
@@ -272,7 +271,11 @@ function buildPublicationBoundaryRules({
         authoredHomes: [ttdSchemaPath],
         generatedRoots: [ttdDir, echoDir].concat(realizationRoot == null ? [] : [realizationRoot]),
         compatRoots: [settlementFamilyFixtureDir, 'schemas/continuum-settlement-family.graphql'],
-        generatedArtifacts
+        generatedArtifactPaths: [
+          ...buildGeneratedArtifactPaths(ttdDir, ttdGeneratedArtifacts),
+          ...buildGeneratedArtifactPaths(echoDir, echoGeneratedArtifacts),
+          ...realizationArtifactPaths
+        ]
       }
     ];
   }
@@ -283,9 +286,31 @@ function buildPublicationBoundaryRules({
       authoredHomes: [ttdSchemaPath],
       generatedRoots: [ttdDir, echoDir].concat(realizationRoot == null ? [] : [realizationRoot]),
       compatRoots: [receiptFamilyFixtureDir, 'schemas/continuum-receipt-family.graphql'],
-      generatedArtifacts
+      generatedArtifactPaths: [
+        ...buildGeneratedArtifactPaths(ttdDir, ttdGeneratedArtifacts),
+        ...buildGeneratedArtifactPaths(echoDir, echoGeneratedArtifacts),
+        ...realizationArtifactPaths
+      ]
     }
   ];
+}
+
+function buildGeneratedArtifactPaths(rootDir, files) {
+  const rootSegment = normalizeSeparators(path.basename(rootDir));
+  return [...new Set(
+    files
+      .map((file) => normalizeGeneratedArtifactPath(file))
+      .filter(Boolean)
+      .map((file) => rootSegment.length === 0 ? file : `${rootSegment}/${file}`)
+  )].sort((left, right) => left.localeCompare(right));
+}
+
+function normalizeGeneratedArtifactPath(filePath) {
+  if (typeof filePath !== 'string' || filePath.trim().length === 0) {
+    return null;
+  }
+
+  return normalizeSeparators(filePath.trim()).replace(/^\.?\//, '');
 }
 
 async function resolveRepoRoot(fs) {

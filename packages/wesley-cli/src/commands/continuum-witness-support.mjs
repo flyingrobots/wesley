@@ -56,10 +56,22 @@ export async function inspectTtdSurface({
   requiredFiles = DEFAULT_TTD_REQUIRED_FILES
 }) {
   const schemaContent = await fs.read(schemaPath);
-  const expectedHash = hashTtdSchema(schemaContent, { crypto });
+  const { hash: expectedHash, error: schemaError } = computeTtdSchemaHash(schemaContent, crypto);
   const requiredPaths = requiredFiles.map((file) => joinPath(outDir, file));
   const missingFiles = await collectMissingFiles(fs, requiredPaths);
   const missingRelative = missingFiles.map((missingPath) => relativePath(outDir, missingPath));
+
+  checks.push(createCheck(
+    'ttd.schema-input-validity',
+    schemaError == null,
+    schemaError == null
+      ? 'TTD authored schema parses cleanly for canonical hashing.'
+      : `TTD authored schema could not be canonically hashed: ${schemaError}`,
+    {
+      schemaPath,
+      error: schemaError
+    }
+  ));
 
   checks.push(createCheck(
     'ttd.required-files',
@@ -78,6 +90,7 @@ export async function inspectTtdSurface({
     return {
       schemaPath,
       schemaHash: expectedHash,
+      schemaError,
       outDir,
       missingFiles: missingRelative
     };
@@ -87,17 +100,20 @@ export async function inspectTtdSurface({
   const manifestJson = await readJson(fs, joinPath(outDir, 'manifest/manifest.json'));
   const contractsJson = await readJson(fs, joinPath(outDir, 'manifest/contracts.json'));
 
-  const hashMatches = schemaJson.hash === expectedHash;
+  const hashMatches = typeof expectedHash === 'string' && schemaJson.hash === expectedHash;
   checks.push(createCheck(
     'ttd.schema-traceability',
     hashMatches,
     hashMatches
       ? 'TTD schema hash matches the authored schema input.'
-      : `TTD schema hash mismatch: expected ${expectedHash}, got ${schemaJson.hash}`,
+      : schemaError == null
+        ? `TTD schema hash mismatch: expected ${expectedHash}, got ${schemaJson.hash}`
+        : `TTD schema hash could not be verified because the authored schema is malformed: ${schemaError}`,
     {
       expectedHash,
       actualHash: schemaJson.hash,
-      schemaPath
+      schemaPath,
+      schemaError
     }
   ));
 
@@ -130,6 +146,7 @@ export async function inspectTtdSurface({
   return {
     schemaPath,
     schemaHash: expectedHash,
+    schemaError,
     outDir,
     channels: schemaJson.channels?.length ?? 0,
     ops: schemaJson.ops?.length ?? 0,
@@ -139,11 +156,23 @@ export async function inspectTtdSurface({
 
 export async function inspectEchoSurface({ fs, schemaPath, outDir, checks }) {
   const schemaContent = await fs.read(schemaPath);
-  const expectedHash = await schemaHash(schemaContent);
+  const { hash: expectedHash, error: schemaError } = await computeEchoSchemaHash(schemaContent);
   const expectedIrHash = await computeSdlHash(schemaContent);
   const requiredPaths = DEFAULT_ECHO_REQUIRED_FILES.map((file) => joinPath(outDir, file));
   const missingFiles = await collectMissingFiles(fs, requiredPaths);
   const missingRelative = missingFiles.map((missingPath) => relativePath(outDir, missingPath));
+
+  checks.push(createCheck(
+    'echo.schema-input-validity',
+    schemaError == null,
+    schemaError == null
+      ? 'Echo authored schema parses cleanly for canonical hashing.'
+      : `Echo authored schema could not be canonically hashed: ${schemaError}`,
+    {
+      schemaPath,
+      error: schemaError
+    }
+  ));
 
   checks.push(createCheck(
     'echo.required-files',
@@ -162,6 +191,7 @@ export async function inspectEchoSurface({ fs, schemaPath, outDir, checks }) {
     return {
       schemaPath,
       schemaHash: expectedHash,
+      schemaError,
       outDir,
       missingFiles: missingRelative
     };
@@ -179,6 +209,7 @@ export async function inspectEchoSurface({ fs, schemaPath, outDir, checks }) {
   const actualCanonicalSchemaPath = summaryJson.canonicalSchemaPath ??
     canonicalizeSchemaPath(summaryJson.schemaPath);
   const traceable = summaryJson.kind === 'wesley.echo-bundle.inspect.v1' &&
+    typeof expectedHash === 'string' &&
     summaryJson.schemaHash === expectedHash &&
     isNonEmptyString(summaryJson.schemaPath) &&
     (expectedCanonicalSchemaPath == null
@@ -190,14 +221,17 @@ export async function inspectEchoSurface({ fs, schemaPath, outDir, checks }) {
     traceable,
     traceable
       ? 'Echo inspect summary matches the authored schema hash and records traceable schema origin.'
-      : 'Echo inspect summary does not match the authored schema input.',
+      : schemaError == null
+        ? 'Echo inspect summary does not match the authored schema input.'
+        : `Echo inspect summary could not be fully verified because the authored schema is malformed: ${schemaError}`,
     {
       expectedHash,
       actualHash: summaryJson.schemaHash,
       expectedSchemaPath: schemaPath,
       actualSchemaPath: summaryJson.schemaPath,
       expectedCanonicalSchemaPath,
-      actualCanonicalSchemaPath
+      actualCanonicalSchemaPath,
+      schemaError
     }
   ));
 
@@ -289,12 +323,41 @@ export async function inspectEchoSurface({ fs, schemaPath, outDir, checks }) {
   return {
     schemaPath,
     schemaHash: expectedHash,
+    schemaError,
     outDir,
     typeCount: irJson.types?.length ?? 0,
     opCount: irJson.ops?.length ?? 0,
     observationCount: deliveryRows.length,
     outcomes: deliveredOutcomes
   };
+}
+
+function computeTtdSchemaHash(schemaContent, crypto) {
+  try {
+    return {
+      hash: hashTtdSchema(schemaContent, { crypto }),
+      error: null
+    };
+  } catch (error) {
+    return {
+      hash: null,
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
+}
+
+async function computeEchoSchemaHash(schemaContent) {
+  try {
+    return {
+      hash: await schemaHash(schemaContent),
+      error: null
+    };
+  } catch (error) {
+    return {
+      hash: null,
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
 }
 
 export async function readJson(fs, path) {
