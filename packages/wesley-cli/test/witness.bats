@@ -180,6 +180,23 @@ EOF
     assert_success
 }
 
+@test "witness fails when receipt-family gains a handwritten scalar shadow contract under tests" {
+    node "$CLI_PATH" compile --schema "$RECEIPT_SCHEMA" --target warp-ttd,echo --out-dir out/proof >/dev/null
+
+    mkdir -p tests/rogue
+    cat > tests/rogue/hash-shadow.graphql <<'EOF'
+scalar Hash
+EOF
+
+    run node "$CLI_PATH" witness \
+        --scope receipt-family \
+        --schema "$RECEIPT_SCHEMA" \
+        --out-dir out/proof
+    assert_failure
+    run jq -e '.checks[] | select(.id == "publication-boundary.receipt-family" and .status == "fail")' out/proof/witness/conformance.json
+    assert_success
+}
+
 @test "witness fails when settlement-family gains a handwritten scalar shadow contract" {
     node "$CLI_PATH" compile --schema "$SETTLEMENT_SCHEMA" --target warp-ttd,echo --out-dir out/settlement >/dev/null
 

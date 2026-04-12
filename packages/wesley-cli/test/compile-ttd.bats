@@ -83,6 +83,25 @@ EOF
     echo "$output" | jq -e '.exitCode == 0' >/dev/null
 }
 
+@test "legacy main surface honors injected process stderr for unknown commands" {
+    run node --input-type=module <<EOF
+import { main } from '${MAIN_MODULE}';
+
+let capturedStderr = '';
+const exitCode = await main(['node', 'wesley', 'definitely-not-a-command'], {
+  process: {
+    stdout: { write() {} },
+    stderr: { write(chunk) { capturedStderr += String(chunk); } }
+  }
+});
+
+console.log(JSON.stringify({ exitCode, capturedStderr }));
+EOF
+    assert_success
+    echo "$output" | jq -e '.exitCode == 1' >/dev/null
+    echo "$output" | jq -e '.capturedStderr | contains("unknown command")' >/dev/null
+}
+
 @test "compile-ttd dry-run shows files" {
     create_minimal_ttd_schema
     run node "$CLI_PATH" compile-ttd --schema ttd-schema.graphql --dry-run

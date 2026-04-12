@@ -311,6 +311,13 @@ async function loadRealizationManifest({ fs, realizationRoot }) {
 function buildPublicationBoundaryReservedRoots(scope) {
   if (scope === CURRENT_MINIMUM_SCOPE) {
     return [
+      'test',
+      'packages/wesley-cli/test',
+      'packages/wesley-core/test',
+      'packages/wesley-generator-echo/test',
+      'packages/wesley-generator-ttd/test',
+      'test/fixtures/continuum/receipt-family',
+      'test/fixtures/continuum/settlement-family',
       'schemas/continuum-receipt-family.graphql',
       'schemas/continuum-settlement-family.graphql',
       'schemas/directives.graphql'

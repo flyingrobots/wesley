@@ -19,7 +19,8 @@ See `pnpm wesley --help` for the full list of commands (including `blade`, `cert
 
 - Run the Bats test suite: `pnpm --filter @wesley/cli test`
 - Install/refresh Bats plugins: `pnpm run setup:bats-plugins`
-- CLI entrypoint: `src/main.mjs`
+- Host CLI entrypoint: `@wesley/host-node/bin/wesley.mjs`, which loads `src/program.mjs`
+- Legacy exported compatibility wrapper: `src/main.mjs`
 
 ## Status
 

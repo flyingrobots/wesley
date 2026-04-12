@@ -23,9 +23,7 @@ const IGNORED_DIRECTORIES = new Set([
   'coverage',
   'dist',
   '.next',
-  'out',
-  'test',
-  'tests'
+  'out'
 ]);
 const ROOT_OPERATION_TYPE_NAMES = new Set(['Query', 'Mutation', 'Subscription']);
 

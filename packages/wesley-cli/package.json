@@ -5,7 +5,6 @@
   "description": "Wesley CLI - GraphQL to Everything",
   "exports": {
     ".": "./src/index.mjs",
-    "./src/commands": "./src/commands.mjs",
     "./src/main.mjs": "./src/main.mjs",
     "./src/program.mjs": "./src/program.mjs"
   },
