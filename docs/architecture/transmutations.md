@@ -8,7 +8,7 @@ This document specifies the transmutation system: how projects declare what they
 
 ## Status
 
-**Implemented in part** — the active `legacy-supabase` hot path now runs through transmutation-aware evidence and evidence-based SCS/TCI/MRI, but the broader generator surface still has follow-on work.
+**Implemented in part** — the active `legacy-supabase` hot path now runs through transmutation-aware evidence and evidence-based SCS/TCI/MRI, and the CLI transmutation registry is now executable rather than name-only. A built-in `null-generator` witness proves a new transmutation can be added through registration without editing orchestration internals, but the broader generator surface still has follow-on work.
 
 ---
 
@@ -808,6 +808,8 @@ graph LR
 #### 0c. Wire T.A.S.K.S. into transmutation execution
 
 **Problem**: `@wesley/tasks` has a complete DAG engine (`TaskDefinition`, `TaskDependency`, `TaskGraph`). `@wesley/slaps` has lock-aware execution (`LockAwareExecutor`, `TasksSlapsBridge`). Both are implemented, tested, and sitting unused. Meanwhile, the CLI's `generate` command runs generators in a hardcoded sequence.
+
+The sequential registry now carries more of the orchestration truth than it did originally: transmutations register their own prerequisites, plugin construction, and runtime capabilities, and the built-in `null-generator` witness exercises that seam without adding special cases to the runner.
 
 **Fix**: Each transmutation becomes a `TaskGraph`:
 

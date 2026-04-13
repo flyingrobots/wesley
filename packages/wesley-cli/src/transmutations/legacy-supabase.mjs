@@ -97,13 +97,14 @@ async function mergeEmitted(targetFiles, targetEvidence, emittedPromise) {
   }
 }
 
-export function flattenTransmutationArtifacts(runResult) {
-  const artifacts = [];
-  for (const result of runResult?.results || []) {
-    if (result.status !== 'ok' || !result.artifacts) continue;
-    for (const [name, content] of Object.entries(result.artifacts)) {
-      artifacts.push({ name, content });
+export function legacySupabaseScoringOptions() {
+  return {
+    scs: {
+      artifactGroups: {
+        sql: ['sql'],
+        tests: ['test']
+      },
+      rollupGroups: ['sql']
     }
-  }
-  return artifacts;
+  };
 }

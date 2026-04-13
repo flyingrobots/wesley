@@ -5,7 +5,7 @@
  */
 
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
-import { WesleyError, OpsError, createRunId } from '@wesley/core';
+import { OpsError, createRunId } from '@wesley/core';
 import {
   ensureGeneratePreconditions,
   runSequentialGeneration,
@@ -13,7 +13,10 @@ import {
 } from './generate-execution.mjs';
 import { compileOpsIfRequested } from './generate-ops.mjs';
 import { LEGACY_SUPABASE_TRANSMUTATION } from '../transmutations/legacy-supabase.mjs';
-import { resolveTransmutationName } from '../transmutations/registry.mjs';
+import {
+  assertTransmutationPrerequisites,
+  resolveTransmutationName
+} from '../transmutations/registry.mjs';
 import {
   assertResumeRequestedRunId,
   buildShortCircuitedResumeResult,
@@ -118,6 +121,8 @@ export class GeneratePipelineCommand extends WesleyCommand {
       throw attachRunFailure(error, eventCollector, run);
     }
 
+    const registration = assertTransmutationPrerequisites(options.transmutation, this.ctx);
+
     const resumeState = options.resume
       ? resolveResumeState(this.ctx?.eventStore, {
         runId: options.runId,
@@ -143,12 +148,14 @@ export class GeneratePipelineCommand extends WesleyCommand {
       logger.info({ schema: schemaPath }, 'Parsing schema...');
     }
 
-    const { generators, planner, runner } = this.ctx;
-    if (!generators || !generators.sql) {
-      throw new WesleyError('GENERATION_FAILED', 'SQL generator not available');
-    }
+    const { planner, runner } = this.ctx;
 
-    const needsSequentialPipeline = options.unit || options.dryRun || options.printIr || options.printComposedSdl;
+    const needsSequentialPipeline =
+      options.unit ||
+      options.dryRun ||
+      options.printIr ||
+      options.printComposedSdl ||
+      registration.supportsTasksRunner !== true;
     const useExperimentalTasksRunner = String(this.ctx?.env?.WESLEY_EXPERIMENTAL_TASKS || '') === '1';
     if (planner && runner && planner.buildPlan && runner.run && useExperimentalTasksRunner && !needsSequentialPipeline && !options.resume) {
       return this.executeWithTasksAndSlaps(context);

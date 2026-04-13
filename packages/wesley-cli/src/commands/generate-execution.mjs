@@ -4,17 +4,16 @@ import {
   GENERATED_HISTORY_PATH,
   GENERATED_SCORES_PATH,
   TransmutationRunner,
-  WesleyError,
   createGeneratedArtifactResolver,
   createRunId,
   enrichBundleWithEvidenceTruth,
   generatedArtifactPathCandidates
 } from '@wesley/core';
 import {
-  LEGACY_SUPABASE_TRANSMUTATION,
-  LegacySupabaseGeneratorPlugin,
+  createTransmutationExecution,
   flattenTransmutationArtifacts
-} from '../transmutations/legacy-supabase.mjs';
+} from '../transmutations/registry.mjs';
+import { LEGACY_SUPABASE_TRANSMUTATION } from '../transmutations/legacy-supabase.mjs';
 import { writeSnapshotProjection } from '../utils/runtime-projections.mjs';
 import {
   attachRunFailure,
@@ -124,7 +123,7 @@ export async function runSequentialGeneration({ ctx, context, compileOpsIfReques
     }
   }
   try {
-    const transmutationResult = await executeLegacySupabaseTransmutation({ ctx, context, ir, runId, eventCollector });
+    const transmutationResult = await executeSequentialTransmutation({ ctx, context, ir, runId, eventCollector });
     const artifacts = flattenTransmutationArtifacts(transmutationResult);
 
     if (!options.dryRun && writer?.writeFiles) {
@@ -252,49 +251,26 @@ async function persistSnapshot({ ctx, ir, logger, dryRun }) {
   }
 }
 
-async function executeLegacySupabaseTransmutation({ ctx, context, ir, runId, eventCollector }) {
+async function executeSequentialTransmutation({ ctx, context, ir, runId, eventCollector }) {
   const { logger, options } = context;
-  const requestedTransmutation = options.transmutation || LEGACY_SUPABASE_TRANSMUTATION;
-  if (requestedTransmutation !== LEGACY_SUPABASE_TRANSMUTATION) {
-    throw new WesleyError(
-      'UNKNOWN_TRANSMUTATION',
-      `The current sequential runtime only supports transmutation "${LEGACY_SUPABASE_TRANSMUTATION}", got "${requestedTransmutation}".`
-    );
-  }
-  const plugin = new LegacySupabaseGeneratorPlugin({
-    generators: ctx.generators,
-    enableRls: options.supabase
-  });
+  const execution = createTransmutationExecution(options.transmutation, { ctx, context, ir, logger });
   const runner = new TransmutationRunner({
     logger,
     clock: createRunnerClock(ctx.clock),
-    config: {
-      paths: {
-        ...(ctx.config?.paths || {}),
-        outputDir: options.outDir
-      },
-      transmutation: {
-        name: LEGACY_SUPABASE_TRANSMUTATION,
-        supabase: Boolean(options.supabase)
-      }
-    }
+    config: execution.config
   });
 
   if (options.showPlan) {
-    const plan = runner.buildTaskGraph(LEGACY_SUPABASE_TRANSMUTATION, [plugin]);
-    logger.info({ transmutation: LEGACY_SUPABASE_TRANSMUTATION, plan }, 'Execution plan:');
+    const plan = runner.buildTaskGraph(execution.name, execution.plugins);
+    logger.info({ transmutation: execution.name, plan }, 'Execution plan:');
   }
 
-  const schema = {
-    sdl: context.schemaContent,
-    ir
-  };
   const sourceSha = await resolveSourceSha(ctx, logger);
 
   const result = await runner.run(
-    LEGACY_SUPABASE_TRANSMUTATION,
-    [plugin],
-    schema,
+    execution.name,
+    execution.plugins,
+    execution.schema,
     {
       runId,
       eventCollector,
@@ -302,7 +278,7 @@ async function executeLegacySupabaseTransmutation({ ctx, context, ir, runId, eve
       emission: {
         outDir: options.outDir
       },
-      scoring: legacySupabaseScoringOptions()
+      ...(execution.scoring ? { scoring: execution.scoring } : {})
     }
   );
 
@@ -327,25 +303,14 @@ function createRunnerClock(clock) {
 function transmutationFailure(result) {
   const failed = result?.results?.find(entry => entry.status === 'error');
   if (!failed) {
-    return new WesleyError('GENERATION_FAILED', `Transmutation "${result?.transmutation || LEGACY_SUPABASE_TRANSMUTATION}" failed`);
+    return new Error(`Transmutation "${result?.transmutation || 'unknown'}" failed`);
   }
 
-  return new WesleyError(
-    failed.errorCode || 'GENERATION_FAILED',
+  const error = new Error(
     `Transmutation "${result.transmutation}" failed in plugin "${failed.name}" during ${failed.phase}: ${failed.errorMessage}`
   );
-}
-
-function legacySupabaseScoringOptions() {
-  return {
-    scs: {
-      artifactGroups: {
-        sql: ['sql'],
-        tests: ['test']
-      },
-      rollupGroups: ['sql']
-    }
-  };
+  error.code = failed.errorCode || 'GENERATION_FAILED';
+  return error;
 }
 
 async function resolveSourceSha(ctx, logger) {
