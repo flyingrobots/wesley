@@ -18,6 +18,7 @@
 
 import { validatePlugin, validatePlan, validateGenerateResult } from '../ports/GeneratorPlugin.mjs';
 import { EvidenceMap, mergePluginEvidenceIntoMap } from './EvidenceMap.mjs';
+import { LoweringEngine } from './LoweringEngine.mjs';
 import { ScoringEngine, BUNDLE_VERSION } from './Scoring.mjs';
 import { createRuntimeEventCollector } from './RuntimeEvents.mjs';
 import { deepFreeze } from '../util/deepFreeze.mjs';
@@ -64,15 +65,20 @@ export class TransmutationRunner {
    * @param {{ now(): string }} deps.clock
    * @param {Record<string, unknown>} deps.config
    * @param {boolean} [deps.bestEffort=false]
+   * @param {{ lower(input: object, options?: object): Promise<{ pluginSchema: object, domain: object|null }> }} [deps.loweringEngine]
    */
-  constructor({ logger, clock, config, bestEffort = false }) {
+  constructor({ logger, clock, config, bestEffort = false, loweringEngine = new LoweringEngine() }) {
     if (!logger) throw new TypeError('TransmutationRunner requires a logger');
     if (!clock) throw new TypeError('TransmutationRunner requires a clock');
     if (config == null) throw new TypeError('TransmutationRunner requires a config object');
+    if (!loweringEngine || typeof loweringEngine.lower !== 'function') {
+      throw new TypeError('TransmutationRunner requires a loweringEngine with lower()');
+    }
     this._logger = logger;
     this._clock = clock;
     this._config = config;
     this._bestEffort = bestEffort;
+    this._loweringEngine = loweringEngine;
   }
 
   /**
@@ -80,7 +86,7 @@ export class TransmutationRunner {
    *
    * @param {string} name - Transmutation name (e.g. 'backend', 'echo')
    * @param {object[]} plugins - Array of GeneratorPlugin-conforming objects
-   * @param {object} schema - Schema input (e.g. { sdl, ir })
+   * @param {object} schema - Schema input (raw SDL/IR/domain or a lowered envelope)
  * @param {object} [options]
  * @param {string} [options.runId] - Caller-supplied run identifier
  * @param {string} [options.sha] - Git commit SHA for evidence tracking
@@ -108,6 +114,8 @@ export class TransmutationRunner {
       eventStore: options.eventStore,
       crashAfterEvent: options.crashAfterEvent
     });
+    const lowered = await this._loweringEngine.lower(schema);
+    const pluginSchema = lowered?.pluginSchema || schema;
     const evidenceMap = new EvidenceMap();
     evidenceMap.setSha(options.sha || 'uncommitted');
 
@@ -127,7 +135,7 @@ export class TransmutationRunner {
     // Execute plugins sequentially (deterministic contract)
     for (const [index, plugin] of plugins.entries()) {
       const taskId = generationNodes[index]?.id || `${name}:gen:${index}`;
-      const result = await this._executePlugin(plugin, schema, runId, evidenceMap, eventCollector, taskId);
+      const result = await this._executePlugin(plugin, pluginSchema, runId, evidenceMap, eventCollector, taskId);
       results.push(result);
 
       if (result.status === 'ok') {
@@ -143,7 +151,7 @@ export class TransmutationRunner {
     const success = this._bestEffort ? hasOk || results.length === 0 : !hasError;
 
     // Compute scores from evidence
-    const scores = this._computeScores(schema, evidenceMap, options);
+    const scores = this._computeScores(lowered?.domain || pluginSchema, evidenceMap, options);
 
     const evidenceJson = evidenceMap.toJSON();
     eventCollector.emit('EvidenceMerged', {

@@ -6,6 +6,7 @@ Pure domain layer that models GraphQL directives, intermediate representation (I
 
 - Directive registry and schema parser
 - IR builders and lowering pipeline (including experimental QIR)
+- LoweringEngine for canonical SDL/IR/domain transmutation inputs
 - SQL/RLS emission utilities and validation helpers
 
 ## Development

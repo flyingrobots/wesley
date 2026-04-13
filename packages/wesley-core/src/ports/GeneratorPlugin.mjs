@@ -63,8 +63,10 @@ export class GeneratorPlugin {
   }
 
   /**
-   * Produce a generation plan from the schema.
-   * @param {object} schema - Schema input (e.g. { sdl: string })
+   * Produce a generation plan from the lowered schema envelope.
+   * The input may expose raw `sdl`, parsed `ir`, and/or domain helpers such as
+   * `getTables()` depending on what the lowering seam admitted.
+   * @param {object} schema
    * @param {PluginContext} context
    * @returns {Promise<GenerationPlan>}
    */
