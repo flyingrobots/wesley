@@ -3,9 +3,7 @@
 </div>
 
 
-A schema-first contract compiler for trustworthy change. Wesley ensures that shared protocols, database migrations, and cross-language boundaries remain technically truthful through bit-exact code generation and evidence-backed conformance.
-
-Wesley is designed for the systems architect who demands a sovereign boundary for their contracts. It scales from automated PostgreSQL migration planning to the compilation of the global Continuum causal protocol.
+Anti-drift tech. Wesley ensures that shared protocols, database migrations, and cross-language boundaries remain technically truthful through bit-exact code generation and evidence-backed conformance.
 
 ## Why Wesley?
 
