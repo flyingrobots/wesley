@@ -231,7 +231,7 @@ export async function buildContinuumWitnessReport({
 
 export { createCheck } from './continuum-witness-support.mjs';
 
-function buildPublicationBoundaryRules({
+export function buildPublicationBoundaryRules({
   scope,
   ttdSchemaPath,
   ttdDir,

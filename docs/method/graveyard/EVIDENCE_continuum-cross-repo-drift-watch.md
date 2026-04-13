@@ -1,11 +1,17 @@
 ---
 title: Continuum Cross-Repo Drift Watch
-lane: v0.1.0
+lane: graveyard
 legend: EVIDENCE
 release: v0.1.0
 ---
 
 # Continuum Cross-Repo Drift Watch
+
+## Disposition
+
+Shipped in release/v0.1.0 via the new `wesley drift-watch` command, focused Bats coverage, and operator docs. The repo now has a local-first surface that compares authored schema identity, local generated legs, realization shells, publication boundaries, and explicit mirror roots, and reports authored / generated-artifact / mirror drift explicitly.
+
+## Original Proposal
 
 - Lane: `cool-ideas`
 - Legend: `EVIDENCE`

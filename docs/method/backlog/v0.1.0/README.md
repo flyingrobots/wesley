@@ -39,7 +39,10 @@ Already shipped on `release/v0.1.0` and retired from the live lane:
 - [Wesley Error Taxonomy And Versioned Holmes Codes](RUNTIME_wesley-error-taxonomy-and-versioned-holmes-codes.md)
 - [Holmes Dashboard Choose Your Track Orientation](RUNTIME_holmes-dashboard-choose-your-track-orientation.md)
 - [Continuum Ownership Map For Shared Nouns](SOURCE_continuum-ownership-map-for-shared-nouns.md)
-- [Continuum Cross-Repo Drift Watch](EVIDENCE_continuum-cross-repo-drift-watch.md)
+
+Already shipped on `release/v0.1.0` and retired from the live lane:
+
+- [Continuum Cross-Repo Drift Watch](../../graveyard/EVIDENCE_continuum-cross-repo-drift-watch.md)
 
 ## Release Companion
 

@@ -11,6 +11,7 @@ pnpm wesley transform --schema path/to/schema.graphql --transmutation null-gener
 pnpm wesley compile --schema "$CONTINUUM_ROOT"/schemas/continuum-receipt-family.graphql --target warp-ttd,echo --out-dir .wesley-cache/continuum/local-inspect
 pnpm wesley verify-realization --tracked
 pnpm wesley witness --scope receipt-family --schema "$CONTINUUM_ROOT"/schemas/continuum-receipt-family.graphql --out-dir .wesley-cache/continuum/local-inspect
+pnpm wesley drift-watch --scope receipt-family --schema "$CONTINUUM_ROOT"/schemas/continuum-receipt-family.graphql --out-dir .wesley-cache/continuum/local-inspect --mirror-root ../warp-ttd
 pnpm wesley plan --schema path/to/schema.graphql --explain
 pnpm wesley rehearse --schema path/to/schema.graphql --dry-run --json
 ```
@@ -20,6 +21,8 @@ Set `CONTINUUM_ROOT` to the root of your local Continuum checkout before using t
 See `pnpm wesley --help` for the full list of commands (including `blade`, `cert-*`, and experimental `--ops` support).
 
 Repeated local schema workflows reuse a hash-addressed IR cache in `.wesley-cache/ir/`, so `generate`, `plan`, `rehearse`, `up`, `typescript`, and `zod` do not need to re-lower unchanged SDL on every invocation.
+
+`drift-watch` is the local cutover surface for nearby Continuum consumers. It verifies the authored schema hash, local generated legs, realization shell, and any explicit mirror roots you point it at, then reports drift as an authored, generated-artifact, or mirror-boundary problem.
 
 ## Development
 

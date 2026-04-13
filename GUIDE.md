@@ -20,10 +20,13 @@ Compile shared causal protocols into bit-exact language targets.
 - **Bundle**: `pnpm wesley bundle-echo --schema <path>`
 - **Guard**: `pnpm wesley verify-realization --tracked`
 - **Witness**: `pnpm wesley witness --scope receipt-family --schema <path>`
+- **Drift Watch**: `pnpm wesley drift-watch --scope receipt-family --schema <path> --mirror-root <consumer-root>`
 
 Use `verify-realization` to validate the realization shell for an emitted leg.
 Use `witness` to certify the explicit bounded properties named by the chosen
 scope. A witness pass is not a blanket claim about runtime or debugger truth.
+Use `drift-watch` when you need one local cutover surface that compares authored
+schema identity, local emitted legs, and explicit nearby mirrors.
 
 ### 3. Governance & Inspection
 Audit proposed changes and monitor the contract state via the TUI dashboard.
