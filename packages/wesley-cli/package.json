@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@wesley/core": "workspace:*",
+    "@wesley/continuum": "workspace:*",
     "@wesley/generator-echo": "workspace:*",
     "@wesley/generator-js": "workspace:*",
     "@wesley/holmes": "workspace:^",

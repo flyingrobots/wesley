@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-13T02:04:21.941Z",
+  "generatedAt": "2026-04-13T22:49:27.920Z",
   "overall": {
     "stage": "MVP",
     "next": "Alpha",
@@ -111,6 +111,25 @@
       "docs": {
         "hasStatus": true,
         "hasUsage": false,
+        "hasApi": false,
+        "hasCaveats": false
+      },
+      "milestones": {
+        "alpha": null,
+        "beta": null
+      },
+      "coverage": null
+    },
+    {
+      "name": "@wesley/continuum",
+      "status": "Active",
+      "stage": "MVP",
+      "progress": 20,
+      "next": "Alpha",
+      "passRate": null,
+      "docs": {
+        "hasStatus": true,
+        "hasUsage": true,
         "hasApi": false,
         "hasCaveats": false
       },

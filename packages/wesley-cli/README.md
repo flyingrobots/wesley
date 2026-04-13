@@ -23,6 +23,9 @@ See `pnpm wesley --help` for the full list of commands (including `blade`, `cert
 Repeated local schema workflows reuse a hash-addressed IR cache in `.wesley-cache/ir/`, so `generate`, `plan`, `rehearse`, `up`, `typescript`, and `zod` do not need to re-lower unchanged SDL on every invocation.
 
 `drift-watch` is the local cutover surface for nearby Continuum consumers. It verifies the authored schema hash, local generated legs, realization shell, and any explicit mirror roots you point it at, then reports drift as an authored, generated-artifact, or mirror-boundary problem.
+The Continuum defaults behind `witness` and `drift-watch` now come from
+`@wesley/continuum`, which owns the shared-family scopes, publication-boundary
+policy, and the Continuum judgment profile for Holmes, Watson, and Moriarty.
 
 ## Development
 

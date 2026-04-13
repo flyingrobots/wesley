@@ -44,6 +44,7 @@ teardown() {
 
     assert_success
     echo "$output" | jq -e '.success == true and .result.status == "pass" and .result.summary.failed == 0' >/dev/null
+    echo "$output" | jq -e '.result.judgmentProfile.profilePackage == "@wesley/continuum" and .result.judgmentProfile.enginePackage == "@wesley/holmes"' >/dev/null
     echo "$output" | jq -e '.result.surfaces.mirrors[0].surfaceCount == 3 and (.result.failures.mirror | length == 0)' >/dev/null
 }
 

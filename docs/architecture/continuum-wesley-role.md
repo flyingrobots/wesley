@@ -101,6 +101,7 @@ reimplement the fact layer underneath it.
 Current repo-visible evidence:
 
 - `docs/architecture/holmes-counterfactuals.md`
+- `packages/wesley-continuum/src/judgment-profile.mjs`
 - `packages/wesley-holmes/src/counterfactual/provider.mjs`
 - `packages/wesley-holmes/src/moriarty-predict-workflow.mjs`
 
@@ -109,6 +110,8 @@ Current rule:
 - substrate facts come from substrate-capable tools and adapters
 - Wesley translates those facts into judgment-bearing outputs for operators and
   automation
+- Continuum-specific judgment profiles may live in `@wesley/continuum`, while
+  shared Holmes/Watson/Moriarty execution stays in `@wesley/holmes`
 
 ## Admission Rule For A Shared Noun Family
 

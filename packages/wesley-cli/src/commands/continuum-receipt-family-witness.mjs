@@ -526,21 +526,21 @@ function validateScalarValue({ value, fieldName, type, enums }) {
   }
 
   switch (type) {
-    case 'Int':
-      return Number.isInteger(value)
-        ? { problems: [], canonical: value }
-        : { problems: [`${fieldName} must be an integer.`], canonical: null };
-    case 'Boolean':
-      return typeof value === 'boolean'
-        ? { problems: [], canonical: value }
-        : { problems: [`${fieldName} must be a boolean.`], canonical: null };
-    case 'Float':
-      return typeof value === 'number' && Number.isFinite(value)
-        ? { problems: [], canonical: value }
-        : { problems: [`${fieldName} must be a finite number.`], canonical: null };
-    default:
-      return typeof value === 'string' && value.trim().length > 0
-        ? { problems: [], canonical: value }
-        : { problems: [`${fieldName} must be a non-empty string.`], canonical: null };
+  case 'Int':
+    return Number.isInteger(value)
+      ? { problems: [], canonical: value }
+      : { problems: [`${fieldName} must be an integer.`], canonical: null };
+  case 'Boolean':
+    return typeof value === 'boolean'
+      ? { problems: [], canonical: value }
+      : { problems: [`${fieldName} must be a boolean.`], canonical: null };
+  case 'Float':
+    return typeof value === 'number' && Number.isFinite(value)
+      ? { problems: [], canonical: value }
+      : { problems: [`${fieldName} must be a finite number.`], canonical: null };
+  default:
+    return typeof value === 'string' && value.trim().length > 0
+      ? { problems: [], canonical: value }
+      : { problems: [`${fieldName} must be a non-empty string.`], canonical: null };
   }
 }

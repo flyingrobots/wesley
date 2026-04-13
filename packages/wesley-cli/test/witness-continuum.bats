@@ -83,6 +83,7 @@ run_witness_continuum() {
     echo "$output" | jq -e '.success == true' >/dev/null
     echo "$output" | jq -e '.result.status == "pass"' >/dev/null
     echo "$output" | jq -e '.result.scope == "current-minimum-shared-surface"' >/dev/null
+    echo "$output" | jq -e '.result.judgmentProfile.profilePackage == "@wesley/continuum" and .result.judgmentProfile.enginePackage == "@wesley/holmes"' >/dev/null
     echo "$output" | jq -e '.result.summary.failed == 0' >/dev/null
     echo "$output" | jq -e '.result.checks[] | select(.id == "continuum.delivery-vs-receipt-separation" and .status == "pass")' >/dev/null
     echo "$output" | jq -e '.result.checks[] | select(.id == "publication-boundary.ttd-protocol" and .status == "pass")' >/dev/null

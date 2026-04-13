@@ -55,6 +55,9 @@ importers:
 
   packages/wesley-cli:
     dependencies:
+      '@wesley/continuum':
+        specifier: workspace:*
+        version: link:../wesley-continuum
       '@wesley/core':
         specifier: workspace:*
         version: link:../wesley-core
@@ -82,6 +85,12 @@ importers:
       graphql:
         specifier: ^16.11.0
         version: 16.11.0
+
+  packages/wesley-continuum:
+    dependencies:
+      '@wesley/core':
+        specifier: workspace:*
+        version: link:../wesley-core
 
   packages/wesley-core:
     dependencies:

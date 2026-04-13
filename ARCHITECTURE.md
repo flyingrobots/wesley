@@ -50,7 +50,7 @@ Pluggable modules that own the physical emission of code.
 - **Host-Node/Bun/Deno**: Runtime-specific adapters for file I/O and process execution.
 
 ### 4. HOLMES (Policy Engine)
-The governance layer. It evaluates proposed changes against a set of policy invariants (e.g., "No breaking changes to public envelopes") and issues cryptographic certificates of conformance.
+The governance layer. It evaluates proposed changes against a set of policy invariants (e.g., "No breaking changes to public envelopes") and issues cryptographic certificates of conformance. Shared execution lives in `@wesley/holmes`, while product packages such as `@wesley/continuum` can supply domain-specific judgment profiles, scope defaults, and publication-boundary policy without absorbing generic compiler infrastructure.
 
 ## Admission Surfaces
 

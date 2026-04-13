@@ -1,10 +1,10 @@
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import { WesleyError } from '@wesley/core';
-import { joinPath } from './path-utils.mjs';
 import {
   CURRENT_MINIMUM_SCOPE,
-  RECEIPT_FAMILY_SCOPE,
-  SETTLEMENT_FAMILY_SCOPE,
+  resolveContinuumWitnessProfile
+} from '@wesley/continuum';
+import {
   buildContinuumWitnessReport,
   resolveContinuumWitnessOptions
 } from './continuum-witness-report.mjs';
@@ -51,22 +51,21 @@ export function configureContinuumWitnessCommander(cmd) {
 }
 
 export function resolveGenericContinuumWitnessOptions(options) {
-  const scope = options.scope ?? CURRENT_MINIMUM_SCOPE;
-  const outDir = options.outDir ?? defaultOutDirForScope(scope);
-  const sharedSchemaPath = normalizeOptionalPath(options.schema);
-
   return {
-    ...resolveContinuumWitnessOptions({
-      ...options,
-      scope,
-      ttdSchema: options.ttdSchema ?? sharedSchemaPath ?? undefined,
-      ttdDir: options.ttdDir ?? joinPath(outDir, 'warp-ttd'),
-      echoSchema: options.echoSchema ?? sharedSchemaPath ?? undefined,
-      echoDir: options.echoDir ?? joinPath(outDir, 'echo'),
-      out: options.reportOut ?? options.out ?? joinPath(outDir, 'witness', 'conformance.json')
-    }),
-    outDir,
-    realizationRoot: joinPath(outDir, 'realization')
+    ...resolveContinuumWitnessOptions(
+      resolveContinuumWitnessProfile({
+        scope: options.scope ?? CURRENT_MINIMUM_SCOPE,
+        schemaPath: options.schema,
+        outDir: options.outDir,
+        ttdSchemaPath: options.ttdSchema,
+        ttdDir: options.ttdDir,
+        echoSchemaPath: options.echoSchema,
+        echoDir: options.echoDir,
+        reportPath: options.reportOut ?? options.out,
+        receiptFamilyFixtureDir: options.receiptFamilyFixtureDir,
+        settlementFamilyFixtureDir: options.settlementFamilyFixtureDir
+      })
+    )
   };
 }
 
@@ -107,23 +106,6 @@ export async function executeContinuumWitnessCommand({
   }
 
   return report;
-}
-
-function defaultOutDirForScope(scope) {
-  if (scope === SETTLEMENT_FAMILY_SCOPE) {
-    return '.wesley-cache/continuum/settlement-family';
-  }
-  return scope === RECEIPT_FAMILY_SCOPE
-    ? '.wesley-cache/continuum/receipt-family'
-    : '.wesley-cache/continuum/local-inspect';
-}
-
-function normalizeOptionalPath(value) {
-  if (value == null) {
-    return undefined;
-  }
-  const text = String(value).trim();
-  return text.length === 0 ? undefined : text;
 }
 
 export {

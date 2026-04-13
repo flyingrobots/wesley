@@ -2,15 +2,17 @@ import path from 'node:path';
 import { Kind, parse } from 'graphql';
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import { WesleyError, computeSdlHash, schemaHash } from '@wesley/core';
+import {
+  CONTINUUM_JUDGMENT_PROFILE,
+  RECEIPT_FAMILY_SCOPE,
+  buildContinuumPublicationBoundaryPlan,
+  resolveContinuumDriftWatchProfile
+} from '@wesley/continuum';
 import { createCheck, summarizeChecks } from './continuum-witness-support.mjs';
 import { inspectRealizationManifest } from './realization-integrity.mjs';
 import { inspectContinuumPublicationBoundary } from './continuum-publication-boundary.mjs';
 import {
-  CURRENT_MINIMUM_SCOPE,
-  RECEIPT_FAMILY_SCOPE,
-  SETTLEMENT_FAMILY_SCOPE,
-  resolveContinuumWitnessOptions,
-  buildPublicationBoundaryRules
+  resolveContinuumWitnessOptions
 } from './continuum-witness-report.mjs';
 import { joinPath } from './path-utils.mjs';
 
@@ -91,26 +93,23 @@ export class DriftWatchCommand extends WesleyCommand {
 }
 
 export function resolveContinuumDriftWatchOptions(options) {
-  const scope = options.scope ?? RECEIPT_FAMILY_SCOPE;
-  const outDir = options.outDir ?? defaultOutDirForScope(scope);
-  const sharedSchemaPath = normalizeOptionalPath(options.schema);
-  const outputPath = normalizeOptionalPath(options.reportOut)
-    ?? joinPath(outDir, 'witness', 'drift-watch.json');
+  const profile = resolveContinuumDriftWatchProfile({
+    scope: options.scope ?? RECEIPT_FAMILY_SCOPE,
+    schemaPath: options.schema,
+    outDir: options.outDir,
+    ttdSchemaPath: options.ttdSchema,
+    ttdDir: options.ttdDir,
+    echoSchemaPath: options.echoSchema,
+    echoDir: options.echoDir,
+    reportPath: options.reportOut,
+    receiptFamilyFixtureDir: options.receiptFamilyFixtureDir,
+    settlementFamilyFixtureDir: options.settlementFamilyFixtureDir,
+    mirrorRoots: options.mirrorRoot
+  });
 
   return {
-    ...resolveContinuumWitnessOptions({
-      ...options,
-      scope,
-      ttdSchema: options.ttdSchema ?? sharedSchemaPath ?? undefined,
-      ttdDir: options.ttdDir ?? joinPath(outDir, 'warp-ttd'),
-      echoSchema: options.echoSchema ?? sharedSchemaPath ?? undefined,
-      echoDir: options.echoDir ?? joinPath(outDir, 'echo'),
-      out: outputPath
-    }),
-    outDir,
-    outputPath,
-    realizationRoot: joinPath(outDir, 'realization'),
-    mirrorRoots: normalizeMirrorRoots(options.mirrorRoot)
+    ...resolveContinuumWitnessOptions(profile),
+    mirrorRoots: profile.mirrorRoots
   };
 }
 
@@ -185,7 +184,7 @@ export async function buildContinuumDriftWatchReport({
   const publicationBoundary = await inspectContinuumPublicationBoundary({
     fs,
     repoRoot,
-    rules: buildPublicationBoundaryRules({
+    ...buildContinuumPublicationBoundaryPlan({
       scope,
       ttdSchemaPath,
       ttdDir,
@@ -193,10 +192,11 @@ export async function buildContinuumDriftWatchReport({
       echoDir,
       realizationRoot,
       realizationManifest: realizationInspection?.manifest ?? null,
+      defaultTtdGeneratedArtifacts: ['manifest/schema.json', 'manifest/manifest.json'],
+      defaultEchoGeneratedArtifacts: ['ir.json', 'mock/summary.json'],
       receiptFamilyFixtureDir,
       settlementFamilyFixtureDir
     }),
-    reservedRoots: buildPublicationBoundaryReservedRoots(scope),
     checks
   });
 
@@ -217,6 +217,7 @@ export async function buildContinuumDriftWatchReport({
     scope,
     status: summary.failed === 0 ? 'pass' : 'fail',
     outputPath,
+    judgmentProfile: CONTINUUM_JUDGMENT_PROFILE,
     proves: [
       'authored Continuum schema inputs still hash to the identities local legs claim to publish',
       'local TTD, Echo, realization, and publication-boundary surfaces stay coherent at the contract boundary',
@@ -615,10 +616,10 @@ async function classifyMirrorSurface({ filePath, content, familyNames }) {
     if (hash == null) {
       return mentionsFamily
         ? {
-            path: filePath,
-            kind: 'json-surface-without-hash',
-            pinned: false
-          }
+          path: filePath,
+          kind: 'json-surface-without-hash',
+          pinned: false
+        }
         : null;
     }
 
@@ -843,55 +844,6 @@ async function resolveRepoRoot(fs) {
     return fs.resolve('.');
   }
   return process.cwd();
-}
-
-function buildPublicationBoundaryReservedRoots(scope) {
-  if (scope === CURRENT_MINIMUM_SCOPE) {
-    return [
-      'test',
-      'packages/wesley-cli/test',
-      'packages/wesley-core/test',
-      'packages/wesley-generator-echo/test',
-      'packages/wesley-generator-ttd/test',
-      'test/fixtures/continuum/receipt-family',
-      'test/fixtures/continuum/settlement-family',
-      'schemas/continuum-receipt-family.graphql',
-      'schemas/continuum-settlement-family.graphql',
-      'schemas/directives.graphql'
-    ];
-  }
-
-  return [
-    'schemas/ttd-protocol.graphql',
-    'schemas/echo-core-types.graphql',
-    'schemas/continuum-receipt-family.graphql',
-    'schemas/continuum-settlement-family.graphql',
-    'schemas/directives.graphql'
-  ];
-}
-
-function normalizeMirrorRoots(value) {
-  const items = Array.isArray(value) ? value : value == null ? [] : [value];
-  return [...new Set(items
-    .map((item) => normalizeOptionalPath(item))
-    .filter(Boolean))];
-}
-
-function defaultOutDirForScope(scope) {
-  if (scope === SETTLEMENT_FAMILY_SCOPE) {
-    return '.wesley-cache/continuum/settlement-family';
-  }
-  return scope === RECEIPT_FAMILY_SCOPE
-    ? '.wesley-cache/continuum/receipt-family'
-    : '.wesley-cache/continuum/local-inspect';
-}
-
-function normalizeOptionalPath(value) {
-  if (value == null) {
-    return undefined;
-  }
-  const text = String(value).trim();
-  return text.length === 0 ? undefined : text;
 }
 
 function describeRelative(root, targetPath) {

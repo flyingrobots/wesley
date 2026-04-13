@@ -504,7 +504,7 @@ wesley moriarty --format json            # machine-readable output
 
 #### Architecture
 
-Moriarty stays in `@wesley/holmes` — the trio remains together. Holmes and Watson are *invoked* per-transmutation (they need the evidence bundle), but they live in the shared package. Moriarty is invoked at both levels:
+Moriarty stays in `@wesley/holmes`, and Holmes/Watson still execute there too. Product-specific behavior can now be profiled in packages such as `@wesley/continuum`, but the shared investigation, verification, and prediction engines remain in the Holmes package. Holmes and Watson are *invoked* per-transmutation (they need the evidence bundle), and Moriarty is invoked at both levels:
 
 ```mermaid
 sequenceDiagram
@@ -565,6 +565,7 @@ This lets HOLMES report: *"backend transmutation: users.graphql is fully certifi
 ```
 packages/
 ├── wesley-cli/
+├── wesley-continuum/
 ├── wesley-core/
 ├── wesley-generator-echo/
 ├── wesley-generator-js/

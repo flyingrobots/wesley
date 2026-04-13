@@ -4,6 +4,7 @@ import {
   GENERATED_HISTORY_PATH,
   GENERATED_SCORES_PATH,
   TransmutationRunner,
+  WesleyError,
   createGeneratedArtifactResolver,
   createRunId,
   enrichBundleWithEvidenceTruth,

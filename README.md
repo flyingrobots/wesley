@@ -70,6 +70,7 @@ Progress: 59% → Alpha
 | `@wesley/host-browser` | Experimental | MVP | 40% → Alpha | — | Pure ESM; in-memory FS; minimal parser; smoke-level only |
 | `@wesley/generator-js` | Active | MVP | 50% → Alpha | — | TS/Zod emitters |
 | `@wesley/generator-supabase` | Active | MVP | 50% → Alpha | — | SQL/RLS/pgTAP emitters |
+| `@wesley/continuum` | Active | MVP | 20% → Alpha | — | Continuum scopes + judgment profiles |
 | `@wesley/holmes` | Active | Alpha | 50% → Beta | — | Evidence scoring |
 | `@wesley/tasks` | Active | MVP | 50% → Alpha | — | Planner utilities |
 | `@wesley/slaps` | Active | MVP | 50% → Alpha | — | Scheduling/core utils |
