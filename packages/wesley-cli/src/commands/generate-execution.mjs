@@ -287,8 +287,7 @@ async function executeLegacySupabaseTransmutation({ ctx, context, ir, runId, eve
 
   const schema = {
     sdl: context.schemaContent,
-    ir,
-    outputDir: options.outDir
+    ir
   };
   const sourceSha = await resolveSourceSha(ctx, logger);
 
@@ -300,6 +299,9 @@ async function executeLegacySupabaseTransmutation({ ctx, context, ir, runId, eve
       runId,
       eventCollector,
       sha: sourceSha,
+      emission: {
+        outDir: options.outDir
+      },
       scoring: legacySupabaseScoringOptions()
     }
   );

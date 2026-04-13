@@ -143,13 +143,16 @@ test('TransmutationRunner — preserves caller-supplied runId', async () => {
 test('TransmutationRunner — lowers raw SDL and IR into one plugin schema envelope', async () => {
   const runner = makeRunner();
   let observedSchema = null;
+  let observedContext = null;
   const plugin = makePlugin({
-    async plan(schema) {
+    async plan(schema, context) {
       observedSchema = schema;
+      observedContext = context;
       assert.equal(schema.ir, minimalIr);
       assert.equal(schema.sdl, 'type User @table { id: ID! @pk }');
-      assert.equal(schema.outputDir, 'out');
+      assert.equal(schema.outputDir, undefined);
       assert.equal(typeof schema.getTables, 'function');
+      assert.equal(context.emission.outDir, 'out');
       return {
         artifacts: [{ path: 'out.txt', reason: 'test' }],
         metadata: { tableCount: schema.getTables().length }
@@ -162,12 +165,16 @@ test('TransmutationRunner — lowers raw SDL and IR into one plugin schema envel
 
   const result = await runner.run('backend', [plugin], {
     sdl: 'type User @table { id: ID! @pk }',
-    ir: minimalIr,
-    outputDir: 'out'
+    ir: minimalIr
+  }, {
+    emission: {
+      outDir: 'out'
+    }
   });
 
   assert.equal(result.success, true);
   assert.ok(observedSchema);
+  assert.ok(observedContext);
   assert.equal(observedSchema.getTables()[0].name, 'User');
   assert.equal(result.results[0].artifacts['out.txt'], '1');
 });
@@ -433,15 +440,19 @@ test('TransmutationRunner — context is frozen (plugin cannot mutate it)', asyn
       capturedContext = context;
       assert.throws(() => { context.runId = 'hacked'; }, TypeError);
       assert.throws(() => { context.config.key = 'hacked'; }, TypeError);
+      assert.throws(() => { context.emission.outDir = 'hacked'; }, TypeError);
       return { artifacts: [{ path: 'out.txt' }] };
     },
     async generate() { return { 'out.txt': 'ok' }; }
   });
 
-  const result = await runner.run('test', [plugin], {});
+  const result = await runner.run('test', [plugin], {}, {
+    emission: { outDir: 'out' }
+  });
   assert.equal(result.success, true);
   assert.ok(capturedContext);
   assert.equal(capturedContext.config.key, 'value');
+  assert.equal(capturedContext.emission.outDir, 'out');
 });
 
 // ---------------------------------------------------------------------------

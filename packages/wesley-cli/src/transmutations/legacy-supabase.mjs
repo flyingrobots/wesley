@@ -17,7 +17,7 @@ export class LegacySupabaseGeneratorPlugin extends GeneratorPlugin {
     return LEGACY_SUPABASE_TRANSMUTATION;
   }
 
-  async plan(schema) {
+  async plan(schema, context) {
     const ir = schema?.ir;
     if (!ir || !Array.isArray(ir.tables)) {
       throw new Error('LegacySupabaseGeneratorPlugin requires schema.ir');
@@ -40,7 +40,7 @@ export class LegacySupabaseGeneratorPlugin extends GeneratorPlugin {
       metadata: {
         ir,
         enableRls: this._enableRls,
-        outDir: schema?.outputDir || 'out'
+        outDir: context?.emission?.outDir || 'out'
       }
     };
   }

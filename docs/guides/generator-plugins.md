@@ -23,7 +23,10 @@ export class HelloPlugin extends GeneratorPlugin {
       artifacts: [
         { path: 'hello.txt', reason: 'Greeting file' },
       ],
-      metadata: { sdlLength: schema.sdl.length },
+      metadata: {
+        sdlLength: schema.sdl.length,
+        outDir: context.emission.outDir ?? 'out',
+      },
     };
   }
 
@@ -109,7 +112,7 @@ init(config) {
 
 ### `plan(schema, context)` (required, async)
 
-Receives the schema object (currently `{ sdl: string }`) and a `PluginContext`. Must return a `GenerationPlan`:
+Receives the lowered schema envelope and a `PluginContext`. The schema may expose `sdl`, `ir`, and domain helpers such as `getTables()`, but output routing lives in `context.emission`. Must return a `GenerationPlan`:
 
 ```mjs
 /**
@@ -156,6 +159,7 @@ Every call to `plan()` and `generate()` receives a frozen context object:
 | `clock`  | `{ now(): string }`           | Clock port returning ISO-8601 timestamps         |
 | `config` | `Readonly<Record<string, unknown>>` | Deep-frozen copy of the run config          |
 | `runId`  | `string`                      | Unique identifier for this run (e.g. `run-m3x7k-a1b2c3`) |
+| `emission` | `Readonly<{ outDir?: string }>` | Explicit runtime emission context such as the target output directory |
 
 The context is immutable. Attempting to modify it will throw in strict mode.
 
