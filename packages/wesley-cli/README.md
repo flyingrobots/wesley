@@ -19,6 +19,8 @@ Set `CONTINUUM_ROOT` to the root of your local Continuum checkout before using t
 
 See `pnpm wesley --help` for the full list of commands (including `blade`, `cert-*`, and experimental `--ops` support).
 
+Repeated local schema workflows reuse a hash-addressed IR cache in `.wesley-cache/ir/`, so `generate`, `plan`, `rehearse`, `up`, `typescript`, and `zod` do not need to re-lower unchanged SDL on every invocation.
+
 ## Development
 
 - Run the Bats test suite: `pnpm --filter @wesley/cli test`

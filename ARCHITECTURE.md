@@ -33,6 +33,8 @@ flowchart TD
 ### 1. Intermediate Representation (IR)
 The central heart of the compiler. Wesley lowers GraphQL SDL into a platform-neutral IR before transmuting it into target-specific artifacts. This ensures that a single schema change results in bit-identical updates across multiple languages.
 
+For local CLI workflows, Wesley now reuses lowered IR through a hash-addressed cache under `.wesley-cache/ir/<authored-sdl-hash>.json`. Commands such as `generate`, `plan`, `rehearse`, `up`, `typescript`, and `zod` can therefore reuse prior lowerings when the authored SDL is unchanged.
+
 ### 2. Transmutation Pipeline
 A governed sequence of transformations:
 1. **Ingest**: Load and validate authored schemas and operations.

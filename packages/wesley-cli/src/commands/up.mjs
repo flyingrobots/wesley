@@ -9,6 +9,7 @@ import {
   readSnapshotProjection,
   writeSnapshotProjection
 } from '../utils/runtime-projections.mjs';
+import { resolveSchemaIr } from '../utils/schema-ir-cache.mjs';
 
 export class UpCommand extends WesleyCommand {
   constructor(ctx) {
@@ -28,7 +29,7 @@ export class UpCommand extends WesleyCommand {
       .option('--json', 'Emit JSON');
   }
 
-  async executeCore({ options, schemaContent, logger }) {
+  async executeCore({ options, schemaContent, schemaPath, logger, units }) {
     const env = this.ctx.env || {};
     let dsn = options.dsn || pickDsn(options, env, this.makeLogger(options, { phase: 'up' }));
 
@@ -41,7 +42,13 @@ export class UpCommand extends WesleyCommand {
     }
 
     // Parse current schema → IR
-    const current = this.ctx.parsers.graphql.parse(schemaContent);
+    const current = (await resolveSchemaIr({
+      ctx: this.ctx,
+      schemaContent,
+      schemaPath,
+      units,
+      logger
+    })).ir;
 
     // Load previous snapshot if any
     let previous = { tables: [] };

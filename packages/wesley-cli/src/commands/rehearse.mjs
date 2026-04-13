@@ -8,6 +8,7 @@ import { assertValid } from '../framework/schemaValidator.mjs';
 import { WesleyError } from '@wesley/core';
 import { formatTransmutationChoices, getDefaultTransmutationName } from '../transmutations/registry.mjs';
 import { resolveRunMetadata } from '../utils/run-metadata.mjs';
+import { resolveSchemaIr } from '../utils/schema-ir-cache.mjs';
 import {
   applyResumeMetadata,
   assertResumeRequestedRunId,
@@ -60,7 +61,7 @@ export class RehearseCommand extends WesleyCommand {
       .option('--json', 'Emit JSON');
   }
 
-  async executeCore({ options, schemaContent, schemaPath, logger }) {
+  async executeCore({ options, schemaContent, schemaPath, units, logger }) {
     assertResumeRequestedRunId(options);
     const run = resolveRunMetadata(options);
     const resumeState = options.resume
@@ -76,9 +77,17 @@ export class RehearseCommand extends WesleyCommand {
       schemaPath,
       dryRun: Boolean(options.dryRun)
     });
-    const ir = this.ctx.parsers.graphql.parse(schemaContent);
+    const irResolution = await resolveSchemaIr({
+      ctx: this.ctx,
+      schemaContent,
+      schemaPath,
+      units,
+      logger
+    });
+    const ir = irResolution.ir;
     emitIrParsed(eventCollector, scope, {
-      tableCount: Array.isArray(ir?.tables) ? ir.tables.length : 0
+      tableCount: Array.isArray(ir?.tables) ? ir.tables.length : 0,
+      cacheStatus: irResolution.cacheStatus
     });
 
     let previous = { tables: [] };

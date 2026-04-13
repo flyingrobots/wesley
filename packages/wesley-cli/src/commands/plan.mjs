@@ -9,6 +9,7 @@ import { assertValid } from '../framework/schemaValidator.mjs';
 import { WesleyError } from '@wesley/core';
 import { formatTransmutationChoices, getDefaultTransmutationName } from '../transmutations/registry.mjs';
 import { resolveRunMetadata } from '../utils/run-metadata.mjs';
+import { resolveSchemaIr } from '../utils/schema-ir-cache.mjs';
 import {
   applyResumeMetadata,
   assertResumeRequestedRunId,
@@ -85,9 +86,17 @@ export class PlanCommand extends WesleyCommand {
     }
 
     try {
-      const current = this.ctx.parsers.graphql.parse(schemaContent);
+      const currentResolution = await resolveSchemaIr({
+        ctx: this.ctx,
+        schemaContent,
+        schemaPath,
+        units: context.units,
+        logger
+      });
+      const current = currentResolution.ir;
       emitIrParsed(eventCollector, scope, {
-        tableCount: Array.isArray(current?.tables) ? current.tables.length : 0
+        tableCount: Array.isArray(current?.tables) ? current.tables.length : 0,
+        cacheStatus: currentResolution.cacheStatus
       });
 
       let previous = { tables: [] };

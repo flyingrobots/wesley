@@ -13,6 +13,7 @@ import {
 } from '@wesley/core/domain/qir';
 import { WesleyError, OpsError } from '@wesley/core';
 import { assertValid } from '../framework/schemaValidator.mjs';
+import { resolveSchemaIr } from '../utils/schema-ir-cache.mjs';
 
 const CONCURRENCY_LIMIT = 8;
 const POSTGRESQL_IDENTIFIER_LIMIT = 63;
@@ -43,7 +44,13 @@ export async function compileOpsIfRequested({ ctx, context }) {
     let ir = context.ir;
     try {
       if (!ir && context.schemaContent) {
-        ir = ctx.parsers.graphql.parse(context.schemaContent);
+        ir = (await resolveSchemaIr({
+          ctx,
+          schemaContent: context.schemaContent,
+          schemaPath: context.schemaPath,
+          units: context.units,
+          logger
+        })).ir;
       }
     } catch (parseErr) {
       logger.warn({ error: parseErr?.message }, 'Could not parse schema for PK map; ops will use heuristic tie-breakers');

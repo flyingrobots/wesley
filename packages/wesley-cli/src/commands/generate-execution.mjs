@@ -15,6 +15,7 @@ import {
   flattenTransmutationArtifacts
 } from '../transmutations/registry.mjs';
 import { writeSnapshotProjection } from '../utils/runtime-projections.mjs';
+import { resolveSchemaIr } from '../utils/schema-ir-cache.mjs';
 import {
   attachRunFailure,
   createCommandEventCollector,
@@ -85,9 +86,14 @@ export async function runSequentialGeneration({ ctx, context, compileOpsIfReques
     }
   }
 
-  let ir = context.units
-    ? ctx.parsers.graphql.parseComposed(context.units)
-    : ctx.parsers.graphql.parse(schemaContent, { filename: schemaPath });
+  const irResolution = await resolveSchemaIr({
+    ctx,
+    schemaContent,
+    schemaPath,
+    units: context.units,
+    logger
+  });
+  let ir = irResolution.ir;
 
   const unitFilter = options.unit
     ? options.unit.flatMap(u => u.split(',')).map(s => s.trim()).filter(Boolean)
@@ -97,7 +103,8 @@ export async function runSequentialGeneration({ ctx, context, compileOpsIfReques
   }
   emitIrParsed(eventCollector, scope, {
     tableCount: Array.isArray(ir?.tables) ? ir.tables.length : 0,
-    unitFilterCount: unitFilter?.length ?? 0
+    unitFilterCount: unitFilter?.length ?? 0,
+    cacheStatus: irResolution.cacheStatus
   });
 
   if (options.printIr) {
@@ -214,7 +221,15 @@ export async function runTasksAndSlapsGeneration({ ctx, context, compileOpsIfReq
   }
 
   const handlers = {
-    parse_schema: async (n) => ({ ir: ctx.parsers.graphql.parse(n.args.sdl) }),
+    parse_schema: async (n) => ({
+      ir: (await resolveSchemaIr({
+        ctx,
+        schemaContent: n.args.sdl,
+        schemaPath: context.schemaPath,
+        units: context.units,
+        logger
+      })).ir
+    }),
     validate_ir: async (_n, deps) => ({ ir: deps.parse.ir }),
     emit_ddl: async (_n, deps) => generators.sql.emitDDL(deps.validate.ir),
     emit_rls: async (_n, deps) => generators.sql.emitRLS(deps.validate.ir),

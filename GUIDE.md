@@ -12,6 +12,8 @@ Compile GraphQL SDL into PostgreSQL migrations and evidence plans.
 - **Plan**: `pnpm wesley plan --schema <path> --explain`
 - **Rehearse**: `pnpm wesley rehearse --schema <path>`
 
+These command paths reuse a hash-addressed IR cache in `.wesley-cache/ir/` when the authored SDL has not changed, which keeps the inner loop tighter across repeated local runs.
+
 ### 2. Continuum Contract Lane
 Compile shared causal protocols into bit-exact language targets.
 - **Compile**: `pnpm wesley compile --schema <path> --target warp-ttd,echo`
