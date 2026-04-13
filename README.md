@@ -47,8 +47,8 @@ pnpm wesley witness \
 ## Overall Status
 
 <!-- BEGIN:OVERALL_STATUS -->
-Stage: experimental  
-Progress: pending
+Stage: MVP  \
+Progress: 59% → Alpha
 <!-- END:OVERALL_STATUS -->
 
 ## Package Matrix
@@ -56,6 +56,19 @@ Progress: pending
 <!-- BEGIN:PACKAGE_MATRIX -->
 | Package | Status | Stage | Progress | CI | Notes |
 | --- | --- | --- | --- | --- | --- |
+| `@wesley/core` | Active | MVP | 45% → Alpha | — | Pure domain logic, no Node builtins |
+| `@wesley/cli` | Active | Alpha | 50% → Beta | — | CLI + Bats suites |
+| `@wesley/host-node` | Active | MVP | 50% → Alpha | — | Node adapters + binary |
+| `@wesley/host-browser` | Experimental | MVP | 40% → Alpha | — | Pure ESM; in-memory FS; minimal parser; smoke-level only |
+| `@wesley/generator-js` | Active | MVP | 50% → Alpha | — | TS/Zod emitters |
+| `@wesley/generator-supabase` | Active | MVP | 50% → Alpha | — | SQL/RLS/pgTAP emitters |
+| `@wesley/holmes` | Active | Alpha | 50% → Beta | — | Evidence scoring |
+| `@wesley/tasks` | Active | MVP | 50% → Alpha | — | Planner utilities |
+| `@wesley/slaps` | Active | MVP | 50% → Alpha | — | Scheduling/core utils |
+| `@wesley/host-deno` | Experimental | Alpha | 50% → Beta | — | Deno host runtime (demo) |
+| `@wesley/host-bun` | Experimental | Alpha | 50% → Beta | — | Bun host runtime (demo) |
+| `@wesley/scaffold-multitenant` | Too soon | Prototype | 50% → MVP | — | Early scaffold, no CI yet |
+| `@wesley/stack-supabase-nextjs` | Too soon | Prototype | 50% → MVP | — | Early stack template, no CI yet |
 <!-- END:PACKAGE_MATRIX -->
 
 ## Documentation
