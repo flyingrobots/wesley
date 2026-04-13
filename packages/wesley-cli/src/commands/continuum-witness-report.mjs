@@ -66,7 +66,7 @@ export function resolveContinuumWitnessOptions(options) {
       outputPath: options.out ?? '.wesley-cache/continuum/receipt-family/witness/conformance.json',
       proves: [
         'schema-to-artifact consistency for the authored receipt-family TTD and Echo legs',
-        'fixture-level conformance for emitted family nouns, footprints, and invariants',
+        'fixture-level conformance for emitted family nouns, footprints, invariants, and selected round-trip operation vectors',
         'cross-leg coherence for the shared family identity and compiled field boundaries',
         'explicit receipt-versus-witness and delivery-versus-receipt separation cases',
         'one local publication-boundary anti-shadow check for the authored receipt family'

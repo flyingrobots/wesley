@@ -268,6 +268,7 @@ EOF
     echo "$output" | jq -e '.result.summary.failed == 0' >/dev/null
     echo "$output" | jq -e '.result.checks[] | select(.id == "receipt-family.ttd-fixture-shape" and .status == "pass")' >/dev/null
     echo "$output" | jq -e '.result.checks[] | select(.id == "receipt-family.boundary-fixture" and .status == "pass")' >/dev/null
+    echo "$output" | jq -e '.result.checks[] | select(.id == "receipt-family.roundtrip-fixture-vectors" and .status == "pass")' >/dev/null
     echo "$output" | jq -e '.result.checks[] | select(.id == "receipt-family.receipt-vs-witness-separation" and .status == "pass")' >/dev/null
     echo "$output" | jq -e '.result.checks[] | select(.id == "publication-boundary.receipt-family" and .status == "pass")' >/dev/null
     echo "$output" | jq -e '.result.surfaces.publicationBoundary.rules[] | select(.id == "receipt-family") | .declaredCompatMirrors | length >= 1' >/dev/null
@@ -290,6 +291,25 @@ EOF
         --out out/witness/receipt-family.json
     assert_failure
     run jq -e '.checks[] | select(.id == "receipt-family.ttd-fixture-shape" and .status == "fail")' out/witness/receipt-family.json
+    assert_success
+}
+
+@test "witness-continuum receipt-family fails when Echo op vectors drift from the roundtrip fixture" {
+    generate_receipt_family_surfaces
+
+    jq '(.ops[] | select(.name == "witnesses") | .result_type) = "Receipt"' \
+        out/receipt-family/echo/ir.json > out/receipt-family/echo/ir.tmp
+    mv out/receipt-family/echo/ir.tmp out/receipt-family/echo/ir.json
+
+    run node "$CLI_PATH" witness-continuum \
+        --scope receipt-family \
+        --ttd-schema "$RECEIPT_SCHEMA" \
+        --echo-schema "$RECEIPT_SCHEMA" \
+        --ttd-dir out/receipt-family/ttd \
+        --echo-dir out/receipt-family/echo \
+        --out out/witness/receipt-family.json
+    assert_failure
+    run jq -e '.checks[] | select(.id == "receipt-family.roundtrip-fixture-vectors" and .status == "fail")' out/witness/receipt-family.json
     assert_success
 }
 

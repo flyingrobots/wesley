@@ -1,10 +1,18 @@
 ---
 title: RE-030 — Realization Integrity Guard
-lane: v0.1.0
+lane: graveyard
 release: v0.1.0
 ---
 
 # RE-030 — Realization Integrity Guard
+
+## Disposition
+
+Shipped on release/v0.1.0 through the realization-integrity guard work in commits c2bb459 and follow-on verification wiring. The pre-commit and CI gates now reject out-of-sync realization manifests instead of leaving this as pending backlog.
+
+Replacement: `packages/wesley-cli/src/commands/verify-realization.mjs`
+
+## Original Proposal
 
 Legend: [RE — Runtime Engine]
 

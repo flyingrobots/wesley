@@ -12,9 +12,12 @@ Release sequence:
 
 ## Cycle 1 — The Sovereign Guard
 
-- [RE-030 — Realization Integrity Guard](RE-030-realization-integrity-guard.md)
 - [Continuum Realization Manifest](TRANSMUTE_continuum-realization-manifest.md)
-- [CI-001 — Cryptographic Artifact Signing](CI-001-artifact-signing-and-sealing.md)
+
+Already shipped on `release/v0.1.0` and retired from the live lane:
+
+- [RE-030 — Realization Integrity Guard](../../graveyard/RE-030-realization-integrity-guard.md)
+- [CI-001 — Cryptographic Artifact Signing](../../graveyard/CI-001-artifact-signing-and-sealing.md)
 
 ## Cycle 2 — The Transmuter Split
 

@@ -147,7 +147,7 @@ done until the whole path is real and inspectable.
 | 2. TTD compile | `pnpm wesley compile --schema <continuum-root>/schemas/continuum-receipt-family.graphql --target warp-ttd --out-dir .wesley-cache/continuum/receipt-family` | command shape exists today; compiler now accepts external authored paths |
 | 3. warp-ttd outputs | `.wesley-cache/continuum/receipt-family/warp-ttd/manifest/{schema.json,contracts.json,manifest.json,ttd-ir.json}` and `.wesley-cache/continuum/receipt-family/warp-ttd/typescript/{types.ts,zod.ts,registry.ts,index.ts}` | output family exists today for current shared contract inputs |
 | 4. Echo bundle | `pnpm wesley compile --schema <continuum-root>/schemas/continuum-receipt-family.graphql --target echo --out-dir .wesley-cache/continuum/receipt-family` writing `.wesley-cache/continuum/receipt-family/echo/{ir.json,ops.generated.ts,schemas.generated.ts,client.generated.ts,raw_le_codec.generated.ts,raw_le_codec.generated.rs,wasm_abi_codec.generated.ts,wasm_abi_codec.generated.rs}` plus `.wesley-cache/continuum/receipt-family/echo/mock/deliveries.jsonl` and `mock/summary.json` | command and local inspect bundle exist today |
-| 5. Fixtures | `test/fixtures/continuum/receipt-family/{minimal,boundary,invalid,receipt-vs-witness}.*` | fixture set now exists and is consumed by the receipt-family witness scope |
+| 5. Fixtures | `test/fixtures/continuum/receipt-family/{minimal,boundary,roundtrip,invalid,receipt-vs-witness}.*` | fixture set now exists and is consumed by the receipt-family witness scope |
 | 6. Witness output | `pnpm wesley witness-continuum --scope receipt-family` with the default `.wesley-cache/continuum/receipt-family/{ttd,echo,witness}` path family | command exists today and proves one bounded local receipt-family conformance lane |
 
 ## No Shadow Contract Rule
@@ -173,6 +173,7 @@ For this cycle, that means the witness lane has to cash out the proof scope
 through:
 
 - selected fixtures for the chosen family
+- selected round-trip operation vectors for the chosen family
 - manifest and source traceability in emitted surfaces
 - one explicit receipt-versus-witness separation case
 

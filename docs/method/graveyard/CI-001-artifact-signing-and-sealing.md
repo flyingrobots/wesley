@@ -1,10 +1,18 @@
 ---
 title: CI-001 — Cryptographic Artifact Signing
-lane: v0.1.0
+lane: graveyard
 release: v0.1.0
 ---
 
 # CI-001 — Cryptographic Artifact Signing
+
+## Disposition
+
+Shipped on release/v0.1.0 through the realization manifest sealing work in commits c2bb459 and follow-on witness verification wiring. Generated artifacts now carry HMAC signatures and witness verifies those signatures instead of leaving this as pending backlog.
+
+Replacement: `packages/wesley-cli/src/commands/realization-integrity.mjs`
+
+## Original Proposal
 
 Legend: [EVIDENCE — Evidence Truth]
 
