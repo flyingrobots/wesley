@@ -44,6 +44,20 @@ pnpm wesley witness \
   --out-dir .wesley-cache/continuum/local-inspect
 ```
 
+## Overall Status
+
+<!-- BEGIN:OVERALL_STATUS -->
+Stage: experimental  
+Progress: pending
+<!-- END:OVERALL_STATUS -->
+
+## Package Matrix
+
+<!-- BEGIN:PACKAGE_MATRIX -->
+| Package | Status | Stage | Progress | CI | Notes |
+| --- | --- | --- | --- | --- | --- |
+<!-- END:PACKAGE_MATRIX -->
+
 ## Documentation
 
 - **[Guide](./GUIDE.md)**: Orientation, the fast path, and compiler usage.
