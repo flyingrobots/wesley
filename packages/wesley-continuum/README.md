@@ -14,6 +14,12 @@ SHA-lock HOLMES, Watson, and Moriarty.
   `@wesley/continuum` owns the product profile that the Continuum lane should
   apply.
 
+This package is not the primary cross-repo consumer surface for Echo,
+`git-warp`, or `warp-ttd`. The intended consumer surface is a versioned
+contract bundle or one of its generated projections; `@wesley/continuum`
+exists so Wesley-side commands and reports can load Continuum policy without
+hardcoding it into generic compiler packages.
+
 ## Usage
 
 ```bash
@@ -28,4 +34,5 @@ defaults without hardcoding them into generic CLI logic.
 Status: Active
 
 Alpha package for the release line. It carries product policy and operator
-defaults, not generic compiler infrastructure.
+defaults, not generic compiler infrastructure or the universal runtime
+dependency for neighboring repos.

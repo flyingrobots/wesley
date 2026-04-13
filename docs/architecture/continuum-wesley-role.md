@@ -60,6 +60,11 @@ Current rule:
 - Either way, the authored home must be named directly.
 - Generated artifacts may be stable consumer surfaces.
 - Mirrors do not inherit authorship just because they exist.
+- Consumer repos should normally consume a released contract bundle or one of
+  its generated projections, not Wesley compiler internals.
+- `@wesley/continuum` is a Wesley-side product profile for commands and
+  reports, not the universal runtime dependency every consumer repo should
+  import.
 
 ### 3. Conformance Anchor
 
@@ -126,6 +131,22 @@ following are true:
 If any of those are missing, the family is still target-state or advisory. Do
 not fill the gap with handwritten shadow contracts.
 
+## Recommended Release Surface
+
+The recommended release surface for an admitted Continuum family is one
+versioned contract bundle that binds:
+
+- human release semver
+- exact admitted schema identity
+- generated target projections
+- realization shell metadata
+- witness output for the named scope
+
+That bundle may produce language-specific package projections, but those remain
+projections of the bundle rather than independent authorities. For the release
+model behind this recommendation, see
+`docs/design/0005-continuum-contract-bundle-release-and-sync/continuum-contract-bundle-release-and-sync.md`.
+
 ## Boundary Map
 
 | Neighbor | Wesley does | Wesley does not do |
@@ -157,4 +178,6 @@ repo can now prove bounded local contract-family stacks from authored schema
 through TTD and Echo legs to conformance witnesses. This note still does not
 claim that the whole Continuum contract surface is frozen, or that Wesley owns
 runtime, storage, debugger, or substrate semantics outside those bounded proof
-lanes.
+lanes. The release and sync shape for turning those bounded proofs into one
+boring consumer bundle now lives in
+`docs/design/0005-continuum-contract-bundle-release-and-sync/continuum-contract-bundle-release-and-sync.md`.

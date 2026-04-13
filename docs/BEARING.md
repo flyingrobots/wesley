@@ -17,6 +17,7 @@ timeline
 - Freezing the `receipt-family` shared contract with one authored home and one ownership map.
 - Strengthening anti-shadow rules so mirrored contracts do not become accidental peer authorities.
 - Strengthening the `realization` manifest so it acts as a packaging shell with build traceability and artifact integrity across monorepo boundaries.
+- Defining one versioned contract-bundle release and sync story so Continuum, Wesley, Echo, `git-warp`, and `warp-ttd` can interoperate without importing compiler internals across repo boundaries.
 
 ### 2. Evidence Maturity
 - Maturing the `wesley witness` command to support generalized realization manifests without confusing shell metadata for proof.
@@ -37,4 +38,7 @@ timeline
 
 ## Next Target
 
-The immediate focus is **Continuum Evidence Maturity**: tighten the realization and witness doctrine, then keep extending the `receipt-family` proving lane without overstating what the current witness actually proves.
+The immediate focus is **Continuum Bundle Publication**: turn the current
+receipt-family compile and witness lane into one boring release-and-sync model,
+then keep extending the proving lane without overstating what the current
+witness actually proves.

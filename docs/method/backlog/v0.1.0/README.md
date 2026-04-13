@@ -46,4 +46,5 @@ Already shipped on `release/v0.1.0` and retired from the live lane:
 
 ## Release Companion
 
-- [Continuum Versioned Contract Bundle Release](TRANSMUTE_continuum-versioned-contract-bundle-release.md)
+- Design: [Continuum Contract Bundle Release and Sync](../../../design/0005-continuum-contract-bundle-release-and-sync/continuum-contract-bundle-release-and-sync.md)
+- Implementation: [Continuum Contract Release And Sync Commands](TRANSMUTE_continuum-contract-release-and-sync-commands.md)
