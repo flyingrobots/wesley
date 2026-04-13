@@ -1,3 +1,9 @@
+---
+title: RE-030 — Realization Integrity Guard
+lane: v0.1.0
+release: v0.1.0
+---
+
 # RE-030 — Realization Integrity Guard
 
 Legend: [RE — Runtime Engine]

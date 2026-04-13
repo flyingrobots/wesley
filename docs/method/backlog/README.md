@@ -7,6 +7,7 @@ Lanes:
 - `inbox/` for raw captured ideas
 - `asap/` for work that should be pulled soon
 - `up-next/` for the next likely pull
+- `v0.1.0/` for work explicitly committed to the first Wesley release
 - `cool-ideas/` for non-commitment exploration
 - `bad-code/` for tech debt that is worth naming
 

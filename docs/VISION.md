@@ -1,4 +1,5 @@
 # VISION
+<!-- docs-truth: status=experimental owner=@flyingrobots -->
 
 Wesley is a schema-first compiler for trustworthy change where contract truth and implementation evidence are unified.
 

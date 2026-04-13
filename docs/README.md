@@ -24,11 +24,12 @@ The most recent Continuum cycle packet is
 It closed as a `partial` landing in
 [its retro packet](./method/retro/0003-continuum-contract-compiler/continuum-contract-compiler.md).
 
-The active carry-over remains in the Continuum `asap/` queue:
+The active carry-over for the first release now lives in the Continuum
+`v0.1.0/` lane:
 
-- [SOURCE_continuum-ownership-map-for-shared-nouns](./method/backlog/asap/SOURCE_continuum-ownership-map-for-shared-nouns.md)
-- [RUNTIME_continuum-local-compile-and-inspect-surface](./method/backlog/asap/RUNTIME_continuum-local-compile-and-inspect-surface.md)
-- [EVIDENCE_continuum-conformance-and-roundtrip-witness](./method/backlog/asap/EVIDENCE_continuum-conformance-and-roundtrip-witness.md)
+- [SOURCE_continuum-ownership-map-for-shared-nouns](./method/backlog/v0.1.0/SOURCE_continuum-ownership-map-for-shared-nouns.md)
+- [RUNTIME_continuum-local-compile-and-inspect-surface](./method/backlog/v0.1.0/RUNTIME_continuum-local-compile-and-inspect-surface.md)
+- [EVIDENCE_continuum-conformance-and-roundtrip-witness](./method/backlog/v0.1.0/EVIDENCE_continuum-conformance-and-roundtrip-witness.md)
 
 The repo already has three important building blocks around that hill:
 

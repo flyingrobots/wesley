@@ -1,3 +1,10 @@
+---
+title: Continuum Cross-Repo Drift Watch
+lane: v0.1.0
+legend: EVIDENCE
+release: v0.1.0
+---
+
 # Continuum Cross-Repo Drift Watch
 
 - Lane: `cool-ideas`

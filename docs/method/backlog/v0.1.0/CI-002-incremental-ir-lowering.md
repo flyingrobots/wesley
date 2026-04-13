@@ -1,3 +1,9 @@
+---
+title: CI-002 — Incremental IR Lowering
+lane: v0.1.0
+release: v0.1.0
+---
+
 # CI-002 — Incremental IR Lowering
 
 Legend: [SOURCE — Source Authority]

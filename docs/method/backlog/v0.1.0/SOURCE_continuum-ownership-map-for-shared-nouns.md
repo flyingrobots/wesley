@@ -1,3 +1,10 @@
+---
+title: Continuum Ownership Map For Shared Nouns
+lane: v0.1.0
+legend: SOURCE
+release: v0.1.0
+---
+
 # Continuum Ownership Map For Shared Nouns
 
 - Lane: `asap`

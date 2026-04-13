@@ -1,3 +1,9 @@
+---
+title: CI-001 — Cryptographic Artifact Signing
+lane: v0.1.0
+release: v0.1.0
+---
+
 # CI-001 — Cryptographic Artifact Signing
 
 Legend: [EVIDENCE — Evidence Truth]

@@ -3,8 +3,7 @@
 This lane holds the next likely pulls. It is a queue of judgment, not a
 calendar.
 
-Current next Continuum pulls after the `asap/` doctrine and proof work:
+Current next Continuum pulls outside the `v0.1.0/` release lane:
 
-1. `TRANSMUTE_continuum-realization-manifest.md`
-2. `TRANSMUTE_continuum-receipt-family-artifact-path.md`
-3. `SOURCE_WESLEY_protocol-surface-cutover.md`
+1. `SOURCE_continuum-lane-identity-family-boundary.md`
+2. `SOURCE_continuum-neighborhood-core-family-boundary.md`

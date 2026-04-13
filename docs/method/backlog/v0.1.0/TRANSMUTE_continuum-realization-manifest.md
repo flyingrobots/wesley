@@ -1,3 +1,10 @@
+---
+title: Continuum Realization Manifest
+lane: v0.1.0
+legend: TRANSMUTE
+release: v0.1.0
+---
+
 # Continuum Realization Manifest
 
 - Lane: `up-next`

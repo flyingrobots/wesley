@@ -1,4 +1,5 @@
 # Wesley
+<!-- docs-truth: status=experimental owner=@flyingrobots -->
 
 A schema-first contract compiler for trustworthy change. Wesley ensures that shared protocols, database migrations, and cross-language boundaries remain technically truthful through bit-exact code generation and evidence-backed conformance.
 
@@ -48,7 +49,7 @@ pnpm wesley witness \
 - **[Guide](./GUIDE.md)**: Orientation, the fast path, and compiler usage.
 - **[Advanced Guide](./ADVANCED_GUIDE.md)**: Deep dives into the IR model, custom directives, and the "Holmes" policy engine.
 - **[Architecture](./ARCHITECTURE.md)**: The authoritative system map (Pipeline, Generators, Hosts).
-- **[Vision](./VISION.md)**: Core tenets and the "Trustworthy Change" mission.
+- **[Vision](./docs/VISION.md)**: Core tenets and the "Trustworthy Change" mission.
 - **[Method](./docs/method/process.md)**: Repo work doctrine and the cycle loop.
 
 ---
