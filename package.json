@@ -75,14 +75,14 @@
     "vite": "^7.1.12"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.4",
-    "@playwright/test": "1.58.2",
-    "autoprefixer": "^10.4.21",
-    "dependency-cruiser": "17.3.8",
-    "eslint": "^9.38.0",
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "1.59.1",
+    "autoprefixer": "^10.4.27",
+    "dependency-cruiser": "17.3.10",
+    "eslint": "^10.2.0",
     "eslint-plugin-promise": "^7.2.1",
-    "globals": "^16.4.0",
-    "postcss": "^8.5.6",
-    "postcss-nesting": "^13.0.2"
+    "globals": "^17.5.0",
+    "postcss": "^8.5.9",
+    "postcss-nesting": "^14.0.0"
   }
 }

@@ -20,8 +20,8 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "typescript": "^5.7.0",
-    "vitest": "^4.0.18"
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.4"
   },
   "author": "Wesley Authors <oss@flyingrobots.dev>",
   "license": "Apache-2.0",

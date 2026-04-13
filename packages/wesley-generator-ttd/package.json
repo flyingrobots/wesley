@@ -18,8 +18,8 @@
     "graphql": "^16.11.0"
   },
   "devDependencies": {
-    "typescript": "^5.7.0",
-    "vitest": "^4.0.18",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.4",
     "zod": "^3.23.8"
   },
   "author": "Wesley Authors <oss@flyingrobots.dev>",
