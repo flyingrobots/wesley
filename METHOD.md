@@ -19,6 +19,7 @@ The Wesley work doctrine: A backlog, a loop, and honest bookkeeping.
 | **`BEARING.md`** | Current direction and active tensions. |
 | **`VISION.md`** | Core tenets and the "Trustworthy Change" mission. |
 | **`ARCHITECTURE.md`** | Authoritative system map and pipeline. |
+| **`docs/design/`** | Active design packets and cycle-bound doctrine. |
 | **`AGENTS.md`** | Context recovery protocol for AI and humans. |
 | **`METHOD.md`** | Repo work doctrine (this document). |
 

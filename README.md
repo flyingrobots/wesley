@@ -13,6 +13,7 @@ Wesley is designed for the systems architect who demands a sovereign boundary fo
 Unlike traditional code-generators that treat schemas as suggestions, Wesley treats the schema as the sovereign system of record.
 
 - **Contract Sovereignty**: Authored GraphQL SDL is the single source of truth. Generated artifacts (Rust, TS, SQL) are derived surfaces that are never allowed to become peer authorities.
+- **Admission Discipline**: Authored source, lowered IR, realization shells, and witness output are kept distinct so Wesley can certify explicit properties without overstating runtime truth.
 - **Evidence-Backed Change**: Commands like `plan`, `rehearse`, and `witness` produce machine-readable evidence that a proposed change is lawful, safe, and conformant.
 - **Cross-Language Inevitability**: By generating bit-exact codecs and IR envelopes, Wesley prevents the "adapter spaghetti" that typically causes multi-repo platforms to rot.
 - **Local-First Operation**: The compiler and witness suite run entirely on the local developer workstation, ensuring that contract verification is part of the fast inner-loop.
@@ -35,8 +36,15 @@ pnpm wesley compile \
   --out-dir .wesley-cache/continuum/local-inspect
 ```
 
-### 3. Verify Conformance
-Produce an evidence witness to prove the generated artifacts match the authored truth.
+### 3. Verify the Realization Shell
+Check that the emitted manifest still matches the authored source and signed artifacts.
+```bash
+pnpm wesley verify-realization \
+  --out-dir .wesley-cache/continuum/local-inspect
+```
+
+### 4. Verify Conformance
+Produce a bounded evidence witness to prove the generated artifacts match the authored truth for the selected scope.
 ```bash
 pnpm wesley witness \
   --scope receipt-family \
@@ -76,6 +84,7 @@ Progress: 59% → Alpha
 - **[Guide](./GUIDE.md)**: Orientation, the fast path, and compiler usage.
 - **[Advanced Guide](./ADVANCED_GUIDE.md)**: Deep dives into the IR model, custom directives, and the "Holmes" policy engine.
 - **[Architecture](./ARCHITECTURE.md)**: The authoritative system map (Pipeline, Generators, Hosts).
+- **[Realization Admission and Witness](./docs/design/0004-realization-admission-and-witness/realization-admission-and-witness.md)**: The release-line doctrine for authored source, IR, realization shells, and bounded witness claims.
 - **[Vision](./docs/VISION.md)**: Core tenets and the "Trustworthy Change" mission.
 - **[Method](./docs/method/process.md)**: Repo work doctrine and the cycle loop.
 

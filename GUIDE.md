@@ -18,8 +18,12 @@ These command paths reuse a hash-addressed IR cache in `.wesley-cache/ir/` when 
 Compile shared causal protocols into bit-exact language targets.
 - **Compile**: `pnpm wesley compile --schema <path> --target warp-ttd,echo`
 - **Bundle**: `pnpm wesley bundle-echo --schema <path>`
-- **Witness**: `pnpm wesley witness --scope receipt-family --schema <path>`
 - **Guard**: `pnpm wesley verify-realization --tracked`
+- **Witness**: `pnpm wesley witness --scope receipt-family --schema <path>`
+
+Use `verify-realization` to validate the realization shell for an emitted leg.
+Use `witness` to certify the explicit bounded properties named by the chosen
+scope. A witness pass is not a blanket claim about runtime or debugger truth.
 
 ### 3. Governance & Inspection
 Audit proposed changes and monitor the contract state via the TUI dashboard.
@@ -32,7 +36,8 @@ Wesley is a tiered engine designed to enforce contract integrity across platform
 
 1. **Compiler API (Surfaces)**: The CLI and internal SDK are thin interfaces that communicate with the core. They ensure that all transformations are explicit and logged.
 2. **Compiler Core (The Engine)**: Manages the GraphQL parser, the platform-neutral IR, and the transmutation pipeline. It ensures that "Trustworthy Change" is a technical guarantee.
-3. **Generators (Memory)**: The Structural Worldline Memory of the contract. Generators transmute IR into physical code (Rust, TS, SQL) while preserving the bit-exact semantics of the authored schema.
+3. **Realization Shells (Packaging)**: Each emitted leg carries a manifest and signatures that let Wesley verify source identity and artifact integrity without treating generated files as authorities.
+4. **Witness Surfaces (Proof)**: Witness commands certify bounded properties against authored source, emitted artifacts, and realization shells. They do not stand in for runtime observation unless a scope explicitly proves that too.
 
 ## Orientation Checklist
 
@@ -40,12 +45,16 @@ Wesley is a tiered engine designed to enforce contract integrity across platform
 - [ ] **I am modifying a schema**: Always start in the `.graphql` file.
 - [ ] **I am adding a new generator**: Check `packages/wesley-generator-js` for a baseline.
 - [ ] **I am contributing to Wesley**: Read `METHOD.md` and `docs/BEARING.md`.
+- [ ] **I am touching Continuum witness behavior**: Read `docs/design/0004-realization-admission-and-witness/realization-admission-and-witness.md`.
 
 ## Rule of Thumb
 
 If you need a comprehensive command reference, use `pnpm wesley --help`.
 
 If you need to know "what's true right now," use [docs/BEARING.md](./docs/BEARING.md).
+
+If you need the exact boundary between authored source, realization shells, and
+bounded witness claims, use [docs/design/0004-realization-admission-and-witness/realization-admission-and-witness.md](./docs/design/0004-realization-admission-and-witness/realization-admission-and-witness.md).
 
 If you are just starting, use the [README.md](./README.md) and the orientation tracks above.
 
