@@ -1,8 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { NullGeneratorPlugin, NULL_GENERATOR_TRANSMUTATION } from '../src/transmutations/null-generator.mjs';
-import { createTransmutationExecution, resolveTransmutationRegistration } from '../src/transmutations/registry.mjs';
+import {
+  describeTransmutations,
+  getDefaultTransmutationName,
+  resolveTransmutationRegistration
+} from '../src/transmutations/registry.mjs';
 import { runSequentialGeneration } from '../src/commands/generate-execution.mjs';
+import { resolveRunMetadata } from '../src/utils/run-metadata.mjs';
 
 const noopLogger = {
   info() {},
@@ -38,6 +43,26 @@ test('registry resolves null-generator as a registration-only sequential transmu
   assert.equal(registration.name, NULL_GENERATOR_TRANSMUTATION);
   assert.equal(registration.supportsTasksRunner, false);
   assert.deepEqual(registration.requiredGenerators, []);
+});
+
+test('registry exposes default transmutation metadata for command surfaces', () => {
+  assert.equal(getDefaultTransmutationName(), 'legacy-supabase');
+  assert.deepEqual(
+    describeTransmutations(),
+    [
+      {
+        name: 'legacy-supabase',
+        description: 'Legacy Supabase SQL/RLS/pgTAP transmutation',
+        default: true
+      },
+      {
+        name: 'null-generator',
+        description: 'Minimal registration-only witness transmutation',
+        default: false
+      }
+    ]
+  );
+  assert.equal(resolveRunMetadata({}).transmutation, 'legacy-supabase');
 });
 
 test('runSequentialGeneration executes null-generator through the transmutation registry', async () => {

@@ -12,6 +12,8 @@ import {
 const TRANSMUTATION_REGISTRY = Object.freeze({
   [LEGACY_SUPABASE_TRANSMUTATION]: {
     name: LEGACY_SUPABASE_TRANSMUTATION,
+    description: 'Legacy Supabase SQL/RLS/pgTAP transmutation',
+    default: true,
     requiredGenerators: ['sql'],
     supportsTasksRunner: true,
     createExecution({ ctx, context, ir }) {
@@ -43,6 +45,8 @@ const TRANSMUTATION_REGISTRY = Object.freeze({
   },
   [NULL_GENERATOR_TRANSMUTATION]: {
     name: NULL_GENERATOR_TRANSMUTATION,
+    description: 'Minimal registration-only witness transmutation',
+    default: false,
     requiredGenerators: [],
     supportsTasksRunner: false,
     createExecution({ ctx, context, ir }) {
@@ -68,17 +72,41 @@ const TRANSMUTATION_REGISTRY = Object.freeze({
 });
 
 const SUPPORTED_TRANSMUTATIONS = Object.freeze(Object.keys(TRANSMUTATION_REGISTRY));
+const DEFAULT_TRANSMUTATION =
+  Object.values(TRANSMUTATION_REGISTRY).find((registration) => registration.default)?.name ||
+  LEGACY_SUPABASE_TRANSMUTATION;
 
 export function listTransmutations() {
   return [...SUPPORTED_TRANSMUTATIONS];
 }
 
+export function describeTransmutations() {
+  return SUPPORTED_TRANSMUTATIONS.map((name) => {
+    const registration = TRANSMUTATION_REGISTRY[name];
+    return {
+      name,
+      description: registration.description || '',
+      default: registration.default === true
+    };
+  });
+}
+
+export function getDefaultTransmutationName() {
+  return DEFAULT_TRANSMUTATION;
+}
+
+export function formatTransmutationChoices() {
+  return describeTransmutations()
+    .map((registration) => registration.default ? `${registration.name} (default)` : registration.name)
+    .join(', ');
+}
+
 export function resolveTransmutationName(requested) {
-  const normalized = String(requested || LEGACY_SUPABASE_TRANSMUTATION).trim() || LEGACY_SUPABASE_TRANSMUTATION;
+  const normalized = String(requested || DEFAULT_TRANSMUTATION).trim() || DEFAULT_TRANSMUTATION;
   if (!SUPPORTED_TRANSMUTATIONS.includes(normalized)) {
     throw new WesleyError(
       'UNKNOWN_TRANSMUTATION',
-      `Unknown transmutation "${normalized}". Supported transmutations: ${SUPPORTED_TRANSMUTATIONS.join(', ')}`
+      `Unknown transmutation "${normalized}". Supported transmutations: ${formatTransmutationChoices()}`
     );
   }
   return normalized;

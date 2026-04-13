@@ -1,11 +1,10 @@
 import { createRunId } from '@wesley/core';
-import { LEGACY_SUPABASE_TRANSMUTATION } from '../transmutations/legacy-supabase.mjs';
-import { resolveTransmutationName } from '../transmutations/registry.mjs';
+import { getDefaultTransmutationName, resolveTransmutationName } from '../transmutations/registry.mjs';
 
 export function resolveRunMetadata(options = {}, defaults = {}) {
   return {
     transmutation: resolveTransmutationName(
-      options.transmutation || defaults.transmutation || LEGACY_SUPABASE_TRANSMUTATION
+      options.transmutation || defaults.transmutation || getDefaultTransmutationName()
     ),
     runId: normalizeRunId(options.runId) || normalizeRunId(defaults.runId) || createRunId()
   };

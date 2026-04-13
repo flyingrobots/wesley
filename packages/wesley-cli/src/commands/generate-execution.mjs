@@ -11,9 +11,9 @@ import {
 } from '@wesley/core';
 import {
   createTransmutationExecution,
+  getDefaultTransmutationName,
   flattenTransmutationArtifacts
 } from '../transmutations/registry.mjs';
-import { LEGACY_SUPABASE_TRANSMUTATION } from '../transmutations/legacy-supabase.mjs';
 import { writeSnapshotProjection } from '../utils/runtime-projections.mjs';
 import {
   attachRunFailure,
@@ -41,7 +41,7 @@ export async function runSequentialGeneration({ ctx, context, compileOpsIfReques
   const debugDump = options.printComposedSdl || options.printIr;
   const { writer } = ctx;
   const commandName = options.commandName || 'generate';
-  const transmutation = options.transmutation || LEGACY_SUPABASE_TRANSMUTATION;
+  const transmutation = options.transmutation || getDefaultTransmutationName();
   const runId = typeof options.runId === 'string' && options.runId.trim()
     ? options.runId.trim()
     : createRunId();

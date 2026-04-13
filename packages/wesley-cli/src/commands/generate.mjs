@@ -12,9 +12,10 @@ import {
   runTasksAndSlapsGeneration
 } from './generate-execution.mjs';
 import { compileOpsIfRequested } from './generate-ops.mjs';
-import { LEGACY_SUPABASE_TRANSMUTATION } from '../transmutations/legacy-supabase.mjs';
 import {
   assertTransmutationPrerequisites,
+  formatTransmutationChoices,
+  getDefaultTransmutationName,
   resolveTransmutationName
 } from '../transmutations/registry.mjs';
 import {
@@ -55,7 +56,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
       .option('--dry-run', 'Show what would be generated without writing files')
       .option('--allow-dirty', 'Allow running with a dirty git working tree (not recommended)')
       .option('--i-know-what-im-doing', 'Acknowledge hazardous flags in CI environments')
-      .option('--transmutation <name>', 'Transmutation to execute', LEGACY_SUPABASE_TRANSMUTATION)
+      .option('--transmutation <name>', `Transmutation to execute (${formatTransmutationChoices()})`, getDefaultTransmutationName())
       .option('--run-id <id>', 'Associate this execution with a specific run ID')
       .option('--resume', 'Resume a previously started run with the same transmutation and run ID')
       .option('--debug', 'Debug output with stack traces')
@@ -75,7 +76,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
     const commandName = options.commandName;
     const outDir = options.outDir || this.ctx?.config?.paths?.output || 'out';
     options.outDir = outDir;
-    const requestedTransmutation = String(options.transmutation || LEGACY_SUPABASE_TRANSMUTATION).trim() || LEGACY_SUPABASE_TRANSMUTATION;
+    const requestedTransmutation = String(options.transmutation || getDefaultTransmutationName()).trim() || getDefaultTransmutationName();
     const requestedRunId = typeof options.runId === 'string' && options.runId.trim()
       ? options.runId.trim()
       : createRunId();

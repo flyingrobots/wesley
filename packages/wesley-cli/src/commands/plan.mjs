@@ -7,6 +7,7 @@ import { buildOutputPathMap, resolveFilePath } from '../utils/output-paths.mjs';
 import { buildAdditivePlan, explainPlan, emitMigrations } from './_migration-plan.mjs';
 import { assertValid } from '../framework/schemaValidator.mjs';
 import { WesleyError } from '@wesley/core';
+import { formatTransmutationChoices, getDefaultTransmutationName } from '../transmutations/registry.mjs';
 import { resolveRunMetadata } from '../utils/run-metadata.mjs';
 import {
   applyResumeMetadata,
@@ -44,7 +45,7 @@ export class PlanCommand extends WesleyCommand {
       .option('--radar', 'Show lock radar summary')
       .option('--map', 'Show mapping from GraphQL/IR changes to migration steps')
       .option('--allow-dirty', 'Allow running with a dirty git working tree (not recommended)')
-      .option('--transmutation <name>', 'Transmutation to associate with this plan', 'legacy-supabase')
+      .option('--transmutation <name>', `Transmutation to associate with this plan (${formatTransmutationChoices()})`, getDefaultTransmutationName())
       .option('--run-id <id>', 'Associate this plan with a specific run ID')
       .option('--resume', 'Resume a previously started plan run with the same transmutation and run ID')
       .option('--write', 'Write migration files to out-dir/migrations')
