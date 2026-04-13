@@ -39,8 +39,9 @@ For local CLI workflows, Wesley now reuses lowered IR through a hash-addressed c
 A governed sequence of transformations:
 1. **Ingest**: Load and validate authored schemas and operations.
 2. **Lower**: Transform SDL into the internal IR model.
-3. **Generate**: Transmute IR into derived artifacts (Rust structs, TS types, SQL migrations).
-4. **Certify**: Run rehearsal and witness protocols to produce machine-readable evidence.
+3. **Emit**: Transmute IR into derived artifact families (Rust structs, TS types, SQL migrations).
+4. **Package**: Write a `realization/manifest.json` shell that records source identity, artifact inventory, and artifact signatures for the emitted leg.
+5. **Certify**: Run rehearsal and witness protocols that verify bounded properties against the authored source, the emitted leg, and the realization shell.
 
 ### 3. Generators & Hosts
 Pluggable modules that own the physical emission of code.
@@ -51,12 +52,29 @@ Pluggable modules that own the physical emission of code.
 ### 4. HOLMES (Policy Engine)
 The governance layer. It evaluates proposed changes against a set of policy invariants (e.g., "No breaking changes to public envelopes") and issues cryptographic certificates of conformance.
 
+## Admission Surfaces
+
+Wesley now treats each compile path as a small admission stack with distinct surfaces:
+
+1. **Authored Source**: The sovereign GraphQL SDL. This is the only authored contract authority.
+2. **Lowered IR**: Wesley's admitted internal reading of that SDL. It is compiler truth, not a publication artifact.
+3. **Emitted Artifact Family**: The generated files for one target or transmutation.
+4. **Realization Shell**: The emitted `realization/manifest.json`, which packages source identity, artifact signatures, and witness status for the leg.
+5. **Witness Output**: The bounded proof result that certifies explicit properties of the leg. Witness output is not the same thing as the realization shell, and neither is the same thing as runtime observation.
+
+This distinction matters for Continuum work. A manifest can say what was emitted and where it came from, but only witness can certify bounded properties such as source traceability, artifact integrity, or cross-leg coherence. Runtime, storage, and debugger semantics remain neighboring surfaces unless a witness explicitly proves them.
+
+For the current release-line doctrine behind these terms, see [`docs/design/0004-realization-admission-and-witness/realization-admission-and-witness.md`](./docs/design/0004-realization-admission-and-witness/realization-admission-and-witness.md).
+
 ## Realization Manifests
 
-Wesley emits a lightweight `realization/manifest.json` under every output root. This manifest carries:
-- Build traceability (which schema version produced this artifact).
-- Conformance status (whether a witness has verified this leg).
-- Registry identifiers for shared Continuum nouns.
+Wesley emits a `realization/manifest.json` under every output root. This manifest is the packaging shell for one emitted leg, not the proof by itself. It carries:
+- Source identity through the authored SDL hash (`sourceHash`).
+- A signed inventory of generated files for the leg.
+- Witness/conformance status for the leg.
+- Registry identifiers for shared Continuum nouns where relevant.
+
+The manifest is what `verify-realization` and witness commands inspect when they check whether a leg is still faithful to its admitted source. For the release line, the manifest should be read as a boring, machine-checkable shell around emitted artifacts rather than as a substitute for witness output.
 
 ---
 **The goal is inevitably. Every derived artifact is a provable consequence of the sovereign schema.**

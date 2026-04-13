@@ -71,6 +71,9 @@ This cycle stays brutally narrow.
   family-specific fixtures, a real receipt-family witness scope, and a local
   anti-shadow publication-boundary check, but it still lacks the ownership
   table that would make the proving path feel fully boring.
+- Wesley now emits realization shells that carry `sourceHash`, signed artifact
+  inventory, and witness status for compiled legs. Those shells are part of the
+  proving path, but they are not the witness proof by themselves.
 
 ## Proved This Cycle
 
@@ -89,7 +92,7 @@ following:
 This cycle proves:
 
 - schema-to-artifact consistency for the chosen family
-- manifest and source traceability for emitted artifacts
+- realization-shell integrity and source traceability for emitted artifacts
 - fixture-level conformance for selected examples
 - the semantic distinction between witness residue and receipt envelope
 
@@ -107,6 +110,8 @@ This cycle does not prove:
 - full WARP optic laws
 - proof that every operational receipt already carries sufficient witness data
 - platform-wide runtime, storage, or observer policy
+- a full observer-rights or property-certificate doctrine for cross-repo
+  consumers
 
 ## Current Optic Discipline
 
@@ -118,9 +123,30 @@ surface:
 - a witness is minimal semantic residue for reversibility or lawful
   reassembly, not the same thing as a receipt
 - a receipt is the larger operational envelope around one realized rewrite
+- admission of the shared contract family is separate from observation of one
+  runtime envelope built from that family
 - Wesley's compiler role is best read as compiling multiple interpretations of
   one declared rewrite or contract, not as merely emitting adjacent artifact
   families
+
+## Realization and Witness Discipline
+
+For the `receipt-family` lane, Wesley now treats the proof surfaces as:
+
+- authored schema: the only contract authority
+- lowered IR: Wesley's admitted internal reading of that schema
+- emitted artifact family: the TTD and Echo legs produced from that IR
+- realization shell: the manifest-plus-signatures layer that packages one leg
+- witness output: the bounded proof result that certifies explicit properties of
+  the emitted family and shell
+
+That means the witness lane should certify properties such as source
+traceability, artifact integrity, cross-leg coherence, and selected fixture
+roundtrips without claiming runtime, debugger, or observer-policy truth that it
+does not inspect.
+
+The general doctrine for these surface boundaries now lives in
+`docs/design/0004-realization-admission-and-witness/realization-admission-and-witness.md`.
 
 ## Ownership Snapshot
 
@@ -175,6 +201,7 @@ through:
 - selected fixtures for the chosen family
 - selected round-trip operation vectors for the chosen family
 - manifest and source traceability in emitted surfaces
+- realization-shell integrity for the emitted legs
 - one explicit receipt-versus-witness separation case
 
 ## Boring Operator Path
@@ -193,7 +220,8 @@ The cycle is incomplete if that path still depends on repo vibes.
 The current witness command now proves two bounded scopes:
 `current-minimum-shared-surface` for the original TTD-plus-Echo subset, and
 `receipt-family` for the authored receipt family with local fixtures. Neither
-scope should be read as proof of runtime, storage, or debugger semantics.
+scope should be read as proof of runtime, storage, debugger, or observer-rights
+semantics.
 
 ## Playback Questions
 
