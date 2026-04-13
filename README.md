@@ -1,12 +1,11 @@
-# Wesley
-<!-- docs-truth: status=experimental owner=@flyingrobots -->
+<div align="center">
+<img src="https://github.com/user-attachments/assets/0c03a527-dc36-466f-a212-a3a24731acf8" />
+</div>
+
 
 A schema-first contract compiler for trustworthy change. Wesley ensures that shared protocols, database migrations, and cross-language boundaries remain technically truthful through bit-exact code generation and evidence-backed conformance.
 
 Wesley is designed for the systems architect who demands a sovereign boundary for their contracts. It scales from automated PostgreSQL migration planning to the compilation of the global Continuum causal protocol.
-
-[![Overall](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/flyingrobots/wesley/main/meta/badges/overall.json)](README.md)
-[![License](https://img.shields.io/github/license/wesley)](./LICENSE)
 
 ## Why Wesley?
 
