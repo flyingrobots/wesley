@@ -1,6 +1,6 @@
+import { LoweringEngine } from '@wesley/core';
 import { ZodGenerator } from '@wesley/generator-js';
 import { FileOutputGeneratorCommand } from '../framework/FileOutputGeneratorCommand.mjs';
-import { irToSchema } from '../framework/irToSchema.mjs';
 
 export class ZodCommand extends FileOutputGeneratorCommand {
   constructor(ctx) {
@@ -10,8 +10,10 @@ export class ZodCommand extends FileOutputGeneratorCommand {
   async executeCore(context) {
     const { schemaContent, options } = context;
 
-    const ir = this.ctx.parsers.graphql.parse(schemaContent);
-    const schema = irToSchema(ir);
+    const loweringEngine = new LoweringEngine({
+      parseIr: (sdl) => this.ctx.parsers.graphql.parse(sdl)
+    });
+    const { domain: schema } = await loweringEngine.lower({ sdl: schemaContent });
 
     const generator = new ZodGenerator(null);
     const zodCode = generator.generate(schema);
@@ -24,4 +26,3 @@ export class ZodCommand extends FileOutputGeneratorCommand {
     return { outFile: written };
   }
 }
-
