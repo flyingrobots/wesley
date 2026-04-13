@@ -17,6 +17,7 @@ Compile shared causal protocols into bit-exact language targets.
 - **Compile**: `pnpm wesley compile --schema <path> --target warp-ttd,echo`
 - **Bundle**: `pnpm wesley bundle-echo --schema <path>`
 - **Witness**: `pnpm wesley witness --scope receipt-family --schema <path>`
+- **Guard**: `pnpm wesley verify-realization --tracked`
 
 ### 3. Governance & Inspection
 Audit proposed changes and monitor the contract state via the TUI dashboard.

@@ -1,18 +1,17 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WesleyError } from '@wesley/core';
-import { joinPath } from './path-utils.mjs';
 import {
   DEFAULT_ECHO_REQUIRED_FILES,
   DEFAULT_TTD_REQUIRED_FILES,
   inspectEchoSurface,
   inspectTtdSurface,
-  readJson,
   summarizeChecks
 } from './continuum-witness-support.mjs';
 import { inspectContinuumPublicationBoundary } from './continuum-publication-boundary.mjs';
 import { inspectReceiptFamilySurface } from './continuum-receipt-family-witness.mjs';
 import { inspectSettlementFamilySurface } from './continuum-settlement-family-witness.mjs';
+import { inspectRealizationManifest } from './realization-integrity.mjs';
 
 export const CURRENT_MINIMUM_SCOPE = 'current-minimum-shared-surface';
 export const RECEIPT_FAMILY_SCOPE = 'receipt-family';
@@ -138,7 +137,18 @@ export async function buildContinuumWitnessReport({
 }) {
   const checks = [];
   const repoRoot = await resolveRepoRoot(fs);
-  const realizationManifest = await loadRealizationManifest({ fs, realizationRoot });
+  const realizationInspection = await inspectRealizationManifest({
+    fs,
+    crypto,
+    schemaPath: ttdSchemaPath,
+    realizationRoot,
+    ttdDir,
+    echoDir
+  });
+  const realizationManifest = realizationInspection?.manifest ?? null;
+  if (realizationInspection != null) {
+    checks.push(...realizationInspection.checks);
+  }
   const ttdRequiredFiles = resolveLegRequiredFiles({
     leg: realizationManifest?.generatedLegs?.warpTtd,
     currentLegOutDir: ttdDir,
@@ -209,6 +219,7 @@ export async function buildContinuumWitnessReport({
     surfaces: {
       ttd: ttdSurface,
       echo: echoSurface,
+      ...(realizationInspection == null ? {} : { realization: realizationInspection }),
       ...(receiptFamily == null ? {} : { receiptFamily }),
       ...(settlementFamily == null ? {} : { settlementFamily }),
       publicationBoundary
@@ -318,19 +329,6 @@ async function resolveRepoRoot(fs) {
     return fs.resolve('.');
   }
   return process.cwd();
-}
-
-async function loadRealizationManifest({ fs, realizationRoot }) {
-  if (realizationRoot == null) {
-    return null;
-  }
-
-  const manifestPath = joinPath(realizationRoot, 'manifest.json');
-  if (!(await fs.exists(manifestPath))) {
-    return null;
-  }
-
-  return readJson(fs, manifestPath);
 }
 
 function buildPublicationBoundaryReservedRoots(scope) {

@@ -165,4 +165,20 @@ echo "🔎 Running lint..."
 pnpm lint || { echo "❌ Lint failed." >&2; exit 1; }
 echo "✅ Lint passed"
 
+# ── Realization integrity guard ─────────────────────────────────────────────
+# Skip with: WESLEY_SKIP_REALIZATION_GUARD=1
+
+if [[ "${WESLEY_SKIP_REALIZATION_GUARD:-0}" == "1" ]]; then
+  echo "⚠️  Skipping realization integrity guard (WESLEY_SKIP_REALIZATION_GUARD=1)."
+  exit 0
+fi
+
+echo "🔎 Verifying realization manifests..."
+pnpm run -s verify:realization || {
+  echo "❌ Realization integrity guard failed." >&2
+  echo "   Regenerate the affected output root so sourceHash and artifact signatures match." >&2
+  exit 1
+}
+echo "✅ Realization manifests verified"
+
 exit 0

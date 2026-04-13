@@ -1,12 +1,14 @@
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import { WesleyError } from '@wesley/core';
-import { canonicalizeSchemaPath, joinPath } from './path-utils.mjs';
+import { joinPath } from './path-utils.mjs';
 import { runCompileTtd } from './compile-ttd.mjs';
 import { runBundleEcho } from './bundle-echo.mjs';
+import {
+  buildRealizationManifest
+} from './realization-integrity.mjs';
 
 const VALID_TARGETS = ['warp-ttd', 'echo'];
 const LEGACY_TARGET_ALIASES = new Map([['ttd', 'warp-ttd']]);
-const REALIZATION_MANIFEST_KIND = 'wesley.realization.manifest.v1';
 
 export class CompileCommand extends WesleyCommand {
   constructor(ctx) {
@@ -82,11 +84,15 @@ export class CompileCommand extends WesleyCommand {
       summary.schemaHash = schemaHashes[0];
     }
 
-    const realizationManifest = buildRealizationManifest({
+    const realizationManifest = await buildRealizationManifest({
+      fs: this.ctx.fs,
+      crypto: this.ctx.crypto,
+      schemaContent: context.schemaContent,
       schemaPath: context.schemaPath,
       outDir: context.options.outDir,
       targets,
-      summary
+      summary,
+      dryRun: Boolean(context.options.dryRun)
     });
     summary.realizationManifest = realizationManifest;
 
@@ -96,47 +102,6 @@ export class CompileCommand extends WesleyCommand {
 
     return summary;
   }
-}
-
-function buildRealizationManifest({ schemaPath, outDir, targets, summary }) {
-  return {
-    kind: REALIZATION_MANIFEST_KIND,
-    schemaPath,
-    canonicalSchemaPath: canonicalizeSchemaPath(schemaPath),
-    schemaHash: summary.schemaHash ?? null,
-    outDir,
-    targets,
-    generatedLegs: {
-      warpTtd: summary.warpTtd == null
-        ? null
-        : {
-          outDir: joinPath(outDir, 'warp-ttd'),
-          schemaHash: summary.warpTtd.schemaHash,
-          targets: summary.warpTtd.targets,
-          files: summary.warpTtd.files
-        },
-      echo: summary.echo == null
-        ? null
-        : {
-          outDir: summary.echo.outDir,
-          schemaHash: summary.echo.schemaHash,
-          artifactCount: summary.echo.echo.artifactCount,
-          files: buildEchoLegFiles(summary.echo)
-        }
-    },
-    proves: [
-      'one authored schema path was compiled into one or more generated consumer legs',
-      'generated legs share one authored schema hash',
-      'the emitted files for each selected target are inspectable from this realization manifest'
-    ],
-    doesNotProve: [
-      'cross-leg conformance beyond shared schema identity',
-      'runtime semantics',
-      'storage semantics',
-      'debugger semantics',
-      'compile-time footprint safety in neighboring runtimes'
-    ]
-  };
 }
 
 function parseTargets(rawTargets) {
@@ -156,34 +121,4 @@ function parseTargets(rawTargets) {
   }
 
   return targets;
-}
-
-function buildEchoLegFiles(echoSummary) {
-  return [
-    ...echoSummary.echo.files,
-    {
-      path: relativeToOutDir(echoSummary.outDir, echoSummary.mock.outputPath),
-      size: null
-    },
-    {
-      path: relativeToOutDir(echoSummary.outDir, echoSummary.mock.summaryPath),
-      size: null
-    }
-  ];
-}
-
-function relativeToOutDir(outDir, targetPath) {
-  if (targetPath == null) {
-    return null;
-  }
-
-  const normalizedOutDir = joinPath(outDir);
-  const normalizedTargetPath = joinPath(targetPath);
-  if (normalizedTargetPath === normalizedOutDir) {
-    return '.';
-  }
-  if (normalizedTargetPath.startsWith(`${normalizedOutDir}/`)) {
-    return normalizedTargetPath.slice(normalizedOutDir.length + 1);
-  }
-  return normalizedTargetPath;
 }
