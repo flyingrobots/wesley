@@ -19,6 +19,24 @@ const nullLogger = {
 };
 
 const fakeClock = { now() { return '2026-03-08T00:00:00.000Z'; } };
+const minimalIr = {
+  tables: [
+    {
+      name: 'User',
+      directives: { table: true },
+      fields: [
+        {
+          name: 'id',
+          type: { base: 'ID', isList: false },
+          nullable: false,
+          directives: { pk: true }
+        }
+      ],
+      indexes: []
+    }
+  ],
+  relationships: []
+};
 
 function makeRunner(overrides = {}) {
   return new TransmutationRunner({
@@ -120,6 +138,38 @@ test('TransmutationRunner — preserves caller-supplied runId', async () => {
   const result = await runner.run('backend', [makePlugin()], {}, { runId: 'run-manual-001' });
 
   assert.equal(result.runId, 'run-manual-001');
+});
+
+test('TransmutationRunner — lowers raw SDL and IR into one plugin schema envelope', async () => {
+  const runner = makeRunner();
+  let observedSchema = null;
+  const plugin = makePlugin({
+    async plan(schema) {
+      observedSchema = schema;
+      assert.equal(schema.ir, minimalIr);
+      assert.equal(schema.sdl, 'type User @table { id: ID! @pk }');
+      assert.equal(schema.outputDir, 'out');
+      assert.equal(typeof schema.getTables, 'function');
+      return {
+        artifacts: [{ path: 'out.txt', reason: 'test' }],
+        metadata: { tableCount: schema.getTables().length }
+      };
+    },
+    async generate(plan) {
+      return { 'out.txt': String(plan.metadata.tableCount) };
+    }
+  });
+
+  const result = await runner.run('backend', [plugin], {
+    sdl: 'type User @table { id: ID! @pk }',
+    ir: minimalIr,
+    outputDir: 'out'
+  });
+
+  assert.equal(result.success, true);
+  assert.ok(observedSchema);
+  assert.equal(observedSchema.getTables()[0].name, 'User');
+  assert.equal(result.results[0].artifacts['out.txt'], '1');
 });
 
 test('TransmutationRunner — bundle includes transmutation name', async () => {
