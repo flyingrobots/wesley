@@ -29,7 +29,7 @@ The sections below describe the extracted target-state design from Echo. They
 are still useful for direction, but they should not be read as proof that
 `main` already accepts the `@channel` / `@op` / `@rule` vocabulary or that the
 cross-repo protocol publication boundary is settled. That cutover is tracked in
-[`SOURCE_WESLEY_protocol-surface-cutover`](../method/backlog/up-next/SOURCE_WESLEY_protocol-surface-cutover.md).
+[`SOURCE_WESLEY_protocol-surface-cutover`](../method/backlog/v0.1.0/SOURCE_WESLEY_protocol-surface-cutover.md).
 
 ### Key Doctrine
 

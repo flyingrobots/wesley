@@ -25,7 +25,7 @@ documented in [`docs/DIRECTIVES.md`](../DIRECTIVES.md) and implemented in
 [`packages/wesley-core/src/ttd/directives.mjs`](../../packages/wesley-core/src/ttd/directives.mjs).
 The broader cross-repo publication boundary is still tracked as active backlog
 work in
-[`SOURCE_WESLEY_protocol-surface-cutover`](../method/backlog/up-next/SOURCE_WESLEY_protocol-surface-cutover.md).
+[`SOURCE_WESLEY_protocol-surface-cutover`](../method/backlog/v0.1.0/SOURCE_WESLEY_protocol-surface-cutover.md).
 
 ### Key Doctrine
 

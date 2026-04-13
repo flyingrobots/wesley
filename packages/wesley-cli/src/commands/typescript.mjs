@@ -1,6 +1,6 @@
+import { LoweringEngine } from '@wesley/core';
 import { TypeScriptGenerator } from '@wesley/generator-js';
 import { FileOutputGeneratorCommand } from '../framework/FileOutputGeneratorCommand.mjs';
-import { irToSchema } from '../framework/irToSchema.mjs';
 
 export class TypeScriptCommand extends FileOutputGeneratorCommand {
   constructor(ctx) {
@@ -14,8 +14,10 @@ export class TypeScriptCommand extends FileOutputGeneratorCommand {
   async executeCore(context) {
     const { schemaContent, options } = context;
 
-    const ir = this.ctx.parsers.graphql.parse(schemaContent);
-    const schema = irToSchema(ir);
+    const loweringEngine = new LoweringEngine({
+      parseIr: (sdl) => this.ctx.parsers.graphql.parse(sdl)
+    });
+    const { domain: schema } = await loweringEngine.lower({ sdl: schemaContent });
 
     const generator = new TypeScriptGenerator(null);
     const tsCode = generator.generate(schema);
@@ -28,4 +30,3 @@ export class TypeScriptCommand extends FileOutputGeneratorCommand {
     return { outFile: written };
   }
 }
-

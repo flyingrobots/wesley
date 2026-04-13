@@ -763,7 +763,7 @@ If a generator needs a domain-specific shape (e.g., JS generators need `Schema`)
 - `packages/wesley-generator-echo/src/index.mjs` — align `generateEcho()` signature
 - `packages/wesley-generator-js/src/index.mjs` — internalize `irToSchema()` conversion
 - `packages/wesley-generator-supabase/src/index.mjs` — align `emitDDL()` etc.
-- `packages/wesley-cli/src/framework/irToSchema.mjs` — move into `@wesley/core` as a shared adapter
+- `packages/wesley-core/src/application/LoweringEngine.mjs` — centralize SDL/IR/domain lowering before orchestration
 - `packages/wesley-cli/src/commands/typescript.mjs`, `zod.mjs` — remove inline adapter calls
 
 #### 0b. Merge GenerationPipeline / PluginRunner duality

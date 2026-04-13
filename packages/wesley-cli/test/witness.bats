@@ -119,6 +119,23 @@ EOF
     echo "$output" | jq -e '.result.status == "pass"' >/dev/null
 }
 
+@test "witness fails when a signed generated artifact drifts from the realization manifest" {
+    cp "$RECEIPT_SCHEMA" schema.graphql
+    node "$CLI_PATH" compile --schema schema.graphql --target warp-ttd,echo --out-dir out/proof >/dev/null
+
+    printf '\n// drift\n' >> out/proof/echo/schemas.generated.ts
+
+    run node "$CLI_PATH" witness \
+        --scope receipt-family \
+        --schema schema.graphql \
+        --out-dir out/proof \
+        --json
+    assert_failure
+    assert_file_exist out/proof/witness/conformance.json
+    run jq -e '.checks | map(select(.id == "realization.echo.artifact-signatures" and .status == "fail")) | length == 1' out/proof/witness/conformance.json
+    assert_success
+}
+
 @test "witness accepts warp-ttd roots compiled with manifest and rust emits only" {
     node "$CLI_PATH" compile \
         --schema "$RECEIPT_SCHEMA" \

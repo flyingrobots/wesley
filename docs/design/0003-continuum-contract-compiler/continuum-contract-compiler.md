@@ -282,11 +282,11 @@ scope should be read as proof of runtime, storage, or debugger semantics.
 
 ## Appendix: Related Backlog Pull Set
 
-- [Continuum Ownership Map For Shared Nouns](../../method/backlog/asap/SOURCE_continuum-ownership-map-for-shared-nouns.md)
-- [Continuum Local Compile And Inspect Surface](../../method/backlog/asap/RUNTIME_continuum-local-compile-and-inspect-surface.md)
-- [Continuum Conformance And Round-Trip Witness](../../method/backlog/asap/EVIDENCE_continuum-conformance-and-roundtrip-witness.md)
-- [Continuum Protocol Surface Cutover](../../method/backlog/up-next/SOURCE_WESLEY_protocol-surface-cutover.md)
-- [Continuum Receipt Family Artifact Path](../../method/backlog/up-next/TRANSMUTE_continuum-receipt-family-artifact-path.md)
+- [Continuum Ownership Map For Shared Nouns](../../method/backlog/v0.1.0/SOURCE_continuum-ownership-map-for-shared-nouns.md)
+- [Continuum Local Compile And Inspect Surface](../../method/backlog/v0.1.0/RUNTIME_continuum-local-compile-and-inspect-surface.md)
+- [Continuum Conformance And Round-Trip Witness](../../method/backlog/v0.1.0/EVIDENCE_continuum-conformance-and-roundtrip-witness.md)
+- [Continuum Protocol Surface Cutover](../../method/backlog/v0.1.0/SOURCE_WESLEY_protocol-surface-cutover.md)
+- [Continuum Receipt Family Artifact Path](../../method/backlog/v0.1.0/TRANSMUTE_continuum-receipt-family-artifact-path.md)
 
 ## Non-goals
 

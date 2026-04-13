@@ -1,10 +1,7 @@
 # ASAP
 
-Items here should be pulled soon. They are closer to commitment than `up-next/`
-or `inbox/`.
+`v0.1.0/` now owns the current release campaign, so this lane is intentionally
+empty until the first ship cut has a calmer horizon.
 
-Current pull order for the Continuum cluster:
-
-1. `SOURCE_continuum-ownership-map-for-shared-nouns.md`
-2. `RUNTIME_continuum-local-compile-and-inspect-surface.md`
-3. `EVIDENCE_continuum-conformance-and-roundtrip-witness.md`
+Use `asap/` again when near-term work is important but not yet explicitly
+committed to the release lane.

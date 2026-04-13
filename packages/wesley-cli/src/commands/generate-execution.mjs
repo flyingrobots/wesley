@@ -8,7 +8,6 @@ import {
   createGeneratedArtifactResolver,
   createRunId,
   enrichBundleWithEvidenceTruth,
-  irToSchema,
   generatedArtifactPathCandidates
 } from '@wesley/core';
 import {
@@ -286,10 +285,11 @@ async function executeLegacySupabaseTransmutation({ ctx, context, ir, runId, eve
     logger.info({ transmutation: LEGACY_SUPABASE_TRANSMUTATION, plan }, 'Execution plan:');
   }
 
-  const schema = irToSchema(ir);
-  schema.ir = ir;
-  schema.sdl = context.schemaContent;
-  schema.outputDir = options.outDir;
+  const schema = {
+    sdl: context.schemaContent,
+    ir,
+    outputDir: options.outDir
+  };
   const sourceSha = await resolveSourceSha(ctx, logger);
 
   const result = await runner.run(

@@ -35,10 +35,14 @@ teardown() {
     echo "$output" | jq -e '.success == true' >/dev/null
     echo "$output" | jq -e '.result.targets == ["warp-ttd","echo"]' >/dev/null
     echo "$output" | jq -e '.result.realizationManifest.kind == "wesley.realization.manifest.v1"' >/dev/null
+    echo "$output" | jq -e '.result.realizationManifest.sourceHash == .result.schemaHash' >/dev/null
+    echo "$output" | jq -e '.result.realizationManifest.integrity.signatureAlgorithm == "hmac-sha256"' >/dev/null
     echo "$output" | jq -e '.result.manifestPath == "out/realization/manifest.json"' >/dev/null
     echo "$output" | jq -e '.result.warpTtd.files | map(.path) | index("out/warp-ttd/manifest/manifest.json") != null' >/dev/null
     echo "$output" | jq -e '.result.echo.outDir == "out/echo"' >/dev/null
     echo "$output" | jq -e '.result.realizationManifest.generatedLegs.echo.files | map(.path) | index("mock/summary.json") != null' >/dev/null
+    echo "$output" | jq -e '.result.realizationManifest.generatedLegs.warpTtd.files | all(.[]; (.contentHash | length) == 64 and (.signature | length) == 64)' >/dev/null
+    echo "$output" | jq -e '.result.realizationManifest.generatedLegs.echo.files | all(.[]; (.contentHash | length) == 64 and (.signature | length) == 64)' >/dev/null
     echo "$output" | jq -e '.result.schemaHash == .result.warpTtd.schemaHash and .result.schemaHash == .result.echo.schemaHash' >/dev/null
 
     assert_file_exist out/warp-ttd/manifest/schema.json
@@ -47,7 +51,7 @@ teardown() {
     assert_file_exist out/echo/mock/deliveries.jsonl
     assert_file_exist out/echo/mock/summary.json
     assert_file_exist out/realization/manifest.json
-    run jq -e '.kind == "wesley.realization.manifest.v1" and .targets == ["warp-ttd","echo"] and .generatedLegs.warpTtd != null and .generatedLegs.echo != null' out/realization/manifest.json
+    run jq -e '.kind == "wesley.realization.manifest.v1" and .sourceHash == .schemaHash and .targets == ["warp-ttd","echo"] and .generatedLegs.warpTtd != null and .generatedLegs.echo != null and (.generatedLegs.warpTtd.files | all(.[]; (.contentHash | length) == 64 and (.signature | length) == 64)) and (.generatedLegs.echo.files | all(.[]; (.contentHash | length) == 64 and (.signature | length) == 64))' out/realization/manifest.json
     assert_success
 }
 

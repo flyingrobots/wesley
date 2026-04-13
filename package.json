@@ -13,6 +13,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "preflight": "node scripts/preflight.mjs",
+    "verify:realization": "node packages/wesley-host-node/bin/wesley.mjs verify-realization --tracked",
     "lint:docs-whitespace": "node scripts/lint-docs-whitespace.mjs",
     "lint:docs-truth": "node scripts/check-doc-truth.mjs",
     "tasks:update": "node scripts/tasks-update.mjs",

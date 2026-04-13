@@ -1,3 +1,10 @@
+---
+title: Continuum Versioned Contract Bundle Release
+lane: v0.1.0
+legend: TRANSMUTE
+release: v0.1.0
+---
+
 # Continuum Versioned Contract Bundle Release
 
 - Lane: `cool-ideas`
