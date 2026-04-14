@@ -29,6 +29,7 @@ const CONTINUUM_CONTRACT_BUNDLE_DEFINITIONS = deepFreeze({
 const CONTINUUM_CONTRACT_CONSUMERS = deepFreeze({
   'warp-ttd': {
     description: 'Sync the checked-in manifest and TypeScript protocol roots in warp-ttd.',
+    allowedExtraFilesByRoot: {},
     projections: [
       {
         kind: 'directory',
@@ -44,6 +45,13 @@ const CONTINUUM_CONTRACT_CONSUMERS = deepFreeze({
   },
   echo: {
     description: 'Sync the checked-in generated TTD TypeScript package in Echo.',
+    allowedExtraFilesByRoot: {
+      'packages/ttd-protocol-ts': [
+        '.gitkeep',
+        'package.json',
+        'primitives.ts'
+      ]
+    },
     projections: [
       {
         kind: 'file',

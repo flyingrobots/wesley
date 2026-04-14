@@ -18,6 +18,7 @@ import { canonicalizeSchemaPath, joinPath } from './path-utils.mjs';
 const CONTRACT_BUNDLE_KIND = 'wesley.contract.bundle.v1';
 const CONTRACT_SYNC_KIND = 'wesley.contract.sync.v1';
 const CONTRACT_AUTHORITY_KIND = 'wesley.contract.bundle.authority.v1';
+const CONTRACT_SYNC_VERIFICATION_KIND = 'wesley.contract.sync.verification.v1';
 const CLI_PACKAGE_NAME = '@wesley/cli';
 const CLI_PACKAGE_VERSION = '0.1.0';
 const PROFILE_PACKAGE_NAME = '@wesley/continuum';
@@ -261,7 +262,6 @@ export class ContractCommand extends WesleyCommand {
     const consumerName = normalizeRequiredText(options.consumer, 'Contract consumer');
     const consumer = resolveBundleConsumer(bundle, consumerName);
     const repoRoot = normalizeRequiredText(options.repo, 'Consumer repository root');
-
     const copiedFiles = [];
     for (const projection of consumer.projections) {
       const writes = projection.kind === 'directory'
@@ -282,10 +282,30 @@ export class ContractCommand extends WesleyCommand {
       copiedFiles.push(...writes);
     }
 
+    const verification = options.dryRun
+      ? {
+        kind: CONTRACT_SYNC_VERIFICATION_KIND,
+        status: 'skipped',
+        reason: '--dry-run',
+        outputPath: null
+      }
+      : await verifySyncedConsumer({
+        fs: this.ctx.fs,
+        bundleRoot,
+        consumer,
+        repoRoot
+      });
+
     if (!options.quiet && !options.json) {
       const action = options.dryRun ? 'Would sync' : 'Synced';
       logger?.info?.(`${action} ${copiedFiles.length} file(s) for ${consumer.consumer} from ${bundleRoot}`);
       logger?.info?.(`Consumer repository: ${repoRoot}`);
+      if (verification.status === 'pass') {
+        logger?.info?.(`Post-sync verification: ${verification.outputPath}`);
+      }
+      if (verification.status === 'skipped') {
+        logger?.info?.('Post-sync verification skipped because --dry-run was set.');
+      }
     }
 
     return {
@@ -298,7 +318,8 @@ export class ContractCommand extends WesleyCommand {
       repoRoot,
       dryRun: Boolean(options.dryRun),
       fileCount: copiedFiles.length,
-      files: copiedFiles
+      files: copiedFiles,
+      verification
     };
   }
 }
@@ -364,7 +385,8 @@ async function buildContractBundleManifest({
       consumers: profile.consumers.map((consumer) => ({
         consumer: consumer.consumer,
         description: consumer.description,
-        projections: consumer.projections
+        projections: consumer.projections,
+        allowedExtraFilesByRoot: consumer.allowedExtraFilesByRoot ?? {}
       }))
     },
     proves: [
@@ -578,6 +600,54 @@ async function syncFileProjection({ fs, bundleRoot, repoRoot, projection, dryRun
   }];
 }
 
+async function verifySyncedConsumer({
+  fs,
+  bundleRoot,
+  consumer,
+  repoRoot
+}) {
+  const outputPath = joinPath(bundleRoot, 'witness', `sync-${consumer.consumer}.json`);
+  const plans = buildConsumerVerificationPlans({
+    consumer,
+    bundleRoot,
+    repoRoot
+  });
+  const rootReports = [];
+  const checks = [];
+
+  for (const plan of plans) {
+    const report = await verifyConsumerRoot({ fs, plan });
+    rootReports.push(report);
+    checks.push(...report.checks);
+  }
+
+  const summary = summarizeVerificationChecks(checks);
+  const report = {
+    kind: CONTRACT_SYNC_VERIFICATION_KIND,
+    consumer: consumer.consumer,
+    status: summary.failed === 0 ? 'pass' : 'fail',
+    outputPath,
+    summary,
+    roots: rootReports,
+    checks
+  };
+  await fs.write(outputPath, JSON.stringify(report, null, 2) + '\n');
+
+  if (report.status !== 'pass') {
+    throw new WesleyError(
+      'CONTRACT_SYNC_VERIFICATION_FAILED',
+      `Contract sync left ${consumer.consumer} drifted (${summary.failed} failed check(s)). See ${outputPath}.`,
+      {
+        consumer: consumer.consumer,
+        outputPath,
+        failedChecks: checks.filter((check) => check.status === 'fail').map((check) => check.id)
+      }
+    );
+  }
+
+  return report;
+}
+
 async function listFilesRecursive(fs, root) {
   if (!fs.readDir) {
     throw new WesleyError(
@@ -633,6 +703,240 @@ function relativizeToRoot({ root, targetPath }) {
     return null;
   }
   return normalizeSeparators(path.relative(path.resolve(root), path.resolve(targetPath)));
+}
+
+function buildConsumerVerificationPlans({ consumer, bundleRoot, repoRoot }) {
+  const plans = [];
+  const fileGroups = new Map();
+  const allowedExtraFilesByRoot = consumer.allowedExtraFilesByRoot ?? {};
+
+  for (const projection of consumer.projections) {
+    if (projection.kind === 'directory') {
+      plans.push({
+        id: normalizeSeparators(projection.toRoot),
+        sourceRoot: joinPath(bundleRoot, projection.fromRoot),
+        destinationRoot: joinPath(repoRoot, projection.toRoot),
+        allowedExtraFiles: allowedExtraFilesByRoot[normalizeSeparators(projection.toRoot)] ?? [],
+        mode: 'directory'
+      });
+      continue;
+    }
+
+    const root = normalizeSeparators(path.posix.dirname(projection.to));
+    const existing = fileGroups.get(root) ?? {
+      id: root,
+      destinationRoot: joinPath(repoRoot, root),
+      allowedExtraFiles: allowedExtraFilesByRoot[root] ?? [],
+      mode: 'managed-files',
+      managedFiles: []
+    };
+    existing.managedFiles.push({
+      relativePath: path.posix.basename(projection.to),
+      sourcePath: joinPath(bundleRoot, projection.from),
+      destinationPath: joinPath(repoRoot, projection.to)
+    });
+    fileGroups.set(root, existing);
+  }
+
+  for (const group of fileGroups.values()) {
+    group.managedFiles.sort((left, right) => left.relativePath.localeCompare(right.relativePath));
+    plans.push(group);
+  }
+
+  return plans.sort((left, right) => left.id.localeCompare(right.id));
+}
+
+async function verifyConsumerRoot({ fs, plan }) {
+  const checks = [];
+  const rootExists = await fs.exists(plan.destinationRoot);
+  checks.push(createVerificationCheck(
+    `${plan.id}.root-present`,
+    rootExists,
+    rootExists
+      ? `Consumer root ${plan.destinationRoot} exists.`
+      : `Consumer root ${plan.destinationRoot} does not exist.`,
+    {
+      destinationRoot: plan.destinationRoot
+    }
+  ));
+
+  if (!rootExists) {
+    return {
+      id: plan.id,
+      destinationRoot: plan.destinationRoot,
+      status: 'fail',
+      missingFiles: [],
+      mismatchedFiles: [],
+      extraFiles: [],
+      checks
+    };
+  }
+
+  if (plan.mode === 'directory') {
+    return verifyDirectoryPlan({ fs, plan, checks });
+  }
+
+  return verifyManagedFilePlan({ fs, plan, checks });
+}
+
+async function verifyDirectoryPlan({ fs, plan, checks }) {
+  const sourceFiles = await listFilesRecursive(fs, plan.sourceRoot);
+  const destinationFiles = await listFilesRecursive(fs, plan.destinationRoot);
+  const sourceMap = new Map(sourceFiles.map((filePath) => [
+    normalizeSeparators(path.relative(plan.sourceRoot, filePath)),
+    filePath
+  ]));
+  const destinationMap = new Map(destinationFiles.map((filePath) => [
+    normalizeSeparators(path.relative(plan.destinationRoot, filePath)),
+    filePath
+  ]));
+
+  const missingFiles = [];
+  const mismatchedFiles = [];
+  for (const [relativePath, sourcePath] of sourceMap) {
+    const destinationPath = destinationMap.get(relativePath);
+    if (destinationPath == null) {
+      missingFiles.push(relativePath);
+      continue;
+    }
+
+    const matches = await fileContentsMatch(fs, sourcePath, destinationPath);
+    if (!matches) {
+      mismatchedFiles.push(relativePath);
+    }
+  }
+
+  const allowedExtraFiles = new Set((plan.allowedExtraFiles ?? []).map(normalizeSeparators));
+  const extraFiles = [...destinationMap.keys()]
+    .filter((relativePath) => !sourceMap.has(relativePath))
+    .filter((relativePath) => !allowedExtraFiles.has(relativePath))
+    .sort((left, right) => left.localeCompare(right));
+
+  checks.push(createVerificationCheck(
+    `${plan.id}.file-set`,
+    missingFiles.length === 0 && extraFiles.length === 0,
+    missingFiles.length === 0 && extraFiles.length === 0
+      ? `Consumer root ${plan.destinationRoot} exposes the expected file set.`
+      : `Consumer root ${plan.destinationRoot} diverges from the expected file set.`,
+    {
+      missingFiles,
+      extraFiles
+    }
+  ));
+  checks.push(createVerificationCheck(
+    `${plan.id}.content`,
+    mismatchedFiles.length === 0,
+    mismatchedFiles.length === 0
+      ? `Consumer root ${plan.destinationRoot} matches the released bundle bytes.`
+      : `Consumer root ${plan.destinationRoot} contains files that drift from the released bundle.`,
+    {
+      mismatchedFiles
+    }
+  ));
+
+  return {
+    id: plan.id,
+    destinationRoot: plan.destinationRoot,
+    status: (missingFiles.length === 0 && extraFiles.length === 0 && mismatchedFiles.length === 0) ? 'pass' : 'fail',
+    missingFiles,
+    mismatchedFiles,
+    extraFiles,
+    checks
+  };
+}
+
+async function verifyManagedFilePlan({ fs, plan, checks }) {
+  const destinationFiles = await listFilesRecursive(fs, plan.destinationRoot);
+  const destinationRelativeFiles = destinationFiles.map((filePath) => normalizeSeparators(path.relative(plan.destinationRoot, filePath)));
+  const managedRelativeFiles = new Set(plan.managedFiles.map((file) => normalizeSeparators(file.relativePath)));
+  const allowedExtraFiles = new Set((plan.allowedExtraFiles ?? []).map(normalizeSeparators));
+
+  const missingFiles = [];
+  const mismatchedFiles = [];
+  for (const file of plan.managedFiles) {
+    const destinationExists = await fs.exists(file.destinationPath);
+    if (!destinationExists) {
+      missingFiles.push(file.relativePath);
+      continue;
+    }
+
+    const matches = await fileContentsMatch(fs, file.sourcePath, file.destinationPath);
+    if (!matches) {
+      mismatchedFiles.push(file.relativePath);
+    }
+  }
+
+  const extraFiles = destinationRelativeFiles
+    .filter((relativePath) => !managedRelativeFiles.has(relativePath))
+    .filter((relativePath) => !allowedExtraFiles.has(relativePath))
+    .sort((left, right) => left.localeCompare(right));
+
+  checks.push(createVerificationCheck(
+    `${plan.id}.managed-files`,
+    missingFiles.length === 0 && mismatchedFiles.length === 0,
+    missingFiles.length === 0 && mismatchedFiles.length === 0
+      ? `Managed files under ${plan.destinationRoot} match the released bundle.`
+      : `Managed files under ${plan.destinationRoot} drift from the released bundle.`,
+    {
+      missingFiles,
+      mismatchedFiles
+    }
+  ));
+  checks.push(createVerificationCheck(
+    `${plan.id}.extras`,
+    extraFiles.length === 0,
+    extraFiles.length === 0
+      ? `Consumer root ${plan.destinationRoot} contains only managed files plus allowed local extras.`
+      : `Consumer root ${plan.destinationRoot} contains extra files outside the declared bundle projection.`,
+    {
+      extraFiles,
+      allowedExtraFiles: [...allowedExtraFiles].sort((left, right) => left.localeCompare(right))
+    }
+  ));
+
+  return {
+    id: plan.id,
+    destinationRoot: plan.destinationRoot,
+    status: (missingFiles.length === 0 && mismatchedFiles.length === 0 && extraFiles.length === 0) ? 'pass' : 'fail',
+    missingFiles,
+    mismatchedFiles,
+    extraFiles,
+    checks
+  };
+}
+
+async function fileContentsMatch(fs, leftPath, rightPath) {
+  const [left, right] = await Promise.all([
+    fs.read(leftPath),
+    fs.read(rightPath)
+  ]);
+  return left === right;
+}
+
+function createVerificationCheck(id, pass, message, details = {}) {
+  return {
+    id,
+    status: pass ? 'pass' : 'fail',
+    message,
+    details
+  };
+}
+
+function summarizeVerificationChecks(checks) {
+  let passed = 0;
+  let failed = 0;
+  for (const check of checks) {
+    if (check.status === 'pass') {
+      passed += 1;
+      continue;
+    }
+    failed += 1;
+  }
+  return {
+    passed,
+    failed,
+    totalChecks: checks.length
+  };
 }
 
 function resolveGitHeadCommit() {

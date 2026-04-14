@@ -32,7 +32,9 @@ policy, and the Continuum judgment profile for Holmes, Watson, and Moriarty.
 contract bundle with `bundle.json`, realization, witness output, admitted
 source metadata, and declared consumer projections. `contract sync` then
 copies those declared projections into a neighboring consumer root such as
-`warp-ttd` or Echo's checked-in `ttd-protocol-ts` package.
+`warp-ttd` or Echo's checked-in `ttd-protocol-ts` package, then writes a
+bundle-scoped sync verification report and fails if the consumer surface still
+drifts after copy.
 
 ## Development
 

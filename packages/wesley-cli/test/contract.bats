@@ -68,9 +68,10 @@ teardown() {
         --repo consumers/warp-ttd \
         --json
     assert_success
-    echo "$output" | jq -e '.success == true and .result.consumer == "warp-ttd" and .result.fileCount > 2' >/dev/null
+    echo "$output" | jq -e '.success == true and .result.consumer == "warp-ttd" and .result.fileCount > 2 and .result.verification.status == "pass"' >/dev/null
     assert_file_exist consumers/warp-ttd/manifest/manifest.json
     assert_file_exist consumers/warp-ttd/typescript/index.ts
+    assert_file_exist out/bundle/witness/sync-warp-ttd.json
 
     run node "$CLI_PATH" contract sync \
         --profile continuum \
@@ -79,7 +80,37 @@ teardown() {
         --repo consumers/echo \
         --json
     assert_success
-    echo "$output" | jq -e '.success == true and .result.consumer == "echo" and .result.fileCount == 4' >/dev/null
+    echo "$output" | jq -e '.success == true and .result.consumer == "echo" and .result.fileCount == 4 and .result.verification.status == "pass"' >/dev/null
     assert_file_exist consumers/echo/packages/ttd-protocol-ts/index.ts
     assert_file_exist consumers/echo/packages/ttd-protocol-ts/zod.ts
+    assert_file_exist out/bundle/witness/sync-echo.json
+}
+
+@test "contract sync fails when the consumer surface still drifts after copy" {
+    cp "$CONTINUUM_SCHEMA" schema.graphql
+    node "$CLI_PATH" contract release \
+        --profile continuum \
+        --family receipt-family \
+        --schema schema.graphql \
+        --release 0.1.0 \
+        --bundle-out out/bundle >/dev/null
+
+    mkdir -p consumers/echo/packages/ttd-protocol-ts
+    cat > consumers/echo/packages/ttd-protocol-ts/manual.ts <<'EOF'
+export interface Receipt {
+  receiptId: string;
+}
+EOF
+
+    run node "$CLI_PATH" contract sync \
+        --profile continuum \
+        --bundle out/bundle \
+        --consumer echo \
+        --repo consumers/echo
+
+    assert_failure
+    assert_output --partial "Contract sync left echo drifted"
+    assert_file_exist out/bundle/witness/sync-echo.json
+    run jq -e '.checks[] | select(.id == "packages/ttd-protocol-ts.extras" and .status == "fail")' out/bundle/witness/sync-echo.json
+    assert_success
 }

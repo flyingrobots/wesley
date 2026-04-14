@@ -31,7 +31,9 @@ Use `contract release` when you want one versioned release object rather than a
 local inspect root. It emits `bundle.json`, realization, witness, admitted
 source metadata, and declared consumer sync projections in one bundle root.
 Use `contract sync` when you want to move those declared projections into a
-nearby consumer repository without hand-copying generated files.
+nearby consumer repository without hand-copying generated files. It now also
+verifies the synced consumer roots against the released bundle and fails on
+residual drift.
 Use `drift-watch` when you need one local cutover surface that compares authored
 schema identity, local emitted legs, and explicit nearby mirrors.
 
