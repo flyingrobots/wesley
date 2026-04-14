@@ -25,7 +25,11 @@ export class ZodCommand extends FileOutputGeneratorCommand {
     const generator = new ZodGenerator(null);
     const zodCode = generator.generate(schema);
 
-    const outFile = options.outFile;
+    const outFile = await this.resolveOutFile({
+      options,
+      outputKey: 'zod',
+      defaultFileName: 'zod.generated.ts'
+    });
     const written = await this.writeOutput({ code: zodCode, outFile, options });
     if (!options.quiet && !options.json && outFile) {
       context.logger.info(`Generated Zod schemas: ${written}`);

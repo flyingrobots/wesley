@@ -1,4 +1,5 @@
 import { GeneratorCommand } from './GeneratorCommand.mjs';
+import { resolveWarpspaceOutputFile } from '../utils/warpspace.mjs';
 
 /**
  * FileOutputGeneratorCommand - Base class for generators that output to files
@@ -17,7 +18,19 @@ export class FileOutputGeneratorCommand extends GeneratorCommand {
 
     // Add file output option
     return generatorCmd
-      .option('--out-file <file>', 'Output file (prints to stdout if not specified)');
+      .option('--out-file <file>', 'Output file (prints to stdout if not specified)')
+      .option('--warpspace <path>', 'Path to host-project warpspace.mjs');
+  }
+
+  async resolveOutFile({ options, outputKey, defaultFileName }) {
+    return resolveWarpspaceOutputFile({
+      outputKey,
+      explicitOutFile: options.outFile,
+      defaultFileName,
+      cwd: process.cwd(),
+      env: this.ctx.env,
+      warpspacePath: options.warpspace
+    });
   }
 }
 

@@ -8,6 +8,8 @@ Command-line interface for turning GraphQL schemas into database artifacts (SQL,
 pnpm wesley --help
 pnpm wesley generate --schema path/to/schema.graphql --emit-bundle
 pnpm wesley transform --schema path/to/schema.graphql --transmutation null-generator --out-dir out
+pnpm wesley typescript --schema path/to/schema.graphql
+pnpm wesley zod --schema path/to/schema.graphql
 pnpm wesley compile --schema "$CONTINUUM_ROOT"/schemas/continuum-receipt-family.graphql --target warp-ttd,echo --out-dir .wesley-cache/continuum/local-inspect
 pnpm wesley contract release --profile continuum --family receipt-family --schema "$CONTINUUM_ROOT"/schemas/continuum-receipt-family.graphql --release 0.1.0
 pnpm wesley contract sync --profile continuum --bundle .wesley-cache/contracts/continuum/receipt-family/0.1.0 --consumer warp-ttd --repo ../warp-ttd
@@ -23,6 +25,12 @@ Set `CONTINUUM_ROOT` to the root of your local Continuum checkout before using t
 See `pnpm wesley --help` for the full list of commands (including `blade`, `cert-*`, and experimental `--ops` support).
 
 Repeated local schema workflows reuse a hash-addressed IR cache in `.wesley-cache/ir/`, so `generate`, `plan`, `rehearse`, `up`, `typescript`, and `zod` do not need to re-lower unchanged SDL on every invocation.
+
+Single-file generators now also understand host-project WARPspace defaults. If a
+project carries `warpspace.mjs`, `wesley typescript` and `wesley zod` resolve
+their default output files from `outputs.typescript` and `outputs.zod`. A local
+`.warpspace.local.mjs` file may override those roots for development, and
+explicit `--out-file` or `--warpspace` flags still win.
 
 `drift-watch` is the local cutover surface for nearby Continuum consumers. It verifies the authored schema hash, local generated legs, realization shell, and any explicit mirror roots you point it at, then reports drift as an authored, generated-artifact, or mirror-boundary problem.
 The Continuum defaults behind `witness` and `drift-watch` now come from

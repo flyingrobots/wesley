@@ -57,6 +57,7 @@ function makeCtx() {
       },
       stdout: { write() {} },
       stderr: { write() {} },
+      env: {},
       parsers: {
         graphql: {
           parse(sdl) {

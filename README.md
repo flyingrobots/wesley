@@ -102,6 +102,7 @@ Progress: 59% → Alpha
 - **[Architecture](./ARCHITECTURE.md)**: The authoritative system map (Pipeline, Generators, Hosts).
 - **[Realization Admission and Witness](./docs/design/0004-realization-admission-and-witness/realization-admission-and-witness.md)**: The release-line doctrine for authored source, IR, realization shells, and bounded witness claims.
 - **[Contract Bundle Release and Sync](./docs/design/0005-continuum-contract-bundle-release-and-sync/continuum-contract-bundle-release-and-sync.md)**: The release object, dual-versioning model, and cross-repo sync doctrine for Continuum families.
+- **[WARPspace Workspace Resolution](./docs/design/0006-warpspace-workspace-resolution/warpspace-workspace-resolution.md)**: The host-project contract consumption model for generated outputs and local overrides.
 - **[Vision](./docs/VISION.md)**: Core tenets and the "Trustworthy Change" mission.
 - **[Method](./docs/method/process.md)**: Repo work doctrine and the cycle loop.
 

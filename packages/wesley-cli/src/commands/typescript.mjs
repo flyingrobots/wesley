@@ -29,7 +29,11 @@ export class TypeScriptCommand extends FileOutputGeneratorCommand {
     const generator = new TypeScriptGenerator(null);
     const tsCode = generator.generate(schema);
 
-    const outFile = options.outFile;
+    const outFile = await this.resolveOutFile({
+      options,
+      outputKey: 'typescript',
+      defaultFileName: 'types.generated.ts'
+    });
     const written = await this.writeOutput({ code: tsCode, outFile, options });
     if (!options.quiet && !options.json && outFile) {
       context.logger.info(`Generated TypeScript interfaces: ${written}`);

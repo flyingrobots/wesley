@@ -337,9 +337,7 @@ That is what `.warpspace.local.mjs` is for.
 
 ## Follow-On Work
 
-- revise CLI/runtime config discovery to load `warpspace.mjs`
-- add optional `.warpspace.local.mjs` merge behavior for development overrides
-- teach generation commands to resolve output roots from WARPspace
+- extend WARPspace consumption beyond single-file generators
 - teach `drift-watch` to validate host-project generated roots against WARPspace
   and released bundles
 - decide whether `contract sync` should remain the end-state command name for
@@ -350,6 +348,10 @@ That is what `.warpspace.local.mjs` is for.
 ## Related Packets
 
 - [Continuum Contract Bundle Release and Sync](../0005-continuum-contract-bundle-release-and-sync/continuum-contract-bundle-release-and-sync.md)
+
+## Supporting Implementation Note
+
+- [WARPspace File Output Defaults](./TRANSMUTE_warpspace-file-output-defaults.md)
 
 ## Playback Questions
 
