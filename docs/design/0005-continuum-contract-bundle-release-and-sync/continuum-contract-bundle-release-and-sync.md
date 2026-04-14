@@ -310,7 +310,7 @@ This packet implies one implementation surface, not five vague ones:
 - emit a root `bundle.json` that binds semver, exact hashes, realization, and
   witness together
 - let drift-watch compare consumer mirrors against released bundles directly
-- separate Tier Zero consumer topology from Tier One local repo-root resolution;
+- separate Tier Zero consumer topology from host-project consumption config;
   see [WARPspace Workspace Resolution](../0006-warpspace-workspace-resolution/warpspace-workspace-resolution.md)
 
 ## Supporting Implementation Note
