@@ -1,11 +1,17 @@
 ---
 title: Continuum Contract Release And Sync Commands
-lane: v0.1.0
+lane: graveyard
 legend: TRANSMUTE
 release: v0.1.0
 ---
 
 # Continuum Contract Release And Sync Commands
+
+## Disposition
+
+Shipped generic `wesley contract release` and `wesley contract sync` commands, moved Continuum family and consumer conventions into `@wesley/continuum`, added bundle assembly and consumer projection sync coverage, and updated operator docs to describe the versioned contract bundle workflow.
+
+## Original Proposal
 
 ## Why now
 

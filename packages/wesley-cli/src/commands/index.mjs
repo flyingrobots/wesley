@@ -3,6 +3,7 @@ export * from './cert-create.mjs';
 export * from './cert-sign.mjs';
 export * from './cert-verify.mjs';
 export * from './compile.mjs';
+export * from './contract.mjs';
 export * from './generate.mjs';
 export * from './models.mjs';
 export * from './plan.mjs';

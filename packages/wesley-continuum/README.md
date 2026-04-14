@@ -8,6 +8,8 @@ SHA-lock HOLMES, Watson, and Moriarty.
   defaults for local compile, witness, and drift-watch workflows.
 - **Publication boundary policy**: the generated roots, authored homes, and
   reserved roots that Continuum witness lanes are allowed to rely on.
+- **Contract bundle policy**: family-level release defaults, bundle roots, and
+  consumer sync conventions for versioned Continuum contract bundles.
 - **Judgment profile**: Continuum-specific expectations for what Holmes,
   Watson, and Moriarty each do, consume, emit, and explicitly do not own.
 - **Execution split**: `@wesley/holmes` remains the shared execution engine;
@@ -27,7 +29,9 @@ pnpm --filter @wesley/continuum test
 ```
 
 Import it from other Wesley packages when a command or report needs Continuum
-defaults without hardcoding them into generic CLI logic.
+defaults without hardcoding them into generic CLI logic. That now includes
+`contract release` and `contract sync`, which keep the release object generic
+while letting the Continuum profile own family names and consumer projections.
 
 ## Status
 

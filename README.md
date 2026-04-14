@@ -52,6 +52,16 @@ pnpm wesley witness \
   --out-dir .wesley-cache/continuum/local-inspect
 ```
 
+### 5. Release One Versioned Contract Bundle
+Assemble one semver-tagged bundle that binds source identity, realization, witness output, and consumer sync projections together.
+```bash
+pnpm wesley contract release \
+  --profile continuum \
+  --family receipt-family \
+  --schema ./schemas/continuum-receipt-family.graphql \
+  --release 0.1.0
+```
+
 ## Overall Status
 
 <!-- BEGIN:OVERALL_STATUS -->
@@ -91,6 +101,7 @@ Progress: 59% → Alpha
 - **[Advanced Guide](./ADVANCED_GUIDE.md)**: Deep dives into the IR model, custom directives, and the "Holmes" policy engine.
 - **[Architecture](./ARCHITECTURE.md)**: The authoritative system map (Pipeline, Generators, Hosts).
 - **[Realization Admission and Witness](./docs/design/0004-realization-admission-and-witness/realization-admission-and-witness.md)**: The release-line doctrine for authored source, IR, realization shells, and bounded witness claims.
+- **[Contract Bundle Release and Sync](./docs/design/0005-continuum-contract-bundle-release-and-sync/continuum-contract-bundle-release-and-sync.md)**: The release object, dual-versioning model, and cross-repo sync doctrine for Continuum families.
 - **[Vision](./docs/VISION.md)**: Core tenets and the "Trustworthy Change" mission.
 - **[Method](./docs/method/process.md)**: Repo work doctrine and the cycle loop.
 

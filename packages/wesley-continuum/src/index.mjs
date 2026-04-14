@@ -11,6 +11,17 @@ export {
   resolveContinuumWitnessProfile
 } from './scopes.mjs';
 export {
+  CONTINUUM_CONTRACT_CONSUMER_ORDER,
+  CONTINUUM_CONTRACT_FAMILY_ORDER,
+  CONTINUUM_CONTRACT_PROFILE,
+  defaultContinuumContractBundleOutDir,
+  getContinuumContractBundleDefinition,
+  getContinuumContractConsumerDefinition,
+  listContinuumContractBundleDefinitions,
+  listContinuumContractConsumerDefinitions,
+  resolveContinuumContractBundleProfile
+} from './contract-bundle.mjs';
+export {
   CONTINUUM_JUDGMENT_PROFILE,
   getContinuumJudgmentProfile
 } from './judgment-profile.mjs';
