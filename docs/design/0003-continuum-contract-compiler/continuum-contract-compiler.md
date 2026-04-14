@@ -223,6 +223,10 @@ The current witness command now proves two bounded scopes:
 scope should be read as proof of runtime, storage, debugger, or observer-rights
 semantics.
 
+## Supporting Slice Closeouts
+
+- [Continuum Cross-Repo Drift Watch](./EVIDENCE_continuum-cross-repo-drift-watch.md)
+
 ## Playback Questions
 
 ### Human

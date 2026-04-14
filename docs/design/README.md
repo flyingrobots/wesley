@@ -3,6 +3,9 @@
 Active cycle packets live here. Once work is pulled from the backlog, it becomes
 a design packet and does not continue to live in the queue.
 
+Packet directories may also carry supporting implementation notes, playback
+closeouts, and retrospectives for slices completed under that packet.
+
 Current packets:
 - [`0001`](./0001-wesley-invariants/wesley-invariants.md): Wesley invariants
 - [`0002`](./0002-wesley-legends/wesley-legends.md): Wesley legends

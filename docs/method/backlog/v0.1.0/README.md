@@ -14,10 +14,10 @@ Release sequence:
 
 - [Continuum Realization Manifest](TRANSMUTE_continuum-realization-manifest.md)
 
-Already shipped on `release/v0.1.0` and retired from the live lane:
+Already completed on `release/v0.1.0` and closed out in design:
 
-- [RE-030 — Realization Integrity Guard](../../graveyard/RE-030-realization-integrity-guard.md)
-- [CI-001 — Cryptographic Artifact Signing](../../graveyard/CI-001-artifact-signing-and-sealing.md)
+- [RE-030 — Realization Integrity Guard](../../../design/0004-realization-admission-and-witness/RE-030-realization-integrity-guard.md)
+- [CI-001 — Cryptographic Artifact Signing](../../../design/0004-realization-admission-and-witness/CI-001-artifact-signing-and-sealing.md)
 
 ## Cycle 2 — The Transmuter Split
 
@@ -40,11 +40,11 @@ Already shipped on `release/v0.1.0` and retired from the live lane:
 - [Holmes Dashboard Choose Your Track Orientation](RUNTIME_holmes-dashboard-choose-your-track-orientation.md)
 - [Continuum Ownership Map For Shared Nouns](SOURCE_continuum-ownership-map-for-shared-nouns.md)
 
-Already shipped on `release/v0.1.0` and retired from the live lane:
+Already completed on `release/v0.1.0` and closed out in design:
 
-- [Continuum Cross-Repo Drift Watch](../../graveyard/EVIDENCE_continuum-cross-repo-drift-watch.md)
+- [Continuum Cross-Repo Drift Watch](../../../design/0003-continuum-contract-compiler/EVIDENCE_continuum-cross-repo-drift-watch.md)
 
 ## Release Companion
 
 - Design: [Continuum Contract Bundle Release and Sync](../../../design/0005-continuum-contract-bundle-release-and-sync/continuum-contract-bundle-release-and-sync.md)
-- Implementation: [Continuum Contract Release And Sync Commands](../../graveyard/TRANSMUTE_continuum-contract-release-and-sync-commands.md)
+- Implementation: [Continuum Contract Release And Sync Commands](../../../design/0005-continuum-contract-bundle-release-and-sync/TRANSMUTE_continuum-contract-release-and-sync-commands.md)

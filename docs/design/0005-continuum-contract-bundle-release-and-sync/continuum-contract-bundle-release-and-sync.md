@@ -311,6 +311,10 @@ This packet implies one implementation surface, not five vague ones:
   witness together
 - let drift-watch compare consumer mirrors against released bundles directly
 
+## Supporting Implementation Note
+
+- [Continuum Contract Release And Sync Commands](./TRANSMUTE_continuum-contract-release-and-sync-commands.md)
+
 ## Playback Questions
 
 ### Human

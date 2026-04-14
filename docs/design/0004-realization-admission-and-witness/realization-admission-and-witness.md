@@ -81,24 +81,62 @@ Downstream consumers may not infer, without additional proof:
 - full observer-rights policy
 - privacy or revelation guarantees beyond the cited witness scope
 
+## Supporting Slice Closeouts
+
+- [RE-030 — Realization Integrity Guard](./RE-030-realization-integrity-guard.md)
+- [CI-001 — Cryptographic Artifact Signing](./CI-001-artifact-signing-and-sealing.md)
+
 ## Playback Questions
 
 ### Human
 
-- [ ] Can I explain the difference between authored source, IR, emitted
+- [x] Can I explain the difference between authored source, IR, emitted
       artifacts, realization shell, and witness output without improvising?
-- [ ] Can I tell which parts of a Continuum proof are compile-time shell checks
+- [x] Can I tell which parts of a Continuum proof are compile-time shell checks
       and which parts are bounded semantic witnesses?
-- [ ] Can I read a witness result without mistaking it for total runtime truth?
+- [x] Can I read a witness result without mistaking it for total runtime truth?
 
 ### Agent
 
-- [ ] Can I map generator inputs and witness outputs back to these surfaces
+- [x] Can I map generator inputs and witness outputs back to these surfaces
       without inventing extra layers?
-- [ ] Can I avoid treating `realization/manifest.json` as a second source of
+- [x] Can I avoid treating `realization/manifest.json` as a second source of
       contract semantics?
-- [ ] Can I state the exact certified property instead of saying a leg is
+- [x] Can I state the exact certified property instead of saying a leg is
       simply "verified"?
+
+## Playback
+
+- Human: yes. The packet now reads cleanly against the shipped command surfaces:
+  authored SDL remains the only authority, lowering is generator-only,
+  `realization/manifest.json` is a packaging shell, and witness output names a
+  bounded property set instead of implying runtime truth.
+- Human: yes. Compile-time shell checks are now concrete in
+  `verify-realization`, pre-commit, and CI, while semantic witness claims stay
+  in `witness` / `witness-continuum` reports.
+- Human: yes. The docs, witness `proves` / `doesNotProve` fields, and
+  realization inspection checks make it harder to confuse shell integrity with
+  end-to-end runtime certification.
+- Agent: yes. Generator input is the lowered IR, shell inspection is explicit,
+  and witness output carries named checks such as source traceability,
+  artifact-signature integrity, and selected cross-leg conformance.
+- Agent: yes. The manifest is now forced to prove traceability back to the
+  authored schema instead of acting like a second semantic authority.
+- Agent: yes. The current release can state finite claims such as "sourceHash
+  matches authored SDL" or "artifact signatures drifted" without collapsing
+  those into generic "verified" language.
+
+## Retrospective
+
+- Doctrine only became durable once it was tied to boring enforcement. The
+  packet would have stayed soft if `sourceHash`, signatures, hooks, and witness
+  checks had remained implied instead of executable.
+- Keeping realization-shell checks separate from witness semantics was the
+  right cut. It made the command surface easier to explain and prevented shell
+  integrity from being mistaken for total proof.
+- The main follow-on remains consumer-side verification after bundle sync.
+  That belongs with contract-bundle work, not by widening this packet into
+  runtime or mirror policy.
 
 ## Non-goals
 
