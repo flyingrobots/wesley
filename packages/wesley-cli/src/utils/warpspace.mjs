@@ -94,6 +94,44 @@ export async function resolveWarpspaceOutputFile({
   return resolved;
 }
 
+export async function resolveWarpspaceOutputDir({
+  outputKeys,
+  explicitOutDir = null,
+  defaultOutDir = null,
+  cwd = process.cwd(),
+  env = process.env,
+  warpspacePath = null
+} = {}) {
+  const requestedOutDir = normalizeOptionalString(explicitOutDir);
+  if (requestedOutDir != null) {
+    return requestedOutDir;
+  }
+
+  const keys = normalizeOutputKeys(outputKeys);
+  const warpspace = await resolveWarpspace({ cwd, env, warpspacePath });
+  if (warpspace == null) {
+    return defaultOutDir;
+  }
+
+  const outputs = isPlainObject(warpspace.config.outputs)
+    ? warpspace.config.outputs
+    : {};
+
+  for (const key of keys) {
+    const configured = outputs[key];
+    if (configured == null) {
+      continue;
+    }
+    return resolveConfiguredOutputDir({
+      configured,
+      rootDir: warpspace.rootDir,
+      outputKey: key
+    });
+  }
+
+  return defaultOutDir;
+}
+
 function resolveWarpspacePath({ cwd, env, warpspacePath }) {
   const explicitPath = normalizeOptionalString(warpspacePath);
   if (explicitPath != null) {
@@ -190,6 +228,37 @@ function resolveConfiguredOutput({ configured, rootDir, defaultFileName, outputK
   );
 }
 
+function resolveConfiguredOutputDir({ configured, rootDir, outputKey }) {
+  if (typeof configured === 'string') {
+    const resolved = normalizeOptionalString(configured);
+    if (resolved == null) {
+      throw new WesleyError(
+        'WARPSPACE_OUTPUT_INVALID',
+        `WARPspace output "${outputKey}" must not be empty.`
+      );
+    }
+    return resolveFromRoot(rootDir, resolved);
+  }
+
+  if (!isPlainObject(configured)) {
+    throw new WesleyError(
+      'WARPSPACE_OUTPUT_INVALID',
+      `WARPspace output "${outputKey}" must be a string or object.`
+    );
+  }
+
+  const explicitDir = normalizeOptionalString(configured.dir)
+    ?? normalizeOptionalString(configured.root);
+  if (explicitDir != null) {
+    return resolveFromRoot(rootDir, explicitDir);
+  }
+
+  throw new WesleyError(
+    'WARPSPACE_OUTPUT_INVALID',
+    `WARPspace output "${outputKey}" must declare "dir" or "root" when used as an output directory.`
+  );
+}
+
 function resolveOutputValue({ rootDir, outputKey, configured, defaultFileName }) {
   const resolved = normalizeOptionalString(configured);
   if (resolved == null) {
@@ -242,4 +311,14 @@ function normalizeOptionalString(value) {
   return typeof value === 'string' && value.trim().length > 0
     ? value.trim()
     : null;
+}
+
+function normalizeOutputKeys(value) {
+  if (Array.isArray(value)) {
+    return value
+      .map((entry) => normalizeOptionalString(entry))
+      .filter(Boolean);
+  }
+  const single = normalizeOptionalString(value);
+  return single == null ? [] : [single];
 }

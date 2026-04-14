@@ -36,10 +36,12 @@ nearby consumer repository without hand-copying generated files. It now also
 verifies the synced consumer roots against the released bundle and fails on
 residual drift.
 Use `warpspace.mjs` when you want a host project to declare where generated
-single-file outputs land. `typescript` and `zod` now resolve default output
-files from `outputs.typescript` and `outputs.zod`, optionally overlay
-`.warpspace.local.mjs`, and still let `--out-file` or `--warpspace` override
-those defaults explicitly.
+outputs land. `typescript` and `zod` now resolve default output files from
+`outputs.typescript` and `outputs.zod`, while `compile-ttd` and `bundle-echo`
+resolve default output roots from `outputs['warp-ttd']` and
+`outputs['echo-ir']`. `.warpspace.local.mjs` may overlay those defaults for
+development, and explicit `--out-file`, `--out-dir`, or `--warpspace` flags
+still win.
 Use `drift-watch` when you need one local cutover surface that compares authored
 schema identity, local emitted legs, and explicit nearby mirrors.
 

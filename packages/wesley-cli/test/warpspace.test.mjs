@@ -7,6 +7,7 @@ import path from 'node:path';
 import {
   WARPSPACE_KIND,
   resolveWarpspace,
+  resolveWarpspaceOutputDir,
   resolveWarpspaceOutputFile
 } from '../src/utils/warpspace.mjs';
 
@@ -104,6 +105,44 @@ test('resolveWarpspaceOutputFile lets an explicit file override WARPspace defaul
     });
 
     assert.equal(outFile, 'manual/types.ts');
+  } finally {
+    await rm(tempDir, { recursive: true, force: true });
+  }
+});
+
+test('resolveWarpspaceOutputDir resolves multi-file output roots and falls back by alias order', async () => {
+  const tempDir = await mkdtemp(path.join(os.tmpdir(), 'wesley-warpspace-'));
+  try {
+    await mkdir(path.join(tempDir, 'app'), { recursive: true });
+    await writeFile(
+      path.join(tempDir, 'app', 'warpspace.mjs'),
+      `export default {
+        kind: '${WARPSPACE_KIND}',
+        outputs: {
+          'echo-ir': 'crates/my-app-contracts/src/generated/echo',
+          'warp-ttd': { dir: 'src/generated/warp-ttd' }
+        }
+      };
+      `
+    );
+
+    const echoDir = await resolveWarpspaceOutputDir({
+      outputKeys: ['echo-ir', 'echo'],
+      cwd: path.join(tempDir, 'app')
+    });
+    const ttdDir = await resolveWarpspaceOutputDir({
+      outputKeys: ['warp-ttd', 'ttd'],
+      cwd: path.join(tempDir, 'app')
+    });
+    const defaultDir = await resolveWarpspaceOutputDir({
+      outputKeys: ['missing'],
+      defaultOutDir: 'fallback-out',
+      cwd: path.join(tempDir, 'app')
+    });
+
+    assert.equal(echoDir, path.join(tempDir, 'app', 'crates/my-app-contracts/src/generated/echo'));
+    assert.equal(ttdDir, path.join(tempDir, 'app', 'src/generated/warp-ttd'));
+    assert.equal(defaultDir, 'fallback-out');
   } finally {
     await rm(tempDir, { recursive: true, force: true });
   }

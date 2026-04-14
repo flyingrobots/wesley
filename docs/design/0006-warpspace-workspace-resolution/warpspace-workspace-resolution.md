@@ -352,6 +352,7 @@ That is what `.warpspace.local.mjs` is for.
 ## Supporting Implementation Note
 
 - [WARPspace File Output Defaults](./TRANSMUTE_warpspace-file-output-defaults.md)
+- [WARPspace Continuum Output Roots](./TRANSMUTE_warpspace-continuum-output-roots.md)
 
 ## Playback Questions
 
