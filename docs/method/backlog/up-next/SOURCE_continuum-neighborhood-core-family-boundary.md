@@ -6,38 +6,50 @@
 
 ## Why now
 
-The Continuum witness ladder now separates three different published surfaces:
+Continuum now has a concrete authored neighborhood-core packet and needs Wesley
+to treat it as the first generated admission/publication family slice.
+
+That slice freezes:
+
+- `NeighborhoodCore`
+- `NeighborhoodParticipant`
+- shared `AdmissionOutcomeKind`
+- shared singleton-vs-plural site truth
+- shared neighborhood participant roles
+
+It remains distinct from the adjacent families in the witness ladder:
 
 - `NeighborhoodCore`
 - `ReintegrationDetail`
 - `ReceiptShell`
 
-Wesley currently has enough contract/compiler language to publish these, but it
-does not yet freeze where one family ends and the next begins. If Wesley skips
-that cut, `warp-ttd`, Echo, and `git-warp` will keep rebuilding one giant
-receipt-shaped inspector blob from different directions.
+If Wesley skips that cut, `warp-ttd`, Echo, and `git-warp` will keep rebuilding
+one giant receipt-shaped inspector blob from different directions.
 
 ## Hill
 
-Wesley names the authored contract boundary between local law-bearing
-neighborhood truth, reintegration/seam detail, and explanatory receipt shell,
-so downstream generators and witnesses stop treating them as one family.
+Wesley takes the authored Continuum neighborhood-core family and compiles it as
+the first concrete admission/publication slice, while preserving the boundary
+between local neighborhood truth, reintegration/seam detail, and explanatory
+receipt shell.
 
 ## Done looks like
 
-- one packet or authored family map names which nouns belong in:
-  - neighborhood core
+- Wesley treats `continuum-neighborhood-core-family.graphql` as the concrete
+  compiler target for this slice
+- the boundary still explains what remains in:
   - reintegration detail
   - receipt shell
-- the boundary explains what is required versus optional for each family
 - `witness-continuum` can point to the right family surface instead of assuming
   one omnibus receipt payload
 - `warp-ttd` and host adapters get a cleaner generated contract target
 
 ## Repo Evidence
 
-- `schemas/continuum-receipt-family.graphql`
+- Continuum `0022`
+- `schemas/continuum-neighborhood-core-family.graphql`
 - `docs/invariants/realization-coherence.md`
 - `docs/invariants/witness-scope-honesty.md`
 - `docs/design/0003-continuum-contract-compiler/continuum-contract-compiler.md`
-- Continuum `0010` through `0013`
+- Continuum `0016`
+- Continuum `0020`
