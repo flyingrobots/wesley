@@ -40,7 +40,38 @@ const sampleIr = {
   relationships: []
 };
 
-function makeCtx() {
+const familySdl = `
+scalar Hash
+
+enum AdmissionOutcomeKind {
+  DERIVED
+  PLURAL
+}
+
+type NeighborhoodParticipant {
+  laneId: ID!
+  stateHash: Hash!
+}
+
+type NeighborhoodCore {
+  siteId: ID!
+  outcomeKind: AdmissionOutcomeKind!
+  participants: [NeighborhoodParticipant!]!
+}
+
+type Query {
+  neighborhoodCores: [NeighborhoodCore!]!
+}
+`;
+
+const familyIr = {
+  tables: [],
+  enums: [],
+  scalars: [],
+  relationships: []
+};
+
+function makeCtx({ sdl: expectedSdl = sampleSdl, ir = sampleIr } = {}) {
   const writes = [];
   let parseCalls = 0;
   return {
@@ -62,8 +93,8 @@ function makeCtx() {
         graphql: {
           parse(sdl) {
             parseCalls += 1;
-            assert.equal(sdl, sampleSdl);
-            return sampleIr;
+            assert.equal(sdl, expectedSdl);
+            return ir;
           }
         }
       }
@@ -92,6 +123,29 @@ test('TypeScriptCommand lowers schema content through the core LoweringEngine', 
   assert.match(state.writes[0].content, /interface User/);
 });
 
+test('TypeScriptCommand falls back to family projection for zero-table Continuum schemas', async () => {
+  const state = makeCtx({ sdl: familySdl, ir: familyIr });
+  const command = new TypeScriptCommand(state.commandCtx);
+
+  const result = await command.executeCore({
+    schemaContent: familySdl,
+    schemaPath: 'continuum-neighborhood-core-family.graphql',
+    options: {
+      outFile: 'family.types.generated.ts',
+      quiet: true,
+      json: false
+    },
+    logger: noopLogger
+  });
+
+  assert.equal(state.parseCalls, 1);
+  assert.equal(result.outFile, 'family.types.generated.ts');
+  assert.equal(state.writes.length, 1);
+  assert.match(state.writes[0].content, /export type AdmissionOutcomeKind = "DERIVED" \| "PLURAL";/);
+  assert.match(state.writes[0].content, /export interface NeighborhoodCore/);
+  assert.match(state.writes[0].content, /participants: Array<NeighborhoodParticipant>;/);
+});
+
 test('ZodCommand lowers schema content through the core LoweringEngine', async () => {
   const state = makeCtx();
   const command = new ZodCommand(state.commandCtx);
@@ -111,4 +165,27 @@ test('ZodCommand lowers schema content through the core LoweringEngine', async (
   assert.equal(state.writes.length, 1);
   assert.equal(state.writes[0].path, 'zod.generated.ts');
   assert.match(state.writes[0].content, /z\.object/);
+});
+
+test('ZodCommand falls back to family projection for zero-table Continuum schemas', async () => {
+  const state = makeCtx({ sdl: familySdl, ir: familyIr });
+  const command = new ZodCommand(state.commandCtx);
+
+  const result = await command.executeCore({
+    schemaContent: familySdl,
+    schemaPath: 'continuum-neighborhood-core-family.graphql',
+    options: {
+      outFile: 'family.zod.generated.ts',
+      quiet: true,
+      json: false
+    },
+    logger: noopLogger
+  });
+
+  assert.equal(state.parseCalls, 1);
+  assert.equal(result.outFile, 'family.zod.generated.ts');
+  assert.equal(state.writes.length, 1);
+  assert.match(state.writes[0].content, /export const AdmissionOutcomeKindSchema = z\.enum\(\["DERIVED", "PLURAL"\]\);/);
+  assert.match(state.writes[0].content, /export const NeighborhoodCoreSchema = z\.object\(/);
+  assert.match(state.writes[0].content, /participants: z\.array\(z\.lazy\(\(\) => NeighborhoodParticipantSchema\)\)/);
 });
