@@ -24,13 +24,13 @@ jobs:
       PROGRESS_PR_TOKEN: ${{ secrets.PROGRESS_PR_TOKEN }}
     steps:
       - name: Harden runner
-        uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176
+        uses: step-security/harden-runner@6c3c2f2c1c457b00c10c4848d6f5491db3b629df
         with:
           egress-policy: audit
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320
+      - uses: pnpm/action-setup@08c4be7e2e672a47d11bd04269e27e5f3e8529cb
         with:
           version: 9.15.9
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f
@@ -48,7 +48,7 @@ jobs:
         run: node scripts/compute-progress.mjs
       - name: Create progress PR
         if: ${{ env.PROGRESS_PR_TOKEN != '' }}
-        uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1
         with:
           token: ${{ env.PROGRESS_PR_TOKEN }}
           commit-message: 'docs(progress): update package matrix and progress.json'
