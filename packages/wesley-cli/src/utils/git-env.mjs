@@ -7,3 +7,20 @@ export function buildGitDiscoveryEnv(baseEnv = process.env) {
   }
   return env;
 }
+
+export async function withSanitizedGitEnv(run, targetEnv = process.env) {
+  const saved = [];
+  for (const key of Object.keys(targetEnv)) {
+    if (!key.startsWith('GIT_')) continue;
+    saved.push([key, targetEnv[key]]);
+    delete targetEnv[key];
+  }
+
+  try {
+    return await run();
+  } finally {
+    for (const [key, value] of saved) {
+      targetEnv[key] = value;
+    }
+  }
+}
