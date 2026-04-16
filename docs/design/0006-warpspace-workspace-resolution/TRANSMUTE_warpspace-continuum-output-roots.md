@@ -29,8 +29,8 @@ The repo now ships:
 ## Playback
 
 - Packet question: where should host-project generated contract trees land?
-  Answer: `warpspace.mjs` now answers that for the Continuum multi-file emitters
-  through `outputs['warp-ttd']` and `outputs['echo-ir']`.
+  Answer: `warpspace.toml` now answers that for the Continuum multi-file emitters
+  through `outputs.warp_ttd` and `outputs.echo_ir`.
 - Packet question: is the WARPspace model only for single-file TS/Zod outputs?
   Answer: no. This slice carries the same host-project model into the
   multi-file Continuum roots that actual app integrations are more likely to

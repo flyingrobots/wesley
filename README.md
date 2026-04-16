@@ -73,7 +73,7 @@ node packages/wesley-host-node/bin/warpspace.mjs init ./tmp/continuum-app \
 This first cut is intentionally local-first:
 
 - it reads a concrete Continuum stack release manifest
-- it writes `warpspace.mjs` and `warpspace.lock.json`
+- it writes `warpspace.toml` and `warpspace.lock.json`
 - it materializes the selected shared family into the host repo
 - it runs the first Wesley generation pass for the selected projections
 

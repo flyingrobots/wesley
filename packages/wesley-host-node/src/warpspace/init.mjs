@@ -70,11 +70,10 @@ export async function initWarpspace({
     });
   }
 
-  const warpspaceConfig = buildWarpspaceConfig({ manifest });
-  const warpspacePath = path.join(resolvedProjectDir, 'warpspace.mjs');
+  const warpspacePath = path.join(resolvedProjectDir, 'warpspace.toml');
   await fs.write(
     warpspacePath,
-    `export default ${JSON.stringify(warpspaceConfig, null, 2)};\n`
+    renderWarpspaceToml({ manifest })
   );
 
   const generatedCommands = [];
@@ -208,41 +207,54 @@ async function findRepoRoot({ fs, startPath }) {
   }
 }
 
-function buildWarpspaceConfig({ manifest }) {
-  const contracts = {};
-  for (const family of manifest.families) {
-    contracts[family.id] = {
-      version: family.version,
-      source: family.materializeTo,
-      projections: family.defaultProjections
-    };
+function renderWarpspaceToml({ manifest }) {
+  const lines = [
+    'version = 1',
+    `profile = ${tomlString(manifest.profile)}`,
+    '',
+    '[stack]',
+    `release_id = ${tomlString(manifest.releaseId)}`,
+    '',
+    '[toolchain]',
+    `wesley_package = ${tomlString(manifest.toolchain?.wesley?.package ?? 'unknown')}`,
+    `wesley_version = ${tomlString(manifest.toolchain?.wesley?.version ?? 'unknown')}`,
+    '',
+    '[outputs]'
+  ];
+
+  for (const [name, outputPath] of Object.entries(manifest.bootstrap.defaultOutputs)) {
+    lines.push(`${tomlKey(name)} = ${tomlString(outputPath)}`);
   }
 
-  const primaryFamily = manifest.families[0];
+  lines.push('', '[runtimes]');
+  lines.push(`echo = ${tomlString(manifest.runtimes?.echo?.crate ?? 'unknown')}`);
+  lines.push(`git_warp = ${tomlString(manifest.runtimes?.['git-warp']?.package ?? 'unknown')}`);
+  lines.push(`warp_ttd = ${tomlString(manifest.runtimes?.['warp-ttd']?.package ?? 'unknown')}`);
 
-  return {
-    kind: WARPSPACE_KIND,
-    profile: manifest.profile,
-    stackRelease: {
-      releaseId: manifest.releaseId
-    },
-    contracts,
-    outputs: manifest.bootstrap.defaultOutputs,
-    runtimes: {
-      continuum: {
-        family: primaryFamily.id,
-        version: primaryFamily.version,
-        sha256: primaryFamily.sha256
-      },
-      wesley: {
-        package: manifest.toolchain?.wesley?.package,
-        version: manifest.toolchain?.wesley?.version
-      },
-      echo: manifest.runtimes?.echo ?? null,
-      'git-warp': manifest.runtimes?.['git-warp'] ?? null,
-      'warp-ttd': manifest.runtimes?.['warp-ttd'] ?? null
-    }
-  };
+  for (const family of manifest.families) {
+    lines.push('', '[[family]]');
+    lines.push(`id = ${tomlString(family.id)}`);
+    lines.push(`version = ${tomlString(family.version)}`);
+    lines.push(`source = ${tomlString(family.materializeTo)}`);
+    lines.push(`projections = ${tomlArray(family.defaultProjections ?? [])}`);
+  }
+
+  lines.push('');
+  return lines.join('\n');
+}
+
+function tomlKey(key) {
+  return /^[A-Za-z0-9_-]+$/.test(key)
+    ? key.replaceAll('-', '_')
+    : tomlString(key);
+}
+
+function tomlArray(values) {
+  return `[${values.map((value) => tomlString(String(value))).join(', ')}]`;
+}
+
+function tomlString(value) {
+  return JSON.stringify(String(value));
 }
 
 function buildWarpspaceLock({

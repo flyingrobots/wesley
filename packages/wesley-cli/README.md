@@ -27,12 +27,14 @@ See `pnpm wesley --help` for the full list of commands (including `blade`, `cert
 Repeated local schema workflows reuse a hash-addressed IR cache in `.wesley-cache/ir/`, so `generate`, `plan`, `rehearse`, `up`, `typescript`, and `zod` do not need to re-lower unchanged SDL on every invocation.
 
 WARPspace defaults now cover both single-file and Continuum multi-file outputs.
-If a project carries `warpspace.mjs`, `wesley typescript` and `wesley zod`
+If a project carries `warpspace.toml`, `wesley typescript` and `wesley zod`
 resolve their default output files from `outputs.typescript` and `outputs.zod`,
 while `wesley compile-ttd` and `wesley bundle-echo` resolve their default
-output roots from `outputs['warp-ttd']` and `outputs['echo-ir']`. A local
-`.warpspace.local.mjs` file may override those roots for development, and
-explicit `--out-file`, `--out-dir`, or `--warpspace` flags still win.
+output roots from `outputs.warp_ttd` and `outputs.echo_ir`. A local
+`.warpspace.local.toml` file may override those roots for development, and
+explicit `--out-file`, `--out-dir`, or `--warpspace` flags still win. Legacy
+`warpspace.mjs` and `.warpspace.local.mjs` files still resolve as compatibility
+fallbacks.
 
 `drift-watch` is the local cutover surface for nearby Continuum consumers. It verifies the authored schema hash, local generated legs, realization shell, and any explicit mirror roots you point it at, then reports drift as an authored, generated-artifact, or mirror-boundary problem.
 The Continuum defaults behind `witness` and `drift-watch` now come from

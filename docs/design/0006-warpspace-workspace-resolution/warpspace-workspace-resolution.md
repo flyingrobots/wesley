@@ -77,7 +77,7 @@ longer the center of the design.
 | --- | --- | --- | --- |
 | Tier Zero | Continuum | shared families, authorship, release semver, compatibility policy, consumer topology, projection intent, Holmes/Watson/Moriarty framing | app-specific output directories |
 | Tier One | Wesley and other cross-substrate tools | compile, release, witness, drift-watch, WARPspace loading, generator execution | semantic ownership of the shared contracts |
-| Tier Two | Host project / application | `warpspace.mjs`, application schema, local generated roots, app-specific integration choices | ecosystem-wide contract authority |
+| Tier Two | Host project / application | `warpspace.toml`, application schema, local generated roots, app-specific integration choices | ecosystem-wide contract authority |
 | Tier Three | Substrate and runtime packages/crates | Echo runtime crates, `git-warp` packages, `warp-ttd` packages, runtime behavior | compiler policy and release semantics |
 
 The key call is:
@@ -126,7 +126,7 @@ Those are application integration decisions.
 The canonical file should be:
 
 ```text
-warpspace.mjs
+warpspace.toml
 ```
 
 Reasoning:
@@ -142,7 +142,7 @@ If a maintainer wants to test against local sibling checkouts during development
 that should be a separate optional file:
 
 ```text
-.warpspace.local.mjs
+.warpspace.local.toml
 ```
 
 This override file may carry local development conveniences such as:
@@ -159,40 +159,28 @@ main WARPspace artifact.
 
 Illustrative shape:
 
-```js
-export default {
-  kind: 'wesley.warpspace.v1',
-  profile: 'continuum',
-  contracts: {
-    'receipt-family': {
-      version: '^0.1.0',
-      projections: ['typescript', 'zod', 'echo-ir']
-    }
-  },
-  outputs: {
-    typescript: 'src/generated/continuum',
-    zod: 'src/generated/continuum/zod',
-    'echo-ir': 'crates/my-app-contracts/src/generated'
-  },
-  runtimes: {
-    wesley: {
-      package: '@wesley/cli',
-      version: '^0.1.0'
-    },
-    'git-warp': {
-      package: '@git-warp/runtime',
-      version: '^0.1.0'
-    },
-    'warp-ttd': {
-      package: '@warp-ttd/protocol',
-      version: '^0.1.0'
-    },
-    echo: {
-      crate: 'echo-runtime',
-      version: '^0.1.0'
-    }
-  }
-};
+```toml
+version = 1
+profile = "continuum"
+
+[stack]
+release_id = "continuum-demo-0.1.0"
+
+[outputs]
+typescript = "src/generated/continuum"
+zod = "src/generated/continuum/zod"
+echo_ir = "crates/my-app-contracts/src/generated"
+
+[runtimes]
+echo = "active"
+git_warp = "pinned"
+warp_ttd = "active"
+
+[[family]]
+id = "receipt-family"
+version = "^0.1.0"
+source = "contracts/continuum/receipt-family.graphql"
+projections = ["typescript", "zod", "echo-ir"]
 ```
 
 The package and crate names above are illustrative. The important structural
@@ -203,10 +191,10 @@ point is:
 
 ## Meaning Of The Fields
 
-- `kind`: schema/version marker for the WARPspace file itself
+- `version`: schema/version marker for the WARPspace file itself
 - `profile`: which Wesley-side product profile interprets the contract family
   defaults
-- `contracts`: the families this host project consumes and the projections it
+- `family`: the families this host project consumes and the projections it
   expects Wesley to materialize
 - `outputs`: where generated artifacts should land inside the host project
 - `runtimes`: the package/crate ecosystem this host project expects to align
@@ -228,9 +216,10 @@ Resolution order should be:
 
 1. explicit `--warpspace <path>`
 2. explicit `WESLEY_WARPSPACE_FILE`
-3. nearest `warpspace.mjs` found by walking upward from `cwd`
-4. optional merge of `.warpspace.local.mjs` from the same directory
-5. fail clearly if no WARPspace file exists when a command requires host-project
+3. nearest `warpspace.toml` found by walking upward from `cwd`
+4. optional merge of `.warpspace.local.toml` from the same directory
+5. legacy fallback to `warpspace.mjs` and `.warpspace.local.mjs`
+6. fail clearly if no WARPspace file exists when a command requires host-project
    integration state
 
 CLI flags should always override WARPspace values.
@@ -264,7 +253,7 @@ bootstrap and producer-maintenance surface.
 
 Target-state consumer behavior is broader:
 
-- Wesley reads `warpspace.mjs`
+- Wesley reads `warpspace.toml`
 - Wesley resolves the desired family projections
 - Wesley materializes those outputs into the app's declared roots
 - Wesley verifies those roots against the chosen released bundle
@@ -293,7 +282,7 @@ host-project contract-consumption configuration.
 Those are adjacent, but not identical:
 
 - `wesley.config.mjs`: how Wesley itself is configured for this repo
-- `warpspace.mjs`: how this app consumes shared contract families
+- `warpspace.toml`: how this app consumes shared contract families
 
 Keeping them distinct makes the integration surface much clearer.
 
@@ -325,7 +314,7 @@ They should be treated as optional development overrides for cases like:
 - validating a new `git-warp` package cut before publication
 - running release tooling across neighboring repos during platform development
 
-That is what `.warpspace.local.mjs` is for.
+That is what `.warpspace.local.toml` is for.
 
 ## Non-goals
 
@@ -358,7 +347,7 @@ That is what `.warpspace.local.mjs` is for.
 
 ### Human
 
-- [ ] Can I explain why `warpspace.mjs` belongs in the host project?
+- [ ] Can I explain why `warpspace.toml` belongs in the host project?
 - [ ] Can I tell the difference between Continuum's release truth and one app's
       output directories?
 - [ ] Can I explain why local sibling repo paths are optional overrides rather

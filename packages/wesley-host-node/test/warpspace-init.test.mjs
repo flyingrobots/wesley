@@ -2,14 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import os from 'node:os';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
 import { mkdtemp, readFile, rm, writeFile, mkdir } from 'node:fs/promises';
 
 import { NodeFileSystem } from '../src/adapters/NodeFileSystem.mjs';
 import { nodeCrypto } from '../src/adapters/NodeCrypto.mjs';
 import { initWarpspace } from '../src/warpspace/init.mjs';
 
-test('initWarpspace materializes a family, writes warpspace files, and infers authority root', async () => {
+test('initWarpspace materializes a family, writes warpspace.toml, and infers authority root', async () => {
   const tempDir = await mkdtemp(path.join(os.tmpdir(), 'wesley-warpspace-init-'));
   const authorityRoot = path.join(tempDir, 'continuum');
   const projectDir = path.join(tempDir, 'app');
@@ -76,11 +75,11 @@ test('initWarpspace materializes a family, writes warpspace files, and infers au
     );
     assert.equal(materialized, schemaContent);
 
-    const warpspaceModule = await import(`${pathToFileURL(path.join(projectDir, 'warpspace.mjs')).href}?t=${Date.now()}`);
-    assert.equal(warpspaceModule.default.kind, 'wesley.warpspace.v1');
-    assert.equal(
-      warpspaceModule.default.contracts['continuum-neighborhood-core-family'].source,
-      'contracts/continuum/continuum-neighborhood-core-family.graphql'
+    const warpspaceToml = await readFile(path.join(projectDir, 'warpspace.toml'), 'utf8');
+    assert.match(warpspaceToml, /^version = 1$/m);
+    assert.match(
+      warpspaceToml,
+      /^source = "contracts\/continuum\/continuum-neighborhood-core-family\.graphql"$/m
     );
 
     const lock = JSON.parse(await readFile(path.join(projectDir, 'warpspace.lock.json'), 'utf8'));

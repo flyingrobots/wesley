@@ -11,20 +11,20 @@ import {
   resolveWarpspaceOutputFile
 } from '../src/utils/warpspace.mjs';
 
-test('resolveWarpspaceOutputFile finds the nearest warpspace and uses default filenames', async () => {
+test('resolveWarpspaceOutputFile finds the nearest warpspace.toml and uses default filenames', async () => {
   const tempDir = await mkdtemp(path.join(os.tmpdir(), 'wesley-warpspace-'));
   try {
     await mkdir(path.join(tempDir, 'app', 'nested'), { recursive: true });
     await writeFile(
-      path.join(tempDir, 'app', 'warpspace.mjs'),
-      `export default {
-        kind: '${WARPSPACE_KIND}',
-        outputs: {
-          typescript: 'src/generated/contracts',
-          zod: 'src/generated/contracts/zod'
-        }
-      };
-      `
+      path.join(tempDir, 'app', 'warpspace.toml'),
+      [
+        'version = 1',
+        '',
+        '[outputs]',
+        'typescript = "src/generated/contracts"',
+        'zod = "src/generated/contracts/zod"',
+        ''
+      ].join('\n')
     );
 
     const tsPath = await resolveWarpspaceOutputFile({
@@ -43,27 +43,26 @@ test('resolveWarpspaceOutputFile finds the nearest warpspace and uses default fi
   }
 });
 
-test('resolveWarpspace merges .warpspace.local.mjs over the committed file', async () => {
+test('resolveWarpspace merges .warpspace.local.toml over the committed file', async () => {
   const tempDir = await mkdtemp(path.join(os.tmpdir(), 'wesley-warpspace-'));
   try {
     await writeFile(
-      path.join(tempDir, 'warpspace.mjs'),
-      `export default {
-        kind: '${WARPSPACE_KIND}',
-        outputs: {
-          typescript: 'src/generated/contracts'
-        }
-      };
-      `
+      path.join(tempDir, 'warpspace.toml'),
+      [
+        'version = 1',
+        '',
+        '[outputs]',
+        'typescript = "src/generated/contracts"',
+        ''
+      ].join('\n')
     );
     await writeFile(
-      path.join(tempDir, '.warpspace.local.mjs'),
-      `export default {
-        outputs: {
-          typescript: 'src/generated/local-contracts'
-        }
-      };
-      `
+      path.join(tempDir, '.warpspace.local.toml'),
+      [
+        '[outputs]',
+        'typescript = "src/generated/local-contracts"',
+        ''
+      ].join('\n')
     );
 
     const warpspace = await resolveWarpspace({ cwd: tempDir });
@@ -88,14 +87,14 @@ test('resolveWarpspaceOutputFile lets an explicit file override WARPspace defaul
   const tempDir = await mkdtemp(path.join(os.tmpdir(), 'wesley-warpspace-'));
   try {
     await writeFile(
-      path.join(tempDir, 'warpspace.mjs'),
-      `export default {
-        kind: '${WARPSPACE_KIND}',
-        outputs: {
-          typescript: 'src/generated/contracts'
-        }
-      };
-      `
+      path.join(tempDir, 'warpspace.toml'),
+      [
+        'version = 1',
+        '',
+        '[outputs]',
+        'typescript = "src/generated/contracts"',
+        ''
+      ].join('\n')
     );
 
     const outFile = await resolveWarpspaceOutputFile({
@@ -110,20 +109,20 @@ test('resolveWarpspaceOutputFile lets an explicit file override WARPspace defaul
   }
 });
 
-test('resolveWarpspaceOutputDir resolves multi-file output roots and falls back by alias order', async () => {
+test('resolveWarpspaceOutputDir resolves multi-file output roots from warpspace.toml aliases', async () => {
   const tempDir = await mkdtemp(path.join(os.tmpdir(), 'wesley-warpspace-'));
   try {
     await mkdir(path.join(tempDir, 'app'), { recursive: true });
     await writeFile(
-      path.join(tempDir, 'app', 'warpspace.mjs'),
-      `export default {
-        kind: '${WARPSPACE_KIND}',
-        outputs: {
-          'echo-ir': 'crates/my-app-contracts/src/generated/echo',
-          'warp-ttd': { dir: 'src/generated/warp-ttd' }
-        }
-      };
-      `
+      path.join(tempDir, 'app', 'warpspace.toml'),
+      [
+        'version = 1',
+        '',
+        '[outputs]',
+        'echo_ir = "crates/my-app-contracts/src/generated/echo"',
+        'warp_ttd = "src/generated/warp-ttd"',
+        ''
+      ].join('\n')
     );
 
     const echoDir = await resolveWarpspaceOutputDir({
@@ -143,6 +142,28 @@ test('resolveWarpspaceOutputDir resolves multi-file output roots and falls back 
     assert.equal(echoDir, path.join(tempDir, 'app', 'crates/my-app-contracts/src/generated/echo'));
     assert.equal(ttdDir, path.join(tempDir, 'app', 'src/generated/warp-ttd'));
     assert.equal(defaultDir, 'fallback-out');
+  } finally {
+    await rm(tempDir, { recursive: true, force: true });
+  }
+});
+
+test('resolveWarpspace still supports legacy warpspace.mjs files', async () => {
+  const tempDir = await mkdtemp(path.join(os.tmpdir(), 'wesley-warpspace-'));
+  try {
+    await writeFile(
+      path.join(tempDir, 'warpspace.mjs'),
+      `export default {
+        kind: '${WARPSPACE_KIND}',
+        outputs: {
+          typescript: 'src/generated/contracts'
+        }
+      };
+      `
+    );
+
+    const warpspace = await resolveWarpspace({ cwd: tempDir });
+    assert.ok(warpspace);
+    assert.equal(warpspace.config.outputs.typescript, 'src/generated/contracts');
   } finally {
     await rm(tempDir, { recursive: true, force: true });
   }

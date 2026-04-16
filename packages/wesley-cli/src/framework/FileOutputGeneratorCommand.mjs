@@ -19,7 +19,7 @@ export class FileOutputGeneratorCommand extends GeneratorCommand {
     // Add file output option
     return generatorCmd
       .option('--out-file <file>', 'Output file (prints to stdout if not specified)')
-      .option('--warpspace <path>', 'Path to host-project warpspace.mjs');
+      .option('--warpspace <path>', 'Path to host-project WARPspace config');
   }
 
   async resolveOutFile({ options, outputKey, defaultFileName }) {

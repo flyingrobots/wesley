@@ -26,7 +26,7 @@ export class BundleEchoCommand extends WesleyCommand {
         '-o, --out-dir <dir>',
         'Output directory'
       )
-      .option('--warpspace <path>', 'Path to host-project warpspace.mjs')
+      .option('--warpspace <path>', 'Path to host-project WARPspace config')
       .option('--dry-run', 'Show what would be generated without writing files');
   }
 

@@ -112,38 +112,38 @@ function collectFamilyDefinitions(sdl) {
 
   for (const definition of document.definitions) {
     switch (definition.kind) {
-      case Kind.SCALAR_TYPE_DEFINITION:
-        scalars.push({ name: definition.name.value });
+    case Kind.SCALAR_TYPE_DEFINITION:
+      scalars.push({ name: definition.name.value });
+      break;
+    case Kind.ENUM_TYPE_DEFINITION:
+      enums.push({
+        name: definition.name.value,
+        values: (definition.values ?? []).map((value) => value.name.value)
+      });
+      break;
+    case Kind.OBJECT_TYPE_DEFINITION:
+      if (shouldSkipObjectDefinition(definition.name.value)) {
         break;
-      case Kind.ENUM_TYPE_DEFINITION:
-        enums.push({
-          name: definition.name.value,
-          values: (definition.values ?? []).map((value) => value.name.value)
-        });
-        break;
-      case Kind.OBJECT_TYPE_DEFINITION:
-        if (shouldSkipObjectDefinition(definition.name.value)) {
-          break;
-        }
-        objects.push({
-          name: definition.name.value,
-          fields: (definition.fields ?? []).map((field) => ({
-            name: field.name.value,
-            type: field.type
-          }))
-        });
-        break;
-      case Kind.INPUT_OBJECT_TYPE_DEFINITION:
-        inputs.push({
-          name: definition.name.value,
-          fields: (definition.fields ?? []).map((field) => ({
-            name: field.name.value,
-            type: field.type
-          }))
-        });
-        break;
-      default:
-        break;
+      }
+      objects.push({
+        name: definition.name.value,
+        fields: (definition.fields ?? []).map((field) => ({
+          name: field.name.value,
+          type: field.type
+        }))
+      });
+      break;
+    case Kind.INPUT_OBJECT_TYPE_DEFINITION:
+      inputs.push({
+        name: definition.name.value,
+        fields: (definition.fields ?? []).map((field) => ({
+          name: field.name.value,
+          type: field.type
+        }))
+      });
+      break;
+    default:
+      break;
     }
   }
 

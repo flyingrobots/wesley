@@ -24,7 +24,7 @@ export class CompileTtdCommand extends WesleyCommand {
       .option('-s, --schema <path>', 'GraphQL schema file with TTD directives. Use "-" for stdin', 'schema.graphql')
       .option('--stdin', 'Read schema from stdin')
       .option('-o, --out-dir <dir>', 'Output directory')
-      .option('--warpspace <path>', 'Path to host-project warpspace.mjs')
+      .option('--warpspace <path>', 'Path to host-project WARPspace config')
       .option('-t, --target <targets>', 'Comma-separated targets: manifest, typescript, rust', 'manifest,typescript')
       .option('--dry-run', 'Show what would be generated without writing files')
       .option('--unit <units...>', 'Compilation unit IDs to generate for (repeatable or comma-separated)')

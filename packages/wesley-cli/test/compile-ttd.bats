@@ -195,15 +195,13 @@ EOF
     assert_equal "$compile_hash" "$bundle_hash"
 }
 
-@test "compile-ttd resolves its output root from warpspace.mjs" {
+@test "compile-ttd resolves its output root from warpspace.toml" {
     create_minimal_ttd_schema
-    cat > warpspace.mjs <<'EOF'
-export default {
-  kind: 'wesley.warpspace.v1',
-  outputs: {
-    'warp-ttd': 'src/generated/warp-ttd'
-  }
-};
+    cat > warpspace.toml <<'EOF'
+version = 1
+
+[outputs]
+warp_ttd = "src/generated/warp-ttd"
 EOF
 
     run node "$CLI_PATH" compile-ttd --schema ttd-schema.graphql --target manifest --json

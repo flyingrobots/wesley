@@ -18,16 +18,14 @@ teardown() {
     fi
 }
 
-@test "typescript and zod resolve default output files from warpspace.mjs" {
+@test "typescript and zod resolve default output files from warpspace.toml" {
     cp "$CONTINUUM_SCHEMA" schema.graphql
-    cat > warpspace.mjs <<'EOF'
-export default {
-  kind: 'wesley.warpspace.v1',
-  outputs: {
-    typescript: 'src/generated/continuum',
-    zod: 'src/generated/continuum/zod'
-  }
-};
+    cat > warpspace.toml <<'EOF'
+version = 1
+
+[outputs]
+typescript = "src/generated/continuum"
+zod = "src/generated/continuum/zod"
 EOF
 
     run node "$CLI_PATH" typescript --schema schema.graphql --json
@@ -41,22 +39,17 @@ EOF
     assert_file_exist src/generated/continuum/zod/zod.generated.ts
 }
 
-@test ".warpspace.local.mjs overrides committed warpspace output roots" {
+@test ".warpspace.local.toml overrides committed warpspace output roots" {
     cp "$CONTINUUM_SCHEMA" schema.graphql
-    cat > warpspace.mjs <<'EOF'
-export default {
-  kind: 'wesley.warpspace.v1',
-  outputs: {
-    typescript: 'src/generated/continuum'
-  }
-};
+    cat > warpspace.toml <<'EOF'
+version = 1
+
+[outputs]
+typescript = "src/generated/continuum"
 EOF
-    cat > .warpspace.local.mjs <<'EOF'
-export default {
-  outputs: {
-    typescript: 'src/generated/local-continuum'
-  }
-};
+    cat > .warpspace.local.toml <<'EOF'
+[outputs]
+typescript = "src/generated/local-continuum"
 EOF
 
     run node "$CLI_PATH" typescript --schema schema.graphql --json
@@ -67,13 +60,11 @@ EOF
 
 @test "--out-file overrides warpspace defaults" {
     cp "$CONTINUUM_SCHEMA" schema.graphql
-    cat > warpspace.mjs <<'EOF'
-export default {
-  kind: 'wesley.warpspace.v1',
-  outputs: {
-    zod: 'src/generated/continuum/zod'
-  }
-};
+    cat > warpspace.toml <<'EOF'
+version = 1
+
+[outputs]
+zod = "src/generated/continuum/zod"
 EOF
 
     run node "$CLI_PATH" zod --schema schema.graphql --out-file explicit/custom-zod.ts --json

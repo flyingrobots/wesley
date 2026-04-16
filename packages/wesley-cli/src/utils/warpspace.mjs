@@ -1,12 +1,26 @@
 import { existsSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { parse as parseToml } from 'smol-toml';
 import { WesleyError } from '@wesley/core';
 
 export const WARPSPACE_KIND = 'wesley.warpspace.v1';
-export const WARPSPACE_FILENAME = 'warpspace.mjs';
-export const WARPSPACE_LOCAL_FILENAME = '.warpspace.local.mjs';
+export const WARPSPACE_FILENAME = 'warpspace.toml';
+export const WARPSPACE_LEGACY_FILENAME = 'warpspace.mjs';
+export const WARPSPACE_LOCAL_FILENAME = '.warpspace.local.toml';
+export const WARPSPACE_LOCAL_LEGACY_FILENAME = '.warpspace.local.mjs';
 export const WARPSPACE_ENV_VAR = 'WESLEY_WARPSPACE_FILE';
+
+const WARPSPACE_CANDIDATE_FILENAMES = Object.freeze([
+  WARPSPACE_FILENAME,
+  WARPSPACE_LEGACY_FILENAME
+]);
+
+const WARPSPACE_LOCAL_CANDIDATE_FILENAMES = Object.freeze([
+  WARPSPACE_LOCAL_FILENAME,
+  WARPSPACE_LOCAL_LEGACY_FILENAME
+]);
 
 const FILE_OUTPUT_DEFAULTS = Object.freeze({
   typescript: 'types.generated.ts',
@@ -28,19 +42,19 @@ export async function resolveWarpspace({
   }
 
   const rootDir = path.dirname(resolvedPath);
-  const baseConfig = await loadWarpspaceModule({
+  const baseConfig = await loadWarpspaceConfig({
     filePath: resolvedPath,
     label: 'WARPspace file',
     requireKind: true
   });
-  const localOverridePath = path.join(rootDir, WARPSPACE_LOCAL_FILENAME);
-  const localOverride = existsSync(localOverridePath)
-    ? await loadWarpspaceModule({
+  const localOverridePath = findFirstExistingPath(rootDir, WARPSPACE_LOCAL_CANDIDATE_FILENAMES);
+  const localOverride = localOverridePath == null
+    ? null
+    : await loadWarpspaceConfig({
       filePath: localOverridePath,
       label: 'WARPspace local override',
       requireKind: false
-    })
-    : null;
+    });
 
   return {
     path: resolvedPath,
@@ -163,8 +177,8 @@ function resolveWarpspacePath({ cwd, env, warpspacePath }) {
 function findNearestWarpspace(startDir) {
   let current = path.resolve(startDir);
   while (true) {
-    const candidate = path.join(current, WARPSPACE_FILENAME);
-    if (existsSync(candidate)) {
+    const candidate = findFirstExistingPath(current, WARPSPACE_CANDIDATE_FILENAMES);
+    if (candidate != null) {
       return candidate;
     }
     const parent = path.dirname(current);
@@ -173,6 +187,43 @@ function findNearestWarpspace(startDir) {
     }
     current = parent;
   }
+}
+
+function findFirstExistingPath(rootDir, candidateFilenames) {
+  for (const candidateFilename of candidateFilenames) {
+    const candidatePath = path.join(rootDir, candidateFilename);
+    if (existsSync(candidatePath)) {
+      return candidatePath;
+    }
+  }
+  return null;
+}
+
+async function loadWarpspaceConfig({ filePath, label, requireKind }) {
+  return filePath.endsWith('.toml')
+    ? loadWarpspaceToml({ filePath, label })
+    : loadWarpspaceModule({ filePath, label, requireKind });
+}
+
+async function loadWarpspaceToml({ filePath, label }) {
+  let config;
+  try {
+    config = parseToml(await readFile(filePath, 'utf8'));
+  } catch (error) {
+    throw new WesleyError(
+      'WARPSPACE_INVALID',
+      `${label} at ${filePath} must be valid TOML. ${error.message}`
+    );
+  }
+
+  if (!isPlainObject(config)) {
+    throw new WesleyError(
+      'WARPSPACE_INVALID',
+      `${label} at ${filePath} must parse to a TOML table.`
+    );
+  }
+
+  return normalizeWarpspaceConfig(config);
 }
 
 async function loadWarpspaceModule({ filePath, label, requireKind }) {
@@ -191,7 +242,7 @@ async function loadWarpspaceModule({ filePath, label, requireKind }) {
       `${label} at ${filePath} must declare kind "${WARPSPACE_KIND}".`
     );
   }
-  return config;
+  return normalizeWarpspaceConfig(config);
 }
 
 function resolveConfiguredOutput({ configured, rootDir, defaultFileName, outputKey }) {
@@ -284,7 +335,7 @@ function mergeWarpspaceConfigs(baseConfig, localOverride) {
   if (localOverride == null) {
     return baseConfig;
   }
-  return deepMerge(baseConfig, localOverride);
+  return normalizeWarpspaceConfig(deepMerge(baseConfig, localOverride));
 }
 
 function deepMerge(baseValue, overrideValue) {
@@ -305,6 +356,29 @@ function deepMerge(baseValue, overrideValue) {
 
 function isPlainObject(value) {
   return value != null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function normalizeWarpspaceConfig(config) {
+  if (!isPlainObject(config)) {
+    return config;
+  }
+
+  const normalized = { ...config };
+  if (isPlainObject(normalized.outputs)) {
+    normalized.outputs = Object.fromEntries(
+      Object.entries(normalized.outputs).map(([key, value]) => [
+        normalizeWarpspaceOutputKey(key),
+        value
+      ])
+    );
+  }
+  return normalized;
+}
+
+function normalizeWarpspaceOutputKey(value) {
+  return typeof value === 'string'
+    ? value.replaceAll('_', '-')
+    : value;
 }
 
 function normalizeOptionalString(value) {

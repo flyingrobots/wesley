@@ -20,8 +20,8 @@
     "test:tap": "./test/run-bats.sh --tap"
   },
   "dependencies": {
-    "@wesley/core": "workspace:*",
     "@wesley/continuum": "workspace:*",
+    "@wesley/core": "workspace:*",
     "@wesley/generator-echo": "workspace:*",
     "@wesley/generator-js": "workspace:*",
     "@wesley/holmes": "workspace:^",
@@ -29,7 +29,8 @@
     "ajv-formats": "^3.0.1",
     "chokidar": "^4.0.3",
     "commander": "^14.0.2",
-    "graphql": "^16.11.0"
+    "graphql": "^16.11.0",
+    "smol-toml": "^1.6.1"
   },
   "keywords": [
     "cli",

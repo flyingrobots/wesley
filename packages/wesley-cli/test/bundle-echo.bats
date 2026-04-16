@@ -127,14 +127,12 @@ EOF
     assert_file_exist out/mock/summary.json
 }
 
-@test "bundle-echo resolves its output root from warpspace.mjs" {
-    cat > warpspace.mjs <<'EOF'
-export default {
-  kind: 'wesley.warpspace.v1',
-  outputs: {
-    'echo-ir': 'crates/my-app-contracts/src/generated/echo'
-  }
-};
+@test "bundle-echo resolves its output root from warpspace.toml" {
+    cat > warpspace.toml <<'EOF'
+version = 1
+
+[outputs]
+echo_ir = "crates/my-app-contracts/src/generated/echo"
 EOF
 
     run node "$CLI_PATH" bundle-echo --schema "$ECHO_SCHEMA" --json
