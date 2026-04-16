@@ -62,6 +62,21 @@ pnpm wesley contract release \
   --release 0.1.0
 ```
 
+### 6. Prototype A WARPspace Bootstrap
+Materialize the first Continuum demo WARPspace from a concrete stack release manifest.
+```bash
+node packages/wesley-host-node/bin/warpspace.mjs init ./tmp/continuum-app \
+  --manifest ../continuum/docs/releases/demo/continuum-stack-release.json \
+  --authority-root ../continuum
+```
+
+This first cut is intentionally local-first:
+
+- it reads a concrete Continuum stack release manifest
+- it writes `warpspace.mjs` and `warpspace.lock.json`
+- it materializes the selected shared family into the host repo
+- it runs the first Wesley generation pass for the selected projections
+
 ## Overall Status
 
 <!-- BEGIN:OVERALL_STATUS -->
