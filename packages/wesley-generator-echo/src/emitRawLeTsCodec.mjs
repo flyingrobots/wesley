@@ -71,6 +71,7 @@ function tsTypeForField(fieldType, required, list, _encodableTypes) {
     break;
   case 'String':
   case 'ID':
+  case 'Hash':
     tsType = 'string';
     break;
   default: {
@@ -240,9 +241,8 @@ function _isScalar(typeName) {
 function emitEnumCodec(lines, type) {
   const sorted = [...type.values].sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
 
-  // encode
-  lines.push(`export function encode${type.name}(value: ${type.name}): Uint8Array {`);
-  lines.push('  const buf: number[] = [];');
+  // internal encode helper
+  lines.push(`function _encode${type.name}(buf: number[], value: ${type.name}): void {`);
   lines.push('  const tmp = new DataView(new ArrayBuffer(4));');
   lines.push('  let idx: number;');
   lines.push('  switch (value) {');
@@ -253,6 +253,13 @@ function emitEnumCodec(lines, type) {
   lines.push('  }');
   lines.push('  tmp.setUint32(0, idx, true);');
   lines.push('  for (let i = 0; i < 4; i++) buf.push(tmp.getUint8(i));');
+  lines.push('}');
+  lines.push('');
+
+  // public encode
+  lines.push(`export function encode${type.name}(value: ${type.name}): Uint8Array {`);
+  lines.push('  const buf: number[] = [];');
+  lines.push(`  _encode${type.name}(buf, value);`);
   lines.push('  return new Uint8Array(buf);');
   lines.push('}');
   lines.push('');
@@ -331,6 +338,7 @@ function encodeCallForScalar(typeName, accessor) {
     return `_encodeF32(buf, ${accessor});`;
   case 'String':
   case 'ID':
+  case 'Hash':
     return `_encodeString(buf, ${accessor});`;
   default:
     // Nested object — encode in-place, no intermediate allocation
@@ -348,6 +356,7 @@ function encodeInnerClosureForType(typeName) {
     return '_encodeF32';
   case 'String':
   case 'ID':
+  case 'Hash':
     return '_encodeString';
   default:
     return `(buf, v) => _encode${typeName}(buf, v)`;
@@ -382,6 +391,7 @@ function decodeCallForType(typeName) {
     return '_decodeF32';
   case 'String':
   case 'ID':
+  case 'Hash':
     return '_decodeString';
   default:
     return `(bytes, off) => { const _r = decode${typeName}(bytes, off.v); off.v += _r.bytesRead; return _r.value; }`;
@@ -398,6 +408,7 @@ function decodeDirectCallForType(typeName, fieldName) {
     return `const ${fieldName} = _decodeF32(bytes, off);`;
   case 'String':
   case 'ID':
+  case 'Hash':
     return `const ${fieldName} = _decodeString(bytes, off);`;
   default: {
     // Nested object — use its decode function, advance offset
