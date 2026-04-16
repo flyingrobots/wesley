@@ -1,0 +1,84 @@
+{
+  "emissions": [],
+  "footprints": [
+    {
+      "closures": [],
+      "createSlots": [],
+      "creates": [],
+      "deletes": [],
+      "forbids": [],
+      "opName": "receipts",
+      "reads": [
+        "Receipt"
+      ],
+      "slots": [],
+      "updates": [],
+      "writes": []
+    },
+    {
+      "closures": [],
+      "createSlots": [],
+      "creates": [],
+      "deletes": [],
+      "forbids": [],
+      "opName": "deliveryObservations",
+      "reads": [
+        "DeliveryObservation"
+      ],
+      "slots": [],
+      "updates": [],
+      "writes": []
+    },
+    {
+      "closures": [],
+      "createSlots": [],
+      "creates": [],
+      "deletes": [],
+      "forbids": [],
+      "opName": "capabilities",
+      "reads": [
+        "Capability"
+      ],
+      "slots": [],
+      "updates": [],
+      "writes": []
+    },
+    {
+      "closures": [],
+      "createSlots": [],
+      "creates": [],
+      "deletes": [],
+      "forbids": [],
+      "opName": "witnesses",
+      "reads": [
+        "Witness"
+      ],
+      "slots": [],
+      "updates": [],
+      "writes": []
+    }
+  ],
+  "invariants": [
+    {
+      "expr": "forall d in DeliveryObservation: exists r in Receipt: d.receiptId == r.receiptId",
+      "name": "delivery_links_receipt",
+      "severity": "error"
+    },
+    {
+      "expr": "forall w in Witness: exists r in Receipt: w.receiptId == r.receiptId",
+      "name": "witness_links_receipt",
+      "severity": "error"
+    },
+    {
+      "expr": "forall r in Receipt: r.inputTick >= 0",
+      "name": "receipt_input_tick_non_negative",
+      "severity": "error"
+    },
+    {
+      "expr": "forall r in Receipt: r.outputTick >= 0",
+      "name": "receipt_output_tick_non_negative",
+      "severity": "error"
+    }
+  ],
+  "stateMachines": []
+}

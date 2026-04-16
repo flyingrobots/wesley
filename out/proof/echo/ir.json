@@ -1,0 +1,518 @@
+{
+  "types": [
+    {
+      "name": "Capability",
+      "kind": "OBJECT",
+      "type_id": "Capability",
+      "layout_hash": "2736911f44874c0b9e7efdbd958d8ae8db15265fcb8a35cea4cff35ddcbd7c9f",
+      "has_join": false,
+      "fields": [
+        {
+          "name": "capabilityId",
+          "type": "ID",
+          "required": true,
+          "list": false,
+          "join": null,
+          "views": null
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "required": true,
+          "list": false,
+          "join": null,
+          "views": null
+        },
+        {
+          "name": "scope",
+          "type": "CapabilityScope",
+          "required": true,
+          "list": false,
+          "join": null,
+          "views": null
+        },
+        {
+          "name": "resource",
+          "type": "String",
+          "required": true,
+          "list": false,
+          "join": null,
+          "views": null
+        },
+        {
+          "name": "description",
+          "type": "String",
+          "required": false,
+          "list": false,
+          "join": null,
+          "views": null
+        }
+      ]
+    },
+    {
+      "name": "CapabilityScope",
+      "kind": "ENUM",
+      "type_id": "CapabilityScope",
+      "layout_hash": "c0a8f2f1ce7f9fc824df1bb0957cbc20a6fefe9f420248cc36e4663afc2913b8",
+      "values": [
+        "READ",
+        "WRITE",
+        "CONTROL",
+        "OBSERVE",
+        "JUDGMENT"
+      ]
+    },
+    {
+      "name": "ContinuumReceiptFamilyInvariants",
+      "kind": "OBJECT",
+      "type_id": "ContinuumReceiptFamilyInvariants",
+      "layout_hash": "364c5d253f427cb97c07bbd8667822326f032af16ab160463037bc7ce57c2013",
+      "has_join": false,
+      "fields": [
+        {
+          "name": "_placeholder",
+          "type": "Boolean",
+          "required": false,
+          "list": false,
+          "join": null,
+          "views": null
+        }
+      ]
+    },
+    {
+      "name": "DeliveryObservation",
+      "kind": "OBJECT",
+      "type_id": "DeliveryObservation",
+      "layout_hash": "4b766d65e8f4f09c031a724bdbb286a8858170dfd12031e2c01bdbbd8c818616",
+      "has_join": false,
+      "fields": [
+        {
+          "name": "observationId",
+          "type": "ID",
+          "required": true,
+          "list": false,
+          "join": null,
+          "views": null
+        },
+        {
+          "name": "receiptId",
+          "type": "ID",
+          "required": true,
+          "list": false,
+          "join": null,
+          "views": null
+        },
+        {
+          "name": "emissionId",
+          "type": "String",
+          "required": true,
+          "list": false,
+          "join": null,
+          "views": null
+        },
+        {
+          "name": "headId",
+          "type": "String",
+          "required": true,
+          "list": false,
+          "join": null,
+          "views": null
+        },
+        {
+          "name": "frameIndex",
+          "type": "Int",
+          "required": true,
+          "list": false,
+          "join": null,
+          "views": null
+        },
+        {
+          "name": "sinkId",
+          "type": "String",
+          "required": true,
+          "list": false,
+          "join": null,
+          "views": null
+        },
+        {
+          "name": "outcome",
+          "type": "DeliveryOutcome",
+          "required": true,
+          "list": false,
+          "join": null,
+          "views": null
+        },
+        {
+          "name": "reason",
+          "type": "String",
+          "required": true,
+          "list": false,
+          "join": null,
+          "views": null
+        },
+        {
+          "name": "observerId",
+          "type": "String",
+          "required": false,
+          "list": false,
+          "join": null,
+          "views": null
+        },
+        {
+          "name": "executionMode",
+          "type": "ExecutionMode",
+          "required": true,
+          "list": false,
+          "join": null,
+          "views": null
+        },
+        {
+          "name": "summary",
+          "type": "String",
+          "required": true,
+          "list": false,
+          "join": null,
+          "views": null
+        }
+      ]
+    },
+    {
+      "name": "DeliveryOutcome",
+      "kind": "ENUM",
+      "type_id": "DeliveryOutcome",
+      "layout_hash": "2d1a421c3a359a395c5ae07ec7839cb1478fda23576fbb23bd1d2da7609e1783",
+      "values": [
+        "DELIVERED",
+        "SUPPRESSED",
+        "FAILED",
+        "SKIPPED"
+      ]
+    },
+    {
+      "name": "ExecutionMode",
+      "kind": "ENUM",
+      "type_id": "ExecutionMode",
+      "layout_hash": "54a44f76047884b8777d670e1df93302d5ae4258220b1a5b21c8e8dce05ab924",
+      "values": [
+        "LIVE",
+        "REPLAY",
+        "DEBUG"
+      ]
+    },
+    {
+      "name": "Receipt",
+      "kind": "OBJECT",
+      "type_id": "Receipt",
+      "layout_hash": "3da2d60994996614c31873398f9ec852fd14ed25ca4dee5ed6088c3200597ee7",
+      "has_join": false,
+      "fields": [
+        {
+          "name": "receiptId",
+          "type": "ID",
+          "required": true,
+          "list": false,
+          "join": null,
+          "views": null
+        },
+        {
+          "name": "headId",
+          "type": "String",
+          "required": true,
+          "list": false,
+          "join": null,
+          "views": null
+        },
+        {
+          "name": "frameIndex",
+          "type": "Int",
+          "required": true,
+          "list": false,
+          "join": null,
+          "views": null
+        },
+        {
+          "name": "laneId",
+          "type": "String",
+          "required": true,
+          "list": false,
+          "join": null,
+          "views": null
+        },
+        {
+          "name": "writerId",
+          "type": "String",
+          "required": false,
+          "list": false,
+          "join": null,
+          "views": null
+        },
+        {
+          "name": "inputTick",
+          "type": "Int",
+          "required": true,
+          "list": false,
+          "join": null,
+          "views": null
+        },
+        {
+          "name": "outputTick",
+          "type": "Int",
+          "required": true,
+          "list": false,
+          "join": null,
+          "views": null
+        },
+        {
+          "name": "admittedRewriteCount",
+          "type": "Int",
+          "required": true,
+          "list": false,
+          "join": null,
+          "views": null
+        },
+        {
+          "name": "rejectedRewriteCount",
+          "type": "Int",
+          "required": true,
+          "list": false,
+          "join": null,
+          "views": null
+        },
+        {
+          "name": "counterfactualCount",
+          "type": "Int",
+          "required": true,
+          "list": false,
+          "join": null,
+          "views": null
+        },
+        {
+          "name": "digest",
+          "type": "Hash",
+          "required": true,
+          "list": false,
+          "join": null,
+          "views": null
+        },
+        {
+          "name": "summary",
+          "type": "String",
+          "required": true,
+          "list": false,
+          "join": null,
+          "views": null
+        }
+      ]
+    },
+    {
+      "name": "Witness",
+      "kind": "OBJECT",
+      "type_id": "Witness",
+      "layout_hash": "ed3eeda5c392e6691bad762d85db107486ee6c177105ab75480a0f60341e0a53",
+      "has_join": false,
+      "fields": [
+        {
+          "name": "witnessId",
+          "type": "ID",
+          "required": true,
+          "list": false,
+          "join": null,
+          "views": null
+        },
+        {
+          "name": "receiptId",
+          "type": "ID",
+          "required": true,
+          "list": false,
+          "join": null,
+          "views": null
+        },
+        {
+          "name": "kind",
+          "type": "WitnessKind",
+          "required": true,
+          "list": false,
+          "join": null,
+          "views": null
+        },
+        {
+          "name": "residueHash",
+          "type": "Hash",
+          "required": true,
+          "list": false,
+          "join": null,
+          "views": null
+        },
+        {
+          "name": "footprint",
+          "type": "String",
+          "required": false,
+          "list": false,
+          "join": null,
+          "views": null
+        },
+        {
+          "name": "summary",
+          "type": "String",
+          "required": true,
+          "list": false,
+          "join": null,
+          "views": null
+        }
+      ]
+    },
+    {
+      "name": "WitnessKind",
+      "kind": "ENUM",
+      "type_id": "WitnessKind",
+      "layout_hash": "bf92ef5376fe7066989008720139ec5551383606a888f3d4c9ea83b79f23af1f",
+      "values": [
+        "FOOTPRINT",
+        "COUNTERFACTUAL",
+        "REINTEGRATION",
+        "PRECONDITION"
+      ]
+    }
+  ],
+  "ir_version": "echo-ir/v2",
+  "codec_id": "cbor-canon-v1",
+  "registry_version": 1,
+  "contract_version": "1.2.0",
+  "generated_by": {
+    "tool": "@wesley/generator-echo",
+    "version": "0.1.0"
+  },
+  "schema_sha256": "c338b55c649254a05ffffe4457eda1dcbae1b84e9814700be4bb7316164eb009",
+  "schema_hash": "c338b55c649254a05ffffe4457eda1dcbae1b84e9814700be4bb7316164eb009",
+  "registry_hash": null,
+  "hash_chain": null,
+  "ops": [
+    {
+      "kind": "QUERY",
+      "name": "capabilities",
+      "op_id": 847711509,
+      "args": [],
+      "result_type": "Capability",
+      "result_required": true,
+      "result_list": true,
+      "footprint": {
+        "reads": [
+          "Capability"
+        ],
+        "writes": [],
+        "creates": [],
+        "deletes": [],
+        "slots": [],
+        "closures": [],
+        "createSlots": [],
+        "updates": [],
+        "forbids": []
+      }
+    },
+    {
+      "kind": "QUERY",
+      "name": "deliveryObservations",
+      "op_id": 3925137921,
+      "args": [
+        {
+          "name": "receiptId",
+          "type": "ID",
+          "required": false,
+          "list": false
+        },
+        {
+          "name": "headId",
+          "type": "String",
+          "required": false,
+          "list": false
+        },
+        {
+          "name": "frameIndex",
+          "type": "Int",
+          "required": false,
+          "list": false
+        }
+      ],
+      "result_type": "DeliveryObservation",
+      "result_required": true,
+      "result_list": true,
+      "footprint": {
+        "reads": [
+          "DeliveryObservation"
+        ],
+        "writes": [],
+        "creates": [],
+        "deletes": [],
+        "slots": [],
+        "closures": [],
+        "createSlots": [],
+        "updates": [],
+        "forbids": []
+      }
+    },
+    {
+      "kind": "QUERY",
+      "name": "receipts",
+      "op_id": 4277194034,
+      "args": [
+        {
+          "name": "headId",
+          "type": "String",
+          "required": false,
+          "list": false
+        },
+        {
+          "name": "frameIndex",
+          "type": "Int",
+          "required": false,
+          "list": false
+        }
+      ],
+      "result_type": "Receipt",
+      "result_required": true,
+      "result_list": true,
+      "footprint": {
+        "reads": [
+          "Receipt"
+        ],
+        "writes": [],
+        "creates": [],
+        "deletes": [],
+        "slots": [],
+        "closures": [],
+        "createSlots": [],
+        "updates": [],
+        "forbids": []
+      }
+    },
+    {
+      "kind": "QUERY",
+      "name": "witnesses",
+      "op_id": 3804088302,
+      "args": [
+        {
+          "name": "receiptId",
+          "type": "ID",
+          "required": true,
+          "list": false
+        }
+      ],
+      "result_type": "Witness",
+      "result_required": true,
+      "result_list": true,
+      "footprint": {
+        "reads": [
+          "Witness"
+        ],
+        "writes": [],
+        "creates": [],
+        "deletes": [],
+        "slots": [],
+        "closures": [],
+        "createSlots": [],
+        "updates": [],
+        "forbids": []
+      }
+    }
+  ]
+}
