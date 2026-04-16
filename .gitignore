@@ -9,6 +9,7 @@ coverage/
 .env
 .env.local
 wesley.holmes-policy.local.json
+.codex/
 .vscode/
 .idea/
 *.swp

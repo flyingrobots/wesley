@@ -48,6 +48,10 @@ enum AdmissionOutcomeKind {
   PLURAL
 }
 
+input ReplaceNeighborhoodInput {
+  siteId: ID!
+}
+
 type NeighborhoodParticipant {
   laneId: ID!
   stateHash: Hash!
@@ -61,6 +65,10 @@ type NeighborhoodCore {
 
 type Query {
   neighborhoodCores: [NeighborhoodCore!]!
+}
+
+type Mutation {
+  replaceNeighborhood(input: ReplaceNeighborhoodInput!): NeighborhoodCore!
 }
 `;
 
@@ -144,6 +152,10 @@ test('TypeScriptCommand falls back to family projection for zero-table Continuum
   assert.match(state.writes[0].content, /export type AdmissionOutcomeKind = "DERIVED" \| "PLURAL";/);
   assert.match(state.writes[0].content, /export interface NeighborhoodCore/);
   assert.match(state.writes[0].content, /participants: Array<NeighborhoodParticipant>;/);
+  assert.match(state.writes[0].content, /export interface ReplaceNeighborhoodMutationArgs/);
+  assert.match(state.writes[0].content, /export interface MutationOperationMap/);
+  assert.match(state.writes[0].content, /replaceNeighborhood: ReplaceNeighborhoodMutationOperation;/);
+  assert.match(state.writes[0].content, /input: ReplaceNeighborhoodInput;/);
 });
 
 test('ZodCommand lowers schema content through the core LoweringEngine', async () => {
@@ -188,4 +200,8 @@ test('ZodCommand falls back to family projection for zero-table Continuum schema
   assert.match(state.writes[0].content, /export const AdmissionOutcomeKindSchema = z\.enum\(\["DERIVED", "PLURAL"\]\);/);
   assert.match(state.writes[0].content, /export const NeighborhoodCoreSchema = z\.object\(/);
   assert.match(state.writes[0].content, /participants: z\.array\(z\.lazy\(\(\) => NeighborhoodParticipantSchema\)\)/);
+  assert.match(state.writes[0].content, /export const ReplaceNeighborhoodMutationArgsSchema = z\.object\(/);
+  assert.match(state.writes[0].content, /export const MutationOperationSchemas = \{/);
+  assert.match(state.writes[0].content, /replaceNeighborhood: \{/);
+  assert.match(state.writes[0].content, /input: z\.lazy\(\(\) => ReplaceNeighborhoodInputSchema\)/);
 });

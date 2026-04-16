@@ -26,6 +26,10 @@ enum AdmissionOutcomeKind {
   PLURAL
 }
 
+input ReplaceNeighborhoodInput {
+  siteId: ID!
+}
+
 type NeighborhoodParticipant {
   laneId: ID!
   stateHash: Hash!
@@ -40,6 +44,10 @@ type NeighborhoodCore {
 type Query {
   neighborhoodCores: [NeighborhoodCore!]!
 }
+
+type Mutation {
+  replaceNeighborhood(input: ReplaceNeighborhoodInput!): NeighborhoodCore!
+}
 EOF
 }
 
@@ -53,6 +61,12 @@ EOF
     assert_success
     run grep -Fq 'export type AdmissionOutcomeKind = "DERIVED" | "PLURAL";' out/family.types.generated.ts
     assert_success
+    run grep -Fq "export interface ReplaceNeighborhoodMutationArgs" out/family.types.generated.ts
+    assert_success
+    run grep -Fq "export interface MutationOperationMap" out/family.types.generated.ts
+    assert_success
+    run grep -Fq "replaceNeighborhood: ReplaceNeighborhoodMutationOperation;" out/family.types.generated.ts
+    assert_success
 }
 
 @test "zod emits family-aware schemas for zero-table continuum schemas" {
@@ -64,5 +78,11 @@ EOF
     run grep -Fq "export const NeighborhoodCoreSchema = z.object(" out/family.zod.generated.ts
     assert_success
     run grep -Fq 'export const AdmissionOutcomeKindSchema = z.enum(["DERIVED", "PLURAL"]);' out/family.zod.generated.ts
+    assert_success
+    run grep -Fq "export const ReplaceNeighborhoodMutationArgsSchema = z.object(" out/family.zod.generated.ts
+    assert_success
+    run grep -Fq "export const MutationOperationSchemas = {" out/family.zod.generated.ts
+    assert_success
+    run grep -Fq "input: z.lazy(() => ReplaceNeighborhoodInputSchema)" out/family.zod.generated.ts
     assert_success
 }
