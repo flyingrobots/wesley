@@ -59,6 +59,8 @@ All artifacts are emitted from a single shared IR in one deterministic pass — 
   - `DiagnosticsChannel` for unknown op / decode error surfacing
 - **`raw_le_codec.generated.ts`**: browser-safe binary encode/decode per type (DataView/Uint8Array)
 - **`raw_le_codec.generated.rs`**: Rust binary encode/decode per type (byte-identical to TS codec)
+- **`rewrite_api.generated.rs`**: proof-slice Rust rewrite authoring traits generated from
+  GraphQL mutations with declared `@wes_footprint` capability boundaries
 - **`wasm_abi_codec.generated.rs`**: Rust encode/decode for WASM ABI response types (`DispatchResponse`, `StepResponse`, `DrainResponse`, `RegistryInfo`, `AbiError`) with binary envelope (`encode_ok`/`encode_err`/`decode_envelope`)
 - **`wasm_abi_codec.generated.ts`**: TypeScript encode/decode for WASM ABI response types with `AbiResult<T>` type, `decodeEnvelope()` generic decoder, and per-response-type convenience decoders
 
