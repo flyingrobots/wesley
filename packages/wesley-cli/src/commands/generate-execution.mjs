@@ -16,6 +16,7 @@ import {
   flattenTransmutationArtifacts
 } from '../transmutations/registry.mjs';
 import { writeSnapshotProjection } from '../utils/runtime-projections.mjs';
+import { buildGitDiscoveryEnv } from '../utils/git-env.mjs';
 import { resolveSchemaIr } from '../utils/schema-ir-cache.mjs';
 import {
   attachRunFailure,
@@ -399,15 +400,16 @@ function shouldEnforceClean(env, options) {
 }
 
 async function assertCleanGit(shell) {
+  const gitEnv = buildGitDiscoveryEnv();
   try {
     const result = shell?.exec
-      ? await shell.exec('git rev-parse --is-inside-work-tree', { stdio: 'ignore' })
-      : shell?.execSync?.('git rev-parse --is-inside-work-tree', { stdio: 'ignore' });
+      ? await shell.exec('git rev-parse --is-inside-work-tree', { stdio: 'ignore', env: gitEnv })
+      : shell?.execSync?.('git rev-parse --is-inside-work-tree', { stdio: 'ignore', env: gitEnv });
     if (!result && !shell?.exec && !shell?.execSync) return;
   } catch {
     return;
   }
-  const out = (await shell?.exec?.('git status --porcelain'))?.stdout?.trim?.() || '';
+  const out = (await shell?.exec?.('git status --porcelain', { env: gitEnv }))?.stdout?.trim?.() || '';
   if (out.length > 0) {
     throw new WesleyError('DIRTY_WORKTREE', 'Working tree has uncommitted changes. Commit or stash before running, or pass --allow-dirty.');
   }

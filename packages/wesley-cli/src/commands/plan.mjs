@@ -30,6 +30,7 @@ import {
   emitSourcesResolved,
   isInjectedCrash
 } from '../utils/runtime-events.mjs';
+import { buildGitDiscoveryEnv } from '../utils/git-env.mjs';
 
 export class PlanCommand extends WesleyCommand {
   constructor(ctx) {
@@ -269,9 +270,14 @@ function shouldEnforceCleanPlan(env) {
   return policy === 'strict';
 }
 async function assertCleanGit(shell) {
+  const gitEnv = buildGitDiscoveryEnv();
   if (!shell?.exec) return;
-  try { await shell.exec('git rev-parse --is-inside-work-tree'); } catch { return; }
-  const out = (await shell.exec('git status --porcelain'))?.stdout?.trim?.() || '';
+  try {
+    await shell.exec('git rev-parse --is-inside-work-tree', { env: gitEnv });
+  } catch {
+    return;
+  }
+  const out = (await shell.exec('git status --porcelain', { env: gitEnv }))?.stdout?.trim?.() || '';
   if (out) {
     throw new WesleyError('DIRTY_WORKTREE', 'Working tree has uncommitted changes. Commit or stash before running, or pass --allow-dirty.');
   }
