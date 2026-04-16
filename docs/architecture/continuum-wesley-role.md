@@ -23,6 +23,43 @@ other hidden source of truth. For the shared noun families it carries, Wesley
 validates schema, computes identity-bearing hashes, lowers contract shape into
 IR and manifests, and emits deterministic language-facing artifacts.
 
+For Continuum's graph and rewrite boundary, this means Wesley is responsible
+for compiling authored families that define:
+
+- graph entities such as nodes and edges
+- graph rewrite declarations
+- declared footprints and capability boundaries
+- static slot, binding, and closure grammar for rewrites whose concrete runtime
+  focus is only known at execution time
+- types that cross Rust, TypeScript, WASM, process, or network boundaries
+
+Wesley should also grow a lawful observer compiler boundary:
+
+- app-authored observer specs for the optic's get side
+- compiled observer plans consumed by generic runtimes
+- observer-state codecs
+- reading/result codecs
+- hologram or frontier-adjacent envelope helpers
+
+The important distinction is that Wesley compiles the static observer law. It
+does not own hosted observer instance state at runtime.
+
+This does **not** mean Wesley owns the whole program. Echo, `git-warp`, and
+other consumers remain free to keep runtime internals and handwritten engine
+logic local. Wesley owns the shared lawful boundary that those engines consume.
+
+The intended enforcement story is capability-bounded code generation, not
+post-hoc narration. When a rewrite declares one footprint, Wesley's generated
+surfaces should make that honesty explicit enough that dishonest use becomes
+auditable or a compile-time failure rather than a convention.
+
+For dynamic graph rewrites, that means Wesley should treat:
+
+- slots, binding sources, closure operators, create/update surfaces, and
+  forbidden surfaces as static authored contract
+- concrete node ids, current-head relations, and derived local closures as
+  runtime bindings supplied or resolved by the consumer engine
+
 Current repo-visible evidence:
 
 - `schemas/ttd-protocol.graphql`
@@ -60,6 +97,11 @@ Current rule:
 - Either way, the authored home must be named directly.
 - Generated artifacts may be stable consumer surfaces.
 - Mirrors do not inherit authorship just because they exist.
+- Consumer repos should normally consume a released contract bundle or one of
+  its generated projections, not Wesley compiler internals.
+- `@wesley/continuum` is a Wesley-side product profile for commands and
+  reports, not the universal runtime dependency every consumer repo should
+  import.
 
 ### 3. Conformance Anchor
 
@@ -101,6 +143,7 @@ reimplement the fact layer underneath it.
 Current repo-visible evidence:
 
 - `docs/architecture/holmes-counterfactuals.md`
+- `packages/wesley-continuum/src/judgment-profile.mjs`
 - `packages/wesley-holmes/src/counterfactual/provider.mjs`
 - `packages/wesley-holmes/src/moriarty-predict-workflow.mjs`
 
@@ -109,6 +152,8 @@ Current rule:
 - substrate facts come from substrate-capable tools and adapters
 - Wesley translates those facts into judgment-bearing outputs for operators and
   automation
+- Continuum-specific judgment profiles may live in `@wesley/continuum`, while
+  shared Holmes/Watson/Moriarty execution stays in `@wesley/holmes`
 
 ## Admission Rule For A Shared Noun Family
 
@@ -122,6 +167,22 @@ following are true:
 
 If any of those are missing, the family is still target-state or advisory. Do
 not fill the gap with handwritten shadow contracts.
+
+## Recommended Release Surface
+
+The recommended release surface for an admitted Continuum family is one
+versioned contract bundle that binds:
+
+- human release semver
+- exact admitted schema identity
+- generated target projections
+- realization shell metadata
+- witness output for the named scope
+
+That bundle may produce language-specific package projections, but those remain
+projections of the bundle rather than independent authorities. For the release
+model behind this recommendation, see
+`docs/design/0005-continuum-contract-bundle-release-and-sync/continuum-contract-bundle-release-and-sync.md`.
 
 ## Boundary Map
 
@@ -154,4 +215,6 @@ repo can now prove bounded local contract-family stacks from authored schema
 through TTD and Echo legs to conformance witnesses. This note still does not
 claim that the whole Continuum contract surface is frozen, or that Wesley owns
 runtime, storage, debugger, or substrate semantics outside those bounded proof
-lanes.
+lanes. The release and sync shape for turning those bounded proofs into one
+boring consumer bundle now lives in
+`docs/design/0005-continuum-contract-bundle-release-and-sync/continuum-contract-bundle-release-and-sync.md`.

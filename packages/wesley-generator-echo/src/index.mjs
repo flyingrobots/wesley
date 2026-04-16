@@ -9,11 +9,22 @@ import { emitRawLeTsCodec } from './emitRawLeTsCodec.mjs';
 import { emitGuardedViews } from './emitGuardedViews.mjs';
 import { emitWasmAbiCodec } from './emitWasmAbiCodec.mjs';
 import { emitWasmAbiCodecTs } from './emitWasmAbiCodecTs.mjs';
+import { emitRewriteApi } from './emitRewriteApi.mjs';
 import { buildLayoutDescriptor, computeLayoutHash } from '@wesley/core';
+import { extractTtdSchema } from '@wesley/core/ttd';
 import { unwrapType } from './graphql-utils.mjs';
 
 const PKG_VERSION = '0.1.0'; // keep simple: avoid package.json import in node CLI
 const CONTRACT_VERSION = '1.2.0'; // semver — bump major on breaking artifact schema changes
+
+const nodeCryptoPort = {
+  sha256(data) {
+    return createHash('sha256').update(data).digest('hex');
+  },
+  sha256Bytes(data) {
+    return new Uint8Array(createHash('sha256').update(data).digest());
+  }
+};
 
 /**
  * WASM ABI response type definitions for Echo's WASM FFI boundary.
@@ -148,6 +159,11 @@ export async function generateEcho({ sdl, ir, mutationIdNamespace = 'Mutation', 
     files.push({ path: 'guarded_views.generated.rs', content: guardedViews });
   }
 
+  const rewriteApi = emitRewriteApi(fullIr);
+  if (rewriteApi) {
+    files.push({ path: 'rewrite_api.generated.rs', content: rewriteApi });
+  }
+
   // WASM ABI codecs are always emitted (WASM_ABI_SDL is a hardcoded constant
   // with object types, so emitters never return null).
   files.push({ path: 'wasm_abi_codec.generated.rs', content: emitWasmAbiCodec(WASM_ABI_SDL) });
@@ -168,6 +184,8 @@ export async function generateEcho({ sdl, ir, mutationIdNamespace = 'Mutation', 
 }
 
 function buildOpsFromSDL(sdl, mutationNs, queryNs) {
+  const ttdSchema = extractTtdSchema(sdl, { crypto: nodeCryptoPort });
+  const footprintByOp = new Map((ttdSchema.footprints ?? []).map((fp) => [fp.opName, fp]));
   const doc = parse(sdl);
   const mutationDef = doc.definitions.find(
     (d) => d.kind === Kind.OBJECT_TYPE_DEFINITION && d.name.value === 'Mutation'
@@ -197,7 +215,32 @@ function buildOpsFromSDL(sdl, mutationNs, queryNs) {
         args,
         result_type: resultType,
         result_required: resultRequired,
-        result_list: resultList
+        result_list: resultList,
+        footprint: footprintByOp.has(f.name.value)
+          ? {
+              reads: [...(footprintByOp.get(f.name.value).reads ?? [])],
+              writes: [...(footprintByOp.get(f.name.value).writes ?? [])],
+              creates: [...(footprintByOp.get(f.name.value).creates ?? [])],
+              deletes: [...(footprintByOp.get(f.name.value).deletes ?? [])],
+              slots: (footprintByOp.get(f.name.value).slots ?? []).map((slot) => ({
+                ...slot,
+                access: [...(slot.access ?? [])]
+              })),
+              closures: (footprintByOp.get(f.name.value).closures ?? []).map((closure) => ({
+                ...closure,
+                argBindings: [...(closure.argBindings ?? [])],
+                reads: [...(closure.reads ?? [])]
+              })),
+              createSlots: (footprintByOp.get(f.name.value).createSlots ?? []).map((slot) => ({
+                ...slot
+              })),
+              updates: (footprintByOp.get(f.name.value).updates ?? []).map((update) => ({
+                ...update,
+                fields: [...(update.fields ?? [])]
+              })),
+              forbids: [...(footprintByOp.get(f.name.value).forbids ?? [])]
+            }
+          : null
       });
     }
   };

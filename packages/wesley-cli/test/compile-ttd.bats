@@ -52,6 +52,7 @@ EOF
     assert_success
     assert_output --partial "Compile GraphQL schema with TTD directives"
     assert_output --partial "--out-dir"
+    assert_output --partial "--warpspace"
     assert_output --partial "--target"
     assert_output --partial "--dry-run"
 }
@@ -192,4 +193,20 @@ EOF
     bundle_hash="$(echo "$output" | jq -r '.result.schemaHash')"
 
     assert_equal "$compile_hash" "$bundle_hash"
+}
+
+@test "compile-ttd resolves its output root from warpspace.toml" {
+    create_minimal_ttd_schema
+    cat > warpspace.toml <<'EOF'
+version = 1
+
+[outputs]
+warp_ttd = "src/generated/warp-ttd"
+EOF
+
+    run node "$CLI_PATH" compile-ttd --schema ttd-schema.graphql --target manifest --json
+    assert_success
+    echo "$output" | jq -e '.success == true' >/dev/null
+    echo "$output" | jq -e '.result.files | any(.[]; (.path | endswith("/src/generated/warp-ttd/manifest/schema.json")))' >/dev/null
+    assert_file_exist src/generated/warp-ttd/manifest/schema.json
 }

@@ -92,6 +92,7 @@ export class TransmutationRunner {
  * @param {string} [options.sha] - Git commit SHA for evidence tracking
  * @param {object} [options.diff] - Migration diff for MRI scoring
  * @param {object} [options.testResults] - Test results for TCI scoring
+ * @param {{ outDir?: string }} [options.emission] - Explicit emission context for plugins
  * @param {{ append(event:object): object, readStream(streamId:string): object[] }} [options.eventStore]
  * @param {{ emit(type:string, payload?:object, metadata?:object): object, events: object[] }} [options.eventCollector]
  * @returns {Promise<TransmutationResult>}
@@ -116,6 +117,7 @@ export class TransmutationRunner {
     });
     const lowered = await this._loweringEngine.lower(schema);
     const pluginSchema = lowered?.pluginSchema || schema;
+    const emission = createEmissionContext(this._config, options);
     const evidenceMap = new EvidenceMap();
     evidenceMap.setSha(options.sha || 'uncommitted');
 
@@ -135,7 +137,7 @@ export class TransmutationRunner {
     // Execute plugins sequentially (deterministic contract)
     for (const [index, plugin] of plugins.entries()) {
       const taskId = generationNodes[index]?.id || `${name}:gen:${index}`;
-      const result = await this._executePlugin(plugin, pluginSchema, runId, evidenceMap, eventCollector, taskId);
+      const result = await this._executePlugin(plugin, pluginSchema, emission, runId, evidenceMap, eventCollector, taskId);
       results.push(result);
 
       if (result.status === 'ok') {
@@ -258,7 +260,7 @@ export class TransmutationRunner {
    * Collects evidence from the plugin's output if provided.
    * @private
    */
-  async _executePlugin(plugin, schema, runId, evidenceMap, eventCollector, taskId) {
+  async _executePlugin(plugin, schema, emission, runId, evidenceMap, eventCollector, taskId) {
     const startMs = Date.now();
     let pluginName = '<unknown>';
     try {
@@ -292,7 +294,8 @@ export class TransmutationRunner {
       logger: childLogger,
       clock: this._clock,
       config: frozenConfig,
-      runId
+      runId,
+      emission
     });
 
     // Phase: init
@@ -445,4 +448,22 @@ export class TransmutationRunner {
       durationMs: Date.now() - startMs
     };
   }
+}
+
+function createEmissionContext(config, options = {}) {
+  const explicitOutDir = normalizeNonEmptyString(options.emission?.outDir);
+  const configuredOutDir = normalizeNonEmptyString(config?.paths?.outputDir);
+  const emission = {};
+
+  if (explicitOutDir || configuredOutDir) {
+    emission.outDir = explicitOutDir || configuredOutDir;
+  }
+
+  return Object.freeze(emission);
+}
+
+function normalizeNonEmptyString(value) {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
 }

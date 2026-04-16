@@ -372,7 +372,7 @@ test('runSequentialGeneration persists real evidence-backed bundle metadata', as
     '1 whole-file citation still relies on broad file-level proof.'
   ]);
   assert.equal(scores.scores.scs, 1);
-  assert.equal(scores.scores.tci, 0.65);
+  assert.equal(scores.scores.tci, 0.75);
 });
 
 test('runSequentialGeneration keeps dry-run side effects disabled', async () => {

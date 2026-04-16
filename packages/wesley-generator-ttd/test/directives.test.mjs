@@ -206,6 +206,63 @@ describe('TTD Directive Parsing', () => {
       expect(result.creates).toEqual(['Transaction']);
       expect(result.deletes).toEqual([]);
     });
+
+    it('parses structured slot and closure footprint fields', () => {
+      const sdl = `
+        type Mutation {
+          replaceRangeAsTick: Result! @wes_footprint(
+            reads: ["BufferWorldline", "RopeHead"]
+            writes: ["BufferWorldline"]
+            slots: [
+              { slot: "worldline", kind: "BufferWorldline", bindFromArg: "worldlineId", access: [READ, WRITE] }
+              { slot: "baseHead", kind: "RopeHead", bindFromArg: "baseHeadId", access: [READ] }
+            ]
+            closures: [
+              { slot: "touchedRope", fromSlot: "baseHead", operator: "ropeRangeClosure", argBindings: ["startByte", "endByte"], reads: ["RopeBranch", "RopeLeaf", "TextBlob"], cardinality: MANY }
+            ]
+            createSlots: [
+              { slot: "tick", kind: "Tick" }
+              { slot: "receipt", kind: "TickReceipt" }
+            ]
+            updates: [
+              { slot: "worldline", fields: ["canonicalHead"] }
+            ]
+            forbids: ["AstState", "Diagnostics", "GitWitness", "UiState"]
+          )
+        }
+      `;
+      const doc = parse(sdl);
+      const field = doc.definitions[0].fields[0];
+      const directive = field.directives.find(d => d.name.value === 'wes_footprint');
+
+      const result = parseFootprintDirective(directive);
+
+      expect(result.slots).toHaveLength(2);
+      expect(result.slots[0]).toEqual({
+        slot: 'worldline',
+        kind: 'BufferWorldline',
+        bindFromArg: 'worldlineId',
+        access: ['READ', 'WRITE']
+      });
+      expect(result.closures).toEqual([
+        {
+          slot: 'touchedRope',
+          fromSlot: 'baseHead',
+          operator: 'ropeRangeClosure',
+          argBindings: ['startByte', 'endByte'],
+          reads: ['RopeBranch', 'RopeLeaf', 'TextBlob'],
+          cardinality: 'MANY'
+        }
+      ]);
+      expect(result.createSlots).toEqual([
+        { slot: 'tick', kind: 'Tick' },
+        { slot: 'receipt', kind: 'TickReceipt' }
+      ]);
+      expect(result.updates).toEqual([
+        { slot: 'worldline', fields: ['canonicalHead'] }
+      ]);
+      expect(result.forbids).toEqual(['AstState', 'Diagnostics', 'GitWitness', 'UiState']);
+    });
   });
 
   describe('parseCodecDirective', () => {

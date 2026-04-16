@@ -5,7 +5,8 @@
   "description": "Wesley Node.js platform adapters and executable",
   "main": "./src/index.mjs",
   "bin": {
-    "wesley": "./bin/wesley.mjs"
+    "wesley": "./bin/wesley.mjs",
+    "warpspace": "./bin/warpspace.mjs"
   },
   "exports": {
     ".": "./src/index.mjs"

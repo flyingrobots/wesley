@@ -2,27 +2,37 @@
 
 > *"The alchemist does not create gold — he reveals what was always latent in the lead."*
 
-Wesley compiles GraphQL SDL into executable artifacts: SQL, TypeScript, Zod schemas, Rust codecs, Vue composables, and more. Each compilation path is a **transmutation** — a declared mapping from source schemas to generators, with evidence tracking that proves the output is correct.
+Wesley compiles GraphQL SDL into executable artifacts: SQL, TypeScript, Zod schemas, Rust codecs, Vue composables, and more. Each compilation path is a **transmutation**: a declared mapping from authored source, through Wesley IR, into one emitted artifact family with evidence that proves bounded properties of the result.
 
 This document specifies the transmutation system: how projects declare what they build, how Wesley executes it, and how HOLMES verifies it.
 
 ## Status
 
-**Implemented in part** — the active `legacy-supabase` hot path now runs through transmutation-aware evidence and evidence-based SCS/TCI/MRI, but the broader generator surface still has follow-on work.
+**Implemented in part**.
+
+Shipped today:
+- the CLI transmutation registry is executable rather than name-only
+- lowering is separated enough that command surfaces can consume Wesley IR directly
+- a built-in `null-generator` witness proves a new transmutation can be added through registration without editing orchestration internals
+- the active `legacy-supabase` path now consumes explicit emission context instead of reaching back into schema-shaped filesystem state
+
+Still follow-on work:
+- broader generator surfaces still need the same IR-only contract and evidence discipline
+- parts of this document remain design direction rather than shipped behavior and should be read that way
 
 ---
 
 ## Problem
 
-Wesley currently runs all enabled generators in sequence against all source files. This creates three problems:
+Wesley historically treated generation as a mostly monolithic pass. The release line is breaking that apart, but three problems still define the work:
 
-1. **No source-to-generator mapping.** An Echo project compiles Rust codecs but Wesley still checks for pgTAP tests. A Supabase project generates DDL but gets scored on layout hashes it never produces.
+1. **Transmutation truth is still uneven.** Some surfaces now have explicit registrations, runtime emission context, and witnessable behavior, while other generator paths still rely on older assumptions.
 
-2. **Transmutation truth is still uneven.** The active `legacy-supabase` path now computes SCS/TCI/MRI from real generator evidence, but other surfaces still need to carry the same evidence contract all the way through.
+2. **Evidence still trails the active seam.** The active `legacy-supabase` path now computes SCS/TCI/MRI from real generator evidence, but other surfaces still need to carry the same evidence contract all the way through.
 
-3. **Evidence is still coarse-grained.** Wesley now emits exact whole-file spans on the active placeholder, counterfactual, and QIR bundle paths, and Holmes/Watson distinguish exact subrange, whole-file, and coarse citations, but the system still lacks per-field, per-artifact citations across the broader generator surface.
+3. **Admission boundaries are easy to blur.** Generators should consume admitted IR and explicit emission context, while manifests and witness outputs should remain separate packaging and proof surfaces. Older language in this file sometimes mixed those layers together.
 
-Transmutations solve all three by making the compilation unit explicit, giving generators an evidence contract, and tracking coverage per source file.
+Transmutations solve these problems by making the compilation unit explicit, giving generators an evidence contract, and keeping authored source, lowered IR, emitted artifacts, realization shells, and witness residue separate.
 
 ---
 
@@ -76,9 +86,23 @@ graph TB
 
 A named compilation unit that maps source files to generators. Declared in `wesley.config.mjs`. Each transmutation runs independently and produces its own evidence bundle.
 
+### Admission Boundary
+
+Each transmutation should respect one narrow boundary:
+
+- authored SDL is the only contract authority
+- lowering produces IR, which is the only semantic surface generators may read
+- emission context tells generators where to write, but not what the source contract means
+- emitted files plus `realization/manifest.json` form the packaging shell for the leg
+- witness output certifies explicit properties of that shell and emitted family
+
+This keeps generation target-agnostic and prevents a generator from depending on the physical source tree or on unpublished schema-side assumptions.
+
+For the release-line doctrine that names these surfaces, see `docs/design/0004-realization-admission-and-witness/realization-admission-and-witness.md`.
+
 ### Evidence Contract
 
-Each generator declares what artifact categories it produces and how they can be verified. Evidence is collected *during generation*, not reconstructed after the fact.
+Each generator declares what artifact categories it produces and how they can be verified. Evidence is collected *during generation*, not reconstructed after the fact. That evidence is witness residue for bounded claims about the emitted family; it is not meant to become a second operational shell.
 
 ### SHA-lock Certification
 
@@ -239,6 +263,8 @@ graph LR
 ```
 
 A single element like `col:User.email` ends up with citations from every generator that touched it.
+
+This evidence map is still distinct from the realization shell. The manifest packages leg identity and signed artifact inventory; the evidence map is the proof-oriented residue that later witness and HOLMES flows inspect.
 
 ---
 
@@ -478,7 +504,7 @@ wesley moriarty --format json            # machine-readable output
 
 #### Architecture
 
-Moriarty stays in `@wesley/holmes` — the trio remains together. Holmes and Watson are *invoked* per-transmutation (they need the evidence bundle), but they live in the shared package. Moriarty is invoked at both levels:
+Moriarty stays in `@wesley/holmes`, and Holmes/Watson still execute there too. Product-specific behavior can now be profiled in packages such as `@wesley/continuum`, but the shared investigation, verification, and prediction engines remain in the Holmes package. Holmes and Watson are *invoked* per-transmutation (they need the evidence bundle), and Moriarty is invoked at both levels:
 
 ```mermaid
 sequenceDiagram
@@ -539,6 +565,7 @@ This lets HOLMES report: *"backend transmutation: users.graphql is fully certifi
 ```
 packages/
 ├── wesley-cli/
+├── wesley-continuum/
 ├── wesley-core/
 ├── wesley-generator-echo/
 ├── wesley-generator-js/
@@ -808,6 +835,8 @@ graph LR
 #### 0c. Wire T.A.S.K.S. into transmutation execution
 
 **Problem**: `@wesley/tasks` has a complete DAG engine (`TaskDefinition`, `TaskDependency`, `TaskGraph`). `@wesley/slaps` has lock-aware execution (`LockAwareExecutor`, `TasksSlapsBridge`). Both are implemented, tested, and sitting unused. Meanwhile, the CLI's `generate` command runs generators in a hardcoded sequence.
+
+The sequential registry now carries more of the orchestration truth than it did originally: transmutations register their own prerequisites, plugin construction, and runtime capabilities, and the built-in `null-generator` witness exercises that seam without adding special cases to the runner.
 
 **Fix**: Each transmutation becomes a `TaskGraph`:
 

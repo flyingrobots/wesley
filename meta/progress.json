@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-18T12:00:58.183Z",
+  "generatedAt": "2026-04-13T22:59:35.497Z",
   "overall": {
     "stage": "MVP",
     "next": "Alpha",
@@ -83,6 +83,25 @@
       "coverage": null
     },
     {
+      "name": "@wesley/generator-echo",
+      "status": "Active",
+      "stage": "MVP",
+      "progress": 20,
+      "next": "Alpha",
+      "passRate": null,
+      "docs": {
+        "hasStatus": false,
+        "hasUsage": true,
+        "hasApi": true,
+        "hasCaveats": true
+      },
+      "milestones": {
+        "alpha": null,
+        "beta": null
+      },
+      "coverage": null
+    },
+    {
       "name": "@wesley/generator-js",
       "status": "Active",
       "stage": "MVP",
@@ -121,6 +140,63 @@
       "coverage": null
     },
     {
+      "name": "@wesley/generator-ttd",
+      "status": "Active",
+      "stage": "MVP",
+      "progress": 20,
+      "next": "Alpha",
+      "passRate": null,
+      "docs": {
+        "hasStatus": true,
+        "hasUsage": true,
+        "hasApi": false,
+        "hasCaveats": false
+      },
+      "milestones": {
+        "alpha": null,
+        "beta": null
+      },
+      "coverage": null
+    },
+    {
+      "name": "@wesley/generator-vue",
+      "status": "Experimental",
+      "stage": "MVP",
+      "progress": 0,
+      "next": "Alpha",
+      "passRate": null,
+      "docs": {
+        "hasStatus": false,
+        "hasUsage": false,
+        "hasApi": true,
+        "hasCaveats": false
+      },
+      "milestones": {
+        "alpha": null,
+        "beta": null
+      },
+      "coverage": null
+    },
+    {
+      "name": "@wesley/continuum",
+      "status": "Active",
+      "stage": "MVP",
+      "progress": 20,
+      "next": "Alpha",
+      "passRate": null,
+      "docs": {
+        "hasStatus": true,
+        "hasUsage": true,
+        "hasApi": false,
+        "hasCaveats": false
+      },
+      "milestones": {
+        "alpha": null,
+        "beta": null
+      },
+      "coverage": null
+    },
+    {
       "name": "@wesley/holmes",
       "status": "Active",
       "stage": "Alpha",
@@ -131,6 +207,25 @@
         "hasStatus": true,
         "hasUsage": true,
         "hasApi": false,
+        "hasCaveats": false
+      },
+      "milestones": {
+        "alpha": null,
+        "beta": null
+      },
+      "coverage": null
+    },
+    {
+      "name": "@wesley/runtime-node",
+      "status": "Active",
+      "stage": "MVP",
+      "progress": 0,
+      "next": "Alpha",
+      "passRate": null,
+      "docs": {
+        "hasStatus": false,
+        "hasUsage": false,
+        "hasApi": true,
         "hasCaveats": false
       },
       "milestones": {
@@ -245,6 +340,25 @@
         "hasStatus": true,
         "hasUsage": false,
         "hasApi": true,
+        "hasCaveats": false
+      },
+      "milestones": {
+        "alpha": null,
+        "beta": null
+      },
+      "coverage": null
+    },
+    {
+      "name": "@wesley/test-fixtures",
+      "status": "Active",
+      "stage": "MVP",
+      "progress": 20,
+      "next": "Alpha",
+      "passRate": null,
+      "docs": {
+        "hasStatus": true,
+        "hasUsage": true,
+        "hasApi": false,
         "hasCaveats": false
       },
       "milestones": {

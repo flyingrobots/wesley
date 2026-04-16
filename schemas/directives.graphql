@@ -223,11 +223,58 @@ directive @wes_emission(
 ) on FIELD_DEFINITION
 
 # Footprint: Defines resource footprint for an operation
+enum WesAccess {
+  READ
+  WRITE
+  DELETE
+}
+
+enum WesCardinality {
+  ONE
+  OPTIONAL
+  MANY
+}
+
+input WesFootprintSlot {
+  slot: String!
+  kind: String!
+  bindFromArg: String
+  bindFromSlot: String
+  bindRelation: String
+  access: [WesAccess!]!
+  cardinality: WesCardinality = ONE
+}
+
+input WesFootprintClosure {
+  slot: String!
+  fromSlot: String!
+  operator: String!
+  argBindings: [String!]
+  reads: [String!]!
+  cardinality: WesCardinality = MANY
+}
+
+input WesFootprintCreateSlot {
+  slot: String!
+  kind: String!
+  cardinality: WesCardinality = ONE
+}
+
+input WesFootprintUpdate {
+  slot: String!
+  fields: [String!]!
+}
+
 directive @wes_footprint(
   reads: [String!]          # Resources read
   writes: [String!]         # Resources written
   creates: [String!]        # Resources created
   deletes: [String!]        # Resources deleted
+  slots: [WesFootprintSlot!]           # Structured direct bindings
+  closures: [WesFootprintClosure!]     # Structured derived closures
+  createSlots: [WesFootprintCreateSlot!] # Structured created node bindings
+  updates: [WesFootprintUpdate!]       # Structured update surfaces
+  forbids: [String!]                   # Explicit forbidden surfaces
 ) on FIELD_DEFINITION
 
 # Requires: Declares prerequisites for an operation

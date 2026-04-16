@@ -13,7 +13,7 @@ import { CertCreateCommand } from './cert-create.mjs';
 import { CertSignCommand } from './cert-sign.mjs';
 import { CertVerifyCommand } from './cert-verify.mjs';
 import { CertBadgeCommand } from './cert-badge.mjs';
-import { LEGACY_SUPABASE_TRANSMUTATION } from '../transmutations/legacy-supabase.mjs';
+import { formatTransmutationChoices, getDefaultTransmutationName } from '../transmutations/registry.mjs';
 import { resolveRunMetadata } from '../utils/run-metadata.mjs';
 import { assertResumeRequestedRunId } from '../utils/runtime-resume.mjs';
 import {
@@ -37,7 +37,7 @@ export class BladeCommand extends WesleyCommand {
       .option('--dry-run', 'Rehearse dry run (no DB)')
       .option('--radar', 'Show lock radar summary during plan')
       .option('--env <name>', 'Target environment', 'production')
-      .option('--transmutation <name>', 'Transmutation to execute', LEGACY_SUPABASE_TRANSMUTATION)
+      .option('--transmutation <name>', `Transmutation to execute (${formatTransmutationChoices()})`, getDefaultTransmutationName())
       .option('--run-id <id>', 'Associate the full BLADE run with a specific run ID')
       .option('--resume', 'Resume a previously started BLADE run with the same transmutation and run ID')
       .option('--counterfactual [baseRef]', 'Analyze a git-warp counterfactual lane against a base ref')

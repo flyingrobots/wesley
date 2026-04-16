@@ -17,7 +17,7 @@ export class LoweringEngine {
 
   /**
    * @param {object} input
-   * @param {{ outputDir?: string, parseOptions?: object }} [options]
+   * @param {{ parseOptions?: object }} [options]
    * @returns {Promise<{ sdl: string|null, ir: object|null, domain: object|null, pluginSchema: object }>}
    */
   async lower(input, options = {}) {
@@ -39,8 +39,7 @@ export class LoweringEngine {
     const pluginSchema = createLoweredSchemaEnvelope({
       domain,
       ir,
-      sdl,
-      outputDir: options.outputDir ?? input.outputDir
+      sdl
     });
 
     return { sdl, ir, domain, pluginSchema };
@@ -52,19 +51,16 @@ export class LoweringEngine {
  * available we preserve its prototype so generator code can still call
  * getTables() while also reading ir/sdl metadata when needed.
  *
- * @param {{ domain?: object|null, ir?: object|null, sdl?: string|null, outputDir?: string }} [input]
+ * @param {{ domain?: object|null, ir?: object|null, sdl?: string|null }} [input]
  * @returns {object}
  */
-export function createLoweredSchemaEnvelope({ domain = null, ir = null, sdl = null, outputDir } = {}) {
+export function createLoweredSchemaEnvelope({ domain = null, ir = null, sdl = null } = {}) {
   const envelope = domain && typeof domain === 'object'
     ? Object.assign(Object.create(Object.getPrototypeOf(domain)), domain)
     : {};
 
   if (ir) envelope.ir = ir;
   if (typeof sdl === 'string') envelope.sdl = sdl;
-  if (typeof outputDir === 'string' && outputDir.length > 0) {
-    envelope.outputDir = outputDir;
-  }
 
   return envelope;
 }

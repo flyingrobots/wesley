@@ -26,6 +26,7 @@ export const SUPPORTED_API_VERSIONS = Object.freeze(['1']);
  * @property {{ now(): string }} clock - Clock port
  * @property {Readonly<Record<string, unknown>>} config - Frozen per-run config
  * @property {string} runId - Unique run identifier
+ * @property {Readonly<{ outDir?: string }>} emission - Explicit runtime emission context
  */
 
 /**
@@ -65,7 +66,8 @@ export class GeneratorPlugin {
   /**
    * Produce a generation plan from the lowered schema envelope.
    * The input may expose raw `sdl`, parsed `ir`, and/or domain helpers such as
-   * `getTables()` depending on what the lowering seam admitted.
+   * `getTables()` depending on what the lowering seam admitted. Physical output
+   * routing belongs in context.emission, not on the schema object.
    * @param {object} schema
    * @param {PluginContext} context
    * @returns {Promise<GenerationPlan>}

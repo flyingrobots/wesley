@@ -6,7 +6,9 @@ import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import { buildAdditivePlan, explainPlan, emitMigrations } from './_migration-plan.mjs';
 import { assertValid } from '../framework/schemaValidator.mjs';
 import { WesleyError } from '@wesley/core';
+import { formatTransmutationChoices, getDefaultTransmutationName } from '../transmutations/registry.mjs';
 import { resolveRunMetadata } from '../utils/run-metadata.mjs';
+import { resolveSchemaIr } from '../utils/schema-ir-cache.mjs';
 import {
   applyResumeMetadata,
   assertResumeRequestedRunId,
@@ -53,13 +55,13 @@ export class RehearseCommand extends WesleyCommand {
       .option('--dry-run', 'Explain without executing')
       .option('--keep', 'Keep temporary schema for inspection')
       .option('--timeout <ms>', 'Timeout in ms', '300000')
-      .option('--transmutation <name>', 'Transmutation to associate with this rehearsal', 'legacy-supabase')
+      .option('--transmutation <name>', `Transmutation to associate with this rehearsal (${formatTransmutationChoices()})`, getDefaultTransmutationName())
       .option('--run-id <id>', 'Associate this rehearsal with a specific run ID')
       .option('--resume', 'Resume a previously started rehearsal run with the same transmutation and run ID')
       .option('--json', 'Emit JSON');
   }
 
-  async executeCore({ options, schemaContent, schemaPath, logger }) {
+  async executeCore({ options, schemaContent, schemaPath, units, logger }) {
     assertResumeRequestedRunId(options);
     const run = resolveRunMetadata(options);
     const resumeState = options.resume
@@ -75,9 +77,17 @@ export class RehearseCommand extends WesleyCommand {
       schemaPath,
       dryRun: Boolean(options.dryRun)
     });
-    const ir = this.ctx.parsers.graphql.parse(schemaContent);
+    const irResolution = await resolveSchemaIr({
+      ctx: this.ctx,
+      schemaContent,
+      schemaPath,
+      units,
+      logger
+    });
+    const ir = irResolution.ir;
     emitIrParsed(eventCollector, scope, {
-      tableCount: Array.isArray(ir?.tables) ? ir.tables.length : 0
+      tableCount: Array.isArray(ir?.tables) ? ir.tables.length : 0,
+      cacheStatus: irResolution.cacheStatus
     });
 
     let previous = { tables: [] };
