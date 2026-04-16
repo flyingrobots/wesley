@@ -1,26 +1,12 @@
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
 import { parse as parseToml } from 'smol-toml';
 import { WesleyError } from '@wesley/core';
 
-export const WARPSPACE_KIND = 'wesley.warpspace.v1';
 export const WARPSPACE_FILENAME = 'warpspace.toml';
-export const WARPSPACE_LEGACY_FILENAME = 'warpspace.mjs';
 export const WARPSPACE_LOCAL_FILENAME = '.warpspace.local.toml';
-export const WARPSPACE_LOCAL_LEGACY_FILENAME = '.warpspace.local.mjs';
 export const WARPSPACE_ENV_VAR = 'WESLEY_WARPSPACE_FILE';
-
-const WARPSPACE_CANDIDATE_FILENAMES = Object.freeze([
-  WARPSPACE_FILENAME,
-  WARPSPACE_LEGACY_FILENAME
-]);
-
-const WARPSPACE_LOCAL_CANDIDATE_FILENAMES = Object.freeze([
-  WARPSPACE_LOCAL_FILENAME,
-  WARPSPACE_LOCAL_LEGACY_FILENAME
-]);
 
 const FILE_OUTPUT_DEFAULTS = Object.freeze({
   typescript: 'types.generated.ts',
@@ -42,18 +28,16 @@ export async function resolveWarpspace({
   }
 
   const rootDir = path.dirname(resolvedPath);
-  const baseConfig = await loadWarpspaceConfig({
+  const baseConfig = await loadWarpspaceToml({
     filePath: resolvedPath,
-    label: 'WARPspace file',
-    requireKind: true
+    label: 'WARPspace file'
   });
-  const localOverridePath = findFirstExistingPath(rootDir, WARPSPACE_LOCAL_CANDIDATE_FILENAMES);
+  const localOverridePath = findFirstExistingPath(rootDir, [WARPSPACE_LOCAL_FILENAME]);
   const localOverride = localOverridePath == null
     ? null
-    : await loadWarpspaceConfig({
+    : await loadWarpspaceToml({
       filePath: localOverridePath,
-      label: 'WARPspace local override',
-      requireKind: false
+      label: 'WARPspace local override'
     });
 
   return {
@@ -177,7 +161,7 @@ function resolveWarpspacePath({ cwd, env, warpspacePath }) {
 function findNearestWarpspace(startDir) {
   let current = path.resolve(startDir);
   while (true) {
-    const candidate = findFirstExistingPath(current, WARPSPACE_CANDIDATE_FILENAMES);
+    const candidate = findFirstExistingPath(current, [WARPSPACE_FILENAME]);
     if (candidate != null) {
       return candidate;
     }
@@ -199,12 +183,6 @@ function findFirstExistingPath(rootDir, candidateFilenames) {
   return null;
 }
 
-async function loadWarpspaceConfig({ filePath, label, requireKind }) {
-  return filePath.endsWith('.toml')
-    ? loadWarpspaceToml({ filePath, label })
-    : loadWarpspaceModule({ filePath, label, requireKind });
-}
-
 async function loadWarpspaceToml({ filePath, label }) {
   let config;
   try {
@@ -223,25 +201,6 @@ async function loadWarpspaceToml({ filePath, label }) {
     );
   }
 
-  return normalizeWarpspaceConfig(config);
-}
-
-async function loadWarpspaceModule({ filePath, label, requireKind }) {
-  const moduleUrl = pathToFileURL(filePath).href;
-  const loaded = await import(`${moduleUrl}?ts=${Date.now()}`);
-  const config = loaded?.default;
-  if (!isPlainObject(config)) {
-    throw new WesleyError(
-      'WARPSPACE_INVALID',
-      `${label} at ${filePath} must export a default object.`
-    );
-  }
-  if (requireKind && config.kind !== WARPSPACE_KIND) {
-    throw new WesleyError(
-      'WARPSPACE_KIND_INVALID',
-      `${label} at ${filePath} must declare kind "${WARPSPACE_KIND}".`
-    );
-  }
   return normalizeWarpspaceConfig(config);
 }
 

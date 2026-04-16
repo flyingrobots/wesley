@@ -24,7 +24,6 @@ The repo now ships:
 - `--warpspace <path>` and `WESLEY_WARPSPACE_FILE` override support
 - WARPspace-backed default outputs for `wesley typescript` and `wesley zod`
 - explicit `--out-file` continuing to win over WARPspace defaults
-- legacy `warpspace.mjs` and `.warpspace.local.mjs` compatibility fallback
 
 ## Playback
 

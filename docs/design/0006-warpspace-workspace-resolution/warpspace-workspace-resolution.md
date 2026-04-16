@@ -218,8 +218,7 @@ Resolution order should be:
 2. explicit `WESLEY_WARPSPACE_FILE`
 3. nearest `warpspace.toml` found by walking upward from `cwd`
 4. optional merge of `.warpspace.local.toml` from the same directory
-5. legacy fallback to `warpspace.mjs` and `.warpspace.local.mjs`
-6. fail clearly if no WARPspace file exists when a command requires host-project
+5. fail clearly if no WARPspace file exists when a command requires host-project
    integration state
 
 CLI flags should always override WARPspace values.

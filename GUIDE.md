@@ -48,8 +48,7 @@ outputs land. `typescript` and `zod` now resolve default output files from
 resolve default output roots from `outputs.warp_ttd` and
 `outputs.echo_ir`. `.warpspace.local.toml` may overlay those defaults for
 development, and explicit `--out-file`, `--out-dir`, or `--warpspace` flags
-still win. Legacy `warpspace.mjs` and `.warpspace.local.mjs` files still
-resolve as compatibility fallbacks.
+still win.
 Use `drift-watch` when you need one local cutover surface that compares authored
 schema identity, local emitted legs, and explicit nearby mirrors.
 

@@ -5,7 +5,6 @@ import { fileURLToPath } from 'node:url';
 
 const STACK_RELEASE_KIND = 'continuum.stack-release.v1';
 const WARPSPACE_LOCK_KIND = 'warpspace.lock.v1';
-const WARPSPACE_KIND = 'wesley.warpspace.v1';
 const WESLEY_BIN_PATH = fileURLToPath(new URL('../../bin/wesley.mjs', import.meta.url));
 
 export async function initWarpspace({
@@ -347,6 +346,5 @@ function normalizeRequiredText(value, label) {
 
 export {
   STACK_RELEASE_KIND,
-  WARPSPACE_LOCK_KIND,
-  WARPSPACE_KIND
+  WARPSPACE_LOCK_KIND
 };

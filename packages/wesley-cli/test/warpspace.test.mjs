@@ -5,7 +5,6 @@ import os from 'node:os';
 import path from 'node:path';
 
 import {
-  WARPSPACE_KIND,
   resolveWarpspace,
   resolveWarpspaceOutputDir,
   resolveWarpspaceOutputFile
@@ -142,28 +141,6 @@ test('resolveWarpspaceOutputDir resolves multi-file output roots from warpspace.
     assert.equal(echoDir, path.join(tempDir, 'app', 'crates/my-app-contracts/src/generated/echo'));
     assert.equal(ttdDir, path.join(tempDir, 'app', 'src/generated/warp-ttd'));
     assert.equal(defaultDir, 'fallback-out');
-  } finally {
-    await rm(tempDir, { recursive: true, force: true });
-  }
-});
-
-test('resolveWarpspace still supports legacy warpspace.mjs files', async () => {
-  const tempDir = await mkdtemp(path.join(os.tmpdir(), 'wesley-warpspace-'));
-  try {
-    await writeFile(
-      path.join(tempDir, 'warpspace.mjs'),
-      `export default {
-        kind: '${WARPSPACE_KIND}',
-        outputs: {
-          typescript: 'src/generated/contracts'
-        }
-      };
-      `
-    );
-
-    const warpspace = await resolveWarpspace({ cwd: tempDir });
-    assert.ok(warpspace);
-    assert.equal(warpspace.config.outputs.typescript, 'src/generated/contracts');
   } finally {
     await rm(tempDir, { recursive: true, force: true });
   }
