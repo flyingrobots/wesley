@@ -252,6 +252,98 @@
           "type": "array",
           "items": { "type": "string" },
           "default": []
+        },
+        "slots": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/FootprintSlot" },
+          "default": []
+        },
+        "closures": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/FootprintClosure" },
+          "default": []
+        },
+        "createSlots": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/FootprintCreateSlot" },
+          "default": []
+        },
+        "updates": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/FootprintUpdate" },
+          "default": []
+        },
+        "forbids": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": []
+        }
+      }
+    },
+    "FootprintSlot": {
+      "type": "object",
+      "required": ["slot", "kind", "access"],
+      "properties": {
+        "slot": { "type": "string" },
+        "kind": { "type": "string" },
+        "bindFromArg": { "type": "string" },
+        "bindFromSlot": { "type": "string" },
+        "bindRelation": { "type": "string" },
+        "access": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["READ", "WRITE", "DELETE"] }
+        },
+        "cardinality": {
+          "type": "string",
+          "enum": ["ONE", "OPTIONAL", "MANY"],
+          "default": "ONE"
+        }
+      }
+    },
+    "FootprintClosure": {
+      "type": "object",
+      "required": ["slot", "fromSlot", "operator", "reads"],
+      "properties": {
+        "slot": { "type": "string" },
+        "fromSlot": { "type": "string" },
+        "operator": { "type": "string" },
+        "argBindings": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": []
+        },
+        "reads": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "cardinality": {
+          "type": "string",
+          "enum": ["ONE", "OPTIONAL", "MANY"],
+          "default": "MANY"
+        }
+      }
+    },
+    "FootprintCreateSlot": {
+      "type": "object",
+      "required": ["slot", "kind"],
+      "properties": {
+        "slot": { "type": "string" },
+        "kind": { "type": "string" },
+        "cardinality": {
+          "type": "string",
+          "enum": ["ONE", "OPTIONAL", "MANY"],
+          "default": "ONE"
+        }
+      }
+    },
+    "FootprintUpdate": {
+      "type": "object",
+      "required": ["slot", "fields"],
+      "properties": {
+        "slot": { "type": "string" },
+        "fields": {
+          "type": "array",
+          "items": { "type": "string" }
         }
       }
     },

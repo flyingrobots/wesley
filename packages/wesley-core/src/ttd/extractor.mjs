@@ -295,7 +295,12 @@ export function extractTtdSchema(sdl, deps = {}) {
           reads: directives.footprint.reads,
           writes: directives.footprint.writes,
           creates: directives.footprint.creates,
-          deletes: directives.footprint.deletes
+          deletes: directives.footprint.deletes,
+          slots: directives.footprint.slots,
+          closures: directives.footprint.closures,
+          createSlots: directives.footprint.createSlots,
+          updates: directives.footprint.updates,
+          forbids: directives.footprint.forbids
         });
         schema.footprints.push(fp);
       }

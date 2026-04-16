@@ -290,6 +290,63 @@ describe('TTD Validation Rules', () => {
       const warning = errors.find(e => e.code === 'FOOTPRINT_CREATE_NO_WRITE');
       expect(warning).toBeDefined();
     });
+
+    it('passes for a valid structured dynamic footprint', () => {
+      const fp = {
+        opName: 'replaceRangeAsTick',
+        reads: ['BufferWorldline', 'RopeHead'],
+        writes: ['BufferWorldline'],
+        creates: [],
+        deletes: [],
+        slots: [
+          {
+            slot: 'worldline',
+            kind: 'BufferWorldline',
+            bindFromArg: 'worldlineId',
+            access: ['READ', 'WRITE']
+          }
+        ],
+        closures: [
+          {
+            slot: 'touchedRope',
+            fromSlot: 'baseHead',
+            operator: 'ropeRangeClosure',
+            argBindings: ['startByte', 'endByte'],
+            reads: ['RopeBranch', 'RopeLeaf', 'TextBlob'],
+            cardinality: 'MANY'
+          }
+        ],
+        createSlots: [{ slot: 'tick', kind: 'Tick' }],
+        updates: [{ slot: 'worldline', fields: ['canonicalHead'] }],
+        forbids: ['AstState']
+      };
+
+      const knownTypes = ['BufferWorldline', 'RopeHead', 'RopeBranch', 'RopeLeaf', 'TextBlob', 'Tick'];
+      const errors = validateFootprint(fp, knownTypes);
+      expect(errors).toHaveLength(0);
+    });
+
+    it('fails on unknown structured type in slot or closure', () => {
+      const fp = {
+        opName: 'replaceRangeAsTick',
+        reads: [],
+        writes: [],
+        creates: [],
+        deletes: [],
+        slots: [{ slot: 'worldline', kind: 'UnknownWorldline', access: ['READ'] }],
+        closures: [
+          {
+            slot: 'touchedRope',
+            fromSlot: 'baseHead',
+            operator: 'ropeRangeClosure',
+            reads: ['UnknownLeaf']
+          }
+        ]
+      };
+
+      const errors = validateFootprint(fp, ['BufferWorldline', 'RopeLeaf']);
+      expect(errors.some(e => e.code === 'FOOTPRINT_UNKNOWN_TYPE')).toBe(true);
+    });
   });
 
   describe('validateRegistry', () => {

@@ -148,7 +148,12 @@ export function createFootprint({
   reads = [],
   writes = [],
   creates = [],
-  deletes = []
+  deletes = [],
+  slots = [],
+  closures = [],
+  createSlots = [],
+  updates = [],
+  forbids = []
 }) {
   return {
     kind: TtdAstKind.FOOTPRINT,
@@ -156,7 +161,12 @@ export function createFootprint({
     reads,
     writes,
     creates,
-    deletes
+    deletes,
+    slots,
+    closures,
+    createSlots,
+    updates,
+    forbids
   };
 }
 

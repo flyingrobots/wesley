@@ -219,6 +219,45 @@ describe('TTD AST Types', () => {
 
       expect(fp.creates).toEqual(['Counter']);
     });
+
+    it('creates a structured dynamic footprint', () => {
+      const fp = createFootprint({
+        opName: 'replaceRangeAsTick',
+        reads: ['BufferWorldline', 'RopeHead'],
+        writes: ['BufferWorldline'],
+        slots: [
+          {
+            slot: 'worldline',
+            kind: 'BufferWorldline',
+            bindFromArg: 'worldlineId',
+            access: ['READ', 'WRITE']
+          }
+        ],
+        closures: [
+          {
+            slot: 'touchedRope',
+            fromSlot: 'baseHead',
+            operator: 'ropeRangeClosure',
+            argBindings: ['startByte', 'endByte'],
+            reads: ['RopeBranch', 'RopeLeaf', 'TextBlob'],
+            cardinality: 'MANY'
+          }
+        ],
+        createSlots: [
+          { slot: 'tick', kind: 'Tick' }
+        ],
+        updates: [
+          { slot: 'worldline', fields: ['canonicalHead'] }
+        ],
+        forbids: ['AstState', 'Diagnostics']
+      });
+
+      expect(fp.slots).toHaveLength(1);
+      expect(fp.closures).toHaveLength(1);
+      expect(fp.createSlots).toEqual([{ slot: 'tick', kind: 'Tick' }]);
+      expect(fp.updates).toEqual([{ slot: 'worldline', fields: ['canonicalHead'] }]);
+      expect(fp.forbids).toEqual(['AstState', 'Diagnostics']);
+    });
   });
 
   describe('RegistryEntry', () => {

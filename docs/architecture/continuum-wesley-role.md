@@ -29,6 +29,8 @@ for compiling authored families that define:
 - graph entities such as nodes and edges
 - graph rewrite declarations
 - declared footprints and capability boundaries
+- static slot, binding, and closure grammar for rewrites whose concrete runtime
+  focus is only known at execution time
 - types that cross Rust, TypeScript, WASM, process, or network boundaries
 
 This does **not** mean Wesley owns the whole program. Echo, `git-warp`, and
@@ -39,6 +41,13 @@ The intended enforcement story is capability-bounded code generation, not
 post-hoc narration. When a rewrite declares one footprint, Wesley's generated
 surfaces should make that honesty explicit enough that dishonest use becomes
 auditable or a compile-time failure rather than a convention.
+
+For dynamic graph rewrites, that means Wesley should treat:
+
+- slots, binding sources, closure operators, create/update surfaces, and
+  forbidden surfaces as static authored contract
+- concrete node ids, current-head relations, and derived local closures as
+  runtime bindings supplied or resolved by the consumer engine
 
 Current repo-visible evidence:
 

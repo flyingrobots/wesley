@@ -183,7 +183,19 @@ export function validateEmission(emission, channels = []) {
 export function validateFootprint(fp, knownTypes = []) {
   const errors = [];
 
-  const allTypes = [...(fp.reads || []), ...(fp.writes || []), ...(fp.creates || []), ...(fp.deletes || [])];
+  const slotTypes = (fp.slots || []).map((slot) => slot.kind).filter(Boolean);
+  const closureTypes = (fp.closures || []).flatMap((closure) => closure.reads || []);
+  const createSlotTypes = (fp.createSlots || []).map((slot) => slot.kind).filter(Boolean);
+
+  const allTypes = [
+    ...(fp.reads || []),
+    ...(fp.writes || []),
+    ...(fp.creates || []),
+    ...(fp.deletes || []),
+    ...slotTypes,
+    ...closureTypes,
+    ...createSlotTypes
+  ];
 
   for (const type of allTypes) {
     if (knownTypes.length > 0 && !knownTypes.includes(type)) {
@@ -191,8 +203,60 @@ export function validateFootprint(fp, knownTypes = []) {
     }
   }
 
-  if (allTypes.length === 0) {
+  const structuredSurfaceCount =
+    (fp.slots?.length ?? 0) +
+    (fp.closures?.length ?? 0) +
+    (fp.createSlots?.length ?? 0) +
+    (fp.updates?.length ?? 0) +
+    (fp.forbids?.length ?? 0);
+
+  if (allTypes.length === 0 && structuredSurfaceCount === 0) {
     errors.push(warning('FOOTPRINT_EMPTY', 'Footprint has no reads, writes, creates, or deletes'));
+  }
+
+  for (const slot of fp.slots || []) {
+    if (!slot.slot) {
+      errors.push(error('FOOTPRINT_SLOT_NAME_EMPTY', 'Footprint slot must have a name'));
+    }
+    if (!slot.kind) {
+      errors.push(error('FOOTPRINT_SLOT_KIND_EMPTY', 'Footprint slot must declare a kind'));
+    }
+    if (!Array.isArray(slot.access) || slot.access.length === 0) {
+      errors.push(error('FOOTPRINT_SLOT_ACCESS_EMPTY', `Footprint slot "${slot.slot || '<unnamed>'}" must declare at least one access mode`));
+    }
+  }
+
+  for (const closure of fp.closures || []) {
+    if (!closure.slot) {
+      errors.push(error('FOOTPRINT_CLOSURE_SLOT_EMPTY', 'Footprint closure must have a slot name'));
+    }
+    if (!closure.fromSlot) {
+      errors.push(error('FOOTPRINT_CLOSURE_FROM_SLOT_EMPTY', `Footprint closure "${closure.slot || '<unnamed>'}" must declare fromSlot`));
+    }
+    if (!closure.operator) {
+      errors.push(error('FOOTPRINT_CLOSURE_OPERATOR_EMPTY', `Footprint closure "${closure.slot || '<unnamed>'}" must declare an operator`));
+    }
+    if (!Array.isArray(closure.reads) || closure.reads.length === 0) {
+      errors.push(error('FOOTPRINT_CLOSURE_READS_EMPTY', `Footprint closure "${closure.slot || '<unnamed>'}" must declare reads`));
+    }
+  }
+
+  for (const slot of fp.createSlots || []) {
+    if (!slot.slot) {
+      errors.push(error('FOOTPRINT_CREATE_SLOT_NAME_EMPTY', 'Footprint createSlot must have a slot name'));
+    }
+    if (!slot.kind) {
+      errors.push(error('FOOTPRINT_CREATE_KIND_EMPTY', `Footprint createSlot "${slot.slot || '<unnamed>'}" must declare a kind`));
+    }
+  }
+
+  for (const update of fp.updates || []) {
+    if (!update.slot) {
+      errors.push(error('FOOTPRINT_UPDATE_SLOT_EMPTY', 'Footprint update must declare a slot'));
+    }
+    if (!Array.isArray(update.fields) || update.fields.length === 0) {
+      errors.push(error('FOOTPRINT_UPDATE_FIELDS_EMPTY', `Footprint update "${update.slot || '<unnamed>'}" must declare at least one field`));
+    }
   }
 
   // Warn if creates without writes
