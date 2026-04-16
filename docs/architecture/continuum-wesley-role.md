@@ -33,6 +33,17 @@ for compiling authored families that define:
   focus is only known at execution time
 - types that cross Rust, TypeScript, WASM, process, or network boundaries
 
+Wesley should also grow a lawful observer compiler boundary:
+
+- app-authored observer specs for the optic's get side
+- compiled observer plans consumed by generic runtimes
+- observer-state codecs
+- reading/result codecs
+- hologram or frontier-adjacent envelope helpers
+
+The important distinction is that Wesley compiles the static observer law. It
+does not own hosted observer instance state at runtime.
+
 This does **not** mean Wesley owns the whole program. Echo, `git-warp`, and
 other consumers remain free to keep runtime internals and handwritten engine
 logic local. Wesley owns the shared lawful boundary that those engines consume.
