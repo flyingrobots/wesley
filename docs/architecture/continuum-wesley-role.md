@@ -23,6 +23,23 @@ other hidden source of truth. For the shared noun families it carries, Wesley
 validates schema, computes identity-bearing hashes, lowers contract shape into
 IR and manifests, and emits deterministic language-facing artifacts.
 
+For Continuum's graph and rewrite boundary, this means Wesley is responsible
+for compiling authored families that define:
+
+- graph entities such as nodes and edges
+- graph rewrite declarations
+- declared footprints and capability boundaries
+- types that cross Rust, TypeScript, WASM, process, or network boundaries
+
+This does **not** mean Wesley owns the whole program. Echo, `git-warp`, and
+other consumers remain free to keep runtime internals and handwritten engine
+logic local. Wesley owns the shared lawful boundary that those engines consume.
+
+The intended enforcement story is capability-bounded code generation, not
+post-hoc narration. When a rewrite declares one footprint, Wesley's generated
+surfaces should make that honesty explicit enough that dishonest use becomes
+auditable or a compile-time failure rather than a convention.
+
 Current repo-visible evidence:
 
 - `schemas/ttd-protocol.graphql`
