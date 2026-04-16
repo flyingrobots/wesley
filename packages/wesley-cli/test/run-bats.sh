@@ -10,6 +10,15 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 export WESLEY_REPO_ROOT="$REPO_ROOT"
 cd "$SCRIPT_DIR/.."
 
+# Git hooks export repo-local GIT_* variables. The CLI bats suite creates
+# nested temp repos and temp non-repo workspaces, so inherited hook git state
+# will poison those tests unless we clear it first.
+while IFS='=' read -r name _; do
+    if [[ "$name" == GIT_* ]]; then
+        unset "$name"
+    fi
+done < <(env)
+
 # Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'

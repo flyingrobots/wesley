@@ -42,6 +42,10 @@ write_holmes_policy() {
     }
   }
 }
+
+git_without_hook_env() {
+  env -u GIT_DIR -u GIT_WORK_TREE -u GIT_PREFIX -u GIT_INDEX_FILE -u GIT_OBJECT_DIRECTORY -u GIT_ALTERNATE_OBJECT_DIRECTORIES -u GIT_COMMON_DIR git "$@"
+}
 JSON
 }
 
@@ -95,16 +99,16 @@ JSON
 
   local dirty_repo="$TEST_TEMP_DIR/outer-repo"
   mkdir -p "$dirty_repo"
-  git -C "$dirty_repo" init -q
-  git -C "$dirty_repo" config user.email "test@example.com"
-  git -C "$dirty_repo" config user.name "Test User"
+  git_without_hook_env -C "$dirty_repo" init -q
+  git_without_hook_env -C "$dirty_repo" config user.email "test@example.com"
+  git_without_hook_env -C "$dirty_repo" config user.name "Test User"
   echo "tracked" > "$dirty_repo/tracked.txt"
-  git -C "$dirty_repo" add tracked.txt
-  git -C "$dirty_repo" commit -qm "init"
+  git_without_hook_env -C "$dirty_repo" add tracked.txt
+  git_without_hook_env -C "$dirty_repo" commit -qm "init"
   echo "dirty" >> "$dirty_repo/tracked.txt"
 
   local git_dir
-  git_dir="$(git -C "$dirty_repo" rev-parse --absolute-git-dir)"
+  git_dir="$(git_without_hook_env -C "$dirty_repo" rev-parse --absolute-git-dir)"
 
   run env \
     GIT_DIR="$git_dir" \
@@ -120,16 +124,16 @@ JSON
 
   local dirty_repo="$TEST_TEMP_DIR/outer-counterfactual-repo"
   mkdir -p "$dirty_repo"
-  git -C "$dirty_repo" init -q
-  git -C "$dirty_repo" config user.email "test@example.com"
-  git -C "$dirty_repo" config user.name "Test User"
+  git_without_hook_env -C "$dirty_repo" init -q
+  git_without_hook_env -C "$dirty_repo" config user.email "test@example.com"
+  git_without_hook_env -C "$dirty_repo" config user.name "Test User"
   echo "tracked" > "$dirty_repo/tracked.txt"
-  git -C "$dirty_repo" add tracked.txt
-  git -C "$dirty_repo" commit -qm "init"
+  git_without_hook_env -C "$dirty_repo" add tracked.txt
+  git_without_hook_env -C "$dirty_repo" commit -qm "init"
   echo "dirty" >> "$dirty_repo/tracked.txt"
 
   local git_dir
-  git_dir="$(git -C "$dirty_repo" rev-parse --absolute-git-dir)"
+  git_dir="$(git_without_hook_env -C "$dirty_repo" rev-parse --absolute-git-dir)"
 
   run env \
     GIT_DIR="$git_dir" \
