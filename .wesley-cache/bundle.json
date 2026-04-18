@@ -1,0 +1,24 @@
+{
+  "sha": "abcdef1234567890abcdef1234567890abcdef12",
+  "timestamp": "2026-03-20T00:00:00.000Z",
+  "bundleVersion": "1.0.0",
+  "evidence": {
+    "evidence": {
+      "artifact:out/schema.sql": {
+        "sql": [
+          {
+            "file": "out/schema.sql",
+            "lines": "1-1"
+          }
+        ]
+      }
+    }
+  },
+  "scores": {
+    "scores": {
+      "scs": 0.5,
+      "tci": 0.4,
+      "mri": 0.2
+    }
+  }
+}
