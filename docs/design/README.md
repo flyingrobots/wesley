@@ -13,3 +13,5 @@ Current packets:
 - [`0004`](./0004-realization-admission-and-witness/realization-admission-and-witness.md): Realization admission and witness
 - [`0005`](./0005-continuum-contract-bundle-release-and-sync/continuum-contract-bundle-release-and-sync.md): Continuum contract bundle release and sync
 - [`0006`](./0006-warpspace-workspace-resolution/warpspace-workspace-resolution.md): WARPspace workspace resolution
+- [`0007`](./0007-observer-spec-and-plan/observer-spec-and-plan.md): Observer spec and plan
+- [`0008`](./0008-causal-suffix-bundle-family-and-runtime-sync/causal-suffix-bundle-family-and-runtime-sync.md): Causal suffix bundle family and runtime sync
