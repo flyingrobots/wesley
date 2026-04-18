@@ -63,6 +63,7 @@
       "name": "appState",
       "op_id": 190543078,
       "args": [],
+      "footprint": null,
       "result_type": "AppState",
       "result_required": true,
       "result_list": false
@@ -79,6 +80,7 @@
           "list": false
         }
       ],
+      "footprint": null,
       "result_type": "AppState",
       "result_required": true,
       "result_list": false
@@ -88,6 +90,7 @@
       "name": "toggleNav",
       "op_id": 3272403183,
       "args": [],
+      "footprint": null,
       "result_type": "AppState",
       "result_required": true,
       "result_list": false
