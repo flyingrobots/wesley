@@ -13,7 +13,7 @@ title: "Causal Suffix Bundle Family And Runtime Sync"
 
 Wesley grows an explicit compiler/publication boundary for the shared
 `CausalSuffixBundle` family so Echo and `git-warp` can exchange witnessed
-causal suffixes over one logical graph without pretending synchronization is
+causal suffixes over one shared witnessed causal history without pretending synchronization is
 state replication.
 
 ## Scope Hard Condition
@@ -32,7 +32,8 @@ following without folklore:
 
 The stack now has two complementary doctrines:
 
-- Continuum promises one graph across multiple runtime temperatures
+- Continuum promises one shared witnessed causal history across multiple runtime
+  temperatures
 - Echo and `git-warp` should exchange witnessed causal suffixes rather than
   synchronized state
 
