@@ -16,7 +16,7 @@
     "@electric-sql/pglite": "^0.3.14",
     "@mantine/code-highlight": "^8.3.10",
     "@mantine/core": "^8.3.10",
-    "@mantine/hooks": "^8.3.10",
+    "@mantine/hooks": "^9.0.2",
     "@mantine/modals": "^8.3.10",
     "@mantine/notifications": "^8.3.10",
     "@mantine/tiptap": "^8.3.10",
