@@ -68,6 +68,15 @@ const mixedSDL = /* GraphQL */ `
   type Query { sprite: Sprite! }
 `;
 
+const hashSDL = /* GraphQL */ `
+  scalar Hash
+  type HashedArtifact {
+    digest: Hash!
+    label: String!
+  }
+  type Query { artifact: HashedArtifact! }
+`;
+
 // ---------------------------------------------------------------------------
 // Helper to get the TS codec content from a full generation
 // ---------------------------------------------------------------------------
@@ -242,6 +251,12 @@ describe('Enum encoding', () => {
     expect(ts).toContain("case 1: value = 'ARCHIVED'; break;");
     expect(ts).toContain("case 2: value = 'DRAFT'; break;");
   });
+
+  it('emits an internal enum helper so object codecs do not call undefined functions', async () => {
+    const ts = await getTsCodec(mixedSDL);
+    expect(ts).toContain('function _encodeColor(buf: number[], value: Color): void {');
+    expect(ts).toContain('_encodeColor(buf, value.color);');
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -322,6 +337,20 @@ describe('Type interfaces generated', () => {
     expect(ts).toContain('label: string;');
     expect(ts).toContain('ratio: number;');
     expect(ts).toContain('uid: string;');
+  });
+
+  it('maps Hash custom scalars to string in TypeScript interfaces', async () => {
+    const ts = await getTsCodec(hashSDL);
+    expect(ts).toContain('export interface HashedArtifact {');
+    expect(ts).toContain('digest: string;');
+  });
+});
+
+describe('Hash scalar encoding', () => {
+  it('treats Hash custom scalars like strings in encode/decode helpers', async () => {
+    const ts = await getTsCodec(hashSDL);
+    expect(ts).toContain('_encodeString(buf, value.digest);');
+    expect(ts).toContain('const digest = _decodeString(bytes, off);');
   });
 });
 

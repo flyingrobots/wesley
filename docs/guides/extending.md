@@ -51,7 +51,7 @@ class MyPlugin extends GeneratorPlugin {
 1. **Pure generate()** — Return `Record<string, string|Uint8Array>`. The runner's caller writes files.
 2. **Plan is enforced** — `plan()` must return an `artifacts` array with `path` strings. Undeclared artifact paths in generate output trigger a warning.
 3. **Duck typing** — You can use a plain object instead of extending the class. `validatePlugin()` checks shape, not `instanceof`.
-4. **Frozen context** — The `PluginContext` passed to `plan()` and `generate()` is `Object.freeze()`'d. It contains `{ logger, clock, config, runId }`.
+4. **Frozen context** — The `PluginContext` passed to `plan()` and `generate()` is `Object.freeze()`'d. It contains `{ logger, clock, config, runId, emission }`, and `emission.outDir` is the explicit place to read output routing.
 5. **apiVersion** — Must be an exact string from `SUPPORTED_API_VERSIONS` (currently `"1"`). Numbers and semver strings are rejected with actionable error messages.
 
 ### Running Plugins
@@ -79,4 +79,3 @@ const { results, success, totalArtifacts, runId } = await runner.run([plugin], s
 ### Example: EchoPlugin
 
 See `packages/wesley-generator-echo/src/EchoPlugin.mjs` for a real-world adapter that wraps the existing `generateEcho()` function in the plugin contract.
-

@@ -17,7 +17,7 @@ export class LegacySupabaseGeneratorPlugin extends GeneratorPlugin {
     return LEGACY_SUPABASE_TRANSMUTATION;
   }
 
-  async plan(schema) {
+  async plan(schema, context) {
     const ir = schema?.ir;
     if (!ir || !Array.isArray(ir.tables)) {
       throw new Error('LegacySupabaseGeneratorPlugin requires schema.ir');
@@ -40,7 +40,7 @@ export class LegacySupabaseGeneratorPlugin extends GeneratorPlugin {
       metadata: {
         ir,
         enableRls: this._enableRls,
-        outDir: schema?.outputDir || 'out'
+        outDir: context?.emission?.outDir || 'out'
       }
     };
   }
@@ -97,13 +97,14 @@ async function mergeEmitted(targetFiles, targetEvidence, emittedPromise) {
   }
 }
 
-export function flattenTransmutationArtifacts(runResult) {
-  const artifacts = [];
-  for (const result of runResult?.results || []) {
-    if (result.status !== 'ok' || !result.artifacts) continue;
-    for (const [name, content] of Object.entries(result.artifacts)) {
-      artifacts.push({ name, content });
+export function legacySupabaseScoringOptions() {
+  return {
+    scs: {
+      artifactGroups: {
+        sql: ['sql'],
+        tests: ['test']
+      },
+      rollupGroups: ['sql']
     }
-  }
-  return artifacts;
+  };
 }

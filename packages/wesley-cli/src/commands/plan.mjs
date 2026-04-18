@@ -7,7 +7,9 @@ import { buildOutputPathMap, resolveFilePath } from '../utils/output-paths.mjs';
 import { buildAdditivePlan, explainPlan, emitMigrations } from './_migration-plan.mjs';
 import { assertValid } from '../framework/schemaValidator.mjs';
 import { WesleyError } from '@wesley/core';
+import { formatTransmutationChoices, getDefaultTransmutationName } from '../transmutations/registry.mjs';
 import { resolveRunMetadata } from '../utils/run-metadata.mjs';
+import { resolveSchemaIr } from '../utils/schema-ir-cache.mjs';
 import {
   applyResumeMetadata,
   assertResumeRequestedRunId,
@@ -28,6 +30,7 @@ import {
   emitSourcesResolved,
   isInjectedCrash
 } from '../utils/runtime-events.mjs';
+import { buildGitDiscoveryEnv } from '../utils/git-env.mjs';
 
 export class PlanCommand extends WesleyCommand {
   constructor(ctx) {
@@ -44,7 +47,7 @@ export class PlanCommand extends WesleyCommand {
       .option('--radar', 'Show lock radar summary')
       .option('--map', 'Show mapping from GraphQL/IR changes to migration steps')
       .option('--allow-dirty', 'Allow running with a dirty git working tree (not recommended)')
-      .option('--transmutation <name>', 'Transmutation to associate with this plan', 'legacy-supabase')
+      .option('--transmutation <name>', `Transmutation to associate with this plan (${formatTransmutationChoices()})`, getDefaultTransmutationName())
       .option('--run-id <id>', 'Associate this plan with a specific run ID')
       .option('--resume', 'Resume a previously started plan run with the same transmutation and run ID')
       .option('--write', 'Write migration files to out-dir/migrations')
@@ -84,9 +87,17 @@ export class PlanCommand extends WesleyCommand {
     }
 
     try {
-      const current = this.ctx.parsers.graphql.parse(schemaContent);
+      const currentResolution = await resolveSchemaIr({
+        ctx: this.ctx,
+        schemaContent,
+        schemaPath,
+        units: context.units,
+        logger
+      });
+      const current = currentResolution.ir;
       emitIrParsed(eventCollector, scope, {
-        tableCount: Array.isArray(current?.tables) ? current.tables.length : 0
+        tableCount: Array.isArray(current?.tables) ? current.tables.length : 0,
+        cacheStatus: currentResolution.cacheStatus
       });
 
       let previous = { tables: [] };
@@ -259,9 +270,14 @@ function shouldEnforceCleanPlan(env) {
   return policy === 'strict';
 }
 async function assertCleanGit(shell) {
+  const gitEnv = buildGitDiscoveryEnv();
   if (!shell?.exec) return;
-  try { await shell.exec('git rev-parse --is-inside-work-tree'); } catch { return; }
-  const out = (await shell.exec('git status --porcelain'))?.stdout?.trim?.() || '';
+  try {
+    await shell.exec('git rev-parse --is-inside-work-tree', { env: gitEnv });
+  } catch {
+    return;
+  }
+  const out = (await shell.exec('git status --porcelain', { env: gitEnv }))?.stdout?.trim?.() || '';
   if (out) {
     throw new WesleyError('DIRTY_WORKTREE', 'Working tree has uncommitted changes. Commit or stash before running, or pass --allow-dirty.');
   }

@@ -143,7 +143,12 @@ export function parseFootprintDirective(directive) {
     reads: getArg(directive, 'reads') ?? [],
     writes: getArg(directive, 'writes') ?? [],
     creates: getArg(directive, 'creates') ?? [],
-    deletes: getArg(directive, 'deletes') ?? []
+    deletes: getArg(directive, 'deletes') ?? [],
+    slots: getArg(directive, 'slots') ?? [],
+    closures: getArg(directive, 'closures') ?? [],
+    createSlots: getArg(directive, 'createSlots') ?? [],
+    updates: getArg(directive, 'updates') ?? [],
+    forbids: getArg(directive, 'forbids') ?? []
   };
 }
 

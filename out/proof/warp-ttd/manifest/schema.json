@@ -1,0 +1,563 @@
+{
+  "channels": [],
+  "enums": [
+    {
+      "name": "DeliveryOutcome",
+      "values": [
+        "DELIVERED",
+        "SUPPRESSED",
+        "FAILED",
+        "SKIPPED"
+      ]
+    },
+    {
+      "name": "ExecutionMode",
+      "values": [
+        "LIVE",
+        "REPLAY",
+        "DEBUG"
+      ]
+    },
+    {
+      "name": "CapabilityScope",
+      "values": [
+        "READ",
+        "WRITE",
+        "CONTROL",
+        "OBSERVE",
+        "JUDGMENT"
+      ]
+    },
+    {
+      "name": "WitnessKind",
+      "values": [
+        "FOOTPRINT",
+        "COUNTERFACTUAL",
+        "REINTEGRATION",
+        "PRECONDITION"
+      ]
+    }
+  ],
+  "generatedAt": {},
+  "generatedBy": "@wesley/generator-ttd",
+  "hash": "16bf631145b60e0ec240f97484ff2cb5f534cd38c963cf12044985915766a602",
+  "invariants": [
+    {
+      "expr": "forall d in DeliveryObservation: exists r in Receipt: d.receiptId == r.receiptId",
+      "kind": "INVARIANT",
+      "name": "delivery_links_receipt",
+      "severity": "error"
+    },
+    {
+      "expr": "forall w in Witness: exists r in Receipt: w.receiptId == r.receiptId",
+      "kind": "INVARIANT",
+      "name": "witness_links_receipt",
+      "severity": "error"
+    },
+    {
+      "expr": "forall r in Receipt: r.inputTick >= 0",
+      "kind": "INVARIANT",
+      "name": "receipt_input_tick_non_negative",
+      "severity": "error"
+    },
+    {
+      "expr": "forall r in Receipt: r.outputTick >= 0",
+      "kind": "INVARIANT",
+      "name": "receipt_output_tick_non_negative",
+      "severity": "error"
+    }
+  ],
+  "ops": [
+    {
+      "args": [],
+      "idempotent": false,
+      "name": "capabilities",
+      "op_id": 847711509,
+      "readonly": true,
+      "resultType": "Capability",
+      "rules": []
+    },
+    {
+      "args": [
+        {
+          "list": false,
+          "name": "receiptId",
+          "required": true,
+          "type": "ID"
+        }
+      ],
+      "idempotent": false,
+      "name": "witnesses",
+      "op_id": 3804088302,
+      "readonly": true,
+      "resultType": "Witness",
+      "rules": []
+    },
+    {
+      "args": [
+        {
+          "list": false,
+          "name": "receiptId",
+          "required": false,
+          "type": "ID"
+        },
+        {
+          "list": false,
+          "name": "headId",
+          "required": false,
+          "type": "String"
+        },
+        {
+          "list": false,
+          "name": "frameIndex",
+          "required": false,
+          "type": "Int"
+        }
+      ],
+      "idempotent": false,
+      "name": "deliveryObservations",
+      "op_id": 3925137921,
+      "readonly": true,
+      "resultType": "DeliveryObservation",
+      "rules": []
+    },
+    {
+      "args": [
+        {
+          "list": false,
+          "name": "headId",
+          "required": false,
+          "type": "String"
+        },
+        {
+          "list": false,
+          "name": "frameIndex",
+          "required": false,
+          "type": "Int"
+        }
+      ],
+      "idempotent": false,
+      "name": "receipts",
+      "op_id": 4277194034,
+      "readonly": true,
+      "resultType": "Receipt",
+      "rules": []
+    }
+  ],
+  "rules": [],
+  "types": [
+    {
+      "fields": [
+        {
+          "list": false,
+          "name": "receiptId",
+          "required": true,
+          "stateField": {
+            "derived": false,
+            "key": true
+          },
+          "type": "ID"
+        },
+        {
+          "list": false,
+          "name": "headId",
+          "required": true,
+          "stateField": {
+            "derived": false,
+            "key": false
+          },
+          "type": "String"
+        },
+        {
+          "constraint": {
+            "min": 0
+          },
+          "list": false,
+          "name": "frameIndex",
+          "required": true,
+          "stateField": {
+            "derived": false,
+            "key": false
+          },
+          "type": "Int"
+        },
+        {
+          "list": false,
+          "name": "laneId",
+          "required": true,
+          "stateField": {
+            "derived": false,
+            "key": false
+          },
+          "type": "String"
+        },
+        {
+          "list": false,
+          "name": "writerId",
+          "required": false,
+          "stateField": {
+            "derived": false,
+            "key": false
+          },
+          "type": "String"
+        },
+        {
+          "constraint": {
+            "min": 0
+          },
+          "list": false,
+          "name": "inputTick",
+          "required": true,
+          "stateField": {
+            "derived": false,
+            "key": false
+          },
+          "type": "Int"
+        },
+        {
+          "constraint": {
+            "min": 0
+          },
+          "list": false,
+          "name": "outputTick",
+          "required": true,
+          "stateField": {
+            "derived": false,
+            "key": false
+          },
+          "type": "Int"
+        },
+        {
+          "constraint": {
+            "min": 0
+          },
+          "list": false,
+          "name": "admittedRewriteCount",
+          "required": true,
+          "stateField": {
+            "derived": false,
+            "key": false
+          },
+          "type": "Int"
+        },
+        {
+          "constraint": {
+            "min": 0
+          },
+          "list": false,
+          "name": "rejectedRewriteCount",
+          "required": true,
+          "stateField": {
+            "derived": false,
+            "key": false
+          },
+          "type": "Int"
+        },
+        {
+          "constraint": {
+            "min": 0
+          },
+          "list": false,
+          "name": "counterfactualCount",
+          "required": true,
+          "stateField": {
+            "derived": false,
+            "key": false
+          },
+          "type": "Int"
+        },
+        {
+          "list": false,
+          "name": "digest",
+          "required": true,
+          "stateField": {
+            "derived": false,
+            "key": false
+          },
+          "type": "Hash"
+        },
+        {
+          "list": false,
+          "name": "summary",
+          "required": true,
+          "stateField": {
+            "derived": false,
+            "key": false
+          },
+          "type": "String"
+        }
+      ],
+      "name": "Receipt",
+      "version": {
+        "major": 0,
+        "minor": 1,
+        "patch": 0
+      }
+    },
+    {
+      "fields": [
+        {
+          "list": false,
+          "name": "observationId",
+          "required": true,
+          "stateField": {
+            "derived": false,
+            "key": true
+          },
+          "type": "ID"
+        },
+        {
+          "list": false,
+          "name": "receiptId",
+          "required": true,
+          "stateField": {
+            "derived": false,
+            "key": false
+          },
+          "type": "ID"
+        },
+        {
+          "list": false,
+          "name": "emissionId",
+          "required": true,
+          "stateField": {
+            "derived": false,
+            "key": false
+          },
+          "type": "String"
+        },
+        {
+          "list": false,
+          "name": "headId",
+          "required": true,
+          "stateField": {
+            "derived": false,
+            "key": false
+          },
+          "type": "String"
+        },
+        {
+          "constraint": {
+            "min": 0
+          },
+          "list": false,
+          "name": "frameIndex",
+          "required": true,
+          "stateField": {
+            "derived": false,
+            "key": false
+          },
+          "type": "Int"
+        },
+        {
+          "list": false,
+          "name": "sinkId",
+          "required": true,
+          "stateField": {
+            "derived": false,
+            "key": false
+          },
+          "type": "String"
+        },
+        {
+          "list": false,
+          "name": "outcome",
+          "required": true,
+          "stateField": {
+            "derived": false,
+            "key": false
+          },
+          "type": "DeliveryOutcome"
+        },
+        {
+          "list": false,
+          "name": "reason",
+          "required": true,
+          "stateField": {
+            "derived": false,
+            "key": false
+          },
+          "type": "String"
+        },
+        {
+          "list": false,
+          "name": "observerId",
+          "required": false,
+          "stateField": {
+            "derived": false,
+            "key": false
+          },
+          "type": "String"
+        },
+        {
+          "list": false,
+          "name": "executionMode",
+          "required": true,
+          "stateField": {
+            "derived": false,
+            "key": false
+          },
+          "type": "ExecutionMode"
+        },
+        {
+          "list": false,
+          "name": "summary",
+          "required": true,
+          "stateField": {
+            "derived": false,
+            "key": false
+          },
+          "type": "String"
+        }
+      ],
+      "name": "DeliveryObservation",
+      "version": {
+        "major": 0,
+        "minor": 1,
+        "patch": 0
+      }
+    },
+    {
+      "fields": [
+        {
+          "list": false,
+          "name": "capabilityId",
+          "required": true,
+          "stateField": {
+            "derived": false,
+            "key": true
+          },
+          "type": "ID"
+        },
+        {
+          "list": false,
+          "name": "name",
+          "required": true,
+          "stateField": {
+            "derived": false,
+            "key": false
+          },
+          "type": "String"
+        },
+        {
+          "list": false,
+          "name": "scope",
+          "required": true,
+          "stateField": {
+            "derived": false,
+            "key": false
+          },
+          "type": "CapabilityScope"
+        },
+        {
+          "list": false,
+          "name": "resource",
+          "required": true,
+          "stateField": {
+            "derived": false,
+            "key": false
+          },
+          "type": "String"
+        },
+        {
+          "list": false,
+          "name": "description",
+          "required": false,
+          "stateField": {
+            "derived": false,
+            "key": false
+          },
+          "type": "String"
+        }
+      ],
+      "name": "Capability",
+      "version": {
+        "major": 0,
+        "minor": 1,
+        "patch": 0
+      }
+    },
+    {
+      "fields": [
+        {
+          "list": false,
+          "name": "witnessId",
+          "required": true,
+          "stateField": {
+            "derived": false,
+            "key": true
+          },
+          "type": "ID"
+        },
+        {
+          "list": false,
+          "name": "receiptId",
+          "required": true,
+          "stateField": {
+            "derived": false,
+            "key": false
+          },
+          "type": "ID"
+        },
+        {
+          "list": false,
+          "name": "kind",
+          "required": true,
+          "stateField": {
+            "derived": false,
+            "key": false
+          },
+          "type": "WitnessKind"
+        },
+        {
+          "list": false,
+          "name": "residueHash",
+          "required": true,
+          "stateField": {
+            "derived": false,
+            "key": false
+          },
+          "type": "Hash"
+        },
+        {
+          "list": false,
+          "name": "footprint",
+          "required": false,
+          "stateField": {
+            "derived": false,
+            "key": false
+          },
+          "type": "String"
+        },
+        {
+          "list": false,
+          "name": "summary",
+          "required": true,
+          "stateField": {
+            "derived": false,
+            "key": false
+          },
+          "type": "String"
+        }
+      ],
+      "name": "Witness",
+      "version": {
+        "major": 0,
+        "minor": 1,
+        "patch": 0
+      }
+    },
+    {
+      "fields": [
+        {
+          "list": false,
+          "name": "_placeholder",
+          "required": false,
+          "type": "Boolean"
+        }
+      ],
+      "name": "ContinuumReceiptFamilyInvariants"
+    }
+  ],
+  "version": "1.0.0"
+}

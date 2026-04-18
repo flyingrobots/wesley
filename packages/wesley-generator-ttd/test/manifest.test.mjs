@@ -116,6 +116,88 @@ describe('TTD Manifest Generator', () => {
       );
       expect(incrementEmission.withinMs).toBe(100);
     });
+
+    it('includes structured footprint fields when present', () => {
+      const schema = extract(`
+        type BufferWorldline { id: ID! }
+        type RopeHead { id: ID! }
+        type RopeBranch { id: ID! }
+        type RopeLeaf { id: ID! }
+        type TextBlob { id: ID! }
+        type Tick { id: ID! }
+        type TickReceipt { id: ID! }
+        type ReplaceRangeAsTickResult { id: ID! }
+
+        type Mutation {
+          replaceRangeAsTick(
+            worldlineId: ID!
+            baseHeadId: ID!
+            startByte: Int!
+            endByte: Int!
+            insertText: String!
+          ): ReplaceRangeAsTickResult!
+            @wes_op(name: "replaceRangeAsTick")
+            @wes_footprint(
+              reads: ["BufferWorldline", "RopeHead"]
+              writes: ["BufferWorldline"]
+              slots: [
+                { slot: "worldline", kind: "BufferWorldline", bindFromArg: "worldlineId", access: [READ, WRITE] }
+                { slot: "baseHead", kind: "RopeHead", bindFromArg: "baseHeadId", access: [READ] }
+              ]
+              closures: [
+                { slot: "touchedRope", fromSlot: "baseHead", operator: "ropeRangeClosure", argBindings: ["startByte", "endByte"], reads: ["RopeBranch", "RopeLeaf", "TextBlob"], cardinality: MANY }
+              ]
+              createSlots: [
+                { slot: "tick", kind: "Tick" }
+              ]
+              updates: [
+                { slot: "worldline", fields: ["canonicalHead"] }
+              ]
+              forbids: ["AstState", "Diagnostics"]
+            )
+        }
+      `);
+      const contractsJson = generateContractsJson(schema);
+      const fp = contractsJson.footprints.find(f => f.opName === 'replaceRangeAsTick');
+
+      expect(fp.slots).toEqual([
+        {
+          slot: 'worldline',
+          kind: 'BufferWorldline',
+          bindFromArg: 'worldlineId',
+          bindFromSlot: undefined,
+          bindRelation: undefined,
+          access: ['READ', 'WRITE'],
+          cardinality: 'ONE'
+        },
+        {
+          slot: 'baseHead',
+          kind: 'RopeHead',
+          bindFromArg: 'baseHeadId',
+          bindFromSlot: undefined,
+          bindRelation: undefined,
+          access: ['READ'],
+          cardinality: 'ONE'
+        }
+      ]);
+      expect(fp.closures).toEqual([
+        {
+          slot: 'touchedRope',
+          fromSlot: 'baseHead',
+          operator: 'ropeRangeClosure',
+          argBindings: ['endByte', 'startByte'],
+          reads: ['RopeBranch', 'RopeLeaf', 'TextBlob'],
+          cardinality: 'MANY'
+        }
+      ]);
+      expect(fp.createSlots).toEqual([
+        { slot: 'tick', kind: 'Tick', cardinality: 'ONE' }
+      ]);
+      expect(fp.updates).toEqual([
+        { slot: 'worldline', fields: ['canonicalHead'] }
+      ]);
+      expect(fp.forbids).toEqual(['AstState', 'Diagnostics']);
+    });
   });
 
   describe('generateManifest', () => {

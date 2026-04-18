@@ -57,7 +57,8 @@ graph LR
 |---------|---------|--------------|--------------|
 | `@wesley/core` | Domain logic, pure functions | None | Models, Events, Commands, Ports |
 | `@wesley/host-node` | Node.js implementations | GraphQL, fs, @wesley/core | Adapters, Parsers, Generators |
-| `@wesley/cli` | Command-line interface | Commander, @wesley/core, @wesley/host-node | Commands, Event handlers |
+| `@wesley/cli` | Command-line interface | Commander, @wesley/core, @wesley/host-node, @wesley/continuum | Commands, Event handlers |
+| `@wesley/continuum` | Continuum-specific contract and judgment profile | @wesley/core | Scope defaults, publication boundaries, Holmes/Watson/Moriarty behavior |
 | `@wesley/templates` | Code generation templates | None | Handlebars templates, patterns |
 
 ## Hexagonal Architecture Deep Dive

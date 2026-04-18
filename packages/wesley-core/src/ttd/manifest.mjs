@@ -11,6 +11,14 @@ import { hashType, hashOp, hashChannel, canonicalizeObject } from './hasher.mjs'
 import { systemClock } from '../ports/clock.mjs';
 import { defaultCrypto } from '../ports/crypto.mjs';
 
+function canonicalStringList(values = []) {
+  return [...values].sort();
+}
+
+function canonicalizeObjectList(values = []) {
+  return canonicalizeObject(values);
+}
+
 /**
  * Generate schema.json
  * @param {object} schema - The TTD schema
@@ -106,7 +114,34 @@ export function generateContractsJson(schema) {
       reads: f.reads,
       writes: f.writes,
       creates: f.creates,
-      deletes: f.deletes
+      deletes: f.deletes,
+      slots: canonicalizeObjectList((f.slots ?? []).map((slot) => canonicalizeObject({
+        slot: slot.slot,
+        kind: slot.kind,
+        bindFromArg: slot.bindFromArg,
+        bindFromSlot: slot.bindFromSlot,
+        bindRelation: slot.bindRelation,
+        access: canonicalStringList(slot.access ?? []),
+        cardinality: slot.cardinality ?? 'ONE'
+      }))),
+      closures: canonicalizeObjectList((f.closures ?? []).map((closure) => canonicalizeObject({
+        slot: closure.slot,
+        fromSlot: closure.fromSlot,
+        operator: closure.operator,
+        argBindings: canonicalStringList(closure.argBindings ?? []),
+        reads: canonicalStringList(closure.reads ?? []),
+        cardinality: closure.cardinality ?? 'MANY'
+      }))),
+      createSlots: canonicalizeObjectList((f.createSlots ?? []).map((slot) => canonicalizeObject({
+        slot: slot.slot,
+        kind: slot.kind,
+        cardinality: slot.cardinality ?? 'ONE'
+      }))),
+      updates: canonicalizeObjectList((f.updates ?? []).map((update) => canonicalizeObject({
+        slot: update.slot,
+        fields: canonicalStringList(update.fields ?? [])
+      }))),
+      forbids: canonicalStringList(f.forbids ?? [])
     })),
     stateMachines: stateMachines.map(sm => canonicalizeObject(sm))
   };

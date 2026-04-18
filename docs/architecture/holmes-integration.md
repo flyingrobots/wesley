@@ -257,6 +257,7 @@ Wesley and HOLMES are separate packages:
 @wesley/core        # Pure domain logic, zero dependencies
 @wesley/host-node   # Platform adapters (fs, graphql parser)
 @wesley/cli         # Main CLI for generation
+@wesley/continuum   # Continuum-specific profiles and witness policy
 @wesley/holmes      # Sidecar intelligence package
 ```
 

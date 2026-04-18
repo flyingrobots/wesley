@@ -1,4 +1,5 @@
 import { WesleyError } from '@wesley/core';
+import { withSanitizedGitEnv } from './git-env.mjs';
 import {
   analyzeCounterfactual,
   COUNTERFACTUAL_CURRENT_PATH,
@@ -28,7 +29,7 @@ export async function maybeAnalyzeCounterfactual({
     braidRefs: Array.isArray(options.counterfactualBraid) ? options.counterfactualBraid : []
   });
 
-  return analyzeCounterfactual({
+  return withSanitizedGitEnv(() => analyzeCounterfactual({
     repoRoot,
     lane,
     includeTransferPlan: true,
@@ -39,7 +40,7 @@ export async function maybeAnalyzeCounterfactual({
       schemaPath,
       transmutation
     }
-  });
+  }));
 }
 
 export async function readCurrentCounterfactualSummary(fs, path = COUNTERFACTUAL_CURRENT_PATH) {
@@ -73,4 +74,3 @@ export function assertCounterfactualGate(summary) {
   const reasons = Array.isArray(summary?.judgment?.reasons) ? summary.judgment.reasons.join(' ') : 'Counterfactual gate failed.';
   throw new WesleyError('COUNTERFACTUAL_GATE_FAILED', reasons);
 }
-

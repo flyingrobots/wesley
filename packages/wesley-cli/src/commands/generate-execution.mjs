@@ -11,11 +11,13 @@ import {
   generatedArtifactPathCandidates
 } from '@wesley/core';
 import {
-  LEGACY_SUPABASE_TRANSMUTATION,
-  LegacySupabaseGeneratorPlugin,
+  createTransmutationExecution,
+  getDefaultTransmutationName,
   flattenTransmutationArtifacts
-} from '../transmutations/legacy-supabase.mjs';
+} from '../transmutations/registry.mjs';
 import { writeSnapshotProjection } from '../utils/runtime-projections.mjs';
+import { buildGitDiscoveryEnv } from '../utils/git-env.mjs';
+import { resolveSchemaIr } from '../utils/schema-ir-cache.mjs';
 import {
   attachRunFailure,
   createCommandEventCollector,
@@ -42,7 +44,7 @@ export async function runSequentialGeneration({ ctx, context, compileOpsIfReques
   const debugDump = options.printComposedSdl || options.printIr;
   const { writer } = ctx;
   const commandName = options.commandName || 'generate';
-  const transmutation = options.transmutation || LEGACY_SUPABASE_TRANSMUTATION;
+  const transmutation = options.transmutation || getDefaultTransmutationName();
   const runId = typeof options.runId === 'string' && options.runId.trim()
     ? options.runId.trim()
     : createRunId();
@@ -86,9 +88,14 @@ export async function runSequentialGeneration({ ctx, context, compileOpsIfReques
     }
   }
 
-  let ir = context.units
-    ? ctx.parsers.graphql.parseComposed(context.units)
-    : ctx.parsers.graphql.parse(schemaContent, { filename: schemaPath });
+  const irResolution = await resolveSchemaIr({
+    ctx,
+    schemaContent,
+    schemaPath,
+    units: context.units,
+    logger
+  });
+  let ir = irResolution.ir;
 
   const unitFilter = options.unit
     ? options.unit.flatMap(u => u.split(',')).map(s => s.trim()).filter(Boolean)
@@ -98,7 +105,8 @@ export async function runSequentialGeneration({ ctx, context, compileOpsIfReques
   }
   emitIrParsed(eventCollector, scope, {
     tableCount: Array.isArray(ir?.tables) ? ir.tables.length : 0,
-    unitFilterCount: unitFilter?.length ?? 0
+    unitFilterCount: unitFilter?.length ?? 0,
+    cacheStatus: irResolution.cacheStatus
   });
 
   if (options.printIr) {
@@ -124,7 +132,7 @@ export async function runSequentialGeneration({ ctx, context, compileOpsIfReques
     }
   }
   try {
-    const transmutationResult = await executeLegacySupabaseTransmutation({ ctx, context, ir, runId, eventCollector });
+    const transmutationResult = await executeSequentialTransmutation({ ctx, context, ir, runId, eventCollector });
     const artifacts = flattenTransmutationArtifacts(transmutationResult);
 
     if (!options.dryRun && writer?.writeFiles) {
@@ -215,7 +223,15 @@ export async function runTasksAndSlapsGeneration({ ctx, context, compileOpsIfReq
   }
 
   const handlers = {
-    parse_schema: async (n) => ({ ir: ctx.parsers.graphql.parse(n.args.sdl) }),
+    parse_schema: async (n) => ({
+      ir: (await resolveSchemaIr({
+        ctx,
+        schemaContent: n.args.sdl,
+        schemaPath: context.schemaPath,
+        units: context.units,
+        logger
+      })).ir
+    }),
     validate_ir: async (_n, deps) => ({ ir: deps.parse.ir }),
     emit_ddl: async (_n, deps) => generators.sql.emitDDL(deps.validate.ir),
     emit_rls: async (_n, deps) => generators.sql.emitRLS(deps.validate.ir),
@@ -252,55 +268,34 @@ async function persistSnapshot({ ctx, ir, logger, dryRun }) {
   }
 }
 
-async function executeLegacySupabaseTransmutation({ ctx, context, ir, runId, eventCollector }) {
+async function executeSequentialTransmutation({ ctx, context, ir, runId, eventCollector }) {
   const { logger, options } = context;
-  const requestedTransmutation = options.transmutation || LEGACY_SUPABASE_TRANSMUTATION;
-  if (requestedTransmutation !== LEGACY_SUPABASE_TRANSMUTATION) {
-    throw new WesleyError(
-      'UNKNOWN_TRANSMUTATION',
-      `The current sequential runtime only supports transmutation "${LEGACY_SUPABASE_TRANSMUTATION}", got "${requestedTransmutation}".`
-    );
-  }
-  const plugin = new LegacySupabaseGeneratorPlugin({
-    generators: ctx.generators,
-    enableRls: options.supabase
-  });
+  const execution = createTransmutationExecution(options.transmutation, { ctx, context, ir, logger });
   const runner = new TransmutationRunner({
     logger,
     clock: createRunnerClock(ctx.clock),
-    config: {
-      paths: {
-        ...(ctx.config?.paths || {}),
-        outputDir: options.outDir
-      },
-      transmutation: {
-        name: LEGACY_SUPABASE_TRANSMUTATION,
-        supabase: Boolean(options.supabase)
-      }
-    }
+    config: execution.config
   });
 
   if (options.showPlan) {
-    const plan = runner.buildTaskGraph(LEGACY_SUPABASE_TRANSMUTATION, [plugin]);
-    logger.info({ transmutation: LEGACY_SUPABASE_TRANSMUTATION, plan }, 'Execution plan:');
+    const plan = runner.buildTaskGraph(execution.name, execution.plugins);
+    logger.info({ transmutation: execution.name, plan }, 'Execution plan:');
   }
 
-  const schema = {
-    sdl: context.schemaContent,
-    ir,
-    outputDir: options.outDir
-  };
   const sourceSha = await resolveSourceSha(ctx, logger);
 
   const result = await runner.run(
-    LEGACY_SUPABASE_TRANSMUTATION,
-    [plugin],
-    schema,
+    execution.name,
+    execution.plugins,
+    execution.schema,
     {
       runId,
       eventCollector,
       sha: sourceSha,
-      scoring: legacySupabaseScoringOptions()
+      emission: {
+        outDir: options.outDir
+      },
+      ...(execution.scoring ? { scoring: execution.scoring } : {})
     }
   );
 
@@ -325,25 +320,14 @@ function createRunnerClock(clock) {
 function transmutationFailure(result) {
   const failed = result?.results?.find(entry => entry.status === 'error');
   if (!failed) {
-    return new WesleyError('GENERATION_FAILED', `Transmutation "${result?.transmutation || LEGACY_SUPABASE_TRANSMUTATION}" failed`);
+    return new Error(`Transmutation "${result?.transmutation || 'unknown'}" failed`);
   }
 
-  return new WesleyError(
-    failed.errorCode || 'GENERATION_FAILED',
+  const error = new Error(
     `Transmutation "${result.transmutation}" failed in plugin "${failed.name}" during ${failed.phase}: ${failed.errorMessage}`
   );
-}
-
-function legacySupabaseScoringOptions() {
-  return {
-    scs: {
-      artifactGroups: {
-        sql: ['sql'],
-        tests: ['test']
-      },
-      rollupGroups: ['sql']
-    }
-  };
+  error.code = failed.errorCode || 'GENERATION_FAILED';
+  return error;
 }
 
 async function resolveSourceSha(ctx, logger) {
@@ -416,15 +400,16 @@ function shouldEnforceClean(env, options) {
 }
 
 async function assertCleanGit(shell) {
+  const gitEnv = buildGitDiscoveryEnv();
   try {
     const result = shell?.exec
-      ? await shell.exec('git rev-parse --is-inside-work-tree', { stdio: 'ignore' })
-      : shell?.execSync?.('git rev-parse --is-inside-work-tree', { stdio: 'ignore' });
+      ? await shell.exec('git rev-parse --is-inside-work-tree', { stdio: 'ignore', env: gitEnv })
+      : shell?.execSync?.('git rev-parse --is-inside-work-tree', { stdio: 'ignore', env: gitEnv });
     if (!result && !shell?.exec && !shell?.execSync) return;
   } catch {
     return;
   }
-  const out = (await shell?.exec?.('git status --porcelain'))?.stdout?.trim?.() || '';
+  const out = (await shell?.exec?.('git status --porcelain', { env: gitEnv }))?.stdout?.trim?.() || '';
   if (out.length > 0) {
     throw new WesleyError('DIRTY_WORKTREE', 'Working tree has uncommitted changes. Commit or stash before running, or pass --allow-dirty.');
   }

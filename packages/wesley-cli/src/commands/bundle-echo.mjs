@@ -1,10 +1,12 @@
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import { WesleyError, schemaHash } from '@wesley/core';
 import { canonicalizeSchemaPath, joinPath } from './path-utils.mjs';
+import { resolveWarpspaceOutputDir } from '../utils/warpspace.mjs';
 
 const MOCK_WARP_COMMAND = 'deliveries';
 const HEAD_ID = 'head:wesley:continuum';
 const FRAME_INDEX = 0;
+const DEFAULT_ECHO_OUT_DIR = '.wesley-cache/continuum/local-inspect/echo';
 
 export class BundleEchoCommand extends WesleyCommand {
   constructor(ctx) {
@@ -22,9 +24,9 @@ export class BundleEchoCommand extends WesleyCommand {
       .option('--stdin', 'Read schema from stdin')
       .option(
         '-o, --out-dir <dir>',
-        'Output directory',
-        '.wesley-cache/continuum/local-inspect/echo'
+        'Output directory'
       )
+      .option('--warpspace <path>', 'Path to host-project WARPspace config')
       .option('--dry-run', 'Show what would be generated without writing files');
   }
 
@@ -33,7 +35,17 @@ export class BundleEchoCommand extends WesleyCommand {
       ctx: this.ctx,
       schemaContent: context.schemaContent,
       schemaPath: context.schemaPath,
-      options: context.options,
+      options: {
+        ...context.options,
+        outDir: await resolveWarpspaceOutputDir({
+          outputKeys: ['echo-ir', 'echo'],
+          explicitOutDir: context.options.outDir,
+          defaultOutDir: DEFAULT_ECHO_OUT_DIR,
+          cwd: process.cwd(),
+          env: this.ctx.env,
+          warpspacePath: context.options.warpspace
+        })
+      },
       logger: context.logger
     });
   }

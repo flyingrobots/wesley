@@ -1,5 +1,6 @@
 import { GeneratorCommand } from '../framework/GeneratorCommand.mjs';
 import { ModelGenerator } from '@wesley/generator-js';
+import { resolveSchemaIr } from '../utils/schema-ir-cache.mjs';
 
 export class ModelsCommand extends GeneratorCommand {
   constructor(ctx) {
@@ -13,9 +14,15 @@ export class ModelsCommand extends GeneratorCommand {
   }
 
   async executeCore(context) {
-    const { schemaContent, options, logger } = context;
+    const { schemaContent, schemaPath, units, options, logger } = context;
 
-    const ir = this.ctx.parsers.graphql.parse(schemaContent);
+    const { ir } = await resolveSchemaIr({
+      ctx: this.ctx,
+      schemaContent,
+      schemaPath,
+      units,
+      logger
+    });
 
     const generator = new ModelGenerator({
       target: options.target,
@@ -34,4 +41,3 @@ export class ModelsCommand extends GeneratorCommand {
     return result;
   }
 }
-

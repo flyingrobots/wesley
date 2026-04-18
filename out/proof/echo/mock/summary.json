@@ -1,0 +1,78 @@
+{
+  "kind": "wesley.echo-bundle.inspect.v1",
+  "schemaPath": "schema.graphql",
+  "canonicalSchemaPath": "/private/var/folders/1h/qn5740kx131g0sxvgv12vm_m0000gn/T/wesley-bats-XXXXXX.TeR1dx0nx7/schema.graphql",
+  "schemaHash": "16bf631145b60e0ec240f97484ff2cb5f534cd38c963cf12044985915766a602",
+  "outDir": "out/proof/echo",
+  "mockCommand": "deliveries",
+  "disclaimer": "This is a local inspect surface. The deliveries output is a mocked warp-ttd-style surface, not a claim about live runtime behavior.",
+  "echo": {
+    "artifactCount": 8,
+    "files": [
+      {
+        "path": "ir.json",
+        "size": 11881
+      },
+      {
+        "path": "ops.generated.ts",
+        "size": 1229
+      },
+      {
+        "path": "schemas.generated.ts",
+        "size": 2825
+      },
+      {
+        "path": "client.generated.ts",
+        "size": 6987
+      },
+      {
+        "path": "raw_le_codec.generated.rs",
+        "size": 13974
+      },
+      {
+        "path": "raw_le_codec.generated.ts",
+        "size": 16634
+      },
+      {
+        "path": "wasm_abi_codec.generated.rs",
+        "size": 14059
+      },
+      {
+        "path": "wasm_abi_codec.generated.ts",
+        "size": 12581
+      }
+    ],
+    "ir": {
+      "typeCount": 9,
+      "opCount": 4
+    },
+    "profile": {
+      "name": "app",
+      "targets": {
+        "ir": [
+          "ir.json"
+        ],
+        "typescript": [
+          "ops.generated.ts",
+          "schemas.generated.ts",
+          "client.generated.ts",
+          "raw_le_codec.generated.ts",
+          "wasm_abi_codec.generated.ts"
+        ],
+        "rust": [
+          "raw_le_codec.generated.rs",
+          "wasm_abi_codec.generated.rs"
+        ]
+      },
+      "artifact_count": 8
+    }
+  },
+  "mock": {
+    "command": "deliveries",
+    "outputPath": "out/proof/echo/mock/deliveries.jsonl",
+    "observationCount": 4,
+    "outcomes": {
+      "delivered": 4
+    }
+  }
+}

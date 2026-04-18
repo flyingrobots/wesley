@@ -28,8 +28,7 @@ test('LoweringEngine lowers IR into a domain schema and plugin envelope', async 
   const engine = new LoweringEngine();
   const lowered = await engine.lower({
     sdl: sampleSdl,
-    ir: sampleIr,
-    outputDir: 'out'
+    ir: sampleIr
   });
 
   assert.equal(lowered.ir, sampleIr);
@@ -40,7 +39,7 @@ test('LoweringEngine lowers IR into a domain schema and plugin envelope', async 
   assert.equal(typeof lowered.pluginSchema.getTables, 'function');
   assert.equal(lowered.pluginSchema.ir, sampleIr);
   assert.equal(lowered.pluginSchema.sdl, sampleSdl);
-  assert.equal(lowered.pluginSchema.outputDir, 'out');
+  assert.equal(lowered.pluginSchema.outputDir, undefined);
 });
 
 test('LoweringEngine can parse SDL when a parser is provided', async () => {

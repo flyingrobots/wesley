@@ -6,6 +6,7 @@
  */
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
+import { execFileSync } from 'node:child_process';
 
 const repo = process.env.GITHUB_REPOSITORY || '';
 const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '';
@@ -19,6 +20,25 @@ if (argv.includes('--help') || argv.includes('-h')) {
 
 function readJSON(p) { return JSON.parse(readFileSync(resolve(p), 'utf8')); }
 function has(hay, needle) { return hay.toLowerCase().includes(needle.toLowerCase()); }
+
+function readPriorProgressSnapshot() {
+  try {
+    const committed = execFileSync('git', ['show', 'HEAD:meta/progress.json'], {
+      cwd: process.cwd(),
+      encoding: 'utf8'
+    });
+    return JSON.parse(committed);
+  } catch {
+    // Fall through to working tree snapshot when HEAD does not have the file.
+  }
+
+  const currentPath = resolve('meta/progress.json');
+  try {
+    return JSON.parse(readFileSync(currentPath, 'utf8'));
+  } catch {
+    return null;
+  }
+}
 
 const SAFE_REPO_RE = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
 const SAFE_WORKFLOW_FILE_RE = /^[A-Za-z0-9_.-]+\.ya?ml$/;
@@ -163,18 +183,21 @@ function computeStageAndProgress(pkg, passRate, docs, milestones) {
 async function main() {
   const rows = [];
   const results = [];
+  const priorSnapshot = readPriorProgressSnapshot();
+  const priorByName = new Map((priorSnapshot?.results || []).map(entry => [entry.name, entry]));
 
   for (const p of cfg.packages) {
+    const prior = priorByName.get(p.name) || {};
     const docs = detectDocsSections(p.readme);
-    const passRate = await fetchWorkflowPassRate(p.ci);
+    const passRate = await fetchWorkflowPassRate(p.ci) ?? prior.passRate ?? null;
     const milestones = {
-      alpha: await fetchMilestoneRatioFor(p.name, 'Alpha'),
-      beta: await fetchMilestoneRatioFor(p.name, 'Beta')
+      alpha: await fetchMilestoneRatioFor(p.name, 'Alpha') ?? prior.milestones?.alpha ?? null,
+      beta: await fetchMilestoneRatioFor(p.name, 'Beta') ?? prior.milestones?.beta ?? null
     };
     const { stage, progress, next } = computeStageAndProgress(p, passRate, docs, milestones);
     // Try to read per-package coverage summary if present
     // Derive package base dir from readme path to avoid hardcoding
-    let coverage = null;
+    let coverage = prior.coverage ?? null;
     try {
       const baseDir = p.readme ? dirname(resolve(p.readme)) : null;
       if (baseDir) {

@@ -2,6 +2,13 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WesleyError } from '@wesley/core';
 import {
+  CONTINUUM_JUDGMENT_PROFILE,
+  RECEIPT_FAMILY_SCOPE,
+  SETTLEMENT_FAMILY_SCOPE,
+  buildContinuumPublicationBoundaryPlan,
+  resolveContinuumWitnessProfile
+} from '@wesley/continuum';
+import {
   DEFAULT_ECHO_REQUIRED_FILES,
   DEFAULT_TTD_REQUIRED_FILES,
   inspectEchoSurface,
@@ -12,10 +19,6 @@ import { inspectContinuumPublicationBoundary } from './continuum-publication-bou
 import { inspectReceiptFamilySurface } from './continuum-receipt-family-witness.mjs';
 import { inspectSettlementFamilySurface } from './continuum-settlement-family-witness.mjs';
 import { inspectRealizationManifest } from './realization-integrity.mjs';
-
-export const CURRENT_MINIMUM_SCOPE = 'current-minimum-shared-surface';
-export const RECEIPT_FAMILY_SCOPE = 'receipt-family';
-export const SETTLEMENT_FAMILY_SCOPE = 'settlement-family';
 
 const WITNESS_KIND = 'wesley.continuum.conformance.v1';
 const RECEIPT_FAMILY_FIXTURE_DIR = path.resolve(
@@ -28,96 +31,29 @@ const SETTLEMENT_FAMILY_FIXTURE_DIR = path.resolve(
 );
 
 export function resolveContinuumWitnessOptions(options) {
-  if (options.scope === CURRENT_MINIMUM_SCOPE) {
-    return {
-      scope: CURRENT_MINIMUM_SCOPE,
-      ttdSchemaPath: options.ttdSchema ?? 'schemas/ttd-protocol.graphql',
-      ttdDir: options.ttdDir ?? '.wesley-cache/continuum/local-inspect/ttd',
-      echoSchemaPath: options.echoSchema ?? 'schemas/echo-core-types.graphql',
-      echoDir: options.echoDir ?? '.wesley-cache/continuum/local-inspect/echo',
-      outputPath: options.out ?? '.wesley-cache/continuum/local-inspect/witness/conformance.json',
-      proves: [
-        'schema-to-artifact consistency for the current TTD and Echo minimum surfaces',
-        'manifest and source traceability for emitted local inspect outputs',
-        'fixture-level conformance for the mocked deliveries inspect surface',
-        'one explicit delivery-observation-versus-receipt separation case',
-        'one local publication-boundary anti-shadow check for the admitted current-minimum families'
-      ],
-      doesNotProve: [
-        'runtime policy correctness',
-        'storage semantics',
-        'debugger semantics',
-        'full Continuum completeness',
-        'the receipt-family proving lane',
-        'the settlement-family proving lane'
-      ],
-      receiptFamilyFixtureDir: null
-    };
-  }
-
-  if (options.scope === RECEIPT_FAMILY_SCOPE) {
-    const schemaPath = options.ttdSchema ?? options.echoSchema ?? 'schemas/continuum-receipt-family.graphql';
-    return {
-      scope: RECEIPT_FAMILY_SCOPE,
-      ttdSchemaPath: schemaPath,
-      ttdDir: options.ttdDir ?? '.wesley-cache/continuum/receipt-family/ttd',
-      echoSchemaPath: options.echoSchema ?? options.ttdSchema ?? 'schemas/continuum-receipt-family.graphql',
-      echoDir: options.echoDir ?? '.wesley-cache/continuum/receipt-family/echo',
-      outputPath: options.out ?? '.wesley-cache/continuum/receipt-family/witness/conformance.json',
-      proves: [
-        'schema-to-artifact consistency for the authored receipt-family TTD and Echo legs',
-        'fixture-level conformance for emitted family nouns, footprints, and invariants',
-        'cross-leg coherence for the shared family identity and compiled field boundaries',
-        'explicit receipt-versus-witness and delivery-versus-receipt separation cases',
-        'one local publication-boundary anti-shadow check for the authored receipt family'
-      ],
-      doesNotProve: [
-        'runtime policy correctness',
-        'storage semantics',
-        'debugger semantics',
-        'full Continuum completeness',
-        'observer or substrate semantics outside the authored receipt family'
-      ],
-      receiptFamilyFixtureDir: options.receiptFamilyFixtureDir ?? RECEIPT_FAMILY_FIXTURE_DIR
-    };
-  }
-
-  if (options.scope === SETTLEMENT_FAMILY_SCOPE) {
-    const schemaPath = options.ttdSchema ?? options.echoSchema ?? 'schemas/continuum-settlement-family.graphql';
-    return {
-      scope: SETTLEMENT_FAMILY_SCOPE,
-      ttdSchemaPath: schemaPath,
-      ttdDir: options.ttdDir ?? '.wesley-cache/continuum/settlement-family/ttd',
-      echoSchemaPath: options.echoSchema ?? options.ttdSchema ?? 'schemas/continuum-settlement-family.graphql',
-      echoDir: options.echoDir ?? '.wesley-cache/continuum/settlement-family/echo',
-      outputPath: options.out ?? '.wesley-cache/continuum/settlement-family/witness/conformance.json',
-      proves: [
-        'schema-to-artifact consistency for the authored settlement-family TTD and Echo legs',
-        'fixture-level conformance for emitted settlement nouns, operations, invariants, and footprints',
-        'cross-leg coherence for the shared settlement family identity and field boundaries',
-        'explicit import-candidate-versus-conflict-artifact separation',
-        'one local publication-boundary anti-shadow check for the authored settlement family'
-      ],
-      doesNotProve: [
-        'runtime settlement correctness',
-        'storage semantics',
-        'debugger semantics',
-        'full Continuum completeness',
-        'observer or substrate semantics outside the authored settlement family'
-      ],
-      receiptFamilyFixtureDir: null,
+  try {
+    return resolveContinuumWitnessProfile({
+      scope: options.scope,
+      schemaPath: options.schemaPath,
+      outDir: options.outDir,
+      ttdSchemaPath: options.ttdSchemaPath ?? options.ttdSchema,
+      ttdDir: options.ttdDir,
+      echoSchemaPath: options.echoSchemaPath ?? options.echoSchema,
+      echoDir: options.echoDir,
+      reportPath: options.outputPath ?? options.out,
+      receiptFamilyFixtureDir: options.receiptFamilyFixtureDir ?? RECEIPT_FAMILY_FIXTURE_DIR,
       settlementFamilyFixtureDir: options.settlementFamilyFixtureDir ?? SETTLEMENT_FAMILY_FIXTURE_DIR
-    };
-  }
-
-  throw new WesleyError(
-    'CONTINUUM_WITNESS_INVALID_SCOPE',
-    `Unsupported witness scope "${options.scope}". Expected "${CURRENT_MINIMUM_SCOPE}", "${RECEIPT_FAMILY_SCOPE}", or "${SETTLEMENT_FAMILY_SCOPE}".`,
-    {
-      requestedScope: options.scope,
-      supportedScopes: [CURRENT_MINIMUM_SCOPE, RECEIPT_FAMILY_SCOPE, SETTLEMENT_FAMILY_SCOPE]
+    });
+  } catch (error) {
+    if (error instanceof WesleyError && error.code === 'CONTINUUM_SCOPE_INVALID') {
+      throw new WesleyError(
+        'CONTINUUM_WITNESS_INVALID_SCOPE',
+        error.message.replace('Continuum scope', 'witness scope'),
+        error.meta
+      );
     }
-  );
+    throw error;
+  }
 }
 
 export async function buildContinuumWitnessReport({
@@ -166,7 +102,7 @@ export async function buildContinuumWitnessReport({
   const publicationBoundary = await inspectContinuumPublicationBoundary({
     fs,
     repoRoot,
-    rules: buildPublicationBoundaryRules({
+    ...buildContinuumPublicationBoundaryPlan({
       scope,
       ttdSchemaPath,
       ttdDir,
@@ -174,10 +110,11 @@ export async function buildContinuumWitnessReport({
       echoDir,
       realizationRoot,
       realizationManifest,
+      defaultTtdGeneratedArtifacts: DEFAULT_TTD_REQUIRED_FILES,
+      defaultEchoGeneratedArtifacts: DEFAULT_ECHO_REQUIRED_FILES,
       receiptFamilyFixtureDir,
       settlementFamilyFixtureDir
     }),
-    reservedRoots: buildPublicationBoundaryReservedRoots(scope),
     checks
   });
   const receiptFamily = scope === RECEIPT_FAMILY_SCOPE &&
@@ -214,6 +151,7 @@ export async function buildContinuumWitnessReport({
     scope,
     status: summary.failed === 0 ? 'pass' : 'fail',
     outputPath,
+    judgmentProfile: CONTINUUM_JUDGMENT_PROFILE,
     proves,
     doesNotProve,
     surfaces: {
@@ -230,130 +168,17 @@ export async function buildContinuumWitnessReport({
 }
 
 export { createCheck } from './continuum-witness-support.mjs';
-
-function buildPublicationBoundaryRules({
-  scope,
-  ttdSchemaPath,
-  ttdDir,
-  echoSchemaPath,
-  echoDir,
-  realizationRoot,
-  realizationManifest,
-  receiptFamilyFixtureDir,
-  settlementFamilyFixtureDir
-}) {
-  const ttdGeneratedArtifacts = resolveLegGeneratedArtifacts({
-    leg: realizationManifest?.generatedLegs?.warpTtd,
-    currentLegOutDir: ttdDir,
-    fallback: DEFAULT_TTD_REQUIRED_FILES
-  });
-  const echoGeneratedArtifacts = resolveLegGeneratedArtifacts({
-    leg: realizationManifest?.generatedLegs?.echo,
-    currentLegOutDir: echoDir,
-    fallback: DEFAULT_ECHO_REQUIRED_FILES
-  });
-  const realizationArtifactPaths = realizationRoot == null
-    ? []
-    : buildGeneratedArtifactPaths(realizationRoot, ['manifest.json']);
-
-  if (scope === CURRENT_MINIMUM_SCOPE) {
-    return [
-      {
-        id: 'ttd-protocol',
-        authoredHomes: [ttdSchemaPath],
-        generatedRoots: [ttdDir].concat(realizationRoot == null ? [] : [realizationRoot]),
-        compatRoots: [],
-        generatedArtifactPaths: buildGeneratedArtifactPaths(ttdDir, ttdGeneratedArtifacts)
-      },
-      {
-        id: 'echo-core-types',
-        authoredHomes: [echoSchemaPath],
-        generatedRoots: [echoDir].concat(realizationRoot == null ? [] : [realizationRoot]),
-        compatRoots: [],
-        generatedArtifactPaths: buildGeneratedArtifactPaths(echoDir, echoGeneratedArtifacts)
-      }
-    ];
-  }
-
-  if (scope === SETTLEMENT_FAMILY_SCOPE) {
-    return [
-      {
-        id: 'settlement-family',
-        authoredHomes: [ttdSchemaPath],
-        generatedRoots: [ttdDir, echoDir].concat(realizationRoot == null ? [] : [realizationRoot]),
-        compatRoots: [settlementFamilyFixtureDir, 'schemas/continuum-settlement-family.graphql'],
-        generatedArtifactPaths: [
-          ...buildGeneratedArtifactPaths(ttdDir, ttdGeneratedArtifacts),
-          ...buildGeneratedArtifactPaths(echoDir, echoGeneratedArtifacts),
-          ...realizationArtifactPaths
-        ]
-      }
-    ];
-  }
-
-  return [
-    {
-      id: 'receipt-family',
-      authoredHomes: [ttdSchemaPath],
-      generatedRoots: [ttdDir, echoDir].concat(realizationRoot == null ? [] : [realizationRoot]),
-      compatRoots: [receiptFamilyFixtureDir, 'schemas/continuum-receipt-family.graphql'],
-      generatedArtifactPaths: [
-        ...buildGeneratedArtifactPaths(ttdDir, ttdGeneratedArtifacts),
-        ...buildGeneratedArtifactPaths(echoDir, echoGeneratedArtifacts),
-        ...realizationArtifactPaths
-      ]
-    }
-  ];
-}
-
-function buildGeneratedArtifactPaths(rootDir, files) {
-  const rootSegment = normalizeSeparators(path.basename(rootDir));
-  return [...new Set(
-    files
-      .map((file) => normalizeGeneratedArtifactPath(file))
-      .filter(Boolean)
-      .map((file) => rootSegment.length === 0 ? file : `${rootSegment}/${file}`)
-  )].sort((left, right) => left.localeCompare(right));
-}
-
-function normalizeGeneratedArtifactPath(filePath) {
-  if (typeof filePath !== 'string' || filePath.trim().length === 0) {
-    return null;
-  }
-
-  return normalizeSeparators(filePath.trim()).replace(/^\.?\//, '');
-}
+export {
+  CURRENT_MINIMUM_SCOPE,
+  RECEIPT_FAMILY_SCOPE,
+  SETTLEMENT_FAMILY_SCOPE
+} from '@wesley/continuum';
 
 async function resolveRepoRoot(fs) {
   if (fs.resolve) {
     return fs.resolve('.');
   }
   return process.cwd();
-}
-
-function buildPublicationBoundaryReservedRoots(scope) {
-  if (scope === CURRENT_MINIMUM_SCOPE) {
-    return [
-      'test',
-      'packages/wesley-cli/test',
-      'packages/wesley-core/test',
-      'packages/wesley-generator-echo/test',
-      'packages/wesley-generator-ttd/test',
-      'test/fixtures/continuum/receipt-family',
-      'test/fixtures/continuum/settlement-family',
-      'schemas/continuum-receipt-family.graphql',
-      'schemas/continuum-settlement-family.graphql',
-      'schemas/directives.graphql'
-    ];
-  }
-
-  return [
-    'schemas/ttd-protocol.graphql',
-    'schemas/echo-core-types.graphql',
-    'schemas/continuum-receipt-family.graphql',
-    'schemas/continuum-settlement-family.graphql',
-    'schemas/directives.graphql'
-  ];
 }
 
 function resolveLegRequiredFiles({ leg, currentLegOutDir, fallback }) {

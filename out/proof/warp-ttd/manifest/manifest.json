@@ -1,0 +1,124 @@
+{
+  "channels": [],
+  "codecs": [
+    {
+      "canonical": true,
+      "format": "cbor",
+      "typeName": "Receipt"
+    },
+    {
+      "canonical": true,
+      "format": "cbor",
+      "typeName": "DeliveryObservation"
+    },
+    {
+      "canonical": true,
+      "format": "cbor",
+      "typeName": "Capability"
+    },
+    {
+      "canonical": true,
+      "format": "cbor",
+      "typeName": "Witness"
+    }
+  ],
+  "ops": [
+    {
+      "args": [],
+      "name": "capabilities",
+      "op_id": 847711509,
+      "resultType": "Capability",
+      "signatureHash": "04f5002947eb1e0cfd84dcd5601785c8e469ba59bc4b3a0339b4c2769e3e80b7"
+    },
+    {
+      "args": [
+        {
+          "list": false,
+          "name": "receiptId",
+          "required": true,
+          "type": "ID"
+        }
+      ],
+      "name": "witnesses",
+      "op_id": 3804088302,
+      "resultType": "Witness",
+      "signatureHash": "41d2de53c080dc4d5a4e941cbea7dec25cc0ffab667ccb65bb340a04e8e8f4d8"
+    },
+    {
+      "args": [
+        {
+          "list": false,
+          "name": "receiptId",
+          "required": false,
+          "type": "ID"
+        },
+        {
+          "list": false,
+          "name": "headId",
+          "required": false,
+          "type": "String"
+        },
+        {
+          "list": false,
+          "name": "frameIndex",
+          "required": false,
+          "type": "Int"
+        }
+      ],
+      "name": "deliveryObservations",
+      "op_id": 3925137921,
+      "resultType": "DeliveryObservation",
+      "signatureHash": "a2eb62de00f2fb093baea06df91639683a8526296d152f831132309eb7164d10"
+    },
+    {
+      "args": [
+        {
+          "list": false,
+          "name": "headId",
+          "required": false,
+          "type": "String"
+        },
+        {
+          "list": false,
+          "name": "frameIndex",
+          "required": false,
+          "type": "Int"
+        }
+      ],
+      "name": "receipts",
+      "op_id": 4277194034,
+      "resultType": "Receipt",
+      "signatureHash": "8c805c91e99ba74bd4e6fbf59456cbe2fec32ca2ff134ad725884ddef618df71"
+    }
+  ],
+  "registry": {
+    "entries": [
+      {
+        "deprecated": false,
+        "id": 100,
+        "typeHash": "cb3e40494bf7369afa1fd574c82cc03ee79232cab1815c20e748c238d4ed5ee0",
+        "typeName": "Receipt"
+      },
+      {
+        "deprecated": false,
+        "id": 101,
+        "typeHash": "a7f143a2422bd703efc46c480112730d35d6cf005368acf87a3afb37b7344a87",
+        "typeName": "DeliveryObservation"
+      },
+      {
+        "deprecated": false,
+        "id": 102,
+        "typeHash": "2b749133966963735bbeebfc4c081f0a7cefa75d9778f8f48e74be55197a4dee",
+        "typeName": "Capability"
+      },
+      {
+        "deprecated": false,
+        "id": 103,
+        "typeHash": "be485097621b0a36300b0126ac73ab20a6582f16d0d3369d242a9790d3f3efa3",
+        "typeName": "Witness"
+      }
+    ],
+    "version": 1
+  },
+  "schemaHash": "16bf631145b60e0ec240f97484ff2cb5f534cd38c963cf12044985915766a602"
+}

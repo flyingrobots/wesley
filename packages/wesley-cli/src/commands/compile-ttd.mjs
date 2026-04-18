@@ -9,6 +9,9 @@
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import { compileTtdProtocol } from '@wesley/core/ttd';
 import { WesleyError } from '@wesley/core';
+import { resolveWarpspaceOutputDir } from '../utils/warpspace.mjs';
+
+const DEFAULT_TTD_OUT_DIR = 'ttd-out';
 
 export class CompileTtdCommand extends WesleyCommand {
   constructor(ctx) {
@@ -20,7 +23,8 @@ export class CompileTtdCommand extends WesleyCommand {
     return cmd
       .option('-s, --schema <path>', 'GraphQL schema file with TTD directives. Use "-" for stdin', 'schema.graphql')
       .option('--stdin', 'Read schema from stdin')
-      .option('-o, --out-dir <dir>', 'Output directory', 'ttd-out')
+      .option('-o, --out-dir <dir>', 'Output directory')
+      .option('--warpspace <path>', 'Path to host-project WARPspace config')
       .option('-t, --target <targets>', 'Comma-separated targets: manifest, typescript, rust', 'manifest,typescript')
       .option('--dry-run', 'Show what would be generated without writing files')
       .option('--unit <units...>', 'Compilation unit IDs to generate for (repeatable or comma-separated)')
@@ -36,7 +40,17 @@ export class CompileTtdCommand extends WesleyCommand {
       schemaContent: context.schemaContent,
       schemaPath: context.schemaPath,
       units: context.units,
-      options: context.options,
+      options: {
+        ...context.options,
+        outDir: await resolveWarpspaceOutputDir({
+          outputKeys: ['warp-ttd', 'ttd'],
+          explicitOutDir: context.options.outDir,
+          defaultOutDir: DEFAULT_TTD_OUT_DIR,
+          cwd: process.cwd(),
+          env: this.ctx.env,
+          warpspacePath: context.options.warpspace
+        })
+      },
       logger: context.logger
     });
   }

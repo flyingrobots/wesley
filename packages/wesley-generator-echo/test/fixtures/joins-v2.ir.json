@@ -66,6 +66,7 @@
       "name": "game",
       "op_id": 278791367,
       "args": [],
+      "footprint": null,
       "result_type": "GameState",
       "result_required": true,
       "result_list": false

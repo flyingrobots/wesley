@@ -45,6 +45,10 @@ write_holmes_policy() {
 JSON
 }
 
+git_without_hook_env() {
+  env -u GIT_DIR -u GIT_WORK_TREE -u GIT_PREFIX -u GIT_INDEX_FILE -u GIT_OBJECT_DIRECTORY -u GIT_ALTERNATE_OBJECT_DIRECTORIES -u GIT_COMMON_DIR git "$@"
+}
+
 @test "blade help works" {
   run node "$CLI_PATH" blade --help
   assert_success
@@ -88,6 +92,57 @@ JSON
   json=$(sed -n '/```json/,/```/p' .wesley-cache/SHIPME.md | sed '1d;$d')
   echo "$json" | jq -e '.counterfactual.gate == "audit"' >/dev/null
   echo "$json" | jq -e '.counterfactual.wouldFail == true' >/dev/null
+}
+
+@test "blade ignores inherited git hook env when checking temp worktree cleanliness" {
+  create_min_schema
+
+  local dirty_repo="$TEST_TEMP_DIR/outer-repo"
+  mkdir -p "$dirty_repo"
+  git_without_hook_env -C "$dirty_repo" init -q
+  git_without_hook_env -C "$dirty_repo" config user.email "test@example.com"
+  git_without_hook_env -C "$dirty_repo" config user.name "Test User"
+  echo "tracked" > "$dirty_repo/tracked.txt"
+  git_without_hook_env -C "$dirty_repo" add tracked.txt
+  git_without_hook_env -C "$dirty_repo" commit -qm "init"
+  echo "dirty" >> "$dirty_repo/tracked.txt"
+
+  local git_dir
+  git_dir="$(git_without_hook_env -C "$dirty_repo" rev-parse --absolute-git-dir)"
+
+  run env \
+    GIT_DIR="$git_dir" \
+    GIT_WORK_TREE="$dirty_repo" \
+    GIT_PREFIX="" \
+    node "$CLI_PATH" blade --schema schema.graphql --out-dir out --dry-run --json --quiet
+  assert_success
+}
+
+@test "blade counterfactual ignores inherited git hook env" {
+  create_min_schema
+  write_holmes_policy audit
+
+  local dirty_repo="$TEST_TEMP_DIR/outer-counterfactual-repo"
+  mkdir -p "$dirty_repo"
+  git_without_hook_env -C "$dirty_repo" init -q
+  git_without_hook_env -C "$dirty_repo" config user.email "test@example.com"
+  git_without_hook_env -C "$dirty_repo" config user.name "Test User"
+  echo "tracked" > "$dirty_repo/tracked.txt"
+  git_without_hook_env -C "$dirty_repo" add tracked.txt
+  git_without_hook_env -C "$dirty_repo" commit -qm "init"
+  echo "dirty" >> "$dirty_repo/tracked.txt"
+
+  local git_dir
+  git_dir="$(git_without_hook_env -C "$dirty_repo" rev-parse --absolute-git-dir)"
+
+  run env \
+    GIT_DIR="$git_dir" \
+    GIT_WORK_TREE="$dirty_repo" \
+    GIT_PREFIX="" \
+    node "$CLI_PATH" blade --schema schema.graphql --out-dir out --dry-run --counterfactual main --json --quiet
+  assert_success
+  echo "$output" | jq -e '.result.stages.counterfactual.gate == "audit"' >/dev/null
+  echo "$output" | jq -e '.result.stages.counterfactual.wouldFail == true' >/dev/null
 }
 
 @test "blade counterfactual hard gate fails through judgment gate only" {

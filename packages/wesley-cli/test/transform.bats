@@ -63,6 +63,7 @@ EOF
   assert_failure 2
   assert_output --partial "UNKNOWN_TRANSMUTATION"
   assert_output --partial "legacy-supabase"
+  assert_output --partial "null-generator"
 }
 
 @test "transform --json failure preserves run envelope" {
