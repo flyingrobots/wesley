@@ -42,11 +42,11 @@ write_holmes_policy() {
     }
   }
 }
+JSON
+}
 
 git_without_hook_env() {
   env -u GIT_DIR -u GIT_WORK_TREE -u GIT_PREFIX -u GIT_INDEX_FILE -u GIT_OBJECT_DIRECTORY -u GIT_ALTERNATE_OBJECT_DIRECTORIES -u GIT_COMMON_DIR git "$@"
-}
-JSON
 }
 
 @test "blade help works" {
