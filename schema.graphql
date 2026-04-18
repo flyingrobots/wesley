@@ -1,3 +1,0 @@
-type User @wes_table {
-  id: ID! @wes_pk
-}
