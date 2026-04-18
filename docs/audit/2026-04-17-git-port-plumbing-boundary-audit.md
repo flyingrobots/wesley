@@ -3,7 +3,9 @@
 ## Scope
 
 This audit checks Wesley for direct `git` subprocess usage after establishing
-the `git-port-plumbing-boundary` invariant.
+the `git-port-plumbing-boundary` invariant. It also records the first set of
+Git-touching tests that must move behind the Dockerized hermetic lane required
+by `git-touching-tests-are-dockerized`.
 
 Command used:
 
@@ -52,6 +54,9 @@ ref resolution, and archive materialization.
 These helpers call `spawnSync('git', ...)` directly. Under a Git hook,
 inherited `GIT_DIR` can redirect those commits into the real repo even when the
 test thinks it is operating in `/tmp`.
+
+These tests now fall under the `git-touching-tests-are-dockerized` invariant
+and must not continue running directly on the host.
 
 ### 4. Repo tooling still shells out directly
 
@@ -106,5 +111,7 @@ These are not Holmes-specific. The invariant is repo-wide, so they count too.
   adapter
 - replace raw Git test helpers with fake ports or plumbing-backed temp repo
   helpers
+- Dockerize every remaining Git-touching test lane so host checkout safety does
+  not depend on perfect helper hygiene
 - strip inherited `GIT_*` variables at hook and test-runner boundaries until
   the cutover is complete
