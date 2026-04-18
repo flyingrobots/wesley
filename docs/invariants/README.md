@@ -7,6 +7,7 @@ contracts, and not personal taste.
 Wesley's current application invariants are:
 
 - [schema-source-of-truth](./schema-source-of-truth.md)
+- [git-port-plumbing-boundary](./git-port-plumbing-boundary.md)
 - [publication-boundary-truth](./publication-boundary-truth.md)
 - [realization-coherence](./realization-coherence.md)
 - [witness-scope-honesty](./witness-scope-honesty.md)
