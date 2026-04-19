@@ -21,37 +21,23 @@ Wesley is bigger than the Continuum lane. It also includes database-change tooli
 
 ## Layers
 
-### 1. Wesley Core
+### 0. Wesley Base Platform
 
-The pure compiler layer.
+The generic base platform.
 
-This layer is responsible for:
+This layer is project-agnostic. It provides the engines and entry points that modules and projects build on top of.
 
-- parsing authored GraphQL
-- lowering it into IR
-- running generator plugins
-- emitting target artifacts
-- writing outputs where the caller asked
+It includes:
 
-This layer should stay project-agnostic.
+- the Wesley compiler core
+- Holmes and Watson verification and witness tooling
+- Moriarty judgment and prediction tooling
+- BLADE certification and release-readiness orchestration
+- generic CLI, hosts, and shared plumbing
 
-### 2. Wesley Toolchain
+### 0a. Package Families Inside The Base Platform
 
-The generic surfaces around the compiler.
-
-This layer can include:
-
-- generic generators
-- realization manifests and shells
-- witness and conformance commands
-- bundle, release, and sync helpers
-- generic technology extensions such as TS, Zod, Echo, TTD, or Postgres emitters
-
-These are useful, but they are not the compiler's essence.
-
-### 2a. Package Families Inside The Toolchain
-
-These are the main non-core package families in this repo today.
+These are the main package families inside the Wesley repo today.
 
 #### CLI And Entry Surfaces
 
@@ -93,15 +79,16 @@ Examples:
 
 - `@wesley/runtime-node`
 
-#### Evidence And Policy
+#### Evidence, Judgment, And Certification
 
-Packages and commands that evaluate, summarize, or certify bounded properties around compiler outputs.
+Packages and commands that evaluate, summarize, certify, or gate bounded claims around compiler outputs.
 
 Examples:
 
 - `@wesley/holmes`
 - witness and realization verification commands
 - plan and rehearse flows
+- BLADE command surfaces
 
 #### Supporting Utilities
 
@@ -122,21 +109,78 @@ Examples:
 - `@wesley/scaffold-multitenant`
 - `@wesley/stack-supabase-nextjs`
 
-### 3. Project Semantics And Extensions
+### 1. Wesley Extension Modules
 
-The project-owned layer above Wesley.
+The extension layer above the base platform.
 
-This layer defines:
+Modules extend Wesley through explicit hooks rather than by contaminating the base platform.
 
-- authored schema families
-- project-specific profiles and presets
-- project-specific bundle and publication policy
-- project-specific judgment roles
-- orchestration tools that invoke Wesley as part of a larger workflow
+An extension module may add:
 
-For Continuum, this is where `warp` belongs.
+- custom GraphQL directives
+- generator plugins
+- witness scopes or verification profiles
+- judgment or policy rules
+- certification profiles
+- bundle or projection behavior
+- BLADE environment setup and additional test suites
 
-## Core Nouns
+Examples:
+
+- Database module
+- Continuum module
+- project-specific custom modules
+
+### 2. Project Workspace
+
+The user's actual working project.
+
+This layer contains:
+
+- authored schemas
+- project config
+- project-specific tests and policies
+- generated outputs
+- local custom modules
+- deployment machinery owned by the project, not by Wesley
+
+## Base Platform Nouns
+
+### Wesley
+
+The schema-first compiler engine at the center of the base platform.
+
+Wesley parses authored GraphQL, lowers it into IR, and drives generator plugins to emit target artifacts.
+
+### Holmes
+
+A verification and evidence tool.
+
+Holmes evaluates bounded properties around proposed or emitted change and produces machine-readable evidence about what passed, failed, or needs attention.
+
+### Watson
+
+A witness and verification companion surface.
+
+Watson is part of the bounded proof story: it helps turn authored source, emitted artifacts, and realization shells into explicit witness material rather than vague confidence.
+
+### Moriarty
+
+A policy, judgment, and prediction tool.
+
+Moriarty evaluates rules, risk, gates, or counterfactuals that go beyond raw compilation and beyond simple artifact coherence.
+
+### BLADE
+
+The certification and release-readiness orchestrator.
+
+BLADE composes compiler outputs, witness/evidence results, tests, and judgments into a tested, certified, deployable bundle or readiness verdict.
+
+BLADE stops short of deployment. Deployment belongs to the project or operator layer.
+
+Projects may extend BLADE with environment setup, additional tests, and custom gate behavior without turning Wesley itself into a deployment system.
+
+## Compiler Nouns
 
 ### Schema
 
@@ -254,7 +298,7 @@ This sits outside the pure compiler core but can still be generic and reusable.
 
 A toolchain surface that evaluates proposed changes or emitted artifacts against declared rules.
 
-In this repo, HOLMES is the main example.
+In this repo, Holmes and Moriarty are the main examples.
 
 ### Scaffold
 
@@ -268,7 +312,34 @@ A higher-level packaged composition of schema, generated outputs, app wiring, an
 
 Stacks are closer to product delivery than to compiler infrastructure.
 
-## Boundary Nouns
+## Extension And Boundary Nouns
+
+### Module
+
+A domain- or ecosystem-specific extension family built on the Wesley base platform.
+
+Modules extend the compiler, witness, judgment, or certification surfaces through explicit extension points.
+
+### Submodule
+
+A narrower extension family inside a module.
+
+Examples:
+
+- a Postgres submodule inside the Database module
+- an Echo or TTD submodule inside the Continuum module
+
+### Database Module
+
+The family of extensions that teaches Wesley about database-facing generation, planning, verification, or certification concerns.
+
+This module may contain submodules such as Postgres or Supabase-specific behavior.
+
+### Continuum Module
+
+The family of extensions that teaches Wesley about Continuum-specific schema families, projections, witness scopes, judgments, and certification behavior.
+
+This module may contain submodules such as Echo- or TTD-facing integrations.
 
 ### Host
 
@@ -298,18 +369,6 @@ A Continuum-specific preset/profile package currently living inside the Wesley r
 
 It is not compiler core. Long-term, much of this package likely belongs in Continuum once the extension-loading and ownership boundaries are cleaner.
 
-### Database-Change Lane
-
-The Wesley workflow that compiles authored schema and operations into database-facing plans, migrations, or evidence.
-
-This is an important part of Wesley's current identity. Wesley is not only the Continuum contract lane.
-
-### Continuum Contract Lane
-
-The Wesley workflow that compiles shared causal protocol families and related cross-repo contract surfaces.
-
-This is one major usage lane of Wesley, but not the only one.
-
 ## Practical Rule
 
 When you are confused, ask this in order:
@@ -327,10 +386,10 @@ That question usually tells you which layer a noun belongs to.
 If you only remember one picture, remember this:
 
 ```text
-Project-owned schema and policy
-  -> Wesley core compiles GraphQL into IR and targets
-  -> Wesley toolchain provides generators, hosts, evidence, packaging, and projections
-  -> host projects, runtimes, database lanes, and app stacks consume the resulting artifacts
+Project workspace
+  -> extension modules add domain meaning
+  -> Wesley base platform compiles, verifies, judges, and certifies
+  -> project-owned deployment and runtime layers consume the resulting bundles and artifacts
 ```
 
 Wesley is strongest when those layers stay separate.
