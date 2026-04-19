@@ -17,6 +17,8 @@ The core compiler turns authored GraphQL into targets.
 The toolchain can package, witness, and project those outputs.
 Projects like Continuum sit above Wesley and decide what to compile, where outputs go, and which policies apply.
 
+Wesley is bigger than the Continuum lane. It also includes database-change tooling, generic code generators, host adapters, evidence tooling, scaffolds, and supporting runtime packages.
+
 ## Layers
 
 ### 1. Wesley Core
@@ -46,6 +48,79 @@ This layer can include:
 - generic technology extensions such as TS, Zod, Echo, TTD, or Postgres emitters
 
 These are useful, but they are not the compiler's essence.
+
+### 2a. Package Families Inside The Toolchain
+
+These are the main non-core package families in this repo today.
+
+#### CLI And Entry Surfaces
+
+Packages and commands that expose Wesley to humans and scripts.
+
+Examples:
+
+- `@wesley/cli`
+- top-level `pnpm wesley ...` command surfaces
+
+#### Generators
+
+Packages that emit target-specific artifacts from Wesley IR.
+
+Examples:
+
+- `@wesley/generator-js`
+- `@wesley/generator-echo`
+- `@wesley/generator-ttd`
+- `@wesley/generator-supabase`
+- `@wesley/generator-vue`
+
+#### Hosts
+
+Packages that provide environment-specific runtime services for running Wesley.
+
+Examples:
+
+- `@wesley/host-node`
+- `@wesley/host-browser`
+- `@wesley/host-deno`
+- `@wesley/host-bun`
+
+#### Runtime Support
+
+Generic runtime-side helpers that are not themselves the compiler core.
+
+Examples:
+
+- `@wesley/runtime-node`
+
+#### Evidence And Policy
+
+Packages and commands that evaluate, summarize, or certify bounded properties around compiler outputs.
+
+Examples:
+
+- `@wesley/holmes`
+- witness and realization verification commands
+- plan and rehearse flows
+
+#### Supporting Utilities
+
+Packages that support scheduling, planning, fixtures, or internal shared operations.
+
+Examples:
+
+- `@wesley/tasks`
+- `@wesley/slaps`
+- `@wesley/test-fixtures`
+
+#### Scaffolds And Stacks
+
+Early project templates or packaged starting points built on Wesley outputs.
+
+Examples:
+
+- `@wesley/scaffold-multitenant`
+- `@wesley/stack-supabase-nextjs`
 
 ### 3. Project Semantics And Extensions
 
@@ -109,6 +184,12 @@ An artifact is generated truth derived from authored truth. It is useful and ins
 
 ## Toolchain Nouns
 
+### CLI
+
+The command-line entry surface for Wesley.
+
+The CLI is not the compiler core itself. It is the main human-facing ingress that invokes the compiler and related toolchain operations.
+
 ### Realization
 
 The concrete emitted output set for a compile act.
@@ -149,13 +230,43 @@ A profile provides policy defaults for packaging, witness, sync, or other higher
 
 A downstream repo, runtime, or host project that receives or uses Wesley outputs.
 
-Examples in this ecosystem include `echo`, `warp-ttd`, and app repos consuming generated contracts.
+Examples in this ecosystem include app repos, runtimes like `echo`, debugger/protocol consumers like `warp-ttd`, or database/application hosts consuming generated contracts.
 
 ### Projection
 
 A consumer-shaped emitted view of a released contract family.
 
 Projection is about where and how a released family lands in a consumer environment.
+
+### Host Adapter
+
+A package that lets Wesley run in a specific execution environment.
+
+Host adapters handle environment-shaped concerns such as filesystem access, process execution, or browser-safe operation without changing compiler truth.
+
+### Runtime Adapter
+
+A supporting package that helps generated or compiled outputs operate inside a runtime environment.
+
+This sits outside the pure compiler core but can still be generic and reusable.
+
+### Policy Engine
+
+A toolchain surface that evaluates proposed changes or emitted artifacts against declared rules.
+
+In this repo, HOLMES is the main example.
+
+### Scaffold
+
+A starter package or template that helps initialize a project using Wesley-generated outputs and conventions.
+
+Scaffolds are consumers of Wesley, not the compiler itself.
+
+### Stack
+
+A higher-level packaged composition of schema, generated outputs, app wiring, and host assumptions.
+
+Stacks are closer to product delivery than to compiler infrastructure.
 
 ## Boundary Nouns
 
@@ -187,6 +298,18 @@ A Continuum-specific preset/profile package currently living inside the Wesley r
 
 It is not compiler core. Long-term, much of this package likely belongs in Continuum once the extension-loading and ownership boundaries are cleaner.
 
+### Database-Change Lane
+
+The Wesley workflow that compiles authored schema and operations into database-facing plans, migrations, or evidence.
+
+This is an important part of Wesley's current identity. Wesley is not only the Continuum contract lane.
+
+### Continuum Contract Lane
+
+The Wesley workflow that compiles shared causal protocol families and related cross-repo contract surfaces.
+
+This is one major usage lane of Wesley, but not the only one.
+
 ## Practical Rule
 
 When you are confused, ask this in order:
@@ -206,8 +329,8 @@ If you only remember one picture, remember this:
 ```text
 Project-owned schema and policy
   -> Wesley core compiles GraphQL into IR and targets
-  -> Wesley toolchain can package, witness, and project the outputs
-  -> host projects and runtimes consume the resulting artifacts
+  -> Wesley toolchain provides generators, hosts, evidence, packaging, and projections
+  -> host projects, runtimes, database lanes, and app stacks consume the resulting artifacts
 ```
 
 Wesley is strongest when those layers stay separate.
