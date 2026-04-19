@@ -4,6 +4,8 @@ This is the developer-level operator guide for Wesley. Use it for orientation, t
 
 For deep-track doctrine, IR model internals, and custom generator development, use [ADVANCED_GUIDE.md](./ADVANCED_GUIDE.md).
 
+If you need the main Wesley nouns and the layer split before reading anything else, start with [docs/WESLEY_GLOSSARY.md](./docs/WESLEY_GLOSSARY.md).
+
 ## Choose Your Lane
 
 ### 1. Database-Change Lane
@@ -86,6 +88,9 @@ they are not the same thing as the core compile act.
 
 For the exact boundary, see
 [docs/architecture/wesley-core-vs-toolchain.md](./docs/architecture/wesley-core-vs-toolchain.md).
+
+For the noun-by-noun version of that split, see
+[docs/WESLEY_GLOSSARY.md](./docs/WESLEY_GLOSSARY.md).
 
 ## Big Picture: System Orchestration
 
