@@ -1,7 +1,8 @@
 # ASAP
 
-`v0.1.0/` now owns the current release campaign, so this lane is intentionally
-empty until the first ship cut has a calmer horizon.
+Use this lane for near-term Wesley work that now matters to the active stack
+but is not yet pulled into the current release packet or a committed design
+cycle.
 
-Use `asap/` again when near-term work is important but not yet explicitly
-committed to the release lane.
+Keep items narrow, evidence-backed, and explicit about which shared seam or
+compiler boundary they are trying to freeze next.
