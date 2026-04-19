@@ -57,6 +57,36 @@ Audit proposed changes and monitor the contract state via the TUI dashboard.
 - **Audit**: `pnpm wesley blade --help`
 - **TUI**: `pnpm wesley holmes dashboard`
 
+## Compiler Versus Toolchain
+
+Wesley is easiest to understand if you keep two layers separate.
+
+### Wesley core
+
+The core compiler behaves like a compiler:
+
+- authored GraphQL in
+- targets selected explicitly
+- outputs written where the caller asks
+
+That is the center of the system.
+
+### Wesley toolchain
+
+This repo also ships surrounding toolchain surfaces:
+
+- realization manifests
+- witness/conformance commands
+- release/bundle assembly
+- sync/projection helpers
+- HOLMES / Watson / Moriarty / BLADE
+
+Those surfaces operate on compiler inputs and outputs. They are useful, but
+they are not the same thing as the core compile act.
+
+For the exact boundary, see
+[docs/architecture/wesley-core-vs-toolchain.md](./docs/architecture/wesley-core-vs-toolchain.md).
+
 ## Big Picture: System Orchestration
 
 Wesley is a tiered engine designed to enforce contract integrity across platforms:
@@ -88,6 +118,10 @@ If you need the release object and cross-repo sync model for Continuum
 consumers, use [docs/design/0005-continuum-contract-bundle-release-and-sync/continuum-contract-bundle-release-and-sync.md](./docs/design/0005-continuum-contract-bundle-release-and-sync/continuum-contract-bundle-release-and-sync.md).
 
 If you need the host-project consumption model for generated outputs, use [docs/design/0006-warpspace-workspace-resolution/warpspace-workspace-resolution.md](./docs/design/0006-warpspace-workspace-resolution/warpspace-workspace-resolution.md).
+
+If you need the clean split between Wesley core, Wesley-side toolchain
+surfaces, Continuum-owned schemas, and Continuum's `warp` tool, use
+[docs/architecture/wesley-core-vs-toolchain.md](./docs/architecture/wesley-core-vs-toolchain.md).
 
 If you want the current host bootstrap prototype rather than the lower-level
 compile commands, run `node packages/wesley-host-node/bin/warpspace.mjs --help`.

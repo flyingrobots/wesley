@@ -14,6 +14,23 @@ conformance anchor, and judgment bridge. It keeps authored shared contracts,
 derived artifacts, and operator-facing judgment coherent without claiming
 runtime, storage, debugger, or substrate-fact ownership.
 
+## Read This With The Right Split
+
+This note describes Wesley's role in Continuum, not the essence of Wesley core.
+
+The important split is:
+
+- **Wesley core** is a compiler: authored contract in, generated artifacts out
+- **the wider Wesley toolchain** also carries realization, witness, release,
+  sync, and judgment helpers around those artifacts
+- **Continuum** still owns its schemas, manifests, and user-facing orchestration
+  concerns
+
+So when this note says Wesley owns publication-boundary management or
+conformance anchoring, read that as a Wesley-side toolchain role layered around
+the compiler, not as a claim that the compiler core itself has become
+Continuum-specific.
+
 ## Wesley Owns Four Jobs
 
 ### 1. Contract Compiler
