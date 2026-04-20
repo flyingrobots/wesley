@@ -33,7 +33,7 @@ jobs:
 
     steps:
       - name: Harden runner
-        uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176
+        uses: step-security/harden-runner@8d3c67de8e2fe68ef647c8db1e6a09f647780f40
         with:
           egress-policy: audit
 
@@ -43,7 +43,7 @@ jobs:
           submodules: recursive  # For Bats plugins
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320
+        uses: pnpm/action-setup@078e9d416474b29c0c387560859308974f7e9c53
 
       - name: Verify pnpm version
         run: |
@@ -51,7 +51,7 @@ jobs:
           node -v
 
       - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
@@ -103,7 +103,7 @@ jobs:
           pnpm test:tap > cli-test-results.tap
 
       - name: Upload TAP test results
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: always()
         with:
           name: cli-test-results-${{ matrix.os }}-node${{ matrix.node-version }}
@@ -129,7 +129,7 @@ jobs:
 
     steps:
       - name: Harden runner
-        uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176
+        uses: step-security/harden-runner@8d3c67de8e2fe68ef647c8db1e6a09f647780f40
         with:
           egress-policy: audit
 
