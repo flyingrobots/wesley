@@ -5,7 +5,7 @@
 # compare / plan / import / conflict settlement surfaces.
 #
 # Canonical authored home:
-# - /Users/james/git/continuum/schemas/continuum-settlement-family.graphql
+# - sibling Continuum repo: `schemas/continuum-settlement-family.graphql`
 
 scalar Hash
 

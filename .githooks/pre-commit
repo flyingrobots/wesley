@@ -153,6 +153,15 @@ else
   echo "✅ pnpm-lock.yaml already up to date"
 fi
 
+# ── Private path guard ──────────────────────────────────────────────────────
+
+echo "🔎 Checking staged files for forbidden machine-local path literals..."
+node scripts/check-forbidden-literals.mjs --staged || {
+  echo "❌ Forbidden machine-local path literal found in staged content." >&2
+  exit 1
+}
+echo "✅ No forbidden machine-local path literals in staged files"
+
 # ── Lint guard ──────────────────────────────────────────────────────────────
 # Skip with: WESLEY_SKIP_LINT_HOOK=1
 

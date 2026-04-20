@@ -54,9 +54,9 @@ The repo now ships:
 
 ## Evidence
 
-- [packages/wesley-cli/src/utils/warpspace.mjs](/Users/james/git/wesley/packages/wesley-cli/src/utils/warpspace.mjs)
-- [packages/wesley-cli/src/framework/FileOutputGeneratorCommand.mjs](/Users/james/git/wesley/packages/wesley-cli/src/framework/FileOutputGeneratorCommand.mjs)
-- [packages/wesley-cli/src/commands/typescript.mjs](/Users/james/git/wesley/packages/wesley-cli/src/commands/typescript.mjs)
-- [packages/wesley-cli/src/commands/zod.mjs](/Users/james/git/wesley/packages/wesley-cli/src/commands/zod.mjs)
-- [packages/wesley-cli/test/warpspace.test.mjs](/Users/james/git/wesley/packages/wesley-cli/test/warpspace.test.mjs)
-- [packages/wesley-cli/test/warpspace.bats](/Users/james/git/wesley/packages/wesley-cli/test/warpspace.bats)
+- [packages/wesley-cli/src/utils/warpspace.mjs](../../../packages/wesley-cli/src/utils/warpspace.mjs)
+- [packages/wesley-cli/src/framework/FileOutputGeneratorCommand.mjs](../../../packages/wesley-cli/src/framework/FileOutputGeneratorCommand.mjs)
+- [packages/wesley-cli/src/commands/typescript.mjs](../../../packages/wesley-cli/src/commands/typescript.mjs)
+- [packages/wesley-cli/src/commands/zod.mjs](../../../packages/wesley-cli/src/commands/zod.mjs)
+- [packages/wesley-cli/test/warpspace.test.mjs](../../../packages/wesley-cli/test/warpspace.test.mjs)
+- [packages/wesley-cli/test/warpspace.bats](../../../packages/wesley-cli/test/warpspace.bats)

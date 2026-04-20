@@ -62,9 +62,11 @@ test('resolveDefaultWesleyModuleSpecifiers prefers the foreign Continuum module 
     }
   });
 
-  assert.deepEqual(preferred, [
-    '/Users/james/git/continuum/wesley/continuum-cli-module.mjs'
-  ]);
+  assert.equal(preferred.length, 1);
+  assert.match(
+    preferred[0].replaceAll('\\', '/'),
+    /\/continuum\/wesley\/continuum-cli-module\.mjs$/
+  );
 });
 
 test('resolveDefaultWesleyModuleSpecifiers falls back to the Wesley bootstrap module when foreign module is absent', () => {

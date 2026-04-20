@@ -80,6 +80,10 @@ if (linkChk.status !== 0) fail('Docs link check failed');
 const truthChk = spawnSync(process.execPath, ['scripts/check-doc-truth.mjs'], { stdio: 'inherit' });
 if (truthChk.status !== 0) fail('Docs truth check failed');
 
+// 5c) Forbidden machine-local path literals
+const privatePathChk = spawnSync(process.execPath, ['scripts/check-forbidden-literals.mjs'], { stdio: 'inherit' });
+if (privatePathChk.status !== 0) fail('Forbidden machine-local path literal check failed');
+
 // 6) pnpm version consistency
 try {
   const pkg = JSON.parse(readFileSync(resolve('package.json'), 'utf8'));

@@ -36,8 +36,7 @@ was edited after generation.
 
 ## Evidence
 
-- [packages/wesley-cli/src/commands/realization-integrity.mjs](/Users/james/git/wesley/packages/wesley-cli/src/commands/realization-integrity.mjs)
-- [packages/wesley-cli/test/compile.bats](/Users/james/git/wesley/packages/wesley-cli/test/compile.bats)
-- [packages/wesley-cli/test/verify-realization.bats](/Users/james/git/wesley/packages/wesley-cli/test/verify-realization.bats)
-- [packages/wesley-cli/test/witness.bats](/Users/james/git/wesley/packages/wesley-cli/test/witness.bats)
-
+- [packages/wesley-cli/src/commands/realization-integrity.mjs](../../../packages/wesley-cli/src/commands/realization-integrity.mjs)
+- [packages/wesley-cli/test/compile.bats](../../../packages/wesley-cli/test/compile.bats)
+- [packages/wesley-cli/test/verify-realization.bats](../../../packages/wesley-cli/test/verify-realization.bats)
+- [packages/wesley-cli/test/witness.bats](../../../packages/wesley-cli/test/witness.bats)

@@ -227,7 +227,7 @@
 
   Do that, and Wesley won’t just be another generator — it will be the trusted compiler for the data plane that teams rally around.
 
-▌ What do you think of the combo: /Users/james/git/shiplog + Wesley deployments? (Read the README there)
+▌ What do you think of the combo: shiplog + Wesley deployments? (Read the README there)
 
 > Love the idea. Even without your README in front of me, the combo makes a ton of sense: Wesley already produces “deployment evidence” (bundle,
   SHIPME cert, plan/lock analysis, timings). A shiplog repo offers the missing ledger/control-plane for those artifacts so they’re queryable,

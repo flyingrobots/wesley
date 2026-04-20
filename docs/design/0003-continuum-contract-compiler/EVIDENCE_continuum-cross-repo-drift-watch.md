@@ -43,7 +43,7 @@ three repositories by hand.
 
 ## Evidence
 
-- [packages/wesley-cli/src/commands/drift-watch.mjs](/Users/james/git/wesley/packages/wesley-cli/src/commands/drift-watch.mjs)
-- [packages/wesley-cli/test/drift-watch.bats](/Users/james/git/wesley/packages/wesley-cli/test/drift-watch.bats)
-- [GUIDE.md](/Users/james/git/wesley/docs/GUIDE.md)
-- [packages/wesley-cli/README.md](/Users/james/git/wesley/packages/wesley-cli/README.md)
+- [packages/wesley-cli/src/commands/drift-watch.mjs](../../../packages/wesley-cli/src/commands/drift-watch.mjs)
+- [packages/wesley-cli/test/drift-watch.bats](../../../packages/wesley-cli/test/drift-watch.bats)
+- [GUIDE.md](../../GUIDE.md)
+- [packages/wesley-cli/README.md](../../../packages/wesley-cli/README.md)

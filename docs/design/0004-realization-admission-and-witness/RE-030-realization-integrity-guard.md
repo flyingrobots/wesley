@@ -36,9 +36,8 @@ authored SDL instead of silently letting generated residue drift.
 
 ## Evidence
 
-- [packages/wesley-cli/src/commands/verify-realization.mjs](/Users/james/git/wesley/packages/wesley-cli/src/commands/verify-realization.mjs)
-- [packages/wesley-cli/src/commands/realization-integrity.mjs](/Users/james/git/wesley/packages/wesley-cli/src/commands/realization-integrity.mjs)
-- [.githooks/pre-commit](/Users/james/git/wesley/.githooks/pre-commit)
-- [.github/workflows/preflight.yml](/Users/james/git/wesley/.github/workflows/preflight.yml)
-- [packages/wesley-cli/test/verify-realization.bats](/Users/james/git/wesley/packages/wesley-cli/test/verify-realization.bats)
-
+- [packages/wesley-cli/src/commands/verify-realization.mjs](../../../packages/wesley-cli/src/commands/verify-realization.mjs)
+- [packages/wesley-cli/src/commands/realization-integrity.mjs](../../../packages/wesley-cli/src/commands/realization-integrity.mjs)
+- [.githooks/pre-commit](../../../.githooks/pre-commit)
+- [.github/workflows/preflight.yml](../../../.github/workflows/preflight.yml)
+- [packages/wesley-cli/test/verify-realization.bats](../../../packages/wesley-cli/test/verify-realization.bats)

@@ -54,9 +54,9 @@ The repo now ships:
 
 ## Evidence
 
-- [packages/wesley-cli/src/utils/warpspace.mjs](/Users/james/git/wesley/packages/wesley-cli/src/utils/warpspace.mjs)
-- [packages/wesley-cli/src/commands/compile-ttd.mjs](/Users/james/git/wesley/packages/wesley-cli/src/commands/compile-ttd.mjs)
-- [packages/wesley-cli/src/commands/bundle-echo.mjs](/Users/james/git/wesley/packages/wesley-cli/src/commands/bundle-echo.mjs)
-- [packages/wesley-cli/test/warpspace.test.mjs](/Users/james/git/wesley/packages/wesley-cli/test/warpspace.test.mjs)
-- [packages/wesley-cli/test/compile-ttd.bats](/Users/james/git/wesley/packages/wesley-cli/test/compile-ttd.bats)
-- [packages/wesley-cli/test/bundle-echo.bats](/Users/james/git/wesley/packages/wesley-cli/test/bundle-echo.bats)
+- [packages/wesley-cli/src/utils/warpspace.mjs](../../../packages/wesley-cli/src/utils/warpspace.mjs)
+- [packages/wesley-cli/src/commands/compile-ttd.mjs](../../../packages/wesley-cli/src/commands/compile-ttd.mjs)
+- [packages/wesley-cli/src/commands/bundle-echo.mjs](../../../packages/wesley-cli/src/commands/bundle-echo.mjs)
+- [packages/wesley-cli/test/warpspace.test.mjs](../../../packages/wesley-cli/test/warpspace.test.mjs)
+- [packages/wesley-cli/test/compile-ttd.bats](../../../packages/wesley-cli/test/compile-ttd.bats)
+- [packages/wesley-cli/test/bundle-echo.bats](../../../packages/wesley-cli/test/bundle-echo.bats)
