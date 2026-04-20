@@ -2,14 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import os from 'node:os';
 import path from 'node:path';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import { program } from '../src/program.mjs';
-import {
-  loadWesleyCliModuleEntries,
-  resolveDefaultWesleyModuleSpecifiers
-} from '../src/framework/module-loader.mjs';
+import { loadWesleyCliModuleEntries } from '../src/framework/module-loader.mjs';
 
 const fixtureModulePath = fileURLToPath(new URL('./fixtures/modules/test-extension-module.mjs', import.meta.url));
 
@@ -55,29 +52,40 @@ test('loadWesleyCliModuleEntries adds env-provided fixture modules without proje
   }
 });
 
-test('resolveDefaultWesleyModuleSpecifiers prefers the foreign Continuum module when present', () => {
-  const preferred = resolveDefaultWesleyModuleSpecifiers({
-    exists(pathname) {
-      return pathname.endsWith('/continuum/wesley/continuum-cli-module.mjs');
-    }
-  });
+test('loadWesleyCliModuleEntries defaults to no modules when config and env are absent', async () => {
+  const tempDir = mkdtempSync(path.join(os.tmpdir(), 'wesley-module-empty-'));
 
-  assert.equal(preferred.length, 1);
-  assert.match(
-    preferred[0].replaceAll('\\', '/'),
-    /\/continuum\/wesley\/continuum-cli-module\.mjs$/
-  );
+  try {
+    const entries = await loadWesleyCliModuleEntries({
+      cwd: tempDir,
+      env: {}
+    });
+
+    assert.deepEqual(entries, []);
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
 });
 
-test('resolveDefaultWesleyModuleSpecifiers falls back to the Wesley bootstrap module when foreign module is absent', () => {
-  const preferred = resolveDefaultWesleyModuleSpecifiers({
-    exists() {
-      return false;
-    }
-  });
+test('loadWesleyCliModuleEntries loads config-provided modules explicitly', async () => {
+  const tempDir = mkdtempSync(path.join(os.tmpdir(), 'wesley-module-explicit-'));
 
-  assert.equal(preferred.length, 1);
-  assert.match(preferred[0], /packages\/wesley-cli\/src\/modules\/continuum\.mjs$/);
+  try {
+    const relativeFixturePath = path.relative(tempDir, fixtureModulePath);
+    writeFileSync(
+      path.join(tempDir, 'wesley.config.mjs'),
+      `export default { modules: [${JSON.stringify(relativeFixturePath)}] };\n`
+    );
+
+    const entries = await loadWesleyCliModuleEntries({
+      cwd: tempDir,
+      env: {}
+    });
+
+    assert.deepEqual(entries, [{ specifier: fixtureModulePath, enabled: true }]);
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
 });
 
 test('program loads CLI commands from a fixture module via WESLEY_MODULES', async () => {

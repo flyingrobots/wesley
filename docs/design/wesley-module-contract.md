@@ -232,10 +232,10 @@ The current posture is:
 
 - generic core owns the `WesleyModule` contract
 - CLI can discover and register module-owned command surfaces
-- Wesley prefers a Continuum-owned foreign module when the sibling Continuum
-  repo is present
-- an internal Continuum bootstrap module still exists as fallback for standalone
-  Wesley checkouts and remote CI
+- generic Wesley loads no domain modules by default
+- modules are loaded explicitly through `wesley.config.mjs` or `WESLEY_MODULES`
+- this repo currently uses its root `wesley.config.mjs` to opt into an internal
+  Continuum bootstrap module for local development and CI
 
 That is not the final architecture. It is the bridge that lets the real
 architecture happen without a rewrite.
