@@ -6,9 +6,22 @@ import { discoverModules } from '@wesley/core';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-export const DEFAULT_WESLEY_MODULE_SPECIFIERS = Object.freeze([
-  resolvePath(__dirname, '../modules/continuum.mjs')
-]);
+const EXTERNAL_CONTINUUM_MODULE_SPECIFIER = resolvePath(
+  __dirname,
+  '../../../../../continuum/wesley/continuum-cli-module.mjs'
+);
+const BOOTSTRAP_CONTINUUM_MODULE_SPECIFIER = resolvePath(__dirname, '../modules/continuum.mjs');
+
+export function resolveDefaultWesleyModuleSpecifiers({ exists = existsSync } = {}) {
+  if (exists(EXTERNAL_CONTINUUM_MODULE_SPECIFIER)) {
+    return [EXTERNAL_CONTINUUM_MODULE_SPECIFIER];
+  }
+  return [BOOTSTRAP_CONTINUUM_MODULE_SPECIFIER];
+}
+
+export const DEFAULT_WESLEY_MODULE_SPECIFIERS = Object.freeze(
+  resolveDefaultWesleyModuleSpecifiers()
+);
 
 export const MODULE_OWNED_COMMAND_FILES = Object.freeze(new Set([
   'contract.mjs',
