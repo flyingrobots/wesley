@@ -11,8 +11,6 @@ export { ConsoleLogger } from './adapters/console-compat-logger.mjs';
 export { EventBus } from './adapters/EventBus.mjs';
 export { GraphQLAdapter } from '@wesley/runtime-node';
 export { NodeFileSystem } from './adapters/NodeFileSystem.mjs';
-export { PgParserAdapter } from './adapters/PgParserAdapter.mjs';
-export { PostgreSQLAdapter } from './adapters/PostgreSQLAdapter.mjs';
 export { WesleyFileWriter } from './adapters/WesleyFileWriter.mjs';
 export { runWesleyCli } from './runWesleyCli.mjs';
 

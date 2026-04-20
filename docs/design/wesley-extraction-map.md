@@ -143,29 +143,24 @@ Why it is non-generic:
 
 New home:
 
-- create a database module layer inside the Wesley ecosystem:
-  - `packages/wesley-module-database`
-  - `packages/wesley-module-postgres`
-  - `packages/wesley-module-supabase`
+- create a PostgreSQL-family extraction repo:
+  - `wesley-postgres`
 
 Suggested split:
 
-- `wesley-module-database`
-  - generic migration planning contracts
-  - generic SQL-ish intermediate shapes if they can truly be shared
-- `wesley-module-postgres`
+- `wesley-postgres/packages/postgres`
   - GraphQL/Postgres type mapping
   - Postgres lock semantics
   - Postgres analyzers
   - PgTAP generation
   - PostgreSQL-specific QIR emission rules
-- `wesley-module-supabase`
+- `wesley-postgres/packages/supabase`
   - Supabase-specific generation and policy behavior
 
 Result:
 
 - `wesley-core` becomes a real base compiler package
-- database behavior remains in the Wesley ecosystem, but not in core
+- PostgreSQL-family behavior gets its own repo instead of lingering in core
 
 ### 5. Database runtime adapters live in generic host-node
 
@@ -183,9 +178,9 @@ Why it is non-generic:
 
 New home:
 
-- move these adapters under the database module layer, likely:
-  - `packages/wesley-module-postgres-node`
-  - or `packages/wesley-module-postgres/src/node/`
+- move these adapters under `wesley-postgres`
+  - initial landed slice: `packages/wesley-postgres-node`
+  - remaining mixed host-node/database config should follow later
 
 Result:
 

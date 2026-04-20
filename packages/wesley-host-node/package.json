@@ -20,7 +20,6 @@
     "lint": "eslint src/"
   },
   "dependencies": {
-    "@supabase/pg-parser": "^0.1.7",
     "@wesley/cli": "workspace:*",
     "@wesley/core": "workspace:*",
     "@wesley/generator-js": "workspace:*",

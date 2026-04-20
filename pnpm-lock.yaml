@@ -213,9 +213,6 @@ importers:
 
   packages/wesley-host-node:
     dependencies:
-      '@supabase/pg-parser':
-        specifier: ^0.1.7
-        version: 0.1.7
       '@wesley/cli':
         specifier: workspace:*
         version: link:../wesley-cli
