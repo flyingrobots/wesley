@@ -33,7 +33,7 @@ That means Wesley should continue to own things like:
 
 ## What Is Still In The Wrong Place
 
-### 1. Continuum target compilation still lives in generic CLI
+### 1. Continuum target semantics are still hard-coded into generic compile flows
 
 Evidence:
 
@@ -46,7 +46,9 @@ Evidence:
 
 Why it is non-generic:
 
-- `compile.mjs` hard-codes `warp-ttd` and `echo` as the valid targets.
+- `compile.mjs` is a core Wesley verb, but its current implementation
+  hard-codes `warp-ttd` and `echo` as the valid targets instead of discovering
+  targets from loaded modules.
 - `compile-ttd.mjs` is a TTD-specific compile surface.
 - `bundle-echo.mjs` is an Echo-specific bundle surface with mocked
   `warp-ttd` deliveries.
@@ -57,15 +59,16 @@ Why it is non-generic:
 
 New home:
 
-- move `compile.mjs`, `compile-ttd.mjs`, and `bundle-echo.mjs` into
-  `continuum/wesley/commands/`
+- keep `compile.mjs` in Wesley, but rewrite it as a generic module/target
+  dispatcher
+- move `compile-ttd.mjs` and `bundle-echo.mjs` into `continuum/wesley/commands/`
 - move `verify-realization.mjs` and `realization-integrity.mjs` into the
   Continuum Wesley module as the Continuum realization verifier
 - move `warpspace.mjs` into `continuum/wesley/utils/`
 
 Result:
 
-- generic Wesley keeps a generic compile surface
+- generic Wesley keeps `compile` as a generic compile surface
 - Continuum owns the multi-target compile surface for `echo` and `warp-ttd`
 
 ### 2. WARPspace bootstrap lives in `wesley-host-node`
@@ -219,12 +222,14 @@ Result:
 
 The safest order is:
 
-1. move the remaining Continuum CLI/compile/generator surfaces into
+1. rewrite `compile.mjs` to discover module-owned targets instead of
+   hard-coding Continuum targets
+2. move the remaining Continuum compile/generator surfaces into
    `continuum/wesley/`
-2. move WARPspace bootstrap into `continuum/apps/warp/`
-3. move the Holmes `git-warp` counterfactual provider into Continuum
-4. carve database behavior out of `wesley-core`
-5. move Node/Postgres adapters out of `wesley-host-node`
+3. move WARPspace bootstrap into `continuum/apps/warp/`
+4. move the Holmes `git-warp` counterfactual provider into Continuum
+5. carve database behavior out of `wesley-core`
+6. move Node/Postgres adapters out of `wesley-host-node`
 
 This order matters because the Continuum extraction is conceptually settled
 already, while the database module split still needs more package shaping.
