@@ -97,6 +97,9 @@ Those are module responsibilities.
 The generic module contract should be read as a family of optional extension
 surfaces, not as a demand that every module implement every hook.
 
+The concrete capability areas that should back that contract are defined in
+[Wesley Module Capability Contract](./wesley-module-capability-contract.md).
+
 A serious module may provide:
 
 - compiler directives and generators
