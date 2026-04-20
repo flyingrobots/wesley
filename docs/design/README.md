@@ -17,3 +17,4 @@ Current packets:
 - [Module Contract](./wesley-module-contract.md): Generic module boundary versus Continuum-only extension surfaces
 - [Contract / Artifact / Runtime Boundary](./wesley-contract-family-artifact-runtime-value.md): GraphQL-authored families, Wesley-emitted artifacts, and later runtime values
 - [Pipeline Note](./wesley-pipeline.md): Wesley, Holmes, Watson, Moriarty, and BLADE as a bundle pipeline
+- [Extraction Map](./wesley-extraction-map.md): What still does not belong in generic Wesley and where it should move
