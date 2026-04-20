@@ -12,6 +12,21 @@ The names in this note such as `WesleyInputBundle` or `HolmesOutputBundle` are
 currently **conceptual bundle names**, not frozen wire contracts. They describe
 the shape of the stack as it should be understood today.
 
+## Keep Three Layers Distinct
+
+This note assumes one hard boundary:
+
+- GraphQL-authored contract families
+- Wesley-emitted compiled artifacts
+- later runtime or tool values
+
+Wesley only owns the middle layer.
+
+If a family such as `TickResult` or `ReadingEnvelope` exists, Wesley may
+compile code, tests, manifests, and registries for that family. Wesley does
+**not** emit actual `TickResult` or `ReadingEnvelope` values. Runtimes and
+tools later do that.
+
 ## One-Line Shape
 
 The base pipeline is:
@@ -80,6 +95,7 @@ artifacts.
 Wesley by itself does **not** prove:
 
 - runtime correctness
+- runtime values were emitted
 - policy compliance
 - deployability
 - production health
@@ -138,6 +154,8 @@ Holmes answers:
 Holmes does not deploy, and it does not turn evidence into final release
 judgment by itself.
 
+Holmes produces a tool output bundle, not a runtime value stream.
+
 ## Stage 3: Watson
 
 Watson is the verification and evidence-audit stage.
@@ -195,6 +213,8 @@ Watson answers:
 
 Watson does not replace Holmes. It audits the integrity of the evidence and
 reasoning surface.
+
+Watson produces a tool output bundle, not a runtime value stream.
 
 ## Stage 4: Moriarty
 
@@ -260,6 +280,8 @@ Moriarty answers:
 
 Moriarty does not compile artifacts and does not certify release readiness by
 itself. It produces judgment.
+
+That judgment is a tool output bundle, not a runtime value stream.
 
 ## Stage 5: BLADE
 
@@ -327,6 +349,9 @@ It may produce a **certified, tested, deployable bundle**, but the actual
 deployment belongs to the project or operator layer.
 
 Wesley should certify deployability, not perform deployment.
+
+BLADE emits certification/readiness outputs. It does not pretend those outputs
+are runtime values from the deployed system.
 
 ## Current Honest Posture
 

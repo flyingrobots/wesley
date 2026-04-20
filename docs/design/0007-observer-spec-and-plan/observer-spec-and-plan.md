@@ -32,7 +32,8 @@ following without folklore:
 
 The current stack now has a clearer optic boundary:
 
-- GraphQL is the app-facing authoring surface for the optic's set side
+- GraphQL is the authored contract surface for both set-side and get-side
+  families
 - Echo remains a generic runtime substrate
 - applications submit intents and later observe resulting causal truth
 - readings should come from holograms and slicing rather than whole-worldline
@@ -57,9 +58,9 @@ meaning:
 - accumulation or update law
 - emission law
 
-Applications therefore need a lawful way to define observers in app code that
+Applications therefore need a lawful way to define observers in GraphQL that
 the Continuum module can validate and compile, while Echo remains free to host
-those observers generically.
+runtime behavior built from those compiled artifacts.
 
 ## Core Split
 
@@ -67,7 +68,7 @@ The Continuum observer lane should preserve three different layers.
 
 ### 1. ObserverSpec
 
-App-authored and mostly static.
+GraphQL-authored and mostly static.
 
 This is the author's declaration of:
 
@@ -80,9 +81,12 @@ This is the author's declaration of:
 
 ### 2. ObserverPlan
 
-Compiler-produced and engine-consumable.
+The GraphQL-authored family for the normalized, engine-consumable plan shape.
 
-This is the lawful compiled surface that names:
+Wesley compiles artifacts for this family, and Continuum tools/runtimes later
+materialize actual plan values conforming to it.
+
+It names:
 
 - validated aperture and slicing constraints
 - basis identifiers or compiled basis references
@@ -138,8 +142,8 @@ For an admitted observer family, the Continuum module should compile:
 
 1. one app-authored `ObserverSpec`
 2. one deterministic `ObserverPlan`
-3. one observer-state schema and codec family
-4. one reading/result schema and codec family
+3. one observer-state codec family
+4. one reading/result family
 5. one receipt or hologram-adjacent envelope family when needed
 
 The main outputs should be:
@@ -172,23 +176,18 @@ The right rule is the same as on the rewrite side:
 The likely authored and compiled layers should look roughly like this:
 
 ```text
-App code
+GraphQL contract families
   ObserverSpec
+  ObserverPlan
+  ReadingEnvelope
     -> Continuum module compile
-        -> ObserverPlan
         -> ObserverState codecs
-        -> Reading codecs
+        -> Reading codecs and generated artifacts
         -> Hologram / frontier / receipt helpers
 ```
 
-That does not require every field to be authored in GraphQL itself.
-
-The current best reading is:
-
-- GraphQL is a good front door for app nouns, mutation shapes, and
-  reading/result families
-- observer specs may need an app-code DSL or builder surface for the full
-  `(O, B, M, K, E)` shape
+GraphQL is the authored language. Module-specific behavior enters through
+directives rather than through a parallel authoring DSL.
 
 ## Initial ObserverSpec Shape
 

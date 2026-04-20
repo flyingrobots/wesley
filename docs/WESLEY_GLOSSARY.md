@@ -215,8 +215,8 @@ Examples:
 
 ### Family
 
-A bounded authored contract slice that is versioned, compiled, witnessed, and
-released as one unit.
+A bounded authored GraphQL contract slice that is versioned, compiled,
+witnessed, and released as one unit.
 
 A family is the authored unit, not the proof claim and not the consumer view.
 
@@ -248,11 +248,11 @@ Observer-facing nouns belong only to the Continuum module.
 
 Those include:
 
-- `ObserverSpec`
-- `ObserverPlan`
-- observer state codecs
-- reading envelopes
-- hosted observer runtime contracts
+- the GraphQL-authored families `ObserverSpec`, `ObserverPlan`, and
+  `ReadingEnvelope`
+- observer state codec artifacts compiled from those families
+- hosted observer runtime contracts in Continuum runtimes that later produce
+  values conforming to those families
 
 Generic Wesley and non-Continuum modules should use simpler read-side nouns
 such as reports, projections, inspections, summaries, and certification
@@ -265,6 +265,8 @@ results.
 The authored GraphQL source file.
 
 In Wesley, the schema is the sovereign source of truth. Generated outputs are derived from it and should not become peer authorities.
+
+The schema is an input, not an extension point.
 
 ### Directive
 
@@ -303,6 +305,27 @@ Examples:
 A concrete emitted file or structured output produced by a generator.
 
 An artifact is generated truth derived from authored truth. It is useful and inspectable, but it is not the governing source.
+
+### Contract Family
+
+A bounded authored GraphQL family that is versioned, compiled, witnessed, and
+released as one unit.
+
+A contract family is authored truth. Wesley compiles artifacts for it. Tools
+and runtimes later may produce actual values that conform to it.
+
+### Runtime Value
+
+An actual execution-time value later produced by a runtime or tool using Wesley
+outputs.
+
+Examples:
+
+- a `TickResult` value emitted by Echo
+- a `ReadingEnvelope` value emitted by a Continuum runtime
+- a Holmes, Watson, Moriarty, or BLADE report value
+
+Wesley does not emit runtime values. Wesley emits compiled artifacts.
 
 ## Toolchain Nouns
 

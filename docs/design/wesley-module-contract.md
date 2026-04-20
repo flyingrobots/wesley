@@ -146,6 +146,23 @@ This is an anti-shadowing rule, not a metaphysical theorem.
 The base platform may provide generic enforcement machinery, but the actual
 policy should be supplied by modules.
 
+## Contract Families Versus Artifacts Versus Values
+
+Wesley must keep three different layers distinct:
+
+- contract families authored in GraphQL
+- compiled artifacts emitted by Wesley
+- runtime values later produced by tools or runtimes using those artifacts
+
+Modules extend the meaning of authored GraphQL families and the artifacts
+emitted from them.
+
+Modules do **not** change the rule that Wesley stops at artifact emission.
+
+If a module defines families such as `TickResult`, `ReadingEnvelope`, or
+`ImportOutcome`, Wesley may compile code and manifests for those families. It
+does not emit actual runtime values conforming to them.
+
 ## Continuum-Only Extension Surface
 
 The Continuum module is allowed to define additional nouns that generic Wesley
@@ -153,11 +170,11 @@ does not own.
 
 Those include:
 
-- `ObserverSpec`
-- `ObserverPlan`
-- observer state codecs
-- reading envelopes
-- hosted observer runtime contracts
+- GraphQL-authored families such as `ObserverSpec`, `ObserverPlan`, and
+  `ReadingEnvelope`
+- compiled observer state codecs and related artifacts
+- hosted observer runtime contracts that later produce values conforming to
+  those families
 
 These are Continuum-only because they depend on WARP runtime semantics that are
 not generic compiler truth.
