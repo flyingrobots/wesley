@@ -131,6 +131,9 @@ Examples:
 - Continuum module
 - project-specific custom modules
 
+Generic modules should not be forced to implement observer surfaces.
+Observer-facing contracts are Continuum-only.
+
 ### 2. Project Workspace
 
 The user's actual working project.
@@ -143,6 +146,18 @@ This layer contains:
 - generated outputs
 - local custom modules
 - deployment machinery owned by the project, not by Wesley
+
+An ordinary project should usually only need to provide:
+
+- authored schemas
+- selected module(s)
+- module configuration
+- optional project tests
+- optional BLADE environment setup and extra test hooks
+
+If a project is being asked to hand-author witness scopes, publication
+boundaries, consumer projections, and judgment profiles directly, the module
+boundary is probably wrong.
 
 ## Base Platform Nouns
 
@@ -179,6 +194,69 @@ BLADE composes compiler outputs, witness/evidence results, tests, and judgments 
 BLADE stops short of deployment. Deployment belongs to the project or operator layer.
 
 Projects may extend BLADE with environment setup, additional tests, and custom gate behavior without turning Wesley itself into a deployment system.
+
+## Module Nouns
+
+### Module
+
+A domain- or ecosystem-specific extension family built on Wesley base platform.
+
+A module may extend compilation, witness, judgment, certification, or bundle
+behavior without contaminating the base platform.
+
+### Submodule
+
+A narrower capability family inside a broader module.
+
+Examples:
+
+- Postgres inside a Database module
+- Echo inside a Continuum module
+
+### Family
+
+A bounded authored contract slice that is versioned, compiled, witnessed, and
+released as one unit.
+
+A family is the authored unit, not the proof claim and not the consumer view.
+
+### Scope
+
+A named claim boundary for what a witness or certification act is proving about
+a family.
+
+### Projection
+
+A consumer-facing emitted view derived from a family.
+
+## Boundary Nouns
+
+### Publication-Boundary Policy
+
+The rule set that says where a family is allowed to live and where its
+generated projections are allowed to land.
+
+Its job is to prevent shadow authored homes and stray generated artifacts from
+becoming peer authorities.
+
+The base platform may provide enforcement machinery, but modules should supply
+the actual policy.
+
+### Continuum-Only Observer Nouns
+
+Observer-facing nouns belong only to the Continuum module.
+
+Those include:
+
+- `ObserverSpec`
+- `ObserverPlan`
+- observer state codecs
+- reading envelopes
+- hosted observer runtime contracts
+
+Generic Wesley and non-Continuum modules should use simpler read-side nouns
+such as reports, projections, inspections, summaries, and certification
+results.
 
 ## Compiler Nouns
 

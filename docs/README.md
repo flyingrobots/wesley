@@ -11,6 +11,7 @@ which signpost is supposed to answer which question.
 | Surface | Role |
 | --- | --- |
 | [README.md](../README.md) | Product-facing front door: what Wesley is, what is real today, and where to start. |
+| [WESLEY_GLOSSARY.md](./WESLEY_GLOSSARY.md) | Fast noun map for the Wesley base platform, modules, and project workspace. |
 | [BEARING](./BEARING.md) | Current direction, what is already real in the repo, and the tensions that still matter. |
 | [VISION](./VISION.md) | Bounded executive synthesis grounded in repo-visible truth. |
 | [roadmap.md](./roadmap.md) | Archived strategic note: harvested V2 phase plan and remaining long-range context. |
@@ -49,8 +50,11 @@ It also now has a more explicit METHOD closeout surface under
 ### Product Orientation
 
 - [README.md](../README.md)
+- [WESLEY_GLOSSARY.md](./WESLEY_GLOSSARY.md)
 - [roadmap.md](./roadmap.md)
 - [Architecture Overview](./architecture/overview.md)
+- [Wesley Core Versus Toolchain](./architecture/wesley-core-vs-toolchain.md)
+- [Module Contract](./design/wesley-module-contract.md)
 
 ### Continuum Orientation
 

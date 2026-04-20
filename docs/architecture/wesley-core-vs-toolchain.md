@@ -50,8 +50,8 @@ compiler story is:
 
 - Continuum owns the schema
 - Wesley compiles that schema
-- any Continuum-specific behavior enters through Wesley generators, directives,
-  or profiles rather than by making the compiler core secretly project-aware
+- any Continuum-specific behavior enters through a loaded Continuum module
+  rather than by making the compiler core secretly project-aware
 
 ## 3. Toolchain Surfaces Around The Compiler
 
@@ -76,7 +76,7 @@ They operate on:
 They are real and useful. They should not be confused with the core compile
 act.
 
-## 4. Continuum-Specific Presets
+## 4. Continuum-Specific Module Policy
 
 `@wesley/continuum` is not the Wesley compiler.
 
@@ -91,12 +91,15 @@ such as:
 That means `@wesley/continuum` is better understood as:
 
 - a product profile
-- a preset library
+- a module bootstrap package
 - a workflow helper layer
 
 not as part of the compiler's essence.
 
 If a Continuum preset disappears tomorrow, Wesley should still be a compiler.
+
+Long term, the real Continuum module should live in the Continuum repo and be
+loaded by Wesley rather than baked into the Wesley repo.
 
 ## 5. How Continuum Fits
 
@@ -127,6 +130,9 @@ Continuum owns the authored family
   -> optional Wesley toolchain surfaces package / verify it
   -> warp orchestrates it for app authors
 ```
+
+Observer-facing surfaces belong on the Continuum side of this boundary, not in
+generic Wesley.
 
 ## 6. Practical Rule
 
@@ -163,6 +169,8 @@ The right mental model is:
 - Wesley core compiles authored contracts into targets
 - the surrounding Wesley toolchain can package, verify, and project those
   outputs
-- Continuum owns its own schemas and higher-level orchestration concerns
+- modules own domain-specific policy and extension surfaces
+- Continuum owns its own schemas, observer-facing contracts, and higher-level
+  orchestration concerns
 
 That is the separation we should preserve.
