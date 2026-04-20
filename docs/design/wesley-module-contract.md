@@ -183,6 +183,11 @@ ultimately live in the Continuum repo.
 If modules are going to live outside the Wesley repo, Wesley needs a clean way
 to load them without hardcoding product semantics into the base platform.
 
+The first practical seam for this is a module-manifest loader and
+module-owned CLI registration path. That is enough to let Wesley load external
+modules and enough to move Continuum-specific commands off the generic
+command-discovery path.
+
 ### 4. Database and Postgres semantics should leave `wesley-core`
 
 Database-specific generation, migration explanation, lock semantics, and
@@ -201,3 +206,17 @@ The clean migration sequence is:
 
 That order reduces churn and avoids pretending the boundary is already real when
 the loader does not exist yet.
+
+## Current Honest Posture
+
+Wesley now has the beginnings of the loader seam it needs.
+
+The current posture is:
+
+- generic core owns the `WesleyModule` contract
+- CLI can discover and register module-owned command surfaces
+- Continuum still ships as a default-loaded bootstrap module inside the Wesley
+  repo
+
+That is not the final architecture. It is the bridge that lets the real
+architecture happen without a rewrite.

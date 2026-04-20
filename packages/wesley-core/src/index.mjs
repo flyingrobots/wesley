@@ -125,6 +125,7 @@ export { PluginRunner } from './application/PluginRunner.mjs';
 export { TransmutationRunner, createRunId } from './application/TransmutationRunner.mjs';
 export { ArtifactWriter } from './application/ArtifactWriter.mjs';
 export { discoverPlugins } from './application/PluginDiscovery.mjs';
+export { discoverModules } from './application/ModuleDiscovery.mjs';
 export { validateConfig, KNOWN_EXPERIMENTAL_FLAGS } from './application/ConfigValidator.mjs';
 
 // Safety Components (Wave 3)
@@ -157,6 +158,7 @@ export { FileSystemPort } from './ports/fs.mjs';
 export { LoggerPort } from './ports/Logger.mjs';
 export { ClockPort, SystemClock, FakeClock, systemClock } from './ports/clock.mjs';
 export { GeneratorPlugin, validatePlugin, validatePlan, validateGenerateResult, SUPPORTED_API_VERSIONS } from './ports/GeneratorPlugin.mjs';
+export { WesleyModule, validateWesleyModule, SUPPORTED_WESLEY_MODULE_API_VERSIONS } from './ports/WesleyModule.mjs';
 export { ArtifactWriterPort, detectConflicts } from './ports/ArtifactWriter.mjs';
 export { assertCounterfactualSurfacePort } from './ports/CounterfactualSurface.mjs';
 export { EventStorePort, assertEventStorePort } from './ports/EventStore.mjs';

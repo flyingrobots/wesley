@@ -9,6 +9,10 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Command } from 'commander';
 import { WesleyCommand } from './framework/WesleyCommand.mjs';
+import {
+  MODULE_OWNED_COMMAND_FILES,
+  discoverAndRegisterWesleyCliModules
+} from './framework/module-loader.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const commandsDir = join(__dirname, 'commands');
@@ -20,7 +24,12 @@ const commandsDir = join(__dirname, 'commands');
  */
 async function discoverCommands(ctx) {
   const files = readdirSync(commandsDir)
-    .filter(f => f.endsWith('.mjs') && !f.startsWith('_') && f !== 'index.mjs');
+    .filter((f) => (
+      f.endsWith('.mjs') &&
+      !f.startsWith('_') &&
+      f !== 'index.mjs' &&
+      !MODULE_OWNED_COMMAND_FILES.has(f)
+    ));
 
   for (const file of files) {
     const mod = await import(join(commandsDir, file));
@@ -50,6 +59,11 @@ function resolveOutputWriters(ctx = {}) {
 export async function program(argv, ctx) {
   // Auto-discover and register all commands
   await discoverCommands(ctx);
+  await discoverAndRegisterWesleyCliModules({
+    ctx,
+    cwd: ctx?.cwd ?? process.cwd(),
+    env: ctx?.env ?? process.env
+  });
   const { writeOut, writeErr } = resolveOutputWriters(ctx);
 
   // Create main program

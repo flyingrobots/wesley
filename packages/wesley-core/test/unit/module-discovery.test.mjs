@@ -1,0 +1,141 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+import {
+  SUPPORTED_WESLEY_MODULE_API_VERSIONS,
+  validateWesleyModule,
+  discoverModules
+} from '../../src/index.mjs';
+
+function makeFakeModule(overrides = {}) {
+  return {
+    apiVersion: '1',
+    name: 'fake-module',
+    init() {},
+    async registerCliCommands() {},
+    ...overrides
+  };
+}
+
+const nullLogger = {
+  info() {},
+  warn() {},
+  error() {},
+  debug() {},
+  child() {
+    return nullLogger;
+  }
+};
+
+function mockResolve(registry) {
+  return async (specifier) => {
+    if (specifier in registry) {
+      return registry[specifier];
+    }
+    throw new Error(`Module not found: ${specifier}`);
+  };
+}
+
+async function catchReject(fn) {
+  try {
+    await fn();
+  } catch (error) {
+    return error;
+  }
+  throw new Error('Expected function to throw');
+}
+
+test('SUPPORTED_WESLEY_MODULE_API_VERSIONS is frozen', () => {
+  assert.throws(() => {
+    SUPPORTED_WESLEY_MODULE_API_VERSIONS.push('2');
+  }, TypeError);
+});
+
+test('validateWesleyModule accepts a valid plain-object module', () => {
+  assert.doesNotThrow(() => validateWesleyModule(makeFakeModule()));
+});
+
+test('validateWesleyModule rejects a module with a blank name', () => {
+  assert.throws(() => validateWesleyModule(makeFakeModule({ name: '   ' })), /non-empty string/);
+});
+
+test('discoverModules loads string and object entries', async () => {
+  const resolve = mockResolve({
+    alpha: { default: makeFakeModule({ name: 'alpha' }) },
+    beta: { wesleyModule: makeFakeModule({ name: 'beta' }) }
+  });
+
+  const result = await discoverModules([
+    'alpha',
+    { specifier: 'beta', config: { answer: 42 } }
+  ], {
+    resolve,
+    logger: nullLogger
+  });
+
+  assert.equal(result.modules.length, 2);
+  assert.equal(result.modules[0].name, 'alpha');
+  assert.equal(result.modules[1].name, 'beta');
+});
+
+test('discoverModules forwards config to init()', async () => {
+  let received = null;
+  const resolve = mockResolve({
+    configured: {
+      default: makeFakeModule({
+        name: 'configured',
+        init(config) {
+          received = config;
+        }
+      })
+    }
+  });
+
+  await discoverModules([
+    { specifier: 'configured', config: { mode: 'test' } }
+  ], {
+    resolve,
+    logger: nullLogger
+  });
+
+  assert.deepEqual(received, { mode: 'test' });
+});
+
+test('discoverModules skips disabled entries', async () => {
+  const resolve = mockResolve({
+    skipped: { default: makeFakeModule({ name: 'skipped' }) },
+    loaded: { default: makeFakeModule({ name: 'loaded' }) }
+  });
+
+  const result = await discoverModules([
+    { specifier: 'skipped', enabled: false },
+    'loaded'
+  ], {
+    resolve,
+    logger: nullLogger
+  });
+
+  assert.deepEqual(result.modules.map((module) => module.name), ['loaded']);
+});
+
+test('discoverModules rejects unresolved modules with a coded error', async () => {
+  const error = await catchReject(() => discoverModules(['missing'], {
+    resolve: mockResolve({}),
+    logger: nullLogger
+  }));
+
+  assert.equal(error.code, 'WMOD003');
+  assert.match(error.message, /missing/);
+});
+
+test('discoverModules rejects invalid module contracts with a coded error', async () => {
+  const error = await catchReject(() => discoverModules(['broken'], {
+    resolve: mockResolve({
+      broken: { default: { apiVersion: '1', name: 'broken', registerCliCommands: true } }
+    }),
+    logger: nullLogger
+  }));
+
+  assert.equal(error.code, 'WMOD004');
+  assert.match(error.message, /WesleyModule contract/);
+});
