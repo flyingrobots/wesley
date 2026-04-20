@@ -4,7 +4,7 @@ This is the developer-level operator guide for Wesley. Use it for orientation, t
 
 For deep-track doctrine, IR model internals, and custom generator development, use [ADVANCED_GUIDE.md](./ADVANCED_GUIDE.md).
 
-If you need the main Wesley nouns and the layer split before reading anything else, start with [docs/WESLEY_GLOSSARY.md](./docs/WESLEY_GLOSSARY.md).
+If you need the main Wesley nouns and the layer split before reading anything else, start with [WESLEY_GLOSSARY.md](./WESLEY_GLOSSARY.md).
 
 ## Choose Your Lane
 
@@ -87,10 +87,10 @@ Those surfaces operate on compiler inputs and outputs. They are useful, but
 they are not the same thing as the core compile act.
 
 For the exact boundary, see
-[docs/architecture/wesley-core-vs-toolchain.md](./docs/architecture/wesley-core-vs-toolchain.md).
+[architecture/wesley-core-vs-toolchain.md](./architecture/wesley-core-vs-toolchain.md).
 
 For the noun-by-noun version of that split, see
-[docs/WESLEY_GLOSSARY.md](./docs/WESLEY_GLOSSARY.md).
+[WESLEY_GLOSSARY.md](./WESLEY_GLOSSARY.md).
 
 ## Big Picture: System Orchestration
 
@@ -106,32 +106,33 @@ Wesley is a tiered engine designed to enforce contract integrity across platform
 - [ ] **I am setting up the repo**: Run `pnpm install` and `pnpm run preflight`.
 - [ ] **I am modifying a schema**: Always start in the `.graphql` file.
 - [ ] **I am adding a new generator**: Check `packages/wesley-generator-js` for a baseline.
-- [ ] **I am contributing to Wesley**: Read `METHOD.md` and `docs/BEARING.md`.
-- [ ] **I am touching Continuum witness behavior**: Read `docs/design/0004-realization-admission-and-witness/realization-admission-and-witness.md`.
-- [ ] **I am shipping a shared Continuum family across repos**: Read `docs/design/0005-continuum-contract-bundle-release-and-sync/continuum-contract-bundle-release-and-sync.md`.
+- [ ] **I am contributing to Wesley**: Read `METHOD.md` and `BEARING.md`.
+- [ ] **I am touching Continuum witness behavior**: Read `design/0004-realization-admission-and-witness/realization-admission-and-witness.md`.
+- [ ] **I am shipping a shared Continuum family across repos**: Read `design/0005-continuum-contract-bundle-release-and-sync/continuum-contract-bundle-release-and-sync.md`.
 
 ## Rule of Thumb
 
 If you need a comprehensive command reference, use `pnpm wesley --help`.
 
-If you need to know "what's true right now," use [docs/BEARING.md](./docs/BEARING.md).
+If you need to know "what's true right now," use [BEARING.md](./BEARING.md).
 
 If you need the exact boundary between authored source, realization shells, and
-bounded witness claims, use [docs/design/0004-realization-admission-and-witness/realization-admission-and-witness.md](./docs/design/0004-realization-admission-and-witness/realization-admission-and-witness.md).
+bounded witness claims, use [design/0004-realization-admission-and-witness/realization-admission-and-witness.md](./design/0004-realization-admission-and-witness/realization-admission-and-witness.md).
 
 If you need the release object and cross-repo sync model for Continuum
-consumers, use [docs/design/0005-continuum-contract-bundle-release-and-sync/continuum-contract-bundle-release-and-sync.md](./docs/design/0005-continuum-contract-bundle-release-and-sync/continuum-contract-bundle-release-and-sync.md).
+consumers, use [design/0005-continuum-contract-bundle-release-and-sync/continuum-contract-bundle-release-and-sync.md](./design/0005-continuum-contract-bundle-release-and-sync/continuum-contract-bundle-release-and-sync.md).
 
-If you need the host-project consumption model for generated outputs, use [docs/design/0006-warpspace-workspace-resolution/warpspace-workspace-resolution.md](./docs/design/0006-warpspace-workspace-resolution/warpspace-workspace-resolution.md).
+If you need the host-project consumption model for generated outputs, use [design/0006-warpspace-workspace-resolution/warpspace-workspace-resolution.md](./design/0006-warpspace-workspace-resolution/warpspace-workspace-resolution.md).
 
-If you need the clean split between Wesley core, Wesley-side toolchain
-surfaces, Continuum-owned schemas, and Continuum's `warp` tool, use
-[docs/architecture/wesley-core-vs-toolchain.md](./docs/architecture/wesley-core-vs-toolchain.md).
+If you need the clean split between Wesley base platform, extension modules,
+project workspace, and Continuum's `warp` tool, use
+[WESLEY_GLOSSARY.md](./WESLEY_GLOSSARY.md) and
+[design/wesley-pipeline.md](./design/wesley-pipeline.md).
 
 If you want the current host bootstrap prototype rather than the lower-level
 compile commands, run `node packages/wesley-host-node/bin/warpspace.mjs --help`.
 
-If you are just starting, use the [README.md](./README.md) and the orientation tracks above.
+If you are just starting, use the [README.md](../README.md) and the orientation tracks above.
 
 ---
 **The goal is inevitably. Every state transition is a provable consequence of the sovereign schema.**

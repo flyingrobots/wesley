@@ -13,7 +13,7 @@ which signpost is supposed to answer which question.
 | [README.md](../README.md) | Product-facing front door: what Wesley is, what is real today, and where to start. |
 | [BEARING](./BEARING.md) | Current direction, what is already real in the repo, and the tensions that still matter. |
 | [VISION](./VISION.md) | Bounded executive synthesis grounded in repo-visible truth. |
-| [ROADMAP.md](../ROADMAP.md) | Strategy of record: fixed contracts, phase order, and release gates. |
+| [roadmap.md](./roadmap.md) | Archived strategic note: harvested V2 phase plan and remaining long-range context. |
 | [METHOD Process](./method/process.md) | How cycles run, close, and reconcile in this repo. |
 | [METHOD Release](./method/release.md) | How releases are shaped, verified, and documented. |
 
@@ -49,7 +49,7 @@ It also now has a more explicit METHOD closeout surface under
 ### Product Orientation
 
 - [README.md](../README.md)
-- [ROADMAP.md](../ROADMAP.md)
+- [roadmap.md](./roadmap.md)
 - [Architecture Overview](./architecture/overview.md)
 
 ### Continuum Orientation
@@ -80,8 +80,8 @@ It also now has a more explicit METHOD closeout surface under
 
 - The root `README.md` is intentionally product-facing, not the full METHOD
   doctrine front door.
-- `ROADMAP.md` is the strategy of record; active execution lives in the
-  filesystem queue.
+- `docs/roadmap.md` is legacy strategic context; active execution lives in the
+  filesystem queue, with `docs/BEARING.md` as the current direction surface.
 - If docs contradict runtime behavior, the docs must change.
 - Retros and witnesses are the closeout surface; chat and PR commentary are
   not enough on their own.

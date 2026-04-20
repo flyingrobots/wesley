@@ -45,6 +45,5 @@ three repositories by hand.
 
 - [packages/wesley-cli/src/commands/drift-watch.mjs](/Users/james/git/wesley/packages/wesley-cli/src/commands/drift-watch.mjs)
 - [packages/wesley-cli/test/drift-watch.bats](/Users/james/git/wesley/packages/wesley-cli/test/drift-watch.bats)
-- [GUIDE.md](/Users/james/git/wesley/GUIDE.md)
+- [GUIDE.md](/Users/james/git/wesley/docs/GUIDE.md)
 - [packages/wesley-cli/README.md](/Users/james/git/wesley/packages/wesley-cli/README.md)
-

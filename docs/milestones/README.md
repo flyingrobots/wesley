@@ -11,6 +11,7 @@ The MVP vertical slice (Transform → Plan → Rehearse → Certify) is complete
 
 ## Roadmap
 
-See the [canonical roadmap](../../ROADMAP.md) for remaining product strategy.
+See the [legacy roadmap note](../roadmap.md) for harvested long-range product
+strategy.
 Active execution now lives in the METHOD filesystem queue under
 `docs/method/backlog/`, with direction summarized in `docs/BEARING.md`.

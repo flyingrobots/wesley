@@ -5,20 +5,14 @@ title: Roadmap
 
 # Roadmap
 
-The canonical roadmap of record lives at the repository root:
-[ROADMAP.md](https://github.com/flyingrobots/wesley/blob/main/ROADMAP.md).
+The legacy roadmap note now lives in the docs tree:
+[docs/roadmap.md](https://github.com/flyingrobots/wesley/blob/main/docs/roadmap.md).
 
-That document owns:
+That document preserves the older V2 phase model, fixed contracts, release
+markers, execution governance, and compatibility windows. It is historical
+strategic context, not the live execution queue.
 
-- fixed contracts
-- phase order
-- release markers
-- execution governance
-- compatibility windows
-- the current phase model
-
-Use this page as a pointer, not a duplicate summary. The root roadmap is the
-single source of truth for what V2 means and how it ships.
+Use this page as a pointer, not a duplicate summary.
 
 Repo-visible execution now lives in the filesystem:
 

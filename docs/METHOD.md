@@ -15,13 +15,13 @@ The Wesley work doctrine: A backlog, a loop, and honest bookkeeping.
 | Signpost | Role |
 | :--- | :--- |
 | **`README.md`** | Public front door and project identity. |
-| **`GUIDE.md`** | Orientation and productive-fast path. |
+| **`docs/GUIDE.md`** | Orientation and productive-fast path. |
 | **`BEARING.md`** | Current direction and active tensions. |
 | **`VISION.md`** | Core tenets and the "Trustworthy Change" mission. |
-| **`ARCHITECTURE.md`** | Authoritative system map and pipeline. |
+| **`docs/ARCHITECTURE.md`** | Authoritative system map and pipeline. |
 | **`docs/design/`** | Active design packets and cycle-bound doctrine. |
 | **`AGENTS.md`** | Context recovery protocol for AI and humans. |
-| **`METHOD.md`** | Repo work doctrine (this document). |
+| **`docs/METHOD.md`** | Repo work doctrine (this document). |
 
 ## Backlog Lanes
 
