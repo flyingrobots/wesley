@@ -2,7 +2,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { schemaHash, WesleyError } from '@wesley/core';
 import { canonicalizeSchemaPath, joinPath } from './path-utils.mjs';
-import { createCheck, summarizeChecks } from './continuum-witness-support.mjs';
+import { createCheck, summarizeChecks } from './check-utils.mjs';
 
 export const REALIZATION_MANIFEST_KIND = 'wesley.realization.manifest.v1';
 export const REALIZATION_SIGNATURE_ALGORITHM = 'hmac-sha256';

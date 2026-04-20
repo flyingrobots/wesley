@@ -20,7 +20,6 @@
     "test:tap": "./test/run-bats.sh --tap"
   },
   "dependencies": {
-    "@wesley/continuum": "workspace:*",
     "@wesley/core": "workspace:*",
     "@wesley/generator-echo": "workspace:*",
     "@wesley/generator-js": "workspace:*",

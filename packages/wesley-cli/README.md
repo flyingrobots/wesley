@@ -36,7 +36,7 @@ explicit `--out-file`, `--out-dir`, or `--warpspace` flags still win.
 
 `drift-watch` is the local cutover surface for nearby Continuum consumers. It verifies the authored schema hash, local generated legs, realization shell, and any explicit mirror roots you point it at, then reports drift as an authored, generated-artifact, or mirror-boundary problem.
 The Continuum defaults behind `witness` and `drift-watch` now come from
-`@wesley/continuum`, which owns the shared-family scopes, publication-boundary
+the Continuum-owned module/profile surfaces in `../continuum/wesley/`, which own the shared-family scopes, publication-boundary
 policy, and the Continuum judgment profile for Holmes, Watson, and Moriarty.
 `contract release` uses those same profile defaults to emit one versioned
 contract bundle with `bundle.json`, realization, witness output, admitted

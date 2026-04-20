@@ -98,7 +98,6 @@ Progress: 59% → Alpha
 | `@wesley/generator-supabase` | Active | MVP | 50% → Alpha | — | SQL/RLS/pgTAP emitters |
 | `@wesley/generator-ttd` | Active | MVP | 20% → Alpha | — | TTD protocol + manifest emitters |
 | `@wesley/generator-vue` | Experimental | MVP | 0% → Alpha | — | Vue-facing TS/composable emitters |
-| `@wesley/continuum` | Active | MVP | 20% → Alpha | — | Continuum scopes + judgment profiles |
 | `@wesley/holmes` | Active | Alpha | 50% → Beta | — | Evidence scoring |
 | `@wesley/runtime-node` | Active | MVP | 0% → Alpha | — | Shared Node runtime adapters |
 | `@wesley/tasks` | Active | MVP | 50% → Alpha | — | Planner utilities |

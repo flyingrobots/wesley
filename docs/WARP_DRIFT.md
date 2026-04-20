@@ -35,8 +35,8 @@ The repo already has meaningful truth in the places that matter:
 - GraphQL SDL is treated as authored source rather than generated fallout
 - authored source, lowered IR, realization shell, and witness output are kept
   distinct
-- `@wesley/continuum` already owns real scope profiles, contract bundle
-  definitions, and sync projections
+- the Continuum module already owns real scope profiles, contract bundle
+  definitions, and sync projections from its home in the Continuum repo
 - Wesley already has a real generator/plugin seam and bundle-oriented
   toolchain surfaces
 - release and sync are already understood as publication-boundary work rather
@@ -52,12 +52,15 @@ is that the current repo still mixes base-platform truth and module-owned truth.
 The current repo still carries Continuum-specific policy and commands directly
 inside Wesley surfaces:
 
-- `@wesley/continuum` lives in the Wesley repo
-- Continuum-specific commands are part of the generic CLI
-- `observer-plan` is presented as a Wesley command even though observer nouns
-  are Continuum-only
+- some docs and generic command helpers still assume the old Wesley-side
+  Continuum package layout
+- some Continuum-target generator surfaces still live in Wesley even after the
+  Continuum command layer moved out
+- `observer-plan` has only just been extracted and the surrounding docs are
+  still catching up
 
-That was acceptable bootstrap. It is now the wrong long-term ownership split.
+That was acceptable bootstrap. The command/profile layer has now moved, but the
+repo still needs cleanup to finish the ownership split.
 
 ### 2. Observer surfaces are still framed as generic Wesley work
 

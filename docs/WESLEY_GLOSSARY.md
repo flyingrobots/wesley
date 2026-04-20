@@ -464,11 +464,12 @@ The Continuum-owned orchestration tool.
 
 `warp` should sit above Wesley. It decides how a Continuum workspace is initialized, which shared families are materialized, and how Wesley is invoked as part of that process.
 
-### `@wesley/continuum`
+### Continuum Wesley Module
 
-A Continuum-specific preset/profile package currently living inside the Wesley repo.
+The Continuum-owned Wesley module and profile surface now lives in the
+Continuum repo under `continuum/wesley/`.
 
-It is not compiler core. Long-term, much of this package likely belongs in Continuum once the extension-loading and ownership boundaries are cleaner.
+It is not compiler core. It extends Wesley from outside the Wesley repo.
 
 ## Practical Rule
 

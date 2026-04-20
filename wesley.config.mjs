@@ -7,14 +7,6 @@ export default {
   // Version of this config format
   version: '1.0.0',
 
-  // Repo-local explicit module bootstrap.
-  // Generic Wesley does not auto-load sibling repos or domain modules.
-  // This repo opts into the internal Continuum bootstrap module for local
-  // development and CI until the real module lives entirely in Continuum.
-  modules: [
-    './packages/wesley-cli/src/modules/continuum.mjs'
-  ],
-
   // Scoring thresholds for production readiness
   thresholds: {
     scs: 0.8,  // Schema Coverage Score - 80% required

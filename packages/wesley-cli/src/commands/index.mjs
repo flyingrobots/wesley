@@ -3,7 +3,6 @@ export * from './cert-create.mjs';
 export * from './cert-sign.mjs';
 export * from './cert-verify.mjs';
 export * from './compile.mjs';
-export * from './contract.mjs';
 export * from './generate.mjs';
 export * from './models.mjs';
 export * from './plan.mjs';
@@ -17,11 +16,8 @@ export * from './zod.mjs';
 export * from './blade.mjs';
 export * from './compile-ttd.mjs';
 export * from './bundle-echo.mjs';
-export * from './witness.mjs';
-export * from './witness-continuum.mjs';
 export * from './doctor.mjs';
 export * from './diff.mjs';
-export * from './drift-watch.mjs';
 
 import { CertSignCommand } from './cert-sign.mjs';
 export const StakeCommand = CertSignCommand; // Alias for BLADE

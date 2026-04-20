@@ -39,7 +39,8 @@ The repo already has three important building blocks around that hill:
 - a real Echo bundle wrapper via
   [bundle-echo](../packages/wesley-cli/src/commands/bundle-echo.mjs)
 - a real current-state witness path via
-  [witness-continuum](../packages/wesley-cli/src/commands/witness-continuum.mjs)
+  the Continuum-owned Wesley module under
+  [../continuum/wesley](../../continuum/wesley/README.md)
 
 It also now has a more explicit METHOD closeout surface under
 `docs/method/retro/`, `docs/method/graveyard/`, `docs/method/releases/`, and

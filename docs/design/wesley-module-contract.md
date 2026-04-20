@@ -190,10 +190,10 @@ This note implies the following changes.
 
 It should be treated as a Continuum-module feature.
 
-### 2. `@wesley/continuum` is in the wrong repo long-term
+### 2. Continuum ownership belongs in the Continuum repo
 
-It is useful as a bootstrap package today, but the real Continuum module should
-ultimately live in the Continuum repo.
+The old Wesley-side Continuum package was bootstrap. The real Continuum module
+and profile surfaces belong in the Continuum repo.
 
 ### 3. Wesley needs external module loading
 
@@ -234,8 +234,7 @@ The current posture is:
 - CLI can discover and register module-owned command surfaces
 - generic Wesley loads no domain modules by default
 - modules are loaded explicitly through `wesley.config.mjs` or `WESLEY_MODULES`
-- this repo currently uses its root `wesley.config.mjs` to opt into an internal
-  Continuum bootstrap module for local development and CI
+- the Continuum module implementation now lives in the Continuum repo
 
 That is not the final architecture. It is the bridge that lets the real
 architecture happen without a rewrite.
