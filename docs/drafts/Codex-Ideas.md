@@ -747,7 +747,7 @@
 ▌ [![Build](https://img.shields.io/github/actions/workflow/status/neuroglyph/git-mind/ci.yml?branch=main)](https://github.com/neuroglyph/git-
 ▌ mind/actions)
 ▌ [![License](https://img.shields.io/badge/license-MIND--UCAL--1.0-blue)](../../LICENSE)
-▌ [![Status](https://img.shields.io/badge/status-early--stage-orange)](../../docs/roadmap.md)
+▌ [![Status](https://img.shields.io/badge/status-early--stage-orange)](../../docs/BEARING.md)
 ▌
 ▌ > __Version your thoughts. Branch your ideas. Merge understanding.__
 ▌
@@ -943,7 +943,7 @@
 ▌ <!-- features-progress:end -->
 ▌
 ▌ 🚀 Early release — Core features work today, API may evolve
-▌ 📅 Roadmap: `../../docs/roadmap.md`
+▌ 📅 Direction: `../../docs/BEARING.md`
 ▌ 🤝 Contributing: `CONTRIBUTING.md`
 ▌
 ▌ ---

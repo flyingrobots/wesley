@@ -24,7 +24,7 @@ Do not audit the repository by recursively walking the filesystem. Follow the au
 
 ### 3. The Direction
 - **`docs/BEARING.md`**: Current execution gravity and active tensions.
-- **`docs/roadmap.md`**: Legacy strategic horizon and harvested phase targets.
+- **`docs/design/README.md`**: Active design packets and structural doctrine.
 - **`docs/method/backlog/`**: The active source of truth for pending work.
 
 ### 4. The Proof

@@ -50,7 +50,7 @@ This runs the migration plan without touching a database and prints the REALM
 ## 5. Next steps
 
 - Explore direction: [docs/BEARING.md](../BEARING.md)
-- Read the strategy: [docs/roadmap.md](../roadmap.md)
+- Read the direction map: [Roadmap](./roadmap.md)
 - Enable Supabase-specific generators: see [docs/features/](../features/).
 - Learn about HOLMES scoring: [docs/architecture/holmes-architecture.md](../architecture/holmes-architecture.md)
 

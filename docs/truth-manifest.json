@@ -27,11 +27,6 @@
       "owner": "@flyingrobots"
     },
     {
-      "path": "docs/roadmap.md",
-      "status": "current",
-      "owner": "@flyingrobots"
-    },
-    {
       "path": "docs/method/process.md",
       "status": "current",
       "owner": "@flyingrobots"

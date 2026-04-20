@@ -28,8 +28,9 @@ Each invariant file answers four questions:
 4. How do you check it?
 
 Phase-specific contracts such as `transform` naming, package transitions, or
-older milestone gates still live in [docs/roadmap.md](../roadmap.md). Those
-matter, but they are not the same thing as application invariants.
+older milestone gates belong in milestone notes, design packets, and release
+history. Those matter, but they are not the same thing as application
+invariants.
 
 Core product pillars also live elsewhere. For example, Wesley's
 multi-transmutation ambition is a pillar of product direction, but it is not the

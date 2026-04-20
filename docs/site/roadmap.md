@@ -5,19 +5,15 @@ title: Roadmap
 
 # Roadmap
 
-The legacy roadmap note now lives in the docs tree:
-[docs/roadmap.md](https://github.com/flyingrobots/wesley/blob/main/docs/roadmap.md).
-
-That document preserves the older V2 phase model, fixed contracts, release
-markers, execution governance, and compatibility windows. It is historical
-strategic context, not the live execution queue.
-
-Use this page as a pointer, not a duplicate summary.
-
 Repo-visible execution now lives in the filesystem:
 
 - `docs/BEARING.md` for current direction
 - `docs/VISION.md` for bounded synthesis
+- `docs/design/README.md` for active design packets and boundary notes
 - `docs/method/backlog/` for queued work
 - `docs/design/` for active cycle packets
 - `docs/method/retro/` for closed cycle packets
+
+This site page is the stable signpost for "where Wesley is headed" after the
+old root-doc roadmap note was retired. Use it as a map to the live surfaces,
+not as a duplicate strategy document.

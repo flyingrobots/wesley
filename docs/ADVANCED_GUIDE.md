@@ -20,7 +20,7 @@ Wesley extends GraphQL SDL with custom directives to capture systems-level inten
 - **`@storage(backend: "postgres")`**: Maps a schema entity to a physical database table.
 - **`@policy(rule: "no-breaking")`**: Injects a HOLMES invariant check into the transmutation pipeline.
 
-See [docs/DIRECTIVES.md](./docs/DIRECTIVES.md) for the full truth table.
+See [DIRECTIVES.md](./DIRECTIVES.md) for the full truth table.
 
 ## HOLMES: Automated Governance
 

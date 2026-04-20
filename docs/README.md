@@ -14,7 +14,7 @@ which signpost is supposed to answer which question.
 | [WESLEY_GLOSSARY.md](./WESLEY_GLOSSARY.md) | Fast noun map for the Wesley base platform, modules, and project workspace. |
 | [BEARING](./BEARING.md) | Current direction, what is already real in the repo, and the tensions that still matter. |
 | [VISION](./VISION.md) | Bounded executive synthesis grounded in repo-visible truth. |
-| [roadmap.md](./roadmap.md) | Archived strategic note: harvested V2 phase plan and remaining long-range context. |
+| [Design Packets](./design/README.md) | Active design packets and doctrinal boundary notes. |
 | [METHOD Process](./method/process.md) | How cycles run, close, and reconcile in this repo. |
 | [METHOD Release](./method/release.md) | How releases are shaped, verified, and documented. |
 
@@ -51,7 +51,8 @@ It also now has a more explicit METHOD closeout surface under
 
 - [README.md](../README.md)
 - [WESLEY_GLOSSARY.md](./WESLEY_GLOSSARY.md)
-- [roadmap.md](./roadmap.md)
+- [BEARING](./BEARING.md)
+- [Design Packets](./design/README.md)
 - [Architecture Overview](./architecture/overview.md)
 - [Wesley Core Versus Toolchain](./architecture/wesley-core-vs-toolchain.md)
 - [Module Contract](./design/wesley-module-contract.md)
@@ -84,8 +85,9 @@ It also now has a more explicit METHOD closeout surface under
 
 - The root `README.md` is intentionally product-facing, not the full METHOD
   doctrine front door.
-- `docs/roadmap.md` is legacy strategic context; active execution lives in the
-  filesystem queue, with `docs/BEARING.md` as the current direction surface.
+- Active execution lives in the filesystem queue, with `docs/BEARING.md` as
+  the current direction surface and `docs/design/README.md` as the design
+  packet index.
 - If docs contradict runtime behavior, the docs must change.
 - Retros and witnesses are the closeout surface; chat and PR commentary are
   not enough on their own.
