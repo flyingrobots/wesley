@@ -1,4 +1,5 @@
 import { validateWesleyModule } from '../ports/WesleyModule.mjs';
+import { createModuleCapabilityRegistry } from './ModuleCapabilityRegistry.mjs';
 
 function fail(message, code, cause) {
   const error = new Error(message);
@@ -112,5 +113,7 @@ export async function discoverModules(entries, { resolve, logger }) {
     modules.push(instance);
   }
 
-  return { modules };
+  const capabilityRegistry = createModuleCapabilityRegistry(modules);
+
+  return { modules, capabilityRegistry };
 }

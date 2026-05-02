@@ -6,7 +6,10 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import { program } from '../src/program.mjs';
-import { loadWesleyCliModuleEntries } from '../src/framework/module-loader.mjs';
+import {
+  discoverAndRegisterWesleyCliModules,
+  loadWesleyCliModuleEntries
+} from '../src/framework/module-loader.mjs';
 
 const fixtureModulePath = fileURLToPath(new URL('./fixtures/modules/test-extension-module.mjs', import.meta.url));
 
@@ -120,6 +123,61 @@ test('program loads CLI commands from a fixture module via WESLEY_MODULES', asyn
     assert.equal(payload.result.kind, 'fixture.hello');
     assert.equal(payload.result.source, 'test-extension-module');
     assert.equal(io.readStderr(), '');
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test('discoverAndRegisterWesleyCliModules exposes fixture capability registry on ctx', async () => {
+  const tempDir = mkdtempSync(path.join(os.tmpdir(), 'wesley-module-capabilities-'));
+
+  try {
+    const ctx = {
+      cwd: tempDir,
+      env: {
+        WESLEY_MODULES: fixtureModulePath
+      },
+      logger: {
+        debug() {},
+        info() {},
+        warn() {},
+        error() {},
+        child() {
+          return this;
+        }
+      }
+    };
+
+    const result = await discoverAndRegisterWesleyCliModules({
+      ctx,
+      cwd: tempDir,
+      env: ctx.env,
+      logger: ctx.logger
+    });
+    const registry = result.capabilityRegistry;
+
+    assert.equal(ctx.moduleCapabilityRegistry, registry);
+    assert.deepEqual(registry.modules, [
+      { name: 'test-extension-module', apiVersion: '1' }
+    ]);
+    assert.deepEqual(registry.capabilities.wesley.targets, [
+      {
+        moduleName: 'test-extension-module',
+        value: { name: 'fixture-target' }
+      }
+    ]);
+    assert.deepEqual(registry.capabilities.holmes.scopes, [
+      {
+        moduleName: 'test-extension-module',
+        value: { name: 'fixture-scope' }
+      }
+    ]);
+    assert.deepEqual(registry.capabilities.cli.commands, [
+      {
+        moduleName: 'test-extension-module',
+        value: { name: 'fixture-hello' }
+      }
+    ]);
   } finally {
     rmSync(tempDir, { recursive: true, force: true });
   }

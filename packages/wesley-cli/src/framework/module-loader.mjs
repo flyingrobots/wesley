@@ -163,10 +163,14 @@ export async function discoverAndRegisterWesleyCliModules({
   logger = ctx?.logger ?? nullLogger
 } = {}) {
   const entries = await loadWesleyCliModuleEntries({ cwd, env });
-  const { modules } = await discoverModules(entries, {
+  const { modules, capabilityRegistry } = await discoverModules(entries, {
     resolve: resolveModuleSpecifier,
     logger
   });
+
+  if (ctx && typeof ctx === 'object') {
+    ctx.moduleCapabilityRegistry = capabilityRegistry;
+  }
 
   for (const module of modules) {
     if (typeof module.registerCliCommands === 'function') {
@@ -174,5 +178,5 @@ export async function discoverAndRegisterWesleyCliModules({
     }
   }
 
-  return { modules, entries };
+  return { modules, entries, capabilityRegistry };
 }

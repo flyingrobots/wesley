@@ -13,6 +13,11 @@ export class WesleyModule {
     // Optional hook for per-project/module configuration.
   }
 
+  get capabilities() {
+    // Optional structured capabilities supplied by external modules.
+    return undefined;
+  }
+
   async registerCliCommands(_ctx) {
     // Optional hook for module-owned CLI command surfaces.
   }
@@ -81,6 +86,26 @@ export function validateWesleyModule(module) {
 
   if (module.init !== undefined && typeof module.init !== 'function') {
     fail(`Module${label} "init" must be a function if provided (got ${typeof module.init})`, 'WMOD001');
+  }
+
+  const capabilitiesResult = safeGet(module, 'capabilities');
+  if (!capabilitiesResult.ok) {
+    fail(`Module${label} capabilities getter threw: ${capabilitiesResult.error.message}`, 'WMOD001');
+  }
+  if (
+    capabilitiesResult.value !== undefined &&
+    (
+      capabilitiesResult.value === null ||
+      typeof capabilitiesResult.value !== 'object' ||
+      Array.isArray(capabilitiesResult.value)
+    )
+  ) {
+    fail(
+      `Module${label} "capabilities" must be a plain object if provided (got ${
+        Array.isArray(capabilitiesResult.value) ? 'array' : typeof capabilitiesResult.value
+      })`,
+      'WMOD001'
+    );
   }
 
   if (

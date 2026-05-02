@@ -24,9 +24,9 @@ timeline
   `wesley-core`, Wesley generators, or generic host packages.
 
 ### 2. Module Capability Runtime
-- Expanding the module contract from CLI command registration to structured
-  capability registries.
-- Making compile target discovery module-driven.
+- Using the basic module capability registry as the default seam between
+  loaded modules and Wesley base verbs.
+- Making compile target discovery consume module-owned `wesley.targets`.
 - Keeping Wesley core CI independent of external product and database repos by
   using hermetic fixture modules.
 

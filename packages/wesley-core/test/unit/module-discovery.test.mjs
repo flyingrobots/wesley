@@ -2,7 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  WESLEY_MODULE_CAPABILITY_AREAS,
   SUPPORTED_WESLEY_MODULE_API_VERSIONS,
+  createModuleCapabilityRegistry,
+  listModuleCapabilities,
   validateWesleyModule,
   discoverModules
 } from '../../src/index.mjs';
@@ -55,6 +58,22 @@ test('validateWesleyModule accepts a valid plain-object module', () => {
   assert.doesNotThrow(() => validateWesleyModule(makeFakeModule()));
 });
 
+test('validateWesleyModule accepts a module with structured capabilities', () => {
+  assert.doesNotThrow(() => validateWesleyModule(makeFakeModule({
+    capabilities: {
+      wesley: {
+        targets: [{ name: 'fixture-target' }]
+      }
+    }
+  })));
+});
+
+test('WESLEY_MODULE_CAPABILITY_AREAS is frozen', () => {
+  assert.throws(() => {
+    WESLEY_MODULE_CAPABILITY_AREAS.push('product');
+  }, TypeError);
+});
+
 test('validateWesleyModule rejects a module with a blank name', () => {
   assert.throws(() => validateWesleyModule(makeFakeModule({ name: '   ' })), /non-empty string/);
 });
@@ -76,6 +95,7 @@ test('discoverModules loads string and object entries', async () => {
   assert.equal(result.modules.length, 2);
   assert.equal(result.modules[0].name, 'alpha');
   assert.equal(result.modules[1].name, 'beta');
+  assert.deepEqual(result.capabilityRegistry.modules.map((module) => module.name), ['alpha', 'beta']);
 });
 
 test('discoverModules forwards config to init()', async () => {
@@ -116,6 +136,86 @@ test('discoverModules skips disabled entries', async () => {
   });
 
   assert.deepEqual(result.modules.map((module) => module.name), ['loaded']);
+});
+
+test('createModuleCapabilityRegistry aggregates structured capabilities with ownership', () => {
+  const registry = createModuleCapabilityRegistry([
+    makeFakeModule({
+      name: 'alpha',
+      capabilities: {
+        wesley: {
+          targets: [{ name: 'alpha-target' }],
+          generators: [{ name: 'alpha-generator' }]
+        },
+        holmes: {
+          scopes: [{ name: 'alpha-scope' }]
+        },
+        cli: {
+          commands: [{ name: 'alpha-command' }]
+        }
+      }
+    }),
+    makeFakeModule({
+      name: 'beta',
+      capabilities: {
+        wesley: {
+          targets: [{ name: 'beta-target' }]
+        },
+        blade: {
+          gates: [{ name: 'beta-gate' }]
+        }
+      }
+    })
+  ]);
+
+  assert.deepEqual(
+    listModuleCapabilities(registry, 'wesley', 'targets'),
+    [
+      { moduleName: 'alpha', value: { name: 'alpha-target' } },
+      { moduleName: 'beta', value: { name: 'beta-target' } }
+    ]
+  );
+  assert.deepEqual(
+    listModuleCapabilities(registry, 'holmes', 'scopes'),
+    [{ moduleName: 'alpha', value: { name: 'alpha-scope' } }]
+  );
+  assert.deepEqual(
+    listModuleCapabilities(registry, 'blade', 'gates'),
+    [{ moduleName: 'beta', value: { name: 'beta-gate' } }]
+  );
+  assert.deepEqual(listModuleCapabilities(registry, 'watson', 'verifiers'), []);
+});
+
+test('createModuleCapabilityRegistry rejects unknown capability areas', () => {
+  assert.throws(() => createModuleCapabilityRegistry([
+    makeFakeModule({
+      capabilities: {
+        product: {
+          targets: []
+        }
+      }
+    })
+  ]), (error) => {
+    assert.equal(error.code, 'WMOD005');
+    assert.match(error.message, /unknown area "product"/);
+    return true;
+  });
+});
+
+test('createModuleCapabilityRegistry rejects non-array capability collections', () => {
+  assert.throws(() => createModuleCapabilityRegistry([
+    makeFakeModule({
+      capabilities: {
+        wesley: {
+          targets: { name: 'not-an-array' }
+        }
+      }
+    })
+  ]), (error) => {
+    assert.equal(error.code, 'WMOD005');
+    assert.match(error.message, /capabilities\.wesley\.targets must be an array/);
+    return true;
+  });
 });
 
 test('discoverModules rejects unresolved modules with a coded error', async () => {

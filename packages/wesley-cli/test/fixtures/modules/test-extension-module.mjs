@@ -23,6 +23,30 @@ class TestExtensionModule extends WesleyModule {
     return 'test-extension-module';
   }
 
+  get capabilities() {
+    return {
+      wesley: {
+        targets: [{ name: 'fixture-target' }],
+        generators: [{ name: 'fixture-generator' }]
+      },
+      holmes: {
+        scopes: [{ name: 'fixture-scope' }]
+      },
+      watson: {
+        verifiers: [{ name: 'fixture-verifier' }]
+      },
+      moriarty: {
+        policyProfiles: [{ name: 'fixture-policy' }]
+      },
+      blade: {
+        gates: [{ name: 'fixture-gate' }]
+      },
+      cli: {
+        commands: [{ name: 'fixture-hello' }]
+      }
+    };
+  }
+
   async registerCliCommands(ctx) {
     new FixtureHelloCommand(ctx);
   }

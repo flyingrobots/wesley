@@ -301,7 +301,7 @@ So Wesley should keep a hermetic fixture module in its own tests that proves:
 
 - module loading works
 - capability registration works
-- `compile` can discover module-owned targets
+- module-owned target metadata can be discovered without product repos
 
 That fixture is a test artifact, not a product module.
 
@@ -324,12 +324,15 @@ Today Wesley has:
 
 - explicit module loading
 - module-owned CLI command registration
+- a basic module capability registry that normalizes loaded module
+  contributions across the `wesley`, `holmes`, `watson`, `moriarty`, `blade`,
+  and `cli` areas
 
 Today Wesley does **not** yet have:
 
-- a real capability registry
 - module-driven compile target discovery
-- module-provided Holmes/Watson/Moriarty/BLADE registries
+- module-provided Holmes/Watson/Moriarty/BLADE dispatch
 
-So this document is the next contract to implement, not a claim that the work
-is already complete.
+So this document is partly implemented. The next concrete cut is to make
+`wesley compile` consume `wesley.targets` from the registry instead of
+hard-coded product targets.

@@ -126,6 +126,13 @@ export { TransmutationRunner, createRunId } from './application/TransmutationRun
 export { ArtifactWriter } from './application/ArtifactWriter.mjs';
 export { discoverPlugins } from './application/PluginDiscovery.mjs';
 export { discoverModules } from './application/ModuleDiscovery.mjs';
+export {
+  WESLEY_MODULE_CAPABILITY_AREAS,
+  WESLEY_MODULE_CAPABILITY_COLLECTIONS,
+  createModuleCapabilityRegistry,
+  listModuleCapabilities,
+  normalizeModuleCapabilities
+} from './application/ModuleCapabilityRegistry.mjs';
 export { validateConfig, KNOWN_EXPERIMENTAL_FLAGS } from './application/ConfigValidator.mjs';
 
 // Safety Components (Wave 3)
