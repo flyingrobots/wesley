@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import os from 'node:os';
 import path from 'node:path';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import { program } from '../src/program.mjs';
@@ -160,12 +160,10 @@ test('discoverAndRegisterWesleyCliModules exposes fixture capability registry on
     assert.deepEqual(registry.modules, [
       { name: 'test-extension-module', apiVersion: '1' }
     ]);
-    assert.deepEqual(registry.capabilities.wesley.targets, [
-      {
-        moduleName: 'test-extension-module',
-        value: { name: 'fixture-target' }
-      }
-    ]);
+    assert.equal(registry.capabilities.wesley.targets.length, 1);
+    assert.equal(registry.capabilities.wesley.targets[0].moduleName, 'test-extension-module');
+    assert.equal(registry.capabilities.wesley.targets[0].value.name, 'fixture-target');
+    assert.equal(typeof registry.capabilities.wesley.targets[0].value.compile, 'function');
     assert.deepEqual(registry.capabilities.holmes.scopes, [
       {
         moduleName: 'test-extension-module',
@@ -178,6 +176,68 @@ test('discoverAndRegisterWesleyCliModules exposes fixture capability registry on
         value: { name: 'fixture-hello' }
       }
     ]);
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test('program dispatches compile through a fixture module target', async () => {
+  const tempDir = mkdtempSync(path.join(os.tmpdir(), 'wesley-module-compile-target-'));
+  const io = createIo();
+
+  try {
+    writeFileSync(path.join(tempDir, 'schema.graphql'), 'type Todo { id: ID! }\n');
+
+    const exitCode = await program(
+      [
+        'node',
+        'wesley',
+        '--json',
+        'compile',
+        '--schema',
+        'schema.graphql',
+        '--target',
+        'fixture-target',
+        '--out-dir',
+        'out',
+        '--dry-run'
+      ],
+      {
+        cwd: tempDir,
+        env: {
+          WESLEY_MODULES: fixtureModulePath
+        },
+        fs: {
+          async read(targetPath) {
+            return readFileSync(path.resolve(tempDir, targetPath), 'utf8');
+          }
+        },
+        stdout: io.stdout,
+        stderr: io.stderr,
+        logger: {
+          debug() {},
+          info() {},
+          warn() {},
+          error() {},
+          child() {
+            return this;
+          }
+        }
+      }
+    );
+
+    assert.equal(exitCode, 0);
+    const payload = JSON.parse(io.readStdout());
+    assert.equal(payload.success, true);
+    assert.deepEqual(payload.result.targets, ['fixture-target']);
+    assert.equal(payload.result.generatedTargets['fixture-target'].moduleName, 'test-extension-module');
+    assert.equal(
+      payload.result.generatedTargets['fixture-target'].result.kind,
+      'fixture.compile-target.v1'
+    );
+    assert.equal(payload.result.generatedTargets['fixture-target'].result.outDir, 'out/fixture-target');
+    assert.equal(payload.result.generatedTargets['fixture-target'].result.dryRun, true);
+    assert.equal(io.readStderr(), '');
   } finally {
     rmSync(tempDir, { recursive: true, force: true });
   }

@@ -129,12 +129,16 @@ Examples:
 
 ### 6. CLI capabilities
 
-These add module-owned user-facing commands.
+These describe module-owned user-facing command surfaces.
 
 Examples:
 
 - target-specific commands
 - module-local doctor or report commands
+
+This is declarative metadata. The current runtime still uses
+`registerCliCommands(ctx)` as the imperative hook that actually registers
+Commander command instances.
 
 CLI capabilities are useful, but they are not the whole module story.
 
@@ -327,12 +331,14 @@ Today Wesley has:
 - a basic module capability registry that normalizes loaded module
   contributions across the `wesley`, `holmes`, `watson`, `moriarty`, `blade`,
   and `cli` areas
+- module-driven compile target discovery and dispatch for loaded
+  `wesley.targets`
 
 Today Wesley does **not** yet have:
 
-- module-driven compile target discovery
 - module-provided Holmes/Watson/Moriarty/BLADE dispatch
+- complete removal of legacy product-target compatibility paths
 
-So this document is partly implemented. The next concrete cut is to make
-`wesley compile` consume `wesley.targets` from the registry instead of
-hard-coded product targets.
+So this document is partly implemented. The next concrete cuts are to exercise
+the full fixture capability matrix and then remove or relocate legacy
+product/database residue.

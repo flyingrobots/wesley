@@ -5,6 +5,5 @@ calendar.
 
 Current next pulls outside the `v0.1.0/` release lane:
 
-1. `TRANSMUTE_compile-target-discovery-from-modules.md`
-2. `SPEC_fixture-extension-module-capability-matrix.md`
-3. `OWN_delete-product-leftovers-after-capability-cut.md`
+1. `SPEC_fixture-extension-module-capability-matrix.md`
+2. `OWN_delete-product-leftovers-after-capability-cut.md`

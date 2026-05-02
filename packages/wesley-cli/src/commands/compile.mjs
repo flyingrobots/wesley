@@ -1,5 +1,5 @@
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
-import { WesleyError } from '@wesley/core';
+import { WesleyError, listModuleCapabilities } from '@wesley/core';
 import { joinPath } from './path-utils.mjs';
 import { runCompileTtd } from './compile-ttd.mjs';
 import { runBundleEcho } from './bundle-echo.mjs';
@@ -7,8 +7,7 @@ import {
   buildRealizationManifest
 } from './realization-integrity.mjs';
 
-const VALID_TARGETS = ['warp-ttd', 'echo'];
-const LEGACY_TARGET_ALIASES = new Map([['ttd', 'warp-ttd']]);
+const LEGACY_COMPAT_MODULE_NAME = 'wesley-legacy-compile-compat';
 
 export class CompileCommand extends WesleyCommand {
   constructor(ctx) {
@@ -34,45 +33,47 @@ export class CompileCommand extends WesleyCommand {
   }
 
   async executeCore(context) {
-    const targets = parseTargets(context.options.target);
+    const availableTargets = getCompileTargetDescriptors(this.ctx);
+    const targets = parseTargets(context.options.target, availableTargets);
     const manifestPath = context.options.manifestOut ?? context.options.witnessOut ?? joinPath(context.options.outDir, 'realization', 'manifest.json');
     const summary = {
       schemaPath: context.schemaPath,
       outDir: context.options.outDir,
       dryRun: Boolean(context.options.dryRun),
       targets,
-      manifestPath
+      manifestPath,
+      generatedTargets: {}
     };
 
-    if (targets.includes('warp-ttd')) {
-      summary.warpTtd = await runCompileTtd({
-        ctx: this.ctx,
-        schemaContent: context.schemaContent,
-        schemaPath: context.schemaPath,
-        units: context.units,
-        options: {
-          ...context.options,
-          outDir: joinPath(context.options.outDir, 'warp-ttd'),
-          target: context.options.emit
-        },
-        logger: context.logger
+    for (const targetName of targets) {
+      const descriptor = availableTargets.byName.get(targetName);
+      if (!descriptor) {
+        throw new WesleyError(
+          'INVALID_TARGET',
+          `Invalid target: "${targetName}". Valid targets: ${formatTargetList(availableTargets)}`
+        );
+      }
+
+      const result = await runCompileTargetDescriptor({
+        command: this,
+        descriptor,
+        context,
+        outDir: joinPath(context.options.outDir, descriptor.name)
       });
+
+      summary.generatedTargets[descriptor.name] = {
+        moduleName: descriptor.moduleName,
+        result
+      };
+
+      if (descriptor.summaryKey) {
+        summary[descriptor.summaryKey] = result;
+      }
     }
 
-    if (targets.includes('echo')) {
-      summary.echo = await runBundleEcho({
-        ctx: this.ctx,
-        schemaContent: context.schemaContent,
-        schemaPath: context.schemaPath,
-        options: {
-          ...context.options,
-          outDir: joinPath(context.options.outDir, 'echo')
-        },
-        logger: context.logger
-      });
-    }
-
-    const schemaHashes = [summary.warpTtd?.schemaHash, summary.echo?.schemaHash].filter(Boolean);
+    const schemaHashes = Object.values(summary.generatedTargets)
+      .map((entry) => entry?.result?.schemaHash)
+      .filter(Boolean);
     if (schemaHashes.length > 1 && new Set(schemaHashes).size !== 1) {
       throw new WesleyError(
         'SCHEMA_HASH_MISMATCH',
@@ -104,21 +105,190 @@ export class CompileCommand extends WesleyCommand {
   }
 }
 
-function parseTargets(rawTargets) {
+function getCompileTargetDescriptors(ctx) {
+  const byName = new Map();
+  const aliases = new Map();
+  const ordered = [];
+
+  for (const entry of listModuleCapabilities(
+    ctx?.moduleCapabilityRegistry,
+    'wesley',
+    'targets'
+  )) {
+    addTargetDescriptor({
+      byName,
+      aliases,
+      ordered,
+      moduleName: entry.moduleName,
+      target: entry.value
+    });
+  }
+
+  for (const legacyTarget of legacyCompileTargets()) {
+    addTargetDescriptor({
+      byName,
+      aliases,
+      ordered,
+      moduleName: LEGACY_COMPAT_MODULE_NAME,
+      target: legacyTarget,
+      replaceExisting: false
+    });
+  }
+
+  return { byName, aliases, ordered };
+}
+
+function addTargetDescriptor({
+  byName,
+  aliases,
+  ordered,
+  moduleName,
+  target,
+  replaceExisting = true
+}) {
+  if (target == null || typeof target !== 'object' || Array.isArray(target)) {
+    throw new WesleyError(
+      'INVALID_TARGET_CAPABILITY',
+      `Module "${moduleName}" registered a target capability that is not a plain object.`
+    );
+  }
+
+  const name = normalizeTargetName(target.name);
+  if (!name) {
+    throw new WesleyError(
+      'INVALID_TARGET_CAPABILITY',
+      `Module "${moduleName}" registered a target capability without a non-empty string "name".`
+    );
+  }
+
+  if (byName.has(name) && !replaceExisting) {
+    return;
+  }
+
+  const descriptor = {
+    ...target,
+    name,
+    moduleName
+  };
+
+  if (byName.has(name)) {
+    const existingIndex = ordered.findIndex((item) => item.name === name);
+    if (existingIndex >= 0) {
+      ordered.splice(existingIndex, 1, descriptor);
+    }
+  } else {
+    ordered.push(descriptor);
+  }
+  byName.set(name, descriptor);
+
+  for (const alias of target.aliases ?? []) {
+    const normalizedAlias = normalizeTargetName(alias);
+    if (normalizedAlias) {
+      aliases.set(normalizedAlias, name);
+    }
+  }
+}
+
+async function runCompileTargetDescriptor({
+  command,
+  descriptor,
+  context,
+  outDir
+}) {
+  if (typeof descriptor.compile !== 'function') {
+    throw new WesleyError(
+      'INVALID_TARGET_CAPABILITY',
+      `Target "${descriptor.name}" from module "${descriptor.moduleName}" does not provide a compile() hook.`
+    );
+  }
+
+  return descriptor.compile({
+    ctx: command.ctx,
+    command,
+    schemaContent: context.schemaContent,
+    schemaPath: context.schemaPath,
+    units: context.units,
+    options: context.options,
+    logger: context.logger,
+    outDir,
+    target: descriptor
+  });
+}
+
+function parseTargets(rawTargets, availableTargets) {
   const targets = String(rawTargets)
     .split(',')
-    .map(target => LEGACY_TARGET_ALIASES.get(target.trim().toLowerCase()) ?? target.trim().toLowerCase())
+    .map((target) => normalizeRequestedTarget(target, availableTargets))
     .filter(Boolean);
 
   if (targets.length === 0) {
-    throw new WesleyError('INVALID_TARGET', `At least one target is required. Valid targets: ${VALID_TARGETS.join(', ')}`);
+    throw new WesleyError(
+      'INVALID_TARGET',
+      `At least one target is required. Valid targets: ${formatTargetList(availableTargets)}`
+    );
   }
 
   for (const target of targets) {
-    if (!VALID_TARGETS.includes(target)) {
-      throw new WesleyError('INVALID_TARGET', `Invalid target: "${target}". Valid targets: ${VALID_TARGETS.join(', ')}`);
+    if (!availableTargets.byName.has(target)) {
+      throw new WesleyError(
+        'INVALID_TARGET',
+        `Invalid target: "${target}". Valid targets: ${formatTargetList(availableTargets)}`
+      );
     }
   }
 
   return targets;
+}
+
+function normalizeRequestedTarget(rawTarget, availableTargets) {
+  const normalized = normalizeTargetName(rawTarget);
+  return availableTargets.aliases.get(normalized) ?? normalized;
+}
+
+function normalizeTargetName(rawTarget) {
+  return typeof rawTarget === 'string' ? rawTarget.trim().toLowerCase() : '';
+}
+
+function formatTargetList(availableTargets) {
+  return availableTargets.ordered.map((target) => target.name).join(', ') || '<none>';
+}
+
+function legacyCompileTargets() {
+  return [
+    {
+      name: 'warp-ttd',
+      aliases: ['ttd'],
+      summaryKey: 'warpTtd',
+      async compile({ ctx, schemaContent, schemaPath, units, options, logger }) {
+        return runCompileTtd({
+          ctx,
+          schemaContent,
+          schemaPath,
+          units,
+          options: {
+            ...options,
+            outDir: joinPath(options.outDir, 'warp-ttd'),
+            target: options.emit
+          },
+          logger
+        });
+      }
+    },
+    {
+      name: 'echo',
+      summaryKey: 'echo',
+      async compile({ ctx, schemaContent, schemaPath, options, logger }) {
+        return runBundleEcho({
+          ctx,
+          schemaContent,
+          schemaPath,
+          options: {
+            ...options,
+            outDir: joinPath(options.outDir, 'echo')
+          },
+          logger
+        });
+      }
+    }
+  ];
 }

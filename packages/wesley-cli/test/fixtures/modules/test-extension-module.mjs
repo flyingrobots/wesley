@@ -26,7 +26,19 @@ class TestExtensionModule extends WesleyModule {
   get capabilities() {
     return {
       wesley: {
-        targets: [{ name: 'fixture-target' }],
+        targets: [{
+          name: 'fixture-target',
+          async compile({ schemaContent, schemaPath, outDir, options, target }) {
+            return {
+              kind: 'fixture.compile-target.v1',
+              target: target.name,
+              schemaPath,
+              outDir,
+              dryRun: Boolean(options.dryRun),
+              schemaBytes: schemaContent.length
+            };
+          }
+        }],
         generators: [{ name: 'fixture-generator' }]
       },
       holmes: {

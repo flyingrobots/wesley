@@ -56,4 +56,4 @@ stateDiagram-v2
 
 ## Naming Convention
 Backlog and cycle files follow: `<LEGEND>_<slug>.md`
-Example: `SOURCE_module-capability-registry-runtime.md`
+Example: `SPEC_fixture-extension-module-capability-matrix.md`

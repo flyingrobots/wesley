@@ -47,5 +47,4 @@ honest base compiler package again.
 - `packages/wesley-core/src/index.mjs`
 - `docs/design/wesley-extraction-map.md`
 - `docs/WARP_DRIFT.md`
-- `../up-next/SOURCE_module-capability-registry-runtime.md`
-
+- `../../retro/module-capability-registry-runtime/module-capability-registry-runtime.md`
