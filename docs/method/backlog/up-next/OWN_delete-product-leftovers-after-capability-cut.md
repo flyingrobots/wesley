@@ -39,7 +39,27 @@ capability runtime and module-driven compile target discovery are in place.
 - the extraction map can mark the product leftovers as complete rather than
   still-active debt
 
+## Current Slice Status
+
+Inventory is now explicit in
+`docs/design/wesley-extraction-map.md#post-capability-cut-inventory`.
+
+No product/database code was deleted in the inventory slice. The inventory
+classifies each remaining surface as:
+
+- `delete`
+- `relocate`
+- `keep as legacy compatibility`
+- `defer`
+
+The next implementation slice should pick one classified row, preferably a
+docs/backlog or compatibility-shim row with existing tests, instead of turning
+this into a broad cleanup raid.
+
 ## Repo Evidence
+
+Seed evidence for this card is below. The complete post-capability-cut
+classification lives in the extraction map inventory linked above.
 
 - `docs/design/wesley-extraction-map.md`
 - `packages/wesley-cli/src/commands/compile-ttd.mjs`
