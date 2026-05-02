@@ -22,10 +22,9 @@ This note assumes one hard boundary:
 
 Wesley only owns the middle layer.
 
-If a family such as `TickResult` or `ReadingEnvelope` exists, Wesley may
-compile code, tests, manifests, and registries for that family. Wesley does
-**not** emit actual `TickResult` or `ReadingEnvelope` values. Runtimes and
-tools later do that.
+If a domain family exists, Wesley may compile code, tests, manifests, and
+registries for that family through a loaded external module. Wesley does
+**not** emit actual runtime values. Runtimes and tools later do that.
 
 ## One-Line Shape
 

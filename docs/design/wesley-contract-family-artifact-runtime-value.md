@@ -24,12 +24,10 @@ compiled, witnessed, and released as one unit.
 
 Examples:
 
-- `IntentEnvelope`
-- `TickResult`
+- `BillingEvent`
+- `InventoryMutation`
 - `ObserverSpec`
-- `ObserverPlan`
-- `ReadingEnvelope`
-- `SuffixShell`
+- `RuntimeResult`
 - `ImportOutcome`
 
 A contract family is authored truth. It defines what shape is being named and
@@ -43,7 +41,7 @@ Examples:
 
 - TypeScript files
 - Rust files
-- SQL or migration legs
+- externally supplied SQL or migration legs
 - generated tests
 - manifests and mappings
 - registries and codec outputs
@@ -58,8 +56,8 @@ uses Wesley outputs.
 
 Examples:
 
-- an actual `TickResult` value emitted by Echo after admission
-- an actual `ReadingEnvelope` value emitted by a Continuum runtime
+- an actual product runtime value emitted after admission
+- an actual database result value emitted by a database host
 - an actual report value emitted by Holmes, Watson, Moriarty, or BLADE
 
 Runtime values are execution-time truth. Wesley may compile code and contracts
@@ -75,19 +73,19 @@ GraphQL contract family -> Wesley compiled artifacts -> later runtime/tool value
 
 That boundary must remain visible in both docs and code.
 
-## Continuum-Specific Consequence
+## Product-Specific Consequence
 
-Observer-anything remains Continuum-only.
+Observer-anything remains product-module-only.
 
 That does **not** mean observer nouns are mystical or outside GraphQL.
 
 It means:
 
-- `ObserverSpec`, `ObserverPlan`, and `ReadingEnvelope` are Continuum-authored
-  GraphQL families
-- Wesley compiles artifacts for those families
-- Continuum runtimes and tools later produce actual values that conform to
-  those families
+- observer contracts are authored GraphQL families in the owning product repo
+- Wesley can compile artifacts for those families through a loaded external
+  module
+- product runtimes and tools later produce actual values that conform to those
+  families
 
 ## Why This Note Exists
 

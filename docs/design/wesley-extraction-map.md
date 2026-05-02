@@ -1,16 +1,19 @@
 # Wesley Extraction Map
 
 This note names the non-generic code still living in the Wesley repo and
-assigns each area a better long-term home.
+assigns each area the external home it must move to.
 
 The rule set behind this map is simple:
 
 - Wesley base platform should contain compiler and toolchain primitives that do
   not know about one product domain.
 - Domain meaning should enter through modules.
-- Continuum-owned behavior belongs in the Continuum repo.
-- Database/Postgres/Supabase behavior belongs in database modules, not in
-  `wesley-core`.
+- Product behavior belongs in the product repo or a product-owned module repo.
+- Database/Postgres/Supabase behavior belongs in `wesley-postgres`, not in this
+  repo.
+
+The target is not "Wesley has cleaner built-in product lanes." The target is
+"Wesley has no built-in product or database lanes."
 
 ## What Stays In Wesley
 
@@ -113,6 +116,7 @@ New home:
 - move them under the Continuum-owned Wesley module surface, for example:
   - `continuum/wesley/generators/echo/`
   - `continuum/wesley/generators/ttd/`
+  - or another Continuum-owned package/repo with no Wesley-workspace package
 
 Result:
 
@@ -160,7 +164,8 @@ Suggested split:
 Result:
 
 - `wesley-core` becomes a real base compiler package
-- PostgreSQL-family behavior gets its own repo instead of lingering in core
+- PostgreSQL-family behavior gets its own repo instead of lingering anywhere in
+  Wesley
 
 ### 5. Database runtime adapters live in generic host-node
 
@@ -245,7 +250,7 @@ The end state should look like this:
   - base platform
   - generic tools
   - generic extension/module contracts
-  - generic tech modules
+  - hermetic fixture modules for tests
 - Continuum repo
   - Continuum Wesley module
   - Continuum generators
@@ -256,4 +261,5 @@ The end state should look like this:
   - Node-specific adapters where needed
 
 That is the split that lets Wesley stay lean without deleting useful
-domain-specific work.
+domain-specific work. The work moves to its owning repo instead of remaining
+in the core compiler workspace.

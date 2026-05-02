@@ -1,8 +1,13 @@
-# Observer Spec / Plan Lowering
+# External observer spec / plan lowering
 
-- Lane: `up-next`
-- Legend: `SOURCE`
+- Lane: `inbox`
+- Legend: `EXTERNAL`
 - Rank: `1`
+
+## Ownership note
+
+Observer lowering is product/runtime module work, not Wesley core work. It
+belongs in the owning product repo or product-owned Wesley module repo.
 
 ## Why now
 
@@ -14,7 +19,7 @@ The stack has now converged on a cleaner optic boundary:
 - sliced holograms and frontiers should feed observer readings instead of full
   state materialization
 
-Wesley currently compiles:
+The product module currently needs to compile:
 
 - mutation-facing contract families
 - reading/result types
@@ -28,9 +33,9 @@ What is still missing is the compiler seam for the observer side:
 
 ## Hill
 
-Wesley lowers one app-authored observer spec into a substrate-legal observer
-plan with explicit state/read codecs and without normalizing arbitrary
-callbacks.
+The external product module lowers one app-authored observer spec into a
+substrate-legal observer plan with explicit state/read codecs and without
+normalizing arbitrary callbacks.
 
 ## Done looks like
 

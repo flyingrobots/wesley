@@ -11,13 +11,14 @@ Use it when you need to answer three questions quickly:
 
 ## Wesley In One Sentence
 
-Wesley is a schema-first contract compiler with a surrounding toolchain.
+Wesley is a schema-first compiler kernel with a surrounding assurance
+toolchain.
 
-The core compiler turns authored GraphQL into targets.
-The toolchain can package, witness, and project those outputs.
-Projects like Continuum sit above Wesley and decide what to compile, where outputs go, and which policies apply.
+The core compiler turns authored GraphQL into module-selected targets. The
+toolchain can package, witness, and project those outputs.
 
-Wesley is bigger than the Continuum lane. It also includes database-change tooling, generic code generators, host adapters, evidence tooling, scaffolds, and supporting runtime packages.
+Wesley brings the `GraphQL ->` half. External modules bring the `whatever`.
+Domain or product meaning belongs outside the Wesley repo.
 
 ## Layers
 
@@ -50,15 +51,15 @@ Examples:
 
 #### Generators
 
-Packages that emit target-specific artifacts from Wesley IR.
+Packages that emit generic target artifacts from Wesley IR.
 
 Examples:
 
 - `@wesley/generator-js`
-- `@wesley/generator-echo`
-- `@wesley/generator-ttd`
-- `@wesley/generator-supabase`
 - `@wesley/generator-vue`
+
+Historical product and database generators still present in this repo are
+extraction debt. They should move into their owning module repos.
 
 #### Hosts
 
@@ -107,7 +108,9 @@ Early project templates or packaged starting points built on Wesley outputs.
 Examples:
 
 - `@wesley/scaffold-multitenant`
-- `@wesley/stack-supabase-nextjs`
+
+Domain-specific stacks still present in this repo are extraction debt. Stacks
+with database or product assumptions should live outside Wesley.
 
 ### 1. Wesley Extension Modules
 
@@ -127,12 +130,13 @@ An extension module may add:
 
 Examples:
 
-- Database module
-- Continuum module
+- external target modules
+- external policy or witness modules
 - project-specific custom modules
 
-Generic modules should not be forced to implement observer surfaces.
-Observer-facing contracts are Continuum-only.
+Generic modules should not be forced to implement product-specific surfaces.
+Observer-facing contracts, database migration semantics, and runtime substrate
+conventions belong to external modules.
 
 ### 2. Project Workspace
 
@@ -200,6 +204,7 @@ Projects may extend BLADE with environment setup, additional tests, and custom g
 ### Module
 
 A domain- or ecosystem-specific extension family built on Wesley base platform.
+Product and database modules live outside the Wesley repo.
 
 A module may extend compilation, witness, judgment, certification, or bundle
 behavior without contaminating the base platform.
@@ -210,8 +215,8 @@ A narrower capability family inside a broader module.
 
 Examples:
 
-- Postgres inside a Database module
-- Echo inside a Continuum module
+- a target emitter inside a language module
+- a dialect package inside an external database module
 
 ### Family
 
@@ -242,21 +247,19 @@ becoming peer authorities.
 The base platform may provide enforcement machinery, but modules should supply
 the actual policy.
 
-### Continuum-Only Observer Nouns
+### Product Observer Nouns
 
-Observer-facing nouns belong only to the Continuum module.
+Observer-facing nouns belong only to external product modules.
 
-Those include:
+Those may include:
 
-- the GraphQL-authored families `ObserverSpec`, `ObserverPlan`, and
-  `ReadingEnvelope`
+- product-authored GraphQL families
 - observer state codec artifacts compiled from those families
-- hosted observer runtime contracts in Continuum runtimes that later produce
+- hosted observer runtime contracts in product runtimes that later produce
   values conforming to those families
 
-Generic Wesley and non-Continuum modules should use simpler read-side nouns
-such as reports, projections, inspections, summaries, and certification
-results.
+Generic Wesley and non-product modules should use simpler read-side nouns such
+as reports, projections, inspections, summaries, and certification results.
 
 ## Compiler Nouns
 
@@ -282,9 +285,11 @@ This is the compiler's internal, normalized form of the authored schema. Generat
 
 ### Generator Plugin
 
-A pluggable emitter that takes Wesley IR and produces one or more target artifacts.
+A pluggable emitter that takes Wesley IR and produces one or more target
+artifacts. Generic emitters may live in Wesley. Domain emitters live in external
+module repos.
 
-Examples include TS/Zod, Echo, TTD, Vue, and Postgres-facing generators.
+Examples include TS/Zod, Vue, and externally supplied target generators.
 
 ### Target
 
@@ -296,9 +301,9 @@ Examples:
 
 - TypeScript types
 - Zod validators
-- Echo codecs and IR
-- TTD protocol structures
-- SQL or RLS output
+- language bindings
+- externally supplied runtime artifacts
+- externally supplied database artifacts
 
 ### Artifact
 
@@ -321,8 +326,8 @@ outputs.
 
 Examples:
 
-- a `TickResult` value emitted by Echo
-- a `ReadingEnvelope` value emitted by a Continuum runtime
+- a product runtime value emitted by a product runtime
+- a database result value emitted by a database host
 - a Holmes, Watson, Moriarty, or BLADE report value
 
 Wesley does not emit runtime values. Wesley emits compiled artifacts.
@@ -375,7 +380,8 @@ A profile provides policy defaults for packaging, witness, sync, or other higher
 
 A downstream repo, runtime, or host project that receives or uses Wesley outputs.
 
-Examples in this ecosystem include app repos, runtimes like `echo`, debugger/protocol consumers like `warp-ttd`, or database/application hosts consuming generated contracts.
+Examples include app repos, runtime repos, protocol consumers, or
+database/application hosts consuming generated contracts.
 
 ### Projection
 
@@ -427,20 +433,23 @@ A narrower extension family inside a module.
 
 Examples:
 
-- a Postgres submodule inside the Database module
-- an Echo or TTD submodule inside the Continuum module
+- a dialect package inside an external database module
+- a runtime projection inside an external product module
 
-### Database Module
+### External Database Module
 
-The family of extensions that teaches Wesley about database-facing generation, planning, verification, or certification concerns.
+The external family of extensions that teaches Wesley about database-facing
+generation, planning, verification, or certification concerns.
 
-This module may contain submodules such as Postgres or Supabase-specific behavior.
+This module lives outside Wesley, for example in `wesley-postgres`.
 
-### Continuum Module
+### External Product Module
 
-The family of extensions that teaches Wesley about Continuum-specific schema families, projections, witness scopes, judgments, and certification behavior.
+An external family of extensions that teaches Wesley about product-specific
+schema families, projections, witness scopes, judgments, and certification
+behavior.
 
-This module may contain submodules such as Echo- or TTD-facing integrations.
+This module lives in the owning product repo or in a product-owned module repo.
 
 ### Host
 
@@ -452,22 +461,25 @@ Examples:
 - a browser host
 - a repo-local workspace bootstrap flow
 
-### WARPspace
+### Product Workspace
 
-A host-project bootstrap and workspace concept used in the Continuum stack.
+A host-project bootstrap and workspace concept owned by a product or runtime
+repo.
 
-It is not Wesley core. It is a project-level orchestration surface that invokes Wesley.
+It is not Wesley core. It is a project-level orchestration surface that invokes
+Wesley.
 
-### `warp`
+### Product Orchestrator
 
-The Continuum-owned orchestration tool.
+A product-owned orchestration tool.
 
-`warp` should sit above Wesley. It decides how a Continuum workspace is initialized, which shared families are materialized, and how Wesley is invoked as part of that process.
+It should sit above Wesley. It decides how a workspace is initialized, which
+shared families are materialized, and how Wesley is invoked as part of that
+process.
 
-### Continuum Wesley Module
+### External Wesley Module
 
-The Continuum-owned Wesley module and profile surface now lives in the
-Continuum repo under `continuum/wesley/`.
+The module and profile surface owned by a domain or product repo.
 
 It is not compiler core. It extends Wesley from outside the Wesley repo.
 

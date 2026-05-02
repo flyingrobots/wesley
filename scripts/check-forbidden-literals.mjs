@@ -55,7 +55,14 @@ function readTarget(pathname, { staged }) {
   if (staged) {
     return runGit(['show', `:${pathname}`], { binary: true });
   }
-  return readFileSync(resolve(pathname));
+  try {
+    return readFileSync(resolve(pathname));
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      return null;
+    }
+    throw error;
+  }
 }
 
 function main() {
@@ -68,6 +75,9 @@ function main() {
   const offenders = [];
   for (const pathname of loadTargets({ staged })) {
     const content = readTarget(pathname, { staged });
+    if (content === null) {
+      continue;
+    }
     for (const pattern of patterns) {
       if (content.includes(pattern.bytes)) {
         offenders.push({ pathname, literal: pattern.literal });

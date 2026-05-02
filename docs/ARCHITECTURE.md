@@ -25,9 +25,9 @@ flowchart TD
         DEP[Project Deployment Layer]
     end
 
-    subgraph Modules["1. Wesley Extension Modules"]
-        DB[Database Module]
-        CONT[Continuum Module]
+    subgraph Modules["1. External Wesley Modules"]
+        TARGETS[Target Modules]
+        POLICY[Policy / Witness Modules]
         CUSTOM[Project Custom Modules]
     end
 
@@ -57,8 +57,24 @@ flowchart TD
 The important responsibility cut is:
 
 - Wesley base platform stays project-agnostic
-- modules add domain meaning through explicit hooks
+- external modules add domain meaning through explicit hooks
 - project workspaces own authored schemas, local tests/policies, and deployment
+
+## Repo Boundary Rule
+
+Wesley is the core `GraphQL -> whatever` compiler and assurance toolchain. The
+`whatever` is not part of this repository.
+
+That means:
+
+- target semantics live in modules
+- domain generators live in modules
+- domain witness scopes and policies live in modules
+- domain runtime or workspace conventions live outside Wesley
+
+Continuum-specific behavior belongs in Continuum or a Continuum-owned module
+repo. PostgreSQL/Supabase behavior belongs in a `wesley-postgres` repo. Their
+historical presence here is extraction debt, not architecture.
 
 ## The Three Layers
 
@@ -91,7 +107,7 @@ It includes:
 
 The base platform should not know project semantics directly.
 
-### 1. Wesley Extension Modules
+### 1. External Wesley Modules
 
 Modules extend the base platform with domain or ecosystem meaning.
 
@@ -104,20 +120,15 @@ A module may add:
 - bundle or projection behavior
 - BLADE environment setup or extra test surfaces
 
-Examples:
-
-- **Database module**
-  - Postgres submodule
-  - Supabase-facing generation and verification
-- **Continuum module**
-  - Continuum-owned families and projections
-  - Echo-facing submodule
-  - TTD-facing submodule
-- **Project custom modules**
-  - repo-specific directives, generators, witness scopes, or gates
-
 Modules should extend the platform through explicit hooks, not by contaminating
 the base platform with domain-specific imports.
+
+Examples of module homes are external to this repo:
+
+- a target module that emits one language or runtime projection
+- a policy module that contributes witness scopes and gates
+- a project module that contributes local directives or fixtures
+- a product/domain module owned by that product's repo
 
 ### 2. Project Workspace
 
@@ -192,19 +203,20 @@ witness claims, use
 
 ## Current Honest Posture
 
-Wesley is still carrying multiple historical identities:
+Wesley is still carrying historical domain residue from earlier identities:
 
-- database-change compiler/toolchain
-- Continuum contract compiler/toolchain
-- verification and judgment tooling
+- database-change compiler/toolchain surfaces
+- product-specific contract compiler/toolchain surfaces
+- verification and judgment surfaces coupled to product backends
 
 The current architecture should be read as:
 
 - one base platform
-- multiple extension modules
+- external extension modules
 - many possible project workspaces
 
-That is cleaner than treating one product lane as if it were the entire system.
+The cleanup target is stricter than "one product lane is not the whole system":
+no product or database lane should live in this repo at all.
 
 ## Practical Rule
 

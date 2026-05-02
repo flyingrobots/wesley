@@ -1,22 +1,28 @@
-# Dynamic Slot And Closure Footprint Grammar
+# External dynamic slot and closure footprint grammar
 
-- Lane: `up-next`
-- Legend: `SOURCE`
+- Lane: `inbox`
+- Legend: `EXTERNAL`
 - Rank: `1`
+
+## Ownership note
+
+This is product/runtime module work, not active Wesley core work. Wesley should
+only provide the generic directive, lowering, module capability, and artifact
+plumbing needed by an external module to implement this target.
 
 ## Why now
 
 The current footprint-honesty proof slice proves one narrow thing:
 
-- Wesley can generate a bounded Rust authoring surface from flat
+- an external module can generate a bounded Rust authoring surface from flat
   `reads`/`writes`/`creates`/`deletes` declarations.
 
 That is not enough for real graph rewrites such as `jedit`'s
 `ReplaceRangeAsTick`, where the concrete rope path and affected-anchor set are
 bound dynamically at runtime.
 
-Wesley now needs to treat structured footprint law as a first-class compiler
-surface:
+The external module now needs to treat structured footprint law as a
+first-class compiler surface:
 
 - direct slots
 - binding sources
@@ -26,14 +32,15 @@ surface:
 
 ## Hill
 
-Wesley compiles one real shared-family rewrite whose honesty is expressed
-through structured slots and closures rather than flat type lists alone.
+The external module compiles one real shared-family rewrite whose honesty is
+expressed through structured slots and closures rather than flat type lists
+alone.
 
 The next cut should prove:
 
 - the GraphQL directive grammar can express slot and closure bindings
-- the extracted TTD/contract surface preserves that structure
-- generated Echo-facing Rust surfaces can evolve from flat capability traits
+- the extracted contract surface preserves that structure
+- generated runtime-facing Rust surfaces can evolve from flat capability traits
   toward slot-aware context traits
 - consumers can tell the difference between compile-time capability shape and
   runtime binding failure
@@ -48,7 +55,7 @@ The next cut should prove:
   - `forbids`
 - one real rewrite family, such as `ReplaceRangeAsTick`, is represented in
   that grammar
-- Wesley emits structured IR/manifest footprint data for it
+- the external module emits structured IR/manifest footprint data for it
 - the next generator step is obvious: slot-aware bounded Rust surfaces
 
 ## Repo Evidence

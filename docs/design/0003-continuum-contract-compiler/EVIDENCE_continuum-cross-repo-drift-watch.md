@@ -43,7 +43,10 @@ three repositories by hand.
 
 ## Evidence
 
-- [packages/wesley-cli/src/commands/drift-watch.mjs](../../../packages/wesley-cli/src/commands/drift-watch.mjs)
-- [packages/wesley-cli/test/drift-watch.bats](../../../packages/wesley-cli/test/drift-watch.bats)
+- Historical implementation paths:
+  `packages/wesley-cli/src/commands/drift-watch.mjs` and
+  `packages/wesley-cli/test/drift-watch.bats`.
+- Current ownership note: this product-specific surface is extraction context,
+  not active Wesley core doctrine.
 - [GUIDE.md](../../GUIDE.md)
 - [packages/wesley-cli/README.md](../../../packages/wesley-cli/README.md)

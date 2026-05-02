@@ -6,3 +6,7 @@ cycle.
 
 Keep items narrow, evidence-backed, and explicit about which shared seam or
 compiler boundary they are trying to freeze next.
+
+The active ASAP hill is domain-empty Wesley: remove product/database ownership
+from this repo, build the external module capability seam, and stop treating
+historical product lanes as Wesley features.

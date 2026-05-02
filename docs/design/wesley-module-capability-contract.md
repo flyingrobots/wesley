@@ -8,7 +8,7 @@ module-owned CLI commands. It is **not** enough to support the architecture we
 actually want:
 
 - `wesley compile` should stay in Wesley
-- Continuum and Postgres should be loadable modules
+- domain targets should be loadable from external modules
 - Wesley should ship no domain modules by default
 - Holmes, Watson, Moriarty, and BLADE should accept module-provided domain
   behavior instead of hard-coded product semantics
@@ -133,7 +133,7 @@ These add module-owned user-facing commands.
 
 Examples:
 
-- Continuum-specific commands
+- target-specific commands
 - module-local doctor or report commands
 
 CLI capabilities are useful, but they are not the whole module story.
@@ -145,7 +145,7 @@ The module contract should evolve toward a shape like this:
 ```js
 {
   apiVersion: '1',
-  name: 'continuum',
+  name: 'example-target-module',
 
   init(config) {},
 
@@ -199,7 +199,8 @@ Examples:
 
 - a small technology module may only register `wesley.targets`
 - a policy-heavy module may contribute only Moriarty and BLADE capabilities
-- a product module like Continuum may contribute across every area
+- a product or database module may contribute across every area from its own
+  external repo
 
 The important rule is:
 
@@ -220,50 +221,50 @@ It should:
 
 It should not:
 
-- hard-code `echo`
-- hard-code `warp-ttd`
-- hard-code Postgres or Supabase target semantics
+- hard-code product targets
+- hard-code database targets
+- hard-code runtime or host-project conventions
 
 That is the central design consequence of this note.
 
-## Continuum Module Under This Contract
+## External Product Modules Under This Contract
 
-The Continuum module should contribute capabilities such as:
+A product module should contribute its own capabilities from its owning repo.
+Those capabilities may include:
 
 - `wesley.targets`
-  - `warp-ttd`
-  - `echo`
+  - product-specific compile targets
 - `wesley.generators`
-  - TTD generator
-  - Echo generator
+  - product-specific generators
 - `wesley.realizationVerifiers`
-  - Continuum realization verifier
+  - product-specific realization verifiers
 - `holmes`
-  - Continuum witness scopes
-  - `git-warp` counterfactual provider
+  - product-specific witness scopes
+  - product-specific counterfactual providers
 - `moriarty`
-  - Continuum policy and judgment profiles
+  - product-specific policy and judgment profiles
 - `blade`
-  - Continuum scenarios, fixtures, and gates
+  - product-specific scenarios, fixtures, and gates
 - `cli`
-  - Continuum-specific helper commands
+  - product-specific helper commands
 
-Observer-anything remains Continuum-only, but it still enters through
-GraphQL-authored contract families and module capabilities, not through generic
-Wesley.
+Product observer or runtime-boundary behavior enters through
+GraphQL-authored contract families and external module capabilities, not
+through generic Wesley.
 
-## Postgres Module Under This Contract
+## External Database Modules Under This Contract
 
-The Postgres module should contribute capabilities such as:
+A database-family module should contribute its own capabilities from a database
+module repo. Those capabilities may include:
 
 - `wesley.targets`
-  - `postgres-sql`
-  - `postgres-tests`
-  - `supabase`
+  - SQL or migration targets
+  - database test targets
+  - hosted-database targets
 - `wesley.generators`
   - DDL emitters
-  - RLS emitters
-  - pgTAP emitters
+  - policy emitters
+  - database test emitters
 - `holmes`
   - migration witness scopes
   - lock and risk checks
@@ -276,7 +277,7 @@ The Postgres module should contribute capabilities such as:
   - fixture DB setup
   - release gates for migration readiness
 
-The Postgres module does **not** define observers.
+Database modules do **not** define product observer semantics.
 
 ## Project Experience
 
@@ -293,7 +294,8 @@ That is the whole point of modules.
 
 ## Test Strategy
 
-Wesley core CI must not depend on Continuum or Postgres repos being present.
+Wesley core CI must not depend on product or database module repos being
+present.
 
 So Wesley should keep a hermetic fixture module in its own tests that proves:
 
@@ -310,9 +312,11 @@ This note implies the following work order:
 1. expand the `WesleyModule` contract to expose capabilities beyond CLI commands
 2. add capability registries in base Wesley
 3. rewrite `wesley compile` to use module-owned target discovery
-4. convert Continuum to the new capability contract
-5. convert Postgres to the new capability contract
-6. remove remaining hard-coded domain imports from Wesley
+4. move product modules to their owning repos and load them through the new
+   contract
+5. move database modules to `wesley-postgres` and load them through the new
+   contract
+6. remove remaining hard-coded domain imports and packages from Wesley
 
 ## Current Honest Posture
 

@@ -11,12 +11,15 @@ It exists to answer three questions cleanly:
 
 The most important rule is simple:
 
-> Observer-anything is Continuum-only.
+> Wesley owns the compiler kernel. Modules bring every domain target.
 
-Generic Wesley does not define observer nouns. Non-Continuum modules do not
-need an observer story. The Continuum module is allowed to add one because it
-is the only lane in this stack that actually needs holographic runtime
-observers.
+Generic Wesley does not define product nouns, database nouns, observer nouns,
+or runtime-family nouns. If a domain needs them, the owning external module
+defines them outside this repo.
+
+Observer-anything is an external module concern. If Continuum needs observer
+contracts, Continuum owns them in the Continuum repo or a Continuum-owned module
+repo, not in Wesley.
 
 ## Layers
 
@@ -42,14 +45,17 @@ It may define:
 
 It must not define:
 
-- Continuum-specific families
+- product-specific families
+- database-specific families
 - project-specific publication boundaries
 - consumer-specific projection policy
 - observer nouns
 
 ### 1. Wesley Extension Modules
 
-Modules extend the base platform through explicit hooks.
+Modules extend the base platform through explicit hooks and live outside the
+core repository unless they are hermetic test fixtures or genuinely generic
+helpers.
 
 A module may add:
 
@@ -65,9 +71,10 @@ Modules are where domain meaning lives.
 
 Examples:
 
-- a Database module
-- a Postgres submodule
-- a Continuum module
+- a language generator module
+- a database-family module in an external repo
+- a product-family module in that product's repo
+- a project-local module
 
 ### 2. Project Workspace
 
@@ -120,8 +127,8 @@ witnessed, and released as one unit.
 
 Examples:
 
-- `receipt-family`
-- `settlement-family`
+- `billing-family`
+- `inventory-family`
 - `runtime-boundary-family`
 
 A family is not the same thing as a scope or a projection.
@@ -162,41 +169,41 @@ emitted from them.
 
 Modules do **not** change the rule that Wesley stops at artifact emission.
 
-If a module defines families such as `TickResult`, `ReadingEnvelope`, or
-`ImportOutcome`, Wesley may compile code and manifests for those families. It
-does not emit actual runtime values conforming to them.
+If a module defines domain-specific families, Wesley may compile code and
+manifests for those families. It does not emit actual runtime values conforming
+to them.
 
-## Continuum-Only Extension Surface
+## External Product Extension Surface
 
-The Continuum module is allowed to define additional nouns that generic Wesley
-does not own.
+An external product module may define additional nouns that generic Wesley does
+not own.
 
-Those include:
+Those may include:
 
-- GraphQL-authored families such as `ObserverSpec`, `ObserverPlan`, and
-  `ReadingEnvelope`
+- GraphQL-authored product families
 - compiled observer state codecs and related artifacts
 - hosted observer runtime contracts that later produce values conforming to
   those families
 
-These are Continuum-only because they depend on WARP runtime semantics that are
-not generic compiler truth.
+These belong outside Wesley because they depend on product runtime semantics
+that are not generic compiler truth.
 
-Postgres and other non-Continuum modules should use simpler read-side nouns such
+Database and other non-product modules should use simpler read-side nouns such
 as reports, projections, inspections, summaries, and certification results.
 
 ## Immediate Consequences
 
 This note implies the following changes.
 
-### 1. `observer-plan` is not a generic Wesley feature
+### 1. Domain commands are not generic Wesley features
 
-It should be treated as a Continuum-module feature.
+Commands such as product observer planning, target-specific bundling, or
+database migration planning should be treated as external module features.
 
-### 2. Continuum ownership belongs in the Continuum repo
+### 2. Product ownership belongs in product repos
 
-The old Wesley-side Continuum package was bootstrap. The real Continuum module
-and profile surfaces belong in the Continuum repo.
+The old Wesley-side product packages were bootstrap. Real product modules and
+profile surfaces belong in their owning repos.
 
 ### 3. Wesley needs external module loading
 
@@ -205,13 +212,13 @@ to load them without hardcoding product semantics into the base platform.
 
 The first practical seam for this is a module-manifest loader and
 module-owned CLI registration path. That is enough to let Wesley load external
-modules and enough to move Continuum-specific commands off the generic
+modules and enough to move domain-specific commands off the generic
 command-discovery path.
 
-### 4. Database and Postgres semantics should leave `wesley-core`
+### 4. Database and Postgres semantics should leave Wesley
 
-Database-specific generation, migration explanation, lock semantics, and
-similar domain logic do not belong in the pure base compiler.
+Database-specific generation, migration explanation, lock semantics, adapters,
+and similar domain logic do not belong in the base compiler repo.
 
 ## Migration Order
 
@@ -219,10 +226,9 @@ The clean migration sequence is:
 
 1. lock the module contract in docs
 2. add a generic external module loading seam
-3. move the Continuum module out of the Wesley repo
-4. retarget Continuum-specific commands to the loaded module
-5. extract database and Postgres semantics from `wesley-core` into a real
-   module
+3. move product modules out of the Wesley repo
+4. retarget domain-specific commands to loaded modules
+5. extract database and Postgres semantics into `wesley-postgres`
 
 That order reduces churn and avoids pretending the boundary is already real when
 the loader does not exist yet.
@@ -237,7 +243,7 @@ The current posture is:
 - CLI can discover and register module-owned command surfaces
 - generic Wesley loads no domain modules by default
 - modules are loaded explicitly through `wesley.config.mjs` or `WESLEY_MODULES`
-- the Continuum module implementation now lives in the Continuum repo
+- product and database modules must live outside Wesley
 
 That is not the final architecture. It is the bridge that lets the real
 architecture happen without a rewrite.

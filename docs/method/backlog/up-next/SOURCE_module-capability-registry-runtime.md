@@ -10,7 +10,7 @@ Wesley now has the doctrine it was missing:
 
 - modules own domain behavior
 - base Wesley owns verbs and engines
-- Continuum and Postgres are extension modules
+- product and database modules live outside this repo
 - `wesley compile` must discover targets from loaded modules
 
 What Wesley still does **not** have is the runtime shape to make that doctrine
@@ -50,8 +50,8 @@ The registry should support capability areas for:
   - modules own domain capabilities
 - at least one hermetic fixture module proves registration across more than one
   capability area
-- the capability registry becomes the default seam for future Continuum and
-  Postgres cutovers
+- the capability registry becomes the default seam for future product and
+  database cutovers
 
 ## Repo Evidence
 
@@ -60,4 +60,3 @@ The registry should support capability areas for:
 - `packages/wesley-core/src/application/ModuleDiscovery.mjs`
 - `packages/wesley-cli/src/framework/module-loader.mjs`
 - `packages/wesley-cli/test/module-loading.test.mjs`
-

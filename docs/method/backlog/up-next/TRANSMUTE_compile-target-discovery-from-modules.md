@@ -32,10 +32,10 @@ knowledge.
 - requested targets are validated against the loaded target registry
 - generation dispatch happens through module-provided target/generator metadata
 - target listing and error messages are module-aware and explicit
-- Continuum and Postgres can each contribute targets without changing Wesley
+- product and database modules can contribute targets without changing Wesley
   base code
-- the command no longer needs hard-coded `echo`, `warp-ttd`, `postgres`, or
-  `supabase` assumptions in order to be useful
+- the command no longer needs hard-coded product, runtime, database, or
+  hosted-platform assumptions in order to be useful
 
 ## Repo Evidence
 
@@ -44,4 +44,3 @@ knowledge.
 - `packages/wesley-cli/src/commands/compile.mjs`
 - `packages/wesley-core/src/ports/GeneratorPlugin.mjs`
 - `packages/wesley-core/src/ports/WesleyModule.mjs`
-

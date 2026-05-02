@@ -11,8 +11,8 @@ architecture.
 
 That rule matters even more now that:
 
-- Continuum is no longer supposed to live inside generic Wesley
-- Postgres is being extracted into its own repo
+- product modules are no longer supposed to live inside generic Wesley
+- database modules are being extracted into their own repo
 - the module contract is expanding beyond CLI commands
 
 The current fixture coverage proves the loader works. It does not yet prove
@@ -21,7 +21,7 @@ that the whole capability stack can be exercised hermetically.
 ## Hill
 
 Wesley ships one test fixture module family that can exercise every supported
-capability area locally in CI without depending on Continuum, Postgres, or any
+capability area locally in CI without depending on product, database, or any
 project-specific repo.
 
 ## Done looks like
@@ -46,4 +46,3 @@ project-specific repo.
 - `packages/wesley-cli/test/fixtures/modules/test-extension-module.mjs`
 - `packages/wesley-cli/test/module-loading.test.mjs`
 - `docs/design/wesley-module-capability-contract.md`
-

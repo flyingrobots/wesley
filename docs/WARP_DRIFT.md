@@ -2,15 +2,12 @@
 
 # Wesley WARP Drift
 
-This note captures where Wesley currently drifts from the stronger WARP
-doctrine now shared across `blog`, `continuum`, `echo`, `warp-ttd`, and app
-repos such as `jedit`.
+This note captures historical WARP-shaped drift in Wesley.
 
 It is not a claim that Wesley is pointed the wrong way. Wesley is already
 carrying several of the right ideas. The drift is now best described as a
-module-boundary drift: too much Continuum-specific policy still lives inside
-generic Wesley surfaces, while some non-Continuum domain semantics still leak
-into core.
+module-boundary drift: product-specific policy still lives inside generic
+Wesley surfaces, while database domain semantics still leak into core.
 
 ## The current WARP baseline
 
@@ -20,11 +17,11 @@ The relevant baseline is now:
   witnessed causal history and observer-relative readings over that history
 - the same admission kernel recurs across tick admission, braid comparison,
   and distributed suffix import, differing mainly by normalization path
-- observer-anything is Continuum-only, not a generic Wesley feature
+- observer-anything is product-module-owned, not a generic Wesley feature
 - modules should own domain semantics, witness policy, bundle defaults, and
   publication-boundary rules
-- Continuum, not Wesley, is the coordination spine that owns shared cross-repo
-  contract truth
+- product repos, not Wesley, are the coordination spines that own shared
+  cross-repo contract truth
 
 ## Where Wesley is already strong
 
@@ -35,8 +32,6 @@ The repo already has meaningful truth in the places that matter:
 - GraphQL SDL is treated as authored source rather than generated fallout
 - authored source, lowered IR, realization shell, and witness output are kept
   distinct
-- the Continuum module already owns real scope profiles, contract bundle
-  definitions, and sync projections from its home in the Continuum repo
 - Wesley already has a real generator/plugin seam and bundle-oriented
   toolchain surfaces
 - release and sync are already understood as publication-boundary work rather
@@ -47,15 +42,15 @@ is that the current repo still mixes base-platform truth and module-owned truth.
 
 ## Where Wesley is drifting
 
-### 1. Continuum-specific policy still lives inside Wesley
+### 1. Product-specific policy still lives inside Wesley
 
-The current repo still carries Continuum-specific policy and commands directly
+The current repo still carries product-specific policy and commands directly
 inside Wesley surfaces:
 
 - some docs and generic command helpers still assume the old Wesley-side
-  Continuum package layout
-- some Continuum-target generator surfaces still live in Wesley even after the
-  Continuum command layer moved out
+  product package layout
+- some product-target generator surfaces still live in Wesley even after the
+  command layer moved out
 - `observer-plan` has only just been extracted and the surrounding docs are
   still catching up
 
@@ -71,8 +66,8 @@ Wesley still carries:
 
 That is now architecturally misleading.
 
-Observer-anything belongs to the Continuum module, not to the Wesley base
-platform and not to non-Continuum modules such as Postgres.
+Observer-anything belongs to an external product module, not to the Wesley base
+platform and not to database modules.
 
 ### 3. Database and Postgres semantics still leak into `wesley-core`
 
@@ -104,16 +99,16 @@ Wesley should freeze the rule that modules, not ordinary projects, own:
 And observer nouns should be explicitly absent from the generic module
 contract.
 
-### Second: move the Continuum module out of Wesley
+### Second: move product modules out of Wesley
 
-The real Continuum module should live in the Continuum repo and be loaded by
-Wesley, not housed inside generic Wesley.
+Real product modules should live in product repos and be loaded by Wesley, not
+housed inside generic Wesley.
 
 That implies:
 
 - external module loading in Wesley
-- Continuum-owned module policy in the Continuum repo
-- retargeted Continuum-specific CLI surfaces that load the module rather than
+- product-owned module policy in the product repo
+- retargeted product-specific CLI surfaces that load the module rather than
   importing it statically
 
 ### Third: move database and Postgres semantics into a database module
@@ -128,10 +123,10 @@ analysis should move into a real module or module family.
 The highest-value next notes are now:
 
 - [Module Contract](./design/wesley-module-contract.md)
-- [0007 — Continuum observer spec and plan](./design/0007-observer-spec-and-plan/observer-spec-and-plan.md)
-- [Wesley role in Continuum](./architecture/continuum-wesley-role.md)
-- [SOURCE_continuum-runtime-boundary-family-compiler-lane](./method/backlog/asap/SOURCE_continuum-runtime-boundary-family-compiler-lane.md)
-- [SOURCE_continuum-lane-identity-family-boundary](./method/backlog/up-next/SOURCE_continuum-lane-identity-family-boundary.md)
+- [Module Capability Contract](./design/wesley-module-capability-contract.md)
+- [Extraction Map](./design/wesley-extraction-map.md)
+- [SOURCE_domain-empty-wesley-core-boundary](./method/backlog/asap/SOURCE_domain-empty-wesley-core-boundary.md)
+- [EXTERNAL_continuum-runtime-boundary-family-module](./method/backlog/inbox/EXTERNAL_continuum-runtime-boundary-family-module.md)
 
 ## Practical rule
 
@@ -139,8 +134,8 @@ Wesley should stay the contract compiler and publication-boundary manager.
 
 What must change is what the repo still tries to own directly:
 
-- not Continuum-specific observer surfaces in generic Wesley
-- not Continuum policy housed permanently in the Wesley repo
+- not product-specific observer surfaces in generic Wesley
+- not product policy housed permanently in the Wesley repo
 - not database semantics leaking through `wesley-core`
 
 The next honest Wesley cut is to make the module boundary real in code, not

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Everyone generates GraphQL from databases. Wesley generates databases from GraphQL. One schema → SQL/migrations/types/Zod + Supabase RLS/Realtime/Storage.",
+  "description": "Core GraphQL compiler and assurance toolchain. Wesley brings the compiler; external modules bring target semantics.",
   "scripts": {
     "build": "pnpm -r build",
     "test": "pnpm -r test",
@@ -37,13 +37,11 @@
   },
   "keywords": [
     "graphql",
-    "sql",
-    "database",
-    "migrations",
-    "supabase",
     "schema",
+    "compiler",
     "codegen",
-    "postgresql",
+    "modules",
+    "contracts",
     "schema-first"
   ],
   "author": "Wesley Authors <oss@flyingrobots.dev>",

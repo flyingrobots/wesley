@@ -1,9 +1,15 @@
 # Wesley
 <!-- docs-truth: status=experimental owner=@flyingrobots -->
 
-A schema-first contract compiler for trustworthy change. Wesley ensures that shared protocols, database migrations, and cross-language boundaries remain technically truthful through bit-exact code generation and evidence-backed conformance.
+A schema-first compiler kernel for trustworthy change. Wesley turns authored
+GraphQL into derived artifacts through explicit target modules, while keeping
+source identity, lowering, artifact emission, and evidence separate.
 
-Wesley is designed for the systems architect who demands a sovereign boundary for their contracts. It scales from automated PostgreSQL migration planning to the compilation of the global Continuum causal protocol.
+Wesley itself is the core `GraphQL -> whatever` compiler and assurance
+toolchain. The `whatever` is brought by modules outside the core repo. Domain
+systems such as Continuum and PostgreSQL are not Wesley product surfaces; their
+generators, policies, witnesses, and runtime conventions belong in external
+module repos such as Continuum itself or `wesley-postgres`.
 
 [![Overall](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/flyingrobots/wesley/main/meta/badges/overall.json)](README.md)
 [![License](https://img.shields.io/github/license/wesley)](./LICENSE)
@@ -12,9 +18,10 @@ Wesley is designed for the systems architect who demands a sovereign boundary fo
 
 Unlike traditional code-generators that treat schemas as suggestions, Wesley treats the schema as the sovereign system of record.
 
-- **Contract Sovereignty**: Authored GraphQL SDL is the single source of truth. Generated artifacts (Rust, TS, SQL) are derived surfaces that are never allowed to become peer authorities.
+- **Contract Sovereignty**: Authored GraphQL SDL is the single source of truth. Generated artifacts are derived surfaces that are never allowed to become peer authorities.
 - **Admission Discipline**: Authored source, lowered IR, realization shells, and witness output are kept distinct so Wesley can certify explicit properties without overstating runtime truth.
-- **Evidence-Backed Change**: Commands like `plan`, `rehearse`, and `witness` produce machine-readable evidence that a proposed change is lawful, safe, and conformant.
+- **Module-Brought Targets**: Wesley owns parsing, lowering, dispatch, artifact bookkeeping, and assurance plumbing. Modules own target semantics, generators, policy, witness scopes, and release conventions.
+- **Evidence-Backed Change**: Toolchain surfaces can produce machine-readable evidence that a proposed artifact bundle is coherent with the authored source and selected modules.
 - **Cross-Language Inevitability**: By generating bit-exact codecs and IR envelopes, Wesley prevents the "adapter spaghetti" that typically causes multi-repo platforms to rot.
 - **Local-First Operation**: The compiler and witness suite run entirely on the local developer workstation, ensuring that contract verification is part of the fast inner-loop.
 
@@ -27,55 +34,23 @@ pnpm install
 pnpm run preflight
 ```
 
-### 2. Compile a Continuum Contract
-Generate manifests and TypeScript targets for a shared causal family.
+### 2. Compile A Generic Projection
+Generate TypeScript from an authored GraphQL schema.
 ```bash
-pnpm wesley compile \
-  --schema ./schemas/continuum-receipt-family.graphql \
-  --target warp-ttd,echo \
-  --out-dir .wesley-cache/continuum/local-inspect
+pnpm wesley typescript \
+  --schema ./schema.graphql \
+  --out-file ./generated/types.generated.ts
 ```
 
-### 3. Verify the Realization Shell
-Check that the emitted manifest still matches the authored source and signed artifacts.
+### 3. Load A Target Module
+Select target behavior explicitly from project config or `WESLEY_MODULES`.
 ```bash
-pnpm wesley verify-realization \
-  --out-dir .wesley-cache/continuum/local-inspect
+WESLEY_MODULES=/path/to/my-wesley-module.mjs pnpm wesley --help
 ```
 
-### 4. Verify Conformance
-Produce a bounded evidence witness to prove the generated artifacts match the authored truth for the selected scope.
-```bash
-pnpm wesley witness \
-  --scope receipt-family \
-  --schema ./schemas/continuum-receipt-family.graphql \
-  --out-dir .wesley-cache/continuum/local-inspect
-```
-
-### 5. Release One Versioned Contract Bundle
-Assemble one semver-tagged bundle that binds source identity, realization, witness output, and consumer sync projections together.
-```bash
-pnpm wesley contract release \
-  --profile continuum \
-  --family receipt-family \
-  --schema ./schemas/continuum-receipt-family.graphql \
-  --release 0.1.0
-```
-
-### 6. Prototype A WARPspace Bootstrap
-Materialize the first Continuum demo WARPspace from a concrete stack release manifest.
-```bash
-node packages/wesley-host-node/bin/warpspace.mjs init ./tmp/continuum-app \
-  --manifest ../continuum/docs/releases/demo/continuum-stack-release.json \
-  --authority-root ../continuum
-```
-
-This first cut is intentionally local-first:
-
-- it reads a concrete Continuum stack release manifest
-- it writes `warpspace.toml` and `warpspace.lock.json`
-- it materializes the selected shared family into the host repo
-- it runs the first Wesley generation pass for the selected projections
+The current repo still carries historical Continuum and PostgreSQL surfaces.
+They are extraction debt, not Wesley identity. New target semantics should land
+in external modules rather than in this repository.
 
 ## Overall Status
 
@@ -89,14 +64,14 @@ Progress: 59% → Alpha
 <!-- BEGIN:PACKAGE_MATRIX -->
 | Package | Status | Stage | Progress | CI | Notes |
 | --- | --- | --- | --- | --- | --- |
-| `@wesley/core` | Active | MVP | 45% → Alpha | — | Pure domain logic, no Node builtins |
+| `@wesley/core` | Active | MVP | 45% → Alpha | — | Generic compiler kernel, no domain targets |
 | `@wesley/cli` | Active | Alpha | 50% → Beta | — | CLI + Bats suites |
 | `@wesley/host-node` | Active | MVP | 50% → Alpha | — | Node adapters + binary |
 | `@wesley/host-browser` | Experimental | MVP | 40% → Alpha | — | Pure ESM; in-memory FS; minimal parser; smoke-level only |
-| `@wesley/generator-echo` | Active | MVP | 20% → Alpha | — | Echo IR + codec emitters |
+| `@wesley/generator-echo` | Extraction debt | MVP | 20% → Alpha | — | Wrong-repo Continuum residue |
 | `@wesley/generator-js` | Active | MVP | 50% → Alpha | — | TS/Zod emitters |
-| `@wesley/generator-supabase` | Active | MVP | 50% → Alpha | — | SQL/RLS/pgTAP emitters |
-| `@wesley/generator-ttd` | Active | MVP | 20% → Alpha | — | TTD protocol + manifest emitters |
+| `@wesley/generator-supabase` | Extraction debt | MVP | 50% → Alpha | — | Move to `wesley-postgres` |
+| `@wesley/generator-ttd` | Extraction debt | MVP | 20% → Alpha | — | Wrong-repo Continuum residue |
 | `@wesley/generator-vue` | Experimental | MVP | 0% → Alpha | — | Vue-facing TS/composable emitters |
 | `@wesley/holmes` | Active | Alpha | 50% → Beta | — | Evidence scoring |
 | `@wesley/runtime-node` | Active | MVP | 0% → Alpha | — | Shared Node runtime adapters |
@@ -105,7 +80,7 @@ Progress: 59% → Alpha
 | `@wesley/host-deno` | Experimental | Alpha | 50% → Beta | — | Deno host runtime (demo) |
 | `@wesley/host-bun` | Experimental | Alpha | 50% → Beta | — | Bun host runtime (demo) |
 | `@wesley/scaffold-multitenant` | Too soon | Prototype | 50% → MVP | — | Early scaffold, no CI yet |
-| `@wesley/stack-supabase-nextjs` | Too soon | Prototype | 50% → MVP | — | Early stack template, no CI yet |
+| `@wesley/stack-supabase-nextjs` | Extraction debt | Prototype | 50% → MVP | — | Move to `wesley-postgres` or a stack repo |
 | `@wesley/test-fixtures` | Active | MVP | 20% → Alpha | — | Private shared fixtures + schema builders |
 <!-- END:PACKAGE_MATRIX -->
 
@@ -116,8 +91,9 @@ Progress: 59% → Alpha
 - **[Advanced Guide](./docs/ADVANCED_GUIDE.md)**: Deep dives into the IR model, custom directives, and the "Holmes" policy engine.
 - **[Architecture](./docs/ARCHITECTURE.md)**: The authoritative system map (Base Platform, Modules, Workspace, and bundle pipeline).
 - **[Realization Admission and Witness](./docs/design/0004-realization-admission-and-witness/realization-admission-and-witness.md)**: The release-line doctrine for authored source, IR, realization shells, and bounded witness claims.
-- **[Contract Bundle Release and Sync](./docs/design/0005-continuum-contract-bundle-release-and-sync/continuum-contract-bundle-release-and-sync.md)**: The release object, dual-versioning model, and cross-repo sync doctrine for Continuum families.
-- **[WARPspace Workspace Resolution](./docs/design/0006-warpspace-workspace-resolution/warpspace-workspace-resolution.md)**: The host-project contract consumption model for generated outputs and local overrides.
+- **[Module Contract](./docs/design/wesley-module-contract.md)**: The boundary between the Wesley compiler kernel and external target modules.
+- **[Module Capability Contract](./docs/design/wesley-module-capability-contract.md)**: The capability surfaces external modules bring to Wesley.
+- **[Extraction Map](./docs/design/wesley-extraction-map.md)**: The currently known wrong-repo domain residue and its intended external homes.
 - **[Vision](./docs/VISION.md)**: Core tenets and the "Trustworthy Change" mission.
 - **[Method](./docs/METHOD.md)**: Repo work doctrine and the cycle loop.
 
