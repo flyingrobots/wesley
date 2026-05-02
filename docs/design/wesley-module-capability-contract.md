@@ -304,8 +304,10 @@ present.
 So Wesley should keep a hermetic fixture module in its own tests that proves:
 
 - module loading works
-- capability registration works
+- capability registration works across every supported area and collection
 - module-owned target metadata can be discovered without product repos
+- BLADE environment, test, and gate hooks can be inspected without downstream
+  project fixtures
 
 That fixture is a test artifact, not a product module.
 
@@ -333,12 +335,14 @@ Today Wesley has:
   and `cli` areas
 - module-driven compile target discovery and dispatch for loaded
   `wesley.targets`
+- hermetic fixture coverage across every supported module capability
+  collection
 
 Today Wesley does **not** yet have:
 
 - module-provided Holmes/Watson/Moriarty/BLADE dispatch
 - complete removal of legacy product-target compatibility paths
 
-So this document is partly implemented. The next concrete cuts are to exercise
-the full fixture capability matrix and then remove or relocate legacy
-product/database residue.
+So this document is partly implemented. The next concrete cut is to remove or
+relocate legacy product/database residue now that the module registry, compile
+dispatch seam, and fixture capability matrix are in place.

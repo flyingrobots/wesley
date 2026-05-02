@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import {
   WESLEY_MODULE_CAPABILITY_AREAS,
+  WESLEY_MODULE_CAPABILITY_COLLECTIONS,
   SUPPORTED_WESLEY_MODULE_API_VERSIONS,
   createModuleCapabilityRegistry,
   listModuleCapabilities,
@@ -18,6 +19,20 @@ function makeFakeModule(overrides = {}) {
     async registerCliCommands() {},
     ...overrides
   };
+}
+
+function makeCapabilityMatrix(prefix) {
+  return Object.fromEntries(
+    Object.entries(WESLEY_MODULE_CAPABILITY_COLLECTIONS).map(([area, collections]) => [
+      area,
+      Object.fromEntries(
+        collections.map((collection) => [
+          collection,
+          [{ name: `${prefix}-${area}-${collection}` }]
+        ])
+      )
+    ])
+  );
 }
 
 const nullLogger = {
@@ -71,6 +86,12 @@ test('validateWesleyModule accepts a module with structured capabilities', () =>
 test('WESLEY_MODULE_CAPABILITY_AREAS is frozen', () => {
   assert.throws(() => {
     WESLEY_MODULE_CAPABILITY_AREAS.push('product');
+  }, TypeError);
+});
+
+test('WESLEY_MODULE_CAPABILITY_COLLECTIONS is frozen', () => {
+  assert.throws(() => {
+    WESLEY_MODULE_CAPABILITY_COLLECTIONS.wesley.push('productTargets');
   }, TypeError);
 });
 
@@ -186,6 +207,32 @@ test('createModuleCapabilityRegistry aggregates structured capabilities with own
   assert.deepEqual(listModuleCapabilities(registry, 'watson', 'verifiers'), []);
 });
 
+test('createModuleCapabilityRegistry normalizes every supported capability collection with ownership', () => {
+  const registry = createModuleCapabilityRegistry([
+    makeFakeModule({
+      name: 'alpha',
+      capabilities: makeCapabilityMatrix('alpha')
+    })
+  ]);
+
+  assert.deepEqual(Object.keys(registry.capabilities), WESLEY_MODULE_CAPABILITY_AREAS);
+
+  for (const [area, collections] of Object.entries(WESLEY_MODULE_CAPABILITY_COLLECTIONS)) {
+    assert.deepEqual(Object.keys(registry.capabilities[area]), collections, area);
+
+    for (const collection of collections) {
+      assert.deepEqual(
+        listModuleCapabilities(registry, area, collection),
+        [{
+          moduleName: 'alpha',
+          value: { name: `alpha-${area}-${collection}` }
+        }],
+        `${area}.${collection}`
+      );
+    }
+  }
+});
+
 test('createModuleCapabilityRegistry rejects unknown capability areas', () => {
   assert.throws(() => createModuleCapabilityRegistry([
     makeFakeModule({
@@ -198,6 +245,36 @@ test('createModuleCapabilityRegistry rejects unknown capability areas', () => {
   ]), (error) => {
     assert.equal(error.code, 'WMOD005');
     assert.match(error.message, /unknown area "product"/);
+    return true;
+  });
+});
+
+test('createModuleCapabilityRegistry rejects non-object capability areas', () => {
+  assert.throws(() => createModuleCapabilityRegistry([
+    makeFakeModule({
+      capabilities: {
+        holmes: []
+      }
+    })
+  ]), (error) => {
+    assert.equal(error.code, 'WMOD005');
+    assert.match(error.message, /capabilities\.holmes must be a plain object/);
+    return true;
+  });
+});
+
+test('createModuleCapabilityRegistry rejects unknown capability collections', () => {
+  assert.throws(() => createModuleCapabilityRegistry([
+    makeFakeModule({
+      capabilities: {
+        blade: {
+          deployments: []
+        }
+      }
+    })
+  ]), (error) => {
+    assert.equal(error.code, 'WMOD005');
+    assert.match(error.message, /capabilities\.blade contains unknown collection "deployments"/);
     return true;
   });
 });

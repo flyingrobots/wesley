@@ -51,5 +51,3 @@ pnpm run preflight
 - legacy product compile descriptors still need relocation or deletion
 - realization manifests are still shaped around the legacy two-leg product
   model
-- the fixture capability matrix still needs broader coverage outside compile
-  dispatch

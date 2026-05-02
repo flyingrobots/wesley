@@ -5,6 +5,11 @@ import path from 'node:path';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
+import {
+  WESLEY_MODULE_CAPABILITY_COLLECTIONS,
+  listModuleCapabilities
+} from '@wesley/core';
+
 import { program } from '../src/program.mjs';
 import {
   discoverAndRegisterWesleyCliModules,
@@ -12,6 +17,51 @@ import {
 } from '../src/framework/module-loader.mjs';
 
 const fixtureModulePath = fileURLToPath(new URL('./fixtures/modules/test-extension-module.mjs', import.meta.url));
+
+const expectedFixtureCapabilityNames = Object.freeze({
+  wesley: {
+    directives: 'fixture-directive',
+    targets: 'fixture-target',
+    generators: 'fixture-generator',
+    bundleProfiles: 'fixture-bundle-profile',
+    realizationVerifiers: 'fixture-realization-verifier'
+  },
+  holmes: {
+    scopes: 'fixture-scope',
+    checks: 'fixture-check',
+    evidenceCollectors: 'fixture-evidence-collector'
+  },
+  watson: {
+    verifiers: 'fixture-verifier',
+    auditProfiles: 'fixture-audit-profile'
+  },
+  moriarty: {
+    policyProfiles: 'fixture-policy-profile',
+    judgmentProfiles: 'fixture-judgment-profile',
+    predictors: 'fixture-predictor'
+  },
+  blade: {
+    scenarios: 'fixture-scenario',
+    fixtures: 'fixture-blade-fixture',
+    envSetups: 'fixture-env-setup',
+    tests: 'fixture-blade-test',
+    gates: 'fixture-gate',
+    certificationProfiles: 'fixture-certification-profile'
+  },
+  cli: {
+    commands: 'fixture-hello'
+  }
+});
+
+const nullLogger = {
+  debug() {},
+  info() {},
+  warn() {},
+  error() {},
+  child() {
+    return this;
+  }
+};
 
 function createIo() {
   let stdout = '';
@@ -35,6 +85,31 @@ function createIo() {
       return stderr;
     }
   };
+}
+
+async function withFixtureCapabilityRegistry(prefix, callback) {
+  const tempDir = mkdtempSync(path.join(os.tmpdir(), prefix));
+
+  try {
+    const ctx = {
+      cwd: tempDir,
+      env: {
+        WESLEY_MODULES: fixtureModulePath
+      },
+      logger: nullLogger
+    };
+
+    const result = await discoverAndRegisterWesleyCliModules({
+      ctx,
+      cwd: tempDir,
+      env: ctx.env,
+      logger: ctx.logger
+    });
+
+    return await callback({ ctx, result, tempDir });
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
 }
 
 test('loadWesleyCliModuleEntries adds env-provided fixture modules without project config', async () => {
@@ -105,15 +180,7 @@ test('program loads CLI commands from a fixture module via WESLEY_MODULES', asyn
         },
         stdout: io.stdout,
         stderr: io.stderr,
-        logger: {
-          debug() {},
-          info() {},
-          warn() {},
-          error() {},
-          child() {
-            return this;
-          }
-        }
+        logger: nullLogger
       }
     );
 
@@ -129,56 +196,79 @@ test('program loads CLI commands from a fixture module via WESLEY_MODULES', asyn
 });
 
 test('discoverAndRegisterWesleyCliModules exposes fixture capability registry on ctx', async () => {
-  const tempDir = mkdtempSync(path.join(os.tmpdir(), 'wesley-module-capabilities-'));
-
-  try {
-    const ctx = {
-      cwd: tempDir,
-      env: {
-        WESLEY_MODULES: fixtureModulePath
-      },
-      logger: {
-        debug() {},
-        info() {},
-        warn() {},
-        error() {},
-        child() {
-          return this;
-        }
-      }
-    };
-
-    const result = await discoverAndRegisterWesleyCliModules({
-      ctx,
-      cwd: tempDir,
-      env: ctx.env,
-      logger: ctx.logger
-    });
+  await withFixtureCapabilityRegistry('wesley-module-capabilities-', async ({ ctx, result }) => {
     const registry = result.capabilityRegistry;
 
     assert.equal(ctx.moduleCapabilityRegistry, registry);
     assert.deepEqual(registry.modules, [
       { name: 'test-extension-module', apiVersion: '1' }
     ]);
-    assert.equal(registry.capabilities.wesley.targets.length, 1);
-    assert.equal(registry.capabilities.wesley.targets[0].moduleName, 'test-extension-module');
-    assert.equal(registry.capabilities.wesley.targets[0].value.name, 'fixture-target');
-    assert.equal(typeof registry.capabilities.wesley.targets[0].value.compile, 'function');
-    assert.deepEqual(registry.capabilities.holmes.scopes, [
-      {
-        moduleName: 'test-extension-module',
-        value: { name: 'fixture-scope' }
+    assert.deepEqual(Object.keys(registry.capabilities), Object.keys(WESLEY_MODULE_CAPABILITY_COLLECTIONS));
+
+    for (const [area, collections] of Object.entries(WESLEY_MODULE_CAPABILITY_COLLECTIONS)) {
+      assert.deepEqual(Object.keys(registry.capabilities[area]), collections, area);
+
+      for (const collection of collections) {
+        const entries = listModuleCapabilities(registry, area, collection);
+        assert.equal(entries.length, 1, `${area}.${collection}`);
+        assert.equal(entries[0].moduleName, 'test-extension-module', `${area}.${collection}`);
+        assert.equal(
+          entries[0].value.name,
+          expectedFixtureCapabilityNames[area][collection],
+          `${area}.${collection}`
+        );
       }
-    ]);
-    assert.deepEqual(registry.capabilities.cli.commands, [
-      {
-        moduleName: 'test-extension-module',
-        value: { name: 'fixture-hello' }
-      }
-    ]);
-  } finally {
-    rmSync(tempDir, { recursive: true, force: true });
-  }
+    }
+
+    assert.equal(
+      typeof listModuleCapabilities(registry, 'wesley', 'targets')[0].value.compile,
+      'function'
+    );
+    assert.equal(
+      typeof listModuleCapabilities(registry, 'blade', 'envSetups')[0].value.setup,
+      'function'
+    );
+    assert.equal(
+      typeof listModuleCapabilities(registry, 'blade', 'tests')[0].value.run,
+      'function'
+    );
+    assert.equal(
+      typeof listModuleCapabilities(registry, 'blade', 'gates')[0].value.evaluate,
+      'function'
+    );
+  });
+});
+
+test('fixture BLADE capabilities expose local environment, test, and gate hooks', async () => {
+  await withFixtureCapabilityRegistry('wesley-module-blade-capabilities-', async ({ result }) => {
+    const registry = result.capabilityRegistry;
+    const envSetup = listModuleCapabilities(registry, 'blade', 'envSetups')[0].value;
+    const bladeTest = listModuleCapabilities(registry, 'blade', 'tests')[0].value;
+    const gate = listModuleCapabilities(registry, 'blade', 'gates')[0].value;
+
+    assert.deepEqual(await envSetup.setup({ environment: 'contract-fixture' }), {
+      kind: 'fixture.blade.env-setup.v1',
+      environment: 'contract-fixture',
+      ready: true
+    });
+    assert.deepEqual(await bladeTest.run(), {
+      kind: 'fixture.blade.test.v1',
+      status: 'pass'
+    });
+    assert.deepEqual(await bladeTest.run({ shouldFail: true }), {
+      kind: 'fixture.blade.test.v1',
+      status: 'fail'
+    });
+    assert.deepEqual(await gate.evaluate(), {
+      kind: 'fixture.blade.gate.v1',
+      status: 'pass'
+    });
+    await assert.rejects(() => gate.evaluate({ passed: false }), (error) => {
+      assert.equal(error.code, 'FIXTURE_GATE_REJECTED');
+      assert.match(error.message, /fixture gate rejected fixture input/);
+      return true;
+    });
+  });
 });
 
 test('program dispatches compile through a fixture module target', async () => {
@@ -214,15 +304,7 @@ test('program dispatches compile through a fixture module target', async () => {
         },
         stdout: io.stdout,
         stderr: io.stderr,
-        logger: {
-          debug() {},
-          info() {},
-          warn() {},
-          error() {},
-          child() {
-            return this;
-          }
-        }
+        logger: nullLogger
       }
     );
 

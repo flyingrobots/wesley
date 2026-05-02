@@ -29,7 +29,8 @@ timeline
 - Keeping `wesley compile` dispatching through module-owned `wesley.targets`
   while legacy product-target compatibility is extracted.
 - Keeping Wesley core CI independent of external product and database repos by
-  using hermetic fixture modules.
+  exercising a hermetic fixture module across every supported capability
+  collection.
 
 ### 3. Extraction Rigor
 - Treating the current Continuum, WARPspace, PostgreSQL, Supabase, Echo, TTD,
@@ -43,8 +44,9 @@ timeline
 
 - **Wrong-Repo Residue**: Wesley still contains historical product and database
   code that belongs in external modules.
-- **Capability Gap**: Module loading exists, but the runtime capability
-  registry is not yet strong enough to replace hard-coded target dispatch.
+- **Capability Gap**: The module registry and compile target dispatch exist,
+  but Holmes, Watson, Moriarty, and BLADE still need real runtime dispatch over
+  module-owned capability collections.
 - **Documentation Drag**: Older docs still describe Continuum and PostgreSQL as
   Wesley lanes instead of extraction targets.
 - **Verification Split**: Generic witness/evidence machinery needs to stay
