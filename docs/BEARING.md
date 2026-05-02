@@ -26,8 +26,8 @@ timeline
 ### 2. Module Capability Runtime
 - Using the basic module capability registry as the default seam between
   loaded modules and Wesley base verbs.
-- Keeping `wesley compile` dispatching through module-owned `wesley.targets`
-  while legacy product-target compatibility is extracted.
+- Keeping `wesley compile` dispatching only through module-owned
+  `wesley.targets`.
 - Keeping Wesley core CI independent of external product and database repos by
   exercising a hermetic fixture module across every supported capability
   collection.

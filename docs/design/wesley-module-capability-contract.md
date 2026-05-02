@@ -341,7 +341,7 @@ Today Wesley has:
 Today Wesley does **not** yet have:
 
 - module-provided Holmes/Watson/Moriarty/BLADE dispatch
-- complete removal of legacy product-target compatibility paths
+- complete removal of all remaining product/database residue outside compile
 
 So this document is partly implemented. The next concrete cut is to remove or
 relocate legacy product/database residue now that the module registry, compile

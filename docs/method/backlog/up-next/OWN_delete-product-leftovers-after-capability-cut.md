@@ -44,17 +44,16 @@ capability runtime and module-driven compile target discovery are in place.
 Inventory is now explicit in
 `docs/design/wesley-extraction-map.md#post-capability-cut-inventory`.
 
-No product/database code was deleted in the inventory slice. The inventory
-classifies each remaining surface as:
+Product/database code deletion has started after the inventory slice. The
+inventory classifies each remaining surface as:
 
 - `delete`
 - `relocate`
-- `keep as legacy compatibility`
 - `defer`
 
-The next implementation slice should pick one classified row, preferably a
-docs/backlog or compatibility-shim row with existing tests, instead of turning
-this into a broad cleanup raid.
+There is no product legacy-support requirement. Each implementation slice should
+pick one classified row and either remove it from Wesley or prove that its
+external home already owns it.
 
 ## Repo Evidence
 
@@ -64,8 +63,15 @@ classification lives in the extraction map inventory linked above.
 - `docs/design/wesley-extraction-map.md`
 - `packages/wesley-cli/src/commands/compile-ttd.mjs`
 - `packages/wesley-cli/src/commands/bundle-echo.mjs`
-- `packages/wesley-cli/src/commands/verify-realization.mjs`
-- `packages/wesley-cli/src/commands/realization-integrity.mjs`
 - `packages/wesley-cli/src/utils/warpspace.mjs`
 - `packages/wesley-generator-echo/`
 - `packages/wesley-generator-ttd/`
+
+Deleted in the first cleanup slice:
+
+- generic `compile` compatibility descriptors for `warp-ttd` and `echo`
+- `packages/wesley-cli/src/commands/verify-realization.mjs`
+- `packages/wesley-cli/src/commands/realization-integrity.mjs`
+- root `verify:realization`
+- stale Continuum witness and realization Bats coverage
+- stale module-owned command skip-list entries for missing product commands

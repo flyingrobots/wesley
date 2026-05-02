@@ -36,8 +36,10 @@ authored SDL instead of silently letting generated residue drift.
 
 ## Evidence
 
-- [packages/wesley-cli/src/commands/verify-realization.mjs](../../../packages/wesley-cli/src/commands/verify-realization.mjs)
-- [packages/wesley-cli/src/commands/realization-integrity.mjs](../../../packages/wesley-cli/src/commands/realization-integrity.mjs)
 - [.githooks/pre-commit](../../../.githooks/pre-commit)
 - [.github/workflows/preflight.yml](../../../.github/workflows/preflight.yml)
-- [packages/wesley-cli/test/verify-realization.bats](../../../packages/wesley-cli/test/verify-realization.bats)
+- [Wesley Extraction Map](../wesley-extraction-map.md)
+
+The original `verify-realization` implementation was a Continuum two-leg guard.
+It has been removed from generic Wesley; any replacement belongs in a
+Continuum-owned module.

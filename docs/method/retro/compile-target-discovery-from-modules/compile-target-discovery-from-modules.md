@@ -21,18 +21,17 @@ Modules own:
 - compile hook implementation
 - target result shape
 
-## Compatibility
+## Compatibility Superseded
 
-The command still carries `warp-ttd` and `echo` as legacy compatibility
-descriptors because existing compile/witness tests still require them. They are
-explicit compatibility residue, not the desired ownership model.
+The first landing kept `warp-ttd` and `echo` as temporary compatibility
+descriptors. A later cleanup removed those descriptors; `wesley compile` is now
+module-target-only.
 
 ## Landed Surface
 
 - `compile` reads module target capabilities through the registry.
 - module target results are recorded under `summary.generatedTargets`.
-- target errors now list module-discovered target names plus legacy
-  compatibility targets.
+- target errors now list module-discovered target names.
 - the hermetic fixture module provides a real `fixture-target` compile hook.
 - CLI tests prove `wesley compile --target fixture-target` can run without
   importing product or database repos.
@@ -48,6 +47,6 @@ pnpm run preflight
 
 ## Remaining Work
 
-- legacy product compile descriptors still need relocation or deletion
-- realization manifests are still shaped around the legacy two-leg product
-  model
+- standalone Continuum command surfaces still need relocation or deletion
+- any future Continuum realization verification must live in a Continuum-owned
+  module rather than generic Wesley

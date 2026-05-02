@@ -36,7 +36,9 @@ was edited after generation.
 
 ## Evidence
 
-- [packages/wesley-cli/src/commands/realization-integrity.mjs](../../../packages/wesley-cli/src/commands/realization-integrity.mjs)
 - [packages/wesley-cli/test/compile.bats](../../../packages/wesley-cli/test/compile.bats)
-- [packages/wesley-cli/test/verify-realization.bats](../../../packages/wesley-cli/test/verify-realization.bats)
-- [packages/wesley-cli/test/witness.bats](../../../packages/wesley-cli/test/witness.bats)
+- [Wesley Extraction Map](../wesley-extraction-map.md)
+
+The original Continuum realization verifier files were removed from generic
+Wesley during the Domain-Empty cleanup. Recreate that behavior only through a
+Continuum-owned module if it is still needed.

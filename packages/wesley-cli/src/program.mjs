@@ -9,10 +9,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Command } from 'commander';
 import { WesleyCommand } from './framework/WesleyCommand.mjs';
-import {
-  MODULE_OWNED_COMMAND_FILES,
-  discoverAndRegisterWesleyCliModules
-} from './framework/module-loader.mjs';
+import { discoverAndRegisterWesleyCliModules } from './framework/module-loader.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const commandsDir = join(__dirname, 'commands');
@@ -27,8 +24,7 @@ async function discoverCommands(ctx) {
     .filter((f) => (
       f.endsWith('.mjs') &&
       !f.startsWith('_') &&
-      f !== 'index.mjs' &&
-      !MODULE_OWNED_COMMAND_FILES.has(f)
+      f !== 'index.mjs'
     ));
 
   for (const file of files) {

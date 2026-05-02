@@ -11,21 +11,19 @@ pnpm wesley --help
 pnpm wesley transform --schema path/to/schema.graphql --transmutation null-generator --out-dir out
 pnpm wesley typescript --schema path/to/schema.graphql
 pnpm wesley zod --schema path/to/schema.graphql
-pnpm wesley verify-realization --tracked
 WESLEY_MODULES=/path/to/module.mjs pnpm wesley --help
 ```
 
 Set `WESLEY_MODULES` or configure `wesley.config.mjs` to load external module
-commands and future module-owned compile targets.
+commands and module-owned compile targets.
 
 See `pnpm wesley --help` for the full list of commands (including `blade`, `cert-*`, and experimental `--ops` support).
 
 Repeated local schema workflows reuse a hash-addressed IR cache in `.wesley-cache/ir/`, so `generate`, `plan`, `rehearse`, `up`, `typescript`, and `zod` do not need to re-lower unchanged SDL on every invocation.
 
-Historical product and database commands still present in this package are
+Any remaining product and database commands still present in this package are
 extraction debt. New domain-specific commands, targets, policies, and runtime
-workspace conventions should be added in external modules, then loaded into
-Wesley.
+workspace conventions belong in external modules, then load into Wesley.
 
 ## Development
 

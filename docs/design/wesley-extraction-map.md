@@ -41,23 +41,24 @@ That means Wesley should continue to own things like:
 Inventory date: 2026-05-02, after the module capability registry, module-driven
 compile target discovery, and full fixture capability matrix landed.
 
-This inventory is the deletion gate. Nothing below should be removed from
-Wesley until its row has either an external home or a replacement module-backed
-test path.
+This inventory is the deletion gate. Each implementation slice should name the
+row it is deleting or relocating, then leave Wesley with a covered generic path
+or no advertised product surface.
 
 | Area | Current Wesley evidence | Classification | Cut guard |
 | --- | --- | --- | --- |
-| Generic `compile` command | `packages/wesley-cli/src/commands/compile.mjs` legacy `warp-ttd` and `echo` compatibility descriptors | Keep as legacy compatibility | Preserve until Continuum supplies equivalent module `wesley.targets` and existing compile tests can run through the module path. |
-| TTD/Echo public CLI commands | `compile-ttd.mjs`, `bundle-echo.mjs`, `verify-realization.mjs`, `realization-integrity.mjs` | Relocate | Move into a Continuum-owned Wesley module command surface; do not delete while Bats coverage still exercises these commands directly. |
+| Generic `compile` command | `packages/wesley-cli/src/commands/compile.mjs` | Done for built-in targets | `compile` now uses module-provided `wesley.targets` only; remaining cleanup is removing standalone Continuum commands and packages. |
+| TTD/Echo public CLI commands | `compile-ttd.mjs`, `bundle-echo.mjs` | Relocate | Move into a Continuum-owned Wesley module command surface if still needed; no Wesley legacy support requirement remains. |
+| Continuum realization verifier | removed `verify-realization.mjs`, `realization-integrity.mjs`, root `verify:realization`, `verify-realization.bats`, and compile-dependent witness assertions | Done | Wesley no longer advertises or tests a built-in two-leg Continuum realization verifier. Recreate only as a Continuum-owned module surface. |
 | WARPspace output lookup in CLI | `packages/wesley-cli/src/utils/warpspace.mjs`, `FileOutputGeneratorCommand.mjs`, `compile-ttd.mjs`, `bundle-echo.mjs` | Relocate | Move Continuum host-project config lookup out of generic CLI after command/module replacements own output defaults. |
-| Stale module-owned command skip list | `MODULE_OWNED_COMMAND_FILES` entries for missing `contract.mjs`, `witness.mjs`, `witness-continuum.mjs`, `drift-watch.mjs`, `observer-plan.mjs` | Delete | Safe only with command auto-discovery regression coverage; no behavior deletion in this inventory slice. |
+| Stale module-owned command skip list | removed `MODULE_OWNED_COMMAND_FILES` entries for missing `contract.mjs`, `witness.mjs`, `witness-continuum.mjs`, `drift-watch.mjs`, `observer-plan.mjs` | Done | Command auto-discovery now only skips private/helper files; external module commands register through loaded modules. |
 | WARPspace bootstrap program | `packages/wesley-host-node/bin/warpspace.mjs`, `src/warpspace-program.mjs`, `src/warpspace/init.mjs`, host-node `bin.warpspace` | Relocate | Move to Continuum `warp` ownership, then remove the Wesley bin or leave a clearly deprecated shim with a removal date. |
 | Continuum generator packages | `packages/wesley-generator-echo/`, `packages/wesley-generator-ttd/` | Relocate | Move to Continuum-owned module/generator packages; keep while legacy commands import them. |
 | TTD core package surface | `packages/wesley-core/src/ttd/`, `@wesley/core` exports `./ttd` and `./ttd/invariants` | Relocate | Needs a Continuum/TTD module package first because `@wesley/generator-ttd` tests and compile paths import this surface. |
 | Continuum schemas | `schemas/ttd-protocol.graphql`, `schemas/ttd-ir.schema.json`, `schemas/echo-core-types.graphql`, `schemas/echo-wasm-abi.graphql`, `schemas/continuum-*.graphql` | Relocate | Move into Continuum-owned schema/module packages after CLI/generator tests stop using repo-local canonical copies. |
 | Mixed directive schema | TTD directive block inside `schemas/directives.graphql` | Defer | Split only after generic directive ownership is clarified; do not break generic SDL parser fixtures incidentally. |
-| Legacy Continuum tests | `compile.bats`, `compile-ttd.bats`, `bundle-echo.bats`, `verify-realization.bats`, `warpspace.*`, Continuum witness assertions | Keep as legacy compatibility | Keep as regression coverage until equivalent module-backed tests cover the transferred behavior. |
-| CLI dependency on Echo generator | `packages/wesley-cli/package.json` depends on `@wesley/generator-echo` | Keep as legacy compatibility | Remove only after `bundle-echo` and legacy compile descriptors no longer import the package from Wesley. |
+| Legacy Continuum tests | `compile-ttd.bats`, `bundle-echo.bats`, `warpspace.*` | Delete or relocate | `verify-realization.bats` and Continuum witness assertions are gone; remove the remaining tests as the corresponding command/package leaves this repo. |
+| CLI dependency on Echo generator | `packages/wesley-cli/package.json` depends on `@wesley/generator-echo` | Delete | Remove after `bundle-echo` leaves the generic CLI. |
 | PostgreSQL-family core exports | `packages/wesley-core/src/index.mjs`, `typeMapping.mjs`, `PostgreSQLGenerator.mjs`, `PgTAPTestGenerator.mjs`, migration explainer/planner/orchestrator, QIR Postgres dialect | Relocate | Move to `wesley-postgres`; keep generic QIR contracts only after the Postgres dialect split is explicit. |
 | PostgreSQL/Supabase packages | `packages/wesley-generator-supabase/`, `packages/wesley-stack-supabase-nextjs/` | Relocate | Move to `wesley-postgres` or a stack repo; root/package metadata follows after package removal. |
 | PostgreSQL/Supabase host/runtime coupling | `packages/wesley-host-node/src/adapters/ConfigLoader.mjs`, `DbAdapter.mjs`, `createNodeRuntime.mjs`, compiler adapters, `packages/wesley-runtime-node/src/CounterfactualSurface.mjs` | Relocate | Move Node database helpers under `wesley-postgres-node`; keep generic host shims in Wesley. |
@@ -73,35 +74,37 @@ Evidence:
 - `packages/wesley-cli/src/commands/compile.mjs`
 - `packages/wesley-cli/src/commands/compile-ttd.mjs`
 - `packages/wesley-cli/src/commands/bundle-echo.mjs`
+- `packages/wesley-cli/src/utils/warpspace.mjs`
+
+Removed in the first cleanup slice:
+
 - `packages/wesley-cli/src/commands/verify-realization.mjs`
 - `packages/wesley-cli/src/commands/realization-integrity.mjs`
-- `packages/wesley-cli/src/utils/warpspace.mjs`
+- `packages/wesley-cli/test/verify-realization.bats`
+- `packages/wesley-cli/test/witness.bats`
 
 Why it is non-generic:
 
-- `compile.mjs` is now a core Wesley dispatcher that discovers module targets,
-  but it still carries `warp-ttd` and `echo` as compatibility descriptors.
+- `compile.mjs` is now a core Wesley dispatcher that discovers module targets
+  only.
 - `compile-ttd.mjs` is a TTD-specific compile surface.
 - `bundle-echo.mjs` is an Echo-specific bundle surface with mocked
   `warp-ttd` deliveries.
-- `verify-realization.mjs` and `realization-integrity.mjs` encode a specific
-  two-leg realization model with `warp-ttd` and `echo`.
 - `warpspace.mjs` resolves `warpspace.toml`, which is a Continuum host-project
   convention, not a generic Wesley concept.
 
 New home:
 
 - keep `compile.mjs` in Wesley as the generic module/target dispatcher
-- remove its `warp-ttd`/`echo` descriptors only after Continuum supplies module
-  targets with equivalent coverage
 - move `compile-ttd.mjs` and `bundle-echo.mjs` into `continuum/wesley/commands/`
-- move `verify-realization.mjs` and `realization-integrity.mjs` into the
-  Continuum Wesley module as the Continuum realization verifier
+- recreate the Continuum realization verifier only in the Continuum Wesley
+  module if it is still needed
 - move `warpspace.mjs` into `continuum/wesley/utils/`
 
 Result:
 
 - generic Wesley keeps `compile` as a generic compile surface
+- generic Wesley no longer exposes a Continuum realization verifier
 - Continuum owns the multi-target compile surface for `echo` and `warp-ttd`
 
 ### 2. WARPspace bootstrap lives in `wesley-host-node`
@@ -306,9 +309,10 @@ Result:
 
 The safest order is:
 
-1. keep `compile.mjs` as the module-owned target dispatcher and treat
-   `warp-ttd`/`echo` as temporary compatibility descriptors
-2. move the remaining Continuum compile/generator/schema surfaces into
+1. keep `compile.mjs` as the module-owned target dispatcher with no built-in
+   product targets
+2. move or delete the remaining Continuum compile/generator/schema surfaces out
+   of Wesley into
    `continuum/wesley/`
 3. move WARPspace bootstrap into `continuum/apps/warp/`
 4. move the Holmes `git-warp` counterfactual provider into Continuum

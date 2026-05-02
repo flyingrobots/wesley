@@ -7,14 +7,6 @@ import { discoverModules } from '@wesley/core';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 export const DEFAULT_WESLEY_MODULE_SPECIFIERS = Object.freeze([]);
 
-export const MODULE_OWNED_COMMAND_FILES = Object.freeze(new Set([
-  'contract.mjs',
-  'witness.mjs',
-  'witness-continuum.mjs',
-  'drift-watch.mjs',
-  'observer-plan.mjs'
-]));
-
 const WESLEY_CONFIG_FILE = 'wesley.config.mjs';
 const WESLEY_ENV_MODULES = 'WESLEY_MODULES';
 const WESLEY_ENV_CONFIG = 'WESLEY_CONFIG';

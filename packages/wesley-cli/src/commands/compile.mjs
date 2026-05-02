@@ -1,13 +1,6 @@
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
 import { WesleyError, listModuleCapabilities } from '@wesley/core';
 import { joinPath } from './path-utils.mjs';
-import { runCompileTtd } from './compile-ttd.mjs';
-import { runBundleEcho } from './bundle-echo.mjs';
-import {
-  buildRealizationManifest
-} from './realization-integrity.mjs';
-
-const LEGACY_COMPAT_MODULE_NAME = 'wesley-legacy-compile-compat';
 
 export class CompileCommand extends WesleyCommand {
   constructor(ctx) {
@@ -24,10 +17,7 @@ export class CompileCommand extends WesleyCommand {
       .option('-s, --schema <path>', 'GraphQL schema file. Use "-" for stdin', 'schema.graphql')
       .option('--stdin', 'Read schema from stdin')
       .option('-o, --out-dir <dir>', 'Root output directory', 'out')
-      .option('-t, --target <targets>', 'Comma-separated targets: warp-ttd, echo', 'warp-ttd,echo')
-      .option('-e, --emit <targets>', 'Comma-separated warp-ttd emits: manifest, typescript, rust', 'manifest,typescript')
-      .option('--manifest-out <path>', 'Realization manifest output path (defaults under <out-dir>/realization/manifest.json)')
-      .option('--witness-out <path>', 'Deprecated alias for --manifest-out')
+      .option('-t, --target <targets>', 'Comma-separated module-provided targets. Defaults to all discovered targets.')
       .option('--schema-root <dir>', 'Root directory for resolving @wes_import paths')
       .option('--dry-run', 'Show what would be generated without writing files');
   }
@@ -35,13 +25,11 @@ export class CompileCommand extends WesleyCommand {
   async executeCore(context) {
     const availableTargets = getCompileTargetDescriptors(this.ctx);
     const targets = parseTargets(context.options.target, availableTargets);
-    const manifestPath = context.options.manifestOut ?? context.options.witnessOut ?? joinPath(context.options.outDir, 'realization', 'manifest.json');
     const summary = {
       schemaPath: context.schemaPath,
       outDir: context.options.outDir,
       dryRun: Boolean(context.options.dryRun),
       targets,
-      manifestPath,
       generatedTargets: {}
     };
 
@@ -65,10 +53,6 @@ export class CompileCommand extends WesleyCommand {
         moduleName: descriptor.moduleName,
         result
       };
-
-      if (descriptor.summaryKey) {
-        summary[descriptor.summaryKey] = result;
-      }
     }
 
     const schemaHashes = Object.values(summary.generatedTargets)
@@ -83,22 +67,6 @@ export class CompileCommand extends WesleyCommand {
 
     if (schemaHashes.length > 0) {
       summary.schemaHash = schemaHashes[0];
-    }
-
-    const realizationManifest = await buildRealizationManifest({
-      fs: this.ctx.fs,
-      crypto: this.ctx.crypto,
-      schemaContent: context.schemaContent,
-      schemaPath: context.schemaPath,
-      outDir: context.options.outDir,
-      targets,
-      summary,
-      dryRun: Boolean(context.options.dryRun)
-    });
-    summary.realizationManifest = realizationManifest;
-
-    if (!context.options.dryRun) {
-      await this.ctx.fs.write(manifestPath, JSON.stringify(realizationManifest, null, 2) + '\n');
     }
 
     return summary;
@@ -124,17 +92,6 @@ function getCompileTargetDescriptors(ctx) {
     });
   }
 
-  for (const legacyTarget of legacyCompileTargets()) {
-    addTargetDescriptor({
-      byName,
-      aliases,
-      ordered,
-      moduleName: LEGACY_COMPAT_MODULE_NAME,
-      target: legacyTarget,
-      replaceExisting: false
-    });
-  }
-
   return { byName, aliases, ordered };
 }
 
@@ -143,8 +100,7 @@ function addTargetDescriptor({
   aliases,
   ordered,
   moduleName,
-  target,
-  replaceExisting = true
+  target
 }) {
   if (target == null || typeof target !== 'object' || Array.isArray(target)) {
     throw new WesleyError(
@@ -159,10 +115,6 @@ function addTargetDescriptor({
       'INVALID_TARGET_CAPABILITY',
       `Module "${moduleName}" registered a target capability without a non-empty string "name".`
     );
-  }
-
-  if (byName.has(name) && !replaceExisting) {
-    return;
   }
 
   const descriptor = {
@@ -216,7 +168,18 @@ async function runCompileTargetDescriptor({
 }
 
 function parseTargets(rawTargets, availableTargets) {
-  const targets = String(rawTargets)
+  if (typeof rawTargets !== 'string' || rawTargets.trim().length === 0) {
+    const discoveredTargets = availableTargets.ordered.map((target) => target.name);
+    if (discoveredTargets.length === 0) {
+      throw new WesleyError(
+        'NO_COMPILE_TARGETS',
+        'No compile targets are available. Load a Wesley module that registers wesley.targets.'
+      );
+    }
+    return discoveredTargets;
+  }
+
+  const targets = rawTargets
     .split(',')
     .map((target) => normalizeRequestedTarget(target, availableTargets))
     .filter(Boolean);
@@ -251,44 +214,4 @@ function normalizeTargetName(rawTarget) {
 
 function formatTargetList(availableTargets) {
   return availableTargets.ordered.map((target) => target.name).join(', ') || '<none>';
-}
-
-function legacyCompileTargets() {
-  return [
-    {
-      name: 'warp-ttd',
-      aliases: ['ttd'],
-      summaryKey: 'warpTtd',
-      async compile({ ctx, schemaContent, schemaPath, units, options, logger }) {
-        return runCompileTtd({
-          ctx,
-          schemaContent,
-          schemaPath,
-          units,
-          options: {
-            ...options,
-            outDir: joinPath(options.outDir, 'warp-ttd'),
-            target: options.emit
-          },
-          logger
-        });
-      }
-    },
-    {
-      name: 'echo',
-      summaryKey: 'echo',
-      async compile({ ctx, schemaContent, schemaPath, options, logger }) {
-        return runBundleEcho({
-          ctx,
-          schemaContent,
-          schemaPath,
-          options: {
-            ...options,
-            outDir: joinPath(options.outDir, 'echo')
-          },
-          logger
-        });
-      }
-    }
-  ];
 }
