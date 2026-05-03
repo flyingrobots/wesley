@@ -119,6 +119,9 @@ EOF
     assert_file_exist out/manifest/contracts.json
     assert_file_exist out/manifest/manifest.json
     assert_file_exist out/manifest/ttd-ir.json
+    jq -e '.generatedBy == "@wesley/core/ttd"' out/manifest/schema.json >/dev/null
+    jq -e '.generated_by.tool == "@wesley/core/ttd"' out/manifest/ttd-ir.json >/dev/null
+    refute grep -R "@wesley/generator-ttd" out
 }
 
 @test "compile-ttd generates typescript files" {
@@ -129,6 +132,8 @@ EOF
     assert_file_exist out/typescript/zod.ts
     assert_file_exist out/typescript/registry.ts
     assert_file_exist out/typescript/index.ts
+    assert_file_contains out/typescript/index.ts "@wesley/core/ttd"
+    refute grep -R "@wesley/generator-ttd" out
 }
 
 @test "compile-ttd generates both targets by default" {

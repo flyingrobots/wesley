@@ -264,7 +264,7 @@ expect(result1.files).toEqual(result2.files);
 {
   "version": "1.0.0",
   "hash": "23dc0e310ad5658b...",
-  "generatedBy": "@wesley/generator-ttd"
+  "generatedBy": "@wesley/core/ttd"
 }
 ```
 

@@ -107,3 +107,10 @@ Deleted in the TTD generator package cleanup slice:
 - package README and metadata advertising a non-existent `src/index.mjs`
 - preserved the remaining CLI `compile-ttd` fixture under
   `packages/wesley-cli/test/fixtures/basic-ttd-protocol.graphql`
+
+Deleted in the TTD generated metadata cleanup slice:
+
+- generated `schema.json`, `ttd-ir.json`, and TypeScript headers no longer
+  claim the deleted `@wesley/generator-ttd` package produced them
+- `compile-ttd` coverage now asserts the current legacy metadata surface is
+  `@wesley/core/ttd`

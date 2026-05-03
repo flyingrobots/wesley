@@ -31,7 +31,7 @@ export function generateSchemaJson(schema, deps = {}) {
     version: '1.0.0',
     hash: schema.schemaHash,
     generatedAt: clock.now(),
-    generatedBy: '@wesley/generator-ttd',
+    generatedBy: '@wesley/core/ttd',
     channels: schema.channels.map(c => canonicalizeObject(c)),
     ops: schema.ops.map(o => canonicalizeObject({
       name: o.name,

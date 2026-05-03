@@ -54,7 +54,7 @@ or no advertised product surface.
 | Stale module-owned command skip list | removed `MODULE_OWNED_COMMAND_FILES` entries for missing `contract.mjs`, `witness.mjs`, `witness-continuum.mjs`, `drift-watch.mjs`, `observer-plan.mjs` | Done | Command auto-discovery now only skips private/helper files; external module commands register through loaded modules. |
 | WARPspace bootstrap program | removed `packages/wesley-host-node/bin/warpspace.mjs`, `src/warpspace-program.mjs`, `src/warpspace/init.mjs`, host-node `bin.warpspace`, and residue tests/backlog notes | Done | Continuum `warp` owns workspace bootstrap; Wesley host-node now keeps only the generic `wesley` binary. |
 | Continuum generator packages | `packages/wesley-generator-echo/`; removed empty `packages/wesley-generator-ttd/` package shell and Vitest-only residue | Relocate | Echo stays while `bundle-echo` imports it; any future TTD generator package belongs in a Continuum-owned module/repo. |
-| TTD core package surface | `packages/wesley-core/src/ttd/`, `@wesley/core` exports `./ttd` and `./ttd/invariants` | Relocate | Needs a Continuum/TTD module package first because `compile-ttd` still imports this surface and TTD output metadata still names the old generator package. |
+| TTD core package surface | `packages/wesley-core/src/ttd/`, `@wesley/core` exports `./ttd` and `./ttd/invariants`; generated output metadata now names `@wesley/core/ttd` instead of the deleted generator package | Relocate | Needs a Continuum/TTD module package first because `compile-ttd` still imports this surface. |
 | Continuum schemas | `schemas/ttd-protocol.graphql`, `schemas/ttd-ir.schema.json`, `schemas/echo-core-types.graphql`, `schemas/echo-wasm-abi.graphql`, `schemas/continuum-*.graphql` | Relocate | Move into Continuum-owned schema/module packages after CLI/generator tests stop using repo-local canonical copies. |
 | Mixed directive schema | TTD directive block inside `schemas/directives.graphql` | Defer | Split only after generic directive ownership is clarified; do not break generic SDL parser fixtures incidentally. |
 | Legacy Continuum tests | `compile-ttd.bats`, `bundle-echo.bats`, `warpspace.*` | Delete or relocate | `verify-realization.bats` and Continuum witness assertions are gone; remove the remaining tests as the corresponding command/package leaves this repo. |
@@ -171,7 +171,8 @@ Evidence:
 - `packages/wesley-core/package.json` exports `./ttd` and `./ttd/invariants`
 - `packages/wesley-cli/src/commands/compile-ttd.mjs` imports
   `@wesley/core/ttd`
-- TTD generated output metadata still names `@wesley/generator-ttd`
+- TTD generated output metadata now names `@wesley/core/ttd`, matching the
+  current legacy implementation surface
 
 Why it is non-generic:
 
