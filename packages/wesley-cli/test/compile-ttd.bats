@@ -18,7 +18,7 @@ setup() {
     MAIN_MODULE="$BATS_TEST_DIRNAME/../src/main.mjs"
 
     # Path to TTD test fixture
-    TTD_SCHEMA="$BATS_TEST_DIRNAME/../../wesley-generator-ttd/test/fixtures/basic-protocol/basic-protocol.graphql"
+    TTD_SCHEMA="$BATS_TEST_DIRNAME/fixtures/basic-ttd-protocol.graphql"
     CONTINUUM_SCHEMA="$BATS_TEST_DIRNAME/../../../schemas/continuum-receipt-family.graphql"
 }
 

@@ -65,7 +65,6 @@ classification lives in the extraction map inventory linked above.
 - `packages/wesley-cli/src/commands/bundle-echo.mjs`
 - `packages/wesley-cli/src/utils/warpspace.mjs`
 - `packages/wesley-generator-echo/`
-- `packages/wesley-generator-ttd/`
 
 Deleted in the first cleanup slice:
 
@@ -100,3 +99,11 @@ Deleted in the WARPspace output lookup cleanup slice:
   `zod`
 - WARPspace-backed default file/root resolution from generic CLI commands
 - `smol-toml` dependency from `@wesley/cli`
+
+Deleted in the TTD generator package cleanup slice:
+
+- empty `packages/wesley-generator-ttd/` package shell
+- package-local TTD Vitest suite that only exercised `@wesley/core/ttd`
+- package README and metadata advertising a non-existent `src/index.mjs`
+- preserved the remaining CLI `compile-ttd` fixture under
+  `packages/wesley-cli/test/fixtures/basic-ttd-protocol.graphql`

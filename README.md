@@ -71,7 +71,6 @@ Progress: 59% → Alpha
 | `@wesley/generator-echo` | Extraction debt | MVP | 20% → Alpha | — | Wrong-repo Continuum residue |
 | `@wesley/generator-js` | Active | MVP | 50% → Alpha | — | TS/Zod emitters |
 | `@wesley/generator-supabase` | Extraction debt | MVP | 50% → Alpha | — | Move to `wesley-postgres` |
-| `@wesley/generator-ttd` | Extraction debt | MVP | 20% → Alpha | — | Wrong-repo Continuum residue |
 | `@wesley/generator-vue` | Experimental | MVP | 0% → Alpha | — | Vue-facing TS/composable emitters |
 | `@wesley/holmes` | Active | Alpha | 50% → Beta | — | Evidence scoring |
 | `@wesley/runtime-node` | Active | MVP | 0% → Alpha | — | Shared Node runtime adapters |

@@ -570,7 +570,6 @@ packages/
 ├── wesley-generator-echo/
 ├── wesley-generator-js/
 ├── wesley-generator-supabase/
-├── wesley-generator-ttd/
 ├── wesley-generator-vue/
 ├── wesley-holmes/
 ├── wesley-host-browser/

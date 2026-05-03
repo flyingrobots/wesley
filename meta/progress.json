@@ -140,25 +140,6 @@
       "coverage": null
     },
     {
-      "name": "@wesley/generator-ttd",
-      "status": "Active",
-      "stage": "MVP",
-      "progress": 20,
-      "next": "Alpha",
-      "passRate": null,
-      "docs": {
-        "hasStatus": true,
-        "hasUsage": true,
-        "hasApi": false,
-        "hasCaveats": false
-      },
-      "milestones": {
-        "alpha": null,
-        "beta": null
-      },
-      "coverage": null
-    },
-    {
       "name": "@wesley/generator-vue",
       "status": "Experimental",
       "stage": "MVP",

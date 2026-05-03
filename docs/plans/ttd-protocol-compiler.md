@@ -349,12 +349,11 @@ packages/wesley-core/src/ttd/codegen/
 ├── orchestrator.mjs   # Codegen orchestration ✓
 └── index.mjs          # Public API ✓
 
-packages/wesley-generator-ttd/src/
-├── rust/              # Rust codegen (TODO)
-│   ├── types.mjs      # Rust struct/enum generation
-│   ├── cbor.mjs       # CBOR codec generation
-│   └── registry.mjs   # Registry table generation
-└── typescript/        # (moved to wesley-core)
+External Continuum-owned TTD generator package/repo:
+└── rust/              # Rust codegen (TODO)
+    ├── types.mjs      # Rust struct/enum generation
+    ├── cbor.mjs       # CBOR codec generation
+    └── registry.mjs   # Registry table generation
 ```
 
 **Invariant:** Codegen is deterministic — same manifest → same output bytes.

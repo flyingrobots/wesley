@@ -326,7 +326,7 @@ const result = verifier.verify(state);
 
 ### Counter Protocol
 
-See the complete example in `packages/wesley-generator-ttd/test/fixtures/basic-protocol/basic-protocol.graphql`:
+See the complete example in `packages/wesley-cli/test/fixtures/basic-ttd-protocol.graphql`:
 
 - 4 state enum (IDLE, COUNTING, PAUSED, COMPLETED)
 - 1 event channel with 3 event types
