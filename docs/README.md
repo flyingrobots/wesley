@@ -32,15 +32,17 @@ The active carry-over for the first release now lives in the Continuum
 - [RUNTIME_continuum-local-compile-and-inspect-surface](./method/backlog/v0.1.0/RUNTIME_continuum-local-compile-and-inspect-surface.md)
 - [EVIDENCE_continuum-conformance-and-roundtrip-witness](./method/backlog/v0.1.0/EVIDENCE_continuum-conformance-and-roundtrip-witness.md)
 
-The repo already has three important building blocks around that hill:
+The repo already has the important generic building block around that hill:
 
-- a real TTD compile path via
-  [compile-ttd](../packages/wesley-cli/src/commands/compile-ttd.mjs)
-- a real Echo bundle wrapper via
-  [bundle-echo](../packages/wesley-cli/src/commands/bundle-echo.mjs)
+- a module-driven `wesley compile` surface where targets come from loaded
+  external modules
 - a real current-state witness path via
   the Continuum-owned Wesley module under
   [../continuum/wesley](../../continuum/wesley/README.md)
+
+The former repo-local `compile-ttd` and `bundle-echo` commands were retired
+from generic Wesley during the domain-empty extraction. Recreate those surfaces
+only as Continuum-owned module commands or external packages.
 
 It also now has a more explicit METHOD closeout surface under
 `docs/method/retro/`, `docs/method/graveyard/`, `docs/method/releases/`, and

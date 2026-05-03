@@ -48,17 +48,17 @@ or no advertised product surface.
 | Area | Current Wesley evidence | Classification | Cut guard |
 | --- | --- | --- | --- |
 | Generic `compile` command | `packages/wesley-cli/src/commands/compile.mjs` | Done for built-in targets | `compile` now uses module-provided `wesley.targets` only; remaining cleanup is removing standalone Continuum commands and packages. |
-| TTD/Echo public CLI commands | `compile-ttd.mjs`, `bundle-echo.mjs` | Relocate | Move into a Continuum-owned Wesley module command surface if still needed; no Wesley legacy support requirement remains. |
+| TTD/Echo public CLI commands | removed `compile-ttd.mjs`, `bundle-echo.mjs`, their CLI Bats suites, and the command-only TTD fixture | Done | Recreate only as Continuum-owned module commands or external packages if still needed; generic Wesley no longer ships those public product commands. |
 | Continuum realization verifier | removed `verify-realization.mjs`, `realization-integrity.mjs`, root `verify:realization`, `verify-realization.bats`, and compile-dependent witness assertions | Done | Wesley no longer advertises or tests a built-in two-leg Continuum realization verifier. Recreate only as a Continuum-owned module surface. |
-| WARPspace output lookup in CLI | removed `packages/wesley-cli/src/utils/warpspace.mjs`, `--warpspace` options, WARPspace-backed file/root defaults, WARPspace CLI tests, and `smol-toml` dependency | Done | Generic Wesley generators now use explicit `--out-file`; legacy Continuum commands use explicit `--out-dir` or their local defaults. Continuum-owned modules/tools should own host-project output defaults. |
+| WARPspace output lookup in CLI | removed `packages/wesley-cli/src/utils/warpspace.mjs`, `--warpspace` options, WARPspace-backed file/root defaults, WARPspace CLI tests, and `smol-toml` dependency | Done | Generic Wesley generators now use explicit `--out-file`; the later-deleted Continuum commands used explicit `--out-dir` or local defaults while they existed. Continuum-owned modules/tools should own host-project output defaults. |
 | Stale module-owned command skip list | removed `MODULE_OWNED_COMMAND_FILES` entries for missing `contract.mjs`, `witness.mjs`, `witness-continuum.mjs`, `drift-watch.mjs`, `observer-plan.mjs` | Done | Command auto-discovery now only skips private/helper files; external module commands register through loaded modules. |
 | WARPspace bootstrap program | removed `packages/wesley-host-node/bin/warpspace.mjs`, `src/warpspace-program.mjs`, `src/warpspace/init.mjs`, host-node `bin.warpspace`, and residue tests/backlog notes | Done | Continuum `warp` owns workspace bootstrap; Wesley host-node now keeps only the generic `wesley` binary. |
-| Continuum generator packages | `packages/wesley-generator-echo/`; removed empty `packages/wesley-generator-ttd/` package shell and Vitest-only residue; resolved Echo lint-hook blocker and golden v2 fixture drift | Relocate | Echo stays while `bundle-echo` imports it; any future TTD generator package belongs in a Continuum-owned module/repo. |
-| TTD core package surface | `packages/wesley-core/src/ttd/`, `@wesley/core` exports `./ttd` and `./ttd/invariants`; generated output metadata now names `@wesley/core/ttd` instead of the deleted generator package | Relocate | Needs a Continuum/TTD module package first because `compile-ttd` still imports this surface. |
-| Continuum schemas | `schemas/ttd-protocol.graphql`, `schemas/ttd-ir.schema.json`, `schemas/echo-core-types.graphql`, `schemas/echo-wasm-abi.graphql`, `schemas/continuum-*.graphql` | Relocate | Move into Continuum-owned schema/module packages after CLI/generator tests stop using repo-local canonical copies. |
+| Continuum generator packages | `packages/wesley-generator-echo/`; removed empty `packages/wesley-generator-ttd/` package shell and Vitest-only residue; resolved Echo lint-hook blocker and golden v2 fixture drift | Relocate | Echo no longer has a generic CLI command consumer, but the package is real implementation residue; remove or relocate only as its own package slice. Any future TTD generator package belongs in a Continuum-owned module/repo. |
+| TTD core package surface | `packages/wesley-core/src/ttd/`, `@wesley/core` exports `./ttd` and `./ttd/invariants`; generated output metadata now names `@wesley/core/ttd` instead of the deleted generator package | Relocate | The public `compile-ttd` command is gone; deleting core TTD internals is a separate package-surface slice because core tests and docs still pin the legacy compiler behavior. |
+| Continuum schemas | `schemas/ttd-protocol.graphql`, `schemas/ttd-ir.schema.json`, `schemas/echo-core-types.graphql`, `schemas/echo-wasm-abi.graphql`, `schemas/continuum-*.graphql` | Relocate | Move into Continuum-owned schema/module packages after generator/core tests stop using repo-local canonical copies. |
 | Mixed directive schema | TTD directive block inside `schemas/directives.graphql` | Defer | Split only after generic directive ownership is clarified; do not break generic SDL parser fixtures incidentally. |
-| Legacy Continuum tests | `compile-ttd.bats`, `bundle-echo.bats`, `warpspace.*` | Delete or relocate | `verify-realization.bats` and Continuum witness assertions are gone; remove the remaining tests as the corresponding command/package leaves this repo. |
-| CLI dependency on Echo generator | `packages/wesley-cli/package.json` depends on `@wesley/generator-echo` | Delete | Remove after `bundle-echo` leaves the generic CLI. |
+| Legacy Continuum tests | removed `compile-ttd.bats`, `bundle-echo.bats`, root `compile-ttd` composition cases, `warpspace.*`, `verify-realization.bats`, and stale Continuum witness assertions | Done | Generic Wesley no longer keeps Bats coverage for removed Continuum product commands. |
+| CLI dependency on Echo generator | `packages/wesley-cli/package.json` depends on `@wesley/generator-echo` | Delete | Ready now that `bundle-echo` has left the generic CLI; remove as a focused metadata/lockfile slice. |
 | Doctor hard-coded product generator list | removed unused `_WELL_KNOWN_GENERATORS` from `packages/wesley-cli/src/commands/doctor-checks.mjs` | Done | Doctor discovers workspace generator packages dynamically or reads `config.generators`; it no longer names Echo, TTD, or Supabase as built-in well-known generators. |
 | PostgreSQL-family core exports | `packages/wesley-core/src/index.mjs`, `typeMapping.mjs`, `PostgreSQLGenerator.mjs`, `PgTAPTestGenerator.mjs`, migration explainer/planner/orchestrator, QIR Postgres dialect | Relocate | Move to `wesley-postgres`; keep generic QIR contracts only after the Postgres dialect split is explicit. |
 | PostgreSQL/Supabase packages | `packages/wesley-generator-supabase/`, `packages/wesley-stack-supabase-nextjs/` | Relocate | Move to `wesley-postgres` or a stack repo; root/package metadata follows after package removal. |
@@ -73,9 +73,9 @@ or no advertised product surface.
 Evidence:
 
 - `packages/wesley-cli/src/commands/compile.mjs`
-- `packages/wesley-cli/src/commands/compile-ttd.mjs`
-- `packages/wesley-cli/src/commands/bundle-echo.mjs`
-- `packages/wesley-cli/src/utils/warpspace.mjs`
+- removed `packages/wesley-cli/src/commands/compile-ttd.mjs`
+- removed `packages/wesley-cli/src/commands/bundle-echo.mjs`
+- removed `packages/wesley-cli/src/utils/warpspace.mjs`
 
 Removed in the first cleanup slice:
 
@@ -88,8 +88,8 @@ Why it is non-generic:
 
 - `compile.mjs` is now a core Wesley dispatcher that discovers module targets
   only.
-- `compile-ttd.mjs` is a TTD-specific compile surface.
-- `bundle-echo.mjs` is an Echo-specific bundle surface with mocked
+- removed `compile-ttd.mjs` was a TTD-specific compile surface.
+- removed `bundle-echo.mjs` was an Echo-specific bundle surface with mocked
   `warp-ttd` deliveries.
 - removed `warpspace.mjs` resolved `warpspace.toml`, which is a Continuum
   host-project convention, not a generic Wesley concept.
@@ -97,7 +97,8 @@ Why it is non-generic:
 New home:
 
 - keep `compile.mjs` in Wesley as the generic module/target dispatcher
-- move `compile-ttd.mjs` and `bundle-echo.mjs` into `continuum/wesley/commands/`
+- recreate `compile-ttd.mjs` and `bundle-echo.mjs` only in
+  `continuum/wesley/commands/` or another Continuum-owned module/package
 - recreate the Continuum realization verifier only in the Continuum Wesley
   module if it is still needed
 - removed Wesley's generic CLI WARPspace lookup; Continuum-owned tools should
@@ -107,7 +108,9 @@ Result:
 
 - generic Wesley keeps `compile` as a generic compile surface
 - generic Wesley no longer exposes a Continuum realization verifier
-- Continuum owns the multi-target compile surface for `echo` and `warp-ttd`
+- generic Wesley no longer exposes TTD/Echo public CLI commands
+- Continuum should own any future multi-target compile surface for `echo` and
+  `warp-ttd`
 
 ### 2. WARPspace bootstrap lived in `wesley-host-node`
 
@@ -161,9 +164,10 @@ Result:
 - the empty TTD generator package shell no longer advertises a Wesley-owned
   package
 - the repo-wide lint hook no longer fails on stale Echo indentation while Echo
-  remains in Wesley for `bundle-echo`
+  remains in Wesley as real implementation residue
 - Echo golden v2 fixtures now match the current explicit `footprint: null` IR
   shape
+- the generic CLI no longer imports Echo through `bundle-echo`
 - the Continuum module owns its own generators
 - Wesley keeps only generator contracts and generic generator infrastructure
 
@@ -173,8 +177,8 @@ Evidence:
 
 - `packages/wesley-core/src/ttd/`
 - `packages/wesley-core/package.json` exports `./ttd` and `./ttd/invariants`
-- `packages/wesley-cli/src/commands/compile-ttd.mjs` imports
-  `@wesley/core/ttd`
+- removed `packages/wesley-cli/src/commands/compile-ttd.mjs` previously
+  imported `@wesley/core/ttd`
 - TTD generated output metadata now names `@wesley/core/ttd`, matching the
   current legacy implementation surface
 

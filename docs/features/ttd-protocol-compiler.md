@@ -2,6 +2,10 @@
 
 > Compile typed protocols with deterministic verification from GraphQL SDL
 
+> Extraction note: generic Wesley no longer ships the public `compile-ttd`
+> command. The CLI examples below are historical shape for a future
+> Continuum-owned module command or external package.
+
 ## Overview
 
 The TTD (Type-Driven Development) Protocol Compiler extends Wesley to generate deterministic protocol definitions from annotated GraphQL schemas. It produces typed protocols, registries, enforcement tables, and verification infrastructure for the Echo Time Travel Debugger.
@@ -10,13 +14,13 @@ The TTD (Type-Driven Development) Protocol Compiler extends Wesley to generate d
 
 Wesley's repo-local authored TTD schema currently lives in
 [`schemas/ttd-protocol.graphql`](../../schemas/ttd-protocol.graphql). The
-current local compile path is:
+former local compile path was:
 
 ```bash
 pnpm wesley compile-ttd --schema schemas/ttd-protocol.graphql --dry-run --json
 ```
 
-That command currently validates the checked-in schema and reports generated
+That retired command validated the checked-in schema and reported generated
 `manifest/*.json` and `typescript/*.ts` outputs. Those files are derived
 artifacts from SDL, not a second authored source surface.
 
@@ -35,9 +39,9 @@ work in
 - Determinism is the product—every byte is canonical
 - Codegen is deterministic: same manifest → same output bytes
 
-## Quick Start
+## Historical Quick Start
 
-### CLI Usage
+### Historical CLI Usage
 
 ```bash
 # Compile the checked-in Wesley TTD schema
@@ -101,10 +105,10 @@ type OrderSystem
 
 ## Directives Reference
 
-The current shipped directive surface for `wesley compile-ttd` is the
-`@wes_*` family below. The newer `@channel` / `@op` / `@rule` noun vocabulary
-described in the extracted plan doc is still target-state design work, not the
-checked-in compiler contract on `main`.
+The legacy TTD directive surface in `@wesley/core/ttd` is the `@wes_*` family
+below. The newer `@channel` / `@op` / `@rule` noun vocabulary described in the
+extracted plan doc is still target-state design work, not the generic Wesley
+CLI contract.
 
 ### Channel Directives
 
@@ -326,7 +330,7 @@ const result = verifier.verify(state);
 
 ### Counter Protocol
 
-See the complete example in `packages/wesley-cli/test/fixtures/basic-ttd-protocol.graphql`:
+The retired CLI fixture covered a counter protocol with:
 
 - 4 state enum (IDLE, COUNTING, PAUSED, COMPLETED)
 - 1 event channel with 3 event types

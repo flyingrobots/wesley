@@ -59,6 +59,8 @@ EOF
     run node "$CLI_PATH" --help
     assert_success
     assert_output --partial "Wesley - GraphQL → Everything"
+    refute_output --partial "compile-ttd"
+    refute_output --partial "bundle-echo"
 }
 
 @test "generate help works" {

@@ -127,3 +127,19 @@ Resolved in the Echo golden fixture cleanup slice:
   `packages/wesley-generator-echo/test/fixtures/joins-v2.ir.json` to include
   explicit `footprint: null` on operations without footprint directives
 - removed the tracked bad-code note after the full Echo package test passed
+
+Deleted in the TTD/Echo public CLI command cleanup slice:
+
+- `packages/wesley-cli/src/commands/compile-ttd.mjs`
+- `packages/wesley-cli/src/commands/bundle-echo.mjs`
+- `packages/wesley-cli/test/compile-ttd.bats`
+- `packages/wesley-cli/test/bundle-echo.bats`
+- root `test/cli-composition.bats` cases that invoked `compile-ttd`
+- command-only `packages/wesley-cli/test/fixtures/basic-ttd-protocol.graphql`
+- `packages/wesley-cli/src/commands/index.mjs` exports for the removed
+  commands
+
+The matching extraction-map rows now mark TTD/Echo public CLI commands and
+legacy Continuum Bats coverage as done. The CLI dependency on
+`@wesley/generator-echo` is intentionally still open as the next focused
+metadata/lockfile slice.

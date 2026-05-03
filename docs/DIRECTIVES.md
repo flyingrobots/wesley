@@ -9,7 +9,8 @@ The repo-wide directive registry in [schemas/directives.graphql](../schemas/dire
 
 - `current`: parsed from SDL and used by a shipped command path today.
 - `experimental`: present in fixtures, legacy IR consumers, or downstream generators, but not guaranteed end-to-end on the main SDL hot path.
-- `ttd-only`: supported by `wesley compile-ttd`, not by the main database compiler path.
+- `ttd-only`: parsed by legacy TTD internals, not by the main database compiler
+  path or a generic Wesley CLI command.
 - `deferred`: declared in the registry or docs, but not yet part of a stable public contract.
 
 ## Current On The Main Database Compiler Path
@@ -34,7 +35,7 @@ These are current, but they belong to schema composition rather than table/colum
 | Directive | Status | Current lowering | Notes |
 | --- | --- | --- | --- |
 | `@wes_package(name: "...")` | `current` | Used by composition and name-mangling flows | Supported through [packages/wesley-core/src/domain/SchemaResolver.mjs](../packages/wesley-core/src/domain/SchemaResolver.mjs). |
-| `@wes_import(from: "...")` | `current` | Used to resolve composed schema units | Current for composed-schema flows such as `generate --schema-root` and `compile-ttd --schema-root`. |
+| `@wes_import(from: "...")` | `current` | Used to resolve composed schema units | Current for composed-schema flows such as `generate --schema-root`. |
 
 ## Experimental Or Partial Directive Families
 
@@ -48,11 +49,14 @@ These directives exist in the registry and some downstream code paths, but they 
 
 ## TTD-Only Directives
 
-These directives are real in the Typed Transition Dynamics path, but they are not part of the main database compiler contract. Use them with `wesley compile-ttd`, not as assumptions about `wesley generate`.
+These directives are real in the legacy Typed Transition Dynamics internals,
+but they are not part of the main database compiler contract and generic Wesley
+no longer ships a public `compile-ttd` command. Reintroduce them through a
+Continuum-owned module command if that path is still needed.
 
-| Directive family | Status | Current command surface |
+| Directive family | Status | Current surface |
 | --- | --- | --- |
-| `@wes_channel`, `@wes_op`, `@wes_rule`, `@wes_invariant` | `ttd-only` | Parsed by the TTD compiler in [packages/wesley-cli/src/commands/compile-ttd.mjs](../packages/wesley-cli/src/commands/compile-ttd.mjs) and [packages/wesley-core/src/ttd/directives.mjs](../packages/wesley-core/src/ttd/directives.mjs). |
+| `@wes_channel`, `@wes_op`, `@wes_rule`, `@wes_invariant` | `ttd-only` | Parsed by legacy TTD internals in [packages/wesley-core/src/ttd/directives.mjs](../packages/wesley-core/src/ttd/directives.mjs). |
 | `@wes_emission`, `@wes_footprint`, `@wes_requires`, `@wes_produces`, `@wes_emitsTo`, `@wes_mustEmit` | `ttd-only` | Current in the TTD extraction/manifest path, not in the database compiler hot path. |
 | `@wes_codec`, `@wes_version` | `ttd-only` | Current for TTD/type-registry compilation paths and related manifests, not for the main SDL-to-DDL flow. |
 
@@ -72,7 +76,9 @@ The directive registry and draft docs still contain broader semantics than the m
 - Prefer canonical `@wes_*` names in new schemas, even where older aliases still parse.
 - Use `@wes_default(value: "...")` in docs and new examples. The parser still accepts `expr`, but that is a compatibility affordance, not the canonical form.
 - Treat the identity, scoring, relation, RPC, and policy hint directives as experimental unless the specific command path you are using proves support end to end.
-- If you are working on protocol/TTD flows, use `wesley compile-ttd`; do not assume TTD directives are part of `wesley generate`.
+- If you are working on protocol/TTD flows, use a Continuum-owned module or
+  package once it exists; do not assume TTD directives are part of
+  `wesley generate`.
 
 ## Minimal Happy-Path Example
 

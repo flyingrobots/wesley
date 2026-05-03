@@ -28,6 +28,13 @@ and no handwritten shadow contracts for the chosen shared nouns.
   manager, conformance anchor, and judgment bridge, with explicit non-ownership
   around runtime, storage, debugger, and substrate-fact policy.
 
+## Extraction Status
+
+The public `wesley compile-ttd` and `wesley bundle-echo` commands described in
+this packet were later retired from generic Wesley during the domain-empty
+v0.1.0 extraction. Recreate them only as Continuum-owned module commands or
+external packages if the product surface is still needed.
+
 ## Scope Hard Condition
 
 This cycle stays brutally narrow.
@@ -56,13 +63,14 @@ This cycle stays brutally narrow.
 
 ## Current State
 
-- Wesley already ships a real TTD compile path through
-  `wesley compile-ttd`.
+- Wesley previously shipped a real TTD compile path through
+  `wesley compile-ttd`; generic Wesley no longer ships that public command.
 - Wesley already ships a real Echo schema-to-codec path through
   `@wesley/generator-echo`.
-- Wesley now ships a first repo-visible Echo wrapper through
-  `wesley bundle-echo`, which writes bundle artifacts and a mocked
-  `warp-ttd`-style `deliveries` inspect surface for local review.
+- Wesley previously shipped a first repo-visible Echo wrapper through
+  `wesley bundle-echo`, which wrote bundle artifacts and a mocked
+  `warp-ttd`-style `deliveries` inspect surface for local review; generic
+  Wesley no longer ships that public command.
 - Wesley now ships a first current-state witness command through
   `wesley witness-continuum`, which proves local coherence for the current TTD
   and Echo minimum surfaces without pretending the frozen receipt-family lane

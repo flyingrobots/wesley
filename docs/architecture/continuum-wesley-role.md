@@ -26,6 +26,11 @@ The important split is:
 - **Continuum** still owns its schemas, manifests, and user-facing orchestration
   concerns
 
+During the domain-empty extraction, generic Wesley retired the public
+`compile-ttd` and `bundle-echo` CLI commands. Any future Continuum compile or
+bundle surface should enter through a Continuum-owned module command or
+external package.
+
 So when this note says Wesley owns publication-boundary management or
 conformance anchoring, read that as a Wesley-side toolchain role layered around
 the compiler, not as a claim that the compiler core itself has become
@@ -83,7 +88,6 @@ Current repo-visible evidence:
 
 - `schemas/ttd-protocol.graphql`
 - `schemas/echo-core-types.graphql`
-- `packages/wesley-cli/src/commands/compile-ttd.mjs`
 - `packages/wesley-core/src/ttd/`
 - `packages/wesley-generator-echo/src/EchoPlugin.mjs`
 
@@ -106,7 +110,6 @@ Current repo-visible evidence:
 
 - `docs/architecture/continuum-minimum-shared-contract-surface.md`
 - `packages/wesley-core/src/ttd/codegen/orchestrator.mjs`
-- `packages/wesley-cli/test/compile-ttd.bats`
 - `packages/wesley-generator-echo/README.md`
 
 Current rule:
@@ -138,7 +141,6 @@ Wesley therefore carries two different proof-adjacent surfaces:
 
 Current repo-visible evidence:
 
-- `packages/wesley-cli/test/compile-ttd.bats`
 - `packages/wesley-generator-echo/test/core-types.test.mjs`
 - `packages/wesley-generator-echo/test/privacy-types-encoding.test.mjs`
 - `packages/wesley-generator-echo/test/golden-vectors/privacy-types.json`

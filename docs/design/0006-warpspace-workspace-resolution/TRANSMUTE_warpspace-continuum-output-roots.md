@@ -62,8 +62,8 @@ This slice shipped:
 
 ## Evidence
 
-- [packages/wesley-cli/src/commands/compile-ttd.mjs](../../../packages/wesley-cli/src/commands/compile-ttd.mjs)
-- [packages/wesley-cli/src/commands/bundle-echo.mjs](../../../packages/wesley-cli/src/commands/bundle-echo.mjs)
-- [packages/wesley-cli/test/compile-ttd.bats](../../../packages/wesley-cli/test/compile-ttd.bats)
-- [packages/wesley-cli/test/bundle-echo.bats](../../../packages/wesley-cli/test/bundle-echo.bats)
+- historical `packages/wesley-cli/src/commands/compile-ttd.mjs`
+- historical `packages/wesley-cli/src/commands/bundle-echo.mjs`
+- historical `packages/wesley-cli/test/compile-ttd.bats`
+- historical `packages/wesley-cli/test/bundle-echo.bats`
 - [Wesley extraction map](../wesley-extraction-map.md)

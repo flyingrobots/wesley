@@ -14,8 +14,6 @@ export * from './validate-bundle.mjs';
 export * from './watch.mjs';
 export * from './zod.mjs';
 export * from './blade.mjs';
-export * from './compile-ttd.mjs';
-export * from './bundle-echo.mjs';
 export * from './doctor.mjs';
 export * from './diff.mjs';
 

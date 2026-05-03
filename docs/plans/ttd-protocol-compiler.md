@@ -3,7 +3,7 @@
 
 # TTD Protocol Compiler Plan
 
-**Status:** Current repo-local compiler shipped; broader Continuum protocol cutover still open
+**Status:** Repo-local CLI retired from generic Wesley; broader Continuum protocol cutover still open
 **Created:** 2026-01-25
 **Origin:** Extracted from `flyingrobots/echo` TTD Master Plan
 **Scope:** Extend Wesley to compile deterministic protocol schemas for the Echo Time Travel Debugger
@@ -16,14 +16,18 @@ This plan extends Wesley with a new **TTD Protocol Compiler** capability. The go
 
 ## Current Repo Truth
 
-Wesley currently ships a repo-local `compile-ttd` path that parses the
+Wesley previously shipped a repo-local `compile-ttd` path that parsed the
 `@wes_*` TTD directives documented in [`../DIRECTIVES.md`](../DIRECTIVES.md)
 and implemented in
 [`../../packages/wesley-core/src/ttd/directives.mjs`](../../packages/wesley-core/src/ttd/directives.mjs).
-The authored schema Wesley compiles today lives at
+The authored schema that the retired path compiled lives at
 [`../../schemas/ttd-protocol.graphql`](../../schemas/ttd-protocol.graphql),
 and the generated manifest / TypeScript outputs are derived artifacts rather
 than peer authorities.
+
+During the domain-empty extraction, generic Wesley retired the public
+`compile-ttd` command. The command examples below are historical shape for a
+future Continuum-owned module command or external package.
 
 The sections below describe the extracted target-state design from Echo. They
 are still useful for direction, but they should not be read as proof that
@@ -417,7 +421,7 @@ The compiler detects which mode to use based on directive presence:
 
 ### 5.2 CLI Integration ✓
 
-The `compile-ttd` command is now available:
+The historical `compile-ttd` command shape was:
 
 ```bash
 # Basic usage
@@ -541,7 +545,7 @@ console.log(result.validation); // { valid: true, errors: [], warnings: [...] }
 
 ## Part 9: Success Criteria
 
-1. **Phase 1a Complete:** Running `wesley compile-ttd example.graphql` produces valid JSON manifests
+1. **Phase 1a Historical:** Running `wesley compile-ttd example.graphql` produced valid JSON manifests in the retired repo-local CLI path
 2. **Phase 1b Complete:** Manifests produce compilable Rust and TypeScript code
 3. **Phase 1c Complete:** Invariant expressions compile to verifiable bytecode
 4. **Determinism Verified:** Same schema always produces identical output bytes

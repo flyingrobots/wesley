@@ -1,11 +1,15 @@
 # Continuum Minimum Shared Contract Surface
 <!-- docs-truth: status=current owner=@flyingrobots -->
 
-This note names the finite repo-local Continuum contract surface Wesley
-currently carries. It is intentionally narrower than the broader Continuum
-target state in [docs/BEARING.md](../BEARING.md) and the active design packet
-in
+This note names the finite repo-local Continuum contract residue Wesley still
+carries during the domain-empty extraction. It is intentionally narrower than
+the broader Continuum target state in [docs/BEARING.md](../BEARING.md) and the
+active design packet in
 [docs/design/0003-continuum-contract-compiler/continuum-contract-compiler.md](../design/0003-continuum-contract-compiler/continuum-contract-compiler.md).
+
+Generic Wesley no longer ships public `compile-ttd` or `bundle-echo` commands.
+Those surfaces must reappear only as Continuum-owned module commands or
+external packages if they are still needed.
 
 ## Canonical Authored Home
 
@@ -43,8 +47,8 @@ Authored file:
 - `schemas/ttd-protocol.graphql`
 
 Current role:
-- host-neutral debugger and control-plane schema compiled by
-  `wesley compile-ttd`
+- host-neutral debugger and control-plane schema still carried as repo-local
+  residue; no generic public CLI compile command remains
 
 Included nouns:
 - scalars: `JSON`, `Hash`, `Timestamp`
@@ -61,17 +65,16 @@ Included nouns:
 - operation roots: `Mutation`, `Query`
 - invariant carrier: `TtdSystem`
 
-Current derived surfaces:
-- `wesley compile-ttd` manifest outputs such as `manifest/schema.json`,
+Former Wesley-local derived surfaces, now external-module responsibility:
+- manifest outputs such as `manifest/schema.json`,
   `manifest/contracts.json`, `manifest/manifest.json`, and
   `manifest/ttd-ir.json`
-- `wesley compile-ttd` TypeScript outputs such as `typescript/types.ts`,
-  `typescript/zod.ts`, `typescript/registry.ts`, and `typescript/index.ts`
+- TypeScript outputs such as `typescript/types.ts`, `typescript/zod.ts`,
+  `typescript/registry.ts`, and `typescript/index.ts`
 
 Repo evidence:
-- `packages/wesley-cli/src/commands/compile-ttd.mjs`
 - `packages/wesley-core/src/ttd/`
-- `packages/wesley-cli/test/compile-ttd.bats`
+- `docs/design/wesley-extraction-map.md`
 
 ### 2. Echo CAS-Facing Payload Family
 
@@ -119,21 +122,18 @@ Included nouns:
 - operation root: `Query`
 - invariant carrier: `ContinuumReceiptFamilyInvariants`
 
-Current derived surfaces:
-- `wesley compile-ttd` manifest outputs such as `manifest/schema.json`,
+Former Wesley-local derived surfaces, now external-module responsibility:
+- manifest outputs such as `manifest/schema.json`,
   `manifest/contracts.json`, `manifest/manifest.json`, and
   `manifest/ttd-ir.json`
-- `wesley compile-ttd` TypeScript outputs such as `typescript/types.ts`,
-  `typescript/zod.ts`, `typescript/registry.ts`, and `typescript/index.ts`
-- `wesley bundle-echo` outputs such as `ir.json`, codec files, and mocked
-  `deliveries` inspect output
+- TypeScript outputs such as `typescript/types.ts`, `typescript/zod.ts`,
+  `typescript/registry.ts`, and `typescript/index.ts`
+- Echo bundle outputs such as `ir.json`, codec files, and mocked `deliveries`
+  inspect output
 
 Repo evidence:
-- `packages/wesley-cli/test/compile-ttd.bats`
-- `packages/wesley-cli/test/bundle-echo.bats`
-- `packages/wesley-cli/src/commands/compile-ttd.mjs`
-- `packages/wesley-cli/src/commands/bundle-echo.mjs`
 - `docs/design/0003-continuum-contract-compiler/continuum-contract-compiler.md`
+- `docs/design/wesley-extraction-map.md`
 
 ## Out Of Bounds
 
@@ -155,6 +155,6 @@ The following are not part of Wesley's current minimum shared contract surface:
   - `<continuum-root>/schemas/` for Continuum-owned shared families
   and regenerate the derived surfaces.
 - If a neighboring repo needs the same noun family, consume generated artifacts
-  or an explicit publication boundary instead of re-authoring the contract by
-  hand.
+  or an explicit publication boundary from the Continuum-owned module/package
+  instead of re-authoring the contract by hand.
 - Handwritten shadow contracts for the included nouns are out of bounds.
