@@ -20,17 +20,17 @@ function snakeCase(value) {
 
 function rustType(typeName) {
   switch (typeName) {
-    case 'String':
-    case 'ID':
-      return 'String';
-    case 'Int':
-      return 'i64';
-    case 'Float':
-      return 'f64';
-    case 'Boolean':
-      return 'bool';
-    default:
-      return typeName;
+  case 'String':
+  case 'ID':
+    return 'String';
+  case 'Int':
+    return 'i64';
+  case 'Float':
+    return 'f64';
+  case 'Boolean':
+    return 'bool';
+  default:
+    return typeName;
   }
 }
 
@@ -378,21 +378,21 @@ function collectCapabilities(ir, mutationOps) {
 
 function emitCapability(entry) {
   switch (entry.kind) {
-    case 'flat':
-      return emitCapabilityTrait(entry.mode, entry.resource);
-    case 'slot':
-      return emitStructuredSlotTrait(entry.op, entry.slot, entry.access);
-    case 'closure':
-      return [
-        emitStructuredClosureEnum(entry.op, entry.closure),
-        emitStructuredClosureTrait(entry.op, entry.closure)
-      ].join('\n');
-    case 'create-slot':
-      return emitStructuredCreateSlotTrait(entry.op, entry.slot);
-    case 'update':
-      return emitStructuredUpdateTrait(entry.ir, entry.op, entry.update, entry.fieldName);
-    default:
-      return '';
+  case 'flat':
+    return emitCapabilityTrait(entry.mode, entry.resource);
+  case 'slot':
+    return emitStructuredSlotTrait(entry.op, entry.slot, entry.access);
+  case 'closure':
+    return [
+      emitStructuredClosureEnum(entry.op, entry.closure),
+      emitStructuredClosureTrait(entry.op, entry.closure)
+    ].join('\n');
+  case 'create-slot':
+    return emitStructuredCreateSlotTrait(entry.op, entry.slot);
+  case 'update':
+    return emitStructuredUpdateTrait(entry.ir, entry.op, entry.update, entry.fieldName);
+  default:
+    return '';
   }
 }
 

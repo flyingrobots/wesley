@@ -218,28 +218,28 @@ function buildOpsFromSDL(sdl, mutationNs, queryNs) {
         result_list: resultList,
         footprint: footprintByOp.has(f.name.value)
           ? {
-              reads: [...(footprintByOp.get(f.name.value).reads ?? [])],
-              writes: [...(footprintByOp.get(f.name.value).writes ?? [])],
-              creates: [...(footprintByOp.get(f.name.value).creates ?? [])],
-              deletes: [...(footprintByOp.get(f.name.value).deletes ?? [])],
-              slots: (footprintByOp.get(f.name.value).slots ?? []).map((slot) => ({
-                ...slot,
-                access: [...(slot.access ?? [])]
-              })),
-              closures: (footprintByOp.get(f.name.value).closures ?? []).map((closure) => ({
-                ...closure,
-                argBindings: [...(closure.argBindings ?? [])],
-                reads: [...(closure.reads ?? [])]
-              })),
-              createSlots: (footprintByOp.get(f.name.value).createSlots ?? []).map((slot) => ({
-                ...slot
-              })),
-              updates: (footprintByOp.get(f.name.value).updates ?? []).map((update) => ({
-                ...update,
-                fields: [...(update.fields ?? [])]
-              })),
-              forbids: [...(footprintByOp.get(f.name.value).forbids ?? [])]
-            }
+            reads: [...(footprintByOp.get(f.name.value).reads ?? [])],
+            writes: [...(footprintByOp.get(f.name.value).writes ?? [])],
+            creates: [...(footprintByOp.get(f.name.value).creates ?? [])],
+            deletes: [...(footprintByOp.get(f.name.value).deletes ?? [])],
+            slots: (footprintByOp.get(f.name.value).slots ?? []).map((slot) => ({
+              ...slot,
+              access: [...(slot.access ?? [])]
+            })),
+            closures: (footprintByOp.get(f.name.value).closures ?? []).map((closure) => ({
+              ...closure,
+              argBindings: [...(closure.argBindings ?? [])],
+              reads: [...(closure.reads ?? [])]
+            })),
+            createSlots: (footprintByOp.get(f.name.value).createSlots ?? []).map((slot) => ({
+              ...slot
+            })),
+            updates: (footprintByOp.get(f.name.value).updates ?? []).map((update) => ({
+              ...update,
+              fields: [...(update.fields ?? [])]
+            })),
+            forbids: [...(footprintByOp.get(f.name.value).forbids ?? [])]
+          }
           : null
       });
     }

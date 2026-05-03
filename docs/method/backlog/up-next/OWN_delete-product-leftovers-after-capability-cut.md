@@ -114,3 +114,9 @@ Deleted in the TTD generated metadata cleanup slice:
   claim the deleted `@wesley/generator-ttd` package produced them
 - `compile-ttd` coverage now asserts the current legacy metadata surface is
   `@wesley/core/ttd`
+
+Resolved in the Echo lint-hook cleanup slice:
+
+- fixed indentation-only ESLint failures in `packages/wesley-generator-echo/src/emitRewriteApi.mjs`
+  and `packages/wesley-generator-echo/src/index.mjs`
+- removed the tracked bad-code note after the exact blocker lint command passed
