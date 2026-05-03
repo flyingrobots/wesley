@@ -68,7 +68,8 @@
       "args": [],
       "result_type": "GameState",
       "result_required": true,
-      "result_list": false
+      "result_list": false,
+      "footprint": null
     }
   ]
 }

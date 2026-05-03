@@ -65,7 +65,8 @@
       "args": [],
       "result_type": "AppState",
       "result_required": true,
-      "result_list": false
+      "result_list": false,
+      "footprint": null
     },
     {
       "kind": "MUTATION",
@@ -81,7 +82,8 @@
       ],
       "result_type": "AppState",
       "result_required": true,
-      "result_list": false
+      "result_list": false,
+      "footprint": null
     },
     {
       "kind": "MUTATION",
@@ -90,7 +92,8 @@
       "args": [],
       "result_type": "AppState",
       "result_required": true,
-      "result_list": false
+      "result_list": false,
+      "footprint": null
     }
   ]
 }

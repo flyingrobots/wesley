@@ -120,3 +120,10 @@ Resolved in the Echo lint-hook cleanup slice:
 - fixed indentation-only ESLint failures in `packages/wesley-generator-echo/src/emitRewriteApi.mjs`
   and `packages/wesley-generator-echo/src/index.mjs`
 - removed the tracked bad-code note after the exact blocker lint command passed
+
+Resolved in the Echo golden fixture cleanup slice:
+
+- updated `packages/wesley-generator-echo/test/fixtures/basic-v2.ir.json` and
+  `packages/wesley-generator-echo/test/fixtures/joins-v2.ir.json` to include
+  explicit `footprint: null` on operations without footprint directives
+- removed the tracked bad-code note after the full Echo package test passed
