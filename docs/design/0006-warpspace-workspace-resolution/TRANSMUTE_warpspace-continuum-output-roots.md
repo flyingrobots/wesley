@@ -4,6 +4,7 @@ legend: TRANSMUTE
 packet: 0006-warpspace-workspace-resolution
 status: shipped
 release: v0.1.0
+current-status: retired-to-continuum
 ---
 
 # WARPspace Continuum Output Roots
@@ -15,9 +16,16 @@ Continuum-oriented multi-file emitters, so host projects can declare where
 `compile-ttd` and `bundle-echo` land their generated roots without repeating
 `--out-dir` on every run.
 
-## Shipped Surface
+## Extraction Status
 
-The repo now ships:
+This shipped slice was later removed from generic Wesley during the
+domain-empty core extraction. Continuum-owned tooling or modules should own
+host-project output roots; Wesley's remaining legacy commands use explicit
+`--out-dir` or local defaults.
+
+## Historical Shipped Surface
+
+This slice shipped:
 
 - WARPspace-backed default output roots for `wesley compile-ttd`
 - WARPspace-backed default output roots for `wesley bundle-echo`
@@ -54,9 +62,8 @@ The repo now ships:
 
 ## Evidence
 
-- [packages/wesley-cli/src/utils/warpspace.mjs](../../../packages/wesley-cli/src/utils/warpspace.mjs)
 - [packages/wesley-cli/src/commands/compile-ttd.mjs](../../../packages/wesley-cli/src/commands/compile-ttd.mjs)
 - [packages/wesley-cli/src/commands/bundle-echo.mjs](../../../packages/wesley-cli/src/commands/bundle-echo.mjs)
-- [packages/wesley-cli/test/warpspace.test.mjs](../../../packages/wesley-cli/test/warpspace.test.mjs)
 - [packages/wesley-cli/test/compile-ttd.bats](../../../packages/wesley-cli/test/compile-ttd.bats)
 - [packages/wesley-cli/test/bundle-echo.bats](../../../packages/wesley-cli/test/bundle-echo.bats)
+- [Wesley extraction map](../wesley-extraction-map.md)

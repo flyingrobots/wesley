@@ -25,7 +25,6 @@ teardown() {
     assert_success
     assert_output --partial "Generate Echo bundle artifacts"
     assert_output --partial "--out-dir"
-    assert_output --partial "--warpspace"
     assert_output --partial "--dry-run"
 }
 
@@ -125,19 +124,4 @@ EOF
     assert_file_exist out/ir.json
     assert_file_exist out/mock/deliveries.jsonl
     assert_file_exist out/mock/summary.json
-}
-
-@test "bundle-echo resolves its output root from warpspace.toml" {
-    cat > warpspace.toml <<'EOF'
-version = 1
-
-[outputs]
-echo_ir = "crates/my-app-contracts/src/generated/echo"
-EOF
-
-    run node "$CLI_PATH" bundle-echo --schema "$ECHO_SCHEMA" --json
-    assert_success
-    echo "$output" | jq -e '.success == true and (.result.outDir | endswith("crates/my-app-contracts/src/generated/echo"))' >/dev/null
-    assert_file_exist crates/my-app-contracts/src/generated/echo/ir.json
-    assert_file_exist crates/my-app-contracts/src/generated/echo/mock/summary.json
 }

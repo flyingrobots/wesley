@@ -50,7 +50,7 @@ or no advertised product surface.
 | Generic `compile` command | `packages/wesley-cli/src/commands/compile.mjs` | Done for built-in targets | `compile` now uses module-provided `wesley.targets` only; remaining cleanup is removing standalone Continuum commands and packages. |
 | TTD/Echo public CLI commands | `compile-ttd.mjs`, `bundle-echo.mjs` | Relocate | Move into a Continuum-owned Wesley module command surface if still needed; no Wesley legacy support requirement remains. |
 | Continuum realization verifier | removed `verify-realization.mjs`, `realization-integrity.mjs`, root `verify:realization`, `verify-realization.bats`, and compile-dependent witness assertions | Done | Wesley no longer advertises or tests a built-in two-leg Continuum realization verifier. Recreate only as a Continuum-owned module surface. |
-| WARPspace output lookup in CLI | `packages/wesley-cli/src/utils/warpspace.mjs`, `FileOutputGeneratorCommand.mjs`, `compile-ttd.mjs`, `bundle-echo.mjs` | Relocate | Move Continuum host-project config lookup out of generic CLI after command/module replacements own output defaults. |
+| WARPspace output lookup in CLI | removed `packages/wesley-cli/src/utils/warpspace.mjs`, `--warpspace` options, WARPspace-backed file/root defaults, WARPspace CLI tests, and `smol-toml` dependency | Done | Generic Wesley generators now use explicit `--out-file`; legacy Continuum commands use explicit `--out-dir` or their local defaults. Continuum-owned modules/tools should own host-project output defaults. |
 | Stale module-owned command skip list | removed `MODULE_OWNED_COMMAND_FILES` entries for missing `contract.mjs`, `witness.mjs`, `witness-continuum.mjs`, `drift-watch.mjs`, `observer-plan.mjs` | Done | Command auto-discovery now only skips private/helper files; external module commands register through loaded modules. |
 | WARPspace bootstrap program | removed `packages/wesley-host-node/bin/warpspace.mjs`, `src/warpspace-program.mjs`, `src/warpspace/init.mjs`, host-node `bin.warpspace`, and residue tests/backlog notes | Done | Continuum `warp` owns workspace bootstrap; Wesley host-node now keeps only the generic `wesley` binary. |
 | Continuum generator packages | `packages/wesley-generator-echo/`, `packages/wesley-generator-ttd/` | Relocate | Move to Continuum-owned module/generator packages; keep while legacy commands import them. |
@@ -91,8 +91,8 @@ Why it is non-generic:
 - `compile-ttd.mjs` is a TTD-specific compile surface.
 - `bundle-echo.mjs` is an Echo-specific bundle surface with mocked
   `warp-ttd` deliveries.
-- `warpspace.mjs` resolves `warpspace.toml`, which is a Continuum host-project
-  convention, not a generic Wesley concept.
+- removed `warpspace.mjs` resolved `warpspace.toml`, which is a Continuum
+  host-project convention, not a generic Wesley concept.
 
 New home:
 
@@ -100,7 +100,8 @@ New home:
 - move `compile-ttd.mjs` and `bundle-echo.mjs` into `continuum/wesley/commands/`
 - recreate the Continuum realization verifier only in the Continuum Wesley
   module if it is still needed
-- move `warpspace.mjs` into `continuum/wesley/utils/`
+- removed Wesley's generic CLI WARPspace lookup; Continuum-owned tools should
+  own host-project output defaults
 
 Result:
 

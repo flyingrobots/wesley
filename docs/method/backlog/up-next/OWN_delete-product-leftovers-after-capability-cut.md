@@ -90,3 +90,13 @@ Deleted in the WARPspace bootstrap cleanup slice:
 - `packages/wesley-host-node/test/warpspace-init.test.mjs`
 - host-node `bin.warpspace`
 - obsolete WARPspace bootstrap bad-code backlog notes
+
+Deleted in the WARPspace output lookup cleanup slice:
+
+- `packages/wesley-cli/src/utils/warpspace.mjs`
+- `packages/wesley-cli/test/warpspace.test.mjs`
+- `packages/wesley-cli/test/warpspace.bats`
+- `--warpspace` options from `compile-ttd`, `bundle-echo`, `typescript`, and
+  `zod`
+- WARPspace-backed default file/root resolution from generic CLI commands
+- `smol-toml` dependency from `@wesley/cli`
