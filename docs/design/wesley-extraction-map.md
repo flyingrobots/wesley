@@ -52,7 +52,7 @@ or no advertised product surface.
 | Continuum realization verifier | removed `verify-realization.mjs`, `realization-integrity.mjs`, root `verify:realization`, `verify-realization.bats`, and compile-dependent witness assertions | Done | Wesley no longer advertises or tests a built-in two-leg Continuum realization verifier. Recreate only as a Continuum-owned module surface. |
 | WARPspace output lookup in CLI | `packages/wesley-cli/src/utils/warpspace.mjs`, `FileOutputGeneratorCommand.mjs`, `compile-ttd.mjs`, `bundle-echo.mjs` | Relocate | Move Continuum host-project config lookup out of generic CLI after command/module replacements own output defaults. |
 | Stale module-owned command skip list | removed `MODULE_OWNED_COMMAND_FILES` entries for missing `contract.mjs`, `witness.mjs`, `witness-continuum.mjs`, `drift-watch.mjs`, `observer-plan.mjs` | Done | Command auto-discovery now only skips private/helper files; external module commands register through loaded modules. |
-| WARPspace bootstrap program | `packages/wesley-host-node/bin/warpspace.mjs`, `src/warpspace-program.mjs`, `src/warpspace/init.mjs`, host-node `bin.warpspace` | Relocate | Move to Continuum `warp` ownership, then remove the Wesley bin or leave a clearly deprecated shim with a removal date. |
+| WARPspace bootstrap program | removed `packages/wesley-host-node/bin/warpspace.mjs`, `src/warpspace-program.mjs`, `src/warpspace/init.mjs`, host-node `bin.warpspace`, and residue tests/backlog notes | Done | Continuum `warp` owns workspace bootstrap; Wesley host-node now keeps only the generic `wesley` binary. |
 | Continuum generator packages | `packages/wesley-generator-echo/`, `packages/wesley-generator-ttd/` | Relocate | Move to Continuum-owned module/generator packages; keep while legacy commands import them. |
 | TTD core package surface | `packages/wesley-core/src/ttd/`, `@wesley/core` exports `./ttd` and `./ttd/invariants` | Relocate | Needs a Continuum/TTD module package first because `@wesley/generator-ttd` tests and compile paths import this surface. |
 | Continuum schemas | `schemas/ttd-protocol.graphql`, `schemas/ttd-ir.schema.json`, `schemas/echo-core-types.graphql`, `schemas/echo-wasm-abi.graphql`, `schemas/continuum-*.graphql` | Relocate | Move into Continuum-owned schema/module packages after CLI/generator tests stop using repo-local canonical copies. |
@@ -108,25 +108,27 @@ Result:
 - generic Wesley no longer exposes a Continuum realization verifier
 - Continuum owns the multi-target compile surface for `echo` and `warp-ttd`
 
-### 2. WARPspace bootstrap lives in `wesley-host-node`
+### 2. WARPspace bootstrap lived in `wesley-host-node`
 
 Evidence:
 
-- `packages/wesley-host-node/src/warpspace-program.mjs`
-- `packages/wesley-host-node/src/warpspace/init.mjs`
-- `packages/wesley-host-node/bin/warpspace.mjs`
+- removed `packages/wesley-host-node/src/warpspace-program.mjs`
+- removed `packages/wesley-host-node/src/warpspace/init.mjs`
+- removed `packages/wesley-host-node/bin/warpspace.mjs`
+- removed `packages/wesley-host-node/test/warpspace-init.test.mjs`
+- removed host-node `bin.warpspace`
 
 Why it is non-generic:
 
-- the CLI literally describes itself as
+- the CLI described itself as
   "Bootstrap a Continuum consumer workspace"
-- the init flow reads a Continuum stack-release manifest
-- it materializes contract families into a host project
-- it invokes `bundle-echo` and `compile-ttd`
+- the init flow read a Continuum stack-release manifest
+- it materialized contract families into a host project
+- it invoked `bundle-echo` and `compile-ttd`
 
 New home:
 
-- move the `warpspace` program and init flow into `continuum/apps/warp/`
+- Continuum `warp` owns this bootstrap path
 
 Result:
 
@@ -315,7 +317,7 @@ The safest order is:
 2. move or delete the remaining Continuum compile/generator/schema surfaces out
    of Wesley into
    `continuum/wesley/`
-3. move WARPspace bootstrap into `continuum/apps/warp/`
+3. keep WARPspace bootstrap out of `wesley-host-node`; Continuum `warp` owns it
 4. move the Holmes `git-warp` counterfactual provider into Continuum
 5. carve database behavior out of `wesley-core`
 6. move Node/Postgres adapters out of `wesley-host-node`

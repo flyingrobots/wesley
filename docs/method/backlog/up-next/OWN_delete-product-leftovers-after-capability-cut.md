@@ -81,3 +81,12 @@ Deleted in the doctor cleanup slice:
 - unused hard-coded `@wesley/generator-echo`, `@wesley/generator-ttd`, and
   `@wesley/generator-supabase` well-known generator list in
   `packages/wesley-cli/src/commands/doctor-checks.mjs`
+
+Deleted in the WARPspace bootstrap cleanup slice:
+
+- `packages/wesley-host-node/bin/warpspace.mjs`
+- `packages/wesley-host-node/src/warpspace-program.mjs`
+- `packages/wesley-host-node/src/warpspace/init.mjs`
+- `packages/wesley-host-node/test/warpspace-init.test.mjs`
+- host-node `bin.warpspace`
+- obsolete WARPspace bootstrap bad-code backlog notes
