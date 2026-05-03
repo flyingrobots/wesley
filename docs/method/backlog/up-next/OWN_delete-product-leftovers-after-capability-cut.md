@@ -75,3 +75,9 @@ Deleted in the first cleanup slice:
 - root `verify:realization`
 - stale Continuum witness and realization Bats coverage
 - stale module-owned command skip-list entries for missing product commands
+
+Deleted in the doctor cleanup slice:
+
+- unused hard-coded `@wesley/generator-echo`, `@wesley/generator-ttd`, and
+  `@wesley/generator-supabase` well-known generator list in
+  `packages/wesley-cli/src/commands/doctor-checks.mjs`

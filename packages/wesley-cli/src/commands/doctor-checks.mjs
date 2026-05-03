@@ -58,18 +58,6 @@ export async function checkConfig(_ctx) {
 // ── Check 3 & 4: Generator plugins ────────────────────────────────
 
 /**
- * Well-known generator package names (workspace packages).
- * In a future iteration these could be read from config.generators.
- */
-const _WELL_KNOWN_GENERATORS = [
-  '@wesley/generator-supabase',
-  '@wesley/generator-js',
-  '@wesley/generator-echo',
-  '@wesley/generator-ttd',
-  '@wesley/generator-vue'
-];
-
-/**
  * Discover generator packages in the workspace.
  * Looks for packages/wesley-generator-* directories with a package.json.
  * Returns an array of { name, entryPoint } where entryPoint is the absolute
