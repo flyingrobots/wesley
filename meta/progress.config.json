@@ -17,8 +17,7 @@
       "@wesley/tasks": 0.05,
       "@wesley/test-fixtures": 0,
       "@wesley/slaps": 0.03,
-      "@wesley/scaffold-multitenant": 0.01,
-      "@wesley/stack-supabase-nextjs": 0.01
+      "@wesley/scaffold-multitenant": 0.01
     }
   },
   "packages": [
@@ -35,7 +34,6 @@
     { "name": "@wesley/host-deno", "status": "Experimental", "ci": "pkg-host-deno.yml", "readme": "packages/wesley-host-deno/README.md", "notes": "Deno host runtime (demo)" },
     { "name": "@wesley/host-bun", "status": "Experimental", "ci": "pkg-host-bun.yml", "readme": "packages/wesley-host-bun/README.md", "notes": "Bun host runtime (demo)" },
     { "name": "@wesley/scaffold-multitenant", "status": "Too soon", "ci": null, "readme": "packages/wesley-scaffold-multitenant/README.md", "notes": "Early scaffold, no CI yet" },
-    { "name": "@wesley/stack-supabase-nextjs", "status": "Too soon", "ci": null, "readme": "packages/wesley-stack-supabase-nextjs/README.md", "notes": "Early stack template, no CI yet" },
     { "name": "@wesley/test-fixtures", "status": "Active", "ci": null, "readme": "packages/wesley-test-fixtures/README.md", "notes": "Private shared fixtures + schema builders" }
   ]
 }

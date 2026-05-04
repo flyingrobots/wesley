@@ -116,7 +116,6 @@ jobs:
             "wesley-slaps"
             "wesley-generator-js"
             "wesley-scaffold-multitenant"
-            "wesley-stack-supabase-nextjs"
           )
 
           for package in "${required_packages[@]}"; do
@@ -166,8 +165,7 @@ jobs:
           │   ├── wesley-tasks/             # Task scheduling system
           │   ├── wesley-slaps/             # PostgreSQL execution engine
           │   ├── wesley-generator-js/      # JavaScript/TypeScript generators
-          │   ├── wesley-scaffold-multitenant/ # Multi-tenant scaffold
-          │   └── wesley-stack-supabase-nextjs/ # Full-stack Supabase template
+          │   └── wesley-scaffold-multitenant/ # Multi-tenant scaffold
           ```
 
           ### Dependency Rules

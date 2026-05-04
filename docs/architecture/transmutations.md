@@ -576,7 +576,6 @@ packages/
 ├── wesley-host-node/
 ├── wesley-scaffold-multitenant/
 ├── wesley-slaps/
-├── wesley-stack-supabase-nextjs/
 └── wesley-tasks/
 ```
 
@@ -632,7 +631,6 @@ packages/
 ├── slaps/                         # @wesley/slaps (S.L.A.P.S.)
 │
 └── stacks/                        # Full-stack scaffolds
-    ├── supabase-nextjs/
     └── scaffold-multitenant/
 ```
 

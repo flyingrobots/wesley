@@ -20,7 +20,6 @@
 /packages/wesley-generator-js/ @flyingrobots
 
 # Stacks & scaffolds
-/packages/wesley-stack-supabase-nextjs/ @flyingrobots
 /packages/wesley-scaffold-multitenant/ @flyingrobots
 
 # Internals

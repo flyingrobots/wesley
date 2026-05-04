@@ -211,5 +211,16 @@ Moved in the Supabase generator package cleanup slice:
   core-export and host/runtime rows
 
 The matching extraction-map row now marks the Supabase generator package as
-done while leaving the Supabase/Next stack package, core Postgres exports, and
-host/runtime database coupling active.
+done while leaving core Postgres exports and host/runtime database coupling
+active.
+
+Moved in the Supabase/Next stack package cleanup slice:
+
+- `packages/wesley-stack-supabase-nextjs/` was removed from Wesley;
+  `wesley-postgres` owns the package copy
+- removed the CODEOWNERS entry, architecture boundary required-package entry,
+  progress metadata, and lockfile importer
+
+The matching extraction-map row now marks the Supabase/Next stack package as
+done. Remaining database residue lives in the core-export, host/runtime
+coupling, fixture/smoke, and root parser dependency rows.

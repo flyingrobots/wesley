@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-04T02:06:25.878Z",
+  "generatedAt": "2026-05-04T04:10:28.431Z",
   "overall": {
     "stage": "MVP",
     "next": "Alpha",
@@ -245,25 +245,6 @@
         "hasStatus": true,
         "hasUsage": false,
         "hasApi": false,
-        "hasCaveats": false
-      },
-      "milestones": {
-        "alpha": null,
-        "beta": null
-      },
-      "coverage": null
-    },
-    {
-      "name": "@wesley/stack-supabase-nextjs",
-      "status": "Too soon",
-      "stage": "Prototype",
-      "progress": 50,
-      "next": "MVP",
-      "passRate": null,
-      "docs": {
-        "hasStatus": true,
-        "hasUsage": false,
-        "hasApi": true,
         "hasCaveats": false
       },
       "milestones": {
