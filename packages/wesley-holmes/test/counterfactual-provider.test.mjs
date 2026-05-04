@@ -1,195 +1,106 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { createHash } from 'node:crypto';
-import { spawnSync } from 'node:child_process';
-import { GENERATED_ARTIFACT_DIR } from '@wesley/core';
+import { fileURLToPath } from 'node:url';
+
+import { createModuleCapabilityRegistry } from '@wesley/core';
 
 import {
+  COUNTERFACTUAL_CURRENT_PATH,
   analyzeCounterfactual,
   defaultCounterfactualPolicy
 } from '../src/index.mjs';
 
-function createRepoFixture({ withBraid = false, prebuildSurface = true } = {}) {
+const fixtureModulePath = fileURLToPath(new URL('./fixtures/counterfactual-provider-module.mjs', import.meta.url));
+
+async function withTempRepo(callback) {
   const tempDir = mkdtempSync(path.join(tmpdir(), 'wesley-counterfactual-'));
-  mkdirSync(path.join(tempDir, GENERATED_ARTIFACT_DIR), { recursive: true });
-  mkdirSync(path.join(tempDir, 'out'), { recursive: true });
-
-  writeFileSync(path.join(tempDir, 'schema.graphql'), [
-    'type User @wes_table {',
-    '  id: ID! @wes_pk',
-    '}',
-    ''
-  ].join('\n'));
-  writeFileSync(path.join(tempDir, GENERATED_ARTIFACT_DIR, 'history.json'), JSON.stringify({
-    points: [
-      { day: 0, scs: 0.3, tci: 0.2, mri: 0.2 },
-      { day: 1, scs: 0.5, tci: 0.4, mri: 0.2 }
-    ]
-  }, null, 2));
-  if (prebuildSurface) {
-    writeSurface(tempDir, {
-      sql: 'create table users (id text primary key);',
-      plan: { plan: { phases: [] }, explain: { steps: [] } }
-    });
+  try {
+    return await callback(tempDir);
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
   }
+}
 
-  git(tempDir, 'init', '--initial-branch=main');
-  git(tempDir, 'config', 'user.email', 'wesley-tests@example.com');
-  git(tempDir, 'config', 'user.name', 'Wesley Tests');
-  git(tempDir, 'add', '.');
-  git(tempDir, 'commit', '-m', 'base');
+function createRegistryWithProviders(providers) {
+  return createModuleCapabilityRegistry([
+    {
+      apiVersion: '1',
+      name: 'counterfactual-test-module',
+      capabilities: {
+        holmes: {
+          counterfactualProviders: providers
+        }
+      }
+    }
+  ]);
+}
 
-  if (withBraid) {
-    git(tempDir, 'checkout', '-b', 'support');
-    writeFileSync(path.join(tempDir, 'schema.graphql'), [
-      'type User @wes_table {',
-      '  id: ID! @wes_pk',
-      '  support: String',
-      '}',
-      ''
-    ].join('\n'));
-    writeSurface(tempDir, {
-      sql: 'create table users (id text primary key, support text);',
-      plan: { plan: { phases: [{ phase: 1 }] }, explain: { steps: [{ op: 'support' }] } }
-    });
-    git(tempDir, 'add', '.');
-    git(tempDir, 'commit', '-m', 'support');
-    git(tempDir, 'checkout', 'main');
-  }
-
-  git(tempDir, 'checkout', '-b', 'feature');
-  writeFileSync(path.join(tempDir, 'schema.graphql'), [
-    'type User @wes_table {',
-    '  id: ID! @wes_pk',
-    '  email: String!',
-    '}',
-    ''
-  ].join('\n'));
-  if (prebuildSurface) {
-    writeSurface(tempDir, {
-      sql: 'create table users (id text primary key, email text not null);',
-      plan: { plan: { phases: [{ phase: 1 }] }, explain: { steps: [{ op: 'alter_table' }] } }
-    });
-  }
-  git(tempDir, 'add', '.');
-  git(tempDir, 'commit', '-m', 'feature');
-
+function createProvider(name, overrides = {}) {
   return {
-    tempDir,
-    cleanup() {
-      rmSync(tempDir, { recursive: true, force: true });
+    name,
+    providerPackageVersion: `${name}-1.0.0`,
+    async analyze({ lane, includeTransferPlan, surface, moduleName }) {
+      return {
+        providerPackageVersion: `${name}-1.0.0`,
+        surfaceVersion: `${name}-surface-v1`,
+        laneFingerprint: `${name}-${lane.composition}-${includeTransferPlan ? 'with-transfer' : 'without-transfer'}`,
+        composition: lane.composition,
+        requested: {
+          baseRef: lane.baseRef,
+          headRef: lane.headRef,
+          braidRefs: lane.braidRefs
+        },
+        resolved: {
+          baseRef: lane.baseRef,
+          baseSha: 'a'.repeat(40),
+          headRef: lane.headRef,
+          headSha: 'b'.repeat(40),
+          braidRefs: lane.braidRefs.map((ref) => ({ ref, sha: 'c'.repeat(40) })),
+          liveWorkspace: lane.headRef === 'HEAD'
+        },
+        facts: {
+          comparison: null,
+          transferPlan: null,
+          normalizedScope: lane.scope || null
+        },
+        judgment: {
+          status: 'clean',
+          signals: [
+            `provider:${name}`,
+            ...(lane.braidRefs.length > 0 ? ['braid_present'] : [])
+          ],
+          riskClass: 'none',
+          confidenceAdjustment: 0,
+          gate: 'pass',
+          wouldFail: false,
+          reasons: [
+            `Provider ${name} ran for ${moduleName}.`,
+            `Surface keys: ${Object.keys(surface || {}).sort().join(',')}`
+          ]
+        },
+        ...overrides
+      };
     }
   };
 }
 
-function writeSurface(repoRoot, { sql, plan }) {
-  writeFileSync(path.join(repoRoot, 'out', 'schema.sql'), sql);
-  writeFileSync(path.join(repoRoot, GENERATED_ARTIFACT_DIR, 'bundle.json'), JSON.stringify({
-    sha: 'abcdef1234567890abcdef1234567890abcdef12',
-    timestamp: '2026-03-20T00:00:00.000Z',
-    bundleVersion: '1.0.0',
-    evidence: {
-      evidence: {
-        'artifact:out/schema.sql': {
-          sql: [{ file: 'out/schema.sql', lines: '1-1' }]
-        }
-      }
-    },
-    scores: { scores: { scs: 0.5, tci: 0.4, mri: 0.2 } }
-  }, null, 2));
-  writeFileSync(path.join(repoRoot, GENERATED_ARTIFACT_DIR, 'plan-report.json'), JSON.stringify(plan, null, 2));
-}
-
-function git(cwd, ...args) {
-  const result = spawnSync('git', ['-C', cwd, ...args], { encoding: 'utf8' });
-  if (result.status !== 0) {
-    throw new Error(result.stderr || `git ${args.join(' ')} failed`);
-  }
-  return result.stdout.trim();
-}
-
-test('analyzeCounterfactual persists canonical fact bytes and judgment metadata', async () => {
-  const fixture = createRepoFixture();
+test('default counterfactual policy does not name a built-in provider', () => {
   const policy = defaultCounterfactualPolicy();
-  policy.counterfactual.enabled = true;
-  policy.counterfactual.gateMode = 'audit';
 
-  try {
-    const report = await analyzeCounterfactual({
-      repoRoot: fixture.tempDir,
-      lane: {
-        baseRef: 'main',
-        headRef: 'HEAD',
-        braidRefs: [],
-        composition: 'merge'
-      },
-      policy,
-      surface: {
-        bundleDir: GENERATED_ARTIFACT_DIR,
-        outDir: 'out',
-        schemaPath: 'schema.graphql'
-      }
-    });
-
-    assert.equal(report.provider, 'git-warp');
-    assert.equal(report.composition, 'merge');
-    assert.equal(report.resolved.baseRef, 'main');
-    assert.ok(report.facts.comparison.factDigest);
-    assert.ok(report.judgment.signals.includes('visible_state_delta'));
-    assert.ok(report.judgment.signals.includes('transfer_ops_present'));
-    assert.equal(report.judgment.gate, 'pass');
-
-    const comparisonPath = path.join(fixture.tempDir, report.facts.comparison.file);
-    const transferPath = path.join(fixture.tempDir, report.facts.transferPlan.file);
-    const summaryPath = path.join(
-      fixture.tempDir,
-      GENERATED_ARTIFACT_DIR,
-      'counterfactual',
-      report.laneFingerprint,
-      'summary.json'
-    );
-    const leasePath = path.join(
-      fixture.tempDir,
-      GENERATED_ARTIFACT_DIR,
-      'counterfactual',
-      'store',
-      'lease.json'
-    );
-    const comparisonBytes = readFileSync(comparisonPath, 'utf8');
-    const transferBytes = readFileSync(transferPath, 'utf8');
-    const summary = JSON.parse(readFileSync(summaryPath, 'utf8'));
-    const lease = JSON.parse(readFileSync(leasePath, 'utf8'));
-
-    assert.equal(
-      createHash('sha256').update(comparisonBytes).digest('hex'),
-      report.facts.comparison.factDigest
-    );
-    assert.equal(
-      createHash('sha256').update(transferBytes).digest('hex'),
-      report.facts.transferPlan.factDigest
-    );
-    assert.equal(summary.cache.storeLeaseVersion, 1);
-    assert.ok(Array.isArray(summary.cache.surfaceKeys));
-    assert.ok(summary.cache.surfaceKeys.length >= 2);
-    assert.equal(lease.graphName, 'wesley-counterfactual-v1');
-    assert.equal(lease.providerPackageVersion, '16.0.0');
-  } finally {
-    fixture.cleanup();
-  }
+  assert.equal(policy.counterfactual.provider, null);
 });
 
-test('analyzeCounterfactual supports braid lanes and marks braid signals', async () => {
-  const fixture = createRepoFixture({ withBraid: true });
-  const policy = defaultCounterfactualPolicy();
-  policy.counterfactual.enabled = true;
-  policy.counterfactual.gateMode = 'audit';
+test('analyzeCounterfactual returns an unsupported report when no provider module is loaded', async () => {
+  await withTempRepo(async (tempDir) => {
+    const policy = defaultCounterfactualPolicy();
+    policy.counterfactual.enabled = true;
+    policy.counterfactual.gateMode = 'audit';
 
-  try {
     const report = await analyzeCounterfactual({
-      repoRoot: fixture.tempDir,
+      repoRoot: tempDir,
       lane: {
         baseRef: 'main',
         headRef: 'HEAD',
@@ -197,121 +108,143 @@ test('analyzeCounterfactual supports braid lanes and marks braid signals', async
         composition: 'braid'
       },
       policy,
+      env: {}
+    });
+
+    assert.equal(report.provider, 'none');
+    assert.equal(report.providerPackageVersion, 'module-capability-unavailable');
+    assert.equal(report.composition, 'braid');
+    assert.deepEqual(report.requested.braidRefs, ['support']);
+    assert.equal(report.facts.comparison, null);
+    assert.equal(report.judgment.status, 'unsupported');
+    assert.equal(report.judgment.gate, 'audit');
+    assert.ok(report.judgment.signals.includes('provider_unavailable'));
+    assert.ok(report.judgment.signals.includes('braid_present'));
+    assert.match(report.judgment.reasons[0], /No counterfactual provider capabilities/);
+
+    const currentPath = path.join(tempDir, COUNTERFACTUAL_CURRENT_PATH);
+    assert.equal(existsSync(currentPath), true);
+    assert.deepEqual(JSON.parse(readFileSync(currentPath, 'utf8')), report);
+  });
+});
+
+test('analyzeCounterfactual dispatches to the sole module counterfactual provider', async () => {
+  await withTempRepo(async (tempDir) => {
+    const registry = createRegistryWithProviders([createProvider('alpha')]);
+    const policy = defaultCounterfactualPolicy();
+    policy.counterfactual.enabled = true;
+
+    const report = await analyzeCounterfactual({
+      repoRoot: tempDir,
+      lane: {
+        baseRef: 'main',
+        headRef: 'HEAD',
+        braidRefs: [],
+        composition: 'merge'
+      },
+      includeTransferPlan: false,
+      policy,
+      moduleCapabilityRegistry: registry,
       surface: {
-        bundleDir: GENERATED_ARTIFACT_DIR,
+        bundleDir: '.wesley-cache',
         outDir: 'out',
         schemaPath: 'schema.graphql'
       }
     });
 
+    assert.equal(report.provider, 'alpha');
+    assert.equal(report.providerModuleName, 'counterfactual-test-module');
+    assert.equal(report.providerPackageVersion, 'alpha-1.0.0');
+    assert.equal(report.surfaceVersion, 'alpha-surface-v1');
+    assert.equal(report.laneFingerprint, 'alpha-merge-without-transfer');
+    assert.equal(report.judgment.status, 'clean');
+    assert.ok(report.judgment.reasons[1].includes('bundleDir,outDir,schemaPath'));
+
+    const currentPath = path.join(tempDir, COUNTERFACTUAL_CURRENT_PATH);
+    assert.equal(JSON.parse(readFileSync(currentPath, 'utf8')).provider, 'alpha');
+  });
+});
+
+test('analyzeCounterfactual honors policy-selected provider names', async () => {
+  await withTempRepo(async (tempDir) => {
+    const registry = createRegistryWithProviders([
+      createProvider('alpha'),
+      createProvider('beta')
+    ]);
+    const policy = defaultCounterfactualPolicy();
+    policy.counterfactual.enabled = true;
+    policy.counterfactual.provider = 'beta';
+
+    const report = await analyzeCounterfactual({
+      repoRoot: tempDir,
+      lane: {
+        baseRef: 'main',
+        headRef: 'HEAD',
+        braidRefs: [],
+        composition: 'merge'
+      },
+      policy,
+      moduleCapabilityRegistry: registry
+    });
+
+    assert.equal(report.provider, 'beta');
+    assert.ok(report.judgment.signals.includes('provider:beta'));
+  });
+});
+
+test('analyzeCounterfactual reports missing selected providers without throwing', async () => {
+  await withTempRepo(async (tempDir) => {
+    const registry = createRegistryWithProviders([createProvider('alpha')]);
+    const policy = defaultCounterfactualPolicy();
+    policy.counterfactual.enabled = true;
+    policy.counterfactual.provider = 'beta';
+    policy.counterfactual.gateMode = 'hard';
+
+    const report = await analyzeCounterfactual({
+      repoRoot: tempDir,
+      lane: {
+        baseRef: 'main',
+        headRef: 'HEAD',
+        braidRefs: [],
+        composition: 'merge'
+      },
+      policy,
+      moduleCapabilityRegistry: registry
+    });
+
+    assert.equal(report.provider, 'beta');
+    assert.equal(report.judgment.status, 'unsupported');
+    assert.equal(report.judgment.gate, 'fail');
+    assert.match(report.judgment.reasons[0], /provider "beta" is not available/i);
+  });
+});
+
+test('analyzeCounterfactual loads counterfactual providers from wesley.config.mjs', async () => {
+  await withTempRepo(async (tempDir) => {
+    writeFileSync(
+      path.join(tempDir, 'wesley.config.mjs'),
+      `export default { modules: [${JSON.stringify(fixtureModulePath)}] };\n`
+    );
+
+    const policy = defaultCounterfactualPolicy();
+    policy.counterfactual.enabled = true;
+
+    const report = await analyzeCounterfactual({
+      repoRoot: tempDir,
+      lane: {
+        baseRef: 'main',
+        headRef: 'HEAD',
+        braidRefs: ['support'],
+        composition: 'braid'
+      },
+      policy,
+      env: {}
+    });
+
+    assert.equal(report.provider, 'fixture-counterfactual');
+    assert.equal(report.providerModuleName, 'holmes-counterfactual-fixture-module');
     assert.equal(report.composition, 'braid');
     assert.equal(report.resolved.braidRefs.length, 1);
     assert.ok(report.judgment.signals.includes('braid_present'));
-  } finally {
-    fixture.cleanup();
-  }
-});
-
-test('analyzeCounterfactual leaves missing workspace artifacts unmaterialized in generic Wesley', async () => {
-  const fixture = createRepoFixture({ prebuildSurface: false });
-  const policy = defaultCounterfactualPolicy();
-  policy.counterfactual.enabled = true;
-
-  try {
-    const report = await analyzeCounterfactual({
-      repoRoot: fixture.tempDir,
-      lane: {
-        baseRef: 'main',
-        headRef: 'HEAD',
-        braidRefs: [],
-        composition: 'merge'
-      },
-      policy,
-      surface: {
-        bundleDir: GENERATED_ARTIFACT_DIR,
-        outDir: 'out',
-        schemaPath: 'schema.graphql'
-      }
-    });
-
-    assert.equal(report.facts.comparison, null);
-    assert.equal(report.judgment.status, 'unsupported');
-    assert.equal(
-      existsSync(path.join(fixture.tempDir, GENERATED_ARTIFACT_DIR, 'bundle.json')),
-      false
-    );
-    assert.equal(
-      existsSync(path.join(fixture.tempDir, 'out', 'schema.sql')),
-      false
-    );
-  } finally {
-    fixture.cleanup();
-  }
-});
-
-test('analyzeCounterfactual prunes expired lane summaries and resets expired store leases', async () => {
-  const fixture = createRepoFixture();
-  const policy = defaultCounterfactualPolicy();
-  policy.counterfactual.enabled = true;
-
-  try {
-    await analyzeCounterfactual({
-      repoRoot: fixture.tempDir,
-      lane: {
-        baseRef: 'main',
-        headRef: 'HEAD',
-        braidRefs: [],
-        composition: 'merge'
-      },
-      policy,
-      surface: {
-        bundleDir: GENERATED_ARTIFACT_DIR,
-        outDir: 'out',
-        schemaPath: 'schema.graphql'
-      }
-    });
-
-    const counterfactualRoot = path.join(fixture.tempDir, GENERATED_ARTIFACT_DIR, 'counterfactual');
-    const staleLaneDir = path.join(counterfactualRoot, 'stale-lane');
-    const staleStoreLeasePath = path.join(counterfactualRoot, 'store', 'lease.json');
-    const staleSurfacePath = path.join(counterfactualRoot, 'store', 'surfaces', 'stale.json');
-
-    mkdirSync(staleLaneDir, { recursive: true });
-    mkdirSync(path.dirname(staleStoreLeasePath), { recursive: true });
-    mkdirSync(path.dirname(staleSurfacePath), { recursive: true });
-    writeFileSync(path.join(staleLaneDir, 'summary.json'), JSON.stringify({
-      cache: {
-        expiresAt: '2000-01-01T00:00:00.000Z'
-      }
-    }, null, 2));
-    writeFileSync(staleStoreLeasePath, JSON.stringify({
-      leaseVersion: 1,
-      expiresAt: '2000-01-01T00:00:00.000Z'
-    }, null, 2));
-    writeFileSync(staleSurfacePath, JSON.stringify({ stale: true }, null, 2));
-
-    await analyzeCounterfactual({
-      repoRoot: fixture.tempDir,
-      lane: {
-        baseRef: 'main',
-        headRef: 'HEAD',
-        braidRefs: [],
-        composition: 'merge'
-      },
-      policy,
-      surface: {
-        bundleDir: GENERATED_ARTIFACT_DIR,
-        outDir: 'out',
-        schemaPath: 'schema.graphql'
-      }
-    });
-
-    assert.equal(existsSync(staleLaneDir), false);
-    assert.equal(existsSync(staleSurfacePath), false);
-    const lease = JSON.parse(readFileSync(staleStoreLeasePath, 'utf8'));
-    assert.equal(lease.leaseVersion, 1);
-    assert.notEqual(lease.expiresAt, '2000-01-01T00:00:00.000Z');
-  } finally {
-    fixture.cleanup();
-  }
+  });
 });

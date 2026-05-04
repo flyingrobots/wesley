@@ -107,7 +107,7 @@ async function runCounterfactual(repoRoot, baseRef = 'main') {
   const policy = {
     counterfactual: {
       enabled: true,
-      provider: 'git-warp',
+      provider: 'external-counterfactual',
       gateMode: 'audit',
       penalties: {
         divergence: 10,

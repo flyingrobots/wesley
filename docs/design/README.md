@@ -14,6 +14,7 @@ Current packets:
 - [`0005`](./0005-continuum-contract-bundle-release-and-sync/continuum-contract-bundle-release-and-sync.md): Historical product bundle packet; extraction context only
 - [`0006`](./0006-warpspace-workspace-resolution/warpspace-workspace-resolution.md): Historical product workspace packet; extraction context only
 - [`0007`](./0007-observer-spec-and-plan/observer-spec-and-plan.md): Historical product observer packet; extraction context only
+- [`0008`](./0008-holmes-counterfactual-provider-capability/holmes-counterfactual-provider-capability.md): Holmes counterfactual provider capability dispatch
 - [Module Contract](./wesley-module-contract.md): Generic core boundary versus external module-owned domain surfaces
 - [Module Capability Contract](./wesley-module-capability-contract.md): The capability surfaces external modules should implement
 - [Contract / Artifact / Runtime Boundary](./wesley-contract-family-artifact-runtime-value.md): GraphQL-authored families, Wesley-emitted artifacts, and later runtime values

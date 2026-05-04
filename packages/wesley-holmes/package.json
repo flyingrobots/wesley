@@ -20,8 +20,6 @@
     "test": "node --test"
   },
   "dependencies": {
-    "@git-stunts/git-warp": "16.0.0",
-    "@git-stunts/plumbing": "2.8.0",
     "@wesley/core": "workspace:*",
     "@wesley/runtime-node": "workspace:*",
     "commander": "^14.0.2"

@@ -8,6 +8,12 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- **Holmes counterfactual provider capability seam**: Added
+  `holmes.counterfactualProviders` to Wesley module capabilities, moved shared
+  Node module-entry loading into `@wesley/runtime-node`, and taught
+  `@wesley/holmes` to
+  dispatch counterfactual analysis through loaded module providers. Generic
+  Holmes now emits a typed unsupported report when no provider module is loaded.
 - **pgTAP smoke tests for emitted ops** (#416): Three pgTAP test files replacing
   the skeleton `ops.pgtap.sql` — `ops-parameterless-view` (view + zero-arg
   function), `ops-parameterized-fn` (ILIKE filter with text param), and
@@ -66,6 +72,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **Stale pre-commit realization guard**: Removed the package-manifest commit
+  hook call to the deleted root `verify:realization` script. Generic Wesley no
+  longer resurrects the old Continuum verifier during commits; product-specific
+  realization checks belong behind module capabilities.
 - **PR #472 Continuum review follow-up**: `witness-continuum` now rejects
   missing canonical Echo schema origins, verifies the Echo IR SDL hash, and
   reports malformed JSONL rows with line context. `bundle-echo` now reports
@@ -152,6 +162,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Removed
 
+- **Built-in Holmes `git-warp` provider**: Removed direct `@git-stunts/*`
+  dependencies and `git-warp` provider defaults from `@wesley/holmes`; product
+  counterfactual providers now belong in external modules.
 - **QIR duck-typing fallbacks (SR-m2)**: Removed 3 duck-typing fallbacks from
   `renderExpr` and 1 from `renderRelation` in `lowerToSQL.mjs`. Objects without
   explicit `kind` tags now throw `Unsupported expr kind` / `Unsupported relation

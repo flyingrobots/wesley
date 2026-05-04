@@ -2,13 +2,13 @@
 <!-- docs-truth: status=current owner=@flyingrobots -->
 
 Purpose
-- Configure git-warp-backed counterfactual analysis without changing code.
+- Configure module-provided counterfactual analysis without changing code.
 - Keep the policy surface small and reviewed in-repo.
-- Separate substrate facts from Wesley judgment.
+- Keep provider-specific fact machinery outside generic Holmes.
 
 Files
-- `wesley.holmes-policy.json` — checked in, reviewed in PRs
-- `wesley.holmes-policy.local.json` — optional developer override, gitignored
+- `wesley.holmes-policy.json` - checked in, reviewed in PRs
+- `wesley.holmes-policy.local.json` - optional developer override, gitignored
 
 CLI
 - `holmes predict --counterfactual [baseRef]`
@@ -17,7 +17,10 @@ CLI
 - `holmes report --counterfactual-braid <ref>`
 
 Notes
-- Policy v1 is still read, but it is upcast into the v2 counterfactual shape at runtime. New policy files should use v2 directly.
+- Policy v1 is still read, but it is upcast into the v2 counterfactual shape at runtime.
+- New policy files should use v2 directly.
+- Counterfactual providers come from loaded Wesley modules under
+  `holmes.counterfactualProviders`.
 
 ## JSON Shape
 
@@ -26,7 +29,7 @@ Notes
   "version": 2,
   "counterfactual": {
     "enabled": true,
-    "provider": "git-warp",
+    "provider": null,
     "baseRef": "main",
     "headRef": "HEAD",
     "braidRefs": [],
@@ -49,9 +52,13 @@ Top level
 
 `counterfactual`
 - `enabled`: boolean
-  - Enables counterfactual analysis when the command is policy-driven rather than flag-driven.
-- `provider`: string
-  - Current value: `git-warp`
+  - Enables counterfactual analysis when the command is policy-driven rather
+    than flag-driven.
+- `provider`: string or `null`
+  - Selects a loaded `holmes.counterfactualProviders` capability by name.
+  - `null` lets Holmes use the sole loaded provider. If zero or multiple
+    providers are loaded, Holmes writes an unsupported report explaining the
+    missing or ambiguous provider selection.
 - `baseRef`: string
   - Base branch or ref to compare against.
 - `headRef`: string
@@ -59,7 +66,8 @@ Top level
 - `braidRefs`: string[]
   - Optional overlay refs for braid lanes.
 - `scope`: object or `null`
-  - Internal visible-state scope passed through to git-warp normalization.
+  - Provider-owned scope payload. Generic Holmes passes it through and does not
+    interpret provider-specific fields.
 - `gateMode`: `"off" | "audit" | "hard"`
   - `off`: never block
   - `audit`: record `wouldFail`, never block
@@ -69,11 +77,38 @@ Top level
   - `destructiveTransfer`: number
   - `providerUnavailable`: number
 
+## Provider Contract
+
+A provider capability is a plain object with a non-empty `name` and an
+`analyze()` hook. Holmes calls it with:
+
+```js
+{
+  repoRoot,
+  lane,
+  includeTransferPlan,
+  policy,
+  surface,
+  env,
+  provider,
+  moduleName
+}
+```
+
+The provider returns a counterfactual report. Generic Holmes normalizes missing
+top-level fields, writes `.wesley-cache/counterfactual/current.json`, and leaves
+provider-specific fact files to the provider.
+
 ## Judgment Model
 
-git-warp produces substrate facts. Wesley derives judgment from those facts.
-
 Counterfactual reports persist:
+- `provider`
+- `providerPackageVersion`
+- `surfaceVersion`
+- `laneFingerprint`
+- `composition`
+- `requested`
+- `resolved`
 - `facts.comparison`
 - `facts.transferPlan`
 - `facts.normalizedScope`
@@ -97,36 +132,26 @@ Risk classes
 
 The important rule is simple:
 - BLADE and cert consumers must use `judgment.gate` as the only authority.
-- They must not re-derive gate semantics from raw substrate status.
+- They must not re-derive gate semantics from raw provider facts.
 
 ## Artifact Layout
 
-Counterfactual artifacts live under:
+Generic Holmes writes:
 
 ```text
 .wesley-cache/counterfactual/
   current.json
-  <laneFingerprint>/
-    summary.json
-    comparison.<factDigest>.json
-    transfer.<factDigest>.json
-  store/
-    lease.json
-    surfaces/*.json
 ```
 
-Rules
-- `comparison.<factDigest>.json` contains the exact canonical fact bytes from git-warp export.
-- `transfer.<factDigest>.json` contains the exact canonical fact bytes from git-warp export.
-- `summary.json` carries digests, resolved refs, versions, and Wesley judgment.
-- `current.json` points to the latest lane summary for downstream consumers like `cert-create`.
-- `store/lease.json` expires provider-owned git-warp cache state, and expired lane summaries are pruned on the next analysis pass.
+Provider modules may write additional fact files under
+`.wesley-cache/counterfactual/` if they need provider-owned evidence,
+summaries, or caches. Generic Holmes does not define those provider internals.
 
 ## Defaults
 
 Runtime defaults if no policy file exists:
 - `enabled: false`
-- `provider: "git-warp"`
+- `provider: null`
 - `baseRef: "main"`
 - `headRef: "HEAD"`
 - `braidRefs: []`
@@ -143,7 +168,8 @@ Implemented now
 - Holmes/Moriarty `--counterfactual`
 - Holmes `--counterfactual-braid` on `predict` and `report`
 - Holmes/Moriarty `--run-id` and `--transmutation` for persisted run binding
-- git-warp provider and canonical fact persistence
+- module-provided counterfactual provider dispatch
+- unsupported reports when no provider capability is loaded
 - Moriarty report `runtime` block sourced from the run ledger
 - Moriarty report `counterfactual` block
 - legacy merge-tree/worktree projection retained in tests only as a regression harness
@@ -154,12 +180,10 @@ Implemented now
 
 Not yet implemented
 - user-facing scope controls
-- public braid CLI for HOLMES
-- provider-owned strand lifecycle beyond the current coordinate-frontier path
+- provider-specific public docs for external product modules
+- a Continuum-owned counterfactual provider package
 
 ## Sources
 
-- [git-warp v16.0.0 package.json](https://raw.githubusercontent.com/git-stunts/git-warp/v16.0.0/package.json)
-- [git-warp v16.0.0 index.d.ts](https://raw.githubusercontent.com/git-stunts/git-warp/v16.0.0/index.d.ts)
-- [git-warp v16.0.0 ARCHITECTURE.md](https://raw.githubusercontent.com/git-stunts/git-warp/v16.0.0/docs/ARCHITECTURE.md)
-- [git-warp v16.0.0 GUIDE.md](https://raw.githubusercontent.com/git-stunts/git-warp/v16.0.0/docs/GUIDE.md)
+- [Holmes counterfactual provider capability](./design/0008-holmes-counterfactual-provider-capability/holmes-counterfactual-provider-capability.md)
+- [Wesley module capability contract](./design/wesley-module-capability-contract.md)

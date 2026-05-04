@@ -49,7 +49,7 @@ or no advertised product surface.
 | --- | --- | --- | --- |
 | Generic `compile` command | `packages/wesley-cli/src/commands/compile.mjs` | Done for built-in targets | `compile` now uses module-provided `wesley.targets` only; remaining cleanup is removing standalone Continuum commands and packages. |
 | TTD/Echo public CLI commands | removed `compile-ttd.mjs`, `bundle-echo.mjs`, their CLI Bats suites, and the command-only TTD fixture | Done | Recreate only as Continuum-owned module commands or external packages if still needed; generic Wesley no longer ships those public product commands. |
-| Continuum realization verifier | removed `verify-realization.mjs`, `realization-integrity.mjs`, root `verify:realization`, `verify-realization.bats`, and compile-dependent witness assertions | Done | Wesley no longer advertises or tests a built-in two-leg Continuum realization verifier. Recreate only as a Continuum-owned module surface. |
+| Continuum realization verifier | removed `verify-realization.mjs`, `realization-integrity.mjs`, root `verify:realization`, the stale pre-commit hook invocation, `verify-realization.bats`, and compile-dependent witness assertions | Done | Wesley no longer advertises, tests, or hook-runs a built-in two-leg Continuum realization verifier. Recreate only as a Continuum-owned module surface. |
 | WARPspace output lookup in CLI | removed `packages/wesley-cli/src/utils/warpspace.mjs`, `--warpspace` options, WARPspace-backed file/root defaults, WARPspace CLI tests, and `smol-toml` dependency | Done | Generic Wesley generators now use explicit `--out-file`; the later-deleted Continuum commands used explicit `--out-dir` or local defaults while they existed. Continuum-owned modules/tools should own host-project output defaults. |
 | Stale module-owned command skip list | removed `MODULE_OWNED_COMMAND_FILES` entries for missing `contract.mjs`, `witness.mjs`, `witness-continuum.mjs`, `drift-watch.mjs`, `observer-plan.mjs` | Done | Command auto-discovery now only skips private/helper files; external module commands register through loaded modules. |
 | WARPspace bootstrap program | removed `packages/wesley-host-node/bin/warpspace.mjs`, `src/warpspace-program.mjs`, `src/warpspace/init.mjs`, host-node `bin.warpspace`, and residue tests/backlog notes | Done | Continuum `warp` owns workspace bootstrap; Wesley host-node now keeps only the generic `wesley` binary. |
@@ -70,7 +70,7 @@ or no advertised product surface.
 | PostgreSQL lock-aware execution package | removed `packages/wesley-slaps/`, the optional `@wesley/slaps` host-node import, package workflow, CODEOWNERS entry, and active docs that advertised SLAPS as a generic Wesley package; `wesley-postgres` owns `packages/wesley-postgres-slaps/` | Done | Wesley keeps generic `@wesley/tasks` planning and task graph descriptors; PostgreSQL SQL execution, lock matrices, deadlock handling, and `pg` pool integration belong to `wesley-postgres`. |
 | PostgreSQL fixtures and smoke scripts | removed root Postgres Docker compose files, Postgres/QIR schemas, QIR docs, Postgres smoke scripts, QIR/ops fixtures, pgTAP examples, and database E2E harness files; `wesley-postgres` owns the moved copies | Done | Database fixture and smoke coverage now belongs to the database repo. |
 | Root PostgreSQL parser dependency | removed root and `@wesley/core` `@supabase/pg-parser` dependencies, lockfile entries, and stale `packages/wesley-core/package-lock.json` | Done | Wesley package metadata no longer implies PostgreSQL parsing is part of the base platform. |
-| Holmes `git-warp` provider | `packages/wesley-holmes/src/counterfactual/provider.mjs`, `policy.mjs`, `@git-stunts/*` deps | Relocate | Move provider/policy defaults into Continuum/module ownership after Holmes has a module capability seam for counterfactual providers. |
+| Holmes `git-warp` provider | `packages/wesley-holmes/src/counterfactual/provider.mjs`, `policy.mjs`, removed `@git-stunts/*` deps | Done | Holmes now dispatches counterfactual analysis through `holmes.counterfactualProviders`; generic Holmes has no built-in `git-warp` provider or default. |
 | Product/database backlog and docs | moved active Postgres/QIR/Supabase backlog notes, QIR specs/guides/drafts, and database smoke docs to `wesley-postgres`; patched active Wesley docs to describe generic artifact/transmutation behavior | Done | Active database work is now owned by the database repo. Historical audit, retro, and changelog mentions remain history rather than current Wesley doctrine. |
 
 ### 1. Continuum target semantics still sit inside generic compile flows
@@ -336,24 +336,26 @@ Result:
   descriptor surface
 - PostgreSQL lock-aware execution belongs to `wesley-postgres`
 
-### 6. Holmes has a `git-warp` counterfactual provider in generic shared code
+### 6. Holmes counterfactual provider moved behind module capabilities
 
-Evidence:
+Removed from generic Wesley:
 
-- `packages/wesley-holmes/src/counterfactual/provider.mjs`
-- `packages/wesley-holmes/src/counterfactual/policy.mjs`
-- `packages/wesley-holmes/package.json`
+- direct `@git-stunts/plumbing` and `@git-stunts/git-warp` imports from
+  `packages/wesley-holmes/src/counterfactual/provider.mjs`
+- direct `@git-stunts/*` dependencies from `packages/wesley-holmes/package.json`
+- the `git-warp` default provider from the Holmes counterfactual policy
 
-Why it is non-generic:
+Generic Wesley now keeps:
 
-- the provider imports `@git-stunts/plumbing`
-- it imports `@git-stunts/git-warp`
-- the default provider is literally `git-warp`
+- `holmes.counterfactualProviders` as a module capability collection
+- a Holmes dispatcher that selects the configured provider or the sole loaded
+  provider
+- a typed unsupported report when no provider module is loaded
 
 New home:
 
-- move this provider and its policy defaults into the Continuum module, for
-  example:
+- recreate the `git-warp` provider in the Continuum module or another
+  Continuum-owned module repo if it is still needed, for example:
   - `continuum/wesley/holmes/counterfactual/provider.mjs`
   - `continuum/wesley/holmes/counterfactual/policy.mjs`
 
@@ -376,10 +378,8 @@ Completed order:
 5. carve database behavior out of `wesley-core`
 6. move Node/Postgres adapters out of `wesley-host-node`
 
-Items 1, 2, 3, 5, and 6 are complete in Wesley. Item 4 remains the next
-non-database product coupling: Holmes still has a `git-warp` counterfactual
-provider in generic shared code and should move only when the counterfactual
-provider capability seam is ready.
+All six extraction-order items are complete in Wesley. Future product behavior
+should enter through external modules, not as new generic package imports.
 
 ## Short-Term Rules
 

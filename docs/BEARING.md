@@ -43,11 +43,12 @@ timeline
 
 ## Tensions
 
-- **Wrong-Repo Residue**: Wesley still contains non-database product coupling,
-  especially the generic Holmes `git-warp` provider/policy surface.
-- **Capability Gap**: The module registry and compile target dispatch exist,
-  but Holmes, Watson, Moriarty, and BLADE still need real runtime dispatch over
-  module-owned capability collections.
+- **Wrong-Repo Residue**: Active implementation residue is now mostly handled;
+  remaining risk is stale historical or audit wording that looks like current
+  Wesley product doctrine.
+- **Capability Gap**: The module registry, compile target dispatch, and Holmes
+  counterfactual provider dispatch exist, but Watson, Moriarty, and BLADE still
+  need broader runtime dispatch over module-owned capability collections.
 - **Documentation Drag**: Older historical/audit docs still mention old product
   and database lanes; active docs should describe Wesley as domain-empty unless
   they are explicit extraction notes.
@@ -56,6 +57,6 @@ timeline
 
 ## Next Target
 
-The immediate focus is **Domain-Empty Wesley**: keep module target dispatch
-module-owned and finish moving the remaining non-database product coupling, with
-the Holmes `git-warp` provider as the next explicit extraction-map row.
+The immediate focus is **Module Capability Runtime**: keep domain behavior
+behind module-owned capability collections and extend the runtime dispatch
+pattern beyond compile targets and Holmes counterfactual providers.

@@ -29,7 +29,8 @@ const expectedFixtureCapabilityNames = Object.freeze({
   holmes: {
     scopes: 'fixture-scope',
     checks: 'fixture-check',
-    evidenceCollectors: 'fixture-evidence-collector'
+    evidenceCollectors: 'fixture-evidence-collector',
+    counterfactualProviders: 'fixture-counterfactual-provider'
   },
   watson: {
     verifiers: 'fixture-verifier',

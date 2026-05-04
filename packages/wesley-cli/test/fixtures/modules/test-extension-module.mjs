@@ -85,6 +85,15 @@ class TestExtensionModule extends WesleyModule {
               evidence: []
             };
           }
+        }],
+        counterfactualProviders: [{
+          name: 'fixture-counterfactual-provider',
+          async analyze() {
+            return {
+              kind: 'fixture.holmes.counterfactual-provider.v1',
+              status: 'clean'
+            };
+          }
         }]
       },
       watson: {

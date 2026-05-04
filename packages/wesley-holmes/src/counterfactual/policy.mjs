@@ -9,7 +9,7 @@ export function defaultCounterfactualPolicy() {
     version: 2,
     counterfactual: {
       enabled: false,
-      provider: 'git-warp',
+      provider: null,
       baseRef: 'main',
       headRef: 'HEAD',
       braidRefs: [],
@@ -72,7 +72,7 @@ function normalizePolicy(policy) {
       version: 2,
       counterfactual: {
         enabled: Boolean(policy?.counterfactual?.enabled),
-        provider: policy?.counterfactual?.provider || 'git-warp',
+        provider: normalizeOptionalString(policy?.counterfactual?.provider),
         baseRef: policy?.counterfactual?.baseRef || 'main',
         headRef: policy?.counterfactual?.headRef || 'HEAD',
         braidRefs: asStringArray(policy?.counterfactual?.braidRefs),
@@ -95,7 +95,7 @@ function normalizePolicy(policy) {
       version: 2,
       counterfactual: {
         enabled: legacyMode !== 'off',
-        provider: 'git-warp',
+        provider: null,
         baseRef: defaults.assumeDefaultBranch || 'main',
         headRef: 'HEAD',
         braidRefs: [],
@@ -144,6 +144,10 @@ function normalizeGateMode(value) {
 
 function normalizeNumber(value, fallback) {
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
+function normalizeOptionalString(value) {
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
 }
 
 function asStringArray(value) {

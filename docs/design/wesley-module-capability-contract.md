@@ -90,6 +90,7 @@ Examples:
 - witness scopes
 - structural checks
 - evidence collectors
+- counterfactual providers
 - drift rules
 
 ### 3. Watson capabilities
@@ -164,7 +165,8 @@ The module contract should evolve toward a shape like this:
     holmes: {
       scopes: [],
       checks: [],
-      evidenceCollectors: []
+      evidenceCollectors: [],
+      counterfactualProviders: []
     },
     watson: {
       verifiers: [],

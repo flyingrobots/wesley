@@ -41,8 +41,8 @@ create_counterfactual_summary() {
   mkdir -p .wesley-cache/counterfactual
   cat > .wesley-cache/counterfactual/current.json << JSON
 {
-  "provider": "git-warp",
-  "providerPackageVersion": "16.0.0",
+  "provider": "fixture-counterfactual",
+  "providerPackageVersion": "fixture-provider-1.0.0",
   "surfaceVersion": "wesley-counterfactual-v1",
   "laneFingerprint": "lane-123",
   "composition": "merge",

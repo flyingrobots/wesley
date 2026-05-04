@@ -2,7 +2,7 @@
   "version": 2,
   "counterfactual": {
     "enabled": true,
-    "provider": "git-warp",
+    "provider": null,
     "baseRef": "main",
     "headRef": "HEAD",
     "braidRefs": [],

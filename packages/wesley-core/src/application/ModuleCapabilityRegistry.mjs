@@ -9,7 +9,8 @@ export const WESLEY_MODULE_CAPABILITY_COLLECTIONS = Object.freeze({
   holmes: Object.freeze([
     'scopes',
     'checks',
-    'evidenceCollectors'
+    'evidenceCollectors',
+    'counterfactualProviders'
   ]),
   watson: Object.freeze([
     'verifiers',

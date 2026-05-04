@@ -71,6 +71,7 @@ Deleted in the first cleanup slice:
 - `packages/wesley-cli/src/commands/verify-realization.mjs`
 - `packages/wesley-cli/src/commands/realization-integrity.mjs`
 - root `verify:realization`
+- stale `.githooks/pre-commit` invocation of root `verify:realization`
 - stale Continuum witness and realization Bats coverage
 - stale module-owned command skip-list entries for missing product commands
 
@@ -244,8 +245,9 @@ Moved in the PostgreSQL/QIR core and harness relocation slice:
 The matching extraction-map rows now mark PostgreSQL-family core exports,
 PostgreSQL/Supabase host/runtime coupling, PostgreSQL fixtures and smoke
 scripts, the root PostgreSQL parser dependency, and active product/database
-backlog/docs as done. Remaining product coupling is the separate Holmes
-`git-warp` counterfactual provider row.
+backlog/docs as done. The later Holmes counterfactual provider capability slice
+also removed the separate non-database product provider row from generic
+Holmes.
 
 Moved in the PostgreSQL lock-aware execution slice:
 
@@ -258,5 +260,5 @@ Moved in the PostgreSQL lock-aware execution slice:
   generic planning/task graph surfaces
 
 The matching extraction-map row now marks PostgreSQL lock-aware execution as
-done. Remaining product coupling is the separate Holmes `git-warp`
-counterfactual provider row.
+done. The later Holmes counterfactual provider capability slice also removed
+the separate non-database product provider row from generic Holmes.
