@@ -1,7 +1,6 @@
 /**
  * Node.js Runtime Composition
- * Creates runtime context with lazy-loaded generators
- * NO top-level imports of generator packages!
+ * Creates runtime context with generic host adapters and legacy generators.
  */
 
 import * as _fs from 'node:fs/promises';
@@ -9,7 +8,11 @@ import path from 'node:path';
 import process from 'node:process';
 import pino from 'pino';
 import { GENERATED_LEDGER_DIR } from '@wesley/core';
-import { GitWarpEventStore, GraphQLAdapter } from '@wesley/runtime-node';
+import {
+  createPostgresGeneratorAdapters,
+  GitWarpEventStore,
+  GraphQLAdapter
+} from '@wesley/runtime-node';
 import { NodeFileSystem } from './NodeFileSystem.mjs';
 import { ConfigLoader } from './ConfigLoader.mjs';
 import { DbAdapter } from './DbAdapter.mjs';
@@ -33,24 +36,10 @@ const stub = {
 };
 
 export async function createNodeRuntime() {
-  // Dynamic imports so --version doesn't explode
-  let sqlGen = stub.sql;
-  let testGen = stub.tests;
+  const postgresGenerators = createPostgresGeneratorAdapters();
+  const sqlGen = postgresGenerators.sql;
+  const testGen = postgresGenerators.tests;
   let jsGen = stub.js;
-
-  try {
-    const supa = await import('@wesley/generator-supabase');
-    sqlGen = {
-      emitDDL: supa.emitDDL || stub.sql.emitDDL,
-      emitRLS: supa.emitRLS || stub.sql.emitRLS,
-      emitMigrations: supa.emitMigrations || stub.sql.emitMigrations
-    };
-    testGen = {
-      emitPgTap: supa.emitPgTap || stub.tests.emitPgTap
-    };
-  } catch (_e) {
-    console.warn('Warning: @wesley/generator-supabase not available, using stubs');
-  }
 
   try {
     const js = await import('@wesley/generator-js');

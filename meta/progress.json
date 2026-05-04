@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-05-04T00:11:33.088Z",
+  "generatedAt": "2026-05-04T02:06:25.878Z",
   "overall": {
     "stage": "MVP",
     "next": "Alpha",
-    "progress": 59
+    "progress": 61
   },
   "results": [
     {
@@ -84,25 +84,6 @@
     },
     {
       "name": "@wesley/generator-js",
-      "status": "Active",
-      "stage": "MVP",
-      "progress": 50,
-      "next": "Alpha",
-      "passRate": 1,
-      "docs": {
-        "hasStatus": true,
-        "hasUsage": false,
-        "hasApi": false,
-        "hasCaveats": false
-      },
-      "milestones": {
-        "alpha": null,
-        "beta": null
-      },
-      "coverage": null
-    },
-    {
-      "name": "@wesley/generator-supabase",
       "status": "Active",
       "stage": "MVP",
       "progress": 50,

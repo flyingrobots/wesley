@@ -1,8 +1,3 @@
-/**
- * Supabase Generator Emit Functions
- * Side-effect free exports for lazy loading
- */
-
 import {
   DirectiveProcessor,
   EvidenceMap,
@@ -13,11 +8,19 @@ import {
 
 const DEFAULT_OUT_DIR = 'out';
 
-/**
- * Emit PostgreSQL DDL from Wesley IR and return precise per-element evidence.
- * @param {object} ir - Wesley IR with structured fields and directives
- * @param {{ outDir?: string }} [options]
- */
+export function createPostgresGeneratorAdapters() {
+  return {
+    sql: {
+      emitDDL,
+      emitRLS,
+      emitMigrations
+    },
+    tests: {
+      emitPgTap
+    }
+  };
+}
+
 export async function emitDDL(ir, options = {}) {
   const schema = irToSchema(ir);
   const evidenceMap = new EvidenceMap();
@@ -34,11 +37,6 @@ export async function emitDDL(ir, options = {}) {
   };
 }
 
-/**
- * Emit RLS policies while preserving legacy tenant-enable behavior.
- * @param {object} ir - Wesley IR with structured fields and directives
- * @param {{ outDir?: string }} [options]
- */
 export async function emitRLS(ir, options = {}) {
   const schema = irToSchema(ir);
   const evidenceMap = new EvidenceMap();
@@ -88,9 +86,6 @@ export async function emitRLS(ir, options = {}) {
   };
 }
 
-/**
- * Emit migrations (placeholder, plan will emit phased files)
- */
 export function emitMigrations(_ir) {
   return {
     label: 'migrations',
@@ -100,11 +95,6 @@ export function emitMigrations(_ir) {
   };
 }
 
-/**
- * Emit pgTAP tests with per-element evidence.
- * @param {object} ir - Wesley IR with structured fields and directives
- * @param {{ outDir?: string }} [options]
- */
 export async function emitPgTap(ir, options = {}) {
   const schema = irToSchema(ir);
   const evidenceMap = new EvidenceMap();

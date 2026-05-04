@@ -56,7 +56,7 @@ in external modules rather than in this repository.
 
 <!-- BEGIN:OVERALL_STATUS -->
 Stage: MVP  \
-Progress: 59% → Alpha
+Progress: 61% → Alpha
 <!-- END:OVERALL_STATUS -->
 
 ## Package Matrix
@@ -69,7 +69,6 @@ Progress: 59% → Alpha
 | `@wesley/host-node` | Active | MVP | 50% → Alpha | — | Node adapters + binary |
 | `@wesley/host-browser` | Experimental | MVP | 40% → Alpha | — | Pure ESM; in-memory FS; minimal parser; smoke-level only |
 | `@wesley/generator-js` | Active | MVP | 50% → Alpha | — | TS/Zod emitters |
-| `@wesley/generator-supabase` | Active | MVP | 50% → Alpha | — | SQL/RLS/pgTAP emitters |
 | `@wesley/generator-vue` | Experimental | MVP | 0% → Alpha | — | Vue-facing TS/composable emitters |
 | `@wesley/holmes` | Active | Alpha | 50% → Beta | — | Evidence scoring |
 | `@wesley/runtime-node` | Active | MVP | 0% → Alpha | — | Shared Node runtime adapters |

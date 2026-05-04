@@ -7,9 +7,8 @@ import {
   collectCounterfactualSurfaceModel as collectCoreCounterfactualSurfaceModel,
   ensureCounterfactualWorkspaceArtifacts as ensureCoreCounterfactualWorkspaceArtifacts
 } from '@wesley/core';
-import { emitDDL, emitPgTap, emitRLS } from '@wesley/generator-supabase';
-
 import { GraphQLAdapter } from './GraphQLAdapter.mjs';
+import { emitDDL, emitPgTap, emitRLS } from './PostgresGeneratorAdapters.mjs';
 
 export function createNodeCounterfactualSurfacePort() {
   const parser = new GraphQLAdapter();

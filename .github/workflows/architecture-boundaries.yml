@@ -114,7 +114,6 @@ jobs:
             "wesley-cli"
             "wesley-tasks"
             "wesley-slaps"
-            "wesley-generator-supabase"
             "wesley-generator-js"
             "wesley-scaffold-multitenant"
             "wesley-stack-supabase-nextjs"
@@ -166,7 +165,6 @@ jobs:
           │   ├── wesley-cli/               # Platform-agnostic CLI
           │   ├── wesley-tasks/             # Task scheduling system
           │   ├── wesley-slaps/             # PostgreSQL execution engine
-          │   ├── wesley-generator-supabase/# Supabase/PostgreSQL generators
           │   ├── wesley-generator-js/      # JavaScript/TypeScript generators
           │   ├── wesley-scaffold-multitenant/ # Multi-tenant scaffold
           │   └── wesley-stack-supabase-nextjs/ # Full-stack Supabase template

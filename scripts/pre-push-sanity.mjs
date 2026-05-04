@@ -157,7 +157,6 @@ function needsHolmesOpsSmoke(changedFiles) {
     file.startsWith('.github/actions/holmes-setup/') ||
     file.startsWith('packages/wesley-holmes/') ||
     file.startsWith('packages/wesley-runtime-node/') ||
-    file.startsWith('packages/wesley-generator-supabase/') ||
     file.startsWith('packages/wesley-core/src/domain/qir/') ||
     file.startsWith('packages/wesley-core/src/application/CounterfactualSurface') ||
     file.startsWith('packages/wesley-core/src/application/GeneratedBundle') ||

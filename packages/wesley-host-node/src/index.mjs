@@ -19,7 +19,6 @@ import { GraphQLAdapter } from '@wesley/runtime-node';
 
 // Re-export generators from proper packages
 // TODO: Fix missing dependencies in generator packages
-// import { PostgreSQLGenerator, PgTAPTestGenerator } from '@wesley/generator-supabase';
 // import { ModelGenerator } from '@wesley/generator-js';
 
 // Import core domain models

@@ -199,3 +199,17 @@ Moved in the mixed directive schema cleanup slice:
 
 The matching extraction-map row now marks the mixed directive schema split as
 done.
+
+Moved in the Supabase generator package cleanup slice:
+
+- `packages/wesley-generator-supabase/` was removed from Wesley;
+  `wesley-postgres` owns the package copy
+- removed the package-local GitHub workflow, CODEOWNERS entry, package test
+  harness, progress metadata, workspace dependency edges, and lockfile importer
+- generic runtime/host code now routes legacy Postgres emit through the
+  remaining core Postgres generators; those leaks stay tracked by the
+  core-export and host/runtime rows
+
+The matching extraction-map row now marks the Supabase generator package as
+done while leaving the Supabase/Next stack package, core Postgres exports, and
+host/runtime database coupling active.

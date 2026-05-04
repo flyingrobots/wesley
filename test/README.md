@@ -46,7 +46,6 @@ Workspace packages expose their own test commands:
 - `pnpm --filter @wesley/cli test`
 - `pnpm --filter @wesley/holmes test`
 - `pnpm --filter @wesley/generator-js test`
-- `pnpm --filter @wesley/generator-supabase test`
 
 See the package READMEs for additional guidance. The `test/packages/` folder contains harnesses tailored to those packages; each directory now has its own README.
 

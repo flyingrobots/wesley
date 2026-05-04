@@ -64,7 +64,8 @@ or no advertised product surface.
 | CLI dependency on Echo generator | removed `packages/wesley-cli` dependency on `@wesley/generator-echo` and the lockfile importer edge | Done | The generic CLI no longer imports or declares Echo; the Echo package was removed in the Continuum generator package slice. |
 | Doctor hard-coded product generator list | removed unused `_WELL_KNOWN_GENERATORS` from `packages/wesley-cli/src/commands/doctor-checks.mjs` | Done | Doctor discovers workspace generator packages dynamically or reads `config.generators`; it no longer names Echo, TTD, or Supabase as built-in well-known generators. |
 | PostgreSQL-family core exports | `packages/wesley-core/src/index.mjs`, `typeMapping.mjs`, `PostgreSQLGenerator.mjs`, `PgTAPTestGenerator.mjs`, migration explainer/planner/orchestrator, QIR Postgres dialect | Relocate | Move to `wesley-postgres`; keep generic QIR contracts only after the Postgres dialect split is explicit. |
-| PostgreSQL/Supabase packages | `packages/wesley-generator-supabase/`, `packages/wesley-stack-supabase-nextjs/` | Relocate | Move to `wesley-postgres` or a stack repo; root/package metadata follows after package removal. |
+| Supabase generator package | removed Wesley-local `packages/wesley-generator-supabase/`, its package-local workflow, test harness, CODEOWNERS entry, workspace lockfile importer, progress metadata, and workspace dependency edges; `wesley-postgres` owns `packages/wesley-generator-supabase/` | Done | Generic Wesley no longer ships the Supabase generator package. Remaining Postgres core/runtime emitters are tracked by the separate core-export and host/runtime coupling rows. |
+| Supabase/Next stack package | `packages/wesley-stack-supabase-nextjs/` | Relocate | Move to `wesley-postgres` or a stack repo; root/package metadata follows after package removal. |
 | PostgreSQL/Supabase host/runtime coupling | `packages/wesley-host-node/src/adapters/ConfigLoader.mjs`, `DbAdapter.mjs`, `createNodeRuntime.mjs`, compiler adapters, `packages/wesley-runtime-node/src/CounterfactualSurface.mjs` | Relocate | Move Node database helpers under `wesley-postgres-node`; keep generic host shims in Wesley. |
 | PostgreSQL fixtures and smoke scripts | `docker-compose.fixture-test.yml`, `scripts/smoke/postgres-fixture.sh`, `scripts/smoke/holmes-ops-pgtap.sh`, `test/fixtures/postgres/` | Defer | These are test harnesses for current database behavior; move with the database package split, not in the Continuum cleanup slice. |
 | Root PostgreSQL parser dependency | root `package.json`, `packages/wesley-core/package.json`, lockfile entries for `@supabase/pg-parser` | Relocate | Remove from Wesley only after all direct core/generator imports move to `wesley-postgres`. |
@@ -262,7 +263,7 @@ Why it is non-generic:
 
 - these adapters assume SQL/PostgreSQL execution and generated SQL/test output
 - `ConfigLoader` includes database-lane defaults like pgTAP generation
-- `createNodeRuntime.mjs` imports `@wesley/generator-supabase`
+- `createNodeRuntime.mjs` still wires PostgreSQL-family generator adapters
 
 New home:
 
@@ -275,11 +276,11 @@ Result:
 - `wesley-host-node` remains a generic host package
 - Node-specific database helpers still exist, but under the database module
 
-### 5a. Supabase/PostgreSQL packages are still in Wesley
+### 5a. Supabase generator package moved out of Wesley
 
 Evidence:
 
-- `packages/wesley-generator-supabase/`
+- removed `packages/wesley-generator-supabase/`
 - `packages/wesley-stack-supabase-nextjs/`
 - `packages/wesley-host-node/package.json`
 - `packages/wesley-runtime-node/package.json`
@@ -287,18 +288,18 @@ Evidence:
 
 Why it is non-generic:
 
-- the generator package emits PostgreSQL DDL, RLS, and pgTAP tests
+- the removed generator package emitted PostgreSQL DDL, RLS, and pgTAP tests
 - the stack package describes a Supabase + Next.js template
 - root and runtime package metadata still pull in PostgreSQL/Supabase tooling
 
 New home:
 
-- move PostgreSQL/Supabase generation into `wesley-postgres`
+- PostgreSQL/Supabase generation package now lives in `wesley-postgres`
 - move stack-specific scaffolding into `wesley-postgres` or a stack-owned repo
 
 Result:
 
-- database package ownership becomes explicit
+- database generator package ownership is explicit
 - Wesley package metadata stops implying PostgreSQL/Supabase is core
 
 ### 6. Holmes has a `git-warp` counterfactual provider in generic shared code

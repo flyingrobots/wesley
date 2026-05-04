@@ -15,7 +15,6 @@
   },
   "dependencies": {
     "@wesley/core": "workspace:*",
-    "@wesley/generator-supabase": "workspace:*",
     "graphql": "^16.9.0"
   },
   "engines": {
