@@ -1,9 +1,0 @@
-{
-  "schema": "type OptTest { value: String }\ntype Query { t: OptTest }",
-  "type": "OptTest",
-  "vectors": [
-    { "label": "none", "value": { "value": null }, "raw_le_hex": "00" },
-    { "label": "some-empty", "value": { "value": "" }, "raw_le_hex": "0100000000" },
-    { "label": "some-hello", "value": { "value": "hello" }, "raw_le_hex": "010500000068656c6c6f" }
-  ]
-}

@@ -567,7 +567,6 @@ packages/
 ├── wesley-cli/
 ├── wesley-continuum/
 ├── wesley-core/
-├── wesley-generator-echo/
 ├── wesley-generator-js/
 ├── wesley-generator-supabase/
 ├── wesley-generator-vue/
@@ -786,7 +785,6 @@ Foundational cleanup that must land before transmutation work begins. These addr
 If a generator needs a domain-specific shape (e.g., JS generators need `Schema`), the adapter lives inside the transmutation module — not in the CLI command. This makes generators self-contained and testable in isolation.
 
 **Files**:
-- `packages/wesley-generator-echo/src/index.mjs` — align `generateEcho()` signature
 - `packages/wesley-generator-js/src/index.mjs` — internalize `irToSchema()` conversion
 - `packages/wesley-generator-supabase/src/index.mjs` — align `emitDDL()` etc.
 - `packages/wesley-core/src/application/LoweringEngine.mjs` — centralize SDL/IR/domain lowering before orchestration

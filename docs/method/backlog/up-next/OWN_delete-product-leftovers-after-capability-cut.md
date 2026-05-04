@@ -149,5 +149,12 @@ Deleted in the CLI Echo dependency cleanup slice:
 - `pnpm-lock.yaml` no longer links `@wesley/generator-echo` into the
   `packages/wesley-cli` importer
 
-The Echo generator package itself remains tracked as separate Continuum
-generator package residue.
+Deleted in the Echo generator package cleanup slice:
+
+- `packages/wesley-generator-echo/`
+- `@wesley/generator-echo` progress metadata
+- the package-local Echo IR, codec, golden vector, and plugin adapter tests
+- the now-superseded bad-code note for the package's host-node dependency audit
+
+The matching extraction-map row now marks Continuum generator packages as done.
+Any future Echo or TTD generator belongs in a Continuum-owned module/repo.

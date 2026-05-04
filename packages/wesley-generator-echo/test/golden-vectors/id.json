@@ -1,8 +1,0 @@
-{
-  "schema": "type IdTest { value: ID! }\ntype Query { t: IdTest! }",
-  "type": "IdTest",
-  "vectors": [
-    { "label": "short-id", "value": { "value": "abc123" }, "raw_le_hex": "06000000616263313233" },
-    { "label": "uuid", "value": { "value": "550e8400-e29b-41d4-a716-446655440000" }, "raw_le_hex": "2400000035353065383430302d653239622d343164342d613731362d343436363535343430303030" }
-  ]
-}

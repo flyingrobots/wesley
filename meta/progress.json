@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-13T22:59:35.497Z",
+  "generatedAt": "2026-05-04T00:11:33.088Z",
   "overall": {
     "stage": "MVP",
     "next": "Alpha",
@@ -83,25 +83,6 @@
       "coverage": null
     },
     {
-      "name": "@wesley/generator-echo",
-      "status": "Active",
-      "stage": "MVP",
-      "progress": 20,
-      "next": "Alpha",
-      "passRate": null,
-      "docs": {
-        "hasStatus": false,
-        "hasUsage": true,
-        "hasApi": true,
-        "hasCaveats": true
-      },
-      "milestones": {
-        "alpha": null,
-        "beta": null
-      },
-      "coverage": null
-    },
-    {
       "name": "@wesley/generator-js",
       "status": "Active",
       "stage": "MVP",
@@ -150,25 +131,6 @@
         "hasStatus": false,
         "hasUsage": false,
         "hasApi": true,
-        "hasCaveats": false
-      },
-      "milestones": {
-        "alpha": null,
-        "beta": null
-      },
-      "coverage": null
-    },
-    {
-      "name": "@wesley/continuum",
-      "status": "Active",
-      "stage": "MVP",
-      "progress": 20,
-      "next": "Alpha",
-      "passRate": null,
-      "docs": {
-        "hasStatus": true,
-        "hasUsage": true,
-        "hasApi": false,
         "hasCaveats": false
       },
       "milestones": {

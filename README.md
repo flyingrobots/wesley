@@ -64,13 +64,12 @@ Progress: 59% → Alpha
 <!-- BEGIN:PACKAGE_MATRIX -->
 | Package | Status | Stage | Progress | CI | Notes |
 | --- | --- | --- | --- | --- | --- |
-| `@wesley/core` | Active | MVP | 45% → Alpha | — | Generic compiler kernel, no domain targets |
+| `@wesley/core` | Active | MVP | 45% → Alpha | — | Pure domain logic, no Node builtins |
 | `@wesley/cli` | Active | Alpha | 50% → Beta | — | CLI + Bats suites |
 | `@wesley/host-node` | Active | MVP | 50% → Alpha | — | Node adapters + binary |
 | `@wesley/host-browser` | Experimental | MVP | 40% → Alpha | — | Pure ESM; in-memory FS; minimal parser; smoke-level only |
-| `@wesley/generator-echo` | Extraction debt | MVP | 20% → Alpha | — | Wrong-repo Continuum residue |
 | `@wesley/generator-js` | Active | MVP | 50% → Alpha | — | TS/Zod emitters |
-| `@wesley/generator-supabase` | Extraction debt | MVP | 50% → Alpha | — | Move to `wesley-postgres` |
+| `@wesley/generator-supabase` | Active | MVP | 50% → Alpha | — | SQL/RLS/pgTAP emitters |
 | `@wesley/generator-vue` | Experimental | MVP | 0% → Alpha | — | Vue-facing TS/composable emitters |
 | `@wesley/holmes` | Active | Alpha | 50% → Beta | — | Evidence scoring |
 | `@wesley/runtime-node` | Active | MVP | 0% → Alpha | — | Shared Node runtime adapters |
@@ -79,7 +78,7 @@ Progress: 59% → Alpha
 | `@wesley/host-deno` | Experimental | Alpha | 50% → Beta | — | Deno host runtime (demo) |
 | `@wesley/host-bun` | Experimental | Alpha | 50% → Beta | — | Bun host runtime (demo) |
 | `@wesley/scaffold-multitenant` | Too soon | Prototype | 50% → MVP | — | Early scaffold, no CI yet |
-| `@wesley/stack-supabase-nextjs` | Extraction debt | Prototype | 50% → MVP | — | Move to `wesley-postgres` or a stack repo |
+| `@wesley/stack-supabase-nextjs` | Too soon | Prototype | 50% → MVP | — | Early stack template, no CI yet |
 | `@wesley/test-fixtures` | Active | MVP | 20% → Alpha | — | Private shared fixtures + schema builders |
 <!-- END:PACKAGE_MATRIX -->
 

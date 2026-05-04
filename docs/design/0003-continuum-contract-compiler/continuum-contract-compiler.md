@@ -65,8 +65,8 @@ This cycle stays brutally narrow.
 
 - Wesley previously shipped a real TTD compile path through
   `wesley compile-ttd`; generic Wesley no longer ships that public command.
-- Wesley already ships a real Echo schema-to-codec path through
-  `@wesley/generator-echo`.
+- Wesley previously shipped a real Echo schema-to-codec path through
+  `@wesley/generator-echo`; generic Wesley no longer carries that package.
 - Wesley previously shipped a first repo-visible Echo wrapper through
   `wesley bundle-echo`, which wrote bundle artifacts and a mocked
   `warp-ttd`-style `deliveries` inspect surface for local review; generic

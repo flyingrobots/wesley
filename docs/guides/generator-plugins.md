@@ -242,7 +242,7 @@ Register plugins in `wesley.config.mjs` under the `generators` array:
 export default {
   generators: [
     // Minimal: just a package specifier
-    { package: '@wesley/generator-echo' },
+    { package: '@wesley/generator-vue' },
 
     // With per-plugin config passed to init()
     {
@@ -270,53 +270,6 @@ Each entry in the `generators` array supports:
 Plugin discovery resolves each package, looks for a `default`, `plugin`, or `Plugin` export, instantiates it if it is a class, validates the contract, and calls `init()` with the entry's `config` if provided.
 
 ---
-
-## Real-World Example: EchoPlugin
-
-The `EchoPlugin` in `packages/wesley-generator-echo/src/EchoPlugin.mjs` is a production generator that compiles GraphQL SDL into Echo IR, TypeScript client/schemas, and Rust codecs — all in a single one-pass profile. Key patterns to learn from:
-
-- **Private fields** for configuration state (`#mutationIdNamespace`, `#queryNamespace`)
-- **`init()`** to accept config overrides
-- **`plan()`** declares all potential artifacts (including conditional ones) and stores SDL + config in `metadata`
-- **`generate()`** delegates to the existing `generateEcho()` function and reshapes the output into `Record<string, string>`
-- **Post-processing**: computes canonical hashes and hash chain after generation
-- **Adapter pattern**: wraps a legacy `{ files: [{path, content}] }` API into the plugin contract without breaking backward compatibility
-
-```mjs
-import { GeneratorPlugin } from '@wesley/core';
-
-export class EchoPlugin extends GeneratorPlugin {
-  get apiVersion() { return '1'; }
-  get name() { return 'echo'; }
-
-  async plan(schema, context) {
-    return {
-      artifacts: [
-        { path: 'ir.json', reason: 'Echo IR (echo-ir/v2)' },
-        { path: 'ops.generated.ts', reason: 'Operation IDs and metadata' },
-        { path: 'schemas.generated.ts', reason: 'Validation schemas' },
-        { path: 'client.generated.ts', reason: 'Type-safe client helpers' },
-        { path: 'raw_le_codec.generated.ts', reason: 'TS binary codec (conditional)' },
-        { path: 'raw_le_codec.generated.rs', reason: 'Rust binary codec (conditional)' },
-        // ...
-      ],
-      metadata: { sdl: schema.sdl },
-    };
-  }
-
-  async generate(plan, context) {
-    // Delegate to existing function, reshape output
-    const result = await generateEcho(plan.metadata);
-    const artifacts = Object.create(null);
-    for (const file of result.files) {
-      artifacts[file.path] = file.content;
-    }
-    return artifacts;
-  }
-}
-```
-
-See the full source at [`packages/wesley-generator-echo/src/EchoPlugin.mjs`](../../packages/wesley-generator-echo/src/EchoPlugin.mjs).
 
 ## Real-World Example: VuePlugin
 

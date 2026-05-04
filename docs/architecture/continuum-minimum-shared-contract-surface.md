@@ -82,8 +82,8 @@ Authored file:
 - `schemas/echo-core-types.graphql`
 
 Current role:
-- canonical CAS-facing payload and storage nouns currently exercised through
-  `@wesley/generator-echo` IR and codec paths
+- canonical CAS-facing payload and storage nouns still carried as repo-local
+  residue; the generic Wesley Echo generator package has been retired
 
 Included nouns:
 - `FieldPatch`
@@ -93,15 +93,14 @@ Included nouns:
 - `PrivateAtomRefV1`
 - `OpaqueRefV1`
 
-Current derived surfaces:
-- `@wesley/generator-echo` IR output
+Former Wesley-local derived surfaces, now external-module responsibility:
+- Echo IR output
 - generated codec implementations and golden vectors used to pin layout and
   field ordering
 
 Repo evidence:
-- `packages/wesley-generator-echo/test/core-types.test.mjs`
-- `packages/wesley-generator-echo/test/privacy-types-encoding.test.mjs`
-- `packages/wesley-generator-echo/test/golden-vectors/privacy-types.json`
+- `schemas/echo-core-types.graphql`
+- `docs/design/wesley-extraction-map.md`
 
 ### 3. Continuum Receipt Family
 
