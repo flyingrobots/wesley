@@ -9,7 +9,7 @@ import { createRunId } from '@wesley/core';
 import {
   ensureGeneratePreconditions,
   runSequentialGeneration,
-  runTasksAndSlapsGeneration
+  runTaskGraphGeneration
 } from './generate-execution.mjs';
 import {
   assertTransmutationPrerequisites,
@@ -129,7 +129,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
       logger.info({ schema: schemaPath }, 'Parsing schema...');
     }
 
-    const { planner, runner } = this.ctx;
+    const { planner } = this.ctx;
 
     const needsSequentialPipeline =
       options.unit ||
@@ -138,8 +138,8 @@ export class GeneratePipelineCommand extends WesleyCommand {
       options.printComposedSdl ||
       registration.supportsTasksRunner !== true;
     const useExperimentalTasksRunner = String(this.ctx?.env?.WESLEY_EXPERIMENTAL_TASKS || '') === '1';
-    if (planner && runner && planner.buildPlan && runner.run && useExperimentalTasksRunner && !needsSequentialPipeline && !options.resume) {
-      return this.executeWithTasksAndSlaps(context);
+    if (planner && planner.buildPlan && useExperimentalTasksRunner && !needsSequentialPipeline && !options.resume) {
+      return this.executeWithTaskGraph(context);
     }
 
     return runSequentialGeneration({
@@ -148,8 +148,8 @@ export class GeneratePipelineCommand extends WesleyCommand {
     });
   }
 
-  async executeWithTasksAndSlaps(context) {
-    return runTasksAndSlapsGeneration({
+  async executeWithTaskGraph(context) {
+    return runTaskGraphGeneration({
       ctx: this.ctx,
       context
     });

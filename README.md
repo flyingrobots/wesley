@@ -73,7 +73,6 @@ Progress: 61% → Alpha
 | `@wesley/holmes` | Active | Alpha | 50% → Beta | — | Evidence scoring |
 | `@wesley/runtime-node` | Active | MVP | 0% → Alpha | — | Shared Node runtime adapters |
 | `@wesley/tasks` | Active | MVP | 50% → Alpha | — | Planner utilities |
-| `@wesley/slaps` | Active | MVP | 50% → Alpha | — | Scheduling/core utils |
 | `@wesley/host-deno` | Experimental | Alpha | 50% → Beta | — | Deno host runtime (demo) |
 | `@wesley/host-bun` | Experimental | Alpha | 50% → Beta | — | Bun host runtime (demo) |
 | `@wesley/scaffold-multitenant` | Too soon | Prototype | 50% → MVP | — | Early scaffold, no CI yet |

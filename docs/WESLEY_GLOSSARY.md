@@ -98,7 +98,6 @@ Packages that support scheduling, planning, fixtures, or internal shared operati
 Examples:
 
 - `@wesley/tasks`
-- `@wesley/slaps`
 - `@wesley/test-fixtures`
 
 #### Scaffolds And Stacks

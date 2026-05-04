@@ -36,23 +36,14 @@ export async function createNodeRuntime() {
     console.warn('Warning: @wesley/generator-js not available, using stubs');
   }
 
-  // Try to load planner and runner
+  // Try to load the generic task planner
   let planner = null;
-  let runner = null;
 
   try {
     planner = await import('@wesley/tasks');
   } catch (_e) {
     if (process.env.WESLEY_WARN_MISSING === '1') {
       console.warn('Warning: @wesley/tasks not available');
-    }
-  }
-
-  try {
-    runner = await import('@wesley/slaps');
-  } catch (_e) {
-    if (process.env.WESLEY_WARN_MISSING === '1') {
-      console.warn('Warning: @wesley/slaps not available');
     }
   }
 
@@ -165,9 +156,8 @@ export async function createNodeRuntime() {
       }
     },
 
-    // Planning and execution (may be null)
+    // Planning (may be null); execution engines are module-owned.
     planner,
-    runner,
 
     // File writer
     writer: {

@@ -5,7 +5,6 @@ Legacy `TASKS.md` still carried explicit coverage gaps for:
 - `@wesley/generator-js`
 - `@wesley/host-bun`
 - `@wesley/scaffold-multitenant`
-- `@wesley/slaps`
 - deeper `@wesley/host-browser` behavior beyond the tiny smoke surface
 
 Done when:

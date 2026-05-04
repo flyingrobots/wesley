@@ -67,6 +67,7 @@ or no advertised product surface.
 | Supabase generator package | removed Wesley-local `packages/wesley-generator-supabase/`, its package-local workflow, test harness, CODEOWNERS entry, workspace lockfile importer, progress metadata, and workspace dependency edges; `wesley-postgres` owns `packages/wesley-generator-supabase/` | Done | Generic Wesley no longer ships the Supabase generator package. Remaining Postgres core/runtime emitters are tracked by the separate core-export and host/runtime coupling rows. |
 | Supabase/Next stack package | removed Wesley-local `packages/wesley-stack-supabase-nextjs/`, its CODEOWNERS entry, architecture boundary required-package entry, progress metadata, and lockfile importer; `wesley-postgres` owns `packages/wesley-stack-supabase-nextjs/` | Done | Generic Wesley no longer ships the Supabase + Next.js stack template. |
 | PostgreSQL/Supabase host/runtime coupling | removed Node database config/adapter/compiler files and Postgres generator adapters; `createNodeRuntime.mjs` now exposes generic parsing, JS generators, event store, filesystem, and writer shims; `wesley-postgres-node` owns the relocated database helpers | Done | Generic host/runtime packages no longer synthesize PostgreSQL outputs or wire database generators. |
+| PostgreSQL lock-aware execution package | removed `packages/wesley-slaps/`, the optional `@wesley/slaps` host-node import, package workflow, CODEOWNERS entry, and active docs that advertised SLAPS as a generic Wesley package; `wesley-postgres` owns `packages/wesley-postgres-slaps/` | Done | Wesley keeps generic `@wesley/tasks` planning and task graph descriptors; PostgreSQL SQL execution, lock matrices, deadlock handling, and `pg` pool integration belong to `wesley-postgres`. |
 | PostgreSQL fixtures and smoke scripts | removed root Postgres Docker compose files, Postgres/QIR schemas, QIR docs, Postgres smoke scripts, QIR/ops fixtures, pgTAP examples, and database E2E harness files; `wesley-postgres` owns the moved copies | Done | Database fixture and smoke coverage now belongs to the database repo. |
 | Root PostgreSQL parser dependency | removed root and `@wesley/core` `@supabase/pg-parser` dependencies, lockfile entries, and stale `packages/wesley-core/package-lock.json` | Done | Wesley package metadata no longer implies PostgreSQL parsing is part of the base platform. |
 | Holmes `git-warp` provider | `packages/wesley-holmes/src/counterfactual/provider.mjs`, `policy.mjs`, `@git-stunts/*` deps | Relocate | Move provider/policy defaults into Continuum/module ownership after Holmes has a module capability seam for counterfactual providers. |
@@ -304,6 +305,36 @@ Result:
 - database generator package ownership is explicit
 - database stack template ownership is explicit
 - Wesley package metadata stops implying PostgreSQL/Supabase is core
+
+### 5b. PostgreSQL lock-aware execution moved out of Wesley
+
+Moved out:
+
+- `packages/wesley-slaps/`
+- `.github/workflows/pkg-slaps.yml`
+- the optional `@wesley/slaps` load path in
+  `packages/wesley-host-node/src/adapters/createNodeRuntime.mjs`
+- active docs and metadata that listed `@wesley/slaps` as a Wesley package
+
+Why it is non-generic:
+
+- the executor classifies SQL statements by PostgreSQL lock behavior
+- it embeds PostgreSQL lock levels such as `ACCESS_EXCLUSIVE` and
+  `SHARE_UPDATE_EXCLUSIVE`
+- it handles PostgreSQL-specific behavior such as `CREATE INDEX CONCURRENTLY`,
+  `SET lock_timeout`, transaction SQL, and deadlock code `40P01`
+- it expects a `pg`-style connection pool
+
+New home:
+
+- `wesley-postgres/packages/wesley-postgres-slaps/`
+
+Result:
+
+- `@wesley/tasks` remains in Wesley as the generic DAG and task abstraction
+- `TransmutationRunner.buildTaskGraph()` remains in Wesley as the generic task
+  descriptor surface
+- PostgreSQL lock-aware execution belongs to `wesley-postgres`
 
 ### 6. Holmes has a `git-warp` counterfactual provider in generic shared code
 

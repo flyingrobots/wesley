@@ -1,4 +1,4 @@
-# GH-166 enhancement(host-node): gate missing tasks/slaps warnings
+# GH-166 enhancement(host-node): gate missing tasks warnings
 
 - Imported from: GitHub issue
 - Issue: #166
@@ -23,11 +23,13 @@ Trigger: default: runtime, host, operator-flow, CI, or repo execution surface.
 
 Tie into config management so operators can choose default verbosity.
 
-# [HOST-166] enhancement(host-node): gate missing tasks/slaps warnings
+# [HOST-166] enhancement(host-node): gate missing tasks warnings
 
 ## Overview
 
-Make the runtime warnings about missing `@wesley/tasks` / `@wesley/slaps` optional or verbose-only so default runs stay quiet while power users can still enable diagnostics.
+Make the runtime warning about missing `@wesley/tasks` optional or verbose-only so default runs stay quiet while power users can still enable diagnostics.
+
+`@wesley/slaps` moved to `wesley-postgres` as `@wesley/postgres-slaps`; generic host-node no longer attempts to load it.
 
 ## References & Assets
 
@@ -39,11 +41,11 @@ Make the runtime warnings about missing `@wesley/tasks` / `@wesley/slaps` option
 
 ## User Story
 
-As a **developer running Wesley**, I want **to suppress optional tasks/slaps warnings unless I opt in**, so that **standard runs don’t surface noise when those packages aren’t installed**.
+As a **developer running Wesley**, I want **to suppress optional tasks warnings unless I opt in**, so that **standard runs don’t surface noise when the package is not installed**.
 
 ## Acceptance Criteria
 
-- [ ] Introduce config/flag to control missing tasks/slaps warnings (default: silent).
+- [ ] Introduce config/flag to control missing tasks warnings (default: silent).
 - [ ] Warnings emitted only when explicit verbose/debug mode enabled.
 - [ ] Documentation updated to explain how to enable diagnostics.
 - [ ] Tests cover both silent and verbose modes.
@@ -61,7 +63,7 @@ Configurable warning behaviour merged, tests passing, docs updated, and TASKLIST
 
 ### Out-of-Scope
 
-- New features for tasks/slaps integration
+- New features for external executor integration
 
 ### Deliverables
 
@@ -92,7 +94,7 @@ Add configuration (env/CLI flag) to gate warnings, adjust runtime to respect set
 ### Happy Path
 
 - [ ] Default run produces no warnings.
-- [ ] Enabling verbose flag emits warnings when tasks/slaps missing.
+- [ ] Enabling verbose flag emits warnings when tasks are missing.
 
 ### Edge Cases
 

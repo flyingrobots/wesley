@@ -21,7 +21,8 @@ timeline
 - Continuum-specific behavior belongs in Continuum or a Continuum-owned module
   repo.
 - PostgreSQL/Supabase behavior belongs in `wesley-postgres`, not in
-  `wesley-core`, Wesley generators, or generic host packages.
+  `wesley-core`, Wesley generators, generic host packages, or generic task
+  execution packages.
 
 ### 2. Module Capability Runtime
 - Using the basic module capability registry as the default seam between

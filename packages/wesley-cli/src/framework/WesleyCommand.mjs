@@ -10,7 +10,7 @@ import { exitCodeFor } from '@wesley/core/domain/ExitCodes';
 const LOG_LEVELS = { trace: 5, debug: 10, info: 30, warn: 40, error: 50, fatal: 60, silent: 100 };
 
 export class WesleyCommand {
-  /** @param {{ logger:any, fs:any, env:any, stdin:any, stdout:any, stderr:any, parsers:any, generators:any, planner:any, runner:any, writer:any, clock:any }} ctx */
+  /** @param {{ logger:any, fs:any, env:any, stdin:any, stdout:any, stderr:any, parsers:any, generators:any, planner:any, writer:any, clock:any }} ctx */
   constructor(ctx, name, description) {
     this.ctx = ctx;
     this.name = name;

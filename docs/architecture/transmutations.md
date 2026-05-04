@@ -575,7 +575,6 @@ packages/
 ├── wesley-host-deno/
 ├── wesley-host-node/
 ├── wesley-scaffold-multitenant/
-├── wesley-slaps/
 └── wesley-tasks/
 ```
 
@@ -628,7 +627,6 @@ packages/
 │   └── browser/                   #   @wesley/host-browser
 │
 ├── tasks/                         # @wesley/tasks (T.A.S.K.S.)
-├── slaps/                         # @wesley/slaps (S.L.A.P.S.)
 │
 └── stacks/                        # Full-stack scaffolds
     └── scaffold-multitenant/
@@ -828,7 +826,7 @@ graph LR
 
 #### 0c. Wire T.A.S.K.S. into transmutation execution
 
-**Problem**: `@wesley/tasks` has a complete DAG engine (`TaskDefinition`, `TaskDependency`, `TaskGraph`). `@wesley/slaps` has lock-aware execution (`LockAwareExecutor`, `TasksSlapsBridge`). Both are implemented, tested, and sitting unused. Meanwhile, the CLI's `generate` command runs generators in a hardcoded sequence.
+**Problem**: `@wesley/tasks` has a complete DAG engine (`TaskDefinition`, `TaskDependency`, `TaskGraph`) but generic generation still runs through the sequential pipeline. The old `@wesley/slaps` PostgreSQL lock-aware executor moved to `wesley-postgres` as `@wesley/postgres-slaps`, so base Wesley should expose task graphs without depending on a database executor.
 
 The sequential registry now carries more of the orchestration truth than it did originally: transmutations register their own prerequisites, plugin construction, and runtime capabilities, and the built-in `null-generator` witness exercises that seam without adding special cases to the runner.
 
@@ -844,17 +842,15 @@ graph LR
     G3 --> E
 ```
 
-The `TransmutationRunner` builds this graph from the transmutation config, then executes via `TasksSlapsBridge`. Benefits:
+The `TransmutationRunner` builds this graph from the transmutation config, then hosts or modules can feed the descriptor into a compatible executor. Benefits:
 
 - **Parallelism**: Independent generators run concurrently (DDL and types don't depend on each other)
 - **`--dry-run` for free**: Render the task graph without executing it
-- **Lock awareness**: S.L.A.P.S. handles migration locking when multiple transmutations touch the same database
+- **Executor ownership**: database lock awareness belongs to `@wesley/postgres-slaps`; generic Wesley owns only the DAG descriptor
 - **Evidence per task**: Each task completion emits an evidence record
 
 **Files**:
 - `packages/wesley-tasks/src/TaskDefinition.mjs` — ready, use as-is
-- `packages/wesley-slaps/src/TasksSlapsBridge.mjs` — integrate as executor
-- `packages/wesley-slaps/src/LockAwareExecutor.mjs` — ready, use as-is
 - New: `packages/wesley-core/src/application/TransmutationRunner.mjs` — orchestrator
 
 #### 0d. Standardize named exports (resolves CR-33)

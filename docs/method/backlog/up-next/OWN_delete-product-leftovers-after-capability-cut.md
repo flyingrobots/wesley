@@ -246,3 +246,17 @@ PostgreSQL/Supabase host/runtime coupling, PostgreSQL fixtures and smoke
 scripts, the root PostgreSQL parser dependency, and active product/database
 backlog/docs as done. Remaining product coupling is the separate Holmes
 `git-warp` counterfactual provider row.
+
+Moved in the PostgreSQL lock-aware execution slice:
+
+- `packages/wesley-slaps/` moved to `wesley-postgres` as
+  `packages/wesley-postgres-slaps/`
+- generic `createNodeRuntime.mjs` no longer tries to import `@wesley/slaps`
+- removed the package workflow, CODEOWNERS entry, README package matrix row, and
+  active docs that described SLAPS as a generic Wesley package
+- kept `@wesley/tasks` and `TransmutationRunner.buildTaskGraph()` in Wesley as
+  generic planning/task graph surfaces
+
+The matching extraction-map row now marks PostgreSQL lock-aware execution as
+done. Remaining product coupling is the separate Holmes `git-warp`
+counterfactual provider row.

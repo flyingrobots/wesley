@@ -191,7 +191,7 @@ export async function runSequentialGeneration({ ctx, context }) {
   }
 }
 
-export async function runTasksAndSlapsGeneration({ ctx, context }) {
+export async function runTaskGraphGeneration({ ctx, context }) {
   return runSequentialGeneration({ ctx, context });
 }
 
