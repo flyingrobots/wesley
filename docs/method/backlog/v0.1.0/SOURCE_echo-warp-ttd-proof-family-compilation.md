@@ -68,5 +68,5 @@ The first proof family should be narrow and boring, but it must cover:
 - Continuum `0015-echo-wesley-warp-ttd-proof-plan`
 - Continuum `0016-engine-local-vs-shared-observer-contract`
 - Continuum `0017-settlement-publication-and-shared-reintegration`
-- `schemas/continuum-receipt-family.graphql`
+- `continuum` owns `schemas/continuum-receipt-family.graphql`
 - `docs/design/0003-continuum-contract-compiler/continuum-contract-compiler.md`

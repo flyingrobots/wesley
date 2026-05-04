@@ -20,9 +20,10 @@ and no handwritten shadow contracts for the chosen shared nouns.
 ## Current Supporting Note
 
 - [Continuum Minimum Shared Contract Surface](../../architecture/continuum-minimum-shared-contract-surface.md)
-  names the finite repo-local authored surface Wesley currently carries:
-  `schemas/ttd-protocol.graphql` and `schemas/echo-core-types.graphql` under
-  `schemas/`.
+  names the finite owner-provided contract surface Wesley currently compiles:
+  `warp-ttd` owns the host-neutral debugger protocol, Echo owns Echo-local
+  CAS/runtime schema truth, and Continuum owns the shared receipt and
+  settlement families.
 - [Wesley Role In Continuum](../../architecture/continuum-wesley-role.md)
   states Wesley's current job as contract compiler, publication-boundary
   manager, conformance anchor, and judgment bridge, with explicit non-ownership
@@ -44,9 +45,11 @@ This cycle stays brutally narrow.
   surface.
 - The cycle target authored home for that family is
   `<continuum-root>/schemas/continuum-receipt-family.graphql`.
-- The original witness-backed minimum subset was
-  `schemas/ttd-protocol.graphql` plus `schemas/echo-core-types.graphql`; the
-  chosen family now has its own fixture-backed witness scope through
+- The original witness-backed minimum subset was the old Wesley-local
+  `ttd-protocol` plus `echo-core-types` pair. That pair has been split to the
+  owning repos: `warp-ttd` owns the debugger protocol and Echo owns the
+  Echo-local CAS/runtime schema.
+- The chosen family now has its own fixture-backed witness scope through
   `wesley witness-continuum --scope receipt-family`.
 - No second family enters the first proof lane this cycle.
 
@@ -75,10 +78,9 @@ This cycle stays brutally narrow.
   `wesley witness-continuum`, which proves local coherence for the current TTD
   and Echo minimum surfaces without pretending the frozen receipt-family lane
   already exists.
-- Wesley now carries the chosen receipt-family schema and ships
+- Continuum now carries the chosen receipt-family schema and ships
   family-specific fixtures, a real receipt-family witness scope, and a local
-  anti-shadow publication-boundary check, but it still lacks the ownership
-  table that would make the proving path feel fully boring.
+  anti-shadow publication-boundary check through its Wesley module.
 - Wesley now emits realization shells that carry `sourceHash`, signed artifact
   inventory, and witness status for compiled legs. Those shells are part of the
   proving path, but they are not the witness proof by themselves.

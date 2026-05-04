@@ -170,3 +170,20 @@ Moved in the TTD core relocation slice:
   `packages/wesley-core/src/domain/joinDirective.mjs`
 
 The matching extraction-map row now marks the TTD core package surface as done.
+
+Moved in the schema ownership split:
+
+- Wesley-local `schemas/ttd-protocol.graphql` was retired in favor of
+  `warp-ttd`'s canonical `schemas/warp-ttd-protocol.graphql`
+- Wesley-local `schemas/echo-core-types.graphql` and
+  `schemas/echo-wasm-abi.graphql` were removed; Echo tracks reconciliation in
+  `docs/method/backlog/inbox/PLATFORM_reconcile-relocated-wesley-echo-schemas.md`
+  instead of treating stale relocated SDL as active schema truth
+- Wesley-local `schemas/continuum-receipt-family.graphql` and
+  `schemas/continuum-settlement-family.graphql` were removed because
+  Continuum owns those authored families
+- Wesley-local `schemas/ttd-ir.schema.json` moved beside the Continuum-owned
+  TTD compiler at `continuum/wesley/ttd/schemas/ttd-ir.schema.json`
+
+The matching extraction-map rows now mark the product schema ownership split as
+done.

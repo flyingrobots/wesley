@@ -41,8 +41,8 @@ public contract drift or flatten the ontology.
 
 ## Repo Evidence
 
-- `schemas/ttd-protocol.graphql`
-- `schemas/continuum-receipt-family.graphql`
+- `warp-ttd` owns `schemas/warp-ttd-protocol.graphql`
+- `continuum` owns `schemas/continuum-receipt-family.graphql`
 - `docs/architecture/continuum-wesley-role.md`
 - `docs/architecture/continuum-minimum-shared-contract-surface.md`
 - Continuum `0001`, `0002`, and `0014`

@@ -21,9 +21,9 @@ Wesley previously shipped a repo-local `compile-ttd` path that parsed the
 That implementation has moved out of generic Wesley and now lives in the
 Continuum-owned `continuum/wesley/ttd/` tree.
 The authored schema that the retired path compiled lives at
-[`../../schemas/ttd-protocol.graphql`](../../schemas/ttd-protocol.graphql),
-and the generated manifest / TypeScript outputs are derived artifacts rather
-than peer authorities.
+the `warp-ttd` authored protocol home, `schemas/warp-ttd-protocol.graphql`.
+The generated manifest / TypeScript outputs are derived artifacts rather than
+peer authorities.
 
 During the domain-empty extraction, generic Wesley retired the public
 `compile-ttd` command and removed the `@wesley/core/ttd` package export. The

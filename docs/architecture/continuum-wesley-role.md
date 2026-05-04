@@ -86,8 +86,11 @@ For dynamic graph rewrites, that means Wesley should treat:
 
 Current repo-visible evidence:
 
-- `schemas/ttd-protocol.graphql`
-- `schemas/echo-core-types.graphql`
+- `warp-ttd` owns `schemas/warp-ttd-protocol.graphql`
+- `echo` owns current runtime schema fragments and ABI/runtime crates; old
+  Wesley-local Echo SDL is tracked as reconciliation work there
+- `continuum` owns `schemas/continuum-receipt-family.graphql` and
+  `schemas/continuum-settlement-family.graphql`
 - relocated Continuum-owned implementation at `continuum/wesley/ttd/`
 - `docs/design/wesley-extraction-map.md`
 
@@ -142,7 +145,7 @@ Wesley therefore carries two different proof-adjacent surfaces:
 
 Current repo-visible evidence:
 
-- `schemas/echo-core-types.graphql`
+- owner-provided schemas in `warp-ttd`, `echo`, and `continuum`
 - `docs/design/wesley-extraction-map.md`
 
 Current rule:
@@ -229,13 +232,14 @@ claim authorship by default.
 
 ## Current Limiting Truth
 
-Wesley now carries an authored `schemas/continuum-receipt-family.graphql` and
-`schemas/continuum-settlement-family.graphql`, plus real `receipt-family` and
-`settlement-family` witness scopes through `wesley witness`. That means the
-repo can now prove bounded local contract-family stacks from authored schema
-through TTD and Echo legs to conformance witnesses. This note still does not
-claim that the whole Continuum contract surface is frozen, or that Wesley owns
-runtime, storage, debugger, or substrate semantics outside those bounded proof
-lanes. The release and sync shape for turning those bounded proofs into one
-boring consumer bundle now lives in
+Continuum now carries authored `schemas/continuum-receipt-family.graphql` and
+`schemas/continuum-settlement-family.graphql`, and the Continuum Wesley module
+ships real `receipt-family` and `settlement-family` witness scopes through
+`wesley witness`. That means the stack can now prove bounded local
+contract-family paths from owner-authored schemas through TTD and Echo legs to
+conformance witnesses. This note still does not claim that the whole Continuum
+contract surface is frozen, or that Wesley owns runtime, storage, debugger, or
+substrate semantics outside those bounded proof lanes. The release and sync
+shape for turning those bounded proofs into one boring consumer bundle now
+lives in
 `docs/design/0005-continuum-contract-bundle-release-and-sync/continuum-contract-bundle-release-and-sync.md`.

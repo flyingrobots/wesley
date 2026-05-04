@@ -31,8 +31,7 @@ guessing.
 ## Done looks like
 
 - the canonical authored protocol location is named explicitly
-- Wesley's local `schemas/ttd-protocol.graphql` is marked as authoritative,
-  generated, compat-only, or retired
+- Wesley's local `schemas/ttd-protocol.graphql` is retired
 - `docs/plans/ttd-protocol-compiler.md` and
   `docs/features/ttd-protocol-compiler.md` tell the same ownership story
 - compile entry points, manifests, and generated outputs point at the chosen
@@ -42,7 +41,8 @@ guessing.
 
 ## Repo Evidence
 
-- `schemas/ttd-protocol.graphql`
+- `warp-ttd` owns `schemas/warp-ttd-protocol.graphql`
+- Wesley's former `schemas/ttd-protocol.graphql` copy was removed
 - `docs/plans/ttd-protocol-compiler.md`
 - `docs/features/ttd-protocol-compiler.md`
 - `docs/design/0003-continuum-contract-compiler/continuum-contract-compiler.md`
