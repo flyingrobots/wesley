@@ -9,10 +9,6 @@ inputs:
     description: Path to the schema SDL used for generation
     required: false
     default: test/fixtures/examples/ecommerce.graphql
-  ops-dir:
-    description: Path to the ops directory (relative to schema directory)
-    required: false
-    default: ./ops
   out-dir:
     description: Generation output directory (relative to schema directory)
     required: false
@@ -91,7 +87,6 @@ runs:
           node "$GITHUB_WORKSPACE/packages/wesley-host-node/bin/wesley.mjs" generate \
             --schema "$SCHEMA_FILE" \
             --emit-bundle \
-            --ops "${{ inputs.ops-dir }}" \
             --allow-dirty \
             --out-dir "${{ inputs.out-dir }}"
           popd >/dev/null
@@ -109,7 +104,6 @@ runs:
         node "$GITHUB_WORKSPACE/packages/wesley-host-node/bin/wesley.mjs" generate \
           --schema "$SCHEMA_FILE" \
           --emit-bundle \
-          --ops "${{ inputs.ops-dir }}" \
           --allow-dirty \
           --out-dir "${{ inputs.out-dir }}"
         popd >/dev/null

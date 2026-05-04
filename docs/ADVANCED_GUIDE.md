@@ -17,7 +17,8 @@ Wesley uses a platform-neutral IR to decouple the authored schema from the gener
 Wesley extends GraphQL SDL with custom directives to capture systems-level intent. These are the "Instruction Manual" for the compiler.
 
 - **`@wesley(id: "...")`**: Registers a type or field in the global registry.
-- **`@storage(backend: "postgres")`**: Maps a schema entity to a physical database table.
+- **Module-owned storage directives**: Database modules define storage
+  directives outside generic Wesley.
 - **`@policy(rule: "no-breaking")`**: Injects a HOLMES invariant check into the transmutation pipeline.
 
 See [DIRECTIVES.md](./DIRECTIVES.md) for the full truth table.
@@ -27,10 +28,9 @@ See [DIRECTIVES.md](./DIRECTIVES.md) for the full truth table.
 HOLMES is the automated policy engine that guards Wesley's "Trustworthy Change" claim.
 
 ### Certification Pipeline
-1. **Plan**: Compare the new schema against the current-state IR.
-2. **Rehearse**: Simulate the transformation against mock targets.
-3. **Verify**: Run property-based tests to ensure idempotence and safety.
-4. **Witness**: Issue a machine-readable certificate of conformance.
+1. **Transform**: Lower the authored schema and execute loaded transmutations.
+2. **Verify**: Run module-owned or generic evidence checks.
+3. **Witness**: Issue a machine-readable certificate of conformance.
 
 ## Performance & Scaling
 

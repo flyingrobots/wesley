@@ -15,9 +15,4 @@ Current exports:
 - `createNodeCounterfactualSurfacePort`
 - `collectCounterfactualSurfaceModel`
 - `ensureCounterfactualWorkspaceArtifacts`
-- `createPostgresGeneratorAdapters`
-- `emitDDL`
-- `emitMigrations`
-- `emitPgTap`
-- `emitRLS`
 - `resolveLedgerRootDir`

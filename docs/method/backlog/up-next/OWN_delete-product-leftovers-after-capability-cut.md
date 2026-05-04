@@ -49,7 +49,6 @@ inventory classifies each remaining surface as:
 
 - `delete`
 - `relocate`
-- `defer`
 
 There is no product legacy-support requirement. Each implementation slice should
 pick one classified row and either remove it from Wesley or prove that its
@@ -224,3 +223,26 @@ Moved in the Supabase/Next stack package cleanup slice:
 The matching extraction-map row now marks the Supabase/Next stack package as
 done. Remaining database residue lives in the core-export, host/runtime
 coupling, fixture/smoke, and root parser dependency rows.
+
+Moved in the PostgreSQL/QIR core and harness relocation slice:
+
+- PostgreSQL-family core exports, implementations, and tests were removed from
+  `packages/wesley-core/`
+- SQL/test/diff ports, advisory lock helpers, transaction helpers, PostgreSQL
+  sanitizers, and database safety validation moved to `@wesley/postgres-core`
+- database CLI commands (`plan`, `rehearse`, `up`, `generate-ops`,
+  `qir-validate`, and the old BLADE database command) were removed from
+  `@wesley/cli`
+- Node database adapters and Postgres generator adapters were removed from
+  generic host/runtime packages
+- root Postgres Docker compose files, smoke scripts, QIR schemas/specs/guides,
+  ops fixtures, pgTAP examples, and database E2E harness files were removed
+  from Wesley
+- active Postgres/QIR/Supabase backlog notes moved to `wesley-postgres`
+- `@supabase/pg-parser` was removed from Wesley package metadata and lockfiles
+
+The matching extraction-map rows now mark PostgreSQL-family core exports,
+PostgreSQL/Supabase host/runtime coupling, PostgreSQL fixtures and smoke
+scripts, the root PostgreSQL parser dependency, and active product/database
+backlog/docs as done. Remaining product coupling is the separate Holmes
+`git-warp` counterfactual provider row.

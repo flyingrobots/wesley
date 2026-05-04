@@ -42,18 +42,19 @@ timeline
 
 ## Tensions
 
-- **Wrong-Repo Residue**: Wesley still contains historical product and database
-  code that belongs in external modules.
+- **Wrong-Repo Residue**: Wesley still contains non-database product coupling,
+  especially the generic Holmes `git-warp` provider/policy surface.
 - **Capability Gap**: The module registry and compile target dispatch exist,
   but Holmes, Watson, Moriarty, and BLADE still need real runtime dispatch over
   module-owned capability collections.
-- **Documentation Drag**: Older docs still describe Continuum and PostgreSQL as
-  Wesley lanes instead of extraction targets.
+- **Documentation Drag**: Older historical/audit docs still mention old product
+  and database lanes; active docs should describe Wesley as domain-empty unless
+  they are explicit extraction notes.
 - **Verification Split**: Generic witness/evidence machinery needs to stay
   independent from module-owned proof scopes and domain policy.
 
 ## Next Target
 
-The immediate focus is **Domain-Empty Wesley**: build the module capability
-registry, make target dispatch module-owned, and remove or relocate every
-Continuum/PostgreSQL-shaped surface from the Wesley repo.
+The immediate focus is **Domain-Empty Wesley**: keep module target dispatch
+module-owned and finish moving the remaining non-database product coupling, with
+the Holmes `git-warp` provider as the next explicit extraction-map row.

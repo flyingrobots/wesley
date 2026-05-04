@@ -212,7 +212,7 @@ test('analyzeCounterfactual supports braid lanes and marks braid signals', async
   }
 });
 
-test('analyzeCounterfactual materializes missing workspace artifacts in process', async () => {
+test('analyzeCounterfactual leaves missing workspace artifacts unmaterialized in generic Wesley', async () => {
   const fixture = createRepoFixture({ prebuildSurface: false });
   const policy = defaultCounterfactualPolicy();
   policy.counterfactual.enabled = true;
@@ -234,18 +234,15 @@ test('analyzeCounterfactual materializes missing workspace artifacts in process'
       }
     });
 
-    assert.ok(report.facts.comparison.factDigest);
+    assert.equal(report.facts.comparison, null);
+    assert.equal(report.judgment.status, 'unsupported');
     assert.equal(
-      readFileSync(path.join(fixture.tempDir, GENERATED_ARTIFACT_DIR, 'bundle.json'), 'utf8').includes('"bundleVersion": "2.0.0"'),
-      true
+      existsSync(path.join(fixture.tempDir, GENERATED_ARTIFACT_DIR, 'bundle.json')),
+      false
     );
     assert.equal(
-      JSON.parse(readFileSync(path.join(fixture.tempDir, GENERATED_ARTIFACT_DIR, 'plan-report.json'), 'utf8')).transmutation,
-      'legacy-supabase'
-    );
-    assert.equal(
-      readFileSync(path.join(fixture.tempDir, 'out', 'schema.sql'), 'utf8').includes('CREATE TABLE IF NOT EXISTS'),
-      true
+      existsSync(path.join(fixture.tempDir, 'out', 'schema.sql')),
+      false
     );
   } finally {
     fixture.cleanup();

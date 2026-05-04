@@ -81,8 +81,6 @@ It also now has a more explicit METHOD closeout surface under
 - [Invariants](./invariants/README.md)
 - [Legends](./method/legends/README.md)
 - [Directive Truth Table](./DIRECTIVES.md)
-- [QIR Specification](./spec/qir.md)
-- [IR Family Specification](./spec/ir-family-spec.md)
 
 ## Current Honesty Rules
 

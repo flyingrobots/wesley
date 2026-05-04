@@ -9,7 +9,6 @@
     "./domain": "./src/domain/index.mjs",
     "./application": "./src/application/index.mjs",
     "./ports": "./src/ports/index.mjs",
-    "./domain/qir": "./src/domain/qir/index.mjs",
     "./domain/SchemaResolver": "./src/domain/SchemaResolver.mjs",
     "./domain/ExitCodes": "./src/domain/ExitCodes.mjs",
     "./domain/SchemaFilter": "./src/domain/SchemaFilter.mjs",
@@ -52,7 +51,6 @@
   },
   "homepage": "https://github.com/flyingrobots/wesley/tree/main/packages/wesley-core#readme",
   "dependencies": {
-    "@supabase/pg-parser": "^0.1.7",
     "graphql": "^16.11.0"
   },
   "devDependencies": {

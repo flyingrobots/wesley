@@ -5,10 +5,7 @@
 
 import {
   SchemaParsed,
-  SQLGenerated,
-  TypeScriptGenerated,
-  MigrationDiffCalculated,
-  MigrationSQLGenerated
+  TypeScriptGenerated
 } from '../domain/Events.mjs';
 
 export class ParseSchemaUseCase {
@@ -22,17 +19,6 @@ export class ParseSchemaUseCase {
   }
 }
 
-export class GenerateSQLUseCase {
-  constructor(generator) {
-    this.generator = generator;
-  }
-
-  async execute(schema) {
-    const sql = await this.generator.generate(schema);
-    return new SQLGenerated(sql, schema);
-  }
-}
-
 export class GenerateTypeScriptUseCase {
   constructor(generator) {
     this.generator = generator;
@@ -41,27 +27,5 @@ export class GenerateTypeScriptUseCase {
   async execute(schema) {
     const typescript = await this.generator.generate(schema);
     return new TypeScriptGenerated(typescript, schema);
-  }
-}
-
-export class CalculateMigrationDiffUseCase {
-  constructor(diffEngine) {
-    this.diffEngine = diffEngine;
-  }
-
-  async execute(previousSchema, currentSchema) {
-    const diff = await this.diffEngine.diff(previousSchema, currentSchema);
-    return new MigrationDiffCalculated(diff, previousSchema, currentSchema);
-  }
-}
-
-export class GenerateMigrationSQLUseCase {
-  constructor(generator) {
-    this.generator = generator;
-  }
-
-  async execute(diff) {
-    const sql = await this.generator.generate(diff);
-    return new MigrationSQLGenerated(sql, diff);
   }
 }

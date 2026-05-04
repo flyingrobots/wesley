@@ -43,13 +43,9 @@ load 'bats-plugins/bats-assert/load'
   assert_success
   [ "$output" -eq 1 ]
 
-  run bash -lc "grep -F 'plan --schema test/fixtures/blade/schema-v1.graphql --write --out-dir out' .github/workflows/cert-shipme.yml | wc -l"
-  assert_success
-  [ "$output" -eq 1 ]
-
   run bash -lc "grep -F 'rehearse --schema test/fixtures/blade/schema-v1.graphql' .github/workflows/cert-shipme.yml | wc -l"
   assert_success
-  [ "$output" -eq 1 ]
+  [ "$output" -eq 0 ]
 
   run bash -lc "grep -F '.wesley-cache/holmes-report.json' .github/workflows/cert-shipme.yml | wc -l"
   assert_success

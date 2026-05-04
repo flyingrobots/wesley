@@ -26,7 +26,6 @@ files=(
   test/progress-dry-run.bats
   test/progress-safety.bats
   test/ci-browser-smoke.bats
-  test/ci-pkg-core.bats
   test/ci-pkg-host-bun.bats
   test/ci-workflows.bats
   test/deno-host-webcrypto-guard.bats

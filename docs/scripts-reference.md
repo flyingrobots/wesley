@@ -15,7 +15,7 @@ Wesley uses `pnpm run <script>` to provide a common set of maintenance, test, an
 | `pnpm run format` / `format:check` | Prettier formatting helpers. | `format` rewrites files, `format:check` is read-only. |
 | `pnpm run validate` | Convenience chain: `lint`, `format:check`, `test`. | Use before opening a PR. |
 | `pnpm run preflight` | Repository hygiene checks (docs links, dependency boundaries, ESLint core purity, license audit). | Mirrors the CI preflight workflow. |
-| `node scripts/pre-push-sanity.mjs --dry-run --files <paths...>` | Preview which sanity checks the smart pre-push hook would run for a change set. | The tracked `.githooks/pre-push` delegates to this selector. Set `SKIP_PREPUSH_SANITY=1` to bypass everything, `SKIP_HOLMES_OPS_PREPUSH=1` to skip only the HOLMES Postgres smoke, and `SKIP_BATS_PREPUSH=1` to skip only the repo Bats lane. |
+| `node scripts/pre-push-sanity.mjs --dry-run --files <paths...>` | Preview which sanity checks the smart pre-push hook would run for a change set. | The tracked `.githooks/pre-push` delegates to this selector. Set `SKIP_PREPUSH_SANITY=1` to bypass everything and `SKIP_BATS_PREPUSH=1` to skip only the repo Bats lane. |
 | `pnpm run clean` | Remove generated artifacts (`out/`, `.wesley-cache/`, coverage, etc.). | See `scripts/clean.mjs` for the exact list. |
 
 ## Project Maintenance
@@ -24,8 +24,6 @@ Wesley uses `pnpm run <script>` to provide a common set of maintenance, test, an
 | --- | --- | --- |
 | `pnpm run setup:bats-plugins` | Download/update vendored Bats plugins for CLI tests. | Safe to re-run; used during devcontainer bootstrapping. |
 | `pnpm run meta:fix-packages` | Normalize package metadata. | Wraps `scripts/fix-package-metadata.mjs`. |
-| `pnpm run docker:up` / `docker:down` | Bring up / tear down the docker-compose stack. | Good for manual Postgres testing. |
-| `pnpm run docker:test` | Run pgTAP tests inside docker-compose. | Executes the `pgtap` service defined in compose. |
 
 ## Test Harnesses
 
@@ -51,13 +49,6 @@ Wesley uses `pnpm run <script>` to provide a common set of maintenance, test, an
 | Helper | Purpose | Notes |
 | --- | --- | --- |
 | `scripts/tasks-update.mjs` | Recomputes the ASCII progress header in `tasks-clean.md`. | Calculates the percentage and bar based on tasks with `[!success]` + checked "Issue resolved". |
-
-## Smoke Checks
-
-| Script | Purpose | Notes |
-| --- | --- | --- |
-| `pnpm run smoke:postgres-fixture` | Verify that the Postgres init fixture mounts and seeds correctly. | Starts a disposable container using `docker-compose.fixture-test.yml`, checks extensions, then tears down. |
-| `pnpm run smoke:holmes-ops` | Reproduce the HOLMES pgTAP SQL-apply seam locally. | Regenerates the example bundle/ops, starts the fixture Postgres, applies `schema.sql`, creates `wes_ops`, then applies generated view/function SQL. |
 
 ## Package-Specific Helpers
 

@@ -9,7 +9,6 @@ on:
 env:
   HOLMES_BUNDLE_DIR: test/fixtures/examples/.wesley-cache
   HOLMES_SCHEMA: test/fixtures/examples/ecommerce.graphql
-  HOLMES_OPS_DIR: ./ops
   HOLMES_OUT_DIR: out
   HOLMES_ARTIFACT: wesley-bundle
 
@@ -70,7 +69,6 @@ jobs:
         with:
           bundle-dir: ${{ steps.detect.outputs.bundle_dir }}
           schema: ${{ steps.detect.outputs.schema }}
-          ops-dir: ${{ env.HOLMES_OPS_DIR }}
           out-dir: ${{ env.HOLMES_OUT_DIR }}
           artifact-name: ${{ env.HOLMES_ARTIFACT }}
           always-generate: 'true'
@@ -128,7 +126,6 @@ jobs:
         with:
           bundle-dir: ${{ needs.wesley-generate.outputs.bundle_dir }}
           schema: ${{ needs.wesley-generate.outputs.schema }}
-          ops-dir: ${{ env.HOLMES_OPS_DIR }}
           out-dir: ${{ env.HOLMES_OUT_DIR }}
           artifact-name: ${{ env.HOLMES_ARTIFACT }}
           
@@ -170,7 +167,6 @@ jobs:
         with:
           bundle-dir: ${{ needs.wesley-generate.outputs.bundle_dir }}
           schema: ${{ needs.wesley-generate.outputs.schema }}
-          ops-dir: ${{ env.HOLMES_OPS_DIR }}
           out-dir: ${{ env.HOLMES_OUT_DIR }}
           artifact-name: ${{ env.HOLMES_ARTIFACT }}
           
@@ -214,7 +210,6 @@ jobs:
         with:
           bundle-dir: ${{ needs.wesley-generate.outputs.bundle_dir }}
           schema: ${{ needs.wesley-generate.outputs.schema }}
-          ops-dir: ${{ env.HOLMES_OPS_DIR }}
           out-dir: ${{ env.HOLMES_OUT_DIR }}
           artifact-name: ${{ env.HOLMES_ARTIFACT }}
           always-generate: 'true'
@@ -352,192 +347,6 @@ jobs:
           name: moriarty-report
           path: reports/moriarty
           if-no-files-found: error
-          
-  test-pgtap:
-    name: "🧪 pgTAP Tests"
-    runs-on: ubuntu-latest
-    needs: wesley-generate
-    
-    services:
-      postgres:
-        image: postgres:15@sha256:c635fa3e3b7421a659d34abdfd6d492f679cbe8149e261a501237b55c5a94212
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-          
-    steps:
-          
-      - name: Harden runner
-          
-        uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176
-          
-        with:
-          
-          egress-policy: audit
-      - name: "📦 Checkout Repository"
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        
-      - name: "🔧 Setup pnpm"
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320
-
-      - name: "🔧 Setup Node.js"
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f
-        with:
-          node-version: '22'
-          cache: 'pnpm'
-
-      - name: "🛠️ Setup HOLMES environment"
-        uses: ./.github/actions/holmes-setup
-        with:
-          bundle-dir: ${{ env.HOLMES_BUNDLE_DIR }}
-          schema: ${{ env.HOLMES_SCHEMA }}
-          ops-dir: ${{ env.HOLMES_OPS_DIR }}
-          out-dir: ${{ env.HOLMES_OUT_DIR }}
-          artifact-name: ${{ env.HOLMES_ARTIFACT }}
-          always-generate: 'true'
-          
-      - name: "🧪 Install pgTAP"
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y postgresql-client
-      
-      - name: "📦 Install pgTAP into Postgres service"
-        run: |
-          # Install pgTAP inside the postgres:15 container as root so CREATE EXTENSION works
-          set -euo pipefail
-          docker exec -u 0 ${{ job.services.postgres.id }} bash -lc '
-            set -euo pipefail
-            export DEBIAN_FRONTEND=noninteractive
-            apt-get update
-            if apt-get install -y --no-install-recommends postgresql-15-pgtap; then
-              echo "Installed postgresql-15-pgtap"
-            elif apt-get install -y --no-install-recommends pgtap; then
-              echo "Installed generic pgtap package"
-            else
-              echo "Failed to install pgTAP in postgres service" >&2
-              exit 1
-            fi
-            apt-get clean && rm -rf /var/lib/apt/lists/*
-          '
-          
-      - name: "🔨 Apply Schema"
-        env:
-          WESLEY_OUT_DIR: out
-        run: |
-          # Apply the generated schema produced in the generation step
-          # Ensure required extensions present (needed by generated defaults/indexes)
-          PGPASSWORD=postgres psql -h localhost -U postgres -d test -c 'CREATE EXTENSION IF NOT EXISTS pgcrypto;'
-          PGPASSWORD=postgres psql -h localhost -U postgres -d test -c 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp";'
-          PGPASSWORD=postgres psql -h localhost -U postgres -d test -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm;'
-          # Apply schema (fail fast on errors)
-          PGPASSWORD=postgres psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d test -f "test/fixtures/examples/${WESLEY_OUT_DIR}/schema.sql"
-
-      - name: "🏗️ Ensure wes_ops schema"
-        run: |
-          # Ops emission targets schema wes_ops; create it if missing
-          PGPASSWORD=postgres psql -h localhost -U postgres -d test -c 'CREATE SCHEMA IF NOT EXISTS wes_ops;'
-      
-      - name: "📦 Apply Ops SQL (views + functions)"
-        env:
-          WESLEY_OUT_DIR: out
-        run: |
-          set -euo pipefail
-          OPS_DIR="test/fixtures/examples/${WESLEY_OUT_DIR}/ops"
-          shopt -s nullglob
-          if [ ! -d "$OPS_DIR" ]; then
-            echo "No ops SQL directory found; skipping"
-            exit 0
-          fi
-          # Apply views first, then functions
-          for pattern in "*.view.sql" "*.fn.sql"; do
-            files=("$OPS_DIR"/$pattern)
-            if [ ${#files[@]} -eq 0 ]; then
-              echo "No $pattern files found; skipping"
-              continue
-            fi
-            for f in "${files[@]}"; do
-              if [ ! -s "$f" ]; then
-                echo "Skipping empty file: $f"
-                continue
-              fi
-              echo "Applying $f (single transaction)..."
-              PGPASSWORD=postgres psql -1 -v ON_ERROR_STOP=1 -h localhost -U postgres -d test -f "$f"
-            done
-          done
-
-      - name: "🌱 Seed minimal data for ops"
-        run: |
-          # Reuse the same seed file that docker-compose mounts as 03-seed.sql.
-          # -1 wraps the file in a single transaction (matches docker-entrypoint behaviour).
-          PGPASSWORD=postgres psql -1 -v ON_ERROR_STOP=1 -h localhost -U postgres -d test \
-            -f test/fixtures/postgres/03-seed.sql
-
-      - name: "🧪 Generate EXPLAIN JSON snapshots"
-        env:
-          WESLEY_OUT_DIR: out
-        run: |
-          set -euo pipefail
-          mkdir -p test/fixtures/examples/${WESLEY_OUT_DIR}/ops/explain
-          # EXPLAIN (FORMAT JSON) for function calls
-          PGPASSWORD=postgres psql -h localhost -U postgres -d test -t -A -c "EXPLAIN (FORMAT JSON) SELECT * FROM wes_ops.op_products_by_name('Al%')" > test/fixtures/examples/${WESLEY_OUT_DIR}/ops/explain/products_by_name.explain.json
-          PGPASSWORD=postgres psql -h localhost -U postgres -d test -t -A -c "EXPLAIN (FORMAT JSON) SELECT * FROM wes_ops.op_orders_by_user('00000000-0000-0000-0000-000000000001'::uuid)" > test/fixtures/examples/${WESLEY_OUT_DIR}/ops/explain/orders_by_user.explain.json
-          PGPASSWORD=postgres psql -h localhost -U postgres -d test -t -A -c "EXPLAIN (FORMAT JSON) SELECT * FROM wes_ops.op_orders_with_items_by_user('00000000-0000-0000-0000-000000000001'::uuid)" > test/fixtures/examples/${WESLEY_OUT_DIR}/ops/explain/orders_with_items_by_user.explain.json
-          PGPASSWORD=postgres psql -h localhost -U postgres -d test -t -A -c "EXPLAIN (FORMAT JSON) SELECT * FROM wes_ops.op_allproducts()" > test/fixtures/examples/${WESLEY_OUT_DIR}/ops/explain/allproducts.explain.json
-
-      - name: "⬆️ Upload EXPLAIN snapshots"
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
-        with:
-          name: ops-explain
-          path: test/fixtures/examples/out/ops/explain/
-
-      - name: "🧪 Run Tests"
-        run: |
-          set -euo pipefail
-          # Optional gate: set RUN_PGTAP=false to skip pgTAP tests
-          : "${RUN_PGTAP:=true}"
-          # Run ops pgTAP smoke only if pgTAP is available
-          HAS_PGTAP=$(PGPASSWORD=postgres psql -h localhost -U postgres -d test -t -A -c "SELECT 1 FROM pg_available_extensions WHERE name='pgtap'" || echo '')
-          if [ "$RUN_PGTAP" = "true" ] && [ "$HAS_PGTAP" = "1" ]; then
-            PGPASSWORD=postgres psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d test -c 'CREATE EXTENSION IF NOT EXISTS pgtap;'
-            shopt -s nullglob
-            files=(test/fixtures/examples/tests/*.pgtap.sql)
-            if [ ${#files[@]} -eq 0 ]; then
-              echo "No pgTAP test files found"
-              exit 1
-            fi
-            TOTAL_PASS=0; TOTAL_FAIL=0
-            for f in "${files[@]}"; do
-              echo "Running $f ..."
-              OUTPUT=$(PGPASSWORD=postgres psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d test -f "$f" 2>&1)
-              echo "$OUTPUT"
-              # Parse TAP output: count "not ok" lines (TAP failures don't cause psql to exit non-zero)
-              FILE_FAIL=$(echo "$OUTPUT" | grep -c '^not ok' || true)
-              FILE_PASS=$(echo "$OUTPUT" | grep -c '^ok' || true)
-              TOTAL_PASS=$((TOTAL_PASS + FILE_PASS))
-              TOTAL_FAIL=$((TOTAL_FAIL + FILE_FAIL))
-            done
-            echo "--- TAP Results: $TOTAL_PASS passed, $TOTAL_FAIL failed ---"
-            if [ "$TOTAL_FAIL" -gt 0 ]; then
-              echo "pgTAP assertion failures detected" >&2
-              exit 1
-            fi
-          else
-            echo "pgtap extension not available; skipping pgTAP tests"
-          fi
-          # Simple non-pgTAP assertion: expect exactly 1 published product matching 'Al%'
-          CNT=$(PGPASSWORD=postgres psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d test -t -A -c "SELECT count(*) FROM wes_ops.op_products_by_name('Al%')" || echo 0)
-          echo "Count from op_products_by_name('Al%') = $CNT"
-          if [ "$CNT" != "1" ]; then
-            echo "Expected 1 row from products_by_name, got $CNT" >&2
-            exit 1
-          fi
           
   comment-report:
     name: "📝 Post Investigation Report"

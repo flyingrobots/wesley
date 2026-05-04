@@ -45,7 +45,7 @@ body:
     attributes:
       label: Playback
       description: How will we demonstrate that the hill is real?
-      placeholder: "Run `wesley blade --resume --counterfactual main` on an injected crash and end with a cert that shows exact evidence and a clear gate decision."
+      placeholder: "Run `wesley generate --emit-bundle` on an injected crash and end with a cert that shows exact evidence and a clear gate decision."
     validations:
       required: true
 

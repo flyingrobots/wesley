@@ -34,19 +34,6 @@ export class SchemaParseError extends DomainEvent {
   }
 }
 
-// Generation Events
-export class SQLGenerationRequested extends DomainEvent {
-  constructor(schema) {
-    super('SQL_GENERATION_REQUESTED', { schema });
-  }
-}
-
-export class SQLGenerated extends DomainEvent {
-  constructor(sql, schema) {
-    super('SQL_GENERATED', { sql, schema });
-  }
-}
-
 export class TypeScriptGenerationRequested extends DomainEvent {
   constructor(schema) {
     super('TYPESCRIPT_GENERATION_REQUESTED', { schema });
@@ -56,25 +43,6 @@ export class TypeScriptGenerationRequested extends DomainEvent {
 export class TypeScriptGenerated extends DomainEvent {
   constructor(typescript, schema) {
     super('TYPESCRIPT_GENERATED', { typescript, schema });
-  }
-}
-
-// Migration Events
-export class MigrationDiffRequested extends DomainEvent {
-  constructor(previousSchema, currentSchema) {
-    super('MIGRATION_DIFF_REQUESTED', { previousSchema, currentSchema });
-  }
-}
-
-export class MigrationDiffCalculated extends DomainEvent {
-  constructor(diff, previousSchema, currentSchema) {
-    super('MIGRATION_DIFF_CALCULATED', { diff, previousSchema, currentSchema });
-  }
-}
-
-export class MigrationSQLGenerated extends DomainEvent {
-  constructor(sql, diff) {
-    super('MIGRATION_SQL_GENERATED', { sql, diff });
   }
 }
 

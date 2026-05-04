@@ -28,14 +28,6 @@ Wesley exposes a handful of `pnpm run <script>` commands for common workflows. T
 | --- | --- | --- |
 | `pnpm run setup:bats-plugins` | Download/update vendored Bats plugins. | Needed for CLI Bats tests (runs automatically inside the devcontainer). |
 | `pnpm run meta:fix-packages` | Normalize workspace `package.json` metadata. | Wraps `scripts/fix-package-metadata.mjs`. |
-| `pnpm run docker:up`, `pnpm run docker:down` | Start/stop the docker-compose stack. | Useful for local Postgres testing. |
-| `pnpm run docker:test` | Run pgTAP tests inside docker-compose. | Executes the `pgtap` service. |
-
-## Smoke Checks
-
-| Script | Purpose | Notes |
-| --- | --- | --- |
-| `pnpm run smoke:postgres-fixture` | Start a disposable Postgres container that mounts `test/fixtures/postgres/`, verify seeded extensions, then tear down. | Ensures the fixture files still apply cleanly. |
 
 ## Package-Specific Commands
 

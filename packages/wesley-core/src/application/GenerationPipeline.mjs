@@ -131,8 +131,7 @@ export class GenerationPipeline {
       this.logger?.info('Generating tests...');
       artifacts.tests = await this.testGenerator.generate(schema, {
         evidenceMap: options.evidenceMap,
-        migrationSteps: options.diff?.steps,
-        supabase: options.supabase
+        migrationSteps: options.diff?.steps
       });
     }
 

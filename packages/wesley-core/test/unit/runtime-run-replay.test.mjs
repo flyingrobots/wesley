@@ -7,45 +7,45 @@ import { buildRuntimeRunSnapshot } from '../../src/application/RuntimeRunSnapsho
 test('replayRuntimeRun rehydrates a valid completed run', () => {
   const events = [
     {
-      eventId: 'transmutation:legacy-supabase:run-replay-001:1',
+      eventId: 'transmutation:null-generator:run-replay-001:1',
       type: 'RunRequested',
-      streamId: 'transmutation:legacy-supabase:run-replay-001',
+      streamId: 'transmutation:null-generator:run-replay-001',
       sequence: 1,
       schemaVersion: '1.0.0',
       timestamp: '2026-03-20T03:20:00.000Z',
       causationId: null,
       correlationId: 'run-replay-001',
-      idempotencyKey: 'legacy-supabase:transform:requested',
+      idempotencyKey: 'null-generator:transform:requested',
       runId: 'run-replay-001',
-      transmutation: 'legacy-supabase',
+      transmutation: 'null-generator',
       payload: { command: 'transform' }
     },
     {
-      eventId: 'transmutation:legacy-supabase:run-replay-001:2',
+      eventId: 'transmutation:null-generator:run-replay-001:2',
       type: 'ArtifactsMaterialized',
-      streamId: 'transmutation:legacy-supabase:run-replay-001',
+      streamId: 'transmutation:null-generator:run-replay-001',
       sequence: 2,
       schemaVersion: '1.0.0',
       timestamp: '2026-03-20T03:20:01.000Z',
       causationId: null,
       correlationId: 'run-replay-001',
-      idempotencyKey: 'legacy-supabase:transform:artifacts',
+      idempotencyKey: 'null-generator:transform:artifacts',
       runId: 'run-replay-001',
-      transmutation: 'legacy-supabase',
+      transmutation: 'null-generator',
       payload: { artifactCount: 2 }
     },
     {
-      eventId: 'transmutation:legacy-supabase:run-replay-001:3',
+      eventId: 'transmutation:null-generator:run-replay-001:3',
       type: 'RunCompleted',
-      streamId: 'transmutation:legacy-supabase:run-replay-001',
+      streamId: 'transmutation:null-generator:run-replay-001',
       sequence: 3,
       schemaVersion: '1.0.0',
       timestamp: '2026-03-20T03:20:02.000Z',
       causationId: null,
       correlationId: 'run-replay-001',
-      idempotencyKey: 'legacy-supabase:transform:completed',
+      idempotencyKey: 'null-generator:transform:completed',
       runId: 'run-replay-001',
-      transmutation: 'legacy-supabase',
+      transmutation: 'null-generator',
       payload: { command: 'transform' }
     }
   ];
@@ -64,17 +64,17 @@ test('replayRuntimeRun rehydrates a valid completed run', () => {
 test('replayRuntimeRun reports stream integrity issues', () => {
   const events = [
     {
-      eventId: 'transmutation:legacy-supabase:run-replay-002:2',
+      eventId: 'transmutation:null-generator:run-replay-002:2',
       type: 'RunRequested',
-      streamId: 'transmutation:legacy-supabase:run-replay-002',
+      streamId: 'transmutation:null-generator:run-replay-002',
       sequence: 2,
       schemaVersion: '1.0.0',
       timestamp: '2026-03-20T03:21:00.000Z',
       causationId: null,
       correlationId: 'run-replay-002',
-      idempotencyKey: 'legacy-supabase:transform:requested',
+      idempotencyKey: 'null-generator:transform:requested',
       runId: 'run-replay-002',
-      transmutation: 'legacy-supabase',
+      transmutation: 'null-generator',
       payload: { command: 'transform' }
     },
     {
@@ -95,8 +95,8 @@ test('replayRuntimeRun reports stream integrity issues', () => {
 
   const result = replayRuntimeRun(events, {
     runId: 'run-replay-002',
-    transmutation: 'legacy-supabase',
-    streamId: 'transmutation:legacy-supabase:run-replay-002'
+    transmutation: 'null-generator',
+    streamId: 'transmutation:null-generator:run-replay-002'
   });
 
   assert.equal(result.run.status, 'failed');
@@ -111,54 +111,54 @@ test('replayRuntimeRun reports stream integrity issues', () => {
 test('replayRuntimeRun can continue from a stored snapshot and tail events', () => {
   const snapshot = buildRuntimeRunSnapshot([
     {
-      eventId: 'transmutation:legacy-supabase:run-replay-003:1',
+      eventId: 'transmutation:null-generator:run-replay-003:1',
       type: 'RunRequested',
-      streamId: 'transmutation:legacy-supabase:run-replay-003',
+      streamId: 'transmutation:null-generator:run-replay-003',
       sequence: 1,
       schemaVersion: '1.0.0',
       timestamp: '2026-03-20T03:22:00.000Z',
       causationId: null,
       correlationId: 'run-replay-003',
-      idempotencyKey: 'legacy-supabase:transform:requested',
+      idempotencyKey: 'null-generator:transform:requested',
       runId: 'run-replay-003',
-      transmutation: 'legacy-supabase',
+      transmutation: 'null-generator',
       payload: { command: 'transform' }
     },
     {
-      eventId: 'transmutation:legacy-supabase:run-replay-003:2',
+      eventId: 'transmutation:null-generator:run-replay-003:2',
       type: 'ArtifactsMaterialized',
-      streamId: 'transmutation:legacy-supabase:run-replay-003',
+      streamId: 'transmutation:null-generator:run-replay-003',
       sequence: 2,
       schemaVersion: '1.0.0',
       timestamp: '2026-03-20T03:22:01.000Z',
       causationId: null,
       correlationId: 'run-replay-003',
-      idempotencyKey: 'legacy-supabase:transform:artifacts',
+      idempotencyKey: 'null-generator:transform:artifacts',
       runId: 'run-replay-003',
-      transmutation: 'legacy-supabase',
+      transmutation: 'null-generator',
       payload: { artifactCount: 1 }
     }
   ]);
 
   const result = replayRuntimeRun([
     {
-      eventId: 'transmutation:legacy-supabase:run-replay-003:3',
+      eventId: 'transmutation:null-generator:run-replay-003:3',
       type: 'RunCompleted',
-      streamId: 'transmutation:legacy-supabase:run-replay-003',
+      streamId: 'transmutation:null-generator:run-replay-003',
       sequence: 3,
       schemaVersion: '1.0.0',
       timestamp: '2026-03-20T03:22:02.000Z',
       causationId: null,
       correlationId: 'run-replay-003',
-      idempotencyKey: 'legacy-supabase:transform:completed',
+      idempotencyKey: 'null-generator:transform:completed',
       runId: 'run-replay-003',
-      transmutation: 'legacy-supabase',
+      transmutation: 'null-generator',
       payload: { command: 'transform' }
     }
   ], {
     runId: 'run-replay-003',
-    transmutation: 'legacy-supabase',
-    streamId: 'transmutation:legacy-supabase:run-replay-003',
+    transmutation: 'null-generator',
+    streamId: 'transmutation:null-generator:run-replay-003',
     snapshot
   });
 

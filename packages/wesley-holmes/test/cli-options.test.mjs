@@ -148,7 +148,7 @@ function persistTransformRun(fixture, runId, extraArgs = []) {
     'transform',
     '--schema', fixture.schemaPath,
     '--out-dir', outDir,
-    '--transmutation', 'legacy-supabase',
+    '--transmutation', 'null-generator',
     '--run-id', runId,
     '--emit-bundle',
     '--json',
@@ -493,7 +493,7 @@ test('holmes CLI predict attaches persisted runtime run context', () => {
     '--history-file', fixture.historyPath,
     '--json', jsonPath,
     '--run-id', 'run-holmes-ledger-123',
-    '--transmutation', 'legacy-supabase'
+    '--transmutation', 'null-generator'
   ], {
     cwd: fixture.tempDir,
     encoding: 'utf8',
@@ -504,7 +504,7 @@ test('holmes CLI predict attaches persisted runtime run context', () => {
     assert.equal(result.status, 0, result.stderr);
     const json = JSON.parse(readFileSync(jsonPath, 'utf8'));
     assert.equal(json.metadata.runId, 'run-holmes-ledger-123');
-    assert.equal(json.metadata.transmutation, 'legacy-supabase');
+    assert.equal(json.metadata.transmutation, 'null-generator');
     assert.equal(json.runtime.run.runId, 'run-holmes-ledger-123');
     assert.equal(json.runtime.run.status, 'completed');
     assert.equal(json.runtime.replay.valid, true);
@@ -594,7 +594,7 @@ test('holmes runs status defaults to holmes-family runs and can inspect them nat
     assert.equal(inspect.run.status, 'completed');
 
     const allStatus = runHolmesRunsStatus(fixture, ['--all']);
-    assert.ok(allStatus.runs.some(run => run.transmutation === 'legacy-supabase'));
+    assert.ok(allStatus.runs.some(run => run.transmutation === 'null-generator'));
   } finally {
     fixture.cleanup();
   }
@@ -635,7 +635,7 @@ test('holmes CLI predict fails when requested runtime run is missing', () => {
     '--history-file', fixture.historyPath,
     '--json', jsonPath,
     '--run-id', 'run-holmes-missing',
-    '--transmutation', 'legacy-supabase'
+    '--transmutation', 'null-generator'
   ], {
     cwd: fixture.tempDir,
     encoding: 'utf8',

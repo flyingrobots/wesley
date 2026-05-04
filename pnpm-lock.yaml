@@ -18,9 +18,6 @@ importers:
       '@mantine/hooks':
         specifier: ^8.3.5
         version: 8.3.5(react@19.2.4)
-      '@supabase/pg-parser':
-        specifier: ^0.1.7
-        version: 0.1.7
       vite:
         specifier: npm:rolldown-vite@7.1.14
         version: rolldown-vite@7.1.14(esbuild@0.25.10)(sugarss@5.0.1(postcss@8.5.6))
@@ -82,9 +79,6 @@ importers:
 
   packages/wesley-core:
     dependencies:
-      '@supabase/pg-parser':
-        specifier: ^0.1.7
-        version: 0.1.7
       graphql:
         specifier: ^16.11.0
         version: 16.11.0
@@ -1071,9 +1065,6 @@ packages:
 
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
-
-  '@supabase/pg-parser@0.1.7':
-    resolution: {integrity: sha512-NSf8e0dwQjLr0QFMwUI04reFzi+XA8eYo4neEfHM/InbS68N91z5bvOvg+ikXNqHFj+6nsBfckLdt7DZsnptzg==}
 
   '@tabler/icons-react@3.35.0':
     resolution: {integrity: sha512-XG7t2DYf3DyHT5jxFNp5xyLVbL4hMJYJhiSdHADzAjLRYfL7AnjlRfiHDHeXxkb2N103rEIvTsBRazxXtAUz2g==}
@@ -4391,8 +4382,6 @@ snapshots:
   '@rolldown/pluginutils@1.0.0-beta.43': {}
 
   '@standard-schema/spec@1.1.0': {}
-
-  '@supabase/pg-parser@0.1.7': {}
 
   '@tabler/icons-react@3.35.0(react@19.2.4)':
     dependencies:

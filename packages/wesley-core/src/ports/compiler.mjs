@@ -2,7 +2,7 @@
  * High level compile service the CLI (and API) depend on.
  */
 /**
- * @typedef {{ sdl: string, flags?: { supabase?: boolean, emitBundle?: boolean } }} CompileInput
+ * @typedef {{ sdl: string, flags?: { emitBundle?: boolean } }} CompileInput
  * @typedef {{ sha: string, outDir: string }} CompileContext
  * @typedef {{
  *   artifacts: {
@@ -51,5 +51,5 @@ export class CompilerPort {
 
   async runTests(_opts) {
     throw new Error('CompilerPort.runTests() must be implemented');
-  } // wire pgTAP later
+  }
 }

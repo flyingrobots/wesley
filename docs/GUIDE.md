@@ -34,7 +34,7 @@ repo, not in Wesley.
 
 ### 3. Governance & Inspection
 Audit proposed changes and monitor the contract state via the TUI dashboard.
-- **Audit**: `pnpm wesley blade --help`
+- **Audit**: `pnpm wesley cert-create --help`
 - **TUI**: `pnpm wesley holmes dashboard`
 
 ## Compiler Versus Toolchain

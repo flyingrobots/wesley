@@ -9,12 +9,11 @@ openssl genpkey -algorithm ed25519 -out holmes.key
 openssl pkey -in holmes.key -pubout -out holmes.pub
 ```
 
-Pass to the one‑shot command:
+Use them with certificate signing:
 
 ```
-wesley blade --schema test/fixtures/blade/schema-v2.graphql \
-  --sign-key test/fixtures/blade/keys/holmes.key \
-  --pub test/fixtures/blade/keys/holmes.pub
+wesley cert-sign --in SHIPME.md --key holmes.key --signer HOLMES
+wesley cert-verify --in SHIPME.md --pub holmes.pub
 ```
 
 Security note: Never commit private keys. This folder stays local-only.

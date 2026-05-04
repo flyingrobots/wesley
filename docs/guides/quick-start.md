@@ -20,19 +20,16 @@ type User @wes_table {
 }
 ```
 
-## Generate, plan, rehearse, certify
+## Generate And Certify
 
 Use the host-node CLI entrypoint directly:
 
 ```bash
-# Generate artifacts (SQL/Types/Zod/tests + evidence)
-node packages/wesley-host-node/bin/wesley.mjs generate --schema schema.graphql --emit-bundle
-
-# Explain the migration plan
-node packages/wesley-host-node/bin/wesley.mjs plan --schema schema.graphql --explain
-
-# Rehearse the plan on a shadow DB (set DSN or pass --docker)
-node packages/wesley-host-node/bin/wesley.mjs rehearse --schema schema.graphql --dsn $TEST_DATABASE_URL --json
+# Generate artifacts through the default generic transmutation
+node packages/wesley-host-node/bin/wesley.mjs generate \
+  --schema schema.graphql \
+  --transmutation null-generator \
+  --emit-bundle
 
 # Create and verify SHIPME certificate
 node packages/wesley-host-node/bin/wesley.mjs cert-create --out .wesley-cache/SHIPME.md
@@ -40,21 +37,6 @@ node packages/wesley-host-node/bin/wesley.mjs cert-verify --in .wesley-cache/SHI
 ```
 
 Generated runtime state lives under `.wesley-cache/` and is validated against JSON Schemas in `schemas/`.
-
-### Experimental: Operation Documents (QIR)
-
-You can place GraphQL operation documents or `*.op.json` plans in an `ops/`
-folder and pass `--ops ops/` to `generate`. The current CLI compiles those
-operations into SQL artifacts; it is no longer just a no-op validator.
-
-Example:
-
-```bash
-node packages/wesley-host-node/bin/wesley.mjs generate \
-  --schema test/fixtures/examples/ecommerce.graphql \
-  --ops test/fixtures/examples/ops \
-  --emit-bundle
-```
 
 ## HOLMES (investigate/verify/predict)
 
@@ -64,14 +46,6 @@ From the repo root:
 node packages/wesley-holmes/src/cli.mjs investigate
 node packages/wesley-holmes/src/cli.mjs verify
 node packages/wesley-holmes/src/cli.mjs predict --from .wesley-cache/scores.json
-```
-
-## Demo (BLADE)
-
-Run the full demo flow:
-
-```bash
-bash test/fixtures/blade/run.sh
 ```
 
 ## Tips

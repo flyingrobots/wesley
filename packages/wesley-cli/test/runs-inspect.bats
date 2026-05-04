@@ -24,13 +24,13 @@ EOF
 @test "runs inspect reads a persisted transform run by runId" {
   create_schema
 
-  run node "$CLI_PATH" transform --schema schema.graphql --transmutation legacy-supabase --run-id run-ledger-123 --out-dir out --json --quiet
+  run node "$CLI_PATH" transform --schema schema.graphql --transmutation null-generator --run-id run-ledger-123 --out-dir out --json --quiet
   assert_success
 
   run node "$CLI_PATH" runs inspect --run-id run-ledger-123 --json
   assert_success
   echo "$output" | jq -e '.run.runId == "run-ledger-123"' >/dev/null
-  echo "$output" | jq -e '.run.transmutation == "legacy-supabase"' >/dev/null
+  echo "$output" | jq -e '.run.transmutation == "null-generator"' >/dev/null
   echo "$output" | jq -e '.run.command == "transform"' >/dev/null
   echo "$output" | jq -e '.run.status == "completed"' >/dev/null
   echo "$output" | jq -e '.snapshot.lastSequence == 10' >/dev/null
@@ -47,7 +47,7 @@ EOF
 @test "runs status lists persisted runs and supports status filters" {
   create_schema
 
-  run node "$CLI_PATH" transform --schema schema.graphql --transmutation legacy-supabase --run-id run-status-ok --out-dir out --json --quiet
+  run node "$CLI_PATH" transform --schema schema.graphql --transmutation null-generator --run-id run-status-ok --out-dir out --json --quiet
   assert_success
 
   run node "$CLI_PATH" transform --schema schema.graphql --transmutation nope --run-id run-status-fail --json --quiet
@@ -69,7 +69,7 @@ EOF
 @test "runs replay rebuilds a completed run from persisted events" {
   create_schema
 
-  run node "$CLI_PATH" transform --schema schema.graphql --transmutation legacy-supabase --run-id run-replay-ok --out-dir out --json --quiet
+  run node "$CLI_PATH" transform --schema schema.graphql --transmutation null-generator --run-id run-replay-ok --out-dir out --json --quiet
   assert_success
 
   run node "$CLI_PATH" runs replay --run-id run-replay-ok --json
@@ -87,10 +87,10 @@ EOF
 @test "runs replay reports partial non-terminal streams after injected crash" {
   create_schema
 
-  run env WESLEY_CRASH_AFTER_EVENT=4 node "$CLI_PATH" transform --schema schema.graphql --transmutation legacy-supabase --run-id run-replay-crash --out-dir out --json --quiet
+  run env WESLEY_CRASH_AFTER_EVENT=4 node "$CLI_PATH" transform --schema schema.graphql --transmutation null-generator --run-id run-replay-crash --out-dir out --json --quiet
   assert_failure 6
 
-  run node "$CLI_PATH" runs replay --run-id run-replay-crash --transmutation legacy-supabase --json
+  run node "$CLI_PATH" runs replay --run-id run-replay-crash --transmutation null-generator --json
   assert_success
   echo "$output" | jq -e '.run.status == "running"' >/dev/null
   echo "$output" | jq -e '.snapshot == null' >/dev/null
@@ -102,11 +102,11 @@ EOF
 @test "runs inspect ignores malformed snapshot cache and falls back to raw events" {
   create_schema
 
-  run node "$CLI_PATH" transform --schema schema.graphql --transmutation legacy-supabase --run-id run-bad-snapshot --out-dir out --json --quiet
+  run node "$CLI_PATH" transform --schema schema.graphql --transmutation null-generator --run-id run-bad-snapshot --out-dir out --json --quiet
   assert_success
 
   local encoded
-  encoded="$(node -e "process.stdout.write(encodeURIComponent(process.argv[1]))" "transmutation:legacy-supabase:run-bad-snapshot")"
+  encoded="$(node -e "process.stdout.write(encodeURIComponent(process.argv[1]))" "transmutation:null-generator:run-bad-snapshot")"
   mkdir -p .wesley-cache/ledger/snapshots
   cat > ".wesley-cache/ledger/snapshots/${encoded}.json" <<'EOF'
 {"not":"valid snapshot"
@@ -122,10 +122,10 @@ EOF
 @test "runs doctor flags non-terminal and malformed streams" {
   create_schema
 
-  run node "$CLI_PATH" transform --schema schema.graphql --transmutation legacy-supabase --run-id run-doctor-ok --out-dir out --json --quiet
+  run node "$CLI_PATH" transform --schema schema.graphql --transmutation null-generator --run-id run-doctor-ok --out-dir out --json --quiet
   assert_success
 
-  run env WESLEY_CRASH_AFTER_EVENT=4 node "$CLI_PATH" transform --schema schema.graphql --transmutation legacy-supabase --run-id run-doctor-crash --out-dir out --json --quiet
+  run env WESLEY_CRASH_AFTER_EVENT=4 node "$CLI_PATH" transform --schema schema.graphql --transmutation null-generator --run-id run-doctor-crash --out-dir out --json --quiet
   assert_failure 6
 
   mkdir -p .wesley-cache/ledger/streams

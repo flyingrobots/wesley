@@ -25,11 +25,6 @@
     "validate": "pnpm lint && pnpm format:check && pnpm test",
     "generate:example": "cd test/fixtures/examples && node ../../../packages/wesley-host-node/bin/wesley.mjs generate --schema ecommerce.graphql --emit-bundle --out-dir out --allow-dirty",
     "clean": "node scripts/clean.mjs",
-    "smoke:postgres-fixture": "bash scripts/smoke/postgres-fixture.sh",
-    "smoke:holmes-ops": "bash scripts/smoke/holmes-ops-pgtap.sh",
-    "docker:up": "docker-compose up -d",
-    "docker:down": "docker-compose down",
-    "docker:test": "docker-compose run pgtap",
     "wesley": "node packages/wesley-host-node/bin/wesley.mjs",
     "meta:fix-packages": "node scripts/fix-package-metadata.mjs",
     "ci": "pnpm validate && pnpm generate:example && node packages/wesley-host-node/bin/wesley.mjs validate-bundle --bundle test/fixtures/examples/.wesley --schemas schemas/"
@@ -68,7 +63,6 @@
   },
   "dependencies": {
     "@mantine/hooks": "^8.3.5",
-    "@supabase/pg-parser": "^0.1.7",
     "vite": "^7.1.12"
   },
   "devDependencies": {

@@ -20,11 +20,7 @@ describe('compileSchemaInBrowser', () => {
     expect(result.outputFiles).toBeInstanceOf(Array);
     expect(result.outputFiles.length).toBeGreaterThan(0);
 
-    const migrationsFile = result.outputFiles.find(f => f.file === 'migrations.sql');
-    expect(migrationsFile).toBeDefined();
-    expect(migrationsFile.body).toContain('CREATE TABLE "User"');
-
-    const schemaFile = result.outputFiles.find(f => f.file === 'schema.sql');
+    const schemaFile = result.outputFiles.find(f => f.file === 'schema.json');
     expect(schemaFile).toBeDefined();
     expect(schemaFile.body).toContain('"name": "User"'); // Check for table name in the bundle schema
     expect(result.tables).toBe(1);
@@ -48,7 +44,7 @@ describe('compileSchemaInBrowser', () => {
     expect(result.tables).toBe(0);
   });
 
-  it('should return no migrations for an empty schema', async () => {
+  it('should return schema JSON for an empty schema', async () => {
     const inputFiles = [
       {
         file: 'empty.graphql',
@@ -60,8 +56,9 @@ describe('compileSchemaInBrowser', () => {
 
     expect(result.ok).toBe(true);
     expect(result.outputFiles).toBeInstanceOf(Array);
-    const migrationsFile = result.outputFiles.find(f => f.file === 'migrations.sql');
-    expect(migrationsFile.body).toContain('-- No migrations generated yet.');
+    const schemaFile = result.outputFiles.find(f => f.file === 'schema.json');
+    expect(schemaFile).toBeDefined();
+    expect(schemaFile.body).toContain('"tables": []');
     expect(result.tables).toBe(0);
   });
 
@@ -81,9 +78,9 @@ describe('compileSchemaInBrowser', () => {
 
     expect(result.ok).toBe(true);
     expect(result.outputFiles.length).toBeGreaterThan(0);
-    const migrationsFile = result.outputFiles.find(f => f.file === 'migrations.sql');
-    expect(migrationsFile.body).toContain('CREATE TABLE "User"');
-    expect(migrationsFile.body).toContain('CREATE TABLE "Product"');
+    const schemaFile = result.outputFiles.find(f => f.file === 'schema.json');
+    expect(schemaFile.body).toContain('"name": "User"');
+    expect(schemaFile.body).toContain('"name": "Product"');
     expect(result.tables).toBe(2);
   });
 });

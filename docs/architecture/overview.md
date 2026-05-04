@@ -113,7 +113,7 @@ class CommandHandler {
 }
 
 // Output Ports (Secondary/Driven)
-class SQLGenerator {
+class ArtifactGenerator {
   async generate(schema) { /* contract */ }
 }
 
@@ -131,26 +131,26 @@ Adapters implement ports for specific platforms:
 graph TB
     subgraph "Port Interfaces"
         IParser[SchemaParser Port]
-        IGenerator[SQLGenerator Port]
+        IGenerator[ArtifactGenerator Port]
         IFS[FileSystem Port]
     end
     
     subgraph "Node.js Adapters"
         GraphQLParser[GraphQL Parser]
-        PostgresGen[PostgreSQL Generator]
+        TypeScriptGen[TypeScript Generator]
         NodeFS[Node FileSystem]
     end
     
     subgraph "Browser Adapters"
         WASMParser[WASM Parser]
-        WebSQLGen[WebSQL Generator]
+        ZodGen[Zod Generator]
         IndexedDBFS[IndexedDB FS]
     end
     
     IParser -.->|implements| GraphQLParser
     IParser -.->|implements| WASMParser
-    IGenerator -.->|implements| PostgresGen
-    IGenerator -.->|implements| WebSQLGen
+    IGenerator -.->|implements| TypeScriptGen
+    IGenerator -.->|implements| ZodGen
     IFS -.->|implements| NodeFS
     IFS -.->|implements| IndexedDBFS
 ```
@@ -177,7 +177,7 @@ sequenceDiagram
     EventBus->>Handlers: notify
     UseCase->>EventBus: SchemaParsed
     EventBus->>Handlers: notify
-    Handlers->>EventBus: SQLGenerationRequested
+    Handlers->>EventBus: TypeScriptGenerationRequested
     EventBus->>Handlers: notify
     Handlers->>User: Output generated
 ```
@@ -189,7 +189,6 @@ graph TD
     subgraph "Domain Events"
         SchemaEvents[Schema Events]
         GenerationEvents[Generation Events]
-        MigrationEvents[Migration Events]
         FileEvents[File Events]
     end
     
@@ -197,14 +196,8 @@ graph TD
     SchemaEvents --> SP[SchemaParsed]
     SchemaEvents --> SPE[SchemaParseError]
     
-    GenerationEvents --> SGR[SQLGenerationRequested]
-    GenerationEvents --> SG[SQLGenerated]
     GenerationEvents --> TGR[TypeScriptGenerationRequested]
     GenerationEvents --> TG[TypeScriptGenerated]
-    
-    MigrationEvents --> MDR[MigrationDiffRequested]
-    MigrationEvents --> MDC[MigrationDiffCalculated]
-    MigrationEvents --> MSG[MigrationSQLGenerated]
 ```
 
 ### Event Sourcing Benefits
@@ -242,7 +235,7 @@ graph LR
         Bus --> Router[Router]
         Router --> Handler1[ParseHandler]
         Router --> Handler2[GenerateHandler]
-        Router --> Handler3[MigrateHandler]
+        Router --> Handler3[WriteHandler]
     end
     
     Handler1 --> Events1[Events]
@@ -264,20 +257,19 @@ Wesley uses constructor injection for all dependencies:
 
 ```javascript
 // Pure domain use case
-class GenerateSQLUseCase {
+class GenerateArtifactUseCase {
   constructor(generator) {
     this.generator = generator; // Injected dependency
   }
   
   async execute(schema) {
-    const sql = await this.generator.generate(schema);
-    return new SQLGenerated(sql, schema);
+    return this.generator.generate(schema);
   }
 }
 
 // Composition root
-const postgresGenerator = new PostgreSQLGenerator();
-const useCase = new GenerateSQLUseCase(postgresGenerator);
+const typeGenerator = new TypeScriptGenerator();
+const useCase = new GenerateArtifactUseCase(typeGenerator);
 ```
 
 ### Benefits
@@ -372,7 +364,7 @@ test('Generate command produces SQL', async () => {
     new GenerateProjectCommand('./schema.graphql', './out')
   );
   
-  assert(events.some(e => e.type === 'SQL_GENERATED'));
+  assert(events.some(e => e.type === 'TYPESCRIPT_GENERATED'));
 });
 ```
 
@@ -386,12 +378,12 @@ Generators are loaded on-demand:
 class GeneratorFactory {
   async getGenerator(type) {
     switch(type) {
-      case 'postgresql':
-        const { PostgreSQLGenerator } = await import('./PostgreSQLGenerator.mjs');
-        return new PostgreSQLGenerator();
-      case 'mysql':
-        const { MySQLGenerator } = await import('./MySQLGenerator.mjs');
-        return new MySQLGenerator();
+      case 'typescript':
+        const { TypeScriptGenerator } = await import('./TypeScriptGenerator.mjs');
+        return new TypeScriptGenerator();
+      case 'zod':
+        const { ZodGenerator } = await import('./ZodGenerator.mjs');
+        return new ZodGenerator();
     }
   }
 }

@@ -24,7 +24,7 @@ create_realm_pass() {
   mkdir -p .wesley-cache
   cat > .wesley-cache/realm.json << 'JSON'
 {
-  "transmutation": "legacy-supabase",
+  "transmutation": "null-generator",
   "runId": "run-realm-123",
   "provider": "postgres",
   "verdict": "PASS",
@@ -270,9 +270,9 @@ create_passing_holmes_summary_inputs() {
 
   run node "$CLI_PATH" cert-create --env test --json
   assert_success
-  echo "$output" | jq -e '.transmutation == "legacy-supabase"' >/dev/null
+  echo "$output" | jq -e '.transmutation == "null-generator"' >/dev/null
   echo "$output" | jq -e '.runId == "run-realm-123"' >/dev/null
-  echo "$output" | jq -e '.realm.transmutation == "legacy-supabase"' >/dev/null
+  echo "$output" | jq -e '.realm.transmutation == "null-generator"' >/dev/null
   echo "$output" | jq -e '.realm.runId == "run-realm-123"' >/dev/null
   echo "$output" | jq -e '.run.command == "cert-create"' >/dev/null
   echo "$output" | jq -e '.run.status == "completed"' >/dev/null
@@ -333,12 +333,12 @@ create_passing_holmes_summary_inputs() {
   create_schema
   create_realm_pass
 
-  run node "$CLI_PATH" transform --schema schema.graphql --transmutation legacy-supabase --run-id run-cert-shared-123 --out-dir out --json --quiet
+  run node "$CLI_PATH" transform --schema schema.graphql --transmutation null-generator --run-id run-cert-shared-123 --out-dir out --json --quiet
   assert_success
 
-  run node "$CLI_PATH" cert-create --env test --json --transmutation legacy-supabase --run-id run-cert-shared-123 --resume
+  run node "$CLI_PATH" cert-create --env test --json --transmutation null-generator --run-id run-cert-shared-123 --resume
   assert_success
-  echo "$output" | jq -e '.transmutation == "legacy-supabase"' >/dev/null
+  echo "$output" | jq -e '.transmutation == "null-generator"' >/dev/null
   echo "$output" | jq -e '.runId == "run-cert-shared-123"' >/dev/null
   echo "$output" | jq -e '.resumed == false' >/dev/null
   echo "$output" | jq -e '.shortCircuited == false' >/dev/null
@@ -349,10 +349,10 @@ create_passing_holmes_summary_inputs() {
 @test "cert-create --resume completes a partial cert run without duplicating events" {
   create_realm_pass
 
-  run env WESLEY_CRASH_AFTER_EVENT=2 node "$CLI_PATH" cert-create --env test --json --transmutation legacy-supabase --run-id run-cert-resume-123
+  run env WESLEY_CRASH_AFTER_EVENT=2 node "$CLI_PATH" cert-create --env test --json --transmutation null-generator --run-id run-cert-resume-123
   assert_failure 6
 
-  run node "$CLI_PATH" cert-create --env test --json --transmutation legacy-supabase --run-id run-cert-resume-123 --resume
+  run node "$CLI_PATH" cert-create --env test --json --transmutation null-generator --run-id run-cert-resume-123 --resume
   assert_success
   echo "$output" | jq -e '.runId == "run-cert-resume-123"' >/dev/null
   echo "$output" | jq -e '.resumed == true' >/dev/null
@@ -364,10 +364,10 @@ create_passing_holmes_summary_inputs() {
 @test "cert-create --resume short-circuits an already completed cert run" {
   create_realm_pass
 
-  run node "$CLI_PATH" cert-create --env test --json --transmutation legacy-supabase --run-id run-cert-shortcircuit-123
+  run node "$CLI_PATH" cert-create --env test --json --transmutation null-generator --run-id run-cert-shortcircuit-123
   assert_success
 
-  run node "$CLI_PATH" cert-create --env test --json --transmutation legacy-supabase --run-id run-cert-shortcircuit-123 --resume
+  run node "$CLI_PATH" cert-create --env test --json --transmutation null-generator --run-id run-cert-shortcircuit-123 --resume
   assert_success
   echo "$output" | jq -e '.result.resumed == true' >/dev/null
   echo "$output" | jq -e '.result.shortCircuited == true' >/dev/null

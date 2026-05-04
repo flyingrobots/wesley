@@ -1,33 +1,20 @@
 /**
  * Node.js Runtime Composition
- * Creates runtime context with generic host adapters and legacy generators.
+ * Creates runtime context with generic host adapters.
  */
 
-import * as _fs from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import pino from 'pino';
 import { GENERATED_LEDGER_DIR } from '@wesley/core';
 import {
-  createPostgresGeneratorAdapters,
   GitWarpEventStore,
   GraphQLAdapter
 } from '@wesley/runtime-node';
 import { NodeFileSystem } from './NodeFileSystem.mjs';
-import { ConfigLoader } from './ConfigLoader.mjs';
-import { DbAdapter } from './DbAdapter.mjs';
 import { nodeCrypto } from './NodeCrypto.mjs';
 
-// Stub generators for fallback when packages are broken
 const stub = {
-  sql: {
-    emitDDL: () => ({ label: 'ddl', files: [] }),
-    emitRLS: () => ({ label: 'rls', files: [] }),
-    emitMigrations: () => ({ label: 'migrations', files: [] })
-  },
-  tests: {
-    emitPgTap: () => ({ label: 'pgtap', files: [] })
-  },
   js: {
     emitModels: () => ({ label: 'models', files: [] }),
     emitZod: () => ({ label: 'zod', files: [] }),
@@ -36,9 +23,6 @@ const stub = {
 };
 
 export async function createNodeRuntime() {
-  const postgresGenerators = createPostgresGeneratorAdapters();
-  const sqlGen = postgresGenerators.sql;
-  const testGen = postgresGenerators.tests;
   let jsGen = stub.js;
 
   try {
@@ -110,18 +94,10 @@ export async function createNodeRuntime() {
 
   const nodeFs = new NodeFileSystem();
 
-  // Load configuration (user override via env path if provided)
-  let config = null;
-  try {
-    const loader = new ConfigLoader();
-    const cfgPath = process.env.WESLEY_CONFIG_FILEPATH || null;
-    config = await loader.load(cfgPath);
-  } catch (e) {
-    console.warn('Warning: could not load Wesley config:', e?.message || e);
-  }
+  const config = { paths: {} };
 
   const eventStore = new GitWarpEventStore({
-    rootDir: config?.ledger?.repoPath || GENERATED_LEDGER_DIR
+    rootDir: GENERATED_LEDGER_DIR
   });
 
   return {
@@ -134,7 +110,6 @@ export async function createNodeRuntime() {
     stderr: process.stderr,
     config,
     eventStore,
-    db: new DbAdapter(),
 
     // Parsers
     parsers: {
@@ -162,8 +137,6 @@ export async function createNodeRuntime() {
 
     // Generators (lazy-loaded)
     generators: {
-      sql: sqlGen,
-      tests: testGen,
       js: jsGen
     },
 

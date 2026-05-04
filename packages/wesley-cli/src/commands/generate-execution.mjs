@@ -38,7 +38,7 @@ export async function ensureGeneratePreconditions({ env, options, shell }) {
   }
 }
 
-export async function runSequentialGeneration({ ctx, context, compileOpsIfRequested }) {
+export async function runSequentialGeneration({ ctx, context }) {
   const { schemaContent, schemaPath, options, logger } = context;
   const debugDump = options.printComposedSdl || options.printIr;
   const { writer } = ctx;
@@ -152,11 +152,8 @@ export async function runSequentialGeneration({ ctx, context, compileOpsIfReques
       options
     });
 
-    if (!options.dryRun) {
-      context.ir = ir;
-      context.transmutationRun = transmutationResult;
-      await compileOpsIfRequested({ ctx, context });
-    }
+    context.ir = ir;
+    context.transmutationRun = transmutationResult;
 
     emitRunCompleted(eventCollector, scope, {
       artifactCount: artifacts.length,
@@ -194,66 +191,8 @@ export async function runSequentialGeneration({ ctx, context, compileOpsIfReques
   }
 }
 
-export async function runTasksAndSlapsGeneration({ ctx, context, compileOpsIfRequested }) {
-  const { schemaContent, options, logger } = context;
-  const { planner, runner, generators, writer } = ctx;
-
-  const nodes = [
-    { id: 'parse', op: 'parse_schema', args: { sdl: schemaContent } },
-    { id: 'validate', op: 'validate_ir', needs: ['parse'] },
-    { id: 'gen_ddl', op: 'emit_ddl', needs: ['validate'] },
-    { id: 'gen_rls', op: 'emit_rls', needs: ['validate'], skip: !options.supabase },
-    { id: 'gen_tests', op: 'emit_tests', needs: ['validate'] },
-    { id: 'write', op: 'write_files', needs: ['gen_ddl', 'gen_rls', 'gen_tests'], args: { out: options.outDir } }
-  ].filter(n => !n.skip);
-
-  const edges = [];
-  for (const node of nodes) {
-    if (!node.needs) continue;
-    for (const dep of node.needs) {
-      edges.push([dep, node.id]);
-    }
-  }
-
-  const plan = planner.buildPlan(nodes, edges, { versions: {} });
-
-  if (options.showPlan) {
-    logger.info({ plan }, 'Execution plan:');
-  }
-
-  const handlers = {
-    parse_schema: async (n) => ({
-      ir: (await resolveSchemaIr({
-        ctx,
-        schemaContent: n.args.sdl,
-        schemaPath: context.schemaPath,
-        units: context.units,
-        logger
-      })).ir
-    }),
-    validate_ir: async (_n, deps) => ({ ir: deps.parse.ir }),
-    emit_ddl: async (_n, deps) => generators.sql.emitDDL(deps.validate.ir),
-    emit_rls: async (_n, deps) => generators.sql.emitRLS(deps.validate.ir),
-    emit_tests: async (_n, deps) => generators.tests.emitPgTap(deps.validate.ir),
-    write_files: async (n, deps) => {
-      const artifacts = [
-        ...(deps.gen_ddl?.files || []),
-        ...(deps.gen_rls?.files || []),
-        ...(deps.gen_tests?.files || [])
-      ];
-      return writer.writeFiles(artifacts, n.args.out);
-    }
-  };
-
-  const result = await runner.run(plan, { handlers, logger });
-
-  await compileOpsIfRequested({ ctx, context });
-
-  if (!options.quiet && !options.json) {
-    logger.info('✨ Generation complete!');
-  }
-
-  return result;
+export async function runTasksAndSlapsGeneration({ ctx, context }) {
+  return runSequentialGeneration({ ctx, context });
 }
 
 async function persistSnapshot({ ctx, ir, logger, dryRun }) {

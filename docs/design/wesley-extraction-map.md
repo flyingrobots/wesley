@@ -63,14 +63,14 @@ or no advertised product surface.
 | Legacy Continuum tests | removed `compile-ttd.bats`, `bundle-echo.bats`, root `compile-ttd` composition cases, `warpspace.*`, `verify-realization.bats`, and stale Continuum witness assertions | Done | Generic Wesley no longer keeps Bats coverage for removed Continuum product commands. |
 | CLI dependency on Echo generator | removed `packages/wesley-cli` dependency on `@wesley/generator-echo` and the lockfile importer edge | Done | The generic CLI no longer imports or declares Echo; the Echo package was removed in the Continuum generator package slice. |
 | Doctor hard-coded product generator list | removed unused `_WELL_KNOWN_GENERATORS` from `packages/wesley-cli/src/commands/doctor-checks.mjs` | Done | Doctor discovers workspace generator packages dynamically or reads `config.generators`; it no longer names Echo, TTD, or Supabase as built-in well-known generators. |
-| PostgreSQL-family core exports | `packages/wesley-core/src/index.mjs`, `typeMapping.mjs`, `PostgreSQLGenerator.mjs`, `PgTAPTestGenerator.mjs`, migration explainer/planner/orchestrator, QIR Postgres dialect | Relocate | Move to `wesley-postgres`; keep generic QIR contracts only after the Postgres dialect split is explicit. |
+| PostgreSQL-family core exports | removed `@wesley/core` exports and implementation files for type mapping, PostgreSQL/PgTAP generation, migration planning/explainers/verifiers, SQL AST/CST/backend helpers, QIR SQL/Postgres lowering, SQL/test/diff ports, advisory locks, transaction helpers, PostgreSQL sanitizers, and database safety validation; `wesley-postgres` owns the relocated core primitives | Done | Generic Wesley core no longer exports PostgreSQL-family generators, migration planners, database ports, database safety helpers, or QIR SQL dialect internals. |
 | Supabase generator package | removed Wesley-local `packages/wesley-generator-supabase/`, its package-local workflow, test harness, CODEOWNERS entry, workspace lockfile importer, progress metadata, and workspace dependency edges; `wesley-postgres` owns `packages/wesley-generator-supabase/` | Done | Generic Wesley no longer ships the Supabase generator package. Remaining Postgres core/runtime emitters are tracked by the separate core-export and host/runtime coupling rows. |
 | Supabase/Next stack package | removed Wesley-local `packages/wesley-stack-supabase-nextjs/`, its CODEOWNERS entry, architecture boundary required-package entry, progress metadata, and lockfile importer; `wesley-postgres` owns `packages/wesley-stack-supabase-nextjs/` | Done | Generic Wesley no longer ships the Supabase + Next.js stack template. |
-| PostgreSQL/Supabase host/runtime coupling | `packages/wesley-host-node/src/adapters/ConfigLoader.mjs`, `DbAdapter.mjs`, `createNodeRuntime.mjs`, compiler adapters, `packages/wesley-runtime-node/src/CounterfactualSurface.mjs` | Relocate | Move Node database helpers under `wesley-postgres-node`; keep generic host shims in Wesley. |
-| PostgreSQL fixtures and smoke scripts | `docker-compose.fixture-test.yml`, `scripts/smoke/postgres-fixture.sh`, `scripts/smoke/holmes-ops-pgtap.sh`, `test/fixtures/postgres/` | Defer | These are test harnesses for current database behavior; move with the database package split, not in the Continuum cleanup slice. |
-| Root PostgreSQL parser dependency | root `package.json`, `packages/wesley-core/package.json`, lockfile entries for `@supabase/pg-parser` | Relocate | Remove from Wesley only after all direct core/generator imports move to `wesley-postgres`. |
+| PostgreSQL/Supabase host/runtime coupling | removed Node database config/adapter/compiler files and Postgres generator adapters; `createNodeRuntime.mjs` now exposes generic parsing, JS generators, event store, filesystem, and writer shims; `wesley-postgres-node` owns the relocated database helpers | Done | Generic host/runtime packages no longer synthesize PostgreSQL outputs or wire database generators. |
+| PostgreSQL fixtures and smoke scripts | removed root Postgres Docker compose files, Postgres/QIR schemas, QIR docs, Postgres smoke scripts, QIR/ops fixtures, pgTAP examples, and database E2E harness files; `wesley-postgres` owns the moved copies | Done | Database fixture and smoke coverage now belongs to the database repo. |
+| Root PostgreSQL parser dependency | removed root and `@wesley/core` `@supabase/pg-parser` dependencies, lockfile entries, and stale `packages/wesley-core/package-lock.json` | Done | Wesley package metadata no longer implies PostgreSQL parsing is part of the base platform. |
 | Holmes `git-warp` provider | `packages/wesley-holmes/src/counterfactual/provider.mjs`, `policy.mjs`, `@git-stunts/*` deps | Relocate | Move provider/policy defaults into Continuum/module ownership after Holmes has a module capability seam for counterfactual providers. |
-| Product/database backlog and docs | active backlog/inbox items naming Continuum, Supabase, Postgres, Echo, TTD as Wesley work | Defer | Triage after code ownership moves; historical retro and changelog entries stay as history, not active doctrine. |
+| Product/database backlog and docs | moved active Postgres/QIR/Supabase backlog notes, QIR specs/guides/drafts, and database smoke docs to `wesley-postgres`; patched active Wesley docs to describe generic artifact/transmutation behavior | Done | Active database work is now owned by the database repo. Historical audit, retro, and changelog mentions remain history rather than current Wesley doctrine. |
 
 ### 1. Continuum target semantics still sit inside generic compile flows
 
@@ -204,9 +204,9 @@ Result:
 - Continuum owns TTD protocol generation
 - Wesley no longer exports protocol-family internals from core
 
-### 4. Database and Postgres semantics leak out of `wesley-core`
+### 4. Database and Postgres semantics moved out of `wesley-core`
 
-Evidence:
+Moved out:
 
 - `packages/wesley-core/src/index.mjs`
 - `packages/wesley-core/src/domain/typeMapping.mjs`
@@ -218,6 +218,11 @@ Evidence:
 - `packages/wesley-core/src/domain/analyzer/DefaultAnalyzer.mjs`
 - `packages/wesley-core/src/domain/analyzer/ConcurrentSafetyAnalyzer.mjs`
 - `packages/wesley-core/src/domain/qir/`
+- removed `packages/wesley-core/src/ports/sqlgen.mjs`
+- removed `packages/wesley-core/src/ports/testgen.mjs`
+- removed `packages/wesley-core/src/ports/diff.mjs`
+- removed PostgreSQL advisory lock, transaction, sanitizer, and safety
+  validation helpers
 
 Why it is non-generic:
 
@@ -225,22 +230,18 @@ Why it is non-generic:
 - it exports Postgres generators directly from the base package
 - it contains migration explainers, lock levels, and CIC orchestration
 - it contains database-specific analyzer logic and QIR/Postgres naming rules
+- it contained database execution safety helpers and SQL-specific port contracts
 
 New home:
 
-- create a PostgreSQL-family extraction repo:
-  - `wesley-postgres`
-
-Suggested split:
-
-- `wesley-postgres/packages/postgres`
+- `wesley-postgres`
   - GraphQL/Postgres type mapping
   - Postgres lock semantics
   - Postgres analyzers
   - PgTAP generation
   - PostgreSQL-specific QIR emission rules
-- `wesley-postgres/packages/supabase`
-  - Supabase-specific generation and policy behavior
+  - migration planning, explainers, verifiers, and repair/rollback helpers
+  - database safety, locking, transaction, sanitizer, and SQL/test/diff ports
 
 Result:
 
@@ -248,33 +249,34 @@ Result:
 - PostgreSQL-family behavior gets its own repo instead of lingering anywhere in
   Wesley
 
-### 5. Database runtime adapters live in generic host-node
+### 5. Database runtime adapters moved out of generic host/runtime packages
 
-Evidence:
+Moved out:
 
 - `packages/wesley-host-node/src/adapters/DbAdapter.mjs`
 - `packages/wesley-host-node/src/adapters/ConfigLoader.mjs`
 - `packages/wesley-host-node/src/adapters/createNodeRuntime.mjs`
 - `packages/wesley-host-node/src/adapters/compiler-inprocess.mjs`
 - `packages/wesley-host-node/src/adapters/inprocess-compiler.mjs`
-- `packages/wesley-runtime-node/src/CounterfactualSurface.mjs`
+- `packages/wesley-runtime-node/src/PostgresGeneratorAdapters.mjs`
 
 Why it is non-generic:
 
 - these adapters assume SQL/PostgreSQL execution and generated SQL/test output
 - `ConfigLoader` includes database-lane defaults like pgTAP generation
-- `createNodeRuntime.mjs` still wires PostgreSQL-family generator adapters
+- old `createNodeRuntime.mjs` wiring loaded PostgreSQL-family generator adapters
+- old runtime-node counterfactual collection synthesized database outputs
 
 New home:
 
-- move these adapters under `wesley-postgres`
-  - initial target: `packages/wesley-postgres-node`
-  - remaining mixed host-node/database config should follow later
+- `wesley-postgres/packages/wesley-postgres-node`
 
 Result:
 
 - `wesley-host-node` remains a generic host package
-- Node-specific database helpers still exist, but under the database module
+- Node-specific database helpers still exist, but under the database repo
+- `packages/wesley-runtime-node/src/CounterfactualSurface.mjs` remains in
+  Wesley only as a generic collector for existing workspace artifacts
 
 ### 5a. Supabase packages moved out of Wesley
 
@@ -331,7 +333,7 @@ Result:
 
 ## Extraction Order
 
-The safest order is:
+Completed order:
 
 1. keep `compile.mjs` as the module-owned target dispatcher with no built-in
    product targets
@@ -343,8 +345,10 @@ The safest order is:
 5. carve database behavior out of `wesley-core`
 6. move Node/Postgres adapters out of `wesley-host-node`
 
-This order matters because the Continuum extraction is conceptually settled
-already, while the database module split still needs more package shaping.
+Items 1, 2, 3, 5, and 6 are complete in Wesley. Item 4 remains the next
+non-database product coupling: Holmes still has a `git-warp` counterfactual
+provider in generic shared code and should move only when the counterfactual
+provider capability seam is ready.
 
 ## Short-Term Rules
 

@@ -12,7 +12,6 @@ export { registryHash, canonicalizeJSON } from './domain/registryHash.mjs';
 export { computeLayoutHash, buildLayoutDescriptor, encodingForType } from './domain/layoutHash.mjs';
 export { computeHashChain, computeSdlHash, computeIrHash, computeBundleHash } from './domain/hashChain.mjs';
 export { computeDelta } from './domain/schemaDelta.mjs';
-export { GQL_TO_PG, PG_TO_GQL, fieldTypeToPg, gqlScalarToPg } from './domain/typeMapping.mjs';
 
 // Domain Errors
 export { WesleyError, OpsError, PluginError } from './domain/WesleyError.mjs';
@@ -23,27 +22,6 @@ export { exitCodeFor, isRegistered, getRegistry } from './domain/ExitCodes.mjs';
 // Domain Events
 export * from './domain/Events.mjs';
 
-// Note: Generators moved to dedicated packages per ENSIGN reorganization
-export { PostgreSQLGenerator } from './domain/generators/PostgreSQLGenerator.mjs';
-export { PgTAPTestGenerator } from './domain/generators/PgTAPTestGenerator.mjs';
-
-// Note: SQLExecutor moved to host-node adapters per ENSIGN reorganization
-
-export {
-  MigrationExplainer,
-  MigrationOperation,
-  MigrationAnalysisSummary,
-  PostgreSQLLockLevels
-} from './domain/explainer/MigrationExplainer.mjs';
-
-export {
-  CICOrchestrator,
-  CICOperation,
-  CICExecutionStrategy,
-  CICProgressTracker,
-  CICOperationResult
-} from './domain/orchestrator/CICOrchestrator.mjs';
-
 // Application Layer
 export * from './application/Commands.mjs';
 export * from './application/UseCases.mjs';
@@ -52,11 +30,6 @@ export { LoweringEngine, createLoweredSchemaEnvelope } from './application/Lower
 export { irToSchema } from './application/irToSchema.mjs';
 export { EvidenceMap } from './application/EvidenceMap.mjs';
 export { mergePluginEvidenceIntoMap } from './application/EvidenceMap.mjs';
-export {
-  collectCounterfactualSurfaceModel,
-  ensureCounterfactualWorkspaceArtifacts,
-  resolveCounterfactualSchemaPath
-} from './application/CounterfactualSurface.mjs';
 export { createGeneratedArtifactResolver, enrichBundleWithEvidenceTruth } from './application/GeneratedBundle.mjs';
 export {
   adjustReadinessVerdictForEvidenceTrust,
@@ -97,7 +70,6 @@ export {
   legacyGeneratedArtifactPath,
   generatedArtifactPathCandidates
 } from './application/GeneratedArtifactPaths.mjs';
-export { buildAdditivePlan, explainPlan, lockFor, emitMigrations } from './application/MigrationPlan.mjs';
 export { MemoryEventStore } from './application/MemoryEventStore.mjs';
 export { createRuntimeEventCollector, createRuntimeStreamId, RUNTIME_EVENT_SCHEMA_VERSION } from './application/RuntimeEvents.mjs';
 export { buildRuntimeRunReport, applyRuntimeEvent } from './application/RuntimeRunReport.mjs';
@@ -135,14 +107,6 @@ export {
 } from './application/ModuleCapabilityRegistry.mjs';
 export { validateConfig, KNOWN_EXPERIMENTAL_FLAGS } from './application/ConfigValidator.mjs';
 
-// Safety Components (Wave 3)
-export {
-  ConcurrentSafetyAnalyzer,
-  ConcurrentSafetyError,
-  RaceConditionError,
-  LockEscalationError
-} from './domain/analyzer/ConcurrentSafetyAnalyzer.mjs';
-
 export {
   BackpressureController,
   BackpressureError,
@@ -156,9 +120,6 @@ export {
 export * from './ports/Ports.mjs';
 export { CompilerPort } from './ports/compiler.mjs';
 export { ParserPort } from './ports/parser.mjs';
-export { SqlGeneratorPort } from './ports/sqlgen.mjs';
-export { TestGeneratorPort } from './ports/testgen.mjs';
-export { DiffEnginePort } from './ports/diff.mjs';
 export { WriterPort } from './ports/writer.mjs';
 export { FileSystemPort } from './ports/fs.mjs';
 // Fixed case sensitivity: logger.mjs -> Logger.mjs
@@ -167,7 +128,6 @@ export { ClockPort, SystemClock, FakeClock, systemClock } from './ports/clock.mj
 export { GeneratorPlugin, validatePlugin, validatePlan, validateGenerateResult, SUPPORTED_API_VERSIONS } from './ports/GeneratorPlugin.mjs';
 export { WesleyModule, validateWesleyModule, SUPPORTED_WESLEY_MODULE_API_VERSIONS } from './ports/WesleyModule.mjs';
 export { ArtifactWriterPort, detectConflicts } from './ports/ArtifactWriter.mjs';
-export { assertCounterfactualSurfacePort } from './ports/CounterfactualSurface.mjs';
 export { EventStorePort, assertEventStorePort } from './ports/EventStore.mjs';
 
 // Utility helpers

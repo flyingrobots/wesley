@@ -14,20 +14,20 @@ test('resolveRuntimeRunStream finds a run from its snapshot when transmutation i
   const store = new MemoryEventStore();
   appendCompletedRun(store, {
     runId: 'run-store-001',
-    transmutation: 'legacy-supabase',
-    streamId: 'transmutation:legacy-supabase:run-store-001'
+    transmutation: 'null-generator',
+    streamId: 'transmutation:null-generator:run-store-001'
   });
 
   const result = resolveRuntimeRunStream(store, { runId: 'run-store-001' });
-  assert.equal(result.streamId, 'transmutation:legacy-supabase:run-store-001');
+  assert.equal(result.streamId, 'transmutation:null-generator:run-store-001');
 });
 
 test('resolveRuntimeRunStream fails when a runId maps to multiple streams', () => {
   const store = new MemoryEventStore();
   appendCompletedRun(store, {
     runId: 'run-store-ambiguous',
-    transmutation: 'legacy-supabase',
-    streamId: 'transmutation:legacy-supabase:run-store-ambiguous'
+    transmutation: 'null-generator',
+    streamId: 'transmutation:null-generator:run-store-ambiguous'
   });
   appendCompletedRun(store, {
     runId: 'run-store-ambiguous',
@@ -43,11 +43,11 @@ test('resolveRuntimeRunStream fails when a runId maps to multiple streams', () =
 
 test('readRuntimeRunRecord replays from snapshot plus tail events', () => {
   const store = new MemoryEventStore();
-  const streamId = 'transmutation:legacy-supabase:run-store-002';
+  const streamId = 'transmutation:null-generator:run-store-002';
   appendEvent(store, {
     streamId,
     runId: 'run-store-002',
-    transmutation: 'legacy-supabase',
+    transmutation: 'null-generator',
     sequence: 1,
     type: 'RunRequested',
     timestamp: '2026-03-21T18:00:00.000Z',
@@ -57,7 +57,7 @@ test('readRuntimeRunRecord replays from snapshot plus tail events', () => {
   appendEvent(store, {
     streamId,
     runId: 'run-store-002',
-    transmutation: 'legacy-supabase',
+    transmutation: 'null-generator',
     sequence: 2,
     type: 'ArtifactsMaterialized',
     timestamp: '2026-03-21T18:00:01.000Z',
@@ -68,13 +68,13 @@ test('readRuntimeRunRecord replays from snapshot plus tail events', () => {
     schemaVersion: 'runtime-run-snapshot.v1',
     streamId,
     runId: 'run-store-002',
-    transmutation: 'legacy-supabase',
+    transmutation: 'null-generator',
     lastSequence: 2,
     eventCount: 2,
     updatedAt: '2026-03-21T18:00:01.000Z',
     run: {
       runId: 'run-store-002',
-      transmutation: 'legacy-supabase',
+      transmutation: 'null-generator',
       streamId,
       command: 'transform',
       status: 'running',
@@ -93,7 +93,7 @@ test('readRuntimeRunRecord replays from snapshot plus tail events', () => {
   appendEvent(store, {
     streamId,
     runId: 'run-store-002',
-    transmutation: 'legacy-supabase',
+    transmutation: 'null-generator',
     sequence: 3,
     type: 'ScoresComputed',
     timestamp: '2026-03-21T18:00:02.000Z',
@@ -113,13 +113,13 @@ test('inspectRuntimeRunStreams and summarizeRuntimeRunDoctor flag non-terminal r
   const store = new MemoryEventStore();
   appendCompletedRun(store, {
     runId: 'run-store-healthy',
-    transmutation: 'legacy-supabase',
-    streamId: 'transmutation:legacy-supabase:run-store-healthy'
+    transmutation: 'null-generator',
+    streamId: 'transmutation:null-generator:run-store-healthy'
   });
   appendEvent(store, {
-    streamId: 'transmutation:legacy-supabase:run-store-running',
+    streamId: 'transmutation:null-generator:run-store-running',
     runId: 'run-store-running',
-    transmutation: 'legacy-supabase',
+    transmutation: 'null-generator',
     sequence: 1,
     type: 'RunRequested',
     timestamp: '2026-03-21T18:10:00.000Z',
@@ -127,9 +127,9 @@ test('inspectRuntimeRunStreams and summarizeRuntimeRunDoctor flag non-terminal r
     payload: { command: 'transform' }
   });
 
-  const streams = inspectRuntimeRunStreams(store, { transmutation: 'legacy-supabase' });
+  const streams = inspectRuntimeRunStreams(store, { transmutation: 'null-generator' });
   const summary = summarizeRuntimeRunDoctor(streams);
-  const runs = listRuntimeRunReports(store, { transmutation: 'legacy-supabase' });
+  const runs = listRuntimeRunReports(store, { transmutation: 'null-generator' });
 
   assert.equal(streams.length, 2);
   assert.equal(summary.streamCount, 2);

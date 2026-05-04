@@ -17,9 +17,12 @@ WESLEY_MODULES=/path/to/module.mjs pnpm wesley --help
 Set `WESLEY_MODULES` or configure `wesley.config.mjs` to load external module
 commands and module-owned compile targets.
 
-See `pnpm wesley --help` for the full list of commands (including `blade`, `cert-*`, and experimental `--ops` support).
+See `pnpm wesley --help` for the full list of generic commands, including
+`cert-*` assurance surfaces.
 
-Repeated local schema workflows reuse a hash-addressed IR cache in `.wesley-cache/ir/`, so `generate`, `plan`, `rehearse`, `up`, `typescript`, and `zod` do not need to re-lower unchanged SDL on every invocation.
+Repeated local schema workflows reuse a hash-addressed IR cache in
+`.wesley-cache/ir/`, so `generate`, `typescript`, and `zod` do not need to
+re-lower unchanged SDL on every invocation.
 
 Any remaining product and database commands still present in this package are
 extraction debt. New domain-specific commands, targets, policies, and runtime
