@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { dirname, join, resolve } from 'node:path';
 import process from 'node:process';
@@ -104,6 +104,7 @@ function loadPackageTests() {
   for (const entry of entries) {
     if (!entry.isDirectory()) continue;
     const packageJsonPath = join(packagesDir, entry.name, 'package.json');
+    if (!existsSync(packageJsonPath)) continue;
     const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
     if (packageJson?.scripts?.test) {
       byDir.set(`packages/${entry.name}/`, packageJson.name);
