@@ -3,14 +3,14 @@
 
 This page describes the directive support Wesley actually ships today.
 
-The repo-wide directive registry in [schemas/directives.graphql](../schemas/directives.graphql) is broader than the main `generate -> plan -> rehearse -> certify` path. The current Node hot path is grounded in the GraphQL adapter at [packages/wesley-host-node/src/adapters/GraphQLAdapter.mjs](../packages/wesley-host-node/src/adapters/GraphQLAdapter.mjs), so this document classifies directives by what that path truly parses and lowers today.
+The repo-wide directive registry in [schemas/directives.graphql](../schemas/directives.graphql) is Wesley's generic registry. Product directive families, including the TTD protocol family, live with their owning modules instead of being declared as generic Wesley directives. The current Node hot path is grounded in the GraphQL adapter at [packages/wesley-host-node/src/adapters/GraphQLAdapter.mjs](../packages/wesley-host-node/src/adapters/GraphQLAdapter.mjs), so this document classifies directives by what that path truly parses and lowers today.
 
 ## Support Levels
 
 - `current`: parsed from SDL and used by a shipped command path today.
 - `experimental`: present in fixtures, legacy IR consumers, or downstream generators, but not guaranteed end-to-end on the main SDL hot path.
-- `ttd-only`: parsed by legacy TTD internals, not by the main database compiler
-  path or a generic Wesley CLI command.
+- `external`: owned by an external module or product repo, not by generic
+  Wesley.
 - `deferred`: declared in the registry or docs, but not yet part of a stable public contract.
 
 ## Current On The Main Database Compiler Path
@@ -47,19 +47,18 @@ These directives exist in the registry and some downstream code paths, but they 
 | `@wes_hasMany`, `@wes_belongsTo` | `experimental` | Relationship hints exist in the registry and legacy/domain consumers such as `OperationRegistry`, but the main GraphQL SDL hot path does not lower canonical `@wes_hasMany` / `@wes_belongsTo` into stable relationship semantics. Some older bare names still act as relation-only hints in limited parser code paths. |
 | `@wes_owner`, `@wes_grant`, `@wes_noRPC` | `experimental` | RPC/policy generators and tenant helpers consume these directives when they already exist on domain tables, but the current GraphQL SDL hot path does not guarantee canonical end-to-end support for them. |
 
-## TTD-Only Directives
+## External TTD Directives
 
-These directives are real in the legacy Typed Transition Dynamics internals,
-but they are not part of the main database compiler contract and generic Wesley
-no longer ships a public `compile-ttd` command or `@wesley/core/ttd` package
-export. Reintroduce them through a Continuum-owned module command if that path
-is still needed.
+These directives are real in the Continuum-owned Typed Transition Dynamics
+module, but they are not declared by Wesley's generic directive registry and
+are not part of the main database compiler contract. Generic Wesley no longer
+ships a public `compile-ttd` command or `@wesley/core/ttd` package export.
 
 | Directive family | Status | Current surface |
 | --- | --- | --- |
-| `@wes_channel`, `@wes_op`, `@wes_rule`, `@wes_invariant` | `ttd-only` | Parsed by the relocated Continuum TTD internals in `continuum/wesley/ttd/directives.mjs`, not by generic Wesley core. |
-| `@wes_emission`, `@wes_footprint`, `@wes_requires`, `@wes_produces`, `@wes_emitsTo`, `@wes_mustEmit` | `ttd-only` | Current in the relocated Continuum TTD extraction/manifest path, not in the database compiler hot path. |
-| `@wes_codec`, `@wes_version` | `ttd-only` | Current for relocated Continuum TTD/type-registry compilation paths and related manifests, not for the main SDL-to-DDL flow. |
+| `@wes_channel`, `@wes_op`, `@wes_rule`, `@wes_invariant` | `external` | Declared in `continuum/wesley/ttd/schemas/ttd-directives.graphql` and parsed by `continuum/wesley/ttd/directives.mjs`, not by generic Wesley core. |
+| `@wes_emission`, `@wes_footprint`, `@wes_requires`, `@wes_produces`, `@wes_emitsTo`, `@wes_mustEmit` | `external` | Current in the relocated Continuum TTD extraction/manifest path, not in the database compiler hot path. |
+| `@wes_codec`, `@wes_version` | `external` | Current for relocated Continuum TTD/type-registry compilation paths and related manifests, not for the main SDL-to-DDL flow. |
 
 ## Deferred Or Unstable Surface
 
@@ -77,9 +76,9 @@ The directive registry and draft docs still contain broader semantics than the m
 - Prefer canonical `@wes_*` names in new schemas, even where older aliases still parse.
 - Use `@wes_default(value: "...")` in docs and new examples. The parser still accepts `expr`, but that is a compatibility affordance, not the canonical form.
 - Treat the identity, scoring, relation, RPC, and policy hint directives as experimental unless the specific command path you are using proves support end to end.
-- If you are working on protocol/TTD flows, use a Continuum-owned module or
-  package once it exists; do not assume TTD directives are part of
-  `wesley generate`.
+- If you are working on protocol/TTD flows, use the Continuum-owned module or
+  package; do not assume TTD directives are part of `wesley generate` or the
+  generic `schemas/directives.graphql` registry.
 
 ## Minimal Happy-Path Example
 

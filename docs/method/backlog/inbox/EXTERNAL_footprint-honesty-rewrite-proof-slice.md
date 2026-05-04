@@ -49,7 +49,7 @@ The external module compiles one narrow proof slice in which:
 
 ## Repo Evidence
 
-- `schemas/directives.graphql`
+- `continuum/wesley/ttd/schemas/ttd-directives.graphql`
 - relocated Continuum-owned TTD compiler evidence at `continuum/wesley/ttd/`
 - historical Wesley-local Echo generator evidence was removed during the
   domain-empty extraction; any replacement belongs in an external module

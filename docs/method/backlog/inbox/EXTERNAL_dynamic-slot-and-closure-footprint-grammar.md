@@ -60,7 +60,7 @@ The next cut should prove:
 
 ## Repo Evidence
 
-- `schemas/directives.graphql`
+- `continuum/wesley/ttd/schemas/ttd-directives.graphql`
 - `continuum/wesley/ttd/schemas/ttd-ir.schema.json`
 - relocated Continuum-owned TTD compiler evidence at `continuum/wesley/ttd/`
 - historical Wesley-local Echo generator evidence was removed during the

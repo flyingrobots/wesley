@@ -26,11 +26,13 @@ That retired command validated the checked-in schema and reported generated
 `manifest/*.json` and `typescript/*.ts` outputs. Those files are derived
 artifacts from SDL, not a second authored source surface.
 
-The shipped directive contract for this compiler path is the `@wes_*` TTD
-family documented in [`docs/DIRECTIVES.md`](../DIRECTIVES.md). Its
-implementation has moved out of generic Wesley and now lives under the
+The directive contract for this compiler path is the `@wes_*` TTD family
+documented in [`docs/DIRECTIVES.md`](../DIRECTIVES.md). Its SDL declaration and
+implementation moved out of generic Wesley and now live under the
 Continuum-owned `continuum/wesley/ttd/` tree. The emitted TTD IR JSON Schema
-now belongs beside that module at `continuum/wesley/ttd/schemas/ttd-ir.schema.json`.
+and TTD directive SDL now belong beside that module at
+`continuum/wesley/ttd/schemas/ttd-ir.schema.json` and
+`continuum/wesley/ttd/schemas/ttd-directives.graphql`.
 The broader cross-repo publication boundary is still tracked as active backlog
 work in
 [`SOURCE_WESLEY_protocol-surface-cutover`](../method/backlog/v0.1.0/SOURCE_WESLEY_protocol-surface-cutover.md).

@@ -187,3 +187,15 @@ Moved in the schema ownership split:
 
 The matching extraction-map rows now mark the product schema ownership split as
 done.
+
+Moved in the mixed directive schema cleanup slice:
+
+- Wesley-local `schemas/directives.graphql` no longer declares the TTD-only
+  directive family
+- the generic composition fixture stopped using `@wes_channel` as a no-op
+  transitive import marker
+- Continuum owns the relocated TTD directive SDL at
+  `continuum/wesley/ttd/schemas/ttd-directives.graphql`
+
+The matching extraction-map row now marks the mixed directive schema split as
+done.
