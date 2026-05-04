@@ -140,6 +140,14 @@ Deleted in the TTD/Echo public CLI command cleanup slice:
   commands
 
 The matching extraction-map rows now mark TTD/Echo public CLI commands and
-legacy Continuum Bats coverage as done. The CLI dependency on
-`@wesley/generator-echo` is intentionally still open as the next focused
-metadata/lockfile slice.
+legacy Continuum Bats coverage as done.
+
+Deleted in the CLI Echo dependency cleanup slice:
+
+- `packages/wesley-cli/package.json` no longer declares
+  `@wesley/generator-echo`
+- `pnpm-lock.yaml` no longer links `@wesley/generator-echo` into the
+  `packages/wesley-cli` importer
+
+The Echo generator package itself remains tracked as separate Continuum
+generator package residue.
