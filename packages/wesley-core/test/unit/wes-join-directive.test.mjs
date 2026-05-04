@@ -11,7 +11,7 @@ import { test } from 'node:test';
 import assert from 'node:assert';
 import { GraphQLSchemaBuilder } from '../../src/domain/GraphQLSchemaBuilder.mjs';
 import { parse } from 'graphql';
-import { validateJoinDirective, VALID_JOIN_STRATEGIES } from '../../src/ttd/directives.mjs';
+import { validateJoinDirective, VALID_JOIN_STRATEGIES } from '../../src/domain/joinDirective.mjs';
 
 /**
  * Helper: parse SDL and build Wesley schema (throws on validation error)

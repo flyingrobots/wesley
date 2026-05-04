@@ -1,11 +1,12 @@
 # TTD Protocol Schema for Echo Time-Travel Debugger
-# Repo-local authored input for Wesley's current `compile-ttd` path.
+# Repo-local historical input for the relocated Continuum TTD compile path.
 #
 # Current source-surface truth in this repo:
-# - this SDL is the authored input Wesley compiles today
+# - generic Wesley no longer ships compile-ttd or @wesley/core/ttd
+# - Continuum owns the current compiler implementation at continuum/wesley/ttd/
 # - manifest JSON and TypeScript outputs are derived artifacts
 # - the cross-repo publication boundary is still tracked separately in
-#   docs/method/backlog/asap/SOURCE_WESLEY_protocol-surface-cutover.md
+#   docs/method/backlog/v0.1.0/SOURCE_WESLEY_protocol-surface-cutover.md
 
 scalar JSON
 scalar Hash  # SHA-256 hash: 32 bytes binary, 64-character hex string

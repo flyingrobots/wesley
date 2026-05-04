@@ -8,8 +8,9 @@ active design packet in
 [docs/design/0003-continuum-contract-compiler/continuum-contract-compiler.md](../design/0003-continuum-contract-compiler/continuum-contract-compiler.md).
 
 Generic Wesley no longer ships public `compile-ttd` or `bundle-echo` commands.
-Those surfaces must reappear only as Continuum-owned module commands or
-external packages if they are still needed.
+It also no longer exports `@wesley/core/ttd`. Those surfaces must reappear only
+as Continuum-owned module commands or external packages if they are still
+needed.
 
 ## Canonical Authored Home
 
@@ -73,7 +74,7 @@ Former Wesley-local derived surfaces, now external-module responsibility:
   `typescript/registry.ts`, and `typescript/index.ts`
 
 Repo evidence:
-- `packages/wesley-core/src/ttd/`
+- relocated Continuum-owned implementation at `continuum/wesley/ttd/`
 - `docs/design/wesley-extraction-map.md`
 
 ### 2. Echo CAS-Facing Payload Family

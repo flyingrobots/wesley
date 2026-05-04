@@ -35,7 +35,7 @@ timeline
 ### 3. Extraction Rigor
 - Treating the current Continuum, WARPspace, PostgreSQL, Supabase, Echo, TTD,
   and product-backend references as wrong-repo residue unless they are explicit
-  historical docs or extraction notes.
+  historical docs, extraction notes, or already-relocated module surfaces.
 - Moving product/domain generators, witnesses, policies, and workspace tools to
   their owning repos.
 - Updating docs as behavior moves so no stale surface looks authoritative.

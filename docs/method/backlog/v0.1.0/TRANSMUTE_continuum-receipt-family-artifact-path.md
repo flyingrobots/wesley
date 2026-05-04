@@ -43,9 +43,11 @@ When this item becomes the active design packet, the target authored home is:
 
 - `schemas/ttd-protocol.graphql`
 - `schemas/echo-core-types.graphql`
-- `packages/wesley-core/src/ttd/codegen/orchestrator.mjs`
-- `packages/wesley-generator-ttd/`
-- `packages/wesley-cli/src/commands/compile-ttd.mjs`
+- relocated Continuum-owned TTD compiler evidence at
+  `continuum/wesley/ttd/codegen/orchestrator.mjs`
+- historical Wesley-local `packages/wesley-generator-ttd/` and
+  `packages/wesley-cli/src/commands/compile-ttd.mjs` surfaces were removed
+  during the domain-empty extraction
 
 ## Related Carry-Over
 

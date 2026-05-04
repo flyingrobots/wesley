@@ -3,8 +3,9 @@
 > Compile typed protocols with deterministic verification from GraphQL SDL
 
 > Extraction note: generic Wesley no longer ships the public `compile-ttd`
-> command. The CLI examples below are historical shape for a future
-> Continuum-owned module command or external package.
+> command or the `@wesley/core/ttd` package export. The implementation moved to
+> the Continuum-owned `continuum/wesley/ttd/` module surface. CLI examples below
+> are historical shape for a future module command or external package.
 
 ## Overview
 
@@ -12,9 +13,9 @@ The TTD (Type-Driven Development) Protocol Compiler extends Wesley to generate d
 
 ## Current Repo Truth
 
-Wesley's repo-local authored TTD schema currently lives in
+Wesley's repo-local historical TTD schema currently lives in
 [`schemas/ttd-protocol.graphql`](../../schemas/ttd-protocol.graphql). The
-former local compile path was:
+former generic Wesley compile path was:
 
 ```bash
 pnpm wesley compile-ttd --schema schemas/ttd-protocol.graphql --dry-run --json
@@ -25,8 +26,9 @@ That retired command validated the checked-in schema and reported generated
 artifacts from SDL, not a second authored source surface.
 
 The shipped directive contract for this path is the `@wes_*` TTD family
-documented in [`docs/DIRECTIVES.md`](../DIRECTIVES.md) and implemented in
-[`packages/wesley-core/src/ttd/directives.mjs`](../../packages/wesley-core/src/ttd/directives.mjs).
+documented in [`docs/DIRECTIVES.md`](../DIRECTIVES.md). Its implementation has
+moved out of generic Wesley and now lives under the Continuum-owned
+`continuum/wesley/ttd/` tree.
 The broader cross-repo publication boundary is still tracked as active backlog
 work in
 [`SOURCE_WESLEY_protocol-surface-cutover`](../method/backlog/v0.1.0/SOURCE_WESLEY_protocol-surface-cutover.md).
@@ -105,10 +107,10 @@ type OrderSystem
 
 ## Directives Reference
 
-The legacy TTD directive surface in `@wesley/core/ttd` is the `@wes_*` family
-below. The newer `@channel` / `@op` / `@rule` noun vocabulary described in the
-extracted plan doc is still target-state design work, not the generic Wesley
-CLI contract.
+The relocated Continuum TTD directive surface is the `@wes_*` family below. The
+newer `@channel` / `@op` / `@rule` noun vocabulary described in the extracted
+plan doc is still target-state design work, not the generic Wesley CLI
+contract.
 
 ### Channel Directives
 
@@ -194,8 +196,11 @@ graph LR
 
 ## Programmatic API
 
+From Continuum-owned tooling, the relocated module is imported from the
+Continuum checkout rather than from `@wesley/core`:
+
 ```typescript
-import { compileTtdProtocol } from '@wesley/core/ttd';
+import { compileTtdProtocol } from './wesley/ttd/index.mjs';
 
 const result = await compileTtdProtocol({
   sdl: schemaContent,
@@ -268,7 +273,7 @@ expect(result1.files).toEqual(result2.files);
 {
   "version": "1.0.0",
   "hash": "23dc0e310ad5658b...",
-  "generatedBy": "@wesley/core/ttd"
+  "generatedBy": "continuum/wesley/ttd"
 }
 ```
 
@@ -309,7 +314,7 @@ quantified = "forall" IDENT "in" IDENT ":" expr
 ### Using the Verifier
 
 ```typescript
-import { extractTtdSchema, createVerifier } from '@wesley/core/ttd';
+import { extractTtdSchema, createVerifier } from './wesley/ttd/index.mjs';
 
 const schema = extractTtdSchema(sdl, { crypto });
 const verifier = createVerifier(schema);

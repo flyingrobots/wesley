@@ -50,8 +50,8 @@ The external module compiles one narrow proof slice in which:
 ## Repo Evidence
 
 - `schemas/directives.graphql`
-- `packages/wesley-core/src/ttd/extractor.mjs`
-- `packages/wesley-core/src/ttd/validation.mjs`
-- `packages/wesley-generator-echo/src/index.mjs`
+- relocated Continuum-owned TTD compiler evidence at `continuum/wesley/ttd/`
+- historical Wesley-local Echo generator evidence was removed during the
+  domain-empty extraction; any replacement belongs in an external module
 - `docs/architecture/continuum-wesley-role.md`
 - `docs/method/backlog/v0.1.0/SOURCE_echo-warp-ttd-proof-family-compilation.md`

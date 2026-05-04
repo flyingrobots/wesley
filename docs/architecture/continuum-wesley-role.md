@@ -88,7 +88,7 @@ Current repo-visible evidence:
 
 - `schemas/ttd-protocol.graphql`
 - `schemas/echo-core-types.graphql`
-- `packages/wesley-core/src/ttd/`
+- relocated Continuum-owned implementation at `continuum/wesley/ttd/`
 - `docs/design/wesley-extraction-map.md`
 
 ### 2. Publication-Boundary Manager
@@ -109,7 +109,8 @@ name:
 Current repo-visible evidence:
 
 - `docs/architecture/continuum-minimum-shared-contract-surface.md`
-- `packages/wesley-core/src/ttd/codegen/orchestrator.mjs`
+- relocated Continuum-owned implementation at
+  `continuum/wesley/ttd/codegen/orchestrator.mjs`
 - `docs/design/wesley-extraction-map.md`
 
 Current rule:

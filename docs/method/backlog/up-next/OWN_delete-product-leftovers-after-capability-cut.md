@@ -112,8 +112,9 @@ Deleted in the TTD generated metadata cleanup slice:
 
 - generated `schema.json`, `ttd-ir.json`, and TypeScript headers no longer
   claim the deleted `@wesley/generator-ttd` package produced them
-- `compile-ttd` coverage now asserts the current legacy metadata surface is
-  `@wesley/core/ttd`
+- that interim `@wesley/core/ttd` metadata surface was superseded by the TTD
+  core relocation slice; Continuum-owned output now names
+  `continuum/wesley/ttd`
 
 Resolved in the Echo lint-hook cleanup slice:
 
@@ -158,3 +159,14 @@ Deleted in the Echo generator package cleanup slice:
 
 The matching extraction-map row now marks Continuum generator packages as done.
 Any future Echo or TTD generator belongs in a Continuum-owned module/repo.
+
+Moved in the TTD core relocation slice:
+
+- `packages/wesley-core/src/ttd/` moved to `continuum/wesley/ttd/`
+- `@wesley/core` no longer exports `./ttd` or `./ttd/invariants`
+- Continuum's `warp-ttd` compile target now imports the Continuum-owned TTD
+  compiler
+- generic Wesley kept `@wes_join` validation under
+  `packages/wesley-core/src/domain/joinDirective.mjs`
+
+The matching extraction-map row now marks the TTD core package surface as done.

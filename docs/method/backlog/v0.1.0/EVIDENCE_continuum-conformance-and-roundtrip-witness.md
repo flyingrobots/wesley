@@ -58,14 +58,12 @@ This lane should not claim to prove:
 
 ## Repo Evidence
 
-- `packages/wesley-generator-ttd/test/integration/e2e-pipeline.test.mjs`
-- `packages/wesley-generator-ttd/test/integration/determinism.test.mjs`
-- `packages/wesley-generator-echo/test/contract-determinism.test.mjs`
-- `packages/wesley-generator-echo/test/golden-vectors.test.mjs`
-- `packages/wesley-cli/src/commands/witness-continuum.mjs`
-- `packages/wesley-cli/test/witness-continuum.bats`
-- `packages/wesley-core/src/ttd/hasher.mjs`
-- `packages/wesley-core/src/ttd/manifest.mjs`
+- historical Wesley-local TTD/Echo generator and CLI evidence was removed
+  during the domain-empty extraction
+- relocated Continuum-owned TTD compiler evidence now lives under
+  `continuum/wesley/ttd/`
+- generic Wesley's remaining evidence path should be rebuilt around module
+  contracts, generated artifacts, and explicit publication boundaries
 - `docs/invariants/evidence-truth.md`
 
 ## Related Carry-Over

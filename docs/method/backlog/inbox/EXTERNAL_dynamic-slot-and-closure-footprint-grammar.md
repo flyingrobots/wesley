@@ -62,6 +62,7 @@ The next cut should prove:
 
 - `schemas/directives.graphql`
 - `schemas/ttd-ir.schema.json`
-- `packages/wesley-core/src/ttd/`
-- `packages/wesley-generator-echo/src/emitRewriteApi.mjs`
+- relocated Continuum-owned TTD compiler evidence at `continuum/wesley/ttd/`
+- historical Wesley-local Echo generator evidence was removed during the
+  domain-empty extraction; any replacement belongs in an external module
 - `docs/architecture/continuum-wesley-role.md`

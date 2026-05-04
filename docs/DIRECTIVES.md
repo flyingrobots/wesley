@@ -51,14 +51,15 @@ These directives exist in the registry and some downstream code paths, but they 
 
 These directives are real in the legacy Typed Transition Dynamics internals,
 but they are not part of the main database compiler contract and generic Wesley
-no longer ships a public `compile-ttd` command. Reintroduce them through a
-Continuum-owned module command if that path is still needed.
+no longer ships a public `compile-ttd` command or `@wesley/core/ttd` package
+export. Reintroduce them through a Continuum-owned module command if that path
+is still needed.
 
 | Directive family | Status | Current surface |
 | --- | --- | --- |
-| `@wes_channel`, `@wes_op`, `@wes_rule`, `@wes_invariant` | `ttd-only` | Parsed by legacy TTD internals in [packages/wesley-core/src/ttd/directives.mjs](../packages/wesley-core/src/ttd/directives.mjs). |
-| `@wes_emission`, `@wes_footprint`, `@wes_requires`, `@wes_produces`, `@wes_emitsTo`, `@wes_mustEmit` | `ttd-only` | Current in the TTD extraction/manifest path, not in the database compiler hot path. |
-| `@wes_codec`, `@wes_version` | `ttd-only` | Current for TTD/type-registry compilation paths and related manifests, not for the main SDL-to-DDL flow. |
+| `@wes_channel`, `@wes_op`, `@wes_rule`, `@wes_invariant` | `ttd-only` | Parsed by the relocated Continuum TTD internals in `continuum/wesley/ttd/directives.mjs`, not by generic Wesley core. |
+| `@wes_emission`, `@wes_footprint`, `@wes_requires`, `@wes_produces`, `@wes_emitsTo`, `@wes_mustEmit` | `ttd-only` | Current in the relocated Continuum TTD extraction/manifest path, not in the database compiler hot path. |
+| `@wes_codec`, `@wes_version` | `ttd-only` | Current for relocated Continuum TTD/type-registry compilation paths and related manifests, not for the main SDL-to-DDL flow. |
 
 ## Deferred Or Unstable Surface
 

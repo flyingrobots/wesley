@@ -3,7 +3,7 @@
 
 # TTD Protocol Compiler Plan
 
-**Status:** Repo-local CLI retired from generic Wesley; broader Continuum protocol cutover still open
+**Status:** Repo-local CLI and `@wesley/core/ttd` export retired from generic Wesley; broader Continuum protocol cutover still open
 **Created:** 2026-01-25
 **Origin:** Extracted from `flyingrobots/echo` TTD Master Plan
 **Scope:** Extend Wesley to compile deterministic protocol schemas for the Echo Time Travel Debugger
@@ -17,17 +17,18 @@ This plan extends Wesley with a new **TTD Protocol Compiler** capability. The go
 ## Current Repo Truth
 
 Wesley previously shipped a repo-local `compile-ttd` path that parsed the
-`@wes_*` TTD directives documented in [`../DIRECTIVES.md`](../DIRECTIVES.md)
-and implemented in
-[`../../packages/wesley-core/src/ttd/directives.mjs`](../../packages/wesley-core/src/ttd/directives.mjs).
+`@wes_*` TTD directives documented in [`../DIRECTIVES.md`](../DIRECTIVES.md).
+That implementation has moved out of generic Wesley and now lives in the
+Continuum-owned `continuum/wesley/ttd/` tree.
 The authored schema that the retired path compiled lives at
 [`../../schemas/ttd-protocol.graphql`](../../schemas/ttd-protocol.graphql),
 and the generated manifest / TypeScript outputs are derived artifacts rather
 than peer authorities.
 
 During the domain-empty extraction, generic Wesley retired the public
-`compile-ttd` command. The command examples below are historical shape for a
-future Continuum-owned module command or external package.
+`compile-ttd` command and removed the `@wesley/core/ttd` package export. The
+command and API examples below are historical shape for a future
+Continuum-owned module command or external package.
 
 The sections below describe the extracted target-state design from Echo. They
 are still useful for direction, but they should not be read as proof that
@@ -291,10 +292,10 @@ Wesley TTD Protocol Compiler is split into three maturity layers to prevent scop
 - [x] Channel/op/rule model extraction
 - [x] JSON manifest output: `schema.json`, `manifest.json`, `contracts.json`
 
-**Key files (implemented):**
+**Key files (implemented historically in Wesley, now relocated):**
 
 ```text
-packages/wesley-core/src/ttd/
+continuum/wesley/ttd/
 ├── directives.mjs     # Directive definitions and validation ✓
 ├── ast.mjs            # TTD-specific AST nodes ✓
 ├── extractor.mjs      # Extract channels/ops/rules from parsed schema ✓
@@ -343,10 +344,10 @@ packages/wesley-core/src/ttd/
 - [x] TypeScript Zod validators
 - [x] TypeScript registries
 
-**Key files:**
+**Key files (relocated):**
 
 ```text
-packages/wesley-core/src/ttd/codegen/
+continuum/wesley/ttd/codegen/
 ├── ts-types.mjs       # TS type generation ✓
 ├── ts-zod.mjs         # Zod validator generation ✓
 ├── ts-registry.mjs    # TS registry generation ✓
@@ -375,10 +376,10 @@ External Continuum-owned TTD generator package/repo:
 - [x] Verification program output (verifier.mjs with Verifier class, generateTsVerifier)
 - [x] Golden test framework
 
-**Key files:**
+**Key files (relocated):**
 
 ```text
-packages/wesley-core/src/ttd/invariants/
+continuum/wesley/ttd/invariants/
 ├── lexer.mjs          # Expression lexer ✓
 ├── parser.mjs         # Expression parser ✓
 ├── ast.mjs            # Invariant AST ✓
@@ -449,8 +450,11 @@ cat schema.graphql | wesley compile-ttd --schema - --out-dir generated/
 
 ### 5.3 Programmatic API ✓
 
+From Continuum-owned tooling, the relocated module is imported from the
+Continuum checkout rather than from `@wesley/core`:
+
 ```typescript
-import { compileTtdProtocol } from '@wesley/core/ttd';
+import { compileTtdProtocol } from './wesley/ttd/index.mjs';
 
 const result = await compileTtdProtocol({
   sdl: schemaContent,
