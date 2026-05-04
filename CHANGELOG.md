@@ -72,6 +72,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **CodeRabbit PR review scope**: Added repo-owned CodeRabbit auto-review
+  configuration so non-draft pull requests targeting any base branch are
+  reviewed, not only PRs targeting the repository default branch.
 - **Stale pre-commit realization guard**: Removed the package-manifest commit
   hook call and GitHub preflight workflow call to the deleted root
   `verify:realization` script. Generic Wesley no longer resurrects the old
