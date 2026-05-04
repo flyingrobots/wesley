@@ -72,6 +72,8 @@ Deleted in the first cleanup slice:
 - `packages/wesley-cli/src/commands/realization-integrity.mjs`
 - root `verify:realization`
 - stale `.githooks/pre-commit` invocation of root `verify:realization`
+- stale `.github/workflows/preflight.yml` invocation of root
+  `verify:realization`
 - stale Continuum witness and realization Bats coverage
 - stale module-owned command skip-list entries for missing product commands
 

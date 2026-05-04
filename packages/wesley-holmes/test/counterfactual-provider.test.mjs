@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -12,6 +12,7 @@ import {
   analyzeCounterfactual,
   defaultCounterfactualPolicy
 } from '../src/index.mjs';
+import { buildMoriartyPrediction } from '../src/moriarty-predict-workflow.mjs';
 
 const fixtureModulePath = fileURLToPath(new URL('./fixtures/counterfactual-provider-module.mjs', import.meta.url));
 
@@ -246,5 +247,34 @@ test('analyzeCounterfactual loads counterfactual providers from wesley.config.mj
     assert.equal(report.composition, 'braid');
     assert.equal(report.resolved.braidRefs.length, 1);
     assert.ok(report.judgment.signals.includes('braid_present'));
+  });
+});
+
+test('buildMoriartyPrediction forwards env module entries into counterfactual analysis', async () => {
+  await withTempRepo(async (tempDir) => {
+    const bundleDir = path.join(tempDir, '.wesley-cache');
+    const historyFile = path.join(bundleDir, 'history.json');
+    mkdirSync(bundleDir, { recursive: true });
+    writeFileSync(historyFile, JSON.stringify({
+      points: [
+        { day: 1, scs: 0.4, tci: 0.3, mri: 0.2 },
+        { day: 2, scs: 0.82, tci: 0.74, mri: 0.12 }
+      ]
+    }, null, 2));
+
+    const result = await buildMoriartyPrediction({
+      bundleDir,
+      historyFile,
+      counterfactual: 'main',
+      explain: true,
+      env: {
+        MORIARTY_USE_GIT: '0',
+        WESLEY_MODULES: fixtureModulePath
+      }
+    });
+
+    assert.equal(result.data.counterfactual.provider, 'fixture-counterfactual');
+    assert.equal(result.data.counterfactual.providerModuleName, 'holmes-counterfactual-fixture-module');
+    assert.equal(result.data.explain.readiness.counterfactual.status, 'clean');
   });
 });

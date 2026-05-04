@@ -73,9 +73,14 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 ### Fixed
 
 - **Stale pre-commit realization guard**: Removed the package-manifest commit
-  hook call to the deleted root `verify:realization` script. Generic Wesley no
-  longer resurrects the old Continuum verifier during commits; product-specific
-  realization checks belong behind module capabilities.
+  hook call and GitHub preflight workflow call to the deleted root
+  `verify:realization` script. Generic Wesley no longer resurrects the old
+  Continuum verifier during commits or PR checks; product-specific realization
+  checks belong behind module capabilities.
+- **Moriarty counterfactual module discovery**: Programmatic Moriarty prediction
+  calls now forward their injected environment into counterfactual provider
+  discovery, so `WESLEY_MODULES` and `WESLEY_CONFIG` work outside the CLI
+  process environment too.
 - **PR #472 Continuum review follow-up**: `witness-continuum` now rejects
   missing canonical Echo schema origins, verifies the Echo IR SDL hash, and
   reports malformed JSONL rows with line context. `bundle-echo` now reports
