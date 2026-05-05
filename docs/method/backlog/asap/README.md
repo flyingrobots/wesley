@@ -10,3 +10,8 @@ compiler boundary they are trying to freeze next.
 The active ASAP hill is domain-empty Wesley: remove product/database ownership
 from this repo, build the external module capability seam, and stop treating
 historical product lanes as Wesley features.
+
+Current near-term pulls:
+
+1. `SOURCE_domain-empty-wesley-core-boundary.md`
+2. `SOURCE_wesley-core-rs-ir-contract-and-fixtures.md`

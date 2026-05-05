@@ -214,6 +214,28 @@ Do not embed TypeScript directly into the Rust kernel as the primary extension
 story. If TypeScript-authored extensions eventually compile to WASM through a
 separate toolchain, they should still enter through the WASM capability ABI.
 
+## Capability Drift Control
+
+The main social risk is capability drift.
+
+If TypeScript modules are much easier to write than WASM capabilities, module
+authors will keep adding important behavior to the Node-only lane. That is
+acceptable for local CLI helpers, but it is wrong for behavior that should run
+inside Echo, browser hosts, CI isolation, or any non-Node environment.
+
+The portability rule should be:
+
+- TypeScript-only capabilities must declare `execution: "typescript-node"`
+- WASM-capable features must declare `execution: "wasm"` or
+  `execution: "wasm-or-native"`
+- host reports must show execution mode
+- docs must mark Node-only module behavior as Node-only
+- new cross-host capability families should prove a WASM fixture before being
+  treated as portable
+
+The ABI does not need to be huge early. It does need to cover enough useful
+work that portable module authors do not immediately fall back to Node.
+
 ## Proposed Runtime Shape
 
 ```text
@@ -253,6 +275,27 @@ pub fn describe_capability_abi() -> CapabilityAbi;
 The first implementation may return canonical JSON bytes. A later
 implementation may add a compact binary encoding, but JSON parity is the first
 truth anchor because the current JS system already has JSON fixtures.
+
+## Encoding Strategy
+
+Canonical JSON is the first migration proof, not the forever wire format.
+
+Phase 0 must define canonical JSON byte rules because current JS truth can
+already produce JSON fixtures and humans can inspect the result. Rust-native
+hosts such as Echo may work with typed Rust structs in process and only
+serialize when evidence, cache, or cross-process boundaries require it.
+
+A compact binary envelope can arrive later if measurements justify it. Candidate
+families include protobuf, FlatBuffers, or a smaller serde-compatible encoding,
+but the choice should wait until:
+
+- canonical JSON parity is proven
+- the IR schema is stable enough to version
+- performance baselines show serialization cost is material
+- binary output can be hash-stable and fixture-tested
+
+Binary encodings must not become a second source of truth. They are
+materializations of the same canonical IR contract.
 
 ## Minimal Capability ABI Shape
 
@@ -299,6 +342,81 @@ The first working ABI should prove:
 2. capability returns artifact data and diagnostics
 3. host records capability identity and execution mode
 4. artifacts and diagnostics can be compared across Rust and Node hosts
+
+## Host Function Governance
+
+WASM capabilities must be deny-by-default.
+
+A capability should receive explicit input data and return explicit output data.
+Any host function import must be declared, versioned, and recorded in the
+execution report.
+
+The first ABI profile should be `pure`:
+
+- no filesystem access
+- no network access
+- no clocks except an injected deterministic timestamp when needed
+- no ambient environment access
+- no process spawning
+
+Future profiles can add host functions, but each one must be portable across
+Rust and Node hosts or explicitly marked host-specific.
+
+Candidate future host imports:
+
+- read an explicitly named virtual file from a host-provided input map
+- write declared artifacts through the output envelope
+- request a deterministic clock value supplied by the host
+- emit structured diagnostics
+- read a host-provided registry snapshot
+
+Network and real filesystem access should not be in the first portable ABI. If a
+module needs those, it should stay a host-specific adapter until the governance
+story is explicit.
+
+## Capability State Model
+
+The first capability ABI should be stateless.
+
+A stateless capability is easier to compare across Rust, Node, and browser
+hosts. Given the same canonical input envelope, it should produce the same
+artifacts, diagnostics, and evidence.
+
+If state is needed later, it should enter through explicit resources:
+
+- a host-created registry snapshot
+- a content-addressed cache handle
+- a declared session resource
+- a declared key/value namespace with deterministic read/write rules
+
+Hidden mutable state inside a portable capability should not affect compiler
+truth. If it does, the capability is not portable truth; it is host behavior and
+must be labeled that way.
+
+## Versioning And Compatibility
+
+Kernel versioning and ABI versioning are related but separate.
+
+- `wesley-core-rs` has its own semver version.
+- the capability ABI has an independent semver version.
+- each capability declares the ABI version range it supports.
+- each capability may declare a minimum kernel feature set.
+- hosts reject unsupported combinations before execution.
+
+An older kernel must not silently run a newer ABI capability. The host should
+emit a typed diagnostic such as `WASM_ABI_UNSUPPORTED` with the kernel version,
+host version, capability ABI requirement, and capability identity.
+
+Compatibility should be recorded in reports:
+
+```text
+kernel: wesley-core-rs 0.1.0
+host: wesley-node-host 0.1.0
+capability_abi: wesley-capability-abi 0.1.0
+capability: example-target 0.1.0
+execution: wasm
+compatibility: accepted
+```
 
 ## Echo In-Process Playback
 
@@ -352,6 +470,10 @@ explicit host imports.
 - define canonical JSON byte rules
 - identify JS functions that currently own parse/lower/hash truth
 - name behavior that is intentionally not in Rust core
+- record parser-sensitive fixtures for directives, comments, schema extension,
+  invalid SDL, and error spans
+- record baseline JS lowering wall-clock and memory measurements
+- define compatibility diagnostics for future kernel/ABI version mismatches
 
 ### Phase 1: Rust IR Crate
 
@@ -365,6 +487,9 @@ explicit host imports.
 
 - choose parser after a fixture spike, likely `apollo-parser` or
   `async-graphql-parser`
+- compare parser candidates on directive AST shape, error spans, comments,
+  schema extension support, location metadata, maintenance posture, and
+  dependency footprint
 - port directive validation
 - port lowering
 - compare JS and Rust outputs over canonical fixtures
@@ -381,6 +506,8 @@ explicit host imports.
 
 - define the minimal ABI
 - implement one fixture WASM capability
+- define the pure host-function profile
+- define ABI/kernel compatibility diagnostics
 - run it from Node and Rust
 - record capability execution reports
 
@@ -411,6 +538,12 @@ explicit host imports.
 - ModuleLoadReport test that distinguishes `rust-native`, `wasm`, and
   `typescript-node` execution modes
 - Echo harness test proving in-process lowering without shelling to Node
+- benchmark fixture comparing JS lowering and Rust lowering over small, medium,
+  and large schemas
+- compatibility fixture proving a host rejects an unsupported ABI version before
+  running a capability
+- statelessness fixture proving a pure WASM capability output depends only on
+  its declared input envelope
 
 ## Linked Invariants
 
@@ -430,6 +563,10 @@ explicit host imports.
 - Capability execution reports must say which engine ran the capability.
 - JSON parity is the first migration proof.
 - Echo in-process use is a first-class user story, not a side effect.
+- the first portable WASM profile is pure and deny-by-default.
+- host functions are explicit imports, not ambient permissions.
+- kernel semver and capability ABI semver are separate.
+- binary encodings are derived materializations of canonical IR, not new truth.
 
 ## Risks / Unknowns
 
@@ -440,8 +577,34 @@ explicit host imports.
 - WASM component tooling may still be heavier than a first fixture needs.
 - TypeScript authors may expect their modules to work everywhere; docs must be
   explicit that TypeScript modules are Node-hosted unless compiled to WASM.
+- if the WASM ABI is too weak, serious module behavior will stay trapped in
+  TypeScript-only modules.
+- if host functions are not governed, WASM portability will collapse into
+  host-specific side effects.
+- if binary encoding starts before JSON parity, the migration will have two
+  competing truth surfaces.
 - Rewriting too much too early would stall the module-runtime work that already
   exists.
+
+## Performance Targets
+
+Phase 0 should measure before promising.
+
+The first target is correctness parity. The second target is no regression for
+normal CLI use. After baseline measurement, reasonable initial goals are:
+
+- Rust lowering is no slower than current JS lowering on the canonical fixture
+  corpus.
+- Rust lowering is at least 2x faster on the large-schema fixture before Node
+  cutover is considered.
+- N-API binding overhead is small enough that Node CLI end-to-end time does not
+  regress on small schemas.
+- WASM execution may be slower than N-API, but portable capability tests should
+  set a ceiling before it becomes a release path.
+- peak memory for Rust lowering should be recorded against JS and treated as a
+  release signal, not a vibe.
+
+Performance claims should be evidence entries, not marketing copy.
 
 ## Non-Goals
 
@@ -461,6 +624,8 @@ Write a narrow design follow-up for Phase 0:
 3. define canonical JSON byte rules
 4. define the first Rust structs
 5. define parity failure reporting
+6. record parser candidate evaluation criteria
+7. record baseline performance measurements
 
 That is the smallest useful next move. Everything else depends on the parity
 contract being boring and exact.
@@ -472,8 +637,12 @@ doctrine only.
 
 Follow-on slices to create:
 
-- `SOURCE_wesley-core-rs-ir-contract-and-fixtures`
-- `SOURCE_wesley-core-rs-parser-parity`
-- `RUNTIME_node-rust-core-binding`
+- [Wesley core-rs IR contract and fixtures](../../method/backlog/asap/SOURCE_wesley-core-rs-ir-contract-and-fixtures.md)
+- [Wesley core-rs parser parity spike](../../method/backlog/up-next/SOURCE_wesley-core-rs-parser-parity-spike.md)
+- [WASM host function governance](../../method/backlog/up-next/RUNTIME_wasm-host-function-governance.md)
+- [WASM capability versioning and state](../../method/backlog/up-next/RUNTIME_wasm-capability-versioning-and-state.md)
+- [Capability portability floor](../../method/backlog/up-next/RUNTIME_capability-portability-floor.md)
+- [Node Rust core binding strategy](../../method/backlog/up-next/RUNTIME_node-rust-core-binding-strategy.md)
+- [Rust core performance baseline](../../method/backlog/up-next/EVIDENCE_rust-core-performance-baseline.md)
 - `RUNTIME_wasm-capability-abi-fixture`
 - `RUNTIME_echo-in-process-wesley-harness`
