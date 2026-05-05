@@ -33,4 +33,3 @@ loaded modules and their registered capabilities.
 
 - `docs/design/wesley-module-capability-contract.md`
 - `packages/wesley-cli/src/framework/module-loader.mjs`
-

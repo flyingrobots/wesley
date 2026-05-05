@@ -62,6 +62,37 @@ export function normalizeWesleyModuleEntry(entry, baseDir) {
   };
 }
 
+export function splitWesleyModuleSpecifiers(value) {
+  if (typeof value !== 'string') {
+    return [];
+  }
+  if (delimiter !== ':') {
+    return value.split(delimiter);
+  }
+
+  const parts = [];
+  let start = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    if (value[index] !== ':') {
+      continue;
+    }
+
+    const candidateScheme = value.slice(start, index);
+    const hasUriScheme = (
+      /^[A-Za-z][A-Za-z0-9+.-]*$/.test(candidateScheme) &&
+      value.slice(index, index + 3) === '://'
+    );
+    if (hasUriScheme) {
+      continue;
+    }
+
+    parts.push(value.slice(start, index));
+    start = index + 1;
+  }
+  parts.push(value.slice(start));
+  return parts;
+}
+
 function dedupeEntries(entries) {
   const bySpecifier = new Map();
   for (const entry of entries) {
@@ -78,8 +109,7 @@ export function parseWesleyEnvModuleEntries(value, baseDir) {
     return [];
   }
 
-  return value
-    .split(delimiter)
+  return splitWesleyModuleSpecifiers(value)
     .map((item) => item.trim())
     .filter(Boolean)
     .map((specifier) => normalizeWesleyModuleEntry(specifier, baseDir))
@@ -99,8 +129,7 @@ export function parseWesleyModuleAllowlist(value, baseDir) {
   }
 
   return new Set(
-    value
-      .split(delimiter)
+    splitWesleyModuleSpecifiers(value)
       .map((item) => normalizeWesleyModuleSpecifier(item, baseDir))
       .filter(Boolean)
   );
@@ -129,7 +158,20 @@ export function findNearestWesleyConfigPath(startDir, env = process.env) {
 
   if (explicitConfig.length > 0) {
     const resolved = normalizeWesleyModuleSpecifier(explicitConfig, startDir);
-    return resolved && existsSync(resolved) ? resolved : null;
+    if (resolved && existsSync(resolved)) {
+      return resolved;
+    }
+    const error = new Error(
+      `${WESLEY_ENV_CONFIG} points to "${resolved ?? explicitConfig}", but that file does not exist.`
+    );
+    error.code = 'WESLEY_CONFIG_NOT_FOUND';
+    error.meta = {
+      env: WESLEY_ENV_CONFIG,
+      specifier: explicitConfig,
+      resolvedPath: resolved,
+      cwd: startDir
+    };
+    throw error;
   }
 
   let current = resolvePath(startDir);
@@ -179,6 +221,9 @@ export async function loadWesleyModuleEntries({
   entries.push(...parseWesleyEnvModuleEntries(env?.[WESLEY_ENV_MODULES], baseDir));
   const deduped = dedupeEntries(entries);
   for (const entry of deduped) {
+    if (entry.enabled === false) {
+      continue;
+    }
     assertModuleAllowlisted(entry.specifier, allowlist, 'module');
   }
   return deduped;

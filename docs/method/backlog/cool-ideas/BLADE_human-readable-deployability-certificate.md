@@ -38,4 +38,3 @@ alongside the machine-facing bundle and certificate artifacts.
 - `docs/design/wesley-pipeline.md`
 - `docs/WESLEY_GLOSSARY.md`
 - BLADE-related runtime and evidence surfaces already tracked in the repo
-

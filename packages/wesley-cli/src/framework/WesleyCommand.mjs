@@ -11,24 +11,59 @@ const LOG_LEVELS = { trace: 5, debug: 10, info: 30, warn: 40, error: 50, fatal: 
 
 export class WesleyCommand {
   /** @param {{ logger:any, fs:any, env:any, stdin:any, stdout:any, stderr:any, parsers:any, generators:any, planner:any, writer:any, clock:any }} ctx */
-  constructor(ctx, name, description) {
+  constructor(ctx, name, description, { register = true } = {}) {
     this.ctx = ctx;
     this.name = name;
     this.description = description;
     this.requiresSchema = false;
 
-    // Auto-register on construction (if registry exists)
-    if (WesleyCommand.registry) {
-      WesleyCommand.registry.set(name, this);
+    // Auto-register on construction into the active per-program registry.
+    if (register) {
+      WesleyCommand.registerCommand(name, this);
     }
   }
 
-  // Static registry for auto-registration
-  static registry = new Map();
+  // Active registry for auto-registration. Normal direct construction does not
+  // register commands; program() installs a fresh registry per invocation.
+  static registry = null;
+
+  static createRegistry() {
+    return new Map();
+  }
+
+  static async withRegistry(registry, callback) {
+    const previous = this.registry;
+    this.registry = registry;
+    try {
+      return await callback(registry);
+    } finally {
+      this.registry = previous;
+    }
+  }
+
+  static registerCommand(name, command, registry = this.registry) {
+    if (!registry) return;
+    if (registry.has(name)) {
+      const existing = registry.get(name);
+      const error = new Error(
+        `Wesley CLI command "${name}" is already registered` +
+        `${existing?.constructor?.name ? ` by ${existing.constructor.name}` : ''}.`
+      );
+      error.code = 'WESLEY_COMMAND_NAME_COLLISION';
+      error.meta = {
+        command: name,
+        existing: existing?.constructor?.name ?? null,
+        incoming: command?.constructor?.name ?? null
+      };
+      throw error;
+    }
+    registry.set(name, command);
+  }
 
   // Register all commands with a Commander program
-  static registerAll(program) {
-    for (const [name, cmd] of this.registry) {
+  static registerAll(program, registry = this.registry) {
+    if (!registry) return;
+    for (const [name, cmd] of registry) {
       const subcommand = program.command(name).description(cmd.description);
       cmd.configureCommander(subcommand);
       subcommand.action((options, command) => {

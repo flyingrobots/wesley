@@ -53,50 +53,52 @@ function resolveOutputWriters(ctx = {}) {
 }
 
 export async function program(argv, ctx) {
-  // Auto-discover and register all commands
-  await discoverCommands(ctx);
-  await discoverAndRegisterWesleyCliModules({
-    ctx,
-    cwd: ctx?.cwd ?? process.cwd(),
-    env: ctx?.env ?? process.env
+  return WesleyCommand.withRegistry(WesleyCommand.createRegistry(), async (commandRegistry) => {
+    // Auto-discover and register all commands
+    await discoverCommands(ctx);
+    await discoverAndRegisterWesleyCliModules({
+      ctx,
+      cwd: ctx?.cwd ?? process.cwd(),
+      env: ctx?.env ?? process.env
+    });
+    const { writeOut, writeErr } = resolveOutputWriters(ctx);
+
+    // Create main program
+    const program = new Command()
+      .name('wesley')
+      .version('0.1.0')
+      .description('Wesley - GraphQL → Everything\n"Make it so, schema."')
+      .option('-v, --verbose', 'Verbose output')
+      .option('--debug', 'Debug mode with stack traces')
+      .option('-q, --quiet', 'Suppress all output')
+      .option('--json', 'Output JSON')
+      .configureOutput({
+        writeOut,
+        writeErr,
+        outputError: (message, write) => write(message)
+      })
+      .exitOverride();
+
+    // Register all commands from this invocation's registry
+    WesleyCommand.registerAll(program, commandRegistry);
+
+    // Parse and execute
+    try {
+      await program.parseAsync(argv, { from: 'node' });
+      return 0;
+    } catch (error) {
+      // Allow commands to throw ExitError to control exit code
+      if (error && error.name === 'ExitError') {
+        return error.exitCode ?? 1;
+      }
+      if (error?.code?.startsWith?.('commander.')) {
+        return error.exitCode ?? 1;
+      }
+      // Commander-level errors or unexpected issues
+      if (!program.opts().quiet) {
+        writeErr(`${error?.stack || error?.message || String(error)}\n`);
+      }
+      return 1;
+    }
   });
-  const { writeOut, writeErr } = resolveOutputWriters(ctx);
-
-  // Create main program
-  const program = new Command()
-    .name('wesley')
-    .version('0.1.0')
-    .description('Wesley - GraphQL → Everything\n"Make it so, schema."')
-    .option('-v, --verbose', 'Verbose output')
-    .option('--debug', 'Debug mode with stack traces')
-    .option('-q, --quiet', 'Suppress all output')
-    .option('--json', 'Output JSON')
-    .configureOutput({
-      writeOut,
-      writeErr,
-      outputError: (message, write) => write(message)
-    })
-    .exitOverride();
-
-  // Register all commands from the registry
-  WesleyCommand.registerAll(program);
-
-  // Parse and execute
-  try {
-    await program.parseAsync(argv, { from: 'node' });
-    return 0;
-  } catch (error) {
-    // Allow commands to throw ExitError to control exit code
-    if (error && error.name === 'ExitError') {
-      return error.exitCode ?? 1;
-    }
-    if (error?.code?.startsWith?.('commander.')) {
-      return error.exitCode ?? 1;
-    }
-    // Commander-level errors or unexpected issues
-    if (!program.opts().quiet) {
-      writeErr(`${error?.stack || error?.message || String(error)}\n`);
-    }
-    return 1;
-  }
 }

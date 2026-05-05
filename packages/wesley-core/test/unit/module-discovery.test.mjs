@@ -207,6 +207,47 @@ test('createModuleCapabilityRegistry aggregates structured capabilities with own
   assert.deepEqual(listModuleCapabilities(registry, 'watson', 'verifiers'), []);
 });
 
+test('createModuleCapabilityRegistry freezes registry data away from source capability mutation', () => {
+  const targetCapability = {
+    name: 'alpha-target',
+    nested: {
+      modes: ['default']
+    }
+  };
+  const registry = createModuleCapabilityRegistry([
+    makeFakeModule({
+      name: 'alpha',
+      capabilities: {
+        wesley: {
+          targets: [targetCapability]
+        }
+      }
+    })
+  ]);
+  const targets = listModuleCapabilities(registry, 'wesley', 'targets');
+  const target = targets[0].value;
+
+  targetCapability.name = 'mutated-target';
+  targetCapability.nested.modes.push('mutated');
+
+  assert.deepEqual(targets, [{
+    moduleName: 'alpha',
+    value: {
+      name: 'alpha-target',
+      nested: {
+        modes: ['default']
+      }
+    }
+  }]);
+  assert.throws(() => targets.push({ moduleName: 'beta', value: {} }), TypeError);
+  assert.throws(() => {
+    target.name = 'mutated-again';
+  }, TypeError);
+  assert.throws(() => {
+    target.nested.modes.push('later-mutation');
+  }, TypeError);
+});
+
 test('createModuleCapabilityRegistry normalizes every supported capability collection with ownership', () => {
   const registry = createModuleCapabilityRegistry([
     makeFakeModule({

@@ -72,6 +72,39 @@ function emptyCapabilities() {
   );
 }
 
+function cloneAndFreezeCapability(value, seen = new WeakMap()) {
+  if (value === null || typeof value !== 'object') {
+    return value;
+  }
+  if (seen.has(value)) {
+    return seen.get(value);
+  }
+
+  if (Array.isArray(value)) {
+    const copy = [];
+    seen.set(value, copy);
+    copy.push(...value.map((item) => cloneAndFreezeCapability(item, seen)));
+    return Object.freeze(copy);
+  }
+
+  const copy = Object.create(Object.getPrototypeOf(value));
+  seen.set(value, copy);
+  for (const [key, nestedValue] of Object.entries(value)) {
+    copy[key] = cloneAndFreezeCapability(nestedValue, seen);
+  }
+  return Object.freeze(copy);
+}
+
+function freezeRegistryCapabilities(capabilities) {
+  for (const area of WESLEY_MODULE_CAPABILITY_AREAS) {
+    for (const collection of WESLEY_MODULE_CAPABILITY_COLLECTIONS[area]) {
+      capabilities[area][collection] = Object.freeze(capabilities[area][collection]);
+    }
+    capabilities[area] = Object.freeze(capabilities[area]);
+  }
+  return Object.freeze(capabilities);
+}
+
 function getModuleLabel(module) {
   return typeof module?.name === 'string' && module.name.trim()
     ? module.name.trim()
@@ -141,9 +174,9 @@ export function normalizeModuleCapabilities(module) {
         );
       }
 
-      normalized[area][collection] = collectionValue.map((value) => ({
+      normalized[area][collection] = collectionValue.map((value) => Object.freeze({
         moduleName,
-        value
+        value: cloneAndFreezeCapability(value)
       }));
     }
   }
@@ -161,10 +194,10 @@ export function createModuleCapabilityRegistry(modules = []) {
 
   for (const module of modules) {
     const moduleName = getModuleLabel(module);
-    moduleSummaries.push({
+    moduleSummaries.push(Object.freeze({
       name: moduleName,
       apiVersion: module.apiVersion
-    });
+    }));
 
     const normalized = normalizeModuleCapabilities(module);
     for (const area of WESLEY_MODULE_CAPABILITY_AREAS) {
@@ -175,8 +208,8 @@ export function createModuleCapabilityRegistry(modules = []) {
   }
 
   return {
-    modules: moduleSummaries,
-    capabilities
+    modules: Object.freeze(moduleSummaries),
+    capabilities: freezeRegistryCapabilities(capabilities)
   };
 }
 

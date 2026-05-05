@@ -72,6 +72,12 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **Module runtime review hardening**: Isolated CLI command registration per
+  invocation, rejected duplicate module command and compile-target names,
+  preserved `file://` module specifiers in env parsing, failed loudly for
+  missing explicit `WESLEY_CONFIG` paths, ignored disabled modules during module
+  allowlist checks, froze normalized capability registry data, and made the
+  front-door CLI docs guard hermetic.
 - **Release dependency audit posture**: Added targeted pnpm overrides for
   vulnerable `brace-expansion`, `picomatch`, and `postcss` lockfile paths, and
   updated the root PostCSS range so `pnpm audit --json` reports zero

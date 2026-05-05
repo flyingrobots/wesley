@@ -40,4 +40,3 @@ of the full extension surface.
 - `packages/wesley-cli/test/fixtures/modules/`
 - `docs/WESLEY_GLOSSARY.md`
 - `docs/design/wesley-module-capability-contract.md`
-

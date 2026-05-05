@@ -28,8 +28,10 @@ function loadWesleyCommands() {
       encoding: 'utf8',
       env: {
         ...process.env,
+        WESLEY_DISABLE_MODULES: '1',
         WESLEY_MODULES: '',
-        WESLEY_CONFIG: ''
+        WESLEY_CONFIG: '',
+        WESLEY_MODULE_ALLOWLIST: ''
       }
     }
   );

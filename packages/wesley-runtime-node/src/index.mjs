@@ -21,5 +21,6 @@ export {
   normalizeWesleyModuleSpecifier,
   parseWesleyModuleAllowlist,
   wesleyModuleLoadingDisabled,
-  parseWesleyEnvModuleEntries
+  parseWesleyEnvModuleEntries,
+  splitWesleyModuleSpecifiers
 } from './ModuleEntryLoader.mjs';

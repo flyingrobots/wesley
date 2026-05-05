@@ -124,18 +124,33 @@ function addTargetDescriptor({
   };
 
   if (byName.has(name)) {
-    const existingIndex = ordered.findIndex((item) => item.name === name);
-    if (existingIndex >= 0) {
-      ordered.splice(existingIndex, 1, descriptor);
-    }
-  } else {
-    ordered.push(descriptor);
+    const existing = byName.get(name);
+    throw new WesleyError(
+      'INVALID_TARGET_CAPABILITY',
+      `Compile target "${name}" was registered by both module "${existing.moduleName}" and module "${moduleName}".`
+    );
   }
+  ordered.push(descriptor);
   byName.set(name, descriptor);
 
   for (const alias of target.aliases ?? []) {
     const normalizedAlias = normalizeTargetName(alias);
     if (normalizedAlias) {
+      if (byName.has(normalizedAlias)) {
+        const existing = byName.get(normalizedAlias);
+        throw new WesleyError(
+          'INVALID_TARGET_CAPABILITY',
+          `Compile target alias "${normalizedAlias}" from module "${moduleName}" conflicts with target "${existing.name}" from module "${existing.moduleName}".`
+        );
+      }
+      if (aliases.has(normalizedAlias)) {
+        const existingTargetName = aliases.get(normalizedAlias);
+        const existing = byName.get(existingTargetName);
+        throw new WesleyError(
+          'INVALID_TARGET_CAPABILITY',
+          `Compile target alias "${normalizedAlias}" was registered by both module "${existing?.moduleName ?? '<unknown>'}" and module "${moduleName}".`
+        );
+      }
       aliases.set(normalizedAlias, name);
     }
   }

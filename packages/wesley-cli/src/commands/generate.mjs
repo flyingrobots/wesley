@@ -32,8 +32,8 @@ import {
 } from '../utils/runtime-events.mjs';
 
 export class GeneratePipelineCommand extends WesleyCommand {
-  constructor(ctx) {
-    super(ctx, 'generate', 'Generate artifacts from GraphQL schema through registered transmutations');
+  constructor(ctx, options = {}) {
+    super(ctx, 'generate', 'Generate artifacts from GraphQL schema through registered transmutations', options);
     this.requiresSchema = true;
   }
 
