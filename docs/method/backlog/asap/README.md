@@ -15,3 +15,5 @@ Current near-term pulls:
 
 1. `SOURCE_domain-empty-wesley-core-boundary.md`
 2. `SOURCE_wesley-core-rs-ir-contract-and-fixtures.md`
+3. `OWN_remove-non-deterministic-ir-metadata.md`
+4. `SOURCE_wesley-core-rs-parity-sentinel.md`

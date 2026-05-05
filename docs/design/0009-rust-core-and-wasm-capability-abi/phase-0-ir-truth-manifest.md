@@ -39,29 +39,35 @@ The fixture corpus is stored in `test/fixtures/ir-parity` and consists of `SDL -
 
 ### Categories
 
-1.  **Small:** Basic table with scalar fields and `@wes_pk`.
-2.  **Medium:** Multiple tables, `@wes_fk` relationships, and `@wes_index`.
-3.  **Large:** 100+ types to test performance and memory scaling.
-4.  **Directive-Heavy:** Extensive use of `@wes_rls`, `@wes_tenant`, and `@wes_default`.
-5.  **Invalid:** SDL cases that MUST trigger specific `WesleyParseError` codes.
-6.  **Schema-Extensions:** Testing `foldExtensions` logic (type extensions).
-7.  **Legacy-Aliases:** Using `@table`, `@pk`, etc., to ensure alias normalization works.
+1.  **Small:** Basic table with scalar fields and `@wes_pk`. (**COMPLETE**)
+2.  **Medium:** Multiple tables, `@wes_fk` relationships, and `@wes_index`. (**COMPLETE**)
+3.  **Large:** 100+ types to test performance and memory scaling. (**COMPLETE**)
+4.  **Directive-Heavy:** Extensive use of `@wes_rls`, `@wes_tenant`, and `@wes_default`. (PENDING)
+5.  **Invalid:** SDL cases that MUST trigger specific `WesleyParseError` codes. (PENDING)
+6.  **Schema-Extensions:** Testing `foldExtensions` logic (type extensions). (PENDING)
+7.  **Legacy-Aliases:** Using `@table`, `@pk`, etc., to ensure alias normalization works. (PENDING)
 
 ## Baseline Performance (JS)
 
 *Captured on: May 5, 2026*
 *Environment: Darwin (macOS)*
 
+NOTE: These are rough measurements to be formalized in `EVIDENCE_rust-core-performance-baseline.md`.
+
 | Fixture | Lowering Time (ms) | Memory Peak (MB) |
 | :--- | :--- | :--- |
-| small-schema.graphql | ~2ms | < 1MB |
-| medium-schema.graphql | ~15ms | ~2MB |
-| large-schema.graphql (100 types) | ~250ms | ~15MB |
+| `small-schema.graphql` | ~2ms | < 1MB |
+| `medium-schema.graphql` | ~15ms | ~2MB |
+| `large-schema.graphql` | ~250ms | ~15MB |
 
-## Parity Validation Command
+## Commands
 
-The following command (once implemented in the parity spike) will be used to verify the Rust kernel against this manifest:
-
+### Generate Fixtures
 ```bash
-cargo test --package wesley-core-rs --test ir_parity
+pnpm fixtures:ir
+```
+
+### Verify Rust Parity
+```bash
+cd crates/wesley-core && cargo test
 ```
