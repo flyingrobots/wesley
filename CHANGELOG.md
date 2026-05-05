@@ -72,6 +72,19 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **Release dependency audit posture**: Added targeted pnpm overrides for
+  vulnerable `brace-expansion`, `picomatch`, and `postcss` lockfile paths, and
+  updated the root PostCSS range so `pnpm audit --json` reports zero
+  vulnerabilities for the current workspace dependency graph.
+- **Front-door CLI documentation drift**: Replaced the non-existent
+  `pnpm wesley holmes dashboard` guide example with the real HOLMES package
+  report command plus the static dashboard artifact path, and added a preflight
+  guard that verifies `README.md` and `docs/GUIDE.md` only document registered
+  `pnpm wesley <command>` examples.
+- **Module-loading trust controls**: Added `WESLEY_DISABLE_MODULES=1` for
+  no-module diagnostic runs and `WESLEY_MODULE_ALLOWLIST` for CI/client
+  environments that must reject unapproved `wesley.config.mjs` and module
+  imports before trusted Node extension code executes.
 - **CodeRabbit PR review scope**: Added repo-owned CodeRabbit auto-review
   configuration so non-draft pull requests targeting any base branch are
   reviewed, not only PRs targeting the repository default branch.

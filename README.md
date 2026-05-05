@@ -47,6 +47,9 @@ Select target behavior explicitly from project config or `WESLEY_MODULES`.
 ```bash
 WESLEY_MODULES=/path/to/my-wesley-module.mjs pnpm wesley --help
 ```
+Modules are trusted Node code. Use `WESLEY_DISABLE_MODULES=1` for a no-module
+diagnostic run, or set `WESLEY_MODULE_ALLOWLIST` to path-delimited config/module
+paths in CI environments that must refuse unapproved module imports.
 
 The current repo still carries historical Continuum and PostgreSQL surfaces.
 They are extraction debt, not Wesley identity. New target semantics should land

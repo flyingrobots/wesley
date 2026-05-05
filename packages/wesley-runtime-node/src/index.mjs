@@ -10,6 +10,8 @@ export {
   DEFAULT_WESLEY_MODULE_SPECIFIERS,
   WESLEY_CONFIG_FILE,
   WESLEY_ENV_CONFIG,
+  WESLEY_ENV_DISABLE_MODULES,
+  WESLEY_ENV_MODULE_ALLOWLIST,
   WESLEY_ENV_MODULES,
   discoverConfiguredWesleyModules,
   findNearestWesleyConfigPath,
@@ -17,5 +19,7 @@ export {
   loadWesleyModuleEntries,
   normalizeWesleyModuleEntry,
   normalizeWesleyModuleSpecifier,
+  parseWesleyModuleAllowlist,
+  wesleyModuleLoadingDisabled,
   parseWesleyEnvModuleEntries
 } from './ModuleEntryLoader.mjs';

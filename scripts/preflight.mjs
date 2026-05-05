@@ -84,6 +84,10 @@ if (truthChk.status !== 0) fail('Docs truth check failed');
 const privatePathChk = spawnSync(process.execPath, ['scripts/check-forbidden-literals.mjs'], { stdio: 'inherit' });
 if (privatePathChk.status !== 0) fail('Forbidden machine-local path literal check failed');
 
+// 5d) Front-door CLI examples should name registered Wesley commands
+const docCliChk = spawnSync(process.execPath, ['scripts/check-doc-cli-commands.mjs'], { stdio: 'inherit' });
+if (docCliChk.status !== 0) fail('Docs CLI command check failed');
+
 // 6) pnpm version consistency
 try {
   const pkg = JSON.parse(readFileSync(resolve('package.json'), 'utf8'));

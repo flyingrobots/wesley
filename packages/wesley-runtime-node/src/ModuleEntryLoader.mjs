@@ -8,6 +8,8 @@ export const DEFAULT_WESLEY_MODULE_SPECIFIERS = Object.freeze([]);
 export const WESLEY_CONFIG_FILE = 'wesley.config.mjs';
 export const WESLEY_ENV_MODULES = 'WESLEY_MODULES';
 export const WESLEY_ENV_CONFIG = 'WESLEY_CONFIG';
+export const WESLEY_ENV_DISABLE_MODULES = 'WESLEY_DISABLE_MODULES';
+export const WESLEY_ENV_MODULE_ALLOWLIST = 'WESLEY_MODULE_ALLOWLIST';
 
 const nullLogger = {
   debug() {},
@@ -84,6 +86,42 @@ export function parseWesleyEnvModuleEntries(value, baseDir) {
     .filter(Boolean);
 }
 
+export function wesleyModuleLoadingDisabled(env = process.env) {
+  const raw = typeof env?.[WESLEY_ENV_DISABLE_MODULES] === 'string'
+    ? env[WESLEY_ENV_DISABLE_MODULES].trim().toLowerCase()
+    : '';
+  return raw === '1' || raw === 'true' || raw === 'yes' || raw === 'on';
+}
+
+export function parseWesleyModuleAllowlist(value, baseDir) {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    return new Set();
+  }
+
+  return new Set(
+    value
+      .split(delimiter)
+      .map((item) => normalizeWesleyModuleSpecifier(item, baseDir))
+      .filter(Boolean)
+  );
+}
+
+function moduleAllowlistError(specifier, kind) {
+  const error = new Error(
+    `Wesley ${kind} "${specifier}" is not in ${WESLEY_ENV_MODULE_ALLOWLIST}; refusing to load untrusted module code.`
+  );
+  error.code = 'WESLEY_MODULE_NOT_ALLOWLISTED';
+  error.meta = { specifier, kind, env: WESLEY_ENV_MODULE_ALLOWLIST };
+  return error;
+}
+
+function assertModuleAllowlisted(specifier, allowlist, kind) {
+  if (allowlist.size === 0 || allowlist.has(specifier)) {
+    return;
+  }
+  throw moduleAllowlistError(specifier, kind);
+}
+
 export function findNearestWesleyConfigPath(startDir, env = process.env) {
   const explicitConfig = typeof env?.[WESLEY_ENV_CONFIG] === 'string'
     ? env[WESLEY_ENV_CONFIG].trim()
@@ -114,12 +152,18 @@ export async function loadWesleyModuleEntries({
   defaultSpecifiers = DEFAULT_WESLEY_MODULE_SPECIFIERS
 } = {}) {
   const baseDir = resolvePath(cwd);
+  if (wesleyModuleLoadingDisabled(env)) {
+    return [];
+  }
+
+  const allowlist = parseWesleyModuleAllowlist(env?.[WESLEY_ENV_MODULE_ALLOWLIST], baseDir);
   const entries = defaultSpecifiers
     .map((specifier) => normalizeWesleyModuleEntry(specifier, baseDir))
     .filter(Boolean);
 
   const configPath = findNearestWesleyConfigPath(baseDir, env);
   if (configPath) {
+    assertModuleAllowlisted(configPath, allowlist, 'config');
     const configDir = dirname(configPath);
     const loaded = await import(pathToFileURL(configPath).href);
     const config = loaded?.default ?? {};
@@ -133,7 +177,11 @@ export async function loadWesleyModuleEntries({
   }
 
   entries.push(...parseWesleyEnvModuleEntries(env?.[WESLEY_ENV_MODULES], baseDir));
-  return dedupeEntries(entries);
+  const deduped = dedupeEntries(entries);
+  for (const entry of deduped) {
+    assertModuleAllowlisted(entry.specifier, allowlist, 'module');
+  }
+  return deduped;
 }
 
 export async function importWesleyModuleSpecifier(specifier) {

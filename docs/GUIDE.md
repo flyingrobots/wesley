@@ -23,6 +23,9 @@ Bring the `whatever` side of `GraphQL -> whatever` through explicit modules.
 - **Config**: add modules in `wesley.config.mjs`
 - **Environment**: set `WESLEY_MODULES=/path/to/module.mjs`
 - **Commands**: module-owned commands appear through the loaded module
+- **Disable**: set `WESLEY_DISABLE_MODULES=1` for a no-module diagnostic run
+- **Trust**: set `WESLEY_MODULE_ALLOWLIST` to path-delimited config/module
+  paths when CI should reject unapproved module imports
 
 External modules own target semantics, generators, witness scopes, release
 profiles, and runtime conventions. Wesley core does not own those meanings.
@@ -33,9 +36,13 @@ extraction debt. New domain behavior should land in the owning external module
 repo, not in Wesley.
 
 ### 3. Governance & Inspection
-Audit proposed changes and monitor the contract state via the TUI dashboard.
-- **Audit**: `pnpm wesley cert-create --help`
-- **TUI**: `pnpm wesley holmes dashboard`
+Audit proposed changes, emit HOLMES reports, and inspect the static dashboard
+artifact assembled by CI.
+- **Certificate**: `pnpm wesley cert-create --help`
+- **HOLMES report**: `pnpm --filter @wesley/holmes exec node src/cli.mjs report --help`
+- **Dashboard artifact**: open `docs/holmes-dashboard/index.html` with the
+  HOLMES workflow JSON artifacts. See
+  [architecture/holmes-integration.md](./architecture/holmes-integration.md#report-validation--dashboard).
 
 ## Compiler Versus Toolchain
 

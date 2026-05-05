@@ -10,6 +10,12 @@ overrides:
   ts-morph>minimatch: '>=10.2.3'
   js-yaml@>=4.0.0: '>=4.1.1'
   markdown-it@>=13.0.0: '>=14.1.1'
+  brace-expansion@1.1.12: 1.1.14
+  brace-expansion@2.0.2: 2.0.3
+  brace-expansion@5.0.4: 5.0.5
+  picomatch@2.3.1: 2.3.2
+  picomatch@4.0.3: 4.0.4
+  postcss@8.5.6: 8.5.14
 
 importers:
 
@@ -20,7 +26,7 @@ importers:
         version: 8.3.5(react@19.2.4)
       vite:
         specifier: npm:rolldown-vite@7.1.14
-        version: rolldown-vite@7.1.14(esbuild@0.25.10)(sugarss@5.0.1(postcss@8.5.6))
+        version: rolldown-vite@7.1.14(esbuild@0.25.10)(sugarss@5.0.1(postcss@8.5.14))
     devDependencies:
       '@eslint/js':
         specifier: ^9.39.4
@@ -30,7 +36,7 @@ importers:
         version: 1.58.2
       autoprefixer:
         specifier: ^10.4.21
-        version: 10.4.21(postcss@8.5.6)
+        version: 10.4.21(postcss@8.5.14)
       dependency-cruiser:
         specifier: 17.3.8
         version: 17.3.8
@@ -44,11 +50,11 @@ importers:
         specifier: ^16.4.0
         version: 16.4.0
       postcss:
-        specifier: ^8.5.6
-        version: 8.5.6
+        specifier: ^8.5.14
+        version: 8.5.14
       postcss-nesting:
         specifier: ^13.0.2
-        version: 13.0.2(postcss@8.5.6)
+        version: 13.0.2(postcss@8.5.14)
 
   packages/wesley-cli:
     dependencies:
@@ -104,7 +110,7 @@ importers:
     devDependencies:
       vitest:
         specifier: ^4.0.18
-        version: 4.0.18(esbuild@0.25.10)(jsdom@27.0.1(postcss@8.5.6))(sugarss@5.0.1(postcss@8.5.6))
+        version: 4.0.18(esbuild@0.25.10)(jsdom@27.0.1(postcss@8.5.14))(sugarss@5.0.1(postcss@8.5.14))
 
   packages/wesley-generator-vue:
     dependencies:
@@ -114,7 +120,7 @@ importers:
     devDependencies:
       vitest:
         specifier: ^4.0.18
-        version: 4.0.18(esbuild@0.25.10)(jsdom@27.0.1(postcss@8.5.6))(sugarss@5.0.1(postcss@8.5.6))
+        version: 4.0.18(esbuild@0.25.10)(jsdom@27.0.1(postcss@8.5.14))(sugarss@5.0.1(postcss@8.5.14))
 
   packages/wesley-holmes:
     dependencies:
@@ -136,7 +142,7 @@ importers:
     devDependencies:
       vitest:
         specifier: ^4.0.18
-        version: 4.0.18(esbuild@0.25.10)(jsdom@27.0.1(postcss@8.5.6))(sugarss@5.0.1(postcss@8.5.6))
+        version: 4.0.18(esbuild@0.25.10)(jsdom@27.0.1(postcss@8.5.14))(sugarss@5.0.1(postcss@8.5.14))
 
   packages/wesley-host-bun: {}
 
@@ -190,13 +196,13 @@ importers:
     devDependencies:
       vitest:
         specifier: ^4.0.18
-        version: 4.0.18(esbuild@0.25.10)(jsdom@27.0.1(postcss@8.5.6))(sugarss@5.0.1(postcss@8.5.6))
+        version: 4.0.18(esbuild@0.25.10)(jsdom@27.0.1(postcss@8.5.14))(sugarss@5.0.1(postcss@8.5.14))
 
   packages/wesley-tasks:
     devDependencies:
       vitest:
         specifier: ^4.0.18
-        version: 4.0.18(esbuild@0.25.10)(jsdom@27.0.1(postcss@8.5.6))(sugarss@5.0.1(postcss@8.5.6))
+        version: 4.0.18(esbuild@0.25.10)(jsdom@27.0.1(postcss@8.5.14))(sugarss@5.0.1(postcss@8.5.14))
 
   packages/wesley-test-fixtures:
     dependencies:
@@ -293,10 +299,10 @@ importers:
         version: 19.2.2(@types/react@19.2.14)
       '@vitejs/plugin-react':
         specifier: ^5.1.0
-        version: 5.1.0(rolldown-vite@7.1.14(esbuild@0.25.10)(sugarss@5.0.1(postcss@8.5.6)))
+        version: 5.1.0(rolldown-vite@7.1.14(esbuild@0.25.10)(sugarss@5.0.1(postcss@8.5.14)))
       autoprefixer:
         specifier: ^10.4.21
-        version: 10.4.21(postcss@8.5.6)
+        version: 10.4.21(postcss@8.5.14)
       eslint:
         specifier: ^9.38.0
         version: 9.38.0
@@ -320,28 +326,28 @@ importers:
         version: 16.4.0
       jsdom:
         specifier: ^27.0.1
-        version: 27.0.1(postcss@8.5.6)
+        version: 27.0.1(postcss@8.5.14)
       postcss:
-        specifier: ^8.5.6
-        version: 8.5.6
+        specifier: 8.5.14
+        version: 8.5.14
       postcss-nesting:
         specifier: ^13.0.2
-        version: 13.0.2(postcss@8.5.6)
+        version: 13.0.2(postcss@8.5.14)
       postcss-preset-mantine:
         specifier: ^1.18.0
-        version: 1.18.0(postcss@8.5.6)
+        version: 1.18.0(postcss@8.5.14)
       postcss-simple-vars:
         specifier: ^7.0.1
-        version: 7.0.1(postcss@8.5.6)
+        version: 7.0.1(postcss@8.5.14)
       typescript-eslint:
         specifier: ^8.46.2
         version: 8.46.2(eslint@9.38.0)(typescript@5.9.3)
       vite:
         specifier: npm:rolldown-vite@7.1.14
-        version: rolldown-vite@7.1.14(esbuild@0.25.10)(sugarss@5.0.1(postcss@8.5.6))
+        version: rolldown-vite@7.1.14(esbuild@0.25.10)(sugarss@5.0.1(postcss@8.5.14))
       vitest:
         specifier: ^4.0.18
-        version: 4.0.18(esbuild@0.25.10)(jsdom@27.0.1(postcss@8.5.6))(sugarss@5.0.1(postcss@8.5.6))
+        version: 4.0.18(esbuild@0.25.10)(jsdom@27.0.1(postcss@8.5.14))(sugarss@5.0.1(postcss@8.5.14))
 
 packages:
 
@@ -480,7 +486,7 @@ packages:
     resolution: {integrity: sha512-zSlIxa20WvMojjpCSy8WrNpcZ61RqfTfX3XTaOeVlGJrt/8HF3YbzgFZa01yTbT4GWQLwfTcC3EB8i3XnB647Q==}
     engines: {node: '>=18'}
     peerDependencies:
-      postcss: ^8.4
+      postcss: 8.5.14
 
   '@csstools/css-tokenizer@3.0.4':
     resolution: {integrity: sha512-Vd/9EVDiu6PPJt9yAh6roZP6El1xHrdvIVGjyBsHR0RYwNHgL7FJPyIIW4fANJNG6FtyZfvlRPpFI4ZM/lubvw==}
@@ -1420,7 +1426,7 @@ packages:
     engines: {node: ^10 || ^12 || >=14}
     hasBin: true
     peerDependencies:
-      postcss: ^8.1.0
+      postcss: 8.5.14
 
   available-typed-arrays@1.0.7:
     resolution: {integrity: sha512-wvUjBtSGN7+7SjNpq/9M2Tg350UZD3q62IFZLbRAR1bSMlCo1ZaeW+BJ+D090e4hIIZLBcTDWe4Mh4jvUDajzQ==}
@@ -1448,14 +1454,14 @@ packages:
   bidi-js@1.0.3:
     resolution: {integrity: sha512-RKshQI1R3YQ+n9YJz2QQ147P66ELpa1FQEg20Dk8oW9t2KgLbpDLLp9aGZ7y8WHSshDknG0bknqGw5/tyCs5tw==}
 
-  brace-expansion@1.1.12:
-    resolution: {integrity: sha512-9T9UjW3r0UW5c1Q7GTwllptXwhvYmEzFhzMfZ9H7FQWt+uZePjZPjBP/W1ZEyZ1twGWom5/56TF4lPcqjnDHcg==}
+  brace-expansion@1.1.14:
+    resolution: {integrity: sha512-MWPGfDxnyzKU7rNOW9SP/c50vi3xrmrua/+6hfPbCS2ABNWfx24vPidzvC7krjU/RTo235sV776ymlsMtGKj8g==}
 
-  brace-expansion@2.0.2:
-    resolution: {integrity: sha512-Jt0vHyM+jmUBqojB7E1NIYadt0vI0Qxjxd2TErW94wDz+E2LAm5vKMXXwg6ZZBTHPuUlDgQHKXvjGBdfcF1ZDQ==}
+  brace-expansion@2.0.3:
+    resolution: {integrity: sha512-MCV/fYJEbqx68aE58kv2cA/kiky1G8vux3OR6/jbS+jIMe/6fJWa0DTzJU7dqijOWYwHi1t29FlfYI9uytqlpA==}
 
-  brace-expansion@5.0.4:
-    resolution: {integrity: sha512-h+DEnpVvxmfVefa4jFbCf5HdH5YMDXRsmKflpf1pILZWRFlTbJpxeU55nJl4Smt5HQaGzg1o6RHFPJaOqnmBDg==}
+  brace-expansion@5.0.5:
+    resolution: {integrity: sha512-VZznLgtwhn+Mact9tfiwx64fA9erHH/MCXEUfB/0bX/6Fz6ny5EGTXYltMocqg4xFAQZtnO3DHWWXi8RiuN7cQ==}
     engines: {node: 18 || 20 || >=22}
 
   braces@3.0.3:
@@ -1833,7 +1839,7 @@ packages:
     resolution: {integrity: sha512-tIbYtZbucOs0BRGqPJkshJUYdL+SDH7dVM8gjy+ERp3WAUjLEFJE+02kanyHtwjWOnwrKYBiwAmM0p4kLJAnXg==}
     engines: {node: '>=12.0.0'}
     peerDependencies:
-      picomatch: ^3 || ^4
+      picomatch: 4.0.4
     peerDependenciesMeta:
       picomatch:
         optional: true
@@ -2465,12 +2471,12 @@ packages:
   picocolors@1.1.1:
     resolution: {integrity: sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==}
 
-  picomatch@2.3.1:
-    resolution: {integrity: sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA==}
+  picomatch@2.3.2:
+    resolution: {integrity: sha512-V7+vQEJ06Z+c5tSye8S+nHUfI51xoXIXjHQ99cQtKUkQqqO1kO/KCJUfZXuB47h/YBlDhah2H3hdUGXn8ie0oA==}
     engines: {node: '>=8.6'}
 
-  picomatch@4.0.3:
-    resolution: {integrity: sha512-5gTmgEY/sqK6gFXLIsQNH19lWb4ebPDLA4SdLP7dsWkIXHWlG66oPuVvXSGFPppYZz8ZDZq0dYYrbHfBCVUb1Q==}
+  picomatch@4.0.4:
+    resolution: {integrity: sha512-QP88BAKvMam/3NxH6vj2o21R6MjxZUAd6nlwAS/pnGvN9IVLocLHxGYIzFhg6fUQ+5th6P4dv4eW9jX3DSIj7A==}
     engines: {node: '>=12'}
 
   pino-abstract-transport@2.0.0:
@@ -2508,30 +2514,30 @@ packages:
     resolution: {integrity: sha512-oIAOTqgIo7q2EOwbhb8UalYePMvYoIeRY2YKntdpFQXNosSu3vLrniGgmH9OKs/qAkfoj5oB3le/7mINW1LCfw==}
     engines: {node: ^12 || ^14 || >= 16}
     peerDependencies:
-      postcss: ^8.4.21
+      postcss: 8.5.14
 
   postcss-mixins@12.1.2:
     resolution: {integrity: sha512-90pSxmZVfbX9e5xCv7tI5RV1mnjdf16y89CJKbf/hD7GyOz1FCxcYMl8ZYA8Hc56dbApTKKmU9HfvgfWdCxlwg==}
     engines: {node: ^20.0 || ^22.0 || >=24.0}
     peerDependencies:
-      postcss: ^8.2.14
+      postcss: 8.5.14
 
   postcss-nested@7.0.2:
     resolution: {integrity: sha512-5osppouFc0VR9/VYzYxO03VaDa3e8F23Kfd6/9qcZTUI8P58GIYlArOET2Wq0ywSl2o2PjELhYOFI4W7l5QHKw==}
     engines: {node: '>=18.0'}
     peerDependencies:
-      postcss: ^8.2.14
+      postcss: 8.5.14
 
   postcss-nesting@13.0.2:
     resolution: {integrity: sha512-1YCI290TX+VP0U/K/aFxzHzQWHWURL+CtHMSbex1lCdpXD1SoR2sYuxDu5aNI9lPoXpKTCggFZiDJbwylU0LEQ==}
     engines: {node: '>=18'}
     peerDependencies:
-      postcss: ^8.4
+      postcss: 8.5.14
 
   postcss-preset-mantine@1.18.0:
     resolution: {integrity: sha512-sP6/s1oC7cOtBdl4mw/IRKmKvYTuzpRrH/vT6v9enMU/EQEQ31eQnHcWtFghOXLH87AAthjL/Q75rLmin1oZoA==}
     peerDependencies:
-      postcss: '>=8.0.0'
+      postcss: 8.5.14
 
   postcss-selector-parser@7.1.0:
     resolution: {integrity: sha512-8sLjZwK0R+JlxlYcTuVnyT2v+htpdrjDOKuMcOVdYjt52Lh8hWRYpxBPoKx/Zg+bcjc3wx6fmQevMmUztS/ccA==}
@@ -2541,13 +2547,13 @@ packages:
     resolution: {integrity: sha512-5GLLXaS8qmzHMOjVxqkk1TZPf1jMqesiI7qLhnlyERalG0sMbHIbJqrcnrpmZdKCLglHnRHoEBB61RtGTsj++A==}
     engines: {node: '>=14.0'}
     peerDependencies:
-      postcss: ^8.2.1
+      postcss: 8.5.14
 
   postcss-value-parser@4.2.0:
     resolution: {integrity: sha512-1NNCs6uurfkVbeXG4S8JFT9t19m45ICnif8zWLd5oPSZ50QnwMfK+H3jv408d4jw/7Bttv5axS5IiHoLaVNHeQ==}
 
-  postcss@8.5.6:
-    resolution: {integrity: sha512-3Ybi1tAuwAP9s0r1UQ2J4n5Y0G05bJkpUIO0/bI9MhwmD70S5aTWbXGBwxHrelT+XM1k6dM0pk+SwNkpTRN7Pg==}
+  postcss@8.5.14:
+    resolution: {integrity: sha512-SoSL4+OSEtR99LHFZQiJLkT59C5B1amGO1NzTwj7TT1qCUgUO6hxOvzkOYxD+vMrXBM3XJIKzokoERdqQq/Zmg==}
     engines: {node: ^10 || ^12 || >=14}
 
   prelude-ls@1.2.1:
@@ -2972,7 +2978,7 @@ packages:
     resolution: {integrity: sha512-ctS5RYCBVvPoZAnzIaX5QSShK8ZiZxD5HUqSxlusvEMC+QZQIPCPOIJg6aceFX+K2rf4+SH89eu++h1Zmsr2nw==}
     engines: {node: '>=18.0'}
     peerDependencies:
-      postcss: ^8.3.3
+      postcss: 8.5.14
 
   supports-color@7.2.0:
     resolution: {integrity: sha512-qpCAvRl9stuOHveKsn7HncJRvv501qIacKzQlO/+Lwxc9+0q2wLyv4Dfvt80/DPn2pqOBsJdDiogXGR9+OvwRw==}
@@ -3449,9 +3455,9 @@ snapshots:
     dependencies:
       '@csstools/css-tokenizer': 3.0.4
 
-  '@csstools/css-syntax-patches-for-csstree@1.0.14(postcss@8.5.6)':
+  '@csstools/css-syntax-patches-for-csstree@1.0.14(postcss@8.5.14)':
     dependencies:
-      postcss: 8.5.6
+      postcss: 8.5.14
 
   '@csstools/css-tokenizer@3.0.4': {}
 
@@ -4206,7 +4212,7 @@ snapshots:
       '@typescript-eslint/types': 8.46.2
       eslint-visitor-keys: 4.2.1
 
-  '@vitejs/plugin-react@5.1.0(rolldown-vite@7.1.14(esbuild@0.25.10)(sugarss@5.0.1(postcss@8.5.6)))':
+  '@vitejs/plugin-react@5.1.0(rolldown-vite@7.1.14(esbuild@0.25.10)(sugarss@5.0.1(postcss@8.5.14)))':
     dependencies:
       '@babel/core': 7.28.5
       '@babel/plugin-transform-react-jsx-self': 7.27.1(@babel/core@7.28.5)
@@ -4214,7 +4220,7 @@ snapshots:
       '@rolldown/pluginutils': 1.0.0-beta.43
       '@types/babel__core': 7.20.5
       react-refresh: 0.18.0
-      vite: rolldown-vite@7.1.14(esbuild@0.25.10)(sugarss@5.0.1(postcss@8.5.6))
+      vite: rolldown-vite@7.1.14(esbuild@0.25.10)(sugarss@5.0.1(postcss@8.5.14))
     transitivePeerDependencies:
       - supports-color
 
@@ -4227,13 +4233,13 @@ snapshots:
       chai: 6.2.2
       tinyrainbow: 3.0.3
 
-  '@vitest/mocker@4.0.18(rolldown-vite@7.1.14(esbuild@0.25.10)(sugarss@5.0.1(postcss@8.5.6)))':
+  '@vitest/mocker@4.0.18(rolldown-vite@7.1.14(esbuild@0.25.10)(sugarss@5.0.1(postcss@8.5.14)))':
     dependencies:
       '@vitest/spy': 4.0.18
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      vite: rolldown-vite@7.1.14(esbuild@0.25.10)(sugarss@5.0.1(postcss@8.5.6))
+      vite: rolldown-vite@7.1.14(esbuild@0.25.10)(sugarss@5.0.1(postcss@8.5.14))
 
   '@vitest/pretty-format@4.0.18':
     dependencies:
@@ -4376,14 +4382,14 @@ snapshots:
 
   atomic-sleep@1.0.0: {}
 
-  autoprefixer@10.4.21(postcss@8.5.6):
+  autoprefixer@10.4.21(postcss@8.5.14):
     dependencies:
       browserslist: 4.27.0
       caniuse-lite: 1.0.30001751
       fraction.js: 4.3.7
       normalize-range: 0.1.2
       picocolors: 1.1.1
-      postcss: 8.5.6
+      postcss: 8.5.14
       postcss-value-parser: 4.2.0
 
   available-typed-arrays@1.0.7:
@@ -4404,16 +4410,16 @@ snapshots:
     dependencies:
       require-from-string: 2.0.2
 
-  brace-expansion@1.1.12:
+  brace-expansion@1.1.14:
     dependencies:
       balanced-match: 1.0.2
       concat-map: 0.0.1
 
-  brace-expansion@2.0.2:
+  brace-expansion@2.0.3:
     dependencies:
       balanced-match: 1.0.2
 
-  brace-expansion@5.0.4:
+  brace-expansion@5.0.5:
     dependencies:
       balanced-match: 4.0.4
 
@@ -4500,10 +4506,10 @@ snapshots:
 
   cssesc@3.0.0: {}
 
-  cssstyle@5.3.1(postcss@8.5.6):
+  cssstyle@5.3.1(postcss@8.5.14):
     dependencies:
       '@asamuzakjp/css-color': 4.0.5
-      '@csstools/css-syntax-patches-for-csstree': 1.0.14(postcss@8.5.6)
+      '@csstools/css-syntax-patches-for-csstree': 1.0.14(postcss@8.5.14)
       css-tree: 3.1.0
     transitivePeerDependencies:
       - postcss
@@ -4570,7 +4576,7 @@ snapshots:
       interpret: 3.1.1
       is-installed-globally: 1.0.0
       json5: 2.2.3
-      picomatch: 4.0.3
+      picomatch: 4.0.4
       prompts: 2.4.2
       rechoir: 0.8.0
       safe-regex: 2.1.1
@@ -4932,9 +4938,9 @@ snapshots:
     dependencies:
       reusify: 1.1.0
 
-  fdir@6.5.0(picomatch@4.0.3):
+  fdir@6.5.0(picomatch@4.0.4):
     optionalDependencies:
-      picomatch: 4.0.3
+      picomatch: 4.0.4
 
   file-entry-cache@8.0.0:
     dependencies:
@@ -5255,10 +5261,10 @@ snapshots:
     dependencies:
       argparse: 2.0.1
 
-  jsdom@27.0.1(postcss@8.5.6):
+  jsdom@27.0.1(postcss@8.5.14):
     dependencies:
       '@asamuzakjp/dom-selector': 6.7.3
-      cssstyle: 5.3.1(postcss@8.5.6)
+      cssstyle: 5.3.1(postcss@8.5.14)
       data-urls: 6.0.0
       decimal.js: 10.6.0
       html-encoding-sniffer: 4.0.0
@@ -5422,21 +5428,21 @@ snapshots:
   micromatch@4.0.8:
     dependencies:
       braces: 3.0.3
-      picomatch: 2.3.1
+      picomatch: 2.3.2
 
   min-indent@1.0.1: {}
 
   minimatch@10.2.4:
     dependencies:
-      brace-expansion: 5.0.4
+      brace-expansion: 5.0.5
 
   minimatch@3.1.5:
     dependencies:
-      brace-expansion: 1.1.12
+      brace-expansion: 1.1.14
 
   minimatch@9.0.9:
     dependencies:
-      brace-expansion: 2.0.2
+      brace-expansion: 2.0.3
 
   minimist@1.2.8: {}
 
@@ -5539,9 +5545,9 @@ snapshots:
 
   picocolors@1.1.1: {}
 
-  picomatch@2.3.1: {}
+  picomatch@2.3.2: {}
 
-  picomatch@4.0.3: {}
+  picomatch@4.0.4: {}
 
   pino-abstract-transport@2.0.0:
     dependencies:
@@ -5593,49 +5599,49 @@ snapshots:
 
   possible-typed-array-names@1.1.0: {}
 
-  postcss-js@4.1.0(postcss@8.5.6):
+  postcss-js@4.1.0(postcss@8.5.14):
     dependencies:
       camelcase-css: 2.0.1
-      postcss: 8.5.6
+      postcss: 8.5.14
 
-  postcss-mixins@12.1.2(postcss@8.5.6):
+  postcss-mixins@12.1.2(postcss@8.5.14):
     dependencies:
-      postcss: 8.5.6
-      postcss-js: 4.1.0(postcss@8.5.6)
-      postcss-simple-vars: 7.0.1(postcss@8.5.6)
-      sugarss: 5.0.1(postcss@8.5.6)
+      postcss: 8.5.14
+      postcss-js: 4.1.0(postcss@8.5.14)
+      postcss-simple-vars: 7.0.1(postcss@8.5.14)
+      sugarss: 5.0.1(postcss@8.5.14)
       tinyglobby: 0.2.15
 
-  postcss-nested@7.0.2(postcss@8.5.6):
+  postcss-nested@7.0.2(postcss@8.5.14):
     dependencies:
-      postcss: 8.5.6
+      postcss: 8.5.14
       postcss-selector-parser: 7.1.0
 
-  postcss-nesting@13.0.2(postcss@8.5.6):
+  postcss-nesting@13.0.2(postcss@8.5.14):
     dependencies:
       '@csstools/selector-resolve-nested': 3.1.0(postcss-selector-parser@7.1.0)
       '@csstools/selector-specificity': 5.0.0(postcss-selector-parser@7.1.0)
-      postcss: 8.5.6
+      postcss: 8.5.14
       postcss-selector-parser: 7.1.0
 
-  postcss-preset-mantine@1.18.0(postcss@8.5.6):
+  postcss-preset-mantine@1.18.0(postcss@8.5.14):
     dependencies:
-      postcss: 8.5.6
-      postcss-mixins: 12.1.2(postcss@8.5.6)
-      postcss-nested: 7.0.2(postcss@8.5.6)
+      postcss: 8.5.14
+      postcss-mixins: 12.1.2(postcss@8.5.14)
+      postcss-nested: 7.0.2(postcss@8.5.14)
 
   postcss-selector-parser@7.1.0:
     dependencies:
       cssesc: 3.0.0
       util-deprecate: 1.0.2
 
-  postcss-simple-vars@7.0.1(postcss@8.5.6):
+  postcss-simple-vars@7.0.1(postcss@8.5.14):
     dependencies:
-      postcss: 8.5.6
+      postcss: 8.5.14
 
   postcss-value-parser@4.2.0: {}
 
-  postcss@8.5.6:
+  postcss@8.5.14:
     dependencies:
       nanoid: 3.3.11
       picocolors: 1.1.1
@@ -5896,19 +5902,19 @@ snapshots:
 
   reusify@1.1.0: {}
 
-  rolldown-vite@7.1.14(esbuild@0.25.10)(sugarss@5.0.1(postcss@8.5.6)):
+  rolldown-vite@7.1.14(esbuild@0.25.10)(sugarss@5.0.1(postcss@8.5.14)):
     dependencies:
       '@oxc-project/runtime': 0.92.0
-      fdir: 6.5.0(picomatch@4.0.3)
+      fdir: 6.5.0(picomatch@4.0.4)
       lightningcss: 1.30.2
-      picomatch: 4.0.3
-      postcss: 8.5.6
+      picomatch: 4.0.4
+      postcss: 8.5.14
       rolldown: 1.0.0-beta.41
       tinyglobby: 0.2.15
     optionalDependencies:
       esbuild: 0.25.10
       fsevents: 2.3.3
-      sugarss: 5.0.1(postcss@8.5.6)
+      sugarss: 5.0.1(postcss@8.5.14)
 
   rolldown@1.0.0-beta.41:
     dependencies:
@@ -6121,9 +6127,9 @@ snapshots:
 
   strip-json-comments@5.0.3: {}
 
-  sugarss@5.0.1(postcss@8.5.6):
+  sugarss@5.0.1(postcss@8.5.14):
     dependencies:
-      postcss: 8.5.6
+      postcss: 8.5.14
 
   supports-color@7.2.0:
     dependencies:
@@ -6147,8 +6153,8 @@ snapshots:
 
   tinyglobby@0.2.15:
     dependencies:
-      fdir: 6.5.0(picomatch@4.0.3)
-      picomatch: 4.0.3
+      fdir: 6.5.0(picomatch@4.0.4)
+      picomatch: 4.0.4
 
   tinyrainbow@3.0.3: {}
 
@@ -6305,10 +6311,10 @@ snapshots:
 
   util-deprecate@1.0.2: {}
 
-  vitest@4.0.18(esbuild@0.25.10)(jsdom@27.0.1(postcss@8.5.6))(sugarss@5.0.1(postcss@8.5.6)):
+  vitest@4.0.18(esbuild@0.25.10)(jsdom@27.0.1(postcss@8.5.14))(sugarss@5.0.1(postcss@8.5.14)):
     dependencies:
       '@vitest/expect': 4.0.18
-      '@vitest/mocker': 4.0.18(rolldown-vite@7.1.14(esbuild@0.25.10)(sugarss@5.0.1(postcss@8.5.6)))
+      '@vitest/mocker': 4.0.18(rolldown-vite@7.1.14(esbuild@0.25.10)(sugarss@5.0.1(postcss@8.5.14)))
       '@vitest/pretty-format': 4.0.18
       '@vitest/runner': 4.0.18
       '@vitest/snapshot': 4.0.18
@@ -6319,16 +6325,16 @@ snapshots:
       magic-string: 0.30.21
       obug: 2.1.1
       pathe: 2.0.3
-      picomatch: 4.0.3
+      picomatch: 4.0.4
       std-env: 3.10.0
       tinybench: 2.9.0
       tinyexec: 1.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 3.0.3
-      vite: rolldown-vite@7.1.14(esbuild@0.25.10)(sugarss@5.0.1(postcss@8.5.6))
+      vite: rolldown-vite@7.1.14(esbuild@0.25.10)(sugarss@5.0.1(postcss@8.5.14))
       why-is-node-running: 2.3.0
     optionalDependencies:
-      jsdom: 27.0.1(postcss@8.5.6)
+      jsdom: 27.0.1(postcss@8.5.14)
     transitivePeerDependencies:
       - esbuild
       - jiti
