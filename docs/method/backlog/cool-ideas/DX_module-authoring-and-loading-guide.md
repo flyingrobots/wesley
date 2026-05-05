@@ -21,14 +21,23 @@ module without reading internal source files.
 - `docs/guides/module-authoring.md` exists and is linked from README and GUIDE
 - the guide includes a minimal module, `wesley.config.mjs`, `WESLEY_MODULES`, a
   capability example, and module-owned command contribution
+- the guide uses current `config.modules` and `capabilities.*` shapes, not the
+  old top-level generator-plugin config shape
 - the guide includes a `holmes.counterfactualProviders` example
-- troubleshooting covers missing configs, failed imports, disabled entries,
-  duplicate specifiers, env/config precedence, and trusted-code warnings
+- troubleshooting covers `WESLEY_CONFIG`, `WESLEY_MODULES`,
+  `WESLEY_DISABLE_MODULES`, `WESLEY_MODULE_ALLOWLIST`, missing configs, failed
+  imports, disabled entries, duplicate specifiers, env/config precedence,
+  duplicate target names, unknown capability collections, and trusted-code
+  warnings
+- the guide points to a module-loading troubleshooting/reference page when that
+  page exists
 
 ## Repo Evidence
 
 - `README.md`
 - `docs/GUIDE.md`
+- `docs/guides/generator-plugins.md`
 - `docs/design/wesley-module-contract.md`
 - `docs/design/wesley-module-capability-contract.md`
 - `docs/holmes-policy/README.md`
+- `docs/audit/2026-05-05_documentation-quality.md`

@@ -22,14 +22,21 @@ loaded modules and their registered capabilities.
 
 ## Done looks like
 
-- one command such as `wesley inspect-module` or `wesley modules list` exists
+- one command such as `wesley modules list` exists
 - the output shows module identity plus capability families, not just package
   names
-- the surface is useful in both human-readable and machine-readable forms
+- the surface is useful in both human-readable and `--json` forms
+- JSON output is backed by the same `ModuleLoadReport` shape used by runtime
+  diagnostics and release evidence
+- a stable summary groups capabilities by area and collection without exposing
+  mutable live capability objects
 - the command is valuable for debugging missing targets and missing BLADE or
   Holmes/Watson/Moriarty behaviors
+- README and GUIDE show this command immediately after module-loading examples
 
 ## Repo Evidence
 
 - `docs/design/wesley-module-capability-contract.md`
+- `packages/wesley-runtime-node/src/ModuleEntryLoader.mjs`
 - `packages/wesley-cli/src/framework/module-loader.mjs`
+- `docs/audit/2026-05-05_code-quality.md`
