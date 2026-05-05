@@ -1,0 +1,65 @@
+{
+  "version": "1.0.0",
+  "metadata": {
+    "generatedAt": "2026-05-05T16:15:59.581Z"
+  },
+  "tables": [
+    {
+      "name": "users",
+      "directives": {
+        "table": true
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "base": "ID",
+            "isList": false
+          },
+          "nullable": false,
+          "directives": {
+            "pk": true
+          }
+        },
+        {
+          "name": "username",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": false,
+          "directives": {
+            "unique": true
+          }
+        },
+        {
+          "name": "email",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": false,
+          "directives": {}
+        },
+        {
+          "name": "created_at",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": false,
+          "directives": {
+            "default": {
+              "value": "now()"
+            }
+          }
+        }
+      ],
+      "indexes": [],
+      "constraints": []
+    }
+  ],
+  "enums": [],
+  "scalars": [],
+  "relationships": []
+}

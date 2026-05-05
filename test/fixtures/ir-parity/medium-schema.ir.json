@@ -1,0 +1,255 @@
+{
+  "version": "1.0.0",
+  "metadata": {
+    "generatedAt": "2026-05-05T16:15:59.579Z"
+  },
+  "tables": [
+    {
+      "name": "users",
+      "directives": {
+        "table": true
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "base": "ID",
+            "isList": false
+          },
+          "nullable": false,
+          "directives": {
+            "pk": true
+          }
+        },
+        {
+          "name": "username",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": false,
+          "directives": {
+            "unique": true
+          }
+        },
+        {
+          "name": "email",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": false,
+          "directives": {}
+        },
+        {
+          "name": "created_at",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": false,
+          "directives": {
+            "default": {
+              "value": "now()"
+            }
+          }
+        }
+      ],
+      "indexes": [],
+      "constraints": []
+    },
+    {
+      "name": "organizations",
+      "directives": {
+        "table": true
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "base": "ID",
+            "isList": false
+          },
+          "nullable": false,
+          "directives": {
+            "pk": true
+          }
+        },
+        {
+          "name": "name",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": false,
+          "directives": {}
+        },
+        {
+          "name": "slug",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": false,
+          "directives": {
+            "unique": true
+          }
+        }
+      ],
+      "indexes": [],
+      "constraints": []
+    },
+    {
+      "name": "projects",
+      "directives": {
+        "table": true
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "base": "ID",
+            "isList": false
+          },
+          "nullable": false,
+          "directives": {
+            "pk": true
+          }
+        },
+        {
+          "name": "org_id",
+          "type": {
+            "base": "ID",
+            "isList": false
+          },
+          "nullable": false,
+          "directives": {
+            "fk": {
+              "targetTable": "organizations",
+              "targetField": "id"
+            }
+          }
+        },
+        {
+          "name": "name",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": false,
+          "directives": {}
+        },
+        {
+          "name": "description",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {}
+        }
+      ],
+      "indexes": [],
+      "constraints": []
+    },
+    {
+      "name": "members",
+      "directives": {
+        "table": true
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "base": "ID",
+            "isList": false
+          },
+          "nullable": false,
+          "directives": {
+            "pk": true
+          }
+        },
+        {
+          "name": "org_id",
+          "type": {
+            "base": "ID",
+            "isList": false
+          },
+          "nullable": false,
+          "directives": {
+            "fk": {
+              "targetTable": "organizations",
+              "targetField": "id"
+            }
+          }
+        },
+        {
+          "name": "user_id",
+          "type": {
+            "base": "ID",
+            "isList": false
+          },
+          "nullable": false,
+          "directives": {
+            "fk": {
+              "targetTable": "users",
+              "targetField": "id"
+            }
+          }
+        },
+        {
+          "name": "role",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": false,
+          "directives": {
+            "default": {
+              "value": "member"
+            }
+          }
+        }
+      ],
+      "indexes": [],
+      "constraints": []
+    }
+  ],
+  "enums": [],
+  "scalars": [],
+  "relationships": [
+    {
+      "type": "one-to-many",
+      "from": {
+        "table": "projects",
+        "field": "org_id"
+      },
+      "to": {
+        "table": "organizations",
+        "field": "id"
+      }
+    },
+    {
+      "type": "one-to-many",
+      "from": {
+        "table": "members",
+        "field": "org_id"
+      },
+      "to": {
+        "table": "organizations",
+        "field": "id"
+      }
+    },
+    {
+      "type": "one-to-many",
+      "from": {
+        "table": "members",
+        "field": "user_id"
+      },
+      "to": {
+        "table": "users",
+        "field": "id"
+      }
+    }
+  ]
+}

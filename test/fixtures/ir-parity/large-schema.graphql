@@ -1,0 +1,1399 @@
+type Type0 @wes_table(name: "type_0") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type1 @wes_table(name: "type_1") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type2 @wes_table(name: "type_2") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type3 @wes_table(name: "type_3") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type4 @wes_table(name: "type_4") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type5 @wes_table(name: "type_5") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type6 @wes_table(name: "type_6") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type7 @wes_table(name: "type_7") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type8 @wes_table(name: "type_8") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type9 @wes_table(name: "type_9") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type10 @wes_table(name: "type_10") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type11 @wes_table(name: "type_11") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type12 @wes_table(name: "type_12") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type13 @wes_table(name: "type_13") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type14 @wes_table(name: "type_14") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type15 @wes_table(name: "type_15") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type16 @wes_table(name: "type_16") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type17 @wes_table(name: "type_17") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type18 @wes_table(name: "type_18") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type19 @wes_table(name: "type_19") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type20 @wes_table(name: "type_20") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type21 @wes_table(name: "type_21") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type22 @wes_table(name: "type_22") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type23 @wes_table(name: "type_23") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type24 @wes_table(name: "type_24") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type25 @wes_table(name: "type_25") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type26 @wes_table(name: "type_26") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type27 @wes_table(name: "type_27") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type28 @wes_table(name: "type_28") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type29 @wes_table(name: "type_29") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type30 @wes_table(name: "type_30") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type31 @wes_table(name: "type_31") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type32 @wes_table(name: "type_32") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type33 @wes_table(name: "type_33") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type34 @wes_table(name: "type_34") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type35 @wes_table(name: "type_35") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type36 @wes_table(name: "type_36") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type37 @wes_table(name: "type_37") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type38 @wes_table(name: "type_38") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type39 @wes_table(name: "type_39") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type40 @wes_table(name: "type_40") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type41 @wes_table(name: "type_41") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type42 @wes_table(name: "type_42") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type43 @wes_table(name: "type_43") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type44 @wes_table(name: "type_44") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type45 @wes_table(name: "type_45") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type46 @wes_table(name: "type_46") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type47 @wes_table(name: "type_47") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type48 @wes_table(name: "type_48") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type49 @wes_table(name: "type_49") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type50 @wes_table(name: "type_50") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type51 @wes_table(name: "type_51") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type52 @wes_table(name: "type_52") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type53 @wes_table(name: "type_53") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type54 @wes_table(name: "type_54") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type55 @wes_table(name: "type_55") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type56 @wes_table(name: "type_56") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type57 @wes_table(name: "type_57") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type58 @wes_table(name: "type_58") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type59 @wes_table(name: "type_59") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type60 @wes_table(name: "type_60") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type61 @wes_table(name: "type_61") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type62 @wes_table(name: "type_62") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type63 @wes_table(name: "type_63") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type64 @wes_table(name: "type_64") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type65 @wes_table(name: "type_65") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type66 @wes_table(name: "type_66") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type67 @wes_table(name: "type_67") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type68 @wes_table(name: "type_68") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type69 @wes_table(name: "type_69") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type70 @wes_table(name: "type_70") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type71 @wes_table(name: "type_71") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type72 @wes_table(name: "type_72") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type73 @wes_table(name: "type_73") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type74 @wes_table(name: "type_74") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type75 @wes_table(name: "type_75") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type76 @wes_table(name: "type_76") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type77 @wes_table(name: "type_77") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type78 @wes_table(name: "type_78") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type79 @wes_table(name: "type_79") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type80 @wes_table(name: "type_80") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type81 @wes_table(name: "type_81") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type82 @wes_table(name: "type_82") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type83 @wes_table(name: "type_83") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type84 @wes_table(name: "type_84") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type85 @wes_table(name: "type_85") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type86 @wes_table(name: "type_86") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type87 @wes_table(name: "type_87") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type88 @wes_table(name: "type_88") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type89 @wes_table(name: "type_89") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type90 @wes_table(name: "type_90") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type91 @wes_table(name: "type_91") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type92 @wes_table(name: "type_92") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type93 @wes_table(name: "type_93") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type94 @wes_table(name: "type_94") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type95 @wes_table(name: "type_95") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type96 @wes_table(name: "type_96") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type97 @wes_table(name: "type_97") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type98 @wes_table(name: "type_98") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}
+
+type Type99 @wes_table(name: "type_99") {
+  id: ID! @wes_pk
+  field0: String @wes_index
+  field1: String @wes_index
+  field2: String @wes_index
+  field3: String @wes_index
+  field4: String @wes_index
+  field5: String @wes_index
+  field6: String @wes_index
+  field7: String @wes_index
+  field8: String @wes_index
+  field9: String @wes_index
+}

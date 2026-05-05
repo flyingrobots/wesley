@@ -1,0 +1,30 @@
+type User @wes_table(name: "users") {
+  id: ID! @wes_pk
+  username: String! @wes_unique
+  email: String!
+  created_at: String! @wes_default(value: "now()")
+}
+
+type Organization @wes_table(name: "organizations") {
+  id: ID! @wes_pk
+  name: String!
+  slug: String! @wes_unique
+}
+
+type Project @wes_table(name: "projects") {
+  id: ID! @wes_pk
+  org_id: ID! @wes_fk(ref: "organizations.id")
+  name: String!
+  description: String
+}
+
+type Member @wes_table(name: "members") {
+  id: ID! @wes_pk
+  org_id: ID! @wes_fk(ref: "organizations.id")
+  user_id: ID! @wes_fk(ref: "users.id")
+  role: String! @wes_default(value: "member")
+}
+
+extend type Member {
+  joined_at: String! @wes_default(value: "now()")
+}
