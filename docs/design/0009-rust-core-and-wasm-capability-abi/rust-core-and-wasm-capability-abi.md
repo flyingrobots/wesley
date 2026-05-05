@@ -485,11 +485,7 @@ explicit host imports.
 
 ### Phase 2: Parser And Lowering Parity
 
-- choose parser after a fixture spike, likely `apollo-parser` or
-  `async-graphql-parser`
-- compare parser candidates on directive AST shape, error spans, comments,
-  schema extension support, location metadata, maintenance posture, and
-  dependency footprint
+- **Parser Choice: `apollo-parser`** (Confirmed May 5, 2026)
 - port directive validation
 - port lowering
 - compare JS and Rust outputs over canonical fixtures
