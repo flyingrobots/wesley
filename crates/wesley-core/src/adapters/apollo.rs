@@ -1,7 +1,7 @@
 //! Apollo Parser implementation of the LoweringPort.
 
 use crate::domain::error::WesleyError;
-use crate::domain::footprint::FootprintSpec;
+use crate::domain::footprint::{FootprintCheck, FootprintSpec};
 use crate::domain::ir::*;
 use crate::ports::lowering::LoweringPort;
 use apollo_parser::{cst, cst::CstNode, Parser};
@@ -288,6 +288,42 @@ pub fn extract_footprint(operation_sdl: &str) -> Result<FootprintSpec, WesleyErr
             "Expected exactly one GraphQL operation, found {count}"
         )),
     }
+}
+
+/// Checks whether an operation's declared footprint covers its selection paths.
+pub fn check_footprint(operation_sdl: &str) -> Result<FootprintCheck, WesleyError> {
+    let spec = extract_footprint(operation_sdl)?;
+    let declared = declared_paths(&spec);
+
+    let undeclared_selections = spec
+        .actual_selections
+        .iter()
+        .filter(|selection| !declared.contains(*selection))
+        .cloned()
+        .collect::<Vec<_>>();
+
+    let unused_declarations = declared
+        .into_iter()
+        .filter(|declaration| !spec.actual_selections.contains(declaration))
+        .collect::<Vec<_>>();
+
+    Ok(FootprintCheck {
+        spec,
+        undeclared_selections,
+        unused_declarations,
+    })
+}
+
+fn declared_paths(spec: &FootprintSpec) -> Vec<String> {
+    let mut declared = Vec::new();
+    for path in spec
+        .declared_reads
+        .iter()
+        .chain(spec.declared_writes.iter())
+    {
+        push_unique(&mut declared, path.clone());
+    }
+    declared
 }
 
 fn extract_footprint_from_operation(

@@ -1,4 +1,4 @@
-use wesley_core::{extract_footprint, FootprintSpec, WesleyError};
+use wesley_core::{check_footprint, extract_footprint, FootprintSpec, WesleyError};
 
 #[test]
 fn extracts_declared_footprint_and_nested_selection_paths() {
@@ -121,6 +121,24 @@ fn records_schema_field_names_instead_of_aliases() {
         spec.actual_selections,
         vec!["viewer".to_string(), "viewer.id".to_string()]
     );
+}
+
+#[test]
+fn checks_declared_footprint_coverage() {
+    let check = check_footprint(
+        r#"
+        query Dishonest @wes_footprint(reads: ["viewer"], writes: ["unusedWrite"]) {
+          viewer {
+            id
+          }
+        }
+        "#,
+    )
+    .expect("operation footprint should check");
+
+    assert!(!check.is_honest());
+    assert_eq!(check.undeclared_selections, vec!["viewer.id".to_string()]);
+    assert_eq!(check.unused_declarations, vec!["unusedWrite".to_string()]);
 }
 
 #[test]

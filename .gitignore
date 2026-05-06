@@ -1,4 +1,5 @@
 node_modules/
+target/
 pnpm-lock.yaml
 .wesley-cache/
 test/fixtures/examples/.wesley-cache/

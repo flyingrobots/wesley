@@ -27,14 +27,32 @@ Unlike traditional code-generators that treat schemas as suggestions, Wesley tre
 
 ## Quick Start
 
-### 1. Repository Preflight
-Install dependencies and verify the local compiler health.
+### 1. Rust Workspace Health
+Verify the native compiler and CLI crates.
+```bash
+cargo test --workspace
+```
+
+### 2. Check An Operation Footprint
+Run the native `wesley` binary against a GraphQL operation document.
+```bash
+cargo run --bin wesley -- \
+  check-footprint \
+  --operation ./operation.graphql
+```
+
+Add `--json` when an agent or CI job needs machine-readable output.
+
+### 3. Repository Tooling Preflight
+The repo still carries historical Node package tooling while the Rust-native
+front door takes over. Use preflight when changing docs, package boundaries, or
+legacy package surfaces.
 ```bash
 pnpm install
 pnpm run preflight
 ```
 
-### 2. Compile A Generic Projection
+### 4. Legacy Package Projection
 Generate TypeScript from an authored GraphQL schema.
 ```bash
 pnpm wesley typescript \
@@ -42,7 +60,7 @@ pnpm wesley typescript \
   --out-file ./generated/types.generated.ts
 ```
 
-### 3. Load A Target Module
+### 5. Legacy Target Module Loading
 Select target behavior explicitly from project config or `WESLEY_MODULES`.
 ```bash
 WESLEY_MODULES=/path/to/my-wesley-module.mjs pnpm wesley --help

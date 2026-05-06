@@ -41,6 +41,13 @@ timeline
   their owning repos.
 - Updating docs as behavior moves so no stale surface looks authoritative.
 
+### 4. Rust-Native Front Door
+- Treating the Rust workspace as the primary surface for core compiler work.
+- Keeping the native `wesley` binary pointed at pure `wesley-core` library
+  behavior before adding host adapters, MCP, or runtime embedding.
+- Treating `pnpm wesley` as legacy package tooling until its remaining useful
+  surfaces are extracted, retired, or deliberately reimplemented in Rust.
+
 ## Tensions
 
 - **Wrong-Repo Residue**: Active implementation residue is now mostly handled;
@@ -54,9 +61,12 @@ timeline
   they are explicit extraction notes.
 - **Verification Split**: Generic witness/evidence machinery needs to stay
   independent from module-owned proof scopes and domain policy.
+- **Legacy NPM Front Door**: README and guide now point core work at Cargo, but
+  package scripts, docs drift checks, and old generator commands still assume
+  `pnpm wesley` is a first-class entry point.
 
 ## Next Target
 
-The immediate focus is **Module Capability Runtime**: keep domain behavior
-behind module-owned capability collections and extend the runtime dispatch
-pattern beyond compile targets and Holmes counterfactual providers.
+The immediate focus is **Rust-native footprint honesty**: keep the native
+`wesley` binary small, pure, and backed by `wesley-core`, then retire or extract
+legacy npm front-door surfaces as Rust equivalents become real.

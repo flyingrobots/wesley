@@ -13,4 +13,4 @@ pub use domain::ir::*;
 pub use domain::error::*;
 pub use domain::footprint::*;
 pub use ports::lowering::*;
-pub use adapters::apollo::{extract_footprint, ApolloLoweringAdapter};
+pub use adapters::apollo::{check_footprint, extract_footprint, ApolloLoweringAdapter};

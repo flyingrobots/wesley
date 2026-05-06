@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "crates/wesley-core",
+    "crates/wesley-cli",
+]
+resolver = "2"

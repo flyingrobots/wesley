@@ -7,7 +7,6 @@ honest.
 - [Continuum Generated-Leg Certificates](EVIDENCE_continuum-generated-leg-certificates.md)
 - [Holmes Comment Loader Policy Module](RUNTIME_holmes-comment-loader-policy-module.md)
 - [Workflow YAML Assertion Helper](RUNTIME_workflow-yaml-assertion-helper.md)
-- [Wesley Core Footprint Check CLI](SOURCE_wesley-core-footprint-check-cli.md)
 - [Holmes Artifact Diagnostic Sidecar](EVIDENCE_holmes-artifact-diagnostic-sidecar.md)
 - [PR Merge Gate Status Helper](RUNTIME_pr-merge-gate-status-helper.md)
 - [Review Supersession Explainer](RUNTIME_review-supersession-explainer.md)

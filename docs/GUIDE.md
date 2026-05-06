@@ -11,12 +11,22 @@ If you need the main Wesley nouns and the layer split before reading anything el
 ### 1. Core Compiler Lane
 Compile authored GraphQL into generic or explicitly selected generated
 artifacts.
-- **Inspect**: `pnpm wesley --help`
+- **Inspect native CLI**: `cargo run --bin wesley -- --help`
+- **Check footprints**: `cargo run --bin wesley -- check-footprint --operation <path>`
+- **Rust workspace tests**: `cargo test --workspace`
+
+The Rust-native CLI is now the preferred front door for Wesley core work. The
+current `check-footprint` command performs a string-level honesty check over
+the declared `@wes_footprint` reads/writes and the operation selection paths.
+
+The historical package CLI still carries generic TypeScript/Zod/transform
+commands while those surfaces are being extracted or retired:
+
 - **TypeScript**: `pnpm wesley typescript --schema <path>`
 - **Zod**: `pnpm wesley zod --schema <path>`
 - **Transform**: `pnpm wesley transform --schema <path> --transmutation <target>`
 
-These command paths reuse a hash-addressed IR cache in `.wesley-cache/ir/` when the authored SDL has not changed, which keeps the inner loop tighter across repeated local runs.
+Those command paths reuse a hash-addressed IR cache in `.wesley-cache/ir/` when the authored SDL has not changed, which keeps the inner loop tighter across repeated local runs.
 
 ### 2. External Module Lane
 Bring the `whatever` side of `GraphQL -> whatever` through explicit modules.
@@ -88,7 +98,8 @@ Wesley is a tiered engine designed to enforce contract integrity across platform
 
 ## Orientation Checklist
 
-- [ ] **I am setting up the repo**: Run `pnpm install` and `pnpm run preflight`.
+- [ ] **I am setting up Rust core work**: Run `cargo test --workspace`.
+- [ ] **I am changing docs or legacy packages**: Run `pnpm install` and `pnpm run preflight`.
 - [ ] **I am modifying a schema**: Always start in the `.graphql` file.
 - [ ] **I am adding a new generic generator**: Check `packages/wesley-generator-js` for a baseline.
 - [ ] **I am adding a domain target**: Put it in an external module repo and load it into Wesley.
@@ -98,7 +109,7 @@ Wesley is a tiered engine designed to enforce contract integrity across platform
 
 ## Rule of Thumb
 
-If you need a comprehensive command reference, use `pnpm wesley --help`.
+If you need the native command reference, use `cargo run --bin wesley -- --help`.
 
 If you need to know "what's true right now," use [BEARING.md](./BEARING.md).
 
