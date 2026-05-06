@@ -1,6 +1,9 @@
-use wesley_core::{compute_registry_hash, to_canonical_json, ApolloLoweringAdapter, LoweringPort};
 use std::fs;
 use std::path::PathBuf;
+use wesley_core::{
+    compute_registry_hash, to_canonical_json, ApolloLoweringAdapter, LoweringPort, TypeDefinition,
+    TypeKind,
+};
 
 fn get_fixture_path(name: &str) -> PathBuf {
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -16,10 +19,13 @@ fn create_adapter() -> ApolloLoweringAdapter {
 async fn validate_schema(name: &str) {
     let sdl_path = get_fixture_path(&format!("{}.graphql", name));
     let sdl = fs::read_to_string(sdl_path).expect("Failed to read SDL fixture");
-    
+
     let adapter = create_adapter();
-    let ir = adapter.lower_sdl(&sdl).await.expect("Failed to lower SDL to L1 IR");
-    
+    let ir = adapter
+        .lower_sdl(&sdl)
+        .await
+        .expect("Failed to lower SDL to L1 IR");
+
     let actual_hash = compute_registry_hash(&ir).expect("Failed to compute IR hash");
     let mut parity_ir = ir.clone();
     parity_ir.metadata = None;
@@ -58,4 +64,137 @@ async fn test_lower_medium_schema() {
 #[tokio::test]
 async fn test_lower_large_schema() {
     validate_schema("large-schema").await;
+}
+
+#[tokio::test]
+async fn lowers_graphql_type_families_into_l1_ir() {
+    let sdl = r#"
+        scalar DateTime @specifiedBy(url: "https://example.com/datetime")
+
+        interface Node {
+          id: ID!
+        }
+
+        interface Timestamped implements Node {
+          id: ID!
+          updatedAt: DateTime
+        }
+
+        type Team implements Node {
+          id: ID!
+        }
+
+        type Organization implements Node {
+          id: ID!
+        }
+
+        type User implements Node & Timestamped {
+          id: ID!
+          updatedAt: DateTime
+          name: String
+        }
+
+        union SearchResult = User | Team
+        extend union SearchResult = Organization
+
+        enum Role {
+          ADMIN
+          MEMBER
+        }
+        extend enum Role {
+          VIEWER
+        }
+
+        input UserFilter {
+          role: Role
+          ids: [ID!]!
+        }
+        extend input UserFilter {
+          active: Boolean @wes_default(value: "true")
+        }
+    "#;
+
+    let adapter = create_adapter();
+    let ir = adapter
+        .lower_sdl(sdl)
+        .await
+        .expect("Failed to lower SDL to L1 IR");
+
+    let date_time = find_type(&ir.types, "DateTime");
+    assert_eq!(date_time.kind, TypeKind::Scalar);
+    assert_eq!(
+        date_time.directives["specifiedBy"]["url"],
+        serde_json::Value::String("https://example.com/datetime".to_string())
+    );
+
+    let timestamped = find_type(&ir.types, "Timestamped");
+    assert_eq!(timestamped.kind, TypeKind::Interface);
+    assert_eq!(timestamped.implements, vec!["Node"]);
+    assert_eq!(
+        timestamped
+            .fields
+            .iter()
+            .map(|field| field.name.as_str())
+            .collect::<Vec<_>>(),
+        vec!["id", "updatedAt"]
+    );
+
+    let user = find_type(&ir.types, "User");
+    assert_eq!(user.kind, TypeKind::Object);
+    assert_eq!(user.implements, vec!["Node", "Timestamped"]);
+
+    let search_result = find_type(&ir.types, "SearchResult");
+    assert_eq!(search_result.kind, TypeKind::Union);
+    assert_eq!(
+        search_result.union_members,
+        vec!["User", "Team", "Organization"]
+    );
+
+    let role = find_type(&ir.types, "Role");
+    assert_eq!(role.kind, TypeKind::Enum);
+    assert_eq!(role.enum_values, vec!["ADMIN", "MEMBER", "VIEWER"]);
+
+    let user_filter = find_type(&ir.types, "UserFilter");
+    assert_eq!(user_filter.kind, TypeKind::InputObject);
+    let ids_field = user_filter
+        .fields
+        .iter()
+        .find(|field| field.name == "ids")
+        .expect("missing ids input field");
+    assert_eq!(ids_field.r#type.base, "ID");
+    assert!(!ids_field.r#type.nullable);
+    assert!(ids_field.r#type.is_list);
+    assert_eq!(ids_field.r#type.list_item_nullable, Some(false));
+}
+
+#[tokio::test]
+async fn rejects_mixed_type_kind_consolidation() {
+    let sdl = r#"
+        type Thing {
+          id: ID
+        }
+
+        extend input Thing {
+          label: String
+        }
+    "#;
+
+    let adapter = create_adapter();
+    let err = adapter
+        .lower_sdl(sdl)
+        .await
+        .expect_err("mixed type kind should fail lowering");
+    let message = err.to_string();
+
+    assert!(
+        message.contains("Thing") && message.contains("Object") && message.contains("InputObject"),
+        "unexpected error: {message}"
+    );
+}
+
+fn find_type<'a>(types: &'a [TypeDefinition], name: &str) -> &'a TypeDefinition {
+    types
+        .iter()
+        .find(|type_def| type_def.name == name)
+        .unwrap_or_else(|| panic!("missing type {name}"))
 }

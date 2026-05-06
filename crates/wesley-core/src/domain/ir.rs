@@ -1,10 +1,10 @@
 //! Wesley Intermediate Representation (IR).
-//! 
+//!
 //! Pure semantic representation of GraphQL SDL, free from domain-specific concepts.
 
-use serde::{Deserialize, Serialize};
-use sha2::{Sha256, Digest};
 use indexmap::IndexMap;
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 
 /// The root Wesley IR structure.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
@@ -55,12 +55,18 @@ pub struct TypeDefinition {
     pub description: Option<String>,
     /// Generic map of directives.
     pub directives: IndexMap<String, serde_json::Value>,
+    /// Interfaces this type implements (for Objects and Interfaces).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub implements: Vec<String>,
     /// Fields (for Objects, Interfaces, InputObjects).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub fields: Vec<Field>,
     /// Enum values (for Enums).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub enum_values: Vec<String>,
+    /// Union member type names (for Unions).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub union_members: Vec<String>,
 }
 
 /// Kinds of GraphQL types.
@@ -117,11 +123,11 @@ pub fn compute_registry_hash(ir: &WesleyIR) -> Result<String, serde_json::Error>
     parity_ir.metadata = None;
 
     let json = to_canonical_json(&parity_ir)?;
-    
+
     let mut hasher = Sha256::new();
     hasher.update(json.as_bytes());
     let result = hasher.finalize();
-    
+
     Ok(hex::encode(result))
 }
 

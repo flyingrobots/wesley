@@ -34,8 +34,63 @@ impl LoweringPort for ApolloLoweringAdapter {
 struct TypeAggregate {
     name: String,
     kind: TypeKind,
-    definitions: Vec<cst::ObjectTypeDefinition>,
-    extensions: Vec<cst::ObjectTypeExtension>,
+    definitions: Vec<TypeDefinitionNode>,
+    extensions: Vec<TypeExtensionNode>,
+}
+
+enum TypeDefinitionNode {
+    Scalar(cst::ScalarTypeDefinition),
+    Object(cst::ObjectTypeDefinition),
+    Interface(cst::InterfaceTypeDefinition),
+    Union(cst::UnionTypeDefinition),
+    Enum(cst::EnumTypeDefinition),
+    InputObject(cst::InputObjectTypeDefinition),
+}
+
+impl TypeDefinitionNode {
+    fn name(&self) -> Option<cst::Name> {
+        match self {
+            TypeDefinitionNode::Scalar(node) => node.name(),
+            TypeDefinitionNode::Object(node) => node.name(),
+            TypeDefinitionNode::Interface(node) => node.name(),
+            TypeDefinitionNode::Union(node) => node.name(),
+            TypeDefinitionNode::Enum(node) => node.name(),
+            TypeDefinitionNode::InputObject(node) => node.name(),
+        }
+    }
+
+    fn description(&self) -> Option<cst::Description> {
+        match self {
+            TypeDefinitionNode::Scalar(node) => node.description(),
+            TypeDefinitionNode::Object(node) => node.description(),
+            TypeDefinitionNode::Interface(node) => node.description(),
+            TypeDefinitionNode::Union(node) => node.description(),
+            TypeDefinitionNode::Enum(node) => node.description(),
+            TypeDefinitionNode::InputObject(node) => node.description(),
+        }
+    }
+}
+
+enum TypeExtensionNode {
+    Scalar(cst::ScalarTypeExtension),
+    Object(cst::ObjectTypeExtension),
+    Interface(cst::InterfaceTypeExtension),
+    Union(cst::UnionTypeExtension),
+    Enum(cst::EnumTypeExtension),
+    InputObject(cst::InputObjectTypeExtension),
+}
+
+impl TypeExtensionNode {
+    fn name(&self) -> Option<cst::Name> {
+        match self {
+            TypeExtensionNode::Scalar(node) => node.name(),
+            TypeExtensionNode::Object(node) => node.name(),
+            TypeExtensionNode::Interface(node) => node.name(),
+            TypeExtensionNode::Union(node) => node.name(),
+            TypeExtensionNode::Enum(node) => node.name(),
+            TypeExtensionNode::InputObject(node) => node.name(),
+        }
+    }
 }
 
 impl ApolloLoweringAdapter {
@@ -58,30 +113,66 @@ impl ApolloLoweringAdapter {
 
         for def in doc.definitions() {
             match def {
-                cst::Definition::ObjectTypeDefinition(obj) => {
-                    if let Some(name) = obj.name() {
-                        let name_str = name.text().to_string();
-                        let agg = aggregates.entry(name_str.clone()).or_insert(TypeAggregate {
-                            name: name_str,
-                            kind: TypeKind::Object,
-                            definitions: Vec::new(),
-                            extensions: Vec::new(),
-                        });
-                        agg.definitions.push(obj);
-                    }
-                }
-                cst::Definition::ObjectTypeExtension(ext) => {
-                    if let Some(name) = ext.name() {
-                        let name_str = name.text().to_string();
-                        let agg = aggregates.entry(name_str.clone()).or_insert(TypeAggregate {
-                            name: name_str,
-                            kind: TypeKind::Object,
-                            definitions: Vec::new(),
-                            extensions: Vec::new(),
-                        });
-                        agg.extensions.push(ext);
-                    }
-                }
+                cst::Definition::ScalarTypeDefinition(node) => self.aggregate_definition(
+                    TypeDefinitionNode::Scalar(node),
+                    TypeKind::Scalar,
+                    &mut aggregates,
+                )?,
+                cst::Definition::ObjectTypeDefinition(node) => self.aggregate_definition(
+                    TypeDefinitionNode::Object(node),
+                    TypeKind::Object,
+                    &mut aggregates,
+                )?,
+                cst::Definition::InterfaceTypeDefinition(node) => self.aggregate_definition(
+                    TypeDefinitionNode::Interface(node),
+                    TypeKind::Interface,
+                    &mut aggregates,
+                )?,
+                cst::Definition::UnionTypeDefinition(node) => self.aggregate_definition(
+                    TypeDefinitionNode::Union(node),
+                    TypeKind::Union,
+                    &mut aggregates,
+                )?,
+                cst::Definition::EnumTypeDefinition(node) => self.aggregate_definition(
+                    TypeDefinitionNode::Enum(node),
+                    TypeKind::Enum,
+                    &mut aggregates,
+                )?,
+                cst::Definition::InputObjectTypeDefinition(node) => self.aggregate_definition(
+                    TypeDefinitionNode::InputObject(node),
+                    TypeKind::InputObject,
+                    &mut aggregates,
+                )?,
+                cst::Definition::ScalarTypeExtension(node) => self.aggregate_extension(
+                    TypeExtensionNode::Scalar(node),
+                    TypeKind::Scalar,
+                    &mut aggregates,
+                )?,
+                cst::Definition::ObjectTypeExtension(node) => self.aggregate_extension(
+                    TypeExtensionNode::Object(node),
+                    TypeKind::Object,
+                    &mut aggregates,
+                )?,
+                cst::Definition::InterfaceTypeExtension(node) => self.aggregate_extension(
+                    TypeExtensionNode::Interface(node),
+                    TypeKind::Interface,
+                    &mut aggregates,
+                )?,
+                cst::Definition::UnionTypeExtension(node) => self.aggregate_extension(
+                    TypeExtensionNode::Union(node),
+                    TypeKind::Union,
+                    &mut aggregates,
+                )?,
+                cst::Definition::EnumTypeExtension(node) => self.aggregate_extension(
+                    TypeExtensionNode::Enum(node),
+                    TypeKind::Enum,
+                    &mut aggregates,
+                )?,
+                cst::Definition::InputObjectTypeExtension(node) => self.aggregate_extension(
+                    TypeExtensionNode::InputObject(node),
+                    TypeKind::InputObject,
+                    &mut aggregates,
+                )?,
                 _ => {}
             }
         }
@@ -98,43 +189,208 @@ impl ApolloLoweringAdapter {
         })
     }
 
+    fn aggregate_definition(
+        &self,
+        node: TypeDefinitionNode,
+        kind: TypeKind,
+        aggregates: &mut BTreeMap<String, TypeAggregate>,
+    ) -> Result<(), WesleyError> {
+        let name = type_node_name(node.name(), "Type definition missing name")?;
+        let agg = aggregate_for(aggregates, name, kind)?;
+        agg.definitions.push(node);
+        Ok(())
+    }
+
+    fn aggregate_extension(
+        &self,
+        node: TypeExtensionNode,
+        kind: TypeKind,
+        aggregates: &mut BTreeMap<String, TypeAggregate>,
+    ) -> Result<(), WesleyError> {
+        let name = type_node_name(node.name(), "Type extension missing name")?;
+        let agg = aggregate_for(aggregates, name, kind)?;
+        agg.extensions.push(node);
+        Ok(())
+    }
+
     fn build_type_from_aggregate(
         &self,
         agg: &TypeAggregate,
     ) -> Result<TypeDefinition, WesleyError> {
         let mut directives = IndexMap::new();
+        let mut implements = Vec::new();
         let mut fields = Vec::new();
+        let mut enum_values = Vec::new();
+        let mut union_members = Vec::new();
+        let mut description = None;
 
-        for obj in &agg.definitions {
-            if let Some(dirs) = obj.directives() {
-                self.extract_directives(dirs, &mut directives)?;
+        for def in &agg.definitions {
+            if description.is_none() {
+                description = description_from(def.description());
             }
-            if let Some(fields_def) = obj.fields_definition() {
-                for field_def in fields_def.field_definitions() {
-                    fields.push(self.build_field(field_def)?);
-                }
-            }
+            self.merge_definition(
+                def,
+                &mut directives,
+                &mut implements,
+                &mut fields,
+                &mut enum_values,
+                &mut union_members,
+            )?;
         }
 
         for ext in &agg.extensions {
-            if let Some(dirs) = ext.directives() {
-                self.extract_directives(dirs, &mut directives)?;
-            }
-            if let Some(fields_def) = ext.fields_definition() {
-                for field_def in fields_def.field_definitions() {
-                    fields.push(self.build_field(field_def)?);
-                }
-            }
+            self.merge_extension(
+                ext,
+                &mut directives,
+                &mut implements,
+                &mut fields,
+                &mut enum_values,
+                &mut union_members,
+            )?;
         }
 
         Ok(TypeDefinition {
             name: agg.name.clone(),
             kind: agg.kind,
-            description: None,
+            description,
             directives,
+            implements,
             fields,
-            enum_values: Vec::new(),
+            enum_values,
+            union_members,
         })
+    }
+
+    fn merge_definition(
+        &self,
+        def: &TypeDefinitionNode,
+        directives: &mut IndexMap<String, serde_json::Value>,
+        implements: &mut Vec<String>,
+        fields: &mut Vec<Field>,
+        enum_values: &mut Vec<String>,
+        union_members: &mut Vec<String>,
+    ) -> Result<(), WesleyError> {
+        match def {
+            TypeDefinitionNode::Scalar(node) => {
+                if let Some(dirs) = node.directives() {
+                    self.extract_directives(dirs, directives)?;
+                }
+            }
+            TypeDefinitionNode::Object(node) => {
+                if let Some(interfaces) = node.implements_interfaces() {
+                    collect_implements(interfaces, implements)?;
+                }
+                if let Some(dirs) = node.directives() {
+                    self.extract_directives(dirs, directives)?;
+                }
+                if let Some(fields_def) = node.fields_definition() {
+                    self.collect_fields(fields_def, fields)?;
+                }
+            }
+            TypeDefinitionNode::Interface(node) => {
+                if let Some(interfaces) = node.implements_interfaces() {
+                    collect_implements(interfaces, implements)?;
+                }
+                if let Some(dirs) = node.directives() {
+                    self.extract_directives(dirs, directives)?;
+                }
+                if let Some(fields_def) = node.fields_definition() {
+                    self.collect_fields(fields_def, fields)?;
+                }
+            }
+            TypeDefinitionNode::Union(node) => {
+                if let Some(dirs) = node.directives() {
+                    self.extract_directives(dirs, directives)?;
+                }
+                if let Some(member_types) = node.union_member_types() {
+                    collect_union_members(member_types, union_members)?;
+                }
+            }
+            TypeDefinitionNode::Enum(node) => {
+                if let Some(dirs) = node.directives() {
+                    self.extract_directives(dirs, directives)?;
+                }
+                if let Some(values_def) = node.enum_values_definition() {
+                    collect_enum_values(values_def, enum_values)?;
+                }
+            }
+            TypeDefinitionNode::InputObject(node) => {
+                if let Some(dirs) = node.directives() {
+                    self.extract_directives(dirs, directives)?;
+                }
+                if let Some(fields_def) = node.input_fields_definition() {
+                    self.collect_input_fields(fields_def, fields)?;
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    fn merge_extension(
+        &self,
+        ext: &TypeExtensionNode,
+        directives: &mut IndexMap<String, serde_json::Value>,
+        implements: &mut Vec<String>,
+        fields: &mut Vec<Field>,
+        enum_values: &mut Vec<String>,
+        union_members: &mut Vec<String>,
+    ) -> Result<(), WesleyError> {
+        match ext {
+            TypeExtensionNode::Scalar(node) => {
+                if let Some(dirs) = node.directives() {
+                    self.extract_directives(dirs, directives)?;
+                }
+            }
+            TypeExtensionNode::Object(node) => {
+                if let Some(interfaces) = node.implements_interfaces() {
+                    collect_implements(interfaces, implements)?;
+                }
+                if let Some(dirs) = node.directives() {
+                    self.extract_directives(dirs, directives)?;
+                }
+                if let Some(fields_def) = node.fields_definition() {
+                    self.collect_fields(fields_def, fields)?;
+                }
+            }
+            TypeExtensionNode::Interface(node) => {
+                if let Some(interfaces) = node.implements_interfaces() {
+                    collect_implements(interfaces, implements)?;
+                }
+                if let Some(dirs) = node.directives() {
+                    self.extract_directives(dirs, directives)?;
+                }
+                if let Some(fields_def) = node.fields_definition() {
+                    self.collect_fields(fields_def, fields)?;
+                }
+            }
+            TypeExtensionNode::Union(node) => {
+                if let Some(dirs) = node.directives() {
+                    self.extract_directives(dirs, directives)?;
+                }
+                if let Some(member_types) = node.union_member_types() {
+                    collect_union_members(member_types, union_members)?;
+                }
+            }
+            TypeExtensionNode::Enum(node) => {
+                if let Some(dirs) = node.directives() {
+                    self.extract_directives(dirs, directives)?;
+                }
+                if let Some(values_def) = node.enum_values_definition() {
+                    collect_enum_values(values_def, enum_values)?;
+                }
+            }
+            TypeExtensionNode::InputObject(node) => {
+                if let Some(dirs) = node.directives() {
+                    self.extract_directives(dirs, directives)?;
+                }
+                if let Some(fields_def) = node.input_fields_definition() {
+                    self.collect_input_fields(fields_def, fields)?;
+                }
+            }
+        }
+
+        Ok(())
     }
 
     fn extract_directives(
@@ -157,8 +413,7 @@ impl ApolloLoweringAdapter {
                 for arg in args.arguments() {
                     let arg_name = arg.name().map(|n| n.text().to_string()).unwrap_or_default();
                     if let Some(val) = arg.value() {
-                        let val_str = val.syntax().text().to_string().replace("\"", "");
-                        args_map.insert(arg_name, serde_json::Value::String(val_str));
+                        args_map.insert(arg_name, directive_value_to_json(val)?);
                     }
                 }
             }
@@ -171,6 +426,30 @@ impl ApolloLoweringAdapter {
 
             map.insert(dir_name, val);
         }
+        Ok(())
+    }
+
+    fn collect_fields(
+        &self,
+        fields_def: cst::FieldsDefinition,
+        fields: &mut Vec<Field>,
+    ) -> Result<(), WesleyError> {
+        for field_def in fields_def.field_definitions() {
+            fields.push(self.build_field(field_def)?);
+        }
+
+        Ok(())
+    }
+
+    fn collect_input_fields(
+        &self,
+        fields_def: cst::InputFieldsDefinition,
+        fields: &mut Vec<Field>,
+    ) -> Result<(), WesleyError> {
+        for field_def in fields_def.input_value_definitions() {
+            fields.push(self.build_input_field(field_def)?);
+        }
+
         Ok(())
     }
 
@@ -189,44 +468,36 @@ impl ApolloLoweringAdapter {
             area: "field".to_string(),
         })?;
 
-        let mut base = String::new();
-        let mut is_list = false;
-        let mut nullable = true;
-
-        match type_node {
-            cst::Type::NamedType(nt) => {
-                base = nt.name().map(|n| n.text().to_string()).unwrap_or_default();
-            }
-            cst::Type::NonNullType(nnt) => {
-                nullable = false;
-                if let Some(nt) = nnt.named_type() {
-                    base = nt.name().map(|n| n.text().to_string()).unwrap_or_default();
-                } else if let Some(lt) = nnt.list_type() {
-                    is_list = true;
-                    if let Some(item_type) = lt.ty() {
-                        base = item_type
-                            .syntax()
-                            .text()
-                            .to_string()
-                            .replace("!", "")
-                            .replace("[", "")
-                            .replace("]", "");
-                    }
-                }
-            }
-            cst::Type::ListType(lt) => {
-                is_list = true;
-                if let Some(item_type) = lt.ty() {
-                    base = item_type
-                        .syntax()
-                        .text()
-                        .to_string()
-                        .replace("!", "")
-                        .replace("[", "")
-                        .replace("]", "");
-                }
-            }
+        let mut field_directives = IndexMap::new();
+        if let Some(dirs) = field_def.directives() {
+            self.extract_directives(dirs, &mut field_directives)?;
         }
+
+        Ok(Field {
+            name,
+            r#type: self.build_type_reference(type_node)?,
+            directives: field_directives,
+            description: description_from(field_def.description()),
+        })
+    }
+
+    fn build_input_field(
+        &self,
+        field_def: cst::InputValueDefinition,
+    ) -> Result<Field, WesleyError> {
+        let name = field_def
+            .name()
+            .ok_or(WesleyError::LoweringError {
+                message: "Input field missing name".to_string(),
+                area: "field".to_string(),
+            })?
+            .text()
+            .to_string();
+
+        let type_node = field_def.ty().ok_or(WesleyError::LoweringError {
+            message: "Input field missing type".to_string(),
+            area: "field".to_string(),
+        })?;
 
         let mut field_directives = IndexMap::new();
         if let Some(dirs) = field_def.directives() {
@@ -235,15 +506,259 @@ impl ApolloLoweringAdapter {
 
         Ok(Field {
             name,
-            r#type: TypeReference {
-                base,
-                nullable,
-                is_list,
-                list_item_nullable: None,
-            },
+            r#type: self.build_type_reference(type_node)?,
             directives: field_directives,
-            description: None,
+            description: description_from(field_def.description()),
         })
+    }
+
+    fn build_type_reference(&self, type_node: cst::Type) -> Result<TypeReference, WesleyError> {
+        type_reference_from_type(type_node, true)
+    }
+}
+
+fn aggregate_for<'a>(
+    aggregates: &'a mut BTreeMap<String, TypeAggregate>,
+    name: String,
+    kind: TypeKind,
+) -> Result<&'a mut TypeAggregate, WesleyError> {
+    use std::collections::btree_map::Entry;
+
+    match aggregates.entry(name.clone()) {
+        Entry::Vacant(entry) => Ok(entry.insert(TypeAggregate {
+            name,
+            kind,
+            definitions: Vec::new(),
+            extensions: Vec::new(),
+        })),
+        Entry::Occupied(entry) => {
+            let aggregate = entry.into_mut();
+            if aggregate.kind != kind {
+                return Err(lowering_error_value(
+                    "type",
+                    format!(
+                        "Type '{}' is declared as both {:?} and {:?}",
+                        aggregate.name, aggregate.kind, kind
+                    ),
+                ));
+            }
+            Ok(aggregate)
+        }
+    }
+}
+
+fn type_node_name(name: Option<cst::Name>, message: &str) -> Result<String, WesleyError> {
+    name.map(|name| name.text().to_string())
+        .ok_or_else(|| lowering_error_value("type", message.to_string()))
+}
+
+fn description_from(description: Option<cst::Description>) -> Option<String> {
+    description
+        .and_then(|description| description.string_value())
+        .map(String::from)
+}
+
+fn collect_implements(
+    interfaces: cst::ImplementsInterfaces,
+    implements: &mut Vec<String>,
+) -> Result<(), WesleyError> {
+    for named_type in interfaces.named_types() {
+        let name = named_type_name_for_lowering(named_type, "Implemented interface missing name")?;
+        push_unique(implements, name);
+    }
+
+    Ok(())
+}
+
+fn collect_union_members(
+    member_types: cst::UnionMemberTypes,
+    union_members: &mut Vec<String>,
+) -> Result<(), WesleyError> {
+    for named_type in member_types.named_types() {
+        let name = named_type_name_for_lowering(named_type, "Union member missing name")?;
+        push_unique(union_members, name);
+    }
+
+    Ok(())
+}
+
+fn collect_enum_values(
+    values_def: cst::EnumValuesDefinition,
+    enum_values: &mut Vec<String>,
+) -> Result<(), WesleyError> {
+    for value_def in values_def.enum_value_definitions() {
+        let name = value_def
+            .enum_value()
+            .and_then(|enum_value| enum_value.name())
+            .map(|name| name.text().to_string())
+            .ok_or_else(|| lowering_error_value("enum", "Enum value missing name".to_string()))?;
+        push_unique(enum_values, name);
+    }
+
+    Ok(())
+}
+
+fn named_type_name_for_lowering(
+    named_type: cst::NamedType,
+    message: &str,
+) -> Result<String, WesleyError> {
+    named_type
+        .name()
+        .map(|name| name.text().to_string())
+        .ok_or_else(|| lowering_error_value("type", message.to_string()))
+}
+
+fn type_reference_from_type(
+    type_node: cst::Type,
+    nullable: bool,
+) -> Result<TypeReference, WesleyError> {
+    match type_node {
+        cst::Type::NamedType(named_type) => Ok(TypeReference {
+            base: named_type_name_for_lowering(named_type, "Type reference missing name")?,
+            nullable,
+            is_list: false,
+            list_item_nullable: None,
+        }),
+        cst::Type::ListType(list_type) => {
+            let item_type = list_type.ty().ok_or_else(|| {
+                lowering_error_value("type", "List type missing item type".to_string())
+            })?;
+            let item_ref = type_reference_from_type(item_type, true)?;
+            Ok(TypeReference {
+                base: item_ref.base,
+                nullable,
+                is_list: true,
+                list_item_nullable: Some(item_ref.nullable),
+            })
+        }
+        cst::Type::NonNullType(non_null_type) => {
+            if let Some(named_type) = non_null_type.named_type() {
+                Ok(TypeReference {
+                    base: named_type_name_for_lowering(
+                        named_type,
+                        "Non-null type reference missing name",
+                    )?,
+                    nullable: false,
+                    is_list: false,
+                    list_item_nullable: None,
+                })
+            } else if let Some(list_type) = non_null_type.list_type() {
+                let item_type = list_type.ty().ok_or_else(|| {
+                    lowering_error_value("type", "Non-null list type missing item type".to_string())
+                })?;
+                let item_ref = type_reference_from_type(item_type, true)?;
+                Ok(TypeReference {
+                    base: item_ref.base,
+                    nullable: false,
+                    is_list: true,
+                    list_item_nullable: Some(item_ref.nullable),
+                })
+            } else {
+                Err(lowering_error_value(
+                    "type",
+                    "Non-null type missing inner type".to_string(),
+                ))
+            }
+        }
+    }
+}
+
+fn directive_value_to_json(value: cst::Value) -> Result<serde_json::Value, WesleyError> {
+    match value {
+        cst::Value::StringValue(value) => Ok(serde_json::Value::String(String::from(value))),
+        cst::Value::FloatValue(value) => {
+            let raw = value
+                .float_token()
+                .map(|token| token.text().to_string())
+                .unwrap_or_default();
+            let parsed = raw.parse::<f64>().map_err(|err| {
+                lowering_error_value(
+                    "directive",
+                    format!("Invalid float directive argument '{raw}': {err}"),
+                )
+            })?;
+            serde_json::Number::from_f64(parsed)
+                .map(serde_json::Value::Number)
+                .ok_or_else(|| {
+                    lowering_error_value(
+                        "directive",
+                        format!("Invalid finite float directive argument '{raw}'"),
+                    )
+                })
+        }
+        cst::Value::IntValue(value) => {
+            let raw = value
+                .int_token()
+                .map(|token| token.text().to_string())
+                .unwrap_or_default();
+            raw.parse::<i64>()
+                .map(|parsed| serde_json::Value::Number(parsed.into()))
+                .map_err(|err| {
+                    lowering_error_value(
+                        "directive",
+                        format!("Invalid integer directive argument '{raw}': {err}"),
+                    )
+                })
+        }
+        cst::Value::BooleanValue(value) => Ok(serde_json::Value::Bool(
+            value.true_token().is_some() && value.false_token().is_none(),
+        )),
+        cst::Value::NullValue(_) => Ok(serde_json::Value::Null),
+        cst::Value::EnumValue(value) => {
+            let name = value
+                .name()
+                .map(|name| name.text().to_string())
+                .ok_or_else(|| {
+                    lowering_error_value(
+                        "directive",
+                        "Enum directive value missing name".to_string(),
+                    )
+                })?;
+            Ok(serde_json::Value::String(name))
+        }
+        cst::Value::ListValue(list) => {
+            let mut values = Vec::new();
+            for value in list.values() {
+                values.push(directive_value_to_json(value)?);
+            }
+            Ok(serde_json::Value::Array(values))
+        }
+        cst::Value::ObjectValue(object) => {
+            let mut map = serde_json::Map::new();
+            for field in object.object_fields() {
+                let name = field
+                    .name()
+                    .map(|name| name.text().to_string())
+                    .ok_or_else(|| {
+                        lowering_error_value(
+                            "directive",
+                            "Object directive value field missing name".to_string(),
+                        )
+                    })?;
+                let value = field.value().ok_or_else(|| {
+                    lowering_error_value(
+                        "directive",
+                        format!("Object directive value field '{name}' missing value"),
+                    )
+                })?;
+                map.insert(name, directive_value_to_json(value)?);
+            }
+            Ok(serde_json::Value::Object(map))
+        }
+        cst::Value::Variable(variable) => Err(lowering_error_value(
+            "directive",
+            format!(
+                "Directive argument values in SDL cannot be variables: {}",
+                variable.text()
+            ),
+        )),
+    }
+}
+
+fn lowering_error_value(area: &str, message: String) -> WesleyError {
+    WesleyError::LoweringError {
+        message,
+        area: area.to_string(),
     }
 }
 
@@ -688,9 +1203,10 @@ impl<'a> SchemaIndex<'a> {
     }
 
     fn require_type(&self, name: &str) -> Result<&'a TypeDefinition, WesleyError> {
-        self.types.get(name).copied().ok_or_else(|| {
-            footprint_error_value(format!("Unknown selection parent type '{name}'"))
-        })
+        self.types
+            .get(name)
+            .copied()
+            .ok_or_else(|| footprint_error_value(format!("Unknown selection parent type '{name}'")))
     }
 
     fn field(&self, parent_type: &str, field_name: &str) -> Result<&'a Field, WesleyError> {
