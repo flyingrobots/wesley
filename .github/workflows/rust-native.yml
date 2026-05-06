@@ -1,0 +1,48 @@
+name: Rust Native
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    paths:
+      - '.cargo/**'
+      - '.github/workflows/rust-native.yml'
+      - 'Cargo.lock'
+      - 'Cargo.toml'
+      - 'crates/**'
+      - 'docs/BEARING.md'
+      - 'docs/GUIDE.md'
+      - 'README.md'
+      - 'test/fixtures/ir-parity/**'
+      - 'xtask/**'
+  push:
+    branches:
+      - main
+    paths:
+      - '.cargo/**'
+      - '.github/workflows/rust-native.yml'
+      - 'Cargo.lock'
+      - 'Cargo.toml'
+      - 'crates/**'
+      - 'docs/BEARING.md'
+      - 'docs/GUIDE.md'
+      - 'README.md'
+      - 'test/fixtures/ir-parity/**'
+      - 'xtask/**'
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - name: Verify Rust toolchain
+        run: |
+          rustc --version
+          cargo --version
+      - name: Run Rust-native preflight
+        run: cargo xtask preflight
