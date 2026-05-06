@@ -1,4 +1,6 @@
-use wesley_core::{check_footprint, extract_footprint, FootprintSpec, WesleyError};
+use wesley_core::{
+    check_footprint, check_footprint_with_schema, extract_footprint, FootprintSpec, WesleyError,
+};
 
 #[test]
 fn extracts_declared_footprint_and_nested_selection_paths() {
@@ -139,6 +141,152 @@ fn checks_declared_footprint_coverage() {
     assert!(!check.is_honest());
     assert_eq!(check.undeclared_selections, vec!["viewer.id".to_string()]);
     assert_eq!(check.unused_declarations, vec!["unusedWrite".to_string()]);
+}
+
+#[test]
+fn checks_declared_schema_coordinates_with_schema() {
+    let schema = r#"
+        type Query {
+          viewer: Viewer!
+        }
+
+        type Viewer {
+          id: ID!
+          receipt: Receipt!
+        }
+
+        type Receipt {
+          status: String!
+        }
+    "#;
+    let operation = r#"
+        query SchemaAware
+          @wes_footprint(
+            reads: ["Query.viewer", "Viewer.id", "Viewer.receipt", "Receipt.status"]
+            writes: []
+          ) {
+          viewer {
+            id
+            receipt {
+              status
+            }
+          }
+        }
+    "#;
+
+    let check = check_footprint_with_schema(schema, operation)
+        .expect("schema-aware operation footprint should check");
+
+    assert!(check.is_honest());
+    assert_eq!(
+        check.spec.actual_selections,
+        vec![
+            "Query.viewer".to_string(),
+            "Viewer.id".to_string(),
+            "Viewer.receipt".to_string(),
+            "Receipt.status".to_string(),
+        ]
+    );
+}
+
+#[test]
+fn reports_undeclared_schema_coordinates() {
+    let schema = r#"
+        type Mutation {
+          admitChange: ChangeAdmission!
+        }
+
+        type ChangeAdmission {
+          receipt: Receipt!
+        }
+
+        type Receipt {
+          status: String!
+        }
+    "#;
+    let operation = r#"
+        mutation Admit
+          @wes_footprint(
+            reads: ["Mutation.admitChange", "ChangeAdmission.receipt"]
+            writes: []
+          ) {
+          admitChange {
+            receipt {
+              status
+            }
+          }
+        }
+    "#;
+
+    let check = check_footprint_with_schema(schema, operation)
+        .expect("schema-aware operation footprint should check");
+
+    assert!(!check.is_honest());
+    assert_eq!(
+        check.undeclared_selections,
+        vec!["Receipt.status".to_string()]
+    );
+}
+
+#[test]
+fn uses_schema_declared_root_operation_types() {
+    let schema = r#"
+        schema {
+          query: RootQuery
+        }
+
+        type RootQuery {
+          viewer: Viewer!
+        }
+
+        type Viewer {
+          id: ID!
+        }
+    "#;
+    let operation = r#"
+        query Rooted @wes_footprint(reads: ["RootQuery.viewer", "Viewer.id"], writes: []) {
+          viewer {
+            id
+          }
+        }
+    "#;
+
+    let check = check_footprint_with_schema(schema, operation)
+        .expect("schema-aware operation footprint should check");
+
+    assert!(check.is_honest());
+    assert_eq!(
+        check.spec.actual_selections,
+        vec!["RootQuery.viewer".to_string(), "Viewer.id".to_string()]
+    );
+}
+
+#[test]
+fn rejects_schema_coordinate_for_unknown_selected_field() {
+    let schema = r#"
+        type Query {
+          viewer: Viewer!
+        }
+
+        type Viewer {
+          id: ID!
+        }
+    "#;
+    let operation = r#"
+        query BadField @wes_footprint(reads: ["Query.viewer"], writes: []) {
+          viewer {
+            missing
+          }
+        }
+    "#;
+
+    let error = check_footprint_with_schema(schema, operation)
+        .expect_err("unknown selected field should fail");
+
+    assert!(matches!(
+        error,
+        WesleyError::LoweringError { area, .. } if area == "footprint"
+    ));
 }
 
 #[test]

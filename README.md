@@ -34,14 +34,18 @@ cargo xtask preflight
 ```
 
 ### 2. Check An Operation Footprint
-Run the native `wesley` binary against a GraphQL operation document.
+Run the native `wesley` binary against a GraphQL schema and operation document.
 ```bash
 cargo wesley \
   check-footprint \
+  --schema ./schema.graphql \
   --operation ./operation.graphql
 ```
 
 Add `--json` when an agent or CI job needs machine-readable output.
+If `--schema` is omitted, Wesley falls back to response-path checking. With
+`--schema`, Wesley checks exact schema coordinates such as `Mutation.admitChange`
+and `Receipt.status`.
 
 ## Rust-Native Front Door
 

@@ -12,12 +12,13 @@ If you need the main Wesley nouns and the layer split before reading anything el
 Compile authored GraphQL into generic or explicitly selected generated
 artifacts.
 - **Inspect native CLI**: `cargo wesley --help`
-- **Check footprints**: `cargo wesley check-footprint --operation <path>`
+- **Check footprints**: `cargo wesley check-footprint --schema <schema> --operation <path>`
 - **Rust preflight**: `cargo xtask preflight`
 
 The Rust-native CLI is now the preferred front door for Wesley core work. The
-current `check-footprint` command performs a string-level honesty check over
-the declared `@wes_footprint` reads/writes and the operation selection paths.
+current `check-footprint` command performs schema-coordinate honesty checks
+when `--schema` is provided, and falls back to response-path checking when it is
+not.
 
 The historical package CLI still carries generic TypeScript/Zod/transform
 commands while those surfaces are being extracted or retired:

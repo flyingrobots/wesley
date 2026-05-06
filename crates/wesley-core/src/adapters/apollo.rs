@@ -7,7 +7,7 @@ use crate::ports::lowering::LoweringPort;
 use apollo_parser::{cst, cst::CstNode, Parser};
 use async_trait::async_trait;
 use indexmap::IndexMap;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 
 /// Adapter that uses `apollo-parser` to lower SDL to IR.
 pub struct ApolloLoweringAdapter {
@@ -293,6 +293,44 @@ pub fn extract_footprint(operation_sdl: &str) -> Result<FootprintSpec, WesleyErr
 /// Checks whether an operation's declared footprint covers its selection paths.
 pub fn check_footprint(operation_sdl: &str) -> Result<FootprintCheck, WesleyError> {
     let spec = extract_footprint(operation_sdl)?;
+    check_spec(spec)
+}
+
+/// Checks whether an operation's declared footprint covers schema coordinates.
+pub fn check_footprint_with_schema(
+    schema_sdl: &str,
+    operation_sdl: &str,
+) -> Result<FootprintCheck, WesleyError> {
+    let adapter = ApolloLoweringAdapter::new(0);
+    let ir = adapter.parse_and_lower(schema_sdl)?;
+    let root_types = extract_root_types(schema_sdl)?;
+
+    let parsed = parse_operation_document(operation_sdl)?;
+    let op = parsed.only_operation()?;
+    let (declared_reads, declared_writes) = extract_declared_footprint(op)?;
+    let mut actual_selections = Vec::new();
+
+    if let Some(selection_set) = op.selection_set() {
+        let root_type = root_types.root_for_operation(op)?;
+        let schema = SchemaIndex::new(&ir);
+        collect_schema_coordinates(
+            &selection_set,
+            root_type,
+            &schema,
+            &parsed.fragments,
+            &mut Vec::new(),
+            &mut actual_selections,
+        )?;
+    }
+
+    check_spec(FootprintSpec {
+        declared_reads,
+        declared_writes,
+        actual_selections,
+    })
+}
+
+fn check_spec(spec: FootprintSpec) -> Result<FootprintCheck, WesleyError> {
     let declared = declared_paths(&spec);
 
     let undeclared_selections = spec
@@ -347,6 +385,62 @@ fn extract_footprint_from_operation(
         declared_reads,
         declared_writes,
         actual_selections,
+    })
+}
+
+struct ParsedOperationDocument {
+    operations: Vec<cst::OperationDefinition>,
+    fragments: BTreeMap<String, cst::FragmentDefinition>,
+}
+
+impl ParsedOperationDocument {
+    fn only_operation(&self) -> Result<&cst::OperationDefinition, WesleyError> {
+        match self.operations.len() {
+            0 => footprint_error("No GraphQL operation found".to_string()),
+            1 => Ok(&self.operations[0]),
+            count => footprint_error(format!(
+                "Expected exactly one GraphQL operation, found {count}"
+            )),
+        }
+    }
+}
+
+fn parse_operation_document(operation_sdl: &str) -> Result<ParsedOperationDocument, WesleyError> {
+    let parser = Parser::new(operation_sdl);
+    let cst = parser.parse();
+
+    let errors = cst.errors().collect::<Vec<_>>();
+    if !errors.is_empty() {
+        let err = &errors[0];
+        return Err(WesleyError::ParseError {
+            message: err.message().to_string(),
+            line: None,
+            column: None,
+        });
+    }
+
+    let doc = cst.document();
+    let mut operations = Vec::new();
+    let mut fragments = BTreeMap::new();
+
+    for def in doc.definitions() {
+        match def {
+            cst::Definition::OperationDefinition(op) => {
+                operations.push(op);
+            }
+            cst::Definition::FragmentDefinition(fragment) => {
+                let name = fragment_name(&fragment)?;
+                if fragments.insert(name.clone(), fragment).is_some() {
+                    return footprint_error(format!("Duplicate fragment definition '{name}'"));
+                }
+            }
+            _ => {}
+        }
+    }
+
+    Ok(ParsedOperationDocument {
+        operations,
+        fragments,
     })
 }
 
@@ -491,6 +585,212 @@ fn collect_selection_paths(
     Ok(())
 }
 
+fn collect_schema_coordinates(
+    selection_set: &cst::SelectionSet,
+    parent_type: &str,
+    schema: &SchemaIndex<'_>,
+    fragments: &BTreeMap<String, cst::FragmentDefinition>,
+    active_fragments: &mut Vec<String>,
+    actual_selections: &mut Vec<String>,
+) -> Result<(), WesleyError> {
+    for selection in selection_set.selections() {
+        match selection {
+            cst::Selection::Field(field) => {
+                let field_name = required_name(field.name(), "Field selection missing name")?;
+                let schema_field = schema.field(parent_type, &field_name)?;
+                let coordinate = format!("{parent_type}.{field_name}");
+                push_unique(actual_selections, coordinate);
+
+                if let Some(nested_selection_set) = field.selection_set() {
+                    let nested_parent = schema_field.r#type.base.as_str();
+                    schema.require_type(nested_parent)?;
+                    collect_schema_coordinates(
+                        &nested_selection_set,
+                        nested_parent,
+                        schema,
+                        fragments,
+                        active_fragments,
+                        actual_selections,
+                    )?;
+                }
+            }
+            cst::Selection::FragmentSpread(spread) => {
+                let name = spread
+                    .fragment_name()
+                    .and_then(|fragment_name| fragment_name.name())
+                    .map(|name| name.text().to_string())
+                    .ok_or_else(|| {
+                        footprint_error_value("Fragment spread missing name".to_string())
+                    })?;
+
+                if active_fragments.contains(&name) {
+                    return footprint_error(format!(
+                        "Cyclic fragment spread detected for fragment '{name}'"
+                    ));
+                }
+
+                let fragment = fragments.get(&name).ok_or_else(|| {
+                    footprint_error_value(format!("Unknown fragment spread '{name}'"))
+                })?;
+                let fragment_parent = fragment_type_condition(fragment)?;
+                schema.require_type(&fragment_parent)?;
+
+                active_fragments.push(name);
+                if let Some(fragment_selection_set) = fragment.selection_set() {
+                    collect_schema_coordinates(
+                        &fragment_selection_set,
+                        &fragment_parent,
+                        schema,
+                        fragments,
+                        active_fragments,
+                        actual_selections,
+                    )?;
+                }
+                active_fragments.pop();
+            }
+            cst::Selection::InlineFragment(fragment) => {
+                let inline_parent = if let Some(type_condition) = fragment.type_condition() {
+                    named_type_name(type_condition.named_type(), "Inline fragment missing type")?
+                } else {
+                    parent_type.to_string()
+                };
+                schema.require_type(&inline_parent)?;
+
+                if let Some(inline_selection_set) = fragment.selection_set() {
+                    collect_schema_coordinates(
+                        &inline_selection_set,
+                        &inline_parent,
+                        schema,
+                        fragments,
+                        active_fragments,
+                        actual_selections,
+                    )?;
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
+
+struct SchemaIndex<'a> {
+    types: HashMap<&'a str, &'a TypeDefinition>,
+}
+
+impl<'a> SchemaIndex<'a> {
+    fn new(ir: &'a WesleyIR) -> Self {
+        let types = ir
+            .types
+            .iter()
+            .map(|type_def| (type_def.name.as_str(), type_def))
+            .collect::<HashMap<_, _>>();
+        Self { types }
+    }
+
+    fn require_type(&self, name: &str) -> Result<&'a TypeDefinition, WesleyError> {
+        self.types.get(name).copied().ok_or_else(|| {
+            footprint_error_value(format!("Unknown selection parent type '{name}'"))
+        })
+    }
+
+    fn field(&self, parent_type: &str, field_name: &str) -> Result<&'a Field, WesleyError> {
+        let type_def = self.require_type(parent_type)?;
+        type_def
+            .fields
+            .iter()
+            .find(|field| field.name == field_name)
+            .ok_or_else(|| {
+                footprint_error_value(format!(
+                    "Type '{parent_type}' does not define selected field '{field_name}'"
+                ))
+            })
+    }
+}
+
+struct RootTypes {
+    query: String,
+    mutation: String,
+    subscription: String,
+}
+
+impl RootTypes {
+    fn root_for_operation(&self, op: &cst::OperationDefinition) -> Result<&str, WesleyError> {
+        let Some(operation_type) = op.operation_type() else {
+            return Ok(self.query.as_str());
+        };
+
+        if operation_type.query_token().is_some() {
+            Ok(self.query.as_str())
+        } else if operation_type.mutation_token().is_some() {
+            Ok(self.mutation.as_str())
+        } else if operation_type.subscription_token().is_some() {
+            Ok(self.subscription.as_str())
+        } else {
+            footprint_error("Unknown GraphQL operation type".to_string())
+        }
+    }
+}
+
+fn extract_root_types(schema_sdl: &str) -> Result<RootTypes, WesleyError> {
+    let parser = Parser::new(schema_sdl);
+    let cst = parser.parse();
+
+    let errors = cst.errors().collect::<Vec<_>>();
+    if !errors.is_empty() {
+        let err = &errors[0];
+        return Err(WesleyError::ParseError {
+            message: err.message().to_string(),
+            line: None,
+            column: None,
+        });
+    }
+
+    let mut root_types = RootTypes {
+        query: "Query".to_string(),
+        mutation: "Mutation".to_string(),
+        subscription: "Subscription".to_string(),
+    };
+
+    for def in cst.document().definitions() {
+        match def {
+            cst::Definition::SchemaDefinition(schema) => {
+                update_root_types(schema.root_operation_type_definitions(), &mut root_types)?;
+            }
+            cst::Definition::SchemaExtension(schema) => {
+                update_root_types(schema.root_operation_type_definitions(), &mut root_types)?;
+            }
+            _ => {}
+        }
+    }
+
+    Ok(root_types)
+}
+
+fn update_root_types(
+    root_defs: cst::CstChildren<cst::RootOperationTypeDefinition>,
+    root_types: &mut RootTypes,
+) -> Result<(), WesleyError> {
+    for root_def in root_defs {
+        let operation_type = root_def.operation_type().ok_or_else(|| {
+            footprint_error_value("Schema root operation missing operation type".to_string())
+        })?;
+        let named_type = named_type_name(
+            root_def.named_type(),
+            "Schema root operation missing named type",
+        )?;
+
+        if operation_type.query_token().is_some() {
+            root_types.query = named_type;
+        } else if operation_type.mutation_token().is_some() {
+            root_types.mutation = named_type;
+        } else if operation_type.subscription_token().is_some() {
+            root_types.subscription = named_type;
+        }
+    }
+
+    Ok(())
+}
+
 fn push_unique(values: &mut Vec<String>, value: String) {
     if !values.contains(&value) {
         values.push(value);
@@ -503,6 +803,22 @@ fn fragment_name(fragment: &cst::FragmentDefinition) -> Result<String, WesleyErr
         .and_then(|fragment_name| fragment_name.name())
         .map(|name| name.text().to_string())
         .ok_or_else(|| footprint_error_value("Fragment definition missing name".to_string()))
+}
+
+fn fragment_type_condition(fragment: &cst::FragmentDefinition) -> Result<String, WesleyError> {
+    let type_condition = fragment.type_condition().ok_or_else(|| {
+        footprint_error_value("Fragment definition missing type condition".to_string())
+    })?;
+    named_type_name(
+        type_condition.named_type(),
+        "Fragment definition missing type condition",
+    )
+}
+
+fn named_type_name(name: Option<cst::NamedType>, message: &str) -> Result<String, WesleyError> {
+    name.and_then(|named_type| named_type.name())
+        .map(|name| name.text().to_string())
+        .ok_or_else(|| footprint_error_value(message.to_string()))
 }
 
 fn required_name(name: Option<cst::Name>, message: &str) -> Result<String, WesleyError> {

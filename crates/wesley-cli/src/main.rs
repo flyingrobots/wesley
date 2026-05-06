@@ -5,7 +5,7 @@ use std::env;
 use std::fs;
 use std::path::PathBuf;
 use std::process::ExitCode;
-use wesley_core::{check_footprint, FootprintCheck, WesleyError};
+use wesley_core::{check_footprint, check_footprint_with_schema, FootprintCheck, WesleyError};
 
 const EXIT_OK: u8 = 0;
 const EXIT_DISHONEST: u8 = 1;
@@ -46,7 +46,17 @@ fn run_check_footprint(args: &[String]) -> Result<u8, CliError> {
         ))
     })?;
 
-    let check = check_footprint(&operation_sdl)?;
+    let check = if let Some(schema_path) = &options.schema {
+        let schema_sdl = fs::read_to_string(schema_path).map_err(|source| {
+            CliError::usage(format!(
+                "failed to read schema '{}': {source}",
+                schema_path.display()
+            ))
+        })?;
+        check_footprint_with_schema(&schema_sdl, &operation_sdl)?
+    } else {
+        check_footprint(&operation_sdl)?
+    };
     if options.json {
         print_json(&check)?;
     } else {
@@ -117,11 +127,11 @@ fn print_check_footprint_help() {
 Check a GraphQL operation @wes_footprint declaration.
 
 Usage:
-  wesley check-footprint --operation <path> [--json] [--schema <path>]
+  wesley check-footprint --operation <path> [--schema <path>] [--json]
 
 Options:
   --operation <path>  GraphQL operation document to check
-  --schema <path>     Reserved for later schema-aware checks
+  --schema <path>     GraphQL schema for schema-coordinate checking
   --json              Emit machine-readable JSON
   -h, --help          Show help"
     );
@@ -130,12 +140,14 @@ Options:
 #[derive(Debug)]
 struct CheckFootprintOptions {
     operation: PathBuf,
+    schema: Option<PathBuf>,
     json: bool,
 }
 
 impl CheckFootprintOptions {
     fn parse(args: &[String]) -> Result<Self, CliError> {
         let mut operation = None;
+        let mut schema = None;
         let mut json = false;
         let mut index = 0;
 
@@ -154,9 +166,10 @@ impl CheckFootprintOptions {
                     index += 2;
                 }
                 "--schema" => {
-                    let _schema = args
+                    let value = args
                         .get(index + 1)
                         .ok_or_else(|| CliError::usage("--schema requires a path"))?;
+                    schema = Some(PathBuf::from(value));
                     index += 2;
                 }
                 option if option.starts_with('-') => {
@@ -170,6 +183,7 @@ impl CheckFootprintOptions {
 
         Ok(Self {
             operation: operation.ok_or_else(|| CliError::usage("--operation is required"))?,
+            schema,
             json,
         })
     }
