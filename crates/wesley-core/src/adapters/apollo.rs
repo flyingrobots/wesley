@@ -5,8 +5,9 @@ use apollo_parser::{cst, Parser, cst::CstNode};
 use crate::domain::ir::*;
 use crate::domain::error::WesleyError;
 use crate::ports::lowering::LoweringPort;
+use std::collections::BTreeMap;
 
-/// Adapter that uses `apollo-parser` to lower SDL to IR.
+/// Adapter that uses `apollo-parser` to lower SDL to IR using Semantic Consolidation.
 pub struct ApolloLoweringAdapter {
     _max_retries: usize,
 }
@@ -25,6 +26,13 @@ impl LoweringPort for ApolloLoweringAdapter {
     }
 }
 
+/// Represents the consolidated parts of a single GraphQL Type.
+struct TypeAggregate {
+    name: String,
+    definitions: Vec<cst::ObjectTypeDefinition>,
+    extensions: Vec<cst::ObjectTypeExtension>,
+}
+
 impl ApolloLoweringAdapter {
     fn parse_and_lower(&self, sdl: &str) -> Result<WesleyIR, WesleyError> {
         let parser = Parser::new(sdl);
@@ -41,15 +49,48 @@ impl ApolloLoweringAdapter {
         }
 
         let doc = cst.document();
-        let mut tables = Vec::new();
+        
+        // STEP 1: Semantic Consolidation
+        let mut aggregates: BTreeMap<String, TypeAggregate> = BTreeMap::new();
 
         for def in doc.definitions() {
-            if let cst::Definition::ObjectTypeDefinition(obj) = def {
-                if let Some(table) = self.build_table(obj)? {
-                    tables.push(table);
+            match def {
+                cst::Definition::ObjectTypeDefinition(obj) => {
+                    if let Some(name) = obj.name() {
+                        let name_str = name.text().to_string();
+                        let agg = aggregates.entry(name_str.clone()).or_insert(TypeAggregate {
+                            name: name_str,
+                            definitions: Vec::new(),
+                            extensions: Vec::new(),
+                        });
+                        agg.definitions.push(obj);
+                    }
                 }
+                cst::Definition::ObjectTypeExtension(ext) => {
+                    if let Some(name) = ext.name() {
+                        let name_str = name.text().to_string();
+                        let agg = aggregates.entry(name_str.clone()).or_insert(TypeAggregate {
+                            name: name_str,
+                            definitions: Vec::new(),
+                            extensions: Vec::new(),
+                        });
+                        agg.extensions.push(ext);
+                    }
+                }
+                _ => {}
             }
         }
+
+        // STEP 2: Lowering
+        let mut tables = Vec::new();
+        for agg in aggregates.values() {
+            if let Some(table) = self.build_table_from_aggregate(agg)? {
+                tables.push(table);
+            }
+        }
+
+        // STEP 3: Synthesis
+        let relationships = self.synthesize_relationships(&tables);
 
         Ok(WesleyIR {
             version: "1.0.0".to_string(),
@@ -57,51 +98,101 @@ impl ApolloLoweringAdapter {
             tables,
             enums: Vec::new(),
             scalars: Vec::new(),
-            relationships: Vec::new(),
+            relationships,
         })
     }
 
-    fn build_table(&self, obj: cst::ObjectTypeDefinition) -> Result<Option<Table>, WesleyError> {
-        let name = obj.name().ok_or(WesleyError::LoweringError {
-            message: "Object type missing name".to_string(),
-            area: "table".to_string(),
-        })?.text().to_string();
+    fn synthesize_relationships(&self, tables: &[Table]) -> Vec<Relationship> {
+        let mut relationships = Vec::new();
+        for table in tables {
+            for field in &table.fields {
+                if let Some(fk) = &field.directives.fk {
+                    relationships.push(Relationship {
+                        r#type: "one-to-many".to_string(),
+                        from: TableFieldRef {
+                            table: table.name.clone(),
+                            field: field.name.clone(),
+                        },
+                        to: TableFieldRef {
+                            table: fk.target_table.clone(),
+                            field: fk.target_field.clone(),
+                        },
+                    });
+                }
+            }
+        }
+        relationships
+    }
 
-        let directives = obj.directives();
+    fn build_table_from_aggregate(&self, agg: &TypeAggregate) -> Result<Option<Table>, WesleyError> {
         let mut is_table = false;
-        let mut table_name = name.clone();
+        let mut table_name = agg.name.clone();
+        let mut fields = Vec::new();
 
-        if let Some(dirs) = directives {
-            for dir in dirs.directives() {
-                let dir_name = dir.name().ok_or(WesleyError::LoweringError {
-                    message: "Directive missing name".to_string(),
-                    area: "directive".to_string(),
-                })?.text();
-                
-                if dir_name == "wes_table" {
-                    is_table = true;
-                    if let Some(args) = dir.arguments() {
-                        for arg in args.arguments() {
-                            let arg_name = arg.name().map(|n| n.text().to_string()).unwrap_or_default();
-                            if arg_name == "name" {
-                                if let Some(cst::Value::StringValue(val)) = arg.value() {
-                                    table_name = val.syntax().text().to_string().replace("\"", "");
+        // Process definitions
+        for obj in &agg.definitions {
+            if let Some(dirs) = obj.directives() {
+                for dir in dirs.directives() {
+                    if let Some(name) = dir.name() {
+                        if name.text() == "wes_table" {
+                            is_table = true;
+                            if let Some(args) = dir.arguments() {
+                                for arg in args.arguments() {
+                                    if arg.name().map(|n| n.text().to_string()) == Some("name".to_string()) {
+                                        if let Some(cst::Value::StringValue(val)) = arg.value() {
+                                            table_name = val.syntax().text().to_string().replace("\"", "");
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
+            if let Some(fields_def) = obj.fields_definition() {
+                for field_def in fields_def.field_definitions() {
+                    fields.push(self.build_field(field_def)?);
+                }
+            }
+        }
+
+        // Process extensions
+        for ext in &agg.extensions {
+            if let Some(dirs) = ext.directives() {
+                for dir in dirs.directives() {
+                    if let Some(name) = dir.name() {
+                        if name.text() == "wes_table" {
+                            is_table = true;
+                        }
+                    }
+                }
+            }
+            if let Some(fields_def) = ext.fields_definition() {
+                for field_def in fields_def.field_definitions() {
+                    fields.push(self.build_field(field_def)?);
+                }
+            }
+        }
+
+        if !is_table && fields.iter().any(|f| f.directives.pk == Some(true)) {
+            is_table = true;
         }
 
         if !is_table {
             return Ok(None);
         }
 
-        let mut fields = Vec::new();
-        if let Some(fields_def) = obj.fields_definition() {
-            for field_def in fields_def.field_definitions() {
-                fields.push(self.build_field(field_def)?);
+        // Synthesize indexes from @wes_index field directives
+        let mut indexes = Vec::new();
+        for field in &fields {
+            if field.directives.index == Some(true) {
+                indexes.push(Index {
+                    fields: vec![field.name.clone()],
+                    name: None,
+                    table: table_name.clone(),
+                    unique: false,
+                    using: None,
+                });
             }
         }
 
@@ -116,7 +207,7 @@ impl ApolloLoweringAdapter {
                 soft_delete: None,
             },
             fields,
-            indexes: Vec::new(),
+            indexes,
             constraints: Vec::new(),
         }))
     }
@@ -189,6 +280,26 @@ impl ApolloLoweringAdapter {
                                             value: serde_json::Value::String(val_str),
                                             is_sql: None,
                                         });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    "wes_fk" => {
+                        if let Some(args) = dir.arguments() {
+                            for arg in args.arguments() {
+                                let arg_name = arg.name().map(|n| n.text().to_string()).unwrap_or_default();
+                                if arg_name == "ref" {
+                                    if let Some(cst::Value::StringValue(val)) = arg.value() {
+                                        let ref_str = val.syntax().text().to_string().replace("\"", "");
+                                        let parts: Vec<&str> = ref_str.split('.').collect();
+                                        if parts.len() == 2 {
+                                            directives.fk = Some(ForeignKey {
+                                                target_table: parts[0].to_string(),
+                                                target_field: parts[1].to_string(),
+                                                on_delete: None,
+                                            });
+                                        }
                                     }
                                 }
                             }

@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "metadata": {
-    "generatedAt": "2026-05-05T16:15:59.561Z"
+    "generatedAt": "2026-05-06T00:44:47.912Z"
   },
   "tables": [
     {
@@ -442,1782 +442,6 @@
           ],
           "name": null,
           "table": "type_1",
-          "unique": false,
-          "using": null
-        }
-      ],
-      "constraints": []
-    },
-    {
-      "name": "type_2",
-      "directives": {
-        "table": true
-      },
-      "fields": [
-        {
-          "name": "id",
-          "type": {
-            "base": "ID",
-            "isList": false
-          },
-          "nullable": false,
-          "directives": {
-            "pk": true
-          }
-        },
-        {
-          "name": "field0",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field1",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field2",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field3",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field4",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field5",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field6",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field7",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field8",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field9",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        }
-      ],
-      "indexes": [
-        {
-          "fields": [
-            "field0"
-          ],
-          "name": null,
-          "table": "type_2",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field1"
-          ],
-          "name": null,
-          "table": "type_2",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field2"
-          ],
-          "name": null,
-          "table": "type_2",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field3"
-          ],
-          "name": null,
-          "table": "type_2",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field4"
-          ],
-          "name": null,
-          "table": "type_2",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field5"
-          ],
-          "name": null,
-          "table": "type_2",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field6"
-          ],
-          "name": null,
-          "table": "type_2",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field7"
-          ],
-          "name": null,
-          "table": "type_2",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field8"
-          ],
-          "name": null,
-          "table": "type_2",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field9"
-          ],
-          "name": null,
-          "table": "type_2",
-          "unique": false,
-          "using": null
-        }
-      ],
-      "constraints": []
-    },
-    {
-      "name": "type_3",
-      "directives": {
-        "table": true
-      },
-      "fields": [
-        {
-          "name": "id",
-          "type": {
-            "base": "ID",
-            "isList": false
-          },
-          "nullable": false,
-          "directives": {
-            "pk": true
-          }
-        },
-        {
-          "name": "field0",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field1",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field2",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field3",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field4",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field5",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field6",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field7",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field8",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field9",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        }
-      ],
-      "indexes": [
-        {
-          "fields": [
-            "field0"
-          ],
-          "name": null,
-          "table": "type_3",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field1"
-          ],
-          "name": null,
-          "table": "type_3",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field2"
-          ],
-          "name": null,
-          "table": "type_3",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field3"
-          ],
-          "name": null,
-          "table": "type_3",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field4"
-          ],
-          "name": null,
-          "table": "type_3",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field5"
-          ],
-          "name": null,
-          "table": "type_3",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field6"
-          ],
-          "name": null,
-          "table": "type_3",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field7"
-          ],
-          "name": null,
-          "table": "type_3",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field8"
-          ],
-          "name": null,
-          "table": "type_3",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field9"
-          ],
-          "name": null,
-          "table": "type_3",
-          "unique": false,
-          "using": null
-        }
-      ],
-      "constraints": []
-    },
-    {
-      "name": "type_4",
-      "directives": {
-        "table": true
-      },
-      "fields": [
-        {
-          "name": "id",
-          "type": {
-            "base": "ID",
-            "isList": false
-          },
-          "nullable": false,
-          "directives": {
-            "pk": true
-          }
-        },
-        {
-          "name": "field0",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field1",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field2",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field3",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field4",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field5",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field6",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field7",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field8",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field9",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        }
-      ],
-      "indexes": [
-        {
-          "fields": [
-            "field0"
-          ],
-          "name": null,
-          "table": "type_4",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field1"
-          ],
-          "name": null,
-          "table": "type_4",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field2"
-          ],
-          "name": null,
-          "table": "type_4",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field3"
-          ],
-          "name": null,
-          "table": "type_4",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field4"
-          ],
-          "name": null,
-          "table": "type_4",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field5"
-          ],
-          "name": null,
-          "table": "type_4",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field6"
-          ],
-          "name": null,
-          "table": "type_4",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field7"
-          ],
-          "name": null,
-          "table": "type_4",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field8"
-          ],
-          "name": null,
-          "table": "type_4",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field9"
-          ],
-          "name": null,
-          "table": "type_4",
-          "unique": false,
-          "using": null
-        }
-      ],
-      "constraints": []
-    },
-    {
-      "name": "type_5",
-      "directives": {
-        "table": true
-      },
-      "fields": [
-        {
-          "name": "id",
-          "type": {
-            "base": "ID",
-            "isList": false
-          },
-          "nullable": false,
-          "directives": {
-            "pk": true
-          }
-        },
-        {
-          "name": "field0",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field1",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field2",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field3",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field4",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field5",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field6",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field7",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field8",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field9",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        }
-      ],
-      "indexes": [
-        {
-          "fields": [
-            "field0"
-          ],
-          "name": null,
-          "table": "type_5",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field1"
-          ],
-          "name": null,
-          "table": "type_5",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field2"
-          ],
-          "name": null,
-          "table": "type_5",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field3"
-          ],
-          "name": null,
-          "table": "type_5",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field4"
-          ],
-          "name": null,
-          "table": "type_5",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field5"
-          ],
-          "name": null,
-          "table": "type_5",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field6"
-          ],
-          "name": null,
-          "table": "type_5",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field7"
-          ],
-          "name": null,
-          "table": "type_5",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field8"
-          ],
-          "name": null,
-          "table": "type_5",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field9"
-          ],
-          "name": null,
-          "table": "type_5",
-          "unique": false,
-          "using": null
-        }
-      ],
-      "constraints": []
-    },
-    {
-      "name": "type_6",
-      "directives": {
-        "table": true
-      },
-      "fields": [
-        {
-          "name": "id",
-          "type": {
-            "base": "ID",
-            "isList": false
-          },
-          "nullable": false,
-          "directives": {
-            "pk": true
-          }
-        },
-        {
-          "name": "field0",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field1",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field2",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field3",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field4",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field5",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field6",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field7",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field8",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field9",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        }
-      ],
-      "indexes": [
-        {
-          "fields": [
-            "field0"
-          ],
-          "name": null,
-          "table": "type_6",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field1"
-          ],
-          "name": null,
-          "table": "type_6",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field2"
-          ],
-          "name": null,
-          "table": "type_6",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field3"
-          ],
-          "name": null,
-          "table": "type_6",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field4"
-          ],
-          "name": null,
-          "table": "type_6",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field5"
-          ],
-          "name": null,
-          "table": "type_6",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field6"
-          ],
-          "name": null,
-          "table": "type_6",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field7"
-          ],
-          "name": null,
-          "table": "type_6",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field8"
-          ],
-          "name": null,
-          "table": "type_6",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field9"
-          ],
-          "name": null,
-          "table": "type_6",
-          "unique": false,
-          "using": null
-        }
-      ],
-      "constraints": []
-    },
-    {
-      "name": "type_7",
-      "directives": {
-        "table": true
-      },
-      "fields": [
-        {
-          "name": "id",
-          "type": {
-            "base": "ID",
-            "isList": false
-          },
-          "nullable": false,
-          "directives": {
-            "pk": true
-          }
-        },
-        {
-          "name": "field0",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field1",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field2",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field3",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field4",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field5",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field6",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field7",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field8",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field9",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        }
-      ],
-      "indexes": [
-        {
-          "fields": [
-            "field0"
-          ],
-          "name": null,
-          "table": "type_7",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field1"
-          ],
-          "name": null,
-          "table": "type_7",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field2"
-          ],
-          "name": null,
-          "table": "type_7",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field3"
-          ],
-          "name": null,
-          "table": "type_7",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field4"
-          ],
-          "name": null,
-          "table": "type_7",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field5"
-          ],
-          "name": null,
-          "table": "type_7",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field6"
-          ],
-          "name": null,
-          "table": "type_7",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field7"
-          ],
-          "name": null,
-          "table": "type_7",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field8"
-          ],
-          "name": null,
-          "table": "type_7",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field9"
-          ],
-          "name": null,
-          "table": "type_7",
-          "unique": false,
-          "using": null
-        }
-      ],
-      "constraints": []
-    },
-    {
-      "name": "type_8",
-      "directives": {
-        "table": true
-      },
-      "fields": [
-        {
-          "name": "id",
-          "type": {
-            "base": "ID",
-            "isList": false
-          },
-          "nullable": false,
-          "directives": {
-            "pk": true
-          }
-        },
-        {
-          "name": "field0",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field1",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field2",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field3",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field4",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field5",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field6",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field7",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field8",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field9",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        }
-      ],
-      "indexes": [
-        {
-          "fields": [
-            "field0"
-          ],
-          "name": null,
-          "table": "type_8",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field1"
-          ],
-          "name": null,
-          "table": "type_8",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field2"
-          ],
-          "name": null,
-          "table": "type_8",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field3"
-          ],
-          "name": null,
-          "table": "type_8",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field4"
-          ],
-          "name": null,
-          "table": "type_8",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field5"
-          ],
-          "name": null,
-          "table": "type_8",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field6"
-          ],
-          "name": null,
-          "table": "type_8",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field7"
-          ],
-          "name": null,
-          "table": "type_8",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field8"
-          ],
-          "name": null,
-          "table": "type_8",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field9"
-          ],
-          "name": null,
-          "table": "type_8",
-          "unique": false,
-          "using": null
-        }
-      ],
-      "constraints": []
-    },
-    {
-      "name": "type_9",
-      "directives": {
-        "table": true
-      },
-      "fields": [
-        {
-          "name": "id",
-          "type": {
-            "base": "ID",
-            "isList": false
-          },
-          "nullable": false,
-          "directives": {
-            "pk": true
-          }
-        },
-        {
-          "name": "field0",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field1",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field2",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field3",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field4",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field5",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field6",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field7",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field8",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        },
-        {
-          "name": "field9",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": true,
-          "directives": {
-            "index": true
-          }
-        }
-      ],
-      "indexes": [
-        {
-          "fields": [
-            "field0"
-          ],
-          "name": null,
-          "table": "type_9",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field1"
-          ],
-          "name": null,
-          "table": "type_9",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field2"
-          ],
-          "name": null,
-          "table": "type_9",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field3"
-          ],
-          "name": null,
-          "table": "type_9",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field4"
-          ],
-          "name": null,
-          "table": "type_9",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field5"
-          ],
-          "name": null,
-          "table": "type_9",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field6"
-          ],
-          "name": null,
-          "table": "type_9",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field7"
-          ],
-          "name": null,
-          "table": "type_9",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field8"
-          ],
-          "name": null,
-          "table": "type_9",
-          "unique": false,
-          "using": null
-        },
-        {
-          "fields": [
-            "field9"
-          ],
-          "name": null,
-          "table": "type_9",
           "unique": false,
           "using": null
         }
@@ -4445,6 +2669,228 @@
       "constraints": []
     },
     {
+      "name": "type_2",
+      "directives": {
+        "table": true
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "base": "ID",
+            "isList": false
+          },
+          "nullable": false,
+          "directives": {
+            "pk": true
+          }
+        },
+        {
+          "name": "field0",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field1",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field2",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field3",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field4",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field5",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field6",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field7",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field8",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field9",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        }
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "field0"
+          ],
+          "name": null,
+          "table": "type_2",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field1"
+          ],
+          "name": null,
+          "table": "type_2",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field2"
+          ],
+          "name": null,
+          "table": "type_2",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field3"
+          ],
+          "name": null,
+          "table": "type_2",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field4"
+          ],
+          "name": null,
+          "table": "type_2",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field5"
+          ],
+          "name": null,
+          "table": "type_2",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field6"
+          ],
+          "name": null,
+          "table": "type_2",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field7"
+          ],
+          "name": null,
+          "table": "type_2",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field8"
+          ],
+          "name": null,
+          "table": "type_2",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field9"
+          ],
+          "name": null,
+          "table": "type_2",
+          "unique": false,
+          "using": null
+        }
+      ],
+      "constraints": []
+    },
+    {
       "name": "type_20",
       "directives": {
         "table": true
@@ -6658,6 +5104,228 @@
           ],
           "name": null,
           "table": "type_29",
+          "unique": false,
+          "using": null
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "name": "type_3",
+      "directives": {
+        "table": true
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "base": "ID",
+            "isList": false
+          },
+          "nullable": false,
+          "directives": {
+            "pk": true
+          }
+        },
+        {
+          "name": "field0",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field1",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field2",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field3",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field4",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field5",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field6",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field7",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field8",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field9",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        }
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "field0"
+          ],
+          "name": null,
+          "table": "type_3",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field1"
+          ],
+          "name": null,
+          "table": "type_3",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field2"
+          ],
+          "name": null,
+          "table": "type_3",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field3"
+          ],
+          "name": null,
+          "table": "type_3",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field4"
+          ],
+          "name": null,
+          "table": "type_3",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field5"
+          ],
+          "name": null,
+          "table": "type_3",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field6"
+          ],
+          "name": null,
+          "table": "type_3",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field7"
+          ],
+          "name": null,
+          "table": "type_3",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field8"
+          ],
+          "name": null,
+          "table": "type_3",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field9"
+          ],
+          "name": null,
+          "table": "type_3",
           "unique": false,
           "using": null
         }
@@ -8885,6 +7553,228 @@
       "constraints": []
     },
     {
+      "name": "type_4",
+      "directives": {
+        "table": true
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "base": "ID",
+            "isList": false
+          },
+          "nullable": false,
+          "directives": {
+            "pk": true
+          }
+        },
+        {
+          "name": "field0",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field1",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field2",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field3",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field4",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field5",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field6",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field7",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field8",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field9",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        }
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "field0"
+          ],
+          "name": null,
+          "table": "type_4",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field1"
+          ],
+          "name": null,
+          "table": "type_4",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field2"
+          ],
+          "name": null,
+          "table": "type_4",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field3"
+          ],
+          "name": null,
+          "table": "type_4",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field4"
+          ],
+          "name": null,
+          "table": "type_4",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field5"
+          ],
+          "name": null,
+          "table": "type_4",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field6"
+          ],
+          "name": null,
+          "table": "type_4",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field7"
+          ],
+          "name": null,
+          "table": "type_4",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field8"
+          ],
+          "name": null,
+          "table": "type_4",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field9"
+          ],
+          "name": null,
+          "table": "type_4",
+          "unique": false,
+          "using": null
+        }
+      ],
+      "constraints": []
+    },
+    {
       "name": "type_40",
       "directives": {
         "table": true
@@ -11098,6 +9988,228 @@
           ],
           "name": null,
           "table": "type_49",
+          "unique": false,
+          "using": null
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "name": "type_5",
+      "directives": {
+        "table": true
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "base": "ID",
+            "isList": false
+          },
+          "nullable": false,
+          "directives": {
+            "pk": true
+          }
+        },
+        {
+          "name": "field0",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field1",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field2",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field3",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field4",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field5",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field6",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field7",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field8",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field9",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        }
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "field0"
+          ],
+          "name": null,
+          "table": "type_5",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field1"
+          ],
+          "name": null,
+          "table": "type_5",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field2"
+          ],
+          "name": null,
+          "table": "type_5",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field3"
+          ],
+          "name": null,
+          "table": "type_5",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field4"
+          ],
+          "name": null,
+          "table": "type_5",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field5"
+          ],
+          "name": null,
+          "table": "type_5",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field6"
+          ],
+          "name": null,
+          "table": "type_5",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field7"
+          ],
+          "name": null,
+          "table": "type_5",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field8"
+          ],
+          "name": null,
+          "table": "type_5",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field9"
+          ],
+          "name": null,
+          "table": "type_5",
           "unique": false,
           "using": null
         }
@@ -13325,6 +12437,228 @@
       "constraints": []
     },
     {
+      "name": "type_6",
+      "directives": {
+        "table": true
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "base": "ID",
+            "isList": false
+          },
+          "nullable": false,
+          "directives": {
+            "pk": true
+          }
+        },
+        {
+          "name": "field0",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field1",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field2",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field3",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field4",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field5",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field6",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field7",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field8",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field9",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        }
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "field0"
+          ],
+          "name": null,
+          "table": "type_6",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field1"
+          ],
+          "name": null,
+          "table": "type_6",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field2"
+          ],
+          "name": null,
+          "table": "type_6",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field3"
+          ],
+          "name": null,
+          "table": "type_6",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field4"
+          ],
+          "name": null,
+          "table": "type_6",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field5"
+          ],
+          "name": null,
+          "table": "type_6",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field6"
+          ],
+          "name": null,
+          "table": "type_6",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field7"
+          ],
+          "name": null,
+          "table": "type_6",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field8"
+          ],
+          "name": null,
+          "table": "type_6",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field9"
+          ],
+          "name": null,
+          "table": "type_6",
+          "unique": false,
+          "using": null
+        }
+      ],
+      "constraints": []
+    },
+    {
       "name": "type_60",
       "directives": {
         "table": true
@@ -15538,6 +14872,228 @@
           ],
           "name": null,
           "table": "type_69",
+          "unique": false,
+          "using": null
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "name": "type_7",
+      "directives": {
+        "table": true
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "base": "ID",
+            "isList": false
+          },
+          "nullable": false,
+          "directives": {
+            "pk": true
+          }
+        },
+        {
+          "name": "field0",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field1",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field2",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field3",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field4",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field5",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field6",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field7",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field8",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field9",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        }
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "field0"
+          ],
+          "name": null,
+          "table": "type_7",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field1"
+          ],
+          "name": null,
+          "table": "type_7",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field2"
+          ],
+          "name": null,
+          "table": "type_7",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field3"
+          ],
+          "name": null,
+          "table": "type_7",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field4"
+          ],
+          "name": null,
+          "table": "type_7",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field5"
+          ],
+          "name": null,
+          "table": "type_7",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field6"
+          ],
+          "name": null,
+          "table": "type_7",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field7"
+          ],
+          "name": null,
+          "table": "type_7",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field8"
+          ],
+          "name": null,
+          "table": "type_7",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field9"
+          ],
+          "name": null,
+          "table": "type_7",
           "unique": false,
           "using": null
         }
@@ -17765,6 +17321,228 @@
       "constraints": []
     },
     {
+      "name": "type_8",
+      "directives": {
+        "table": true
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "base": "ID",
+            "isList": false
+          },
+          "nullable": false,
+          "directives": {
+            "pk": true
+          }
+        },
+        {
+          "name": "field0",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field1",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field2",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field3",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field4",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field5",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field6",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field7",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field8",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field9",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        }
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "field0"
+          ],
+          "name": null,
+          "table": "type_8",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field1"
+          ],
+          "name": null,
+          "table": "type_8",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field2"
+          ],
+          "name": null,
+          "table": "type_8",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field3"
+          ],
+          "name": null,
+          "table": "type_8",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field4"
+          ],
+          "name": null,
+          "table": "type_8",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field5"
+          ],
+          "name": null,
+          "table": "type_8",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field6"
+          ],
+          "name": null,
+          "table": "type_8",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field7"
+          ],
+          "name": null,
+          "table": "type_8",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field8"
+          ],
+          "name": null,
+          "table": "type_8",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field9"
+          ],
+          "name": null,
+          "table": "type_8",
+          "unique": false,
+          "using": null
+        }
+      ],
+      "constraints": []
+    },
+    {
       "name": "type_80",
       "directives": {
         "table": true
@@ -19978,6 +19756,228 @@
           ],
           "name": null,
           "table": "type_89",
+          "unique": false,
+          "using": null
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "name": "type_9",
+      "directives": {
+        "table": true
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "base": "ID",
+            "isList": false
+          },
+          "nullable": false,
+          "directives": {
+            "pk": true
+          }
+        },
+        {
+          "name": "field0",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field1",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field2",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field3",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field4",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field5",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field6",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field7",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field8",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        },
+        {
+          "name": "field9",
+          "type": {
+            "base": "String",
+            "isList": false
+          },
+          "nullable": true,
+          "directives": {
+            "index": true
+          }
+        }
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "field0"
+          ],
+          "name": null,
+          "table": "type_9",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field1"
+          ],
+          "name": null,
+          "table": "type_9",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field2"
+          ],
+          "name": null,
+          "table": "type_9",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field3"
+          ],
+          "name": null,
+          "table": "type_9",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field4"
+          ],
+          "name": null,
+          "table": "type_9",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field5"
+          ],
+          "name": null,
+          "table": "type_9",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field6"
+          ],
+          "name": null,
+          "table": "type_9",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field7"
+          ],
+          "name": null,
+          "table": "type_9",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field8"
+          ],
+          "name": null,
+          "table": "type_9",
+          "unique": false,
+          "using": null
+        },
+        {
+          "fields": [
+            "field9"
+          ],
+          "name": null,
+          "table": "type_9",
           "unique": false,
           "using": null
         }

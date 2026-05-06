@@ -53,3 +53,37 @@ async fn test_lowering_small_schema() {
     let actual_hash = compute_registry_hash(&ir).unwrap();
     assert_eq!(actual_hash, expected_hash, "Lowered hash mismatch for small-schema");
 }
+
+#[tokio::test]
+async fn test_lowering_medium_schema() {
+    let sdl = fs::read_to_string(get_fixture_path("medium-schema.graphql")).unwrap();
+    let expected_hash = fs::read_to_string(get_fixture_path("medium-schema.hash")).unwrap().trim().to_string();
+
+    let adapter = create_adapter();
+    let ir = adapter.lower_sdl(&sdl).await.unwrap();
+    
+    let mut parity_ir = ir.clone();
+    parity_ir.metadata = None;
+    let actual_json = to_canonical_json(&parity_ir).unwrap();
+    let expected_canonical = fs::read_to_string(get_fixture_path("medium-schema.canonical.json")).unwrap();
+
+    if actual_json != expected_canonical {
+        println!("ACTUAL: {}", actual_json);
+        println!("EXPECTED: {}", expected_canonical);
+    }
+
+    let actual_hash = compute_registry_hash(&ir).unwrap();
+    assert_eq!(actual_hash, expected_hash, "Lowered hash mismatch for medium-schema");
+}
+
+#[tokio::test]
+async fn test_lowering_large_schema() {
+    let sdl = fs::read_to_string(get_fixture_path("large-schema.graphql")).unwrap();
+    let expected_hash = fs::read_to_string(get_fixture_path("large-schema.hash")).unwrap().trim().to_string();
+
+    let adapter = create_adapter();
+    let ir = adapter.lower_sdl(&sdl).await.unwrap();
+    
+    let actual_hash = compute_registry_hash(&ir).unwrap();
+    assert_eq!(actual_hash, expected_hash, "Lowered hash mismatch for large-schema");
+}

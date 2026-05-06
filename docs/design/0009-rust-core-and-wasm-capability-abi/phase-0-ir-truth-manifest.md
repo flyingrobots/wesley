@@ -34,8 +34,8 @@ The fixture corpus is stored in `test/fixtures/ir-parity` and consists of `SDL -
 | Fixture | Hash (SHA-256) |
 | :--- | :--- |
 | `small-schema.graphql` | `36b451e20c50699f4f924077449221c62f86373b380e6cf224a0492a49829295` |
-| `medium-schema.graphql` | `50700ecbd4a9dc4c0725fb0fd26f3df54859715cb543c889cf6c2650be418c28` |
-| `large-schema.graphql` | `cd6b771e3a22dafbc05fe3bd7c15c214cc05adef660d494142ef3d6142831285` |
+| `medium-schema.graphql` | `18836c2b45985a11b5e64d05f8f81e62b9e5e2c113d1cf6e7e9db12ee66a9b71` |
+| `large-schema.graphql` | `6e600885d7602fafdfe5665402280e05d160b351c93c3ed29c3c3db1ee63a315` |
 
 ### Categories
 

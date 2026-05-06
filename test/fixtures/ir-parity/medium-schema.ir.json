@@ -1,11 +1,11 @@
 {
   "version": "1.0.0",
   "metadata": {
-    "generatedAt": "2026-05-05T16:15:59.579Z"
+    "generatedAt": "2026-05-06T00:44:47.932Z"
   },
   "tables": [
     {
-      "name": "users",
+      "name": "members",
       "directives": {
         "table": true
       },
@@ -22,27 +22,48 @@
           }
         },
         {
-          "name": "username",
+          "name": "org_id",
+          "type": {
+            "base": "ID",
+            "isList": false
+          },
+          "nullable": false,
+          "directives": {
+            "fk": {
+              "targetTable": "organizations",
+              "targetField": "id"
+            }
+          }
+        },
+        {
+          "name": "user_id",
+          "type": {
+            "base": "ID",
+            "isList": false
+          },
+          "nullable": false,
+          "directives": {
+            "fk": {
+              "targetTable": "users",
+              "targetField": "id"
+            }
+          }
+        },
+        {
+          "name": "role",
           "type": {
             "base": "String",
             "isList": false
           },
           "nullable": false,
           "directives": {
-            "unique": true
+            "default": {
+              "value": "member"
+            }
           }
         },
         {
-          "name": "email",
-          "type": {
-            "base": "String",
-            "isList": false
-          },
-          "nullable": false,
-          "directives": {}
-        },
-        {
-          "name": "created_at",
+          "name": "joined_at",
           "type": {
             "base": "String",
             "isList": false
@@ -153,7 +174,7 @@
       "constraints": []
     },
     {
-      "name": "members",
+      "name": "users",
       "directives": {
         "table": true
       },
@@ -170,35 +191,27 @@
           }
         },
         {
-          "name": "org_id",
+          "name": "username",
           "type": {
-            "base": "ID",
+            "base": "String",
             "isList": false
           },
           "nullable": false,
           "directives": {
-            "fk": {
-              "targetTable": "organizations",
-              "targetField": "id"
-            }
+            "unique": true
           }
         },
         {
-          "name": "user_id",
+          "name": "email",
           "type": {
-            "base": "ID",
+            "base": "String",
             "isList": false
           },
           "nullable": false,
-          "directives": {
-            "fk": {
-              "targetTable": "users",
-              "targetField": "id"
-            }
-          }
+          "directives": {}
         },
         {
-          "name": "role",
+          "name": "created_at",
           "type": {
             "base": "String",
             "isList": false
@@ -206,7 +219,7 @@
           "nullable": false,
           "directives": {
             "default": {
-              "value": "member"
+              "value": "now()"
             }
           }
         }
@@ -218,17 +231,6 @@
   "enums": [],
   "scalars": [],
   "relationships": [
-    {
-      "type": "one-to-many",
-      "from": {
-        "table": "projects",
-        "field": "org_id"
-      },
-      "to": {
-        "table": "organizations",
-        "field": "id"
-      }
-    },
     {
       "type": "one-to-many",
       "from": {
@@ -248,6 +250,17 @@
       },
       "to": {
         "table": "users",
+        "field": "id"
+      }
+    },
+    {
+      "type": "one-to-many",
+      "from": {
+        "table": "projects",
+        "field": "org_id"
+      },
+      "to": {
+        "table": "organizations",
         "field": "id"
       }
     }
