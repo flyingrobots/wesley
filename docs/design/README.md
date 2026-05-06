@@ -16,6 +16,7 @@ Current packets:
 - [`0007`](./0007-observer-spec-and-plan/observer-spec-and-plan.md): Historical product observer packet; extraction context only
 - [`0008`](./0008-holmes-counterfactual-provider-capability/holmes-counterfactual-provider-capability.md): Holmes counterfactual provider capability dispatch
 - [`0009`](./0009-rust-core-and-wasm-capability-abi/rust-core-and-wasm-capability-abi.md): Rust-native compiler kernel and WASM capability ABI design
+- [`0010`](./0010-wesley-graft-mcp-boundary/wesley-graft-mcp-boundary.md): Wesley+Graft MCP boundary for legal agent optics
 - [Module Contract](./wesley-module-contract.md): Generic core boundary versus external module-owned domain surfaces
 - [Module Capability Contract](./wesley-module-capability-contract.md): The capability surfaces external modules should implement
 - [Contract / Artifact / Runtime Boundary](./wesley-contract-family-artifact-runtime-value.md): GraphQL-authored families, Wesley-emitted artifacts, and later runtime values
