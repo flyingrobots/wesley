@@ -43,6 +43,21 @@ cargo wesley \
 
 Add `--json` when an agent or CI job needs machine-readable output.
 
+## Rust-Native Front Door
+
+Wesley core work now starts from Cargo.
+
+- `cargo wesley ...` runs the native Rust `wesley` binary from
+  `crates/wesley-cli`.
+- `cargo xtask ...` runs repository automation from `xtask`.
+- `cargo xtask preflight` is the normal Rust-native health check.
+- `cargo xtask legacy-preflight` runs the historical npm/package preflight
+  while the old package surfaces are being retired.
+
+The distinction matters: `wesley` is the user-facing compiler command, while
+`xtask` is for maintaining this repository. Avoid adding new core workflows to
+`pnpm wesley`; new compiler behavior should land in Rust first.
+
 ### 3. Repository Tooling Preflight
 The repo still carries historical Node package tooling while the Rust-native
 front door takes over. Use preflight when changing docs, package boundaries, or
