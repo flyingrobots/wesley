@@ -11,9 +11,9 @@ If you need the main Wesley nouns and the layer split before reading anything el
 ### 1. Core Compiler Lane
 Compile authored GraphQL into generic or explicitly selected generated
 artifacts.
-- **Inspect native CLI**: `cargo run --bin wesley -- --help`
-- **Check footprints**: `cargo run --bin wesley -- check-footprint --operation <path>`
-- **Rust workspace tests**: `cargo test --workspace`
+- **Inspect native CLI**: `cargo wesley --help`
+- **Check footprints**: `cargo wesley check-footprint --operation <path>`
+- **Rust preflight**: `cargo xtask preflight`
 
 The Rust-native CLI is now the preferred front door for Wesley core work. The
 current `check-footprint` command performs a string-level honesty check over
@@ -98,8 +98,8 @@ Wesley is a tiered engine designed to enforce contract integrity across platform
 
 ## Orientation Checklist
 
-- [ ] **I am setting up Rust core work**: Run `cargo test --workspace`.
-- [ ] **I am changing docs or legacy packages**: Run `pnpm install` and `pnpm run preflight`.
+- [ ] **I am setting up Rust core work**: Run `cargo xtask preflight`.
+- [ ] **I am changing docs or legacy packages**: Run `pnpm install` and `cargo xtask legacy-preflight`.
 - [ ] **I am modifying a schema**: Always start in the `.graphql` file.
 - [ ] **I am adding a new generic generator**: Check `packages/wesley-generator-js` for a baseline.
 - [ ] **I am adding a domain target**: Put it in an external module repo and load it into Wesley.
@@ -109,7 +109,7 @@ Wesley is a tiered engine designed to enforce contract integrity across platform
 
 ## Rule of Thumb
 
-If you need the native command reference, use `cargo run --bin wesley -- --help`.
+If you need the native command reference, use `cargo wesley --help`.
 
 If you need to know "what's true right now," use [BEARING.md](./BEARING.md).
 

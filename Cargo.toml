@@ -2,5 +2,6 @@
 members = [
     "crates/wesley-core",
     "crates/wesley-cli",
+    "xtask",
 ]
 resolver = "2"

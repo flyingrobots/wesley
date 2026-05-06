@@ -25,10 +25,14 @@ or scheduled for extraction.
 - legacy JS commands have an explicit extraction or retirement map
 - docs command drift checks stop treating `pnpm wesley` as the front-door
   authority
+- `cargo xtask legacy-preflight` is no longer needed for ordinary repo health
+  checks
 
 ## Repo Evidence
 
 - `Cargo.toml`
+- `.cargo/config.toml`
+- `xtask/src/main.rs`
 - `crates/wesley-cli/Cargo.toml`
 - `crates/wesley-cli/src/main.rs`
 - `package.json`

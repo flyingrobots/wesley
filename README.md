@@ -30,13 +30,13 @@ Unlike traditional code-generators that treat schemas as suggestions, Wesley tre
 ### 1. Rust Workspace Health
 Verify the native compiler and CLI crates.
 ```bash
-cargo test --workspace
+cargo xtask preflight
 ```
 
 ### 2. Check An Operation Footprint
 Run the native `wesley` binary against a GraphQL operation document.
 ```bash
-cargo run --bin wesley -- \
+cargo wesley \
   check-footprint \
   --operation ./operation.graphql
 ```
@@ -49,7 +49,7 @@ front door takes over. Use preflight when changing docs, package boundaries, or
 legacy package surfaces.
 ```bash
 pnpm install
-pnpm run preflight
+cargo xtask legacy-preflight
 ```
 
 ### 4. Legacy Package Projection
