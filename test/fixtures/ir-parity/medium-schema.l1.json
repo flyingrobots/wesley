@@ -1,37 +1,36 @@
 {
   "version": "1.0.0",
-  "metadata": {
-    "generatedAt": "2026-05-06T00:44:47.932Z"
-  },
-  "tables": [
+  "types": [
     {
-      "name": "members",
+      "name": "Member",
+      "kind": "OBJECT",
       "directives": {
-        "table": true
+        "wes_table": {
+          "name": "members"
+        }
       },
       "fields": [
         {
           "name": "id",
           "type": {
             "base": "ID",
+            "nullable": false,
             "isList": false
           },
-          "nullable": false,
           "directives": {
-            "pk": true
+            "wes_pk": true
           }
         },
         {
           "name": "org_id",
           "type": {
             "base": "ID",
+            "nullable": false,
             "isList": false
           },
-          "nullable": false,
           "directives": {
-            "fk": {
-              "targetTable": "organizations",
-              "targetField": "id"
+            "wes_fk": {
+              "ref": "organizations.id"
             }
           }
         },
@@ -39,13 +38,12 @@
           "name": "user_id",
           "type": {
             "base": "ID",
+            "nullable": false,
             "isList": false
           },
-          "nullable": false,
           "directives": {
-            "fk": {
-              "targetTable": "users",
-              "targetField": "id"
+            "wes_fk": {
+              "ref": "users.id"
             }
           }
         },
@@ -53,11 +51,11 @@
           "name": "role",
           "type": {
             "base": "String",
+            "nullable": false,
             "isList": false
           },
-          "nullable": false,
           "directives": {
-            "default": {
+            "wes_default": {
               "value": "member"
             }
           }
@@ -66,88 +64,89 @@
           "name": "joined_at",
           "type": {
             "base": "String",
+            "nullable": false,
             "isList": false
           },
-          "nullable": false,
           "directives": {
-            "default": {
+            "wes_default": {
               "value": "now()"
             }
           }
         }
-      ],
-      "indexes": [],
-      "constraints": []
+      ]
     },
     {
-      "name": "organizations",
+      "name": "Organization",
+      "kind": "OBJECT",
       "directives": {
-        "table": true
+        "wes_table": {
+          "name": "organizations"
+        }
       },
       "fields": [
         {
           "name": "id",
           "type": {
             "base": "ID",
+            "nullable": false,
             "isList": false
           },
-          "nullable": false,
           "directives": {
-            "pk": true
+            "wes_pk": true
           }
         },
         {
           "name": "name",
           "type": {
             "base": "String",
+            "nullable": false,
             "isList": false
           },
-          "nullable": false,
           "directives": {}
         },
         {
           "name": "slug",
           "type": {
             "base": "String",
+            "nullable": false,
             "isList": false
           },
-          "nullable": false,
           "directives": {
-            "unique": true
+            "wes_unique": true
           }
         }
-      ],
-      "indexes": [],
-      "constraints": []
+      ]
     },
     {
-      "name": "projects",
+      "name": "Project",
+      "kind": "OBJECT",
       "directives": {
-        "table": true
+        "wes_table": {
+          "name": "projects"
+        }
       },
       "fields": [
         {
           "name": "id",
           "type": {
             "base": "ID",
+            "nullable": false,
             "isList": false
           },
-          "nullable": false,
           "directives": {
-            "pk": true
+            "wes_pk": true
           }
         },
         {
           "name": "org_id",
           "type": {
             "base": "ID",
+            "nullable": false,
             "isList": false
           },
-          "nullable": false,
           "directives": {
-            "fk": {
-              "targetTable": "organizations",
-              "targetField": "id"
+            "wes_fk": {
+              "ref": "organizations.id"
             }
           }
         },
@@ -155,114 +154,76 @@
           "name": "name",
           "type": {
             "base": "String",
+            "nullable": false,
             "isList": false
           },
-          "nullable": false,
           "directives": {}
         },
         {
           "name": "description",
           "type": {
             "base": "String",
+            "nullable": true,
             "isList": false
           },
-          "nullable": true,
           "directives": {}
         }
-      ],
-      "indexes": [],
-      "constraints": []
+      ]
     },
     {
-      "name": "users",
+      "name": "User",
+      "kind": "OBJECT",
       "directives": {
-        "table": true
+        "wes_table": {
+          "name": "users"
+        }
       },
       "fields": [
         {
           "name": "id",
           "type": {
             "base": "ID",
+            "nullable": false,
             "isList": false
           },
-          "nullable": false,
           "directives": {
-            "pk": true
+            "wes_pk": true
           }
         },
         {
           "name": "username",
           "type": {
             "base": "String",
+            "nullable": false,
             "isList": false
           },
-          "nullable": false,
           "directives": {
-            "unique": true
+            "wes_unique": true
           }
         },
         {
           "name": "email",
           "type": {
             "base": "String",
+            "nullable": false,
             "isList": false
           },
-          "nullable": false,
           "directives": {}
         },
         {
           "name": "created_at",
           "type": {
             "base": "String",
+            "nullable": false,
             "isList": false
           },
-          "nullable": false,
           "directives": {
-            "default": {
+            "wes_default": {
               "value": "now()"
             }
           }
         }
-      ],
-      "indexes": [],
-      "constraints": []
-    }
-  ],
-  "enums": [],
-  "scalars": [],
-  "relationships": [
-    {
-      "type": "one-to-many",
-      "from": {
-        "table": "members",
-        "field": "org_id"
-      },
-      "to": {
-        "table": "organizations",
-        "field": "id"
-      }
-    },
-    {
-      "type": "one-to-many",
-      "from": {
-        "table": "members",
-        "field": "user_id"
-      },
-      "to": {
-        "table": "users",
-        "field": "id"
-      }
-    },
-    {
-      "type": "one-to-many",
-      "from": {
-        "table": "projects",
-        "field": "org_id"
-      },
-      "to": {
-        "table": "organizations",
-        "field": "id"
-      }
+      ]
     }
   ]
 }

@@ -12,3 +12,6 @@ Current next pulls outside the `v0.1.0/` release lane:
 5. `RUNTIME_capability-portability-floor.md`
 6. `RUNTIME_node-rust-core-binding-strategy.md`
 7. `EVIDENCE_rust-core-performance-baseline.md`
+8. `SOURCE_wesley-sdl-normalizer-command.md`
+9. `SOURCE_wesley-host-native.md`
+10. `RUNTIME_wesley-mcp-server.md`

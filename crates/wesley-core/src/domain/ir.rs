@@ -1,7 +1,10 @@
 //! Wesley Intermediate Representation (IR).
+//! 
+//! Pure semantic representation of GraphQL SDL, free from domain-specific concepts.
 
 use serde::{Deserialize, Serialize};
 use sha2::{Sha256, Digest};
+use indexmap::IndexMap;
 
 /// The root Wesley IR structure.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
@@ -11,231 +14,104 @@ pub struct WesleyIR {
     /// Non-deterministic metadata (stripped during parity hashing).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub metadata: Option<Metadata>,
-    /// Table definitions extracted from SDL.
-    pub tables: Vec<Table>,
-    /// Enum definitions.
-    #[serde(default)]
-    pub enums: Vec<Enum>,
-    /// Custom scalar definitions.
-    #[serde(default)]
-    pub scalars: Vec<CustomScalar>,
-    /// Synthesized relationships.
-    #[serde(default)]
-    pub relationships: Vec<Relationship>,
+    /// Consolidated type definitions.
+    pub types: Vec<TypeDefinition>,
 }
 
 /// Metadata for the IR.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Metadata {
-    /// SHA-256 hash of the source SDL.
-    #[serde(skip_serializing_if = "Option::is_none")]
+    /// Source SDL hash.
     pub source_hash: Option<String>,
-    /// ISO-8601 generation timestamp.
-    #[serde(skip_serializing_if = "Option::is_none")]
+    /// Generation timestamp.
     pub generated_at: Option<String>,
-    /// Name of the schema.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub schema_name: Option<String>,
+    /// Compilation units involved.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub units: Vec<UnitMeta>,
 }
 
-/// A table definition.
+/// Compilation unit metadata.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+pub struct UnitMeta {
+    /// Unit ID (usually path).
+    pub id: String,
+    /// Package name.
+    pub package: String,
+    /// Unit hash.
+    pub hash: String,
+}
+
+/// A type definition (Object, Interface, etc.).
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct Table {
-    /// Table name.
+pub struct TypeDefinition {
+    /// Type name.
     pub name: String,
+    /// Kind of type.
+    pub kind: TypeKind,
     /// Optional description.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    /// Table-level directives.
-    pub directives: TableDirectives,
-    /// Field definitions.
+    /// Generic map of directives.
+    pub directives: IndexMap<String, serde_json::Value>,
+    /// Fields (for Objects, Interfaces, InputObjects).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub fields: Vec<Field>,
-    /// Index definitions.
-    #[serde(default)]
-    pub indexes: Vec<Index>,
-    /// Constraint definitions.
-    #[serde(default)]
-    pub constraints: Vec<Constraint>,
+    /// Enum values (for Enums).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub enum_values: Vec<String>,
 }
 
-/// Table-level directives (e.g. @wes_table).
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-pub struct TableDirectives {
-    /// Whether this is explicitly marked as a table.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub table: Option<bool>,
-    /// RLS configuration.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub rls: Option<RLSConfig>,
-    /// Tenant configuration.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub tenant: Option<TenantConfig>,
-    /// Audit configuration.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub audit: Option<bool>,
-    /// Soft delete configuration.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub soft_delete: Option<bool>,
+/// Kinds of GraphQL types.
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum TypeKind {
+    /// Object type.
+    Object,
+    /// Interface type.
+    Interface,
+    /// Union type.
+    Union,
+    /// Enum type.
+    Enum,
+    /// Scalar type.
+    Scalar,
+    /// Input object type.
+    InputObject,
 }
 
-/// A field definition within a table.
+/// A field definition.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Field {
     /// Field name.
     pub name: String,
-    /// Field type information.
-    pub r#type: FieldType,
-    /// Whether the field can be null.
-    pub nullable: bool,
-    /// Field-level directives.
-    pub directives: FieldDirectives,
     /// Optional description.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    /// Field type reference.
+    pub r#type: TypeReference,
+    /// Generic map of directives.
+    pub directives: IndexMap<String, serde_json::Value>,
 }
 
-/// Detailed field type information.
+/// Reference to a type with nullability and list information.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct FieldType {
-    /// Base type name (e.g. "String", "Int").
+pub struct TypeReference {
+    /// Base type name.
     pub base: String,
-    /// Whether this is a list type.
+    /// Whether the type is nullable.
+    pub nullable: bool,
+    /// Whether the type is a list.
     pub is_list: bool,
-    /// Whether items in the list can be null.
+    /// Whether list items are nullable.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub list_item_nullable: Option<bool>,
 }
 
-/// Field-level directives (e.g. @wes_pk, @wes_fk).
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-pub struct FieldDirectives {
-    /// Primary key flag.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub pk: Option<bool>,
-    /// Unique constraint flag.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub unique: Option<bool>,
-    /// Index flag.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub index: Option<bool>,
-    /// Default value configuration.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub default: Option<DefaultValue>,
-    /// Foreign key configuration.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub fk: Option<ForeignKey>,
-}
-
-/// Default value configuration.
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-pub struct DefaultValue {
-    /// The default value.
-    pub value: serde_json::Value,
-    /// Whether the value is a SQL expression.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub is_sql: Option<bool>,
-}
-
-/// Foreign key configuration.
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct ForeignKey {
-    /// Target table name.
-    pub target_table: String,
-    /// Target field name.
-    pub target_field: String,
-    /// On delete behavior.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub on_delete: Option<String>,
-}
-
-/// Index definition.
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-pub struct Index {
-    /// Fields involved in the index.
-    pub fields: Vec<String>,
-    /// Optional index name.
-    pub name: Option<String>,
-    /// Table name.
-    pub table: String,
-    /// Whether the index is unique.
-    pub unique: bool,
-    /// Indexing method (e.g. "btree").
-    pub using: Option<String>,
-}
-
-/// Constraint definition.
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-pub struct Constraint {
-    /// Constraint name.
-    pub name: String,
-    /// Constraint type (e.g. "check").
-    pub r#type: String,
-    /// Table name.
-    pub table: String,
-    /// Constraint definition string.
-    pub definition: String,
-}
-
-/// Relationship between tables.
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-pub struct Relationship {
-    /// Relationship type (e.g. "one-to-many").
-    pub r#type: String,
-    /// Source reference.
-    pub from: TableFieldRef,
-    /// Target reference.
-    pub to: TableFieldRef,
-}
-
-/// Reference to a specific field in a table.
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-pub struct TableFieldRef {
-    /// Table name.
-    pub table: String,
-    /// Field name.
-    pub field: String,
-}
-
-/// RLS configuration.
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-pub struct RLSConfig {
-    /// Whether RLS is enabled.
-    pub enable: bool,
-}
-
-/// Tenant configuration.
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-pub struct TenantConfig {
-    /// Field name used for partitioning by tenant.
-    pub field: String,
-}
-
-/// Enum definition.
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-pub struct Enum {
-    /// Enum name.
-    pub name: String,
-    /// Possible enum values.
-    pub values: Vec<String>,
-}
-
-/// Custom scalar definition.
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct CustomScalar {
-    /// Scalar name.
-    pub name: String,
-    /// Target SQL type.
-    pub sql_type: String,
-}
-
 /// Computes the canonical registry hash for the given IR.
-/// Matches @wesley/core domain/registryHash.mjs logic.
 pub fn compute_registry_hash(ir: &WesleyIR) -> Result<String, serde_json::Error> {
     let mut parity_ir = ir.clone();
     parity_ir.metadata = None;

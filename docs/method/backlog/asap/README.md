@@ -18,3 +18,4 @@ Current near-term pulls:
 3. `OWN_remove-non-deterministic-ir-metadata.md`
 4. `SOURCE_wesley-core-rs-parity-sentinel.md`
 5. `OWN_ninelives-resilience-integration.md`
+6. `OWN_fix-legacy-js-extension-ignorance.md`

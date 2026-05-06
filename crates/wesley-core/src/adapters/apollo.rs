@@ -6,8 +6,9 @@ use crate::domain::ir::*;
 use crate::domain::error::WesleyError;
 use crate::ports::lowering::LoweringPort;
 use std::collections::BTreeMap;
+use indexmap::IndexMap;
 
-/// Adapter that uses `apollo-parser` to lower SDL to IR using Semantic Consolidation.
+/// Adapter that uses `apollo-parser` to lower SDL to IR and enforce Footprint Honesty.
 pub struct ApolloLoweringAdapter {
     _max_retries: usize,
 }
@@ -29,6 +30,7 @@ impl LoweringPort for ApolloLoweringAdapter {
 /// Represents the consolidated parts of a single GraphQL Type.
 struct TypeAggregate {
     name: String,
+    kind: TypeKind,
     definitions: Vec<cst::ObjectTypeDefinition>,
     extensions: Vec<cst::ObjectTypeExtension>,
 }
@@ -49,8 +51,6 @@ impl ApolloLoweringAdapter {
         }
 
         let doc = cst.document();
-        
-        // STEP 1: Semantic Consolidation
         let mut aggregates: BTreeMap<String, TypeAggregate> = BTreeMap::new();
 
         for def in doc.definitions() {
@@ -60,6 +60,7 @@ impl ApolloLoweringAdapter {
                         let name_str = name.text().to_string();
                         let agg = aggregates.entry(name_str.clone()).or_insert(TypeAggregate {
                             name: name_str,
+                            kind: TypeKind::Object,
                             definitions: Vec::new(),
                             extensions: Vec::new(),
                         });
@@ -71,6 +72,7 @@ impl ApolloLoweringAdapter {
                         let name_str = name.text().to_string();
                         let agg = aggregates.entry(name_str.clone()).or_insert(TypeAggregate {
                             name: name_str,
+                            kind: TypeKind::Object,
                             definitions: Vec::new(),
                             extensions: Vec::new(),
                         });
@@ -81,66 +83,48 @@ impl ApolloLoweringAdapter {
             }
         }
 
-        // STEP 2: Lowering
-        let mut tables = Vec::new();
+        let mut types = Vec::new();
         for agg in aggregates.values() {
-            if let Some(table) = self.build_table_from_aggregate(agg)? {
-                tables.push(table);
-            }
+            types.push(self.build_type_from_aggregate(agg)?);
         }
 
-        // STEP 3: Synthesis
-        let relationships = self.synthesize_relationships(&tables);
+        // --- THE FOOTPRINT AUDIT ---
+        // After building the types, we must validate that all Operations (Query/Mutation)
+        // have an honest @wes_footprint declaration.
+        for def in doc.definitions() {
+            if let cst::Definition::OperationDefinition(op) = def {
+                self.audit_operation_footprint(op, &types)?;
+            }
+        }
 
         Ok(WesleyIR {
             version: "1.0.0".to_string(),
             metadata: None,
-            tables,
-            enums: Vec::new(),
-            scalars: Vec::new(),
-            relationships,
+            types,
         })
     }
 
-    fn synthesize_relationships(&self, tables: &[Table]) -> Vec<Relationship> {
-        let mut relationships = Vec::new();
-        for table in tables {
-            for field in &table.fields {
-                if let Some(fk) = &field.directives.fk {
-                    relationships.push(Relationship {
-                        r#type: "one-to-many".to_string(),
-                        from: TableFieldRef {
-                            table: table.name.clone(),
-                            field: field.name.clone(),
-                        },
-                        to: TableFieldRef {
-                            table: fk.target_table.clone(),
-                            field: fk.target_field.clone(),
-                        },
-                    });
-                }
-            }
-        }
-        relationships
-    }
+    /// Audit a GraphQL operation to ensure its @wes_footprint is honest.
+    fn audit_operation_footprint(&self, op: cst::OperationDefinition, _types: &[TypeDefinition]) -> Result<(), WesleyError> {
+        let op_name = op.name().map(|n| n.text().to_string()).unwrap_or_else(|| "anonymous".to_string());
+        
+        // 1. Find the @wes_footprint directive
+        let mut declared_reads = Vec::new();
+        let mut declared_writes = Vec::new();
 
-    fn build_table_from_aggregate(&self, agg: &TypeAggregate) -> Result<Option<Table>, WesleyError> {
-        let mut is_table = false;
-        let mut table_name = agg.name.clone();
-        let mut fields = Vec::new();
-
-        // Process definitions
-        for obj in &agg.definitions {
-            if let Some(dirs) = obj.directives() {
-                for dir in dirs.directives() {
-                    if let Some(name) = dir.name() {
-                        if name.text() == "wes_table" {
-                            is_table = true;
-                            if let Some(args) = dir.arguments() {
-                                for arg in args.arguments() {
-                                    if arg.name().map(|n| n.text().to_string()) == Some("name".to_string()) {
-                                        if let Some(cst::Value::StringValue(val)) = arg.value() {
-                                            table_name = val.syntax().text().to_string().replace("\"", "");
+        if let Some(dirs) = op.directives() {
+            for dir in dirs.directives() {
+                if dir.name().map(|n| n.text().to_string()) == Some("wes_footprint".to_string()) {
+                    if let Some(args) = dir.arguments() {
+                        for arg in args.arguments() {
+                            let arg_name = arg.name().map(|n| n.text().to_string()).unwrap_or_default();
+                            if arg_name == "reads" || arg_name == "writes" {
+                                if let Some(cst::Value::ListValue(list)) = arg.value() {
+                                    for val in list.values() {
+                                        if let cst::Value::StringValue(s) = val {
+                                            let s_str = s.syntax().text().to_string().replace("\"", "");
+                                            if arg_name == "reads" { declared_reads.push(s_str); }
+                                            else { declared_writes.push(s_str); }
                                         }
                                     }
                                 }
@@ -149,6 +133,38 @@ impl ApolloLoweringAdapter {
                     }
                 }
             }
+        }
+
+        // 2. Perform Structural Analysis of the Selection Set
+        // This is a simplified "Honesty Check" for Phase 2.
+        // In Phase 3+, we will use a full DPO rewrite tracer.
+        if let Some(selection_set) = op.selection_set() {
+            for selection in selection_set.selections() {
+                if let cst::Selection::Field(field) = selection {
+                    let field_name = field.name().map(|n| n.text().to_string()).unwrap_or_default();
+                    
+                    // Simple Rule: If you touch a field, its parent type must be in the footprint.
+                    // This logic will become much more sophisticated.
+                    if !declared_reads.contains(&field_name) && !declared_writes.contains(&field_name) {
+                        // FOR NOW: We just log the intent. 
+                        // In the future, this is a WesleyError::DishonestFootprint.
+                        println!("AUDIT: Operation '{}' touches '{}', which is NOT in the @wes_footprint!", op_name, field_name);
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    fn build_type_from_aggregate(&self, agg: &TypeAggregate) -> Result<TypeDefinition, WesleyError> {
+        let mut directives = IndexMap::new();
+        let mut fields = Vec::new();
+
+        for obj in &agg.definitions {
+            if let Some(dirs) = obj.directives() {
+                self.extract_directives(dirs, &mut directives)?;
+            }
             if let Some(fields_def) = obj.fields_definition() {
                 for field_def in fields_def.field_definitions() {
                     fields.push(self.build_field(field_def)?);
@@ -156,16 +172,9 @@ impl ApolloLoweringAdapter {
             }
         }
 
-        // Process extensions
         for ext in &agg.extensions {
             if let Some(dirs) = ext.directives() {
-                for dir in dirs.directives() {
-                    if let Some(name) = dir.name() {
-                        if name.text() == "wes_table" {
-                            is_table = true;
-                        }
-                    }
-                }
+                self.extract_directives(dirs, &mut directives)?;
             }
             if let Some(fields_def) = ext.fields_definition() {
                 for field_def in fields_def.field_definitions() {
@@ -174,42 +183,43 @@ impl ApolloLoweringAdapter {
             }
         }
 
-        if !is_table && fields.iter().any(|f| f.directives.pk == Some(true)) {
-            is_table = true;
-        }
-
-        if !is_table {
-            return Ok(None);
-        }
-
-        // Synthesize indexes from @wes_index field directives
-        let mut indexes = Vec::new();
-        for field in &fields {
-            if field.directives.index == Some(true) {
-                indexes.push(Index {
-                    fields: vec![field.name.clone()],
-                    name: None,
-                    table: table_name.clone(),
-                    unique: false,
-                    using: None,
-                });
-            }
-        }
-
-        Ok(Some(Table {
-            name: table_name,
+        Ok(TypeDefinition {
+            name: agg.name.clone(),
+            kind: agg.kind,
             description: None,
-            directives: TableDirectives {
-                table: Some(true),
-                rls: None,
-                tenant: None,
-                audit: None,
-                soft_delete: None,
-            },
+            directives,
             fields,
-            indexes,
-            constraints: Vec::new(),
-        }))
+            enum_values: Vec::new(),
+        })
+    }
+
+    fn extract_directives(&self, dirs: cst::Directives, map: &mut IndexMap<String, serde_json::Value>) -> Result<(), WesleyError> {
+        for dir in dirs.directives() {
+            let dir_name = dir.name().ok_or(WesleyError::LoweringError {
+                message: "Directive missing name".to_string(),
+                area: "directive".to_string(),
+            })?.text().to_string();
+
+            let mut args_map = serde_json::Map::new();
+            if let Some(args) = dir.arguments() {
+                for arg in args.arguments() {
+                    let arg_name = arg.name().map(|n| n.text().to_string()).unwrap_or_default();
+                    if let Some(val) = arg.value() {
+                        let val_str = val.syntax().text().to_string().replace("\"", "");
+                        args_map.insert(arg_name, serde_json::Value::String(val_str));
+                    }
+                }
+            }
+
+            let val = if args_map.is_empty() {
+                serde_json::Value::Bool(true)
+            } else {
+                serde_json::Value::Object(args_map)
+            };
+
+            map.insert(dir_name, val);
+        }
+        Ok(())
     }
 
     fn build_field(&self, field_def: cst::FieldDefinition) -> Result<Field, WesleyError> {
@@ -250,75 +260,20 @@ impl ApolloLoweringAdapter {
             }
         }
 
-        let mut directives = FieldDirectives {
-            pk: None,
-            unique: None,
-            index: None,
-            default: None,
-            fk: None,
-        };
-
+        let mut field_directives = IndexMap::new();
         if let Some(dirs) = field_def.directives() {
-            for dir in dirs.directives() {
-                let dir_name = dir.name().ok_or(WesleyError::LoweringError {
-                    message: "Directive missing name".to_string(),
-                    area: "directive".to_string(),
-                })?.text();
-
-                match dir_name.as_str() {
-                    "wes_pk" => directives.pk = Some(true),
-                    "wes_unique" => directives.unique = Some(true),
-                    "wes_index" => directives.index = Some(true),
-                    "wes_default" => {
-                        if let Some(args) = dir.arguments() {
-                            for arg in args.arguments() {
-                                let arg_name = arg.name().map(|n| n.text().to_string()).unwrap_or_default();
-                                if arg_name == "value" {
-                                    if let Some(val) = arg.value() {
-                                        let val_str = val.syntax().text().to_string().replace("\"", "");
-                                        directives.default = Some(DefaultValue {
-                                            value: serde_json::Value::String(val_str),
-                                            is_sql: None,
-                                        });
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    "wes_fk" => {
-                        if let Some(args) = dir.arguments() {
-                            for arg in args.arguments() {
-                                let arg_name = arg.name().map(|n| n.text().to_string()).unwrap_or_default();
-                                if arg_name == "ref" {
-                                    if let Some(cst::Value::StringValue(val)) = arg.value() {
-                                        let ref_str = val.syntax().text().to_string().replace("\"", "");
-                                        let parts: Vec<&str> = ref_str.split('.').collect();
-                                        if parts.len() == 2 {
-                                            directives.fk = Some(ForeignKey {
-                                                target_table: parts[0].to_string(),
-                                                target_field: parts[1].to_string(),
-                                                on_delete: None,
-                                            });
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    _ => {}
-                }
-            }
+            self.extract_directives(dirs, &mut field_directives)?;
         }
 
         Ok(Field {
             name,
-            r#type: FieldType {
+            r#type: TypeReference {
                 base,
+                nullable,
                 is_list,
                 list_item_nullable: None,
             },
-            nullable,
-            directives,
+            directives: field_directives,
             description: None,
         })
     }

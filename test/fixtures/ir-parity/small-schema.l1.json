@@ -1,65 +1,60 @@
 {
   "version": "1.0.0",
-  "metadata": {
-    "generatedAt": "2026-05-06T00:44:47.934Z"
-  },
-  "tables": [
+  "types": [
     {
-      "name": "users",
+      "name": "User",
+      "kind": "OBJECT",
       "directives": {
-        "table": true
+        "wes_table": {
+          "name": "users"
+        }
       },
       "fields": [
         {
           "name": "id",
           "type": {
             "base": "ID",
+            "nullable": false,
             "isList": false
           },
-          "nullable": false,
           "directives": {
-            "pk": true
+            "wes_pk": true
           }
         },
         {
           "name": "username",
           "type": {
             "base": "String",
+            "nullable": false,
             "isList": false
           },
-          "nullable": false,
           "directives": {
-            "unique": true
+            "wes_unique": true
           }
         },
         {
           "name": "email",
           "type": {
             "base": "String",
+            "nullable": false,
             "isList": false
           },
-          "nullable": false,
           "directives": {}
         },
         {
           "name": "created_at",
           "type": {
             "base": "String",
+            "nullable": false,
             "isList": false
           },
-          "nullable": false,
           "directives": {
-            "default": {
+            "wes_default": {
               "value": "now()"
             }
           }
         }
-      ],
-      "indexes": [],
-      "constraints": []
+      ]
     }
-  ],
-  "enums": [],
-  "scalars": [],
-  "relationships": []
+  ]
 }
