@@ -47,6 +47,9 @@ timeline
   behavior before adding host adapters, MCP, or runtime embedding.
 - Using `cargo xtask` for repository automation so Rust-native checks do not
   depend on npm scripts.
+- Keeping native install/release checks on the Cargo path with
+  `cargo install --locked --path crates/wesley-cli` and
+  `cargo xtask release-check`.
 - Treating `pnpm wesley` as legacy package tooling until its remaining useful
   surfaces are extracted, retired, or deliberately reimplemented in Rust.
 

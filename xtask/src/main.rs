@@ -43,6 +43,24 @@ fn run(args: Vec<OsString>) -> Result<(), Error> {
                 &["run", "--bin", "wesley", "--", "check-footprint", "--help"],
             )
         }
+        "release-check" => {
+            run_command("cargo", &["test", "--workspace"])?;
+            run_command("cargo", &["build", "--release", "--bin", "wesley"])?;
+            run_command(
+                "cargo",
+                &["run", "--release", "--bin", "wesley", "--", "--help"],
+            )?;
+            run_command(
+                "cargo",
+                &[
+                    "package",
+                    "--manifest-path",
+                    "crates/wesley-core/Cargo.toml",
+                    "--allow-dirty",
+                    "--no-verify",
+                ],
+            )
+        }
         "legacy-preflight" => run_command("pnpm", &["run", "preflight"]),
         other => Err(Error::Usage(format!("unknown xtask command `{other}`"))),
     }
@@ -85,6 +103,7 @@ Usage:
 Commands:
   test              Run Rust workspace tests
   preflight         Run native Rust preflight checks
+  release-check     Build and package the native Rust release artifacts
   legacy-preflight  Run the historical pnpm package preflight
   help              Show help"
     );

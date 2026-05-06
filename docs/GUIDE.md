@@ -13,12 +13,20 @@ Compile authored GraphQL into generic or explicitly selected generated
 artifacts.
 - **Inspect native CLI**: `cargo wesley --help`
 - **Check footprints**: `cargo wesley check-footprint --schema <schema> --operation <path>`
+- **Install locally**: `cargo install --locked --path crates/wesley-cli`
 - **Rust preflight**: `cargo xtask preflight`
+- **Release check**: `cargo xtask release-check`
 
 The Rust-native CLI is now the preferred front door for Wesley core work. The
 current `check-footprint` command performs schema-coordinate honesty checks
 when `--schema` is provided, and falls back to response-path checking when it is
 not.
+
+Use `cargo install --locked --path crates/wesley-cli` when you want `wesley` on
+your PATH. Use `cargo xtask release-check` before attaching native release
+artifacts; it runs the Rust tests, builds the optimized binary, and packages
+the Rust library crate without publishing anything. The native CLI is a local
+install or binary artifact for now, not a crates.io upload target.
 
 The historical package CLI still carries generic TypeScript/Zod/transform
 commands while those surfaces are being extracted or retired:

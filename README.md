@@ -55,6 +55,8 @@ Wesley core work now starts from Cargo.
   `crates/wesley-cli`.
 - `cargo xtask ...` runs repository automation from `xtask`.
 - `cargo xtask preflight` is the normal Rust-native health check.
+- `cargo xtask release-check` builds the optimized native binary and packages
+  the Rust library crate without publishing anything.
 - `cargo xtask legacy-preflight` runs the historical npm/package preflight
   while the old package surfaces are being retired.
 
@@ -62,7 +64,28 @@ The distinction matters: `wesley` is the user-facing compiler command, while
 `xtask` is for maintaining this repository. Avoid adding new core workflows to
 `pnpm wesley`; new compiler behavior should land in Rust first.
 
-### 3. Repository Tooling Preflight
+### Native Install And Release
+
+Install the local native binary directly from the Rust workspace.
+```bash
+cargo install --locked --path crates/wesley-cli
+wesley --help
+```
+
+Before cutting or attaching a native release artifact, run the Rust release
+check.
+```bash
+cargo xtask release-check
+./target/release/wesley --help
+```
+
+This path does not require an npm entry point. The native CLI is distributed as
+a local Cargo install or release binary artifact; it is not a crates.io upload
+target yet. The historical Node packages remain available only for legacy
+package projections and surrounding tooling until those surfaces are extracted,
+retired, or reimplemented in Rust.
+
+### Legacy Repository Tooling Preflight
 The repo still carries historical Node package tooling while the Rust-native
 front door takes over. Use preflight when changing docs, package boundaries, or
 legacy package surfaces.
@@ -71,7 +94,7 @@ pnpm install
 cargo xtask legacy-preflight
 ```
 
-### 4. Legacy Package Projection
+### Legacy Package Projection
 Generate TypeScript from an authored GraphQL schema.
 ```bash
 pnpm wesley typescript \
@@ -79,7 +102,7 @@ pnpm wesley typescript \
   --out-file ./generated/types.generated.ts
 ```
 
-### 5. Legacy Target Module Loading
+### Legacy Target Module Loading
 Select target behavior explicitly from project config or `WESLEY_MODULES`.
 ```bash
 WESLEY_MODULES=/path/to/my-wesley-module.mjs pnpm wesley --help
