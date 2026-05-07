@@ -5,18 +5,33 @@ use std::env;
 use std::fs;
 use std::path::PathBuf;
 use std::process::ExitCode;
-use wesley_core::{check_footprint, check_footprint_with_schema, FootprintCheck, WesleyError};
+use wesley_core::{
+    check_footprint, check_footprint_with_schema, compute_content_hash, compute_registry_hash,
+    lower_schema_sdl, FootprintCheck, WesleyError,
+};
 
 const EXIT_OK: u8 = 0;
 const EXIT_DISHONEST: u8 = 1;
 const EXIT_USAGE: u8 = 2;
+const CHECK_FOOTPRINT_KIND: &str = "wesley.checkFootprint.v1";
+const ERROR_KIND: &str = "wesley.error.v1";
+const JSON_VERSION: u16 = 1;
 
 fn main() -> ExitCode {
-    match run(env::args().skip(1).collect()) {
+    let args = env::args().skip(1).collect::<Vec<_>>();
+    let wants_json = args.iter().any(|arg| arg == "--json");
+
+    match run(args) {
         Ok(code) => ExitCode::from(code),
         Err(error) => {
-            eprintln!("{error}");
-            ExitCode::from(EXIT_USAGE)
+            if wants_json {
+                if let Err(serialization_error) = print_error_json(&error) {
+                    eprintln!("{serialization_error}");
+                }
+            } else {
+                eprintln!("{error}");
+            }
+            ExitCode::from(error.exit_code())
         }
     }
 }
@@ -46,6 +61,7 @@ fn run_check_footprint(args: &[String]) -> Result<u8, CliError> {
         ))
     })?;
 
+    let mut schema_hash = None;
     let check = if let Some(schema_path) = &options.schema {
         let schema_sdl = fs::read_to_string(schema_path).map_err(|source| {
             CliError::usage(format!(
@@ -53,12 +69,16 @@ fn run_check_footprint(args: &[String]) -> Result<u8, CliError> {
                 schema_path.display()
             ))
         })?;
+        let ir = lower_schema_sdl(&schema_sdl)?;
+        schema_hash = Some(prefixed_hash(&compute_registry_hash(&ir).map_err(
+            |source| CliError::usage(format!("failed to compute schema IR hash: {source}")),
+        )?));
         check_footprint_with_schema(&schema_sdl, &operation_sdl)?
     } else {
         check_footprint(&operation_sdl)?
     };
     if options.json {
-        print_json(&check)?;
+        print_json(&options, &operation_sdl, schema_hash, &check)?;
     } else {
         print_human(&check);
     }
@@ -89,16 +109,62 @@ fn print_human(check: &FootprintCheck) {
     }
 }
 
-fn print_json(check: &FootprintCheck) -> Result<(), CliError> {
+fn print_json(
+    options: &CheckFootprintOptions,
+    operation_sdl: &str,
+    schema_hash: Option<String>,
+    check: &FootprintCheck,
+) -> Result<(), CliError> {
     let output = CheckFootprintOutput {
+        kind: CHECK_FOOTPRINT_KIND,
+        version: JSON_VERSION,
+        command: "check-footprint",
+        ok: true,
+        mode: options.mode(),
+        verdict: if check.is_honest() {
+            FootprintVerdict::Honest
+        } else {
+            FootprintVerdict::Dishonest
+        },
         honest: check.is_honest(),
-        check,
+        operation_hash: prefixed_hash(&compute_content_hash(operation_sdl)),
+        schema_hash,
+        inputs: CheckFootprintInputs {
+            operation: options.operation.display().to_string(),
+            schema: options
+                .schema
+                .as_ref()
+                .map(|schema| schema.display().to_string()),
+        },
+        declared_reads: check.spec.declared_reads.clone(),
+        declared_writes: check.spec.declared_writes.clone(),
+        actual_selections: check.spec.actual_selections.clone(),
+        undeclared_selections: check.undeclared_selections.clone(),
+        unused_declarations: check.unused_declarations.clone(),
+        spec: check.spec.clone(),
     };
     let json = serde_json::to_string_pretty(&output).map_err(|source| {
         CliError::usage(format!(
             "failed to serialize footprint check result: {source}"
         ))
     })?;
+    println!("{json}");
+    Ok(())
+}
+
+fn print_error_json(error: &CliError) -> Result<(), CliError> {
+    let output = ErrorOutput {
+        kind: ERROR_KIND,
+        version: JSON_VERSION,
+        ok: false,
+        error: ErrorBody {
+            category: error.category(),
+            message: error.message(),
+            detail: error.detail(),
+        },
+    };
+    let json = serde_json::to_string_pretty(&output)
+        .map_err(|source| CliError::usage(format!("failed to serialize error result: {source}")))?;
     println!("{json}");
     Ok(())
 }
@@ -187,14 +253,76 @@ impl CheckFootprintOptions {
             json,
         })
     }
+
+    fn mode(&self) -> FootprintMode {
+        if self.schema.is_some() {
+            FootprintMode::SchemaCoordinate
+        } else {
+            FootprintMode::ResponsePath
+        }
+    }
 }
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-struct CheckFootprintOutput<'a> {
+struct CheckFootprintOutput {
+    kind: &'static str,
+    version: u16,
+    command: &'static str,
+    ok: bool,
+    mode: FootprintMode,
+    verdict: FootprintVerdict,
     honest: bool,
-    #[serde(flatten)]
-    check: &'a FootprintCheck,
+    operation_hash: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    schema_hash: Option<String>,
+    inputs: CheckFootprintInputs,
+    declared_reads: Vec<String>,
+    declared_writes: Vec<String>,
+    actual_selections: Vec<String>,
+    undeclared_selections: Vec<String>,
+    unused_declarations: Vec<String>,
+    spec: wesley_core::FootprintSpec,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct CheckFootprintInputs {
+    operation: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    schema: Option<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "kebab-case")]
+enum FootprintMode {
+    ResponsePath,
+    SchemaCoordinate,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "kebab-case")]
+enum FootprintVerdict {
+    Honest,
+    Dishonest,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ErrorOutput {
+    kind: &'static str,
+    version: u16,
+    ok: bool,
+    error: ErrorBody,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ErrorBody {
+    category: &'static str,
+    message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    detail: Option<serde_json::Value>,
 }
 
 #[derive(Debug)]
@@ -206,6 +334,33 @@ enum CliError {
 impl CliError {
     fn usage(message: impl Into<String>) -> Self {
         Self::Usage(message.into())
+    }
+
+    fn exit_code(&self) -> u8 {
+        match self {
+            Self::Usage(_) | Self::Wesley(_) => EXIT_USAGE,
+        }
+    }
+
+    fn category(&self) -> &'static str {
+        match self {
+            Self::Usage(_) => "usage",
+            Self::Wesley(_) => "wesley",
+        }
+    }
+
+    fn message(&self) -> String {
+        match self {
+            Self::Usage(message) => message.clone(),
+            Self::Wesley(error) => error.to_string(),
+        }
+    }
+
+    fn detail(&self) -> Option<serde_json::Value> {
+        match self {
+            Self::Usage(_) => None,
+            Self::Wesley(error) => serde_json::to_value(error).ok(),
+        }
     }
 }
 
@@ -225,4 +380,8 @@ impl std::fmt::Display for CliError {
             Self::Wesley(error) => write!(formatter, "{error}"),
         }
     }
+}
+
+fn prefixed_hash(hash: &str) -> String {
+    format!("sha256:{hash}")
 }

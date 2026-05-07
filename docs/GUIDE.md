@@ -20,7 +20,9 @@ artifacts.
 The Rust-native CLI is now the preferred front door for Wesley core work. The
 current `check-footprint` command performs schema-coordinate honesty checks
 when `--schema` is provided, and falls back to response-path checking when it is
-not.
+not. Its `--json` output is a stable automation contract:
+`wesley.checkFootprint.v1` for completed checks and `wesley.error.v1` for
+machine-readable parse/lowering failures.
 
 Use `cargo install --locked --path crates/wesley-cli` when you want `wesley` on
 your PATH. Use `cargo xtask release-check` before attaching native release

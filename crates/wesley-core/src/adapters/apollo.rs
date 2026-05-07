@@ -30,6 +30,11 @@ impl LoweringPort for ApolloLoweringAdapter {
     }
 }
 
+/// Lowers GraphQL SDL into the Wesley L1 IR using the Apollo parser adapter.
+pub fn lower_schema_sdl(sdl: &str) -> Result<WesleyIR, WesleyError> {
+    ApolloLoweringAdapter::new(0).parse_and_lower(sdl)
+}
+
 /// Represents the consolidated parts of a single GraphQL Type.
 struct TypeAggregate {
     name: String,

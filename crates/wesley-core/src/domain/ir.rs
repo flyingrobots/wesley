@@ -123,12 +123,16 @@ pub fn compute_registry_hash(ir: &WesleyIR) -> Result<String, serde_json::Error>
     parity_ir.metadata = None;
 
     let json = to_canonical_json(&parity_ir)?;
+    Ok(compute_content_hash(&json))
+}
 
+/// Computes a stable SHA-256 hex hash for arbitrary UTF-8 content.
+pub fn compute_content_hash(content: &str) -> String {
     let mut hasher = Sha256::new();
-    hasher.update(json.as_bytes());
+    hasher.update(content.as_bytes());
     let result = hasher.finalize();
 
-    Ok(hex::encode(result))
+    hex::encode(result)
 }
 
 /// Serializes a value to a canonical JSON string (sorted keys, no whitespace).

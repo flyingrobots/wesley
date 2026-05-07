@@ -47,6 +47,13 @@ If `--schema` is omitted, Wesley falls back to response-path checking. With
 `--schema`, Wesley checks exact schema coordinates such as `Mutation.admitChange`
 and `Receipt.status`.
 
+The JSON output is a versioned contract for automation. Successful checks emit
+`kind: "wesley.checkFootprint.v1"`, `version: 1`, `mode`, `verdict`,
+`operationHash`, optional `schemaHash`, and top-level declared/actual footprint
+arrays. When `--json` is present and parsing/lowering fails, Wesley emits
+`kind: "wesley.error.v1"` with a structured error body instead of prose-only
+stderr.
+
 ## Rust-Native Front Door
 
 Wesley core work now starts from Cargo.
