@@ -77,7 +77,9 @@ Wesley core work now starts from Cargo.
 - `cargo wesley ...` runs the native Rust `wesley` binary from
   `crates/wesley-cli`.
 - `cargo xtask ...` runs repository automation from `xtask`.
-- `cargo xtask preflight` is the normal Rust-native health check.
+- `cargo xtask docs-check` runs Rust-native documentation hygiene checks.
+- `cargo xtask preflight` is the normal Rust-native health check: docs checks,
+  Rust tests, and native CLI help.
 - `cargo xtask release-check` builds the optimized native binary and packages
   the Rust library crate without publishing anything.
 - `cargo xtask legacy-preflight` runs the historical npm/package preflight

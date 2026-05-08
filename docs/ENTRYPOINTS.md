@@ -23,7 +23,7 @@ or ported.
 | --- | --- | --- | --- |
 | Rust compiler kernel | `crates/wesley-core/` | Canonical for new compiler work | Lowers GraphQL SDL into domain-empty L1 IR; resolves operation selections; extracts directive arguments. |
 | Native Wesley command | `crates/wesley-cli/` | Rust product CLI | Provides schema lowering, schema hashing, operation selection analysis, and directive argument extraction from the Rust core. |
-| Repo automation | `xtask/` | Current Rust maintenance front door | Runs Rust tests, native preflight, release checks, and the legacy preflight bridge. |
+| Repo automation | `xtask/` | Current Rust maintenance front door | Runs docs checks, Rust tests, native preflight, release checks, and the legacy preflight bridge. |
 | Legacy JS core | `packages/wesley-core/` | Legacy/tooling | Historical JavaScript compiler domain, module registry, hashes, generation pipeline, and runtime helpers. |
 | Legacy JS CLI | `packages/wesley-cli/` | Legacy/tooling | Historical command framework for generate/transform/typescript/zod/diff/cert/Holmes-era flows. |
 | Legacy Node host | `packages/wesley-host-node/` | Legacy/tooling | Node executable wrapper and runtime adapter around the JS CLI. |
@@ -78,6 +78,7 @@ truth to the Node side.
 | Adding or changing compiler semantics | `crates/wesley-core/` |
 | Adding a user-facing Wesley command | `crates/wesley-cli/` |
 | Running Rust health checks | `cargo xtask preflight` |
+| Checking docs links/truth/local-path hygiene | `cargo xtask docs-check` |
 | Preparing native release artifacts | `cargo xtask release-check` |
 | Touching old JS packages, docs drift checks, or package tests | `cargo xtask legacy-preflight` |
 | Using an old generator that only exists in JS | `pnpm wesley ...` for now, then plan a port or extraction |

@@ -14,6 +14,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   commands. The native CLI now exposes the `wesley-core` L1 lowering,
   registry-hash, operation-selection, and directive-argument primitives without
   going through the legacy Node entry point.
+- **Rust-native docs check**: Added `cargo xtask docs-check` for markdown link
+  validation, docs-truth manifest validation, and forbidden machine-local path
+  detection. `cargo xtask preflight` now runs those checks before Rust tests and
+  native CLI help.
 
 - **Holmes counterfactual provider capability seam**: Added
   `holmes.counterfactualProviders` to Wesley module capabilities, moved shared

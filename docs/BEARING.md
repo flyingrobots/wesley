@@ -47,8 +47,9 @@ timeline
   behavior. It now exposes schema lowering, schema hashing, operation
   selections, and directive argument extraction before any host adapters, MCP, or
   runtime embedding.
-- Using `cargo xtask` for repository automation so Rust-native checks do not
-  depend on npm scripts.
+- Using `cargo xtask` for repository automation so Rust-native checks keep
+  moving away from npm scripts. Native preflight now includes Rust docs checks,
+  Rust tests, and native CLI help.
 - Keeping native install/release checks on the Cargo path with
   `cargo install --locked --path crates/wesley-cli` and
   `cargo xtask release-check`.

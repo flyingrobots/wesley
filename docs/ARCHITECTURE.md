@@ -113,7 +113,7 @@ semantics.
 | --- | --- |
 | `crates/wesley-core/` | Rust compiler kernel. Parses/lower SDL to domain-empty L1 IR and analyzes operation documents. |
 | `crates/wesley-cli/` | Native Rust `wesley` binary for schema and operation facts. |
-| `xtask/` | Rust repository automation: tests, native preflight, release check, legacy preflight bridge. |
+| `xtask/` | Rust repository automation: docs checks, tests, native preflight, release check, legacy preflight bridge. |
 | `packages/wesley-core/` | Historical JS core: domain/application/port modules, module capabilities, generation pipeline, hashes, runtime-event helpers. |
 | `packages/wesley-cli/` | Historical JS CLI command framework and module-aware command surfaces. |
 | `packages/wesley-host-node/` | Node executable wrapper around the JS CLI and runtime adapters. |
@@ -308,16 +308,17 @@ flowchart LR
     WesleyBin --> CoreFacts[wesley-core]
 
     Maintainer --> CargoXtask[cargo xtask]
+    CargoXtask --> DocsCheck[docs-check]
     CargoXtask --> Tests[cargo test --workspace]
     CargoXtask --> NativeHelp[cargo run --bin wesley -- --help]
     CargoXtask --> Release[cargo build --release + package wesley-core]
     CargoXtask --> Legacy[pnpm run preflight]
 ```
 
-`cargo xtask preflight` is the current native health check. It runs Rust
-workspace tests and verifies the native CLI help surface. `cargo xtask
-legacy-preflight` intentionally crosses into Node package tooling because docs,
-legacy packages, and module examples still need that coverage.
+`cargo xtask preflight` is the current native health check. It runs Rust-native
+docs hygiene checks, Rust workspace tests, and verifies the native CLI help
+surface. `cargo xtask legacy-preflight` intentionally crosses into Node package
+tooling because legacy packages and module examples still need that coverage.
 
 ## Legacy Node Tooling
 
