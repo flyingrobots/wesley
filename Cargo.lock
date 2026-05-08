@@ -981,6 +981,7 @@ name = "wesley-emit-rust"
 version = "0.1.0"
 dependencies = [
  "pretty_assertions",
+ "serde_json",
  "syn",
  "wesley-core",
 ]
@@ -990,6 +991,7 @@ name = "wesley-emit-typescript"
 version = "0.1.0"
 dependencies = [
  "pretty_assertions",
+ "serde_json",
  "wesley-core",
 ]
 

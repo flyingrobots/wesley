@@ -1287,6 +1287,7 @@ fn collect_schema_operations_from_object(
         for operation_type in &operation_types {
             operations.push(schema_operation_from_field(
                 *operation_type,
+                &type_name,
                 field_def.clone(),
             )?);
         }
@@ -1297,6 +1298,7 @@ fn collect_schema_operations_from_object(
 
 fn schema_operation_from_field(
     operation_type: OperationType,
+    root_type_name: &str,
     field_def: cst::FieldDefinition,
 ) -> Result<SchemaOperation, WesleyError> {
     let field_name = field_def
@@ -1319,6 +1321,7 @@ fn schema_operation_from_field(
 
     Ok(SchemaOperation {
         operation_type,
+        root_type_name: root_type_name.to_string(),
         field_name,
         arguments: operation_arguments_from_definition(field_def.arguments_definition())?,
         result_type: type_reference_from_type(result_type, true)?,

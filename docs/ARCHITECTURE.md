@@ -120,8 +120,8 @@ semantics.
 | --- | --- |
 | `crates/wesley-core/` | Rust compiler kernel. Parses/lower SDL to domain-empty L1 IR, diffs L1 schema structure, lists schema root operations, and analyzes operation documents. |
 | `crates/wesley-cli/` | Native Rust `wesley` binary for schema deltas, schema hashes, Rust/TypeScript artifacts, and operation facts. |
-| `crates/wesley-emit-rust/` | Rust model projection crate. Builds a Rust item/type AST from L1 IR, then prints deterministic data model declarations. |
-| `crates/wesley-emit-typescript/` | Rust TypeScript projection crate. Builds a TypeScript declaration AST from L1 IR, then prints it deterministically. |
+| `crates/wesley-emit-rust/` | Rust projection crate. Builds a Rust item/type AST from L1 IR and `SchemaOperation` data, then prints deterministic model and operation declarations. |
+| `crates/wesley-emit-typescript/` | Rust TypeScript projection crate. Builds a TypeScript declaration AST from L1 IR and `SchemaOperation` data, then prints deterministic model and operation declarations. |
 | `xtask/` | Rust repository automation: docs checks, tests, native preflight, release check, legacy preflight bridge. |
 | `packages/wesley-core/` | Historical JS core: domain/application/port modules, module capabilities, generation pipeline, hashes, runtime-event helpers. |
 | `packages/wesley-cli/` | Historical JS CLI command framework and module-aware command surfaces. |
@@ -180,6 +180,8 @@ flowchart TD
     IR --> Canonical[Canonical JSON]
     Canonical --> Hash[Registry hash]
     IR --> Delta[Schema delta]
+    SDL --> RootOps[SchemaOperation catalog]
+    RootOps --> EmitOps[Operation bindings]
 
     OP[GraphQL operation] --> OpParse[Operation parser]
     OpParse --> Selections[Response-path selections]
@@ -198,13 +200,19 @@ deployments, or runtime policy.
 
 `crates/wesley-emit-rust` and `crates/wesley-emit-typescript` are the first Rust
 projection crates. They do not parse or rewrite existing source files. They take
-`WesleyIR`, build structured language-specific ASTs, and print deterministic
-data model declarations.
+`WesleyIR` for models and, when available, `SchemaOperation` data for root
+operation bindings. Each crate builds structured language-specific ASTs and
+prints deterministic artifacts.
 
 This generation path does not need tree-sitter. Tree-sitter, SWC, oxc, or a
 similar parser becomes relevant when Wesley needs to inspect or edit existing
 source files. Pure generation starts from an AST owned by the emitter. The Rust
 emitter tests validate generated Rust syntax with `syn`.
+
+Operation binding emission is still domain-empty. It connects operation kind,
+root field name, argument object types, result type, and preserved directive
+metadata. It does not interpret Echo footprint directives or bind operations to
+Postgres, Continuum, or any other target runtime.
 
 ### Rust Class Diagram
 
@@ -246,6 +254,22 @@ classDiagram
         +IndexMap arguments
     }
 
+    class SchemaOperation {
+        +OperationType operation_type
+        +String root_type_name
+        +String field_name
+        +Vec~OperationArgument~ arguments
+        +TypeReference result_type
+        +IndexMap directives
+    }
+
+    class OperationArgument {
+        +String name
+        +TypeReference type
+        +Option~Value~ default_value
+        +IndexMap directives
+    }
+
     class SchemaDelta {
         +Vec~TypeDelta~ added_types
         +Vec~TypeDelta~ removed_types
@@ -274,6 +298,7 @@ classDiagram
         Struct
         Enum
         TypeAlias
+        Operation
     }
 
     class RustType {
@@ -290,6 +315,7 @@ classDiagram
         <<enum>>
         Interface
         TypeAlias
+        Operation
     }
 
     class TsTypeExpr {
@@ -299,6 +325,8 @@ classDiagram
         Boolean
         Null
         Reference
+        Typeof
+        Object
         Array
         Union
     }
@@ -323,6 +351,9 @@ classDiagram
     WesleyIR "1" --> "*" TypeDefinition
     TypeDefinition "1" --> "*" Field
     Field "1" --> "1" TypeReference
+    SchemaOperation "1" --> "*" OperationArgument
+    SchemaOperation "1" --> "1" TypeReference
+    OperationArgument "1" --> "1" TypeReference
     SchemaDelta "1" --> "*" TypeModification
     RustFile "1" --> "*" RustItem
     RustItem --> RustType
@@ -340,8 +371,14 @@ erDiagram
     WESLEY_IR ||--o{ TYPE_DEFINITION : contains
     TYPE_DEFINITION ||--o{ FIELD : declares
     FIELD ||--|| TYPE_REFERENCE : has
+    TYPE_DEFINITION ||--o{ SCHEMA_OPERATION : roots
+    SCHEMA_OPERATION ||--o{ OPERATION_ARGUMENT : accepts
+    SCHEMA_OPERATION ||--|| TYPE_REFERENCE : returns
+    OPERATION_ARGUMENT ||--|| TYPE_REFERENCE : has
     TYPE_DEFINITION ||--o{ DIRECTIVE_VALUE : annotates
     FIELD ||--o{ DIRECTIVE_VALUE : annotates
+    SCHEMA_OPERATION ||--o{ DIRECTIVE_VALUE : annotates
+    OPERATION_ARGUMENT ||--o{ DIRECTIVE_VALUE : annotates
     TYPE_DEFINITION ||--o{ IMPLEMENTS_EDGE : implements
     TYPE_DEFINITION ||--o{ UNION_MEMBER : includes
     TYPE_DEFINITION ||--o{ ENUM_VALUE : declares
@@ -364,6 +401,15 @@ erDiagram
         bool nullable
         bool is_list
         bool list_item_nullable
+    }
+    SCHEMA_OPERATION {
+        string operation_type
+        string root_type_name
+        string field_name
+    }
+    OPERATION_ARGUMENT {
+        string name
+        json default_value
     }
     DIRECTIVE_VALUE {
         string name

@@ -108,6 +108,7 @@ fn schema_operations_emit_root_operation_catalog_as_json() {
         .find(|operation| operation["fieldName"] == "createBufferWorldline")
         .expect("createBufferWorldline should be present");
     assert_eq!(create_buffer["operationType"], "MUTATION");
+    assert_eq!(create_buffer["rootTypeName"], "Mutation");
     assert_eq!(
         create_buffer["arguments"][0]["type"]["base"],
         "CreateBufferWorldlineInput"
@@ -132,6 +133,7 @@ fn schema_operations_emit_root_operation_catalog_as_json() {
         .find(|operation| operation["fieldName"] == "textWindow")
         .expect("textWindow should be present");
     assert_eq!(text_window["operationType"], "QUERY");
+    assert_eq!(text_window["rootTypeName"], "Query");
     assert_eq!(
         text_window["arguments"][0]["type"]["base"],
         "TextWindowInput"
@@ -465,6 +467,57 @@ fn emit_rust_writes_ast_generated_models() {
     assert!(generated.contains("#[serde(rename = \"displayName\")]"));
     assert!(generated.contains("pub display_name: Option<String>,"));
     assert!(generated.contains("pub roles: Vec<Role>,"));
+
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
+fn emit_commands_include_jedit_operation_bindings() {
+    let dir = temp_dir("emit-jedit-operation-bindings");
+    let rust_out = dir.join("generated").join("model.rs");
+    let typescript_out = dir.join("generated").join("types.ts");
+    let schema = fixture("test/fixtures/consumer-models/jedit-hot-text-runtime.graphql");
+
+    let rust_output = wesley()
+        .args(["emit", "rust", "--schema"])
+        .arg(&schema)
+        .arg("--out")
+        .arg(&rust_out)
+        .output()
+        .expect("wesley should run");
+    assert_success(&rust_output);
+
+    let typescript_output = wesley()
+        .args(["emit", "typescript", "--schema"])
+        .arg(&schema)
+        .arg("--out")
+        .arg(&typescript_out)
+        .output()
+        .expect("wesley should run");
+    assert_success(&typescript_output);
+
+    let generated_rust = std::fs::read_to_string(&rust_out).expect("Rust output should read");
+    let generated_typescript =
+        std::fs::read_to_string(&typescript_out).expect("TypeScript output should read");
+
+    assert!(generated_rust.contains("pub struct CreateBufferWorldlineRequest {"));
+    assert!(generated_rust.contains("pub input: CreateBufferWorldlineInput,"));
+    assert!(generated_rust
+        .contains("pub type CreateBufferWorldlineResponse = CreateBufferWorldlineResult;"));
+    assert!(generated_rust.contains("pub const OPERATION_TYPE: &'static str = \"MUTATION\";"));
+    assert!(
+        generated_rust.contains("pub const FIELD_NAME: &'static str = \"createBufferWorldline\";")
+    );
+    assert!(!generated_rust.contains("pub struct Mutation {"));
+
+    assert!(generated_typescript.contains("export interface CreateBufferWorldlineRequest {"));
+    assert!(generated_typescript.contains("  input: CreateBufferWorldlineInput;"));
+    assert!(generated_typescript
+        .contains("export type CreateBufferWorldlineResponse = CreateBufferWorldlineResult;"));
+    assert!(generated_typescript.contains("export const createBufferWorldlineOperation = {"));
+    assert!(generated_typescript.contains("  operationType: \"MUTATION\","));
+    assert!(generated_typescript.contains("  fieldName: \"createBufferWorldline\","));
+    assert!(!generated_typescript.contains("export interface Mutation {"));
 
     let _ = std::fs::remove_dir_all(dir);
 }

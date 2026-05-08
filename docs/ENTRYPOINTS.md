@@ -24,8 +24,8 @@ or ported. Their migration map lives in
 | --- | --- | --- | --- |
 | Rust compiler kernel | `crates/wesley-core/` | Canonical for new compiler work | Lowers GraphQL SDL into domain-empty L1 IR; diffs L1 schema structure; lists schema root operations; resolves operation selections; extracts directive arguments. |
 | Native Wesley command | `crates/wesley-cli/` | Rust product CLI | Provides schema lowering, schema hashing, schema operation listing, schema diffing, Rust/TypeScript emission, operation selection analysis, and directive argument extraction from Rust crates. |
-| Rust model emitter | `crates/wesley-emit-rust/` | Rust projection crate | Emits Rust data models from Wesley L1 IR through a structured Rust item/type AST and printer. |
-| Rust TypeScript emitter | `crates/wesley-emit-typescript/` | Rust projection crate | Emits TypeScript declarations from Wesley L1 IR through a structured TypeScript declaration AST and printer. |
+| Rust model emitter | `crates/wesley-emit-rust/` | Rust projection crate | Emits Rust data models and root operation request/response bindings from Wesley L1 IR plus `SchemaOperation` data through a structured Rust item/type AST and printer. |
+| Rust TypeScript emitter | `crates/wesley-emit-typescript/` | Rust projection crate | Emits TypeScript declarations, root operation request/response bindings, and operation metadata constants from Wesley L1 IR plus `SchemaOperation` data through a structured TypeScript declaration AST and printer. |
 | Repo automation | `xtask/` | Current Rust maintenance front door | Runs docs checks, Rust tests, native preflight, release checks, and the legacy preflight bridge. |
 | Legacy JS core | `packages/wesley-core/` | Legacy/tooling | Historical JavaScript compiler domain, module registry, hashes, generation pipeline, and runtime helpers. |
 | Legacy JS CLI | `packages/wesley-cli/` | Legacy/tooling | Historical command framework for generate/transform/typescript/zod/diff/cert/Holmes-era flows. |
@@ -45,8 +45,8 @@ It can:
 - compute stable canonical JSON and hashes for L1 IR
 - compute structural L1 schema deltas
 - list schema root operations with arguments, result types, and directives
-- emit Rust data models from L1 IR through a Rust AST/printer path
-- emit TypeScript declarations from L1 IR through a Rust AST/printer path
+- emit Rust data models and operation bindings through a Rust AST/printer path
+- emit TypeScript declarations and operation bindings through a Rust AST/printer path
 - resolve GraphQL operation selection paths
 - resolve schema-coordinate selections when schema SDL is available
 - extract arbitrary operation directive arguments as data

@@ -3,12 +3,23 @@
 
 //! AST-based Rust model emitter for Wesley L1 IR.
 
+use std::collections::BTreeSet;
 use std::fmt::Write;
-use wesley_core::{Field, TypeDefinition, TypeKind, TypeReference, WesleyIR};
+use wesley_core::{
+    Field, OperationArgument, OperationType, SchemaOperation, TypeDefinition, TypeKind,
+    TypeReference, WesleyIR,
+};
 
 /// Emits Rust model declarations for a Wesley L1 IR document.
 pub fn emit_rust(ir: &WesleyIR) -> String {
     let file = RustFile::from_ir(ir);
+
+    print_file(&file)
+}
+
+/// Emits Rust model and operation binding declarations for a Wesley L1 IR document.
+pub fn emit_rust_with_operations(ir: &WesleyIR, operations: &[SchemaOperation]) -> String {
+    let file = RustFile::from_ir_and_operations(ir, operations);
 
     print_file(&file)
 }
@@ -20,9 +31,21 @@ struct RustFile {
 
 impl RustFile {
     fn from_ir(ir: &WesleyIR) -> Self {
+        Self::from_ir_and_operations(ir, &[])
+    }
+
+    fn from_ir_and_operations(ir: &WesleyIR, operations: &[SchemaOperation]) -> Self {
         let mut items = Vec::new();
+        let root_type_names = operations
+            .iter()
+            .map(|operation| operation.root_type_name.as_str())
+            .collect::<BTreeSet<_>>();
 
         for type_def in &ir.types {
+            if root_type_names.contains(type_def.name.as_str()) {
+                continue;
+            }
+
             match type_def.kind {
                 TypeKind::Scalar if is_builtin_scalar(&type_def.name) => {}
                 TypeKind::Scalar => items.push(RustItem::TypeAlias(RustTypeAlias {
@@ -37,6 +60,12 @@ impl RustFile {
             }
         }
 
+        items.extend(
+            operations
+                .iter()
+                .map(|operation| RustItem::Operation(operation_binding_from_schema(operation))),
+        );
+
         Self { items }
     }
 }
@@ -46,6 +75,7 @@ enum RustItem {
     TypeAlias(RustTypeAlias),
     Struct(RustStruct),
     Enum(RustEnum),
+    Operation(RustOperationBinding),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -72,6 +102,15 @@ struct RustEnum {
     name: String,
     derive_eq: bool,
     variants: Vec<RustVariant>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct RustOperationBinding {
+    operation_type: &'static str,
+    field_name: String,
+    request: RustStruct,
+    response_alias: RustTypeAlias,
+    directives_json: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -139,6 +178,43 @@ fn union_enum_from_type(type_def: &TypeDefinition) -> RustEnum {
     }
 }
 
+fn operation_binding_from_schema(operation: &SchemaOperation) -> RustOperationBinding {
+    let request_type_name = operation_type_name(&operation.field_name, "Request");
+    let response_type_name = operation_type_name(&operation.field_name, "Response");
+
+    RustOperationBinding {
+        operation_type: operation_type_literal(operation.operation_type),
+        field_name: operation.field_name.clone(),
+        request: RustStruct {
+            name: request_type_name,
+            fields: operation
+                .arguments
+                .iter()
+                .map(field_from_operation_argument)
+                .collect(),
+        },
+        response_alias: RustTypeAlias {
+            name: response_type_name,
+            target: rust_type_from_reference(&operation.result_type),
+        },
+        directives_json: serde_json::to_string(&operation.directives)
+            .expect("schema operation directives should serialize"),
+    }
+}
+
+fn field_from_operation_argument(argument: &OperationArgument) -> RustField {
+    let mut ty = rust_type_from_reference(&argument.r#type);
+    if argument.default_value.is_some() && !matches!(ty, RustType::Option(_)) {
+        ty = RustType::Option(Box::new(ty));
+    }
+
+    RustField {
+        source_name: argument.name.clone(),
+        rust_name: rust_field_name(&argument.name),
+        ty,
+    }
+}
+
 fn rust_type_from_reference(type_ref: &TypeReference) -> RustType {
     let base = match type_ref.base.as_str() {
         "ID" | "String" => RustType::String,
@@ -181,6 +257,7 @@ fn print_item(out: &mut String, item: &RustItem) {
         RustItem::TypeAlias(alias) => print_type_alias(out, alias),
         RustItem::Struct(struct_item) => print_struct(out, struct_item),
         RustItem::Enum(enum_item) => print_enum(out, enum_item),
+        RustItem::Operation(operation) => print_operation_binding(out, operation),
     }
 }
 
@@ -240,6 +317,27 @@ fn print_enum(out: &mut String, enum_item: &RustEnum) {
     out.push_str("}\n");
 }
 
+fn print_operation_binding(out: &mut String, operation: &RustOperationBinding) {
+    print_struct(out, &operation.request);
+    out.push('\n');
+    print_type_alias(out, &operation.response_alias);
+    out.push('\n');
+    writeln!(out, "impl {} {{", operation.request.name).expect("writing to string should not fail");
+    write!(out, "    pub const OPERATION_TYPE: &'static str = ")
+        .expect("writing to string should not fail");
+    print_rust_string_literal(out, operation.operation_type);
+    out.push_str(";\n");
+    write!(out, "    pub const FIELD_NAME: &'static str = ")
+        .expect("writing to string should not fail");
+    print_rust_string_literal(out, &operation.field_name);
+    out.push_str(";\n");
+    write!(out, "    pub const DIRECTIVES_JSON: &'static str = ")
+        .expect("writing to string should not fail");
+    print_rust_string_literal(out, &operation.directives_json);
+    out.push_str(";\n");
+    out.push_str("}\n");
+}
+
 fn print_type(out: &mut String, ty: &RustType) {
     match ty {
         RustType::String => out.push_str("String"),
@@ -257,6 +355,14 @@ fn print_type(out: &mut String, ty: &RustType) {
             print_type(out, item);
             out.push('>');
         }
+    }
+}
+
+fn operation_type_literal(operation_type: OperationType) -> &'static str {
+    match operation_type {
+        OperationType::Query => "QUERY",
+        OperationType::Mutation => "MUTATION",
+        OperationType::Subscription => "SUBSCRIPTION",
     }
 }
 
@@ -281,6 +387,10 @@ fn rust_type_name(name: &str) -> String {
     }
 
     candidate
+}
+
+fn operation_type_name(field_name: &str, suffix: &str) -> String {
+    rust_type_name(&format!("{field_name}{suffix}"))
 }
 
 fn rust_variant_name(name: &str) -> String {
@@ -452,11 +562,26 @@ fn escape_attribute(value: &str) -> String {
     value.replace('\\', "\\\\").replace('"', "\\\"")
 }
 
+fn print_rust_string_literal(out: &mut String, value: &str) {
+    out.push('"');
+    for ch in value.chars() {
+        match ch {
+            '\\' => out.push_str("\\\\"),
+            '"' => out.push_str("\\\""),
+            '\n' => out.push_str("\\n"),
+            '\r' => out.push_str("\\r"),
+            '\t' => out.push_str("\\t"),
+            _ => out.push(ch),
+        }
+    }
+    out.push('"');
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use pretty_assertions::assert_eq;
-    use wesley_core::lower_schema_sdl;
+    use wesley_core::{list_schema_operations_sdl, lower_schema_sdl};
 
     #[test]
     fn emits_rust_models_from_l1_ir() {
@@ -535,6 +660,28 @@ pub struct UserFilter {
         assert!(actual.contains("pub checkpoints: Vec<Checkpoint>,"));
         assert!(actual.contains("pub created_at_tick_id: Option<String>,"));
         assert!(actual.contains("pub create_initial_checkpoint: Option<bool>,"));
+    }
+
+    #[test]
+    fn emits_jedit_operation_bindings() {
+        let sdl =
+            include_str!("../../../test/fixtures/consumer-models/jedit-hot-text-runtime.graphql");
+        let ir = lower_schema_sdl(sdl).expect("jedit runtime fixture should lower");
+        let operations =
+            list_schema_operations_sdl(sdl).expect("jedit runtime operations should resolve");
+
+        let actual = emit_rust_with_operations(&ir, &operations);
+
+        syn::parse_file(&actual).expect("generated Rust should parse");
+        assert!(!actual.contains("pub struct Mutation {"));
+        assert!(actual.contains("pub struct CreateBufferWorldlineRequest {"));
+        assert!(actual.contains("pub input: CreateBufferWorldlineInput,"));
+        assert!(actual
+            .contains("pub type CreateBufferWorldlineResponse = CreateBufferWorldlineResult;"));
+        assert!(actual.contains("pub const OPERATION_TYPE: &'static str = \"MUTATION\";"));
+        assert!(actual.contains("pub const FIELD_NAME: &'static str = \"createBufferWorldline\";"));
+        assert!(actual.contains("pub const DIRECTIVES_JSON: &'static str = "));
+        assert!(actual.contains("\\\"wes_footprint\\\""));
     }
 
     #[test]

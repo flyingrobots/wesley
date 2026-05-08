@@ -202,6 +202,7 @@ fn lists_schema_operations_with_arguments_results_and_directives() {
         .find(|operation| operation.field_name == "makeThing")
         .expect("mutation operation should exist");
     assert_eq!(make_thing.operation_type, OperationType::Mutation);
+    assert_eq!(make_thing.root_type_name, "RootMutation");
     assert_eq!(make_thing.result_type.base, "MakeThingResult");
     assert!(!make_thing.result_type.nullable);
     assert_eq!(make_thing.arguments.len(), 2);
@@ -228,6 +229,7 @@ fn lists_schema_operations_with_arguments_results_and_directives() {
         .find(|operation| operation.field_name == "thing")
         .expect("query operation should exist");
     assert_eq!(thing.operation_type, OperationType::Query);
+    assert_eq!(thing.root_type_name, "RootQuery");
     assert_eq!(thing.result_type.base, "Thing");
     assert!(thing.result_type.nullable);
     assert_eq!(thing.arguments[0].name, "id");
@@ -249,6 +251,7 @@ fn lists_jedit_hot_text_runtime_schema_operations() {
         .find(|operation| operation.field_name == "createBufferWorldline")
         .expect("createBufferWorldline mutation should exist");
     assert_eq!(create_buffer.operation_type, OperationType::Mutation);
+    assert_eq!(create_buffer.root_type_name, "Mutation");
     assert_eq!(create_buffer.arguments.len(), 1);
     assert_eq!(create_buffer.arguments[0].name, "input");
     assert_eq!(
@@ -290,6 +293,7 @@ fn lists_jedit_hot_text_runtime_schema_operations() {
         .find(|operation| operation.field_name == "textWindow")
         .expect("textWindow query should exist");
     assert_eq!(text_window.operation_type, OperationType::Query);
+    assert_eq!(text_window.root_type_name, "Query");
     assert_eq!(text_window.arguments[0].r#type.base, "TextWindowInput");
     assert_eq!(text_window.result_type.base, "TextWindowReading");
     assert_eq!(

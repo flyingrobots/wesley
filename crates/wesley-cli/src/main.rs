@@ -9,8 +9,8 @@ use wesley_core::{
     list_schema_operations_sdl, lower_schema_sdl, resolve_operation_selections,
     resolve_operation_selections_with_schema, SchemaDelta, WesleyError,
 };
-use wesley_emit_rust::emit_rust;
-use wesley_emit_typescript::emit_typescript;
+use wesley_emit_rust::emit_rust_with_operations;
+use wesley_emit_typescript::emit_typescript_with_operations;
 
 const EXIT_OK: u8 = 0;
 const EXIT_FAILURE: u8 = 1;
@@ -135,7 +135,8 @@ fn run_emit_command(args: &[String]) -> Result<u8, CliError> {
             let out_path = options.required_out("emit rust")?;
             let sdl = read_file(&schema_path, "schema")?;
             let ir = lower_schema_sdl(&sdl)?;
-            let rust = emit_rust(&ir);
+            let operations = list_schema_operations_sdl(&sdl)?;
+            let rust = emit_rust_with_operations(&ir, &operations);
 
             write_file(&out_path, &rust, "Rust output")?;
             Ok(EXIT_OK)
@@ -150,7 +151,8 @@ fn run_emit_command(args: &[String]) -> Result<u8, CliError> {
             let out_path = options.required_out("emit typescript")?;
             let sdl = read_file(&schema_path, "schema")?;
             let ir = lower_schema_sdl(&sdl)?;
-            let typescript = emit_typescript(&ir);
+            let operations = list_schema_operations_sdl(&sdl)?;
+            let typescript = emit_typescript_with_operations(&ir, &operations);
 
             write_file(&out_path, &typescript, "TypeScript output")?;
             Ok(EXIT_OK)
@@ -637,8 +639,8 @@ Commands:
   schema hash               Print the Wesley L1 registry hash for GraphQL SDL
   schema operations         List Query/Mutation/Subscription root operations
   schema diff               Compare GraphQL SDL states as Wesley L1 IR
-  emit rust                 Emit Rust models from GraphQL SDL
-  emit typescript           Emit TypeScript declarations from GraphQL SDL
+  emit rust                 Emit Rust models and operation bindings from GraphQL SDL
+  emit typescript           Emit TypeScript declarations and operation bindings from GraphQL SDL
   operation selections      Resolve selected operation fields
   operation directive-args  Extract operation directive arguments as JSON
   version                   Print the native CLI version
@@ -675,6 +677,9 @@ fn print_emit_help() {
     println!(
         "\
 Wesley emit commands
+
+Emits model declarations and root operation bindings when the schema declares
+Query, Mutation, or Subscription fields.
 
 Usage:
   wesley emit rust --schema <path> --out <path>

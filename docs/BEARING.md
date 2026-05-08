@@ -73,10 +73,10 @@ timeline
   generated Rust syntax in tests.
 - Tracking jedit capability support explicitly in
   [JEDIT_CAPABILITY_PROGRESS.md](./JEDIT_CAPABILITY_PROGRESS.md). Current
-  evidence says basic Rust/TypeScript model emission works and schema operation
-  discovery preserves root field arguments, result types, and directives without
-  moving Echo footprint enforcement into Wesley core. The next gap is operation
-  binding emission.
+  evidence says Rust/TypeScript model emission works, schema operation discovery
+  preserves root field arguments, result types, and directives, and native
+  emitters can project those operations into request/response bindings without
+  moving Echo footprint enforcement into Wesley core.
 
 ## Tensions
 
@@ -101,8 +101,8 @@ timeline
 
 ## Next Target
 
-The immediate focus is **jedit-shaped operation binding emission**: use the
-domain-empty schema operation catalog to emit Rust and TypeScript callable
-operation surfaces from real jedit contracts. Keep Echo-specific footprint
-honesty to Echo-owned tooling; Wesley should expose and project the generic
-operation facts that downstream adapters can consume.
+The immediate focus is **external jedit adoption**: have jedit consume
+Wesley-generated Rust/TypeScript model and operation artifacts instead of
+handwritten shadow models. That requires changes in sibling repos, so this repo
+should only advise those prompts unless the operator explicitly authorizes work
+inside the owning checkout.

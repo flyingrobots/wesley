@@ -3,12 +3,23 @@
 
 //! AST-based TypeScript declaration emitter for Wesley L1 IR.
 
+use std::collections::BTreeSet;
 use std::fmt::Write;
-use wesley_core::{Field, TypeDefinition, TypeKind, TypeReference, WesleyIR};
+use wesley_core::{
+    Field, OperationArgument, OperationType, SchemaOperation, TypeDefinition, TypeKind,
+    TypeReference, WesleyIR,
+};
 
 /// Emits TypeScript declarations for a Wesley L1 IR document.
 pub fn emit_typescript(ir: &WesleyIR) -> String {
     let program = TsProgram::from_ir(ir);
+
+    print_program(&program)
+}
+
+/// Emits TypeScript declarations and operation bindings for a Wesley L1 IR document.
+pub fn emit_typescript_with_operations(ir: &WesleyIR, operations: &[SchemaOperation]) -> String {
+    let program = TsProgram::from_ir_and_operations(ir, operations);
 
     print_program(&program)
 }
@@ -20,9 +31,21 @@ struct TsProgram {
 
 impl TsProgram {
     fn from_ir(ir: &WesleyIR) -> Self {
+        Self::from_ir_and_operations(ir, &[])
+    }
+
+    fn from_ir_and_operations(ir: &WesleyIR, operations: &[SchemaOperation]) -> Self {
         let mut declarations = Vec::new();
+        let root_type_names = operations
+            .iter()
+            .map(|operation| operation.root_type_name.as_str())
+            .collect::<BTreeSet<_>>();
 
         for type_def in &ir.types {
+            if root_type_names.contains(type_def.name.as_str()) {
+                continue;
+            }
+
             match type_def.kind {
                 TypeKind::Scalar if is_builtin_scalar(&type_def.name) => {}
                 TypeKind::Scalar => declarations.push(TsDeclaration::TypeAlias(TsTypeAlias {
@@ -43,6 +66,12 @@ impl TsProgram {
             }
         }
 
+        declarations.extend(
+            operations.iter().map(|operation| {
+                TsDeclaration::Operation(operation_binding_from_schema(operation))
+            }),
+        );
+
         Self { declarations }
     }
 }
@@ -51,6 +80,7 @@ impl TsProgram {
 enum TsDeclaration {
     Interface(TsInterface),
     TypeAlias(TsTypeAlias),
+    Operation(TsOperationBinding),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -67,9 +97,27 @@ struct TsTypeAlias {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+struct TsOperationBinding {
+    operation_type: &'static str,
+    field_name: String,
+    const_name: String,
+    request: TsInterface,
+    response_alias: TsTypeAlias,
+    operation_alias: TsTypeAlias,
+    directives_json: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 struct TsProperty {
     name: String,
     optional: bool,
+    type_expr: TsTypeExpr,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct TsObjectMember {
+    name: String,
+    readonly: bool,
     type_expr: TsTypeExpr,
 }
 
@@ -82,7 +130,9 @@ enum TsTypeExpr {
     Never,
     Null,
     Reference(String),
+    Typeof(String),
     StringLiteral(String),
+    Object(Vec<TsObjectMember>),
     Array(Box<TsTypeExpr>),
     Union(Vec<TsTypeExpr>),
 }
@@ -132,6 +182,61 @@ fn property_from_field(field: &Field, is_input: bool) -> TsProperty {
         name: field.name.clone(),
         optional: is_input && field.r#type.nullable,
         type_expr: type_expr_from_reference(&field.r#type),
+    }
+}
+
+fn operation_binding_from_schema(operation: &SchemaOperation) -> TsOperationBinding {
+    let request_type_name = operation_type_name(&operation.field_name, "Request");
+    let response_type_name = operation_type_name(&operation.field_name, "Response");
+    let const_name = operation_const_name(&operation.field_name);
+
+    TsOperationBinding {
+        operation_type: operation_type_literal(operation.operation_type),
+        field_name: operation.field_name.clone(),
+        const_name: const_name.clone(),
+        request: TsInterface {
+            name: request_type_name.clone(),
+            extends: Vec::new(),
+            properties: operation
+                .arguments
+                .iter()
+                .map(property_from_operation_argument)
+                .collect(),
+        },
+        response_alias: TsTypeAlias {
+            name: response_type_name.clone(),
+            type_expr: type_expr_from_reference(&operation.result_type),
+        },
+        operation_alias: TsTypeAlias {
+            name: operation_type_name(&operation.field_name, "Operation"),
+            type_expr: TsTypeExpr::Object(vec![
+                TsObjectMember {
+                    name: "request".to_string(),
+                    readonly: false,
+                    type_expr: TsTypeExpr::Reference(request_type_name),
+                },
+                TsObjectMember {
+                    name: "response".to_string(),
+                    readonly: false,
+                    type_expr: TsTypeExpr::Reference(response_type_name),
+                },
+                TsObjectMember {
+                    name: "metadata".to_string(),
+                    readonly: false,
+                    type_expr: TsTypeExpr::Typeof(const_name),
+                },
+            ]),
+        },
+        directives_json: serde_json::to_string(&operation.directives)
+            .expect("schema operation directives should serialize"),
+    }
+}
+
+fn property_from_operation_argument(argument: &OperationArgument) -> TsProperty {
+    TsProperty {
+        name: argument.name.clone(),
+        optional: argument.r#type.nullable || argument.default_value.is_some(),
+        type_expr: type_expr_from_reference(&argument.r#type),
     }
 }
 
@@ -197,6 +302,7 @@ fn print_declaration(out: &mut String, declaration: &TsDeclaration) {
     match declaration {
         TsDeclaration::Interface(interface) => print_interface(out, interface),
         TsDeclaration::TypeAlias(type_alias) => print_type_alias(out, type_alias),
+        TsDeclaration::Operation(operation) => print_operation_binding(out, operation),
     }
 }
 
@@ -230,6 +336,26 @@ fn print_type_alias(out: &mut String, type_alias: &TsTypeAlias) {
     out.push_str(";\n");
 }
 
+fn print_operation_binding(out: &mut String, operation: &TsOperationBinding) {
+    print_interface(out, &operation.request);
+    out.push('\n');
+    print_type_alias(out, &operation.response_alias);
+    out.push('\n');
+    writeln!(out, "export const {} = {{", operation.const_name)
+        .expect("writing to string should not fail");
+    write!(out, "  operationType: ").expect("writing to string should not fail");
+    print_string_literal(out, operation.operation_type);
+    out.push_str(",\n");
+    write!(out, "  fieldName: ").expect("writing to string should not fail");
+    print_string_literal(out, &operation.field_name);
+    out.push_str(",\n");
+    out.push_str("  directives: ");
+    out.push_str(&operation.directives_json);
+    out.push_str(",\n");
+    out.push_str("} as const;\n\n");
+    print_type_alias(out, &operation.operation_alias);
+}
+
 fn print_type_expr(out: &mut String, type_expr: &TsTypeExpr, parenthesize_union: bool) {
     match type_expr {
         TsTypeExpr::String => out.push_str("string"),
@@ -239,7 +365,12 @@ fn print_type_expr(out: &mut String, type_expr: &TsTypeExpr, parenthesize_union:
         TsTypeExpr::Never => out.push_str("never"),
         TsTypeExpr::Null => out.push_str("null"),
         TsTypeExpr::Reference(name) => out.push_str(name),
+        TsTypeExpr::Typeof(name) => {
+            out.push_str("typeof ");
+            out.push_str(name);
+        }
         TsTypeExpr::StringLiteral(value) => print_string_literal(out, value),
+        TsTypeExpr::Object(members) => print_object_type_expr(out, members),
         TsTypeExpr::Array(item) => {
             print_type_expr(out, item, true);
             out.push_str("[]");
@@ -259,6 +390,26 @@ fn print_type_expr(out: &mut String, type_expr: &TsTypeExpr, parenthesize_union:
             }
         }
     }
+}
+
+fn print_object_type_expr(out: &mut String, members: &[TsObjectMember]) {
+    if members.is_empty() {
+        out.push_str("{}");
+        return;
+    }
+
+    out.push_str("{\n");
+    for member in members {
+        out.push_str("  ");
+        if member.readonly {
+            out.push_str("readonly ");
+        }
+        out.push_str(&property_name(&member.name));
+        out.push_str(": ");
+        print_type_expr(out, &member.type_expr, false);
+        out.push_str(";\n");
+    }
+    out.push('}');
 }
 
 fn print_string_literal(out: &mut String, value: &str) {
@@ -301,6 +452,39 @@ fn ts_type_name(name: &str) -> String {
     }
 
     sanitized
+}
+
+fn operation_type_name(field_name: &str, suffix: &str) -> String {
+    ts_type_name(&format!("{}{suffix}", upper_first(field_name)))
+}
+
+fn operation_const_name(field_name: &str) -> String {
+    let candidate = format!("{field_name}Operation");
+    if is_identifier_name(&candidate) && !is_reserved_type_name(&candidate) {
+        return candidate;
+    }
+
+    ts_type_name(&candidate)
+}
+
+fn upper_first(value: &str) -> String {
+    let mut chars = value.chars();
+    let Some(first) = chars.next() else {
+        return String::new();
+    };
+
+    let mut out = String::new();
+    out.push(first.to_ascii_uppercase());
+    out.extend(chars);
+    out
+}
+
+fn operation_type_literal(operation_type: OperationType) -> &'static str {
+    match operation_type {
+        OperationType::Query => "QUERY",
+        OperationType::Mutation => "MUTATION",
+        OperationType::Subscription => "SUBSCRIPTION",
+    }
 }
 
 fn is_identifier_name(name: &str) -> bool {
@@ -396,7 +580,7 @@ fn is_reserved_type_name(name: &str) -> bool {
 mod tests {
     use super::*;
     use pretty_assertions::assert_eq;
-    use wesley_core::lower_schema_sdl;
+    use wesley_core::{list_schema_operations_sdl, lower_schema_sdl};
 
     #[test]
     fn emits_typescript_declarations_from_l1_ir() {
@@ -483,5 +667,28 @@ export interface UserFilter {
         assert!(actual.contains("checkpoints: Checkpoint[];"));
         assert!(actual.contains("createdAtTickId: string | null;"));
         assert!(actual.contains("createInitialCheckpoint?: boolean | null;"));
+    }
+
+    #[test]
+    fn emits_jedit_operation_bindings() {
+        let sdl =
+            include_str!("../../../test/fixtures/consumer-models/jedit-hot-text-runtime.graphql");
+        let ir = lower_schema_sdl(sdl).expect("jedit runtime fixture should lower");
+        let operations =
+            list_schema_operations_sdl(sdl).expect("jedit runtime operations should resolve");
+
+        let actual = emit_typescript_with_operations(&ir, &operations);
+
+        assert!(!actual.contains("export interface Mutation {"));
+        assert!(actual.contains("export interface CreateBufferWorldlineRequest {"));
+        assert!(actual.contains("  input: CreateBufferWorldlineInput;"));
+        assert!(actual
+            .contains("export type CreateBufferWorldlineResponse = CreateBufferWorldlineResult;"));
+        assert!(actual.contains("export const createBufferWorldlineOperation = {"));
+        assert!(actual.contains("  operationType: \"MUTATION\","));
+        assert!(actual.contains("  fieldName: \"createBufferWorldline\","));
+        assert!(actual.contains("\"wes_footprint\""));
+        assert!(actual.contains("export type CreateBufferWorldlineOperation = {\n"));
+        assert!(actual.contains("  metadata: typeof createBufferWorldlineOperation;"));
     }
 }

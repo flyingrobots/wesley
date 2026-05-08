@@ -48,6 +48,8 @@ pub struct OperationArgument {
 pub struct SchemaOperation {
     /// Root operation kind for the field.
     pub operation_type: OperationType,
+    /// Root GraphQL object type that owns this operation field.
+    pub root_type_name: String,
     /// Root field name.
     pub field_name: String,
     /// Root field arguments.

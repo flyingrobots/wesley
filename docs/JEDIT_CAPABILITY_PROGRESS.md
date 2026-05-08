@@ -43,6 +43,14 @@ The invariant is still Wesley's normal compiler boundary:
   `Subscription` fields as `SchemaOperation` data.
 - `wesley schema operations --schema <path> --json` exposes the schema operation
   catalog from the native Rust CLI.
+- `crates/wesley-emit-rust` can emit operation request/response bindings from
+  `SchemaOperation` data through `emit_rust_with_operations`.
+- `crates/wesley-emit-typescript` can emit operation request/response bindings
+  and operation metadata constants from `SchemaOperation` data through
+  `emit_typescript_with_operations`.
+- `wesley emit rust` and `wesley emit typescript` now include root operation
+  bindings when the schema contains root `Query`, `Mutation`, or
+  `Subscription` fields.
 
 ## Capability Gap
 
@@ -50,11 +58,11 @@ The real jedit contract is more than a data model. Its root `Query` and
 `Mutation` fields define capability-like surfaces, including inputs, return
 types, and generic directive data.
 
-Wesley now has a generic operation catalog for those root fields. The remaining
-gap is projection: the Rust and TypeScript emitters still produce model
-declarations, not callable operation bindings. Echo-specific footprint honesty
-also remains external to Wesley core; Wesley preserves `@wes_footprint` as
-generic directive JSON for Echo-owned tooling to interpret later.
+Wesley now has a generic operation catalog for those root fields and can project
+that catalog into Rust and TypeScript operation bindings. Echo-specific
+footprint honesty still remains external to Wesley core; Wesley preserves
+`@wes_footprint` as generic directive JSON for Echo-owned tooling to interpret
+later.
 
 ## Progress Ledger
 
@@ -69,18 +77,31 @@ generic directive JSON for Echo-owned tooling to interpret later.
 | Full jedit runtime fixture is tracked hermetically in Wesley | Done | 8 |
 | Generic schema operation catalog preserves root args/results/directives | Done | 15 |
 | Native CLI exposes schema operation inspection | Done | 5 |
-| Rust operation binding emission exists | Not started | 0 |
-| TypeScript operation binding emission exists | Not started | 0 |
+| Rust operation binding emission exists | Done | 10 |
+| TypeScript operation binding emission exists | Done | 10 |
 | jedit consumes generated artifacts without shadow models | Not started | 0 |
 
-Current score: 70 / 100.
+Current score: 90 / 100.
 
 ## Next Move
 
-Add operation binding emission on top of the schema operation catalog.
+Adopt the generated artifacts in the sibling repos that consume the contract.
+Those changes should not be made from this repository session unless explicitly
+authorized in those repos.
 
-The emitters should not reparse SDL. They should consume `SchemaOperation` data
-and generate callable Rust/TypeScript surfaces for root operations such as:
+Suggested out-of-repo prompts:
+
+- In the jedit repository: replace handwritten hot text runtime shadow models
+  with Rust and TypeScript artifacts generated from Wesley's
+  `test/fixtures/consumer-models/jedit-hot-text-runtime.graphql` equivalent,
+  then update imports until jedit uses the generated request/response bindings.
+- In the Echo repository: consume Wesley's schema operation catalog or generated
+  Rust operation bindings, and keep Echo-owned `@wes_footprint` honesty checks
+  in Echo rather than moving them into `wesley-core`.
+- In the warp-ttd and Continuum repositories: treat Wesley-generated TypeScript
+  operation bindings as the protocol boundary for jedit runtime operations.
+
+The current generated operation surface connects root operations such as:
 
 ```graphql
 createBufferWorldline(
@@ -88,8 +109,7 @@ createBufferWorldline(
 ): CreateBufferWorldlineResult!
 ```
 
-The first useful target is generated types or traits/functions that clearly
-connect:
+The generated bindings now connect:
 
 - operation kind
 - operation field name
@@ -99,4 +119,4 @@ connect:
 
 ## Progress
 
-`[###################################---------------] 70%`
+`[#############################################-----] 90%`

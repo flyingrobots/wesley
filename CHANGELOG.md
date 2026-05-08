@@ -32,6 +32,11 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   arguments, result types, and generic directive JSON. Exposed it as
   `wesley schema operations --schema <path> --json` and covered it with a full
   jedit hot text runtime fixture.
+- **Native operation binding emission**: Added Rust and TypeScript operation
+  binding projection from `SchemaOperation` data. `wesley emit rust` now emits
+  request structs, response aliases, and preserved directive metadata constants
+  for root operations; `wesley emit typescript` now emits request interfaces,
+  response aliases, operation metadata constants, and operation type aliases.
 - **Native TypeScript emitter**: Added `crates/wesley-emit-typescript`, a
   structured TypeScript declaration AST/printer projection from Wesley L1 IR,
   and exposed it as `wesley emit typescript --schema <path> --out <path>`.
