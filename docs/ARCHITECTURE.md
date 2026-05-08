@@ -1,234 +1,510 @@
 # ARCHITECTURE
+<!-- docs-truth: status=experimental owner=@flyingrobots -->
 
-Wesley is a schema-first compiler-and-assurance platform.
+Wesley is a schema-first compiler kernel and assurance toolchain.
 
-The clean picture is:
+The current architecture is intentionally narrower than older product-era docs:
 
-- **0. Wesley Base Platform**
-- **1. Wesley Extension Modules**
-- **2. Project Workspace**
+```text
+authored GraphQL -> Wesley core facts -> module-owned targets / evidence / hosts
+```
 
-This note is the high-level map of how those pieces fit together.
+Wesley owns compiler truth. External modules and sibling repos own target
+semantics, runtime policy, database behavior, Echo behavior, and deployment.
 
-For the noun-by-noun version, use [WESLEY_GLOSSARY.md](./WESLEY_GLOSSARY.md).
-For the stage-by-stage bundle flow, use
-[design/wesley-pipeline.md](./design/wesley-pipeline.md).
+For the noun-by-noun reference, use [WESLEY_GLOSSARY.md](./WESLEY_GLOSSARY.md).
+For current direction and active tensions, use [BEARING.md](./BEARING.md).
+For work doctrine, use [METHOD.md](./METHOD.md).
 
-## System Shape
+## Where This Leaves Us
+
+The repo is now split into three practical layers:
+
+1. **Rust kernel**: `crates/wesley-core` is the emerging authoritative compiler
+   library. It lowers GraphQL SDL into L1 IR and exposes generic operation facts.
+2. **Native front door**: `crates/wesley-cli` is a tiny Rust binary. Today it is
+   mostly a stable executable shell around the Rust workspace, not a featureful
+   command surface.
+3. **Legacy / module tooling**: `packages/` still carries the historical Node
+   compiler, module runtime, generators, hosts, Holmes tooling, and fixture
+   packages. These remain useful, but they are no longer the center of gravity
+   for core compiler truth.
+
+The most recent boundary cleanup removed root-level footprint checking from
+Wesley. `wesley-core` now exposes generic operation selection and directive
+argument extraction. Echo-specific footprint honesty belongs in Echo-owned
+tooling, not in generic Wesley.
+
+## System Context
+
+```mermaid
+flowchart LR
+    Author[Human or agent author] --> SDL[Authored GraphQL SDL]
+    Author --> OP[GraphQL operation documents]
+
+    subgraph WesleyRepo["Wesley repository"]
+        subgraph Rust["Rust workspace"]
+            Core[wesley-core]
+            NativeCli[wesley-cli]
+            Xtask[xtask]
+        end
+
+        subgraph Node["Legacy Node packages"]
+            JsCore["@wesley/core"]
+            JsCli["@wesley/cli"]
+            Runtime["@wesley/runtime-node"]
+            HostNode["@wesley/host-node"]
+            Generators["@wesley/generator-*"]
+            Holmes["@wesley/holmes"]
+        end
+
+        Docs[docs/]
+        Schemas[schemas/]
+        Fixtures[test/fixtures/]
+        Scripts[scripts/]
+    end
+
+    subgraph External["External owners"]
+        Echo[Echo-owned Wesley integration]
+        Postgres[wesley-postgres]
+        Continuum[Continuum-owned modules]
+        Apps[Project workspaces]
+    end
+
+    SDL --> Core
+    OP --> Core
+    NativeCli --> Core
+    Xtask --> NativeCli
+    Xtask --> Core
+
+    SDL --> JsCli
+    JsCli --> JsCore
+    JsCli --> Runtime
+    Runtime --> JsCore
+    JsCore --> Generators
+    JsCore --> Holmes
+
+    Core --> Fixtures
+    JsCore --> Schemas
+    Scripts --> Docs
+    Scripts --> JsCli
+
+    Core -. generic facts .-> Echo
+    Core -. L1 IR .-> Postgres
+    JsCli -. module loading .-> Continuum
+    Generators -. generated artifacts .-> Apps
+```
+
+The dashed arrows are intentional boundaries. Wesley can produce facts and
+artifacts that external systems consume, but it should not absorb their runtime
+semantics.
+
+## Repo Tour
+
+| Path | Role |
+| --- | --- |
+| `crates/wesley-core/` | Rust compiler kernel. Parses/lower SDL to domain-empty L1 IR and analyzes operation documents. |
+| `crates/wesley-cli/` | Native Rust `wesley` binary. Currently minimal: help and unknown-command handling. |
+| `xtask/` | Rust repository automation: tests, native preflight, release check, legacy preflight bridge. |
+| `packages/wesley-core/` | Historical JS core: domain/application/port modules, module capabilities, generation pipeline, hashes, runtime-event helpers. |
+| `packages/wesley-cli/` | Historical JS CLI command framework and module-aware command surfaces. |
+| `packages/wesley-host-node/` | Node executable wrapper around the JS CLI and runtime adapters. |
+| `packages/wesley-runtime-node/` | Shared Node module discovery/loading and host utilities. |
+| `packages/wesley-generator-js/` | TypeScript/Zod/model generation surface. |
+| `packages/wesley-generator-vue/` | Experimental Vue-facing generator surface. |
+| `packages/wesley-holmes/` | Evidence, verification, counterfactual, Holmes/Moriarty-era tooling. |
+| `packages/wesley-host-browser/`, `wesley-host-bun/`, `wesley-host-deno/` | Experimental host adapters. |
+| `packages/wesley-tasks/` | Task planning/orchestration utilities. |
+| `packages/wesley-test-fixtures/` | Shared test fixtures and schema builders for package tests. |
+| `schemas/` | JSON schemas and generic directive/schema assets used by tooling and tests. |
+| `test/fixtures/` | GraphQL fixtures, Rust L1 goldens, package examples, and reference schemas. |
+| `scripts/` | Preflight, docs truth, docs link, fixture generation, smoke, and CI helper scripts. |
+| `docs/` | Operator docs, architecture, design packets, backlog, audits, specs, and method docs. |
+| `.github/workflows/` | CI workflows for Rust, packages, docs, hosts, security, and progress badges. |
+
+Some directories still contain extraction residue. In particular,
+`packages/wesley-generator-echo/` exists on disk but is not an active tracked
+source package in this architecture. Echo-owned work should happen in Echo.
+
+## Rust Kernel
+
+`crates/wesley-core` is the cleanest current source of compiler truth.
+
+It has three internal areas:
+
+| Area | Files | Responsibility |
+| --- | --- | --- |
+| Domain | `src/domain/*` | IR structs, operation-analysis structs, error types, hashes. |
+| Ports | `src/ports/*` | Host-neutral traits such as `LoweringPort`. |
+| Adapters | `src/adapters/*` | Concrete parser/lowering implementation, currently Apollo Parser. |
+
+Public Rust APIs currently include:
+
+- `lower_schema_sdl(sdl) -> WesleyIR`
+- `resolve_operation_selections(operation_sdl) -> Vec<String>`
+- `resolve_operation_selections_with_schema(schema_sdl, operation_sdl) -> Vec<String>`
+- `extract_operation_directive_args(operation_sdl, directive_name) -> Vec<OperationDirectiveArgs>`
+- `compute_registry_hash(ir) -> String`
+- `compute_content_hash(content) -> String`
+- `to_canonical_json(value) -> String`
+
+### Rust Flow
 
 ```mermaid
 flowchart TD
-    subgraph Project["2. Project Workspace"]
-        SDL[Authored GraphQL Schemas]
-        CFG[Project Config / Tests / Policies]
-        OUT[Generated Outputs]
-        DEP[Project Deployment Layer]
-    end
+    SDL[GraphQL SDL] --> Apollo[Apollo parser]
+    Apollo --> CST[CST document]
+    CST --> Consolidation[Semantic consolidation]
+    Consolidation --> Types[Type definitions]
+    Types --> IR[WesleyIR L1]
+    IR --> Canonical[Canonical JSON]
+    Canonical --> Hash[Registry hash]
 
-    subgraph Modules["1. External Wesley Modules"]
-        TARGETS[Target Modules]
-        POLICY[Policy / Witness Modules]
-        CUSTOM[Project Custom Modules]
-    end
-
-    subgraph Base["0. Wesley Base Platform"]
-        W[Wesley Compiler]
-        H[Holmes + Watson]
-        M[Moriarty]
-        B[BLADE]
-        HOST[CLI / Hosts / Shared Plumbing]
-    end
-
-    SDL --> W
-    CFG --> Modules
-    Modules --> W
-    Modules --> H
-    Modules --> M
-    Modules --> B
-    W --> H
-    W --> M
-    H --> M
-    M --> B
-    W --> OUT
-    B --> OUT
-    OUT --> DEP
+    OP[GraphQL operation] --> OpParse[Operation parser]
+    OpParse --> Selections[Response-path selections]
+    OpParse --> Directives[Directive argument JSON]
+    SDL --> SchemaIndex[Schema index]
+    SchemaIndex --> Coordinates[Schema-coordinate selections]
+    OpParse --> Coordinates
 ```
 
-The important responsibility cut is:
+L1 IR is domain-empty. It knows GraphQL types, fields, directives, interfaces,
+unions, enum values, input objects, nullability, lists, and source-level
+directive data. It does not know tables, Echo graph nodes, migrations, routes,
+deployments, or runtime policy.
 
-- Wesley base platform stays project-agnostic
-- external modules add domain meaning through explicit hooks
-- project workspaces own authored schemas, local tests/policies, and deployment
+### Rust Class Diagram
 
-## Repo Boundary Rule
+```mermaid
+classDiagram
+    class WesleyIR {
+        +String version
+        +Option~Metadata~ metadata
+        +Vec~TypeDefinition~ types
+    }
 
-Wesley is the core `GraphQL -> whatever` compiler and assurance toolchain. The
-`whatever` is not part of this repository.
+    class TypeDefinition {
+        +String name
+        +TypeKind kind
+        +Option~String~ description
+        +IndexMap directives
+        +Vec~String~ implements
+        +Vec~Field~ fields
+        +Vec~String~ enum_values
+        +Vec~String~ union_members
+    }
 
-That means:
+    class Field {
+        +String name
+        +Option~String~ description
+        +TypeReference type
+        +IndexMap directives
+    }
 
-- target semantics live in modules
-- domain generators live in modules
-- domain witness scopes and policies live in modules
-- domain runtime or workspace conventions live outside Wesley
+    class TypeReference {
+        +String base
+        +bool nullable
+        +bool is_list
+        +Option~bool~ list_item_nullable
+    }
 
-Continuum-specific behavior belongs in Continuum or a Continuum-owned module
-repo. PostgreSQL/Supabase behavior belongs in a `wesley-postgres` repo. Their
-historical presence here is extraction debt, not architecture.
+    class OperationDirectiveArgs {
+        +String directive_name
+        +IndexMap arguments
+    }
 
-## The Three Layers
+    class LoweringPort {
+        <<trait>>
+        +lower_sdl(sdl)
+    }
 
-### 0. Wesley Base Platform
+    class ApolloLoweringAdapter {
+        +new(usize)
+        +parse_and_lower(sdl)
+    }
 
-The base platform contains the generic engines and entry points.
+    class WesleyError {
+        <<enum>>
+        ParseError
+        LoweringError
+        ResilienceError
+    }
 
-It includes:
+    WesleyIR "1" --> "*" TypeDefinition
+    TypeDefinition "1" --> "*" Field
+    Field "1" --> "1" TypeReference
+    LoweringPort <|.. ApolloLoweringAdapter
+    ApolloLoweringAdapter --> WesleyIR
+    ApolloLoweringAdapter --> WesleyError
+```
 
-- **Wesley**
-  - GraphQL parsing
-  - directive handling
-  - IR lowering
-  - generator/plugin orchestration
-  - artifact emission
-- **Holmes + Watson**
-  - verification
-  - witness/evidence
-  - trust and consistency checks
-- **Moriarty**
-  - policy
-  - judgment
-  - prediction and counterfactual analysis
-- **BLADE**
-  - certification and release-readiness orchestration
-- **CLI / hosts / plumbing**
-  - node/browser/bun/deno host surfaces
-  - command runners
-  - runtime helpers
+### L1 IR Entity Relationship
 
-The base platform should not know project semantics directly.
+```mermaid
+erDiagram
+    WESLEY_IR ||--o{ TYPE_DEFINITION : contains
+    TYPE_DEFINITION ||--o{ FIELD : declares
+    FIELD ||--|| TYPE_REFERENCE : has
+    TYPE_DEFINITION ||--o{ DIRECTIVE_VALUE : annotates
+    FIELD ||--o{ DIRECTIVE_VALUE : annotates
+    TYPE_DEFINITION ||--o{ IMPLEMENTS_EDGE : implements
+    TYPE_DEFINITION ||--o{ UNION_MEMBER : includes
+    TYPE_DEFINITION ||--o{ ENUM_VALUE : declares
 
-### 1. External Wesley Modules
+    WESLEY_IR {
+        string version
+        object metadata
+    }
+    TYPE_DEFINITION {
+        string name
+        string kind
+        string description
+    }
+    FIELD {
+        string name
+        string description
+    }
+    TYPE_REFERENCE {
+        string base
+        bool nullable
+        bool is_list
+        bool list_item_nullable
+    }
+    DIRECTIVE_VALUE {
+        string name
+        json arguments
+    }
+    IMPLEMENTS_EDGE {
+        string interface_name
+    }
+    UNION_MEMBER {
+        string type_name
+    }
+    ENUM_VALUE {
+        string value
+    }
+```
 
-Modules extend the base platform with domain or ecosystem meaning.
+## Native CLI And Xtask
 
-A module may add:
+The native CLI is intentionally small:
 
-- custom GraphQL directives
-- generator plugins
-- witness scopes
-- judgment and policy rules
-- bundle or projection behavior
-- BLADE environment setup or extra test surfaces
+```mermaid
+flowchart LR
+    User --> CargoWesley[cargo wesley]
+    CargoWesley --> WesleyBin[crates/wesley-cli]
+    WesleyBin --> Help[help output]
+    WesleyBin --> Unknown[unknown command -> exit 2]
 
-Modules should extend the platform through explicit hooks, not by contaminating
-the base platform with domain-specific imports.
+    Maintainer --> CargoXtask[cargo xtask]
+    CargoXtask --> Tests[cargo test --workspace]
+    CargoXtask --> NativeHelp[cargo run --bin wesley -- --help]
+    CargoXtask --> Release[cargo build --release + package wesley-core]
+    CargoXtask --> Legacy[pnpm run preflight]
+```
 
-Examples of module homes are external to this repo:
+`cargo xtask preflight` is the current native health check. It runs Rust
+workspace tests and verifies the native CLI help surface. `cargo xtask
+legacy-preflight` intentionally crosses into Node package tooling because docs,
+legacy packages, and module examples still need that coverage.
 
-- a target module that emits one language or runtime projection
-- a policy module that contributes witness scopes and gates
-- a project module that contributes local directives or fixtures
-- a product/domain module owned by that product's repo
+## Legacy Node Tooling
 
-### 2. Project Workspace
+The Node packages are still active for legacy compiler workflows, module
+loading, generated TypeScript/Zod output, host experiments, and Holmes-era
+assurance tooling. They are not the preferred home for new compiler-kernel
+truth.
 
-This is where an actual user lives.
+The central JS split is:
 
-A project workspace contains:
+- `@wesley/core`: package-era domain/application/ports layer.
+- `@wesley/cli`: command framework and module-aware CLI commands.
+- `@wesley/runtime-node`: module discovery/loading and Node host utilities.
+- `@wesley/host-node`: executable wrapper for the JS CLI.
+- generator packages: output-specific code generation.
+- Holmes/Watson/Moriarty/BLADE-era packages and docs: generic assurance work,
+  still in extraction and cleanup.
 
-- authored schemas
-- project config
-- project-specific tests and policies
-- generated outputs
-- local custom modules
-- deployment and runtime layers
+### Module Capability Model
 
-Wesley should help the project become deployable.
-Wesley should **not** own the deployment step itself.
+External modules are the JS-side extension seam. A module has an API version,
+a name, optional initialization, optional CLI command registration, and optional
+structured capabilities.
 
-## The Bundle Pipeline
+Capability areas are currently:
 
-The clean stage model is:
+- `wesley`: directives, targets, generators, bundle profiles, realization verifiers.
+- `holmes`: scopes, checks, evidence collectors, counterfactual providers.
+- `watson`: verifiers, audit profiles.
+- `moriarty`: policy profiles, judgment profiles, predictors.
+- `blade`: scenarios, fixtures, environment setup, tests, gates, certification profiles.
+- `cli`: commands.
+
+```mermaid
+erDiagram
+    MODULE ||--o{ MODULE_SUMMARY : records
+    MODULE ||--o{ CAPABILITY_ENTRY : contributes
+    CAPABILITY_REGISTRY ||--o{ MODULE_SUMMARY : lists
+    CAPABILITY_REGISTRY ||--o{ CAPABILITY_AREA : contains
+    CAPABILITY_AREA ||--o{ CAPABILITY_COLLECTION : contains
+    CAPABILITY_COLLECTION ||--o{ CAPABILITY_ENTRY : stores
+
+    MODULE {
+        string apiVersion
+        string name
+    }
+    MODULE_SUMMARY {
+        string name
+        string apiVersion
+    }
+    CAPABILITY_REGISTRY {
+        object modules
+        object capabilities
+    }
+    CAPABILITY_AREA {
+        string name
+    }
+    CAPABILITY_COLLECTION {
+        string name
+    }
+    CAPABILITY_ENTRY {
+        string moduleName
+        object value
+    }
+```
+
+### Module-Aware Compile Flow
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant CLI as @wesley/cli
+    participant Loader as @wesley/runtime-node
+    participant Registry as ModuleCapabilityRegistry
+    participant Target as External target module
+    participant Core as @wesley/core
+    participant Out as Generated artifacts
+
+    User->>CLI: pnpm wesley compile --schema schema.graphql --target name
+    CLI->>Loader: discover configured/env/default modules
+    Loader->>Registry: normalize and freeze capabilities
+    CLI->>Registry: list wesley.targets
+    CLI->>Target: run selected target descriptor
+    Target->>Core: lower/read schema facts as needed
+    Target->>Out: emit target-owned artifacts
+    CLI->>User: summary / dry-run / errors
+```
+
+This is still a useful surface. The architectural rule is that target meaning
+comes from the module, not from generic Wesley.
+
+## Assurance And Evidence
+
+Wesley keeps separate layers for authored source, compiler facts, generated
+artifacts, and bounded evidence:
+
+```mermaid
+flowchart TD
+    Source[Authored source] --> IR[Lowered IR]
+    IR --> Artifact[Generated artifact family]
+    Artifact --> Shell[Realization shell]
+    Source --> Evidence[Witness / evidence]
+    IR --> Evidence
+    Artifact --> Evidence
+    Shell --> Evidence
+    Evidence --> Judgment[Judgment / certification]
+```
+
+The key invariant is not "the generated files are true." The invariant is:
 
 ```text
-Wesley -> Holmes -> Watson -> Moriarty -> BLADE
+generated files are derived from named authored source through a recorded tool path
 ```
 
-The more honest operational model is:
+Witness and evidence outputs are bounded claims. They should say exactly what
+was checked and should not pretend to be runtime observation unless that is the
+explicit witness scope.
+
+## What Wesley Does Today
+
+Wesley currently does these things in this repo:
+
+- Lowers GraphQL SDL into a Rust L1 IR with consolidated type definitions.
+- Preserves generic directives as JSON values in type and field IR.
+- Computes canonical JSON and SHA-256 registry/content hashes.
+- Resolves operation selection paths in response-path mode.
+- Resolves operation selection paths in schema-coordinate mode.
+- Extracts operation directive arguments by directive name.
+- Provides a native Rust workspace preflight and release check.
+- Maintains package-era JS compile/generate/module/host tooling.
+- Maintains docs, schemas, fixtures, CI scripts, and design packets around the
+  broader compiler-and-assurance system.
+
+## What Wesley Does Not Own
+
+Wesley does not own these semantics:
+
+- Echo rewrite scheduling or footprint honesty enforcement.
+- PostgreSQL migrations, SQL lowering, RLS policy, or database deployment.
+- Continuum product/runtime behavior.
+- Project-specific deployment.
+- Agent repository aperture policy.
+- Host-specific runtime trust decisions beyond its own module-loading guards.
+
+Those systems may consume Wesley facts. They should not become Wesley core.
+
+## Test And Evidence Surfaces
+
+```mermaid
+flowchart LR
+    RustTests[cargo test --workspace] --> CoreTests[core lowering + operation analysis]
+    RustTests --> CliTests[native CLI help/unknown command]
+    Preflight[cargo xtask preflight] --> RustTests
+    Preflight --> NativeHelp[native help smoke]
+    Legacy[cargo xtask legacy-preflight] --> Pnpm[pnpm run preflight]
+    Pnpm --> Links[docs links]
+    Pnpm --> DocsTruth[docs truth manifest]
+    Pnpm --> Literals[forbidden local literals]
+    Pnpm --> CliDocs[front-door CLI docs guard]
+    Pnpm --> DepCruise[dependency-cruiser]
+```
+
+Use native checks for Rust-core work. Use legacy preflight when changing docs,
+package boundaries, JS command examples, or module-loading behavior.
+
+## Ownership Rules
+
+1. If it changes GraphQL parsing, L1 IR, operation analysis, canonical JSON, or
+   compiler hashes, it belongs in `crates/wesley-core`.
+2. If it is a native user command, add it only when it is backed by pure
+   `wesley-core` behavior and documented as current.
+3. If it is repository automation, put it in `xtask` or a script called by
+   `xtask`.
+4. If it is target semantics, make it a module or put it in the owning external
+   repo.
+5. If it is Echo, PostgreSQL, Continuum, or app runtime meaning, keep it outside
+   generic Wesley.
+6. If docs describe old product surfaces, mark them as historical/extraction
+   context or remove the current-surface wording.
+
+## North Star
+
+Wesley is becoming a Rust library that can be embedded by other systems while
+still preserving package-era module workflows during the transition.
+
+The durable shape is:
 
 ```text
-WesleyOutputBundle
-  -> Holmes
-  -> Watson
-
-HolmesOutputBundle + WatsonOutputBundle + history/runtime/counterfactual context
-  -> Moriarty
-
-WesleyOutputBundle + HolmesOutputBundle + WatsonOutputBundle + MoriartyOutputBundle
-+ project test/environment extensions
-  -> BLADE
+Rust core: deterministic compiler facts
+Native CLI: small local executable surface
+WASM / bindings: future portable capability boundary
+Node packages: legacy host and module tooling during extraction
+External modules: target and domain meaning
+Project workspaces: authored schemas, policy, runtime, deployment
 ```
 
-This means:
-
-- **Wesley** compiles authored contracts into artifact bundles
-- **Holmes** investigates structural completeness, evidence, and risk surfaces
-- **Watson** verifies the evidence chain itself
-- **Moriarty** produces judgment and prediction from evidence plus context
-- **BLADE** turns all of that into a tested, certified, deployable bundle or failure bundle
-
-BLADE stops short of deployment.
-The project or operator layer deploys.
-
-## Compiler And Assurance Surfaces
-
-Wesley's important internal surfaces are:
-
-1. **Authored source**
-   - sovereign GraphQL SDL
-2. **Lowered IR**
-   - Wesley's admitted internal reading of the authored schema
-3. **Emitted artifact family**
-   - generated files for one compile leg
-4. **Realization shell**
-   - packaging shell around emitted artifacts
-5. **Witness / evidence / judgment outputs**
-   - bounded claims from Holmes, Watson, Moriarty, and BLADE
-
-This distinction matters because Wesley must stay honest about what it proves.
-
-For the current doctrine behind authored source, realization shells, and bounded
-witness claims, use
-[design/0004-realization-admission-and-witness/realization-admission-and-witness.md](./design/0004-realization-admission-and-witness/realization-admission-and-witness.md).
-
-## Current Honest Posture
-
-Wesley is still carrying historical domain residue from earlier identities:
-
-- database-change compiler/toolchain surfaces
-- product-specific contract compiler/toolchain surfaces
-- verification and judgment surfaces coupled to product backends
-
-The current architecture should be read as:
-
-- one base platform
-- external extension modules
-- many possible project workspaces
-
-The cleanup target is stricter than "one product lane is not the whole system":
-no product or database lane should live in this repo at all.
-
-## Practical Rule
-
-When you are unsure where something belongs, ask:
-
-1. Is this compiler truth?
-2. Is this generic assurance/tooling?
-3. Is this domain/module meaning?
-4. Is this project/workspace policy?
-5. Is this deployment/runtime behavior that Wesley should stop short of?
-
-That usually tells you which layer owns the thing.
+That shape keeps the compiler honest. Wesley says what the schema and operation
+mean. Other systems decide what those facts imply for their runtime.
 
 ---
-**The goal is inevitably. Wesley compiles, verifies, judges, and certifies; projects decide what to ship.**
+**The goal is inevitably. Wesley owns compiler truth; target worlds own their own meaning.**
