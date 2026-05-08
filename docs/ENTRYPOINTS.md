@@ -22,8 +22,8 @@ or ported. Their migration map lives in
 
 | Surface | Path | Status | What it does |
 | --- | --- | --- | --- |
-| Rust compiler kernel | `crates/wesley-core/` | Canonical for new compiler work | Lowers GraphQL SDL into domain-empty L1 IR; resolves operation selections; extracts directive arguments. |
-| Native Wesley command | `crates/wesley-cli/` | Rust product CLI | Provides schema lowering, schema hashing, operation selection analysis, and directive argument extraction from the Rust core. |
+| Rust compiler kernel | `crates/wesley-core/` | Canonical for new compiler work | Lowers GraphQL SDL into domain-empty L1 IR; diffs L1 schema structure; resolves operation selections; extracts directive arguments. |
+| Native Wesley command | `crates/wesley-cli/` | Rust product CLI | Provides schema lowering, schema hashing, schema diffing, operation selection analysis, and directive argument extraction from the Rust core. |
 | Repo automation | `xtask/` | Current Rust maintenance front door | Runs docs checks, Rust tests, native preflight, release checks, and the legacy preflight bridge. |
 | Legacy JS core | `packages/wesley-core/` | Legacy/tooling | Historical JavaScript compiler domain, module registry, hashes, generation pipeline, and runtime helpers. |
 | Legacy JS CLI | `packages/wesley-cli/` | Legacy/tooling | Historical command framework for generate/transform/typescript/zod/diff/cert/Holmes-era flows. |
@@ -41,6 +41,7 @@ It can:
 - parse and lower GraphQL SDL into the L1 semantic IR
 - consolidate `extend type` blocks before lowering
 - compute stable canonical JSON and hashes for L1 IR
+- compute structural L1 schema deltas
 - resolve GraphQL operation selection paths
 - resolve schema-coordinate selections when schema SDL is available
 - extract arbitrary operation directive arguments as data
@@ -50,6 +51,7 @@ The native CLI exposes those facts through:
 ```bash
 wesley schema lower --schema <path> --json
 wesley schema hash --schema <path>
+wesley schema diff --old <path> --new <path> [--format text|json|summary] [--exit-code]
 wesley operation selections --operation <path> [--schema <path>] [--json]
 wesley operation directive-args --operation <path> --directive <name> --json
 ```

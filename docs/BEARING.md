@@ -44,9 +44,9 @@ timeline
 ### 4. Rust-Native Front Door
 - Treating the Rust workspace as the primary surface for core compiler work.
 - Keeping the native `wesley` binary pointed at pure `wesley-core` library
-  behavior. It now exposes schema lowering, schema hashing, operation
-  selections, and directive argument extraction before any host adapters, MCP, or
-  runtime embedding.
+  behavior. It now exposes schema lowering, schema hashing, schema diffing,
+  operation selections, and directive argument extraction before any host
+  adapters, MCP, or runtime embedding.
 - Using `cargo xtask` for repository automation so Rust-native checks keep
   moving away from npm scripts. Native preflight now includes Rust docs checks,
   Rust tests, and native CLI help.
@@ -60,6 +60,9 @@ timeline
   presented as competing Wesley products.
 - Maintaining [LEGACY_NODE_MIGRATION.md](./LEGACY_NODE_MIGRATION.md) as the
   command/package disposition map for the move to a pure Rust Wesley.
+- Treating `wesley schema diff` as the first native port of a legacy Node
+  command: it compares L1 schema structure now, while argument-aware operation
+  deltas wait on an explicit IR/API decision.
 
 ## Tensions
 

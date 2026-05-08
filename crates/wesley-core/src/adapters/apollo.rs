@@ -3,6 +3,7 @@
 use crate::domain::error::WesleyError;
 use crate::domain::ir::*;
 use crate::domain::operation::OperationDirectiveArgs;
+use crate::domain::schema_delta::{diff_schema_ir, SchemaDelta};
 use crate::ports::lowering::LoweringPort;
 use apollo_parser::{cst, Parser};
 use async_trait::async_trait;
@@ -33,6 +34,15 @@ impl LoweringPort for ApolloLoweringAdapter {
 /// Lowers GraphQL SDL into the Wesley L1 IR using the Apollo parser adapter.
 pub fn lower_schema_sdl(sdl: &str) -> Result<WesleyIR, WesleyError> {
     ApolloLoweringAdapter::new(0).parse_and_lower(sdl)
+}
+
+/// Computes the structural L1 delta between two GraphQL SDL documents.
+pub fn diff_schema_sdl(old_sdl: &str, new_sdl: &str) -> Result<SchemaDelta, WesleyError> {
+    let adapter = ApolloLoweringAdapter::new(0);
+    let old_ir = adapter.parse_and_lower(old_sdl)?;
+    let new_ir = adapter.parse_and_lower(new_sdl)?;
+
+    Ok(diff_schema_ir(&old_ir, &new_ir))
 }
 
 /// Represents the consolidated parts of a single GraphQL Type.

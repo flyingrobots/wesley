@@ -27,7 +27,7 @@ Every legacy Node surface gets one disposition:
 | `typescript` / `ts` | `packages/wesley-cli/src/commands/typescript.mjs` | Port | Build a Rust TypeScript projection after L1 IR is stable. Destination is a Rust codegen module or crate, not JS. |
 | `zod` | `packages/wesley-cli/src/commands/zod.mjs` | Port | Build a Rust Zod projection if Wesley still owns this generic output. |
 | `models` | `packages/wesley-cli/src/commands/models.mjs` | Delete or extract | Model-class scaffolding is not core compiler truth. Keep only if a Rust target module explicitly owns it. |
-| `diff` | `packages/wesley-cli/src/commands/diff.mjs` | Port | Generic schema diff belongs in Rust if it stays in Wesley. |
+| `diff` | `packages/wesley-cli/src/commands/diff.mjs` | Ported | Native `wesley schema diff` now compares L1 schema structure in Rust. Argument-aware operation deltas remain a separate IR/API decision because L1 fields do not currently carry field arguments. |
 | `init` | `packages/wesley-cli/src/commands/init.mjs` | Port small or delete | A native `wesley init` is acceptable only as a tiny schema starter. Do not scaffold product conventions in core. |
 | `doctor` | `packages/wesley-cli/src/commands/doctor.mjs` | Port narrow | Rebuild only Rust-native health checks. Drop Node/plugin resolver checks once Node packages retire. |
 | `validate-bundle` | `packages/wesley-cli/src/commands/validate-bundle.mjs` | Defer | Port only if Rust evidence bundles remain a Wesley-owned surface. Otherwise extract to assurance tooling. |
@@ -59,7 +59,8 @@ Every legacy Node surface gets one disposition:
 
 1. Keep shipping Rust-native compiler facts through `crates/wesley-core` and
    `crates/wesley-cli`.
-2. Port generic schema diff if it is still wanted.
+2. Port generic schema diff if it is still wanted. Done for L1 schema
+   structure through `wesley schema diff`.
 3. Port TypeScript/Zod only after deciding the Rust target boundary.
 4. Replace Node `generate` with explicit Rust emit commands.
 5. Remove Node host/runtime packages once no CLI command needs them.

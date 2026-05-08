@@ -3,3 +3,4 @@
 pub mod error;
 pub mod ir;
 pub mod operation;
+pub mod schema_delta;

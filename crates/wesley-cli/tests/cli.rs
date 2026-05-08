@@ -9,6 +9,7 @@ fn help_exits_zero_without_footprint_command() {
     let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
     assert!(stdout.contains("Wesley native CLI"));
     assert!(stdout.contains("schema lower"));
+    assert!(stdout.contains("schema diff"));
     assert!(stdout.contains("operation selections"));
     assert!(!stdout.contains("check-footprint"));
 }
@@ -71,6 +72,117 @@ fn schema_hash_matches_l1_hash_fixture() {
         .expect("hash fixture should read");
 
     assert_eq!(stdout.trim(), expected.trim());
+}
+
+#[test]
+fn schema_diff_emits_l1_delta_as_json() {
+    let old_schema = temp_file(
+        "schema-diff-old.graphql",
+        r#"
+        type Query {
+          viewer: Viewer
+        }
+
+        type Viewer {
+          id: ID!
+          name: String
+        }
+        "#,
+    );
+    let new_schema = temp_file(
+        "schema-diff-new.graphql",
+        r#"
+        type Query {
+          viewer: Viewer
+        }
+
+        type Viewer {
+          id: ID!
+          handle: String
+        }
+
+        type Team {
+          id: ID!
+        }
+        "#,
+    );
+
+    let output = wesley()
+        .args(["schema", "diff", "--old"])
+        .arg(&old_schema)
+        .arg("--new")
+        .arg(&new_schema)
+        .arg("--json")
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let json: serde_json::Value = serde_json::from_str(&stdout).expect("stdout should be json");
+
+    assert_eq!(json["addedTypes"][0]["name"], "Team");
+    assert_eq!(json["modifiedTypes"][0]["name"], "Viewer");
+    assert_eq!(
+        json["modifiedTypes"][0]["fieldChanges"][0]["name"],
+        "handle"
+    );
+
+    let _ = std::fs::remove_file(old_schema);
+    let _ = std::fs::remove_file(new_schema);
+}
+
+#[test]
+fn schema_diff_exit_code_reports_breaking_changes() {
+    let old_schema = temp_file(
+        "schema-diff-breaking-old.graphql",
+        r#"
+        type Query {
+          viewer: Viewer
+        }
+
+        type Viewer {
+          id: ID!
+          name: String
+        }
+        "#,
+    );
+    let new_schema = temp_file(
+        "schema-diff-breaking-new.graphql",
+        r#"
+        type Query {
+          viewer: Viewer
+        }
+
+        type Viewer {
+          id: ID!
+        }
+        "#,
+    );
+
+    let output = wesley()
+        .args([
+            "schema",
+            "diff",
+            "--format",
+            "summary",
+            "--breaking-only",
+            "--exit-code",
+            "--old",
+        ])
+        .arg(&old_schema)
+        .arg("--new")
+        .arg(&new_schema)
+        .output()
+        .expect("wesley should run");
+
+    assert_eq!(output.status.code(), Some(1));
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+    assert_eq!(stdout.trim(), "1 breaking");
+    assert!(stderr.is_empty());
+
+    let _ = std::fs::remove_file(old_schema);
+    let _ = std::fs::remove_file(new_schema);
 }
 
 #[test]

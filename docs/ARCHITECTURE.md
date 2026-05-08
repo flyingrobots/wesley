@@ -25,11 +25,11 @@ For work doctrine, use [METHOD.md](./METHOD.md).
 The repo is now split into three practical layers:
 
 1. **Rust kernel / brain**: `crates/wesley-core` is the emerging authoritative
-   compiler library. It lowers GraphQL SDL into L1 IR and exposes generic
-   operation facts.
+   compiler library. It lowers GraphQL SDL into L1 IR, diffs L1 schema
+   structure, and exposes generic operation facts.
 2. **Native CLI / body**: `crates/wesley-cli` is the Rust product command. It
-   exposes schema lowering, schema hashing, operation selection analysis, and
-   directive argument extraction from the Rust core.
+   exposes schema lowering, schema hashing, schema diffing, operation selection
+   analysis, and directive argument extraction from the Rust core.
 3. **Legacy Node tooling**: `packages/` still carries the historical Node
    compiler, module runtime, generators, hosts, Holmes tooling, and fixture
    packages. These remain useful, but they are no longer the center of gravity
@@ -111,8 +111,8 @@ semantics.
 
 | Path | Role |
 | --- | --- |
-| `crates/wesley-core/` | Rust compiler kernel. Parses/lower SDL to domain-empty L1 IR and analyzes operation documents. |
-| `crates/wesley-cli/` | Native Rust `wesley` binary for schema and operation facts. |
+| `crates/wesley-core/` | Rust compiler kernel. Parses/lower SDL to domain-empty L1 IR, diffs L1 schema structure, and analyzes operation documents. |
+| `crates/wesley-cli/` | Native Rust `wesley` binary for schema deltas, schema hashes, and operation facts. |
 | `xtask/` | Rust repository automation: docs checks, tests, native preflight, release check, legacy preflight bridge. |
 | `packages/wesley-core/` | Historical JS core: domain/application/port modules, module capabilities, generation pipeline, hashes, runtime-event helpers. |
 | `packages/wesley-cli/` | Historical JS CLI command framework and module-aware command surfaces. |
@@ -149,6 +149,8 @@ It has three internal areas:
 Public Rust APIs currently include:
 
 - `lower_schema_sdl(sdl) -> WesleyIR`
+- `diff_schema_sdl(old_sdl, new_sdl) -> SchemaDelta`
+- `diff_schema_ir(old_ir, new_ir) -> SchemaDelta`
 - `resolve_operation_selections(operation_sdl) -> Vec<String>`
 - `resolve_operation_selections_with_schema(schema_sdl, operation_sdl) -> Vec<String>`
 - `extract_operation_directive_args(operation_sdl, directive_name) -> Vec<OperationDirectiveArgs>`
@@ -167,6 +169,7 @@ flowchart TD
     Types --> IR[WesleyIR L1]
     IR --> Canonical[Canonical JSON]
     Canonical --> Hash[Registry hash]
+    IR --> Delta[Schema delta]
 
     OP[GraphQL operation] --> OpParse[Operation parser]
     OpParse --> Selections[Response-path selections]
@@ -221,6 +224,21 @@ classDiagram
         +IndexMap arguments
     }
 
+    class SchemaDelta {
+        +Vec~TypeDelta~ added_types
+        +Vec~TypeDelta~ removed_types
+        +Vec~TypeModification~ modified_types
+    }
+
+    class TypeModification {
+        +String name
+        +bool breaking
+        +Vec~SchemaElementChange~ field_changes
+        +Vec~SchemaElementChange~ enum_value_changes
+        +Vec~SchemaElementChange~ union_member_changes
+        +Vec~SchemaElementChange~ directive_changes
+    }
+
     class LoweringPort {
         <<trait>>
         +lower_sdl(sdl)
@@ -241,6 +259,7 @@ classDiagram
     WesleyIR "1" --> "*" TypeDefinition
     TypeDefinition "1" --> "*" Field
     Field "1" --> "1" TypeReference
+    SchemaDelta "1" --> "*" TypeModification
     LoweringPort <|.. ApolloLoweringAdapter
     ApolloLoweringAdapter --> WesleyIR
     ApolloLoweringAdapter --> WesleyError
@@ -303,6 +322,7 @@ flowchart LR
     CargoWesley --> WesleyBin[crates/wesley-cli]
     WesleyBin --> SchemaLower[schema lower]
     WesleyBin --> SchemaHash[schema hash]
+    WesleyBin --> SchemaDiff[schema diff]
     WesleyBin --> OpSelections[operation selections]
     WesleyBin --> DirectiveArgs[operation directive-args]
     WesleyBin --> CoreFacts[wesley-core]

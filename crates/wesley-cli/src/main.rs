@@ -5,8 +5,9 @@ use std::fs;
 use std::path::PathBuf;
 use std::process::ExitCode;
 use wesley_core::{
-    compute_registry_hash, extract_operation_directive_args, lower_schema_sdl,
-    resolve_operation_selections, resolve_operation_selections_with_schema, WesleyError,
+    compute_registry_hash, diff_schema_sdl, extract_operation_directive_args, lower_schema_sdl,
+    resolve_operation_selections, resolve_operation_selections_with_schema, SchemaDelta,
+    WesleyError,
 };
 
 const EXIT_OK: u8 = 0;
@@ -78,6 +79,27 @@ fn run_schema_command(args: &[String]) -> Result<u8, CliError> {
 
             Ok(EXIT_OK)
         }
+        Some("diff") if wants_help(&args[1..]) => {
+            print_schema_help();
+            Ok(EXIT_OK)
+        }
+        Some("diff") => {
+            let options = parse_options(&args[1..], "schema diff")?;
+            let old_schema_path = options.required_old_schema("schema diff")?;
+            let new_schema_path = options.required_new_schema("schema diff")?;
+            let old_sdl = read_file(&old_schema_path, "old schema")?;
+            let new_sdl = read_file(&new_schema_path, "new schema")?;
+            let delta = diff_schema_sdl(&old_sdl, &new_sdl)?;
+            let output_format = options.output_format()?;
+
+            print_schema_delta(&delta, output_format, options.breaking_only)?;
+
+            if options.exit_code && delta.has_breaking_changes() {
+                Ok(EXIT_FAILURE)
+            } else {
+                Ok(EXIT_OK)
+            }
+        }
         Some(command) => Err(CliError::usage(format!(
             "unknown schema command '{command}'"
         ))),
@@ -138,8 +160,13 @@ fn run_operation_command(args: &[String]) -> Result<u8, CliError> {
 #[derive(Default)]
 struct ParsedOptions {
     schema: Option<PathBuf>,
+    old_schema: Option<PathBuf>,
+    new_schema: Option<PathBuf>,
     operation: Option<PathBuf>,
     directive: Option<String>,
+    format: Option<String>,
+    breaking_only: bool,
+    exit_code: bool,
     json: bool,
 }
 
@@ -148,6 +175,18 @@ impl ParsedOptions {
         self.schema
             .clone()
             .ok_or_else(|| CliError::usage(format!("missing --schema for `{command}`")))
+    }
+
+    fn required_old_schema(&self, command: &str) -> Result<PathBuf, CliError> {
+        self.old_schema
+            .clone()
+            .ok_or_else(|| CliError::usage(format!("missing --old for `{command}`")))
+    }
+
+    fn required_new_schema(&self, command: &str) -> Result<PathBuf, CliError> {
+        self.new_schema
+            .clone()
+            .ok_or_else(|| CliError::usage(format!("missing --new for `{command}`")))
     }
 
     fn required_operation(&self, command: &str) -> Result<PathBuf, CliError> {
@@ -161,6 +200,21 @@ impl ParsedOptions {
             .clone()
             .ok_or_else(|| CliError::usage(format!("missing --directive for `{command}`")))
     }
+
+    fn output_format(&self) -> Result<OutputFormat, CliError> {
+        if self.json {
+            return Ok(OutputFormat::Json);
+        }
+
+        match self.format.as_deref().unwrap_or("text") {
+            "text" => Ok(OutputFormat::Text),
+            "json" => Ok(OutputFormat::Json),
+            "summary" => Ok(OutputFormat::Summary),
+            format => Err(CliError::usage(format!(
+                "unknown output format '{format}'; expected text, json, or summary"
+            ))),
+        }
+    }
 }
 
 fn parse_options(args: &[String], command: &str) -> Result<ParsedOptions, CliError> {
@@ -172,6 +226,14 @@ fn parse_options(args: &[String], command: &str) -> Result<ParsedOptions, CliErr
             "--schema" | "-s" => {
                 index += 1;
                 options.schema = Some(PathBuf::from(required_value(args, index, "--schema")?));
+            }
+            "--old" => {
+                index += 1;
+                options.old_schema = Some(PathBuf::from(required_value(args, index, "--old")?));
+            }
+            "--new" => {
+                index += 1;
+                options.new_schema = Some(PathBuf::from(required_value(args, index, "--new")?));
             }
             "--operation" | "-o" => {
                 index += 1;
@@ -186,6 +248,16 @@ fn parse_options(args: &[String], command: &str) -> Result<ParsedOptions, CliErr
                     return Err(CliError::usage("missing directive name for --directive"));
                 }
                 options.directive = Some(name);
+            }
+            "--format" => {
+                index += 1;
+                options.format = Some(required_value(args, index, "--format")?);
+            }
+            "--breaking-only" => {
+                options.breaking_only = true;
+            }
+            "--exit-code" => {
+                options.exit_code = true;
             }
             "--json" => {
                 options.json = true;
@@ -244,6 +316,126 @@ fn print_json(value: &impl serde::Serialize) -> Result<(), CliError> {
     Ok(())
 }
 
+#[derive(Clone, Copy)]
+enum OutputFormat {
+    Text,
+    Json,
+    Summary,
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct FlatChange {
+    breaking: bool,
+    description: String,
+}
+
+fn print_schema_delta(
+    delta: &SchemaDelta,
+    output_format: OutputFormat,
+    breaking_only: bool,
+) -> Result<(), CliError> {
+    let changes = flattened_schema_changes(delta, breaking_only);
+
+    match output_format {
+        OutputFormat::Text => println!("{}", format_delta_text(&changes)),
+        OutputFormat::Json if breaking_only => {
+            print_json(&serde_json::json!({ "changes": changes }))?;
+        }
+        OutputFormat::Json => {
+            print_json(delta)?;
+        }
+        OutputFormat::Summary => println!("{}", format_delta_summary(&changes)),
+    }
+
+    Ok(())
+}
+
+fn flattened_schema_changes(delta: &SchemaDelta, breaking_only: bool) -> Vec<FlatChange> {
+    let mut changes = Vec::new();
+
+    for change in &delta.removed_types {
+        changes.push(flat_change(change.breaking, &change.description));
+    }
+
+    for modification in &delta.modified_types {
+        if let Some(kind_change) = &modification.kind_change {
+            changes.push(flat_change(kind_change.breaking, &kind_change.description));
+        }
+
+        for change in &modification.field_changes {
+            changes.push(flat_change(change.breaking, &change.description));
+        }
+        for change in &modification.enum_value_changes {
+            changes.push(flat_change(change.breaking, &change.description));
+        }
+        for change in &modification.union_member_changes {
+            changes.push(flat_change(change.breaking, &change.description));
+        }
+        for change in &modification.implements_changes {
+            changes.push(flat_change(change.breaking, &change.description));
+        }
+        for change in &modification.directive_changes {
+            changes.push(flat_change(change.breaking, &change.description));
+        }
+    }
+
+    for change in &delta.added_types {
+        changes.push(flat_change(change.breaking, &change.description));
+    }
+
+    if breaking_only {
+        changes.retain(|change| change.breaking);
+    }
+
+    changes
+}
+
+fn flat_change(breaking: bool, description: &str) -> FlatChange {
+    FlatChange {
+        breaking,
+        description: description.to_string(),
+    }
+}
+
+fn format_delta_text(changes: &[FlatChange]) -> String {
+    if changes.is_empty() {
+        return "No changes detected.".to_string();
+    }
+
+    changes
+        .iter()
+        .map(|change| {
+            let tag = if change.breaking {
+                "BREAKING"
+            } else {
+                "safe    "
+            };
+            format!("{tag}  {}", change.description)
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+fn format_delta_summary(changes: &[FlatChange]) -> String {
+    if changes.is_empty() {
+        return "No changes detected.".to_string();
+    }
+
+    let breaking = changes.iter().filter(|change| change.breaking).count();
+    let safe = changes.len() - breaking;
+    let mut parts = Vec::new();
+
+    if breaking > 0 {
+        parts.push(format!("{breaking} breaking"));
+    }
+    if safe > 0 {
+        parts.push(format!("{safe} safe"));
+    }
+
+    parts.join(", ")
+}
+
 fn print_help() {
     println!(
         "\
@@ -255,6 +447,7 @@ Usage:
 Commands:
   schema lower              Lower GraphQL SDL to Wesley L1 IR JSON
   schema hash               Print the Wesley L1 registry hash for GraphQL SDL
+  schema diff               Compare two GraphQL SDL files as Wesley L1 IR
   operation selections      Resolve selected operation fields
   operation directive-args  Extract operation directive arguments as JSON
   version                   Print the native CLI version
@@ -273,9 +466,13 @@ Wesley schema commands
 Usage:
   wesley schema lower --schema <path> [--json]
   wesley schema hash --schema <path> [--json]
+  wesley schema diff --old <path> --new <path> [--format text|json|summary] [--breaking-only] [--exit-code]
 
 Options:
-  -s, --schema <path>  GraphQL SDL file"
+  -s, --schema <path>  GraphQL SDL file
+  --old <path>         Old/base GraphQL SDL file
+  --new <path>         New/target GraphQL SDL file
+  --json               Emit JSON output"
     );
 }
 

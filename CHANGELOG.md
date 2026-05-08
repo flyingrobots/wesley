@@ -21,6 +21,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **Legacy Node migration map**: Added a command and package disposition map for
   retiring the historical Node CLI, generators, hosts, runtime packages, and
   evidence tooling on the path to a pure Rust Wesley.
+- **Native schema diff**: Added Rust `SchemaDelta` extraction over L1 IR and
+  exposed it as `wesley schema diff --old <path> --new <path>` with text, JSON,
+  summary, breaking-only, and breaking-change exit-code modes.
 
 - **Holmes counterfactual provider capability seam**: Added
   `holmes.counterfactualProviders` to Wesley module capabilities, moved shared
