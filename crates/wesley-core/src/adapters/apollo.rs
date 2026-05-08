@@ -522,11 +522,11 @@ impl ApolloLoweringAdapter {
     }
 }
 
-fn aggregate_for<'a>(
-    aggregates: &'a mut BTreeMap<String, TypeAggregate>,
+fn aggregate_for(
+    aggregates: &mut BTreeMap<String, TypeAggregate>,
     name: String,
     kind: TypeKind,
-) -> Result<&'a mut TypeAggregate, WesleyError> {
+) -> Result<&mut TypeAggregate, WesleyError> {
     use std::collections::btree_map::Entry;
 
     match aggregates.entry(name.clone()) {

@@ -27,9 +27,9 @@ The repo is now split into three practical layers:
 1. **Rust kernel / brain**: `crates/wesley-core` is the emerging authoritative
    compiler library. It lowers GraphQL SDL into L1 IR and exposes generic
    operation facts.
-2. **Native CLI / body**: `crates/wesley-cli` is the intended product command.
-   Today it is mostly a stable executable shell around the Rust workspace, not a
-   featureful command surface.
+2. **Native CLI / body**: `crates/wesley-cli` is the Rust product command. It
+   exposes schema lowering, schema hashing, operation selection analysis, and
+   directive argument extraction from the Rust core.
 3. **Legacy Node tooling**: `packages/` still carries the historical Node
    compiler, module runtime, generators, hosts, Holmes tooling, and fixture
    packages. These remain useful, but they are no longer the center of gravity
@@ -112,7 +112,7 @@ semantics.
 | Path | Role |
 | --- | --- |
 | `crates/wesley-core/` | Rust compiler kernel. Parses/lower SDL to domain-empty L1 IR and analyzes operation documents. |
-| `crates/wesley-cli/` | Native Rust `wesley` binary. Currently minimal: help and unknown-command handling. |
+| `crates/wesley-cli/` | Native Rust `wesley` binary for schema and operation facts. |
 | `xtask/` | Rust repository automation: tests, native preflight, release check, legacy preflight bridge. |
 | `packages/wesley-core/` | Historical JS core: domain/application/port modules, module capabilities, generation pipeline, hashes, runtime-event helpers. |
 | `packages/wesley-cli/` | Historical JS CLI command framework and module-aware command surfaces. |
@@ -295,14 +295,17 @@ erDiagram
 
 ## Native CLI And Xtask
 
-The native CLI is intentionally small:
+The native CLI exposes Rust-backed compiler facts:
 
 ```mermaid
 flowchart LR
     User --> CargoWesley[cargo wesley]
     CargoWesley --> WesleyBin[crates/wesley-cli]
-    WesleyBin --> Help[help output]
-    WesleyBin --> Unknown[unknown command -> exit 2]
+    WesleyBin --> SchemaLower[schema lower]
+    WesleyBin --> SchemaHash[schema hash]
+    WesleyBin --> OpSelections[operation selections]
+    WesleyBin --> DirectiveArgs[operation directive-args]
+    WesleyBin --> CoreFacts[wesley-core]
 
     Maintainer --> CargoXtask[cargo xtask]
     CargoXtask --> Tests[cargo test --workspace]

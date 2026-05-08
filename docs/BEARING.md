@@ -44,7 +44,9 @@ timeline
 ### 4. Rust-Native Front Door
 - Treating the Rust workspace as the primary surface for core compiler work.
 - Keeping the native `wesley` binary pointed at pure `wesley-core` library
-  behavior before adding host adapters, MCP, or runtime embedding.
+  behavior. It now exposes schema lowering, schema hashing, operation
+  selections, and directive argument extraction before any host adapters, MCP, or
+  runtime embedding.
 - Using `cargo xtask` for repository automation so Rust-native checks do not
   depend on npm scripts.
 - Keeping native install/release checks on the Cargo path with

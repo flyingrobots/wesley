@@ -6,19 +6,14 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
-### Changed
-
-- **Rust core operation analysis boundary**: Replaced generic Wesley footprint
-  checking APIs with operation selection resolution and directive argument
-  extraction primitives. Echo-specific footprint honesty now belongs to
-  Echo-owned tooling rather than the Wesley core API.
-
-### Removed
-
-- **Native `check-footprint` command**: Removed the root `wesley check-footprint`
-  CLI surface and its JSON contract from the Wesley binary.
-
 ### Added
+
+- **Native Rust schema and operation commands**: Added Rust-backed
+  `wesley schema lower`, `wesley schema hash`,
+  `wesley operation selections`, and `wesley operation directive-args`
+  commands. The native CLI now exposes the `wesley-core` L1 lowering,
+  registry-hash, operation-selection, and directive-argument primitives without
+  going through the legacy Node entry point.
 
 - **Holmes counterfactual provider capability seam**: Added
   `holmes.counterfactualProviders` to Wesley module capabilities, moved shared
@@ -81,6 +76,18 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   Go Public gate checklist. Includes progress snapshot from
   `meta/progress.json`, deferred/speculative items with provenance tags,
   completed milestone archive, and artifact map for planning documents.
+
+### Changed
+
+- **Rust core operation analysis boundary**: Replaced generic Wesley footprint
+  checking APIs with operation selection resolution and directive argument
+  extraction primitives. Echo-specific footprint honesty now belongs to
+  Echo-owned tooling rather than the Wesley core API.
+
+### Removed
+
+- **Native `check-footprint` command**: Removed the root `wesley check-footprint`
+  CLI surface and its JSON contract from the Wesley binary.
 
 ### Fixed
 

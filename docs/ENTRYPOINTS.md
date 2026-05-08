@@ -7,9 +7,10 @@ Wesley has one intended front door:
 cargo wesley --help
 ```
 
-The native command is still small, so the deeper source of truth today is the
-Rust library under `crates/wesley-core`. New compiler behavior should start
-there, then grow a native CLI command when it needs one.
+The native command is now the first user-facing Rust surface for compiler facts.
+The deeper source of truth is still the Rust library under `crates/wesley-core`.
+New compiler behavior should start there, then grow a native CLI command when it
+needs one.
 
 The Node packages still exist, but they are not a second Wesley. They are the
 historical package toolchain: old CLI commands, generators, host adapters,
@@ -21,7 +22,7 @@ or ported.
 | Surface | Path | Status | What it does |
 | --- | --- | --- | --- |
 | Rust compiler kernel | `crates/wesley-core/` | Canonical for new compiler work | Lowers GraphQL SDL into domain-empty L1 IR; resolves operation selections; extracts directive arguments. |
-| Native Wesley command | `crates/wesley-cli/` | Intended product CLI, currently minimal | Provides the Rust `wesley` binary. Today it is mostly help/usage shell; new user-facing compiler commands should land here. |
+| Native Wesley command | `crates/wesley-cli/` | Rust product CLI | Provides schema lowering, schema hashing, operation selection analysis, and directive argument extraction from the Rust core. |
 | Repo automation | `xtask/` | Current Rust maintenance front door | Runs Rust tests, native preflight, release checks, and the legacy preflight bridge. |
 | Legacy JS core | `packages/wesley-core/` | Legacy/tooling | Historical JavaScript compiler domain, module registry, hashes, generation pipeline, and runtime helpers. |
 | Legacy JS CLI | `packages/wesley-cli/` | Legacy/tooling | Historical command framework for generate/transform/typescript/zod/diff/cert/Holmes-era flows. |
@@ -43,8 +44,14 @@ It can:
 - resolve schema-coordinate selections when schema SDL is available
 - extract arbitrary operation directive arguments as data
 
-It does not yet have a featureful native command surface. That is intentional:
-the Rust library is being made correct before commands are rebuilt around it.
+The native CLI exposes those facts through:
+
+```bash
+wesley schema lower --schema <path> --json
+wesley schema hash --schema <path>
+wesley operation selections --operation <path> [--schema <path>] [--json]
+wesley operation directive-args --operation <path> --directive <name> --json
+```
 
 ## What Node Wesley Does Today
 

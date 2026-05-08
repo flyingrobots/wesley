@@ -27,7 +27,8 @@ Wesley currently has legacy Node packages and a newer Rust kernel in the same
 repository. They are not equal product fronts.
 
 - `crates/wesley-core/` is the compiler truth for new work.
-- `crates/wesley-cli/` is the intended native `wesley` command, currently small.
+- `crates/wesley-cli/` is the native `wesley` command for Rust-backed compiler
+  facts.
 - `xtask/` is repository automation.
 - `packages/` is the historical Node toolchain: old commands, generators,
   hosts, module loading, evidence tooling, package tests, and docs support.
@@ -55,15 +56,19 @@ cargo xtask preflight
 ```
 
 ### 2. Inspect The Native Command
-The native `wesley` binary is intentionally small while core compiler behavior
-moves into Rust library APIs.
 ```bash
 cargo wesley --help
 ```
 
-Wesley core exposes generic operation analysis primitives for resolving
-selection paths and extracting directive arguments. Echo-owned tooling owns
-Echo-specific footprint honesty checks.
+The native command can lower schema SDL to L1 IR, compute schema hashes, resolve
+operation selections, and extract operation directive arguments.
+
+```bash
+cargo wesley schema lower --schema test/fixtures/ir-parity/small-schema.graphql --json
+cargo wesley schema hash --schema test/fixtures/ir-parity/small-schema.graphql
+```
+
+Echo-owned tooling owns Echo-specific footprint honesty checks.
 
 ## Rust-Native Front Door
 

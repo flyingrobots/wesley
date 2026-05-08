@@ -949,6 +949,11 @@ dependencies = [
 [[package]]
 name = "wesley-cli"
 version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "wesley-core",
+]
 
 [[package]]
 name = "wesley-core"
