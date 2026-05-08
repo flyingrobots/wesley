@@ -13,6 +13,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   `wesley-emit-rust`, `wesley-emit-typescript`, and `wesley-cli`. The
   installable package is `wesley-cli`, which provides the `wesley` binary,
   because the bare `wesley` crate name is already occupied on crates.io.
+- **Resilient crates.io alpha publish automation**: Added
+  `cargo xtask publish-alpha`, which plans the alpha publish by default and can
+  publish with `--execute` in dependency order while using `ninelives` retry
+  policy to wait for crates.io index propagation between dependent crates.
 - **Native Rust schema and operation commands**: Added Rust-backed
   `wesley schema lower`, `wesley schema hash`,
   `wesley operation selections`, and `wesley operation directive-args`

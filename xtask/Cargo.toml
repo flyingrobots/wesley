@@ -6,4 +6,6 @@ description = "Wesley repository automation"
 publish = false
 
 [dependencies]
+ninelives = "0.2"
 serde_json = "1.0"
+tokio = { version = "1", features = ["rt", "time"] }

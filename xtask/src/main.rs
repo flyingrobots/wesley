@@ -1,14 +1,35 @@
 //! Repository automation for Wesley.
 
+use ninelives::{Backoff, Jitter, ResilienceError, RetryPolicy};
 use std::env;
 use std::ffi::OsString;
 use std::fs;
 use std::path::{Component, Path, PathBuf};
-use std::process::{Command, ExitCode};
+use std::process::{Command, ExitCode, Stdio};
+use std::time::Duration;
 
 const EXIT_OK: u8 = 0;
 const EXIT_FAILURE: u8 = 1;
 const EXIT_USAGE: u8 = 2;
+const ALPHA_VERSION: &str = "0.0.1";
+const PUBLISH_CRATES: &[PublishCrate] = &[
+    PublishCrate {
+        name: "wesley-core",
+        dependencies: &[],
+    },
+    PublishCrate {
+        name: "wesley-emit-rust",
+        dependencies: &["wesley-core"],
+    },
+    PublishCrate {
+        name: "wesley-emit-typescript",
+        dependencies: &["wesley-core"],
+    },
+    PublishCrate {
+        name: "wesley-cli",
+        dependencies: &["wesley-core", "wesley-emit-rust", "wesley-emit-typescript"],
+    },
+];
 
 fn main() -> ExitCode {
     match run(env::args_os().skip(1).collect()) {
@@ -50,6 +71,7 @@ fn run(args: Vec<OsString>) -> Result<(), Error> {
             run_command("cargo", &["run", "--bin", "wesley", "--", "--help"])
         }
         "docs-check" => run_docs_check(),
+        "publish-alpha" => run_publish_alpha(&args[1..]),
         "release-check" => {
             run_command("cargo", &["test", "--workspace"])?;
             run_command("cargo", &["build", "--release", "--bin", "wesley"])?;
@@ -70,6 +92,171 @@ fn run(args: Vec<OsString>) -> Result<(), Error> {
         }
         "legacy-preflight" => run_command("pnpm", &["run", "preflight"]),
         other => Err(Error::Usage(format!("unknown xtask command `{other}`"))),
+    }
+}
+
+fn run_publish_alpha(args: &[OsString]) -> Result<(), Error> {
+    let options = PublishOptions::parse(args)?;
+
+    if options.execute {
+        assert_clean_worktree()?;
+        if !options.skip_checks {
+            run_docs_check()?;
+            run_command("cargo", &["test", "--workspace"])?;
+            run_command(
+                "cargo",
+                &[
+                    "clippy",
+                    "--workspace",
+                    "--all-targets",
+                    "--",
+                    "-D",
+                    "warnings",
+                ],
+            )?;
+            run_command("cargo", &["xtask", "release-check"])?;
+        }
+        for publish_crate in PUBLISH_CRATES {
+            publish_crate_to_crates_io(publish_crate.name)?;
+            wait_for_crate_version(publish_crate.name, ALPHA_VERSION)?;
+        }
+        println!("xtask: published Wesley alpha {ALPHA_VERSION}");
+        Ok(())
+    } else {
+        print_publish_alpha_plan();
+        run_publish_alpha_dry_run()
+    }
+}
+
+fn print_publish_alpha_plan() {
+    println!("Wesley crates.io alpha publish plan");
+    println!();
+    println!("Version: {ALPHA_VERSION}");
+    println!("Mode: dry-run/plan. Pass --execute for real crates.io uploads.");
+    println!();
+    println!("Publish order:");
+    for publish_crate in PUBLISH_CRATES {
+        println!(" - {}", publish_crate.name);
+    }
+    println!();
+}
+
+fn run_publish_alpha_dry_run() -> Result<(), Error> {
+    for publish_crate in PUBLISH_CRATES {
+        let missing_dependencies = publish_crate
+            .dependencies
+            .iter()
+            .filter(|dependency| !crate_version_is_indexed(dependency, ALPHA_VERSION))
+            .copied()
+            .collect::<Vec<_>>();
+
+        if missing_dependencies.is_empty() {
+            run_command(
+                "cargo",
+                &[
+                    "publish",
+                    "--dry-run",
+                    "--allow-dirty",
+                    "-p",
+                    publish_crate.name,
+                ],
+            )?;
+        } else {
+            println!(
+                "xtask: skipping dry-run for {} until crates.io indexes {}",
+                publish_crate.name,
+                missing_dependencies.join(", ")
+            );
+        }
+    }
+
+    Ok(())
+}
+
+fn publish_crate_to_crates_io(crate_name: &str) -> Result<(), Error> {
+    run_command("cargo", &["publish", "-p", crate_name])
+}
+
+fn wait_for_crate_version(crate_name: &str, version: &str) -> Result<(), Error> {
+    println!("xtask: waiting for {crate_name} {version} in crates.io index");
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_time()
+        .build()
+        .map_err(|source| Error::Usage(format!("failed to build retry runtime: {source}")))?;
+
+    runtime.block_on(wait_for_crate_version_async(
+        crate_name.to_string(),
+        version.to_string(),
+    ))
+}
+
+async fn wait_for_crate_version_async(crate_name: String, version: String) -> Result<(), Error> {
+    let policy = RetryPolicy::<IndexPollError>::builder()
+        .max_attempts(30)
+        .backoff(Backoff::constant(Duration::from_secs(10)))
+        .with_jitter(Jitter::None)
+        .should_retry(|_| true)
+        .build()
+        .map_err(|source| {
+            Error::Usage(format!(
+                "failed to build crates.io index retry policy: {source}"
+            ))
+        })?;
+
+    policy
+        .execute(|| {
+            let crate_name = crate_name.clone();
+            let version = version.clone();
+            async move {
+                if crate_version_is_indexed(&crate_name, &version) {
+                    Ok(())
+                } else {
+                    Err(ResilienceError::Inner(IndexPollError {
+                        crate_name,
+                        version,
+                    }))
+                }
+            }
+        })
+        .await
+        .map_err(|source| Error::CheckFailed {
+            check: "crates.io index propagation".to_string(),
+            failures: vec![source.to_string()],
+        })
+}
+
+fn crate_version_is_indexed(crate_name: &str, version: &str) -> bool {
+    let spec = format!("{crate_name}@{version}");
+    Command::new("cargo")
+        .args(["info", &spec])
+        .current_dir(env::temp_dir())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()
+        .is_ok_and(|status| status.success())
+}
+
+fn assert_clean_worktree() -> Result<(), Error> {
+    let output = Command::new("git")
+        .args(["status", "--porcelain"])
+        .output()
+        .map_err(|source| Error::Usage(format!("failed to run `git status`: {source}")))?;
+    if !output.status.success() {
+        return Err(Error::CommandFailed {
+            command: "git status --porcelain".to_string(),
+            code: output.status.code().unwrap_or(EXIT_FAILURE as i32),
+        });
+    }
+    if output.stdout.is_empty() {
+        Ok(())
+    } else {
+        Err(Error::CheckFailed {
+            check: "clean worktree".to_string(),
+            failures: vec![
+                "real crates.io publish requires a clean worktree; commit or stash changes first"
+                    .to_string(),
+            ],
+        })
     }
 }
 
@@ -502,11 +689,82 @@ Commands:
   test              Run Rust workspace tests
   docs-check        Run Rust-native documentation hygiene checks
   preflight         Run native Rust preflight checks
+  publish-alpha     Publish the crates.io alpha package set; dry-run by default
   release-check     Build and package the native Rust release artifacts
   legacy-preflight  Run the historical pnpm package preflight
-  help              Show help"
+  help              Show help
+
+Publish options:
+  cargo xtask publish-alpha            Print plan and run safe dry-runs
+  cargo xtask publish-alpha --execute  Publish crates in dependency order
+  cargo xtask publish-alpha --execute --skip-checks"
     );
 }
+
+struct PublishCrate {
+    name: &'static str,
+    dependencies: &'static [&'static str],
+}
+
+#[derive(Default)]
+struct PublishOptions {
+    execute: bool,
+    skip_checks: bool,
+}
+
+impl PublishOptions {
+    fn parse(args: &[OsString]) -> Result<Self, Error> {
+        let mut options = Self::default();
+        for arg in args {
+            let Some(arg) = arg.to_str() else {
+                return Err(Error::Usage(
+                    "publish-alpha options must be UTF-8".to_string(),
+                ));
+            };
+            match arg {
+                "--dry-run" => {
+                    options.execute = false;
+                }
+                "--execute" => {
+                    options.execute = true;
+                }
+                "--skip-checks" => {
+                    options.skip_checks = true;
+                }
+                "--help" | "-h" => {
+                    print_help();
+                    return Err(Error::Usage(
+                        "publish-alpha help requested; see usage above".to_string(),
+                    ));
+                }
+                other => {
+                    return Err(Error::Usage(format!(
+                        "unknown publish-alpha option `{other}`"
+                    )));
+                }
+            }
+        }
+        Ok(options)
+    }
+}
+
+#[derive(Debug)]
+struct IndexPollError {
+    crate_name: String,
+    version: String,
+}
+
+impl std::fmt::Display for IndexPollError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{} {} is not visible in the crates.io index yet",
+            self.crate_name, self.version
+        )
+    }
+}
+
+impl std::error::Error for IndexPollError {}
 
 #[derive(Debug)]
 enum Error {

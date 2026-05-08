@@ -40,7 +40,26 @@ cargo test --workspace
 cargo xtask release-check
 ```
 
-Publish in this order:
+The preferred path is the resilient xtask wrapper:
+
+```bash
+cargo xtask publish-alpha
+cargo xtask publish-alpha --execute
+```
+
+The default `publish-alpha` mode prints the release plan, runs safe dry-runs
+where crates.io already has the needed internal dependencies, and explains
+which dependent crates are waiting on index visibility.
+
+`publish-alpha --execute`:
+
+- requires a clean worktree
+- runs docs, test, clippy, and release checks unless `--skip-checks` is passed
+- publishes crates in dependency order
+- uses `ninelives` retry policy while polling crates.io index visibility
+  between dependent publishes
+
+The underlying manual order is:
 
 ```bash
 cargo publish -p wesley-core
