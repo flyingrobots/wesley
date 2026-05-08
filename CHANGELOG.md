@@ -27,6 +27,11 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **Git-aware schema diff**: Added `wesley schema diff --schema <path>
   --against <rev>` and `--base <rev>` so local edits can be compared against a
   schema's previous Git state without manually materializing an old file.
+- **Native schema operation catalog**: Added `SchemaOperation` extraction from
+  schema root `Query`, `Mutation`, and `Subscription` fields, preserving root
+  arguments, result types, and generic directive JSON. Exposed it as
+  `wesley schema operations --schema <path> --json` and covered it with a full
+  jedit hot text runtime fixture.
 - **Native TypeScript emitter**: Added `crates/wesley-emit-typescript`, a
   structured TypeScript declaration AST/printer projection from Wesley L1 IR,
   and exposed it as `wesley emit typescript --schema <path> --out <path>`.

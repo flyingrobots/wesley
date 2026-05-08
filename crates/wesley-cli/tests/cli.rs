@@ -9,6 +9,7 @@ fn help_exits_zero_without_footprint_command() {
     let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
     assert!(stdout.contains("Wesley native CLI"));
     assert!(stdout.contains("schema lower"));
+    assert!(stdout.contains("schema operations"));
     assert!(stdout.contains("schema diff"));
     assert!(stdout.contains("emit rust"));
     assert!(stdout.contains("emit typescript"));
@@ -74,6 +75,68 @@ fn schema_hash_matches_l1_hash_fixture() {
         .expect("hash fixture should read");
 
     assert_eq!(stdout.trim(), expected.trim());
+}
+
+#[test]
+fn schema_operations_emit_root_operation_catalog_as_json() {
+    let output = wesley()
+        .args(["schema", "operations", "--schema"])
+        .arg(fixture(
+            "test/fixtures/consumer-models/jedit-hot-text-runtime.graphql",
+        ))
+        .arg("--json")
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let operations: serde_json::Value =
+        serde_json::from_str(&stdout).expect("stdout should be json");
+
+    assert_eq!(
+        operations
+            .as_array()
+            .expect("operations should be array")
+            .len(),
+        5
+    );
+
+    let create_buffer = operations
+        .as_array()
+        .expect("operations should be array")
+        .iter()
+        .find(|operation| operation["fieldName"] == "createBufferWorldline")
+        .expect("createBufferWorldline should be present");
+    assert_eq!(create_buffer["operationType"], "MUTATION");
+    assert_eq!(
+        create_buffer["arguments"][0]["type"]["base"],
+        "CreateBufferWorldlineInput"
+    );
+    assert_eq!(
+        create_buffer["resultType"]["base"],
+        "CreateBufferWorldlineResult"
+    );
+    assert_eq!(
+        create_buffer["directives"]["wes_op"]["name"],
+        "createBufferWorldline"
+    );
+    assert_eq!(
+        create_buffer["directives"]["wes_footprint"]["creates"][0],
+        "BufferWorldline"
+    );
+
+    let text_window = operations
+        .as_array()
+        .expect("operations should be array")
+        .iter()
+        .find(|operation| operation["fieldName"] == "textWindow")
+        .expect("textWindow should be present");
+    assert_eq!(text_window["operationType"], "QUERY");
+    assert_eq!(
+        text_window["arguments"][0]["type"]["base"],
+        "TextWindowInput"
+    );
+    assert_eq!(text_window["resultType"]["base"], "TextWindowReading");
 }
 
 #[test]

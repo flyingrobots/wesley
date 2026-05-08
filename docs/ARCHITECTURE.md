@@ -26,11 +26,11 @@ The repo is now split into three practical layers:
 
 1. **Rust kernel / brain**: `crates/wesley-core` is the emerging authoritative
    compiler library. It lowers GraphQL SDL into L1 IR, diffs L1 schema
-   structure, and exposes generic operation facts.
+   structure, lists schema root operations, and exposes generic operation facts.
 2. **Native CLI / body**: `crates/wesley-cli` is the Rust product command. It
-   exposes schema lowering, schema hashing, schema diffing, Rust/TypeScript
-   emission, operation selection analysis, and directive argument extraction
-   from Rust crates.
+   exposes schema lowering, schema hashing, schema operation listing, schema
+   diffing, Rust/TypeScript emission, operation selection analysis, and
+   directive argument extraction from Rust crates.
 3. **Legacy Node tooling**: `packages/` still carries the historical Node
    compiler, module runtime, generators, hosts, Holmes tooling, and fixture
    packages. These remain useful, but they are no longer the center of gravity
@@ -118,7 +118,7 @@ semantics.
 
 | Path | Role |
 | --- | --- |
-| `crates/wesley-core/` | Rust compiler kernel. Parses/lower SDL to domain-empty L1 IR, diffs L1 schema structure, and analyzes operation documents. |
+| `crates/wesley-core/` | Rust compiler kernel. Parses/lower SDL to domain-empty L1 IR, diffs L1 schema structure, lists schema root operations, and analyzes operation documents. |
 | `crates/wesley-cli/` | Native Rust `wesley` binary for schema deltas, schema hashes, Rust/TypeScript artifacts, and operation facts. |
 | `crates/wesley-emit-rust/` | Rust model projection crate. Builds a Rust item/type AST from L1 IR, then prints deterministic data model declarations. |
 | `crates/wesley-emit-typescript/` | Rust TypeScript projection crate. Builds a TypeScript declaration AST from L1 IR, then prints it deterministically. |
@@ -158,6 +158,7 @@ It has three internal areas:
 Public Rust APIs currently include:
 
 - `lower_schema_sdl(sdl) -> WesleyIR`
+- `list_schema_operations_sdl(schema_sdl) -> Vec<SchemaOperation>`
 - `diff_schema_sdl(old_sdl, new_sdl) -> SchemaDelta`
 - `diff_schema_ir(old_ir, new_ir) -> SchemaDelta`
 - `resolve_operation_selections(operation_sdl) -> Vec<String>`
@@ -389,6 +390,7 @@ flowchart LR
     CargoWesley --> WesleyBin[crates/wesley-cli]
     WesleyBin --> SchemaLower[schema lower]
     WesleyBin --> SchemaHash[schema hash]
+    WesleyBin --> SchemaOperations[schema operations]
     WesleyBin --> SchemaDiff[schema diff]
     WesleyBin --> EmitRust[emit rust]
     WesleyBin --> EmitTypescript[emit typescript]
@@ -543,6 +545,8 @@ Wesley currently does these things in this repo:
 - Lowers GraphQL SDL into a Rust L1 IR with consolidated type definitions.
 - Preserves generic directives as JSON values in type and field IR.
 - Computes canonical JSON and SHA-256 registry/content hashes.
+- Lists schema root operations with argument types, result types, and
+  directives.
 - Resolves operation selection paths in response-path mode.
 - Resolves operation selection paths in schema-coordinate mode.
 - Extracts operation directive arguments by directive name.

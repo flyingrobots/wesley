@@ -30,12 +30,19 @@ The invariant is still Wesley's normal compiler boundary:
 - `test/fixtures/consumer-models/jedit-hot-text-core.graphql` is a
   representative jedit-shaped fixture copied into Wesley so tests do not depend
   on a sibling checkout.
+- `test/fixtures/consumer-models/jedit-hot-text-runtime.graphql` is a full
+  jedit hot text runtime fixture copied into Wesley for hermetic operation
+  catalog tests.
 - Both emitters have tests against the jedit-shaped fixture.
 - A local smoke check against the real jedit hot text contract succeeded on
   2026-05-08:
   - schema lowering succeeded
   - Rust model emission succeeded
   - TypeScript declaration emission succeeded
+- `list_schema_operations_sdl` preserves root `Query`, `Mutation`, and
+  `Subscription` fields as `SchemaOperation` data.
+- `wesley schema operations --schema <path> --json` exposes the schema operation
+  catalog from the native Rust CLI.
 
 ## Capability Gap
 
@@ -43,64 +50,53 @@ The real jedit contract is more than a data model. Its root `Query` and
 `Mutation` fields define capability-like surfaces, including inputs, return
 types, and generic directive data.
 
-Wesley currently lowers root fields and field directives, but L1 fields do not
-carry field arguments. That means the emitters can produce model declarations
-for `Mutation` and `Query`, but they do not yet produce useful operation or
-capability bindings such as:
-
-- operation name
-- query versus mutation kind
-- argument list and input object type
-- result type
-- directive payloads attached to the root field
-
-That gap matters for jedit because capabilities are invoked operations, not
-just structs.
+Wesley now has a generic operation catalog for those root fields. The remaining
+gap is projection: the Rust and TypeScript emitters still produce model
+declarations, not callable operation bindings. Echo-specific footprint honesty
+also remains external to Wesley core; Wesley preserves `@wes_footprint` as
+generic directive JSON for Echo-owned tooling to interpret later.
 
 ## Progress Ledger
 
-| Item | Status | Weight |
+| Item | Status | Score |
 | --- | --- | ---: |
-| Rust-native CLI is the primary Wesley front door | Done | 10 |
-| L1 schema lowering works for jedit-shaped models | Done | 10 |
-| Rust model emitter exists and is AST/printer-based | Done | 10 |
-| TypeScript model emitter exists and is AST/printer-based | Done | 10 |
-| Representative jedit fixture is tracked in Wesley tests | Done | 8 |
-| Real jedit contract lowers and emits in local smoke checks | Partial | 7 |
-| Full real-contract fixture is tracked hermetically in Wesley | Not started | 10 |
-| Generic schema operation/capability catalog preserves root args | Not started | 20 |
-| Rust/TypeScript operation binding emission exists | Not started | 15 |
-| jedit consumes generated artifacts without shadow models | Not started | 10 |
+| Rust-native CLI is the primary Wesley front door | Done | 8 |
+| L1 schema lowering works for jedit-shaped models | Done | 8 |
+| Rust model emitter exists and is AST/printer-based | Done | 8 |
+| TypeScript model emitter exists and is AST/printer-based | Done | 8 |
+| Representative jedit model fixture is tracked in Wesley tests | Done | 5 |
+| Real jedit contract lowers and emits in local smoke checks | Done | 5 |
+| Full jedit runtime fixture is tracked hermetically in Wesley | Done | 8 |
+| Generic schema operation catalog preserves root args/results/directives | Done | 15 |
+| Native CLI exposes schema operation inspection | Done | 5 |
+| Rust operation binding emission exists | Not started | 0 |
+| TypeScript operation binding emission exists | Not started | 0 |
+| jedit consumes generated artifacts without shadow models | Not started | 0 |
 
-Current score: 42 / 100.
+Current score: 70 / 100.
 
 ## Next Move
 
-Add a generic schema operation catalog to Wesley core and test it with a copied
-full jedit hot text contract fixture.
+Add operation binding emission on top of the schema operation catalog.
 
-The API should stay domain-empty and Echo-neutral. It should describe GraphQL
-root operation fields as data:
+The emitters should not reparse SDL. They should consume `SchemaOperation` data
+and generate callable Rust/TypeScript surfaces for root operations such as:
 
-```rust
-pub struct SchemaOperation {
-    pub operation_type: OperationType,
-    pub field_name: String,
-    pub arguments: Vec<OperationArgument>,
-    pub result_type: TypeReference,
-    pub directives: BTreeMap<String, serde_json::Value>,
-}
+```graphql
+createBufferWorldline(
+  input: CreateBufferWorldlineInput!
+): CreateBufferWorldlineResult!
 ```
 
-The first CLI surface should be inspection, not generation:
+The first useful target is generated types or traits/functions that clearly
+connect:
 
-```bash
-wesley schema operations --schema <path> --json
-```
-
-Once that is proven, Rust and TypeScript operation binding emission can build on
-the catalog instead of inventing separate parser paths.
+- operation kind
+- operation field name
+- argument object type
+- result type
+- preserved directive metadata for downstream Echo-owned tooling
 
 ## Progress
 
-`[#####################-----------------------------] 42%`
+`[###################################---------------] 70%`

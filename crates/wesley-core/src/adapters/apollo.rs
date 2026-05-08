@@ -2,7 +2,9 @@
 
 use crate::domain::error::WesleyError;
 use crate::domain::ir::*;
-use crate::domain::operation::OperationDirectiveArgs;
+use crate::domain::operation::{
+    OperationArgument, OperationDirectiveArgs, OperationType, SchemaOperation,
+};
 use crate::domain::schema_delta::{diff_schema_ir, SchemaDelta};
 use crate::ports::lowering::LoweringPort;
 use apollo_parser::{cst, Parser};
@@ -43,6 +45,61 @@ pub fn diff_schema_sdl(old_sdl: &str, new_sdl: &str) -> Result<SchemaDelta, Wesl
     let new_ir = adapter.parse_and_lower(new_sdl)?;
 
     Ok(diff_schema_ir(&old_ir, &new_ir))
+}
+
+/// Lists schema root operations from GraphQL SDL.
+pub fn list_schema_operations_sdl(schema_sdl: &str) -> Result<Vec<SchemaOperation>, WesleyError> {
+    let parser = Parser::new(schema_sdl);
+    let cst = parser.parse();
+
+    let errors = cst.errors().collect::<Vec<_>>();
+    if !errors.is_empty() {
+        let err = &errors[0];
+        return Err(WesleyError::ParseError {
+            message: err.message().to_string(),
+            line: None,
+            column: None,
+        });
+    }
+
+    let doc = cst.document();
+    let mut root_types = RootTypes::default();
+    for def in doc.definitions() {
+        match def {
+            cst::Definition::SchemaDefinition(schema) => {
+                update_root_types(schema.root_operation_type_definitions(), &mut root_types)?;
+            }
+            cst::Definition::SchemaExtension(schema) => {
+                update_root_types(schema.root_operation_type_definitions(), &mut root_types)?;
+            }
+            _ => {}
+        }
+    }
+
+    let mut operations = Vec::new();
+    for def in doc.definitions() {
+        match def {
+            cst::Definition::ObjectTypeDefinition(node) => {
+                collect_schema_operations_from_object(
+                    node.name(),
+                    node.fields_definition(),
+                    &root_types,
+                    &mut operations,
+                )?;
+            }
+            cst::Definition::ObjectTypeExtension(node) => {
+                collect_schema_operations_from_object(
+                    node.name(),
+                    node.fields_definition(),
+                    &root_types,
+                    &mut operations,
+                )?;
+            }
+            _ => {}
+        }
+    }
+
+    Ok(operations)
 }
 
 /// Represents the consolidated parts of a single GraphQL Type.
@@ -1135,7 +1192,33 @@ struct RootTypes {
     subscription: String,
 }
 
+impl Default for RootTypes {
+    fn default() -> Self {
+        Self {
+            query: "Query".to_string(),
+            mutation: "Mutation".to_string(),
+            subscription: "Subscription".to_string(),
+        }
+    }
+}
+
 impl RootTypes {
+    fn operation_types_for_type(&self, type_name: &str) -> Vec<OperationType> {
+        let mut operation_types = Vec::new();
+
+        if self.query == type_name {
+            operation_types.push(OperationType::Query);
+        }
+        if self.mutation == type_name {
+            operation_types.push(OperationType::Mutation);
+        }
+        if self.subscription == type_name {
+            operation_types.push(OperationType::Subscription);
+        }
+
+        operation_types
+    }
+
     fn root_for_operation(&self, op: &cst::OperationDefinition) -> Result<&str, WesleyError> {
         let Some(operation_type) = op.operation_type() else {
             return Ok(self.query.as_str());
@@ -1167,11 +1250,7 @@ fn extract_root_types(schema_sdl: &str) -> Result<RootTypes, WesleyError> {
         });
     }
 
-    let mut root_types = RootTypes {
-        query: "Query".to_string(),
-        mutation: "Mutation".to_string(),
-        subscription: "Subscription".to_string(),
-    };
+    let mut root_types = RootTypes::default();
 
     for def in cst.document().definitions() {
         match def {
@@ -1186,6 +1265,112 @@ fn extract_root_types(schema_sdl: &str) -> Result<RootTypes, WesleyError> {
     }
 
     Ok(root_types)
+}
+
+fn collect_schema_operations_from_object(
+    name: Option<cst::Name>,
+    fields_definition: Option<cst::FieldsDefinition>,
+    root_types: &RootTypes,
+    operations: &mut Vec<SchemaOperation>,
+) -> Result<(), WesleyError> {
+    let type_name = type_node_name(name, "Object type missing name")?;
+    let operation_types = root_types.operation_types_for_type(&type_name);
+    if operation_types.is_empty() {
+        return Ok(());
+    }
+
+    let Some(fields_definition) = fields_definition else {
+        return Ok(());
+    };
+
+    for field_def in fields_definition.field_definitions() {
+        for operation_type in &operation_types {
+            operations.push(schema_operation_from_field(
+                *operation_type,
+                field_def.clone(),
+            )?);
+        }
+    }
+
+    Ok(())
+}
+
+fn schema_operation_from_field(
+    operation_type: OperationType,
+    field_def: cst::FieldDefinition,
+) -> Result<SchemaOperation, WesleyError> {
+    let field_name = field_def
+        .name()
+        .map(|name| name.text().to_string())
+        .ok_or_else(|| {
+            lowering_error_value("schema operation", "Root field missing name".into())
+        })?;
+    let result_type = field_def.ty().ok_or_else(|| {
+        lowering_error_value(
+            "schema operation",
+            format!("Root field '{field_name}' missing result type"),
+        )
+    })?;
+
+    let mut directives = IndexMap::new();
+    if let Some(dirs) = field_def.directives() {
+        ApolloLoweringAdapter::new(0).extract_directives(dirs, &mut directives)?;
+    }
+
+    Ok(SchemaOperation {
+        operation_type,
+        field_name,
+        arguments: operation_arguments_from_definition(field_def.arguments_definition())?,
+        result_type: type_reference_from_type(result_type, true)?,
+        directives,
+    })
+}
+
+fn operation_arguments_from_definition(
+    arguments_definition: Option<cst::ArgumentsDefinition>,
+) -> Result<Vec<OperationArgument>, WesleyError> {
+    let Some(arguments_definition) = arguments_definition else {
+        return Ok(Vec::new());
+    };
+
+    arguments_definition
+        .input_value_definitions()
+        .map(operation_argument_from_input_value)
+        .collect()
+}
+
+fn operation_argument_from_input_value(
+    input_value: cst::InputValueDefinition,
+) -> Result<OperationArgument, WesleyError> {
+    let name = input_value
+        .name()
+        .map(|name| name.text().to_string())
+        .ok_or_else(|| {
+            lowering_error_value("schema operation", "Operation argument missing name".into())
+        })?;
+    let type_node = input_value.ty().ok_or_else(|| {
+        lowering_error_value(
+            "schema operation",
+            format!("Operation argument '{name}' missing type"),
+        )
+    })?;
+    let default_value = input_value
+        .default_value()
+        .and_then(|default_value| default_value.value())
+        .map(directive_value_to_json)
+        .transpose()?;
+
+    let mut directives = IndexMap::new();
+    if let Some(dirs) = input_value.directives() {
+        ApolloLoweringAdapter::new(0).extract_directives(dirs, &mut directives)?;
+    }
+
+    Ok(OperationArgument {
+        name,
+        r#type: type_reference_from_type(type_node, true)?,
+        default_value,
+        directives,
+    })
 }
 
 fn update_root_types(

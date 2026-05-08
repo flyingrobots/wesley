@@ -61,12 +61,14 @@ cargo wesley --help
 ```
 
 The native command can lower schema SDL to L1 IR, compute schema hashes, diff
-schema structure, emit Rust models and TypeScript declarations, resolve
-operation selections, and extract operation directive arguments.
+schema structure, list schema root operations, emit Rust models and TypeScript
+declarations, resolve operation selections, and extract operation directive
+arguments.
 
 ```bash
 cargo wesley schema lower --schema test/fixtures/ir-parity/small-schema.graphql --json
 cargo wesley schema hash --schema test/fixtures/ir-parity/small-schema.graphql
+cargo wesley schema operations --schema test/fixtures/consumer-models/jedit-hot-text-runtime.graphql --json
 cargo wesley schema diff --old old.graphql --new new.graphql --format summary --exit-code
 cargo wesley schema diff --schema schema.graphql --against HEAD --format summary
 cargo wesley emit rust --schema schema.graphql --out generated/model.rs

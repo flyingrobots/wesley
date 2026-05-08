@@ -45,9 +45,9 @@ timeline
 - Treating the Rust workspace as the primary surface for core compiler work.
 - Keeping the native `wesley` binary pointed at pure `wesley-core` library
   behavior and Rust projection crates. It now exposes schema lowering, schema
-  hashing, schema diffing, Rust/TypeScript emission, operation selections, and
-  directive argument extraction before any host adapters, MCP, or runtime
-  embedding.
+  hashing, schema operation listing, schema diffing, Rust/TypeScript emission,
+  operation selections, and directive argument extraction before any host
+  adapters, MCP, or runtime embedding.
 - Using `cargo xtask` for repository automation so Rust-native checks keep
   moving away from npm scripts. Native preflight now includes Rust docs checks,
   Rust tests, and native CLI help.
@@ -73,9 +73,10 @@ timeline
   generated Rust syntax in tests.
 - Tracking jedit capability support explicitly in
   [JEDIT_CAPABILITY_PROGRESS.md](./JEDIT_CAPABILITY_PROGRESS.md). Current
-  evidence says basic Rust/TypeScript model emission works; the next gap is a
-  generic schema operation catalog that preserves root field arguments and
-  directives without moving Echo footprint enforcement into Wesley core.
+  evidence says basic Rust/TypeScript model emission works and schema operation
+  discovery preserves root field arguments, result types, and directives without
+  moving Echo footprint enforcement into Wesley core. The next gap is operation
+  binding emission.
 
 ## Tensions
 
@@ -100,8 +101,8 @@ timeline
 
 ## Next Target
 
-The immediate focus is **jedit-shaped capability inspection**: add a
-domain-empty schema operation catalog that can describe `Query` and `Mutation`
-root fields, arguments, result types, and directives from real jedit contracts.
-Keep Echo-specific footprint honesty to Echo-owned tooling; Wesley should expose
-the generic operation facts that emitters and downstream adapters can consume.
+The immediate focus is **jedit-shaped operation binding emission**: use the
+domain-empty schema operation catalog to emit Rust and TypeScript callable
+operation surfaces from real jedit contracts. Keep Echo-specific footprint
+honesty to Echo-owned tooling; Wesley should expose and project the generic
+operation facts that downstream adapters can consume.

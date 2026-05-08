@@ -5,9 +5,9 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
 use wesley_core::{
-    compute_registry_hash, diff_schema_sdl, extract_operation_directive_args, lower_schema_sdl,
-    resolve_operation_selections, resolve_operation_selections_with_schema, SchemaDelta,
-    WesleyError,
+    compute_registry_hash, diff_schema_sdl, extract_operation_directive_args,
+    list_schema_operations_sdl, lower_schema_sdl, resolve_operation_selections,
+    resolve_operation_selections_with_schema, SchemaDelta, WesleyError,
 };
 use wesley_emit_rust::emit_rust;
 use wesley_emit_typescript::emit_typescript;
@@ -80,6 +80,19 @@ fn run_schema_command(args: &[String]) -> Result<u8, CliError> {
                 println!("{schema_hash}");
             }
 
+            Ok(EXIT_OK)
+        }
+        Some("operations") if wants_help(&args[1..]) => {
+            print_schema_help();
+            Ok(EXIT_OK)
+        }
+        Some("operations") => {
+            let options = parse_options(&args[1..], "schema operations")?;
+            let schema_path = options.required_schema("schema operations")?;
+            let sdl = read_file(&schema_path, "schema")?;
+            let operations = list_schema_operations_sdl(&sdl)?;
+
+            print_json(&operations)?;
             Ok(EXIT_OK)
         }
         Some("diff") if wants_help(&args[1..]) => {
@@ -622,6 +635,7 @@ Usage:
 Commands:
   schema lower              Lower GraphQL SDL to Wesley L1 IR JSON
   schema hash               Print the Wesley L1 registry hash for GraphQL SDL
+  schema operations         List Query/Mutation/Subscription root operations
   schema diff               Compare GraphQL SDL states as Wesley L1 IR
   emit rust                 Emit Rust models from GraphQL SDL
   emit typescript           Emit TypeScript declarations from GraphQL SDL
@@ -643,6 +657,7 @@ Wesley schema commands
 Usage:
   wesley schema lower --schema <path> [--json]
   wesley schema hash --schema <path> [--json]
+  wesley schema operations --schema <path> [--json]
   wesley schema diff --old <path> --new <path> [--format text|json|summary] [--breaking-only] [--exit-code]
   wesley schema diff --schema <path> --against <rev> [--format text|json|summary] [--breaking-only] [--exit-code]
 

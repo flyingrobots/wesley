@@ -1,0 +1,394 @@
+"""
+Authored home for `jedit`'s causal text runtime boundary.
+
+The file keeps the legacy `hot-text-runtime` name for continuity. In current
+doctrine, `hot` here means the first low-latency text contract surface over
+witnessed causal history, not a separate ontology layer.
+
+This SDL defines the graph-like reading nouns and rewrite surfaces that
+`jedit` expects Wesley to compile for Echo-backed causal text truth. It
+intentionally models only the text contract layer:
+
+- canonical text worldlines
+- rope heads and rope DAG nodes
+- ticks and tick receipts
+- anchors
+- checkpoints
+
+It intentionally does not model AST truth, diagnostics, Git export history, or
+UI state as canonical text-history nouns.
+
+Directive definitions are expected to come from Wesley's shared directive pack
+when this schema is compiled.
+"""
+enum TextEncoding {
+    UTF8
+}
+
+enum AnchorKind {
+    CURSOR
+    SELECTION
+    BOOKMARK
+    COMMENT
+    DIAGNOSTIC_TARGET
+    AI_TARGET
+}
+
+enum AnchorBias {
+    LEFT
+    RIGHT
+}
+
+enum AnchorStickiness {
+    LEADING
+    TRAILING
+    EXPAND
+}
+
+enum TickKind {
+    BUFFER_CREATE
+    TEXT_REWRITE
+    CHECKPOINT_CREATE
+    ANCHOR_REGISTER
+}
+
+enum TickReceiptRewriteKind {
+    CREATE_BUFFER_WORLDLINE
+    REPLACE_RANGE_AS_TICK
+    CREATE_CHECKPOINT
+    REGISTER_ANCHOR
+}
+
+enum CheckpointKind {
+    INITIAL
+    MANUAL_SAVE
+    AUTO_SAVE
+}
+
+type BufferWorldline {
+    worldlineId: ID!
+    bufferKey: String!
+    canonicalHeadId: ID!
+    createdAtTickId: ID
+    projectionPath: String
+}
+
+type RopeHead {
+    headId: ID!
+    worldlineId: ID!
+    rootNodeId: ID!
+    byteLength: Int!
+    lineCount: Int!
+    utf16Length: Int!
+    equivalenceDigest: String!
+}
+
+type RopeBranch {
+    branchId: ID!
+    byteLength: Int!
+    lineCount: Int!
+    utf16Length: Int!
+    height: Int
+}
+
+type RopeLeaf {
+    leafId: ID!
+    blobId: ID!
+    startByte: Int!
+    endByte: Int!
+    byteLength: Int!
+    lineCount: Int!
+    utf16Length: Int!
+}
+
+type TextBlob {
+    blobId: ID!
+    encoding: TextEncoding!
+    byteLength: Int!
+    contentHash: String!
+}
+
+type Anchor {
+    anchorId: ID!
+    kind: AnchorKind!
+    basisHeadId: ID!
+    startByte: Int!
+    endByte: Int
+    startBias: AnchorBias!
+    endBias: AnchorBias
+    stickiness: AnchorStickiness
+}
+
+type Tick {
+    tickId: ID!
+    worldlineId: ID!
+    kind: TickKind!
+    sequenceNumber: Int!
+    author: String
+}
+
+type TickReceipt {
+    receiptId: ID!
+    tickId: ID!
+    baseHeadId: ID!
+    nextHeadId: ID!
+    rewriteKind: TickReceiptRewriteKind!
+    startByte: Int
+    endByte: Int
+    insertedByteLength: Int!
+    deletedByteLength: Int!
+    inverseFragmentDigest: String
+    summary: String
+}
+
+type Checkpoint {
+    checkpointId: ID!
+    worldlineId: ID!
+    headId: ID!
+    kind: CheckpointKind!
+    label: String
+    createdByTickId: ID
+}
+
+type WorldlineSnapshot {
+    worldline: BufferWorldline!
+    head: RopeHead!
+    checkpoints: [Checkpoint!]!
+    text: String!
+}
+
+type TextLineReading {
+    lineNumber: Int!
+    text: String!
+    startByte: Int!
+    endByte: Int!
+}
+
+type TextWindowReading {
+    worldline: BufferWorldline!
+    head: RopeHead!
+    readingId: ID!
+    startLine: Int!
+    lineCount: Int!
+    totalLineCount: Int!
+    hasMoreBefore: Boolean!
+    hasMoreAfter: Boolean!
+    lines: [TextLineReading!]!
+}
+
+type CreateBufferWorldlineResult {
+    worldline: BufferWorldline!
+    head: RopeHead!
+    checkpoint: Checkpoint
+}
+
+type ReplaceRangeAsTickResult {
+    worldline: BufferWorldline!
+    nextHead: RopeHead!
+    tick: Tick!
+    receipt: TickReceipt!
+}
+
+type CreateCheckpointResult {
+    worldline: BufferWorldline!
+    head: RopeHead!
+    checkpoint: Checkpoint!
+}
+
+input CreateBufferWorldlineInput {
+    bufferKey: String!
+    initialText: String = ""
+    projectionPath: String
+    createInitialCheckpoint: Boolean = false
+}
+
+input ReplaceRangeAsTickInput {
+    worldlineId: ID!
+    baseHeadId: ID!
+    startByte: Int!
+    endByte: Int!
+    insertText: String!
+    author: String
+}
+
+input CreateCheckpointInput {
+    worldlineId: ID!
+    kind: CheckpointKind!
+    label: String
+}
+
+input WorldlineSnapshotInput {
+    worldlineId: ID!
+}
+
+input TextWindowInput {
+    worldlineId: ID!
+    cursorLine: Int!
+    viewportLineCount: Int!
+    beforeLines: Int!
+    afterLines: Int!
+    maxBytes: Int!
+}
+
+type Mutation {
+    createBufferWorldline(
+        input: CreateBufferWorldlineInput!
+    ): CreateBufferWorldlineResult!
+        @wes_op(name: "createBufferWorldline")
+        @wes_footprint(
+            creates: [
+                "BufferWorldline"
+                "RopeHead"
+                "Checkpoint"
+                "TextBlob"
+                "RopeLeaf"
+            ]
+            slots: []
+            createSlots: [
+                { slot: "worldline", kind: "BufferWorldline" }
+                { slot: "head", kind: "RopeHead" }
+                {
+                    slot: "checkpoint"
+                    kind: "Checkpoint"
+                    cardinality: OPTIONAL
+                }
+                { slot: "initialBlob", kind: "TextBlob", cardinality: OPTIONAL }
+                { slot: "initialLeaf", kind: "RopeLeaf", cardinality: OPTIONAL }
+            ]
+            updates: []
+            forbids: ["AstState", "Diagnostics", "GitWitness", "UiState"]
+        )
+
+    """
+    v1 reads affected anchors only so anchor transform can be derived from the
+    resulting receipt. This rewrite does not persist anchor updates in-place.
+    """
+    replaceRangeAsTick(
+        input: ReplaceRangeAsTickInput!
+    ): ReplaceRangeAsTickResult!
+        @wes_op(name: "replaceRangeAsTick")
+        @wes_footprint(
+            reads: [
+                "BufferWorldline"
+                "RopeHead"
+                "RopeBranch"
+                "RopeLeaf"
+                "TextBlob"
+                "Anchor"
+            ]
+            writes: ["BufferWorldline"]
+            creates: [
+                "TextBlob"
+                "RopeLeaf"
+                "RopeBranch"
+                "RopeHead"
+                "Tick"
+                "TickReceipt"
+            ]
+            slots: [
+                {
+                    slot: "worldline"
+                    kind: "BufferWorldline"
+                    bindFromArg: "input.worldlineId"
+                    access: [READ, WRITE]
+                }
+                {
+                    slot: "baseHead"
+                    kind: "RopeHead"
+                    bindFromArg: "input.baseHeadId"
+                    access: [READ]
+                }
+            ]
+            closures: [
+                {
+                    slot: "touchedRope"
+                    fromSlot: "baseHead"
+                    operator: "ropeRangeClosure"
+                    argBindings: ["input.startByte", "input.endByte"]
+                    reads: ["RopeBranch", "RopeLeaf", "TextBlob"]
+                    cardinality: MANY
+                }
+                {
+                    slot: "affectedAnchors"
+                    fromSlot: "worldline"
+                    operator: "anchorsIntersectingEditWindow"
+                    argBindings: [
+                        "baseHead"
+                        "input.startByte"
+                        "input.endByte"
+                    ]
+                    reads: ["Anchor"]
+                    cardinality: MANY
+                }
+            ]
+            createSlots: [
+                { slot: "newBlob", kind: "TextBlob", cardinality: OPTIONAL }
+                { slot: "newLeaves", kind: "RopeLeaf", cardinality: MANY }
+                { slot: "newBranches", kind: "RopeBranch", cardinality: MANY }
+                { slot: "nextHead", kind: "RopeHead" }
+                { slot: "tick", kind: "Tick" }
+                { slot: "receipt", kind: "TickReceipt" }
+            ]
+            updates: [{ slot: "worldline", fields: ["canonicalHead"] }]
+            forbids: ["AstState", "Diagnostics", "GitWitness", "UiState"]
+        )
+
+    """
+    v1 deliberately records a checkpoint only at the current canonical head.
+    Wider retained-marker flows, such as checkpointing an arbitrary non-canonical
+    head, should arrive later as an explicit new rewrite rather than silently
+    widening this one.
+    """
+    createCheckpoint(input: CreateCheckpointInput!): CreateCheckpointResult!
+        @wes_op(name: "createCheckpoint")
+        @wes_footprint(
+            reads: ["BufferWorldline", "RopeHead"]
+            creates: ["Checkpoint"]
+            slots: [
+                {
+                    slot: "worldline"
+                    kind: "BufferWorldline"
+                    bindFromArg: "input.worldlineId"
+                    access: [READ]
+                }
+                {
+                    slot: "currentHead"
+                    kind: "RopeHead"
+                    bindFromSlot: "worldline"
+                    bindRelation: "CANONICAL_HEAD"
+                    access: [READ]
+                }
+            ]
+            createSlots: [{ slot: "checkpoint", kind: "Checkpoint" }]
+            updates: []
+            forbids: [
+                "RopeBranch"
+                "RopeLeaf"
+                "TextBlob"
+                "Tick"
+                "TickReceipt"
+                "AstState"
+                "Diagnostics"
+                "GitWitness"
+                "UiState"
+            ]
+        )
+}
+
+type Query {
+    """
+    Returns the current canonical worldline/head pair plus retained checkpoints
+    and materialized text. v1 intentionally reads the canonical head only rather
+    than arbitrary retained non-canonical heads.
+    """
+    worldlineSnapshot(input: WorldlineSnapshotInput!): WorldlineSnapshot!
+        @wes_op(name: "worldlineSnapshot")
+
+    """
+    Returns a bounded canonical text window around the active viewport. This is
+    the normal editor painting read. Full text snapshots remain explicit
+    snapshot reads, not the default source-rendering contract.
+    """
+    textWindow(input: TextWindowInput!): TextWindowReading!
+        @wes_op(name: "textWindow")
+}
