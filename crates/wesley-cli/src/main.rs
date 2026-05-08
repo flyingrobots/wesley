@@ -9,6 +9,7 @@ use wesley_core::{
     resolve_operation_selections, resolve_operation_selections_with_schema, SchemaDelta,
     WesleyError,
 };
+use wesley_emit_rust::emit_rust;
 use wesley_emit_typescript::emit_typescript;
 
 const EXIT_OK: u8 = 0;
@@ -109,6 +110,21 @@ fn run_emit_command(args: &[String]) -> Result<u8, CliError> {
     match args.first().map(String::as_str) {
         None | Some("--help") | Some("-h") => {
             print_emit_help();
+            Ok(EXIT_OK)
+        }
+        Some("rust") if wants_help(&args[1..]) => {
+            print_emit_help();
+            Ok(EXIT_OK)
+        }
+        Some("rust") => {
+            let options = parse_options(&args[1..], "emit rust")?;
+            let schema_path = options.required_schema("emit rust")?;
+            let out_path = options.required_out("emit rust")?;
+            let sdl = read_file(&schema_path, "schema")?;
+            let ir = lower_schema_sdl(&sdl)?;
+            let rust = emit_rust(&ir);
+
+            write_file(&out_path, &rust, "Rust output")?;
             Ok(EXIT_OK)
         }
         Some("typescript") if wants_help(&args[1..]) => {
@@ -607,6 +623,7 @@ Commands:
   schema lower              Lower GraphQL SDL to Wesley L1 IR JSON
   schema hash               Print the Wesley L1 registry hash for GraphQL SDL
   schema diff               Compare GraphQL SDL states as Wesley L1 IR
+  emit rust                 Emit Rust models from GraphQL SDL
   emit typescript           Emit TypeScript declarations from GraphQL SDL
   operation selections      Resolve selected operation fields
   operation directive-args  Extract operation directive arguments as JSON
@@ -645,11 +662,12 @@ fn print_emit_help() {
 Wesley emit commands
 
 Usage:
+  wesley emit rust --schema <path> --out <path>
   wesley emit typescript --schema <path> --out <path>
 
 Options:
   -s, --schema <path>  GraphQL SDL file
-  --out <path>         Output TypeScript declaration file"
+  --out <path>         Output file"
     );
 }
 

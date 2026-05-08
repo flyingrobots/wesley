@@ -1,0 +1,153 @@
+"""
+Representative jedit hot text model fixture.
+
+This fixture is copied into Wesley as a consumer-shaped contract sample. It is
+not a dependency on the jedit repository.
+"""
+enum TextEncoding {
+  UTF8
+}
+
+enum AnchorKind {
+  CURSOR
+  SELECTION
+  BOOKMARK
+  DIAGNOSTIC_TARGET
+}
+
+enum AnchorBias {
+  LEFT
+  RIGHT
+}
+
+enum AnchorStickiness {
+  LEADING
+  TRAILING
+  EXPAND
+}
+
+enum TickKind {
+  BUFFER_CREATE
+  TEXT_REWRITE
+  CHECKPOINT_CREATE
+}
+
+enum CheckpointKind {
+  INITIAL
+  MANUAL_SAVE
+  AUTO_SAVE
+}
+
+type BufferWorldline {
+  worldlineId: ID!
+  bufferKey: String!
+  canonicalHeadId: ID!
+  createdAtTickId: ID
+  projectionPath: String
+}
+
+type RopeHead {
+  headId: ID!
+  worldlineId: ID!
+  rootNodeId: ID!
+  byteLength: Int!
+  lineCount: Int!
+  utf16Length: Int!
+  equivalenceDigest: String!
+}
+
+type RopeLeaf {
+  leafId: ID!
+  blobId: ID!
+  startByte: Int!
+  endByte: Int!
+  byteLength: Int!
+  lineCount: Int!
+  utf16Length: Int!
+}
+
+type TextBlob {
+  blobId: ID!
+  encoding: TextEncoding!
+  byteLength: Int!
+  contentHash: String!
+}
+
+type Anchor {
+  anchorId: ID!
+  kind: AnchorKind!
+  basisHeadId: ID!
+  startByte: Int!
+  endByte: Int
+  startBias: AnchorBias!
+  endBias: AnchorBias
+  stickiness: AnchorStickiness
+}
+
+type Tick {
+  tickId: ID!
+  worldlineId: ID!
+  kind: TickKind!
+  sequenceNumber: Int!
+  author: String
+}
+
+type Checkpoint {
+  checkpointId: ID!
+  worldlineId: ID!
+  headId: ID!
+  kind: CheckpointKind!
+  label: String
+  createdByTickId: ID
+}
+
+type WorldlineSnapshot {
+  worldline: BufferWorldline!
+  head: RopeHead!
+  checkpoints: [Checkpoint!]!
+  text: String!
+}
+
+type TextLineReading {
+  lineNumber: Int!
+  text: String!
+  startByte: Int!
+  endByte: Int!
+}
+
+type TextWindowReading {
+  worldline: BufferWorldline!
+  head: RopeHead!
+  readingId: ID!
+  startLine: Int!
+  lineCount: Int!
+  totalLineCount: Int!
+  hasMoreBefore: Boolean!
+  hasMoreAfter: Boolean!
+  lines: [TextLineReading!]!
+}
+
+input CreateBufferWorldlineInput {
+  bufferKey: String!
+  initialText: String
+  projectionPath: String
+  createInitialCheckpoint: Boolean
+}
+
+input ReplaceRangeAsTickInput {
+  worldlineId: ID!
+  baseHeadId: ID!
+  startByte: Int!
+  endByte: Int!
+  insertText: String!
+  author: String
+}
+
+input TextWindowInput {
+  worldlineId: ID!
+  cursorLine: Int!
+  viewportLineCount: Int!
+  beforeLines: Int!
+  afterLines: Int!
+  maxBytes: Int!
+}

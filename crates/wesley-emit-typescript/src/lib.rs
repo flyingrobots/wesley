@@ -468,4 +468,20 @@ export interface UserFilter {
         assert_eq!(property_name("normalName"), "normalName");
         assert_eq!(property_name("not-normal"), "\"not-normal\"");
     }
+
+    #[test]
+    fn emits_jedit_shaped_hot_text_fixture() {
+        let ir = lower_schema_sdl(include_str!(
+            "../../../test/fixtures/consumer-models/jedit-hot-text-core.graphql"
+        ))
+        .expect("jedit-shaped fixture should lower");
+
+        let actual = emit_typescript(&ir);
+
+        assert!(actual.contains("export interface BufferWorldline {"));
+        assert!(actual.contains("export type AnchorKind = "));
+        assert!(actual.contains("checkpoints: Checkpoint[];"));
+        assert!(actual.contains("createdAtTickId: string | null;"));
+        assert!(actual.contains("createInitialCheckpoint?: boolean | null;"));
+    }
 }

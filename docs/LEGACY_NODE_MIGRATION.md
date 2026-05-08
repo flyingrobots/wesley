@@ -45,7 +45,7 @@ Every legacy Node surface gets one disposition:
 | `packages/wesley-cli/` | Delete after command migration | Native `crates/wesley-cli` is the product body. |
 | `packages/wesley-host-node/` | Delete | Native binary replaces the Node host. |
 | `packages/wesley-runtime-node/` | Extract or delete | Node module loading should not define Wesley core. |
-| `packages/wesley-generator-js/` | Port useful projections | Basic TypeScript declaration emission has started in Rust. Zod and legacy generator parity remain open. |
+| `packages/wesley-generator-js/` | Port useful projections | Basic Rust and TypeScript model emission has started in Rust. Zod and legacy generator parity remain open. |
 | `packages/wesley-generator-vue/` | Delete or externalize | Experimental frontend projection is not core. |
 | `packages/wesley-holmes/` | Extract or rebuild later | Assurance/evidence tooling is adjacent, not a blocker for compiler-kernel Rustification. |
 | `packages/wesley-host-browser/` | Delete or externalize | Browser host is an experiment, not the pure Rust path. |
@@ -61,8 +61,8 @@ Every legacy Node surface gets one disposition:
    `crates/wesley-cli`.
 2. Port generic schema diff if it is still wanted. Done for L1 schema
    structure through `wesley schema diff`.
-3. Port TypeScript/Zod only after deciding the Rust target boundary. Basic
-   TypeScript declaration emission now lives in `crates/wesley-emit-typescript`.
+3. Port TypeScript/Zod only after deciding the Rust target boundary. Basic Rust
+   and TypeScript model emission now live in Rust projection crates.
 4. Replace Node `generate` with explicit Rust emit commands.
 5. Remove Node host/runtime packages once no CLI command needs them.
 6. Remove root `package.json`, `pnpm-workspace.yaml`, and `pnpm-lock.yaml` only

@@ -30,6 +30,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **Native TypeScript emitter**: Added `crates/wesley-emit-typescript`, a
   structured TypeScript declaration AST/printer projection from Wesley L1 IR,
   and exposed it as `wesley emit typescript --schema <path> --out <path>`.
+- **Native Rust emitter**: Added `crates/wesley-emit-rust`, a structured Rust
+  item/type AST printer from Wesley L1 IR, plus `wesley emit rust --schema
+  <path> --out <path>` and a jedit-shaped hot text model fixture.
 
 - **Holmes counterfactual provider capability seam**: Added
   `holmes.counterfactualProviders` to Wesley module capabilities, moved shared

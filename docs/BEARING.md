@@ -45,7 +45,7 @@ timeline
 - Treating the Rust workspace as the primary surface for core compiler work.
 - Keeping the native `wesley` binary pointed at pure `wesley-core` library
   behavior and Rust projection crates. It now exposes schema lowering, schema
-  hashing, schema diffing, TypeScript emission, operation selections, and
+  hashing, schema diffing, Rust/TypeScript emission, operation selections, and
   directive argument extraction before any host adapters, MCP, or runtime
   embedding.
 - Using `cargo xtask` for repository automation so Rust-native checks keep
@@ -68,6 +68,9 @@ timeline
 - Treating `wesley emit typescript` as the first Rust generator port. It goes
   through a TypeScript declaration AST/printer crate, not regex replacement or
   Node template code.
+- Treating `wesley emit rust` as the matching model path for jedit-shaped
+  contracts. It goes through a Rust item/type AST/printer crate and validates
+  generated Rust syntax in tests.
 
 ## Tensions
 

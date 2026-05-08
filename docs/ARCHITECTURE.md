@@ -28,9 +28,9 @@ The repo is now split into three practical layers:
    compiler library. It lowers GraphQL SDL into L1 IR, diffs L1 schema
    structure, and exposes generic operation facts.
 2. **Native CLI / body**: `crates/wesley-cli` is the Rust product command. It
-   exposes schema lowering, schema hashing, schema diffing, TypeScript emission,
-   operation selection analysis, and directive argument extraction from Rust
-   crates.
+   exposes schema lowering, schema hashing, schema diffing, Rust/TypeScript
+   emission, operation selection analysis, and directive argument extraction
+   from Rust crates.
 3. **Legacy Node tooling**: `packages/` still carries the historical Node
    compiler, module runtime, generators, hosts, Holmes tooling, and fixture
    packages. These remain useful, but they are no longer the center of gravity
@@ -54,6 +54,7 @@ flowchart LR
     subgraph WesleyRepo["Wesley repository"]
         subgraph Rust["Rust workspace"]
             Core[wesley-core]
+            RustEmitter[wesley-emit-rust]
             TsEmitter[wesley-emit-typescript]
             NativeCli[wesley-cli]
             Xtask[xtask]
@@ -84,7 +85,9 @@ flowchart LR
     SDL --> Core
     OP --> Core
     NativeCli --> Core
+    NativeCli --> RustEmitter
     NativeCli --> TsEmitter
+    RustEmitter --> Core
     TsEmitter --> Core
     Xtask --> NativeCli
     Xtask --> Core
@@ -116,7 +119,8 @@ semantics.
 | Path | Role |
 | --- | --- |
 | `crates/wesley-core/` | Rust compiler kernel. Parses/lower SDL to domain-empty L1 IR, diffs L1 schema structure, and analyzes operation documents. |
-| `crates/wesley-cli/` | Native Rust `wesley` binary for schema deltas, schema hashes, TypeScript declarations, and operation facts. |
+| `crates/wesley-cli/` | Native Rust `wesley` binary for schema deltas, schema hashes, Rust/TypeScript artifacts, and operation facts. |
+| `crates/wesley-emit-rust/` | Rust model projection crate. Builds a Rust item/type AST from L1 IR, then prints deterministic data model declarations. |
 | `crates/wesley-emit-typescript/` | Rust TypeScript projection crate. Builds a TypeScript declaration AST from L1 IR, then prints it deterministically. |
 | `xtask/` | Rust repository automation: docs checks, tests, native preflight, release check, legacy preflight bridge. |
 | `packages/wesley-core/` | Historical JS core: domain/application/port modules, module capabilities, generation pipeline, hashes, runtime-event helpers. |
@@ -191,13 +195,15 @@ deployments, or runtime policy.
 
 ## Rust Emitters
 
-`crates/wesley-emit-typescript` is the first Rust projection crate. It does not
-parse or rewrite existing TypeScript. It takes `WesleyIR`, builds a structured
-TypeScript declaration AST, and prints deterministic declarations.
+`crates/wesley-emit-rust` and `crates/wesley-emit-typescript` are the first Rust
+projection crates. They do not parse or rewrite existing source files. They take
+`WesleyIR`, build structured language-specific ASTs, and print deterministic
+data model declarations.
 
 This generation path does not need tree-sitter. Tree-sitter, SWC, oxc, or a
 similar parser becomes relevant when Wesley needs to inspect or edit existing
-TypeScript files. Pure generation starts from an AST owned by the emitter.
+source files. Pure generation starts from an AST owned by the emitter. The Rust
+emitter tests validate generated Rust syntax with `syn`.
 
 ### Rust Class Diagram
 
@@ -258,6 +264,27 @@ classDiagram
         +Vec~TsDeclaration~ declarations
     }
 
+    class RustFile {
+        +Vec~RustItem~ items
+    }
+
+    class RustItem {
+        <<enum>>
+        Struct
+        Enum
+        TypeAlias
+    }
+
+    class RustType {
+        <<enum>>
+        String
+        I32
+        F64
+        Bool
+        Vec
+        Option
+    }
+
     class TsDeclaration {
         <<enum>>
         Interface
@@ -296,6 +323,8 @@ classDiagram
     TypeDefinition "1" --> "*" Field
     Field "1" --> "1" TypeReference
     SchemaDelta "1" --> "*" TypeModification
+    RustFile "1" --> "*" RustItem
+    RustItem --> RustType
     TsProgram "1" --> "*" TsDeclaration
     TsDeclaration --> TsTypeExpr
     LoweringPort <|.. ApolloLoweringAdapter
@@ -361,6 +390,7 @@ flowchart LR
     WesleyBin --> SchemaLower[schema lower]
     WesleyBin --> SchemaHash[schema hash]
     WesleyBin --> SchemaDiff[schema diff]
+    WesleyBin --> EmitRust[emit rust]
     WesleyBin --> EmitTypescript[emit typescript]
     WesleyBin --> OpSelections[operation selections]
     WesleyBin --> DirectiveArgs[operation directive-args]

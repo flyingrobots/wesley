@@ -10,6 +10,7 @@ fn help_exits_zero_without_footprint_command() {
     assert!(stdout.contains("Wesley native CLI"));
     assert!(stdout.contains("schema lower"));
     assert!(stdout.contains("schema diff"));
+    assert!(stdout.contains("emit rust"));
     assert!(stdout.contains("emit typescript"));
     assert!(stdout.contains("operation selections"));
     assert!(!stdout.contains("check-footprint"));
@@ -352,6 +353,55 @@ fn emit_typescript_writes_ast_generated_declarations() {
     assert!(generated.contains("  id: string;"));
     assert!(generated.contains("  name: string | null;"));
     assert!(generated.contains("  createdAt: DateTime;"));
+
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
+fn emit_rust_writes_ast_generated_models() {
+    let dir = temp_dir("emit-rust");
+    let schema = dir.join("schema.graphql");
+    let out = dir.join("generated").join("model.rs");
+
+    std::fs::write(
+        &schema,
+        r#"
+        enum Role {
+          ADMIN
+          READ_ONLY
+        }
+
+        type User {
+          id: ID!
+          displayName: String
+          roles: [Role!]!
+        }
+        "#,
+    )
+    .expect("schema should write");
+
+    let output = wesley()
+        .args(["emit", "rust", "--schema"])
+        .arg(&schema)
+        .arg("--out")
+        .arg(&out)
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+    let generated = std::fs::read_to_string(&out).expect("output should read");
+
+    assert!(stdout.is_empty());
+    assert!(stderr.is_empty());
+    assert!(generated.contains("pub enum Role {"));
+    assert!(generated.contains("#[serde(rename = \"READ_ONLY\")]"));
+    assert!(generated.contains("ReadOnly,"));
+    assert!(generated.contains("pub struct User {"));
+    assert!(generated.contains("#[serde(rename = \"displayName\")]"));
+    assert!(generated.contains("pub display_name: Option<String>,"));
+    assert!(generated.contains("pub roles: Vec<Role>,"));
 
     let _ = std::fs::remove_dir_all(dir);
 }
