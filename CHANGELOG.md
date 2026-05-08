@@ -6,6 +6,18 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Changed
+
+- **Rust core operation analysis boundary**: Replaced generic Wesley footprint
+  checking APIs with operation selection resolution and directive argument
+  extraction primitives. Echo-specific footprint honesty now belongs to
+  Echo-owned tooling rather than the Wesley core API.
+
+### Removed
+
+- **Native `check-footprint` command**: Removed the root `wesley check-footprint`
+  CLI surface and its JSON contract from the Wesley binary.
+
 ### Added
 
 - **Holmes counterfactual provider capability seam**: Added

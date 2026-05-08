@@ -1,10 +1,10 @@
 //! Apollo Parser implementation of the LoweringPort.
 
 use crate::domain::error::WesleyError;
-use crate::domain::footprint::{FootprintCheck, FootprintSpec};
 use crate::domain::ir::*;
+use crate::domain::operation::OperationDirectiveArgs;
 use crate::ports::lowering::LoweringPort;
-use apollo_parser::{cst, cst::CstNode, Parser};
+use apollo_parser::{cst, Parser};
 use async_trait::async_trait;
 use indexmap::IndexMap;
 use std::collections::{BTreeMap, HashMap};
@@ -753,7 +753,7 @@ fn directive_value_to_json(value: cst::Value) -> Result<serde_json::Value, Wesle
         cst::Value::Variable(variable) => Err(lowering_error_value(
             "directive",
             format!(
-                "Directive argument values in SDL cannot be variables: {}",
+                "Directive argument values cannot be variables: {}",
                 variable.text()
             ),
         )),
@@ -767,68 +767,37 @@ fn lowering_error_value(area: &str, message: String) -> WesleyError {
     }
 }
 
-/// Extracts declared and observed footprint data from a single GraphQL operation.
-pub fn extract_footprint(operation_sdl: &str) -> Result<FootprintSpec, WesleyError> {
-    let parser = Parser::new(operation_sdl);
-    let cst = parser.parse();
+/// Resolves response-path field selections from a single GraphQL operation.
+pub fn resolve_operation_selections(operation_sdl: &str) -> Result<Vec<String>, WesleyError> {
+    let parsed = parse_operation_document(operation_sdl)?;
+    let op = parsed.only_operation()?;
+    let mut selections = Vec::new();
 
-    let errors = cst.errors().collect::<Vec<_>>();
-    if !errors.is_empty() {
-        let err = &errors[0];
-        return Err(WesleyError::ParseError {
-            message: err.message().to_string(),
-            line: None,
-            column: None,
-        });
+    if let Some(selection_set) = op.selection_set() {
+        collect_selection_paths(
+            &selection_set,
+            "",
+            &parsed.fragments,
+            &mut Vec::new(),
+            &mut selections,
+        )?;
     }
 
-    let doc = cst.document();
-    let mut operations = Vec::new();
-    let mut fragments = BTreeMap::new();
-
-    for def in doc.definitions() {
-        match def {
-            cst::Definition::OperationDefinition(op) => {
-                operations.push(op);
-            }
-            cst::Definition::FragmentDefinition(fragment) => {
-                let name = fragment_name(&fragment)?;
-                if fragments.insert(name.clone(), fragment).is_some() {
-                    return footprint_error(format!("Duplicate fragment definition '{name}'"));
-                }
-            }
-            _ => {}
-        }
-    }
-
-    match operations.len() {
-        0 => footprint_error("No GraphQL operation found".to_string()),
-        1 => extract_footprint_from_operation(&operations[0], &fragments),
-        count => footprint_error(format!(
-            "Expected exactly one GraphQL operation, found {count}"
-        )),
-    }
+    Ok(selections)
 }
 
-/// Checks whether an operation's declared footprint covers its selection paths.
-pub fn check_footprint(operation_sdl: &str) -> Result<FootprintCheck, WesleyError> {
-    let spec = extract_footprint(operation_sdl)?;
-    check_spec(spec)
-}
-
-/// Checks whether an operation's declared footprint covers schema coordinates.
-pub fn check_footprint_with_schema(
+/// Resolves schema-coordinate field selections from a single GraphQL operation.
+pub fn resolve_operation_selections_with_schema(
     schema_sdl: &str,
     operation_sdl: &str,
-) -> Result<FootprintCheck, WesleyError> {
+) -> Result<Vec<String>, WesleyError> {
     let adapter = ApolloLoweringAdapter::new(0);
     let ir = adapter.parse_and_lower(schema_sdl)?;
     let root_types = extract_root_types(schema_sdl)?;
 
     let parsed = parse_operation_document(operation_sdl)?;
     let op = parsed.only_operation()?;
-    let (declared_reads, declared_writes) = extract_declared_footprint(op)?;
-    let mut actual_selections = Vec::new();
+    let mut selections = Vec::new();
 
     if let Some(selection_set) = op.selection_set() {
         let root_type = root_types.root_for_operation(op)?;
@@ -839,73 +808,59 @@ pub fn check_footprint_with_schema(
             &schema,
             &parsed.fragments,
             &mut Vec::new(),
-            &mut actual_selections,
+            &mut selections,
         )?;
     }
 
-    check_spec(FootprintSpec {
-        declared_reads,
-        declared_writes,
-        actual_selections,
-    })
+    Ok(selections)
 }
 
-fn check_spec(spec: FootprintSpec) -> Result<FootprintCheck, WesleyError> {
-    let declared = declared_paths(&spec);
+/// Extracts arguments from operation directives with the requested directive name.
+pub fn extract_operation_directive_args(
+    operation_sdl: &str,
+    directive_name: &str,
+) -> Result<Vec<OperationDirectiveArgs>, WesleyError> {
+    let parsed = parse_operation_document(operation_sdl)?;
+    let op = parsed.only_operation()?;
+    let mut directives = Vec::new();
 
-    let undeclared_selections = spec
-        .actual_selections
-        .iter()
-        .filter(|selection| !declared.contains(*selection))
-        .cloned()
-        .collect::<Vec<_>>();
+    let Some(operation_directives) = op.directives() else {
+        return Ok(directives);
+    };
 
-    let unused_declarations = declared
-        .into_iter()
-        .filter(|declaration| !spec.actual_selections.contains(declaration))
-        .collect::<Vec<_>>();
+    for directive in operation_directives.directives() {
+        let name = required_name(directive.name(), "Directive missing name")?;
+        if name != directive_name {
+            continue;
+        }
 
-    Ok(FootprintCheck {
-        spec,
-        undeclared_selections,
-        unused_declarations,
-    })
-}
-
-fn declared_paths(spec: &FootprintSpec) -> Vec<String> {
-    let mut declared = Vec::new();
-    for path in spec
-        .declared_reads
-        .iter()
-        .chain(spec.declared_writes.iter())
-    {
-        push_unique(&mut declared, path.clone());
-    }
-    declared
-}
-
-fn extract_footprint_from_operation(
-    op: &cst::OperationDefinition,
-    fragments: &BTreeMap<String, cst::FragmentDefinition>,
-) -> Result<FootprintSpec, WesleyError> {
-    let (declared_reads, declared_writes) = extract_declared_footprint(op)?;
-    let mut actual_selections = Vec::new();
-
-    if let Some(selection_set) = op.selection_set() {
-        collect_selection_paths(
-            &selection_set,
-            "",
-            fragments,
-            &mut Vec::new(),
-            &mut actual_selections,
-        )?;
+        directives.push(OperationDirectiveArgs {
+            directive_name: name,
+            arguments: extract_directive_arguments(directive.arguments())?,
+        });
     }
 
-    Ok(FootprintSpec {
-        declared_reads,
-        declared_writes,
-        actual_selections,
-    })
+    Ok(directives)
+}
+
+fn extract_directive_arguments(
+    arguments: Option<cst::Arguments>,
+) -> Result<IndexMap<String, serde_json::Value>, WesleyError> {
+    let mut values = IndexMap::new();
+
+    let Some(arguments) = arguments else {
+        return Ok(values);
+    };
+
+    for argument in arguments.arguments() {
+        let name = required_name(argument.name(), "Directive argument missing name")?;
+        let value = argument.value().ok_or_else(|| {
+            operation_error_value(format!("Directive argument '{name}' missing value"))
+        })?;
+        values.insert(name, directive_value_to_json(value)?);
+    }
+
+    Ok(values)
 }
 
 struct ParsedOperationDocument {
@@ -916,9 +871,9 @@ struct ParsedOperationDocument {
 impl ParsedOperationDocument {
     fn only_operation(&self) -> Result<&cst::OperationDefinition, WesleyError> {
         match self.operations.len() {
-            0 => footprint_error("No GraphQL operation found".to_string()),
+            0 => operation_error("No GraphQL operation found".to_string()),
             1 => Ok(&self.operations[0]),
-            count => footprint_error(format!(
+            count => operation_error(format!(
                 "Expected exactly one GraphQL operation, found {count}"
             )),
         }
@@ -951,7 +906,7 @@ fn parse_operation_document(operation_sdl: &str) -> Result<ParsedOperationDocume
             cst::Definition::FragmentDefinition(fragment) => {
                 let name = fragment_name(&fragment)?;
                 if fragments.insert(name.clone(), fragment).is_some() {
-                    return footprint_error(format!("Duplicate fragment definition '{name}'"));
+                    return operation_error(format!("Duplicate fragment definition '{name}'"));
                 }
             }
             _ => {}
@@ -962,70 +917,6 @@ fn parse_operation_document(operation_sdl: &str) -> Result<ParsedOperationDocume
         operations,
         fragments,
     })
-}
-
-fn extract_declared_footprint(
-    op: &cst::OperationDefinition,
-) -> Result<(Vec<String>, Vec<String>), WesleyError> {
-    let mut declared_reads = Vec::new();
-    let mut declared_writes = Vec::new();
-
-    let Some(dirs) = op.directives() else {
-        return Ok((declared_reads, declared_writes));
-    };
-
-    for dir in dirs.directives() {
-        let dir_name = required_name(dir.name(), "Directive missing name")?;
-        if dir_name != "wes_footprint" {
-            continue;
-        }
-
-        let Some(args) = dir.arguments() else {
-            continue;
-        };
-
-        for arg in args.arguments() {
-            let arg_name = required_name(arg.name(), "Directive argument missing name")?;
-            match arg_name.as_str() {
-                "reads" => declared_reads.extend(extract_string_list_arg(&arg_name, arg.value())?),
-                "writes" => {
-                    declared_writes.extend(extract_string_list_arg(&arg_name, arg.value())?)
-                }
-                _ => {}
-            }
-        }
-    }
-
-    Ok((declared_reads, declared_writes))
-}
-
-fn extract_string_list_arg(
-    arg_name: &str,
-    value: Option<cst::Value>,
-) -> Result<Vec<String>, WesleyError> {
-    let value = value.ok_or_else(|| {
-        footprint_error_value(format!(
-            "@wes_footprint argument '{arg_name}' is missing a value"
-        ))
-    })?;
-
-    let cst::Value::ListValue(list) = value else {
-        return footprint_error(format!(
-            "@wes_footprint argument '{arg_name}' must be a list of strings"
-        ));
-    };
-
-    let mut values = Vec::new();
-    for value in list.values() {
-        let cst::Value::StringValue(string_value) = value else {
-            return footprint_error(format!(
-                "@wes_footprint argument '{arg_name}' must be a list of strings"
-            ));
-        };
-        values.push(parse_string_value(string_value)?);
-    }
-
-    Ok(values)
 }
 
 fn collect_selection_paths(
@@ -1063,17 +954,17 @@ fn collect_selection_paths(
                     .and_then(|fragment_name| fragment_name.name())
                     .map(|name| name.text().to_string())
                     .ok_or_else(|| {
-                        footprint_error_value("Fragment spread missing name".to_string())
+                        operation_error_value("Fragment spread missing name".to_string())
                     })?;
 
                 if active_fragments.contains(&name) {
-                    return footprint_error(format!(
+                    return operation_error(format!(
                         "Cyclic fragment spread detected for fragment '{name}'"
                     ));
                 }
 
                 let fragment = fragments.get(&name).ok_or_else(|| {
-                    footprint_error_value(format!("Unknown fragment spread '{name}'"))
+                    operation_error_value(format!("Unknown fragment spread '{name}'"))
                 })?;
 
                 active_fragments.push(name);
@@ -1140,17 +1031,17 @@ fn collect_schema_coordinates(
                     .and_then(|fragment_name| fragment_name.name())
                     .map(|name| name.text().to_string())
                     .ok_or_else(|| {
-                        footprint_error_value("Fragment spread missing name".to_string())
+                        operation_error_value("Fragment spread missing name".to_string())
                     })?;
 
                 if active_fragments.contains(&name) {
-                    return footprint_error(format!(
+                    return operation_error(format!(
                         "Cyclic fragment spread detected for fragment '{name}'"
                     ));
                 }
 
                 let fragment = fragments.get(&name).ok_or_else(|| {
-                    footprint_error_value(format!("Unknown fragment spread '{name}'"))
+                    operation_error_value(format!("Unknown fragment spread '{name}'"))
                 })?;
                 let fragment_parent = fragment_type_condition(fragment)?;
                 schema.require_type(&fragment_parent)?;
@@ -1211,7 +1102,7 @@ impl<'a> SchemaIndex<'a> {
         self.types
             .get(name)
             .copied()
-            .ok_or_else(|| footprint_error_value(format!("Unknown selection parent type '{name}'")))
+            .ok_or_else(|| operation_error_value(format!("Unknown selection parent type '{name}'")))
     }
 
     fn field(&self, parent_type: &str, field_name: &str) -> Result<&'a Field, WesleyError> {
@@ -1221,7 +1112,7 @@ impl<'a> SchemaIndex<'a> {
             .iter()
             .find(|field| field.name == field_name)
             .ok_or_else(|| {
-                footprint_error_value(format!(
+                operation_error_value(format!(
                     "Type '{parent_type}' does not define selected field '{field_name}'"
                 ))
             })
@@ -1247,7 +1138,7 @@ impl RootTypes {
         } else if operation_type.subscription_token().is_some() {
             Ok(self.subscription.as_str())
         } else {
-            footprint_error("Unknown GraphQL operation type".to_string())
+            operation_error("Unknown GraphQL operation type".to_string())
         }
     }
 }
@@ -1293,7 +1184,7 @@ fn update_root_types(
 ) -> Result<(), WesleyError> {
     for root_def in root_defs {
         let operation_type = root_def.operation_type().ok_or_else(|| {
-            footprint_error_value("Schema root operation missing operation type".to_string())
+            operation_error_value("Schema root operation missing operation type".to_string())
         })?;
         let named_type = named_type_name(
             root_def.named_type(),
@@ -1323,12 +1214,12 @@ fn fragment_name(fragment: &cst::FragmentDefinition) -> Result<String, WesleyErr
         .fragment_name()
         .and_then(|fragment_name| fragment_name.name())
         .map(|name| name.text().to_string())
-        .ok_or_else(|| footprint_error_value("Fragment definition missing name".to_string()))
+        .ok_or_else(|| operation_error_value("Fragment definition missing name".to_string()))
 }
 
 fn fragment_type_condition(fragment: &cst::FragmentDefinition) -> Result<String, WesleyError> {
     let type_condition = fragment.type_condition().ok_or_else(|| {
-        footprint_error_value("Fragment definition missing type condition".to_string())
+        operation_error_value("Fragment definition missing type condition".to_string())
     })?;
     named_type_name(
         type_condition.named_type(),
@@ -1339,35 +1230,21 @@ fn fragment_type_condition(fragment: &cst::FragmentDefinition) -> Result<String,
 fn named_type_name(name: Option<cst::NamedType>, message: &str) -> Result<String, WesleyError> {
     name.and_then(|named_type| named_type.name())
         .map(|name| name.text().to_string())
-        .ok_or_else(|| footprint_error_value(message.to_string()))
+        .ok_or_else(|| operation_error_value(message.to_string()))
 }
 
 fn required_name(name: Option<cst::Name>, message: &str) -> Result<String, WesleyError> {
     name.map(|name| name.text().to_string())
-        .ok_or_else(|| footprint_error_value(message.to_string()))
+        .ok_or_else(|| operation_error_value(message.to_string()))
 }
 
-fn parse_string_value(value: cst::StringValue) -> Result<String, WesleyError> {
-    let raw = value.syntax().text().to_string();
-    if let Some(block_string) = raw
-        .strip_prefix("\"\"\"")
-        .and_then(|s| s.strip_suffix("\"\"\""))
-    {
-        return Ok(block_string.to_string());
-    }
-
-    serde_json::from_str::<String>(&raw).map_err(|err| {
-        footprint_error_value(format!("Invalid string literal in @wes_footprint: {err}"))
-    })
+fn operation_error<T>(message: String) -> Result<T, WesleyError> {
+    Err(operation_error_value(message))
 }
 
-fn footprint_error<T>(message: String) -> Result<T, WesleyError> {
-    Err(footprint_error_value(message))
-}
-
-fn footprint_error_value(message: String) -> WesleyError {
+fn operation_error_value(message: String) -> WesleyError {
     WesleyError::LoweringError {
         message,
-        area: "footprint".to_string(),
+        area: "operation".to_string(),
     }
 }

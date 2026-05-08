@@ -12,17 +12,15 @@ If you need the main Wesley nouns and the layer split before reading anything el
 Compile authored GraphQL into generic or explicitly selected generated
 artifacts.
 - **Inspect native CLI**: `cargo wesley --help`
-- **Check footprints**: `cargo wesley check-footprint --schema <schema> --operation <path>`
 - **Install locally**: `cargo install --locked --path crates/wesley-cli`
 - **Rust preflight**: `cargo xtask preflight`
 - **Release check**: `cargo xtask release-check`
 
 The Rust-native CLI is now the preferred front door for Wesley core work. The
-current `check-footprint` command performs schema-coordinate honesty checks
-when `--schema` is provided, and falls back to response-path checking when it is
-not. Its `--json` output is a stable automation contract:
-`wesley.checkFootprint.v1` for completed checks and `wesley.error.v1` for
-machine-readable parse/lowering failures.
+native binary stays small while core behavior moves into the Rust library.
+`wesley-core` exposes generic operation analysis primitives for resolving
+selection paths and extracting directive arguments; Echo-owned tooling owns
+Echo-specific footprint honesty checks.
 
 Use `cargo install --locked --path crates/wesley-cli` when you want `wesley` on
 your PATH. Use `cargo xtask release-check` before attaching native release

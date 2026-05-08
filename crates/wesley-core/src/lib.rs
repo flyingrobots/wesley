@@ -5,15 +5,15 @@
 //!
 //! Deterministic compiler kernel for GraphQL-to-Wesley IR lowering.
 
+pub mod adapters;
 pub mod domain;
 pub mod ports;
-pub mod adapters;
 
-pub use domain::ir::*;
-pub use domain::error::*;
-pub use domain::footprint::*;
-pub use ports::lowering::*;
 pub use adapters::apollo::{
-    check_footprint, check_footprint_with_schema, extract_footprint, lower_schema_sdl,
-    ApolloLoweringAdapter,
+    extract_operation_directive_args, lower_schema_sdl, resolve_operation_selections,
+    resolve_operation_selections_with_schema, ApolloLoweringAdapter,
 };
+pub use domain::error::*;
+pub use domain::ir::*;
+pub use domain::operation::*;
+pub use ports::lowering::*;

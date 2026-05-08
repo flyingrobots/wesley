@@ -72,6 +72,7 @@ timeline
 
 ## Next Target
 
-The immediate focus is **Rust-native footprint honesty**: keep the native
-`wesley` binary small, pure, and backed by `wesley-core`, then retire or extract
-legacy npm front-door surfaces as Rust equivalents become real.
+The immediate focus is **Rust-native core boundary cleanup**: keep the native
+`wesley` binary small, keep `wesley-core` focused on generic GraphQL lowering
+and operation analysis, and leave Echo-specific footprint honesty to Echo-owned
+tooling.

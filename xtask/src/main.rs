@@ -37,11 +37,7 @@ fn run(args: Vec<OsString>) -> Result<(), Error> {
         "test" => run_command("cargo", &["test", "--workspace"]),
         "preflight" => {
             run_command("cargo", &["test", "--workspace"])?;
-            run_command("cargo", &["run", "--bin", "wesley", "--", "--help"])?;
-            run_command(
-                "cargo",
-                &["run", "--bin", "wesley", "--", "check-footprint", "--help"],
-            )
+            run_command("cargo", &["run", "--bin", "wesley", "--", "--help"])
         }
         "release-check" => {
             run_command("cargo", &["test", "--workspace"])?;

@@ -1,8 +1,8 @@
 //! Lowering port definitions.
 
-use async_trait::async_trait;
-use crate::domain::ir::WesleyIR;
 use crate::domain::error::WesleyError;
+use crate::domain::ir::WesleyIR;
+use async_trait::async_trait;
 
 /// Port for lowering GraphQL SDL to Wesley IR.
 #[async_trait]

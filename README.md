@@ -33,26 +33,16 @@ Verify the native compiler and CLI crates.
 cargo xtask preflight
 ```
 
-### 2. Check An Operation Footprint
-Run the native `wesley` binary against a GraphQL schema and operation document.
+### 2. Inspect The Native CLI
+The native `wesley` binary is intentionally small while core compiler behavior
+moves into Rust library APIs.
 ```bash
-cargo wesley \
-  check-footprint \
-  --schema ./schema.graphql \
-  --operation ./operation.graphql
+cargo wesley --help
 ```
 
-Add `--json` when an agent or CI job needs machine-readable output.
-If `--schema` is omitted, Wesley falls back to response-path checking. With
-`--schema`, Wesley checks exact schema coordinates such as `Mutation.admitChange`
-and `Receipt.status`.
-
-The JSON output is a versioned contract for automation. Successful checks emit
-`kind: "wesley.checkFootprint.v1"`, `version: 1`, `mode`, `verdict`,
-`operationHash`, optional `schemaHash`, and top-level declared/actual footprint
-arrays. When `--json` is present and parsing/lowering fails, Wesley emits
-`kind: "wesley.error.v1"` with a structured error body instead of prose-only
-stderr.
+Wesley core exposes generic operation analysis primitives for resolving
+selection paths and extracting directive arguments. Echo-owned tooling owns
+Echo-specific footprint honesty checks.
 
 ## Rust-Native Front Door
 
