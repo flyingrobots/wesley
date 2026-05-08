@@ -10,6 +10,12 @@ footprint-honesty linter surface. The historical `pnpm wesley` entry point
 still exists for older package tooling, but it is no longer the right product
 center for Wesley's compiler kernel.
 
+The current repo also creates two-brain confusion: Rust Wesley and Node Wesley
+can look like competing products. The intended direction is one compiler brain
+in `crates/wesley-core`, one native command body in `crates/wesley-cli`, and
+legacy Node support surfaces under `packages/` only while their useful
+capabilities are ported, extracted, or retired.
+
 ## Hill
 
 The repository presents one Rust-native front door for core compiler work, and
@@ -35,5 +41,6 @@ or scheduled for extraction.
 - `xtask/src/main.rs`
 - `crates/wesley-cli/Cargo.toml`
 - `crates/wesley-cli/src/main.rs`
+- `docs/ENTRYPOINTS.md`
 - `package.json`
 - `scripts/check-doc-cli-commands.mjs`

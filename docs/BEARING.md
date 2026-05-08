@@ -52,6 +52,9 @@ timeline
   `cargo xtask release-check`.
 - Treating `pnpm wesley` as legacy package tooling until its remaining useful
   surfaces are extracted, retired, or deliberately reimplemented in Rust.
+- Maintaining [ENTRYPOINTS.md](./ENTRYPOINTS.md) as the short repo map so the
+  Rust kernel, native CLI, xtask automation, and legacy Node tooling are not
+  presented as competing Wesley products.
 
 ## Tensions
 
@@ -69,6 +72,10 @@ timeline
 - **Legacy NPM Front Door**: README and guide now point core work at Cargo, but
   package scripts, docs drift checks, and old generator commands still assume
   `pnpm wesley` is a first-class entry point.
+- **Two-Brain Confusion**: Rust and Node surfaces still coexist in the same
+  checkout. The intended shape is one compiler brain (`crates/wesley-core`), one
+  native command body (`crates/wesley-cli`), and legacy Node support surfaces
+  under `packages/` until they are ported, extracted, or deleted.
 
 ## Next Target
 

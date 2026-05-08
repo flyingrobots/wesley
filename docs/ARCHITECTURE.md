@@ -12,6 +12,10 @@ authored GraphQL -> Wesley core facts -> module-owned targets / evidence / hosts
 Wesley owns compiler truth. External modules and sibling repos own target
 semantics, runtime policy, database behavior, Echo behavior, and deployment.
 
+If you are trying to figure out where to start, read
+[ENTRYPOINTS.md](./ENTRYPOINTS.md) first. This document is the deeper structural
+map; the entrypoint map is the short answer to "which Wesley do I run or edit?"
+
 For the noun-by-noun reference, use [WESLEY_GLOSSARY.md](./WESLEY_GLOSSARY.md).
 For current direction and active tensions, use [BEARING.md](./BEARING.md).
 For work doctrine, use [METHOD.md](./METHOD.md).
@@ -20,15 +24,19 @@ For work doctrine, use [METHOD.md](./METHOD.md).
 
 The repo is now split into three practical layers:
 
-1. **Rust kernel**: `crates/wesley-core` is the emerging authoritative compiler
-   library. It lowers GraphQL SDL into L1 IR and exposes generic operation facts.
-2. **Native front door**: `crates/wesley-cli` is a tiny Rust binary. Today it is
-   mostly a stable executable shell around the Rust workspace, not a featureful
-   command surface.
-3. **Legacy / module tooling**: `packages/` still carries the historical Node
+1. **Rust kernel / brain**: `crates/wesley-core` is the emerging authoritative
+   compiler library. It lowers GraphQL SDL into L1 IR and exposes generic
+   operation facts.
+2. **Native CLI / body**: `crates/wesley-cli` is the intended product command.
+   Today it is mostly a stable executable shell around the Rust workspace, not a
+   featureful command surface.
+3. **Legacy Node tooling**: `packages/` still carries the historical Node
    compiler, module runtime, generators, hosts, Holmes tooling, and fixture
    packages. These remain useful, but they are no longer the center of gravity
    for core compiler truth.
+
+The root `package.json` keeps the legacy Node workspace installable. It is not
+the Wesley product entry point.
 
 The most recent boundary cleanup removed root-level footprint checking from
 Wesley. `wesley-core` now exposes generic operation selection and directive

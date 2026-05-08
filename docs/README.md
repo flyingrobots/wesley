@@ -11,6 +11,7 @@ which signpost is supposed to answer which question.
 | Surface | Role |
 | --- | --- |
 | [README.md](../README.md) | Product-facing front door: what Wesley is, what is real today, and where to start. |
+| [ENTRYPOINTS.md](./ENTRYPOINTS.md) | Short answer for which Wesley to run or edit: Rust kernel, native CLI, xtask, or legacy Node tooling. |
 | [WESLEY_GLOSSARY.md](./WESLEY_GLOSSARY.md) | Fast noun map for the Wesley base platform, modules, and project workspace. |
 | [BEARING](./BEARING.md) | Current direction, what is already real in the repo, and the tensions that still matter. |
 | [VISION](./VISION.md) | Bounded executive synthesis grounded in repo-visible truth. |
@@ -53,6 +54,7 @@ It also now has a more explicit METHOD closeout surface under
 ### Product Orientation
 
 - [README.md](../README.md)
+- [ENTRYPOINTS.md](./ENTRYPOINTS.md)
 - [WESLEY_GLOSSARY.md](./WESLEY_GLOSSARY.md)
 - [BEARING](./BEARING.md)
 - [Design Packets](./design/README.md)

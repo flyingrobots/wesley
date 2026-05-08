@@ -14,6 +14,28 @@ module repos such as Continuum itself or `wesley-postgres`.
 [![Overall](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/flyingrobots/wesley/main/meta/badges/overall.json)](README.md)
 [![License](https://img.shields.io/github/license/wesley)](./LICENSE)
 
+## Entry Point
+
+Start with the Rust-native surface:
+
+```bash
+cargo xtask preflight
+cargo wesley --help
+```
+
+Wesley currently has legacy Node packages and a newer Rust kernel in the same
+repository. They are not equal product fronts.
+
+- `crates/wesley-core/` is the compiler truth for new work.
+- `crates/wesley-cli/` is the intended native `wesley` command, currently small.
+- `xtask/` is repository automation.
+- `packages/` is the historical Node toolchain: old commands, generators,
+  hosts, module loading, evidence tooling, package tests, and docs support.
+- `package.json` keeps that old Node workspace installable; it is not the
+  product entry point.
+
+For the full map, read [ENTRYPOINTS.md](./docs/ENTRYPOINTS.md).
+
 ## Why Wesley?
 
 Unlike traditional code-generators that treat schemas as suggestions, Wesley treats the schema as the sovereign system of record.
@@ -27,13 +49,12 @@ Unlike traditional code-generators that treat schemas as suggestions, Wesley tre
 
 ## Quick Start
 
-### 1. Rust Workspace Health
-Verify the native compiler and CLI crates.
+### 1. Verify The Rust Workspace
 ```bash
 cargo xtask preflight
 ```
 
-### 2. Inspect The Native CLI
+### 2. Inspect The Native Command
 The native `wesley` binary is intentionally small while core compiler behavior
 moves into Rust library APIs.
 ```bash
