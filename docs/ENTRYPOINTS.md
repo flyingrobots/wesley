@@ -15,7 +15,8 @@ needs one.
 The Node packages still exist, but they are not a second Wesley. They are the
 historical package toolchain: old CLI commands, generators, host adapters,
 module loading, and evidence tooling that have not yet been extracted, retired,
-or ported.
+or ported. Their migration map lives in
+[LEGACY_NODE_MIGRATION.md](./LEGACY_NODE_MIGRATION.md).
 
 ## What Lives Where
 

@@ -18,6 +18,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   validation, docs-truth manifest validation, and forbidden machine-local path
   detection. `cargo xtask preflight` now runs those checks before Rust tests and
   native CLI help.
+- **Legacy Node migration map**: Added a command and package disposition map for
+  retiring the historical Node CLI, generators, hosts, runtime packages, and
+  evidence tooling on the path to a pure Rust Wesley.
 
 - **Holmes counterfactual provider capability seam**: Added
   `holmes.counterfactualProviders` to Wesley module capabilities, moved shared

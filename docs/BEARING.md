@@ -58,6 +58,8 @@ timeline
 - Maintaining [ENTRYPOINTS.md](./ENTRYPOINTS.md) as the short repo map so the
   Rust kernel, native CLI, xtask automation, and legacy Node tooling are not
   presented as competing Wesley products.
+- Maintaining [LEGACY_NODE_MIGRATION.md](./LEGACY_NODE_MIGRATION.md) as the
+  command/package disposition map for the move to a pure Rust Wesley.
 
 ## Tensions
 
