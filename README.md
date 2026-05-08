@@ -68,6 +68,7 @@ arguments.
 cargo wesley schema lower --schema test/fixtures/ir-parity/small-schema.graphql --json
 cargo wesley schema hash --schema test/fixtures/ir-parity/small-schema.graphql
 cargo wesley schema diff --old old.graphql --new new.graphql --format summary --exit-code
+cargo wesley schema diff --schema schema.graphql --against HEAD --format summary
 ```
 
 Echo-owned tooling owns Echo-specific footprint honesty checks.

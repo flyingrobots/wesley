@@ -52,6 +52,7 @@ The native CLI exposes those facts through:
 wesley schema lower --schema <path> --json
 wesley schema hash --schema <path>
 wesley schema diff --old <path> --new <path> [--format text|json|summary] [--exit-code]
+wesley schema diff --schema <path> --against <rev> [--format text|json|summary] [--exit-code]
 wesley operation selections --operation <path> [--schema <path>] [--json]
 wesley operation directive-args --operation <path> --directive <name> --json
 ```

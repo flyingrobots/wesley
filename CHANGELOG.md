@@ -24,6 +24,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **Native schema diff**: Added Rust `SchemaDelta` extraction over L1 IR and
   exposed it as `wesley schema diff --old <path> --new <path>` with text, JSON,
   summary, breaking-only, and breaking-change exit-code modes.
+- **Git-aware schema diff**: Added `wesley schema diff --schema <path>
+  --against <rev>` and `--base <rev>` so local edits can be compared against a
+  schema's previous Git state without manually materializing an old file.
 
 - **Holmes counterfactual provider capability seam**: Added
   `holmes.counterfactualProviders` to Wesley module capabilities, moved shared

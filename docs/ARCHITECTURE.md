@@ -335,6 +335,16 @@ flowchart LR
     CargoXtask --> Legacy[pnpm run preflight]
 ```
 
+`schema diff` has two input modes. The explicit mode compares two schema files.
+The Git-aware mode compares the working-tree schema against the same path at a
+Git revision:
+
+```bash
+wesley schema diff --old old.graphql --new new.graphql
+wesley schema diff --schema schema.graphql --against HEAD
+wesley schema diff --schema schema.graphql --base origin/main
+```
+
 `cargo xtask preflight` is the current native health check. It runs Rust-native
 docs hygiene checks, Rust workspace tests, and verifies the native CLI help
 surface. `cargo xtask legacy-preflight` intentionally crosses into Node package

@@ -2,8 +2,8 @@
 
 use std::env;
 use std::fs;
-use std::path::PathBuf;
-use std::process::ExitCode;
+use std::path::{Path, PathBuf};
+use std::process::{Command, ExitCode};
 use wesley_core::{
     compute_registry_hash, diff_schema_sdl, extract_operation_directive_args, lower_schema_sdl,
     resolve_operation_selections, resolve_operation_selections_with_schema, SchemaDelta,
@@ -85,10 +85,7 @@ fn run_schema_command(args: &[String]) -> Result<u8, CliError> {
         }
         Some("diff") => {
             let options = parse_options(&args[1..], "schema diff")?;
-            let old_schema_path = options.required_old_schema("schema diff")?;
-            let new_schema_path = options.required_new_schema("schema diff")?;
-            let old_sdl = read_file(&old_schema_path, "old schema")?;
-            let new_sdl = read_file(&new_schema_path, "new schema")?;
+            let (old_sdl, new_sdl) = read_schema_diff_inputs(&options)?;
             let delta = diff_schema_sdl(&old_sdl, &new_sdl)?;
             let output_format = options.output_format()?;
 
@@ -162,6 +159,7 @@ struct ParsedOptions {
     schema: Option<PathBuf>,
     old_schema: Option<PathBuf>,
     new_schema: Option<PathBuf>,
+    revision: Option<String>,
     operation: Option<PathBuf>,
     directive: Option<String>,
     format: Option<String>,
@@ -175,18 +173,6 @@ impl ParsedOptions {
         self.schema
             .clone()
             .ok_or_else(|| CliError::usage(format!("missing --schema for `{command}`")))
-    }
-
-    fn required_old_schema(&self, command: &str) -> Result<PathBuf, CliError> {
-        self.old_schema
-            .clone()
-            .ok_or_else(|| CliError::usage(format!("missing --old for `{command}`")))
-    }
-
-    fn required_new_schema(&self, command: &str) -> Result<PathBuf, CliError> {
-        self.new_schema
-            .clone()
-            .ok_or_else(|| CliError::usage(format!("missing --new for `{command}`")))
     }
 
     fn required_operation(&self, command: &str) -> Result<PathBuf, CliError> {
@@ -234,6 +220,16 @@ fn parse_options(args: &[String], command: &str) -> Result<ParsedOptions, CliErr
             "--new" => {
                 index += 1;
                 options.new_schema = Some(PathBuf::from(required_value(args, index, "--new")?));
+            }
+            "--against" | "--base" => {
+                let option = args[index].clone();
+                index += 1;
+                let revision = required_value(args, index, &option)?;
+                if options.revision.replace(revision).is_some() {
+                    return Err(CliError::usage(
+                        "pass only one Git revision with --against or --base",
+                    ));
+                }
             }
             "--operation" | "-o" => {
                 index += 1;
@@ -308,6 +304,113 @@ fn read_file(path: &PathBuf, label: &str) -> Result<String, CliError> {
         path: path.clone(),
         source: source.to_string(),
     })
+}
+
+fn read_schema_diff_inputs(options: &ParsedOptions) -> Result<(String, String), CliError> {
+    let explicit_mode = options.old_schema.is_some() || options.new_schema.is_some();
+    let git_mode = options.schema.is_some() || options.revision.is_some();
+
+    match (explicit_mode, git_mode) {
+        (true, true) => Err(CliError::usage(
+            "`schema diff` accepts either --old/--new or --schema with --against/--base",
+        )),
+        (true, false) => {
+            let old_schema_path = options
+                .old_schema
+                .clone()
+                .ok_or_else(|| CliError::usage("missing --old for `schema diff`"))?;
+            let new_schema_path = options
+                .new_schema
+                .clone()
+                .ok_or_else(|| CliError::usage("missing --new for `schema diff`"))?;
+
+            Ok((
+                read_file(&old_schema_path, "old schema")?,
+                read_file(&new_schema_path, "new schema")?,
+            ))
+        }
+        (false, true) => {
+            let schema_path = options
+                .schema
+                .clone()
+                .ok_or_else(|| CliError::usage("missing --schema for `schema diff`"))?;
+            let revision = options
+                .revision
+                .as_deref()
+                .ok_or_else(|| CliError::usage("missing --against or --base for `schema diff`"))?;
+
+            Ok((
+                read_git_file(revision, &schema_path)?,
+                read_file(&schema_path, "schema")?,
+            ))
+        }
+        (false, false) => Err(CliError::usage(
+            "`schema diff` needs --old/--new or --schema with --against/--base",
+        )),
+    }
+}
+
+fn read_git_file(revision: &str, schema_path: &Path) -> Result<String, CliError> {
+    let absolute_schema_path = absolute_path(schema_path)?;
+    let search_dir = absolute_schema_path
+        .parent()
+        .ok_or_else(|| CliError::Git("schema path has no parent directory".to_string()))?;
+    let repo_root_text = git_stdout(search_dir, ["rev-parse", "--show-toplevel"])?;
+    let repo_root = fs::canonicalize(repo_root_text.trim()).map_err(|source| {
+        CliError::Git(format!(
+            "failed to resolve Git repository root `{}`: {source}",
+            repo_root_text.trim()
+        ))
+    })?;
+    let relative_path = absolute_schema_path.strip_prefix(&repo_root).map_err(|_| {
+        CliError::Git(format!(
+            "schema file `{}` is outside Git repository `{}`",
+            absolute_schema_path.display(),
+            repo_root.display()
+        ))
+    })?;
+    let git_path = relative_path.to_string_lossy().replace('\\', "/");
+    let revision_spec = format!("{revision}:{git_path}");
+
+    git_stdout(&repo_root, ["show", revision_spec.as_str()])
+}
+
+fn absolute_path(path: &Path) -> Result<PathBuf, CliError> {
+    let path = if path.is_absolute() {
+        path.to_path_buf()
+    } else {
+        env::current_dir()
+            .map_err(|source| CliError::Git(format!("failed to read current directory: {source}")))?
+            .join(path)
+    };
+
+    fs::canonicalize(&path).map_err(|source| CliError::Io {
+        label: "schema".to_string(),
+        path,
+        source: source.to_string(),
+    })
+}
+
+fn git_stdout<const N: usize>(working_dir: &Path, args: [&str; N]) -> Result<String, CliError> {
+    let output = Command::new("git")
+        .arg("-C")
+        .arg(working_dir)
+        .args(args)
+        .output()
+        .map_err(|source| CliError::Git(format!("failed to run git: {source}")))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        let detail = if !stderr.is_empty() { stderr } else { stdout };
+        return Err(CliError::Git(format!(
+            "git command failed in `{}`: {detail}",
+            working_dir.display()
+        )));
+    }
+
+    String::from_utf8(output.stdout)
+        .map_err(|source| CliError::Git(format!("git output was not UTF-8: {source}")))
 }
 
 fn print_json(value: &impl serde::Serialize) -> Result<(), CliError> {
@@ -467,11 +570,14 @@ Usage:
   wesley schema lower --schema <path> [--json]
   wesley schema hash --schema <path> [--json]
   wesley schema diff --old <path> --new <path> [--format text|json|summary] [--breaking-only] [--exit-code]
+  wesley schema diff --schema <path> --against <rev> [--format text|json|summary] [--breaking-only] [--exit-code]
 
 Options:
   -s, --schema <path>  GraphQL SDL file
   --old <path>         Old/base GraphQL SDL file
   --new <path>         New/target GraphQL SDL file
+  --against <rev>      Git revision that provides the old schema state
+  --base <rev>         Alias for --against
   --json               Emit JSON output"
     );
 }
@@ -501,6 +607,7 @@ enum CliError {
         source: String,
     },
     Core(WesleyError),
+    Git(String),
     Json(String),
 }
 
@@ -512,7 +619,7 @@ impl CliError {
     fn exit_code(&self) -> u8 {
         match self {
             Self::Usage(_) => EXIT_USAGE,
-            Self::Io { .. } | Self::Core(_) | Self::Json(_) => EXIT_FAILURE,
+            Self::Io { .. } | Self::Core(_) | Self::Git(_) | Self::Json(_) => EXIT_FAILURE,
         }
     }
 }
@@ -534,6 +641,7 @@ impl std::fmt::Display for CliError {
                 path.display()
             ),
             Self::Core(error) => write!(formatter, "{error}"),
+            Self::Git(error) => write!(formatter, "git error: {error}"),
             Self::Json(error) => write!(formatter, "failed to serialize JSON output: {error}"),
         }
     }

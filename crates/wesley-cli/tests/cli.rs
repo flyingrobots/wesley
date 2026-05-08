@@ -186,6 +186,126 @@ fn schema_diff_exit_code_reports_breaking_changes() {
 }
 
 #[test]
+fn schema_diff_can_compare_worktree_schema_against_git_revision() {
+    let repo = temp_dir("schema-diff-git-against");
+    run_git(&repo, ["init"]);
+    run_git(&repo, ["config", "user.email", "wesley@example.test"]);
+    run_git(&repo, ["config", "user.name", "Wesley CLI Test"]);
+
+    let schema = repo.join("schema.graphql");
+    std::fs::write(
+        &schema,
+        r#"
+        type Query {
+          viewer: Viewer
+        }
+
+        type Viewer {
+          id: ID!
+          name: String
+        }
+        "#,
+    )
+    .expect("schema should write");
+    run_git(&repo, ["add", "schema.graphql"]);
+    run_git(&repo, ["commit", "-m", "initial schema"]);
+
+    std::fs::write(
+        &schema,
+        r#"
+        type Query {
+          viewer: Viewer
+        }
+
+        type Viewer {
+          id: ID!
+          handle: String
+        }
+        "#,
+    )
+    .expect("schema should write");
+
+    let output = wesley()
+        .current_dir(&repo)
+        .args([
+            "schema",
+            "diff",
+            "--schema",
+            "schema.graphql",
+            "--against",
+            "HEAD",
+            "--format",
+            "summary",
+        ])
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    assert_eq!(stdout.trim(), "1 breaking, 1 safe");
+
+    let _ = std::fs::remove_dir_all(repo);
+}
+
+#[test]
+fn schema_diff_base_alias_accepts_absolute_schema_paths() {
+    let repo = temp_dir("schema-diff-git-base");
+    run_git(&repo, ["init"]);
+    run_git(&repo, ["config", "user.email", "wesley@example.test"]);
+    run_git(&repo, ["config", "user.name", "Wesley CLI Test"]);
+
+    let schema = repo.join("schema.graphql");
+    std::fs::write(
+        &schema,
+        r#"
+        type Query {
+          viewer: Viewer
+        }
+
+        type Viewer {
+          id: ID!
+        }
+        "#,
+    )
+    .expect("schema should write");
+    run_git(&repo, ["add", "schema.graphql"]);
+    run_git(&repo, ["commit", "-m", "initial schema"]);
+
+    std::fs::write(
+        &schema,
+        r#"
+        type Query {
+          viewer: Viewer
+        }
+
+        type Viewer {
+          id: ID!
+        }
+
+        type Team {
+          id: ID!
+        }
+        "#,
+    )
+    .expect("schema should write");
+
+    let output = wesley()
+        .current_dir(std::env::temp_dir())
+        .args(["schema", "diff", "--schema"])
+        .arg(&schema)
+        .args(["--base", "HEAD", "--json"])
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let json: serde_json::Value = serde_json::from_str(&stdout).expect("stdout should be json");
+    assert_eq!(json["addedTypes"][0]["name"], "Team");
+
+    let _ = std::fs::remove_dir_all(repo);
+}
+
+#[test]
 fn operation_selections_emit_response_paths_as_json() {
     let operation = temp_file(
         "response-paths.graphql",
@@ -358,4 +478,34 @@ fn temp_file(name: &str, content: &str) -> std::path::PathBuf {
     ));
     std::fs::write(&path, content).expect("temp file should write");
     path
+}
+
+fn temp_dir(name: &str) -> std::path::PathBuf {
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("system time should be after unix epoch")
+        .as_nanos();
+    let path = std::env::temp_dir().join(format!(
+        "wesley-cli-test-{}-{nanos}-{name}",
+        std::process::id()
+    ));
+    std::fs::create_dir_all(&path).expect("temp directory should create");
+    path
+}
+
+fn run_git<const N: usize>(repo: &std::path::Path, args: [&str; N]) {
+    let output = Command::new("git")
+        .current_dir(repo)
+        .args(args)
+        .output()
+        .expect("git should run");
+
+    if !output.status.success() {
+        panic!(
+            "git command failed with {:?}\nstdout:\n{}\nstderr:\n{}",
+            output.status.code(),
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
 }

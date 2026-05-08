@@ -61,8 +61,9 @@ timeline
 - Maintaining [LEGACY_NODE_MIGRATION.md](./LEGACY_NODE_MIGRATION.md) as the
   command/package disposition map for the move to a pure Rust Wesley.
 - Treating `wesley schema diff` as the first native port of a legacy Node
-  command: it compares L1 schema structure now, while argument-aware operation
-  deltas wait on an explicit IR/API decision.
+  command: it compares L1 schema structure now, supports Git-aware old-schema
+  lookup through `--schema <path> --against <rev>`, and leaves argument-aware
+  operation deltas waiting on an explicit IR/API decision.
 
 ## Tensions
 
