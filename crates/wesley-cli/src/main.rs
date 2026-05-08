@@ -9,6 +9,7 @@ use wesley_core::{
     resolve_operation_selections, resolve_operation_selections_with_schema, SchemaDelta,
     WesleyError,
 };
+use wesley_emit_typescript::emit_typescript;
 
 const EXIT_OK: u8 = 0;
 const EXIT_FAILURE: u8 = 1;
@@ -33,6 +34,7 @@ fn run(args: Vec<String>) -> Result<u8, CliError> {
             Ok(EXIT_OK)
         }
         Some("schema") => run_schema_command(&args[1..]),
+        Some("emit") => run_emit_command(&args[1..]),
         Some("operation") => run_operation_command(&args[1..]),
         Some("version") | Some("--version") | Some("-V") => {
             println!("{}", env!("CARGO_PKG_VERSION"));
@@ -103,6 +105,31 @@ fn run_schema_command(args: &[String]) -> Result<u8, CliError> {
     }
 }
 
+fn run_emit_command(args: &[String]) -> Result<u8, CliError> {
+    match args.first().map(String::as_str) {
+        None | Some("--help") | Some("-h") => {
+            print_emit_help();
+            Ok(EXIT_OK)
+        }
+        Some("typescript") if wants_help(&args[1..]) => {
+            print_emit_help();
+            Ok(EXIT_OK)
+        }
+        Some("typescript") => {
+            let options = parse_options(&args[1..], "emit typescript")?;
+            let schema_path = options.required_schema("emit typescript")?;
+            let out_path = options.required_out("emit typescript")?;
+            let sdl = read_file(&schema_path, "schema")?;
+            let ir = lower_schema_sdl(&sdl)?;
+            let typescript = emit_typescript(&ir);
+
+            write_file(&out_path, &typescript, "TypeScript output")?;
+            Ok(EXIT_OK)
+        }
+        Some(command) => Err(CliError::usage(format!("unknown emit command '{command}'"))),
+    }
+}
+
 fn run_operation_command(args: &[String]) -> Result<u8, CliError> {
     match args.first().map(String::as_str) {
         None | Some("--help") | Some("-h") => {
@@ -161,6 +188,7 @@ struct ParsedOptions {
     new_schema: Option<PathBuf>,
     revision: Option<String>,
     operation: Option<PathBuf>,
+    out: Option<PathBuf>,
     directive: Option<String>,
     format: Option<String>,
     breaking_only: bool,
@@ -179,6 +207,12 @@ impl ParsedOptions {
         self.operation
             .clone()
             .ok_or_else(|| CliError::usage(format!("missing --operation for `{command}`")))
+    }
+
+    fn required_out(&self, command: &str) -> Result<PathBuf, CliError> {
+        self.out
+            .clone()
+            .ok_or_else(|| CliError::usage(format!("missing --out for `{command}`")))
     }
 
     fn required_directive(&self, command: &str) -> Result<String, CliError> {
@@ -235,6 +269,10 @@ fn parse_options(args: &[String], command: &str) -> Result<ParsedOptions, CliErr
                 index += 1;
                 options.operation =
                     Some(PathBuf::from(required_value(args, index, "--operation")?));
+            }
+            "--out" => {
+                index += 1;
+                options.out = Some(PathBuf::from(required_value(args, index, "--out")?));
             }
             "--directive" | "-d" => {
                 index += 1;
@@ -302,6 +340,24 @@ fn read_file(path: &PathBuf, label: &str) -> Result<String, CliError> {
     fs::read_to_string(path).map_err(|source| CliError::Io {
         label: label.to_string(),
         path: path.clone(),
+        source: source.to_string(),
+    })
+}
+
+fn write_file(path: &Path, content: &str, label: &str) -> Result<(), CliError> {
+    if let Some(parent) = path.parent() {
+        if !parent.as_os_str().is_empty() {
+            fs::create_dir_all(parent).map_err(|source| CliError::Io {
+                label: format!("{label} directory"),
+                path: parent.to_path_buf(),
+                source: source.to_string(),
+            })?;
+        }
+    }
+
+    fs::write(path, content).map_err(|source| CliError::Io {
+        label: label.to_string(),
+        path: path.to_path_buf(),
         source: source.to_string(),
     })
 }
@@ -550,7 +606,8 @@ Usage:
 Commands:
   schema lower              Lower GraphQL SDL to Wesley L1 IR JSON
   schema hash               Print the Wesley L1 registry hash for GraphQL SDL
-  schema diff               Compare two GraphQL SDL files as Wesley L1 IR
+  schema diff               Compare GraphQL SDL states as Wesley L1 IR
+  emit typescript           Emit TypeScript declarations from GraphQL SDL
   operation selections      Resolve selected operation fields
   operation directive-args  Extract operation directive arguments as JSON
   version                   Print the native CLI version
@@ -579,6 +636,20 @@ Options:
   --against <rev>      Git revision that provides the old schema state
   --base <rev>         Alias for --against
   --json               Emit JSON output"
+    );
+}
+
+fn print_emit_help() {
+    println!(
+        "\
+Wesley emit commands
+
+Usage:
+  wesley emit typescript --schema <path> --out <path>
+
+Options:
+  -s, --schema <path>  GraphQL SDL file
+  --out <path>         Output TypeScript declaration file"
     );
 }
 
@@ -637,7 +708,7 @@ impl std::fmt::Display for CliError {
                 source,
             } => write!(
                 formatter,
-                "failed to read {label} file `{}`: {source}",
+                "failed to access {label} `{}`: {source}",
                 path.display()
             ),
             Self::Core(error) => write!(formatter, "{error}"),

@@ -61,14 +61,15 @@ cargo wesley --help
 ```
 
 The native command can lower schema SDL to L1 IR, compute schema hashes, diff
-schema structure, resolve operation selections, and extract operation directive
-arguments.
+schema structure, emit TypeScript declarations, resolve operation selections,
+and extract operation directive arguments.
 
 ```bash
 cargo wesley schema lower --schema test/fixtures/ir-parity/small-schema.graphql --json
 cargo wesley schema hash --schema test/fixtures/ir-parity/small-schema.graphql
 cargo wesley schema diff --old old.graphql --new new.graphql --format summary --exit-code
 cargo wesley schema diff --schema schema.graphql --against HEAD --format summary
+cargo wesley emit typescript --schema schema.graphql --out generated/types.ts
 ```
 
 Echo-owned tooling owns Echo-specific footprint honesty checks.

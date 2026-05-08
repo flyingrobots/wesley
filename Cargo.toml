@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "crates/wesley-core",
+    "crates/wesley-emit-typescript",
     "crates/wesley-cli",
     "xtask",
 ]

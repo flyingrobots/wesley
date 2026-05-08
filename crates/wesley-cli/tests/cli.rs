@@ -10,6 +10,7 @@ fn help_exits_zero_without_footprint_command() {
     assert!(stdout.contains("Wesley native CLI"));
     assert!(stdout.contains("schema lower"));
     assert!(stdout.contains("schema diff"));
+    assert!(stdout.contains("emit typescript"));
     assert!(stdout.contains("operation selections"));
     assert!(!stdout.contains("check-footprint"));
 }
@@ -303,6 +304,56 @@ fn schema_diff_base_alias_accepts_absolute_schema_paths() {
     assert_eq!(json["addedTypes"][0]["name"], "Team");
 
     let _ = std::fs::remove_dir_all(repo);
+}
+
+#[test]
+fn emit_typescript_writes_ast_generated_declarations() {
+    let dir = temp_dir("emit-typescript");
+    let schema = dir.join("schema.graphql");
+    let out = dir.join("generated").join("types.ts");
+
+    std::fs::write(
+        &schema,
+        r#"
+        scalar DateTime
+
+        type User {
+          id: ID!
+          name: String
+          createdAt: DateTime!
+        }
+
+        enum Role {
+          ADMIN
+          MEMBER
+        }
+        "#,
+    )
+    .expect("schema should write");
+
+    let output = wesley()
+        .args(["emit", "typescript", "--schema"])
+        .arg(&schema)
+        .arg("--out")
+        .arg(&out)
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+    let generated = std::fs::read_to_string(&out).expect("output should read");
+
+    assert!(stdout.is_empty());
+    assert!(stderr.is_empty());
+    assert!(generated.contains("export type DateTime = unknown;"));
+    assert!(generated.contains("export type Role = \"ADMIN\" | \"MEMBER\";"));
+    assert!(generated.contains("export interface User {"));
+    assert!(generated.contains("  id: string;"));
+    assert!(generated.contains("  name: string | null;"));
+    assert!(generated.contains("  createdAt: DateTime;"));
+
+    let _ = std::fs::remove_dir_all(dir);
 }
 
 #[test]

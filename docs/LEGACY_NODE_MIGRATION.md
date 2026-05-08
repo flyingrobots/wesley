@@ -24,7 +24,7 @@ Every legacy Node surface gets one disposition:
 | `generate` | `packages/wesley-cli/src/commands/generate.mjs` | Port in pieces, then delete | Replace with native schema/operation/emit commands. Keep only while JS generators and evidence bundle flow still need it. |
 | `transform` | `packages/wesley-cli/src/commands/transform.mjs` | Delete | It is a compatibility wrapper around `generate`; do not recreate as a core noun unless the Rust transmutation model earns it. |
 | `compile` | `packages/wesley-cli/src/commands/compile.mjs` | Defer, then rebuild in Rust | Replace Node dynamic module target dispatch with a Rust target registry or external-process target protocol. |
-| `typescript` / `ts` | `packages/wesley-cli/src/commands/typescript.mjs` | Port | Build a Rust TypeScript projection after L1 IR is stable. Destination is a Rust codegen module or crate, not JS. |
+| `typescript` / `ts` | `packages/wesley-cli/src/commands/typescript.mjs` | Partially ported | Native `wesley emit typescript` now emits basic TypeScript declarations through `crates/wesley-emit-typescript`, a Rust AST/printer projection. Legacy generator parity is not complete yet. |
 | `zod` | `packages/wesley-cli/src/commands/zod.mjs` | Port | Build a Rust Zod projection if Wesley still owns this generic output. |
 | `models` | `packages/wesley-cli/src/commands/models.mjs` | Delete or extract | Model-class scaffolding is not core compiler truth. Keep only if a Rust target module explicitly owns it. |
 | `diff` | `packages/wesley-cli/src/commands/diff.mjs` | Ported | Native `wesley schema diff` now compares L1 schema structure in Rust, including Git-aware `--schema <path> --against <rev>` lookup. Argument-aware operation deltas remain a separate IR/API decision because L1 fields do not currently carry field arguments. |
@@ -45,7 +45,7 @@ Every legacy Node surface gets one disposition:
 | `packages/wesley-cli/` | Delete after command migration | Native `crates/wesley-cli` is the product body. |
 | `packages/wesley-host-node/` | Delete | Native binary replaces the Node host. |
 | `packages/wesley-runtime-node/` | Extract or delete | Node module loading should not define Wesley core. |
-| `packages/wesley-generator-js/` | Port useful projections | TypeScript/Zod may become Rust targets; old implementation should not remain authoritative. |
+| `packages/wesley-generator-js/` | Port useful projections | Basic TypeScript declaration emission has started in Rust. Zod and legacy generator parity remain open. |
 | `packages/wesley-generator-vue/` | Delete or externalize | Experimental frontend projection is not core. |
 | `packages/wesley-holmes/` | Extract or rebuild later | Assurance/evidence tooling is adjacent, not a blocker for compiler-kernel Rustification. |
 | `packages/wesley-host-browser/` | Delete or externalize | Browser host is an experiment, not the pure Rust path. |
@@ -61,7 +61,8 @@ Every legacy Node surface gets one disposition:
    `crates/wesley-cli`.
 2. Port generic schema diff if it is still wanted. Done for L1 schema
    structure through `wesley schema diff`.
-3. Port TypeScript/Zod only after deciding the Rust target boundary.
+3. Port TypeScript/Zod only after deciding the Rust target boundary. Basic
+   TypeScript declaration emission now lives in `crates/wesley-emit-typescript`.
 4. Replace Node `generate` with explicit Rust emit commands.
 5. Remove Node host/runtime packages once no CLI command needs them.
 6. Remove root `package.json`, `pnpm-workspace.yaml`, and `pnpm-lock.yaml` only

@@ -18,3 +18,4 @@ path = "src/main.rs"
 serde = "1.0"
 serde_json = "1.0"
 wesley-core = { path = "../wesley-core", version = "0.1.0" }
+wesley-emit-typescript = { path = "../wesley-emit-typescript", version = "0.1.0" }

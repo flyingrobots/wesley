@@ -44,9 +44,10 @@ timeline
 ### 4. Rust-Native Front Door
 - Treating the Rust workspace as the primary surface for core compiler work.
 - Keeping the native `wesley` binary pointed at pure `wesley-core` library
-  behavior. It now exposes schema lowering, schema hashing, schema diffing,
-  operation selections, and directive argument extraction before any host
-  adapters, MCP, or runtime embedding.
+  behavior and Rust projection crates. It now exposes schema lowering, schema
+  hashing, schema diffing, TypeScript emission, operation selections, and
+  directive argument extraction before any host adapters, MCP, or runtime
+  embedding.
 - Using `cargo xtask` for repository automation so Rust-native checks keep
   moving away from npm scripts. Native preflight now includes Rust docs checks,
   Rust tests, and native CLI help.
@@ -64,6 +65,9 @@ timeline
   command: it compares L1 schema structure now, supports Git-aware old-schema
   lookup through `--schema <path> --against <rev>`, and leaves argument-aware
   operation deltas waiting on an explicit IR/API decision.
+- Treating `wesley emit typescript` as the first Rust generator port. It goes
+  through a TypeScript declaration AST/printer crate, not regex replacement or
+  Node template code.
 
 ## Tensions
 

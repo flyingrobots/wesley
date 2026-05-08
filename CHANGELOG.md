@@ -27,6 +27,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **Git-aware schema diff**: Added `wesley schema diff --schema <path>
   --against <rev>` and `--base <rev>` so local edits can be compared against a
   schema's previous Git state without manually materializing an old file.
+- **Native TypeScript emitter**: Added `crates/wesley-emit-typescript`, a
+  structured TypeScript declaration AST/printer projection from Wesley L1 IR,
+  and exposed it as `wesley emit typescript --schema <path> --out <path>`.
 
 - **Holmes counterfactual provider capability seam**: Added
   `holmes.counterfactualProviders` to Wesley module capabilities, moved shared

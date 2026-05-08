@@ -28,8 +28,9 @@ The repo is now split into three practical layers:
    compiler library. It lowers GraphQL SDL into L1 IR, diffs L1 schema
    structure, and exposes generic operation facts.
 2. **Native CLI / body**: `crates/wesley-cli` is the Rust product command. It
-   exposes schema lowering, schema hashing, schema diffing, operation selection
-   analysis, and directive argument extraction from the Rust core.
+   exposes schema lowering, schema hashing, schema diffing, TypeScript emission,
+   operation selection analysis, and directive argument extraction from Rust
+   crates.
 3. **Legacy Node tooling**: `packages/` still carries the historical Node
    compiler, module runtime, generators, hosts, Holmes tooling, and fixture
    packages. These remain useful, but they are no longer the center of gravity
@@ -53,6 +54,7 @@ flowchart LR
     subgraph WesleyRepo["Wesley repository"]
         subgraph Rust["Rust workspace"]
             Core[wesley-core]
+            TsEmitter[wesley-emit-typescript]
             NativeCli[wesley-cli]
             Xtask[xtask]
         end
@@ -82,6 +84,8 @@ flowchart LR
     SDL --> Core
     OP --> Core
     NativeCli --> Core
+    NativeCli --> TsEmitter
+    TsEmitter --> Core
     Xtask --> NativeCli
     Xtask --> Core
 
@@ -112,7 +116,8 @@ semantics.
 | Path | Role |
 | --- | --- |
 | `crates/wesley-core/` | Rust compiler kernel. Parses/lower SDL to domain-empty L1 IR, diffs L1 schema structure, and analyzes operation documents. |
-| `crates/wesley-cli/` | Native Rust `wesley` binary for schema deltas, schema hashes, and operation facts. |
+| `crates/wesley-cli/` | Native Rust `wesley` binary for schema deltas, schema hashes, TypeScript declarations, and operation facts. |
+| `crates/wesley-emit-typescript/` | Rust TypeScript projection crate. Builds a TypeScript declaration AST from L1 IR, then prints it deterministically. |
 | `xtask/` | Rust repository automation: docs checks, tests, native preflight, release check, legacy preflight bridge. |
 | `packages/wesley-core/` | Historical JS core: domain/application/port modules, module capabilities, generation pipeline, hashes, runtime-event helpers. |
 | `packages/wesley-cli/` | Historical JS CLI command framework and module-aware command surfaces. |
@@ -184,6 +189,16 @@ unions, enum values, input objects, nullability, lists, and source-level
 directive data. It does not know tables, Echo graph nodes, migrations, routes,
 deployments, or runtime policy.
 
+## Rust Emitters
+
+`crates/wesley-emit-typescript` is the first Rust projection crate. It does not
+parse or rewrite existing TypeScript. It takes `WesleyIR`, builds a structured
+TypeScript declaration AST, and prints deterministic declarations.
+
+This generation path does not need tree-sitter. Tree-sitter, SWC, oxc, or a
+similar parser becomes relevant when Wesley needs to inspect or edit existing
+TypeScript files. Pure generation starts from an AST owned by the emitter.
+
 ### Rust Class Diagram
 
 ```mermaid
@@ -239,6 +254,27 @@ classDiagram
         +Vec~SchemaElementChange~ directive_changes
     }
 
+    class TsProgram {
+        +Vec~TsDeclaration~ declarations
+    }
+
+    class TsDeclaration {
+        <<enum>>
+        Interface
+        TypeAlias
+    }
+
+    class TsTypeExpr {
+        <<enum>>
+        String
+        Number
+        Boolean
+        Null
+        Reference
+        Array
+        Union
+    }
+
     class LoweringPort {
         <<trait>>
         +lower_sdl(sdl)
@@ -260,6 +296,8 @@ classDiagram
     TypeDefinition "1" --> "*" Field
     Field "1" --> "1" TypeReference
     SchemaDelta "1" --> "*" TypeModification
+    TsProgram "1" --> "*" TsDeclaration
+    TsDeclaration --> TsTypeExpr
     LoweringPort <|.. ApolloLoweringAdapter
     ApolloLoweringAdapter --> WesleyIR
     ApolloLoweringAdapter --> WesleyError
@@ -323,6 +361,7 @@ flowchart LR
     WesleyBin --> SchemaLower[schema lower]
     WesleyBin --> SchemaHash[schema hash]
     WesleyBin --> SchemaDiff[schema diff]
+    WesleyBin --> EmitTypescript[emit typescript]
     WesleyBin --> OpSelections[operation selections]
     WesleyBin --> DirectiveArgs[operation directive-args]
     WesleyBin --> CoreFacts[wesley-core]

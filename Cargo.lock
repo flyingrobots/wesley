@@ -953,6 +953,7 @@ dependencies = [
  "serde",
  "serde_json",
  "wesley-core",
+ "wesley-emit-typescript",
 ]
 
 [[package]]
@@ -972,6 +973,14 @@ dependencies = [
  "thiserror 1.0.69",
  "tokio",
  "tower 0.4.13",
+]
+
+[[package]]
+name = "wesley-emit-typescript"
+version = "0.1.0"
+dependencies = [
+ "pretty_assertions",
+ "wesley-core",
 ]
 
 [[package]]
