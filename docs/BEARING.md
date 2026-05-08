@@ -71,6 +71,11 @@ timeline
 - Treating `wesley emit rust` as the matching model path for jedit-shaped
   contracts. It goes through a Rust item/type AST/printer crate and validates
   generated Rust syntax in tests.
+- Tracking jedit capability support explicitly in
+  [JEDIT_CAPABILITY_PROGRESS.md](./JEDIT_CAPABILITY_PROGRESS.md). Current
+  evidence says basic Rust/TypeScript model emission works; the next gap is a
+  generic schema operation catalog that preserves root field arguments and
+  directives without moving Echo footprint enforcement into Wesley core.
 
 ## Tensions
 
@@ -95,7 +100,8 @@ timeline
 
 ## Next Target
 
-The immediate focus is **Rust-native core boundary cleanup**: keep the native
-`wesley` binary small, keep `wesley-core` focused on generic GraphQL lowering
-and operation analysis, and leave Echo-specific footprint honesty to Echo-owned
-tooling.
+The immediate focus is **jedit-shaped capability inspection**: add a
+domain-empty schema operation catalog that can describe `Query` and `Mutation`
+root fields, arguments, result types, and directives from real jedit contracts.
+Keep Echo-specific footprint honesty to Echo-owned tooling; Wesley should expose
+the generic operation facts that emitters and downstream adapters can consume.
