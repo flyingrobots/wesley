@@ -6,6 +6,10 @@ This is the deletion map for the historical Node Wesley surface.
 The goal is not to port every file. The goal is to keep useful Wesley
 capabilities while removing Node as a product entry point.
 
+The native Rust distribution path is crates.io: `cargo install wesley-cli`
+installs the `wesley` binary. Sibling-repo paths and Node entrypoints are local
+development or legacy compatibility surfaces, not release distribution.
+
 ## Rule
 
 Every legacy Node surface gets one disposition:

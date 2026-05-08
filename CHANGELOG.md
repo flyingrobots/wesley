@@ -8,6 +8,11 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- **Crates.io alpha publishing metadata**: Prepared the Rust-native crates for
+  a first `0.0.1` alpha publication: `wesley-core`,
+  `wesley-emit-rust`, `wesley-emit-typescript`, and `wesley-cli`. The
+  installable package is `wesley-cli`, which provides the `wesley` binary,
+  because the bare `wesley` crate name is already occupied on crates.io.
 - **Native Rust schema and operation commands**: Added Rust-backed
   `wesley schema lower`, `wesley schema hash`,
   `wesley operation selections`, and `wesley operation directive-args`

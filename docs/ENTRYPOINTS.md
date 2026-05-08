@@ -7,6 +7,14 @@ Wesley has one intended front door:
 cargo wesley --help
 ```
 
+For installed alpha builds, the crates.io package is `wesley-cli` and the
+installed command is `wesley`:
+
+```bash
+cargo install wesley-cli --version 0.0.1
+wesley --help
+```
+
 The native command is now the first user-facing Rust surface for compiler facts.
 The deeper source of truth is still the Rust library under `crates/wesley-core`.
 New compiler behavior should start there, then grow a native CLI command when it
@@ -96,6 +104,18 @@ truth to the Node side.
 | Using an old generator that only exists in JS | `pnpm wesley ...` for now, then plan a port or extraction |
 | Implementing Echo footprint honesty | Echo-owned tooling, not generic Wesley |
 | Implementing Postgres migrations or SQL projection | `wesley-postgres` or another external target module, not `wesley-core` |
+
+## Crates.io Alpha Packages
+
+The first crates.io alpha is intentionally small:
+
+- `wesley-core`: compiler kernel library
+- `wesley-emit-rust`: Rust projection crate
+- `wesley-emit-typescript`: TypeScript projection crate
+- `wesley-cli`: installable CLI package that provides the `wesley` binary
+
+The bare crate name `wesley` is already occupied on crates.io, so the product
+binary ships through the `wesley-cli` package.
 
 ## Migration Rule
 

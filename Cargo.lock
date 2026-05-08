@@ -948,7 +948,7 @@ dependencies = [
 
 [[package]]
 name = "wesley-cli"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -959,7 +959,7 @@ dependencies = [
 
 [[package]]
 name = "wesley-core"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "apollo-parser",
  "async-trait",
@@ -978,7 +978,7 @@ dependencies = [
 
 [[package]]
 name = "wesley-emit-rust"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "pretty_assertions",
  "serde_json",
@@ -988,7 +988,7 @@ dependencies = [
 
 [[package]]
 name = "wesley-emit-typescript"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "pretty_assertions",
  "serde_json",

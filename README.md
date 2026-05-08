@@ -98,7 +98,14 @@ The distinction matters: `wesley` is the user-facing compiler command, while
 
 ### Native Install And Release
 
-Install the local native binary directly from the Rust workspace.
+Install the published alpha native binary from crates.io.
+```bash
+cargo install wesley-cli --version 0.0.1
+wesley --help
+```
+
+Install the local native binary directly from the Rust workspace when working
+inside this checkout.
 ```bash
 cargo install --locked --path crates/wesley-cli
 wesley --help
@@ -112,10 +119,10 @@ cargo xtask release-check
 ```
 
 This path does not require an npm entry point. The native CLI is distributed as
-a local Cargo install or release binary artifact; it is not a crates.io upload
-target yet. The historical Node packages remain available only for legacy
-package projections and surrounding tooling until those surfaces are extracted,
-retired, or reimplemented in Rust.
+the `wesley-cli` crate on crates.io, which installs a `wesley` binary. The
+historical Node packages remain available only for legacy package projections
+and surrounding tooling until those surfaces are extracted, retired, or
+reimplemented in Rust.
 
 ### Legacy Repository Tooling Preflight
 The repo still carries historical Node package tooling while the Rust-native
@@ -177,6 +184,8 @@ Progress: 61% → Alpha
 ## Documentation
 
 - **[Guide](./docs/GUIDE.md)**: Orientation, the fast path, and compiler usage.
+- **[Crates.io Release](./docs/CRATES_IO_RELEASE.md)**: Native Rust alpha
+  package set and publish order.
 - **[Wesley Glossary](./docs/WESLEY_GLOSSARY.md)**: The main nouns, layers, and boundary terms for Wesley and its surrounding toolchain.
 - **[Advanced Guide](./docs/ADVANCED_GUIDE.md)**: Deep dives into the IR model, custom directives, and the "Holmes" policy engine.
 - **[Architecture](./docs/ARCHITECTURE.md)**: The authoritative system map (Base Platform, Modules, Workspace, and bundle pipeline).

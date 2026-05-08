@@ -52,7 +52,8 @@ timeline
   moving away from npm scripts. Native preflight now includes Rust docs checks,
   Rust tests, and native CLI help.
 - Keeping native install/release checks on the Cargo path with
-  `cargo install --locked --path crates/wesley-cli` and
+  `cargo install wesley-cli --version 0.0.1`,
+  `cargo install --locked --path crates/wesley-cli`, and
   `cargo xtask release-check`.
 - Treating `pnpm wesley` as legacy package tooling until its remaining useful
   surfaces are extracted, retired, or deliberately reimplemented in Rust.

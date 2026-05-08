@@ -12,6 +12,7 @@ If you need the main Wesley nouns and the layer split before reading anything el
 Compile authored GraphQL into generic or explicitly selected generated
 artifacts.
 - **Inspect native CLI**: `cargo wesley --help`
+- **Install alpha from crates.io**: `cargo install wesley-cli --version 0.0.1`
 - **Install locally**: `cargo install --locked --path crates/wesley-cli`
 - **Rust preflight**: `cargo xtask preflight`
 - **Release check**: `cargo xtask release-check`
@@ -22,11 +23,12 @@ native binary stays small while core behavior moves into the Rust library.
 selection paths and extracting directive arguments; Echo-owned tooling owns
 Echo-specific footprint honesty checks.
 
-Use `cargo install --locked --path crates/wesley-cli` when you want `wesley` on
-your PATH. Use `cargo xtask release-check` before attaching native release
+Use `cargo install wesley-cli --version 0.0.1` when you want the published
+alpha `wesley` binary on your PATH. Use
+`cargo install --locked --path crates/wesley-cli` when working from this
+checkout. Use `cargo xtask release-check` before cutting native release
 artifacts; it runs the Rust tests, builds the optimized binary, and packages
-the Rust library crate without publishing anything. The native CLI is a local
-install or binary artifact for now, not a crates.io upload target.
+the Rust library crate without publishing anything.
 
 The historical package CLI still carries generic TypeScript/Zod/transform
 commands while those surfaces are being extracted or retired:
