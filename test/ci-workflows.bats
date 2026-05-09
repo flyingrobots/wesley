@@ -118,6 +118,42 @@ load 'bats-plugins/bats-assert/load'
   [ "$output" -eq 1 ]
 }
 
+@test "release crates workflow creates draft release before publishing crates" {
+  run bash -lc "grep -n 'Create draft GitHub Release' .github/workflows/release-crates.yml | cut -d: -f1"
+  assert_success
+  [ -n "$output" ]
+  draft_line="$output"
+
+  run bash -lc "grep -n 'Publish crates' .github/workflows/release-crates.yml | cut -d: -f1"
+  assert_success
+  [ -n "$output" ]
+  publish_line="$output"
+
+  [ "$draft_line" -lt "$publish_line" ]
+
+  run bash -lc "grep -n 'Finalize GitHub Release' .github/workflows/release-crates.yml | cut -d: -f1"
+  assert_success
+  [ -n "$output" ]
+  finalize_line="$output"
+
+  run bash -lc "grep -n 'Verify crates.io visibility' .github/workflows/release-crates.yml | cut -d: -f1"
+  assert_success
+  [ -n "$output" ]
+  verify_line="$output"
+
+  [ "$verify_line" -lt "$finalize_line" ]
+}
+
+@test "release crates workflow checks version milestones and labels" {
+  run bash -lc "grep -F -- '--milestone' .github/workflows/release-crates.yml | wc -l"
+  assert_success
+  [ "$output" -ge 2 ]
+
+  run bash -lc "grep -F -- '--label' .github/workflows/release-crates.yml | wc -l"
+  assert_success
+  [ "$output" -ge 2 ]
+}
+
 @test "wesley-holmes workflow propagates detected schema outputs into analysis jobs" {
   run bash -lc "grep -F 'outputs:' .github/workflows/wesley-holmes.yml | wc -l"
   assert_success

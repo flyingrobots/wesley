@@ -71,12 +71,16 @@ The `release-gauntlet` job must verify:
 - root `README.md` exists
 - root `CHANGELOG.md` contains release notes for the exact version
 - no version-associated backlog item remains under `docs/method/backlog/`
-- no open GitHub issue is associated with the exact tag or version
+- no open GitHub issue is associated with the exact tag or version by text,
+  milestone, or label
 - Rust check, test, clippy, docs, release-check, package sanity, and audit pass
 
 The `publish-crates` job must depend on `release-gauntlet` and must repeat the
-release guard before uploading. It publishes in dependency order and performs a
-`cargo publish --dry-run` immediately before each real `cargo publish`.
+release guard before uploading. It extracts release notes and creates a draft
+GitHub Release before the first crates.io mutation. It then publishes in
+dependency order, performs a `cargo publish --dry-run` immediately before each
+real `cargo publish`, verifies crates.io visibility, and only then finalizes the
+GitHub Release.
 
 ## Release Pre-Flight Contract
 
@@ -180,7 +184,8 @@ cargo xtask package-crates --tag vX.Y.Z
 ```
 
 The release workflow also checks open GitHub issues for the exact tag and
-version. Any matching open issue blocks publication.
+version using text search, milestone association, and label association. Any
+matching open issue blocks publication.
 
 For a multi-crate release where later crates depend on earlier Wesley crates,
 the full registry-backed `cargo publish --dry-run` for dependent crates cannot

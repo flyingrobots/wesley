@@ -54,11 +54,21 @@ jobs:
         run: |
           set -euo pipefail
           version="${GITHUB_REF_NAME#v}"
-          matches="$(gh issue list \
-            --state open \
-            --search "\"${GITHUB_REF_NAME}\" OR \"${version}\" repo:${GITHUB_REPOSITORY}" \
-            --json number,title,url \
-            --jq '.[] | "#\(.number) \(.title) \(.url)"')"
+          issue_query() {
+            gh issue list "$@" \
+              --state open \
+              --json number,title,url \
+              --jq '.[] | "#\(.number) \(.title) \(.url)"'
+          }
+          matches="$(
+            {
+              issue_query --search "\"${GITHUB_REF_NAME}\" OR \"${version}\" repo:${GITHUB_REPOSITORY}"
+              issue_query --milestone "${GITHUB_REF_NAME}" 2>/dev/null || true
+              issue_query --milestone "${version}" 2>/dev/null || true
+              issue_query --label "${GITHUB_REF_NAME}" 2>/dev/null || true
+              issue_query --label "${version}" 2>/dev/null || true
+            } | sort -u
+          )"
           if [ -n "$matches" ]; then
             echo "Open GitHub issues are associated with ${GITHUB_REF_NAME}:"
             echo "$matches"
@@ -123,19 +133,6 @@ jobs:
           git fetch origin main --tags --prune
           cargo xtask release-guard --tag "$GITHUB_REF_NAME"
 
-      - name: Publish crates
-        env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-        run: cargo xtask publish-crates --tag "$GITHUB_REF_NAME" --execute --skip-checks
-
-      - name: Verify crates.io visibility
-        run: |
-          set -euo pipefail
-          version="${GITHUB_REF_NAME#v}"
-          for crate in wesley-core wesley-emit-rust wesley-emit-typescript wesley-cli; do
-            cargo info "${crate}@${version}" >/dev/null
-          done
-
       - name: Extract release notes
         run: |
           set -euo pipefail
@@ -150,7 +147,35 @@ jobs:
             exit 1
           fi
 
-      - name: Create GitHub Release
+      - name: Create draft GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file release-notes.md --verify-tag
+        run: |
+          set -euo pipefail
+          if gh release view "$GITHUB_REF_NAME" --json isDraft --jq .isDraft > release-draft-state.txt 2>/dev/null; then
+            if [ "$(cat release-draft-state.txt)" != "true" ]; then
+              echo "Release ${GITHUB_REF_NAME} already exists and is not a draft"
+              exit 1
+            fi
+            gh release edit "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file release-notes.md --draft --verify-tag
+          else
+            gh release create "$GITHUB_REF_NAME" --draft --title "$GITHUB_REF_NAME" --notes-file release-notes.md --verify-tag
+          fi
+
+      - name: Publish crates
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: cargo xtask publish-crates --tag "$GITHUB_REF_NAME" --execute --skip-checks
+
+      - name: Verify crates.io visibility
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          for crate in wesley-core wesley-emit-rust wesley-emit-typescript wesley-cli; do
+            cargo info "${crate}@${version}" >/dev/null
+          done
+
+      - name: Finalize GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release edit "$GITHUB_REF_NAME" --draft=false --verify-tag

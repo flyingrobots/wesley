@@ -26,6 +26,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   publish dry-run reporting, package file-set verification for every published
   crate, and idempotent publish execution that skips crate versions already
   visible in the crates.io index.
+- **Release workflow publication ordering**: The crates.io release workflow now
+  creates or reuses a draft GitHub Release before the first registry mutation,
+  finalizes it only after crates.io visibility is verified, and treats open
+  issues tied to the release by text, milestone, or label as blockers.
 - **Native Rust schema and operation commands**: Added Rust-backed
   `wesley schema lower`, `wesley schema hash`,
   `wesley operation selections`, and `wesley operation directive-args`
