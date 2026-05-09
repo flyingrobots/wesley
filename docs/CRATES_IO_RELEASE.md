@@ -180,7 +180,8 @@ cargo test --workspace --all-features
 cargo clippy --workspace --all-targets -- -D warnings
 cargo xtask release-check
 cargo audit
-cargo xtask package-crates --tag vX.Y.Z
+cargo xtask release-prep-guard --version X.Y.Z
+cargo xtask package-crates --version X.Y.Z
 ```
 
 The release workflow also checks open GitHub issues for the exact tag and
@@ -264,7 +265,13 @@ cargo check --workspace --all-targets
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets -- -D warnings
 cargo xtask release-check
-cargo xtask package-crates --tag vX.Y.Z
+cargo xtask release-prep-guard --version X.Y.Z
+cargo xtask package-crates --version X.Y.Z
+```
+
+After creating the signed tag, verify the tag-specific guard:
+
+```bash
 cargo xtask release-guard --tag vX.Y.Z
 ```
 

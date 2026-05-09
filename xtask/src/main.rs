@@ -1,6 +1,7 @@
 //! Repository automation for Wesley.
 
 use ninelives::{Backoff, Jitter, ResilienceError, RetryPolicy};
+use semver::Version;
 use std::env;
 use std::ffi::OsString;
 use std::fs;
@@ -80,6 +81,7 @@ fn run(args: Vec<OsString>) -> Result<(), Error> {
             run_publish_crates(&args[1..], Some(ALPHA_VERSION), "publish-alpha", true)
         }
         "publish-crates" => run_publish_crates(&args[1..], None, "publish-crates", false),
+        "release-prep-guard" => run_release_prep_guard(&args[1..]),
         "release-guard" => run_release_guard(&args[1..]),
         "release-check" => {
             run_command("cargo", &["test", "--workspace"])?;
@@ -406,6 +408,17 @@ fn run_release_guard(args: &[OsString]) -> Result<(), Error> {
     run_release_guard_for_tag(&options.tag)
 }
 
+fn run_release_prep_guard(args: &[OsString]) -> Result<(), Error> {
+    let options = ReleasePrepOptions::parse(args)?;
+    let tag = format!("v{}", options.version);
+    check_publish_manifest_versions(&options.version)?;
+    check_release_required_files(&options.version)?;
+    check_release_backlog_clear(&tag, &options.version)?;
+    check_package_file_sets()?;
+    println!("xtask: release prep guard passed for {}", options.version);
+    Ok(())
+}
+
 fn run_release_guard_for_tag(tag: &str) -> Result<(), Error> {
     let version = version_from_tag(tag)?;
     check_release_tag_points_to_head(tag)?;
@@ -425,33 +438,25 @@ fn version_from_tag(tag: &str) -> Result<String, Error> {
         });
     };
 
-    if !is_semver_like(version) {
+    version_from_release_arg(version)
+}
+
+fn version_from_release_arg(version: &str) -> Result<String, Error> {
+    let parsed = Version::parse(version).map_err(|source| Error::CheckFailed {
+        check: "release version".to_string(),
+        failures: vec![format!(
+            "version `{version}` must be valid SemVer without build metadata: {source}"
+        )],
+    })?;
+    if !parsed.build.is_empty() {
         return Err(Error::CheckFailed {
-            check: "release tag".to_string(),
+            check: "release version".to_string(),
             failures: vec![format!(
-                "tag `{tag}` must look like vX.Y.Z or vX.Y.Z-prerelease"
+                "version `{version}` must not include build metadata"
             )],
         });
     }
-
-    Ok(version.to_string())
-}
-
-fn is_semver_like(version: &str) -> bool {
-    let (core, prerelease) = version.split_once('-').unwrap_or((version, ""));
-    let core_parts = core.split('.').collect::<Vec<_>>();
-    if core_parts.len() != 3
-        || !core_parts
-            .iter()
-            .all(|part| !part.is_empty() && part.chars().all(|ch| ch.is_ascii_digit()))
-    {
-        return false;
-    }
-
-    prerelease.is_empty()
-        || prerelease
-            .chars()
-            .all(|ch| ch.is_ascii_alphanumeric() || ch == '.' || ch == '-')
+    Ok(parsed.to_string())
 }
 
 fn check_release_tag_points_to_head(tag: &str) -> Result<(), Error> {
@@ -1171,6 +1176,7 @@ Commands:
   package-crates    Check package file sets for the crates.io release set
   publish-alpha     Publish the crates.io alpha package set; dry-run by default
   publish-crates    Publish crates.io package set for a release tag
+  release-prep-guard Verify release prep before a tag exists
   release-guard     Verify that a release tag is eligible to publish
   release-check     Build and package the native Rust release artifacts
   legacy-preflight  Run the historical pnpm package preflight
@@ -1182,6 +1188,7 @@ Publish options:
   cargo xtask package-crates --tag vX.Y.Z      Check release package file sets
   cargo xtask publish-crates --tag vX.Y.Z      Print tag-derived plan and run safe dry-runs
   cargo xtask publish-crates --tag vX.Y.Z --execute  Publish in GitHub Actions only
+  cargo xtask release-prep-guard --version X.Y.Z
   cargo xtask release-guard --tag vX.Y.Z"
     );
 }
@@ -1251,21 +1258,11 @@ impl PublishOptions {
                             "{command_name} --version requires a UTF-8 value"
                         )));
                     };
-                    if !is_semver_like(version) {
-                        return Err(Error::Usage(format!(
-                            "{command_name} --version must look like X.Y.Z or X.Y.Z-prerelease"
-                        )));
-                    }
-                    options.version = version.to_string();
+                    options.version = version_from_release_arg(version)?;
                 }
                 value if value.starts_with("--version=") => {
                     let version = value.trim_start_matches("--version=");
-                    if !is_semver_like(version) {
-                        return Err(Error::Usage(format!(
-                            "{command_name} --version must look like X.Y.Z or X.Y.Z-prerelease"
-                        )));
-                    }
-                    options.version = version.to_string();
+                    options.version = version_from_release_arg(version)?;
                 }
                 "--help" | "-h" => {
                     print_help();
@@ -1293,6 +1290,58 @@ impl PublishOptions {
 
 struct ReleaseGuardOptions {
     tag: String,
+}
+
+struct ReleasePrepOptions {
+    version: String,
+}
+
+impl ReleasePrepOptions {
+    fn parse(args: &[OsString]) -> Result<Self, Error> {
+        let mut version = None;
+        let mut index = 0;
+        while index < args.len() {
+            let Some(arg) = args[index].to_str() else {
+                return Err(Error::Usage(
+                    "release-prep-guard options must be UTF-8".to_string(),
+                ));
+            };
+            match arg {
+                "--version" => {
+                    index += 1;
+                    let Some(value) = args.get(index).and_then(|arg| arg.to_str()) else {
+                        return Err(Error::Usage(
+                            "release-prep-guard --version requires a UTF-8 value".to_string(),
+                        ));
+                    };
+                    version = Some(version_from_release_arg(value)?);
+                }
+                value if value.starts_with("--version=") => {
+                    let value = value.trim_start_matches("--version=");
+                    version = Some(version_from_release_arg(value)?);
+                }
+                "--help" | "-h" => {
+                    print_help();
+                    return Err(Error::Usage(
+                        "release-prep-guard help requested; see usage above".to_string(),
+                    ));
+                }
+                other => {
+                    return Err(Error::Usage(format!(
+                        "unknown release-prep-guard option `{other}`"
+                    )));
+                }
+            }
+            index += 1;
+        }
+
+        let Some(version) = version else {
+            return Err(Error::Usage(
+                "release-prep-guard requires --version X.Y.Z".to_string(),
+            ));
+        };
+        Ok(Self { version })
+    }
 }
 
 impl ReleaseGuardOptions {
@@ -1390,5 +1439,20 @@ mod tests {
     fn execute_publish_skips_crates_that_are_already_indexed() {
         assert_eq!(publish_decision(true), PublishDecision::SkipAlreadyIndexed);
         assert_eq!(publish_decision(false), PublishDecision::Publish);
+    }
+
+    #[test]
+    fn release_prep_version_does_not_require_existing_git_tag() {
+        assert_eq!(version_from_release_arg("0.0.1").unwrap(), "0.0.1");
+        assert_eq!(
+            version_from_release_arg("0.0.1-alpha.1").unwrap(),
+            "0.0.1-alpha.1"
+        );
+    }
+
+    #[test]
+    fn semver_rejects_leading_zeroes_and_empty_prereleases() {
+        assert!(version_from_tag("v01.2.3").is_err());
+        assert!(version_from_tag("v1.2.3-").is_err());
     }
 }

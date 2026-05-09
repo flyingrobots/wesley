@@ -30,6 +30,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   creates or reuses a draft GitHub Release before the first registry mutation,
   finalizes it only after crates.io visibility is verified, and treats open
   issues tied to the release by text, milestone, or label as blockers.
+- **Release guard split and SemVer validation**: Added a pre-tag release prep
+  guard for manifest, changelog, backlog, and package checks, retained the
+  tag-specific release guard for GitHub Actions, and replaced the permissive
+  hand-rolled version check with Rust SemVer parsing.
 - **Native Rust schema and operation commands**: Added Rust-backed
   `wesley schema lower`, `wesley schema hash`,
   `wesley operation selections`, and `wesley operation directive-args`

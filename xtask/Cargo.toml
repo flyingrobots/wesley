@@ -7,6 +7,7 @@ publish = false
 
 [dependencies]
 ninelives = "0.2"
+semver = "1.0"
 serde_json = "1.0"
 tokio = { version = "1", features = ["rt", "time"] }
 toml = "0.8"
