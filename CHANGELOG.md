@@ -146,6 +146,12 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **Nested GraphQL list lowering and emission**: L1 type references now retain
+  nested list wrapper depth, and the Rust and TypeScript emitters project nested
+  GraphQL lists as nested vectors/arrays instead of flattening to one level.
+- **Schema diff field arguments**: Schema delta now compares object and interface
+  field arguments, including additions, removals, type changes, default changes,
+  and directive changes, so required argument additions are reported as breaking.
 - **Operation binding symbol collisions**: Rust and TypeScript operation
   emitters now include the root operation scope in generated request, response,
   metadata, and operation binding symbols so schemas can reuse field names
