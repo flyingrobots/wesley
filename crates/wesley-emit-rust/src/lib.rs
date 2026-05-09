@@ -179,8 +179,8 @@ fn union_enum_from_type(type_def: &TypeDefinition) -> RustEnum {
 }
 
 fn operation_binding_from_schema(operation: &SchemaOperation) -> RustOperationBinding {
-    let request_type_name = operation_type_name(&operation.field_name, "Request");
-    let response_type_name = operation_type_name(&operation.field_name, "Response");
+    let request_type_name = operation_type_name(operation, "Request");
+    let response_type_name = operation_type_name(operation, "Response");
 
     RustOperationBinding {
         operation_type: operation_type_literal(operation.operation_type),
@@ -389,8 +389,20 @@ fn rust_type_name(name: &str) -> String {
     candidate
 }
 
-fn operation_type_name(field_name: &str, suffix: &str) -> String {
-    rust_type_name(&format!("{field_name}{suffix}"))
+fn operation_type_name(operation: &SchemaOperation, suffix: &str) -> String {
+    rust_type_name(&format!(
+        "{}{}{suffix}",
+        operation_scope_name(operation.operation_type),
+        rust_type_name(&operation.field_name)
+    ))
+}
+
+fn operation_scope_name(operation_type: OperationType) -> &'static str {
+    match operation_type {
+        OperationType::Query => "Query",
+        OperationType::Mutation => "Mutation",
+        OperationType::Subscription => "Subscription",
+    }
 }
 
 fn rust_variant_name(name: &str) -> String {
@@ -674,14 +686,46 @@ pub struct UserFilter {
 
         syn::parse_file(&actual).expect("generated Rust should parse");
         assert!(!actual.contains("pub struct Mutation {"));
-        assert!(actual.contains("pub struct CreateBufferWorldlineRequest {"));
+        assert!(actual.contains("pub struct MutationCreateBufferWorldlineRequest {"));
         assert!(actual.contains("pub input: CreateBufferWorldlineInput,"));
-        assert!(actual
-            .contains("pub type CreateBufferWorldlineResponse = CreateBufferWorldlineResult;"));
+        assert!(actual.contains(
+            "pub type MutationCreateBufferWorldlineResponse = CreateBufferWorldlineResult;"
+        ));
         assert!(actual.contains("pub const OPERATION_TYPE: &'static str = \"MUTATION\";"));
         assert!(actual.contains("pub const FIELD_NAME: &'static str = \"createBufferWorldline\";"));
         assert!(actual.contains("pub const DIRECTIVES_JSON: &'static str = "));
         assert!(actual.contains("\\\"wes_footprint\\\""));
+    }
+
+    #[test]
+    fn operation_bindings_include_operation_scope_in_type_names() {
+        let sdl = r#"
+            type Query {
+              status: Status!
+            }
+
+            type Mutation {
+              status(input: StatusInput!): Status!
+            }
+
+            type Status {
+              ok: Boolean!
+            }
+
+            input StatusInput {
+              reason: String
+            }
+        "#;
+        let ir = lower_schema_sdl(sdl).expect("schema should lower");
+        let operations = list_schema_operations_sdl(sdl).expect("operations should resolve");
+
+        let actual = emit_rust_with_operations(&ir, &operations);
+
+        syn::parse_file(&actual).expect("generated Rust should parse");
+        assert!(actual.contains("pub struct QueryStatusRequest {"));
+        assert!(actual.contains("pub type QueryStatusResponse = Status;"));
+        assert!(actual.contains("pub struct MutationStatusRequest {"));
+        assert!(actual.contains("pub type MutationStatusResponse = Status;"));
     }
 
     #[test]

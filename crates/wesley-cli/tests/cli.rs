@@ -500,21 +500,26 @@ fn emit_commands_include_jedit_operation_bindings() {
     let generated_typescript =
         std::fs::read_to_string(&typescript_out).expect("TypeScript output should read");
 
-    assert!(generated_rust.contains("pub struct CreateBufferWorldlineRequest {"));
+    assert!(generated_rust.contains("pub struct MutationCreateBufferWorldlineRequest {"));
     assert!(generated_rust.contains("pub input: CreateBufferWorldlineInput,"));
     assert!(generated_rust
-        .contains("pub type CreateBufferWorldlineResponse = CreateBufferWorldlineResult;"));
+        .contains("pub type MutationCreateBufferWorldlineResponse = CreateBufferWorldlineResult;"));
     assert!(generated_rust.contains("pub const OPERATION_TYPE: &'static str = \"MUTATION\";"));
     assert!(
         generated_rust.contains("pub const FIELD_NAME: &'static str = \"createBufferWorldline\";")
     );
     assert!(!generated_rust.contains("pub struct Mutation {"));
 
-    assert!(generated_typescript.contains("export interface CreateBufferWorldlineRequest {"));
+    assert!(
+        generated_typescript.contains("export interface MutationCreateBufferWorldlineRequest {")
+    );
     assert!(generated_typescript.contains("  input: CreateBufferWorldlineInput;"));
-    assert!(generated_typescript
-        .contains("export type CreateBufferWorldlineResponse = CreateBufferWorldlineResult;"));
-    assert!(generated_typescript.contains("export const createBufferWorldlineOperation = {"));
+    assert!(generated_typescript.contains(
+        "export type MutationCreateBufferWorldlineResponse = CreateBufferWorldlineResult;"
+    ));
+    assert!(
+        generated_typescript.contains("export const mutationCreateBufferWorldlineOperation = {")
+    );
     assert!(generated_typescript.contains("  operationType: \"MUTATION\","));
     assert!(generated_typescript.contains("  fieldName: \"createBufferWorldline\","));
     assert!(!generated_typescript.contains("export interface Mutation {"));

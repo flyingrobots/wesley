@@ -186,9 +186,9 @@ fn property_from_field(field: &Field, is_input: bool) -> TsProperty {
 }
 
 fn operation_binding_from_schema(operation: &SchemaOperation) -> TsOperationBinding {
-    let request_type_name = operation_type_name(&operation.field_name, "Request");
-    let response_type_name = operation_type_name(&operation.field_name, "Response");
-    let const_name = operation_const_name(&operation.field_name);
+    let request_type_name = operation_type_name(operation, "Request");
+    let response_type_name = operation_type_name(operation, "Response");
+    let const_name = operation_const_name(operation);
 
     TsOperationBinding {
         operation_type: operation_type_literal(operation.operation_type),
@@ -208,7 +208,7 @@ fn operation_binding_from_schema(operation: &SchemaOperation) -> TsOperationBind
             type_expr: type_expr_from_reference(&operation.result_type),
         },
         operation_alias: TsTypeAlias {
-            name: operation_type_name(&operation.field_name, "Operation"),
+            name: operation_type_name(operation, "Operation"),
             type_expr: TsTypeExpr::Object(vec![
                 TsObjectMember {
                     name: "request".to_string(),
@@ -454,17 +454,41 @@ fn ts_type_name(name: &str) -> String {
     sanitized
 }
 
-fn operation_type_name(field_name: &str, suffix: &str) -> String {
-    ts_type_name(&format!("{}{suffix}", upper_first(field_name)))
+fn operation_type_name(operation: &SchemaOperation, suffix: &str) -> String {
+    ts_type_name(&format!(
+        "{}{}{suffix}",
+        operation_scope_type_name(operation.operation_type),
+        upper_first(&operation.field_name)
+    ))
 }
 
-fn operation_const_name(field_name: &str) -> String {
-    let candidate = format!("{field_name}Operation");
+fn operation_const_name(operation: &SchemaOperation) -> String {
+    let candidate = format!(
+        "{}{}Operation",
+        operation_scope_const_prefix(operation.operation_type),
+        upper_first(&operation.field_name)
+    );
     if is_identifier_name(&candidate) && !is_reserved_type_name(&candidate) {
         return candidate;
     }
 
     ts_type_name(&candidate)
+}
+
+fn operation_scope_type_name(operation_type: OperationType) -> &'static str {
+    match operation_type {
+        OperationType::Query => "Query",
+        OperationType::Mutation => "Mutation",
+        OperationType::Subscription => "Subscription",
+    }
+}
+
+fn operation_scope_const_prefix(operation_type: OperationType) -> &'static str {
+    match operation_type {
+        OperationType::Query => "query",
+        OperationType::Mutation => "mutation",
+        OperationType::Subscription => "subscription",
+    }
 }
 
 fn upper_first(value: &str) -> String {
@@ -680,15 +704,52 @@ export interface UserFilter {
         let actual = emit_typescript_with_operations(&ir, &operations);
 
         assert!(!actual.contains("export interface Mutation {"));
-        assert!(actual.contains("export interface CreateBufferWorldlineRequest {"));
+        assert!(actual.contains("export interface MutationCreateBufferWorldlineRequest {"));
         assert!(actual.contains("  input: CreateBufferWorldlineInput;"));
-        assert!(actual
-            .contains("export type CreateBufferWorldlineResponse = CreateBufferWorldlineResult;"));
-        assert!(actual.contains("export const createBufferWorldlineOperation = {"));
+        assert!(actual.contains(
+            "export type MutationCreateBufferWorldlineResponse = CreateBufferWorldlineResult;"
+        ));
+        assert!(actual.contains("export const mutationCreateBufferWorldlineOperation = {"));
         assert!(actual.contains("  operationType: \"MUTATION\","));
         assert!(actual.contains("  fieldName: \"createBufferWorldline\","));
         assert!(actual.contains("\"wes_footprint\""));
-        assert!(actual.contains("export type CreateBufferWorldlineOperation = {\n"));
-        assert!(actual.contains("  metadata: typeof createBufferWorldlineOperation;"));
+        assert!(actual.contains("export type MutationCreateBufferWorldlineOperation = {\n"));
+        assert!(actual.contains("  metadata: typeof mutationCreateBufferWorldlineOperation;"));
+    }
+
+    #[test]
+    fn operation_bindings_include_operation_scope_in_symbol_names() {
+        let sdl = r#"
+            type Query {
+              status: Status!
+            }
+
+            type Mutation {
+              status(input: StatusInput!): Status!
+            }
+
+            type Status {
+              ok: Boolean!
+            }
+
+            input StatusInput {
+              reason: String
+            }
+        "#;
+        let ir = lower_schema_sdl(sdl).expect("schema should lower");
+        let operations = list_schema_operations_sdl(sdl).expect("operations should resolve");
+
+        let actual = emit_typescript_with_operations(&ir, &operations);
+
+        assert!(actual.contains("export interface QueryStatusRequest {"));
+        assert!(actual.contains("export type QueryStatusResponse = Status;"));
+        assert!(actual.contains("export const queryStatusOperation = {"));
+        assert!(actual.contains("export type QueryStatusOperation = {\n"));
+        assert!(actual.contains("  metadata: typeof queryStatusOperation;"));
+        assert!(actual.contains("export interface MutationStatusRequest {"));
+        assert!(actual.contains("export type MutationStatusResponse = Status;"));
+        assert!(actual.contains("export const mutationStatusOperation = {"));
+        assert!(actual.contains("export type MutationStatusOperation = {\n"));
+        assert!(actual.contains("  metadata: typeof mutationStatusOperation;"));
     }
 }
