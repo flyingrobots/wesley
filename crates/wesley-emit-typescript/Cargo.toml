@@ -1,6 +1,6 @@
 [package]
 name = "wesley-emit-typescript"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2021"
 description = "AST-based TypeScript emitter for Wesley IR"
 license = "Apache-2.0"
@@ -13,7 +13,7 @@ categories = ["compilers"]
 
 [dependencies]
 serde_json = "1.0"
-wesley-core = { path = "../wesley-core", version = "0.0.1" }
+wesley-core = { path = "../wesley-core", version = "0.0.2" }
 
 [dev-dependencies]
 pretty_assertions = "1.4"
