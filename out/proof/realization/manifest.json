@@ -1,0 +1,160 @@
+{
+  "kind": "wesley.realization.manifest.v1",
+  "schemaPath": "schema.graphql",
+  "canonicalSchemaPath": "/private/var/folders/1h/qn5740kx131g0sxvgv12vm_m0000gn/T/wesley-bats-XXXXXX.TeR1dx0nx7/schema.graphql",
+  "schemaHash": "16bf631145b60e0ec240f97484ff2cb5f534cd38c963cf12044985915766a602",
+  "sourceHash": "16bf631145b60e0ec240f97484ff2cb5f534cd38c963cf12044985915766a602",
+  "outDir": "out/proof",
+  "targets": [
+    "warp-ttd",
+    "echo"
+  ],
+  "integrity": {
+    "status": "sealed",
+    "scope": "generated-leg-files",
+    "hashAlgorithm": "sha256",
+    "signatureAlgorithm": "hmac-sha256",
+    "signatureKeyId": "builtin:wesley-v0.1.0-local-dev-hmac-key"
+  },
+  "generatedLegs": {
+    "warpTtd": {
+      "outDir": "out/proof/warp-ttd",
+      "schemaHash": "16bf631145b60e0ec240f97484ff2cb5f534cd38c963cf12044985915766a602",
+      "sourceHash": "16bf631145b60e0ec240f97484ff2cb5f534cd38c963cf12044985915766a602",
+      "targets": [
+        "manifest",
+        "typescript"
+      ],
+      "files": [
+        {
+          "path": "manifest/schema.json",
+          "size": 12101,
+          "contentHash": "f3322bcc5f07b8a635e24302d77926c983d9dc43c63c1ba7ab50f6ca6e229e0a",
+          "signature": "dc916e2920dc599d1ca1ca5b197b7bc7deb6af7a0c319abf2d26d931d0015e2c"
+        },
+        {
+          "path": "manifest/contracts.json",
+          "size": 1765,
+          "contentHash": "9b27299238947efd3cb7ffbcd027b7f88e1994aa077b59b81c3b05197b7a58fc",
+          "signature": "5d62e43d897f7e01f6f2799e8ea67c83149c98fdef4237b15fcf50fd544515b2"
+        },
+        {
+          "path": "manifest/manifest.json",
+          "size": 2968,
+          "contentHash": "991c2c188a275b12b8654330fae669cf589fe1c3ef5d50d52ddbc0955b8e99e7",
+          "signature": "a3858470556002991e1445927aafa8520099d1d096a5129b4faa610c29c9fb46"
+        },
+        {
+          "path": "manifest/ttd-ir.json",
+          "size": 14628,
+          "contentHash": "8639756fe6a7d31f7e8ba939c84c44b7938fcca6be45da8a07ab88fe5c90f721",
+          "signature": "e4da43a326f17bea3e662e740dd37b555d2caefa0192468cc820d549c2407811"
+        },
+        {
+          "path": "typescript/types.ts",
+          "size": 2463,
+          "contentHash": "54b5d24902357b7504e8bccadaa329133808eed6e3a77433ceaf80cf285a5afe",
+          "signature": "831994c0a68c78a7ed1100568966ab90f6a7a76c8abce5f4419bb1bec2c622f1"
+        },
+        {
+          "path": "typescript/zod.ts",
+          "size": 4283,
+          "contentHash": "eb2677d8f0e71c189ad7848a7467d6f8617a3c6b8e8aea14cbe4c1024f7a7794",
+          "signature": "aa1704edd676a9efc3e468d224b9dc8e62111051dad927d792f767d90baa15ef"
+        },
+        {
+          "path": "typescript/registry.ts",
+          "size": 1982,
+          "contentHash": "dfc12191b79936a4fa71cf7a8558d5301e88ce0d3acd82aa0bd836efa70a5008",
+          "signature": "8f9249ae6717e06d015f597fdcb4e35ea8ac0856c91fa5bf88bf4ed352a0e107"
+        },
+        {
+          "path": "typescript/index.ts",
+          "size": 174,
+          "contentHash": "a1a650594946249c534fc09e9a2165832bd821bf6e0b767630fe860490aa2893",
+          "signature": "e8f2b9bd46f929a5bf54b90b194ec8a00d56d7e451859b0ef4bc9a350b9d5b59"
+        }
+      ]
+    },
+    "echo": {
+      "outDir": "out/proof/echo",
+      "schemaHash": "16bf631145b60e0ec240f97484ff2cb5f534cd38c963cf12044985915766a602",
+      "sourceHash": "16bf631145b60e0ec240f97484ff2cb5f534cd38c963cf12044985915766a602",
+      "artifactCount": 8,
+      "files": [
+        {
+          "path": "ir.json",
+          "size": 11881,
+          "contentHash": "ba2e2fa15ed865571fde7a588f346ff4bc4ceded28907d4ab383d393fdab6dfd",
+          "signature": "e164174476ccbbc336bf0262b2926937794eedf0a06bdb812fff5032111506be"
+        },
+        {
+          "path": "ops.generated.ts",
+          "size": 1229,
+          "contentHash": "d32a99a75f96625e08b4641c6f745b50c5487281271f8a205e66ddfeb73fd7af",
+          "signature": "2b72020eb15d2469e193f4067b41eb5e1649ea2745b8808cf3ffd9e68946aaad"
+        },
+        {
+          "path": "schemas.generated.ts",
+          "size": 2825,
+          "contentHash": "b480e549fdc9383d96e68f7379c90a5499739f058fa536825f25869e86329123",
+          "signature": "1cec4cf44da46d277f1319c8d70fadede55d4fbe74de1078423190cbc6dabf70"
+        },
+        {
+          "path": "client.generated.ts",
+          "size": 6987,
+          "contentHash": "067cd31f5dc3e2b7a205939672d549b62b875730c05cb8cfc15013ec7837b22a",
+          "signature": "af183aba47c2337706c13bd09bce10ca5d1ebdabedf356ea2fef02e4eb31a569"
+        },
+        {
+          "path": "raw_le_codec.generated.rs",
+          "size": 13974,
+          "contentHash": "74195dcc756cb04e16d1a65e9fc4094f05e9acd5cf825476553557fe437ed461",
+          "signature": "36132ee692ecc50740e03a3b0d19fa175f327215294ea058bdf82c599a670f46"
+        },
+        {
+          "path": "raw_le_codec.generated.ts",
+          "size": 16634,
+          "contentHash": "ffe0179dd00f62004c12689c5fea8e69081bfa92b51373b0487b48ebcb9330fe",
+          "signature": "6c5b5a19e87395ebbc9c908b10857fc98d41cbff69011cbcc99f7d7f917ec5a5"
+        },
+        {
+          "path": "wasm_abi_codec.generated.rs",
+          "size": 14059,
+          "contentHash": "3f857a7518d1df482783ec57e9930f7275fbfdd8a1a51e60db9db8b5b07a1973",
+          "signature": "1f49c4877fd3603fd73272caeead5f700604ea9bfd84e6462e5963cd6ca7e85a"
+        },
+        {
+          "path": "wasm_abi_codec.generated.ts",
+          "size": 12581,
+          "contentHash": "766246a99f78beefc5cd59e89508b99e032ea2a3ccedfaf00395841304f52fab",
+          "signature": "0b0e3d8f737e107b5f82aefb37f2a48ae7cd7f6b6528d9cb350658f4dfbea7d9"
+        },
+        {
+          "path": "mock/deliveries.jsonl",
+          "size": 1700,
+          "contentHash": "0a582fe86a71c33499277c968e6b20f462e0ce244cc60f57cecf1ccaacbc9c19",
+          "signature": "29ff8f0c5e7995d67e6a48ca66ab15be6c85d5fa5949e21c2b77054ce56286c3"
+        },
+        {
+          "path": "mock/summary.json",
+          "size": 1902,
+          "contentHash": "6dd2abbcaad3a0bf2a2e79b9e8900731d87b2919ca2498018bfcff253edda83a",
+          "signature": "59d94ec992eec658fc2a45c2fef68ccbb1ce9d8cfcfd8acd284350d917ebd336"
+        }
+      ]
+    }
+  },
+  "proves": [
+    "one authored schema path was compiled into one or more generated consumer legs",
+    "generated legs share one authored schema hash",
+    "the emitted files for each selected target are inspectable from this realization manifest"
+  ],
+  "doesNotProve": [
+    "cross-leg conformance beyond shared schema identity",
+    "runtime semantics",
+    "storage semantics",
+    "debugger semantics",
+    "compile-time footprint safety in neighboring runtimes"
+  ]
+}

@@ -1,5 +1,7 @@
-# Wesley
 <!-- docs-truth: status=experimental owner=@flyingrobots -->
+<div align="center">
+<img src="https://github.com/user-attachments/assets/0c03a527-dc36-466f-a212-a3a24731acf8" />
+</div>
 
 A schema-first compiler kernel for trustworthy change. Wesley turns authored
 GraphQL into derived artifacts through explicit target modules, while keeping
@@ -10,9 +12,6 @@ toolchain. The `whatever` is brought by modules outside the core repo. Domain
 systems such as Continuum and PostgreSQL are not Wesley product surfaces; their
 generators, policies, witnesses, and runtime conventions belong in external
 module repos such as Continuum itself or `wesley-postgres`.
-
-[![Overall](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/flyingrobots/wesley/main/meta/badges/overall.json)](README.md)
-[![License](https://img.shields.io/github/license/wesley)](./LICENSE)
 
 ## Entry Point
 

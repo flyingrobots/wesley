@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { dirname, join, resolve } from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
+import { buildGitDiscoveryEnv } from '../packages/wesley-cli/src/utils/git-env.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = resolve(__dirname, '..');
@@ -208,7 +209,7 @@ function runCommand(label, command) {
   const result = spawnSync('/bin/bash', ['-lc', command], {
     cwd: ROOT_DIR,
     stdio: 'inherit',
-    env: process.env
+    env: buildGitDiscoveryEnv(process.env)
   });
   if (result.status !== 0) {
     process.exit(result.status ?? 1);
