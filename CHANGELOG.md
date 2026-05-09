@@ -148,6 +148,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **Git identity release guard**: Added collaborator-neutral preflight and Rust
+  release guard checks that reject known fixture identities in repo-local Git
+  config and the release `HEAD` author/committer metadata before publish prep
+  can proceed.
 - **Nested GraphQL list lowering and emission**: L1 type references now retain
   nested list wrapper depth, and the Rust and TypeScript emitters project nested
   GraphQL lists as nested vectors/arrays instead of flattening to one level.
