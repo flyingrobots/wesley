@@ -21,14 +21,14 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Harden runner
-        uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176
+        uses: step-security/harden-runner@a5ad31d6a139d249332a2605b85202e8c0b78450
         with:
           egress-policy: audit
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320
+      - uses: pnpm/action-setup@91ab88e2619ed1f46221f0ba42d1492c02baf788
         with:
           version: 9.15.9
-      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version: 22
       - name: Enable corepack (pnpm)
@@ -39,7 +39,7 @@ jobs:
         # Quote the command: '@' can confuse YAML if unquoted
         run: "pnpm --filter @wesley/core test:coverage || pnpm --filter @wesley/core test"
       - name: Upload core coverage (if present)
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: core-coverage
           path: packages/wesley-core/coverage/**
