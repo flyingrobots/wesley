@@ -548,6 +548,7 @@ impl ApolloLoweringAdapter {
         Ok(Field {
             name,
             r#type: self.build_type_reference(type_node)?,
+            arguments: field_arguments_from_definition(field_def.arguments_definition())?,
             directives: field_directives,
             description: description_from(field_def.description()),
         })
@@ -579,6 +580,7 @@ impl ApolloLoweringAdapter {
         Ok(Field {
             name,
             r#type: self.build_type_reference(type_node)?,
+            arguments: Vec::new(),
             directives: field_directives,
             description: description_from(field_def.description()),
         })
@@ -680,50 +682,101 @@ fn named_type_name_for_lowering(
         .ok_or_else(|| lowering_error_value("type", message.to_string()))
 }
 
+#[derive(Debug)]
+struct TypeReferenceShape {
+    base: String,
+    nullable: bool,
+    list_wrappers: Vec<TypeListWrapper>,
+    leaf_nullable: bool,
+}
+
 fn type_reference_from_type(
     type_node: cst::Type,
     nullable: bool,
 ) -> Result<TypeReference, WesleyError> {
+    let shape = type_reference_shape_from_type(type_node, nullable)?;
+    let is_list = !shape.list_wrappers.is_empty();
+    let list_item_nullable = if is_list {
+        Some(
+            shape
+                .list_wrappers
+                .get(1)
+                .map(|wrapper| wrapper.nullable)
+                .unwrap_or(shape.leaf_nullable),
+        )
+    } else {
+        None
+    };
+    let has_nested_lists = shape.list_wrappers.len() > 1;
+
+    Ok(TypeReference {
+        base: shape.base,
+        nullable: shape.nullable,
+        is_list,
+        list_item_nullable,
+        list_wrappers: if has_nested_lists {
+            shape.list_wrappers
+        } else {
+            Vec::new()
+        },
+        leaf_nullable: if has_nested_lists {
+            Some(shape.leaf_nullable)
+        } else {
+            None
+        },
+    })
+}
+
+fn type_reference_shape_from_type(
+    type_node: cst::Type,
+    nullable: bool,
+) -> Result<TypeReferenceShape, WesleyError> {
     match type_node {
-        cst::Type::NamedType(named_type) => Ok(TypeReference {
+        cst::Type::NamedType(named_type) => Ok(TypeReferenceShape {
             base: named_type_name_for_lowering(named_type, "Type reference missing name")?,
             nullable,
-            is_list: false,
-            list_item_nullable: None,
+            list_wrappers: Vec::new(),
+            leaf_nullable: nullable,
         }),
         cst::Type::ListType(list_type) => {
             let item_type = list_type.ty().ok_or_else(|| {
                 lowering_error_value("type", "List type missing item type".to_string())
             })?;
-            let item_ref = type_reference_from_type(item_type, true)?;
-            Ok(TypeReference {
+            let item_ref = type_reference_shape_from_type(item_type, true)?;
+            let mut list_wrappers = vec![TypeListWrapper { nullable }];
+            list_wrappers.extend(item_ref.list_wrappers);
+
+            Ok(TypeReferenceShape {
                 base: item_ref.base,
                 nullable,
-                is_list: true,
-                list_item_nullable: Some(item_ref.nullable),
+                list_wrappers,
+                leaf_nullable: item_ref.leaf_nullable,
             })
         }
         cst::Type::NonNullType(non_null_type) => {
             if let Some(named_type) = non_null_type.named_type() {
-                Ok(TypeReference {
+                Ok(TypeReferenceShape {
                     base: named_type_name_for_lowering(
                         named_type,
                         "Non-null type reference missing name",
                     )?,
                     nullable: false,
-                    is_list: false,
-                    list_item_nullable: None,
+                    list_wrappers: Vec::new(),
+                    leaf_nullable: false,
                 })
             } else if let Some(list_type) = non_null_type.list_type() {
                 let item_type = list_type.ty().ok_or_else(|| {
                     lowering_error_value("type", "Non-null list type missing item type".to_string())
                 })?;
-                let item_ref = type_reference_from_type(item_type, true)?;
-                Ok(TypeReference {
+                let item_ref = type_reference_shape_from_type(item_type, true)?;
+                let mut list_wrappers = vec![TypeListWrapper { nullable: false }];
+                list_wrappers.extend(item_ref.list_wrappers);
+
+                Ok(TypeReferenceShape {
                     base: item_ref.base,
                     nullable: false,
-                    is_list: true,
-                    list_item_nullable: Some(item_ref.nullable),
+                    list_wrappers,
+                    leaf_nullable: item_ref.leaf_nullable,
                 })
             } else {
                 Err(lowering_error_value(
@@ -733,6 +786,54 @@ fn type_reference_from_type(
             }
         }
     }
+}
+
+fn field_arguments_from_definition(
+    arguments_definition: Option<cst::ArgumentsDefinition>,
+) -> Result<Vec<FieldArgument>, WesleyError> {
+    let Some(arguments_definition) = arguments_definition else {
+        return Ok(Vec::new());
+    };
+
+    arguments_definition
+        .input_value_definitions()
+        .map(field_argument_from_input_value)
+        .collect()
+}
+
+fn field_argument_from_input_value(
+    input_value: cst::InputValueDefinition,
+) -> Result<FieldArgument, WesleyError> {
+    let name = input_value
+        .name()
+        .map(|name| name.text().to_string())
+        .ok_or_else(|| {
+            lowering_error_value("field argument", "Field argument missing name".into())
+        })?;
+    let type_node = input_value.ty().ok_or_else(|| {
+        lowering_error_value(
+            "field argument",
+            format!("Field argument '{name}' missing type"),
+        )
+    })?;
+    let default_value = input_value
+        .default_value()
+        .and_then(|default_value| default_value.value())
+        .map(directive_value_to_json)
+        .transpose()?;
+
+    let mut directives = IndexMap::new();
+    if let Some(dirs) = input_value.directives() {
+        ApolloLoweringAdapter::new(0).extract_directives(dirs, &mut directives)?;
+    }
+
+    Ok(FieldArgument {
+        name,
+        description: description_from(input_value.description()),
+        r#type: type_reference_from_type(type_node, true)?,
+        default_value,
+        directives,
+    })
 }
 
 fn directive_value_to_json(value: cst::Value) -> Result<serde_json::Value, WesleyError> {

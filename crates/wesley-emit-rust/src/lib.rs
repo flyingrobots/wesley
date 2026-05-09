@@ -224,6 +224,23 @@ fn rust_type_from_reference(type_ref: &TypeReference) -> RustType {
         name => RustType::Named(rust_type_name(name)),
     };
 
+    if !type_ref.list_wrappers.is_empty() {
+        let mut ty = if type_ref.leaf_nullable.unwrap_or(true) {
+            RustType::Option(Box::new(base))
+        } else {
+            base
+        };
+
+        for wrapper in type_ref.list_wrappers.iter().rev() {
+            ty = RustType::Vec(Box::new(ty));
+            if wrapper.nullable {
+                ty = RustType::Option(Box::new(ty));
+            }
+        }
+
+        return ty;
+    }
+
     let mut ty = if type_ref.is_list {
         let item = match type_ref.list_item_nullable {
             Some(true) | None => RustType::Option(Box::new(base)),
@@ -655,6 +672,27 @@ pub struct UserFilter {
 }
 "#
         );
+    }
+
+    #[test]
+    fn emits_nested_graphql_lists_as_nested_rust_vectors() {
+        let ir = lower_schema_sdl(
+            r#"
+            type Matrix {
+              values: [[Int!]!]!
+              maybeValues: [[String]]
+            }
+            "#,
+        )
+        .expect("schema should lower");
+
+        let actual = emit_rust(&ir);
+
+        syn::parse_file(&actual).expect("generated Rust should parse");
+        assert!(actual.contains("pub values: Vec<Vec<i32>>,"));
+        assert!(actual.contains(
+            "#[serde(rename = \"maybeValues\")]\n    pub maybe_values: Option<Vec<Option<Vec<Option<String>>>>>,"
+        ));
     }
 
     #[test]

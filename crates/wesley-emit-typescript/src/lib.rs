@@ -248,6 +248,23 @@ fn type_expr_from_reference(type_ref: &TypeReference) -> TsTypeExpr {
         name => TsTypeExpr::Reference(ts_type_name(name)),
     };
 
+    if !type_ref.list_wrappers.is_empty() {
+        let mut type_expr = if type_ref.leaf_nullable.unwrap_or(true) {
+            TsTypeExpr::union(vec![base, TsTypeExpr::Null])
+        } else {
+            base
+        };
+
+        for wrapper in type_ref.list_wrappers.iter().rev() {
+            type_expr = TsTypeExpr::Array(Box::new(type_expr));
+            if wrapper.nullable {
+                type_expr = TsTypeExpr::union(vec![type_expr, TsTypeExpr::Null]);
+            }
+        }
+
+        return type_expr;
+    }
+
     let mut type_expr = if type_ref.is_list {
         let item = match type_ref.list_item_nullable {
             Some(true) | None => TsTypeExpr::union(vec![base, TsTypeExpr::Null]),
@@ -675,6 +692,24 @@ export interface UserFilter {
     fn quotes_non_identifier_property_names_in_the_ast_printer() {
         assert_eq!(property_name("normalName"), "normalName");
         assert_eq!(property_name("not-normal"), "\"not-normal\"");
+    }
+
+    #[test]
+    fn emits_nested_graphql_lists_as_nested_typescript_arrays() {
+        let ir = lower_schema_sdl(
+            r#"
+            type Matrix {
+              values: [[Int!]!]!
+              maybeValues: [[String]]
+            }
+            "#,
+        )
+        .expect("schema should lower");
+
+        let actual = emit_typescript(&ir);
+
+        assert!(actual.contains("  values: number[][];"));
+        assert!(actual.contains("  maybeValues: ((string | null)[] | null)[] | null;"));
     }
 
     #[test]

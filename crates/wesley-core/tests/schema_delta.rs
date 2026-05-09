@@ -101,6 +101,57 @@ fn classifies_field_changes_from_l1_shape() {
 }
 
 #[test]
+fn detects_field_argument_changes() {
+    let old_sdl = r#"
+        type Query {
+          search(term: String, limit: Int = 20, scope: SearchScope): [SearchResult!]!
+        }
+
+        enum SearchScope {
+          ALL
+        }
+
+        type SearchResult {
+          id: ID!
+        }
+    "#;
+    let new_sdl = r#"
+        type Query {
+          search(term: String!, first: Int!, scope: SearchScope @deprecated(reason: "legacy")): [SearchResult!]!
+        }
+
+        enum SearchScope {
+          ALL
+        }
+
+        type SearchResult {
+          id: ID!
+        }
+    "#;
+
+    let delta = diff_schema_sdl(old_sdl, new_sdl).expect("schema diff should succeed");
+    let query = delta
+        .modified_types
+        .iter()
+        .find(|change| change.name == "Query")
+        .expect("Query should be modified");
+
+    assert!(query.breaking);
+    assert!(query.field_changes.iter().any(|change| {
+        change.name == "search(first)" && change.kind == ChangeKind::Added && change.breaking
+    }));
+    assert!(query.field_changes.iter().any(|change| {
+        change.name == "search(limit)" && change.kind == ChangeKind::Removed && change.breaking
+    }));
+    assert!(query.field_changes.iter().any(|change| {
+        change.name == "search(term)" && change.kind == ChangeKind::Changed && change.breaking
+    }));
+    assert!(query.field_changes.iter().any(|change| {
+        change.name == "search(scope)" && change.kind == ChangeKind::Changed && change.breaking
+    }));
+}
+
+#[test]
 fn detects_enum_union_implements_and_directive_changes() {
     let old_sdl = r#"
         directive @tag(name: String!) on OBJECT

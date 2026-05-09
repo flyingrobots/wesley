@@ -1,6 +1,6 @@
 //! Schema delta data and L1 IR diffing.
 
-use crate::domain::ir::{Field, TypeDefinition, TypeKind, TypeReference, WesleyIR};
+use crate::domain::ir::{Field, FieldArgument, TypeDefinition, TypeKind, TypeReference, WesleyIR};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
@@ -314,6 +314,13 @@ fn diff_fields(old_type: &TypeDefinition, new_type: &TypeDefinition) -> Vec<Sche
                 description: format!("Field \"{name}\" directives changed on {}", new_type.name),
             });
         }
+
+        changes.extend(diff_field_arguments(
+            &new_type.name,
+            name,
+            old_field,
+            new_field,
+        ));
     }
 
     changes
@@ -324,6 +331,103 @@ fn field_map(fields: &[Field]) -> BTreeMap<&str, &Field> {
         .iter()
         .map(|field| (field.name.as_str(), field))
         .collect()
+}
+
+fn diff_field_arguments(
+    type_name: &str,
+    field_name: &str,
+    old_field: &Field,
+    new_field: &Field,
+) -> Vec<SchemaElementChange> {
+    let old_arguments = argument_map(&old_field.arguments);
+    let new_arguments = argument_map(&new_field.arguments);
+    let mut changes = Vec::new();
+
+    for (name, argument) in &new_arguments {
+        if !old_arguments.contains_key(name) {
+            let breaking = is_required_argument(argument);
+            let description = if breaking {
+                format!("Required argument \"{name}\" added to {type_name}.{field_name} (breaking)")
+            } else {
+                format!("Argument \"{name}\" added to {type_name}.{field_name}")
+            };
+            changes.push(SchemaElementChange {
+                name: argument_coordinate(field_name, name),
+                kind: ChangeKind::Added,
+                breaking,
+                description,
+            });
+        }
+    }
+
+    for name in old_arguments.keys() {
+        if !new_arguments.contains_key(name) {
+            changes.push(SchemaElementChange {
+                name: argument_coordinate(field_name, name),
+                kind: ChangeKind::Removed,
+                breaking: true,
+                description: format!("Argument \"{name}\" removed from {type_name}.{field_name}"),
+            });
+        }
+    }
+
+    for (name, new_argument) in &new_arguments {
+        let Some(old_argument) = old_arguments.get(name) else {
+            continue;
+        };
+
+        let old_type_ref = format_type_reference(&old_argument.r#type);
+        let new_type_ref = format_type_reference(&new_argument.r#type);
+        if old_type_ref != new_type_ref {
+            changes.push(SchemaElementChange {
+                name: argument_coordinate(field_name, name),
+                kind: ChangeKind::Changed,
+                breaking: true,
+                description: format!(
+                    "Argument \"{name}\" on {type_name}.{field_name} changed type from {old_type_ref} to {new_type_ref}"
+                ),
+            });
+        }
+
+        if old_argument.default_value != new_argument.default_value {
+            changes.push(SchemaElementChange {
+                name: argument_coordinate(field_name, name),
+                kind: ChangeKind::Changed,
+                breaking: true,
+                description: format!(
+                    "Argument \"{name}\" default value changed on {type_name}.{field_name}"
+                ),
+            });
+        }
+
+        if old_argument.directives != new_argument.directives {
+            changes.push(SchemaElementChange {
+                name: argument_coordinate(field_name, name),
+                kind: ChangeKind::Changed,
+                breaking: true,
+                description: format!(
+                    "Argument \"{name}\" directives changed on {type_name}.{field_name}"
+                ),
+            });
+        }
+    }
+
+    changes
+}
+
+fn argument_map(arguments: &[FieldArgument]) -> BTreeMap<&str, &FieldArgument> {
+    arguments
+        .iter()
+        .map(|argument| (argument.name.as_str(), argument))
+        .collect()
+}
+
+fn argument_coordinate(field_name: &str, argument_name: &str) -> String {
+    format!("{field_name}({argument_name})")
+}
+
+fn is_required_argument(argument: &FieldArgument) -> bool {
+    !argument.r#type.nullable && argument.default_value.is_none()
 }
 
 fn diff_string_members(
@@ -406,6 +510,22 @@ fn diff_directives(
 }
 
 fn format_type_reference(type_ref: &TypeReference) -> String {
+    if !type_ref.list_wrappers.is_empty() {
+        let mut formatted = type_ref.base.clone();
+        if type_ref.leaf_nullable == Some(false) {
+            formatted.push('!');
+        }
+
+        for wrapper in type_ref.list_wrappers.iter().rev() {
+            formatted = format!("[{formatted}]");
+            if !wrapper.nullable {
+                formatted.push('!');
+            }
+        }
+
+        return formatted;
+    }
+
     let mut formatted = if type_ref.is_list {
         let item_suffix = match type_ref.list_item_nullable {
             Some(false) => "!",

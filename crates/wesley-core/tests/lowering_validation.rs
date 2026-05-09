@@ -168,6 +168,63 @@ async fn lowers_graphql_type_families_into_l1_ir() {
 }
 
 #[tokio::test]
+async fn preserves_nested_list_type_references() {
+    let sdl = r#"
+        type Matrix {
+          values: [[Int!]!]!
+          maybeValues: [[String]]
+        }
+    "#;
+
+    let adapter = create_adapter();
+    let ir = adapter
+        .lower_sdl(sdl)
+        .await
+        .expect("Failed to lower SDL to L1 IR");
+    let matrix = find_type(&ir.types, "Matrix");
+    let values = matrix
+        .fields
+        .iter()
+        .find(|field| field.name == "values")
+        .expect("missing values field");
+    let maybe_values = matrix
+        .fields
+        .iter()
+        .find(|field| field.name == "maybeValues")
+        .expect("missing maybeValues field");
+
+    assert_eq!(values.r#type.base, "Int");
+    assert!(!values.r#type.nullable);
+    assert!(values.r#type.is_list);
+    assert_eq!(values.r#type.list_item_nullable, Some(false));
+    assert_eq!(
+        values
+            .r#type
+            .list_wrappers
+            .iter()
+            .map(|wrapper| wrapper.nullable)
+            .collect::<Vec<_>>(),
+        vec![false, false]
+    );
+    assert_eq!(values.r#type.leaf_nullable, Some(false));
+
+    assert_eq!(maybe_values.r#type.base, "String");
+    assert!(maybe_values.r#type.nullable);
+    assert!(maybe_values.r#type.is_list);
+    assert_eq!(maybe_values.r#type.list_item_nullable, Some(true));
+    assert_eq!(
+        maybe_values
+            .r#type
+            .list_wrappers
+            .iter()
+            .map(|wrapper| wrapper.nullable)
+            .collect::<Vec<_>>(),
+        vec![true, true]
+    );
+    assert_eq!(maybe_values.r#type.leaf_nullable, Some(true));
+}
+
+#[tokio::test]
 async fn rejects_mixed_type_kind_consolidation() {
     let sdl = r#"
         type Thing {

@@ -98,7 +98,28 @@ pub struct Field {
     pub description: Option<String>,
     /// Field type reference.
     pub r#type: TypeReference,
+    /// Field arguments, for object and interface fields.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub arguments: Vec<FieldArgument>,
     /// Generic map of directives.
+    pub directives: IndexMap<String, serde_json::Value>,
+}
+
+/// A field argument definition.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct FieldArgument {
+    /// Argument name.
+    pub name: String,
+    /// Optional description.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    /// Argument type reference.
+    pub r#type: TypeReference,
+    /// Default value, if the schema declares one.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub default_value: Option<serde_json::Value>,
+    /// Generic map of directives attached to the argument.
     pub directives: IndexMap<String, serde_json::Value>,
 }
 
@@ -115,6 +136,20 @@ pub struct TypeReference {
     /// Whether list items are nullable.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub list_item_nullable: Option<bool>,
+    /// Nested list wrappers ordered from outermost to innermost.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub list_wrappers: Vec<TypeListWrapper>,
+    /// Whether the named leaf value is nullable for nested list references.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub leaf_nullable: Option<bool>,
+}
+
+/// One list wrapper inside a nested GraphQL type reference.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct TypeListWrapper {
+    /// Whether this list wrapper is nullable.
+    pub nullable: bool,
 }
 
 /// Computes the canonical registry hash for the given IR.
