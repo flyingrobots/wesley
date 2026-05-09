@@ -1,8 +1,12 @@
-# Generator Plugins
+# Legacy Generator Plugins
 
-Wesley uses a plugin system to turn parsed GraphQL schemas into output artifacts (SQL, TypeScript, Zod schemas, IR files, etc.). Each generator plugin receives a schema, declares what it will produce, then generates the artifacts as pure data. Wesley handles all file I/O.
+Wesley's current extension direction is Rust-first core APIs plus external
+modules for domain targets. This page documents the legacy Node generator plugin
+contract that still exists while the older package surfaces are being retired or
+extracted.
 
-This guide will get you writing your own generator plugin in under 30 minutes.
+For new work, start with [Extending Wesley](./extending.md). Add generic
+compiler facts in Rust, and put domain targets in external modules or crates.
 
 ---
 
@@ -40,12 +44,32 @@ export class HelloPlugin extends GeneratorPlugin {
 export default HelloPlugin;
 ```
 
-Register it in `wesley.config.mjs` and you are done:
+Expose it from a Wesley module and register that module in `wesley.config.mjs`:
 
 ```mjs
+// my-wesley-module.mjs
+import HelloPlugin from './my-plugin.mjs';
+
 export default {
-  generators: [
-    { package: './my-plugin.mjs' },
+  name: 'hello-module',
+  capabilities: {
+    wesley: {
+      generators: [
+        {
+          name: 'hello',
+          plugin: new HelloPlugin(),
+        },
+      ],
+    },
+  },
+};
+```
+
+```mjs
+// wesley.config.mjs
+export default {
+  modules: [
+    { specifier: './my-wesley-module.mjs' },
   ],
 };
 ```
@@ -235,39 +259,56 @@ The harness uses a deterministic clock (`2020-01-01T00:00:00.000Z`), a null logg
 
 ## Configuration
 
-Register plugins in `wesley.config.mjs` under the `generators` array:
+Register plugins through module capabilities. Do not use the obsolete top-level
+`generators` array for new code.
+
+```mjs
+// my-wesley-module.mjs
+import { MyPlugin } from './my-plugin.mjs';
+import { ExperimentalPlugin } from './experimental-plugin.mjs';
+
+export default {
+  name: 'my-generators',
+  capabilities: {
+    wesley: {
+      generators: [
+        {
+          name: 'my-generator',
+          plugin: new MyPlugin(),
+          config: { format: 'yaml', verbose: true },
+        },
+        {
+          name: 'experimental',
+          plugin: new ExperimentalPlugin(),
+          enabled: false,
+        },
+      ],
+    },
+  },
+};
+```
 
 ```mjs
 // wesley.config.mjs
 export default {
-  generators: [
-    // Minimal: just a package specifier
-    { package: '@wesley/generator-vue' },
-
-    // With per-plugin config passed to init()
-    {
-      package: './my-plugin.mjs',
-      config: { format: 'yaml', verbose: true },
-    },
-
-    // Disabled (skipped during discovery)
-    {
-      package: '@wesley/generator-experimental',
-      enabled: false,
-    },
+  modules: [
+    { specifier: './my-wesley-module.mjs' },
   ],
 };
 ```
 
-Each entry in the `generators` array supports:
+Each generator capability supports:
 
 | Field     | Type      | Required | Description                              |
 |-----------|-----------|----------|------------------------------------------|
-| `package` | `string`  | yes      | npm package name or relative file path   |
+| `name`    | `string`  | yes      | Unique generator name within the module  |
+| `plugin`  | `object`  | yes      | GeneratorPlugin instance or duck-typed object |
 | `config`  | `object`  | no       | Passed to `plugin.init(config)`          |
 | `enabled` | `boolean` | no       | Set to `false` to skip (default: `true`) |
 
-Plugin discovery resolves each package, looks for a `default`, `plugin`, or `Plugin` export, instantiates it if it is a class, validates the contract, and calls `init()` with the entry's `config` if provided.
+Module discovery resolves each configured module specifier, reads its
+`capabilities.wesley.generators` entries, validates each plugin contract, and
+calls `init()` with the entry's `config` if provided.
 
 ---
 

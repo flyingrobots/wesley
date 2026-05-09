@@ -14,6 +14,13 @@ const failures = [];
 
 function fail(msg) { ok = false; failures.push(msg); }
 
+const gitIdentityChk = spawnSync(
+  process.execPath,
+  ['scripts/check-git-identity.mjs'],
+  { stdio: 'inherit' }
+);
+if (gitIdentityChk.status !== 0) fail('Git identity guard failed');
+
 // 1) .gitignore contains .wesley-cache/ and out/
 try {
   const gi = readFileSync(resolve('.gitignore'), 'utf8');

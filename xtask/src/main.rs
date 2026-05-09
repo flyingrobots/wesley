@@ -13,6 +13,16 @@ const EXIT_OK: u8 = 0;
 const EXIT_FAILURE: u8 = 1;
 const EXIT_USAGE: u8 = 2;
 const ALPHA_VERSION: &str = "0.0.1";
+const FORBIDDEN_GIT_IDENTITIES: &[&str] = &[
+    "Wesley Tests",
+    "wesley-tests@example.com",
+    "Wesley CLI Test",
+    "wesley@example.test",
+    "Local Test",
+    "test@local.dev",
+    "CI Test",
+    "test@ci.com",
+];
 const PUBLISH_CRATES: &[PublishCrate] = &[
     PublishCrate {
         name: "wesley-core",
@@ -71,6 +81,7 @@ fn run(args: Vec<OsString>) -> Result<(), Error> {
         }
         "test" => run_command("cargo", &["test", "--workspace"]),
         "preflight" => {
+            check_git_identity_guard()?;
             run_docs_check()?;
             run_command("cargo", &["test", "--workspace"])?;
             run_command("cargo", &["run", "--bin", "wesley", "--", "--help"])
@@ -411,6 +422,7 @@ fn run_release_guard(args: &[OsString]) -> Result<(), Error> {
 fn run_release_prep_guard(args: &[OsString]) -> Result<(), Error> {
     let options = ReleasePrepOptions::parse(args)?;
     let tag = format!("v{}", options.version);
+    check_git_identity_guard()?;
     check_publish_manifest_versions(&options.version)?;
     check_release_required_files(&options.version)?;
     check_release_backlog_clear(&tag, &options.version)?;
@@ -421,6 +433,7 @@ fn run_release_prep_guard(args: &[OsString]) -> Result<(), Error> {
 
 fn run_release_guard_for_tag(tag: &str) -> Result<(), Error> {
     let version = version_from_tag(tag)?;
+    check_git_identity_guard()?;
     check_release_tag_points_to_head(tag)?;
     check_release_tag_is_on_main(tag)?;
     check_publish_manifest_versions(&version)?;
@@ -457,6 +470,135 @@ fn version_from_release_arg(version: &str) -> Result<String, Error> {
         });
     }
     Ok(parsed.to_string())
+}
+
+fn check_git_identity_guard() -> Result<(), Error> {
+    let local_name = git_local_config_value("user.name")?;
+    let local_email = git_local_config_value("user.email")?;
+    let head_identity = git_head_identity()?;
+    let failures = git_identity_failures(GitIdentityInput {
+        local_name: local_name.as_deref(),
+        local_email: local_email.as_deref(),
+        head_author_name: head_identity.author_name.as_deref(),
+        head_author_email: head_identity.author_email.as_deref(),
+        head_committer_name: head_identity.committer_name.as_deref(),
+        head_committer_email: head_identity.committer_email.as_deref(),
+    });
+    finish_check("git identity", failures)
+}
+
+#[derive(Default)]
+struct GitIdentityInput<'a> {
+    local_name: Option<&'a str>,
+    local_email: Option<&'a str>,
+    head_author_name: Option<&'a str>,
+    head_author_email: Option<&'a str>,
+    head_committer_name: Option<&'a str>,
+    head_committer_email: Option<&'a str>,
+}
+
+#[derive(Default)]
+struct HeadGitIdentity {
+    author_name: Option<String>,
+    author_email: Option<String>,
+    committer_name: Option<String>,
+    committer_email: Option<String>,
+}
+
+fn git_identity_failures(input: GitIdentityInput<'_>) -> Vec<String> {
+    let mut failures = Vec::new();
+    if let Some(name) = input.local_name {
+        if is_forbidden_git_identity(name) {
+            failures.push(format!("local git user.name is a test identity: {name}"));
+        }
+    }
+    if let Some(email) = input.local_email {
+        if is_forbidden_git_identity(email) {
+            failures.push(format!("local git user.email is a test identity: {email}"));
+        }
+    }
+    if let Some(name) = input.head_author_name {
+        if is_forbidden_git_identity(name) {
+            failures.push(format!("HEAD author name is a test identity: {name}"));
+        }
+    }
+    if let Some(email) = input.head_author_email {
+        if is_forbidden_git_identity(email) {
+            failures.push(format!("HEAD author email is a test identity: {email}"));
+        }
+    }
+    if let Some(name) = input.head_committer_name {
+        if is_forbidden_git_identity(name) {
+            failures.push(format!("HEAD committer name is a test identity: {name}"));
+        }
+    }
+    if let Some(email) = input.head_committer_email {
+        if is_forbidden_git_identity(email) {
+            failures.push(format!("HEAD committer email is a test identity: {email}"));
+        }
+    }
+    failures
+}
+
+fn is_forbidden_git_identity(value: &str) -> bool {
+    FORBIDDEN_GIT_IDENTITIES.contains(&value)
+}
+
+fn git_local_config_value(key: &str) -> Result<Option<String>, Error> {
+    let label = command_label("git", &["config", "--local", "--get", key]);
+    let output = Command::new("git")
+        .args(["config", "--local", "--get", key])
+        .output()
+        .map_err(|source| Error::Usage(format!("failed to spawn `{label}`: {source}")))?;
+
+    if output.status.success() {
+        let value = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        Ok((!value.is_empty()).then_some(value))
+    } else if output.status.code() == Some(1) {
+        Ok(None)
+    } else {
+        Err(Error::CommandFailed {
+            command: label,
+            code: output.status.code().unwrap_or(EXIT_FAILURE as i32),
+        })
+    }
+}
+
+fn git_head_identity() -> Result<HeadGitIdentity, Error> {
+    let label = command_label(
+        "git",
+        &["log", "-1", "--format=%an%x00%ae%x00%cn%x00%ce", "HEAD"],
+    );
+    let output = Command::new("git")
+        .args(["log", "-1", "--format=%an%x00%ae%x00%cn%x00%ce", "HEAD"])
+        .output()
+        .map_err(|source| Error::Usage(format!("failed to spawn `{label}`: {source}")))?;
+
+    if !output.status.success() {
+        if output.status.code() == Some(128) {
+            return Ok(HeadGitIdentity::default());
+        }
+        return Err(Error::CommandFailed {
+            command: label,
+            code: output.status.code().unwrap_or(EXIT_FAILURE as i32),
+        });
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let parts = stdout
+        .trim_end_matches('\n')
+        .split('\0')
+        .collect::<Vec<_>>();
+    Ok(HeadGitIdentity {
+        author_name: parts.first().and_then(|value| non_empty_string(value)),
+        author_email: parts.get(1).and_then(|value| non_empty_string(value)),
+        committer_name: parts.get(2).and_then(|value| non_empty_string(value)),
+        committer_email: parts.get(3).and_then(|value| non_empty_string(value)),
+    })
+}
+
+fn non_empty_string(value: &str) -> Option<String> {
+    (!value.is_empty()).then(|| value.to_string())
 }
 
 fn check_release_tag_points_to_head(tag: &str) -> Result<(), Error> {
@@ -1454,6 +1596,70 @@ mod tests {
     fn semver_rejects_leading_zeroes_and_empty_prereleases() {
         assert!(version_from_tag("v01.2.3").is_err());
         assert!(version_from_tag("v1.2.3-").is_err());
+    }
+
+    #[test]
+    fn git_identity_guard_accepts_unset_or_collaborator_identities() {
+        assert!(git_identity_failures(GitIdentityInput::default()).is_empty());
+        assert!(git_identity_failures(GitIdentityInput {
+            local_name: Some("Example Contributor"),
+            local_email: Some("contributor@company.dev"),
+            head_author_name: Some("Another Contributor"),
+            head_author_email: Some("another@company.dev"),
+            head_committer_name: Some("Release Operator"),
+            head_committer_email: Some("release@company.dev"),
+        })
+        .is_empty());
+    }
+
+    #[test]
+    fn git_identity_guard_rejects_known_fixture_identities() {
+        assert_eq!(
+            git_identity_failures(GitIdentityInput {
+                local_name: Some("Wesley Tests"),
+                local_email: Some("contributor@company.dev"),
+                ..GitIdentityInput::default()
+            }),
+            vec!["local git user.name is a test identity: Wesley Tests"]
+        );
+        assert_eq!(
+            git_identity_failures(GitIdentityInput {
+                local_name: Some("Example Contributor"),
+                local_email: Some("wesley-tests@example.com"),
+                ..GitIdentityInput::default()
+            }),
+            vec!["local git user.email is a test identity: wesley-tests@example.com"]
+        );
+        assert_eq!(
+            git_identity_failures(GitIdentityInput {
+                local_name: Some("CI Test"),
+                local_email: Some("test@ci.com"),
+                ..GitIdentityInput::default()
+            }),
+            vec![
+                "local git user.name is a test identity: CI Test",
+                "local git user.email is a test identity: test@ci.com"
+            ]
+        );
+    }
+
+    #[test]
+    fn git_identity_guard_rejects_fixture_identities_on_head_commits() {
+        assert_eq!(
+            git_identity_failures(GitIdentityInput {
+                head_author_name: Some("Wesley Tests"),
+                head_author_email: Some("wesley-tests@example.com"),
+                head_committer_name: Some("CI Test"),
+                head_committer_email: Some("test@ci.com"),
+                ..GitIdentityInput::default()
+            }),
+            vec![
+                "HEAD author name is a test identity: Wesley Tests",
+                "HEAD author email is a test identity: wesley-tests@example.com",
+                "HEAD committer name is a test identity: CI Test",
+                "HEAD committer email is a test identity: test@ci.com"
+            ]
+        );
     }
 
     #[test]
