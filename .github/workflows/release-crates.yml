@@ -1,0 +1,156 @@
+name: Release Crates
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+  issues: read
+
+concurrency:
+  group: release-crates-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release-gauntlet:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176
+        with:
+          egress-policy: audit
+
+      - name: Checkout release tag
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          fetch-depth: 0
+
+      - name: Verify Rust toolchain
+        run: |
+          rustc --version
+          cargo --version
+
+      - name: Verify tag is on main
+        run: |
+          set -euo pipefail
+          git fetch origin main --tags --prune
+          tag_commit="$(git rev-parse "${GITHUB_REF_NAME}^{commit}")"
+          head_commit="$(git rev-parse HEAD)"
+          if [ "$tag_commit" != "$head_commit" ]; then
+            echo "Tag ${GITHUB_REF_NAME} points at $tag_commit, but HEAD is $head_commit"
+            exit 1
+          fi
+          git merge-base --is-ancestor "$tag_commit" origin/main
+
+      - name: Release guard
+        run: cargo xtask release-guard --tag "$GITHUB_REF_NAME"
+
+      - name: Check for open version issues
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          matches="$(gh issue list \
+            --state open \
+            --search "\"${GITHUB_REF_NAME}\" OR \"${version}\" repo:${GITHUB_REPOSITORY}" \
+            --json number,title,url \
+            --jq '.[] | "#\(.number) \(.title) \(.url)"')"
+          if [ -n "$matches" ]; then
+            echo "Open GitHub issues are associated with ${GITHUB_REF_NAME}:"
+            echo "$matches"
+            exit 1
+          fi
+
+      - name: Docs check
+        run: cargo xtask docs-check
+
+      - name: Cargo check
+        run: cargo check --workspace --all-targets
+
+      - name: Cargo test
+        run: cargo test --workspace --all-features
+
+      - name: Cargo clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Release check
+        run: cargo xtask release-check
+
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked
+
+      - name: Cargo audit
+        run: cargo audit
+
+      - name: Publish dry-run
+        run: cargo xtask publish-crates --tag "$GITHUB_REF_NAME"
+
+  publish-crates:
+    needs: release-gauntlet
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      issues: read
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176
+        with:
+          egress-policy: audit
+
+      - name: Checkout release tag
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          fetch-depth: 0
+
+      - name: Verify registry credential
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${CARGO_REGISTRY_TOKEN:-}" ]; then
+            echo "CARGO_REGISTRY_TOKEN is required to publish crates"
+            exit 1
+          fi
+
+      - name: Release guard
+        run: |
+          set -euo pipefail
+          git fetch origin main --tags --prune
+          cargo xtask release-guard --tag "$GITHUB_REF_NAME"
+
+      - name: Publish crates
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: cargo xtask publish-crates --tag "$GITHUB_REF_NAME" --execute --skip-checks
+
+      - name: Verify crates.io visibility
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          for crate in wesley-core wesley-emit-rust wesley-emit-typescript wesley-cli; do
+            cargo info "${crate}@${version}" >/dev/null
+          done
+
+      - name: Extract release notes
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          awk -v version="$version" '
+            $0 ~ "^## \\[v?" version "\\]" { in_section=1; print; next }
+            in_section && $0 ~ "^## \\[" { exit }
+            in_section { print }
+          ' CHANGELOG.md > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "No CHANGELOG.md section found for ${version}"
+            exit 1
+          fi
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file release-notes.md --verify-tag

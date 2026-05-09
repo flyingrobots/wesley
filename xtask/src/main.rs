@@ -15,18 +15,22 @@ const ALPHA_VERSION: &str = "0.0.1";
 const PUBLISH_CRATES: &[PublishCrate] = &[
     PublishCrate {
         name: "wesley-core",
+        path: "crates/wesley-core",
         dependencies: &[],
     },
     PublishCrate {
         name: "wesley-emit-rust",
+        path: "crates/wesley-emit-rust",
         dependencies: &["wesley-core"],
     },
     PublishCrate {
         name: "wesley-emit-typescript",
+        path: "crates/wesley-emit-typescript",
         dependencies: &["wesley-core"],
     },
     PublishCrate {
         name: "wesley-cli",
+        path: "crates/wesley-cli",
         dependencies: &["wesley-core", "wesley-emit-rust", "wesley-emit-typescript"],
     },
 ];
@@ -71,7 +75,9 @@ fn run(args: Vec<OsString>) -> Result<(), Error> {
             run_command("cargo", &["run", "--bin", "wesley", "--", "--help"])
         }
         "docs-check" => run_docs_check(),
-        "publish-alpha" => run_publish_alpha(&args[1..]),
+        "publish-alpha" => run_publish_crates(&args[1..], Some(ALPHA_VERSION), "publish-alpha"),
+        "publish-crates" => run_publish_crates(&args[1..], None, "publish-crates"),
+        "release-guard" => run_release_guard(&args[1..]),
         "release-check" => {
             run_command("cargo", &["test", "--workspace"])?;
             run_command("cargo", &["build", "--release", "--bin", "wesley"])?;
@@ -95,12 +101,21 @@ fn run(args: Vec<OsString>) -> Result<(), Error> {
     }
 }
 
-fn run_publish_alpha(args: &[OsString]) -> Result<(), Error> {
-    let options = PublishOptions::parse(args)?;
+fn run_publish_crates(
+    args: &[OsString],
+    default_version: Option<&str>,
+    command_name: &str,
+) -> Result<(), Error> {
+    let options = PublishOptions::parse(args, default_version, command_name)?;
+    check_publish_manifest_versions(&options.version)?;
 
     if options.execute {
+        assert_github_actions_release_environment(options.tag.as_deref())?;
         assert_clean_worktree()?;
         if !options.skip_checks {
+            if let Some(tag) = &options.tag {
+                run_release_guard_for_tag(tag)?;
+            }
             run_docs_check()?;
             run_command("cargo", &["test", "--workspace"])?;
             run_command(
@@ -117,21 +132,22 @@ fn run_publish_alpha(args: &[OsString]) -> Result<(), Error> {
             run_command("cargo", &["xtask", "release-check"])?;
         }
         for publish_crate in PUBLISH_CRATES {
+            run_publish_dry_run_for_crate(publish_crate.name, false)?;
             publish_crate_to_crates_io(publish_crate.name)?;
-            wait_for_crate_version(publish_crate.name, ALPHA_VERSION)?;
+            wait_for_crate_version(publish_crate.name, &options.version)?;
         }
-        println!("xtask: published Wesley alpha {ALPHA_VERSION}");
+        println!("xtask: published Wesley crates {}", options.version);
         Ok(())
     } else {
-        print_publish_alpha_plan();
-        run_publish_alpha_dry_run()
+        print_publish_crates_plan(&options.version);
+        run_publish_crates_dry_run(&options.version)
     }
 }
 
-fn print_publish_alpha_plan() {
-    println!("Wesley crates.io alpha publish plan");
+fn print_publish_crates_plan(version: &str) {
+    println!("Wesley crates.io publish plan");
     println!();
-    println!("Version: {ALPHA_VERSION}");
+    println!("Version: {version}");
     println!("Mode: dry-run/plan. Pass --execute for real crates.io uploads.");
     println!();
     println!("Publish order:");
@@ -141,26 +157,17 @@ fn print_publish_alpha_plan() {
     println!();
 }
 
-fn run_publish_alpha_dry_run() -> Result<(), Error> {
+fn run_publish_crates_dry_run(version: &str) -> Result<(), Error> {
     for publish_crate in PUBLISH_CRATES {
         let missing_dependencies = publish_crate
             .dependencies
             .iter()
-            .filter(|dependency| !crate_version_is_indexed(dependency, ALPHA_VERSION))
+            .filter(|dependency| !crate_version_is_indexed(dependency, version))
             .copied()
             .collect::<Vec<_>>();
 
         if missing_dependencies.is_empty() {
-            run_command(
-                "cargo",
-                &[
-                    "publish",
-                    "--dry-run",
-                    "--allow-dirty",
-                    "-p",
-                    publish_crate.name,
-                ],
-            )?;
+            run_publish_dry_run_for_crate(publish_crate.name, true)?;
         } else {
             println!(
                 "xtask: skipping dry-run for {} until crates.io indexes {}",
@@ -171,6 +178,42 @@ fn run_publish_alpha_dry_run() -> Result<(), Error> {
     }
 
     Ok(())
+}
+
+fn assert_github_actions_release_environment(tag: Option<&str>) -> Result<(), Error> {
+    let mut failures = Vec::new();
+    if env::var("GITHUB_ACTIONS").ok().as_deref() != Some("true") {
+        failures.push("real crates.io publish must run inside GitHub Actions".to_string());
+    }
+    if env::var("GITHUB_REF_TYPE").ok().as_deref() != Some("tag") {
+        failures.push("real crates.io publish must run from a GitHub tag ref".to_string());
+    }
+
+    let Some(tag) = tag else {
+        failures.push("real crates.io publish requires --tag vX.Y.Z".to_string());
+        return finish_check("release authority", failures);
+    };
+
+    match env::var("GITHUB_REF_NAME") {
+        Ok(ref_name) if ref_name == tag => {}
+        Ok(ref_name) => failures.push(format!(
+            "requested tag `{tag}` does not match GITHUB_REF_NAME `{ref_name}`"
+        )),
+        Err(_) => failures.push("GITHUB_REF_NAME is missing".to_string()),
+    }
+
+    finish_check("release authority", failures)
+}
+
+fn run_publish_dry_run_for_crate(crate_name: &str, allow_dirty: bool) -> Result<(), Error> {
+    if allow_dirty {
+        run_command(
+            "cargo",
+            &["publish", "--dry-run", "--allow-dirty", "-p", crate_name],
+        )
+    } else {
+        run_command("cargo", &["publish", "--dry-run", "-p", crate_name])
+    }
 }
 
 fn publish_crate_to_crates_io(crate_name: &str) -> Result<(), Error> {
@@ -260,6 +303,344 @@ fn assert_clean_worktree() -> Result<(), Error> {
     }
 }
 
+fn run_release_guard(args: &[OsString]) -> Result<(), Error> {
+    let options = ReleaseGuardOptions::parse(args)?;
+    run_release_guard_for_tag(&options.tag)
+}
+
+fn run_release_guard_for_tag(tag: &str) -> Result<(), Error> {
+    let version = version_from_tag(tag)?;
+    check_release_tag_points_to_head(tag)?;
+    check_release_tag_is_on_main(tag)?;
+    check_publish_manifest_versions(&version)?;
+    check_release_required_files(&version)?;
+    check_release_backlog_clear(tag, &version)?;
+    println!("xtask: release guard passed for {tag}");
+    Ok(())
+}
+
+fn version_from_tag(tag: &str) -> Result<String, Error> {
+    let Some(version) = tag.strip_prefix('v') else {
+        return Err(Error::CheckFailed {
+            check: "release tag".to_string(),
+            failures: vec![format!("tag `{tag}` must start with `v`")],
+        });
+    };
+
+    if !is_semver_like(version) {
+        return Err(Error::CheckFailed {
+            check: "release tag".to_string(),
+            failures: vec![format!(
+                "tag `{tag}` must look like vX.Y.Z or vX.Y.Z-prerelease"
+            )],
+        });
+    }
+
+    Ok(version.to_string())
+}
+
+fn is_semver_like(version: &str) -> bool {
+    let (core, prerelease) = version.split_once('-').unwrap_or((version, ""));
+    let core_parts = core.split('.').collect::<Vec<_>>();
+    if core_parts.len() != 3
+        || !core_parts
+            .iter()
+            .all(|part| !part.is_empty() && part.chars().all(|ch| ch.is_ascii_digit()))
+    {
+        return false;
+    }
+
+    prerelease.is_empty()
+        || prerelease
+            .chars()
+            .all(|ch| ch.is_ascii_alphanumeric() || ch == '.' || ch == '-')
+}
+
+fn check_release_tag_points_to_head(tag: &str) -> Result<(), Error> {
+    let tag_ref = format!("{tag}^{{commit}}");
+    let tag_commit = git_output(&["rev-parse", "--verify", &tag_ref])?;
+    let head = git_output(&["rev-parse", "HEAD"])?;
+    if tag_commit == head {
+        Ok(())
+    } else {
+        Err(Error::CheckFailed {
+            check: "release tag".to_string(),
+            failures: vec![format!(
+                "tag `{tag}` points at {tag_commit}, but workflow HEAD is {head}"
+            )],
+        })
+    }
+}
+
+fn check_release_tag_is_on_main(tag: &str) -> Result<(), Error> {
+    let tag_ref = format!("{tag}^{{commit}}");
+    let tag_commit = git_output(&["rev-parse", "--verify", &tag_ref])?;
+    if git_status_success(&["merge-base", "--is-ancestor", &tag_commit, "origin/main"])? {
+        Ok(())
+    } else {
+        Err(Error::CheckFailed {
+            check: "release tag".to_string(),
+            failures: vec![format!(
+                "tag `{tag}` points at {tag_commit}, which is not reachable from origin/main"
+            )],
+        })
+    }
+}
+
+fn check_publish_manifest_versions(version: &str) -> Result<(), Error> {
+    let root = env::current_dir()
+        .map_err(|source| Error::Usage(format!("failed to resolve current directory: {source}")))?;
+    let publish_crate_names = PUBLISH_CRATES
+        .iter()
+        .map(|publish_crate| publish_crate.name)
+        .collect::<Vec<_>>();
+    let mut failures = Vec::new();
+
+    for publish_crate in PUBLISH_CRATES {
+        let manifest_path = root.join(publish_crate.path).join("Cargo.toml");
+        let manifest = match read_toml_manifest(&manifest_path) {
+            Ok(manifest) => manifest,
+            Err(failure) => {
+                failures.push(failure);
+                continue;
+            }
+        };
+
+        let Some(package) = manifest.get("package").and_then(toml::Value::as_table) else {
+            failures.push(format!("{} is missing [package]", publish_crate.path));
+            continue;
+        };
+
+        let name = package
+            .get("name")
+            .and_then(toml::Value::as_str)
+            .unwrap_or_default();
+        if name != publish_crate.name {
+            failures.push(format!(
+                "{} package.name is `{name}`, expected `{}`",
+                publish_crate.path, publish_crate.name
+            ));
+        }
+
+        let manifest_version = package
+            .get("version")
+            .and_then(toml::Value::as_str)
+            .unwrap_or_default();
+        if manifest_version != version {
+            failures.push(format!(
+                "{} version is `{manifest_version}`, expected `{version}`",
+                publish_crate.path
+            ));
+        }
+
+        if package
+            .get("publish")
+            .and_then(toml::Value::as_bool)
+            .is_some_and(|publish| !publish)
+        {
+            failures.push(format!("{} has publish = false", publish_crate.path));
+        }
+
+        check_dependency_hygiene(
+            publish_crate,
+            &manifest,
+            version,
+            &publish_crate_names,
+            &mut failures,
+        );
+    }
+
+    finish_check("release manifest versions", failures)
+}
+
+fn check_dependency_hygiene(
+    publish_crate: &PublishCrate,
+    manifest: &toml::Value,
+    version: &str,
+    publish_crate_names: &[&str],
+    failures: &mut Vec<String>,
+) {
+    for section_name in ["dependencies", "dev-dependencies", "build-dependencies"] {
+        let Some(dependencies) = manifest.get(section_name).and_then(toml::Value::as_table) else {
+            continue;
+        };
+
+        for (dependency_name, dependency) in dependencies {
+            let Some(dependency_table) = dependency.as_table() else {
+                continue;
+            };
+
+            if dependency_table.contains_key("git") {
+                failures.push(format!(
+                    "{} {section_name}.{dependency_name} uses a git dependency",
+                    publish_crate.path
+                ));
+            }
+            if dependency_table.contains_key("workspace") {
+                failures.push(format!(
+                    "{} {section_name}.{dependency_name} uses a workspace dependency",
+                    publish_crate.path
+                ));
+            }
+
+            if dependency_table.contains_key("path") {
+                let dependency_version = dependency_table
+                    .get("version")
+                    .and_then(toml::Value::as_str)
+                    .unwrap_or_default();
+                if !publish_crate_names.contains(&dependency_name.as_str())
+                    || dependency_version != version
+                {
+                    failures.push(format!(
+                        "{} {section_name}.{dependency_name} has registry-incompatible path dependency",
+                        publish_crate.path
+                    ));
+                }
+            }
+
+            if publish_crate_names.contains(&dependency_name.as_str()) {
+                let dependency_version = dependency_table
+                    .get("version")
+                    .and_then(toml::Value::as_str)
+                    .unwrap_or_default();
+                if dependency_version != version {
+                    failures.push(format!(
+                        "{} {section_name}.{dependency_name} version is `{dependency_version}`, expected `{version}`",
+                        publish_crate.path
+                    ));
+                }
+            }
+        }
+    }
+}
+
+fn check_release_required_files(version: &str) -> Result<(), Error> {
+    let root = env::current_dir()
+        .map_err(|source| Error::Usage(format!("failed to resolve current directory: {source}")))?;
+    let mut failures = Vec::new();
+
+    for required in ["README.md", "CHANGELOG.md"] {
+        if !root.join(required).is_file() {
+            failures.push(format!("missing root {required}"));
+        }
+    }
+
+    if let Ok(changelog) = fs::read_to_string(root.join("CHANGELOG.md")) {
+        let version_heading = format!("## [{version}]");
+        let v_version_heading = format!("## [v{version}]");
+        if !changelog.contains(&version_heading) && !changelog.contains(&v_version_heading) {
+            failures.push(format!(
+                "CHANGELOG.md has no release notes section for {version}"
+            ));
+        }
+    }
+
+    for publish_crate in PUBLISH_CRATES {
+        let crate_root = root.join(publish_crate.path);
+        let manifest_path = crate_root.join("Cargo.toml");
+        if !manifest_path.is_file() {
+            failures.push(format!("{}/Cargo.toml is missing", publish_crate.path));
+        }
+        if !crate_root.join("README.md").is_file() {
+            failures.push(format!("{}/README.md is missing", publish_crate.path));
+        }
+        if !crate_root.join("src/lib.rs").is_file() && !crate_root.join("src/main.rs").is_file() {
+            failures.push(format!(
+                "{} must contain src/lib.rs or src/main.rs",
+                publish_crate.path
+            ));
+        }
+
+        let Ok(manifest) = read_toml_manifest(&manifest_path) else {
+            continue;
+        };
+        let readme = manifest
+            .get("package")
+            .and_then(toml::Value::as_table)
+            .and_then(|package| package.get("readme"))
+            .and_then(toml::Value::as_str)
+            .unwrap_or_default();
+        if readme.is_empty() {
+            failures.push(format!("{} package.readme is missing", publish_crate.path));
+        } else if !crate_root.join(readme).is_file() {
+            failures.push(format!(
+                "{} package.readme points at missing `{readme}`",
+                publish_crate.path
+            ));
+        }
+    }
+
+    finish_check("release required files", failures)
+}
+
+fn check_release_backlog_clear(tag: &str, version: &str) -> Result<(), Error> {
+    let root = env::current_dir()
+        .map_err(|source| Error::Usage(format!("failed to resolve current directory: {source}")))?;
+    let backlog_root = root.join("docs/method/backlog");
+    let mut files = Vec::new();
+    collect_markdown_files(&backlog_root, &mut files)?;
+
+    let mut failures = Vec::new();
+    for file in files {
+        let relative = display_path(&root, &file);
+        let content = fs::read_to_string(&file).map_err(|source| {
+            Error::Usage(format!("failed to read `{}`: {source}", file.display()))
+        })?;
+        if relative.contains(tag)
+            || relative.contains(version)
+            || content.contains(tag)
+            || content.contains(version)
+        {
+            failures.push(relative);
+        }
+    }
+
+    finish_check("release backlog", failures)
+}
+
+fn read_toml_manifest(path: &Path) -> Result<toml::Value, String> {
+    let content = fs::read_to_string(path)
+        .map_err(|source| format!("failed to read `{}`: {source}", path.display()))?;
+    toml::from_str(&content)
+        .map_err(|source| format!("failed to parse `{}`: {source}", path.display()))
+}
+
+fn git_output(args: &[&str]) -> Result<String, Error> {
+    let label = command_label("git", args);
+    let output = Command::new("git")
+        .args(args)
+        .output()
+        .map_err(|source| Error::Usage(format!("failed to spawn `{label}`: {source}")))?;
+    if output.status.success() {
+        Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+    } else {
+        Err(Error::CommandFailed {
+            command: label,
+            code: output.status.code().unwrap_or(EXIT_FAILURE as i32),
+        })
+    }
+}
+
+fn git_status_success(args: &[&str]) -> Result<bool, Error> {
+    let label = command_label("git", args);
+    Command::new("git")
+        .args(args)
+        .status()
+        .map(|status| status.success())
+        .map_err(|source| Error::Usage(format!("failed to spawn `{label}`: {source}")))
+}
+
+fn finish_check(check: &str, failures: Vec<String>) -> Result<(), Error> {
+    if failures.is_empty() {
+        Ok(())
+    } else {
+        Err(Error::CheckFailed {
+            check: check.to_string(),
+            failures,
+        })
+    }
+}
+
 fn run_docs_check() -> Result<(), Error> {
     check_doc_links()?;
     check_docs_truth_manifest()?;
@@ -318,7 +699,7 @@ fn check_doc_links() -> Result<(), Error> {
 }
 
 fn collect_markdown_files(dir: &Path, out: &mut Vec<PathBuf>) -> Result<(), Error> {
-    const IGNORED_DIRS: &[&str] = &[".git", "node_modules", ".wesley", "out"];
+    const IGNORED_DIRS: &[&str] = &[".git", "node_modules", ".wesley", "out", "target"];
 
     let entries = fs::read_dir(dir)
         .map_err(|source| Error::Usage(format!("failed to read `{}`: {source}", dir.display())))?;
@@ -690,19 +1071,24 @@ Commands:
   docs-check        Run Rust-native documentation hygiene checks
   preflight         Run native Rust preflight checks
   publish-alpha     Publish the crates.io alpha package set; dry-run by default
+  publish-crates    Publish crates.io package set for a release tag
+  release-guard     Verify that a release tag is eligible to publish
   release-check     Build and package the native Rust release artifacts
   legacy-preflight  Run the historical pnpm package preflight
   help              Show help
 
 Publish options:
-  cargo xtask publish-alpha            Print plan and run safe dry-runs
-  cargo xtask publish-alpha --execute  Publish crates in dependency order
-  cargo xtask publish-alpha --execute --skip-checks"
+  cargo xtask publish-alpha                    Print alpha plan and run safe dry-runs
+  cargo xtask publish-alpha --execute          CI tag-only compatibility publish path
+  cargo xtask publish-crates --tag vX.Y.Z      Print tag-derived plan and run safe dry-runs
+  cargo xtask publish-crates --tag vX.Y.Z --execute  Publish in GitHub Actions only
+  cargo xtask release-guard --tag vX.Y.Z"
     );
 }
 
 struct PublishCrate {
     name: &'static str,
+    path: &'static str,
     dependencies: &'static [&'static str],
 }
 
@@ -710,16 +1096,28 @@ struct PublishCrate {
 struct PublishOptions {
     execute: bool,
     skip_checks: bool,
+    tag: Option<String>,
+    version: String,
 }
 
 impl PublishOptions {
-    fn parse(args: &[OsString]) -> Result<Self, Error> {
-        let mut options = Self::default();
-        for arg in args {
+    fn parse(
+        args: &[OsString],
+        default_version: Option<&str>,
+        command_name: &str,
+    ) -> Result<Self, Error> {
+        let mut options = Self {
+            version: default_version.unwrap_or_default().to_string(),
+            ..Default::default()
+        };
+
+        let mut index = 0;
+        while index < args.len() {
+            let arg = &args[index];
             let Some(arg) = arg.to_str() else {
-                return Err(Error::Usage(
-                    "publish-alpha options must be UTF-8".to_string(),
-                ));
+                return Err(Error::Usage(format!(
+                    "{command_name} options must be UTF-8"
+                )));
             };
             match arg {
                 "--dry-run" => {
@@ -731,20 +1129,116 @@ impl PublishOptions {
                 "--skip-checks" => {
                     options.skip_checks = true;
                 }
+                "--tag" => {
+                    index += 1;
+                    let Some(tag) = args.get(index).and_then(|arg| arg.to_str()) else {
+                        return Err(Error::Usage(format!(
+                            "{command_name} --tag requires a UTF-8 value"
+                        )));
+                    };
+                    options.version = version_from_tag(tag)?;
+                    options.tag = Some(tag.to_string());
+                }
+                value if value.starts_with("--tag=") => {
+                    let tag = value.trim_start_matches("--tag=");
+                    options.version = version_from_tag(tag)?;
+                    options.tag = Some(tag.to_string());
+                }
+                "--version" => {
+                    index += 1;
+                    let Some(version) = args.get(index).and_then(|arg| arg.to_str()) else {
+                        return Err(Error::Usage(format!(
+                            "{command_name} --version requires a UTF-8 value"
+                        )));
+                    };
+                    if !is_semver_like(version) {
+                        return Err(Error::Usage(format!(
+                            "{command_name} --version must look like X.Y.Z or X.Y.Z-prerelease"
+                        )));
+                    }
+                    options.version = version.to_string();
+                }
+                value if value.starts_with("--version=") => {
+                    let version = value.trim_start_matches("--version=");
+                    if !is_semver_like(version) {
+                        return Err(Error::Usage(format!(
+                            "{command_name} --version must look like X.Y.Z or X.Y.Z-prerelease"
+                        )));
+                    }
+                    options.version = version.to_string();
+                }
+                "--help" | "-h" => {
+                    print_help();
+                    return Err(Error::Usage(format!(
+                        "{command_name} help requested; see usage above"
+                    )));
+                }
+                other => {
+                    return Err(Error::Usage(format!(
+                        "unknown {command_name} option `{other}`"
+                    )));
+                }
+            }
+            index += 1;
+        }
+
+        if options.version.is_empty() {
+            return Err(Error::Usage(format!(
+                "{command_name} requires --tag vX.Y.Z or --version X.Y.Z"
+            )));
+        }
+        Ok(options)
+    }
+}
+
+struct ReleaseGuardOptions {
+    tag: String,
+}
+
+impl ReleaseGuardOptions {
+    fn parse(args: &[OsString]) -> Result<Self, Error> {
+        let mut tag = None;
+        let mut index = 0;
+        while index < args.len() {
+            let Some(arg) = args[index].to_str() else {
+                return Err(Error::Usage(
+                    "release-guard options must be UTF-8".to_string(),
+                ));
+            };
+            match arg {
+                "--tag" => {
+                    index += 1;
+                    let Some(value) = args.get(index).and_then(|arg| arg.to_str()) else {
+                        return Err(Error::Usage(
+                            "release-guard --tag requires a UTF-8 value".to_string(),
+                        ));
+                    };
+                    tag = Some(value.to_string());
+                }
+                value if value.starts_with("--tag=") => {
+                    tag = Some(value.trim_start_matches("--tag=").to_string());
+                }
                 "--help" | "-h" => {
                     print_help();
                     return Err(Error::Usage(
-                        "publish-alpha help requested; see usage above".to_string(),
+                        "release-guard help requested; see usage above".to_string(),
                     ));
                 }
                 other => {
                     return Err(Error::Usage(format!(
-                        "unknown publish-alpha option `{other}`"
+                        "unknown release-guard option `{other}`"
                     )));
                 }
             }
+            index += 1;
         }
-        Ok(options)
+
+        let Some(tag) = tag else {
+            return Err(Error::Usage(
+                "release-guard requires --tag vX.Y.Z".to_string(),
+            ));
+        };
+        Ok(Self { tag })
     }
 }
 

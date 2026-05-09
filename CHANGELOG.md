@@ -17,6 +17,11 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   `cargo xtask publish-alpha`, which plans the alpha publish by default and can
   publish with `--execute` in dependency order while using `ninelives` retry
   policy to wait for crates.io index propagation between dependent crates.
+- **Official GitHub Actions Rust release procedure**: Documented Wesley's
+  tag-driven crates.io release policy and added release guards for version-tag
+  alignment, tag-on-main validation, required crate package files, changelog
+  coverage, version-linked backlog, dry-runs, and GitHub Actions-only
+  publication.
 - **Native Rust schema and operation commands**: Added Rust-backed
   `wesley schema lower`, `wesley schema hash`,
   `wesley operation selections`, and `wesley operation directive-args`
@@ -129,6 +134,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **Docs link preflight and Rust package dry-runs**: The legacy Node docs link
+  checker now ignores Rust `target/` build artifacts, matching the Rust-native
+  docs check and preventing `cargo publish --dry-run` package trees from
+  breaking later preflight runs.
 - **Module runtime review hardening**: Isolated CLI command registration per
   invocation, rejected duplicate module command and compile-target names,
   preserved `file://` module specifiers in env parsing, failed loudly for
