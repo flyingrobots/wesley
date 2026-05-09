@@ -15,6 +15,7 @@ which signpost is supposed to answer which question.
 | [LEGACY_NODE_MIGRATION.md](./LEGACY_NODE_MIGRATION.md) | Deletion map for the historical Node CLI, packages, generators, hosts, and evidence tooling. |
 | [WESLEY_GLOSSARY.md](./WESLEY_GLOSSARY.md) | Fast noun map for the Wesley base platform, modules, and project workspace. |
 | [BEARING](./BEARING.md) | Current direction, what is already real in the repo, and the tensions that still matter. |
+| [Extending Wesley](./guides/extending.md) | How to add Rust compiler behavior, native CLI commands, emitter projections, or external modules. |
 | [VISION](./VISION.md) | Bounded executive synthesis grounded in repo-visible truth. |
 | [Design Packets](./design/README.md) | Active design packets and doctrinal boundary notes. |
 | [METHOD Process](./method/process.md) | How cycles run, close, and reconcile in this repo. |
@@ -61,6 +62,7 @@ It also now has a more explicit METHOD closeout surface under
 - [Design Packets](./design/README.md)
 - [Architecture Overview](./architecture/overview.md)
 - [Wesley Core Versus Toolchain](./architecture/wesley-core-vs-toolchain.md)
+- [Extending Wesley](./guides/extending.md)
 - [Module Contract](./design/wesley-module-contract.md)
 
 ### Continuum Orientation

@@ -95,6 +95,8 @@ they are not the same thing as the core compile act.
 For the exact boundary, see
 [architecture/wesley-core-vs-toolchain.md](./architecture/wesley-core-vs-toolchain.md).
 
+For practical extension rules, see [guides/extending.md](./guides/extending.md).
+
 For the noun-by-noun version of that split, see
 [WESLEY_GLOSSARY.md](./WESLEY_GLOSSARY.md).
 
@@ -112,8 +114,9 @@ Wesley is a tiered engine designed to enforce contract integrity across platform
 - [ ] **I am setting up Rust core work**: Run `cargo xtask preflight`.
 - [ ] **I am changing docs or legacy packages**: Run `pnpm install` and `cargo xtask legacy-preflight`.
 - [ ] **I am modifying a schema**: Always start in the `.graphql` file.
-- [ ] **I am adding a new generic generator**: Check `packages/wesley-generator-js` for a baseline.
+- [ ] **I am adding a generic projection**: Start in `crates/wesley-emit-rust` or `crates/wesley-emit-typescript`, and only touch legacy Node generators for legacy package work.
 - [ ] **I am adding a domain target**: Put it in an external module repo and load it into Wesley.
+- [ ] **I am extending Wesley**: Use `docs/guides/extending.md` to pick the Rust core, native CLI, emitter, external module, or `xtask` boundary.
 - [ ] **I am contributing to Wesley**: Read `METHOD.md` and `BEARING.md`.
 - [ ] **I am touching Continuum behavior**: Work in the Continuum-owned module/repo, not here.
 - [ ] **I am touching PostgreSQL or Supabase behavior**: Work in `wesley-postgres`, not here.

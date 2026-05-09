@@ -76,6 +76,18 @@ cargo wesley emit typescript --schema test/fixtures/consumer-models/jedit-hot-te
 
 Echo-owned tooling owns Echo-specific footprint honesty checks.
 
+## What's New in v0.0.1
+
+Wesley's first Rust-native alpha publishes the core compiler path to crates.io:
+`wesley-core`, `wesley-emit-rust`, `wesley-emit-typescript`, and `wesley-cli`.
+The installable crate is `wesley-cli`, which provides the `wesley` binary.
+
+This release centers the Rust front door. It lowers GraphQL SDL to domain-empty
+L1 IR, hashes schemas, diffs schema structure, lists schema root operations,
+emits Rust and TypeScript model/operation bindings, resolves operation
+selection paths, and extracts operation directive arguments without requiring an
+npm entry point. See [CHANGELOG.md](./CHANGELOG.md) for the full release notes.
+
 ## Rust-Native Front Door
 
 Wesley core work now starts from Cargo.
@@ -94,6 +106,19 @@ Wesley core work now starts from Cargo.
 The distinction matters: `wesley` is the user-facing compiler command, while
 `xtask` is for maintaining this repository. Avoid adding new core workflows to
 `pnpm wesley`; new compiler behavior should land in Rust first.
+
+### Extending Wesley
+
+Extend Wesley at the narrowest boundary that owns the meaning:
+
+- Add generic GraphQL compiler facts in `crates/wesley-core`.
+- Add user-facing Rust commands in `crates/wesley-cli`.
+- Add generic Rust or TypeScript projections in the existing Rust emitter crates
+  when the projection is domain-empty and broadly reusable.
+- Put domain targets, policies, witnesses, and runtime conventions in external
+  modules or crates owned by that domain.
+
+The practical extension guide is [docs/guides/extending.md](./docs/guides/extending.md).
 
 ### Native Install And Release
 
@@ -188,6 +213,9 @@ Progress: 61% → Alpha
 - **[Wesley Glossary](./docs/WESLEY_GLOSSARY.md)**: The main nouns, layers, and boundary terms for Wesley and its surrounding toolchain.
 - **[Advanced Guide](./docs/ADVANCED_GUIDE.md)**: Deep dives into the IR model, custom directives, and the "Holmes" policy engine.
 - **[Architecture](./docs/ARCHITECTURE.md)**: The authoritative system map (Base Platform, Modules, Workspace, and bundle pipeline).
+- **[Extending Wesley](./docs/guides/extending.md)**: How to add Rust compiler
+  behavior, native CLI surfaces, emitter projections, or external modules
+  without breaking the core boundary.
 - **[Realization Admission and Witness](./docs/design/0004-realization-admission-and-witness/realization-admission-and-witness.md)**: The release-line doctrine for authored source, IR, realization shells, and bounded witness claims.
 - **[Module Contract](./docs/design/wesley-module-contract.md)**: The boundary between the Wesley compiler kernel and external target modules.
 - **[Module Capability Contract](./docs/design/wesley-module-capability-contract.md)**: The capability surfaces external modules bring to Wesley.
