@@ -5,7 +5,7 @@
 
 ## Why (Engineering Standard Violation)
 
-The current `schemas/ir.schema.json` defines explicit structures for `Table`, `Index`, `ForeignKey`, `RLSConfig`, and `TenantConfig`. 
+The current `schemas/ir.schema.json` defines explicit structures for `Table`, `Index`, `ForeignKey`, `RLSConfig`, and `TenantConfig`.
 
 According to Wesley doctrine (domain-empty core), these are specific to the PostgreSQL/Relational domain. Their presence in the core IR schema violates the hard boundary between the compiler kernel and target semantics.
 

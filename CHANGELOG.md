@@ -150,6 +150,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   checker now ignores Rust `target/` build artifacts, matching the Rust-native
   docs check and preventing `cargo publish --dry-run` package trees from
   breaking later preflight runs.
+- **Release documentation polish**: Crate README links now resolve from packaged
+  crates, the release install example uses a version placeholder, and committed
+  trailing whitespace from the release branch diff was removed.
 - **Module runtime review hardening**: Isolated CLI command registration per
   invocation, rejected duplicate module command and compile-target names,
   preserved `file://` module specifiers in env parsing, failed loudly for

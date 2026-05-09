@@ -5,7 +5,7 @@
 
 ## Why (Decision)
 
-We evaluated `apollo-parser` and `async-graphql-parser`. 
+We evaluated `apollo-parser` and `async-graphql-parser`.
 
 **Decision: apollo-parser**
 

@@ -1455,4 +1455,40 @@ mod tests {
         assert!(version_from_tag("v01.2.3").is_err());
         assert!(version_from_tag("v1.2.3-").is_err());
     }
+
+    #[test]
+    fn crate_readmes_do_not_use_repo_relative_links() {
+        for (name, content) in [
+            (
+                "wesley-core",
+                include_str!("../../crates/wesley-core/README.md"),
+            ),
+            (
+                "wesley-cli",
+                include_str!("../../crates/wesley-cli/README.md"),
+            ),
+            (
+                "wesley-emit-rust",
+                include_str!("../../crates/wesley-emit-rust/README.md"),
+            ),
+            (
+                "wesley-emit-typescript",
+                include_str!("../../crates/wesley-emit-typescript/README.md"),
+            ),
+        ] {
+            assert!(
+                !content.contains("../../"),
+                "{name} README must use package-safe links"
+            );
+        }
+    }
+
+    #[test]
+    fn release_procedure_uses_version_placeholder_in_install_example() {
+        let doc = include_str!("../../docs/CRATES_IO_RELEASE.md");
+        assert!(
+            !doc.contains("cargo install wesley-cli --version 0.0.1"),
+            "release procedure should not hardcode the first alpha version"
+        );
+    }
 }

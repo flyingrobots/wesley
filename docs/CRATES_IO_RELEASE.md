@@ -46,7 +46,7 @@ The bare `wesley` crate name is already occupied on crates.io, so the
 installable package is `wesley-cli`:
 
 ```bash
-cargo install wesley-cli --version 0.0.1
+cargo install wesley-cli --version X.Y.Z
 wesley --help
 ```
 

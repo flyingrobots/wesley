@@ -5,7 +5,7 @@
 
 ## Why (Categorical Slop)
 
-The current `ApolloLoweringAdapter` is implemented as a procedural, linear pipeline. This is a "Cold Compiler" mindset. To conform to the Continuum, Wesley must be an **Optic Engine**. 
+The current `ApolloLoweringAdapter` is implemented as a procedural, linear pipeline. This is a "Cold Compiler" mindset. To conform to the Continuum, Wesley must be an **Optic Engine**.
 
 It should not "lower a string"; it should **project a reading from a coordinate**.
 

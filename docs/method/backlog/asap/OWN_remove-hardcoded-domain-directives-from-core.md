@@ -5,7 +5,7 @@
 
 ## Why (Bad Code)
 
-The current Rust `WesleyIR` implementation (`crates/wesley-core/src/domain/ir.rs`) has hardcoded fields for `@wes_rls`, `@wes_tenant`, `@wes_audit`, and `@wes_soft_delete`. 
+The current Rust `WesleyIR` implementation (`crates/wesley-core/src/domain/ir.rs`) has hardcoded fields for `@wes_rls`, `@wes_tenant`, `@wes_audit`, and `@wes_soft_delete`.
 
 According to Wesley doctrine, these are PostgreSQL-specific semantics and do not belong in the domain-empty core. Their presence in the core creates a "God Kernel" anti-pattern and violates the hard boundary defined in `docs/ARCHITECTURE.md`.
 

@@ -2,7 +2,7 @@
 
 ## The Fundamental Lie
 
-Traditional computing is built on a fiction: *there is a single, global, mutable State.* Whether it is a memory address, a file on disk, a row in a database, or a node in a graph, we pretend that "The State" is the primary reality. 
+Traditional computing is built on a fiction: *there is a single, global, mutable State.* Whether it is a memory address, a file on disk, a row in a database, or a node in a graph, we pretend that "The State" is the primary reality.
 
 This lie is the source of all technical debt. Rebuild fragility, merge conflicts, non-deterministic bugs, and AI hallucinations are not accidental; they are the geometric consequences of trying to mutate a global object that doesn't actually exist.
 

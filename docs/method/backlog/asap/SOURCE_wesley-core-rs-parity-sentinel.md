@@ -5,7 +5,7 @@
 
 ## Why (Cool Idea)
 
-As we move the compiler truth to Rust, we risk "Semantic Drift" where the legacy JS implementation and the new Rust kernel produce slightly different IR or hashes for the same SDL. 
+As we move the compiler truth to Rust, we risk "Semantic Drift" where the legacy JS implementation and the new Rust kernel produce slightly different IR or hashes for the same SDL.
 
 ## Done looks like
 

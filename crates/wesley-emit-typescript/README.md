@@ -5,5 +5,7 @@ artifacts using a structured emitter. It is the native TypeScript
 code-generation surface for models and operation bindings derived from GraphQL
 schema definitions.
 
-See the repository [README](../../README.md) and
-[architecture guide](../../docs/ARCHITECTURE.md) for the full project context.
+See the repository
+[README](https://github.com/flyingrobots/wesley#readme) and
+[architecture guide](https://github.com/flyingrobots/wesley/blob/main/docs/ARCHITECTURE.md)
+for the full project context.

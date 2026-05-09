@@ -7,5 +7,7 @@ TypeScript emitter commands.
 The crate is named `wesley-cli` because the bare `wesley` crate name is already
 occupied on crates.io.
 
-See the repository [README](../../README.md) and
-[architecture guide](../../docs/ARCHITECTURE.md) for the full project context.
+See the repository
+[README](https://github.com/flyingrobots/wesley#readme) and
+[architecture guide](https://github.com/flyingrobots/wesley/blob/main/docs/ARCHITECTURE.md)
+for the full project context.
