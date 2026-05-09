@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readFileSync, writeFileSync, readdirSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { join, basename, extname } from 'node:path';
 import { GraphQLAdapter } from '../packages/wesley-runtime-node/src/GraphQLAdapter.mjs';
 import { registryHash, canonicalizeJSON } from '../packages/wesley-core/src/domain/registryHash.mjs';

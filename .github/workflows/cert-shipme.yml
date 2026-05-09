@@ -38,6 +38,9 @@ jobs:
       - name: Transform
         run: node packages/wesley-host-node/bin/wesley.mjs transform --schema test/fixtures/blade/schema-v1.graphql --emit-bundle --out-dir out
 
+      - name: Prepare passing SHIPME certificate fixture
+        run: node scripts/prepare-shipme-cert-fixture.mjs
+
       - name: Run HOLMES investigation
         run: |
           node packages/wesley-holmes/src/cli.mjs investigate \

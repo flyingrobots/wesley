@@ -15,9 +15,9 @@
     "node": ">=22.0.0"
   },
   "scripts": {
-    "test": "node --test \"test/*.test.mjs\" && ./test/run-bats.sh",
-    "test:verbose": "node --test \"test/*.test.mjs\" && ./test/run-bats.sh --verbose",
-    "test:tap": "node --test \"test/*.test.mjs\" && ./test/run-bats.sh --tap"
+    "test": "node --test test/*.test.mjs && ./test/run-bats.sh",
+    "test:verbose": "node --test test/*.test.mjs && ./test/run-bats.sh --verbose",
+    "test:tap": "node --test test/*.test.mjs && ./test/run-bats.sh --tap"
   },
   "dependencies": {
     "@wesley/core": "workspace:*",

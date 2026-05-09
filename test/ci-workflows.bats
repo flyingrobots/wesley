@@ -43,6 +43,14 @@ load 'bats-plugins/bats-assert/load'
   assert_success
   [ "$output" -eq 1 ]
 
+  run bash -lc "grep -F 'Prepare passing SHIPME certificate fixture' .github/workflows/cert-shipme.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'node scripts/prepare-shipme-cert-fixture.mjs' .github/workflows/cert-shipme.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
   run bash -lc "grep -F 'rehearse --schema test/fixtures/blade/schema-v1.graphql' .github/workflows/cert-shipme.yml | wc -l"
   assert_success
   [ "$output" -eq 0 ]
@@ -116,6 +124,18 @@ load 'bats-plugins/bats-assert/load'
   run bash -lc "grep -F 'pnpm --filter @wesley/core test:fuzz' .github/workflows/fuzzing.yml | wc -l"
   assert_success
   [ "$output" -eq 1 ]
+}
+
+@test "@wesley/cli package test script is compatible with Node 20 test runner globs" {
+  run node -e "const pkg = JSON.parse(require('node:fs').readFileSync('packages/wesley-cli/package.json', 'utf8')); if (pkg.scripts.test.includes('\\\"test/*.test.mjs\\\"')) { throw new Error('quoted test glob is not expanded by Node 20'); } if (!pkg.scripts.test.includes('node --test test/*.test.mjs')) { throw new Error('expected shell-expanded test glob'); }"
+  assert_success
+}
+
+@test "shipme certificate fixture prepares PASS realm and exact evidence" {
+  tmp_dir="$(mktemp -d -t wesley-shipme-fixture-XXXXXX)"
+  run bash -lc "cd '$tmp_dir' && node '$PWD/scripts/prepare-shipme-cert-fixture.mjs' && grep -F '\"verdict\": \"PASS\"' .wesley-cache/realm.json && grep -F '\"readiness\"' .wesley-cache/bundle.json && grep -F '\"lines\": \"1-2\"' .wesley-cache/bundle.json && grep -F '\"lines\": \"1-1\"' .wesley-cache/bundle.json"
+  rm -rf "$tmp_dir"
+  assert_success
 }
 
 @test "release crates workflow creates draft release before publishing crates" {
