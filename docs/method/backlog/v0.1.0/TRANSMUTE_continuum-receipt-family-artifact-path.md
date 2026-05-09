@@ -37,15 +37,19 @@ surface, into a predictable generated bundle from one schema entry point.
 
 When this item becomes the active design packet, the target authored home is:
 
-- `schemas/continuum-receipt-family.graphql`
+- `<continuum-root>/schemas/continuum-receipt-family.graphql`
 
 ## Repo Evidence
 
-- `schemas/ttd-protocol.graphql`
-- `schemas/echo-core-types.graphql`
-- `packages/wesley-core/src/ttd/codegen/orchestrator.mjs`
-- `packages/wesley-generator-ttd/`
-- `packages/wesley-cli/src/commands/compile-ttd.mjs`
+- `warp-ttd` owns `schemas/warp-ttd-protocol.graphql`
+- `echo` owns current runtime schema fragments and tracks old Wesley Echo SDL
+  reconciliation in its backlog
+- `continuum` owns `schemas/continuum-receipt-family.graphql`
+- relocated Continuum-owned TTD compiler evidence at
+  `continuum/wesley/ttd/codegen/orchestrator.mjs`
+- historical Wesley-local `packages/wesley-generator-ttd/` and
+  `packages/wesley-cli/src/commands/compile-ttd.mjs` surfaces were removed
+  during the domain-empty extraction
 
 ## Related Carry-Over
 

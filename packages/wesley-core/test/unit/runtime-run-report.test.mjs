@@ -23,19 +23,19 @@ test('buildRuntimeRunReport summarizes a completed run stream', () => {
   const collector = createRuntimeEventCollector({
     clock: fakeClock,
     runId: 'run-report-001',
-    transmutation: 'legacy-supabase'
+    transmutation: 'null-generator'
   });
 
   collector.emit('RunRequested', { command: 'plan', dryRun: true });
-  collector.emit('TaskStarted', { taskId: 'legacy-supabase:plan:build' });
-  collector.emit('TaskCompleted', { taskId: 'legacy-supabase:plan:build' });
+  collector.emit('TaskStarted', { taskId: 'null-generator:plan:build' });
+  collector.emit('TaskCompleted', { taskId: 'null-generator:plan:build' });
   collector.emit('ArtifactsMaterialized', { artifactCount: 2 });
   collector.emit('RunCompleted', { command: 'plan', dryRun: true });
 
   const report = buildRuntimeRunReport(collector.events);
 
   assert.equal(report.runId, 'run-report-001');
-  assert.equal(report.transmutation, 'legacy-supabase');
+  assert.equal(report.transmutation, 'null-generator');
   assert.equal(report.command, 'plan');
   assert.equal(report.status, 'completed');
   assert.equal(report.eventCount, 5);
@@ -52,13 +52,13 @@ test('buildRuntimeRunReport summarizes a failed run stream', () => {
   const collector = createRuntimeEventCollector({
     clock: fakeClock,
     runId: 'run-report-002',
-    transmutation: 'legacy-supabase'
+    transmutation: 'null-generator'
   });
 
   collector.emit('RunRequested', { command: 'rehearse' });
-  collector.emit('TaskStarted', { taskId: 'legacy-supabase:rehearse:apply' });
+  collector.emit('TaskStarted', { taskId: 'null-generator:rehearse:apply' });
   collector.emit('TaskFailed', {
-    taskId: 'legacy-supabase:rehearse:apply',
+    taskId: 'null-generator:rehearse:apply',
     errorCode: 'NO_DSN',
     errorMessage: 'No DSN provided'
   });

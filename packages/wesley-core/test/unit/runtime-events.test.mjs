@@ -14,7 +14,7 @@ test('createRuntimeEventCollector stores events in the backing event store', () 
   const collector = createRuntimeEventCollector({
     clock: fakeClock,
     runId: 'run-store-001',
-    transmutation: 'legacy-supabase',
+    transmutation: 'null-generator',
     eventStore
   });
 
@@ -34,14 +34,14 @@ test('createRuntimeEventCollector stores events in the backing event store', () 
 test('createRuntimeEventCollector continues sequence from an existing stream', () => {
   const eventStore = new MemoryEventStore();
   const streamId = createRuntimeStreamId({
-    transmutation: 'legacy-supabase',
+    transmutation: 'null-generator',
     runId: 'run-store-002'
   });
 
   const firstCollector = createRuntimeEventCollector({
     clock: fakeClock,
     runId: 'run-store-002',
-    transmutation: 'legacy-supabase',
+    transmutation: 'null-generator',
     streamId,
     eventStore
   });
@@ -50,7 +50,7 @@ test('createRuntimeEventCollector continues sequence from an existing stream', (
   const secondCollector = createRuntimeEventCollector({
     clock: fakeClock,
     runId: 'run-store-002',
-    transmutation: 'legacy-supabase',
+    transmutation: 'null-generator',
     streamId,
     eventStore
   });
@@ -67,7 +67,7 @@ test('createRuntimeEventCollector injects a crash after a configured event count
   const collector = createRuntimeEventCollector({
     clock: fakeClock,
     runId: 'run-store-003',
-    transmutation: 'legacy-supabase',
+    transmutation: 'null-generator',
     eventStore,
     crashAfterEvent: 2
   });
@@ -96,7 +96,7 @@ test('createRuntimeEventCollector persists a terminal snapshot in the backing ev
   const collector = createRuntimeEventCollector({
     clock: fakeClock,
     runId: 'run-store-004',
-    transmutation: 'legacy-supabase',
+    transmutation: 'null-generator',
     eventStore
   });
 

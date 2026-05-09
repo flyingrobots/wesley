@@ -79,7 +79,7 @@ test('validateConfig — accepts empty config (no generators, no experimental)',
 test('validateConfig — accepts valid generators array', () => {
   const result = validateConfig({
     generators: [
-      { package: '@wesley/generator-echo', config: { key: 'val' } },
+      { package: '@example/generator', config: { key: 'val' } },
       { package: './my-plugin', enabled: false }
     ]
   });

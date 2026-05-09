@@ -111,9 +111,10 @@ Downstream consumers may not infer, without additional proof:
   authored SDL remains the only authority, lowering is generator-only,
   `realization/manifest.json` is a packaging shell, and witness output names a
   bounded property set instead of implying runtime truth.
-- Human: yes. Compile-time shell checks are now concrete in
-  `verify-realization`, pre-commit, and CI, while semantic witness claims stay
-  in `witness` / `witness-continuum` reports.
+- Human: yes. Compile-time shell checks were concrete in the original
+  `verify-realization` guard while that Continuum verifier lived in this repo;
+  generic Wesley now keeps semantic witness claims in explicit witness reports
+  and expects product-owned realization checks to return through modules.
 - Human: yes. The docs, witness `proves` / `doesNotProve` fields, and
   realization inspection checks make it harder to confuse shell integrity with
   end-to-end runtime certification.

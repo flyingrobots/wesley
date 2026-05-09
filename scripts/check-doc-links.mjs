@@ -6,7 +6,8 @@ const root = resolve('.');
 // Directories to skip when scanning for markdown files:
 // - '.wesley': local developer state / emitted artifacts (bundles, scores)
 // - 'out': build/output directory that may contain generated docs or temp files
-const ignoreDirs = new Set(['.git', 'node_modules', '.wesley', 'out']);
+// - 'target': Rust build/package output, including cargo dry-run package trees
+const ignoreDirs = new Set(['.git', 'node_modules', '.wesley', 'out', 'target']);
 
 const mdFiles = [];
 function walk(dir) {

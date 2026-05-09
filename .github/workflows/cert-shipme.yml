@@ -24,20 +24,6 @@ jobs:
       contents: read
       issues: write
       pull-requests: write
-    services:
-      postgres:
-        image: postgres:15@sha256:c635fa3e3b7421a659d34abdfd6d492f679cbe8149e261a501237b55c5a94212
-        env:
-          POSTGRES_USER: wesley
-          POSTGRES_PASSWORD: wesley_test
-          POSTGRES_DB: wesley_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U wesley -d wesley_test"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 30
     steps:
       - name: Harden runner
         uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176
@@ -52,20 +38,8 @@ jobs:
       - name: Transform
         run: node packages/wesley-host-node/bin/wesley.mjs transform --schema test/fixtures/blade/schema-v1.graphql --emit-bundle --out-dir out
 
-      - name: Plan (write)
-        run: node packages/wesley-host-node/bin/wesley.mjs plan --schema test/fixtures/blade/schema-v1.graphql --write --out-dir out
-
-      - name: Wait for Postgres
-        run: |
-          for i in {1..60}; do
-            pg_isready -h localhost -U wesley -d wesley_test && break
-            sleep 1
-          done
-        env:
-          PGPASSWORD: wesley_test
-
-      - name: Rehearse (REALM)
-        run: node packages/wesley-host-node/bin/wesley.mjs rehearse --schema test/fixtures/blade/schema-v1.graphql --dsn postgres://wesley:wesley_test@localhost:5432/wesley_test --timeout 300000
+      - name: Prepare passing SHIPME certificate fixture
+        run: node scripts/prepare-shipme-cert-fixture.mjs
 
       - name: Run HOLMES investigation
         run: |

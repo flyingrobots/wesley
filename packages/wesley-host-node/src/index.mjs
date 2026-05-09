@@ -11,24 +11,13 @@ export { ConsoleLogger } from './adapters/console-compat-logger.mjs';
 export { EventBus } from './adapters/EventBus.mjs';
 export { GraphQLAdapter } from '@wesley/runtime-node';
 export { NodeFileSystem } from './adapters/NodeFileSystem.mjs';
-export { PgParserAdapter } from './adapters/PgParserAdapter.mjs';
-export { PostgreSQLAdapter } from './adapters/PostgreSQLAdapter.mjs';
-export { WesleyFileWriter } from './adapters/WesleyFileWriter.mjs';
 export { runWesleyCli } from './runWesleyCli.mjs';
 
 // Import GraphQLAdapter for use in GraphQLSchemaParser
 import { GraphQLAdapter } from '@wesley/runtime-node';
 
-// Re-export generators from proper packages
-// TODO: Fix missing dependencies in generator packages
-// import { PostgreSQLGenerator, PgTAPTestGenerator } from '@wesley/generator-supabase';
-// import { ModelGenerator } from '@wesley/generator-js';
-
 // Import core domain models
 import { Schema, Table, Field } from '@wesley/core';
-
-// Temporary stubs - will be replaced by adapters
-// export { PostgreSQLGenerator, PgTAPTestGenerator, ModelGenerator };
 
 // Stub implementations for missing components
 // TODO: Implement these properly

@@ -1,0 +1,350 @@
+# Wesley Module Capability Contract
+<!-- docs-truth: status=current owner=@flyingrobots -->
+
+This note defines the next real module boundary for Wesley.
+
+The current `WesleyModule` contract is enough to load modules and register
+module-owned CLI commands. It is **not** enough to support the architecture we
+actually want:
+
+- `wesley compile` should stay in Wesley
+- domain targets should be loadable from external modules
+- Wesley should ship no domain modules by default
+- Holmes, Watson, Moriarty, and BLADE should accept module-provided domain
+  behavior instead of hard-coded product semantics
+
+This document names the capability surfaces that a module may contribute.
+
+## Core Rule
+
+> Wesley ships engines and extension points, not product semantics.
+
+That means:
+
+- base Wesley owns the verbs
+- modules own domain targets, domain checks, domain policies, and domain test
+  scenarios
+- projects select modules explicitly
+
+## Inputs, Extensions, Outputs
+
+Keep these separate.
+
+### Inputs
+
+What the project supplies:
+
+- GraphQL schemas
+- selected modules
+- module config
+- optional project tests and BLADE hooks
+
+### Extensions
+
+What a module contributes:
+
+- directive semantics
+- compile targets and generators
+- Holmes checks and witness scopes
+- Watson verifiers
+- Moriarty policy and judgment profiles
+- BLADE scenarios, fixtures, and gates
+- optional CLI commands
+
+### Outputs
+
+What Wesley and the toolchain emit:
+
+- compiled artifacts
+- evidence bundles
+- judgment bundles
+- certified deployable bundles or failure bundles
+
+Wesley does not emit runtime values. Runtimes and tools later emit values that
+conform to GraphQL-authored families.
+
+## Module Capability Areas
+
+A loadable module may contribute capabilities in these areas.
+
+### 1. Wesley capabilities
+
+These extend the compiler/toolchain surface directly.
+
+Examples:
+
+- directive semantics
+- compile targets
+- generators
+- bundle profiles
+- realization verifiers
+
+This is the capability set `wesley compile` and related base verbs should use.
+
+### 2. Holmes capabilities
+
+These extend structural witness and evidence gathering.
+
+Examples:
+
+- witness scopes
+- structural checks
+- evidence collectors
+- counterfactual providers
+- drift rules
+
+### 3. Watson capabilities
+
+These extend evidence verification and audit logic.
+
+Examples:
+
+- citation verifiers
+- consistency checks
+- score/math verification rules
+- audit profiles
+
+### 4. Moriarty capabilities
+
+These extend policy, judgment, and prediction.
+
+Examples:
+
+- policy profiles
+- judgment rules
+- predictor models
+- risk classification rules
+
+### 5. BLADE capabilities
+
+These extend release-readiness orchestration.
+
+Examples:
+
+- test scenarios
+- fixtures
+- environment setup hooks
+- extra tests
+- gate rules
+- certification profiles
+
+### 6. CLI capabilities
+
+These describe module-owned user-facing command surfaces.
+
+Examples:
+
+- target-specific commands
+- module-local doctor or report commands
+
+This is declarative metadata. The current runtime still uses
+`registerCliCommands(ctx)` as the imperative hook that actually registers
+Commander command instances.
+
+CLI capabilities are useful, but they are not the whole module story.
+
+## Capability Shape
+
+The module contract should evolve toward a shape like this:
+
+```js
+{
+  apiVersion: '1',
+  name: 'example-target-module',
+
+  init(config) {},
+
+  capabilities: {
+    wesley: {
+      directives: [],
+      targets: [],
+      generators: [],
+      bundleProfiles: [],
+      realizationVerifiers: []
+    },
+    holmes: {
+      scopes: [],
+      checks: [],
+      evidenceCollectors: [],
+      counterfactualProviders: []
+    },
+    watson: {
+      verifiers: [],
+      auditProfiles: []
+    },
+    moriarty: {
+      policyProfiles: [],
+      judgmentProfiles: [],
+      predictors: []
+    },
+    blade: {
+      scenarios: [],
+      fixtures: [],
+      envSetups: [],
+      tests: [],
+      gates: [],
+      certificationProfiles: []
+    },
+    cli: {
+      commands: []
+    }
+  }
+}
+```
+
+This is a target contract shape, not a promise that the current runtime already
+implements every registry.
+
+## Required Versus Optional
+
+Modules do not need to implement every capability area.
+
+A module may contribute only one slice.
+
+Examples:
+
+- a small technology module may only register `wesley.targets`
+- a policy-heavy module may contribute only Moriarty and BLADE capabilities
+- a product or database module may contribute across every area from its own
+  external repo
+
+The important rule is:
+
+> if domain behavior exists, it should come from a module capability, not from
+> hard-coded base-platform imports.
+
+## Compile Must Use Module Targets
+
+`wesley compile` remains a Wesley base-platform verb.
+
+What changes is how it decides what to compile.
+
+It should:
+
+- ask loaded modules for available compile targets
+- validate requested targets against the loaded registry
+- dispatch generation through those module-provided targets
+
+It should not:
+
+- hard-code product targets
+- hard-code database targets
+- hard-code runtime or host-project conventions
+
+That is the central design consequence of this note.
+
+## External Product Modules Under This Contract
+
+A product module should contribute its own capabilities from its owning repo.
+Those capabilities may include:
+
+- `wesley.targets`
+  - product-specific compile targets
+- `wesley.generators`
+  - product-specific generators
+- `wesley.realizationVerifiers`
+  - product-specific realization verifiers
+- `holmes`
+  - product-specific witness scopes
+  - product-specific counterfactual providers
+- `moriarty`
+  - product-specific policy and judgment profiles
+- `blade`
+  - product-specific scenarios, fixtures, and gates
+- `cli`
+  - product-specific helper commands
+
+Product observer or runtime-boundary behavior enters through
+GraphQL-authored contract families and external module capabilities, not
+through generic Wesley.
+
+## External Database Modules Under This Contract
+
+A database-family module should contribute its own capabilities from a database
+module repo. Those capabilities may include:
+
+- `wesley.targets`
+  - SQL or migration targets
+  - database test targets
+  - hosted-database targets
+- `wesley.generators`
+  - DDL emitters
+  - policy emitters
+  - database test emitters
+- `holmes`
+  - migration witness scopes
+  - lock and risk checks
+- `watson`
+  - artifact verification for SQL/test outputs
+- `moriarty`
+  - migration risk policy profiles
+- `blade`
+  - database test scenarios
+  - fixture DB setup
+  - release gates for migration readiness
+
+Database modules do **not** define product observer semantics.
+
+## Project Experience
+
+Ordinary projects should not hand-wire all of this.
+
+A project should mainly say:
+
+- here are my GraphQL schemas
+- here are the modules I use
+- here is any module config
+- here are any extra project tests or BLADE hooks
+
+That is the whole point of modules.
+
+## Test Strategy
+
+Wesley core CI must not depend on product or database module repos being
+present.
+
+So Wesley should keep a hermetic fixture module in its own tests that proves:
+
+- module loading works
+- capability registration works across every supported area and collection
+- module-owned target metadata can be discovered without product repos
+- BLADE environment, test, and gate hooks can be inspected without downstream
+  project fixtures
+
+That fixture is a test artifact, not a product module.
+
+## Migration Consequences
+
+This note implies the following work order:
+
+1. expand the `WesleyModule` contract to expose capabilities beyond CLI commands
+2. add capability registries in base Wesley
+3. rewrite `wesley compile` to use module-owned target discovery
+4. move product modules to their owning repos and load them through the new
+   contract
+5. move database modules to `wesley-postgres` and load them through the new
+   contract
+6. remove remaining hard-coded domain imports and packages from Wesley
+
+## Current Honest Posture
+
+Today Wesley has:
+
+- explicit module loading
+- module-owned CLI command registration
+- a basic module capability registry that normalizes loaded module
+  contributions across the `wesley`, `holmes`, `watson`, `moriarty`, `blade`,
+  and `cli` areas
+- module-driven compile target discovery and dispatch for loaded
+  `wesley.targets`
+- hermetic fixture coverage across every supported module capability
+  collection
+
+Today Wesley does **not** yet have:
+
+- module-provided Holmes/Watson/Moriarty/BLADE dispatch
+- complete removal of all remaining product/database residue outside compile
+
+So this document is partly implemented. The next concrete cut is to remove or
+relocate legacy product/database residue now that the module registry, compile
+dispatch seam, and fixture capability matrix are in place.

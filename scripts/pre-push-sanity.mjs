@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { dirname, join, resolve } from 'node:path';
 import process from 'node:process';
@@ -82,10 +82,6 @@ function buildCommands(changedFiles) {
     addCommand('repo-bats', 'Repo Bats smoke suite', 'bash scripts/smoke/repo-bats-prepush.sh');
   }
 
-  if (needsHolmesOpsSmoke(changedFiles)) {
-    addCommand('holmes-ops', 'HOLMES ops/Postgres smoke', 'bash scripts/smoke/holmes-ops-pgtap.sh');
-  }
-
   for (const packageName of [...touchedPackages].sort()) {
     addCommand(
       `package:${packageName}`,
@@ -105,6 +101,7 @@ function loadPackageTests() {
   for (const entry of entries) {
     if (!entry.isDirectory()) continue;
     const packageJsonPath = join(packagesDir, entry.name, 'package.json');
+    if (!existsSync(packageJsonPath)) continue;
     const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
     if (packageJson?.scripts?.test) {
       byDir.set(`packages/${entry.name}/`, packageJson.name);
@@ -148,25 +145,6 @@ function needsRepoBats(changedFiles) {
     file.startsWith('packages/wesley-cli/src/commands/watch') ||
     file.startsWith('packages/wesley-core/src/cli/') ||
     file === 'packages/wesley-core/src/util/EventEmitter.mjs'
-  );
-}
-
-function needsHolmesOpsSmoke(changedFiles) {
-  return changedFiles.some((file) =>
-    file === '.github/workflows/wesley-holmes.yml' ||
-    file.startsWith('.github/actions/holmes-setup/') ||
-    file.startsWith('packages/wesley-holmes/') ||
-    file.startsWith('packages/wesley-runtime-node/') ||
-    file.startsWith('packages/wesley-generator-supabase/') ||
-    file.startsWith('packages/wesley-core/src/domain/qir/') ||
-    file.startsWith('packages/wesley-core/src/application/CounterfactualSurface') ||
-    file.startsWith('packages/wesley-core/src/application/GeneratedBundle') ||
-    file.startsWith('packages/wesley-core/src/application/TransmutationRunner') ||
-    file.startsWith('packages/wesley-core/src/application/Scoring') ||
-    file.startsWith('packages/wesley-cli/src/commands/generate') ||
-    file.startsWith('packages/wesley-cli/src/transmutations/') ||
-    file.startsWith('test/fixtures/examples/') ||
-    file.startsWith('test/fixtures/postgres/')
   );
 }
 

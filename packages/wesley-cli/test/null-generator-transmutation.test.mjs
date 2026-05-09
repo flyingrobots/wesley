@@ -46,23 +46,18 @@ test('registry resolves null-generator as a registration-only sequential transmu
 });
 
 test('registry exposes default transmutation metadata for command surfaces', () => {
-  assert.equal(getDefaultTransmutationName(), 'legacy-supabase');
+  assert.equal(getDefaultTransmutationName(), NULL_GENERATOR_TRANSMUTATION);
   assert.deepEqual(
     describeTransmutations(),
     [
       {
-        name: 'legacy-supabase',
-        description: 'Legacy Supabase SQL/RLS/pgTAP transmutation',
-        default: true
-      },
-      {
         name: 'null-generator',
         description: 'Minimal registration-only witness transmutation',
-        default: false
+        default: true
       }
     ]
   );
-  assert.equal(resolveRunMetadata({}).transmutation, 'legacy-supabase');
+  assert.equal(resolveRunMetadata({}).transmutation, NULL_GENERATOR_TRANSMUTATION);
 });
 
 test('runSequentialGeneration executes null-generator through the transmutation registry', async () => {
@@ -111,8 +106,7 @@ test('runSequentialGeneration executes null-generator through the transmutation 
 
   const result = await runSequentialGeneration({
     ctx,
-    context,
-    compileOpsIfRequested: async () => {}
+    context
   });
 
   assert.equal(result.transmutation, NULL_GENERATOR_TRANSMUTATION);

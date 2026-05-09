@@ -32,5 +32,3 @@ jobs:
         run: git diff --exit-code -- pnpm-lock.yaml
       - name: Run repository preflight
         run: node scripts/preflight.mjs
-      - name: Verify realization manifests
-        run: pnpm run verify:realization

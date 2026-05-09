@@ -25,17 +25,17 @@ function createSchemaCtx() {
 
 function makeRuntimeEvent(type, sequence) {
   return {
-    eventId: `transmutation:legacy-supabase:run-123:${sequence}`,
+    eventId: `transmutation:null-generator:run-123:${sequence}`,
     type,
-    streamId: 'transmutation:legacy-supabase:run-123',
+    streamId: 'transmutation:null-generator:run-123',
     sequence,
     schemaVersion: '1.0.0',
     timestamp: '2026-03-19T10:30:00.000Z',
     causationId: null,
     correlationId: 'run-123',
-    idempotencyKey: `legacy-supabase:${type}:${sequence}`,
+    idempotencyKey: `null-generator:${type}:${sequence}`,
     runId: 'run-123',
-    transmutation: 'legacy-supabase',
+    transmutation: 'null-generator',
     payload: {}
   };
 }
@@ -44,7 +44,7 @@ test('compileSchema resolves nested local refs for shipme + realm + runtime-even
   const { validate } = await compileSchema(createSchemaCtx(), 'shipme.schema.json');
   const document = {
     version: '1.0.0',
-    transmutation: 'legacy-supabase',
+    transmutation: 'null-generator',
     runId: 'run-123',
     sha: '0123456789abcdef0123456789abcdef01234567',
     timestamp: '2026-03-19T10:30:00.000Z',
@@ -72,7 +72,7 @@ test('compileSchema resolves nested local refs for shipme + realm + runtime-even
       message: 'Ship immediately! The evidence is conclusive.'
     },
     realm: {
-      transmutation: 'legacy-supabase',
+      transmutation: 'null-generator',
       runId: 'run-123',
       provider: 'postgres',
       verdict: 'PASS',

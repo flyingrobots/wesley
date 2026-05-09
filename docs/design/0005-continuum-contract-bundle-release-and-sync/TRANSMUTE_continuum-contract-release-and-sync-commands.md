@@ -55,7 +55,10 @@ The repo now ships:
 
 ## Evidence
 
-- [packages/wesley-cli/src/commands/contract.mjs](/Users/james/git/wesley/packages/wesley-cli/src/commands/contract.mjs)
-- [packages/wesley-continuum/src/contract-bundle.mjs](/Users/james/git/wesley/packages/wesley-continuum/src/contract-bundle.mjs)
-- [packages/wesley-cli/test/contract.bats](/Users/james/git/wesley/packages/wesley-cli/test/contract.bats)
-- [packages/wesley-continuum/test/contract-bundle.test.mjs](/Users/james/git/wesley/packages/wesley-continuum/test/contract-bundle.test.mjs)
+- Historical implementation paths:
+  `packages/wesley-cli/src/commands/contract.mjs`,
+  `packages/wesley-continuum/src/contract-bundle.mjs`,
+  `packages/wesley-cli/test/contract.bats`, and
+  `packages/wesley-continuum/test/contract-bundle.test.mjs`.
+- Current ownership note: this product-specific surface is extraction context,
+  not active Wesley core doctrine.

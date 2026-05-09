@@ -8,6 +8,74 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- **Crates.io alpha publishing metadata**: Prepared the Rust-native crates for
+  a first `0.0.1` alpha publication: `wesley-core`,
+  `wesley-emit-rust`, `wesley-emit-typescript`, and `wesley-cli`. The
+  installable package is `wesley-cli`, which provides the `wesley` binary,
+  because the bare `wesley` crate name is already occupied on crates.io.
+- **Resilient crates.io alpha publish automation**: Added
+  `cargo xtask publish-alpha`, which plans the alpha publish by default and can
+  publish with `--execute` in dependency order while using `ninelives` retry
+  policy to wait for crates.io index propagation between dependent crates.
+- **Official GitHub Actions Rust release procedure**: Documented Wesley's
+  tag-driven crates.io release policy and added release guards for version-tag
+  alignment, tag-on-main validation, required crate package files, changelog
+  coverage, version-linked backlog, dry-runs, and GitHub Actions-only
+  publication.
+- **Release package sanity and resumable publish flow**: Added strict official
+  publish dry-run reporting, package file-set verification for every published
+  crate, and idempotent publish execution that skips crate versions already
+  visible in the crates.io index.
+- **Release workflow publication ordering**: The crates.io release workflow now
+  creates or reuses a draft GitHub Release before the first registry mutation,
+  finalizes it only after crates.io visibility is verified, and treats open
+  issues tied to the release by text, milestone, or label as blockers.
+- **Release guard split and SemVer validation**: Added a pre-tag release prep
+  guard for manifest, changelog, backlog, and package checks, retained the
+  tag-specific release guard for GitHub Actions, and replaced the permissive
+  hand-rolled version check with Rust SemVer parsing.
+- **Native Rust schema and operation commands**: Added Rust-backed
+  `wesley schema lower`, `wesley schema hash`,
+  `wesley operation selections`, and `wesley operation directive-args`
+  commands. The native CLI now exposes the `wesley-core` L1 lowering,
+  registry-hash, operation-selection, and directive-argument primitives without
+  going through the legacy Node entry point.
+- **Rust-native docs check**: Added `cargo xtask docs-check` for markdown link
+  validation, docs-truth manifest validation, and forbidden machine-local path
+  detection. `cargo xtask preflight` now runs those checks before Rust tests and
+  native CLI help.
+- **Legacy Node migration map**: Added a command and package disposition map for
+  retiring the historical Node CLI, generators, hosts, runtime packages, and
+  evidence tooling on the path to a pure Rust Wesley.
+- **Native schema diff**: Added Rust `SchemaDelta` extraction over L1 IR and
+  exposed it as `wesley schema diff --old <path> --new <path>` with text, JSON,
+  summary, breaking-only, and breaking-change exit-code modes.
+- **Git-aware schema diff**: Added `wesley schema diff --schema <path>
+  --against <rev>` and `--base <rev>` so local edits can be compared against a
+  schema's previous Git state without manually materializing an old file.
+- **Native schema operation catalog**: Added `SchemaOperation` extraction from
+  schema root `Query`, `Mutation`, and `Subscription` fields, preserving root
+  arguments, result types, and generic directive JSON. Exposed it as
+  `wesley schema operations --schema <path> --json` and covered it with a full
+  jedit hot text runtime fixture.
+- **Native operation binding emission**: Added Rust and TypeScript operation
+  binding projection from `SchemaOperation` data. `wesley emit rust` now emits
+  request structs, response aliases, and preserved directive metadata constants
+  for root operations; `wesley emit typescript` now emits request interfaces,
+  response aliases, operation metadata constants, and operation type aliases.
+- **Native TypeScript emitter**: Added `crates/wesley-emit-typescript`, a
+  structured TypeScript declaration AST/printer projection from Wesley L1 IR,
+  and exposed it as `wesley emit typescript --schema <path> --out <path>`.
+- **Native Rust emitter**: Added `crates/wesley-emit-rust`, a structured Rust
+  item/type AST printer from Wesley L1 IR, plus `wesley emit rust --schema
+  <path> --out <path>` and a jedit-shaped hot text model fixture.
+
+- **Holmes counterfactual provider capability seam**: Added
+  `holmes.counterfactualProviders` to Wesley module capabilities, moved shared
+  Node module-entry loading into `@wesley/runtime-node`, and taught
+  `@wesley/holmes` to
+  dispatch counterfactual analysis through loaded module providers. Generic
+  Holmes now emits a typed unsupported report when no provider module is loaded.
 - **pgTAP smoke tests for emitted ops** (#416): Three pgTAP test files replacing
   the skeleton `ops.pgtap.sql` — `ops-parameterless-view` (view + zero-arg
   function), `ops-parameterized-fn` (ILIKE filter with text param), and
@@ -64,8 +132,74 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   `meta/progress.json`, deferred/speculative items with provenance tags,
   completed milestone archive, and artifact map for planning documents.
 
+### Changed
+
+- **Rust core operation analysis boundary**: Replaced generic Wesley footprint
+  checking APIs with operation selection resolution and directive argument
+  extraction primitives. Echo-specific footprint honesty now belongs to
+  Echo-owned tooling rather than the Wesley core API.
+
+### Removed
+
+- **Native `check-footprint` command**: Removed the root `wesley check-footprint`
+  CLI surface and its JSON contract from the Wesley binary.
+
 ### Fixed
 
+- **Nested GraphQL list lowering and emission**: L1 type references now retain
+  nested list wrapper depth, and the Rust and TypeScript emitters project nested
+  GraphQL lists as nested vectors/arrays instead of flattening to one level.
+- **Schema diff field arguments**: Schema delta now compares object and interface
+  field arguments, including additions, removals, type changes, default changes,
+  and directive changes, so required argument additions are reported as breaking.
+- **Operation binding symbol collisions**: Rust and TypeScript operation
+  emitters now include the root operation scope in generated request, response,
+  metadata, and operation binding symbols so schemas can reuse field names
+  across `Query`, `Mutation`, and `Subscription` without duplicate generated
+  declarations.
+- **PR readiness checks**: Fixed PR feedback failures by removing an unused
+  fixture-generation import, replacing the CI-breaking docs link to a sibling
+  checkout with repo-local wording, making the legacy CLI package test glob
+  compatible with Node 20 runners, and preparing a passing SHIPME certificate
+  fixture before the certificate workflow verifies it.
+- **Docs link preflight and Rust package dry-runs**: The legacy Node docs link
+  checker now ignores Rust `target/` build artifacts, matching the Rust-native
+  docs check and preventing `cargo publish --dry-run` package trees from
+  breaking later preflight runs.
+- **Release documentation polish**: Crate README links now resolve from packaged
+  crates, the release install example uses a version placeholder, and committed
+  trailing whitespace from the release branch diff was removed.
+- **Module runtime review hardening**: Isolated CLI command registration per
+  invocation, rejected duplicate module command and compile-target names,
+  preserved `file://` module specifiers in env parsing, failed loudly for
+  missing explicit `WESLEY_CONFIG` paths, ignored disabled modules during module
+  allowlist checks, froze normalized capability registry data, and made the
+  front-door CLI docs guard hermetic.
+- **Release dependency audit posture**: Added targeted pnpm overrides for
+  vulnerable `brace-expansion`, `picomatch`, and `postcss` lockfile paths, and
+  updated the root PostCSS range so `pnpm audit --json` reports zero
+  vulnerabilities for the current workspace dependency graph.
+- **Front-door CLI documentation drift**: Replaced the non-existent
+  `pnpm wesley holmes dashboard` guide example with the real HOLMES package
+  report command plus the static dashboard artifact path, and added a preflight
+  guard that verifies `README.md` and `docs/GUIDE.md` only document registered
+  `pnpm wesley <command>` examples.
+- **Module-loading trust controls**: Added `WESLEY_DISABLE_MODULES=1` for
+  no-module diagnostic runs and `WESLEY_MODULE_ALLOWLIST` for CI/client
+  environments that must reject unapproved `wesley.config.mjs` and module
+  imports before trusted Node extension code executes.
+- **CodeRabbit PR review scope**: Added repo-owned CodeRabbit auto-review
+  configuration so non-draft pull requests targeting any base branch are
+  reviewed, not only PRs targeting the repository default branch.
+- **Stale pre-commit realization guard**: Removed the package-manifest commit
+  hook call and GitHub preflight workflow call to the deleted root
+  `verify:realization` script. Generic Wesley no longer resurrects the old
+  Continuum verifier during commits or PR checks; product-specific realization
+  checks belong behind module capabilities.
+- **Moriarty counterfactual module discovery**: Programmatic Moriarty prediction
+  calls now forward their injected environment into counterfactual provider
+  discovery, so `WESLEY_MODULES` and `WESLEY_CONFIG` work outside the CLI
+  process environment too.
 - **PR #472 Continuum review follow-up**: `witness-continuum` now rejects
   missing canonical Echo schema origins, verifies the Echo IR SDL hash, and
   reports malformed JSONL rows with line context. `bundle-echo` now reports
@@ -152,6 +286,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Removed
 
+- **Built-in Holmes `git-warp` provider**: Removed direct `@git-stunts/*`
+  dependencies and `git-warp` provider defaults from `@wesley/holmes`; product
+  counterfactual providers now belong in external modules.
 - **QIR duck-typing fallbacks (SR-m2)**: Removed 3 duck-typing fallbacks from
   `renderExpr` and 1 from `renderRelation` in `lowerToSQL.mjs`. Objects without
   explicit `kind` tags now throw `Unsupported expr kind` / `Unsupported relation

@@ -59,12 +59,14 @@ EOF
     run node "$CLI_PATH" --help
     assert_success
     assert_output --partial "Wesley - GraphQL → Everything"
+    refute_output --partial "compile-ttd"
+    refute_output --partial "bundle-echo"
 }
 
 @test "generate help works" {
     run node "$CLI_PATH" generate --help
     assert_success
-    assert_output --partial "Generate SQL, tests, and more"
+    assert_output --partial "Generate artifacts from GraphQL schema through registered transmutations"
     assert_output --partial "stdin"
     assert_output --partial "--transmutation"
 }
@@ -128,13 +130,13 @@ EOF
 @test "stdin input with --schema - works" {
     run bash -c "echo 'type User @wes_table { id: ID! @wes_pk }' | node '$CLI_PATH' generate --schema - --out-dir out"
     assert_success
-    assert_file_exist out/schema.sql
+    assert_file_exist out/null/summary.json
 }
 
 @test "--stdin convenience flag works" {
     run bash -c "echo 'type User @wes_table { id: ID! @wes_pk }' | node '$CLI_PATH' generate --stdin --out-dir out"
     assert_success
-    assert_file_exist out/schema.sql
+    assert_file_exist out/null/summary.json
 }
 
 @test "empty stdin exits 2" {

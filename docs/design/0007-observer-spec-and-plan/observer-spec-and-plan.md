@@ -1,20 +1,20 @@
 ---
-title: "Observer Spec And Plan"
+title: "Continuum Observer Spec And Plan"
 ---
 
 ## Sponsors
 
 - Human: I can author the get side of an optic in application code without
   inventing handwritten Echo APIs or unsafe host callbacks.
-- Agent: I can explain how observer-facing app declarations become lawful
-  substrate plans, state codecs, and reading families without collapsing
+- Agent: I can explain how Continuum observer declarations become lawful
+  module-produced plans, state codecs, and reading families without collapsing
   observer spec, observer instance, and emitted reading into one blob.
 
 ## Hill
 
-Wesley grows an explicit `ObserverSpec -> ObserverPlan` compiler boundary so
-applications can author lawful observers while Echo stays a generic runtime
-that hosts observer instances over sliced holographic truth.
+The Continuum module grows an explicit `ObserverSpec -> ObserverPlan` compiler
+boundary so applications can author lawful observers while Echo stays a generic
+runtime that hosts observer instances over sliced holographic truth.
 
 ## Scope Hard Condition
 
@@ -24,14 +24,16 @@ following without folklore:
 - what an application is allowed to author as an observer
 - what part of an observer is static and compile-time validated
 - what part of an observer is runtime instance state
-- what Wesley emits for observer plans, observer state codecs, and readings
+- what the Continuum module emits for observer plans, observer state codecs,
+  and readings
 - why GraphQL queries are not automatically the same thing as full observers
 
 ## Why This Exists
 
 The current stack now has a clearer optic boundary:
 
-- GraphQL is the app-facing authoring surface for the optic's set side
+- GraphQL is the authored contract surface for both set-side and get-side
+  families
 - Echo remains a generic runtime substrate
 - applications submit intents and later observe resulting causal truth
 - readings should come from holograms and slicing rather than whole-worldline
@@ -39,8 +41,10 @@ The current stack now has a clearer optic boundary:
 
 That still leaves an important missing seam.
 
-The get side of the optic is not just a query shape. In OG-I terms, the
-structural observer is:
+Observer-anything is Continuum-only. Generic Wesley and non-Continuum modules
+do not need observer nouns. Continuum does.
+
+In OG-I terms, the structural observer is:
 
 ```text
 S = (O, B, M, K, E)
@@ -54,17 +58,17 @@ meaning:
 - accumulation or update law
 - emission law
 
-Applications therefore need a lawful way to define observers in app code that
-Wesley can validate and compile, while Echo remains free to host those
-observers generically.
+Applications therefore need a lawful way to define observers in GraphQL that
+the Continuum module can validate and compile, while Echo remains free to host
+runtime behavior built from those compiled artifacts.
 
 ## Core Split
 
-Wesley should preserve three different layers.
+The Continuum observer lane should preserve three different layers.
 
 ### 1. ObserverSpec
 
-App-authored and mostly static.
+GraphQL-authored and mostly static.
 
 This is the author's declaration of:
 
@@ -77,9 +81,12 @@ This is the author's declaration of:
 
 ### 2. ObserverPlan
 
-Compiler-produced and engine-consumable.
+The GraphQL-authored family for the normalized, engine-consumable plan shape.
 
-This is the lawful compiled surface that names:
+Wesley compiles artifacts for this family, and Continuum tools/runtimes later
+materialize actual plan values conforming to it.
+
+It names:
 
 - validated aperture and slicing constraints
 - basis identifiers or compiled basis references
@@ -103,7 +110,8 @@ runtime turns into a mushy RPC layer.
 
 ## Static Versus Dynamic
 
-Wesley should treat the following as mostly static and compile-time validated:
+The Continuum module should treat the following as mostly static and
+compile-time validated:
 
 - aperture declaration
 - basis declaration
@@ -113,7 +121,7 @@ Wesley should treat the following as mostly static and compile-time validated:
 - slice budget
 - rights or exposure tier
 
-Wesley should treat the following as runtime:
+The runtime should treat the following as dynamic:
 
 - current observer state value
 - current frontier, coordinate, or hologram reference
@@ -128,14 +136,14 @@ The important special case is a memoryless observer:
 
 That is still an observer. It is just the degenerate case, not the general one.
 
-## What Wesley Should Compile
+## What The Continuum Module Should Compile
 
-For an admitted observer family, Wesley should compile:
+For an admitted observer family, the Continuum module should compile:
 
 1. one app-authored `ObserverSpec`
 2. one deterministic `ObserverPlan`
-3. one observer-state schema and codec family
-4. one reading/result schema and codec family
+3. one observer-state codec family
+4. one reading/result family
 5. one receipt or hologram-adjacent envelope family when needed
 
 The main outputs should be:
@@ -146,9 +154,10 @@ The main outputs should be:
 - operation registries or builder helpers
 - manifest traceability tying those outputs back to the authored observer spec
 
-## What Wesley Must Not Compile
+## What The Continuum Module Must Not Compile
 
-Wesley must not normalize unsafe observer authoring patterns into legitimacy.
+The Continuum module must not normalize unsafe observer authoring patterns into
+legitimacy.
 
 In particular:
 
@@ -167,27 +176,22 @@ The right rule is the same as on the rewrite side:
 The likely authored and compiled layers should look roughly like this:
 
 ```text
-App code
+GraphQL contract families
   ObserverSpec
-    -> Wesley compile
-        -> ObserverPlan
+  ObserverPlan
+  ReadingEnvelope
+    -> Continuum module compile
         -> ObserverState codecs
-        -> Reading codecs
+        -> Reading codecs and generated artifacts
         -> Hologram / frontier / receipt helpers
 ```
 
-That does not require every field to be authored in GraphQL itself.
-
-The current best reading is:
-
-- GraphQL is a good front door for app nouns, mutation shapes, and
-  reading/result families
-- observer specs may need an app-code DSL or builder surface for the full
-  `(O, B, M, K, E)` shape
+GraphQL is the authored language. Module-specific behavior enters through
+directives rather than through a parallel authoring DSL.
 
 ## Initial ObserverSpec Shape
 
-Wesley's first serious observer lane should assume at least these fields:
+The first serious Continuum observer lane should assume at least these fields:
 
 - `aperture`
 - `basis`
@@ -217,10 +221,19 @@ The observer boundary now also needs governance-aware constraints such as:
 - whether a reading may surface witness-only, receipt-only, or full
   provenance-bearing detail
 
-Wesley should therefore treat rights and exposure as part of the compiled
-observer plan rather than as an afterthought.
+The Continuum module should therefore treat rights and exposure as part of the
+compiled observer plan rather than as an afterthought.
 
-## Relationship To Echo
+## Relationship To Wesley And Echo
+
+Generic Wesley should not expose observer nouns as part of its base module
+contract.
+
+The correct layering is:
+
+- Wesley base platform provides generic compiler and toolchain machinery
+- the Continuum module owns observer authoring and lowering
+- Echo hosts compiled observer plans generically
 
 Echo should not know app-specific observer names as handwritten runtime APIs.
 
@@ -232,17 +245,19 @@ operations such as:
 - read once over a hologram or frontier
 - return reading envelopes
 
-Wesley's job is to make the authored observer legal and portable enough that
-Echo can host it generically.
+The Continuum module's job is to make the authored observer legal and portable
+enough that Echo can host it generically.
 
 ## Immediate Next Step
 
 The next implementation lane should be:
 
-1. define one lawful `ObserverSpec` authoring surface
-2. compile it into one explicit `ObserverPlan`
-3. emit state and reading codecs
-4. prove one app-owned memoryless observer and one accumulative observer
+1. keep observer-anything out of generic Wesley
+2. relocate the observer compile surface into the Continuum module
+3. define one lawful `ObserverSpec` authoring surface
+4. compile it into one explicit `ObserverPlan`
+5. emit state and reading codecs
+6. prove one app-owned memoryless observer and one accumulative observer
    against that surface
 
 The first concrete proving target should be a canonical-head `worldlineSnapshot`

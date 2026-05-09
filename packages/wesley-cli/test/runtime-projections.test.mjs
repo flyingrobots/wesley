@@ -22,7 +22,7 @@ test('buildSnapshotProjection returns the canonical snapshot shape', () => {
 
 test('buildRealmProjection returns the canonical realm shape', () => {
   const projection = buildRealmProjection({
-    transmutation: 'legacy-supabase',
+    transmutation: 'null-generator',
     runId: 'run-realm-123',
     provider: 'postgres',
     verdict: 'PASS',
@@ -32,7 +32,7 @@ test('buildRealmProjection returns the canonical realm shape', () => {
   });
 
   assert.deepEqual(projection, {
-    transmutation: 'legacy-supabase',
+    transmutation: 'null-generator',
     runId: 'run-realm-123',
     provider: 'postgres',
     verdict: 'PASS',
@@ -44,7 +44,7 @@ test('buildRealmProjection returns the canonical realm shape', () => {
 
 test('buildRealmProjection omits nullish optional fields', () => {
   const projection = buildRealmProjection({
-    transmutation: 'legacy-supabase',
+    transmutation: 'null-generator',
     runId: 'run-realm-456',
     provider: 'postgres',
     verdict: 'FAIL',
@@ -76,7 +76,7 @@ test('readRealmProjection parses the canonical realm file shape', async () => {
     async read(path) {
       assert.equal(path, GENERATED_REALM_PATH);
       return JSON.stringify({
-        transmutation: 'legacy-supabase',
+        transmutation: 'null-generator',
         runId: 'run-realm-789',
         provider: 'postgres',
         verdict: 'PASS',
@@ -87,7 +87,7 @@ test('readRealmProjection parses the canonical realm file shape', async () => {
   });
 
   assert.deepEqual(projection, {
-    transmutation: 'legacy-supabase',
+    transmutation: 'null-generator',
     runId: 'run-realm-789',
     provider: 'postgres',
     verdict: 'PASS',

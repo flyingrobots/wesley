@@ -1,4 +1,9 @@
-# Wesley Core Rewrite (JS → Rust)
+# Wesley Core Rewrite (JS -> Rust)
+
+> Current design packet:
+> [Wesley Rust Core And WASM Capability ABI](./design/0009-rust-core-and-wasm-capability-abi/rust-core-and-wasm-capability-abi.md).
+> This note is the older seed of that direction; the design packet is the active
+> architectural boundary.
 
 **Status:** Deferred (Trojan Horse Strategy active)
 **Goal:** Port `wesley-core` from JavaScript to Rust to enable a unified, high-performance compiler library that powers both Node.js (via WASM/NAPI) and native Rust tools (like Echo).

@@ -149,6 +149,7 @@ async function attachMoriartyCounterfactual(data, {
     lane,
     includeTransferPlan: true,
     policy,
+    env,
     surface: {
       bundleDir,
       outDir,

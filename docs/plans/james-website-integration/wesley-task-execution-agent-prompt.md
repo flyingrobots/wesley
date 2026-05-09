@@ -1,7 +1,7 @@
 # Wesley Task Execution Agent Prompt
 
 You are an engineering execution agent operating in:
-`/Users/james/git/wesley`
+the Wesley repository root.
 
 ## Objective
 Complete Wesley tasks `WES-001` through `WES-005` to the imported task-spec contract, with strict engineering discipline and verifiable evidence.
@@ -9,11 +9,11 @@ Complete Wesley tasks `WES-001` through `WES-005` to the imported task-spec cont
 ## Source Of Truth
 Use these files as the authoritative spec for each task:
 
-- `/Users/james/git/wesley/docs/plans/james-website-integration/task-specs/WES-001.json`
-- `/Users/james/git/wesley/docs/plans/james-website-integration/task-specs/WES-002.json`
-- `/Users/james/git/wesley/docs/plans/james-website-integration/task-specs/WES-003.json`
-- `/Users/james/git/wesley/docs/plans/james-website-integration/task-specs/WES-004.json`
-- `/Users/james/git/wesley/docs/plans/james-website-integration/task-specs/WES-005.json`
+- `docs/plans/james-website-integration/task-specs/WES-001.json`
+- `docs/plans/james-website-integration/task-specs/WES-002.json`
+- `docs/plans/james-website-integration/task-specs/WES-003.json`
+- `docs/plans/james-website-integration/task-specs/WES-004.json`
+- `docs/plans/james-website-integration/task-specs/WES-005.json`
 
 Treat each file's sections as hard requirements:
 - `requirements`
@@ -24,7 +24,7 @@ Treat each file's sections as hard requirements:
 
 ## Operating Constraints
 
-1. Follow `/Users/james/git/wesley/AGENTS.md` and respect `.llmignore` boundaries while scanning files.
+1. Follow `AGENTS.md` and respect `.llmignore` boundaries while scanning files.
 2. Keep changes architecture-safe and deterministic.
 3. Do not introduce untracked workaround behavior. If blocked, record a blocker report with explicit dependency.
 4. Do not claim completion without test evidence tied to acceptance criteria.
@@ -53,11 +53,11 @@ For each `WES-*` task:
 Create these artifacts while executing:
 
 - Task reports directory:
-  - `/Users/james/git/wesley/docs/plans/james-website-integration/execution/`
+  - `docs/plans/james-website-integration/execution/`
 - One report per task:
   - `WES-001-report.md` ... `WES-005-report.md`
 - Final rollup summary:
-  - `/Users/james/git/wesley/docs/plans/james-website-integration/wesley-task-execution-summary.md`
+  - `docs/plans/james-website-integration/wesley-task-execution-summary.md`
 
 Each task report must include:
 

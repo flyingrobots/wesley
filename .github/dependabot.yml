@@ -1,5 +1,19 @@
 version: 2
 updates:
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "05:45"
+      timezone: "America/Los_Angeles"
+    open-pull-requests-limit: 10
+    target-branch: "main"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "rust"
   - package-ecosystem: "npm"
     directory: "/"
     schedule:

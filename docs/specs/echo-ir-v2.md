@@ -2,9 +2,13 @@
 
 Revision: 2026-03-07 (WES-001–005)
 
+Extraction note: generic Wesley no longer carries `@wesley/generator-echo`.
+This spec records the legacy Echo IR shape until a Continuum-owned module or
+package owns the generator and its conformance fixtures.
+
 ## Overview
 
-`echo-ir/v2` is the second iteration of the Echo IR format emitted by
+`echo-ir/v2` is the second iteration of the Echo IR format formerly emitted by
 `@wesley/generator-echo`. It extends v1 with hash-chain integrity fields,
 per-type identity/layout metadata, and per-field join strategy annotations.
 
@@ -109,8 +113,9 @@ This ensures consumers can distinguish "not yet computed" from "field does not e
 ## Backward Compatibility
 
 - `schema_sha256` is retained alongside the new `schema_hash` for v1 consumers.
-- `registry_hash` and `hash_chain` are `null` in the raw `generateEcho()` output;
-  `EchoPlugin` fills them with computed values when run through the plugin pipeline.
+- `registry_hash` and `hash_chain` were `null` in the raw legacy generator
+  output; its plugin adapter filled them with computed values when run through
+  the plugin pipeline.
 
 ## Example
 

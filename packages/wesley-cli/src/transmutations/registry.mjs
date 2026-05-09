@@ -1,52 +1,14 @@
 import { WesleyError } from '@wesley/core';
 import {
-  LEGACY_SUPABASE_TRANSMUTATION,
-  LegacySupabaseGeneratorPlugin,
-  legacySupabaseScoringOptions
-} from './legacy-supabase.mjs';
-import {
   NULL_GENERATOR_TRANSMUTATION,
   NullGeneratorPlugin
 } from './null-generator.mjs';
 
 const TRANSMUTATION_REGISTRY = Object.freeze({
-  [LEGACY_SUPABASE_TRANSMUTATION]: {
-    name: LEGACY_SUPABASE_TRANSMUTATION,
-    description: 'Legacy Supabase SQL/RLS/pgTAP transmutation',
-    default: true,
-    requiredGenerators: ['sql'],
-    supportsTasksRunner: true,
-    createExecution({ ctx, context, ir }) {
-      return {
-        name: LEGACY_SUPABASE_TRANSMUTATION,
-        plugins: [
-          new LegacySupabaseGeneratorPlugin({
-            generators: ctx.generators,
-            enableRls: context.options.supabase
-          })
-        ],
-        schema: {
-          sdl: context.schemaContent,
-          ir
-        },
-        config: {
-          paths: {
-            ...(ctx.config?.paths || {}),
-            outputDir: context.options.outDir
-          },
-          transmutation: {
-            name: LEGACY_SUPABASE_TRANSMUTATION,
-            supabase: Boolean(context.options.supabase)
-          }
-        },
-        scoring: legacySupabaseScoringOptions()
-      };
-    }
-  },
   [NULL_GENERATOR_TRANSMUTATION]: {
     name: NULL_GENERATOR_TRANSMUTATION,
     description: 'Minimal registration-only witness transmutation',
-    default: false,
+    default: true,
     requiredGenerators: [],
     supportsTasksRunner: false,
     createExecution({ ctx, context, ir }) {
@@ -74,7 +36,7 @@ const TRANSMUTATION_REGISTRY = Object.freeze({
 const SUPPORTED_TRANSMUTATIONS = Object.freeze(Object.keys(TRANSMUTATION_REGISTRY));
 const DEFAULT_TRANSMUTATION =
   Object.values(TRANSMUTATION_REGISTRY).find((registration) => registration.default)?.name ||
-  LEGACY_SUPABASE_TRANSMUTATION;
+  NULL_GENERATOR_TRANSMUTATION;
 
 export function listTransmutations() {
   return [...SUPPORTED_TRANSMUTATIONS];

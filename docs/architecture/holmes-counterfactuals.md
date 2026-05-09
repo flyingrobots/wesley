@@ -8,39 +8,35 @@ Scope
 - BLADE counterfactual stage
 - SHIPME counterfactual summary
 
-Substrate
-- Package: `@git-stunts/git-warp@16.0.0`
-- Runtime floor: Node 22+
-- Sources in this document are pinned to the `v16.0.0` tag, not `main`
-
 ## Boundary
 
-git-warp is the fact machine.
-- comparison
-- transfer planning
-- visible-state scope normalization
-- canonical fact export
+Holmes is the generic counterfactual dispatcher and judgment carrier.
 
-Wesley is the judgment machine.
-- status
-- signals
-- risk class
-- confidence adjustment
-- gate result
-- explanations for humans
+Loaded modules own provider semantics:
+- ref or lane interpretation beyond the generic request shape
+- comparison or transfer machinery
+- provider-owned fact files
+- provider-owned cache state
+- provider-specific scope payloads
 
-Wesley must not reimplement git-warp comparison, braid, or transfer semantics inside its event store or deploy ledger.
+Wesley-owned consumers use only the normalized report shape and
+`judgment.gate`. They must not import a product-specific provider or
+re-derive gate semantics from provider internals.
 
 ## Provider Layout
 
-Holmes owns the provider.
-
-Current implementation
+Generic implementation
 - package: `packages/wesley-holmes`
 - policy loader: `src/counterfactual/policy.mjs`
-- provider: `src/counterfactual/provider.mjs`
-- runtime run lookup: shared `@wesley/core` run-store use cases plus the shared `@wesley/runtime-node` ledger adapter
-- surface materialization: shared `@wesley/core` counterfactual surface use cases plus shared `@wesley/runtime-node` Node adapters
+- dispatcher: `src/counterfactual/provider.mjs`
+- runtime run lookup: shared `@wesley/core` run-store use cases plus the shared
+  `@wesley/runtime-node` ledger adapter
+- module loading: shared `@wesley/runtime-node` module-entry loader
+
+Module implementation
+- capability area: `holmes`
+- capability collection: `counterfactualProviders`
+- capability shape: plain object with non-empty `name` and `analyze()` hook
 
 Entrypoints
 - `wesley`
@@ -49,51 +45,15 @@ Entrypoints
 
 Current rule
 - these remain independent entry points
-- Holmes/Moriarty may consume Wesley artifacts and the shared run ledger, but they must not shell out to the `wesley` CLI just to inspect persisted run state
-- Holmes counterfactual analysis materializes missing surfaces in-process through shared Node adapters, not by invoking another entry point
-- Holmes and Moriarty emit their own command streams into the shared ledger under command-specific transmutation names instead of appending events onto a bound Wesley runtime stream
-- Holmes exposes read-only `runs status|inspect` commands over the same shared ledger through the same core/runtime-node seams, so operational introspection does not require the `wesley` entry point
-
-Runtime storage
-
-```text
-.wesley-cache/counterfactual/
-  current.json
-  <laneFingerprint>/
-    summary.json
-    comparison.<factDigest>.json
-    transfer.<factDigest>.json
-  store/
-    lease.json
-    surfaces/*.json
-```
-
-The `store/` subtree is a Holmes counterfactual cache. It is not part of the Wesley run ledger.
-`lease.json` governs store expiry, and stale lane summaries plus expired store state are pruned on the next counterfactual analysis run.
-
-## Surface Encoding
-
-Graph namespace
-- `wesley-counterfactual-v1`
-
-Surface families
-- `artifact:` generated files like `out/schema.sql`
-- `evidence:` bundle and verification artifacts
-- `plan:` plan JSON summaries
-- `realm:` rehearsal verdicts
-
-Current rule
-- `score:` stays advisory and out of gating until it is proven reproducible from a resolved ref.
-
-Encoding strategy
-- Each encoded surface is one writer in the git-warp graph.
-- Stable node IDs are the only public contract:
-  - `artifact:<relative-path>`
-  - `evidence:bundle`
-  - `plan:report`
-  - `realm:report`
-- File bytes are attached as content for auditability.
-- Comparison semantics rely on stable properties like `sha256`, `size`, `family`, and `path`.
+- Holmes/Moriarty may consume Wesley artifacts and the shared run ledger, but
+  they must not shell out to the `wesley` CLI just to inspect persisted run
+  state
+- Holmes and Moriarty emit their own command streams into the shared ledger
+  under command-specific transmutation names instead of appending events onto a
+  bound Wesley runtime stream
+- Holmes exposes read-only `runs status|inspect` commands over the same shared
+  ledger through the same core/runtime-node seams, so operational introspection
+  does not require the `wesley` entry point
 
 ## Lane Model
 
@@ -104,33 +64,36 @@ Lane request
 - optional `scope`
 - `composition: merge | braid`
 
-Resolution flow
-1. Resolve refs to immutable SHAs.
-2. Encode the base/head/braid surfaces into the provider graph.
-3. Build coordinate selectors over those encoded surfaces.
-4. Compare `head (+ braids)` against `base`.
-5. Plan transfer from `head (+ braids)` into `base`.
-6. Export canonical facts and derive Wesley judgment.
+Holmes normalizes the lane request and passes it to the selected provider. The
+provider may resolve refs, compare surfaces, plan transfer, or perform a
+different counterfactual analysis appropriate to its module.
 
-Current braid note
-- The current implementation uses coordinate frontiers for braid overlays.
-- It does not yet expose user-facing strand lifecycle management.
+Provider selection
+- If `policy.counterfactual.provider` names a loaded provider, Holmes uses it.
+- If no provider is named and exactly one provider is loaded, Holmes uses that
+  provider.
+- If no provider is available, or more than one provider is available without an
+  explicit selection, Holmes writes a valid unsupported report.
 
 ## Facts and Judgment
 
-Persisted facts
-- `comparison.<factDigest>.json`
-- `transfer.<factDigest>.json`
+Generic persisted report
+- `.wesley-cache/counterfactual/current.json`
 
-Those files contain the exact `canonicalFactJson` bytes returned by git-warp export helpers.
+Provider-owned artifacts
+- may live under `.wesley-cache/counterfactual/`
+- may include comparison facts, transfer facts, summaries, caches, or other
+  module-specific evidence
+- are not part of the generic Holmes contract unless represented in
+  `current.json`
 
-`summary.json` carries
-- provider version
+`current.json` carries
+- provider name and version
 - surface version
 - requested and resolved refs
 - normalized scope
 - lane fingerprint
-- digests and export versions
+- optional fact summaries
 - Wesley judgment
 
 Judgment fields
@@ -142,7 +105,10 @@ Judgment fields
 - `wouldFail`
 - `reasons[]`
 
-Current signals
+Generic signal
+- `provider_unavailable`
+
+Common provider signals may include:
 - `patch_divergence`
 - `visible_state_delta`
 - `transfer_ops_present`
@@ -150,7 +116,6 @@ Current signals
 - `content_clear_ops_present`
 - `scope_applied`
 - `braid_present`
-- `provider_unavailable`
 
 ## Consumers
 
@@ -165,10 +130,11 @@ Moriarty
   - `runtime`
   - `counterfactual`
   - `explain.readiness.counterfactual`
-- Legacy merge-tree/worktree projection code remains in tests only as a one-release regression harness.
+- Legacy merge-tree/worktree projection code remains in tests only as a
+  one-release regression harness.
 
 BLADE
-- new stage between `rehearse` and `cert-create`
+- stage between `rehearse` and `cert-create`
 - flags:
   - `--counterfactual [baseRef]`
   - `--counterfactual-braid <ref>`
@@ -199,8 +165,5 @@ Current behavior
 
 ## References
 
-- [git-warp v16.0.0 package.json](https://raw.githubusercontent.com/git-stunts/git-warp/v16.0.0/package.json)
-- [git-warp v16.0.0 CHANGELOG.md](https://raw.githubusercontent.com/git-stunts/git-warp/v16.0.0/CHANGELOG.md)
-- [git-warp v16.0.0 ARCHITECTURE.md](https://raw.githubusercontent.com/git-stunts/git-warp/v16.0.0/docs/ARCHITECTURE.md)
-- [git-warp v16.0.0 GUIDE.md](https://raw.githubusercontent.com/git-stunts/git-warp/v16.0.0/docs/GUIDE.md)
-- [git-warp v16.0.0 index.d.ts](https://raw.githubusercontent.com/git-stunts/git-warp/v16.0.0/index.d.ts)
+- [Holmes counterfactual provider capability](../design/0008-holmes-counterfactual-provider-capability/holmes-counterfactual-provider-capability.md)
+- [Wesley module capability contract](../design/wesley-module-capability-contract.md)

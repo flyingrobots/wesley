@@ -1,30 +1,20 @@
 /**
  * Node.js Runtime Composition
- * Creates runtime context with lazy-loaded generators
- * NO top-level imports of generator packages!
+ * Creates runtime context with generic host adapters.
  */
 
-import * as _fs from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import pino from 'pino';
 import { GENERATED_LEDGER_DIR } from '@wesley/core';
-import { GitWarpEventStore, GraphQLAdapter } from '@wesley/runtime-node';
+import {
+  GitWarpEventStore,
+  GraphQLAdapter
+} from '@wesley/runtime-node';
 import { NodeFileSystem } from './NodeFileSystem.mjs';
-import { ConfigLoader } from './ConfigLoader.mjs';
-import { DbAdapter } from './DbAdapter.mjs';
 import { nodeCrypto } from './NodeCrypto.mjs';
 
-// Stub generators for fallback when packages are broken
 const stub = {
-  sql: {
-    emitDDL: () => ({ label: 'ddl', files: [] }),
-    emitRLS: () => ({ label: 'rls', files: [] }),
-    emitMigrations: () => ({ label: 'migrations', files: [] })
-  },
-  tests: {
-    emitPgTap: () => ({ label: 'pgtap', files: [] })
-  },
   js: {
     emitModels: () => ({ label: 'models', files: [] }),
     emitZod: () => ({ label: 'zod', files: [] }),
@@ -33,24 +23,7 @@ const stub = {
 };
 
 export async function createNodeRuntime() {
-  // Dynamic imports so --version doesn't explode
-  let sqlGen = stub.sql;
-  let testGen = stub.tests;
   let jsGen = stub.js;
-
-  try {
-    const supa = await import('@wesley/generator-supabase');
-    sqlGen = {
-      emitDDL: supa.emitDDL || stub.sql.emitDDL,
-      emitRLS: supa.emitRLS || stub.sql.emitRLS,
-      emitMigrations: supa.emitMigrations || stub.sql.emitMigrations
-    };
-    testGen = {
-      emitPgTap: supa.emitPgTap || stub.tests.emitPgTap
-    };
-  } catch (_e) {
-    console.warn('Warning: @wesley/generator-supabase not available, using stubs');
-  }
 
   try {
     const js = await import('@wesley/generator-js');
@@ -63,23 +36,14 @@ export async function createNodeRuntime() {
     console.warn('Warning: @wesley/generator-js not available, using stubs');
   }
 
-  // Try to load planner and runner
+  // Try to load the generic task planner
   let planner = null;
-  let runner = null;
 
   try {
     planner = await import('@wesley/tasks');
   } catch (_e) {
     if (process.env.WESLEY_WARN_MISSING === '1') {
       console.warn('Warning: @wesley/tasks not available');
-    }
-  }
-
-  try {
-    runner = await import('@wesley/slaps');
-  } catch (_e) {
-    if (process.env.WESLEY_WARN_MISSING === '1') {
-      console.warn('Warning: @wesley/slaps not available');
     }
   }
 
@@ -121,18 +85,10 @@ export async function createNodeRuntime() {
 
   const nodeFs = new NodeFileSystem();
 
-  // Load configuration (user override via env path if provided)
-  let config = null;
-  try {
-    const loader = new ConfigLoader();
-    const cfgPath = process.env.WESLEY_CONFIG_FILEPATH || null;
-    config = await loader.load(cfgPath);
-  } catch (e) {
-    console.warn('Warning: could not load Wesley config:', e?.message || e);
-  }
+  const config = { paths: {} };
 
   const eventStore = new GitWarpEventStore({
-    rootDir: config?.ledger?.repoPath || GENERATED_LEDGER_DIR
+    rootDir: GENERATED_LEDGER_DIR
   });
 
   return {
@@ -145,7 +101,6 @@ export async function createNodeRuntime() {
     stderr: process.stderr,
     config,
     eventStore,
-    db: new DbAdapter(),
 
     // Parsers
     parsers: {
@@ -173,8 +128,6 @@ export async function createNodeRuntime() {
 
     // Generators (lazy-loaded)
     generators: {
-      sql: sqlGen,
-      tests: testGen,
       js: jsGen
     },
 
@@ -203,9 +156,8 @@ export async function createNodeRuntime() {
       }
     },
 
-    // Planning and execution (may be null)
+    // Planning (may be null); execution engines are module-owned.
     planner,
-    runner,
 
     // File writer
     writer: {

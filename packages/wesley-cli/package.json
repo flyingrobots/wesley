@@ -15,22 +15,20 @@
     "node": ">=22.0.0"
   },
   "scripts": {
-    "test": "./test/run-bats.sh",
-    "test:verbose": "./test/run-bats.sh --verbose",
-    "test:tap": "./test/run-bats.sh --tap"
+    "test": "node --test test/*.test.mjs && ./test/run-bats.sh",
+    "test:verbose": "node --test test/*.test.mjs && ./test/run-bats.sh --verbose",
+    "test:tap": "node --test test/*.test.mjs && ./test/run-bats.sh --tap"
   },
   "dependencies": {
-    "@wesley/continuum": "workspace:*",
     "@wesley/core": "workspace:*",
-    "@wesley/generator-echo": "workspace:*",
     "@wesley/generator-js": "workspace:*",
     "@wesley/holmes": "workspace:^",
+    "@wesley/runtime-node": "workspace:*",
     "ajv": "^8.18.0",
     "ajv-formats": "^3.0.1",
     "chokidar": "^4.0.3",
     "commander": "^14.0.2",
-    "graphql": "^16.11.0",
-    "smol-toml": "^1.6.1"
+    "graphql": "^16.11.0"
   },
   "keywords": [
     "cli",

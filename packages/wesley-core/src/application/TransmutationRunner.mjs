@@ -203,7 +203,7 @@ export class TransmutationRunner {
   /**
    * Build a task graph descriptor for this transmutation.
    * Returns a plain object describing the DAG — no dependency on @wesley/tasks.
-   * Hosts can feed this into TaskGraph + TasksSlapsBridge for concurrent execution.
+   * Hosts or external modules can feed this into a compatible task executor.
    *
    * @param {string} name - Transmutation name
    * @param {object[]} plugins - Array of GeneratorPlugin-conforming objects

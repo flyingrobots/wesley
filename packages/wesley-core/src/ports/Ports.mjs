@@ -22,13 +22,6 @@ export class EventPublisher {
   }
 }
 
-// Output Ports (Secondary/Driven)
-export class SQLGenerator {
-  async generate(_schema) {
-    throw new Error('SQLGenerator.generate() must be implemented');
-  }
-}
-
 export class TypeScriptGenerator {
   async generate(_schema) {
     throw new Error('TypeScriptGenerator.generate() must be implemented');
@@ -38,18 +31,6 @@ export class TypeScriptGenerator {
 export class ZodGenerator {
   async generate(_schema) {
     throw new Error('ZodGenerator.generate() must be implemented');
-  }
-}
-
-export class MigrationDiffer {
-  async diff(_previousSchema, _currentSchema) {
-    throw new Error('MigrationDiffer.diff() must be implemented');
-  }
-}
-
-export class MigrationSQLGenerator {
-  async generate(_diff) {
-    throw new Error('MigrationSQLGenerator.generate() must be implemented');
   }
 }
 

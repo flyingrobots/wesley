@@ -1,0 +1,6 @@
+type User @wes_table(name: "users") {
+  id: ID! @wes_pk
+  username: String! @wes_unique
+  email: String!
+  created_at: String! @wes_default(value: "now()")
+}

@@ -11,9 +11,12 @@ which signpost is supposed to answer which question.
 | Surface | Role |
 | --- | --- |
 | [README.md](../README.md) | Product-facing front door: what Wesley is, what is real today, and where to start. |
+| [ENTRYPOINTS.md](./ENTRYPOINTS.md) | Short answer for which Wesley to run or edit: Rust kernel, native CLI, xtask, or legacy Node tooling. |
+| [LEGACY_NODE_MIGRATION.md](./LEGACY_NODE_MIGRATION.md) | Deletion map for the historical Node CLI, packages, generators, hosts, and evidence tooling. |
+| [WESLEY_GLOSSARY.md](./WESLEY_GLOSSARY.md) | Fast noun map for the Wesley base platform, modules, and project workspace. |
 | [BEARING](./BEARING.md) | Current direction, what is already real in the repo, and the tensions that still matter. |
 | [VISION](./VISION.md) | Bounded executive synthesis grounded in repo-visible truth. |
-| [ROADMAP.md](../ROADMAP.md) | Strategy of record: fixed contracts, phase order, and release gates. |
+| [Design Packets](./design/README.md) | Active design packets and doctrinal boundary notes. |
 | [METHOD Process](./method/process.md) | How cycles run, close, and reconcile in this repo. |
 | [METHOD Release](./method/release.md) | How releases are shaped, verified, and documented. |
 
@@ -31,14 +34,16 @@ The active carry-over for the first release now lives in the Continuum
 - [RUNTIME_continuum-local-compile-and-inspect-surface](./method/backlog/v0.1.0/RUNTIME_continuum-local-compile-and-inspect-surface.md)
 - [EVIDENCE_continuum-conformance-and-roundtrip-witness](./method/backlog/v0.1.0/EVIDENCE_continuum-conformance-and-roundtrip-witness.md)
 
-The repo already has three important building blocks around that hill:
+The repo already has the important generic building block around that hill:
 
-- a real TTD compile path via
-  [compile-ttd](../packages/wesley-cli/src/commands/compile-ttd.mjs)
-- a real Echo bundle wrapper via
-  [bundle-echo](../packages/wesley-cli/src/commands/bundle-echo.mjs)
+- a module-driven `wesley compile` surface where targets come from loaded
+  external modules
 - a real current-state witness path via
-  [witness-continuum](../packages/wesley-cli/src/commands/witness-continuum.mjs)
+  the Continuum-owned Wesley module that lives outside this repository
+
+The former repo-local `compile-ttd` and `bundle-echo` commands were retired
+from generic Wesley during the domain-empty extraction. Recreate those surfaces
+only as Continuum-owned module commands or external packages.
 
 It also now has a more explicit METHOD closeout surface under
 `docs/method/retro/`, `docs/method/graveyard/`, `docs/method/releases/`, and
@@ -49,8 +54,14 @@ It also now has a more explicit METHOD closeout surface under
 ### Product Orientation
 
 - [README.md](../README.md)
-- [ROADMAP.md](../ROADMAP.md)
+- [ENTRYPOINTS.md](./ENTRYPOINTS.md)
+- [LEGACY_NODE_MIGRATION.md](./LEGACY_NODE_MIGRATION.md)
+- [WESLEY_GLOSSARY.md](./WESLEY_GLOSSARY.md)
+- [BEARING](./BEARING.md)
+- [Design Packets](./design/README.md)
 - [Architecture Overview](./architecture/overview.md)
+- [Wesley Core Versus Toolchain](./architecture/wesley-core-vs-toolchain.md)
+- [Module Contract](./design/wesley-module-contract.md)
 
 ### Continuum Orientation
 
@@ -73,15 +84,14 @@ It also now has a more explicit METHOD closeout surface under
 - [Invariants](./invariants/README.md)
 - [Legends](./method/legends/README.md)
 - [Directive Truth Table](./DIRECTIVES.md)
-- [QIR Specification](./spec/qir.md)
-- [IR Family Specification](./spec/ir-family-spec.md)
 
 ## Current Honesty Rules
 
 - The root `README.md` is intentionally product-facing, not the full METHOD
   doctrine front door.
-- `ROADMAP.md` is the strategy of record; active execution lives in the
-  filesystem queue.
+- Active execution lives in the filesystem queue, with `docs/BEARING.md` as
+  the current direction surface and `docs/design/README.md` as the design
+  packet index.
 - If docs contradict runtime behavior, the docs must change.
 - Retros and witnesses are the closeout surface; chat and PR commentary are
   not enough on their own.

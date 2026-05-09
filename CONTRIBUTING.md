@@ -14,7 +14,7 @@ Read these surfaces in order:
 - [README.md](README.md) for doctrine and repo shape
 - [docs/BEARING.md](docs/BEARING.md) for current direction and tensions
 - [docs/VISION.md](docs/VISION.md) for a bounded executive synthesis
-- [ROADMAP.md](ROADMAP.md) for Wesley V2 strategy and fixed contracts
+- [docs/design/README.md](docs/design/README.md) for active design packets and boundary doctrine
 - [docs/method/process.md](docs/method/process.md) for the workflow contract
 - [docs/method/guide.md](docs/method/guide.md) for practical repo guidance
 - [AGENTS.md](AGENTS.md) for repository-specific automation rules

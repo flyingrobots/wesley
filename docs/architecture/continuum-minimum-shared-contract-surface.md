@@ -1,32 +1,40 @@
 # Continuum Minimum Shared Contract Surface
 <!-- docs-truth: status=current owner=@flyingrobots -->
 
-This note names the finite repo-local Continuum contract surface Wesley
-currently carries. It is intentionally narrower than the broader Continuum
-target state in [docs/BEARING.md](../BEARING.md) and the active design packet
-in
+This note names the finite Continuum-adjacent contract surface Wesley still
+knows how to compile and witness during the domain-empty extraction. It is
+intentionally narrower than the broader Continuum target state in
+[docs/BEARING.md](../BEARING.md) and the active design packet in
 [docs/design/0003-continuum-contract-compiler/continuum-contract-compiler.md](../design/0003-continuum-contract-compiler/continuum-contract-compiler.md).
+
+Generic Wesley no longer ships public `compile-ttd` or `bundle-echo` commands.
+It also no longer exports `@wesley/core/ttd`. Those surfaces must reappear only
+as Continuum-owned module commands or external packages if they are still
+needed.
 
 ## Canonical Authored Home
 
-Wesley's current minimum shared Continuum surface now spans:
+Wesley's current minimum shared Continuum surface now spans owner-provided
+schema inputs:
 
-- repo-local schema inputs that Wesley still authors directly under `schemas/`
-- Continuum-authored shared families that Wesley compiles from external paths
+- `warp-ttd` for the host-neutral debugger protocol
+- Echo for Echo-local CAS/runtime/ABI families; the old Wesley-local Echo SDL
+  was retired and must be reconciled against current Echo truth before reuse
+- Continuum for shared receipt, settlement, neighborhood, and runtime-boundary
+  families
 
 The current concrete inputs are:
 
-- `schemas/ttd-protocol.graphql`
-- `schemas/echo-core-types.graphql`
+- `<warp-ttd-root>/schemas/warp-ttd-protocol.graphql`
+- `<echo-root>/schemas/runtime/*.graphql` and Echo's runtime/ABI crates for
+  current Echo-owned truth
 - `<continuum-root>/schemas/continuum-receipt-family.graphql`
+- `<continuum-root>/schemas/continuum-settlement-family.graphql`
 
-Wesley still carries a repo-local compatibility copy of the receipt family at
-`schemas/continuum-receipt-family.graphql` while its current local fixtures and
-witness tests catch up, but that copy is no longer the semantic authored home.
-
-Those schema files are the current authored inputs. Generated
+Those owner-provided schema files are the current authored inputs. Generated
 manifests, IR, TypeScript, Rust, codec vectors, and helper registries are
-derived outputs, not peer authorities.
+derived outputs, not peer authorities. Generic Wesley no longer carries
+canonical product schema copies under its own `schemas/` directory.
 
 The original witness-backed minimum subset was the bounded TTD-plus-Echo pair.
 Wesley now also ships a receipt-family witness scope through
@@ -40,47 +48,41 @@ proves runtime, storage, or debugger semantics.
 ### 1. TTD Protocol Control Family
 
 Authored file:
-- `schemas/ttd-protocol.graphql`
+- `<warp-ttd-root>/schemas/warp-ttd-protocol.graphql`
 
 Current role:
-- host-neutral debugger and control-plane schema compiled by
-  `wesley compile-ttd`
+- host-neutral debugger and control-plane schema owned by `warp-ttd`; no
+  generic public Wesley `compile-ttd` command remains
 
 Included nouns:
-- scalars: `JSON`, `Hash`, `Timestamp`
-- enums: `CursorRole`, `PlaybackMode`, `SeekResult`, `ComplianceStatus`,
-  `ViolationSeverity`, `ObligationStatusKind`, `StepResultKind`
-- channels: `TtdHeadChannel`, `TtdErrorsChannel`, `TtdComplianceChannel`,
-  `TtdSessionChannel`
-- event and codec contracts: `CursorMoved`, `SeekCompleted`, `SeekFailed`,
-  `ViolationDetected`, `ComplianceUpdate`, `SessionStarted`, `SessionEnded`,
-  `CursorCreated`, `CursorDestroyed`, `StepResult`, `Snapshot`,
-  `ComplianceModel`, `Obligation`, `ObligationReport`
-- state and judgment contracts: `Violation`, `TruthFrame`, `ObligationState`,
-  `CursorState`
-- operation roots: `Mutation`, `Query`
-- invariant carrier: `TtdSystem`
+- host identity and capability handshake
+- lane catalog, playback head, and frame-view surfaces
+- receipt summaries, effect emissions, delivery observations, and execution
+  context summaries
+- debugger command/query surfaces that remain host-neutral
 
-Current derived surfaces:
-- `wesley compile-ttd` manifest outputs such as `manifest/schema.json`,
+Former Wesley-local derived surfaces, now external-module responsibility:
+- manifest outputs such as `manifest/schema.json`,
   `manifest/contracts.json`, `manifest/manifest.json`, and
   `manifest/ttd-ir.json`
-- `wesley compile-ttd` TypeScript outputs such as `typescript/types.ts`,
-  `typescript/zod.ts`, `typescript/registry.ts`, and `typescript/index.ts`
+- TypeScript outputs such as `typescript/types.ts`, `typescript/zod.ts`,
+  `typescript/registry.ts`, and `typescript/index.ts`
 
 Repo evidence:
-- `packages/wesley-cli/src/commands/compile-ttd.mjs`
-- `packages/wesley-core/src/ttd/`
-- `packages/wesley-cli/test/compile-ttd.bats`
+- `warp-ttd` owns `schemas/warp-ttd-protocol.graphql`
+- relocated Continuum-owned implementation at `continuum/wesley/ttd/`
+- `docs/design/wesley-extraction-map.md`
 
 ### 2. Echo CAS-Facing Payload Family
 
-Authored file:
-- `schemas/echo-core-types.graphql`
+Authored home:
+- Echo current runtime schema fragments under `<echo-root>/schemas/runtime/`
+- Echo runtime / ABI crates for surfaces that are not currently SDL-authored
 
 Current role:
-- canonical CAS-facing payload and storage nouns currently exercised through
-  `@wesley/generator-echo` IR and codec paths
+- Echo-owned CAS-facing payload and storage nouns no longer live in generic
+  Wesley. The old Wesley-local SDL was retired rather than promoted to active
+  Echo schema truth because Echo already has newer runtime and ABI surfaces.
 
 Included nouns:
 - `FieldPatch`
@@ -90,15 +92,14 @@ Included nouns:
 - `PrivateAtomRefV1`
 - `OpaqueRefV1`
 
-Current derived surfaces:
-- `@wesley/generator-echo` IR output
+Former Wesley-local derived surfaces, now external-module responsibility:
+- Echo IR output
 - generated codec implementations and golden vectors used to pin layout and
   field ordering
 
 Repo evidence:
-- `packages/wesley-generator-echo/test/core-types.test.mjs`
-- `packages/wesley-generator-echo/test/privacy-types-encoding.test.mjs`
-- `packages/wesley-generator-echo/test/golden-vectors/privacy-types.json`
+- `echo` tracks `PLATFORM_reconcile-relocated-wesley-echo-schemas`
+- `docs/design/wesley-extraction-map.md`
 
 ### 3. Continuum Receipt Family
 
@@ -119,21 +120,31 @@ Included nouns:
 - operation root: `Query`
 - invariant carrier: `ContinuumReceiptFamilyInvariants`
 
-Current derived surfaces:
-- `wesley compile-ttd` manifest outputs such as `manifest/schema.json`,
+Former Wesley-local derived surfaces, now external-module responsibility:
+- manifest outputs such as `manifest/schema.json`,
   `manifest/contracts.json`, `manifest/manifest.json`, and
   `manifest/ttd-ir.json`
-- `wesley compile-ttd` TypeScript outputs such as `typescript/types.ts`,
-  `typescript/zod.ts`, `typescript/registry.ts`, and `typescript/index.ts`
-- `wesley bundle-echo` outputs such as `ir.json`, codec files, and mocked
-  `deliveries` inspect output
+- TypeScript outputs such as `typescript/types.ts`, `typescript/zod.ts`,
+  `typescript/registry.ts`, and `typescript/index.ts`
+- Echo bundle outputs such as `ir.json`, codec files, and mocked `deliveries`
+  inspect output
 
 Repo evidence:
-- `packages/wesley-cli/test/compile-ttd.bats`
-- `packages/wesley-cli/test/bundle-echo.bats`
-- `packages/wesley-cli/src/commands/compile-ttd.mjs`
-- `packages/wesley-cli/src/commands/bundle-echo.mjs`
 - `docs/design/0003-continuum-contract-compiler/continuum-contract-compiler.md`
+- `docs/design/wesley-extraction-map.md`
+
+### 4. Continuum Settlement Family
+
+Authored file:
+- `<continuum-root>/schemas/continuum-settlement-family.graphql`
+
+Current role:
+- canonical authored home for compare / plan / import / conflict settlement
+  surfaces shared across Continuum consumers
+
+Repo evidence:
+- `continuum` owns `schemas/continuum-settlement-family.graphql`
+- `docs/design/wesley-extraction-map.md`
 
 ## Out Of Bounds
 
@@ -146,15 +157,18 @@ The following are not part of Wesley's current minimum shared contract surface:
   are still target-state and are not yet authored in the schema files above
 - generated manifest, IR, registry, TypeScript, Rust, and golden-vector files
   as authored sources
+- Echo-local CAS, runtime, and WASM ABI schema truth
+- `warp-ttd` host-neutral debugger protocol ownership
 
 ## Current Rule
 
 - If a shared noun is in the current minimum surface, edit the authored schema
   in its real authored home:
-  - `schemas/` for Wesley-owned local families
+  - `warp-ttd/schemas/` for the host-neutral debugger protocol
+  - `echo/schemas/` for Echo-local runtime, CAS, and ABI families
   - `<continuum-root>/schemas/` for Continuum-owned shared families
   and regenerate the derived surfaces.
 - If a neighboring repo needs the same noun family, consume generated artifacts
-  or an explicit publication boundary instead of re-authoring the contract by
-  hand.
+  or an explicit publication boundary from the Continuum-owned module/package
+  instead of re-authoring the contract by hand.
 - Handwritten shadow contracts for the included nouns are out of bounds.

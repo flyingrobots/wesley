@@ -16,17 +16,17 @@ test('GitWarpEventStore appends and reads a stream', async () => {
   });
 
   store.append({
-    streamId: 'transmutation:legacy-supabase:run-ledger-001',
+    streamId: 'transmutation:null-generator:run-ledger-001',
     sequence: 1,
     runId: 'run-ledger-001',
-    transmutation: 'legacy-supabase',
-    eventId: 'transmutation:legacy-supabase:run-ledger-001:1',
+    transmutation: 'null-generator',
+    eventId: 'transmutation:null-generator:run-ledger-001:1',
     type: 'RunRequested',
     idempotencyKey: 'ledger:001:1',
     payload: { command: 'transform' }
   });
 
-  const events = store.readStream('transmutation:legacy-supabase:run-ledger-001');
+  const events = store.readStream('transmutation:null-generator:run-ledger-001');
   assert.equal(events.length, 1);
   assert.equal(events[0].type, 'RunRequested');
 });
@@ -37,13 +37,13 @@ test('GitWarpEventStore persists terminal snapshots and can read stream tails', 
   const store = new GitWarpEventStore({
     rootDir: path.join(tempDir, GENERATED_LEDGER_DIR)
   });
-  const streamId = 'transmutation:legacy-supabase:run-ledger-002';
+  const streamId = 'transmutation:null-generator:run-ledger-002';
 
   store.append({
     streamId,
     sequence: 1,
     runId: 'run-ledger-002',
-    transmutation: 'legacy-supabase',
+    transmutation: 'null-generator',
     eventId: `${streamId}:1`,
     type: 'RunRequested',
     idempotencyKey: 'ledger:002:1',
@@ -53,7 +53,7 @@ test('GitWarpEventStore persists terminal snapshots and can read stream tails', 
     streamId,
     sequence: 2,
     runId: 'run-ledger-002',
-    transmutation: 'legacy-supabase',
+    transmutation: 'null-generator',
     eventId: `${streamId}:2`,
     type: 'ArtifactsMaterialized',
     idempotencyKey: 'ledger:002:2',
@@ -63,7 +63,7 @@ test('GitWarpEventStore persists terminal snapshots and can read stream tails', 
     streamId,
     sequence: 3,
     runId: 'run-ledger-002',
-    transmutation: 'legacy-supabase',
+    transmutation: 'null-generator',
     eventId: `${streamId}:3`,
     type: 'RunCompleted',
     idempotencyKey: 'ledger:002:3',

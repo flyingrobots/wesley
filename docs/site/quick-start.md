@@ -18,44 +18,36 @@ pnpm install
 
 ## 2. Generate artifacts
 
-Compile the example schema and operation plans:
+Compile the example schema through the default generic transmutation:
 
 ```bash
 node packages/wesley-host-node/bin/wesley.mjs generate \
   --schema test/fixtures/examples/ecommerce.graphql \
-  --ops test/fixtures/examples/ops \
+  --transmutation null-generator \
   --emit-bundle \
   --out-dir out/examples
 ```
 
-## 3. Inspect the plan
+## 3. Inspect generated evidence
 
 ```bash
-node packages/wesley-host-node/bin/wesley.mjs plan \
-  --schema test/fixtures/examples/schema.graphql \
-  --explain
+node packages/wesley-host-node/bin/wesley.mjs cert-create \
+  --out .wesley-cache/SHIPME.md
 ```
 
-## 4. Rehearse (dry-run)
+## 4. Verify the certificate
 
 ```bash
-node packages/wesley-host-node/bin/wesley.mjs rehearse \
-  --schema test/fixtures/examples/schema.graphql \
-  --dry-run --json
+node packages/wesley-host-node/bin/wesley.mjs cert-verify \
+  --in .wesley-cache/SHIPME.md
 ```
 
-This runs the migration plan without touching a database and prints the REALM
-(verdict) JSON.
+This verifies the generic assurance certificate emitted from the local run.
 
 ## 5. Next steps
 
 - Explore direction: [docs/BEARING.md](../BEARING.md)
-- Read the strategy: [docs/roadmap.md](../roadmap.md)
-- Enable Supabase-specific generators: see [docs/features/](../features/).
+- Read the direction map: [Roadmap](./roadmap.md)
 - Learn about HOLMES scoring: [docs/architecture/holmes-architecture.md](../architecture/holmes-architecture.md)
 
-Need a scripted, showcase flow? Run the [BLADE Demo](../blade.md).
-
-> ℹ️ **Local Postgres fixtures**
->
-> The repo seeds the Dockerised PostgreSQL instance with SQL stored in `test/fixtures/postgres/`. Those files are version-controlled so every developer gets the same extensions and baseline objects the first time the container starts. Run `pnpm run smoke:postgres-fixture` whenever you want to verify the mount and extensions locally.
+Database-specific generators and fixtures live in `wesley-postgres`.

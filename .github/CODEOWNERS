@@ -18,13 +18,10 @@
 
 # Generators
 /packages/wesley-generator-js/ @flyingrobots
-/packages/wesley-generator-supabase/ @flyingrobots
 
 # Stacks & scaffolds
-/packages/wesley-stack-supabase-nextjs/ @flyingrobots
 /packages/wesley-scaffold-multitenant/ @flyingrobots
 
 # Internals
 /packages/wesley-holmes/ @flyingrobots
-/packages/wesley-slaps/ @flyingrobots
 /packages/wesley-tasks/ @flyingrobots

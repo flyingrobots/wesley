@@ -1,0 +1,30 @@
+[package]
+name = "wesley-core"
+version = "0.0.1"
+edition = "2021"
+description = "Wesley Rust Core - Deterministic compiler kernel"
+license = "Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/flyingrobots/wesley"
+homepage = "https://github.com/flyingrobots/wesley#readme"
+documentation = "https://docs.rs/wesley-core"
+keywords = ["graphql", "compiler", "schema", "ir"]
+categories = ["compilers", "parser-implementations"]
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0", features = ["preserve_order"] }
+sha2 = "0.10"
+hex = "0.4"
+chrono = { version = "0.4", features = ["serde"] }
+thiserror = "1.0"
+indexmap = { version = "2.0", features = ["serde"] }
+async-trait = "0.1"
+apollo-parser = "0.8"
+ninelives = { version = "0.2" }
+tower = { version = "0.4", features = ["util"] }
+tokio = { version = "1", features = ["full"] }
+
+[dev-dependencies]
+pretty_assertions = "1.4"
+tokio = { version = "1", features = ["full"] }

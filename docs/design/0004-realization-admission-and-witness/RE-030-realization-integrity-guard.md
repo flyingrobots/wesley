@@ -30,15 +30,17 @@ authored SDL instead of silently letting generated residue drift.
 ## Retrospective
 
 - Sharing one `verify-realization` path across CLI use, pre-commit, and CI was
-  the right implementation cut. It avoided three slightly-different guards.
+  the original implementation cut. After the Continuum verifier moved out of
+  generic Wesley, the stale pre-commit invocation was removed rather than
+  keeping a product-specific root guard alive.
 - The guard is most effective on tracked or explicit output roots. Broader
   consumer-side mirror verification still belongs in the contract-bundle lane.
 
 ## Evidence
 
-- [packages/wesley-cli/src/commands/verify-realization.mjs](/Users/james/git/wesley/packages/wesley-cli/src/commands/verify-realization.mjs)
-- [packages/wesley-cli/src/commands/realization-integrity.mjs](/Users/james/git/wesley/packages/wesley-cli/src/commands/realization-integrity.mjs)
-- [.githooks/pre-commit](/Users/james/git/wesley/.githooks/pre-commit)
-- [.github/workflows/preflight.yml](/Users/james/git/wesley/.github/workflows/preflight.yml)
-- [packages/wesley-cli/test/verify-realization.bats](/Users/james/git/wesley/packages/wesley-cli/test/verify-realization.bats)
+- [.github/workflows/preflight.yml](../../../.github/workflows/preflight.yml)
+- [Wesley Extraction Map](../wesley-extraction-map.md)
 
+The original `verify-realization` implementation was a Continuum two-leg guard.
+It has been removed from generic Wesley; any replacement belongs in a
+Continuum-owned module.

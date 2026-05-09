@@ -27,11 +27,6 @@
       "owner": "@flyingrobots"
     },
     {
-      "path": "docs/roadmap.md",
-      "status": "current",
-      "owner": "@flyingrobots"
-    },
-    {
       "path": "docs/method/process.md",
       "status": "current",
       "owner": "@flyingrobots"
@@ -93,11 +88,6 @@
     },
     {
       "path": "docs/holmes-merge-projection-plan.md",
-      "status": "current",
-      "owner": "@flyingrobots"
-    },
-    {
-      "path": "docs/blade.md",
       "status": "current",
       "owner": "@flyingrobots"
     }

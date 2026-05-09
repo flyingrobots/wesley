@@ -2,27 +2,37 @@
 
 > Compile typed protocols with deterministic verification from GraphQL SDL
 
+> Extraction note: generic Wesley no longer ships the public `compile-ttd`
+> command or the `@wesley/core/ttd` package export. The implementation moved to
+> the Continuum-owned `continuum/wesley/ttd/` module surface. CLI examples below
+> are historical shape for a future module command or external package.
+
 ## Overview
 
 The TTD (Type-Driven Development) Protocol Compiler extends Wesley to generate deterministic protocol definitions from annotated GraphQL schemas. It produces typed protocols, registries, enforcement tables, and verification infrastructure for the Echo Time Travel Debugger.
 
 ## Current Repo Truth
 
-Wesley's repo-local authored TTD schema currently lives in
-[`schemas/ttd-protocol.graphql`](../../schemas/ttd-protocol.graphql). The
-current local compile path is:
+Generic Wesley no longer carries a repo-local TTD protocol SDL. The
+host-neutral debugger protocol is owned by `warp-ttd` at
+`schemas/warp-ttd-protocol.graphql`. The former generic Wesley compile path
+was:
 
 ```bash
 pnpm wesley compile-ttd --schema schemas/ttd-protocol.graphql --dry-run --json
 ```
 
-That command currently validates the checked-in schema and reports generated
+That retired command validated the checked-in schema and reported generated
 `manifest/*.json` and `typescript/*.ts` outputs. Those files are derived
 artifacts from SDL, not a second authored source surface.
 
-The shipped directive contract for this path is the `@wes_*` TTD family
-documented in [`docs/DIRECTIVES.md`](../DIRECTIVES.md) and implemented in
-[`packages/wesley-core/src/ttd/directives.mjs`](../../packages/wesley-core/src/ttd/directives.mjs).
+The directive contract for this compiler path is the `@wes_*` TTD family
+documented in [`docs/DIRECTIVES.md`](../DIRECTIVES.md). Its SDL declaration and
+implementation moved out of generic Wesley and now live under the
+Continuum-owned `continuum/wesley/ttd/` tree. The emitted TTD IR JSON Schema
+and TTD directive SDL now belong beside that module at
+`continuum/wesley/ttd/schemas/ttd-ir.schema.json` and
+`continuum/wesley/ttd/schemas/ttd-directives.graphql`.
 The broader cross-repo publication boundary is still tracked as active backlog
 work in
 [`SOURCE_WESLEY_protocol-surface-cutover`](../method/backlog/v0.1.0/SOURCE_WESLEY_protocol-surface-cutover.md).
@@ -35,12 +45,12 @@ work in
 - Determinism is the product—every byte is canonical
 - Codegen is deterministic: same manifest → same output bytes
 
-## Quick Start
+## Historical Quick Start
 
-### CLI Usage
+### Historical CLI Usage
 
 ```bash
-# Compile the checked-in Wesley TTD schema
+# Historical example against the removed Wesley TTD schema copy
 pnpm wesley compile-ttd --schema schemas/ttd-protocol.graphql --out-dir .wesley-cache/ttd-out
 
 # Basic compilation
@@ -101,10 +111,10 @@ type OrderSystem
 
 ## Directives Reference
 
-The current shipped directive surface for `wesley compile-ttd` is the
-`@wes_*` family below. The newer `@channel` / `@op` / `@rule` noun vocabulary
-described in the extracted plan doc is still target-state design work, not the
-checked-in compiler contract on `main`.
+The relocated Continuum TTD directive surface is the `@wes_*` family below. The
+newer `@channel` / `@op` / `@rule` noun vocabulary described in the extracted
+plan doc is still target-state design work, not the generic Wesley CLI
+contract.
 
 ### Channel Directives
 
@@ -190,8 +200,11 @@ graph LR
 
 ## Programmatic API
 
+From Continuum-owned tooling, the relocated module is imported from the
+Continuum checkout rather than from `@wesley/core`:
+
 ```typescript
-import { compileTtdProtocol } from '@wesley/core/ttd';
+import { compileTtdProtocol } from './wesley/ttd/index.mjs';
 
 const result = await compileTtdProtocol({
   sdl: schemaContent,
@@ -264,7 +277,7 @@ expect(result1.files).toEqual(result2.files);
 {
   "version": "1.0.0",
   "hash": "23dc0e310ad5658b...",
-  "generatedBy": "@wesley/generator-ttd"
+  "generatedBy": "continuum/wesley/ttd"
 }
 ```
 
@@ -305,7 +318,7 @@ quantified = "forall" IDENT "in" IDENT ":" expr
 ### Using the Verifier
 
 ```typescript
-import { extractTtdSchema, createVerifier } from '@wesley/core/ttd';
+import { extractTtdSchema, createVerifier } from './wesley/ttd/index.mjs';
 
 const schema = extractTtdSchema(sdl, { crypto });
 const verifier = createVerifier(schema);
@@ -326,7 +339,7 @@ const result = verifier.verify(state);
 
 ### Counter Protocol
 
-See the complete example in `packages/wesley-generator-ttd/test/fixtures/basic-protocol/basic-protocol.graphql`:
+The retired CLI fixture covered a counter protocol with:
 
 - 4 state enum (IDLE, COUNTING, PAUSED, COMPLETED)
 - 1 event channel with 3 event types

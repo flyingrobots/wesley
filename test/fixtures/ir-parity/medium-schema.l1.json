@@ -1,0 +1,229 @@
+{
+  "version": "1.0.0",
+  "types": [
+    {
+      "name": "Member",
+      "kind": "OBJECT",
+      "directives": {
+        "wes_table": {
+          "name": "members"
+        }
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "base": "ID",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {
+            "wes_pk": true
+          }
+        },
+        {
+          "name": "org_id",
+          "type": {
+            "base": "ID",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {
+            "wes_fk": {
+              "ref": "organizations.id"
+            }
+          }
+        },
+        {
+          "name": "user_id",
+          "type": {
+            "base": "ID",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {
+            "wes_fk": {
+              "ref": "users.id"
+            }
+          }
+        },
+        {
+          "name": "role",
+          "type": {
+            "base": "String",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {
+            "wes_default": {
+              "value": "member"
+            }
+          }
+        },
+        {
+          "name": "joined_at",
+          "type": {
+            "base": "String",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {
+            "wes_default": {
+              "value": "now()"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Organization",
+      "kind": "OBJECT",
+      "directives": {
+        "wes_table": {
+          "name": "organizations"
+        }
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "base": "ID",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {
+            "wes_pk": true
+          }
+        },
+        {
+          "name": "name",
+          "type": {
+            "base": "String",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {}
+        },
+        {
+          "name": "slug",
+          "type": {
+            "base": "String",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {
+            "wes_unique": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "Project",
+      "kind": "OBJECT",
+      "directives": {
+        "wes_table": {
+          "name": "projects"
+        }
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "base": "ID",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {
+            "wes_pk": true
+          }
+        },
+        {
+          "name": "org_id",
+          "type": {
+            "base": "ID",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {
+            "wes_fk": {
+              "ref": "organizations.id"
+            }
+          }
+        },
+        {
+          "name": "name",
+          "type": {
+            "base": "String",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {}
+        },
+        {
+          "name": "description",
+          "type": {
+            "base": "String",
+            "nullable": true,
+            "isList": false
+          },
+          "directives": {}
+        }
+      ]
+    },
+    {
+      "name": "User",
+      "kind": "OBJECT",
+      "directives": {
+        "wes_table": {
+          "name": "users"
+        }
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "base": "ID",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {
+            "wes_pk": true
+          }
+        },
+        {
+          "name": "username",
+          "type": {
+            "base": "String",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {
+            "wes_unique": true
+          }
+        },
+        {
+          "name": "email",
+          "type": {
+            "base": "String",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {}
+        },
+        {
+          "name": "created_at",
+          "type": {
+            "base": "String",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {
+            "wes_default": {
+              "value": "now()"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

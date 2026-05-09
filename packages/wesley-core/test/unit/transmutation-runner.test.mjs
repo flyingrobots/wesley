@@ -293,7 +293,7 @@ test('TransmutationRunner — accepts transmutation-specific SCS scoring options
   };
   const plugin = {
     apiVersion: '1',
-    name: 'legacy-supabase-plugin',
+    name: 'null-generator-plugin',
     async plan() {
       return { artifacts: [{ path: 'schema.sql' }, { path: 'tests.sql' }] };
     },
@@ -321,7 +321,7 @@ test('TransmutationRunner — accepts transmutation-specific SCS scoring options
   };
 
   const result = await runner.run(
-    'legacy-supabase',
+    'null-generator',
     [plugin],
     schema,
     {

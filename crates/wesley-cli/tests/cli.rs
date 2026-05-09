@@ -1,0 +1,733 @@
+use std::process::Command;
+use std::time::{SystemTime, UNIX_EPOCH};
+
+#[test]
+fn help_exits_zero_without_footprint_command() {
+    let output = wesley().arg("--help").output().expect("wesley should run");
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    assert!(stdout.contains("Wesley native CLI"));
+    assert!(stdout.contains("schema lower"));
+    assert!(stdout.contains("schema operations"));
+    assert!(stdout.contains("schema diff"));
+    assert!(stdout.contains("emit rust"));
+    assert!(stdout.contains("emit typescript"));
+    assert!(stdout.contains("operation selections"));
+    assert!(!stdout.contains("check-footprint"));
+}
+
+#[test]
+fn removed_footprint_checker_is_not_a_wesley_command() {
+    let output = wesley()
+        .arg("check-footprint")
+        .output()
+        .expect("wesley should run");
+
+    assert_eq!(output.status.code(), Some(2));
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+    assert!(stdout.is_empty());
+    assert!(stderr.contains("unknown command 'check-footprint'"));
+}
+
+#[test]
+fn nested_command_help_exits_zero() {
+    let output = wesley()
+        .args(["schema", "lower", "--help"])
+        .output()
+        .expect("wesley should run");
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    assert!(stdout.contains("wesley schema lower --schema <path>"));
+}
+
+#[test]
+fn schema_lower_emits_l1_ir_json() {
+    let output = wesley()
+        .args(["schema", "lower", "--schema"])
+        .arg(fixture("test/fixtures/ir-parity/small-schema.graphql"))
+        .arg("--json")
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let json: serde_json::Value = serde_json::from_str(&stdout).expect("stdout should be json");
+
+    assert_eq!(json["version"], "1.0.0");
+    assert_eq!(json["types"][0]["name"], "User");
+    assert_eq!(json["types"][0]["kind"], "OBJECT");
+}
+
+#[test]
+fn schema_hash_matches_l1_hash_fixture() {
+    let output = wesley()
+        .args(["schema", "hash", "--schema"])
+        .arg(fixture("test/fixtures/ir-parity/small-schema.graphql"))
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let expected = std::fs::read_to_string(fixture("test/fixtures/ir-parity/small-schema.l1.hash"))
+        .expect("hash fixture should read");
+
+    assert_eq!(stdout.trim(), expected.trim());
+}
+
+#[test]
+fn schema_operations_emit_root_operation_catalog_as_json() {
+    let output = wesley()
+        .args(["schema", "operations", "--schema"])
+        .arg(fixture(
+            "test/fixtures/consumer-models/jedit-hot-text-runtime.graphql",
+        ))
+        .arg("--json")
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let operations: serde_json::Value =
+        serde_json::from_str(&stdout).expect("stdout should be json");
+
+    assert_eq!(
+        operations
+            .as_array()
+            .expect("operations should be array")
+            .len(),
+        5
+    );
+
+    let create_buffer = operations
+        .as_array()
+        .expect("operations should be array")
+        .iter()
+        .find(|operation| operation["fieldName"] == "createBufferWorldline")
+        .expect("createBufferWorldline should be present");
+    assert_eq!(create_buffer["operationType"], "MUTATION");
+    assert_eq!(create_buffer["rootTypeName"], "Mutation");
+    assert_eq!(
+        create_buffer["arguments"][0]["type"]["base"],
+        "CreateBufferWorldlineInput"
+    );
+    assert_eq!(
+        create_buffer["resultType"]["base"],
+        "CreateBufferWorldlineResult"
+    );
+    assert_eq!(
+        create_buffer["directives"]["wes_op"]["name"],
+        "createBufferWorldline"
+    );
+    assert_eq!(
+        create_buffer["directives"]["wes_footprint"]["creates"][0],
+        "BufferWorldline"
+    );
+
+    let text_window = operations
+        .as_array()
+        .expect("operations should be array")
+        .iter()
+        .find(|operation| operation["fieldName"] == "textWindow")
+        .expect("textWindow should be present");
+    assert_eq!(text_window["operationType"], "QUERY");
+    assert_eq!(text_window["rootTypeName"], "Query");
+    assert_eq!(
+        text_window["arguments"][0]["type"]["base"],
+        "TextWindowInput"
+    );
+    assert_eq!(text_window["resultType"]["base"], "TextWindowReading");
+}
+
+#[test]
+fn schema_diff_emits_l1_delta_as_json() {
+    let old_schema = temp_file(
+        "schema-diff-old.graphql",
+        r#"
+        type Query {
+          viewer: Viewer
+        }
+
+        type Viewer {
+          id: ID!
+          name: String
+        }
+        "#,
+    );
+    let new_schema = temp_file(
+        "schema-diff-new.graphql",
+        r#"
+        type Query {
+          viewer: Viewer
+        }
+
+        type Viewer {
+          id: ID!
+          handle: String
+        }
+
+        type Team {
+          id: ID!
+        }
+        "#,
+    );
+
+    let output = wesley()
+        .args(["schema", "diff", "--old"])
+        .arg(&old_schema)
+        .arg("--new")
+        .arg(&new_schema)
+        .arg("--json")
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let json: serde_json::Value = serde_json::from_str(&stdout).expect("stdout should be json");
+
+    assert_eq!(json["addedTypes"][0]["name"], "Team");
+    assert_eq!(json["modifiedTypes"][0]["name"], "Viewer");
+    assert_eq!(
+        json["modifiedTypes"][0]["fieldChanges"][0]["name"],
+        "handle"
+    );
+
+    let _ = std::fs::remove_file(old_schema);
+    let _ = std::fs::remove_file(new_schema);
+}
+
+#[test]
+fn schema_diff_exit_code_reports_breaking_changes() {
+    let old_schema = temp_file(
+        "schema-diff-breaking-old.graphql",
+        r#"
+        type Query {
+          viewer: Viewer
+        }
+
+        type Viewer {
+          id: ID!
+          name: String
+        }
+        "#,
+    );
+    let new_schema = temp_file(
+        "schema-diff-breaking-new.graphql",
+        r#"
+        type Query {
+          viewer: Viewer
+        }
+
+        type Viewer {
+          id: ID!
+        }
+        "#,
+    );
+
+    let output = wesley()
+        .args([
+            "schema",
+            "diff",
+            "--format",
+            "summary",
+            "--breaking-only",
+            "--exit-code",
+            "--old",
+        ])
+        .arg(&old_schema)
+        .arg("--new")
+        .arg(&new_schema)
+        .output()
+        .expect("wesley should run");
+
+    assert_eq!(output.status.code(), Some(1));
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+    assert_eq!(stdout.trim(), "1 breaking");
+    assert!(stderr.is_empty());
+
+    let _ = std::fs::remove_file(old_schema);
+    let _ = std::fs::remove_file(new_schema);
+}
+
+#[test]
+fn schema_diff_can_compare_worktree_schema_against_git_revision() {
+    let repo = temp_dir("schema-diff-git-against");
+    run_git(&repo, ["init"]);
+    run_git(&repo, ["config", "user.email", "wesley@example.test"]);
+    run_git(&repo, ["config", "user.name", "Wesley CLI Test"]);
+
+    let schema = repo.join("schema.graphql");
+    std::fs::write(
+        &schema,
+        r#"
+        type Query {
+          viewer: Viewer
+        }
+
+        type Viewer {
+          id: ID!
+          name: String
+        }
+        "#,
+    )
+    .expect("schema should write");
+    run_git(&repo, ["add", "schema.graphql"]);
+    run_git(&repo, ["commit", "-m", "initial schema"]);
+
+    std::fs::write(
+        &schema,
+        r#"
+        type Query {
+          viewer: Viewer
+        }
+
+        type Viewer {
+          id: ID!
+          handle: String
+        }
+        "#,
+    )
+    .expect("schema should write");
+
+    let output = wesley()
+        .current_dir(&repo)
+        .args([
+            "schema",
+            "diff",
+            "--schema",
+            "schema.graphql",
+            "--against",
+            "HEAD",
+            "--format",
+            "summary",
+        ])
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    assert_eq!(stdout.trim(), "1 breaking, 1 safe");
+
+    let _ = std::fs::remove_dir_all(repo);
+}
+
+#[test]
+fn schema_diff_base_alias_accepts_absolute_schema_paths() {
+    let repo = temp_dir("schema-diff-git-base");
+    run_git(&repo, ["init"]);
+    run_git(&repo, ["config", "user.email", "wesley@example.test"]);
+    run_git(&repo, ["config", "user.name", "Wesley CLI Test"]);
+
+    let schema = repo.join("schema.graphql");
+    std::fs::write(
+        &schema,
+        r#"
+        type Query {
+          viewer: Viewer
+        }
+
+        type Viewer {
+          id: ID!
+        }
+        "#,
+    )
+    .expect("schema should write");
+    run_git(&repo, ["add", "schema.graphql"]);
+    run_git(&repo, ["commit", "-m", "initial schema"]);
+
+    std::fs::write(
+        &schema,
+        r#"
+        type Query {
+          viewer: Viewer
+        }
+
+        type Viewer {
+          id: ID!
+        }
+
+        type Team {
+          id: ID!
+        }
+        "#,
+    )
+    .expect("schema should write");
+
+    let output = wesley()
+        .current_dir(std::env::temp_dir())
+        .args(["schema", "diff", "--schema"])
+        .arg(&schema)
+        .args(["--base", "HEAD", "--json"])
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let json: serde_json::Value = serde_json::from_str(&stdout).expect("stdout should be json");
+    assert_eq!(json["addedTypes"][0]["name"], "Team");
+
+    let _ = std::fs::remove_dir_all(repo);
+}
+
+#[test]
+fn emit_typescript_writes_ast_generated_declarations() {
+    let dir = temp_dir("emit-typescript");
+    let schema = dir.join("schema.graphql");
+    let out = dir.join("generated").join("types.ts");
+
+    std::fs::write(
+        &schema,
+        r#"
+        scalar DateTime
+
+        type User {
+          id: ID!
+          name: String
+          createdAt: DateTime!
+        }
+
+        enum Role {
+          ADMIN
+          MEMBER
+        }
+        "#,
+    )
+    .expect("schema should write");
+
+    let output = wesley()
+        .args(["emit", "typescript", "--schema"])
+        .arg(&schema)
+        .arg("--out")
+        .arg(&out)
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+    let generated = std::fs::read_to_string(&out).expect("output should read");
+
+    assert!(stdout.is_empty());
+    assert!(stderr.is_empty());
+    assert!(generated.contains("export type DateTime = unknown;"));
+    assert!(generated.contains("export type Role = \"ADMIN\" | \"MEMBER\";"));
+    assert!(generated.contains("export interface User {"));
+    assert!(generated.contains("  id: string;"));
+    assert!(generated.contains("  name: string | null;"));
+    assert!(generated.contains("  createdAt: DateTime;"));
+
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
+fn emit_rust_writes_ast_generated_models() {
+    let dir = temp_dir("emit-rust");
+    let schema = dir.join("schema.graphql");
+    let out = dir.join("generated").join("model.rs");
+
+    std::fs::write(
+        &schema,
+        r#"
+        enum Role {
+          ADMIN
+          READ_ONLY
+        }
+
+        type User {
+          id: ID!
+          displayName: String
+          roles: [Role!]!
+        }
+        "#,
+    )
+    .expect("schema should write");
+
+    let output = wesley()
+        .args(["emit", "rust", "--schema"])
+        .arg(&schema)
+        .arg("--out")
+        .arg(&out)
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+    let generated = std::fs::read_to_string(&out).expect("output should read");
+
+    assert!(stdout.is_empty());
+    assert!(stderr.is_empty());
+    assert!(generated.contains("pub enum Role {"));
+    assert!(generated.contains("#[serde(rename = \"READ_ONLY\")]"));
+    assert!(generated.contains("ReadOnly,"));
+    assert!(generated.contains("pub struct User {"));
+    assert!(generated.contains("#[serde(rename = \"displayName\")]"));
+    assert!(generated.contains("pub display_name: Option<String>,"));
+    assert!(generated.contains("pub roles: Vec<Role>,"));
+
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
+fn emit_commands_include_jedit_operation_bindings() {
+    let dir = temp_dir("emit-jedit-operation-bindings");
+    let rust_out = dir.join("generated").join("model.rs");
+    let typescript_out = dir.join("generated").join("types.ts");
+    let schema = fixture("test/fixtures/consumer-models/jedit-hot-text-runtime.graphql");
+
+    let rust_output = wesley()
+        .args(["emit", "rust", "--schema"])
+        .arg(&schema)
+        .arg("--out")
+        .arg(&rust_out)
+        .output()
+        .expect("wesley should run");
+    assert_success(&rust_output);
+
+    let typescript_output = wesley()
+        .args(["emit", "typescript", "--schema"])
+        .arg(&schema)
+        .arg("--out")
+        .arg(&typescript_out)
+        .output()
+        .expect("wesley should run");
+    assert_success(&typescript_output);
+
+    let generated_rust = std::fs::read_to_string(&rust_out).expect("Rust output should read");
+    let generated_typescript =
+        std::fs::read_to_string(&typescript_out).expect("TypeScript output should read");
+
+    assert!(generated_rust.contains("pub struct MutationCreateBufferWorldlineRequest {"));
+    assert!(generated_rust.contains("pub input: CreateBufferWorldlineInput,"));
+    assert!(generated_rust
+        .contains("pub type MutationCreateBufferWorldlineResponse = CreateBufferWorldlineResult;"));
+    assert!(generated_rust.contains("pub const OPERATION_TYPE: &'static str = \"MUTATION\";"));
+    assert!(
+        generated_rust.contains("pub const FIELD_NAME: &'static str = \"createBufferWorldline\";")
+    );
+    assert!(!generated_rust.contains("pub struct Mutation {"));
+
+    assert!(
+        generated_typescript.contains("export interface MutationCreateBufferWorldlineRequest {")
+    );
+    assert!(generated_typescript.contains("  input: CreateBufferWorldlineInput;"));
+    assert!(generated_typescript.contains(
+        "export type MutationCreateBufferWorldlineResponse = CreateBufferWorldlineResult;"
+    ));
+    assert!(
+        generated_typescript.contains("export const mutationCreateBufferWorldlineOperation = {")
+    );
+    assert!(generated_typescript.contains("  operationType: \"MUTATION\","));
+    assert!(generated_typescript.contains("  fieldName: \"createBufferWorldline\","));
+    assert!(!generated_typescript.contains("export interface Mutation {"));
+
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
+fn operation_selections_emit_response_paths_as_json() {
+    let operation = temp_file(
+        "response-paths.graphql",
+        r#"
+        query Viewer {
+          viewer {
+            id
+            profile {
+              handle
+            }
+          }
+        }
+        "#,
+    );
+
+    let output = wesley()
+        .args(["operation", "selections", "--operation"])
+        .arg(&operation)
+        .arg("--json")
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let selections: Vec<String> = serde_json::from_str(&stdout).expect("stdout should be json");
+
+    assert_eq!(
+        selections,
+        vec![
+            "viewer".to_string(),
+            "viewer.id".to_string(),
+            "viewer.profile".to_string(),
+            "viewer.profile.handle".to_string(),
+        ]
+    );
+
+    let _ = std::fs::remove_file(operation);
+}
+
+#[test]
+fn operation_selections_can_use_schema_coordinates() {
+    let schema = temp_file(
+        "schema-coordinates-schema.graphql",
+        r#"
+        type Query {
+          viewer: Viewer!
+        }
+
+        type Viewer {
+          id: ID!
+          profile: Profile!
+        }
+
+        type Profile {
+          handle: String!
+        }
+        "#,
+    );
+    let operation = temp_file(
+        "schema-coordinates-operation.graphql",
+        r#"
+        query Viewer {
+          viewer {
+            id
+            profile {
+              handle
+            }
+          }
+        }
+        "#,
+    );
+
+    let output = wesley()
+        .args(["operation", "selections", "--schema"])
+        .arg(&schema)
+        .arg("--operation")
+        .arg(&operation)
+        .arg("--json")
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let selections: Vec<String> = serde_json::from_str(&stdout).expect("stdout should be json");
+
+    assert_eq!(
+        selections,
+        vec![
+            "Query.viewer".to_string(),
+            "Viewer.id".to_string(),
+            "Viewer.profile".to_string(),
+            "Profile.handle".to_string(),
+        ]
+    );
+
+    let _ = std::fs::remove_file(schema);
+    let _ = std::fs::remove_file(operation);
+}
+
+#[test]
+fn operation_directive_args_emit_generic_directive_data() {
+    let operation = temp_file(
+        "directive-args.graphql",
+        r#"
+        query Viewer @wes_footprint(reads: ["viewer", "viewer.id"], writes: []) {
+          viewer {
+            id
+          }
+        }
+        "#,
+    );
+
+    let output = wesley()
+        .args([
+            "operation",
+            "directive-args",
+            "--operation",
+            operation.to_str().expect("temp path should be utf8"),
+            "--directive",
+            "@wes_footprint",
+            "--json",
+        ])
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let directives: serde_json::Value =
+        serde_json::from_str(&stdout).expect("stdout should be json");
+
+    assert_eq!(directives[0]["directiveName"], "wes_footprint");
+    assert_eq!(
+        directives[0]["arguments"]["reads"],
+        serde_json::json!(["viewer", "viewer.id"])
+    );
+    assert_eq!(directives[0]["arguments"]["writes"], serde_json::json!([]));
+
+    let _ = std::fs::remove_file(operation);
+}
+
+fn wesley() -> Command {
+    Command::new(env!("CARGO_BIN_EXE_wesley"))
+}
+
+fn assert_success(output: &std::process::Output) {
+    if !output.status.success() {
+        panic!(
+            "expected success, got {:?}\nstdout:\n{}\nstderr:\n{}",
+            output.status.code(),
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+}
+
+fn fixture(relative: &str) -> std::path::PathBuf {
+    std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../..")
+        .join(relative)
+}
+
+fn temp_file(name: &str, content: &str) -> std::path::PathBuf {
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("system time should be after unix epoch")
+        .as_nanos();
+    let path = std::env::temp_dir().join(format!(
+        "wesley-cli-test-{}-{nanos}-{name}",
+        std::process::id()
+    ));
+    std::fs::write(&path, content).expect("temp file should write");
+    path
+}
+
+fn temp_dir(name: &str) -> std::path::PathBuf {
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("system time should be after unix epoch")
+        .as_nanos();
+    let path = std::env::temp_dir().join(format!(
+        "wesley-cli-test-{}-{nanos}-{name}",
+        std::process::id()
+    ));
+    std::fs::create_dir_all(&path).expect("temp directory should create");
+    path
+}
+
+fn run_git<const N: usize>(repo: &std::path::Path, args: [&str; N]) {
+    let output = Command::new("git")
+        .current_dir(repo)
+        .args(args)
+        .output()
+        .expect("git should run");
+
+    if !output.status.success() {
+        panic!(
+            "git command failed with {:?}\nstdout:\n{}\nstderr:\n{}",
+            output.status.code(),
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+}

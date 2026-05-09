@@ -1,0 +1,60 @@
+{
+  "version": "1.0.0",
+  "types": [
+    {
+      "name": "User",
+      "kind": "OBJECT",
+      "directives": {
+        "wes_table": {
+          "name": "users"
+        }
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "base": "ID",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {
+            "wes_pk": true
+          }
+        },
+        {
+          "name": "username",
+          "type": {
+            "base": "String",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {
+            "wes_unique": true
+          }
+        },
+        {
+          "name": "email",
+          "type": {
+            "base": "String",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {}
+        },
+        {
+          "name": "created_at",
+          "type": {
+            "base": "String",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {
+            "wes_default": {
+              "value": "now()"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

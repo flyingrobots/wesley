@@ -76,6 +76,7 @@ const { results, success, totalArtifacts, runId } = await runner.run([plugin], s
 | `WPLY003` | generate() returned wrong type (not Record/object) |
 | `WPLY004` | plan() returned invalid shape (missing/malformed artifacts) |
 
-### Example: EchoPlugin
+### Example: VuePlugin
 
-See `packages/wesley-generator-echo/src/EchoPlugin.mjs` for a real-world adapter that wraps the existing `generateEcho()` function in the plugin contract.
+See `packages/wesley-generator-vue/src/VuePlugin.mjs` for a real-world adapter
+that wraps the existing `generateVue()` function in the plugin contract.

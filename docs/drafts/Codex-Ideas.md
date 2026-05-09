@@ -227,7 +227,7 @@
 
   Do that, and Wesley won’t just be another generator — it will be the trusted compiler for the data plane that teams rally around.
 
-▌ What do you think of the combo: /Users/james/git/shiplog + Wesley deployments? (Read the README there)
+▌ What do you think of the combo: shiplog + Wesley deployments? (Read the README there)
 
 > Love the idea. Even without your README in front of me, the combo makes a ton of sense: Wesley already produces “deployment evidence” (bundle,
   SHIPME cert, plan/lock analysis, timings). A shiplog repo offers the missing ledger/control-plane for those artifacts so they’re queryable,
@@ -747,7 +747,7 @@
 ▌ [![Build](https://img.shields.io/github/actions/workflow/status/neuroglyph/git-mind/ci.yml?branch=main)](https://github.com/neuroglyph/git-
 ▌ mind/actions)
 ▌ [![License](https://img.shields.io/badge/license-MIND--UCAL--1.0-blue)](../../LICENSE)
-▌ [![Status](https://img.shields.io/badge/status-early--stage-orange)](../../docs/roadmap.md)
+▌ [![Status](https://img.shields.io/badge/status-early--stage-orange)](../../docs/BEARING.md)
 ▌
 ▌ > __Version your thoughts. Branch your ideas. Merge understanding.__
 ▌
@@ -943,7 +943,7 @@
 ▌ <!-- features-progress:end -->
 ▌
 ▌ 🚀 Early release — Core features work today, API may evolve
-▌ 📅 Roadmap: `../../docs/roadmap.md`
+▌ 📅 Direction: `../../docs/BEARING.md`
 ▌ 🤝 Contributing: `CONTRIBUTING.md`
 ▌
 ▌ ---

@@ -3,7 +3,8 @@
 
 Status: superseded.
 
-This document described the older merge-tree / worktree projection plan. Wesley now uses git-warp-backed counterfactual lanes instead.
+This document described the older merge-tree / worktree projection plan. Wesley
+now uses module-provided counterfactual lanes instead.
 
 Use these documents instead:
 - `docs/architecture/holmes-counterfactuals.md`

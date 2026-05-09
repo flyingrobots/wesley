@@ -1,0 +1,142 @@
+<!-- docs-truth: status=current owner=@flyingrobots -->
+
+# Wesley WARP Drift
+
+This note captures historical WARP-shaped drift in Wesley.
+
+It is not a claim that Wesley is pointed the wrong way. Wesley is already
+carrying several of the right ideas. The drift is now best described as a
+module-boundary drift: product-specific policy still lives inside generic
+Wesley surfaces, while database domain semantics still leak into core.
+
+## The current WARP baseline
+
+The relevant baseline is now:
+
+- there is no canonical materialized graph-in-itself; shared runtime truth is
+  witnessed causal history and observer-relative readings over that history
+- the same admission kernel recurs across tick admission, braid comparison,
+  and distributed suffix import, differing mainly by normalization path
+- observer-anything is product-module-owned, not a generic Wesley feature
+- modules should own domain semantics, witness policy, bundle defaults, and
+  publication-boundary rules
+- product repos, not Wesley, are the coordination spines that own shared
+  cross-repo contract truth
+
+## Where Wesley is already strong
+
+Wesley is not behind in the generic compiler story.
+
+The repo already has meaningful truth in the places that matter:
+
+- GraphQL SDL is treated as authored source rather than generated fallout
+- authored source, lowered IR, realization shell, and witness output are kept
+  distinct
+- Wesley already has a real generator/plugin seam and bundle-oriented
+  toolchain surfaces
+- release and sync are already understood as publication-boundary work rather
+  than ad hoc file copying
+
+That means the current problem is not that Wesley lacks doctrine. The problem
+is that the current repo still mixes base-platform truth and module-owned truth.
+
+## Where Wesley is drifting
+
+### 1. Product-specific policy still lives inside Wesley
+
+The current repo still carries product-specific policy and commands directly
+inside Wesley surfaces:
+
+- some docs and generic command helpers still assume the old Wesley-side
+  product package layout
+- some product-target generator surfaces still live in Wesley even after the
+  command layer moved out
+- `observer-plan` has only just been extracted and the surrounding docs are
+  still catching up
+
+That was acceptable bootstrap. The command/profile layer has now moved, but the
+repo still needs cleanup to finish the ownership split.
+
+### 2. Observer surfaces are still framed as generic Wesley work
+
+Wesley still carries:
+
+- a generic-looking observer design packet
+- a generic-looking `observer-plan` command
+
+That is now architecturally misleading.
+
+Observer-anything belongs to an external product module, not to the Wesley base
+platform and not to database modules.
+
+### 3. Database and Postgres semantics still leak into `wesley-core`
+
+The generic compiler base still exports database-specific logic such as:
+
+- Postgres generation
+- pgTAP generation
+- migration explanation
+- lock semantics and related database-specific helpers
+
+That makes core less honest than it should be. Those semantics belong in a
+database module, not in the pure compiler base.
+
+## What Wesley should look like next
+
+The correction path is straightforward.
+
+### First: define and preserve the generic module contract
+
+Wesley should freeze the rule that modules, not ordinary projects, own:
+
+- witness scopes
+- publication-boundary policy
+- consumer projection defaults
+- judgment profiles
+- BLADE hooks
+- domain-specific compile and release defaults
+
+And observer nouns should be explicitly absent from the generic module
+contract.
+
+### Second: move product modules out of Wesley
+
+Real product modules should live in product repos and be loaded by Wesley, not
+housed inside generic Wesley.
+
+That implies:
+
+- external module loading in Wesley
+- product-owned module policy in the product repo
+- retargeted product-specific CLI surfaces that load the module rather than
+  importing it statically
+
+### Third: move database and Postgres semantics into a database module
+
+The same ownership logic applies to database semantics.
+
+Core should keep generic compiler machinery. Database-specific generation and
+analysis should move into a real module or module family.
+
+## Immediate backlog
+
+The highest-value next notes are now:
+
+- [Module Contract](./design/wesley-module-contract.md)
+- [Module Capability Contract](./design/wesley-module-capability-contract.md)
+- [Extraction Map](./design/wesley-extraction-map.md)
+- [SOURCE_domain-empty-wesley-core-boundary](./method/backlog/asap/SOURCE_domain-empty-wesley-core-boundary.md)
+- [EXTERNAL_continuum-runtime-boundary-family-module](./method/backlog/inbox/EXTERNAL_continuum-runtime-boundary-family-module.md)
+
+## Practical rule
+
+Wesley should stay the contract compiler and publication-boundary manager.
+
+What must change is what the repo still tries to own directly:
+
+- not product-specific observer surfaces in generic Wesley
+- not product policy housed permanently in the Wesley repo
+- not database semantics leaking through `wesley-core`
+
+The next honest Wesley cut is to make the module boundary real in code, not
+just in docs.

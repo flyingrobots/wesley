@@ -5,13 +5,12 @@
  */
 
 import { WesleyCommand } from '../framework/WesleyCommand.mjs';
-import { OpsError, createRunId } from '@wesley/core';
+import { createRunId } from '@wesley/core';
 import {
   ensureGeneratePreconditions,
   runSequentialGeneration,
-  runTasksAndSlapsGeneration
+  runTaskGraphGeneration
 } from './generate-execution.mjs';
-import { compileOpsIfRequested } from './generate-ops.mjs';
 import {
   assertTransmutationPrerequisites,
   formatTransmutationChoices,
@@ -33,8 +32,8 @@ import {
 } from '../utils/runtime-events.mjs';
 
 export class GeneratePipelineCommand extends WesleyCommand {
-  constructor(ctx) {
-    super(ctx, 'generate', 'Generate SQL, tests, and more from GraphQL schema');
+  constructor(ctx, options = {}) {
+    super(ctx, 'generate', 'Generate artifacts from GraphQL schema through registered transmutations', options);
     this.requiresSchema = true;
   }
 
@@ -42,16 +41,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
     return cmd
       .option('-s, --schema <path>', 'GraphQL schema file. Use "-" for stdin', 'schema.graphql')
       .option('--stdin', 'Read schema from stdin (alias for --schema -)')
-      .option('--ops <dir>', 'Experimental: directory containing *.op.json files to compile (omit to disable)')
-      .option('--ops-manifest <path>', 'Path to ops manifest JSON file (auto-detected if omitted)')
-      .option('--ops-schema <name>', 'Schema name for emitted ops SQL (default wes_ops)', 'wes_ops')
-      .option('--ops-security <mode>', 'Security for emitted functions: invoker|definer', 'invoker')
-      .option('--ops-search-path <list>', 'Override comma-separated search_path for ops functions (default inferred from IR/schema refs, e.g., "pg_catalog, wes_ops, app")')
-      .option('--ops-target <platform>', 'Target platform for ops: postgres|supabase (affects auth variable compilation)', 'postgres')
-      .option('--ops-explain <mode>', 'Emit EXPLAIN JSON snapshots for ops: mock', '')
-      .option('--ops-allow-errors', 'Continue compiling remaining ops even if some fail validation (not allowed in CI without override)')
       .option('--emit-bundle', 'Emit .wesley-cache/ evidence bundle')
-      .option('--supabase', 'Enable Supabase features (RLS tests)')
       .option('--out-dir <dir>', 'Output directory', 'out')
       .option('--dry-run', 'Show what would be generated without writing files')
       .option('--allow-dirty', 'Allow running with a dirty git working tree (not recommended)')
@@ -81,16 +71,6 @@ export class GeneratePipelineCommand extends WesleyCommand {
       ? options.runId.trim()
       : createRunId();
     assertResumeRequestedRunId(options);
-
-    const isCI = String(this.ctx?.env?.CI || '').toLowerCase() === 'true' || this.ctx?.env?.CI === '1';
-    const canAllowErrors = !isCI || options.iKnowWhatImDoing;
-    if (options.opsAllowErrors && !canAllowErrors) {
-      throw new OpsError('OPS_ALLOW_ERRORS_FORBIDDEN', '--ops-allow-errors is disabled when CI=true; remove the flag or rerun with --i-know-what-im-doing.');
-    }
-    if (options.opsAllowErrors && isCI && options.iKnowWhatImDoing) {
-      logger.warn({ opsAllowErrors: true }, '--ops-allow-errors acknowledged in CI due to override flag');
-    }
-    options.opsAllowErrors = Boolean(options.opsAllowErrors);
 
     if (options.stdin) {
       options.schema = '-';
@@ -149,7 +129,7 @@ export class GeneratePipelineCommand extends WesleyCommand {
       logger.info({ schema: schemaPath }, 'Parsing schema...');
     }
 
-    const { planner, runner } = this.ctx;
+    const { planner } = this.ctx;
 
     const needsSequentialPipeline =
       options.unit ||
@@ -158,26 +138,20 @@ export class GeneratePipelineCommand extends WesleyCommand {
       options.printComposedSdl ||
       registration.supportsTasksRunner !== true;
     const useExperimentalTasksRunner = String(this.ctx?.env?.WESLEY_EXPERIMENTAL_TASKS || '') === '1';
-    if (planner && runner && planner.buildPlan && runner.run && useExperimentalTasksRunner && !needsSequentialPipeline && !options.resume) {
-      return this.executeWithTasksAndSlaps(context);
+    if (planner && planner.buildPlan && useExperimentalTasksRunner && !needsSequentialPipeline && !options.resume) {
+      return this.executeWithTaskGraph(context);
     }
 
     return runSequentialGeneration({
       ctx: this.ctx,
-      context,
-      compileOpsIfRequested
+      context
     });
   }
 
-  async executeWithTasksAndSlaps(context) {
-    return runTasksAndSlapsGeneration({
+  async executeWithTaskGraph(context) {
+    return runTaskGraphGeneration({
       ctx: this.ctx,
-      context,
-      compileOpsIfRequested
+      context
     });
-  }
-
-  async compileOpsIfRequested(context) {
-    return compileOpsIfRequested({ ctx: this.ctx, context });
   }
 }

@@ -38,19 +38,19 @@ EOF
 
 @test "transform runs successfully on minimal schema" {
   create_min_schema
-  run node "$CLI_PATH" transform --schema schema.graphql --transmutation legacy-supabase --out-dir out
+  run node "$CLI_PATH" transform --schema schema.graphql --transmutation null-generator --out-dir out
   assert_success
   # Out directory should exist (writer stubs may create files)
 }
 
 @test "transform --json preserves caller-supplied runId" {
   create_min_schema
-  run node "$CLI_PATH" transform --schema schema.graphql --transmutation legacy-supabase --run-id run-transform-123 --out-dir out --json --quiet
+  run node "$CLI_PATH" transform --schema schema.graphql --transmutation null-generator --run-id run-transform-123 --out-dir out --json --quiet
   assert_success
   local json
   json=$(printf '%s' "$output" | jq '.')
   [[ -n "$json" ]] || fail "No JSON output with result payload"
-  echo "$json" | jq -e '.result.transmutation == "legacy-supabase"' >/dev/null
+  echo "$json" | jq -e '.result.transmutation == "null-generator"' >/dev/null
   echo "$json" | jq -e '.result.runId == "run-transform-123"' >/dev/null
   echo "$json" | jq -e '.result.run.command == "transform"' >/dev/null
   echo "$json" | jq -e '.result.run.status == "completed"' >/dev/null
@@ -62,7 +62,7 @@ EOF
   run node "$CLI_PATH" transform --schema schema.graphql --transmutation nope
   assert_failure 2
   assert_output --partial "UNKNOWN_TRANSMUTATION"
-  assert_output --partial "legacy-supabase"
+  assert_output --partial "null-generator"
   assert_output --partial "null-generator"
 }
 
@@ -81,14 +81,14 @@ EOF
 
 @test "transform fault injection preserves partial persisted run state" {
   create_min_schema
-  run env WESLEY_CRASH_AFTER_EVENT=4 node "$CLI_PATH" transform --schema schema.graphql --transmutation legacy-supabase --run-id run-transform-crash-123 --out-dir out --json --quiet
+  run env WESLEY_CRASH_AFTER_EVENT=4 node "$CLI_PATH" transform --schema schema.graphql --transmutation null-generator --run-id run-transform-crash-123 --out-dir out --json --quiet
   assert_failure 6
   echo "$output" | jq -e '.code == "PIPELINE_EXEC_FAILED"' >/dev/null
   echo "$output" | jq -e '.runId == "run-transform-crash-123"' >/dev/null
   echo "$output" | jq -e '.run.status == "running"' >/dev/null
   echo "$output" | jq -e '.events | map(.type) == ["RunRequested","SourcesResolved","IRParsed","TaskGraphBuilt"]' >/dev/null
 
-  run node "$CLI_PATH" runs inspect --run-id run-transform-crash-123 --transmutation legacy-supabase --json
+  run node "$CLI_PATH" runs inspect --run-id run-transform-crash-123 --transmutation null-generator --json
   assert_success
   echo "$output" | jq -e '.run.status == "running"' >/dev/null
   echo "$output" | jq -e '.events | map(.type) == ["RunRequested","SourcesResolved","IRParsed","TaskGraphBuilt"]' >/dev/null
@@ -97,17 +97,17 @@ EOF
 @test "transform --resume completes a partial persisted run without duplicating events" {
   create_min_schema
 
-  run env WESLEY_CRASH_AFTER_EVENT=4 node "$CLI_PATH" transform --schema schema.graphql --transmutation legacy-supabase --run-id run-transform-resume-123 --out-dir out --json --quiet
+  run env WESLEY_CRASH_AFTER_EVENT=4 node "$CLI_PATH" transform --schema schema.graphql --transmutation null-generator --run-id run-transform-resume-123 --out-dir out --json --quiet
   assert_failure 6
 
-  run node "$CLI_PATH" transform --schema schema.graphql --transmutation legacy-supabase --run-id run-transform-resume-123 --resume --out-dir out --json --quiet
+  run node "$CLI_PATH" transform --schema schema.graphql --transmutation null-generator --run-id run-transform-resume-123 --resume --out-dir out --json --quiet
   assert_success
   echo "$output" | jq -e '.result.resumed == true' >/dev/null
   echo "$output" | jq -e '.result.shortCircuited == false' >/dev/null
   echo "$output" | jq -e '.result.run.status == "completed"' >/dev/null
   echo "$output" | jq -e '.result.events | map(.type) == ["RunRequested","SourcesResolved","IRParsed","TaskGraphBuilt","TaskStarted","TaskCompleted","EvidenceMerged","ScoresComputed","ArtifactsMaterialized","RunCompleted"]' >/dev/null
 
-  run node "$CLI_PATH" runs replay --run-id run-transform-resume-123 --transmutation legacy-supabase --json
+  run node "$CLI_PATH" runs replay --run-id run-transform-resume-123 --transmutation null-generator --json
   assert_success
   echo "$output" | jq -e '.run.status == "completed"' >/dev/null
   echo "$output" | jq -e '.replay.integrity.valid == true' >/dev/null
@@ -117,10 +117,10 @@ EOF
 @test "transform --resume short-circuits an already completed run" {
   create_min_schema
 
-  run node "$CLI_PATH" transform --schema schema.graphql --transmutation legacy-supabase --run-id run-transform-shortcircuit-123 --out-dir out --json --quiet
+  run node "$CLI_PATH" transform --schema schema.graphql --transmutation null-generator --run-id run-transform-shortcircuit-123 --out-dir out --json --quiet
   assert_success
 
-  run node "$CLI_PATH" transform --schema schema.graphql --transmutation legacy-supabase --run-id run-transform-shortcircuit-123 --resume --out-dir out --json --quiet
+  run node "$CLI_PATH" transform --schema schema.graphql --transmutation null-generator --run-id run-transform-shortcircuit-123 --resume --out-dir out --json --quiet
   assert_success
   echo "$output" | jq -e '.result.resumed == true' >/dev/null
   echo "$output" | jq -e '.result.shortCircuited == true' >/dev/null

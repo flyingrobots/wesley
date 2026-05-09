@@ -3,7 +3,7 @@
 
 # TTD Protocol Compiler Plan
 
-**Status:** Current repo-local compiler shipped; broader Continuum protocol cutover still open
+**Status:** Repo-local CLI and `@wesley/core/ttd` export retired from generic Wesley; broader Continuum protocol cutover still open
 **Created:** 2026-01-25
 **Origin:** Extracted from `flyingrobots/echo` TTD Master Plan
 **Scope:** Extend Wesley to compile deterministic protocol schemas for the Echo Time Travel Debugger
@@ -16,14 +16,19 @@ This plan extends Wesley with a new **TTD Protocol Compiler** capability. The go
 
 ## Current Repo Truth
 
-Wesley currently ships a repo-local `compile-ttd` path that parses the
-`@wes_*` TTD directives documented in [`../DIRECTIVES.md`](../DIRECTIVES.md)
-and implemented in
-[`../../packages/wesley-core/src/ttd/directives.mjs`](../../packages/wesley-core/src/ttd/directives.mjs).
-The authored schema Wesley compiles today lives at
-[`../../schemas/ttd-protocol.graphql`](../../schemas/ttd-protocol.graphql),
-and the generated manifest / TypeScript outputs are derived artifacts rather
-than peer authorities.
+Wesley previously shipped a repo-local `compile-ttd` path that parsed the
+`@wes_*` TTD directives documented in [`../DIRECTIVES.md`](../DIRECTIVES.md).
+That implementation has moved out of generic Wesley and now lives in the
+Continuum-owned `continuum/wesley/ttd/` tree.
+The authored schema that the retired path compiled lives at
+the `warp-ttd` authored protocol home, `schemas/warp-ttd-protocol.graphql`.
+The generated manifest / TypeScript outputs are derived artifacts rather than
+peer authorities.
+
+During the domain-empty extraction, generic Wesley retired the public
+`compile-ttd` command and removed the `@wesley/core/ttd` package export. The
+command and API examples below are historical shape for a future
+Continuum-owned module command or external package.
 
 The sections below describe the extracted target-state design from Echo. They
 are still useful for direction, but they should not be read as proof that
@@ -287,10 +292,10 @@ Wesley TTD Protocol Compiler is split into three maturity layers to prevent scop
 - [x] Channel/op/rule model extraction
 - [x] JSON manifest output: `schema.json`, `manifest.json`, `contracts.json`
 
-**Key files (implemented):**
+**Key files (implemented historically in Wesley, now relocated):**
 
 ```text
-packages/wesley-core/src/ttd/
+continuum/wesley/ttd/
 ├── directives.mjs     # Directive definitions and validation ✓
 ├── ast.mjs            # TTD-specific AST nodes ✓
 ├── extractor.mjs      # Extract channels/ops/rules from parsed schema ✓
@@ -339,22 +344,21 @@ packages/wesley-core/src/ttd/
 - [x] TypeScript Zod validators
 - [x] TypeScript registries
 
-**Key files:**
+**Key files (relocated):**
 
 ```text
-packages/wesley-core/src/ttd/codegen/
+continuum/wesley/ttd/codegen/
 ├── ts-types.mjs       # TS type generation ✓
 ├── ts-zod.mjs         # Zod validator generation ✓
 ├── ts-registry.mjs    # TS registry generation ✓
 ├── orchestrator.mjs   # Codegen orchestration ✓
 └── index.mjs          # Public API ✓
 
-packages/wesley-generator-ttd/src/
-├── rust/              # Rust codegen (TODO)
-│   ├── types.mjs      # Rust struct/enum generation
-│   ├── cbor.mjs       # CBOR codec generation
-│   └── registry.mjs   # Registry table generation
-└── typescript/        # (moved to wesley-core)
+External Continuum-owned TTD generator package/repo:
+└── rust/              # Rust codegen (TODO)
+    ├── types.mjs      # Rust struct/enum generation
+    ├── cbor.mjs       # CBOR codec generation
+    └── registry.mjs   # Registry table generation
 ```
 
 **Invariant:** Codegen is deterministic — same manifest → same output bytes.
@@ -372,10 +376,10 @@ packages/wesley-generator-ttd/src/
 - [x] Verification program output (verifier.mjs with Verifier class, generateTsVerifier)
 - [x] Golden test framework
 
-**Key files:**
+**Key files (relocated):**
 
 ```text
-packages/wesley-core/src/ttd/invariants/
+continuum/wesley/ttd/invariants/
 ├── lexer.mjs          # Expression lexer ✓
 ├── parser.mjs         # Expression parser ✓
 ├── ast.mjs            # Invariant AST ✓
@@ -418,7 +422,7 @@ The compiler detects which mode to use based on directive presence:
 
 ### 5.2 CLI Integration ✓
 
-The `compile-ttd` command is now available:
+The historical `compile-ttd` command shape was:
 
 ```bash
 # Basic usage
@@ -446,8 +450,11 @@ cat schema.graphql | wesley compile-ttd --schema - --out-dir generated/
 
 ### 5.3 Programmatic API ✓
 
+From Continuum-owned tooling, the relocated module is imported from the
+Continuum checkout rather than from `@wesley/core`:
+
 ```typescript
-import { compileTtdProtocol } from '@wesley/core/ttd';
+import { compileTtdProtocol } from './wesley/ttd/index.mjs';
 
 const result = await compileTtdProtocol({
   sdl: schemaContent,
@@ -542,7 +549,7 @@ console.log(result.validation); // { valid: true, errors: [], warnings: [...] }
 
 ## Part 9: Success Criteria
 
-1. **Phase 1a Complete:** Running `wesley compile-ttd example.graphql` produces valid JSON manifests
+1. **Phase 1a Historical:** Running `wesley compile-ttd example.graphql` produced valid JSON manifests in the retired repo-local CLI path
 2. **Phase 1b Complete:** Manifests produce compilable Rust and TypeScript code
 3. **Phase 1c Complete:** Invariant expressions compile to verifiable bytecode
 4. **Determinism Verified:** Same schema always produces identical output bytes

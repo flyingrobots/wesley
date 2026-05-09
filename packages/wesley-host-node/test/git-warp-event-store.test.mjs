@@ -13,10 +13,10 @@ test('GitWarpEventStore appends and reads a stream', async () => {
       rootDir: path.join(tempDir, GENERATED_LEDGER_DIR)
     });
     const event = {
-      streamId: 'transmutation:legacy-supabase:run-ledger-001',
+      streamId: 'transmutation:null-generator:run-ledger-001',
       sequence: 1,
       runId: 'run-ledger-001',
-      transmutation: 'legacy-supabase',
+      transmutation: 'null-generator',
       type: 'RunRequested',
       timestamp: '2026-03-20T03:10:00.000Z',
       payload: { command: 'transform' }
@@ -37,13 +37,13 @@ test('GitWarpEventStore persists terminal snapshots and can read stream tails', 
     const store = new GitWarpEventStore({
       rootDir: path.join(tempDir, GENERATED_LEDGER_DIR)
     });
-    const streamId = 'transmutation:legacy-supabase:run-ledger-002';
+    const streamId = 'transmutation:null-generator:run-ledger-002';
 
     store.append({
       streamId,
       sequence: 1,
       runId: 'run-ledger-002',
-      transmutation: 'legacy-supabase',
+      transmutation: 'null-generator',
       type: 'RunRequested',
       timestamp: '2026-03-20T06:00:00.000Z',
       payload: { command: 'transform' }
@@ -52,7 +52,7 @@ test('GitWarpEventStore persists terminal snapshots and can read stream tails', 
       streamId,
       sequence: 2,
       runId: 'run-ledger-002',
-      transmutation: 'legacy-supabase',
+      transmutation: 'null-generator',
       type: 'ArtifactsMaterialized',
       timestamp: '2026-03-20T06:00:01.000Z',
       payload: { artifactCount: 1 }
@@ -61,7 +61,7 @@ test('GitWarpEventStore persists terminal snapshots and can read stream tails', 
       streamId,
       sequence: 3,
       runId: 'run-ledger-002',
-      transmutation: 'legacy-supabase',
+      transmutation: 'null-generator',
       type: 'RunCompleted',
       timestamp: '2026-03-20T06:00:02.000Z',
       payload: { command: 'transform' }

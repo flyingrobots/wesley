@@ -7,7 +7,8 @@ Implements SHA-lock investigative tooling for Wesley deployments.
 - **Moriarty** – Generates predictions using historical deployment data.
 - **Entry points** – `holmes` remains the multi-tool CLI, while `moriarty` is a dedicated prediction entry point.
 - **Runtime binding** – HOLMES/Moriarty read the Wesley run ledger directly through shared core use cases plus the shared Node runtime adapter package. They do not shell out to the `wesley` executable for run inspection anymore.
-- **Product profiles** – Product packages such as `@wesley/continuum` may define domain-specific Holmes/Watson/Moriarty behavior profiles while `@wesley/holmes` remains the shared execution engine.
+- **Product profiles** – Product modules such as `continuum/wesley/profile` may define domain-specific Holmes/Watson/Moriarty behavior profiles while `@wesley/holmes` remains the shared execution engine.
+- **Counterfactual providers** – Counterfactual analysis is selected from loaded `holmes.counterfactualProviders` module capabilities; `@wesley/holmes` does not ship a product-specific provider by default.
 - **Command runs** – `holmes investigate|verify|report` and the standalone `moriarty` entry point now emit their own command streams into the shared ledger, so `wesley runs inspect|status|replay|doctor` can see them without special cases.
 - **Native run inspection** – `holmes runs status|inspect` exposes the same persisted Holmes-family command streams without requiring the `wesley` entry point as the operator shell.
 

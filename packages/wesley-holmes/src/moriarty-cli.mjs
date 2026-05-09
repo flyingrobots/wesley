@@ -21,7 +21,7 @@ async function main() {
     .option('--json <file>', 'Write prediction JSON to file')
     .option('--run-id <id>', 'Bind prediction context to a persisted Wesley run')
     .option('--transmutation <name>', 'Disambiguate the persisted run stream by transmutation')
-    .option('--counterfactual [baseRef]', 'Analyze a git-warp counterfactual lane against a base ref')
+    .option('--counterfactual [baseRef]', 'Analyze a module-provided counterfactual lane against a base ref')
     .option('--explain', 'Show resolved refs, digests, and counterfactual details')
     .option('--counterfactual-braid <ref>', 'Add a braid ref to the counterfactual lane', collectRepeatableOption, [])
     .action(async options => {

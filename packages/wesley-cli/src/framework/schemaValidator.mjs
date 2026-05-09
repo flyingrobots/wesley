@@ -2,7 +2,7 @@
  * Shared Ajv schema-validation helper.
  *
  * Centralises the boilerplate that was previously copy-pasted across
- * cert-verify, generate, plan, qir-validate, and rehearse commands:
+ * cert-verify, generate, and other schema-validation command surfaces:
  *   1. Lazy import of ajv + ajv-formats
  *   2. Deterministic Ajv configuration
  *   3. Dual-path schema file resolution (WESLEY_REPO_ROOT → import.meta.url)
@@ -36,7 +36,7 @@ export async function createAjv() {
  *   2. `import.meta.url`-relative fallback (4 levels up from this file)
  *
  * @param {object} ctx  Wesley command context (`ctx.fs`, `ctx.env`)
- * @param {string} name Schema filename, e.g. `'qir.schema.json'`
+ * @param {string} name Schema filename, e.g. `'shipme.schema.json'`
  * @returns {Promise<string>} Raw file contents (string or Buffer)
  */
 export async function loadSchemaFile(ctx, name) {

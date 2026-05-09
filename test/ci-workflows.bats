@@ -43,13 +43,17 @@ load 'bats-plugins/bats-assert/load'
   assert_success
   [ "$output" -eq 1 ]
 
-  run bash -lc "grep -F 'plan --schema test/fixtures/blade/schema-v1.graphql --write --out-dir out' .github/workflows/cert-shipme.yml | wc -l"
+  run bash -lc "grep -F 'Prepare passing SHIPME certificate fixture' .github/workflows/cert-shipme.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'node scripts/prepare-shipme-cert-fixture.mjs' .github/workflows/cert-shipme.yml | wc -l"
   assert_success
   [ "$output" -eq 1 ]
 
   run bash -lc "grep -F 'rehearse --schema test/fixtures/blade/schema-v1.graphql' .github/workflows/cert-shipme.yml | wc -l"
   assert_success
-  [ "$output" -eq 1 ]
+  [ "$output" -eq 0 ]
 
   run bash -lc "grep -F '.wesley-cache/holmes-report.json' .github/workflows/cert-shipme.yml | wc -l"
   assert_success
@@ -120,6 +124,54 @@ load 'bats-plugins/bats-assert/load'
   run bash -lc "grep -F 'pnpm --filter @wesley/core test:fuzz' .github/workflows/fuzzing.yml | wc -l"
   assert_success
   [ "$output" -eq 1 ]
+}
+
+@test "@wesley/cli package test script is compatible with Node 20 test runner globs" {
+  run node -e "const pkg = JSON.parse(require('node:fs').readFileSync('packages/wesley-cli/package.json', 'utf8')); if (pkg.scripts.test.includes('\\\"test/*.test.mjs\\\"')) { throw new Error('quoted test glob is not expanded by Node 20'); } if (!pkg.scripts.test.includes('node --test test/*.test.mjs')) { throw new Error('expected shell-expanded test glob'); }"
+  assert_success
+}
+
+@test "shipme certificate fixture prepares PASS realm and exact evidence" {
+  tmp_dir="$(mktemp -d -t wesley-shipme-fixture-XXXXXX)"
+  run bash -lc "cd '$tmp_dir' && node '$PWD/scripts/prepare-shipme-cert-fixture.mjs' && grep -F '\"verdict\": \"PASS\"' .wesley-cache/realm.json && grep -F '\"readiness\"' .wesley-cache/bundle.json && grep -F '\"lines\": \"1-2\"' .wesley-cache/bundle.json && grep -F '\"lines\": \"1-1\"' .wesley-cache/bundle.json"
+  rm -rf "$tmp_dir"
+  assert_success
+}
+
+@test "release crates workflow creates draft release before publishing crates" {
+  run bash -lc "grep -n 'Create draft GitHub Release' .github/workflows/release-crates.yml | cut -d: -f1"
+  assert_success
+  [ -n "$output" ]
+  draft_line="$output"
+
+  run bash -lc "grep -n 'Publish crates' .github/workflows/release-crates.yml | cut -d: -f1"
+  assert_success
+  [ -n "$output" ]
+  publish_line="$output"
+
+  [ "$draft_line" -lt "$publish_line" ]
+
+  run bash -lc "grep -n 'Finalize GitHub Release' .github/workflows/release-crates.yml | cut -d: -f1"
+  assert_success
+  [ -n "$output" ]
+  finalize_line="$output"
+
+  run bash -lc "grep -n 'Verify crates.io visibility' .github/workflows/release-crates.yml | cut -d: -f1"
+  assert_success
+  [ -n "$output" ]
+  verify_line="$output"
+
+  [ "$verify_line" -lt "$finalize_line" ]
+}
+
+@test "release crates workflow checks version milestones and labels" {
+  run bash -lc "grep -F -- '--milestone' .github/workflows/release-crates.yml | wc -l"
+  assert_success
+  [ "$output" -ge 2 ]
+
+  run bash -lc "grep -F -- '--label' .github/workflows/release-crates.yml | wc -l"
+  assert_success
+  [ "$output" -ge 2 ]
 }
 
 @test "wesley-holmes workflow propagates detected schema outputs into analysis jobs" {

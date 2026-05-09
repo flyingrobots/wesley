@@ -113,11 +113,8 @@ jobs:
             "wesley-host-node"
             "wesley-cli"
             "wesley-tasks"
-            "wesley-slaps"
-            "wesley-generator-supabase"
             "wesley-generator-js"
             "wesley-scaffold-multitenant"
-            "wesley-stack-supabase-nextjs"
           )
 
           for package in "${required_packages[@]}"; do
@@ -153,7 +150,7 @@ jobs:
           - Core domain extracted from god module
           - Generators moved to dedicated packages
           - CLI and Node.js code evicted from core
-          - T.A.S.K.S. and S.L.A.P.S. orchestration implemented
+          - T.A.S.K.S. planning primitives implemented
           - Package boundaries defined and enforced
 
           ### Package Structure
@@ -165,11 +162,8 @@ jobs:
           │   ├── wesley-host-node/         # Node.js adapters
           │   ├── wesley-cli/               # Platform-agnostic CLI
           │   ├── wesley-tasks/             # Task scheduling system
-          │   ├── wesley-slaps/             # PostgreSQL execution engine
-          │   ├── wesley-generator-supabase/# Supabase/PostgreSQL generators
           │   ├── wesley-generator-js/      # JavaScript/TypeScript generators
-          │   ├── wesley-scaffold-multitenant/ # Multi-tenant scaffold
-          │   └── wesley-stack-supabase-nextjs/ # Full-stack Supabase template
+          │   └── wesley-scaffold-multitenant/ # Multi-tenant scaffold
           ```
 
           ### Dependency Rules
@@ -178,7 +172,7 @@ jobs:
           2. **Adapters** → Can use core + platform libraries
           3. **Generators** → Can use core, no cross-dependencies
           4. **T.A.S.K.S.** → Independent scheduling system
-          5. **S.L.A.P.S.** → Can coordinate with T.A.S.K.S.
+          5. **External executors** → Can consume Wesley task graphs from module repos
 
           Generated at: $(date)
           EOF

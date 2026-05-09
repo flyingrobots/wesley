@@ -103,7 +103,3 @@ export class ValidateBundleCommand extends WesleyCommand {
     }
   }
 }
-
-
-// Auto-register this command by creating an instance
-new ValidateBundleCommand();

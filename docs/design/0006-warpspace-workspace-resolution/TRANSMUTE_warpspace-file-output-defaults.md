@@ -4,6 +4,7 @@ legend: TRANSMUTE
 packet: 0006-warpspace-workspace-resolution
 status: shipped
 release: v0.1.0
+current-status: retired-to-continuum
 ---
 
 # WARPspace File Output Defaults
@@ -15,9 +16,16 @@ generator commands to resolve default output files from `warpspace.toml`, with a
 optional `.warpspace.local.toml` development override and explicit CLI flags
 remaining authoritative.
 
-## Shipped Surface
+## Extraction Status
 
-The repo now ships:
+This shipped slice was later removed from generic Wesley during the
+domain-empty core extraction. WARPspace host-project output policy belongs in
+Continuum-owned tooling or modules, not in Wesley's generic CLI. The historical
+playback below records what the removed slice proved.
+
+## Historical Shipped Surface
+
+This slice shipped:
 
 - `warpspace.toml` discovery by walking upward from the current working directory
 - optional `.warpspace.local.toml` overlay from the same host-project root
@@ -54,9 +62,7 @@ The repo now ships:
 
 ## Evidence
 
-- [packages/wesley-cli/src/utils/warpspace.mjs](/Users/james/git/wesley/packages/wesley-cli/src/utils/warpspace.mjs)
-- [packages/wesley-cli/src/framework/FileOutputGeneratorCommand.mjs](/Users/james/git/wesley/packages/wesley-cli/src/framework/FileOutputGeneratorCommand.mjs)
-- [packages/wesley-cli/src/commands/typescript.mjs](/Users/james/git/wesley/packages/wesley-cli/src/commands/typescript.mjs)
-- [packages/wesley-cli/src/commands/zod.mjs](/Users/james/git/wesley/packages/wesley-cli/src/commands/zod.mjs)
-- [packages/wesley-cli/test/warpspace.test.mjs](/Users/james/git/wesley/packages/wesley-cli/test/warpspace.test.mjs)
-- [packages/wesley-cli/test/warpspace.bats](/Users/james/git/wesley/packages/wesley-cli/test/warpspace.bats)
+- [packages/wesley-cli/src/framework/FileOutputGeneratorCommand.mjs](../../../packages/wesley-cli/src/framework/FileOutputGeneratorCommand.mjs)
+- [packages/wesley-cli/src/commands/typescript.mjs](../../../packages/wesley-cli/src/commands/typescript.mjs)
+- [packages/wesley-cli/src/commands/zod.mjs](../../../packages/wesley-cli/src/commands/zod.mjs)
+- [Wesley extraction map](../wesley-extraction-map.md)

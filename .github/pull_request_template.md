@@ -14,10 +14,10 @@
 - How to revert safely; follow‑up cleanup if rollback happens.
 
 ## Testing
-- Unit: `pnpm -w -F @wesley/core test:unit`
-- Snapshots: `UPDATE_SNAPSHOTS=1 pnpm -w -F @wesley/core test:snapshots` (only when intentionally updating)
-- CLI Bats: `pnpm -w -F @wesley/cli test`
-- Preflight: `pnpm run preflight`
+- Rust core/CLI: `cargo xtask preflight`
+- Core fixtures: `cargo test --manifest-path crates/wesley-core/Cargo.toml`
+- Legacy package surfaces: `cargo xtask legacy-preflight` (when touching `packages/`, docs checks, or JS tooling)
+- JS package focus: `pnpm -w -F <package> test` (only for legacy package changes)
 
 ## EvidenceMap / SourceMap (if applicable)
 - Confirm UIDs use `tbl:Table` and `col:Table.field`.
@@ -31,7 +31,7 @@
 
 ## Checklist
 - [ ] One‑topic PR with tight diff
-- [ ] Tests green locally (unit, snapshots, CLI Bats as relevant)
-- [ ] Preflight passes (`pnpm run preflight`)
+- [ ] Rust-native preflight passes (`cargo xtask preflight`)
+- [ ] Legacy package preflight passes when relevant (`cargo xtask legacy-preflight`)
 - [ ] No widened permissions/secrets in workflows
 - [ ] Docs updated if behavior changed

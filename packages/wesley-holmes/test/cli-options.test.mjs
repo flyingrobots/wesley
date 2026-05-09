@@ -18,6 +18,7 @@ const repoRoot = path.resolve(path.dirname(__filename), '..', '..', '..');
 const cliPath = path.join(repoRoot, 'packages', 'wesley-holmes', 'src', 'cli.mjs');
 const moriartyCliPath = path.join(repoRoot, 'packages', 'wesley-holmes', 'src', 'moriarty-cli.mjs');
 const wesleyCliPath = path.join(repoRoot, 'packages', 'wesley-host-node', 'bin', 'wesley.mjs');
+const counterfactualModulePath = fileURLToPath(new URL('./fixtures/counterfactual-provider-module.mjs', import.meta.url));
 
 const sampleBundle = {
   sha: 'abcdef1234567890abcdef1234567890abcdef12',
@@ -148,7 +149,7 @@ function persistTransformRun(fixture, runId, extraArgs = []) {
     'transform',
     '--schema', fixture.schemaPath,
     '--out-dir', outDir,
-    '--transmutation', 'legacy-supabase',
+    '--transmutation', 'null-generator',
     '--run-id', runId,
     '--emit-bundle',
     '--json',
@@ -186,7 +187,7 @@ function runCli(command, {
   const result = spawnSync(process.execPath, args, {
     cwd: fixture.tempDir,
     encoding: 'utf8',
-    env: { ...process.env, MORIARTY_USE_GIT: '0' }
+    env: { ...process.env, MORIARTY_USE_GIT: '0', WESLEY_MODULES: counterfactualModulePath }
   });
 
   let parsed = null;
@@ -257,7 +258,7 @@ function runHolmesRunsStatus(fixture, extraArgs = []) {
   ], {
     cwd: fixture.tempDir,
     encoding: 'utf8',
-    env: { ...process.env, MORIARTY_USE_GIT: '0' }
+    env: { ...process.env, MORIARTY_USE_GIT: '0', WESLEY_MODULES: counterfactualModulePath }
   });
   assert.equal(result.status, 0, result.stderr || result.stdout);
   return JSON.parse(result.stdout);
@@ -274,7 +275,7 @@ function runHolmesRunsInspect(fixture, runId, transmutation) {
   ], {
     cwd: fixture.tempDir,
     encoding: 'utf8',
-    env: { ...process.env, MORIARTY_USE_GIT: '0' }
+    env: { ...process.env, MORIARTY_USE_GIT: '0', WESLEY_MODULES: counterfactualModulePath }
   });
   assert.equal(result.status, 0, result.stderr || result.stdout);
   return JSON.parse(result.stdout);
@@ -330,7 +331,7 @@ test('moriarty entry point runs independently of holmes CLI', () => {
   ], {
     cwd: fixture.tempDir,
     encoding: 'utf8',
-    env: { ...process.env, MORIARTY_USE_GIT: '0' }
+    env: { ...process.env, MORIARTY_USE_GIT: '0', WESLEY_MODULES: counterfactualModulePath }
   });
 
   try {
@@ -376,7 +377,7 @@ test('holmes CLI report passes braid refs through to combined moriarty output', 
   ], {
     cwd: fixture.tempDir,
     encoding: 'utf8',
-    env: { ...process.env, MORIARTY_USE_GIT: '0' }
+    env: { ...process.env, MORIARTY_USE_GIT: '0', WESLEY_MODULES: counterfactualModulePath }
   });
 
   try {
@@ -405,7 +406,7 @@ test('holmes CLI predict emits counterfactual report without projection alias', 
   ], {
     cwd: fixture.tempDir,
     encoding: 'utf8',
-    env: { ...process.env, MORIARTY_USE_GIT: '0' }
+    env: { ...process.env, MORIARTY_USE_GIT: '0', WESLEY_MODULES: counterfactualModulePath }
   });
 
   try {
@@ -444,7 +445,7 @@ test('holmes CLI predict accepts braid refs on the public counterfactual lane', 
   ], {
     cwd: fixture.tempDir,
     encoding: 'utf8',
-    env: { ...process.env, MORIARTY_USE_GIT: '0' }
+    env: { ...process.env, MORIARTY_USE_GIT: '0', WESLEY_MODULES: counterfactualModulePath }
   });
 
   try {
@@ -493,7 +494,7 @@ test('holmes CLI predict attaches persisted runtime run context', () => {
     '--history-file', fixture.historyPath,
     '--json', jsonPath,
     '--run-id', 'run-holmes-ledger-123',
-    '--transmutation', 'legacy-supabase'
+    '--transmutation', 'null-generator'
   ], {
     cwd: fixture.tempDir,
     encoding: 'utf8',
@@ -504,7 +505,7 @@ test('holmes CLI predict attaches persisted runtime run context', () => {
     assert.equal(result.status, 0, result.stderr);
     const json = JSON.parse(readFileSync(jsonPath, 'utf8'));
     assert.equal(json.metadata.runId, 'run-holmes-ledger-123');
-    assert.equal(json.metadata.transmutation, 'legacy-supabase');
+    assert.equal(json.metadata.transmutation, 'null-generator');
     assert.equal(json.runtime.run.runId, 'run-holmes-ledger-123');
     assert.equal(json.runtime.run.status, 'completed');
     assert.equal(json.runtime.replay.valid, true);
@@ -594,7 +595,7 @@ test('holmes runs status defaults to holmes-family runs and can inspect them nat
     assert.equal(inspect.run.status, 'completed');
 
     const allStatus = runHolmesRunsStatus(fixture, ['--all']);
-    assert.ok(allStatus.runs.some(run => run.transmutation === 'legacy-supabase'));
+    assert.ok(allStatus.runs.some(run => run.transmutation === 'null-generator'));
   } finally {
     fixture.cleanup();
   }
@@ -635,7 +636,7 @@ test('holmes CLI predict fails when requested runtime run is missing', () => {
     '--history-file', fixture.historyPath,
     '--json', jsonPath,
     '--run-id', 'run-holmes-missing',
-    '--transmutation', 'legacy-supabase'
+    '--transmutation', 'null-generator'
   ], {
     cwd: fixture.tempDir,
     encoding: 'utf8',

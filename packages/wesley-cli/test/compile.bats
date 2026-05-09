@@ -9,7 +9,13 @@ setup() {
     cd "$TEST_TEMP_DIR"
 
     CLI_PATH="$BATS_TEST_DIRNAME/../../wesley-host-node/bin/wesley.mjs"
-    CONTINUUM_SCHEMA="$BATS_TEST_DIRNAME/../../../schemas/continuum-receipt-family.graphql"
+    FIXTURE_MODULE="$BATS_TEST_DIRNAME/fixtures/modules/test-extension-module.mjs"
+
+    cat > schema.graphql <<'EOF'
+type Todo {
+  id: ID!
+}
+EOF
 }
 
 teardown() {
@@ -18,62 +24,47 @@ teardown() {
     fi
 }
 
-@test "compile help works" {
+@test "compile help describes module-provided targets" {
     run node "$CLI_PATH" compile --help
     assert_success
     assert_output --partial "Compile one GraphQL contract family"
     assert_output --partial "--schema"
     assert_output --partial "--target"
-    assert_output --partial "--emit"
-    assert_output --partial "--out-dir"
+    assert_output --partial "module-provided targets"
+    refute_output --partial "--emit"
+    refute_output --partial "warp-ttd"
+    refute_output --partial "echo"
 }
 
-@test "compile writes warp-ttd and Echo targets plus realization manifest under one output root" {
-    run node "$CLI_PATH" compile --schema "$CONTINUUM_SCHEMA" --target warp-ttd,echo --out-dir out --json
+@test "compile fails clearly when no module target is loaded" {
+    run node "$CLI_PATH" --json compile --schema schema.graphql --dry-run
+    assert_failure
+
+    echo "$output" | jq -e '.success == false' >/dev/null
+    echo "$output" | jq -e '.code == "NO_COMPILE_TARGETS"' >/dev/null
+    echo "$output" | jq -e '.error | contains("Load a Wesley module")' >/dev/null
+}
+
+@test "compile dispatches all discovered module targets by default" {
+    WESLEY_MODULES="$FIXTURE_MODULE" run node "$CLI_PATH" --json compile --schema schema.graphql --out-dir out --dry-run
     assert_success
 
     echo "$output" | jq -e '.success == true' >/dev/null
-    echo "$output" | jq -e '.result.targets == ["warp-ttd","echo"]' >/dev/null
-    echo "$output" | jq -e '.result.realizationManifest.kind == "wesley.realization.manifest.v1"' >/dev/null
-    echo "$output" | jq -e '.result.realizationManifest.sourceHash == .result.schemaHash' >/dev/null
-    echo "$output" | jq -e '.result.realizationManifest.integrity.signatureAlgorithm == "hmac-sha256"' >/dev/null
-    echo "$output" | jq -e '.result.manifestPath == "out/realization/manifest.json"' >/dev/null
-    echo "$output" | jq -e '.result.warpTtd.files | map(.path) | index("out/warp-ttd/manifest/manifest.json") != null' >/dev/null
-    echo "$output" | jq -e '.result.echo.outDir == "out/echo"' >/dev/null
-    echo "$output" | jq -e '.result.realizationManifest.generatedLegs.echo.files | map(.path) | index("mock/summary.json") != null' >/dev/null
-    echo "$output" | jq -e '.result.realizationManifest.generatedLegs.warpTtd.files | all(.[]; (.contentHash | length) == 64 and (.signature | length) == 64)' >/dev/null
-    echo "$output" | jq -e '.result.realizationManifest.generatedLegs.echo.files | all(.[]; (.contentHash | length) == 64 and (.signature | length) == 64)' >/dev/null
-    echo "$output" | jq -e '.result.schemaHash == .result.warpTtd.schemaHash and .result.schemaHash == .result.echo.schemaHash' >/dev/null
+    echo "$output" | jq -e '.result.targets == ["fixture-target"]' >/dev/null
+    echo "$output" | jq -e '.result.generatedTargets["fixture-target"].moduleName == "test-extension-module"' >/dev/null
+    echo "$output" | jq -e '.result.generatedTargets["fixture-target"].result.kind == "fixture.compile-target.v1"' >/dev/null
+    echo "$output" | jq -e '.result.generatedTargets["fixture-target"].result.outDir == "out/fixture-target"' >/dev/null
+    echo "$output" | jq -e '.result.realizationManifest == null' >/dev/null
 
-    assert_file_exist out/warp-ttd/manifest/schema.json
-    assert_file_exist out/warp-ttd/typescript/types.ts
-    assert_file_exist out/echo/ir.json
-    assert_file_exist out/echo/mock/deliveries.jsonl
-    assert_file_exist out/echo/mock/summary.json
-    assert_file_exist out/realization/manifest.json
-    run jq -e '.kind == "wesley.realization.manifest.v1" and .sourceHash == .schemaHash and .targets == ["warp-ttd","echo"] and .generatedLegs.warpTtd != null and .generatedLegs.echo != null and (.generatedLegs.warpTtd.files | all(.[]; (.contentHash | length) == 64 and (.signature | length) == 64)) and (.generatedLegs.echo.files | all(.[]; (.contentHash | length) == 64 and (.signature | length) == 64))' out/realization/manifest.json
-    assert_success
-}
-
-@test "compile can target echo only" {
-    run node "$CLI_PATH" compile --schema "$CONTINUUM_SCHEMA" --target echo --out-dir out --json
-    assert_success
-
-    echo "$output" | jq -e '.result.targets == ["echo"]' >/dev/null
-    echo "$output" | jq -e '.result.warpTtd == null' >/dev/null
-    echo "$output" | jq -e '.result.echo.outDir == "out/echo"' >/dev/null
-    echo "$output" | jq -e '.result.realizationManifest.generatedLegs.warpTtd == null and .result.realizationManifest.generatedLegs.echo != null' >/dev/null
-
-    assert_file_not_exist out/warp-ttd/manifest/schema.json
-    assert_file_exist out/echo/ir.json
-    assert_file_exist out/realization/manifest.json
-}
-
-@test "compile dry-run does not write realization manifest file" {
-    run node "$CLI_PATH" compile --schema "$CONTINUUM_SCHEMA" --target warp-ttd,echo --out-dir out --dry-run --json
-    assert_success
-
-    echo "$output" | jq -e '.result.dryRun == true' >/dev/null
-    echo "$output" | jq -e '.result.realizationManifest.kind == "wesley.realization.manifest.v1"' >/dev/null
     assert_file_not_exist out/realization/manifest.json
+}
+
+@test "compile validates requested targets against loaded modules" {
+    WESLEY_MODULES="$FIXTURE_MODULE" run node "$CLI_PATH" --json compile --schema schema.graphql --target echo --dry-run
+    assert_failure
+
+    echo "$output" | jq -e '.success == false' >/dev/null
+    echo "$output" | jq -e '.code == "INVALID_TARGET"' >/dev/null
+    echo "$output" | jq -e '.error | contains("fixture-target")' >/dev/null
+    echo "$output" | jq -e '.error | contains("echo")' >/dev/null
 }

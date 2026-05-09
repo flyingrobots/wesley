@@ -5,8 +5,7 @@
   "description": "Wesley Node.js platform adapters and executable",
   "main": "./src/index.mjs",
   "bin": {
-    "wesley": "./bin/wesley.mjs",
-    "warpspace": "./bin/warpspace.mjs"
+    "wesley": "./bin/wesley.mjs"
   },
   "exports": {
     ".": "./src/index.mjs"
@@ -20,11 +19,9 @@
     "lint": "eslint src/"
   },
   "dependencies": {
-    "@supabase/pg-parser": "^0.1.7",
     "@wesley/cli": "workspace:*",
     "@wesley/core": "workspace:*",
     "@wesley/generator-js": "workspace:*",
-    "@wesley/generator-supabase": "workspace:*",
     "@wesley/runtime-node": "workspace:*",
     "commander": "^14.0.2",
     "fast-glob": "^3.3.2",

@@ -126,9 +126,8 @@ export class ScaffoldCommand {
     console.log(`✨ Created ${scaffold.name} schema at: ${outputPath}`);
     console.log('\nNext steps:');
     console.log('  1. Review and customize the schema');
-    console.log(`  2. Generate SQL: wesley generate --schema ${outputPath}`);
-    console.log('  3. Run migrations: wesley migrate up');
-    console.log('  4. Generate TypeScript types: wesley generate --types');
+    console.log(`  2. Generate artifacts: wesley generate --schema ${outputPath}`);
+    console.log('  3. Generate TypeScript types: wesley typescript --schema <schema>');
 
     if (type === 'multi-tenant') {
       console.log('\n💡 Multi-tenant tips:');

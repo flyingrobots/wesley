@@ -15,16 +15,16 @@ Do not audit the repository by recursively walking the filesystem. Follow the au
 
 ### 1. The Entrance
 - **`README.md`**: Public front door, core value prop, and quick start.
-- **`GUIDE.md`**: Orientation, fast path, and system orchestration.
+- **`docs/GUIDE.md`**: Orientation, fast path, and system orchestration.
 
 ### 2. The Bedrock
-- **`ARCHITECTURE.md`**: Authoritative structural reference (IR, Pipeline, Generators).
+- **`docs/ARCHITECTURE.md`**: Authoritative structural reference (Base Platform, Modules, Pipeline).
 - **`docs/VISION.md`**: Core tenets and the "Trustworthy Change" mission.
-- **`METHOD.md`**: Repo work doctrine (Backlog lanes, Cycle loop).
+- **`docs/METHOD.md`**: Repo work doctrine (Backlog lanes, Cycle loop).
 
 ### 3. The Direction
 - **`docs/BEARING.md`**: Current execution gravity and active tensions.
-- **`ROADMAP.md`**: Broad strategic horizon and phase targets.
+- **`docs/design/README.md`**: Active design packets and structural doctrine.
 - **`docs/method/backlog/`**: The active source of truth for pending work.
 
 ### 4. The Proof
@@ -36,7 +36,7 @@ Do not audit the repository by recursively walking the filesystem. Follow the au
 When starting a new session or recovering from context loss:
 
 1. **Read `docs/BEARING.md`** to find the current execution gravity.
-2. **Read `METHOD.md`** to understand the work doctrine.
+2. **Read `docs/METHOD.md`** to understand the work doctrine.
 3. **Check `docs/method/backlog/asap/`** for imminent work.
 4. **Check `git log -n 5` and `git status`** to verify the current branch state.
 

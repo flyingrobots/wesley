@@ -14,6 +14,28 @@ conformance anchor, and judgment bridge. It keeps authored shared contracts,
 derived artifacts, and operator-facing judgment coherent without claiming
 runtime, storage, debugger, or substrate-fact ownership.
 
+## Read This With The Right Split
+
+This note describes Wesley's role in Continuum, not the essence of Wesley core.
+
+The important split is:
+
+- **Wesley core** is a compiler: authored contract in, generated artifacts out
+- **the wider Wesley toolchain** also carries realization, witness, release,
+  sync, and judgment helpers around those artifacts
+- **Continuum** still owns its schemas, manifests, and user-facing orchestration
+  concerns
+
+During the domain-empty extraction, generic Wesley retired the public
+`compile-ttd` and `bundle-echo` CLI commands. Any future Continuum compile or
+bundle surface should enter through a Continuum-owned module command or
+external package.
+
+So when this note says Wesley owns publication-boundary management or
+conformance anchoring, read that as a Wesley-side toolchain role layered around
+the compiler, not as a claim that the compiler core itself has become
+Continuum-specific.
+
 ## Wesley Owns Four Jobs
 
 ### 1. Contract Compiler
@@ -33,7 +55,7 @@ for compiling authored families that define:
   focus is only known at execution time
 - types that cross Rust, TypeScript, WASM, process, or network boundaries
 
-Wesley should also grow a lawful observer compiler boundary:
+The Continuum module should also grow a lawful observer compiler boundary:
 
 - app-authored observer specs for the optic's get side
 - compiled observer plans consumed by generic runtimes
@@ -41,8 +63,10 @@ Wesley should also grow a lawful observer compiler boundary:
 - reading/result codecs
 - hologram or frontier-adjacent envelope helpers
 
-The important distinction is that Wesley compiles the static observer law. It
-does not own hosted observer instance state at runtime.
+The important distinction is that observer-anything is Continuum-only. Generic
+Wesley provides the extension seam and compile plumbing. The Continuum module
+owns the static observer law. Echo owns hosted observer instance state at
+runtime.
 
 This does **not** mean Wesley owns the whole program. Echo, `git-warp`, and
 other consumers remain free to keep runtime internals and handwritten engine
@@ -62,11 +86,13 @@ For dynamic graph rewrites, that means Wesley should treat:
 
 Current repo-visible evidence:
 
-- `schemas/ttd-protocol.graphql`
-- `schemas/echo-core-types.graphql`
-- `packages/wesley-cli/src/commands/compile-ttd.mjs`
-- `packages/wesley-core/src/ttd/`
-- `packages/wesley-generator-echo/src/EchoPlugin.mjs`
+- `warp-ttd` owns `schemas/warp-ttd-protocol.graphql`
+- `echo` owns current runtime schema fragments and ABI/runtime crates; old
+  Wesley-local Echo SDL is tracked as reconciliation work there
+- `continuum` owns `schemas/continuum-receipt-family.graphql` and
+  `schemas/continuum-settlement-family.graphql`
+- relocated Continuum-owned implementation at `continuum/wesley/ttd/`
+- `docs/design/wesley-extraction-map.md`
 
 ### 2. Publication-Boundary Manager
 
@@ -86,9 +112,9 @@ name:
 Current repo-visible evidence:
 
 - `docs/architecture/continuum-minimum-shared-contract-surface.md`
-- `packages/wesley-core/src/ttd/codegen/orchestrator.mjs`
-- `packages/wesley-cli/test/compile-ttd.bats`
-- `packages/wesley-generator-echo/README.md`
+- relocated Continuum-owned implementation at
+  `continuum/wesley/ttd/codegen/orchestrator.mjs`
+- `docs/design/wesley-extraction-map.md`
 
 Current rule:
 
@@ -119,10 +145,8 @@ Wesley therefore carries two different proof-adjacent surfaces:
 
 Current repo-visible evidence:
 
-- `packages/wesley-cli/test/compile-ttd.bats`
-- `packages/wesley-generator-echo/test/core-types.test.mjs`
-- `packages/wesley-generator-echo/test/privacy-types-encoding.test.mjs`
-- `packages/wesley-generator-echo/test/golden-vectors/privacy-types.json`
+- owner-provided schemas in `warp-ttd`, `echo`, and `continuum`
+- `docs/design/wesley-extraction-map.md`
 
 Current rule:
 
@@ -208,13 +232,14 @@ claim authorship by default.
 
 ## Current Limiting Truth
 
-Wesley now carries an authored `schemas/continuum-receipt-family.graphql` and
-`schemas/continuum-settlement-family.graphql`, plus real `receipt-family` and
-`settlement-family` witness scopes through `wesley witness`. That means the
-repo can now prove bounded local contract-family stacks from authored schema
-through TTD and Echo legs to conformance witnesses. This note still does not
-claim that the whole Continuum contract surface is frozen, or that Wesley owns
-runtime, storage, debugger, or substrate semantics outside those bounded proof
-lanes. The release and sync shape for turning those bounded proofs into one
-boring consumer bundle now lives in
+Continuum now carries authored `schemas/continuum-receipt-family.graphql` and
+`schemas/continuum-settlement-family.graphql`, and the Continuum Wesley module
+ships real `receipt-family` and `settlement-family` witness scopes through
+`wesley witness`. That means the stack can now prove bounded local
+contract-family paths from owner-authored schemas through TTD and Echo legs to
+conformance witnesses. This note still does not claim that the whole Continuum
+contract surface is frozen, or that Wesley owns runtime, storage, debugger, or
+substrate semantics outside those bounded proof lanes. The release and sync
+shape for turning those bounded proofs into one boring consumer bundle now
+lives in
 `docs/design/0005-continuum-contract-bundle-release-and-sync/continuum-contract-bundle-release-and-sync.md`.

@@ -9,7 +9,7 @@ export class TransformPipelineCommand extends WesleyCommand {
   constructor(ctx) {
     super(ctx, 'transform', 'Run a named transmutation against a GraphQL schema');
     this.requiresSchema = true;
-    this._delegate = new GeneratePipelineCommand(ctx);
+    this._delegate = new GeneratePipelineCommand(ctx, { register: false });
   }
 
   configureCommander(cmd) {

@@ -1,8 +1,8 @@
 # Process
 <!-- docs-truth: status=current owner=@flyingrobots -->
 
-Wesley uses METHOD for repo coordination. Product strategy still lives in
-`ROADMAP.md`; METHOD governs how work is queued, pulled, proved, and closed.
+Wesley uses METHOD for repo coordination. Current execution lives in METHOD
+surfaces, `docs/BEARING.md`, and active design packets.
 
 ## Rules
 
