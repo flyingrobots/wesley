@@ -72,7 +72,7 @@ The `release-gauntlet` job must verify:
 - root `CHANGELOG.md` contains release notes for the exact version
 - no version-associated backlog item remains under `docs/method/backlog/`
 - no open GitHub issue is associated with the exact tag or version
-- Rust check, test, clippy, docs, release-check, package dry-run, and audit pass
+- Rust check, test, clippy, docs, release-check, package sanity, and audit pass
 
 The `publish-crates` job must depend on `release-gauntlet` and must repeat the
 release guard before uploading. It publishes in dependency order and performs a
@@ -176,11 +176,20 @@ cargo test --workspace --all-features
 cargo clippy --workspace --all-targets -- -D warnings
 cargo xtask release-check
 cargo audit
-cargo xtask publish-crates --tag vX.Y.Z
+cargo xtask package-crates --tag vX.Y.Z
 ```
 
 The release workflow also checks open GitHub issues for the exact tag and
 version. Any matching open issue blocks publication.
+
+For a multi-crate release where later crates depend on earlier Wesley crates,
+the full registry-backed `cargo publish --dry-run` for dependent crates cannot
+complete until the upstream Wesley crate version is visible in the crates.io
+index. The publish job therefore dry-runs each crate immediately before its
+real upload, after any internal dependencies have been published and observed in
+the index. The planning command `cargo xtask publish-crates --tag vX.Y.Z`
+reports this explicitly as an incomplete dry-run instead of treating skipped
+crates as a passed gauntlet.
 
 Packaging sanity must fail on:
 
@@ -250,6 +259,7 @@ cargo check --workspace --all-targets
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets -- -D warnings
 cargo xtask release-check
+cargo xtask package-crates --tag vX.Y.Z
 cargo xtask release-guard --tag vX.Y.Z
 ```
 
@@ -258,6 +268,10 @@ Dry-run package plan:
 ```bash
 cargo xtask publish-crates --tag vX.Y.Z
 ```
+
+This command is intentionally strict for official releases: if an internal
+dependency has not reached crates.io yet, skipped dependent dry-runs are
+reported as failures rather than success.
 
 Publish command used by GitHub Actions only:
 

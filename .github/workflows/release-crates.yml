@@ -86,8 +86,8 @@ jobs:
       - name: Cargo audit
         run: cargo audit
 
-      - name: Publish dry-run
-        run: cargo xtask publish-crates --tag "$GITHUB_REF_NAME"
+      - name: Package sanity
+        run: cargo xtask package-crates --tag "$GITHUB_REF_NAME"
 
   publish-crates:
     needs: release-gauntlet

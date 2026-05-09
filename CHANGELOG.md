@@ -22,6 +22,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   alignment, tag-on-main validation, required crate package files, changelog
   coverage, version-linked backlog, dry-runs, and GitHub Actions-only
   publication.
+- **Release package sanity and resumable publish flow**: Added strict official
+  publish dry-run reporting, package file-set verification for every published
+  crate, and idempotent publish execution that skips crate versions already
+  visible in the crates.io index.
 - **Native Rust schema and operation commands**: Added Rust-backed
   `wesley schema lower`, `wesley schema hash`,
   `wesley operation selections`, and `wesley operation directive-args`

@@ -75,8 +75,11 @@ fn run(args: Vec<OsString>) -> Result<(), Error> {
             run_command("cargo", &["run", "--bin", "wesley", "--", "--help"])
         }
         "docs-check" => run_docs_check(),
-        "publish-alpha" => run_publish_crates(&args[1..], Some(ALPHA_VERSION), "publish-alpha"),
-        "publish-crates" => run_publish_crates(&args[1..], None, "publish-crates"),
+        "package-crates" => run_package_crates(&args[1..]),
+        "publish-alpha" => {
+            run_publish_crates(&args[1..], Some(ALPHA_VERSION), "publish-alpha", true)
+        }
+        "publish-crates" => run_publish_crates(&args[1..], None, "publish-crates", false),
         "release-guard" => run_release_guard(&args[1..]),
         "release-check" => {
             run_command("cargo", &["test", "--workspace"])?;
@@ -101,10 +104,67 @@ fn run(args: Vec<OsString>) -> Result<(), Error> {
     }
 }
 
+fn run_package_crates(args: &[OsString]) -> Result<(), Error> {
+    let options = PublishOptions::parse(args, None, "package-crates")?;
+    check_publish_manifest_versions(&options.version)?;
+    check_package_file_sets()
+}
+
+fn check_package_file_sets() -> Result<(), Error> {
+    let mut failures = Vec::new();
+    for publish_crate in PUBLISH_CRATES {
+        let files = cargo_package_file_list(publish_crate.name)?;
+        for required_file in required_package_files(publish_crate) {
+            if !files.iter().any(|file| file == required_file) {
+                failures.push(format!(
+                    "{} package is missing {required_file}",
+                    publish_crate.name
+                ));
+            }
+        }
+    }
+
+    finish_check("crate package file sets", failures)
+}
+
+fn cargo_package_file_list(crate_name: &str) -> Result<Vec<String>, Error> {
+    let args = ["package", "--allow-dirty", "--list", "-p", crate_name];
+    let label = command_label("cargo", &args);
+    println!("xtask: {label}");
+    let output = Command::new("cargo")
+        .args(args)
+        .output()
+        .map_err(|source| Error::Usage(format!("failed to spawn `{label}`: {source}")))?;
+    if !output.status.success() {
+        return Err(Error::CommandFailed {
+            command: label,
+            code: output.status.code().unwrap_or(EXIT_FAILURE as i32),
+        });
+    }
+
+    Ok(String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .map(ToOwned::to_owned)
+        .collect())
+}
+
+fn required_package_files(publish_crate: &PublishCrate) -> Vec<&'static str> {
+    let mut files = vec!["Cargo.toml", "README.md"];
+    if publish_crate.name == "wesley-cli" {
+        files.push("src/main.rs");
+    } else {
+        files.push("src/lib.rs");
+    }
+    files
+}
+
 fn run_publish_crates(
     args: &[OsString],
     default_version: Option<&str>,
     command_name: &str,
+    allow_dependency_skips: bool,
 ) -> Result<(), Error> {
     let options = PublishOptions::parse(args, default_version, command_name)?;
     check_publish_manifest_versions(&options.version)?;
@@ -132,6 +192,17 @@ fn run_publish_crates(
             run_command("cargo", &["xtask", "release-check"])?;
         }
         for publish_crate in PUBLISH_CRATES {
+            if publish_decision(crate_version_is_indexed(
+                publish_crate.name,
+                &options.version,
+            )) == PublishDecision::SkipAlreadyIndexed
+            {
+                println!(
+                    "xtask: skipping {} {}; already visible in crates.io index",
+                    publish_crate.name, options.version
+                );
+                continue;
+            }
             run_publish_dry_run_for_crate(publish_crate.name, false)?;
             publish_crate_to_crates_io(publish_crate.name)?;
             wait_for_crate_version(publish_crate.name, &options.version)?;
@@ -140,7 +211,7 @@ fn run_publish_crates(
         Ok(())
     } else {
         print_publish_crates_plan(&options.version);
-        run_publish_crates_dry_run(&options.version)
+        run_publish_crates_dry_run(&options.version, allow_dependency_skips)
     }
 }
 
@@ -157,7 +228,8 @@ fn print_publish_crates_plan(version: &str) {
     println!();
 }
 
-fn run_publish_crates_dry_run(version: &str) -> Result<(), Error> {
+fn run_publish_crates_dry_run(version: &str, allow_dependency_skips: bool) -> Result<(), Error> {
+    let mut failures = Vec::new();
     for publish_crate in PUBLISH_CRATES {
         let missing_dependencies = publish_crate
             .dependencies
@@ -168,16 +240,42 @@ fn run_publish_crates_dry_run(version: &str) -> Result<(), Error> {
 
         if missing_dependencies.is_empty() {
             run_publish_dry_run_for_crate(publish_crate.name, true)?;
-        } else {
+        } else if allow_dependency_skips {
             println!(
                 "xtask: skipping dry-run for {} until crates.io indexes {}",
                 publish_crate.name,
                 missing_dependencies.join(", ")
             );
+        } else {
+            failures.push(dry_run_dependency_failure(
+                publish_crate.name,
+                &missing_dependencies,
+            ));
         }
     }
 
-    Ok(())
+    finish_check("publish dry-run", failures)
+}
+
+#[derive(Debug, PartialEq, Eq)]
+enum PublishDecision {
+    SkipAlreadyIndexed,
+    Publish,
+}
+
+fn publish_decision(crate_version_is_indexed: bool) -> PublishDecision {
+    if crate_version_is_indexed {
+        PublishDecision::SkipAlreadyIndexed
+    } else {
+        PublishDecision::Publish
+    }
+}
+
+fn dry_run_dependency_failure(crate_name: &str, missing_dependencies: &[&str]) -> String {
+    format!(
+        "{crate_name} dry-run cannot run until crates.io indexes {}",
+        missing_dependencies.join(", ")
+    )
 }
 
 fn assert_github_actions_release_environment(tag: Option<&str>) -> Result<(), Error> {
@@ -1070,6 +1168,7 @@ Commands:
   test              Run Rust workspace tests
   docs-check        Run Rust-native documentation hygiene checks
   preflight         Run native Rust preflight checks
+  package-crates    Check package file sets for the crates.io release set
   publish-alpha     Publish the crates.io alpha package set; dry-run by default
   publish-crates    Publish crates.io package set for a release tag
   release-guard     Verify that a release tag is eligible to publish
@@ -1080,6 +1179,7 @@ Commands:
 Publish options:
   cargo xtask publish-alpha                    Print alpha plan and run safe dry-runs
   cargo xtask publish-alpha --execute          CI tag-only compatibility publish path
+  cargo xtask package-crates --tag vX.Y.Z      Check release package file sets
   cargo xtask publish-crates --tag vX.Y.Z      Print tag-derived plan and run safe dry-runs
   cargo xtask publish-crates --tag vX.Y.Z --execute  Publish in GitHub Actions only
   cargo xtask release-guard --tag vX.Y.Z"
@@ -1271,4 +1371,24 @@ enum Error {
         check: String,
         failures: Vec<String>,
     },
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn official_dry_run_reports_missing_internal_dependency_as_failure() {
+        let failure = dry_run_dependency_failure("wesley-emit-rust", &["wesley-core"]);
+        assert_eq!(
+            failure,
+            "wesley-emit-rust dry-run cannot run until crates.io indexes wesley-core"
+        );
+    }
+
+    #[test]
+    fn execute_publish_skips_crates_that_are_already_indexed() {
+        assert_eq!(publish_decision(true), PublishDecision::SkipAlreadyIndexed);
+        assert_eq!(publish_decision(false), PublishDecision::Publish);
+    }
 }
