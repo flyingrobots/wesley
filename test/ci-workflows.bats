@@ -164,6 +164,24 @@ load 'bats-plugins/bats-assert/load'
   [ "$verify_line" -lt "$finalize_line" ]
 }
 
+@test "release crates workflow keeps release scratch files outside repository" {
+  run bash -lc "grep -F '\${RUNNER_TEMP}/release-notes.md' .github/workflows/release-crates.yml | wc -l"
+  assert_success
+  [ "$output" -ge 2 ]
+
+  run bash -lc "grep -F '\${RUNNER_TEMP}/release-draft-state.txt' .github/workflows/release-crates.yml | wc -l"
+  assert_success
+  [ "$output" -ge 1 ]
+
+  run bash -lc "grep -F 'release-notes.md' .github/workflows/release-crates.yml | grep -v '\${RUNNER_TEMP}'"
+  [ "$status" -eq 1 ]
+  [ -z "$output" ]
+
+  run bash -lc "grep -F 'release-draft-state.txt' .github/workflows/release-crates.yml | grep -v '\${RUNNER_TEMP}'"
+  [ "$status" -eq 1 ]
+  [ -z "$output" ]
+}
+
 @test "release crates workflow checks version milestones and labels" {
   run bash -lc "grep -F -- '--milestone' .github/workflows/release-crates.yml | wc -l"
   assert_success

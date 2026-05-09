@@ -137,12 +137,13 @@ jobs:
         run: |
           set -euo pipefail
           version="${GITHUB_REF_NAME#v}"
+          notes_file="${RUNNER_TEMP}/release-notes.md"
           awk -v version="$version" '
             $0 ~ "^## \\[v?" version "\\]" { in_section=1; print; next }
             in_section && $0 ~ "^## \\[" { exit }
             in_section { print }
-          ' CHANGELOG.md > release-notes.md
-          if [ ! -s release-notes.md ]; then
+          ' CHANGELOG.md > "$notes_file"
+          if [ ! -s "$notes_file" ]; then
             echo "No CHANGELOG.md section found for ${version}"
             exit 1
           fi
@@ -152,14 +153,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          if gh release view "$GITHUB_REF_NAME" --json isDraft --jq .isDraft > release-draft-state.txt 2>/dev/null; then
-            if [ "$(cat release-draft-state.txt)" != "true" ]; then
+          notes_file="${RUNNER_TEMP}/release-notes.md"
+          draft_state_file="${RUNNER_TEMP}/release-draft-state.txt"
+          if gh release view "$GITHUB_REF_NAME" --json isDraft --jq .isDraft > "$draft_state_file" 2>/dev/null; then
+            if [ "$(cat "$draft_state_file")" != "true" ]; then
               echo "Release ${GITHUB_REF_NAME} already exists and is not a draft"
               exit 1
             fi
-            gh release edit "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file release-notes.md --draft --verify-tag
+            gh release edit "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file "$notes_file" --draft --verify-tag
           else
-            gh release create "$GITHUB_REF_NAME" --draft --title "$GITHUB_REF_NAME" --notes-file release-notes.md --verify-tag
+            gh release create "$GITHUB_REF_NAME" --draft --title "$GITHUB_REF_NAME" --notes-file "$notes_file" --verify-tag
           fi
 
       - name: Publish crates

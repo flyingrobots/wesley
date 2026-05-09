@@ -76,17 +76,19 @@ cargo wesley emit typescript --schema test/fixtures/consumer-models/jedit-hot-te
 
 Echo-owned tooling owns Echo-specific footprint honesty checks.
 
-## What's New in v0.0.1
+## What's New in v0.0.2
 
-Wesley's first Rust-native alpha publishes the core compiler path to crates.io:
-`wesley-core`, `wesley-emit-rust`, `wesley-emit-typescript`, and `wesley-cli`.
-The installable crate is `wesley-cli`, which provides the `wesley` binary.
+Wesley's `0.0.2` alpha hardens the Rust-native crates.io release path. The
+GitHub Actions release workflow now keeps temporary GitHub Release notes and
+draft-state files outside the repository checkout, so the real-publish
+clean-worktree guard can run immediately before registry mutation.
 
-This release centers the Rust front door. It lowers GraphQL SDL to domain-empty
-L1 IR, hashes schemas, diffs schema structure, lists schema root operations,
-emits Rust and TypeScript model/operation bindings, resolves operation
-selection paths, and extracts operation directive arguments without requiring an
-npm entry point. See [CHANGELOG.md](./CHANGELOG.md) for the full release notes.
+The native alpha line still centers the Rust front door: it lowers GraphQL SDL
+to domain-empty L1 IR, hashes schemas, diffs schema structure, lists schema root
+operations, emits Rust and TypeScript model/operation bindings, resolves
+operation selection paths, and extracts operation directive arguments without
+requiring an npm entry point. See [CHANGELOG.md](./CHANGELOG.md) for the full
+release notes.
 
 ## Rust-Native Front Door
 
@@ -124,7 +126,7 @@ The practical extension guide is [docs/guides/extending.md](./docs/guides/extend
 
 Install the published alpha native binary from crates.io.
 ```bash
-cargo install wesley-cli --version 0.0.1
+cargo install wesley-cli --version 0.0.2
 wesley --help
 ```
 

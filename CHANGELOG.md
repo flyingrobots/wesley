@@ -6,6 +6,15 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+## [0.0.2] - 2026-05-09
+
+### Fixed
+
+- **Crates.io release clean-worktree recovery**: The release workflow now keeps
+  GitHub Release scratch files in the runner temp directory so draft release
+  preparation no longer dirties the checkout before `cargo xtask
+  publish-crates` enforces the real-publish clean-worktree guard.
+
 ## [0.0.1] - 2026-05-09
 
 ### Added
@@ -812,5 +821,6 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 ## [0.1.0] - 2025-09-01
 - Initial public repository layout
 
-[Unreleased]: https://github.com/flyingrobots/wesley/compare/v0.0.1...HEAD
+[Unreleased]: https://github.com/flyingrobots/wesley/compare/v0.0.2...HEAD
+[0.0.2]: https://github.com/flyingrobots/wesley/compare/v0.0.1...v0.0.2
 [0.0.1]: https://github.com/flyingrobots/wesley/releases/tag/v0.0.1
