@@ -146,6 +146,16 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **Operation binding symbol collisions**: Rust and TypeScript operation
+  emitters now include the root operation scope in generated request, response,
+  metadata, and operation binding symbols so schemas can reuse field names
+  across `Query`, `Mutation`, and `Subscription` without duplicate generated
+  declarations.
+- **PR readiness checks**: Fixed PR feedback failures by removing an unused
+  fixture-generation import, replacing the CI-breaking docs link to a sibling
+  checkout with repo-local wording, making the legacy CLI package test glob
+  compatible with Node 20 runners, and preparing a passing SHIPME certificate
+  fixture before the certificate workflow verifies it.
 - **Docs link preflight and Rust package dry-runs**: The legacy Node docs link
   checker now ignores Rust `target/` build artifacts, matching the Rust-native
   docs check and preventing `cargo publish --dry-run` package trees from

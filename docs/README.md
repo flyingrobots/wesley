@@ -39,8 +39,7 @@ The repo already has the important generic building block around that hill:
 - a module-driven `wesley compile` surface where targets come from loaded
   external modules
 - a real current-state witness path via
-  the Continuum-owned Wesley module under
-  [../continuum/wesley](../../continuum/wesley/README.md)
+  the Continuum-owned Wesley module that lives outside this repository
 
 The former repo-local `compile-ttd` and `bundle-echo` commands were retired
 from generic Wesley during the domain-empty extraction. Recreate those surfaces
