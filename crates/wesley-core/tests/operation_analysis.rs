@@ -322,6 +322,15 @@ fn lists_stack_witness_0001_fixture_artifact_shape() {
         vectors["artifact"]["schemaId"],
         serde_json::json!("stack-witness-0001.file-history.v0")
     );
+    assert_eq!(
+        vectors["artifact"]["familyId"],
+        serde_json::json!("stack-witness-0001.file-history")
+    );
+    assert_eq!(vectors["artifact"]["version"], serde_json::json!("0"));
+    assert_eq!(
+        vectors["canonicalVarsEncoding"],
+        serde_json::json!("utf8-semicolon-kv/v0")
+    );
 
     let create_buffer = operations
         .iter()
@@ -335,17 +344,23 @@ fn lists_stack_witness_0001_fixture_artifact_shape() {
         create_buffer.directives["wes_artifact"]["artifactId"],
         vectors["artifact"]["artifactId"]
     );
+    assert_artifact_identity_matches_vector(create_buffer, &vectors);
     assert_eq!(
         create_buffer.directives["wes_stack_witness"]["opId"],
         create_buffer_vector["opIdHex"]
     );
+    assert_op_id_forms_agree(create_buffer_vector, STACK_WITNESS_CREATE_BUFFER_OP_ID);
     assert_eq!(
         create_buffer_vector["opIdDecimal"],
-        serde_json::json!(1398210561)
+        serde_json::json!(STACK_WITNESS_CREATE_BUFFER_OP_ID)
     );
     assert_eq!(
         create_buffer.directives["wes_stack_witness"]["helperKind"],
         serde_json::json!("EINT")
+    );
+    assert_eq!(
+        create_buffer.directives["wes_stack_witness"]["canonicalVarsEncoding"],
+        vectors["canonicalVarsEncoding"]
     );
     assert_eq!(
         create_buffer_vector["helperShape"]["entrypoint"],
@@ -359,6 +374,22 @@ fn lists_stack_witness_0001_fixture_artifact_shape() {
         create_buffer.directives["wes_footprint"]["creates"],
         create_buffer_vector["declaredFootprint"]["creates"]
     );
+    assert_declared_footprint_matches_vector(create_buffer, create_buffer_vector);
+    assert_helper_shape(
+        create_buffer_vector,
+        "EINT",
+        "dispatch_intent",
+        &[
+            "contract_artifact_id",
+            "operation_id",
+            "canonical_vars_bytes",
+            "declared_footprint",
+        ],
+    );
+    assert_eq!(
+        create_buffer.directives["wes_stack_witness"]["fixtureVector"],
+        serde_json::json!("stack-witness-0001-vectors.json#createBuffer")
+    );
 
     let replace_range = operations
         .iter()
@@ -371,9 +402,15 @@ fn lists_stack_witness_0001_fixture_artifact_shape() {
         replace_range.directives["wes_stack_witness"]["opId"],
         replace_range_vector["opIdHex"]
     );
+    assert_artifact_identity_matches_vector(replace_range, &vectors);
+    assert_op_id_forms_agree(replace_range_vector, STACK_WITNESS_REPLACE_RANGE_OP_ID);
     assert_eq!(
         replace_range_vector["opIdDecimal"],
-        serde_json::json!(1398210562)
+        serde_json::json!(STACK_WITNESS_REPLACE_RANGE_OP_ID)
+    );
+    assert_eq!(
+        replace_range.directives["wes_stack_witness"]["canonicalVarsEncoding"],
+        vectors["canonicalVarsEncoding"]
     );
     assert_eq!(
         replace_range.directives["wes_stack_witness"]["canonicalVarsBytes"],
@@ -382,7 +419,7 @@ fn lists_stack_witness_0001_fixture_artifact_shape() {
     assert_eq!(
         replace_range.directives["wes_stack_witness"]["canonicalVarsBytes"],
         serde_json::json!(
-            "stack-witness-0001/replaceRange;basis=B0;coord=utf8-bytes;start=0;end=0;text=hello;artifact=fixture-file-history-v0"
+            "stack-witness-0001/replaceRange;bufferId=demo.txt;basis=B0;coord=utf8-bytes;start=0;end=0;text=hello;artifact=fixture-file-history-v0"
         )
     );
     assert_eq!(
@@ -392,6 +429,22 @@ fn lists_stack_witness_0001_fixture_artifact_shape() {
     assert_eq!(
         replace_range.directives["wes_footprint"]["writes"],
         replace_range_vector["declaredFootprint"]["writes"]
+    );
+    assert_declared_footprint_matches_vector(replace_range, replace_range_vector);
+    assert_helper_shape(
+        replace_range_vector,
+        "EINT",
+        "dispatch_intent",
+        &[
+            "contract_artifact_id",
+            "operation_id",
+            "canonical_vars_bytes",
+            "declared_footprint",
+        ],
+    );
+    assert_eq!(
+        replace_range.directives["wes_stack_witness"]["fixtureVector"],
+        serde_json::json!("stack-witness-0001-vectors.json#replaceRange")
     );
 
     let text_window = operations
@@ -406,13 +459,19 @@ fn lists_stack_witness_0001_fixture_artifact_shape() {
         text_window.directives["wes_stack_witness"]["opId"],
         text_window_vector["opIdHex"]
     );
+    assert_artifact_identity_matches_vector(text_window, &vectors);
+    assert_op_id_forms_agree(text_window_vector, STACK_WITNESS_TEXT_WINDOW_QUERY_ID);
     assert_eq!(
         text_window_vector["opIdDecimal"],
-        serde_json::json!(1398214657)
+        serde_json::json!(STACK_WITNESS_TEXT_WINDOW_QUERY_ID)
     );
     assert_eq!(
         text_window.directives["wes_stack_witness"]["helperKind"],
         serde_json::json!("QueryView")
+    );
+    assert_eq!(
+        text_window.directives["wes_stack_witness"]["canonicalVarsEncoding"],
+        vectors["canonicalVarsEncoding"]
     );
     assert_eq!(
         text_window_vector["helperShape"]["entrypoint"],
@@ -421,7 +480,7 @@ fn lists_stack_witness_0001_fixture_artifact_shape() {
     assert_eq!(
         text_window.directives["wes_stack_witness"]["canonicalVarsBytes"],
         serde_json::json!(
-            "stack-witness-0001/textWindow;basis=B1;coord=utf8-bytes;start=0;length=5;artifact=fixture-file-history-v0"
+            "stack-witness-0001/textWindow;bufferId=demo.txt;basis=B1;coord=utf8-bytes;start=0;length=5;artifact=fixture-file-history-v0"
         )
     );
     assert_eq!(
@@ -435,6 +494,27 @@ fn lists_stack_witness_0001_fixture_artifact_shape() {
     assert_eq!(
         text_window.directives["wes_footprint"]["reads"],
         text_window_vector["declaredFootprint"]["reads"]
+    );
+    assert_declared_footprint_matches_vector(text_window, text_window_vector);
+    assert_helper_shape(
+        text_window_vector,
+        "QueryView",
+        "observe",
+        &[
+            "contract_artifact_id",
+            "query_id",
+            "canonical_vars_bytes",
+            "reading_envelope",
+            "query_bytes",
+        ],
+    );
+    assert_eq!(
+        text_window.directives["wes_stack_witness"]["fixtureVector"],
+        serde_json::json!("stack-witness-0001-vectors.json#textWindow")
+    );
+    assert_eq!(
+        text_window_vector["expectedQueryBytesHex"],
+        serde_json::json!("68656c6c6f")
     );
 }
 
@@ -624,4 +704,63 @@ fn vector_for<'a>(vectors: &'a serde_json::Value, name: &str) -> &'a serde_json:
         .iter()
         .find(|operation| operation["name"].as_str() == Some(name))
         .expect("fixture operation vector should exist")
+}
+
+const STACK_WITNESS_CREATE_BUFFER_OP_ID: u32 = 0x5357_0001;
+const STACK_WITNESS_REPLACE_RANGE_OP_ID: u32 = 0x5357_0002;
+const STACK_WITNESS_TEXT_WINDOW_QUERY_ID: u32 = 0x5357_1001;
+
+fn assert_artifact_identity_matches_vector(
+    operation: &wesley_core::SchemaOperation,
+    vectors: &serde_json::Value,
+) {
+    let artifact = &operation.directives["wes_artifact"];
+    assert_eq!(artifact["familyId"], vectors["artifact"]["familyId"]);
+    assert_eq!(artifact["schemaId"], vectors["artifact"]["schemaId"]);
+    assert_eq!(artifact["artifactId"], vectors["artifact"]["artifactId"]);
+    assert_eq!(artifact["version"], vectors["artifact"]["version"]);
+}
+
+fn assert_declared_footprint_matches_vector(
+    operation: &wesley_core::SchemaOperation,
+    vector: &serde_json::Value,
+) {
+    let footprint = &operation.directives["wes_footprint"];
+    assert_eq!(footprint["reads"], vector["declaredFootprint"]["reads"]);
+    assert_eq!(footprint["writes"], vector["declaredFootprint"]["writes"]);
+    assert_eq!(footprint["creates"], vector["declaredFootprint"]["creates"]);
+    assert_eq!(footprint["forbids"], vector["declaredFootprint"]["forbids"]);
+}
+
+fn assert_helper_shape(
+    vector: &serde_json::Value,
+    frame: &str,
+    entrypoint: &str,
+    fields: &[&str],
+) {
+    assert_eq!(vector["helperShape"]["frame"], serde_json::json!(frame));
+    assert_eq!(
+        vector["helperShape"]["entrypoint"],
+        serde_json::json!(entrypoint)
+    );
+    assert_eq!(
+        vector["helperShape"]["fields"],
+        serde_json::Value::Array(
+            fields
+                .iter()
+                .map(|field| serde_json::json!(field))
+                .collect()
+        )
+    );
+}
+
+fn assert_op_id_forms_agree(vector: &serde_json::Value, expected: u32) {
+    let hex = vector["opIdHex"]
+        .as_str()
+        .expect("opIdHex should be a string")
+        .strip_prefix("0x")
+        .expect("opIdHex should use 0x prefix");
+    let parsed = u32::from_str_radix(hex, 16).expect("opIdHex should parse as u32");
+    assert_eq!(parsed, expected);
+    assert_eq!(vector["opIdDecimal"], serde_json::json!(parsed));
 }

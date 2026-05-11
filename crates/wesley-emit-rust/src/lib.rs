@@ -754,20 +754,38 @@ pub struct UserFilter {
         assert!(actual.contains("pub type MutationReplaceRangeResponse = MutationReceipt;"));
         assert!(actual.contains("pub struct QueryTextWindowRequest {"));
         assert!(actual.contains("pub type QueryTextWindowResponse = TextWindowReading;"));
-        assert!(actual.contains("pub const FIELD_NAME: &'static str = \"createBuffer\";"));
-        assert!(actual.contains("pub const FIELD_NAME: &'static str = \"replaceRange\";"));
-        assert!(actual.contains("pub const FIELD_NAME: &'static str = \"textWindow\";"));
-        assert!(actual.contains("\\\"artifactId\\\":\\\"fixture-file-history-v0\\\""));
-        assert!(actual.contains("\\\"opId\\\":\\\"0x53570001\\\""));
-        assert!(actual.contains("\\\"opId\\\":\\\"0x53570002\\\""));
-        assert!(actual.contains("\\\"opId\\\":\\\"0x53571001\\\""));
-        assert!(actual.contains("\\\"helperKind\\\":\\\"EINT\\\""));
-        assert!(actual.contains("\\\"helperKind\\\":\\\"QueryView\\\""));
-        assert!(actual.contains(
-            "\\\"canonicalVarsBytes\\\":\\\"stack-witness-0001/textWindow;basis=B1;coord=utf8-bytes;start=0;length=5;artifact=fixture-file-history-v0\\\""
+        assert!(actual.contains("pub data_base64: String,"));
+
+        let create_buffer =
+            rust_operation_impl_block(&actual, "MutationCreateBufferRequest");
+        assert!(create_buffer.contains("pub const FIELD_NAME: &'static str = \"createBuffer\";"));
+        assert!(create_buffer.contains("\\\"artifactId\\\":\\\"fixture-file-history-v0\\\""));
+        assert!(create_buffer.contains("\\\"opId\\\":\\\"0x53570001\\\""));
+        assert!(create_buffer.contains("\\\"helperKind\\\":\\\"EINT\\\""));
+        assert!(create_buffer.contains(
+            "\\\"canonicalVarsBytes\\\":\\\"stack-witness-0001/createBuffer;name=demo.txt;artifact=fixture-file-history-v0\\\""
         ));
-        assert!(actual.contains("\\\"payloadCodec\\\":\\\"QueryBytes\\\""));
-        assert!(actual.contains("\\\"envelope\\\":\\\"ReadingEnvelope\\\""));
+
+        let replace_range =
+            rust_operation_impl_block(&actual, "MutationReplaceRangeRequest");
+        assert!(replace_range.contains("pub const FIELD_NAME: &'static str = \"replaceRange\";"));
+        assert!(replace_range.contains("\\\"artifactId\\\":\\\"fixture-file-history-v0\\\""));
+        assert!(replace_range.contains("\\\"opId\\\":\\\"0x53570002\\\""));
+        assert!(replace_range.contains("\\\"helperKind\\\":\\\"EINT\\\""));
+        assert!(replace_range.contains(
+            "\\\"canonicalVarsBytes\\\":\\\"stack-witness-0001/replaceRange;bufferId=demo.txt;basis=B0;coord=utf8-bytes;start=0;end=0;text=hello;artifact=fixture-file-history-v0\\\""
+        ));
+
+        let text_window = rust_operation_impl_block(&actual, "QueryTextWindowRequest");
+        assert!(text_window.contains("pub const FIELD_NAME: &'static str = \"textWindow\";"));
+        assert!(text_window.contains("\\\"artifactId\\\":\\\"fixture-file-history-v0\\\""));
+        assert!(text_window.contains("\\\"opId\\\":\\\"0x53571001\\\""));
+        assert!(text_window.contains("\\\"helperKind\\\":\\\"QueryView\\\""));
+        assert!(text_window.contains(
+            "\\\"canonicalVarsBytes\\\":\\\"stack-witness-0001/textWindow;bufferId=demo.txt;basis=B1;coord=utf8-bytes;start=0;length=5;artifact=fixture-file-history-v0\\\""
+        ));
+        assert!(text_window.contains("\\\"payloadCodec\\\":\\\"QueryBytes\\\""));
+        assert!(text_window.contains("\\\"envelope\\\":\\\"ReadingEnvelope\\\""));
     }
 
     #[test]
@@ -826,5 +844,18 @@ pub struct UserFilter {
         assert!(actual.contains(
             "#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]\npub enum SearchResult"
         ));
+    }
+
+    fn rust_operation_impl_block<'a>(actual: &'a str, request_name: &str) -> &'a str {
+        let marker = format!("impl {request_name} {{");
+        let start = actual
+            .find(&marker)
+            .expect("operation impl block should exist");
+        let tail = &actual[start..];
+        let end = tail
+            .find("\n}\n")
+            .expect("operation impl block should close")
+            + "\n}\n".len();
+        &tail[..end]
     }
 }

@@ -7,6 +7,7 @@ Fixtures live here so tests, docs, and demos all reference the same canonical in
 | Directory | Purpose | Consumed By |
 | --- | --- | --- |
 | `examples/` | Canonical GraphQL schemas plus generated outputs for docs and HOLMES tests. | CLI bats (`holmes-e2e.bats`), documentation snippets. |
+| `consumer-models/` | Hermetic consumer-shaped GraphQL fixtures for jedit and Stack Witness 0001 contract-boundary tests. | Wesley core operation catalog tests, Rust emitter tests, TypeScript emitter tests. |
 | `blade/` | Daywalker Deploys demo assets (schemas, run script, signing key instructions). | Docs walkthrough, manual CLI demos. |
 | `reference/` | Comprehensive SDL showcasing most directives; useful for experiments. | Manual runs, future regression suites. |
 | `rls-schema.graphql` | Focused schema exercising RLS directives. | `cli-e2e.bats`, `cli-e2e-real.bats`. |
