@@ -753,6 +753,63 @@ export interface UserFilter {
     }
 
     #[test]
+    fn emits_stack_witness_0001_fixture_operation_bindings() {
+        let sdl = include_str!(
+            "../../../test/fixtures/consumer-models/stack-witness-0001-file-history.graphql"
+        );
+        let ir = lower_schema_sdl(sdl).expect("stack witness fixture should lower");
+        let operations =
+            list_schema_operations_sdl(sdl).expect("stack witness operations should resolve");
+
+        let actual = emit_typescript_with_operations(&ir, &operations);
+
+        assert!(actual.contains("export interface MutationCreateBufferRequest {"));
+        assert!(actual.contains("  input: CreateBufferInput;"));
+        assert!(actual.contains("export type MutationCreateBufferResponse = MutationReceipt;"));
+        assert!(actual.contains("export const mutationCreateBufferOperation = {"));
+        assert!(actual.contains("export interface MutationReplaceRangeRequest {"));
+        assert!(actual.contains("export type MutationReplaceRangeResponse = MutationReceipt;"));
+        assert!(actual.contains("export const mutationReplaceRangeOperation = {"));
+        assert!(actual.contains("export interface QueryTextWindowRequest {"));
+        assert!(actual.contains("export type QueryTextWindowResponse = TextWindowReading;"));
+        assert!(actual.contains("export const queryTextWindowOperation = {"));
+        assert!(actual.contains("dataBase64: string;"));
+
+        let create_buffer =
+            ts_operation_metadata_block(&actual, "mutationCreateBufferOperation");
+        assert!(create_buffer.contains("  fieldName: \"createBuffer\","));
+        assert!(create_buffer.contains("\"artifactId\":\"fixture-file-history-v0\""));
+        assert!(create_buffer.contains("\"opId\":\"0x53570001\""));
+        assert!(create_buffer.contains("\"helperKind\":\"EINT\""));
+        assert!(create_buffer.contains(
+            "\"canonicalVarsBytes\":\"stack-witness-0001/createBuffer;name=demo.txt;artifact=fixture-file-history-v0\""
+        ));
+
+        let replace_range =
+            ts_operation_metadata_block(&actual, "mutationReplaceRangeOperation");
+        assert!(replace_range.contains("  fieldName: \"replaceRange\","));
+        assert!(replace_range.contains("\"artifactId\":\"fixture-file-history-v0\""));
+        assert!(replace_range.contains("\"opId\":\"0x53570002\""));
+        assert!(replace_range.contains("\"helperKind\":\"EINT\""));
+        assert!(replace_range.contains(
+            "\"canonicalVarsBytes\":\"stack-witness-0001/replaceRange;bufferId=demo.txt;basis=B0;coord=utf8-bytes;start=0;end=0;text=hello;artifact=fixture-file-history-v0\""
+        ));
+
+        let text_window = ts_operation_metadata_block(&actual, "queryTextWindowOperation");
+        assert!(text_window.contains("  fieldName: \"textWindow\","));
+        assert!(text_window.contains("\"artifactId\":\"fixture-file-history-v0\""));
+        assert!(text_window.contains("\"opId\":\"0x53571001\""));
+        assert!(text_window.contains("\"helperKind\":\"QueryView\""));
+        assert!(text_window.contains(
+            "\"canonicalVarsBytes\":\"stack-witness-0001/textWindow;bufferId=demo.txt;basis=B1;coord=utf8-bytes;start=0;length=5;artifact=fixture-file-history-v0\""
+        ));
+        assert!(text_window.contains("\"payloadCodec\":\"QueryBytes\""));
+        assert!(text_window.contains("\"envelope\":\"ReadingEnvelope\""));
+        assert!(actual.contains("export type QueryTextWindowOperation = {\n"));
+        assert!(actual.contains("  metadata: typeof queryTextWindowOperation;"));
+    }
+
+    #[test]
     fn operation_bindings_include_operation_scope_in_symbol_names() {
         let sdl = r#"
             type Query {
@@ -786,5 +843,18 @@ export interface UserFilter {
         assert!(actual.contains("export const mutationStatusOperation = {"));
         assert!(actual.contains("export type MutationStatusOperation = {\n"));
         assert!(actual.contains("  metadata: typeof mutationStatusOperation;"));
+    }
+
+    fn ts_operation_metadata_block<'a>(actual: &'a str, const_name: &str) -> &'a str {
+        let marker = format!("export const {const_name} = {{");
+        let start = actual
+            .find(&marker)
+            .expect("operation metadata block should exist");
+        let tail = &actual[start..];
+        let end = tail
+            .find("} as const;")
+            .expect("operation metadata block should close")
+            + "} as const;".len();
+        &tail[..end]
     }
 }

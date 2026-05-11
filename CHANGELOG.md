@@ -6,6 +6,13 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Added
+
+- **Stack Witness 0001 fixture artifact shape**: Added a hermetic
+  jedit-through-Echo file-history fixture with operation ids, canonical vars
+  bytes, declared footprints, EINT and QueryView helper shapes, fixture vectors,
+  and Rust/TypeScript operation binding coverage.
+
 ## [0.0.2] - 2026-05-09
 
 ### Fixed
