@@ -328,8 +328,12 @@ fn lists_stack_witness_0001_fixture_artifact_shape() {
     );
     assert_eq!(vectors["artifact"]["version"], serde_json::json!("0"));
     assert_eq!(
-        vectors["canonicalVarsEncoding"],
+        vectors["fixtureVarsEncoding"],
         serde_json::json!("utf8-semicolon-kv/v0")
+    );
+    assert_eq!(
+        vectors["targetCodec"],
+        serde_json::json!("wesley-binary/v0")
     );
 
     let create_buffer = operations
@@ -359,16 +363,20 @@ fn lists_stack_witness_0001_fixture_artifact_shape() {
         serde_json::json!("EINT")
     );
     assert_eq!(
-        create_buffer.directives["wes_stack_witness"]["canonicalVarsEncoding"],
-        vectors["canonicalVarsEncoding"]
+        create_buffer.directives["wes_stack_witness"]["fixtureVarsEncoding"],
+        vectors["fixtureVarsEncoding"]
+    );
+    assert_eq!(
+        create_buffer.directives["wes_stack_witness"]["targetCodec"],
+        vectors["targetCodec"]
     );
     assert_eq!(
         create_buffer_vector["helperShape"]["entrypoint"],
         serde_json::json!("dispatch_intent")
     );
     assert_eq!(
-        create_buffer.directives["wes_stack_witness"]["canonicalVarsBytes"],
-        create_buffer_vector["canonicalVarsBytes"]
+        create_buffer.directives["wes_stack_witness"]["fixtureVarsBytes"],
+        create_buffer_vector["fixtureVarsBytes"]
     );
     assert_eq!(
         create_buffer.directives["wes_footprint"]["creates"],
@@ -382,7 +390,7 @@ fn lists_stack_witness_0001_fixture_artifact_shape() {
         &[
             "contract_artifact_id",
             "operation_id",
-            "canonical_vars_bytes",
+            "fixture_vars_bytes",
             "declared_footprint",
         ],
     );
@@ -409,15 +417,19 @@ fn lists_stack_witness_0001_fixture_artifact_shape() {
         serde_json::json!(STACK_WITNESS_REPLACE_RANGE_OP_ID)
     );
     assert_eq!(
-        replace_range.directives["wes_stack_witness"]["canonicalVarsEncoding"],
-        vectors["canonicalVarsEncoding"]
+        replace_range.directives["wes_stack_witness"]["fixtureVarsEncoding"],
+        vectors["fixtureVarsEncoding"]
     );
     assert_eq!(
-        replace_range.directives["wes_stack_witness"]["canonicalVarsBytes"],
-        replace_range_vector["canonicalVarsBytes"]
+        replace_range.directives["wes_stack_witness"]["targetCodec"],
+        vectors["targetCodec"]
     );
     assert_eq!(
-        replace_range.directives["wes_stack_witness"]["canonicalVarsBytes"],
+        replace_range.directives["wes_stack_witness"]["fixtureVarsBytes"],
+        replace_range_vector["fixtureVarsBytes"]
+    );
+    assert_eq!(
+        replace_range.directives["wes_stack_witness"]["fixtureVarsBytes"],
         serde_json::json!(
             "stack-witness-0001/replaceRange;bufferId=demo.txt;basis=B0;coord=utf8-bytes;start=0;end=0;text=hello;artifact=fixture-file-history-v0"
         )
@@ -438,7 +450,7 @@ fn lists_stack_witness_0001_fixture_artifact_shape() {
         &[
             "contract_artifact_id",
             "operation_id",
-            "canonical_vars_bytes",
+            "fixture_vars_bytes",
             "declared_footprint",
         ],
     );
@@ -470,15 +482,19 @@ fn lists_stack_witness_0001_fixture_artifact_shape() {
         serde_json::json!("QueryView")
     );
     assert_eq!(
-        text_window.directives["wes_stack_witness"]["canonicalVarsEncoding"],
-        vectors["canonicalVarsEncoding"]
+        text_window.directives["wes_stack_witness"]["fixtureVarsEncoding"],
+        vectors["fixtureVarsEncoding"]
+    );
+    assert_eq!(
+        text_window.directives["wes_stack_witness"]["targetCodec"],
+        vectors["targetCodec"]
     );
     assert_eq!(
         text_window_vector["helperShape"]["entrypoint"],
         serde_json::json!("observe")
     );
     assert_eq!(
-        text_window.directives["wes_stack_witness"]["canonicalVarsBytes"],
+        text_window.directives["wes_stack_witness"]["fixtureVarsBytes"],
         serde_json::json!(
             "stack-witness-0001/textWindow;bufferId=demo.txt;basis=B1;coord=utf8-bytes;start=0;length=5;artifact=fixture-file-history-v0"
         )
@@ -503,7 +519,7 @@ fn lists_stack_witness_0001_fixture_artifact_shape() {
         &[
             "contract_artifact_id",
             "query_id",
-            "canonical_vars_bytes",
+            "fixture_vars_bytes",
             "reading_envelope",
             "query_bytes",
         ],
@@ -732,12 +748,7 @@ fn assert_declared_footprint_matches_vector(
     assert_eq!(footprint["forbids"], vector["declaredFootprint"]["forbids"]);
 }
 
-fn assert_helper_shape(
-    vector: &serde_json::Value,
-    frame: &str,
-    entrypoint: &str,
-    fields: &[&str],
-) {
+fn assert_helper_shape(vector: &serde_json::Value, frame: &str, entrypoint: &str, fields: &[&str]) {
     assert_eq!(vector["helperShape"]["frame"], serde_json::json!(frame));
     assert_eq!(
         vector["helperShape"]["entrypoint"],

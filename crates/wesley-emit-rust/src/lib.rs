@@ -756,24 +756,24 @@ pub struct UserFilter {
         assert!(actual.contains("pub type QueryTextWindowResponse = TextWindowReading;"));
         assert!(actual.contains("pub data_base64: String,"));
 
-        let create_buffer =
-            rust_operation_impl_block(&actual, "MutationCreateBufferRequest");
+        let create_buffer = rust_operation_impl_block(&actual, "MutationCreateBufferRequest");
         assert!(create_buffer.contains("pub const FIELD_NAME: &'static str = \"createBuffer\";"));
         assert!(create_buffer.contains("\\\"artifactId\\\":\\\"fixture-file-history-v0\\\""));
         assert!(create_buffer.contains("\\\"opId\\\":\\\"0x53570001\\\""));
         assert!(create_buffer.contains("\\\"helperKind\\\":\\\"EINT\\\""));
+        assert!(create_buffer.contains("\\\"targetCodec\\\":\\\"wesley-binary/v0\\\""));
         assert!(create_buffer.contains(
-            "\\\"canonicalVarsBytes\\\":\\\"stack-witness-0001/createBuffer;name=demo.txt;artifact=fixture-file-history-v0\\\""
+            "\\\"fixtureVarsBytes\\\":\\\"stack-witness-0001/createBuffer;name=demo.txt;artifact=fixture-file-history-v0\\\""
         ));
 
-        let replace_range =
-            rust_operation_impl_block(&actual, "MutationReplaceRangeRequest");
+        let replace_range = rust_operation_impl_block(&actual, "MutationReplaceRangeRequest");
         assert!(replace_range.contains("pub const FIELD_NAME: &'static str = \"replaceRange\";"));
         assert!(replace_range.contains("\\\"artifactId\\\":\\\"fixture-file-history-v0\\\""));
         assert!(replace_range.contains("\\\"opId\\\":\\\"0x53570002\\\""));
         assert!(replace_range.contains("\\\"helperKind\\\":\\\"EINT\\\""));
+        assert!(replace_range.contains("\\\"targetCodec\\\":\\\"wesley-binary/v0\\\""));
         assert!(replace_range.contains(
-            "\\\"canonicalVarsBytes\\\":\\\"stack-witness-0001/replaceRange;bufferId=demo.txt;basis=B0;coord=utf8-bytes;start=0;end=0;text=hello;artifact=fixture-file-history-v0\\\""
+            "\\\"fixtureVarsBytes\\\":\\\"stack-witness-0001/replaceRange;bufferId=demo.txt;basis=B0;coord=utf8-bytes;start=0;end=0;text=hello;artifact=fixture-file-history-v0\\\""
         ));
 
         let text_window = rust_operation_impl_block(&actual, "QueryTextWindowRequest");
@@ -781,8 +781,9 @@ pub struct UserFilter {
         assert!(text_window.contains("\\\"artifactId\\\":\\\"fixture-file-history-v0\\\""));
         assert!(text_window.contains("\\\"opId\\\":\\\"0x53571001\\\""));
         assert!(text_window.contains("\\\"helperKind\\\":\\\"QueryView\\\""));
+        assert!(text_window.contains("\\\"targetCodec\\\":\\\"wesley-binary/v0\\\""));
         assert!(text_window.contains(
-            "\\\"canonicalVarsBytes\\\":\\\"stack-witness-0001/textWindow;bufferId=demo.txt;basis=B1;coord=utf8-bytes;start=0;length=5;artifact=fixture-file-history-v0\\\""
+            "\\\"fixtureVarsBytes\\\":\\\"stack-witness-0001/textWindow;bufferId=demo.txt;basis=B1;coord=utf8-bytes;start=0;length=5;artifact=fixture-file-history-v0\\\""
         ));
         assert!(text_window.contains("\\\"payloadCodec\\\":\\\"QueryBytes\\\""));
         assert!(text_window.contains("\\\"envelope\\\":\\\"ReadingEnvelope\\\""));

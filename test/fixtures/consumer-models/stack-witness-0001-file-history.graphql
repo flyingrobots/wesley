@@ -87,8 +87,9 @@ type Mutation {
     @wes_stack_witness(
       opId: "0x53570001"
       helperKind: "EINT"
-      canonicalVarsEncoding: "utf8-semicolon-kv/v0"
-      canonicalVarsBytes: "stack-witness-0001/createBuffer;name=demo.txt;artifact=fixture-file-history-v0"
+      fixtureVarsEncoding: "utf8-semicolon-kv/v0"
+      fixtureVarsBytes: "stack-witness-0001/createBuffer;name=demo.txt;artifact=fixture-file-history-v0"
+      targetCodec: "wesley-binary/v0"
       fixtureVector: "stack-witness-0001-vectors.json#createBuffer"
     )
     @wes_footprint(
@@ -112,8 +113,9 @@ type Mutation {
     @wes_stack_witness(
       opId: "0x53570002"
       helperKind: "EINT"
-      canonicalVarsEncoding: "utf8-semicolon-kv/v0"
-      canonicalVarsBytes: "stack-witness-0001/replaceRange;bufferId=demo.txt;basis=B0;coord=utf8-bytes;start=0;end=0;text=hello;artifact=fixture-file-history-v0"
+      fixtureVarsEncoding: "utf8-semicolon-kv/v0"
+      fixtureVarsBytes: "stack-witness-0001/replaceRange;bufferId=demo.txt;basis=B0;coord=utf8-bytes;start=0;end=0;text=hello;artifact=fixture-file-history-v0"
+      targetCodec: "wesley-binary/v0"
       fixtureVector: "stack-witness-0001-vectors.json#replaceRange"
     )
     @wes_footprint(
@@ -149,8 +151,9 @@ type Query {
     @wes_stack_witness(
       opId: "0x53571001"
       helperKind: "QueryView"
-      canonicalVarsEncoding: "utf8-semicolon-kv/v0"
-      canonicalVarsBytes: "stack-witness-0001/textWindow;bufferId=demo.txt;basis=B1;coord=utf8-bytes;start=0;length=5;artifact=fixture-file-history-v0"
+      fixtureVarsEncoding: "utf8-semicolon-kv/v0"
+      fixtureVarsBytes: "stack-witness-0001/textWindow;bufferId=demo.txt;basis=B1;coord=utf8-bytes;start=0;length=5;artifact=fixture-file-history-v0"
+      targetCodec: "wesley-binary/v0"
       payloadCodec: "QueryBytes"
       envelope: "ReadingEnvelope"
       fixtureVector: "stack-witness-0001-vectors.json#textWindow"

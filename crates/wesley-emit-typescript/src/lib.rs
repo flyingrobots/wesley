@@ -775,24 +775,24 @@ export interface UserFilter {
         assert!(actual.contains("export const queryTextWindowOperation = {"));
         assert!(actual.contains("dataBase64: string;"));
 
-        let create_buffer =
-            ts_operation_metadata_block(&actual, "mutationCreateBufferOperation");
+        let create_buffer = ts_operation_metadata_block(&actual, "mutationCreateBufferOperation");
         assert!(create_buffer.contains("  fieldName: \"createBuffer\","));
         assert!(create_buffer.contains("\"artifactId\":\"fixture-file-history-v0\""));
         assert!(create_buffer.contains("\"opId\":\"0x53570001\""));
         assert!(create_buffer.contains("\"helperKind\":\"EINT\""));
+        assert!(create_buffer.contains("\"targetCodec\":\"wesley-binary/v0\""));
         assert!(create_buffer.contains(
-            "\"canonicalVarsBytes\":\"stack-witness-0001/createBuffer;name=demo.txt;artifact=fixture-file-history-v0\""
+            "\"fixtureVarsBytes\":\"stack-witness-0001/createBuffer;name=demo.txt;artifact=fixture-file-history-v0\""
         ));
 
-        let replace_range =
-            ts_operation_metadata_block(&actual, "mutationReplaceRangeOperation");
+        let replace_range = ts_operation_metadata_block(&actual, "mutationReplaceRangeOperation");
         assert!(replace_range.contains("  fieldName: \"replaceRange\","));
         assert!(replace_range.contains("\"artifactId\":\"fixture-file-history-v0\""));
         assert!(replace_range.contains("\"opId\":\"0x53570002\""));
         assert!(replace_range.contains("\"helperKind\":\"EINT\""));
+        assert!(replace_range.contains("\"targetCodec\":\"wesley-binary/v0\""));
         assert!(replace_range.contains(
-            "\"canonicalVarsBytes\":\"stack-witness-0001/replaceRange;bufferId=demo.txt;basis=B0;coord=utf8-bytes;start=0;end=0;text=hello;artifact=fixture-file-history-v0\""
+            "\"fixtureVarsBytes\":\"stack-witness-0001/replaceRange;bufferId=demo.txt;basis=B0;coord=utf8-bytes;start=0;end=0;text=hello;artifact=fixture-file-history-v0\""
         ));
 
         let text_window = ts_operation_metadata_block(&actual, "queryTextWindowOperation");
@@ -800,8 +800,9 @@ export interface UserFilter {
         assert!(text_window.contains("\"artifactId\":\"fixture-file-history-v0\""));
         assert!(text_window.contains("\"opId\":\"0x53571001\""));
         assert!(text_window.contains("\"helperKind\":\"QueryView\""));
+        assert!(text_window.contains("\"targetCodec\":\"wesley-binary/v0\""));
         assert!(text_window.contains(
-            "\"canonicalVarsBytes\":\"stack-witness-0001/textWindow;bufferId=demo.txt;basis=B1;coord=utf8-bytes;start=0;length=5;artifact=fixture-file-history-v0\""
+            "\"fixtureVarsBytes\":\"stack-witness-0001/textWindow;bufferId=demo.txt;basis=B1;coord=utf8-bytes;start=0;length=5;artifact=fixture-file-history-v0\""
         ));
         assert!(text_window.contains("\"payloadCodec\":\"QueryBytes\""));
         assert!(text_window.contains("\"envelope\":\"ReadingEnvelope\""));

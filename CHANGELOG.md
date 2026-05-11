@@ -9,9 +9,12 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 ### Added
 
 - **Stack Witness 0001 fixture artifact shape**: Added a hermetic
-  jedit-through-Echo file-history fixture with operation ids, canonical vars
-  bytes, declared footprints, EINT and QueryView helper shapes, fixture vectors,
-  and Rust/TypeScript operation binding coverage.
+  jedit-through-Echo file-history fixture with operation ids, temporary fixture
+  vars bytes, declared footprints, EINT and QueryView helper shapes, fixture
+  vectors, and Rust/TypeScript operation binding coverage. The semicolon-kv
+  bytes are explicitly marked as fixture-only, while `targetCodec:
+  wesley-binary/v0` records the future Wesley-generated binary codec target
+  without implementing it.
 
 ## [0.0.2] - 2026-05-09
 
