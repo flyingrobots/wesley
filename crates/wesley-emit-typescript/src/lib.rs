@@ -753,6 +753,45 @@ export interface UserFilter {
     }
 
     #[test]
+    fn emits_stack_witness_0001_fixture_operation_bindings() {
+        let sdl = include_str!(
+            "../../../test/fixtures/consumer-models/stack-witness-0001-file-history.graphql"
+        );
+        let ir = lower_schema_sdl(sdl).expect("stack witness fixture should lower");
+        let operations =
+            list_schema_operations_sdl(sdl).expect("stack witness operations should resolve");
+
+        let actual = emit_typescript_with_operations(&ir, &operations);
+
+        assert!(actual.contains("export interface MutationCreateBufferRequest {"));
+        assert!(actual.contains("  input: CreateBufferInput;"));
+        assert!(actual.contains("export type MutationCreateBufferResponse = MutationReceipt;"));
+        assert!(actual.contains("export const mutationCreateBufferOperation = {"));
+        assert!(actual.contains("export interface MutationReplaceRangeRequest {"));
+        assert!(actual.contains("export type MutationReplaceRangeResponse = MutationReceipt;"));
+        assert!(actual.contains("export const mutationReplaceRangeOperation = {"));
+        assert!(actual.contains("export interface QueryTextWindowRequest {"));
+        assert!(actual.contains("export type QueryTextWindowResponse = TextWindowReading;"));
+        assert!(actual.contains("export const queryTextWindowOperation = {"));
+        assert!(actual.contains("  fieldName: \"createBuffer\","));
+        assert!(actual.contains("  fieldName: \"replaceRange\","));
+        assert!(actual.contains("  fieldName: \"textWindow\","));
+        assert!(actual.contains("\"artifactId\":\"fixture-file-history-v0\""));
+        assert!(actual.contains("\"opId\":\"0x53570001\""));
+        assert!(actual.contains("\"opId\":\"0x53570002\""));
+        assert!(actual.contains("\"opId\":\"0x53571001\""));
+        assert!(actual.contains("\"helperKind\":\"EINT\""));
+        assert!(actual.contains("\"helperKind\":\"QueryView\""));
+        assert!(actual.contains(
+            "\"canonicalVarsBytes\":\"stack-witness-0001/textWindow;basis=B1;coord=utf8-bytes;start=0;length=5;artifact=fixture-file-history-v0\""
+        ));
+        assert!(actual.contains("\"payloadCodec\":\"QueryBytes\""));
+        assert!(actual.contains("\"envelope\":\"ReadingEnvelope\""));
+        assert!(actual.contains("export type QueryTextWindowOperation = {\n"));
+        assert!(actual.contains("  metadata: typeof queryTextWindowOperation;"));
+    }
+
+    #[test]
     fn operation_bindings_include_operation_scope_in_symbol_names() {
         let sdl = r#"
             type Query {

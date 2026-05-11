@@ -736,6 +736,41 @@ pub struct UserFilter {
     }
 
     #[test]
+    fn emits_stack_witness_0001_fixture_operation_bindings() {
+        let sdl = include_str!(
+            "../../../test/fixtures/consumer-models/stack-witness-0001-file-history.graphql"
+        );
+        let ir = lower_schema_sdl(sdl).expect("stack witness fixture should lower");
+        let operations =
+            list_schema_operations_sdl(sdl).expect("stack witness operations should resolve");
+
+        let actual = emit_rust_with_operations(&ir, &operations);
+
+        syn::parse_file(&actual).expect("generated Rust should parse");
+        assert!(actual.contains("pub struct MutationCreateBufferRequest {"));
+        assert!(actual.contains("pub input: CreateBufferInput,"));
+        assert!(actual.contains("pub type MutationCreateBufferResponse = MutationReceipt;"));
+        assert!(actual.contains("pub struct MutationReplaceRangeRequest {"));
+        assert!(actual.contains("pub type MutationReplaceRangeResponse = MutationReceipt;"));
+        assert!(actual.contains("pub struct QueryTextWindowRequest {"));
+        assert!(actual.contains("pub type QueryTextWindowResponse = TextWindowReading;"));
+        assert!(actual.contains("pub const FIELD_NAME: &'static str = \"createBuffer\";"));
+        assert!(actual.contains("pub const FIELD_NAME: &'static str = \"replaceRange\";"));
+        assert!(actual.contains("pub const FIELD_NAME: &'static str = \"textWindow\";"));
+        assert!(actual.contains("\\\"artifactId\\\":\\\"fixture-file-history-v0\\\""));
+        assert!(actual.contains("\\\"opId\\\":\\\"0x53570001\\\""));
+        assert!(actual.contains("\\\"opId\\\":\\\"0x53570002\\\""));
+        assert!(actual.contains("\\\"opId\\\":\\\"0x53571001\\\""));
+        assert!(actual.contains("\\\"helperKind\\\":\\\"EINT\\\""));
+        assert!(actual.contains("\\\"helperKind\\\":\\\"QueryView\\\""));
+        assert!(actual.contains(
+            "\\\"canonicalVarsBytes\\\":\\\"stack-witness-0001/textWindow;basis=B1;coord=utf8-bytes;start=0;length=5;artifact=fixture-file-history-v0\\\""
+        ));
+        assert!(actual.contains("\\\"payloadCodec\\\":\\\"QueryBytes\\\""));
+        assert!(actual.contains("\\\"envelope\\\":\\\"ReadingEnvelope\\\""));
+    }
+
+    #[test]
     fn operation_bindings_include_operation_scope_in_type_names() {
         let sdl = r#"
             type Query {
