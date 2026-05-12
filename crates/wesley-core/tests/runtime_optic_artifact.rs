@@ -417,6 +417,49 @@ fn payload_shape_uses_response_aliases() {
 }
 
 #[test]
+fn nested_payload_requiredness_respects_nullable_ancestors() {
+    let schema = r#"
+        type Query {
+          maybeResult: MaybeResult!
+        }
+
+        type MaybeResult {
+          receipt: RewriteReceipt
+        }
+
+        type RewriteReceipt {
+          witnessDigest: String!
+        }
+    "#;
+    let operation = r#"
+        query MaybeResult {
+          maybeResult {
+            receipt {
+              witnessDigest
+            }
+          }
+        }
+    "#;
+
+    let artifact = compile_runtime_optic(schema, operation, Some("MaybeResult"))
+        .expect("nullable-parent runtime optic should compile");
+    let receipt = find_codec_field(&artifact.operation.payload_shape.fields, "receipt");
+    let witness_digest = find_codec_field(
+        &artifact.operation.payload_shape.fields,
+        "receipt.witnessDigest",
+    );
+
+    assert!(
+        !receipt.required,
+        "nullable parent field should not be marked required"
+    );
+    assert!(
+        !witness_digest.required,
+        "child path under nullable parent should not be marked required"
+    );
+}
+
+#[test]
 fn optic_wire_shapes_serialize_with_stable_field_names() {
     let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
     let operation = include_str!("../../../test/fixtures/runtime-optics/rename_symbol.graphql");

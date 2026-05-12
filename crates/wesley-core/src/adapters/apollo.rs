@@ -1028,7 +1028,7 @@ pub fn compile_runtime_optic(
     let variable_shape = variable_codec_shape(op, schema_operation)?;
     let payload_shape = payload_codec_shape(
         &root_field,
-        &schema_operation.result_type.base,
+        &schema_operation.result_type,
         &schema,
         &parsed.fragments,
     )?;
@@ -2087,7 +2087,7 @@ fn variable_codec_field(variable: cst::VariableDefinition) -> Result<CodecField,
 
 fn payload_codec_shape(
     root_field: &cst::Field,
-    result_type: &str,
+    result_type: &TypeReference,
     schema: &SchemaIndex<'_>,
     fragments: &BTreeMap<String, cst::FragmentDefinition>,
 ) -> Result<CodecShape, WesleyError> {
@@ -2096,17 +2096,18 @@ fn payload_codec_shape(
     if let Some(selection_set) = root_field.selection_set() {
         collect_payload_codec_fields(
             &selection_set,
-            result_type,
+            &result_type.base,
             schema,
             fragments,
             &mut Vec::new(),
             "",
+            !result_type.nullable,
             &mut fields,
         )?;
     }
 
     Ok(CodecShape {
-        type_name: result_type.to_string(),
+        type_name: result_type.base.to_string(),
         fields,
     })
 }
@@ -2118,6 +2119,7 @@ fn collect_payload_codec_fields(
     fragments: &BTreeMap<String, cst::FragmentDefinition>,
     active_fragments: &mut Vec<String>,
     prefix: &str,
+    parent_path_required: bool,
     fields: &mut Vec<CodecField>,
 ) -> Result<(), WesleyError> {
     for selection in selection_set.selections() {
@@ -2131,13 +2133,14 @@ fn collect_payload_codec_fields(
                 } else {
                     format!("{prefix}.{response_name}")
                 };
+                let field_required = parent_path_required && !schema_field.r#type.nullable;
 
                 push_unique_codec_field(
                     fields,
                     CodecField {
                         name: path.clone(),
                         type_ref: schema_field.r#type.clone(),
-                        required: !schema_field.r#type.nullable,
+                        required: field_required,
                         list: is_list_type(&schema_field.r#type),
                     },
                 );
@@ -2152,6 +2155,7 @@ fn collect_payload_codec_fields(
                         fragments,
                         active_fragments,
                         &path,
+                        field_required,
                         fields,
                     )?;
                 }
@@ -2186,6 +2190,7 @@ fn collect_payload_codec_fields(
                         fragments,
                         active_fragments,
                         prefix,
+                        parent_path_required,
                         fields,
                     )?;
                 }
@@ -2207,6 +2212,7 @@ fn collect_payload_codec_fields(
                         fragments,
                         active_fragments,
                         prefix,
+                        parent_path_required,
                         fields,
                     )?;
                 }

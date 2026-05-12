@@ -297,7 +297,8 @@ The first witness does not need Echo. It can be a Rust test proving:
 - root field argument bindings are validated and preserved
 - directive law data is preserved across the operation and selected field tree
 - operation identity is stable
-- variable and response payload codec shapes are typed and inspectable
+- variable and response payload codec shapes are typed, aliased, and nullable
+  path-aware
 - declared read and rewrite footprints are preserved
 - a `footprint.closed.v1` law claim template is produced for runtime
   governance and witness
