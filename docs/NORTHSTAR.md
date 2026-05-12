@@ -297,6 +297,8 @@ The first witness does not need Echo. It can be a Rust test proving:
 - root field argument bindings are validated and preserved
 - input object literals, nested required input fields, and enum values are
   schema-validated before `shape.valid.v1` is claimed
+- fragment spreads and inline fragments have compatible type conditions before
+  they contribute payload, directive, or argument metadata
 - directive law data is preserved across the operation and selected field tree,
   including executable variable references
 - operation identity is stable

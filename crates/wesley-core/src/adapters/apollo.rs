@@ -1381,7 +1381,7 @@ fn collect_schema_coordinates(
                     operation_error_value(format!("Unknown fragment spread '{name}'"))
                 })?;
                 let fragment_parent = fragment_type_condition(fragment)?;
-                schema.require_type(&fragment_parent)?;
+                validate_fragment_type_condition(parent_type, &fragment_parent, schema, &name)?;
 
                 active_fragments.push(name);
                 if let Some(fragment_selection_set) = fragment.selection_set() {
@@ -1402,7 +1402,7 @@ fn collect_schema_coordinates(
                 } else {
                     parent_type.to_string()
                 };
-                schema.require_type(&inline_parent)?;
+                validate_fragment_type_condition(parent_type, &inline_parent, schema, "inline")?;
 
                 if let Some(inline_selection_set) = fragment.selection_set() {
                     collect_schema_coordinates(
@@ -1582,7 +1582,7 @@ fn collect_selection_directive_records(
                     operation_error_value(format!("Unknown fragment spread '{name}'"))
                 })?;
                 let fragment_parent = fragment_type_condition(fragment)?;
-                schema.require_type(&fragment_parent)?;
+                validate_fragment_type_condition(parent_type, &fragment_parent, schema, &name)?;
 
                 let spread_coordinate = if context_coordinate.is_empty() {
                     format!("{parent_type}...{name}")
@@ -1616,7 +1616,7 @@ fn collect_selection_directive_records(
                 } else {
                     parent_type.to_string()
                 };
-                schema.require_type(&inline_parent)?;
+                validate_fragment_type_condition(parent_type, &inline_parent, schema, "inline")?;
 
                 let inline_coordinate = if context_coordinate.is_empty() {
                     format!("{parent_type}...on {inline_parent}")
@@ -1940,7 +1940,7 @@ fn collect_selection_argument_bindings(
                     operation_error_value(format!("Unknown fragment spread '{name}'"))
                 })?;
                 let fragment_parent = fragment_type_condition(fragment)?;
-                schema.require_type(&fragment_parent)?;
+                validate_fragment_type_condition(parent_type, &fragment_parent, schema, &name)?;
 
                 active_fragments.push(name);
                 if let Some(fragment_selection_set) = fragment.selection_set() {
@@ -1963,7 +1963,7 @@ fn collect_selection_argument_bindings(
                 } else {
                     parent_type.to_string()
                 };
-                schema.require_type(&inline_parent)?;
+                validate_fragment_type_condition(parent_type, &inline_parent, schema, "inline")?;
 
                 if let Some(inline_selection_set) = fragment.selection_set() {
                     collect_selection_argument_bindings(
@@ -2607,7 +2607,7 @@ fn collect_payload_codec_fields(
                     operation_error_value(format!("Unknown fragment spread '{name}'"))
                 })?;
                 let fragment_parent = fragment_type_condition(fragment)?;
-                schema.require_type(&fragment_parent)?;
+                validate_fragment_type_condition(parent_type, &fragment_parent, schema, &name)?;
 
                 active_fragments.push(name);
                 if let Some(fragment_selection_set) = fragment.selection_set() {
@@ -2630,7 +2630,7 @@ fn collect_payload_codec_fields(
                 } else {
                     parent_type.to_string()
                 };
-                schema.require_type(&inline_parent)?;
+                validate_fragment_type_condition(parent_type, &inline_parent, schema, "inline")?;
 
                 if let Some(inline_selection_set) = fragment.selection_set() {
                     collect_payload_codec_fields(
@@ -2828,6 +2828,27 @@ impl<'a> SchemaIndex<'a> {
 
     fn type_kind(&self, name: &str) -> Option<TypeKind> {
         self.types.get(name).map(|type_def| type_def.kind)
+    }
+
+    fn possible_runtime_types(&self, name: &str) -> Result<BTreeSet<String>, WesleyError> {
+        let type_def = self.require_type(name)?;
+        match type_def.kind {
+            TypeKind::Object => Ok(BTreeSet::from([name.to_string()])),
+            TypeKind::Interface => Ok(self
+                .types
+                .values()
+                .filter(|candidate| {
+                    candidate.kind == TypeKind::Object
+                        && candidate
+                            .implements
+                            .iter()
+                            .any(|interface| interface == name)
+                })
+                .map(|candidate| candidate.name.clone())
+                .collect()),
+            TypeKind::Union => Ok(type_def.union_members.iter().cloned().collect()),
+            _ => operation_error(format!("Type '{name}' is not a composite fragment parent")),
+        }
     }
 
     fn field(&self, parent_type: &str, field_name: &str) -> Result<&'a Field, WesleyError> {
@@ -3081,6 +3102,24 @@ fn fragment_type_condition(fragment: &cst::FragmentDefinition) -> Result<String,
         type_condition.named_type(),
         "Fragment definition missing type condition",
     )
+}
+
+fn validate_fragment_type_condition(
+    parent_type: &str,
+    condition_type: &str,
+    schema: &SchemaIndex<'_>,
+    context: &str,
+) -> Result<(), WesleyError> {
+    let parent_possible = schema.possible_runtime_types(parent_type)?;
+    let condition_possible = schema.possible_runtime_types(condition_type)?;
+
+    if parent_possible.is_disjoint(&condition_possible) {
+        return operation_error(format!(
+            "Fragment '{context}' type condition '{condition_type}' cannot apply to parent type '{parent_type}'"
+        ));
+    }
+
+    Ok(())
 }
 
 fn named_type_name(name: Option<cst::NamedType>, message: &str) -> Result<String, WesleyError> {

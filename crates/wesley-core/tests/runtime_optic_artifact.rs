@@ -413,6 +413,71 @@ fn runtime_optic_rejects_invalid_input_object_literals() {
 }
 
 #[test]
+fn runtime_optic_rejects_impossible_fragment_type_conditions() {
+    let schema = r#"
+        type Query {
+          search: SearchResult!
+        }
+
+        union SearchResult = File | Issue
+
+        type File {
+          path: String!
+        }
+
+        type Issue {
+          title: String!
+        }
+
+        type User {
+          name: String!
+        }
+    "#;
+    let valid = r#"
+        query Search {
+          search {
+            ... on File {
+              path
+            }
+          }
+        }
+    "#;
+    let impossible_inline_fragment = r#"
+        query Search {
+          search {
+            ... on User {
+              name
+            }
+          }
+        }
+    "#;
+    let impossible_fragment_spread = r#"
+        query Search {
+          search {
+            ...UserFields
+          }
+        }
+
+        fragment UserFields on User {
+          name
+        }
+    "#;
+
+    compile_runtime_optic(schema, valid, Some("Search"))
+        .expect("compatible fragment type condition should compile");
+    assert_operation_lowering_error(compile_runtime_optic(
+        schema,
+        impossible_inline_fragment,
+        Some("Search"),
+    ));
+    assert_operation_lowering_error(compile_runtime_optic(
+        schema,
+        impossible_fragment_spread,
+        Some("Search"),
+    ));
+}
+
+#[test]
 fn runtime_optic_requires_reads_and_writes_when_footprint_is_present() {
     let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
     let missing_reads = r#"

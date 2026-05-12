@@ -32,6 +32,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **Runtime optic input literal validation**: `compile_runtime_optic()` now
   recursively validates input object literals, required nested input fields, and
   enum values before emitting `shape.valid.v1`.
+- **Runtime optic fragment compatibility**: Runtime optic lowering now rejects
+  impossible fragment spreads and inline fragments by comparing parent and type
+  condition possible runtime types.
 - **Runtime optic directive preservation**: Runtime optic artifacts now preserve
   directive records from the executable operation, nested selections, fragment
   spreads, fragment definitions, and inline fragments instead of only the root
