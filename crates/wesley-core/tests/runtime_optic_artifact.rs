@@ -170,6 +170,29 @@ fn resolves_artifact_by_registration_descriptor_and_rejects_tampering() {
 }
 
 #[test]
+fn registry_insert_normalizes_embedded_registration_descriptor() {
+    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
+    let operation = include_str!("../../../test/fixtures/runtime-optics/rename_symbol.graphql");
+    let mut artifact = compile_runtime_optic(schema, operation, Some("RenameSymbol"))
+        .expect("runtime optic should compile");
+    artifact.registration.schema_id = "tampered-embedded-schema".to_string();
+    artifact.registration.requirements_digest = "tampered-embedded-requirements".to_string();
+
+    let mut registry = InMemoryOpticArtifactRegistry::new();
+    let stored_registration = registry.insert(artifact.clone());
+    let resolved = registry
+        .resolve_optic_artifact(&stored_registration)
+        .expect("normalized registration should resolve");
+
+    assert_eq!(stored_registration.schema_id, artifact.schema_id);
+    assert_eq!(
+        stored_registration.requirements_digest,
+        artifact.requirements_digest
+    );
+    assert_eq!(resolved.registration, stored_registration);
+}
+
+#[test]
 fn artifact_hashes_are_stable_and_sensitive_to_shape_and_requirements() {
     let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
     let operation = include_str!("../../../test/fixtures/runtime-optics/rename_symbol.graphql");

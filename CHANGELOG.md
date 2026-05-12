@@ -31,6 +31,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **Runtime optic executable directive variables**: Runtime optic directive
   records now preserve variable-backed executable directive arguments, such as
   `@include(if: $flag)`, as canonical variable-reference JSON.
+- **Optic artifact registry normalization**: The in-memory optic artifact
+  registry now derives stored registration descriptors from artifact identity
+  fields instead of trusting stale embedded descriptor data.
 
 ## [0.0.2] - 2026-05-09
 

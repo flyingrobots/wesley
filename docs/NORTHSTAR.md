@@ -326,7 +326,9 @@ The first resolver hill is equally small: an `OpticArtifactResolver` can resolve
 an `OpticRegistrationDescriptor` back to its `OpticArtifact` and reject
 descriptors whose artifact id, artifact hash, schema id, operation id, or
 requirements digest no longer match. The v0 proof is an in-memory registry, not
-distributed infrastructure.
+distributed infrastructure. The in-memory registry normalizes registration
+descriptors from stored artifact identity fields at insertion so stale embedded
+descriptor data cannot become the returned resolver reference.
 
 The next witness can let an Echo fixture verifier say:
 

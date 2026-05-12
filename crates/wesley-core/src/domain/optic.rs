@@ -260,8 +260,9 @@ impl InMemoryOpticArtifactRegistry {
     }
 
     /// Stores an artifact and returns its registration descriptor.
-    pub fn insert(&mut self, artifact: OpticArtifact) -> OpticRegistrationDescriptor {
-        let registration = artifact.registration.clone();
+    pub fn insert(&mut self, mut artifact: OpticArtifact) -> OpticRegistrationDescriptor {
+        let registration = registration_descriptor_for_artifact(&artifact);
+        artifact.registration = registration.clone();
         self.artifacts
             .insert(artifact.artifact_id.clone(), artifact);
         registration
@@ -275,6 +276,16 @@ impl InMemoryOpticArtifactRegistry {
     /// Returns true when no artifacts are stored.
     pub fn is_empty(&self) -> bool {
         self.artifacts.is_empty()
+    }
+}
+
+fn registration_descriptor_for_artifact(artifact: &OpticArtifact) -> OpticRegistrationDescriptor {
+    OpticRegistrationDescriptor {
+        artifact_id: artifact.artifact_id.clone(),
+        artifact_hash: artifact.artifact_hash.clone(),
+        schema_id: artifact.schema_id.clone(),
+        operation_id: artifact.operation.operation_id.clone(),
+        requirements_digest: artifact.requirements_digest.clone(),
     }
 }
 
