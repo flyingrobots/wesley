@@ -295,7 +295,7 @@ The first witness does not need Echo. It can be a Rust test proving:
 - runtime SDL parses and lowers
 - the selected operation resolves
 - root field argument bindings are validated and preserved
-- directive law data is preserved
+- directive law data is preserved across the operation and selected field tree
 - operation identity is stable
 - variable and payload codec shapes are typed and inspectable
 - declared read and rewrite footprints are preserved
@@ -306,8 +306,9 @@ The repo-visible v0 surface for that hill is `compile_runtime_optic()`. It
 returns an in-memory `OpticArtifact` containing schema identity, artifact
 identity, artifact hash, operation identity, operation kind, operation name,
 canonical root argument bindings, variable codec shape, payload codec shape,
-preserved directive records, declared footprint, law claim templates, admission
-requirements, requirements digest, and an `OpticRegistrationDescriptor`.
+preserved directive records from the executable operation and selected field
+tree, declared footprint, law claim templates, admission requirements,
+requirements digest, and an `OpticRegistrationDescriptor`.
 `compile_runtime_optic_registration()` returns just the registration descriptor
 for callers that need the cross-process registration reference without
 receiving the full in-memory artifact object.

@@ -319,6 +319,59 @@ fn root_argument_bindings_are_preserved_and_affect_operation_identity() {
 }
 
 #[test]
+fn runtime_optic_preserves_operation_nested_and_fragment_directives() {
+    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
+    let operation = r#"
+        mutation RenameSymbol($input: RenameSymbolInput!)
+          @wes_law(id: "operation.audit.v1") {
+          renameSymbol(input: $input)
+            @wes_law(id: "bounded.rewrite.v1") {
+            receipt {
+              ...ReceiptWitness @wes_law(id: "fragment.spread.v1")
+            }
+          }
+        }
+
+        fragment ReceiptWitness on RewriteReceipt
+          @wes_law(id: "fragment.definition.v1") {
+          witnessDigest @wes_law(id: "payload.witness.v1")
+        }
+    "#;
+
+    let artifact = compile_runtime_optic(schema, operation, Some("RenameSymbol"))
+        .expect("runtime optic with scattered directives should compile");
+
+    assert_contains_directive(
+        &artifact.operation.directives,
+        "Operation.RenameSymbol",
+        "wes_law",
+        serde_json::json!({ "id": "operation.audit.v1" }),
+    );
+    assert_contains_directive(
+        &artifact.operation.directives,
+        "RenameSymbolResult.receipt...ReceiptWitness",
+        "wes_law",
+        serde_json::json!({ "id": "fragment.spread.v1" }),
+    );
+    assert_contains_directive(
+        &artifact.operation.directives,
+        "Fragment.ReceiptWitness",
+        "wes_law",
+        serde_json::json!({ "id": "fragment.definition.v1" }),
+    );
+    assert_contains_directive(
+        &artifact.operation.directives,
+        "RewriteReceipt.witnessDigest",
+        "wes_law",
+        serde_json::json!({ "id": "payload.witness.v1" }),
+    );
+    assert_contains_law_claim(&artifact, "operation.audit.v1");
+    assert_contains_law_claim(&artifact, "fragment.spread.v1");
+    assert_contains_law_claim(&artifact, "fragment.definition.v1");
+    assert_contains_law_claim(&artifact, "payload.witness.v1");
+}
+
+#[test]
 fn optic_wire_shapes_serialize_with_stable_field_names() {
     let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
     let operation = include_str!("../../../test/fixtures/runtime-optics/rename_symbol.graphql");

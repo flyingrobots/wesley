@@ -1022,8 +1022,8 @@ pub fn compile_runtime_optic(
     let root_arguments = root_argument_bindings(&root_field, schema_operation, &variable_types)?;
 
     let operation_name = op.name().map(|name| name.text().to_string());
-    let coordinate = format!("{root_type}.{root_field_name}");
-    let directives = directive_records_from_field(&coordinate, &root_field)?;
+    let directives =
+        directive_records_for_operation(op, root_type, &root_field, &schema, &parsed.fragments)?;
     let declared_footprint = footprint_from_directives(&directives)?;
     let variable_shape = variable_codec_shape(op, schema_operation)?;
     let payload_shape = payload_codec_shape(
@@ -1462,15 +1462,177 @@ fn schema_operation_for_selected_field<'a>(
         })
 }
 
-fn directive_records_from_field(
-    coordinate: &str,
-    field: &cst::Field,
+fn directive_records_for_operation(
+    op: &cst::OperationDefinition,
+    root_type: &str,
+    root_field: &cst::Field,
+    schema: &SchemaIndex<'_>,
+    fragments: &BTreeMap<String, cst::FragmentDefinition>,
 ) -> Result<Vec<DirectiveRecord>, WesleyError> {
-    let Some(directives) = field.directives() else {
-        return Ok(Vec::new());
+    let operation_coordinate = op
+        .name()
+        .map(|name| format!("Operation.{}", name.text()))
+        .unwrap_or_else(|| "Operation.<anonymous>".to_string());
+    let mut records = Vec::new();
+
+    push_directive_records(&operation_coordinate, op.directives(), &mut records)?;
+    collect_field_directive_records(
+        root_field,
+        root_type,
+        schema,
+        fragments,
+        &mut Vec::new(),
+        "",
+        &mut records,
+    )?;
+
+    Ok(records)
+}
+
+fn collect_field_directive_records(
+    field: &cst::Field,
+    parent_type: &str,
+    schema: &SchemaIndex<'_>,
+    fragments: &BTreeMap<String, cst::FragmentDefinition>,
+    active_fragments: &mut Vec<String>,
+    context_coordinate: &str,
+    records: &mut Vec<DirectiveRecord>,
+) -> Result<(), WesleyError> {
+    let field_name = required_name(field.name(), "Field selection missing name")?;
+    let schema_field = schema.field(parent_type, &field_name)?;
+    let coordinate = format!("{parent_type}.{field_name}");
+    push_directive_records(&coordinate, field.directives(), records)?;
+
+    if let Some(selection_set) = field.selection_set() {
+        let nested_parent = schema_field.r#type.base.as_str();
+        schema.require_type(nested_parent)?;
+        collect_selection_directive_records(
+            &selection_set,
+            nested_parent,
+            schema,
+            fragments,
+            active_fragments,
+            &coordinate,
+            records,
+        )?;
+    } else if !context_coordinate.is_empty() {
+        let _ = context_coordinate;
+    }
+
+    Ok(())
+}
+
+fn collect_selection_directive_records(
+    selection_set: &cst::SelectionSet,
+    parent_type: &str,
+    schema: &SchemaIndex<'_>,
+    fragments: &BTreeMap<String, cst::FragmentDefinition>,
+    active_fragments: &mut Vec<String>,
+    context_coordinate: &str,
+    records: &mut Vec<DirectiveRecord>,
+) -> Result<(), WesleyError> {
+    for selection in selection_set.selections() {
+        match selection {
+            cst::Selection::Field(field) => {
+                collect_field_directive_records(
+                    &field,
+                    parent_type,
+                    schema,
+                    fragments,
+                    active_fragments,
+                    context_coordinate,
+                    records,
+                )?;
+            }
+            cst::Selection::FragmentSpread(spread) => {
+                let name = spread
+                    .fragment_name()
+                    .and_then(|fragment_name| fragment_name.name())
+                    .map(|name| name.text().to_string())
+                    .ok_or_else(|| {
+                        operation_error_value("Fragment spread missing name".to_string())
+                    })?;
+
+                if active_fragments.contains(&name) {
+                    return operation_error(format!(
+                        "Cyclic fragment spread detected for fragment '{name}'"
+                    ));
+                }
+
+                let fragment = fragments.get(&name).ok_or_else(|| {
+                    operation_error_value(format!("Unknown fragment spread '{name}'"))
+                })?;
+                let fragment_parent = fragment_type_condition(fragment)?;
+                schema.require_type(&fragment_parent)?;
+
+                let spread_coordinate = if context_coordinate.is_empty() {
+                    format!("{parent_type}...{name}")
+                } else {
+                    format!("{context_coordinate}...{name}")
+                };
+                push_directive_records(&spread_coordinate, spread.directives(), records)?;
+                push_directive_records(
+                    &format!("Fragment.{name}"),
+                    fragment.directives(),
+                    records,
+                )?;
+
+                active_fragments.push(name);
+                if let Some(fragment_selection_set) = fragment.selection_set() {
+                    collect_selection_directive_records(
+                        &fragment_selection_set,
+                        &fragment_parent,
+                        schema,
+                        fragments,
+                        active_fragments,
+                        context_coordinate,
+                        records,
+                    )?;
+                }
+                active_fragments.pop();
+            }
+            cst::Selection::InlineFragment(fragment) => {
+                let inline_parent = if let Some(type_condition) = fragment.type_condition() {
+                    named_type_name(type_condition.named_type(), "Inline fragment missing type")?
+                } else {
+                    parent_type.to_string()
+                };
+                schema.require_type(&inline_parent)?;
+
+                let inline_coordinate = if context_coordinate.is_empty() {
+                    format!("{parent_type}...on {inline_parent}")
+                } else {
+                    format!("{context_coordinate}...on {inline_parent}")
+                };
+                push_directive_records(&inline_coordinate, fragment.directives(), records)?;
+
+                if let Some(inline_selection_set) = fragment.selection_set() {
+                    collect_selection_directive_records(
+                        &inline_selection_set,
+                        &inline_parent,
+                        schema,
+                        fragments,
+                        active_fragments,
+                        &inline_coordinate,
+                        records,
+                    )?;
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn push_directive_records(
+    coordinate: &str,
+    directives: Option<cst::Directives>,
+    records: &mut Vec<DirectiveRecord>,
+) -> Result<(), WesleyError> {
+    let Some(directives) = directives else {
+        return Ok(());
     };
 
-    let mut records = Vec::new();
     for directive in directives.directives() {
         let name = required_name(directive.name(), "Directive missing name")?;
         let arguments = extract_directive_arguments(directive.arguments())?;
@@ -1482,7 +1644,7 @@ fn directive_records_from_field(
         });
     }
 
-    Ok(records)
+    Ok(())
 }
 
 fn footprint_from_directives(
