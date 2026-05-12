@@ -1,8 +1,9 @@
 use wesley_core::{
-    compile_runtime_optic, compile_runtime_optic_registration, AdmissionTicket,
-    CapabilityPresentation, CodecField, DirectiveRecord, InMemoryOpticArtifactRegistry,
+    compile_runtime_optic, compile_runtime_optic_registration, AdmissionTicket, ApertureConstraint,
+    BasisConstraint, BudgetConstraint, CapabilityGrant, CapabilityPresentation, CodecField,
+    DirectiveRecord, EvidenceKind, InMemoryOpticArtifactRegistry, LawVerdict, LawWitness,
     ObserverClass, OperationKind, OpticArtifactHandle, OpticArtifactResolver, PermissionAction,
-    PermissionRequirement, PrincipalRef, ResolveError,
+    PermissionRequirement, PrincipalRef, ReplayHint, ResolveError,
 };
 
 #[test]
@@ -1035,6 +1036,37 @@ fn optic_wire_shapes_serialize_with_stable_field_names() {
         kind: "agent".to_string(),
         id: "codex".to_string(),
     };
+    let issuer = PrincipalRef {
+        kind: "host".to_string(),
+        id: "jedit".to_string(),
+    };
+    let grant = CapabilityGrant {
+        grant_id: "grant-1".to_string(),
+        subject: subject.clone(),
+        artifact_hash: artifact.artifact_hash.clone(),
+        operation_id: artifact.operation.operation_id.clone(),
+        requirements_digest: artifact.requirements_digest.clone(),
+        allowed_basis: Some(BasisConstraint {
+            basis_ref: Some("basis-1".to_string()),
+            max_staleness_ms: Some(250),
+        }),
+        allowed_apertures: vec![ApertureConstraint {
+            kind: "file_range".to_string(),
+            limit: Some(4096),
+        }],
+        budget: BudgetConstraint {
+            max_operations: Some(1),
+            max_bytes: Some(4096),
+            max_millis: Some(1000),
+        },
+        expires_at: Some("2026-05-12T00:05:00Z".to_string()),
+        rights: vec!["READ".to_string(), "WRITE".to_string()],
+        issuer: issuer.clone(),
+        issuer_signature: Some("issuer-signature-1".to_string()),
+        delegation_chain_digest: Some("delegation-digest-1".to_string()),
+        observer_class: Some(ObserverClass::Oc2),
+        non_transferable: true,
+    };
     let presentation = CapabilityPresentation {
         grant_id: "grant-1".to_string(),
         subject: subject.clone(),
@@ -1055,6 +1087,21 @@ fn optic_wire_shapes_serialize_with_stable_field_names() {
         issued_at: "2026-05-12T00:00:01Z".to_string(),
         expires_at: None,
     };
+    let witness = LawWitness {
+        law_id: "footprint.closed.v1".to_string(),
+        claim_id: "claim-1".to_string(),
+        basis_ref: Some("basis-1".to_string()),
+        checker_id: "echo.fixture.v0".to_string(),
+        checker_artifact_hash: Some("checker-hash-1".to_string()),
+        verdict: LawVerdict::Obstructed,
+        evidence_digests: vec!["evidence-digest-1".to_string()],
+        runtime_trace_digest: Some("trace-digest-1".to_string()),
+        obstruction_reason: Some("forbidden resource touched".to_string()),
+        replay_hints: vec![ReplayHint {
+            kind: "trace".to_string(),
+            value: "trace://fixture/1".to_string(),
+        }],
+    };
 
     assert_eq!(
         serde_json::to_value(&artifact.registration).expect("registration should serialize"),
@@ -1071,6 +1118,44 @@ fn optic_wire_shapes_serialize_with_stable_field_names() {
         serde_json::json!({
             "kind": "optic-artifact-handle",
             "id": "echo.local.handle.1",
+        })
+    );
+    assert_eq!(
+        serde_json::to_value(&grant).expect("grant should serialize"),
+        serde_json::json!({
+            "grantId": "grant-1",
+            "subject": {
+                "kind": "agent",
+                "id": "codex",
+            },
+            "artifactHash": artifact.artifact_hash,
+            "operationId": artifact.operation.operation_id,
+            "requirementsDigest": artifact.requirements_digest,
+            "allowedBasis": {
+                "basisRef": "basis-1",
+                "maxStalenessMs": 250,
+            },
+            "allowedApertures": [
+                {
+                    "kind": "file_range",
+                    "limit": 4096,
+                }
+            ],
+            "budget": {
+                "maxOperations": 1,
+                "maxBytes": 4096,
+                "maxMillis": 1000,
+            },
+            "expiresAt": "2026-05-12T00:05:00Z",
+            "rights": ["READ", "WRITE"],
+            "issuer": {
+                "kind": "host",
+                "id": "jedit",
+            },
+            "issuerSignature": "issuer-signature-1",
+            "delegationChainDigest": "delegation-digest-1",
+            "observerClass": "OC2",
+            "nonTransferable": true,
         })
     );
     assert_eq!(
@@ -1103,6 +1188,26 @@ fn optic_wire_shapes_serialize_with_stable_field_names() {
         })
     );
     assert_eq!(
+        serde_json::to_value(&witness).expect("witness should serialize"),
+        serde_json::json!({
+            "lawId": "footprint.closed.v1",
+            "claimId": "claim-1",
+            "basisRef": "basis-1",
+            "checkerId": "echo.fixture.v0",
+            "checkerArtifactHash": "checker-hash-1",
+            "verdict": "OBSTRUCTED",
+            "evidenceDigests": ["evidence-digest-1"],
+            "runtimeTraceDigest": "trace-digest-1",
+            "obstructionReason": "forbidden resource touched",
+            "replayHints": [
+                {
+                    "kind": "trace",
+                    "value": "trace://fixture/1",
+                }
+            ],
+        })
+    );
+    assert_eq!(
         serde_json::to_value(ObserverClass::Oc0).expect("observer class should serialize"),
         serde_json::json!("OC0")
     );
@@ -1117,6 +1222,18 @@ fn optic_wire_shapes_serialize_with_stable_field_names() {
     assert_eq!(
         serde_json::to_value(ObserverClass::Oc3).expect("observer class should serialize"),
         serde_json::json!("OC3")
+    );
+    assert_eq!(
+        serde_json::to_value(PermissionAction::Read).expect("permission action should serialize"),
+        serde_json::json!("READ")
+    );
+    assert_eq!(
+        serde_json::to_value(EvidenceKind::RuntimeTrace).expect("evidence kind should serialize"),
+        serde_json::json!("RUNTIME_TRACE")
+    );
+    assert_eq!(
+        serde_json::to_value(LawVerdict::Unknown).expect("law verdict should serialize"),
+        serde_json::json!("UNKNOWN")
     );
 }
 
