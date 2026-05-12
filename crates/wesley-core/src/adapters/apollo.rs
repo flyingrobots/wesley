@@ -7,8 +7,8 @@ use crate::domain::operation::{
 };
 use crate::domain::optic::{
     CodecField, CodecShape, DirectiveRecord, EvidenceKind, Footprint, IdentityRequirement,
-    LawClaimTemplate, OperationKind, OpticAdmissionRequirements, OpticArtifact,
-    OpticArtifactHandle, OpticOperation, PermissionAction, PermissionRequirement,
+    LawClaimTemplate, OperationKind, OpticAdmissionRequirements, OpticArtifact, OpticOperation,
+    OpticRegistrationDescriptor, PermissionAction, PermissionRequirement,
 };
 use crate::domain::schema_delta::{diff_schema_ir, SchemaDelta};
 use crate::ports::lowering::LoweringPort;
@@ -1043,28 +1043,40 @@ pub fn compile_runtime_optic(
     let operation_id = stable_json_hash(&identity_seed, "runtime optic operation identity")?;
     let law_claims =
         law_claims_for_operation(&operation_id, &directives, declared_footprint.as_ref())?;
-    let artifact_id = compute_content_hash(&format!("optic-artifact:{schema_id}:{operation_id}"));
     let requirements = admission_requirements_from_footprint(declared_footprint.as_ref());
-    let handle_id = stable_json_hash(
+    let requirements_digest = stable_json_hash(
         &serde_json::json!({
-            "artifactId": &artifact_id,
-            "operationId": &operation_id,
-            "schemaId": &schema_id,
+            "declaredFootprint": &declared_footprint,
+            "lawClaims": &law_claims,
             "requirements": &requirements,
         }),
-        "runtime optic handle identity",
+        "runtime optic requirements digest",
     )?;
-    let handle = OpticArtifactHandle {
-        handle_id,
+    let artifact_hash = stable_json_hash(
+        &serde_json::json!({
+            "directives": &directives,
+            "operationId": &operation_id,
+            "payloadShape": &payload_shape,
+            "requirementsDigest": &requirements_digest,
+            "schemaId": &schema_id,
+            "variableShape": &variable_shape,
+        }),
+        "runtime optic artifact hash",
+    )?;
+    let artifact_id = artifact_hash.clone();
+    let registration = OpticRegistrationDescriptor {
         artifact_id: artifact_id.clone(),
+        artifact_hash: artifact_hash.clone(),
         schema_id: schema_id.clone(),
         operation_id: operation_id.clone(),
-        requirements,
+        requirements_digest: requirements_digest.clone(),
     };
 
     Ok(OpticArtifact {
         artifact_id,
+        artifact_hash,
         schema_id,
+        requirements_digest,
         operation: OpticOperation {
             operation_id,
             name: operation_name,
@@ -1076,22 +1088,22 @@ pub fn compile_runtime_optic(
             declared_footprint,
             law_claims,
         },
-        handle,
+        requirements,
+        registration,
     })
 }
 
-/// Compiles runtime-provided SDL plus one GraphQL operation into a portable handle.
+/// Compiles runtime-provided SDL plus one GraphQL operation into a registration descriptor.
 ///
-/// This returns the cross-process reference for an artifact without requiring a
-/// caller to receive or move the full in-memory artifact object. The handle is
-/// still not an authority grant; hosts must bind identity and verify permission
-/// requirements before admission.
-pub fn compile_runtime_optic_handle(
+/// This returns the cross-process descriptor an application can present to Echo
+/// when registering the full artifact. Echo returns the runtime-local opaque
+/// `OpticArtifactHandle` after it accepts the artifact.
+pub fn compile_runtime_optic_registration(
     sdl: &str,
     operation_source: &str,
     selected_operation: Option<&str>,
-) -> Result<OpticArtifactHandle, WesleyError> {
-    Ok(compile_runtime_optic(sdl, operation_source, selected_operation)?.handle)
+) -> Result<OpticRegistrationDescriptor, WesleyError> {
+    Ok(compile_runtime_optic(sdl, operation_source, selected_operation)?.registration)
 }
 
 /// Extracts arguments from operation directives with the requested directive name.

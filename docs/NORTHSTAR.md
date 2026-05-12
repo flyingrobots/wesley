@@ -231,28 +231,35 @@ The runtime handoff should stay explicit:
 
 ```text
 application declares GraphQL operation
-  -> Wesley compiles OpticArtifact / OpticArtifactHandle
+  -> Wesley compiles OpticArtifact
+  -> Wesley returns OpticArtifact plus artifact hash and requirements digest
   -> application registers artifact with Echo or another runtime registry
-  -> runtime verifies Wesley artifact identity/hash and stores requirements
-  -> user, host, or quorum issues CapabilityGrant / IssuedOpticHandle
-  -> caller invokes operation with handle, variables, and capability presentation
-  -> runtime checks identity, authority, permissions, expiry, basis, and budget
+  -> runtime verifies Wesley artifact hash and stores requirements
+  -> runtime returns opaque OpticArtifactHandle
+  -> user, host, or quorum issues CapabilityGrant
+  -> caller invokes with OpticArtifactHandle, canonical variables,
+     capability presentation, and basis/aperture request
+  -> runtime checks artifact identity, capability authority, operation
+     permissions, expiry, basis validity, budget, and support requirements
   -> runtime admits or obstructs
   -> runtime instruments actual access
+  -> runtime compares actual access against declared requirements
   -> runtime emits LawWitness / receipt
 ```
 
-That flow preserves three separate nouns:
+That flow preserves five separate nouns:
 
 | Noun | Owner | Job |
 | --- | --- | --- |
-| `OpticArtifact` / `OpticArtifactHandle` | Wesley | Compile and identify the lawful optic contract plus its admission requirements. |
-| `CapabilityGrant` / `IssuedOpticHandle` | Host, user, quorum, or runtime policy | Bind a principal to the right to attempt this operation under explicit limits. |
-| `LawWitness` / receipt | Runtime or verifier | Report what was admitted, obstructed, satisfied, unknown, and actually touched. |
+| `OpticArtifact` | Wesley | Compiled, content-addressed declaration of operation shape, codecs, law claims, and admission requirements. |
+| `OpticRegistrationDescriptor` | Wesley | Artifact hash, schema id, operation id, and requirements digest used when registering the artifact with a runtime. |
+| `OpticArtifactHandle` | Echo or another runtime | Opaque registry handle proving the runtime accepted and stored a specific Wesley artifact hash. |
+| `CapabilityGrant` / `CapabilityPresentation` | User, host, quorum, or policy authority | Bounded authority plus invocation-time proof to attempt a registered artifact under explicit constraints. |
+| `LawWitness` / receipt | Echo, runtime, or verifier | Evidence describing admission, obstruction, access, basis, budget, and law satisfaction posture. |
 
 The critical boundary is that Wesley compiles the requirements, while the
-runtime admits the interaction and witnesses what happened. A handle names a
-compiled optic; it is not a capability presentation by itself.
+runtime registers the artifact, admits the interaction, instruments access, and
+witnesses what happened. A runtime handle proves registration, not authority.
 
 ## What Wesley Must Become
 
@@ -296,27 +303,26 @@ The first witness does not need Echo. It can be a Rust test proving:
 
 The repo-visible v0 surface for that hill is `compile_runtime_optic()`. It
 returns an in-memory `OpticArtifact` containing schema identity, artifact
-identity, operation identity, operation kind, operation name, variable codec
-shape, payload codec shape, preserved directive records, declared footprint,
-law claim templates, and a portable `OpticArtifactHandle`.
-`compile_runtime_optic_handle()` returns just the cross-process handle for
-callers that should refer to an artifact without receiving the full in-memory
-object.
+identity, artifact hash, operation identity, operation kind, operation name,
+variable codec shape, payload codec shape, preserved directive records,
+declared footprint, law claim templates, admission requirements, requirements
+digest, and an `OpticRegistrationDescriptor`.
+`compile_runtime_optic_registration()` returns just the registration descriptor
+for callers that need the cross-process registration reference without
+receiving the full in-memory artifact object.
 
-The compiler handle carries admission requirements: identity must be bound by
-the host or session layer, read/write permission requirements are inferred from
-declared footprints, and forbidden resources stay explicit. This is not an
-authority grant. Host/session-owned admission state belongs in an
-`IssuedOpticHandle`: bound principal, issuer, audience, granted permissions,
-expiry, policy digest, and attestation. Wesley deliberately does not execute
-the operation, issue capabilities, call Echo, run a policy engine, or verify
-runtime law satisfaction.
+The registration descriptor carries artifact hash, schema id, operation id, and
+requirements digest. It is not an authority grant and it is not the Echo-owned
+`OpticArtifactHandle`. Echo or another runtime returns the opaque handle after
+it accepts the artifact and stores the requirements. Wesley deliberately does
+not execute the operation, issue capabilities, call Echo, run a policy engine,
+or verify runtime law satisfaction.
 
 The first resolver hill is equally small: an `OpticArtifactResolver` can resolve
-an `OpticArtifactHandle` back to its `OpticArtifact` and reject handles whose
-artifact id, schema id, operation id, handle id, or admission requirements no
-longer match. The v0 proof is an in-memory registry, not distributed
-infrastructure.
+an `OpticRegistrationDescriptor` back to its `OpticArtifact` and reject
+descriptors whose artifact id, artifact hash, schema id, operation id, or
+requirements digest no longer match. The v0 proof is an in-memory registry, not
+distributed infrastructure.
 
 The next witness can let an Echo fixture verifier say:
 
@@ -335,8 +341,10 @@ That is the first real proof of bounded, lawful autonomy.
 
 ## Doctrine
 
-Wesley declares and compiles lawful optics. Runtimes witness whether those laws
-were satisfied.
+Wesley compiles lawful optic claims. Echo or another runtime registers, admits,
+obstructs, instruments, and witnesses them. Applications hold product-facing
+capabilities that hide artifact handles, basis references, and runtime
+coordinates.
 
 Agents do not get ambient authority. They get a lawful way to propose precise
 readings and rewrites, and an evidence-bearing way to learn why a proposal was

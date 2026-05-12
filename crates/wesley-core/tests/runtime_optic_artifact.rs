@@ -1,5 +1,5 @@
 use wesley_core::{
-    compile_runtime_optic, compile_runtime_optic_handle, CodecField, DirectiveRecord,
+    compile_runtime_optic, compile_runtime_optic_registration, CodecField, DirectiveRecord,
     InMemoryOpticArtifactRegistry, OperationKind, OpticArtifactResolver, PermissionAction,
     PermissionRequirement, ResolveError,
 };
@@ -13,24 +13,32 @@ fn compiles_runtime_operation_into_domain_empty_optic_artifact() {
         .expect("runtime optic should compile");
     let repeated = compile_runtime_optic(schema, operation, Some("RenameSymbol"))
         .expect("runtime optic should compile repeatedly");
-    let handle = compile_runtime_optic_handle(schema, operation, Some("RenameSymbol"))
-        .expect("runtime optic handle should compile");
+    let registration = compile_runtime_optic_registration(schema, operation, Some("RenameSymbol"))
+        .expect("runtime optic registration should compile");
 
     assert_eq!(artifact.schema_id.len(), 64);
     assert_eq!(artifact.artifact_id.len(), 64);
+    assert_eq!(artifact.artifact_hash.len(), 64);
+    assert_eq!(artifact.requirements_digest.len(), 64);
     assert_eq!(artifact.operation.operation_id.len(), 64);
-    assert_eq!(artifact.handle.handle_id.len(), 64);
     assert_eq!(
         artifact.operation.operation_id,
         repeated.operation.operation_id
     );
     assert_eq!(artifact.artifact_id, repeated.artifact_id);
-    assert_eq!(artifact.handle, handle);
-    assert_eq!(artifact.handle.artifact_id, artifact.artifact_id);
-    assert_eq!(artifact.handle.schema_id, artifact.schema_id);
+    assert_eq!(artifact.artifact_hash, repeated.artifact_hash);
+    assert_eq!(artifact.requirements_digest, repeated.requirements_digest);
+    assert_eq!(artifact.registration, registration);
+    assert_eq!(artifact.registration.artifact_id, artifact.artifact_id);
+    assert_eq!(artifact.registration.artifact_hash, artifact.artifact_hash);
+    assert_eq!(artifact.registration.schema_id, artifact.schema_id);
     assert_eq!(
-        artifact.handle.operation_id,
+        artifact.registration.operation_id,
         artifact.operation.operation_id
+    );
+    assert_eq!(
+        artifact.registration.requirements_digest,
+        artifact.requirements_digest
     );
 
     assert_eq!(artifact.operation.name.as_deref(), Some("RenameSymbol"));
@@ -63,7 +71,7 @@ fn compiles_runtime_operation_into_domain_empty_optic_artifact() {
     assert_eq!(footprint.writes, vec!["workspace.files"]);
     assert_eq!(footprint.forbids, vec!["secrets", "git.refs"]);
 
-    let requirements = &artifact.handle.requirements;
+    let requirements = &artifact.requirements;
     assert!(requirements.identity.required);
     assert!(requirements.identity.accepted_principal_kinds.is_empty());
     assert_contains_permission(
@@ -113,42 +121,46 @@ fn compiles_runtime_operation_into_domain_empty_optic_artifact() {
 }
 
 #[test]
-fn resolves_artifact_by_handle_and_rejects_tampered_handles() {
+fn resolves_artifact_by_registration_descriptor_and_rejects_tampering() {
     let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
     let operation = include_str!("../../../test/fixtures/runtime-optics/rename_symbol.graphql");
     let artifact = compile_runtime_optic(schema, operation, Some("RenameSymbol"))
         .expect("runtime optic should compile");
-    let handle = artifact.handle.clone();
+    let registration = artifact.registration.clone();
 
     let mut registry = InMemoryOpticArtifactRegistry::new();
     assert!(registry.is_empty());
-    let stored_handle = registry.insert(artifact.clone());
+    let stored_registration = registry.insert(artifact.clone());
     assert_eq!(registry.len(), 1);
-    assert_eq!(stored_handle, handle);
+    assert_eq!(stored_registration, registration);
 
     let resolved = registry
-        .resolve_optic_artifact(&handle)
-        .expect("handle should resolve");
+        .resolve_optic_artifact(&registration)
+        .expect("registration descriptor should resolve");
     assert_eq!(resolved, artifact);
 
-    let mut tampered_schema = handle.clone();
+    let mut tampered_schema = registration.clone();
     tampered_schema.schema_id = "tampered-schema".to_string();
     assert!(matches!(
         registry.resolve_optic_artifact(&tampered_schema),
         Err(ResolveError::SchemaIdMismatch { .. })
     ));
 
-    let mut tampered_requirements = handle.clone();
-    tampered_requirements
-        .requirements
-        .forbidden_resources
-        .push("extra.secret".to_string());
+    let mut tampered_artifact_hash = registration.clone();
+    tampered_artifact_hash.artifact_hash = "tampered-artifact-hash".to_string();
     assert!(matches!(
-        registry.resolve_optic_artifact(&tampered_requirements),
-        Err(ResolveError::AdmissionRequirementsMismatch { .. })
+        registry.resolve_optic_artifact(&tampered_artifact_hash),
+        Err(ResolveError::ArtifactHashMismatch { .. })
     ));
 
-    let mut missing = handle;
+    let mut tampered_requirements = registration.clone();
+    tampered_requirements.requirements_digest = "tampered-requirements".to_string();
+    assert!(matches!(
+        registry.resolve_optic_artifact(&tampered_requirements),
+        Err(ResolveError::RequirementsDigestMismatch { .. })
+    ));
+
+    let mut missing = registration;
     missing.artifact_id = "missing-artifact".to_string();
     assert!(matches!(
         registry.resolve_optic_artifact(&missing),

@@ -10,7 +10,7 @@ pub mod domain;
 pub mod ports;
 
 pub use adapters::apollo::{
-    compile_runtime_optic, compile_runtime_optic_handle, diff_schema_sdl,
+    compile_runtime_optic, compile_runtime_optic_registration, diff_schema_sdl,
     extract_operation_directive_args, list_schema_operations_sdl, lower_schema_sdl,
     resolve_operation_selections, resolve_operation_selections_with_schema, ApolloLoweringAdapter,
 };
