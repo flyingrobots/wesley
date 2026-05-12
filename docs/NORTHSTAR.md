@@ -265,6 +265,21 @@ The first witness does not need Echo. It can be a Rust test proving:
 - a `footprint.closed.v1` law claim template is produced for runtime
   governance and witness
 
+The repo-visible v0 surface for that hill is `compile_runtime_optic()`. It
+returns an in-memory `OpticArtifact` containing schema identity, artifact
+identity, operation identity, operation kind, operation name, variable codec
+shape, payload codec shape, preserved directive records, declared footprint,
+law claim templates, and a portable `OpticArtifactHandle`.
+`compile_runtime_optic_handle()` returns just the cross-process handle for
+callers that should refer to an artifact without receiving the full in-memory
+object.
+
+The handle carries security requirements: identity must be bound by the host or
+session layer, read/write permission requirements are inferred from declared
+footprints, and forbidden resources stay explicit. This is not an authority
+grant. Wesley deliberately does not execute the operation, issue capabilities,
+call Echo, run a policy engine, or verify runtime law satisfaction.
+
 The next witness can let an Echo fixture verifier say:
 
 ```text

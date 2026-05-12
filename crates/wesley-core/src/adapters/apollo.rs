@@ -5,12 +5,17 @@ use crate::domain::ir::*;
 use crate::domain::operation::{
     OperationArgument, OperationDirectiveArgs, OperationType, SchemaOperation,
 };
+use crate::domain::optic::{
+    CodecField, CodecShape, DirectiveRecord, EvidenceKind, Footprint, IdentityRequirement,
+    LawClaimTemplate, OperationKind, OpticArtifact, OpticArtifactHandle, OpticOperation,
+    OpticSecurityContext, PermissionAction, PermissionRequirement,
+};
 use crate::domain::schema_delta::{diff_schema_ir, SchemaDelta};
 use crate::ports::lowering::LoweringPort;
 use apollo_parser::{cst, Parser};
 use async_trait::async_trait;
 use indexmap::IndexMap;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 /// Adapter that uses `apollo-parser` to lower SDL to IR.
 pub struct ApolloLoweringAdapter {
@@ -983,6 +988,112 @@ pub fn resolve_operation_selections_with_schema(
     Ok(selections)
 }
 
+/// Compiles runtime-provided SDL plus one GraphQL operation into an optic artifact.
+///
+/// This is a compiler-only entry point. It validates and inspects the declared
+/// operation shape, but it does not execute the operation, grant authority, or
+/// verify runtime law satisfaction.
+pub fn compile_runtime_optic(
+    sdl: &str,
+    operation_source: &str,
+    selected_operation: Option<&str>,
+) -> Result<OpticArtifact, WesleyError> {
+    let adapter = ApolloLoweringAdapter::new(0);
+    let ir = adapter.parse_and_lower(sdl)?;
+    let schema_id = compute_registry_hash(&ir).map_err(|err| {
+        lowering_error_value(
+            "runtime optic",
+            format!("Failed to compute schema identity: {err}"),
+        )
+    })?;
+    let schema = SchemaIndex::new(&ir);
+    let root_types = extract_root_types(sdl)?;
+    let schema_operations = list_schema_operations_sdl(sdl)?;
+
+    let parsed = parse_operation_document(operation_source)?;
+    let op = parsed.selected_operation(selected_operation)?;
+    let kind = operation_kind(op)?;
+    let root_type = root_types.root_for_operation(op)?;
+    let root_field = selected_root_field(op)?;
+    let root_field_name = required_name(root_field.name(), "Root field selection missing name")?;
+    let schema_operation =
+        schema_operation_for_selected_field(&schema_operations, kind, &root_field_name)?;
+
+    let operation_name = op.name().map(|name| name.text().to_string());
+    let coordinate = format!("{root_type}.{root_field_name}");
+    let directives = directive_records_from_field(&coordinate, &root_field)?;
+    let declared_footprint = footprint_from_directives(&directives)?;
+    let variable_shape = variable_codec_shape(op, schema_operation)?;
+    let payload_shape = payload_codec_shape(
+        &root_field,
+        &schema_operation.result_type.base,
+        &schema,
+        &parsed.fragments,
+    )?;
+
+    let identity_seed = serde_json::json!({
+        "kind": kind,
+        "name": operation_name,
+        "rootField": root_field_name,
+        "schemaId": schema_id,
+        "variableShape": variable_shape,
+        "payloadShape": payload_shape,
+        "directives": directives,
+    });
+    let operation_id = stable_json_hash(&identity_seed, "runtime optic operation identity")?;
+    let law_claims =
+        law_claims_for_operation(&operation_id, &directives, declared_footprint.as_ref())?;
+    let artifact_id = compute_content_hash(&format!("optic-artifact:{schema_id}:{operation_id}"));
+    let security = security_context_from_footprint(declared_footprint.as_ref());
+    let handle_id = stable_json_hash(
+        &serde_json::json!({
+            "artifactId": &artifact_id,
+            "operationId": &operation_id,
+            "schemaId": &schema_id,
+            "security": &security,
+        }),
+        "runtime optic handle identity",
+    )?;
+    let handle = OpticArtifactHandle {
+        handle_id,
+        artifact_id: artifact_id.clone(),
+        schema_id: schema_id.clone(),
+        operation_id: operation_id.clone(),
+        security,
+    };
+
+    Ok(OpticArtifact {
+        artifact_id,
+        schema_id,
+        operation: OpticOperation {
+            operation_id,
+            name: operation_name,
+            kind,
+            root_field: root_field_name,
+            variable_shape,
+            payload_shape,
+            directives,
+            declared_footprint,
+            law_claims,
+        },
+        handle,
+    })
+}
+
+/// Compiles runtime-provided SDL plus one GraphQL operation into a portable handle.
+///
+/// This returns the cross-process reference for an artifact without requiring a
+/// caller to receive or move the full in-memory artifact object. The handle is
+/// still not an authority grant; hosts must bind identity and verify permission
+/// requirements before admission.
+pub fn compile_runtime_optic_handle(
+    sdl: &str,
+    operation_source: &str,
+    selected_operation: Option<&str>,
+) -> Result<OpticArtifactHandle, WesleyError> {
+    Ok(compile_runtime_optic(sdl, operation_source, selected_operation)?.handle)
+}
+
 /// Extracts arguments from operation directives with the requested directive name.
 pub fn extract_operation_directive_args(
     operation_sdl: &str,
@@ -1045,6 +1156,29 @@ impl ParsedOperationDocument {
                 "Expected exactly one GraphQL operation, found {count}"
             )),
         }
+    }
+
+    fn selected_operation(
+        &self,
+        selected_operation: Option<&str>,
+    ) -> Result<&cst::OperationDefinition, WesleyError> {
+        let Some(selected_operation) = selected_operation else {
+            return self.only_operation();
+        };
+
+        self.operations
+            .iter()
+            .find(|operation| {
+                operation
+                    .name()
+                    .map(|name| name.text() == selected_operation)
+                    .unwrap_or(false)
+            })
+            .ok_or_else(|| {
+                operation_error_value(format!(
+                    "Selected GraphQL operation '{selected_operation}' not found"
+                ))
+            })
     }
 }
 
@@ -1250,6 +1384,467 @@ fn collect_schema_coordinates(
     }
 
     Ok(())
+}
+
+fn operation_kind(op: &cst::OperationDefinition) -> Result<OperationKind, WesleyError> {
+    let Some(operation_type) = op.operation_type() else {
+        return Ok(OperationKind::Query);
+    };
+
+    if operation_type.query_token().is_some() {
+        Ok(OperationKind::Query)
+    } else if operation_type.mutation_token().is_some() {
+        Ok(OperationKind::Mutation)
+    } else if operation_type.subscription_token().is_some() {
+        Ok(OperationKind::Subscription)
+    } else {
+        operation_error("Unknown GraphQL operation type".to_string())
+    }
+}
+
+fn selected_root_field(op: &cst::OperationDefinition) -> Result<cst::Field, WesleyError> {
+    let selection_set = op.selection_set().ok_or_else(|| {
+        operation_error_value("Runtime optic operation missing selection set".to_string())
+    })?;
+    let mut fields = Vec::new();
+
+    for selection in selection_set.selections() {
+        match selection {
+            cst::Selection::Field(field) => fields.push(field),
+            cst::Selection::FragmentSpread(_) | cst::Selection::InlineFragment(_) => {
+                return operation_error(
+                    "Runtime optic v0 requires a concrete top-level field selection".to_string(),
+                );
+            }
+        }
+    }
+
+    match fields.len() {
+        0 => operation_error("Runtime optic operation selects no root field".to_string()),
+        1 => Ok(fields.remove(0)),
+        count => operation_error(format!(
+            "Runtime optic v0 expects exactly one root field selection, found {count}"
+        )),
+    }
+}
+
+fn schema_operation_for_selected_field<'a>(
+    schema_operations: &'a [SchemaOperation],
+    kind: OperationKind,
+    root_field_name: &str,
+) -> Result<&'a SchemaOperation, WesleyError> {
+    let operation_type = OperationType::from(kind);
+    schema_operations
+        .iter()
+        .find(|operation| {
+            operation.operation_type == operation_type && operation.field_name == root_field_name
+        })
+        .ok_or_else(|| {
+            operation_error_value(format!(
+                "Schema root operation '{root_field_name}' not found for {kind:?}"
+            ))
+        })
+}
+
+fn directive_records_from_field(
+    coordinate: &str,
+    field: &cst::Field,
+) -> Result<Vec<DirectiveRecord>, WesleyError> {
+    let Some(directives) = field.directives() else {
+        return Ok(Vec::new());
+    };
+
+    let mut records = Vec::new();
+    for directive in directives.directives() {
+        let name = required_name(directive.name(), "Directive missing name")?;
+        let arguments = extract_directive_arguments(directive.arguments())?;
+        let arguments_canonical_json = stable_json_string(&arguments, "runtime optic directive")?;
+        records.push(DirectiveRecord {
+            coordinate: coordinate.to_string(),
+            name,
+            arguments_canonical_json,
+        });
+    }
+
+    Ok(records)
+}
+
+fn footprint_from_directives(
+    directives: &[DirectiveRecord],
+) -> Result<Option<Footprint>, WesleyError> {
+    let mut footprint = None;
+
+    for directive in directives
+        .iter()
+        .filter(|directive| directive.name == "wes_footprint")
+    {
+        if footprint.is_some() {
+            return operation_error("Runtime optic declares multiple footprints".to_string());
+        }
+
+        let arguments: serde_json::Value =
+            serde_json::from_str(&directive.arguments_canonical_json).map_err(|err| {
+                operation_error_value(format!("Invalid canonical footprint arguments: {err}"))
+            })?;
+        footprint = Some(Footprint {
+            reads: optional_string_array(&arguments, "reads")?,
+            writes: optional_string_array(&arguments, "writes")?,
+            forbids: optional_string_array(&arguments, "forbids")?,
+        });
+    }
+
+    Ok(footprint)
+}
+
+fn optional_string_array(
+    arguments: &serde_json::Value,
+    name: &str,
+) -> Result<Vec<String>, WesleyError> {
+    let Some(value) = arguments.get(name) else {
+        return Ok(Vec::new());
+    };
+
+    let serde_json::Value::Array(items) = value else {
+        return operation_error(format!(
+            "Footprint argument '{name}' must be a string array"
+        ));
+    };
+
+    items
+        .iter()
+        .map(|item| {
+            item.as_str().map(|value| value.to_string()).ok_or_else(|| {
+                operation_error_value(format!(
+                    "Footprint argument '{name}' contains a non-string value"
+                ))
+            })
+        })
+        .collect()
+}
+
+fn variable_codec_shape(
+    op: &cst::OperationDefinition,
+    schema_operation: &SchemaOperation,
+) -> Result<CodecShape, WesleyError> {
+    let type_name = op
+        .name()
+        .map(|name| format!("{}Variables", name.text()))
+        .unwrap_or_else(|| format!("{}Variables", schema_operation.field_name));
+
+    let fields = if let Some(variable_definitions) = op.variable_definitions() {
+        variable_definitions
+            .variable_definitions()
+            .map(variable_codec_field)
+            .collect::<Result<Vec<_>, _>>()?
+    } else {
+        schema_operation
+            .arguments
+            .iter()
+            .map(|argument| CodecField {
+                name: argument.name.clone(),
+                type_ref: argument.r#type.clone(),
+                required: argument.default_value.is_none() && !argument.r#type.nullable,
+                list: is_list_type(&argument.r#type),
+            })
+            .collect()
+    };
+
+    Ok(CodecShape { type_name, fields })
+}
+
+fn variable_codec_field(variable: cst::VariableDefinition) -> Result<CodecField, WesleyError> {
+    let name = variable
+        .variable()
+        .and_then(|variable| variable.name())
+        .map(|name| name.text().to_string())
+        .ok_or_else(|| operation_error_value("Variable definition missing name".to_string()))?;
+    let type_node = variable.ty().ok_or_else(|| {
+        operation_error_value(format!("Variable definition '{name}' missing type"))
+    })?;
+    let type_ref = type_reference_from_type(type_node, true)?;
+
+    Ok(CodecField {
+        name,
+        required: variable.default_value().is_none() && !type_ref.nullable,
+        list: is_list_type(&type_ref),
+        type_ref,
+    })
+}
+
+fn payload_codec_shape(
+    root_field: &cst::Field,
+    result_type: &str,
+    schema: &SchemaIndex<'_>,
+    fragments: &BTreeMap<String, cst::FragmentDefinition>,
+) -> Result<CodecShape, WesleyError> {
+    let mut fields = Vec::new();
+
+    if let Some(selection_set) = root_field.selection_set() {
+        collect_payload_codec_fields(
+            &selection_set,
+            result_type,
+            schema,
+            fragments,
+            &mut Vec::new(),
+            "",
+            &mut fields,
+        )?;
+    }
+
+    Ok(CodecShape {
+        type_name: result_type.to_string(),
+        fields,
+    })
+}
+
+fn collect_payload_codec_fields(
+    selection_set: &cst::SelectionSet,
+    parent_type: &str,
+    schema: &SchemaIndex<'_>,
+    fragments: &BTreeMap<String, cst::FragmentDefinition>,
+    active_fragments: &mut Vec<String>,
+    prefix: &str,
+    fields: &mut Vec<CodecField>,
+) -> Result<(), WesleyError> {
+    for selection in selection_set.selections() {
+        match selection {
+            cst::Selection::Field(field) => {
+                let field_name = required_name(field.name(), "Field selection missing name")?;
+                let schema_field = schema.field(parent_type, &field_name)?;
+                let path = if prefix.is_empty() {
+                    field_name
+                } else {
+                    format!("{prefix}.{field_name}")
+                };
+
+                push_unique_codec_field(
+                    fields,
+                    CodecField {
+                        name: path.clone(),
+                        type_ref: schema_field.r#type.clone(),
+                        required: !schema_field.r#type.nullable,
+                        list: is_list_type(&schema_field.r#type),
+                    },
+                );
+
+                if let Some(nested_selection_set) = field.selection_set() {
+                    let nested_parent = schema_field.r#type.base.as_str();
+                    schema.require_type(nested_parent)?;
+                    collect_payload_codec_fields(
+                        &nested_selection_set,
+                        nested_parent,
+                        schema,
+                        fragments,
+                        active_fragments,
+                        &path,
+                        fields,
+                    )?;
+                }
+            }
+            cst::Selection::FragmentSpread(spread) => {
+                let name = spread
+                    .fragment_name()
+                    .and_then(|fragment_name| fragment_name.name())
+                    .map(|name| name.text().to_string())
+                    .ok_or_else(|| {
+                        operation_error_value("Fragment spread missing name".to_string())
+                    })?;
+
+                if active_fragments.contains(&name) {
+                    return operation_error(format!(
+                        "Cyclic fragment spread detected for fragment '{name}'"
+                    ));
+                }
+
+                let fragment = fragments.get(&name).ok_or_else(|| {
+                    operation_error_value(format!("Unknown fragment spread '{name}'"))
+                })?;
+                let fragment_parent = fragment_type_condition(fragment)?;
+                schema.require_type(&fragment_parent)?;
+
+                active_fragments.push(name);
+                if let Some(fragment_selection_set) = fragment.selection_set() {
+                    collect_payload_codec_fields(
+                        &fragment_selection_set,
+                        &fragment_parent,
+                        schema,
+                        fragments,
+                        active_fragments,
+                        prefix,
+                        fields,
+                    )?;
+                }
+                active_fragments.pop();
+            }
+            cst::Selection::InlineFragment(fragment) => {
+                let inline_parent = if let Some(type_condition) = fragment.type_condition() {
+                    named_type_name(type_condition.named_type(), "Inline fragment missing type")?
+                } else {
+                    parent_type.to_string()
+                };
+                schema.require_type(&inline_parent)?;
+
+                if let Some(inline_selection_set) = fragment.selection_set() {
+                    collect_payload_codec_fields(
+                        &inline_selection_set,
+                        &inline_parent,
+                        schema,
+                        fragments,
+                        active_fragments,
+                        prefix,
+                        fields,
+                    )?;
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn push_unique_codec_field(fields: &mut Vec<CodecField>, field: CodecField) {
+    if !fields.iter().any(|existing| existing.name == field.name) {
+        fields.push(field);
+    }
+}
+
+fn law_claims_for_operation(
+    operation_id: &str,
+    directives: &[DirectiveRecord],
+    footprint: Option<&Footprint>,
+) -> Result<Vec<LawClaimTemplate>, WesleyError> {
+    let mut claims = Vec::new();
+    let mut seen = BTreeSet::new();
+
+    push_law_claim(
+        &mut claims,
+        &mut seen,
+        operation_id,
+        "shape.valid.v1",
+        vec![EvidenceKind::Compiler],
+    );
+    push_law_claim(
+        &mut claims,
+        &mut seen,
+        operation_id,
+        "codec.canonical.v1",
+        vec![EvidenceKind::Compiler, EvidenceKind::Codec],
+    );
+
+    for law_id in law_ids_from_directives(directives)? {
+        push_law_claim(
+            &mut claims,
+            &mut seen,
+            operation_id,
+            &law_id,
+            vec![EvidenceKind::HostPolicy, EvidenceKind::DomainVerifier],
+        );
+    }
+
+    if footprint.is_some() {
+        push_law_claim(
+            &mut claims,
+            &mut seen,
+            operation_id,
+            "footprint.closed.v1",
+            vec![EvidenceKind::RuntimeTrace],
+        );
+    }
+
+    Ok(claims)
+}
+
+fn security_context_from_footprint(footprint: Option<&Footprint>) -> OpticSecurityContext {
+    let mut required_permissions = Vec::new();
+    let mut forbidden_resources = Vec::new();
+
+    if let Some(footprint) = footprint {
+        for resource in &footprint.reads {
+            required_permissions.push(PermissionRequirement {
+                action: PermissionAction::Read,
+                resource: resource.clone(),
+                source: "wes_footprint.reads".to_string(),
+            });
+        }
+
+        for resource in &footprint.writes {
+            required_permissions.push(PermissionRequirement {
+                action: PermissionAction::Write,
+                resource: resource.clone(),
+                source: "wes_footprint.writes".to_string(),
+            });
+        }
+
+        forbidden_resources = footprint.forbids.clone();
+    }
+
+    OpticSecurityContext {
+        identity: IdentityRequirement {
+            required: true,
+            accepted_principal_kinds: Vec::new(),
+        },
+        bound_principal: None,
+        issuer: None,
+        required_permissions,
+        forbidden_resources,
+    }
+}
+
+fn push_law_claim(
+    claims: &mut Vec<LawClaimTemplate>,
+    seen: &mut BTreeSet<String>,
+    operation_id: &str,
+    law_id: &str,
+    required_evidence: Vec<EvidenceKind>,
+) {
+    if !seen.insert(law_id.to_string()) {
+        return;
+    }
+
+    let claim_id = compute_content_hash(&format!("law-claim:{operation_id}:{law_id}"));
+    claims.push(LawClaimTemplate {
+        law_id: law_id.to_string(),
+        claim_id,
+        operation_id: operation_id.to_string(),
+        required_evidence,
+    });
+}
+
+fn law_ids_from_directives(directives: &[DirectiveRecord]) -> Result<Vec<String>, WesleyError> {
+    let mut law_ids = Vec::new();
+
+    for directive in directives
+        .iter()
+        .filter(|directive| directive.name == "wes_law")
+    {
+        let arguments: serde_json::Value =
+            serde_json::from_str(&directive.arguments_canonical_json).map_err(|err| {
+                operation_error_value(format!("Invalid canonical law arguments: {err}"))
+            })?;
+        let law_id = arguments
+            .get("id")
+            .and_then(serde_json::Value::as_str)
+            .ok_or_else(|| {
+                operation_error_value("Directive 'wes_law' requires string argument 'id'".into())
+            })?;
+        law_ids.push(law_id.to_string());
+    }
+
+    Ok(law_ids)
+}
+
+fn is_list_type(type_ref: &TypeReference) -> bool {
+    type_ref.is_list || !type_ref.list_wrappers.is_empty()
+}
+
+fn stable_json_hash<T: serde::Serialize>(value: &T, area: &str) -> Result<String, WesleyError> {
+    let canonical = stable_json_string(value, area)?;
+    Ok(compute_content_hash(&canonical))
+}
+
+fn stable_json_string<T: serde::Serialize>(value: &T, area: &str) -> Result<String, WesleyError> {
+    to_canonical_json(value)
+        .map_err(|err| lowering_error_value(area, format!("Failed to serialize JSON: {err}")))
 }
 
 struct SchemaIndex<'a> {

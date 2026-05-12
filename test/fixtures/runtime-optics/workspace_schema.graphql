@@ -1,0 +1,49 @@
+directive @wes_law(id: String!) on FIELD
+directive @wes_footprint(
+  reads: [String!]!
+  writes: [String!]!
+  forbids: [String!]
+) on FIELD
+
+schema {
+  query: Query
+  mutation: Mutation
+}
+
+type Query {
+  basis(ref: ID!): WorkspaceBasis
+}
+
+type Mutation {
+  renameSymbol(input: RenameSymbolInput!): RenameSymbolResult!
+}
+
+input RenameSymbolInput {
+  basisRef: ID!
+  path: String!
+  symbol: String!
+  nextName: String!
+}
+
+type RenameSymbolResult {
+  receipt: RewriteReceipt!
+  changedFiles: [ChangedFile!]!
+}
+
+type RewriteReceipt {
+  basisRef: ID!
+  resultRef: ID!
+  operationId: String!
+  witnessDigest: String!
+}
+
+type ChangedFile {
+  path: String!
+  beforeDigest: String!
+  afterDigest: String!
+}
+
+type WorkspaceBasis {
+  ref: ID!
+  digest: String!
+}
