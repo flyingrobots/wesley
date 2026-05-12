@@ -7,8 +7,8 @@ use crate::domain::operation::{
 };
 use crate::domain::optic::{
     CodecField, CodecShape, DirectiveRecord, EvidenceKind, Footprint, IdentityRequirement,
-    LawClaimTemplate, OperationKind, OpticArtifact, OpticArtifactHandle, OpticOperation,
-    OpticSecurityContext, PermissionAction, PermissionRequirement,
+    LawClaimTemplate, OperationKind, OpticAdmissionRequirements, OpticArtifact,
+    OpticArtifactHandle, OpticOperation, PermissionAction, PermissionRequirement,
 };
 use crate::domain::schema_delta::{diff_schema_ir, SchemaDelta};
 use crate::ports::lowering::LoweringPort;
@@ -1044,13 +1044,13 @@ pub fn compile_runtime_optic(
     let law_claims =
         law_claims_for_operation(&operation_id, &directives, declared_footprint.as_ref())?;
     let artifact_id = compute_content_hash(&format!("optic-artifact:{schema_id}:{operation_id}"));
-    let security = security_context_from_footprint(declared_footprint.as_ref());
+    let requirements = admission_requirements_from_footprint(declared_footprint.as_ref());
     let handle_id = stable_json_hash(
         &serde_json::json!({
             "artifactId": &artifact_id,
             "operationId": &operation_id,
             "schemaId": &schema_id,
-            "security": &security,
+            "requirements": &requirements,
         }),
         "runtime optic handle identity",
     )?;
@@ -1059,7 +1059,7 @@ pub fn compile_runtime_optic(
         artifact_id: artifact_id.clone(),
         schema_id: schema_id.clone(),
         operation_id: operation_id.clone(),
-        security,
+        requirements,
     };
 
     Ok(OpticArtifact {
@@ -1754,7 +1754,9 @@ fn law_claims_for_operation(
     Ok(claims)
 }
 
-fn security_context_from_footprint(footprint: Option<&Footprint>) -> OpticSecurityContext {
+fn admission_requirements_from_footprint(
+    footprint: Option<&Footprint>,
+) -> OpticAdmissionRequirements {
     let mut required_permissions = Vec::new();
     let mut forbidden_resources = Vec::new();
 
@@ -1778,13 +1780,11 @@ fn security_context_from_footprint(footprint: Option<&Footprint>) -> OpticSecuri
         forbidden_resources = footprint.forbids.clone();
     }
 
-    OpticSecurityContext {
+    OpticAdmissionRequirements {
         identity: IdentityRequirement {
             required: true,
             accepted_principal_kinds: Vec::new(),
         },
-        bound_principal: None,
-        issuer: None,
         required_permissions,
         forbidden_resources,
     }

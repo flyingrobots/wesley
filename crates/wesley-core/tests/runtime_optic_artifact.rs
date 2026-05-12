@@ -1,6 +1,7 @@
 use wesley_core::{
     compile_runtime_optic, compile_runtime_optic_handle, CodecField, DirectiveRecord,
-    OperationKind, PermissionAction, PermissionRequirement,
+    InMemoryOpticArtifactRegistry, OperationKind, OpticArtifactResolver, PermissionAction,
+    PermissionRequirement, ResolveError,
 };
 
 #[test]
@@ -62,27 +63,28 @@ fn compiles_runtime_operation_into_domain_empty_optic_artifact() {
     assert_eq!(footprint.writes, vec!["workspace.files"]);
     assert_eq!(footprint.forbids, vec!["secrets", "git.refs"]);
 
-    let security = &artifact.handle.security;
-    assert!(security.identity.required);
-    assert!(security.identity.accepted_principal_kinds.is_empty());
-    assert!(security.bound_principal.is_none());
-    assert!(security.issuer.is_none());
+    let requirements = &artifact.handle.requirements;
+    assert!(requirements.identity.required);
+    assert!(requirements.identity.accepted_principal_kinds.is_empty());
     assert_contains_permission(
-        &security.required_permissions,
+        &requirements.required_permissions,
         PermissionAction::Read,
         "workspace.files",
     );
     assert_contains_permission(
-        &security.required_permissions,
+        &requirements.required_permissions,
         PermissionAction::Read,
         "symbol.index",
     );
     assert_contains_permission(
-        &security.required_permissions,
+        &requirements.required_permissions,
         PermissionAction::Write,
         "workspace.files",
     );
-    assert_eq!(security.forbidden_resources, vec!["secrets", "git.refs"]);
+    assert_eq!(
+        requirements.forbidden_resources,
+        vec!["secrets", "git.refs"]
+    );
 
     let input = find_codec_field(&artifact.operation.variable_shape.fields, "input");
     assert_eq!(
@@ -108,6 +110,50 @@ fn compiles_runtime_operation_into_domain_empty_optic_artifact() {
     assert_contains_law_claim(&artifact, "codec.canonical.v1");
     assert_contains_law_claim(&artifact, "bounded.rewrite.v1");
     assert_contains_law_claim(&artifact, "footprint.closed.v1");
+}
+
+#[test]
+fn resolves_artifact_by_handle_and_rejects_tampered_handles() {
+    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
+    let operation = include_str!("../../../test/fixtures/runtime-optics/rename_symbol.graphql");
+    let artifact = compile_runtime_optic(schema, operation, Some("RenameSymbol"))
+        .expect("runtime optic should compile");
+    let handle = artifact.handle.clone();
+
+    let mut registry = InMemoryOpticArtifactRegistry::new();
+    assert!(registry.is_empty());
+    let stored_handle = registry.insert(artifact.clone());
+    assert_eq!(registry.len(), 1);
+    assert_eq!(stored_handle, handle);
+
+    let resolved = registry
+        .resolve_optic_artifact(&handle)
+        .expect("handle should resolve");
+    assert_eq!(resolved, artifact);
+
+    let mut tampered_schema = handle.clone();
+    tampered_schema.schema_id = "tampered-schema".to_string();
+    assert!(matches!(
+        registry.resolve_optic_artifact(&tampered_schema),
+        Err(ResolveError::SchemaIdMismatch { .. })
+    ));
+
+    let mut tampered_requirements = handle.clone();
+    tampered_requirements
+        .requirements
+        .forbidden_resources
+        .push("extra.secret".to_string());
+    assert!(matches!(
+        registry.resolve_optic_artifact(&tampered_requirements),
+        Err(ResolveError::AdmissionRequirementsMismatch { .. })
+    ));
+
+    let mut missing = handle;
+    missing.artifact_id = "missing-artifact".to_string();
+    assert!(matches!(
+        registry.resolve_optic_artifact(&missing),
+        Err(ResolveError::ArtifactNotFound { .. })
+    ));
 }
 
 fn assert_contains_directive(

@@ -274,11 +274,20 @@ law claim templates, and a portable `OpticArtifactHandle`.
 callers that should refer to an artifact without receiving the full in-memory
 object.
 
-The handle carries security requirements: identity must be bound by the host or
-session layer, read/write permission requirements are inferred from declared
-footprints, and forbidden resources stay explicit. This is not an authority
-grant. Wesley deliberately does not execute the operation, issue capabilities,
-call Echo, run a policy engine, or verify runtime law satisfaction.
+The compiler handle carries admission requirements: identity must be bound by
+the host or session layer, read/write permission requirements are inferred from
+declared footprints, and forbidden resources stay explicit. This is not an
+authority grant. Host/session-owned admission state belongs in an
+`IssuedOpticHandle`: bound principal, issuer, audience, granted permissions,
+expiry, policy digest, and attestation. Wesley deliberately does not execute
+the operation, issue capabilities, call Echo, run a policy engine, or verify
+runtime law satisfaction.
+
+The first resolver hill is equally small: an `OpticArtifactResolver` can resolve
+an `OpticArtifactHandle` back to its `OpticArtifact` and reject handles whose
+artifact id, schema id, operation id, handle id, or admission requirements no
+longer match. The v0 proof is an in-memory registry, not distributed
+infrastructure.
 
 The next witness can let an Echo fixture verifier say:
 
