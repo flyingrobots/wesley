@@ -309,13 +309,6 @@ fn verify_registration_matches_artifact(
     registration: &OpticRegistrationDescriptor,
     artifact: &OpticArtifact,
 ) -> Result<(), ResolveError> {
-    if registration.artifact_id != artifact.artifact_id {
-        return Err(ResolveError::ArtifactIdMismatch {
-            expected: artifact.artifact_id.clone(),
-            actual: registration.artifact_id.clone(),
-        });
-    }
-
     if registration.artifact_hash != artifact.artifact_hash {
         return Err(ResolveError::ArtifactHashMismatch {
             expected: artifact.artifact_hash.clone(),
@@ -355,13 +348,6 @@ pub enum ResolveError {
         /// Artifact identity requested by the descriptor.
         artifact_id: String,
     },
-    /// The supplied artifact id does not match the stored artifact.
-    ArtifactIdMismatch {
-        /// Artifact id expected by the stored artifact.
-        expected: String,
-        /// Artifact id supplied by the caller.
-        actual: String,
-    },
     /// The supplied artifact hash does not match the stored artifact.
     ArtifactHashMismatch {
         /// Artifact hash expected by the stored artifact.
@@ -398,10 +384,6 @@ impl fmt::Display for ResolveError {
             ResolveError::ArtifactNotFound { artifact_id } => {
                 write!(formatter, "optic artifact '{artifact_id}' was not found")
             }
-            ResolveError::ArtifactIdMismatch { expected, actual } => write!(
-                formatter,
-                "optic artifact id mismatch: expected '{expected}', got '{actual}'"
-            ),
             ResolveError::ArtifactHashMismatch { expected, actual } => write!(
                 formatter,
                 "optic artifact hash mismatch: expected '{expected}', got '{actual}'"
