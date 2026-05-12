@@ -580,6 +580,67 @@ fn runtime_optic_requires_reads_and_writes_when_footprint_is_present() {
 }
 
 #[test]
+fn runtime_optic_rejects_duplicate_footprint_labels() {
+    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
+    let duplicate_reads = r#"
+        mutation RenameSymbol($input: RenameSymbolInput!) {
+          renameSymbol(input: $input)
+            @wes_footprint(
+              reads: ["workspace.files", "workspace.files"]
+              writes: ["workspace.files"]
+            ) {
+            receipt {
+              witnessDigest
+            }
+          }
+        }
+    "#;
+    let duplicate_writes = r#"
+        mutation RenameSymbol($input: RenameSymbolInput!) {
+          renameSymbol(input: $input)
+            @wes_footprint(
+              reads: ["workspace.files"]
+              writes: ["workspace.files", "workspace.files"]
+            ) {
+            receipt {
+              witnessDigest
+            }
+          }
+        }
+    "#;
+    let duplicate_forbids = r#"
+        mutation RenameSymbol($input: RenameSymbolInput!) {
+          renameSymbol(input: $input)
+            @wes_footprint(
+              reads: ["workspace.files"]
+              writes: ["workspace.files"]
+              forbids: ["secrets", "secrets"]
+            ) {
+            receipt {
+              witnessDigest
+            }
+          }
+        }
+    "#;
+
+    assert_operation_lowering_error(compile_runtime_optic(
+        schema,
+        duplicate_reads,
+        Some("RenameSymbol"),
+    ));
+    assert_operation_lowering_error(compile_runtime_optic(
+        schema,
+        duplicate_writes,
+        Some("RenameSymbol"),
+    ));
+    assert_operation_lowering_error(compile_runtime_optic(
+        schema,
+        duplicate_forbids,
+        Some("RenameSymbol"),
+    ));
+}
+
+#[test]
 fn runtime_optic_rejects_non_root_footprint_directives() {
     let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
     let nested_only = r#"

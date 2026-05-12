@@ -1749,16 +1749,26 @@ fn string_array(value: &serde_json::Value, name: &str) -> Result<Vec<String>, We
         ));
     };
 
-    items
-        .iter()
-        .map(|item| {
-            item.as_str().map(|value| value.to_string()).ok_or_else(|| {
+    let mut labels = Vec::new();
+    let mut seen = BTreeSet::new();
+    for item in items {
+        let label = item
+            .as_str()
+            .map(|value| value.to_string())
+            .ok_or_else(|| {
                 operation_error_value(format!(
                     "Footprint argument '{name}' contains a non-string value"
                 ))
-            })
-        })
-        .collect()
+            })?;
+        if !seen.insert(label.clone()) {
+            return operation_error(format!(
+                "Footprint argument '{name}' contains duplicate label '{label}'"
+            ));
+        }
+        labels.push(label);
+    }
+
+    Ok(labels)
 }
 
 fn variable_definition_types(

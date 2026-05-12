@@ -42,6 +42,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   `ArtifactIdMismatch` resolver error from the v0 in-memory registry, where
   descriptor artifact ids are lookup keys and unknown ids correctly resolve as
   `ArtifactNotFound`.
+- **Runtime optic footprint label validation**: Runtime optic lowering now
+  rejects duplicate labels within each `@wes_footprint` `reads`, `writes`, and
+  `forbids` array.
 - **Runtime optic directive preservation**: Runtime optic artifacts now preserve
   directive records from the executable operation, nested selections, fragment
   spreads, fragment definitions, and inline fragments instead of only the root

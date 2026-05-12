@@ -77,9 +77,10 @@ admissible for Echo runtime law.
 
 For runtime optic artifacts, `@wes_footprint` is admission-facing v0 metadata.
 It is legal only on the selected root field, must declare `reads` and `writes`
-arrays, and may omit `forbids` to mean an empty forbidden-resource list.
-Nested, fragment, inline-fragment, or operation-level footprints are rejected
-until Wesley intentionally designs scoped footprints.
+arrays, may omit `forbids` to mean an empty forbidden-resource list, and must
+not repeat labels within any single footprint array. Nested, fragment,
+inline-fragment, or operation-level footprints are rejected until Wesley
+intentionally designs scoped footprints.
 
 ## Extension Interpretation
 
