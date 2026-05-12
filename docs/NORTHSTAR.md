@@ -225,6 +225,35 @@ That is why Wesley exists. It lets applications keep their shape while Echo
 receives only canonical buffers, identities, footprints, receipts, witnesses,
 and readings.
 
+## Target Admission Flow
+
+The runtime handoff should stay explicit:
+
+```text
+application declares GraphQL operation
+  -> Wesley compiles OpticArtifact / OpticArtifactHandle
+  -> application registers artifact with Echo or another runtime registry
+  -> runtime verifies Wesley artifact identity/hash and stores requirements
+  -> user, host, or quorum issues CapabilityGrant / IssuedOpticHandle
+  -> caller invokes operation with handle, variables, and capability presentation
+  -> runtime checks identity, authority, permissions, expiry, basis, and budget
+  -> runtime admits or obstructs
+  -> runtime instruments actual access
+  -> runtime emits LawWitness / receipt
+```
+
+That flow preserves three separate nouns:
+
+| Noun | Owner | Job |
+| --- | --- | --- |
+| `OpticArtifact` / `OpticArtifactHandle` | Wesley | Compile and identify the lawful optic contract plus its admission requirements. |
+| `CapabilityGrant` / `IssuedOpticHandle` | Host, user, quorum, or runtime policy | Bind a principal to the right to attempt this operation under explicit limits. |
+| `LawWitness` / receipt | Runtime or verifier | Report what was admitted, obstructed, satisfied, unknown, and actually touched. |
+
+The critical boundary is that Wesley compiles the requirements, while the
+runtime admits the interaction and witnesses what happened. A handle names a
+compiled optic; it is not a capability presentation by itself.
+
 ## What Wesley Must Become
 
 The target architecture is layered:
