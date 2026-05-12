@@ -568,6 +568,60 @@ fn payload_shape_uses_response_aliases() {
 }
 
 #[test]
+fn payload_shape_preserves_duplicate_schema_fields_with_distinct_aliases() {
+    let schema = r#"
+        type Query {
+          library: Library!
+        }
+
+        type Library {
+          item(id: ID!): Item!
+        }
+
+        type Item {
+          name: String!
+        }
+    "#;
+    let operation = r#"
+        query LibraryItems {
+          library {
+            alpha: item(id: "alpha") {
+              name
+            }
+            beta: item(id: "beta") {
+              name
+            }
+          }
+        }
+    "#;
+
+    let artifact = compile_runtime_optic(schema, operation, Some("LibraryItems"))
+        .expect("multi-alias runtime optic should compile");
+
+    let alpha_name = find_codec_field(&artifact.operation.payload_shape.fields, "alpha.name");
+    let beta_name = find_codec_field(&artifact.operation.payload_shape.fields, "beta.name");
+    let argument_paths = artifact
+        .operation
+        .selection_arguments
+        .iter()
+        .map(|argument| argument.path.as_str())
+        .collect::<Vec<_>>();
+
+    assert_eq!(alpha_name.type_ref.base, "String");
+    assert_eq!(beta_name.type_ref.base, "String");
+    assert_eq!(argument_paths, vec!["alpha", "beta"]);
+    assert!(
+        !artifact
+            .operation
+            .payload_shape
+            .fields
+            .iter()
+            .any(|field| field.name == "item.name"),
+        "duplicate aliased selections should not collapse to schema field paths"
+    );
+}
+
+#[test]
 fn nested_payload_requiredness_respects_nullable_ancestors() {
     let schema = r#"
         type Query {

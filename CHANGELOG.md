@@ -31,7 +31,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   spreads, fragment definitions, and inline fragments instead of only the root
   field.
 - **Runtime optic payload aliases**: Payload codec shapes now use GraphQL
-  response names, so aliases are reflected in payload paths and artifact hashes.
+  response names, so aliases and repeated schema fields with distinct aliases are
+  reflected in payload paths and artifact hashes.
 - **Runtime optic payload requiredness**: Payload codec fields now respect
   nullable ancestors, preventing non-null children under nullable parents from
   being emitted as required response paths.
