@@ -248,12 +248,11 @@ admit, obstruct, schedule, witness, and replay.
 
 ## First Concrete Hill
 
-The first implementation hill should be small:
+The first implementation hill is:
 
-> Wesley can compile a runtime-provided GraphQL operation into an in-memory,
-> domain-empty optic artifact containing operation identity, variable codec
-> shape, payload codec shape, directive data, declared footprint metadata, and
-> law-claim templates.
+> Wesley compiles GraphQL operations into lawful optic contracts: typed,
+> bounded, inspectable declarations of reads and rewrites that runtimes can
+> govern and witness.
 
 The first witness does not need Echo. It can be a Rust test proving:
 
@@ -261,8 +260,10 @@ The first witness does not need Echo. It can be a Rust test proving:
 - the selected operation resolves
 - directive law data is preserved
 - operation identity is stable
-- variable and payload codec shapes are inspectable
-- a `footprint.closed.v1` law claim template is produced
+- variable and payload codec shapes are typed and inspectable
+- declared read and rewrite footprints are preserved
+- a `footprint.closed.v1` law claim template is produced for runtime
+  governance and witness
 
 The next witness can let an Echo fixture verifier say:
 
