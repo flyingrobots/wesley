@@ -14,6 +14,7 @@ which signpost is supposed to answer which question.
 | [ENTRYPOINTS.md](./ENTRYPOINTS.md) | Short answer for which Wesley to run or edit: Rust kernel, native CLI, xtask, or legacy Node tooling. |
 | [LEGACY_NODE_MIGRATION.md](./LEGACY_NODE_MIGRATION.md) | Deletion map for the historical Node CLI, packages, generators, hosts, and evidence tooling. |
 | [WESLEY_GLOSSARY.md](./WESLEY_GLOSSARY.md) | Fast noun map for the Wesley base platform, modules, and project workspace. |
+| [SDL, Shape, And Law](./SDL.md) | Why GraphQL SDL is Wesley's contract substrate and where domain law interpretation belongs. |
 | [BEARING](./BEARING.md) | Current direction, what is already real in the repo, and the tensions that still matter. |
 | [Extending Wesley](./guides/extending.md) | How to add Rust compiler behavior, native CLI commands, emitter projections, or external modules. |
 | [VISION](./VISION.md) | Bounded executive synthesis grounded in repo-visible truth. |
@@ -58,6 +59,7 @@ It also now has a more explicit METHOD closeout surface under
 - [ENTRYPOINTS.md](./ENTRYPOINTS.md)
 - [LEGACY_NODE_MIGRATION.md](./LEGACY_NODE_MIGRATION.md)
 - [WESLEY_GLOSSARY.md](./WESLEY_GLOSSARY.md)
+- [SDL, Shape, And Law](./SDL.md)
 - [BEARING](./BEARING.md)
 - [Design Packets](./design/README.md)
 - [Architecture Overview](./architecture/overview.md)
