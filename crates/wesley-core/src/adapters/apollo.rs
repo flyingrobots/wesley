@@ -555,6 +555,7 @@ impl ApolloLoweringAdapter {
             name,
             r#type: self.build_type_reference(type_node)?,
             arguments: field_arguments_from_definition(field_def.arguments_definition())?,
+            default_value: None,
             directives: field_directives,
             description: description_from(field_def.description()),
         })
@@ -582,11 +583,17 @@ impl ApolloLoweringAdapter {
         if let Some(dirs) = field_def.directives() {
             self.extract_directives(dirs, &mut field_directives)?;
         }
+        let default_value = field_def
+            .default_value()
+            .and_then(|default_value| default_value.value())
+            .map(directive_value_to_json)
+            .transpose()?;
 
         Ok(Field {
             name,
             r#type: self.build_type_reference(type_node)?,
             arguments: Vec::new(),
+            default_value,
             directives: field_directives,
             description: description_from(field_def.description()),
         })
@@ -1020,7 +1027,8 @@ pub fn compile_runtime_optic(
     let schema_operation =
         schema_operation_for_selected_field(&schema_operations, kind, &root_field_name)?;
     let variable_types = variable_definition_types(op)?;
-    let root_arguments = root_argument_bindings(&root_field, schema_operation, &variable_types)?;
+    let root_arguments =
+        root_argument_bindings(&root_field, schema_operation, &variable_types, &schema)?;
     let selection_arguments = selection_argument_bindings(
         &root_field,
         &schema_operation.result_type,
@@ -1785,6 +1793,7 @@ fn root_argument_bindings(
     root_field: &cst::Field,
     schema_operation: &SchemaOperation,
     variable_types: &BTreeMap<String, TypeReference>,
+    schema: &SchemaIndex<'_>,
 ) -> Result<Vec<RootArgumentBinding>, WesleyError> {
     let expected_arguments = schema_operation
         .arguments
@@ -1814,7 +1823,7 @@ fn root_argument_bindings(
                 operation_error_value(format!("Root field argument '{name}' missing value"))
             })?;
 
-            validate_root_argument_value(value.clone(), expected, variable_types)?;
+            validate_root_argument_value(value.clone(), expected, variable_types, schema)?;
             let value_canonical_json =
                 stable_json_string(&executable_value_to_json(value)?, "runtime optic argument")?;
             bindings.push(RootArgumentBinding {
@@ -1893,6 +1902,7 @@ fn collect_selection_argument_bindings(
                     &path,
                     schema_field,
                     variable_types,
+                    schema,
                     bindings,
                 )?;
 
@@ -1979,6 +1989,7 @@ fn append_field_argument_bindings(
     path: &str,
     schema_field: &Field,
     variable_types: &BTreeMap<String, TypeReference>,
+    schema: &SchemaIndex<'_>,
     bindings: &mut Vec<SelectionArgumentBinding>,
 ) -> Result<(), WesleyError> {
     let expected_arguments = schema_field
@@ -2007,7 +2018,7 @@ fn append_field_argument_bindings(
                 operation_error_value(format!("Field argument '{name}' missing value"))
             })?;
 
-            validate_field_argument_value(value.clone(), expected, variable_types)?;
+            validate_field_argument_value(value.clone(), expected, variable_types, schema)?;
             let value_canonical_json = stable_json_string(
                 &executable_value_to_json(value)?,
                 "runtime optic selection argument",
@@ -2042,6 +2053,7 @@ fn validate_root_argument_value(
     value: cst::Value,
     expected: &OperationArgument,
     variable_types: &BTreeMap<String, TypeReference>,
+    schema: &SchemaIndex<'_>,
 ) -> Result<(), WesleyError> {
     validate_argument_value(
         value,
@@ -2049,6 +2061,7 @@ fn validate_root_argument_value(
         &expected.name,
         &expected.r#type,
         variable_types,
+        schema,
     )
 }
 
@@ -2056,6 +2069,7 @@ fn validate_field_argument_value(
     value: cst::Value,
     expected: &FieldArgument,
     variable_types: &BTreeMap<String, TypeReference>,
+    schema: &SchemaIndex<'_>,
 ) -> Result<(), WesleyError> {
     validate_argument_value(
         value,
@@ -2063,6 +2077,7 @@ fn validate_field_argument_value(
         &expected.name,
         &expected.r#type,
         variable_types,
+        schema,
     )
 }
 
@@ -2072,6 +2087,7 @@ fn validate_argument_value(
     argument_name: &str,
     expected_type: &TypeReference,
     variable_types: &BTreeMap<String, TypeReference>,
+    schema: &SchemaIndex<'_>,
 ) -> Result<(), WesleyError> {
     match value {
         cst::Value::Variable(variable) => {
@@ -2096,6 +2112,24 @@ fn validate_argument_value(
 
             Ok(())
         }
+        literal => validate_literal_value(
+            literal,
+            argument_context,
+            argument_name,
+            expected_type,
+            schema,
+        ),
+    }
+}
+
+fn validate_literal_value(
+    value: cst::Value,
+    argument_context: &str,
+    argument_name: &str,
+    expected_type: &TypeReference,
+    schema: &SchemaIndex<'_>,
+) -> Result<(), WesleyError> {
+    match value {
         cst::Value::NullValue(_) => {
             if expected_type.nullable {
                 Ok(())
@@ -2105,85 +2139,193 @@ fn validate_argument_value(
                 ))
             }
         }
-        cst::Value::StringValue(_) => {
-            if matches!(expected_type.base.as_str(), "String" | "ID")
-                && !is_list_type(expected_type)
-            {
-                Ok(())
-            } else {
-                literal_type_error(argument_context, argument_name, "String", expected_type)
-            }
-        }
+        cst::Value::StringValue(_) => validate_named_scalar_literal(
+            argument_context,
+            argument_name,
+            "String",
+            expected_type,
+            schema,
+        ),
         cst::Value::IntValue(_) => {
-            if matches!(expected_type.base.as_str(), "Int" | "Float")
-                && !is_list_type(expected_type)
-            {
-                Ok(())
-            } else {
-                literal_type_error(argument_context, argument_name, "Int", expected_type)
-            }
-        }
-        cst::Value::FloatValue(_) => {
             if expected_type.base == "Float" && !is_list_type(expected_type) {
                 Ok(())
             } else {
-                literal_type_error(argument_context, argument_name, "Float", expected_type)
+                validate_named_scalar_literal(
+                    argument_context,
+                    argument_name,
+                    "Int",
+                    expected_type,
+                    schema,
+                )
             }
         }
-        cst::Value::BooleanValue(_) => {
-            if expected_type.base == "Boolean" && !is_list_type(expected_type) {
-                Ok(())
-            } else {
-                literal_type_error(argument_context, argument_name, "Boolean", expected_type)
-            }
-        }
-        cst::Value::EnumValue(_) => {
-            if is_builtin_scalar(&expected_type.base) || is_list_type(expected_type) {
-                literal_type_error(argument_context, argument_name, "Enum", expected_type)
-            } else {
-                Ok(())
-            }
-        }
+        cst::Value::FloatValue(_) => validate_named_scalar_literal(
+            argument_context,
+            argument_name,
+            "Float",
+            expected_type,
+            schema,
+        ),
+        cst::Value::BooleanValue(_) => validate_named_scalar_literal(
+            argument_context,
+            argument_name,
+            "Boolean",
+            expected_type,
+            schema,
+        ),
+        cst::Value::EnumValue(value) => validate_enum_literal(
+            value,
+            argument_context,
+            argument_name,
+            expected_type,
+            schema,
+        ),
         cst::Value::ListValue(list) => {
             if !is_list_type(expected_type) {
                 return literal_type_error(argument_context, argument_name, "List", expected_type);
             }
             let item_type = list_item_type_ref(expected_type);
             for item in list.values() {
-                validate_literal_value(
-                    item,
-                    argument_context,
-                    argument_name,
-                    &item_type,
-                    variable_types,
-                )?;
+                validate_literal_value(item, argument_context, argument_name, &item_type, schema)?;
             }
             Ok(())
         }
-        cst::Value::ObjectValue(_) => {
-            if is_builtin_scalar(&expected_type.base) || is_list_type(expected_type) {
-                literal_type_error(argument_context, argument_name, "Object", expected_type)
-            } else {
-                Ok(())
-            }
-        }
+        cst::Value::ObjectValue(object) => validate_object_literal(
+            object,
+            argument_context,
+            argument_name,
+            expected_type,
+            schema,
+        ),
+        cst::Value::Variable(_) => operation_error(format!(
+            "{argument_context} '{argument_name}' received nested variable value"
+        )),
     }
 }
 
-fn validate_literal_value(
-    value: cst::Value,
+fn validate_named_scalar_literal(
+    argument_context: &str,
+    argument_name: &str,
+    actual: &str,
+    expected_type: &TypeReference,
+    schema: &SchemaIndex<'_>,
+) -> Result<(), WesleyError> {
+    let builtin_matches = match actual {
+        "String" => matches!(expected_type.base.as_str(), "String" | "ID"),
+        "Int" => matches!(expected_type.base.as_str(), "Int" | "Float"),
+        "Float" => expected_type.base == "Float",
+        "Boolean" => expected_type.base == "Boolean",
+        _ => false,
+    };
+
+    if builtin_matches && !is_list_type(expected_type) {
+        return Ok(());
+    }
+
+    if schema.type_kind(&expected_type.base) == Some(TypeKind::Scalar)
+        && !is_builtin_scalar(&expected_type.base)
+        && !is_list_type(expected_type)
+    {
+        return Ok(());
+    }
+
+    literal_type_error(argument_context, argument_name, actual, expected_type)
+}
+
+fn validate_enum_literal(
+    value: cst::EnumValue,
     argument_context: &str,
     argument_name: &str,
     expected_type: &TypeReference,
-    variable_types: &BTreeMap<String, TypeReference>,
+    schema: &SchemaIndex<'_>,
 ) -> Result<(), WesleyError> {
-    validate_argument_value(
-        value,
-        argument_context,
-        argument_name,
-        expected_type,
-        variable_types,
-    )
+    let name = value
+        .name()
+        .map(|name| name.text().to_string())
+        .ok_or_else(|| operation_error_value("Enum argument value missing name".into()))?;
+
+    if is_list_type(expected_type) {
+        return literal_type_error(argument_context, argument_name, "Enum", expected_type);
+    }
+
+    match schema.type_kind(&expected_type.base) {
+        Some(TypeKind::Enum) => {
+            let type_def = schema.require_type(&expected_type.base)?;
+            if type_def.enum_values.contains(&name) {
+                Ok(())
+            } else {
+                operation_error(format!(
+                    "{argument_context} '{argument_name}' received unknown enum value '{name}' for '{}'",
+                    expected_type.base
+                ))
+            }
+        }
+        Some(TypeKind::Scalar) if !is_builtin_scalar(&expected_type.base) => Ok(()),
+        _ => literal_type_error(argument_context, argument_name, "Enum", expected_type),
+    }
+}
+
+fn validate_object_literal(
+    object: cst::ObjectValue,
+    argument_context: &str,
+    argument_name: &str,
+    expected_type: &TypeReference,
+    schema: &SchemaIndex<'_>,
+) -> Result<(), WesleyError> {
+    if is_list_type(expected_type) {
+        return literal_type_error(argument_context, argument_name, "Object", expected_type);
+    }
+
+    let type_def = schema.require_type(&expected_type.base)?;
+    if type_def.kind == TypeKind::Scalar && !is_builtin_scalar(&expected_type.base) {
+        return Ok(());
+    }
+    if type_def.kind != TypeKind::InputObject {
+        return literal_type_error(argument_context, argument_name, "Object", expected_type);
+    }
+
+    let expected_fields = type_def
+        .fields
+        .iter()
+        .map(|field| (field.name.as_str(), field))
+        .collect::<BTreeMap<_, _>>();
+    let mut supplied = BTreeSet::new();
+
+    for field in object.object_fields() {
+        let name = field
+            .name()
+            .map(|name| name.text().to_string())
+            .ok_or_else(|| operation_error_value("Object argument field missing name".into()))?;
+        if !supplied.insert(name.clone()) {
+            return operation_error(format!(
+                "{argument_context} '{argument_name}' declares duplicate input field '{name}'"
+            ));
+        }
+
+        let expected_field = expected_fields.get(name.as_str()).ok_or_else(|| {
+            operation_error_value(format!(
+                "{argument_context} '{argument_name}' declares unknown input field '{name}'"
+            ))
+        })?;
+        let value = field.value().ok_or_else(|| {
+            operation_error_value(format!("Object argument field '{name}' missing value"))
+        })?;
+        validate_literal_value(value, "Input field", &name, &expected_field.r#type, schema)?;
+    }
+
+    for expected_field in &type_def.fields {
+        if !expected_field.r#type.nullable
+            && expected_field.default_value.is_none()
+            && !supplied.contains(&expected_field.name)
+        {
+            return operation_error(format!(
+                "{argument_context} '{argument_name}' missing required input field '{}'",
+                expected_field.name
+            ));
+        }
+    }
+
+    Ok(())
 }
 
 fn executable_value_to_json(value: cst::Value) -> Result<serde_json::Value, WesleyError> {
@@ -2682,6 +2824,10 @@ impl<'a> SchemaIndex<'a> {
             .get(name)
             .copied()
             .ok_or_else(|| operation_error_value(format!("Unknown selection parent type '{name}'")))
+    }
+
+    fn type_kind(&self, name: &str) -> Option<TypeKind> {
+        self.types.get(name).map(|type_def| type_def.kind)
     }
 
     fn field(&self, parent_type: &str, field_name: &str) -> Result<&'a Field, WesleyError> {

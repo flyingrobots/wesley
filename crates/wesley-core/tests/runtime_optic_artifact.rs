@@ -295,6 +295,124 @@ fn runtime_optic_rejects_invalid_root_argument_bindings() {
 }
 
 #[test]
+fn runtime_optic_rejects_invalid_input_object_literals() {
+    let schema = r#"
+        type Mutation {
+          configure(input: ConfigureInput!): ConfigureResult!
+        }
+
+        input ConfigureInput {
+          path: String!
+          mode: Mode!
+          nested: NestedInput!
+        }
+
+        input NestedInput {
+          label: String!
+        }
+
+        enum Mode {
+          READ
+          WRITE
+        }
+
+        type ConfigureResult {
+          ok: Boolean!
+        }
+    "#;
+    let valid = r#"
+        mutation Configure {
+          configure(input: {
+            path: "src/lib.rs"
+            mode: READ
+            nested: { label: "core" }
+          }) {
+            ok
+          }
+        }
+    "#;
+    let missing_required = r#"
+        mutation Configure {
+          configure(input: {
+            path: "src/lib.rs"
+            mode: READ
+          }) {
+            ok
+          }
+        }
+    "#;
+    let unknown_field = r#"
+        mutation Configure {
+          configure(input: {
+            path: "src/lib.rs"
+            mode: READ
+            nested: { label: "core" }
+            surprise: "nope"
+          }) {
+            ok
+          }
+        }
+    "#;
+    let wrong_scalar = r#"
+        mutation Configure {
+          configure(input: {
+            path: 1
+            mode: READ
+            nested: { label: "core" }
+          }) {
+            ok
+          }
+        }
+    "#;
+    let invalid_enum_value = r#"
+        mutation Configure {
+          configure(input: {
+            path: "src/lib.rs"
+            mode: EXECUTE
+            nested: { label: "core" }
+          }) {
+            ok
+          }
+        }
+    "#;
+    let enum_for_input_object = r#"
+        mutation Configure {
+          configure(input: READ) {
+            ok
+          }
+        }
+    "#;
+
+    compile_runtime_optic(schema, valid, Some("Configure"))
+        .expect("valid input object literal should compile");
+    assert_operation_lowering_error(compile_runtime_optic(
+        schema,
+        missing_required,
+        Some("Configure"),
+    ));
+    assert_operation_lowering_error(compile_runtime_optic(
+        schema,
+        unknown_field,
+        Some("Configure"),
+    ));
+    assert_operation_lowering_error(compile_runtime_optic(
+        schema,
+        wrong_scalar,
+        Some("Configure"),
+    ));
+    assert_operation_lowering_error(compile_runtime_optic(
+        schema,
+        invalid_enum_value,
+        Some("Configure"),
+    ));
+    assert_operation_lowering_error(compile_runtime_optic(
+        schema,
+        enum_for_input_object,
+        Some("Configure"),
+    ));
+}
+
+#[test]
 fn runtime_optic_requires_reads_and_writes_when_footprint_is_present() {
     let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
     let missing_reads = r#"

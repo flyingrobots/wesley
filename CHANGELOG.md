@@ -29,6 +29,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **Runtime optic root footprint admission**: `@wes_footprint` is now legal only
   on the selected root field for runtime optic artifacts, keeping nested
   directives from changing admission-facing requirements.
+- **Runtime optic input literal validation**: `compile_runtime_optic()` now
+  recursively validates input object literals, required nested input fields, and
+  enum values before emitting `shape.valid.v1`.
 - **Runtime optic directive preservation**: Runtime optic artifacts now preserve
   directive records from the executable operation, nested selections, fragment
   spreads, fragment definitions, and inline fragments instead of only the root
