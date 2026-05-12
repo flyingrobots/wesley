@@ -75,6 +75,10 @@ type, result type, directive names, and directive arguments. An Echo-owned
 extension can then decide whether `@wes_footprint` is honest, sufficient, or
 admissible for Echo runtime law.
 
+For runtime optic artifacts, `@wes_footprint` must declare `reads` and `writes`
+arrays. `forbids` may be omitted and then means an empty forbidden-resource
+list.
+
 ## Extension Interpretation
 
 Extensions own interpretation.

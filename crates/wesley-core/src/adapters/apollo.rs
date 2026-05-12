@@ -1695,13 +1695,23 @@ fn footprint_from_directives(
                 operation_error_value(format!("Invalid canonical footprint arguments: {err}"))
             })?;
         footprint = Some(Footprint {
-            reads: optional_string_array(&arguments, "reads")?,
-            writes: optional_string_array(&arguments, "writes")?,
+            reads: required_string_array(&arguments, "reads")?,
+            writes: required_string_array(&arguments, "writes")?,
             forbids: optional_string_array(&arguments, "forbids")?,
         });
     }
 
     Ok(footprint)
+}
+
+fn required_string_array(
+    arguments: &serde_json::Value,
+    name: &str,
+) -> Result<Vec<String>, WesleyError> {
+    let value = arguments
+        .get(name)
+        .ok_or_else(|| operation_error_value(format!("Footprint argument '{name}' is required")))?;
+    string_array(value, name)
 }
 
 fn optional_string_array(
@@ -1712,6 +1722,10 @@ fn optional_string_array(
         return Ok(Vec::new());
     };
 
+    string_array(value, name)
+}
+
+fn string_array(value: &serde_json::Value, name: &str) -> Result<Vec<String>, WesleyError> {
     let serde_json::Value::Array(items) = value else {
         return operation_error(format!(
             "Footprint argument '{name}' must be a string array"

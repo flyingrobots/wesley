@@ -288,6 +288,65 @@ fn runtime_optic_rejects_invalid_root_argument_bindings() {
 }
 
 #[test]
+fn runtime_optic_requires_reads_and_writes_when_footprint_is_present() {
+    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
+    let missing_reads = r#"
+        mutation RenameSymbol($input: RenameSymbolInput!) {
+          renameSymbol(input: $input)
+            @wes_footprint(writes: ["workspace.files"]) {
+            receipt {
+              witnessDigest
+            }
+          }
+        }
+    "#;
+    let missing_writes = r#"
+        mutation RenameSymbol($input: RenameSymbolInput!) {
+          renameSymbol(input: $input)
+            @wes_footprint(reads: ["workspace.files"]) {
+            receipt {
+              witnessDigest
+            }
+          }
+        }
+    "#;
+    let without_forbids = r#"
+        mutation RenameSymbol($input: RenameSymbolInput!) {
+          renameSymbol(input: $input)
+            @wes_footprint(
+              reads: ["workspace.files"]
+              writes: ["workspace.files"]
+            ) {
+            receipt {
+              witnessDigest
+            }
+          }
+        }
+    "#;
+
+    assert_operation_lowering_error(compile_runtime_optic(
+        schema,
+        missing_reads,
+        Some("RenameSymbol"),
+    ));
+    assert_operation_lowering_error(compile_runtime_optic(
+        schema,
+        missing_writes,
+        Some("RenameSymbol"),
+    ));
+
+    let artifact = compile_runtime_optic(schema, without_forbids, Some("RenameSymbol"))
+        .expect("footprint without forbids should compile");
+    let footprint = artifact
+        .operation
+        .declared_footprint
+        .expect("footprint should be extracted");
+    assert_eq!(footprint.reads, vec!["workspace.files"]);
+    assert_eq!(footprint.writes, vec!["workspace.files"]);
+    assert!(footprint.forbids.is_empty());
+}
+
+#[test]
 fn root_argument_bindings_are_preserved_and_affect_operation_identity() {
     let schema = r#"
         type Mutation {
@@ -723,4 +782,16 @@ fn assert_error_contains(
         message.contains(needle),
         "expected error '{message}' to contain '{needle}'"
     );
+}
+
+fn assert_operation_lowering_error(
+    result: Result<wesley_core::OpticArtifact, wesley_core::WesleyError>,
+) {
+    match result {
+        Err(wesley_core::WesleyError::LoweringError { area, .. }) => {
+            assert_eq!(area, "operation");
+        }
+        Err(error) => panic!("expected operation lowering error, got {error:?}"),
+        Ok(_) => panic!("runtime optic should reject invalid operation"),
+    }
 }

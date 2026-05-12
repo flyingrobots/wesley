@@ -23,6 +23,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   validates selected payload field arguments against the schema, preserves
   canonical field argument bindings in `OpticOperation`, and includes those
   bindings in stable operation and artifact identity.
+- **Runtime optic footprint bounds**: `compile_runtime_optic()` now requires
+  `reads` and `writes` arrays whenever `@wes_footprint` is present, while
+  omitted `forbids` still defaults to an empty forbidden-resource list.
 - **Runtime optic directive preservation**: Runtime optic artifacts now preserve
   directive records from the executable operation, nested selections, fragment
   spreads, fragment definitions, and inline fragments instead of only the root
