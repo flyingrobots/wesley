@@ -252,7 +252,7 @@ That flow preserves five separate nouns:
 | Noun | Owner | Job |
 | --- | --- | --- |
 | `OpticArtifact` | Wesley | Compiled, content-addressed declaration of operation shape, codecs, law claims, and admission requirements. |
-| `OpticRegistrationDescriptor` | Wesley | Artifact hash, schema id, operation id, and requirements digest used when registering the artifact with a runtime. |
+| `OpticRegistrationDescriptor` | Wesley | Artifact id, artifact hash, schema id, operation id, and requirements digest used when registering the artifact with a runtime. |
 | `OpticArtifactHandle` | Echo or another runtime | Opaque registry handle proving the runtime accepted and stored a specific Wesley artifact hash. |
 | `CapabilityGrant` / `CapabilityPresentation` | User, host, quorum, or policy authority | Bounded authority plus invocation-time proof to attempt a registered artifact under explicit constraints. |
 | `LawWitness` / receipt | Echo, runtime, or verifier | Evidence describing admission, obstruction, access, basis, budget, and law satisfaction posture. |
@@ -316,12 +316,12 @@ claim templates, admission requirements, requirements digest, and an
 for callers that need the cross-process registration reference without
 receiving the full in-memory artifact object.
 
-The registration descriptor carries artifact hash, schema id, operation id, and
-requirements digest. It is not an authority grant and it is not the Echo-owned
-`OpticArtifactHandle`. Echo or another runtime returns the opaque handle after
-it accepts the artifact and stores the requirements. Wesley deliberately does
-not execute the operation, issue capabilities, call Echo, run a policy engine,
-or verify runtime law satisfaction.
+The registration descriptor carries artifact id, artifact hash, schema id,
+operation id, and requirements digest. It is not an authority grant and it is not
+the Echo-owned `OpticArtifactHandle`. Echo or another runtime returns the opaque
+handle after it accepts the artifact and stores the requirements. Wesley
+deliberately does not execute the operation, issue capabilities, call Echo, run a
+policy engine, or verify runtime law satisfaction.
 
 The first resolver hill is equally small: an `OpticArtifactResolver` can resolve
 an `OpticRegistrationDescriptor` back to its `OpticArtifact` and reject
