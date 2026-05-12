@@ -28,6 +28,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **Runtime optic payload requiredness**: Payload codec fields now respect
   nullable ancestors, preventing non-null children under nullable parents from
   being emitted as required response paths.
+- **Runtime optic executable directive variables**: Runtime optic directive
+  records now preserve variable-backed executable directive arguments, such as
+  `@include(if: $flag)`, as canonical variable-reference JSON.
 
 ## [0.0.2] - 2026-05-09
 

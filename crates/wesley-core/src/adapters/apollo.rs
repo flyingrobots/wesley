@@ -1635,7 +1635,7 @@ fn push_directive_records(
 
     for directive in directives.directives() {
         let name = required_name(directive.name(), "Directive missing name")?;
-        let arguments = extract_directive_arguments(directive.arguments())?;
+        let arguments = extract_executable_directive_arguments(directive.arguments())?;
         let arguments_canonical_json = stable_json_string(&arguments, "runtime optic directive")?;
         records.push(DirectiveRecord {
             coordinate: coordinate.to_string(),
@@ -1645,6 +1645,26 @@ fn push_directive_records(
     }
 
     Ok(())
+}
+
+fn extract_executable_directive_arguments(
+    arguments: Option<cst::Arguments>,
+) -> Result<IndexMap<String, serde_json::Value>, WesleyError> {
+    let mut values = IndexMap::new();
+
+    let Some(arguments) = arguments else {
+        return Ok(values);
+    };
+
+    for argument in arguments.arguments() {
+        let name = required_name(argument.name(), "Directive argument missing name")?;
+        let value = argument.value().ok_or_else(|| {
+            operation_error_value(format!("Directive argument '{name}' missing value"))
+        })?;
+        values.insert(name, executable_value_to_json(value)?);
+    }
+
+    Ok(values)
 }
 
 fn footprint_from_directives(

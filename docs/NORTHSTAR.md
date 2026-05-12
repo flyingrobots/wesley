@@ -295,7 +295,8 @@ The first witness does not need Echo. It can be a Rust test proving:
 - runtime SDL parses and lowers
 - the selected operation resolves
 - root field argument bindings are validated and preserved
-- directive law data is preserved across the operation and selected field tree
+- directive law data is preserved across the operation and selected field tree,
+  including executable variable references
 - operation identity is stable
 - variable and response payload codec shapes are typed, aliased, and nullable
   path-aware

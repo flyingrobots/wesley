@@ -460,6 +460,30 @@ fn nested_payload_requiredness_respects_nullable_ancestors() {
 }
 
 #[test]
+fn runtime_optic_preserves_variable_backed_executable_directives() {
+    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
+    let operation = r#"
+        mutation RenameSymbol($input: RenameSymbolInput!, $includeDigest: Boolean!) {
+          renameSymbol(input: $input) {
+            receipt {
+              witnessDigest @include(if: $includeDigest)
+            }
+          }
+        }
+    "#;
+
+    let artifact = compile_runtime_optic(schema, operation, Some("RenameSymbol"))
+        .expect("runtime optic should preserve variable-backed executable directive");
+
+    assert_contains_directive(
+        &artifact.operation.directives,
+        "RewriteReceipt.witnessDigest",
+        "include",
+        serde_json::json!({ "if": { "$variable": "includeDigest" } }),
+    );
+}
+
+#[test]
 fn optic_wire_shapes_serialize_with_stable_field_names() {
     let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
     let operation = include_str!("../../../test/fixtures/runtime-optics/rename_symbol.graphql");
