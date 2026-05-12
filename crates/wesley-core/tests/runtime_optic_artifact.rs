@@ -1,7 +1,8 @@
 use wesley_core::{
-    compile_runtime_optic, compile_runtime_optic_registration, CodecField, DirectiveRecord,
-    InMemoryOpticArtifactRegistry, OperationKind, OpticArtifactResolver, PermissionAction,
-    PermissionRequirement, ResolveError,
+    compile_runtime_optic, compile_runtime_optic_registration, AdmissionTicket,
+    CapabilityPresentation, CodecField, DirectiveRecord, InMemoryOpticArtifactRegistry,
+    ObserverClass, OperationKind, OpticArtifactHandle, OpticArtifactResolver, PermissionAction,
+    PermissionRequirement, PrincipalRef, ResolveError,
 };
 
 #[test]
@@ -166,6 +167,155 @@ fn resolves_artifact_by_registration_descriptor_and_rejects_tampering() {
         registry.resolve_optic_artifact(&missing),
         Err(ResolveError::ArtifactNotFound { .. })
     ));
+}
+
+#[test]
+fn artifact_hashes_are_stable_and_sensitive_to_shape_and_requirements() {
+    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
+    let operation = include_str!("../../../test/fixtures/runtime-optics/rename_symbol.graphql");
+
+    let baseline = compile_runtime_optic(schema, operation, Some("RenameSymbol"))
+        .expect("baseline runtime optic should compile");
+    let repeated = compile_runtime_optic(schema, operation, Some("RenameSymbol"))
+        .expect("repeated runtime optic should compile");
+
+    assert_eq!(baseline.artifact_hash, repeated.artifact_hash);
+    assert_eq!(baseline.requirements_digest, repeated.requirements_digest);
+
+    let reformatted = operation
+        .replace("mutation RenameSymbol", "\nmutation   RenameSymbol")
+        .replace("receipt {", "receipt   {");
+    let reformatted_artifact = compile_runtime_optic(schema, &reformatted, Some("RenameSymbol"))
+        .expect("reformatted runtime optic should compile");
+    assert_eq!(baseline.artifact_hash, reformatted_artifact.artifact_hash);
+    assert_eq!(
+        baseline.requirements_digest,
+        reformatted_artifact.requirements_digest
+    );
+
+    let footprint_changed = operation.replace("\"symbol.index\"", "\"diagnostics\"");
+    let footprint_artifact =
+        compile_runtime_optic(schema, &footprint_changed, Some("RenameSymbol"))
+            .expect("footprint-changed runtime optic should compile");
+    assert_ne!(
+        baseline.requirements_digest, footprint_artifact.requirements_digest,
+        "changing declared footprint must change requirements digest"
+    );
+
+    let law_changed = operation.replace("bounded.rewrite.v1", "bounded.rewrite.audit.v1");
+    let law_artifact = compile_runtime_optic(schema, &law_changed, Some("RenameSymbol"))
+        .expect("law-changed runtime optic should compile");
+    assert_ne!(
+        baseline.requirements_digest, law_artifact.requirements_digest,
+        "changing law claim directives must change requirements digest"
+    );
+
+    let payload_changed = operation.replace("      resultRef\n", "");
+    let payload_artifact = compile_runtime_optic(schema, &payload_changed, Some("RenameSymbol"))
+        .expect("payload-changed runtime optic should compile");
+    assert_ne!(
+        baseline.artifact_hash, payload_artifact.artifact_hash,
+        "changing selected payload shape must change artifact hash"
+    );
+}
+
+#[test]
+fn optic_wire_shapes_serialize_with_stable_field_names() {
+    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
+    let operation = include_str!("../../../test/fixtures/runtime-optics/rename_symbol.graphql");
+    let artifact = compile_runtime_optic(schema, operation, Some("RenameSymbol"))
+        .expect("runtime optic should compile");
+    let echo_handle = OpticArtifactHandle {
+        kind: "optic-artifact-handle".to_string(),
+        id: "echo.local.handle.1".to_string(),
+    };
+    let subject = PrincipalRef {
+        kind: "agent".to_string(),
+        id: "codex".to_string(),
+    };
+    let presentation = CapabilityPresentation {
+        grant_id: "grant-1".to_string(),
+        subject: subject.clone(),
+        artifact_handle_id: echo_handle.id.clone(),
+        operation_id: artifact.operation.operation_id.clone(),
+        variables_digest: "vars-digest-1".to_string(),
+        basis_request_digest: None,
+        nonce: "nonce-1".to_string(),
+        presented_at: "2026-05-12T00:00:00Z".to_string(),
+        proof_digest: None,
+    };
+    let ticket = AdmissionTicket {
+        ticket_id: "ticket-1".to_string(),
+        artifact_handle: echo_handle.clone(),
+        capability_grant_id: presentation.grant_id.clone(),
+        operation_id: artifact.operation.operation_id.clone(),
+        invocation_digest: "invocation-digest-1".to_string(),
+        issued_at: "2026-05-12T00:00:01Z".to_string(),
+        expires_at: None,
+    };
+
+    assert_eq!(
+        serde_json::to_value(&artifact.registration).expect("registration should serialize"),
+        serde_json::json!({
+            "artifactId": artifact.artifact_id,
+            "artifactHash": artifact.artifact_hash,
+            "schemaId": artifact.schema_id,
+            "operationId": artifact.operation.operation_id,
+            "requirementsDigest": artifact.requirements_digest,
+        })
+    );
+    assert_eq!(
+        serde_json::to_value(&echo_handle).expect("handle should serialize"),
+        serde_json::json!({
+            "kind": "optic-artifact-handle",
+            "id": "echo.local.handle.1",
+        })
+    );
+    assert_eq!(
+        serde_json::to_value(&presentation).expect("presentation should serialize"),
+        serde_json::json!({
+            "grantId": "grant-1",
+            "subject": {
+                "kind": "agent",
+                "id": "codex",
+            },
+            "artifactHandleId": "echo.local.handle.1",
+            "operationId": artifact.operation.operation_id,
+            "variablesDigest": "vars-digest-1",
+            "nonce": "nonce-1",
+            "presentedAt": "2026-05-12T00:00:00Z",
+        })
+    );
+    assert_eq!(
+        serde_json::to_value(&ticket).expect("ticket should serialize"),
+        serde_json::json!({
+            "ticketId": "ticket-1",
+            "artifactHandle": {
+                "kind": "optic-artifact-handle",
+                "id": "echo.local.handle.1",
+            },
+            "capabilityGrantId": "grant-1",
+            "operationId": artifact.operation.operation_id,
+            "invocationDigest": "invocation-digest-1",
+            "issuedAt": "2026-05-12T00:00:01Z",
+        })
+    );
+    assert_eq!(
+        serde_json::to_value(ObserverClass::Oc0).expect("observer class should serialize"),
+        serde_json::json!("OC0")
+    );
+    assert_eq!(
+        serde_json::to_value(ObserverClass::Oc1).expect("observer class should serialize"),
+        serde_json::json!("OC1")
+    );
+    assert_eq!(
+        serde_json::to_value(ObserverClass::Oc2).expect("observer class should serialize"),
+        serde_json::json!("OC2")
+    );
+    assert_eq!(
+        serde_json::to_value(ObserverClass::Oc3).expect("observer class should serialize"),
+        serde_json::json!("OC3")
+    );
 }
 
 fn assert_contains_directive(
