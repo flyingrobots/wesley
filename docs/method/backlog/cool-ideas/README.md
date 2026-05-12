@@ -12,3 +12,6 @@ honest.
 - [Review Supersession Explainer](RUNTIME_review-supersession-explainer.md)
 - [PR Feedback Session Witness](EVIDENCE_pr-feedback-session-witness.md)
 - [Continuum Contract Bundle Atlas](RUNTIME_continuum-contract-bundle-atlas.md)
+- [Echo Optic Artifact Registration Fixture](RUNTIME_echo-optic-artifact-registration-fixture.md)
+- [WARP-TTD Adapter Capability Rename](RUNTIME_warp-ttd-adapter-capability-rename.md)
+- [Continuum Optic Admission Role Note](SOURCE_continuum-optic-admission-role-note.md)
