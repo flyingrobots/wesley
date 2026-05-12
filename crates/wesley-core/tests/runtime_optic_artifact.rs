@@ -281,18 +281,21 @@ fn runtime_optic_rejects_invalid_root_argument_bindings() {
         }
     "#;
 
-    assert_error_contains(
-        compile_runtime_optic(schema, missing_required, Some("RenameSymbol")),
-        "missing required argument 'input'",
-    );
-    assert_error_contains(
-        compile_runtime_optic(schema, unknown_argument, Some("RenameSymbol")),
-        "unknown argument 'unexpected'",
-    );
-    assert_error_contains(
-        compile_runtime_optic(schema, wrong_variable_type, Some("RenameSymbol")),
-        "Variable '$input' has type 'String!' but argument 'input' expects 'RenameSymbolInput!'",
-    );
+    assert_operation_lowering_error(compile_runtime_optic(
+        schema,
+        missing_required,
+        Some("RenameSymbol"),
+    ));
+    assert_operation_lowering_error(compile_runtime_optic(
+        schema,
+        unknown_argument,
+        Some("RenameSymbol"),
+    ));
+    assert_operation_lowering_error(compile_runtime_optic(
+        schema,
+        wrong_variable_type,
+        Some("RenameSymbol"),
+    ));
 }
 
 #[test]
@@ -1280,18 +1283,6 @@ fn assert_contains_permission(
             .iter()
             .any(|permission| permission.action == action && permission.resource == resource),
         "permission {action:?} {resource} should exist"
-    );
-}
-
-fn assert_error_contains(
-    result: Result<wesley_core::OpticArtifact, wesley_core::WesleyError>,
-    needle: &str,
-) {
-    let error = result.expect_err("runtime optic should reject invalid operation");
-    let message = error.to_string();
-    assert!(
-        message.contains(needle),
-        "expected error '{message}' to contain '{needle}'"
     );
 }
 

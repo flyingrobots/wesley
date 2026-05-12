@@ -49,6 +49,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   `CapabilityGrant`, `CapabilityPresentation`, `AdmissionTicket`,
   `LawWitness`, observer classes, permission actions, evidence kinds, and law
   verdict enum spellings.
+- **Runtime optic invalid-operation assertions**: Runtime optic regression tests
+  now assert structured operation lowering errors instead of matching error
+  message substrings.
 - **Runtime optic directive preservation**: Runtime optic artifacts now preserve
   directive records from the executable operation, nested selections, fragment
   spreads, fragment definitions, and inline fragments instead of only the root
