@@ -478,6 +478,49 @@ fn runtime_optic_rejects_impossible_fragment_type_conditions() {
 }
 
 #[test]
+fn runtime_optic_rejects_flat_literals_for_nested_list_arguments() {
+    let schema = r#"
+        type Mutation {
+          configure(input: MatrixInput!): ConfigureResult!
+        }
+
+        input MatrixInput {
+          matrix: [[Int!]!]!
+        }
+
+        type ConfigureResult {
+          ok: Boolean!
+        }
+    "#;
+    let valid = r#"
+        mutation Configure {
+          configure(input: {
+            matrix: [[1, 2], [3]]
+          }) {
+            ok
+          }
+        }
+    "#;
+    let flat_matrix = r#"
+        mutation Configure {
+          configure(input: {
+            matrix: [1, 2, 3]
+          }) {
+            ok
+          }
+        }
+    "#;
+
+    compile_runtime_optic(schema, valid, Some("Configure"))
+        .expect("nested list literal should compile");
+    assert_operation_lowering_error(compile_runtime_optic(
+        schema,
+        flat_matrix,
+        Some("Configure"),
+    ));
+}
+
+#[test]
 fn runtime_optic_requires_reads_and_writes_when_footprint_is_present() {
     let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
     let missing_reads = r#"

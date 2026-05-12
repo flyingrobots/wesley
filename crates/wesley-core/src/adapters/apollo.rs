@@ -2428,13 +2428,63 @@ fn list_items_are_compatible(actual: &TypeReference, expected: &TypeReference) -
 }
 
 fn list_item_type_ref(type_ref: &TypeReference) -> TypeReference {
+    if !type_ref.list_wrappers.is_empty() {
+        let leaf_nullable = type_ref
+            .leaf_nullable
+            .unwrap_or_else(|| type_ref.list_item_nullable.unwrap_or(true));
+        return type_ref_from_list_shape(
+            type_ref.base.clone(),
+            type_ref.list_wrappers[1..].to_vec(),
+            leaf_nullable,
+        );
+    }
+
+    type_ref_from_list_shape(
+        type_ref.base.clone(),
+        Vec::new(),
+        type_ref.list_item_nullable.unwrap_or(true),
+    )
+}
+
+fn type_ref_from_list_shape(
+    base: String,
+    list_wrappers: Vec<TypeListWrapper>,
+    leaf_nullable: bool,
+) -> TypeReference {
+    if list_wrappers.is_empty() {
+        return TypeReference {
+            base,
+            nullable: leaf_nullable,
+            is_list: false,
+            list_item_nullable: None,
+            list_wrappers: Vec::new(),
+            leaf_nullable: None,
+        };
+    }
+
+    let list_item_nullable = Some(
+        list_wrappers
+            .get(1)
+            .map(|wrapper| wrapper.nullable)
+            .unwrap_or(leaf_nullable),
+    );
+    let has_nested_lists = list_wrappers.len() > 1;
+
     TypeReference {
-        base: type_ref.base.clone(),
-        nullable: type_ref.list_item_nullable.unwrap_or(true),
-        is_list: false,
-        list_item_nullable: None,
-        list_wrappers: Vec::new(),
-        leaf_nullable: None,
+        base,
+        nullable: list_wrappers[0].nullable,
+        is_list: true,
+        list_item_nullable,
+        list_wrappers: if has_nested_lists {
+            list_wrappers
+        } else {
+            Vec::new()
+        },
+        leaf_nullable: if has_nested_lists {
+            Some(leaf_nullable)
+        } else {
+            None
+        },
     }
 }
 

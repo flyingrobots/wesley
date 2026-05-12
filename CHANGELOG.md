@@ -35,6 +35,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **Runtime optic fragment compatibility**: Runtime optic lowering now rejects
   impossible fragment spreads and inline fragments by comparing parent and type
   condition possible runtime types.
+- **Runtime optic nested list validation**: Runtime optic argument literal
+  validation now preserves nested list wrappers while descending list values, so
+  flattened literals cannot satisfy nested list types.
 - **Runtime optic directive preservation**: Runtime optic artifacts now preserve
   directive records from the executable operation, nested selections, fragment
   spreads, fragment definitions, and inline fragments instead of only the root
