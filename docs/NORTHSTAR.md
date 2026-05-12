@@ -1,0 +1,293 @@
+<!-- docs-truth: status=experimental owner=@flyingrobots -->
+# Wesley North Star
+
+Wesley's ultimate north star is **bounded, lawful autonomy**.
+
+The current repo proves early compiler facts: GraphQL SDL lowering, operation
+catalogs, Rust and TypeScript projection, preserved directive data, and
+fixture-backed operation bindings. The long-term direction is larger:
+
+```text
+agent or application declares the optic it needs
+  -> Wesley compiles the GraphQL contract
+  -> host policy checks authority, support, and budget
+  -> a runtime such as Echo admits, obstructs, schedules, and witnesses it
+  -> the caller receives a lawful reading or receipt
+```
+
+Wesley should feel like an empowerment tool for agents. It should let an agent
+propose a precise, typed, inspectable interaction surface instead of scraping
+text, guessing state shape, or asking for broad ambient access.
+
+## The Difference From MCP
+
+MCP gets important transport machinery right: tool discovery, typed inputs,
+structured outputs, and a common service boundary for agents.
+
+The missing layer is the language for declaring the reading or rewrite the
+agent actually wants.
+
+MCP usually says:
+
+```text
+Here are the tools this service offers.
+Choose one.
+```
+
+Wesley should let a governable service say:
+
+```text
+Here is the lawful surface of this system.
+Declare the bounded reading or rewrite you need.
+```
+
+GraphQL is the difference. A GraphQL operation is not just a request payload; it
+is a declarative optic shape:
+
+- selected fields define the desired reading
+- variables define the bounded input
+- directives attach law-shaped metadata
+- operation names give identity
+- schema coordinates make the request statically inspectable
+- result types make the reading shape explicit
+
+The transport can still look MCP-like. The interaction language is GraphQL.
+Wesley compiles that interaction language into a runtime optic artifact.
+
+## Programmable GraphQL APIs, But Lawful
+
+The target is not a wild-west programmable API. It is programmable GraphQL under
+law.
+
+Traditional GraphQL:
+
+```text
+client writes query
+server owns schema and resolvers
+server executes against app state
+response comes back
+```
+
+Wesley runtime optics:
+
+```text
+agent writes or selects a GraphQL operation
+Wesley compiles it into an optic contract
+host policy checks authority, support, and budget
+runtime admits or obstructs the operation
+reading or receipt comes back with witness posture
+```
+
+The operation is empowering because it is bounded. It names the basis,
+aperture, footprint, variables, result shape, and law hooks that make autonomy
+inspectable.
+
+## Legal WARP Optics
+
+A legal WARP optic is a bounded GraphQL-declared interaction with explicit law.
+
+It can be a reading:
+
+```graphql
+query ReadCodeSlice($path: String!) {
+  file(path: $path)
+    @wes_law(id: "bounded.read.v1")
+    @wes_aperture(kind: "symbol_context", maxBytes: 12000) {
+    path
+    digest
+    outline {
+      kind
+      name
+      range
+    }
+  }
+}
+```
+
+Or it can be a rewrite:
+
+```graphql
+mutation RenameSymbol($input: RenameSymbolInput!) {
+  renameSymbol(input: $input)
+    @wes_law(id: "bounded.rewrite.v1")
+    @wes_footprint(
+      reads: ["workspace.files", "symbol.index"]
+      writes: ["workspace.files"]
+      forbids: ["secrets", "git.refs"]
+    ) {
+    receipt {
+      basisRef
+      resultRef
+      operationId
+      witnessDigest
+    }
+  }
+}
+```
+
+Wesley should compile the operation, preserve the law declarations, generate
+the canonical variable and payload codecs, and produce the law-claim artifact.
+It should not grant authority or execute the world.
+
+## How A System Becomes Governable
+
+A system becomes governable by publishing a GraphQL contract over governable
+capabilities and routing access through instrumented optic handlers.
+
+That means the system exposes:
+
+- resource families
+- operation and reading fields
+- input and payload types
+- footprint labels
+- aperture kinds
+- law directive vocabulary
+- witness result types
+- support and budget hooks
+
+Then every read or rewrite goes through a handler that can report what happened:
+
+- declared footprint
+- actual reads
+- actual writes
+- support consumed
+- budget spent
+- basis used
+- payload emitted
+- obstruction reason when law is not met
+
+This is the missing step between "law was declared" and "law was satisfied."
+Wesley compiles the claim. The service runtime and its verifier produce the
+law-satisfaction witness.
+
+## Law Satisfaction
+
+The system needs a way to say:
+
+```text
+Given law L, basis B, support S, authority A, and evidence E:
+L is satisfied, obstructed, or unknown.
+```
+
+That verdict must be an evidence-bearing artifact, not a bare boolean.
+
+At target state, a law witness should carry:
+
+- law id
+- claim id
+- basis reference
+- checker identity
+- checker artifact hash
+- verdict
+- evidence digests
+- runtime trace digest when available
+- obstruction reason when not satisfied
+- replay hints when available
+
+Different law classes have different proof strength:
+
+| Law class | Likely verifier |
+| --- | --- |
+| Structural shape | Wesley compiler |
+| Canonical codec | Wesley generated codec plus fixture vectors |
+| Runtime footprint | Echo or another instrumented runtime |
+| Capability and authority | Host policy |
+| Domain semantics | Application-owned checker |
+| Human intent | Review, attestation, or unknown posture |
+
+Honesty matters. Wesley should distinguish declaration, satisfaction,
+obstruction, and unknown posture instead of flattening everything into "valid."
+
+## Echo Boundary
+
+Echo should not learn application nouns.
+
+Applications can talk in their own generated language:
+
+- Think can talk about captures and derivation artifacts.
+- Graft can talk about structural projections and review readings.
+- jedit can talk about buffers and ranges.
+
+At Echo's boundary, those nouns should erase into causal runtime facts:
+
+- contract artifact id
+- operation id
+- basis reference
+- canonical variable bytes
+- canonical variable digest
+- declared footprint
+- support references
+- payload codec
+- reading identity
+- receipt and witness material
+
+That is why Wesley exists. It lets applications keep their shape while Echo
+receives only canonical buffers, identities, footprints, receipts, witnesses,
+and readings.
+
+## What Wesley Must Become
+
+The target architecture is layered:
+
+1. **Static compiler**: lower SDL, list operations, diff schema structure, and
+   emit Rust or TypeScript artifacts.
+2. **Contract artifact compiler**: produce operation ids, schema/artifact
+   identity, canonical variable codecs, payload codecs, and footprint
+   certificates.
+3. **Runtime library**: compile runtime-provided SDL fragments into in-memory
+   contract artifacts without requiring file generation.
+4. **Optic plan compiler**: produce read, rewrite, observation, codec,
+   footprint, support, and witness plans.
+5. **Law claim compiler**: bind operations to law declarations, verifier
+   requirements, and witness codecs.
+6. **Admission handoff**: hand the compiled artifact to Echo, host policy, or
+   another runtime for actual admission, scheduling, obstruction, and witness.
+
+Wesley does not become the runtime. It gives runtimes a lawful artifact they can
+admit, obstruct, schedule, witness, and replay.
+
+## First Concrete Hill
+
+The first implementation hill should be small:
+
+> Wesley can compile a runtime-provided GraphQL operation into an in-memory,
+> domain-empty optic artifact containing operation identity, variable codec
+> shape, payload codec shape, directive data, declared footprint metadata, and
+> law-claim templates.
+
+The first witness does not need Echo. It can be a Rust test proving:
+
+- runtime SDL parses and lowers
+- the selected operation resolves
+- directive law data is preserved
+- operation identity is stable
+- variable and payload codec shapes are inspectable
+- a `footprint.closed.v1` law claim template is produced
+
+The next witness can let an Echo fixture verifier say:
+
+```text
+law footprint.closed.v1 was satisfied
+```
+
+or:
+
+```text
+law footprint.closed.v1 was obstructed because the runtime touched an
+undeclared read
+```
+
+That is the first real proof of bounded, lawful autonomy.
+
+## Doctrine
+
+Wesley declares and compiles lawful optics. Runtimes witness whether those laws
+were satisfied.
+
+Agents do not get ambient authority. They get a lawful way to propose precise
+readings and rewrites, and an evidence-bearing way to learn why a proposal was
+admitted, obstructed, or left unknown.
+
+That is the OS-level promise: agents can interact with anything governable, not
+because every tool was prebuilt, but because the system can accept a bounded
+GraphQL optic and prove what happened.

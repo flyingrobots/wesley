@@ -51,6 +51,21 @@ repository. They are not equal product fronts.
 For the full map, read [ENTRYPOINTS.md](./docs/ENTRYPOINTS.md). For the
 developer-level operator guide, read [GUIDE.md](./docs/GUIDE.md).
 
+## North Star
+
+Wesley's long-term north star is **bounded, lawful autonomy**.
+
+Agents and applications should be able to declare the GraphQL optic they need:
+the reading or rewrite shape, basis, aperture, footprint, variables, support
+obligations, and law hooks. Wesley compiles that declaration into a typed and
+inspectable contract artifact. Host policy and runtimes such as Echo then admit,
+obstruct, schedule, witness, and replay it under explicit law.
+
+The target is not ambient authority. It is a lawful path for agents to propose
+precise interactions and receive evidence-bearing readings or receipts.
+
+Read the full doctrine in [Wesley North Star](./docs/NORTHSTAR.md).
+
 ## Why Wesley?
 
 Traditional code generators often treat schemas as suggestions. Wesley treats
@@ -288,6 +303,8 @@ Progress: 61% → Alpha
   package set and publish order.
 - **[Wesley Glossary](./docs/WESLEY_GLOSSARY.md)**: The main nouns, layers, and
   boundary terms for Wesley and its surrounding toolchain.
+- **[Wesley North Star](./docs/NORTHSTAR.md)**: Ultimate doctrine for bounded,
+  lawful autonomy through GraphQL-declared runtime optics.
 - **[SDL, Shape, And Law](./docs/SDL.md)**: Why SDL is the contract substrate
   and where domain law interpretation belongs.
 - **[Advanced Guide](./docs/ADVANCED_GUIDE.md)**: Deep dives into the IR model,

@@ -4,7 +4,8 @@
 This note supports the README. It explains why Wesley starts from GraphQL SDL
 and where the line sits between generic compiler facts and domain-owned law.
 
-For runnable commands, use [ENTRYPOINTS.md](./ENTRYPOINTS.md). For the current
+For runnable commands, use [ENTRYPOINTS.md](./ENTRYPOINTS.md). For the ultimate
+runtime-optic direction, use [NORTHSTAR.md](./NORTHSTAR.md). For the current
 direction and active tensions, use [BEARING.md](./BEARING.md).
 
 ## Contract Substrate
