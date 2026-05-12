@@ -342,6 +342,68 @@ fn root_argument_bindings_are_preserved_and_affect_operation_identity() {
 }
 
 #[test]
+fn selection_field_arguments_affect_operation_identity() {
+    let schema = r#"
+        type Query {
+          library: Library!
+        }
+
+        type Library {
+          item(id: ID!): Item!
+        }
+
+        type Item {
+          name: String!
+        }
+    "#;
+    let alpha = r#"
+        query LibraryItem {
+          library {
+            item(id: "alpha") {
+              name
+            }
+          }
+        }
+    "#;
+    let beta = r#"
+        query LibraryItem {
+          library {
+            item(id: "beta") {
+              name
+            }
+          }
+        }
+    "#;
+
+    let alpha_artifact = compile_runtime_optic(schema, alpha, Some("LibraryItem"))
+        .expect("alpha item runtime optic should compile");
+    let beta_artifact = compile_runtime_optic(schema, beta, Some("LibraryItem"))
+        .expect("beta item runtime optic should compile");
+    let argument_binding = alpha_artifact
+        .operation
+        .selection_arguments
+        .first()
+        .expect("selected field argument should be preserved");
+
+    assert_eq!(argument_binding.path, "item");
+    assert_eq!(argument_binding.name, "id");
+    assert_eq!(argument_binding.type_ref.base, "ID");
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&argument_binding.value_canonical_json)
+            .expect("selection argument value should be JSON"),
+        serde_json::json!("alpha")
+    );
+    assert_ne!(
+        alpha_artifact.operation.operation_id, beta_artifact.operation.operation_id,
+        "field argument values must contribute to operation identity"
+    );
+    assert_ne!(
+        alpha_artifact.artifact_hash, beta_artifact.artifact_hash,
+        "field argument values must contribute to artifact identity"
+    );
+}
+
+#[test]
 fn runtime_optic_preserves_operation_nested_and_fragment_directives() {
     let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
     let operation = r#"

@@ -19,6 +19,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   validates selected root field arguments against the schema, preserves
   canonical root argument bindings in `OpticOperation`, and includes those
   bindings in stable operation identity.
+- **Runtime optic selected field arguments**: `compile_runtime_optic()` now
+  validates selected payload field arguments against the schema, preserves
+  canonical field argument bindings in `OpticOperation`, and includes those
+  bindings in stable operation and artifact identity.
 - **Runtime optic directive preservation**: Runtime optic artifacts now preserve
   directive records from the executable operation, nested selections, fragment
   spreads, fragment definitions, and inline fragments instead of only the root

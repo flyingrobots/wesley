@@ -9,6 +9,7 @@ use crate::domain::optic::{
     CodecField, CodecShape, DirectiveRecord, EvidenceKind, Footprint, IdentityRequirement,
     LawClaimTemplate, OperationKind, OpticAdmissionRequirements, OpticArtifact, OpticOperation,
     OpticRegistrationDescriptor, PermissionAction, PermissionRequirement, RootArgumentBinding,
+    SelectionArgumentBinding,
 };
 use crate::domain::schema_delta::{diff_schema_ir, SchemaDelta};
 use crate::ports::lowering::LoweringPort;
@@ -1020,6 +1021,13 @@ pub fn compile_runtime_optic(
         schema_operation_for_selected_field(&schema_operations, kind, &root_field_name)?;
     let variable_types = variable_definition_types(op)?;
     let root_arguments = root_argument_bindings(&root_field, schema_operation, &variable_types)?;
+    let selection_arguments = selection_argument_bindings(
+        &root_field,
+        &schema_operation.result_type,
+        &schema,
+        &parsed.fragments,
+        &variable_types,
+    )?;
 
     let operation_name = op.name().map(|name| name.text().to_string());
     let directives =
@@ -1039,6 +1047,7 @@ pub fn compile_runtime_optic(
         "rootArguments": root_arguments,
         "rootField": root_field_name,
         "schemaId": schema_id,
+        "selectionArguments": selection_arguments,
         "variableShape": variable_shape,
         "payloadShape": payload_shape,
         "directives": directives,
@@ -1086,6 +1095,7 @@ pub fn compile_runtime_optic(
             kind,
             root_field: root_field_name,
             root_arguments,
+            selection_arguments,
             variable_shape,
             payload_shape,
             directives,
@@ -1808,9 +1818,236 @@ fn root_argument_bindings(
     Ok(bindings)
 }
 
+fn selection_argument_bindings(
+    root_field: &cst::Field,
+    result_type: &TypeReference,
+    schema: &SchemaIndex<'_>,
+    fragments: &BTreeMap<String, cst::FragmentDefinition>,
+    variable_types: &BTreeMap<String, TypeReference>,
+) -> Result<Vec<SelectionArgumentBinding>, WesleyError> {
+    let mut bindings = Vec::new();
+
+    if let Some(selection_set) = root_field.selection_set() {
+        collect_selection_argument_bindings(
+            &selection_set,
+            &result_type.base,
+            schema,
+            fragments,
+            &mut Vec::new(),
+            "",
+            variable_types,
+            &mut bindings,
+        )?;
+    }
+
+    Ok(bindings)
+}
+
+fn collect_selection_argument_bindings(
+    selection_set: &cst::SelectionSet,
+    parent_type: &str,
+    schema: &SchemaIndex<'_>,
+    fragments: &BTreeMap<String, cst::FragmentDefinition>,
+    active_fragments: &mut Vec<String>,
+    prefix: &str,
+    variable_types: &BTreeMap<String, TypeReference>,
+    bindings: &mut Vec<SelectionArgumentBinding>,
+) -> Result<(), WesleyError> {
+    for selection in selection_set.selections() {
+        match selection {
+            cst::Selection::Field(field) => {
+                let field_name = required_name(field.name(), "Field selection missing name")?;
+                let response_name = response_field_name(&field)?;
+                let schema_field = schema.field(parent_type, &field_name)?;
+                let path = if prefix.is_empty() {
+                    response_name
+                } else {
+                    format!("{prefix}.{response_name}")
+                };
+
+                append_field_argument_bindings(
+                    &field,
+                    &path,
+                    schema_field,
+                    variable_types,
+                    bindings,
+                )?;
+
+                if let Some(nested_selection_set) = field.selection_set() {
+                    let nested_parent = schema_field.r#type.base.as_str();
+                    schema.require_type(nested_parent)?;
+                    collect_selection_argument_bindings(
+                        &nested_selection_set,
+                        nested_parent,
+                        schema,
+                        fragments,
+                        active_fragments,
+                        &path,
+                        variable_types,
+                        bindings,
+                    )?;
+                }
+            }
+            cst::Selection::FragmentSpread(spread) => {
+                let name = spread
+                    .fragment_name()
+                    .and_then(|fragment_name| fragment_name.name())
+                    .map(|name| name.text().to_string())
+                    .ok_or_else(|| {
+                        operation_error_value("Fragment spread missing name".to_string())
+                    })?;
+
+                if active_fragments.contains(&name) {
+                    return operation_error(format!(
+                        "Cyclic fragment spread detected for fragment '{name}'"
+                    ));
+                }
+
+                let fragment = fragments.get(&name).ok_or_else(|| {
+                    operation_error_value(format!("Unknown fragment spread '{name}'"))
+                })?;
+                let fragment_parent = fragment_type_condition(fragment)?;
+                schema.require_type(&fragment_parent)?;
+
+                active_fragments.push(name);
+                if let Some(fragment_selection_set) = fragment.selection_set() {
+                    collect_selection_argument_bindings(
+                        &fragment_selection_set,
+                        &fragment_parent,
+                        schema,
+                        fragments,
+                        active_fragments,
+                        prefix,
+                        variable_types,
+                        bindings,
+                    )?;
+                }
+                active_fragments.pop();
+            }
+            cst::Selection::InlineFragment(fragment) => {
+                let inline_parent = if let Some(type_condition) = fragment.type_condition() {
+                    named_type_name(type_condition.named_type(), "Inline fragment missing type")?
+                } else {
+                    parent_type.to_string()
+                };
+                schema.require_type(&inline_parent)?;
+
+                if let Some(inline_selection_set) = fragment.selection_set() {
+                    collect_selection_argument_bindings(
+                        &inline_selection_set,
+                        &inline_parent,
+                        schema,
+                        fragments,
+                        active_fragments,
+                        prefix,
+                        variable_types,
+                        bindings,
+                    )?;
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn append_field_argument_bindings(
+    field: &cst::Field,
+    path: &str,
+    schema_field: &Field,
+    variable_types: &BTreeMap<String, TypeReference>,
+    bindings: &mut Vec<SelectionArgumentBinding>,
+) -> Result<(), WesleyError> {
+    let expected_arguments = schema_field
+        .arguments
+        .iter()
+        .map(|argument| (argument.name.as_str(), argument))
+        .collect::<BTreeMap<_, _>>();
+    let mut supplied = BTreeSet::new();
+    let mut field_bindings = Vec::new();
+
+    if let Some(arguments) = field.arguments() {
+        for argument in arguments.arguments() {
+            let name = required_name(argument.name(), "Field argument missing name")?;
+            if !supplied.insert(name.clone()) {
+                return operation_error(format!(
+                    "Runtime optic field '{path}' declares duplicate argument '{name}'"
+                ));
+            }
+
+            let expected = expected_arguments.get(name.as_str()).ok_or_else(|| {
+                operation_error_value(format!(
+                    "Runtime optic field '{path}' declares unknown argument '{name}'"
+                ))
+            })?;
+            let value = argument.value().ok_or_else(|| {
+                operation_error_value(format!("Field argument '{name}' missing value"))
+            })?;
+
+            validate_field_argument_value(value.clone(), expected, variable_types)?;
+            let value_canonical_json = stable_json_string(
+                &executable_value_to_json(value)?,
+                "runtime optic selection argument",
+            )?;
+            field_bindings.push(SelectionArgumentBinding {
+                path: path.to_string(),
+                name,
+                type_ref: expected.r#type.clone(),
+                value_canonical_json,
+            });
+        }
+    }
+
+    for expected in &schema_field.arguments {
+        if !expected.r#type.nullable
+            && expected.default_value.is_none()
+            && !supplied.contains(&expected.name)
+        {
+            return operation_error(format!(
+                "Runtime optic field '{path}' missing required argument '{}'",
+                expected.name
+            ));
+        }
+    }
+
+    field_bindings.sort_by(|left, right| left.name.cmp(&right.name));
+    bindings.extend(field_bindings);
+    Ok(())
+}
+
 fn validate_root_argument_value(
     value: cst::Value,
     expected: &OperationArgument,
+    variable_types: &BTreeMap<String, TypeReference>,
+) -> Result<(), WesleyError> {
+    validate_argument_value(
+        value,
+        "Root argument",
+        &expected.name,
+        &expected.r#type,
+        variable_types,
+    )
+}
+
+fn validate_field_argument_value(
+    value: cst::Value,
+    expected: &FieldArgument,
+    variable_types: &BTreeMap<String, TypeReference>,
+) -> Result<(), WesleyError> {
+    validate_argument_value(
+        value,
+        "Field argument",
+        &expected.name,
+        &expected.r#type,
+        variable_types,
+    )
+}
+
+fn validate_argument_value(
+    value: cst::Value,
+    argument_context: &str,
+    argument_name: &str,
+    expected_type: &TypeReference,
     variable_types: &BTreeMap<String, TypeReference>,
 ) -> Result<(), WesleyError> {
     match value {
@@ -1821,84 +2058,88 @@ fn validate_root_argument_value(
                 .ok_or_else(|| operation_error_value("Variable reference missing name".into()))?;
             let variable_type = variable_types.get(&variable_name).ok_or_else(|| {
                 operation_error_value(format!(
-                    "Root argument '{}' references undefined variable '${variable_name}'",
-                    expected.name
+                    "{argument_context} '{argument_name}' references undefined variable '${variable_name}'"
                 ))
             })?;
 
-            if !variable_type_is_compatible(variable_type, &expected.r#type) {
+            if !variable_type_is_compatible(variable_type, expected_type) {
                 return operation_error(format!(
                     "Variable '${variable_name}' has type '{}' but argument '{}' expects '{}'",
                     display_type_ref(variable_type),
-                    expected.name,
-                    display_type_ref(&expected.r#type)
+                    argument_name,
+                    display_type_ref(expected_type)
                 ));
             }
 
             Ok(())
         }
         cst::Value::NullValue(_) => {
-            if expected.r#type.nullable {
+            if expected_type.nullable {
                 Ok(())
             } else {
                 operation_error(format!(
-                    "Root argument '{}' is non-null but received null",
-                    expected.name
+                    "{argument_context} '{argument_name}' is non-null but received null",
                 ))
             }
         }
         cst::Value::StringValue(_) => {
-            if matches!(expected.r#type.base.as_str(), "String" | "ID")
-                && !is_list_type(&expected.r#type)
+            if matches!(expected_type.base.as_str(), "String" | "ID")
+                && !is_list_type(expected_type)
             {
                 Ok(())
             } else {
-                literal_type_error(&expected.name, "String", &expected.r#type)
+                literal_type_error(argument_context, argument_name, "String", expected_type)
             }
         }
         cst::Value::IntValue(_) => {
-            if matches!(expected.r#type.base.as_str(), "Int" | "Float")
-                && !is_list_type(&expected.r#type)
+            if matches!(expected_type.base.as_str(), "Int" | "Float")
+                && !is_list_type(expected_type)
             {
                 Ok(())
             } else {
-                literal_type_error(&expected.name, "Int", &expected.r#type)
+                literal_type_error(argument_context, argument_name, "Int", expected_type)
             }
         }
         cst::Value::FloatValue(_) => {
-            if expected.r#type.base == "Float" && !is_list_type(&expected.r#type) {
+            if expected_type.base == "Float" && !is_list_type(expected_type) {
                 Ok(())
             } else {
-                literal_type_error(&expected.name, "Float", &expected.r#type)
+                literal_type_error(argument_context, argument_name, "Float", expected_type)
             }
         }
         cst::Value::BooleanValue(_) => {
-            if expected.r#type.base == "Boolean" && !is_list_type(&expected.r#type) {
+            if expected_type.base == "Boolean" && !is_list_type(expected_type) {
                 Ok(())
             } else {
-                literal_type_error(&expected.name, "Boolean", &expected.r#type)
+                literal_type_error(argument_context, argument_name, "Boolean", expected_type)
             }
         }
         cst::Value::EnumValue(_) => {
-            if is_builtin_scalar(&expected.r#type.base) || is_list_type(&expected.r#type) {
-                literal_type_error(&expected.name, "Enum", &expected.r#type)
+            if is_builtin_scalar(&expected_type.base) || is_list_type(expected_type) {
+                literal_type_error(argument_context, argument_name, "Enum", expected_type)
             } else {
                 Ok(())
             }
         }
         cst::Value::ListValue(list) => {
-            if !is_list_type(&expected.r#type) {
-                return literal_type_error(&expected.name, "List", &expected.r#type);
+            if !is_list_type(expected_type) {
+                return literal_type_error(argument_context, argument_name, "List", expected_type);
             }
-            let item_type = list_item_type_ref(&expected.r#type);
+            let item_type = list_item_type_ref(expected_type);
             for item in list.values() {
-                validate_literal_value(item, &expected.name, &item_type, variable_types)?;
+                validate_literal_value(
+                    item,
+                    argument_context,
+                    argument_name,
+                    &item_type,
+                    variable_types,
+                )?;
             }
             Ok(())
         }
         cst::Value::ObjectValue(_) => {
-            if is_builtin_scalar(&expected.r#type.base) || is_list_type(&expected.r#type) {
-                literal_type_error(&expected.name, "Object", &expected.r#type)
+            if is_builtin_scalar(&expected_type.base) || is_list_type(expected_type) {
+                literal_type_error(argument_context, argument_name, "Object", expected_type)
             } else {
                 Ok(())
             }
@@ -1908,17 +2149,18 @@ fn validate_root_argument_value(
 
 fn validate_literal_value(
     value: cst::Value,
+    argument_context: &str,
     argument_name: &str,
     expected_type: &TypeReference,
     variable_types: &BTreeMap<String, TypeReference>,
 ) -> Result<(), WesleyError> {
-    let expected = OperationArgument {
-        name: argument_name.to_string(),
-        r#type: expected_type.clone(),
-        default_value: None,
-        directives: IndexMap::new(),
-    };
-    validate_root_argument_value(value, &expected, variable_types)
+    validate_argument_value(
+        value,
+        argument_context,
+        argument_name,
+        expected_type,
+        variable_types,
+    )
 }
 
 fn executable_value_to_json(value: cst::Value) -> Result<serde_json::Value, WesleyError> {
@@ -1994,12 +2236,13 @@ fn executable_value_to_json(value: cst::Value) -> Result<serde_json::Value, Wesl
 }
 
 fn literal_type_error(
+    argument_context: &str,
     argument_name: &str,
     actual: &str,
     expected: &TypeReference,
 ) -> Result<(), WesleyError> {
     operation_error(format!(
-        "Root argument '{argument_name}' received {actual} value but expects '{}'",
+        "{argument_context} '{argument_name}' received {actual} value but expects '{}'",
         display_type_ref(expected)
     ))
 }

@@ -481,6 +481,9 @@ pub struct OpticOperation {
     pub root_field: String,
     /// Canonical bindings supplied to the selected root field.
     pub root_arguments: Vec<RootArgumentBinding>,
+    /// Canonical argument bindings supplied to selected payload fields.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub selection_arguments: Vec<SelectionArgumentBinding>,
     /// Codec shape for the operation variables or root field arguments.
     pub variable_shape: CodecShape,
     /// Codec shape for the selected response payload.
@@ -499,6 +502,20 @@ pub struct OpticOperation {
 #[serde(rename_all = "camelCase")]
 pub struct RootArgumentBinding {
     /// Root argument name.
+    pub name: String,
+    /// Schema-declared argument type.
+    pub type_ref: TypeReference,
+    /// Canonical JSON representation of the supplied GraphQL input value.
+    pub value_canonical_json: String,
+}
+
+/// Canonical binding for one argument supplied to a selected payload field.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct SelectionArgumentBinding {
+    /// Response-path field that received the argument.
+    pub path: String,
+    /// Field argument name.
     pub name: String,
     /// Schema-declared argument type.
     pub type_ref: TypeReference,
