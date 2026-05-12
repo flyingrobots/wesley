@@ -354,6 +354,52 @@ fn runtime_optic_requires_reads_and_writes_when_footprint_is_present() {
 }
 
 #[test]
+fn runtime_optic_rejects_non_root_footprint_directives() {
+    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
+    let nested_only = r#"
+        mutation RenameSymbol($input: RenameSymbolInput!) {
+          renameSymbol(input: $input) {
+            receipt
+              @wes_footprint(
+                reads: ["receipt.local"]
+                writes: []
+              ) {
+              witnessDigest
+            }
+          }
+        }
+    "#;
+    let root_and_nested = r#"
+        mutation RenameSymbol($input: RenameSymbolInput!) {
+          renameSymbol(input: $input)
+            @wes_footprint(
+              reads: ["workspace.files"]
+              writes: ["workspace.files"]
+            ) {
+            receipt
+              @wes_footprint(
+                reads: ["receipt.local"]
+                writes: []
+              ) {
+              witnessDigest
+            }
+          }
+        }
+    "#;
+
+    assert_operation_lowering_error(compile_runtime_optic(
+        schema,
+        nested_only,
+        Some("RenameSymbol"),
+    ));
+    assert_operation_lowering_error(compile_runtime_optic(
+        schema,
+        root_and_nested,
+        Some("RenameSymbol"),
+    ));
+}
+
+#[test]
 fn root_argument_bindings_are_preserved_and_affect_operation_identity() {
     let schema = r#"
         type Mutation {

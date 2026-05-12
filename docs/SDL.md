@@ -75,9 +75,11 @@ type, result type, directive names, and directive arguments. An Echo-owned
 extension can then decide whether `@wes_footprint` is honest, sufficient, or
 admissible for Echo runtime law.
 
-For runtime optic artifacts, `@wes_footprint` must declare `reads` and `writes`
-arrays. `forbids` may be omitted and then means an empty forbidden-resource
-list.
+For runtime optic artifacts, `@wes_footprint` is admission-facing v0 metadata.
+It is legal only on the selected root field, must declare `reads` and `writes`
+arrays, and may omit `forbids` to mean an empty forbidden-resource list.
+Nested, fragment, inline-fragment, or operation-level footprints are rejected
+until Wesley intentionally designs scoped footprints.
 
 ## Extension Interpretation
 

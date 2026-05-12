@@ -26,6 +26,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **Runtime optic footprint bounds**: `compile_runtime_optic()` now requires
   `reads` and `writes` arrays whenever `@wes_footprint` is present, while
   omitted `forbids` still defaults to an empty forbidden-resource list.
+- **Runtime optic root footprint admission**: `@wes_footprint` is now legal only
+  on the selected root field for runtime optic artifacts, keeping nested
+  directives from changing admission-facing requirements.
 - **Runtime optic directive preservation**: Runtime optic artifacts now preserve
   directive records from the executable operation, nested selections, fragment
   spreads, fragment definitions, and inline fragments instead of only the root

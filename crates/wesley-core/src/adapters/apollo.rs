@@ -1032,7 +1032,8 @@ pub fn compile_runtime_optic(
     let operation_name = op.name().map(|name| name.text().to_string());
     let directives =
         directive_records_for_operation(op, root_type, &root_field, &schema, &parsed.fragments)?;
-    let declared_footprint = footprint_from_directives(&directives)?;
+    let root_coordinate = format!("{root_type}.{root_field_name}");
+    let declared_footprint = footprint_from_directives(&directives, &root_coordinate)?;
     let variable_shape = variable_codec_shape(op, schema_operation)?;
     let payload_shape = payload_codec_shape(
         &root_field,
@@ -1679,6 +1680,7 @@ fn extract_executable_directive_arguments(
 
 fn footprint_from_directives(
     directives: &[DirectiveRecord],
+    root_coordinate: &str,
 ) -> Result<Option<Footprint>, WesleyError> {
     let mut footprint = None;
 
@@ -1686,6 +1688,13 @@ fn footprint_from_directives(
         .iter()
         .filter(|directive| directive.name == "wes_footprint")
     {
+        if directive.coordinate != root_coordinate {
+            return operation_error(format!(
+                "Runtime optic @wes_footprint is only supported on selected root field '{root_coordinate}', found on '{}'",
+                directive.coordinate
+            ));
+        }
+
         if footprint.is_some() {
             return operation_error("Runtime optic declares multiple footprints".to_string());
         }
