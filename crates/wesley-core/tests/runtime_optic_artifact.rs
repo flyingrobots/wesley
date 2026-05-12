@@ -220,6 +220,105 @@ fn artifact_hashes_are_stable_and_sensitive_to_shape_and_requirements() {
 }
 
 #[test]
+fn runtime_optic_rejects_invalid_root_argument_bindings() {
+    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
+    let missing_required = r#"
+        mutation RenameSymbol($input: RenameSymbolInput!) {
+          renameSymbol {
+            receipt {
+              witnessDigest
+            }
+          }
+        }
+    "#;
+    let unknown_argument = r#"
+        mutation RenameSymbol($input: RenameSymbolInput!) {
+          renameSymbol(input: $input, unexpected: "nope") {
+            receipt {
+              witnessDigest
+            }
+          }
+        }
+    "#;
+    let wrong_variable_type = r#"
+        mutation RenameSymbol($input: String!) {
+          renameSymbol(input: $input) {
+            receipt {
+              witnessDigest
+            }
+          }
+        }
+    "#;
+
+    assert_error_contains(
+        compile_runtime_optic(schema, missing_required, Some("RenameSymbol")),
+        "missing required argument 'input'",
+    );
+    assert_error_contains(
+        compile_runtime_optic(schema, unknown_argument, Some("RenameSymbol")),
+        "unknown argument 'unexpected'",
+    );
+    assert_error_contains(
+        compile_runtime_optic(schema, wrong_variable_type, Some("RenameSymbol")),
+        "Variable '$input' has type 'String!' but argument 'input' expects 'RenameSymbolInput!'",
+    );
+}
+
+#[test]
+fn root_argument_bindings_are_preserved_and_affect_operation_identity() {
+    let schema = r#"
+        type Mutation {
+          combine(left: String!, right: String!): CombineResult!
+        }
+
+        type CombineResult {
+          receipt: RewriteReceipt!
+        }
+
+        type RewriteReceipt {
+          witnessDigest: String!
+        }
+    "#;
+    let left_right = r#"
+        mutation Combine($left: String!, $right: String!) {
+          combine(left: $left, right: $right) {
+            receipt {
+              witnessDigest
+            }
+          }
+        }
+    "#;
+    let right_left = r#"
+        mutation Combine($left: String!, $right: String!) {
+          combine(left: $right, right: $left) {
+            receipt {
+              witnessDigest
+            }
+          }
+        }
+    "#;
+
+    let left_right_artifact = compile_runtime_optic(schema, left_right, Some("Combine"))
+        .expect("left-right runtime optic should compile");
+    let right_left_artifact = compile_runtime_optic(schema, right_left, Some("Combine"))
+        .expect("right-left runtime optic should compile");
+
+    assert_eq!(left_right_artifact.operation.root_arguments.len(), 2);
+    assert_eq!(left_right_artifact.operation.root_arguments[0].name, "left");
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(
+            &left_right_artifact.operation.root_arguments[0].value_canonical_json,
+        )
+        .expect("root argument value should be JSON"),
+        serde_json::json!({ "$variable": "left" })
+    );
+    assert_ne!(
+        left_right_artifact.operation.operation_id, right_left_artifact.operation.operation_id,
+        "different root argument bindings must produce different operation identities"
+    );
+}
+
+#[test]
 fn optic_wire_shapes_serialize_with_stable_field_names() {
     let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
     let operation = include_str!("../../../test/fixtures/runtime-optics/rename_symbol.graphql");
@@ -361,5 +460,17 @@ fn assert_contains_permission(
             .iter()
             .any(|permission| permission.action == action && permission.resource == resource),
         "permission {action:?} {resource} should exist"
+    );
+}
+
+fn assert_error_contains(
+    result: Result<wesley_core::OpticArtifact, wesley_core::WesleyError>,
+    needle: &str,
+) {
+    let error = result.expect_err("runtime optic should reject invalid operation");
+    let message = error.to_string();
+    assert!(
+        message.contains(needle),
+        "expected error '{message}' to contain '{needle}'"
     );
 }

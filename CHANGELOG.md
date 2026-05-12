@@ -15,6 +15,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   bytes are explicitly marked as fixture-only, while `targetCodec:
   wesley-binary/v0` records the future Wesley-generated binary codec target
   without implementing it.
+- **Runtime optic root argument validation**: `compile_runtime_optic()` now
+  validates selected root field arguments against the schema, preserves
+  canonical root argument bindings in `OpticOperation`, and includes those
+  bindings in stable operation identity.
 
 ## [0.0.2] - 2026-05-09
 

@@ -468,6 +468,8 @@ pub struct OpticOperation {
     pub kind: OperationKind,
     /// Root schema field selected by the operation.
     pub root_field: String,
+    /// Canonical bindings supplied to the selected root field.
+    pub root_arguments: Vec<RootArgumentBinding>,
     /// Codec shape for the operation variables or root field arguments.
     pub variable_shape: CodecShape,
     /// Codec shape for the selected response payload.
@@ -479,6 +481,18 @@ pub struct OpticOperation {
     pub declared_footprint: Option<Footprint>,
     /// Compiler-produced templates for laws relevant to this operation.
     pub law_claims: Vec<LawClaimTemplate>,
+}
+
+/// Canonical binding for one argument supplied to an optic root field.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct RootArgumentBinding {
+    /// Root argument name.
+    pub name: String,
+    /// Schema-declared argument type.
+    pub type_ref: TypeReference,
+    /// Canonical JSON representation of the supplied GraphQL input value.
+    pub value_canonical_json: String,
 }
 
 /// GraphQL executable operation kind.

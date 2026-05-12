@@ -8,7 +8,7 @@ use crate::domain::operation::{
 use crate::domain::optic::{
     CodecField, CodecShape, DirectiveRecord, EvidenceKind, Footprint, IdentityRequirement,
     LawClaimTemplate, OperationKind, OpticAdmissionRequirements, OpticArtifact, OpticOperation,
-    OpticRegistrationDescriptor, PermissionAction, PermissionRequirement,
+    OpticRegistrationDescriptor, PermissionAction, PermissionRequirement, RootArgumentBinding,
 };
 use crate::domain::schema_delta::{diff_schema_ir, SchemaDelta};
 use crate::ports::lowering::LoweringPort;
@@ -1018,6 +1018,8 @@ pub fn compile_runtime_optic(
     let root_field_name = required_name(root_field.name(), "Root field selection missing name")?;
     let schema_operation =
         schema_operation_for_selected_field(&schema_operations, kind, &root_field_name)?;
+    let variable_types = variable_definition_types(op)?;
+    let root_arguments = root_argument_bindings(&root_field, schema_operation, &variable_types)?;
 
     let operation_name = op.name().map(|name| name.text().to_string());
     let coordinate = format!("{root_type}.{root_field_name}");
@@ -1034,6 +1036,7 @@ pub fn compile_runtime_optic(
     let identity_seed = serde_json::json!({
         "kind": kind,
         "name": operation_name,
+        "rootArguments": root_arguments,
         "rootField": root_field_name,
         "schemaId": schema_id,
         "variableShape": variable_shape,
@@ -1082,6 +1085,7 @@ pub fn compile_runtime_optic(
             name: operation_name,
             kind,
             root_field: root_field_name,
+            root_arguments,
             variable_shape,
             payload_shape,
             directives,
@@ -1532,6 +1536,342 @@ fn optional_string_array(
             })
         })
         .collect()
+}
+
+fn variable_definition_types(
+    op: &cst::OperationDefinition,
+) -> Result<BTreeMap<String, TypeReference>, WesleyError> {
+    let mut variables = BTreeMap::new();
+
+    let Some(variable_definitions) = op.variable_definitions() else {
+        return Ok(variables);
+    };
+
+    for variable in variable_definitions.variable_definitions() {
+        let name = variable
+            .variable()
+            .and_then(|variable| variable.name())
+            .map(|name| name.text().to_string())
+            .ok_or_else(|| operation_error_value("Variable definition missing name".to_string()))?;
+        let type_node = variable.ty().ok_or_else(|| {
+            operation_error_value(format!("Variable definition '{name}' missing type"))
+        })?;
+        let type_ref = type_reference_from_type(type_node, true)?;
+
+        if variables.insert(name.clone(), type_ref).is_some() {
+            return operation_error(format!("Duplicate variable definition '${name}'"));
+        }
+    }
+
+    Ok(variables)
+}
+
+fn root_argument_bindings(
+    root_field: &cst::Field,
+    schema_operation: &SchemaOperation,
+    variable_types: &BTreeMap<String, TypeReference>,
+) -> Result<Vec<RootArgumentBinding>, WesleyError> {
+    let expected_arguments = schema_operation
+        .arguments
+        .iter()
+        .map(|argument| (argument.name.as_str(), argument))
+        .collect::<BTreeMap<_, _>>();
+    let mut supplied = BTreeSet::new();
+    let mut bindings = Vec::new();
+
+    if let Some(arguments) = root_field.arguments() {
+        for argument in arguments.arguments() {
+            let name = required_name(argument.name(), "Root field argument missing name")?;
+            if !supplied.insert(name.clone()) {
+                return operation_error(format!(
+                    "Runtime optic root field '{}' declares duplicate argument '{name}'",
+                    schema_operation.field_name
+                ));
+            }
+
+            let expected = expected_arguments.get(name.as_str()).ok_or_else(|| {
+                operation_error_value(format!(
+                    "Runtime optic root field '{}' declares unknown argument '{name}'",
+                    schema_operation.field_name
+                ))
+            })?;
+            let value = argument.value().ok_or_else(|| {
+                operation_error_value(format!("Root field argument '{name}' missing value"))
+            })?;
+
+            validate_root_argument_value(value.clone(), expected, variable_types)?;
+            let value_canonical_json =
+                stable_json_string(&executable_value_to_json(value)?, "runtime optic argument")?;
+            bindings.push(RootArgumentBinding {
+                name,
+                type_ref: expected.r#type.clone(),
+                value_canonical_json,
+            });
+        }
+    }
+
+    for expected in &schema_operation.arguments {
+        if !expected.r#type.nullable
+            && expected.default_value.is_none()
+            && !supplied.contains(&expected.name)
+        {
+            return operation_error(format!(
+                "Runtime optic root field '{}' missing required argument '{}'",
+                schema_operation.field_name, expected.name
+            ));
+        }
+    }
+
+    bindings.sort_by(|left, right| left.name.cmp(&right.name));
+    Ok(bindings)
+}
+
+fn validate_root_argument_value(
+    value: cst::Value,
+    expected: &OperationArgument,
+    variable_types: &BTreeMap<String, TypeReference>,
+) -> Result<(), WesleyError> {
+    match value {
+        cst::Value::Variable(variable) => {
+            let variable_name = variable
+                .name()
+                .map(|name| name.text().to_string())
+                .ok_or_else(|| operation_error_value("Variable reference missing name".into()))?;
+            let variable_type = variable_types.get(&variable_name).ok_or_else(|| {
+                operation_error_value(format!(
+                    "Root argument '{}' references undefined variable '${variable_name}'",
+                    expected.name
+                ))
+            })?;
+
+            if !variable_type_is_compatible(variable_type, &expected.r#type) {
+                return operation_error(format!(
+                    "Variable '${variable_name}' has type '{}' but argument '{}' expects '{}'",
+                    display_type_ref(variable_type),
+                    expected.name,
+                    display_type_ref(&expected.r#type)
+                ));
+            }
+
+            Ok(())
+        }
+        cst::Value::NullValue(_) => {
+            if expected.r#type.nullable {
+                Ok(())
+            } else {
+                operation_error(format!(
+                    "Root argument '{}' is non-null but received null",
+                    expected.name
+                ))
+            }
+        }
+        cst::Value::StringValue(_) => {
+            if matches!(expected.r#type.base.as_str(), "String" | "ID")
+                && !is_list_type(&expected.r#type)
+            {
+                Ok(())
+            } else {
+                literal_type_error(&expected.name, "String", &expected.r#type)
+            }
+        }
+        cst::Value::IntValue(_) => {
+            if matches!(expected.r#type.base.as_str(), "Int" | "Float")
+                && !is_list_type(&expected.r#type)
+            {
+                Ok(())
+            } else {
+                literal_type_error(&expected.name, "Int", &expected.r#type)
+            }
+        }
+        cst::Value::FloatValue(_) => {
+            if expected.r#type.base == "Float" && !is_list_type(&expected.r#type) {
+                Ok(())
+            } else {
+                literal_type_error(&expected.name, "Float", &expected.r#type)
+            }
+        }
+        cst::Value::BooleanValue(_) => {
+            if expected.r#type.base == "Boolean" && !is_list_type(&expected.r#type) {
+                Ok(())
+            } else {
+                literal_type_error(&expected.name, "Boolean", &expected.r#type)
+            }
+        }
+        cst::Value::EnumValue(_) => {
+            if is_builtin_scalar(&expected.r#type.base) || is_list_type(&expected.r#type) {
+                literal_type_error(&expected.name, "Enum", &expected.r#type)
+            } else {
+                Ok(())
+            }
+        }
+        cst::Value::ListValue(list) => {
+            if !is_list_type(&expected.r#type) {
+                return literal_type_error(&expected.name, "List", &expected.r#type);
+            }
+            let item_type = list_item_type_ref(&expected.r#type);
+            for item in list.values() {
+                validate_literal_value(item, &expected.name, &item_type, variable_types)?;
+            }
+            Ok(())
+        }
+        cst::Value::ObjectValue(_) => {
+            if is_builtin_scalar(&expected.r#type.base) || is_list_type(&expected.r#type) {
+                literal_type_error(&expected.name, "Object", &expected.r#type)
+            } else {
+                Ok(())
+            }
+        }
+    }
+}
+
+fn validate_literal_value(
+    value: cst::Value,
+    argument_name: &str,
+    expected_type: &TypeReference,
+    variable_types: &BTreeMap<String, TypeReference>,
+) -> Result<(), WesleyError> {
+    let expected = OperationArgument {
+        name: argument_name.to_string(),
+        r#type: expected_type.clone(),
+        default_value: None,
+        directives: IndexMap::new(),
+    };
+    validate_root_argument_value(value, &expected, variable_types)
+}
+
+fn executable_value_to_json(value: cst::Value) -> Result<serde_json::Value, WesleyError> {
+    match value {
+        cst::Value::Variable(variable) => {
+            let name = variable
+                .name()
+                .map(|name| name.text().to_string())
+                .ok_or_else(|| operation_error_value("Variable reference missing name".into()))?;
+            Ok(serde_json::json!({ "$variable": name }))
+        }
+        cst::Value::StringValue(value) => Ok(serde_json::Value::String(String::from(value))),
+        cst::Value::FloatValue(value) => {
+            let raw = value
+                .float_token()
+                .map(|token| token.text().to_string())
+                .unwrap_or_default();
+            let parsed = raw.parse::<f64>().map_err(|err| {
+                operation_error_value(format!("Invalid float argument value '{raw}': {err}"))
+            })?;
+            serde_json::Number::from_f64(parsed)
+                .map(serde_json::Value::Number)
+                .ok_or_else(|| {
+                    operation_error_value(format!("Invalid finite float argument value '{raw}'"))
+                })
+        }
+        cst::Value::IntValue(value) => {
+            let raw = value
+                .int_token()
+                .map(|token| token.text().to_string())
+                .unwrap_or_default();
+            raw.parse::<i64>()
+                .map(|parsed| serde_json::Value::Number(parsed.into()))
+                .map_err(|err| {
+                    operation_error_value(format!("Invalid integer argument value '{raw}': {err}"))
+                })
+        }
+        cst::Value::BooleanValue(value) => Ok(serde_json::Value::Bool(
+            value.true_token().is_some() && value.false_token().is_none(),
+        )),
+        cst::Value::NullValue(_) => Ok(serde_json::Value::Null),
+        cst::Value::EnumValue(value) => {
+            let name = value
+                .name()
+                .map(|name| name.text().to_string())
+                .ok_or_else(|| operation_error_value("Enum argument value missing name".into()))?;
+            Ok(serde_json::Value::String(name))
+        }
+        cst::Value::ListValue(list) => {
+            let mut values = Vec::new();
+            for value in list.values() {
+                values.push(executable_value_to_json(value)?);
+            }
+            Ok(serde_json::Value::Array(values))
+        }
+        cst::Value::ObjectValue(object) => {
+            let mut map = serde_json::Map::new();
+            for field in object.object_fields() {
+                let name = field
+                    .name()
+                    .map(|name| name.text().to_string())
+                    .ok_or_else(|| {
+                        operation_error_value("Object argument field missing name".into())
+                    })?;
+                let value = field.value().ok_or_else(|| {
+                    operation_error_value(format!("Object argument field '{name}' missing value"))
+                })?;
+                map.insert(name, executable_value_to_json(value)?);
+            }
+            Ok(serde_json::Value::Object(map))
+        }
+    }
+}
+
+fn literal_type_error(
+    argument_name: &str,
+    actual: &str,
+    expected: &TypeReference,
+) -> Result<(), WesleyError> {
+    operation_error(format!(
+        "Root argument '{argument_name}' received {actual} value but expects '{}'",
+        display_type_ref(expected)
+    ))
+}
+
+fn variable_type_is_compatible(actual: &TypeReference, expected: &TypeReference) -> bool {
+    actual.base == expected.base
+        && actual.is_list == expected.is_list
+        && actual.list_wrappers == expected.list_wrappers
+        && (!actual.nullable || expected.nullable)
+        && list_items_are_compatible(actual, expected)
+}
+
+fn list_items_are_compatible(actual: &TypeReference, expected: &TypeReference) -> bool {
+    match (actual.list_item_nullable, expected.list_item_nullable) {
+        (Some(true), Some(false)) => false,
+        _ => actual.leaf_nullable.unwrap_or(false) || !expected.leaf_nullable.unwrap_or(false),
+    }
+}
+
+fn list_item_type_ref(type_ref: &TypeReference) -> TypeReference {
+    TypeReference {
+        base: type_ref.base.clone(),
+        nullable: type_ref.list_item_nullable.unwrap_or(true),
+        is_list: false,
+        list_item_nullable: None,
+        list_wrappers: Vec::new(),
+        leaf_nullable: None,
+    }
+}
+
+fn display_type_ref(type_ref: &TypeReference) -> String {
+    let mut rendered = if type_ref.is_list {
+        format!(
+            "[{}{}]",
+            type_ref.base,
+            if type_ref.list_item_nullable == Some(false) {
+                "!"
+            } else {
+                ""
+            }
+        )
+    } else {
+        type_ref.base.clone()
+    };
+
+    if !type_ref.nullable {
+        rendered.push('!');
+    }
+
+    rendered
+}
+
+fn is_builtin_scalar(name: &str) -> bool {
+    matches!(name, "ID" | "String" | "Int" | "Float" | "Boolean")
 }
 
 fn variable_codec_shape(
