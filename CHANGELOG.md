@@ -23,6 +23,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   directive records from the executable operation, nested selections, fragment
   spreads, fragment definitions, and inline fragments instead of only the root
   field.
+- **Runtime optic payload aliases**: Payload codec shapes now use GraphQL
+  response names, so aliases are reflected in payload paths and artifact hashes.
 
 ## [0.0.2] - 2026-05-09
 

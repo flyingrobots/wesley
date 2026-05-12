@@ -2124,11 +2124,12 @@ fn collect_payload_codec_fields(
         match selection {
             cst::Selection::Field(field) => {
                 let field_name = required_name(field.name(), "Field selection missing name")?;
+                let response_name = response_field_name(&field)?;
                 let schema_field = schema.field(parent_type, &field_name)?;
                 let path = if prefix.is_empty() {
-                    field_name
+                    response_name
                 } else {
-                    format!("{prefix}.{field_name}")
+                    format!("{prefix}.{response_name}")
                 };
 
                 push_unique_codec_field(
@@ -2214,6 +2215,15 @@ fn collect_payload_codec_fields(
     }
 
     Ok(())
+}
+
+fn response_field_name(field: &cst::Field) -> Result<String, WesleyError> {
+    field
+        .alias()
+        .and_then(|alias| alias.name())
+        .or_else(|| field.name())
+        .map(|name| name.text().to_string())
+        .ok_or_else(|| operation_error_value("Field selection missing response name".into()))
 }
 
 fn push_unique_codec_field(fields: &mut Vec<CodecField>, field: CodecField) {

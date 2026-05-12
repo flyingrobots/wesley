@@ -372,6 +372,51 @@ fn runtime_optic_preserves_operation_nested_and_fragment_directives() {
 }
 
 #[test]
+fn payload_shape_uses_response_aliases() {
+    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
+    let operation = r#"
+        mutation RenameSymbol($input: RenameSymbolInput!) {
+          renameSymbol(input: $input) {
+            receipt {
+              digest: witnessDigest
+            }
+          }
+        }
+    "#;
+    let unaliased_operation = r#"
+        mutation RenameSymbol($input: RenameSymbolInput!) {
+          renameSymbol(input: $input) {
+            receipt {
+              witnessDigest
+            }
+          }
+        }
+    "#;
+
+    let artifact = compile_runtime_optic(schema, operation, Some("RenameSymbol"))
+        .expect("aliased runtime optic should compile");
+    let unaliased_artifact =
+        compile_runtime_optic(schema, unaliased_operation, Some("RenameSymbol"))
+            .expect("unaliased runtime optic should compile");
+
+    let digest = find_codec_field(&artifact.operation.payload_shape.fields, "receipt.digest");
+    assert_eq!(digest.type_ref.base, "String");
+    assert!(
+        !artifact
+            .operation
+            .payload_shape
+            .fields
+            .iter()
+            .any(|field| field.name == "receipt.witnessDigest"),
+        "aliased payload shape should use response names, not schema field names"
+    );
+    assert_ne!(
+        artifact.artifact_hash, unaliased_artifact.artifact_hash,
+        "changing response aliases must change artifact hash"
+    );
+}
+
+#[test]
 fn optic_wire_shapes_serialize_with_stable_field_names() {
     let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
     let operation = include_str!("../../../test/fixtures/runtime-optics/rename_symbol.graphql");
