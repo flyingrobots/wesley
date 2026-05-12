@@ -41,6 +41,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **Optic artifact registry normalization**: The in-memory optic artifact
   registry now derives stored registration descriptors from artifact identity
   fields instead of trusting stale embedded descriptor data.
+- **Optic registration descriptor integrity coverage**: The in-memory registry
+  tests now assert operation id tampering is rejected alongside artifact hash,
+  schema id, requirements digest, and missing artifact checks.
 
 ## [0.0.2] - 2026-05-09
 

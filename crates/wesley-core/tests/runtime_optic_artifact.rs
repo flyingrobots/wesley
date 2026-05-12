@@ -154,6 +154,13 @@ fn resolves_artifact_by_registration_descriptor_and_rejects_tampering() {
         Err(ResolveError::ArtifactHashMismatch { .. })
     ));
 
+    let mut tampered_operation = registration.clone();
+    tampered_operation.operation_id = "tampered-operation-id".to_string();
+    assert!(matches!(
+        registry.resolve_optic_artifact(&tampered_operation),
+        Err(ResolveError::OperationIdMismatch { .. })
+    ));
+
     let mut tampered_requirements = registration.clone();
     tampered_requirements.requirements_digest = "tampered-requirements".to_string();
     assert!(matches!(
