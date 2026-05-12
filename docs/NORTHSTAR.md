@@ -1,5 +1,5 @@
-<!-- docs-truth: status=experimental owner=@flyingrobots -->
 # Wesley North Star
+<!-- docs-truth: status=experimental owner=@flyingrobots -->
 
 Wesley's ultimate north star is **bounded, lawful autonomy**.
 

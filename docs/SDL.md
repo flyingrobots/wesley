@@ -1,5 +1,5 @@
-<!-- docs-truth: status=experimental owner=@flyingrobots -->
 # SDL, Shape, And Law
+<!-- docs-truth: status=experimental owner=@flyingrobots -->
 
 This note supports the README. It explains why Wesley starts from GraphQL SDL
 and where the line sits between generic compiler facts and domain-owned law.
