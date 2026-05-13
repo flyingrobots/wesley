@@ -41,6 +41,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **Runtime optic subselection validation**: Runtime optic lowering now rejects
   composite fields without subselections and leaf fields with subselections
   before emitting `shape.valid.v1`.
+- **Runtime optic response-name validation**: Runtime optic lowering now rejects
+  conflicting same-response-name selections before payload codec extraction can
+  collapse incompatible fields.
 - **Optic registry resolver errors**: Removed the unreachable
   `ArtifactIdMismatch` resolver error from the v0 in-memory registry, where
   descriptor artifact ids are lookup keys and unknown ids correctly resolve as

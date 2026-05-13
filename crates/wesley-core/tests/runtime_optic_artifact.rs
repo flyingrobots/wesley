@@ -485,6 +485,79 @@ fn runtime_optic_rejects_invalid_subselection_shapes() {
 }
 
 #[test]
+fn runtime_optic_rejects_conflicting_response_names() {
+    let schema = r#"
+        type Query {
+          profile: Profile!
+        }
+
+        type Profile {
+          id: ID!
+          name: String!
+          friend(id: ID!): Profile!
+        }
+    "#;
+    let valid_duplicate = r#"
+        query Profile {
+          profile {
+            id
+            id
+          }
+        }
+    "#;
+    let conflicting_aliases = r#"
+        query Profile {
+          profile {
+            value: id
+            value: name
+          }
+        }
+    "#;
+    let conflicting_arguments = r#"
+        query Profile {
+          profile {
+            friend(id: "a") {
+              id
+            }
+            friend(id: "b") {
+              id
+            }
+          }
+        }
+    "#;
+    let conflicting_fragment = r#"
+        query Profile {
+          profile {
+            value: id
+            ...NameValue
+          }
+        }
+
+        fragment NameValue on Profile {
+          value: name
+        }
+    "#;
+
+    compile_runtime_optic(schema, valid_duplicate, Some("Profile"))
+        .expect("identical duplicate response names should compile");
+    assert_operation_lowering_error(compile_runtime_optic(
+        schema,
+        conflicting_aliases,
+        Some("Profile"),
+    ));
+    assert_operation_lowering_error(compile_runtime_optic(
+        schema,
+        conflicting_arguments,
+        Some("Profile"),
+    ));
+    assert_operation_lowering_error(compile_runtime_optic(
+        schema,
+        conflicting_fragment,
+        Some("Profile"),
+    ));
+}
+
+#[test]
 fn runtime_optic_rejects_impossible_fragment_type_conditions() {
     let schema = r#"
         type Query {

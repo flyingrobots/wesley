@@ -301,6 +301,8 @@ The first witness does not need Echo. It can be a Rust test proving:
   and nullability are part of the validity claim
 - composite fields require subselections, and leaf fields reject subselections,
   before payload shape metadata is trusted
+- same-response-name field selections must be merge-compatible before payload
+  codec extraction can collapse duplicate response paths
 - fragment spreads and inline fragments have compatible type conditions before
   they contribute payload, directive, or argument metadata
 - directive law data is preserved across the operation and selected field tree,

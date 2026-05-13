@@ -1509,9 +1509,40 @@ fn validate_runtime_optic_selection_set(
     fragments: &BTreeMap<String, cst::FragmentDefinition>,
     active_fragments: &mut Vec<String>,
 ) -> Result<(), WesleyError> {
+    let mut response_signatures = BTreeMap::new();
+    validate_runtime_optic_selection_set_into(
+        selection_set,
+        parent_type,
+        schema,
+        fragments,
+        active_fragments,
+        &mut response_signatures,
+    )
+}
+
+fn validate_runtime_optic_selection_set_into(
+    selection_set: &cst::SelectionSet,
+    parent_type: &str,
+    schema: &SchemaIndex<'_>,
+    fragments: &BTreeMap<String, cst::FragmentDefinition>,
+    active_fragments: &mut Vec<String>,
+    response_signatures: &mut BTreeMap<String, RuntimeOpticFieldSignature>,
+) -> Result<(), WesleyError> {
     for selection in selection_set.selections() {
         match selection {
             cst::Selection::Field(field) => {
+                let (response_name, signature) =
+                    runtime_optic_field_signature(&field, parent_type, schema)?;
+                if let Some(existing) = response_signatures.get(&response_name) {
+                    if existing != &signature {
+                        return operation_error(format!(
+                            "Runtime optic response name '{response_name}' has conflicting field selections"
+                        ));
+                    }
+                } else {
+                    response_signatures.insert(response_name, signature);
+                }
+
                 validate_runtime_optic_field_selection(
                     &field,
                     parent_type,
@@ -1543,12 +1574,13 @@ fn validate_runtime_optic_selection_set(
 
                 active_fragments.push(name);
                 if let Some(fragment_selection_set) = fragment.selection_set() {
-                    validate_runtime_optic_selection_set(
+                    validate_runtime_optic_selection_set_into(
                         &fragment_selection_set,
                         &fragment_parent,
                         schema,
                         fragments,
                         active_fragments,
+                        response_signatures,
                     )?;
                 }
                 active_fragments.pop();
@@ -1562,12 +1594,13 @@ fn validate_runtime_optic_selection_set(
                 validate_fragment_type_condition(parent_type, &inline_parent, schema, "inline")?;
 
                 if let Some(inline_selection_set) = fragment.selection_set() {
-                    validate_runtime_optic_selection_set(
+                    validate_runtime_optic_selection_set_into(
                         &inline_selection_set,
                         &inline_parent,
                         schema,
                         fragments,
                         active_fragments,
+                        response_signatures,
                     )?;
                 }
             }
@@ -1611,6 +1644,57 @@ fn validate_runtime_optic_field_selection(
             Ok(())
         }
     }
+}
+
+#[derive(Clone, PartialEq)]
+struct RuntimeOpticFieldSignature {
+    parent_type: String,
+    field_name: String,
+    arguments_canonical_json: String,
+    type_ref: TypeReference,
+}
+
+fn runtime_optic_field_signature(
+    field: &cst::Field,
+    parent_type: &str,
+    schema: &SchemaIndex<'_>,
+) -> Result<(String, RuntimeOpticFieldSignature), WesleyError> {
+    let field_name = required_name(field.name(), "Field selection missing name")?;
+    let response_name = response_field_name(field)?;
+    let schema_field = schema.field(parent_type, &field_name)?;
+
+    Ok((
+        response_name,
+        RuntimeOpticFieldSignature {
+            parent_type: parent_type.to_string(),
+            field_name,
+            arguments_canonical_json: field_arguments_canonical_json(field.arguments())?,
+            type_ref: schema_field.r#type.clone(),
+        },
+    ))
+}
+
+fn field_arguments_canonical_json(
+    arguments: Option<cst::Arguments>,
+) -> Result<String, WesleyError> {
+    let mut values = IndexMap::new();
+
+    if let Some(arguments) = arguments {
+        for argument in arguments.arguments() {
+            let name = required_name(argument.name(), "Field argument missing name")?;
+            if values.contains_key(&name) {
+                return operation_error(format!(
+                    "Runtime optic field argument '{name}' is declared more than once"
+                ));
+            }
+            let value = argument.value().ok_or_else(|| {
+                operation_error_value(format!("Field argument '{name}' missing value"))
+            })?;
+            values.insert(name, executable_value_to_json(value)?);
+        }
+    }
+
+    stable_json_string(&values, "runtime optic field arguments")
 }
 
 fn is_composite_output_type(
