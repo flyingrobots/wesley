@@ -82,6 +82,25 @@ not repeat labels within any single footprint array. Nested, fragment,
 inline-fragment, or operation-level footprints are rejected until Wesley
 intentionally designs scoped footprints.
 
+## Runtime Optic Executable Subset
+
+`shape.valid.v1` means the selected operation is valid inside Wesley's declared
+runtime-optic executable subset. It does not claim that Wesley has implemented
+the full GraphQL executable-validation spec by hand.
+
+The v0 subset supports one selected root field, variables without default
+values, schema-backed field selections, root and selected-field argument
+validation, recursive input object literals, enum values, list/nullability
+checks, fragment type-condition compatibility, required subselections for
+composite fields, rejected subselections for leaf fields, response-name conflict
+checks, and preserved executable directive metadata.
+
+Unsupported executable features are rejected with structured operation lowering
+errors instead of being implicitly accepted. Current explicit v0 rejections
+include `__typename` selections, variable default values, interface
+inheritance, non-root `@wes_footprint`, duplicate executable directive
+arguments, and duplicate footprint labels.
+
 ## Extension Interpretation
 
 Extensions own interpretation.

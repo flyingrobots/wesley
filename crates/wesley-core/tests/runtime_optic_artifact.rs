@@ -558,6 +558,83 @@ fn runtime_optic_rejects_conflicting_response_names() {
 }
 
 #[test]
+fn runtime_optic_rejects_unsupported_executable_features() {
+    let schema = r#"
+        interface Node {
+          id: ID!
+        }
+
+        interface Resource implements Node {
+          id: ID!
+          path: String!
+        }
+
+        type File implements Node & Resource {
+          id: ID!
+          path: String!
+        }
+
+        type Query {
+          profile(id: ID!): Profile!
+          resource: Resource!
+        }
+
+        type Profile {
+          id: ID!
+          name: String!
+        }
+    "#;
+    let no_interface_inheritance_schema = r#"
+        type Query {
+          profile(id: ID!): Profile!
+        }
+
+        type Profile {
+          id: ID!
+          name: String!
+        }
+    "#;
+    let variable_default = r#"
+        query Profile($id: ID! = "me") {
+          profile(id: $id) {
+            id
+          }
+        }
+    "#;
+    let typename_selection = r#"
+        query Profile($id: ID!) {
+          profile(id: $id) {
+            __typename
+            id
+          }
+        }
+    "#;
+    let interface_inheritance = r#"
+        query Resource {
+          resource {
+            id
+          }
+        }
+    "#;
+
+    assert_operation_lowering_error(compile_runtime_optic(
+        no_interface_inheritance_schema,
+        variable_default,
+        Some("Profile"),
+    ));
+    assert_operation_lowering_error(compile_runtime_optic(
+        no_interface_inheritance_schema,
+        typename_selection,
+        Some("Profile"),
+    ));
+    assert_operation_lowering_error(compile_runtime_optic(
+        schema,
+        interface_inheritance,
+        Some("Resource"),
+    ));
+}
+
+#[test]
 fn runtime_optic_rejects_impossible_fragment_type_conditions() {
     let schema = r#"
         type Query {

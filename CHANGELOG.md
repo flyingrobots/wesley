@@ -57,6 +57,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **Runtime optic directive argument validation**: Runtime optic lowering now
   rejects duplicate executable directive arguments instead of preserving
   last-write-wins metadata for law and footprint directives.
+- **Runtime optic executable subset guards**: Runtime optic lowering now rejects
+  variable defaults, `__typename` selections, and interface inheritance as
+  explicit v0 unsupported features instead of accepting them under
+  `shape.valid.v1`.
 - **Authority and witness wire snapshots**: Runtime optic tests now snapshot
   `CapabilityGrant`, `CapabilityPresentation`, `AdmissionTicket`,
   `LawWitness`, observer classes, permission actions, evidence kinds, and law

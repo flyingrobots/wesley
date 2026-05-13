@@ -1015,6 +1015,7 @@ pub fn compile_runtime_optic(
         )
     })?;
     let schema = SchemaIndex::new(&ir);
+    reject_runtime_optic_unsupported_schema_features(&ir)?;
     let root_types = extract_root_types(sdl)?;
     let schema_operations = list_schema_operations_sdl(sdl)?;
 
@@ -1026,6 +1027,7 @@ pub fn compile_runtime_optic(
     let root_field_name = required_name(root_field.name(), "Root field selection missing name")?;
     let schema_operation =
         schema_operation_for_selected_field(&schema_operations, kind, &root_field_name)?;
+    reject_runtime_optic_variable_defaults(op)?;
     let variable_types = variable_definition_types(op)?;
     validate_runtime_optic_executable_selection(
         &root_field,
@@ -1487,6 +1489,42 @@ fn schema_operation_for_selected_field<'a>(
         })
 }
 
+fn reject_runtime_optic_unsupported_schema_features(ir: &WesleyIR) -> Result<(), WesleyError> {
+    for type_def in &ir.types {
+        if type_def.kind == TypeKind::Interface && !type_def.implements.is_empty() {
+            return operation_error(format!(
+                "Runtime optic v0 does not support interface inheritance on '{}'",
+                type_def.name
+            ));
+        }
+    }
+
+    Ok(())
+}
+
+fn reject_runtime_optic_variable_defaults(
+    op: &cst::OperationDefinition,
+) -> Result<(), WesleyError> {
+    let Some(variable_definitions) = op.variable_definitions() else {
+        return Ok(());
+    };
+
+    for variable in variable_definitions.variable_definitions() {
+        if variable.default_value().is_some() {
+            let name = variable
+                .variable()
+                .and_then(|variable| variable.name())
+                .map(|name| name.text().to_string())
+                .unwrap_or_else(|| "<unknown>".to_string());
+            return operation_error(format!(
+                "Runtime optic v0 does not support default value for variable '${name}'"
+            ));
+        }
+    }
+
+    Ok(())
+}
+
 fn validate_runtime_optic_executable_selection(
     root_field: &cst::Field,
     root_type: &str,
@@ -1618,6 +1656,7 @@ fn validate_runtime_optic_field_selection(
     active_fragments: &mut Vec<String>,
 ) -> Result<(), WesleyError> {
     let field_name = required_name(field.name(), "Field selection missing name")?;
+    reject_runtime_optic_unsupported_field_name(&field_name)?;
     let schema_field = schema.field(parent_type, &field_name)?;
     let has_selection_set = field.selection_set().is_some();
     let is_composite = is_composite_output_type(&schema_field.r#type, schema)?;
@@ -1660,6 +1699,7 @@ fn runtime_optic_field_signature(
     schema: &SchemaIndex<'_>,
 ) -> Result<(String, RuntimeOpticFieldSignature), WesleyError> {
     let field_name = required_name(field.name(), "Field selection missing name")?;
+    reject_runtime_optic_unsupported_field_name(&field_name)?;
     let response_name = response_field_name(field)?;
     let schema_field = schema.field(parent_type, &field_name)?;
 
@@ -1695,6 +1735,16 @@ fn field_arguments_canonical_json(
     }
 
     stable_json_string(&values, "runtime optic field arguments")
+}
+
+fn reject_runtime_optic_unsupported_field_name(field_name: &str) -> Result<(), WesleyError> {
+    if field_name == "__typename" {
+        return operation_error(
+            "Runtime optic v0 does not support __typename selections".to_string(),
+        );
+    }
+
+    Ok(())
 }
 
 fn is_composite_output_type(

@@ -295,6 +295,9 @@ The first witness does not need Echo. It can be a Rust test proving:
 - runtime SDL parses and lowers
 - the selected operation resolves
 - root field argument bindings are validated and preserved
+- unsupported runtime-optic executable features are rejected explicitly, so
+  `shape.valid.v1` means valid inside Wesley's declared v0 subset rather than
+  full GraphQL spec coverage
 - input object literals, nested required input fields, and enum values are
   schema-validated before `shape.valid.v1` is claimed
 - nested list wrappers are preserved during literal validation, so list depth
