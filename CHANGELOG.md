@@ -54,6 +54,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **Runtime optic footprint label validation**: Runtime optic lowering now
   rejects duplicate labels within each `@wes_footprint` `reads`, `writes`, and
   `forbids` array.
+- **Runtime optic directive argument validation**: Runtime optic lowering now
+  rejects duplicate executable directive arguments instead of preserving
+  last-write-wins metadata for law and footprint directives.
 - **Authority and witness wire snapshots**: Runtime optic tests now snapshot
   `CapabilityGrant`, `CapabilityPresentation`, `AdmissionTicket`,
   `LawWitness`, observer classes, permission actions, evidence kinds, and law

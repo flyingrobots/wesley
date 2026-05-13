@@ -1915,7 +1915,14 @@ fn extract_executable_directive_arguments(
         let value = argument.value().ok_or_else(|| {
             operation_error_value(format!("Directive argument '{name}' missing value"))
         })?;
-        values.insert(name, executable_value_to_json(value)?);
+        if values
+            .insert(name.clone(), executable_value_to_json(value)?)
+            .is_some()
+        {
+            return operation_error(format!(
+                "Directive argument '{name}' is declared more than once"
+            ));
+        }
     }
 
     Ok(values)

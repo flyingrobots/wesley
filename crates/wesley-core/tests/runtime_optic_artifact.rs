@@ -821,6 +821,55 @@ fn runtime_optic_rejects_duplicate_footprint_labels() {
 }
 
 #[test]
+fn runtime_optic_rejects_duplicate_footprint_directive_arguments() {
+    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
+    let duplicate_footprint_argument = r#"
+        mutation RenameSymbol($input: RenameSymbolInput!) {
+          renameSymbol(input: $input)
+            @wes_footprint(
+              reads: ["workspace.files"]
+              reads: ["secrets"]
+              writes: ["workspace.files"]
+            ) {
+            receipt {
+              witnessDigest
+            }
+          }
+        }
+    "#;
+
+    assert_operation_lowering_error(compile_runtime_optic(
+        schema,
+        duplicate_footprint_argument,
+        Some("RenameSymbol"),
+    ));
+}
+
+#[test]
+fn runtime_optic_rejects_duplicate_law_directive_arguments() {
+    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
+    let duplicate_law_argument = r#"
+        mutation RenameSymbol($input: RenameSymbolInput!) {
+          renameSymbol(input: $input)
+            @wes_law(
+              id: "bounded.rewrite.v1"
+              id: "footprint.closed.v1"
+            ) {
+            receipt {
+              witnessDigest
+            }
+          }
+        }
+    "#;
+
+    assert_operation_lowering_error(compile_runtime_optic(
+        schema,
+        duplicate_law_argument,
+        Some("RenameSymbol"),
+    ));
+}
+
+#[test]
 fn runtime_optic_rejects_non_root_footprint_directives() {
     let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
     let nested_only = r#"
