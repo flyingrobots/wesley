@@ -299,6 +299,8 @@ The first witness does not need Echo. It can be a Rust test proving:
   schema-validated before `shape.valid.v1` is claimed
 - nested list wrappers are preserved during literal validation, so list depth
   and nullability are part of the validity claim
+- composite fields require subselections, and leaf fields reject subselections,
+  before payload shape metadata is trusted
 - fragment spreads and inline fragments have compatible type conditions before
   they contribute payload, directive, or argument metadata
 - directive law data is preserved across the operation and selected field tree,

@@ -417,6 +417,74 @@ fn runtime_optic_rejects_invalid_input_object_literals() {
 }
 
 #[test]
+fn runtime_optic_rejects_invalid_subselection_shapes() {
+    let schema = r#"
+        type Query {
+          profile: Profile!
+          version: String!
+        }
+
+        type Profile {
+          id: ID!
+          name: String!
+        }
+    "#;
+    let valid_composite = r#"
+        query Profile {
+          profile {
+            id
+          }
+        }
+    "#;
+    let valid_leaf = r#"
+        query Version {
+          version
+        }
+    "#;
+    let composite_without_selection = r#"
+        query Profile {
+          profile
+        }
+    "#;
+    let leaf_with_selection = r#"
+        query Version {
+          version {
+            length
+          }
+        }
+    "#;
+    let nested_leaf_with_selection = r#"
+        query Profile {
+          profile {
+            id {
+              value
+            }
+          }
+        }
+    "#;
+
+    compile_runtime_optic(schema, valid_composite, Some("Profile"))
+        .expect("composite field with subselection should compile");
+    compile_runtime_optic(schema, valid_leaf, Some("Version"))
+        .expect("leaf field without subselection should compile");
+    assert_operation_lowering_error(compile_runtime_optic(
+        schema,
+        composite_without_selection,
+        Some("Profile"),
+    ));
+    assert_operation_lowering_error(compile_runtime_optic(
+        schema,
+        leaf_with_selection,
+        Some("Version"),
+    ));
+    assert_operation_lowering_error(compile_runtime_optic(
+        schema,
+        nested_leaf_with_selection,
+        Some("Profile"),
+    ));
+}
+
+#[test]
 fn runtime_optic_rejects_impossible_fragment_type_conditions() {
     let schema = r#"
         type Query {

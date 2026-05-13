@@ -1027,6 +1027,12 @@ pub fn compile_runtime_optic(
     let schema_operation =
         schema_operation_for_selected_field(&schema_operations, kind, &root_field_name)?;
     let variable_types = variable_definition_types(op)?;
+    validate_runtime_optic_executable_selection(
+        &root_field,
+        root_type,
+        &schema,
+        &parsed.fragments,
+    )?;
     let root_arguments =
         root_argument_bindings(&root_field, schema_operation, &variable_types, &schema)?;
     let selection_arguments = selection_argument_bindings(
@@ -1479,6 +1485,151 @@ fn schema_operation_for_selected_field<'a>(
                 "Schema root operation '{root_field_name}' not found for {kind:?}"
             ))
         })
+}
+
+fn validate_runtime_optic_executable_selection(
+    root_field: &cst::Field,
+    root_type: &str,
+    schema: &SchemaIndex<'_>,
+    fragments: &BTreeMap<String, cst::FragmentDefinition>,
+) -> Result<(), WesleyError> {
+    validate_runtime_optic_field_selection(
+        root_field,
+        root_type,
+        schema,
+        fragments,
+        &mut Vec::new(),
+    )
+}
+
+fn validate_runtime_optic_selection_set(
+    selection_set: &cst::SelectionSet,
+    parent_type: &str,
+    schema: &SchemaIndex<'_>,
+    fragments: &BTreeMap<String, cst::FragmentDefinition>,
+    active_fragments: &mut Vec<String>,
+) -> Result<(), WesleyError> {
+    for selection in selection_set.selections() {
+        match selection {
+            cst::Selection::Field(field) => {
+                validate_runtime_optic_field_selection(
+                    &field,
+                    parent_type,
+                    schema,
+                    fragments,
+                    active_fragments,
+                )?;
+            }
+            cst::Selection::FragmentSpread(spread) => {
+                let name = spread
+                    .fragment_name()
+                    .and_then(|fragment_name| fragment_name.name())
+                    .map(|name| name.text().to_string())
+                    .ok_or_else(|| {
+                        operation_error_value("Fragment spread missing name".to_string())
+                    })?;
+
+                if active_fragments.contains(&name) {
+                    return operation_error(format!(
+                        "Cyclic fragment spread detected for fragment '{name}'"
+                    ));
+                }
+
+                let fragment = fragments.get(&name).ok_or_else(|| {
+                    operation_error_value(format!("Unknown fragment spread '{name}'"))
+                })?;
+                let fragment_parent = fragment_type_condition(fragment)?;
+                validate_fragment_type_condition(parent_type, &fragment_parent, schema, &name)?;
+
+                active_fragments.push(name);
+                if let Some(fragment_selection_set) = fragment.selection_set() {
+                    validate_runtime_optic_selection_set(
+                        &fragment_selection_set,
+                        &fragment_parent,
+                        schema,
+                        fragments,
+                        active_fragments,
+                    )?;
+                }
+                active_fragments.pop();
+            }
+            cst::Selection::InlineFragment(fragment) => {
+                let inline_parent = if let Some(type_condition) = fragment.type_condition() {
+                    named_type_name(type_condition.named_type(), "Inline fragment missing type")?
+                } else {
+                    parent_type.to_string()
+                };
+                validate_fragment_type_condition(parent_type, &inline_parent, schema, "inline")?;
+
+                if let Some(inline_selection_set) = fragment.selection_set() {
+                    validate_runtime_optic_selection_set(
+                        &inline_selection_set,
+                        &inline_parent,
+                        schema,
+                        fragments,
+                        active_fragments,
+                    )?;
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn validate_runtime_optic_field_selection(
+    field: &cst::Field,
+    parent_type: &str,
+    schema: &SchemaIndex<'_>,
+    fragments: &BTreeMap<String, cst::FragmentDefinition>,
+    active_fragments: &mut Vec<String>,
+) -> Result<(), WesleyError> {
+    let field_name = required_name(field.name(), "Field selection missing name")?;
+    let schema_field = schema.field(parent_type, &field_name)?;
+    let has_selection_set = field.selection_set().is_some();
+    let is_composite = is_composite_output_type(&schema_field.r#type, schema)?;
+
+    match (is_composite, has_selection_set) {
+        (true, false) => operation_error(format!(
+            "Runtime optic field '{parent_type}.{field_name}' returns composite type '{}' and requires a subselection",
+            schema_field.r#type.base
+        )),
+        (false, true) => operation_error(format!(
+            "Runtime optic field '{parent_type}.{field_name}' returns leaf type '{}' and must not have a subselection",
+            schema_field.r#type.base
+        )),
+        _ => {
+            if let Some(selection_set) = field.selection_set() {
+                validate_runtime_optic_selection_set(
+                    &selection_set,
+                    &schema_field.r#type.base,
+                    schema,
+                    fragments,
+                    active_fragments,
+                )?;
+            }
+            Ok(())
+        }
+    }
+}
+
+fn is_composite_output_type(
+    type_ref: &TypeReference,
+    schema: &SchemaIndex<'_>,
+) -> Result<bool, WesleyError> {
+    match schema.type_kind(&type_ref.base) {
+        Some(TypeKind::Object | TypeKind::Interface | TypeKind::Union) => Ok(true),
+        Some(TypeKind::Enum | TypeKind::Scalar) => Ok(false),
+        Some(TypeKind::InputObject) => operation_error(format!(
+            "Runtime optic field references input object '{}' as an output type",
+            type_ref.base
+        )),
+        None if is_builtin_scalar(&type_ref.base) => Ok(false),
+        None => operation_error(format!(
+            "Runtime optic field references unknown output type '{}'",
+            type_ref.base
+        )),
+    }
 }
 
 fn directive_records_for_operation(
