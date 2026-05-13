@@ -1,0 +1,16 @@
+mutation RenameSymbol($input: RenameSymbolInput!) {
+  renameSymbol(input: $input)
+    @wes_law(id: "bounded.rewrite.v1")
+    @wes_footprint(
+      reads: ["workspace.files", "symbol.index"]
+      writes: ["workspace.files"]
+      forbids: ["secrets", "git.refs"]
+    ) {
+    receipt {
+      basisRef
+      resultRef
+      operationId
+      witnessDigest
+    }
+  }
+}

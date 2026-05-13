@@ -9,9 +9,84 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 ### Added
 
 - **Stack Witness 0001 fixture artifact shape**: Added a hermetic
-  jedit-through-Echo file-history fixture with operation ids, canonical vars
-  bytes, declared footprints, EINT and QueryView helper shapes, fixture vectors,
-  and Rust/TypeScript operation binding coverage.
+  jedit-through-Echo file-history fixture with operation ids, temporary fixture
+  vars bytes, declared footprints, EINT and QueryView helper shapes, fixture
+  vectors, and Rust/TypeScript operation binding coverage. The semicolon-kv
+  bytes are explicitly marked as fixture-only, while `targetCodec:
+  wesley-binary/v0` records the future Wesley-generated binary codec target
+  without implementing it.
+- **Runtime optic root argument validation**: `compile_runtime_optic()` now
+  validates selected root field arguments against the schema, preserves
+  canonical root argument bindings in `OpticOperation`, and includes those
+  bindings in stable operation identity.
+- **Runtime optic selected field arguments**: `compile_runtime_optic()` now
+  validates selected payload field arguments against the schema, preserves
+  canonical field argument bindings in `OpticOperation`, and includes those
+  bindings in stable operation and artifact identity.
+- **Runtime optic footprint bounds**: `compile_runtime_optic()` now requires
+  `reads` and `writes` arrays whenever `@wes_footprint` is present, while
+  omitted `forbids` still defaults to an empty forbidden-resource list.
+- **Runtime optic root footprint admission**: `@wes_footprint` is now legal only
+  on the selected root field for runtime optic artifacts, keeping nested
+  directives from changing admission-facing requirements.
+- **Runtime optic input literal validation**: `compile_runtime_optic()` now
+  recursively validates input object literals, required nested input fields, and
+  enum values before emitting `shape.valid.v1`.
+- **Runtime optic fragment compatibility**: Runtime optic lowering now rejects
+  impossible fragment spreads and inline fragments by comparing parent and type
+  condition possible runtime types.
+- **Runtime optic nested list validation**: Runtime optic argument literal
+  validation now preserves nested list wrappers while descending list values, so
+  flattened literals cannot satisfy nested list types.
+- **Runtime optic nested list variable compatibility**: Runtime optic variable
+  validation now rejects nullable nested-list leaf types when the schema
+  argument requires non-null leaves.
+- **Runtime optic subselection validation**: Runtime optic lowering now rejects
+  composite fields without subselections and leaf fields with subselections
+  before emitting `shape.valid.v1`.
+- **Runtime optic response-name validation**: Runtime optic lowering now rejects
+  conflicting same-response-name selections before payload codec extraction can
+  collapse incompatible fields.
+- **Optic registry resolver errors**: Removed the unreachable
+  `ArtifactIdMismatch` resolver error from the v0 in-memory registry, where
+  descriptor artifact ids are lookup keys and unknown ids correctly resolve as
+  `ArtifactNotFound`.
+- **Runtime optic footprint label validation**: Runtime optic lowering now
+  rejects duplicate labels within each `@wes_footprint` `reads`, `writes`, and
+  `forbids` array.
+- **Runtime optic directive argument validation**: Runtime optic lowering now
+  rejects duplicate executable directive arguments instead of preserving
+  last-write-wins metadata for law and footprint directives.
+- **Runtime optic executable subset guards**: Runtime optic lowering now rejects
+  variable defaults, `__typename` selections, and interface inheritance as
+  explicit v0 unsupported features instead of accepting them under
+  `shape.valid.v1`.
+- **Authority and witness wire snapshots**: Runtime optic tests now snapshot
+  `CapabilityGrant`, `CapabilityPresentation`, `AdmissionTicket`,
+  `LawWitness`, observer classes, permission actions, evidence kinds, and law
+  verdict enum spellings.
+- **Runtime optic invalid-operation assertions**: Runtime optic regression tests
+  now assert structured operation lowering errors instead of matching error
+  message substrings.
+- **Runtime optic directive preservation**: Runtime optic artifacts now preserve
+  directive records from the executable operation, nested selections, fragment
+  spreads, fragment definitions, and inline fragments instead of only the root
+  field.
+- **Runtime optic payload aliases**: Payload codec shapes now use GraphQL
+  response names, so aliases and repeated schema fields with distinct aliases are
+  reflected in payload paths and artifact hashes.
+- **Runtime optic payload requiredness**: Payload codec fields now respect
+  nullable ancestors, preventing non-null children under nullable parents from
+  being emitted as required response paths.
+- **Runtime optic executable directive variables**: Runtime optic directive
+  records now preserve variable-backed executable directive arguments, such as
+  `@include(if: $flag)`, as canonical variable-reference JSON.
+- **Optic artifact registry normalization**: The in-memory optic artifact
+  registry now derives stored registration descriptors from artifact identity
+  fields instead of trusting stale embedded descriptor data.
+- **Optic registration descriptor integrity coverage**: The in-memory registry
+  tests now assert operation id tampering is rejected alongside artifact hash,
+  schema id, requirements digest, and missing artifact checks.
 
 ## [0.0.2] - 2026-05-09
 

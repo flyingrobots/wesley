@@ -101,6 +101,9 @@ pub struct Field {
     /// Field arguments, for object and interface fields.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub arguments: Vec<FieldArgument>,
+    /// Default value, if an input object field declares one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub default_value: Option<serde_json::Value>,
     /// Generic map of directives.
     pub directives: IndexMap<String, serde_json::Value>,
 }
