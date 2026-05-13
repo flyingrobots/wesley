@@ -299,6 +299,7 @@ The first witness does not need Echo. It can be a Rust test proving:
   schema-validated before `shape.valid.v1` is claimed
 - nested list wrappers are preserved during literal validation, so list depth
   and nullability are part of the validity claim
+- nested list variable bindings preserve non-null leaf requirements
 - composite fields require subselections, and leaf fields reject subselections,
   before payload shape metadata is trusted
 - same-response-name field selections must be merge-compatible before payload

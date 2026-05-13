@@ -38,6 +38,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **Runtime optic nested list validation**: Runtime optic argument literal
   validation now preserves nested list wrappers while descending list values, so
   flattened literals cannot satisfy nested list types.
+- **Runtime optic nested list variable compatibility**: Runtime optic variable
+  validation now rejects nullable nested-list leaf types when the schema
+  argument requires non-null leaves.
 - **Runtime optic subselection validation**: Runtime optic lowering now rejects
   composite fields without subselections and leaf fields with subselections
   before emitting `shape.valid.v1`.

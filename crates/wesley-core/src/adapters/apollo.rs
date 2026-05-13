@@ -2666,9 +2666,19 @@ fn variable_type_is_compatible(actual: &TypeReference, expected: &TypeReference)
 }
 
 fn list_items_are_compatible(actual: &TypeReference, expected: &TypeReference) -> bool {
-    match (actual.list_item_nullable, expected.list_item_nullable) {
+    if matches!(
+        (actual.list_item_nullable, expected.list_item_nullable),
+        (Some(true), Some(false))
+    ) {
+        return false;
+    }
+
+    match (
+        actual.leaf_nullable.or(actual.list_item_nullable),
+        expected.leaf_nullable.or(expected.list_item_nullable),
+    ) {
         (Some(true), Some(false)) => false,
-        _ => actual.leaf_nullable.unwrap_or(false) || !expected.leaf_nullable.unwrap_or(false),
+        _ => true,
     }
 }
 

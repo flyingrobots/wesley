@@ -666,6 +666,41 @@ fn runtime_optic_rejects_flat_literals_for_nested_list_arguments() {
 }
 
 #[test]
+fn runtime_optic_rejects_nullable_leaf_nested_list_variables() {
+    let schema = r#"
+        type Mutation {
+          configure(matrix: [[Int!]!]!): ConfigureResult!
+        }
+
+        type ConfigureResult {
+          ok: Boolean!
+        }
+    "#;
+    let valid = r#"
+        mutation Configure($matrix: [[Int!]!]!) {
+          configure(matrix: $matrix) {
+            ok
+          }
+        }
+    "#;
+    let nullable_leaf = r#"
+        mutation Configure($matrix: [[Int]!]!) {
+          configure(matrix: $matrix) {
+            ok
+          }
+        }
+    "#;
+
+    compile_runtime_optic(schema, valid, Some("Configure"))
+        .expect("matching nested list variable should compile");
+    assert_operation_lowering_error(compile_runtime_optic(
+        schema,
+        nullable_leaf,
+        Some("Configure"),
+    ));
+}
+
+#[test]
 fn runtime_optic_requires_reads_and_writes_when_footprint_is_present() {
     let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
     let missing_reads = r#"
