@@ -20,7 +20,7 @@ Plan and execute a small directive migration from `@wes_footprint` to a
 runtime-owned spelling such as `@echo_footprint`, while preserving a deliberate
 compatibility path for existing fixtures and consumers.
 
-## Done Looks Like
+## Done looks like
 
 - a migration plan states whether `@wes_footprint` remains as a legacy alias,
   warning, or removed spelling

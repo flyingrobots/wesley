@@ -34,7 +34,7 @@ validate_runtime_optic_executable_selection(...)
   -> law claim generation
 ```
 
-## Done Looks Like
+## Done looks like
 
 - runtime optic validation has a documented matrix of covered GraphQL
   executable rules
