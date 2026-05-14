@@ -1,6 +1,6 @@
 [package]
 name = "wesley-emit-rust"
-version = "0.0.2"
+version = "0.0.3"
 edition = "2021"
 description = "AST-based Rust emitter for Wesley IR"
 license = "Apache-2.0"
@@ -13,7 +13,7 @@ categories = ["compilers"]
 
 [dependencies]
 serde_json = "1.0"
-wesley-core = { path = "../wesley-core", version = "0.0.2" }
+wesley-core = { path = "../wesley-core", version = "0.0.3" }
 
 [dev-dependencies]
 pretty_assertions = "1.4"
