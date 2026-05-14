@@ -2160,16 +2160,19 @@ fn selection_argument_bindings(
     variable_types: &BTreeMap<String, TypeReference>,
 ) -> Result<Vec<SelectionArgumentBinding>, WesleyError> {
     let mut bindings = Vec::new();
+    let context = SelectionArgumentBindingContext {
+        schema,
+        fragments,
+        variable_types,
+    };
 
     if let Some(selection_set) = root_field.selection_set() {
         collect_selection_argument_bindings(
             &selection_set,
             &result_type.base,
-            schema,
-            fragments,
+            &context,
             &mut Vec::new(),
             "",
-            variable_types,
             &mut bindings,
         )?;
     }
@@ -2177,14 +2180,18 @@ fn selection_argument_bindings(
     Ok(bindings)
 }
 
+struct SelectionArgumentBindingContext<'a> {
+    schema: &'a SchemaIndex<'a>,
+    fragments: &'a BTreeMap<String, cst::FragmentDefinition>,
+    variable_types: &'a BTreeMap<String, TypeReference>,
+}
+
 fn collect_selection_argument_bindings(
     selection_set: &cst::SelectionSet,
     parent_type: &str,
-    schema: &SchemaIndex<'_>,
-    fragments: &BTreeMap<String, cst::FragmentDefinition>,
+    context: &SelectionArgumentBindingContext<'_>,
     active_fragments: &mut Vec<String>,
     prefix: &str,
-    variable_types: &BTreeMap<String, TypeReference>,
     bindings: &mut Vec<SelectionArgumentBinding>,
 ) -> Result<(), WesleyError> {
     for selection in selection_set.selections() {
@@ -2192,7 +2199,7 @@ fn collect_selection_argument_bindings(
             cst::Selection::Field(field) => {
                 let field_name = required_name(field.name(), "Field selection missing name")?;
                 let response_name = response_field_name(&field)?;
-                let schema_field = schema.field(parent_type, &field_name)?;
+                let schema_field = context.schema.field(parent_type, &field_name)?;
                 let path = if prefix.is_empty() {
                     response_name
                 } else {
@@ -2203,22 +2210,20 @@ fn collect_selection_argument_bindings(
                     &field,
                     &path,
                     schema_field,
-                    variable_types,
-                    schema,
+                    context.variable_types,
+                    context.schema,
                     bindings,
                 )?;
 
                 if let Some(nested_selection_set) = field.selection_set() {
                     let nested_parent = schema_field.r#type.base.as_str();
-                    schema.require_type(nested_parent)?;
+                    context.schema.require_type(nested_parent)?;
                     collect_selection_argument_bindings(
                         &nested_selection_set,
                         nested_parent,
-                        schema,
-                        fragments,
+                        context,
                         active_fragments,
                         &path,
-                        variable_types,
                         bindings,
                     )?;
                 }
@@ -2238,22 +2243,25 @@ fn collect_selection_argument_bindings(
                     ));
                 }
 
-                let fragment = fragments.get(&name).ok_or_else(|| {
+                let fragment = context.fragments.get(&name).ok_or_else(|| {
                     operation_error_value(format!("Unknown fragment spread '{name}'"))
                 })?;
                 let fragment_parent = fragment_type_condition(fragment)?;
-                validate_fragment_type_condition(parent_type, &fragment_parent, schema, &name)?;
+                validate_fragment_type_condition(
+                    parent_type,
+                    &fragment_parent,
+                    context.schema,
+                    &name,
+                )?;
 
                 active_fragments.push(name);
                 if let Some(fragment_selection_set) = fragment.selection_set() {
                     collect_selection_argument_bindings(
                         &fragment_selection_set,
                         &fragment_parent,
-                        schema,
-                        fragments,
+                        context,
                         active_fragments,
                         prefix,
-                        variable_types,
                         bindings,
                     )?;
                 }
@@ -2265,17 +2273,20 @@ fn collect_selection_argument_bindings(
                 } else {
                     parent_type.to_string()
                 };
-                validate_fragment_type_condition(parent_type, &inline_parent, schema, "inline")?;
+                validate_fragment_type_condition(
+                    parent_type,
+                    &inline_parent,
+                    context.schema,
+                    "inline",
+                )?;
 
                 if let Some(inline_selection_set) = fragment.selection_set() {
                     collect_selection_argument_bindings(
                         &inline_selection_set,
                         &inline_parent,
-                        schema,
-                        fragments,
+                        context,
                         active_fragments,
                         prefix,
-                        variable_types,
                         bindings,
                     )?;
                 }
@@ -2730,13 +2741,13 @@ fn list_items_are_compatible(actual: &TypeReference, expected: &TypeReference) -
         return false;
     }
 
-    match (
-        actual.leaf_nullable.or(actual.list_item_nullable),
-        expected.leaf_nullable.or(expected.list_item_nullable),
-    ) {
-        (Some(true), Some(false)) => false,
-        _ => true,
-    }
+    !matches!(
+        (
+            actual.leaf_nullable.or(actual.list_item_nullable),
+            expected.leaf_nullable.or(expected.list_item_nullable),
+        ),
+        (Some(true), Some(false))
+    )
 }
 
 fn list_item_type_ref(type_ref: &TypeReference) -> TypeReference {
@@ -2882,13 +2893,13 @@ fn payload_codec_shape(
     fragments: &BTreeMap<String, cst::FragmentDefinition>,
 ) -> Result<CodecShape, WesleyError> {
     let mut fields = Vec::new();
+    let context = PayloadCodecContext { schema, fragments };
 
     if let Some(selection_set) = root_field.selection_set() {
         collect_payload_codec_fields(
             &selection_set,
             &result_type.base,
-            schema,
-            fragments,
+            &context,
             &mut Vec::new(),
             "",
             !result_type.nullable,
@@ -2902,11 +2913,15 @@ fn payload_codec_shape(
     })
 }
 
+struct PayloadCodecContext<'a> {
+    schema: &'a SchemaIndex<'a>,
+    fragments: &'a BTreeMap<String, cst::FragmentDefinition>,
+}
+
 fn collect_payload_codec_fields(
     selection_set: &cst::SelectionSet,
     parent_type: &str,
-    schema: &SchemaIndex<'_>,
-    fragments: &BTreeMap<String, cst::FragmentDefinition>,
+    context: &PayloadCodecContext<'_>,
     active_fragments: &mut Vec<String>,
     prefix: &str,
     parent_path_required: bool,
@@ -2917,7 +2932,7 @@ fn collect_payload_codec_fields(
             cst::Selection::Field(field) => {
                 let field_name = required_name(field.name(), "Field selection missing name")?;
                 let response_name = response_field_name(&field)?;
-                let schema_field = schema.field(parent_type, &field_name)?;
+                let schema_field = context.schema.field(parent_type, &field_name)?;
                 let path = if prefix.is_empty() {
                     response_name
                 } else {
@@ -2937,12 +2952,11 @@ fn collect_payload_codec_fields(
 
                 if let Some(nested_selection_set) = field.selection_set() {
                     let nested_parent = schema_field.r#type.base.as_str();
-                    schema.require_type(nested_parent)?;
+                    context.schema.require_type(nested_parent)?;
                     collect_payload_codec_fields(
                         &nested_selection_set,
                         nested_parent,
-                        schema,
-                        fragments,
+                        context,
                         active_fragments,
                         &path,
                         field_required,
@@ -2965,19 +2979,23 @@ fn collect_payload_codec_fields(
                     ));
                 }
 
-                let fragment = fragments.get(&name).ok_or_else(|| {
+                let fragment = context.fragments.get(&name).ok_or_else(|| {
                     operation_error_value(format!("Unknown fragment spread '{name}'"))
                 })?;
                 let fragment_parent = fragment_type_condition(fragment)?;
-                validate_fragment_type_condition(parent_type, &fragment_parent, schema, &name)?;
+                validate_fragment_type_condition(
+                    parent_type,
+                    &fragment_parent,
+                    context.schema,
+                    &name,
+                )?;
 
                 active_fragments.push(name);
                 if let Some(fragment_selection_set) = fragment.selection_set() {
                     collect_payload_codec_fields(
                         &fragment_selection_set,
                         &fragment_parent,
-                        schema,
-                        fragments,
+                        context,
                         active_fragments,
                         prefix,
                         parent_path_required,
@@ -2992,14 +3010,18 @@ fn collect_payload_codec_fields(
                 } else {
                     parent_type.to_string()
                 };
-                validate_fragment_type_condition(parent_type, &inline_parent, schema, "inline")?;
+                validate_fragment_type_condition(
+                    parent_type,
+                    &inline_parent,
+                    context.schema,
+                    "inline",
+                )?;
 
                 if let Some(inline_selection_set) = fragment.selection_set() {
                     collect_payload_codec_fields(
                         &inline_selection_set,
                         &inline_parent,
-                        schema,
-                        fragments,
+                        context,
                         active_fragments,
                         prefix,
                         parent_path_required,

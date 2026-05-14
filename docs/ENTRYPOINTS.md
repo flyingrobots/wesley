@@ -11,7 +11,7 @@ For installed alpha builds, the crates.io package is `wesley-cli` and the
 installed command is `wesley`:
 
 ```bash
-cargo install wesley-cli --version 0.0.2
+cargo install wesley-cli --version 0.0.3
 wesley --help
 ```
 

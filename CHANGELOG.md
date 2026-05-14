@@ -6,6 +6,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+## [0.0.3] - 2026-05-14
+
 ### Added
 
 - **Stack Witness 0001 fixture artifact shape**: Added a hermetic
@@ -903,6 +905,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 ## [0.1.0] - 2025-09-01
 - Initial public repository layout
 
-[Unreleased]: https://github.com/flyingrobots/wesley/compare/v0.0.2...HEAD
+[Unreleased]: https://github.com/flyingrobots/wesley/compare/v0.0.3...HEAD
+[0.0.3]: https://github.com/flyingrobots/wesley/compare/v0.0.2...v0.0.3
 [0.0.2]: https://github.com/flyingrobots/wesley/compare/v0.0.1...v0.0.2
 [0.0.1]: https://github.com/flyingrobots/wesley/releases/tag/v0.0.1
