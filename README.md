@@ -27,20 +27,19 @@ For the bounded-autonomy direction, read
 
 ---
 
-## What's New in v0.0.3
+## What's New in v0.0.4
 
-Wesley `0.0.3` introduces the first runtime optic artifact compiler surface.
-`wesley-core` can compile supported GraphQL runtime optic operations into
-stable, content-addressed artifact claims with operation identity, variable and
-payload shapes, preserved directive records, admission requirements, law claim
-templates, artifact hashes, and registration descriptors for runtime import.
+Wesley `0.0.4` makes runtime optic admission requirements importable as a
+canonical compiler-owned artifact. `compile_runtime_optic()` still exposes the
+structured `OpticAdmissionRequirements` for compiler-side inspection, and now
+also emits deterministic requirement bytes, an explicit
+`wesley.requirements.canonical-json.v0` codec, and a digest computed from those
+exact bytes.
 
-The release also hardens the runtime optic executable subset before
-`shape.valid.v1` is emitted. Unsupported v0 features are rejected explicitly,
-footprints are root-field-only admission declarations, nested inputs and list
-wrappers are validated, response-name conflicts are rejected, authority and
-witness wire spellings are snapshotted, and causal suffix bundle design notes
-record the next runtime synchronization direction.
+This release keeps the runtime boundary narrow. Downstream runtimes can import
+Wesley's requirement bytes, digest, and codec directly instead of reserializing
+compiler structs to create admission truth. Echo still owns registration,
+handles, grants, tickets, witnesses, and runtime enforcement.
 
 For the complete release history, read [CHANGELOG.md](./CHANGELOG.md).
 
