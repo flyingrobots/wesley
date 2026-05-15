@@ -1,9 +1,11 @@
+use sha2::{Digest, Sha256};
 use wesley_core::{
     compile_runtime_optic, compile_runtime_optic_registration, AdmissionTicket, ApertureConstraint,
     BasisConstraint, BudgetConstraint, CapabilityGrant, CapabilityPresentation, CodecField,
     DirectiveRecord, EvidenceKind, InMemoryOpticArtifactRegistry, LawVerdict, LawWitness,
     ObserverClass, OperationKind, OpticArtifactHandle, OpticArtifactResolver, PermissionAction,
     PermissionRequirement, PrincipalRef, ReplayHint, ResolveError,
+    OPTIC_ADMISSION_REQUIREMENTS_ARTIFACT_CODEC,
 };
 
 #[test]
@@ -247,6 +249,168 @@ fn artifact_hashes_are_stable_and_sensitive_to_shape_and_requirements() {
     assert_ne!(
         baseline.artifact_hash, payload_artifact.artifact_hash,
         "changing selected payload shape must change artifact hash"
+    );
+}
+
+#[test]
+fn canonical_requirements_bytes_are_deterministic() {
+    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
+    let operation = include_str!("../../../test/fixtures/runtime-optics/rename_symbol.graphql");
+
+    let artifact = compile_runtime_optic(schema, operation, Some("RenameSymbol"))
+        .expect("runtime optic should compile");
+    let expected = wesley_core::to_canonical_json(&serde_json::json!({
+        "declaredFootprint": &artifact.operation.declared_footprint,
+        "lawClaims": &artifact.operation.law_claims,
+        "requirements": &artifact.requirements,
+    }))
+    .expect("expected requirements body should canonicalize")
+    .into_bytes();
+
+    assert!(!artifact.requirements_artifact.bytes.is_empty());
+    assert_eq!(
+        artifact.requirements_artifact.bytes, expected,
+        "compiled artifact should expose Wesley's canonical requirements byte buffer"
+    );
+}
+
+#[test]
+fn canonical_requirements_digest_matches_bytes() {
+    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
+    let operation = include_str!("../../../test/fixtures/runtime-optics/rename_symbol.graphql");
+
+    let artifact = compile_runtime_optic(schema, operation, Some("RenameSymbol"))
+        .expect("runtime optic should compile");
+    let actual_digest = sha256_hex(&artifact.requirements_artifact.bytes);
+
+    assert_eq!(artifact.requirements_artifact.digest, actual_digest);
+    assert_eq!(
+        artifact.requirements_digest,
+        artifact.requirements_artifact.digest
+    );
+}
+
+#[test]
+fn canonical_requirements_codec_is_explicit() {
+    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
+    let operation = include_str!("../../../test/fixtures/runtime-optics/rename_symbol.graphql");
+
+    let artifact = compile_runtime_optic(schema, operation, Some("RenameSymbol"))
+        .expect("runtime optic should compile");
+
+    assert_eq!(
+        artifact.requirements_artifact.codec,
+        OPTIC_ADMISSION_REQUIREMENTS_ARTIFACT_CODEC
+    );
+}
+
+#[test]
+fn canonical_requirements_bytes_are_stable_across_repeated_compile() {
+    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
+    let operation = include_str!("../../../test/fixtures/runtime-optics/rename_symbol.graphql");
+
+    let first = compile_runtime_optic(schema, operation, Some("RenameSymbol"))
+        .expect("runtime optic should compile");
+    let second = compile_runtime_optic(schema, operation, Some("RenameSymbol"))
+        .expect("runtime optic should compile repeatedly");
+
+    assert_eq!(
+        first.requirements_artifact.bytes,
+        second.requirements_artifact.bytes
+    );
+    assert_eq!(
+        first.requirements_artifact.digest,
+        second.requirements_artifact.digest
+    );
+}
+
+#[test]
+fn canonical_requirements_json_keys_are_ordered_if_json_codec_is_used() {
+    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
+    let operation = include_str!("../../../test/fixtures/runtime-optics/rename_symbol.graphql");
+
+    let artifact = compile_runtime_optic(schema, operation, Some("RenameSymbol"))
+        .expect("runtime optic should compile");
+    assert_eq!(
+        artifact.requirements_artifact.codec,
+        OPTIC_ADMISSION_REQUIREMENTS_ARTIFACT_CODEC
+    );
+
+    let canonical = std::str::from_utf8(&artifact.requirements_artifact.bytes)
+        .expect("canonical requirements bytes should be UTF-8 JSON");
+    serde_json::from_str::<serde_json::Value>(canonical)
+        .expect("canonical requirements bytes should parse as JSON");
+
+    assert!(
+        canonical.starts_with("{\"declaredFootprint\":"),
+        "top-level JSON keys should begin in sorted order: {canonical}"
+    );
+    assert!(
+        canonical.find("\"lawClaims\"").expect("lawClaims key")
+            < canonical
+                .find("\"requirements\"")
+                .expect("requirements key"),
+        "top-level JSON keys should stay lexicographically ordered: {canonical}"
+    );
+    assert!(
+        canonical
+            .find("\"forbiddenResources\"")
+            .expect("forbiddenResources key")
+            < canonical.find("\"identity\"").expect("identity key"),
+        "nested requirements keys should stay lexicographically ordered: {canonical}"
+    );
+}
+
+#[test]
+fn runtime_optic_artifact_exposes_requirements_artifact() {
+    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
+    let operation = include_str!("../../../test/fixtures/runtime-optics/rename_symbol.graphql");
+
+    let artifact = compile_runtime_optic(schema, operation, Some("RenameSymbol"))
+        .expect("runtime optic should compile");
+
+    assert_eq!(
+        artifact.requirements_artifact.digest,
+        artifact.requirements_digest
+    );
+    assert_eq!(
+        artifact.requirements_artifact.codec,
+        OPTIC_ADMISSION_REQUIREMENTS_ARTIFACT_CODEC
+    );
+    assert!(!artifact.requirements_artifact.bytes.is_empty());
+}
+
+#[test]
+fn changing_footprint_law_requirements_changes_requirements_digest() {
+    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
+    let operation = include_str!("../../../test/fixtures/runtime-optics/rename_symbol.graphql");
+
+    let baseline = compile_runtime_optic(schema, operation, Some("RenameSymbol"))
+        .expect("baseline runtime optic should compile");
+
+    let footprint_changed = operation.replace("\"symbol.index\"", "\"diagnostics\"");
+    let footprint_artifact =
+        compile_runtime_optic(schema, &footprint_changed, Some("RenameSymbol"))
+            .expect("footprint-changed runtime optic should compile");
+    assert_ne!(
+        baseline.requirements_digest, footprint_artifact.requirements_digest,
+        "changing footprint requirements must change requirements digest"
+    );
+    assert_ne!(
+        baseline.requirements_artifact.bytes, footprint_artifact.requirements_artifact.bytes,
+        "changing footprint requirements must change canonical requirements bytes"
+    );
+
+    let law_changed = operation.replace("bounded.rewrite.v1", "bounded.rewrite.audit.v1");
+    let law_artifact = compile_runtime_optic(schema, &law_changed, Some("RenameSymbol"))
+        .expect("law-changed runtime optic should compile");
+    assert_ne!(
+        baseline.requirements_digest, law_artifact.requirements_digest,
+        "changing law requirements must change requirements digest"
+    );
+    assert_ne!(
+        baseline.requirements_artifact.bytes, law_artifact.requirements_artifact.bytes,
+        "changing law requirements must change canonical requirements bytes"
     );
 }
 
@@ -1598,4 +1762,10 @@ fn assert_operation_lowering_error(
         Err(error) => panic!("expected operation lowering error, got {error:?}"),
         Ok(_) => panic!("runtime optic should reject invalid operation"),
     }
+}
+
+fn sha256_hex(bytes: &[u8]) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(bytes);
+    hex::encode(hasher.finalize())
 }

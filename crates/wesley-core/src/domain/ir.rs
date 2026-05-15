@@ -166,8 +166,13 @@ pub fn compute_registry_hash(ir: &WesleyIR) -> Result<String, serde_json::Error>
 
 /// Computes a stable SHA-256 hex hash for arbitrary UTF-8 content.
 pub fn compute_content_hash(content: &str) -> String {
+    compute_content_hash_bytes(content.as_bytes())
+}
+
+/// Computes a stable SHA-256 hex hash for arbitrary bytes.
+pub fn compute_content_hash_bytes(content: &[u8]) -> String {
     let mut hasher = Sha256::new();
-    hasher.update(content.as_bytes());
+    hasher.update(content);
     let result = hasher.finalize();
 
     hex::encode(result)
