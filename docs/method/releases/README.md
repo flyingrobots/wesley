@@ -2,6 +2,10 @@
 
 Store internal release artifacts here.
 
+## Release Packets
+
+- [Wesley v0.0.4](./v0.0.4/release.md)
+
 Each shaped release should have a versioned directory such as
 `docs/method/releases/vX.Y.Z/` containing:
 
