@@ -232,7 +232,8 @@ The runtime handoff should stay explicit:
 ```text
 application declares GraphQL operation
   -> Wesley compiles OpticArtifact
-  -> Wesley returns OpticArtifact plus artifact hash and requirements digest
+  -> Wesley returns OpticArtifact plus artifact hash, requirements digest,
+     and canonical requirements artifact
   -> application registers artifact with Echo or another runtime registry
   -> runtime verifies Wesley artifact hash and stores requirements
   -> runtime returns opaque OpticArtifactHandle
@@ -247,11 +248,12 @@ application declares GraphQL operation
   -> runtime emits LawWitness / receipt
 ```
 
-That flow preserves five separate nouns:
+That flow preserves separate nouns:
 
 | Noun | Owner | Job |
 | --- | --- | --- |
 | `OpticArtifact` | Wesley | Compiled, content-addressed declaration of operation shape, codecs, law claims, and admission requirements. |
+| `OpticAdmissionRequirementsArtifact` | Wesley | Canonical requirements bytes, explicit codec, and digest computed from those exact bytes. |
 | `OpticRegistrationDescriptor` | Wesley | Artifact id, artifact hash, schema id, operation id, and requirements digest used when registering the artifact with a runtime. |
 | `OpticArtifactHandle` | Echo or another runtime | Opaque registry handle proving the runtime accepted and stored a specific Wesley artifact hash. |
 | `CapabilityGrant` / `CapabilityPresentation` | User, host, quorum, or policy authority | Bounded authority plus invocation-time proof to attempt a registered artifact under explicit constraints. |
@@ -259,7 +261,10 @@ That flow preserves five separate nouns:
 
 The critical boundary is that Wesley compiles the requirements, while the
 runtime registers the artifact, admits the interaction, instruments access, and
-witnesses what happened. A runtime handle proves registration, not authority.
+witnesses what happened. Wesley owns canonical runtime optic requirement truth:
+downstream runtimes may import the requirements bytes, digest, and codec
+directly, but must not serialize Wesley structs to create admission truth. A
+runtime handle proves registration, not authority.
 
 ## What Wesley Must Become
 
@@ -326,8 +331,8 @@ identity, artifact hash, operation identity, operation kind, operation name,
 canonical root argument bindings, canonical selected field argument bindings,
 variable codec shape, response payload codec shape, preserved directive records
 from the executable operation and selected field tree, declared footprint, law
-claim templates, admission requirements, requirements digest, and an
-`OpticRegistrationDescriptor`.
+claim templates, structured admission requirements, canonical admission
+requirements artifact, requirements digest, and an `OpticRegistrationDescriptor`.
 `compile_runtime_optic_registration()` returns just the registration descriptor
 for callers that need the cross-process registration reference without
 receiving the full in-memory artifact object.

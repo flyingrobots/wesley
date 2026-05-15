@@ -7,9 +7,10 @@ use crate::domain::operation::{
 };
 use crate::domain::optic::{
     CodecField, CodecShape, DirectiveRecord, EvidenceKind, Footprint, IdentityRequirement,
-    LawClaimTemplate, OperationKind, OpticAdmissionRequirements, OpticArtifact, OpticOperation,
-    OpticRegistrationDescriptor, PermissionAction, PermissionRequirement, RootArgumentBinding,
-    SelectionArgumentBinding,
+    LawClaimTemplate, OperationKind, OpticAdmissionRequirements,
+    OpticAdmissionRequirementsArtifact, OpticArtifact, OpticOperation, OpticRegistrationDescriptor,
+    PermissionAction, PermissionRequirement, RootArgumentBinding, SelectionArgumentBinding,
+    OPTIC_ADMISSION_REQUIREMENTS_ARTIFACT_CODEC,
 };
 use crate::domain::schema_delta::{diff_schema_ir, SchemaDelta};
 use crate::ports::lowering::LoweringPort;
@@ -1073,20 +1074,21 @@ pub fn compile_runtime_optic(
     let law_claims =
         law_claims_for_operation(&operation_id, &directives, declared_footprint.as_ref())?;
     let requirements = admission_requirements_from_footprint(declared_footprint.as_ref());
-    let requirements_digest = stable_json_hash(
-        &serde_json::json!({
-            "declaredFootprint": &declared_footprint,
-            "lawClaims": &law_claims,
-            "requirements": &requirements,
-        }),
-        "runtime optic requirements digest",
-    )?;
+    let requirements_artifact = canonical_requirements_artifact(&serde_json::json!({
+        "declaredFootprint": &declared_footprint,
+        "lawClaims": &law_claims,
+        "requirements": &requirements,
+    }))?;
+    let requirements_digest = requirements_artifact.digest.clone();
     let artifact_hash = stable_json_hash(
         &serde_json::json!({
             "directives": &directives,
             "operationId": &operation_id,
             "payloadShape": &payload_shape,
-            "requirementsDigest": &requirements_digest,
+            "requirementsArtifact": {
+                "codec": &requirements_artifact.codec,
+                "digest": &requirements_artifact.digest,
+            },
             "schemaId": &schema_id,
             "variableShape": &variable_shape,
         }),
@@ -1106,6 +1108,7 @@ pub fn compile_runtime_optic(
         artifact_hash,
         schema_id,
         requirements_digest,
+        requirements_artifact,
         operation: OpticOperation {
             operation_id,
             name: operation_name,
@@ -3182,6 +3185,20 @@ fn is_list_type(type_ref: &TypeReference) -> bool {
 fn stable_json_hash<T: serde::Serialize>(value: &T, area: &str) -> Result<String, WesleyError> {
     let canonical = stable_json_string(value, area)?;
     Ok(compute_content_hash(&canonical))
+}
+
+fn canonical_requirements_artifact<T: serde::Serialize>(
+    value: &T,
+) -> Result<OpticAdmissionRequirementsArtifact, WesleyError> {
+    let canonical = stable_json_string(value, "runtime optic requirements artifact")?;
+    let bytes = canonical.into_bytes();
+    let digest = compute_content_hash_bytes(&bytes);
+
+    Ok(OpticAdmissionRequirementsArtifact {
+        digest,
+        codec: OPTIC_ADMISSION_REQUIREMENTS_ARTIFACT_CODEC.to_string(),
+        bytes,
+    })
 }
 
 fn stable_json_string<T: serde::Serialize>(value: &T, area: &str) -> Result<String, WesleyError> {

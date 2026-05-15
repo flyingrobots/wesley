@@ -6,6 +6,15 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Added
+
+- **Runtime optic requirements artifact**: `compile_runtime_optic()` now emits a
+  Wesley-owned `OpticAdmissionRequirementsArtifact` containing canonical
+  requirements bytes, an explicit `wesley.requirements.canonical-json.v0` codec,
+  and a digest computed from those exact bytes. Downstream runtimes can import
+  the bytes, digest, and codec directly without reserializing
+  `OpticAdmissionRequirements` to create admission truth.
+
 ## [0.0.3] - 2026-05-14
 
 ### Added
