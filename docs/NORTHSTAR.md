@@ -248,7 +248,7 @@ application declares GraphQL operation
   -> runtime emits LawWitness / receipt
 ```
 
-That flow preserves five separate nouns:
+That flow preserves separate nouns:
 
 | Noun | Owner | Job |
 | --- | --- | --- |
