@@ -2,7 +2,7 @@
 
 Store internal release artifacts here.
 
-## Release Packets
+## Available Releases
 
 - [Wesley v0.0.4](./v0.0.4/release.md)
 
