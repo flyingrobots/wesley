@@ -61,6 +61,20 @@ It:
   active queue
 - leaves implementation behavior untouched
 
+## Governance Docs Slice
+
+The root governance files are part of the release front door.
+
+This slice:
+
+- updates `CONTRIBUTING.md` so contributors see Wesley as the module-first
+  semantic contract compiler and assurance toolchain
+- updates `SECURITY.md` so security posture centers trusted modules, generated
+  artifact review, evidence integrity, and explicit external ownership for
+  database/runtime/product policy
+- retires the matching bad-code card because root governance no longer claims
+  database-change product ownership as generic Wesley doctrine
+
 ## Non-Goals
 
 - Do not delete historical design packets that are already marked as
