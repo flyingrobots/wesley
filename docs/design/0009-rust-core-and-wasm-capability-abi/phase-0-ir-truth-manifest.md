@@ -5,7 +5,8 @@ L1 fixture corpus required for the Wesley Rust Core parity migration.
 
 ## Canonical JS Functions
 
-The following functions in the existing JS codebase are the "Truth Anchors" for compiler behavior:
+The following functions in the existing JS codebase are the "Truth Anchors" for
+compiler behavior:
 
 | Area | Package | File | Function |
 | :--- | :--- | :--- | :--- |
@@ -17,18 +18,22 @@ The following functions in the existing JS codebase are the "Truth Anchors" for 
 
 ## Canonical JSON Byte Rules
 
-To achieve byte-level parity between Rust and JS, the following serialization rules are MANDATORY:
+To achieve byte-level parity between Rust and JS, the following serialization
+rules are MANDATORY:
 
-1.  **Key Ordering:** Object keys must be sorted lexicographically by Unicode code point at every level.
-2.  **Compactness:** No whitespace between keys, values, or structural characters (`:`, `,`, `{`, `}`, `[`, `]`).
-3.  **UTF-8:** Output must be valid UTF-8.
-4.  **No Escaping:** Non-essential escaping (e.g., escaping forward slashes `/`) should be avoided to match `JSON.stringify` default behavior.
-5.  **Numeric Stability:** Integers should be serialized without decimal points. Floating point numbers should use standard notation.
-6.  **Metadata Exclusion:** The `metadata` field is an envelope, not semantic
-    IR. It MUST be stripped before computing the parity hash. The JS adapter
-    now emits a stable `generatedAt` value for compatibility so repeated parses
-    of identical SDL do not change IR bytes solely because wall-clock time
-    advanced.
+1. **Key Ordering:** Object keys must be sorted lexicographically by Unicode
+   code point at every level.
+2. **Compactness:** No whitespace between keys, values, or structural
+   characters (`:`, `,`, `{`, `}`, `[`, `]`).
+3. **UTF-8:** Output must be valid UTF-8.
+4. **No Escaping:** Non-essential escaping (e.g., escaping forward slashes `/`)
+   should be avoided to match `JSON.stringify` default behavior.
+5. **Numeric Stability:** Integers should be serialized without decimal points.
+   Floating point numbers should use standard notation.
+6. **Metadata Exclusion:** The `metadata` field is an envelope, not semantic
+   IR. It MUST be stripped before computing the parity hash. The JS adapter now
+   emits a stable `generatedAt` value for compatibility so repeated parses of
+   identical SDL do not change IR bytes solely because wall-clock time advanced.
 
 ## Fixture Corpus
 
@@ -49,20 +54,26 @@ The fixture corpus is stored in `test/fixtures/ir-parity` and consists of
 
 ### Categories
 
-1.  **Small:** Basic table with scalar fields and `@wes_pk`. (**COMPLETE**)
-2.  **Medium:** Multiple tables, `@wes_fk` relationships, and `@wes_index`. (**COMPLETE**)
-3.  **Large:** 100+ types to test performance and memory scaling. (**COMPLETE**)
-4.  **Directive-Heavy:** Extensive use of `@wes_rls`, `@wes_tenant`, and `@wes_default`. (PENDING)
-5.  **Invalid:** SDL cases that MUST trigger specific `WesleyParseError` codes. (PENDING)
-6.  **Schema-Extensions:** Testing JS and Rust `extend type` folding. (**STARTED**)
-7.  **Legacy-Aliases:** Using `@table`, `@pk`, etc., to ensure alias normalization works. (PENDING)
+1. **Small:** Basic table with scalar fields and `@wes_pk`. (**COMPLETE**)
+2. **Medium:** Multiple tables, `@wes_fk` relationships, and `@wes_index`.
+   (**COMPLETE**)
+3. **Large:** 100+ types to test performance and memory scaling. (**COMPLETE**)
+4. **Directive-Heavy:** Extensive use of `@wes_rls`, `@wes_tenant`, and
+   `@wes_default`. (PENDING)
+5. **Invalid:** SDL cases that MUST trigger specific `WesleyParseError` codes.
+   (PENDING)
+6. **Schema-Extensions:** Testing JS and Rust `extend type` folding.
+   (**STARTED**)
+7. **Legacy-Aliases:** Using `@table`, `@pk`, etc., to ensure alias
+   normalization works. (PENDING)
 
 ## Baseline Performance (JS)
 
 *Captured on: May 5, 2026*
 *Environment: Darwin (macOS)*
 
-NOTE: These are rough measurements to be formalized in `EVIDENCE_rust-core-performance-baseline.md`.
+NOTE: These are rough measurements to be formalized in
+`EVIDENCE_rust-core-performance-baseline.md`.
 
 | Fixture | Lowering Time (ms) | Memory Peak (MB) |
 | :--- | :--- | :--- |
@@ -73,6 +84,7 @@ NOTE: These are rough measurements to be formalized in `EVIDENCE_rust-core-perfo
 ## Commands
 
 ### Generate Fixtures
+
 ```bash
 pnpm fixtures:ir
 ```
@@ -82,6 +94,7 @@ tracked `*.l1.json` and `*.l1.hash` outputs. It exits nonzero if any fixture
 fails to lower or hash.
 
 ### Verify Rust Parity
+
 ```bash
 cd crates/wesley-core && cargo test
 ```
