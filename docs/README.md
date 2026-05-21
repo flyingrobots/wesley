@@ -65,7 +65,6 @@ It also now has a more explicit METHOD closeout surface under
 - [SDL, Shape, And Law](./SDL.md)
 - [BEARING](./BEARING.md)
 - [Design Packets](./design/README.md)
-- [Architecture Overview](./architecture/overview.md)
 - [Wesley Core Versus Toolchain](./architecture/wesley-core-vs-toolchain.md)
 - [Extending Wesley](./guides/extending.md)
 - [Module Contract](./design/wesley-module-contract.md)

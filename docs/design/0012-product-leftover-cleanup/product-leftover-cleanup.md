@@ -117,6 +117,20 @@ This slice:
 - preserves the files as historical extraction context for Continuum-era design
   references and future repo-specific coordination
 
+## Product-Era Docs Slice
+
+Some public docs still presented database generation and older package
+architecture as current generic Wesley behavior.
+
+This slice:
+
+- retires the row-level-security feature page to the graveyard because RLS,
+  generated SQL, helper functions, and pgTAP tests belong in
+  `wesley-postgres`
+- retires the older architecture overview to the graveyard because the current
+  authoritative system map is `docs/ARCHITECTURE.md`
+- removes the stale overview from the docs start path
+
 ## Non-Goals
 
 - Do not delete historical design packets that are already marked as
