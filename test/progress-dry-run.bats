@@ -16,3 +16,8 @@ load 'bats-plugins/bats-assert/load'
   assert_success
   [ "$output" -eq 0 ]
 }
+
+@test "compute-progress does not generate forced README line breaks" {
+  run grep -F 'Stage: ${overallStage}  \\' scripts/compute-progress.mjs
+  assert_failure
+}

@@ -98,6 +98,8 @@ This slice:
 
 - merges `extend type` fields and directives into the base object definition
   in `GraphQLAdapter.buildIRFromAST`
+- rejects duplicate fields and repeated Wesley directives when object type
+  extensions are folded into their base definitions
 - rejects object type extensions that do not have a base definition
 - removes the manual type-extension folding workaround from
   `scripts/generate-ir-fixtures.mjs`
@@ -141,8 +143,28 @@ This slice:
 - restores the README progress markers required by the progress script
 - regenerates the README package matrix from `meta/progress.config.json`
 - removes the extracted `@wesley/slaps` package from progress metadata
+- removes `@wesley/scaffold-multitenant` from active progress metadata because
+  product scaffolding is legacy extraction work, not generic Wesley release
+  progress
+- renders the overall README status as a Markdown table rather than a forced
+  line break
 - clarifies the `@wesley/runtime-node` row as shared module loading, GraphQL
   parsing, and host utility infrastructure
+
+## L1 Fixture Generator Slice
+
+The parity fixture command now regenerates the corpus that Rust tests actually
+consume.
+
+This slice:
+
+- rewires `pnpm fixtures:ir` to call the native Wesley CLI for `schema lower`
+  and `schema hash`
+- writes tracked `*.l1.json` and `*.l1.hash` files instead of legacy JS
+  `.ir.json`, `.canonical.json`, and `.hash` side outputs
+- exits nonzero if any fixture fails, so stale or partial parity fixtures do
+  not pass silently
+- updates the IR truth manifest with the current stable L1 hashes
 
 ## Non-Goals
 

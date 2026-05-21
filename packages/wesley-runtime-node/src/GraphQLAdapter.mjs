@@ -167,6 +167,8 @@ class GraphQLSchemaParser {
 
     for (const definition of definitions) {
       if (definition.kind === Kind.OBJECT_TYPE_DEFINITION) {
+        this.validateObjectDefinitionShape(definition);
+
         const clone = {
           ...definition,
           fields: definition.fields ? [...definition.fields] : [],
@@ -185,7 +187,11 @@ class GraphQLSchemaParser {
         throw new WesleyParseError(`Cannot extend type "${extension.name.value}": no base definition found`);
       }
 
+      this.validateObjectExtensionShape(extension);
+      this.assertNoMergedDirectiveDuplicates(base, extension);
+
       if (extension.fields) {
+        this.assertNoMergedFieldDuplicates(base, extension);
         base.fields.push(...extension.fields);
       }
       if (extension.directives) {
@@ -194,6 +200,99 @@ class GraphQLSchemaParser {
     }
 
     return objectDefinitions;
+  }
+
+  validateObjectDefinitionShape(definition) {
+    this.assertNoDuplicateFields(definition.fields, definition.name.value);
+    this.assertNoDuplicateWesleyDirectives(
+      definition.directives,
+      `type "${definition.name.value}"`
+    );
+
+    for (const field of definition.fields || []) {
+      this.assertNoDuplicateWesleyDirectives(
+        field.directives,
+        `field "${definition.name.value}.${field.name.value}"`
+      );
+    }
+  }
+
+  validateObjectExtensionShape(extension) {
+    this.assertNoDuplicateFields(extension.fields, extension.name.value);
+    this.assertNoDuplicateWesleyDirectives(
+      extension.directives,
+      `type "${extension.name.value}"`
+    );
+
+    for (const field of extension.fields || []) {
+      this.assertNoDuplicateWesleyDirectives(
+        field.directives,
+        `field "${extension.name.value}.${field.name.value}"`
+      );
+    }
+  }
+
+  assertNoDuplicateFields(fields = [], typeName) {
+    const seen = new Set();
+
+    for (const field of fields || []) {
+      const fieldName = field.name.value;
+      if (seen.has(fieldName)) {
+        throw new WesleyParseError(`Duplicate field "${fieldName}" on type "${typeName}"`);
+      }
+      seen.add(fieldName);
+    }
+  }
+
+  assertNoMergedFieldDuplicates(base, extension) {
+    const baseFields = new Set((base.fields || []).map(field => field.name.value));
+
+    for (const field of extension.fields || []) {
+      const fieldName = field.name.value;
+      if (baseFields.has(fieldName)) {
+        throw new WesleyParseError(`Duplicate field "${fieldName}" on type "${base.name.value}"`);
+      }
+      baseFields.add(fieldName);
+    }
+  }
+
+  assertNoDuplicateWesleyDirectives(directives = [], location) {
+    const seen = new Set();
+
+    for (const directive of directives || []) {
+      const canonical = this.canonicalDirectiveName(directive.name.value);
+      if (!canonical) continue;
+
+      if (seen.has(canonical)) {
+        throw new WesleyParseError(`Duplicate directive "@${canonical}" on ${location}`);
+      }
+      seen.add(canonical);
+    }
+  }
+
+  assertNoMergedDirectiveDuplicates(base, extension) {
+    const baseDirectives = new Set();
+    for (const directive of base.directives || []) {
+      const canonical = this.canonicalDirectiveName(directive.name.value);
+      if (canonical) baseDirectives.add(canonical);
+    }
+
+    for (const directive of extension.directives || []) {
+      const canonical = this.canonicalDirectiveName(directive.name.value);
+      if (!canonical) continue;
+
+      if (baseDirectives.has(canonical)) {
+        throw new WesleyParseError(`Duplicate directive "@${canonical}" on type "${base.name.value}"`);
+      }
+      baseDirectives.add(canonical);
+    }
+  }
+
+  canonicalDirectiveName(directiveName) {
+    const alias = this.legacyAliases.get(directiveName);
+    if (alias) return alias;
+    if (directiveName.startsWith('wes_')) return directiveName;
+    return null;
   }
 
   /**

@@ -56,7 +56,7 @@ jobs:
           echo "$CHANGED" | sed 's/^/ - /'
           NEED=false
           # Trigger only on unit/serverless tests; exclude browser-contracts and serve-static e2e
-          echo "$CHANGED" | grep -E -q '^(scripts/serve-static\.mjs|test/serve-static-(unit|relative-unit)\.bats|scripts/compute-progress\.mjs|test/progress-|test/ci-|test/deno-host-webcrypto-guard\.bats)' && NEED=true || true
+          echo "$CHANGED" | grep -E -q '^(scripts/serve-static\.mjs|test/serve-static-(unit|relative-unit)\.bats|scripts/compute-progress\.mjs|scripts/generate-ir-fixtures\.mjs|test/progress-|test/ir-fixtures\.bats|test/ci-|test/deno-host-webcrypto-guard\.bats)' && NEED=true || true
           echo "RUN_BATS=$NEED" >> $GITHUB_ENV
 
       - name: Repo Bats tests (unit/progress/ci checks only)
@@ -76,6 +76,7 @@ jobs:
             test/serve-static-unit.bats
             test/serve-static-relative-unit.bats
             test/progress-dry-run.bats
+            test/ir-fixtures.bats
             test/progress-safety.bats
             test/ci-browser-smoke.bats
             test/ci-pkg-host-bun.bats

@@ -132,6 +132,37 @@ test('extend type without base definition is rejected', () => {
   );
 });
 
+test('extend type duplicate fields are rejected', () => {
+  assert.throws(
+    () => parseSDL(`
+      type User @wes_table {
+        id: ID! @wes_pk
+      }
+
+      extend type User {
+        id: ID!
+      }
+    `),
+    /Duplicate field "id" on type "User"/
+  );
+});
+
+test('extend type duplicate Wesley directives are rejected', () => {
+  assert.throws(
+    () => parseSDL(`
+      type User @wes_table @wes_tenant(by: "org_id") {
+        id: ID! @wes_pk
+        org_id: ID!
+      }
+
+      extend type User @tenant(by: "workspace_id") {
+        workspace_id: ID!
+      }
+    `),
+    /Duplicate directive "@wes_tenant" on type "User"/
+  );
+});
+
 // ---------- Field structure ----------
 
 test('field.type is a structured FieldType object', () => {

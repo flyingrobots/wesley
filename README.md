@@ -200,8 +200,9 @@ developer-level operator guide, read [GUIDE.md](./docs/GUIDE.md).
 ## Project status
 
 <!-- BEGIN:OVERALL_STATUS -->
-Stage: MVP  \
-Progress: 61% → Alpha
+| Stage | Progress |
+| --- | --- |
+| MVP | 61% → Alpha |
 <!-- END:OVERALL_STATUS -->
 
 <!-- BEGIN:PACKAGE_MATRIX -->
@@ -218,7 +219,6 @@ Progress: 61% → Alpha
 | `@wesley/tasks` | Active | MVP | 50% → Alpha | ![pkg-tasks.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-tasks.yml/badge.svg?branch=main) | Planner utilities |
 | `@wesley/host-deno` | Experimental | Alpha | 50% → Beta | ![pkg-host-deno.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-host-deno.yml/badge.svg?branch=main) | Deno host runtime (demo) |
 | `@wesley/host-bun` | Experimental | Alpha | 50% → Beta | ![pkg-host-bun.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-host-bun.yml/badge.svg?branch=main) | Bun host runtime (demo) |
-| `@wesley/scaffold-multitenant` | Too soon | Prototype | 50% → MVP | — | Early scaffold, no CI yet |
 | `@wesley/test-fixtures` | Active | MVP | 20% → Alpha | — | Private shared fixtures + schema builders |
 <!-- END:PACKAGE_MATRIX -->
 
@@ -229,6 +229,8 @@ Progress: 61% → Alpha
 A single schema can be compiled by many extensions simultaneously. Each
 extension walks the semantic graph independently and emits its own artifacts.
 Extensions do not need to know about one another.
+These are external owning module families; Wesley preserves the neutral IR
+contract they consume.
 
 | Extension | Responsibility |
 | :--- | :--- |

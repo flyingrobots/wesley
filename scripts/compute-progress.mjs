@@ -317,7 +317,13 @@ async function main() {
   }
   const overallBefore = afterMatrix.slice(0, ns2 + ovStart.length);
   const overallAfterPre = afterMatrix.slice(ne2);
-  const overallBody = `\nStage: ${overallStage}  \\\nProgress: ${overallProgress}% → ${overallNext}\n`;
+  const overallBody = [
+    '',
+    '| Stage | Progress |',
+    '| --- | --- |',
+    `| ${overallStage} | ${overallProgress}% → ${overallNext} |`,
+    ''
+  ].join('\n');
   const nextReadme = overallBefore + overallBody + overallAfterPre;
   if (DRY_RUN) {
     console.log('[dry-run] README.md would be updated between markers.');

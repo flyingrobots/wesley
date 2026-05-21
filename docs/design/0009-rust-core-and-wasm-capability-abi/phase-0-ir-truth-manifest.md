@@ -1,6 +1,7 @@
 # Phase 0: IR Truth Manifest
 
-This document records the canonical JS implementation details and the fixture corpus required for the Wesley Rust Core (core-rs) parity migration.
+This document records the legacy JS implementation anchors and the current Rust
+L1 fixture corpus required for the Wesley Rust Core parity migration.
 
 ## Canonical JS Functions
 
@@ -31,15 +32,20 @@ To achieve byte-level parity between Rust and JS, the following serialization ru
 
 ## Fixture Corpus
 
-The fixture corpus is stored in `test/fixtures/ir-parity` and consists of `SDL -> IR -> Hash` triplets.
+The fixture corpus is stored in `test/fixtures/ir-parity` and consists of
+`SDL -> L1 IR -> Hash` triplets:
 
-### Stable Parity Hashes (Metadata Stripped)
+- `*.graphql` stores the SDL input.
+- `*.l1.json` stores the Rust-native L1 IR emitted by `wesley schema lower`.
+- `*.l1.hash` stores the Rust-native L1 hash emitted by `wesley schema hash`.
+
+### Stable L1 Hashes
 
 | Fixture | Hash (SHA-256) |
 | :--- | :--- |
-| `small-schema.graphql` | `36b451e20c50699f4f924077449221c62f86373b380e6cf224a0492a49829295` |
-| `medium-schema.graphql` | `18836c2b45985a11b5e64d05f8f81e62b9e5e2c113d1cf6e7e9db12ee66a9b71` |
-| `large-schema.graphql` | `6e600885d7602fafdfe5665402280e05d160b351c93c3ed29c3c3db1ee63a315` |
+| `small-schema.graphql` | `b484bf6741686314aea381b51d5d26805b08fa27517225bbe4b736d9f39c606f` |
+| `medium-schema.graphql` | `853d939364506680535ae865438d897efc9fee2dc8e5b21d1118cae3cfe5664b` |
+| `large-schema.graphql` | `dfd5a42ab6a03570294764e4e9bdd791b5dd42fc02db5feb9543849a67d14726` |
 
 ### Categories
 
@@ -70,6 +76,10 @@ NOTE: These are rough measurements to be formalized in `EVIDENCE_rust-core-perfo
 ```bash
 pnpm fixtures:ir
 ```
+
+This command shells through the native Wesley CLI and overwrites only the
+tracked `*.l1.json` and `*.l1.hash` outputs. It exits nonzero if any fixture
+fails to lower or hash.
 
 ### Verify Rust Parity
 ```bash

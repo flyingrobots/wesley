@@ -16,4 +16,4 @@ As we move the compiler truth to Rust, we risk "Semantic Drift" where the legacy
 ## Repo Evidence
 
 - `scripts/generate-ir-fixtures.mjs`
-- `crates/wesley-core/tests/ir_parity.rs`
+- `crates/wesley-core/tests/lowering_validation.rs`
