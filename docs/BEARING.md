@@ -104,11 +104,12 @@ is deleted or reshaped in generic Wesley.
 
 The immediate focus is **v0.0.5 clean house**:
 
-1. Move external jedit, Echo, and Continuum backlog gravity out of Wesley.
-2. Archive stale Continuum-era ideas that reference removed built-in product
-   commands or generators.
-3. Pull product-leftover deletion back into the active cleanup lane and finish
-   the real verification work.
+1. Execute design packet
+   [0012-product-leftover-cleanup](./design/0012-product-leftover-cleanup/product-leftover-cleanup.md).
+2. Finish the active backlog verification pass so product/runtime/database
+   cards are moved, retired, or rewritten as external-module compatibility
+   work.
+3. Revisit the old `v0.1.0` lane after active backlog truth is clean.
 4. Freeze canonical IR fixtures and nondeterministic metadata policy.
 5. Install JS/Rust parity evidence before deeper Rust-native cleanup.
 6. Keep `wesley-postgres` visible as the database extraction home.
