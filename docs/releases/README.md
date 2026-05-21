@@ -4,6 +4,7 @@ Store user-facing release notes here.
 
 ## Release Notes
 
+- [Wesley v0.0.5](./v0.0.5.md)
 - [Wesley v0.0.4](./v0.0.4.md)
 
 Each release note should live at `docs/releases/vX.Y.Z.md` and include these

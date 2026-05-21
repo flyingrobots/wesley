@@ -2,7 +2,7 @@
 title: Product Leftover Cleanup
 legend: OWN
 packet: 0012-product-leftover-cleanup
-status: active
+status: shipped
 release: v0.0.5
 ---
 
@@ -167,6 +167,32 @@ This slice:
 - exits nonzero if any fixture fails, so stale or partial parity fixtures do
   not pass silently
 - updates the IR truth manifest with the current stable L1 hashes
+
+## Playback
+
+1. Active backlog lanes no longer keep Echo, jedit, Continuum, `warp-ttd`,
+   `git-warp`, PostgreSQL, or Supabase product work in Wesley's release center.
+2. The old `docs/method/backlog/v0.1.0/` lane is graveyard context, not an
+   active release lane.
+3. Product-era docs that presented SQL/RLS/PostgreSQL behavior as generic
+   Wesley behavior were retired to historical context.
+4. The README/progress surface now excludes extracted product scaffolding and
+   keeps `@wesley/runtime-node` framed as shared module-loading and parsing
+   infrastructure.
+5. Rust L1 fixture regeneration now uses the native Wesley CLI. The future
+   JS/Rust parity comparator remains explicit follow-up work rather than an
+   implied property of `pnpm fixtures:ir`.
+
+## Retrospective
+
+This release cleaned the queue and front door before attempting deeper Rust
+parity work. That was the right order: the repository now says where product
+and database concerns belong, and the remaining near-term work is compiler
+truth, module-boundary enforcement, and compatibility evidence.
+
+Do not use this packet as justification for new product behavior in Wesley.
+The next work should either strengthen the domain-empty compiler boundary or
+move external behavior to its owning module or sibling repository.
 
 ## Non-Goals
 

@@ -11,8 +11,8 @@ Lanes:
 - `bad-code/` for tech debt that is worth naming
 
 The old `v0.1.0/` release lane was retired to
-`docs/method/graveyard/v0.1.0/` during the v0.0.5 clean-house release. Treat it
-as historical/extraction context, not an active queue.
+`docs/method/graveyard/v0.1.0/` during the clean-house release. Treat it as
+historical/extraction context, not an active queue.
 
 When an item is pulled into `docs/design/<cycle>/`, the backlog file is removed.
 Work should not live in two places at once.
