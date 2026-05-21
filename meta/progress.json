@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-04T04:10:28.431Z",
+  "generatedAt": "2026-05-21T17:43:45.139Z",
   "overall": {
     "stage": "MVP",
     "next": "Alpha",
@@ -169,25 +169,6 @@
         "hasStatus": true,
         "hasUsage": false,
         "hasApi": false,
-        "hasCaveats": false
-      },
-      "milestones": {
-        "alpha": null,
-        "beta": null
-      },
-      "coverage": null
-    },
-    {
-      "name": "@wesley/slaps",
-      "status": "Active",
-      "stage": "MVP",
-      "progress": 50,
-      "next": "Alpha",
-      "passRate": 1,
-      "docs": {
-        "hasStatus": true,
-        "hasUsage": false,
-        "hasApi": true,
         "hasCaveats": false
       },
       "milestones": {

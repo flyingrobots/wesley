@@ -131,6 +131,19 @@ This slice:
   authoritative system map is `docs/ARCHITECTURE.md`
 - removes the stale overview from the docs start path
 
+## Progress Metadata Slice
+
+The README progress surface is still part of the release gate because pre-push
+validates `scripts/compute-progress.mjs --dry-run`.
+
+This slice:
+
+- restores the README progress markers required by the progress script
+- regenerates the README package matrix from `meta/progress.config.json`
+- removes the extracted `@wesley/slaps` package from progress metadata
+- clarifies the `@wesley/runtime-node` row as shared module loading, GraphQL
+  parsing, and host utility infrastructure
+
 ## Non-Goals
 
 - Do not delete historical design packets that are already marked as
