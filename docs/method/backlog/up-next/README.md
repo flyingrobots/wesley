@@ -3,7 +3,7 @@
 This lane holds the next likely pulls. It is a queue of judgment, not a
 calendar.
 
-Current next pulls outside the `v0.1.0/` release lane:
+Current next pulls:
 
 1. `SOURCE_wesley-core-rs-parser-parity-spike.md`
 2. `RUNTIME_wasm-host-function-governance.md`

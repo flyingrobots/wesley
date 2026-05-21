@@ -109,7 +109,7 @@ The immediate focus is **v0.0.5 clean house**:
 2. Finish the active backlog verification pass so product/runtime/database
    cards are moved, retired, or rewritten as external-module compatibility
    work.
-3. Revisit the old `v0.1.0` lane after active backlog truth is clean.
+3. Treat the old `v0.1.0` lane as retired historical/extraction context.
 4. Freeze canonical IR fixtures and nondeterministic metadata policy.
 5. Install JS/Rust parity evidence before deeper Rust-native cleanup.
 6. Keep `wesley-postgres` visible as the database extraction home.

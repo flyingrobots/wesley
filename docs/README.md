@@ -30,12 +30,13 @@ The most recent Continuum cycle packet is
 It closed as a `partial` landing in
 [its retro packet](./method/retro/0003-continuum-contract-compiler/continuum-contract-compiler.md).
 
-The active carry-over for the first release now lives in the Continuum
-`v0.1.0/` lane:
+The active release center is now the v0.0.5 clean-house packet:
 
-- [SOURCE_continuum-ownership-map-for-shared-nouns](./method/backlog/v0.1.0/SOURCE_continuum-ownership-map-for-shared-nouns.md)
-- [RUNTIME_continuum-local-compile-and-inspect-surface](./method/backlog/v0.1.0/RUNTIME_continuum-local-compile-and-inspect-surface.md)
-- [EVIDENCE_continuum-conformance-and-roundtrip-witness](./method/backlog/v0.1.0/EVIDENCE_continuum-conformance-and-roundtrip-witness.md)
+- [Product Leftover Cleanup](./design/0012-product-leftover-cleanup/product-leftover-cleanup.md)
+
+The old Continuum-heavy `v0.1.0/` lane has been retired to
+[graveyard/v0.1.0](./method/graveyard/v0.1.0/README.md). Treat those notes as
+historical extraction context, not as active Wesley release commitments.
 
 The repo already has the important generic building block around that hill:
 

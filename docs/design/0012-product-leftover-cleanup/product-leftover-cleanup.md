@@ -104,6 +104,19 @@ This slice:
 - retires the matching ASAP card because the JS hot path now owns the behavior
   the fixture script was previously simulating
 
+## v0.1.0 Lane Slice
+
+The old `docs/method/backlog/v0.1.0/` lane predated the current domain-empty
+release bearing.
+
+This slice:
+
+- moves the lane to `docs/method/graveyard/v0.1.0/`
+- updates docs signposts that previously presented the lane as active release
+  carry-over
+- preserves the files as historical extraction context for Continuum-era design
+  references and future repo-specific coordination
+
 ## Non-Goals
 
 - Do not delete historical design packets that are already marked as
