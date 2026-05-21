@@ -75,6 +75,20 @@ This slice:
 - retires the matching bad-code card because root governance no longer claims
   database-change product ownership as generic Wesley doctrine
 
+## IR Metadata Slice
+
+The first IR-truth cleanup keeps the existing JS IR metadata shape but removes
+the clock from parity-sensitive bytes.
+
+This slice:
+
+- replaces runtime `generatedAt` timestamps in the JS GraphQL adapter with a
+  stable epoch value
+- updates host-node parser IR tests to assert deterministic metadata across
+  repeated parses of the same SDL
+- retires the matching ASAP card because identical SDL no longer changes JS IR
+  bytes solely because wall-clock time advanced
+
 ## Non-Goals
 
 - Do not delete historical design packets that are already marked as

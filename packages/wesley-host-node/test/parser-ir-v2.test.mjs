@@ -24,12 +24,14 @@ test('IR has version "1.0.0"', () => {
   assert.equal(ir.version, '1.0.0');
 });
 
-test('IR has metadata with generatedAt timestamp', () => {
-  const ir = parseSDL('type User @wes_table { id: ID! @wes_pk }');
+test('IR has deterministic generatedAt metadata', () => {
+  const sdl = 'type User @wes_table { id: ID! @wes_pk }';
+  const ir = parseSDL(sdl);
+  const again = parseSDL(sdl);
+
   assert.ok(ir.metadata, 'metadata should exist');
-  assert.ok(ir.metadata.generatedAt, 'generatedAt should exist');
-  // Should be a valid ISO timestamp
-  assert.ok(!Number.isNaN(Date.parse(ir.metadata.generatedAt)));
+  assert.equal(ir.metadata.generatedAt, '1970-01-01T00:00:00.000Z');
+  assert.deepEqual(ir.metadata, again.metadata);
 });
 
 test('IR has relationships array', () => {

@@ -9,6 +9,8 @@ import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+const STABLE_GENERATED_AT = '1970-01-01T00:00:00.000Z';
+
 // Wesley directive validation errors
 class WesleyParseError extends Error {
   constructor(message, directive = null, field = null) {
@@ -147,7 +149,7 @@ class GraphQLSchemaParser {
     return {
       version: '1.0.0',
       metadata: {
-        generatedAt: new Date().toISOString()
+        generatedAt: STABLE_GENERATED_AT
       },
       tables,
       enums: [],
