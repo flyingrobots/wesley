@@ -121,22 +121,21 @@ class GraphQLSchemaParser {
   buildIRFromAST(ast) {
     const tables = [];
     const tableNames = new Set();
+    const objectDefinitions = this.mergeObjectTypeExtensions(ast.definitions);
 
     // First pass: collect all table types
-    for (const definition of ast.definitions) {
-      if (definition.kind === Kind.OBJECT_TYPE_DEFINITION) {
-        const tableDirective = this.findDirective(definition.directives, 'wes_table');
-        if (tableDirective) {
-          const tableName = this.getDirectiveArgument(tableDirective, 'name') || definition.name.value;
+    for (const definition of objectDefinitions) {
+      const tableDirective = this.findDirective(definition.directives, 'wes_table');
+      if (tableDirective) {
+        const tableName = this.getDirectiveArgument(tableDirective, 'name') || definition.name.value;
 
-          if (tableNames.has(tableName)) {
-            throw new WesleyParseError(`Duplicate table name: ${tableName}`);
-          }
-          tableNames.add(tableName);
-
-          const table = this.buildTable(definition, tableName);
-          tables.push(table);
+        if (tableNames.has(tableName)) {
+          throw new WesleyParseError(`Duplicate table name: ${tableName}`);
         }
+        tableNames.add(tableName);
+
+        const table = this.buildTable(definition, tableName);
+        tables.push(table);
       }
     }
 
@@ -156,6 +155,45 @@ class GraphQLSchemaParser {
       scalars: [],
       relationships
     };
+  }
+
+  /**
+   * Merge object type extensions into their base object type definitions.
+   */
+  mergeObjectTypeExtensions(definitions) {
+    const objectDefinitions = [];
+    const definitionsByName = new Map();
+    const extensions = [];
+
+    for (const definition of definitions) {
+      if (definition.kind === Kind.OBJECT_TYPE_DEFINITION) {
+        const clone = {
+          ...definition,
+          fields: definition.fields ? [...definition.fields] : [],
+          directives: definition.directives ? [...definition.directives] : []
+        };
+        objectDefinitions.push(clone);
+        definitionsByName.set(clone.name.value, clone);
+      } else if (definition.kind === Kind.OBJECT_TYPE_EXTENSION) {
+        extensions.push(definition);
+      }
+    }
+
+    for (const extension of extensions) {
+      const base = definitionsByName.get(extension.name.value);
+      if (!base) {
+        throw new WesleyParseError(`Cannot extend type "${extension.name.value}": no base definition found`);
+      }
+
+      if (extension.fields) {
+        base.fields.push(...extension.fields);
+      }
+      if (extension.directives) {
+        base.directives.push(...extension.directives);
+      }
+    }
+
+    return objectDefinitions;
   }
 
   /**

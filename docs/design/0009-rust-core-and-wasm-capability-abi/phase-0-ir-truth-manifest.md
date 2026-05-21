@@ -23,7 +23,11 @@ To achieve byte-level parity between Rust and JS, the following serialization ru
 3.  **UTF-8:** Output must be valid UTF-8.
 4.  **No Escaping:** Non-essential escaping (e.g., escaping forward slashes `/`) should be avoided to match `JSON.stringify` default behavior.
 5.  **Numeric Stability:** Integers should be serialized without decimal points. Floating point numbers should use standard notation.
-6.  **Metadata Stripping:** The `metadata` field in the IR is non-deterministic (contains timestamps) and MUST be stripped before computing the parity hash.
+6.  **Metadata Exclusion:** The `metadata` field is an envelope, not semantic
+    IR. It MUST be stripped before computing the parity hash. The JS adapter
+    now emits a stable `generatedAt` value for compatibility so repeated parses
+    of identical SDL do not change IR bytes solely because wall-clock time
+    advanced.
 
 ## Fixture Corpus
 
@@ -44,7 +48,7 @@ The fixture corpus is stored in `test/fixtures/ir-parity` and consists of `SDL -
 3.  **Large:** 100+ types to test performance and memory scaling. (**COMPLETE**)
 4.  **Directive-Heavy:** Extensive use of `@wes_rls`, `@wes_tenant`, and `@wes_default`. (PENDING)
 5.  **Invalid:** SDL cases that MUST trigger specific `WesleyParseError` codes. (PENDING)
-6.  **Schema-Extensions:** Testing `foldExtensions` logic (type extensions). (PENDING)
+6.  **Schema-Extensions:** Testing JS and Rust `extend type` folding. (**STARTED**)
 7.  **Legacy-Aliases:** Using `@table`, `@pk`, etc., to ensure alias normalization works. (PENDING)
 
 ## Baseline Performance (JS)

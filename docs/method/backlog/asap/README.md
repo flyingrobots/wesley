@@ -17,4 +17,3 @@ Current near-term pulls:
 2. `SOURCE_wesley-core-rs-ir-contract-and-fixtures.md`
 3. `SOURCE_wesley-core-rs-parity-sentinel.md`
 4. `OWN_ninelives-resilience-integration.md`
-5. `OWN_fix-legacy-js-extension-ignorance.md`

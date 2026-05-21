@@ -108,6 +108,30 @@ test('table has constraints array', () => {
   assert.ok(Array.isArray(table.constraints));
 });
 
+test('extend type fields are folded into table IR', () => {
+  const ir = parseSDL(`
+    type User @wes_table {
+      id: ID! @wes_pk
+    }
+
+    extend type User {
+      email: String! @wes_unique
+    }
+  `);
+
+  const fields = Object.fromEntries(ir.tables[0].fields.map(field => [field.name, field]));
+  assert.deepEqual(Object.keys(fields), ['id', 'email']);
+  assert.equal(fields.email.type.base, 'String');
+  assert.equal(fields.email.directives.unique, true);
+});
+
+test('extend type without base definition is rejected', () => {
+  assert.throws(
+    () => parseSDL('extend type Missing { id: ID }'),
+    /Cannot extend type "Missing": no base definition found/
+  );
+});
+
 // ---------- Field structure ----------
 
 test('field.type is a structured FieldType object', () => {

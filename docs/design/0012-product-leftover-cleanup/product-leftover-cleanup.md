@@ -89,6 +89,21 @@ This slice:
 - retires the matching ASAP card because identical SDL no longer changes JS IR
   bytes solely because wall-clock time advanced
 
+## Schema Extension Slice
+
+The legacy JS adapter now folds object type extensions before table IR
+construction.
+
+This slice:
+
+- merges `extend type` fields and directives into the base object definition
+  in `GraphQLAdapter.buildIRFromAST`
+- rejects object type extensions that do not have a base definition
+- removes the manual type-extension folding workaround from
+  `scripts/generate-ir-fixtures.mjs`
+- retires the matching ASAP card because the JS hot path now owns the behavior
+  the fixture script was previously simulating
+
 ## Non-Goals
 
 - Do not delete historical design packets that are already marked as
