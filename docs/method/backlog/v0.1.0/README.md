@@ -3,6 +3,16 @@
 This lane holds work explicitly committed to Wesley's first release. It is a
 ship lane, not a general priority queue.
 
+## 2026-05-21 Review Note
+
+This lane predates the current domain-empty cleanup bearing. Items that still
+describe Echo, TTD, Continuum, or product-family work as Wesley-owned should be
+treated as historical/extraction context until explicitly rewritten.
+
+Do not pull work from this lane into the cleanup release without first deciding
+whether it now belongs in Wesley, Echo, Continuum, `warp-ttd`, `git-warp`,
+jedit, or `wesley-postgres`.
+
 Release sequence:
 
 1. `Cycle 1: The Sovereign Guard`
