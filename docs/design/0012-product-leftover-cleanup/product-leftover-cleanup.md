@@ -146,6 +146,8 @@ This slice:
 - removes `@wesley/scaffold-multitenant` from active progress metadata because
   product scaffolding is legacy extraction work, not generic Wesley release
   progress
+- removes the scaffold package from active architecture-boundary required
+  package validation and generated boundary reports
 - renders the overall README status as a Markdown table rather than a forced
   line break
 - clarifies the `@wesley/runtime-node` row as shared module loading, GraphQL

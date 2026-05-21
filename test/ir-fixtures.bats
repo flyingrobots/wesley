@@ -13,11 +13,16 @@ teardown() {
 
 make_fake_wesley() {
   FAKE_WESLEY="$TEST_TEMP_DIR/fake-wesley.mjs"
+  FAKE_WESLEY_CALL_LOG="$TEST_TEMP_DIR/fake-wesley-calls.log"
   cat > "$FAKE_WESLEY" <<'NODE'
 #!/usr/bin/env node
-import { readFileSync } from 'node:fs';
+import { appendFileSync, readFileSync } from 'node:fs';
 
 const args = process.argv.slice(2);
+if (process.env.WESLEY_FAKE_CALL_LOG) {
+  appendFileSync(process.env.WESLEY_FAKE_CALL_LOG, `${args.join(' ')}\n`);
+}
+
 const schemaIndex = args.indexOf('--schema');
 const schemaPath = schemaIndex === -1 ? null : args[schemaIndex + 1];
 const sdl = schemaPath ? readFileSync(schemaPath, 'utf8') : '';
@@ -39,29 +44,14 @@ NODE
   chmod +x "$FAKE_WESLEY"
 }
 
-@test "IR fixture generator targets tracked L1 corpus" {
-  run grep -F ".l1.json" scripts/generate-ir-fixtures.mjs
-  assert_success
-
-  run grep -F ".canonical.json" scripts/generate-ir-fixtures.mjs
-  assert_failure
-
-  run grep -F ".ir.json" scripts/generate-ir-fixtures.mjs
-  assert_failure
-}
-
-@test "IR fixture generator fails the command when any fixture fails" {
-  run grep -F "process.exitCode = 1" scripts/generate-ir-fixtures.mjs
-  assert_success
-}
-
-@test "IR fixture generator writes L1 JSON and hash files" {
+@test "IR fixture generator writes tracked L1 files through lower and hash commands" {
   printf 'type User @wes_table { id: ID! @wes_pk }\n' > "$TEST_TEMP_DIR/small.graphql"
   make_fake_wesley
 
   run env \
     WESLEY_IR_FIXTURE_DIR="$TEST_TEMP_DIR" \
     WESLEY_CLI_BIN="$FAKE_WESLEY" \
+    WESLEY_FAKE_CALL_LOG="$FAKE_WESLEY_CALL_LOG" \
     node scripts/generate-ir-fixtures.mjs
   assert_success
 
@@ -69,6 +59,21 @@ NODE
   [ -f "$TEST_TEMP_DIR/small.l1.hash" ]
   [ ! -f "$TEST_TEMP_DIR/small.ir.json" ]
   [ ! -f "$TEST_TEMP_DIR/small.canonical.json" ]
+
+  run grep -F '"version": "1.0.0"' "$TEST_TEMP_DIR/small.l1.json"
+  assert_success
+
+  run cat "$TEST_TEMP_DIR/small.l1.hash"
+  assert_output "abc123"
+
+  run grep -F "schema lower --schema $TEST_TEMP_DIR/small.graphql --json" "$FAKE_WESLEY_CALL_LOG"
+  assert_success
+
+  run grep -F "schema hash --schema $TEST_TEMP_DIR/small.graphql" "$FAKE_WESLEY_CALL_LOG"
+  assert_success
+
+  run grep -c '^schema ' "$FAKE_WESLEY_CALL_LOG"
+  assert_output "2"
 }
 
 @test "IR fixture generator exits nonzero for invalid fixtures" {
@@ -78,7 +83,17 @@ NODE
   run env \
     WESLEY_IR_FIXTURE_DIR="$TEST_TEMP_DIR" \
     WESLEY_CLI_BIN="$FAKE_WESLEY" \
+    WESLEY_FAKE_CALL_LOG="$FAKE_WESLEY_CALL_LOG" \
     node scripts/generate-ir-fixtures.mjs
   assert_failure
   assert_output --partial "Error processing broken.graphql"
+
+  [ ! -f "$TEST_TEMP_DIR/broken.l1.json" ]
+  [ ! -f "$TEST_TEMP_DIR/broken.l1.hash" ]
+
+  run grep -F "schema lower --schema $TEST_TEMP_DIR/broken.graphql --json" "$FAKE_WESLEY_CALL_LOG"
+  assert_success
+
+  run grep -F "schema hash --schema $TEST_TEMP_DIR/broken.graphql" "$FAKE_WESLEY_CALL_LOG"
+  assert_failure
 }

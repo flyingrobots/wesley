@@ -126,6 +126,12 @@ load 'bats-plugins/bats-assert/load'
   [ "$output" -eq 1 ]
 }
 
+@test "architecture boundaries workflow excludes product scaffold from required packages" {
+  run bash -lc "grep -F 'wesley-scaffold-multitenant' .github/workflows/architecture-boundaries.yml | wc -l"
+  assert_success
+  [ "$output" -eq 0 ]
+}
+
 @test "@wesley/cli package test script is compatible with Node 20 test runner globs" {
   run node -e "const pkg = JSON.parse(require('node:fs').readFileSync('packages/wesley-cli/package.json', 'utf8')); if (pkg.scripts.test.includes('\\\"test/*.test.mjs\\\"')) { throw new Error('quoted test glob is not expanded by Node 20'); } if (!pkg.scripts.test.includes('node --test test/*.test.mjs')) { throw new Error('expected shell-expanded test glob'); }"
   assert_success
