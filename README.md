@@ -197,11 +197,40 @@ developer-level operator guide, read [GUIDE.md](./docs/GUIDE.md).
 
 ---
 
+## Project status
+
+<!-- BEGIN:OVERALL_STATUS -->
+| Stage | Progress |
+| --- | --- |
+| MVP | 61% → Alpha |
+<!-- END:OVERALL_STATUS -->
+
+<!-- BEGIN:PACKAGE_MATRIX -->
+| Package | Status | Stage | Progress | CI | Notes |
+| --- | --- | --- | --- | --- | --- |
+| `@wesley/core` | Active | MVP | 45% → Alpha | ![pkg-core.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-core.yml/badge.svg?branch=main) | Pure domain logic, no Node builtins |
+| `@wesley/cli` | Active | Alpha | 50% → Beta | ![pkg-cli.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-cli.yml/badge.svg?branch=main) | CLI + Bats suites |
+| `@wesley/host-node` | Active | MVP | 50% → Alpha | ![pkg-host-node.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-host-node.yml/badge.svg?branch=main) | Node adapters + binary |
+| `@wesley/host-browser` | Experimental | MVP | 40% → Alpha | ![browser-smoke.yml](https://github.com/flyingrobots/wesley/actions/workflows/browser-smoke.yml/badge.svg?branch=main) | Pure ESM; in-memory FS; minimal parser; smoke-level only |
+| `@wesley/generator-js` | Active | MVP | 50% → Alpha | ![pkg-generator-js.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-generator-js.yml/badge.svg?branch=main) | TS/Zod emitters |
+| `@wesley/generator-vue` | Experimental | MVP | 0% → Alpha | — | Vue-facing TS/composable emitters |
+| `@wesley/holmes` | Active | Alpha | 50% → Beta | ![pkg-holmes.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-holmes.yml/badge.svg?branch=main) | Evidence scoring |
+| `@wesley/runtime-node` | Active | MVP | 0% → Alpha | — | Shared Node module loading, GraphQL parsing, and host utilities |
+| `@wesley/tasks` | Active | MVP | 50% → Alpha | ![pkg-tasks.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-tasks.yml/badge.svg?branch=main) | Planner utilities |
+| `@wesley/host-deno` | Experimental | Alpha | 50% → Beta | ![pkg-host-deno.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-host-deno.yml/badge.svg?branch=main) | Deno host runtime (demo) |
+| `@wesley/host-bun` | Experimental | Alpha | 50% → Beta | ![pkg-host-bun.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-host-bun.yml/badge.svg?branch=main) | Bun host runtime (demo) |
+| `@wesley/test-fixtures` | Active | MVP | 20% → Alpha | — | Private shared fixtures + schema builders |
+<!-- END:PACKAGE_MATRIX -->
+
+---
+
 ## Extension modules
 
 A single schema can be compiled by many extensions simultaneously. Each
 extension walks the semantic graph independently and emits its own artifacts.
 Extensions do not need to know about one another.
+These are external owning module families; Wesley preserves the neutral IR
+contract they consume.
 
 | Extension | Responsibility |
 | :--- | :--- |

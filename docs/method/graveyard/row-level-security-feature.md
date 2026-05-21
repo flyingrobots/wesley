@@ -1,3 +1,15 @@
+# Retired: Row Level Security Feature Page
+
+This page is preserved as historical product-era context. It is not current
+generic Wesley doctrine. Row-level security, generated SQL, PostgreSQL helper
+functions, Supabase policy, and pgTAP tests belong in `wesley-postgres` or an
+external database module.
+
+For current Wesley architecture, read
+[`docs/ARCHITECTURE.md`](../../ARCHITECTURE.md).
+
+---
+
 # Row Level Security: From GraphQL Directives to Production Policies
 
 ## Overview

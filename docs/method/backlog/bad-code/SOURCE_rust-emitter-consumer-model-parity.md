@@ -1,4 +1,4 @@
-# Rust Emitter Jedit Model Parity
+# Rust emitter consumer model parity
 
 - Lane: `bad-code`
 - Legend: `SOURCE`
@@ -7,21 +7,24 @@
 
 `wesley emit rust` now emits basic Rust model declarations from Wesley L1 IR
 through a structured Rust AST/printer projection. That proves the Rust-native
-path for jedit-shaped GraphQL contracts, but it is still a model surface rather
-than a complete jedit runtime binding.
+model path for consumer-shaped GraphQL contracts, but it is still a model
+surface rather than a complete runtime binding.
+
+The jedit hot-text fixture remains useful coverage because it pressures real
+consumer shapes. It should not make Wesley own jedit product behavior.
 
 ## Hill
 
-Wesley can generate the Rust contract layer that jedit, Echo, warp-ttd, and
-Continuum can all treat as a shared authority, without any handwritten shadow
-model beside the authored GraphQL schema.
+Wesley can generate a Rust contract model layer that external consumers can
+treat as shared artifact truth, without handwritten shadow models beside the
+authored GraphQL schema.
 
 ## Done looks like
 
 - generated Rust output is documented with examples
 - object, interface, input object, enum, union, scalar, list, nullability, and
   reserved-word behavior are covered by golden tests
-- generated models can be consumed by a jedit-facing Rust crate without local
+- generated models can be consumed by an external Rust crate without local
   structural rewrites
 - serde behavior, crate imports, and custom scalar hooks are configurable enough
   for real consumers

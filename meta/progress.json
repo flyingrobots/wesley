@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-04T04:10:28.431Z",
+  "generatedAt": "2026-05-21T17:59:17.943Z",
   "overall": {
     "stage": "MVP",
     "next": "Alpha",
@@ -178,25 +178,6 @@
       "coverage": null
     },
     {
-      "name": "@wesley/slaps",
-      "status": "Active",
-      "stage": "MVP",
-      "progress": 50,
-      "next": "Alpha",
-      "passRate": 1,
-      "docs": {
-        "hasStatus": true,
-        "hasUsage": false,
-        "hasApi": true,
-        "hasCaveats": false
-      },
-      "milestones": {
-        "alpha": null,
-        "beta": null
-      },
-      "coverage": null
-    },
-    {
       "name": "@wesley/host-deno",
       "status": "Experimental",
       "stage": "Alpha",
@@ -226,25 +207,6 @@
         "hasStatus": false,
         "hasUsage": true,
         "hasApi": true,
-        "hasCaveats": false
-      },
-      "milestones": {
-        "alpha": null,
-        "beta": null
-      },
-      "coverage": null
-    },
-    {
-      "name": "@wesley/scaffold-multitenant",
-      "status": "Too soon",
-      "stage": "Prototype",
-      "progress": 50,
-      "next": "MVP",
-      "passRate": null,
-      "docs": {
-        "hasStatus": true,
-        "hasUsage": false,
-        "hasApi": false,
         "hasCaveats": false
       },
       "milestones": {

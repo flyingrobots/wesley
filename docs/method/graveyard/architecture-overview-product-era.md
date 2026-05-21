@@ -1,3 +1,14 @@
+# Retired: Wesley Architecture Overview Product-Era Draft
+
+This page is preserved as historical product-era context. It is not the current
+authoritative architecture map. It still names removed package surfaces and
+database-generation examples that generic Wesley no longer owns.
+
+For current Wesley architecture, read
+[`docs/ARCHITECTURE.md`](../../ARCHITECTURE.md).
+
+---
+
 # Wesley Architecture Overview
 
 ## Architectural Patterns

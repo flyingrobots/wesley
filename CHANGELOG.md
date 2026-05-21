@@ -6,6 +6,21 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Fixed
+
+- **Object extension folding validation**: JS GraphQL lowering now rejects
+  duplicate fields and repeated Wesley directives when `extend type` blocks are
+  folded into base object definitions.
+- **L1 fixture regeneration**: `pnpm fixtures:ir` now regenerates the tracked
+  Rust L1 `*.l1.json` and `*.l1.hash` corpus through the native Wesley CLI and
+  exits nonzero when any fixture fails.
+- **Parity sentinel backlog truth**: Clarified that Rust L1 fixture
+  regeneration is not the same as the future JS/Rust parity comparator.
+- **Progress surface cleanup**: Removed `@wesley/scaffold-multitenant` from the
+  active README/progress metadata and architecture-boundary required package
+  checks, and replaced the generated overall status hard break with a Markdown
+  table.
+
 ## [0.0.4] - 2026-05-15
 
 ### Added

@@ -33,9 +33,9 @@ Continuum-owned `continuum/wesley/ttd/` tree. The emitted TTD IR JSON Schema
 and TTD directive SDL now belong beside that module at
 `continuum/wesley/ttd/schemas/ttd-ir.schema.json` and
 `continuum/wesley/ttd/schemas/ttd-directives.graphql`.
-The broader cross-repo publication boundary is still tracked as active backlog
-work in
-[`SOURCE_WESLEY_protocol-surface-cutover`](../method/backlog/v0.1.0/SOURCE_WESLEY_protocol-surface-cutover.md).
+The old cross-repo publication-boundary backlog note was retired as
+historical extraction context in
+[`SOURCE_WESLEY_protocol-surface-cutover`](../method/graveyard/v0.1.0/SOURCE_WESLEY_protocol-surface-cutover.md).
 
 ### Key Doctrine
 

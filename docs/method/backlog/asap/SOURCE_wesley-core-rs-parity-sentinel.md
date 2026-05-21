@@ -5,15 +5,23 @@
 
 ## Why (Cool Idea)
 
-As we move the compiler truth to Rust, we risk "Semantic Drift" where the legacy JS implementation and the new Rust kernel produce slightly different IR or hashes for the same SDL.
+As we move the compiler truth to Rust, we risk "Semantic Drift" where the
+legacy JS implementation and the new Rust kernel produce slightly different IR
+or hashes for the same SDL.
 
 ## Done looks like
 
-- A GitHub Action or pre-push hook that runs both JS and Rust lowerers.
-- It compares the resulting IR and hashes for the entire `test/fixtures/ir-parity` corpus.
-- It fails if they diverge, forcing the developer to either fix the drift or explicitly update the truth manifest.
+- `pnpm fixtures:ir` remains the Rust L1 golden-regeneration command only.
+- A separate GitHub Action or pre-push hook runs the legacy JS lowerer and
+  Rust lowerer against an explicit parity corpus.
+- The sentinel normalizes agreed non-semantic envelope fields before comparing
+  semantic IR and hashes.
+- It fails if JS and Rust diverge, forcing the developer to fix drift, update
+  the Rust L1 truth manifest, or record an explicit compatibility break.
 
 ## Repo Evidence
 
 - `scripts/generate-ir-fixtures.mjs`
-- `crates/wesley-core/tests/ir_parity.rs`
+- `docs/design/0009-rust-core-and-wasm-capability-abi/phase-0-ir-truth-manifest.md`
+- `packages/wesley-runtime-node/src/GraphQLAdapter.mjs`
+- `crates/wesley-core/tests/lowering_validation.rs`

@@ -24,12 +24,14 @@ test('IR has version "1.0.0"', () => {
   assert.equal(ir.version, '1.0.0');
 });
 
-test('IR has metadata with generatedAt timestamp', () => {
-  const ir = parseSDL('type User @wes_table { id: ID! @wes_pk }');
+test('IR has deterministic generatedAt metadata', () => {
+  const sdl = 'type User @wes_table { id: ID! @wes_pk }';
+  const ir = parseSDL(sdl);
+  const again = parseSDL(sdl);
+
   assert.ok(ir.metadata, 'metadata should exist');
-  assert.ok(ir.metadata.generatedAt, 'generatedAt should exist');
-  // Should be a valid ISO timestamp
-  assert.ok(!Number.isNaN(Date.parse(ir.metadata.generatedAt)));
+  assert.equal(ir.metadata.generatedAt, '1970-01-01T00:00:00.000Z');
+  assert.deepEqual(ir.metadata, again.metadata);
 });
 
 test('IR has relationships array', () => {
@@ -104,6 +106,61 @@ test('table has constraints array', () => {
   const ir = parseSDL('type User @wes_table { id: ID! @wes_pk }');
   const table = ir.tables[0];
   assert.ok(Array.isArray(table.constraints));
+});
+
+test('extend type fields are folded into table IR', () => {
+  const ir = parseSDL(`
+    type User @wes_table {
+      id: ID! @wes_pk
+    }
+
+    extend type User {
+      email: String! @wes_unique
+    }
+  `);
+
+  const fields = Object.fromEntries(ir.tables[0].fields.map(field => [field.name, field]));
+  assert.deepEqual(Object.keys(fields), ['id', 'email']);
+  assert.equal(fields.email.type.base, 'String');
+  assert.equal(fields.email.directives.unique, true);
+});
+
+test('extend type without base definition is rejected', () => {
+  assert.throws(
+    () => parseSDL('extend type Missing { id: ID }'),
+    /Cannot extend type "Missing": no base definition found/
+  );
+});
+
+test('extend type duplicate fields are rejected', () => {
+  assert.throws(
+    () => parseSDL(`
+      type User @wes_table {
+        id: ID! @wes_pk
+      }
+
+      extend type User {
+        id: ID!
+      }
+    `),
+    /Duplicate field "id" on type "User"/
+  );
+});
+
+test('extend type duplicate Wesley directives are rejected', () => {
+  assert.throws(
+    () => parseSDL(`
+      type User @wes_table @wes_tenant(by: "org_id") {
+        id: ID! @wes_pk
+        org_id: ID!
+      }
+
+      extend type User @tenant(by: "workspace_id") {
+        workspace_id: ID!
+      }
+    `),
+    /Duplicate directive "@wes_tenant" on type "User"/
+  );
 });
 
 // ---------- Field structure ----------

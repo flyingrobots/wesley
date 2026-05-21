@@ -59,7 +59,11 @@ These small suites are gated in CI and only run when relevant files change. To r
 ```bash
 pnpm run setup:bats-plugins
 BATS_LIB_PATH=packages/wesley-cli/test \
-  bats test/serve-static*.bats test/progress-*.bats test/ci-*.bats test/browser-contracts-*.bats
+  bats test/serve-static*.bats \
+    test/progress-*.bats \
+    test/ir-fixtures.bats \
+    test/ci-*.bats \
+    test/browser-contracts-*.bats
 ```
 
 When debugging browser contracts diagnostics only (no Vite/Playwright):

@@ -1,8 +1,8 @@
 # Contributing to Wesley
 
 Wesley is a local-first system for planning, rehearsing, certifying, and
-explaining database change with durable runtime truth and evidence-backed
-judgment.
+explaining semantic contract changes with durable compiler truth,
+evidence-backed judgment, and explicit extension boundaries.
 
 This repo now uses METHOD for workflow. Wesley's product doctrine remains
 Wesley's. METHOD defines how work is queued, pulled, proved, and closed.
@@ -19,12 +19,16 @@ Read these surfaces in order:
 - [docs/method/guide.md](docs/method/guide.md) for practical repo guidance
 - [AGENTS.md](AGENTS.md) for repository-specific automation rules
 
-## Product Doctrine
+## Repository Doctrine
 
-Wesley exists to make database change trustworthy.
+Wesley exists to make schema-authored semantic change trustworthy.
 
 That means:
 
+- GraphQL SDL is the source contract
+- Wesley owns compiler truth, generic module contracts, and evidence plumbing
+- external modules own target semantics, product behavior, runtime law, and
+  database behavior
 - runtime truth beats convenience
 - evidence beats assertion
 - replayability beats magic
@@ -32,9 +36,10 @@ That means:
 - governed behavior beats advisory theater
 - local-first operation beats unnecessary network dependence
 
-Wesley is not trying to be a clever compiler demo or a pile of abstractions
-searching for a product. It is trying to become a trustworthy operating system
-for schema change.
+Wesley is not a database product, runtime, scheduler, or hidden platform for
+product policy. It is the semantic contract compiler and assurance toolchain;
+the `GraphQL -> whatever` side must enter through explicit modules or owning
+repos such as `wesley-postgres`.
 
 ## Repo Queue
 

@@ -323,13 +323,16 @@ semantics.
   absorbing receipt-only operational metadata
 - the proving path quietly expands beyond the frozen first family
 
-## Appendix: Related Backlog Pull Set
+## Appendix: Historical Backlog Pull Set
 
-- [Continuum Ownership Map For Shared Nouns](../../method/backlog/v0.1.0/SOURCE_continuum-ownership-map-for-shared-nouns.md)
-- [Continuum Local Compile And Inspect Surface](../../method/backlog/v0.1.0/RUNTIME_continuum-local-compile-and-inspect-surface.md)
-- [Continuum Conformance And Round-Trip Witness](../../method/backlog/v0.1.0/EVIDENCE_continuum-conformance-and-roundtrip-witness.md)
-- [Continuum Protocol Surface Cutover](../../method/backlog/v0.1.0/SOURCE_WESLEY_protocol-surface-cutover.md)
-- [Continuum Receipt Family Artifact Path](../../method/backlog/v0.1.0/TRANSMUTE_continuum-receipt-family-artifact-path.md)
+The related `v0.1.0/` backlog lane has been retired as historical extraction
+context during the v0.0.5 clean-house release.
+
+- [Continuum Ownership Map For Shared Nouns](../../method/graveyard/v0.1.0/SOURCE_continuum-ownership-map-for-shared-nouns.md)
+- [Continuum Local Compile And Inspect Surface](../../method/graveyard/v0.1.0/RUNTIME_continuum-local-compile-and-inspect-surface.md)
+- [Continuum Conformance And Round-Trip Witness](../../method/graveyard/v0.1.0/EVIDENCE_continuum-conformance-and-roundtrip-witness.md)
+- [Continuum Protocol Surface Cutover](../../method/graveyard/v0.1.0/SOURCE_WESLEY_protocol-surface-cutover.md)
+- [Continuum Receipt Family Artifact Path](../../method/graveyard/v0.1.0/TRANSMUTE_continuum-receipt-family-artifact-path.md)
 
 ## Non-goals
 

@@ -18,6 +18,7 @@ Current packets:
 - [`0009`](./0009-rust-core-and-wasm-capability-abi/rust-core-and-wasm-capability-abi.md): Rust-native compiler kernel and WASM capability ABI design
 - [`0010`](./0010-wesley-graft-mcp-boundary/wesley-graft-mcp-boundary.md): Wesley+Graft MCP boundary for legal agent optics
 - [`0011`](./0011-causal-suffix-bundle-family-and-runtime-sync/causal-suffix-bundle-family-and-runtime-sync.md): Causal suffix bundle family and runtime sync
+- [`0012`](./0012-product-leftover-cleanup/product-leftover-cleanup.md): Product leftover cleanup for the v0.0.5 clean-house release
 - [Module Contract](./wesley-module-contract.md): Generic core boundary versus external module-owned domain surfaces
 - [Module Capability Contract](./wesley-module-capability-contract.md): The capability surfaces external modules should implement
 - [Contract / Artifact / Runtime Boundary](./wesley-contract-family-artifact-runtime-value.md): GraphQL-authored families, Wesley-emitted artifacts, and later runtime values

@@ -9,6 +9,8 @@ import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+const STABLE_GENERATED_AT = '1970-01-01T00:00:00.000Z';
+
 // Wesley directive validation errors
 class WesleyParseError extends Error {
   constructor(message, directive = null, field = null) {
@@ -119,22 +121,21 @@ class GraphQLSchemaParser {
   buildIRFromAST(ast) {
     const tables = [];
     const tableNames = new Set();
+    const objectDefinitions = this.mergeObjectTypeExtensions(ast.definitions);
 
     // First pass: collect all table types
-    for (const definition of ast.definitions) {
-      if (definition.kind === Kind.OBJECT_TYPE_DEFINITION) {
-        const tableDirective = this.findDirective(definition.directives, 'wes_table');
-        if (tableDirective) {
-          const tableName = this.getDirectiveArgument(tableDirective, 'name') || definition.name.value;
+    for (const definition of objectDefinitions) {
+      const tableDirective = this.findDirective(definition.directives, 'wes_table');
+      if (tableDirective) {
+        const tableName = this.getDirectiveArgument(tableDirective, 'name') || definition.name.value;
 
-          if (tableNames.has(tableName)) {
-            throw new WesleyParseError(`Duplicate table name: ${tableName}`);
-          }
-          tableNames.add(tableName);
-
-          const table = this.buildTable(definition, tableName);
-          tables.push(table);
+        if (tableNames.has(tableName)) {
+          throw new WesleyParseError(`Duplicate table name: ${tableName}`);
         }
+        tableNames.add(tableName);
+
+        const table = this.buildTable(definition, tableName);
+        tables.push(table);
       }
     }
 
@@ -147,13 +148,151 @@ class GraphQLSchemaParser {
     return {
       version: '1.0.0',
       metadata: {
-        generatedAt: new Date().toISOString()
+        generatedAt: STABLE_GENERATED_AT
       },
       tables,
       enums: [],
       scalars: [],
       relationships
     };
+  }
+
+  /**
+   * Merge object type extensions into their base object type definitions.
+   */
+  mergeObjectTypeExtensions(definitions) {
+    const objectDefinitions = [];
+    const definitionsByName = new Map();
+    const extensions = [];
+
+    for (const definition of definitions) {
+      if (definition.kind === Kind.OBJECT_TYPE_DEFINITION) {
+        this.validateObjectDefinitionShape(definition);
+
+        const clone = {
+          ...definition,
+          fields: definition.fields ? [...definition.fields] : [],
+          directives: definition.directives ? [...definition.directives] : []
+        };
+        objectDefinitions.push(clone);
+        definitionsByName.set(clone.name.value, clone);
+      } else if (definition.kind === Kind.OBJECT_TYPE_EXTENSION) {
+        extensions.push(definition);
+      }
+    }
+
+    for (const extension of extensions) {
+      const base = definitionsByName.get(extension.name.value);
+      if (!base) {
+        throw new WesleyParseError(`Cannot extend type "${extension.name.value}": no base definition found`);
+      }
+
+      this.validateObjectExtensionShape(extension);
+      this.assertNoMergedDirectiveDuplicates(base, extension);
+
+      if (extension.fields) {
+        this.assertNoMergedFieldDuplicates(base, extension);
+        base.fields.push(...extension.fields);
+      }
+      if (extension.directives) {
+        base.directives.push(...extension.directives);
+      }
+    }
+
+    return objectDefinitions;
+  }
+
+  validateObjectDefinitionShape(definition) {
+    this.assertNoDuplicateFields(definition.fields, definition.name.value);
+    this.assertNoDuplicateWesleyDirectives(
+      definition.directives,
+      `type "${definition.name.value}"`
+    );
+
+    for (const field of definition.fields || []) {
+      this.assertNoDuplicateWesleyDirectives(
+        field.directives,
+        `field "${definition.name.value}.${field.name.value}"`
+      );
+    }
+  }
+
+  validateObjectExtensionShape(extension) {
+    this.assertNoDuplicateFields(extension.fields, extension.name.value);
+    this.assertNoDuplicateWesleyDirectives(
+      extension.directives,
+      `type "${extension.name.value}"`
+    );
+
+    for (const field of extension.fields || []) {
+      this.assertNoDuplicateWesleyDirectives(
+        field.directives,
+        `field "${extension.name.value}.${field.name.value}"`
+      );
+    }
+  }
+
+  assertNoDuplicateFields(fields = [], typeName) {
+    const seen = new Set();
+
+    for (const field of fields || []) {
+      const fieldName = field.name.value;
+      if (seen.has(fieldName)) {
+        throw new WesleyParseError(`Duplicate field "${fieldName}" on type "${typeName}"`);
+      }
+      seen.add(fieldName);
+    }
+  }
+
+  assertNoMergedFieldDuplicates(base, extension) {
+    const baseFields = new Set((base.fields || []).map(field => field.name.value));
+
+    for (const field of extension.fields || []) {
+      const fieldName = field.name.value;
+      if (baseFields.has(fieldName)) {
+        throw new WesleyParseError(`Duplicate field "${fieldName}" on type "${base.name.value}"`);
+      }
+      baseFields.add(fieldName);
+    }
+  }
+
+  assertNoDuplicateWesleyDirectives(directives = [], location) {
+    const seen = new Set();
+
+    for (const directive of directives || []) {
+      const canonical = this.canonicalDirectiveName(directive.name.value);
+      if (!canonical) continue;
+
+      if (seen.has(canonical)) {
+        throw new WesleyParseError(`Duplicate directive "@${canonical}" on ${location}`);
+      }
+      seen.add(canonical);
+    }
+  }
+
+  assertNoMergedDirectiveDuplicates(base, extension) {
+    const baseDirectives = new Set();
+    for (const directive of base.directives || []) {
+      const canonical = this.canonicalDirectiveName(directive.name.value);
+      if (canonical) baseDirectives.add(canonical);
+    }
+
+    for (const directive of extension.directives || []) {
+      const canonical = this.canonicalDirectiveName(directive.name.value);
+      if (!canonical) continue;
+
+      if (baseDirectives.has(canonical)) {
+        throw new WesleyParseError(`Duplicate directive "@${canonical}" on type "${base.name.value}"`);
+      }
+      baseDirectives.add(canonical);
+    }
+  }
+
+  canonicalDirectiveName(directiveName) {
+    const alias = this.legacyAliases.get(directiveName);
+    if (alias) return alias;
+    if (directiveName.startsWith('wes_')) return directiveName;
+    return null;
   }
 
   /**

@@ -39,8 +39,9 @@ receipt-family proof already exists.
 
 ## New Debt
 
-- None recorded as new debt. The remaining work is active carry-over on the
-  Continuum proving path rather than newly discovered bad-code debt.
+- None recorded as new debt. The remaining Continuum proving-path work was
+  active carry-over at closeout time; the old `v0.1.0` lane is now retired
+  historical context under `docs/method/graveyard/v0.1.0/`.
 
 ## Cool Ideas
 

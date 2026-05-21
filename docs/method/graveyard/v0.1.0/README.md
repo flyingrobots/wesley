@@ -1,7 +1,18 @@
-# v0.1.0
+# Retired v0.1.0 Lane
 
-This lane holds work explicitly committed to Wesley's first release. It is a
-ship lane, not a general priority queue.
+This directory preserves the old `docs/method/backlog/v0.1.0/` lane as
+historical extraction context. It is not an active ship lane.
+
+## 2026-05-21 Review Note
+
+This lane predates the current domain-empty cleanup bearing. Items that still
+describe Echo, TTD, Continuum, or product-family work as Wesley-owned should be
+treated as historical/extraction context until explicitly rewritten.
+
+Do not pull work from this directory into a release without first deciding
+whether it now belongs in Wesley, Echo, Continuum, `warp-ttd`, `git-warp`,
+jedit, or `wesley-postgres`, and then rewriting it into the active backlog lane
+that matches that decision.
 
 Release sequence:
 

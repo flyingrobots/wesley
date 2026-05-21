@@ -114,7 +114,6 @@ jobs:
             "wesley-cli"
             "wesley-tasks"
             "wesley-generator-js"
-            "wesley-scaffold-multitenant"
           )
 
           for package in "${required_packages[@]}"; do
@@ -162,8 +161,7 @@ jobs:
           │   ├── wesley-host-node/         # Node.js adapters
           │   ├── wesley-cli/               # Platform-agnostic CLI
           │   ├── wesley-tasks/             # Task scheduling system
-          │   ├── wesley-generator-js/      # JavaScript/TypeScript generators
-          │   └── wesley-scaffold-multitenant/ # Multi-tenant scaffold
+          │   └── wesley-generator-js/      # JavaScript/TypeScript generators
           ```
 
           ### Dependency Rules
