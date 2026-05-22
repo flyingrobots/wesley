@@ -13,6 +13,5 @@ database lanes as Wesley features.
 
 Current near-term pulls:
 
-1. `SOURCE_domain-empty-wesley-core-boundary.md`
-2. `SOURCE_wesley-core-rs-ir-contract-and-fixtures.md`
-3. `OWN_ninelives-resilience-integration.md`
+1. `SOURCE_wesley-core-rs-ir-contract-and-fixtures.md`
+2. `OWN_ninelives-resilience-integration.md`

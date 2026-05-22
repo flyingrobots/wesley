@@ -8,6 +8,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- **Domain-empty core boundary packet**: Pulled the boundary card into design
+  packet `0014`, defining what generic Wesley owns, what external modules or
+  sibling repos own, and the first docs/dispatch audit that keeps product and
+  database semantics outside the base compiler surface.
 - **Rust IR parity sentinel packet**: Pulled the parity sentinel backlog item
   into design packet `0013`, defining comparator inputs, normalization, hash
   behavior, and failure output for the next JS/Rust parity check.

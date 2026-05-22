@@ -50,6 +50,8 @@ Bring the `whatever` side of `GraphQL -> whatever` through explicit modules.
 
 External modules own target semantics, generators, witness scopes, release
 profiles, and runtime conventions. Wesley core does not own those meanings.
+For the active ownership rule, see
+[design/0014-domain-empty-core-boundary](./design/0014-domain-empty-core-boundary/domain-empty-core-boundary.md).
 
 The current repository still contains historical Continuum, WARPspace,
 PostgreSQL, and Supabase command/package residue. Treat those paths as

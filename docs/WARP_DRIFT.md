@@ -125,7 +125,7 @@ The highest-value next notes are now:
 - [Module Contract](./design/wesley-module-contract.md)
 - [Module Capability Contract](./design/wesley-module-capability-contract.md)
 - [Extraction Map](./design/wesley-extraction-map.md)
-- [SOURCE_domain-empty-wesley-core-boundary](./method/backlog/asap/SOURCE_domain-empty-wesley-core-boundary.md)
+- [Domain-Empty Core Boundary](./design/0014-domain-empty-core-boundary/domain-empty-core-boundary.md)
 - Continuum repo:
   `docs/method/backlog/asap/SOURCE_minimum-runtime-boundary-contract-family.md`
 
