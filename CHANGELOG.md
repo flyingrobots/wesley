@@ -8,6 +8,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- **Type-family parity projection design**: Named
+  `js-sdl-type-family-vs-rust-l1-type-family.v0` as the next fair parity
+  projection for schema-extension and non-table GraphQL facts before admitting
+  those fixtures to the default sentinel corpus.
 - **Rust IR fixture contract note**: Moved the core-rs IR contract and fixture
   backlog card into the active `0013` design packet, naming the v0.0.6 fixture
   classes, canonical byte rules, diagnostics contract, and repo evidence.

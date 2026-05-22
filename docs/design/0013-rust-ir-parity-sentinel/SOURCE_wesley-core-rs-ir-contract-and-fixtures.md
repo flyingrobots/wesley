@@ -51,6 +51,9 @@ The v0.0.6 corpus must keep these classes explicit:
 - **Invalid SDL**: negative diagnostics with stable codes and spans where the
   lowerer can provide them.
 
+The schema-extension admission projection is
+[Type-family parity projection](./SOURCE_type-family-parity-projection.md).
+
 ## Canonical Bytes
 
 - Canonical JSON is UTF-8, newline-free, sorted-object-key JSON.
