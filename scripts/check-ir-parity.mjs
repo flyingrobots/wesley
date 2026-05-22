@@ -211,6 +211,7 @@ function gitHead() {
 }
 
 function readTrackedHash(fixturePath) {
+  if (!fixturePath.endsWith('.graphql')) return null;
   const hashPath = fixturePath.replace(/\.graphql$/, '.l1.hash');
   if (!existsSync(hashPath)) return null;
   return readFileSync(hashPath, 'utf8').trim();

@@ -184,6 +184,29 @@ NODE
   assert_output --partial '"rustCommandHashMatches": false'
 }
 
+@test "IR parity sentinel skips tracked hash sidecars for custom non-graphql fixtures" {
+  make_fake_wesley
+
+  cat > "$TEST_TEMP_DIR/custom.gql" <<'SDL'
+type User @wes_table(name: "users") {
+  id: ID! @wes_pk
+  username: String! @wes_unique
+  email: String!
+  created_at: String! @wes_default(value: "now()")
+}
+SDL
+
+  run env \
+    WESLEY_CLI_BIN="$FAKE_WESLEY" \
+    node scripts/check-ir-parity.mjs \
+      --fixture "$TEST_TEMP_DIR/custom.gql" \
+      --json
+  assert_success
+  assert_output --partial '"status": "pass"'
+  assert_output --partial '"rustTrackedHash": null'
+  assert_output --partial '"rustTrackedHashMatches": null'
+}
+
 @test "IR parity sentinel reports the first mismatch path" {
   make_fake_wesley
 

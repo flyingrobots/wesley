@@ -170,7 +170,8 @@ The command lowers each fixture through the legacy JS adapter and the Rust CLI,
 projects both outputs into the shared table shape, compares canonical projected
 bytes and hashes, verifies `wesley schema hash` against the current Rust L1
 semantic bytes after top-level `metadata` removal, checks tracked Rust L1 hashes
-when present, and reports the first mismatch path when projection parity fails.
+for `.graphql` fixtures when sidecars are present, and reports the first
+mismatch path when projection parity fails.
 JSON output records the canonical projected `legacyBytes` and `rustBytes`
 alongside their hashes so reviewers can archive or inspect the exact compared
 bytes.

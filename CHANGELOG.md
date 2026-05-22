@@ -37,6 +37,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **Parity projection ordering**: The `js-table-vs-rust-table.v0` projection now
   sorts table names with deterministic code-point ordering instead of
   locale-aware collation.
+- **Parity custom fixture sidecars**: `pnpm parity:ir --fixture` now skips
+  tracked `*.l1.hash` checks for non-`.graphql` custom SDL paths instead of
+  reading the schema file as its own hash sidecar.
 - **Rust directive alias normalization**: Rust L1 lowering now canonicalizes
   the current core Wesley directive aliases to `wes_*` names and rejects
   duplicate canonical directives instead of allowing last-write-wins drift,
