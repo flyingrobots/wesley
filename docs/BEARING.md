@@ -7,8 +7,8 @@ Current direction and active tensions. Historical ship data is in
 ```mermaid
 timeline
     Phase 1 : v0.0.5 Shipped : Clean House : Domain-Empty Backlog
-    Phase 2 : v0.0.6 : Rust IR Parity : Fixture Truth
-    Phase 3 : Module Boundary : External Targets : Artifact Evidence
+    Phase 2 : v0.0.6 : Rust IR Parity : Boundary Proof
+    Phase 3 : Module Runtime : External Targets : Artifact Evidence
     Phase 4 : Core Release : Legacy Node Retirement : Postgres Module Cutover
 ```
 
@@ -31,6 +31,8 @@ still match the legacy truth anchors where they are expected to match.
   toolchain.
 - The `whatever` must come from explicitly loaded external modules, not
   built-in product or database semantics.
+- [0014-domain-empty-core-boundary](./design/0014-domain-empty-core-boundary/domain-empty-core-boundary.md)
+  is now the active ownership doctrine, not a pending cleanup card.
 - Echo, jedit, Continuum, WARPspace, and `warp-ttd` behavior belongs in the
   owning repos or owning modules.
 - PostgreSQL/Supabase behavior belongs in `wesley-postgres`, not in
@@ -92,9 +94,10 @@ base platform.
   license to preserve arbitrary spelling in semantic Rust L1 output.
 - **Invalid Diagnostics**: The Rust lowerer can reject invalid SDL, but stable
   codes and spans are not yet part of the L1 fixture contract.
-- **External Module Gap**: Wesley can name the domain-empty boundary, but
-  external modules still need enough capability runtime and artifact evidence
-  to consume it cleanly.
+- **External Module Gap**: Wesley has named the domain-empty boundary, but the
+  module seam still needs hermetic target-dispatch fixtures, runtime boundary
+  evidence, and artifact evidence before external modules can consume it
+  cleanly.
 - **Sibling Repo Coordination**: Wesley should reference `wesley-postgres` as
   the database authority without editing or overwriting sibling work from this
   repo.
@@ -106,23 +109,32 @@ enforcement**:
 
 Current evidence now includes complete v0.0.5 publication proof, an expanded
 Rust L1 corpus for directive-heavy SDL, schema extensions, legacy aliases, and
-invalid duplicate-directive coverage, plus `pnpm parity:ir` for the
+invalid duplicate-directive coverage, `pnpm parity:ir` for the
 `js-table-vs-rust-table.v0` compatibility projection over the first
-table-compatible sentinel corpus.
+table-compatible sentinel corpus, and the domain-empty ownership packet in
+`0014`.
 
 The next pulls are:
 
-1. Land domain-empty core boundary enforcement so product and database behavior
-   stays outside generic Wesley. The active packet is
-   [0014-domain-empty-core-boundary](./design/0014-domain-empty-core-boundary/domain-empty-core-boundary.md).
-2. Broaden parity sentinel coverage only after naming fair projections for
-   non-table extension semantics and scale/performance fixtures.
-3. Continue the IR contract fixture lane for stable invalid-SDL diagnostics,
-   including codes and spans where available.
-4. Keep `wesley-postgres` visible as the database extraction home and avoid
-   reshaping sibling work from Wesley release branches.
-5. Use the parity sentinel output as compatibility evidence before retiring or
-   demoting legacy Node lowering.
+1. Prove module-owned target dispatch with hermetic fixture modules:
+   no-module diagnostics, explicit `wesley.targets`, duplicate target
+   rejection, alias conflict rejection, and target selection without built-in
+   product or database names.
+2. Pull the remaining Rust IR contract fixture card into design so fixture
+   classes, canonical byte rules, diagnostics, and performance evidence are
+   release-scoped instead of floating in `asap/`.
+3. Stabilize invalid-SDL diagnostic contracts with executable coverage for
+   codes and spans where available, while naming what remains intentionally
+   unstable.
+4. Define the next parity projection before broadening `pnpm parity:ir` beyond
+   table-compatible SDL. Schema extensions and non-table L1 facts need a fair
+   projection before they become JS/Rust parity evidence.
+5. Capture a Rust core performance baseline over the canonical corpus after
+   the fixture and projection boundaries are named.
+
+Do not pull `OWN_ninelives-resilience-integration.md` until the module boundary
+has stronger executable evidence. Resilience policy should not arrive before
+the base compiler/module seam is boring.
 
 Echo and jedit do not need more Wesley feature gravity for their current work.
 Wesley should coordinate on compatibility only when a concrete artifact, hash,
