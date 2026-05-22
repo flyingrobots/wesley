@@ -30,15 +30,20 @@ The most recent Continuum cycle packet is
 It closed as a `partial` landing in
 [its retro packet](./method/retro/0003-continuum-contract-compiler/continuum-contract-compiler.md).
 
-The active release center is now the v0.0.5 clean-house packet:
+The v0.0.5 clean-house packet is shipped release context:
 
 - [Product Leftover Cleanup](./design/0012-product-leftover-cleanup/product-leftover-cleanup.md)
+
+The active release center is now v0.0.6 Rust IR parity:
+
+- [Rust IR Parity Sentinel](./design/0013-rust-ir-parity-sentinel/rust-ir-parity-sentinel.md)
 
 The old Continuum-heavy `v0.1.0/` lane has been retired to
 [graveyard/v0.1.0](./method/graveyard/v0.1.0/README.md). Treat those notes as
 historical extraction context, not as active Wesley release commitments.
 
-The repo already has the important generic building block around that hill:
+The repo already has the important generic building blocks around that
+direction:
 
 - a module-driven `wesley compile` surface where targets come from loaded
   external modules
