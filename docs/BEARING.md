@@ -6,26 +6,24 @@ Current direction and active tensions. Historical ship data is in
 
 ```mermaid
 timeline
-    Phase 1 : Clean House Release : Domain-Empty Core : Backlog Truth
-    Phase 2 : IR Truth : Rust Parity : Stable Fixture Corpus
-    Phase 3 : Module Boundaries : External Targets : Artifact Evidence
+    Phase 1 : v0.0.5 Shipped : Clean House : Domain-Empty Backlog
+    Phase 2 : v0.0.6 : Rust IR Parity : Fixture Truth
+    Phase 3 : Module Boundary : External Targets : Artifact Evidence
     Phase 4 : Core Release : Legacy Node Retirement : Postgres Module Cutover
 ```
 
 ## Active Gravity
 
-### 1. Clean House Release
+### 1. v0.0.6 Rust IR Parity
 
-The next Wesley hill is an introspective cleanup release.
+The next Wesley hill is not another product lane. It is a compiler-truth
+release that makes the Rust core harder to drift from the legacy JS lowering
+surface while Wesley finishes moving toward one native compiler brain.
 
-Wesley should stop orbiting old Echo, jedit, Continuum, PostgreSQL, and
-Supabase implementation lanes. Those repos or their external module homes now
-own the product/domain work. Wesley owns the compiler kernel, generic module
-contracts, generic artifact/evidence plumbing, and compatibility evidence that
-those external consumers can inspect.
-
-The cleanup release should make the repository's backlog, docs, tests, and
-front doors say that consistently.
+v0.0.5 closed the clean-house release. v0.0.6 should turn that cleanup into
+evidence: richer canonical fixtures, clearer compatibility diagnostics, and a
+separate JS/Rust parity sentinel that proves whether current Rust L1 bytes
+still match the legacy truth anchors where they are expected to match.
 
 ### 2. Domain-Empty Core
 
@@ -39,80 +37,89 @@ front doors say that consistently.
   `wesley-core`, Wesley generators, generic host packages, or generic task
   execution packages.
 
-### 3. IR Truth And Rust Parity
+### 3. Rust L1 Fixture Truth
 
 - Treat the Rust workspace as the primary compiler surface.
-- Freeze the canonical IR contract and fixture corpus before broad rewrites.
-- Remove nondeterministic metadata from parity-sensitive IR bytes.
-- Keep a JS/Rust parity sentinel over canonical fixtures until legacy Node
-  lowering is retired or deliberately demoted.
+- Expand the canonical fixture corpus before broad rewrites.
+- Keep nondeterministic metadata out of parity-sensitive IR bytes.
+- Preserve directive spelling, alias normalization, extension folding, and
+  invalid-SDL diagnostics as explicit tests instead of tribal knowledge.
 - Keep jedit-shaped consumer fixtures as compiler coverage, not as jedit
   product ownership.
 
-### 4. External Optic Admission Split
+### 4. Parity Sentinel Before Retirement
 
-The current optic-admission ownership split is:
+`pnpm fixtures:ir` regenerates Rust L1 golden files. It is not JS/Rust parity
+proof.
 
-- Wesley compiles artifacts and registration descriptors.
-- Echo registers artifacts, returns runtime-local handles, admits or obstructs
-  invocations, instruments access, and emits witnesses/readings.
-- Authority layers issue grants and capability presentations.
-- Applications hide artifact handles, basis references, and runtime
-  coordinates behind product-facing adapters.
-- Continuum coordinates the shared role map, but should not freeze a shared
-  protocol family until the compiled-artifact, registration, invocation, and
-  witness path is proven in the owning repos.
+The new sentinel work lives in
+[0013-rust-ir-parity-sentinel](./design/0013-rust-ir-parity-sentinel/rust-ir-parity-sentinel.md).
+It should compare normalized semantic IR from the legacy JS lowerer and the
+Rust lowerer over an explicit corpus, then fail with a useful mismatch path and
+hash evidence. Only after that evidence exists should Wesley retire or demote
+legacy Node lowering.
 
-That split belongs in repo bearings and external backlogs, not as hidden Wesley
-product work.
-
-### 5. Module Capability Runtime
+### 5. Module Capability Boundary
 
 - Use the module capability registry as the seam between loaded modules and
   Wesley base verbs.
 - Keep `wesley compile` dispatching only through module-owned `wesley.targets`.
 - Keep Wesley core CI independent of external product and database repos by
   exercising hermetic fixture modules across supported capability collections.
+- Move product/runtime/database semantics to owning repos or modules before
+  deleting generic compatibility evidence that external consumers still need.
 
 ### 6. Wesley-Postgres Preservation
 
-`wesley-postgres` is the PostgreSQL-family extraction home. It should not be
-abandoned while Wesley cleans house. Database semantics removed from Wesley
-need explicit homes and follow-through there before more Postgres-shaped code
-is deleted or reshaped in generic Wesley.
+`wesley-postgres` is the PostgreSQL-family extraction home. It is active and
+must not be abandoned while Wesley tightens its domain-empty boundary.
+
+That repo remains the home for PostgreSQL/Supabase generation, PostgreSQL
+execution adapters, and database safety primitives. Wesley should coordinate
+by preserving generic module seams and avoiding new database semantics in the
+base platform.
 
 ## Tensions
 
-- **Backlog Residue**: Several older cards still read like Echo, jedit,
-  Continuum, or database implementation work belongs in Wesley. The next
-  cleanup slice must move, archive, or rewrite those cards.
-- **Compatibility Churn**: IR, hash, directive, or generated-artifact changes
-  can affect Echo and jedit fixtures. Those changes need explicit compatibility
-  notes rather than accidental hash churn.
-- **Legacy NPM Front Door**: README and guide now point core work at Cargo, but
-  package scripts, docs drift checks, and old generator commands still assume
-  legacy Node surfaces.
 - **Two-Brain Confusion**: Rust and Node surfaces still coexist. The intended
   shape is one compiler brain (`crates/wesley-core`), one native command body
   (`crates/wesley-cli`), and legacy Node support surfaces under `packages/`
   until ported, extracted, or retired.
+- **Fixture Churn**: IR, hash, directive, or generated-artifact changes can
+  affect Echo and jedit fixtures. Those changes need explicit compatibility
+  notes rather than accidental hash churn.
+- **Alias Semantics**: Legacy directive aliases are compatibility input, not a
+  license to preserve arbitrary spelling in semantic Rust L1 output.
+- **Invalid Diagnostics**: The Rust lowerer can reject invalid SDL, but stable
+  codes and spans are not yet part of the L1 fixture contract.
 - **External Module Gap**: Wesley can name the domain-empty boundary, but
   external modules still need enough capability runtime and artifact evidence
   to consume it cleanly.
+- **Sibling Repo Coordination**: Wesley should reference `wesley-postgres` as
+  the database authority without editing or overwriting sibling work from this
+  repo.
 
 ## Next Target
 
-The immediate focus is **v0.0.5 clean house**:
+The immediate focus is **v0.0.6 Rust IR parity and module-boundary
+enforcement**:
 
-1. Execute design packet
-   [0012-product-leftover-cleanup](./design/0012-product-leftover-cleanup/product-leftover-cleanup.md).
-2. Finish the active backlog verification pass so product/runtime/database
-   cards are moved, retired, or rewritten as external-module compatibility
-   work.
-3. Treat the old `v0.1.0` lane as retired historical/extraction context.
-4. Freeze canonical IR fixtures and nondeterministic metadata policy.
-5. Install JS/Rust parity evidence before deeper Rust-native cleanup.
-6. Keep `wesley-postgres` visible as the database extraction home.
+Current evidence now includes complete v0.0.5 publication proof and an expanded
+Rust L1 corpus for directive-heavy SDL, schema extensions, legacy aliases, and
+invalid duplicate-directive coverage.
+
+The next pulls are:
+
+1. Implement the JS/Rust parity sentinel command from design packet
+   [0013-rust-ir-parity-sentinel](./design/0013-rust-ir-parity-sentinel/rust-ir-parity-sentinel.md).
+2. Land the `js-table-vs-rust-table.v0` projection/crosswalk before comparing
+   legacy JS table IR with Rust L1 bytes.
+3. Pull the domain-empty core boundary card into enforcement work so product
+   and database behavior stays outside generic Wesley.
+4. Continue the IR contract fixture lane for stable invalid-SDL diagnostics,
+   including codes and spans where available.
+5. Keep `wesley-postgres` visible as the database extraction home and avoid
+   reshaping sibling work from Wesley release branches.
 
 Echo and jedit do not need more Wesley feature gravity for their current work.
 Wesley should coordinate on compatibility only when a concrete artifact, hash,

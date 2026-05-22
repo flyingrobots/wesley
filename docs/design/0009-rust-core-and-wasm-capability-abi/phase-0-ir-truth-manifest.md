@@ -34,6 +34,10 @@ rules are MANDATORY:
    IR. It MUST be stripped before computing the parity hash. The JS adapter now
    emits a stable `generatedAt` value for compatibility so repeated parses of
    identical SDL do not change IR bytes solely because wall-clock time advanced.
+7. **Directive Multiplicity:** Core Wesley directive aliases MUST lower to the
+   canonical `@wes_*` directive name and duplicate canonical core directives
+   MUST fail. Repeated custom directives are preserved as ordered JSON arrays
+   under the directive name.
 
 ## Fixture Corpus
 
@@ -44,6 +48,10 @@ The fixture corpus is stored in `test/fixtures/ir-parity` and consists of
 - `*.l1.json` stores the Rust-native L1 IR emitted by `wesley schema lower`.
 - `*.l1.hash` stores the Rust-native L1 hash emitted by `wesley schema hash`.
 
+Invalid SDL fixtures live in `test/fixtures/ir-parity-invalid`. They are not
+processed by `pnpm fixtures:ir`; they are consumed by explicit negative Rust
+tests.
+
 ### Stable L1 Hashes
 
 | Fixture | Hash (SHA-256) |
@@ -51,6 +59,9 @@ The fixture corpus is stored in `test/fixtures/ir-parity` and consists of
 | `small-schema.graphql` | `b484bf6741686314aea381b51d5d26805b08fa27517225bbe4b736d9f39c606f` |
 | `medium-schema.graphql` | `853d939364506680535ae865438d897efc9fee2dc8e5b21d1118cae3cfe5664b` |
 | `large-schema.graphql` | `dfd5a42ab6a03570294764e4e9bdd791b5dd42fc02db5feb9543849a67d14726` |
+| `directive-heavy-schema.graphql` | `e2e831e55a3b439322c49057e6ad2c6e28e6446e0b6f79fa1cae2a8b102053e3` |
+| `schema-extensions-schema.graphql` | `72d4d2db0d705fb59117a4c9f2e55ade187e435829253bb862aabd6dee5c9f99` |
+| `legacy-alias-schema.graphql` | `95b4c726cfccf7874ba2e5d01a216cb1f31c0abce0ea060885899a5d79281aa6` |
 
 ### Categories
 
@@ -59,13 +70,16 @@ The fixture corpus is stored in `test/fixtures/ir-parity` and consists of
    (**COMPLETE**)
 3. **Large:** 100+ types to test performance and memory scaling. (**COMPLETE**)
 4. **Directive-Heavy:** Extensive use of `@wes_rls`, `@wes_tenant`, and
-   `@wes_default`. (PENDING)
+   `@wes_default`, including directive arguments with arrays and object
+   values. (**COMPLETE**)
 5. **Invalid:** SDL cases that MUST trigger specific `WesleyParseError` codes.
-   (PENDING)
-6. **Schema-Extensions:** Testing JS and Rust `extend type` folding.
-   (**STARTED**)
-7. **Legacy-Aliases:** Using `@table`, `@pk`, etc., to ensure alias
-   normalization works. (PENDING)
+   (**STARTED**; current Rust coverage rejects duplicate canonical directives,
+   while stable diagnostic codes and spans remain future work.)
+6. **Schema-Extensions:** Testing JS and Rust extension folding for scalar,
+   object, interface, union, enum, and input object types. (**COMPLETE**)
+7. **Legacy-Aliases:** Using `@table`, `@pk`, `@primaryKey`, `@tenant`, and
+   related core aliases to ensure Rust L1 emits canonical `@wes_*` directive
+   names. (**COMPLETE for the current core compiler alias set**)
 
 ## Baseline Performance (JS)
 

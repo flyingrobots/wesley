@@ -6,6 +6,31 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Added
+
+- **Rust IR parity sentinel packet**: Pulled the parity sentinel backlog item
+  into design packet `0013`, defining comparator inputs, normalization, hash
+  behavior, and failure output for the next JS/Rust parity check.
+- **Expanded Rust L1 fixture corpus**: Added directive-heavy,
+  schema-extension, legacy-alias, and invalid duplicate-directive fixtures for
+  the v0.0.6 compiler-truth lane.
+
+### Changed
+
+- **v0.0.6 bearing reset**: Reframed `docs/BEARING.md` around Rust IR parity,
+  module-boundary enforcement, and explicit `wesley-postgres` preservation
+  after the v0.0.5 clean-house release.
+- **v0.0.5 release evidence**: Replaced pending publication wording with the
+  actual GitHub Release, signed tag, workflow, and crates.io visibility
+  evidence.
+
+### Fixed
+
+- **Rust directive alias normalization**: Rust L1 lowering now canonicalizes
+  the current core Wesley directive aliases to `wes_*` names and rejects
+  duplicate canonical directives instead of allowing last-write-wins drift,
+  while repeated custom directives are preserved as ordered values.
+
 ## [0.0.5] - 2026-05-21
 
 ### Fixed
