@@ -139,6 +139,31 @@ async fn rejects_duplicate_canonical_directives() {
         message.contains("Duplicate directive '@wes_table'"),
         "unexpected error: {message}"
     );
+
+    let diagnostic = err.diagnostic();
+    assert_eq!(diagnostic.code, "WESLEY_LOWERING_ERROR");
+    assert_eq!(diagnostic.severity, "ERROR");
+    assert_eq!(diagnostic.message, "Duplicate directive '@wes_table'");
+    assert_eq!(diagnostic.line, None);
+    assert_eq!(diagnostic.column, None);
+}
+
+#[tokio::test]
+async fn parse_errors_expose_stable_diagnostics_with_spans() {
+    let sdl = "type Broken {\n  id:\n}\n";
+
+    let adapter = create_adapter();
+    let err = adapter
+        .lower_sdl(sdl)
+        .await
+        .expect_err("invalid SDL syntax should fail lowering");
+    let diagnostic = err.diagnostic();
+
+    assert_eq!(diagnostic.code, "WESLEY_PARSE_ERROR");
+    assert_eq!(diagnostic.severity, "ERROR");
+    assert!(diagnostic.message.contains("expected"));
+    assert_eq!(diagnostic.line, Some(3));
+    assert_eq!(diagnostic.column, Some(1));
 }
 
 #[tokio::test]

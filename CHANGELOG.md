@@ -37,6 +37,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **Rust invalid-SDL diagnostics**: `WesleyError` now exposes a stable
+  diagnostic object with machine-readable codes, severity, and parser
+  line/column spans where Apollo provides a byte index; semantic lowering
+  errors keep stable codes while source spans remain intentionally absent.
 - **Module target alias collision order**: `wesley compile` now rejects a
   module target name that conflicts with an alias registered by an earlier
   loaded module, closing an order-dependent gap in module-owned target

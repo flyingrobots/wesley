@@ -68,7 +68,7 @@ The v0.0.6 corpus must keep these classes explicit:
 
 Invalid SDL coverage should record:
 
-- a stable error code where the Rust lowerer exposes one
+- a stable error code from `WesleyError::diagnostic()`
 - the fixture path
 - a stable message shape that names the violated rule
 - line and column spans where the parser or lowerer can preserve them
@@ -76,6 +76,14 @@ Invalid SDL coverage should record:
 
 The diagnostic contract is not allowed to hide invalid inputs by normalizing
 them into fixture outputs.
+
+Current v0.0.6 behavior:
+
+- parse errors use `WESLEY_PARSE_ERROR` and preserve line/column spans derived
+  from Apollo's parser byte index
+- semantic lowering errors use `WESLEY_LOWERING_ERROR`
+- semantic lowering errors do not yet expose source spans, so duplicate
+  canonical directive coverage asserts `line: null` and `column: null`
 
 ## Done looks like
 

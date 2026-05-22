@@ -29,6 +29,39 @@ pub enum WesleyError {
     ResilienceError(String),
 }
 
+impl WesleyError {
+    /// Returns the stable diagnostic contract for this error.
+    pub fn diagnostic(&self) -> WesleyDiagnostic {
+        match self {
+            Self::ParseError {
+                message,
+                line,
+                column,
+            } => WesleyDiagnostic {
+                code: "WESLEY_PARSE_ERROR".to_string(),
+                message: message.clone(),
+                severity: "ERROR".to_string(),
+                line: *line,
+                column: *column,
+            },
+            Self::LoweringError { message, .. } => WesleyDiagnostic {
+                code: "WESLEY_LOWERING_ERROR".to_string(),
+                message: message.clone(),
+                severity: "ERROR".to_string(),
+                line: None,
+                column: None,
+            },
+            Self::ResilienceError(message) => WesleyDiagnostic {
+                code: "WESLEY_RESILIENCE_ERROR".to_string(),
+                message: message.clone(),
+                severity: "ERROR".to_string(),
+                line: None,
+                column: None,
+            },
+        }
+    }
+}
+
 /// A diagnostic message emitted by the compiler.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct WesleyDiagnostic {
