@@ -112,10 +112,11 @@ table-compatible sentinel corpus.
 
 The next pulls are:
 
-1. Broaden parity sentinel coverage only after naming fair projections for
+1. Land domain-empty core boundary enforcement so product and database behavior
+   stays outside generic Wesley. The active packet is
+   [0014-domain-empty-core-boundary](./design/0014-domain-empty-core-boundary/domain-empty-core-boundary.md).
+2. Broaden parity sentinel coverage only after naming fair projections for
    non-table extension semantics and scale/performance fixtures.
-2. Pull the domain-empty core boundary card into enforcement work so product
-   and database behavior stays outside generic Wesley.
 3. Continue the IR contract fixture lane for stable invalid-SDL diagnostics,
    including codes and spans where available.
 4. Keep `wesley-postgres` visible as the database extraction home and avoid

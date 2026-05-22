@@ -11,6 +11,8 @@ authored GraphQL -> Wesley core facts -> module-owned targets / evidence / hosts
 
 Wesley owns compiler truth. External modules and sibling repos own target
 semantics, runtime policy, database behavior, Echo behavior, and deployment.
+The active ownership doctrine is
+[Domain-Empty Core Boundary](./design/0014-domain-empty-core-boundary/domain-empty-core-boundary.md).
 
 If you are trying to figure out where to start, read
 [ENTRYPOINTS.md](./ENTRYPOINTS.md) first. This document is the deeper structural

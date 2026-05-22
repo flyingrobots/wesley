@@ -23,7 +23,8 @@ extension modules.
 
 For the bounded-autonomy direction, read
 [Wesley North Star](./docs/NORTHSTAR.md). For the SDL boundary, read
-[SDL, Shape, And Law](./docs/SDL.md).
+[SDL, Shape, And Law](./docs/SDL.md). For the active ownership boundary, read
+[Domain-Empty Core Boundary](./docs/design/0014-domain-empty-core-boundary/domain-empty-core-boundary.md).
 
 ---
 
@@ -224,23 +225,23 @@ developer-level operator guide, read [GUIDE.md](./docs/GUIDE.md).
 
 ---
 
-## Extension modules
+## External module examples
 
 A single schema can be compiled by many extensions simultaneously. Each
 extension walks the semantic graph independently and emits its own artifacts.
 Extensions do not need to know about one another.
-These are external owning module families; Wesley preserves the neutral IR
-contract they consume.
+These are externally owned module families; Wesley preserves the neutral IR
+contract and module seam they consume.
 
-| Extension | Responsibility |
+| Module family | External owner | Responsibility |
 | :--- | :--- |
-| Postgres | SQL schemas, migrations, indexes, pgTAP, CRUD helpers |
-| Validation | Runtime and static validation rules |
-| Codec | Binary and runtime codecs |
-| TypeScript | Type contracts and client bindings |
-| Observer | Observation plans and projections |
-| Echo | Runtime law, footprints, observation semantics |
-| Continuum | Deferred protocol generation |
+| Postgres | `wesley-postgres` | SQL schemas, migrations, indexes, pgTAP, CRUD helpers |
+| Validation | loaded module | Runtime and static validation rules |
+| Codec | loaded module | Binary and runtime codecs |
+| TypeScript | Wesley emitter or loaded module | Type contracts and client bindings |
+| Observer | loaded module | Observation plans and projections |
+| Echo | Echo-owned integration | Runtime law, footprints, observation semantics |
+| Continuum | Continuum-owned module/repo | Deferred protocol generation |
 
 ---
 
