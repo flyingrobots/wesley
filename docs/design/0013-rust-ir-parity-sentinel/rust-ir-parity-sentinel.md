@@ -115,6 +115,7 @@ The normalizer removes envelope-only data and keeps semantic data intact.
 - Remove top-level `metadata`.
 - Sort object keys with Wesley canonical JSON ordering before hashing.
 - Preserve array order.
+- Sort projection-created table arrays by deterministic code-point name order.
 - Preserve directive argument values exactly after each lowerer has produced
   semantic IR.
 - Require lowerers to emit canonical directive names for core Wesley aliases.

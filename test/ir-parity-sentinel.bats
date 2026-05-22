@@ -200,6 +200,43 @@ NODE
   assert_output --partial '"rust": true'
 }
 
+@test "IR parity projection sorts table names by code point" {
+  run node --input-type=module <<'NODE'
+import { projectRustL1IR } from './scripts/ir-parity-projection.mjs';
+
+const names = ['a', 'B', 'á', 'aa', 'A'];
+const ir = {
+  version: '1.0.0',
+  types: names.map(name => ({
+    name,
+    kind: 'OBJECT',
+    directives: {
+      wes_table: {
+        name
+      }
+    },
+    fields: [
+      {
+        name: 'id',
+        type: {
+          base: 'ID',
+          nullable: false,
+          isList: false
+        },
+        directives: {
+          wes_pk: true
+        }
+      }
+    ]
+  }))
+};
+
+console.log(projectRustL1IR(ir).tables.map(table => table.name).join(','));
+NODE
+  assert_success
+  assert_output "A,B,a,aa,á"
+}
+
 @test "IR parity sentinel lists only the v0 table-compatible corpus by default" {
   run node scripts/check-ir-parity.mjs --list-fixtures
   assert_success

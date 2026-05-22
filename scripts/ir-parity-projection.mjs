@@ -237,7 +237,9 @@ function isRustColumnField(field) {
 }
 
 function compareByName(left, right) {
-  return left.name.localeCompare(right.name);
+  if (left.name < right.name) return -1;
+  if (left.name > right.name) return 1;
+  return 0;
 }
 
 function findFirstMismatch(left, right, path) {

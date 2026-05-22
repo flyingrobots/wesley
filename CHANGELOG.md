@@ -34,6 +34,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   canonical projected legacy and Rust bytes, and Rust L1 hash checks remove
   top-level metadata before comparing against `wesley schema hash` or tracked
   `*.l1.hash` outputs.
+- **Parity projection ordering**: The `js-table-vs-rust-table.v0` projection now
+  sorts table names with deterministic code-point ordering instead of
+  locale-aware collation.
 - **Rust directive alias normalization**: Rust L1 lowering now canonicalizes
   the current core Wesley directive aliases to `wes_*` names and rejects
   duplicate canonical directives instead of allowing last-write-wins drift,
