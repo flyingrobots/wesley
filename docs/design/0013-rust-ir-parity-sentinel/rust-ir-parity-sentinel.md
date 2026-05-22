@@ -181,6 +181,21 @@ the default v0 sentinel corpus. The former still carries non-table Rust L1
 coverage that needs a separate projection before it is fair parity evidence;
 the latter is scale coverage rather than the first compatibility sentinel.
 
+## Next Projection
+
+The next projection is named in
+[Type-family parity projection](./SOURCE_type-family-parity-projection.md).
+
+It defines `js-sdl-type-family-vs-rust-l1-type-family.v0` for structural
+GraphQL type-family facts that the legacy JS table adapter drops: scalars,
+interfaces, unions, enums, input objects, object/interface implements, and
+extension-folded fields or members.
+
+`schema-extensions-schema.graphql` may enter the default sentinel corpus only
+after that projection exists and passes. Running the fixture through
+`js-table-vs-rust-table.v0` is useful table evidence, but it is not non-table
+type-family parity evidence.
+
 The supporting
 [core-rs IR contract and fixtures note](./SOURCE_wesley-core-rs-ir-contract-and-fixtures.md)
 records the release-scoped fixture classes, canonical byte rules, diagnostic

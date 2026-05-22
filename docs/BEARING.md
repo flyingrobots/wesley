@@ -119,7 +119,9 @@ rejection, alias conflicts in both registration orders, and the Rust IR
 fixture contract now housed under the active `0013` packet. Invalid SDL
 diagnostics now expose stable `WesleyError::diagnostic()` codes and parser
 line/column spans where available, while semantic lowering spans remain
-explicitly absent.
+explicitly absent. The next non-table projection is now named as
+`js-sdl-type-family-vs-rust-l1-type-family.v0` so schema-extension fixtures do
+not enter default parity on table evidence alone.
 
 The next pulls are:
 
@@ -127,9 +129,9 @@ The next pulls are:
    target dispatch already rejects missing modules, invalid product/database
    target names, duplicate names, and aliases that collide before or after the
    owning target loads.
-2. Define the next parity projection before broadening `pnpm parity:ir` beyond
-   table-compatible SDL. Schema extensions and non-table L1 facts need a fair
-   projection before they become JS/Rust parity evidence.
+2. Implement the named type-family projection and admit
+   `schema-extensions-schema.graphql` only after
+   `js-sdl-type-family-vs-rust-l1-type-family.v0` passes.
 3. Capture a Rust core performance baseline over the canonical corpus after
    the fixture and projection boundaries are named.
 
