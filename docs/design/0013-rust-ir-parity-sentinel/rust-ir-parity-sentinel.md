@@ -168,8 +168,11 @@ The v0 corpus is explicit and table-compatible:
 The command lowers each fixture through the legacy JS adapter and the Rust CLI,
 projects both outputs into the shared table shape, compares canonical projected
 bytes and hashes, verifies `wesley schema hash` against the current Rust L1
-bytes, checks tracked Rust L1 hashes when present, and reports the first
-mismatch path when projection parity fails.
+semantic bytes after top-level `metadata` removal, checks tracked Rust L1 hashes
+when present, and reports the first mismatch path when projection parity fails.
+JSON output records the canonical projected `legacyBytes` and `rustBytes`
+alongside their hashes so reviewers can archive or inspect the exact compared
+bytes.
 
 `schema-extensions-schema.graphql` and `large-schema.graphql` remain outside
 the default v0 sentinel corpus. The former still carries non-table Rust L1

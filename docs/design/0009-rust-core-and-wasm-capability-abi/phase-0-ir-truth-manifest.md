@@ -133,8 +133,9 @@ pnpm parity:ir
 
 This command lowers the explicit v0 sentinel corpus through both the legacy JS
 adapter and the Rust CLI, compares the `js-table-vs-rust-table.v0` projection,
-verifies the Rust `schema hash` command against current Rust L1 bytes, and
-checks tracked Rust L1 hashes when present.
+records canonical projected bytes in JSON output, verifies the Rust
+`schema hash` command against current Rust semantic L1 bytes after top-level
+`metadata` removal, and checks tracked Rust L1 hashes when present.
 
 ### Verify Rust Tests
 

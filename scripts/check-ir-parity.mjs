@@ -126,7 +126,7 @@ function compareFixture(fixture) {
     const mismatch = legacyBytes === rustBytes
       ? null
       : firstMismatch(legacyProjection, rustProjection);
-    const rustL1Hash = sha256Hex(canonicalizeJSON(rustIr));
+    const rustL1Hash = rustSemanticHash(rustIr);
     const rustCommandHash = runWesley(['schema', 'hash', '--schema', fixturePath]).trim();
     const rustTrackedHash = readTrackedHash(fixturePath);
     const rustCommandHashMatches = rustCommandHash === rustL1Hash;
@@ -141,6 +141,8 @@ function compareFixture(fixture) {
       fixture: displayPath,
       status: failureReasons.length > 0 ? 'fail' : 'pass',
       failureReasons,
+      legacyBytes,
+      rustBytes,
       legacyHash: projectionHash(legacyProjection),
       rustHash: projectionHash(rustProjection),
       rustL1Hash,
@@ -168,6 +170,12 @@ function lowerLegacyProjection(fixturePath) {
 function lowerRustL1(fixturePath) {
   const output = runWesley(['schema', 'lower', '--schema', fixturePath, '--json']);
   return JSON.parse(output);
+}
+
+function rustSemanticHash(ir) {
+  const semanticIr = { ...ir };
+  delete semanticIr.metadata;
+  return sha256Hex(canonicalizeJSON(semanticIr));
 }
 
 function runWesley(args) {

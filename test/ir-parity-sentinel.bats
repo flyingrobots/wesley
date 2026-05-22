@@ -86,6 +86,13 @@ const ir = {
   ]
 };
 
+if (process.env.WESLEY_FAKE_VARIANT === 'metadata') {
+  ir.metadata = {
+    generatedAt: '2026-05-22T00:00:00.000Z',
+    sourceHash: 'fake-source-hash'
+  };
+}
+
 function canonicalizeJSON(value) {
   return JSON.stringify(value, (_key, jsonValue) => {
     if (jsonValue && typeof jsonValue === 'object' && !Array.isArray(jsonValue)) {
@@ -103,6 +110,12 @@ function sha256Hex(value) {
   return createHash('sha256').update(value).digest('hex');
 }
 
+function semanticIr(value) {
+  const copy = structuredClone(value);
+  delete copy.metadata;
+  return copy;
+}
+
 if (args[0] === 'schema' && args[1] === 'lower') {
   console.log(JSON.stringify(ir, null, 2));
 } else if (args[0] === 'schema' && args[1] === 'hash') {
@@ -110,7 +123,7 @@ if (args[0] === 'schema' && args[1] === 'lower') {
     console.log('deadbeef');
     process.exit(0);
   }
-  console.log(sha256Hex(canonicalizeJSON(ir)));
+  console.log(sha256Hex(canonicalizeJSON(semanticIr(ir))));
 } else {
   console.error(`unexpected fake wesley args: ${args.join(' ')}`);
   process.exit(2);
@@ -132,12 +145,28 @@ NODE
   assert_output --partial '"projection": "js-table-vs-rust-table.v0"'
   assert_output --partial '"status": "pass"'
   assert_output --partial '"rustCommandHashMatches": true'
+  assert_output --partial '"legacyBytes": "{'
+  assert_output --partial '"rustBytes": "{'
 
   run grep -F "schema lower --schema" "$FAKE_WESLEY_CALL_LOG"
   assert_success
 
   run grep -F "schema hash --schema" "$FAKE_WESLEY_CALL_LOG"
   assert_success
+}
+
+@test "IR parity sentinel ignores top-level Rust metadata when checking schema hash" {
+  make_fake_wesley
+
+  run env \
+    WESLEY_CLI_BIN="$FAKE_WESLEY" \
+    WESLEY_FAKE_VARIANT="metadata" \
+    node scripts/check-ir-parity.mjs \
+      --fixture test/fixtures/ir-parity/small-schema.graphql \
+      --json
+  assert_success
+  assert_output --partial '"status": "pass"'
+  assert_output --partial '"rustCommandHashMatches": true'
 }
 
 @test "IR parity sentinel fails when the Rust hash command drifts from current L1" {
