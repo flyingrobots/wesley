@@ -149,15 +149,38 @@ Each failure should include:
 - the next decision: fix Rust, fix JS compatibility, update Rust goldens, or
   record an intentional compatibility break
 
-## Current Slice
+## Implemented Slice
 
-This first v0.0.6 slice does not implement the sentinel command yet.
+The first command slice implements the `js-table-vs-rust-table.v0` projection
+and exposes it as:
 
-It does pull the backlog card into design, expands the Rust L1 corpus, and
-closes one blocker the sentinel would otherwise expose immediately: Rust L1
-lowering now canonicalizes the core Wesley directive aliases before writing
-semantic IR, rejects duplicate canonical core directives, and preserves
-repeated custom directives as ordered values.
+```bash
+pnpm parity:ir
+```
+
+The v0 corpus is explicit and table-compatible:
+
+- `test/fixtures/ir-parity/small-schema.graphql`
+- `test/fixtures/ir-parity/medium-schema.graphql`
+- `test/fixtures/ir-parity/directive-heavy-schema.graphql`
+- `test/fixtures/ir-parity/legacy-alias-schema.graphql`
+
+The command lowers each fixture through the legacy JS adapter and the Rust CLI,
+projects both outputs into the shared table shape, compares canonical projected
+bytes and hashes, verifies `wesley schema hash` against the current Rust L1
+bytes, checks tracked Rust L1 hashes when present, and reports the first
+mismatch path when projection parity fails.
+
+`schema-extensions-schema.graphql` and `large-schema.graphql` remain outside
+the default v0 sentinel corpus. The former still carries non-table Rust L1
+coverage that needs a separate projection before it is fair parity evidence;
+the latter is scale coverage rather than the first compatibility sentinel.
+
+The preceding design slice also pulled the backlog card into design, expanded
+the Rust L1 corpus, and closed one blocker the sentinel would otherwise expose
+immediately: Rust L1 lowering now canonicalizes the core Wesley directive
+aliases before writing semantic IR, rejects duplicate canonical core
+directives, and preserves repeated custom directives as ordered values.
 
 ## Playback Questions
 
@@ -169,8 +192,8 @@ repeated custom directives as ordered values.
 4. Does the fixture corpus now cover directive-heavy SDL, schema extensions,
    legacy aliases, and at least one invalid-SDL case?
 5. Does Rust L1 preserve canonical directive names for supported aliases?
-6. Is the next implementation slice narrow enough to add a `pnpm parity:ir`
-   check without changing the Rust golden-regeneration command?
+6. Does `pnpm parity:ir` compare the v0 table-compatible corpus without
+   changing the Rust golden-regeneration command?
 
 ## Non-Goals
 

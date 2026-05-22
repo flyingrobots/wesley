@@ -104,22 +104,24 @@ base platform.
 The immediate focus is **v0.0.6 Rust IR parity and module-boundary
 enforcement**:
 
-Current evidence now includes complete v0.0.5 publication proof and an expanded
+Current evidence now includes complete v0.0.5 publication proof, an expanded
 Rust L1 corpus for directive-heavy SDL, schema extensions, legacy aliases, and
-invalid duplicate-directive coverage.
+invalid duplicate-directive coverage, plus `pnpm parity:ir` for the
+`js-table-vs-rust-table.v0` compatibility projection over the first
+table-compatible sentinel corpus.
 
 The next pulls are:
 
-1. Implement the JS/Rust parity sentinel command from design packet
-   [0013-rust-ir-parity-sentinel](./design/0013-rust-ir-parity-sentinel/rust-ir-parity-sentinel.md).
-2. Land the `js-table-vs-rust-table.v0` projection/crosswalk before comparing
-   legacy JS table IR with Rust L1 bytes.
-3. Pull the domain-empty core boundary card into enforcement work so product
+1. Broaden parity sentinel coverage only after naming fair projections for
+   non-table extension semantics and scale/performance fixtures.
+2. Pull the domain-empty core boundary card into enforcement work so product
    and database behavior stays outside generic Wesley.
-4. Continue the IR contract fixture lane for stable invalid-SDL diagnostics,
+3. Continue the IR contract fixture lane for stable invalid-SDL diagnostics,
    including codes and spans where available.
-5. Keep `wesley-postgres` visible as the database extraction home and avoid
+4. Keep `wesley-postgres` visible as the database extraction home and avoid
    reshaping sibling work from Wesley release branches.
+5. Use the parity sentinel output as compatibility evidence before retiring or
+   demoting legacy Node lowering.
 
 Echo and jedit do not need more Wesley feature gravity for their current work.
 Wesley should coordinate on compatibility only when a concrete artifact, hash,

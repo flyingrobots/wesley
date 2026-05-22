@@ -12,3 +12,7 @@ the hill is "this no longer bothers us."
 ## Emitters
 
 - [Rust emitter consumer model parity](SOURCE_rust-emitter-consumer-model-parity.md)
+
+## Developer Experience
+
+- [Format Check Toolchain Gap](DX_format-check-toolchain-gap.md)

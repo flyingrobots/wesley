@@ -28,7 +28,8 @@
     "wesley": "node packages/wesley-host-node/bin/wesley.mjs",
     "meta:fix-packages": "node scripts/fix-package-metadata.mjs",
     "ci": "pnpm validate && pnpm generate:example && node packages/wesley-host-node/bin/wesley.mjs validate-bundle --bundle test/fixtures/examples/.wesley --schemas schemas/",
-    "fixtures:ir": "node scripts/generate-ir-fixtures.mjs"
+    "fixtures:ir": "node scripts/generate-ir-fixtures.mjs",
+    "parity:ir": "node scripts/check-ir-parity.mjs"
   },
   "keywords": [
     "graphql",

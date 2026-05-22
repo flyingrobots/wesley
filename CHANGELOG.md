@@ -11,6 +11,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **Rust IR parity sentinel packet**: Pulled the parity sentinel backlog item
   into design packet `0013`, defining comparator inputs, normalization, hash
   behavior, and failure output for the next JS/Rust parity check.
+- **JS/Rust table parity sentinel**: Added `pnpm parity:ir` and the
+  `js-table-vs-rust-table.v0` projection so Wesley can compare legacy JS table
+  IR with Rust L1 over an explicit table-compatible corpus before broadening
+  parity coverage.
 - **Expanded Rust L1 fixture corpus**: Added directive-heavy,
   schema-extension, legacy-alias, and invalid duplicate-directive fixtures for
   the v0.0.6 compiler-truth lane.
