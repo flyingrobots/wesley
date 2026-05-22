@@ -25,6 +25,7 @@ files=(
   test/serve-static-relative-unit.bats
   test/progress-dry-run.bats
   test/ir-fixtures.bats
+  test/ir-parity-sentinel.bats
   test/progress-safety.bats
   test/ci-browser-smoke.bats
   test/ci-pkg-host-bun.bats

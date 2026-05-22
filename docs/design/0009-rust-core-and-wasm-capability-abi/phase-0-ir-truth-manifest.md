@@ -81,6 +81,24 @@ tests.
    related core aliases to ensure Rust L1 emits canonical `@wes_*` directive
    names. (**COMPLETE for the current core compiler alias set**)
 
+## JS/Rust Parity Sentinel Corpus
+
+`pnpm parity:ir` is the current JS/Rust compatibility sentinel. It is separate
+from `pnpm fixtures:ir` and compares a named projection rather than raw legacy
+table IR against raw Rust L1 IR.
+
+The v0 projection is `js-table-vs-rust-table.v0`. Its default corpus is the
+table-compatible subset:
+
+- `small-schema.graphql`
+- `medium-schema.graphql`
+- `directive-heavy-schema.graphql`
+- `legacy-alias-schema.graphql`
+
+`schema-extensions-schema.graphql` remains Rust L1 extension-folding coverage
+until Wesley defines a fair non-table JS/Rust projection. `large-schema.graphql`
+remains scale coverage outside the default v0 compatibility sentinel.
+
 ## Baseline Performance (JS)
 
 *Captured on: May 5, 2026*
@@ -107,7 +125,20 @@ This command shells through the native Wesley CLI and overwrites only the
 tracked `*.l1.json` and `*.l1.hash` outputs. It exits nonzero if any fixture
 fails to lower or hash.
 
-### Verify Rust Parity
+### Verify JS/Rust Table Parity
+
+```bash
+pnpm parity:ir
+```
+
+This command lowers the explicit v0 sentinel corpus through both the legacy JS
+adapter and the Rust CLI, compares the `js-table-vs-rust-table.v0` projection,
+records canonical projected bytes in JSON output, verifies the Rust
+`schema hash` command against current Rust semantic L1 bytes after top-level
+`metadata` removal, and checks tracked Rust L1 hashes for `.graphql` fixtures
+when sidecars are present.
+
+### Verify Rust Tests
 
 ```bash
 cd crates/wesley-core && cargo test

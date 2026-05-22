@@ -62,6 +62,7 @@ BATS_LIB_PATH=packages/wesley-cli/test \
   bats test/serve-static*.bats \
     test/progress-*.bats \
     test/ir-fixtures.bats \
+    test/ir-parity-sentinel.bats \
     test/ci-*.bats \
     test/browser-contracts-*.bats
 ```

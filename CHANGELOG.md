@@ -11,6 +11,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **Rust IR parity sentinel packet**: Pulled the parity sentinel backlog item
   into design packet `0013`, defining comparator inputs, normalization, hash
   behavior, and failure output for the next JS/Rust parity check.
+- **JS/Rust table parity sentinel**: Added `pnpm parity:ir` and the
+  `js-table-vs-rust-table.v0` projection so Wesley can compare legacy JS table
+  IR with Rust L1 over an explicit table-compatible corpus before broadening
+  parity coverage.
 - **Expanded Rust L1 fixture corpus**: Added directive-heavy,
   schema-extension, legacy-alias, and invalid duplicate-directive fixtures for
   the v0.0.6 compiler-truth lane.
@@ -26,6 +30,16 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **Parity sentinel evidence contract**: `pnpm parity:ir --json` now records
+  canonical projected legacy and Rust bytes, and Rust L1 hash checks remove
+  top-level metadata before comparing against `wesley schema hash` or tracked
+  `*.l1.hash` outputs.
+- **Parity projection ordering**: The `js-table-vs-rust-table.v0` projection now
+  sorts table names with deterministic code-point ordering instead of
+  locale-aware collation.
+- **Parity custom fixture sidecars**: `pnpm parity:ir --fixture` now skips
+  tracked `*.l1.hash` checks for non-`.graphql` custom SDL paths instead of
+  reading the schema file as its own hash sidecar.
 - **Rust directive alias normalization**: Rust L1 lowering now canonicalizes
   the current core Wesley directive aliases to `wes_*` names and rejects
   duplicate canonical directives instead of allowing last-write-wins drift,
