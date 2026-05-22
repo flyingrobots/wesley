@@ -67,6 +67,81 @@ async fn test_lower_large_schema() {
 }
 
 #[tokio::test]
+async fn test_lower_directive_heavy_schema() {
+    validate_schema("directive-heavy-schema").await;
+}
+
+#[tokio::test]
+async fn test_lower_schema_extensions_schema() {
+    validate_schema("schema-extensions-schema").await;
+}
+
+#[tokio::test]
+async fn test_lower_legacy_alias_schema() {
+    validate_schema("legacy-alias-schema").await;
+}
+
+#[tokio::test]
+async fn canonicalizes_legacy_directive_aliases() {
+    let sdl_path = get_fixture_path("legacy-alias-schema.graphql");
+    let sdl = fs::read_to_string(sdl_path).expect("Failed to read SDL fixture");
+
+    let adapter = create_adapter();
+    let ir = adapter
+        .lower_sdl(&sdl)
+        .await
+        .expect("Failed to lower SDL to L1 IR");
+
+    let tenant = find_type(&ir.types, "Tenant");
+    assert!(tenant.directives.contains_key("wes_table"));
+    assert!(tenant.directives.contains_key("wes_rls"));
+    assert!(!tenant.directives.contains_key("table"));
+    assert!(!tenant.directives.contains_key("rls"));
+
+    let tenant_id = tenant
+        .fields
+        .iter()
+        .find(|field| field.name == "id")
+        .expect("missing id field");
+    assert!(tenant_id.directives.contains_key("wes_pk"));
+    assert!(!tenant_id.directives.contains_key("pk"));
+
+    let member = find_type(&ir.types, "Member");
+    assert!(member.directives.contains_key("wes_table"));
+    assert!(member.directives.contains_key("wes_tenant"));
+    assert!(member.directives.contains_key("wes_rls"));
+    assert!(!member.directives.contains_key("wesley_table"));
+    assert!(!member.directives.contains_key("tenant"));
+
+    let role = member
+        .fields
+        .iter()
+        .find(|field| field.name == "role")
+        .expect("missing role field");
+    assert!(role.directives.contains_key("wes_default"));
+    assert!(!role.directives.contains_key("default"));
+}
+
+#[tokio::test]
+async fn rejects_duplicate_canonical_directives() {
+    let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    path.push("../../test/fixtures/ir-parity-invalid/duplicate-directive-alias.graphql");
+    let sdl = fs::read_to_string(path).expect("Failed to read invalid SDL fixture");
+
+    let adapter = create_adapter();
+    let err = adapter
+        .lower_sdl(&sdl)
+        .await
+        .expect_err("duplicate canonical directives should fail lowering");
+    let message = err.to_string();
+
+    assert!(
+        message.contains("Duplicate directive '@wes_table'"),
+        "unexpected error: {message}"
+    );
+}
+
+#[tokio::test]
 async fn lowers_graphql_type_families_into_l1_ir() {
     let sdl = r#"
         scalar DateTime @specifiedBy(url: "https://example.com/datetime")

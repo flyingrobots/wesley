@@ -44,5 +44,12 @@
 
 ## Publication Evidence
 
-Publication is pending merge of the release finalization branch, creation of
-tag `v0.0.5`, and the tag-triggered GitHub Actions release workflow.
+| Check | Evidence |
+| --- | --- |
+| Release finalization PR | PR #512 merged into `main` as `fa42c71832520b70e55447e865e0425e467db2a5`. |
+| Release tag | Signed annotated tag `v0.0.5` points to `fa42c71832520b70e55447e865e0425e467db2a5`. |
+| Tag signature | `git tag -v v0.0.5` passed with RSA key `01A63D8E9DBEEDE32918AF9C39560E0406CA9135`. |
+| GitHub Release | Published at <https://github.com/flyingrobots/wesley/releases/tag/v0.0.5> on `2026-05-21T23:05:14Z`; draft and prerelease flags are false. |
+| CI workflow | `CI` run `26258049691` completed successfully for `v0.0.5` at `fa42c71832520b70e55447e865e0425e467db2a5`: <https://github.com/flyingrobots/wesley/actions/runs/26258049691>. |
+| Crates workflow | `Release Crates` run `26258049690` completed successfully for `v0.0.5` at `fa42c71832520b70e55447e865e0425e467db2a5`: <https://github.com/flyingrobots/wesley/actions/runs/26258049690>. |
+| Crates.io visibility | Direct crates.io API checks returned HTTP `200` for `wesley-core`, `wesley-emit-rust`, `wesley-emit-typescript`, and `wesley-cli` version `0.0.5`. |

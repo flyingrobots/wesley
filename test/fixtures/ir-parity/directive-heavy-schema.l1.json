@@ -1,0 +1,221 @@
+{
+  "version": "1.0.0",
+  "types": [
+    {
+      "name": "Account",
+      "kind": "OBJECT",
+      "directives": {
+        "wes_table": {
+          "name": "accounts"
+        },
+        "wes_tenant": {
+          "by": "org_id"
+        },
+        "wes_rls": {
+          "preset": "tenant",
+          "roles": [
+            "member",
+            "admin"
+          ],
+          "options": {
+            "mode": "strict",
+            "audit": true,
+            "limit": 5
+          }
+        }
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "base": "ID",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {
+            "wes_pk": true
+          }
+        },
+        {
+          "name": "org_id",
+          "type": {
+            "base": "ID",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {
+            "wes_fk": {
+              "ref": "organizations.id"
+            },
+            "wes_index": true
+          }
+        },
+        {
+          "name": "email",
+          "type": {
+            "base": "String",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {
+            "wes_unique": true
+          }
+        },
+        {
+          "name": "created_at",
+          "type": {
+            "base": "String",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {
+            "wes_default": {
+              "value": "now()"
+            }
+          }
+        },
+        {
+          "name": "active",
+          "type": {
+            "base": "Boolean",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {
+            "wes_default": {
+              "value": "true"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "AccountEvent",
+      "kind": "OBJECT",
+      "directives": {
+        "wes_table": {
+          "name": "account_events"
+        },
+        "wes_tenant": {
+          "by": "account_id"
+        },
+        "wes_rls": true
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "base": "ID",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {
+            "wes_pk": true
+          }
+        },
+        {
+          "name": "account_id",
+          "type": {
+            "base": "ID",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {
+            "wes_fk": {
+              "ref": "accounts.id"
+            },
+            "wes_index": {
+              "name": "account_events_account_idx"
+            }
+          }
+        },
+        {
+          "name": "kind",
+          "type": {
+            "base": "String",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {
+            "wes_default": {
+              "value": "created"
+            }
+          }
+        },
+        {
+          "name": "payload",
+          "type": {
+            "base": "String",
+            "nullable": true,
+            "isList": false
+          },
+          "directives": {}
+        }
+      ]
+    },
+    {
+      "name": "Organization",
+      "kind": "OBJECT",
+      "directives": {
+        "wes_table": {
+          "name": "organizations"
+        },
+        "wes_rls": true
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "base": "ID",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {
+            "wes_pk": true
+          }
+        },
+        {
+          "name": "slug",
+          "type": {
+            "base": "String",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {
+            "wes_unique": true,
+            "wes_index": {
+              "name": "organizations_slug_idx",
+              "using": "btree"
+            }
+          }
+        },
+        {
+          "name": "name",
+          "type": {
+            "base": "String",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {
+            "wes_default": {
+              "value": "unnamed"
+            }
+          }
+        },
+        {
+          "name": "created_at",
+          "type": {
+            "base": "String",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {
+            "wes_default": {
+              "value": "now()"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

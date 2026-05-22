@@ -1,0 +1,11 @@
+type Tenant @table(name: "tenants") @rls {
+  id: ID! @pk
+  slug: String! @unique @index(name: "tenant_slug_idx")
+}
+
+type Member @wesley_table(name: "members") @tenant(by: "tenant_id") @wesley_rls {
+  id: ID! @primaryKey
+  tenant_id: ID! @foreignKey(ref: "tenants.id") @index
+  email: String! @wesley_unique
+  role: String! @default(value: "member")
+}
