@@ -8,6 +8,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- **Rust IR fixture contract note**: Moved the core-rs IR contract and fixture
+  backlog card into the active `0013` design packet, naming the v0.0.6 fixture
+  classes, canonical byte rules, diagnostics contract, and repo evidence.
 - **Domain-empty core boundary packet**: Pulled the boundary card into design
   packet `0014`, defining what generic Wesley owns, what external modules or
   sibling repos own, and the first docs/dispatch audit that keeps product and
@@ -34,6 +37,14 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **Rust invalid-SDL diagnostics**: `WesleyError` now exposes a stable
+  diagnostic object with machine-readable codes, severity, and parser
+  line/column spans where Apollo provides a byte index; semantic lowering
+  errors keep stable codes while source spans remain intentionally absent.
+- **Module target alias collision order**: `wesley compile` now rejects a
+  module target name that conflicts with an alias registered by an earlier
+  loaded module, closing an order-dependent gap in module-owned target
+  dispatch.
 - **Parity sentinel evidence contract**: `pnpm parity:ir --json` now records
   canonical projected legacy and Rust bytes, and Rust L1 hash checks remove
   top-level metadata before comparing against `wesley schema hash` or tracked

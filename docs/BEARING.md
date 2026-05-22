@@ -92,8 +92,9 @@ base platform.
   notes rather than accidental hash churn.
 - **Alias Semantics**: Legacy directive aliases are compatibility input, not a
   license to preserve arbitrary spelling in semantic Rust L1 output.
-- **Invalid Diagnostics**: The Rust lowerer can reject invalid SDL, but stable
-  codes and spans are not yet part of the L1 fixture contract.
+- **Invalid Diagnostics**: The Rust lowerer now exposes stable diagnostic
+  codes and parser spans, but semantic lowering spans are still absent and
+  should not be implied by tests or release notes.
 - **External Module Gap**: Wesley has named the domain-empty boundary, but the
   module seam still needs hermetic target-dispatch fixtures, runtime boundary
   evidence, and artifact evidence before external modules can consume it
@@ -111,25 +112,25 @@ Current evidence now includes complete v0.0.5 publication proof, an expanded
 Rust L1 corpus for directive-heavy SDL, schema extensions, legacy aliases, and
 invalid duplicate-directive coverage, `pnpm parity:ir` for the
 `js-table-vs-rust-table.v0` compatibility projection over the first
-table-compatible sentinel corpus, and the domain-empty ownership packet in
-`0014`.
+table-compatible sentinel corpus, the domain-empty ownership packet in `0014`,
+and executable module-target dispatch coverage for no-module diagnostics,
+default target discovery, requested-target validation, duplicate target
+rejection, alias conflicts in both registration orders, and the Rust IR
+fixture contract now housed under the active `0013` packet. Invalid SDL
+diagnostics now expose stable `WesleyError::diagnostic()` codes and parser
+line/column spans where available, while semantic lowering spans remain
+explicitly absent.
 
 The next pulls are:
 
-1. Prove module-owned target dispatch with hermetic fixture modules:
-   no-module diagnostics, explicit `wesley.targets`, duplicate target
-   rejection, alias conflict rejection, and target selection without built-in
-   product or database names.
-2. Pull the remaining Rust IR contract fixture card into design so fixture
-   classes, canonical byte rules, diagnostics, and performance evidence are
-   release-scoped instead of floating in `asap/`.
-3. Stabilize invalid-SDL diagnostic contracts with executable coverage for
-   codes and spans where available, while naming what remains intentionally
-   unstable.
-4. Define the next parity projection before broadening `pnpm parity:ir` beyond
+1. Expand the fixture-module zoo only where it adds new boundary evidence:
+   target dispatch already rejects missing modules, invalid product/database
+   target names, duplicate names, and aliases that collide before or after the
+   owning target loads.
+2. Define the next parity projection before broadening `pnpm parity:ir` beyond
    table-compatible SDL. Schema extensions and non-table L1 facts need a fair
    projection before they become JS/Rust parity evidence.
-5. Capture a Rust core performance baseline over the canonical corpus after
+3. Capture a Rust core performance baseline over the canonical corpus after
    the fixture and projection boundaries are named.
 
 Do not pull `OWN_ninelives-resilience-integration.md` until the module boundary

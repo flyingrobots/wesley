@@ -27,5 +27,5 @@ for small, medium, and large schemas before any default cutover.
 ## Repo Evidence
 
 - `docs/design/0009-rust-core-and-wasm-capability-abi/rust-core-and-wasm-capability-abi.md`
-- `docs/method/backlog/asap/SOURCE_wesley-core-rs-ir-contract-and-fixtures.md`
+- `docs/design/0013-rust-ir-parity-sentinel/SOURCE_wesley-core-rs-ir-contract-and-fixtures.md`
 - `packages/wesley-core/test/`
