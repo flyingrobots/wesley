@@ -8,6 +8,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- **Rust IR fixture contract note**: Moved the core-rs IR contract and fixture
+  backlog card into the active `0013` design packet, naming the v0.0.6 fixture
+  classes, canonical byte rules, diagnostics contract, and repo evidence.
 - **Domain-empty core boundary packet**: Pulled the boundary card into design
   packet `0014`, defining what generic Wesley owns, what external modules or
   sibling repos own, and the first docs/dispatch audit that keeps product and

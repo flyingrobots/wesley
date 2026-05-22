@@ -181,11 +181,14 @@ the default v0 sentinel corpus. The former still carries non-table Rust L1
 coverage that needs a separate projection before it is fair parity evidence;
 the latter is scale coverage rather than the first compatibility sentinel.
 
-The preceding design slice also pulled the backlog card into design, expanded
-the Rust L1 corpus, and closed one blocker the sentinel would otherwise expose
+The supporting
+[core-rs IR contract and fixtures note](./SOURCE_wesley-core-rs-ir-contract-and-fixtures.md)
+records the release-scoped fixture classes, canonical byte rules, diagnostic
+contract, and repo evidence. The preceding design slice also expanded the Rust
+L1 corpus and closed one blocker the sentinel would otherwise expose
 immediately: Rust L1 lowering now canonicalizes the core Wesley directive
-aliases before writing semantic IR, rejects duplicate canonical core
-directives, and preserves repeated custom directives as ordered values.
+aliases before writing semantic IR, rejects duplicate canonical core directives,
+and preserves repeated custom directives as ordered values.
 
 ## Playback Questions
 
