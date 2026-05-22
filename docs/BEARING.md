@@ -111,15 +111,17 @@ Current evidence now includes complete v0.0.5 publication proof, an expanded
 Rust L1 corpus for directive-heavy SDL, schema extensions, legacy aliases, and
 invalid duplicate-directive coverage, `pnpm parity:ir` for the
 `js-table-vs-rust-table.v0` compatibility projection over the first
-table-compatible sentinel corpus, and the domain-empty ownership packet in
-`0014`.
+table-compatible sentinel corpus, the domain-empty ownership packet in `0014`,
+and executable module-target dispatch coverage for no-module diagnostics,
+default target discovery, requested-target validation, duplicate target
+rejection, and alias conflicts in both registration orders.
 
 The next pulls are:
 
-1. Prove module-owned target dispatch with hermetic fixture modules:
-   no-module diagnostics, explicit `wesley.targets`, duplicate target
-   rejection, alias conflict rejection, and target selection without built-in
-   product or database names.
+1. Expand the fixture-module zoo only where it adds new boundary evidence:
+   target dispatch already rejects missing modules, invalid product/database
+   target names, duplicate names, and aliases that collide before or after the
+   owning target loads.
 2. Pull the remaining Rust IR contract fixture card into design so fixture
    classes, canonical byte rules, diagnostics, and performance evidence are
    release-scoped instead of floating in `asap/`.

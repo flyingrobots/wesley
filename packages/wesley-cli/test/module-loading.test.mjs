@@ -586,3 +586,50 @@ test('program rejects compile target aliases that collide across modules', async
     rmSync(tempDir, { recursive: true, force: true });
   }
 });
+
+test('program rejects compile target aliases that collide with later target names', async () => {
+  const tempDir = mkdtempSync(path.join(os.tmpdir(), 'wesley-module-compile-alias-target-collision-'));
+  const io = createIo();
+
+  try {
+    writeFileSync(path.join(tempDir, 'schema.graphql'), 'type Todo { id: ID! }\n');
+    const firstModule = writeCompileTargetModule(tempDir, {
+      fileName: 'alias-first-module.mjs',
+      moduleName: 'alias-first-module',
+      targetName: 'first-target',
+      aliases: ['later-target']
+    });
+    const secondModule = writeCompileTargetModule(tempDir, {
+      fileName: 'target-later-module.mjs',
+      moduleName: 'target-later-module',
+      targetName: 'later-target'
+    });
+
+    const exitCode = await program(
+      ['node', 'wesley', '--json', 'compile', '--schema', 'schema.graphql', '--dry-run'],
+      {
+        cwd: tempDir,
+        env: {
+          WESLEY_MODULES: [firstModule, secondModule].join(path.delimiter)
+        },
+        fs: {
+          async read(targetPath) {
+            return readFileSync(path.resolve(tempDir, targetPath), 'utf8');
+          }
+        },
+        stdout: io.stdout,
+        stderr: io.stderr,
+        logger: nullLogger
+      }
+    );
+
+    assert.notEqual(exitCode, 0);
+    const payload = JSON.parse(io.readStderr());
+    assert.equal(payload.code, 'INVALID_TARGET_CAPABILITY');
+    assert.match(payload.error, /later-target/);
+    assert.match(payload.error, /alias-first-module/);
+    assert.match(payload.error, /target-later-module/);
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});

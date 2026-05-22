@@ -130,6 +130,14 @@ function addTargetDescriptor({
       `Compile target "${name}" was registered by both module "${existing.moduleName}" and module "${moduleName}".`
     );
   }
+  if (aliases.has(name)) {
+    const existingTargetName = aliases.get(name);
+    const existing = byName.get(existingTargetName);
+    throw new WesleyError(
+      'INVALID_TARGET_CAPABILITY',
+      `Compile target "${name}" from module "${moduleName}" conflicts with alias registered by target "${existing?.name ?? existingTargetName}" from module "${existing?.moduleName ?? '<unknown>'}".`
+    );
+  }
   ordered.push(descriptor);
   byName.set(name, descriptor);
 

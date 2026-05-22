@@ -34,6 +34,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **Module target alias collision order**: `wesley compile` now rejects a
+  module target name that conflicts with an alias registered by an earlier
+  loaded module, closing an order-dependent gap in module-owned target
+  dispatch.
 - **Parity sentinel evidence contract**: `pnpm parity:ir --json` now records
   canonical projected legacy and Rust bytes, and Rust L1 hash checks remove
   top-level metadata before comparing against `wesley schema hash` or tracked
