@@ -28,7 +28,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 - **Rust directive alias normalization**: Rust L1 lowering now canonicalizes
   the current core Wesley directive aliases to `wes_*` names and rejects
-  duplicate canonical directives instead of allowing last-write-wins drift.
+  duplicate canonical directives instead of allowing last-write-wins drift,
+  while repeated custom directives are preserved as ordered values.
 
 ## [0.0.5] - 2026-05-21
 

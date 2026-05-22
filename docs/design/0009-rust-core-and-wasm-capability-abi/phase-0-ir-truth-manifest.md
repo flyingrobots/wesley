@@ -34,6 +34,10 @@ rules are MANDATORY:
    IR. It MUST be stripped before computing the parity hash. The JS adapter now
    emits a stable `generatedAt` value for compatibility so repeated parses of
    identical SDL do not change IR bytes solely because wall-clock time advanced.
+7. **Directive Multiplicity:** Core Wesley directive aliases MUST lower to the
+   canonical `@wes_*` directive name and duplicate canonical core directives
+   MUST fail. Repeated custom directives are preserved as ordered JSON arrays
+   under the directive name.
 
 ## Fixture Corpus
 

@@ -486,7 +486,8 @@ impl ApolloLoweringAdapter {
                 })?
                 .text()
                 .to_string();
-            let canonical_name = canonical_directive_name(&dir_name).to_string();
+            let core_name = canonical_core_directive_name(&dir_name);
+            let canonical_name = core_name.unwrap_or(dir_name.as_str()).to_string();
 
             let mut args_map = serde_json::Map::new();
             if let Some(args) = dir.arguments() {
@@ -504,14 +505,14 @@ impl ApolloLoweringAdapter {
                 serde_json::Value::Object(args_map)
             };
 
-            if map.contains_key(&canonical_name) {
+            if core_name.is_some() && map.contains_key(&canonical_name) {
                 return Err(lowering_error_value(
                     "directive",
                     format!("Duplicate directive '@{canonical_name}'"),
                 ));
             }
 
-            map.insert(canonical_name, val);
+            insert_directive_value(map, canonical_name, val);
         }
         Ok(())
     }
@@ -957,17 +958,34 @@ fn lowering_error_value(area: &str, message: String) -> WesleyError {
     }
 }
 
-fn canonical_directive_name(name: &str) -> &str {
+fn canonical_core_directive_name(name: &str) -> Option<&str> {
     match name {
-        "wesley_table" | "table" => "wes_table",
-        "wesley_pk" | "pk" | "primaryKey" => "wes_pk",
-        "wesley_fk" | "fk" | "foreignKey" => "wes_fk",
-        "wesley_unique" | "unique" => "wes_unique",
-        "wesley_index" | "index" => "wes_index",
-        "wesley_tenant" | "tenant" => "wes_tenant",
-        "wesley_default" | "default" => "wes_default",
-        "wesley_rls" | "rls" => "wes_rls",
-        _ => name,
+        "wes_table" | "wesley_table" | "table" => Some("wes_table"),
+        "wes_pk" | "wesley_pk" | "pk" | "primaryKey" => Some("wes_pk"),
+        "wes_fk" | "wesley_fk" | "fk" | "foreignKey" => Some("wes_fk"),
+        "wes_unique" | "wesley_unique" | "unique" => Some("wes_unique"),
+        "wes_index" | "wesley_index" | "index" => Some("wes_index"),
+        "wes_tenant" | "wesley_tenant" | "tenant" => Some("wes_tenant"),
+        "wes_default" | "wesley_default" | "default" => Some("wes_default"),
+        "wes_rls" | "wesley_rls" | "rls" => Some("wes_rls"),
+        _ => None,
+    }
+}
+
+fn insert_directive_value(
+    map: &mut IndexMap<String, serde_json::Value>,
+    name: String,
+    value: serde_json::Value,
+) {
+    match map.get_mut(&name) {
+        Some(serde_json::Value::Array(values)) => values.push(value),
+        Some(existing) => {
+            let first = std::mem::take(existing);
+            *existing = serde_json::Value::Array(vec![first, value]);
+        }
+        None => {
+            map.insert(name, value);
+        }
     }
 }
 

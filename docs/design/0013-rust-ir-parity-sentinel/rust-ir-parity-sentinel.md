@@ -47,10 +47,11 @@ accident.
 For each fixture it records:
 
 - fixture path
-- legacy JS semantic IR bytes
-- Rust semantic IR bytes
-- legacy JS semantic hash
-- Rust semantic hash
+- comparison projection name
+- legacy JS projected semantic bytes
+- Rust projected semantic bytes
+- legacy JS projected semantic hash
+- Rust projected semantic hash
 - normalizer version
 - command versions or commit identifiers when available
 
@@ -75,6 +76,38 @@ The legacy JS side uses the current truth anchors named in
 - `registryHash`
 - `canonicalizeJSON`
 
+### Projection
+
+The sentinel must not compare raw legacy JS table IR bytes directly against
+raw Rust L1 bytes. Those shapes are intentionally different today: the legacy
+JS adapter emits table-centered IR, while Rust L1 emits consolidated GraphQL
+type definitions.
+
+The first implementation uses a named `js-table-vs-rust-table.v0` projection.
+Both lowerers must project into that shared comparison shape before bytes or
+hashes are compared.
+
+The projection includes:
+
+- object types admitted as tables by `@wes_table` or its supported aliases
+- effective table names
+- field names and GraphQL type references
+- canonical core Wesley directives and directive arguments
+- table index, tenant, primary-key, default, and foreign-key facts derivable
+  from the projected directives
+
+The projection excludes:
+
+- non-table scalar, enum, union, interface, and input-object-only semantics
+- Rust-only extension-family coverage that has no legacy JS table-IR
+  equivalent yet
+- generated relationship records unless the projection derives the same fact
+  from both lowerers
+
+Each fixture admitted to the sentinel corpus must name the projection it uses.
+Fixtures with no coherent legacy/Rust common projection remain Rust L1 corpus
+fixtures until a separate crosswalk is designed.
+
 ### Normalization
 
 The normalizer removes envelope-only data and keeps semantic data intact.
@@ -90,11 +123,12 @@ The normalizer removes envelope-only data and keeps semantic data intact.
 
 ### Hash Behavior
 
-The sentinel compares normalized semantic bytes and their SHA-256 digests.
+The sentinel compares normalized projected semantic bytes and their SHA-256
+digests.
 
 It also verifies that the Rust `schema hash` command agrees with the digest of
-the normalized Rust semantic bytes. If those disagree, the Rust CLI/hash path
-is inconsistent even before JS parity is considered.
+the normalized Rust L1 semantic bytes. If those disagree, the Rust CLI/hash
+path is inconsistent even before JS parity is considered.
 
 Tracked `*.l1.hash` files remain Rust golden outputs, not JS/Rust parity
 evidence.
@@ -122,17 +156,20 @@ This first v0.0.6 slice does not implement the sentinel command yet.
 It does pull the backlog card into design, expands the Rust L1 corpus, and
 closes one blocker the sentinel would otherwise expose immediately: Rust L1
 lowering now canonicalizes the core Wesley directive aliases before writing
-semantic IR and rejects duplicate canonical directives.
+semantic IR, rejects duplicate canonical core directives, and preserves
+repeated custom directives as ordered values.
 
 ## Playback Questions
 
 1. Is Rust fixture regeneration still separate from JS/Rust parity proof?
 2. Does the design define comparator inputs, lowerers, normalization, hash
    behavior, and failure output?
-3. Does the fixture corpus now cover directive-heavy SDL, schema extensions,
+3. Does the design forbid raw legacy table IR versus raw Rust L1 comparison
+   and name a projection before comparing bytes?
+4. Does the fixture corpus now cover directive-heavy SDL, schema extensions,
    legacy aliases, and at least one invalid-SDL case?
-4. Does Rust L1 preserve canonical directive names for supported aliases?
-5. Is the next implementation slice narrow enough to add a `pnpm parity:ir`
+5. Does Rust L1 preserve canonical directive names for supported aliases?
+6. Is the next implementation slice narrow enough to add a `pnpm parity:ir`
    check without changing the Rust golden-regeneration command?
 
 ## Non-Goals

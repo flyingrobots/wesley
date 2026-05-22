@@ -74,11 +74,10 @@ legacy Node lowering.
 `wesley-postgres` is the PostgreSQL-family extraction home. It is active and
 must not be abandoned while Wesley tightens its domain-empty boundary.
 
-As of this bearing reset, `~/git/wesley-postgres` has local `main` ahead of
-`origin/main` with additional uncommitted bootstrap work. That repo remains the
-home for PostgreSQL/Supabase generation, PostgreSQL execution adapters, and
-database safety primitives. Wesley should coordinate by preserving generic
-module seams and avoiding new database semantics in the base platform.
+That repo remains the home for PostgreSQL/Supabase generation, PostgreSQL
+execution adapters, and database safety primitives. Wesley should coordinate
+by preserving generic module seams and avoiding new database semantics in the
+base platform.
 
 ## Tensions
 
@@ -96,25 +95,30 @@ module seams and avoiding new database semantics in the base platform.
 - **External Module Gap**: Wesley can name the domain-empty boundary, but
   external modules still need enough capability runtime and artifact evidence
   to consume it cleanly.
-- **Sibling Repo State**: `wesley-postgres` has active local work outside this
-  PR. Wesley should reference it as the database authority without editing or
-  overwriting that work from this repo.
+- **Sibling Repo Coordination**: Wesley should reference `wesley-postgres` as
+  the database authority without editing or overwriting sibling work from this
+  repo.
 
 ## Next Target
 
 The immediate focus is **v0.0.6 Rust IR parity and module-boundary
 enforcement**:
 
-1. Keep v0.0.5 publication evidence complete and inspectable.
-2. Execute design packet
+Current evidence now includes complete v0.0.5 publication proof and an expanded
+Rust L1 corpus for directive-heavy SDL, schema extensions, legacy aliases, and
+invalid duplicate-directive coverage.
+
+The next pulls are:
+
+1. Implement the JS/Rust parity sentinel command from design packet
    [0013-rust-ir-parity-sentinel](./design/0013-rust-ir-parity-sentinel/rust-ir-parity-sentinel.md).
-3. Expand the L1 fixture corpus for directive-heavy SDL, schema extensions,
-   legacy directive aliases, and invalid-SDL failure coverage.
-4. Implement the JS/Rust parity sentinel as a separate check from
-   `pnpm fixtures:ir`.
-5. Pull the domain-empty core boundary card into enforcement work so product
+2. Land the `js-table-vs-rust-table.v0` projection/crosswalk before comparing
+   legacy JS table IR with Rust L1 bytes.
+3. Pull the domain-empty core boundary card into enforcement work so product
    and database behavior stays outside generic Wesley.
-6. Keep `wesley-postgres` visible as the database extraction home and avoid
+4. Continue the IR contract fixture lane for stable invalid-SDL diagnostics,
+   including codes and spans where available.
+5. Keep `wesley-postgres` visible as the database extraction home and avoid
    reshaping sibling work from Wesley release branches.
 
 Echo and jedit do not need more Wesley feature gravity for their current work.

@@ -142,6 +142,42 @@ async fn rejects_duplicate_canonical_directives() {
 }
 
 #[tokio::test]
+async fn preserves_repeated_custom_directives_as_ordered_values() {
+    let sdl = r#"
+        directive @tag(name: String!) repeatable on FIELD_DEFINITION
+
+        type Thing {
+          name: String @tag(name: "alpha") @tag(name: "beta")
+        }
+    "#;
+
+    let adapter = create_adapter();
+    let ir = adapter
+        .lower_sdl(sdl)
+        .await
+        .expect("repeatable custom directives should lower");
+    let thing = find_type(&ir.types, "Thing");
+    let name = thing
+        .fields
+        .iter()
+        .find(|field| field.name == "name")
+        .expect("missing name field");
+    let tag_values = name.directives["tag"]
+        .as_array()
+        .expect("repeated custom directive should be preserved as an array");
+
+    assert_eq!(tag_values.len(), 2);
+    assert_eq!(
+        tag_values[0]["name"],
+        serde_json::Value::String("alpha".into())
+    );
+    assert_eq!(
+        tag_values[1]["name"],
+        serde_json::Value::String("beta".into())
+    );
+}
+
+#[tokio::test]
 async fn lowers_graphql_type_families_into_l1_ir() {
     let sdl = r#"
         scalar DateTime @specifiedBy(url: "https://example.com/datetime")
