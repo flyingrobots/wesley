@@ -41,7 +41,7 @@ function loadBundle(bundlePath) {
       return JSON.parse(readFileSync(candidate, 'utf8'));
     } catch (error) {
       if (error?.code !== 'ENOENT') {
-        throw new Error(`Unable to read Wesley bundle at ${candidate}`);
+        throw new Error(`Unable to read Wesley bundle at ${candidate}`, { cause: error });
       }
     }
   }
@@ -414,7 +414,9 @@ Requires:
           writeFileSync(options.json, JSON.stringify(config, null, 2));
         }
       } catch (error) {
-        throw new Error(`Weight configuration invalid: ${error?.message ?? 'unknown error'}`);
+        throw new Error(`Weight configuration invalid: ${error?.message ?? 'unknown error'}`, {
+          cause: error
+        });
       }
     });
 

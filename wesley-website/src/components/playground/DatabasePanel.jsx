@@ -102,12 +102,13 @@ export default function DatabasePanel({
   };
 
   const renderStructureTab = () => {
-    if (!tableSchema || tableSchema.length === 0)
+    if (!tableSchema || tableSchema.length === 0) {
       return (
         <Text p="md" c="dimmed">
           No schema information available.
         </Text>
       );
+    }
 
     return (
       <ScrollArea className={classes.resultsArea}>

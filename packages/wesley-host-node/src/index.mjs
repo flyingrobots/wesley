@@ -56,7 +56,7 @@ export class GraphQLSchemaParser {
       if (error.name === 'PARSE_FAILED') {
         throw error;
       }
-      throw new Error(`GraphQL parsing failed: ${error.message}`);
+      throw new Error(`GraphQL parsing failed: ${error.message}`, { cause: error });
     }
   }
 

@@ -471,7 +471,7 @@ function findReportPath(root, filename, reportName) {
   while (stack.length > 0) {
     const dir = stack.pop();
     if (!existsSync(dir)) continue;
-    let realDir = '';
+    let realDir;
     try {
       realDir = realpathSync(dir);
     } catch {

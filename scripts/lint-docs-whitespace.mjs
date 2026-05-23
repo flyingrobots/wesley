@@ -7,7 +7,7 @@ const offenders = [];
 for (const p of cfg.packages || []) {
   const rp = p.readme;
   if (!rp) continue;
-  let content = '';
+  let content;
   try {
     content = readFileSync(resolve(rp), 'utf8');
   } catch {

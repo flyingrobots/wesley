@@ -138,7 +138,9 @@ export default function TryNow() {
 
   // --- Helpers ---
   const fetchTables = async (session) => {
-    if (!session) return;
+    if (!session) {
+      return;
+    }
     try {
       const res = await session.query(`
         SELECT table_name
@@ -147,8 +149,11 @@ export default function TryNow() {
         ORDER BY table_name;
       `);
       dispatchDb({ type: 'SET_TABLES', payload: res.rows.map((r) => r.table_name) });
-    } catch (e) {
-      console.error('Failed to fetch tables:', e);
+    } catch (error) {
+      dispatchDb({
+        type: 'ADD_ERROR',
+        payload: { title: 'Fetch Tables Failed', message: error.message }
+      });
     }
   };
 
@@ -190,8 +195,11 @@ export default function TryNow() {
         );
         dispatchDb({ type: 'SET_TABLE_SCHEMA', payload: schemaRes.rows });
         handleRunDbQuery(`SELECT * FROM "${tableName}" LIMIT 100;`);
-      } catch (e) {
-        console.error(e);
+      } catch (error) {
+        dispatchDb({
+          type: 'ADD_ERROR',
+          payload: { title: 'Table Schema Failed', message: error.message }
+        });
       }
     }
   };
@@ -217,14 +225,15 @@ export default function TryNow() {
         await fetchTables(session);
       } catch (error) {
         if (!cancelled) {
-          console.error('Failed to initialize DbSession:', error);
           dispatchDb({
             type: 'ADD_ERROR',
             payload: { title: 'Database Init Failed', message: error.message }
           });
         }
       } finally {
-        if (!cancelled) dispatchDb({ type: 'SET_LOADING', payload: false });
+        if (!cancelled) {
+          dispatchDb({ type: 'SET_LOADING', payload: false });
+        }
       }
     }
     initDb();
@@ -284,7 +293,9 @@ export default function TryNow() {
   };
 
   const handleApplyToDatabase = async () => {
-    if (!dbState.session || !compileState.lastSuccess) return;
+    if (!dbState.session || !compileState.lastSuccess) {
+      return;
+    }
     try {
       dispatchDb({ type: 'CLEAR_ERRORS' });
       dispatchDb({ type: 'SET_LOADING', payload: true });
@@ -343,8 +354,12 @@ export default function TryNow() {
 
   const handleRunDbQuery = async (queryOverride) => {
     const sql = queryOverride || dbState.queryText;
-    if (!dbState.session || !sql.trim()) return;
-    if (queryOverride) dispatchDb({ type: 'SET_QUERY_TEXT', payload: sql });
+    if (!dbState.session || !sql.trim()) {
+      return;
+    }
+    if (queryOverride) {
+      dispatchDb({ type: 'SET_QUERY_TEXT', payload: sql });
+    }
 
     dispatchDb({ type: 'CLEAR_ERRORS' });
     dispatchDb({ type: 'SET_LOADING', payload: true });
@@ -373,7 +388,9 @@ export default function TryNow() {
       labels: { confirm: 'Reset', cancel: 'Cancel' },
       confirmProps: { color: 'red' },
       onConfirm: async () => {
-        if (!dbState.session) return;
+        if (!dbState.session) {
+          return;
+        }
         dispatchDb({ type: 'SET_LOADING', payload: true });
         dispatchDb({ type: 'SET_QUERY_RESULT', payload: null });
         try {
@@ -427,8 +444,11 @@ export default function TryNow() {
               message: 'All state has been cleared.',
               color: 'gray'
             });
-          } catch (e) {
-            console.error(e);
+          } catch (error) {
+            dispatchDb({
+              type: 'ADD_ERROR',
+              payload: { title: 'Reset Failed', message: error.message }
+            });
           } finally {
             dispatchDb({ type: 'SET_LOADING', payload: false });
           }

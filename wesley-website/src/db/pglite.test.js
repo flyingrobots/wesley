@@ -30,7 +30,7 @@ describe('DbSession', () => {
   it('should reset the database', async () => {
     await dbSession.applyMigrations(['CREATE TABLE products (id INT);']);
     const beforeReset = await dbSession.query('SELECT COUNT(*) FROM products;');
-    expect(Number(beforeReset.rows[0]['count'])).toBe(0); // PGLite returns count as number
+    expect(Number(beforeReset.rows[0].count)).toBe(0); // PGLite returns count as number
 
     await dbSession.reset();
 
