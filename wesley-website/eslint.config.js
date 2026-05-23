@@ -1,13 +1,13 @@
-import js from '@eslint/js'
-import globals from 'globals'
-import reactHooks from 'eslint-plugin-react-hooks'
-import reactRefresh from 'eslint-plugin-react-refresh'
-import react from 'eslint-plugin-react'
-import jsxA11y from 'eslint-plugin-jsx-a11y'
-import { defineConfig, globalIgnores } from 'eslint/config'
-import { FlatCompat } from '@eslint/eslintrc'
+import js from '@eslint/js';
+import globals from 'globals';
+import reactHooks from 'eslint-plugin-react-hooks';
+import reactRefresh from 'eslint-plugin-react-refresh';
+import react from 'eslint-plugin-react';
+import jsxA11y from 'eslint-plugin-jsx-a11y';
+import { defineConfig, globalIgnores } from 'eslint/config';
+import { FlatCompat } from '@eslint/eslintrc';
 
-const compat = new FlatCompat({ baseDirectory: import.meta.dirname })
+const compat = new FlatCompat({ baseDirectory: import.meta.dirname });
 
 export default defineConfig([
   globalIgnores(['dist']),
@@ -20,23 +20,23 @@ export default defineConfig([
       react.configs.recommended,
       jsxA11y.configs.recommended,
       reactHooks.configs['recommended-latest'],
-      reactRefresh.configs.vite,
+      reactRefresh.configs.vite
     ],
     settings: { react: { version: 'detect' } },
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
       globals: globals.browser,
-      parserOptions: { ecmaFeatures: { jsx: true } },
+      parserOptions: { ecmaFeatures: { jsx: true } }
     },
     rules: {
-      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
-    },
+      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }]
+    }
   },
   {
     files: ['**/*.{test,spec}.{js,jsx}'],
     languageOptions: {
-      globals: { ...globals.browser, ...globals.node, ...globals.jest },
-    },
-  },
-])
+      globals: { ...globals.browser, ...globals.node, ...globals.jest }
+    }
+  }
+]);

@@ -9,12 +9,23 @@ import { exitCodeFor, isRegistered, getRegistry } from '../../src/domain/ExitCod
 
 test('exitCodeFor — returns 2 for configuration/input errors', () => {
   for (const code of [
-    'ENOENT', 'EEMPTYSCHEMA', 'EEXIST', 'EARGS', 'EUSAGE',
-    'ERR_MISSING_ARGUMENT', 'DIRTY_WORKTREE', 'NO_DSN',
-    'INVALID_TARGET', 'UNSUPPORTED_OPTION', 'INVALID_LOG_FORMAT',
-    'UNKNOWN_TRANSMUTATION', 'NO_EVENT_STORE',
-    'RUN_NOT_FOUND', 'RUN_AMBIGUOUS',
-    'OPS_ALLOW_ERRORS_FORBIDDEN', 'OPS_INVALID_SECURITY'
+    'ENOENT',
+    'EEMPTYSCHEMA',
+    'EEXIST',
+    'EARGS',
+    'EUSAGE',
+    'ERR_MISSING_ARGUMENT',
+    'DIRTY_WORKTREE',
+    'NO_DSN',
+    'INVALID_TARGET',
+    'UNSUPPORTED_OPTION',
+    'INVALID_LOG_FORMAT',
+    'UNKNOWN_TRANSMUTATION',
+    'NO_EVENT_STORE',
+    'RUN_NOT_FOUND',
+    'RUN_AMBIGUOUS',
+    'OPS_ALLOW_ERRORS_FORBIDDEN',
+    'OPS_INVALID_SECURITY'
   ]) {
     assert.equal(exitCodeFor(code), 2, `${code} should map to exit code 2`);
   }
@@ -22,8 +33,10 @@ test('exitCodeFor — returns 2 for configuration/input errors', () => {
 
 test('exitCodeFor — returns 3 for parsing errors', () => {
   for (const code of [
-    'PARSE_FAILED', 'SCHEMA_RESOLUTION_FAILED',
-    'OPS_COLLISION', 'OPS_IDENTIFIER_TOO_LONG'
+    'PARSE_FAILED',
+    'SCHEMA_RESOLUTION_FAILED',
+    'OPS_COLLISION',
+    'OPS_IDENTIFIER_TOO_LONG'
   ]) {
     assert.equal(exitCodeFor(code), 3, `${code} should map to exit code 3`);
   }
@@ -31,8 +44,14 @@ test('exitCodeFor — returns 3 for parsing errors', () => {
 
 test('exitCodeFor — returns 4 for generation/plugin errors', () => {
   for (const code of [
-    'GENERATION_FAILED', 'REALM_FAILED', 'TTD_COMPILE_FAILED',
-    'OPS_EMPTY_SET', 'WPLY001', 'WPLY002', 'WPLY003', 'WPLY004'
+    'GENERATION_FAILED',
+    'REALM_FAILED',
+    'TTD_COMPILE_FAILED',
+    'OPS_EMPTY_SET',
+    'WPLY001',
+    'WPLY002',
+    'WPLY003',
+    'WPLY004'
   ]) {
     assert.equal(exitCodeFor(code), 4, `${code} should map to exit code 4`);
   }
@@ -40,8 +59,12 @@ test('exitCodeFor — returns 4 for generation/plugin errors', () => {
 
 test('exitCodeFor — returns 5 for validation/certification errors', () => {
   for (const code of [
-    'VALIDATION_FAILED', 'CERT_INVALID', 'COUNTERFACTUAL_GATE_FAILED',
-    'OPS_MANIFEST_INVALID', 'OPS_COMPILE_FAILED', 'DIFF_FAILED'
+    'VALIDATION_FAILED',
+    'CERT_INVALID',
+    'COUNTERFACTUAL_GATE_FAILED',
+    'OPS_MANIFEST_INVALID',
+    'OPS_COMPILE_FAILED',
+    'DIFF_FAILED'
   ]) {
     assert.equal(exitCodeFor(code), 5, `${code} should map to exit code 5`);
   }
@@ -89,6 +112,10 @@ test('getRegistry — returns an object with all known codes', () => {
 
 test('getRegistry — registry is immutable (frozen object)', () => {
   const registry = getRegistry();
-  assert.throws(() => { registry.NEW_CODE = 99; }, TypeError);
-  assert.throws(() => { registry.ENOENT = 99; }, TypeError);
+  assert.throws(() => {
+    registry.NEW_CODE = 99;
+  }, TypeError);
+  assert.throws(() => {
+    registry.ENOENT = 99;
+  }, TypeError);
 });

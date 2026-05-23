@@ -53,7 +53,7 @@ test('all directives in schema are registered', () => {
 All directives must be registered in schemas/directives.graphql before use.
 Add the following to directives.graphql:
 
-${unregistered.map(d => `directive @${d} on FIELD_DEFINITION | OBJECT`).join('\n')}
+${unregistered.map((d) => `directive @${d} on FIELD_DEFINITION | OBJECT`).join('\n')}
 `);
   }
 

@@ -23,7 +23,9 @@ test('host contracts pass in browser', async ({ page }) => {
       expect(typeof fail.details.actualTableCount).toBe('number');
       // Either a summary mentioning expected vs actual or missing fields
       expect(
-        /expected\s+2\s+tables|missing table|missing columns/i.test(String(fail.details.summary || ''))
+        /expected\s+2\s+tables|missing table|missing columns/i.test(
+          String(fail.details.summary || '')
+        )
       ).toBeTruthy();
       // Include SDL snippet context for debugging
       expect(String(fail.details.sdlSnippet || '')).toContain('type');

@@ -18,18 +18,22 @@ Trigger: title/label match: evidence, certification, security, or Holmes-family 
 ## Original Issue
 
 ## Summary
+
 Introduce a lightweight dynamic scan using OWASP ZAP (Dockerized baseline scan) against our local demo endpoints.
 
 ## Details
+
 - Add a GitHub Actions workflow using `owasp/zap2docker-stable zap-baseline.py`.
 - Target the docker-compose demo (or a minimal test service) spun up in CI.
 - Export alerts as HTML + SARIF; fail on medium+ findings configurable via inputs.
 - Retain artifacts for triage and link to Security tab when SARIF upload is supported.
 
 ## Motivation
+
 - Free/open-source DAST coverage complements SAST and catches runtime misconfigurations before go-live.
 
 ## Acceptance Criteria
+
 - Workflow runnable on demand (workflow_dispatch) and scheduled (weekly) without manual intervention.
 - Documentation explains how to tune alert severities and suppress known findings.
 - Added to go-public checklist once baseline passes.

@@ -1,7 +1,7 @@
 ---
-title: "Holmes Dashboard Choose Your Track Orientation"
+title: 'Holmes Dashboard Choose Your Track Orientation'
 legend: RUNTIME
-release: "v0.1.0"
+release: 'v0.1.0'
 lane: v0.1.0
 ---
 

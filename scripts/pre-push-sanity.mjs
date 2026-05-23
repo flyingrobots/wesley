@@ -22,9 +22,8 @@ function main() {
   const filesArgIndex = args.indexOf('--files');
   const explicitFiles = filesArgIndex === -1 ? null : args.slice(filesArgIndex + 1).filter(Boolean);
 
-  const changedFiles = explicitFiles && explicitFiles.length > 0
-    ? explicitFiles
-    : collectChangedFiles(readStdin());
+  const changedFiles =
+    explicitFiles && explicitFiles.length > 0 ? explicitFiles : collectChangedFiles(readStdin());
 
   if (changedFiles.length === 0) {
     console.log('[pre-push] No changed files detected; skipping sanity checks.');
@@ -119,37 +118,42 @@ function packageForFile(file, packages) {
 }
 
 function needsPreflight(changedFiles) {
-  return changedFiles.some((file) =>
-    file === 'package.json' ||
-    file === 'pnpm-lock.yaml' ||
-    file === 'pnpm-workspace.yaml' ||
-    file.startsWith('.github/') ||
-    file.startsWith('.githooks/') ||
-    file.startsWith('docs/') ||
-    file.startsWith('schemas/') ||
-    file.startsWith('scripts/') ||
-    file.endsWith('/package.json')
+  return changedFiles.some(
+    (file) =>
+      file === 'package.json' ||
+      file === 'pnpm-lock.yaml' ||
+      file === 'pnpm-workspace.yaml' ||
+      file.startsWith('.github/') ||
+      file.startsWith('.githooks/') ||
+      file.startsWith('docs/') ||
+      file.startsWith('schemas/') ||
+      file.startsWith('scripts/') ||
+      file.endsWith('/package.json')
   );
 }
 
 function needsRepoBats(changedFiles) {
-  return changedFiles.some((file) =>
-    file.startsWith('.github/') ||
-    file.startsWith('.githooks/') ||
-    file.startsWith('scripts/') ||
-    file.startsWith('test/') ||
-    file.startsWith('packages/wesley-host-browser/') ||
-    file.startsWith('packages/wesley-host-bun/') ||
-    file.startsWith('packages/wesley-host-deno/') ||
-    file.startsWith('packages/wesley-host-node/') ||
-    file.startsWith('packages/wesley-cli/src/commands/watch') ||
-    file.startsWith('packages/wesley-core/src/cli/') ||
-    file === 'packages/wesley-core/src/util/EventEmitter.mjs'
+  return changedFiles.some(
+    (file) =>
+      file.startsWith('.github/') ||
+      file.startsWith('.githooks/') ||
+      file.startsWith('scripts/') ||
+      file.startsWith('test/') ||
+      file.startsWith('packages/wesley-host-browser/') ||
+      file.startsWith('packages/wesley-host-bun/') ||
+      file.startsWith('packages/wesley-host-deno/') ||
+      file.startsWith('packages/wesley-host-node/') ||
+      file.startsWith('packages/wesley-cli/src/commands/watch') ||
+      file.startsWith('packages/wesley-core/src/cli/') ||
+      file === 'packages/wesley-core/src/util/EventEmitter.mjs'
   );
 }
 
 function collectChangedFiles(stdinText) {
-  const lines = stdinText.split('\n').map((line) => line.trim()).filter(Boolean);
+  const lines = stdinText
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
   const files = new Set();
 
   for (const line of lines) {
@@ -188,7 +192,10 @@ function diffFilesForUpdate(localRef, localSha, remoteSha) {
 }
 
 function gitLines(args) {
-  return gitText(args).split('\n').map((line) => line.trim()).filter(Boolean);
+  return gitText(args)
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
 }
 
 function gitText(args, options = {}) {

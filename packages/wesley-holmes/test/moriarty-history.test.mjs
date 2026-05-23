@@ -21,10 +21,9 @@ test('normalizeMoriartyHistoryPoints keeps latest seven points and normalizes tr
   assert.equal(normalized.length, 7);
   assert.equal(normalized[0].timestamp, formatMoriartyHistoryTimestamp(1));
   assert.equal(normalized.at(-1).evidenceTrust, 'weak');
-  assert.deepEqual(
-    normalized.at(-1).evidenceTrustReasons,
-    ['Coarse citations remain unpinned to exact line spans.']
-  );
+  assert.deepEqual(normalized.at(-1).evidenceTrustReasons, [
+    'Coarse citations remain unpinned to exact line spans.'
+  ]);
   assert.equal('evidenceTrust' in normalized[0], false);
 });
 
@@ -34,12 +33,8 @@ test('normalizeMoriartyEvidenceTrustLevel rejects unsupported values', () => {
 });
 
 test('normalizeMoriartyEvidenceTrustReasons falls back to stable defaults', () => {
-  assert.deepEqual(
-    normalizeMoriartyEvidenceTrustReasons([], 'missing'),
-    ['No evidence citations were available for trust analysis.']
-  );
-  assert.deepEqual(
-    normalizeMoriartyEvidenceTrustReasons(['kept', '', 1], 'strong'),
-    ['kept']
-  );
+  assert.deepEqual(normalizeMoriartyEvidenceTrustReasons([], 'missing'), [
+    'No evidence citations were available for trust analysis.'
+  ]);
+  assert.deepEqual(normalizeMoriartyEvidenceTrustReasons(['kept', '', 1], 'strong'), ['kept']);
 });

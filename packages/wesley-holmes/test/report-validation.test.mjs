@@ -167,7 +167,7 @@ test('holmes report schema rejects missing scores', () => {
   delete broken.scores;
   const result = validateReport(holmesReportSchema, broken);
   assert.equal(result.valid, false);
-  assert.ok(result.errors.some(err => err.includes('scores')));
+  assert.ok(result.errors.some((err) => err.includes('scores')));
 });
 
 test('watson report schema accepts valid sample', () => {
@@ -180,7 +180,7 @@ test('watson report schema rejects missing citations.total', () => {
   delete broken.citations.total;
   const result = validateReport(watsonReportSchema, broken);
   assert.equal(result.valid, false);
-  assert.ok(result.errors.some(err => err.includes('citations.total')));
+  assert.ok(result.errors.some((err) => err.includes('citations.total')));
 });
 
 test('moriarty schema accepts valid sample', () => {
@@ -193,5 +193,5 @@ test('moriarty schema enforces history array', () => {
   delete broken.history;
   const result = validateReport(moriartyReportSchema, broken);
   assert.equal(result.valid, false);
-  assert.ok(result.errors.some(err => err.includes('history')));
+  assert.ok(result.errors.some((err) => err.includes('history')));
 });

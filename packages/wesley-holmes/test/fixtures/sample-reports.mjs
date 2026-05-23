@@ -24,9 +24,19 @@ export function sampleHolmesReport(overrides = {}) {
     },
     gates: [
       { gate: 'Migration Risk', status: '⛔', evidence: 'MRI: 46.0%', ruling: 'HIGH RISK!' },
-      { gate: 'Test Coverage', status: '⚠️', evidence: 'TCI: 52.0%', ruling: 'Insufficient coverage' },
+      {
+        gate: 'Test Coverage',
+        status: '⚠️',
+        evidence: 'TCI: 52.0%',
+        ruling: 'Insufficient coverage'
+      },
       { gate: 'Sensitive Fields', status: '⛔', evidence: '2 fields', ruling: '1 EXPOSED!' },
-      { gate: 'Evidence Quality', status: '⚠️', evidence: '4 exact · 3 whole-file · 2 coarse', ruling: 'Some claims still rely on coarse citations.' }
+      {
+        gate: 'Evidence Quality',
+        status: '⚠️',
+        evidence: '4 exact · 3 whole-file · 2 coarse',
+        ruling: 'Some claims still rely on coarse citations.'
+      }
     ],
     verdict: {
       code: 'REQUIRES INVESTIGATION',
@@ -78,7 +88,14 @@ export function sampleMoriartyReport(overrides = {}) {
     history: [
       { timestamp: '2026-03-28T00:00:00Z', scs: 0.6, tci: 0.4, mri: 0.5 },
       { timestamp: '2026-03-29T00:00:00Z', scs: 0.68, tci: 0.48, mri: 0.47 },
-      { timestamp: '2026-03-30T00:00:00Z', scs: 0.74, tci: 0.52, mri: 0.46, evidenceTrust: 'weak', evidenceTrustReasons: ['Citations are still coarse.'] }
+      {
+        timestamp: '2026-03-30T00:00:00Z',
+        scs: 0.74,
+        tci: 0.52,
+        mri: 0.46,
+        evidenceTrust: 'weak',
+        evidenceTrustReasons: ['Citations are still coarse.']
+      }
     ],
     plateauDetected: false,
     regressionDetected: false,

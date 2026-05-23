@@ -1,23 +1,30 @@
 ---
-report_id: "AUD-2026-05-05-DQ01"
-title: "Documentation Quality Audit: Wesley Release Branch Onboarding"
-status: "Final"
+report_id: 'AUD-2026-05-05-DQ01'
+title: 'Documentation Quality Audit: Wesley Release Branch Onboarding'
+status: 'Final'
 audit:
   date_started: 2026-05-05
   date_completed: 2026-05-05
-  type: "Differential"
-  scope: "README.md, CONTRIBUTING.md, SECURITY.md, docs/GUIDE.md, docs/ARCHITECTURE.md, docs/VISION.md, docs/design/, docs/guides/, docs/scripts-reference.md"
-  compliance_frameworks: ["OpenSSF Best Practices", "Diataxis Documentation System", "OWASP ASVS"]
+  type: 'Differential'
+  scope: 'README.md, CONTRIBUTING.md, SECURITY.md, docs/GUIDE.md, docs/ARCHITECTURE.md, docs/VISION.md, docs/design/, docs/guides/, docs/scripts-reference.md'
+  compliance_frameworks: ['OpenSSF Best Practices', 'Diataxis Documentation System', 'OWASP ASVS']
 target:
-  repository: "github.com/flyingrobots/wesley"
-  branch: "release/v0.1.0"
-  commit_hash: "1333104"
-  language_stack: ["Node.js >=22", "pnpm 9.15.9", "ESM JavaScript", "Markdown", "GraphQL"]
-  environment: "Local release branch"
+  repository: 'github.com/flyingrobots/wesley'
+  branch: 'release/v0.1.0'
+  commit_hash: '1333104'
+  language_stack: ['Node.js >=22', 'pnpm 9.15.9', 'ESM JavaScript', 'Markdown', 'GraphQL']
+  environment: 'Local release branch'
 methodology:
-  automated_tools: ["rg", "find", "pnpm wesley --help", "pnpm audit --json", "docs truth scripts via package metadata review"]
+  automated_tools:
+    [
+      'rg',
+      'find',
+      'pnpm wesley --help',
+      'pnpm audit --json',
+      'docs truth scripts via package metadata review'
+    ]
   manual_review_hours: 2
-  false_positive_rate: "10%"
+  false_positive_rate: '10%'
 summary:
   total_findings: 8
   severity_count:
@@ -25,10 +32,10 @@ summary:
     high: 2
     medium: 4
     low: 2
-  remediation_status: "Pending"
+  remediation_status: 'Pending'
 related_reports:
-  previous_audit: "AUD-2026-05-04-DQ01"
-  tracking_ticket: "docs/method/backlog/"
+  previous_audit: 'AUD-2026-05-04-DQ01'
+  tracking_ticket: 'docs/method/backlog/'
 ---
 
 # AUDIT: DOCUMENTATION QUALITY (2026-05-05)

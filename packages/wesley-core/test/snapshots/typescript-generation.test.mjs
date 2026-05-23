@@ -51,13 +51,15 @@ class TypeScriptGenerator {
   }
 
   generateInterface(table) {
-    const fields = Object.values(table.fields).map(field => {
-      const tsType = this.mapTypeToTypeScript(field.type, field.nonNull, field.itemNonNull);
-      const optional = field.nonNull ? '' : '?';
-      const comment = this.generateFieldComment(field);
+    const fields = Object.values(table.fields)
+      .map((field) => {
+        const tsType = this.mapTypeToTypeScript(field.type, field.nonNull, field.itemNonNull);
+        const optional = field.nonNull ? '' : '?';
+        const comment = this.generateFieldComment(field);
 
-      return `  ${comment ? `${comment}\n  ` : ''}${field.name}${optional}: ${tsType};`;
-    }).join('\n');
+        return `  ${comment ? `${comment}\n  ` : ''}${field.name}${optional}: ${tsType};`;
+      })
+      .join('\n');
 
     return `export interface ${table.name} {
 ${fields}
@@ -66,13 +68,16 @@ ${fields}
 
   generateInputType(table) {
     const fields = Object.values(table.fields)
-      .filter(field => !this.hasDirective(field, '@primaryKey') || this.hasDirective(field, '@default'))
-      .map(field => {
+      .filter(
+        (field) => !this.hasDirective(field, '@primaryKey') || this.hasDirective(field, '@default')
+      )
+      .map((field) => {
         const tsType = this.mapTypeToTypeScript(field.type, false, field.itemNonNull); // All inputs optional by default
         const comment = this.generateFieldComment(field);
 
         return `  ${comment ? `${comment}\n  ` : ''}${field.name}?: ${tsType};`;
-      }).join('\n');
+      })
+      .join('\n');
 
     return `export interface ${table.name}Input {
 ${fields}
@@ -81,23 +86,25 @@ ${fields}
 
   generateCreateType(table) {
     const requiredFields = Object.values(table.fields)
-      .filter(field =>
-        field.nonNull &&
-        !this.hasDirective(field, '@primaryKey') &&
-        !this.hasDirective(field, '@default')
+      .filter(
+        (field) =>
+          field.nonNull &&
+          !this.hasDirective(field, '@primaryKey') &&
+          !this.hasDirective(field, '@default')
       )
-      .map(field => {
+      .map((field) => {
         const tsType = this.mapTypeToTypeScript(field.type, true, field.itemNonNull);
         return `  ${field.name}: ${tsType};`;
       });
 
     const optionalFields = Object.values(table.fields)
-      .filter(field =>
-        !field.nonNull ||
-        this.hasDirective(field, '@default') ||
-        this.hasDirective(field, '@primaryKey')
+      .filter(
+        (field) =>
+          !field.nonNull ||
+          this.hasDirective(field, '@default') ||
+          this.hasDirective(field, '@primaryKey')
       )
-      .map(field => {
+      .map((field) => {
         const tsType = this.mapTypeToTypeScript(field.type, field.nonNull, field.itemNonNull);
         return `  ${field.name}?: ${tsType};`;
       });
@@ -111,11 +118,12 @@ ${allFields}
 
   generateUpdateType(table) {
     const fields = Object.values(table.fields)
-      .filter(field => !this.hasDirective(field, '@primaryKey'))
-      .map(field => {
+      .filter((field) => !this.hasDirective(field, '@primaryKey'))
+      .map((field) => {
         const tsType = this.mapTypeToTypeScript(field.type, false, field.itemNonNull);
         return `  ${field.name}?: ${tsType};`;
-      }).join('\n');
+      })
+      .join('\n');
 
     return `export interface Update${table.name}Input {
 ${fields}
@@ -160,19 +168,19 @@ ${fields}
 
   mapScalarToTypeScript(graphQLType) {
     const typeMap = {
-      'String': 'string',
-      'Int': 'number',
-      'BigInt': 'bigint',
-      'Float': 'number',
-      'Decimal': 'number',
-      'Boolean': 'boolean',
-      'ID': 'string',
-      'UUID': 'string',
-      'DateTime': 'Date',
-      'Date': 'Date',
-      'Time': 'Date',
-      'JSON': 'Record<string, any>',
-      'Inet': 'string'
+      String: 'string',
+      Int: 'number',
+      BigInt: 'bigint',
+      Float: 'number',
+      Decimal: 'number',
+      Boolean: 'boolean',
+      ID: 'string',
+      UUID: 'string',
+      DateTime: 'Date',
+      Date: 'Date',
+      Time: 'Date',
+      JSON: 'Record<string, any>',
+      Inet: 'string'
     };
 
     return typeMap[graphQLType] || 'unknown';

@@ -3,13 +3,24 @@
   "$id": "https://wesley.dev/schemas/runtime-run.schema.json",
   "title": "Wesley Runtime Run Report",
   "type": "object",
-  "required": ["runId", "transmutation", "streamId", "status", "eventCount", "artifactCount", "taskCounts"],
+  "required": [
+    "runId",
+    "transmutation",
+    "streamId",
+    "status",
+    "eventCount",
+    "artifactCount",
+    "taskCounts"
+  ],
   "properties": {
     "runId": { "type": "string", "minLength": 1 },
     "transmutation": { "type": "string", "minLength": 1 },
     "streamId": { "type": "string", "minLength": 1 },
     "command": { "type": ["string", "null"] },
-    "status": { "type": "string", "enum": ["pending", "running", "completed", "failed", "cancelled"] },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "running", "completed", "failed", "cancelled"]
+    },
     "startedAt": { "type": ["string", "null"], "format": "date-time" },
     "completedAt": { "type": ["string", "null"], "format": "date-time" },
     "lastEventAt": { "type": ["string", "null"], "format": "date-time" },

@@ -27,7 +27,7 @@ export class CompilerError extends Error {
    * @param {string} message
    * @param {any} [cause]
    */
-  constructor(code, message, cause){
+  constructor(code, message, cause) {
     super(message);
     this.name = 'CompilerError';
     /** @type {CompilerErrorCode} */ this.code = code;

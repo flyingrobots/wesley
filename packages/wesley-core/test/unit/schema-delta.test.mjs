@@ -7,8 +7,12 @@ import { computeDelta } from '../../src/domain/schemaDelta.mjs';
 
 function emptyDelta() {
   return {
-    added_types: [], removed_types: [], modified_types: [],
-    added_ops: [], removed_ops: [], modified_ops: []
+    added_types: [],
+    removed_types: [],
+    modified_types: [],
+    added_ops: [],
+    removed_ops: [],
+    modified_ops: []
   };
 }
 
@@ -88,7 +92,7 @@ test('computeDelta: removing a field is breaking', () => {
   const delta = computeDelta(old, nu);
   assert.equal(delta.modified_types.length, 1);
   assert.equal(delta.modified_types[0].breaking, true);
-  const removed = delta.modified_types[0].fieldChanges.find(f => f.name === 'name');
+  const removed = delta.modified_types[0].fieldChanges.find((f) => f.name === 'name');
   assert.ok(removed);
   assert.equal(removed.kind, 'removed');
   assert.equal(removed.breaking, true);
@@ -102,7 +106,7 @@ test('computeDelta: changing a field type is breaking', () => {
   const delta = computeDelta(old, nu);
   assert.equal(delta.modified_types.length, 1);
   assert.equal(delta.modified_types[0].breaking, true);
-  const changed = delta.modified_types[0].fieldChanges.find(f => f.kind === 'changed');
+  const changed = delta.modified_types[0].fieldChanges.find((f) => f.kind === 'changed');
   assert.ok(changed);
   assert.ok(changed.description.includes('Int'));
   assert.ok(changed.description.includes('String'));
@@ -116,7 +120,7 @@ test('computeDelta: adding an enum value is non-breaking', () => {
   const delta = computeDelta(old, nu);
   assert.equal(delta.modified_types.length, 1);
   assert.equal(delta.modified_types[0].breaking, false);
-  const added = delta.modified_types[0].fieldChanges.find(f => f.name === 'BLUE');
+  const added = delta.modified_types[0].fieldChanges.find((f) => f.name === 'BLUE');
   assert.ok(added);
   assert.equal(added.breaking, false);
   assert.ok(added.description.includes('Enum value'));
@@ -130,7 +134,7 @@ test('computeDelta: removing an enum value is breaking', () => {
   const delta = computeDelta(old, nu);
   assert.equal(delta.modified_types.length, 1);
   assert.equal(delta.modified_types[0].breaking, true);
-  const removed = delta.modified_types[0].fieldChanges.find(f => f.name === 'BLUE');
+  const removed = delta.modified_types[0].fieldChanges.find((f) => f.name === 'BLUE');
   assert.ok(removed);
   assert.equal(removed.breaking, true);
 });
@@ -151,9 +155,10 @@ test('computeDelta: type rename shows as remove + add', () => {
 
 test('computeDelta: adding a query operation is non-breaking', () => {
   const old = 'type Query { users: [User] } type User { id: ID! }';
-  const nu = 'type Query { users: [User] posts: [Post] } type User { id: ID! } type Post { id: ID! }';
+  const nu =
+    'type Query { users: [User] posts: [Post] } type User { id: ID! } type Post { id: ID! }';
   const delta = computeDelta(old, nu);
-  const addedOp = delta.added_ops.find(o => o.name === 'Query.posts');
+  const addedOp = delta.added_ops.find((o) => o.name === 'Query.posts');
   assert.ok(addedOp);
   assert.equal(addedOp.breaking, false);
 });
@@ -161,10 +166,11 @@ test('computeDelta: adding a query operation is non-breaking', () => {
 // ─── 12. op removed → breaking ──────────────────────────────────────
 
 test('computeDelta: removing a query operation is breaking', () => {
-  const old = 'type Query { users: [User] posts: [Post] } type User { id: ID! } type Post { id: ID! }';
+  const old =
+    'type Query { users: [User] posts: [Post] } type User { id: ID! } type Post { id: ID! }';
   const nu = 'type Query { users: [User] } type User { id: ID! } type Post { id: ID! }';
   const delta = computeDelta(old, nu);
-  const removedOp = delta.removed_ops.find(o => o.name === 'Query.posts');
+  const removedOp = delta.removed_ops.find((o) => o.name === 'Query.posts');
   assert.ok(removedOp);
   assert.equal(removedOp.breaking, true);
 });
@@ -177,7 +183,7 @@ test('computeDelta: adding a required op argument is breaking', () => {
   const delta = computeDelta(old, nu);
   assert.equal(delta.modified_ops.length, 1);
   assert.equal(delta.modified_ops[0].breaking, true);
-  const argChange = delta.modified_ops[0].argChanges.find(a => a.name === 'role');
+  const argChange = delta.modified_ops[0].argChanges.find((a) => a.name === 'role');
   assert.ok(argChange);
   assert.equal(argChange.breaking, true);
 });
@@ -190,7 +196,7 @@ test('computeDelta: removing an op argument is breaking', () => {
   const delta = computeDelta(old, nu);
   assert.equal(delta.modified_ops.length, 1);
   assert.equal(delta.modified_ops[0].breaking, true);
-  const removed = delta.modified_ops[0].argChanges.find(a => a.name === 'role');
+  const removed = delta.modified_ops[0].argChanges.find((a) => a.name === 'role');
   assert.ok(removed);
   assert.equal(removed.kind, 'removed');
 });
@@ -203,7 +209,7 @@ test('computeDelta: changing an op argument type is breaking', () => {
   const delta = computeDelta(old, nu);
   assert.equal(delta.modified_ops.length, 1);
   assert.equal(delta.modified_ops[0].breaking, true);
-  const changed = delta.modified_ops[0].argChanges.find(a => a.kind === 'changed');
+  const changed = delta.modified_ops[0].argChanges.find((a) => a.kind === 'changed');
   assert.ok(changed);
   assert.ok(changed.description.includes('ID!'));
   assert.ok(changed.description.includes('String!'));
@@ -251,7 +257,10 @@ test('computeDelta: all description strings are non-empty', () => {
 
   // Check all entries have non-empty descriptions
   for (const t of [...delta.added_types, ...delta.removed_types]) {
-    assert.ok(typeof t.description === 'string' && t.description.length > 0, `Type delta for ${t.name} needs description`);
+    assert.ok(
+      typeof t.description === 'string' && t.description.length > 0,
+      `Type delta for ${t.name} needs description`
+    );
   }
   for (const m of delta.modified_types) {
     assert.ok(typeof m.description === 'string' && m.description.length > 0);
@@ -270,11 +279,13 @@ test('computeDelta: all description strings are non-empty', () => {
 // ─── 19. mutation operations tracked ────────────────────────────────
 
 test('computeDelta: mutation operations are tracked', () => {
-  const old = 'type Query { q: String } type Mutation { createUser(name: String!): User } type User { id: ID! }';
-  const nu = 'type Query { q: String } type Mutation { deleteUser(id: ID!): Boolean } type User { id: ID! }';
+  const old =
+    'type Query { q: String } type Mutation { createUser(name: String!): User } type User { id: ID! }';
+  const nu =
+    'type Query { q: String } type Mutation { deleteUser(id: ID!): Boolean } type User { id: ID! }';
   const delta = computeDelta(old, nu);
-  const removed = delta.removed_ops.find(o => o.name === 'Mutation.createUser');
-  const added = delta.added_ops.find(o => o.name === 'Mutation.deleteUser');
+  const removed = delta.removed_ops.find((o) => o.name === 'Mutation.createUser');
+  const added = delta.added_ops.find((o) => o.name === 'Mutation.deleteUser');
   assert.ok(removed);
   assert.ok(added);
   assert.equal(removed.breaking, true);
@@ -307,7 +318,7 @@ test('computeDelta: adding an optional op argument is non-breaking', () => {
   const delta = computeDelta(old, nu);
   assert.equal(delta.modified_ops.length, 1);
   assert.equal(delta.modified_ops[0].breaking, false);
-  const argChange = delta.modified_ops[0].argChanges.find(a => a.name === 'limit');
+  const argChange = delta.modified_ops[0].argChanges.find((a) => a.name === 'limit');
   assert.ok(argChange);
   assert.equal(argChange.breaking, false);
 });
@@ -325,7 +336,9 @@ test('computeDelta: performance — 500-type schemas under 200ms', () => {
   }
   const oldSDL = types.join('\n');
   // Modify every 10th type slightly
-  const newTypes = types.map((t, i) => i % 10 === 0 ? t.replace('field0: String', 'field0: Int') : t);
+  const newTypes = types.map((t, i) =>
+    i % 10 === 0 ? t.replace('field0: String', 'field0: Int') : t
+  );
   const newSDL = newTypes.join('\n');
 
   const start = performance.now();

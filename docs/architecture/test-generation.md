@@ -16,15 +16,15 @@ Wesley **proves the it generates works**. Every schema element gets risk-weighte
 graph TD
     Schema[GraphQL Schema] --> Diff[Diff Engine]
     Previous[Previous Schema] --> Diff
-    
+
     Diff --> Migration[Migration SQL]
     Diff --> Tests[pgTAP Tests]
-    
+
     Tests --> Structure[Structure Tests]
     Tests --> Constraints[Constraint Tests]
     Tests --> Data[Data Tests]
     Tests --> Performance[Performance Tests]
-    
+
     style Tests fill:#9f9,stroke:#333,stroke-width:4px
 ```
 
@@ -89,8 +89,8 @@ SELECT col_not_null('user', 'email', 'user.email should not be nullable');
 -- Default Value Tests
 SELECT col_has_default('user', 'created_at', 'user.created_at should have default');
 SELECT col_default_is(
-  'user', 'created_at', 
-  'now()', 
+  'user', 'created_at',
+  'now()',
   'user.created_at default should be now()'
 );
 ```
@@ -135,7 +135,7 @@ When Wesley detects changes, it generates specific tests:
 ```javascript
 function generateDiffTests(diff) {
   const tests = [];
-  
+
   for (const change of diff.changes) {
     switch (change.type) {
       case 'ADD_COLUMN':
@@ -152,7 +152,7 @@ function generateDiffTests(diff) {
         break;
     }
   }
-  
+
   return tests;
 }
 
@@ -166,20 +166,28 @@ SELECT has_column(
 );
 
 -- Test nullable if not required
-${!change.field.nonNull ? `
+${
+  !change.field.nonNull
+    ? `
 SELECT col_is_null(
   '${change.table}',
   '${change.column}',
   'Column ${change.table}.${change.column} should be nullable'
-);` : ''}
+);`
+    : ''
+}
 
 -- Test default value if specified
-${change.field.default ? `
+${
+  change.field.default
+    ? `
 SELECT col_has_default(
   '${change.table}',
   '${change.column}',
   'Column ${change.table}.${change.column} should have default'
-);` : ''}
+);`
+    : ''
+}
 `;
 }
 ```
@@ -196,6 +204,7 @@ email: String! @unique
 ```
 
 Suggests:
+
 ```sql
 -- Email format validation
 SELECT throws_ok(
@@ -225,12 +234,13 @@ type Post @table {
 ```
 
 Generates:
+
 ```sql
 -- Cascading delete test
 BEGIN;
-INSERT INTO user (id, email) VALUES 
+INSERT INTO user (id, email) VALUES
   ('user-1', 'test@example.com');
-INSERT INTO post (id, user_id, title) VALUES 
+INSERT INTO post (id, user_id, title) VALUES
   ('post-1', 'user-1', 'Test Post');
 
 DELETE FROM user WHERE id = 'user-1';
@@ -256,12 +266,12 @@ Wesley generates performance tests for indexes:
 
 ```sql
 -- Index performance test
-EXPLAIN (ANALYZE, BUFFERS) 
+EXPLAIN (ANALYZE, BUFFERS)
 SELECT * FROM user WHERE email = 'test@example.com';
 
 SELECT ok(
-  (SELECT COUNT(*) FROM pg_indexes 
-   WHERE tablename = 'user' 
+  (SELECT COUNT(*) FROM pg_indexes
+   WHERE tablename = 'user'
    AND indexname LIKE '%email%') > 0,
   'Index on user.email should exist'
 );
@@ -319,19 +329,19 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-    
+
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Install pgTAP
         run: |
           sudo apt-get update
           sudo apt-get install -y postgresql-15-pgtap
-      
+
       - name: Run Migrations
         run: |
           psql -h localhost -U postgres -f out/schema.sql
-      
+
       - name: Run Tests
         run: |
           pg_prove -h localhost -U postgres tests/**/*.sql
@@ -350,35 +360,26 @@ class TestCoverageAnalyzer {
       constraints: new Set(),
       indexes: new Set()
     };
-    
+
     // Parse tests to find what's covered
     for (const test of tests) {
       this.extractCoverage(test, coverage);
     }
-    
+
     // Calculate coverage percentages
     const report = {
-      tables: this.calculateCoverage(
-        schema.getTables(),
-        coverage.tables
-      ),
-      columns: this.calculateCoverage(
-        schema.getAllColumns(),
-        coverage.columns
-      ),
-      constraints: this.calculateCoverage(
-        schema.getAllConstraints(),
-        coverage.constraints
-      ),
+      tables: this.calculateCoverage(schema.getTables(), coverage.tables),
+      columns: this.calculateCoverage(schema.getAllColumns(), coverage.columns),
+      constraints: this.calculateCoverage(schema.getAllConstraints(), coverage.constraints),
       overall: this.calculateOverallCoverage(coverage)
     };
-    
+
     return report;
   }
-  
+
   suggestMissingTests(schema, coverage) {
     const suggestions = [];
-    
+
     // Find untested elements
     for (const table of schema.getTables()) {
       if (!coverage.tables.has(table.name)) {
@@ -388,7 +389,7 @@ class TestCoverageAnalyzer {
           test: `SELECT has_table('${table.name}');`
         });
       }
-      
+
       for (const field of table.getFields()) {
         const key = `${table.name}.${field.name}`;
         if (!coverage.columns.has(key)) {
@@ -400,7 +401,7 @@ class TestCoverageAnalyzer {
         }
       }
     }
-    
+
     return suggestions;
   }
 }
@@ -416,7 +417,7 @@ Wesley uses `@weight` and `@critical` directives to prioritize testing:
 type User @table @critical {
   id: ID! @primaryKey                    # Weight: 10 (automatic)
   password: String! @sensitive @weight(10) # Maximum priority
-  email: String! @pii @weight(8)          # High priority  
+  email: String! @pii @weight(8)          # High priority
   theme: String @weight(2)                # Low priority
 }
 ```
@@ -454,7 +455,7 @@ For tables with `@rls` directive, Wesley generates auth context tests:
 
 ```sql
 -- Test as resource owner
-SELECT set_config('request.jwt.claims', 
+SELECT set_config('request.jwt.claims',
   '{"sub":"00000000-0000-0000-0000-000000000001", "role":"authenticated"}', true);
 
 -- Should allow for owner
@@ -467,7 +468,7 @@ SELECT lives_ok(
 SELECT set_config('request.jwt.claims',
   '{"sub":"00000000-0000-0000-0000-000000000002", "role":"authenticated"}', true);
 
--- Should block for non-owner  
+-- Should block for non-owner
 SELECT throws_ok(
   $$ SELECT * FROM "Post" $$,
   '42501',
@@ -549,19 +550,19 @@ BEGIN
   -- Insert and capture initial timestamp
   INSERT INTO "User" (id) VALUES (test_id);
   SELECT updated_at INTO initial_time FROM "User" WHERE id = test_id;
-  
+
   -- Wait briefly then update
   PERFORM pg_sleep(0.01);
   UPDATE "User" SET id = test_id WHERE id = test_id;
   SELECT updated_at INTO updated_time FROM "User" WHERE id = test_id;
-  
+
   -- Verify timestamp was updated
   PERFORM is(
     updated_time > initial_time,
     true,
     'updated_at should auto-update on modification'
   );
-  
+
   ROLLBACK;
 END $$;
 ```
@@ -596,6 +597,7 @@ SELECT has_column('User', 'email', 'Column User.email should exist');
 ```
 
 This enables:
+
 - Precise citations without grep
 - SHA-locked verification
 - Zero flakiness
@@ -626,7 +628,7 @@ ROLLBACK;
 Wesley fails the gate if critical fields lack proper tests:
 
 - `@critical` fields without constraint tests → ❌ FAIL
-- `@sensitive` fields without hash/encryption checks → ❌ FAIL  
+- `@sensitive` fields without hash/encryption checks → ❌ FAIL
 - `@pii` fields without masking tests → ⚠️ WARN
 
 ## CLI Ergonomics
@@ -652,17 +654,17 @@ TCI Score: 0.87 (87%) - PASS ✅
 
 ## What Gets Generated from Directives
 
-| Directive | Generated Tests |
-|-----------|-----------------|
-| `@primaryKey` | PK exists, unique, not null |
-| `@unique` | Unique constraint + case-insensitive for emails |
-| `@foreignKey` | FK exists, cascade behavior |
-| `@default` | Default presence + behavior |
-| `@check` | Constraint holds, failing insert blocked |
-| `@index` | Index exists + EXPLAIN verification |
-| `@rls` | Per-operation auth tests |
-| `@sensitive` | Hash/length checks, no plaintext |
-| `@updatedAt` | Trigger behavior verification |
+| Directive     | Generated Tests                                 |
+| ------------- | ----------------------------------------------- |
+| `@primaryKey` | PK exists, unique, not null                     |
+| `@unique`     | Unique constraint + case-insensitive for emails |
+| `@foreignKey` | FK exists, cascade behavior                     |
+| `@default`    | Default presence + behavior                     |
+| `@check`      | Constraint holds, failing insert blocked        |
+| `@index`      | Index exists + EXPLAIN verification             |
+| `@rls`        | Per-operation auth tests                        |
+| `@sensitive`  | Hash/length checks, no plaintext                |
+| `@updatedAt`  | Trigger behavior verification                   |
 
 ## Benefits
 
@@ -695,6 +697,6 @@ export default {
 
 ## Conclusion
 
-Wesley's test generation transforms database testing from a chore to an automatic safety net. Every schema change, every migration, every constraint gets tested automatically. 
+Wesley's test generation transforms database testing from a chore to an automatic safety net. Every schema change, every migration, every constraint gets tested automatically.
 
 **You write GraphQL. Wesley writes tests.**

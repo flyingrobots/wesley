@@ -17,27 +17,25 @@ permissions:
 
 jobs:
   wesley-generate:
-    name: "🚀 Wesley Generation"
+    name: '🚀 Wesley Generation'
     runs-on: ubuntu-latest
     outputs:
       schema: ${{ steps.detect.outputs.schema }}
       bundle_dir: ${{ steps.detect.outputs.bundle_dir }}
-    
+
     steps:
-    
       - name: Harden runner
-    
+
         uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176
-    
+
         with:
-    
           egress-policy: audit
-      - name: "📦 Checkout Repository"
+      - name: '📦 Checkout Repository'
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           fetch-depth: 0
 
-      - name: "🕵️ Detect Schema"
+      - name: '🕵️ Detect Schema'
         id: detect
         shell: bash
         run: |
@@ -63,8 +61,8 @@ jobs:
           echo "bundle_dir=$bundle_dir" >> "$GITHUB_OUTPUT"
           echo "Detected schema: $schema"
           echo "Bundle dir: $bundle_dir"
-      
-      - name: "🛠️ Setup HOLMES environment"
+
+      - name: '🛠️ Setup HOLMES environment'
         uses: ./.github/actions/holmes-setup
         with:
           bundle-dir: ${{ steps.detect.outputs.bundle_dir }}
@@ -72,8 +70,8 @@ jobs:
           out-dir: ${{ env.HOLMES_OUT_DIR }}
           artifact-name: ${{ env.HOLMES_ARTIFACT }}
           always-generate: 'true'
-        
-      - name: "📊 Display Scores"
+
+      - name: '📊 Display Scores'
         run: |
           echo "## 📊 Generation Scores"
           if [ -f "${{ steps.detect.outputs.bundle_dir }}/scores.json" ]; then
@@ -82,19 +80,19 @@ jobs:
             echo "No scores.json found yet"
           fi
 
-      - name: "📤 Upload Dashboard Template"
+      - name: '📤 Upload Dashboard Template'
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
         with:
           name: dashboard-template
           path: docs/holmes-dashboard
           if-no-files-found: error
-          
-      - name: "📦 Prepare Bundle for Upload"
+
+      - name: '📦 Prepare Bundle for Upload'
         run: |
           ls -la "${{ steps.detect.outputs.bundle_dir }}"
           test -f "${{ steps.detect.outputs.bundle_dir }}/bundle.json"
 
-      - name: "💾 Upload Bundle"
+      - name: '💾 Upload Bundle'
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
         with:
           name: ${{ env.HOLMES_ARTIFACT }}
@@ -103,33 +101,31 @@ jobs:
             ${{ steps.detect.outputs.bundle_dir }}/scores.json
             ${{ steps.detect.outputs.bundle_dir }}/history.json
           if-no-files-found: error
-          
+
   holmes-investigate:
-    name: "🔍 HOLMES Investigation"
+    name: '🔍 HOLMES Investigation'
     runs-on: ubuntu-latest
     needs: wesley-generate
-    
+
     steps:
-    
       - name: Harden runner
-    
+
         uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176
-    
+
         with:
-    
           egress-policy: audit
-      - name: "📦 Checkout Repository"
+      - name: '📦 Checkout Repository'
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      
-      - name: "🛠️ Setup HOLMES environment"
+
+      - name: '🛠️ Setup HOLMES environment'
         uses: ./.github/actions/holmes-setup
         with:
           bundle-dir: ${{ needs.wesley-generate.outputs.bundle_dir }}
           schema: ${{ needs.wesley-generate.outputs.schema }}
           out-dir: ${{ env.HOLMES_OUT_DIR }}
           artifact-name: ${{ env.HOLMES_ARTIFACT }}
-          
-      - name: "🔍 Run Investigation"
+
+      - name: '🔍 Run Investigation'
         id: holmes
         uses: ./.github/actions/run-holmes-command
         with:
@@ -138,39 +134,37 @@ jobs:
           schema-path: ${{ needs.wesley-generate.outputs.schema }}
           bundle-dir: ${{ needs.wesley-generate.outputs.bundle_dir }}
 
-      - name: "💾 Save Report"
+      - name: '💾 Save Report'
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
         with:
           name: holmes-report
           path: reports/holmes
           if-no-files-found: error
-          
+
   watson-verify:
-    name: "🩺 WATSON Verification"
+    name: '🩺 WATSON Verification'
     runs-on: ubuntu-latest
     needs: [wesley-generate, holmes-investigate]
-    
+
     steps:
-    
       - name: Harden runner
-    
+
         uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176
-    
+
         with:
-    
           egress-policy: audit
-      - name: "📦 Checkout Repository"
+      - name: '📦 Checkout Repository'
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        
-      - name: "🛠️ Setup HOLMES environment"
+
+      - name: '🛠️ Setup HOLMES environment'
         uses: ./.github/actions/holmes-setup
         with:
           bundle-dir: ${{ needs.wesley-generate.outputs.bundle_dir }}
           schema: ${{ needs.wesley-generate.outputs.schema }}
           out-dir: ${{ env.HOLMES_OUT_DIR }}
           artifact-name: ${{ env.HOLMES_ARTIFACT }}
-          
-      - name: "🩺 Run Verification"
+
+      - name: '🩺 Run Verification'
         id: watson
         uses: ./.github/actions/run-holmes-command
         with:
@@ -179,33 +173,31 @@ jobs:
           schema-path: ${{ needs.wesley-generate.outputs.schema }}
           bundle-dir: ${{ needs.wesley-generate.outputs.bundle_dir }}
 
-      - name: "💾 Save Report"
+      - name: '💾 Save Report'
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
         with:
           name: watson-report
           path: reports/watson
           if-no-files-found: error
-          
+
   moriarty-predict:
-    name: "🔮 MORIARTY Predictions"
+    name: '🔮 MORIARTY Predictions'
     runs-on: ubuntu-latest
     needs: [wesley-generate, watson-verify]
-    
+
     steps:
-    
       - name: Harden runner
-    
+
         uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176
-    
+
         with:
-    
           egress-policy: audit
-      - name: "📦 Checkout Repository"
+      - name: '📦 Checkout Repository'
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           fetch-depth: 0
-        
-      - name: "🛠️ Setup HOLMES environment"
+
+      - name: '🛠️ Setup HOLMES environment'
         uses: ./.github/actions/holmes-setup
         with:
           bundle-dir: ${{ needs.wesley-generate.outputs.bundle_dir }}
@@ -214,7 +206,7 @@ jobs:
           artifact-name: ${{ env.HOLMES_ARTIFACT }}
           always-generate: 'true'
 
-      - name: "🔄 Ensure history for MORIARTY"
+      - name: '🔄 Ensure history for MORIARTY'
         shell: bash
         run: |
           set -euo pipefail
@@ -223,7 +215,7 @@ jobs:
           fi
           git fetch --prune origin '+refs/heads/*:refs/remotes/origin/*' || true
 
-      - name: "🧮 Compute MORIARTY context (issues/PRs/CI)"
+      - name: '🧮 Compute MORIARTY context (issues/PRs/CI)'
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
         continue-on-error: true
         env:
@@ -324,8 +316,8 @@ jobs:
             const outPath = path.join(outDir, 'moriarty-context.json');
             fs.writeFileSync(outPath, JSON.stringify(out, null, 2));
             core.info(`Wrote ${outPath}`);
-          
-      - name: "🔮 Run Predictions"
+
+      - name: '🔮 Run Predictions'
         id: moriarty
         uses: ./.github/actions/run-holmes-command
         with:
@@ -334,22 +326,22 @@ jobs:
           schema-path: ${{ needs.wesley-generate.outputs.schema }}
           bundle-dir: ${{ needs.wesley-generate.outputs.bundle_dir }}
         env:
-          MORIARTY_BASE_REF: "${{ github.base_ref }}"
-          MORIARTY_USE_GIT: "1"
-          MORIARTY_GIT_WINDOW_HOURS: "24"
-          MORIARTY_ACTIVITY_THRESHOLD: "0.35"
-          MORIARTY_ACTIVITY_COMMITS_PER_DAY: "6"
-          MORIARTY_ACTIVITY_RELEVANT_PER_DAY: "4"
+          MORIARTY_BASE_REF: '${{ github.base_ref }}'
+          MORIARTY_USE_GIT: '1'
+          MORIARTY_GIT_WINDOW_HOURS: '24'
+          MORIARTY_ACTIVITY_THRESHOLD: '0.35'
+          MORIARTY_ACTIVITY_COMMITS_PER_DAY: '6'
+          MORIARTY_ACTIVITY_RELEVANT_PER_DAY: '4'
 
-      - name: "💾 Save Report"
+      - name: '💾 Save Report'
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
         with:
           name: moriarty-report
           path: reports/moriarty
           if-no-files-found: error
-          
+
   comment-report:
-    name: "📝 Post Investigation Report"
+    name: '📝 Post Investigation Report'
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     needs: [holmes-investigate, watson-verify, moriarty-predict]
@@ -357,34 +349,33 @@ jobs:
       HOLMES_STATUS: ${{ needs.holmes-investigate.result }}
       WATSON_STATUS: ${{ needs.watson-verify.result }}
       MORIARTY_STATUS: ${{ needs.moriarty-predict.result }}
-    
+
     permissions:
       issues: write
       pull-requests: write
-      
+
     steps:
       - name: Harden runner
-      
+
         uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176
-      
+
         with:
-      
           egress-policy: audit
-      - name: "📦 Checkout Repository"
+      - name: '📦 Checkout Repository'
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      - name: "📥 Download Reports"
+      - name: '📥 Download Reports'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           merge-multiple: true
           path: reports
 
-      - name: "📥 Download Dashboard Template"
+      - name: '📥 Download Dashboard Template'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           name: dashboard-template
           path: dashboard-template
 
-      - name: "📊 Assemble Dashboard"
+      - name: '📊 Assemble Dashboard'
         run: |
           set -euo pipefail
           mkdir -p dashboard
@@ -411,14 +402,14 @@ jobs:
             exit 1
           fi
 
-      - name: "📤 Upload Dashboard"
+      - name: '📤 Upload Dashboard'
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
         with:
           name: holmes-dashboard
           path: dashboard
           if-no-files-found: error
 
-      - name: "🧾 Build PR Comment"
+      - name: '🧾 Build PR Comment'
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
@@ -432,7 +423,7 @@ jobs:
             --moriarty-status "$MORIARTY_STATUS" \
             > reports/pr-comment.md
 
-      - name: "📝 Create Comment"
+      - name: '📝 Create Comment'
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
         with:
           script: |
@@ -475,7 +466,7 @@ jobs:
                 body
               });
             }
-      - name: "🔄 Ensure history for MORIARTY"
+      - name: '🔄 Ensure history for MORIARTY'
         shell: bash
         run: |
           set -euo pipefail

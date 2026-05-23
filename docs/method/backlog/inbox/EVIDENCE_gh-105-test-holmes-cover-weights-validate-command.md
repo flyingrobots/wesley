@@ -105,9 +105,9 @@ Add fixtures/tmp dirs, write tests for CLI command covering success/failure/JSON
 
 ### QA Sign-off Matrix
 
-| Environment | Surface | Owner | Status | Notes |
-| --- | --- | --- | --- | --- |
-| CI | HOLMES tests | TBD | pending | |
+| Environment | Surface      | Owner | Status  | Notes |
+| ----------- | ------------ | ----- | ------- | ----- |
+| CI          | HOLMES tests | TBD   | pending |       |
 
 ## Requirements
 

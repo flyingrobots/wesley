@@ -12,26 +12,26 @@ The Wesley work doctrine: A backlog, a loop, and honest bookkeeping.
 
 ## Structure
 
-| Signpost | Role |
-| :--- | :--- |
-| **`README.md`** | Public front door and project identity. |
-| **`docs/GUIDE.md`** | Orientation and productive-fast path. |
-| **`BEARING.md`** | Current direction and active tensions. |
-| **`VISION.md`** | Core tenets and the "Trustworthy Change" mission. |
-| **`docs/ARCHITECTURE.md`** | Authoritative system map and pipeline. |
-| **`docs/design/`** | Active design packets and cycle-bound doctrine. |
-| **`AGENTS.md`** | Context recovery protocol for AI and humans. |
-| **`docs/METHOD.md`** | Repo work doctrine (this document). |
+| Signpost                   | Role                                              |
+| :------------------------- | :------------------------------------------------ |
+| **`README.md`**            | Public front door and project identity.           |
+| **`docs/GUIDE.md`**        | Orientation and productive-fast path.             |
+| **`BEARING.md`**           | Current direction and active tensions.            |
+| **`VISION.md`**            | Core tenets and the "Trustworthy Change" mission. |
+| **`docs/ARCHITECTURE.md`** | Authoritative system map and pipeline.            |
+| **`docs/design/`**         | Active design packets and cycle-bound doctrine.   |
+| **`AGENTS.md`**            | Context recovery protocol for AI and humans.      |
+| **`docs/METHOD.md`**       | Repo work doctrine (this document).               |
 
 ## Backlog Lanes
 
-| Lane | Purpose |
-| :--- | :--- |
-| **`asap/`** | Imminent work; pull into the next cycle. |
-| **`up-next/`** | Queued after `asap/`. |
-| **`cool-ideas/`** | Uncommitted experiments. |
-| **`bad-code/`** | Technical debt that must be addressed. |
-| **`inbox/`** | Raw ideas. |
+| Lane              | Purpose                                  |
+| :---------------- | :--------------------------------------- |
+| **`asap/`**       | Imminent work; pull into the next cycle. |
+| **`up-next/`**    | Queued after `asap/`.                    |
+| **`cool-ideas/`** | Uncommitted experiments.                 |
+| **`bad-code/`**   | Technical debt that must be addressed.   |
+| **`inbox/`**      | Raw ideas.                               |
 
 ## The Cycle Loop
 
@@ -55,5 +55,6 @@ stateDiagram-v2
 6. **Ship**: Open a PR to `main`. Update `BEARING.md` and `CHANGELOG.md` after merge.
 
 ## Naming Convention
+
 Backlog and cycle files follow: `<LEGEND>_<slug>.md`
 Example: `SPEC_fixture-extension-module-capability-matrix.md`

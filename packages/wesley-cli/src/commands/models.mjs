@@ -8,7 +8,8 @@ export class ModelsCommand extends GeneratorCommand {
   }
 
   configureCommander(cmd) {
-    return super.configureCommander(cmd)
+    return super
+      .configureCommander(cmd)
       .option('--target <type>', 'Output target: "ts" or "js"', 'ts')
       .option('--out-dir <dir>', 'Output directory', 'src/models');
   }

@@ -8,7 +8,11 @@ for (const p of cfg.packages || []) {
   const rp = p.readme;
   if (!rp) continue;
   let content = '';
-  try { content = readFileSync(resolve(rp), 'utf8'); } catch { continue; }
+  try {
+    content = readFileSync(resolve(rp), 'utf8');
+  } catch {
+    continue;
+  }
   const lines = content.split(/\r?\n/);
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -22,4 +26,3 @@ if (offenders.length) {
   process.exit(1);
 }
 console.log('Docs whitespace OK');
-

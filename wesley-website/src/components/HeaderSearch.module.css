@@ -14,7 +14,8 @@
   align-items: center;
 }
 
-.links { }
+.links {
+}
 
 .link {
   display: block;
@@ -31,11 +32,16 @@
   background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
 }
 
-.search { width: 220px; }
-
-@media (max-width: 36em) {
-  .search { display: none; }
+.search {
+  width: 220px;
 }
 
-.githubButton { font-weight: 700; }
+@media (max-width: 36em) {
+  .search {
+    display: none;
+  }
+}
 
+.githubButton {
+  font-weight: 700;
+}

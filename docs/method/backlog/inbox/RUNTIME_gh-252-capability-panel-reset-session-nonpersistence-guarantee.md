@@ -17,5 +17,5 @@ Trigger: label match: Website/Playground surfaces are runtime/operator-facing qu
 
 ## Original Issue
 
-- [ ] Capability panel visible; 
+- [ ] Capability panel visible;
 - [ ] Reset button wipes engine state.

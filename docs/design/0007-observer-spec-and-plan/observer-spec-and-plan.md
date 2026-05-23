@@ -1,5 +1,5 @@
 ---
-title: "Continuum Observer Spec And Plan"
+title: 'Continuum Observer Spec And Plan'
 ---
 
 ## Sponsors

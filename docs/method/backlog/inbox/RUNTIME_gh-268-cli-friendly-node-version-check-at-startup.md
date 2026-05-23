@@ -20,8 +20,10 @@ Trigger: default: runtime, host, operator-flow, CI, or repo execution surface.
 Add a friendly Node version guard to the CLI entrypoint to improve error messaging on older runtimes.
 
 What
+
 - At the top of `packages/wesley-host-node/bin/wesley.mjs`, check process.version and print a clear message if < 18.17, then exit(1).
 - Keep engines in package.json, but don’t rely solely on npm’s warning.
 
 Acceptance
+
 - Running `wesley` on Node < 18.17 shows a crisp actionable message.

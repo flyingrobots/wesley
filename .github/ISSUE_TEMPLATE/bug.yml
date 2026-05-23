@@ -1,7 +1,7 @@
 name: Bug Report
 description: Report a reproducible defect in shipped behavior.
-title: "[bug] <short summary>"
-labels: ["bug"]
+title: '[bug] <short summary>'
+labels: ['bug']
 assignees: []
 body:
   - type: textarea
@@ -9,7 +9,7 @@ body:
     attributes:
       label: Blocked Actor
       description: Who is blocked or harmed by this bug?
-      placeholder: "Release owner, maintainer, website user, or CI operator"
+      placeholder: 'Release owner, maintainer, website user, or CI operator'
     validations:
       required: true
 
@@ -65,6 +65,6 @@ body:
     id: env
     attributes:
       label: Environment
-      placeholder: "OS, Node version, pnpm version, CI link, browser, fixture path"
+      placeholder: 'OS, Node version, pnpm version, CI link, browser, fixture path'
     validations:
       required: true

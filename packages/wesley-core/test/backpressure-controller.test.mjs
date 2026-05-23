@@ -45,7 +45,11 @@ test('BackpressureController - basic functionality', async () => {
   assert.equal(status.enabled, true, 'Should be enabled by default');
   assert.equal(status.operations.max, 5, 'Should set max concurrent operations');
   assert.equal(status.rateLimit.base, 10, 'Should set base rate limit');
-  assert.equal(status.circuitBreaker.state, CircuitBreakerState.CLOSED, 'Circuit breaker should start closed');
+  assert.equal(
+    status.circuitBreaker.state,
+    CircuitBreakerState.CLOSED,
+    'Circuit breaker should start closed'
+  );
 
   await shutdownController(controller);
 });
@@ -139,7 +143,11 @@ test('BackpressureController - circuit breaker', async () => {
 
   // Circuit breaker should now be open
   const status = controller.getStatus();
-  assert.equal(status.circuitBreaker.state, CircuitBreakerState.OPEN, 'Circuit breaker should be open');
+  assert.equal(
+    status.circuitBreaker.state,
+    CircuitBreakerState.OPEN,
+    'Circuit breaker should be open'
+  );
 
   // Requests should be blocked
   try {
@@ -158,8 +166,11 @@ test('BackpressureController - circuit breaker', async () => {
   assert.equal(resetPerm.granted, true, 'Should grant request after timeout');
 
   const resetStatus = controller.getStatus();
-  assert.equal(resetStatus.circuitBreaker.state, CircuitBreakerState.HALF_OPEN,
-    'Circuit breaker should be half-open');
+  assert.equal(
+    resetStatus.circuitBreaker.state,
+    CircuitBreakerState.HALF_OPEN,
+    'Circuit breaker should be half-open'
+  );
 
   // Report success to close circuit breaker
   await controller.reportCompletion({ success: true });
@@ -424,7 +435,11 @@ test('BackpressureController - reset functionality', async () => {
   assert.equal(controller.activeOperations, 0, 'Should reset active operations');
   assert.equal(controller.isBackpressureActive, false, 'Should reset backpressure');
   assert.equal(controller.backpressureLevel, 0, 'Should reset backpressure level');
-  assert.equal(controller.circuitBreakerState, CircuitBreakerState.CLOSED, 'Should reset circuit breaker');
+  assert.equal(
+    controller.circuitBreakerState,
+    CircuitBreakerState.CLOSED,
+    'Should reset circuit breaker'
+  );
   assert.equal(controller.circuitBreakerFailures, 0, 'Should reset failures');
   assert.equal(controller.metrics.totalOperations, 0, 'Should reset metrics');
 
@@ -542,7 +557,11 @@ test('BackpressureController - monitoring lifecycle', async () => {
   // Should not create duplicate intervals
   const firstInterval = controller.monitoringInterval;
   controller.startMonitoring();
-  assert.equal(controller.monitoringInterval, firstInterval, 'Should not create duplicate intervals');
+  assert.equal(
+    controller.monitoringInterval,
+    firstInterval,
+    'Should not create duplicate intervals'
+  );
 
   await shutdownController(controller);
 });
@@ -586,14 +605,16 @@ test('BackpressureController - event emission comprehensive', async () => {
   // Trigger throttling adjustment
   const oldRate = controller.currentRateLimit;
   controller.currentRateLimit = oldRate + 5;
-  controller.emit('throttlingAdjusted',
-    new ThrottlingAdjusted(oldRate, controller.currentRateLimit, 'test'));
+  controller.emit(
+    'throttlingAdjusted',
+    new ThrottlingAdjusted(oldRate, controller.currentRateLimit, 'test')
+  );
 
   // Verify events were emitted
-  const backpressureActivated = events.filter(e => e.type === 'backpressureActivated');
-  const backpressureDeactivated = events.filter(e => e.type === 'backpressureDeactivated');
-  const _circuitBreakerChanged = events.filter(e => e.type === 'circuitBreakerStateChanged');
-  const throttlingAdjusted = events.filter(e => e.type === 'throttlingAdjusted');
+  const backpressureActivated = events.filter((e) => e.type === 'backpressureActivated');
+  const backpressureDeactivated = events.filter((e) => e.type === 'backpressureDeactivated');
+  const _circuitBreakerChanged = events.filter((e) => e.type === 'circuitBreakerStateChanged');
+  const throttlingAdjusted = events.filter((e) => e.type === 'throttlingAdjusted');
 
   assert(backpressureActivated.length > 0, 'Should emit backpressure activation events');
   assert(backpressureDeactivated.length > 0, 'Should emit backpressure deactivation events');
@@ -610,7 +631,9 @@ test('BackpressureController - destroy cleanup', async () => {
   controller.operationQueue.set('test', { data: 'test' });
 
   let listenerCount = 0;
-  const testListener = () => { listenerCount++; };
+  const testListener = () => {
+    listenerCount++;
+  };
   controller.on('test', testListener);
 
   // Destroy

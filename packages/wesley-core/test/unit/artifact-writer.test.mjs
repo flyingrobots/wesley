@@ -2,10 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { ArtifactWriter } from '../../src/application/ArtifactWriter.mjs';
-import {
-  ArtifactWriterPort,
-  detectConflicts
-} from '../../src/ports/ArtifactWriter.mjs';
+import { ArtifactWriterPort, detectConflicts } from '../../src/ports/ArtifactWriter.mjs';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -13,13 +10,21 @@ import {
 
 /** Capture a thrown error for assertion. */
 function catchError(fn) {
-  try { fn(); } catch (e) { return e; }
+  try {
+    fn();
+  } catch (e) {
+    return e;
+  }
   throw new Error('Expected function to throw');
 }
 
 /** Capture a rejected promise for assertion. */
 async function catchReject(fn) {
-  try { await fn(); } catch (e) { return e; }
+  try {
+    await fn();
+  } catch (e) {
+    return e;
+  }
   throw new Error('Expected promise to reject');
 }
 
@@ -58,7 +63,12 @@ function createMemoryFs() {
     },
     async stat(path) {
       ops.push(`stat:${path}`);
-      if (files.has(path)) return { isFile() { return true; } };
+      if (files.has(path))
+        return {
+          isFile() {
+            return true;
+          }
+        };
       throw Object.assign(new Error(`ENOENT: ${path}`), { code: 'ENOENT' });
     },
     async rm(path, _options) {
@@ -96,7 +106,9 @@ const nullLogger = {
   warn() {},
   error() {},
   debug() {},
-  child() { return nullLogger; },
+  child() {
+    return nullLogger;
+  },
   setLevel() {},
   async flush() {}
 };
@@ -106,10 +118,14 @@ function collectingLogger() {
   const warnings = [];
   const logger = {
     info() {},
-    warn(...args) { warnings.push(args); },
+    warn(...args) {
+      warnings.push(args);
+    },
     error() {},
     debug() {},
-    child() { return logger; },
+    child() {
+      return logger;
+    },
     setLevel() {},
     async flush() {}
   };
@@ -186,22 +202,28 @@ test('detectConflicts — three plugins on same path', () => {
 // ===========================================================================
 
 test('ArtifactWriter — constructor throws on missing fs', () => {
-  const err = catchError(() => new ArtifactWriter({ }));
+  const err = catchError(() => new ArtifactWriter({}));
   assert.match(err.message, /fs/i);
 });
 
 test('ArtifactWriter — constructor throws on invalid fs.writeFile', () => {
-  const err = catchError(() => new ArtifactWriter({ fs: { writeFile: 'nope', mkdir() {}, rename() {} } }));
+  const err = catchError(
+    () => new ArtifactWriter({ fs: { writeFile: 'nope', mkdir() {}, rename() {} } })
+  );
   assert.match(err.message, /writeFile/);
 });
 
 test('ArtifactWriter — constructor throws on invalid fs.mkdir', () => {
-  const err = catchError(() => new ArtifactWriter({ fs: { writeFile() {}, mkdir: null, rename() {} } }));
+  const err = catchError(
+    () => new ArtifactWriter({ fs: { writeFile() {}, mkdir: null, rename() {} } })
+  );
   assert.match(err.message, /mkdir/);
 });
 
 test('ArtifactWriter — constructor throws on invalid fs.rename', () => {
-  const err = catchError(() => new ArtifactWriter({ fs: { writeFile() {}, mkdir() {}, rename: 42 } }));
+  const err = catchError(
+    () => new ArtifactWriter({ fs: { writeFile() {}, mkdir() {}, rename: 42 } })
+  );
   assert.match(err.message, /rename/);
 });
 
@@ -233,10 +255,8 @@ test('ArtifactWriter — writes binary Uint8Array artifacts', async () => {
   const memFs = createMemoryFs();
   const writer = new ArtifactWriter({ fs: memFs, logger: nullLogger });
 
-  const binaryData = new Uint8Array([0x00, 0xFF, 0x42]);
-  const runResult = makeRunResult([
-    { name: 'gen-bin', artifacts: { 'data.bin': binaryData } }
-  ]);
+  const binaryData = new Uint8Array([0x00, 0xff, 0x42]);
+  const runResult = makeRunResult([{ name: 'gen-bin', artifacts: { 'data.bin': binaryData } }]);
 
   const result = await writer.writeArtifacts(runResult, '/out');
 
@@ -290,9 +310,7 @@ test('ArtifactWriter — dry run: reports but writes nothing', async () => {
   const memFs = createMemoryFs();
   const writer = new ArtifactWriter({ fs: memFs, logger: nullLogger });
 
-  const runResult = makeRunResult([
-    { name: 'gen', artifacts: { 'a.txt': 'aaa', 'b.txt': 'bbb' } }
-  ]);
+  const runResult = makeRunResult([{ name: 'gen', artifacts: { 'a.txt': 'aaa', 'b.txt': 'bbb' } }]);
 
   const result = await writer.writeArtifacts(runResult, '/out', { dryRun: true });
 
@@ -325,9 +343,7 @@ test('ArtifactWriter — overwrite=true (default) overwrites existing files', as
   memFs.files.set('/out/existing.txt', 'old-content');
   const writer = new ArtifactWriter({ fs: memFs, logger: nullLogger });
 
-  const runResult = makeRunResult([
-    { name: 'gen', artifacts: { 'existing.txt': 'new-content' } }
-  ]);
+  const runResult = makeRunResult([{ name: 'gen', artifacts: { 'existing.txt': 'new-content' } }]);
 
   const result = await writer.writeArtifacts(runResult, '/out', { overwrite: true });
   assert.deepEqual(result.written, ['existing.txt']);
@@ -371,15 +387,13 @@ test('ArtifactWriter — cleans up temp dir on write failure', async () => {
 
   const writer = new ArtifactWriter({ fs: memFs, logger: nullLogger });
 
-  const runResult = makeRunResult([
-    { name: 'gen', artifacts: { 'a.txt': 'aaa', 'b.txt': 'bbb' } }
-  ]);
+  const runResult = makeRunResult([{ name: 'gen', artifacts: { 'a.txt': 'aaa', 'b.txt': 'bbb' } }]);
 
   const err = await catchReject(() => writer.writeArtifacts(runResult, '/out'));
   assert.match(err.message, /disk full/i);
 
   // Temp directory should have been cleaned up
-  const tmpKeys = [...memFs.files.keys()].filter(k => k.includes('.wesley-tmp-'));
+  const tmpKeys = [...memFs.files.keys()].filter((k) => k.includes('.wesley-tmp-'));
   assert.equal(tmpKeys.length, 0, 'Temp files should be cleaned up after failure');
 });
 
@@ -406,7 +420,15 @@ test('ArtifactWriter — skips error-status plugins in RunResult', async () => {
   const runResult = {
     results: [
       { name: 'good', status: 'ok', artifacts: { 'a.txt': 'ok' }, artifactCount: 1, durationMs: 1 },
-      { name: 'bad', status: 'error', artifactCount: 0, errorCode: 'WPLY002', errorMessage: 'boom', phase: 'plan', durationMs: 1 }
+      {
+        name: 'bad',
+        status: 'error',
+        artifactCount: 0,
+        errorCode: 'WPLY002',
+        errorMessage: 'boom',
+        phase: 'plan',
+        durationMs: 1
+      }
     ],
     success: true,
     totalArtifacts: 1,
@@ -438,9 +460,7 @@ test('ArtifactWriter — works without logger (uses internal noop)', async () =>
   const memFs = createMemoryFs();
   const writer = new ArtifactWriter({ fs: memFs });
 
-  const runResult = makeRunResult([
-    { name: 'gen', artifacts: { 'a.txt': 'hello' } }
-  ]);
+  const runResult = makeRunResult([{ name: 'gen', artifacts: { 'a.txt': 'hello' } }]);
 
   const result = await writer.writeArtifacts(runResult, '/out');
   assert.deepEqual(result.written, ['a.txt']);
@@ -451,9 +471,7 @@ test('ArtifactWriter — works without fs.rm (cleanup is best-effort)', async ()
   delete memFs.rm;
   const writer = new ArtifactWriter({ fs: memFs, logger: nullLogger });
 
-  const runResult = makeRunResult([
-    { name: 'gen', artifacts: { 'a.txt': 'hello' } }
-  ]);
+  const runResult = makeRunResult([{ name: 'gen', artifacts: { 'a.txt': 'hello' } }]);
 
   // Should not throw even though rm is not available
   const result = await writer.writeArtifacts(runResult, '/out');
@@ -468,9 +486,7 @@ test('ArtifactWriter — rejects artifact keys with path traversal (..)', async 
   const memFs = createMemoryFs();
   const writer = new ArtifactWriter({ fs: memFs, logger: nullLogger });
 
-  const runResult = makeRunResult([
-    { name: 'evil', artifacts: { '../../etc/passwd': 'pwned' } }
-  ]);
+  const runResult = makeRunResult([{ name: 'evil', artifacts: { '../../etc/passwd': 'pwned' } }]);
 
   const err = await catchReject(() => writer.writeArtifacts(runResult, '/out'));
   assert.match(err.message, /traversal|outside/i);
@@ -480,9 +496,7 @@ test('ArtifactWriter — rejects absolute artifact paths', async () => {
   const memFs = createMemoryFs();
   const writer = new ArtifactWriter({ fs: memFs, logger: nullLogger });
 
-  const runResult = makeRunResult([
-    { name: 'evil', artifacts: { '/etc/passwd': 'pwned' } }
-  ]);
+  const runResult = makeRunResult([{ name: 'evil', artifacts: { '/etc/passwd': 'pwned' } }]);
 
   const err = await catchReject(() => writer.writeArtifacts(runResult, '/out'));
   assert.match(err.message, /traversal|outside|absolute/i);
@@ -492,9 +506,7 @@ test('ArtifactWriter — allows legitimate nested paths', async () => {
   const memFs = createMemoryFs();
   const writer = new ArtifactWriter({ fs: memFs, logger: nullLogger });
 
-  const runResult = makeRunResult([
-    { name: 'gen', artifacts: { 'sub/dir/file.txt': 'ok' } }
-  ]);
+  const runResult = makeRunResult([{ name: 'gen', artifacts: { 'sub/dir/file.txt': 'ok' } }]);
 
   const result = await writer.writeArtifacts(runResult, '/out');
   assert.deepEqual(result.written, ['sub/dir/file.txt']);
@@ -506,9 +518,7 @@ test('ArtifactWriter — works without fs.stat (overwrite=false always writes)',
   delete memFs.stat;
   const writer = new ArtifactWriter({ fs: memFs, logger: nullLogger });
 
-  const runResult = makeRunResult([
-    { name: 'gen', artifacts: { 'a.txt': 'hello' } }
-  ]);
+  const runResult = makeRunResult([{ name: 'gen', artifacts: { 'a.txt': 'hello' } }]);
 
   // Without stat, cannot detect existing files, so always writes
   const result = await writer.writeArtifacts(runResult, '/out', { overwrite: false });

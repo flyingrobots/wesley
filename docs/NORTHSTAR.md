@@ -1,4 +1,5 @@
 # Wesley North Star
+
 <!-- docs-truth: status=experimental owner=@flyingrobots -->
 
 Wesley's ultimate north star is **bounded, lawful autonomy**.
@@ -186,14 +187,14 @@ At target state, a law witness should carry:
 
 Different law classes have different proof strength:
 
-| Law class | Likely verifier |
-| --- | --- |
-| Structural shape | Wesley compiler |
-| Canonical codec | Wesley generated codec plus fixture vectors |
-| Runtime footprint | Echo or another instrumented runtime |
-| Capability and authority | Host policy |
-| Domain semantics | Application-owned checker |
-| Human intent | Review, attestation, or unknown posture |
+| Law class                | Likely verifier                             |
+| ------------------------ | ------------------------------------------- |
+| Structural shape         | Wesley compiler                             |
+| Canonical codec          | Wesley generated codec plus fixture vectors |
+| Runtime footprint        | Echo or another instrumented runtime        |
+| Capability and authority | Host policy                                 |
+| Domain semantics         | Application-owned checker                   |
+| Human intent             | Review, attestation, or unknown posture     |
 
 Honesty matters. Wesley should distinguish declaration, satisfaction,
 obstruction, and unknown posture instead of flattening everything into "valid."
@@ -250,14 +251,14 @@ application declares GraphQL operation
 
 That flow preserves separate nouns:
 
-| Noun | Owner | Job |
-| --- | --- | --- |
-| `OpticArtifact` | Wesley | Compiled, content-addressed declaration of operation shape, codecs, law claims, and admission requirements. |
-| `OpticAdmissionRequirementsArtifact` | Wesley | Canonical requirements bytes, explicit codec, and digest computed from those exact bytes. |
-| `OpticRegistrationDescriptor` | Wesley | Artifact id, artifact hash, schema id, operation id, and requirements digest used when registering the artifact with a runtime. |
-| `OpticArtifactHandle` | Echo or another runtime | Opaque registry handle proving the runtime accepted and stored a specific Wesley artifact hash. |
-| `CapabilityGrant` / `CapabilityPresentation` | User, host, quorum, or policy authority | Bounded authority plus invocation-time proof to attempt a registered artifact under explicit constraints. |
-| `LawWitness` / receipt | Echo, runtime, or verifier | Evidence describing admission, obstruction, access, basis, budget, and law satisfaction posture. |
+| Noun                                         | Owner                                   | Job                                                                                                                             |
+| -------------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `OpticArtifact`                              | Wesley                                  | Compiled, content-addressed declaration of operation shape, codecs, law claims, and admission requirements.                     |
+| `OpticAdmissionRequirementsArtifact`         | Wesley                                  | Canonical requirements bytes, explicit codec, and digest computed from those exact bytes.                                       |
+| `OpticRegistrationDescriptor`                | Wesley                                  | Artifact id, artifact hash, schema id, operation id, and requirements digest used when registering the artifact with a runtime. |
+| `OpticArtifactHandle`                        | Echo or another runtime                 | Opaque registry handle proving the runtime accepted and stored a specific Wesley artifact hash.                                 |
+| `CapabilityGrant` / `CapabilityPresentation` | User, host, quorum, or policy authority | Bounded authority plus invocation-time proof to attempt a registered artifact under explicit constraints.                       |
+| `LawWitness` / receipt                       | Echo, runtime, or verifier              | Evidence describing admission, obstruction, access, basis, budget, and law satisfaction posture.                                |
 
 The critical boundary is that Wesley compiles the requirements, while the
 runtime registers the artifact, admits the interaction, instruments access, and

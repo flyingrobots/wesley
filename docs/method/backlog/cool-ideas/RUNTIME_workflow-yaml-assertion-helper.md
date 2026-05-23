@@ -37,4 +37,3 @@ relying on fragile text windows or emoji-labeled boundaries.
 
 - `#449`
 - `#447`
-

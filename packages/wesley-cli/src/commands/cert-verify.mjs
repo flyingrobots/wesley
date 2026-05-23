@@ -31,7 +31,9 @@ export class CertVerifyCommand extends WesleyCommand {
     const { validate } = await compileSchema(this.ctx, 'shipme.schema.json', ajv);
     const schemaOk = validate(json);
     if (!schemaOk) {
-      throw new WesleyError('VALIDATION_FAILED', 'Certificate JSON failed schema validation', { errors: validate.errors });
+      throw new WesleyError('VALIDATION_FAILED', 'Certificate JSON failed schema validation', {
+        errors: validate.errors
+      });
     }
     const canonical = canonicalize({ ...json, signatures: [] });
     const pubs = options.pub || [];
@@ -39,7 +41,10 @@ export class CertVerifyCommand extends WesleyCommand {
     for (const sig of json.signatures || []) {
       for (const p of pubs) {
         const ok = await verifySig(this.ctx.fs, p, canonical, sig.signature);
-        if (ok) { validCount++; break; }
+        if (ok) {
+          validCount++;
+          break;
+        }
       }
     }
     const policy = evaluateCertificatePolicy(json);
@@ -78,7 +83,8 @@ async function verifySig(fs, pubPath, data, b64sig) {
     return !!ok;
   } catch (err) {
     // Crypto verification mismatch returns false; infrastructure errors propagate
-    if (err?.code === 'ERR_CRYPTO_SIGN_MISMATCH' || err?.message?.includes?.('Signature')) return false;
+    if (err?.code === 'ERR_CRYPTO_SIGN_MISMATCH' || err?.message?.includes?.('Signature'))
+      return false;
     throw err;
   }
 }

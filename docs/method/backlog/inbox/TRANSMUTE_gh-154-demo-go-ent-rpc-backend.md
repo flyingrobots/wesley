@@ -107,9 +107,9 @@ Use generated ent models, set up Go service with sample endpoints calling Wesley
 
 ### QA Sign-off Matrix
 
-| Environment | Surface | Owner | Status | Notes |
-| --- | --- | --- | --- | --- |
-| Local Go env | Demo app | TBD | pending | |
+| Environment  | Surface  | Owner | Status  | Notes |
+| ------------ | -------- | ----- | ------- | ----- |
+| Local Go env | Demo app | TBD   | pending |       |
 
 ## Requirements
 

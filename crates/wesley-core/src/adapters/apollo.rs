@@ -14,7 +14,7 @@ use crate::domain::optic::{
 };
 use crate::domain::schema_delta::{diff_schema_ir, SchemaDelta};
 use crate::ports::lowering::LoweringPort;
-use apollo_parser::{cst, Parser};
+use apollo_parser::{cst, Error as ApolloParserError, Parser};
 use async_trait::async_trait;
 use indexmap::IndexMap;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -62,11 +62,7 @@ pub fn list_schema_operations_sdl(schema_sdl: &str) -> Result<Vec<SchemaOperatio
     let errors = cst.errors().collect::<Vec<_>>();
     if !errors.is_empty() {
         let err = &errors[0];
-        return Err(WesleyError::ParseError {
-            message: err.message().to_string(),
-            line: None,
-            column: None,
-        });
+        return Err(parse_error_from_apollo(schema_sdl, err));
     }
 
     let doc = cst.document();
@@ -180,11 +176,7 @@ impl ApolloLoweringAdapter {
         let errors = cst.errors().collect::<Vec<_>>();
         if !errors.is_empty() {
             let err = &errors[0];
-            return Err(WesleyError::ParseError {
-                message: err.message().to_string(),
-                line: None,
-                column: None,
-            });
+            return Err(parse_error_from_apollo(sdl, err));
         }
 
         let doc = cst.document();
@@ -958,6 +950,34 @@ fn lowering_error_value(area: &str, message: String) -> WesleyError {
     }
 }
 
+fn parse_error_from_apollo(sdl: &str, error: &ApolloParserError) -> WesleyError {
+    let (line, column) = source_location_for_byte_index(sdl, error.index());
+    WesleyError::ParseError {
+        message: error.message().to_string(),
+        line: Some(line),
+        column: Some(column),
+    }
+}
+
+fn source_location_for_byte_index(source: &str, index: usize) -> (u32, u32) {
+    let mut line = 1;
+    let mut column = 1;
+
+    for (byte_index, character) in source.char_indices() {
+        if byte_index >= index {
+            break;
+        }
+        if character == '\n' {
+            line += 1;
+            column = 1;
+        } else {
+            column += 1;
+        }
+    }
+
+    (line, column)
+}
+
 fn canonical_core_directive_name(name: &str) -> Option<&str> {
     match name {
         "wes_table" | "wesley_table" | "table" => Some("wes_table"),
@@ -1275,11 +1295,7 @@ fn parse_operation_document(operation_sdl: &str) -> Result<ParsedOperationDocume
     let errors = cst.errors().collect::<Vec<_>>();
     if !errors.is_empty() {
         let err = &errors[0];
-        return Err(WesleyError::ParseError {
-            message: err.message().to_string(),
-            line: None,
-            column: None,
-        });
+        return Err(parse_error_from_apollo(operation_sdl, err));
     }
 
     let doc = cst.document();
@@ -3363,11 +3379,7 @@ fn extract_root_types(schema_sdl: &str) -> Result<RootTypes, WesleyError> {
     let errors = cst.errors().collect::<Vec<_>>();
     if !errors.is_empty() {
         let err = &errors[0];
-        return Err(WesleyError::ParseError {
-            message: err.message().to_string(),
-            line: None,
-            column: None,
-        });
+        return Err(parse_error_from_apollo(schema_sdl, err));
     }
 
     let mut root_types = RootTypes::default();

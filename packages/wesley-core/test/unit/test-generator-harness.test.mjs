@@ -42,7 +42,9 @@ test('testGenerator — golden path returns artifacts', async () => {
 test('testGenerator — config forwarded to init', async () => {
   let receivedConfig;
   const plugin = makePlugin({
-    init(config) { receivedConfig = config; }
+    init(config) {
+      receivedConfig = config;
+    }
   });
 
   await testGenerator(plugin, 'type Query { x: Int }', { flavor: 'vanilla' });
@@ -52,7 +54,9 @@ test('testGenerator — config forwarded to init', async () => {
 test('testGenerator — default config is empty object', async () => {
   let receivedConfig;
   const plugin = makePlugin({
-    init(config) { receivedConfig = config; }
+    init(config) {
+      receivedConfig = config;
+    }
   });
 
   await testGenerator(plugin, 'type Query { x: Int }');
@@ -66,51 +70,67 @@ test('testGenerator — rejects invalid plugin (no name)', async () => {
 
 test('testGenerator — rejects invalid plan (no artifacts array)', async () => {
   const plugin = makePlugin({
-    async plan() { return { artifacts: 'nope' }; }
+    async plan() {
+      return { artifacts: 'nope' };
+    }
   });
   await assert.rejects(() => testGenerator(plugin, 'x'), /artifacts/i);
 });
 
 test('testGenerator — rejects non-object generate return', async () => {
   const plugin = makePlugin({
-    async generate() { return 'bad'; }
+    async generate() {
+      return 'bad';
+    }
   });
   await assert.rejects(() => testGenerator(plugin, 'x'), /Record/);
 });
 
 test('testGenerator — rejects null generate return', async () => {
   const plugin = makePlugin({
-    async generate() { return null; }
+    async generate() {
+      return null;
+    }
   });
   await assert.rejects(() => testGenerator(plugin, 'x'), /null/);
 });
 
 test('testGenerator — rejects array generate return', async () => {
   const plugin = makePlugin({
-    async generate() { return []; }
+    async generate() {
+      return [];
+    }
   });
   await assert.rejects(() => testGenerator(plugin, 'x'), /Array/);
 });
 
 test('testGenerator — propagates error thrown in generate', async () => {
   const plugin = makePlugin({
-    async generate() { throw new Error('kaboom'); }
+    async generate() {
+      throw new Error('kaboom');
+    }
   });
   await assert.rejects(() => testGenerator(plugin, 'x'), /kaboom/);
 });
 
 test('testGenerator — propagates error thrown in plan', async () => {
   const plugin = makePlugin({
-    async plan() { throw new Error('plan-fail'); }
+    async plan() {
+      throw new Error('plan-fail');
+    }
   });
   await assert.rejects(() => testGenerator(plugin, 'x'), /plan-fail/);
 });
 
 test('testGenerator — supports binary (Uint8Array) artifacts', async () => {
-  const binary = new Uint8Array([0x00, 0xFF, 0x42]);
+  const binary = new Uint8Array([0x00, 0xff, 0x42]);
   const plugin = makePlugin({
-    async plan() { return { artifacts: [{ path: 'bin.dat', binary: true }] }; },
-    async generate() { return { 'bin.dat': binary }; }
+    async plan() {
+      return { artifacts: [{ path: 'bin.dat', binary: true }] };
+    },
+    async generate() {
+      return { 'bin.dat': binary };
+    }
   });
   const artifacts = await testGenerator(plugin, 'x');
   assert.ok(artifacts['bin.dat'] instanceof Uint8Array);
@@ -131,7 +151,9 @@ test('testGenerator — no filesystem I/O (context has null logger, fake clock)'
       capturedContext = context;
       return { artifacts: [{ path: 'out.txt' }] };
     },
-    async generate() { return { 'out.txt': 'ok' }; }
+    async generate() {
+      return { 'out.txt': 'ok' };
+    }
   });
 
   await testGenerator(plugin, 'x');
@@ -151,12 +173,18 @@ test('testGenerator — context is frozen', async () => {
       capturedContext = context;
       return { artifacts: [{ path: 'out.txt' }] };
     },
-    async generate() { return { 'out.txt': 'ok' }; }
+    async generate() {
+      return { 'out.txt': 'ok' };
+    }
   });
 
   await testGenerator(plugin, 'x');
-  assert.throws(() => { capturedContext.runId = 'hacked'; }, TypeError);
-  assert.throws(() => { capturedContext.config.anything = 'hacked'; }, TypeError);
+  assert.throws(() => {
+    capturedContext.runId = 'hacked';
+  }, TypeError);
+  assert.throws(() => {
+    capturedContext.config.anything = 'hacked';
+  }, TypeError);
 });
 
 // ===========================================================================
@@ -173,7 +201,9 @@ test('testGeneratorPlan — returns validated plan', async () => {
 test('testGeneratorPlan — forwards config to init', async () => {
   let receivedConfig;
   const plugin = makePlugin({
-    init(config) { receivedConfig = config; }
+    init(config) {
+      receivedConfig = config;
+    }
   });
   await testGeneratorPlan(plugin, 'x', { key: 'val' });
   assert.equal(receivedConfig.key, 'val');
@@ -181,7 +211,9 @@ test('testGeneratorPlan — forwards config to init', async () => {
 
 test('testGeneratorPlan — rejects invalid plan', async () => {
   const plugin = makePlugin({
-    async plan() { return null; }
+    async plan() {
+      return null;
+    }
   });
   await assert.rejects(() => testGeneratorPlan(plugin, 'x'), /Plan/i);
 });
@@ -197,10 +229,7 @@ test('expectArtifact.toExist — passes when artifact exists', () => {
 
 test('expectArtifact.toExist — fails when artifact missing', () => {
   const artifacts = { 'a.txt': 'hello' };
-  assert.throws(
-    () => expectArtifact(artifacts, 'b.txt').toExist(),
-    /b\.txt/
-  );
+  assert.throws(() => expectArtifact(artifacts, 'b.txt').toExist(), /b\.txt/);
 });
 
 test('expectArtifact.toContain — passes when content contains substring', () => {
@@ -210,10 +239,7 @@ test('expectArtifact.toContain — passes when content contains substring', () =
 
 test('expectArtifact.toContain — fails when content missing substring', () => {
   const artifacts = { 'a.txt': 'hello world' };
-  assert.throws(
-    () => expectArtifact(artifacts, 'a.txt').toContain('xyz'),
-    /xyz/
-  );
+  assert.throws(() => expectArtifact(artifacts, 'a.txt').toContain('xyz'), /xyz/);
 });
 
 test('expectArtifact.toContain — decodes Uint8Array content', () => {
@@ -223,31 +249,24 @@ test('expectArtifact.toContain — decodes Uint8Array content', () => {
 
 test('expectArtifact.toContain — fails on missing path', () => {
   const artifacts = {};
-  assert.throws(
-    () => expectArtifact(artifacts, 'x.txt').toContain('any'),
-    /x\.txt/
-  );
+  assert.throws(() => expectArtifact(artifacts, 'x.txt').toContain('any'), /x\.txt/);
 });
 
 test('expectArtifact.toMatchJSON — passes on matching JSON', () => {
   const artifacts = { 'data.json': JSON.stringify({ a: 1, b: [2, 3] }) };
-  assert.doesNotThrow(() => expectArtifact(artifacts, 'data.json').toMatchJSON({ a: 1, b: [2, 3] }));
+  assert.doesNotThrow(() =>
+    expectArtifact(artifacts, 'data.json').toMatchJSON({ a: 1, b: [2, 3] })
+  );
 });
 
 test('expectArtifact.toMatchJSON — fails on mismatched JSON', () => {
   const artifacts = { 'data.json': JSON.stringify({ a: 1 }) };
-  assert.throws(
-    () => expectArtifact(artifacts, 'data.json').toMatchJSON({ a: 2 }),
-    /mismatch/i
-  );
+  assert.throws(() => expectArtifact(artifacts, 'data.json').toMatchJSON({ a: 2 }), /mismatch/i);
 });
 
 test('expectArtifact.toMatchJSON — fails on invalid JSON', () => {
   const artifacts = { 'data.json': 'not json{{{' };
-  assert.throws(
-    () => expectArtifact(artifacts, 'data.json').toMatchJSON({}),
-    /valid JSON/
-  );
+  assert.throws(() => expectArtifact(artifacts, 'data.json').toMatchJSON({}), /valid JSON/);
 });
 
 test('expectArtifact.toMatchJSON — decodes Uint8Array content', () => {
@@ -258,8 +277,5 @@ test('expectArtifact.toMatchJSON — decodes Uint8Array content', () => {
 
 test('expectArtifact.toMatchJSON — fails on missing path', () => {
   const artifacts = {};
-  assert.throws(
-    () => expectArtifact(artifacts, 'x.json').toMatchJSON({}),
-    /x\.json/
-  );
+  assert.throws(() => expectArtifact(artifacts, 'x.json').toMatchJSON({}), /x\.json/);
 });

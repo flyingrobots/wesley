@@ -20,19 +20,19 @@ Wesley transforms GraphQL directives into comprehensive Row Level Security (RLS)
 graph TD
     GraphQL[GraphQL Schema] --> Analyze[Wesley Analyzer]
     Analyze --> Patterns[Pattern Detection]
-    
+
     Patterns --> Tenant[Tenant Model]
     Patterns --> Owner[Owner Model]
     Patterns --> Custom[Custom Rules]
-    
+
     Tenant --> Policies[RLS Policies]
     Owner --> Policies
     Custom --> Functions[Helper Functions]
     Functions --> Policies
-    
+
     Policies --> SQL[Generated SQL]
     SQL --> Tests[pgTAP Tests]
-    
+
     style GraphQL fill:#9f9,stroke:#333,stroke-width:4px
     style SQL fill:#bbf,stroke:#333,stroke-width:2px
 ```
@@ -69,9 +69,7 @@ enum MemberRole {
   VIEWER
 }
 
-type Document @table
-  @tenant(by: "org_id")
-  @rls(enabled: true) {
+type Document @table @tenant(by: "org_id") @rls(enabled: true) {
   id: ID! @primaryKey
   org_id: ID! @foreignKey(ref: "Organization.id") @index
   title: String!
@@ -87,23 +85,23 @@ Wesley detects the membership pattern and generates:
 ```sql
 -- 1. Fast membership lookup view
 CREATE OR REPLACE VIEW wesley_user_orgs AS
-  SELECT m.user_id, m.org_id, m.role 
+  SELECT m.user_id, m.org_id, m.role
   FROM membership m
   WHERE m.deleted_at IS NULL;
 
 -- 2. Optimized indexes for policy predicates
-CREATE INDEX IF NOT EXISTS idx_membership_user_org 
-  ON membership(user_id, org_id) 
+CREATE INDEX IF NOT EXISTS idx_membership_user_org
+  ON membership(user_id, org_id)
   WHERE deleted_at IS NULL;
 
-CREATE INDEX IF NOT EXISTS idx_document_org_id 
+CREATE INDEX IF NOT EXISTS idx_document_org_id
   ON document(org_id);
 
 -- 3. Helper functions for clean policies
 CREATE OR REPLACE FUNCTION wesley.is_member_of(p_org_id UUID)
-RETURNS BOOLEAN 
-LANGUAGE sql 
-STABLE 
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
 SECURITY DEFINER
 AS $$
   SELECT EXISTS (
@@ -125,7 +123,7 @@ CREATE POLICY policy_document_tenant_select ON document
 CREATE POLICY policy_document_tenant_insert ON document
   FOR INSERT
   WITH CHECK (
-    wesley.is_member_of(org_id) AND 
+    wesley.is_member_of(org_id) AND
     created_by = auth.uid()
   );
 
@@ -141,7 +139,7 @@ CREATE POLICY policy_document_tenant_delete ON document
   USING (
     EXISTS (
       SELECT 1 FROM wesley_user_orgs uo
-      WHERE uo.user_id = auth.uid() 
+      WHERE uo.user_id = auth.uid()
         AND uo.org_id = document.org_id
         AND uo.role IN ('OWNER', 'ADMIN')
     )
@@ -203,14 +201,15 @@ type DocumentShare @table {
   can_comment: Boolean! @default(value: "true")
 }
 
-type Document @table
+type Document
+  @table
   @tenant(by: "org_id")
   @owner(column: "created_by")
   @rls(
-    enabled: true,
-    select: "tenant_or_shared",
-    insert: "tenant_and_owner",
-    update: "owner_or_editor",
+    enabled: true
+    select: "tenant_or_shared"
+    insert: "tenant_and_owner"
+    update: "owner_or_editor"
     delete: "owner_or_admin"
   ) {
   id: ID! @primaryKey
@@ -228,9 +227,9 @@ Wesley generates SECURITY DEFINER functions to encapsulate complex logic:
 ```sql
 -- Check if document is shared with user
 CREATE OR REPLACE FUNCTION wesley.is_shared_with(p_doc_id UUID)
-RETURNS BOOLEAN 
-LANGUAGE sql 
-STABLE 
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
 SECURITY DEFINER
 AS $$
   SELECT EXISTS (
@@ -241,13 +240,13 @@ $$;
 
 -- Check if user can edit shared document
 CREATE OR REPLACE FUNCTION wesley.can_edit_shared(p_doc_id UUID)
-RETURNS BOOLEAN 
-LANGUAGE sql 
-STABLE 
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
 SECURITY DEFINER
 AS $$
   SELECT COALESCE(
-    (SELECT can_edit FROM document_share 
+    (SELECT can_edit FROM document_share
      WHERE document_id = p_doc_id AND user_id = auth.uid()),
     FALSE
   )
@@ -255,8 +254,8 @@ $$;
 
 -- Check if user owns document
 CREATE OR REPLACE FUNCTION wesley.is_owner(p_created_by UUID)
-RETURNS BOOLEAN 
-LANGUAGE sql 
+RETURNS BOOLEAN
+LANGUAGE sql
 IMMUTABLE
 AS $$
   SELECT p_created_by = auth.uid()
@@ -266,14 +265,14 @@ $$;
 CREATE POLICY policy_document_select_complex ON document
   FOR SELECT
   USING (
-    wesley.is_member_of(org_id) OR 
+    wesley.is_member_of(org_id) OR
     wesley.is_shared_with(id)
   );
 
 CREATE POLICY policy_document_update_complex ON document
   FOR UPDATE
   USING (
-    wesley.is_member_of(org_id) AND 
+    wesley.is_member_of(org_id) AND
     (wesley.is_owner(created_by) OR wesley.can_edit_shared(id))
   )
   WITH CHECK (wesley.is_member_of(org_id));
@@ -286,11 +285,7 @@ For complex business rules, Wesley provides escape hatches while maintaining str
 #### GraphQL Declaration
 
 ```graphql
-type Invoice @table 
-  @rls(
-    enabled: true, 
-    select: "can_view_invoice"
-  ) {
+type Invoice @table @rls(enabled: true, select: "can_view_invoice") {
   id: ID! @primaryKey
   org_id: ID! @foreignKey(ref: "Organization.id")
   amount: Decimal!
@@ -312,8 +307,8 @@ You provide the business logic:
 ```sql
 -- Your custom business logic
 CREATE OR REPLACE FUNCTION app_can_view_invoice(p_user_id UUID, p_invoice_id UUID)
-RETURNS BOOLEAN 
-LANGUAGE plpgsql 
+RETURNS BOOLEAN
+LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 DECLARE
@@ -323,12 +318,12 @@ BEGIN
   -- Get invoice status and user role
   SELECT i.status INTO v_status
   FROM invoice i WHERE i.id = p_invoice_id;
-  
+
   SELECT m.role INTO v_role
   FROM invoice i
   JOIN membership m ON m.org_id = i.org_id
   WHERE i.id = p_invoice_id AND m.user_id = p_user_id;
-  
+
   -- Business rules:
   -- - Owners/Admins see all invoices
   -- - Members see only issued/paid invoices
@@ -348,9 +343,9 @@ Wesley wraps it with standard interface:
 ```sql
 -- Wesley-generated wrapper for consistent calling convention
 CREATE OR REPLACE FUNCTION wesley.can_view_invoice(p_invoice_id UUID)
-RETURNS BOOLEAN 
-LANGUAGE sql 
-STABLE 
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
 SECURITY DEFINER
 AS $$
   SELECT app_can_view_invoice(auth.uid(), p_invoice_id)
@@ -369,12 +364,13 @@ CREATE POLICY policy_invoice_select_custom ON invoice
 Wesley supports role-specific policies through the `@rls` directive:
 
 ```graphql
-type AdminPanel @table
+type AdminPanel
+  @table
   @rls(
-    enabled: true,
-    select: "admin_only",
-    insert: "admin_only",
-    update: "admin_only",
+    enabled: true
+    select: "admin_only"
+    insert: "admin_only"
+    update: "admin_only"
     delete: "never"
   ) {
   id: ID! @primaryKey
@@ -391,7 +387,7 @@ CREATE POLICY policy_admin_panel_select ON admin_panel
   USING (
     EXISTS (
       SELECT 1 FROM wesley_user_orgs
-      WHERE user_id = auth.uid() 
+      WHERE user_id = auth.uid()
         AND role IN ('ADMIN', 'OWNER')
     )
   );
@@ -410,13 +406,13 @@ Wesley automatically generates performance-critical components:
 
 ```sql
 -- Index for active members only
-CREATE INDEX idx_membership_active 
-  ON membership(user_id, org_id) 
+CREATE INDEX idx_membership_active
+  ON membership(user_id, org_id)
   WHERE deleted_at IS NULL;
 
 -- Index for documents by status
-CREATE INDEX idx_document_published 
-  ON document(org_id, created_at) 
+CREATE INDEX idx_document_published
+  ON document(org_id, created_at)
   WHERE is_published = TRUE;
 ```
 
@@ -425,7 +421,7 @@ CREATE INDEX idx_document_published
 ```sql
 -- For expensive permission calculations
 CREATE MATERIALIZED VIEW wesley_user_permissions AS
-  SELECT 
+  SELECT
     u.id as user_id,
     o.id as org_id,
     m.role,
@@ -457,8 +453,8 @@ Wesley generates audit-aware policies:
 ```sql
 -- Audit trigger that respects RLS
 CREATE OR REPLACE FUNCTION wesley.audit_document()
-RETURNS TRIGGER 
-LANGUAGE plpgsql 
+RETURNS TRIGGER
+LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 BEGIN
@@ -548,24 +544,24 @@ BEGIN;
   -- Setup test data
   PERFORM tests.setup_test_org('test_org');
   PERFORM tests.setup_test_user('test_user', 'test_org', 'MEMBER');
-  
+
   -- Set JWT claims
   SET LOCAL request.jwt.claim.sub TO 'test_user';
-  
+
   -- Test INSERT
   INSERT INTO document (org_id, title, created_by)
   VALUES ('test_org', 'Test', 'test_user')
   RETURNING id INTO v_doc_id;
-  
+
   -- Test SELECT
   SELECT COUNT(*) INTO v_count FROM document WHERE id = v_doc_id;
   SELECT is(v_count, 1, 'User can select their document');
-  
+
   -- Test UPDATE
   UPDATE document SET title = 'Updated' WHERE id = v_doc_id;
   SELECT is(title, 'Updated', 'User can update their document')
   FROM document WHERE id = v_doc_id;
-  
+
   -- Test DELETE (should fail for MEMBER role)
   SELECT throws_ok(
     $$DELETE FROM document WHERE id = v_doc_id$$,
@@ -578,8 +574,8 @@ ROLLBACK;
 
 ```sql
 -- Test: Policy performance with large datasets
-EXPLAIN (ANALYZE, BUFFERS) 
-SELECT * FROM document 
+EXPLAIN (ANALYZE, BUFFERS)
+SELECT * FROM document
 WHERE org_id = 'test_org';
 
 SELECT ok(
@@ -599,11 +595,11 @@ rls:
   force_row_level_security: true
   audit_failed_checks: true
   helper_schema: 'wesley'
-  
+
   # Performance tuning
   use_materialized_views: true
   refresh_interval: '1 hour'
-  
+
   # Testing
   generate_tests: true
   test_coverage_threshold: 90
@@ -630,11 +626,13 @@ type Document @table
 ### 1. Start Simple, Evolve Gradually
 
 Begin with basic tenant isolation:
+
 ```graphql
 @tenant(by: "org_id")
 ```
 
 Add complexity only when needed:
+
 ```graphql
 @tenant(by: "org_id")
 @owner(column: "created_by")
@@ -644,6 +642,7 @@ Add complexity only when needed:
 ### 2. Use Helper Functions for Readability
 
 Instead of inline SQL:
+
 ```sql
 -- Bad: Complex inline logic
 CREATE POLICY complex_policy ON document
@@ -660,6 +659,7 @@ CREATE POLICY complex_policy ON document
 ```
 
 Use helper functions:
+
 ```sql
 -- Good: Clear, testable function
 CREATE POLICY clear_policy ON document
@@ -672,9 +672,9 @@ RLS policies are only as fast as their indexes:
 
 ```graphql
 type Document @table {
-  org_id: ID! @foreignKey(ref: "Organization.id") @index  # Always index tenant column
-  created_by: ID! @foreignKey(ref: "User.id") @index      # Always index owner column
-  status: Status! @index(where: "status = 'PUBLISHED'")   # Partial index for common filters
+  org_id: ID! @foreignKey(ref: "Organization.id") @index # Always index tenant column
+  created_by: ID! @foreignKey(ref: "User.id") @index # Always index owner column
+  status: Status! @index(where: "status = 'PUBLISHED'") # Partial index for common filters
 }
 ```
 
@@ -684,7 +684,7 @@ Wesley generates standard tests, but add your own for business logic:
 
 ```sql
 -- Test: Document sharing expires
-SELECT tests.create_document_share('doc_1', 'user_1', 
+SELECT tests.create_document_share('doc_1', 'user_1',
   expires_at => NOW() - INTERVAL '1 day');
 
 SET LOCAL request.jwt.claim.sub TO 'user_1';

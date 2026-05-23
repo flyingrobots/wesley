@@ -1,4 +1,5 @@
 # BEARING
+
 <!-- docs-truth: status=experimental owner=@flyingrobots -->
 
 Current direction and active tensions. Historical ship data is in
@@ -7,8 +8,8 @@ Current direction and active tensions. Historical ship data is in
 ```mermaid
 timeline
     Phase 1 : v0.0.5 Shipped : Clean House : Domain-Empty Backlog
-    Phase 2 : v0.0.6 : Rust IR Parity : Fixture Truth
-    Phase 3 : Module Boundary : External Targets : Artifact Evidence
+    Phase 2 : v0.0.6 : Rust IR Parity : Boundary Proof
+    Phase 3 : Module Runtime : External Targets : Artifact Evidence
     Phase 4 : Core Release : Legacy Node Retirement : Postgres Module Cutover
 ```
 
@@ -31,6 +32,8 @@ still match the legacy truth anchors where they are expected to match.
   toolchain.
 - The `whatever` must come from explicitly loaded external modules, not
   built-in product or database semantics.
+- [0014-domain-empty-core-boundary](./design/0014-domain-empty-core-boundary/domain-empty-core-boundary.md)
+  is now the active ownership doctrine, not a pending cleanup card.
 - Echo, jedit, Continuum, WARPspace, and `warp-ttd` behavior belongs in the
   owning repos or owning modules.
 - PostgreSQL/Supabase behavior belongs in `wesley-postgres`, not in
@@ -90,11 +93,13 @@ base platform.
   notes rather than accidental hash churn.
 - **Alias Semantics**: Legacy directive aliases are compatibility input, not a
   license to preserve arbitrary spelling in semantic Rust L1 output.
-- **Invalid Diagnostics**: The Rust lowerer can reject invalid SDL, but stable
-  codes and spans are not yet part of the L1 fixture contract.
-- **External Module Gap**: Wesley can name the domain-empty boundary, but
-  external modules still need enough capability runtime and artifact evidence
-  to consume it cleanly.
+- **Invalid Diagnostics**: The Rust lowerer now exposes stable diagnostic
+  codes and parser spans, but semantic lowering spans are still absent and
+  should not be implied by tests or release notes.
+- **External Module Gap**: Wesley has named the domain-empty boundary, but the
+  module seam still needs hermetic target-dispatch fixtures, runtime boundary
+  evidence, and artifact evidence before external modules can consume it
+  cleanly.
 - **Sibling Repo Coordination**: Wesley should reference `wesley-postgres` as
   the database authority without editing or overwriting sibling work from this
   repo.
@@ -106,22 +111,36 @@ enforcement**:
 
 Current evidence now includes complete v0.0.5 publication proof, an expanded
 Rust L1 corpus for directive-heavy SDL, schema extensions, legacy aliases, and
-invalid duplicate-directive coverage, plus `pnpm parity:ir` for the
+invalid duplicate-directive coverage, `pnpm parity:ir` for the
 `js-table-vs-rust-table.v0` compatibility projection over the first
-table-compatible sentinel corpus.
+table-compatible sentinel corpus, `pnpm parity:ir` support for fixture-owned
+projections, the `js-sdl-type-family-vs-rust-l1-type-family.v0` projection
+over extension-folded SDL type-family facts, default sentinel admission for
+`schema-extensions-schema.graphql` under that projection, `pnpm perf:ir` Rust
+CLI wall-clock baseline evidence over the valid IR fixture corpus, the
+domain-empty ownership packet in `0014`, and executable module-target dispatch
+coverage for no-module diagnostics, default target discovery, requested-target
+validation, duplicate target rejection, alias conflicts in both registration
+orders, and the Rust IR fixture contract now housed under the active `0013`
+packet.
+Invalid SDL diagnostics now expose stable `WesleyError::diagnostic()` codes
+and parser line/column spans where available, while semantic lowering spans
+remain explicitly absent.
 
 The next pulls are:
 
-1. Broaden parity sentinel coverage only after naming fair projections for
-   non-table extension semantics and scale/performance fixtures.
-2. Pull the domain-empty core boundary card into enforcement work so product
-   and database behavior stays outside generic Wesley.
-3. Continue the IR contract fixture lane for stable invalid-SDL diagnostics,
-   including codes and spans where available.
-4. Keep `wesley-postgres` visible as the database extraction home and avoid
-   reshaping sibling work from Wesley release branches.
-5. Use the parity sentinel output as compatibility evidence before retiring or
-   demoting legacy Node lowering.
+1. Expand the fixture-module zoo only where it adds new boundary evidence:
+   target dispatch already rejects missing modules, invalid product/database
+   target names, duplicate names, and aliases that collide before or after the
+   owning target loads.
+2. Broaden performance evidence only where a separate harness can distinguish
+   JS lowering, Rust peak RSS, Node binding overhead, and WASM binding overhead.
+3. Add new parity fixtures only when they exercise a named projection boundary
+   that the current table and type-family corpus does not already cover.
+
+Do not pull `OWN_ninelives-resilience-integration.md` until the module boundary
+has stronger executable evidence. Resilience policy should not arrive before
+the base compiler/module seam is boring.
 
 Echo and jedit do not need more Wesley feature gravity for their current work.
 Wesley should coordinate on compatibility only when a concrete artifact, hash,

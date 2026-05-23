@@ -55,9 +55,10 @@ export class LoweringEngine {
  * @returns {object}
  */
 export function createLoweredSchemaEnvelope({ domain = null, ir = null, sdl = null } = {}) {
-  const envelope = domain && typeof domain === 'object'
-    ? Object.assign(Object.create(Object.getPrototypeOf(domain)), domain)
-    : {};
+  const envelope =
+    domain && typeof domain === 'object'
+      ? Object.assign(Object.create(Object.getPrototypeOf(domain)), domain)
+      : {};
 
   if (ir) envelope.ir = ir;
   if (typeof sdl === 'string') envelope.sdl = sdl;

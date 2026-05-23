@@ -33,7 +33,11 @@ export class Watson {
     const evidenceTrust = assessEvidenceTrust(citations);
     const mathCheck = this.verifyMath();
     const inconsistencies = this.checkInconsistencies();
-    const opinion = this.buildOpinion(verificationRate, inconsistencies.length === 0, evidenceTrust);
+    const opinion = this.buildOpinion(
+      verificationRate,
+      inconsistencies.length === 0,
+      evidenceTrust
+    );
     return {
       metadata: {
         examinedAt,
@@ -64,7 +68,7 @@ export class Watson {
 
   renderVerification(data) {
     const report = [];
-    report.push('### 🩺 Dr. Watson\'s Independent Verification Report');
+    report.push("### 🩺 Dr. Watson's Independent Verification Report");
     report.push('');
     report.push('_Medical Examination of Evidence_');
     report.push('');
@@ -109,7 +113,7 @@ export class Watson {
       }
     }
     report.push('');
-    report.push('## 🩺 Dr. Watson\'s Medical Opinion');
+    report.push("## 🩺 Dr. Watson's Medical Opinion");
     report.push('');
     report.push(data.opinion.markdown);
     report.push('');
@@ -120,12 +124,17 @@ export class Watson {
   }
 
   buildOpinion(rate, noIssues, evidenceTrust = { level: 'strong', reasons: [] }) {
-    const passed = rate >= 0.8 && noIssues && evidenceTrust.level !== 'weak' && evidenceTrust.level !== 'missing';
+    const passed =
+      rate >= 0.8 &&
+      noIssues &&
+      evidenceTrust.level !== 'weak' &&
+      evidenceTrust.level !== 'missing';
     if (passed) {
       return {
         verdict: 'PASSED',
         message: 'Evidence independently verified; conclusions concur.',
-        markdown: '**VERIFICATION: PASSED** ✅\n\n"I have examined Holmes\'s evidence independently and concur with his"\n"deductions. The investigation is thorough and the conclusions sound."'
+        markdown:
+          '**VERIFICATION: PASSED** ✅\n\n"I have examined Holmes\'s evidence independently and concur with his"\n"deductions. The investigation is thorough and the conclusions sound."'
       };
     }
     const trustReason = evidenceTrust.reasons[0];
@@ -279,16 +288,15 @@ export class Watson {
       });
       return { status: 'ok', content };
     } catch (error) {
-      const stderr = typeof error?.stderr === 'string'
-        ? error.stderr
-        : (error?.stderr ? error.stderr.toString() : '');
+      const stderr =
+        typeof error?.stderr === 'string'
+          ? error.stderr
+          : error?.stderr
+            ? error.stderr.toString()
+            : '';
       const message = stderr || error?.message || '';
-      const nonFatalPatterns = [
-        'not a git repository',
-        'does not exist in',
-        'exists on disk'
-      ];
-      if (nonFatalPatterns.some(pattern => message.includes(pattern)) || sha === 'unknown') {
+      const nonFatalPatterns = ['not a git repository', 'does not exist in', 'exists on disk'];
+      if (nonFatalPatterns.some((pattern) => message.includes(pattern)) || sha === 'unknown') {
         return { status: 'missing' };
       }
       return { status: 'error', message: message.trim() };

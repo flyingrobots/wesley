@@ -2,53 +2,88 @@
  * @wesley/host-deno — minimal Deno runtime adapter
  * Uses Web APIs and optional Deno.* where useful; keeps FS in-memory for demos.
  */
-import { GenerationPipeline } from "../wesley-core/src/index.mjs";
+import { GenerationPipeline } from '../wesley-core/src/index.mjs';
 
 class MemoryFileSystem {
-  private files = new Map<string,string>();
-  async exists(p:string){ return this.files.has(p); }
-  async read(p:string){
-    if(!this.files.has(p)) { const e = new Error(`ENOENT: ${p}`) as Error & { code?: string }; e.code = 'ENOENT'; throw e; }
+  private files = new Map<string, string>();
+  async exists(p: string) {
+    return this.files.has(p);
+  }
+  async read(p: string) {
+    if (!this.files.has(p)) {
+      const e = new Error(`ENOENT: ${p}`) as Error & { code?: string };
+      e.code = 'ENOENT';
+      throw e;
+    }
     return this.files.get(p)!;
   }
-  async write(p:string,c:string){ this.files.set(p, String(c ?? "")); }
+  async write(p: string, c: string) {
+    this.files.set(p, String(c ?? ''));
+  }
 }
 
-async function sha256Hex(input:unknown){
+async function sha256Hex(input: unknown) {
   const subtle = (globalThis as any).crypto && (globalThis as any).crypto.subtle;
   if (!subtle) throw new Error('WebCrypto (crypto.subtle) is not available in this runtime');
   const enc = new TextEncoder();
   const data = enc.encode(typeof input === 'string' ? input : JSON.stringify(input));
   const digest = await subtle.digest('SHA-256', data);
-  return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,'0')).join('');
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-export async function createDenoRuntime(){
+export async function createDenoRuntime() {
   const logger = console;
   const fs = new MemoryFileSystem();
   const clock = { now: () => new Date() };
   const parsers = {
     graphql: {
-      async parse(sdl:string){
+      async parse(sdl: string) {
         // ultra-minimal detector for @wes_table types
         const re = /\btype\s+([A-Za-z_][A-Za-z0-9_]*)\s*([^\{]*)\{/g;
-        const tables: Array<{ name: string; directives: { table: boolean }; fields: never[]; indexes: never[]; constraints: never[] }> = [];
+        const tables: Array<{
+          name: string;
+          directives: { table: boolean };
+          fields: never[];
+          indexes: never[];
+          constraints: never[];
+        }> = [];
         let m: RegExpExecArray | null;
         while ((m = re.exec(sdl)) !== null) {
-          if (/@wes_table\b|@wesley_table\b|\b@table\b/.test(m[2] || '')) tables.push({ name: m[1], directives: { table: true }, fields: [], indexes: [], constraints: [] });
+          if (/@wes_table\b|@wesley_table\b|\b@table\b/.test(m[2] || ''))
+            tables.push({
+              name: m[1],
+              directives: { table: true },
+              fields: [],
+              indexes: [],
+              constraints: []
+            });
         }
-        return { version: '1.0.0' as const, metadata: { generatedAt: new Date().toISOString() }, tables, enums: [] as never[], scalars: [] as never[], relationships: [] as never[], toJSON(){ return { version: '1.0.0', tables }; } };
+        return {
+          version: '1.0.0' as const,
+          metadata: { generatedAt: new Date().toISOString() },
+          tables,
+          enums: [] as never[],
+          scalars: [] as never[],
+          relationships: [] as never[],
+          toJSON() {
+            return { version: '1.0.0', tables };
+          }
+        };
       }
     }
   };
   return { logger, fs, clock, crypto: { sha256Hex }, parsers };
 }
 
-export async function runInDeno(schemaSDL:string){
+export async function runInDeno(schemaSDL: string) {
   const rt = await createDenoRuntime();
   const diffEngine = {
-    async diff(){ return { steps: [] }; },
-    async generateMigration(){ return null; }
+    async diff() {
+      return { steps: [] };
+    },
+    async generateMigration() {
+      return null;
+    }
   };
   const pipeline = new GenerationPipeline({
     parser: rt.parsers.graphql,
@@ -57,7 +92,7 @@ export async function runInDeno(schemaSDL:string){
     logger: rt.logger
   });
   const bundle = await pipeline.execute(schemaSDL, { sha: 'deno-smoke' });
-  const tables = Array.isArray(bundle?.schema?.tables)? bundle.schema.tables.length : 0;
-  const token = `DENO_HOST_OK:${tables}:${(await rt.crypto.sha256Hex(bundle.schema)).slice(0,12)}`;
-  return { ok:true, token, tables };
+  const tables = Array.isArray(bundle?.schema?.tables) ? bundle.schema.tables.length : 0;
+  const token = `DENO_HOST_OK:${tables}:${(await rt.crypto.sha256Hex(bundle.schema)).slice(0, 12)}`;
+  return { ok: true, token, tables };
 }

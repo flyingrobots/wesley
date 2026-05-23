@@ -110,9 +110,9 @@ Define JSON/SQL trace format, build replay runner executing traces against shado
 
 ### QA Sign-off Matrix
 
-| Environment | Surface | Owner | Status | Notes |
-| --- | --- | --- | --- | --- |
-| Unit/integration | Replay runner | TBD | pending | |
+| Environment      | Surface       | Owner | Status  | Notes |
+| ---------------- | ------------- | ----- | ------- | ----- |
+| Unit/integration | Replay runner | TBD   | pending |       |
 
 ## Requirements
 

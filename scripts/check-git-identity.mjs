@@ -67,15 +67,11 @@ function repositoryRoot(cwd) {
 }
 
 function headGitIdentity(cwd) {
-  const result = spawnSync(
-    'git',
-    ['log', '-1', '--format=%an%x00%ae%x00%cn%x00%ce', 'HEAD'],
-    {
-      cwd,
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe']
-    }
-  );
+  const result = spawnSync('git', ['log', '-1', '--format=%an%x00%ae%x00%cn%x00%ce', 'HEAD'], {
+    cwd,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe']
+  });
   if (result.status === 128) return {};
   if (result.status !== 0) {
     throw new Error(result.stderr.trim() || 'git log -1 identity lookup failed');

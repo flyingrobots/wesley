@@ -1,9 +1,5 @@
 import path from 'node:path';
-import {
-  buildRuntimeRunReport,
-  createRunId,
-  createRuntimeEventCollector
-} from '@wesley/core';
+import { buildRuntimeRunReport, createRunId, createRuntimeEventCollector } from '@wesley/core';
 import { GitWarpEventStore, resolveLedgerRootDir } from '@wesley/runtime-node';
 
 const COMMAND_TRANSMUTATIONS = Object.freeze({
@@ -38,27 +34,57 @@ export async function withCommandRun({
   const scope = createCommandRunScope(context.run);
   const taskId = `${scope}:main`;
 
-  emitLifecycleEvent(context.eventCollector, scope, 'RunRequested', {
-    command: context.run.command
-  }, 'requested');
-  emitLifecycleEvent(context.eventCollector, scope, 'SourcesResolved', {
-    command: context.run.command,
-    ...sources
-  }, 'sources');
-  emitTaskEvent(context.eventCollector, taskId, 'TaskStarted', {
-    command: context.run.command
-  }, 'started');
+  emitLifecycleEvent(
+    context.eventCollector,
+    scope,
+    'RunRequested',
+    {
+      command: context.run.command
+    },
+    'requested'
+  );
+  emitLifecycleEvent(
+    context.eventCollector,
+    scope,
+    'SourcesResolved',
+    {
+      command: context.run.command,
+      ...sources
+    },
+    'sources'
+  );
+  emitTaskEvent(
+    context.eventCollector,
+    taskId,
+    'TaskStarted',
+    {
+      command: context.run.command
+    },
+    'started'
+  );
 
   try {
     const result = await task(context);
-    emitTaskEvent(context.eventCollector, taskId, 'TaskCompleted', {
-      command: context.run.command
-    }, 'completed');
-    emitLifecycleEvent(context.eventCollector, scope, 'RunCompleted', {
-      command: context.run.command,
-      verdict: normalizeOptionalString(result?.verdict),
-      dryRun: typeof result?.dryRun === 'boolean' ? result.dryRun : null
-    }, 'completed');
+    emitTaskEvent(
+      context.eventCollector,
+      taskId,
+      'TaskCompleted',
+      {
+        command: context.run.command
+      },
+      'completed'
+    );
+    emitLifecycleEvent(
+      context.eventCollector,
+      scope,
+      'RunCompleted',
+      {
+        command: context.run.command,
+        verdict: normalizeOptionalString(result?.verdict),
+        dryRun: typeof result?.dryRun === 'boolean' ? result.dryRun : null
+      },
+      'completed'
+    );
 
     return {
       ...result,
@@ -66,16 +92,28 @@ export async function withCommandRun({
     };
   } catch (error) {
     if (!isInjectedCrash(error)) {
-      emitTaskEvent(context.eventCollector, taskId, 'TaskFailed', {
-        command: context.run.command,
-        errorCode: normalizeErrorCode(error),
-        errorMessage: normalizeErrorMessage(error)
-      }, 'failed');
-      emitLifecycleEvent(context.eventCollector, scope, 'RunFailed', {
-        command: context.run.command,
-        code: normalizeErrorCode(error),
-        message: normalizeErrorMessage(error)
-      }, 'failed');
+      emitTaskEvent(
+        context.eventCollector,
+        taskId,
+        'TaskFailed',
+        {
+          command: context.run.command,
+          errorCode: normalizeErrorCode(error),
+          errorMessage: normalizeErrorMessage(error)
+        },
+        'failed'
+      );
+      emitLifecycleEvent(
+        context.eventCollector,
+        scope,
+        'RunFailed',
+        {
+          command: context.run.command,
+          code: normalizeErrorCode(error),
+          message: normalizeErrorMessage(error)
+        },
+        'failed'
+      );
     }
 
     error.commandRun = buildCommandRunSummary(context, {

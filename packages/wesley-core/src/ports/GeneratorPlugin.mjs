@@ -127,22 +127,17 @@ export function validatePlugin(plugin) {
   const nameResult = safeGet(plugin, 'name');
 
   if (!verResult.ok) {
-    fail(
-      `Plugin apiVersion getter threw: ${verResult.error.message}`,
-      'WPLY001'
-    );
+    fail(`Plugin apiVersion getter threw: ${verResult.error.message}`, 'WPLY001');
   }
   if (!nameResult.ok) {
-    fail(
-      `Plugin name getter threw: ${nameResult.error.message}`,
-      'WPLY001'
-    );
+    fail(`Plugin name getter threw: ${nameResult.error.message}`, 'WPLY001');
   }
 
   const ver = verResult.value;
-  const pluginName = typeof nameResult.value === 'string' && nameResult.value.trim()
-    ? nameResult.value.trim()
-    : undefined;
+  const pluginName =
+    typeof nameResult.value === 'string' && nameResult.value.trim()
+      ? nameResult.value.trim()
+      : undefined;
   const nameLabel = pluginName ? ` "${pluginName}"` : '';
 
   // apiVersion — must be a string in SUPPORTED_API_VERSIONS
@@ -152,14 +147,14 @@ export function validatePlugin(plugin) {
   if (typeof ver !== 'string') {
     fail(
       `Plugin${nameLabel} apiVersion must be a string (got ${typeof ver}: ${ver}). ` +
-      `Use apiVersion: "${String(ver)}" instead of apiVersion: ${ver}`,
+        `Use apiVersion: "${String(ver)}" instead of apiVersion: ${ver}`,
       'WPLY001'
     );
   }
   if (!SUPPORTED_API_VERSIONS.includes(ver)) {
     fail(
       `Plugin${nameLabel} requires apiVersion "${ver}", ` +
-      `but only [${[...SUPPORTED_API_VERSIONS].map(v => `"${v}"`).join(', ')}] are supported`,
+        `but only [${[...SUPPORTED_API_VERSIONS].map((v) => `"${v}"`).join(', ')}] are supported`,
       'WPLY001'
     );
   }
@@ -168,7 +163,10 @@ export function validatePlugin(plugin) {
   if (typeof nameResult.value !== 'string' || nameResult.value.trim().length === 0) {
     fail(
       'Plugin "name" must be a non-empty string (got ' +
-      (typeof nameResult.value === 'string' ? 'whitespace-only string' : typeof nameResult.value) + ')',
+        (typeof nameResult.value === 'string'
+          ? 'whitespace-only string'
+          : typeof nameResult.value) +
+        ')',
       'WPLY001'
     );
   }
@@ -219,9 +217,7 @@ export function validateGenerateResult(result, pluginName) {
 
   // Top-level: must be non-null, non-array object
   if (result == null || typeof result !== 'object' || Array.isArray(result)) {
-    const typeLabel = result === null ? 'null'
-      : Array.isArray(result) ? 'Array'
-        : typeof result;
+    const typeLabel = result === null ? 'null' : Array.isArray(result) ? 'Array' : typeof result;
     fail(
       `Plugin${label} generate() must return a Record<string, string|Uint8Array> (got ${typeLabel})`,
       'WPLY003'
@@ -231,18 +227,28 @@ export function validateGenerateResult(result, pluginName) {
   // New transmutation-aware shape: { files, evidence }
   if ('files' in result && 'evidence' in result) {
     if (result.files == null || typeof result.files !== 'object' || Array.isArray(result.files)) {
-      const filesLabel = result.files === null ? 'null'
-        : Array.isArray(result.files) ? 'Array'
-          : typeof result.files;
+      const filesLabel =
+        result.files === null
+          ? 'null'
+          : Array.isArray(result.files)
+            ? 'Array'
+            : typeof result.files;
       fail(
         `Plugin${label} generate() returned { files, evidence } but files is ${filesLabel} (expected Record<string, string|Uint8Array>)`,
         'WPLY003'
       );
     }
-    if (result.evidence == null || typeof result.evidence !== 'object' || Array.isArray(result.evidence)) {
-      const evLabel = result.evidence === null ? 'null'
-        : Array.isArray(result.evidence) ? 'Array'
-          : typeof result.evidence;
+    if (
+      result.evidence == null ||
+      typeof result.evidence !== 'object' ||
+      Array.isArray(result.evidence)
+    ) {
+      const evLabel =
+        result.evidence === null
+          ? 'null'
+          : Array.isArray(result.evidence)
+            ? 'Array'
+            : typeof result.evidence;
       fail(
         `Plugin${label} generate() returned { files, evidence } but evidence is ${evLabel} (expected Record<string, object>)`,
         'WPLY003'
@@ -267,7 +273,10 @@ export function validatePlan(plan, pluginName) {
   const label = pluginName ? ` from plugin "${pluginName}"` : '';
 
   if (plan == null || typeof plan !== 'object') {
-    fail(`Plan${label} must be a non-null object (got ${plan === null ? 'null' : typeof plan})`, 'WPLY004');
+    fail(
+      `Plan${label} must be a non-null object (got ${plan === null ? 'null' : typeof plan})`,
+      'WPLY004'
+    );
   }
 
   if (!Array.isArray(plan.artifacts)) {

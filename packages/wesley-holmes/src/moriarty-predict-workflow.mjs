@@ -1,9 +1,6 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import {
-  GENERATED_ARTIFACT_DIR,
-  generatedArtifactPathCandidates
-} from '@wesley/core';
+import { GENERATED_ARTIFACT_DIR, generatedArtifactPathCandidates } from '@wesley/core';
 import { Moriarty } from './Moriarty.mjs';
 import { attachRuntimeRun, loadRuntimeRunRecord } from './runtime-run.mjs';
 import {
@@ -56,9 +53,10 @@ export async function buildMoriartyPrediction({
   });
 
   if (typeof counterfactual !== 'undefined') {
-    const baseRef = typeof counterfactual === 'string' && counterfactual.length > 0
-      ? counterfactual
-      : defaultMoriartyBaseRef(env);
+    const baseRef =
+      typeof counterfactual === 'string' && counterfactual.length > 0
+        ? counterfactual
+        : defaultMoriartyBaseRef(env);
     await attachMoriartyCounterfactual(data, {
       ...paths,
       transmutation: runtime?.run?.transmutation || transmutation,
@@ -108,7 +106,7 @@ function resolvePath(target, fallback) {
 function ensureValidReport(label, schema, data) {
   const { valid, errors } = validateReport(schema, data);
   if (!valid) {
-    const detail = errors.map(err => ` - ${err}`).join('\n');
+    const detail = errors.map((err) => ` - ${err}`).join('\n');
     throw new Error(`[${label}] report validation failed:\n${detail}`);
   }
 }
@@ -127,17 +125,20 @@ async function attachMoriartyRuntime(data, { repoRoot, runId, transmutation }) {
   return runtimeRecord;
 }
 
-async function attachMoriartyCounterfactual(data, {
-  repoRoot,
-  bundleDir,
-  outDir,
-  schemaPath,
-  transmutation,
-  baseRef,
-  braidRefs = [],
-  explain = false,
-  env = process.env
-}) {
+async function attachMoriartyCounterfactual(
+  data,
+  {
+    repoRoot,
+    bundleDir,
+    outDir,
+    schemaPath,
+    transmutation,
+    baseRef,
+    braidRefs = [],
+    explain = false,
+    env = process.env
+  }
+) {
   const policy = await loadHolmesCounterfactualPolicy({ repoRoot, env });
   const lane = resolveCounterfactualLaneRequest({
     policy,
@@ -168,17 +169,16 @@ export function applyCounterfactualJudgmentToPrediction(data, counterfactual) {
   data.explain.readiness = data.explain?.readiness || {};
 
   const judgment = counterfactual?.judgment || {};
-  const gate = typeof judgment.gate === 'string' && judgment.gate.length > 0
-    ? judgment.gate
-    : 'pass';
-  const status = typeof judgment.status === 'string' && judgment.status.length > 0
-    ? judgment.status
-    : 'unknown';
-  const riskClass = typeof judgment.riskClass === 'string' && judgment.riskClass.length > 0
-    ? judgment.riskClass
-    : 'none';
+  const gate =
+    typeof judgment.gate === 'string' && judgment.gate.length > 0 ? judgment.gate : 'pass';
+  const status =
+    typeof judgment.status === 'string' && judgment.status.length > 0 ? judgment.status : 'unknown';
+  const riskClass =
+    typeof judgment.riskClass === 'string' && judgment.riskClass.length > 0
+      ? judgment.riskClass
+      : 'none';
   const reasons = Array.isArray(judgment.reasons)
-    ? judgment.reasons.filter(reason => typeof reason === 'string' && reason.length > 0)
+    ? judgment.reasons.filter((reason) => typeof reason === 'string' && reason.length > 0)
     : [];
 
   if (typeof data.confidence === 'number' && Number.isFinite(judgment.confidenceAdjustment)) {
@@ -205,16 +205,14 @@ export function applyCounterfactualJudgmentToPrediction(data, counterfactual) {
   if (status !== 'clean') {
     pushPattern(
       data.patterns,
-      gate !== 'pass' || riskClass === 'high'
-        ? 'COUNTERFACTUAL_RISK'
-        : 'COUNTERFACTUAL_DIVERGENCE',
+      gate !== 'pass' || riskClass === 'high' ? 'COUNTERFACTUAL_RISK' : 'COUNTERFACTUAL_DIVERGENCE',
       reasons[0] || `Counterfactual status is ${status}.`
     );
   }
 }
 
 function pushPattern(patterns, type, description) {
-  if (patterns.some(pattern => pattern?.type === type)) {
+  if (patterns.some((pattern) => pattern?.type === type)) {
     return;
   }
   patterns.push({ type, description });

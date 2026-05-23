@@ -105,7 +105,7 @@ describe('CheckpointManager', () => {
     for (let i = 0; i < 5; i++) {
       await manager.store(`cleanup-checkpoint-${i}`, { index: i });
       // Small delay to ensure different timestamps
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
     }
 
     const deletedCount = await manager.cleanup(3);

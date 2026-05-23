@@ -18,33 +18,41 @@ Trigger: title/label match: evidence, certification, security, or Holmes-family 
 ## Original Issue
 
 ## Sponsor actor
+
 A pull-request reviewer who needs to decide whether a change is safe to merge without already knowing Wesley/HOLMES jargon.
 
 ## Hill
+
 A reviewer can read the HOLMES GitHub comment and understand the ship recommendation, the top reasons, the next actions, and the jargon from the comment alone.
 
 ## Playback
+
 Open a PR with a HOLMES comment and understand, without opening source code or docs:
+
 - safe / investigate / do not ship
 - why
 - what to do next
 - what SCS / TCI / MRI / evidence trust mean
 
 ## Type
+
 product
 
 ## Invariants
+
 - keep the underlying report truthful
 - do not hide failing gates or weak evidence
 - keep the GitHub comment machine-generated and reproducible
 - do not break existing JSON report contracts
 
 ## Non-goals
+
 - redesign the CLI markdown report wholesale
 - remove the Holmes/Watson/Moriarty flavor
 - change SHIPME or certificate policy
 
 ## Acceptance
+
 - the PR comment starts with a plain-English summary
 - the visible summary avoids unexplained acronyms
 - the comment includes actionable next steps

@@ -24,7 +24,7 @@ class ZodSchemaGenerator {
   }
 
   async generate(schema) {
-    const imports = ['import { z } from \'zod\';'];
+    const imports = ["import { z } from 'zod';"];
     const schemas = [];
     const inputSchemas = [];
     const refinements = [];
@@ -70,13 +70,13 @@ class ZodSchemaGenerator {
   }
 
   generateEntitySchema(table) {
-    const fields = Object.values(table.fields).map(field => {
+    const fields = Object.values(table.fields).map((field) => {
       const zodType = this.mapFieldToZod(field);
       const fieldComment = this.generateFieldComment(field);
 
-      return fieldComment ?
-        `  // ${fieldComment}\n  ${field.name}: ${zodType}` :
-        `  ${field.name}: ${zodType}`;
+      return fieldComment
+        ? `  // ${fieldComment}\n  ${field.name}: ${zodType}`
+        : `  ${field.name}: ${zodType}`;
     });
 
     return `export const ${table.name}Schema = z.object({
@@ -88,14 +88,16 @@ export type ${table.name} = z.infer<typeof ${table.name}Schema>;`;
 
   generateCreateInputSchema(table) {
     const fields = Object.values(table.fields)
-      .filter(field => !this.hasDirective(field, '@primaryKey') || this.hasDirective(field, '@default'))
-      .map(field => {
+      .filter(
+        (field) => !this.hasDirective(field, '@primaryKey') || this.hasDirective(field, '@default')
+      )
+      .map((field) => {
         const zodType = this.mapFieldToZod(field, 'create');
         const fieldComment = this.generateFieldComment(field);
 
-        return fieldComment ?
-          `  // ${fieldComment}\n  ${field.name}: ${zodType}` :
-          `  ${field.name}: ${zodType}`;
+        return fieldComment
+          ? `  // ${fieldComment}\n  ${field.name}: ${zodType}`
+          : `  ${field.name}: ${zodType}`;
       });
 
     return `export const Create${table.name}Schema = z.object({
@@ -107,8 +109,8 @@ export type Create${table.name}Input = z.infer<typeof Create${table.name}Schema>
 
   generateUpdateInputSchema(table) {
     const fields = Object.values(table.fields)
-      .filter(field => !this.hasDirective(field, '@primaryKey'))
-      .map(field => {
+      .filter((field) => !this.hasDirective(field, '@primaryKey'))
+      .map((field) => {
         const zodType = this.mapFieldToZod(field, 'update');
         return `  ${field.name}: ${zodType}.optional()`;
       });
@@ -124,11 +126,12 @@ export type Update${table.name}Input = z.infer<typeof Update${table.name}Schema>
     const refinements = [];
 
     // Generate unique field validations
-    const uniqueFields = Object.values(table.fields)
-      .filter(field => this.hasDirective(field, '@unique'));
+    const uniqueFields = Object.values(table.fields).filter((field) =>
+      this.hasDirective(field, '@unique')
+    );
 
     if (uniqueFields.length > 0) {
-      const uniqueValidations = uniqueFields.map(field => {
+      const uniqueValidations = uniqueFields.map((field) => {
         return `// Unique validation for ${field.name}
 export const validate${table.name}${this.capitalize(field.name)}Unique = async (value: string) => {
   // Implementation would check database for uniqueness
@@ -140,15 +143,16 @@ export const validate${table.name}${this.capitalize(field.name)}Unique = async (
     }
 
     // Generate custom validations based on directives
-    const sensitiveFields = Object.values(table.fields)
-      .filter(field => this.hasDirective(field, '@sensitive'));
+    const sensitiveFields = Object.values(table.fields).filter((field) =>
+      this.hasDirective(field, '@sensitive')
+    );
 
     if (sensitiveFields.length > 0) {
       refinements.push(`// Enhanced validation for ${table.name} sensitive fields
 export const ${table.name}SensitiveDataSchema = ${table.name}Schema.refine(
   (data) => {
     // Add custom validation logic for sensitive fields
-    ${sensitiveFields.map(f => `// Validate ${f.name} meets security requirements`).join('\n    ')}
+    ${sensitiveFields.map((f) => `// Validate ${f.name} meets security requirements`).join('\n    ')}
     return true;
   },
   {
@@ -184,19 +188,19 @@ export const ${table.name}SensitiveDataSchema = ${table.name}Schema.refine(
 
   mapScalarToZod(graphQLType) {
     const typeMap = {
-      'String': 'z.string()',
-      'Int': 'z.number().int()',
-      'BigInt': 'z.bigint()',
-      'Float': 'z.number()',
-      'Decimal': 'z.number()',
-      'Boolean': 'z.boolean()',
-      'ID': 'z.string()',
-      'UUID': 'z.string().uuid()',
-      'DateTime': 'z.date()',
-      'Date': 'z.date()',
-      'Time': 'z.date()',
-      'JSON': 'z.record(z.unknown())',
-      'Inet': 'z.string().ip()'
+      String: 'z.string()',
+      Int: 'z.number().int()',
+      BigInt: 'z.bigint()',
+      Float: 'z.number()',
+      Decimal: 'z.number()',
+      Boolean: 'z.boolean()',
+      ID: 'z.string()',
+      UUID: 'z.string().uuid()',
+      DateTime: 'z.date()',
+      Date: 'z.date()',
+      Time: 'z.date()',
+      JSON: 'z.record(z.unknown())',
+      Inet: 'z.string().ip()'
     };
 
     return typeMap[graphQLType] || 'z.unknown()';
@@ -217,7 +221,10 @@ export const ${table.name}SensitiveDataSchema = ${table.name}Schema.refine(
       }
 
       // URL validation
-      if (field.name.toLowerCase().includes('url') || field.name.toLowerCase().includes('website')) {
+      if (
+        field.name.toLowerCase().includes('url') ||
+        field.name.toLowerCase().includes('website')
+      ) {
         validations.push('.url("Invalid URL format")');
       }
 
@@ -226,7 +233,10 @@ export const ${table.name}SensitiveDataSchema = ${table.name}Schema.refine(
         validations.push('.min(1, "Name cannot be empty").max(100, "Name too long")');
       }
 
-      if (field.name.toLowerCase().includes('description') || field.name.toLowerCase().includes('content')) {
+      if (
+        field.name.toLowerCase().includes('description') ||
+        field.name.toLowerCase().includes('content')
+      ) {
         validations.push('.max(10000, "Content too long")');
       }
     }
@@ -237,11 +247,17 @@ export const ${table.name}SensitiveDataSchema = ${table.name}Schema.refine(
         validations.push('.min(0, "Age cannot be negative").max(150, "Invalid age")');
       }
 
-      if (field.name.toLowerCase().includes('price') || field.name.toLowerCase().includes('amount')) {
+      if (
+        field.name.toLowerCase().includes('price') ||
+        field.name.toLowerCase().includes('amount')
+      ) {
         validations.push('.min(0, "Price cannot be negative")');
       }
 
-      if (field.name.toLowerCase().includes('count') || field.name.toLowerCase().includes('quantity')) {
+      if (
+        field.name.toLowerCase().includes('count') ||
+        field.name.toLowerCase().includes('quantity')
+      ) {
         validations.push('.min(0, "Count cannot be negative")');
       }
     }

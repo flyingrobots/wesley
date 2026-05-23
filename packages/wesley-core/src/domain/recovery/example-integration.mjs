@@ -101,13 +101,12 @@ export class MigrationOrchestrator {
       });
 
       this.formatter.formatMigrationSummary(migrationName, {
-        tablesCreated: results.filter(r => r.type === 'table').length,
-        indexesCreated: results.filter(r => r.type === 'index').length,
-        functionsCreated: results.filter(r => r.type === 'function').length
+        tablesCreated: results.filter((r) => r.type === 'table').length,
+        indexesCreated: results.filter((r) => r.type === 'index').length,
+        functionsCreated: results.filter((r) => r.type === 'function').length
       });
 
       return { success: true, results };
-
     } catch (error) {
       this.progressTracker.failOperation(migrationId, error);
       this.formatter.formatError(error, {
@@ -128,7 +127,8 @@ export class MigrationOrchestrator {
     await this.sleep(operation.duration || 1000);
 
     // Simulate random failures for demonstration
-    if (Math.random() < 0.1) { // 10% failure rate
+    if (Math.random() < 0.1) {
+      // 10% failure rate
       throw new Error(`Operation ${operation.name} failed: Simulated database error`);
     }
 
@@ -176,11 +176,7 @@ export class MigrationOrchestrator {
     });
 
     this.errorRecovery.on('rollback:started', ({ operationId }) => {
-      this.formatter.formatOperationProgress(
-        operationId,
-        'warning',
-        'Initiating rollback...'
-      );
+      this.formatter.formatOperationProgress(operationId, 'warning', 'Initiating rollback...');
     });
 
     // Checkpoint events -> logging
@@ -207,7 +203,7 @@ export class MigrationOrchestrator {
   }
 
   sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**

@@ -60,7 +60,6 @@ export class ErrorRecovery extends EventEmitter {
       this.operations.delete(operationId);
 
       return result;
-
     } catch (error) {
       this.emit('operation:failed', {
         operationId,
@@ -116,7 +115,6 @@ export class ErrorRecovery extends EventEmitter {
         });
 
         return result;
-
       } catch (error) {
         lastError = error;
 
@@ -159,12 +157,12 @@ export class ErrorRecovery extends EventEmitter {
       }, timeout);
 
       Promise.resolve(operation(recoveryContext))
-        .then(result => {
+        .then((result) => {
           clearTimeout(timeoutId);
           resolve(result);
           return undefined;
         })
-        .catch(error => {
+        .catch((error) => {
           clearTimeout(timeoutId);
           reject(error);
         });
@@ -180,19 +178,19 @@ export class ErrorRecovery extends EventEmitter {
     }
 
     switch (errorCategory.type) {
-    case 'network':
-    case 'timeout':
-    case 'rate_limit':
-      return errorCategory.retryable;
-    case 'database':
-      return errorCategory.retryable && !errorCategory.fatal;
-    case 'system':
-      return errorCategory.retryable;
-    case 'validation':
-    case 'business_logic':
-      return false; // Don't retry logical errors
-    default:
-      return errorCategory.retryable;
+      case 'network':
+      case 'timeout':
+      case 'rate_limit':
+        return errorCategory.retryable;
+      case 'database':
+        return errorCategory.retryable && !errorCategory.fatal;
+      case 'system':
+        return errorCategory.retryable;
+      case 'validation':
+      case 'business_logic':
+        return false; // Don't retry logical errors
+      default:
+        return errorCategory.retryable;
     }
   }
 
@@ -240,16 +238,16 @@ export class ErrorRecovery extends EventEmitter {
    */
   getStrategyForError(errorCategory) {
     switch (errorCategory.type) {
-    case 'network':
-      return 'network_recovery';
-    case 'database':
-      return 'database_recovery';
-    case 'rate_limit':
-      return 'rate_limit_recovery';
-    case 'timeout':
-      return 'timeout_recovery';
-    default:
-      return 'default_recovery';
+      case 'network':
+        return 'network_recovery';
+      case 'database':
+        return 'database_recovery';
+      case 'rate_limit':
+        return 'rate_limit_recovery';
+      case 'timeout':
+        return 'timeout_recovery';
+      default:
+        return 'default_recovery';
     }
   }
 
@@ -290,7 +288,6 @@ export class ErrorRecovery extends EventEmitter {
         checkpointId: checkpoint.id,
         restoredState: restored.metadata || {}
       });
-
     } catch (error) {
       this.emit('rollback:failed', {
         operationId,
@@ -365,7 +362,7 @@ export class ErrorRecovery extends EventEmitter {
    * Sleep utility
    */
   sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
@@ -522,34 +519,43 @@ class ErrorCategorizer {
 
   isNetworkError(message, code) {
     const networkPatterns = [
-      'network', 'connection', 'socket', 'timeout', 'dns',
-      'econnreset', 'enotfound', 'etimedout', 'econnrefused'
+      'network',
+      'connection',
+      'socket',
+      'timeout',
+      'dns',
+      'econnreset',
+      'enotfound',
+      'etimedout',
+      'econnrefused'
     ];
     const networkCodes = ['ECONNRESET', 'ENOTFOUND', 'ETIMEDOUT', 'ECONNREFUSED'];
 
-    return networkPatterns.some(pattern => message.includes(pattern)) ||
-           networkCodes.includes(code);
+    return (
+      networkPatterns.some((pattern) => message.includes(pattern)) || networkCodes.includes(code)
+    );
   }
 
   isDatabaseError(message, code) {
     const dbPatterns = ['database', 'sql', 'postgres', 'connection pool', 'deadlock'];
     const dbCodes = ['23000', '23001', '23505', '40001', '40P01'];
 
-    return dbPatterns.some(pattern => message.includes(pattern)) ||
-           dbCodes.includes(code);
+    return dbPatterns.some((pattern) => message.includes(pattern)) || dbCodes.includes(code);
   }
 
   isDatabaseRetryable(message, code) {
     const retryableCodes = ['40001', '40P01']; // Deadlock, serialization failure
     const nonRetryablePatterns = ['unique constraint', 'foreign key', 'check constraint'];
 
-    return retryableCodes.includes(code) &&
-           !nonRetryablePatterns.some(pattern => message.includes(pattern));
+    return (
+      retryableCodes.includes(code) &&
+      !nonRetryablePatterns.some((pattern) => message.includes(pattern))
+    );
   }
 
   isDatabaseFatal(message, _code) {
     const fatalPatterns = ['syntax error', 'permission denied', 'does not exist'];
-    return fatalPatterns.some(pattern => message.includes(pattern));
+    return fatalPatterns.some((pattern) => message.includes(pattern));
   }
 
   isTimeoutError(message, code) {
@@ -557,22 +563,24 @@ class ErrorCategorizer {
   }
 
   isRateLimitError(message, code) {
-    return message.includes('rate limit') ||
-           message.includes('too many requests') ||
-           code === '429';
+    return (
+      message.includes('rate limit') || message.includes('too many requests') || code === '429'
+    );
   }
 
   isValidationError(message, code) {
     const validationPatterns = ['validation', 'invalid', 'required', 'format'];
     const validationCodes = ['400', '422'];
 
-    return validationPatterns.some(pattern => message.includes(pattern)) ||
-           validationCodes.includes(String(code));
+    return (
+      validationPatterns.some((pattern) => message.includes(pattern)) ||
+      validationCodes.includes(String(code))
+    );
   }
 
   isSystemError(message, _code) {
     const systemPatterns = ['memory', 'disk space', 'file system', 'permission'];
-    return systemPatterns.some(pattern => message.includes(pattern));
+    return systemPatterns.some((pattern) => message.includes(pattern));
   }
 
   parseRetryAfter(error) {

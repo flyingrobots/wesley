@@ -1,8 +1,9 @@
 # Domain-empty Wesley core boundary
 
-- Lane: `asap`
+- Lane: `design/0014-domain-empty-core-boundary`
 - Legend: `SOURCE`
 - Rank: `1`
+- Pulled from: `docs/method/backlog/asap/`
 
 ## Why now
 
@@ -48,6 +49,7 @@ generic toolchain, generic module contracts, and hermetic fixture modules only.
 - `docs/GUIDE.md`
 - `docs/ARCHITECTURE.md`
 - `docs/BEARING.md`
+- `docs/design/0014-domain-empty-core-boundary/domain-empty-core-boundary.md`
 - `docs/design/wesley-module-contract.md`
 - `docs/design/wesley-module-capability-contract.md`
 - `docs/design/wesley-extraction-map.md`

@@ -18,5 +18,6 @@ Trigger: default: runtime, host, operator-flow, CI, or repo execution surface.
 ## Original Issue
 
 Add bundle size/perf checks to browser-smoke.
+
 - Fail if bundle exceeds X kB (configurable).
 - Record timing metric; feed into progress gates once stable.

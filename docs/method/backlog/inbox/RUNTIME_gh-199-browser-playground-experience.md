@@ -81,7 +81,7 @@ Extend the Astro/Mantine site, embed React components for editor/viewer, use bro
 ### Affected Areas
 
 - website/src/pages/playground.astro (new)
-- website/src/components/playground/**/* (new)
+- website/src/components/playground/\*_/_ (new)
 - website/src/styles (updates)
 
 ### Implementation Steps
@@ -112,11 +112,11 @@ Extend the Astro/Mantine site, embed React components for editor/viewer, use bro
 
 ### QA Sign-off Matrix
 
-| Environment | Surface | Owner | Status | Notes |
-| --- | --- | --- | --- | --- |
-| Desktop Chrome | Playground | TBD | pending | |
-| Desktop Firefox | Playground | TBD | pending | |
-| Mobile Safari | Playground | TBD | pending | MVP ensures responsive layout |
+| Environment     | Surface    | Owner | Status  | Notes                         |
+| --------------- | ---------- | ----- | ------- | ----------------------------- |
+| Desktop Chrome  | Playground | TBD   | pending |                               |
+| Desktop Firefox | Playground | TBD   | pending |                               |
+| Mobile Safari   | Playground | TBD   | pending | MVP ensures responsive layout |
 
 ## Requirements
 

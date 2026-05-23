@@ -5,6 +5,7 @@ This package (`wesley-website`) hosts the public documentation site and the **Tr
 ## Architecture
 
 The website is a Single Page Application (SPA) built with:
+
 - **React 19** + **Vite**
 - **Mantine UI** for components and styling
 - **PGLite** (@electric-sql/pglite) for the in-browser Postgres database
@@ -15,6 +16,7 @@ The website is a Single Page Application (SPA) built with:
 The playground allows users to experience the "Schema First" workflow without installing CLI tools.
 
 **How it works:**
+
 1.  **Input:** User edits GraphQL SDL in the browser.
 2.  **Compile:** The `@wesley/host-browser` package (running in a Web Worker or main thread) parses the SDL and simulates the Wesley build pipeline.
 3.  **Output:** It generates SQL migrations and a JSON schema bundle.
@@ -22,6 +24,7 @@ The playground allows users to experience the "Schema First" workflow without in
 5.  **Query:** Users can run real SQL queries against this ephemeral database.
 
 **Limitations (Alpha):**
+
 - **Non-Persistent:** Reloading the page clears the database and schema edits.
 - **Single-File SQL:** The migration generation is currently a simplified simulation for the demo.
 - **No Backend:** Everything runs client-side.
@@ -47,4 +50,5 @@ pnpm test
 ```
 
 ### Mocking PGLite
+
 Tests for the playground use `FakeDbSession` (in `src/test/FakeDbSession.js`) to simulate database interactions without spinning up the full WASM Postgres engine, ensuring fast and reliable UI tests.

@@ -41,4 +41,3 @@ PR comment builder and the CLI without re-deriving the rules from a large file.
 ## Related Carry-Over
 
 - `#466`
-

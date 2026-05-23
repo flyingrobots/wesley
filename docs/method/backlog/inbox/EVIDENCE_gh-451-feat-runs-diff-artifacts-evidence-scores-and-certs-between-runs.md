@@ -22,6 +22,7 @@ Source: ROADMAP_2.md backlog
 Track the post-GA roadmap item for `wesley runs diff <a> <b>`.
 
 Done when:
+
 - the command can compare two runs
 - artifacts/evidence/scores/certs differences are surfaced coherently
 - output is stable enough for CI or human review

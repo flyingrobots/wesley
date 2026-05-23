@@ -119,7 +119,7 @@ test('extend type fields are folded into table IR', () => {
     }
   `);
 
-  const fields = Object.fromEntries(ir.tables[0].fields.map(field => [field.name, field]));
+  const fields = Object.fromEntries(ir.tables[0].fields.map((field) => [field.name, field]));
   assert.deepEqual(Object.keys(fields), ['id', 'email']);
   assert.equal(fields.email.type.base, 'String');
   assert.equal(fields.email.directives.unique, true);
@@ -134,7 +134,8 @@ test('extend type without base definition is rejected', () => {
 
 test('extend type duplicate fields are rejected', () => {
   assert.throws(
-    () => parseSDL(`
+    () =>
+      parseSDL(`
       type User @wes_table {
         id: ID! @wes_pk
       }
@@ -149,7 +150,8 @@ test('extend type duplicate fields are rejected', () => {
 
 test('extend type duplicate Wesley directives are rejected', () => {
   assert.throws(
-    () => parseSDL(`
+    () =>
+      parseSDL(`
       type User @wes_table @wes_tenant(by: "org_id") {
         id: ID! @wes_pk
         org_id: ID!
@@ -188,7 +190,7 @@ test('field.type.base preserves GraphQL scalar names', () => {
     }
   `);
   const fields = ir.tables[0].fields;
-  const byName = Object.fromEntries(fields.map(f => [f.name, f]));
+  const byName = Object.fromEntries(fields.map((f) => [f.name, f]));
 
   assert.equal(byName.id.type.base, 'ID');
   assert.equal(byName.name.type.base, 'String');
@@ -208,7 +210,7 @@ test('field.type.isList is true for list types', () => {
       tags: [String]
     }
   `);
-  const tags = ir.tables[0].fields.find(f => f.name === 'tags');
+  const tags = ir.tables[0].fields.find((f) => f.name === 'tags');
   assert.equal(tags.type.isList, true);
   assert.equal(tags.type.base, 'String');
 });
@@ -222,7 +224,7 @@ test('field.nullable reflects NonNull', () => {
     }
   `);
   const fields = ir.tables[0].fields;
-  const byName = Object.fromEntries(fields.map(f => [f.name, f]));
+  const byName = Object.fromEntries(fields.map((f) => [f.name, f]));
   assert.equal(byName.id.nullable, false);
   assert.equal(byName.email.nullable, false);
   assert.equal(byName.bio.nullable, true);
@@ -243,7 +245,7 @@ test('field with @wes_unique has directives.unique === true', () => {
       email: String! @wes_unique
     }
   `);
-  const email = ir.tables[0].fields.find(f => f.name === 'email');
+  const email = ir.tables[0].fields.find((f) => f.name === 'email');
   assert.equal(email.directives.unique, true);
 });
 
@@ -254,7 +256,7 @@ test('field with @wes_index has directives.index === true', () => {
       email: String! @wes_index
     }
   `);
-  const email = ir.tables[0].fields.find(f => f.name === 'email');
+  const email = ir.tables[0].fields.find((f) => f.name === 'email');
   assert.equal(email.directives.index, true);
 });
 
@@ -265,7 +267,7 @@ test('field with @wes_default has structured directives.default', () => {
       status: String! @wes_default(value: "active")
     }
   `);
-  const status = ir.tables[0].fields.find(f => f.name === 'status');
+  const status = ir.tables[0].fields.find((f) => f.name === 'status');
   assert.ok(status.directives.default, 'default directive should exist');
   assert.equal(status.directives.default.value, 'active');
 });
@@ -280,7 +282,7 @@ test('field with @wes_fk has structured directives.fk', () => {
       org_id: ID! @wes_fk(ref: "Org.id")
     }
   `);
-  const orgId = ir.tables[1].fields.find(f => f.name === 'org_id');
+  const orgId = ir.tables[1].fields.find((f) => f.name === 'org_id');
   assert.ok(orgId.directives.fk, 'fk directive should exist');
   assert.equal(orgId.directives.fk.targetTable, 'Org');
   assert.equal(orgId.directives.fk.targetField, 'id');
@@ -316,7 +318,7 @@ test('table does NOT have legacy shim properties (columns, primaryKey, foreignKe
       org_id: ID! @wes_fk(ref: "Org.id")
     }
   `);
-  const user = ir.tables.find(t => t.name === 'User');
+  const user = ir.tables.find((t) => t.name === 'User');
   assert.equal(user.columns, undefined, 'table.columns shim should be removed');
   assert.equal(user.primaryKey, undefined, 'table.primaryKey shim should be removed');
   assert.equal(user.foreignKeys, undefined, 'table.foreignKeys shim should be removed');

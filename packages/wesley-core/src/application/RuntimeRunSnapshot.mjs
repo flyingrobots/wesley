@@ -3,9 +3,7 @@ import { applyRuntimeEvent, buildRuntimeRunReport } from './RuntimeRunReport.mjs
 export const RUNTIME_RUN_SNAPSHOT_SCHEMA_VERSION = '1.0.0';
 
 export function createRuntimeRunSnapshot(seed = {}) {
-  const run = seed.run
-    ? cloneRunReport(seed.run)
-    : buildRuntimeRunReport([], seed);
+  const run = seed.run ? cloneRunReport(seed.run) : buildRuntimeRunReport([], seed);
   const eventCount = normalizeNonNegativeInteger(seed.eventCount, run.eventCount);
   return {
     schemaVersion: seed.schemaVersion || RUNTIME_RUN_SNAPSHOT_SCHEMA_VERSION,
@@ -63,10 +61,10 @@ function cloneRunReport(report) {
       failed: report?.taskCounts?.failed ?? 0,
       skipped: report?.taskCounts?.skipped ?? 0
     },
-    dryRun: typeof report?.dryRun === 'boolean' ? report.dryRun : report?.dryRun ?? null,
+    dryRun: typeof report?.dryRun === 'boolean' ? report.dryRun : (report?.dryRun ?? null),
     verdict: report?.verdict ?? null,
-    scores: report?.scores ? { ...report.scores } : report?.scores ?? null,
-    failure: report?.failure ? { ...report.failure } : report?.failure ?? null
+    scores: report?.scores ? { ...report.scores } : (report?.scores ?? null),
+    failure: report?.failure ? { ...report.failure } : (report?.failure ?? null)
   };
 }
 

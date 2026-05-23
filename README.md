@@ -1,4 +1,5 @@
 <!-- docs-truth: status=experimental owner=@flyingrobots -->
+
 > "Things are only impossible until they're not."
 > -- Jean-Luc Picard
 
@@ -23,7 +24,8 @@ extension modules.
 
 For the bounded-autonomy direction, read
 [Wesley North Star](./docs/NORTHSTAR.md). For the SDL boundary, read
-[SDL, Shape, And Law](./docs/SDL.md).
+[SDL, Shape, And Law](./docs/SDL.md). For the active ownership boundary, read
+[Domain-Empty Core Boundary](./docs/design/0014-domain-empty-core-boundary/domain-empty-core-boundary.md).
 
 ---
 
@@ -200,47 +202,51 @@ developer-level operator guide, read [GUIDE.md](./docs/GUIDE.md).
 ## Project status
 
 <!-- BEGIN:OVERALL_STATUS -->
-| Stage | Progress |
-| --- | --- |
-| MVP | 61% → Alpha |
+
+| Stage | Progress    |
+| ----- | ----------- |
+| MVP   | 61% → Alpha |
+
 <!-- END:OVERALL_STATUS -->
 
 <!-- BEGIN:PACKAGE_MATRIX -->
-| Package | Status | Stage | Progress | CI | Notes |
-| --- | --- | --- | --- | --- | --- |
-| `@wesley/core` | Active | MVP | 45% → Alpha | ![pkg-core.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-core.yml/badge.svg?branch=main) | Pure domain logic, no Node builtins |
-| `@wesley/cli` | Active | Alpha | 50% → Beta | ![pkg-cli.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-cli.yml/badge.svg?branch=main) | CLI + Bats suites |
-| `@wesley/host-node` | Active | MVP | 50% → Alpha | ![pkg-host-node.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-host-node.yml/badge.svg?branch=main) | Node adapters + binary |
-| `@wesley/host-browser` | Experimental | MVP | 40% → Alpha | ![browser-smoke.yml](https://github.com/flyingrobots/wesley/actions/workflows/browser-smoke.yml/badge.svg?branch=main) | Pure ESM; in-memory FS; minimal parser; smoke-level only |
-| `@wesley/generator-js` | Active | MVP | 50% → Alpha | ![pkg-generator-js.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-generator-js.yml/badge.svg?branch=main) | TS/Zod emitters |
-| `@wesley/generator-vue` | Experimental | MVP | 0% → Alpha | — | Vue-facing TS/composable emitters |
-| `@wesley/holmes` | Active | Alpha | 50% → Beta | ![pkg-holmes.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-holmes.yml/badge.svg?branch=main) | Evidence scoring |
-| `@wesley/runtime-node` | Active | MVP | 0% → Alpha | — | Shared Node module loading, GraphQL parsing, and host utilities |
-| `@wesley/tasks` | Active | MVP | 50% → Alpha | ![pkg-tasks.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-tasks.yml/badge.svg?branch=main) | Planner utilities |
-| `@wesley/host-deno` | Experimental | Alpha | 50% → Beta | ![pkg-host-deno.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-host-deno.yml/badge.svg?branch=main) | Deno host runtime (demo) |
-| `@wesley/host-bun` | Experimental | Alpha | 50% → Beta | ![pkg-host-bun.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-host-bun.yml/badge.svg?branch=main) | Bun host runtime (demo) |
-| `@wesley/test-fixtures` | Active | MVP | 20% → Alpha | — | Private shared fixtures + schema builders |
+
+| Package                 | Status       | Stage | Progress    | CI                                                                                                                           | Notes                                                           |
+| ----------------------- | ------------ | ----- | ----------- | ---------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| `@wesley/core`          | Active       | MVP   | 45% → Alpha | ![pkg-core.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-core.yml/badge.svg?branch=main)                 | Pure domain logic, no Node builtins                             |
+| `@wesley/cli`           | Active       | Alpha | 50% → Beta  | ![pkg-cli.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-cli.yml/badge.svg?branch=main)                   | CLI + Bats suites                                               |
+| `@wesley/host-node`     | Active       | MVP   | 50% → Alpha | ![pkg-host-node.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-host-node.yml/badge.svg?branch=main)       | Node adapters + binary                                          |
+| `@wesley/host-browser`  | Experimental | MVP   | 40% → Alpha | ![browser-smoke.yml](https://github.com/flyingrobots/wesley/actions/workflows/browser-smoke.yml/badge.svg?branch=main)       | Pure ESM; in-memory FS; minimal parser; smoke-level only        |
+| `@wesley/generator-js`  | Active       | MVP   | 50% → Alpha | ![pkg-generator-js.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-generator-js.yml/badge.svg?branch=main) | TS/Zod emitters                                                 |
+| `@wesley/generator-vue` | Experimental | MVP   | 0% → Alpha  | —                                                                                                                            | Vue-facing TS/composable emitters                               |
+| `@wesley/holmes`        | Active       | Alpha | 50% → Beta  | ![pkg-holmes.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-holmes.yml/badge.svg?branch=main)             | Evidence scoring                                                |
+| `@wesley/runtime-node`  | Active       | MVP   | 0% → Alpha  | —                                                                                                                            | Shared Node module loading, GraphQL parsing, and host utilities |
+| `@wesley/tasks`         | Active       | MVP   | 50% → Alpha | ![pkg-tasks.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-tasks.yml/badge.svg?branch=main)               | Planner utilities                                               |
+| `@wesley/host-deno`     | Experimental | Alpha | 50% → Beta  | ![pkg-host-deno.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-host-deno.yml/badge.svg?branch=main)       | Deno host runtime (demo)                                        |
+| `@wesley/host-bun`      | Experimental | Alpha | 50% → Beta  | ![pkg-host-bun.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-host-bun.yml/badge.svg?branch=main)         | Bun host runtime (demo)                                         |
+| `@wesley/test-fixtures` | Active       | MVP   | 20% → Alpha | —                                                                                                                            | Private shared fixtures + schema builders                       |
+
 <!-- END:PACKAGE_MATRIX -->
 
 ---
 
-## Extension modules
+## External module examples
 
 A single schema can be compiled by many extensions simultaneously. Each
 extension walks the semantic graph independently and emits its own artifacts.
 Extensions do not need to know about one another.
-These are external owning module families; Wesley preserves the neutral IR
-contract they consume.
+These are externally owned module families; Wesley preserves the neutral IR
+contract and module seam they consume.
 
-| Extension | Responsibility |
-| :--- | :--- |
-| Postgres | SQL schemas, migrations, indexes, pgTAP, CRUD helpers |
-| Validation | Runtime and static validation rules |
-| Codec | Binary and runtime codecs |
-| TypeScript | Type contracts and client bindings |
-| Observer | Observation plans and projections |
-| Echo | Runtime law, footprints, observation semantics |
-| Continuum | Deferred protocol generation |
+| Module family | External owner                  | Responsibility                                        |
+| :------------ | :------------------------------ | ----------------------------------------------------- |
+| Postgres      | `wesley-postgres`               | SQL schemas, migrations, indexes, pgTAP, CRUD helpers |
+| Validation    | loaded module                   | Runtime and static validation rules                   |
+| Codec         | loaded module                   | Binary and runtime codecs                             |
+| TypeScript    | Wesley emitter or loaded module | Type contracts and client bindings                    |
+| Observer      | loaded module                   | Observation plans and projections                     |
+| Echo          | Echo-owned integration          | Runtime law, footprints, observation semantics        |
+| Continuum     | Continuum-owned module/repo     | Deferred protocol generation                          |
 
 ---
 
@@ -248,7 +254,7 @@ contract they consume.
 
 ### Shape
 
-Shape answers: *What exists?*
+Shape answers: _What exists?_
 
 It defines the structural reality of the system, covering fields, entities,
 relationships, arguments, and payloads. GraphQL types define shape.
@@ -267,7 +273,7 @@ execution.
 
 ### Law
 
-Law answers: *What is permitted, required, or forbidden?*
+Law answers: _What is permitted, required, or forbidden?_
 
 It governs execution, covering reads, writes, capabilities, footprints,
 admissibility rules, and operational constraints. Directives carry this law when
@@ -326,13 +332,13 @@ runtimes at all.
 
 ## Layer separation
 
-| Layer | Responsibility |
-| :--- | :--- |
-| Product | Product pressure and user semantics |
-| Runtime | Execution and substrate truth |
-| Wesley | Semantic compilation |
-| Extensions | Domain law |
-| Protocols | Deferred publication of proven seams |
+| Layer      | Responsibility                       |
+| :--------- | :----------------------------------- |
+| Product    | Product pressure and user semantics  |
+| Runtime    | Execution and substrate truth        |
+| Wesley     | Semantic compilation                 |
+| Extensions | Domain law                           |
+| Protocols  | Deferred publication of proven seams |
 
 The compiler must not silently become a runtime.
 The runtime must not silently become product policy.

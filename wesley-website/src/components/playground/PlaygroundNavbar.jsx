@@ -1,12 +1,5 @@
 import { IconFile, IconSearch, IconDatabase } from '@tabler/icons-react';
-import {
-  Box,
-  Code,
-  Group,
-  Text,
-  TextInput,
-  UnstyledButton
-} from '@mantine/core';
+import { Box, Code, Group, Text, TextInput, UnstyledButton } from '@mantine/core';
 import cx from 'clsx';
 import classes from './PlaygroundNavbar.module.css';
 
@@ -30,7 +23,7 @@ export default function PlaygroundNavbar({
       className={cx(classes.mainLink, { [classes.mainLinkActive]: activeFile === file.file })}
       onClick={() => handleSelect(file.file)}
       disabled={isTutorialActive && tutorialStepId !== 'edit-schema'}
-      ref={idx === 0 ? (tutorialRefs.editor || null) : null}
+      ref={idx === 0 ? tutorialRefs.editor || null : null}
     >
       <div className={classes.mainLinkInner}>
         <IconFile size={20} className={classes.mainLinkIcon} stroke={1.5} />
@@ -50,7 +43,7 @@ export default function PlaygroundNavbar({
       key={file.file}
       className={cx(classes.collectionLink, { [classes.mainLinkActive]: activeFile === file.file })}
       aria-disabled={isTutorialActive && tutorialStepId !== 'sidebar-migrations'}
-      ref={idx === 0 ? (tutorialRefs['sidebar-migrations'] || null) : null}
+      ref={idx === 0 ? tutorialRefs['sidebar-migrations'] || null : null}
     >
       <Box component="span" mr={9} fz={16}>
         {file.file.endsWith('.sql') ? '🐘' : '📄'}
@@ -63,8 +56,12 @@ export default function PlaygroundNavbar({
     <nav className={classes.navbar}>
       <div className={classes.section}>
         <Box p="md">
-            <Text fw={700} size="sm">Wesley Project</Text>
-            <Text size="xs" c="dimmed">Alpha Playground</Text>
+          <Text fw={700} size="sm">
+            Wesley Project
+          </Text>
+          <Text size="xs" c="dimmed">
+            Alpha Playground
+          </Text>
         </Box>
       </div>
 
@@ -81,8 +78,10 @@ export default function PlaygroundNavbar({
 
       <div className={classes.section}>
         <div className={classes.mainLinks}>
-          <UnstyledButton 
-            className={cx(classes.mainLink, { [classes.mainLinkActive]: activeFile === 'database' })}
+          <UnstyledButton
+            className={cx(classes.mainLink, {
+              [classes.mainLinkActive]: activeFile === 'database'
+            })}
             onClick={() => handleSelect('database')}
             disabled={isTutorialActive && tutorialStepId !== 'sidebar-database'}
             ref={tutorialRefs['sidebar-database'] || null}

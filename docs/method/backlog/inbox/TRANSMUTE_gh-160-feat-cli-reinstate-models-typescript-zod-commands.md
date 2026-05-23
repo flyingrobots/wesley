@@ -108,9 +108,9 @@ Wire CLI commands to call new generator APIs, ensure config flags propagate, upd
 
 ### QA Sign-off Matrix
 
-| Environment | Surface | Owner | Status | Notes |
-| --- | --- | --- | --- | --- |
-| Unit/integration | CLI commands | TBD | pending | |
+| Environment      | Surface      | Owner | Status  | Notes |
+| ---------------- | ------------ | ----- | ------- | ----- |
+| Unit/integration | CLI commands | TBD   | pending |       |
 
 ## Requirements
 

@@ -1,6 +1,6 @@
-import { Button, Container, Group, Image, List, Text, ThemeIcon, Title } from '@mantine/core'
-import heroImg from '../assets/react.svg'
-import classes from './HeroBullets.module.css'
+import { Button, Container, Group, Image, List, Text, ThemeIcon, Title } from '@mantine/core';
+import heroImg from '../assets/react.svg';
+import classes from './HeroBullets.module.css';
 
 export default function HeroBullets({ onNavigate }) {
   return (
@@ -19,7 +19,11 @@ export default function HeroBullets({ onNavigate }) {
             mt={30}
             spacing="sm"
             size="sm"
-            icon={<ThemeIcon size={20} radius="xl">✓</ThemeIcon>}
+            icon={
+              <ThemeIcon size={20} radius="xl">
+                ✓
+              </ThemeIcon>
+            }
           >
             <List.Item>
               <b>Write once</b> – generate everywhere (DB, API, types, docs)
@@ -33,7 +37,13 @@ export default function HeroBullets({ onNavigate }) {
           </List>
 
           <Group mt={30}>
-            <Button radius="xl" size="md" className={classes.control} component="a" href="#getting-started">
+            <Button
+              radius="xl"
+              size="md"
+              className={classes.control}
+              component="a"
+              href="#getting-started"
+            >
               Get started
             </Button>
             <Button
@@ -74,5 +84,5 @@ export default function HeroBullets({ onNavigate }) {
         <Image src={heroImg} className={classes.image} alt="Illustration" />
       </div>
     </Container>
-  )
+  );
 }

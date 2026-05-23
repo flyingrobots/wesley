@@ -115,7 +115,7 @@ export class CheckpointManager {
       await this._ensureDirectoryExists();
 
       const files = await fs.readdir(this.baseDir);
-      const checkpointFiles = files.filter(f => f.endsWith('.json') && !f.includes('.tmp.'));
+      const checkpointFiles = files.filter((f) => f.endsWith('.json') && !f.includes('.tmp.'));
 
       const checkpoints = [];
 
@@ -225,7 +225,7 @@ export class CheckpointManager {
 
   async _findByName(name) {
     const files = await fs.readdir(this.baseDir);
-    const checkpointFiles = files.filter(f => f.endsWith('.json') && !f.includes('.tmp.'));
+    const checkpointFiles = files.filter((f) => f.endsWith('.json') && !f.includes('.tmp.'));
 
     for (const file of checkpointFiles) {
       try {
@@ -268,7 +268,9 @@ export class CheckpointManager {
     }
 
     if (checkpoint.version !== this.version) {
-      console.warn(`Warning: Checkpoint version mismatch. Expected ${this.version}, got ${checkpoint.version}`);
+      console.warn(
+        `Warning: Checkpoint version mismatch. Expected ${this.version}, got ${checkpoint.version}`
+      );
     }
   }
 }

@@ -1,4 +1,5 @@
 # Wesley Role In Continuum
+
 <!-- docs-truth: status=current owner=@flyingrobots -->
 
 This note states Wesley's current operating role in Continuum. It complements
@@ -210,12 +211,12 @@ model behind this recommendation, see
 
 ## Boundary Map
 
-| Neighbor | Wesley does | Wesley does not do |
-| --- | --- | --- |
-| Echo | Compile shared contract artifacts and keep schema, codec, manifest, and registry meaning stable for hot-side consumers. | Own hot-runtime rewrite semantics, storage behavior, or runtime policy. |
-| `git-warp` | Consume canonical substrate facts and derive Wesley-native judgment from them. | Own comparison, transfer planning, visible-state normalization, or canonical fact export. |
-| `warp-ttd` | Support host-neutral protocol families with explicit compile and publication boundaries. | Own debugger UX, playback policy, observer behavior, or tool-local mirrors. |
-| HOLMES / Moriarty / BLADE | Turn compiled surfaces plus substrate facts into readiness, forecast, and gate outputs. | Replace substrate tools or smuggle runtime semantics into product judgment. |
+| Neighbor                  | Wesley does                                                                                                             | Wesley does not do                                                                        |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Echo                      | Compile shared contract artifacts and keep schema, codec, manifest, and registry meaning stable for hot-side consumers. | Own hot-runtime rewrite semantics, storage behavior, or runtime policy.                   |
+| `git-warp`                | Consume canonical substrate facts and derive Wesley-native judgment from them.                                          | Own comparison, transfer planning, visible-state normalization, or canonical fact export. |
+| `warp-ttd`                | Support host-neutral protocol families with explicit compile and publication boundaries.                                | Own debugger UX, playback policy, observer behavior, or tool-local mirrors.               |
+| HOLMES / Moriarty / BLADE | Turn compiled surfaces plus substrate facts into readiness, forecast, and gate outputs.                                 | Replace substrate tools or smuggle runtime semantics into product judgment.               |
 
 Neighboring repos may author some shared noun families. Wesley's job is to
 keep the compile path, publication boundary, and proof surface explicit, not to

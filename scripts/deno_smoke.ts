@@ -1,5 +1,5 @@
 // Deno smoke: import @wesley/core via import map and exercise a tiny bit
-import { SystemClock } from "@wesley/core";
+import { SystemClock } from '@wesley/core';
 
 const clock = new SystemClock();
 const now = clock.now();

@@ -31,12 +31,15 @@ test('loadWeightConfig returns defaults when nothing defined', () => {
 
 test('loadWeightConfig reads wesley.weights.json', () => {
   withTempDir((dir) => {
-    writeFileSync(join(dir, HOLMES_WEIGHT_CONFIG_PATH), JSON.stringify({
-      default: 7,
-      substrings: { foo: 9 },
-      directives: { sensitive: 11 },
-      overrides: { 'col:User.email': 13 }
-    }));
+    writeFileSync(
+      join(dir, HOLMES_WEIGHT_CONFIG_PATH),
+      JSON.stringify({
+        default: 7,
+        substrings: { foo: 9 },
+        directives: { sensitive: 11 },
+        overrides: { 'col:User.email': 13 }
+      })
+    );
 
     const { config, source } = loadWeightConfig({ cwd: dir, env: {} });
     assert.equal(config.default, 7);
@@ -63,7 +66,10 @@ test('environment file overrides default path', () => {
   withTempDir((dir) => {
     const custom = join(dir, 'custom-weights.json');
     writeFileSync(custom, JSON.stringify({ default: 6 }));
-    const { config, source } = loadWeightConfig({ cwd: dir, env: { WESLEY_HOLMES_WEIGHT_FILE: 'custom-weights.json' } });
+    const { config, source } = loadWeightConfig({
+      cwd: dir,
+      env: { WESLEY_HOLMES_WEIGHT_FILE: 'custom-weights.json' }
+    });
     assert.equal(config.default, 6);
     assert.equal(source, `file:${resolve(dir, 'custom-weights.json')}`);
   });

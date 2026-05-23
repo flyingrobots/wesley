@@ -22,6 +22,7 @@ Source: ROADMAP_2.md backlog
 Track the post-GA roadmap item for remote/shared execution.
 
 Done when:
+
 - the execution model supports remote/shared workers through the scheduler/runtime ports
 - security and trust boundaries are documented
 - semantics match the local baseline

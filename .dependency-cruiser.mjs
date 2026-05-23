@@ -13,10 +13,7 @@ export default {
         path: 'packages/wesley-core/src'
       },
       to: {
-        path: [
-          'packages/wesley-host-node/src',
-          'packages/wesley-cli/src'
-        ]
+        path: ['packages/wesley-host-node/src', 'packages/wesley-cli/src']
       }
     },
     {
@@ -83,11 +80,7 @@ export default {
   options: {
     includeOnly: { path: '^packages/.+?/src' },
     exclude: {
-      path: [
-        'node_modules',
-        '/test/',
-        '\\.(spec|test)\\.'
-      ]
+      path: ['node_modules', '/test/', '\\.(spec|test)\\.']
     }
   }
 };

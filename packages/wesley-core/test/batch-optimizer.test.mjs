@@ -27,7 +27,7 @@ class MockEventEmitter {
   }
 
   getEvents(type) {
-    return this.events.filter(e => e.type === type);
+    return this.events.filter((e) => e.type === type);
   }
 
   clear() {
@@ -96,7 +96,7 @@ test('optimizeOperations with valid operations', async () => {
   // Should have batches with operations
   assert(Array.isArray(result.batches));
   assert(result.batches.length > 0);
-  assert(result.batches.every(batch => Array.isArray(batch.operations)));
+  assert(result.batches.every((batch) => Array.isArray(batch.operations)));
 
   // Metrics should be populated
   assert.equal(result.metrics.originalOperationCount, sampleOperations.length);
@@ -108,15 +108,9 @@ test('optimizeOperations with valid operations', async () => {
 test('optimizeOperations throws error for invalid input', async () => {
   const optimizer = new BatchOptimizer();
 
-  await assert.rejects(
-    () => optimizer.optimizeOperations(null),
-    BatchOptimizationError
-  );
+  await assert.rejects(() => optimizer.optimizeOperations(null), BatchOptimizationError);
 
-  await assert.rejects(
-    () => optimizer.optimizeOperations('not an array'),
-    BatchOptimizationError
-  );
+  await assert.rejects(() => optimizer.optimizeOperations('not an array'), BatchOptimizationError);
 });
 
 test('operation dependency analysis', async () => {
@@ -149,13 +143,13 @@ test('lock contention minimization through ordering', async () => {
 
   // Create operations should come before destructive ones where possible
   const firstBatch = result.batches[0];
-  const createOps = firstBatch.operations.filter(op => op.kind.startsWith('create'));
-  const dropOps = firstBatch.operations.filter(op => op.kind.startsWith('drop'));
+  const createOps = firstBatch.operations.filter((op) => op.kind.startsWith('create'));
+  const dropOps = firstBatch.operations.filter((op) => op.kind.startsWith('drop'));
 
   if (createOps.length > 0 && dropOps.length > 0) {
     // Find indices of first create and first drop
-    const firstCreateIndex = firstBatch.operations.findIndex(op => op.kind.startsWith('create'));
-    const firstDropIndex = firstBatch.operations.findIndex(op => op.kind.startsWith('drop'));
+    const firstCreateIndex = firstBatch.operations.findIndex((op) => op.kind.startsWith('create'));
+    const firstDropIndex = firstBatch.operations.findIndex((op) => op.kind.startsWith('drop'));
 
     // Create should generally come before drop (unless there are dependencies)
     if (firstCreateIndex !== -1 && firstDropIndex !== -1) {
@@ -181,8 +175,9 @@ test('compatible operations grouping', async () => {
   assert(result.batches.length >= 1);
 
   // Schema operations should generally be grouped
-  const schemaOps = result.batches.flatMap(b => b.operations)
-    .filter(op => ['create_table', 'add_column'].includes(op.kind));
+  const schemaOps = result.batches
+    .flatMap((b) => b.operations)
+    .filter((op) => ['create_table', 'add_column'].includes(op.kind));
   assert.equal(schemaOps.length, 4);
 });
 
@@ -202,7 +197,7 @@ test('memory-aware batch sizing', async () => {
   assert(result.batches.length > 1);
 
   // Each batch should respect memory limits
-  result.batches.forEach(batch => {
+  result.batches.forEach((batch) => {
     assert(batch.estimatedMemoryMB <= optimizer.maxMemoryMB);
   });
 });
@@ -218,7 +213,7 @@ test('transaction boundary optimization', async () => {
   const result = await optimizer.optimizeOperations(mixedOperations);
 
   // Batches should have transaction configuration
-  result.batches.forEach(batch => {
+  result.batches.forEach((batch) => {
     assert(['explicit', 'auto'].includes(batch.transactionMode));
     assert(['serializable', 'read_committed'].includes(batch.isolationLevel));
     assert(typeof batch.requiresExclusiveLock === 'boolean');
@@ -235,11 +230,11 @@ test('risk assessment and scoring', async () => {
   assert(result.analysis.riskScore > 0);
 
   // High-risk operations should have appropriate handling
-  const highRiskBatches = result.batches.filter(batch =>
-    batch.operations.some(op => ['drop_table', 'drop_column', 'alter_type'].includes(op.kind))
+  const highRiskBatches = result.batches.filter((batch) =>
+    batch.operations.some((op) => ['drop_table', 'drop_column', 'alter_type'].includes(op.kind))
   );
 
-  highRiskBatches.forEach(batch => {
+  highRiskBatches.forEach((batch) => {
     assert.equal(batch.transactionMode, 'explicit');
     assert.equal(batch.rollbackPolicy, 'immediate');
   });
@@ -287,10 +282,7 @@ test('executeBatch with executor failure', async () => {
     throw new Error('Database connection failed');
   };
 
-  await assert.rejects(
-    () => optimizer.executeBatch(batch, mockExecutor),
-    BatchOptimizationError
-  );
+  await assert.rejects(() => optimizer.executeBatch(batch, mockExecutor), BatchOptimizationError);
 
   // Should still emit completion event with failure
   assert.equal(eventEmitter.getEvents('BATCH_EXECUTION_COMPLETED').length, 1);
@@ -304,7 +296,7 @@ test('executeBatch with timeout', async () => {
 
   // Mock slow executor
   const mockExecutor = async () => {
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
     return { success: true };
   };
 
@@ -317,20 +309,14 @@ test('executeBatch with timeout', async () => {
 test('executeBatch input validation', async () => {
   const optimizer = new BatchOptimizer();
 
-  await assert.rejects(
-    () => optimizer.executeBatch([], () => {}),
-    BatchOptimizationError
-  );
+  await assert.rejects(() => optimizer.executeBatch([], () => {}), BatchOptimizationError);
 
   await assert.rejects(
     () => optimizer.executeBatch([{ kind: 'test' }], null),
     BatchOptimizationError
   );
 
-  await assert.rejects(
-    () => optimizer.executeBatch(null, () => {}),
-    BatchOptimizationError
-  );
+  await assert.rejects(() => optimizer.executeBatch(null, () => {}), BatchOptimizationError);
 });
 
 test('batch size limits respected', async () => {
@@ -348,7 +334,7 @@ test('batch size limits respected', async () => {
   assert(result.batches.length >= 4); // 20 operations / 5 max = 4 batches minimum
 
   // Each batch should not exceed maxBatchSize
-  result.batches.forEach(batch => {
+  result.batches.forEach((batch) => {
     assert(batch.operations.length <= optimizer.maxBatchSize);
   });
 });
@@ -449,22 +435,20 @@ test('batch type determination', async () => {
     { kind: 'update', table: 'test', where: { id: 1 } }
   ];
 
-  const indexOps = [
-    { kind: 'create_index', table: 'test', columns: ['col'] }
-  ];
+  const indexOps = [{ kind: 'create_index', table: 'test', columns: ['col'] }];
 
   const schemaResult = await optimizer.optimizeOperations(schemaOps);
   const dataResult = await optimizer.optimizeOperations(dataOps);
   const indexResult = await optimizer.optimizeOperations(indexOps);
 
   // Should categorize batch types
-  const schemaBatch = schemaResult.batches.find(b => b.batchType === 'schema');
-  const dataBatch = dataResult.batches.find(b => b.batchType === 'data');
-  const indexBatch = indexResult.batches.find(b => b.batchType === 'index');
+  const schemaBatch = schemaResult.batches.find((b) => b.batchType === 'schema');
+  const dataBatch = dataResult.batches.find((b) => b.batchType === 'data');
+  const indexBatch = indexResult.batches.find((b) => b.batchType === 'index');
 
-  assert(schemaBatch || schemaResult.batches.some(b => b.batchType === 'mixed'));
-  assert(dataBatch || dataResult.batches.some(b => b.batchType === 'mixed'));
-  assert(indexBatch || indexResult.batches.some(b => b.batchType === 'mixed'));
+  assert(schemaBatch || schemaResult.batches.some((b) => b.batchType === 'mixed'));
+  assert(dataBatch || dataResult.batches.some((b) => b.batchType === 'mixed'));
+  assert(indexBatch || indexResult.batches.some((b) => b.batchType === 'mixed'));
 });
 
 test('complex multi-table dependency resolution', async () => {
@@ -474,7 +458,12 @@ test('complex multi-table dependency resolution', async () => {
     { kind: 'create_table', table: 'posts' },
     { kind: 'create_table', table: 'comments' },
     { kind: 'add_constraint', table: 'posts', constraintType: 'foreign_key', references: 'users' },
-    { kind: 'add_constraint', table: 'comments', constraintType: 'foreign_key', references: 'posts' },
+    {
+      kind: 'add_constraint',
+      table: 'comments',
+      constraintType: 'foreign_key',
+      references: 'posts'
+    },
     { kind: 'create_index', table: 'users', columns: ['email'] },
     { kind: 'create_index', table: 'posts', columns: ['user_id'] },
     { kind: 'create_index', table: 'comments', columns: ['post_id'] }
@@ -487,16 +476,17 @@ test('complex multi-table dependency resolution', async () => {
   assert(result.analysis.dependencies.size >= 0);
 
   // Foreign key constraints should come after table creation
-  const allOps = result.batches.flatMap(b => b.operations);
-  const tableCreations = allOps.filter(op => op.kind === 'create_table');
-  const constraints = allOps.filter(op => op.kind === 'add_constraint');
+  const allOps = result.batches.flatMap((b) => b.operations);
+  const tableCreations = allOps.filter((op) => op.kind === 'create_table');
+  const constraints = allOps.filter((op) => op.kind === 'add_constraint');
 
   // Basic dependency check: tables should be created before constraints
   if (tableCreations.length > 0 && constraints.length > 0) {
-    const lastTableIndex = allOps.map((op, i) => op.kind === 'create_table' ? i : -1)
-      .filter(i => i >= 0)
+    const lastTableIndex = allOps
+      .map((op, i) => (op.kind === 'create_table' ? i : -1))
+      .filter((i) => i >= 0)
       .pop();
-    const firstConstraintIndex = allOps.findIndex(op => op.kind === 'add_constraint');
+    const firstConstraintIndex = allOps.findIndex((op) => op.kind === 'add_constraint');
 
     if (lastTableIndex !== undefined && firstConstraintIndex >= 0) {
       // This is a guideline - actual ordering depends on specific dependencies
@@ -570,18 +560,19 @@ test('operation memory estimation accuracy', async () => {
   const result = await optimizer.optimizeOperations(memoryIntensiveOps);
 
   // Memory estimates should be reasonable
-  result.batches.forEach(batch => {
+  result.batches.forEach((batch) => {
     assert(batch.estimatedMemoryMB > 0);
     assert(batch.estimatedMemoryMB <= optimizer.maxMemoryMB);
   });
 
   // Index creation should have higher memory estimate than simple column addition
-  const indexBatch = result.batches.find(b =>
-    b.operations.some(op => op.kind === 'create_index')
+  const indexBatch = result.batches.find((b) =>
+    b.operations.some((op) => op.kind === 'create_index')
   );
-  const simpleColumnBatch = result.batches.find(b =>
-    b.operations.some(op => op.kind === 'add_column') &&
-    b.operations.every(op => op.kind !== 'create_index' && op.kind !== 'alter_type')
+  const simpleColumnBatch = result.batches.find(
+    (b) =>
+      b.operations.some((op) => op.kind === 'add_column') &&
+      b.operations.every((op) => op.kind !== 'create_index' && op.kind !== 'alter_type')
   );
 
   if (indexBatch && simpleColumnBatch) {

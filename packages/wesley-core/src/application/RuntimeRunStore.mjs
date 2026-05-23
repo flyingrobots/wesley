@@ -10,9 +10,15 @@ export function resolveRuntimeRunStream(eventStore, { runId, transmutation = nul
   }
 
   if (requestedTransmutation) {
-    const streamId = createRuntimeStreamId({ transmutation: requestedTransmutation, runId: requestedRunId });
+    const streamId = createRuntimeStreamId({
+      transmutation: requestedTransmutation,
+      runId: requestedRunId
+    });
     if (!runtimeRunStreamExists(eventStore, streamId)) {
-      throw new WesleyError('RUN_NOT_FOUND', `No persisted run found for ${requestedTransmutation}/${requestedRunId}.`);
+      throw new WesleyError(
+        'RUN_NOT_FOUND',
+        `No persisted run found for ${requestedTransmutation}/${requestedRunId}.`
+      );
     }
     return { streamId };
   }
@@ -27,7 +33,7 @@ export function resolveRuntimeRunStream(eventStore, { runId, transmutation = nul
     }
 
     const events = eventStore.readStream(streamId);
-    if (events.some(event => event?.runId === requestedRunId)) {
+    if (events.some((event) => event?.runId === requestedRunId)) {
       matches.push({ streamId });
     }
   }
@@ -36,7 +42,10 @@ export function resolveRuntimeRunStream(eventStore, { runId, transmutation = nul
     throw new WesleyError('RUN_NOT_FOUND', `No persisted run found for runId ${requestedRunId}.`);
   }
   if (matches.length > 1) {
-    throw new WesleyError('RUN_AMBIGUOUS', `Multiple persisted runs match ${requestedRunId}; pass --transmutation.`);
+    throw new WesleyError(
+      'RUN_AMBIGUOUS',
+      `Multiple persisted runs match ${requestedRunId}; pass --transmutation.`
+    );
   }
   return matches[0];
 }
@@ -54,7 +63,8 @@ export function readRuntimeRunRecord(
   const last = tailEvents.at(-1) || {};
   const replay = replayRuntimeRun(tailEvents, {
     runId: runId || snapshot?.runId || last.runId || first.runId || null,
-    transmutation: transmutation || snapshot?.transmutation || last.transmutation || first.transmutation || null,
+    transmutation:
+      transmutation || snapshot?.transmutation || last.transmutation || first.transmutation || null,
     streamId,
     snapshot
   });
@@ -101,10 +111,12 @@ export function inspectRuntimeRunStream(eventStore, streamId) {
       run: null,
       replay: null,
       events: [],
-      findings: [{
-        code: 'STREAM_READ_FAILED',
-        message: error.message
-      }],
+      findings: [
+        {
+          code: 'STREAM_READ_FAILED',
+          message: error.message
+        }
+      ],
       healthy: false
     };
   }
@@ -164,13 +176,17 @@ export function summarizeRuntimeRunDoctor(streams) {
       summary.unhealthyStreams += 1;
     }
 
-    if (stream.findings.some(finding => finding.code === 'RUN_NON_TERMINAL')) {
+    if (stream.findings.some((finding) => finding.code === 'RUN_NON_TERMINAL')) {
       summary.nonTerminalStreams += 1;
     }
-    if (stream.findings.some(finding => finding.code === 'STREAM_READ_FAILED')) {
+    if (stream.findings.some((finding) => finding.code === 'STREAM_READ_FAILED')) {
       summary.readErrorStreams += 1;
     }
-    if (stream.findings.some(finding => !['RUN_NON_TERMINAL', 'STREAM_READ_FAILED'].includes(finding.code))) {
+    if (
+      stream.findings.some(
+        (finding) => !['RUN_NON_TERMINAL', 'STREAM_READ_FAILED'].includes(finding.code)
+      )
+    ) {
       summary.integrityIssueStreams += 1;
     }
   }
@@ -193,7 +209,7 @@ export function readRuntimeRunStreamSince(eventStore, streamId, afterSequence = 
   if (typeof eventStore?.readStreamSince === 'function') {
     return eventStore.readStreamSince(streamId, afterSequence);
   }
-  return eventStore.readStream(streamId).filter(event => {
+  return eventStore.readStream(streamId).filter((event) => {
     return Number.isInteger(event?.sequence) ? event.sequence > afterSequence : true;
   });
 }
@@ -213,10 +229,12 @@ export function listRuntimeRunStreamIds(eventStore) {
 }
 
 function compareRunsDescending(left, right) {
-  return compareTimestampDescending(
-    left.lastEventAt || left.completedAt || left.startedAt,
-    right.lastEventAt || right.completedAt || right.startedAt
-  ) || String(right.runId || '').localeCompare(String(left.runId || ''));
+  return (
+    compareTimestampDescending(
+      left.lastEventAt || left.completedAt || left.startedAt,
+      right.lastEventAt || right.completedAt || right.startedAt
+    ) || String(right.runId || '').localeCompare(String(left.runId || ''))
+  );
 }
 
 function compareTimestampDescending(left, right) {

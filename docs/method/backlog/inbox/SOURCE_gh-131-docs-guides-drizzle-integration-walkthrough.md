@@ -100,9 +100,9 @@ Document manifest config, CLI commands, schema output, integration patterns (rel
 
 ### QA Sign-off Matrix
 
-| Environment | Surface | Owner | Status | Notes |
-| --- | --- | --- | --- | --- |
-| Docs preview | Web | TBD | pending | |
+| Environment  | Surface | Owner | Status  | Notes |
+| ------------ | ------- | ----- | ------- | ----- |
+| Docs preview | Web     | TBD   | pending |       |
 
 ## Requirements
 

@@ -83,11 +83,15 @@ raw Rust L1 bytes. Those shapes are intentionally different today: the legacy
 JS adapter emits table-centered IR, while Rust L1 emits consolidated GraphQL
 type definitions.
 
-The first implementation uses a named `js-table-vs-rust-table.v0` projection.
-Both lowerers must project into that shared comparison shape before bytes or
-hashes are compared.
+The sentinel uses named projections. Both sides must project into the selected
+shared comparison shape before bytes or hashes are compared.
 
-The projection includes:
+The implemented v0 projections are:
+
+- `js-table-vs-rust-table.v0`
+- `js-sdl-type-family-vs-rust-l1-type-family.v0`
+
+The table projection includes:
 
 - object types admitted as tables by `@wes_table` or its supported aliases
 - effective table names
@@ -96,13 +100,21 @@ The projection includes:
 - table index, tenant, primary-key, default, and foreign-key facts derivable
   from the projected directives
 
-The projection excludes:
+The type-family projection includes structural GraphQL facts that the legacy JS
+table adapter drops:
 
-- non-table scalar, enum, union, interface, and input-object-only semantics
-- Rust-only extension-family coverage that has no legacy JS table-IR
-  equivalent yet
+- scalar, object, interface, union, enum, and input object names
+- object/interface implemented interfaces
+- object/interface/input field names, type references, default values, and
+  directives
+- union members and enum values
+- extension-folded members, values, fields, interfaces, and directives
+
+The projections exclude:
+
 - generated relationship records unless the projection derives the same fact
   from both lowerers
+- target-specific product, database, runtime, or generated-code semantics
 
 Each fixture admitted to the sentinel corpus must name the projection it uses.
 Fixtures with no coherent legacy/Rust common projection remain Rust L1 corpus
@@ -114,8 +126,10 @@ The normalizer removes envelope-only data and keeps semantic data intact.
 
 - Remove top-level `metadata`.
 - Sort object keys with Wesley canonical JSON ordering before hashing.
-- Preserve array order.
-- Sort projection-created table arrays by deterministic code-point name order.
+- Preserve authored array order unless a projection contract declares a field
+  as an unordered semantic fact set.
+- Sort projection-created table and type-family fact arrays by deterministic
+  code-point order.
 - Preserve directive argument values exactly after each lowerer has produced
   semantic IR.
 - Require lowerers to emit canonical directive names for core Wesley aliases.
@@ -152,40 +166,81 @@ Each failure should include:
 
 ## Implemented Slice
 
-The first command slice implements the `js-table-vs-rust-table.v0` projection
-and exposes it as:
+The command slices implement `js-table-vs-rust-table.v0` and
+`js-sdl-type-family-vs-rust-l1-type-family.v0`, exposed as:
 
 ```bash
 pnpm parity:ir
 ```
 
-The v0 corpus is explicit and table-compatible:
+The v0 corpus is explicit and projection-owned:
 
-- `test/fixtures/ir-parity/small-schema.graphql`
-- `test/fixtures/ir-parity/medium-schema.graphql`
-- `test/fixtures/ir-parity/directive-heavy-schema.graphql`
-- `test/fixtures/ir-parity/legacy-alias-schema.graphql`
+- `test/fixtures/ir-parity/small-schema.graphql` under
+  `js-table-vs-rust-table.v0`
+- `test/fixtures/ir-parity/medium-schema.graphql` under
+  `js-table-vs-rust-table.v0`
+- `test/fixtures/ir-parity/directive-heavy-schema.graphql` under
+  `js-table-vs-rust-table.v0`
+- `test/fixtures/ir-parity/legacy-alias-schema.graphql` under
+  `js-table-vs-rust-table.v0`
+- `test/fixtures/ir-parity/schema-extensions-schema.graphql` under
+  `js-sdl-type-family-vs-rust-l1-type-family.v0`
 
-The command lowers each fixture through the legacy JS adapter and the Rust CLI,
-projects both outputs into the shared table shape, compares canonical projected
-bytes and hashes, verifies `wesley schema hash` against the current Rust L1
-semantic bytes after top-level `metadata` removal, checks tracked Rust L1 hashes
-for `.graphql` fixtures when sidecars are present, and reports the first
-mismatch path when projection parity fails.
+The command lowers each fixture through its projection-owned JS lowerer and the
+Rust CLI, projects both outputs into the selected shared shape, compares
+canonical projected bytes and hashes, verifies `wesley schema hash` against the
+current Rust L1 semantic bytes after top-level `metadata` removal, checks
+tracked Rust L1 hashes for `.graphql` fixtures when sidecars are present, and
+reports the first mismatch path when projection parity fails.
 JSON output records the canonical projected `legacyBytes` and `rustBytes`
 alongside their hashes so reviewers can archive or inspect the exact compared
 bytes.
 
-`schema-extensions-schema.graphql` and `large-schema.graphql` remain outside
-the default v0 sentinel corpus. The former still carries non-table Rust L1
-coverage that needs a separate projection before it is fair parity evidence;
-the latter is scale coverage rather than the first compatibility sentinel.
+`large-schema.graphql` remains outside the default v0 sentinel corpus as scale
+coverage rather than first-pass compatibility evidence.
 
-The preceding design slice also pulled the backlog card into design, expanded
-the Rust L1 corpus, and closed one blocker the sentinel would otherwise expose
+## Performance Baseline
+
+The pulled
+[Rust core performance baseline](./EVIDENCE_rust-core-performance-baseline.md)
+slice adds:
+
+```bash
+pnpm perf:ir
+```
+
+The v0 baseline measures Rust CLI `schema lower` wall-clock samples over the
+valid Rust IR fixture corpus, including `large-schema.graphql`. It records
+fixture identity, SDL byte size, output byte size, Rust L1 semantic hash, type
+count, sample durations, and summary timings.
+
+This is evidence, not a cutover threshold. It explicitly does not capture peak
+RSS, JS lowering, Node binding overhead, WASM binding overhead, or external
+consumer in-process measurements.
+
+## Type-Family Projection
+
+The second projection is defined in
+[Type-family parity projection](./SOURCE_type-family-parity-projection.md).
+
+It implements `js-sdl-type-family-vs-rust-l1-type-family.v0` for structural
+GraphQL type-family facts that the legacy JS table adapter drops: scalars,
+interfaces, unions, enums, input objects, object/interface implements, and
+extension-folded fields or members.
+
+`schema-extensions-schema.graphql` is admitted to the default sentinel corpus
+under this projection. Running the fixture through
+`js-table-vs-rust-table.v0` remains useful table evidence, but it is not the
+evidence that admits the non-table type-family facts.
+
+The supporting
+[core-rs IR contract and fixtures note](./SOURCE_wesley-core-rs-ir-contract-and-fixtures.md)
+records the release-scoped fixture classes, canonical byte rules, diagnostic
+contract, and repo evidence. The preceding design slice also expanded the Rust
+L1 corpus and closed one blocker the sentinel would otherwise expose
 immediately: Rust L1 lowering now canonicalizes the core Wesley directive
-aliases before writing semantic IR, rejects duplicate canonical core
-directives, and preserves repeated custom directives as ordered values.
+aliases before writing semantic IR, rejects duplicate canonical core directives,
+and preserves repeated custom directives as ordered values.
 
 ## Playback Questions
 
@@ -197,7 +252,7 @@ directives, and preserves repeated custom directives as ordered values.
 4. Does the fixture corpus now cover directive-heavy SDL, schema extensions,
    legacy aliases, and at least one invalid-SDL case?
 5. Does Rust L1 preserve canonical directive names for supported aliases?
-6. Does `pnpm parity:ir` compare the v0 table-compatible corpus without
+6. Does `pnpm parity:ir` compare the projection-owned v0 corpus without
    changing the Rust golden-regeneration command?
 
 ## Non-Goals

@@ -18,6 +18,7 @@ Trigger: title match: schema semantics, parser/IR meaning, or canonical document
 ## Original Issue
 
 Add a Deno host package.
+
 - Ports implemented with Deno APIs; import map & permissions documented.
 - CI job for host-deno unit smoke.
 - Update Package Matrix to track its stage.

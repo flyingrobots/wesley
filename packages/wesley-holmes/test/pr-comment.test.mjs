@@ -42,12 +42,22 @@ test('buildHolmesSuiteComment adds a plain-English summary, next actions, and gl
   assert.ok(comment.includes('## Plain-English Readout'));
   assert.ok(comment.includes('Holmes says this change needs investigation before shipping.'));
   assert.ok(comment.includes('## Suggested next actions'));
-  assert.ok(comment.includes('Tighten citations so the report points to exact lines instead of whole files or coarse references.'));
-  assert.ok(comment.includes('<details><summary>📚 Glossary (what the Holmes terms mean)</summary>'));
+  assert.ok(
+    comment.includes(
+      'Tighten citations so the report points to exact lines instead of whole files or coarse references.'
+    )
+  );
+  assert.ok(
+    comment.includes('<details><summary>📚 Glossary (what the Holmes terms mean)</summary>')
+  );
 
   const beforeGlossary = comment.split('<details><summary>📚 Glossary')[0];
   const unexplainedAcronyms = beforeGlossary.match(/\b(SCS|TCI|MRI)\b/gi);
-  assert.equal(unexplainedAcronyms, null, `visible summary should avoid unexplained score acronyms: ${unexplainedAcronyms}`);
+  assert.equal(
+    unexplainedAcronyms,
+    null,
+    `visible summary should avoid unexplained score acronyms: ${unexplainedAcronyms}`
+  );
 });
 
 test('buildHolmesSuiteComment explains unavailable reports without crashing the comment', () => {
@@ -60,52 +70,104 @@ test('buildHolmesSuiteComment explains unavailable reports without crashing the 
       moriarty: 'cancelled'
     },
     holmesReport: null,
-    watsonReport: sampleWatsonReport({ opinion: { verdict: 'PASSED', message: 'ok', markdown: 'ok' }, inconsistencies: [] }),
+    watsonReport: sampleWatsonReport({
+      opinion: { verdict: 'PASSED', message: 'ok', markdown: 'ok' },
+      inconsistencies: []
+    }),
     moriartyReport: null,
     holmesMarkdown: '',
     watsonMarkdown: '### raw watson',
     moriartyMarkdown: ''
   });
 
-  assert.ok(comment.includes('The Holmes report is unavailable because the workflow status is failure.'));
+  assert.ok(
+    comment.includes('The Holmes report is unavailable because the workflow status is failure.')
+  );
   assert.ok(comment.includes('<!-- HOLMES_SUITE_SHA:deadbeef1234567890 -->'));
-  assert.ok(comment.includes('The Moriarty forecast is unavailable because the workflow status is cancelled.'));
-  assert.ok(comment.includes('Fix the HOLMES workflow job first so the PR has a real evidence investigation again.'));
+  assert.ok(
+    comment.includes(
+      'The Moriarty forecast is unavailable because the workflow status is cancelled.'
+    )
+  );
+  assert.ok(
+    comment.includes(
+      'Fix the HOLMES workflow job first so the PR has a real evidence investigation again.'
+    )
+  );
 });
 
-test('buildHolmesSuiteComment distinguishes missing and invalid report artifacts from successful workflow status', { timeout: 5000 }, () => {
-  const reportsDir = mkdtempSync(path.join(os.tmpdir(), 'holmes-pr-comment-load-'));
-  try {
-    writeFileSync(path.join(reportsDir, 'holmes-report.md'), '### holmes raw\n');
-    writeFileSync(path.join(reportsDir, 'watson-report.json'), '{"not":"valid"');
+test(
+  'buildHolmesSuiteComment distinguishes missing and invalid report artifacts from successful workflow status',
+  { timeout: 5000 },
+  () => {
+    const reportsDir = mkdtempSync(path.join(os.tmpdir(), 'holmes-pr-comment-load-'));
+    try {
+      writeFileSync(path.join(reportsDir, 'holmes-report.md'), '### holmes raw\n');
+      writeFileSync(path.join(reportsDir, 'watson-report.json'), '{"not":"valid"');
 
-    const comment = buildHolmesSuiteComment({
-      pullRequestNumber: 466,
-      headSha: 'beadfeed1234567890',
-      ...loadHolmesSuiteReports(reportsDir, {
-        holmes: 'success',
-        watson: 'success',
-        moriarty: 'success'
-      })
-    });
+      const comment = buildHolmesSuiteComment({
+        pullRequestNumber: 466,
+        headSha: 'beadfeed1234567890',
+        ...loadHolmesSuiteReports(reportsDir, {
+          holmes: 'success',
+          watson: 'success',
+          moriarty: 'success'
+        })
+      });
 
-    assert.ok(comment.includes('The Holmes report is unavailable because the workflow finished without a readable holmes-report.json artifact.'));
-    assert.ok(comment.includes('The Watson report is unavailable because the watson-report.json artifact could not be parsed as JSON.'));
-    assert.ok(comment.includes('The Moriarty forecast is unavailable because the workflow finished without a readable moriarty-report.json artifact.'));
-    assert.ok(comment.includes('Regenerate the HOLMES artifacts and make sure holmes-report.json is uploaded before trusting this PR summary.'));
-    assert.ok(comment.includes('Fix the WATSON report generation so watson-report.json contains valid JSON before trusting this PR summary.'));
-    assert.ok(comment.includes('Regenerate the MORIARTY artifacts and make sure moriarty-report.json is uploaded before trusting this PR summary.'));
-    assert.ok(comment.includes('_Report unavailable for watson: readable watson-report.md artifact not found._'));
-    assert.ok(comment.includes('_Report unavailable for moriarty: readable moriarty-report.md artifact not found._'));
-  } finally {
-    rmSync(reportsDir, { recursive: true, force: true });
+      assert.ok(
+        comment.includes(
+          'The Holmes report is unavailable because the workflow finished without a readable holmes-report.json artifact.'
+        )
+      );
+      assert.ok(
+        comment.includes(
+          'The Watson report is unavailable because the watson-report.json artifact could not be parsed as JSON.'
+        )
+      );
+      assert.ok(
+        comment.includes(
+          'The Moriarty forecast is unavailable because the workflow finished without a readable moriarty-report.json artifact.'
+        )
+      );
+      assert.ok(
+        comment.includes(
+          'Regenerate the HOLMES artifacts and make sure holmes-report.json is uploaded before trusting this PR summary.'
+        )
+      );
+      assert.ok(
+        comment.includes(
+          'Fix the WATSON report generation so watson-report.json contains valid JSON before trusting this PR summary.'
+        )
+      );
+      assert.ok(
+        comment.includes(
+          'Regenerate the MORIARTY artifacts and make sure moriarty-report.json is uploaded before trusting this PR summary.'
+        )
+      );
+      assert.ok(
+        comment.includes(
+          '_Report unavailable for watson: readable watson-report.md artifact not found._'
+        )
+      );
+      assert.ok(
+        comment.includes(
+          '_Report unavailable for moriarty: readable moriarty-report.md artifact not found._'
+        )
+      );
+    } finally {
+      rmSync(reportsDir, { recursive: true, force: true });
+    }
   }
-});
+);
 
 test('buildHolmesSuiteComment keeps raw report sections honest when markdown artifacts are missing', () => {
   const reportsDir = mkdtempSync(path.join(os.tmpdir(), 'holmes-pr-comment-markdown-'));
   try {
-    writeFileSync(path.join(reportsDir, 'holmes-report.json'), JSON.stringify(sampleHolmesReport()));
+    writeFileSync(
+      path.join(reportsDir, 'holmes-report.json'),
+      JSON.stringify(sampleHolmesReport())
+    );
 
     const comment = buildHolmesSuiteComment({
       pullRequestNumber: 466,
@@ -118,8 +180,16 @@ test('buildHolmesSuiteComment keeps raw report sections honest when markdown art
     });
 
     assert.ok(comment.includes('Holmes says this change needs investigation before shipping.'));
-    assert.ok(comment.includes('_Report unavailable for holmes: readable holmes-report.md artifact not found._'));
-    assert.equal(comment.includes('job status: success'), false, 'raw section should not blame a success status for a missing markdown artifact');
+    assert.ok(
+      comment.includes(
+        '_Report unavailable for holmes: readable holmes-report.md artifact not found._'
+      )
+    );
+    assert.equal(
+      comment.includes('job status: success'),
+      false,
+      'raw section should not blame a success status for a missing markdown artifact'
+    );
   } finally {
     rmSync(reportsDir, { recursive: true, force: true });
   }
@@ -148,9 +218,22 @@ test('buildHolmesSuiteComment normalizes repeated whitespace and trailing period
     moriartyMarkdown: '### raw moriarty'
   });
 
-  assert.equal(comment.includes('One   cited span'), false, 'summary should collapse repeated whitespace');
-  assert.equal(comment.includes('current file contents....'), false, 'summary should trim trailing periods from source phrases');
-  assert.ok(comment.includes('Most important concern: One cited span no longer matches the current file contents.'), 'Watson concern should collapse internal whitespace and trim trailing periods');
+  assert.equal(
+    comment.includes('One   cited span'),
+    false,
+    'summary should collapse repeated whitespace'
+  );
+  assert.equal(
+    comment.includes('current file contents....'),
+    false,
+    'summary should trim trailing periods from source phrases'
+  );
+  assert.ok(
+    comment.includes(
+      'Most important concern: One cited span no longer matches the current file contents.'
+    ),
+    'Watson concern should collapse internal whitespace and trim trailing periods'
+  );
 });
 
 test('buildHolmesSuiteComment preserves at least one next action per suite before truncating to four items', () => {
@@ -190,9 +273,18 @@ test('buildHolmesSuiteComment preserves at least one next action per suite befor
 test('buildHolmesSuiteComment keeps loaded reports visible when workflow statuses are omitted', () => {
   const reportsDir = mkdtempSync(path.join(os.tmpdir(), 'holmes-pr-comment-implicit-status-'));
   try {
-    writeFileSync(path.join(reportsDir, 'holmes-report.json'), JSON.stringify(sampleHolmesReport()));
-    writeFileSync(path.join(reportsDir, 'watson-report.json'), JSON.stringify(sampleWatsonReport()));
-    writeFileSync(path.join(reportsDir, 'moriarty-report.json'), JSON.stringify(sampleMoriartyReport()));
+    writeFileSync(
+      path.join(reportsDir, 'holmes-report.json'),
+      JSON.stringify(sampleHolmesReport())
+    );
+    writeFileSync(
+      path.join(reportsDir, 'watson-report.json'),
+      JSON.stringify(sampleWatsonReport())
+    );
+    writeFileSync(
+      path.join(reportsDir, 'moriarty-report.json'),
+      JSON.stringify(sampleMoriartyReport())
+    );
     writeFileSync(path.join(reportsDir, 'holmes-report.md'), '### raw holmes\n');
     writeFileSync(path.join(reportsDir, 'watson-report.md'), '### raw watson\n');
     writeFileSync(path.join(reportsDir, 'moriarty-report.md'), '### raw moriarty\n');
@@ -203,8 +295,16 @@ test('buildHolmesSuiteComment keeps loaded reports visible when workflow statuse
       ...loadHolmesSuiteReports(reportsDir)
     });
 
-    assert.equal(comment.includes('workflow status is unknown'), false, 'omitted statuses should not hide loaded reports');
-    assert.equal(comment.includes('Fix the HOLMES workflow job first'), false, 'omitted statuses should not trigger workflow-failure actions');
+    assert.equal(
+      comment.includes('workflow status is unknown'),
+      false,
+      'omitted statuses should not hide loaded reports'
+    );
+    assert.equal(
+      comment.includes('Fix the HOLMES workflow job first'),
+      false,
+      'omitted statuses should not trigger workflow-failure actions'
+    );
     assert.ok(comment.includes('Holmes says this change needs investigation before shipping.'));
     assert.ok(comment.includes('### raw holmes'));
     assert.ok(comment.includes('### raw watson'));
@@ -218,35 +318,53 @@ test('pr-comment CLI builds comment output without external argument parser depe
   const reportsDir = mkdtempSync(path.join(os.tmpdir(), 'holmes-pr-comment-'));
   try {
     writeFileSync(path.join(reportsDir, 'holmes-report.md'), '### holmes raw\n');
-    const result = spawnSync(process.execPath, [
-      prCommentCliPath,
-      '--reports-dir', reportsDir,
-      '--pr-number', '467',
-      '--head-sha', '0123456789abcdef',
-      '--holmes-status', 'failure',
-      '--watson-status', 'failure',
-      '--moriarty-status', 'failure'
-    ], {
-      encoding: 'utf8'
-    });
+    const result = spawnSync(
+      process.execPath,
+      [
+        prCommentCliPath,
+        '--reports-dir',
+        reportsDir,
+        '--pr-number',
+        '467',
+        '--head-sha',
+        '0123456789abcdef',
+        '--holmes-status',
+        'failure',
+        '--watson-status',
+        'failure',
+        '--moriarty-status',
+        'failure'
+      ],
+      {
+        encoding: 'utf8'
+      }
+    );
 
     assert.equal(result.status, 0, result.stderr);
     assert.ok(result.stdout.includes(HOLMES_SUITE_COMMENT_MARKER));
     assert.ok(result.stdout.includes('<!-- HOLMES_SUITE_SHA:0123456789abcdef -->'));
-    assert.ok(result.stdout.includes('The Holmes report is unavailable because the workflow status is failure.'));
+    assert.ok(
+      result.stdout.includes(
+        'The Holmes report is unavailable because the workflow status is failure.'
+      )
+    );
   } finally {
     rmSync(reportsDir, { recursive: true, force: true });
   }
 });
 
 test('pr-comment CLI can be imported without executing the entrypoint', () => {
-  const result = spawnSync(process.execPath, [
-    '--input-type=module',
-    '-e',
-    `await import(${JSON.stringify(pathToFileURL(prCommentCliPath).href)});`
-  ], {
-    encoding: 'utf8'
-  });
+  const result = spawnSync(
+    process.execPath,
+    [
+      '--input-type=module',
+      '-e',
+      `await import(${JSON.stringify(pathToFileURL(prCommentCliPath).href)});`
+    ],
+    {
+      encoding: 'utf8'
+    }
+  );
 
   assert.equal(result.status, 0, result.stderr);
   assert.equal(result.stdout, '');
@@ -257,22 +375,30 @@ test('pr-comment CLI accepts equals-form options', () => {
   const reportsDir = mkdtempSync(path.join(os.tmpdir(), 'holmes-pr-comment-equals-'));
   try {
     writeFileSync(path.join(reportsDir, 'holmes-report.md'), '### raw holmes\n');
-    const result = spawnSync(process.execPath, [
-      prCommentCliPath,
-      `--reports-dir=${reportsDir}`,
-      '--pr-number=467',
-      '--head-sha=abcdef0123456789',
-      '--holmes-status=failure',
-      '--watson-status=failure',
-      '--moriarty-status=failure'
-    ], {
-      encoding: 'utf8'
-    });
+    const result = spawnSync(
+      process.execPath,
+      [
+        prCommentCliPath,
+        `--reports-dir=${reportsDir}`,
+        '--pr-number=467',
+        '--head-sha=abcdef0123456789',
+        '--holmes-status=failure',
+        '--watson-status=failure',
+        '--moriarty-status=failure'
+      ],
+      {
+        encoding: 'utf8'
+      }
+    );
 
     assert.equal(result.status, 0, result.stderr);
     assert.ok(result.stdout.includes(HOLMES_SUITE_COMMENT_MARKER));
     assert.ok(result.stdout.includes('<!-- HOLMES_SUITE_SHA:abcdef0123456789 -->'));
-    assert.ok(result.stdout.includes('The Holmes report is unavailable because the workflow status is failure.'));
+    assert.ok(
+      result.stdout.includes(
+        'The Holmes report is unavailable because the workflow status is failure.'
+      )
+    );
   } finally {
     rmSync(reportsDir, { recursive: true, force: true });
   }
@@ -282,9 +408,15 @@ test('loadHolmesSuiteReports preserves report and markdown diagnostics without t
   const reportsDir = mkdtempSync(path.join(os.tmpdir(), 'holmes-pr-comment-errors-'));
   const unreadableMarkdownPath = path.join(reportsDir, 'holmes-report.md');
   try {
-    writeFileSync(path.join(reportsDir, 'holmes-report.json'), JSON.stringify(sampleHolmesReport()));
+    writeFileSync(
+      path.join(reportsDir, 'holmes-report.json'),
+      JSON.stringify(sampleHolmesReport())
+    );
     writeFileSync(path.join(reportsDir, 'watson-report.json'), '{"not":"valid"');
-    writeFileSync(path.join(reportsDir, 'moriarty-report.json'), JSON.stringify(sampleMoriartyReport()));
+    writeFileSync(
+      path.join(reportsDir, 'moriarty-report.json'),
+      JSON.stringify(sampleMoriartyReport())
+    );
     writeFileSync(unreadableMarkdownPath, '### raw holmes\n');
     chmodSync(unreadableMarkdownPath, 0o000);
 
@@ -297,7 +429,10 @@ test('loadHolmesSuiteReports preserves report and markdown diagnostics without t
     assert.equal(reports.reportStates.watson, 'invalid');
     assert.ok(reports.reportErrors.watson.length > 0, 'invalid JSON should preserve a parse error');
     assert.equal(reports.markdownStates.holmes, 'invalid');
-    assert.ok(reports.markdownErrors.holmes.length > 0, 'unreadable markdown should preserve a read error');
+    assert.ok(
+      reports.markdownErrors.holmes.length > 0,
+      'unreadable markdown should preserve a read error'
+    );
   } finally {
     chmodSync(unreadableMarkdownPath, 0o644);
     rmSync(reportsDir, { recursive: true, force: true });

@@ -22,7 +22,9 @@ export class WatchCommand extends EventEmitter {
     this.clearConsole = options.clearConsole !== false; // Default to true
     this.onchange = options.onchange || (() => {});
     this.clock = options.clock ?? systemClock;
-    this.watcherFactory = options.watcherFactory || ((patterns, watcherOptions) => chokidar.watch(patterns, watcherOptions));
+    this.watcherFactory =
+      options.watcherFactory ||
+      ((patterns, watcherOptions) => chokidar.watch(patterns, watcherOptions));
     this.console = options.console || console;
     this.stdout = options.stdout || process.stdout;
     this.processRef = options.processRef || process;
@@ -177,7 +179,9 @@ export class WatchCommand extends EventEmitter {
     const timestamp = new Date(this.clock.nowMs()).toLocaleTimeString();
     const changeIcon = this._getChangeIcon(eventType);
 
-    this.console.log(`${changeIcon} [${timestamp}] ${this._formatEventType(eventType)}: ${filePath}`);
+    this.console.log(
+      `${changeIcon} [${timestamp}] ${this._formatEventType(eventType)}: ${filePath}`
+    );
 
     // Emit change event
     this.emit('change', {

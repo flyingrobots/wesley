@@ -13,7 +13,11 @@ async function _sh(cmd, args, opts = {}) {
     p.on('exit', (code, signal) =>
       code === 0
         ? resolve()
-        : reject(new Error(`${cmd} ${args.join(' ')} exited ${code ?? 'null'}${signal ? ` (signal ${signal})` : ''}`))
+        : reject(
+            new Error(
+              `${cmd} ${args.join(' ')} exited ${code ?? 'null'}${signal ? ` (signal ${signal})` : ''}`
+            )
+          )
     );
   });
 }
@@ -29,7 +33,11 @@ async function shToStderr(cmd, args, opts = {}) {
     p.on('exit', (code, signal) =>
       code === 0
         ? resolve()
-        : reject(new Error(`${cmd} ${args.join(' ')} exited ${code ?? 'null'}${signal ? ` (signal ${signal})` : ''}`))
+        : reject(
+            new Error(
+              `${cmd} ${args.join(' ')} exited ${code ?? 'null'}${signal ? ` (signal ${signal})` : ''}`
+            )
+          )
     );
   });
 }
@@ -38,9 +46,15 @@ async function waitFor(url, ms = 15000) {
   const start = Date.now();
   while (Date.now() - start < ms) {
     const ok = await new Promise((resolve) => {
-      const req = http.get(url, (res) => { res.resume(); resolve(res.statusCode === 200); });
+      const req = http.get(url, (res) => {
+        res.resume();
+        resolve(res.statusCode === 200);
+      });
       req.on('error', () => resolve(false));
-      req.setTimeout(2000, () => { req.destroy(); resolve(false); });
+      req.setTimeout(2000, () => {
+        req.destroy();
+        resolve(false);
+      });
     });
     if (ok) return true;
     await sleep(200);
@@ -60,9 +74,12 @@ async function main() {
     try {
       const res = JSON.parse(json);
       if (res && typeof res.failed === 'number' && res.failed > 0) {
-        const fail = Array.isArray(res.cases) && res.cases.find((c) => c && c.name === 'browser-ir-shape' && c.ok === false);
+        const fail =
+          Array.isArray(res.cases) &&
+          res.cases.find((c) => c && c.name === 'browser-ir-shape' && c.ok === false);
         if (fail && fail.details) {
-          const { summary, missingTables, missingColumns, actualTableCount, expectedTableCount } = fail.details;
+          const { summary, missingTables, missingColumns, actualTableCount, expectedTableCount } =
+            fail.details;
           console.error('[host-contracts][diagnostics] verifyIr failed');
           if (typeof expectedTableCount === 'number' && typeof actualTableCount === 'number') {
             console.error(` - tables: expected=${expectedTableCount} actual=${actualTableCount}`);
@@ -72,7 +89,8 @@ async function main() {
           }
           if (missingColumns && typeof missingColumns === 'object') {
             for (const [t, cols] of Object.entries(missingColumns)) {
-              if (Array.isArray(cols) && cols.length) console.error(` - ${t} missing columns: ${cols.join(', ')}`);
+              if (Array.isArray(cols) && cols.length)
+                console.error(` - ${t} missing columns: ${cols.join(', ')}`);
             }
           }
           if (summary) console.error(` - summary: ${summary}`);
@@ -86,7 +104,13 @@ async function main() {
     process.exit(process.exitCode || 0);
   }
   // Build contracts harness
-  await shToStderr('pnpm', ['exec', 'vite', 'build', '--config', 'test/browser/contracts/vite.config.mjs']);
+  await shToStderr('pnpm', [
+    'exec',
+    'vite',
+    'build',
+    '--config',
+    'test/browser/contracts/vite.config.mjs'
+  ]);
   // Enforce bundle size budget (sum of JS assets)
   try {
     const maxKb = Number(process.env.BUNDLE_MAX_KB || '50');
@@ -100,7 +124,9 @@ async function main() {
     }
     const kb = Math.round(total / 1024);
     if (kb > maxKb) {
-      throw new Error(`Bundle size ${kb}KB exceeds budget ${maxKb}KB (set BUNDLE_MAX_KB to override)`);
+      throw new Error(
+        `Bundle size ${kb}KB exceeds budget ${maxKb}KB (set BUNDLE_MAX_KB to override)`
+      );
     }
     console.error(`[bundle-budget] OK: ${kb}KB <= ${maxKb}KB`);
   } catch (e) {
@@ -111,27 +137,46 @@ async function main() {
   // Serve dist
   const port = process.env.TEST_SERVER_PORT || '8787';
   let srvErr = '';
-  const srv = spawn(process.execPath, ['scripts/serve-static.mjs', '--dir=test/browser/contracts/dist', `--port=${port}`], { stdio: ['ignore','pipe','pipe'] });
-  srv.on('error', (e) => { srvErr += `\n[spawn-error] ${e?.message || e}`; throw new Error(`serve-static failed to spawn: ${e?.message || e}`); });
-  srv.stderr?.on('data', (d) => { srvErr += d.toString(); if (srvErr.length > 2000) srvErr = srvErr.slice(-2000); });
+  const srv = spawn(
+    process.execPath,
+    ['scripts/serve-static.mjs', '--dir=test/browser/contracts/dist', `--port=${port}`],
+    { stdio: ['ignore', 'pipe', 'pipe'] }
+  );
+  srv.on('error', (e) => {
+    srvErr += `\n[spawn-error] ${e?.message || e}`;
+    throw new Error(`serve-static failed to spawn: ${e?.message || e}`);
+  });
+  srv.stderr?.on('data', (d) => {
+    srvErr += d.toString();
+    if (srvErr.length > 2000) srvErr = srvErr.slice(-2000);
+  });
   try {
     await waitFor(`http://127.0.0.1:${port}`);
   } catch (e) {
-    try { srv.kill('SIGTERM'); await sleep(1000); if (!srv.killed) srv.kill('SIGKILL'); } catch { /* empty */ }
+    try {
+      srv.kill('SIGTERM');
+      await sleep(1000);
+      if (!srv.killed) srv.kill('SIGKILL');
+    } catch {
+      /* empty */
+    }
     const err = new Error(`Static server failed to start: ${e?.message || e}\n${srvErr}`);
     throw err;
   }
 
   // Ensure playwright installed (skip if cache present) and run spec, capture JSON
   try {
-    const browsersPath = process.env.PLAYWRIGHT_BROWSERS_PATH || `${process.env.HOME}/.cache/ms-playwright`;
+    const browsersPath =
+      process.env.PLAYWRIGHT_BROWSERS_PATH || `${process.env.HOME}/.cache/ms-playwright`;
     const { readdirSync, existsSync } = await import('node:fs');
     let haveChromium = false;
     try {
       if (existsSync(browsersPath)) {
         haveChromium = readdirSync(browsersPath).some((n) => n.startsWith('chromium'));
       }
-    } catch { /* empty */ }
+    } catch {
+      /* empty */
+    }
     const _PWV = process.env.PLAYWRIGHT_VERSION || '1.49.0';
     if (!haveChromium) {
       // Use workspace-installed @playwright/test to install browsers
@@ -143,14 +188,27 @@ async function main() {
       const outDir = mkdtempSync(join(tmpdir(), 'hc-'));
       outFile = join(outDir, 'browser.json');
     }
-    await shToStderr('pnpm', ['exec', 'playwright', 'test', 'test/browser/contracts/host-contracts.spec.mjs', '--reporter=line'], { env: { ...process.env, OUT_JSON: outFile } });
+    await shToStderr(
+      'pnpm',
+      [
+        'exec',
+        'playwright',
+        'test',
+        'test/browser/contracts/host-contracts.spec.mjs',
+        '--reporter=line'
+      ],
+      { env: { ...process.env, OUT_JSON: outFile } }
+    );
     const json = readFileSync(outFile, 'utf8');
     try {
       const res = JSON.parse(json);
       if (res && typeof res.failed === 'number' && res.failed > 0) {
-        const fail = Array.isArray(res.cases) && res.cases.find((c) => c && c.name === 'browser-ir-shape' && c.ok === false);
+        const fail =
+          Array.isArray(res.cases) &&
+          res.cases.find((c) => c && c.name === 'browser-ir-shape' && c.ok === false);
         if (fail && fail.details) {
-          const { summary, missingTables, missingColumns, actualTableCount, expectedTableCount } = fail.details;
+          const { summary, missingTables, missingColumns, actualTableCount, expectedTableCount } =
+            fail.details;
           console.error('[host-contracts][diagnostics] verifyIr failed');
           if (typeof expectedTableCount === 'number' && typeof actualTableCount === 'number') {
             console.error(` - tables: expected=${expectedTableCount} actual=${actualTableCount}`);
@@ -160,7 +218,8 @@ async function main() {
           }
           if (missingColumns && typeof missingColumns === 'object') {
             for (const [t, cols] of Object.entries(missingColumns)) {
-              if (Array.isArray(cols) && cols.length) console.error(` - ${t} missing columns: ${cols.join(', ')}`);
+              if (Array.isArray(cols) && cols.length)
+                console.error(` - ${t} missing columns: ${cols.join(', ')}`);
             }
           }
           if (summary) console.error(` - summary: ${summary}`);
@@ -173,8 +232,17 @@ async function main() {
     }
     process.stdout.write(json + '\n');
   } finally {
-    try { srv.kill('SIGTERM'); await sleep(1000); if (!srv.killed) srv.kill('SIGKILL'); } catch { /* empty */ }
+    try {
+      srv.kill('SIGTERM');
+      await sleep(1000);
+      if (!srv.killed) srv.kill('SIGKILL');
+    } catch {
+      /* empty */
+    }
   }
 }
 
-main().catch((e) => { console.error(e?.stack || e); process.exit(1); });
+main().catch((e) => {
+  console.error(e?.stack || e);
+  process.exit(1);
+});

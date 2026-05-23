@@ -1,7 +1,7 @@
 name: Chore
 description: Maintenance, refactor, docs, CI, or cleanup work.
-title: "[chore] <short summary>"
-labels: ["chore"]
+title: '[chore] <short summary>'
+labels: ['chore']
 assignees: []
 body:
   - type: markdown
@@ -27,7 +27,7 @@ body:
     attributes:
       label: Hill Supported
       description: Which active or near-term hill does this work serve?
-      placeholder: "Supports the hill that a reviewer can trust a certificate because every claim traces to exact evidence."
+      placeholder: 'Supports the hill that a reviewer can trust a certificate because every claim traces to exact evidence.'
     validations:
       required: true
 
@@ -36,7 +36,7 @@ body:
     attributes:
       label: Sponsor Actor
       description: Whose job gets easier because this cleanup exists?
-      placeholder: "Reviewer, release owner, maintainer, or agent consumer"
+      placeholder: 'Reviewer, release owner, maintainer, or agent consumer'
     validations:
       required: true
 
@@ -53,7 +53,7 @@ body:
     attributes:
       label: Playback Impact
       description: What playback becomes cleaner, safer, or more honest after this lands?
-      placeholder: "The BLADE playback no longer shows provisional evidence in the cert output."
+      placeholder: 'The BLADE playback no longer shows provisional evidence in the cert output.'
     validations:
       required: true
 

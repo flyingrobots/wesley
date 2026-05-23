@@ -3,10 +3,7 @@
  * Commands that orchestrate domain operations
  */
 
-import {
-  SchemaParsed,
-  TypeScriptGenerated
-} from '../domain/Events.mjs';
+import { SchemaParsed, TypeScriptGenerated } from '../domain/Events.mjs';
 
 export class ParseSchemaUseCase {
   constructor(parser) {

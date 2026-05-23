@@ -17,7 +17,12 @@ function createField(name, options = {}) {
     isUnique: () => Boolean(options.unique || options.directives?.['@unique']),
     isIndexed: () => Boolean(options.indexed),
     getForeignKeyRef: () => options.foreignKey || null,
-    getDefault: () => options.defaultValue ? { value: options.defaultValue } : (options.defaultExpr ? { expr: options.defaultExpr } : null),
+    getDefault: () =>
+      options.defaultValue
+        ? { value: options.defaultValue }
+        : options.defaultExpr
+          ? { expr: options.defaultExpr }
+          : null,
     getCheckConstraint: () => options.check || null
   };
 }
@@ -29,7 +34,10 @@ test('ScoringEngine computes breakdown metrics with evidence', () => {
   const fields = [
     createField('id', { directives: { '@primaryKey': {} }, primaryKey: true, type: 'ID' }),
     createField('email', { directives: { '@unique': {} }, unique: true }),
-    createField('org_id', { directives: { '@foreignKey': { ref: 'Org.id' } }, foreignKey: 'Org.id' }),
+    createField('org_id', {
+      directives: { '@foreignKey': { ref: 'Org.id' } },
+      foreignKey: 'Org.id'
+    }),
     createField('status', { defaultValue: 'pending' })
   ];
 
@@ -53,20 +61,20 @@ test('ScoringEngine computes breakdown metrics with evidence', () => {
   };
 
   // id -> full coverage
-  ['sql', 'typescript', 'zod', 'test'].forEach(kind => record(fieldUid(fields[0]), kind));
+  ['sql', 'typescript', 'zod', 'test'].forEach((kind) => record(fieldUid(fields[0]), kind));
   record(`${fieldUid(fields[0])}.pk`, 'test');
 
   // email -> missing types
-  ['sql', 'zod'].forEach(kind => record(fieldUid(fields[1]), kind));
+  ['sql', 'zod'].forEach((kind) => record(fieldUid(fields[1]), kind));
   record(`${fieldUid(fields[1])}.unique`, 'test');
   record(`${fieldUid(fields[1])}.index`, 'test');
 
   // org_id -> full coverage including FK
-  ['sql', 'typescript', 'zod', 'test'].forEach(kind => record(fieldUid(fields[2]), kind));
+  ['sql', 'typescript', 'zod', 'test'].forEach((kind) => record(fieldUid(fields[2]), kind));
   record(`${fieldUid(fields[2])}.fk`, 'test');
 
   // status -> only types + validation (no tests)
-  ['sql', 'typescript', 'zod'].forEach(kind => record(fieldUid(fields[3]), kind));
+  ['sql', 'typescript', 'zod'].forEach((kind) => record(fieldUid(fields[3]), kind));
   record(`${fieldUid(fields[3])}.default`, 'test');
 
   // table-level RLS evidence
@@ -76,13 +84,21 @@ test('ScoringEngine computes breakdown metrics with evidence', () => {
 
   const scsDetails = scoring.calculateSCSDetails(schema);
   const scsBreakdown = scsDetails.breakdown;
-  assert.ok(scsBreakdown.sql.score <= 1 && scsBreakdown.sql.score > 0.9, 'SQL coverage should be high');
+  assert.ok(
+    scsBreakdown.sql.score <= 1 && scsBreakdown.sql.score > 0.9,
+    'SQL coverage should be high'
+  );
   assert.ok(scsBreakdown.types.score < 1, 'Types coverage should reflect missing email types');
   assert.ok(scsBreakdown.tests.score < 1, 'Tests coverage should reflect missing status tests');
 
   const migrationSteps = [
     { kind: 'drop_column', table: 'users', column: 'legacy' },
-    { kind: 'add_column', table: 'users', column: 'enabled', field: { nonNull: true, directives: {} } },
+    {
+      kind: 'add_column',
+      table: 'users',
+      column: 'enabled',
+      field: { nonNull: true, directives: {} }
+    },
     { kind: 'rename_table', table: 'users', uidContinuity: false },
     { kind: 'create_index', table: 'users', column: 'email', concurrent: false }
   ];
@@ -95,12 +111,18 @@ test('ScoringEngine computes breakdown metrics with evidence', () => {
 
   const tciDetails = scoring.calculateTCIDetails(schema, { migrations: { passed: 1, total: 1 } });
   const tciBreakdown = tciDetails.breakdown;
-  assert.ok(tciBreakdown.unit_constraints.score > 0.5, 'Unit constraints score should reflect recorded tests');
+  assert.ok(
+    tciBreakdown.unit_constraints.score > 0.5,
+    'Unit constraints score should reflect recorded tests'
+  );
   assert.equal(tciBreakdown.unit_rls.score, 1, 'RLS coverage should be complete');
 
   const mriDetails = scoring.calculateMRIDetails(migrationSteps);
   assert.ok(mriDetails.breakdown.drops.points >= 25, 'Drop risk captured');
-  assert.ok(mriDetails.breakdown.add_not_null_without_default.points >= 10, 'NOT NULL without default risk captured');
+  assert.ok(
+    mriDetails.breakdown.add_not_null_without_default.points >= 10,
+    'NOT NULL without default risk captured'
+  );
   assert.ok(mriDetails.score > 0, 'MRI score should be non-zero');
 });
 
@@ -120,19 +142,28 @@ test('TCI incorporates test results health factors', () => {
   };
 
   const schema = { getTables: () => [table] };
-  const step = { kind: 'add_column', table: 'account', column: 'status', field: { nonNull: true, directives: {} } };
+  const step = {
+    kind: 'add_column',
+    table: 'account',
+    column: 'status',
+    field: { nonNull: true, directives: {} }
+  };
 
   const record = (uid, kind) => evidence.record(uid, kind, { file: `${kind}.sql`, lines: '1-1' });
   const fieldUid = (field) => `col:${table.name}.${field.name}`;
-  ['sql', 'typescript', 'zod', 'test'].forEach(kind => record(fieldUid(fields[0]), kind));
+  ['sql', 'typescript', 'zod', 'test'].forEach((kind) => record(fieldUid(fields[0]), kind));
   record(`${fieldUid(fields[0])}.pk`, 'test');
-  ['sql', 'typescript', 'zod', 'test'].forEach(kind => record(fieldUid(fields[1]), kind));
+  ['sql', 'typescript', 'zod', 'test'].forEach((kind) => record(fieldUid(fields[1]), kind));
   record(`${fieldUid(fields[1])}.unique`, 'test');
   record('tbl:Account.rls', 'test');
   record(`migration:${step.kind}:${step.table}:${step.column}`, 'test');
 
   const scoring = new ScoringEngine(evidence);
-  const tciHealthy = scoring.calculateTCI(schema, { passed: 2, total: 2, migrations: { passed: 1, total: 1 } }, [step]);
+  const tciHealthy = scoring.calculateTCI(
+    schema,
+    { passed: 2, total: 2, migrations: { passed: 1, total: 1 } },
+    [step]
+  );
   assert.ok(tciHealthy > 0.6, 'Healthy suites should yield high TCI');
 
   const failingResults = {
@@ -165,16 +196,19 @@ test('TCI treats schemas with no indexed fields as fully covered for performance
   const fieldUid = (field) => `col:${table.name}.${field.name}`;
 
   record('tbl:Account', 'test');
-  ['sql', 'typescript', 'zod', 'test'].forEach(kind => record(fieldUid(fields[0]), kind));
+  ['sql', 'typescript', 'zod', 'test'].forEach((kind) => record(fieldUid(fields[0]), kind));
   record(`${fieldUid(fields[0])}.pk`, 'test');
-  ['sql', 'typescript', 'zod', 'test'].forEach(kind => record(fieldUid(fields[1]), kind));
+  ['sql', 'typescript', 'zod', 'test'].forEach((kind) => record(fieldUid(fields[1]), kind));
   record(`${fieldUid(fields[1])}.unique`, 'test');
 
   const scoring = new ScoringEngine(evidence);
   const tci = scoring.calculateTCI(schema, {});
 
   assert.equal(scoring.calculateIndexCoverage(schema, []), 1);
-  assert.ok(tci >= 0.7, 'Schemas with no indexed fields should not fail TCI on a non-applicable performance check');
+  assert.ok(
+    tci >= 0.7,
+    'Schemas with no indexed fields should not fail TCI on a non-applicable performance check'
+  );
 });
 
 test('calculateIndexCoverage returns 0 when indexed fields lack test evidence', () => {

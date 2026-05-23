@@ -3,6 +3,7 @@
 This spec freezes the contracts required to deliver the MVP vertical slice.
 
 ## 1) Canonical IR (JSON Schema)
+
 - Top-level: `{ tables: Table[] }`
 - `Table`: `{ name, directives, columns: Column[], primaryKey?, foreignKeys: FK[], indexes: Index[], tenantBy? }`
 - `Column`: `{ name, type, nullable, default?, unique?, directives }`
@@ -12,10 +13,12 @@ This spec freezes the contracts required to deliver the MVP vertical slice.
 - File: `schemas/ir.schema.json` (added in Phase 1)
 
 Notes:
+
 - Types: GraphQL scalars map to PG (`ID→uuid`, `String→text`, `Int→integer`, `Float→double precision`, `Boolean→boolean`, `DateTime→timestamptz`). Arrays: `[]` suffix.
 - Parser errors use code `PARSE_FAILED` with helpful hints.
 
 ## 2) Transform Targets (MVP)
+
 - Postgres DDL (SQL):
   - CREATE TABLE columns (nullable unless nonNull), defaults
   - UNIQUE constraints, CREATE INDEX (CONCURRENTLY)
@@ -27,10 +30,12 @@ Notes:
   - Structure/constraints tests + optional basic RLS probes if annotated
 
 Evidence:
+
 - `.wesley/evidence-map.json` records artifact locations for IR elements
 - Hash all artifacts (content SHA) and include in bundle
 
 ## 3) Diff & Phased Migrations (Additive Only)
+
 - Supported: add table, add column (nullable), add index/unique, add FK (NOT VALID)
 - Phases:
   - Expand: CREATE columns (nullable), CREATE INDEX CONCURRENTLY, ADD CONSTRAINT (NOT VALID)
@@ -39,16 +44,19 @@ Evidence:
   - Switch/Contract: Minimal for MVP (no DROPs)
 
 Plan Explain:
+
 - Show steps with lock classification (SHARE/ROW_EXCLUSIVE/SHARE_UPDATE_EXCLUSIVE/etc.)
 - Compute rough risk per step via `MigrationExplainer`
 
 ## 4) Rehearsal (REALM‑lite)
+
 - CLI: `wesley rehearse --dsn <shadow>`
 - Behavior: apply plan, run pgTAP, capture timing
 - Output: `.wesley/realm.json` with `{ verdict: PASS|FAIL, tests: { passed, failed }, timings, notes }`
 - Flags: `--dry-run` (no DB writes), `--timeout` (ms)
 
 ## 5) SHIPME.md
+
 - Human header + canonical JSON block
 - Required fields:
   - commitSha, timestamp, environment
@@ -64,6 +72,7 @@ Plan Explain:
   - `wesley cert verify --in SHIPME.md`
 
 ## 6) CLI Commands (MVP)
+
 - `wesley transform`:
   - Flags: `--schema <file>`, `--target <csv>`, `--out <dir>`, `--json`, `--quiet`, `--debug`
   - Exit codes: 0 ok; 2 compile/parse error; 4 generation failed
@@ -78,15 +87,17 @@ Plan Explain:
   - Exit: 0 ok; 8 invalid certificate
 
 ## 7) Thresholds (Defaults)
+
 - SCS ≥ 0.80 (schema coverage weighted)
 - MRI ≤ 0.40 (migration risk)
 - TCI ≥ 0.70 (test coverage)
 
 ## 8) Logging & Telemetry
+
 - Default console with levels; `--json` structured output
 - Include timestamps, codes, and hints for common failures
 
 ## 9) Non‑Goals & Open Questions
+
 - Non‑Goals: destructive diffs in MVP; full TASKS v3; traffic mirroring
 - Open Questions: default REALM smoke suite, pg version matrix, signer key management (local vs KMS)
-

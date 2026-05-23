@@ -24,8 +24,10 @@ import { ExitError } from '../framework/errors.mjs';
 function flattenChanges(delta) {
   const out = [];
 
-  for (const t of delta.removed_types)  out.push({ breaking: true,  description: `Removed type: ${t.name}` });
-  for (const o of delta.removed_ops)    out.push({ breaking: true,  description: `Removed operation: ${o.name}` });
+  for (const t of delta.removed_types)
+    out.push({ breaking: true, description: `Removed type: ${t.name}` });
+  for (const o of delta.removed_ops)
+    out.push({ breaking: true, description: `Removed operation: ${o.name}` });
 
   for (const m of delta.modified_types) {
     for (const fc of m.fieldChanges) {
@@ -45,8 +47,10 @@ function flattenChanges(delta) {
     }
   }
 
-  for (const t of delta.added_types) out.push({ breaking: false, description: `Added type: ${t.name}` });
-  for (const o of delta.added_ops)   out.push({ breaking: false, description: `Added operation: ${o.name}` });
+  for (const t of delta.added_types)
+    out.push({ breaking: false, description: `Added type: ${t.name}` });
+  for (const o of delta.added_ops)
+    out.push({ breaking: false, description: `Added operation: ${o.name}` });
 
   return out;
 }
@@ -58,10 +62,12 @@ function flattenChanges(delta) {
  */
 function formatText(changes) {
   if (changes.length === 0) return 'No changes detected.';
-  return changes.map((c) => {
-    const tag = c.breaking ? 'BREAKING' : 'safe    ';
-    return `${tag}  ${c.description}`;
-  }).join('\n');
+  return changes
+    .map((c) => {
+      const tag = c.breaking ? 'BREAKING' : 'safe    ';
+      return `${tag}  ${c.description}`;
+    })
+    .join('\n');
 }
 
 /**
@@ -75,7 +81,7 @@ function formatSummary(changes) {
   const safe = changes.length - breaking;
   const parts = [];
   if (breaking > 0) parts.push(`${breaking} breaking`);
-  if (safe > 0)     parts.push(`${safe} safe`);
+  if (safe > 0) parts.push(`${safe} safe`);
   return parts.join(', ');
 }
 
@@ -134,7 +140,10 @@ export class DiffCommand extends WesleyCommand {
   async _run(oldPath, newPath, options) {
     // Validate arguments
     if (!oldPath || !newPath) {
-      const err = new WesleyError('EUSAGE', 'Two schema file paths are required: wesley diff <old-schema> <new-schema>');
+      const err = new WesleyError(
+        'EUSAGE',
+        'Two schema file paths are required: wesley diff <old-schema> <new-schema>'
+      );
       this.ctx.stderr.write(err.message + '\n');
 
       throw new ExitError(exitCodeFor(err.code), err);
@@ -146,7 +155,9 @@ export class DiffCommand extends WesleyCommand {
       oldSDL = readFileSync(oldPath, 'utf-8');
     } catch (fsErr) {
       const code = fsErr.code || 'ENOENT';
-      const err = new WesleyError(code, `Cannot read old schema: ${oldPath} (${code})`, { cause: fsErr });
+      const err = new WesleyError(code, `Cannot read old schema: ${oldPath} (${code})`, {
+        cause: fsErr
+      });
       this.ctx.stderr.write(err.message + '\n');
 
       throw new ExitError(exitCodeFor(err.code), err);
@@ -155,7 +166,9 @@ export class DiffCommand extends WesleyCommand {
       newSDL = readFileSync(newPath, 'utf-8');
     } catch (fsErr) {
       const code = fsErr.code || 'ENOENT';
-      const err = new WesleyError(code, `Cannot read new schema: ${newPath} (${code})`, { cause: fsErr });
+      const err = new WesleyError(code, `Cannot read new schema: ${newPath} (${code})`, {
+        cause: fsErr
+      });
       this.ctx.stderr.write(err.message + '\n');
 
       throw new ExitError(exitCodeFor(err.code), err);
@@ -194,7 +207,6 @@ export class DiffCommand extends WesleyCommand {
     const hasBreaking = allChanges.some((c) => c.breaking);
 
     if (options.exitCode && hasBreaking) {
-
       throw new ExitError(1);
     }
 
@@ -209,4 +221,3 @@ export class DiffCommand extends WesleyCommand {
 
 // Also export helpers for testing
 export { flattenChanges, formatText, formatSummary };
-

@@ -14,33 +14,33 @@ graph TB
         IR[Domain IR]
         Generators[Generators]
     end
-    
+
     subgraph "Generated Artifacts"
         SQL[SQL DDL]
         Types[TypeScript]
         Zod[Zod Schemas]
         Tests[pgTAP Tests]
     end
-    
+
     subgraph "Evidence System"
         EvidenceMap[Evidence Map]
         Scores[SCS/MRI/TCI]
         Bundle[.wesley-cache/bundle]
     end
-    
+
     subgraph "SHA-lock HOLMES"
         Holmes[Investigation]
         Watson[Verification]
         Moriarty[Prediction]
     end
-    
+
     Schema --> Parser --> IR --> Generators
     Generators --> SQL & Types & Zod & Tests
     Generators --> EvidenceMap
     IR --> Scores
     EvidenceMap & Scores --> Bundle
     Bundle --> Holmes --> Watson --> Moriarty
-    
+
     style Schema fill:#f9f,stroke:#333,stroke-width:4px
     style Bundle fill:#9f9,stroke:#333,stroke-width:2px
 ```
@@ -82,16 +82,16 @@ type User @table @critical {
 
 ### Default Weights
 
-| Directive/Type | Default Weight | Rationale |
-|----------------|----------------|-----------|
-| `@critical` | 10 | Mission-critical functionality |
-| `@primaryKey` | 10 | Core identity field |
-| `@sensitive` | 9 | Security-critical |
-| `@foreignKey` | 8 | Relationship integrity |
-| `@unique` | 8 | Business constraint |
-| `@pii` | 8 | Privacy compliance |
-| `@index` | 5 | Performance optimization |
-| Default field | 5 | Standard field |
+| Directive/Type | Default Weight | Rationale                      |
+| -------------- | -------------- | ------------------------------ |
+| `@critical`    | 10             | Mission-critical functionality |
+| `@primaryKey`  | 10             | Core identity field            |
+| `@sensitive`   | 9              | Security-critical              |
+| `@foreignKey`  | 8              | Relationship integrity         |
+| `@unique`      | 8              | Business constraint            |
+| `@pii`         | 8              | Privacy compliance             |
+| `@index`       | 5              | Performance optimization       |
+| Default field  | 5              | Standard field                 |
 
 ## The Evidence Map
 
@@ -103,27 +103,35 @@ Every `wesley generate` now produces generated evidence artifacts under `.wesley
   "timestamp": "2024-03-20T10:30:00Z",
   "evidence": {
     "col:user.email": {
-      "sql": [{
-        "file": "out/schema.sql",
-        "lines": "42-49",
-        "sha": "abc123d",
-        "timestamp": "2024-03-20T10:30:00Z"
-      }],
-      "ts": [{
-        "file": "out/types/User.d.ts",
-        "lines": "5-10",
-        "sha": "abc123d"
-      }],
-      "zod": [{
-        "file": "out/zod/user.ts",
-        "lines": "9-15",
-        "sha": "abc123d"
-      }],
-      "tests": [{
-        "file": "tests/schema/constraints.sql",
-        "lines": "70-90",
-        "sha": "abc123d"
-      }]
+      "sql": [
+        {
+          "file": "out/schema.sql",
+          "lines": "42-49",
+          "sha": "abc123d",
+          "timestamp": "2024-03-20T10:30:00Z"
+        }
+      ],
+      "ts": [
+        {
+          "file": "out/types/User.d.ts",
+          "lines": "5-10",
+          "sha": "abc123d"
+        }
+      ],
+      "zod": [
+        {
+          "file": "out/zod/user.ts",
+          "lines": "9-15",
+          "sha": "abc123d"
+        }
+      ],
+      "tests": [
+        {
+          "file": "tests/schema/constraints.sql",
+          "lines": "70-90",
+          "sha": "abc123d"
+        }
+      ]
     }
   }
 }
@@ -149,6 +157,7 @@ Wesley calculates three scores:
   - **tests** – pgTAP suites covering the element
 
 Example:
+
 ```javascript
 // High-weight critical field missing TypeScript type
 User.password: weight=10, sql=✓, ts=✗, zod=✓ → 66% coverage
@@ -162,14 +171,14 @@ SCS = (10 × 0.66 + 2 × 1.0) / 12 = 0.72 (72%)
 
 **Formula**: Risk points normalized to 0-1
 
-| Operation | Risk Points | Reason |
-|-----------|-------------|--------|
-| DROP TABLE | 40 | Data loss |
-| DROP COLUMN | 25 | Data loss |
-| ALTER TYPE (unsafe) | 30 | May fail |
-| ADD NOT NULL (no default) | 25 | Requires backfill |
-| RENAME (no @uid) | 10 | Breaks references |
-| CREATE INDEX (blocking) | 10 | Performance impact |
+| Operation                 | Risk Points | Reason             |
+| ------------------------- | ----------- | ------------------ |
+| DROP TABLE                | 40          | Data loss          |
+| DROP COLUMN               | 25          | Data loss          |
+| ALTER TYPE (unsafe)       | 30          | May fail           |
+| ADD NOT NULL (no default) | 25          | Requires backfill  |
+| RENAME (no @uid)          | 10          | Breaks references  |
+| CREATE INDEX (blocking)   | 10          | Performance impact |
 
 Breakdown vectors in `scores.breakdown.mri`:
 
@@ -181,6 +190,7 @@ Breakdown vectors in `scores.breakdown.mri`:
 - **other** – residual operations recorded for transparency
 
 Example:
+
 ```sql
 -- Migration with MRI = 0.55 (55% risk)
 DROP COLUMN users.old_field;     -- +25
@@ -191,6 +201,7 @@ ALTER COLUMN posts.count TYPE bigint; -- +30 (unsafe)
 ### TCI - Test Confidence Index
 
 **Weighted formula**:
+
 - Structure tests: 20%
 - Constraint tests: 45% (weighted by field importance)
 - Migration tests: 25%
@@ -202,6 +213,7 @@ ALTER COLUMN posts.count TYPE bigint; -- +30 (unsafe)
   - **e2eOps** – migration steps exercised by pgTAP suites
 
 Example:
+
 ```
 Structure:    15/15 tables tested = 100% × 0.20 = 0.20
 Constraints:  23/25 tested = 92% × 0.45 = 0.41
@@ -264,6 +276,7 @@ Wesley and HOLMES are separate packages:
 ## Commands
 
 ### Wesley (Main Generator)
+
 ```bash
 # Generate with evidence tracking
 wesley generate --schema schema.graphql --emit-bundle
@@ -273,6 +286,7 @@ wesley test
 ```
 
 ### HOLMES (Sidecar Intelligence)
+
 ```bash
 # Install separately
 npm install -g @wesley/holmes
@@ -308,7 +322,7 @@ jobs:
   wesley-generate:
     steps:
       - run: wesley generate --schema schema.graphql --emit-bundle
-      
+
   holmes-investigate:
     needs: wesley-generate
     steps:
@@ -409,10 +423,10 @@ Precedence: **overrides → directives → substrings → default**. Keys in `ov
 
 Environment overrides still work when needed:
 
-| Variable | Purpose |
-|----------|---------|
-| `WESLEY_HOLMES_WEIGHTS` | JSON string override (highest priority) |
-| `WESLEY_HOLMES_WEIGHT_FILE` | Path override for the config file |
+| Variable                    | Purpose                                 |
+| --------------------------- | --------------------------------------- |
+| `WESLEY_HOLMES_WEIGHTS`     | JSON string override (highest priority) |
+| `WESLEY_HOLMES_WEIGHT_FILE` | Path override for the config file       |
 
 Run `holmes weights:validate [--file path]` to lint configuration files locally. The HOLMES report now states which source supplied the weights and the reason behind each element’s weight.
 
@@ -421,25 +435,32 @@ Run `holmes weights:validate [--file path]` to lint configuration files locally.
 Wesley + HOLMES enforces security automatically:
 
 ### Sensitive Field Gate
+
 ```graphql
 password: String! @sensitive
 ```
+
 ❌ **BLOCKS** if no hash constraint in SQL:
+
 ```sql
 -- Required constraint
 CHECK (char_length(password_hash) = 60)  -- bcrypt
 ```
 
 ### PII Field Gate
+
 ```graphql
 email: String! @pii
 ```
+
 ⚠️ **WARNS** if no RLS masking policy
 
 ### RLS Coverage Gate
+
 ```graphql
 type Post @table @rls
 ```
+
 ❌ **BLOCKS** if RLS enabled but policies missing for used operations
 
 ## Example Investigation Output
@@ -451,12 +472,12 @@ type Post @table @rls
 **Verification Status**: 47/47 claims independently verified
 **Ship Verdict**: ELEMENTARY
 
-| Feature | Weight | Source | Status | Evidence | Deduction |
-|---------|--------|--------|--------|----------|-----------|
-| User.password | 12 | Override col:User.password | ✅ | `schema.sql:45@abc123d` | "Properly hashed!" |
-| User.email | 8 | Substring email | ✅ | `schema.sql:42@abc123d` | "Unique as required" |
-| Post.content | 5 | Default | ⚠️ | Missing Zod validation | "Minor oversight" |
-| User.theme | 2 | Substring theme | ✅ | `types.ts:8@abc123d` | "Low priority complete" |
+| Feature       | Weight | Source                     | Status | Evidence                | Deduction               |
+| ------------- | ------ | -------------------------- | ------ | ----------------------- | ----------------------- |
+| User.password | 12     | Override col:User.password | ✅     | `schema.sql:45@abc123d` | "Properly hashed!"      |
+| User.email    | 8      | Substring email            | ✅     | `schema.sql:42@abc123d` | "Unique as required"    |
+| Post.content  | 5      | Default                    | ⚠️     | Missing Zod validation  | "Minor oversight"       |
+| User.theme    | 2      | Substring theme            | ✅     | `types.ts:8@abc123d`    | "Low priority complete" |
 
 ## 📊 Scores
 
@@ -467,6 +488,7 @@ type Post @table @rls
 ## 🔮 Prediction
 
 Based on velocity of 3.2%/day:
+
 - **ETA**: 5 days (March 25, 2024)
 - **Confidence**: 87%
 ```

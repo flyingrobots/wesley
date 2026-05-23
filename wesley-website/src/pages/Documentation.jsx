@@ -1,6 +1,6 @@
-import { Box, Container, Stack, Text, Title } from '@mantine/core'
-import NavbarSimpleColored from '../components/NavbarSimpleColored.jsx'
-import ThemeLab from './ThemeLab.jsx'
+import { Box, Container, Stack, Text, Title } from '@mantine/core';
+import NavbarSimpleColored from '../components/NavbarSimpleColored.jsx';
+import ThemeLab from './ThemeLab.jsx';
 
 export default function Documentation() {
   return (
@@ -10,12 +10,13 @@ export default function Documentation() {
         <Container size="lg" py="xl">
           <Stack gap="xs">
             <Title order={1}>Documentation</Title>
-            <Text c="dimmed">Skeleton docs layout with a left sidebar. Replace this with real docs content.</Text>
+            <Text c="dimmed">
+              Skeleton docs layout with a left sidebar. Replace this with real docs content.
+            </Text>
           </Stack>
         </Container>
         <ThemeLab />
       </Box>
     </Box>
-  )
+  );
 }
-

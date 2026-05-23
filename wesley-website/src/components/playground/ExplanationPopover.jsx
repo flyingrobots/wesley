@@ -5,11 +5,11 @@ export default function ExplanationPopover({ children, title, description, width
   const [opened, { open, close }] = useDisclosure(false);
 
   return (
-    <Popover 
-      opened={opened} 
-      width={width} 
-      position="bottom" 
-      withArrow 
+    <Popover
+      opened={opened}
+      width={width}
+      position="bottom"
+      withArrow
       shadow="md"
       zIndex={100} // Ensure it's above other things
     >
@@ -25,7 +25,9 @@ export default function ExplanationPopover({ children, title, description, width
           {children}
         </Box>
       </Popover.Target>
-      <Popover.Dropdown style={{ pointerEvents: 'none' }}> {/* Prevent interaction with tooltip itself */}
+      <Popover.Dropdown style={{ pointerEvents: 'none' }}>
+        {' '}
+        {/* Prevent interaction with tooltip itself */}
         {title && (
           <Text size="sm" fw={700} mb={5}>
             {title}

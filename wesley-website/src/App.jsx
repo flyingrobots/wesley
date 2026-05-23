@@ -1,29 +1,29 @@
-import { useEffect, useState } from 'react'
-import { Box } from '@mantine/core'
-import ThemeLab from './pages/ThemeLab.jsx'
-import TryNow from './pages/TryNow.jsx'
-import FooterLinks from './components/FooterLinks.jsx'
-import HeroBullets from './components/HeroBullets.jsx'
-import FeaturesTitleWesley from './components/FeaturesTitleWesley.jsx'
-import FeaturesCardsWesley from './components/FeaturesCardsWesley.jsx'
-import GettingStarted from './components/GettingStarted.jsx'
-import FutureSection from './components/FutureSection.jsx'
-import Documentation from './pages/Documentation.jsx'
-import { HeaderTabs } from './components/HeaderTabs.jsx'
+import { useEffect, useState } from 'react';
+import { Box } from '@mantine/core';
+import ThemeLab from './pages/ThemeLab.jsx';
+import TryNow from './pages/TryNow.jsx';
+import FooterLinks from './components/FooterLinks.jsx';
+import HeroBullets from './components/HeroBullets.jsx';
+import FeaturesTitleWesley from './components/FeaturesTitleWesley.jsx';
+import FeaturesCardsWesley from './components/FeaturesCardsWesley.jsx';
+import GettingStarted from './components/GettingStarted.jsx';
+import FutureSection from './components/FutureSection.jsx';
+import Documentation from './pages/Documentation.jsx';
+import { HeaderTabs } from './components/HeaderTabs.jsx';
 
 function usePath() {
-  const [path, setPath] = useState(typeof window !== 'undefined' ? window.location.pathname : '/')
+  const [path, setPath] = useState(typeof window !== 'undefined' ? window.location.pathname : '/');
   useEffect(() => {
-    const onPop = () => setPath(window.location.pathname)
-    window.addEventListener('popstate', onPop)
-    return () => window.removeEventListener('popstate', onPop)
-  }, [])
+    const onPop = () => setPath(window.location.pathname);
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
   const navigate = (to) => {
-    if (to === path) return
-    window.history.pushState({}, '', to)
-    setPath(to)
-  }
-  return { path, navigate }
+    if (to === path) return;
+    window.history.pushState({}, '', to);
+    setPath(to);
+  };
+  return { path, navigate };
 }
 
 // Note: We avoid adding a router dependency; navigation is handled in App.
@@ -39,11 +39,11 @@ function HomeContent({ onNavigate }) {
       <GettingStarted />
       <FutureSection />
     </Box>
-  )
+  );
 }
 
 function App() {
-  const { path, navigate } = usePath()
+  const { path, navigate } = usePath();
 
   return (
     <Box style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -61,7 +61,7 @@ function App() {
       </Box>
       <FooterLinks />
     </Box>
-  )
+  );
 }
 
-export default App
+export default App;

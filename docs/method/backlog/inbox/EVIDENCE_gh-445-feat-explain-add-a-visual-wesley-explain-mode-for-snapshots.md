@@ -22,6 +22,7 @@ Source: BACKLOG.md
 Migrate the old backlog item into GitHub tracking. Generate an interactive HTML view for explain snapshots once real explain data exists, similar to a plan visualizer.
 
 Done when:
+
 - a concrete snapshot format exists to render
 - the visual mode is tied to real explain data instead of mocks
 - UX/docs show how to use it

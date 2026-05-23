@@ -1,7 +1,7 @@
 ---
-title: "Transmuter Lowering Engine Extraction"
+title: 'Transmuter Lowering Engine Extraction'
 legend: TRANSMUTE
-release: "v0.1.0"
+release: 'v0.1.0'
 lane: v0.1.0
 ---
 

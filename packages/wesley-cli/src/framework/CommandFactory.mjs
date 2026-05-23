@@ -15,4 +15,3 @@ export class CommandFactory {
 }
 
 export default CommandFactory;
-

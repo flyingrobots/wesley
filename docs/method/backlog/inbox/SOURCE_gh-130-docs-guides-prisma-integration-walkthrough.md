@@ -105,9 +105,9 @@ Document manifest setup, CLI commands, running `prisma generate`, integrating cl
 
 ### QA Sign-off Matrix
 
-| Environment | Surface | Owner | Status | Notes |
-| --- | --- | --- | --- | --- |
-| Docs preview | Web | TBD | pending | |
+| Environment  | Surface | Owner | Status  | Notes |
+| ------------ | ------- | ----- | ------- | ----- |
+| Docs preview | Web     | TBD   | pending |       |
 
 ## Requirements
 

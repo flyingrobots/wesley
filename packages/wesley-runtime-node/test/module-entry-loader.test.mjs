@@ -25,127 +25,131 @@ async function withTempDir(fn) {
   }
 }
 
-test('WESLEY_DISABLE_MODULES prevents config and env module loading', async () => withTempDir(async (tempDir) => {
-  writeFileSync(
-    path.join(tempDir, 'wesley.config.mjs'),
-    'throw new Error("config should not be imported when modules are disabled");'
-  );
+test('WESLEY_DISABLE_MODULES prevents config and env module loading', async () =>
+  withTempDir(async (tempDir) => {
+    writeFileSync(
+      path.join(tempDir, 'wesley.config.mjs'),
+      'throw new Error("config should not be imported when modules are disabled");'
+    );
 
-  const entries = await loadWesleyModuleEntries({
-    cwd: tempDir,
-    env: {
-      [WESLEY_ENV_DISABLE_MODULES]: '1',
-      [WESLEY_ENV_MODULES]: './module.mjs'
-    }
-  });
-
-  assert.deepEqual(entries, []);
-}));
-
-test('WESLEY_MODULE_ALLOWLIST rejects non-allowlisted config before import', async () => withTempDir(async (tempDir) => {
-  const allowedModule = path.join(tempDir, 'allowed-module.mjs');
-  writeFileSync(
-    path.join(tempDir, 'wesley.config.mjs'),
-    'throw new Error("config import should be blocked by allowlist");'
-  );
-
-  await assert.rejects(
-    () => loadWesleyModuleEntries({
-      cwd: tempDir,
-      env: { [WESLEY_ENV_MODULE_ALLOWLIST]: allowedModule }
-    }),
-    (error) => {
-      assert.equal(error.code, 'WESLEY_MODULE_NOT_ALLOWLISTED');
-      assert.match(error.message, /config/);
-      return true;
-    }
-  );
-}));
-
-test('WESLEY_MODULE_ALLOWLIST rejects non-allowlisted env modules', async () => withTempDir(async (tempDir) => {
-  const modulePath = path.join(tempDir, 'module.mjs');
-  const allowedModule = path.join(tempDir, 'allowed-module.mjs');
-
-  await assert.rejects(
-    () => loadWesleyModuleEntries({
+    const entries = await loadWesleyModuleEntries({
       cwd: tempDir,
       env: {
-        [WESLEY_ENV_MODULES]: modulePath,
-        [WESLEY_ENV_MODULE_ALLOWLIST]: allowedModule
+        [WESLEY_ENV_DISABLE_MODULES]: '1',
+        [WESLEY_ENV_MODULES]: './module.mjs'
       }
-    }),
-    (error) => {
-      assert.equal(error.code, 'WESLEY_MODULE_NOT_ALLOWLISTED');
-      assert.match(error.message, /module/);
-      return true;
-    }
-  );
-}));
+    });
 
-test('WESLEY_MODULE_ALLOWLIST permits allowlisted config and module paths', async () => withTempDir(async (tempDir) => {
-  const configPath = path.join(tempDir, 'wesley.config.mjs');
-  const modulePath = path.join(tempDir, 'module.mjs');
-  writeFileSync(configPath, 'export default { modules: ["./module.mjs"] };');
+    assert.deepEqual(entries, []);
+  }));
 
-  const entries = await loadWesleyModuleEntries({
-    cwd: tempDir,
-    env: { [WESLEY_ENV_MODULE_ALLOWLIST]: [configPath, modulePath].join(delimiter) }
-  });
+test('WESLEY_MODULE_ALLOWLIST rejects non-allowlisted config before import', async () =>
+  withTempDir(async (tempDir) => {
+    const allowedModule = path.join(tempDir, 'allowed-module.mjs');
+    writeFileSync(
+      path.join(tempDir, 'wesley.config.mjs'),
+      'throw new Error("config import should be blocked by allowlist");'
+    );
 
-  assert.deepEqual(entries, [{ specifier: modulePath, enabled: true }]);
-}));
+    await assert.rejects(
+      () =>
+        loadWesleyModuleEntries({
+          cwd: tempDir,
+          env: { [WESLEY_ENV_MODULE_ALLOWLIST]: allowedModule }
+        }),
+      (error) => {
+        assert.equal(error.code, 'WESLEY_MODULE_NOT_ALLOWLISTED');
+        assert.match(error.message, /config/);
+        return true;
+      }
+    );
+  }));
 
-test('WESLEY_MODULES preserves file URLs when splitting path-delimited entries', async () => withTempDir(async (tempDir) => {
-  const firstModule = path.join(tempDir, 'first-module.mjs');
-  const secondModule = path.join(tempDir, 'second-module.mjs');
-  const firstUrl = pathToFileURL(firstModule).href;
-  const secondUrl = pathToFileURL(secondModule).href;
+test('WESLEY_MODULE_ALLOWLIST rejects non-allowlisted env modules', async () =>
+  withTempDir(async (tempDir) => {
+    const modulePath = path.join(tempDir, 'module.mjs');
+    const allowedModule = path.join(tempDir, 'allowed-module.mjs');
 
-  const entries = parseWesleyEnvModuleEntries(
-    [firstUrl, secondUrl].join(delimiter),
-    tempDir
-  );
-  const allowlist = parseWesleyModuleAllowlist(
-    [firstUrl, secondUrl].join(delimiter),
-    tempDir
-  );
+    await assert.rejects(
+      () =>
+        loadWesleyModuleEntries({
+          cwd: tempDir,
+          env: {
+            [WESLEY_ENV_MODULES]: modulePath,
+            [WESLEY_ENV_MODULE_ALLOWLIST]: allowedModule
+          }
+        }),
+      (error) => {
+        assert.equal(error.code, 'WESLEY_MODULE_NOT_ALLOWLISTED');
+        assert.match(error.message, /module/);
+        return true;
+      }
+    );
+  }));
 
-  assert.deepEqual(entries, [
-    { specifier: firstModule, enabled: true },
-    { specifier: secondModule, enabled: true }
-  ]);
-  assert.deepEqual([...allowlist], [firstModule, secondModule]);
-}));
+test('WESLEY_MODULE_ALLOWLIST permits allowlisted config and module paths', async () =>
+  withTempDir(async (tempDir) => {
+    const configPath = path.join(tempDir, 'wesley.config.mjs');
+    const modulePath = path.join(tempDir, 'module.mjs');
+    writeFileSync(configPath, 'export default { modules: ["./module.mjs"] };');
 
-test('explicit missing WESLEY_CONFIG fails loudly', async () => withTempDir(async (tempDir) => {
-  const missingConfig = path.join(tempDir, 'missing-wesley.config.mjs');
-
-  await assert.rejects(
-    () => loadWesleyModuleEntries({
+    const entries = await loadWesleyModuleEntries({
       cwd: tempDir,
-      env: { [WESLEY_ENV_CONFIG]: missingConfig }
-    }),
-    (error) => {
-      assert.equal(error.code, 'WESLEY_CONFIG_NOT_FOUND');
-      assert.equal(error.meta.resolvedPath, missingConfig);
-      assert.match(error.message, /WESLEY_CONFIG points to/);
-      return true;
-    }
-  );
-}));
+      env: { [WESLEY_ENV_MODULE_ALLOWLIST]: [configPath, modulePath].join(delimiter) }
+    });
 
-test('WESLEY_MODULE_ALLOWLIST ignores disabled module entries', async () => withTempDir(async (tempDir) => {
-  const configPath = path.join(tempDir, 'wesley.config.mjs');
-  const disabledModule = path.join(tempDir, 'disabled-module.mjs');
-  writeFileSync(
-    configPath,
-    'export default { modules: [{ specifier: "./disabled-module.mjs", enabled: false }] };\n'
-  );
+    assert.deepEqual(entries, [{ specifier: modulePath, enabled: true }]);
+  }));
 
-  const entries = await loadWesleyModuleEntries({
-    cwd: tempDir,
-    env: { [WESLEY_ENV_MODULE_ALLOWLIST]: configPath }
-  });
+test('WESLEY_MODULES preserves file URLs when splitting path-delimited entries', async () =>
+  withTempDir(async (tempDir) => {
+    const firstModule = path.join(tempDir, 'first-module.mjs');
+    const secondModule = path.join(tempDir, 'second-module.mjs');
+    const firstUrl = pathToFileURL(firstModule).href;
+    const secondUrl = pathToFileURL(secondModule).href;
 
-  assert.deepEqual(entries, [{ specifier: disabledModule, enabled: false }]);
-}));
+    const entries = parseWesleyEnvModuleEntries([firstUrl, secondUrl].join(delimiter), tempDir);
+    const allowlist = parseWesleyModuleAllowlist([firstUrl, secondUrl].join(delimiter), tempDir);
+
+    assert.deepEqual(entries, [
+      { specifier: firstModule, enabled: true },
+      { specifier: secondModule, enabled: true }
+    ]);
+    assert.deepEqual([...allowlist], [firstModule, secondModule]);
+  }));
+
+test('explicit missing WESLEY_CONFIG fails loudly', async () =>
+  withTempDir(async (tempDir) => {
+    const missingConfig = path.join(tempDir, 'missing-wesley.config.mjs');
+
+    await assert.rejects(
+      () =>
+        loadWesleyModuleEntries({
+          cwd: tempDir,
+          env: { [WESLEY_ENV_CONFIG]: missingConfig }
+        }),
+      (error) => {
+        assert.equal(error.code, 'WESLEY_CONFIG_NOT_FOUND');
+        assert.equal(error.meta.resolvedPath, missingConfig);
+        assert.match(error.message, /WESLEY_CONFIG points to/);
+        return true;
+      }
+    );
+  }));
+
+test('WESLEY_MODULE_ALLOWLIST ignores disabled module entries', async () =>
+  withTempDir(async (tempDir) => {
+    const configPath = path.join(tempDir, 'wesley.config.mjs');
+    const disabledModule = path.join(tempDir, 'disabled-module.mjs');
+    writeFileSync(
+      configPath,
+      'export default { modules: [{ specifier: "./disabled-module.mjs", enabled: false }] };\n'
+    );
+
+    const entries = await loadWesleyModuleEntries({
+      cwd: tempDir,
+      env: { [WESLEY_ENV_MODULE_ALLOWLIST]: configPath }
+    });
+
+    assert.deepEqual(entries, [{ specifier: disabledModule, enabled: false }]);
+  }));

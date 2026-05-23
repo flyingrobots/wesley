@@ -18,6 +18,7 @@ Trigger: title match: schema semantics, parser/IR meaning, or canonical document
 ## Original Issue
 
 Implement a browser-friendly ParserPort without graphql.js.
+
 - Minimal SDL parser sufficient for IR construction.
 - Wire to GenerationPipeline in browser host.
 - Add contracts that assert real IR shape (not header-only).

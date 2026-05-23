@@ -13,6 +13,7 @@ Legend: [SOURCE — Source Authority]
 The Wesley compiler currently lowers the full GraphQL SDL tree into IR on every command. For giant schemas, this creates a performance bottleneck in the inner-loop.
 
 Implement "Incremental Lowering":
+
 1. Partition the schema into logical fragments (e.g. by Type or Namespace).
 2. Cache the lowered IR for each fragment in `.wesley-cache/ir/`.
 3. Only re-lower fragments whose authored source has changed.

@@ -28,6 +28,7 @@ See [DIRECTIVES.md](./DIRECTIVES.md) for the full truth table.
 HOLMES is the automated policy engine that guards Wesley's "Trustworthy Change" claim.
 
 ### Certification Pipeline
+
 1. **Transform**: Lower the authored schema and execute loaded transmutations.
 2. **Verify**: Run module-owned or generic evidence checks.
 3. **Witness**: Issue a machine-readable certificate of conformance.
@@ -37,4 +38,5 @@ HOLMES is the automated policy engine that guards Wesley's "Trustworthy Change" 
 Wesley uses a content-addressed cache (`.wesley-cache/`) to avoid redundant transmutation work. For giant monorepos, the `witness` suite supports scoped proving (e.g., `receipt-family`) to keep the CI loop fast.
 
 ---
+
 **The goal is inevitably. Every continuation from the past is explicit, capability-gated, and provenance-bearing.**

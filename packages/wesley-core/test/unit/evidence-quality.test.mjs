@@ -20,9 +20,18 @@ test('classifyEvidenceLocation distinguishes exact, whole-file, and coarse citat
     return null;
   };
 
-  assert.equal(classifyEvidenceLocation({ file: 'tests.sql', lines: '1-1' }, resolver).strength, 'exact');
-  assert.equal(classifyEvidenceLocation({ file: 'schema.sql', lines: '1-3' }, resolver).strength, 'wholeFile');
-  assert.equal(classifyEvidenceLocation({ file: 'schema.sql', lines: '1-*' }, resolver).strength, 'coarse');
+  assert.equal(
+    classifyEvidenceLocation({ file: 'tests.sql', lines: '1-1' }, resolver).strength,
+    'exact'
+  );
+  assert.equal(
+    classifyEvidenceLocation({ file: 'schema.sql', lines: '1-3' }, resolver).strength,
+    'wholeFile'
+  );
+  assert.equal(
+    classifyEvidenceLocation({ file: 'schema.sql', lines: '1-*' }, resolver).strength,
+    'coarse'
+  );
 });
 
 test('summarizeEvidenceQuality and helpers produce cert-friendly totals', () => {
@@ -38,9 +47,7 @@ test('summarizeEvidenceQuality and helpers produce cert-friendly totals', () => 
           { file: 'schema.sql', lines: '1-3' },
           { file: 'schema.sql', lines: '1-*' }
         ],
-        tests: [
-          { file: 'tests.sql', lines: '1-1' }
-        ]
+        tests: [{ file: 'tests.sql', lines: '1-1' }]
       }
     }
   };
@@ -56,21 +63,15 @@ test('summarizeEvidenceQuality and helpers produce cert-friendly totals', () => 
 });
 
 test('assessEvidenceTrust downgrades coarse citation mixes and explains why', () => {
-  assert.deepEqual(
-    assessEvidenceTrust({ exact: 2, wholeFile: 1, coarse: 0 }),
-    {
-      level: 'moderate',
-      reasons: ['1 whole-file citation still relies on broad file-level proof.']
-    }
-  );
+  assert.deepEqual(assessEvidenceTrust({ exact: 2, wholeFile: 1, coarse: 0 }), {
+    level: 'moderate',
+    reasons: ['1 whole-file citation still relies on broad file-level proof.']
+  });
 
-  assert.deepEqual(
-    assessEvidenceTrust({ exact: 1, wholeFile: 0, coarse: 1 }),
-    {
-      level: 'weak',
-      reasons: ['1 coarse citation remains unpinned to exact line spans.']
-    }
-  );
+  assert.deepEqual(assessEvidenceTrust({ exact: 1, wholeFile: 0, coarse: 1 }), {
+    level: 'weak',
+    reasons: ['1 coarse citation remains unpinned to exact line spans.']
+  });
 });
 
 test('evidence trust helpers drive readiness and confidence decisions', () => {
@@ -84,9 +85,18 @@ test('evidence trust helpers drive readiness and confidence decisions', () => {
   assert.equal(confidencePenaltyForEvidenceTrust('weak'), 12);
   assert.equal(confidencePenaltyForEvidenceTrust('missing'), 20);
 
-  assert.equal(adjustReadinessVerdictForEvidenceTrust('ELEMENTARY', 'weak'), 'REQUIRES INVESTIGATION');
-  assert.equal(adjustReadinessVerdictForEvidenceTrust('ELEMENTARY', 'missing'), 'REQUIRES INVESTIGATION');
-  assert.equal(adjustReadinessVerdictForEvidenceTrust('REQUIRES INVESTIGATION', 'weak'), 'REQUIRES INVESTIGATION');
+  assert.equal(
+    adjustReadinessVerdictForEvidenceTrust('ELEMENTARY', 'weak'),
+    'REQUIRES INVESTIGATION'
+  );
+  assert.equal(
+    adjustReadinessVerdictForEvidenceTrust('ELEMENTARY', 'missing'),
+    'REQUIRES INVESTIGATION'
+  );
+  assert.equal(
+    adjustReadinessVerdictForEvidenceTrust('REQUIRES INVESTIGATION', 'weak'),
+    'REQUIRES INVESTIGATION'
+  );
 });
 
 test('pickBestEvidenceLocation prefers narrow exact citations over whole-file and coarse fallbacks', () => {
@@ -100,9 +110,7 @@ test('pickBestEvidenceLocation prefers narrow exact citations over whole-file an
       { file: 'schema.sql', lines: '1-3' },
       { file: 'schema.sql', lines: '1-*' }
     ],
-    tests: [
-      { file: 'tests.sql', lines: '1-1' }
-    ]
+    tests: [{ file: 'tests.sql', lines: '1-1' }]
   };
 
   const best = pickBestEvidenceLocation(evidence, resolver);

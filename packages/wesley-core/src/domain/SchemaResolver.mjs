@@ -43,9 +43,21 @@ export function unescapePackage(esc) {
   while (i < esc.length) {
     if (esc[i] === 'X' && i + 1 < esc.length) {
       const next = esc[i + 1];
-      if (next === 'd') { out += '.'; i += 2; continue; }
-      if (next === 'u') { out += '_'; i += 2; continue; }
-      if (next === 'X') { out += 'X'; i += 2; continue; }
+      if (next === 'd') {
+        out += '.';
+        i += 2;
+        continue;
+      }
+      if (next === 'u') {
+        out += '_';
+        i += 2;
+        continue;
+      }
+      if (next === 'X') {
+        out += 'X';
+        i += 2;
+        continue;
+      }
     }
     out += esc[i];
     i++;
@@ -154,7 +166,7 @@ export async function resolve(entryPath, readFileFn, rootDir, opts = {}) {
       doc: mangledDoc,
       sdl: mangledSdl,
       rawSdl: unit.rawSdl,
-      imports: unit.importPaths.map(p => pathToId.get(p)),
+      imports: unit.importPaths.map((p) => pathToId.get(p)),
       definitions: unit.definitions,
       hash: simpleHash(unit.rawSdl)
     });
@@ -178,18 +190,14 @@ async function discover(entryPath, readFileFn, rootDir, units, pathToId, resolve
     try {
       rawSdl = await readFileFn(absPath);
     } catch (err) {
-      throw new SchemaResolutionError(
-        `Cannot read schema file: ${absPath}\n${err.message}`
-      );
+      throw new SchemaResolutionError(`Cannot read schema file: ${absPath}\n${err.message}`);
     }
 
     let ast;
     try {
       ast = parse(rawSdl);
     } catch (err) {
-      throw new SchemaResolutionError(
-        `GraphQL syntax error in ${absPath}: ${err.message}`
-      );
+      throw new SchemaResolutionError(`GraphQL syntax error in ${absPath}: ${err.message}`);
     }
 
     // Extract metadata from SchemaExtension nodes
@@ -200,12 +208,12 @@ async function discover(entryPath, readFileFn, rootDir, units, pathToId, resolve
       if (def.kind === Kind.SCHEMA_EXTENSION && def.directives) {
         for (const dir of def.directives) {
           if (dir.name.value === 'wes_package') {
-            const nameArg = dir.arguments?.find(a => a.name.value === 'name');
+            const nameArg = dir.arguments?.find((a) => a.name.value === 'name');
             if (nameArg) {
               pkg = nameArg.value.value;
             }
           } else if (dir.name.value === 'wes_import') {
-            const fromArg = dir.arguments?.find(a => a.name.value === 'from');
+            const fromArg = dir.arguments?.find((a) => a.name.value === 'from');
             if (fromArg) {
               importFroms.push(fromArg.value.value);
             }
@@ -284,13 +292,18 @@ function buildAdjacencyList(units, _pathToId) {
   // adj[absPath] = [absPath of dependencies]
   const adj = new Map();
   for (const [absPath, unit] of units) {
-    adj.set(absPath, unit.importPaths.filter(p => units.has(p)));
+    adj.set(
+      absPath,
+      unit.importPaths.filter((p) => units.has(p))
+    );
   }
   return adj;
 }
 
 function detectCycles(adj, pathToId) {
-  const WHITE = 0, GRAY = 1, BLACK = 2;
+  const WHITE = 0,
+    GRAY = 1,
+    BLACK = 2;
   const color = new Map();
   for (const node of adj.keys()) color.set(node, WHITE);
 
@@ -300,15 +313,13 @@ function detectCycles(adj, pathToId) {
     color.set(node, GRAY);
     path.push(node);
 
-    for (const dep of (adj.get(node) || [])) {
+    for (const dep of adj.get(node) || []) {
       if (color.get(dep) === GRAY) {
         // Found cycle — extract it
         const cycleStart = path.indexOf(dep);
-        const cycle = path.slice(cycleStart).map(p => pathToId.get(p));
+        const cycle = path.slice(cycleStart).map((p) => pathToId.get(p));
         cycle.push(pathToId.get(dep)); // close the cycle
-        throw new SchemaResolutionError(
-          `Import cycle detected: ${cycle.join(' → ')}`
-        );
+        throw new SchemaResolutionError(`Import cycle detected: ${cycle.join(' → ')}`);
       }
       if (color.get(dep) === WHITE) {
         dfs(dep);
@@ -351,14 +362,16 @@ function detectDuplicateDefinitions(units) {
     for (const [name, locations] of typeDefs) {
       if (locations.length > 1) {
         const pkgLabel = pkg || '(root)';
-        const locs = locations.map(l => {
-          const id = l.unitPath.split('/').pop();
-          return `${id}:${l.line}`;
-        }).join(' and ');
+        const locs = locations
+          .map((l) => {
+            const id = l.unitPath.split('/').pop();
+            return `${id}:${l.line}`;
+          })
+          .join(' and ');
         throw new SchemaResolutionError(
           `Duplicate definition of "${name}" in package ${pkgLabel}:\n` +
-          `  ${locs}\n` +
-          `Use "extend type ${name}" to add fields across files.`
+            `  ${locs}\n` +
+            `Use "extend type ${name}" to add fields across files.`
         );
       }
     }
@@ -405,7 +418,8 @@ function topologicalSort(adj, _pathToId) {
       inDeg.set(depender, inDeg.get(depender) - 1);
       if (inDeg.get(depender) === 0) {
         // Binary search insertion for O(log n) instead of O(n log n) per push
-        let lo = 0, hi = queue.length;
+        let lo = 0,
+          hi = queue.length;
         while (lo < hi) {
           const mid = (lo + hi) >>> 1;
           if (queue[mid] < depender) lo = mid + 1;
@@ -505,9 +519,9 @@ function buildResolutionMaps(sorted, units, pathToId, adj) {
 
             throw new SchemaResolutionError(
               `"${shortName}" is defined locally in package ${localPkg || '(root)'} (${localUnit.split('/').pop()}) ` +
-              `and also imported from package ${importedPkg || '(root)'} (${importedUnit.split('/').pop()}).\n` +
-              'Local type shadows import — this is an error.\n' +
-              'Rename one type (recommended), or use import aliasing (not yet supported).'
+                `and also imported from package ${importedPkg || '(root)'} (${importedUnit.split('/').pop()}).\n` +
+                'Local type shadows import — this is an error.\n' +
+                'Rename one type (recommended), or use import aliasing (not yet supported).'
             );
           }
 
@@ -521,8 +535,8 @@ function buildResolutionMaps(sorted, units, pathToId, adj) {
 
           throw new SchemaResolutionError(
             `"${shortName}" is defined in both ${pkg1} (${file1}:${line1}) ` +
-            `and ${pkg2} (${file2}:${line2}).\n` +
-            'Rename one type (recommended), or use import aliasing (not yet supported).'
+              `and ${pkg2} (${file2}:${line2}).\n` +
+              'Rename one type (recommended), or use import aliasing (not yet supported).'
           );
         }
 
@@ -560,24 +574,48 @@ function rewriteAST(unit, resMap) {
     },
 
     // Rewrite definition names
-    ObjectTypeDefinition(node) { return rewriteDefName(node, resMap); },
-    ObjectTypeExtension(node) { return rewriteDefName(node, resMap); },
-    InputObjectTypeDefinition(node) { return rewriteDefName(node, resMap); },
-    InputObjectTypeExtension(node) { return rewriteDefName(node, resMap); },
-    InterfaceTypeDefinition(node) { return rewriteDefName(node, resMap); },
-    InterfaceTypeExtension(node) { return rewriteDefName(node, resMap); },
-    UnionTypeDefinition(node) { return rewriteDefName(node, resMap); },
-    UnionTypeExtension(node) { return rewriteDefName(node, resMap); },
-    EnumTypeDefinition(node) { return rewriteDefName(node, resMap); },
-    EnumTypeExtension(node) { return rewriteDefName(node, resMap); },
-    ScalarTypeDefinition(node) { return rewriteDefName(node, resMap); },
-    ScalarTypeExtension(node) { return rewriteDefName(node, resMap); },
+    ObjectTypeDefinition(node) {
+      return rewriteDefName(node, resMap);
+    },
+    ObjectTypeExtension(node) {
+      return rewriteDefName(node, resMap);
+    },
+    InputObjectTypeDefinition(node) {
+      return rewriteDefName(node, resMap);
+    },
+    InputObjectTypeExtension(node) {
+      return rewriteDefName(node, resMap);
+    },
+    InterfaceTypeDefinition(node) {
+      return rewriteDefName(node, resMap);
+    },
+    InterfaceTypeExtension(node) {
+      return rewriteDefName(node, resMap);
+    },
+    UnionTypeDefinition(node) {
+      return rewriteDefName(node, resMap);
+    },
+    UnionTypeExtension(node) {
+      return rewriteDefName(node, resMap);
+    },
+    EnumTypeDefinition(node) {
+      return rewriteDefName(node, resMap);
+    },
+    EnumTypeExtension(node) {
+      return rewriteDefName(node, resMap);
+    },
+    ScalarTypeDefinition(node) {
+      return rewriteDefName(node, resMap);
+    },
+    ScalarTypeExtension(node) {
+      return rewriteDefName(node, resMap);
+    },
 
     // Strip SchemaExtension nodes carrying @wes_import / @wes_package
     SchemaExtension(node) {
       if (!node.directives) return undefined;
       const hasWesDir = node.directives.some(
-        d => d.name.value === 'wes_package' || d.name.value === 'wes_import'
+        (d) => d.name.value === 'wes_package' || d.name.value === 'wes_import'
       );
       if (hasWesDir) return null; // remove from AST
       return undefined;
@@ -636,21 +674,19 @@ function simpleHash(str) {
  * @returns {{ sdl: string, units: CompilationUnit[] }}
  */
 export function composeUnits(allUnits, selectedUnitIds) {
-  const idSet = new Set(
-    selectedUnitIds.flatMap(id => id.split(','))
-  );
+  const idSet = new Set(selectedUnitIds.flatMap((id) => id.split(',')));
 
-  const selected = allUnits.filter(u => idSet.has(u.id));
+  const selected = allUnits.filter((u) => idSet.has(u.id));
 
   if (selected.length === 0) {
-    const available = allUnits.map(u => u.id).join(', ');
+    const available = allUnits.map((u) => u.id).join(', ');
     throw new SchemaResolutionError(
       `No units match the requested IDs: ${[...idSet].join(', ')}\n` +
-      `Available units: ${available}`
+        `Available units: ${available}`
     );
   }
 
-  const mergedSdl = selected.map(u => u.sdl).join('\n\n');
+  const mergedSdl = selected.map((u) => u.sdl).join('\n\n');
   return { sdl: mergedSdl, units: selected };
 }
 
@@ -696,18 +732,42 @@ export function demangleSdl(sdl, demangleMap) {
       return { ...node, name: { ...node.name, value: short } };
     },
 
-    ObjectTypeDefinition(node) { return _demangleNode(node, demangleMap); },
-    ObjectTypeExtension(node) { return _demangleNode(node, demangleMap); },
-    InputObjectTypeDefinition(node) { return _demangleNode(node, demangleMap); },
-    InputObjectTypeExtension(node) { return _demangleNode(node, demangleMap); },
-    InterfaceTypeDefinition(node) { return _demangleNode(node, demangleMap); },
-    InterfaceTypeExtension(node) { return _demangleNode(node, demangleMap); },
-    UnionTypeDefinition(node) { return _demangleNode(node, demangleMap); },
-    UnionTypeExtension(node) { return _demangleNode(node, demangleMap); },
-    EnumTypeDefinition(node) { return _demangleNode(node, demangleMap); },
-    EnumTypeExtension(node) { return _demangleNode(node, demangleMap); },
-    ScalarTypeDefinition(node) { return _demangleNode(node, demangleMap); },
-    ScalarTypeExtension(node) { return _demangleNode(node, demangleMap); }
+    ObjectTypeDefinition(node) {
+      return _demangleNode(node, demangleMap);
+    },
+    ObjectTypeExtension(node) {
+      return _demangleNode(node, demangleMap);
+    },
+    InputObjectTypeDefinition(node) {
+      return _demangleNode(node, demangleMap);
+    },
+    InputObjectTypeExtension(node) {
+      return _demangleNode(node, demangleMap);
+    },
+    InterfaceTypeDefinition(node) {
+      return _demangleNode(node, demangleMap);
+    },
+    InterfaceTypeExtension(node) {
+      return _demangleNode(node, demangleMap);
+    },
+    UnionTypeDefinition(node) {
+      return _demangleNode(node, demangleMap);
+    },
+    UnionTypeExtension(node) {
+      return _demangleNode(node, demangleMap);
+    },
+    EnumTypeDefinition(node) {
+      return _demangleNode(node, demangleMap);
+    },
+    EnumTypeExtension(node) {
+      return _demangleNode(node, demangleMap);
+    },
+    ScalarTypeDefinition(node) {
+      return _demangleNode(node, demangleMap);
+    },
+    ScalarTypeExtension(node) {
+      return _demangleNode(node, demangleMap);
+    }
   });
 
   return print(rewritten);
@@ -730,7 +790,10 @@ function _demangleNode(node, demangleMap) {
  * @returns {{ missing: Array<{ type: string, definedIn: string }>, excludedUnits: string[] } | null}
  */
 export function validateFilteredSdl(sdl, allUnits, selectedUnitIds) {
-  const normalized = selectedUnitIds.flatMap(id => id.split(',')).map(s => s.trim()).filter(Boolean);
+  const normalized = selectedUnitIds
+    .flatMap((id) => id.split(','))
+    .map((s) => s.trim())
+    .filter(Boolean);
   const idSet = new Set(normalized);
   const doc = parse(sdl);
 
@@ -777,9 +840,7 @@ export function validateFilteredSdl(sdl, allUnits, selectedUnitIds) {
 
   if (missing.length === 0) return null;
 
-  const excludedUnits = allUnits
-    .filter(u => !idSet.has(u.id))
-    .map(u => u.id);
+  const excludedUnits = allUnits.filter((u) => !idSet.has(u.id)).map((u) => u.id);
 
   return { missing, excludedUnits };
 }

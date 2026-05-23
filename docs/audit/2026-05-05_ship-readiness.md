@@ -1,23 +1,24 @@
 ---
-report_id: "AUD-2026-05-05-SR01"
-title: "Ship Readiness Audit: Wesley v0.1.0 Release Branch"
-status: "Final"
+report_id: 'AUD-2026-05-05-SR01'
+title: 'Ship Readiness Audit: Wesley v0.1.0 Release Branch'
+status: 'Final'
 audit:
   date_started: 2026-05-05
   date_completed: 2026-05-05
-  type: "Differential"
-  scope: "README.md, CONTRIBUTING.md, SECURITY.md, docs/, packages/, scripts/, package.json, pnpm-lock.yaml, .github/workflows"
-  compliance_frameworks: ["OWASP ASVS", "OpenSSF Scorecard Practices", "SLSA Release Principles"]
+  type: 'Differential'
+  scope: 'README.md, CONTRIBUTING.md, SECURITY.md, docs/, packages/, scripts/, package.json, pnpm-lock.yaml, .github/workflows'
+  compliance_frameworks: ['OWASP ASVS', 'OpenSSF Scorecard Practices', 'SLSA Release Principles']
 target:
-  repository: "github.com/flyingrobots/wesley"
-  branch: "release/v0.1.0"
-  commit_hash: "1333104"
-  language_stack: ["Node.js >=22", "pnpm 9.15.9", "ESM JavaScript", "GraphQL", "Commander", "Bats", "Playwright"]
-  environment: "Local release branch"
+  repository: 'github.com/flyingrobots/wesley'
+  branch: 'release/v0.1.0'
+  commit_hash: '1333104'
+  language_stack:
+    ['Node.js >=22', 'pnpm 9.15.9', 'ESM JavaScript', 'GraphQL', 'Commander', 'Bats', 'Playwright']
+  environment: 'Local release branch'
 methodology:
-  automated_tools: ["git status", "git log", "rg", "wc", "pnpm audit --json", "pnpm wesley --help"]
+  automated_tools: ['git status', 'git log', 'rg', 'wc', 'pnpm audit --json', 'pnpm wesley --help']
   manual_review_hours: 4
-  false_positive_rate: "15%"
+  false_positive_rate: '15%'
 summary:
   total_findings: 17
   severity_count:
@@ -25,10 +26,10 @@ summary:
     high: 4
     medium: 10
     low: 3
-  remediation_status: "Pending"
+  remediation_status: 'Pending'
 related_reports:
-  previous_audit: "AUD-2026-05-04-SR01"
-  tracking_ticket: "docs/method/backlog/"
+  previous_audit: 'AUD-2026-05-04-SR01'
+  tracking_ticket: 'docs/method/backlog/'
 ---
 
 # AUDIT: READY-TO-SHIP ASSESSMENT (2026-05-05)
@@ -56,7 +57,7 @@ The three most problematic patterns are:
 - **Issue 3:** `docs/guides/generator-plugins.md` teaches an obsolete config shape. It tells users to register plugins under a top-level `generators` array (`docs/guides/generator-plugins.md:43-51`), while current loading expects `config.modules` and capabilities supplied by loaded modules.
 - **Mitigation Prompt 3:** `Update docs/guides/generator-plugins.md to use the current module contract. Show a minimal module that exports capabilities.wesley.generators or capabilities.wesley.targets, show wesley.config.mjs with modules: [{ specifier: './my-plugin.mjs' }], and include a test command that proves the module-loaded capability is visible.`
 
-1.3. **Code Quality Violation:**
+  1.3. **Code Quality Violation:**
 
 - **Violation 1:** `ModuleEntryLoader` still performs source discovery, trust policy, import execution, dedupe, and capability discovery in one adapter.
 
@@ -70,7 +71,9 @@ if (configPath) {
   const loaded = await import(pathToFileURL(configPath).href);
   const config = loaded?.default ?? {};
   if (Array.isArray(config.modules)) {
-    entries.push(...config.modules.map((entry) => normalizeWesleyModuleEntry(entry, configDir)).filter(Boolean));
+    entries.push(
+      ...config.modules.map((entry) => normalizeWesleyModuleEntry(entry, configDir)).filter(Boolean)
+    );
   }
 }
 ```
@@ -108,8 +111,16 @@ function addMoriartyContextOptions(command, runIdDescription) {
   return command
     .option('--run-id <id>', runIdDescription)
     .option('--transmutation <name>', 'Disambiguate the persisted run stream by transmutation')
-    .option('--counterfactual [baseRef]', 'Analyze a module-provided counterfactual lane against a base ref')
-    .option('--counterfactual-braid <ref>', 'Add a braid ref to the counterfactual lane', collectRepeatableOption, [])
+    .option(
+      '--counterfactual [baseRef]',
+      'Analyze a module-provided counterfactual lane against a base ref'
+    )
+    .option(
+      '--counterfactual-braid <ref>',
+      'Add a braid ref to the counterfactual lane',
+      collectRepeatableOption,
+      []
+    )
     .option('--explain', 'Show resolved refs, digests, and counterfactual details');
 }
 ```
@@ -124,7 +135,10 @@ Original code excerpt:
 let ok = true;
 const failures = [];
 
-function fail(msg) { ok = false; failures.push(msg); }
+function fail(msg) {
+  ok = false;
+  failures.push(msg);
+}
 ```
 
 Simplified rewrite:
@@ -138,7 +152,7 @@ const checks = [
 
 const failures = [];
 for (const check of checks) {
-  failures.push(...await check.run());
+  failures.push(...(await check.run()));
 }
 ```
 
@@ -157,7 +171,7 @@ for (const check of checks) {
 - **Risk 3:** **High - pre-push command execution uses shell strings.** `scripts/pre-push-sanity.mjs` builds string commands (`lines 65-90`) and executes them with `/bin/bash -lc` (`lines 206-212`). The current interpolation is narrow and shell-quoted, but the pattern is a sharp edge for future file/path-driven checks.
 - **Mitigation Prompt 9:** `Replace shell-string command execution in scripts/pre-push-sanity.mjs with argv-based spawnSync calls. Make buildCommands return { key, label, cmd, args }, preserve dry-run output with a safe formatter, remove shellQuote from package command construction, and add tests covering package names, repo checks, and explicit --files input.`
 
-2.2. **Security Posture:**
+  2.2. **Security Posture:**
 
 - **Vulnerability 1:** **Trusted-code execution through module config/env remains a primary threat model.** Module loading can import auto-discovered `wesley.config.mjs` and allowed module specifiers (`packages/wesley-runtime-node/src/ModuleEntryLoader.mjs:206-239`). This is expected local compiler behavior, but it needs accurate `SECURITY.md` language and CI report artifacts.
 - **Mitigation Prompt 10:** `Document and operationalize Wesley's module trust model. Update SECURITY.md, README.md, and module-authoring docs to state that modules are trusted Node code; require WESLEY_DISABLE_MODULES=1 or WESLEY_MODULE_ALLOWLIST for client automation; add structured import audit logs; and add tests proving blocked modules are not imported.`
@@ -165,7 +179,7 @@ for (const check of checks) {
 - **Vulnerability 2:** **Shell-command execution pattern in pre-push checks.** The pre-push hook uses `/bin/bash -lc` (`scripts/pre-push-sanity.mjs:206-212`) for commands assembled earlier in the script. This is not an active exploit in the reviewed paths, but it is a preventable injection class.
 - **Mitigation Prompt 11:** `Convert pre-push checks to direct argv execution. Avoid /bin/bash -lc, represent every check as cmd + args, and include a safe pretty-printer for dry-run output. Add regression tests proving explicit file lists cannot alter command argv.`
 
-2.3. **Operational Gaps:**
+  2.3. **Operational Gaps:**
 
 - **Gap 1:** No module-load report artifact exists for release runs, so trust policy decisions are not inspectable after the fact.
 - **Gap 2:** Dependency audit is clean today, but `pnpm audit --json` is not yet a documented release gate in preflight or the release runbook.

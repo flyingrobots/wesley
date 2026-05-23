@@ -41,12 +41,16 @@ ${fields.join(',\n')}
 
       if (createSchema) {
         schemas.push(createSchema);
-        schemas.push(`export type ${table.name}Create = z.infer<typeof ${table.name}CreateSchema>;`);
+        schemas.push(
+          `export type ${table.name}Create = z.infer<typeof ${table.name}CreateSchema>;`
+        );
       }
 
       if (updateSchema) {
         schemas.push(updateSchema);
-        schemas.push(`export type ${table.name}Update = z.infer<typeof ${table.name}UpdateSchema>;`);
+        schemas.push(
+          `export type ${table.name}Update = z.infer<typeof ${table.name}UpdateSchema>;`
+        );
       }
 
       // Record evidence
@@ -144,27 +148,27 @@ export const validateUpdate = <T>(schema: z.ZodSchema<T>, data: unknown): T => {
    */
   getBaseZodType(field) {
     const typeMap = {
-      'ID': 'z.string().uuid()',
-      'String': 'z.string()',
-      'Int': 'z.number().int()',
-      'Float': 'z.number()',
-      'Boolean': 'z.boolean()',
-      'DateTime': 'z.string().datetime()',
-      'Date': 'z.string().date()',
-      'Time': 'z.string().time()',
-      'Decimal': 'z.number()',
-      'UUID': 'z.string().uuid()',
-      'JSON': 'z.record(z.any())',
-      'Inet': 'z.string().ip()',
-      'CIDR': 'z.string()', // CIDR notation
-      'MacAddr': 'z.string().regex(/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/)', // MAC address
-      'BigInt': 'z.bigint()',
-      'Bytes': 'z.instanceof(Buffer)' // For binary data
+      ID: 'z.string().uuid()',
+      String: 'z.string()',
+      Int: 'z.number().int()',
+      Float: 'z.number()',
+      Boolean: 'z.boolean()',
+      DateTime: 'z.string().datetime()',
+      Date: 'z.string().date()',
+      Time: 'z.string().time()',
+      Decimal: 'z.number()',
+      UUID: 'z.string().uuid()',
+      JSON: 'z.record(z.any())',
+      Inet: 'z.string().ip()',
+      CIDR: 'z.string()', // CIDR notation
+      MacAddr: 'z.string().regex(/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/)', // MAC address
+      BigInt: 'z.bigint()',
+      Bytes: 'z.instanceof(Buffer)' // For binary data
     };
 
     // Check if it's an enum type (assuming enum types are UPPERCASE or have specific pattern)
     if (this.isEnumType(field.type)) {
-      return `z.enum(['${field.type}'])`;  // This would need actual enum values
+      return `z.enum(['${field.type}'])`; // This would need actual enum values
     }
 
     return typeMap[field.type] || 'z.unknown()';
@@ -175,7 +179,28 @@ export const validateUpdate = <T>(schema: z.ZodSchema<T>, data: unknown): T => {
    */
   isEnumType(type) {
     // This is a heuristic - in practice you'd have enum metadata
-    return type && type[0] === type[0].toUpperCase() && !['ID', 'String', 'Int', 'Float', 'Boolean', 'DateTime', 'Date', 'Time', 'Decimal', 'UUID', 'JSON', 'Inet', 'CIDR', 'MacAddr', 'BigInt', 'Bytes'].includes(type);
+    return (
+      type &&
+      type[0] === type[0].toUpperCase() &&
+      ![
+        'ID',
+        'String',
+        'Int',
+        'Float',
+        'Boolean',
+        'DateTime',
+        'Date',
+        'Time',
+        'Decimal',
+        'UUID',
+        'JSON',
+        'Inet',
+        'CIDR',
+        'MacAddr',
+        'BigInt',
+        'Bytes'
+      ].includes(type)
+    );
   }
 
   /**
@@ -218,8 +243,10 @@ export const validateUpdate = <T>(schema: z.ZodSchema<T>, data: unknown): T => {
     // Custom refinements for sensitive fields
     if (directives['@sensitive'] && field.name.toLowerCase().includes('password')) {
       // Password strength requirements
-      schema += '.refine(val => val.length >= 8, { message: "Password must be at least 8 characters" })';
-      schema += '.refine(val => /[A-Z]/.test(val), { message: "Password must contain uppercase letter" })';
+      schema +=
+        '.refine(val => val.length >= 8, { message: "Password must be at least 8 characters" })';
+      schema +=
+        '.refine(val => /[A-Z]/.test(val), { message: "Password must contain uppercase letter" })';
       schema += '.refine(val => /[0-9]/.test(val), { message: "Password must contain number" })';
     }
 
@@ -309,12 +336,12 @@ ${inputFields.join(',\n')}
    */
   getZodTypeForArg(arg) {
     const typeMap = {
-      'ID': 'z.string().uuid()',
-      'String': 'z.string()',
-      'Int': 'z.number().int()',
-      'Float': 'z.number()',
-      'Boolean': 'z.boolean()',
-      'JSON': 'z.record(z.any())'
+      ID: 'z.string().uuid()',
+      String: 'z.string()',
+      Int: 'z.number().int()',
+      Float: 'z.number()',
+      Boolean: 'z.boolean()',
+      JSON: 'z.record(z.any())'
     };
 
     let type = typeMap[arg.type] || 'z.unknown()';

@@ -6,7 +6,8 @@ const root = resolve('.');
 const manifestPath = resolve(root, 'docs/truth-manifest.json');
 const mkdocsPath = resolve(root, 'mkdocs.yml');
 const allowedStatuses = new Set(['current', 'experimental', 'proposed']);
-const truthRe = /<!--\s*docs-truth:\s*status=(current|experimental|proposed)\s+owner=([^\s]+)\s*-->/;
+const truthRe =
+  /<!--\s*docs-truth:\s*status=(current|experimental|proposed)\s+owner=([^\s]+)\s*-->/;
 
 function fail(message) {
   console.error(`docs-truth: ${message}`);

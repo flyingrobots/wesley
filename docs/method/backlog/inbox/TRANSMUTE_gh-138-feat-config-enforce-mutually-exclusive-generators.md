@@ -107,9 +107,9 @@ Define generator families/conflicts, update schema validation to enforce exclusi
 
 ### QA Sign-off Matrix
 
-| Environment | Surface | Owner | Status | Notes |
-| --- | --- | --- | --- | --- |
-| Unit tests | Config validation | TBD | pending | |
+| Environment | Surface           | Owner | Status  | Notes |
+| ----------- | ----------------- | ----- | ------- | ----- |
+| Unit tests  | Config validation | TBD   | pending |       |
 
 ## Requirements
 

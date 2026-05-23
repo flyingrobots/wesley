@@ -1,23 +1,24 @@
 ---
-report_id: "AUD-2026-05-04-SR01"
-title: "Ship Readiness Audit: Wesley v0.1.0 Release Candidate Branch"
-status: "Final"
+report_id: 'AUD-2026-05-04-SR01'
+title: 'Ship Readiness Audit: Wesley v0.1.0 Release Candidate Branch'
+status: 'Final'
 audit:
   date_started: 2026-05-04
   date_completed: 2026-05-04
-  type: "Full"
-  scope: "README.md, docs/, packages/, scripts/, package.json, pnpm-lock.yaml, .github/workflows"
-  compliance_frameworks: ["OWASP ASVS", "OpenSSF Scorecard Practices", "SLSA Release Principles"]
+  type: 'Full'
+  scope: 'README.md, docs/, packages/, scripts/, package.json, pnpm-lock.yaml, .github/workflows'
+  compliance_frameworks: ['OWASP ASVS', 'OpenSSF Scorecard Practices', 'SLSA Release Principles']
 target:
-  repository: "github.com/flyingrobots/wesley"
-  branch: "cycle/0008-holmes-counterfactual-provider-capability"
-  commit_hash: "f185446"
-  language_stack: ["Node.js >=22", "pnpm 9.15.9", "ESM JavaScript", "GraphQL", "Commander", "Bats", "Vitest"]
-  environment: "Local release-candidate branch"
+  repository: 'github.com/flyingrobots/wesley'
+  branch: 'cycle/0008-holmes-counterfactual-provider-capability'
+  commit_hash: 'f185446'
+  language_stack:
+    ['Node.js >=22', 'pnpm 9.15.9', 'ESM JavaScript', 'GraphQL', 'Commander', 'Bats', 'Vitest']
+  environment: 'Local release-candidate branch'
 methodology:
-  automated_tools: ["rg", "wc", "pnpm audit --json", "pnpm run preflight"]
+  automated_tools: ['rg', 'wc', 'pnpm audit --json', 'pnpm run preflight']
   manual_review_hours: 3
-  false_positive_rate: "20%"
+  false_positive_rate: '20%'
 summary:
   total_findings: 13
   severity_count:
@@ -25,10 +26,10 @@ summary:
     high: 5
     medium: 6
     low: 2
-  remediation_status: "Pending"
+  remediation_status: 'Pending'
 related_reports:
-  previous_audit: "AUD-2026-04-11-SHIP-READINESS"
-  tracking_ticket: "docs/method/backlog/"
+  previous_audit: 'AUD-2026-04-11-SHIP-READINESS'
+  tracking_ticket: 'docs/method/backlog/'
 ---
 
 # AUDIT: READY-TO-SHIP ASSESSMENT (2026-05-04)
@@ -56,7 +57,7 @@ The three most problematic patterns are:
 - **Issue 3:** Runtime package status is inconsistent with behavior. `README.md:74` marks `@wesley/runtime-node` as `0% -> Alpha`, but the current branch depends on it for shared Node module-entry loading used by CLI and HOLMES paths.
 - **Mitigation Prompt 3:** `Update the package progress metadata and README package matrix so @wesley/runtime-node reflects its actual module-entry-loading responsibility. If progress should remain 0%, add a note explaining which capabilities are production-owned and which runtime-node responsibilities remain unproven.`
 
-1.3. **Code Quality Violation:**
+  1.3. **Code Quality Violation:**
 
 - **Violation 1:** `ModuleEntryLoader` violates SRP by resolving env/config, importing modules, and discovering capabilities in one file.
 
@@ -69,7 +70,9 @@ if (configPath) {
   const loaded = await import(pathToFileURL(configPath).href);
   const config = loaded?.default ?? {};
   if (Array.isArray(config.modules)) {
-    entries.push(...config.modules.map((entry) => normalizeWesleyModuleEntry(entry, configDir)).filter(Boolean));
+    entries.push(
+      ...config.modules.map((entry) => normalizeWesleyModuleEntry(entry, configDir)).filter(Boolean)
+    );
   }
 }
 
@@ -111,8 +114,16 @@ function addMoriartyContextOptions(command) {
   return command
     .option('--run-id <id>', 'Bind prediction context to a persisted Wesley run')
     .option('--transmutation <name>', 'Disambiguate the persisted run stream by transmutation')
-    .option('--counterfactual [baseRef]', 'Analyze a module-provided counterfactual lane against a base ref')
-    .option('--counterfactual-braid <ref>', 'Add a braid ref to the counterfactual lane', collectRepeatableOption, [])
+    .option(
+      '--counterfactual [baseRef]',
+      'Analyze a module-provided counterfactual lane against a base ref'
+    )
+    .option(
+      '--counterfactual-braid <ref>',
+      'Add a braid ref to the counterfactual lane',
+      collectRepeatableOption,
+      []
+    )
     .option('--explain', 'Show resolved refs, digests, and counterfactual details');
 }
 ```
@@ -127,7 +138,10 @@ Original snippet:
 let ok = true;
 const failures = [];
 
-function fail(msg) { ok = false; failures.push(msg); }
+function fail(msg) {
+  ok = false;
+  failures.push(msg);
+}
 // numbered check blocks mutate global state
 ```
 
@@ -142,7 +156,7 @@ const checks = [
 
 const failures = [];
 for (const check of checks) {
-  failures.push(...await check.run());
+  failures.push(...(await check.run()));
 }
 ```
 
@@ -161,7 +175,7 @@ for (const check of checks) {
 - **Risk 3:** **High - documented release/operator command does not exist.** `docs/GUIDE.md:35-38` presents a governance dashboard path that a release operator may try during validation. The absence of the command means documented ship procedure and actual tooling are not aligned.
 - **Mitigation Prompt 9:** `Close the dashboard command gap before release. Implement the documented "pnpm wesley holmes dashboard" path or update the guide to the actual artifact/local-report workflow. Add a smoke test or docs-truth check that verifies documented CLI commands in README.md and docs/GUIDE.md.`
 
-2.2. **Security Posture:**
+  2.2. **Security Posture:**
 
 - **Vulnerability 1:** **Trusted-code injection via module config/env.** The module loader executes `wesley.config.mjs` and arbitrary `WESLEY_MODULES` entries (`packages/wesley-runtime-node/src/ModuleEntryLoader.mjs:121-146`) without an allowlist, disabled mode, or trust warning. This is acceptable only if documented as trusted local code and controlled in automation.
 - **Mitigation Prompt 10:** `Add a module trust policy to runtime-node and CLI startup. Include allowlist/disable controls, structured audit logs for module imports, docs that modules are trusted code, and tests that prove CI can run with modules disabled.`
@@ -169,7 +183,7 @@ for (const check of checks) {
 - **Vulnerability 2:** **Shell-command execution pattern in pre-push checks.** `scripts/pre-push-sanity.mjs` builds command strings and runs them via `/bin/bash -lc` (`scripts/pre-push-sanity.mjs:65-89`, `206-214`). Current inputs are mostly fixed and package names are shell-quoted, but the pattern makes future checks prone to injection if file paths or user-controlled values are interpolated.
 - **Mitigation Prompt 11:** `Replace string-based pre-push command execution with argv arrays. Change buildCommands to return {cmd, args, label}, run spawnSync(cmd, args) without /bin/bash -lc, preserve dry-run printing with a safe formatter, and add tests covering package names and explicit --files input.`
 
-2.3. **Operational Gaps:**
+  2.3. **Operational Gaps:**
 
 - **Gap 1:** No formal production/client module trust profile. There is no documented policy for when modules are allowed, disabled, or allowlisted in CI/client environments.
 - **Gap 2:** No automated dependency-audit gate in the required preflight path. `pnpm run preflight` enforces docs, architecture boundaries, package metadata, and license checks, but `pnpm audit` is currently a manual check.

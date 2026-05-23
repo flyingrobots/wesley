@@ -26,7 +26,7 @@ Each command loads the required generated artifacts (`.wesley-cache/bundle.json`
 
 Holmes consumes the bundle’s evidence map, scores, schema metadata, and weight configuration to build an investigation report:
 
-1. **Initialization** – The constructor extracts the bundle SHA, evidence, score breakdowns, and resolves weight configuration from environment variables, filesystem overrides, or defaults. It also indexes schema directives so directive-specific weights can be applied. 
+1. **Initialization** – The constructor extracts the bundle SHA, evidence, score breakdowns, and resolves weight configuration from environment variables, filesystem overrides, or defaults. It also indexes schema directives so directive-specific weights can be applied.
 2. **Investigation Data** – `investigationData()` aggregates summary metadata, iterates through every UID in the evidence map to determine status, source citations, and deductions, classifies citation quality (exact vs whole-file vs coarse), and constructs “gate” verdicts for migration risk, test coverage, sensitive field hygiene, and evidence trust.
 3. **Rendering** – `renderInvestigation()` assembles a Markdown report including executive summary, score breakdown tables, evidence table, gates, and final verdict signed by Holmes.
 4. **Weighting Logic** – Helpers such as `inferWeight()`, `matchOverride()`, `matchDirective()`, and `matchSubstring()` determine each UID’s weight based on overrides, schema directives, substring heuristics, or defaults. Sensitive-field checks and gating heuristics add opinionated guardrails to the investigation.
@@ -58,13 +58,15 @@ Moriarty’s goal is to forecast when a feature branch becomes “ship-ready,”
 These are blended to compute a small corrective “activity index.” Activity cannot inflate readiness; it only prevents declaring a plateau when work is clearly happening.
 
 Environment knobs (see CI wiring for defaults):
+
 - `MORIARTY_BASE_REF` – base branch for PR graph (defaults to `GITHUB_BASE_REF` or `main`).
 - `MORIARTY_GIT_WINDOW_HOURS` – time window for fallback activity (default: 24).
 - `MORIARTY_ACTIVITY_THRESHOLD` – minimum activity index to suppress plateau when SCS is flat (default: 0.35).
 - `MORIARTY_ACTIVITY_COMMITS_PER_DAY`, `MORIARTY_ACTIVITY_RELEVANT_PER_DAY` – normalization targets for “active” (defaults: 6 and 4).
- - `MORIARTY_ACTIVITY_LINES_PER_DAY`, `MORIARTY_ACTIVITY_FILES_PER_DAY` – magnitude/breadth targets for work volume (defaults: 400 LOC/day, 10 files/day).
+- `MORIARTY_ACTIVITY_LINES_PER_DAY`, `MORIARTY_ACTIVITY_FILES_PER_DAY` – magnitude/breadth targets for work volume (defaults: 400 LOC/day, 10 files/day).
 
 Design constraints:
+
 - Team-wide commits on the base branch do not penalize the PR’s forecast.
 - Activity is weighted by relevance (schema/DDL/tests/generated artifacts > docs/random).
 - When Git is missing or shallow, Moriarty gracefully falls back to SCS-only velocity.

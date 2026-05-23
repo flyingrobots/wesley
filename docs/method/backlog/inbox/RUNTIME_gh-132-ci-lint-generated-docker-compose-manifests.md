@@ -106,9 +106,9 @@ Add workflow step after compose generation to run lint, optionally run smoke con
 
 ### QA Sign-off Matrix
 
-| Environment | Surface | Owner | Status | Notes |
-| --- | --- | --- | --- | --- |
-| GitHub Actions | Compose lint job | TBD | pending | |
+| Environment    | Surface          | Owner | Status  | Notes |
+| -------------- | ---------------- | ----- | ------- | ----- |
+| GitHub Actions | Compose lint job | TBD   | pending |       |
 
 ## Requirements
 

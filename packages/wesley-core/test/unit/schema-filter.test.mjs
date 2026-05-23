@@ -22,9 +22,7 @@ test('filterIRByUnits: keeps only tables matching unit IDs', () => {
 
 test('filterIRByUnits: filters enums and scalars too', () => {
   const ir = {
-    tables: [
-      { name: 'Widget', sourceUnit: 'core.graphql' }
-    ],
+    tables: [{ name: 'Widget', sourceUnit: 'core.graphql' }],
     enums: [
       { name: 'Color', sourceUnit: 'core.graphql' },
       { name: 'Status', sourceUnit: 'game.graphql' }
