@@ -5,7 +5,7 @@ This directory contains helper scripts that power development workflows. Run the
 | Script | Description | Usage |
 | --- | --- | --- |
 | `check-doc-links.mjs` | Scans every markdown file for relative links that point to missing targets. Fails with a non-zero exit code if any are broken. | `pnpm exec node scripts/check-doc-links.mjs` (no arguments) |
-| `check-ir-parity.mjs` | Compares the legacy JS table projection with the Rust L1 projection over the explicit v0 IR parity corpus. | `pnpm parity:ir` |
+| `check-ir-parity.mjs` | Compares explicit JS/Rust IR parity projections over the v0 corpus, including table compatibility and SDL type-family parity. | `pnpm parity:ir` |
 | `clean.mjs` | Removes generated artifacts such as `.wesley-cache/`, `out/`, and fixture outputs to return the workspace to a pristine state. | `pnpm run clean` (no arguments) |
 | `fix-package-metadata.mjs` | Normalises `package.json` metadata across all workspaces (author, license, repository, etc.). | `pnpm exec node scripts/fix-package-metadata.mjs` (no arguments) |
 | `install-hooks.sh` | Sets `core.hooksPath` to `.githooks`, ensuring local Git hooks run. Safe to rerun. | `bash scripts/install-hooks.sh` |

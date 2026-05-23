@@ -25,7 +25,7 @@ if (process.env.WESLEY_FAKE_CALL_LOG) {
 }
 
 const nullable = process.env.WESLEY_FAKE_VARIANT === 'nullable-mismatch';
-const ir = {
+const tableIr = {
   version: '1.0.0',
   types: [
     {
@@ -85,6 +85,216 @@ const ir = {
     }
   ]
 };
+const typeFamilyExtensionIr = {
+  version: '1.0.0',
+  types: [
+    {
+      name: 'DateTime',
+      kind: 'SCALAR',
+      directives: {
+        specifiedBy: {
+          url: 'https://example.com/datetime'
+        },
+        wes_critical: true
+      }
+    },
+    {
+      name: 'Named',
+      kind: 'INTERFACE',
+      directives: {},
+      fields: [
+        {
+          name: 'name',
+          type: {
+            base: 'String',
+            nullable: false,
+            isList: false
+          },
+          directives: {}
+        }
+      ]
+    },
+    {
+      name: 'Node',
+      kind: 'INTERFACE',
+      directives: {},
+      fields: [
+        {
+          name: 'id',
+          type: {
+            base: 'ID',
+            nullable: false,
+            isList: false
+          },
+          directives: {}
+        }
+      ]
+    },
+    {
+      name: 'SearchResult',
+      kind: 'UNION',
+      directives: {},
+      unionMembers: ['User', 'Team']
+    },
+    {
+      name: 'Status',
+      kind: 'ENUM',
+      directives: {},
+      enumValues: ['ACTIVE', 'ARCHIVED']
+    },
+    {
+      name: 'Team',
+      kind: 'OBJECT',
+      directives: {
+        wes_table: {
+          name: 'teams'
+        }
+      },
+      implements: ['Node', 'Named'],
+      fields: [
+        {
+          name: 'id',
+          type: {
+            base: 'ID',
+            nullable: false,
+            isList: false
+          },
+          directives: {
+            wes_pk: true
+          }
+        },
+        {
+          name: 'name',
+          type: {
+            base: 'String',
+            nullable: false,
+            isList: false
+          },
+          directives: {}
+        }
+      ]
+    },
+    {
+      name: 'Timestamped',
+      kind: 'INTERFACE',
+      directives: {},
+      implements: ['Node'],
+      fields: [
+        {
+          name: 'id',
+          type: {
+            base: 'ID',
+            nullable: false,
+            isList: false
+          },
+          directives: {}
+        },
+        {
+          name: 'created_at',
+          type: {
+            base: 'DateTime',
+            nullable: false,
+            isList: false
+          },
+          directives: {}
+        },
+        {
+          name: 'updated_at',
+          type: {
+            base: 'DateTime',
+            nullable: true,
+            isList: false
+          },
+          directives: {}
+        }
+      ]
+    },
+    {
+      name: 'User',
+      kind: 'OBJECT',
+      directives: {
+        wes_table: {
+          name: 'users'
+        }
+      },
+      implements: ['Node', 'Named', 'Timestamped'],
+      fields: [
+        {
+          name: 'id',
+          type: {
+            base: 'ID',
+            nullable: false,
+            isList: false
+          },
+          directives: {
+            wes_pk: true
+          }
+        },
+        {
+          name: 'name',
+          type: {
+            base: 'String',
+            nullable: false,
+            isList: false
+          },
+          directives: {}
+        },
+        {
+          name: 'created_at',
+          type: {
+            base: 'DateTime',
+            nullable: false,
+            isList: false
+          },
+          directives: {
+            wes_default: {
+              value: 'now()'
+            }
+          }
+        },
+        {
+          name: 'updated_at',
+          type: {
+            base: 'DateTime',
+            nullable: true,
+            isList: false
+          },
+          directives: {}
+        }
+      ]
+    },
+    {
+      name: 'UserFilter',
+      kind: 'INPUT_OBJECT',
+      directives: {},
+      fields: [
+        {
+          name: 'ids',
+          type: {
+            base: 'ID',
+            nullable: false,
+            isList: true,
+            listItemNullable: false
+          },
+          directives: {}
+        },
+        {
+          name: 'status',
+          type: {
+            base: 'Status',
+            nullable: true,
+            isList: false
+          },
+          defaultValue: 'ACTIVE',
+          directives: {}
+        }
+      ]
+    }
+  ]
+};
+const ir = process.env.WESLEY_FAKE_VARIANT === 'type-family-extension'
+  ? typeFamilyExtensionIr
+  : tableIr;
 
 if (process.env.WESLEY_FAKE_VARIANT === 'metadata') {
   ir.metadata = {
@@ -223,6 +433,38 @@ SDL
   assert_output --partial '"rust": true'
 }
 
+@test "IR parity sentinel reports the projection for text failures" {
+  make_fake_wesley
+
+  run env \
+    WESLEY_CLI_BIN="$FAKE_WESLEY" \
+    WESLEY_FAKE_VARIANT="nullable-mismatch" \
+    node scripts/check-ir-parity.mjs \
+      --fixture test/fixtures/ir-parity/small-schema.graphql
+  assert_failure
+  assert_output --partial "IR parity failed for 1/1 fixture projections"
+  assert_output --partial "projection: js-table-vs-rust-table.v0"
+  assert_output --partial "first mismatch: /tables/0/fields/0/type/nullable"
+}
+
+@test "IR parity sentinel compares SDL and Rust type-family projections" {
+  make_fake_wesley
+
+  run env \
+    WESLEY_CLI_BIN="$FAKE_WESLEY" \
+    WESLEY_FAKE_VARIANT="type-family-extension" \
+    node scripts/check-ir-parity.mjs \
+      --fixture test/fixtures/ir-parity/schema-extensions-schema.graphql \
+      --projection js-sdl-type-family-vs-rust-l1-type-family.v0 \
+      --json
+  assert_success
+  assert_output --partial '"projection": "js-sdl-type-family-vs-rust-l1-type-family.v0"'
+  assert_output --partial '"fixture": "test/fixtures/ir-parity/schema-extensions-schema.graphql"'
+  assert_output --partial '"status": "pass"'
+  assert_output --partial 'DateTime'
+  assert_output --partial 'UserFilter'
+}
+
 @test "IR parity projection sorts table names by code point" {
   run node --input-type=module <<'NODE'
 import { projectRustL1IR } from './scripts/ir-parity-projection.mjs';
@@ -260,13 +502,13 @@ NODE
   assert_output "A,B,a,aa,á"
 }
 
-@test "IR parity sentinel lists only the v0 table-compatible corpus by default" {
+@test "IR parity sentinel lists default fixtures with owning projections" {
   run node scripts/check-ir-parity.mjs --list-fixtures
   assert_success
-  assert_output --partial "test/fixtures/ir-parity/small-schema.graphql"
-  assert_output --partial "test/fixtures/ir-parity/medium-schema.graphql"
-  assert_output --partial "test/fixtures/ir-parity/directive-heavy-schema.graphql"
-  assert_output --partial "test/fixtures/ir-parity/legacy-alias-schema.graphql"
-  [[ "$output" != *"schema-extensions-schema.graphql"* ]]
+  assert_output --partial $'test/fixtures/ir-parity/small-schema.graphql\tjs-table-vs-rust-table.v0'
+  assert_output --partial $'test/fixtures/ir-parity/medium-schema.graphql\tjs-table-vs-rust-table.v0'
+  assert_output --partial $'test/fixtures/ir-parity/directive-heavy-schema.graphql\tjs-table-vs-rust-table.v0'
+  assert_output --partial $'test/fixtures/ir-parity/legacy-alias-schema.graphql\tjs-table-vs-rust-table.v0'
+  assert_output --partial $'test/fixtures/ir-parity/schema-extensions-schema.graphql\tjs-sdl-type-family-vs-rust-l1-type-family.v0'
   [[ "$output" != *"large-schema.graphql"* ]]
 }

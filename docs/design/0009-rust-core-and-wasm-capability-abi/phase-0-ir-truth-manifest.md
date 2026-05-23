@@ -87,17 +87,18 @@ tests.
 from `pnpm fixtures:ir` and compares a named projection rather than raw legacy
 table IR against raw Rust L1 IR.
 
-The v0 projection is `js-table-vs-rust-table.v0`. Its default corpus is the
-table-compatible subset:
+The v0 sentinel now allows each fixture to declare its projection. The default
+corpus is:
 
-- `small-schema.graphql`
-- `medium-schema.graphql`
-- `directive-heavy-schema.graphql`
-- `legacy-alias-schema.graphql`
+- `small-schema.graphql` under `js-table-vs-rust-table.v0`
+- `medium-schema.graphql` under `js-table-vs-rust-table.v0`
+- `directive-heavy-schema.graphql` under `js-table-vs-rust-table.v0`
+- `legacy-alias-schema.graphql` under `js-table-vs-rust-table.v0`
+- `schema-extensions-schema.graphql` under
+  `js-sdl-type-family-vs-rust-l1-type-family.v0`
 
-`schema-extensions-schema.graphql` remains Rust L1 extension-folding coverage
-until Wesley defines a fair non-table JS/Rust projection. `large-schema.graphql`
-remains scale coverage outside the default v0 compatibility sentinel.
+`large-schema.graphql` remains scale coverage outside the default v0
+compatibility sentinel.
 
 ## Baseline Performance (JS)
 
@@ -125,14 +126,14 @@ This command shells through the native Wesley CLI and overwrites only the
 tracked `*.l1.json` and `*.l1.hash` outputs. It exits nonzero if any fixture
 fails to lower or hash.
 
-### Verify JS/Rust Table Parity
+### Verify JS/Rust Parity
 
 ```bash
 pnpm parity:ir
 ```
 
-This command lowers the explicit v0 sentinel corpus through both the legacy JS
-adapter and the Rust CLI, compares the `js-table-vs-rust-table.v0` projection,
+This command lowers the explicit v0 sentinel corpus through projection-owned
+JS lowerers and the Rust CLI, compares each fixture under its named projection,
 records canonical projected bytes in JSON output, verifies the Rust
 `schema hash` command against current Rust semantic L1 bytes after top-level
 `metadata` removal, and checks tracked Rust L1 hashes for `.graphql` fixtures

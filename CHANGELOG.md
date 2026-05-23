@@ -12,6 +12,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   `js-sdl-type-family-vs-rust-l1-type-family.v0` as the next fair parity
   projection for schema-extension and non-table GraphQL facts before admitting
   those fixtures to the default sentinel corpus.
+- **Type-family parity sentinel**: `pnpm parity:ir` now implements
+  `js-sdl-type-family-vs-rust-l1-type-family.v0`, lets fixtures declare their
+  owning projection, and admits `schema-extensions-schema.graphql` to the
+  default corpus only under that projection.
 - **Rust IR fixture contract note**: Moved the core-rs IR contract and fixture
   backlog card into the active `0013` design packet, naming the v0.0.6 fixture
   classes, canonical byte rules, diagnostics contract, and repo evidence.
@@ -59,6 +63,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **Parity custom fixture sidecars**: `pnpm parity:ir --fixture` now skips
   tracked `*.l1.hash` checks for non-`.graphql` custom SDL paths instead of
   reading the schema file as its own hash sidecar.
+- **Multi-projection parity output**: `pnpm parity:ir` failure output now names
+  the projection for each failing fixture and summarizes multi-projection runs
+  without implying a single global comparison shape.
 - **Rust directive alias normalization**: Rust L1 lowering now canonicalizes
   the current core Wesley directive aliases to `wes_*` names and rejects
   duplicate canonical directives instead of allowing last-write-wins drift,
