@@ -359,7 +359,7 @@ export class TransmutationRunner {
 
     // Phase: generate
     let artifacts;
-    let pluginEvidence = null;
+    let pluginEvidence;
     try {
       const raw = await plugin.generate(plan, context);
       const normalized = validateGenerateResult(raw, pluginName);
