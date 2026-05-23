@@ -10,7 +10,7 @@ Current next pulls:
 3. `RUNTIME_wasm-capability-versioning-and-state.md`
 4. `RUNTIME_capability-portability-floor.md`
 5. `RUNTIME_node-rust-core-binding-strategy.md`
-6. `EVIDENCE_rust-core-performance-baseline.md`
+6. `EVIDENCE_rust-core-binding-and-memory-baselines.md`
 7. `SOURCE_wesley-sdl-normalizer-command.md`
 8. `SOURCE_wesley-host-native.md`
 9. `RUNTIME_wesley-mcp-server.md`

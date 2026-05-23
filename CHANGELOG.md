@@ -8,6 +8,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- **Rust IR performance baseline**: Added `pnpm perf:ir`, which measures Rust
+  CLI `schema lower` wall-clock samples over the explicit valid Rust IR fixture
+  corpus, including `large-schema.graphql`, and emits JSON or Markdown evidence
+  without implying memory, binding-overhead, or cutover-threshold claims.
 - **Type-family parity projection design**: Named
   `js-sdl-type-family-vs-rust-l1-type-family.v0` as the next fair parity
   projection for schema-extension and non-table GraphQL facts before admitting
