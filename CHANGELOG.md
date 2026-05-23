@@ -27,6 +27,15 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   packet `0014`, defining what generic Wesley owns, what external modules or
   sibling repos own, and the first docs/dispatch audit that keeps product and
   database semantics outside the base compiler surface.
+- **Resilience policy boundary packet**: Pulled the `ninelives`/Alfred decision
+  into design packet `0015`, defining Rust compiler resilience seams,
+  JavaScript child-process bounds, and the non-ownership line that keeps
+  product, database, scheduler, and runtime semantics outside Wesley core.
+- **Rust core resilience policy wrapper**: Added `ResiliencePolicy` and
+  `ResilientLoweringPort` so Rust lowering callers can opt into explicit,
+  cooperative `ninelives` timeout policy at async execution boundaries while
+  preserving ordinary deterministic compiler errors. The wrapper does not claim
+  hard preemption of synchronous CPU-bound parser work.
 - **Rust IR parity sentinel packet**: Pulled the parity sentinel backlog item
   into design packet `0013`, defining comparator inputs, normalization, hash
   behavior, and failure output for the next JS/Rust parity check.
@@ -53,6 +62,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   and Git metadata probes in `@git-stunts/alfred` timeouts with explicit output
   buffers so hung or oversized child processes produce controlled evidence
   instead of blocking CI.
+- **IR parity process bounds**: `pnpm parity:ir` now uses the shared
+  `@git-stunts/alfred` child-process runner for Rust lowerer, Rust hash, and
+  Git metadata probes, giving the parity sentinel timeout and output-buffer
+  controls that are covered by deterministic `TestClock` tests.
 - **Rust IR performance baseline median**: Even-sized duration sample sets now
   report median as the rounded midpoint of the two central values instead of
   the upper middle sample.

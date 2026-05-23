@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, relative, resolve } from 'node:path';
 import process from 'node:process';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { TimeoutError } from '@git-stunts/alfred';
 import { GraphQLAdapter } from '../packages/wesley-runtime-node/src/index.mjs';
 import { canonicalizeJSON } from '../packages/wesley-core/src/domain/registryHash.mjs';
 import {
@@ -19,14 +19,22 @@ import {
   projectionHash,
   sha256Hex
 } from './ir-parity-projection.mjs';
+import { runProcess } from './resilient-process.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = resolve(__dirname, '..');
 const CARGO = process.env.CARGO || 'cargo';
 const WESLEY_CLI_ARGS = ['run', '--quiet', '-p', 'wesley-cli', '--'];
 const WESLEY_CLI_BIN = process.env.WESLEY_CLI_BIN || null;
+const PARITY_TIMEOUT_MS = readPositiveIntegerEnv('WESLEY_PARITY_TIMEOUT_MS', 120_000);
+const PARITY_MAX_BUFFER_BYTES = readPositiveIntegerEnv(
+  'WESLEY_PARITY_MAX_BUFFER_BYTES',
+  64 * 1024 * 1024
+);
+const GIT_TIMEOUT_MS = readPositiveIntegerEnv('WESLEY_GIT_TIMEOUT_MS', 5_000);
+const GIT_MAX_BUFFER_BYTES = readPositiveIntegerEnv('WESLEY_GIT_MAX_BUFFER_BYTES', 1024 * 1024);
 
-function main() {
+async function main() {
   const options = parseArgs(process.argv.slice(2));
 
   if (options.help) {
@@ -41,7 +49,7 @@ function main() {
     return;
   }
 
-  const report = runParity(options.fixtures);
+  const report = await runParity(options.fixtures);
 
   if (options.json) {
     console.log(JSON.stringify(report, null, 2));
@@ -108,8 +116,25 @@ function parseArgs(args) {
   };
 }
 
-function runParity(fixtures) {
-  const results = fixtures.map((entry) => compareFixture(normalizeParityFixture(entry)));
+function parsePositiveInteger(value, label) {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    throw new Error(`${label} requires a positive integer`);
+  }
+  return parsed;
+}
+
+function readPositiveIntegerEnv(name, fallback) {
+  const raw = process.env[name];
+  if (raw === undefined || raw === '') return fallback;
+  return parsePositiveInteger(raw, name);
+}
+
+async function runParity(fixtures) {
+  const results = [];
+  for (const entry of fixtures) {
+    results.push(await compareFixture(normalizeParityFixture(entry)));
+  }
   const failed = results.filter((result) => result.status !== 'pass').length;
   const projections = [...new Set(results.map((result) => result.projection))];
 
@@ -117,7 +142,7 @@ function runParity(fixtures) {
     projection: projections.length === 1 ? projections[0] : 'multiple',
     projections,
     normalizerVersion: PROJECTION_NORMALIZER_VERSION,
-    gitHead: gitHead(),
+    gitHead: await gitHead(),
     lowerers: {
       legacy: 'projection-owned JS lowerer',
       rust: WESLEY_CLI_BIN || `${CARGO} ${WESLEY_CLI_ARGS.join(' ')}`
@@ -131,7 +156,7 @@ function runParity(fixtures) {
   };
 }
 
-function compareFixture(fixture) {
+async function compareFixture(fixture) {
   const fixturePath = resolve(ROOT_DIR, fixture.fixture);
   const displayPath = relative(ROOT_DIR, fixturePath);
   const { projection } = fixture;
@@ -142,14 +167,14 @@ function compareFixture(fixture) {
     }
 
     const legacyProjection = lowerLegacyProjection(fixturePath, projection);
-    const rustIr = lowerRustL1(fixturePath);
+    const rustIr = await lowerRustL1(fixturePath);
     const rustProjection = projectRustProjection(projection, rustIr);
     const legacyBytes = canonicalProjectionBytes(legacyProjection);
     const rustBytes = canonicalProjectionBytes(rustProjection);
     const mismatch =
       legacyBytes === rustBytes ? null : firstMismatch(legacyProjection, rustProjection);
     const rustL1Hash = rustSemanticHash(rustIr);
-    const rustCommandHash = runWesley(['schema', 'hash', '--schema', fixturePath]).trim();
+    const rustCommandHash = (await runWesley(['schema', 'hash', '--schema', fixturePath])).trim();
     const rustTrackedHash = readTrackedHash(fixturePath);
     const rustCommandHashMatches = rustCommandHash === rustL1Hash;
     const rustTrackedHashMatches = rustTrackedHash === null ? null : rustTrackedHash === rustL1Hash;
@@ -191,8 +216,8 @@ function lowerLegacyProjection(fixturePath, projection) {
   return projectLegacyProjection(projection, { sdl, legacyIr });
 }
 
-function lowerRustL1(fixturePath) {
-  const output = runWesley(['schema', 'lower', '--schema', fixturePath, '--json']);
+async function lowerRustL1(fixturePath) {
+  const output = await runWesley(['schema', 'lower', '--schema', fixturePath, '--json']);
   return JSON.parse(output);
 }
 
@@ -202,17 +227,27 @@ function rustSemanticHash(ir) {
   return sha256Hex(canonicalizeJSON(semanticIr));
 }
 
-function runWesley(args) {
+async function runWesley(args) {
   const command = WESLEY_CLI_BIN || CARGO;
   const commandArgs = WESLEY_CLI_BIN ? args : [...WESLEY_CLI_ARGS, ...args];
-  const result = spawnSync(command, commandArgs, {
-    cwd: ROOT_DIR,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe']
-  });
 
-  if (result.error) {
-    throw result.error;
+  let result;
+  try {
+    result = await runProcess(command, commandArgs, {
+      cwd: ROOT_DIR,
+      timeoutMs: PARITY_TIMEOUT_MS,
+      maxBufferBytes: PARITY_MAX_BUFFER_BYTES
+    });
+  } catch (error) {
+    if (error instanceof TimeoutError) {
+      throw new Error(
+        `${command} ${commandArgs.join(' ')} timed out after ${PARITY_TIMEOUT_MS}ms`,
+        {
+          cause: error
+        }
+      );
+    }
+    throw error;
   }
 
   if (result.status !== 0) {
@@ -223,12 +258,17 @@ function runWesley(args) {
   return result.stdout;
 }
 
-function gitHead() {
-  const result = spawnSync('git', ['rev-parse', '--short=12', 'HEAD'], {
-    cwd: ROOT_DIR,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'ignore']
-  });
+async function gitHead() {
+  let result;
+  try {
+    result = await runProcess('git', ['rev-parse', '--short=12', 'HEAD'], {
+      cwd: ROOT_DIR,
+      timeoutMs: GIT_TIMEOUT_MS,
+      maxBufferBytes: GIT_MAX_BUFFER_BYTES
+    });
+  } catch {
+    return null;
+  }
 
   if (result.status !== 0) return null;
   return result.stdout.trim() || null;
@@ -297,9 +337,16 @@ explicit v0 sentinel corpus with each fixture's owning projection:
 ${DEFAULT_PARITY_FIXTURES.map((fixture) => `  - ${formatParityFixture(fixture)}`).join('\n')}`);
 }
 
-try {
-  main();
-} catch (error) {
-  console.error(error?.message || String(error));
-  process.exitCode = 1;
+function isCliEntrypoint() {
+  if (!process.argv[1]) return false;
+  return pathToFileURL(resolve(process.argv[1])).href === import.meta.url;
+}
+
+if (isCliEntrypoint()) {
+  try {
+    await main();
+  } catch (error) {
+    console.error(error?.message || String(error));
+    process.exitCode = 1;
+  }
 }

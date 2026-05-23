@@ -13,4 +13,7 @@ database lanes as Wesley features.
 
 Current near-term pulls:
 
-1. `OWN_ninelives-resilience-integration.md`
+1. The `ninelives`/Alfred decision has been pulled into
+   `docs/design/0015-resilience-policy-boundary/`.
+2. Next pulls should add evidence only where the resilience boundary touches the
+   v0.0.6 compiler-truth and module-boundary work.
