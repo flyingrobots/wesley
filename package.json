@@ -74,8 +74,8 @@
     }
   },
   "dependencies": {
-    "@mantine/hooks": "^8.3.5",
-    "vite": "^7.1.12"
+    "@mantine/hooks": "^9.2.1",
+    "vite": "^8.0.14"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
