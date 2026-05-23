@@ -25,6 +25,7 @@ Current packets:
   and
   [Rust core performance baseline](./0013-rust-ir-parity-sentinel/EVIDENCE_rust-core-performance-baseline.md)
 - [`0014`](./0014-domain-empty-core-boundary/domain-empty-core-boundary.md): Domain-empty Wesley core boundary for the v0.0.6 compiler-truth release
+- [`0015`](./0015-resilience-policy-boundary/resilience-policy-boundary.md): Resilience policy boundary for `ninelives` in Rust and `@git-stunts/alfred` in JavaScript tooling
 - [Module Contract](./wesley-module-contract.md): Generic core boundary versus external module-owned domain surfaces
 - [Module Capability Contract](./wesley-module-capability-contract.md): The capability surfaces external modules should implement
 - [Contract / Artifact / Runtime Boundary](./wesley-contract-family-artifact-runtime-value.md): GraphQL-authored families, Wesley-emitted artifacts, and later runtime values

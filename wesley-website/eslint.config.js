@@ -9,10 +9,7 @@ export default defineConfig([
   ...mantineConfig,
   {
     files: ['**/*.{js,jsx}'],
-    extends: [
-      reactHooks.configs.flat['recommended-latest'],
-      reactRefresh.configs.vite
-    ],
+    extends: [reactHooks.configs.flat['recommended-latest'], reactRefresh.configs.vite],
     settings: { react: { version: 'detect' } },
     languageOptions: {
       ecmaVersion: 'latest',

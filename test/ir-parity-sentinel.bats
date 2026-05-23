@@ -406,6 +406,64 @@ NODE
   assert_success
 }
 
+@test "IR parity process runner kills timed-out children with Alfred TestClock" {
+  run node --input-type=module <<'NODE'
+import { EventEmitter } from 'node:events';
+import { TimeoutError } from '@git-stunts/alfred';
+import { TestClock } from '@git-stunts/alfred/testing';
+import { runProcess } from './scripts/resilient-process.mjs';
+
+function makeStream() {
+  const stream = new EventEmitter();
+  stream.setEncoding = () => {};
+  return stream;
+}
+
+let child;
+const spawnImpl = (_command, _args, options) => {
+  child = new EventEmitter();
+  child.stdout = makeStream();
+  child.stderr = makeStream();
+  child.options = options;
+  child.kill = (signal) => {
+    child.killedWith = signal;
+  };
+  return child;
+};
+
+const clock = new TestClock();
+const promise = runProcess('fake-wesley', ['schema', 'lower'], {
+  timeoutMs: 50,
+  maxBufferBytes: 1024,
+  clock,
+  spawnImpl,
+  cwd: process.cwd()
+});
+
+await Promise.resolve();
+await clock.advance(49);
+console.log(`before=${child.killedWith ?? 'none'}`);
+await clock.advance(1);
+
+try {
+  await promise;
+  console.log('unexpected success');
+  process.exitCode = 1;
+} catch (error) {
+  console.log(`error=${error.name}`);
+  console.log(`timeout=${error instanceof TimeoutError}`);
+  console.log(`killed=${child.killedWith}`);
+  console.log(`killSignal=${child.options.killSignal}`);
+}
+NODE
+  assert_success
+  assert_output --partial 'before=none'
+  assert_output --partial 'error=TimeoutError'
+  assert_output --partial 'timeout=true'
+  assert_output --partial 'killed=SIGKILL'
+  assert_output --partial 'killSignal=SIGKILL'
+}
+
 @test "IR parity sentinel ignores top-level Rust metadata when checking schema hash" {
   make_fake_wesley
 

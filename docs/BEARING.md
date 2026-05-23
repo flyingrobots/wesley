@@ -62,7 +62,18 @@ Rust lowerer over an explicit corpus, then fail with a useful mismatch path and
 hash evidence. Only after that evidence exists should Wesley retire or demote
 legacy Node lowering.
 
-### 5. Module Capability Boundary
+### 5. Resilience Policy Boundary
+
+- Use `ninelives` for Rust compiler and capability seams when a boundary needs
+  explicit resilience policy.
+- Use `@git-stunts/alfred` for JavaScript tooling and child-process boundaries
+  when a command can hang or emit unbounded output.
+- Keep deterministic compiler errors as compiler errors; do not retry semantic
+  parse/lowering failures.
+- [0015-resilience-policy-boundary](./design/0015-resilience-policy-boundary/resilience-policy-boundary.md)
+  is now the active resilience doctrine.
+
+### 6. Module Capability Boundary
 
 - Use the module capability registry as the seam between loaded modules and
   Wesley base verbs.
@@ -72,7 +83,7 @@ legacy Node lowering.
 - Move product/runtime/database semantics to owning repos or modules before
   deleting generic compatibility evidence that external consumers still need.
 
-### 6. Wesley-Postgres Preservation
+### 7. Wesley-Postgres Preservation
 
 `wesley-postgres` is the PostgreSQL-family extraction home. It is active and
 must not be abandoned while Wesley tightens its domain-empty boundary.
@@ -122,7 +133,10 @@ domain-empty ownership packet in `0014`, and executable module-target dispatch
 coverage for no-module diagnostics, default target discovery, requested-target
 validation, duplicate target rejection, alias conflicts in both registration
 orders, and the Rust IR fixture contract now housed under the active `0013`
-packet.
+packet. The `0015` resilience boundary now has first proof on both sides:
+`ResilientLoweringPort` applies explicit `ninelives` timeout policy for Rust
+lowering seams, while the parity and performance scripts share an Alfred-backed
+child-process runner with timeout and output-buffer guards.
 Invalid SDL diagnostics now expose stable `WesleyError::diagnostic()` codes
 and parser line/column spans where available, while semantic lowering spans
 remain explicitly absent.
@@ -138,9 +152,10 @@ The next pulls are:
 3. Add new parity fixtures only when they exercise a named projection boundary
    that the current table and type-family corpus does not already cover.
 
-Do not pull `OWN_ninelives-resilience-integration.md` until the module boundary
-has stronger executable evidence. Resilience policy should not arrive before
-the base compiler/module seam is boring.
+The `ninelives` decision is made: use `ninelives` for Rust resilience seams and
+Alfred for JavaScript tooling seams. Keep the scope narrow: resilience policy
+wraps execution boundaries; it does not import product, database, scheduler, or
+runtime semantics into Wesley.
 
 Echo and jedit do not need more Wesley feature gravity for their current work.
 Wesley should coordinate on compatibility only when a concrete artifact, hash,

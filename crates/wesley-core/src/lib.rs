@@ -8,6 +8,7 @@
 pub mod adapters;
 pub mod domain;
 pub mod ports;
+pub mod resilience;
 
 pub use adapters::apollo::{
     compile_runtime_optic, compile_runtime_optic_registration, diff_schema_sdl,
@@ -20,3 +21,4 @@ pub use domain::operation::*;
 pub use domain::optic::*;
 pub use domain::schema_delta::*;
 pub use ports::lowering::*;
+pub use resilience::*;
