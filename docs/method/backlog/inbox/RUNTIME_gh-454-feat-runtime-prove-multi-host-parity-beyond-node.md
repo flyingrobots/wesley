@@ -22,6 +22,7 @@ Source: ROADMAP_2.md backlog
 Track the post-GA roadmap item for multi-host parity beyond Node.
 
 Done when:
+
 - another host implementation reaches parity on the representative fixture suite
 - parity gaps are documented and tested
 - host-specific assumptions are isolated behind ports

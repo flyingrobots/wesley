@@ -24,20 +24,28 @@ export class NullGeneratorPlugin extends GeneratorPlugin {
       metadata: {
         outDir: context?.emission?.outDir || 'out',
         tableCount: ir.tables.length,
-        fieldCount: ir.tables.reduce((total, table) => total + (Array.isArray(table?.fields) ? table.fields.length : 0), 0)
+        fieldCount: ir.tables.reduce(
+          (total, table) => total + (Array.isArray(table?.fields) ? table.fields.length : 0),
+          0
+        )
       }
     };
   }
 
   async generate(plan, context) {
     return {
-      'null/summary.json': JSON.stringify({
-        transmutation: NULL_GENERATOR_TRANSMUTATION,
-        plugin: this.name,
-        outputDir: context?.emission?.outDir || plan?.metadata?.outDir || 'out',
-        tables: plan?.metadata?.tableCount || 0,
-        fields: plan?.metadata?.fieldCount || 0
-      }, null, 2) + '\n'
+      'null/summary.json':
+        JSON.stringify(
+          {
+            transmutation: NULL_GENERATOR_TRANSMUTATION,
+            plugin: this.name,
+            outputDir: context?.emission?.outDir || plan?.metadata?.outDir || 'out',
+            tables: plan?.metadata?.tableCount || 0,
+            fields: plan?.metadata?.fieldCount || 0
+          },
+          null,
+          2
+        ) + '\n'
     };
   }
 }

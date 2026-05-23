@@ -22,6 +22,7 @@ Source: BACKLOG.md
 Migrate the old backlog item into GitHub tracking. Evaluate pre-compiling JSON Schema validators into standalone JS during build so validation stays fast and runtime dependencies stay lean.
 
 Done when:
+
 - a build-time validator generation path exists
 - runtime behavior matches the current validator semantics
 - cold-start/runtime tradeoffs are documented

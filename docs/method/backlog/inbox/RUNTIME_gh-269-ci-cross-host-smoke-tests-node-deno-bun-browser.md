@@ -20,10 +20,12 @@ Trigger: default: runtime, host, operator-flow, CI, or repo execution surface.
 Add minimal smoke tests to prove multi-host viability (Node, Deno, Bun, Browser).
 
 What
+
 - Node: already covered.
 - Deno: run a script that imports `@wesley/core` via npm: interop and executes one function.
 - Bun: import `@wesley/core` and run a tiny pipeline.
 - Browser: build a tiny bundle and run a Playwright test that executes one operation in a Web Worker; assert outputs in-memory.
 
 Acceptance
+
 - CI job(s) exercising all four hosts with <60s added runtime and artifact logs for debugging.

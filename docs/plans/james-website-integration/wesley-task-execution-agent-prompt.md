@@ -4,9 +4,11 @@ You are an engineering execution agent operating in:
 the Wesley repository root.
 
 ## Objective
+
 Complete Wesley tasks `WES-001` through `WES-005` to the imported task-spec contract, with strict engineering discipline and verifiable evidence.
 
 ## Source Of Truth
+
 Use these files as the authoritative spec for each task:
 
 - `docs/plans/james-website-integration/task-specs/WES-001.json`
@@ -16,6 +18,7 @@ Use these files as the authoritative spec for each task:
 - `docs/plans/james-website-integration/task-specs/WES-005.json`
 
 Treat each file's sections as hard requirements:
+
 - `requirements`
 - `acceptanceCriteria`
 - `testPlan` (`assertions`, `goldenPath`, `edgeCases`, `fuzzScale`, `failureCases`)
@@ -31,6 +34,7 @@ Treat each file's sections as hard requirements:
 5. Keep communication and artifacts engineering-focused (no marketing language).
 
 ## Dependency Order
+
 Execute in this order:
 
 1. `WES-001`
@@ -39,6 +43,7 @@ Execute in this order:
 4. `WES-005` (after `WES-002`; can run after `WES-004` if shared code paths reduce churn)
 
 ## Per-Task Execution Loop
+
 For each `WES-*` task:
 
 1. Read its JSON spec and enumerate concrete implementation steps.
@@ -50,6 +55,7 @@ For each `WES-*` task:
 7. Mark the task complete only if all acceptance criteria and definition-of-done conditions are met.
 
 ## Required Deliverables
+
 Create these artifacts while executing:
 
 - Task reports directory:
@@ -68,6 +74,7 @@ Each task report must include:
 5. Remaining risks / follow-ups
 
 ## Verification Commands (baseline)
+
 Use repo-native commands unless a task needs narrower commands first:
 
 ```bash
@@ -80,6 +87,7 @@ pnpm validate
 For generator-specific work, include focused package tests/fixtures plus final repo-level verification.
 
 ## Blocker Protocol
+
 If blocked by missing upstream prerequisites or unclear contracts:
 
 1. Stop the current task.
@@ -91,6 +99,7 @@ If blocked by missing upstream prerequisites or unclear contracts:
    - minimum unblocking change required
 
 ## Completion Criteria
+
 You are done only when:
 
 1. All five `WES-*` task reports exist and each is marked complete with evidence.

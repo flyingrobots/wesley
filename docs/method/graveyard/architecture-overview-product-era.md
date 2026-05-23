@@ -27,20 +27,20 @@ graph TB
             UseCases[Use Cases]
             Ports[Port Interfaces]
         end
-        
+
         subgraph "Adapters (Platform-Specific)"
             CLI[CLI Adapter]
             FS[FileSystem Adapter]
             Parser[GraphQL Parser]
             Generators[SQL/TS Generators]
         end
-        
+
         CLI --> Ports
         Ports --> FS
         Ports --> Parser
         Ports --> Generators
     end
-    
+
     style Domain fill:#9f9,stroke:#333,stroke-width:2px
 ```
 
@@ -53,7 +53,7 @@ graph LR
         Host["@wesley/host-node"]
         CLI["@wesley/cli"]
         Templates["@wesley/templates"]
-        
+
         Core -->|"Pure Logic"| Core
         Host -->|"Implements"| Core
         CLI -->|"Uses"| Host
@@ -64,13 +64,13 @@ graph LR
 
 ### Package Responsibilities
 
-| Package | Purpose | Dependencies | Key Concepts |
-|---------|---------|--------------|--------------|
-| `@wesley/core` | Domain logic, pure functions | None | Models, Events, Commands, Ports |
-| `@wesley/host-node` | Node.js implementations | GraphQL, fs, @wesley/core | Adapters, Parsers, Generators |
-| `@wesley/cli` | Command-line interface | Commander, @wesley/core, @wesley/host-node, @wesley/continuum | Commands, Event handlers |
-| `@wesley/continuum` | Continuum-specific contract and judgment profile | @wesley/core | Scope defaults, publication boundaries, Holmes/Watson/Moriarty behavior |
-| `@wesley/templates` | Code generation templates | None | Handlebars templates, patterns |
+| Package             | Purpose                                          | Dependencies                                                  | Key Concepts                                                            |
+| ------------------- | ------------------------------------------------ | ------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `@wesley/core`      | Domain logic, pure functions                     | None                                                          | Models, Events, Commands, Ports                                         |
+| `@wesley/host-node` | Node.js implementations                          | GraphQL, fs, @wesley/core                                     | Adapters, Parsers, Generators                                           |
+| `@wesley/cli`       | Command-line interface                           | Commander, @wesley/core, @wesley/host-node, @wesley/continuum | Commands, Event handlers                                                |
+| `@wesley/continuum` | Continuum-specific contract and judgment profile | @wesley/core                                                  | Scope defaults, publication boundaries, Holmes/Watson/Moriarty behavior |
+| `@wesley/templates` | Code generation templates                        | None                                                          | Handlebars templates, patterns                                          |
 
 ## Hexagonal Architecture Deep Dive
 
@@ -86,7 +86,7 @@ classDiagram
         +getTable(name)
         +toJSON()
     }
-    
+
     class Table {
         +name: string
         +fields: Map
@@ -94,7 +94,7 @@ classDiagram
         +addField(field)
         +isTable()
     }
-    
+
     class Field {
         +name: string
         +type: string
@@ -104,7 +104,7 @@ classDiagram
         +isForeignKey()
         +isVirtual()
     }
-    
+
     Schema --> Table
     Table --> Field
 ```
@@ -116,21 +116,31 @@ Ports define contracts that adapters must implement:
 ```javascript
 // Input Ports (Primary/Driving)
 class SchemaParser {
-  async parse(sdl) { /* contract */ }
+  async parse(sdl) {
+    /* contract */
+  }
 }
 
 class CommandHandler {
-  async handle(command) { /* contract */ }
+  async handle(command) {
+    /* contract */
+  }
 }
 
 // Output Ports (Secondary/Driven)
 class ArtifactGenerator {
-  async generate(schema) { /* contract */ }
+  async generate(schema) {
+    /* contract */
+  }
 }
 
 class FileSystem {
-  async read(path) { /* contract */ }
-  async write(path, content) { /* contract */ }
+  async read(path) {
+    /* contract */
+  }
+  async write(path, content) {
+    /* contract */
+  }
 }
 ```
 
@@ -145,19 +155,19 @@ graph TB
         IGenerator[ArtifactGenerator Port]
         IFS[FileSystem Port]
     end
-    
+
     subgraph "Node.js Adapters"
         GraphQLParser[GraphQL Parser]
         TypeScriptGen[TypeScript Generator]
         NodeFS[Node FileSystem]
     end
-    
+
     subgraph "Browser Adapters"
         WASMParser[WASM Parser]
         ZodGen[Zod Generator]
         IndexedDBFS[IndexedDB FS]
     end
-    
+
     IParser -.->|implements| GraphQLParser
     IParser -.->|implements| WASMParser
     IGenerator -.->|implements| TypeScriptGen
@@ -180,7 +190,7 @@ sequenceDiagram
     participant UseCase
     participant EventBus
     participant Handlers
-    
+
     User->>CLI: wesley generate
     CLI->>CommandBus: ParseSchemaCommand
     CommandBus->>UseCase: execute()
@@ -202,11 +212,11 @@ graph TD
         GenerationEvents[Generation Events]
         FileEvents[File Events]
     end
-    
+
     SchemaEvents --> SPR[SchemaParseRequested]
     SchemaEvents --> SP[SchemaParsed]
     SchemaEvents --> SPE[SchemaParseError]
-    
+
     GenerationEvents --> TGR[TypeScriptGenerationRequested]
     GenerationEvents --> TG[TypeScriptGenerated]
 ```
@@ -248,7 +258,7 @@ graph LR
         Router --> Handler2[GenerateHandler]
         Router --> Handler3[WriteHandler]
     end
-    
+
     Handler1 --> Events1[Events]
     Handler2 --> Events2[Events]
     Handler3 --> Events3[Events]
@@ -272,7 +282,7 @@ class GenerateArtifactUseCase {
   constructor(generator) {
     this.generator = generator; // Injected dependency
   }
-  
+
   async execute(schema) {
     return this.generator.generate(schema);
   }
@@ -299,19 +309,19 @@ graph TB
     subgraph "Wesley Core"
         Core[Pure JavaScript]
     end
-    
+
     subgraph "Platform Hosts"
         Node[Node.js Host]
         Deno[Deno Host]
         Browser[Browser Host]
         CloudFlare[Workers Host]
     end
-    
+
     Core --> Node
     Core --> Deno
     Core --> Browser
     Core --> CloudFlare
-    
+
     Node --> NodeAPI[Node APIs]
     Deno --> DenoAPI[Deno APIs]
     Browser --> WebAPI[Web APIs]
@@ -322,12 +332,12 @@ graph TB
 
 Each platform provides its own adapters:
 
-| Platform | FileSystem | Logger | HTTP | Process |
-|----------|------------|--------|------|---------|
-| Node.js | fs/promises | console | node:http | process |
-| Deno | Deno.readFile | console | fetch | Deno.env |
-| Browser | IndexedDB | console | fetch | - |
-| Workers | KV Store | console | fetch | env |
+| Platform | FileSystem    | Logger  | HTTP      | Process  |
+| -------- | ------------- | ------- | --------- | -------- |
+| Node.js  | fs/promises   | console | node:http | process  |
+| Deno     | Deno.readFile | console | fetch     | Deno.env |
+| Browser  | IndexedDB     | console | fetch     | -        |
+| Workers  | KV Store      | console | fetch     | env      |
 
 ## Testing Strategy
 
@@ -342,7 +352,7 @@ test('Field identifies as primary key', () => {
     type: 'ID',
     directives: { '@primaryKey': {} }
   });
-  
+
   assert(field.isPrimaryKey() === true);
 });
 ```
@@ -356,7 +366,7 @@ test('GraphQLParser implements SchemaParser', async () => {
   const parser = new GraphQLParser();
   const sdl = 'type User @table { id: ID! }';
   const schema = await parser.parse(sdl);
-  
+
   assert(schema instanceof Schema);
   assert(schema.getTable('User'));
 });
@@ -369,13 +379,11 @@ Test complete command flows:
 ```javascript
 test('Generate command produces SQL', async () => {
   const events = [];
-  eventBus.subscribe('*', e => events.push(e));
-  
-  await commandBus.handle(
-    new GenerateProjectCommand('./schema.graphql', './out')
-  );
-  
-  assert(events.some(e => e.type === 'TYPESCRIPT_GENERATED'));
+  eventBus.subscribe('*', (e) => events.push(e));
+
+  await commandBus.handle(new GenerateProjectCommand('./schema.graphql', './out'));
+
+  assert(events.some((e) => e.type === 'TYPESCRIPT_GENERATED'));
 });
 ```
 
@@ -388,7 +396,7 @@ Generators are loaded on-demand:
 ```javascript
 class GeneratorFactory {
   async getGenerator(type) {
-    switch(type) {
+    switch (type) {
       case 'typescript':
         const { TypeScriptGenerator } = await import('./TypeScriptGenerator.mjs');
         return new TypeScriptGenerator();
@@ -411,7 +419,7 @@ class BatchedEventBus {
     this.batchSize = batchSize;
     this.flushInterval = flushInterval;
   }
-  
+
   async publish(event) {
     this.batch.push(event);
     if (this.batch.length >= this.batchSize) {
@@ -431,13 +439,13 @@ class CachedParser {
     this.parser = parser;
     this.cache = new Map();
   }
-  
+
   async parse(sdl) {
     const hash = crypto.hash(sdl);
     if (this.cache.has(hash)) {
       return this.cache.get(hash);
     }
-    
+
     const result = await this.parser.parse(sdl);
     this.cache.set(hash, result);
     return result;
@@ -458,12 +466,12 @@ class ValidatedParser {
     if (typeof sdl !== 'string') {
       throw new InvalidInputError('SDL must be a string');
     }
-    
+
     // Validate size limits
     if (sdl.length > MAX_SDL_SIZE) {
       throw new InvalidInputError('SDL exceeds size limit');
     }
-    
+
     return await this.parser.parse(sdl);
   }
 }
@@ -478,7 +486,7 @@ class SafeSQLGenerator {
   generateInsert(table, data) {
     const columns = Object.keys(data);
     const placeholders = columns.map((_, i) => `$${i + 1}`);
-    
+
     return {
       sql: `INSERT INTO "${table}" (${columns.join(', ')}) VALUES (${placeholders.join(', ')})`,
       params: Object.values(data)

@@ -11,7 +11,9 @@
 
 function parseRange(r) {
   if (!r) return [0, 0];
-  const m = String(r).split('-').map((n) => Number(n));
+  const m = String(r)
+    .split('-')
+    .map((n) => Number(n));
   return [m[0] || 0, m[1] || m[0] || 0];
 }
 
@@ -34,4 +36,3 @@ export function findSourceForSql(evidenceMap, { file, line }) {
   if (!source) return { uid, source: null };
   return { uid, source };
 }
-

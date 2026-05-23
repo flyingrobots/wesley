@@ -15,32 +15,32 @@ graph LR
     subgraph "Input Layer"
         SDL[GraphQL SDL]
     end
-    
+
     subgraph "Parse Layer"
         Lexer[Lexer]
         Parser[Parser]
         Validator[Validator]
     end
-    
+
     subgraph "Domain Layer"
         Model[Domain Model]
         Rules[Business Rules]
         Invariants[Invariants]
     end
-    
+
     subgraph "Generation Layer"
         Templates[Templates]
         Builders[Builders]
         Optimizers[Optimizers]
     end
-    
+
     subgraph "Output Layer"
         SQL[SQL]
         TS[TypeScript]
         Zod[Zod]
         Docs[Documentation]
     end
-    
+
     SDL --> Lexer --> Parser --> Validator --> Model
     Model --> Rules --> Invariants --> Templates
     Templates --> Builders --> Optimizers --> SQL
@@ -62,7 +62,7 @@ class Schema {
     this.tables = Object.freeze({ ...tables });
     Object.freeze(this);
   }
-  
+
   addTable(table) {
     // Return new instance (immutable update)
     return new Schema({
@@ -89,19 +89,19 @@ class FieldPool {
   constructor(size = 1000) {
     this.pool = [];
     this.size = size;
-    
+
     // Pre-allocate
     for (let i = 0; i < size; i++) {
       this.pool.push(new Field());
     }
   }
-  
+
   acquire(props) {
     const field = this.pool.pop() || new Field();
     Object.assign(field, props);
     return field;
   }
-  
+
   release(field) {
     if (this.pool.length < this.size) {
       // Reset and return to pool
@@ -125,29 +125,29 @@ class Tokenizer {
     this.position = 0;
     this.tokens = [];
   }
-  
+
   tokenize() {
     while (this.position < this.input.length) {
       this.skipWhitespace();
-      
+
       if (this.position >= this.input.length) break;
-      
-      const token = 
+
+      const token =
         this.readKeyword() ||
         this.readIdentifier() ||
         this.readDirective() ||
         this.readPunctuation();
-      
+
       if (token) {
         this.tokens.push(token);
       } else {
         throw new ParseError(`Unexpected character at position ${this.position}`);
       }
     }
-    
+
     return this.tokens;
   }
-  
+
   readKeyword() {
     const keywords = ['type', 'interface', 'enum', 'scalar', 'union'];
     for (const keyword of keywords) {
@@ -170,23 +170,23 @@ class ASTBuilder {
     this.tokens = tokens;
     this.current = 0;
   }
-  
+
   build() {
     const definitions = [];
-    
+
     while (!this.isAtEnd()) {
       definitions.push(this.definition());
     }
-    
+
     return {
       kind: 'Document',
       definitions
     };
   }
-  
+
   definition() {
     const token = this.peek();
-    
+
     switch (token.value) {
       case 'type':
         return this.objectTypeDefinition();
@@ -198,13 +198,13 @@ class ASTBuilder {
         throw new ParseError(`Unexpected token: ${token.value}`);
     }
   }
-  
+
   objectTypeDefinition() {
     this.consume('type');
     const name = this.identifier();
     const directives = this.directives();
     const fields = this.fieldDefinitions();
-    
+
     return {
       kind: 'ObjectTypeDefinition',
       name,
@@ -224,7 +224,7 @@ class SemanticAnalyzer {
   analyze(ast) {
     const errors = [];
     const warnings = [];
-    
+
     // Check for duplicate type names
     const typeNames = new Set();
     for (const def of ast.definitions) {
@@ -235,7 +235,7 @@ class SemanticAnalyzer {
         typeNames.add(def.name.value);
       }
     }
-    
+
     // Validate foreign key references
     for (const def of ast.definitions) {
       for (const field of def.fields || []) {
@@ -248,29 +248,29 @@ class SemanticAnalyzer {
         }
       }
     }
-    
+
     // Check for circular dependencies
     const cycles = this.detectCycles(ast);
     if (cycles.length > 0) {
       warnings.push(`Circular dependencies detected: ${cycles.join(' -> ')}`);
     }
-    
+
     return { errors, warnings };
   }
-  
+
   detectCycles(ast) {
     // Depth-first search for cycles
     const graph = this.buildDependencyGraph(ast);
     const visited = new Set();
     const stack = new Set();
     const cycles = [];
-    
+
     for (const node of graph.keys()) {
       if (!visited.has(node)) {
         this.dfs(node, graph, visited, stack, cycles);
       }
     }
-    
+
     return cycles;
   }
 }
@@ -288,20 +288,20 @@ class EventBus {
     this.history = [];
     this.maxHistory = 1000;
   }
-  
+
   use(middleware) {
     this.middleware.push(middleware);
   }
-  
+
   subscribe(eventType, handler, options = {}) {
     const wrappedHandler = this.wrapHandler(handler, options);
-    
+
     if (!this.handlers.has(eventType)) {
       this.handlers.set(eventType, []);
     }
-    
+
     this.handlers.get(eventType).push(wrappedHandler);
-    
+
     // Return unsubscribe function
     return () => {
       const handlers = this.handlers.get(eventType);
@@ -311,7 +311,7 @@ class EventBus {
       }
     };
   }
-  
+
   wrapHandler(handler, options) {
     return async (event) => {
       // Apply middleware
@@ -319,56 +319,51 @@ class EventBus {
       for (const mw of this.middleware) {
         processedEvent = await mw(processedEvent);
       }
-      
+
       // Call handler with timeout
       if (options.timeout) {
-        return await this.withTimeout(
-          handler(processedEvent),
-          options.timeout
-        );
+        return await this.withTimeout(handler(processedEvent), options.timeout);
       }
-      
+
       return await handler(processedEvent);
     };
   }
-  
+
   async publish(event) {
     // Record in history
     this.recordHistory(event);
-    
+
     // Get handlers
     const specificHandlers = this.handlers.get(event.type) || [];
     const wildcardHandlers = this.handlers.get('*') || [];
     const allHandlers = [...specificHandlers, ...wildcardHandlers];
-    
+
     // Execute in parallel with error boundaries
     const results = await Promise.allSettled(
-      allHandlers.map(handler => 
-        this.executeWithErrorBoundary(handler, event)
-      )
+      allHandlers.map((handler) => this.executeWithErrorBoundary(handler, event))
     );
-    
+
     // Process results
-    const failures = results.filter(r => r.status === 'rejected');
+    const failures = results.filter((r) => r.status === 'rejected');
     if (failures.length > 0 && !event.metadata?.allowFailures) {
       throw new EventHandlingError(failures);
     }
-    
+
     return results;
   }
-  
+
   recordHistory(event) {
     this.history.push({
       ...event,
       timestamp: Date.now()
     });
-    
+
     // Trim history if needed
     if (this.history.length > this.maxHistory) {
       this.history.shift();
     }
   }
-  
+
   async executeWithErrorBoundary(handler, event) {
     try {
       return await handler(event);
@@ -389,19 +384,19 @@ class EventReplayer {
   constructor(eventBus) {
     this.eventBus = eventBus;
   }
-  
+
   async replay(events, options = {}) {
     const results = [];
-    
+
     for (const event of events) {
       if (options.delay) {
         await this.delay(options.delay);
       }
-      
+
       if (options.filter && !options.filter(event)) {
         continue;
       }
-      
+
       const result = await this.eventBus.publish({
         ...event,
         metadata: {
@@ -410,19 +405,19 @@ class EventReplayer {
           originalTimestamp: event.timestamp
         }
       });
-      
+
       results.push(result);
-      
+
       if (options.onEvent) {
         options.onEvent(event, result);
       }
     }
-    
+
     return results;
   }
-  
+
   delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
 ```
@@ -440,28 +435,26 @@ class TemplateEngine {
     this.helpers = new Map();
     this.partials = new Map();
   }
-  
+
   registerTemplate(name, template) {
     // Pre-compile template
     const compiled = this.compile(template);
     this.templates.set(name, compiled);
   }
-  
+
   compile(template) {
     const ast = this.parseTemplate(template);
-    
+
     // Generate optimized render function
-    return new Function('context', 'helpers', 
-      this.generateRenderCode(ast)
-    );
+    return new Function('context', 'helpers', this.generateRenderCode(ast));
   }
-  
+
   parseTemplate(template) {
     const tokens = [];
     const regex = /{{(#|\/|>)?([^}]+)}}/g;
     let lastIndex = 0;
     let match;
-    
+
     while ((match = regex.exec(template)) !== null) {
       // Add literal text
       if (match.index > lastIndex) {
@@ -470,19 +463,19 @@ class TemplateEngine {
           value: template.slice(lastIndex, match.index)
         });
       }
-      
+
       // Add template token
       const prefix = match[1] || '';
       const content = match[2].trim();
-      
+
       tokens.push({
         type: this.getTokenType(prefix),
         value: content
       });
-      
+
       lastIndex = regex.lastIndex;
     }
-    
+
     // Add remaining text
     if (lastIndex < template.length) {
       tokens.push({
@@ -490,13 +483,13 @@ class TemplateEngine {
         value: template.slice(lastIndex)
       });
     }
-    
+
     return tokens;
   }
-  
+
   generateRenderCode(ast) {
     let code = 'let output = "";\n';
-    
+
     for (const token of ast) {
       switch (token.type) {
         case 'TEXT':
@@ -511,17 +504,17 @@ class TemplateEngine {
           break;
       }
     }
-    
+
     code += 'return output;';
     return code;
   }
-  
+
   render(templateName, context) {
     const template = this.templates.get(templateName);
     if (!template) {
       throw new Error(`Template not found: ${templateName}`);
     }
-    
+
     return template(context, this.helpers);
   }
 }
@@ -538,7 +531,7 @@ class SQLBuilder {
     this.currentTable = null;
     this.indentLevel = 0;
   }
-  
+
   createTable(name) {
     this.currentTable = {
       name,
@@ -548,85 +541,80 @@ class SQLBuilder {
     };
     return this;
   }
-  
+
   addColumn(name, type, options = {}) {
     let definition = `"${name}" ${type}`;
-    
+
     if (options.notNull) {
       definition += ' NOT NULL';
     }
-    
+
     if (options.default) {
       definition += ` DEFAULT ${options.default}`;
     }
-    
+
     this.currentTable.columns.push(definition);
     return this;
   }
-  
+
   addPrimaryKey(column) {
-    this.currentTable.constraints.push(
-      `PRIMARY KEY ("${column}")`
-    );
+    this.currentTable.constraints.push(`PRIMARY KEY ("${column}")`);
     return this;
   }
-  
+
   addForeignKey(column, reference, options = {}) {
     let constraint = `FOREIGN KEY ("${column}") REFERENCES ${reference}`;
-    
+
     if (options.onDelete) {
       constraint += ` ON DELETE ${options.onDelete}`;
     }
-    
+
     if (options.onUpdate) {
       constraint += ` ON UPDATE ${options.onUpdate}`;
     }
-    
+
     this.currentTable.constraints.push(constraint);
     return this;
   }
-  
+
   addIndex(name, columns, options = {}) {
     let index = `CREATE`;
-    
+
     if (options.unique) {
       index += ' UNIQUE';
     }
-    
+
     index += ` INDEX IF NOT EXISTS "${name}" ON "${this.currentTable.name}"`;
-    index += ` (${columns.map(c => `"${c}"`).join(', ')})`;
-    
+    index += ` (${columns.map((c) => `"${c}"`).join(', ')})`;
+
     if (options.where) {
       index += ` WHERE ${options.where}`;
     }
-    
+
     this.currentTable.indexes.push(index + ';');
     return this;
   }
-  
+
   build() {
     if (!this.currentTable) {
       return this.statements.join('\n\n');
     }
-    
+
     // Build CREATE TABLE statement
     let sql = `CREATE TABLE IF NOT EXISTS "${this.currentTable.name}" (\n`;
-    
-    const allItems = [
-      ...this.currentTable.columns,
-      ...this.currentTable.constraints
-    ];
-    
-    sql += allItems.map(item => `  ${item}`).join(',\n');
+
+    const allItems = [...this.currentTable.columns, ...this.currentTable.constraints];
+
+    sql += allItems.map((item) => `  ${item}`).join(',\n');
     sql += '\n);';
-    
+
     this.statements.push(sql);
-    
+
     // Add indexes
     this.statements.push(...this.currentTable.indexes);
-    
+
     this.currentTable = null;
-    
+
     return this.statements.join('\n\n');
   }
 }
@@ -641,52 +629,50 @@ Wesley optimizes generated SQL queries:
 ```javascript
 class QueryOptimizer {
   optimize(statements) {
-    return statements
-      .map(stmt => this.optimizeStatement(stmt))
-      .filter(stmt => stmt !== null);
+    return statements.map((stmt) => this.optimizeStatement(stmt)).filter((stmt) => stmt !== null);
   }
-  
+
   optimizeStatement(statement) {
     // Remove redundant indexes
     if (this.isRedundantIndex(statement)) {
       return null;
     }
-    
+
     // Combine adjacent ALTER statements
     if (this.canCombineWithPrevious(statement)) {
       return this.combineStatements(this.previous, statement);
     }
-    
+
     // Reorder for optimal execution
     const priority = this.getStatementPriority(statement);
     statement.priority = priority;
-    
+
     this.previous = statement;
     return statement;
   }
-  
+
   isRedundantIndex(statement) {
     // Check if index is redundant (covered by PK or unique)
     if (!statement.includes('CREATE INDEX')) {
       return false;
     }
-    
+
     const columns = this.extractIndexColumns(statement);
     const table = this.extractTableName(statement);
-    
+
     // Check if primary key covers this index
     if (this.primaryKeyCovers(table, columns)) {
       return true;
     }
-    
+
     // Check if unique constraint covers this index
     if (this.uniqueConstraintCovers(table, columns)) {
       return true;
     }
-    
+
     return false;
   }
-  
+
   getStatementPriority(statement) {
     // Execution order optimization
     if (statement.includes('CREATE TABLE')) return 1;
@@ -709,33 +695,29 @@ class StreamingGenerator {
     this.buffer = [];
     this.bufferSize = 1024 * 16; // 16KB chunks
   }
-  
+
   async *generate(schema) {
     for (const table of schema.getTables()) {
       const sql = await this.generateTable(table);
-      
+
       // Yield in chunks
       for (let i = 0; i < sql.length; i += this.bufferSize) {
         yield sql.slice(i, i + this.bufferSize);
       }
     }
   }
-  
+
   async generateTable(table) {
     // Generate SQL for single table
     const builder = new SQLBuilder();
     builder.createTable(table.name);
-    
+
     for (const field of table.getFields()) {
       if (!field.isVirtual()) {
-        builder.addColumn(
-          field.name,
-          this.mapType(field),
-          { notNull: field.nonNull }
-        );
+        builder.addColumn(field.name, this.mapType(field), { notNull: field.nonNull });
       }
     }
-    
+
     return builder.build();
   }
 }
@@ -756,7 +738,7 @@ class WesleyError extends Error {
     this.details = details;
     this.timestamp = new Date().toISOString();
   }
-  
+
   toJSON() {
     return {
       name: this.name,
@@ -800,29 +782,25 @@ class ErrorRecovery {
       this.recoverFromValidation,
       this.recoverFromGeneration
     ];
-    
+
     for (const strategy of strategies) {
       const result = await strategy.call(this, error, context);
       if (result.recovered) {
         return result;
       }
     }
-    
+
     return { recovered: false, error };
   }
-  
+
   async recoverFromParse(error, context) {
     if (error.code !== 'PARSE_ERROR') {
       return { recovered: false };
     }
-    
+
     // Try to fix common parse errors
-    const fixes = [
-      this.fixMissingBrace,
-      this.fixMissingQuote,
-      this.fixTypo
-    ];
-    
+    const fixes = [this.fixMissingBrace, this.fixMissingQuote, this.fixTypo];
+
     for (const fix of fixes) {
       const fixed = fix(context.input, error.details.position);
       if (fixed) {
@@ -834,7 +812,7 @@ class ErrorRecovery {
         }
       }
     }
-    
+
     return { recovered: false };
   }
 }
@@ -850,24 +828,24 @@ class Profiler {
     this.metrics = new Map();
     this.enabled = process.env.WESLEY_PROFILE === 'true';
   }
-  
+
   measure(name, fn) {
     if (!this.enabled) {
       return fn();
     }
-    
+
     const start = performance.now();
     const memory = process.memoryUsage();
-    
+
     try {
       const result = fn();
-      
+
       if (result instanceof Promise) {
         return result.finally(() => {
           this.record(name, start, memory);
         });
       }
-      
+
       this.record(name, start, memory);
       return result;
     } catch (error) {
@@ -875,11 +853,11 @@ class Profiler {
       throw error;
     }
   }
-  
+
   record(name, start, startMemory, error = null) {
     const duration = performance.now() - start;
     const endMemory = process.memoryUsage();
-    
+
     const metric = {
       name,
       duration,
@@ -890,21 +868,21 @@ class Profiler {
       error: error?.message,
       timestamp: Date.now()
     };
-    
+
     if (!this.metrics.has(name)) {
       this.metrics.set(name, []);
     }
-    
+
     this.metrics.get(name).push(metric);
   }
-  
+
   report() {
     const report = {};
-    
+
     for (const [name, metrics] of this.metrics) {
-      const durations = metrics.map(m => m.duration);
-      const memories = metrics.map(m => m.memoryDelta.heapUsed);
-      
+      const durations = metrics.map((m) => m.duration);
+      const memories = metrics.map((m) => m.memoryDelta.heapUsed);
+
       report[name] = {
         count: metrics.length,
         totalTime: durations.reduce((a, b) => a + b, 0),
@@ -912,10 +890,10 @@ class Profiler {
         minTime: Math.min(...durations),
         maxTime: Math.max(...durations),
         avgMemory: memories.reduce((a, b) => a + b, 0) / metrics.length,
-        errors: metrics.filter(m => m.error).length
+        errors: metrics.filter((m) => m.error).length
       };
     }
-    
+
     return report;
   }
 }

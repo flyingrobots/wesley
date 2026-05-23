@@ -30,11 +30,13 @@ export async function analyzeCounterfactual({
   const requestedLane = normalizeLaneRequest(lane);
 
   try {
-    const registry = moduleCapabilityRegistry ?? await loadCounterfactualCapabilityRegistry({
-      repoRoot: workspaceRoot,
-      env,
-      logger
-    });
+    const registry =
+      moduleCapabilityRegistry ??
+      (await loadCounterfactualCapabilityRegistry({
+        repoRoot: workspaceRoot,
+        env,
+        logger
+      }));
     const providerEntry = selectCounterfactualProvider({
       registry,
       policy
@@ -83,11 +85,7 @@ function normalizeLaneRequest(lane) {
   };
 }
 
-async function loadCounterfactualCapabilityRegistry({
-  repoRoot,
-  env,
-  logger
-}) {
+async function loadCounterfactualCapabilityRegistry({ repoRoot, env, logger }) {
   const result = await discoverConfiguredWesleyModules({
     cwd: repoRoot,
     env,
@@ -105,11 +103,13 @@ function selectCounterfactualProvider({ registry, policy }) {
 
   const requestedName = normalizeProviderName(policy?.counterfactual?.provider);
   if (requestedName) {
-    const matched = providers.find((entry) => normalizeProviderName(entry.value.name) === requestedName);
+    const matched = providers.find(
+      (entry) => normalizeProviderName(entry.value.name) === requestedName
+    );
     if (!matched) {
       throw new Error(
         `Counterfactual provider "${policy.counterfactual.provider}" is not available. ` +
-        'Load a Wesley module that registers holmes.counterfactualProviders.'
+          'Load a Wesley module that registers holmes.counterfactualProviders.'
       );
     }
     return matched;
@@ -122,38 +122,41 @@ function selectCounterfactualProvider({ registry, policy }) {
   if (providers.length === 0) {
     throw new Error(
       'No counterfactual provider capabilities are available. ' +
-      'Load a Wesley module that registers holmes.counterfactualProviders.'
+        'Load a Wesley module that registers holmes.counterfactualProviders.'
     );
   }
 
   throw new Error(
     'Multiple counterfactual providers are available. ' +
-    'Set counterfactual.provider in the Holmes policy.'
+      'Set counterfactual.provider in the Holmes policy.'
   );
 }
 
 function validateCounterfactualProviderEntry(entry) {
   const provider = entry?.value;
   if (provider == null || typeof provider !== 'object' || Array.isArray(provider)) {
-    throw new Error(`Module "${entry?.moduleName || '<unknown>'}" registered an invalid counterfactual provider.`);
+    throw new Error(
+      `Module "${entry?.moduleName || '<unknown>'}" registered an invalid counterfactual provider.`
+    );
   }
   if (typeof provider.name !== 'string' || provider.name.trim().length === 0) {
-    throw new Error(`Module "${entry.moduleName}" registered a counterfactual provider without a non-empty name.`);
+    throw new Error(
+      `Module "${entry.moduleName}" registered a counterfactual provider without a non-empty name.`
+    );
   }
   if (typeof provider.analyze !== 'function') {
-    throw new Error(`Counterfactual provider "${provider.name}" from module "${entry.moduleName}" must expose analyze().`);
+    throw new Error(
+      `Counterfactual provider "${provider.name}" from module "${entry.moduleName}" must expose analyze().`
+    );
   }
   return entry;
 }
 
-function normalizeProviderReport(report, {
-  providerEntry,
-  lane,
-  policy,
-  repoRoot
-}) {
+function normalizeProviderReport(report, { providerEntry, lane, policy, repoRoot }) {
   if (report == null || typeof report !== 'object' || Array.isArray(report)) {
-    throw new Error(`Counterfactual provider "${providerEntry.value.name}" returned a non-object report.`);
+    throw new Error(
+      `Counterfactual provider "${providerEntry.value.name}" returned a non-object report.`
+    );
   }
 
   const providerName = providerEntry.value.name.trim();
@@ -202,16 +205,17 @@ function normalizeResolved(resolved, lane) {
     headSha: typeof resolved?.headSha === 'string' ? resolved.headSha : null,
     braidRefs: Array.isArray(resolved?.braidRefs)
       ? resolved.braidRefs
-        .filter((item) => item && typeof item === 'object')
-        .map((item) => ({
-          ref: String(item.ref || ''),
-          sha: String(item.sha || '')
-        }))
-        .filter((item) => item.ref && item.sha)
+          .filter((item) => item && typeof item === 'object')
+          .map((item) => ({
+            ref: String(item.ref || ''),
+            sha: String(item.sha || '')
+          }))
+          .filter((item) => item.ref && item.sha)
       : [],
-    liveWorkspace: typeof resolved?.liveWorkspace === 'boolean'
-      ? resolved.liveWorkspace
-      : lane.headRef === 'HEAD'
+    liveWorkspace:
+      typeof resolved?.liveWorkspace === 'boolean'
+        ? resolved.liveWorkspace
+        : lane.headRef === 'HEAD'
   };
 }
 
@@ -229,16 +233,18 @@ function normalizeJudgment(judgment, policy) {
   const signals = Array.isArray(judgment?.signals)
     ? judgment.signals.map(String).filter(Boolean)
     : ['provider_unavailable'];
-  const riskClass = normalizeNonEmptyString(judgment?.riskClass, status === 'clean' ? 'none' : 'high');
+  const riskClass = normalizeNonEmptyString(
+    judgment?.riskClass,
+    status === 'clean' ? 'none' : 'high'
+  );
   const confidenceAdjustment = Number.isFinite(judgment?.confidenceAdjustment)
     ? judgment.confidenceAdjustment
     : 0;
-  const wouldFail = typeof judgment?.wouldFail === 'boolean'
-    ? judgment.wouldFail
-    : riskClass === 'high';
+  const wouldFail =
+    typeof judgment?.wouldFail === 'boolean' ? judgment.wouldFail : riskClass === 'high';
   const gate = normalizeNonEmptyString(
     judgment?.gate,
-    gateMode === 'hard' && wouldFail ? 'fail' : (gateMode === 'audit' && wouldFail ? 'audit' : 'pass')
+    gateMode === 'hard' && wouldFail ? 'fail' : gateMode === 'audit' && wouldFail ? 'audit' : 'pass'
   );
   const reasons = Array.isArray(judgment?.reasons)
     ? judgment.reasons.map(String).filter(Boolean)
@@ -255,23 +261,16 @@ function normalizeJudgment(judgment, policy) {
   };
 }
 
-export function buildCounterfactualProviderFailure({
-  repoRoot,
-  lane,
-  error,
-  policy
-}) {
-  const providerName = typeof policy?.counterfactual?.provider === 'string' && policy.counterfactual.provider.trim()
-    ? policy.counterfactual.provider.trim()
-    : 'none';
+export function buildCounterfactualProviderFailure({ repoRoot, lane, error, policy }) {
+  const providerName =
+    typeof policy?.counterfactual?.provider === 'string' && policy.counterfactual.provider.trim()
+      ? policy.counterfactual.provider.trim()
+      : 'none';
   const penalties = policy?.counterfactual?.penalties || {};
   const gateMode = policy?.counterfactual?.gateMode || 'off';
   const reasons = [error?.message || 'Counterfactual provider is unavailable.'];
   const confidenceAdjustment = -Math.abs(Number(penalties.providerUnavailable || 50));
-  const signals = [
-    'provider_unavailable',
-    ...(lane.braidRefs.length > 0 ? ['braid_present'] : [])
-  ];
+  const signals = ['provider_unavailable', ...(lane.braidRefs.length > 0 ? ['braid_present'] : [])];
 
   return {
     provider: providerName,
@@ -302,7 +301,7 @@ export function buildCounterfactualProviderFailure({
       signals,
       riskClass: 'high',
       confidenceAdjustment,
-      gate: gateMode === 'hard' ? 'fail' : (gateMode === 'audit' ? 'audit' : 'pass'),
+      gate: gateMode === 'hard' ? 'fail' : gateMode === 'audit' ? 'audit' : 'pass',
       wouldFail: true,
       reasons
     }
@@ -316,9 +315,7 @@ async function writeCurrentCounterfactualReport(repoRoot, report) {
 }
 
 function normalizeProviderName(value) {
-  return typeof value === 'string' && value.trim().length > 0
-    ? value.trim().toLowerCase()
-    : '';
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim().toLowerCase() : '';
 }
 
 function normalizeNonEmptyString(value, fallback) {
@@ -326,13 +323,17 @@ function normalizeNonEmptyString(value, fallback) {
 }
 
 function hashObject(value) {
-  return createHash('sha256').update(JSON.stringify(sortValue(value))).digest('hex');
+  return createHash('sha256')
+    .update(JSON.stringify(sortValue(value)))
+    .digest('hex');
 }
 
 function sortValue(value) {
   if (Array.isArray(value)) return value.map(sortValue);
   if (!value || typeof value !== 'object') return value;
   return Object.fromEntries(
-    Object.keys(value).sort().map(key => [key, sortValue(value[key])])
+    Object.keys(value)
+      .sort()
+      .map((key) => [key, sortValue(value[key])])
   );
 }

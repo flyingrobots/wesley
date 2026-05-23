@@ -12,11 +12,11 @@ For a full smoke run: `pnpm run bootstrap` (installs, preflight, workspace tests
 
 ## Suites & Commands
 
-| Test File | Run It With | Fixtures/Data | Recommended Environment |
-| --- | --- | --- | --- |
-| `test/cli-generators.bats` | `pnpm --filter @wesley/cli exec bats test/cli-generators.bats` | Creates temporary schema inline | Local Node runtime (no DB) |
-| `test/cli-models.bats` | `pnpm --filter @wesley/cli exec bats test/cli-models.bats` | Creates temporary schema inline | Local Node runtime |
-| `test/holmes-e2e.bats` | `pnpm --filter @wesley/holmes exec bats test/holmes-e2e.bats` | `test/fixtures/examples/schema.graphql` | Local Node runtime |
+| Test File                  | Run It With                                                    | Fixtures/Data                           | Recommended Environment    |
+| -------------------------- | -------------------------------------------------------------- | --------------------------------------- | -------------------------- |
+| `test/cli-generators.bats` | `pnpm --filter @wesley/cli exec bats test/cli-generators.bats` | Creates temporary schema inline         | Local Node runtime (no DB) |
+| `test/cli-models.bats`     | `pnpm --filter @wesley/cli exec bats test/cli-models.bats`     | Creates temporary schema inline         | Local Node runtime         |
+| `test/holmes-e2e.bats`     | `pnpm --filter @wesley/holmes exec bats test/holmes-e2e.bats`  | `test/fixtures/examples/schema.graphql` | Local Node runtime         |
 
 ### Notes
 

@@ -7,4 +7,3 @@ export class ExitError extends Error {
 }
 
 export default { ExitError };
-

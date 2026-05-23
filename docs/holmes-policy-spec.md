@@ -1,22 +1,27 @@
 # HOLMES/Moriarty Counterfactual Policy Spec (v2)
+
 <!-- docs-truth: status=current owner=@flyingrobots -->
 
 Purpose
+
 - Configure module-provided counterfactual analysis without changing code.
 - Keep the policy surface small and reviewed in-repo.
 - Keep provider-specific fact machinery outside generic Holmes.
 
 Files
+
 - `wesley.holmes-policy.json` - checked in, reviewed in PRs
 - `wesley.holmes-policy.local.json` - optional developer override, gitignored
 
 CLI
+
 - `holmes predict --counterfactual [baseRef]`
 - `holmes report --counterfactual [baseRef]`
 - `holmes predict --counterfactual-braid <ref>`
 - `holmes report --counterfactual-braid <ref>`
 
 Notes
+
 - Policy v1 is still read, but it is upcast into the v2 counterfactual shape at runtime.
 - New policy files should use v2 directly.
 - Counterfactual providers come from loaded Wesley modules under
@@ -47,10 +52,12 @@ Notes
 ## Fields
 
 Top level
+
 - `version`: number, required, currently `2`
 - `counterfactual`: object, required
 
 `counterfactual`
+
 - `enabled`: boolean
   - Enables counterfactual analysis when the command is policy-driven rather
     than flag-driven.
@@ -84,14 +91,7 @@ A provider capability is a plain object with a non-empty `name` and an
 
 ```js
 {
-  repoRoot,
-  lane,
-  includeTransferPlan,
-  policy,
-  surface,
-  env,
-  provider,
-  moduleName
+  (repoRoot, lane, includeTransferPlan, policy, surface, env, provider, moduleName);
 }
 ```
 
@@ -102,6 +102,7 @@ provider-specific fact files to the provider.
 ## Judgment Model
 
 Counterfactual reports persist:
+
 - `provider`
 - `providerPackageVersion`
 - `surfaceVersion`
@@ -121,16 +122,19 @@ Counterfactual reports persist:
 - `judgment.reasons[]`
 
 Gate states
+
 - `pass`
 - `audit`
 - `fail`
 
 Risk classes
+
 - `none`
 - `low`
 - `high`
 
 The important rule is simple:
+
 - BLADE and cert consumers must use `judgment.gate` as the only authority.
 - They must not re-derive gate semantics from raw provider facts.
 
@@ -150,6 +154,7 @@ summaries, or caches. Generic Holmes does not define those provider internals.
 ## Defaults
 
 Runtime defaults if no policy file exists:
+
 - `enabled: false`
 - `provider: null`
 - `baseRef: "main"`
@@ -165,6 +170,7 @@ Runtime defaults if no policy file exists:
 ## Current Implementation
 
 Implemented now
+
 - Holmes/Moriarty `--counterfactual`
 - Holmes `--counterfactual-braid` on `predict` and `report`
 - Holmes/Moriarty `--run-id` and `--transmutation` for persisted run binding
@@ -179,6 +185,7 @@ Implemented now
 - `cert-verify` respects embedded `counterfactual.gate` and requires `holmes.shipVerdict === "ELEMENTARY"`
 
 Not yet implemented
+
 - user-facing scope controls
 - provider-specific public docs for external product modules
 - a Continuum-owned counterfactual provider package

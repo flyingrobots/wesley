@@ -14,20 +14,24 @@ This guide is for AI agents and human operators recovering context in the Wesley
 Do not audit the repository by recursively walking the filesystem. Follow the authoritative manifests:
 
 ### 1. The Entrance
+
 - **`README.md`**: Public front door, core value prop, and quick start.
 - **`docs/GUIDE.md`**: Orientation, fast path, and system orchestration.
 
 ### 2. The Bedrock
+
 - **`docs/ARCHITECTURE.md`**: Authoritative structural reference (Base Platform, Modules, Pipeline).
 - **`docs/VISION.md`**: Core tenets and the "Trustworthy Change" mission.
 - **`docs/METHOD.md`**: Repo work doctrine (Backlog lanes, Cycle loop).
 
 ### 3. The Direction
+
 - **`docs/BEARING.md`**: Current execution gravity and active tensions.
 - **`docs/design/README.md`**: Active design packets and structural doctrine.
 - **`docs/method/backlog/`**: The active source of truth for pending work.
 
 ### 4. The Proof
+
 - **`CHANGELOG.md`**: Historical truth of merged behavior.
 - **`docs/audit/`**: Structural health and due diligence reports.
 
@@ -50,4 +54,5 @@ After altering files:
 4. **Validate**: Run `pnpm run preflight`.
 
 ---
+
 **The goal is inevitably. Every feature is defined by its tests.**

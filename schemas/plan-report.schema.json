@@ -75,9 +75,16 @@
       "type": "object",
       "required": ["op", "table"],
       "properties": {
-        "op": { "type": "string", "enum": [
-          "create_table", "add_column", "create_index_concurrently", "add_fk_not_valid", "validate_fk"
-        ] },
+        "op": {
+          "type": "string",
+          "enum": [
+            "create_table",
+            "add_column",
+            "create_index_concurrently",
+            "add_fk_not_valid",
+            "validate_fk"
+          ]
+        },
         "table": { "type": "string" },
         "column": { "type": ["string", "null"] },
         "type": { "type": ["string", "null"] },

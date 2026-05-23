@@ -1,5 +1,5 @@
 ---
-title: "Wesley Invariants"
+title: 'Wesley Invariants'
 ---
 
 ## Sponsors

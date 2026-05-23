@@ -30,7 +30,7 @@ function runWesley(args) {
 
 async function generate() {
   const files = readdirSync(FIXTURE_DIR)
-    .filter(f => extname(f) === '.graphql')
+    .filter((f) => extname(f) === '.graphql')
     .sort((a, b) => a.localeCompare(b));
   let hasError = false;
 

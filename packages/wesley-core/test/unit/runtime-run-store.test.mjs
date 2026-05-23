@@ -37,7 +37,7 @@ test('resolveRuntimeRunStream fails when a runId maps to multiple streams', () =
 
   assert.throws(
     () => resolveRuntimeRunStream(store, { runId: 'run-store-ambiguous' }),
-    error => error?.code === 'RUN_AMBIGUOUS'
+    (error) => error?.code === 'RUN_AMBIGUOUS'
   );
 });
 
@@ -162,16 +162,10 @@ function appendCompletedRun(store, { runId, transmutation, streamId }) {
   });
 }
 
-function appendEvent(store, {
-  streamId,
-  runId,
-  transmutation,
-  sequence,
-  type,
-  timestamp,
-  idempotencyKey,
-  payload
-}) {
+function appendEvent(
+  store,
+  { streamId, runId, transmutation, sequence, type, timestamp, idempotencyKey, payload }
+) {
   store.append({
     eventId: `${streamId}:${sequence}`,
     streamId,

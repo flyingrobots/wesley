@@ -116,36 +116,54 @@ export class CLIEnhancer extends EventEmitter {
 
     // Available commands for completion
     this.commands = new Map([
-      ['generate', {
-        description: 'Generate SQL, TypeScript, or migrations',
-        subcommands: ['sql', 'typescript', 'zod', 'migration', 'all'],
-        options: ['--dry-run', '--output', '--verbose']
-      }],
-      ['migrate', {
-        description: 'Database migration operations',
-        subcommands: ['up', 'down', 'status', 'diff', 'rollback'],
-        options: ['--dry-run', '--force', '--target', '--verbose']
-      }],
-      ['test', {
-        description: 'Run tests',
-        subcommands: ['unit', 'integration', 'all'],
-        options: ['--coverage', '--watch', '--verbose']
-      }],
-      ['watch', {
-        description: 'Watch files for changes',
-        subcommands: ['schema', 'migrations'],
-        options: ['--interval', '--verbose']
-      }],
-      ['help', {
-        description: 'Show help information',
-        subcommands: [],
-        options: []
-      }],
-      ['version', {
-        description: 'Show version information',
-        subcommands: [],
-        options: []
-      }]
+      [
+        'generate',
+        {
+          description: 'Generate SQL, TypeScript, or migrations',
+          subcommands: ['sql', 'typescript', 'zod', 'migration', 'all'],
+          options: ['--dry-run', '--output', '--verbose']
+        }
+      ],
+      [
+        'migrate',
+        {
+          description: 'Database migration operations',
+          subcommands: ['up', 'down', 'status', 'diff', 'rollback'],
+          options: ['--dry-run', '--force', '--target', '--verbose']
+        }
+      ],
+      [
+        'test',
+        {
+          description: 'Run tests',
+          subcommands: ['unit', 'integration', 'all'],
+          options: ['--coverage', '--watch', '--verbose']
+        }
+      ],
+      [
+        'watch',
+        {
+          description: 'Watch files for changes',
+          subcommands: ['schema', 'migrations'],
+          options: ['--interval', '--verbose']
+        }
+      ],
+      [
+        'help',
+        {
+          description: 'Show help information',
+          subcommands: [],
+          options: []
+        }
+      ],
+      [
+        'version',
+        {
+          description: 'Show version information',
+          subcommands: [],
+          options: []
+        }
+      ]
     ]);
 
     // Progress tracking
@@ -159,7 +177,7 @@ export class CLIEnhancer extends EventEmitter {
   async initialize() {
     try {
       this.emit('cliInitialized', {
-        features: Object.keys(this.options).filter(k => this.options[k]),
+        features: Object.keys(this.options).filter((k) => this.options[k]),
         aliasCount: this.aliases.size,
         commandCount: this.commands.size
       });
@@ -207,7 +225,6 @@ export class CLIEnhancer extends EventEmitter {
         processed: true,
         timestamp: new Date().toISOString()
       };
-
     } catch (error) {
       const cliError = new CLIError(`Command processing failed: ${error.message}`);
       this.emit('error', cliError);
@@ -228,14 +245,19 @@ export class CLIEnhancer extends EventEmitter {
 
       // This would typically connect to a readline interface
       // For Wesley, we emit an event that adapters can handle
-      this.emit('interactionRequested', new CLIInteractionRequested(
-        'Wesley Interactive Mode - Enter commands (type "exit" to quit)',
-        { mode: 'interactive', multiline: false }
-      ));
+      this.emit(
+        'interactionRequested',
+        new CLIInteractionRequested(
+          'Wesley Interactive Mode - Enter commands (type "exit" to quit)',
+          { mode: 'interactive', multiline: false }
+        )
+      );
 
       return true;
     } catch (error) {
-      const interactionError = new InteractionError(`Failed to start interactive mode: ${error.message}`);
+      const interactionError = new InteractionError(
+        `Failed to start interactive mode: ${error.message}`
+      );
       this.emit('error', interactionError);
       throw interactionError;
     }
@@ -250,7 +272,10 @@ export class CLIEnhancer extends EventEmitter {
       const responses = {};
 
       for (const prompt of prompts) {
-        this.emit('interactionRequested', new CLIInteractionRequested(prompt.message, prompt.options));
+        this.emit(
+          'interactionRequested',
+          new CLIInteractionRequested(prompt.message, prompt.options)
+        );
 
         // In a real implementation, this would wait for user input
         // For now, we simulate the interaction structure
@@ -261,7 +286,6 @@ export class CLIEnhancer extends EventEmitter {
         confirmed: responses.confirm !== false,
         responses
       };
-
     } catch (error) {
       const interactionError = new InteractionError(`Interaction failed: ${error.message}`);
       this.emit('error', interactionError);
@@ -288,7 +312,6 @@ export class CLIEnhancer extends EventEmitter {
 
       this.emit('progressStarted', new CLIProgressStarted(operation, total));
       return this.activeProgress;
-
     } catch (error) {
       this.emit('error', new CLIError(`Failed to start progress: ${error.message}`));
       return null;
@@ -307,12 +330,10 @@ export class CLIEnhancer extends EventEmitter {
       this.activeProgress.current = current;
       this.activeProgress.message = message;
 
-      this.emit('progressUpdated', new CLIProgressUpdate(
-        current,
-        this.activeProgress.total,
-        message
-      ));
-
+      this.emit(
+        'progressUpdated',
+        new CLIProgressUpdate(current, this.activeProgress.total, message)
+      );
     } catch (error) {
       this.emit('error', new CLIError(`Failed to update progress: ${error.message}`));
     }
@@ -330,15 +351,17 @@ export class CLIEnhancer extends EventEmitter {
       const operation = this.activeProgress.operation;
       const duration = Date.now() - this.activeProgress.startTime;
 
-      this.emit('progressCompleted', new CLIProgressCompleted(operation, {
-        result,
-        duration,
-        completed: this.activeProgress.current,
-        total: this.activeProgress.total
-      }));
+      this.emit(
+        'progressCompleted',
+        new CLIProgressCompleted(operation, {
+          result,
+          duration,
+          completed: this.activeProgress.current,
+          total: this.activeProgress.total
+        })
+      );
 
       this.activeProgress = null;
-
     } catch (error) {
       this.emit('error', new CLIError(`Failed to complete progress: ${error.message}`));
     }
@@ -420,7 +443,6 @@ export class CLIEnhancer extends EventEmitter {
       this.emit('completionRequested', new CLICompletionRequested(line, position));
 
       return completions.sort((a, b) => a.value.localeCompare(b.value));
-
     } catch (error) {
       const completionError = new CompletionError(`Completion failed: ${error.message}`);
       this.emit('error', completionError);
@@ -450,7 +472,6 @@ export class CLIEnhancer extends EventEmitter {
 
       const entry = this.history[index];
       return await this.processCommand(entry.command, entry.args, { replay: true });
-
     } catch (error) {
       const cliError = new CLIError(`Command replay failed: ${error.message}`);
       this.emit('error', cliError);
@@ -517,7 +538,6 @@ export class CLIEnhancer extends EventEmitter {
           wouldExecute: true
         }
       };
-
     } catch (error) {
       const cliError = new CLIError(`Dry-run analysis failed: ${error.message}`);
       this.emit('error', cliError);
@@ -609,30 +629,30 @@ export class CLIEnhancer extends EventEmitter {
 
     // Analyze based on command type
     switch (command) {
-    case 'generate':
-      analysis.type = 'generation';
-      analysis.filesAffected = ['SQL files', 'TypeScript files', 'Migration files'];
-      analysis.estimatedDuration = '5-30 seconds';
-      break;
+      case 'generate':
+        analysis.type = 'generation';
+        analysis.filesAffected = ['SQL files', 'TypeScript files', 'Migration files'];
+        analysis.estimatedDuration = '5-30 seconds';
+        break;
 
-    case 'migrate':
-      analysis.type = 'migration';
-      analysis.destructive = !args.includes('status');
-      analysis.databaseChanges = true;
-      analysis.estimatedDuration = '10-300 seconds';
-      break;
+      case 'migrate':
+        analysis.type = 'migration';
+        analysis.destructive = !args.includes('status');
+        analysis.databaseChanges = true;
+        analysis.estimatedDuration = '10-300 seconds';
+        break;
 
-    case 'rollback':
-      analysis.type = 'rollback';
-      analysis.destructive = true;
-      analysis.databaseChanges = true;
-      analysis.estimatedDuration = '5-60 seconds';
-      break;
+      case 'rollback':
+        analysis.type = 'rollback';
+        analysis.destructive = true;
+        analysis.databaseChanges = true;
+        analysis.estimatedDuration = '5-60 seconds';
+        break;
 
-    case 'test':
-      analysis.type = 'testing';
-      analysis.estimatedDuration = '30-180 seconds';
-      break;
+      case 'test':
+        analysis.type = 'testing';
+        analysis.estimatedDuration = '30-180 seconds';
+        break;
     }
 
     return analysis;

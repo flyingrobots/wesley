@@ -2,7 +2,7 @@ site_name: Wesley Docs
 site_url: https://flyingrobots.github.io/wesley/
 repo_name: flyingrobots/wesley
 repo_url: https://github.com/flyingrobots/wesley
-edit_uri: ""
+edit_uri: ''
 docs_dir: docs/site
 nav:
   - Home: index.md

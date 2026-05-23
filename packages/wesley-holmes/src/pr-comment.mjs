@@ -48,15 +48,36 @@ export function buildHolmesSuiteComment({
     '',
     '---',
     '',
-    renderReportSection('🕵️ SHA-lock HOLMES full report', holmesMarkdown, statuses.holmes, 'holmes', 'holmes-report.md', markdownStates.holmes),
+    renderReportSection(
+      '🕵️ SHA-lock HOLMES full report',
+      holmesMarkdown,
+      statuses.holmes,
+      'holmes',
+      'holmes-report.md',
+      markdownStates.holmes
+    ),
     '',
     '---',
     '',
-    renderReportSection('🩺 Dr. WATSON full report', watsonMarkdown, statuses.watson, 'watson', 'watson-report.md', markdownStates.watson),
+    renderReportSection(
+      '🩺 Dr. WATSON full report',
+      watsonMarkdown,
+      statuses.watson,
+      'watson',
+      'watson-report.md',
+      markdownStates.watson
+    ),
     '',
     '---',
     '',
-    renderReportSection('🔮 Professor MORIARTY full report', moriartyMarkdown, statuses.moriarty, 'moriarty', 'moriarty-report.md', markdownStates.moriarty),
+    renderReportSection(
+      '🔮 Professor MORIARTY full report',
+      moriartyMarkdown,
+      statuses.moriarty,
+      'moriarty',
+      'moriarty-report.md',
+      markdownStates.moriarty
+    ),
     '',
     '---',
     '',
@@ -76,7 +97,12 @@ export function loadHolmesSuiteReports(reportsDir, statuses = {}) {
   const moriartyReport = readJsonReport(reportsDir, 'moriarty', 'moriarty-report.json');
   const holmesMarkdown = readTextReport(reportsDir, 'holmes', 'holmes-report.md', statuses.holmes);
   const watsonMarkdown = readTextReport(reportsDir, 'watson', 'watson-report.md', statuses.watson);
-  const moriartyMarkdown = readTextReport(reportsDir, 'moriarty', 'moriarty-report.md', statuses.moriarty);
+  const moriartyMarkdown = readTextReport(
+    reportsDir,
+    'moriarty',
+    'moriarty-report.md',
+    statuses.moriarty
+  );
   return {
     statuses,
     reportStates: {
@@ -113,7 +139,13 @@ function renderCurrentShaMarker(headSha) {
   return sha ? `<!-- HOLMES_SUITE_SHA:${sha} -->` : '<!-- HOLMES_SUITE_SHA:unknown -->';
 }
 
-function renderPlainEnglishReadout({ holmesReport, watsonReport, moriartyReport, statuses, reportStates }) {
+function renderPlainEnglishReadout({
+  holmesReport,
+  watsonReport,
+  moriartyReport,
+  statuses,
+  reportStates
+}) {
   const holmes = summarizeHolmes(holmesReport, statuses.holmes, reportStates.holmes);
   const watson = summarizeWatson(watsonReport, statuses.watson, reportStates.watson);
   const moriarty = summarizeMoriarty(moriartyReport, statuses.moriarty, reportStates.moriarty);
@@ -169,22 +201,35 @@ function renderGlossary() {
 }
 
 function renderReportSection(title, markdown, status, reportName, artifactName, markdownState) {
-  const unavailableBody = buildReportSectionUnavailableBody(reportName, artifactName, status, markdownState, markdown);
-  const body = markdown && markdown.trim()
-    ? markdown.trim()
-    : unavailableBody;
+  const unavailableBody = buildReportSectionUnavailableBody(
+    reportName,
+    artifactName,
+    status,
+    markdownState,
+    markdown
+  );
+  const body = markdown && markdown.trim() ? markdown.trim() : unavailableBody;
   return `<details><summary>${title} (click to expand)</summary>\n\n${body}\n\n</details>`;
 }
 
 function summarizeHolmes(report, status, reportState) {
-  const unavailableSummary = buildUnavailableSummary('Holmes report', 'holmes-report.json', status, reportState, report);
+  const unavailableSummary = buildUnavailableSummary(
+    'Holmes report',
+    'holmes-report.json',
+    status,
+    reportState,
+    report
+  );
   if (unavailableSummary) {
     return {
       summary: unavailableSummary
     };
   }
 
-  const verdict = normalizeOptionalString(report?.verdict?.code) || normalizeOptionalString(report?.metadata?.verificationStatus) || 'UNKNOWN';
+  const verdict =
+    normalizeOptionalString(report?.verdict?.code) ||
+    normalizeOptionalString(report?.metadata?.verificationStatus) ||
+    'UNKNOWN';
   const reasons = collectHolmesReasons(report).slice(0, 3);
   const message = verdictToPlainEnglish(verdict);
   if (reasons.length === 0) {
@@ -194,7 +239,13 @@ function summarizeHolmes(report, status, reportState) {
 }
 
 function summarizeWatson(report, status, reportState) {
-  const unavailableSummary = buildUnavailableSummary('Watson report', 'watson-report.json', status, reportState, report);
+  const unavailableSummary = buildUnavailableSummary(
+    'Watson report',
+    'watson-report.json',
+    status,
+    reportState,
+    report
+  );
   if (unavailableSummary) {
     return {
       summary: unavailableSummary
@@ -219,12 +270,19 @@ function summarizeWatson(report, status, reportState) {
     };
   }
   return {
-    summary: 'Watson found verification concerns and recommends a closer look before trusting the result.'
+    summary:
+      'Watson found verification concerns and recommends a closer look before trusting the result.'
   };
 }
 
 function summarizeMoriarty(report, status, reportState) {
-  const unavailableSummary = buildUnavailableSummary('Moriarty forecast', 'moriarty-report.json', status, reportState, report);
+  const unavailableSummary = buildUnavailableSummary(
+    'Moriarty forecast',
+    'moriarty-report.json',
+    status,
+    reportState,
+    report
+  );
   if (unavailableSummary) {
     return {
       summary: unavailableSummary
@@ -259,12 +317,19 @@ function summarizeMoriarty(report, status, reportState) {
   }
 
   return {
-    summary: 'Moriarty sees ongoing movement, but the forecast is not yet concrete enough to promise a readiness date.'
+    summary:
+      'Moriarty sees ongoing movement, but the forecast is not yet concrete enough to promise a readiness date.'
   };
 }
 
 function collectHolmesActions(report, status, reportState) {
-  const unavailableAction = buildUnavailableAction('HOLMES', 'holmes-report.json', status, reportState, report);
+  const unavailableAction = buildUnavailableAction(
+    'HOLMES',
+    'holmes-report.json',
+    status,
+    reportState,
+    report
+  );
   if (unavailableAction) {
     return [unavailableAction];
   }
@@ -276,16 +341,31 @@ function collectHolmesActions(report, status, reportState) {
   const sensitiveGate = findGate(report, 'Sensitive Fields');
 
   if (evidenceTrust && evidenceTrust !== 'strong') {
-    actions.push('Tighten citations so the report points to exact lines instead of whole files or coarse references.');
+    actions.push(
+      'Tighten citations so the report points to exact lines instead of whole files or coarse references.'
+    );
   }
-  if ((typeof report?.scores?.tci === 'number' && report.scores.tci < HOLMES_WEAK_TCI_THRESHOLD) || gateNeedsAttention(testCoverageGate)) {
-    actions.push('Add or strengthen tests for the schema elements and operations HOLMES flagged as weakly proven.');
+  if (
+    (typeof report?.scores?.tci === 'number' && report.scores.tci < HOLMES_WEAK_TCI_THRESHOLD) ||
+    gateNeedsAttention(testCoverageGate)
+  ) {
+    actions.push(
+      'Add or strengthen tests for the schema elements and operations HOLMES flagged as weakly proven.'
+    );
   }
-  if ((typeof report?.scores?.mri === 'number' && report.scores.mri >= HOLMES_ELEVATED_MRI_THRESHOLD) || gateNeedsAttention(migrationRiskGate)) {
-    actions.push('Review the migration plan for risky changes such as drops, renames, not-null additions, or index strategy.');
+  if (
+    (typeof report?.scores?.mri === 'number' &&
+      report.scores.mri >= HOLMES_ELEVATED_MRI_THRESHOLD) ||
+    gateNeedsAttention(migrationRiskGate)
+  ) {
+    actions.push(
+      'Review the migration plan for risky changes such as drops, renames, not-null additions, or index strategy.'
+    );
   }
   if (gateNeedsAttention(sensitiveGate)) {
-    actions.push('Review sensitive-field protections and add the missing security evidence or tests.');
+    actions.push(
+      'Review sensitive-field protections and add the missing security evidence or tests.'
+    );
   }
   if (actions.length === 0 && report?.verdict?.code !== 'ELEMENTARY') {
     actions.push('Resolve the remaining HOLMES findings before treating this PR as ready to ship.');
@@ -294,21 +374,40 @@ function collectHolmesActions(report, status, reportState) {
 }
 
 function collectWatsonActions(report, status, reportState) {
-  const unavailableAction = buildUnavailableAction('WATSON', 'watson-report.json', status, reportState, report);
+  const unavailableAction = buildUnavailableAction(
+    'WATSON',
+    'watson-report.json',
+    status,
+    reportState,
+    report
+  );
   if (unavailableAction) return [unavailableAction];
   if (normalizeOptionalString(report?.opinion?.verdict) === 'PASSED') return [];
   return ['Resolve Watson’s verification concerns before trusting the Holmes verdict as final.'];
 }
 
 function collectMoriartyActions(report, status, reportState) {
-  const unavailableAction = buildUnavailableAction('MORIARTY', 'moriarty-report.json', status, reportState, report);
+  const unavailableAction = buildUnavailableAction(
+    'MORIARTY',
+    'moriarty-report.json',
+    status,
+    reportState,
+    report
+  );
   if (unavailableAction) return [unavailableAction];
   const actions = [];
   if (report.plateauDetected) {
-    actions.push('Treat the readiness forecast as stalled until new evidence or real progress moves the trend again.');
+    actions.push(
+      'Treat the readiness forecast as stalled until new evidence or real progress moves the trend again.'
+    );
   }
-  if (Array.isArray(report?.warnings) && report.warnings.some((warning) => /evidence trust/i.test(warning))) {
-    actions.push('Improve evidence trust before leaning on the readiness forecast for shipping decisions.');
+  if (
+    Array.isArray(report?.warnings) &&
+    report.warnings.some((warning) => /evidence trust/i.test(warning))
+  ) {
+    actions.push(
+      'Improve evidence trust before leaning on the readiness forecast for shipping decisions.'
+    );
   }
   return actions;
 }
@@ -322,24 +421,44 @@ function collectHolmesReasons(report) {
   const sensitiveGate = findGate(report, 'Sensitive Fields');
 
   if (evidenceTrust && evidenceTrust !== 'strong') {
-    reasons.push(firstNonEmpty([
-      normalizeOptionalString(findGate(report, 'Evidence Quality')?.ruling),
-      `some claims rely on ${evidenceTrust} evidence trust`,
-      (citationQuality.coarse || citationQuality.wholeFile) > 0 ? 'some claims rely on whole-file or coarse citations' : null
-    ]));
+    reasons.push(
+      firstNonEmpty([
+        normalizeOptionalString(findGate(report, 'Evidence Quality')?.ruling),
+        `some claims rely on ${evidenceTrust} evidence trust`,
+        (citationQuality.coarse || citationQuality.wholeFile) > 0
+          ? 'some claims rely on whole-file or coarse citations'
+          : null
+      ])
+    );
   }
 
-  if ((typeof report?.scores?.tci === 'number' && report.scores.tci < HOLMES_WEAK_TCI_THRESHOLD) || gateNeedsAttention(testCoverageGate)) {
+  if (
+    (typeof report?.scores?.tci === 'number' && report.scores.tci < HOLMES_WEAK_TCI_THRESHOLD) ||
+    gateNeedsAttention(testCoverageGate)
+  ) {
     reasons.push('test evidence is incomplete');
   }
-  if ((typeof report?.scores?.scs === 'number' && report.scores.scs < HOLMES_INCOMPLETE_SCS_THRESHOLD)) {
+  if (
+    typeof report?.scores?.scs === 'number' &&
+    report.scores.scs < HOLMES_INCOMPLETE_SCS_THRESHOLD
+  ) {
     reasons.push('schema coverage is incomplete');
   }
-  if ((typeof report?.scores?.mri === 'number' && report.scores.mri >= HOLMES_ELEVATED_MRI_THRESHOLD) || gateNeedsAttention(migrationRiskGate)) {
-    reasons.push(trimSentence(normalizeOptionalString(migrationRiskGate?.ruling)) || 'migration risk is elevated');
+  if (
+    (typeof report?.scores?.mri === 'number' &&
+      report.scores.mri >= HOLMES_ELEVATED_MRI_THRESHOLD) ||
+    gateNeedsAttention(migrationRiskGate)
+  ) {
+    reasons.push(
+      trimSentence(normalizeOptionalString(migrationRiskGate?.ruling)) ||
+        'migration risk is elevated'
+    );
   }
   if (gateNeedsAttention(sensitiveGate)) {
-    reasons.push(trimSentence(normalizeOptionalString(sensitiveGate?.ruling)) || 'sensitive fields still need stronger protections');
+    reasons.push(
+      trimSentence(normalizeOptionalString(sensitiveGate?.ruling)) ||
+        'sensitive fields still need stronger protections'
+    );
   }
 
   return dedupeStrings(reasons.filter(Boolean));
@@ -370,7 +489,9 @@ function findReportPath(root, filename, reportName) {
     }
   }
   if (matches.length === 0) return null;
-  const preferred = matches.find((candidate) => candidate.toLowerCase().split(path.sep).includes(reportName.toLowerCase()));
+  const preferred = matches.find((candidate) =>
+    candidate.toLowerCase().split(path.sep).includes(reportName.toLowerCase())
+  );
   return preferred || matches[0];
 }
 
@@ -418,14 +539,14 @@ function readTextReport(root, reportName, filename, status) {
 
 function verdictToPlainEnglish(verdict) {
   switch (verdict) {
-  case 'ELEMENTARY':
-    return 'Holmes says this change looks ready to ship.';
-  case 'REQUIRES INVESTIGATION':
-    return 'Holmes says this change needs investigation before shipping.';
-  case 'YOU SHALL NOT PASS':
-    return 'Holmes says this change should not ship in its current state.';
-  default:
-    return 'Holmes could not reach a clear ship recommendation from the available evidence.';
+    case 'ELEMENTARY':
+      return 'Holmes says this change looks ready to ship.';
+    case 'REQUIRES INVESTIGATION':
+      return 'Holmes says this change needs investigation before shipping.';
+    case 'YOU SHALL NOT PASS':
+      return 'Holmes says this change should not ship in its current state.';
+    default:
+      return 'Holmes could not reach a clear ship recommendation from the available evidence.';
   }
 }
 
@@ -545,7 +666,13 @@ function buildUnavailableAction(reportLabel, artifactName, status, reportState, 
   return '';
 }
 
-function buildReportSectionUnavailableBody(reportName, artifactName, status, markdownState, markdown) {
+function buildReportSectionUnavailableBody(
+  reportName,
+  artifactName,
+  status,
+  markdownState,
+  markdown
+) {
   const effectiveState = resolveArtifactState(markdownState, markdown, status);
   const explicitStatus = normalizeOptionalString(status);
   if (explicitStatus && explicitStatus !== 'success' && effectiveState !== 'loaded') {

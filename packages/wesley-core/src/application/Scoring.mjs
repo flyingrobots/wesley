@@ -44,7 +44,8 @@ export class ScoringEngine {
 
         // Normalize to the same fallback UID format used by generators
         // (e.g., PostgreSQL + pgTAP use `col:Table.field`).
-        const uid = DirectiveProcessor.getUid(field.directives) || `col:${table.name}.${field.name}`;
+        const uid =
+          DirectiveProcessor.getUid(field.directives) || `col:${table.name}.${field.name}`;
         const weight = DirectiveProcessor.getWeight(field.directives);
 
         totalWeight += weight;
@@ -104,45 +105,45 @@ export class ScoringEngine {
 
     for (const step of migrationSteps) {
       switch (step.kind) {
-      case 'drop_table':
-        components.drops.points += 40;
-        components.drops.count += 1;
-        riskPoints += 40;
-        break;
-      case 'drop_column':
-        components.drops.points += 25;
-        components.drops.count += 1;
-        riskPoints += 25;
-        break;
-      case 'alter_type':
-        if (!this.isSafeCast(step.from, step.to)) {
-          components.add_not_null_without_default.points += 30;
-          components.add_not_null_without_default.count += 1;
-          riskPoints += 30;
-        }
-        break;
-      case 'add_column':
-        if (step.field?.nonNull && !step.field?.directives?.['@default']) {
-          components.add_not_null_without_default.points += 25;
-          components.add_not_null_without_default.count += 1;
+        case 'drop_table':
+          components.drops.points += 40;
+          components.drops.count += 1;
+          riskPoints += 40;
+          break;
+        case 'drop_column':
+          components.drops.points += 25;
+          components.drops.count += 1;
           riskPoints += 25;
-        }
-        break;
-      case 'rename_column':
-      case 'rename_table':
-        if (!step.uidContinuity) {
-          components.renames_without_uid.points += 10;
-          components.renames_without_uid.count += 1;
-          riskPoints += 10;
-        }
-        break;
-      case 'create_index':
-        if (step.concurrent === false) {
-          components.non_concurrent_indexes.points += 10;
-          components.non_concurrent_indexes.count += 1;
-          riskPoints += 10;
-        }
-        break;
+          break;
+        case 'alter_type':
+          if (!this.isSafeCast(step.from, step.to)) {
+            components.add_not_null_without_default.points += 30;
+            components.add_not_null_without_default.count += 1;
+            riskPoints += 30;
+          }
+          break;
+        case 'add_column':
+          if (step.field?.nonNull && !step.field?.directives?.['@default']) {
+            components.add_not_null_without_default.points += 25;
+            components.add_not_null_without_default.count += 1;
+            riskPoints += 25;
+          }
+          break;
+        case 'rename_column':
+        case 'rename_table':
+          if (!step.uidContinuity) {
+            components.renames_without_uid.points += 10;
+            components.renames_without_uid.count += 1;
+            riskPoints += 10;
+          }
+          break;
+        case 'create_index':
+          if (step.concurrent === false) {
+            components.non_concurrent_indexes.points += 10;
+            components.non_concurrent_indexes.count += 1;
+            riskPoints += 10;
+          }
+          break;
       }
     }
 
@@ -177,10 +178,10 @@ export class ScoringEngine {
    */
   calculateTCIDetails(schema, testResults = {}) {
     const weights = {
-      structure: 0.20,    // Tables/columns exist
-      constraints: 0.45,  // PK/FK/unique work
-      migrations: 0.25,   // Migrations apply cleanly
-      performance: 0.10   // Indexes used
+      structure: 0.2, // Tables/columns exist
+      constraints: 0.45, // PK/FK/unique work
+      migrations: 0.25, // Migrations apply cleanly
+      performance: 0.1 // Indexes used
     };
 
     const testedStructure = this.collectStructureEvidence(schema);
@@ -192,19 +193,15 @@ export class ScoringEngine {
     const relationDetails = this.calculateRelationCoverageDetails(schema, testedConstraints);
     const rlsDetails = this.calculateRlsCoverageDetails(schema);
 
-    const migrationCoverage = testResults.migrations?.passed /
-      (testResults.migrations?.total || 1) || 0;
-    const performanceCoverage = this.calculateIndexCoverage(
-      schema,
-      testResults.performance || []
-    );
+    const migrationCoverage =
+      testResults.migrations?.passed / (testResults.migrations?.total || 1) || 0;
+    const performanceCoverage = this.calculateIndexCoverage(schema, testResults.performance || []);
 
-    const score = (
+    const score =
       weights.structure * structureDetails.score +
       weights.constraints * constraintDetails.score +
       weights.migrations * migrationCoverage +
-      weights.performance * performanceCoverage
-    );
+      weights.performance * performanceCoverage;
 
     const breakdown = {
       unit_constraints: {
@@ -253,7 +250,7 @@ export class ScoringEngine {
     const defaults = {
       scs: 0.8,
       tci: 0.7,
-      mri: 0.4  // Lower is better for risk
+      mri: 0.4 // Lower is better for risk
     };
 
     const t = { ...defaults, ...thresholds };
@@ -288,10 +285,10 @@ export class ScoringEngine {
   // Helper methods
   isSafeCast(fromType, toType) {
     const safeCasts = {
-      'Int': ['Float', 'String'],
-      'Float': ['String'],
-      'Boolean': ['String'],
-      'ID': ['String']
+      Int: ['Float', 'String'],
+      Float: ['String'],
+      Boolean: ['String'],
+      ID: ['String']
     };
 
     return safeCasts[fromType]?.includes(toType) || false;
@@ -444,7 +441,8 @@ export class ScoringEngine {
 
       for (const field of table.getFields()) {
         if (field.isVirtual()) continue;
-        const fieldUid = DirectiveProcessor.getUid(field.directives) || `col:${table.name}.${field.name}`;
+        const fieldUid =
+          DirectiveProcessor.getUid(field.directives) || `col:${table.name}.${field.name}`;
         if (this.evidenceMap.hasArtifact(fieldUid, 'test')) {
           tested.add(`${table.name}.${field.name}`);
         }
@@ -459,7 +457,8 @@ export class ScoringEngine {
 
     for (const table of schema.getTables()) {
       for (const field of table.getFields()) {
-        const fieldUid = DirectiveProcessor.getUid(field.directives) || `col:${table.name}.${field.name}`;
+        const fieldUid =
+          DirectiveProcessor.getUid(field.directives) || `col:${table.name}.${field.name}`;
 
         if (field.isPrimaryKey() && this.evidenceMap.hasArtifact(`${fieldUid}.pk`, 'test')) {
           tested.add(`${table.name}.${field.name}.pk`);
@@ -486,9 +485,13 @@ export class ScoringEngine {
     for (const table of schema.getTables()) {
       for (const field of table.getFields()) {
         if (!field.isForeignKey()) continue;
-        const fieldUid = DirectiveProcessor.getUid(field.directives) || `col:${table.name}.${field.name}`;
+        const fieldUid =
+          DirectiveProcessor.getUid(field.directives) || `col:${table.name}.${field.name}`;
         total += 1;
-        if (tested.has(`${table.name}.${field.name}.fk`) || this.evidenceMap.hasArtifact(`${fieldUid}.fk`, 'test')) {
+        if (
+          tested.has(`${table.name}.${field.name}.fk`) ||
+          this.evidenceMap.hasArtifact(`${fieldUid}.fk`, 'test')
+        ) {
           covered += 1;
         }
       }

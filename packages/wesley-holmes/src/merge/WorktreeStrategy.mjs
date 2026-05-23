@@ -20,21 +20,39 @@ export class WorktreeStrategy {
     const remoteBase = baseRef.startsWith('origin/') ? baseRef : `origin/${baseRef}`;
 
     function safe(args, opts) {
-      try { return execFileSync('git', args, { encoding: 'utf8', ...opts }); } catch (_e) { return null; }
+      try {
+        return execFileSync('git', args, { encoding: 'utf8', ...opts });
+      } catch (_e) {
+        return null;
+      }
     }
 
     try {
-      execFileSync('git', ['rev-parse', '--is-inside-work-tree'], { stdio: 'ignore', cwd: this.repoRoot });
+      execFileSync('git', ['rev-parse', '--is-inside-work-tree'], {
+        stdio: 'ignore',
+        cwd: this.repoRoot
+      });
     } catch {
-      return { status: 'error', reason: 'Not a git work tree', merge: { baseRef, strategy: 'worktree' } };
+      return {
+        status: 'error',
+        reason: 'Not a git work tree',
+        merge: { baseRef, strategy: 'worktree' }
+      };
     }
 
     // Ensure base fetched and merge-base available
-    safe(['fetch', '--prune', 'origin', `${baseRef}:refs/remotes/origin/${baseRef}`], { cwd: this.repoRoot });
-    const mergeBase = safe(['merge-base', 'HEAD', remoteBase], { cwd: this.repoRoot })?.trim() || null;
+    safe(['fetch', '--prune', 'origin', `${baseRef}:refs/remotes/origin/${baseRef}`], {
+      cwd: this.repoRoot
+    });
+    const mergeBase =
+      safe(['merge-base', 'HEAD', remoteBase], { cwd: this.repoRoot })?.trim() || null;
     const headCommit = safe(['rev-parse', 'HEAD'], { cwd: this.repoRoot })?.trim();
     if (!headCommit) {
-      return { status: 'error', reason: 'HEAD not resolved', merge: { baseRef, strategy: 'worktree' } };
+      return {
+        status: 'error',
+        reason: 'HEAD not resolved',
+        merge: { baseRef, strategy: 'worktree' }
+      };
     }
 
     // Create ephemeral worktree at base
@@ -42,7 +60,9 @@ export class WorktreeStrategy {
     let wroteTree = null;
     try {
       // Add detached worktree at base
-      const addOut = safe(['worktree', 'add', '--detach', wtDir, remoteBase], { cwd: this.repoRoot });
+      const addOut = safe(['worktree', 'add', '--detach', wtDir, remoteBase], {
+        cwd: this.repoRoot
+      });
       if (addOut === null) {
         throw new Error('git worktree add failed');
       }
@@ -60,7 +80,10 @@ export class WorktreeStrategy {
       }
       if (status === 'conflicts') {
         const out = safe(['diff', '--name-only', '--diff-filter=U'], { cwd: wtDir }) || '';
-        conflicts = out.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+        conflicts = out
+          .split(/\r?\n/)
+          .map((s) => s.trim())
+          .filter(Boolean);
         // Abort merge to leave worktree clean before remove
         safe(['merge', '--abort'], { cwd: wtDir });
         return {
@@ -80,10 +103,25 @@ export class WorktreeStrategy {
         materialization: 'deferred'
       };
     } catch (e) {
-      return { status: 'error', reason: e?.message || String(e), merge: { baseRef, mergeBase, strategy: 'worktree' } };
+      return {
+        status: 'error',
+        reason: e?.message || String(e),
+        merge: { baseRef, mergeBase, strategy: 'worktree' }
+      };
     } finally {
-      try { execFileSync('git', ['worktree', 'remove', '--force', wtDir], { cwd: this.repoRoot, stdio: 'ignore' }); } catch { /* empty */ }
-      try { rmSync(wtDir, { recursive: true, force: true }); } catch { /* empty */ }
+      try {
+        execFileSync('git', ['worktree', 'remove', '--force', wtDir], {
+          cwd: this.repoRoot,
+          stdio: 'ignore'
+        });
+      } catch {
+        /* empty */
+      }
+      try {
+        rmSync(wtDir, { recursive: true, force: true });
+      } catch {
+        /* empty */
+      }
     }
   }
 }

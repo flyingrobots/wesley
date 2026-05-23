@@ -26,26 +26,35 @@ export class RunsCommand extends WesleyCommand {
       .option('--limit <n>', 'Maximum number of streams to inspect', '100')
       .option('--json', 'Emit JSON')
       .action((options, command) => {
-        return this.execute({
-          ...mergeCommandOptions(command),
-          ...options,
-          _runsSubcommand: 'doctor'
-        }, command);
+        return this.execute(
+          {
+            ...mergeCommandOptions(command),
+            ...options,
+            _runsSubcommand: 'doctor'
+          },
+          command
+        );
       });
 
     cmd
       .command('status')
       .description('List persisted runtime runs from the ledger')
       .option('--transmutation <name>', 'Filter runs by transmutation name')
-      .option('--status <state>', 'Filter runs by status: pending|running|completed|failed|cancelled')
+      .option(
+        '--status <state>',
+        'Filter runs by status: pending|running|completed|failed|cancelled'
+      )
       .option('--limit <n>', 'Maximum number of runs to return', '20')
       .option('--json', 'Emit JSON')
       .action((options, command) => {
-        return this.execute({
-          ...mergeCommandOptions(command),
-          ...options,
-          _runsSubcommand: 'status'
-        }, command);
+        return this.execute(
+          {
+            ...mergeCommandOptions(command),
+            ...options,
+            _runsSubcommand: 'status'
+          },
+          command
+        );
       });
 
     cmd
@@ -55,11 +64,14 @@ export class RunsCommand extends WesleyCommand {
       .option('--transmutation <name>', 'Transmutation name for direct stream lookup')
       .option('--json', 'Emit JSON')
       .action((options, command) => {
-        return this.execute({
-          ...mergeCommandOptions(command),
-          ...options,
-          _runsSubcommand: 'replay'
-        }, command);
+        return this.execute(
+          {
+            ...mergeCommandOptions(command),
+            ...options,
+            _runsSubcommand: 'replay'
+          },
+          command
+        );
       });
 
     cmd
@@ -69,11 +81,14 @@ export class RunsCommand extends WesleyCommand {
       .option('--transmutation <name>', 'Transmutation name for direct stream lookup')
       .option('--json', 'Emit JSON')
       .action((options, command) => {
-        return this.execute({
-          ...mergeCommandOptions(command),
-          ...options,
-          _runsSubcommand: 'inspect'
-        }, command);
+        return this.execute(
+          {
+            ...mergeCommandOptions(command),
+            ...options,
+            _runsSubcommand: 'inspect'
+          },
+          command
+        );
       });
 
     return cmd;
@@ -125,9 +140,11 @@ export class RunsCommand extends WesleyCommand {
       logger.info(`Integrity issue streams: ${summary.integrityIssueStreams}`);
     }
 
-    for (const stream of streams.filter(entry => !entry.healthy)) {
+    for (const stream of streams.filter((entry) => !entry.healthy)) {
       logger.info(`Stream: ${stream.streamId}`);
-      logger.info(`  run=${stream.run?.runId || 'n/a'} transmutation=${stream.run?.transmutation || 'n/a'} status=${stream.run?.status || 'unknown'}`);
+      logger.info(
+        `  run=${stream.run?.runId || 'n/a'} transmutation=${stream.run?.transmutation || 'n/a'} status=${stream.run?.status || 'unknown'}`
+      );
       for (const finding of stream.findings) {
         logger.info(`  ${finding.code}: ${finding.message}`);
       }
@@ -175,7 +192,9 @@ export class RunsCommand extends WesleyCommand {
         logger.info(`  last=${run.lastEventAt} stream=${run.streamId}`);
       }
       if (run.failure?.code) {
-        logger.info(`  failure=${run.failure.code}${run.failure.message ? ` ${run.failure.message}` : ''}`);
+        logger.info(
+          `  failure=${run.failure.code}${run.failure.message ? ` ${run.failure.message}` : ''}`
+        );
       }
     }
 
@@ -216,7 +235,9 @@ export class RunsCommand extends WesleyCommand {
     logger.info(`Applied events: ${payload.replay.appliedEventCount}/${payload.replay.eventCount}`);
     logger.info(`Terminal: ${payload.replay.terminal ? 'yes' : 'no'}`);
     logger.info(`Stream: ${payload.run.streamId}`);
-    logger.info(`Snapshot: ${payload.snapshot ? `yes (seq=${payload.snapshot.lastSequence})` : 'no'}`);
+    logger.info(
+      `Snapshot: ${payload.snapshot ? `yes (seq=${payload.snapshot.lastSequence})` : 'no'}`
+    );
     if (payload.replay.integrity.issues.length > 0) {
       logger.info('Replay issues:');
       for (const issue of payload.replay.integrity.issues) {
@@ -261,11 +282,15 @@ export class RunsCommand extends WesleyCommand {
     logger.info(`Stream: ${record.run.streamId}`);
     logger.info(`Events: ${record.run.eventCount}`);
     logger.info(`Artifacts: ${record.run.artifactCount}`);
-    logger.info(`Snapshot: ${record.snapshot ? `yes (seq=${record.snapshot.lastSequence})` : 'no'}`);
+    logger.info(
+      `Snapshot: ${record.snapshot ? `yes (seq=${record.snapshot.lastSequence})` : 'no'}`
+    );
     if (record.run.startedAt) logger.info(`Started: ${record.run.startedAt}`);
     if (record.run.completedAt) logger.info(`Completed: ${record.run.completedAt}`);
     if (record.run.failure?.code) {
-      logger.info(`Failure: ${record.run.failure.code}${record.run.failure.message ? ` - ${record.run.failure.message}` : ''}`);
+      logger.info(
+        `Failure: ${record.run.failure.code}${record.run.failure.message ? ` - ${record.run.failure.message}` : ''}`
+      );
     }
 
     return payload;

@@ -18,23 +18,29 @@ Trigger: label match: Website/Playground surfaces are runtime/operator-facing qu
 ## Original Issue
 
 ## Overview
+
 Scaffold the base website app (Vite+React+Mantine) and ensure the GitHub Pages deploy harness is in place and green. This is the prerequisite surface for the Playground Shell.
 
 ## Acceptance Criteria
+
 - [ ] Vite app compiles locally and CI builds artifact
 - [ ] Pages workflow deploys site from the built `website/dist`
 - [ ] Placeholder route for `/playground` exists (blank)
 - [ ] Basic lint/format hooks configured or deferred
 
 ## Definition of Done
+
 - CI: docs-site workflow green; site loads; `/playground` route resolves
 - Docs: short README section describing `website/` and how to run locally
 
 ## Links
+
 - Tracks shell: #259
 
 ---
+
 ## Checklist
+
 - [ ] Scaffold Vite+React+Mantine app under `website/`
 - [ ] Wire docs-site GitHub Pages workflow to build `website/dist`
 - [ ] Add `/playground` route (placeholder)

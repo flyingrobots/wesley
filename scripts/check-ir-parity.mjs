@@ -8,12 +8,14 @@ import { GraphQLAdapter } from '../packages/wesley-runtime-node/src/index.mjs';
 import { canonicalizeJSON } from '../packages/wesley-core/src/domain/registryHash.mjs';
 import {
   DEFAULT_PARITY_FIXTURES,
-  PROJECTION_NAME,
+  TABLE_PROJECTION_NAME,
   PROJECTION_NORMALIZER_VERSION,
   canonicalProjectionBytes,
+  formatParityFixture,
   firstMismatch,
-  projectLegacyTableIR,
-  projectRustL1IR,
+  normalizeParityFixture,
+  projectLegacyProjection,
+  projectRustProjection,
   projectionHash,
   sha256Hex
 } from './ir-parity-projection.mjs';
@@ -34,7 +36,7 @@ function main() {
 
   if (options.listFixtures) {
     for (const fixture of DEFAULT_PARITY_FIXTURES) {
-      console.log(fixture);
+      console.log(formatParityFixture(fixture));
     }
     return;
   }
@@ -53,10 +55,12 @@ function main() {
 }
 
 function parseArgs(args) {
-  const fixtures = [];
+  const fixturePaths = [];
   let json = false;
   let listFixtures = false;
   let help = false;
+  let projection = TABLE_PROJECTION_NAME;
+  let projectionSpecified = false;
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
@@ -73,15 +77,31 @@ function parseArgs(args) {
       if (!fixture) {
         throw new Error('--fixture requires a path');
       }
-      fixtures.push(fixture);
+      fixturePaths.push(fixture);
+      index += 1;
+    } else if (arg === '--projection') {
+      projection = args[index + 1];
+      if (!projection) {
+        throw new Error('--projection requires a projection name');
+      }
+      projectionSpecified = true;
       index += 1;
     } else {
       throw new Error(`Unknown argument: ${arg}`);
     }
   }
 
+  let fixtures = [...DEFAULT_PARITY_FIXTURES];
+  if (fixturePaths.length > 0) {
+    fixtures = fixturePaths.map((fixture) => normalizeParityFixture({ fixture, projection }));
+  } else if (projectionSpecified) {
+    fixtures = DEFAULT_PARITY_FIXTURES.map((entry) =>
+      normalizeParityFixture({ ...entry, projection })
+    );
+  }
+
   return {
-    fixtures: fixtures.length > 0 ? fixtures : [...DEFAULT_PARITY_FIXTURES],
+    fixtures,
     json,
     listFixtures,
     help
@@ -89,15 +109,17 @@ function parseArgs(args) {
 }
 
 function runParity(fixtures) {
-  const results = fixtures.map(compareFixture);
-  const failed = results.filter(result => result.status !== 'pass').length;
+  const results = fixtures.map((entry) => compareFixture(normalizeParityFixture(entry)));
+  const failed = results.filter((result) => result.status !== 'pass').length;
+  const projections = [...new Set(results.map((result) => result.projection))];
 
   return {
-    projection: PROJECTION_NAME,
+    projection: projections.length === 1 ? projections[0] : 'multiple',
+    projections,
     normalizerVersion: PROJECTION_NORMALIZER_VERSION,
     gitHead: gitHead(),
     lowerers: {
-      legacy: '@wesley/runtime-node GraphQLAdapter.parseSDL',
+      legacy: 'projection-owned JS lowerer',
       rust: WESLEY_CLI_BIN || `${CARGO} ${WESLEY_CLI_ARGS.join(' ')}`
     },
     summary: {
@@ -110,22 +132,22 @@ function runParity(fixtures) {
 }
 
 function compareFixture(fixture) {
-  const fixturePath = resolve(ROOT_DIR, fixture);
+  const fixturePath = resolve(ROOT_DIR, fixture.fixture);
   const displayPath = relative(ROOT_DIR, fixturePath);
+  const { projection } = fixture;
 
   try {
     if (!existsSync(fixturePath)) {
       throw new Error(`Fixture does not exist: ${displayPath}`);
     }
 
-    const legacyProjection = lowerLegacyProjection(fixturePath);
+    const legacyProjection = lowerLegacyProjection(fixturePath, projection);
     const rustIr = lowerRustL1(fixturePath);
-    const rustProjection = projectRustL1IR(rustIr);
+    const rustProjection = projectRustProjection(projection, rustIr);
     const legacyBytes = canonicalProjectionBytes(legacyProjection);
     const rustBytes = canonicalProjectionBytes(rustProjection);
-    const mismatch = legacyBytes === rustBytes
-      ? null
-      : firstMismatch(legacyProjection, rustProjection);
+    const mismatch =
+      legacyBytes === rustBytes ? null : firstMismatch(legacyProjection, rustProjection);
     const rustL1Hash = rustSemanticHash(rustIr);
     const rustCommandHash = runWesley(['schema', 'hash', '--schema', fixturePath]).trim();
     const rustTrackedHash = readTrackedHash(fixturePath);
@@ -139,6 +161,7 @@ function compareFixture(fixture) {
 
     return {
       fixture: displayPath,
+      projection,
       status: failureReasons.length > 0 ? 'fail' : 'pass',
       failureReasons,
       legacyBytes,
@@ -155,16 +178,17 @@ function compareFixture(fixture) {
   } catch (error) {
     return {
       fixture: displayPath,
+      projection,
       status: 'error',
       error: error?.message || String(error)
     };
   }
 }
 
-function lowerLegacyProjection(fixturePath) {
+function lowerLegacyProjection(fixturePath, projection) {
   const sdl = readFileSync(fixturePath, 'utf8');
-  const ir = new GraphQLAdapter().parseSDL(sdl);
-  return projectLegacyTableIR(ir);
+  const legacyIr = projection === TABLE_PROJECTION_NAME ? new GraphQLAdapter().parseSDL(sdl) : null;
+  return projectLegacyProjection(projection, { sdl, legacyIr });
 }
 
 function lowerRustL1(fixturePath) {
@@ -220,20 +244,21 @@ function readTrackedHash(fixturePath) {
 function printTextReport(report) {
   if (report.summary.failed === 0) {
     console.log(
-      `IR parity passed for ${report.summary.passed}/${report.summary.total} fixtures ` +
-      `using ${report.projection}.`
+      `IR parity passed for ${report.summary.passed}/${report.summary.total} fixture projections ` +
+        `using ${projectionSummary(report)}.`
     );
     return;
   }
 
   console.error(
-    `IR parity failed for ${report.summary.failed}/${report.summary.total} fixtures ` +
-    `using ${report.projection}.`
+    `IR parity failed for ${report.summary.failed}/${report.summary.total} fixture projections ` +
+      `using ${projectionSummary(report)}.`
   );
 
   for (const result of report.fixtures) {
     if (result.status === 'pass') continue;
     console.error(`- ${result.fixture}`);
+    console.error(`  projection: ${result.projection}`);
     console.error(`  status: ${result.status}`);
     if (result.error) {
       console.error(`  error: ${result.error}`);
@@ -253,18 +278,23 @@ function printTextReport(report) {
   }
 }
 
+function projectionSummary(report) {
+  if (report.projections.length === 1) return report.projections[0];
+  return `${report.projections.length} projections`;
+}
+
 function formatPreview(value) {
   if (typeof value === 'string') return value;
   return JSON.stringify(value);
 }
 
 function printHelp() {
-  console.log(`Usage: pnpm parity:ir [--json] [--list-fixtures] [--fixture <path> ...]
+  console.log(`Usage: pnpm parity:ir [--json] [--list-fixtures] [--fixture <path> ...] [--projection <name>]
 
-Compares the legacy JS table IR projection against the Rust L1 projection using
-${PROJECTION_NAME}. By default it runs the explicit v0 sentinel corpus:
+Compares explicit legacy/Rust IR parity projections. By default it runs the
+explicit v0 sentinel corpus with each fixture's owning projection:
 
-${DEFAULT_PARITY_FIXTURES.map(fixture => `  - ${fixture}`).join('\n')}`);
+${DEFAULT_PARITY_FIXTURES.map((fixture) => `  - ${formatParityFixture(fixture)}`).join('\n')}`);
 }
 
 try {

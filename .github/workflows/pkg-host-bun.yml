@@ -2,11 +2,11 @@ name: pkg-host-bun
 
 on:
   push:
-    branches: ["**"]
+    branches: ['**']
     paths:
       - 'packages/wesley-host-bun/**'
   pull_request:
-    branches: ["**"]
+    branches: ['**']
     paths:
       - 'packages/wesley-host-bun/**'
 

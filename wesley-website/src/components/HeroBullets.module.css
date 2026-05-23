@@ -31,16 +31,24 @@
   }
 }
 
-.control {}
-
-@media (max-width: 36em) {
-  .control { flex: 1; }
+.control {
 }
 
-.image { width: 376px; height: 356px; }
+@media (max-width: 36em) {
+  .control {
+    flex: 1;
+  }
+}
+
+.image {
+  width: 376px;
+  height: 356px;
+}
 
 @media (max-width: 62em) {
-  .image { display: none; }
+  .image {
+    display: none;
+  }
 }
 
 .highlight {
@@ -49,4 +57,3 @@
   border-radius: var(--mantine-radius-sm);
   padding: 4px 12px;
 }
-

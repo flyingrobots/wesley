@@ -6,7 +6,9 @@ export function createCommandEventCollector(ctx, run, options = {}) {
     runId: run.runId,
     transmutation: run.transmutation,
     eventStore: options.eventStore ?? ctx?.eventStore,
-    crashAfterEvent: resolveCrashAfterEvent(options.crashAfterEvent ?? ctx?.env?.WESLEY_CRASH_AFTER_EVENT),
+    crashAfterEvent: resolveCrashAfterEvent(
+      options.crashAfterEvent ?? ctx?.env?.WESLEY_CRASH_AFTER_EVENT
+    ),
     streamId: options.streamId,
     correlationId: options.correlationId
   });

@@ -1,5 +1,5 @@
 ---
-title: "Wesley Legends"
+title: 'Wesley Legends'
 ---
 
 ## Sponsors

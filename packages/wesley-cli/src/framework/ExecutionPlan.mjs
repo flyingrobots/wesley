@@ -24,4 +24,3 @@ export class ExecutionPlan {
 }
 
 export default ExecutionPlan;
-

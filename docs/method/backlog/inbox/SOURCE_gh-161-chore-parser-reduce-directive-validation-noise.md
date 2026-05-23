@@ -107,9 +107,9 @@ Update validation rules to whitelist known directives, consolidate warning outpu
 
 ### QA Sign-off Matrix
 
-| Environment | Surface | Owner | Status | Notes |
-| --- | --- | --- | --- | --- |
-| Unit tests | Parser validation | TBD | pending | |
+| Environment | Surface           | Owner | Status  | Notes |
+| ----------- | ----------------- | ----- | ------- | ----- |
+| Unit tests  | Parser validation | TBD   | pending |       |
 
 ## Requirements
 

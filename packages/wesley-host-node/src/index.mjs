@@ -46,7 +46,7 @@ export class GraphQLSchemaParser {
       return {
         getTables: () => schema.getTables(),
         toJSON: () => ({
-          tables: schema.getTables().map(t => t.toJSON ? t.toJSON() : t),
+          tables: schema.getTables().map((t) => (t.toJSON ? t.toJSON() : t)),
           raw: schemaSource
         }),
         raw: schemaSource
@@ -79,7 +79,7 @@ export class GraphQLSchemaParser {
         if (f.directives.unique) directives['@unique'] = {};
         if (f.directives.default) directives['@default'] = { expr: f.directives.default.value };
         if (f.directives.index) {
-          const idx = tableData.indexes?.find(i => i.fields?.includes(f.name));
+          const idx = tableData.indexes?.find((i) => i.fields?.includes(f.name));
           if (idx) directives['@index'] = { name: idx.name, using: idx.using };
           else directives['@index'] = {};
         }

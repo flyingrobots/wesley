@@ -59,7 +59,13 @@ export async function annotateErrorWithSDL(error, { fs } = {}) {
     if (result && result.source) {
       const src = result.source;
       const _columns = src.columns ? `, columns ${src.columns}` : '';
-      return { file: src.file, lines: src.lines, columns: src.columns || null, uid: result.uid, matchedSql: { file: f, line: loc.line } };
+      return {
+        file: src.file,
+        lines: src.lines,
+        columns: src.columns || null,
+        uid: result.uid,
+        matchedSql: { file: f, line: loc.line }
+      };
     }
   }
   return null;

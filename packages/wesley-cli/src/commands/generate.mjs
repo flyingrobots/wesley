@@ -33,7 +33,12 @@ import {
 
 export class GeneratePipelineCommand extends WesleyCommand {
   constructor(ctx, options = {}) {
-    super(ctx, 'generate', 'Generate artifacts from GraphQL schema through registered transmutations', options);
+    super(
+      ctx,
+      'generate',
+      'Generate artifacts from GraphQL schema through registered transmutations',
+      options
+    );
     this.requiresSchema = true;
   }
 
@@ -46,7 +51,11 @@ export class GeneratePipelineCommand extends WesleyCommand {
       .option('--dry-run', 'Show what would be generated without writing files')
       .option('--allow-dirty', 'Allow running with a dirty git working tree (not recommended)')
       .option('--i-know-what-im-doing', 'Acknowledge hazardous flags in CI environments')
-      .option('--transmutation <name>', `Transmutation to execute (${formatTransmutationChoices()})`, getDefaultTransmutationName())
+      .option(
+        '--transmutation <name>',
+        `Transmutation to execute (${formatTransmutationChoices()})`,
+        getDefaultTransmutationName()
+      )
       .option('--run-id <id>', 'Associate this execution with a specific run ID')
       .option('--resume', 'Resume a previously started run with the same transmutation and run ID')
       .option('--debug', 'Debug output with stack traces')
@@ -54,7 +63,10 @@ export class GeneratePipelineCommand extends WesleyCommand {
       .option('--json', 'Emit newline-delimited JSON logs')
       .option('--log-level <level>', 'One of: error|warn|info|debug|trace')
       .option('--show-plan', 'Display execution plan before running')
-      .option('--unit <units...>', 'Compilation unit IDs to generate for (repeatable or comma-separated)')
+      .option(
+        '--unit <units...>',
+        'Compilation unit IDs to generate for (repeatable or comma-separated)'
+      )
       .option('--schema-root <dir>', 'Root directory for resolving @wes_import paths')
       .option('--print-composed-sdl', 'Print the composed/mangled SDL to stdout (debug)')
       .option('--print-ir', 'Print the parsed IR as JSON to stdout (debug)');
@@ -66,10 +78,13 @@ export class GeneratePipelineCommand extends WesleyCommand {
     const commandName = options.commandName;
     const outDir = options.outDir || this.ctx?.config?.paths?.output || 'out';
     options.outDir = outDir;
-    const requestedTransmutation = String(options.transmutation || getDefaultTransmutationName()).trim() || getDefaultTransmutationName();
-    const requestedRunId = typeof options.runId === 'string' && options.runId.trim()
-      ? options.runId.trim()
-      : createRunId();
+    const requestedTransmutation =
+      String(options.transmutation || getDefaultTransmutationName()).trim() ||
+      getDefaultTransmutationName();
+    const requestedRunId =
+      typeof options.runId === 'string' && options.runId.trim()
+        ? options.runId.trim()
+        : createRunId();
     assertResumeRequestedRunId(options);
 
     if (options.stdin) {
@@ -106,10 +121,10 @@ export class GeneratePipelineCommand extends WesleyCommand {
 
     const resumeState = options.resume
       ? resolveResumeState(this.ctx?.eventStore, {
-        runId: options.runId,
-        transmutation: options.transmutation,
-        command: commandName
-      })
+          runId: options.runId,
+          transmutation: options.transmutation,
+          command: commandName
+        })
       : null;
     if (resumeState?.shortCircuited) {
       return buildShortCircuitedResumeResult(resumeState);
@@ -137,8 +152,15 @@ export class GeneratePipelineCommand extends WesleyCommand {
       options.printIr ||
       options.printComposedSdl ||
       registration.supportsTasksRunner !== true;
-    const useExperimentalTasksRunner = String(this.ctx?.env?.WESLEY_EXPERIMENTAL_TASKS || '') === '1';
-    if (planner && planner.buildPlan && useExperimentalTasksRunner && !needsSequentialPipeline && !options.resume) {
+    const useExperimentalTasksRunner =
+      String(this.ctx?.env?.WESLEY_EXPERIMENTAL_TASKS || '') === '1';
+    if (
+      planner &&
+      planner.buildPlan &&
+      useExperimentalTasksRunner &&
+      !needsSequentialPipeline &&
+      !options.resume
+    ) {
       return this.executeWithTaskGraph(context);
     }
 

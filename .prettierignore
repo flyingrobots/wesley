@@ -30,3 +30,8 @@ junit.xml
 # Generated files
 migrations/
 .migration_archive/
+.graft/
+
+# Wesley compiler inputs and fixture truth
+*.graphql
+test/fixtures/ir-parity/*.l1.json

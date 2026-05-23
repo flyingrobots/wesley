@@ -44,15 +44,15 @@ export class CleanFormatter extends EventEmitter {
 
     return {
       success: (text) => `\u001b[32m${text}\u001b[0m`, // Green
-      error: (text) => `\u001b[31m${text}\u001b[0m`,   // Red
+      error: (text) => `\u001b[31m${text}\u001b[0m`, // Red
       warning: (text) => `\u001b[33m${text}\u001b[0m`, // Yellow
-      info: (text) => `\u001b[36m${text}\u001b[0m`,    // Cyan
-      dim: (text) => `\u001b[2m${text}\u001b[0m`,      // Dim
-      bold: (text) => `\u001b[1m${text}\u001b[0m`,     // Bold
-      cyan: (text) => `\u001b[36m${text}\u001b[0m`,    // Cyan
-      green: (text) => `\u001b[32m${text}\u001b[0m`,   // Green
-      red: (text) => `\u001b[31m${text}\u001b[0m`,     // Red
-      yellow: (text) => `\u001b[33m${text}\u001b[0m`   // Yellow
+      info: (text) => `\u001b[36m${text}\u001b[0m`, // Cyan
+      dim: (text) => `\u001b[2m${text}\u001b[0m`, // Dim
+      bold: (text) => `\u001b[1m${text}\u001b[0m`, // Bold
+      cyan: (text) => `\u001b[36m${text}\u001b[0m`, // Cyan
+      green: (text) => `\u001b[32m${text}\u001b[0m`, // Green
+      red: (text) => `\u001b[31m${text}\u001b[0m`, // Red
+      yellow: (text) => `\u001b[33m${text}\u001b[0m` // Yellow
     };
   }
 
@@ -118,27 +118,27 @@ export class CleanFormatter extends EventEmitter {
     let symbol, colorFn;
 
     switch (status) {
-    case 'start':
-      symbol = this.symbols.progress;
-      colorFn = this.colors.info;
-      break;
-    case 'success':
-      symbol = this.symbols.success;
-      colorFn = this.colors.success;
-      this.completedCount++;
-      break;
-    case 'error':
-      symbol = this.symbols.error;
-      colorFn = this.colors.error;
-      this.failedCount++;
-      break;
-    case 'warning':
-      symbol = this.symbols.warning;
-      colorFn = this.colors.warning;
-      break;
-    default:
-      symbol = this.symbols.info;
-      colorFn = this.colors.info;
+      case 'start':
+        symbol = this.symbols.progress;
+        colorFn = this.colors.info;
+        break;
+      case 'success':
+        symbol = this.symbols.success;
+        colorFn = this.colors.success;
+        this.completedCount++;
+        break;
+      case 'error':
+        symbol = this.symbols.error;
+        colorFn = this.colors.error;
+        this.failedCount++;
+        break;
+      case 'warning':
+        symbol = this.symbols.warning;
+        colorFn = this.colors.warning;
+        break;
+      default:
+        symbol = this.symbols.info;
+        colorFn = this.colors.info;
     }
 
     let output = `${timestamp}${colorFn(symbol)} ${message}`;
@@ -151,7 +151,7 @@ export class CleanFormatter extends EventEmitter {
 
     if (details.error && this.options.verbose) {
       const errorLines = details.error.split('\n');
-      errorLines.forEach(line => {
+      errorLines.forEach((line) => {
         if (line.trim()) {
           console.log(`  ${this.colors.dim('│')} ${this.colors.red(line)}`);
         }
@@ -194,24 +194,34 @@ export class CleanFormatter extends EventEmitter {
     // Statistics
     console.log();
     console.log(this.colors.bold('Summary:'));
-    console.log(`  ${this.colors.bullet} Operations completed: ${this.colors.green(this.completedCount)}`);
+    console.log(
+      `  ${this.colors.bullet} Operations completed: ${this.colors.green(this.completedCount)}`
+    );
 
     if (this.failedCount > 0) {
-      console.log(`  ${this.colors.bullet} Operations failed: ${this.colors.red(this.failedCount)}`);
+      console.log(
+        `  ${this.colors.bullet} Operations failed: ${this.colors.red(this.failedCount)}`
+      );
     }
 
     console.log(`  ${this.colors.bullet} Duration: ${this.colors.cyan(`${durationSeconds}s`)}`);
 
     if (stats.tablesCreated) {
-      console.log(`  ${this.colors.bullet} Tables created: ${this.colors.info(stats.tablesCreated)}`);
+      console.log(
+        `  ${this.colors.bullet} Tables created: ${this.colors.info(stats.tablesCreated)}`
+      );
     }
 
     if (stats.indexesCreated) {
-      console.log(`  ${this.colors.bullet} Indexes created: ${this.colors.info(stats.indexesCreated)}`);
+      console.log(
+        `  ${this.colors.bullet} Indexes created: ${this.colors.info(stats.indexesCreated)}`
+      );
     }
 
     if (stats.functionsCreated) {
-      console.log(`  ${this.colors.bullet} Functions created: ${this.colors.info(stats.functionsCreated)}`);
+      console.log(
+        `  ${this.colors.bullet} Functions created: ${this.colors.info(stats.functionsCreated)}`
+      );
     }
 
     console.log();
@@ -238,7 +248,9 @@ export class CleanFormatter extends EventEmitter {
    */
   formatError(error, context = {}) {
     const timestamp = this.formatTimestamp();
-    console.log(`${timestamp}${this.colors.error(this.symbols.error)} ${this.colors.red('ERROR:')} ${error.message}`);
+    console.log(
+      `${timestamp}${this.colors.error(this.symbols.error)} ${this.colors.red('ERROR:')} ${error.message}`
+    );
 
     if (context.operation) {
       console.log(`  ${this.colors.dim('Operation:')} ${context.operation}`);
@@ -250,7 +262,7 @@ export class CleanFormatter extends EventEmitter {
 
     if (error.stack && this.options.verbose) {
       const stackLines = error.stack.split('\n').slice(1, 5); // Show top 4 stack frames
-      stackLines.forEach(line => {
+      stackLines.forEach((line) => {
         console.log(`  ${this.colors.dim(line.trim())}`);
       });
     }
@@ -303,27 +315,31 @@ class ProgressBar {
 
     if (!process.stdout.isTTY) {
       // Non-TTY: Just show periodic updates
-      if (this.current % Math.max(1, Math.floor(this.total / 10)) === 0 || this.current === this.total) {
+      if (
+        this.current % Math.max(1, Math.floor(this.total / 10)) === 0 ||
+        this.current === this.total
+      ) {
         console.log(`${this.label}: ${this.current}/${this.total} ${message}`);
       }
       return;
     }
 
-    const percent = this.total > 0 ? (this.current / this.total) : 0;
+    const percent = this.total > 0 ? this.current / this.total : 0;
     const barLength = Math.min(30, this.options.width - 50);
     const filled = Math.floor(barLength * percent);
     const empty = barLength - filled;
 
-    const bar = this.options.colors !== false
-      ? `\u001b[32m${'█'.repeat(filled)}\u001b[0m${'░'.repeat(empty)}`
-      : `${'#'.repeat(filled)}${'.'.repeat(empty)}`;
+    const bar =
+      this.options.colors !== false
+        ? `\u001b[32m${'█'.repeat(filled)}\u001b[0m${'░'.repeat(empty)}`
+        : `${'#'.repeat(filled)}${'.'.repeat(empty)}`;
 
     const percentText = `${(percent * 100).toFixed(1)}%`.padStart(6);
     const progress = `${this.current}/${this.total}`.padStart(10);
 
     // Calculate ETA
     const elapsed = now - this.startTime;
-    const eta = percent > 0 ? ((elapsed / percent) - elapsed) : 0;
+    const eta = percent > 0 ? elapsed / percent - elapsed : 0;
     const etaText = eta > 0 ? this.formatDuration(eta) : '--:--';
 
     let line = `${this.label}: [${bar}] ${percentText} ${progress} ETA: ${etaText}`;

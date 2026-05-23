@@ -1,4 +1,5 @@
 # Wesley Module Capability Contract
+
 <!-- docs-truth: status=current owner=@flyingrobots -->
 
 This note defines the next real module boundary for Wesley.

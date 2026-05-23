@@ -39,9 +39,7 @@ export class VuePlugin extends GeneratorPlugin {
    */
   async plan(schema, _context) {
     return {
-      artifacts: [
-        { path: this.#outPath, reason: 'Vue TypeScript type definitions' }
-      ],
+      artifacts: [{ path: this.#outPath, reason: 'Vue TypeScript type definitions' }],
       metadata: {
         ir: schema.ir ?? schema,
         outPath: this.#outPath

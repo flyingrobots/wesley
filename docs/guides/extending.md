@@ -7,14 +7,14 @@ put domain behavior where that domain lives."
 
 ## Extension Decision Table
 
-| Goal | Put It Here | Why |
-| --- | --- | --- |
-| Parse or lower more domain-empty GraphQL semantics | `crates/wesley-core` | Core owns GraphQL syntax, L1 IR, schema diffs, operation catalogs, selection resolution, and directive argument extraction. |
-| Add a native user command over existing Rust facts | `crates/wesley-cli` | The CLI is the Rust product front door and should stay a thin shell around library APIs. |
-| Emit generic Rust data models or operation bindings | `crates/wesley-emit-rust` | The projection is reusable and does not smuggle database, Echo, or product assumptions into core. |
-| Emit generic TypeScript declarations or operation bindings | `crates/wesley-emit-typescript` | The projection is reusable and derived from L1 IR plus schema operation data. |
-| Add PostgreSQL, Echo, Continuum, jedit, or other domain behavior | External module or external crate | Domain targets own their policy, runtime semantics, witnesses, and release conventions. |
-| Add release or repository automation | `xtask` | `xtask` is the maintenance front door, not user-facing compiler behavior. |
+| Goal                                                             | Put It Here                       | Why                                                                                                                         |
+| ---------------------------------------------------------------- | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Parse or lower more domain-empty GraphQL semantics               | `crates/wesley-core`              | Core owns GraphQL syntax, L1 IR, schema diffs, operation catalogs, selection resolution, and directive argument extraction. |
+| Add a native user command over existing Rust facts               | `crates/wesley-cli`               | The CLI is the Rust product front door and should stay a thin shell around library APIs.                                    |
+| Emit generic Rust data models or operation bindings              | `crates/wesley-emit-rust`         | The projection is reusable and does not smuggle database, Echo, or product assumptions into core.                           |
+| Emit generic TypeScript declarations or operation bindings       | `crates/wesley-emit-typescript`   | The projection is reusable and derived from L1 IR plus schema operation data.                                               |
+| Add PostgreSQL, Echo, Continuum, jedit, or other domain behavior | External module or external crate | Domain targets own their policy, runtime semantics, witnesses, and release conventions.                                     |
+| Add release or repository automation                             | `xtask`                           | `xtask` is the maintenance front door, not user-facing compiler behavior.                                                   |
 
 ## Rust Core Extensions
 
@@ -119,10 +119,10 @@ export default {
     {
       specifier: './my-wesley-module.mjs',
       config: {
-        output: 'generated',
-      },
-    },
-  ],
+        output: 'generated'
+      }
+    }
+  ]
 };
 ```
 
@@ -136,11 +136,11 @@ export default {
       targets: [
         {
           name: 'my-domain',
-          description: 'Emit my-domain artifacts from Wesley compiler facts',
-        },
-      ],
-    },
-  },
+          description: 'Emit my-domain artifacts from Wesley compiler facts'
+        }
+      ]
+    }
+  }
 };
 ```
 

@@ -6,21 +6,9 @@ export const WESLEY_MODULE_CAPABILITY_COLLECTIONS = Object.freeze({
     'bundleProfiles',
     'realizationVerifiers'
   ]),
-  holmes: Object.freeze([
-    'scopes',
-    'checks',
-    'evidenceCollectors',
-    'counterfactualProviders'
-  ]),
-  watson: Object.freeze([
-    'verifiers',
-    'auditProfiles'
-  ]),
-  moriarty: Object.freeze([
-    'policyProfiles',
-    'judgmentProfiles',
-    'predictors'
-  ]),
+  holmes: Object.freeze(['scopes', 'checks', 'evidenceCollectors', 'counterfactualProviders']),
+  watson: Object.freeze(['verifiers', 'auditProfiles']),
+  moriarty: Object.freeze(['policyProfiles', 'judgmentProfiles', 'predictors']),
   blade: Object.freeze([
     'scenarios',
     'fixtures',
@@ -29,9 +17,7 @@ export const WESLEY_MODULE_CAPABILITY_COLLECTIONS = Object.freeze({
     'gates',
     'certificationProfiles'
   ]),
-  cli: Object.freeze([
-    'commands'
-  ])
+  cli: Object.freeze(['commands'])
 });
 
 export const WESLEY_MODULE_CAPABILITY_AREAS = Object.freeze(
@@ -45,11 +31,7 @@ function fail(message, code = 'WMOD005') {
 }
 
 function isPlainObject(value) {
-  return (
-    value !== null &&
-    typeof value === 'object' &&
-    !Array.isArray(value)
-  );
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
 function describeValue(value) {
@@ -63,10 +45,7 @@ function emptyCapabilities() {
     WESLEY_MODULE_CAPABILITY_AREAS.map((area) => [
       area,
       Object.fromEntries(
-        WESLEY_MODULE_CAPABILITY_COLLECTIONS[area].map((collection) => [
-          collection,
-          []
-        ])
+        WESLEY_MODULE_CAPABILITY_COLLECTIONS[area].map((collection) => [collection, []])
       )
     ])
   );
@@ -106,9 +85,7 @@ function freezeRegistryCapabilities(capabilities) {
 }
 
 function getModuleLabel(module) {
-  return typeof module?.name === 'string' && module.name.trim()
-    ? module.name.trim()
-    : '<unknown>';
+  return typeof module?.name === 'string' && module.name.trim() ? module.name.trim() : '<unknown>';
 }
 
 function readCapabilities(module) {
@@ -131,7 +108,7 @@ export function normalizeModuleCapabilities(module) {
   if (!isPlainObject(rawCapabilities)) {
     fail(
       `Module "${moduleName}" capabilities must be a plain object if provided ` +
-      `(got ${describeValue(rawCapabilities)})`
+        `(got ${describeValue(rawCapabilities)})`
     );
   }
 
@@ -139,7 +116,7 @@ export function normalizeModuleCapabilities(module) {
     if (!WESLEY_MODULE_CAPABILITY_AREAS.includes(area)) {
       fail(
         `Module "${moduleName}" capabilities contains unknown area "${area}". ` +
-        `Supported areas: ${WESLEY_MODULE_CAPABILITY_AREAS.join(', ')}`
+          `Supported areas: ${WESLEY_MODULE_CAPABILITY_AREAS.join(', ')}`
       );
     }
 
@@ -150,7 +127,7 @@ export function normalizeModuleCapabilities(module) {
     if (!isPlainObject(areaValue)) {
       fail(
         `Module "${moduleName}" capabilities.${area} must be a plain object ` +
-        `(got ${describeValue(areaValue)})`
+          `(got ${describeValue(areaValue)})`
       );
     }
 
@@ -159,7 +136,7 @@ export function normalizeModuleCapabilities(module) {
       if (!allowedCollections.includes(collection)) {
         fail(
           `Module "${moduleName}" capabilities.${area} contains unknown collection ` +
-          `"${collection}". Supported ${area} collections: ${allowedCollections.join(', ')}`
+            `"${collection}". Supported ${area} collections: ${allowedCollections.join(', ')}`
         );
       }
 
@@ -170,14 +147,16 @@ export function normalizeModuleCapabilities(module) {
       if (!Array.isArray(collectionValue)) {
         fail(
           `Module "${moduleName}" capabilities.${area}.${collection} must be an array ` +
-          `(got ${describeValue(collectionValue)})`
+            `(got ${describeValue(collectionValue)})`
         );
       }
 
-      normalized[area][collection] = collectionValue.map((value) => Object.freeze({
-        moduleName,
-        value: cloneAndFreezeCapability(value)
-      }));
+      normalized[area][collection] = collectionValue.map((value) =>
+        Object.freeze({
+          moduleName,
+          value: cloneAndFreezeCapability(value)
+        })
+      );
     }
   }
 
@@ -194,10 +173,12 @@ export function createModuleCapabilityRegistry(modules = []) {
 
   for (const module of modules) {
     const moduleName = getModuleLabel(module);
-    moduleSummaries.push(Object.freeze({
-      name: moduleName,
-      apiVersion: module.apiVersion
-    }));
+    moduleSummaries.push(
+      Object.freeze({
+        name: moduleName,
+        apiVersion: module.apiVersion
+      })
+    );
 
     const normalized = normalizeModuleCapabilities(module);
     for (const area of WESLEY_MODULE_CAPABILITY_AREAS) {

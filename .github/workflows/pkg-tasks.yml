@@ -2,13 +2,13 @@ name: pkg-tasks
 
 on:
   push:
-    branches: ["**"]
+    branches: ['**']
     paths:
       - 'packages/wesley-tasks/**'
       - 'pnpm-lock.yaml'
       - 'package.json'
   pull_request:
-    branches: ["**"]
+    branches: ['**']
     paths:
       - 'packages/wesley-tasks/**'
 
@@ -35,5 +35,5 @@ jobs:
         run: corepack enable
       - name: Install deps
         run: pnpm install --frozen-lockfile
-      - name: "@wesley/tasks tests"
+      - name: '@wesley/tasks tests'
         run: pnpm --filter @wesley/tasks test

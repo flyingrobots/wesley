@@ -90,7 +90,9 @@ test('schemaHash: changing a field type → changes hash', async () => {
 
 test('schemaHash: adding a directive → changes hash', async () => {
   const without = await schemaHash('directive @auth on FIELD_DEFINITION\ntype Query { x: Int }');
-  const with_ = await schemaHash('directive @auth on FIELD_DEFINITION\ntype Query { x: Int @auth }');
+  const with_ = await schemaHash(
+    'directive @auth on FIELD_DEFINITION\ntype Query { x: Int @auth }'
+  );
   assert.notEqual(without, with_);
 });
 

@@ -46,18 +46,27 @@ importers:
       eslint:
         specifier: ^9.38.0
         version: 9.38.0
+      eslint-config-prettier:
+        specifier: 10.1.8
+        version: 10.1.8(eslint@9.38.0)
       eslint-plugin-promise:
         specifier: ^7.2.1
         version: 7.2.1(eslint@9.38.0)
       globals:
         specifier: ^16.4.0
         version: 16.4.0
+      graphql:
+        specifier: 16.11.0
+        version: 16.11.0
       postcss:
         specifier: ^8.5.14
         version: 8.5.14
       postcss-nesting:
         specifier: ^13.0.2
         version: 13.0.2(postcss@8.5.14)
+      prettier:
+        specifier: 3.8.3
+        version: 3.8.3
 
   packages/wesley-cli:
     dependencies:
@@ -1727,6 +1736,12 @@ packages:
       eslint-plugin-react: ^7.35.0
       typescript-eslint: ^8.3.0
 
+  eslint-config-prettier@10.1.8:
+    resolution: {integrity: sha512-82GZUjRS0p/jganf6q1rEO25VSoHH0hKPCTrgillPjdI/3bgBhAE1QzHrHTizjpRvy6pGAvKjDJtk2pF9NDq8w==}
+    hasBin: true
+    peerDependencies:
+      eslint: '>=7.0.0'
+
   eslint-plugin-jsx-a11y@6.10.2:
     resolution: {integrity: sha512-scB3nz4WmG75pV8+3eRUQOHZlNSUhFNq37xnpgRkCCELU3XMvXAxLk1eqWWyE22Ki4Q01Fnsw9BA3cJHDPgn2Q==}
     engines: {node: '>=4.0'}
@@ -2562,6 +2577,11 @@ packages:
   prelude-ls@1.2.1:
     resolution: {integrity: sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g==}
     engines: {node: '>= 0.8.0'}
+
+  prettier@3.8.3:
+    resolution: {integrity: sha512-7igPTM53cGHMW8xWuVTydi2KO233VFiTNyF5hLJqpilHfmn8C8gPf+PS7dUT64YcXFbiMGZxS9pCSxL/Dxm/Jw==}
+    engines: {node: '>=14'}
+    hasBin: true
 
   pretty-format@27.5.1:
     resolution: {integrity: sha512-Qb1gy5OrP5+zDf2Bvnzdl3jsTf1qXVMazbvCoKhtKqVs4/YK4ozX4gKQJJVyNe+cajNPn0KoC0MC3FUmaHWEmQ==}
@@ -4778,6 +4798,10 @@ snapshots:
       eslint-plugin-react: 7.37.5(eslint@9.38.0)
       typescript-eslint: 8.46.2(eslint@9.38.0)(typescript@5.9.3)
 
+  eslint-config-prettier@10.1.8(eslint@9.38.0):
+    dependencies:
+      eslint: 9.38.0
+
   eslint-plugin-jsx-a11y@6.10.2(eslint@9.38.0):
     dependencies:
       aria-query: 5.3.2
@@ -5651,6 +5675,8 @@ snapshots:
       source-map-js: 1.2.1
 
   prelude-ls@1.2.1: {}
+
+  prettier@3.8.3: {}
 
   pretty-format@27.5.1:
     dependencies:

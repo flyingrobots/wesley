@@ -108,10 +108,10 @@ Normalize schema representation (sorted JSON), hash via SHA-256, insert into bun
 
 ### QA Sign-off Matrix
 
-| Environment | Surface | Owner | Status | Notes |
-| --- | --- | --- | --- | --- |
-| Unit tests | Hash utility | TBD | pending | |
-| Integration | HOLMES ingest | TBD | pending | |
+| Environment | Surface       | Owner | Status  | Notes |
+| ----------- | ------------- | ----- | ------- | ----- |
+| Unit tests  | Hash utility  | TBD   | pending |       |
+| Integration | HOLMES ingest | TBD   | pending |       |
 
 ## Requirements
 

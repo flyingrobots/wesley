@@ -23,11 +23,11 @@ Set up the Playground webpage with a terminal emulator that handles commands and
 
 ## User Story
 
-|  |  |
-|--|--|
-| **As a** | Playground user |
-| **I want** | A terminal-style UX that feels like using a real terminal emulator |
-| **So that** | It feels just like using Wesley "at home" |
+|             |                                                                    |
+| ----------- | ------------------------------------------------------------------ |
+| **As a**    | Playground user                                                    |
+| **I want**  | A terminal-style UX that feels like using a real terminal emulator |
+| **So that** | It feels just like using Wesley "at home"                          |
 
 ## Acceptance Critiera
 

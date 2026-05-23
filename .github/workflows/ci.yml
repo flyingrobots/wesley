@@ -64,7 +64,7 @@ jobs:
         env:
           BATS_LIB_PATH: packages/wesley-cli/test
           TERM: xterm
-          BATS_NO_COLOR: "1"
+          BATS_NO_COLOR: '1'
         run: |
           # Ensure tests that use `load 'bats-plugins/…'` from the repo-level
           # `test/` directory can resolve plugins.

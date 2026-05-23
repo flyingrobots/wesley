@@ -11,6 +11,7 @@ coverage-debt card. Product scaffolding is extraction debt, not generic Wesley
 release progress.
 
 Done when:
+
 - each named package has a visible minimum regression suite
 - host-browser coverage extends beyond the current shallow path
 - repo truth can point to package-level coverage intent without relying on a root TODO

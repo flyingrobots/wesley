@@ -10,7 +10,12 @@ export { canonicalize } from './domain/canonicalize.mjs';
 export { schemaHash } from './domain/schemaHash.mjs';
 export { registryHash, canonicalizeJSON } from './domain/registryHash.mjs';
 export { computeLayoutHash, buildLayoutDescriptor, encodingForType } from './domain/layoutHash.mjs';
-export { computeHashChain, computeSdlHash, computeIrHash, computeBundleHash } from './domain/hashChain.mjs';
+export {
+  computeHashChain,
+  computeSdlHash,
+  computeIrHash,
+  computeBundleHash
+} from './domain/hashChain.mjs';
 export { computeDelta } from './domain/schemaDelta.mjs';
 
 // Domain Errors
@@ -30,7 +35,10 @@ export { LoweringEngine, createLoweredSchemaEnvelope } from './application/Lower
 export { irToSchema } from './application/irToSchema.mjs';
 export { EvidenceMap } from './application/EvidenceMap.mjs';
 export { mergePluginEvidenceIntoMap } from './application/EvidenceMap.mjs';
-export { createGeneratedArtifactResolver, enrichBundleWithEvidenceTruth } from './application/GeneratedBundle.mjs';
+export {
+  createGeneratedArtifactResolver,
+  enrichBundleWithEvidenceTruth
+} from './application/GeneratedBundle.mjs';
 export {
   adjustReadinessVerdictForEvidenceTrust,
   assessEvidenceTrust,
@@ -71,7 +79,11 @@ export {
   generatedArtifactPathCandidates
 } from './application/GeneratedArtifactPaths.mjs';
 export { MemoryEventStore } from './application/MemoryEventStore.mjs';
-export { createRuntimeEventCollector, createRuntimeStreamId, RUNTIME_EVENT_SCHEMA_VERSION } from './application/RuntimeEvents.mjs';
+export {
+  createRuntimeEventCollector,
+  createRuntimeStreamId,
+  RUNTIME_EVENT_SCHEMA_VERSION
+} from './application/RuntimeEvents.mjs';
 export { buildRuntimeRunReport, applyRuntimeEvent } from './application/RuntimeRunReport.mjs';
 export {
   RUNTIME_RUN_SNAPSHOT_SCHEMA_VERSION,
@@ -125,8 +137,18 @@ export { FileSystemPort } from './ports/fs.mjs';
 // Fixed case sensitivity: logger.mjs -> Logger.mjs
 export { LoggerPort } from './ports/Logger.mjs';
 export { ClockPort, SystemClock, FakeClock, systemClock } from './ports/clock.mjs';
-export { GeneratorPlugin, validatePlugin, validatePlan, validateGenerateResult, SUPPORTED_API_VERSIONS } from './ports/GeneratorPlugin.mjs';
-export { WesleyModule, validateWesleyModule, SUPPORTED_WESLEY_MODULE_API_VERSIONS } from './ports/WesleyModule.mjs';
+export {
+  GeneratorPlugin,
+  validatePlugin,
+  validatePlan,
+  validateGenerateResult,
+  SUPPORTED_API_VERSIONS
+} from './ports/GeneratorPlugin.mjs';
+export {
+  WesleyModule,
+  validateWesleyModule,
+  SUPPORTED_WESLEY_MODULE_API_VERSIONS
+} from './ports/WesleyModule.mjs';
 export { ArtifactWriterPort, detectConflicts } from './ports/ArtifactWriter.mjs';
 export { EventStorePort, assertEventStorePort } from './ports/EventStore.mjs';
 

@@ -50,7 +50,10 @@ class FakeProcess {
 
   off(eventName, handler) {
     const handlers = this.listeners.get(eventName) || [];
-    this.listeners.set(eventName, handlers.filter((candidate) => candidate !== handler));
+    this.listeners.set(
+      eventName,
+      handlers.filter((candidate) => candidate !== handler)
+    );
   }
 
   listenerCount(eventName) {

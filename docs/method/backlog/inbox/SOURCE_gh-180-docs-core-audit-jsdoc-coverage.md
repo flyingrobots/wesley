@@ -106,9 +106,9 @@ Review modules, update or add JSDoc blocks, note any internal APIs to exclude, o
 
 ### QA Sign-off Matrix
 
-| Environment | Surface | Owner | Status | Notes |
-| --- | --- | --- | --- | --- |
-| n/a | Comments | n/a | n/a | Documentation task |
+| Environment | Surface  | Owner | Status | Notes              |
+| ----------- | -------- | ----- | ------ | ------------------ |
+| n/a         | Comments | n/a   | n/a    | Documentation task |
 
 ## Requirements
 

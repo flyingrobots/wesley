@@ -22,6 +22,7 @@ Source: ROADMAP_2.md backlog
 Track the post-GA roadmap item for an external plugin SDK.
 
 Done when:
+
 - external plugin authors have a stable SDK surface
 - the SDK covers the supported plugin lifecycle/contracts
 - example external plugins and docs exist

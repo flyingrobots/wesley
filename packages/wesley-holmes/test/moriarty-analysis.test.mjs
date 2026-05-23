@@ -97,7 +97,10 @@ test('counterfactual judgment becomes a first-class readiness signal in Moriarty
   assert.equal(result.explain.readiness.counterfactual.pass, false);
   assert.equal(result.explain.readiness.counterfactual.value, 'audit');
   assert.equal(result.explain.readiness.counterfactual.status, 'divergent');
-  assert.ok(result.confidence < baselineConfidence, 'counterfactual adjustment should lower confidence');
+  assert.ok(
+    result.confidence < baselineConfidence,
+    'counterfactual adjustment should lower confidence'
+  );
   assert.ok(
     result.warnings.some((warning) => warning.includes('Counterfactual gate is audit')),
     'counterfactual gate warning should be surfaced'

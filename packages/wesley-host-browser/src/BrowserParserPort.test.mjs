@@ -134,7 +134,7 @@ describe('field structure', () => {
         meta: JSON
       }
     `);
-    const byName = Object.fromEntries(ir.tables[0].fields.map(f => [f.name, f]));
+    const byName = Object.fromEntries(ir.tables[0].fields.map((f) => [f.name, f]));
     expect(byName.id.type.base).toBe('ID');
     expect(byName.name.type.base).toBe('String');
     expect(byName.age.type.base).toBe('Int');
@@ -153,7 +153,7 @@ describe('field structure', () => {
         tags: [String]
       }
     `);
-    const tags = ir.tables[0].fields.find(f => f.name === 'tags');
+    const tags = ir.tables[0].fields.find((f) => f.name === 'tags');
     expect(tags.type.isList).toBe(true);
     expect(tags.type.base).toBe('String');
   });
@@ -166,7 +166,7 @@ describe('field structure', () => {
         bio: String
       }
     `);
-    const byName = Object.fromEntries(ir.tables[0].fields.map(f => [f.name, f]));
+    const byName = Object.fromEntries(ir.tables[0].fields.map((f) => [f.name, f]));
     expect(byName.id.nullable).toBe(false);
     expect(byName.email.nullable).toBe(false);
     expect(byName.bio.nullable).toBe(true);
@@ -188,7 +188,7 @@ describe('field directives', () => {
         email: String! @wes_unique
       }
     `);
-    const email = ir.tables[0].fields.find(f => f.name === 'email');
+    const email = ir.tables[0].fields.find((f) => f.name === 'email');
     expect(email.directives.unique).toBe(true);
   });
 
@@ -199,7 +199,7 @@ describe('field directives', () => {
         email: String! @wes_index
       }
     `);
-    const email = ir.tables[0].fields.find(f => f.name === 'email');
+    const email = ir.tables[0].fields.find((f) => f.name === 'email');
     expect(email.directives.index).toBe(true);
   });
 
@@ -210,7 +210,7 @@ describe('field directives', () => {
         status: String! @wes_default(value: "active")
       }
     `);
-    const status = ir.tables[0].fields.find(f => f.name === 'status');
+    const status = ir.tables[0].fields.find((f) => f.name === 'status');
     expect(status.directives.default).toEqual({ value: 'active' });
   });
 
@@ -221,7 +221,7 @@ describe('field directives', () => {
         org_id: ID! @wes_fk(ref: "Org.id")
       }
     `);
-    const orgId = ir.tables[0].fields.find(f => f.name === 'org_id');
+    const orgId = ir.tables[0].fields.find((f) => f.name === 'org_id');
     expect(orgId.directives.fk).toEqual({ targetTable: 'Org', targetField: 'id' });
   });
 });

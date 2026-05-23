@@ -37,7 +37,5 @@
       "label": "PostgreSQL"
     }
   },
-  "runArgs": [
-    "--init"
-  ]
+  "runArgs": ["--init"]
 }

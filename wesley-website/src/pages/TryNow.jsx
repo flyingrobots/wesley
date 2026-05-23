@@ -52,7 +52,7 @@ const initialDbState = {
   tableSchema: [],
   queryText: "SELECT * FROM pg_catalog.pg_tables WHERE schemaname = 'public';",
   queryResult: null,
-  errors: [],
+  errors: []
 };
 
 function dbReducer(state, action) {
@@ -74,7 +74,7 @@ function dbReducer(state, action) {
     case 'ADD_ERROR':
       return { ...state, errors: [...state.errors, { ...action.payload, id: nextErrorId++ }] };
     case 'REMOVE_ERROR':
-      return { ...state, errors: state.errors.filter(e => e.id !== action.payload) };
+      return { ...state, errors: state.errors.filter((e) => e.id !== action.payload) };
     case 'CLEAR_ERRORS':
       return { ...state, errors: [] };
     case 'RESET':
@@ -85,7 +85,7 @@ function dbReducer(state, action) {
         tableSchema: [],
         queryText: "SELECT * FROM pg_catalog.pg_tables WHERE schemaname = 'public';",
         queryResult: null,
-        errors: [],
+        errors: []
       };
     default:
       return state;
@@ -95,7 +95,7 @@ function dbReducer(state, action) {
 const initialCompileState = {
   isCompiling: false,
   lastSuccess: false,
-  errors: [],
+  errors: []
 };
 
 function compileReducer(state, action) {
@@ -105,9 +105,13 @@ function compileReducer(state, action) {
     case 'SUCCESS':
       return { isCompiling: false, lastSuccess: true, errors: [] };
     case 'FAILURE':
-      return { isCompiling: false, lastSuccess: false, errors: action.payload.map(e => ({ ...e, id: nextErrorId++ })) };
+      return {
+        isCompiling: false,
+        lastSuccess: false,
+        errors: action.payload.map((e) => ({ ...e, id: nextErrorId++ }))
+      };
     case 'REMOVE_ERROR':
-      return { ...state, errors: state.errors.filter(e => e.id !== action.payload) };
+      return { ...state, errors: state.errors.filter((e) => e.id !== action.payload) };
     case 'RESET':
       return initialCompileState;
     default:
@@ -142,7 +146,7 @@ export default function TryNow() {
         WHERE table_schema = 'public'
         ORDER BY table_name;
       `);
-      dispatchDb({ type: 'SET_TABLES', payload: res.rows.map(r => r.table_name) });
+      dispatchDb({ type: 'SET_TABLES', payload: res.rows.map((r) => r.table_name) });
     } catch (e) {
       console.error('Failed to fetch tables:', e);
     }
@@ -155,7 +159,7 @@ export default function TryNow() {
         title: 'Invalid Table Name',
         message: 'Table name contains invalid characters.',
         color: 'red',
-        icon: <IconAlertCircle size="1.1rem" />,
+        icon: <IconAlertCircle size="1.1rem" />
       });
       return;
     }
@@ -166,7 +170,7 @@ export default function TryNow() {
         title: 'Unknown Table',
         message: 'Selected table does not exist.',
         color: 'red',
-        icon: <IconAlertCircle size="1.1rem" />,
+        icon: <IconAlertCircle size="1.1rem" />
       });
       return;
     }
@@ -214,7 +218,10 @@ export default function TryNow() {
       } catch (error) {
         if (!cancelled) {
           console.error('Failed to initialize DbSession:', error);
-          dispatchDb({ type: 'ADD_ERROR', payload: { title: 'Database Init Failed', message: error.message } });
+          dispatchDb({
+            type: 'ADD_ERROR',
+            payload: { title: 'Database Init Failed', message: error.message }
+          });
         }
       } finally {
         if (!cancelled) dispatchDb({ type: 'SET_LOADING', payload: false });
@@ -237,9 +244,7 @@ export default function TryNow() {
 
   // --- Handlers ---
   const handleInputFileChange = (body) => {
-    setInputFiles(prev => prev.map(f =>
-      f.file === activeView ? { ...f, body } : f
-    ));
+    setInputFiles((prev) => prev.map((f) => (f.file === activeView ? { ...f, body } : f)));
   };
 
   const handleRunWesley = async () => {
@@ -256,7 +261,7 @@ export default function TryNow() {
           title: 'Compilation Successful',
           message: 'Schema generated successfully.',
           color: 'green',
-          icon: <IconCheck size="1.1rem" />,
+          icon: <IconCheck size="1.1rem" />
         });
       } else {
         dispatchCompile({ type: 'FAILURE', payload: result.errors || [] });
@@ -264,7 +269,7 @@ export default function TryNow() {
           title: 'Compilation Failed',
           message: 'Check the error panel for details.',
           color: 'red',
-          icon: <IconX size="1.1rem" />,
+          icon: <IconX size="1.1rem" />
         });
       }
     } catch (error) {
@@ -273,7 +278,7 @@ export default function TryNow() {
         title: 'Compilation Error',
         message: error.message,
         color: 'red',
-        icon: <IconX size="1.1rem" />,
+        icon: <IconX size="1.1rem" />
       });
     }
   };
@@ -283,9 +288,15 @@ export default function TryNow() {
     try {
       dispatchDb({ type: 'CLEAR_ERRORS' });
       dispatchDb({ type: 'SET_LOADING', payload: true });
-      const migrationsSql = outputFiles.find(f => f.file === 'migrations.sql')?.body;
+      const migrationsSql = outputFiles.find((f) => f.file === 'migrations.sql')?.body;
       if (!migrationsSql) {
-        dispatchDb({ type: 'ADD_ERROR', payload: { title: 'No Migrations', message: 'No migrations.sql file found in compiled output.' } });
+        dispatchDb({
+          type: 'ADD_ERROR',
+          payload: {
+            title: 'No Migrations',
+            message: 'No migrations.sql file found in compiled output.'
+          }
+        });
         dispatchDb({ type: 'SET_LOADING', payload: false });
         return;
       }
@@ -295,12 +306,22 @@ export default function TryNow() {
       // For now, we validate and warn the user about this limitation.
       const hasUnmatchedQuotes = (migrationsSql.match(/'/g) || []).length % 2 !== 0;
       if (hasUnmatchedQuotes) {
-        dispatchDb({ type: 'ADD_ERROR', payload: { title: 'Migration Warning', message: 'SQL contains unmatched quotes. Migrations with semicolons inside string literals are not supported.' } });
+        dispatchDb({
+          type: 'ADD_ERROR',
+          payload: {
+            title: 'Migration Warning',
+            message:
+              'SQL contains unmatched quotes. Migrations with semicolons inside string literals are not supported.'
+          }
+        });
         dispatchDb({ type: 'SET_LOADING', payload: false });
         return;
       }
 
-      const statements = migrationsSql.split(';').map(s => s.trim()).filter(s => s.length > 0);
+      const statements = migrationsSql
+        .split(';')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
       await dbState.session.applyMigrations(statements);
       await fetchTables(dbState.session);
       setActiveView('database');
@@ -308,10 +329,13 @@ export default function TryNow() {
         title: 'Database Updated',
         message: 'Migrations applied successfully.',
         color: 'green',
-        icon: <IconCheck size="1.1rem" />,
+        icon: <IconCheck size="1.1rem" />
       });
     } catch (error) {
-      dispatchDb({ type: 'ADD_ERROR', payload: { title: 'Migration Failed', message: error.message } });
+      dispatchDb({
+        type: 'ADD_ERROR',
+        payload: { title: 'Migration Failed', message: error.message }
+      });
     } finally {
       dispatchDb({ type: 'SET_LOADING', payload: false });
     }
@@ -361,14 +385,17 @@ export default function TryNow() {
             title: 'Database Reset',
             message: 'The database has been cleared.',
             color: 'blue',
-            icon: <IconCheck size="1.1rem" />,
+            icon: <IconCheck size="1.1rem" />
           });
         } catch (error) {
-          dispatchDb({ type: 'ADD_ERROR', payload: { title: 'Reset Failed', message: error.message } });
+          dispatchDb({
+            type: 'ADD_ERROR',
+            payload: { title: 'Reset Failed', message: error.message }
+          });
         } finally {
           dispatchDb({ type: 'SET_LOADING', payload: false });
         }
-      },
+      }
     });
   };
 
@@ -377,7 +404,8 @@ export default function TryNow() {
       title: 'Reset Playground?',
       children: (
         <Text size="sm">
-          Are you sure you want to reset the entire playground? This will clear all your GraphQL schemas and reset the database.
+          Are you sure you want to reset the entire playground? This will clear all your GraphQL
+          schemas and reset the database.
         </Text>
       ),
       labels: { confirm: 'Reset Everything', cancel: 'Cancel' },
@@ -397,7 +425,7 @@ export default function TryNow() {
             notifications.show({
               title: 'Playground Reset',
               message: 'All state has been cleared.',
-              color: 'gray',
+              color: 'gray'
             });
           } catch (e) {
             console.error(e);
@@ -405,7 +433,7 @@ export default function TryNow() {
             dispatchDb({ type: 'SET_LOADING', payload: false });
           }
         }
-      },
+      }
     });
   };
 
@@ -427,19 +455,25 @@ export default function TryNow() {
       );
     }
 
-    const inputContent = inputFiles.find(f => f.file === activeView)?.body;
+    const inputContent = inputFiles.find((f) => f.file === activeView)?.body;
     if (inputContent !== undefined) {
-      return <CodeEditor value={inputContent} onChange={handleInputFileChange} language="graphql" />;
+      return (
+        <CodeEditor value={inputContent} onChange={handleInputFileChange} language="graphql" />
+      );
     }
 
-    const outputContent = outputFiles.find(f => f.file === activeView)?.body;
+    const outputContent = outputFiles.find((f) => f.file === activeView)?.body;
     if (outputContent !== undefined) {
       const ext = activeView.split('.').pop();
       const lang = ext === 'sql' ? 'sql' : ext === 'json' ? 'json' : 'graphql';
       return <CodeEditor value={outputContent} readOnly language={lang} />;
     }
 
-    return <Text p="md" c="dimmed">Select a file to view</Text>;
+    return (
+      <Text p="md" c="dimmed">
+        Select a file to view
+      </Text>
+    );
   };
 
   return (
@@ -448,7 +482,9 @@ export default function TryNow() {
       <Box className={classes.header}>
         <Group justify="space-between" mb="md">
           <Box>
-            <Title order={1} className={classes.title}>Wesley Playground (Alpha)</Title>
+            <Title order={1} className={classes.title}>
+              Wesley Playground (Alpha)
+            </Title>
             <Text className={classes.subtitle}>
               Edit GraphQL schemas, compile to Postgres, and query live.
             </Text>
@@ -505,12 +541,26 @@ export default function TryNow() {
       {(compileState.errors.length > 0 || dbState.errors.length > 0) && (
         <Box className={classes.alert}>
           {compileState.errors.map((err) => (
-            <Alert key={`compile-${err.id}`} title="Compilation Error" color="red" withCloseButton onClose={() => dispatchCompile({ type: 'REMOVE_ERROR', payload: err.id })} mb="xs">
+            <Alert
+              key={`compile-${err.id}`}
+              title="Compilation Error"
+              color="red"
+              withCloseButton
+              onClose={() => dispatchCompile({ type: 'REMOVE_ERROR', payload: err.id })}
+              mb="xs"
+            >
               {err.message}
             </Alert>
           ))}
           {dbState.errors.map((err) => (
-            <Alert key={`db-${err.id}`} title={err.title} color="red" withCloseButton onClose={() => dispatchDb({ type: 'REMOVE_ERROR', payload: err.id })} mb="xs">
+            <Alert
+              key={`db-${err.id}`}
+              title={err.title}
+              color="red"
+              withCloseButton
+              onClose={() => dispatchDb({ type: 'REMOVE_ERROR', payload: err.id })}
+              mb="xs"
+            >
               {err.message}
             </Alert>
           ))}

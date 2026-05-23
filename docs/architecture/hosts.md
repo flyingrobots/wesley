@@ -68,4 +68,3 @@ The repository tracks per‑package maturity (MVP → Alpha → Beta → v1.0.0)
 - See the root README “Overall Project Status” badge and “Package Matrix” for a live view.
 - Automation lives in `scripts/compute-progress.mjs` and runs nightly via `.github/workflows/progress.yml`.
 - The computation considers: CI pass rate, presence of docs sections, and (in upcoming work) milestone completion, coverage, and budgets.
-

@@ -111,9 +111,9 @@ Leverage directives (`@pii`, `@tenant`, etc.) to generate masking rules, create 
 
 ### QA Sign-off Matrix
 
-| Environment | Surface | Owner | Status | Notes |
-| --- | --- | --- | --- | --- |
-| Unit/integration | Masking pipeline | TBD | pending | |
+| Environment      | Surface          | Owner | Status  | Notes |
+| ---------------- | ---------------- | ----- | ------- | ----- |
+| Unit/integration | Masking pipeline | TBD   | pending |       |
 
 ## Requirements
 

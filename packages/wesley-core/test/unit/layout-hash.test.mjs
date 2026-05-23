@@ -86,9 +86,7 @@ test('buildLayoutDescriptor: includes format and endian', () => {
 });
 
 test('buildLayoutDescriptor: resolves enum field kind via typeIndex', () => {
-  const typeIndex = new Map([
-    ['Status', { name: 'Status', kind: 'ENUM', values: ['A', 'B'] }]
-  ]);
+  const typeIndex = new Map([['Status', { name: 'Status', kind: 'ENUM', values: ['A', 'B'] }]]);
   const desc = buildLayoutDescriptor(
     {
       name: 'User',
@@ -126,30 +124,54 @@ test('computeLayoutHash: deterministic — same descriptor → same hash', async
 // ─── sensitivity tests ──────────────────────────────────────────────
 
 test('adding a field → different hash', async () => {
-  const base = { name: 'T', kind: 'OBJECT', fields: [{ name: 'a', type: 'Int', required: true, list: false }] };
-  const extended = { name: 'T', kind: 'OBJECT', fields: [
-    { name: 'a', type: 'Int', required: true, list: false },
-    { name: 'b', type: 'String', required: true, list: false }
-  ]};
+  const base = {
+    name: 'T',
+    kind: 'OBJECT',
+    fields: [{ name: 'a', type: 'Int', required: true, list: false }]
+  };
+  const extended = {
+    name: 'T',
+    kind: 'OBJECT',
+    fields: [
+      { name: 'a', type: 'Int', required: true, list: false },
+      { name: 'b', type: 'String', required: true, list: false }
+    ]
+  };
   const a = await computeLayoutHash(buildLayoutDescriptor(base));
   const b = await computeLayoutHash(buildLayoutDescriptor(extended));
   assert.notEqual(a, b);
 });
 
 test('removing a field → different hash', async () => {
-  const full = { name: 'T', kind: 'OBJECT', fields: [
-    { name: 'a', type: 'Int', required: true, list: false },
-    { name: 'b', type: 'String', required: true, list: false }
-  ]};
-  const partial = { name: 'T', kind: 'OBJECT', fields: [{ name: 'a', type: 'Int', required: true, list: false }] };
+  const full = {
+    name: 'T',
+    kind: 'OBJECT',
+    fields: [
+      { name: 'a', type: 'Int', required: true, list: false },
+      { name: 'b', type: 'String', required: true, list: false }
+    ]
+  };
+  const partial = {
+    name: 'T',
+    kind: 'OBJECT',
+    fields: [{ name: 'a', type: 'Int', required: true, list: false }]
+  };
   const a = await computeLayoutHash(buildLayoutDescriptor(full));
   const b = await computeLayoutHash(buildLayoutDescriptor(partial));
   assert.notEqual(a, b);
 });
 
 test('changing a field type → different hash', async () => {
-  const intField = { name: 'T', kind: 'OBJECT', fields: [{ name: 'x', type: 'Int', required: true, list: false }] };
-  const floatField = { name: 'T', kind: 'OBJECT', fields: [{ name: 'x', type: 'Float', required: true, list: false }] };
+  const intField = {
+    name: 'T',
+    kind: 'OBJECT',
+    fields: [{ name: 'x', type: 'Int', required: true, list: false }]
+  };
+  const floatField = {
+    name: 'T',
+    kind: 'OBJECT',
+    fields: [{ name: 'x', type: 'Float', required: true, list: false }]
+  };
   const a = await computeLayoutHash(buildLayoutDescriptor(intField));
   const b = await computeLayoutHash(buildLayoutDescriptor(floatField));
   assert.notEqual(a, b);
@@ -157,20 +179,32 @@ test('changing a field type → different hash', async () => {
 
 test('changing type name → different hash', async () => {
   const fields = [{ name: 'x', type: 'Int', required: true, list: false }];
-  const a = await computeLayoutHash(buildLayoutDescriptor({ name: 'Alpha', kind: 'OBJECT', fields }));
-  const b = await computeLayoutHash(buildLayoutDescriptor({ name: 'Beta', kind: 'OBJECT', fields }));
+  const a = await computeLayoutHash(
+    buildLayoutDescriptor({ name: 'Alpha', kind: 'OBJECT', fields })
+  );
+  const b = await computeLayoutHash(
+    buildLayoutDescriptor({ name: 'Beta', kind: 'OBJECT', fields })
+  );
   assert.notEqual(a, b);
 });
 
 test('same fields different declaration order → same hash (alphabetical sort)', async () => {
-  const orderA = { name: 'T', kind: 'OBJECT', fields: [
-    { name: 'b', type: 'String', required: true, list: false },
-    { name: 'a', type: 'Int', required: true, list: false }
-  ]};
-  const orderB = { name: 'T', kind: 'OBJECT', fields: [
-    { name: 'a', type: 'Int', required: true, list: false },
-    { name: 'b', type: 'String', required: true, list: false }
-  ]};
+  const orderA = {
+    name: 'T',
+    kind: 'OBJECT',
+    fields: [
+      { name: 'b', type: 'String', required: true, list: false },
+      { name: 'a', type: 'Int', required: true, list: false }
+    ]
+  };
+  const orderB = {
+    name: 'T',
+    kind: 'OBJECT',
+    fields: [
+      { name: 'a', type: 'Int', required: true, list: false },
+      { name: 'b', type: 'String', required: true, list: false }
+    ]
+  };
   const a = await computeLayoutHash(buildLayoutDescriptor(orderA));
   const b = await computeLayoutHash(buildLayoutDescriptor(orderB));
   assert.equal(a, b);

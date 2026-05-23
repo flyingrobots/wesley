@@ -1,4 +1,5 @@
 # BEARING
+
 <!-- docs-truth: status=experimental owner=@flyingrobots -->
 
 Current direction and active tensions. Historical ship data is in
@@ -112,16 +113,17 @@ Current evidence now includes complete v0.0.5 publication proof, an expanded
 Rust L1 corpus for directive-heavy SDL, schema extensions, legacy aliases, and
 invalid duplicate-directive coverage, `pnpm parity:ir` for the
 `js-table-vs-rust-table.v0` compatibility projection over the first
-table-compatible sentinel corpus, the domain-empty ownership packet in `0014`,
-and executable module-target dispatch coverage for no-module diagnostics,
-default target discovery, requested-target validation, duplicate target
-rejection, alias conflicts in both registration orders, and the Rust IR
-fixture contract now housed under the active `0013` packet. Invalid SDL
-diagnostics now expose stable `WesleyError::diagnostic()` codes and parser
-line/column spans where available, while semantic lowering spans remain
-explicitly absent. The next non-table projection is now named as
-`js-sdl-type-family-vs-rust-l1-type-family.v0` so schema-extension fixtures do
-not enter default parity on table evidence alone.
+table-compatible sentinel corpus, `pnpm parity:ir` support for fixture-owned
+projections, the `js-sdl-type-family-vs-rust-l1-type-family.v0` projection
+over extension-folded SDL type-family facts, default sentinel admission for
+`schema-extensions-schema.graphql` under that projection, the domain-empty
+ownership packet in `0014`, and executable module-target dispatch coverage for
+no-module diagnostics, default target discovery, requested-target validation,
+duplicate target rejection, alias conflicts in both registration orders, and
+the Rust IR fixture contract now housed under the active `0013` packet.
+Invalid SDL diagnostics now expose stable `WesleyError::diagnostic()` codes
+and parser line/column spans where available, while semantic lowering spans
+remain explicitly absent.
 
 The next pulls are:
 
@@ -129,11 +131,10 @@ The next pulls are:
    target dispatch already rejects missing modules, invalid product/database
    target names, duplicate names, and aliases that collide before or after the
    owning target loads.
-2. Implement the named type-family projection and admit
-   `schema-extensions-schema.graphql` only after
-   `js-sdl-type-family-vs-rust-l1-type-family.v0` passes.
-3. Capture a Rust core performance baseline over the canonical corpus after
+2. Capture a Rust core performance baseline over the canonical corpus after
    the fixture and projection boundaries are named.
+3. Add new parity fixtures only when they exercise a named projection boundary
+   that the current table and type-family corpus does not already cover.
 
 Do not pull `OWN_ninelives-resilience-integration.md` until the module boundary
 has stronger executable evidence. Resilience policy should not arrive before

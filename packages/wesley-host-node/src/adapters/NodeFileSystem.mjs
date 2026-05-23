@@ -52,7 +52,7 @@ export class NodeFileSystem {
     }
     try {
       const entries = await readdir(path, { withFileTypes: true });
-      return entries.map(e => ({
+      return entries.map((e) => ({
         name: e.name,
         path: resolve(path, e.name),
         isFile: e.isFile(),

@@ -47,13 +47,13 @@ describe('TaskGraph', () => {
     graph.addTask(testTask);
 
     // No tasks completed yet → highest priority ready task first
-    expect(graph.getReadyTasks().map(t => t.id)).toEqual(['lint', 'prepare']);
+    expect(graph.getReadyTasks().map((t) => t.id)).toEqual(['lint', 'prepare']);
 
     // Once lint is done, prepare remains ready
-    expect(graph.getReadyTasks(new Set(['lint'])).map(t => t.id)).toEqual(['prepare']);
+    expect(graph.getReadyTasks(new Set(['lint'])).map((t) => t.id)).toEqual(['prepare']);
 
     // Once both prep + lint done, test is ready
-    expect(graph.getReadyTasks(new Set(['lint', 'prepare'])).map(t => t.id)).toEqual(['test']);
+    expect(graph.getReadyTasks(new Set(['lint', 'prepare'])).map((t) => t.id)).toEqual(['test']);
   });
 
   it('detects dependency cycles', () => {

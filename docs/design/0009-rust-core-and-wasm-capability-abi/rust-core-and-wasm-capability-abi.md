@@ -199,11 +199,11 @@ Rust core is not permission to move domain behavior back into generic Wesley.
 
 Wesley should support three extension modes under one capability contract.
 
-| Mode | Host | Use |
-| --- | --- | --- |
-| Rust-native capability | Rust hosts | Echo in-process, high-trust native integrations |
-| WASM capability | Rust, Node, browser, CI | portable capability execution |
-| TypeScript module | Node host | fast authoring and current CLI DX |
+| Mode                   | Host                    | Use                                             |
+| ---------------------- | ----------------------- | ----------------------------------------------- |
+| Rust-native capability | Rust hosts              | Echo in-process, high-trust native integrations |
+| WASM capability        | Rust, Node, browser, CI | portable capability execution                   |
+| TypeScript module      | Node host               | fast authoring and current CLI DX               |
 
 The important rule:
 

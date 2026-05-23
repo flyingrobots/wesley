@@ -12,7 +12,12 @@
     "mod.ts",
     "examples/"
   ],
-  "keywords": ["deno", "runtime", "adapters", "wesley"],
+  "keywords": [
+    "deno",
+    "runtime",
+    "adapters",
+    "wesley"
+  ],
   "author": "Wesley Authors <oss@flyingrobots.dev>",
   "license": "Apache-2.0",
   "repository": {
@@ -20,7 +25,8 @@
     "url": "https://github.com/flyingrobots/wesley.git",
     "directory": "packages/wesley-host-deno"
   },
-  "bugs": { "url": "https://github.com/flyingrobots/wesley/issues" },
+  "bugs": {
+    "url": "https://github.com/flyingrobots/wesley/issues"
+  },
   "homepage": "https://github.com/flyingrobots/wesley"
 }
-

@@ -52,18 +52,14 @@ export class TaskDefinition {
    * Check if this task can run given available resources
    */
   canExecuteWith(availableResources) {
-    return Array.from(this.resources).every(resource =>
-      availableResources.has(resource)
-    );
+    return Array.from(this.resources).every((resource) => availableResources.has(resource));
   }
 
   /**
    * Check if dependencies are satisfied
    */
   dependenciesSatisfied(completedTasks) {
-    return Array.from(this.dependencies).every(dep =>
-      completedTasks.has(dep)
-    );
+    return Array.from(this.dependencies).every((dep) => completedTasks.has(dep));
   }
 
   /**
@@ -325,7 +321,7 @@ export class TaskGraph {
     return {
       path,
       duration: maxDistance,
-      tasks: path.map(id => this.tasks.get(id))
+      tasks: path.map((id) => this.tasks.get(id))
     };
   }
 }

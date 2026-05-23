@@ -20,20 +20,14 @@ const commandsDir = join(__dirname, 'commands');
  * `index.mjs` is a re-export barrel — both are skipped.
  */
 async function discoverCommands(ctx) {
-  const files = readdirSync(commandsDir)
-    .filter((f) => (
-      f.endsWith('.mjs') &&
-      !f.startsWith('_') &&
-      f !== 'index.mjs'
-    ));
+  const files = readdirSync(commandsDir).filter(
+    (f) => f.endsWith('.mjs') && !f.startsWith('_') && f !== 'index.mjs'
+  );
 
   for (const file of files) {
     const mod = await import(join(commandsDir, file));
     for (const exported of Object.values(mod)) {
-      if (
-        typeof exported === 'function' &&
-        exported.prototype instanceof WesleyCommand
-      ) {
+      if (typeof exported === 'function' && exported.prototype instanceof WesleyCommand) {
         new exported(ctx);
       }
     }
@@ -41,14 +35,18 @@ async function discoverCommands(ctx) {
 }
 
 function bindWrite(target) {
-  return typeof target?.write === 'function'
-    ? target.write.bind(target)
-    : null;
+  return typeof target?.write === 'function' ? target.write.bind(target) : null;
 }
 
 function resolveOutputWriters(ctx = {}) {
-  const writeOut = bindWrite(ctx.process?.stdout) ?? bindWrite(ctx.stdout) ?? process.stdout.write.bind(process.stdout);
-  const writeErr = bindWrite(ctx.process?.stderr) ?? bindWrite(ctx.stderr) ?? process.stderr.write.bind(process.stderr);
+  const writeOut =
+    bindWrite(ctx.process?.stdout) ??
+    bindWrite(ctx.stdout) ??
+    process.stdout.write.bind(process.stdout);
+  const writeErr =
+    bindWrite(ctx.process?.stderr) ??
+    bindWrite(ctx.stderr) ??
+    process.stderr.write.bind(process.stderr);
   return { writeOut, writeErr };
 }
 

@@ -54,7 +54,7 @@ The first default-corpus candidate is:
 test/fixtures/ir-parity/schema-extensions-schema.graphql
 ```
 
-Current observed behavior:
+Pre-implementation behavior:
 
 - `pnpm parity:ir --fixture test/fixtures/ir-parity/schema-extensions-schema.graphql`
   passes under `js-table-vs-rust-table.v0`
@@ -65,6 +65,17 @@ Current observed behavior:
 
 Therefore, admitting this fixture to the default parity corpus requires the new
 type-family projection, not just adding it to the current table fixture list.
+
+Implemented behavior:
+
+- `pnpm parity:ir --list-fixtures` lists each default fixture with its owning
+  projection
+- `schema-extensions-schema.graphql` is admitted under
+  `js-sdl-type-family-vs-rust-l1-type-family.v0`
+- `pnpm parity:ir` passes the default v0 corpus across the table and
+  type-family projections
+- `pnpm parity:ir --fixture <path> --projection <name>` can run a custom SDL
+  fixture under a selected projection
 
 ## Included Facts
 
@@ -107,14 +118,16 @@ contracts.
 - Fold `extend scalar`, `extend type`, `extend interface`, `extend union`,
   `extend enum`, and `extend input` blocks into their base definitions before
   projection.
-- Sort projected type records by deterministic code-point order of
-  `kind:name`.
+- Sort projected type records by deterministic code-point name order with kind
+  as a tie-breaker.
 - Sort projected field, argument, enum value, union member, interface, and
-  directive arrays by deterministic code-point order because the projection
+  directive keys by deterministic code-point order because the projection
   treats them as semantic fact sets.
 - Preserve GraphQL nullability and list wrapper structure.
 - Preserve directive argument values after each side has produced semantic
   values.
+- Preserve repeated directive values as arrays instead of collapsing by
+  directive name.
 - Preserve Rust L1 canonical core directive names.
 - Do not use this projection to prove legacy directive alias behavior unless
   the admitted fixture uses canonical directive spelling or the JS structural
@@ -123,18 +136,18 @@ contracts.
 
 ## Implementation Shape
 
-The implementation should add projection selection instead of overloading the
-current table projection.
+The implementation adds projection selection instead of overloading the current
+table projection.
 
-Expected shape:
+Implemented shape:
 
 - keep `js-table-vs-rust-table.v0` as the default table projection
 - add `js-sdl-type-family-vs-rust-l1-type-family.v0`
-- allow fixtures to name their projection
+- allow default and custom fixtures to name their projection
 - keep failure reports keyed by projection, fixture, mismatch path, legacy
   hash, and Rust hash
-- admit `schema-extensions-schema.graphql` to the default sentinel corpus only
-  after the new projection passes
+- admit `schema-extensions-schema.graphql` to the default sentinel corpus under
+  the type-family projection
 
 The JS-side structural projection may reuse the existing canonical SDL
 machinery in `packages/wesley-core/src/domain/canonicalize.mjs`, but the
@@ -147,8 +160,9 @@ raw canonical bytes alone.
    on each side?
 2. Does the projection compare non-table type-family facts that the current
    table adapter drops?
-3. Does the fixture admission rule prevent `schema-extensions-schema.graphql`
-   from becoming default parity evidence before the new projection exists?
+3. Does the fixture admission rule keep `schema-extensions-schema.graphql`
+   under the type-family projection instead of treating table parity as
+   non-table evidence?
 4. Does the implementation avoid product, database, and runtime semantics?
 5. Does failure output still identify the first semantic mismatch path?
 

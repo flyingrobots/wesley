@@ -18,7 +18,7 @@ export class ValidateBundleCommand extends WesleyCommand {
     const fs = this.ctx.fs;
     const cwd = await fs.resolve('.');
     const bundlePath = options.bundle || '.wesley';
-    const schemasPath = options.schemas || await fs.join(cwd, 'schemas');
+    const schemasPath = options.schemas || (await fs.join(cwd, 'schemas'));
 
     try {
       // Dynamic import of Ajv
@@ -96,7 +96,6 @@ export class ValidateBundleCommand extends WesleyCommand {
 
         console.log('✅ All thresholds passed!');
       }
-
     } catch (error) {
       error.code = error.code || 'VALIDATION_FAILED';
       throw error;

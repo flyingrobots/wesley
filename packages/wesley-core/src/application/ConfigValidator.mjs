@@ -50,7 +50,10 @@ export function validateConfig(config) {
         if (typeof entry.package !== 'string' || entry.package.trim().length === 0) {
           errors.push(`generators[${i}] must have a non-empty "package" string`);
         }
-        if (entry.config !== undefined && (typeof entry.config !== 'object' || entry.config === null || Array.isArray(entry.config))) {
+        if (
+          entry.config !== undefined &&
+          (typeof entry.config !== 'object' || entry.config === null || Array.isArray(entry.config))
+        ) {
           errors.push(`generators[${i}].config must be a plain object if provided`);
         }
         if (entry.enabled !== undefined && typeof entry.enabled !== 'boolean') {

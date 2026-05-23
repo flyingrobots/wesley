@@ -12,6 +12,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   `js-sdl-type-family-vs-rust-l1-type-family.v0` as the next fair parity
   projection for schema-extension and non-table GraphQL facts before admitting
   those fixtures to the default sentinel corpus.
+- **Type-family parity sentinel**: `pnpm parity:ir` now implements
+  `js-sdl-type-family-vs-rust-l1-type-family.v0`, lets fixtures declare their
+  owning projection, and admits `schema-extensions-schema.graphql` to the
+  default corpus only under that projection.
 - **Rust IR fixture contract note**: Moved the core-rs IR contract and fixture
   backlog card into the active `0013` design packet, naming the v0.0.6 fixture
   classes, canonical byte rules, diagnostics contract, and repo evidence.
@@ -41,6 +45,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **Formatter gate ownership**: `pnpm run format:check` now uses the
+  workspace-pinned Prettier binary against the repo-owned formatter surface,
+  while leaving Wesley SDL compiler inputs and Rust IR golden bytes under
+  parser/generator control.
 - **Rust invalid-SDL diagnostics**: `WesleyError` now exposes a stable
   diagnostic object with machine-readable codes, severity, and parser
   line/column spans where Apollo provides a byte index; semantic lowering
@@ -59,6 +67,13 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **Parity custom fixture sidecars**: `pnpm parity:ir --fixture` now skips
   tracked `*.l1.hash` checks for non-`.graphql` custom SDL paths instead of
   reading the schema file as its own hash sidecar.
+- **Multi-projection parity output**: `pnpm parity:ir` failure output now names
+  the projection for each failing fixture and summarizes multi-projection runs
+  without implying a single global comparison shape.
+- **Type-family repeated directives**: The JS side of
+  `js-sdl-type-family-vs-rust-l1-type-family.v0` now preserves repeated
+  directive values as ordered arrays instead of overwriting earlier occurrences
+  or re-sorting same-name directive instances.
 - **Rust directive alias normalization**: Rust L1 lowering now canonicalizes
   the current core Wesley directive aliases to `wes_*` names and rejects
   duplicate canonical directives instead of allowing last-write-wins drift,
@@ -104,7 +119,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   vars bytes, declared footprints, EINT and QueryView helper shapes, fixture
   vectors, and Rust/TypeScript operation binding coverage. The semicolon-kv
   bytes are explicitly marked as fixture-only, while `targetCodec:
-  wesley-binary/v0` records the future Wesley-generated binary codec target
+wesley-binary/v0` records the future Wesley-generated binary codec target
   without implementing it.
 - **Runtime optic root argument validation**: `compile_runtime_optic()` now
   validates selected root field arguments against the schema, preserves
@@ -186,7 +201,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **Crates.io release clean-worktree recovery**: The release workflow now keeps
   GitHub Release scratch files in the runner temp directory so draft release
   preparation no longer dirties the checkout before `cargo xtask
-  publish-crates` enforces the real-publish clean-worktree guard.
+publish-crates` enforces the real-publish clean-worktree guard.
 
 ## [0.0.1] - 2026-05-09
 
@@ -235,7 +250,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   exposed it as `wesley schema diff --old <path> --new <path>` with text, JSON,
   summary, breaking-only, and breaking-change exit-code modes.
 - **Git-aware schema diff**: Added `wesley schema diff --schema <path>
-  --against <rev>` and `--base <rev>` so local edits can be compared against a
+--against <rev>` and `--base <rev>` so local edits can be compared against a
   schema's previous Git state without manually materializing an old file.
 - **Native schema operation catalog**: Added `SchemaOperation` extraction from
   schema root `Query`, `Mutation`, and `Subscription` fields, preserving root
@@ -252,7 +267,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   and exposed it as `wesley emit typescript --schema <path> --out <path>`.
 - **Native Rust emitter**: Added `crates/wesley-emit-rust`, a structured Rust
   item/type AST printer from Wesley L1 IR, plus `wesley emit rust --schema
-  <path> --out <path>` and a jedit-shaped hot text model fixture.
+<path> --out <path>` and a jedit-shaped hot text model fixture.
 
 - **Holmes counterfactual provider capability seam**: Added
   `holmes.counterfactualProviders` to Wesley module capabilities, moved shared
@@ -440,7 +455,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   unreadable.
 - **PR #463 cert failure JSON assertions**: The HOLMES failure-path cert E2E
   tests now assert against the first JSON document emitted by `cert-verify
-  --json`, splitting presence and value checks for `holmesPassed`,
+--json`, splitting presence and value checks for `holmesPassed`,
   `holmesVerdict`, `eligibleToShip`, and `reasons`, so missing fields and wrong
   values fail independently while staying robust when the command also emits
   the framework error envelope.
@@ -480,7 +495,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **QIR duck-typing fallbacks (SR-m2)**: Removed 3 duck-typing fallbacks from
   `renderExpr` and 1 from `renderRelation` in `lowerToSQL.mjs`. Objects without
   explicit `kind` tags now throw `Unsupported expr kind` / `Unsupported relation
-  kind` instead of being silently accepted via structural duck-typing. All
+kind` instead of being silently accepted via structural duck-typing. All
   current callers already use proper `Nodes.mjs` constructors — no behavioral
   change for well-formed input.
 
@@ -551,17 +566,20 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   registration file (fixes Open/Closed principle violation).
 
 ### Changed
+
 - `ConcurrentSafetyError`, `BackpressureError`, and `SafetyValidationError` now
   extend `WesleyError` instead of bare `Error`, unifying the error hierarchy
   under a single base class with `code` + `meta` semantics. Backward-compatible:
   `.context` / `.details` properties preserved.
 
 ### Removed
+
 - Dead duplicate generators in `wesley-generator-supabase`: `repair.mjs`,
   `trigger.mjs`, `rollback.mjs` (byte-for-byte copies of the canonical files
   in `wesley-core/src/domain/generators/`, never imported or exported).
 
 ### Fixed
+
 - `backpressure-controller.test.mjs` and `concurrent-safety-analyzer.test.mjs`
   imported nonexistent underscore-prefixed exports (`_BackpressureActivated`,
   `_ConcurrentAnalysisStarted`, etc.) — corrected to match actual export names.
@@ -698,11 +716,13 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **A:** Docker Compose fixture + `scripts/smoke/postgres-fixture.sh` for Postgres fixture smoke tests (`pnpm run smoke:postgres-fixture`)
 
 #### WES — Documentation & Compatibility
+
 - **A:** Updated `README.md` for `@wesley/generator-echo` — documents one-pass profile, full artifact list, client/pump API, contract versioning, plugin usage
 - **A:** Updated `README.md` for `@wesley/generator-vue` — documents unified `VuePlugin` entrypoint, legacy function API
 - **A:** Updated `docs/specs/echo-ir-v2.md` — documents `contract_version` field, type/op ordering rules, version bump policy
 
 #### WES-005 — Unify generator-vue Ownership/Entrypoint
+
 - **A:** `VuePlugin` class implementing `GeneratorPlugin` contract — canonical unified entrypoint
 - **A:** Package exports `./plugin` subpath for plugin-based invocation
 - **A:** Vue plugin test suite (`vue-plugin.test.mjs`) with 12 tests covering contract, lifecycle, capabilities, and backward compatibility
@@ -713,17 +733,20 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **C:** Legacy `generateVue()` function remains available but documented as non-primary path
 
 #### WES-004 — One-Pass App Codegen Profile (schema → IR/Rust/TS)
+
 - **A:** `profile` metadata in `generateEcho()` output describing artifact sets (IR, TS, Rust targets)
 - **A:** Types sorted alphabetically in IR for deterministic output independent of SDL declaration order
 - **A:** One-pass profile test suite (`one-pass-profile.test.mjs`) with 15 tests covering atomic generation, cross-artifact parity, no-duplicate-transform verification, and performance baseline
 
 #### WES-003 — Artifact Contract Versioning + Deterministic Output Tests
+
 - **A:** `contract_version` (semver) field added to IR, `ops.generated.ts`, and `client.generated.ts` HANDSHAKE
 - **A:** Types in IR now sorted alphabetically for ordering stability across SDL variations
 - **A:** Contract determinism test suite (`contract-determinism.test.mjs`) with 22 tests covering byte-for-byte stability, ordering, edge cases, and version bump policy
 - **A:** Version bump policy codified in tests (major/minor/patch rules)
 
 #### WES-002 — Integration-Ready TS Runtime Client/Pump
+
 - **A:** Complete `emitClient.mjs` rewrite — generates self-contained TypeScript client with typed dispatch/query APIs
 - **A:** Canonical pump loop (`createPump`) for view-op envelope parsing and routing
 - **A:** `parseViewOps` for binary envelope decoding (u32le op_id + u32le length + payload)
@@ -732,12 +755,14 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **A:** Client/pump test suite (`client-pump.test.mjs`) with 22 tests covering compilation, dispatch, query, pump routing, and edge cases
 
 #### WES-001 — Per-Op Var/Result Schema Wiring
+
 - **A:** `emitSchemas.mjs` now generates `VarsSchema` and `ResultSchema` for every operation in the ops catalog
 - **A:** `OP_SCHEMAS` registry map exported for runtime op-to-schema lookup
 - **A:** TTD `ts-zod.mjs` now emits per-op result schemas alongside existing args schemas
 - **A:** Schema completeness test suite (`schema-completeness.test.mjs`) with 11 tests covering completeness, edge cases, and ordering stability
 
 #### Alpha Playground — Browser-Based "Try Wesley"
+
 - **A:** `/try` route, TryNow page, workspace state, file tree UI, Tiptap-based schema editor with GraphQL highlighting
 - **B:** `compileSchemaInBrowser()` API in `@wesley/host-browser` — regex-based parser, in-memory pipeline, SQL migration generation
 - **C:** PGLite integration — `DbSession` with `applyMigrations`/`reset`/`query` (100-row limit), `FakeDbSession` for tests, `DatabasePanel` with table view and schema inspector
@@ -756,6 +781,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - ROADMAP-ALPHA.md marked 343/343 complete (100%)
 
 #### E0 — Plugin Pipeline Stabilization
+
 - **E0.1:** `GeneratorPlugin` contract with `apiVersion`, error isolation (WPLY001–004), `--best-effort` mode, per-plugin status summary, `PluginRunner` orchestrator with frozen context
 - **E0.1:** `ArtifactWriter` with overwrite detection, conflict reporting, atomic writes via temp staging, dry-run support
 - **E0.2:** Plugin discovery and registration via `wesley.config.mjs` `generators` array (`package`, `config`, `enabled` fields)
@@ -765,6 +791,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **E0.5:** `wesley doctor` CLI command — checks Node version, config, plugins, crypto, experimental flags; `--format json`
 
 #### E1 — Boundary Grammar & Schema Hash Pinning
+
 - **E1.1:** `canonicalize(sdl)` — deterministic AST serialization with lexicographic sorting, `extend type` folding, NFC normalization
 - **E1.2:** `schemaHash(sdl)` — SHA-256 of canonical AST bytes, 64-char lowercase hex
 - **E1.3:** `registryHash(obj)` and `canonicalizeJSON(obj)` — deterministic registry blob hashing
@@ -774,28 +801,35 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **E1.7:** `wesley diff` CLI — `--format text|json|summary`, `--breaking-only`, `--exit-code`
 
 #### E2a — Canonical Encodings
+
 - **E2a.1:** `emitRawLeCodec` — generates `raw_le_codec.generated.rs` with per-type `encode_raw_le`/`decode_raw_le`, `DecodeError` enum, alphabetical field order, LE numerics, NaN canonicalization (`0x7FC00000`), `Option<T>` prefix tags, length-prefixed strings
 - **E2a.2:** `emitRawLeTsCodec` — generates `raw_le_codec.generated.ts` with browser-safe `DataView`/`Uint8Array` encode/decode, byte-identical to Rust, TypeScript interfaces for all types
 - **E2a.3:** `computeLayoutHash(type, typeIndex)` — stable per-type layout descriptor → SHA-256, integrated into `echo-ir/v2` as `layout_hash` per type
 
 #### E2b — Core Type Schemas
+
 - **E2b.1:** Echo core storage types in Wesley SDL (`schemas/echo-core-types.graphql`): `WorldlineTickPatchV1`, `SnapshotManifest`, `ClaimRecord`, `PrivateAtomRefV1`, `OpaqueRefV1`, `FieldPatch`
 
 #### E2c — Guarded Views
+
 - **E2c.1:** `emitGuardedViews` — generates `guarded_views.generated.rs` with per-rule `ReadView`/`WriteView` structs from `@wes_view` directive, `from_full` and `apply_write` methods
 
 #### E2d — Cross-Platform Determinism
+
 - **E2d.1:** Golden vector test suite — 44 checked-in JSON vectors across 12 fixture files (Boolean, Int, Float, String, ID, List, Option, Enum, nested objects, multi-field, optional list, privacy types) with reference encoder harness
 
 #### E3 — @wes_join Directive
+
 - **E3.1:** `@wes_join(strategy: "union"|"max"|"lww")` directive parsing and validation
 - **E3.2:** Rust `JoinFn` trait codegen — `emitJoinImpls()` generates `impl JoinFn` with per-field lattice calls, `has_join` per-type IR metadata
 - **E3.3:** Join directive documentation (`docs/guides/wes-join-directive.md`)
 
 #### E4 — Privacy Types
+
 - **E4.1:** Privacy type canonical encoding verification — 28 tests for `ClaimRecord`, `PrivateAtomRefV1`, `OpaqueRefV1` round-trip encoding, Rust codegen field order, optional field handling
 
 #### Previous (pre-Echo roadmap)
+
 - Generators: `@wesley/generator-vue` minimal TS type emission (enums + interfaces)
 - Generators: hardened `@wesley/generator-echo` with explicit SDL validation and package README
 - Generators: ops helpers tests (`ops.generated.ts`) for ops-catalog wiring
@@ -808,12 +842,14 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 ### Changed
 
 #### PR Self-Review (qir/phase-c)
+
 - **Cursor encoding**: Use `charCodeAt()` instead of `codePointAt()` for Latin1 binary string decoding (atob output is always 0-255)
 - **Lock-level readability**: Break dense `add_column` lock ternary into named boolean (`canAvoidRewrite`) with multi-line conditional; also fixes `step.default` truthy check (`0`/`''` are valid defaults)
 - **ESLint flat config**: Migrate from legacy `.eslintrc.json` to `eslint.config.js` for ESLint 9 compatibility; install missing `eslint-plugin-promise`; fix all 612 pre-existing lint errors across the codebase
 - **Pre-commit hook**: Add lint enforcement guard to `.githooks/pre-commit` (skippable via `WESLEY_SKIP_LINT_HOOK=1`)
 
 #### Other
+
 - `generator-echo` now emits `echo-ir/v2` (was `echo-ir/v1`)
 - `schema_sha256` in IR uses canonical AST hash (was raw SDL hash)
 - **CR-13/14/20/21:** `docs/guides/qir-ops.md` — remove stale "Discovery Modes (planned)" section, add `version` field to registry example, update shipped features to present tense, prune shipped roadmap bullets
@@ -827,6 +863,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 ### Fixed
 
 #### PR Self-Review (qir/phase-c)
+
 - **Double JSON output**: Commands that write their own JSON (cert-verify, cert-create, plan, rehearse, up) no longer trigger the framework's duplicate JSON wrapper, fixing `jq` pipeline breakage and cert-e2e test failures
 - **SHIPME.md marker ordering**: `extractJsonBlock()` now throws a descriptive error instead of returning null when certificate markers are present but out of order
 - **SQL comment injection**: `emitMigrations()` quotes table names in SQL comments using the same `q()` function used for all other identifiers
@@ -875,7 +912,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Fix `promise/param-names` in `BatchOptimizer.mjs` and `TasksSlapsBridge.mjs` — rename unused resolve parameter from `_` to `_resolve`
 - Fix `promise/always-return` in `ErrorRecovery.mjs` and `DocumentationGenerator.mjs` — add `return undefined` in `.then()` callbacks
 - Fix `no-async-promise-executor` in `AdvisoryLockManager.mjs` — replace async executor with `Promise.resolve().then()` chain
-- Fix `no-constant-binary-expression` in `StandardSanitizer.mjs` — remove redundant constant `\`SET ${nextTok}\`` on left side of `&&`
+- Fix `no-constant-binary-expression` in `StandardSanitizer.mjs` — remove redundant constant `\`SET ${nextTok}\``on left side of`&&`
 - Fix `no-return-await` in `sql-executor.test.mjs` — remove redundant `await` from `return await`
 - Fix `no-control-regex` in `createNodeRuntime.mjs` — add `eslint-disable-next-line` comment for intentional null byte detection
 
@@ -921,6 +958,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **SR-n4:** `PredicateCompiler.mjs` re-exported from QIR barrel `index.mjs`
 
 #### Pre-review fixes
+
 - **QIR:** `lowerToSQL` recursive calls (Subquery, Lateral, ScalarSubquery, Exists) now pass full `opts` — preserves `pkResolver` and `identPolicy` in nested queries; also threads `opts` through `renderOrderBy`
 - **QIR:** `lowerToSQL` join-type handling is now explicit (LEFT, INNER) and throws on unsupported types instead of silently defaulting to JOIN
 - **QIR:** `lowerToSQL` DISTINCT ON prefix uses position-based matching — preserves existing direction/nulls, supports multi-column distinctOn
@@ -992,6 +1030,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **CR-R6-16 (Trivial):** Test coverage: cursor null/undefined/non-object edge cases, qualified join refs positive path, builder-based pkResolver test, LIKE/CONTAINS param guard tests
 
 ## [0.1.0] - 2025-09-01
+
 - Initial public repository layout
 
 [Unreleased]: https://github.com/flyingrobots/wesley/compare/v0.0.5...HEAD

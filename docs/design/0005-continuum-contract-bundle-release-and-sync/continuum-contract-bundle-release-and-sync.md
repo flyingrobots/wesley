@@ -1,5 +1,5 @@
 ---
-title: "Continuum Contract Bundle Release and Sync"
+title: 'Continuum Contract Bundle Release and Sync'
 ---
 
 ## Sponsors
@@ -69,12 +69,12 @@ That gap creates three recurring confusions:
 
 ## Ownership Split
 
-| Surface | Owner | Role |
-| --- | --- | --- |
-| Authored shared family schema | Continuum | Semantic authority; release intent and compatibility decision |
-| Generic compiler, realization, witness, drift engine | Wesley core/CLI/host packages | Compile, package, certify, compare |
-| Product profile for Continuum | `@wesley/continuum` | Scope defaults, publication-boundary policy, consumer conventions, Holmes/Watson/Moriarty framing |
-| Runtime behavior and local mirrors | Echo, `git-warp`, `warp-ttd` | Consume generated artifacts and keep runtime-specific behavior honest |
+| Surface                                              | Owner                         | Role                                                                                              |
+| ---------------------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------- |
+| Authored shared family schema                        | Continuum                     | Semantic authority; release intent and compatibility decision                                     |
+| Generic compiler, realization, witness, drift engine | Wesley core/CLI/host packages | Compile, package, certify, compare                                                                |
+| Product profile for Continuum                        | `@wesley/continuum`           | Scope defaults, publication-boundary policy, consumer conventions, Holmes/Watson/Moriarty framing |
+| Runtime behavior and local mirrors                   | Echo, `git-warp`, `warp-ttd`  | Consume generated artifacts and keep runtime-specific behavior honest                             |
 
 This keeps the current doctrinal split intact:
 

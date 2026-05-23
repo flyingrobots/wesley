@@ -34,12 +34,16 @@ ${fields.join(',\n')}
 
       if (createSchema) {
         schemas.push(createSchema);
-        schemas.push(`export type ${table.name}Create = z.infer<typeof ${table.name}CreateSchema>;`);
+        schemas.push(
+          `export type ${table.name}Create = z.infer<typeof ${table.name}CreateSchema>;`
+        );
       }
 
       if (updateSchema) {
         schemas.push(updateSchema);
-        schemas.push(`export type ${table.name}Update = z.infer<typeof ${table.name}UpdateSchema>;`);
+        schemas.push(
+          `export type ${table.name}Update = z.infer<typeof ${table.name}UpdateSchema>;`
+        );
       }
 
       if (this.evidenceMap) {
@@ -145,7 +149,24 @@ export const validateUpdate = <T>(schema: z.ZodSchema<T>, data: unknown): T => {
 
   isEnumType(type) {
     if (!type) return false;
-    const scalarTypes = new Set(['ID', 'String', 'Int', 'Float', 'Boolean', 'DateTime', 'Date', 'Time', 'Decimal', 'UUID', 'JSON', 'Inet', 'CIDR', 'MacAddr', 'BigInt', 'Bytes']);
+    const scalarTypes = new Set([
+      'ID',
+      'String',
+      'Int',
+      'Float',
+      'Boolean',
+      'DateTime',
+      'Date',
+      'Time',
+      'Decimal',
+      'UUID',
+      'JSON',
+      'Inet',
+      'CIDR',
+      'MacAddr',
+      'BigInt',
+      'Bytes'
+    ]);
     if (scalarTypes.has(type)) return false;
     return type[0] === type[0].toUpperCase();
   }
@@ -179,17 +200,17 @@ export const validateUpdate = <T>(schema: z.ZodSchema<T>, data: unknown): T => {
     }
 
     if (directives['@critical']) {
-      schema += '.brand<\'critical\'>()';
+      schema += ".brand<'critical'>()";
     }
 
     return schema;
   }
 
   generateCreateSchema(table) {
-    const fields = table.getFields().filter(f => !f.isVirtual());
+    const fields = table.getFields().filter((f) => !f.isVirtual());
     if (fields.length === 0) return null;
 
-    const shape = fields.map(field => {
+    const shape = fields.map((field) => {
       const base = this.generateFieldSchema(field);
       const required = field.nonNull && !field.isPrimaryKey();
       return `  ${field.name}: ${required ? base : `${base}.optional()`}`;
@@ -201,10 +222,12 @@ ${shape.join(',\n')}
   }
 
   generateUpdateSchema(table) {
-    const fields = table.getFields().filter(f => !f.isVirtual());
+    const fields = table.getFields().filter((f) => !f.isVirtual());
     if (fields.length === 0) return null;
 
-    const shape = fields.map(field => `  ${field.name}: ${this.generateFieldSchema(field)}.optional()`);
+    const shape = fields.map(
+      (field) => `  ${field.name}: ${this.generateFieldSchema(field)}.optional()`
+    );
 
     return `export const ${table.name}UpdateSchema = z.object({
 ${shape.join(',\n')}

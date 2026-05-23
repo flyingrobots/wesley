@@ -74,15 +74,29 @@ export class Holmes {
     const gates = [];
     const mri = summary.mri;
     const tci = summary.tci;
-    gates.push({ gate: 'Migration Risk', status: mri < 0.4 ? '✅' : '⛔', evidence: `MRI: ${(mri * 100).toFixed(1)}%`, ruling: this.assessRisk(mri) });
-    gates.push({ gate: 'Test Coverage', status: tci > 0.7 ? '✅' : '⚠️', evidence: `TCI: ${(tci * 100).toFixed(1)}%`, ruling: this.assessTests(tci) });
+    gates.push({
+      gate: 'Migration Risk',
+      status: mri < 0.4 ? '✅' : '⛔',
+      evidence: `MRI: ${(mri * 100).toFixed(1)}%`,
+      ruling: this.assessRisk(mri)
+    });
+    gates.push({
+      gate: 'Test Coverage',
+      status: tci > 0.7 ? '✅' : '⚠️',
+      evidence: `TCI: ${(tci * 100).toFixed(1)}%`,
+      ruling: this.assessTests(tci)
+    });
     const sensitive = this.checkSensitiveFields();
-    gates.push({ gate: 'Sensitive Fields', status: sensitive.safe ? '✅' : '⛔', evidence: `${sensitive.count} fields`, ruling: sensitive.ruling });
+    gates.push({
+      gate: 'Sensitive Fields',
+      status: sensitive.safe ? '✅' : '⛔',
+      evidence: `${sensitive.count} fields`,
+      ruling: sensitive.ruling
+    });
     gates.push({
       gate: 'Evidence Quality',
-      status: evidenceTrust.level === 'strong'
-        ? '✅'
-        : (evidenceTrust.level === 'missing' ? '⛔' : '⚠️'),
+      status:
+        evidenceTrust.level === 'strong' ? '✅' : evidenceTrust.level === 'missing' ? '⛔' : '⚠️',
       evidence: `${citationQuality.exact} exact · ${citationQuality.wholeFile} whole-file · ${citationQuality.coarse} coarse`,
       ruling: evidenceTrust.reasons.join(' ')
     });
@@ -113,12 +127,15 @@ export class Holmes {
         const fields = table?.fields || {};
         for (const [fieldName, field] of Object.entries(fields)) {
           const uid = `col:${tableName}.${fieldName}`;
-          const dirs = Object.keys(field?.directives || {})
-            .map((k) => (k.startsWith('@') ? k.slice(1) : k).toLowerCase());
+          const dirs = Object.keys(field?.directives || {}).map((k) =>
+            (k.startsWith('@') ? k.slice(1) : k).toLowerCase()
+          );
           if (dirs.length) index[uid] = dirs;
         }
       }
-    } catch { /* empty */ }
+    } catch {
+      /* empty */
+    }
     this.schemaDirectives = index;
     return index;
   }
@@ -139,11 +156,17 @@ export class Holmes {
     lines.push('');
     lines.push('"Watson, after careful examination of the evidence, I deduce..."');
     lines.push('');
-    lines.push(`**Weighted Completion**: ${this.progressBar(metadata.weightedCompletion)} ${(metadata.weightedCompletion * 100).toFixed(1)}%`);
-    lines.push(`**Scores**: SCS ${(scores.scs * 100).toFixed(1)}% · TCI ${(scores.tci * 100).toFixed(1)}% · MRI ${(scores.mri * 100).toFixed(1)}%`);
+    lines.push(
+      `**Weighted Completion**: ${this.progressBar(metadata.weightedCompletion)} ${(metadata.weightedCompletion * 100).toFixed(1)}%`
+    );
+    lines.push(
+      `**Scores**: SCS ${(scores.scs * 100).toFixed(1)}% · TCI ${(scores.tci * 100).toFixed(1)}% · MRI ${(scores.mri * 100).toFixed(1)}%`
+    );
     lines.push(`**Verification Status**: ${metadata.verificationCount} claims verified`);
     if (metadata.citationQuality) {
-      lines.push(`**Citation Quality**: ${metadata.citationQuality.exact} exact · ${metadata.citationQuality.wholeFile} whole-file · ${metadata.citationQuality.coarse} coarse`);
+      lines.push(
+        `**Citation Quality**: ${metadata.citationQuality.exact} exact · ${metadata.citationQuality.wholeFile} whole-file · ${metadata.citationQuality.coarse} coarse`
+      );
     }
     if (metadata.evidenceTrust) {
       lines.push(`**Evidence Trust**: ${metadata.evidenceTrust}`);
@@ -161,7 +184,9 @@ export class Holmes {
       lines.push('|-----------|-------|----------|');
       for (const [label, detail] of Object.entries(breakdown.scs)) {
         const score = detail.score === null ? 'N/A' : `${(detail.score * 100).toFixed(1)}%`;
-        const coverage = detail.totalWeight ? `${detail.earnedWeight.toFixed(2)}/${detail.totalWeight.toFixed(2)}` : '—';
+        const coverage = detail.totalWeight
+          ? `${detail.earnedWeight.toFixed(2)}/${detail.totalWeight.toFixed(2)}`
+          : '—';
         lines.push(`| ${this.formatLabel(label)} | ${score} | ${coverage} |`);
       }
       lines.push('');
@@ -190,8 +215,11 @@ export class Holmes {
       const totalPoints = breakdown.mri.totalPoints || 0;
       for (const [label, detail] of Object.entries(breakdown.mri)) {
         if (label === 'totalPoints') continue;
-        const share = totalPoints > 0 ? `${(detail.points / totalPoints * 100).toFixed(1)}%` : '0%';
-        lines.push(`| ${this.formatLabel(label)} | ${share} | ${detail.points} | ${detail.count} |`);
+        const share =
+          totalPoints > 0 ? `${((detail.points / totalPoints) * 100).toFixed(1)}%` : '0%';
+        lines.push(
+          `| ${this.formatLabel(label)} | ${share} | ${detail.points} | ${detail.count} |`
+        );
       }
       lines.push('');
     }
@@ -203,7 +231,9 @@ export class Holmes {
     lines.push('| Element | Weight | Status | Evidence | Strength | Deduction |');
     lines.push('|---------|--------|--------|----------|----------|-----------|');
     for (const row of evidence) {
-      lines.push(`| ${row.element} | ${row.weight} | ${row.status} | ${row.evidence} | ${row.evidenceStrength} | ${row.deduction} |`);
+      lines.push(
+        `| ${row.element} | ${row.weight} | ${row.status} | ${row.evidence} | ${row.evidenceStrength} | ${row.deduction} |`
+      );
     }
     lines.push('');
 
@@ -211,7 +241,7 @@ export class Holmes {
     lines.push('');
     lines.push('"Elementary security measures, Watson..."');
     lines.push('');
-    lines.push('| Gate | Status | Evidence | Holmes\'s Ruling |');
+    lines.push("| Gate | Status | Evidence | Holmes's Ruling |");
     lines.push('|------|--------|----------|-----------------|');
     for (const gate of gates) {
       lines.push(`| ${gate.gate} | ${gate.status} | ${gate.evidence} | "${gate.ruling}" |`);
@@ -231,10 +261,11 @@ export class Holmes {
 
   buildVerdict(code, evidenceTrust = { level: 'strong', reasons: [] }) {
     if (
-      code === 'ELEMENTARY'
-      && (evidenceTrust.level === 'weak' || evidenceTrust.level === 'missing')
+      code === 'ELEMENTARY' &&
+      (evidenceTrust.level === 'weak' || evidenceTrust.level === 'missing')
     ) {
-      const reason = evidenceTrust.reasons[0] || 'Citation quality is too coarse to call this conclusive.';
+      const reason =
+        evidenceTrust.reasons[0] || 'Citation quality is too coarse to call this conclusive.';
       return {
         code: 'REQUIRES INVESTIGATION',
         message: `Further investigation required before shipping. ${reason}`,
@@ -242,19 +273,34 @@ export class Holmes {
       };
     }
     switch (code) {
-    case 'ELEMENTARY': {
-      const message = 'Ship immediately! The evidence is conclusive.';
-      return { code, message, markdown: '✅ **ELEMENTARY** - Ship immediately!\n"The evidence is conclusive. No mysteries remain."' };
-    }
-    case 'REQUIRES INVESTIGATION': {
-      const message = 'Further investigation required before shipping.';
-      return { code, message, markdown: '⚠️ **REQUIRES FURTHER INVESTIGATION**\n"Some clues remain unclear. Address the noted issues."' };
-    }
-    case 'YOU SHALL NOT PASS':
-    default: {
-      const message = 'Do not ship. Critical evidence is missing.';
-      return { code: 'YOU SHALL NOT PASS', message, markdown: '⛔ **YOU SHALL NOT PASS**\n"Critical evidence is missing! Return to your laboratory!"' };
-    }
+      case 'ELEMENTARY': {
+        const message = 'Ship immediately! The evidence is conclusive.';
+        return {
+          code,
+          message,
+          markdown:
+            '✅ **ELEMENTARY** - Ship immediately!\n"The evidence is conclusive. No mysteries remain."'
+        };
+      }
+      case 'REQUIRES INVESTIGATION': {
+        const message = 'Further investigation required before shipping.';
+        return {
+          code,
+          message,
+          markdown:
+            '⚠️ **REQUIRES FURTHER INVESTIGATION**\n"Some clues remain unclear. Address the noted issues."'
+        };
+      }
+      case 'YOU SHALL NOT PASS':
+      default: {
+        const message = 'Do not ship. Critical evidence is missing.';
+        return {
+          code: 'YOU SHALL NOT PASS',
+          message,
+          markdown:
+            '⛔ **YOU SHALL NOT PASS**\n"Critical evidence is missing! Return to your laboratory!"'
+        };
+      }
     }
   }
 
@@ -285,7 +331,13 @@ export class Holmes {
 
   inferWeight(uid) {
     const lowered = uid.toLowerCase();
-    const cfg = this.weightConfig || this.weights || { default: DEFAULT_WEIGHTS.default, substrings: {}, directives: {}, overrides: {} };
+    const cfg = this.weightConfig ||
+      this.weights || {
+        default: DEFAULT_WEIGHTS.default,
+        substrings: {},
+        directives: {},
+        overrides: {}
+      };
     // 1) Explicit overrides (table/column patterns)
     for (const [pattern, weight] of Object.entries(cfg.overrides || {})) {
       // Support simple wildcard: tbl:Table.* covering all columns
@@ -333,7 +385,8 @@ export class Holmes {
     if (structuredSQL && structuredTests) return '⚠️ Whole-file/mixed SQL & tests';
     if (hasSQL && hasTests) return '⚠️ Coarse/mixed SQL & tests';
     if (hasSQL) return structuredSQL ? '⚠️ Whole-file/mixed SQL only' : '⚠️ Coarse SQL only';
-    if (hasTests) return structuredTests ? '⚠️ Whole-file/mixed tests only' : '⚠️ Coarse tests only';
+    if (hasTests)
+      return structuredTests ? '⚠️ Whole-file/mixed tests only' : '⚠️ Coarse tests only';
     return '⛔ Missing';
   }
 
@@ -347,12 +400,12 @@ export class Holmes {
     const best = pickBestEvidenceLocation(evidence);
     if (!best) return 'missing';
     switch (best.classification.strength) {
-    case 'exact':
-      return 'exact';
-    case 'wholeFile':
-      return 'whole-file';
-    default:
-      return 'coarse';
+      case 'exact':
+        return 'exact';
+      case 'wholeFile':
+        return 'whole-file';
+      default:
+        return 'coarse';
     }
   }
 
@@ -380,9 +433,7 @@ export class Holmes {
   }
 
   formatLabel(label) {
-    return label
-      .replace(/_/g, ' ')
-      .replace(/\b\w/g, c => c.toUpperCase());
+    return label.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
   }
 
   checkSensitiveFields() {
@@ -410,7 +461,10 @@ export class Holmes {
   loadWeightOverrides() {
     const weights = { ...DEFAULT_WEIGHTS };
     try {
-      if (process.env.WESLEY_HOLMES_WEIGHT_FILE && existsSync(process.env.WESLEY_HOLMES_WEIGHT_FILE)) {
+      if (
+        process.env.WESLEY_HOLMES_WEIGHT_FILE &&
+        existsSync(process.env.WESLEY_HOLMES_WEIGHT_FILE)
+      ) {
         const fileWeights = JSON.parse(readFileSync(process.env.WESLEY_HOLMES_WEIGHT_FILE, 'utf8'));
         Object.assign(weights, fileWeights);
       } else if (process.env.WESLEY_HOLMES_WEIGHTS) {
@@ -428,11 +482,11 @@ export class Holmes {
 }
 
 function hasAnyEvidence(summary) {
-  return Boolean(summary) && (summary.exact + summary.wholeFile + summary.coarse) > 0;
+  return Boolean(summary) && summary.exact + summary.wholeFile + summary.coarse > 0;
 }
 
 function hasStructuredEvidence(summary) {
-  return Boolean(summary) && (summary.exact + summary.wholeFile) > 0;
+  return Boolean(summary) && summary.exact + summary.wholeFile > 0;
 }
 
 function hasExactSubrange(summary) {
@@ -452,7 +506,8 @@ function normalizeBreakdown(b) {
     for (const k of Object.keys(out.scs)) {
       const comp = out.scs[k];
       if (comp.total !== undefined && comp.totalWeight === undefined) comp.totalWeight = comp.total;
-      if (comp.covered !== undefined && comp.earnedWeight === undefined) comp.earnedWeight = comp.covered;
+      if (comp.covered !== undefined && comp.earnedWeight === undefined)
+        comp.earnedWeight = comp.covered;
     }
   }
   // TCI (normalize legacy keys and fields)
@@ -461,10 +516,19 @@ function normalizeBreakdown(b) {
       unit_constraints: b.tci.unit_constraints || b.tci.unitConstraints,
       unit_rls: b.tci.unit_rls || b.tci.rls,
       integration_relations: b.tci.integration_relations || b.tci.integrationRelations,
-      e2e_ops: b.tci.e2e_ops || b.tci.e2eOps || { score: null, covered: 0, total: 0, note: 'Query operation test tracking not yet implemented' }
+      e2e_ops: b.tci.e2e_ops ||
+        b.tci.e2eOps || {
+          score: null,
+          covered: 0,
+          total: 0,
+          note: 'Query operation test tracking not yet implemented'
+        }
     };
     for (const [key, val] of Object.entries(map)) {
-      if (!val) { out.tci[key] = { score: null, covered: 0, total: 0 }; continue; }
+      if (!val) {
+        out.tci[key] = { score: null, covered: 0, total: 0 };
+        continue;
+      }
       out.tci[key] = {
         score: val.score ?? null,
         covered: val.covered ?? val.coveredWeight ?? 0,
@@ -490,7 +554,12 @@ function normalizeBreakdown(b) {
         count: comp.count ?? 0
       };
     }
-    out.mri.totalPoints = b.mri.totalPoints ?? Object.values(out.mri).reduce((s, c) => s + (c && typeof c.points === 'number' ? c.points : 0), 0);
+    out.mri.totalPoints =
+      b.mri.totalPoints ??
+      Object.values(out.mri).reduce(
+        (s, c) => s + (c && typeof c.points === 'number' ? c.points : 0),
+        0
+      );
   }
   return out;
 }

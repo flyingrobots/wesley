@@ -30,7 +30,8 @@ The fixture contract is owned by generic Wesley compiler truth:
 - Invalid SDL fixtures live under `test/fixtures/ir-parity-invalid/`.
 - Rust golden regeneration is `pnpm fixtures:ir`.
 - JS/Rust parity evidence is `pnpm parity:ir`.
-- The first parity projection is `js-table-vs-rust-table.v0`.
+- The current parity projections are `js-table-vs-rust-table.v0` and
+  `js-sdl-type-family-vs-rust-l1-type-family.v0`.
 - The Rust command surface is `cargo run --quiet -p wesley-cli -- schema ...`.
 - The legacy JS anchors are the parse, lower, canonicalize, registry-hash, and
   canonical JSON functions named in
@@ -46,8 +47,8 @@ The v0.0.6 corpus must keep these classes explicit:
   baselines, not first-pass parity proof.
 - **Directive-heavy SDL**: directive argument and canonical alias truth.
 - **Legacy alias SDL**: compatibility input for supported core aliases.
-- **Schema-extension SDL**: Rust L1 coverage that waits for a fair non-table
-  parity projection before default sentinel admission.
+- **Schema-extension SDL**: Rust L1 coverage admitted to the default sentinel
+  corpus under the type-family parity projection.
 - **Invalid SDL**: negative diagnostics with stable codes and spans where the
   lowerer can provide them.
 

@@ -110,10 +110,7 @@ test('canonicalize: extend type folded into base type', () => {
 });
 
 test('canonicalize: extend type without base → throws', () => {
-  assert.throws(
-    () => canonicalize('extend type Missing { x: Int }'),
-    /no base definition found/
-  );
+  assert.throws(() => canonicalize('extend type Missing { x: Int }'), /no base definition found/);
 });
 
 // ─── enum value ordering ─────────────────────────────────────────────
@@ -192,7 +189,8 @@ test('canonicalize: same directive multiple times sorted by serialized args', ()
 
 test('canonicalize: NFC normalization applied to string values', () => {
   // e followed by combining acute accent (NFD) vs e-acute (NFC)
-  const nfd = 'directive @d(x: String) on OBJECT\ntype Query @d(x: "caf\u0065\u0301") { a: String }';
+  const nfd =
+    'directive @d(x: String) on OBJECT\ntype Query @d(x: "caf\u0065\u0301") { a: String }';
   const nfc = 'directive @d(x: String) on OBJECT\ntype Query @d(x: "caf\u00e9") { a: String }';
   assert.ok(bytesEqual(canonicalize(nfd), canonicalize(nfc)));
 });
@@ -236,7 +234,7 @@ test('canonicalize: fields explicitly set to default appear', () => {
   `;
   const result = canonicalize(sdl);
   const decoded = JSON.parse(new TextDecoder().decode(result));
-  const queryType = decoded.find(d => d.kind === 'ObjectTypeDefinition');
+  const queryType = decoded.find((d) => d.kind === 'ObjectTypeDefinition');
   assert.ok(queryType.fields[0].directives);
   assert.equal(queryType.fields[0].directives[0].arguments[0].value, 0);
 });
@@ -250,7 +248,7 @@ test('canonicalize: schema definition included', () => {
   `;
   const result = canonicalize(sdl);
   const decoded = JSON.parse(new TextDecoder().decode(result));
-  const schemaDef = decoded.find(d => d.kind === 'SchemaDefinition');
+  const schemaDef = decoded.find((d) => d.kind === 'SchemaDefinition');
   assert.ok(schemaDef);
   assert.equal(schemaDef.operationTypes[0].type, 'MyQuery');
 });

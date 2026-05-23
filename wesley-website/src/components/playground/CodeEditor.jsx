@@ -8,10 +8,10 @@ export default function CodeEditor({ value, onChange, readOnly = false, language
   if (readOnly) {
     return (
       <Box className={classes.editorContainer}>
-        <CodeHighlight 
-          code={value} 
-          language={language} 
-          className={classes.codeBlock} 
+        <CodeHighlight
+          code={value}
+          language={language}
+          className={classes.codeBlock}
           style={{ height: '100%', overflow: 'auto' }}
         />
       </Box>

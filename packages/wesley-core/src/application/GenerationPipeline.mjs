@@ -4,7 +4,10 @@
  */
 
 import { EvidenceMap } from './EvidenceMap.mjs';
-import { GENERATED_SNAPSHOT_PATH, generatedArtifactPathCandidates } from './GeneratedArtifactPaths.mjs';
+import {
+  GENERATED_SNAPSHOT_PATH,
+  generatedArtifactPathCandidates
+} from './GeneratedArtifactPaths.mjs';
 import { ScoringEngine, BUNDLE_VERSION } from './Scoring.mjs';
 
 export class GenerationPipeline {
@@ -48,11 +51,7 @@ export class GenerationPipeline {
     try {
       // Prefer full scoring when the parsed schema exposes the domain API
       if (schema && typeof schema.getTables === 'function') {
-        scores = scoringEngine.exportScores(
-          schema,
-          diff.steps || [],
-          options.testResults || {}
-        );
+        scores = scoringEngine.exportScores(schema, diff.steps || [], options.testResults || {});
       } else {
         // Minimal fallback for lightweight hosts (e.g., browser/deno/bun smokes)
         // whose parsers return a small JSON-ish object with { tables } only.
@@ -76,7 +75,10 @@ export class GenerationPipeline {
       }
     } catch (err) {
       // Never crash generation due to scoring; prefer explicit degraded output
-      this.logger?.warn?.('[scoring] Failed to compute scores; defaulting to zeros:', err?.message || err);
+      this.logger?.warn?.(
+        '[scoring] Failed to compute scores; defaulting to zeros:',
+        err?.message || err
+      );
       const mri = scoringEngine.calculateMRIDetails(diff.steps || []);
       const zero = 0;
       const readiness = scoringEngine.calculateReadiness(zero, mri.score, zero);

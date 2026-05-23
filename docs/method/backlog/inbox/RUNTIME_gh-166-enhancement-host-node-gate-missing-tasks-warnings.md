@@ -110,9 +110,9 @@ Add configuration (env/CLI flag) to gate warnings, adjust runtime to respect set
 
 ### QA Sign-off Matrix
 
-| Environment | Surface | Owner | Status | Notes |
-| --- | --- | --- | --- | --- |
-| Unit tests | Host-node runtime | TBD | pending | |
+| Environment | Surface           | Owner | Status  | Notes |
+| ----------- | ----------------- | ----- | ------- | ----- |
+| Unit tests  | Host-node runtime | TBD   | pending |       |
 
 ## Requirements
 

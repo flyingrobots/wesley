@@ -5,10 +5,7 @@ import path from 'node:path';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-import {
-  WESLEY_MODULE_CAPABILITY_COLLECTIONS,
-  listModuleCapabilities
-} from '@wesley/core';
+import { WESLEY_MODULE_CAPABILITY_COLLECTIONS, listModuleCapabilities } from '@wesley/core';
 
 import { program } from '../src/program.mjs';
 import {
@@ -16,7 +13,9 @@ import {
   loadWesleyCliModuleEntries
 } from '../src/framework/module-loader.mjs';
 
-const fixtureModulePath = fileURLToPath(new URL('./fixtures/modules/test-extension-module.mjs', import.meta.url));
+const fixtureModulePath = fileURLToPath(
+  new URL('./fixtures/modules/test-extension-module.mjs', import.meta.url)
+);
 const wesleyCommandUrl = new URL('../src/framework/WesleyCommand.mjs', import.meta.url).href;
 
 const expectedFixtureCapabilityNames = Object.freeze({
@@ -227,18 +226,15 @@ test('program loads CLI commands from a fixture module via WESLEY_MODULES', asyn
   const io = createIo();
 
   try {
-    const exitCode = await program(
-      ['node', 'wesley', '--json', 'fixture-hello'],
-      {
-        cwd: tempDir,
-        env: {
-          WESLEY_MODULES: fixtureModulePath
-        },
-        stdout: io.stdout,
-        stderr: io.stderr,
-        logger: nullLogger
-      }
-    );
+    const exitCode = await program(['node', 'wesley', '--json', 'fixture-hello'], {
+      cwd: tempDir,
+      env: {
+        WESLEY_MODULES: fixtureModulePath
+      },
+      stdout: io.stdout,
+      stderr: io.stderr,
+      logger: nullLogger
+    });
 
     assert.equal(exitCode, 0);
     const payload = JSON.parse(io.readStdout());
@@ -257,28 +253,22 @@ test('program keeps module CLI commands isolated to the invocation that loaded t
   const secondIo = createIo();
 
   try {
-    const firstExitCode = await program(
-      ['node', 'wesley', '--json', 'fixture-hello'],
-      {
-        cwd: tempDir,
-        env: {
-          WESLEY_MODULES: fixtureModulePath
-        },
-        stdout: firstIo.stdout,
-        stderr: firstIo.stderr,
-        logger: nullLogger
-      }
-    );
-    const secondExitCode = await program(
-      ['node', 'wesley', '--json', 'fixture-hello'],
-      {
-        cwd: tempDir,
-        env: {},
-        stdout: secondIo.stdout,
-        stderr: secondIo.stderr,
-        logger: nullLogger
-      }
-    );
+    const firstExitCode = await program(['node', 'wesley', '--json', 'fixture-hello'], {
+      cwd: tempDir,
+      env: {
+        WESLEY_MODULES: fixtureModulePath
+      },
+      stdout: firstIo.stdout,
+      stderr: firstIo.stderr,
+      logger: nullLogger
+    });
+    const secondExitCode = await program(['node', 'wesley', '--json', 'fixture-hello'], {
+      cwd: tempDir,
+      env: {},
+      stdout: secondIo.stdout,
+      stderr: secondIo.stderr,
+      logger: nullLogger
+    });
 
     assert.equal(firstExitCode, 0);
     assert.equal(JSON.parse(firstIo.readStdout()).result.kind, 'fixture.hello');
@@ -301,9 +291,8 @@ test('program rejects module CLI commands that collide with built-in commands', 
     });
 
     await assert.rejects(
-      () => program(
-        ['node', 'wesley', '--help'],
-        {
+      () =>
+        program(['node', 'wesley', '--help'], {
           cwd: tempDir,
           env: {
             WESLEY_MODULES: modulePath
@@ -311,8 +300,7 @@ test('program rejects module CLI commands that collide with built-in commands', 
           stdout: createIo().stdout,
           stderr: createIo().stderr,
           logger: nullLogger
-        }
-      ),
+        }),
       (error) => {
         assert.equal(error.code, 'WESLEY_COMMAND_NAME_COLLISION');
         assert.equal(error.meta.command, 'compile');
@@ -340,9 +328,8 @@ test('program rejects duplicate module CLI command names', async () => {
     });
 
     await assert.rejects(
-      () => program(
-        ['node', 'wesley', '--help'],
-        {
+      () =>
+        program(['node', 'wesley', '--help'], {
           cwd: tempDir,
           env: {
             WESLEY_MODULES: [firstModule, secondModule].join(path.delimiter)
@@ -350,8 +337,7 @@ test('program rejects duplicate module CLI command names', async () => {
           stdout: createIo().stdout,
           stderr: createIo().stderr,
           logger: nullLogger
-        }
-      ),
+        }),
       (error) => {
         assert.equal(error.code, 'WESLEY_COMMAND_NAME_COLLISION');
         assert.equal(error.meta.command, 'fixture-duplicate');
@@ -368,10 +354,11 @@ test('discoverAndRegisterWesleyCliModules exposes fixture capability registry on
     const registry = result.capabilityRegistry;
 
     assert.equal(ctx.moduleCapabilityRegistry, registry);
-    assert.deepEqual(registry.modules, [
-      { name: 'test-extension-module', apiVersion: '1' }
-    ]);
-    assert.deepEqual(Object.keys(registry.capabilities), Object.keys(WESLEY_MODULE_CAPABILITY_COLLECTIONS));
+    assert.deepEqual(registry.modules, [{ name: 'test-extension-module', apiVersion: '1' }]);
+    assert.deepEqual(
+      Object.keys(registry.capabilities),
+      Object.keys(WESLEY_MODULE_CAPABILITY_COLLECTIONS)
+    );
 
     for (const [area, collections] of Object.entries(WESLEY_MODULE_CAPABILITY_COLLECTIONS)) {
       assert.deepEqual(Object.keys(registry.capabilities[area]), collections, area);
@@ -431,11 +418,14 @@ test('fixture BLADE capabilities expose local environment, test, and gate hooks'
       kind: 'fixture.blade.gate.v1',
       status: 'pass'
     });
-    await assert.rejects(() => gate.evaluate({ passed: false }), (error) => {
-      assert.equal(error.code, 'FIXTURE_GATE_REJECTED');
-      assert.match(error.message, /fixture gate rejected fixture input/);
-      return true;
-    });
+    await assert.rejects(
+      () => gate.evaluate({ passed: false }),
+      (error) => {
+        assert.equal(error.code, 'FIXTURE_GATE_REJECTED');
+        assert.match(error.message, /fixture gate rejected fixture input/);
+        return true;
+      }
+    );
   });
 });
 
@@ -480,12 +470,18 @@ test('program dispatches compile through a fixture module target', async () => {
     const payload = JSON.parse(io.readStdout());
     assert.equal(payload.success, true);
     assert.deepEqual(payload.result.targets, ['fixture-target']);
-    assert.equal(payload.result.generatedTargets['fixture-target'].moduleName, 'test-extension-module');
+    assert.equal(
+      payload.result.generatedTargets['fixture-target'].moduleName,
+      'test-extension-module'
+    );
     assert.equal(
       payload.result.generatedTargets['fixture-target'].result.kind,
       'fixture.compile-target.v1'
     );
-    assert.equal(payload.result.generatedTargets['fixture-target'].result.outDir, 'out/fixture-target');
+    assert.equal(
+      payload.result.generatedTargets['fixture-target'].result.outDir,
+      'out/fixture-target'
+    );
     assert.equal(payload.result.generatedTargets['fixture-target'].result.dryRun, true);
     assert.equal(io.readStderr(), '');
   } finally {
@@ -588,7 +584,9 @@ test('program rejects compile target aliases that collide across modules', async
 });
 
 test('program rejects compile target aliases that collide with later target names', async () => {
-  const tempDir = mkdtempSync(path.join(os.tmpdir(), 'wesley-module-compile-alias-target-collision-'));
+  const tempDir = mkdtempSync(
+    path.join(os.tmpdir(), 'wesley-module-compile-alias-target-collision-')
+  );
   const io = createIo();
 
   try {

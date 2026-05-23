@@ -47,7 +47,7 @@ export class WesleyCommand {
       const existing = registry.get(name);
       const error = new Error(
         `Wesley CLI command "${name}" is already registered` +
-        `${existing?.constructor?.name ? ` by ${existing.constructor.name}` : ''}.`
+          `${existing?.constructor?.name ? ` by ${existing.constructor.name}` : ''}.`
       );
       error.code = 'WESLEY_COMMAND_NAME_COLLISION';
       error.meta = {
@@ -172,8 +172,10 @@ export class WesleyCommand {
         ? pathResolve(options.schemaRoot)
         : dirname(realSchemaPath);
 
-      const units = await resolve(realSchemaPath, (p) => fs.read(p), rootDir, { resolvePath: pathResolve });
-      const mergedSdl = units.map(u => u.sdl).join('\n\n');
+      const units = await resolve(realSchemaPath, (p) => fs.read(p), rootDir, {
+        resolvePath: pathResolve
+      });
+      const mergedSdl = units.map((u) => u.sdl).join('\n\n');
       return { schemaPath, schemaContent: mergedSdl, units };
     }
 
@@ -186,7 +188,7 @@ export class WesleyCommand {
     return new Promise((resolve, reject) => {
       let buf = '';
       stdin.setEncoding('utf8');
-      stdin.on('data', chunk => buf += chunk);
+      stdin.on('data', (chunk) => (buf += chunk));
       stdin.on('end', () => resolve(buf));
       stdin.on('error', reject);
     });
@@ -210,7 +212,8 @@ export class WesleyCommand {
 
   // Main execute flow with error handling
   async execute(options = {}, command) {
-    const requestedFormat = (options.logFormat || (options.json ? 'json' : 'text'))?.toLowerCase?.() || 'text';
+    const requestedFormat =
+      (options.logFormat || (options.json ? 'json' : 'text'))?.toLowerCase?.() || 'text';
     if (!['text', 'json'].includes(requestedFormat)) {
       const err = new Error(`Unsupported log format: ${options.logFormat}`);
       err.code = 'INVALID_LOG_FORMAT';
@@ -245,15 +248,20 @@ export class WesleyCommand {
 
       // Handle JSON output mode
       if (options.json && result) {
-        this.ctx.stdout.write(JSON.stringify({
-          success: true,
-          result,
-          timestamp: new Date().toISOString()
-        }, null, 2) + '\n');
+        this.ctx.stdout.write(
+          JSON.stringify(
+            {
+              success: true,
+              result,
+              timestamp: new Date().toISOString()
+            },
+            null,
+            2
+          ) + '\n'
+        );
       }
 
       return result;
-
     } catch (error) {
       // Handle errors properly
       const exitCode = this.exitCodeFor(error);
@@ -266,23 +274,25 @@ export class WesleyCommand {
         if (ann && ann.file && ann.lines) {
           sdlNote = `${ann.file}:${ann.lines}`;
         }
-      } catch { /* empty */ }
+      } catch {
+        /* empty */
+      }
 
       if (options.json) {
-        const fallbackRunId = typeof options.runId === 'string' && options.runId.trim()
-          ? options.runId.trim()
-          : null;
-        const fallbackTransmutation = typeof options.transmutation === 'string' && options.transmutation.trim()
-          ? options.transmutation.trim()
-          : null;
-        const fallbackRun = error.run || (
-          Array.isArray(error.events) && error.events.length > 0
+        const fallbackRunId =
+          typeof options.runId === 'string' && options.runId.trim() ? options.runId.trim() : null;
+        const fallbackTransmutation =
+          typeof options.transmutation === 'string' && options.transmutation.trim()
+            ? options.transmutation.trim()
+            : null;
+        const fallbackRun =
+          error.run ||
+          (Array.isArray(error.events) && error.events.length > 0
             ? buildRuntimeRunReport(error.events, {
-              runId: error.runId || fallbackRunId,
-              transmutation: error.transmutation || fallbackTransmutation
-            })
-            : null
-        );
+                runId: error.runId || fallbackRunId,
+                transmutation: error.transmutation || fallbackTransmutation
+              })
+            : null);
         const errorPayload = {
           success: false,
           code: error.code || 'ERROR',
@@ -291,7 +301,7 @@ export class WesleyCommand {
           transmutation: error.transmutation || fallbackTransmutation,
           run: fallbackRun,
           events: Array.isArray(error.events) ? error.events : [],
-          stack: (options.debug || options.verbose) ? error.stack : undefined,
+          stack: options.debug || options.verbose ? error.stack : undefined,
           timestamp: new Date().toISOString()
         };
         this.ctx.stderr.write(JSON.stringify(errorPayload, null, 2) + '\n');

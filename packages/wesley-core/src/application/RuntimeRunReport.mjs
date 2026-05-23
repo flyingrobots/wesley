@@ -66,60 +66,60 @@ export function applyRuntimeEvent(report, event) {
   }
 
   switch (event.type) {
-  case 'TaskStarted':
-    report.taskCounts.started += 1;
-    report.status = isTerminal(report.status) ? report.status : 'running';
-    break;
-  case 'TaskCompleted':
-    report.taskCounts.completed += 1;
-    break;
-  case 'TaskFailed':
-    report.taskCounts.failed += 1;
-    if (!report.failure) {
-      report.failure = {
-        code: payload.errorCode ?? 'TASK_FAILED',
-        message: payload.errorMessage ?? null
+    case 'TaskStarted':
+      report.taskCounts.started += 1;
+      report.status = isTerminal(report.status) ? report.status : 'running';
+      break;
+    case 'TaskCompleted':
+      report.taskCounts.completed += 1;
+      break;
+    case 'TaskFailed':
+      report.taskCounts.failed += 1;
+      if (!report.failure) {
+        report.failure = {
+          code: payload.errorCode ?? 'TASK_FAILED',
+          message: payload.errorMessage ?? null
+        };
+      }
+      break;
+    case 'TaskSkipped':
+      report.taskCounts.skipped += 1;
+      break;
+    case 'ArtifactsMaterialized':
+      if (Number.isInteger(payload.artifactCount) && payload.artifactCount >= 0) {
+        report.artifactCount += payload.artifactCount;
+      }
+      break;
+    case 'ScoresComputed':
+      report.scores = {
+        scs: payload.scs ?? null,
+        mri: payload.mri ?? null,
+        tci: payload.tci ?? null,
+        readiness: payload.readiness ?? null
       };
-    }
-    break;
-  case 'TaskSkipped':
-    report.taskCounts.skipped += 1;
-    break;
-  case 'ArtifactsMaterialized':
-    if (Number.isInteger(payload.artifactCount) && payload.artifactCount >= 0) {
-      report.artifactCount += payload.artifactCount;
-    }
-    break;
-  case 'ScoresComputed':
-    report.scores = {
-      scs: payload.scs ?? null,
-      mri: payload.mri ?? null,
-      tci: payload.tci ?? null,
-      readiness: payload.readiness ?? null
-    };
-    break;
-  case 'RunCompleted':
-    report.status = 'completed';
-    report.completedAt = event.timestamp ?? report.completedAt;
-    break;
-  case 'RunFailed':
-    report.status = 'failed';
-    report.completedAt = event.timestamp ?? report.completedAt;
-    report.failure = {
-      code: payload.code ?? 'RUN_FAILED',
-      message: payload.message ?? null
-    };
-    break;
-  case 'RunCancelled':
-    report.status = 'cancelled';
-    report.completedAt = event.timestamp ?? report.completedAt;
-    report.failure = {
-      code: payload.code ?? 'RUN_CANCELLED',
-      message: payload.message ?? null
-    };
-    break;
-  default:
-    break;
+      break;
+    case 'RunCompleted':
+      report.status = 'completed';
+      report.completedAt = event.timestamp ?? report.completedAt;
+      break;
+    case 'RunFailed':
+      report.status = 'failed';
+      report.completedAt = event.timestamp ?? report.completedAt;
+      report.failure = {
+        code: payload.code ?? 'RUN_FAILED',
+        message: payload.message ?? null
+      };
+      break;
+    case 'RunCancelled':
+      report.status = 'cancelled';
+      report.completedAt = event.timestamp ?? report.completedAt;
+      report.failure = {
+        code: payload.code ?? 'RUN_CANCELLED',
+        message: payload.message ?? null
+      };
+      break;
+    default:
+      break;
   }
 
   return report;

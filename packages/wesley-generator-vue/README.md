@@ -56,9 +56,7 @@ The generator is intentionally strict: it will throw if `ir` is missing or `ir.t
 
 ```js
 {
-  files: [
-    { path: "types.generated.ts", content: "..." }
-  ]
+  files: [{ path: 'types.generated.ts', content: '...' }];
 }
 ```
 

@@ -30,7 +30,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
-          submodules: recursive  # For Bats plugins
+          submodules: recursive # For Bats plugins
 
       - name: Detect CLI changes
         id: changes

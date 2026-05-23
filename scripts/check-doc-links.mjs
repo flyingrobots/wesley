@@ -37,7 +37,13 @@ for (const file of mdFiles) {
   let m;
   while ((m = linkRe.exec(content)) !== null) {
     let link = m[1].trim();
-    if (!link || link.startsWith('http://') || link.startsWith('https://') || link.startsWith('mailto:')) continue;
+    if (
+      !link ||
+      link.startsWith('http://') ||
+      link.startsWith('https://') ||
+      link.startsWith('mailto:')
+    )
+      continue;
     // Strip anchors
     const hashIdx = link.indexOf('#');
     if (hashIdx >= 0) link = link.slice(0, hashIdx);

@@ -5,9 +5,7 @@
   "priority": "P1",
   "status": "PLANNED",
   "track": "REAL_WAY",
-  "dependencies": [
-    "WES-002"
-  ],
+  "dependencies": ["WES-002"],
   "requirements": [
     "All prerequisite tasks are marked DONE in the selected execution path: WES-002.",
     "Owning repository has an active branch with contract/codegen artifacts synchronized to current baselines."

@@ -5,9 +5,7 @@
   "priority": "P0",
   "status": "UPSTREAM_ACTIVE",
   "track": "REAL_WAY",
-  "dependencies": [
-    "WES-001"
-  ],
+  "dependencies": ["WES-001"],
   "requirements": [
     "All prerequisite tasks are marked DONE in the selected execution path: WES-001.",
     "Owning repository has an active branch with contract/codegen artifacts synchronized to current baselines."

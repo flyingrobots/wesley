@@ -19,7 +19,7 @@ const encoder = new TextEncoder();
  */
 function hexFromBuffer(buf) {
   return Array.from(new Uint8Array(buf))
-    .map(b => b.toString(16).padStart(2, '0'))
+    .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
 }
 
@@ -76,9 +76,7 @@ export async function computeBundleHash(artifacts) {
     const normalizedPath = path.replace(/\\/g, '/');
     const pathBytes = encoder.encode(normalizedPath + '\0');
     const content = artifacts[path];
-    const contentBytes = typeof content === 'string'
-      ? encoder.encode(content)
-      : content;
+    const contentBytes = typeof content === 'string' ? encoder.encode(content) : content;
 
     segments.push(pathBytes);
     segments.push(contentBytes);

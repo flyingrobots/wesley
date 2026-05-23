@@ -19,7 +19,11 @@ import { validatePlugin } from '@wesley/core/ports';
 export function checkNodeVersion(versionString) {
   const match = versionString.match(/^v?(\d+)\.(\d+)/);
   if (!match) {
-    return { name: 'Node.js', status: 'fail', message: `Unable to parse version: ${versionString}` };
+    return {
+      name: 'Node.js',
+      status: 'fail',
+      message: `Unable to parse version: ${versionString}`
+    };
   }
   const major = Number(match[1]);
   const minor = Number(match[2]);
@@ -134,9 +138,7 @@ export async function checkPlugins(ctx) {
       });
       continue;
     }
-    const specifier = entryPoint
-      ? pathToFileURL(entryPoint).href
-      : pkg;
+    const specifier = entryPoint ? pathToFileURL(entryPoint).href : pkg;
 
     try {
       const mod = await import(specifier);

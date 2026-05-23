@@ -52,7 +52,10 @@ export class CertCreateCommand extends WesleyCommand {
       .option('--out <file>', 'Output file', GENERATED_SHIPME_PATH)
       .option('--transmutation <name>', 'Transmutation to associate with this certificate')
       .option('--run-id <id>', 'Associate this certificate with a specific run ID')
-      .option('--resume', 'Resume a previously started certificate run with the same transmutation and run ID')
+      .option(
+        '--resume',
+        'Resume a previously started certificate run with the same transmutation and run ID'
+      )
       .option('--json', 'Emit JSON to stdout (no file)');
   }
 
@@ -60,7 +63,7 @@ export class CertCreateCommand extends WesleyCommand {
     assertResumeRequestedRunId(options);
     const env = options.env || 'production';
     const now = new Date().toISOString();
-    const sha = await gitSha(this.ctx) || 'uncommitted';
+    const sha = (await gitSha(this.ctx)) || 'uncommitted';
 
     const bundle = await readGeneratedJsonSafe(this.ctx, GENERATED_BUNDLE_PATH);
     const scores = await readGeneratedJsonSafe(this.ctx, GENERATED_SCORES_PATH);
@@ -95,21 +98,24 @@ export class CertCreateCommand extends WesleyCommand {
         artifactCount: Object.keys(artifacts).length
       });
 
-      const cert = applyResumeMetadata({
-        version: '1.0.0',
-        transmutation: run.transmutation,
-        runId: run.runId,
-        sha,
-        environment: env,
-        timestamp: now,
-        scores: scores?.scores || null,
-        evidence,
-        holmes,
-        realm: realm || null,
-        counterfactual,
-        artifacts,
-        signatures: []
-      }, resumeState);
+      const cert = applyResumeMetadata(
+        {
+          version: '1.0.0',
+          transmutation: run.transmutation,
+          runId: run.runId,
+          sha,
+          environment: env,
+          timestamp: now,
+          scores: scores?.scores || null,
+          evidence,
+          holmes,
+          realm: realm || null,
+          counterfactual,
+          artifacts,
+          signatures: []
+        },
+        resumeState
+      );
       emitCertificateIssued(eventCollector, scope, {
         environment: env,
         artifactCount: Object.keys(artifacts).length,
@@ -125,11 +131,17 @@ export class CertCreateCommand extends WesleyCommand {
           command: 'cert-create',
           json: true
         });
-        this.ctx.stdout.write(JSON.stringify({
-          ...cert,
-          events: eventCollector.events,
-          run: buildCommandRunReport(eventCollector, run)
-        }, null, 2) + '\n');
+        this.ctx.stdout.write(
+          JSON.stringify(
+            {
+              ...cert,
+              events: eventCollector.events,
+              run: buildCommandRunReport(eventCollector, run)
+            },
+            null,
+            2
+          ) + '\n'
+        );
         return;
       }
 
@@ -179,7 +191,9 @@ function renderSHIPME(cert) {
     `- Environment: ${cert.environment}`,
     `- Timestamp: ${cert.timestamp}`,
     cert.realm ? `- REALM: ${cert.realm.verdict} (${cert.realm.duration_ms}ms)` : '- REALM: n/a',
-    cert.scores ? `- Scores: SCS=${fmt(cert.scores.scs)} MRI=${fmt(cert.scores.mri)} TCI=${fmt(cert.scores.tci)}` : '- Scores: n/a',
+    cert.scores
+      ? `- Scores: SCS=${fmt(cert.scores.scs)} MRI=${fmt(cert.scores.mri)} TCI=${fmt(cert.scores.tci)}`
+      : '- Scores: n/a',
     cert.evidence
       ? `- Evidence: ${cert.evidence.totalCitations} citations (${cert.evidence.exact} exact · ${cert.evidence.wholeFile} whole-file · ${cert.evidence.coarse} coarse; strongest ${cert.evidence.strongestCitation})`
       : '- Evidence: n/a',
@@ -192,7 +206,9 @@ function renderSHIPME(cert) {
     cert.holmes
       ? `- HOLMES Gates: ${cert.holmes.gateFailures} failing · ${cert.holmes.gateWarnings} warnings${cert.holmes.evidenceTrust ? `; evidence trust ${cert.holmes.evidenceTrust}` : ''}`
       : '- HOLMES Gates: n/a',
-    cert.counterfactual ? `- Counterfactual: ${cert.counterfactual.gate} (${cert.counterfactual.riskClass})` : '- Counterfactual: n/a',
+    cert.counterfactual
+      ? `- Counterfactual: ${cert.counterfactual.gate} (${cert.counterfactual.riskClass})`
+      : '- Counterfactual: n/a',
     '',
     '<!-- WESLEY_CERT:BEGIN -->',
     '```json',
@@ -204,7 +220,10 @@ function renderSHIPME(cert) {
   return human;
 }
 
-function fmt(v){ if (v==null) return 'n/a'; return typeof v==='number' ? Number(v).toFixed(2) : String(v); }
+function fmt(v) {
+  if (v == null) return 'n/a';
+  return typeof v === 'number' ? Number(v).toFixed(2) : String(v);
+}
 
 async function gitSha(ctx) {
   try {
@@ -229,7 +248,11 @@ async function readGeneratedJsonSafe(ctx, currentPath) {
 }
 
 async function readWithFallback(fn) {
-  try { return await fn(); } catch { return null; }
+  try {
+    return await fn();
+  } catch {
+    return null;
+  }
 }
 
 async function hashArtifacts(ctx, outDir) {
@@ -263,7 +286,7 @@ async function buildShipmeEvidenceSummary(ctx, bundle) {
 
   const citationQuality = summarizeEvidenceQuality(
     bundle.evidence,
-    file => contentByFile.get(file) ?? null
+    (file) => contentByFile.get(file) ?? null
   );
   const total = totalEvidenceCitations(citationQuality);
   if (total === 0) return null;
@@ -286,16 +309,13 @@ function buildShipmeHolmesSummary(bundle, logger) {
   try {
     const investigation = new Holmes(bundle).investigationData();
     const gates = Array.isArray(investigation?.gates) ? investigation.gates : [];
-    const blockingGates = gates
-      .filter(gate => gate?.status === '⛔')
-      .map(gate => gate.gate);
-    const warningGates = gates
-      .filter(gate => gate?.status === '⚠️')
-      .map(gate => gate.gate);
+    const blockingGates = gates.filter((gate) => gate?.status === '⛔').map((gate) => gate.gate);
+    const warningGates = gates.filter((gate) => gate?.status === '⚠️').map((gate) => gate.gate);
 
     return {
       generatedAt: investigation?.metadata?.generatedAt || bundle.timestamp || null,
-      shipVerdict: investigation?.verdict?.code || investigation?.metadata?.verificationStatus || 'UNKNOWN',
+      shipVerdict:
+        investigation?.verdict?.code || investigation?.metadata?.verificationStatus || 'UNKNOWN',
       baseReadiness: investigation?.metadata?.readinessStatus || null,
       evidenceTrust: investigation?.metadata?.evidenceTrust || 'missing',
       verificationCount: investigation?.metadata?.verificationCount ?? 0,
@@ -306,7 +326,10 @@ function buildShipmeHolmesSummary(bundle, logger) {
       message: investigation?.verdict?.message || null
     };
   } catch (error) {
-    logger?.debug?.('buildShipmeHolmesSummary: unable to summarize HOLMES investigation: %s', error?.message || error);
+    logger?.debug?.(
+      'buildShipmeHolmesSummary: unable to summarize HOLMES investigation: %s',
+      error?.message || error
+    );
     return null;
   }
 }

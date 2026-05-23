@@ -1,17 +1,12 @@
 import path from 'node:path';
-import {
-  listRuntimeRunReports,
-  readRuntimeRunRecord,
-  resolveRuntimeRunStream
-} from '@wesley/core';
+import { listRuntimeRunReports, readRuntimeRunRecord, resolveRuntimeRunStream } from '@wesley/core';
 import { GitWarpEventStore, resolveLedgerRootDir } from '@wesley/runtime-node';
 import { HOLMES_COMMAND_TRANSMUTATIONS } from './command-run.mjs';
 
 export async function loadRuntimeRunRecord({ repoRoot, runId, transmutation = null }) {
   const requestedRunId = typeof runId === 'string' ? runId.trim() : '';
-  const requestedTransmutation = typeof transmutation === 'string' && transmutation.trim()
-    ? transmutation.trim()
-    : null;
+  const requestedTransmutation =
+    typeof transmutation === 'string' && transmutation.trim() ? transmutation.trim() : null;
 
   if (!requestedRunId) {
     return null;
@@ -42,16 +37,18 @@ export async function loadRuntimeRunRecord({ repoRoot, runId, transmutation = nu
     run: record.run,
     snapshot: record.snapshot
       ? {
-        used: true,
-        lastSequence: record.snapshot.lastSequence ?? null,
-        updatedAt: record.snapshot.updatedAt ?? null,
-        eventCount: record.snapshot.eventCount ?? null
-      }
+          used: true,
+          lastSequence: record.snapshot.lastSequence ?? null,
+          updatedAt: record.snapshot.updatedAt ?? null,
+          eventCount: record.snapshot.eventCount ?? null
+        }
       : null,
     replay: {
       terminal: Boolean(record.replay?.terminal),
       valid: Boolean(record.replay?.integrity?.valid),
-      issueCount: Array.isArray(record.replay?.integrity?.issues) ? record.replay.integrity.issues.length : 0
+      issueCount: Array.isArray(record.replay?.integrity?.issues)
+        ? record.replay.integrity.issues.length
+        : 0
     },
     ledgerDir
   };
@@ -59,9 +56,8 @@ export async function loadRuntimeRunRecord({ repoRoot, runId, transmutation = nu
 
 export async function inspectPersistedRuntimeRun({ repoRoot, runId, transmutation = null }) {
   const requestedRunId = typeof runId === 'string' ? runId.trim() : '';
-  const requestedTransmutation = typeof transmutation === 'string' && transmutation.trim()
-    ? transmutation.trim()
-    : null;
+  const requestedTransmutation =
+    typeof transmutation === 'string' && transmutation.trim() ? transmutation.trim() : null;
 
   if (!requestedRunId) {
     return null;
@@ -102,12 +98,9 @@ export async function listPersistedRuntimeRuns({
   includeAll = false
 } = {}) {
   const { eventStore, ledgerDir } = await openRuntimeLedger({ repoRoot });
-  const requestedTransmutation = typeof transmutation === 'string' && transmutation.trim()
-    ? transmutation.trim()
-    : null;
-  const requestedStatus = typeof status === 'string' && status.trim()
-    ? status.trim()
-    : null;
+  const requestedTransmutation =
+    typeof transmutation === 'string' && transmutation.trim() ? transmutation.trim() : null;
+  const requestedStatus = typeof status === 'string' && status.trim() ? status.trim() : null;
 
   let runs = listRuntimeRunReports(eventStore, {
     transmutation: requestedTransmutation,
@@ -115,7 +108,7 @@ export async function listPersistedRuntimeRuns({
   });
 
   if (!requestedTransmutation && !includeAll) {
-    runs = runs.filter(run => HOLMES_COMMAND_TRANSMUTATIONS.includes(run.transmutation));
+    runs = runs.filter((run) => HOLMES_COMMAND_TRANSMUTATIONS.includes(run.transmutation));
   }
 
   const capped = Number.isInteger(limit) && limit >= 0 ? runs.slice(0, limit) : runs;
@@ -134,7 +127,8 @@ export function attachRuntimeRun(data, runtimeRecord) {
   data.runtime = runtimeRecord;
   data.metadata = typeof data.metadata === 'object' && data.metadata !== null ? data.metadata : {};
   data.metadata.runId = runtimeRecord.run?.runId || runtimeRecord.requested?.runId || null;
-  data.metadata.transmutation = runtimeRecord.run?.transmutation || runtimeRecord.requested?.transmutation || null;
+  data.metadata.transmutation =
+    runtimeRecord.run?.transmutation || runtimeRecord.requested?.transmutation || null;
 
   data.warnings = Array.isArray(data.warnings) ? data.warnings : [];
   data.patterns = Array.isArray(data.patterns) ? data.patterns : [];

@@ -1,5 +1,5 @@
 ---
-title: "Verification Witness"
+title: 'Verification Witness'
 ---
 
 Date: 2026-04-06

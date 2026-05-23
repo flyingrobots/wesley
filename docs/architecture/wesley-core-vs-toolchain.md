@@ -1,4 +1,5 @@
 # Wesley Core Versus Toolchain
+
 <!-- docs-truth: status=current owner=@flyingrobots -->
 
 This note freezes the layer split that keeps Wesley understandable.
@@ -138,14 +139,14 @@ generic Wesley.
 
 When a new idea appears, ask which layer it belongs to:
 
-| Question | Layer |
-| --- | --- |
-| "What does this GraphQL mean?" | Wesley compiler core / generators |
-| "What files get emitted?" | Wesley compiler core |
-| "How do we prove these outputs are coherent?" | Wesley toolchain |
+| Question                                        | Layer                                            |
+| ----------------------------------------------- | ------------------------------------------------ |
+| "What does this GraphQL mean?"                  | Wesley compiler core / generators                |
+| "What files get emitted?"                       | Wesley compiler core                             |
+| "How do we prove these outputs are coherent?"   | Wesley toolchain                                 |
 | "How do we package/version/sync those outputs?" | Wesley toolchain or a higher orchestration layer |
-| "Which schema is canonical for Continuum?" | Continuum |
-| "How does a user bootstrap a WARPspace?" | Continuum `warp` |
+| "Which schema is canonical for Continuum?"      | Continuum                                        |
+| "How does a user bootstrap a WARPspace?"        | Continuum `warp`                                 |
 
 If those questions get collapsed into one blob, repo truth starts to drift.
 

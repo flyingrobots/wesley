@@ -20,6 +20,7 @@ Trigger: title/label match: generators, adapters, QIR, RPC, ops, or artifact-dom
 This meta issue tracks M1 for multi-host adapters beyond Node.
 
 Goals
+
 - Browser: raise to meaningful Alpha (native ParserPort, bundler docs/examples, budgets).
 - Deno/Bun: first-class host packages + CI + docs.
 - Progress gates: include host viability in package stages.

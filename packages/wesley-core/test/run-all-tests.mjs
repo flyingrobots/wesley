@@ -148,7 +148,7 @@ async function runTestSuite(suiteName, config, options = {}) {
 async function runTestsParallel(suiteNames, options = {}) {
   console.log(`🚀 Running tests in parallel: ${suiteNames.join(', ')}`);
 
-  const promises = suiteNames.map(suiteName => {
+  const promises = suiteNames.map((suiteName) => {
     const config = testConfigs[suiteName];
     if (!config) {
       throw new Error(`Unknown test suite: ${suiteName}`);
@@ -170,8 +170,8 @@ async function runTestsParallel(suiteNames, options = {}) {
     }
   });
 
-  const failedCount = results.filter(r =>
-    r.status === 'rejected' || r.value?.status === 'failed'
+  const failedCount = results.filter(
+    (r) => r.status === 'rejected' || r.value?.status === 'failed'
   ).length;
 
   return { total: results.length, failed: failedCount };
@@ -208,13 +208,11 @@ async function runTestsSequential(suiteNames, options = {}) {
 
   // Report results
   console.log('\n📊 Sequential Test Results:');
-  results.forEach(result => {
+  results.forEach((result) => {
     console.log(`   ${result.suite}: ${result.status}`);
   });
 
-  const failedCount = results.filter(r =>
-    r.status === 'failed' || r.status === 'error'
-  ).length;
+  const failedCount = results.filter((r) => r.status === 'failed' || r.status === 'error').length;
 
   return { total: results.length, failed: failedCount };
 }
@@ -239,12 +237,12 @@ async function main() {
   // Parse test suite selection
   let selectedSuites = Object.keys(testConfigs);
 
-  const suiteArgs = args.filter(arg => !arg.startsWith('--'));
+  const suiteArgs = args.filter((arg) => !arg.startsWith('--'));
   if (suiteArgs.length > 0) {
-    selectedSuites = suiteArgs.filter(suite => testConfigs[suite]);
+    selectedSuites = suiteArgs.filter((suite) => testConfigs[suite]);
 
     // Warn about unknown suites
-    const unknownSuites = suiteArgs.filter(suite => !testConfigs[suite]);
+    const unknownSuites = suiteArgs.filter((suite) => !testConfigs[suite]);
     if (unknownSuites.length > 0) {
       console.warn(`⚠️  Unknown test suites: ${unknownSuites.join(', ')}`);
       console.warn(`   Available suites: ${Object.keys(testConfigs).join(', ')}`);
@@ -271,7 +269,9 @@ async function main() {
     console.log('\n🏁 Test Summary:');
     console.log(`   Total suites: ${results.total}`);
     console.log(`   Failed suites: ${results.failed}`);
-    console.log(`   Success rate: ${((results.total - results.failed) / results.total * 100).toFixed(1)}%`);
+    console.log(
+      `   Success rate: ${(((results.total - results.failed) / results.total) * 100).toFixed(1)}%`
+    );
 
     if (results.failed > 0) {
       console.log('\n❌ Some tests failed');
@@ -323,7 +323,7 @@ Examples:
 }
 
 // Run the main function
-main().catch(error => {
+main().catch((error) => {
   console.error('Unhandled error:', error);
   process.exit(1);
 });
