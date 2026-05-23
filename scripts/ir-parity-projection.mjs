@@ -316,10 +316,28 @@ function projectCanonicalDirectives(directives = []) {
   const projected = {};
 
   for (const directive of directives || []) {
-    projected[directive.name] = projectCanonicalDirectiveValue(directive);
+    insertProjectedDirectiveValue(
+      projected,
+      directive.name,
+      projectCanonicalDirectiveValue(directive)
+    );
   }
 
   return projected;
+}
+
+function insertProjectedDirectiveValue(target, name, value) {
+  if (!Object.hasOwn(target, name)) {
+    target[name] = value;
+    return;
+  }
+
+  if (Array.isArray(target[name])) {
+    target[name].push(value);
+    return;
+  }
+
+  target[name] = [target[name], value];
 }
 
 function projectCanonicalDirectiveValue(directive) {

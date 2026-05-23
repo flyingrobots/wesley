@@ -292,9 +292,50 @@ const typeFamilyExtensionIr = {
     }
   ]
 };
+const typeFamilyRepeatableDirectiveIr = {
+  version: '1.0.0',
+  types: [
+    {
+      name: 'User',
+      kind: 'OBJECT',
+      directives: {
+        tag: [
+          {
+            name: 'alpha'
+          },
+          {
+            name: 'beta'
+          }
+        ]
+      },
+      fields: [
+        {
+          name: 'id',
+          type: {
+            base: 'ID',
+            nullable: false,
+            isList: false
+          },
+          directives: {
+            tag: [
+              {
+                name: 'field-alpha'
+              },
+              {
+                name: 'field-beta'
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+};
 const ir = process.env.WESLEY_FAKE_VARIANT === 'type-family-extension'
   ? typeFamilyExtensionIr
-  : tableIr;
+  : process.env.WESLEY_FAKE_VARIANT === 'type-family-repeatable-directive'
+    ? typeFamilyRepeatableDirectiveIr
+    : tableIr;
 
 if (process.env.WESLEY_FAKE_VARIANT === 'metadata') {
   ir.metadata = {
@@ -463,6 +504,29 @@ SDL
   assert_output --partial '"status": "pass"'
   assert_output --partial 'DateTime'
   assert_output --partial 'UserFilter'
+}
+
+@test "IR parity sentinel preserves repeatable directive values in type-family projection" {
+  make_fake_wesley
+
+  cat > "$TEST_TEMP_DIR/repeatable-schema.gql" <<'SDL'
+directive @tag(name: String!) repeatable on OBJECT | FIELD_DEFINITION
+
+type User @tag(name: "alpha") @tag(name: "beta") {
+  id: ID! @tag(name: "field-alpha") @tag(name: "field-beta")
+}
+SDL
+
+  run env \
+    WESLEY_CLI_BIN="$FAKE_WESLEY" \
+    WESLEY_FAKE_VARIANT="type-family-repeatable-directive" \
+    node scripts/check-ir-parity.mjs \
+      --fixture "$TEST_TEMP_DIR/repeatable-schema.gql" \
+      --projection js-sdl-type-family-vs-rust-l1-type-family.v0 \
+      --json
+  assert_success
+  assert_output --partial '"status": "pass"'
+  assert_output --partial 'field-beta'
 }
 
 @test "IR parity projection sorts table names by code point" {

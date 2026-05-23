@@ -126,6 +126,8 @@ contracts.
 - Preserve GraphQL nullability and list wrapper structure.
 - Preserve directive argument values after each side has produced semantic
   values.
+- Preserve repeated directive values as arrays instead of collapsing by
+  directive name.
 - Preserve Rust L1 canonical core directive names.
 - Do not use this projection to prove legacy directive alias behavior unless
   the admitted fixture uses canonical directive spelling or the JS structural
