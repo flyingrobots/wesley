@@ -11,10 +11,15 @@ use std::time::Duration;
 ///
 /// The default policy is disabled so ordinary in-process lowering remains a
 /// deterministic compiler operation. Callers opt in at execution boundaries
-/// where a deadline is meaningful.
+/// where a cooperative async deadline is meaningful.
+///
+/// This policy does not preempt synchronous CPU-bound work that runs inside a
+/// single future poll. Lowerers that need a hard execution deadline should run
+/// behind a process, thread, or runtime boundary that can be cancelled outside
+/// the parser/lowering poll itself.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct ResiliencePolicy {
-    lowering_timeout: Option<Duration>,
+    cooperative_lowering_timeout: Option<Duration>,
 }
 
 impl ResiliencePolicy {
@@ -22,47 +27,61 @@ impl ResiliencePolicy {
     #[must_use]
     pub fn disabled() -> Self {
         Self {
-            lowering_timeout: None,
+            cooperative_lowering_timeout: None,
         }
     }
 
-    /// Returns a policy with a schema-lowering timeout.
+    /// Returns a policy with a cooperative schema-lowering timeout.
+    ///
+    /// The timeout is enforced when the wrapped future yields to the async
+    /// runtime. It does not preempt synchronous CPU-bound parser or lowering
+    /// work that runs to completion inside one poll.
     ///
     /// # Errors
     ///
     /// Returns [`WesleyError::ResilienceError`] if `duration` is not accepted by
     /// `ninelives`.
-    pub fn lowering_timeout(duration: Duration) -> Result<Self, WesleyError> {
-        Self::disabled().with_lowering_timeout(duration)
+    pub fn cooperative_lowering_timeout(duration: Duration) -> Result<Self, WesleyError> {
+        Self::disabled().with_cooperative_lowering_timeout(duration)
     }
 
-    /// Adds a schema-lowering timeout to this policy.
+    /// Adds a cooperative schema-lowering timeout to this policy.
+    ///
+    /// The timeout is enforced when the wrapped future yields to the async
+    /// runtime. It does not preempt synchronous CPU-bound parser or lowering
+    /// work that runs to completion inside one poll.
     ///
     /// # Errors
     ///
     /// Returns [`WesleyError::ResilienceError`] if `duration` is not accepted by
     /// `ninelives`.
-    pub fn with_lowering_timeout(mut self, duration: Duration) -> Result<Self, WesleyError> {
+    pub fn with_cooperative_lowering_timeout(
+        mut self,
+        duration: Duration,
+    ) -> Result<Self, WesleyError> {
         TimeoutPolicy::new(duration)
             .map_err(|error| WesleyError::ResilienceError(format!("invalid timeout: {error}")))?;
-        self.lowering_timeout = Some(duration);
+        self.cooperative_lowering_timeout = Some(duration);
         Ok(self)
     }
 
-    /// Returns the configured schema-lowering timeout, if enabled.
+    /// Returns the configured cooperative schema-lowering timeout, if enabled.
     #[must_use]
-    pub fn lowering_timeout_duration(&self) -> Option<Duration> {
-        self.lowering_timeout
+    pub fn cooperative_lowering_timeout_duration(&self) -> Option<Duration> {
+        self.cooperative_lowering_timeout
     }
 
     /// Returns true when no resilience wrappers are enabled.
     #[must_use]
     pub fn is_disabled(&self) -> bool {
-        self.lowering_timeout.is_none()
+        self.cooperative_lowering_timeout.is_none()
     }
 }
 
-/// Lowering-port adapter that applies explicit resilience policy.
+/// Lowering-port adapter that applies explicit cooperative resilience policy.
+///
+/// The timeout policy observes async cancellation points. It preserves ordinary
+/// compiler errors and does not retry deterministic parse or semantic failures.
 #[derive(Debug, Clone)]
 pub struct ResilientLoweringPort<P> {
     inner: P,
@@ -95,7 +114,7 @@ where
     P: LoweringPort + Send + Sync,
 {
     async fn lower_sdl(&self, sdl: &str) -> Result<WesleyIR, WesleyError> {
-        let Some(timeout) = self.policy.lowering_timeout_duration() else {
+        let Some(timeout) = self.policy.cooperative_lowering_timeout_duration() else {
             return self.inner.lower_sdl(sdl).await;
         };
 

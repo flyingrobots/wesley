@@ -32,9 +32,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   JavaScript child-process bounds, and the non-ownership line that keeps
   product, database, scheduler, and runtime semantics outside Wesley core.
 - **Rust core resilience policy wrapper**: Added `ResiliencePolicy` and
-  `ResilientLoweringPort` so Rust lowering callers can opt into explicit
-  `ninelives` timeout policy at execution boundaries while preserving ordinary
-  deterministic compiler errors.
+  `ResilientLoweringPort` so Rust lowering callers can opt into explicit,
+  cooperative `ninelives` timeout policy at async execution boundaries while
+  preserving ordinary deterministic compiler errors. The wrapper does not claim
+  hard preemption of synchronous CPU-bound parser work.
 - **Rust IR parity sentinel packet**: Pulled the parity sentinel backlog item
   into design packet `0013`, defining comparator inputs, normalization, hash
   behavior, and failure output for the next JS/Rust parity check.

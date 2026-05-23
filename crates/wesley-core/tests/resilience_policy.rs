@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use wesley_core::{
     ApolloLoweringAdapter, LoweringPort, ResiliencePolicy, ResilientLoweringPort, WesleyError,
     WesleyIR,
@@ -15,10 +15,25 @@ impl LoweringPort for PendingLowerer {
     }
 }
 
+#[derive(Clone)]
+struct BlockingLowerer;
+
+#[async_trait]
+impl LoweringPort for BlockingLowerer {
+    async fn lower_sdl(&self, _sdl: &str) -> Result<WesleyIR, WesleyError> {
+        std::thread::sleep(Duration::from_millis(20));
+        Ok(WesleyIR {
+            version: "1.0.0".to_string(),
+            metadata: None,
+            types: Vec::new(),
+        })
+    }
+}
+
 #[tokio::test(start_paused = true)]
 async fn resilient_lowering_port_maps_timeout_to_resilience_error() {
-    let policy =
-        ResiliencePolicy::lowering_timeout(Duration::from_millis(50)).expect("valid timeout");
+    let policy = ResiliencePolicy::cooperative_lowering_timeout(Duration::from_millis(50))
+        .expect("valid timeout");
     let lowerer = ResilientLoweringPort::new(PendingLowerer, policy);
 
     let task = tokio::spawn(async move { lowerer.lower_sdl("type Query { id: ID }").await });
@@ -37,6 +52,22 @@ async fn resilient_lowering_port_maps_timeout_to_resilience_error() {
 }
 
 #[tokio::test]
+async fn resilient_lowering_port_does_not_preempt_synchronous_poll_work() {
+    let policy = ResiliencePolicy::cooperative_lowering_timeout(Duration::from_millis(1))
+        .expect("valid timeout");
+    let lowerer = ResilientLoweringPort::new(BlockingLowerer, policy);
+
+    let started = Instant::now();
+    let ir = lowerer
+        .lower_sdl("type Query { id: ID }")
+        .await
+        .expect("cooperative timeout should not claim hard preemption");
+
+    assert!(started.elapsed() >= Duration::from_millis(20));
+    assert_eq!(ir.version, "1.0.0");
+}
+
+#[tokio::test]
 async fn resilient_lowering_port_disabled_policy_forwards_success() {
     let lowerer =
         ResilientLoweringPort::new(ApolloLoweringAdapter::new(0), ResiliencePolicy::disabled());
@@ -52,7 +83,8 @@ async fn resilient_lowering_port_disabled_policy_forwards_success() {
 
 #[tokio::test]
 async fn resilient_lowering_port_preserves_compiler_parse_errors() {
-    let policy = ResiliencePolicy::lowering_timeout(Duration::from_secs(5)).expect("valid timeout");
+    let policy = ResiliencePolicy::cooperative_lowering_timeout(Duration::from_secs(5))
+        .expect("valid timeout");
     let lowerer = ResilientLoweringPort::new(ApolloLoweringAdapter::new(0), policy);
 
     let error = lowerer

@@ -65,11 +65,13 @@ legacy Node lowering.
 ### 5. Resilience Policy Boundary
 
 - Use `ninelives` for Rust compiler and capability seams when a boundary needs
-  explicit resilience policy.
+  explicit cooperative resilience policy.
 - Use `@git-stunts/alfred` for JavaScript tooling and child-process boundaries
   when a command can hang or emit unbounded output.
 - Keep deterministic compiler errors as compiler errors; do not retry semantic
   parse/lowering failures.
+- Do not imply hard preemption for synchronous in-process parser work; use a
+  process, thread, or runtime boundary when a lowerer needs a hard deadline.
 - [0015-resilience-policy-boundary](./design/0015-resilience-policy-boundary/resilience-policy-boundary.md)
   is now the active resilience doctrine.
 
@@ -134,9 +136,11 @@ coverage for no-module diagnostics, default target discovery, requested-target
 validation, duplicate target rejection, alias conflicts in both registration
 orders, and the Rust IR fixture contract now housed under the active `0013`
 packet. The `0015` resilience boundary now has first proof on both sides:
-`ResilientLoweringPort` applies explicit `ninelives` timeout policy for Rust
-lowering seams, while the parity and performance scripts share an Alfred-backed
-child-process runner with timeout and output-buffer guards.
+`ResilientLoweringPort` applies explicit cooperative `ninelives` timeout policy
+for Rust lowering seams, while the parity and performance scripts share an
+Alfred-backed child-process runner with timeout and output-buffer guards. The
+Rust wrapper does not claim hard preemption for synchronous CPU-bound parser
+work.
 Invalid SDL diagnostics now expose stable `WesleyError::diagnostic()` codes
 and parser line/column spans where available, while semantic lowering spans
 remain explicitly absent.
