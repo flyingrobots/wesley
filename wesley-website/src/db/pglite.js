@@ -19,10 +19,6 @@ export class DbSession {
   /** @type {PGlite | null} */
   #pg = null;
 
-  constructor() {
-    // Lazy init via reset/init
-  }
-
   /**
    * Initializes the session.
    * Uses a singleton PGLite instance to be safe against React double-mounts.

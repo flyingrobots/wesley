@@ -57,7 +57,7 @@ export class WorktreeStrategy {
 
     // Create ephemeral worktree at base
     const wtDir = mkdtempSync(path.join(tmpdir(), 'wesley-wt-'));
-    let wroteTree = null;
+    let wroteTree;
     try {
       // Add detached worktree at base
       const addOut = safe(['worktree', 'add', '--detach', wtDir, remoteBase], {

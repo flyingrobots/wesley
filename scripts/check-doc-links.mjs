@@ -51,7 +51,7 @@ for (const file of mdFiles) {
     // Resolve relative to file
     const base = dirname(file);
     const target = resolve(base, link);
-    let exists = false;
+    let exists;
     try {
       const st = statSync(target);
       exists = st.isFile() || st.isDirectory();

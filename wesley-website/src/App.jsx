@@ -19,7 +19,9 @@ function usePath() {
     return () => window.removeEventListener('popstate', onPop);
   }, []);
   const navigate = (to) => {
-    if (to === path) return;
+    if (to === path) {
+      return;
+    }
     window.history.pushState({}, '', to);
     setPath(to);
   };
@@ -47,7 +49,7 @@ function App() {
 
   return (
     <Box style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <HeaderTabs onNavigate={navigate} />
+      <HeaderTabs />
       <Box style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
         {path === '/docs' ? (
           <Documentation />

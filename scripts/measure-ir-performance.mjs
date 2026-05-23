@@ -245,7 +245,9 @@ async function runLower(fixturePath) {
     });
   } catch (error) {
     if (error instanceof TimeoutError) {
-      throw new Error(`${command} ${args.join(' ')} timed out after ${LOWER_TIMEOUT_MS}ms`);
+      throw new Error(`${command} ${args.join(' ')} timed out after ${LOWER_TIMEOUT_MS}ms`, {
+        cause: error
+      });
     }
     throw error;
   }

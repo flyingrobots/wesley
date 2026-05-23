@@ -51,7 +51,9 @@ export function matchTextSnapshot({
     if (error?.code !== 'EEXIST') throw error;
     const concurrentContent = readFileSync(filePath, 'utf-8').trim();
     if (normalizedActual !== concurrentContent) {
-      throw new Error(`Snapshot mismatch for ${fileName}. Set UPDATE_SNAPSHOTS=1 to update.`);
+      throw new Error(`Snapshot mismatch for ${fileName}. Set UPDATE_SNAPSHOTS=1 to update.`, {
+        cause: error
+      });
     }
   }
 }

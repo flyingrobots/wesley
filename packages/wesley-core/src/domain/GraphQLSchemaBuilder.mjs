@@ -384,7 +384,7 @@ export class GraphQLSchemaBuilder {
    * Unwrap GraphQL type to get base type and modifiers
    */
   unwrapType(typeNode) {
-    let base = '';
+    let base;
     let nonNull = false;
     let list = false;
     let itemNonNull = false;

@@ -43,7 +43,7 @@ const tabs = [
   'Helpdesk'
 ];
 
-export function HeaderTabs({ onNavigate }) {
+export function HeaderTabs() {
   const theme = useMantineTheme();
   const [opened, { toggle }] = useDisclosure(false);
   const [userMenuOpened, setUserMenuOpened] = useState(false);

@@ -37,7 +37,9 @@ export default function PlaygroundNavbar({
       href="#"
       onClick={(event) => {
         event.preventDefault();
-        if (isTutorialActive && tutorialStepId !== 'sidebar-migrations') return;
+        if (isTutorialActive && tutorialStepId !== 'sidebar-migrations') {
+          return;
+        }
         handleSelect(file.file);
       }}
       key={file.file}

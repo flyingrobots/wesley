@@ -25,7 +25,7 @@ if (typeof window.ResizeObserver === 'undefined') {
     disconnect() {}
   }
   // Attach to both window and globalThis to satisfy various imports
-  // eslint-disable-next-line no-undef
+
   globalThis.ResizeObserver = ResizeObserverStub;
   window.ResizeObserver = ResizeObserverStub;
 }

@@ -39,7 +39,7 @@ export class MergeTreeStrategy {
       /* empty */
     }
 
-    let mergeBase = null;
+    let mergeBase;
     try {
       mergeBase = execFileSync('git', ['merge-base', 'HEAD', remoteBase], {
         encoding: 'utf8',
@@ -51,7 +51,7 @@ export class MergeTreeStrategy {
     }
 
     // Compute merged tree id
-    let mergedTree = null;
+    let mergedTree;
     try {
       const out = execFileSync(
         'git',

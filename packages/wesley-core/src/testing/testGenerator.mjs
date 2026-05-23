@@ -139,8 +139,10 @@ export function expectArtifact(artifacts, path) {
       let parsed;
       try {
         parsed = JSON.parse(content);
-      } catch (e) {
-        throw new Error(`Expected artifact "${path}" to be valid JSON.\nParse error: ${e.message}`);
+      } catch (cause) {
+        throw new Error(`Expected artifact "${path}" to be valid JSON.\nParse error: ${cause.message}`, {
+          cause
+        });
       }
       const expectedJson = JSON.stringify(expected, null, 2);
       const actualJson = JSON.stringify(parsed, null, 2);
