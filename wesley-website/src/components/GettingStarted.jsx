@@ -1,4 +1,4 @@
-import { Card, Code, Container, Text, Title } from '@mantine/core'
+import { Card, Code, Container, Text, Title } from '@mantine/core';
 
 const snippet = `# Install Wesley
 pnpm add -g @wesley/cli
@@ -23,12 +23,14 @@ EOF
 wesley generate --schema schema.graphql
 
 # Watch for changes
-wesley watch --schema schema.graphql`
+wesley watch --schema schema.graphql`;
 
 export default function GettingStarted() {
   return (
     <Container size="lg" py="xl" id="getting-started">
-      <Title order={2} mb="sm">Getting Started</Title>
+      <Title order={2} mb="sm">
+        Getting Started
+      </Title>
       <Text c="dimmed" mb="md">
         Install the CLI, declare a schema, and generate your entire data layer.
       </Text>
@@ -36,5 +38,5 @@ export default function GettingStarted() {
         <Code block>{snippet}</Code>
       </Card>
     </Container>
-  )
+  );
 }

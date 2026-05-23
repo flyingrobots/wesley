@@ -2,11 +2,11 @@
 
 ## Supported Versions
 
-| Version or branch | Supported |
-| ------- | ------- |
-| Active release branches | Yes |
-| Current `main` | Yes |
-| Older pre-1.0 tags | No, unless a maintainer explicitly backports a fix |
+| Version or branch       | Supported                                          |
+| ----------------------- | -------------------------------------------------- |
+| Active release branches | Yes                                                |
+| Current `main`          | Yes                                                |
+| Older pre-1.0 tags      | No, unless a maintainer explicitly backports a fix |
 
 ## Reporting a Vulnerability
 

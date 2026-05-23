@@ -1,7 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { computeSdlHash, computeIrHash, computeBundleHash, computeHashChain } from '../../src/domain/hashChain.mjs';
+import {
+  computeSdlHash,
+  computeIrHash,
+  computeBundleHash,
+  computeHashChain
+} from '../../src/domain/hashChain.mjs';
 import { canonicalize } from '../../src/domain/canonicalize.mjs';
 import { schemaHash } from '../../src/domain/schemaHash.mjs';
 

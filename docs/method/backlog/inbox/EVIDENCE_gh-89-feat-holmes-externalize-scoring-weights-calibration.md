@@ -18,19 +18,23 @@ Trigger: title/label match: evidence, certification, security, or Holmes-family 
 ## Original Issue
 
 ## Summary
+
 Move hard-coded SCS/TCI/MRI weights and thresholds into configurable policy objects so teams can calibrate readiness without code changes.
 
 ## Details
+
 - Introduce a configuration file or CLI flags for weight/threshold tuning (with sane defaults).
 - Validate weights sum to 1 and thresholds are within [0,1].
 - Update ScoringEngine to consume the config, falling back to defaults when unspecified.
 - Surface the active policy in bundle.json for traceability.
 
 ## Motivation
+
 - Current weights (0.45/0.2/0.2/0.15 + fixed thresholds) are embedded in code, making experimentation difficult.
 - Different environments (dev/staging/prod) may require different tolerances.
 
 ## Acceptance Criteria
+
 - Configurable weights/thresholds respected by ScoringEngine and readiness calculations.
 - scores.schema.json + docs updated to explain policy exposure.
 - Tests covering default vs. custom policy paths.

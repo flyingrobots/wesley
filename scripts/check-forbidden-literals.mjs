@@ -3,9 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
-const DEFAULT_FORBIDDEN_LITERALS = Object.freeze([
-  ['', 'Users', 'james', ''].join('/')
-]);
+const DEFAULT_FORBIDDEN_LITERALS = Object.freeze([['', 'Users', 'james', ''].join('/')]);
 
 function fail(message) {
   console.error(message);
@@ -19,9 +17,7 @@ function runGit(args, { binary = false } = {}) {
   });
 
   if (result.status !== 0) {
-    const stderr = binary
-      ? String(result.stderr || '')
-      : (result.stderr || '').trim();
+    const stderr = binary ? String(result.stderr || '') : (result.stderr || '').trim();
     fail(`git ${args.join(' ')} failed: ${stderr}`);
   }
 

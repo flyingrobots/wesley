@@ -33,7 +33,7 @@ export class EventStorePort {
    * @returns {object[]}
    */
   readStreamSince(streamId, afterSequence = 0) {
-    return this.readStream(streamId).filter(event => {
+    return this.readStream(streamId).filter((event) => {
       return Number.isInteger(event?.sequence) ? event.sequence > afterSequence : true;
     });
   }

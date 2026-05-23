@@ -121,7 +121,7 @@ async function testBasicFunctionality() {
 }
 
 // Run the test
-testBasicFunctionality().catch(error => {
+testBasicFunctionality().catch((error) => {
   console.error('❌ CheckpointManager test failed:', error);
   process.exit(1);
 });

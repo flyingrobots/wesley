@@ -53,13 +53,14 @@ export async function ensureCounterfactualWorkspaceArtifacts(_options = {}) {
   return false;
 }
 
-export async function collectCounterfactualSurfaceModel({
-  workspaceDir,
-  surface = {}
-} = {}) {
+export async function collectCounterfactualSurfaceModel({ workspaceDir, surface = {} } = {}) {
   const deps = createNodeCounterfactualSurfacePort();
   const resolvedWorkspaceDir = deps.resolvePath(workspaceDir || '.');
-  const bundleDir = resolveWorkspacePath(resolvedWorkspaceDir, surface.bundleDir || GENERATED_ARTIFACT_DIR, deps);
+  const bundleDir = resolveWorkspacePath(
+    resolvedWorkspaceDir,
+    surface.bundleDir || GENERATED_ARTIFACT_DIR,
+    deps
+  );
   const outDir = resolveWorkspacePath(resolvedWorkspaceDir, surface.outDir || 'out', deps);
   const nodeSpecs = [];
   const summary = {
@@ -71,23 +72,37 @@ export async function collectCounterfactualSurfaceModel({
   const seen = new Set();
 
   const knownFiles = [
-    { absolutePath: deps.joinPath(bundleDir, 'bundle.json'), family: 'evidence', nodeId: 'evidence:bundle' },
-    { absolutePath: deps.joinPath(bundleDir, 'plan-report.json'), family: 'plan', nodeId: 'plan:report' },
-    { absolutePath: deps.joinPath(bundleDir, 'realm.json'), family: 'realm', nodeId: 'realm:report' }
+    {
+      absolutePath: deps.joinPath(bundleDir, 'bundle.json'),
+      family: 'evidence',
+      nodeId: 'evidence:bundle'
+    },
+    {
+      absolutePath: deps.joinPath(bundleDir, 'plan-report.json'),
+      family: 'plan',
+      nodeId: 'plan:report'
+    },
+    {
+      absolutePath: deps.joinPath(bundleDir, 'realm.json'),
+      family: 'realm',
+      nodeId: 'realm:report'
+    }
   ];
 
   for (const entry of knownFiles) {
-    if (!await deps.exists(entry.absolutePath)) continue;
+    if (!(await deps.exists(entry.absolutePath))) continue;
     const content = await deps.readFile(entry.absolutePath);
-    nodeSpecs.push(buildCounterfactualFileNodeSpec({
-      workspaceDir: resolvedWorkspaceDir,
-      nodeId: entry.nodeId,
-      family: entry.family,
-      absolutePath: entry.absolutePath,
-      content,
-      hashContent: deps.hashContent,
-      relativePath: deps.relativePath
-    }));
+    nodeSpecs.push(
+      buildCounterfactualFileNodeSpec({
+        workspaceDir: resolvedWorkspaceDir,
+        nodeId: entry.nodeId,
+        family: entry.family,
+        absolutePath: entry.absolutePath,
+        content,
+        hashContent: deps.hashContent,
+        relativePath: deps.relativePath
+      })
+    );
     seen.add(deps.resolvePath(entry.absolutePath));
     if (entry.family === 'evidence') summary.evidenceCount += 1;
     if (entry.family === 'plan') summary.planCount += 1;
@@ -98,15 +113,17 @@ export async function collectCounterfactualSurfaceModel({
     const resolved = deps.resolvePath(abs);
     if (seen.has(resolved)) continue;
     const content = await deps.readFile(resolved);
-    nodeSpecs.push(buildCounterfactualFileNodeSpec({
-      workspaceDir: resolvedWorkspaceDir,
-      nodeId: `artifact:${normalizeRelativePath(deps.relativePath(resolvedWorkspaceDir, resolved))}`,
-      family: 'artifact',
-      absolutePath: resolved,
-      content,
-      hashContent: deps.hashContent,
-      relativePath: deps.relativePath
-    }));
+    nodeSpecs.push(
+      buildCounterfactualFileNodeSpec({
+        workspaceDir: resolvedWorkspaceDir,
+        nodeId: `artifact:${normalizeRelativePath(deps.relativePath(resolvedWorkspaceDir, resolved))}`,
+        family: 'artifact',
+        absolutePath: resolved,
+        content,
+        hashContent: deps.hashContent,
+        relativePath: deps.relativePath
+      })
+    );
     seen.add(resolved);
     summary.artifactCount += 1;
   }
@@ -121,7 +138,7 @@ async function listFilesRecursive(root) {
   for (const entry of entries) {
     const absolutePath = path.join(root, entry.name);
     if (entry.isDirectory()) {
-      files.push(...await listFilesRecursive(absolutePath));
+      files.push(...(await listFilesRecursive(absolutePath)));
     } else if (entry.isFile()) {
       files.push(absolutePath);
     }
@@ -160,5 +177,7 @@ function resolveWorkspacePath(workspaceDir, targetPath, deps) {
 }
 
 function normalizeRelativePath(value) {
-  return String(value || '').replaceAll('\\', '/').replace(/^\.\/+/, '');
+  return String(value || '')
+    .replaceAll('\\', '/')
+    .replace(/^\.\/+/, '');
 }

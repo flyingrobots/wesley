@@ -48,7 +48,9 @@ export const realGitAdapter = {
       return false;
     }
     try {
-      execFileSync('git', ['fetch', '--prune', 'origin', `${ref}:refs/remotes/origin/${ref}`], { stdio: 'ignore' });
+      execFileSync('git', ['fetch', '--prune', 'origin', `${ref}:refs/remotes/origin/${ref}`], {
+        stdio: 'ignore'
+      });
       return true;
     } catch {
       return false;
@@ -78,7 +80,10 @@ export const realGitAdapter = {
     }
     if (range) {
       // Validate range contains only valid ref characters and ..
-      if (typeof range === 'string' && /^[a-zA-Z0-9._\-/~^:]+\.\.[a-zA-Z0-9._\-/~^:]+$/.test(range)) {
+      if (
+        typeof range === 'string' &&
+        /^[a-zA-Z0-9._\-/~^:]+\.\.[a-zA-Z0-9._\-/~^:]+$/.test(range)
+      ) {
         args.push(range);
       }
     }

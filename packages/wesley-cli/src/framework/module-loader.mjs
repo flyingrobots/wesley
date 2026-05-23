@@ -5,10 +5,7 @@ import {
   loadWesleyModuleEntries
 } from '@wesley/runtime-node';
 
-export {
-  DEFAULT_WESLEY_MODULE_SPECIFIERS,
-  findNearestWesleyConfigPath
-};
+export { DEFAULT_WESLEY_MODULE_SPECIFIERS, findNearestWesleyConfigPath };
 
 const nullLogger = {
   debug() {},

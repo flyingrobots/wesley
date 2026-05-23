@@ -1,7 +1,7 @@
 name: RFC / Proposal
 description: For larger design changes requiring discussion before implementation.
-title: "[rfc] <short title>"
-labels: ["rfc", "discussion"]
+title: '[rfc] <short title>'
+labels: ['rfc', 'discussion']
 assignees: []
 body:
   - type: markdown

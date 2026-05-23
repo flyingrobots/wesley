@@ -1,5 +1,5 @@
 ---
-title: "Continuum Contract Compiler"
+title: 'Continuum Contract Compiler'
 outcome: partial
 drift_check: yes
 ---

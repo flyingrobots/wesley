@@ -27,8 +27,8 @@ test('generic counterfactual surface collects existing artifacts without synthes
 
     assert.equal(model.summary.evidenceCount, 1);
     assert.equal(model.summary.artifactCount, 1);
-    assert.ok(model.nodeSpecs.some(spec => spec.id === 'evidence:bundle'));
-    assert.ok(model.nodeSpecs.some(spec => spec.id === 'artifact:out/schema.json'));
+    assert.ok(model.nodeSpecs.some((spec) => spec.id === 'evidence:bundle'));
+    assert.ok(model.nodeSpecs.some((spec) => spec.id === 'artifact:out/schema.json'));
   } finally {
     rmSync(tempDir, { recursive: true, force: true });
   }

@@ -1,23 +1,24 @@
 ---
-report_id: "AUD-2026-05-05-CQ01"
-title: "Code Quality Audit: Wesley v0.1.0 Release Branch"
-status: "Final"
+report_id: 'AUD-2026-05-05-CQ01'
+title: 'Code Quality Audit: Wesley v0.1.0 Release Branch'
+status: 'Final'
 audit:
   date_started: 2026-05-05
   date_completed: 2026-05-05
-  type: "Differential"
-  scope: "README.md, CONTRIBUTING.md, SECURITY.md, docs/, packages/wesley-cli, packages/wesley-core, packages/wesley-holmes, packages/wesley-runtime-node, scripts/"
-  compliance_frameworks: ["OWASP ASVS", "OpenSSF Scorecard Practices", "SLSA Release Principles"]
+  type: 'Differential'
+  scope: 'README.md, CONTRIBUTING.md, SECURITY.md, docs/, packages/wesley-cli, packages/wesley-core, packages/wesley-holmes, packages/wesley-runtime-node, scripts/'
+  compliance_frameworks: ['OWASP ASVS', 'OpenSSF Scorecard Practices', 'SLSA Release Principles']
 target:
-  repository: "github.com/flyingrobots/wesley"
-  branch: "release/v0.1.0"
-  commit_hash: "1333104"
-  language_stack: ["Node.js >=22", "pnpm 9.15.9", "ESM JavaScript", "GraphQL", "Commander", "Bats", "Playwright"]
-  environment: "Local release branch"
+  repository: 'github.com/flyingrobots/wesley'
+  branch: 'release/v0.1.0'
+  commit_hash: '1333104'
+  language_stack:
+    ['Node.js >=22', 'pnpm 9.15.9', 'ESM JavaScript', 'GraphQL', 'Commander', 'Bats', 'Playwright']
+  environment: 'Local release branch'
 methodology:
-  automated_tools: ["git status", "git log", "rg", "wc", "pnpm audit --json", "pnpm wesley --help"]
+  automated_tools: ['git status', 'git log', 'rg', 'wc', 'pnpm audit --json', 'pnpm wesley --help']
   manual_review_hours: 3
-  false_positive_rate: "12%"
+  false_positive_rate: '12%'
 summary:
   total_findings: 11
   severity_count:
@@ -25,21 +26,21 @@ summary:
     high: 3
     medium: 6
     low: 2
-  remediation_status: "Pending"
+  remediation_status: 'Pending'
 related_reports:
-  previous_audit: "AUD-2026-05-04-CQ01"
-  tracking_ticket: "docs/method/backlog/"
+  previous_audit: 'AUD-2026-05-04-CQ01'
+  tracking_ticket: 'docs/method/backlog/'
 ---
 
 # AUDIT: CODE QUALITY (2026-05-05)
 
 ## 0. EXECUTIVE REPORT CARD (Strategic Lead View)
 
-| **Metric** | **Score (1-10)** | **Recommendation** |
-| --- | --- | --- |
-| **Developer Experience (DX)** | 7.4 | **Best of:** The README and GUIDE now correctly present Wesley as a domain-empty compiler kernel with module-brought targets and documented trust controls. |
-| **Internal Quality (IQ)** | 7.0 | **Watch Out For:** Module loading and command orchestration still need structured diagnostic/report layers so operators do not have to infer runtime behavior from source. |
-| **Overall Recommendation** | **THUMBS UP** | **Justification:** The release branch is materially healthier after the runtime hardening pass, but the next quality step is turning implicit module and CLI behavior into inspectable contracts. |
+| **Metric**                    | **Score (1-10)** | **Recommendation**                                                                                                                                                                                |
+| ----------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Developer Experience (DX)** | 7.4              | **Best of:** The README and GUIDE now correctly present Wesley as a domain-empty compiler kernel with module-brought targets and documented trust controls.                                       |
+| **Internal Quality (IQ)**     | 7.0              | **Watch Out For:** Module loading and command orchestration still need structured diagnostic/report layers so operators do not have to infer runtime behavior from source.                        |
+| **Overall Recommendation**    | **THUMBS UP**    | **Justification:** The release branch is materially healthier after the runtime hardening pass, but the next quality step is turning implicit module and CLI behavior into inspectable contracts. |
 
 ## 1. DX: ERGONOMICS & INTERFACE CLARITY (Advocate View)
 

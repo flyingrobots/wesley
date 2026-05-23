@@ -79,7 +79,7 @@ export class TypeScriptGenerator {
       fields.push(fieldDef);
     }
 
-    const interfaceBody = fields.map(f => `  ${f}`).join('\n');
+    const interfaceBody = fields.map((f) => `  ${f}`).join('\n');
 
     return `export interface ${table.name} {
 ${interfaceBody}
@@ -146,20 +146,20 @@ ${interfaceBody}
     }
 
     const typeMap = {
-      'ID': 'string',
-      'String': 'string',
-      'Int': 'number',
-      'Float': 'number',
-      'Boolean': 'boolean',
-      'DateTime': 'string', // ISO string representation
-      'Date': 'string',
-      'Time': 'string',
-      'Decimal': 'number',
-      'UUID': 'string',
-      'JSON': 'Record<string, any>',
-      'Inet': 'string',
-      'CIDR': 'string',
-      'MacAddr': 'string'
+      ID: 'string',
+      String: 'string',
+      Int: 'number',
+      Float: 'number',
+      Boolean: 'boolean',
+      DateTime: 'string', // ISO string representation
+      Date: 'string',
+      Time: 'string',
+      Decimal: 'number',
+      UUID: 'string',
+      JSON: 'Record<string, any>',
+      Inet: 'string',
+      CIDR: 'string',
+      MacAddr: 'string'
     };
 
     return typeMap[field.type] || 'unknown';
@@ -170,9 +170,20 @@ ${interfaceBody}
    */
   isCustomType(type) {
     const builtInTypes = [
-      'ID', 'String', 'Int', 'Float', 'Boolean',
-      'DateTime', 'Date', 'Time', 'Decimal', 'UUID',
-      'JSON', 'Inet', 'CIDR', 'MacAddr'
+      'ID',
+      'String',
+      'Int',
+      'Float',
+      'Boolean',
+      'DateTime',
+      'Date',
+      'Time',
+      'Decimal',
+      'UUID',
+      'JSON',
+      'Inet',
+      'CIDR',
+      'MacAddr'
     ];
     return !builtInTypes.includes(type);
   }
@@ -196,7 +207,7 @@ ${interfaceBody}
 
     if (fields.length === 0) return null;
 
-    const interfaceBody = fields.map(f => `  ${f}`).join('\n');
+    const interfaceBody = fields.map((f) => `  ${f}`).join('\n');
 
     return `export interface ${table.name}Create {
 ${interfaceBody}
@@ -237,7 +248,7 @@ ${interfaceBody}
 
     if (fields.length === 0) return null;
 
-    const interfaceBody = fields.map(f => `  ${f}`).join('\n');
+    const interfaceBody = fields.map((f) => `  ${f}`).join('\n');
 
     return `export interface ${table.name}Update {
 ${interfaceBody}
@@ -248,7 +259,7 @@ ${interfaceBody}
    * Generate enum types
    */
   generateEnum(name, values) {
-    const enumValues = values.map(value => `  ${value} = ${JSON.stringify(value)}`).join(',\n');
+    const enumValues = values.map((value) => `  ${value} = ${JSON.stringify(value)}`).join(',\n');
 
     return `export enum ${name} {
 ${enumValues}

@@ -2,7 +2,7 @@ name: Property Fuzzing
 
 on:
   push:
-    branches: ["**"]
+    branches: ['**']
     paths:
       - 'packages/wesley-core/test/fuzz/**'
       - 'packages/wesley-core/package.json'
@@ -10,7 +10,7 @@ on:
       - 'package.json'
       - 'pnpm-lock.yaml'
   pull_request:
-    branches: ["**"]
+    branches: ['**']
     paths:
       - 'packages/wesley-core/test/fuzz/**'
       - 'packages/wesley-core/package.json'

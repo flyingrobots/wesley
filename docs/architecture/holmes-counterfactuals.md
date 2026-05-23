@@ -1,9 +1,11 @@
 # HOLMES Counterfactual Architecture
+
 <!-- docs-truth: status=current owner=@flyingrobots -->
 
 This is the canonical architecture note for Wesley counterfactual analysis.
 
 Scope
+
 - HOLMES/Moriarty read-only counterfactual analysis
 - BLADE counterfactual stage
 - SHIPME counterfactual summary
@@ -13,6 +15,7 @@ Scope
 Holmes is the generic counterfactual dispatcher and judgment carrier.
 
 Loaded modules own provider semantics:
+
 - ref or lane interpretation beyond the generic request shape
 - comparison or transfer machinery
 - provider-owned fact files
@@ -26,6 +29,7 @@ re-derive gate semantics from provider internals.
 ## Provider Layout
 
 Generic implementation
+
 - package: `packages/wesley-holmes`
 - policy loader: `src/counterfactual/policy.mjs`
 - dispatcher: `src/counterfactual/provider.mjs`
@@ -34,16 +38,19 @@ Generic implementation
 - module loading: shared `@wesley/runtime-node` module-entry loader
 
 Module implementation
+
 - capability area: `holmes`
 - capability collection: `counterfactualProviders`
 - capability shape: plain object with non-empty `name` and `analyze()` hook
 
 Entrypoints
+
 - `wesley`
 - `holmes`
 - `moriarty`
 
 Current rule
+
 - these remain independent entry points
 - Holmes/Moriarty may consume Wesley artifacts and the shared run ledger, but
   they must not shell out to the `wesley` CLI just to inspect persisted run
@@ -58,6 +65,7 @@ Current rule
 ## Lane Model
 
 Lane request
+
 - `baseRef`
 - `headRef`
 - optional `braidRefs[]`
@@ -69,6 +77,7 @@ provider may resolve refs, compare surfaces, plan transfer, or perform a
 different counterfactual analysis appropriate to its module.
 
 Provider selection
+
 - If `policy.counterfactual.provider` names a loaded provider, Holmes uses it.
 - If no provider is named and exactly one provider is loaded, Holmes uses that
   provider.
@@ -78,9 +87,11 @@ Provider selection
 ## Facts and Judgment
 
 Generic persisted report
+
 - `.wesley-cache/counterfactual/current.json`
 
 Provider-owned artifacts
+
 - may live under `.wesley-cache/counterfactual/`
 - may include comparison facts, transfer facts, summaries, caches, or other
   module-specific evidence
@@ -88,6 +99,7 @@ Provider-owned artifacts
   `current.json`
 
 `current.json` carries
+
 - provider name and version
 - surface version
 - requested and resolved refs
@@ -97,6 +109,7 @@ Provider-owned artifacts
 - Wesley judgment
 
 Judgment fields
+
 - `status`
 - `signals[]`
 - `riskClass`
@@ -106,9 +119,11 @@ Judgment fields
 - `reasons[]`
 
 Generic signal
+
 - `provider_unavailable`
 
 Common provider signals may include:
+
 - `patch_divergence`
 - `visible_state_delta`
 - `transfer_ops_present`
@@ -120,6 +135,7 @@ Common provider signals may include:
 ## Consumers
 
 Moriarty
+
 - `holmes predict --counterfactual [baseRef]`
 - `holmes report --counterfactual [baseRef]`
 - `holmes predict --counterfactual-braid <ref>`
@@ -134,31 +150,37 @@ Moriarty
   one-release regression harness.
 
 BLADE
+
 - stage between `rehearse` and `cert-create`
 - flags:
   - `--counterfactual [baseRef]`
   - `--counterfactual-braid <ref>`
 
 SHIPME / cert
+
 - `cert-create` embeds a compact counterfactual summary
 - `cert-verify` respects embedded `counterfactual.gate`
 
 ## Gate Semantics
 
 This is the critical rule:
+
 - `judgment.gate` is the only authority for BLADE and cert decisions.
 
 Policy gate modes
+
 - `off`
 - `audit`
 - `hard`
 
 Derived gate states
+
 - `pass`
 - `audit`
 - `fail`
 
 Current behavior
+
 - `off`: never block
 - `audit`: record `wouldFail`, continue
 - `hard`: fail when `judgment.gate === "fail"`

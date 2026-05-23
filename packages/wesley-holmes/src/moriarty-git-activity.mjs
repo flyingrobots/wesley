@@ -3,7 +3,9 @@ export function analyzeMoriartyGitActivity({ git, clock, config }) {
   const prIndex = normalizeMoriartyGitActivity(prActivity, config);
   const windowActivity = computeMoriartyGitWindowActivity({ git, clock, config });
   const windowIndex = normalizeMoriartyGitActivity(windowActivity, config);
-  const activityIndex = (Number.isFinite(prIndex) ? prIndex * 0.6 : 0) + (Number.isFinite(windowIndex) ? windowIndex * 0.4 : 0);
+  const activityIndex =
+    (Number.isFinite(prIndex) ? prIndex * 0.6 : 0) +
+    (Number.isFinite(windowIndex) ? windowIndex * 0.4 : 0);
   const gitActivity = {
     window: windowActivity || undefined,
     pr: prActivity || undefined,
@@ -11,8 +13,10 @@ export function analyzeMoriartyGitActivity({ git, clock, config }) {
   };
 
   const sizes = [];
-  if (gitActivity.pr?.commitRelevantSizes?.length) sizes.push(...gitActivity.pr.commitRelevantSizes);
-  if (gitActivity.window?.commitRelevantSizes?.length) sizes.push(...gitActivity.window.commitRelevantSizes);
+  if (gitActivity.pr?.commitRelevantSizes?.length)
+    sizes.push(...gitActivity.pr.commitRelevantSizes);
+  if (gitActivity.window?.commitRelevantSizes?.length)
+    sizes.push(...gitActivity.window.commitRelevantSizes);
 
   return {
     gitActivity,
@@ -32,7 +36,14 @@ export function computeMoriartyGitWindowActivity({ git, clock, config }) {
     return null;
   }
   if (!raw.trim()) {
-    return { windowHours, commits: 0, relevantCommits: 0, commitsPerDay: 0, linesChanged: 0, relevantLinesChanged: 0 };
+    return {
+      windowHours,
+      commits: 0,
+      relevantCommits: 0,
+      commitsPerDay: 0,
+      linesChanged: 0,
+      relevantLinesChanged: 0
+    };
   }
 
   const parsed = parseMoriartyGitNumstat(raw);
@@ -59,16 +70,29 @@ export function computeMoriartyGitPrActivity({ git, config }) {
     const mergeBase = git.mergeBase('HEAD', remoteBase);
     if (!mergeBase) return null;
 
-    const raw = git.log({ range: `${mergeBase}..HEAD`, format: '--%ct', numstat: true, noMerges: true });
+    const raw = git.log({
+      range: `${mergeBase}..HEAD`,
+      format: '--%ct',
+      numstat: true,
+      noMerges: true
+    });
     if (raw === null) {
       return null;
     }
     if (!raw.trim()) {
-      return { commits: 0, relevantCommits: 0, days: 0, commitsPerDay: 0, linesChanged: 0, relevantLinesChanged: 0 };
+      return {
+        commits: 0,
+        relevantCommits: 0,
+        days: 0,
+        commitsPerDay: 0,
+        linesChanged: 0,
+        relevantLinesChanged: 0
+      };
     }
 
     const parsed = parseMoriartyGitNumstat(raw);
-    const spanSecs = parsed.firstTs && parsed.lastTs ? Math.max(1, Math.abs(parsed.lastTs - parsed.firstTs)) : 0;
+    const spanSecs =
+      parsed.firstTs && parsed.lastTs ? Math.max(1, Math.abs(parsed.lastTs - parsed.firstTs)) : 0;
     const days = spanSecs / 86400 || 0;
     return {
       commits: parsed.commits,
@@ -89,24 +113,29 @@ export function normalizeMoriartyGitActivity(activity, config) {
   if (!activity) return 0;
   const commitsPerDay = Number.isFinite(activity.commitsPerDay) ? activity.commitsPerDay : 0;
   const relPerDay = Number.isFinite(activity.windowHours)
-    ? (activity.relevantCommits * (24 / activity.windowHours))
-    : (Number.isFinite(activity.days) && activity.days > 0 ? activity.relevantCommits / activity.days : 0);
+    ? activity.relevantCommits * (24 / activity.windowHours)
+    : Number.isFinite(activity.days) && activity.days > 0
+      ? activity.relevantCommits / activity.days
+      : 0;
   const locPerDay = Number.isFinite(activity.windowHours)
-    ? (activity.relevantLinesChanged * (24 / activity.windowHours))
-    : (Number.isFinite(activity.days) && activity.days > 0 ? activity.relevantLinesChanged / activity.days : activity.relevantLinesChanged);
+    ? activity.relevantLinesChanged * (24 / activity.windowHours)
+    : Number.isFinite(activity.days) && activity.days > 0
+      ? activity.relevantLinesChanged / activity.days
+      : activity.relevantLinesChanged;
   const filesPerDay = Number.isFinite(activity.windowHours)
-    ? (Number.isFinite(activity.uniqueRelevantFiles) ? (activity.uniqueRelevantFiles * (24 / activity.windowHours)) : 0)
-    : (Number.isFinite(activity.days) && activity.days > 0 && Number.isFinite(activity.uniqueRelevantFiles) ? activity.uniqueRelevantFiles / activity.days : 0);
+    ? Number.isFinite(activity.uniqueRelevantFiles)
+      ? activity.uniqueRelevantFiles * (24 / activity.windowHours)
+      : 0
+    : Number.isFinite(activity.days) &&
+        activity.days > 0 &&
+        Number.isFinite(activity.uniqueRelevantFiles)
+      ? activity.uniqueRelevantFiles / activity.days
+      : 0;
   const commitScore = Math.min(1, commitsPerDay / config.activityCommitThreshold);
   const relevantScore = Math.min(1, relPerDay / config.activityRelevantCommitThreshold);
   const volumeScore = Math.min(1, locPerDay / Math.max(1, config.activityLinesPerDayTarget));
   const breadthScore = Math.min(1, filesPerDay / Math.max(1, config.activityFilesPerDayTarget));
-  return (
-    (commitScore * 0.25) +
-    (relevantScore * 0.35) +
-    (volumeScore * 0.25) +
-    (breadthScore * 0.15)
-  );
+  return commitScore * 0.25 + relevantScore * 0.35 + volumeScore * 0.25 + breadthScore * 0.15;
 }
 
 export function computeMoriartyBurstinessIndex(samples) {
@@ -190,7 +219,8 @@ function parseMoriartyGitNumstat(raw) {
 
 function isRelevantMoriartyFile(file) {
   const normalized = String(file || '').toLowerCase();
-  return normalized.endsWith('.graphql') ||
+  return (
+    normalized.endsWith('.graphql') ||
     normalized.includes('/ddl/') ||
     normalized.endsWith('.sql') ||
     normalized.includes('pgtap') ||
@@ -198,5 +228,6 @@ function isRelevantMoriartyFile(file) {
     normalized.includes('.wesley-cache/bundle.json') ||
     normalized.includes('.wesley-cache/history.json') ||
     normalized.includes('.wesley/bundle.json') ||
-    normalized.includes('.wesley/history.json');
+    normalized.includes('.wesley/history.json')
+  );
 }

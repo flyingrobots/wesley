@@ -18,18 +18,22 @@ Trigger: title/label match: evidence, certification, security, or Holmes-family 
 ## Original Issue
 
 ## Summary
+
 Replace the bespoke JSON-schema validator in `packages/wesley-holmes/src/report-schemas.mjs` with Ajv (or similar) to gain better error reporting and schema coverage.
 
 ## Motivation
+
 The current validator only supports a subset of JSON schema features. As we add more structure (weights, breakdowns, provenance), maintaining the custom walker becomes risky. Ajv would give us spec compliance and better diagnostics.
 
 ## Tasks
+
 - Add Ajv as a dependency for @wesley/holmes.
 - Port existing schemas to Ajv (holmes/watson/moriarty reports).
 - Update tests to use Ajv for validation.
 - Ensure CLI commands still exit with helpful messaging when validation fails.
 
 ## Acceptance Criteria
+
 - All report commands use Ajv under the hood.
 - CI/test suites cover both valid and invalid payloads.
 - Error output remains user-friendly.

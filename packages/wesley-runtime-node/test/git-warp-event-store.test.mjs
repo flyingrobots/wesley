@@ -88,10 +88,7 @@ test('resolveLedgerRootDir respects env and repo config', async () => {
     'export default { ledger: { repoPath: "./custom-ledger" } };'
   );
 
-  assert.equal(
-    await resolveLedgerRootDir({ repoRoot: tempDir }),
-    configured
-  );
+  assert.equal(await resolveLedgerRootDir({ repoRoot: tempDir }), configured);
 
   assert.equal(
     await resolveLedgerRootDir({
@@ -102,7 +99,10 @@ test('resolveLedgerRootDir respects env and repo config', async () => {
   );
 
   assert.ok(existsSync(path.join(tempDir, 'wesley.config.mjs')));
-  assert.equal(readFileSync(path.join(tempDir, 'wesley.config.mjs'), 'utf8').includes('custom-ledger'), true);
+  assert.equal(
+    readFileSync(path.join(tempDir, 'wesley.config.mjs'), 'utf8').includes('custom-ledger'),
+    true
+  );
 });
 
 test('resolveLedgerRootDir defaults to .wesley-cache/ledger when no override exists', async () => {

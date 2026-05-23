@@ -1,6 +1,7 @@
 # Technical Architecture — MVP
 
 ## System Overview
+
 Wesley is a schema-first transformer with a pure core (IR, evidence, scoring) and host adapters (Node). The CLI orchestrates targets, planning, rehearsal, and certification.
 
 ```mermaid
@@ -27,18 +28,22 @@ flowchart LR
 ```
 
 ## Technology Decisions (MVP)
+
 - Node 22+, pnpm; pino logger
 - graphql-js in GraphQLAdapter; ajv for schema validation
 - pgTAP for DB tests; Postgres for rehearsal
 
 ## Scalability & Performance
+
 - CLI-first; transform is fast and pure
 - Rehearsal bounded via `--timeout`; pg pool size small by default
 
 ## Security & Compliance
+
 - No secrets in evidence; SHIPME signatures stored locally for MVP
 - Future: KMS/HSM for signing, role‑based approvals
 
 ## ADRs (Pointers)
+
 - ADR-0001: GraphQL as single source of truth
 - ADR-0002: Additive-only diffs for MVP

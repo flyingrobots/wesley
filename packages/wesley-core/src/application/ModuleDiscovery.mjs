@@ -38,7 +38,10 @@ function normalizeEntries(entries) {
     if (entry.enabled !== undefined && typeof entry.enabled !== 'boolean') {
       fail(`modules[${index}].enabled must be a boolean if provided`, 'WMOD002');
     }
-    if (entry.config !== undefined && (typeof entry.config !== 'object' || entry.config === null || Array.isArray(entry.config))) {
+    if (
+      entry.config !== undefined &&
+      (typeof entry.config !== 'object' || entry.config === null || Array.isArray(entry.config))
+    ) {
       fail(`modules[${index}].config must be a plain object if provided`, 'WMOD002');
     }
 
@@ -82,7 +85,10 @@ export async function discoverModules(entries, { resolve, logger }) {
 
   for (const entry of normalized) {
     if (!entry.enabled) {
-      logger.debug?.({ specifier: entry.specifier }, `Skipping disabled module "${entry.specifier}"`);
+      logger.debug?.(
+        { specifier: entry.specifier },
+        `Skipping disabled module "${entry.specifier}"`
+      );
       continue;
     }
 

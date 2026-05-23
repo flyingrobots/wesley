@@ -109,10 +109,10 @@ Map IR to Drizzle table builders, emit relation helpers, integrate with CLI targ
 
 ### QA Sign-off Matrix
 
-| Environment | Surface | Owner | Status | Notes |
-| --- | --- | --- | --- | --- |
-| Unit tests | Generator | TBD | pending | |
-| Sample project | Demo validation | TBD | pending | |
+| Environment    | Surface         | Owner | Status  | Notes |
+| -------------- | --------------- | ----- | ------- | ----- |
+| Unit tests     | Generator       | TBD   | pending |       |
+| Sample project | Demo validation | TBD   | pending |       |
 
 ## Requirements
 

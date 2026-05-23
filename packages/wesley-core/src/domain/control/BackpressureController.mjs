@@ -223,7 +223,10 @@ export class BackpressureController extends EventEmitter {
       if (poolResult.canQueue) {
         return this.enqueueOperation(operation);
       }
-      throw new ConnectionPoolExhaustedError(poolResult.activeConnections, this.maxConnectionPoolSize);
+      throw new ConnectionPoolExhaustedError(
+        poolResult.activeConnections,
+        this.maxConnectionPoolSize
+      );
     }
 
     // Check concurrent operations limit
@@ -286,25 +289,25 @@ export class BackpressureController extends EventEmitter {
     const now = this.clock.nowMs();
 
     switch (this.circuitBreakerState) {
-    case CircuitBreakerState.CLOSED:
-      return { allowed: true };
-
-    case CircuitBreakerState.OPEN:
-      if (now - this.circuitBreakerLastFailureTime >= this.circuitBreakerOptions.resetTimeout) {
-        this.transitionCircuitBreaker(CircuitBreakerState.HALF_OPEN, 'timeout_expired');
+      case CircuitBreakerState.CLOSED:
         return { allowed: true };
-      }
-      return { allowed: false, reason: 'circuit_breaker_open' };
 
-    case CircuitBreakerState.HALF_OPEN:
-      if (this.circuitBreakerHalfOpenCalls < this.circuitBreakerOptions.halfOpenMaxCalls) {
-        this.circuitBreakerHalfOpenCalls++;
-        return { allowed: true };
-      }
-      return { allowed: false, reason: 'half_open_limit_exceeded' };
+      case CircuitBreakerState.OPEN:
+        if (now - this.circuitBreakerLastFailureTime >= this.circuitBreakerOptions.resetTimeout) {
+          this.transitionCircuitBreaker(CircuitBreakerState.HALF_OPEN, 'timeout_expired');
+          return { allowed: true };
+        }
+        return { allowed: false, reason: 'circuit_breaker_open' };
 
-    default:
-      return { allowed: false, reason: 'unknown_circuit_breaker_state' };
+      case CircuitBreakerState.HALF_OPEN:
+        if (this.circuitBreakerHalfOpenCalls < this.circuitBreakerOptions.halfOpenMaxCalls) {
+          this.circuitBreakerHalfOpenCalls++;
+          return { allowed: true };
+        }
+        return { allowed: false, reason: 'half_open_limit_exceeded' };
+
+      default:
+        return { allowed: false, reason: 'unknown_circuit_breaker_state' };
     }
   }
 
@@ -364,7 +367,9 @@ export class BackpressureController extends EventEmitter {
     };
 
     // Insert in priority order
-    const insertIndex = this.queuedOperations.findIndex(op => op.priority < queuedOperation.priority);
+    const insertIndex = this.queuedOperations.findIndex(
+      (op) => op.priority < queuedOperation.priority
+    );
     if (insertIndex === -1) {
       this.queuedOperations.push(queuedOperation);
     } else {
@@ -386,7 +391,10 @@ export class BackpressureController extends EventEmitter {
    * Process queued operations
    */
   async processQueue() {
-    while (this.queuedOperations.length > 0 && this.activeOperations < this.maxConcurrentOperations) {
+    while (
+      this.queuedOperations.length > 0 &&
+      this.activeOperations < this.maxConcurrentOperations
+    ) {
       const queuedOp = this.queuedOperations.shift();
       this.metrics.queueDepth = this.queuedOperations.length;
 
@@ -436,8 +444,10 @@ export class BackpressureController extends EventEmitter {
     this.circuitBreakerState = newState;
     this.circuitBreakerHalfOpenCalls = 0;
 
-    this.emit('circuitBreakerStateChanged',
-      new CircuitBreakerStateChanged(previousState, newState, reason));
+    this.emit(
+      'circuitBreakerStateChanged',
+      new CircuitBreakerStateChanged(previousState, newState, reason)
+    );
   }
 
   /**
@@ -464,9 +474,10 @@ export class BackpressureController extends EventEmitter {
    * Update error rate metrics
    */
   updateErrorRate() {
-    this.metrics.errorRate = this.metrics.totalOperations > 0
-      ? this.metrics.failedOperations / this.metrics.totalOperations
-      : 0;
+    this.metrics.errorRate =
+      this.metrics.totalOperations > 0
+        ? this.metrics.failedOperations / this.metrics.totalOperations
+        : 0;
 
     this.metrics.errorHistory.push({
       time: this.clock.nowMs(),
@@ -475,7 +486,9 @@ export class BackpressureController extends EventEmitter {
 
     // Keep only last hour of data
     const oneHourAgo = this.clock.nowMs() - 3600000;
-    this.metrics.errorHistory = this.metrics.errorHistory.filter(entry => entry.time > oneHourAgo);
+    this.metrics.errorHistory = this.metrics.errorHistory.filter(
+      (entry) => entry.time > oneHourAgo
+    );
   }
 
   /**
@@ -500,7 +513,10 @@ export class BackpressureController extends EventEmitter {
     }
 
     // Update connection pool utilization (simulated - in real implementation would query actual pool)
-    this.metrics.connectionPoolUtilization = Math.min(1, this.activeOperations / this.maxConnectionPoolSize);
+    this.metrics.connectionPoolUtilization = Math.min(
+      1,
+      this.activeOperations / this.maxConnectionPoolSize
+    );
 
     // Update queue depth
     this.metrics.queueDepth = this.queuedOperations.length;
@@ -569,8 +585,7 @@ export class BackpressureController extends EventEmitter {
 
     if (!wasActive && this.isBackpressureActive) {
       this.backpressureStartTime = this.clock.nowMs();
-      this.emit('backpressureActivated',
-        new BackpressureActivated(maxLevel, triggeringConditions));
+      this.emit('backpressureActivated', new BackpressureActivated(maxLevel, triggeringConditions));
     } else if (wasActive && !this.isBackpressureActive) {
       const duration = this.clock.nowMs() - (this.backpressureStartTime || this.clock.nowMs());
       this.backpressureStartTime = null;
@@ -591,17 +606,22 @@ export class BackpressureController extends EventEmitter {
 
     if (this.isBackpressureActive) {
       // Reduce rate limit based on backpressure level
-      const reductionFactor = 1 - (this.backpressureLevel * 0.7);
+      const reductionFactor = 1 - this.backpressureLevel * 0.7;
       newRate = Math.max(1, Math.floor(this.baseRateLimit * reductionFactor));
-    } else if (this.metrics.errorRate < 0.01 && this.metrics.averageResponseTime < this.thresholds.responseTimeWarning / 2) {
+    } else if (
+      this.metrics.errorRate < 0.01 &&
+      this.metrics.averageResponseTime < this.thresholds.responseTimeWarning / 2
+    ) {
       // Conditions are good, can increase rate limit slightly
       newRate = Math.min(this.baseRateLimit * 1.5, this.baseRateLimit + 10);
     }
 
     if (newRate !== previousRate) {
       this.currentRateLimit = newRate;
-      this.emit('throttlingAdjusted',
-        new ThrottlingAdjusted(previousRate, newRate, 'adaptive_adjustment'));
+      this.emit(
+        'throttlingAdjusted',
+        new ThrottlingAdjusted(previousRate, newRate, 'adaptive_adjustment')
+      );
     }
   }
 
@@ -769,7 +789,7 @@ export class BackpressureController extends EventEmitter {
     const shutdownTimeout = 30000; // 30 seconds
     const startTime = this.clock.nowMs();
 
-    while (this.activeOperations > 0 && (this.clock.nowMs() - startTime) < shutdownTimeout) {
+    while (this.activeOperations > 0 && this.clock.nowMs() - startTime < shutdownTimeout) {
       await this.sleep(100);
     }
 

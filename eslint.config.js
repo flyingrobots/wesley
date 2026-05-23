@@ -1,4 +1,5 @@
 import js from '@eslint/js';
+import eslintConfigPrettier from 'eslint-config-prettier/flat';
 import globals from 'globals';
 import promise from 'eslint-plugin-promise';
 
@@ -48,18 +49,21 @@ export default [
 
       // ESM-specific rules
       'no-undef': 'error',
-      'no-unused-vars': ['error', {
-        argsIgnorePattern: '^_',
-        varsIgnorePattern: '^_',
-        caughtErrorsIgnorePattern: '^_'
-      }],
+      'no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_'
+        }
+      ],
 
       // General best practices for JavaScript
       'no-console': 'off',
-      'semi': ['error', 'always'],
-      'quotes': ['error', 'single', { avoidEscape: true }],
+      semi: ['error', 'always'],
+      quotes: ['error', 'single', { avoidEscape: true }],
       'comma-dangle': ['error', 'never'],
-      'indent': ['error', 2],
+      indent: ['error', 2],
       'no-trailing-spaces': 'error',
       'eol-last': 'error',
 
@@ -101,11 +105,14 @@ export default [
   {
     files: ['**/test/**', '**/*.test.mjs', '**/*.test.js', '**/*.spec.mjs', '**/*.spec.js'],
     rules: {
-      'no-unused-vars': ['error', {
-        argsIgnorePattern: '^_',
-        varsIgnorePattern: '^_',
-        caughtErrorsIgnorePattern: '^_'
-      }],
+      'no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_'
+        }
+      ],
       // Test stubs often implement interfaces without using await
       'require-await': 'off',
       // Tests may use empty catch blocks for error-path testing
@@ -133,5 +140,9 @@ export default [
         Deno: 'readonly'
       }
     }
-  }
+  },
+
+  // Prettier owns stylistic formatting. Keep this last so ESLint does not
+  // re-litigate indentation or other formatter-owned layout choices.
+  eslintConfigPrettier
 ];

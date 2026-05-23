@@ -7,7 +7,7 @@
 
 Wesley acts as an Assurance Toolchain. AI agents (like Claude or custom internal bots) currently manipulate files blindly. By exposing Wesley via the Model Context Protocol (MCP), we provide an Interactive Assurance Oracle for AI.
 
-An agent could query the schema, ask for relationships, or ask Wesley to "dry run" a proposed SDL change to see if it causes compiler errors or breaks target contracts—all *before* making the change.
+An agent could query the schema, ask for relationships, or ask Wesley to "dry run" a proposed SDL change to see if it causes compiler errors or breaks target contracts—all _before_ making the change.
 
 ## Done looks like
 

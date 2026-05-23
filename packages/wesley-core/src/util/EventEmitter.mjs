@@ -130,7 +130,10 @@ export class EventEmitter {
     }
 
     if (errors.length > 1) {
-      throw new AggregateError(errors, `Event publish failed for ${event?.type || 'unknown event'}`);
+      throw new AggregateError(
+        errors,
+        `Event publish failed for ${event?.type || 'unknown event'}`
+      );
     }
 
     return results;

@@ -2,11 +2,11 @@ name: pkg-host-deno
 
 on:
   push:
-    branches: ["**"]
+    branches: ['**']
     paths:
       - 'packages/wesley-host-deno/**'
   pull_request:
-    branches: ["**"]
+    branches: ['**']
     paths:
       - 'packages/wesley-host-deno/**'
 

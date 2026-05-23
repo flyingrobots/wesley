@@ -8,7 +8,7 @@ import {
   IconSettings,
   IconStar,
   IconSwitchHorizontal,
-  IconTrash,
+  IconTrash
 } from '@tabler/icons-react';
 import cx from 'clsx';
 import {
@@ -20,7 +20,7 @@ import {
   Tabs,
   Text,
   UnstyledButton,
-  useMantineTheme,
+  useMantineTheme
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { MantineLogo } from '@mantinex/mantine-logo';
@@ -29,7 +29,7 @@ import classes from './HeaderTabs.module.css';
 const user = {
   name: 'Jane Spoonfighter',
   email: 'janspoon @fighter.dev',
-  image: 'https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-5.png',
+  image: 'https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-5.png'
 };
 
 const tabs = [
@@ -40,7 +40,7 @@ const tabs = [
   'Forums',
   'Support',
   'Account',
-  'Helpdesk',
+  'Helpdesk'
 ];
 
 export function HeaderTabs({ onNavigate }) {
@@ -130,7 +130,7 @@ export function HeaderTabs({ onNavigate }) {
           classNames={{
             root: classes.tabs,
             list: classes.tabsList,
-            tab: classes.tab,
+            tab: classes.tab
           }}
         >
           <Tabs.List>{items}</Tabs.List>

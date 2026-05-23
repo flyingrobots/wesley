@@ -17,17 +17,17 @@ const SCAFFOLDS = {
     description: 'Production-ready multi-tenant schema with organizations, users, and RLS',
     file: 'multi-tenant.graphql'
   },
-  'blog': {
+  blog: {
     name: 'Blog Platform',
     description: 'Blog with posts, authors, comments, and categories',
     file: 'blog.graphql'
   },
-  'ecommerce': {
+  ecommerce: {
     name: 'E-Commerce',
     description: 'Online store with products, orders, and inventory',
     file: 'ecommerce.graphql'
   },
-  'social': {
+  social: {
     name: 'Social Network',
     description: 'Social platform with users, posts, follows, and likes',
     file: 'social.graphql'
@@ -114,10 +114,7 @@ export class ScaffoldCommand {
 
     if (this.options.minimal) {
       // Remove optional sections for minimal setup
-      customized = customized.replace(
-        /# =+\n# RPC Functions \(Optional\)\n# =+[\s\S]*$/,
-        ''
-      );
+      customized = customized.replace(/# =+\n# RPC Functions \(Optional\)\n# =+[\s\S]*$/, '');
     }
 
     // Write output file
@@ -158,10 +155,10 @@ export class ScaffoldCommand {
 if (import.meta.url === `file://${process.argv[1]}`) {
   const type = process.argv[2];
   const options = {
-    output: process.argv.find(arg => arg.startsWith('--output='))?.split('=')[1],
+    output: process.argv.find((arg) => arg.startsWith('--output='))?.split('=')[1],
     force: process.argv.includes('--force'),
     minimal: process.argv.includes('--minimal'),
-    projectName: process.argv.find(arg => arg.startsWith('--name='))?.split('=')[1]
+    projectName: process.argv.find((arg) => arg.startsWith('--name='))?.split('=')[1]
   };
 
   const command = new ScaffoldCommand();

@@ -111,9 +111,9 @@ Use Rollup with plugin ecosystem (replace, node-polyfills where necessary), prod
 
 ### QA Sign-off Matrix
 
-| Environment | Surface | Owner | Status | Notes |
-| --- | --- | --- | --- | --- |
-| GitHub Actions | Headless Chrome | TBD | pending | |
+| Environment    | Surface         | Owner | Status  | Notes |
+| -------------- | --------------- | ----- | ------- | ----- |
+| GitHub Actions | Headless Chrome | TBD   | pending |       |
 
 ## Requirements
 

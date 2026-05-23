@@ -62,6 +62,7 @@ test/
 ## Test Patterns
 
 ### Basic CLI Test
+
 ```bash
 @test "command works" {
     run node "$CLI_PATH" --version
@@ -71,6 +72,7 @@ test/
 ```
 
 ### Error Handling Test
+
 ```bash
 @test "missing file exits 2" {
     run node "$CLI_PATH" generate --schema ./nonexistent.graphql
@@ -80,6 +82,7 @@ test/
 ```
 
 ### stdin Test
+
 ```bash
 @test "stdin input works" {
     run bash -c "echo 'schema' | node '$CLI_PATH' generate --schema -"
@@ -107,6 +110,7 @@ From our technical debate, Bats was chosen because it:
 ## Future Test Scenarios
 
 When Wesley CLI adds complex features, we may need additional test coverage for:
+
 - TTY-sensitive output (colors, progress bars)
 - File watching with debouncing (`--watch` mode)
 - Time-dependent logic (polling, backoff)

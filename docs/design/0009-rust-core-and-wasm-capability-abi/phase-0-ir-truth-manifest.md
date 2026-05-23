@@ -8,13 +8,13 @@ L1 fixture corpus required for the Wesley Rust Core parity migration.
 The following functions in the existing JS codebase are the "Truth Anchors" for
 compiler behavior:
 
-| Area | Package | File | Function |
-| :--- | :--- | :--- | :--- |
-| **Parsing & Lowering** | `@wesley/runtime-node` | `src/GraphQLAdapter.mjs` | `GraphQLSchemaParser.parse` |
-| **IR Construction** | `@wesley/runtime-node` | `src/GraphQLAdapter.mjs` | `buildIRFromAST` |
-| **Canonicalization** | `@wesley/core` | `src/domain/canonicalize.mjs` | `canonicalize` |
-| **Hashing** | `@wesley/core` | `src/domain/registryHash.mjs` | `registryHash` |
-| **JSON Serialization** | `@wesley/core` | `src/domain/registryHash.mjs` | `canonicalizeJSON` |
+| Area                   | Package                | File                          | Function                    |
+| :--------------------- | :--------------------- | :---------------------------- | :-------------------------- |
+| **Parsing & Lowering** | `@wesley/runtime-node` | `src/GraphQLAdapter.mjs`      | `GraphQLSchemaParser.parse` |
+| **IR Construction**    | `@wesley/runtime-node` | `src/GraphQLAdapter.mjs`      | `buildIRFromAST`            |
+| **Canonicalization**   | `@wesley/core`         | `src/domain/canonicalize.mjs` | `canonicalize`              |
+| **Hashing**            | `@wesley/core`         | `src/domain/registryHash.mjs` | `registryHash`              |
+| **JSON Serialization** | `@wesley/core`         | `src/domain/registryHash.mjs` | `canonicalizeJSON`          |
 
 ## Canonical JSON Byte Rules
 
@@ -34,6 +34,10 @@ rules are MANDATORY:
    IR. It MUST be stripped before computing the parity hash. The JS adapter now
    emits a stable `generatedAt` value for compatibility so repeated parses of
    identical SDL do not change IR bytes solely because wall-clock time advanced.
+7. **Directive Multiplicity:** Core Wesley directive aliases MUST lower to the
+   canonical `@wes_*` directive name and duplicate canonical core directives
+   MUST fail. Repeated custom directives are preserved as ordered JSON arrays
+   under the directive name.
 
 ## Fixture Corpus
 
@@ -44,13 +48,20 @@ The fixture corpus is stored in `test/fixtures/ir-parity` and consists of
 - `*.l1.json` stores the Rust-native L1 IR emitted by `wesley schema lower`.
 - `*.l1.hash` stores the Rust-native L1 hash emitted by `wesley schema hash`.
 
+Invalid SDL fixtures live in `test/fixtures/ir-parity-invalid`. They are not
+processed by `pnpm fixtures:ir`; they are consumed by explicit negative Rust
+tests.
+
 ### Stable L1 Hashes
 
-| Fixture | Hash (SHA-256) |
-| :--- | :--- |
-| `small-schema.graphql` | `b484bf6741686314aea381b51d5d26805b08fa27517225bbe4b736d9f39c606f` |
-| `medium-schema.graphql` | `853d939364506680535ae865438d897efc9fee2dc8e5b21d1118cae3cfe5664b` |
-| `large-schema.graphql` | `dfd5a42ab6a03570294764e4e9bdd791b5dd42fc02db5feb9543849a67d14726` |
+| Fixture                            | Hash (SHA-256)                                                     |
+| :--------------------------------- | :----------------------------------------------------------------- |
+| `small-schema.graphql`             | `b484bf6741686314aea381b51d5d26805b08fa27517225bbe4b736d9f39c606f` |
+| `medium-schema.graphql`            | `853d939364506680535ae865438d897efc9fee2dc8e5b21d1118cae3cfe5664b` |
+| `large-schema.graphql`             | `dfd5a42ab6a03570294764e4e9bdd791b5dd42fc02db5feb9543849a67d14726` |
+| `directive-heavy-schema.graphql`   | `e2e831e55a3b439322c49057e6ad2c6e28e6446e0b6f79fa1cae2a8b102053e3` |
+| `schema-extensions-schema.graphql` | `72d4d2db0d705fb59117a4c9f2e55ade187e435829253bb862aabd6dee5c9f99` |
+| `legacy-alias-schema.graphql`      | `95b4c726cfccf7874ba2e5d01a216cb1f31c0abce0ea060885899a5d79281aa6` |
 
 ### Categories
 
@@ -59,27 +70,49 @@ The fixture corpus is stored in `test/fixtures/ir-parity` and consists of
    (**COMPLETE**)
 3. **Large:** 100+ types to test performance and memory scaling. (**COMPLETE**)
 4. **Directive-Heavy:** Extensive use of `@wes_rls`, `@wes_tenant`, and
-   `@wes_default`. (PENDING)
+   `@wes_default`, including directive arguments with arrays and object
+   values. (**COMPLETE**)
 5. **Invalid:** SDL cases that MUST trigger specific `WesleyParseError` codes.
-   (PENDING)
-6. **Schema-Extensions:** Testing JS and Rust `extend type` folding.
-   (**STARTED**)
-7. **Legacy-Aliases:** Using `@table`, `@pk`, etc., to ensure alias
-   normalization works. (PENDING)
+   (**STARTED**; current Rust coverage rejects duplicate canonical directives,
+   while stable diagnostic codes and spans remain future work.)
+6. **Schema-Extensions:** Testing JS and Rust extension folding for scalar,
+   object, interface, union, enum, and input object types. (**COMPLETE**)
+7. **Legacy-Aliases:** Using `@table`, `@pk`, `@primaryKey`, `@tenant`, and
+   related core aliases to ensure Rust L1 emits canonical `@wes_*` directive
+   names. (**COMPLETE for the current core compiler alias set**)
+
+## JS/Rust Parity Sentinel Corpus
+
+`pnpm parity:ir` is the current JS/Rust compatibility sentinel. It is separate
+from `pnpm fixtures:ir` and compares a named projection rather than raw legacy
+table IR against raw Rust L1 IR.
+
+The v0 sentinel now allows each fixture to declare its projection. The default
+corpus is:
+
+- `small-schema.graphql` under `js-table-vs-rust-table.v0`
+- `medium-schema.graphql` under `js-table-vs-rust-table.v0`
+- `directive-heavy-schema.graphql` under `js-table-vs-rust-table.v0`
+- `legacy-alias-schema.graphql` under `js-table-vs-rust-table.v0`
+- `schema-extensions-schema.graphql` under
+  `js-sdl-type-family-vs-rust-l1-type-family.v0`
+
+`large-schema.graphql` remains scale coverage outside the default v0
+compatibility sentinel.
 
 ## Baseline Performance (JS)
 
-*Captured on: May 5, 2026*
-*Environment: Darwin (macOS)*
+_Captured on: May 5, 2026_
+_Environment: Darwin (macOS)_
 
 NOTE: These are rough measurements to be formalized in
 `EVIDENCE_rust-core-performance-baseline.md`.
 
-| Fixture | Lowering Time (ms) | Memory Peak (MB) |
-| :--- | :--- | :--- |
-| `small-schema.graphql` | ~2ms | < 1MB |
-| `medium-schema.graphql` | ~15ms | ~2MB |
-| `large-schema.graphql` | ~250ms | ~15MB |
+| Fixture                 | Lowering Time (ms) | Memory Peak (MB) |
+| :---------------------- | :----------------- | :--------------- |
+| `small-schema.graphql`  | ~2ms               | < 1MB            |
+| `medium-schema.graphql` | ~15ms              | ~2MB             |
+| `large-schema.graphql`  | ~250ms             | ~15MB            |
 
 ## Commands
 
@@ -93,7 +126,20 @@ This command shells through the native Wesley CLI and overwrites only the
 tracked `*.l1.json` and `*.l1.hash` outputs. It exits nonzero if any fixture
 fails to lower or hash.
 
-### Verify Rust Parity
+### Verify JS/Rust Parity
+
+```bash
+pnpm parity:ir
+```
+
+This command lowers the explicit v0 sentinel corpus through projection-owned
+JS lowerers and the Rust CLI, compares each fixture under its named projection,
+records canonical projected bytes in JSON output, verifies the Rust
+`schema hash` command against current Rust semantic L1 bytes after top-level
+`metadata` removal, and checks tracked Rust L1 hashes for `.graphql` fixtures
+when sidecars are present.
+
+### Verify Rust Tests
 
 ```bash
 cd crates/wesley-core && cargo test

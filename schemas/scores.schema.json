@@ -35,7 +35,7 @@
           "type": "object",
           "required": ["sql", "types", "validation", "tests"],
           "properties": {
-            "sql":   { "$ref": "#/definitions/scsComponent" },
+            "sql": { "$ref": "#/definitions/scsComponent" },
             "types": { "$ref": "#/definitions/scsComponent" },
             "validation": { "$ref": "#/definitions/scsComponent" },
             "tests": { "$ref": "#/definitions/scsComponent" }
@@ -50,7 +50,10 @@
             "unit_rls": { "$ref": "#/definitions/tciComponent" },
             "integration_relations": { "$ref": "#/definitions/tciComponent" },
             "e2e_ops": {
-              "allOf": [ { "$ref": "#/definitions/tciComponent" }, { "properties": { "note": { "type": "string" } } } ]
+              "allOf": [
+                { "$ref": "#/definitions/tciComponent" },
+                { "properties": { "note": { "type": "string" } } }
+              ]
             },
             "legacy_components": {
               "type": "object",
@@ -61,7 +64,13 @@
         },
         "mri": {
           "type": "object",
-          "required": ["drops", "renames_without_uid", "add_not_null_without_default", "non_concurrent_indexes", "totalPoints"],
+          "required": [
+            "drops",
+            "renames_without_uid",
+            "add_not_null_without_default",
+            "non_concurrent_indexes",
+            "totalPoints"
+          ],
           "properties": {
             "drops": { "$ref": "#/definitions/mriComponent" },
             "renames_without_uid": { "$ref": "#/definitions/mriComponent" },

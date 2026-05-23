@@ -30,13 +30,13 @@ export function enrichBundleWithEvidenceTruth({
 } = {}) {
   const nextBundle = structuredClone(bundle || {});
   const nextScores = structuredClone(scores || nextBundle.scores || {});
-  const resolveArtifact = typeof resolver === 'function'
-    ? resolver
-    : createGeneratedArtifactResolver(artifacts, outDir);
+  const resolveArtifact =
+    typeof resolver === 'function' ? resolver : createGeneratedArtifactResolver(artifacts, outDir);
 
   const citationQuality = summarizeEvidenceQuality(nextBundle.evidence, resolveArtifact);
   const evidenceTrust = assessEvidenceTrust(citationQuality);
-  const baseVerdict = nextScores.readiness?.baseVerdict || nextScores.readiness?.verdict || 'UNKNOWN';
+  const baseVerdict =
+    nextScores.readiness?.baseVerdict || nextScores.readiness?.verdict || 'UNKNOWN';
   const verdict = adjustReadinessVerdictForEvidenceTrust(baseVerdict, evidenceTrust.level);
 
   nextScores.readiness = {

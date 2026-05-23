@@ -1,4 +1,5 @@
 # Jedit Capability Progress
+
 <!-- docs-truth: status=experimental owner=@flyingrobots -->
 
 This page tracks Wesley's progress toward supporting the jedit capability path:
@@ -66,20 +67,20 @@ later.
 
 ## Progress Ledger
 
-| Item | Status | Score |
-| --- | --- | ---: |
-| Rust-native CLI is the primary Wesley front door | Done | 8 |
-| L1 schema lowering works for jedit-shaped models | Done | 8 |
-| Rust model emitter exists and is AST/printer-based | Done | 8 |
-| TypeScript model emitter exists and is AST/printer-based | Done | 8 |
-| Representative jedit model fixture is tracked in Wesley tests | Done | 5 |
-| Real jedit contract lowers and emits in local smoke checks | Done | 5 |
-| Full jedit runtime fixture is tracked hermetically in Wesley | Done | 8 |
-| Generic schema operation catalog preserves root args/results/directives | Done | 15 |
-| Native CLI exposes schema operation inspection | Done | 5 |
-| Rust operation binding emission exists | Done | 10 |
-| TypeScript operation binding emission exists | Done | 10 |
-| jedit consumes generated artifacts without shadow models | Not started | 0 |
+| Item                                                                    | Status      | Score |
+| ----------------------------------------------------------------------- | ----------- | ----: |
+| Rust-native CLI is the primary Wesley front door                        | Done        |     8 |
+| L1 schema lowering works for jedit-shaped models                        | Done        |     8 |
+| Rust model emitter exists and is AST/printer-based                      | Done        |     8 |
+| TypeScript model emitter exists and is AST/printer-based                | Done        |     8 |
+| Representative jedit model fixture is tracked in Wesley tests           | Done        |     5 |
+| Real jedit contract lowers and emits in local smoke checks              | Done        |     5 |
+| Full jedit runtime fixture is tracked hermetically in Wesley            | Done        |     8 |
+| Generic schema operation catalog preserves root args/results/directives | Done        |    15 |
+| Native CLI exposes schema operation inspection                          | Done        |     5 |
+| Rust operation binding emission exists                                  | Done        |    10 |
+| TypeScript operation binding emission exists                            | Done        |    10 |
+| jedit consumes generated artifacts without shadow models                | Not started |     0 |
 
 Current score: 90 / 100.
 

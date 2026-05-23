@@ -23,8 +23,19 @@ const sampleIr = {
 
 function makeContext() {
   return Object.freeze({
-    logger: { info() {}, warn() {}, error() {}, child() { return this; } },
-    clock: { now() { return new Date().toISOString(); } },
+    logger: {
+      info() {},
+      warn() {},
+      error() {},
+      child() {
+        return this;
+      }
+    },
+    clock: {
+      now() {
+        return new Date().toISOString();
+      }
+    },
     config: Object.freeze({}),
     runId: 'test-run-001'
   });

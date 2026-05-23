@@ -59,7 +59,7 @@ export class FakeDbSession {
   async applyMigrations(sqlMigrations) {
     this.#appliedMigrations.push(...sqlMigrations);
     // Simulate table creation for testing purposes
-    sqlMigrations.forEach(sql => {
+    sqlMigrations.forEach((sql) => {
       const createTableMatch = sql.match(/CREATE TABLE\s+"?(\w+)"?/i);
       if (createTableMatch && createTableMatch[1]) {
         const tableName = createTableMatch[1];
@@ -85,7 +85,7 @@ export class FakeDbSession {
     }
     // Handle information_schema.tables queries (used by fetchTables)
     if (sql.includes('information_schema.tables')) {
-      const rows = [...this.#tableNames].sort().map(n => ({ table_name: n }));
+      const rows = [...this.#tableNames].sort().map((n) => ({ table_name: n }));
       return { rows, fields: ['table_name'] };
     }
     // Handle information_schema.columns queries (used by table schema inspection)

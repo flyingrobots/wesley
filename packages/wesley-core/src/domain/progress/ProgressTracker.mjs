@@ -154,13 +154,13 @@ export class ProgressTracker extends EventEmitter {
     const totalWeight = operations.reduce((sum, op) => sum + op.weight, 0);
     const completedWeight = operations.reduce((sum, op) => {
       if (op.status === 'completed') return sum + op.weight;
-      if (op.status === 'active') return sum + (op.progress * op.weight);
+      if (op.status === 'active') return sum + op.progress * op.weight;
       return sum;
     }, 0);
 
-    const completed = operations.filter(op => op.status === 'completed').length;
-    const active = operations.filter(op => op.status === 'active').length;
-    const failed = operations.filter(op => op.status === 'failed').length;
+    const completed = operations.filter((op) => op.status === 'completed').length;
+    const active = operations.filter((op) => op.status === 'active').length;
+    const failed = operations.filter((op) => op.status === 'failed').length;
 
     const overallProgress = totalWeight > 0 ? completedWeight / totalWeight : 0;
     const eta = this.calculateGlobalETA(operations, overallProgress);
@@ -186,16 +186,15 @@ export class ProgressTracker extends EventEmitter {
     }
 
     // Use average completion time of recent operations
-    const recentCompletions = this.history
-      .filter(op => op.status === 'completed')
-      .slice(-10); // Last 10 completions
+    const recentCompletions = this.history.filter((op) => op.status === 'completed').slice(-10); // Last 10 completions
 
     if (recentCompletions.length === 0) {
       return null;
     }
 
-    const avgDuration = recentCompletions.reduce((sum, op) => sum + op.duration, 0) / recentCompletions.length;
-    const remainingOperations = operations.filter(op => op.status !== 'completed').length;
+    const avgDuration =
+      recentCompletions.reduce((sum, op) => sum + op.duration, 0) / recentCompletions.length;
+    const remainingOperations = operations.filter((op) => op.status !== 'completed').length;
 
     return Math.round((remainingOperations * avgDuration) / (1 - overallProgress));
   }
@@ -204,7 +203,7 @@ export class ProgressTracker extends EventEmitter {
    * Calculate average operation completion time
    */
   calculateAverageOperationTime() {
-    const completedOps = this.history.filter(op => op.status === 'completed');
+    const completedOps = this.history.filter((op) => op.status === 'completed');
     if (completedOps.length === 0) return null;
 
     const totalDuration = completedOps.reduce((sum, op) => sum + op.duration, 0);
@@ -218,7 +217,7 @@ export class ProgressTracker extends EventEmitter {
     let filtered = this.history;
 
     if (category) {
-      filtered = filtered.filter(op => op.category === category);
+      filtered = filtered.filter((op) => op.category === category);
     }
 
     if (limit) {
@@ -254,11 +253,13 @@ export class ProgressTracker extends EventEmitter {
    * Clean up completed operations
    */
   cleanup() {
-    const cutoff = Date.now() - (5 * 60 * 1000); // 5 minutes ago
+    const cutoff = Date.now() - 5 * 60 * 1000; // 5 minutes ago
 
     for (const [id, operation] of this.operations) {
-      if ((operation.status === 'completed' || operation.status === 'failed') &&
-          operation.endTime < cutoff) {
+      if (
+        (operation.status === 'completed' || operation.status === 'failed') &&
+        operation.endTime < cutoff
+      ) {
         this.operations.delete(id);
       }
     }
@@ -368,8 +369,8 @@ class OperationProgress {
     let validPoints = 0;
 
     for (let i = 1; i < recent.length; i++) {
-      const timeDiff = recent[i].timestamp - recent[i-1].timestamp;
-      const progressDiff = recent[i].progress - recent[i-1].progress;
+      const timeDiff = recent[i].timestamp - recent[i - 1].timestamp;
+      const progressDiff = recent[i].progress - recent[i - 1].progress;
 
       if (timeDiff > 0 && progressDiff > 0) {
         const rate = progressDiff / timeDiff; // progress per millisecond
@@ -380,8 +381,10 @@ class OperationProgress {
 
     if (validPoints > 0) {
       const newRate = totalRate / validPoints;
-      this.estimatedRate = this.estimatedRate === 0 ? newRate :
-        (this.smoothingFactor * this.estimatedRate) + ((1 - this.smoothingFactor) * newRate);
+      this.estimatedRate =
+        this.estimatedRate === 0
+          ? newRate
+          : this.smoothingFactor * this.estimatedRate + (1 - this.smoothingFactor) * newRate;
     }
   }
 
@@ -495,16 +498,16 @@ class PerformanceMetrics {
     for (const [category, stats] of this.categoryStats) {
       categoryData[category] = {
         count: stats.count,
-        successRate: stats.count > 0 ? (stats.success / stats.count) : 0,
-        averageDuration: stats.count > 0 ? (stats.totalDuration / stats.count) : 0
+        successRate: stats.count > 0 ? stats.success / stats.count : 0,
+        averageDuration: stats.count > 0 ? stats.totalDuration / stats.count : 0
       };
     }
 
     return {
       totalOperations: this.operationCount,
-      successRate: this.operationCount > 0 ? (this.successCount / this.operationCount) : 0,
-      averageDuration: this.operationCount > 0 ? (this.totalDuration / this.operationCount) : 0,
-      operationsPerMinute: totalTime > 0 ? (this.operationCount / (totalTime / 60000)) : 0,
+      successRate: this.operationCount > 0 ? this.successCount / this.operationCount : 0,
+      averageDuration: this.operationCount > 0 ? this.totalDuration / this.operationCount : 0,
+      operationsPerMinute: totalTime > 0 ? this.operationCount / (totalTime / 60000) : 0,
       categories: categoryData,
       uptime: totalTime
     };

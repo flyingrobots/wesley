@@ -20,7 +20,7 @@ describe('compileSchemaInBrowser', () => {
     expect(result.outputFiles).toBeInstanceOf(Array);
     expect(result.outputFiles.length).toBeGreaterThan(0);
 
-    const schemaFile = result.outputFiles.find(f => f.file === 'schema.json');
+    const schemaFile = result.outputFiles.find((f) => f.file === 'schema.json');
     expect(schemaFile).toBeDefined();
     expect(schemaFile.body).toContain('"name": "User"'); // Check for table name in the bundle schema
     expect(result.tables).toBe(1);
@@ -56,7 +56,7 @@ describe('compileSchemaInBrowser', () => {
 
     expect(result.ok).toBe(true);
     expect(result.outputFiles).toBeInstanceOf(Array);
-    const schemaFile = result.outputFiles.find(f => f.file === 'schema.json');
+    const schemaFile = result.outputFiles.find((f) => f.file === 'schema.json');
     expect(schemaFile).toBeDefined();
     expect(schemaFile.body).toContain('"tables": []');
     expect(result.tables).toBe(0);
@@ -78,7 +78,7 @@ describe('compileSchemaInBrowser', () => {
 
     expect(result.ok).toBe(true);
     expect(result.outputFiles.length).toBeGreaterThan(0);
-    const schemaFile = result.outputFiles.find(f => f.file === 'schema.json');
+    const schemaFile = result.outputFiles.find((f) => f.file === 'schema.json');
     expect(schemaFile.body).toContain('"name": "User"');
     expect(schemaFile.body).toContain('"name": "Product"');
     expect(result.tables).toBe(2);

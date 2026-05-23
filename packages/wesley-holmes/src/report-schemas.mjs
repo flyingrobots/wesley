@@ -18,7 +18,15 @@ function commandRunSchema() {
       ledgerDir: stringField,
       run: {
         type: 'object',
-        required: ['runId', 'transmutation', 'streamId', 'command', 'status', 'eventCount', 'artifactCount'],
+        required: [
+          'runId',
+          'transmutation',
+          'streamId',
+          'command',
+          'status',
+          'eventCount',
+          'artifactCount'
+        ],
         properties: {
           runId: stringField,
           transmutation: { anyOf: [stringField, { type: 'null' }] },
@@ -152,7 +160,13 @@ export const holmesReportSchema = {
         },
         mri: {
           type: 'object',
-          required: ['drops', 'renames_without_uid', 'add_not_null_without_default', 'non_concurrent_indexes', 'totalPoints'],
+          required: [
+            'drops',
+            'renames_without_uid',
+            'add_not_null_without_default',
+            'non_concurrent_indexes',
+            'totalPoints'
+          ],
           properties: {
             drops: mriComponentSchema(),
             renames_without_uid: mriComponentSchema(),
@@ -220,7 +234,18 @@ export const watsonReportSchema = {
     },
     citations: {
       type: 'object',
-      required: ['total', 'verified', 'failed', 'unverified', 'exact', 'wholeFile', 'coarse', 'trust', 'reasons', 'rate'],
+      required: [
+        'total',
+        'verified',
+        'failed',
+        'unverified',
+        'exact',
+        'wholeFile',
+        'coarse',
+        'trust',
+        'reasons',
+        'rate'
+      ],
       properties: {
         total: numberField,
         verified: numberField,
@@ -329,7 +354,15 @@ export const moriartyReportSchema = {
         },
         run: {
           type: 'object',
-          required: ['runId', 'transmutation', 'streamId', 'command', 'status', 'eventCount', 'artifactCount'],
+          required: [
+            'runId',
+            'transmutation',
+            'streamId',
+            'command',
+            'status',
+            'eventCount',
+            'artifactCount'
+          ],
           properties: {
             runId: stringField,
             transmutation: { anyOf: [stringField, { type: 'null' }] },
@@ -369,7 +402,17 @@ export const moriartyReportSchema = {
     },
     counterfactual: {
       type: 'object',
-      required: ['provider', 'providerPackageVersion', 'surfaceVersion', 'laneFingerprint', 'composition', 'requested', 'resolved', 'facts', 'judgment'],
+      required: [
+        'provider',
+        'providerPackageVersion',
+        'surfaceVersion',
+        'laneFingerprint',
+        'composition',
+        'requested',
+        'resolved',
+        'facts',
+        'judgment'
+      ],
       properties: {
         provider: stringField,
         providerPackageVersion: stringField,
@@ -447,16 +490,21 @@ export const moriartyReportSchema = {
               ]
             },
             normalizedScope: {
-              anyOf: [
-                { type: 'null' },
-                { type: 'object' }
-              ]
+              anyOf: [{ type: 'null' }, { type: 'object' }]
             }
           }
         },
         judgment: {
           type: 'object',
-          required: ['status', 'signals', 'riskClass', 'confidenceAdjustment', 'gate', 'wouldFail', 'reasons'],
+          required: [
+            'status',
+            'signals',
+            'riskClass',
+            'confidenceAdjustment',
+            'gate',
+            'wouldFail',
+            'reasons'
+          ],
           properties: {
             status: stringField,
             signals: {
@@ -488,57 +536,57 @@ function validateNode(schema, value, path, errors) {
   const location = path || 'root';
 
   switch (schema.type) {
-  case 'object': {
-    if (!isObject(value)) {
-      errors.push(`${location} expected object`);
+    case 'object': {
+      if (!isObject(value)) {
+        errors.push(`${location} expected object`);
+        return;
+      }
+      const required = schema.required || [];
+      for (const key of required) {
+        if (!(key in value)) {
+          errors.push(`${location}.${key} missing`);
+        }
+      }
+      const props = schema.properties || {};
+      for (const [key, childSchema] of Object.entries(props)) {
+        if (key in value) {
+          validateNode(childSchema, value[key], `${location}.${key}`, errors);
+        }
+      }
       return;
     }
-    const required = schema.required || [];
-    for (const key of required) {
-      if (!(key in value)) {
-        errors.push(`${location}.${key} missing`);
+    case 'array': {
+      if (!Array.isArray(value)) {
+        errors.push(`${location} expected array`);
+        return;
       }
-    }
-    const props = schema.properties || {};
-    for (const [key, childSchema] of Object.entries(props)) {
-      if (key in value) {
-        validateNode(childSchema, value[key], `${location}.${key}`, errors);
+      if (schema.items) {
+        value.forEach((item, index) => {
+          validateNode(schema.items, item, `${location}[${index}]`, errors);
+        });
       }
-    }
-    return;
-  }
-  case 'array': {
-    if (!Array.isArray(value)) {
-      errors.push(`${location} expected array`);
       return;
     }
-    if (schema.items) {
-      value.forEach((item, index) => {
-        validateNode(schema.items, item, `${location}[${index}]`, errors);
-      });
+    case 'string': {
+      if (typeof value !== 'string') {
+        errors.push(`${location} expected string`);
+      }
+      return;
     }
-    return;
-  }
-  case 'string': {
-    if (typeof value !== 'string') {
-      errors.push(`${location} expected string`);
+    case 'number': {
+      if (typeof value !== 'number' || Number.isNaN(value)) {
+        errors.push(`${location} expected number`);
+      }
+      return;
     }
-    return;
-  }
-  case 'number': {
-    if (typeof value !== 'number' || Number.isNaN(value)) {
-      errors.push(`${location} expected number`);
+    case 'boolean': {
+      if (typeof value !== 'boolean') {
+        errors.push(`${location} expected boolean`);
+      }
+      return;
     }
-    return;
-  }
-  case 'boolean': {
-    if (typeof value !== 'boolean') {
-      errors.push(`${location} expected boolean`);
-    }
-    return;
-  }
-  default:
-    return;
+    default:
+      return;
   }
 }
 

@@ -108,9 +108,9 @@ Expose configuration option, update generator to derive composite types from tab
 
 ### QA Sign-off Matrix
 
-| Environment | Surface | Owner | Status | Notes |
-| --- | --- | --- | --- | --- |
-| Unit/Integration tests | RPC generator | TBD | pending | |
+| Environment            | Surface       | Owner | Status  | Notes |
+| ---------------------- | ------------- | ----- | ------- | ----- |
+| Unit/Integration tests | RPC generator | TBD   | pending |       |
 
 ## Requirements
 

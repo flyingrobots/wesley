@@ -37,12 +37,18 @@ export function encodingForType(graphqlType, { required = true, list = false, ki
 function baseEncoding(typeName, kind) {
   if (kind === 'ENUM') return 'enum_u32_le';
   switch (typeName) {
-  case 'Boolean': return 'bool_u8';
-  case 'Int':     return 'i32_le';
-  case 'Float':   return 'f32_le';
-  case 'String':  return 'len_prefix_utf8';
-  case 'ID':      return 'len_prefix_utf8';
-  default:        return `nested_${typeName}`;
+    case 'Boolean':
+      return 'bool_u8';
+    case 'Int':
+      return 'i32_le';
+    case 'Float':
+      return 'f32_le';
+    case 'String':
+      return 'len_prefix_utf8';
+    case 'ID':
+      return 'len_prefix_utf8';
+    default:
+      return `nested_${typeName}`;
   }
 }
 

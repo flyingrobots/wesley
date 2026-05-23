@@ -1,7 +1,7 @@
 ---
-title: "Transmuter Emission Engine Orchestrator"
+title: 'Transmuter Emission Engine Orchestrator'
 legend: TRANSMUTE
-release: "v0.1.0"
+release: 'v0.1.0'
 lane: v0.1.0
 ---
 

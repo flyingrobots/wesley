@@ -1,7 +1,7 @@
 ---
-title: "Wesley Error Taxonomy And Versioned Holmes Codes"
+title: 'Wesley Error Taxonomy And Versioned Holmes Codes'
 legend: RUNTIME
-release: "v0.1.0"
+release: 'v0.1.0'
 lane: v0.1.0
 ---
 

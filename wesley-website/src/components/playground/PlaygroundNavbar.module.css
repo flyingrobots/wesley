@@ -52,7 +52,7 @@
 .mainLinkActive {
   background-color: light-dark(var(--mantine-color-blue-light), var(--mantine-color-blue-9));
   color: light-dark(var(--mantine-color-blue-7), var(--mantine-color-blue-1));
-  
+
   &:hover {
     background-color: light-dark(var(--mantine-color-blue-light), var(--mantine-color-blue-9));
   }

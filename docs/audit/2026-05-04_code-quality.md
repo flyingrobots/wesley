@@ -1,23 +1,24 @@
 ---
-report_id: "AUD-2026-05-04-CQ01"
-title: "Code Quality Audit: Wesley Module-First Compiler Toolchain"
-status: "Final"
+report_id: 'AUD-2026-05-04-CQ01'
+title: 'Code Quality Audit: Wesley Module-First Compiler Toolchain'
+status: 'Final'
 audit:
   date_started: 2026-05-04
   date_completed: 2026-05-04
-  type: "Full"
-  scope: "README.md, docs/, packages/, scripts/, .github/workflows"
-  compliance_frameworks: ["OWASP ASVS", "OpenSSF Scorecard Practices"]
+  type: 'Full'
+  scope: 'README.md, docs/, packages/, scripts/, .github/workflows'
+  compliance_frameworks: ['OWASP ASVS', 'OpenSSF Scorecard Practices']
 target:
-  repository: "github.com/flyingrobots/wesley"
-  branch: "cycle/0008-holmes-counterfactual-provider-capability"
-  commit_hash: "f185446"
-  language_stack: ["Node.js >=22", "pnpm 9.15.9", "ESM JavaScript", "GraphQL", "Commander", "Bats", "Vitest"]
-  environment: "Local release-candidate branch"
+  repository: 'github.com/flyingrobots/wesley'
+  branch: 'cycle/0008-holmes-counterfactual-provider-capability'
+  commit_hash: 'f185446'
+  language_stack:
+    ['Node.js >=22', 'pnpm 9.15.9', 'ESM JavaScript', 'GraphQL', 'Commander', 'Bats', 'Vitest']
+  environment: 'Local release-candidate branch'
 methodology:
-  automated_tools: ["rg", "wc", "pnpm audit --json", "pnpm run preflight"]
+  automated_tools: ['rg', 'wc', 'pnpm audit --json', 'pnpm run preflight']
   manual_review_hours: 3
-  false_positive_rate: "15%"
+  false_positive_rate: '15%'
 summary:
   total_findings: 12
   severity_count:
@@ -25,21 +26,21 @@ summary:
     high: 3
     medium: 7
     low: 2
-  remediation_status: "Pending"
+  remediation_status: 'Pending'
 related_reports:
-  previous_audit: "AUD-2026-04-11-CODE-QUALITY"
-  tracking_ticket: "docs/method/backlog/"
+  previous_audit: 'AUD-2026-04-11-CODE-QUALITY'
+  tracking_ticket: 'docs/method/backlog/'
 ---
 
 # AUDIT: CODE QUALITY (2026-05-04)
 
 ## 0. EXECUTIVE REPORT CARD (Strategic Lead View)
 
-| **Metric** | **Score (1-10)** | **Recommendation** |
-| --- | --- | --- |
-| **Developer Experience (DX)** | 7.0 | **Best of:** The root README now states the core value clearly: Wesley owns the compiler kernel and explicit module dispatch. |
-| **Internal Quality (IQ)** | 6.5 | **Watch Out For:** Runtime module loading is powerful but still too ambient, combining discovery, import execution, and capability registration behind environment/config side effects. |
-| **Overall Recommendation** | **THUMBS UP** | **Justification:** The architecture is moving in the right direction after the counterfactual-provider extraction, but release confidence depends on tightening module-loading trust, CLI/doc truth, and dependency hygiene. |
+| **Metric**                    | **Score (1-10)** | **Recommendation**                                                                                                                                                                                                           |
+| ----------------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Developer Experience (DX)** | 7.0              | **Best of:** The root README now states the core value clearly: Wesley owns the compiler kernel and explicit module dispatch.                                                                                                |
+| **Internal Quality (IQ)**     | 6.5              | **Watch Out For:** Runtime module loading is powerful but still too ambient, combining discovery, import execution, and capability registration behind environment/config side effects.                                      |
+| **Overall Recommendation**    | **THUMBS UP**    | **Justification:** The architecture is moving in the right direction after the counterfactual-provider extraction, but release confidence depends on tightening module-loading trust, CLI/doc truth, and dependency hygiene. |
 
 ## 1. DX: ERGONOMICS & INTERFACE CLARITY (Advocate View)
 

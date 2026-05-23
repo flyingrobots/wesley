@@ -1,7 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MemoryEventStore } from '../../src/application/MemoryEventStore.mjs';
-import { createRuntimeEventCollector, createRuntimeStreamId } from '../../src/application/RuntimeEvents.mjs';
+import {
+  createRuntimeEventCollector,
+  createRuntimeStreamId
+} from '../../src/application/RuntimeEvents.mjs';
 
 const fakeClock = {
   now() {
@@ -22,11 +25,11 @@ test('createRuntimeEventCollector stores events in the backing event store', () 
   collector.emit('RunCompleted', { command: 'transform' });
 
   assert.deepEqual(
-    collector.events.map(event => event.type),
+    collector.events.map((event) => event.type),
     ['RunRequested', 'RunCompleted']
   );
   assert.deepEqual(
-    eventStore.readStream(collector.streamId).map(event => event.type),
+    eventStore.readStream(collector.streamId).map((event) => event.type),
     ['RunRequested', 'RunCompleted']
   );
 });
@@ -57,7 +60,7 @@ test('createRuntimeEventCollector continues sequence from an existing stream', (
   secondCollector.emit('RunCompleted', { command: 'transform' });
 
   assert.deepEqual(
-    eventStore.readStream(streamId).map(event => event.sequence),
+    eventStore.readStream(streamId).map((event) => event.sequence),
     [1, 2]
   );
 });
@@ -86,7 +89,7 @@ test('createRuntimeEventCollector injects a crash after a configured event count
   assert.equal(error.injectedCrash, true);
   assert.equal(error.runId, 'run-store-003');
   assert.deepEqual(
-    eventStore.readStream(collector.streamId).map(event => event.type),
+    eventStore.readStream(collector.streamId).map((event) => event.type),
     ['RunRequested', 'SourcesResolved']
   );
 });

@@ -50,7 +50,7 @@ describe('CLIEnhancer', () => {
       const customEnhancer = new CLIEnhancer({
         historySize: 50,
         enableInteractiveMode: false,
-        aliases: { 'g': 'generate' }
+        aliases: { g: 'generate' }
       });
 
       await customEnhancer.initialize();
@@ -131,14 +131,11 @@ describe('CLIEnhancer', () => {
         throw new Error('Test error');
       };
 
-      await assert.rejects(
-        enhancer.processCommand('invalid'),
-        (error) => {
-          assert(error instanceof CLIError);
-          assert(error.message.includes('Command processing failed'));
-          return true;
-        }
-      );
+      await assert.rejects(enhancer.processCommand('invalid'), (error) => {
+        assert(error instanceof CLIError);
+        assert(error.message.includes('Command processing failed'));
+        return true;
+      });
     });
   });
 
@@ -166,14 +163,11 @@ describe('CLIEnhancer', () => {
     test('should throw error when interactive mode disabled', async () => {
       enhancer.options.enableInteractiveMode = false;
 
-      await assert.rejects(
-        enhancer.startInteractiveMode(),
-        (error) => {
-          assert(error instanceof InteractionError);
-          assert(error.message.includes('Interactive mode is disabled'));
-          return true;
-        }
-      );
+      await assert.rejects(enhancer.startInteractiveMode(), (error) => {
+        assert(error instanceof InteractionError);
+        assert(error.message.includes('Interactive mode is disabled'));
+        return true;
+      });
     });
 
     test('should handle interaction for destructive commands', async () => {
@@ -260,7 +254,7 @@ describe('CLIEnhancer', () => {
     test('should provide command completions', async () => {
       const completions = await enhancer.getCompletions('gen', 3);
 
-      const generateCompletion = completions.find(c => c.value === 'generate');
+      const generateCompletion = completions.find((c) => c.value === 'generate');
       assert(generateCompletion);
       assert.strictEqual(generateCompletion.type, 'command');
       assert(generateCompletion.description.includes('Generate'));
@@ -269,7 +263,7 @@ describe('CLIEnhancer', () => {
     test('should provide alias completions', async () => {
       const completions = await enhancer.getCompletions('g', 1);
 
-      const aliasCompletion = completions.find(c => c.value === 'g');
+      const aliasCompletion = completions.find((c) => c.value === 'g');
       assert(aliasCompletion);
       assert.strictEqual(aliasCompletion.type, 'alias');
       assert(aliasCompletion.description.includes('Alias for'));
@@ -278,7 +272,7 @@ describe('CLIEnhancer', () => {
     test('should provide subcommand completions', async () => {
       const completions = await enhancer.getCompletions('generate s', 11);
 
-      const sqlCompletion = completions.find(c => c.value === 'sql');
+      const sqlCompletion = completions.find((c) => c.value === 'sql');
       assert(sqlCompletion);
       assert.strictEqual(sqlCompletion.type, 'subcommand');
     });
@@ -286,7 +280,7 @@ describe('CLIEnhancer', () => {
     test('should provide option completions', async () => {
       const completions = await enhancer.getCompletions('generate sql --dry', 19);
 
-      const dryRunCompletion = completions.find(c => c.value === '--dry-run');
+      const dryRunCompletion = completions.find((c) => c.value === '--dry-run');
       assert(dryRunCompletion);
       assert.strictEqual(dryRunCompletion.type, 'option');
     });
@@ -346,14 +340,11 @@ describe('CLIEnhancer', () => {
     });
 
     test('should throw error for invalid history index', async () => {
-      await assert.rejects(
-        enhancer.replayCommand(99),
-        (error) => {
-          assert(error instanceof CLIError);
-          assert(error.message.includes('Invalid history index'));
-          return true;
-        }
-      );
+      await assert.rejects(enhancer.replayCommand(99), (error) => {
+        assert(error instanceof CLIError);
+        assert(error.message.includes('Invalid history index'));
+        return true;
+      });
     });
   });
 
@@ -383,13 +374,16 @@ describe('CLIEnhancer', () => {
     });
 
     test('should prevent aliases conflicting with commands', () => {
-      assert.throws(() => {
-        enhancer.addAlias('generate', 'some-command');
-      }, (error) => {
-        assert(error instanceof CLIError);
-        assert(error.message.includes('conflicts with existing command'));
-        return true;
-      });
+      assert.throws(
+        () => {
+          enhancer.addAlias('generate', 'some-command');
+        },
+        (error) => {
+          assert(error instanceof CLIError);
+          assert(error.message.includes('conflicts with existing command'));
+          return true;
+        }
+      );
     });
 
     test('should remove aliases', () => {
@@ -480,7 +474,7 @@ describe('CLIEnhancer', () => {
 
       // The updateProgress should trigger an error event internally
       // Wait a bit for async operations
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       // If no error was emitted from updateProgress, manually trigger one to test the mechanism
       if (!errorEmitted) {
@@ -511,7 +505,7 @@ describe('CLIEnhancer', () => {
       assert.strictEqual(events.length, 3);
 
       // All events should have proper structure
-      events.forEach(event => {
+      events.forEach((event) => {
         assert(event.type);
         assert(event.payload);
         assert(event.metadata);

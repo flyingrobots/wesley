@@ -1,6 +1,6 @@
-import { useState } from 'react'
-import { Code, Group } from '@mantine/core'
-import classes from './NavbarSimpleColored.module.css'
+import { useState } from 'react';
+import { Code, Group } from '@mantine/core';
+import classes from './NavbarSimpleColored.module.css';
 
 const data = [
   { link: '#', label: 'Notifications', icon: '🔔' },
@@ -9,11 +9,11 @@ const data = [
   { link: '#', label: 'SSH Keys', icon: '🗝️' },
   { link: '#', label: 'Databases', icon: '🗄️' },
   { link: '#', label: 'Authentication', icon: '🛡️' },
-  { link: '#', label: 'Other Settings', icon: '⚙️' },
-]
+  { link: '#', label: 'Other Settings', icon: '⚙️' }
+];
 
 export default function NavbarSimpleColored() {
-  const [active, setActive] = useState('Billing')
+  const [active, setActive] = useState('Billing');
 
   const links = data.map((item) => (
     <a
@@ -22,8 +22,8 @@ export default function NavbarSimpleColored() {
       href={item.link}
       key={item.label}
       onClick={(event) => {
-        event.preventDefault()
-        setActive(item.label)
+        event.preventDefault();
+        setActive(item.label);
       }}
     >
       <span className={classes.linkIcon} aria-hidden>
@@ -31,29 +31,39 @@ export default function NavbarSimpleColored() {
       </span>
       <span>{item.label}</span>
     </a>
-  ))
+  ));
 
   return (
     <nav className={classes.navbar} aria-label="Primary">
       <div className={classes.navbarMain}>
         <Group className={classes.header} justify="space-between">
-          <img src="/wesley-logo.jpg" alt="Wesley logo" style={{ display: 'block', width: 140, height: 'auto' }} />
-          <Code fw={700} className={classes.version}>v0.1.0</Code>
+          <img
+            src="/wesley-logo.jpg"
+            alt="Wesley logo"
+            style={{ display: 'block', width: 140, height: 'auto' }}
+          />
+          <Code fw={700} className={classes.version}>
+            v0.1.0
+          </Code>
         </Group>
         {links}
       </div>
 
       <div className={classes.footer}>
         <a href="#" className={classes.link} onClick={(event) => event.preventDefault()}>
-          <span className={classes.linkIcon} aria-hidden>⇄</span>
+          <span className={classes.linkIcon} aria-hidden>
+            ⇄
+          </span>
           <span>Change account</span>
         </a>
 
         <a href="#" className={classes.link} onClick={(event) => event.preventDefault()}>
-          <span className={classes.linkIcon} aria-hidden>⎋</span>
+          <span className={classes.linkIcon} aria-hidden>
+            ⎋
+          </span>
           <span>Logout</span>
         </a>
       </div>
     </nav>
-  )
+  );
 }

@@ -62,10 +62,7 @@ test('Holmes prefers a narrow exact span over a whole-file span', () => {
       }
     });
 
-    assert.equal(
-      holmes.getCitation(holmes.evidence.evidence.schema),
-      'tests.sql:1-1@abcdef1'
-    );
+    assert.equal(holmes.getCitation(holmes.evidence.evidence.schema), 'tests.sql:1-1@abcdef1');
     const data = holmes.investigationData();
     assert.deepEqual(data.metadata.citationQuality, {
       exact: 1,
@@ -89,12 +86,8 @@ test('Holmes downgrades an elemental verdict when coarse citations remain', () =
     evidence: {
       evidence: {
         schema: {
-          sql: [
-            { file: 'schema.sql', lines: '1-*', sha }
-          ],
-          tests: [
-            { file: 'tests.sql', lines: '1-1', sha }
-          ]
+          sql: [{ file: 'schema.sql', lines: '1-*', sha }],
+          tests: [{ file: 'tests.sql', lines: '1-1', sha }]
         }
       }
     },

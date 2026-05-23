@@ -11,14 +11,18 @@ const nullLogger = Object.freeze({
   warn() {},
   error() {},
   debug() {},
-  child() { return nullLogger; },
+  child() {
+    return nullLogger;
+  },
   setLevel() {},
   async flush() {}
 });
 
 /** Deterministic fake clock for snapshot-friendly output. */
 const fakeClock = Object.freeze({
-  now() { return '2020-01-01T00:00:00.000Z'; }
+  now() {
+    return '2020-01-01T00:00:00.000Z';
+  }
 });
 
 /**
@@ -59,9 +63,8 @@ export async function testGenerator(plugin, sdl, config = {}) {
   const artifacts = await plugin.generate(plan, context);
 
   if (artifacts == null || typeof artifacts !== 'object' || Array.isArray(artifacts)) {
-    const label = artifacts === null ? 'null'
-      : Array.isArray(artifacts) ? 'Array'
-        : typeof artifacts;
+    const label =
+      artifacts === null ? 'null' : Array.isArray(artifacts) ? 'Array' : typeof artifacts;
     throw new Error(
       `Plugin "${plugin.name}" generate() must return Record<string, string|Uint8Array> (got ${label})`
     );
@@ -110,7 +113,9 @@ export function expectArtifact(artifacts, path) {
     /** Assert the path exists in the artifacts map. */
     toExist() {
       if (!(path in artifacts)) {
-        throw new Error(`Expected artifact "${path}" to exist. Keys: [${Object.keys(artifacts).join(', ')}]`);
+        throw new Error(
+          `Expected artifact "${path}" to exist. Keys: [${Object.keys(artifacts).join(', ')}]`
+        );
       }
     },
 
@@ -118,9 +123,7 @@ export function expectArtifact(artifacts, path) {
     toContain(str) {
       this.toExist();
       const raw = artifacts[path];
-      const content = raw instanceof Uint8Array
-        ? new TextDecoder().decode(raw)
-        : raw;
+      const content = raw instanceof Uint8Array ? new TextDecoder().decode(raw) : raw;
       if (!content.includes(str)) {
         throw new Error(
           `Expected artifact "${path}" to contain "${str}".\nActual (first 200 chars): ${String(content).slice(0, 200)}`
@@ -132,9 +135,7 @@ export function expectArtifact(artifacts, path) {
     toMatchJSON(expected) {
       this.toExist();
       const raw = artifacts[path];
-      const content = raw instanceof Uint8Array
-        ? new TextDecoder().decode(raw)
-        : raw;
+      const content = raw instanceof Uint8Array ? new TextDecoder().decode(raw) : raw;
       let parsed;
       try {
         parsed = JSON.parse(content);

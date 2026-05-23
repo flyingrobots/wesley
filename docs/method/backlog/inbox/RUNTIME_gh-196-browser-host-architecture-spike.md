@@ -22,6 +22,7 @@ Trigger: default: runtime, host, operator-flow, CI, or repo execution surface.
 <!--
 Leave space for notes, open questions, or follow-ups uncovered during grooming or implementation.
 -->
+
 ## Additional Notes
 
 Document findings in `docs/features/host-browser.md` and attach benchmark artifacts to the RFC.

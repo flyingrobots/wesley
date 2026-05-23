@@ -61,7 +61,11 @@
         "directives": { "$ref": "#/definitions/TableDirectives" },
         "fields": { "type": "array", "items": { "$ref": "#/definitions/Field" } },
         "indexes": { "type": "array", "items": { "$ref": "#/definitions/Index" }, "default": [] },
-        "constraints": { "type": "array", "items": { "$ref": "#/definitions/Constraint" }, "default": [] },
+        "constraints": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/Constraint" },
+          "default": []
+        },
         "sourceUnit": { "type": "string" },
         "package": { "type": "string" },
         "qualifiedName": { "type": "string" }
@@ -95,7 +99,10 @@
       "type": "object",
       "required": ["base", "isList"],
       "properties": {
-        "base": { "type": "string", "description": "GraphQL scalar name (ID, String, Int, etc.) or custom type reference" },
+        "base": {
+          "type": "string",
+          "description": "GraphQL scalar name (ID, String, Int, etc.) or custom type reference"
+        },
         "isList": { "type": "boolean" },
         "listItemNullable": { "type": "boolean" }
       },
@@ -129,7 +136,10 @@
       "properties": {
         "targetTable": { "type": "string" },
         "targetField": { "type": "string" },
-        "onDelete": { "type": "string", "enum": ["CASCADE", "RESTRICT", "SET NULL", "SET DEFAULT"] },
+        "onDelete": {
+          "type": "string",
+          "enum": ["CASCADE", "RESTRICT", "SET NULL", "SET DEFAULT"]
+        },
         "onUpdate": { "type": "string", "enum": ["CASCADE", "RESTRICT", "SET NULL", "SET DEFAULT"] }
       },
       "additionalProperties": false

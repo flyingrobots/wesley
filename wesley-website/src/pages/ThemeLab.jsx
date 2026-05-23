@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState } from 'react';
 import {
   Accordion,
   Alert,
@@ -34,13 +34,13 @@ import {
   TextInput,
   Textarea,
   ThemeIcon,
-  Title,
-} from '@mantine/core'
+  Title
+} from '@mantine/core';
 
 export default function ThemeLab() {
-  const [openedModal, setOpenedModal] = useState(false)
-  const [openedDrawer, setOpenedDrawer] = useState(false)
-  const [popoverOpened, setPopoverOpened] = useState(false)
+  const [openedModal, setOpenedModal] = useState(false);
+  const [openedDrawer, setOpenedDrawer] = useState(false);
+  const [popoverOpened, setPopoverOpened] = useState(false);
 
   return (
     <Box p={24}>
@@ -68,10 +68,16 @@ export default function ThemeLab() {
             <NumberInput label="Number input" placeholder="42" />
           </Group>
           <Group mt="md" grow>
-            <Select label="Select" data={[ 'One', 'Two', 'Three' ]} placeholder="Pick one" />
+            <Select label="Select" data={['One', 'Two', 'Three']} placeholder="Pick one" />
             <TextInput label="Password" type="password" placeholder="••••••" />
           </Group>
-          <Textarea mt="md" label="Textarea" placeholder="Say something nice" autosize minRows={2} />
+          <Textarea
+            mt="md"
+            label="Textarea"
+            placeholder="Say something nice"
+            autosize
+            minRows={2}
+          />
           <Group mt="md">
             <Checkbox label="Checkbox" defaultChecked />
             <Switch label="Switch" />
@@ -117,8 +123,12 @@ export default function ThemeLab() {
               <Tabs.Tab value="one">One</Tabs.Tab>
               <Tabs.Tab value="two">Two</Tabs.Tab>
             </Tabs.List>
-            <Tabs.Panel value="one" pt="sm">First panel</Tabs.Panel>
-            <Tabs.Panel value="two" pt="sm">Second panel</Tabs.Panel>
+            <Tabs.Panel value="one" pt="sm">
+              First panel
+            </Tabs.Panel>
+            <Tabs.Panel value="two" pt="sm">
+              Second panel
+            </Tabs.Panel>
           </Tabs>
           <Accordion mt="md">
             <Accordion.Item value="a">
@@ -137,7 +147,9 @@ export default function ThemeLab() {
           <Title order={3}>Overlays & Menus</Title>
           <Group mt="md">
             <Button onClick={() => setOpenedModal(true)}>Open Modal</Button>
-            <Button variant="outline" onClick={() => setOpenedDrawer(true)}>Open Drawer</Button>
+            <Button variant="outline" onClick={() => setOpenedDrawer(true)}>
+              Open Drawer
+            </Button>
             <Popover opened={popoverOpened} onChange={setPopoverOpened}>
               <Popover.Target>
                 <Button variant="light" onClick={() => setPopoverOpened((o) => !o)}>
@@ -211,16 +223,23 @@ export default function ThemeLab() {
         </Card>
 
         <Center>
-          <ThemeIcon size={32} radius="xl">W</ThemeIcon>
+          <ThemeIcon size={32} radius="xl">
+            W
+          </ThemeIcon>
         </Center>
       </Stack>
 
       <Modal opened={openedModal} onClose={() => setOpenedModal(false)} title="A Modal">
         <Text size="sm">Modal content respects the current theme.</Text>
       </Modal>
-      <Drawer opened={openedDrawer} onClose={() => setOpenedDrawer(false)} title="A Drawer" position="right">
+      <Drawer
+        opened={openedDrawer}
+        onClose={() => setOpenedDrawer(false)}
+        title="A Drawer"
+        position="right"
+      >
         <Text size="sm">Drawer content, also themed.</Text>
       </Drawer>
     </Box>
-  )
+  );
 }

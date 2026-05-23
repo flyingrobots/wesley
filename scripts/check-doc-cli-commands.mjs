@@ -76,7 +76,9 @@ for (const doc of docs) {
   const content = readFileSync(resolve(root, doc), 'utf8');
   for (const command of extractDocumentedCommands(content)) {
     if (!commands.has(command)) {
-      fail(`${doc} documents "pnpm wesley ${command}", but the Wesley CLI does not expose that command`);
+      fail(
+        `${doc} documents "pnpm wesley ${command}", but the Wesley CLI does not expose that command`
+      );
     }
   }
 }

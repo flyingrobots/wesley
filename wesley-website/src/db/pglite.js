@@ -42,7 +42,7 @@ export class DbSession {
    */
   async reset() {
     await this.init(); // Ensure we have the instance
-    
+
     // Instead of re-instantiating (which causes WASM race conditions),
     // we drop the public schema and recreate it.
     await this.#pg.query('DROP SCHEMA public CASCADE;');
@@ -56,7 +56,7 @@ export class DbSession {
    */
   async close() {
     // No-op: we keep globalPg alive for the lifetime of the tab to prevent "already read Response" errors.
-    this.#pg = null; 
+    this.#pg = null;
   }
 
   /**
@@ -87,12 +87,10 @@ export class DbSession {
       throw new Error('PGLite database not initialized.');
     }
     try {
-      const result = params
-        ? await this.#pg.query(sql, params)
-        : await this.#pg.query(sql);
+      const result = params ? await this.#pg.query(sql, params) : await this.#pg.query(sql);
       // PGLite query result structure is { rows: [], fields: [{ name: 'col' }] }
       const rows = result.rows.slice(0, 100); // Limit results
-      const fields = result.fields.map(f => f.name);
+      const fields = result.fields.map((f) => f.name);
       return { rows, fields };
     } catch (error) {
       // Wrap PGLite errors for cleaner UI display

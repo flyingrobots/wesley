@@ -88,14 +88,14 @@ const DEFAULT_ROOT_NAMES = { query: 'Query', mutation: 'Mutation', subscription:
  */
 function typeToString(typeNode) {
   switch (typeNode.kind) {
-  case 'NamedType':
-    return typeNode.name.value;
-  case 'ListType':
-    return `[${typeToString(typeNode.type)}]`;
-  case 'NonNullType':
-    return `${typeToString(typeNode.type)}!`;
-  default:
-    return '?';
+    case 'NamedType':
+      return typeNode.name.value;
+    case 'ListType':
+      return `[${typeToString(typeNode.type)}]`;
+    case 'NonNullType':
+      return `${typeToString(typeNode.type)}!`;
+    default:
+      return '?';
   }
 }
 
@@ -115,7 +115,7 @@ function isNonNull(typeNode) {
  */
 function directiveToKey(dir) {
   const args = (dir.arguments || [])
-    .map(a => `${a.name.value}:${valueToString(a.value)}`)
+    .map((a) => `${a.name.value}:${valueToString(a.value)}`)
     .sort()
     .join(',');
   return `@${dir.name.value}(${args})`;
@@ -128,14 +128,25 @@ function directiveToKey(dir) {
  */
 function valueToString(node) {
   switch (node.kind) {
-  case 'StringValue': return `"${node.value}"`;
-  case 'IntValue': case 'FloatValue': case 'EnumValue': return node.value;
-  case 'BooleanValue': return String(node.value);
-  case 'NullValue': return 'null';
-  case 'ListValue': return `[${node.values.map(valueToString).join(',')}]`;
-  case 'ObjectValue':
-    return `{${node.fields.map(f => `${f.name.value}:${valueToString(f.value)}`).sort().join(',')}}`;
-  default: return '?';
+    case 'StringValue':
+      return `"${node.value}"`;
+    case 'IntValue':
+    case 'FloatValue':
+    case 'EnumValue':
+      return node.value;
+    case 'BooleanValue':
+      return String(node.value);
+    case 'NullValue':
+      return 'null';
+    case 'ListValue':
+      return `[${node.values.map(valueToString).join(',')}]`;
+    case 'ObjectValue':
+      return `{${node.fields
+        .map((f) => `${f.name.value}:${valueToString(f.value)}`)
+        .sort()
+        .join(',')}}`;
+    default:
+      return '?';
   }
 }
 
@@ -176,7 +187,12 @@ function buildMaps(definitions) {
 
   // Collect base definitions
   for (const def of definitions) {
-    if (def.name && !extMap[def.kind] && def.kind !== 'SchemaDefinition' && def.kind !== 'DirectiveDefinition') {
+    if (
+      def.name &&
+      !extMap[def.kind] &&
+      def.kind !== 'SchemaDefinition' &&
+      def.kind !== 'DirectiveDefinition'
+    ) {
       types.set(def.name.value, cloneDef(def));
     }
   }
@@ -267,14 +283,29 @@ function diffDirectives(oldDef, newDef, parentName) {
 
   for (const [name, key] of newDirs) {
     if (!oldDirs.has(name)) {
-      changes.push({ name, kind: 'added', breaking: false, description: `Directive @${name} added to ${parentName}` });
+      changes.push({
+        name,
+        kind: 'added',
+        breaking: false,
+        description: `Directive @${name} added to ${parentName}`
+      });
     } else if (oldDirs.get(name) !== key) {
-      changes.push({ name, kind: 'changed', breaking: true, description: `Directive @${name} changed on ${parentName}` });
+      changes.push({
+        name,
+        kind: 'changed',
+        breaking: true,
+        description: `Directive @${name} changed on ${parentName}`
+      });
     }
   }
   for (const [name] of oldDirs) {
     if (!newDirs.has(name)) {
-      changes.push({ name, kind: 'removed', breaking: true, description: `Directive @${name} removed from ${parentName}` });
+      changes.push({
+        name,
+        kind: 'removed',
+        breaking: true,
+        description: `Directive @${name} removed from ${parentName}`
+      });
     }
   }
 
@@ -308,13 +339,16 @@ function diffFields(oldDef, newDef, typeName) {
     if (!oldFields.has(name)) {
       if (enumMode) {
         changes.push({
-          name, kind: 'added', breaking: false,
+          name,
+          kind: 'added',
+          breaking: false,
           description: `Enum value "${name}" added to ${typeName}`
         });
       } else {
         const req = isNonNull(field.type);
         changes.push({
-          name, kind: 'added',
+          name,
+          kind: 'added',
           breaking: req,
           description: req
             ? `Required field "${name}" added to ${typeName} (breaking)`
@@ -328,12 +362,16 @@ function diffFields(oldDef, newDef, typeName) {
     if (!newFields.has(name)) {
       if (enumMode) {
         changes.push({
-          name, kind: 'removed', breaking: true,
+          name,
+          kind: 'removed',
+          breaking: true,
           description: `Enum value "${name}" removed from ${typeName}`
         });
       } else {
         changes.push({
-          name, kind: 'removed', breaking: true,
+          name,
+          kind: 'removed',
+          breaking: true,
           description: `Field "${name}" removed from ${typeName}`
         });
       }
@@ -349,7 +387,9 @@ function diffFields(oldDef, newDef, typeName) {
         const newType = typeToString(newField.type);
         if (oldType !== newType) {
           changes.push({
-            name, kind: 'changed', breaking: true,
+            name,
+            kind: 'changed',
+            breaking: true,
             description: `Field "${name}" on ${typeName} changed type from ${oldType} to ${newType}`
           });
         }
@@ -368,8 +408,8 @@ function diffFields(oldDef, newDef, typeName) {
  * @returns {ArgChange[]}
  */
 function diffArgs(oldField, newField, opName) {
-  const oldArgs = new Map((oldField.arguments || []).map(a => [a.name.value, a]));
-  const newArgs = new Map((newField.arguments || []).map(a => [a.name.value, a]));
+  const oldArgs = new Map((oldField.arguments || []).map((a) => [a.name.value, a]));
+  const newArgs = new Map((newField.arguments || []).map((a) => [a.name.value, a]));
   /** @type {ArgChange[]} */
   const changes = [];
 
@@ -377,7 +417,8 @@ function diffArgs(oldField, newField, opName) {
     if (!oldArgs.has(name)) {
       const req = isNonNull(arg.type);
       changes.push({
-        name, kind: 'added',
+        name,
+        kind: 'added',
         breaking: req,
         description: req
           ? `Required argument "${name}" added to ${opName} (breaking)`
@@ -389,7 +430,9 @@ function diffArgs(oldField, newField, opName) {
   for (const [name] of oldArgs) {
     if (!newArgs.has(name)) {
       changes.push({
-        name, kind: 'removed', breaking: true,
+        name,
+        kind: 'removed',
+        breaking: true,
         description: `Argument "${name}" removed from ${opName}`
       });
     }
@@ -402,7 +445,9 @@ function diffArgs(oldField, newField, opName) {
       const newType = typeToString(newArg.type);
       if (oldType !== newType) {
         changes.push({
-          name, kind: 'changed', breaking: true,
+          name,
+          kind: 'changed',
+          breaking: true,
           description: `Argument "${name}" on ${opName} changed type from ${oldType} to ${newType}`
         });
       }
@@ -456,7 +501,8 @@ export function computeDelta(oldSDL, newSDL) {
     const directiveChanges = diffDirectives(oldDef, newDef, name);
 
     if (fieldChanges.length > 0 || directiveChanges.length > 0) {
-      const breaking = fieldChanges.some(c => c.breaking) || directiveChanges.some(c => c.breaking);
+      const breaking =
+        fieldChanges.some((c) => c.breaking) || directiveChanges.some((c) => c.breaking);
       const parts = [];
       if (fieldChanges.length > 0) parts.push(`${fieldChanges.length} field change(s)`);
       if (directiveChanges.length > 0) parts.push(`${directiveChanges.length} directive change(s)`);
@@ -504,7 +550,7 @@ export function computeDelta(oldSDL, newSDL) {
     }
 
     if (argChanges.length > 0 || returnTypeChange) {
-      const breaking = argChanges.some(c => c.breaking) || returnTypeChange !== null;
+      const breaking = argChanges.some((c) => c.breaking) || returnTypeChange !== null;
       const parts = [];
       if (argChanges.length > 0) parts.push(`${argChanges.length} arg change(s)`);
       if (returnTypeChange) parts.push(returnTypeChange);

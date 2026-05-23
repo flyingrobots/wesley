@@ -1,6 +1,6 @@
 # Transmutations
 
-> *"The alchemist does not create gold — he reveals what was always latent in the lead."*
+> _"The alchemist does not create gold — he reveals what was always latent in the lead."_
 
 Wesley compiles GraphQL SDL into executable artifacts: SQL, TypeScript, Zod schemas, Rust codecs, Vue composables, and more. Each compilation path is a **transmutation**: a declared mapping from authored source, through Wesley IR, into one emitted artifact family with evidence that proves bounded properties of the result.
 
@@ -11,12 +11,14 @@ This document specifies the transmutation system: how projects declare what they
 **Implemented in part**.
 
 Shipped today:
+
 - the CLI transmutation registry is executable rather than name-only
 - lowering is separated enough that command surfaces can consume Wesley IR directly
 - a built-in `null-generator` witness proves a new transmutation can be added through registration without editing orchestration internals
 - the active `legacy-supabase` path now consumes explicit emission context instead of reaching back into schema-shaped filesystem state
 
 Still follow-on work:
+
 - broader generator surfaces still need the same IR-only contract and evidence discipline
 - parts of this document remain design direction rather than shipped behavior and should be read that way
 
@@ -102,7 +104,7 @@ For the release-line doctrine that names these surfaces, see `docs/design/0004-r
 
 ### Evidence Contract
 
-Each generator declares what artifact categories it produces and how they can be verified. Evidence is collected *during generation*, not reconstructed after the fact. That evidence is witness residue for bounded claims about the emitted family; it is not meant to become a second operational shell.
+Each generator declares what artifact categories it produces and how they can be verified. Evidence is collected _during generation_, not reconstructed after the fact. That evidence is witness residue for bounded claims about the emitted family; it is not meant to become a second operational shell.
 
 ### SHA-lock Certification
 
@@ -121,42 +123,48 @@ export default {
   transmutations: {
     backend: {
       sources: ['schemas/backend/**/*.graphql'],
-      generators: ['supabase', 'js'],
+      generators: ['supabase', 'js']
     },
 
     echo: {
       sources: ['schemas/echo/**/*.graphql'],
-      generators: ['echo', 'ttd'],
+      generators: ['echo', 'ttd']
     },
 
     ui: {
       sources: ['schemas/ui/**/*.graphql'],
-      generators: ['js', 'vue'],
-    },
+      generators: ['js', 'vue']
+    }
   },
 
   // Thresholds can be global (defaults) or per-transmutation
   thresholds: {
     scs: 0.8,
     tci: 0.7,
-    mri: 0.4,
+    mri: 0.4
   },
 
   // Existing keys (weights, paths, security, etc.) remain unchanged
-  weights: { /* ... */ },
-  paths: { /* ... */ },
-  security: { /* ... */ },
+  weights: {
+    /* ... */
+  },
+  paths: {
+    /* ... */
+  },
+  security: {
+    /* ... */
+  }
 };
 ```
 
 ### Transmutation Options
 
-| Key | Type | Required | Description |
-|-----|------|----------|-------------|
-| `sources` | `string[]` | Yes | Glob patterns resolving to GraphQL SDL files |
-| `generators` | `string[]` | Yes | Generator names to run (order = execution order) |
-| `thresholds` | `object` | No | Per-transmutation threshold overrides |
-| `output` | `string` | No | Output directory override (default: `out/<name>/`) |
+| Key          | Type       | Required | Description                                        |
+| ------------ | ---------- | -------- | -------------------------------------------------- |
+| `sources`    | `string[]` | Yes      | Glob patterns resolving to GraphQL SDL files       |
+| `generators` | `string[]` | Yes      | Generator names to run (order = execution order)   |
+| `thresholds` | `object`   | No       | Per-transmutation threshold overrides              |
+| `output`     | `string`   | No       | Output directory override (default: `out/<name>/`) |
 
 ### Backward Compatibility
 
@@ -182,7 +190,9 @@ If no `transmutations` key is present, Wesley synthesizes a single implicit tran
 
 ```javascript
 class SupabaseGenerator extends GeneratorPlugin {
-  get name() { return 'supabase'; }
+  get name() {
+    return 'supabase';
+  }
 
   get evidenceContract() {
     return {
@@ -191,11 +201,11 @@ class SupabaseGenerator extends GeneratorPlugin {
 
       // How each category can be verified
       verification: {
-        ddl:        { type: 'sql-parse' },
-        rls:        { type: 'sql-parse' },
+        ddl: { type: 'sql-parse' },
+        rls: { type: 'sql-parse' },
         migrations: { type: 'sql-parse', risk: ['DROP', 'ALTER', 'RENAME'] },
-        pgtap:      { type: 'sql-parse' },
-      },
+        pgtap: { type: 'sql-parse' }
+      }
     };
   }
 
@@ -212,8 +222,8 @@ class SupabaseGenerator extends GeneratorPlugin {
       for (const field of table.fields) {
         evidence[`col:${table.name}.${field.name}`] = {
           artifacts: {
-            ddl: { file: path, lines: [field.startLine, field.endLine] },
-          },
+            ddl: { file: path, lines: [field.startLine, field.endLine] }
+          }
         };
       }
     }
@@ -231,17 +241,17 @@ Each generator returns per-element evidence keyed by UID (`col:User.email`, `tbl
 {
   "col:User.email": {
     "artifacts": {
-      "ddl":       { "file": "ddl/User.sql",       "lines": [4, 4],   "sha": "a1b2c3" },
-      "rls":       { "file": "rls/User.sql",       "lines": [2, 8],   "sha": "d4e5f6" },
-      "pgtap":     { "file": "tests/User.sql",     "lines": [12, 18], "sha": "789abc" },
-      "typescript":{ "file": "models/User.ts",      "lines": [3, 3],   "sha": "def012" },
-      "zod":       { "file": "zod/User.ts",         "lines": [5, 5],   "sha": "345678" }
+      "ddl": { "file": "ddl/User.sql", "lines": [4, 4], "sha": "a1b2c3" },
+      "rls": { "file": "rls/User.sql", "lines": [2, 8], "sha": "d4e5f6" },
+      "pgtap": { "file": "tests/User.sql", "lines": [12, 18], "sha": "789abc" },
+      "typescript": { "file": "models/User.ts", "lines": [3, 3], "sha": "def012" },
+      "zod": { "file": "zod/User.ts", "lines": [5, 5], "sha": "345678" }
     }
   },
   "col:User.password_hash": {
     "artifacts": {
-      "ddl":   { "file": "ddl/User.sql",   "lines": [5, 5], "sha": "a1b2c3" },
-      "rls":   { "file": "rls/User.sql",   "lines": [9, 15], "sha": "d4e5f6" },
+      "ddl": { "file": "ddl/User.sql", "lines": [5, 5], "sha": "a1b2c3" },
+      "rls": { "file": "rls/User.sql", "lines": [9, 15], "sha": "d4e5f6" },
       "pgtap": { "file": "tests/User.sql", "lines": [20, 32], "sha": "789abc" }
     }
   }
@@ -416,9 +426,9 @@ Each transmutation maintains its own score history in `.wesley-cache/evidence/<n
 {
   "transmutation": "backend",
   "history": [
-    { "timestamp": "2026-03-01T...", "scs": 0.65, "tci": 0.40, "mri": 0.30, "ref": "abc123" },
+    { "timestamp": "2026-03-01T...", "scs": 0.65, "tci": 0.4, "mri": 0.3, "ref": "abc123" },
     { "timestamp": "2026-03-03T...", "scs": 0.72, "tci": 0.55, "mri": 0.25, "ref": "def456" },
-    { "timestamp": "2026-03-08T...", "scs": 0.82, "tci": 0.70, "mri": 0.15, "ref": "789abc" }
+    { "timestamp": "2026-03-08T...", "scs": 0.82, "tci": 0.7, "mri": 0.15, "ref": "789abc" }
   ]
 }
 ```
@@ -468,7 +478,7 @@ graph TB
     DEP --> B["Bottleneck Detection"]
 ```
 
-**Project readiness** is gated on the *slowest* transmutation. Moriarty identifies the bottleneck:
+**Project readiness** is gated on the _slowest_ transmutation. Moriarty identifies the bottleneck:
 
 ```
 🔮 Project certification ETA: ~4 PRs
@@ -487,12 +497,12 @@ graph TB
 
 **Aggregate metrics**:
 
-| Metric | Computation |
-|--------|-------------|
-| Project velocity | Weighted average of per-transmutation velocities (weight = distance from threshold) |
-| Convergence score | Are transmutations moving toward certification together or diverging? |
-| Bottleneck identification | Which transmutation is furthest from its threshold relative to its velocity? |
-| Risk forecast | Which transmutation is most likely to *regress* based on MRI trends? |
+| Metric                    | Computation                                                                         |
+| ------------------------- | ----------------------------------------------------------------------------------- |
+| Project velocity          | Weighted average of per-transmutation velocities (weight = distance from threshold) |
+| Convergence score         | Are transmutations moving toward certification together or diverging?               |
+| Bottleneck identification | Which transmutation is furthest from its threshold relative to its velocity?        |
+| Risk forecast             | Which transmutation is most likely to _regress_ based on MRI trends?                |
 
 #### CLI
 
@@ -504,7 +514,7 @@ wesley moriarty --format json            # machine-readable output
 
 #### Architecture
 
-Moriarty stays in `@wesley/holmes`, and Holmes/Watson still execute there too. Product-specific behavior can now be profiled in packages such as `@wesley/continuum`, but the shared investigation, verification, and prediction engines remain in the Holmes package. Holmes and Watson are *invoked* per-transmutation (they need the evidence bundle), and Moriarty is invoked at both levels:
+Moriarty stays in `@wesley/holmes`, and Holmes/Watson still execute there too. Product-specific behavior can now be profiled in packages such as `@wesley/continuum`, but the shared investigation, verification, and prediction engines remain in the Holmes package. Holmes and Watson are _invoked_ per-transmutation (they need the evidence bundle), and Moriarty is invoked at both levels:
 
 ```mermaid
 sequenceDiagram
@@ -524,7 +534,7 @@ sequenceDiagram
     M-->>CLI: project forecast + bottleneck report
 ```
 
-The key insight: Holmes and Watson answer *"what is true right now?"* — Moriarty answers *"what will be true soon, and what's in the way?"*
+The key insight: Holmes and Watson answer _"what is true right now?"_ — Moriarty answers _"what will be true soon, and what's in the way?"_
 
 ---
 
@@ -539,7 +549,9 @@ Within a transmutation, evidence is tracked per source file. If `schemas/backend
     "schemas/backend/users.graphql": {
       "elements": {
         "col:User.id": { "artifacts": { "ddl": {}, "typescript": {}, "zod": {}, "pgtap": {} } },
-        "col:User.email": { "artifacts": { "ddl": {}, "rls": {}, "typescript": {}, "zod": {}, "pgtap": {} } }
+        "col:User.email": {
+          "artifacts": { "ddl": {}, "rls": {}, "typescript": {}, "zod": {}, "pgtap": {} }
+        }
       },
       "scores": { "scs": 1.0, "tci": 1.0, "mri": 0.0 }
     },
@@ -554,7 +566,7 @@ Within a transmutation, evidence is tracked per source file. If `schemas/backend
 }
 ```
 
-This lets HOLMES report: *"backend transmutation: users.graphql is fully certified, orders.graphql is missing pgtap tests for Order.total."*
+This lets HOLMES report: _"backend transmutation: users.graphql is fully certified, orders.graphql is missing pgtap tests for Order.total."_
 
 ---
 
@@ -634,7 +646,7 @@ packages/
 
 Key changes:
 
-- **`generator-*` → `transmute-*`**: Generators become transmutation modules. Each module bundles its generators *and* its evidence contract. The module is the unit of accountability.
+- **`generator-*` → `transmute-*`**: Generators become transmutation modules. Each module bundles its generators _and_ its evidence contract. The module is the unit of accountability.
 - **Hosts grouped**: `hosts/node`, `hosts/bun`, etc. — they're adapters, not primary actors.
 - **Stacks grouped**: Scaffolds and stacks are templates, not core packages.
 - **Shorter names**: Drop the `wesley-` prefix from directory names (npm package names stay scoped: `@wesley/transmute-supabase`).
@@ -667,9 +679,9 @@ When `wesley generate --certify` runs, each transmutation that passes its thresh
     "mri": 0.15
   },
   "thresholds": {
-    "scs": 0.80,
-    "tci": 0.70,
-    "mri": 0.40
+    "scs": 0.8,
+    "tci": 0.7,
+    "mri": 0.4
   },
   "generators": ["supabase", "js"],
   "sources": ["schemas/backend/users.graphql", "schemas/backend/orders.graphql"],
@@ -687,9 +699,9 @@ A project is SHA-lock certified when **all** declared transmutations pass:
   "project": "my-app",
   "certified": true,
   "transmutations": {
-    "backend": { "certified": true,  "scs": 0.92, "tci": 0.85, "mri": 0.15 },
-    "echo":    { "certified": true,  "scs": 0.88, "tci": 0.90, "mri": 0.05 },
-    "ui":      { "certified": false, "scs": 0.71, "tci": 0.45, "mri": 0.00 }
+    "backend": { "certified": true, "scs": 0.92, "tci": 0.85, "mri": 0.15 },
+    "echo": { "certified": true, "scs": 0.88, "tci": 0.9, "mri": 0.05 },
+    "ui": { "certified": false, "scs": 0.71, "tci": 0.45, "mri": 0.0 }
   },
   "sha": "sha256:combined-evidence-hash",
   "timestamp": "2026-03-08T14:30:00Z"
@@ -716,8 +728,9 @@ HOLMES PR comments become contextual — one section per transmutation:
 ## 🔬 Wesley SHA-lock Report
 
 ### Transmutation: `backend` ✅ CERTIFIED
+
 | Score | Value | Threshold | Status |
-|-------|-------|-----------|--------|
+| ----- | ----- | --------- | ------ |
 | SCS   | 0.92  | 0.80      | ✅     |
 | TCI   | 0.85  | 0.70      | ✅     |
 | MRI   | 0.15  | 0.40      | ✅     |
@@ -730,15 +743,17 @@ HOLMES PR comments become contextual — one section per transmutation:
 </details>
 
 ### Transmutation: `echo` ✅ CERTIFIED
+
 | Score | Value | Threshold | Status |
-|-------|-------|-----------|--------|
+| ----- | ----- | --------- | ------ |
 | SCS   | 0.88  | 0.80      | ✅     |
 | TCI   | 0.90  | 0.70      | ✅     |
 | MRI   | 0.05  | 0.40      | ✅     |
 
 ### Transmutation: `ui` ❌ NOT CERTIFIED
+
 | Score | Value | Threshold | Status |
-|-------|-------|-----------|--------|
+| ----- | ----- | --------- | ------ |
 | SCS   | 0.71  | 0.80      | ❌     |
 | TCI   | 0.45  | 0.70      | ❌     |
 | MRI   | 0.00  | 0.40      | ✅     |
@@ -751,8 +766,9 @@ HOLMES PR comments become contextual — one section per transmutation:
 </details>
 
 ---
+
 📊 Moriarty projection: `ui` transmutation on track for certification in ~3 PRs
-  based on SCS velocity +0.07/PR (EMA, 5-PR window)
+based on SCS velocity +0.07/PR (EMA, 5-PR window)
 ```
 
 ---
@@ -780,6 +796,7 @@ Foundational cleanup that must land before transmutation work begins. These addr
 If a generator needs a domain-specific shape (e.g., JS generators need `Schema`), the adapter lives inside the transmutation module — not in the CLI command. This makes generators self-contained and testable in isolation.
 
 **Files**:
+
 - `packages/wesley-generator-js/src/index.mjs` — internalize `irToSchema()` conversion
 - external PostgreSQL/Supabase module package — align `emitDDL()` etc.
 - `packages/wesley-core/src/application/LoweringEngine.mjs` — centralize SDL/IR/domain lowering before orchestration
@@ -789,10 +806,10 @@ If a generator needs a domain-specific shape (e.g., JS generators need `Schema`)
 
 **Problem**: Two overlapping orchestration systems in `@wesley/core/application/`:
 
-| System | Owns | Missing |
-|--------|------|---------|
+| System               | Owns                                            | Missing                          |
+| -------------------- | ----------------------------------------------- | -------------------------------- |
 | `GenerationPipeline` | Evidence collection, scoring, artifact bundling | Plugin isolation, error recovery |
-| `PluginRunner` | Plugin validation, `--best-effort` isolation | Evidence wiring, scoring |
+| `PluginRunner`       | Plugin validation, `--best-effort` isolation    | Evidence wiring, scoring         |
 
 Neither is complete. Commands use them inconsistently.
 
@@ -819,6 +836,7 @@ graph LR
 ```
 
 **Files**:
+
 - `packages/wesley-core/src/application/GenerationPipeline.mjs` — absorb into TransmutationRunner
 - `packages/wesley-core/src/application/PluginRunner.mjs` — absorb into TransmutationRunner
 - `packages/wesley-core/src/application/EvidenceMap.mjs` — wire into runner
@@ -850,6 +868,7 @@ The `TransmutationRunner` builds this graph from the transmutation config, then 
 - **Evidence per task**: Each task completion emits an evidence record
 
 **Files**:
+
 - `packages/wesley-tasks/src/TaskDefinition.mjs` — ready, use as-is
 - New: `packages/wesley-core/src/application/TransmutationRunner.mjs` — orchestrator
 
@@ -864,6 +883,7 @@ The `TransmutationRunner` builds this graph from the transmutation config, then 
 #### 0e. Unify error construction (resolves CR-24)
 
 **Problem**: Three different error patterns coexist:
+
 - `OpsError` (structured, with code + metadata)
 - Manual `e.code = 'WFOO'` mutation after construction
 - Manual `err.meta = { ... }` assignment
@@ -889,6 +909,7 @@ All error construction converges on this. `OpsError` extends it. No more manual 
 ---
 
 ### Phase 1: Config + Transmutation Runner
+
 - Add `transmutations` key to `wesley.config.mjs` schema
 - Build `TransmutationRunner` in core (replaces merged GenerationPipeline/PluginRunner)
 - Source resolution, generator dispatch via T.A.S.K.S. task graphs
@@ -896,6 +917,7 @@ All error construction converges on this. `OpsError` extends it. No more manual 
 - Tests: config parsing, source glob resolution, generator selection, task graph construction
 
 ### Phase 2: Evidence Contracts
+
 - Extend `GeneratorPlugin` with `evidenceContract` getter
 - Modify `generate()` return type to include evidence
 - Implement evidence collection in `transmute-supabase` (first mover)
@@ -903,12 +925,14 @@ All error construction converges on this. `OpsError` extends it. No more manual 
 - Tests: evidence shape validation, per-element tracking
 
 ### Phase 3: Real HOLMES Scoring
+
 - Extend evidence-based SCS/TCI/MRI beyond the active `legacy-supabase` hot path
 - Wire HOLMES investigation to transmutation context
 - Update Watson to verify real citations with precise line ranges
 - Tests: scoring accuracy against known evidence bundles
 
 ### Phase 4: Moriarty Dual-Layer
+
 - Per-transmutation history: append scores after each `--certify` run
 - Per-transmutation predictions: velocity, slope, ETA, plateau detection
 - Project-level oracle: aggregate analysis, bottleneck identification, convergence scoring
@@ -917,12 +941,14 @@ All error construction converges on this. `OpsError` extends it. No more manual 
 - Tests: multi-transmutation forecast scenarios, bottleneck detection, correlation detection
 
 ### Phase 5: Package Reorganization
+
 - Rename `generator-*` → `transmute-*`
 - Group hosts and stacks into subdirectories
 - Update workspace config, imports, CI workflows
 - Tests: all existing tests pass under new paths
 
 ### Phase 6: Certification + CI
+
 - Implement per-transmutation certification stamps
 - Project-level certification aggregation
 - `--certify` and `--fail-on-threshold` CLI flags

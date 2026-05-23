@@ -35,15 +35,33 @@ test('harvests CRUD operations from tables', () => {
   assert.equal(harvested.tables.User.operations.length, 6, 'Should generate 6 CRUD operations');
 
   const userOps = harvested.tables.User.operations;
-  assert(userOps.find(op => op.name === 'findOneUser'), 'Should have findOne operation');
-  assert(userOps.find(op => op.name === 'findManyUser'), 'Should have findMany operation');
-  assert(userOps.find(op => op.name === 'createUser'), 'Should have create operation');
-  assert(userOps.find(op => op.name === 'updateUser'), 'Should have update operation');
-  assert(userOps.find(op => op.name === 'deleteUser'), 'Should have delete operation');
-  assert(userOps.find(op => op.name === 'upsertUser'), 'Should have upsert operation');
+  assert(
+    userOps.find((op) => op.name === 'findOneUser'),
+    'Should have findOne operation'
+  );
+  assert(
+    userOps.find((op) => op.name === 'findManyUser'),
+    'Should have findMany operation'
+  );
+  assert(
+    userOps.find((op) => op.name === 'createUser'),
+    'Should have create operation'
+  );
+  assert(
+    userOps.find((op) => op.name === 'updateUser'),
+    'Should have update operation'
+  );
+  assert(
+    userOps.find((op) => op.name === 'deleteUser'),
+    'Should have delete operation'
+  );
+  assert(
+    userOps.find((op) => op.name === 'upsertUser'),
+    'Should have upsert operation'
+  );
 
   // Check operation details
-  const createOp = userOps.find(op => op.name === 'createUser');
+  const createOp = userOps.find((op) => op.name === 'createUser');
   assert.equal(createOp.type, 'mutation');
   assert.equal(createOp.category, 'create');
   assert(createOp.generated, 'Should be marked as generated');
@@ -109,7 +127,7 @@ test('harvests explicit RPC operations', () => {
   assert.equal(harvested.queries.length, 2, 'Should harvest 2 queries');
   assert.equal(harvested.mutations.length, 1, 'Should harvest 1 mutation');
 
-  const getByEmail = harvested.queries.find(q => q.name === 'getUserByEmail');
+  const getByEmail = harvested.queries.find((q) => q.name === 'getUserByEmail');
   assert.equal(getByEmail.type, 'query');
   assert.equal(getByEmail.args.length, 1);
   assert.equal(getByEmail.args[0].name, 'email');
@@ -143,17 +161,17 @@ test('extracts table fields and relationships', () => {
   const userFields = harvested.tables.User.fields;
   assert.equal(userFields.length, 3);
 
-  const emailField = userFields.find(f => f.name === 'email');
+  const emailField = userFields.find((f) => f.name === 'email');
   assert(emailField.isUnique, 'Email should be unique');
   assert(emailField.directives['@email'], 'Should have email directive');
 
   // Check relationships
   const userRels = harvested.tables.User.relationships;
-  assert(userRels.find(r => r.type === 'hasMany' && r.field === 'posts'));
+  assert(userRels.find((r) => r.type === 'hasMany' && r.field === 'posts'));
 
   const postRels = harvested.tables.Post.relationships;
-  assert(postRels.find(r => r.type === 'belongsTo' && r.field === 'author'));
-  assert(postRels.find(r => r.type === 'foreignKey' && r.field === 'author_id'));
+  assert(postRels.find((r) => r.type === 'belongsTo' && r.field === 'author'));
+  assert(postRels.find((r) => r.type === 'foreignKey' && r.field === 'author_id'));
 });
 
 test('calculates operation complexity', () => {
@@ -167,11 +185,7 @@ test('calculates operation complexity', () => {
 
   const complexOp = {
     name: 'searchUsers',
-    args: [
-      { name: 'term' },
-      { name: 'limit' },
-      { name: 'offset' }
-    ],
+    args: [{ name: 'term' }, { name: 'limit' }, { name: 'offset' }],
     returnType: { type: 'User', list: true },
     directives: {
       '@auth': { roles: ['admin'] },
@@ -208,7 +222,7 @@ test('exports for Watson integration', () => {
   assert(watsonExport.metadata, 'Should have metadata');
   assert.equal(watsonExport.metadata.generator, 'wesley');
 
-  const createOp = watsonExport.operations.find(op => op.name === 'createUser');
+  const createOp = watsonExport.operations.find((op) => op.name === 'createUser');
   assert(createOp.signature, 'Should have operation signature');
   assert(createOp.signature.includes('input: UserCreateInput!'));
   assert(createOp.signature.includes(': User!'));
@@ -233,14 +247,20 @@ test('filters operations by criteria', () => {
   registry.harvest(wesleySchema);
 
   // Filter mutations
-  const mutations = registry.filter(op => op.type === 'mutation');
+  const mutations = registry.filter((op) => op.type === 'mutation');
   assert(mutations.length > 0, 'Should have mutations');
-  assert(mutations.every(op => op.type === 'mutation'), 'All should be mutations');
+  assert(
+    mutations.every((op) => op.type === 'mutation'),
+    'All should be mutations'
+  );
 
   // Filter User operations
   const userOps = registry.getTableOperations('User');
   assert(userOps.length === 6, 'Should have 6 User operations');
-  assert(userOps.every(op => op.name.includes('User')), 'All should be User operations');
+  assert(
+    userOps.every((op) => op.name.includes('User')),
+    'All should be User operations'
+  );
 });
 
 test('generates summary statistics', () => {
@@ -271,5 +291,8 @@ test('generates summary statistics', () => {
 
   assert(json.summary.complexityStats, 'Should have complexity stats');
   assert(json.summary.complexityStats.min >= 0, 'Min complexity should be non-negative');
-  assert(json.summary.complexityStats.max >= json.summary.complexityStats.min, 'Max should be >= min');
+  assert(
+    json.summary.complexityStats.max >= json.summary.complexityStats.min,
+    'Max should be >= min'
+  );
 });

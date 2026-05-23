@@ -181,10 +181,7 @@ test('recordQueryMetrics throws in strict mode for slow queries', async () => {
   metrics.complete(Date.now(), { executionTime: 150 });
   metrics.executionTime = 150; // Override for test
 
-  assert.throws(
-    () => monitor.recordQueryMetrics(metrics),
-    SlowQueryDetectedError
-  );
+  assert.throws(() => monitor.recordQueryMetrics(metrics), SlowQueryDetectedError);
 });
 
 test('startMonitoring sets up intervals', async () => {
@@ -274,10 +271,7 @@ test('checkResourceThresholds throws in strict mode', async () => {
   const metrics = new ResourceMetrics();
   metrics.cpu.usage = 75;
 
-  assert.throws(
-    () => monitor.checkResourceThresholds(metrics),
-    ResourceThresholdExceededError
-  );
+  assert.throws(() => monitor.checkResourceThresholds(metrics), ResourceThresholdExceededError);
 });
 
 test('analyzeIndexUsage performs analysis', async () => {
@@ -555,14 +549,14 @@ test('integration test with full monitoring cycle', async () => {
   tracker2.complete({ rowsReturned: 1 });
 
   // Let it run briefly to collect some resource metrics
-  await new Promise(resolve => setTimeout(resolve, 50));
+  await new Promise((resolve) => setTimeout(resolve, 50));
 
   // Stop monitoring
   const stats = await monitor.stopMonitoring();
 
-  assert.equal(events.filter(e => e === 'started').length, 1);
-  assert.equal(events.filter(e => e === 'stopped').length, 1);
-  assert.equal(events.filter(e => e === 'query').length, 2);
+  assert.equal(events.filter((e) => e === 'started').length, 1);
+  assert.equal(events.filter((e) => e === 'stopped').length, 1);
+  assert.equal(events.filter((e) => e === 'query').length, 2);
   assert.equal(monitor.queryHistory.length, 2);
   assert(monitor.resourceHistory.length > 0);
   assert(typeof stats.queryStats.totalQueries === 'number');

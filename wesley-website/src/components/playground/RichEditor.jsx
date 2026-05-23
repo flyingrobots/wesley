@@ -20,9 +20,9 @@ const TabKeyExtension = Extension.create({
         // Prevent default browser behavior of focusing next element
         editor.commands.insertContent('  '); // Insert 2 spaces for tab
         return true; // Mark as handled
-      },
+      }
     };
-  },
+  }
 });
 
 // Helper to ensure content is treated as a code block
@@ -43,28 +43,28 @@ export default function RichEditor({ value, onChange }) {
       // Configure StarterKit to disable its default Link and CodeBlock extensions
       StarterKit.configure({
         link: false,
-        codeBlock: false,
+        codeBlock: false
       }),
       Link, // Use Mantine's Link extension (explicitly added)
       CodeBlockLowlight.configure({
         lowlight,
-        defaultLanguage: 'graphql',
+        defaultLanguage: 'graphql'
       }),
-      TabKeyExtension, // Add our custom tab key extension
+      TabKeyExtension // Add our custom tab key extension
     ],
     content: createCodeDocument(value), // Initialize as code block
     onUpdate: ({ editor }) => {
       // Get plain text from the code block
-      // We use getText() which extracts text from all nodes. 
+      // We use getText() which extracts text from all nodes.
       // Since we only have one code block, this works.
-      onChange(editor.getText()); 
+      onChange(editor.getText());
     },
     // Adding placeholder for better UX
     editorProps: {
       attributes: {
-        class: 'tiptap-editor-focused', // Apply custom class for editor area
-      },
-    },
+        class: 'tiptap-editor-focused' // Apply custom class for editor area
+      }
+    }
   });
 
   // Ensure editor content is up-to-date with value prop
@@ -76,24 +76,24 @@ export default function RichEditor({ value, onChange }) {
   }, [value, editor]);
 
   return (
-    <MantineRichTextEditor 
-      editor={editor} 
-      style={{ 
-        flex: 1, 
-        display: 'flex', 
+    <MantineRichTextEditor
+      editor={editor}
+      style={{
+        flex: 1,
+        display: 'flex',
         flexDirection: 'column',
-        border: 'none', // Remove default border to blend with container
+        border: 'none' // Remove default border to blend with container
       }}
     >
       {/* Removed Toolbar for Code Editor feel */}
-      
-      <MantineRichTextEditor.Content 
-        style={{ 
-          flex: 1, 
+
+      <MantineRichTextEditor.Content
+        style={{
+          flex: 1,
           overflowY: 'auto',
           fontFamily: 'var(--mantine-font-family-monospace)', // Force monospace
-          fontSize: 'var(--mantine-font-size-sm)',
-        }} 
+          fontSize: 'var(--mantine-font-size-sm)'
+        }}
       />
       <style>{`
         .ProseMirror {

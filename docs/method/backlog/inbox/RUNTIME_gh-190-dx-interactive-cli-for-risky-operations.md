@@ -111,9 +111,9 @@ Enhance planner output to flag risks, add CLI middleware that inspects plan resp
 
 ### QA Sign-off Matrix
 
-| Environment | Surface | Owner | Status | Notes |
-| --- | --- | --- | --- | --- |
-| Local CLI | plan/rehearse commands | TBD | pending | |
+| Environment | Surface                | Owner | Status  | Notes |
+| ----------- | ---------------------- | ----- | ------- | ----- |
+| Local CLI   | plan/rehearse commands | TBD   | pending |       |
 
 ## Requirements
 

@@ -111,10 +111,10 @@ Use VS Code extension API with JSON/TS data of directives to serve completions/h
 
 ### QA Sign-off Matrix
 
-| Environment | Surface | Owner | Status | Notes |
-| --- | --- | --- | --- | --- |
-| VS Code Stable | Extension | TBD | pending | Manual QA |
-| CLI | `wesley viz` command | TBD | pending | |
+| Environment    | Surface              | Owner | Status  | Notes     |
+| -------------- | -------------------- | ----- | ------- | --------- |
+| VS Code Stable | Extension            | TBD   | pending | Manual QA |
+| CLI            | `wesley viz` command | TBD   | pending |           |
 
 ## Requirements
 

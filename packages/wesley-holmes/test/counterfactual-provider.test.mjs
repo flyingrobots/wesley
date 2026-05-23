@@ -14,7 +14,9 @@ import {
 } from '../src/index.mjs';
 import { buildMoriartyPrediction } from '../src/moriarty-predict-workflow.mjs';
 
-const fixtureModulePath = fileURLToPath(new URL('./fixtures/counterfactual-provider-module.mjs', import.meta.url));
+const fixtureModulePath = fileURLToPath(
+  new URL('./fixtures/counterfactual-provider-module.mjs', import.meta.url)
+);
 
 async function withTempRepo(callback) {
   const tempDir = mkdtempSync(path.join(tmpdir(), 'wesley-counterfactual-'));
@@ -69,17 +71,16 @@ function createProvider(name, overrides = {}) {
         },
         judgment: {
           status: 'clean',
-          signals: [
-            `provider:${name}`,
-            ...(lane.braidRefs.length > 0 ? ['braid_present'] : [])
-          ],
+          signals: [`provider:${name}`, ...(lane.braidRefs.length > 0 ? ['braid_present'] : [])],
           riskClass: 'none',
           confidenceAdjustment: 0,
           gate: 'pass',
           wouldFail: false,
           reasons: [
             `Provider ${name} ran for ${moduleName}.`,
-            `Surface keys: ${Object.keys(surface || {}).sort().join(',')}`
+            `Surface keys: ${Object.keys(surface || {})
+              .sort()
+              .join(',')}`
           ]
         },
         ...overrides
@@ -168,10 +169,7 @@ test('analyzeCounterfactual dispatches to the sole module counterfactual provide
 
 test('analyzeCounterfactual honors policy-selected provider names', async () => {
   await withTempRepo(async (tempDir) => {
-    const registry = createRegistryWithProviders([
-      createProvider('alpha'),
-      createProvider('beta')
-    ]);
+    const registry = createRegistryWithProviders([createProvider('alpha'), createProvider('beta')]);
     const policy = defaultCounterfactualPolicy();
     policy.counterfactual.enabled = true;
     policy.counterfactual.provider = 'beta';
@@ -255,12 +253,19 @@ test('buildMoriartyPrediction forwards env module entries into counterfactual an
     const bundleDir = path.join(tempDir, '.wesley-cache');
     const historyFile = path.join(bundleDir, 'history.json');
     mkdirSync(bundleDir, { recursive: true });
-    writeFileSync(historyFile, JSON.stringify({
-      points: [
-        { day: 1, scs: 0.4, tci: 0.3, mri: 0.2 },
-        { day: 2, scs: 0.82, tci: 0.74, mri: 0.12 }
-      ]
-    }, null, 2));
+    writeFileSync(
+      historyFile,
+      JSON.stringify(
+        {
+          points: [
+            { day: 1, scs: 0.4, tci: 0.3, mri: 0.2 },
+            { day: 2, scs: 0.82, tci: 0.74, mri: 0.12 }
+          ]
+        },
+        null,
+        2
+      )
+    );
 
     const result = await buildMoriartyPrediction({
       bundleDir,
@@ -274,7 +279,10 @@ test('buildMoriartyPrediction forwards env module entries into counterfactual an
     });
 
     assert.equal(result.data.counterfactual.provider, 'fixture-counterfactual');
-    assert.equal(result.data.counterfactual.providerModuleName, 'holmes-counterfactual-fixture-module');
+    assert.equal(
+      result.data.counterfactual.providerModuleName,
+      'holmes-counterfactual-fixture-module'
+    );
     assert.equal(result.data.explain.readiness.counterfactual.status, 'clean');
   });
 });

@@ -2,10 +2,7 @@
 
 import { pathToFileURL } from 'node:url';
 
-import {
-  buildHolmesSuiteComment,
-  loadHolmesSuiteReports
-} from './pr-comment.mjs';
+import { buildHolmesSuiteComment, loadHolmesSuiteReports } from './pr-comment.mjs';
 
 if (isDirectExecution()) {
   main();
@@ -57,26 +54,26 @@ function parseArgs(argv) {
     }
 
     switch (name) {
-    case 'reports-dir':
-      options.reportsDir = value;
-      break;
-    case 'pr-number':
-      options.prNumber = value;
-      break;
-    case 'head-sha':
-      options.headSha = value;
-      break;
-    case 'holmes-status':
-      options.holmesStatus = value;
-      break;
-    case 'watson-status':
-      options.watsonStatus = value;
-      break;
-    case 'moriarty-status':
-      options.moriartyStatus = value;
-      break;
-    default:
-      fail(`Unknown option: --${name}`);
+      case 'reports-dir':
+        options.reportsDir = value;
+        break;
+      case 'pr-number':
+        options.prNumber = value;
+        break;
+      case 'head-sha':
+        options.headSha = value;
+        break;
+      case 'holmes-status':
+        options.holmesStatus = value;
+        break;
+      case 'watson-status':
+        options.watsonStatus = value;
+        break;
+      case 'moriarty-status':
+        options.moriartyStatus = value;
+        break;
+      default:
+        fail(`Unknown option: --${name}`);
     }
 
     if (consumesNextToken) {

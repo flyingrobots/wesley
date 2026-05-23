@@ -4,7 +4,11 @@ const ROOT_TYPE_NAMES = new Set(['Query', 'Mutation', 'Subscription']);
 const ROOT_TYPE_METADATA = [
   { rootTypeName: 'Query', collectionName: 'queries', interfaceName: 'QueryOperationMap' },
   { rootTypeName: 'Mutation', collectionName: 'mutations', interfaceName: 'MutationOperationMap' },
-  { rootTypeName: 'Subscription', collectionName: 'subscriptions', interfaceName: 'SubscriptionOperationMap' }
+  {
+    rootTypeName: 'Subscription',
+    collectionName: 'subscriptions',
+    interfaceName: 'SubscriptionOperationMap'
+  }
 ];
 const BUILTIN_SCALARS = new Map([
   ['ID', { ts: 'string', zod: 'z.string()' }],
@@ -136,42 +140,42 @@ function collectFamilyDefinitions(sdl) {
 
   for (const definition of document.definitions) {
     switch (definition.kind) {
-    case Kind.SCALAR_TYPE_DEFINITION:
-      scalars.push({ name: definition.name.value });
-      break;
-    case Kind.ENUM_TYPE_DEFINITION:
-      enums.push({
-        name: definition.name.value,
-        values: (definition.values ?? []).map((value) => value.name.value)
-      });
-      break;
-    case Kind.OBJECT_TYPE_DEFINITION:
-      if (ROOT_TYPE_NAMES.has(definition.name.value)) {
-        collectRootOperations(definition.name.value, definition.fields ?? [], operations);
+      case Kind.SCALAR_TYPE_DEFINITION:
+        scalars.push({ name: definition.name.value });
         break;
-      }
-      if (shouldSkipObjectDefinition(definition.name.value)) {
+      case Kind.ENUM_TYPE_DEFINITION:
+        enums.push({
+          name: definition.name.value,
+          values: (definition.values ?? []).map((value) => value.name.value)
+        });
         break;
-      }
-      objects.push({
-        name: definition.name.value,
-        fields: (definition.fields ?? []).map((field) => ({
-          name: field.name.value,
-          type: field.type
-        }))
-      });
-      break;
-    case Kind.INPUT_OBJECT_TYPE_DEFINITION:
-      inputs.push({
-        name: definition.name.value,
-        fields: (definition.fields ?? []).map((field) => ({
-          name: field.name.value,
-          type: field.type
-        }))
-      });
-      break;
-    default:
-      break;
+      case Kind.OBJECT_TYPE_DEFINITION:
+        if (ROOT_TYPE_NAMES.has(definition.name.value)) {
+          collectRootOperations(definition.name.value, definition.fields ?? [], operations);
+          break;
+        }
+        if (shouldSkipObjectDefinition(definition.name.value)) {
+          break;
+        }
+        objects.push({
+          name: definition.name.value,
+          fields: (definition.fields ?? []).map((field) => ({
+            name: field.name.value,
+            type: field.type
+          }))
+        });
+        break;
+      case Kind.INPUT_OBJECT_TYPE_DEFINITION:
+        inputs.push({
+          name: definition.name.value,
+          fields: (definition.fields ?? []).map((field) => ({
+            name: field.name.value,
+            type: field.type
+          }))
+        });
+        break;
+      default:
+        break;
     }
   }
 
@@ -179,41 +183,38 @@ function collectFamilyDefinitions(sdl) {
 }
 
 function renderTypeScriptObjectDefinitions(definitions) {
-  return definitions.flatMap((definition) => {
-    const fields = definition.fields.map((field) => {
-      const rendered = renderTypeScriptField(field.type);
-      const propertyName = rendered.required ? field.name : `${field.name}?`;
-      const propertyType = rendered.required
-        ? rendered.type
-        : `${rendered.type} | null`;
-      return `  ${propertyName}: ${propertyType};`;
-    });
-    return [
-      `export interface ${definition.name} {`,
-      ...fields,
-      '}',
-      ''
-    ];
-  }).slice(0, -1);
+  return definitions
+    .flatMap((definition) => {
+      const fields = definition.fields.map((field) => {
+        const rendered = renderTypeScriptField(field.type);
+        const propertyName = rendered.required ? field.name : `${field.name}?`;
+        const propertyType = rendered.required ? rendered.type : `${rendered.type} | null`;
+        return `  ${propertyName}: ${propertyType};`;
+      });
+      return [`export interface ${definition.name} {`, ...fields, '}', ''];
+    })
+    .slice(0, -1);
 }
 
 function renderZodDefinitions(definitions, context) {
-  return definitions.flatMap((definition) => {
-    const fields = definition.fields.map((field) => {
-      const rendered = renderZodField(field.type, context);
-      const propertyType = rendered.required
-        ? rendered.expr
-        : `${rendered.expr}.nullable().optional()`;
-      return `  ${field.name}: ${propertyType}`;
-    });
-    return [
-      `export const ${definition.name}Schema = z.object({`,
-      fields.join(',\n'),
-      '});',
-      `export type ${definition.name} = z.infer<typeof ${definition.name}Schema>;`,
-      ''
-    ];
-  }).slice(0, -1);
+  return definitions
+    .flatMap((definition) => {
+      const fields = definition.fields.map((field) => {
+        const rendered = renderZodField(field.type, context);
+        const propertyType = rendered.required
+          ? rendered.expr
+          : `${rendered.expr}.nullable().optional()`;
+        return `  ${field.name}: ${propertyType}`;
+      });
+      return [
+        `export const ${definition.name}Schema = z.object({`,
+        fields.join(',\n'),
+        '});',
+        `export type ${definition.name} = z.infer<typeof ${definition.name}Schema>;`,
+        ''
+      ];
+    })
+    .slice(0, -1);
 }
 
 function renderTypeScriptOperationDefinitions(operations) {
@@ -248,9 +249,7 @@ function renderTypeScriptOperationDefinition(metadata, definition) {
     for (const argument of definition.args) {
       const rendered = renderTypeScriptField(argument.type);
       const propertyName = rendered.required ? argument.name : `${argument.name}?`;
-      const propertyType = rendered.required
-        ? rendered.type
-        : `${rendered.type} | null`;
+      const propertyType = rendered.required ? rendered.type : `${rendered.type} | null`;
       lines.push(`  ${propertyName}: ${propertyType};`);
     }
     lines.push('}');
@@ -277,8 +276,12 @@ function renderTypeScriptOperationMap(metadata, definitions) {
   }
 
   lines.push('}');
-  lines.push(`export type ${metadata.rootTypeName}OperationName = keyof ${metadata.interfaceName};`);
-  lines.push(`export type ${metadata.rootTypeName}Operation = ${metadata.interfaceName}[${metadata.rootTypeName}OperationName];`);
+  lines.push(
+    `export type ${metadata.rootTypeName}OperationName = keyof ${metadata.interfaceName};`
+  );
+  lines.push(
+    `export type ${metadata.rootTypeName}Operation = ${metadata.interfaceName}[${metadata.rootTypeName}OperationName];`
+  );
   return lines;
 }
 

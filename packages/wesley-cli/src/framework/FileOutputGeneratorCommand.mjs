@@ -16,8 +16,10 @@ export class FileOutputGeneratorCommand extends GeneratorCommand {
     const generatorCmd = super.configureCommander(cmd);
 
     // Add file output option
-    return generatorCmd
-      .option('--out-file <file>', 'Output file (prints to stdout if not specified)');
+    return generatorCmd.option(
+      '--out-file <file>',
+      'Output file (prints to stdout if not specified)'
+    );
   }
 
   async resolveOutFile({ options }) {

@@ -4,12 +4,12 @@ import { compilePipeline } from '../../src/pipeline/pipelineMap.mjs';
 
 test('Pipeline Map: compiles a simple products query end-to-end', () => {
   const sdl = /* GraphQL */ `
-      type Product @table {
-        id: ID! @primaryKey
-        name: String!
-        slug: String!
-      }
-    `;
+    type Product @table {
+      id: ID! @primaryKey
+      name: String!
+      slug: String!
+    }
+  `;
 
   const op = {
     name: 'products_by_name',

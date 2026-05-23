@@ -8,9 +8,9 @@ graph TD
     DB -->|Prisma/TypeORM| TS[TypeScript Types]
     DB -->|Manual Sync| Zod[Zod Schemas]
     DB -->|OpenAPI Gen| JSON[JSON Schema]
-    
+
     style DB fill:#f66,stroke:#333,stroke-width:2px
-    
+
     DB -.->|"⚠️ Manual Migrations"| DB2[Updated Database]
     DB2 -.->|"😱 Update Everything!"| GraphQL
     DB2 -.->|"😱 Update Everything!"| TS
@@ -35,9 +35,9 @@ graph TD
     GraphQL -->|Wesley| Zod[Zod Schemas]
     GraphQL -->|Wesley| RLS[RLS Policies]
     GraphQL -->|Wesley| Realtime[Realtime Config]
-    
+
     style GraphQL fill:#9f9,stroke:#333,stroke-width:4px
-    
+
     GraphQL -->|"✨ Change Once"| GraphQL2[Updated Schema]
     GraphQL2 -->|"🎉 Auto Generate"| Everything[Everything Else]
 ```
@@ -57,22 +57,22 @@ graph TD
 ```mermaid
 timeline
     title Database Development Evolution
-    
+
     1970s : SQL Invented
             : Relational model dominates
-    
+
     1990s : ORMs Emerge
             : Objects mapped to tables
-    
+
     2000s : Schema Migrations
             : Rails/Django patterns
-    
+
     2012  : GraphQL Created
             : But used as API layer only
-    
+
     2015  : GraphQL Adoption
             : Still generated FROM databases
-    
+
     2024  : Wesley Revolution
             : GraphQL BECOMES the database schema
 ```
@@ -90,35 +90,36 @@ Everyone assumed the database HAD to come first because:
 
 ### Why GraphQL is Superior as Source of Truth
 
-| Aspect | SQL | GraphQL |
-|--------|-----|---------|
-| **Relationships** | Foreign keys, joins | Natural graph expressions |
-| **Types** | Limited, DB-specific | Rich, extensible |
-| **Constraints** | Verbose, scattered | Directives, co-located |
-| **Readability** | Table-centric | Domain-centric |
-| **Evolution** | Manual migrations | Automatic diffing |
-| **Validation** | Triggers, constraints | Built-in type system |
+| Aspect            | SQL                   | GraphQL                   |
+| ----------------- | --------------------- | ------------------------- |
+| **Relationships** | Foreign keys, joins   | Natural graph expressions |
+| **Types**         | Limited, DB-specific  | Rich, extensible          |
+| **Constraints**   | Verbose, scattered    | Directives, co-located    |
+| **Readability**   | Table-centric         | Domain-centric            |
+| **Evolution**     | Manual migrations     | Automatic diffing         |
+| **Validation**    | Triggers, constraints | Built-in type system      |
 
 ### The Directive System
 
 Wesley extends GraphQL with semantic directives that map to database concepts:
 
 ```graphql
-type User @table {                          # This is a database table
-  id: ID! @primaryKey                       # Primary key constraint
-          @default(expr: "gen_random_uuid()") # SQL default expression
-  
-  email: String! @unique                    # Unique constraint
-                 @index                      # Create index
-  
-  profile: Profile! @hasOne                 # Virtual relation (no FK)
-  posts: [Post!]! @hasMany                  # Virtual relation (no FK)
-  
+type User
+  @table { # This is a database table
+  id: ID!
+    @primaryKey # Primary key constraint
+    @default(expr: "gen_random_uuid()") # SQL default expression
+  email: String!
+    @unique # Unique constraint
+    @index # Create index
+  profile: Profile! @hasOne # Virtual relation (no FK)
+  posts: [Post!]! @hasMany # Virtual relation (no FK)
   created_at: DateTime! @default(expr: "now()") # Timestamp default
 }
 ```
 
 These directives are:
+
 - **Declarative**: Say what, not how
 - **Co-located**: Constraints live with fields
 - **Composable**: Combine multiple directives
@@ -129,6 +130,7 @@ These directives are:
 ### From Imperative to Declarative
 
 **Traditional (Imperative)**:
+
 ```sql
 CREATE TABLE users (id UUID PRIMARY KEY DEFAULT gen_random_uuid());
 ALTER TABLE users ADD COLUMN email TEXT NOT NULL;
@@ -139,6 +141,7 @@ CREATE UNIQUE INDEX ON users(email);
 ```
 
 **Wesley (Declarative)**:
+
 ```graphql
 type User @table {
   id: ID! @primaryKey @default(expr: "gen_random_uuid()")
@@ -156,12 +159,12 @@ graph TB
         ORM --> API[API Layer]
         API --> FE[Frontend Types]
     end
-    
+
     subgraph "Wesley: Top-Down"
         Mental[Mental Model] --> GQL[GraphQL Schema]
         GQL --> ALL[All Implementations]
     end
-    
+
     style Mental fill:#9f9,stroke:#333,stroke-width:2px
     style SQL1 fill:#f99,stroke:#333,stroke-width:2px
 ```
@@ -201,7 +204,7 @@ CREATE TABLE users (
   email TEXT NOT NULL UNIQUE
 );
 
--- 2. migrations/002_create_posts.sql  
+-- 2. migrations/002_create_posts.sql
 CREATE TABLE posts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id),
@@ -271,13 +274,13 @@ graph LR
     Think[Think] --> Design[Design in GraphQL]
     Design --> Wesley[Wesley]
     Wesley --> Everything[Everything Else]
-    
+
     Everything --> DB[(PostgreSQL)]
     Everything --> Cache[(Redis)]
     Everything --> Search[(Elasticsearch)]
     Everything --> Queue[(RabbitMQ)]
     Everything --> Stream[(Kafka)]
-    
+
     style Think fill:#ff9,stroke:#333,stroke-width:2px
     style Wesley fill:#9f9,stroke:#333,stroke-width:4px
 ```
@@ -286,7 +289,7 @@ Wesley isn't just about SQL generation. It's about making GraphQL the universal 
 
 ## Conclusion: The Inversion
 
-The revolution isn't the code. It's the inversion of thinking. 
+The revolution isn't the code. It's the inversion of thinking.
 
 Everyone assumes SQL must come first because "that's where the data lives." But data doesn't live in SQL—it lives in our mental models. GraphQL expresses those models better than SQL ever could.
 

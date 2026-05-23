@@ -45,11 +45,13 @@ export function replayRuntimeRun(events, seed = {}) {
       continue;
     }
 
-    const streamId = typeof event.streamId === 'string' && event.streamId.trim() ? event.streamId : null;
+    const streamId =
+      typeof event.streamId === 'string' && event.streamId.trim() ? event.streamId : null;
     const runId = typeof event.runId === 'string' && event.runId.trim() ? event.runId : null;
-    const transmutation = typeof event.transmutation === 'string' && event.transmutation.trim()
-      ? event.transmutation
-      : null;
+    const transmutation =
+      typeof event.transmutation === 'string' && event.transmutation.trim()
+        ? event.transmutation
+        : null;
     const sequence = Number.isInteger(event.sequence) ? event.sequence : null;
 
     if (!expectedStreamId && streamId) expectedStreamId = streamId;
@@ -57,10 +59,20 @@ export function replayRuntimeRun(events, seed = {}) {
     if (!expectedTransmutation && transmutation) expectedTransmutation = transmutation;
 
     if (streamId && expectedStreamId && streamId !== expectedStreamId) {
-      pushReplayIssue(replay, 'STREAM_MISMATCH', `Event ${index} belongs to stream ${streamId}, expected ${expectedStreamId}.`, { index, sequence });
+      pushReplayIssue(
+        replay,
+        'STREAM_MISMATCH',
+        `Event ${index} belongs to stream ${streamId}, expected ${expectedStreamId}.`,
+        { index, sequence }
+      );
     }
     if (runId && expectedRunId && runId !== expectedRunId) {
-      pushReplayIssue(replay, 'RUN_MISMATCH', `Event ${index} belongs to runId ${runId}, expected ${expectedRunId}.`, { index, sequence });
+      pushReplayIssue(
+        replay,
+        'RUN_MISMATCH',
+        `Event ${index} belongs to runId ${runId}, expected ${expectedRunId}.`,
+        { index, sequence }
+      );
     }
     if (transmutation && expectedTransmutation && transmutation !== expectedTransmutation) {
       pushReplayIssue(
@@ -72,7 +84,12 @@ export function replayRuntimeRun(events, seed = {}) {
     }
 
     if (sequence == null) {
-      pushReplayIssue(replay, 'SEQUENCE_MISSING', `Event ${index} is missing an integer sequence.`, { index });
+      pushReplayIssue(
+        replay,
+        'SEQUENCE_MISSING',
+        `Event ${index} is missing an integer sequence.`,
+        { index }
+      );
     } else {
       if (replay.firstSequence == null) replay.firstSequence = sequence;
       replay.lastSequence = sequence;
@@ -146,7 +163,11 @@ function validateSnapshotSeed(snapshot, seed, replay) {
       `Snapshot belongs to runId ${snapshot.runId}, expected ${expectedRunId}.`
     );
   }
-  if (expectedTransmutation && snapshot.transmutation && snapshot.transmutation !== expectedTransmutation) {
+  if (
+    expectedTransmutation &&
+    snapshot.transmutation &&
+    snapshot.transmutation !== expectedTransmutation
+  ) {
     pushReplayIssue(
       replay,
       'SNAPSHOT_TRANSMUTATION_MISMATCH',

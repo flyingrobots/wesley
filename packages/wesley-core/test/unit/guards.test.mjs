@@ -11,17 +11,11 @@ test('mustFind: returns the matching element', () => {
 });
 
 test('mustFind: throws with the provided message when no element matches', () => {
-  assert.throws(
-    () => mustFind([1, 2, 3], (n) => n > 10, 'too small'),
-    { message: 'too small' }
-  );
+  assert.throws(() => mustFind([1, 2, 3], (n) => n > 10, 'too small'), { message: 'too small' });
 });
 
 test('mustFind: throws an Error instance', () => {
-  assert.throws(
-    () => mustFind([], () => true, 'empty'),
-    Error
-  );
+  assert.throws(() => mustFind([], () => true, 'empty'), Error);
 });
 
 test('mustFind: returns the first match when multiple elements satisfy the predicate', () => {
@@ -31,7 +25,10 @@ test('mustFind: returns the first match when multiple elements satisfy the predi
 });
 
 test('mustFind: works with primitive arrays', () => {
-  assert.equal(mustFind([10, 20, 30], (n) => n > 15, 'miss'), 20);
+  assert.equal(
+    mustFind([10, 20, 30], (n) => n > 15, 'miss'),
+    20
+  );
 });
 
 // ─── mustMatch ──────────────────────────────────────────────────────
@@ -42,17 +39,11 @@ test('mustMatch: returns the match array on success', () => {
 });
 
 test('mustMatch: throws with the provided message when the pattern does not match', () => {
-  assert.throws(
-    () => mustMatch('hello', /\d+/, 'expected digits'),
-    { message: 'expected digits' }
-  );
+  assert.throws(() => mustMatch('hello', /\d+/, 'expected digits'), { message: 'expected digits' });
 });
 
 test('mustMatch: throws an Error instance', () => {
-  assert.throws(
-    () => mustMatch('', /x/, 'miss'),
-    Error
-  );
+  assert.throws(() => mustMatch('', /x/, 'miss'), Error);
 });
 
 test('mustMatch: returns full match info including index', () => {
@@ -67,11 +58,7 @@ test('mustMatch: works with string patterns', () => {
 });
 
 test('mustMatch: supports capture groups', () => {
-  const result = mustMatch(
-    'col_name INTEGER NOT NULL',
-    /^(\w+)\s+(\w+)/,
-    'bad column def'
-  );
+  const result = mustMatch('col_name INTEGER NOT NULL', /^(\w+)\s+(\w+)/, 'bad column def');
   assert.equal(result[1], 'col_name');
   assert.equal(result[2], 'INTEGER');
 });

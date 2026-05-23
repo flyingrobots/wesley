@@ -2,7 +2,7 @@ name: SHIPME Certificate
 
 on:
   push:
-    branches: [ main, dev, 'feat/*', 'fix/*', 'milestone/*' ]
+    branches: [main, dev, 'feat/*', 'fix/*', 'milestone/*']
     paths:
       - 'packages/**'
       - '.github/**'
@@ -146,7 +146,7 @@ jobs:
 
             core.setOutput('ready', 'false');
             core.setFailed(`HOLMES suite comment for ${context.sha} did not appear within the 2 hour coordination window.`);
-      
+
       - name: Create/Update PR Comment
         if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]' && steps.holmes_comment_wait.outputs.ready == 'true'
         continue-on-error: true

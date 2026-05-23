@@ -1,0 +1,55 @@
+scalar DateTime @specifiedBy(url: "https://example.com/datetime")
+
+extend scalar DateTime @wes_critical
+
+interface Node {
+  id: ID!
+}
+
+interface Named {
+  name: String!
+}
+
+interface Timestamped implements Node {
+  id: ID!
+  created_at: DateTime!
+}
+
+extend interface Timestamped {
+  updated_at: DateTime
+}
+
+type User implements Node & Named @wes_table(name: "users") {
+  id: ID! @wes_pk
+  name: String!
+}
+
+extend type User implements Timestamped {
+  created_at: DateTime! @wes_default(value: "now()")
+  updated_at: DateTime
+}
+
+type Team implements Node & Named @wes_table(name: "teams") {
+  id: ID! @wes_pk
+  name: String!
+}
+
+union SearchResult = User
+
+extend union SearchResult = Team
+
+enum Status {
+  ACTIVE
+}
+
+extend enum Status {
+  ARCHIVED
+}
+
+input UserFilter {
+  ids: [ID!]!
+}
+
+extend input UserFilter {
+  status: Status = ACTIVE
+}

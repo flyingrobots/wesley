@@ -46,7 +46,7 @@ export class MemoryEventStore extends EventStorePort {
   }
 
   readStreamSince(streamId, afterSequence = 0) {
-    return this.readStream(streamId).filter(event => {
+    return this.readStream(streamId).filter((event) => {
       return Number.isInteger(event?.sequence) ? event.sequence > afterSequence : true;
     });
   }
@@ -76,7 +76,7 @@ function findExistingByIdempotencyKey(stream, idempotencyKey) {
   if (typeof idempotencyKey !== 'string' || !idempotencyKey.trim()) {
     return null;
   }
-  return stream.find(entry => entry?.idempotencyKey === idempotencyKey) || null;
+  return stream.find((entry) => entry?.idempotencyKey === idempotencyKey) || null;
 }
 
 function isTerminalRuntimeEvent(type) {

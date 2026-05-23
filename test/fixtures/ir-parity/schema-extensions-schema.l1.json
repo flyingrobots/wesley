@@ -1,0 +1,222 @@
+{
+  "version": "1.0.0",
+  "types": [
+    {
+      "name": "DateTime",
+      "kind": "SCALAR",
+      "directives": {
+        "specifiedBy": {
+          "url": "https://example.com/datetime"
+        },
+        "wes_critical": true
+      }
+    },
+    {
+      "name": "Named",
+      "kind": "INTERFACE",
+      "directives": {},
+      "fields": [
+        {
+          "name": "name",
+          "type": {
+            "base": "String",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {}
+        }
+      ]
+    },
+    {
+      "name": "Node",
+      "kind": "INTERFACE",
+      "directives": {},
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "base": "ID",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {}
+        }
+      ]
+    },
+    {
+      "name": "SearchResult",
+      "kind": "UNION",
+      "directives": {},
+      "unionMembers": [
+        "User",
+        "Team"
+      ]
+    },
+    {
+      "name": "Status",
+      "kind": "ENUM",
+      "directives": {},
+      "enumValues": [
+        "ACTIVE",
+        "ARCHIVED"
+      ]
+    },
+    {
+      "name": "Team",
+      "kind": "OBJECT",
+      "directives": {
+        "wes_table": {
+          "name": "teams"
+        }
+      },
+      "implements": [
+        "Node",
+        "Named"
+      ],
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "base": "ID",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {
+            "wes_pk": true
+          }
+        },
+        {
+          "name": "name",
+          "type": {
+            "base": "String",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {}
+        }
+      ]
+    },
+    {
+      "name": "Timestamped",
+      "kind": "INTERFACE",
+      "directives": {},
+      "implements": [
+        "Node"
+      ],
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "base": "ID",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {}
+        },
+        {
+          "name": "created_at",
+          "type": {
+            "base": "DateTime",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {}
+        },
+        {
+          "name": "updated_at",
+          "type": {
+            "base": "DateTime",
+            "nullable": true,
+            "isList": false
+          },
+          "directives": {}
+        }
+      ]
+    },
+    {
+      "name": "User",
+      "kind": "OBJECT",
+      "directives": {
+        "wes_table": {
+          "name": "users"
+        }
+      },
+      "implements": [
+        "Node",
+        "Named",
+        "Timestamped"
+      ],
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "base": "ID",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {
+            "wes_pk": true
+          }
+        },
+        {
+          "name": "name",
+          "type": {
+            "base": "String",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {}
+        },
+        {
+          "name": "created_at",
+          "type": {
+            "base": "DateTime",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {
+            "wes_default": {
+              "value": "now()"
+            }
+          }
+        },
+        {
+          "name": "updated_at",
+          "type": {
+            "base": "DateTime",
+            "nullable": true,
+            "isList": false
+          },
+          "directives": {}
+        }
+      ]
+    },
+    {
+      "name": "UserFilter",
+      "kind": "INPUT_OBJECT",
+      "directives": {},
+      "fields": [
+        {
+          "name": "ids",
+          "type": {
+            "base": "ID",
+            "nullable": false,
+            "isList": true,
+            "listItemNullable": false
+          },
+          "directives": {}
+        },
+        {
+          "name": "status",
+          "type": {
+            "base": "Status",
+            "nullable": true,
+            "isList": false
+          },
+          "defaultValue": "ACTIVE",
+          "directives": {}
+        }
+      ]
+    }
+  ]
+}

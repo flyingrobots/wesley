@@ -22,6 +22,7 @@ Source: ROADMAP_2.md backlog
 Track the post-GA roadmap item for digest-tree certificates.
 
 Done when:
+
 - certificates can be verified via digest-tree structure
 - Watson or other verifiers can validate cheaper than the naive path
 - compatibility/migration behavior is documented

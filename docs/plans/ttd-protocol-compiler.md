@@ -63,77 +63,77 @@ directive @noUnorderedMap on OBJECT | FIELD_DEFINITION
 directive @keyBytes on FIELD_DEFINITION
 ```
 
-| Directive | Purpose |
-|-----------|---------|
-| `@canonicalCbor` | Type uses canonical CBOR encoding (deterministic byte order) |
-| `@noFloat` | Forbids IEEE floats (use `@fixed` decimals instead) |
-| `@fixed(kind, scale)` | Fixed-point decimal with specified precision |
-| `@sorted(by)` | Array field must be sorted by specified keys |
-| `@noUnorderedMap` | Forbids HashMap-style types (use sorted arrays) |
-| `@keyBytes` | Field is raw bytes used as lookup key |
+| Directive             | Purpose                                                      |
+| --------------------- | ------------------------------------------------------------ |
+| `@canonicalCbor`      | Type uses canonical CBOR encoding (deterministic byte order) |
+| `@noFloat`            | Forbids IEEE floats (use `@fixed` decimals instead)          |
+| `@fixed(kind, scale)` | Fixed-point decimal with specified precision                 |
+| `@sorted(by)`         | Array field must be sorted by specified keys                 |
+| `@noUnorderedMap`     | Forbids HashMap-style types (use sorted arrays)              |
+| `@keyBytes`           | Field is raw bytes used as lookup key                        |
 
 ### 1.2 Channel Registry Directives
 
 ```graphql
 # ─── Channel Registry ─────────────────────────────────────────────
 enum ChannelPolicy {
-    LOG
-    STRICT_SINGLE
-    REDUCE
+  LOG
+  STRICT_SINGLE
+  REDUCE
 }
 enum ReducerKind {
-    LAST
-    FIRST
-    CONCAT
-    SUM
-    MAX
-    MIN
-    CANONICAL_MERGE
+  LAST
+  FIRST
+  CONCAT
+  SUM
+  MAX
+  MIN
+  CANONICAL_MERGE
 }
 
 directive @channel(
-    id: ChannelId!
-    version: U16!
-    policy: ChannelPolicy!
-    reducer: ReducerKind
-    doc: String
+  id: ChannelId!
+  version: U16!
+  policy: ChannelPolicy!
+  reducer: ReducerKind
+  doc: String
 ) on OBJECT
 
 directive @emitKey(type: String!) on OBJECT
 directive @entryType(name: String!) on OBJECT
 ```
 
-| Directive | Purpose |
-|-----------|---------|
-| `@channel` | Marks type as a channel payload with policy and optional reducer |
-| `@emitKey` | Specifies the key type for keyed channels |
-| `@entryType` | Names the entry type for collection channels |
+| Directive    | Purpose                                                          |
+| ------------ | ---------------------------------------------------------------- |
+| `@channel`   | Marks type as a channel payload with policy and optional reducer |
+| `@emitKey`   | Specifies the key type for keyed channels                        |
+| `@entryType` | Names the entry type for collection channels                     |
 
 ### 1.3 Op Registry Directives
 
 ```graphql
 # ─── Op Registry ──────────────────────────────────────────────────
 enum OpKind {
-    COMMAND
-    QUERY
-    EVENT
+  COMMAND
+  QUERY
+  EVENT
 }
 
 directive @op(
-    opcode: String!
-    version: U16!
-    kind: OpKind!
-    response: String
-    doc: String
+  opcode: String!
+  version: U16!
+  kind: OpKind!
+  response: String
+  doc: String
 ) on OBJECT
 
 directive @opError(code: String!, severity: String = "ERROR") on OBJECT
 ```
 
-| Directive | Purpose |
-|-----------|---------|
-| `@op` | Marks type as an operation with opcode, version, and kind |
-| `@opError` | Marks type as an error response with error code |
+| Directive  | Purpose                                                   |
+| ---------- | --------------------------------------------------------- |
+| `@op`      | Marks type as an operation with opcode, version, and kind |
+| `@opError` | Marks type as an error response with error code           |
 
 ### 1.4 Rule Contract Directives
 
@@ -146,9 +146,9 @@ directive @footprintRead(kind: String!, argType: String) on OBJECT
 directive @footprintWrite(kind: String!, argType: String) on OBJECT
 
 enum EmitCount {
-    EXACTLY_ONE
-    AT_LEAST_ONE
-    ZERO_OR_MORE
+  EXACTLY_ONE
+  AT_LEAST_ONE
+  ZERO_OR_MORE
 }
 directive @mustEmit(channel: ChannelId!, count: EmitCount!) on OBJECT
 directive @mayEmitOnly(channels: [ChannelId!]!) on OBJECT
@@ -156,40 +156,40 @@ directive @ruleDeterminism(kind: String!, detail: String) on OBJECT
 directive @noSideEffects(kinds: [String!]!) on OBJECT
 ```
 
-| Directive | Purpose |
-|-----------|---------|
-| `@rule` | Marks type as a rule contract definition |
-| `@triggerOp` | Rule fires when this op executes (phase: pre/post) |
-| `@triggerEvent` | Rule fires on this event kind |
-| `@footprintRead` | Rule declares read access to this scope kind |
-| `@footprintWrite` | Rule declares write access to this scope kind |
-| `@mustEmit` | Rule MUST emit to this channel (with cardinality) |
-| `@mayEmitOnly` | Rule may ONLY emit to these channels |
-| `@ruleDeterminism` | Documents determinism guarantees |
-| `@noSideEffects` | Declares forbidden side effects |
+| Directive          | Purpose                                            |
+| ------------------ | -------------------------------------------------- |
+| `@rule`            | Marks type as a rule contract definition           |
+| `@triggerOp`       | Rule fires when this op executes (phase: pre/post) |
+| `@triggerEvent`    | Rule fires on this event kind                      |
+| `@footprintRead`   | Rule declares read access to this scope kind       |
+| `@footprintWrite`  | Rule declares write access to this scope kind      |
+| `@mustEmit`        | Rule MUST emit to this channel (with cardinality)  |
+| `@mayEmitOnly`     | Rule may ONLY emit to these channels               |
+| `@ruleDeterminism` | Documents determinism guarantees                   |
+| `@noSideEffects`   | Declares forbidden side effects                    |
 
 ### 1.5 Global Invariant Directives
 
 ```graphql
 # ─── Global Invariants ────────────────────────────────────────────
 enum InvariantSeverity {
-    INFO
-    WARN
-    ERROR
-    FATAL
+  INFO
+  WARN
+  ERROR
+  FATAL
 }
 
 directive @invariant(
-    id: String!
-    severity: InvariantSeverity!
-    kind: String! # "TICK" | "EVENTUAL" | "SAFETY"
-    expr: String!
-    doc: String
+  id: String!
+  severity: InvariantSeverity!
+  kind: String! # "TICK" | "EVENTUAL" | "SAFETY"
+  expr: String!
+  doc: String
 ) on SCHEMA
 ```
 
-| Directive | Purpose |
-|-----------|---------|
+| Directive    | Purpose                                                      |
+| ------------ | ------------------------------------------------------------ |
 | `@invariant` | Schema-level invariant with expression and enforcement level |
 
 ---
@@ -245,35 +245,35 @@ type RuleContract_MovePlayer
 
 ### 3.1 Type/Codegen Outputs (what devs use)
 
-| Output | Location | Contents |
-|--------|----------|----------|
-| Rust types | `<out>/rust/types.rs` | Structs/enums for ops/channels |
-| CBOR codecs | `<out>/rust/cbor.rs` | Canonical encode/decode |
-| Rust registries | `<out>/rust/registry.rs` | Op/channel lookup tables |
-| Hash helpers | `<out>/rust/hash.rs` | Digest functions |
-| TS types | `<out>/ts/types.ts` | TypeScript types |
-| Zod validators | `<out>/ts/zod.ts` | Runtime validation |
-| TS registries | `<out>/ts/registry.ts` | Op/channel tables |
+| Output          | Location                 | Contents                       |
+| --------------- | ------------------------ | ------------------------------ |
+| Rust types      | `<out>/rust/types.rs`    | Structs/enums for ops/channels |
+| CBOR codecs     | `<out>/rust/cbor.rs`     | Canonical encode/decode        |
+| Rust registries | `<out>/rust/registry.rs` | Op/channel lookup tables       |
+| Hash helpers    | `<out>/rust/hash.rs`     | Digest functions               |
+| TS types        | `<out>/ts/types.ts`      | TypeScript types               |
+| Zod validators  | `<out>/ts/zod.ts`        | Runtime validation             |
+| TS registries   | `<out>/ts/registry.ts`   | Op/channel tables              |
 
 ### 3.2 Manifest/Enforcement Outputs (what keeps you honest)
 
-| Output | Location | Contents |
-|--------|----------|----------|
-| Schema manifest | `<out>/manifest/schema.json` | schema_hash, version, channels, ops, rules |
-| Channel registry | `<out>/manifest/channels.json` | IDs, policies, reducers |
-| Op registry | `<out>/manifest/ops.json` | Opcodes, versions, types |
-| Rule contracts | `<out>/manifest/rules.json` | Triggers, footprints, emissions |
-| Invariants | `<out>/manifest/invariants.json` | Compiled invariant programs |
-| Footprint specs | `<out>/manifest/footprints.json` | Declared read/write sets |
-| Emission contracts | `<out>/manifest/emissions.json` | mustEmit/mayEmitOnly tables |
+| Output             | Location                         | Contents                                   |
+| ------------------ | -------------------------------- | ------------------------------------------ |
+| Schema manifest    | `<out>/manifest/schema.json`     | schema_hash, version, channels, ops, rules |
+| Channel registry   | `<out>/manifest/channels.json`   | IDs, policies, reducers                    |
+| Op registry        | `<out>/manifest/ops.json`        | Opcodes, versions, types                   |
+| Rule contracts     | `<out>/manifest/rules.json`      | Triggers, footprints, emissions            |
+| Invariants         | `<out>/manifest/invariants.json` | Compiled invariant programs                |
+| Footprint specs    | `<out>/manifest/footprints.json` | Declared read/write sets                   |
+| Emission contracts | `<out>/manifest/emissions.json`  | mustEmit/mayEmitOnly tables                |
 
 ### 3.3 Docs & Golden Tests
 
-| Output | Location | Contents |
-|--------|----------|----------|
-| Channel docs | `<out>/docs/channels.md` | Auto-generated |
-| Op docs | `<out>/docs/ops.md` | Auto-generated |
-| Golden tests | `<out>/fixtures/*.cbor` | Canonical test vectors |
+| Output       | Location                 | Contents               |
+| ------------ | ------------------------ | ---------------------- |
+| Channel docs | `<out>/docs/channels.md` | Auto-generated         |
+| Op docs      | `<out>/docs/ops.md`      | Auto-generated         |
+| Golden tests | `<out>/fixtures/*.cbor`  | Canonical test vectors |
 
 ---
 
@@ -411,12 +411,13 @@ arg        = STRING | NUMBER | IDENT | "within" NUMBER ;
 
 TTD directives coexist with existing `@wes_*` directives:
 
-| Namespace | Purpose | Example |
-|-----------|---------|---------|
-| `@wes_*` | Database DDL | `@wes_table`, `@wes_pk` |
+| Namespace               | Purpose      | Example                          |
+| ----------------------- | ------------ | -------------------------------- |
+| `@wes_*`                | Database DDL | `@wes_table`, `@wes_pk`          |
 | `@channel`, `@op`, etc. | TTD Protocol | `@channel(id: "ttd.state", ...)` |
 
 The compiler detects which mode to use based on directive presence:
+
 - If `@wes_table` present → existing DDL pipeline
 - If `@channel` or `@op` present → TTD protocol pipeline
 - Both can coexist in the same schema (different types)
@@ -443,6 +444,7 @@ cat schema.graphql | wesley compile-ttd --schema - --out-dir generated/
 ```
 
 **Options:**
+
 - `-s, --schema <path>` - Schema file (default: schema.graphql, use "-" for stdin)
 - `-o, --out-dir <dir>` - Output directory (default: ttd-out)
 - `-t, --target <targets>` - Comma-separated targets: manifest, typescript, rust
@@ -460,11 +462,11 @@ import { compileTtdProtocol } from './wesley/ttd/index.mjs';
 const result = await compileTtdProtocol({
   sdl: schemaContent,
   targets: ['manifest', 'typescript'],
-  deps: { clock, crypto }, // optional DI
+  deps: { clock, crypto } // optional DI
 });
 
 console.log(result.schemaHash); // "23dc0e310ad5658b89..."
-console.log(result.files);      // [{ path: 'manifest/schema.json', content: '...' }, ...]
+console.log(result.files); // [{ path: 'manifest/schema.json', content: '...' }, ...]
 console.log(result.validation); // { valid: true, errors: [], warnings: [...] }
 ```
 
@@ -536,9 +538,9 @@ console.log(result.validation); // { valid: true, errors: [], warnings: [...] }
 
 ### 8.1 New Dependencies
 
-| Package | Purpose |
-|---------|---------|
-| (TBD) | CBOR reference implementation for golden tests |
+| Package | Purpose                                        |
+| ------- | ---------------------------------------------- |
+| (TBD)   | CBOR reference implementation for golden tests |
 
 ### 8.2 Existing Wesley Dependencies (reused)
 
@@ -560,18 +562,18 @@ console.log(result.validation); // { valid: true, errors: [], warnings: [...] }
 
 ## Appendix A: Scalar Type Mapping
 
-| GraphQL Scalar | Rust Type | TypeScript Type | CBOR Major Type |
-|----------------|-----------|-----------------|-----------------|
-| `ID` | `[u8; 32]` | `Uint8Array` | 2 (bytes) |
-| `String` | `String` | `string` | 3 (text) |
-| `Int` | `i32` | `number` | 0/1 (int) |
-| `U16` | `u16` | `number` | 0 (uint) |
-| `U32` | `u32` | `number` | 0 (uint) |
-| `I32` | `i32` | `number` | 0/1 (int) |
-| `Boolean` | `bool` | `boolean` | 7 (simple) |
-| `Bytes` | `Vec<u8>` | `Uint8Array` | 2 (bytes) |
-| `Hash` | `[u8; 32]` | `Uint8Array` | 2 (bytes) |
-| `Tick` | `u64` | `bigint` | 0 (uint) |
+| GraphQL Scalar | Rust Type  | TypeScript Type | CBOR Major Type |
+| -------------- | ---------- | --------------- | --------------- |
+| `ID`           | `[u8; 32]` | `Uint8Array`    | 2 (bytes)       |
+| `String`       | `String`   | `string`        | 3 (text)        |
+| `Int`          | `i32`      | `number`        | 0/1 (int)       |
+| `U16`          | `u16`      | `number`        | 0 (uint)        |
+| `U32`          | `u32`      | `number`        | 0 (uint)        |
+| `I32`          | `i32`      | `number`        | 0/1 (int)       |
+| `Boolean`      | `bool`     | `boolean`       | 7 (simple)      |
+| `Bytes`        | `Vec<u8>`  | `Uint8Array`    | 2 (bytes)       |
+| `Hash`         | `[u8; 32]` | `Uint8Array`    | 2 (bytes)       |
+| `Tick`         | `u64`      | `bigint`        | 0 (uint)        |
 
 ---
 

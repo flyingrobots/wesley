@@ -1,0 +1,21 @@
+type Organization @wes_table(name: "organizations") @wes_rls {
+  id: ID! @wes_pk
+  slug: String! @wes_unique @wes_index(name: "organizations_slug_idx", using: "btree")
+  name: String! @wes_default(value: "unnamed")
+  created_at: String! @wes_default(value: "now()")
+}
+
+type Account @wes_table(name: "accounts") @wes_tenant(by: "org_id") @wes_rls(preset: "tenant", roles: ["member", "admin"], options: {mode: "strict", audit: true, limit: 5}) {
+  id: ID! @wes_pk
+  org_id: ID! @wes_fk(ref: "organizations.id") @wes_index
+  email: String! @wes_unique
+  created_at: String! @wes_default(value: "now()")
+  active: Boolean! @wes_default(value: "true")
+}
+
+type AccountEvent @wes_table(name: "account_events") @wes_tenant(by: "account_id") @wes_rls {
+  id: ID! @wes_pk
+  account_id: ID! @wes_fk(ref: "accounts.id") @wes_index(name: "account_events_account_idx")
+  kind: String! @wes_default(value: "created")
+  payload: String
+}

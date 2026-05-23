@@ -1,4 +1,5 @@
 # Continuum Minimum Shared Contract Surface
+
 <!-- docs-truth: status=current owner=@flyingrobots -->
 
 This note names the finite Continuum-adjacent contract surface Wesley still
@@ -48,13 +49,16 @@ proves runtime, storage, or debugger semantics.
 ### 1. TTD Protocol Control Family
 
 Authored file:
+
 - `<warp-ttd-root>/schemas/warp-ttd-protocol.graphql`
 
 Current role:
+
 - host-neutral debugger and control-plane schema owned by `warp-ttd`; no
   generic public Wesley `compile-ttd` command remains
 
 Included nouns:
+
 - host identity and capability handshake
 - lane catalog, playback head, and frame-view surfaces
 - receipt summaries, effect emissions, delivery observations, and execution
@@ -62,6 +66,7 @@ Included nouns:
 - debugger command/query surfaces that remain host-neutral
 
 Former Wesley-local derived surfaces, now external-module responsibility:
+
 - manifest outputs such as `manifest/schema.json`,
   `manifest/contracts.json`, `manifest/manifest.json`, and
   `manifest/ttd-ir.json`
@@ -69,6 +74,7 @@ Former Wesley-local derived surfaces, now external-module responsibility:
   `typescript/registry.ts`, and `typescript/index.ts`
 
 Repo evidence:
+
 - `warp-ttd` owns `schemas/warp-ttd-protocol.graphql`
 - relocated Continuum-owned implementation at `continuum/wesley/ttd/`
 - `docs/design/wesley-extraction-map.md`
@@ -76,15 +82,18 @@ Repo evidence:
 ### 2. Echo CAS-Facing Payload Family
 
 Authored home:
+
 - Echo current runtime schema fragments under `<echo-root>/schemas/runtime/`
 - Echo runtime / ABI crates for surfaces that are not currently SDL-authored
 
 Current role:
+
 - Echo-owned CAS-facing payload and storage nouns no longer live in generic
   Wesley. The old Wesley-local SDL was retired rather than promoted to active
   Echo schema truth because Echo already has newer runtime and ABI surfaces.
 
 Included nouns:
+
 - `FieldPatch`
 - `WorldlineTickPatchV1`
 - `SnapshotManifest`
@@ -93,24 +102,29 @@ Included nouns:
 - `OpaqueRefV1`
 
 Former Wesley-local derived surfaces, now external-module responsibility:
+
 - Echo IR output
 - generated codec implementations and golden vectors used to pin layout and
   field ordering
 
 Repo evidence:
+
 - `echo` tracks `PLATFORM_reconcile-relocated-wesley-echo-schemas`
 - `docs/design/wesley-extraction-map.md`
 
 ### 3. Continuum Receipt Family
 
 Authored file:
+
 - `<continuum-root>/schemas/continuum-receipt-family.graphql`
 
 Current role:
+
 - canonical authored home for the first frozen Continuum proving family:
   `Receipt`, `DeliveryObservation`, `Capability`, and `Witness`
 
 Included nouns:
+
 - enums: `DeliveryOutcome`, `ExecutionMode`, `CapabilityScope`,
   `WitnessKind`
 - operational envelope: `Receipt`
@@ -121,6 +135,7 @@ Included nouns:
 - invariant carrier: `ContinuumReceiptFamilyInvariants`
 
 Former Wesley-local derived surfaces, now external-module responsibility:
+
 - manifest outputs such as `manifest/schema.json`,
   `manifest/contracts.json`, `manifest/manifest.json`, and
   `manifest/ttd-ir.json`
@@ -130,19 +145,23 @@ Former Wesley-local derived surfaces, now external-module responsibility:
   inspect output
 
 Repo evidence:
+
 - `docs/design/0003-continuum-contract-compiler/continuum-contract-compiler.md`
 - `docs/design/wesley-extraction-map.md`
 
 ### 4. Continuum Settlement Family
 
 Authored file:
+
 - `<continuum-root>/schemas/continuum-settlement-family.graphql`
 
 Current role:
+
 - canonical authored home for compare / plan / import / conflict settlement
   surfaces shared across Continuum consumers
 
 Repo evidence:
+
 - `continuum` owns `schemas/continuum-settlement-family.graphql`
 - `docs/design/wesley-extraction-map.md`
 
@@ -167,7 +186,7 @@ The following are not part of Wesley's current minimum shared contract surface:
   - `warp-ttd/schemas/` for the host-neutral debugger protocol
   - `echo/schemas/` for Echo-local runtime, CAS, and ABI families
   - `<continuum-root>/schemas/` for Continuum-owned shared families
-  and regenerate the derived surfaces.
+    and regenerate the derived surfaces.
 - If a neighboring repo needs the same noun family, consume generated artifacts
   or an explicit publication boundary from the Continuum-owned module/package
   instead of re-authoring the contract by hand.

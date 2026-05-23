@@ -110,10 +110,10 @@ Reuse existing hexagonal ports, create browser-specific adapters (e.g., in-memor
 
 ### QA Sign-off Matrix
 
-| Environment | Surface | Owner | Status | Notes |
-| --- | --- | --- | --- | --- |
-| Chrome Stable | Playground API | TBD | pending | |
-| Firefox Stable | Playground API | TBD | pending | |
+| Environment    | Surface        | Owner | Status  | Notes |
+| -------------- | -------------- | ----- | ------- | ----- |
+| Chrome Stable  | Playground API | TBD   | pending |       |
+| Firefox Stable | Playground API | TBD   | pending |       |
 
 ## Requirements
 

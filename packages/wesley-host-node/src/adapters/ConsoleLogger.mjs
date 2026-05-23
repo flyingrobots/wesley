@@ -11,10 +11,10 @@ export class ConsoleLogger {
 
     // Log levels in order of verbosity
     this.levels = {
-      'error': 0,
-      'warn': 1,
-      'info': 2,
-      'debug': 3
+      error: 0,
+      warn: 1,
+      info: 2,
+      debug: 3
     };
   }
 

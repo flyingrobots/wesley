@@ -213,7 +213,11 @@ export class FakeClock extends ClockPort {
         continue;
       }
 
-      if (!nextTimer || timer.at < nextTimer.at || (timer.at === nextTimer.at && timer.id < nextTimer.id)) {
+      if (
+        !nextTimer ||
+        timer.at < nextTimer.at ||
+        (timer.at === nextTimer.at && timer.id < nextTimer.id)
+      ) {
         nextTimer = timer;
       }
     }

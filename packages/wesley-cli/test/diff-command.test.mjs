@@ -30,8 +30,18 @@ function writeSchema(name, sdl) {
 
 /** Build a minimal context with captured stdout/stderr. */
 function makeCtx() {
-  const stdout = { chunks: [], write(s) { this.chunks.push(s); } };
-  const stderr = { chunks: [], write(s) { this.chunks.push(s); } };
+  const stdout = {
+    chunks: [],
+    write(s) {
+      this.chunks.push(s);
+    }
+  };
+  const stderr = {
+    chunks: [],
+    write(s) {
+      this.chunks.push(s);
+    }
+  };
   return {
     stdout,
     stderr,
@@ -46,14 +56,20 @@ function makeCtx() {
 test('diff: text output lists breaking and safe changes', async () => {
   setup();
   try {
-    const old = writeSchema('old.graphql', `
+    const old = writeSchema(
+      'old.graphql',
+      `
       type Query { getUser: UserProfile }
       type UserProfile { id: ID! name: String }
-    `);
-    const nu = writeSchema('new.graphql', `
+    `
+    );
+    const nu = writeSchema(
+      'new.graphql',
+      `
       type Query { listUsers: [UserListItem] }
       type UserListItem { id: ID! }
-    `);
+    `
+    );
     const ctx = makeCtx();
     const cmd = new DiffCommand(ctx);
     await cmd._run(old, nu, { format: 'text' });
@@ -71,10 +87,13 @@ test('diff: json output is valid SchemaDelta', async () => {
   setup();
   try {
     const old = writeSchema('old.graphql', 'type Query { hello: String }');
-    const nu = writeSchema('new.graphql', `
+    const nu = writeSchema(
+      'new.graphql',
+      `
       type Query { hello: String world: Int }
       type NewType { id: ID! }
-    `);
+    `
+    );
     const ctx = makeCtx();
     const cmd = new DiffCommand(ctx);
     await cmd._run(old, nu, { format: 'json' });
@@ -96,14 +115,20 @@ test('diff: json output is valid SchemaDelta', async () => {
 test('diff: summary format produces single line', async () => {
   setup();
   try {
-    const old = writeSchema('old.graphql', `
+    const old = writeSchema(
+      'old.graphql',
+      `
       type Query { getUser: User }
       type User { id: ID! name: String }
-    `);
-    const nu = writeSchema('new.graphql', `
+    `
+    );
+    const nu = writeSchema(
+      'new.graphql',
+      `
       type Query { getUser: User listUsers: [User] }
       type User { id: ID! }
-    `);
+    `
+    );
     const ctx = makeCtx();
     const cmd = new DiffCommand(ctx);
     await cmd._run(old, nu, { format: 'summary' });
@@ -121,14 +146,20 @@ test('diff: summary format produces single line', async () => {
 test('diff: --breaking-only filters out non-breaking changes', async () => {
   setup();
   try {
-    const old = writeSchema('old.graphql', `
+    const old = writeSchema(
+      'old.graphql',
+      `
       type Query { getUser: User }
       type User { id: ID! name: String }
-    `);
-    const nu = writeSchema('new.graphql', `
+    `
+    );
+    const nu = writeSchema(
+      'new.graphql',
+      `
       type Query { getUser: User listUsers: [User] }
       type User { id: ID! }
-    `);
+    `
+    );
     const ctx = makeCtx();
     const cmd = new DiffCommand(ctx);
     await cmd._run(old, nu, { format: 'text', breakingOnly: true });
@@ -145,10 +176,13 @@ test('diff: --breaking-only filters out non-breaking changes', async () => {
 test('diff: --exit-code returns 1 on breaking changes', async () => {
   setup();
   try {
-    const old = writeSchema('old.graphql', `
+    const old = writeSchema(
+      'old.graphql',
+      `
       type Query { hello: String }
       type User { id: ID! }
-    `);
+    `
+    );
     const nu = writeSchema('new.graphql', 'type Query { hello: String }');
     const ctx = makeCtx();
     const cmd = new DiffCommand(ctx);
@@ -166,10 +200,13 @@ test('diff: --exit-code returns 0 when no breaking changes', async () => {
   setup();
   try {
     const old = writeSchema('old.graphql', 'type Query { hello: String }');
-    const nu = writeSchema('new.graphql', `
+    const nu = writeSchema(
+      'new.graphql',
+      `
       type Query { hello: String world: Int }
       type NewType { id: ID! }
-    `);
+    `
+    );
     const ctx = makeCtx();
     const cmd = new DiffCommand(ctx);
     // Should NOT throw
@@ -256,13 +293,17 @@ test('flattenChanges: flattens SchemaDelta correctly', () => {
   const delta = {
     added_types: [{ name: 'Foo', breaking: false, description: 'Type "Foo" added' }],
     removed_types: [{ name: 'Bar', breaking: true, description: 'Type "Bar" removed' }],
-    modified_types: [{
-      name: 'Baz',
-      breaking: true,
-      description: 'Type "Baz" modified: 1 field change(s)',
-      fieldChanges: [{ name: 'x', kind: 'removed', breaking: true, description: 'Field "x" removed from Baz' }],
-      directiveChanges: []
-    }],
+    modified_types: [
+      {
+        name: 'Baz',
+        breaking: true,
+        description: 'Type "Baz" modified: 1 field change(s)',
+        fieldChanges: [
+          { name: 'x', kind: 'removed', breaking: true, description: 'Field "x" removed from Baz' }
+        ],
+        directiveChanges: []
+      }
+    ],
     added_ops: [],
     removed_ops: [],
     modified_ops: []
@@ -289,10 +330,7 @@ test('formatText: BREAKING and safe tags', () => {
 });
 
 test('formatSummary: counts breaking and safe', () => {
-  const changes = [
-    { breaking: true }, { breaking: true },
-    { breaking: false }
-  ];
+  const changes = [{ breaking: true }, { breaking: true }, { breaking: false }];
   const summary = formatSummary(changes);
   assert.ok(summary.includes('2 breaking'));
   assert.ok(summary.includes('1 safe'));

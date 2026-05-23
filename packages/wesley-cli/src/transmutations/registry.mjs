@@ -1,8 +1,5 @@
 import { WesleyError } from '@wesley/core';
-import {
-  NULL_GENERATOR_TRANSMUTATION,
-  NullGeneratorPlugin
-} from './null-generator.mjs';
+import { NULL_GENERATOR_TRANSMUTATION, NullGeneratorPlugin } from './null-generator.mjs';
 
 const TRANSMUTATION_REGISTRY = Object.freeze({
   [NULL_GENERATOR_TRANSMUTATION]: {
@@ -59,7 +56,9 @@ export function getDefaultTransmutationName() {
 
 export function formatTransmutationChoices() {
   return describeTransmutations()
-    .map((registration) => registration.default ? `${registration.name} (default)` : registration.name)
+    .map((registration) =>
+      registration.default ? `${registration.name} (default)` : registration.name
+    )
     .join(', ');
 }
 
@@ -80,7 +79,9 @@ export function resolveTransmutationRegistration(requested) {
 
 export function assertTransmutationPrerequisites(requested, ctx) {
   const registration = resolveTransmutationRegistration(requested);
-  const missing = (registration.requiredGenerators || []).filter((kind) => !ctx?.generators?.[kind]);
+  const missing = (registration.requiredGenerators || []).filter(
+    (kind) => !ctx?.generators?.[kind]
+  );
 
   if (missing.length > 0) {
     throw new WesleyError(

@@ -30,20 +30,14 @@ test('git identity guard rejects test names and emails independently', () => {
 });
 
 test('git identity guard rejects known local and CI fixture identities', () => {
-  assert.deepEqual(
-    gitIdentityFailures({ name: 'Local Test', email: 'test@local.dev' }),
-    [
-      'local git user.name is a test identity: Local Test',
-      'local git user.email is a test identity: test@local.dev'
-    ]
-  );
-  assert.deepEqual(
-    gitIdentityFailures({ name: 'CI Test', email: 'test@ci.com' }),
-    [
-      'local git user.name is a test identity: CI Test',
-      'local git user.email is a test identity: test@ci.com'
-    ]
-  );
+  assert.deepEqual(gitIdentityFailures({ name: 'Local Test', email: 'test@local.dev' }), [
+    'local git user.name is a test identity: Local Test',
+    'local git user.email is a test identity: test@local.dev'
+  ]);
+  assert.deepEqual(gitIdentityFailures({ name: 'CI Test', email: 'test@ci.com' }), [
+    'local git user.name is a test identity: CI Test',
+    'local git user.email is a test identity: test@ci.com'
+  ]);
 });
 
 test('git identity guard rejects fixture identities on HEAD commits', () => {

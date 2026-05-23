@@ -189,7 +189,7 @@ test('resolve: diamond (A imports B + C, both import D) → deduped', async () =
   const units = await resolve('/root/a.graphql', (p) => files[p], '/root');
   assert.equal(units.length, 4);
   // D should appear exactly once and before B/C
-  const ids = units.map(u => u.id);
+  const ids = units.map((u) => u.id);
   assert.ok(ids.indexOf('d.graphql') < ids.indexOf('b.graphql'));
   assert.ok(ids.indexOf('d.graphql') < ids.indexOf('c.graphql'));
   assert.ok(ids.indexOf('b.graphql') < ids.indexOf('a.graphql'));
@@ -332,14 +332,19 @@ test('resolve: missing file → error with path', async () => {
   };
 
   await assert.rejects(
-    () => resolve('/root/a.graphql', (p) => {
-      if (!files[p]) {
-        const e = new Error(`ENOENT: no such file: ${p}`);
-        e.code = 'ENOENT';
-        throw e;
-      }
-      return files[p];
-    }, '/root'),
+    () =>
+      resolve(
+        '/root/a.graphql',
+        (p) => {
+          if (!files[p]) {
+            const e = new Error(`ENOENT: no such file: ${p}`);
+            e.code = 'ENOENT';
+            throw e;
+          }
+          return files[p];
+        },
+        '/root'
+      ),
     (err) => {
       assert.ok(err.message.includes('nonexistent.graphql'));
       return true;
@@ -388,7 +393,7 @@ test('resolve: transitive visibility (A imports B, B imports C) → A sees C typ
   const units = await resolve('/root/a.graphql', (p) => files[p], '/root');
   assert.equal(units.length, 3);
   // A references Deep from C transitively — should resolve
-  const topUnit = units.find(u => u.id === 'a.graphql');
+  const topUnit = units.find((u) => u.id === 'a.graphql');
   assert.ok(topUnit.sdl.includes('c__Deep'));
   assert.ok(topUnit.sdl.includes('b__Middle'));
 });
@@ -415,7 +420,7 @@ test('resolve: extend type across units in same package → works', async () => 
   const units = await resolve('/root/ext.graphql', (p) => files[p], '/root');
   assert.equal(units.length, 2);
   // Extension should reference the mangled name
-  const extUnit = units.find(u => u.id === 'ext.graphql');
+  const extUnit = units.find((u) => u.id === 'ext.graphql');
   assert.ok(extUnit.sdl.includes('pkg__Widget'));
 });
 
@@ -507,12 +512,12 @@ test('resolve: units have correct metadata', async () => {
 
   const units = await resolve('/root/main.graphql', (p) => files[p], '/root');
 
-  const dep = units.find(u => u.id === 'dep.graphql');
+  const dep = units.find((u) => u.id === 'dep.graphql');
   assert.equal(dep.package, 'dep');
   assert.ok(dep.hash);
   assert.deepEqual(dep.imports, []);
 
-  const main = units.find(u => u.id === 'main.graphql');
+  const main = units.find((u) => u.id === 'main.graphql');
   assert.equal(main.package, 'main');
   assert.deepEqual(main.imports, ['dep.graphql']);
 });
@@ -725,7 +730,7 @@ test('validateFilteredSdl: returns null when all types are present', async () =>
 
   const units = await resolve('/root/game.graphql', (p) => files[p], '/root');
   // Selecting both units — all types present
-  const mergedSdl = units.map(u => u.sdl).join('\n\n');
+  const mergedSdl = units.map((u) => u.sdl).join('\n\n');
   const diag = validateFilteredSdl(mergedSdl, units, ['core.graphql', 'game.graphql']);
   assert.equal(diag, null);
 });
@@ -746,7 +751,7 @@ test('validateFilteredSdl: detects missing types from excluded units', async () 
   const units = await resolve('/root/game.graphql', (p) => files[p], '/root');
   const map = buildDemangleMap(units);
   // Only game.graphql selected — Widget is missing
-  const gameSdl = units.find(u => u.id === 'game.graphql').sdl;
+  const gameSdl = units.find((u) => u.id === 'game.graphql').sdl;
   const demangled = demangleSdl(gameSdl, map);
   const diag = validateFilteredSdl(demangled, units, ['game.graphql']);
 

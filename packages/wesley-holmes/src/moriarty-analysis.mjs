@@ -1,7 +1,4 @@
-import {
-  confidencePenaltyForEvidenceTrust,
-  evidenceTrustMeetsThreshold
-} from '@wesley/core';
+import { confidencePenaltyForEvidenceTrust, evidenceTrustMeetsThreshold } from '@wesley/core';
 
 export function analyzeMoriartyPredictionCore({
   historyPoints,
@@ -18,9 +15,12 @@ export function analyzeMoriartyPredictionCore({
   const slope = calculateMoriartySlope(series);
   const recentVelocity = calculateMoriartyRecentVelocity(series);
   const latest = historyPoints[historyPoints.length - 1];
-  const blendedRecentVelocity = (recentVelocity * 0.7) + (activityIndex * 0.3 * 0.02);
-  const plateauDetected = Math.abs(blendedRecentVelocity) < config.minSlope && (activityIndex < config.activityPlateauThreshold);
-  const regressionDetected = series.length >= 2 && series[series.length - 1].scs < series[series.length - 2].scs;
+  const blendedRecentVelocity = recentVelocity * 0.7 + activityIndex * 0.3 * 0.02;
+  const plateauDetected =
+    Math.abs(blendedRecentVelocity) < config.minSlope &&
+    activityIndex < config.activityPlateauThreshold;
+  const regressionDetected =
+    series.length >= 2 && series[series.length - 1].scs < series[series.length - 2].scs;
 
   let eta = null;
   let confidence = null;
@@ -43,7 +43,10 @@ export function analyzeMoriartyPredictionCore({
   }
 
   if (gitActivity && burstinessIndex > 0 && confidence !== null) {
-    const penalty = Math.min(config.confidenceBurstinessMax, burstinessIndex * config.confidenceBurstinessMax);
+    const penalty = Math.min(
+      config.confidenceBurstinessMax,
+      burstinessIndex * config.confidenceBurstinessMax
+    );
     confidence = Math.max(0, confidence - penalty);
   }
 
@@ -61,10 +64,27 @@ export function analyzeMoriartyPredictionCore({
   const thresholds = config.readinessThresholds;
   const ci = context?.ci || {};
   const readiness = {
-    scs: { value: latest.scs ?? 0, pass: (latest.scs ?? 0) >= thresholds.scs, threshold: thresholds.scs },
-    tci: { value: latest.tci ?? 0, pass: (latest.tci ?? 0) >= thresholds.tci, threshold: thresholds.tci },
-    mri: { value: latest.mri ?? 0, pass: (latest.mri ?? 0) <= thresholds.mri, threshold: thresholds.mri },
-    ci: { value: Number(ci.stability ?? 0), pass: Number(ci.stability ?? 0) >= thresholds.ci, threshold: thresholds.ci, windowHours: context?.timeframeHours }
+    scs: {
+      value: latest.scs ?? 0,
+      pass: (latest.scs ?? 0) >= thresholds.scs,
+      threshold: thresholds.scs
+    },
+    tci: {
+      value: latest.tci ?? 0,
+      pass: (latest.tci ?? 0) >= thresholds.tci,
+      threshold: thresholds.tci
+    },
+    mri: {
+      value: latest.mri ?? 0,
+      pass: (latest.mri ?? 0) <= thresholds.mri,
+      threshold: thresholds.mri
+    },
+    ci: {
+      value: Number(ci.stability ?? 0),
+      pass: Number(ci.stability ?? 0) >= thresholds.ci,
+      threshold: thresholds.ci,
+      windowHours: context?.timeframeHours
+    }
   };
   if (latestEvidenceTrust) {
     readiness.evidenceTrust = {
@@ -116,8 +136,8 @@ export function calculateMoriartySeries(historyPoints, alpha) {
   const series = [];
 
   for (const point of historyPoints) {
-    emaSCS = emaSCS === null ? point.scs : (alpha * point.scs + (1 - alpha) * emaSCS);
-    emaTCI = emaTCI === null ? point.tci : (alpha * point.tci + (1 - alpha) * emaTCI);
+    emaSCS = emaSCS === null ? point.scs : alpha * point.scs + (1 - alpha) * emaSCS;
+    emaTCI = emaTCI === null ? point.tci : alpha * point.tci + (1 - alpha) * emaTCI;
     series.push({
       day: point.day,
       scs: emaSCS,
@@ -133,9 +153,9 @@ export function calculateMoriartySlope(series) {
   if (series.length < 2) return { scs: 0, tci: 0 };
 
   const n = series.length;
-  const xs = series.map(s => s.day);
-  const scsList = series.map(s => s.scs);
-  const tciList = series.map(s => s.tci);
+  const xs = series.map((s) => s.day);
+  const scsList = series.map((s) => s.scs);
+  const tciList = series.map((s) => s.tci);
   const xBar = xs.reduce((a, b) => a + b, 0) / n;
   const scsBar = scsList.reduce((a, b) => a + b, 0) / n;
   const tciBar = tciList.reduce((a, b) => a + b, 0) / n;
@@ -154,17 +174,18 @@ export function calculateMoriartyRecentVelocity(series) {
   let velocity = 0;
   for (let i = 1; i < recent.length; i++) {
     const delta = recent[i].scs - recent[i - 1].scs;
-    const days = (recent[i].day - recent[i - 1].day) || 1;
+    const days = recent[i].day - recent[i - 1].day || 1;
     velocity += delta / days;
   }
-  velocity /= (recent.length - 1);
-  return (velocity * 0.7) + (calculateMoriartySlope(series).scs * 0.3);
+  velocity /= recent.length - 1;
+  return velocity * 0.7 + calculateMoriartySlope(series).scs * 0.3;
 }
 
 export function calculateMoriartyVariance(series) {
   if (series.length < 2) return 1;
   const mean = series.reduce((acc, s) => acc + s.scs, 0) / series.length;
-  const variance = series.reduce((acc, s) => acc + Math.pow(s.scs - mean, 2), 0) / (series.length - 1);
+  const variance =
+    series.reduce((acc, s) => acc + Math.pow(s.scs - mean, 2), 0) / (series.length - 1);
   return Math.sqrt(variance);
 }
 

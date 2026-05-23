@@ -1,5 +1,5 @@
 ---
-title: "Realization Admission and Witness"
+title: 'Realization Admission and Witness'
 ---
 
 ## Sponsors
@@ -30,14 +30,14 @@ following without folklore:
 
 ## Surface Model
 
-| Surface | What it is | Authority | What downstream consumers may rely on |
-| --- | --- | --- | --- |
-| Authored source | Sovereign GraphQL SDL | authored contract authority | schema meaning and declared contract shape |
-| Lowered IR | Wesley's admitted internal reading of authored SDL | compiler-internal semantic truth | generator input only; not a publication artifact |
-| Emitted artifact family | Generated files for one compile leg or transmutation | derived consequence of authored source plus IR | target-specific artifacts, subject to manifest and witness checks |
-| Realization shell | `realization/manifest.json` plus artifact signatures | packaging shell for one emitted leg | source identity, artifact inventory, signature integrity, recorded witness status |
-| Witness output | bounded proof result for one check or scope | explicit certified property set | only the properties named by the witness scope |
-| Runtime observation | logs, receipts, debugger surfaces, live envelopes | neighboring runtime or observer systems | operational truth only when separately witnessed |
+| Surface                 | What it is                                           | Authority                                      | What downstream consumers may rely on                                             |
+| ----------------------- | ---------------------------------------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------- |
+| Authored source         | Sovereign GraphQL SDL                                | authored contract authority                    | schema meaning and declared contract shape                                        |
+| Lowered IR              | Wesley's admitted internal reading of authored SDL   | compiler-internal semantic truth               | generator input only; not a publication artifact                                  |
+| Emitted artifact family | Generated files for one compile leg or transmutation | derived consequence of authored source plus IR | target-specific artifacts, subject to manifest and witness checks                 |
+| Realization shell       | `realization/manifest.json` plus artifact signatures | packaging shell for one emitted leg            | source identity, artifact inventory, signature integrity, recorded witness status |
+| Witness output          | bounded proof result for one check or scope          | explicit certified property set                | only the properties named by the witness scope                                    |
+| Runtime observation     | logs, receipts, debugger surfaces, live envelopes    | neighboring runtime or observer systems        | operational truth only when separately witnessed                                  |
 
 ## Doctrine
 

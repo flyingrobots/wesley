@@ -3,6 +3,7 @@
 These schemas are retained for generic certificate and HOLMES workflow tests.
 
 ## Files
+
 - `schema-v1.graphql` — baseline
 - `schema-v2.graphql` — adds a nullable column + index (safe, additive)
 

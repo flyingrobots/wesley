@@ -54,13 +54,16 @@ test('analyzeMoriartyGitActivity combines PR and window activity through one sea
 
 test('normalizeMoriartyGitActivity and burstiness helpers stay deterministic', () => {
   const config = createMoriartyConfig({ env: {} });
-  const normalized = normalizeMoriartyGitActivity({
-    windowHours: 4,
-    commitsPerDay: 4,
-    relevantCommits: 2,
-    relevantLinesChanged: 200,
-    uniqueRelevantFiles: 5
-  }, config);
+  const normalized = normalizeMoriartyGitActivity(
+    {
+      windowHours: 4,
+      commitsPerDay: 4,
+      relevantCommits: 2,
+      relevantLinesChanged: 200,
+      uniqueRelevantFiles: 5
+    },
+    config
+  );
 
   assert.ok(normalized > 0 && normalized < 1);
   assert.equal(computeMoriartyBurstinessIndex([10, 10, 10]), 0);

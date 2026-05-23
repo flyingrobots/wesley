@@ -1,5 +1,5 @@
 export function normalizeMoriartyHistoryPoints(historyPoints = []) {
-  return historyPoints.slice(-7).map(point => {
+  return historyPoints.slice(-7).map((point) => {
     const normalizedTrust = normalizeMoriartyEvidenceTrustLevel(point.evidenceTrust);
     const normalizedReasons = normalizedTrust
       ? normalizeMoriartyEvidenceTrustReasons(point.evidenceTrustReasons, normalizedTrust)
@@ -17,13 +17,13 @@ export function normalizeMoriartyHistoryPoints(historyPoints = []) {
 
 export function normalizeMoriartyEvidenceTrustLevel(level) {
   switch (level) {
-  case 'strong':
-  case 'moderate':
-  case 'weak':
-  case 'missing':
-    return level;
-  default:
-    return null;
+    case 'strong':
+    case 'moderate':
+    case 'weak':
+    case 'missing':
+      return level;
+    default:
+      return null;
   }
 }
 
@@ -33,14 +33,14 @@ export function normalizeMoriartyEvidenceTrustReasons(reasons, level) {
   }
 
   switch (level) {
-  case 'moderate':
-    return ['Whole-file citations still rely on broad file-level proof.'];
-  case 'weak':
-    return ['Coarse citations remain unpinned to exact line spans.'];
-  case 'missing':
-    return ['No evidence citations were available for trust analysis.'];
-  default:
-    return ['All citations resolve to exact line spans.'];
+    case 'moderate':
+      return ['Whole-file citations still rely on broad file-level proof.'];
+    case 'weak':
+      return ['Coarse citations remain unpinned to exact line spans.'];
+    case 'missing':
+      return ['No evidence citations were available for trust analysis.'];
+    default:
+      return ['All citations resolve to exact line spans.'];
   }
 }
 

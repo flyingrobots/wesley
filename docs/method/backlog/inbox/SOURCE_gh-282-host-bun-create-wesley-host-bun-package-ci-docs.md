@@ -18,6 +18,7 @@ Trigger: title match: schema semantics, parser/IR meaning, or canonical document
 ## Original Issue
 
 Add a Bun host package.
+
 - Ports implemented with Bun APIs where helpful.
 - CI job for host-bun unit smoke.
 - Update Package Matrix to track its stage.

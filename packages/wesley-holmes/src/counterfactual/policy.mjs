@@ -33,15 +33,9 @@ export async function loadHolmesCounterfactualPolicy({ repoRoot, env = process.e
     : path.join(repoRoot, HOLMES_POLICY_PATH);
   const localPolicyFile = path.join(repoRoot, HOLMES_POLICY_LOCAL_PATH);
 
-  const base = mergePolicies(
-    defaults,
-    normalizePolicy(await readJson(policyFile))
-  );
+  const base = mergePolicies(defaults, normalizePolicy(await readJson(policyFile)));
 
-  return mergePolicies(
-    base,
-    normalizePolicy(await readJson(localPolicyFile))
-  );
+  return mergePolicies(base, normalizePolicy(await readJson(localPolicyFile)));
 }
 
 export function resolveCounterfactualLaneRequest({
@@ -52,9 +46,7 @@ export function resolveCounterfactualLaneRequest({
   composition
 } = {}) {
   const cfg = policy?.counterfactual || {};
-  const resolvedBraidRefs = braidRefs.length > 0
-    ? braidRefs
-    : asStringArray(cfg.braidRefs);
+  const resolvedBraidRefs = braidRefs.length > 0 ? braidRefs : asStringArray(cfg.braidRefs);
 
   return {
     baseRef: String(baseRef || cfg.baseRef || 'main'),
@@ -80,8 +72,14 @@ function normalizePolicy(policy) {
         gateMode: normalizeGateMode(policy?.counterfactual?.gateMode),
         penalties: {
           divergence: normalizeNumber(policy?.counterfactual?.penalties?.divergence, 10),
-          destructiveTransfer: normalizeNumber(policy?.counterfactual?.penalties?.destructiveTransfer, 30),
-          providerUnavailable: normalizeNumber(policy?.counterfactual?.penalties?.providerUnavailable, 50)
+          destructiveTransfer: normalizeNumber(
+            policy?.counterfactual?.penalties?.destructiveTransfer,
+            30
+          ),
+          providerUnavailable: normalizeNumber(
+            policy?.counterfactual?.penalties?.providerUnavailable,
+            50
+          )
         }
       }
     };

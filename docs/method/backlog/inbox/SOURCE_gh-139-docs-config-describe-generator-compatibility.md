@@ -74,7 +74,7 @@ Add table summarizing compatibility, update narrative sections, link to validati
 
 ### Affected Areas
 
-- docs/config/*.md
+- docs/config/\*.md
 - README config section
 
 ### Implementation Steps
@@ -103,9 +103,9 @@ Add table summarizing compatibility, update narrative sections, link to validati
 
 ### QA Sign-off Matrix
 
-| Environment | Surface | Owner | Status | Notes |
-| --- | --- | --- | --- | --- |
-| Docs preview | Site | TBD | pending | |
+| Environment  | Surface | Owner | Status  | Notes |
+| ------------ | ------- | ----- | ------- | ----- |
+| Docs preview | Site    | TBD   | pending |       |
 
 ## Requirements
 

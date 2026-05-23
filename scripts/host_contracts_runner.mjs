@@ -34,7 +34,11 @@ export async function runAndReport() {
       error: String(err && err.message ? err.message : err)
     };
     // Emit failure payload to stderr to avoid confusing stdout parsers
-    try { console.error(JSON.stringify(payload)); } catch { /* ignore */ }
+    try {
+      console.error(JSON.stringify(payload));
+    } catch {
+      /* ignore */
+    }
     exitWithCode(1);
     throw err; // allow callers to observe error if they import this function
   }
@@ -47,4 +51,3 @@ if (import.meta.main) {
   // directly. We keep this for completeness when supported.
   runAndReport();
 }
-

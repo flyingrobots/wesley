@@ -55,9 +55,7 @@ export class EvidenceMap {
     const evidence = this.getEvidence(uid);
     const locations = evidence[kind] || [];
 
-    return locations.map(loc =>
-      `${loc.file}:${loc.lines}@${loc.sha.substring(0, 7)}`
-    );
+    return locations.map((loc) => `${loc.file}:${loc.lines}@${loc.sha.substring(0, 7)}`);
   }
 
   /**
@@ -65,13 +63,13 @@ export class EvidenceMap {
    */
   hasCompleteArtifacts(uid, required = ['sql', 'ts', 'zod']) {
     const evidence = this.getEvidence(uid);
-    return required.every(kind => evidence[kind]?.length > 0);
+    return required.every((kind) => evidence[kind]?.length > 0);
   }
 
   hasArtifact(uid, kinds = ['sql']) {
     const evidence = this.getEvidence(uid);
     const list = Array.isArray(kinds) ? kinds : [kinds];
-    return list.some(kind => evidence[kind]?.length > 0);
+    return list.some((kind) => evidence[kind]?.length > 0);
   }
 
   forEachEvidence(callback) {
@@ -222,9 +220,10 @@ export function mergePluginEvidenceIntoMap(evidenceMap, pluginEvidence, options 
     return evidenceMap;
   }
 
-  const timestampOverride = typeof options.timestampOverride === 'string' && options.timestampOverride
-    ? options.timestampOverride
-    : null;
+  const timestampOverride =
+    typeof options.timestampOverride === 'string' && options.timestampOverride
+      ? options.timestampOverride
+      : null;
 
   for (const [uid, entry] of Object.entries(pluginEvidence)) {
     if (!entry || typeof entry !== 'object') continue;

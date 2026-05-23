@@ -109,10 +109,10 @@ Translate IR tables/relations into ent schema definitions, generate Go files + m
 
 ### QA Sign-off Matrix
 
-| Environment | Surface | Owner | Status | Notes |
-| --- | --- | --- | --- | --- |
-| Unit tests | Generator | TBD | pending | |
-| Sample Go build | Demo project | TBD | pending | |
+| Environment     | Surface      | Owner | Status  | Notes |
+| --------------- | ------------ | ----- | ------- | ----- |
+| Unit tests      | Generator    | TBD   | pending |       |
+| Sample Go build | Demo project | TBD   | pending |       |
 
 ## Requirements
 

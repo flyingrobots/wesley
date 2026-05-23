@@ -14,7 +14,7 @@ use crate::domain::optic::{
 };
 use crate::domain::schema_delta::{diff_schema_ir, SchemaDelta};
 use crate::ports::lowering::LoweringPort;
-use apollo_parser::{cst, Parser};
+use apollo_parser::{cst, Error as ApolloParserError, Parser};
 use async_trait::async_trait;
 use indexmap::IndexMap;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -62,11 +62,7 @@ pub fn list_schema_operations_sdl(schema_sdl: &str) -> Result<Vec<SchemaOperatio
     let errors = cst.errors().collect::<Vec<_>>();
     if !errors.is_empty() {
         let err = &errors[0];
-        return Err(WesleyError::ParseError {
-            message: err.message().to_string(),
-            line: None,
-            column: None,
-        });
+        return Err(parse_error_from_apollo(schema_sdl, err));
     }
 
     let doc = cst.document();
@@ -180,11 +176,7 @@ impl ApolloLoweringAdapter {
         let errors = cst.errors().collect::<Vec<_>>();
         if !errors.is_empty() {
             let err = &errors[0];
-            return Err(WesleyError::ParseError {
-                message: err.message().to_string(),
-                line: None,
-                column: None,
-            });
+            return Err(parse_error_from_apollo(sdl, err));
         }
 
         let doc = cst.document();
@@ -486,6 +478,8 @@ impl ApolloLoweringAdapter {
                 })?
                 .text()
                 .to_string();
+            let core_name = canonical_core_directive_name(&dir_name);
+            let canonical_name = core_name.unwrap_or(dir_name.as_str()).to_string();
 
             let mut args_map = serde_json::Map::new();
             if let Some(args) = dir.arguments() {
@@ -503,7 +497,14 @@ impl ApolloLoweringAdapter {
                 serde_json::Value::Object(args_map)
             };
 
-            map.insert(dir_name, val);
+            if core_name.is_some() && map.contains_key(&canonical_name) {
+                return Err(lowering_error_value(
+                    "directive",
+                    format!("Duplicate directive '@{canonical_name}'"),
+                ));
+            }
+
+            insert_directive_value(map, canonical_name, val);
         }
         Ok(())
     }
@@ -949,6 +950,65 @@ fn lowering_error_value(area: &str, message: String) -> WesleyError {
     }
 }
 
+fn parse_error_from_apollo(sdl: &str, error: &ApolloParserError) -> WesleyError {
+    let (line, column) = source_location_for_byte_index(sdl, error.index());
+    WesleyError::ParseError {
+        message: error.message().to_string(),
+        line: Some(line),
+        column: Some(column),
+    }
+}
+
+fn source_location_for_byte_index(source: &str, index: usize) -> (u32, u32) {
+    let mut line = 1;
+    let mut column = 1;
+
+    for (byte_index, character) in source.char_indices() {
+        if byte_index >= index {
+            break;
+        }
+        if character == '\n' {
+            line += 1;
+            column = 1;
+        } else {
+            column += 1;
+        }
+    }
+
+    (line, column)
+}
+
+fn canonical_core_directive_name(name: &str) -> Option<&str> {
+    match name {
+        "wes_table" | "wesley_table" | "table" => Some("wes_table"),
+        "wes_pk" | "wesley_pk" | "pk" | "primaryKey" => Some("wes_pk"),
+        "wes_fk" | "wesley_fk" | "fk" | "foreignKey" => Some("wes_fk"),
+        "wes_unique" | "wesley_unique" | "unique" => Some("wes_unique"),
+        "wes_index" | "wesley_index" | "index" => Some("wes_index"),
+        "wes_tenant" | "wesley_tenant" | "tenant" => Some("wes_tenant"),
+        "wes_default" | "wesley_default" | "default" => Some("wes_default"),
+        "wes_rls" | "wesley_rls" | "rls" => Some("wes_rls"),
+        _ => None,
+    }
+}
+
+fn insert_directive_value(
+    map: &mut IndexMap<String, serde_json::Value>,
+    name: String,
+    value: serde_json::Value,
+) {
+    match map.get_mut(&name) {
+        Some(serde_json::Value::Array(values)) => values.push(value),
+        Some(existing) => {
+            let first = std::mem::take(existing);
+            *existing = serde_json::Value::Array(vec![first, value]);
+        }
+        None => {
+            map.insert(name, value);
+        }
+    }
+}
+
 /// Resolves response-path field selections from a single GraphQL operation.
 pub fn resolve_operation_selections(operation_sdl: &str) -> Result<Vec<String>, WesleyError> {
     let parsed = parse_operation_document(operation_sdl)?;
@@ -1235,11 +1295,7 @@ fn parse_operation_document(operation_sdl: &str) -> Result<ParsedOperationDocume
     let errors = cst.errors().collect::<Vec<_>>();
     if !errors.is_empty() {
         let err = &errors[0];
-        return Err(WesleyError::ParseError {
-            message: err.message().to_string(),
-            line: None,
-            column: None,
-        });
+        return Err(parse_error_from_apollo(operation_sdl, err));
     }
 
     let doc = cst.document();
@@ -3323,11 +3379,7 @@ fn extract_root_types(schema_sdl: &str) -> Result<RootTypes, WesleyError> {
     let errors = cst.errors().collect::<Vec<_>>();
     if !errors.is_empty() {
         let err = &errors[0];
-        return Err(WesleyError::ParseError {
-            message: err.message().to_string(),
-            line: None,
-            column: None,
-        });
+        return Err(parse_error_from_apollo(schema_sdl, err));
     }
 
     let mut root_types = RootTypes::default();

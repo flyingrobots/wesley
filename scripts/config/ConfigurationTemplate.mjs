@@ -3,8 +3,6 @@
  * NOTE: Lives under scripts to avoid polluting core with fs/path usage.
  */
 
-
-
 import { DomainEvent } from '../../packages/wesley-core/src/domain/Events.mjs';
 
 export class ConfigurationTemplateRequested extends DomainEvent {
@@ -57,4 +55,3 @@ export class ConfigurationTemplate {
     }
   }
 }
-

@@ -9,8 +9,10 @@ If you need the main Wesley nouns and the layer split before reading anything el
 ## Choose Your Lane
 
 ### 1. Core Compiler Lane
+
 Compile authored GraphQL into generic or explicitly selected generated
 artifacts.
+
 - **Inspect native CLI**: `cargo wesley --help`
 - **Install alpha from crates.io**: `cargo install wesley-cli --version 0.0.4`
 - **Install locally**: `cargo install --locked --path crates/wesley-cli`
@@ -40,7 +42,9 @@ commands while those surfaces are being extracted or retired:
 Those command paths reuse a hash-addressed IR cache in `.wesley-cache/ir/` when the authored SDL has not changed, which keeps the inner loop tighter across repeated local runs.
 
 ### 2. External Module Lane
+
 Bring the `whatever` side of `GraphQL -> whatever` through explicit modules.
+
 - **Config**: add modules in `wesley.config.mjs`
 - **Environment**: set `WESLEY_MODULES=/path/to/module.mjs`
 - **Commands**: module-owned commands appear through the loaded module
@@ -50,6 +54,8 @@ Bring the `whatever` side of `GraphQL -> whatever` through explicit modules.
 
 External modules own target semantics, generators, witness scopes, release
 profiles, and runtime conventions. Wesley core does not own those meanings.
+For the active ownership rule, see
+[design/0014-domain-empty-core-boundary](./design/0014-domain-empty-core-boundary/domain-empty-core-boundary.md).
 
 The current repository still contains historical Continuum, WARPspace,
 PostgreSQL, and Supabase command/package residue. Treat those paths as
@@ -57,8 +63,10 @@ extraction debt. New domain behavior should land in the owning external module
 repo, not in Wesley.
 
 ### 3. Governance & Inspection
+
 Audit proposed changes, emit HOLMES reports, and inspect the static dashboard
 artifact assembled by CI.
+
 - **Certificate**: `pnpm wesley cert-create --help`
 - **HOLMES report**: `pnpm --filter @wesley/holmes exec node src/cli.mjs report --help`
 - **Dashboard artifact**: open `docs/holmes-dashboard/index.html` with the
@@ -138,4 +146,5 @@ and project workspaces, use
 If you are just starting, use the [README.md](../README.md) and the orientation tracks above.
 
 ---
+
 **The goal is inevitably. Every state transition is a provable consequence of the sovereign schema.**

@@ -1,8 +1,4 @@
-import {
-  isExactLineSpan,
-  isWholeFileLineSpan,
-  lineSpanWidth
-} from './EvidenceSpans.mjs';
+import { isExactLineSpan, isWholeFileLineSpan, lineSpanWidth } from './EvidenceSpans.mjs';
 
 export function createEvidenceQualitySummary() {
   return {
@@ -107,13 +103,19 @@ export function assessEvidenceTrust(summary) {
 
   const reasons = [];
   if (Number(summary.coarse || 0) > 0) {
-    reasons.push(`${summary.coarse} coarse citation${plural(summary.coarse)} ${verb(summary.coarse, 'remains', 'remain')} unpinned to exact line spans.`);
+    reasons.push(
+      `${summary.coarse} coarse citation${plural(summary.coarse)} ${verb(summary.coarse, 'remains', 'remain')} unpinned to exact line spans.`
+    );
   }
   if (Number(summary.wholeFile || 0) > 0) {
-    reasons.push(`${summary.wholeFile} whole-file citation${plural(summary.wholeFile)} ${verb(summary.wholeFile, 'still relies', 'still rely')} on broad file-level proof.`);
+    reasons.push(
+      `${summary.wholeFile} whole-file citation${plural(summary.wholeFile)} ${verb(summary.wholeFile, 'still relies', 'still rely')} on broad file-level proof.`
+    );
   }
   if (reasons.length === 0 && Number(summary.exact || 0) > 0) {
-    reasons.push(`All ${summary.exact} citation${plural(summary.exact)} resolve to exact line spans.`);
+    reasons.push(
+      `All ${summary.exact} citation${plural(summary.exact)} resolve to exact line spans.`
+    );
   }
 
   return {
@@ -131,12 +133,12 @@ export function evidenceTrustMeetsThreshold(level, threshold = 'moderate') {
 
 export function confidencePenaltyForEvidenceTrust(level) {
   switch (level) {
-  case 'weak':
-    return 12;
-  case 'missing':
-    return 20;
-  default:
-    return 0;
+    case 'weak':
+      return 12;
+    case 'missing':
+      return 20;
+    default:
+      return 0;
   }
 }
 
@@ -173,12 +175,12 @@ function compareEvidenceCandidates(left, right) {
 
 function strengthRank(strength) {
   switch (strength) {
-  case 'exact':
-    return 0;
-  case 'wholeFile':
-    return 1;
-  default:
-    return 2;
+    case 'exact':
+      return 0;
+    case 'wholeFile':
+      return 1;
+    default:
+      return 2;
   }
 }
 
@@ -191,16 +193,16 @@ function determineEvidenceTrustLevel(summary) {
 
 function evidenceTrustRank(level) {
   switch (level) {
-  case 'strong':
-    return 3;
-  case 'moderate':
-    return 2;
-  case 'weak':
-    return 1;
-  case 'missing':
-    return 0;
-  default:
-    return null;
+    case 'strong':
+      return 3;
+    case 'moderate':
+      return 2;
+    case 'weak':
+      return 1;
+    case 'missing':
+      return 0;
+    default:
+      return null;
   }
 }
 

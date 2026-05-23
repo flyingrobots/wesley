@@ -53,9 +53,10 @@ export function validateWesleyModule(module) {
   }
 
   const version = versionResult.value;
-  const moduleName = typeof nameResult.value === 'string' && nameResult.value.trim()
-    ? nameResult.value.trim()
-    : undefined;
+  const moduleName =
+    typeof nameResult.value === 'string' && nameResult.value.trim()
+      ? nameResult.value.trim()
+      : undefined;
   const label = moduleName ? ` "${moduleName}"` : '';
 
   if (version === undefined || version === null) {
@@ -70,7 +71,7 @@ export function validateWesleyModule(module) {
   if (!SUPPORTED_WESLEY_MODULE_API_VERSIONS.includes(version)) {
     fail(
       `Module${label} requires apiVersion "${version}", but only [` +
-      `${SUPPORTED_WESLEY_MODULE_API_VERSIONS.map((item) => `"${item}"`).join(', ')}] are supported`,
+        `${SUPPORTED_WESLEY_MODULE_API_VERSIONS.map((item) => `"${item}"`).join(', ')}] are supported`,
       'WMOD001'
     );
   }
@@ -85,20 +86,24 @@ export function validateWesleyModule(module) {
   }
 
   if (module.init !== undefined && typeof module.init !== 'function') {
-    fail(`Module${label} "init" must be a function if provided (got ${typeof module.init})`, 'WMOD001');
+    fail(
+      `Module${label} "init" must be a function if provided (got ${typeof module.init})`,
+      'WMOD001'
+    );
   }
 
   const capabilitiesResult = safeGet(module, 'capabilities');
   if (!capabilitiesResult.ok) {
-    fail(`Module${label} capabilities getter threw: ${capabilitiesResult.error.message}`, 'WMOD001');
+    fail(
+      `Module${label} capabilities getter threw: ${capabilitiesResult.error.message}`,
+      'WMOD001'
+    );
   }
   if (
     capabilitiesResult.value !== undefined &&
-    (
-      capabilitiesResult.value === null ||
+    (capabilitiesResult.value === null ||
       typeof capabilitiesResult.value !== 'object' ||
-      Array.isArray(capabilitiesResult.value)
-    )
+      Array.isArray(capabilitiesResult.value))
   ) {
     fail(
       `Module${label} "capabilities" must be a plain object if provided (got ${
@@ -113,9 +118,7 @@ export function validateWesleyModule(module) {
     typeof module.registerCliCommands !== 'function'
   ) {
     fail(
-      `Module${label} "registerCliCommands" must be a function if provided (got ${
-        typeof module.registerCliCommands
-      })`,
+      `Module${label} "registerCliCommands" must be a function if provided (got ${typeof module.registerCliCommands})`,
       'WMOD001'
     );
   }

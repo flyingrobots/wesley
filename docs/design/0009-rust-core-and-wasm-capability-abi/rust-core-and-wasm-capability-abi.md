@@ -199,11 +199,11 @@ Rust core is not permission to move domain behavior back into generic Wesley.
 
 Wesley should support three extension modes under one capability contract.
 
-| Mode | Host | Use |
-| --- | --- | --- |
-| Rust-native capability | Rust hosts | Echo in-process, high-trust native integrations |
-| WASM capability | Rust, Node, browser, CI | portable capability execution |
-| TypeScript module | Node host | fast authoring and current CLI DX |
+| Mode                   | Host                    | Use                                             |
+| ---------------------- | ----------------------- | ----------------------------------------------- |
+| Rust-native capability | Rust hosts              | Echo in-process, high-trust native integrations |
+| WASM capability        | Rust, Node, browser, CI | portable capability execution                   |
+| TypeScript module      | Node host               | fast authoring and current CLI DX               |
 
 The important rule:
 
@@ -633,12 +633,12 @@ doctrine only.
 
 Follow-on slices to create:
 
-- [Wesley core-rs IR contract and fixtures](../../method/backlog/asap/SOURCE_wesley-core-rs-ir-contract-and-fixtures.md)
+- [Wesley core-rs IR contract and fixtures](../0013-rust-ir-parity-sentinel/SOURCE_wesley-core-rs-ir-contract-and-fixtures.md)
 - [Wesley core-rs parser parity spike](../../method/backlog/up-next/SOURCE_wesley-core-rs-parser-parity-spike.md)
 - [WASM host function governance](../../method/backlog/up-next/RUNTIME_wasm-host-function-governance.md)
 - [WASM capability versioning and state](../../method/backlog/up-next/RUNTIME_wasm-capability-versioning-and-state.md)
 - [Capability portability floor](../../method/backlog/up-next/RUNTIME_capability-portability-floor.md)
 - [Node Rust core binding strategy](../../method/backlog/up-next/RUNTIME_node-rust-core-binding-strategy.md)
-- [Rust core performance baseline](../../method/backlog/up-next/EVIDENCE_rust-core-performance-baseline.md)
+- [Rust core performance baseline](../0013-rust-ir-parity-sentinel/EVIDENCE_rust-core-performance-baseline.md)
 - `RUNTIME_wasm-capability-abi-fixture`
 - `RUNTIME_echo-in-process-wesley-harness`

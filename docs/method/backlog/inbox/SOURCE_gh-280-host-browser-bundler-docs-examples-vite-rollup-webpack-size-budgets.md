@@ -18,5 +18,6 @@ Trigger: title match: schema semantics, parser/IR meaning, or canonical document
 ## Original Issue
 
 Add docs + tiny examples for bundlers.
+
 - Build+run examples in CI smoke job.
 - Enforce bundle size budgets (configurable).
