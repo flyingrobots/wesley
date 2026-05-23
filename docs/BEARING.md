@@ -116,11 +116,13 @@ invalid duplicate-directive coverage, `pnpm parity:ir` for the
 table-compatible sentinel corpus, `pnpm parity:ir` support for fixture-owned
 projections, the `js-sdl-type-family-vs-rust-l1-type-family.v0` projection
 over extension-folded SDL type-family facts, default sentinel admission for
-`schema-extensions-schema.graphql` under that projection, the domain-empty
-ownership packet in `0014`, and executable module-target dispatch coverage for
-no-module diagnostics, default target discovery, requested-target validation,
-duplicate target rejection, alias conflicts in both registration orders, and
-the Rust IR fixture contract now housed under the active `0013` packet.
+`schema-extensions-schema.graphql` under that projection, `pnpm perf:ir` Rust
+CLI wall-clock baseline evidence over the valid IR fixture corpus, the
+domain-empty ownership packet in `0014`, and executable module-target dispatch
+coverage for no-module diagnostics, default target discovery, requested-target
+validation, duplicate target rejection, alias conflicts in both registration
+orders, and the Rust IR fixture contract now housed under the active `0013`
+packet.
 Invalid SDL diagnostics now expose stable `WesleyError::diagnostic()` codes
 and parser line/column spans where available, while semantic lowering spans
 remain explicitly absent.
@@ -131,8 +133,8 @@ The next pulls are:
    target dispatch already rejects missing modules, invalid product/database
    target names, duplicate names, and aliases that collide before or after the
    owning target loads.
-2. Capture a Rust core performance baseline over the canonical corpus after
-   the fixture and projection boundaries are named.
+2. Broaden performance evidence only where a separate harness can distinguish
+   JS lowering, Rust peak RSS, Node binding overhead, and WASM binding overhead.
 3. Add new parity fixtures only when they exercise a named projection boundary
    that the current table and type-family corpus does not already cover.
 

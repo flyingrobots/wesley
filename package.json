@@ -29,7 +29,8 @@
     "meta:fix-packages": "node scripts/fix-package-metadata.mjs",
     "ci": "pnpm validate && pnpm generate:example && node packages/wesley-host-node/bin/wesley.mjs validate-bundle --bundle test/fixtures/examples/.wesley --schemas schemas/",
     "fixtures:ir": "node scripts/generate-ir-fixtures.mjs",
-    "parity:ir": "node scripts/check-ir-parity.mjs"
+    "parity:ir": "node scripts/check-ir-parity.mjs",
+    "perf:ir": "node scripts/measure-ir-performance.mjs"
   },
   "keywords": [
     "graphql",
@@ -78,6 +79,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@git-stunts/alfred": "0.10.3",
     "@playwright/test": "1.58.2",
     "autoprefixer": "^10.4.21",
     "dependency-cruiser": "17.3.8",
