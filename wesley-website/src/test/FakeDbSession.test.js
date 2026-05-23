@@ -25,7 +25,7 @@ describe('FakeDbSession', () => {
   it('information_schema.tables returns multiple tables sorted', async () => {
     await session.applyMigrations([
       'CREATE TABLE products (id INT)',
-      'CREATE TABLE orders (id INT)',
+      'CREATE TABLE orders (id INT)'
     ]);
 
     const result = await session.query(`
@@ -35,10 +35,7 @@ describe('FakeDbSession', () => {
       ORDER BY table_name;
     `);
 
-    expect(result.rows).toEqual([
-      { table_name: 'orders' },
-      { table_name: 'products' },
-    ]);
+    expect(result.rows).toEqual([{ table_name: 'orders' }, { table_name: 'products' }]);
   });
 
   it('information_schema.tables returns empty after reset', async () => {

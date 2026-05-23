@@ -19,13 +19,19 @@ function createConsoleLogger() {
 
 // In-memory file store for smoke tests (NOT persistent)
 export class MemoryFileSystem {
-  constructor() { this._files = new Map(); }
-  async exists(path) { return this._files.has(path); }
+  constructor() {
+    this._files = new Map();
+  }
+  async exists(path) {
+    return this._files.has(path);
+  }
   async read(path) {
     if (!this._files.has(path)) throw new Error(`ENOENT: ${path}`);
     return this._files.get(path);
   }
-  async write(path, content) { this._files.set(path, String(content ?? '')); }
+  async write(path, content) {
+    this._files.set(path, String(content ?? ''));
+  }
 }
 
 // Web Crypto helpers
@@ -37,7 +43,7 @@ async function sha256Hex(input) {
   // Prefer globalThis.crypto.subtle (available in browsers and some runtimes)
   const digest = await subtle.digest('SHA-256', data);
   const bytes = new Uint8Array(digest);
-  return [...bytes].map(b => b.toString(16).padStart(2, '0')).join('');
+  return [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 function byteLengthUtf8(str) {
@@ -53,7 +59,7 @@ function sanitizeGraphQL(sdl, { maxBytes = 5 * 1024 * 1024 } = {}) {
   }
   // Strip BOM without control chars in regex; defensively drop null bytes
   let out = sdl;
-  if (out.length && out.charCodeAt(0) === 0xFEFF) out = out.slice(1);
+  if (out.length && out.charCodeAt(0) === 0xfeff) out = out.slice(1);
   if (out.indexOf('\0') !== -1) out = out.split('\0').join('');
   return out;
 }
@@ -67,7 +73,7 @@ export async function createBrowserRuntime() {
   // High-resolution clock when available
   const clock = {
     now: () => new Date(),
-    hrtime: () => (globalThis.performance?.now?.() ?? Date.now())
+    hrtime: () => globalThis.performance?.now?.() ?? Date.now()
   };
 
   const parsers = { graphql: new BrowserParserPort() };

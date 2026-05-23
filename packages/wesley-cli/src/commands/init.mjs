@@ -15,7 +15,11 @@ export class InitCommand extends WesleyCommand {
     return cmd
       .option('--schema <path>', 'Schema filepath to create', 'schema.graphql')
       .option('--force', 'Overwrite existing files if present')
-      .option('--gitignore', `Add .gitignore entries for out/ and ${GENERATED_ARTIFACT_DIR}/`, true);
+      .option(
+        '--gitignore',
+        `Add .gitignore entries for out/ and ${GENERATED_ARTIFACT_DIR}/`,
+        true
+      );
   }
 
   async executeCore({ options, logger }) {
@@ -24,11 +28,15 @@ export class InitCommand extends WesleyCommand {
 
     const exists = await fs.exists(schemaPath).catch(() => false);
     if (exists && !options.force) {
-      throw new WesleyError('EEXIST', `Schema already exists: ${schemaPath}. Use --force to overwrite.`);
+      throw new WesleyError(
+        'EEXIST',
+        `Schema already exists: ${schemaPath}. Use --force to overwrite.`
+      );
     }
 
     // Minimal canonical schema (v1 baseline)
-    const schema = '# Wesley minimal schema (v1 baseline)\n\n' +
+    const schema =
+      '# Wesley minimal schema (v1 baseline)\n\n' +
       'type User @wes_table {\n' +
       '  id: ID! @wes_pk\n' +
       '  email: String! @wes_unique\n' +
@@ -51,7 +59,9 @@ export class InitCommand extends WesleyCommand {
           }
         }
         if (changed) await fs.write(giPath, content);
-      } catch { /* empty */ }
+      } catch {
+        /* empty */
+      }
     }
 
     if (logger) logger.info(`✨ Initialized Wesley project. Schema: ${schemaPath}`);

@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { NullGeneratorPlugin, NULL_GENERATOR_TRANSMUTATION } from '../src/transmutations/null-generator.mjs';
+import {
+  NullGeneratorPlugin,
+  NULL_GENERATOR_TRANSMUTATION
+} from '../src/transmutations/null-generator.mjs';
 import {
   describeTransmutations,
   getDefaultTransmutationName,
@@ -21,13 +24,16 @@ const noopLogger = {
 
 test('null generator plugin plans from IR and explicit emission context', async () => {
   const plugin = new NullGeneratorPlugin();
-  const plan = await plugin.plan({
-    ir: {
-      tables: [{ name: 'User', fields: [{ name: 'id' }] }]
+  const plan = await plugin.plan(
+    {
+      ir: {
+        tables: [{ name: 'User', fields: [{ name: 'id' }] }]
+      }
+    },
+    {
+      emission: { outDir: 'build/null' }
     }
-  }, {
-    emission: { outDir: 'build/null' }
-  });
+  );
 
   assert.equal(plugin.name, NULL_GENERATOR_TRANSMUTATION);
   assert.deepEqual(plan.artifacts, [
@@ -47,16 +53,13 @@ test('registry resolves null-generator as a registration-only sequential transmu
 
 test('registry exposes default transmutation metadata for command surfaces', () => {
   assert.equal(getDefaultTransmutationName(), NULL_GENERATOR_TRANSMUTATION);
-  assert.deepEqual(
-    describeTransmutations(),
-    [
-      {
-        name: 'null-generator',
-        description: 'Minimal registration-only witness transmutation',
-        default: true
-      }
-    ]
-  );
+  assert.deepEqual(describeTransmutations(), [
+    {
+      name: 'null-generator',
+      description: 'Minimal registration-only witness transmutation',
+      default: true
+    }
+  ]);
   assert.equal(resolveRunMetadata({}).transmutation, NULL_GENERATOR_TRANSMUTATION);
 });
 
@@ -67,7 +70,21 @@ test('runSequentialGeneration executes null-generator through the transmutation 
     parsers: {
       graphql: {
         parse: () => ({
-          tables: [{ name: 'User', fields: [{ name: 'id', type: { base: 'ID', isList: false }, nullable: false, directives: { pk: true } }], indexes: [], directives: {} }]
+          tables: [
+            {
+              name: 'User',
+              fields: [
+                {
+                  name: 'id',
+                  type: { base: 'ID', isList: false },
+                  nullable: false,
+                  directives: { pk: true }
+                }
+              ],
+              indexes: [],
+              directives: {}
+            }
+          ]
         })
       }
     },
@@ -112,7 +129,10 @@ test('runSequentialGeneration executes null-generator through the transmutation 
   assert.equal(result.transmutation, NULL_GENERATOR_TRANSMUTATION);
   assert.equal(writes.length, 1);
   assert.equal(writes[0].outDir, 'out');
-  assert.deepEqual(writes[0].artifacts.map((file) => file.name), ['null/summary.json']);
+  assert.deepEqual(
+    writes[0].artifacts.map((file) => file.name),
+    ['null/summary.json']
+  );
   const summary = JSON.parse(String(writes[0].artifacts[0].content));
   assert.equal(summary.transmutation, NULL_GENERATOR_TRANSMUTATION);
   assert.equal(summary.outputDir, 'out');

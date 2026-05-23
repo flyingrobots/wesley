@@ -1,5 +1,5 @@
 ---
-title: "Witness Index"
+title: 'Witness Index'
 ---
 
 This cycle closes as a partial landing.

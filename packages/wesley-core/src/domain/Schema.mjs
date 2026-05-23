@@ -30,18 +30,22 @@ export class Schema {
   toAST() {
     return {
       kind: 'WesleySchema',
-      tables: Object.values(this.tables).map(table => table.toAST ? table.toAST() : {
-        name: table.name,
-        directives: table.directives,
-        fields: Object.values(table.fields).map(field => ({
-          name: field.name,
-          type: field.type,
-          nonNull: field.nonNull,
-          list: field.list,
-          itemNonNull: field.itemNonNull,
-          directives: field.directives
-        }))
-      })
+      tables: Object.values(this.tables).map((table) =>
+        table.toAST
+          ? table.toAST()
+          : {
+              name: table.name,
+              directives: table.directives,
+              fields: Object.values(table.fields).map((field) => ({
+                name: field.name,
+                type: field.type,
+                nonNull: field.nonNull,
+                list: field.list,
+                itemNonNull: field.itemNonNull,
+                directives: field.directives
+              }))
+            }
+      )
     };
   }
 }
@@ -88,14 +92,18 @@ export class Table {
     return {
       name: this.name,
       directives: this.directives,
-      fields: this.getFields().map(field => field.toAST ? field.toAST() : {
-        name: field.name,
-        type: field.type,
-        nonNull: field.nonNull,
-        list: field.list,
-        itemNonNull: field.itemNonNull,
-        directives: field.directives
-      })
+      fields: this.getFields().map((field) =>
+        field.toAST
+          ? field.toAST()
+          : {
+              name: field.name,
+              type: field.type,
+              nonNull: field.nonNull,
+              list: field.list,
+              itemNonNull: field.itemNonNull,
+              directives: field.directives
+            }
+      )
     };
   }
 }
@@ -104,9 +112,9 @@ export class Field {
   constructor({ name, type, nonNull = false, list = false, itemNonNull = false, directives = {} }) {
     this.name = name;
     this.type = type;
-    this.nonNull = nonNull;  // Field-level nullability: [T]! or T!
+    this.nonNull = nonNull; // Field-level nullability: [T]! or T!
     this.list = list;
-    this.itemNonNull = itemNonNull;  // Item-level nullability: [T!]!
+    this.itemNonNull = itemNonNull; // Item-level nullability: [T!]!
     this.directives = directives;
   }
 

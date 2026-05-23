@@ -105,9 +105,9 @@ Iterate through each workspace, verify `exports` map against actual entrypoints,
 
 ### QA Sign-off Matrix
 
-| Environment | Surface | Owner | Status | Notes |
-| --- | --- | --- | --- | --- |
-| Local build | Packages | TBD | pending | |
+| Environment | Surface  | Owner | Status  | Notes |
+| ----------- | -------- | ----- | ------- | ----- |
+| Local build | Packages | TBD   | pending |       |
 
 ## Requirements
 

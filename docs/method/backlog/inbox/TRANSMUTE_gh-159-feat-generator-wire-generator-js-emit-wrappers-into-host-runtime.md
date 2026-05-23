@@ -108,9 +108,9 @@ Expose helpers in generator-js index, update runtime to include methods, ensure 
 
 ### QA Sign-off Matrix
 
-| Environment | Surface | Owner | Status | Notes |
-| --- | --- | --- | --- | --- |
-| Unit tests | generator-js/runtime | TBD | pending | |
+| Environment | Surface              | Owner | Status  | Notes |
+| ----------- | -------------------- | ----- | ------- | ----- |
+| Unit tests  | generator-js/runtime | TBD   | pending |       |
 
 ## Requirements
 

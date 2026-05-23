@@ -18,18 +18,22 @@ Trigger: title/label match: evidence, certification, security, or Holmes-family 
 ## Original Issue
 
 ## Summary
+
 Replace the hand-rolled `process.argv` parsing in the HOLMES CLI with a robust library (e.g. Commander) to simplify future flags and subcommands.
 
 ## Motivation
+
 Review feedback for #102 called out that our ad-hoc parser will become brittle as we keep adding commands like `weights:validate`. A library gives us automatic help output, validation, and subcommand support.
 
 ## Tasks
+
 - Introduce Commander (or similar) to the HOLMES CLI.
 - Port existing commands (`investigate`, `verify`, `predict`, `report`, `weights:validate`) to the new router.
 - Ensure help output documents the new options.
 - Update tests/docs if behaviours (e.g. exit codes) change.
 
 ## Acceptance Criteria
+
 - CLI continues to support the current commands and options.
 - New commands automatically show up in `--help`.
 - Tests cover at least one command via the new parser.

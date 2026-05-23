@@ -8,13 +8,13 @@ L1 fixture corpus required for the Wesley Rust Core parity migration.
 The following functions in the existing JS codebase are the "Truth Anchors" for
 compiler behavior:
 
-| Area | Package | File | Function |
-| :--- | :--- | :--- | :--- |
-| **Parsing & Lowering** | `@wesley/runtime-node` | `src/GraphQLAdapter.mjs` | `GraphQLSchemaParser.parse` |
-| **IR Construction** | `@wesley/runtime-node` | `src/GraphQLAdapter.mjs` | `buildIRFromAST` |
-| **Canonicalization** | `@wesley/core` | `src/domain/canonicalize.mjs` | `canonicalize` |
-| **Hashing** | `@wesley/core` | `src/domain/registryHash.mjs` | `registryHash` |
-| **JSON Serialization** | `@wesley/core` | `src/domain/registryHash.mjs` | `canonicalizeJSON` |
+| Area                   | Package                | File                          | Function                    |
+| :--------------------- | :--------------------- | :---------------------------- | :-------------------------- |
+| **Parsing & Lowering** | `@wesley/runtime-node` | `src/GraphQLAdapter.mjs`      | `GraphQLSchemaParser.parse` |
+| **IR Construction**    | `@wesley/runtime-node` | `src/GraphQLAdapter.mjs`      | `buildIRFromAST`            |
+| **Canonicalization**   | `@wesley/core`         | `src/domain/canonicalize.mjs` | `canonicalize`              |
+| **Hashing**            | `@wesley/core`         | `src/domain/registryHash.mjs` | `registryHash`              |
+| **JSON Serialization** | `@wesley/core`         | `src/domain/registryHash.mjs` | `canonicalizeJSON`          |
 
 ## Canonical JSON Byte Rules
 
@@ -54,14 +54,14 @@ tests.
 
 ### Stable L1 Hashes
 
-| Fixture | Hash (SHA-256) |
-| :--- | :--- |
-| `small-schema.graphql` | `b484bf6741686314aea381b51d5d26805b08fa27517225bbe4b736d9f39c606f` |
-| `medium-schema.graphql` | `853d939364506680535ae865438d897efc9fee2dc8e5b21d1118cae3cfe5664b` |
-| `large-schema.graphql` | `dfd5a42ab6a03570294764e4e9bdd791b5dd42fc02db5feb9543849a67d14726` |
-| `directive-heavy-schema.graphql` | `e2e831e55a3b439322c49057e6ad2c6e28e6446e0b6f79fa1cae2a8b102053e3` |
+| Fixture                            | Hash (SHA-256)                                                     |
+| :--------------------------------- | :----------------------------------------------------------------- |
+| `small-schema.graphql`             | `b484bf6741686314aea381b51d5d26805b08fa27517225bbe4b736d9f39c606f` |
+| `medium-schema.graphql`            | `853d939364506680535ae865438d897efc9fee2dc8e5b21d1118cae3cfe5664b` |
+| `large-schema.graphql`             | `dfd5a42ab6a03570294764e4e9bdd791b5dd42fc02db5feb9543849a67d14726` |
+| `directive-heavy-schema.graphql`   | `e2e831e55a3b439322c49057e6ad2c6e28e6446e0b6f79fa1cae2a8b102053e3` |
 | `schema-extensions-schema.graphql` | `72d4d2db0d705fb59117a4c9f2e55ade187e435829253bb862aabd6dee5c9f99` |
-| `legacy-alias-schema.graphql` | `95b4c726cfccf7874ba2e5d01a216cb1f31c0abce0ea060885899a5d79281aa6` |
+| `legacy-alias-schema.graphql`      | `95b4c726cfccf7874ba2e5d01a216cb1f31c0abce0ea060885899a5d79281aa6` |
 
 ### Categories
 
@@ -102,17 +102,17 @@ compatibility sentinel.
 
 ## Baseline Performance (JS)
 
-*Captured on: May 5, 2026*
-*Environment: Darwin (macOS)*
+_Captured on: May 5, 2026_
+_Environment: Darwin (macOS)_
 
 NOTE: These are rough measurements to be formalized in
 `EVIDENCE_rust-core-performance-baseline.md`.
 
-| Fixture | Lowering Time (ms) | Memory Peak (MB) |
-| :--- | :--- | :--- |
-| `small-schema.graphql` | ~2ms | < 1MB |
-| `medium-schema.graphql` | ~15ms | ~2MB |
-| `large-schema.graphql` | ~250ms | ~15MB |
+| Fixture                 | Lowering Time (ms) | Memory Peak (MB) |
+| :---------------------- | :----------------- | :--------------- |
+| `small-schema.graphql`  | ~2ms               | < 1MB            |
+| `medium-schema.graphql` | ~15ms              | ~2MB             |
+| `large-schema.graphql`  | ~250ms             | ~15MB            |
 
 ## Commands
 

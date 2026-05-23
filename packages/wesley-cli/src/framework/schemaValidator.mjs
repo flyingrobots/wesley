@@ -17,10 +17,7 @@ let _ajvFactory = null;
  */
 export async function createAjv() {
   if (!_ajvFactory) {
-    _ajvFactory = Promise.all([
-      import('ajv'),
-      import('ajv-formats')
-    ]);
+    _ajvFactory = Promise.all([import('ajv'), import('ajv-formats')]);
   }
   const [{ default: Ajv }, { default: addFormats }] = await _ajvFactory;
   const ajv = new Ajv({ strict: false, allErrors: true });
@@ -119,7 +116,7 @@ async function loadSchemaObject(ctx, name) {
 
 function findLocalSchemaRefs(schema) {
   const refs = new Set();
-  visitSchemaNode(schema, value => {
+  visitSchemaNode(schema, (value) => {
     if (typeof value !== 'string') return;
     if (!/^[^:/?#]+\.json(?:#.*)?$/.test(value)) return;
     refs.add(value.split('#')[0]);

@@ -22,11 +22,7 @@ const nullLogger = {
 };
 
 function isPathLike(specifier) {
-  return (
-    specifier.startsWith('.') ||
-    specifier.startsWith('/') ||
-    specifier.startsWith('file:')
-  );
+  return specifier.startsWith('.') || specifier.startsWith('/') || specifier.startsWith('file:');
 }
 
 export function normalizeWesleyModuleSpecifier(specifier, baseDir) {
@@ -78,10 +74,8 @@ export function splitWesleyModuleSpecifiers(value) {
     }
 
     const candidateScheme = value.slice(start, index);
-    const hasUriScheme = (
-      /^[A-Za-z][A-Za-z0-9+.-]*$/.test(candidateScheme) &&
-      value.slice(index, index + 3) === '://'
-    );
+    const hasUriScheme =
+      /^[A-Za-z][A-Za-z0-9+.-]*$/.test(candidateScheme) && value.slice(index, index + 3) === '://';
     if (hasUriScheme) {
       continue;
     }
@@ -117,9 +111,10 @@ export function parseWesleyEnvModuleEntries(value, baseDir) {
 }
 
 export function wesleyModuleLoadingDisabled(env = process.env) {
-  const raw = typeof env?.[WESLEY_ENV_DISABLE_MODULES] === 'string'
-    ? env[WESLEY_ENV_DISABLE_MODULES].trim().toLowerCase()
-    : '';
+  const raw =
+    typeof env?.[WESLEY_ENV_DISABLE_MODULES] === 'string'
+      ? env[WESLEY_ENV_DISABLE_MODULES].trim().toLowerCase()
+      : '';
   return raw === '1' || raw === 'true' || raw === 'yes' || raw === 'on';
 }
 
@@ -152,9 +147,8 @@ function assertModuleAllowlisted(specifier, allowlist, kind) {
 }
 
 export function findNearestWesleyConfigPath(startDir, env = process.env) {
-  const explicitConfig = typeof env?.[WESLEY_ENV_CONFIG] === 'string'
-    ? env[WESLEY_ENV_CONFIG].trim()
-    : '';
+  const explicitConfig =
+    typeof env?.[WESLEY_ENV_CONFIG] === 'string' ? env[WESLEY_ENV_CONFIG].trim() : '';
 
   if (explicitConfig.length > 0) {
     const resolved = normalizeWesleyModuleSpecifier(explicitConfig, startDir);
@@ -231,9 +225,7 @@ export async function loadWesleyModuleEntries({
 
 export async function importWesleyModuleSpecifier(specifier) {
   if (specifier.startsWith('/') || specifier.startsWith('file:')) {
-    const url = specifier.startsWith('file:')
-      ? specifier
-      : pathToFileURL(specifier).href;
+    const url = specifier.startsWith('file:') ? specifier : pathToFileURL(specifier).href;
     return import(url);
   }
   return import(specifier);

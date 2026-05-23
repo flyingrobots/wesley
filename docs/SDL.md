@@ -1,4 +1,5 @@
 # SDL, Shape, And Law
+
 <!-- docs-truth: status=experimental owner=@flyingrobots -->
 
 This note supports the README. It explains why Wesley starts from GraphQL SDL
@@ -123,12 +124,12 @@ bytes.
 
 Extensions own interpretation.
 
-| Owner | Can interpret |
-| --- | --- |
-| Rust/TypeScript emitters | Domain-empty model and operation bindings |
-| Echo-owned tooling | Footprints, observer plans, runtime admissibility |
-| `wesley-postgres` | SQL schemas, migrations, indexes, database tests |
-| Continuum-owned modules | Continuum release, witness, and protocol surfaces |
+| Owner                    | Can interpret                                     |
+| ------------------------ | ------------------------------------------------- |
+| Rust/TypeScript emitters | Domain-empty model and operation bindings         |
+| Echo-owned tooling       | Footprints, observer plans, runtime admissibility |
+| `wesley-postgres`        | SQL schemas, migrations, indexes, database tests  |
+| Continuum-owned modules  | Continuum release, witness, and protocol surfaces |
 
 This keeps Wesley narrow. The compiler can make derived artifacts reproducible
 and inspectable without silently becoming a runtime, database, scheduler, or

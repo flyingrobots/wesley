@@ -59,14 +59,14 @@ class NullCrypto extends CryptoPort {
   sha256(_data) {
     throw new Error(
       'No crypto adapter configured. ' +
-      'Platform host must inject a CryptoPort implementation via dependencies.'
+        'Platform host must inject a CryptoPort implementation via dependencies.'
     );
   }
 
   sha256Bytes(_data) {
     throw new Error(
       'No crypto adapter configured. ' +
-      'Platform host must inject a CryptoPort implementation via dependencies.'
+        'Platform host must inject a CryptoPort implementation via dependencies.'
     );
   }
 }

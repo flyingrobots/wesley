@@ -22,12 +22,16 @@ export class PerformanceMonitoringError extends Error {
 
 export class ResourceThresholdExceededError extends PerformanceMonitoringError {
   constructor(resource, threshold, actual, details = {}) {
-    super(`Resource threshold exceeded: ${resource} (${actual} > ${threshold})`, 'RESOURCE_THRESHOLD_EXCEEDED', {
-      resource,
-      threshold,
-      actual,
-      ...details
-    });
+    super(
+      `Resource threshold exceeded: ${resource} (${actual} > ${threshold})`,
+      'RESOURCE_THRESHOLD_EXCEEDED',
+      {
+        resource,
+        threshold,
+        actual,
+        ...details
+      }
+    );
   }
 }
 
@@ -140,31 +144,31 @@ export class ResourceMetrics {
   constructor(timestamp = Date.now()) {
     this.timestamp = timestamp;
     this.cpu = {
-      usage: 0,       // CPU usage percentage
-      system: 0,      // System CPU time
-      user: 0,        // User CPU time
-      idle: 0         // Idle time
+      usage: 0, // CPU usage percentage
+      system: 0, // System CPU time
+      user: 0, // User CPU time
+      idle: 0 // Idle time
     };
     this.memory = {
-      used: 0,        // Used memory in bytes
-      free: 0,        // Free memory in bytes
-      total: 0,       // Total memory in bytes
-      cached: 0,      // Cached memory in bytes
-      buffers: 0      // Buffer memory in bytes
+      used: 0, // Used memory in bytes
+      free: 0, // Free memory in bytes
+      total: 0, // Total memory in bytes
+      cached: 0, // Cached memory in bytes
+      buffers: 0 // Buffer memory in bytes
     };
     this.io = {
-      reads: 0,       // Disk reads
-      writes: 0,      // Disk writes
-      readBytes: 0,   // Bytes read
-      writeBytes: 0,  // Bytes written
-      readTime: 0,    // Time spent reading
-      writeTime: 0    // Time spent writing
+      reads: 0, // Disk reads
+      writes: 0, // Disk writes
+      readBytes: 0, // Bytes read
+      writeBytes: 0, // Bytes written
+      readTime: 0, // Time spent reading
+      writeTime: 0 // Time spent writing
     };
     this.network = {
-      bytesIn: 0,     // Network bytes received
-      bytesOut: 0,    // Network bytes sent
-      packetsIn: 0,   // Network packets received
-      packetsOut: 0   // Network packets sent
+      bytesIn: 0, // Network bytes received
+      bytesOut: 0, // Network bytes sent
+      packetsIn: 0, // Network packets received
+      packetsOut: 0 // Network packets sent
     };
   }
 
@@ -185,19 +189,19 @@ export class ResourceMetrics {
 export class PerformanceMonitor {
   constructor(options = {}) {
     this.options = {
-      slowQueryThreshold: 1000,      // ms
-      queryHistoryLimit: 1000,       // number of queries to keep
+      slowQueryThreshold: 1000, // ms
+      queryHistoryLimit: 1000, // number of queries to keep
       resourceSamplingInterval: 5000, // ms
-      indexAnalysisInterval: 60000,  // ms
+      indexAnalysisInterval: 60000, // ms
       connectionPoolCheckInterval: 10000, // ms
       enableQueryLogging: true,
       enableResourceMonitoring: true,
       enableIndexAnalysis: true,
       enableConnectionPoolMonitoring: true,
       resourceThresholds: {
-        cpu: 80,        // %
-        memory: 85,     // %
-        diskIO: 90,     // %
+        cpu: 80, // %
+        memory: 85, // %
+        diskIO: 90, // %
         connections: 90 // %
       },
       ...options
@@ -228,7 +232,7 @@ export class PerformanceMonitor {
    */
   emit(event) {
     const listeners = this.listeners.get(event.type) || [];
-    listeners.forEach(listener => listener(event));
+    listeners.forEach((listener) => listener(event));
     return this;
   }
 
@@ -334,10 +338,16 @@ export class PerformanceMonitor {
 
     // Check for slow query
     if (metrics.executionTime > this.options.slowQueryThreshold) {
-      this.emit(new SlowQueryDetected(metrics.queryId, metrics.toJSON(), this.options.slowQueryThreshold));
+      this.emit(
+        new SlowQueryDetected(metrics.queryId, metrics.toJSON(), this.options.slowQueryThreshold)
+      );
 
       if (this.options.strictMode) {
-        throw new SlowQueryDetectedError(metrics.sql, metrics.executionTime, this.options.slowQueryThreshold);
+        throw new SlowQueryDetectedError(
+          metrics.sql,
+          metrics.executionTime,
+          this.options.slowQueryThreshold
+        );
       }
     }
 
@@ -363,9 +373,12 @@ export class PerformanceMonitor {
       this.checkResourceThresholds(metrics);
 
       return metrics;
-
     } catch (error) {
-      throw new PerformanceMonitoringError('Failed to collect resource metrics', 'RESOURCE_COLLECTION_FAILED', { error: error.message });
+      throw new PerformanceMonitoringError(
+        'Failed to collect resource metrics',
+        'RESOURCE_COLLECTION_FAILED',
+        { error: error.message }
+      );
     }
   }
 
@@ -408,7 +421,11 @@ export class PerformanceMonitor {
       this.emit(new ResourceUsageAlert('memory', memoryUsagePercent, resourceThresholds.memory));
 
       if (this.options.strictMode) {
-        throw new ResourceThresholdExceededError('memory', resourceThresholds.memory, memoryUsagePercent);
+        throw new ResourceThresholdExceededError(
+          'memory',
+          resourceThresholds.memory,
+          memoryUsagePercent
+        );
       }
     }
   }
@@ -421,9 +438,10 @@ export class PerformanceMonitor {
       const analysis = await this.performIndexAnalysis();
       this.emit(new IndexUsageAnalyzed(analysis));
       return analysis;
-
     } catch (error) {
-      throw new PerformanceMonitoringError('Index analysis failed', 'INDEX_ANALYSIS_FAILED', { error: error.message });
+      throw new PerformanceMonitoringError('Index analysis failed', 'INDEX_ANALYSIS_FAILED', {
+        error: error.message
+      });
     }
   }
 
@@ -455,13 +473,18 @@ export class PerformanceMonitor {
       const connectionUsage = (status.activeConnections / status.maxConnections) * 100;
 
       if (connectionUsage > resourceThresholds.connections) {
-        this.emit(new ResourceUsageAlert('connections', connectionUsage, resourceThresholds.connections));
+        this.emit(
+          new ResourceUsageAlert('connections', connectionUsage, resourceThresholds.connections)
+        );
       }
 
       return status;
-
     } catch (error) {
-      throw new PerformanceMonitoringError('Connection pool check failed', 'CONNECTION_POOL_CHECK_FAILED', { error: error.message });
+      throw new PerformanceMonitoringError(
+        'Connection pool check failed',
+        'CONNECTION_POOL_CHECK_FAILED',
+        { error: error.message }
+      );
     }
   }
 
@@ -487,7 +510,7 @@ export class PerformanceMonitor {
    */
   getSlowQueries(threshold = null) {
     const limit = threshold || this.options.slowQueryThreshold;
-    return this.queryHistory.filter(query => query.executionTime > limit);
+    return this.queryHistory.filter((query) => query.executionTime > limit);
   }
 
   /**
@@ -506,17 +529,28 @@ export class PerformanceMonitor {
       };
     }
 
-    const executionTimes = queries.map(q => q.executionTime).filter(t => t !== null);
-    const slowQueries = queries.filter(q => q.executionTime > this.options.slowQueryThreshold);
+    const executionTimes = queries.map((q) => q.executionTime).filter((t) => t !== null);
+    const slowQueries = queries.filter((q) => q.executionTime > this.options.slowQueryThreshold);
 
     return {
       totalQueries: queries.length,
-      averageExecutionTime: executionTimes.reduce((sum, time) => sum + time, 0) / executionTimes.length,
+      averageExecutionTime:
+        executionTimes.reduce((sum, time) => sum + time, 0) / executionTimes.length,
       slowQueries: slowQueries.length,
-      fastestQuery: queries.reduce((fastest, query) =>
-        !fastest || (query.executionTime && query.executionTime < fastest.executionTime) ? query : fastest, null),
-      slowestQuery: queries.reduce((slowest, query) =>
-        !slowest || (query.executionTime && query.executionTime > slowest.executionTime) ? query : slowest, null)
+      fastestQuery: queries.reduce(
+        (fastest, query) =>
+          !fastest || (query.executionTime && query.executionTime < fastest.executionTime)
+            ? query
+            : fastest,
+        null
+      ),
+      slowestQuery: queries.reduce(
+        (slowest, query) =>
+          !slowest || (query.executionTime && query.executionTime > slowest.executionTime)
+            ? query
+            : slowest,
+        null
+      )
     };
   }
 
@@ -533,8 +567,8 @@ export class PerformanceMonitor {
       };
     }
 
-    const cpuUsages = this.resourceHistory.map(r => r.cpu.usage);
-    const memoryUsages = this.resourceHistory.map(r => (r.memory.used / r.memory.total) * 100);
+    const cpuUsages = this.resourceHistory.map((r) => r.cpu.usage);
+    const memoryUsages = this.resourceHistory.map((r) => (r.memory.used / r.memory.total) * 100);
 
     return {
       samples: this.resourceHistory.length,

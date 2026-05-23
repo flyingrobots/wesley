@@ -46,11 +46,11 @@ The playground at `/try` lets users edit GraphQL schemas, compile them to Postgr
 
 ## Key Packages
 
-| Package | Role |
-| --- | --- |
-| `wesley-website` | React SPA, UI components, page routing |
+| Package                | Role                                                                                          |
+| ---------------------- | --------------------------------------------------------------------------------------------- |
+| `wesley-website`       | React SPA, UI components, page routing                                                        |
 | `@wesley/host-browser` | `compileSchemaInBrowser()`, `createBrowserRuntime()`, `BrowserParserPort`, `MemoryFileSystem` |
-| `@electric-sql/pglite` | WASM-based Postgres (in-browser) |
+| `@electric-sql/pglite` | WASM-based Postgres (in-browser)                                                              |
 
 ## State Management
 

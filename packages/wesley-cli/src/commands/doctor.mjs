@@ -41,7 +41,7 @@ export class DoctorCommand extends WesleyCommand {
 
     results.push(checkNodeVersion(process.version));
     results.push(await checkConfig(this.ctx));
-    results.push(...await checkPlugins(this.ctx));
+    results.push(...(await checkPlugins(this.ctx)));
     results.push(checkHash(this.ctx));
     results.push(checkExperimental(this.ctx));
 

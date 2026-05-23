@@ -5,13 +5,13 @@
   "type": "object",
   "required": ["version", "commit", "artifacts"],
   "properties": {
-    "version": { 
-      "type": "string", 
+    "version": {
+      "type": "string",
       "pattern": "^1\\.[0-9]+\\.[0-9]+$",
       "description": "Semantic version of the schema"
     },
-    "commit": { 
-      "type": "string", 
+    "commit": {
+      "type": "string",
       "minLength": 7,
       "description": "Git commit SHA"
     },
@@ -26,11 +26,11 @@
         "^[-\\w.:/]+$": {
           "type": "object",
           "properties": {
-            "sql":   { "$ref": "#/$defs/citations" },
-            "ts":    { "$ref": "#/$defs/citations" },
-            "zod":   { "$ref": "#/$defs/citations" },
+            "sql": { "$ref": "#/$defs/citations" },
+            "ts": { "$ref": "#/$defs/citations" },
+            "zod": { "$ref": "#/$defs/citations" },
             "tests": { "$ref": "#/$defs/citations" },
-            "rls":   { "$ref": "#/$defs/citations" }
+            "rls": { "$ref": "#/$defs/citations" }
           },
           "additionalProperties": false
         }
@@ -43,26 +43,26 @@
       "type": "object",
       "required": ["file", "lines", "sha"],
       "properties": {
-        "file": { 
+        "file": {
           "type": "string",
           "description": "Relative file path"
         },
-        "lines": { 
-          "type": "string", 
+        "lines": {
+          "type": "string",
           "pattern": "^[0-9]+-[0-9]+$",
           "description": "Line range (e.g., '10-20')"
         },
-        "sha": { 
-          "type": "string", 
+        "sha": {
+          "type": "string",
           "minLength": 7,
           "description": "Git SHA at time of generation"
         }
       },
       "additionalProperties": false
     },
-    "citations": { 
-      "type": "array", 
-      "items": { "$ref": "#/$defs/citation" } 
+    "citations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/citation" }
     }
   },
   "additionalProperties": false

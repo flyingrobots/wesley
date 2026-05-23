@@ -1,38 +1,45 @@
-import { Grid, SimpleGrid, Text, ThemeIcon, Title } from '@mantine/core'
-import classes from './FeaturesTitleWesley.module.css'
+import { Grid, SimpleGrid, Text, ThemeIcon, Title } from '@mantine/core';
+import classes from './FeaturesTitleWesley.module.css';
 
 const items = [
   {
     icon: '🚨',
     title: 'The Problem',
     description:
-      'Every developer writes the same data shape 5+ times: SQL DDL, GraphQL, TypeScript, Zod, JSON Schema. It’s error‑prone and wasteful.',
+      'Every developer writes the same data shape 5+ times: SQL DDL, GraphQL, TypeScript, Zod, JSON Schema. It’s error‑prone and wasteful.'
   },
   {
     icon: '✅',
     title: 'The Solution',
     description:
-      'GraphQL is the single source of truth. Everything else is generated — types, migrations, APIs, and docs.',
+      'GraphQL is the single source of truth. Everything else is generated — types, migrations, APIs, and docs.'
   },
   {
     icon: '📐',
     title: 'The Philosophy',
     description:
-      'Schema first. Migrations are diffs, not a task. Evolve your schema and get migrations for free.',
+      'Schema first. Migrations are diffs, not a task. Evolve your schema and get migrations for free.'
   },
   {
     icon: '🎯',
     title: 'Why This Matters',
     description:
-      'Write once, generate everywhere. Teams review the schema (the contract) and ship with fewer sync bugs.',
-  },
-]
+      'Write once, generate everywhere. Teams review the schema (the contract) and ship with fewer sync bugs.'
+  }
+];
 
 export default function FeaturesTitleWesley() {
   const features = items.map((feature) => (
     <div key={feature.title}>
-      <ThemeIcon size={44} radius="md" variant="gradient" gradient={{ deg: 133, from: 'blue', to: 'cyan' }}>
-        <span aria-hidden style={{ fontSize: 22, lineHeight: 1 }}>{feature.icon}</span>
+      <ThemeIcon
+        size={44}
+        radius="md"
+        variant="gradient"
+        gradient={{ deg: 133, from: 'blue', to: 'cyan' }}
+      >
+        <span aria-hidden style={{ fontSize: 22, lineHeight: 1 }}>
+          {feature.icon}
+        </span>
       </ThemeIcon>
       <Text fz="lg" mt="sm" fw={600}>
         {feature.title}
@@ -41,7 +48,7 @@ export default function FeaturesTitleWesley() {
         {feature.description}
       </Text>
     </div>
-  ))
+  ));
 
   return (
     <div className={classes.wrapper} id="why">
@@ -62,5 +69,5 @@ export default function FeaturesTitleWesley() {
         </Grid.Col>
       </Grid>
     </div>
-  )
+  );
 }

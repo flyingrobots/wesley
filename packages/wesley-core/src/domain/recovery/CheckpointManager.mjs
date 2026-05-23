@@ -15,7 +15,7 @@ export class CheckpointManager extends EventEmitter {
       persistToDisk: options.persistToDisk || false,
       checkpointDir: options.checkpointDir || './checkpoints',
       autoCleanup: options.autoCleanup !== false,
-      maxAge: options.maxAge || (24 * 60 * 60 * 1000), // 24 hours
+      maxAge: options.maxAge || 24 * 60 * 60 * 1000, // 24 hours
       ...options
     };
 
@@ -114,7 +114,7 @@ export class CheckpointManager extends EventEmitter {
    */
   getLatestCheckpoint(operationId) {
     const operationCheckpoints = Array.from(this.checkpoints.values())
-      .filter(cp => cp.operationId === operationId)
+      .filter((cp) => cp.operationId === operationId)
       .sort((a, b) => b.timestamp - a.timestamp);
 
     return operationCheckpoints.length > 0 ? operationCheckpoints[0] : null;
@@ -125,7 +125,7 @@ export class CheckpointManager extends EventEmitter {
    */
   getOperationCheckpoints(operationId) {
     return Array.from(this.checkpoints.values())
-      .filter(cp => cp.operationId === operationId)
+      .filter((cp) => cp.operationId === operationId)
       .sort((a, b) => b.timestamp - a.timestamp);
   }
 
@@ -143,7 +143,7 @@ export class CheckpointManager extends EventEmitter {
     }
 
     // Remove from operation stack
-    this.operationStack = this.operationStack.filter(op => op.operationId !== operationId);
+    this.operationStack = this.operationStack.filter((op) => op.operationId !== operationId);
 
     this.emit('checkpoints:cleared', {
       operationId,
@@ -170,11 +170,10 @@ export class CheckpointManager extends EventEmitter {
 
     // Create individual checkpoints for each state
     for (const [key, state] of Object.entries(states)) {
-      const checkpointId = await this.createCheckpoint(
-        `${operationId}:${key}`,
-        state,
-        { recoveryPointId: recoveryPoint.id, stateKey: key }
-      );
+      const checkpointId = await this.createCheckpoint(`${operationId}:${key}`, state, {
+        recoveryPointId: recoveryPoint.id,
+        stateKey: key
+      });
       recoveryPoint.checkpoints.push({ key, checkpointId });
     }
 
@@ -191,8 +190,9 @@ export class CheckpointManager extends EventEmitter {
    * Restore all states from a recovery point
    */
   async restoreRecoveryPoint(recoveryPointId) {
-    const recoveryCheckpoints = Array.from(this.checkpoints.values())
-      .filter(cp => cp.metadata.recoveryPointId === recoveryPointId);
+    const recoveryCheckpoints = Array.from(this.checkpoints.values()).filter(
+      (cp) => cp.metadata.recoveryPointId === recoveryPointId
+    );
 
     if (recoveryCheckpoints.length === 0) {
       throw new Error(`Recovery point ${recoveryPointId} not found`);
@@ -222,7 +222,7 @@ export class CheckpointManager extends EventEmitter {
     const totalSize = checkpoints.reduce((sum, cp) => sum + (cp.metadata.size || 0), 0);
 
     const operationCounts = {};
-    checkpoints.forEach(cp => {
+    checkpoints.forEach((cp) => {
       operationCounts[cp.operationId] = (operationCounts[cp.operationId] || 0) + 1;
     });
 
@@ -231,10 +231,10 @@ export class CheckpointManager extends EventEmitter {
       totalSize,
       averageSize: checkpoints.length > 0 ? Math.round(totalSize / checkpoints.length) : 0,
       operationCounts,
-      oldestCheckpoint: checkpoints.length > 0 ?
-        Math.min(...checkpoints.map(cp => cp.timestamp)) : null,
-      newestCheckpoint: checkpoints.length > 0 ?
-        Math.max(...checkpoints.map(cp => cp.timestamp)) : null
+      oldestCheckpoint:
+        checkpoints.length > 0 ? Math.min(...checkpoints.map((cp) => cp.timestamp)) : null,
+      newestCheckpoint:
+        checkpoints.length > 0 ? Math.max(...checkpoints.map((cp) => cp.timestamp)) : null
     };
   }
 
@@ -325,8 +325,9 @@ export class CheckpointManager extends EventEmitter {
     }
 
     // Remove oldest checkpoints
-    const sorted = Array.from(this.checkpoints.entries())
-      .sort(([,a], [,b]) => a.timestamp - b.timestamp);
+    const sorted = Array.from(this.checkpoints.entries()).sort(
+      ([, a], [, b]) => a.timestamp - b.timestamp
+    );
 
     const toRemove = sorted.slice(0, this.checkpoints.size - this.options.maxCheckpoints);
 

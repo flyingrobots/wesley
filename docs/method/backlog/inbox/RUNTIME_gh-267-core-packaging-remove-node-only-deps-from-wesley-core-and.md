@@ -20,9 +20,11 @@ Trigger: default: runtime, host, operator-flow, CI, or repo execution surface.
 Make @wesley/core fully host-agnostic so Browser/Deno/Bun builds don’t drag Node shims.
 
 Why
+
 - Core should be pure ESM with zero Node deps to support non-Node hosts.
 
 What
+
 - Move Node-only deps out of core:
   - `chokidar` → used by CLI watch; move to `@wesley/cli`.
   - `ts-morph` → only used by JS generator; move to `@wesley/generator-js`.
@@ -30,5 +32,6 @@ What
 - Add a check in preflight to fail if core declares Node engines or Node-only deps.
 
 Acceptance
+
 - `@wesley/core` installs on Deno/Bun/browser bundlers without Node shims.
 - Preflight blocks regressions.

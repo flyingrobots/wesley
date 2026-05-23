@@ -19,7 +19,7 @@ Trigger: default: runtime, host, operator-flow, CI, or repo execution surface.
 
 ### Summary
 
-The deployment job is not meant to run on any arbitrary branch. It fails. Looks red. Is bad for deployment success rates. False red-flag. 
+The deployment job is not meant to run on any arbitrary branch. It fails. Looks red. Is bad for deployment success rates. False red-flag.
 
 ### Steps to Reproduce
 

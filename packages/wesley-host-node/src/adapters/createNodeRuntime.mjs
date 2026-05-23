@@ -7,10 +7,7 @@ import path from 'node:path';
 import process from 'node:process';
 import pino from 'pino';
 import { GENERATED_LEDGER_DIR } from '@wesley/core';
-import {
-  GitWarpEventStore,
-  GraphQLAdapter
-} from '@wesley/runtime-node';
+import { GitWarpEventStore, GraphQLAdapter } from '@wesley/runtime-node';
 import { NodeFileSystem } from './NodeFileSystem.mjs';
 import { nodeCrypto } from './NodeCrypto.mjs';
 
@@ -54,10 +51,12 @@ export async function createNodeRuntime() {
     name: 'Wesley',
     level: process.env.WESLEY_LOG_LEVEL || 'info',
     // Use pino-pretty for readable logs in development; undefined lets pino use its default transport in other environments for performance
-    transport: usePretty ? {
-      target: 'pino-pretty',
-      options: { colorize: true }
-    } : undefined
+    transport: usePretty
+      ? {
+          target: 'pino-pretty',
+          options: { colorize: true }
+        }
+      : undefined
   });
 
   // Logger wrapper that can be silenced
@@ -112,15 +111,23 @@ export async function createNodeRuntime() {
         parseComposed: (units) => {
           const adapter = new GraphQLAdapter();
           // Enforce aggregate size limit before per-unit sanitization
-          const totalBytes = units.reduce((sum, u) => sum + Buffer.byteLength(u.sdl || '', 'utf8'), 0);
+          const totalBytes = units.reduce(
+            (sum, u) => sum + Buffer.byteLength(u.sdl || '', 'utf8'),
+            0
+          );
           const parsed = Number.parseInt(process.env?.WESLEY_MAX_SCHEMA_BYTES, 10);
           const max = Number.isFinite(parsed) ? parsed : 5242880;
           if (totalBytes > max) {
-            const e = new Error(`Composed schema exceeds max size (${totalBytes} bytes > ${max} limit)`);
+            const e = new Error(
+              `Composed schema exceeds max size (${totalBytes} bytes > ${max} limit)`
+            );
             e.code = 'EINPUTSIZE';
             throw e;
           }
-          const sanitizedUnits = units.map(u => ({ ...u, sdl: sanitizeGraphQL(u.sdl, process.env) }));
+          const sanitizedUnits = units.map((u) => ({
+            ...u,
+            sdl: sanitizeGraphQL(u.sdl, process.env)
+          }));
           return adapter.parseComposed(sanitizedUnits);
         }
       }
@@ -171,7 +178,7 @@ export async function createNodeRuntime() {
             const name = artifact?.name ?? '<unknown>';
             // Fallback: write under provided baseDir (or 'out/') if not materialized by the caller
             if (typeof name === 'string' && name.length > 0) {
-              const dir = (typeof baseDir === 'string' && baseDir.length > 0) ? baseDir : 'out';
+              const dir = typeof baseDir === 'string' && baseDir.length > 0 ? baseDir : 'out';
               targetPath = path.join(dir, name);
             } else {
               throw new TypeError(`Artifact "${name}" is missing a resolved path`);
@@ -205,7 +212,7 @@ function sanitizeGraphQL(sdl, env) {
   }
   // Strip BOM and null bytes (matches browser runtime behaviour).
   let out = sdl;
-  if (out.length && out.charCodeAt(0) === 0xFEFF) out = out.slice(1);
+  if (out.length && out.charCodeAt(0) === 0xfeff) out = out.slice(1);
   if (out.indexOf('\0') !== -1) out = out.split('\0').join('');
   return out;
 }

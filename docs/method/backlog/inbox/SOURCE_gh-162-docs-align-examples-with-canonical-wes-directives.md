@@ -1,4 +1,4 @@
-# GH-162 docs: align examples with canonical @wes_* directives
+# GH-162 docs: align examples with canonical @wes\_\* directives
 
 - Imported from: GitHub issue
 - Issue: #162
@@ -23,7 +23,7 @@ Trigger: title match: schema semantics, parser/IR meaning, or canonical document
 
 Capture a checklist of files updated to avoid regressions.
 
-# [DOCS-162] docs: align examples with canonical @wes_* directives
+# [DOCS-162] docs: align examples with canonical @wes\_\* directives
 
 ## Overview
 
@@ -104,9 +104,9 @@ Search/replace legacy directives, verify examples render, update docs describing
 
 ### QA Sign-off Matrix
 
-| Environment | Surface | Owner | Status | Notes |
-| --- | --- | --- | --- | --- |
-| Docs preview | Site | TBD | pending | |
+| Environment  | Surface | Owner | Status  | Notes |
+| ------------ | ------- | ----- | ------- | ----- |
+| Docs preview | Site    | TBD   | pending |       |
 
 ## Requirements
 

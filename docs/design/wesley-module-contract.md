@@ -1,4 +1,5 @@
 # Wesley Module Contract
+
 <!-- docs-truth: status=current owner=@flyingrobots -->
 
 This note freezes the module boundary for Wesley.

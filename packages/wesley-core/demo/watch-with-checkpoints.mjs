@@ -48,11 +48,9 @@ async function demo() {
     fileCount: 1
   };
 
-  const initialCheckpointId = await checkpointManager.store(
-    'initial-state',
-    initialState,
-    { reason: 'demo-startup' }
-  );
+  const initialCheckpointId = await checkpointManager.store('initial-state', initialState, {
+    reason: 'demo-startup'
+  });
 
   console.log(`💾 Created initial checkpoint: ${initialCheckpointId}`);
 
@@ -80,15 +78,11 @@ async function demo() {
         };
 
         // Create checkpoint
-        const checkpointId = await checkpointManager.store(
-          `change-${changeCount}`,
-          currentState,
-          {
-            reason: `file-${eventType}`,
-            filePath,
-            previousCheckpoint: initialCheckpointId
-          }
-        );
+        const checkpointId = await checkpointManager.store(`change-${changeCount}`, currentState, {
+          reason: `file-${eventType}`,
+          filePath,
+          previousCheckpoint: initialCheckpointId
+        });
 
         console.log(`💾 Created checkpoint: ${checkpointId}`);
 
@@ -101,7 +95,6 @@ async function demo() {
           await watcher.stop();
           await demonstrateRecovery();
         }
-
       } catch (error) {
         console.error('Error handling change:', error);
       }
@@ -159,9 +152,7 @@ type Query {
         const change3 = change2 + '\n\n# Added comment for final change';
         await fs.writeFile(schemaFile, change3, 'utf8');
       }, 1000);
-
     }, 1000);
-
   }, 2000);
 }
 
@@ -206,7 +197,7 @@ process.on('SIGINT', async () => {
 });
 
 // Run the demo
-demo().catch(error => {
+demo().catch((error) => {
   console.error('❌ Demo failed:', error);
   process.exit(1);
 });

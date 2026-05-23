@@ -147,7 +147,11 @@ export class GraphQLSchemaBuilder {
     // Validate @join directive (always, even without evidenceMap)
     if (directives['@join']) {
       const joinMeta = directives['@join'];
-      const error = validateJoinDirective(joinMeta, { list: typeInfo?.list ?? false, base: typeInfo?.base ?? 'unknown' }, fieldName);
+      const error = validateJoinDirective(
+        joinMeta,
+        { list: typeInfo?.list ?? false, base: typeInfo?.base ?? 'unknown' },
+        fieldName
+      );
       if (error) {
         if (this.evidenceMap) {
           this.evidenceMap.recordError(uid, {
@@ -242,7 +246,7 @@ export class GraphQLSchemaBuilder {
   extractArguments(args) {
     if (!args) return [];
 
-    return args.map(arg => {
+    return args.map((arg) => {
       const typeInfo = this.unwrapType(arg.type);
       return {
         name: arg.name.value,
@@ -258,14 +262,14 @@ export class GraphQLSchemaBuilder {
    * Check if a node has a specific directive
    */
   hasDirective(node, name) {
-    return node.directives?.some(d => d.name.value === name) || false;
+    return node.directives?.some((d) => d.name.value === name) || false;
   }
 
   /**
    * Check if Query type has custom RPC queries
    */
   hasCustomQueries(node) {
-    return node.fields?.some(f => this.hasDirective(f, 'rpc')) || false;
+    return node.fields?.some((f) => this.hasDirective(f, 'rpc')) || false;
   }
 
   /**
@@ -299,42 +303,42 @@ export class GraphQLSchemaBuilder {
       [name]: `@${name}`,
 
       // Primary key aliases
-      'pk': '@primaryKey',
-      'primaryKey': '@primaryKey',
+      pk: '@primaryKey',
+      primaryKey: '@primaryKey',
 
       // Unique aliases
-      'uid': '@unique',
-      'unique': '@unique',
+      uid: '@unique',
+      unique: '@unique',
 
       // Foreign key aliases
-      'fk': '@foreignKey',
-      'foreignKey': '@foreignKey',
+      fk: '@foreignKey',
+      foreignKey: '@foreignKey',
 
       // Index aliases
-      'idx': '@index',
-      'index': '@index',
+      idx: '@index',
+      index: '@index',
 
       // Relation aliases
-      'hasOne': '@hasOne',
-      'hasMany': '@hasMany',
-      'belongsTo': '@belongsTo',
+      hasOne: '@hasOne',
+      hasMany: '@hasMany',
+      belongsTo: '@belongsTo',
 
       // RLS aliases
-      'rls': '@rls',
-      'rowLevelSecurity': '@rls',
+      rls: '@rls',
+      rowLevelSecurity: '@rls',
 
       // Other common aliases
-      'table': '@table',
-      'default': '@default',
-      'owner': '@owner',
-      'tenant': '@tenant',
-      'grant': '@grant',
-      'sensitive': '@sensitive',
-      'pii': '@pii',
+      table: '@table',
+      default: '@default',
+      owner: '@owner',
+      tenant: '@tenant',
+      grant: '@grant',
+      sensitive: '@sensitive',
+      pii: '@pii',
 
       // Echo lattice/CRDT join
-      'wes_join': '@join',
-      'join': '@join'
+      wes_join: '@join',
+      join: '@join'
     };
 
     // Remove @ if present in the input
@@ -347,30 +351,32 @@ export class GraphQLSchemaBuilder {
    */
   extractValue(valueNode) {
     switch (valueNode.kind) {
-    case 'StringValue':
-      return valueNode.value;
-    case 'IntValue':
-      return parseInt(valueNode.value, 10);
-    case 'FloatValue':
-      return parseFloat(valueNode.value);
-    case 'BooleanValue':
-      return valueNode.value;
-    case 'EnumValue':
-      return valueNode.value;
-    case 'NullValue':
-      return null;
-    case 'ListValue':
-      return valueNode.values.map(v => this.extractValue(v));
-    case 'ObjectValue': {
-      const obj = {};
-      for (const field of valueNode.fields) {
-        obj[field.name.value] = this.extractValue(field.value);
+      case 'StringValue':
+        return valueNode.value;
+      case 'IntValue':
+        return parseInt(valueNode.value, 10);
+      case 'FloatValue':
+        return parseFloat(valueNode.value);
+      case 'BooleanValue':
+        return valueNode.value;
+      case 'EnumValue':
+        return valueNode.value;
+      case 'NullValue':
+        return null;
+      case 'ListValue':
+        return valueNode.values.map((v) => this.extractValue(v));
+      case 'ObjectValue': {
+        const obj = {};
+        for (const field of valueNode.fields) {
+          obj[field.name.value] = this.extractValue(field.value);
+        }
+        return obj;
       }
-      return obj;
-    }
-    default:
-      // Alpha Blocker #2: Remove silent coercion in value extraction
-      throw new Error(`Unknown value node kind: ${valueNode.kind}. Value node: ${JSON.stringify(valueNode)}`);
+      default:
+        // Alpha Blocker #2: Remove silent coercion in value extraction
+        throw new Error(
+          `Unknown value node kind: ${valueNode.kind}. Value node: ${JSON.stringify(valueNode)}`
+        );
     }
   }
 
@@ -407,7 +413,9 @@ export class GraphQLSchemaBuilder {
       base = current.name.value;
     } else {
       // Alpha Blocker #2: Remove silent type coercion
-      throw new Error(`Unknown GraphQL type kind: ${current.kind}. Type node: ${JSON.stringify(current)}`);
+      throw new Error(
+        `Unknown GraphQL type kind: ${current.kind}. Type node: ${JSON.stringify(current)}`
+      );
     }
 
     return { base, nonNull, list, itemNonNull };

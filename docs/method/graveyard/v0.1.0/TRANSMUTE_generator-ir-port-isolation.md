@@ -1,7 +1,7 @@
 ---
-title: "Generator IR Port Isolation"
+title: 'Generator IR Port Isolation'
 legend: TRANSMUTE
-release: "v0.1.0"
+release: 'v0.1.0'
 lane: v0.1.0
 ---
 

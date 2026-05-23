@@ -30,7 +30,7 @@ class MockEventEmitter {
   }
 
   getEvents(type) {
-    return this.events.filter(e => e.type === type);
+    return this.events.filter((e) => e.type === type);
   }
 
   clear() {
@@ -66,7 +66,7 @@ class MockDatabaseAdapter {
 
   async getSchema() {
     return {
-      tables: this.tables.map(t => ({ ...t })),
+      tables: this.tables.map((t) => ({ ...t })),
       version: '1.0.0'
     };
   }
@@ -80,11 +80,11 @@ class MockDatabaseAdapter {
   }
 
   async getTables() {
-    return this.tables.map(t => ({ name: t.name, columns: t.columns.length }));
+    return this.tables.map((t) => ({ name: t.name, columns: t.columns.length }));
   }
 
   async getTableData(tableName, _options = {}) {
-    const table = this.tables.find(t => t.name === tableName);
+    const table = this.tables.find((t) => t.name === tableName);
     if (!table) {
       throw new Error(`Table ${tableName} not found`);
     }
@@ -134,15 +134,19 @@ class MockDatabaseAdapter {
 function createHarnessContext(options = {}) {
   const clock = options.clock ?? createTestClock();
   const random = options.random ?? (() => 0.5);
-  const databaseAdapter = options.databaseAdapter ?? new MockDatabaseAdapter({ clock, ...options.databaseAdapterOptions });
+  const databaseAdapter =
+    options.databaseAdapter ??
+    new MockDatabaseAdapter({ clock, ...options.databaseAdapterOptions });
   const eventEmitter = options.eventEmitter ?? new MockEventEmitter({ clock });
-  const harness = options.harness ?? new IntegrationTestHarness({
-    databaseAdapter,
-    eventEmitter,
-    clock,
-    random,
-    ...options.harnessOptions
-  });
+  const harness =
+    options.harness ??
+    new IntegrationTestHarness({
+      databaseAdapter,
+      eventEmitter,
+      clock,
+      random,
+      ...options.harnessOptions
+    });
 
   return {
     clock: harness.clock ?? clock,
@@ -285,10 +289,7 @@ test('createSnapshot with schema-only strategy', async () => {
 test('createSnapshot without database adapter throws error', async () => {
   const harness = new IntegrationTestHarness();
 
-  await assert.rejects(
-    () => harness.createSnapshot('test'),
-    IntegrationTestError
-  );
+  await assert.rejects(() => harness.createSnapshot('test'), IntegrationTestError);
 });
 
 test('executeTest with successful basic test', async () => {
@@ -356,9 +357,7 @@ test('executeTest with performance threshold', async () => {
     performanceThreshold: 50 // 50% regression allowance
   });
 
-  const operations = [
-    { kind: 'create_table', table: 'slow_table' }
-  ];
+  const operations = [{ kind: 'create_table', table: 'slow_table' }];
 
   // This should pass because 200ms is within 50% of 100ms baseline
   const result = await harness.executeTest(testConfig, operations);
@@ -384,7 +383,7 @@ test('executeTest with rollback verification', async () => {
   const result = await harness.executeTest(testConfig, operations);
 
   // Should include rollback phase
-  const rollbackPhase = result.phases.find(p => p.name === 'rollback');
+  const rollbackPhase = result.phases.find((p) => p.name === 'rollback');
   assert(rollbackPhase);
 });
 
@@ -485,15 +484,9 @@ test('executeTestSuite with concurrent execution', async () => {
 test('executeTestSuite with empty test array throws error', async () => {
   const harness = new IntegrationTestHarness();
 
-  await assert.rejects(
-    () => harness.executeTestSuite([]),
-    IntegrationTestError
-  );
+  await assert.rejects(() => harness.executeTestSuite([]), IntegrationTestError);
 
-  await assert.rejects(
-    () => harness.executeTestSuite(null),
-    IntegrationTestError
-  );
+  await assert.rejects(() => harness.executeTestSuite(null), IntegrationTestError);
 });
 
 test('setupFailureInjection and failure injection execution', async () => {
@@ -745,11 +738,11 @@ test('complex integration scenario with all features', async () => {
   const result = await harness.executeTest(testConfig, operations);
 
   // Should execute all phases
-  assert(result.phases.find(p => p.name === 'setup'));
-  assert(result.phases.find(p => p.name === 'execution'));
-  assert(result.phases.find(p => p.name === 'verification'));
-  assert(result.phases.find(p => p.name === 'rollback'));
-  assert(result.phases.find(p => p.name === 'performance'));
+  assert(result.phases.find((p) => p.name === 'setup'));
+  assert(result.phases.find((p) => p.name === 'execution'));
+  assert(result.phases.find((p) => p.name === 'verification'));
+  assert(result.phases.find((p) => p.name === 'rollback'));
+  assert(result.phases.find((p) => p.name === 'performance'));
 
   // Should have snapshots
   assert(result.snapshots.length > 0);
@@ -832,9 +825,9 @@ test('concurrent batch execution with mixed success/failure', async () => {
 
   const operations = [
     { kind: 'create_table', table: 'batch1' }, // Should succeed
-    { kind: 'drop_table', table: 'users' },    // Should fail
+    { kind: 'drop_table', table: 'users' }, // Should fail
     { kind: 'create_table', table: 'batch2' }, // Should succeed
-    { kind: 'drop_table', table: 'posts' }     // Should fail
+    { kind: 'drop_table', table: 'posts' } // Should fail
   ];
 
   const testConfig = new TestConfig({
@@ -874,22 +867,22 @@ test('snapshot comparison with complex differences', async () => {
   assert.equal(comparison.identical, false);
 
   // Should detect row count difference
-  const usersDiff = comparison.differences.tables.find(d =>
-    d.table === 'users' && d.type === 'row_count_mismatch'
+  const usersDiff = comparison.differences.tables.find(
+    (d) => d.table === 'users' && d.type === 'row_count_mismatch'
   );
   assert(usersDiff);
   assert.equal(usersDiff.expected, 2);
   assert.equal(usersDiff.actual, 3);
 
   // Should detect missing table in other
-  const postsMissing = comparison.differences.tables.find(d =>
-    d.table === 'posts' && d.type === 'missing_in_other'
+  const postsMissing = comparison.differences.tables.find(
+    (d) => d.table === 'posts' && d.type === 'missing_in_other'
   );
   assert(postsMissing);
 
   // Should detect missing table in this
-  const ordersMissing = comparison.differences.tables.find(d =>
-    d.table === 'orders' && d.type === 'missing_in_this'
+  const ordersMissing = comparison.differences.tables.find(
+    (d) => d.table === 'orders' && d.type === 'missing_in_this'
   );
   assert(ordersMissing);
 });

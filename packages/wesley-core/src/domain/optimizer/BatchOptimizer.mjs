@@ -151,8 +151,10 @@ export class BatchOptimizer {
     try {
       // Execute with timeout protection
       const timeoutPromise = new Promise((_resolve, reject) => {
-        setTimeout(() => reject(new Error('Batch execution timeout')),
-          options.timeout || this.lockTimeout);
+        setTimeout(
+          () => reject(new Error('Batch execution timeout')),
+          options.timeout || this.lockTimeout
+        );
       });
 
       const executionPromise = executor(batch, {
@@ -168,7 +170,7 @@ export class BatchOptimizer {
         batchId,
         executionTime: endTime - startTime,
         operationCount: batch.length,
-        throughput: batch.length / (endTime - startTime) * 1000, // ops/sec
+        throughput: (batch.length / (endTime - startTime)) * 1000, // ops/sec
         success: true
       };
 
@@ -179,7 +181,6 @@ export class BatchOptimizer {
         metrics,
         batchId
       };
-
     } catch (error) {
       const endTime = performance.now();
       const metrics = {
@@ -233,7 +234,10 @@ export class BatchOptimizer {
       // Analyze conflicts
       const conflicts = this._findConflicts(op, operations.slice(i + 1));
       if (conflicts.length > 0) {
-        analysis.conflicts.set(i, conflicts.map(c => c.index + i + 1));
+        analysis.conflicts.set(
+          i,
+          conflicts.map((c) => c.index + i + 1)
+        );
       }
 
       // Track change types
@@ -260,24 +264,26 @@ export class BatchOptimizer {
     const indexed = operations.map((op, i) => ({ operation: op, originalIndex: i }));
 
     // Sort by lock priority: DDL before DML, table creation before modification
-    return indexed.sort((a, b) => {
-      const priorityA = this._getLockPriority(a.operation);
-      const priorityB = this._getLockPriority(b.operation);
+    return indexed
+      .sort((a, b) => {
+        const priorityA = this._getLockPriority(a.operation);
+        const priorityB = this._getLockPriority(b.operation);
 
-      if (priorityA !== priorityB) {
-        return priorityA - priorityB;
-      }
+        if (priorityA !== priorityB) {
+          return priorityA - priorityB;
+        }
 
-      // If same priority, maintain dependency order
-      const depsA = analysis.dependencies.get(a.originalIndex) || [];
-      const depsB = analysis.dependencies.get(b.originalIndex) || [];
+        // If same priority, maintain dependency order
+        const depsA = analysis.dependencies.get(a.originalIndex) || [];
+        const depsB = analysis.dependencies.get(b.originalIndex) || [];
 
-      if (depsA.includes(b.originalIndex)) return 1;
-      if (depsB.includes(a.originalIndex)) return -1;
+        if (depsA.includes(b.originalIndex)) return 1;
+        if (depsB.includes(a.originalIndex)) return -1;
 
-      // Otherwise maintain original order
-      return a.originalIndex - b.originalIndex;
-    }).map(item => item.operation);
+        // Otherwise maintain original order
+        return a.originalIndex - b.originalIndex;
+      })
+      .map((item) => item.operation);
   }
 
   /**
@@ -297,9 +303,7 @@ export class BatchOptimizer {
       }
 
       // Check if operation is compatible with current group
-      const compatible = currentGroup.every(groupOp =>
-        this._areCompatible(groupOp, operation)
-      );
+      const compatible = currentGroup.every((groupOp) => this._areCompatible(groupOp, operation));
 
       if (compatible && currentGroup.length < this.maxBatchSize) {
         currentGroup.push(operation);
@@ -332,9 +336,10 @@ export class BatchOptimizer {
       for (const operation of group) {
         const opMemory = this._estimateOperationMemory(operation);
 
-        if (currentBatch.length === 0 ||
-            (currentMemory + opMemory <= this.maxMemoryMB &&
-             currentBatch.length < this.maxBatchSize)) {
+        if (
+          currentBatch.length === 0 ||
+          (currentMemory + opMemory <= this.maxMemoryMB && currentBatch.length < this.maxBatchSize)
+        ) {
           currentBatch.push(operation);
           currentMemory += opMemory;
         } else {
@@ -367,11 +372,11 @@ export class BatchOptimizer {
    * @private
    */
   _optimizeTransactionBoundaries(batches) {
-    return batches.map(batch => {
-      const hasSchemaChanges = batch.operations.some(op => this._isSchemaChange(op));
-      const _hasDataChanges = batch.operations.some(op => this._isDataChange(op));
-      const hasRiskyOperations = batch.operations.some(op =>
-        this._calculateOperationRisk(op) >= 50
+    return batches.map((batch) => {
+      const hasSchemaChanges = batch.operations.some((op) => this._isSchemaChange(op));
+      const _hasDataChanges = batch.operations.some((op) => this._isDataChange(op));
+      const hasRiskyOperations = batch.operations.some(
+        (op) => this._calculateOperationRisk(op) >= 50
       );
 
       return {
@@ -396,23 +401,27 @@ export class BatchOptimizer {
       const prevOp = previousOperations[i];
 
       // Table creation dependency
-      if (operation.table && prevOp.kind === 'create_table' &&
-          prevOp.table === operation.table) {
+      if (operation.table && prevOp.kind === 'create_table' && prevOp.table === operation.table) {
         dependencies.push(i);
       }
 
       // Foreign key dependency
-      if (operation.kind === 'add_constraint' &&
-          operation.constraintType === 'foreign_key' &&
-          prevOp.kind === 'create_table' &&
-          prevOp.table === operation.references) {
+      if (
+        operation.kind === 'add_constraint' &&
+        operation.constraintType === 'foreign_key' &&
+        prevOp.kind === 'create_table' &&
+        prevOp.table === operation.references
+      ) {
         dependencies.push(i);
       }
 
       // Column dependency
-      if (operation.column && prevOp.kind === 'add_column' &&
-          prevOp.table === operation.table &&
-          prevOp.column === operation.column) {
+      if (
+        operation.column &&
+        prevOp.kind === 'add_column' &&
+        prevOp.table === operation.table &&
+        prevOp.column === operation.column
+      ) {
         dependencies.push(i);
       }
     }
@@ -432,9 +441,11 @@ export class BatchOptimizer {
 
       // Same table, incompatible operations
       if (operation.table === laterOp.table) {
-        if ((operation.kind === 'drop_table' && laterOp.table === operation.table) ||
-            (operation.kind === 'rename_table' && laterOp.table === operation.table) ||
-            (operation.kind === 'drop_column' && laterOp.column === operation.column)) {
+        if (
+          (operation.kind === 'drop_table' && laterOp.table === operation.table) ||
+          (operation.kind === 'rename_table' && laterOp.table === operation.table) ||
+          (operation.kind === 'drop_column' && laterOp.column === operation.column)
+        ) {
           conflicts.push({ operation: laterOp, index: i });
         }
       }
@@ -463,8 +474,10 @@ export class BatchOptimizer {
       ];
 
       for (const [first, second] of incompatiblePairs) {
-        if ((op1.kind === first && op2.kind === second) ||
-            (op1.kind === second && op2.kind === first)) {
+        if (
+          (op1.kind === first && op2.kind === second) ||
+          (op1.kind === second && op2.kind === first)
+        ) {
           return false;
         }
       }
@@ -487,16 +500,16 @@ export class BatchOptimizer {
    */
   _getLockPriority(operation) {
     const priorities = {
-      'create_table': 1,
-      'create_index': 2,
-      'add_column': 3,
-      'add_constraint': 4,
-      'alter_type': 5,
-      'rename_column': 6,
-      'rename_table': 7,
-      'drop_constraint': 8,
-      'drop_column': 9,
-      'drop_table': 10
+      create_table: 1,
+      create_index: 2,
+      add_column: 3,
+      add_constraint: 4,
+      alter_type: 5,
+      rename_column: 6,
+      rename_table: 7,
+      drop_constraint: 8,
+      drop_column: 9,
+      drop_table: 10
     };
 
     return priorities[operation.kind] || 5;
@@ -509,16 +522,16 @@ export class BatchOptimizer {
   _estimateOperationMemory(operation) {
     // Base memory estimates in MB
     const baseMemory = {
-      'create_table': 5,
-      'drop_table': 2,
-      'add_column': 3,
-      'drop_column': 1,
-      'alter_type': 10, // Type conversion can be expensive
-      'create_index': 20, // Index creation is memory intensive
-      'add_constraint': 5,
-      'drop_constraint': 1,
-      'rename_table': 1,
-      'rename_column': 1
+      create_table: 5,
+      drop_table: 2,
+      add_column: 3,
+      drop_column: 1,
+      alter_type: 10, // Type conversion can be expensive
+      create_index: 20, // Index creation is memory intensive
+      add_constraint: 5,
+      drop_constraint: 1,
+      rename_table: 1,
+      rename_column: 1
     };
 
     return baseMemory[operation.kind] || 2;
@@ -529,9 +542,9 @@ export class BatchOptimizer {
    * @private
    */
   _determineBatchType(operations) {
-    const hasSchema = operations.some(op => this._isSchemaChange(op));
-    const hasData = operations.some(op => this._isDataChange(op));
-    const hasIndex = operations.some(op => op.kind.includes('index'));
+    const hasSchema = operations.some((op) => this._isSchemaChange(op));
+    const hasData = operations.some((op) => this._isDataChange(op));
+    const hasIndex = operations.some((op) => op.kind.includes('index'));
 
     if (hasSchema && hasData) return 'mixed';
     if (hasSchema) return 'schema';
@@ -546,9 +559,15 @@ export class BatchOptimizer {
    */
   _isSchemaChange(operation) {
     const schemaOps = [
-      'create_table', 'drop_table', 'rename_table',
-      'add_column', 'drop_column', 'rename_column', 'alter_type',
-      'add_constraint', 'drop_constraint'
+      'create_table',
+      'drop_table',
+      'rename_table',
+      'add_column',
+      'drop_column',
+      'rename_column',
+      'alter_type',
+      'add_constraint',
+      'drop_constraint'
     ];
     return schemaOps.includes(operation.kind);
   }
@@ -568,16 +587,16 @@ export class BatchOptimizer {
    */
   _calculateOperationRisk(operation) {
     const riskScores = {
-      'drop_table': 100,
-      'drop_column': 80,
-      'alter_type': 60,
-      'add_not_null': 40,
-      'rename_table': 30,
-      'rename_column': 25,
-      'drop_constraint': 20,
-      'create_index': 10,
-      'add_column': 5,
-      'add_constraint': 5
+      drop_table: 100,
+      drop_column: 80,
+      alter_type: 60,
+      add_not_null: 40,
+      rename_table: 30,
+      rename_column: 25,
+      drop_constraint: 20,
+      create_index: 10,
+      add_column: 5,
+      add_constraint: 5
     };
 
     return riskScores[operation.kind] || 0;
@@ -588,8 +607,10 @@ export class BatchOptimizer {
    * @private
    */
   _calculateLockReduction(analysis) {
-    const totalConflicts = Array.from(analysis.conflicts.values())
-      .reduce((sum, conflicts) => sum + conflicts.length, 0);
+    const totalConflicts = Array.from(analysis.conflicts.values()).reduce(
+      (sum, conflicts) => sum + conflicts.length,
+      0
+    );
 
     if (totalConflicts === 0) return 0;
 

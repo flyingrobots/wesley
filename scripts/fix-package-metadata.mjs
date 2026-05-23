@@ -15,9 +15,11 @@ const packages = await fs.readdir(packagesDir, { withFileTypes: true });
 
 function _sortKeys(obj) {
   const ordered = {};
-  Object.keys(obj).sort().forEach((key) => {
-    ordered[key] = obj[key];
-  });
+  Object.keys(obj)
+    .sort()
+    .forEach((key) => {
+      ordered[key] = obj[key];
+    });
   return ordered;
 }
 

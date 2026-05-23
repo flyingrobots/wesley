@@ -2,10 +2,7 @@ import { LoweringEngine, WesleyError } from '@wesley/core';
 import { ZodGenerator } from '@wesley/generator-js';
 import { FileOutputGeneratorCommand } from '../framework/FileOutputGeneratorCommand.mjs';
 import { resolveSchemaIr } from '../utils/schema-ir-cache.mjs';
-import {
-  generateFamilyZodFromSDL,
-  hasTableLikeIr
-} from '../utils/family-projections.mjs';
+import { generateFamilyZodFromSDL, hasTableLikeIr } from '../utils/family-projections.mjs';
 
 export class ZodCommand extends FileOutputGeneratorCommand {
   constructor(ctx) {

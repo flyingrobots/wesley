@@ -2,7 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { discoverPlugins } from '../../src/application/PluginDiscovery.mjs';
-import { validateConfig, KNOWN_EXPERIMENTAL_FLAGS } from '../../src/application/ConfigValidator.mjs';
+import {
+  validateConfig,
+  KNOWN_EXPERIMENTAL_FLAGS
+} from '../../src/application/ConfigValidator.mjs';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -10,7 +13,11 @@ import { validateConfig, KNOWN_EXPERIMENTAL_FLAGS } from '../../src/application/
 
 /** Capture a thrown error (sync or async). */
 async function catchReject(fn) {
-  try { await fn(); } catch (e) { return e; }
+  try {
+    await fn();
+  } catch (e) {
+    return e;
+  }
   throw new Error('Expected function to throw');
 }
 
@@ -20,8 +27,12 @@ function makeFakePlugin(overrides = {}) {
     apiVersion: '1',
     name: 'fake-plugin',
     init() {},
-    async plan() { return { artifacts: [{ path: 'out.txt' }] }; },
-    async generate() { return { 'out.txt': 'hello' }; },
+    async plan() {
+      return { artifacts: [{ path: 'out.txt' }] };
+    },
+    async generate() {
+      return { 'out.txt': 'hello' };
+    },
     ...overrides
   };
 }
@@ -32,7 +43,9 @@ const nullLogger = {
   warn() {},
   error() {},
   debug() {},
-  child() { return nullLogger; },
+  child() {
+    return nullLogger;
+  },
   setLevel() {},
   async flush() {}
 };
@@ -43,10 +56,16 @@ function collectingLogger() {
   const debugs = [];
   const logger = {
     info() {},
-    warn(...args) { warnings.push(args); },
+    warn(...args) {
+      warnings.push(args);
+    },
     error() {},
-    debug(...args) { debugs.push(args); },
-    child() { return logger; },
+    debug(...args) {
+      debugs.push(args);
+    },
+    child() {
+      return logger;
+    },
     setLevel() {},
     async flush() {}
   };
@@ -90,37 +109,37 @@ test('validateConfig — accepts valid generators array', () => {
 test('validateConfig — rejects non-array generators', () => {
   const result = validateConfig({ generators: 'bad' });
   assert.equal(result.valid, false);
-  assert.ok(result.errors.some(e => e.includes('array')));
+  assert.ok(result.errors.some((e) => e.includes('array')));
 });
 
 test('validateConfig — rejects generator entry missing package', () => {
   const result = validateConfig({ generators: [{ config: {} }] });
   assert.equal(result.valid, false);
-  assert.ok(result.errors.some(e => e.includes('package')));
+  assert.ok(result.errors.some((e) => e.includes('package')));
 });
 
 test('validateConfig — rejects generator entry with empty package', () => {
   const result = validateConfig({ generators: [{ package: '  ' }] });
   assert.equal(result.valid, false);
-  assert.ok(result.errors.some(e => e.includes('package')));
+  assert.ok(result.errors.some((e) => e.includes('package')));
 });
 
 test('validateConfig — rejects null generator entry', () => {
   const result = validateConfig({ generators: [null] });
   assert.equal(result.valid, false);
-  assert.ok(result.errors.some(e => e.includes('non-null')));
+  assert.ok(result.errors.some((e) => e.includes('non-null')));
 });
 
 test('validateConfig — rejects non-boolean enabled', () => {
   const result = validateConfig({ generators: [{ package: 'x', enabled: 'yes' }] });
   assert.equal(result.valid, false);
-  assert.ok(result.errors.some(e => e.includes('enabled')));
+  assert.ok(result.errors.some((e) => e.includes('enabled')));
 });
 
 test('validateConfig — rejects non-object config field', () => {
   const result = validateConfig({ generators: [{ package: 'x', config: 'bad' }] });
   assert.equal(result.valid, false);
-  assert.ok(result.errors.some(e => e.includes('config')));
+  assert.ok(result.errors.some((e) => e.includes('config')));
 });
 
 test('validateConfig — accepts valid experimental flags', () => {
@@ -132,19 +151,19 @@ test('validateConfig — accepts valid experimental flags', () => {
 test('validateConfig — warns on unknown experimental flag', () => {
   const result = validateConfig({ experimental: { unknownFlag: true } });
   assert.equal(result.valid, true);
-  assert.ok(result.warnings.some(w => w.includes('unknownFlag')));
+  assert.ok(result.warnings.some((w) => w.includes('unknownFlag')));
 });
 
 test('validateConfig — rejects non-boolean experimental value', () => {
   const result = validateConfig({ experimental: { irV2: 'yes' } });
   assert.equal(result.valid, false);
-  assert.ok(result.errors.some(e => e.includes('irV2')));
+  assert.ok(result.errors.some((e) => e.includes('irV2')));
 });
 
 test('validateConfig — rejects non-object experimental', () => {
   const result = validateConfig({ experimental: 'nope' });
   assert.equal(result.valid, false);
-  assert.ok(result.errors.some(e => e.includes('experimental')));
+  assert.ok(result.errors.some((e) => e.includes('experimental')));
 });
 
 test('validateConfig — rejects non-object config at top level', () => {
@@ -153,7 +172,9 @@ test('validateConfig — rejects non-object config at top level', () => {
 });
 
 test('KNOWN_EXPERIMENTAL_FLAGS is frozen', () => {
-  assert.throws(() => { KNOWN_EXPERIMENTAL_FLAGS.push('x'); }, TypeError);
+  assert.throws(() => {
+    KNOWN_EXPERIMENTAL_FLAGS.push('x');
+  }, TypeError);
 });
 
 // ===========================================================================
@@ -169,10 +190,7 @@ test('discoverPlugins — loads two generators, both returned', async () => {
   });
 
   const config = {
-    generators: [
-      { package: 'pkg-alpha' },
-      { package: 'pkg-beta' }
-    ]
+    generators: [{ package: 'pkg-alpha' }, { package: 'pkg-beta' }]
   };
 
   const result = await discoverPlugins(config, { resolve, logger: nullLogger });
@@ -190,10 +208,7 @@ test('discoverPlugins — enabled: false skips generator entirely', async () => 
   });
 
   const config = {
-    generators: [
-      { package: 'pkg-alpha', enabled: false },
-      { package: 'pkg-beta' }
-    ]
+    generators: [{ package: 'pkg-alpha', enabled: false }, { package: 'pkg-beta' }]
   };
 
   const result = await discoverPlugins(config, { resolve, logger: nullLogger });
@@ -214,7 +229,9 @@ test('discoverPlugins — plugin config forwarded to init() verbatim', async () 
   let receivedConfig;
   const plugin = makeFakePlugin({
     name: 'cfg-test',
-    init(config) { receivedConfig = config; }
+    init(config) {
+      receivedConfig = config;
+    }
   });
   const resolve = mockResolve({ 'pkg-cfg': { default: plugin } });
 
@@ -229,7 +246,9 @@ test('discoverPlugins — init() is NOT called when no config provided', async (
   let initCalled = false;
   const plugin = makeFakePlugin({
     name: 'no-cfg',
-    init() { initCalled = true; }
+    init() {
+      initCalled = true;
+    }
   });
   const resolve = mockResolve({ 'pkg-nocfg': { default: plugin } });
 
@@ -267,9 +286,9 @@ test('discoverPlugins — unknown experimental flag produces warning', async () 
   });
 
   // Warning from validateConfig propagated to result
-  assert.ok(result.warnings.some(w => w.includes('newThing')));
+  assert.ok(result.warnings.some((w) => w.includes('newThing')));
   // irV2 enabled warning logged
-  assert.ok(warnings.some(args => JSON.stringify(args).includes('irV2')));
+  assert.ok(warnings.some((args) => JSON.stringify(args).includes('irV2')));
 });
 
 test('discoverPlugins — experimental defaults to all-false when absent', async () => {
@@ -286,10 +305,18 @@ test('discoverPlugins — experimental defaults to all-false when absent', async
 
 test('discoverPlugins — supports class-based plugin via default export', async () => {
   class TestPlugin {
-    get apiVersion() { return '1'; }
-    get name() { return 'class-plugin'; }
-    async plan() { return { artifacts: [] }; }
-    async generate() { return {}; }
+    get apiVersion() {
+      return '1';
+    }
+    get name() {
+      return 'class-plugin';
+    }
+    async plan() {
+      return { artifacts: [] };
+    }
+    async generate() {
+      return {};
+    }
   }
 
   const resolve = mockResolve({ 'pkg-class': { default: TestPlugin } });
@@ -312,10 +339,18 @@ test('discoverPlugins — supports named "plugin" export', async () => {
 
 test('discoverPlugins — supports named "Plugin" export (capital P)', async () => {
   class MyPlugin {
-    get apiVersion() { return '1'; }
-    get name() { return 'capital-p'; }
-    async plan() { return { artifacts: [] }; }
-    async generate() { return {}; }
+    get apiVersion() {
+      return '1';
+    }
+    get name() {
+      return 'capital-p';
+    }
+    async plan() {
+      return { artifacts: [] };
+    }
+    async generate() {
+      return {};
+    }
   }
   const resolve = mockResolve({ 'pkg-cap': { Plugin: MyPlugin } });
 
@@ -352,16 +387,12 @@ test('discoverPlugins — invalid config shape throws WCFG001', async () => {
 });
 
 test('discoverPlugins — throws on missing resolve dependency', async () => {
-  const err = await catchReject(() =>
-    discoverPlugins({}, { logger: nullLogger })
-  );
+  const err = await catchReject(() => discoverPlugins({}, { logger: nullLogger }));
   assert.match(err.message, /resolve/);
 });
 
 test('discoverPlugins — throws on missing logger dependency', async () => {
-  const err = await catchReject(() =>
-    discoverPlugins({}, { resolve: async () => ({}) })
-  );
+  const err = await catchReject(() => discoverPlugins({}, { resolve: async () => ({}) }));
   assert.match(err.message, /logger/);
 });
 
@@ -374,10 +405,7 @@ test('discoverPlugins — empty generators array returns empty plugins', async (
 });
 
 test('discoverPlugins — no generators key is valid (defaults to empty)', async () => {
-  const result = await discoverPlugins(
-    {},
-    { resolve: mockResolve({}), logger: nullLogger }
-  );
+  const result = await discoverPlugins({}, { resolve: mockResolve({}), logger: nullLogger });
   assert.equal(result.plugins.length, 0);
   assert.equal(result.warnings.length, 0);
 });
@@ -388,12 +416,14 @@ test('discoverPlugins — enabled: false logs debug message', async () => {
   const config = { generators: [{ package: 'skipped-pkg', enabled: false }] };
 
   await discoverPlugins(config, { resolve, logger });
-  assert.ok(debugs.some(args => JSON.stringify(args).includes('skipped-pkg')));
+  assert.ok(debugs.some((args) => JSON.stringify(args).includes('skipped-pkg')));
 });
 
 test('discoverPlugins — class instantiation failure produces WCFG003', async () => {
   class BadConstructor {
-    constructor() { throw new Error('constructor boom'); }
+    constructor() {
+      throw new Error('constructor boom');
+    }
   }
   const resolve = mockResolve({ 'pkg-boom': { default: BadConstructor } });
   const config = { generators: [{ package: 'pkg-boom' }] };

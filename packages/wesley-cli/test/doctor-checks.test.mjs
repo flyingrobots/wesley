@@ -68,7 +68,9 @@ test('checkHash fails when crypto is missing', () => {
 test('checkHash fails when sha256 throws', () => {
   const ctx = {
     crypto: {
-      sha256: () => { throw new Error('boom'); }
+      sha256: () => {
+        throw new Error('boom');
+      }
     }
   };
   const r = checkHash(ctx);

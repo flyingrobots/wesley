@@ -1,4 +1,5 @@
 # ARCHITECTURE
+
 <!-- docs-truth: status=experimental owner=@flyingrobots -->
 
 Wesley is a schema-first compiler kernel and assurance toolchain.
@@ -118,28 +119,28 @@ semantics.
 
 ## Repo Tour
 
-| Path | Role |
-| --- | --- |
-| `crates/wesley-core/` | Rust compiler kernel. Parses/lower SDL to domain-empty L1 IR, diffs L1 schema structure, lists schema root operations, and analyzes operation documents. |
-| `crates/wesley-cli/` | Native Rust `wesley` binary for schema deltas, schema hashes, Rust/TypeScript artifacts, and operation facts. |
-| `crates/wesley-emit-rust/` | Rust projection crate. Builds a Rust item/type AST from L1 IR and `SchemaOperation` data, then prints deterministic model and operation declarations. |
-| `crates/wesley-emit-typescript/` | Rust TypeScript projection crate. Builds a TypeScript declaration AST from L1 IR and `SchemaOperation` data, then prints deterministic model and operation declarations. |
-| `xtask/` | Rust repository automation: docs checks, tests, native preflight, release check, legacy preflight bridge. |
-| `packages/wesley-core/` | Historical JS core: domain/application/port modules, module capabilities, generation pipeline, hashes, runtime-event helpers. |
-| `packages/wesley-cli/` | Historical JS CLI command framework and module-aware command surfaces. |
-| `packages/wesley-host-node/` | Node executable wrapper around the JS CLI and runtime adapters. |
-| `packages/wesley-runtime-node/` | Shared Node module discovery/loading and host utilities. |
-| `packages/wesley-generator-js/` | TypeScript/Zod/model generation surface. |
-| `packages/wesley-generator-vue/` | Experimental Vue-facing generator surface. |
-| `packages/wesley-holmes/` | Evidence, verification, counterfactual, Holmes/Moriarty-era tooling. |
-| `packages/wesley-host-browser/`, `wesley-host-bun/`, `wesley-host-deno/` | Experimental host adapters. |
-| `packages/wesley-tasks/` | Task planning/orchestration utilities. |
-| `packages/wesley-test-fixtures/` | Shared test fixtures and schema builders for package tests. |
-| `schemas/` | JSON schemas and generic directive/schema assets used by tooling and tests. |
-| `test/fixtures/` | GraphQL fixtures, Rust L1 goldens, package examples, and reference schemas. |
-| `scripts/` | Preflight, docs truth, docs link, fixture generation, smoke, and CI helper scripts. |
-| `docs/` | Operator docs, architecture, design packets, backlog, audits, specs, and method docs. |
-| `.github/workflows/` | CI workflows for Rust, packages, docs, hosts, security, and progress badges. |
+| Path                                                                     | Role                                                                                                                                                                     |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `crates/wesley-core/`                                                    | Rust compiler kernel. Parses/lower SDL to domain-empty L1 IR, diffs L1 schema structure, lists schema root operations, and analyzes operation documents.                 |
+| `crates/wesley-cli/`                                                     | Native Rust `wesley` binary for schema deltas, schema hashes, Rust/TypeScript artifacts, and operation facts.                                                            |
+| `crates/wesley-emit-rust/`                                               | Rust projection crate. Builds a Rust item/type AST from L1 IR and `SchemaOperation` data, then prints deterministic model and operation declarations.                    |
+| `crates/wesley-emit-typescript/`                                         | Rust TypeScript projection crate. Builds a TypeScript declaration AST from L1 IR and `SchemaOperation` data, then prints deterministic model and operation declarations. |
+| `xtask/`                                                                 | Rust repository automation: docs checks, tests, native preflight, release check, legacy preflight bridge.                                                                |
+| `packages/wesley-core/`                                                  | Historical JS core: domain/application/port modules, module capabilities, generation pipeline, hashes, runtime-event helpers.                                            |
+| `packages/wesley-cli/`                                                   | Historical JS CLI command framework and module-aware command surfaces.                                                                                                   |
+| `packages/wesley-host-node/`                                             | Node executable wrapper around the JS CLI and runtime adapters.                                                                                                          |
+| `packages/wesley-runtime-node/`                                          | Shared Node module discovery/loading and host utilities.                                                                                                                 |
+| `packages/wesley-generator-js/`                                          | TypeScript/Zod/model generation surface.                                                                                                                                 |
+| `packages/wesley-generator-vue/`                                         | Experimental Vue-facing generator surface.                                                                                                                               |
+| `packages/wesley-holmes/`                                                | Evidence, verification, counterfactual, Holmes/Moriarty-era tooling.                                                                                                     |
+| `packages/wesley-host-browser/`, `wesley-host-bun/`, `wesley-host-deno/` | Experimental host adapters.                                                                                                                                              |
+| `packages/wesley-tasks/`                                                 | Task planning/orchestration utilities.                                                                                                                                   |
+| `packages/wesley-test-fixtures/`                                         | Shared test fixtures and schema builders for package tests.                                                                                                              |
+| `schemas/`                                                               | JSON schemas and generic directive/schema assets used by tooling and tests.                                                                                              |
+| `test/fixtures/`                                                         | GraphQL fixtures, Rust L1 goldens, package examples, and reference schemas.                                                                                              |
+| `scripts/`                                                               | Preflight, docs truth, docs link, fixture generation, smoke, and CI helper scripts.                                                                                      |
+| `docs/`                                                                  | Operator docs, architecture, design packets, backlog, audits, specs, and method docs.                                                                                    |
+| `.github/workflows/`                                                     | CI workflows for Rust, packages, docs, hosts, security, and progress badges.                                                                                             |
 
 Some directories still contain extraction residue. In particular,
 `packages/wesley-generator-echo/` exists on disk but is not an active tracked
@@ -151,10 +152,10 @@ source package in this architecture. Echo-owned work should happen in Echo.
 
 It has three internal areas:
 
-| Area | Files | Responsibility |
-| --- | --- | --- |
-| Domain | `src/domain/*` | IR structs, operation-analysis structs, error types, hashes. |
-| Ports | `src/ports/*` | Host-neutral traits such as `LoweringPort`. |
+| Area     | Files            | Responsibility                                                    |
+| -------- | ---------------- | ----------------------------------------------------------------- |
+| Domain   | `src/domain/*`   | IR structs, operation-analysis structs, error types, hashes.      |
+| Ports    | `src/ports/*`    | Host-neutral traits such as `LoweringPort`.                       |
 | Adapters | `src/adapters/*` | Concrete parser/lowering implementation, currently Apollo Parser. |
 
 Public Rust APIs currently include:
@@ -670,4 +671,5 @@ That shape keeps the compiler honest. Wesley says what the schema and operation
 mean. Other systems decide what those facts imply for their runtime.
 
 ---
+
 **The goal is inevitably. Wesley owns compiler truth; target worlds own their own meaning.**

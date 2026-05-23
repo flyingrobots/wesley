@@ -39,10 +39,10 @@ The first match wins. Wildcard overrides of the form `tbl:Orders.*` apply to bot
 
 In CI or ad-hoc runs you can override the file without editing the repo:
 
-| Variable | Effect |
-|----------|--------|
-| `WESLEY_HOLMES_WEIGHTS` | Inline JSON string (highest precedence). |
-| `WESLEY_HOLMES_WEIGHT_FILE` | Alternative path to a JSON file. |
+| Variable                    | Effect                                   |
+| --------------------------- | ---------------------------------------- |
+| `WESLEY_HOLMES_WEIGHTS`     | Inline JSON string (highest precedence). |
+| `WESLEY_HOLMES_WEIGHT_FILE` | Alternative path to a JSON file.         |
 
 If neither variable is set HOLMES looks for `wesley.weights.json`; if it is missing the built-in defaults are used.
 

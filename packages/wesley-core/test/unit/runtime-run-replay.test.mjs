@@ -103,7 +103,7 @@ test('replayRuntimeRun reports stream integrity issues', () => {
   assert.equal(result.replay.terminal, true);
   assert.equal(result.replay.integrity.valid, false);
   assert.deepEqual(
-    result.replay.integrity.issues.map(issue => issue.code),
+    result.replay.integrity.issues.map((issue) => issue.code),
     ['SEQUENCE_START', 'SEQUENCE_GAP', 'STREAM_MISMATCH', 'TRANSMUTATION_MISMATCH', 'SEQUENCE_GAP']
   );
 });
@@ -140,27 +140,30 @@ test('replayRuntimeRun can continue from a stored snapshot and tail events', () 
     }
   ]);
 
-  const result = replayRuntimeRun([
+  const result = replayRuntimeRun(
+    [
+      {
+        eventId: 'transmutation:null-generator:run-replay-003:3',
+        type: 'RunCompleted',
+        streamId: 'transmutation:null-generator:run-replay-003',
+        sequence: 3,
+        schemaVersion: '1.0.0',
+        timestamp: '2026-03-20T03:22:02.000Z',
+        causationId: null,
+        correlationId: 'run-replay-003',
+        idempotencyKey: 'null-generator:transform:completed',
+        runId: 'run-replay-003',
+        transmutation: 'null-generator',
+        payload: { command: 'transform' }
+      }
+    ],
     {
-      eventId: 'transmutation:null-generator:run-replay-003:3',
-      type: 'RunCompleted',
-      streamId: 'transmutation:null-generator:run-replay-003',
-      sequence: 3,
-      schemaVersion: '1.0.0',
-      timestamp: '2026-03-20T03:22:02.000Z',
-      causationId: null,
-      correlationId: 'run-replay-003',
-      idempotencyKey: 'null-generator:transform:completed',
       runId: 'run-replay-003',
       transmutation: 'null-generator',
-      payload: { command: 'transform' }
+      streamId: 'transmutation:null-generator:run-replay-003',
+      snapshot
     }
-  ], {
-    runId: 'run-replay-003',
-    transmutation: 'null-generator',
-    streamId: 'transmutation:null-generator:run-replay-003',
-    snapshot
-  });
+  );
 
   assert.equal(result.run.status, 'completed');
   assert.equal(result.run.artifactCount, 1);

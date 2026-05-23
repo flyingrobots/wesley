@@ -75,7 +75,7 @@ Review core directories, note modules/classes violating SRP or using `opts` anti
 
 ### Affected Areas
 
-- packages/wesley-core/*
+- packages/wesley-core/\*
 - docs/architecture notes (optional)
 
 ### Implementation Steps
@@ -105,9 +105,9 @@ Review core directories, note modules/classes violating SRP or using `opts` anti
 
 ### QA Sign-off Matrix
 
-| Environment | Surface | Owner | Status | Notes |
-| --- | --- | --- | --- | --- |
-| n/a | Documentation | n/a | n/a | |
+| Environment | Surface       | Owner | Status | Notes |
+| ----------- | ------------- | ----- | ------ | ----- |
+| n/a         | Documentation | n/a   | n/a    |       |
 
 ## Requirements
 

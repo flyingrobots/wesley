@@ -29,7 +29,7 @@ export async function compileSchemaInBrowser(inputFiles) {
   // Combine all input files into a single SDL string for initial parsing
   // In a more advanced scenario, MemoryFileSystem would handle file imports
   // For now, simple concatenation.
-  const schemaSDL = inputFiles.map(f => f.body).join('\n\n');
+  const schemaSDL = inputFiles.map((f) => f.body).join('\n\n');
 
   if (schemaSDL.length > 1_000_000) {
     throw new Error('Combined schema too large (max 1MB)');
@@ -75,21 +75,19 @@ export async function compileSchemaInBrowser(inputFiles) {
 
     result.outputFiles.push({ file: 'schema.json', body: JSON.stringify(bundle.schema, null, 2) });
 
-
     result.ok = true;
     result.tables = tables;
 
     // Check for errors in the bundle
     if (bundle.errors && bundle.errors.length > 0) {
       result.ok = false;
-      result.errors = bundle.errors.map(err => ({ message: err.message || String(err) }));
+      result.errors = bundle.errors.map((err) => ({ message: err.message || String(err) }));
     } else if (tables === 0 && schemaSDL.includes('type ')) {
       // Fallback: if we have types but 0 tables, something might be wrong with parsing/bundle
       // console.log('DEBUG: Bundle schema:', JSON.stringify(bundle.schema, null, 2));
     }
 
     return result;
-
   } catch (err) {
     result.ok = false;
     result.errors.push({ message: err.message || String(err) });

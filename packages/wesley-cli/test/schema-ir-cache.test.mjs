@@ -182,9 +182,7 @@ test('resolveSchemaIr uses parseComposed and records composed cache metadata', a
 
 test('resolveSchemaIr ignores malformed cache entries and regenerates IR', async () => {
   const cacheKey = await computeSdlHash(sampleSdl);
-  const fs = createFs(new Map([
-    [`${SCHEMA_IR_CACHE_DIR}/${cacheKey}.json`, '{"nope":true}']
-  ]));
+  const fs = createFs(new Map([[`${SCHEMA_IR_CACHE_DIR}/${cacheKey}.json`, '{"nope":true}']]));
   const ctx = createCtx({
     fs,
     parse() {

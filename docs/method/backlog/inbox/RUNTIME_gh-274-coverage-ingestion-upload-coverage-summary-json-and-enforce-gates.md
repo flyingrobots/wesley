@@ -18,5 +18,6 @@ Trigger: default: runtime, host, operator-flow, CI, or repo execution surface.
 ## Original Issue
 
 Add coverage upload to pkg workflows (start with @wesley/core/@wesley/cli).
+
 - Persist coverage-summary.json as artifact.
 - Have compute-progress read coverage and enforce thresholds for Alpha/Beta.

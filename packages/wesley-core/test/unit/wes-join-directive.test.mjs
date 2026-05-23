@@ -109,7 +109,8 @@ test('@wes_join(strategy: "lww") on Boolean field parses successfully', () => {
 
 test('@wes_join(strategy: "union") on scalar field throws error', () => {
   assert.throws(
-    () => buildSchema(`
+    () =>
+      buildSchema(`
       type GameState @table {
         id: ID! @primaryKey
         maxScore: Int! @wes_join(strategy: "union")
@@ -125,7 +126,8 @@ test('@wes_join(strategy: "union") on scalar field throws error', () => {
 
 test('@wes_join(strategy: "max") on String field throws error', () => {
   assert.throws(
-    () => buildSchema(`
+    () =>
+      buildSchema(`
       type GameState @table {
         id: ID! @primaryKey
         name: String! @wes_join(strategy: "max")
@@ -141,7 +143,8 @@ test('@wes_join(strategy: "max") on String field throws error', () => {
 
 test('@wes_join(strategy: "max") on Boolean field throws error', () => {
   assert.throws(
-    () => buildSchema(`
+    () =>
+      buildSchema(`
       type GameState @table {
         id: ID! @primaryKey
         active: Boolean! @wes_join(strategy: "max")
@@ -157,7 +160,8 @@ test('@wes_join(strategy: "max") on Boolean field throws error', () => {
 
 test('@wes_join(strategy: "max") on ID field throws error', () => {
   assert.throws(
-    () => buildSchema(`
+    () =>
+      buildSchema(`
       type GameState @table {
         id: ID! @primaryKey @wes_join(strategy: "max")
       }
@@ -171,7 +175,8 @@ test('@wes_join(strategy: "max") on ID field throws error', () => {
 
 test('unknown @wes_join strategy throws error', () => {
   assert.throws(
-    () => buildSchema(`
+    () =>
+      buildSchema(`
       type GameState @table {
         id: ID! @primaryKey
         name: String @wes_join(strategy: "merge")
@@ -190,7 +195,8 @@ test('@wes_join on type definition throws error', () => {
   // But the runtime builder must also reject it if somehow placed on a type.
   // We test by using the bare alias "join" which normalizes to @join.
   assert.throws(
-    () => buildSchema(`
+    () =>
+      buildSchema(`
       type GameState @table @wes_join(strategy: "union") {
         id: ID! @primaryKey
         name: String
@@ -250,7 +256,7 @@ test('@wes_join appears in canonical AST', () => {
     }
   `);
   const ast = schema.toAST();
-  const scoreField = ast.tables[0].fields.find(f => f.name === 'score');
+  const scoreField = ast.tables[0].fields.find((f) => f.name === 'score');
   assert.ok(scoreField.directives['@join'], 'AST field should have @join directive');
   assert.strictEqual(scoreField.directives['@join'].strategy, 'max');
 });
@@ -260,7 +266,11 @@ test('@wes_join appears in canonical AST', () => {
 // ──────────────────────────────────────────────────
 
 test('validateJoinDirective returns null for valid union on list', () => {
-  const result = validateJoinDirective({ strategy: 'union' }, { list: true, base: 'String' }, 'tags');
+  const result = validateJoinDirective(
+    { strategy: 'union' },
+    { list: true, base: 'String' },
+    'tags'
+  );
   assert.strictEqual(result, null);
 });
 
@@ -270,27 +280,47 @@ test('validateJoinDirective returns null for valid max on Int', () => {
 });
 
 test('validateJoinDirective returns null for valid max on Float', () => {
-  const result = validateJoinDirective({ strategy: 'max' }, { list: false, base: 'Float' }, 'rating');
+  const result = validateJoinDirective(
+    { strategy: 'max' },
+    { list: false, base: 'Float' },
+    'rating'
+  );
   assert.strictEqual(result, null);
 });
 
 test('validateJoinDirective returns null for lww on any type', () => {
-  const result = validateJoinDirective({ strategy: 'lww' }, { list: false, base: 'Boolean' }, 'flag');
+  const result = validateJoinDirective(
+    { strategy: 'lww' },
+    { list: false, base: 'Boolean' },
+    'flag'
+  );
   assert.strictEqual(result, null);
 });
 
 test('validateJoinDirective returns error for unknown strategy', () => {
-  const result = validateJoinDirective({ strategy: 'crdt' }, { list: false, base: 'String' }, 'name');
+  const result = validateJoinDirective(
+    { strategy: 'crdt' },
+    { list: false, base: 'String' },
+    'name'
+  );
   assert.ok(result.includes('Unknown @wes_join strategy "crdt"'));
 });
 
 test('validateJoinDirective returns error for union on non-list', () => {
-  const result = validateJoinDirective({ strategy: 'union' }, { list: false, base: 'String' }, 'name');
+  const result = validateJoinDirective(
+    { strategy: 'union' },
+    { list: false, base: 'String' },
+    'name'
+  );
   assert.ok(result.includes('requires a list field'));
 });
 
 test('validateJoinDirective returns error for max on String', () => {
-  const result = validateJoinDirective({ strategy: 'max' }, { list: false, base: 'String' }, 'name');
+  const result = validateJoinDirective(
+    { strategy: 'max' },
+    { list: false, base: 'String' },
+    'name'
+  );
   assert.ok(result.includes('requires Int or Float'));
 });
 

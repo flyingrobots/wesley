@@ -7,17 +7,17 @@ export const TABLE_PROJECTION_NAME = 'js-table-vs-rust-table.v0';
 export const TYPE_FAMILY_PROJECTION_NAME = 'js-sdl-type-family-vs-rust-l1-type-family.v0';
 export const PROJECTION_NAME = TABLE_PROJECTION_NAME;
 export const PROJECTION_NORMALIZER_VERSION = 'v0';
-export const PROJECTION_NAMES = Object.freeze([
-  TABLE_PROJECTION_NAME,
-  TYPE_FAMILY_PROJECTION_NAME
-]);
+export const PROJECTION_NAMES = Object.freeze([TABLE_PROJECTION_NAME, TYPE_FAMILY_PROJECTION_NAME]);
 
 export const DEFAULT_PARITY_FIXTURES = Object.freeze([
   parityFixture('test/fixtures/ir-parity/small-schema.graphql', TABLE_PROJECTION_NAME),
   parityFixture('test/fixtures/ir-parity/medium-schema.graphql', TABLE_PROJECTION_NAME),
   parityFixture('test/fixtures/ir-parity/directive-heavy-schema.graphql', TABLE_PROJECTION_NAME),
   parityFixture('test/fixtures/ir-parity/legacy-alias-schema.graphql', TABLE_PROJECTION_NAME),
-  parityFixture('test/fixtures/ir-parity/schema-extensions-schema.graphql', TYPE_FAMILY_PROJECTION_NAME)
+  parityFixture(
+    'test/fixtures/ir-parity/schema-extensions-schema.graphql',
+    TYPE_FAMILY_PROJECTION_NAME
+  )
 ]);
 
 const TABLE_COLUMN_SCALARS = new Set([
@@ -105,7 +105,7 @@ export function projectLegacyTableIR(ir) {
 export function projectRustL1IR(ir) {
   const types = Array.isArray(ir?.types) ? ir.types : [];
   const tables = types
-    .filter(type => type?.kind === 'OBJECT' && type?.directives?.wes_table)
+    .filter((type) => type?.kind === 'OBJECT' && type?.directives?.wes_table)
     .map(projectRustTable)
     .sort(compareByName);
 
@@ -169,9 +169,7 @@ function projectCanonicalTypeFamilyDefinition(definition) {
   }
 
   if (Array.isArray(definition.fields) && definition.fields.length > 0) {
-    projected.fields = definition.fields
-      .map(projectCanonicalTypeFamilyField)
-      .sort(compareByName);
+    projected.fields = definition.fields.map(projectCanonicalTypeFamilyField).sort(compareByName);
   }
 
   if (Array.isArray(definition.members) && definition.members.length > 0) {
@@ -179,9 +177,7 @@ function projectCanonicalTypeFamilyDefinition(definition) {
   }
 
   if (Array.isArray(definition.values) && definition.values.length > 0) {
-    projected.enumValues = definition.values
-      .map(value => value.name)
-      .sort(compareStrings);
+    projected.enumValues = definition.values.map((value) => value.name).sort(compareStrings);
   }
 
   return projected;
@@ -199,9 +195,7 @@ function projectRustTypeFamilyDefinition(type) {
   }
 
   if (Array.isArray(type.fields) && type.fields.length > 0) {
-    projected.fields = type.fields
-      .map(projectRustTypeFamilyField)
-      .sort(compareByName);
+    projected.fields = type.fields.map(projectRustTypeFamilyField).sort(compareByName);
   }
 
   if (Array.isArray(type.unionMembers) && type.unionMembers.length > 0) {
@@ -210,7 +204,7 @@ function projectRustTypeFamilyDefinition(type) {
 
   if (Array.isArray(type.enumValues) && type.enumValues.length > 0) {
     projected.enumValues = type.enumValues
-      .map(value => typeof value === 'string' ? value : value.name)
+      .map((value) => (typeof value === 'string' ? value : value.name))
       .sort(compareStrings);
   }
 
@@ -229,9 +223,7 @@ function projectCanonicalTypeFamilyField(field) {
   }
 
   if (Array.isArray(field.arguments) && field.arguments.length > 0) {
-    projected.arguments = field.arguments
-      .map(projectCanonicalTypeFamilyField)
-      .sort(compareByName);
+    projected.arguments = field.arguments.map(projectCanonicalTypeFamilyField).sort(compareByName);
   }
 
   return projected;
@@ -249,9 +241,7 @@ function projectRustTypeFamilyField(field) {
   }
 
   if (Array.isArray(field.arguments) && field.arguments.length > 0) {
-    projected.arguments = field.arguments
-      .map(projectRustTypeFamilyField)
-      .sort(compareByName);
+    projected.arguments = field.arguments.map(projectRustTypeFamilyField).sort(compareByName);
   }
 
   return projected;
@@ -368,7 +358,7 @@ function projectLegacyTable(table) {
   return {
     name: table.name,
     directives: projectLegacyTableDirectives(table.directives || {}),
-    fields: (table.fields || []).map(field => projectLegacyField(field, indexByField))
+    fields: (table.fields || []).map((field) => projectLegacyField(field, indexByField))
   };
 }
 
@@ -446,9 +436,7 @@ function legacyIndexByField(table) {
 
 function projectRustTable(type) {
   const tableDirective = type.directives.wes_table;
-  const fields = (type.fields || [])
-    .filter(isRustColumnField)
-    .map(projectRustField);
+  const fields = (type.fields || []).filter(isRustColumnField).map(projectRustField);
 
   return {
     name: tableDirective?.name || type.name,
@@ -602,7 +590,7 @@ function mismatch(path, left, right, reason) {
 
 function toJsonPointer(path) {
   if (path.length === 0) return '/';
-  return `/${path.map(part => String(part).replaceAll('~', '~0').replaceAll('/', '~1')).join('/')}`;
+  return `/${path.map((part) => String(part).replaceAll('~', '~0').replaceAll('/', '~1')).join('/')}`;
 }
 
 function preview(value) {

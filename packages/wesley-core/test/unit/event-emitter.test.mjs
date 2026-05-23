@@ -72,8 +72,5 @@ test('EventEmitter publish surfaces handler failures', async () => {
     throw new Error('boom');
   });
 
-  await assert.rejects(
-    emitter.publish({ type: 'test' }),
-    /boom/
-  );
+  await assert.rejects(emitter.publish({ type: 'test' }), /boom/);
 });

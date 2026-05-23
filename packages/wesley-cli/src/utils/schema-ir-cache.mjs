@@ -94,20 +94,19 @@ async function readSchemaIrCache({ fs, cachePath, cacheKey, logger }) {
 
     const payload = JSON.parse(await fs.read(cachePath));
     const payloadKey = payload?.cacheKey ?? payload?.sourceHash ?? null;
-    if (
-      payload?.kind !== SCHEMA_IR_CACHE_KIND ||
-      payloadKey !== cacheKey ||
-      !isIr(payload?.ir)
-    ) {
+    if (payload?.kind !== SCHEMA_IR_CACHE_KIND || payloadKey !== cacheKey || !isIr(payload?.ir)) {
       return null;
     }
 
     return payload.ir;
   } catch (error) {
-    logger?.debug?.({
-      cachePath,
-      error: error?.message || String(error)
-    }, 'Ignoring unreadable schema IR cache entry');
+    logger?.debug?.(
+      {
+        cachePath,
+        error: error?.message || String(error)
+      },
+      'Ignoring unreadable schema IR cache entry'
+    );
     return null;
   }
 }
@@ -138,10 +137,13 @@ async function writeSchemaIrCache({
     };
     await fs.write(cachePath, JSON.stringify(payload, null, 2) + '\n');
   } catch (error) {
-    logger?.debug?.({
-      cachePath,
-      error: error?.message || String(error)
-    }, 'Could not persist schema IR cache entry');
+    logger?.debug?.(
+      {
+        cachePath,
+        error: error?.message || String(error)
+      },
+      'Could not persist schema IR cache entry'
+    );
   }
 }
 

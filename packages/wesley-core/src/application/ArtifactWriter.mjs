@@ -27,7 +27,9 @@ const noopLogger = {
   warn() {},
   error() {},
   debug() {},
-  child() { return noopLogger; },
+  child() {
+    return noopLogger;
+  },
   setLevel() {},
   async flush() {}
 };
@@ -81,7 +83,7 @@ export class ArtifactWriter {
 
     // Step 1: Detect conflicts
     const conflicts = detectConflicts(runResult);
-    const conflictPaths = conflicts.map(c => c.path);
+    const conflictPaths = conflicts.map((c) => c.path);
 
     for (const conflict of conflicts) {
       this._logger.warn(
@@ -161,7 +163,6 @@ export class ArtifactWriter {
 
       // Clean up temp dir (best-effort)
       await _rmDir(this._fs, tmpDir);
-
     } catch (err) {
       // Clean up temp dir on failure
       await _rmDir(this._fs, tmpDir);

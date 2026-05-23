@@ -13,12 +13,18 @@ const nullLogger = {
   warn() {},
   error() {},
   debug() {},
-  child() { return nullLogger; },
+  child() {
+    return nullLogger;
+  },
   setLevel() {},
   async flush() {}
 };
 
-const fakeClock = { now() { return '2026-03-08T00:00:00.000Z'; } };
+const fakeClock = {
+  now() {
+    return '2026-03-08T00:00:00.000Z';
+  }
+};
 const minimalIr = {
   tables: [
     {
@@ -93,7 +99,11 @@ function makeEvidencePlugin(overrides = {}) {
 }
 
 async function catchReject(fn) {
-  try { await fn(); } catch (e) { return e; }
+  try {
+    await fn();
+  } catch (e) {
+    return e;
+  }
   throw new Error('Expected promise to reject');
 }
 
@@ -163,14 +173,19 @@ test('TransmutationRunner — lowers raw SDL and IR into one plugin schema envel
     }
   });
 
-  const result = await runner.run('backend', [plugin], {
-    sdl: 'type User @table { id: ID! @pk }',
-    ir: minimalIr
-  }, {
-    emission: {
-      outDir: 'out'
+  const result = await runner.run(
+    'backend',
+    [plugin],
+    {
+      sdl: 'type User @table { id: ID! @pk }',
+      ir: minimalIr
+    },
+    {
+      emission: {
+        outDir: 'out'
+      }
     }
-  });
+  );
 
   assert.equal(result.success, true);
   assert.ok(observedSchema);
@@ -192,17 +207,20 @@ test('TransmutationRunner — emits lifecycle events with a runtime envelope', a
   const result = await runner.run('backend', [makePlugin()], {});
 
   assert.deepEqual(
-    result.events.map(event => event.type),
+    result.events.map((event) => event.type),
     ['TaskGraphBuilt', 'TaskStarted', 'TaskCompleted', 'EvidenceMerged', 'ScoresComputed']
   );
   assert.deepEqual(
-    result.events.map(event => event.sequence),
+    result.events.map((event) => event.sequence),
     [1, 2, 3, 4, 5]
   );
-  result.events.forEach(event => {
+  result.events.forEach((event) => {
     assert.equal(event.runId, result.runId);
     assert.equal(event.transmutation, 'backend');
-    assert.match(event.eventId, new RegExp(`^${event.streamId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}:\\d+$`));
+    assert.match(
+      event.eventId,
+      new RegExp(`^${event.streamId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}:\\d+$`)
+    );
     assert.equal(event.correlationId, result.runId);
     assert.equal(event.schemaVersion, '1.0.0');
   });
@@ -219,7 +237,9 @@ test('TransmutationRunner — can write events through a supplied event store', 
   );
 
   assert.deepEqual(
-    eventStore.readStream(createRuntimeStreamId({ transmutation: 'backend', runId: 'run-store-backend' })),
+    eventStore.readStream(
+      createRuntimeStreamId({ transmutation: 'backend', runId: 'run-store-backend' })
+    ),
     result.events
   );
 });
@@ -248,7 +268,9 @@ test('TransmutationRunner — merges evidence from multiple plugins', async () =
   const tsPlugin = {
     apiVersion: '1',
     name: 'ts-plugin',
-    async plan() { return { artifacts: [{ path: 'models/User.ts' }] }; },
+    async plan() {
+      return { artifacts: [{ path: 'models/User.ts' }] };
+    },
     async generate() {
       return {
         files: { 'models/User.ts': 'export interface User {}' },
@@ -277,19 +299,23 @@ test('TransmutationRunner — merges evidence from multiple plugins', async () =
 test('TransmutationRunner — accepts transmutation-specific SCS scoring options', async () => {
   const runner = makeRunner();
   const schema = {
-    getTables: () => [{
-      name: 'User',
-      directives: {},
-      getFields: () => [{
-        name: 'id',
-        directives: { '@primaryKey': {} },
-        isVirtual: () => false,
-        isPrimaryKey: () => true,
-        isForeignKey: () => false,
-        isUnique: () => false,
-        isIndexed: () => false
-      }]
-    }]
+    getTables: () => [
+      {
+        name: 'User',
+        directives: {},
+        getFields: () => [
+          {
+            name: 'id',
+            directives: { '@primaryKey': {} },
+            isVirtual: () => false,
+            isPrimaryKey: () => true,
+            isForeignKey: () => false,
+            isUnique: () => false,
+            isIndexed: () => false
+          }
+        ]
+      }
+    ]
   };
   const plugin = {
     apiVersion: '1',
@@ -320,22 +346,17 @@ test('TransmutationRunner — accepts transmutation-specific SCS scoring options
     }
   };
 
-  const result = await runner.run(
-    'null-generator',
-    [plugin],
-    schema,
-    {
-      scoring: {
-        scs: {
-          artifactGroups: {
-            sql: ['sql'],
-            tests: ['test']
-          },
-          rollupGroups: ['sql']
-        }
+  const result = await runner.run('null-generator', [plugin], schema, {
+    scoring: {
+      scs: {
+        artifactGroups: {
+          sql: ['sql'],
+          tests: ['test']
+        },
+        rollupGroups: ['sql']
       }
     }
-  );
+  });
 
   assert.equal(result.scores.scores.scs, 1);
 });
@@ -362,7 +383,9 @@ test('TransmutationRunner — plugin failure stops execution by default', async 
   const runner = makeRunner();
   const failPlugin = makePlugin({
     name: 'fail',
-    async plan() { throw new Error('boom'); }
+    async plan() {
+      throw new Error('boom');
+    }
   });
   const goodPlugin = makePlugin({ name: 'good' });
 
@@ -372,7 +395,7 @@ test('TransmutationRunner — plugin failure stops execution by default', async 
   assert.equal(result.results[0].status, 'error');
   assert.equal(result.results[0].phase, 'plan');
   assert.deepEqual(
-    result.events.map(event => event.type),
+    result.events.map((event) => event.type),
     ['TaskGraphBuilt', 'TaskStarted', 'TaskFailed', 'EvidenceMerged', 'ScoresComputed']
   );
   assert.equal(result.events[2].payload.phase, 'plan');
@@ -382,7 +405,9 @@ test('TransmutationRunner — best-effort continues after failure', async () => 
   const runner = makeRunner({ bestEffort: true });
   const failPlugin = makePlugin({
     name: 'fail',
-    async plan() { throw new Error('boom'); }
+    async plan() {
+      throw new Error('boom');
+    }
   });
   const goodPlugin = makePlugin({ name: 'good' });
 
@@ -395,7 +420,11 @@ test('TransmutationRunner — best-effort continues after failure', async () => 
 
 test('TransmutationRunner — bad generate() return type produces WPLY003', async () => {
   const runner = makeRunner();
-  const plugin = makePlugin({ async generate() { return null; } });
+  const plugin = makePlugin({
+    async generate() {
+      return null;
+    }
+  });
 
   const result = await runner.run('test', [plugin], {});
   assert.equal(result.success, false);
@@ -438,17 +467,30 @@ test('TransmutationRunner — context is frozen (plugin cannot mutate it)', asyn
   const plugin = makePlugin({
     async plan(schema, context) {
       capturedContext = context;
-      assert.throws(() => { context.runId = 'hacked'; }, TypeError);
-      assert.throws(() => { context.config.key = 'hacked'; }, TypeError);
-      assert.throws(() => { context.emission.outDir = 'hacked'; }, TypeError);
+      assert.throws(() => {
+        context.runId = 'hacked';
+      }, TypeError);
+      assert.throws(() => {
+        context.config.key = 'hacked';
+      }, TypeError);
+      assert.throws(() => {
+        context.emission.outDir = 'hacked';
+      }, TypeError);
       return { artifacts: [{ path: 'out.txt' }] };
     },
-    async generate() { return { 'out.txt': 'ok' }; }
+    async generate() {
+      return { 'out.txt': 'ok' };
+    }
   });
 
-  const result = await runner.run('test', [plugin], {}, {
-    emission: { outDir: 'out' }
-  });
+  const result = await runner.run(
+    'test',
+    [plugin],
+    {},
+    {
+      emission: { outDir: 'out' }
+    }
+  );
   assert.equal(result.success, true);
   assert.ok(capturedContext);
   assert.equal(capturedContext.config.key, 'value');
@@ -461,36 +503,37 @@ test('TransmutationRunner — context is frozen (plugin cannot mutate it)', asyn
 
 test('TransmutationRunner — buildTaskGraph produces DAG with parse → generators → evidence', () => {
   const runner = makeRunner();
-  const plugins = [
-    makePlugin({ name: 'supabase' }),
-    makePlugin({ name: 'js' })
-  ];
+  const plugins = [makePlugin({ name: 'supabase' }), makePlugin({ name: 'js' })];
 
   const graph = runner.buildTaskGraph('backend', plugins);
 
   // Should have: parse, supabase, js, evidence = 4 nodes
   assert.equal(graph.nodes.length, 4);
-  assert.ok(graph.nodes.find(n => n.id === 'backend:parse'));
-  assert.ok(graph.nodes.find(n => n.id === 'backend:gen:supabase'));
-  assert.ok(graph.nodes.find(n => n.id === 'backend:gen:js'));
-  assert.ok(graph.nodes.find(n => n.id === 'backend:evidence'));
+  assert.ok(graph.nodes.find((n) => n.id === 'backend:parse'));
+  assert.ok(graph.nodes.find((n) => n.id === 'backend:gen:supabase'));
+  assert.ok(graph.nodes.find((n) => n.id === 'backend:gen:js'));
+  assert.ok(graph.nodes.find((n) => n.id === 'backend:evidence'));
 
   // Parse has no dependencies
-  const parse = graph.nodes.find(n => n.id === 'backend:parse');
+  const parse = graph.nodes.find((n) => n.id === 'backend:parse');
   assert.deepEqual(parse.dependencies, []);
 
   // Generators depend on parse
-  const supabase = graph.nodes.find(n => n.id === 'backend:gen:supabase');
+  const supabase = graph.nodes.find((n) => n.id === 'backend:gen:supabase');
   assert.deepEqual(supabase.dependencies, ['backend:parse']);
 
   // Evidence depends on all generators
-  const evidence = graph.nodes.find(n => n.id === 'backend:evidence');
+  const evidence = graph.nodes.find((n) => n.id === 'backend:evidence');
   assert.ok(evidence.dependencies.includes('backend:gen:supabase'));
   assert.ok(evidence.dependencies.includes('backend:gen:js'));
 
   // Edges match
-  assert.ok(graph.edges.some(([from, to]) => from === 'backend:parse' && to === 'backend:gen:supabase'));
-  assert.ok(graph.edges.some(([from, to]) => from === 'backend:gen:js' && to === 'backend:evidence'));
+  assert.ok(
+    graph.edges.some(([from, to]) => from === 'backend:parse' && to === 'backend:gen:supabase')
+  );
+  assert.ok(
+    graph.edges.some(([from, to]) => from === 'backend:gen:js' && to === 'backend:evidence')
+  );
 });
 
 test('TransmutationRunner — buildTaskGraph with single plugin', () => {
@@ -518,8 +561,12 @@ test('TransmutationRunner — { files: null, evidence: {} } produces WPLY003 err
   const runner = makeRunner({ bestEffort: true });
   const plugin = makePlugin({
     name: 'null-files',
-    async plan() { return { artifacts: [{ path: 'x.sql' }] }; },
-    async generate() { return { files: null, evidence: {} }; }
+    async plan() {
+      return { artifacts: [{ path: 'x.sql' }] };
+    },
+    async generate() {
+      return { files: null, evidence: {} };
+    }
   });
   const good = makePlugin({ name: 'good' });
 
@@ -534,8 +581,12 @@ test('TransmutationRunner — { files: [], evidence: {} } (array) produces WPLY0
   const runner = makeRunner();
   const plugin = makePlugin({
     name: 'array-files',
-    async plan() { return { artifacts: [{ path: 'x.sql' }] }; },
-    async generate() { return { files: ['not', 'a', 'record'], evidence: {} }; }
+    async plan() {
+      return { artifacts: [{ path: 'x.sql' }] };
+    },
+    async generate() {
+      return { files: ['not', 'a', 'record'], evidence: {} };
+    }
   });
 
   const result = await runner.run('test', [plugin], {});
@@ -548,8 +599,12 @@ test('TransmutationRunner — non-object evidence produces WPLY003', async () =>
   const runner = makeRunner({ bestEffort: true });
   const plugin = makePlugin({
     name: 'bad-evidence',
-    async plan() { return { artifacts: [{ path: 'x.sql' }] }; },
-    async generate() { return { files: { 'x.sql': 'CREATE TABLE ...' }, evidence: 42 }; }
+    async plan() {
+      return { artifacts: [{ path: 'x.sql' }] };
+    },
+    async generate() {
+      return { files: { 'x.sql': 'CREATE TABLE ...' }, evidence: 42 };
+    }
   });
   const good = makePlugin({ name: 'good' });
 
@@ -564,8 +619,12 @@ test('TransmutationRunner — null evidence produces WPLY003', async () => {
   const runner = makeRunner();
   const plugin = makePlugin({
     name: 'null-evidence',
-    async plan() { return { artifacts: [{ path: 'x.sql' }] }; },
-    async generate() { return { files: { 'x.sql': 'ok' }, evidence: null }; }
+    async plan() {
+      return { artifacts: [{ path: 'x.sql' }] };
+    },
+    async generate() {
+      return { files: { 'x.sql': 'ok' }, evidence: null };
+    }
   });
 
   const result = await runner.run('test', [plugin], {});
@@ -578,12 +637,16 @@ test('TransmutationRunner — evidence entry without .artifacts is silently skip
   const runner = makeRunner();
   const plugin = makePlugin({
     name: 'sparse-evidence',
-    async plan() { return { artifacts: [{ path: 'x.sql' }] }; },
+    async plan() {
+      return { artifacts: [{ path: 'x.sql' }] };
+    },
     async generate() {
       return {
         files: { 'x.sql': 'CREATE TABLE ...' },
         evidence: {
-          'col:User.id': { /* no artifacts key */ },
+          'col:User.id': {
+            /* no artifacts key */
+          },
           'col:User.email': { artifacts: null },
           'col:User.name': { artifacts: { ddl: { file: 'x.sql', lines: [1, 1], sha: 'abc' } } }
         }
@@ -633,7 +696,9 @@ test('TransmutationRunner — plugin evidence errors and warnings are forwarded 
   const plugin = {
     apiVersion: '1',
     name: 'err-warn-plugin',
-    async plan() { return { artifacts: [{ path: 'x.sql' }] }; },
+    async plan() {
+      return { artifacts: [{ path: 'x.sql' }] };
+    },
     async generate() {
       return {
         files: { 'x.sql': 'CREATE TABLE ...' },
@@ -641,7 +706,9 @@ test('TransmutationRunner — plugin evidence errors and warnings are forwarded 
           'col:User.id': {
             artifacts: { ddl: { file: 'x.sql', lines: [1, 1], sha: 'abc' } },
             errors: [{ message: 'Missing NOT NULL', type: 'constraint', severity: 'error' }],
-            warnings: [{ message: 'Consider adding index', type: 'performance', severity: 'warning' }]
+            warnings: [
+              { message: 'Consider adding index', type: 'performance', severity: 'warning' }
+            ]
           }
         }
       };

@@ -58,8 +58,10 @@ describe('Wesley Wave 4 Final Integration Tests', () => {
       await cliEnhancer.initialize();
 
       const duration = performance.now() - startTime;
-      assert(duration < PERFORMANCE_THRESHOLDS.cliInitialization,
-        `CLI initialization took ${duration}ms, expected < ${PERFORMANCE_THRESHOLDS.cliInitialization}ms`);
+      assert(
+        duration < PERFORMANCE_THRESHOLDS.cliInitialization,
+        `CLI initialization took ${duration}ms, expected < ${PERFORMANCE_THRESHOLDS.cliInitialization}ms`
+      );
     });
 
     test('should process commands within performance threshold', async () => {
@@ -70,8 +72,10 @@ describe('Wesley Wave 4 Final Integration Tests', () => {
       const result = await cliEnhancer.processCommand('generate', ['sql']);
 
       const duration = performance.now() - startTime;
-      assert(duration < PERFORMANCE_THRESHOLDS.commandProcessing,
-        `Command processing took ${duration}ms, expected < ${PERFORMANCE_THRESHOLDS.commandProcessing}ms`);
+      assert(
+        duration < PERFORMANCE_THRESHOLDS.commandProcessing,
+        `Command processing took ${duration}ms, expected < ${PERFORMANCE_THRESHOLDS.commandProcessing}ms`
+      );
 
       assert(result.processed);
       assert.strictEqual(result.command, 'generate');
@@ -86,11 +90,13 @@ describe('Wesley Wave 4 Final Integration Tests', () => {
       const completions = await cliEnhancer.getCompletions('gen', 3);
 
       const duration = performance.now() - startTime;
-      assert(duration < PERFORMANCE_THRESHOLDS.completionResponse,
-        `Completion response took ${duration}ms, expected < ${PERFORMANCE_THRESHOLDS.completionResponse}ms`);
+      assert(
+        duration < PERFORMANCE_THRESHOLDS.completionResponse,
+        `Completion response took ${duration}ms, expected < ${PERFORMANCE_THRESHOLDS.completionResponse}ms`
+      );
 
       assert(Array.isArray(completions));
-      const generateCompletion = completions.find(c => c.value === 'generate');
+      const generateCompletion = completions.find((c) => c.value === 'generate');
       assert(generateCompletion, 'Should provide generate command completion');
     });
 
@@ -104,8 +110,10 @@ describe('Wesley Wave 4 Final Integration Tests', () => {
       cliEnhancer.completeProgress({ success: true });
 
       const duration = performance.now() - startTime;
-      assert(duration < PERFORMANCE_THRESHOLDS.progressTracking,
-        `Progress tracking took ${duration}ms, expected < ${PERFORMANCE_THRESHOLDS.progressTracking}ms`);
+      assert(
+        duration < PERFORMANCE_THRESHOLDS.progressTracking,
+        `Progress tracking took ${duration}ms, expected < ${PERFORMANCE_THRESHOLDS.progressTracking}ms`
+      );
     });
 
     test('should maintain memory usage within threshold', async () => {
@@ -123,8 +131,10 @@ describe('Wesley Wave 4 Final Integration Tests', () => {
       const currentMemory = process.memoryUsage().heapUsed;
       const memoryIncrease = currentMemory - startMemory;
 
-      assert(memoryIncrease < PERFORMANCE_THRESHOLDS.memoryUsage,
-        `Memory usage increased by ${memoryIncrease} bytes, expected < ${PERFORMANCE_THRESHOLDS.memoryUsage} bytes`);
+      assert(
+        memoryIncrease < PERFORMANCE_THRESHOLDS.memoryUsage,
+        `Memory usage increased by ${memoryIncrease} bytes, expected < ${PERFORMANCE_THRESHOLDS.memoryUsage} bytes`
+      );
     });
   });
 
@@ -149,13 +159,14 @@ describe('Wesley Wave 4 Final Integration Tests', () => {
       ];
 
       destructiveCommands.forEach(([cmd, args]) => {
-        assert(cliEnhancer.requiresInteraction(cmd, args),
-          `${cmd} should require interaction`);
+        assert(cliEnhancer.requiresInteraction(cmd, args), `${cmd} should require interaction`);
       });
 
       safeCommands.forEach(([cmd, args]) => {
-        assert(!cliEnhancer.requiresInteraction(cmd, args),
-          `${cmd} should not require interaction`);
+        assert(
+          !cliEnhancer.requiresInteraction(cmd, args),
+          `${cmd} should not require interaction`
+        );
       });
     });
 
@@ -195,23 +206,36 @@ describe('Wesley Wave 4 Final Integration Tests', () => {
         const result = await cliEnhancer.performDryRun(testCase.command, testCase.args);
 
         assert(result.dryRun, `${testCase.command} should be marked as dry-run`);
-        assert.strictEqual(result.analysis.type, testCase.expectedType,
-          `${testCase.command} should have type ${testCase.expectedType}`);
-        assert.strictEqual(result.analysis.destructive, testCase.expectedDestructive,
-          `${testCase.command} destructive flag should be ${testCase.expectedDestructive}`);
-        assert.strictEqual(result.analysis.databaseChanges, testCase.expectedDatabaseChanges,
-          `${testCase.command} database changes flag should be ${testCase.expectedDatabaseChanges}`);
+        assert.strictEqual(
+          result.analysis.type,
+          testCase.expectedType,
+          `${testCase.command} should have type ${testCase.expectedType}`
+        );
+        assert.strictEqual(
+          result.analysis.destructive,
+          testCase.expectedDestructive,
+          `${testCase.command} destructive flag should be ${testCase.expectedDestructive}`
+        );
+        assert.strictEqual(
+          result.analysis.databaseChanges,
+          testCase.expectedDatabaseChanges,
+          `${testCase.command} database changes flag should be ${testCase.expectedDatabaseChanges}`
+        );
       }
     });
 
     test('should bypass confirmation with force flags', () => {
       const forceFlags = ['--force', '-f', '--yes', '-y'];
 
-      forceFlags.forEach(flag => {
-        assert(!cliEnhancer.requiresInteraction('migrate', ['up', flag]),
-          `migrate up ${flag} should not require interaction`);
-        assert(!cliEnhancer.requiresInteraction('rollback', [flag]),
-          `rollback ${flag} should not require interaction`);
+      forceFlags.forEach((flag) => {
+        assert(
+          !cliEnhancer.requiresInteraction('migrate', ['up', flag]),
+          `migrate up ${flag} should not require interaction`
+        );
+        assert(
+          !cliEnhancer.requiresInteraction('rollback', [flag]),
+          `rollback ${flag} should not require interaction`
+        );
       });
     });
   });
@@ -255,8 +279,11 @@ describe('Wesley Wave 4 Final Integration Tests', () => {
       ];
 
       aliasTests.forEach(([alias, expected]) => {
-        assert.strictEqual(cliEnhancer.resolveAlias(alias), expected,
-          `Alias ${alias} should resolve to ${expected}`);
+        assert.strictEqual(
+          cliEnhancer.resolveAlias(alias),
+          expected,
+          `Alias ${alias} should resolve to ${expected}`
+        );
       });
 
       // Non-alias should return unchanged
@@ -322,7 +349,9 @@ describe('Wesley Wave 4 Final Integration Tests', () => {
       cliEnhancer.on('commandExecuted', (event) => events.push({ type: 'command', event }));
       cliEnhancer.on('progressStarted', (event) => events.push({ type: 'progress_start', event }));
       cliEnhancer.on('progressUpdated', (event) => events.push({ type: 'progress_update', event }));
-      cliEnhancer.on('progressCompleted', (event) => events.push({ type: 'progress_complete', event }));
+      cliEnhancer.on('progressCompleted', (event) =>
+        events.push({ type: 'progress_complete', event })
+      );
 
       // Execute command with progress
       await cliEnhancer.processCommand('generate', ['sql']);
@@ -355,7 +384,7 @@ describe('Wesley Wave 4 Final Integration Tests', () => {
       cliEnhancer.updateProgress(50); // No active progress should cause error
 
       // Wait for async error handling
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       // The CLI enhancer should still be functional
       const result = await cliEnhancer.processCommand('help', []);
@@ -396,24 +425,18 @@ describe('Wesley Wave 4 Final Integration Tests', () => {
     });
 
     test('should handle concurrent completion requests', async () => {
-      const completionRequests = [
-        'gen',
-        'mig',
-        'test',
-        'help',
-        'ver'
-      ];
+      const completionRequests = ['gen', 'mig', 'test', 'help', 'ver'];
 
       const startTime = performance.now();
 
       const results = await Promise.all(
-        completionRequests.map(partial => cliEnhancer.getCompletions(partial, partial.length))
+        completionRequests.map((partial) => cliEnhancer.getCompletions(partial, partial.length))
       );
 
       const duration = performance.now() - startTime;
 
       assert.strictEqual(results.length, completionRequests.length);
-      results.forEach(completions => {
+      results.forEach((completions) => {
         assert(Array.isArray(completions));
       });
 
@@ -435,10 +458,7 @@ describe('Wesley Wave 4 Final Integration Tests', () => {
       };
 
       // Should handle error gracefully
-      await assert.rejects(
-        cliEnhancer.processCommand('test', []),
-        /Command processing failed/
-      );
+      await assert.rejects(cliEnhancer.processCommand('test', []), /Command processing failed/);
 
       // Restore function
       cliEnhancer.resolveAlias = originalResolveAlias;
@@ -468,15 +488,9 @@ describe('Wesley Wave 4 Final Integration Tests', () => {
     });
 
     test('should handle invalid history replay gracefully', async () => {
-      await assert.rejects(
-        cliEnhancer.replayCommand(999),
-        /Invalid history index/
-      );
+      await assert.rejects(cliEnhancer.replayCommand(999), /Invalid history index/);
 
-      await assert.rejects(
-        cliEnhancer.replayCommand(-1),
-        /Invalid history index/
-      );
+      await assert.rejects(cliEnhancer.replayCommand(-1), /Invalid history index/);
     });
   });
 
@@ -530,7 +544,9 @@ describe('Wesley Wave 4 Final Integration Tests', () => {
 
         // Event System
         let eventReceived = false;
-        cli.on('test-event', () => { eventReceived = true; });
+        cli.on('test-event', () => {
+          eventReceived = true;
+        });
         cli.emit('test-event', {});
         healthCheck.eventSystem = eventReceived;
 
@@ -545,7 +561,6 @@ describe('Wesley Wave 4 Final Integration Tests', () => {
         const finalMemory = process.memoryUsage().heapUsed;
         const memoryIncrease = finalMemory - initialMemory;
         healthCheck.memoryUsage = memoryIncrease < PERFORMANCE_THRESHOLDS.memoryUsage;
-
       } finally {
         cli.removeAllListeners();
       }
@@ -555,8 +570,11 @@ describe('Wesley Wave 4 Final Integration Tests', () => {
         .filter(([_, passed]) => !passed)
         .map(([check]) => check);
 
-      assert.strictEqual(failedChecks.length, 0,
-        `Health check failed for: ${failedChecks.join(', ')}`);
+      assert.strictEqual(
+        failedChecks.length,
+        0,
+        `Health check failed for: ${failedChecks.join(', ')}`
+      );
 
       // Log successful health check
       console.log('✓ Wesley Wave 4 CLI Enhancement system health check passed');

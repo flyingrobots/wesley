@@ -83,15 +83,24 @@ export class PluginRunner {
         const result = _errorResult(plugin, 'init', cause, startMs);
         results.push(result);
         if (!this._bestEffort) {
-          _throwRunError(cause.message, cause.code || 'WPLY001', plugin, 'init', results, startMs, cause);
+          _throwRunError(
+            cause.message,
+            cause.code || 'WPLY001',
+            plugin,
+            'init',
+            results,
+            startMs,
+            cause
+          );
         }
         continue;
       }
 
       const pluginName = plugin.name;
-      const childLogger = typeof this._logger.child === 'function'
-        ? this._logger.child({ plugin: pluginName })
-        : this._logger;
+      const childLogger =
+        typeof this._logger.child === 'function'
+          ? this._logger.child({ plugin: pluginName })
+          : this._logger;
 
       const frozenConfig = deepFreeze(structuredClone(this._config));
       const context = Object.freeze({
@@ -148,7 +157,7 @@ export class PluginRunner {
       }
 
       // Warn on undeclared artifact paths
-      const declaredPaths = new Set(plan.artifacts.map(a => a.path));
+      const declaredPaths = new Set(plan.artifacts.map((a) => a.path));
       for (const key of Object.keys(artifacts)) {
         if (!declaredPaths.has(key)) {
           childLogger.warn(
@@ -169,8 +178,8 @@ export class PluginRunner {
       });
     }
 
-    const hasOk = results.some(r => r.status === 'ok');
-    const hasError = results.some(r => r.status === 'error');
+    const hasOk = results.some((r) => r.status === 'ok');
+    const hasError = results.some((r) => r.status === 'error');
     const success = this._bestEffort ? hasOk : !hasError;
 
     return { results, success, totalArtifacts, runId };

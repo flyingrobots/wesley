@@ -52,9 +52,11 @@ export class DirectiveProcessor {
   }
 
   static isCritical(directives) {
-    return !!(directives?.[CRITICAL_DIRECTIVE] ||
-              directives?.['@primaryKey'] ||
-              this.isSensitive(directives));
+    return !!(
+      directives?.[CRITICAL_DIRECTIVE] ||
+      directives?.['@primaryKey'] ||
+      this.isSensitive(directives)
+    );
   }
 
   static shouldSkip(directives) {

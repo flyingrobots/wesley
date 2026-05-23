@@ -36,34 +36,50 @@ export function normalizeWeightConfig(raw) {
   if (looksLikeFlatMap) {
     for (const [key, value] of Object.entries(raw)) {
       if (key === 'default') {
-        config.default = coerceNumber(value, config.default, '\'default\' weight');
+        config.default = coerceNumber(value, config.default, "'default' weight");
       } else {
-        config.substrings[key.toLowerCase()] = coerceNumber(value, config.substrings[key.toLowerCase()] ?? config.default, `substring weight for "${key}"`);
+        config.substrings[key.toLowerCase()] = coerceNumber(
+          value,
+          config.substrings[key.toLowerCase()] ?? config.default,
+          `substring weight for "${key}"`
+        );
       }
     }
     return config;
   }
 
   if ('default' in raw) {
-    config.default = coerceNumber(raw.default, config.default, '\'default\' weight');
+    config.default = coerceNumber(raw.default, config.default, "'default' weight");
   }
 
   if (raw.substrings && typeof raw.substrings === 'object' && !Array.isArray(raw.substrings)) {
     for (const [key, value] of Object.entries(raw.substrings)) {
-      config.substrings[key.toLowerCase()] = coerceNumber(value, config.substrings[key.toLowerCase()] ?? config.default, `substring weight for "${key}"`);
+      config.substrings[key.toLowerCase()] = coerceNumber(
+        value,
+        config.substrings[key.toLowerCase()] ?? config.default,
+        `substring weight for "${key}"`
+      );
     }
   }
 
   if (raw.directives && typeof raw.directives === 'object' && !Array.isArray(raw.directives)) {
     for (const [key, value] of Object.entries(raw.directives)) {
       const normalized = normalizeDirectiveKey(key);
-      config.directives[normalized] = coerceNumber(value, config.directives[normalized] ?? config.default, `directive weight for "${key}"`);
+      config.directives[normalized] = coerceNumber(
+        value,
+        config.directives[normalized] ?? config.default,
+        `directive weight for "${key}"`
+      );
     }
   }
 
   if (raw.overrides && typeof raw.overrides === 'object' && !Array.isArray(raw.overrides)) {
     for (const [key, value] of Object.entries(raw.overrides)) {
-      config.overrides[key] = coerceNumber(value, config.overrides[key] ?? config.default, `override weight for "${key}"`);
+      config.overrides[key] = coerceNumber(
+        value,
+        config.overrides[key] ?? config.default,
+        `override weight for "${key}"`
+      );
     }
   }
 

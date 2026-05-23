@@ -46,6 +46,9 @@ importers:
       eslint:
         specifier: ^9.38.0
         version: 9.38.0
+      eslint-config-prettier:
+        specifier: 10.1.8
+        version: 10.1.8(eslint@9.38.0)
       eslint-plugin-promise:
         specifier: ^7.2.1
         version: 7.2.1(eslint@9.38.0)
@@ -1729,6 +1732,12 @@ packages:
       eslint-plugin-jsx-a11y: ^6.9.0
       eslint-plugin-react: ^7.35.0
       typescript-eslint: ^8.3.0
+
+  eslint-config-prettier@10.1.8:
+    resolution: {integrity: sha512-82GZUjRS0p/jganf6q1rEO25VSoHH0hKPCTrgillPjdI/3bgBhAE1QzHrHTizjpRvy6pGAvKjDJtk2pF9NDq8w==}
+    hasBin: true
+    peerDependencies:
+      eslint: '>=7.0.0'
 
   eslint-plugin-jsx-a11y@6.10.2:
     resolution: {integrity: sha512-scB3nz4WmG75pV8+3eRUQOHZlNSUhFNq37xnpgRkCCELU3XMvXAxLk1eqWWyE22Ki4Q01Fnsw9BA3cJHDPgn2Q==}
@@ -4785,6 +4794,10 @@ snapshots:
       eslint-plugin-jsx-a11y: 6.10.2(eslint@9.38.0)
       eslint-plugin-react: 7.37.5(eslint@9.38.0)
       typescript-eslint: 8.46.2(eslint@9.38.0)(typescript@5.9.3)
+
+  eslint-config-prettier@10.1.8(eslint@9.38.0):
+    dependencies:
+      eslint: 9.38.0
 
   eslint-plugin-jsx-a11y@6.10.2(eslint@9.38.0):
     dependencies:

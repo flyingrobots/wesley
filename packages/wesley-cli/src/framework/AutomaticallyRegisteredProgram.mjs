@@ -32,9 +32,7 @@ export class AutomaticallyRegisteredProgram {
 
   // Factory method to create Commander command
   createCommand(commander) {
-    const cmd = commander
-      .command(this.name)
-      .description(this.description);
+    const cmd = commander.command(this.name).description(this.description);
 
     // Let subclass configure commander options (which may add aliases)
     const configuredCmd = this.configureCommander(cmd);
@@ -43,7 +41,7 @@ export class AutomaticallyRegisteredProgram {
     if (configuredCmd._aliases && configuredCmd._aliases.length > 0) {
       this.aliases = configuredCmd._aliases;
       // Register aliases in our map
-      this.aliases.forEach(alias => {
+      this.aliases.forEach((alias) => {
         aliasMap.set(alias, this.name);
       });
     }
@@ -82,7 +80,7 @@ export class AutomaticallyRegisteredProgram {
   // Static method to register all programs with Commander
   static registerAll(commander) {
     const programs = AutomaticallyRegisteredProgram.getAllPrograms();
-    programs.forEach(program => {
+    programs.forEach((program) => {
       program.createCommand(commander);
     });
     return commander;

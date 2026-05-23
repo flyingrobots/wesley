@@ -26,158 +26,194 @@ class TestExtensionModule extends WesleyModule {
   get capabilities() {
     return {
       wesley: {
-        directives: [{
-          name: 'fixture-directive',
-          directive: 'fixture'
-        }],
-        targets: [{
-          name: 'fixture-target',
-          async compile({ schemaContent, schemaPath, outDir, options, target }) {
-            return {
-              kind: 'fixture.compile-target.v1',
-              target: target.name,
-              schemaPath,
-              outDir,
-              dryRun: Boolean(options.dryRun),
-              schemaBytes: schemaContent.length
-            };
+        directives: [
+          {
+            name: 'fixture-directive',
+            directive: 'fixture'
           }
-        }],
-        generators: [{
-          name: 'fixture-generator',
-          async generate({ schemaPath } = {}) {
-            return {
-              kind: 'fixture.wesley.generator.v1',
-              schemaPath
-            };
+        ],
+        targets: [
+          {
+            name: 'fixture-target',
+            async compile({ schemaContent, schemaPath, outDir, options, target }) {
+              return {
+                kind: 'fixture.compile-target.v1',
+                target: target.name,
+                schemaPath,
+                outDir,
+                dryRun: Boolean(options.dryRun),
+                schemaBytes: schemaContent.length
+              };
+            }
           }
-        }],
-        bundleProfiles: [{
-          name: 'fixture-bundle-profile',
-          format: 'fixture.bundle.v1'
-        }],
-        realizationVerifiers: [{
-          name: 'fixture-realization-verifier',
-          async verify() {
-            return {
-              kind: 'fixture.wesley.realization-verifier.v1',
-              status: 'pass'
-            };
+        ],
+        generators: [
+          {
+            name: 'fixture-generator',
+            async generate({ schemaPath } = {}) {
+              return {
+                kind: 'fixture.wesley.generator.v1',
+                schemaPath
+              };
+            }
           }
-        }]
+        ],
+        bundleProfiles: [
+          {
+            name: 'fixture-bundle-profile',
+            format: 'fixture.bundle.v1'
+          }
+        ],
+        realizationVerifiers: [
+          {
+            name: 'fixture-realization-verifier',
+            async verify() {
+              return {
+                kind: 'fixture.wesley.realization-verifier.v1',
+                status: 'pass'
+              };
+            }
+          }
+        ]
       },
       holmes: {
         scopes: [{ name: 'fixture-scope' }],
-        checks: [{
-          name: 'fixture-check',
-          async check() {
-            return {
-              kind: 'fixture.holmes.check.v1',
-              status: 'pass'
-            };
+        checks: [
+          {
+            name: 'fixture-check',
+            async check() {
+              return {
+                kind: 'fixture.holmes.check.v1',
+                status: 'pass'
+              };
+            }
           }
-        }],
-        evidenceCollectors: [{
-          name: 'fixture-evidence-collector',
-          async collect() {
-            return {
-              kind: 'fixture.holmes.evidence-collector.v1',
-              evidence: []
-            };
+        ],
+        evidenceCollectors: [
+          {
+            name: 'fixture-evidence-collector',
+            async collect() {
+              return {
+                kind: 'fixture.holmes.evidence-collector.v1',
+                evidence: []
+              };
+            }
           }
-        }],
-        counterfactualProviders: [{
-          name: 'fixture-counterfactual-provider',
-          async analyze() {
-            return {
-              kind: 'fixture.holmes.counterfactual-provider.v1',
-              status: 'clean'
-            };
+        ],
+        counterfactualProviders: [
+          {
+            name: 'fixture-counterfactual-provider',
+            async analyze() {
+              return {
+                kind: 'fixture.holmes.counterfactual-provider.v1',
+                status: 'clean'
+              };
+            }
           }
-        }]
+        ]
       },
       watson: {
-        verifiers: [{
-          name: 'fixture-verifier',
-          async verify() {
-            return {
-              kind: 'fixture.watson.verifier.v1',
-              status: 'pass'
-            };
+        verifiers: [
+          {
+            name: 'fixture-verifier',
+            async verify() {
+              return {
+                kind: 'fixture.watson.verifier.v1',
+                status: 'pass'
+              };
+            }
           }
-        }],
-        auditProfiles: [{
-          name: 'fixture-audit-profile',
-          verifiers: ['fixture-verifier']
-        }]
+        ],
+        auditProfiles: [
+          {
+            name: 'fixture-audit-profile',
+            verifiers: ['fixture-verifier']
+          }
+        ]
       },
       moriarty: {
         policyProfiles: [{ name: 'fixture-policy-profile' }],
-        judgmentProfiles: [{
-          name: 'fixture-judgment-profile',
-          policies: ['fixture-policy-profile']
-        }],
-        predictors: [{
-          name: 'fixture-predictor',
-          async predict() {
-            return {
-              kind: 'fixture.moriarty.predictor.v1',
-              prediction: 'neutral'
-            };
+        judgmentProfiles: [
+          {
+            name: 'fixture-judgment-profile',
+            policies: ['fixture-policy-profile']
           }
-        }]
+        ],
+        predictors: [
+          {
+            name: 'fixture-predictor',
+            async predict() {
+              return {
+                kind: 'fixture.moriarty.predictor.v1',
+                prediction: 'neutral'
+              };
+            }
+          }
+        ]
       },
       blade: {
-        scenarios: [{
-          name: 'fixture-scenario',
-          fixtures: ['fixture-blade-fixture']
-        }],
-        fixtures: [{
-          name: 'fixture-blade-fixture',
-          async load() {
-            return {
-              kind: 'fixture.blade.fixture.v1',
-              ready: true
-            };
+        scenarios: [
+          {
+            name: 'fixture-scenario',
+            fixtures: ['fixture-blade-fixture']
           }
-        }],
-        envSetups: [{
-          name: 'fixture-env-setup',
-          async setup({ environment = 'fixture' } = {}) {
-            return {
-              kind: 'fixture.blade.env-setup.v1',
-              environment,
-              ready: true
-            };
-          }
-        }],
-        tests: [{
-          name: 'fixture-blade-test',
-          async run({ shouldFail = false } = {}) {
-            return {
-              kind: 'fixture.blade.test.v1',
-              status: shouldFail ? 'fail' : 'pass'
-            };
-          }
-        }],
-        gates: [{
-          name: 'fixture-gate',
-          async evaluate({ passed = true } = {}) {
-            if (!passed) {
-              const error = new Error('fixture gate rejected fixture input');
-              error.code = 'FIXTURE_GATE_REJECTED';
-              throw error;
+        ],
+        fixtures: [
+          {
+            name: 'fixture-blade-fixture',
+            async load() {
+              return {
+                kind: 'fixture.blade.fixture.v1',
+                ready: true
+              };
             }
-            return {
-              kind: 'fixture.blade.gate.v1',
-              status: 'pass'
-            };
           }
-        }],
-        certificationProfiles: [{
-          name: 'fixture-certification-profile',
-          gates: ['fixture-gate']
-        }]
+        ],
+        envSetups: [
+          {
+            name: 'fixture-env-setup',
+            async setup({ environment = 'fixture' } = {}) {
+              return {
+                kind: 'fixture.blade.env-setup.v1',
+                environment,
+                ready: true
+              };
+            }
+          }
+        ],
+        tests: [
+          {
+            name: 'fixture-blade-test',
+            async run({ shouldFail = false } = {}) {
+              return {
+                kind: 'fixture.blade.test.v1',
+                status: shouldFail ? 'fail' : 'pass'
+              };
+            }
+          }
+        ],
+        gates: [
+          {
+            name: 'fixture-gate',
+            async evaluate({ passed = true } = {}) {
+              if (!passed) {
+                const error = new Error('fixture gate rejected fixture input');
+                error.code = 'FIXTURE_GATE_REJECTED';
+                throw error;
+              }
+              return {
+                kind: 'fixture.blade.gate.v1',
+                status: 'pass'
+              };
+            }
+          }
+        ],
+        certificationProfiles: [
+          {
+            name: 'fixture-certification-profile',
+            gates: ['fixture-gate']
+          }
+        ]
       },
       cli: {
         commands: [{ name: 'fixture-hello' }]

@@ -1,23 +1,24 @@
 ---
-report_id: "AUD-2026-05-04-DQ01"
-title: "Documentation Quality Audit: Wesley Module-First Onboarding"
-status: "Final"
+report_id: 'AUD-2026-05-04-DQ01'
+title: 'Documentation Quality Audit: Wesley Module-First Onboarding'
+status: 'Final'
 audit:
   date_started: 2026-05-04
   date_completed: 2026-05-04
-  type: "Full"
-  scope: "README.md, docs/GUIDE.md, docs/ARCHITECTURE.md, docs/VISION.md, docs/design/, docs/guides/"
-  compliance_frameworks: ["OpenSSF Best Practices", "Diataxis Documentation System"]
+  type: 'Full'
+  scope: 'README.md, docs/GUIDE.md, docs/ARCHITECTURE.md, docs/VISION.md, docs/design/, docs/guides/'
+  compliance_frameworks: ['OpenSSF Best Practices', 'Diataxis Documentation System']
 target:
-  repository: "github.com/flyingrobots/wesley"
-  branch: "cycle/0008-holmes-counterfactual-provider-capability"
-  commit_hash: "f185446"
-  language_stack: ["Node.js >=22", "pnpm 9.15.9", "ESM JavaScript", "Markdown"]
-  environment: "Local release-candidate branch"
+  repository: 'github.com/flyingrobots/wesley'
+  branch: 'cycle/0008-holmes-counterfactual-provider-capability'
+  commit_hash: 'f185446'
+  language_stack: ['Node.js >=22', 'pnpm 9.15.9', 'ESM JavaScript', 'Markdown']
+  environment: 'Local release-candidate branch'
 methodology:
-  automated_tools: ["rg", "docs link check via pnpm run preflight", "docs truth check via pnpm run preflight"]
+  automated_tools:
+    ['rg', 'docs link check via pnpm run preflight', 'docs truth check via pnpm run preflight']
   manual_review_hours: 2
-  false_positive_rate: "10%"
+  false_positive_rate: '10%'
 summary:
   total_findings: 7
   severity_count:
@@ -25,10 +26,10 @@ summary:
     high: 1
     medium: 4
     low: 2
-  remediation_status: "Pending"
+  remediation_status: 'Pending'
 related_reports:
-  previous_audit: "AUD-2026-04-11-DOCUMENTATION-QUALITY"
-  tracking_ticket: "docs/method/backlog/"
+  previous_audit: 'AUD-2026-04-11-DOCUMENTATION-QUALITY'
+  tracking_ticket: 'docs/method/backlog/'
 ---
 
 # AUDIT: DOCUMENTATION QUALITY (2026-05-04)

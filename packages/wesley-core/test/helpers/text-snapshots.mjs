@@ -2,10 +2,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 export function normalizeSnapshotText(actual) {
-  return actual
-    .replace(/\r\n/g, '\n')
-    .replace(/\s+$/gm, '')
-    .trim();
+  return actual.replace(/\r\n/g, '\n').replace(/\s+$/gm, '').trim();
 }
 
 export function matchTextSnapshot({

@@ -18,17 +18,21 @@ Trigger: title/label match: evidence, certification, security, or Holmes-family 
 ## Original Issue
 
 ## Summary
+
 Ensure top-level SCS/TCI/MRI scores stay consistent with their breakdown components by adding automated sanity checks and fail-fast guardrails.
 
 ## Details
+
 - After computing breakdowns, recompute aggregate scores and compare against published SCS/TCI/MRI (within configurable tolerance).
 - Fail bundle generation or emit warnings when discrepancies exceed tolerance (configurable).
 - Update validate-bundle/holmes CLI to run the same validation for safety.
 
 ## Motivation
+
 - Manual edits or future heuristics could desync aggregates from components, undermining trust.
 
 ## Acceptance Criteria
+
 - Bundles with mismatched aggregates fail validation (or at least warn loudly).
 - Tests cover matching and mismatching scenarios.
 - Documentation describes the sanity check and tolerance settings.

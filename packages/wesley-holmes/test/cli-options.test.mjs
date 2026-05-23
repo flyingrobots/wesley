@@ -1,14 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { tmpdir } from 'node:os';
-import {
-  mkdtempSync,
-  rmSync,
-  existsSync,
-  readFileSync,
-  mkdirSync,
-  writeFileSync
-} from 'node:fs';
+import { mkdtempSync, rmSync, existsSync, readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -18,7 +11,9 @@ const repoRoot = path.resolve(path.dirname(__filename), '..', '..', '..');
 const cliPath = path.join(repoRoot, 'packages', 'wesley-holmes', 'src', 'cli.mjs');
 const moriartyCliPath = path.join(repoRoot, 'packages', 'wesley-holmes', 'src', 'moriarty-cli.mjs');
 const wesleyCliPath = path.join(repoRoot, 'packages', 'wesley-host-node', 'bin', 'wesley.mjs');
-const counterfactualModulePath = fileURLToPath(new URL('./fixtures/counterfactual-provider-module.mjs', import.meta.url));
+const counterfactualModulePath = fileURLToPath(
+  new URL('./fixtures/counterfactual-provider-module.mjs', import.meta.url)
+);
 
 const sampleBundle = {
   sha: 'abcdef1234567890abcdef1234567890abcdef12',
@@ -39,24 +34,136 @@ const sampleBundle = {
       mri: 0.18,
       breakdown: {
         scs: {
-          sql: { score: 0.9, totalWeight: 10, coveredWeight: 9, total: 10, covered: 9, contribution: 0.9, points: 90 },
-          types: { score: 0.8, totalWeight: 8, coveredWeight: 6, total: 8, covered: 6, contribution: 0.8, points: 64 },
-          validation: { score: 0.75, totalWeight: 6, coveredWeight: 4, total: 6, covered: 4, contribution: 0.75, points: 45 },
-          tests: { score: 0.7, totalWeight: 5, coveredWeight: 3, total: 5, covered: 3, contribution: 0.7, points: 35 }
+          sql: {
+            score: 0.9,
+            totalWeight: 10,
+            coveredWeight: 9,
+            total: 10,
+            covered: 9,
+            contribution: 0.9,
+            points: 90
+          },
+          types: {
+            score: 0.8,
+            totalWeight: 8,
+            coveredWeight: 6,
+            total: 8,
+            covered: 6,
+            contribution: 0.8,
+            points: 64
+          },
+          validation: {
+            score: 0.75,
+            totalWeight: 6,
+            coveredWeight: 4,
+            total: 6,
+            covered: 4,
+            contribution: 0.75,
+            points: 45
+          },
+          tests: {
+            score: 0.7,
+            totalWeight: 5,
+            coveredWeight: 3,
+            total: 5,
+            covered: 3,
+            contribution: 0.7,
+            points: 35
+          }
         },
         tci: {
-          unitConstraints: { score: 0.7, totalWeight: 6, coveredWeight: 4, total: 6, covered: 4, contribution: 0.7, points: 42 },
-          rls: { score: 0.65, totalWeight: 4, coveredWeight: 3, total: 4, covered: 3, contribution: 0.65, points: 26 },
-          integrationRelations: { score: 0.8, totalWeight: 5, coveredWeight: 4, total: 5, covered: 4, contribution: 0.8, points: 40 },
-          e2eOps: { score: 0.6, totalWeight: 3, coveredWeight: 2, total: 3, covered: 2, contribution: 0.6, points: 18 }
+          unitConstraints: {
+            score: 0.7,
+            totalWeight: 6,
+            coveredWeight: 4,
+            total: 6,
+            covered: 4,
+            contribution: 0.7,
+            points: 42
+          },
+          rls: {
+            score: 0.65,
+            totalWeight: 4,
+            coveredWeight: 3,
+            total: 4,
+            covered: 3,
+            contribution: 0.65,
+            points: 26
+          },
+          integrationRelations: {
+            score: 0.8,
+            totalWeight: 5,
+            coveredWeight: 4,
+            total: 5,
+            covered: 4,
+            contribution: 0.8,
+            points: 40
+          },
+          e2eOps: {
+            score: 0.6,
+            totalWeight: 3,
+            coveredWeight: 2,
+            total: 3,
+            covered: 2,
+            contribution: 0.6,
+            points: 18
+          }
         },
         mri: {
-          drops: { score: 0.95, totalWeight: 2, coveredWeight: 2, total: 2, covered: 2, contribution: 0.95, points: 19 },
-          renames: { score: 0.9, totalWeight: 2, coveredWeight: 2, total: 2, covered: 2, contribution: 0.9, points: 18 },
-          defaults: { score: 0.85, totalWeight: 3, coveredWeight: 3, total: 3, covered: 3, contribution: 0.85, points: 25 },
-          typeChanges: { score: 0.8, totalWeight: 3, coveredWeight: 2, total: 3, covered: 2, contribution: 0.8, points: 24 },
-          indexes: { score: 0.88, totalWeight: 2, coveredWeight: 2, total: 2, covered: 2, contribution: 0.88, points: 18 },
-          other: { score: 0.9, totalWeight: 2, coveredWeight: 2, total: 2, covered: 2, contribution: 0.9, points: 18 }
+          drops: {
+            score: 0.95,
+            totalWeight: 2,
+            coveredWeight: 2,
+            total: 2,
+            covered: 2,
+            contribution: 0.95,
+            points: 19
+          },
+          renames: {
+            score: 0.9,
+            totalWeight: 2,
+            coveredWeight: 2,
+            total: 2,
+            covered: 2,
+            contribution: 0.9,
+            points: 18
+          },
+          defaults: {
+            score: 0.85,
+            totalWeight: 3,
+            coveredWeight: 3,
+            total: 3,
+            covered: 3,
+            contribution: 0.85,
+            points: 25
+          },
+          typeChanges: {
+            score: 0.8,
+            totalWeight: 3,
+            coveredWeight: 2,
+            total: 3,
+            covered: 2,
+            contribution: 0.8,
+            points: 24
+          },
+          indexes: {
+            score: 0.88,
+            totalWeight: 2,
+            coveredWeight: 2,
+            total: 2,
+            covered: 2,
+            contribution: 0.88,
+            points: 18
+          },
+          other: {
+            score: 0.9,
+            totalWeight: 2,
+            coveredWeight: 2,
+            total: 2,
+            covered: 2,
+            contribution: 0.9,
+            points: 18
+          }
         }
       }
     },
@@ -75,7 +182,11 @@ const sampleHistory = {
   ]
 };
 
-function createFixture({ includeBundle = true, includeHistory = true, corruptBundle = false } = {}) {
+function createFixture({
+  includeBundle = true,
+  includeHistory = true,
+  corruptBundle = false
+} = {}) {
   const tempDir = mkdtempSync(path.join(tmpdir(), 'holmes-cli-'));
   const bundleDir = path.join(tempDir, '.wesley-cache');
   const schemaDir = path.join(tempDir, 'schema');
@@ -118,15 +229,27 @@ function initGitFixture(tempDir) {
   runGit(tempDir, 'checkout', '-b', 'feature');
   mkdirSync(path.join(tempDir, 'out'), { recursive: true });
   writeFileSync(path.join(tempDir, 'out', 'schema.sql'), '-- feature branch surface\n');
-  writeFileSync(path.join(tempDir, '.wesley-cache', 'plan-report.json'), JSON.stringify({
-    plan: { phases: [{ phase: 1 }] },
-    explain: { steps: [{ op: 'alter_table' }] }
-  }, null, 2));
-  const bundle = JSON.parse(readFileSync(path.join(tempDir, '.wesley-cache', 'bundle.json'), 'utf8'));
+  writeFileSync(
+    path.join(tempDir, '.wesley-cache', 'plan-report.json'),
+    JSON.stringify(
+      {
+        plan: { phases: [{ phase: 1 }] },
+        explain: { steps: [{ op: 'alter_table' }] }
+      },
+      null,
+      2
+    )
+  );
+  const bundle = JSON.parse(
+    readFileSync(path.join(tempDir, '.wesley-cache', 'bundle.json'), 'utf8')
+  );
   bundle.evidence.evidence['artifact:out/schema.sql'] = {
     sql: [{ file: 'out/schema.sql', lines: '1-1' }]
   };
-  writeFileSync(path.join(tempDir, '.wesley-cache', 'bundle.json'), JSON.stringify(bundle, null, 2));
+  writeFileSync(
+    path.join(tempDir, '.wesley-cache', 'bundle.json'),
+    JSON.stringify(bundle, null, 2)
+  );
   runGit(tempDir, 'add', '.');
   runGit(tempDir, 'commit', '-m', 'feature');
 }
@@ -144,31 +267,37 @@ function runGit(cwd, ...args) {
 function persistTransformRun(fixture, runId, extraArgs = []) {
   const outDir = path.join(fixture.tempDir, 'out');
   mkdirSync(outDir, { recursive: true });
-  const result = spawnSync(process.execPath, [
-    wesleyCliPath,
-    'transform',
-    '--schema', fixture.schemaPath,
-    '--out-dir', outDir,
-    '--transmutation', 'null-generator',
-    '--run-id', runId,
-    '--emit-bundle',
-    '--json',
-    '--quiet',
-    ...extraArgs
-  ], {
-    cwd: fixture.tempDir,
-    encoding: 'utf8',
-    env: { ...process.env }
-  });
+  const result = spawnSync(
+    process.execPath,
+    [
+      wesleyCliPath,
+      'transform',
+      '--schema',
+      fixture.schemaPath,
+      '--out-dir',
+      outDir,
+      '--transmutation',
+      'null-generator',
+      '--run-id',
+      runId,
+      '--emit-bundle',
+      '--json',
+      '--quiet',
+      ...extraArgs
+    ],
+    {
+      cwd: fixture.tempDir,
+      encoding: 'utf8',
+      env: { ...process.env }
+    }
+  );
   assert.equal(result.status, 0, result.stderr || result.stdout);
 }
 
-function runCli(command, {
-  jsonName = `${command}-report`,
-  extraArgs = [],
-  fixtureOptions = {},
-  expectSuccess = true
-} = {}) {
+function runCli(
+  command,
+  { jsonName = `${command}-report`, extraArgs = [], fixtureOptions = {}, expectSuccess = true } = {}
+) {
   const fixture = createFixture(fixtureOptions);
   const args = [cliPath, command, '--bundle-dir', fixture.bundleDir];
   let jsonPath;
@@ -211,18 +340,24 @@ function runCli(command, {
 }
 
 function inspectPersistedRun(fixture, runId, transmutation) {
-  const result = spawnSync(process.execPath, [
-    wesleyCliPath,
-    'runs',
-    'inspect',
-    '--run-id', runId,
-    '--transmutation', transmutation,
-    '--json'
-  ], {
-    cwd: fixture.tempDir,
-    encoding: 'utf8',
-    env: { ...process.env }
-  });
+  const result = spawnSync(
+    process.execPath,
+    [
+      wesleyCliPath,
+      'runs',
+      'inspect',
+      '--run-id',
+      runId,
+      '--transmutation',
+      transmutation,
+      '--json'
+    ],
+    {
+      cwd: fixture.tempDir,
+      encoding: 'utf8',
+      env: { ...process.env }
+    }
+  );
   assert.equal(result.status, 0, result.stderr || result.stdout);
   return JSON.parse(result.stdout);
 }
@@ -232,8 +367,10 @@ function listPersistedRuns(fixture, transmutation, status = null) {
     wesleyCliPath,
     'runs',
     'status',
-    '--transmutation', transmutation,
-    '--limit', '10',
+    '--transmutation',
+    transmutation,
+    '--limit',
+    '10',
     '--json'
   ];
   if (status) {
@@ -249,13 +386,7 @@ function listPersistedRuns(fixture, transmutation, status = null) {
 }
 
 function runHolmesRunsStatus(fixture, extraArgs = []) {
-  const result = spawnSync(process.execPath, [
-    cliPath,
-    'runs',
-    'status',
-    '--json',
-    ...extraArgs
-  ], {
+  const result = spawnSync(process.execPath, [cliPath, 'runs', 'status', '--json', ...extraArgs], {
     cwd: fixture.tempDir,
     encoding: 'utf8',
     env: { ...process.env, MORIARTY_USE_GIT: '0', WESLEY_MODULES: counterfactualModulePath }
@@ -265,18 +396,15 @@ function runHolmesRunsStatus(fixture, extraArgs = []) {
 }
 
 function runHolmesRunsInspect(fixture, runId, transmutation) {
-  const result = spawnSync(process.execPath, [
-    cliPath,
-    'runs',
-    'inspect',
-    '--run-id', runId,
-    '--transmutation', transmutation,
-    '--json'
-  ], {
-    cwd: fixture.tempDir,
-    encoding: 'utf8',
-    env: { ...process.env, MORIARTY_USE_GIT: '0', WESLEY_MODULES: counterfactualModulePath }
-  });
+  const result = spawnSync(
+    process.execPath,
+    [cliPath, 'runs', 'inspect', '--run-id', runId, '--transmutation', transmutation, '--json'],
+    {
+      cwd: fixture.tempDir,
+      encoding: 'utf8',
+      env: { ...process.env, MORIARTY_USE_GIT: '0', WESLEY_MODULES: counterfactualModulePath }
+    }
+  );
   assert.equal(result.status, 0, result.stderr || result.stdout);
   return JSON.parse(result.stdout);
 }
@@ -325,10 +453,7 @@ test('holmes CLI predict accepts explicit history file', () => {
 test('moriarty entry point runs independently of holmes CLI', () => {
   const fixture = createFixture();
   const jsonPath = path.join(fixture.schemaDir, 'moriarty-standalone.json');
-  const result = spawnSync(process.execPath, [
-    moriartyCliPath,
-    '--json', jsonPath
-  ], {
+  const result = spawnSync(process.execPath, [moriartyCliPath, '--json', jsonPath], {
     cwd: fixture.tempDir,
     encoding: 'utf8',
     env: { ...process.env, MORIARTY_USE_GIT: '0', WESLEY_MODULES: counterfactualModulePath }
@@ -340,7 +465,11 @@ test('moriarty entry point runs independently of holmes CLI', () => {
     const json = JSON.parse(readFileSync(jsonPath, 'utf8'));
     assert.equal(json.status, 'OK');
     assert.equal(json.commandRun.run.transmutation, 'moriarty-predict');
-    const inspected = inspectPersistedRun(fixture, json.commandRun.run.runId, json.commandRun.run.transmutation);
+    const inspected = inspectPersistedRun(
+      fixture,
+      json.commandRun.run.runId,
+      json.commandRun.run.transmutation
+    );
     assert.equal(inspected.run.command, 'predict');
     assert.equal(inspected.run.status, 'completed');
   } finally {
@@ -360,25 +489,37 @@ test('holmes CLI report passes braid refs through to combined moriarty output', 
   const fixture = createFixture();
   initGitFixture(fixture.tempDir);
   runGit(fixture.tempDir, 'checkout', '-b', 'support', 'main');
-  writeFileSync(path.join(fixture.tempDir, 'schema.graphql'), 'type Query { hello: String support: String }\n');
+  writeFileSync(
+    path.join(fixture.tempDir, 'schema.graphql'),
+    'type Query { hello: String support: String }\n'
+  );
   runGit(fixture.tempDir, 'add', 'schema.graphql');
   runGit(fixture.tempDir, 'commit', '-m', 'support lane');
   runGit(fixture.tempDir, 'checkout', 'feature');
 
   const jsonPath = path.join(fixture.schemaDir, 'combined-braid-report.json');
-  const result = spawnSync(process.execPath, [
-    cliPath,
-    'report',
-    '--bundle-dir', fixture.bundleDir,
-    '--history-file', fixture.historyPath,
-    '--json', jsonPath,
-    '--counterfactual', 'main',
-    '--counterfactual-braid', 'support'
-  ], {
-    cwd: fixture.tempDir,
-    encoding: 'utf8',
-    env: { ...process.env, MORIARTY_USE_GIT: '0', WESLEY_MODULES: counterfactualModulePath }
-  });
+  const result = spawnSync(
+    process.execPath,
+    [
+      cliPath,
+      'report',
+      '--bundle-dir',
+      fixture.bundleDir,
+      '--history-file',
+      fixture.historyPath,
+      '--json',
+      jsonPath,
+      '--counterfactual',
+      'main',
+      '--counterfactual-braid',
+      'support'
+    ],
+    {
+      cwd: fixture.tempDir,
+      encoding: 'utf8',
+      env: { ...process.env, MORIARTY_USE_GIT: '0', WESLEY_MODULES: counterfactualModulePath }
+    }
+  );
 
   try {
     assert.equal(result.status, 0, result.stderr);
@@ -396,25 +537,36 @@ test('holmes CLI predict emits counterfactual report without projection alias', 
   const fixture = createFixture();
   initGitFixture(fixture.tempDir);
   const jsonPath = path.join(fixture.schemaDir, 'moriarty-counterfactual.json');
-  const result = spawnSync(process.execPath, [
-    cliPath,
-    'predict',
-    '--bundle-dir', fixture.bundleDir,
-    '--history-file', fixture.historyPath,
-    '--json', jsonPath,
-    '--counterfactual', 'main'
-  ], {
-    cwd: fixture.tempDir,
-    encoding: 'utf8',
-    env: { ...process.env, MORIARTY_USE_GIT: '0', WESLEY_MODULES: counterfactualModulePath }
-  });
+  const result = spawnSync(
+    process.execPath,
+    [
+      cliPath,
+      'predict',
+      '--bundle-dir',
+      fixture.bundleDir,
+      '--history-file',
+      fixture.historyPath,
+      '--json',
+      jsonPath,
+      '--counterfactual',
+      'main'
+    ],
+    {
+      cwd: fixture.tempDir,
+      encoding: 'utf8',
+      env: { ...process.env, MORIARTY_USE_GIT: '0', WESLEY_MODULES: counterfactualModulePath }
+    }
+  );
 
   try {
     assert.equal(result.status, 0, result.stderr);
     const json = JSON.parse(readFileSync(jsonPath, 'utf8'));
     assert.ok(json.counterfactual, 'Counterfactual data should be present');
     assert.equal('projection' in json, false, 'Projection compatibility alias should be removed');
-    assert.ok(json.explain?.readiness?.counterfactual, 'Counterfactual readiness signal should be present in Moriarty EXPLAIN');
+    assert.ok(
+      json.explain?.readiness?.counterfactual,
+      'Counterfactual readiness signal should be present in Moriarty EXPLAIN'
+    );
     assert.equal(typeof json.explain.readiness.counterfactual.pass, 'boolean');
     assert.ok(result.stdout.includes('Counterfactual Analysis'));
     assert.ok(result.stdout.includes('Counterfactual gate must be pass'));
@@ -428,25 +580,37 @@ test('holmes CLI predict accepts braid refs on the public counterfactual lane', 
   const fixture = createFixture();
   initGitFixture(fixture.tempDir);
   runGit(fixture.tempDir, 'checkout', '-b', 'support', 'main');
-  writeFileSync(path.join(fixture.tempDir, 'schema.graphql'), 'type Query { hello: String support: String }\n');
+  writeFileSync(
+    path.join(fixture.tempDir, 'schema.graphql'),
+    'type Query { hello: String support: String }\n'
+  );
   runGit(fixture.tempDir, 'add', 'schema.graphql');
   runGit(fixture.tempDir, 'commit', '-m', 'support lane');
   runGit(fixture.tempDir, 'checkout', 'feature');
 
   const jsonPath = path.join(fixture.schemaDir, 'moriarty-braid.json');
-  const result = spawnSync(process.execPath, [
-    cliPath,
-    'predict',
-    '--bundle-dir', fixture.bundleDir,
-    '--history-file', fixture.historyPath,
-    '--json', jsonPath,
-    '--counterfactual', 'main',
-    '--counterfactual-braid', 'support'
-  ], {
-    cwd: fixture.tempDir,
-    encoding: 'utf8',
-    env: { ...process.env, MORIARTY_USE_GIT: '0', WESLEY_MODULES: counterfactualModulePath }
-  });
+  const result = spawnSync(
+    process.execPath,
+    [
+      cliPath,
+      'predict',
+      '--bundle-dir',
+      fixture.bundleDir,
+      '--history-file',
+      fixture.historyPath,
+      '--json',
+      jsonPath,
+      '--counterfactual',
+      'main',
+      '--counterfactual-braid',
+      'support'
+    ],
+    {
+      cwd: fixture.tempDir,
+      encoding: 'utf8',
+      env: { ...process.env, MORIARTY_USE_GIT: '0', WESLEY_MODULES: counterfactualModulePath }
+    }
+  );
 
   try {
     assert.equal(result.status, 0, result.stderr);
@@ -461,17 +625,24 @@ test('holmes CLI predict accepts braid refs on the public counterfactual lane', 
 
 test('holmes CLI rejects removed project-merge flag', () => {
   const fixture = createFixture();
-  const result = spawnSync(process.execPath, [
-    cliPath,
-    'predict',
-    '--bundle-dir', fixture.bundleDir,
-    '--history-file', fixture.historyPath,
-    '--project-merge', 'main'
-  ], {
-    cwd: fixture.tempDir,
-    encoding: 'utf8',
-    env: { ...process.env, MORIARTY_USE_GIT: '0' }
-  });
+  const result = spawnSync(
+    process.execPath,
+    [
+      cliPath,
+      'predict',
+      '--bundle-dir',
+      fixture.bundleDir,
+      '--history-file',
+      fixture.historyPath,
+      '--project-merge',
+      'main'
+    ],
+    {
+      cwd: fixture.tempDir,
+      encoding: 'utf8',
+      env: { ...process.env, MORIARTY_USE_GIT: '0' }
+    }
+  );
 
   try {
     assert.notEqual(result.status, 0);
@@ -487,19 +658,28 @@ test('holmes CLI predict attaches persisted runtime run context', () => {
   persistTransformRun(fixture, 'run-holmes-ledger-123');
   const jsonPath = path.join(fixture.schemaDir, 'moriarty-runtime.json');
 
-  const result = spawnSync(process.execPath, [
-    cliPath,
-    'predict',
-    '--bundle-dir', fixture.bundleDir,
-    '--history-file', fixture.historyPath,
-    '--json', jsonPath,
-    '--run-id', 'run-holmes-ledger-123',
-    '--transmutation', 'null-generator'
-  ], {
-    cwd: fixture.tempDir,
-    encoding: 'utf8',
-    env: { ...process.env, MORIARTY_USE_GIT: '0' }
-  });
+  const result = spawnSync(
+    process.execPath,
+    [
+      cliPath,
+      'predict',
+      '--bundle-dir',
+      fixture.bundleDir,
+      '--history-file',
+      fixture.historyPath,
+      '--json',
+      jsonPath,
+      '--run-id',
+      'run-holmes-ledger-123',
+      '--transmutation',
+      'null-generator'
+    ],
+    {
+      cwd: fixture.tempDir,
+      encoding: 'utf8',
+      env: { ...process.env, MORIARTY_USE_GIT: '0' }
+    }
+  );
 
   try {
     assert.equal(result.status, 0, result.stderr);
@@ -512,7 +692,11 @@ test('holmes CLI predict attaches persisted runtime run context', () => {
     assert.notEqual(json.commandRun.run.runId, 'run-holmes-ledger-123');
     assert.equal(json.commandRun.run.transmutation, 'moriarty-predict');
     assert.ok(result.stdout.includes('Runtime Run Context'));
-    const inspected = inspectPersistedRun(fixture, json.commandRun.run.runId, json.commandRun.run.transmutation);
+    const inspected = inspectPersistedRun(
+      fixture,
+      json.commandRun.run.runId,
+      json.commandRun.run.transmutation
+    );
     assert.equal(inspected.run.command, 'predict');
     assert.equal(inspected.run.status, 'completed');
   } finally {
@@ -523,22 +707,25 @@ test('holmes CLI predict attaches persisted runtime run context', () => {
 test('holmes CLI investigate emits its own command run into the shared ledger', () => {
   const fixture = createFixture();
   const jsonPath = path.join(fixture.schemaDir, 'holmes-investigation.json');
-  const result = spawnSync(process.execPath, [
-    cliPath,
-    'investigate',
-    '--bundle-dir', fixture.bundleDir,
-    '--json', jsonPath
-  ], {
-    cwd: fixture.tempDir,
-    encoding: 'utf8',
-    env: { ...process.env, MORIARTY_USE_GIT: '0' }
-  });
+  const result = spawnSync(
+    process.execPath,
+    [cliPath, 'investigate', '--bundle-dir', fixture.bundleDir, '--json', jsonPath],
+    {
+      cwd: fixture.tempDir,
+      encoding: 'utf8',
+      env: { ...process.env, MORIARTY_USE_GIT: '0' }
+    }
+  );
 
   try {
     assert.equal(result.status, 0, result.stderr);
     const json = JSON.parse(readFileSync(jsonPath, 'utf8'));
     assert.equal(json.commandRun.run.transmutation, 'holmes-investigate');
-    const inspected = inspectPersistedRun(fixture, json.commandRun.run.runId, json.commandRun.run.transmutation);
+    const inspected = inspectPersistedRun(
+      fixture,
+      json.commandRun.run.runId,
+      json.commandRun.run.transmutation
+    );
     assert.equal(inspected.run.command, 'investigate');
     assert.equal(inspected.run.status, 'completed');
   } finally {
@@ -553,27 +740,33 @@ test('holmes runs status defaults to holmes-family runs and can inspect them nat
   const investigateJsonPath = path.join(fixture.schemaDir, 'holmes-native-investigate.json');
   const predictJsonPath = path.join(fixture.schemaDir, 'holmes-native-predict.json');
 
-  const investigate = spawnSync(process.execPath, [
-    cliPath,
-    'investigate',
-    '--bundle-dir', fixture.bundleDir,
-    '--json', investigateJsonPath
-  ], {
-    cwd: fixture.tempDir,
-    encoding: 'utf8',
-    env: { ...process.env, MORIARTY_USE_GIT: '0' }
-  });
-  const predict = spawnSync(process.execPath, [
-    cliPath,
-    'predict',
-    '--bundle-dir', fixture.bundleDir,
-    '--history-file', fixture.historyPath,
-    '--json', predictJsonPath
-  ], {
-    cwd: fixture.tempDir,
-    encoding: 'utf8',
-    env: { ...process.env, MORIARTY_USE_GIT: '0' }
-  });
+  const investigate = spawnSync(
+    process.execPath,
+    [cliPath, 'investigate', '--bundle-dir', fixture.bundleDir, '--json', investigateJsonPath],
+    {
+      cwd: fixture.tempDir,
+      encoding: 'utf8',
+      env: { ...process.env, MORIARTY_USE_GIT: '0' }
+    }
+  );
+  const predict = spawnSync(
+    process.execPath,
+    [
+      cliPath,
+      'predict',
+      '--bundle-dir',
+      fixture.bundleDir,
+      '--history-file',
+      fixture.historyPath,
+      '--json',
+      predictJsonPath
+    ],
+    {
+      cwd: fixture.tempDir,
+      encoding: 'utf8',
+      env: { ...process.env, MORIARTY_USE_GIT: '0' }
+    }
+  );
 
   try {
     assert.equal(investigate.status, 0, investigate.stderr);
@@ -581,21 +774,21 @@ test('holmes runs status defaults to holmes-family runs and can inspect them nat
 
     const status = runHolmesRunsStatus(fixture);
     assert.equal(status.count, 2);
-    assert.deepEqual(
-      status.runs.map(run => run.transmutation).sort(),
-      ['holmes-investigate', 'moriarty-predict']
-    );
+    assert.deepEqual(status.runs.map((run) => run.transmutation).sort(), [
+      'holmes-investigate',
+      'moriarty-predict'
+    ]);
 
     const inspect = runHolmesRunsInspect(
       fixture,
-      status.runs.find(run => run.transmutation === 'holmes-investigate').runId,
+      status.runs.find((run) => run.transmutation === 'holmes-investigate').runId,
       'holmes-investigate'
     );
     assert.equal(inspect.run.command, 'investigate');
     assert.equal(inspect.run.status, 'completed');
 
     const allStatus = runHolmesRunsStatus(fixture, ['--all']);
-    assert.ok(allStatus.runs.some(run => run.transmutation === 'null-generator'));
+    assert.ok(allStatus.runs.some((run) => run.transmutation === 'null-generator'));
   } finally {
     fixture.cleanup();
   }
@@ -603,15 +796,15 @@ test('holmes runs status defaults to holmes-family runs and can inspect them nat
 
 test('holmes CLI investigate records failed command runs on bundle errors', () => {
   const fixture = createFixture({ includeBundle: false });
-  const result = spawnSync(process.execPath, [
-    cliPath,
-    'investigate',
-    '--bundle-dir', fixture.bundleDir
-  ], {
-    cwd: fixture.tempDir,
-    encoding: 'utf8',
-    env: { ...process.env, MORIARTY_USE_GIT: '0' }
-  });
+  const result = spawnSync(
+    process.execPath,
+    [cliPath, 'investigate', '--bundle-dir', fixture.bundleDir],
+    {
+      cwd: fixture.tempDir,
+      encoding: 'utf8',
+      env: { ...process.env, MORIARTY_USE_GIT: '0' }
+    }
+  );
 
   try {
     assert.notEqual(result.status, 0);
@@ -629,19 +822,28 @@ test('holmes CLI investigate records failed command runs on bundle errors', () =
 test('holmes CLI predict fails when requested runtime run is missing', () => {
   const fixture = createFixture();
   const jsonPath = path.join(fixture.schemaDir, 'moriarty-runtime-missing.json');
-  const result = spawnSync(process.execPath, [
-    cliPath,
-    'predict',
-    '--bundle-dir', fixture.bundleDir,
-    '--history-file', fixture.historyPath,
-    '--json', jsonPath,
-    '--run-id', 'run-holmes-missing',
-    '--transmutation', 'null-generator'
-  ], {
-    cwd: fixture.tempDir,
-    encoding: 'utf8',
-    env: { ...process.env, MORIARTY_USE_GIT: '0' }
-  });
+  const result = spawnSync(
+    process.execPath,
+    [
+      cliPath,
+      'predict',
+      '--bundle-dir',
+      fixture.bundleDir,
+      '--history-file',
+      fixture.historyPath,
+      '--json',
+      jsonPath,
+      '--run-id',
+      'run-holmes-missing',
+      '--transmutation',
+      'null-generator'
+    ],
+    {
+      cwd: fixture.tempDir,
+      encoding: 'utf8',
+      env: { ...process.env, MORIARTY_USE_GIT: '0' }
+    }
+  );
 
   try {
     assert.notEqual(result.status, 0);
@@ -657,7 +859,10 @@ test('weights command validates custom configuration', () => {
 
 test('weights command fails when file missing', () => {
   const result = runWeights({ expectSuccess: false });
-  assert.ok(result.stderr.includes('Weight configuration invalid'), 'Missing weights should report failure');
+  assert.ok(
+    result.stderr.includes('Weight configuration invalid'),
+    'Missing weights should report failure'
+  );
 });
 
 test('holmes CLI fails when bundle missing', () => {

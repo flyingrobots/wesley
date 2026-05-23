@@ -9,7 +9,7 @@
     "runId": { "type": ["string", "null"], "minLength": 1 },
     "resumed": { "type": "boolean" },
     "shortCircuited": { "type": "boolean" },
-    "run": { "anyOf": [ { "$ref": "runtime-run.schema.json#" }, { "type": "null" } ] },
+    "run": { "anyOf": [{ "$ref": "runtime-run.schema.json#" }, { "type": "null" }] },
     "events": {
       "type": "array",
       "items": { "$ref": "runtime-event.schema.json#" }
@@ -22,6 +22,9 @@
     "timestamp": { "type": "string", "format": "date-time" }
   },
   "if": { "required": ["verdict"], "properties": { "verdict": { "const": "FAIL" } } },
-  "then": { "required": ["error"], "properties": { "error": { "type": "string", "minLength": 1 } } },
+  "then": {
+    "required": ["error"],
+    "properties": { "error": { "type": "string", "minLength": 1 } }
+  },
   "additionalProperties": false
 }

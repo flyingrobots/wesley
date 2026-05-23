@@ -105,9 +105,9 @@ Review tests, refactor to use direct function calls or property tests, replace s
 
 ### QA Sign-off Matrix
 
-| Environment | Surface | Owner | Status | Notes |
-| --- | --- | --- | --- | --- |
-| CI | Core tests | TBD | pending | |
+| Environment | Surface    | Owner | Status  | Notes |
+| ----------- | ---------- | ----- | ------- | ----- |
+| CI          | Core tests | TBD   | pending |       |
 
 ## Requirements
 

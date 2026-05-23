@@ -23,9 +23,7 @@ export function resolveResumeState(eventStore, { runId, transmutation, command =
   if (command && events.length === 0) {
     return null;
   }
-  const replayEvents = command
-    ? normalizeCommandReplayEvents(events)
-    : events;
+  const replayEvents = command ? normalizeCommandReplayEvents(events) : events;
 
   const replayResult = replayRuntimeRun(replayEvents, {
     runId,
@@ -33,7 +31,7 @@ export function resolveResumeState(eventStore, { runId, transmutation, command =
     streamId
   });
   if (!replayResult.replay.integrity.valid) {
-    const codes = replayResult.replay.integrity.issues.map(issue => issue.code).join(', ');
+    const codes = replayResult.replay.integrity.issues.map((issue) => issue.code).join(', ');
     throw new WesleyError(
       'PIPELINE_EXEC_FAILED',
       `Cannot resume ${transmutation}/${runId}; persisted stream failed integrity checks: ${codes}.`
@@ -76,7 +74,7 @@ function normalizeRunId(runId) {
 }
 
 function filterCommandEvents(events, { command, transmutation }) {
-  return events.filter(event => eventBelongsToCommand(event, { command, transmutation }));
+  return events.filter((event) => eventBelongsToCommand(event, { command, transmutation }));
 }
 
 function normalizeCommandReplayEvents(events) {
@@ -85,9 +83,10 @@ function normalizeCommandReplayEvents(events) {
     return {
       ...event,
       sequence,
-      eventId: typeof event?.streamId === 'string' && event.streamId
-        ? `${event.streamId}:${sequence}`
-        : event?.eventId
+      eventId:
+        typeof event?.streamId === 'string' && event.streamId
+          ? `${event.streamId}:${sequence}`
+          : event?.eventId
     };
   });
 }

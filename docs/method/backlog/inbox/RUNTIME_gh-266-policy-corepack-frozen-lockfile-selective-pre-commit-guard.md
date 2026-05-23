@@ -20,10 +20,12 @@ Trigger: default: runtime, host, operator-flow, CI, or repo execution surface.
 Establish and document a single-source-of-truth package manager + lockfile policy for the monorepo, and enforce it locally/CI.
 
 Why
+
 - CI was rewriting pnpm-lock.yaml due to mixed pnpm majors and `--no-frozen-lockfile`.
 - Lockfile churn = flaky preflight + confusing diffs.
 
 What
+
 - Source of truth: `package.json: "packageManager": "pnpm@9.15.9"`.
 - CI: use `pnpm/action-setup@v4` (no version input → reads packageManager), install with `pnpm install --frozen-lockfile`, and fail if the lockfile changes (`git diff --exit-code pnpm-lock.yaml`).
 - Preflight: verify `pnpm --version` matches packageManager and fail with a clear `corepack prepare pnpm@… --activate` hint.
@@ -32,6 +34,7 @@ What
 - Docs: CONTRIBUTING.md section on Corepack + lockfile workflow.
 
 Acceptance
+
 - CI green with frozen installs.
 - Local commits that change deps auto-stage a matching lockfile.
 - Preflight blocks wrong pnpm versions with a friendly message.

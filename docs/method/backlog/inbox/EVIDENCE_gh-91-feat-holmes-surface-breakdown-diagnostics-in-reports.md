@@ -18,17 +18,21 @@ Trigger: title/label match: evidence, certification, security, or Holmes-family 
 ## Original Issue
 
 ## Summary
+
 Augment HOLMES investigation output with a short diagnostic section that highlights sub-metrics below thresholds or relying on heuristics so reviewers can triage quickly.
 
 ## Details
+
 - After the breakdown tables, add a “Primary Risks” section summarizing any components under threshold (or heuristic).
 - Include tooltip/markdown guidance linking to relevant docs/tests.
 - Feed the same summary into CLI JSON for automation (e.g., GitHub comments).
 
 ## Motivation
+
 - Reviewers currently scan tables manually; automated summaries speed decision making.
 
 ## Acceptance Criteria
+
 - HOLMES markdown + JSON include a diagnostic block listing risky sub-metrics.
 - Scores schema updated if new fields are introduced.
 - Tests verify diagnostics trigger under low scores and remain empty when all metrics pass.

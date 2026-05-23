@@ -1,4 +1,5 @@
 # ENTRYPOINTS
+
 <!-- docs-truth: status=experimental owner=@flyingrobots -->
 
 Wesley has one intended front door:
@@ -28,19 +29,19 @@ or ported. Their migration map lives in
 
 ## What Lives Where
 
-| Surface | Path | Status | What it does |
-| --- | --- | --- | --- |
-| Rust compiler kernel | `crates/wesley-core/` | Canonical for new compiler work | Lowers GraphQL SDL into domain-empty L1 IR; diffs L1 schema structure; lists schema root operations; resolves operation selections; extracts directive arguments. |
-| Native Wesley command | `crates/wesley-cli/` | Rust product CLI | Provides schema lowering, schema hashing, schema operation listing, schema diffing, Rust/TypeScript emission, operation selection analysis, and directive argument extraction from Rust crates. |
-| Rust model emitter | `crates/wesley-emit-rust/` | Rust projection crate | Emits Rust data models and root operation request/response bindings from Wesley L1 IR plus `SchemaOperation` data through a structured Rust item/type AST and printer. |
-| Rust TypeScript emitter | `crates/wesley-emit-typescript/` | Rust projection crate | Emits TypeScript declarations, root operation request/response bindings, and operation metadata constants from Wesley L1 IR plus `SchemaOperation` data through a structured TypeScript declaration AST and printer. |
-| Repo automation | `xtask/` | Current Rust maintenance front door | Runs docs checks, Rust tests, native preflight, release checks, and the legacy preflight bridge. |
-| Legacy JS core | `packages/wesley-core/` | Legacy/tooling | Historical JavaScript compiler domain, module registry, hashes, generation pipeline, and runtime helpers. |
-| Legacy JS CLI | `packages/wesley-cli/` | Legacy/tooling | Historical command framework for generate/transform/typescript/zod/diff/cert/Holmes-era flows. |
-| Legacy Node host | `packages/wesley-host-node/` | Legacy/tooling | Node executable wrapper and runtime adapter around the JS CLI. |
-| Legacy generators | `packages/wesley-generator-*` | Legacy/tooling | Existing TypeScript/Zod/Vue projection surfaces. Useful until ported or externalized. |
-| Legacy evidence tooling | `packages/wesley-holmes/` | Legacy/tooling | Holmes/Moriarty-era evidence, verification, and counterfactual tooling. |
-| Root Node workspace | `package.json`, `pnpm-workspace.yaml` | Workspace plumbing | Keeps old packages, docs checks, package tests, and website tooling installable. It is not the Wesley product entry point. |
+| Surface                 | Path                                  | Status                              | What it does                                                                                                                                                                                                         |
+| ----------------------- | ------------------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rust compiler kernel    | `crates/wesley-core/`                 | Canonical for new compiler work     | Lowers GraphQL SDL into domain-empty L1 IR; diffs L1 schema structure; lists schema root operations; resolves operation selections; extracts directive arguments.                                                    |
+| Native Wesley command   | `crates/wesley-cli/`                  | Rust product CLI                    | Provides schema lowering, schema hashing, schema operation listing, schema diffing, Rust/TypeScript emission, operation selection analysis, and directive argument extraction from Rust crates.                      |
+| Rust model emitter      | `crates/wesley-emit-rust/`            | Rust projection crate               | Emits Rust data models and root operation request/response bindings from Wesley L1 IR plus `SchemaOperation` data through a structured Rust item/type AST and printer.                                               |
+| Rust TypeScript emitter | `crates/wesley-emit-typescript/`      | Rust projection crate               | Emits TypeScript declarations, root operation request/response bindings, and operation metadata constants from Wesley L1 IR plus `SchemaOperation` data through a structured TypeScript declaration AST and printer. |
+| Repo automation         | `xtask/`                              | Current Rust maintenance front door | Runs docs checks, Rust tests, native preflight, release checks, and the legacy preflight bridge.                                                                                                                     |
+| Legacy JS core          | `packages/wesley-core/`               | Legacy/tooling                      | Historical JavaScript compiler domain, module registry, hashes, generation pipeline, and runtime helpers.                                                                                                            |
+| Legacy JS CLI           | `packages/wesley-cli/`                | Legacy/tooling                      | Historical command framework for generate/transform/typescript/zod/diff/cert/Holmes-era flows.                                                                                                                       |
+| Legacy Node host        | `packages/wesley-host-node/`          | Legacy/tooling                      | Node executable wrapper and runtime adapter around the JS CLI.                                                                                                                                                       |
+| Legacy generators       | `packages/wesley-generator-*`         | Legacy/tooling                      | Existing TypeScript/Zod/Vue projection surfaces. Useful until ported or externalized.                                                                                                                                |
+| Legacy evidence tooling | `packages/wesley-holmes/`             | Legacy/tooling                      | Holmes/Moriarty-era evidence, verification, and counterfactual tooling.                                                                                                                                              |
+| Root Node workspace     | `package.json`, `pnpm-workspace.yaml` | Workspace plumbing                  | Keeps old packages, docs checks, package tests, and website tooling installable. It is not the Wesley product entry point.                                                                                           |
 
 ## What Rust Wesley Does Today
 
@@ -93,17 +94,17 @@ truth to the Node side.
 
 ## How To Choose
 
-| If you are doing this | Use this |
-| --- | --- |
-| Adding or changing compiler semantics | `crates/wesley-core/` |
-| Adding a user-facing Wesley command | `crates/wesley-cli/` |
-| Running Rust health checks | `cargo xtask preflight` |
-| Checking docs links/truth/local-path hygiene | `cargo xtask docs-check` |
-| Preparing native release artifacts | `cargo xtask release-check` |
-| Touching old JS packages, docs drift checks, or package tests | `cargo xtask legacy-preflight` |
-| Using an old generator that only exists in JS | `pnpm wesley ...` for now, then plan a port or extraction |
-| Implementing Echo footprint honesty | Echo-owned tooling, not generic Wesley |
-| Implementing Postgres migrations or SQL projection | `wesley-postgres` or another external target module, not `wesley-core` |
+| If you are doing this                                         | Use this                                                               |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Adding or changing compiler semantics                         | `crates/wesley-core/`                                                  |
+| Adding a user-facing Wesley command                           | `crates/wesley-cli/`                                                   |
+| Running Rust health checks                                    | `cargo xtask preflight`                                                |
+| Checking docs links/truth/local-path hygiene                  | `cargo xtask docs-check`                                               |
+| Preparing native release artifacts                            | `cargo xtask release-check`                                            |
+| Touching old JS packages, docs drift checks, or package tests | `cargo xtask legacy-preflight`                                         |
+| Using an old generator that only exists in JS                 | `pnpm wesley ...` for now, then plan a port or extraction              |
+| Implementing Echo footprint honesty                           | Echo-owned tooling, not generic Wesley                                 |
+| Implementing Postgres migrations or SQL projection            | `wesley-postgres` or another external target module, not `wesley-core` |
 
 ## Crates.io Alpha Packages
 

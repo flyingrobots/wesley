@@ -21,7 +21,7 @@ export function filterIRByUnits(ir, unitIds) {
 
   const unitSet = new Set(unitIds);
   // Preserve items where sourceUnit is undefined (they belong to no specific unit)
-  const pred = item => item.sourceUnit === undefined || unitSet.has(item.sourceUnit);
+  const pred = (item) => item.sourceUnit === undefined || unitSet.has(item.sourceUnit);
 
   return {
     ...ir,

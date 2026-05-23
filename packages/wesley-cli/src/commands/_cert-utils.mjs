@@ -15,8 +15,10 @@ export function extractJsonBlock(md) {
   const fence = md.indexOf(JSON_FENCE, begin);
   const fenceEnd = md.indexOf('```', fence + JSON_FENCE_LEN);
   const end = md.indexOf('<!-- WESLEY_CERT:END -->', fenceEnd);
-  if (begin === -1 || fence === -1 || fenceEnd === -1 || end === -1) throw new Error('Invalid SHIPME.md format');
-  if (!(begin < fence && fence < fenceEnd && fenceEnd < end)) throw new Error('SHIPME.md certificate markers are out of order');
+  if (begin === -1 || fence === -1 || fenceEnd === -1 || end === -1)
+    throw new Error('Invalid SHIPME.md format');
+  if (!(begin < fence && fence < fenceEnd && fenceEnd < end))
+    throw new Error('SHIPME.md certificate markers are out of order');
   const pre = md.slice(0, fence + JSON_FENCE_LEN) + '\n';
   const jsonStr = md.slice(fence + JSON_FENCE_LEN, fenceEnd).trim();
   const post = '\n```\n' + md.slice(end);
@@ -63,7 +65,12 @@ export function canonicalize(obj) {
   const sort = (x) => {
     if (Array.isArray(x)) return x.map(sort);
     if (x && typeof x === 'object') {
-      return Object.keys(x).sort((a, b) => a < b ? -1 : a > b ? 1 : 0).reduce((acc, k) => { acc[k] = sort(x[k]); return acc; }, {});
+      return Object.keys(x)
+        .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+        .reduce((acc, k) => {
+          acc[k] = sort(x[k]);
+          return acc;
+        }, {});
     }
     return x;
   };

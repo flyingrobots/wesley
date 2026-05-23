@@ -12,7 +12,6 @@ import CheckpointManager from '../src/domain/recovery/CheckpointManager.mjs';
 import ErrorRecovery from '../src/domain/recovery/ErrorRecovery.mjs';
 
 describe('Wave 2 Components Integration', () => {
-
   describe('CleanFormatter', () => {
     test('should initialize with default options', () => {
       const formatter = new CleanFormatter();
@@ -71,7 +70,7 @@ describe('Wave 2 Components Integration', () => {
       const global = tracker.getGlobalProgress();
 
       // Total weight: 3, completed weight: 1 + (0.5 * 2) = 2
-      assert.strictEqual(global.overallProgress, 2/3);
+      assert.strictEqual(global.overallProgress, 2 / 3);
       assert.strictEqual(global.activeOperations, 2);
 
       tracker.dispose();

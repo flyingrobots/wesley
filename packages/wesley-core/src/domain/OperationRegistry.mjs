@@ -85,7 +85,7 @@ export class OperationRegistry {
   extractArguments(args) {
     if (!args) return [];
 
-    return args.map(arg => ({
+    return args.map((arg) => ({
       name: arg.name,
       type: this.formatType(arg),
       required: arg.nonNull || false,
@@ -164,9 +164,7 @@ export class OperationRegistry {
       name: `create${tableName}`,
       type: 'mutation',
       category: 'create',
-      args: [
-        { name: 'input', type: `${tableName}CreateInput!`, required: true }
-      ],
+      args: [{ name: 'input', type: `${tableName}CreateInput!`, required: true }],
       returnType: { type: `${tableName}!`, nullable: false },
       generated: true,
       sql: `INSERT INTO "${tableName}" ($fields) VALUES ($values) RETURNING *`
@@ -219,14 +217,14 @@ export class OperationRegistry {
    * Get primary key arguments for a table
    */
   getPrimaryKeyArgs(table) {
-    const pkFields = table.getFields().filter(f => f.isPrimaryKey());
+    const pkFields = table.getFields().filter((f) => f.isPrimaryKey());
 
     if (pkFields.length === 0) {
       // Default to id if no PK specified
       return [{ name: 'id', type: 'ID!', required: true }];
     }
 
-    return pkFields.map(field => ({
+    return pkFields.map((field) => ({
       name: field.name,
       type: this.formatType(field),
       required: true
@@ -237,7 +235,7 @@ export class OperationRegistry {
    * Extract table fields for documentation
    */
   extractTableFields(table) {
-    return table.getFields().map(field => ({
+    return table.getFields().map((field) => ({
       name: field.name,
       type: this.formatType(field),
       nullable: !field.nonNull,
@@ -416,10 +414,8 @@ export class OperationRegistry {
       queries: harvest.queries?.length || 0,
       mutations: harvest.mutations?.length || 0,
       tables: Object.keys(harvest.tables || {}).length,
-      generatedOperations: Array.from(this.operations.values())
-        .filter(op => op.generated).length,
-      customOperations: Array.from(this.operations.values())
-        .filter(op => !op.generated).length,
+      generatedOperations: Array.from(this.operations.values()).filter((op) => op.generated).length,
+      customOperations: Array.from(this.operations.values()).filter((op) => !op.generated).length,
       complexityStats: this.calculateComplexityStats()
     };
   }
@@ -428,8 +424,7 @@ export class OperationRegistry {
    * Calculate complexity statistics
    */
   calculateComplexityStats() {
-    const complexities = Array.from(this.operations.values())
-      .map(op => op.complexity || 1);
+    const complexities = Array.from(this.operations.values()).map((op) => op.complexity || 1);
 
     if (complexities.length === 0) {
       return { min: 0, max: 0, avg: 0 };
@@ -467,7 +462,7 @@ export class OperationRegistry {
    * Get operations for a specific table
    */
   getTableOperations(tableName) {
-    return this.filter(op => op.name.includes(tableName));
+    return this.filter((op) => op.name.includes(tableName));
   }
 
   /**
@@ -475,7 +470,7 @@ export class OperationRegistry {
    */
   exportForWatson() {
     return {
-      operations: this.getAll().map(op => ({
+      operations: this.getAll().map((op) => ({
         key: `${op.type}.${op.name}`,
         name: op.name,
         type: op.type,
@@ -495,9 +490,7 @@ export class OperationRegistry {
    * Generate operation signature for Watson
    */
   generateSignature(operation) {
-    const args = (operation.args || [])
-      .map(arg => `${arg.name}: ${arg.type}`)
-      .join(', ');
+    const args = (operation.args || []).map((arg) => `${arg.name}: ${arg.type}`).join(', ');
 
     const returnType = operation.returnType?.type || 'void';
 

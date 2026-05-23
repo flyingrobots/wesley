@@ -2,7 +2,7 @@ name: wesley-website
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
       - 'wesley-website/**'
       - '.github/workflows/wesley-website.yml'

@@ -32,11 +32,11 @@ function buildFieldDirectives(field, table) {
 
   if (field.directives.index) {
     // Find matching indexes from the table-level index array
-    const indexes = table.indexes?.filter(i => i.fields?.includes(field.name));
+    const indexes = table.indexes?.filter((i) => i.fields?.includes(field.name));
     if (indexes?.length === 1) {
       directives['@index'] = { name: indexes[0].name, using: indexes[0].using };
     } else if (indexes?.length > 1) {
-      directives['@index'] = indexes.map(i => ({ name: i.name, using: i.using }));
+      directives['@index'] = indexes.map((i) => ({ name: i.name, using: i.using }));
     } else {
       directives['@index'] = {};
     }

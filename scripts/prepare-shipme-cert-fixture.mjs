@@ -48,26 +48,16 @@ const bundle = {
   sha: fixtureSha,
   timestamp,
   testResults: {
-    verifications: [
-      { name: 'schema-sql', status: 'passed', file: 'schema.sql' }
-    ],
-    execution: [
-      { type: 'pgtap', status: 'passed', file: 'tests.sql' }
-    ],
-    conclusions: [
-      { type: 'ship-readiness', result: 'passed' }
-    ]
+    verifications: [{ name: 'schema-sql', status: 'passed', file: 'schema.sql' }],
+    execution: [{ type: 'pgtap', status: 'passed', file: 'tests.sql' }],
+    conclusions: [{ type: 'ship-readiness', result: 'passed' }]
   },
   scores,
   evidence: {
     evidence: {
       schema: {
-        sql: [
-          { file: schemaEvidencePath, lines: '1-2', sha: fixtureSha }
-        ],
-        tests: [
-          { file: testsEvidencePath, lines: '1-1', sha: fixtureSha }
-        ]
+        sql: [{ file: schemaEvidencePath, lines: '1-2', sha: fixtureSha }],
+        tests: [{ file: testsEvidencePath, lines: '1-1', sha: fixtureSha }]
       }
     }
   }

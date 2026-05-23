@@ -52,4 +52,3 @@ const newHeader = [
 const updated = text.replace(headerRe, newHeader);
 writeFileSync(path, updated, 'utf8');
 console.log(`Updated ${file}: ${pct}% (${resolved}/${total})`);
-

@@ -4,9 +4,7 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import {
-  analyzeCounterfactual
-} from '../src/index.mjs';
+import { analyzeCounterfactual } from '../src/index.mjs';
 import { MergePlanner } from '../src/merge/Planner.mjs';
 import { MergeTreeStrategy } from '../src/merge/MergeTreeStrategy.mjs';
 import { WorktreeStrategy } from '../src/merge/WorktreeStrategy.mjs';
@@ -40,11 +38,14 @@ function createRemoteFixture() {
   git(seed, 'init', '--initial-branch=main');
   git(seed, 'config', 'user.email', 'wesley-tests@example.com');
   git(seed, 'config', 'user.name', 'Wesley Tests');
-  writeSchema(seed, `
+  writeSchema(
+    seed,
+    `
 type Query {
   hello: String
 }
-  `);
+  `
+  );
   commitAll(seed, 'base');
 
   git(root, 'init', '--bare', origin);
@@ -68,28 +69,37 @@ type Query {
 }
 
 function applyCleanFeatureChange(fixture) {
-  writeSchema(fixture.work, `
+  writeSchema(
+    fixture.work,
+    `
 type Query {
   hello: String
   world: String
 }
-  `);
+  `
+  );
   commitAll(fixture.work, 'feature clean change');
 }
 
 function applyConflictChanges(fixture) {
-  writeSchema(fixture.work, `
+  writeSchema(
+    fixture.work,
+    `
 type Query {
   hello: Int
 }
-  `);
+  `
+  );
   commitAll(fixture.work, 'feature conflicting change');
 
-  writeSchema(fixture.seed, `
+  writeSchema(
+    fixture.seed,
+    `
 type Query {
   hello: Boolean
 }
-  `);
+  `
+  );
   commitAll(fixture.seed, 'main conflicting change');
   git(fixture.seed, 'push', 'origin', 'main');
 }

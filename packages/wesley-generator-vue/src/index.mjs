@@ -70,16 +70,16 @@ export async function generateVue(ir, options = {}) {
 
 function tsTypeForGql(typeName, { knownTypes }) {
   switch (typeName) {
-  case 'Boolean':
-    return 'boolean';
-  case 'String':
-  case 'ID':
-    return 'string';
-  case 'Int':
-  case 'Float':
-    return 'number';
-  default:
-    return knownTypes.has(typeName) ? typeName : 'any';
+    case 'Boolean':
+      return 'boolean';
+    case 'String':
+    case 'ID':
+      return 'string';
+    case 'Int':
+    case 'Float':
+      return 'number';
+    default:
+      return knownTypes.has(typeName) ? typeName : 'any';
   }
 }
 

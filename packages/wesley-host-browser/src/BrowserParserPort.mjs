@@ -20,25 +20,46 @@ function parseRawDirectives(head) {
     const name = m[1];
     const argsStr = m[3] || '';
     const args = {};
-    argsStr.split(',').map(s => s.trim()).filter(Boolean).forEach(pair => {
-      const mm = pair.match(/([A-Za-z_][A-Za-z0-9_]*)\s*:\s*(.+)$/);
-      if (mm) {
-        let val = mm[2].trim();
-        if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
-          val = val.slice(1, -1);
+    argsStr
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .forEach((pair) => {
+        const mm = pair.match(/([A-Za-z_][A-Za-z0-9_]*)\s*:\s*(.+)$/);
+        if (mm) {
+          let val = mm[2].trim();
+          if (
+            (val.startsWith('"') && val.endsWith('"')) ||
+            (val.startsWith("'") && val.endsWith("'"))
+          ) {
+            val = val.slice(1, -1);
+          }
+          args[mm[1]] = val;
         }
-        args[mm[1]] = val;
-      }
-    });
+      });
     out[name] = args;
   }
   return out;
 }
 
-const SCALAR_SET = new Set(['ID','UUID','String','Int','Float','Boolean','DateTime','Date','Time','JSON']);
+const SCALAR_SET = new Set([
+  'ID',
+  'UUID',
+  'String',
+  'Int',
+  'Float',
+  'Boolean',
+  'DateTime',
+  'Date',
+  'Time',
+  'JSON'
+]);
 
 function parseFields(body) {
-  const lines = body.split(/\r?\n|\r/).map(s => s.trim()).filter(Boolean);
+  const lines = body
+    .split(/\r?\n|\r/)
+    .map((s) => s.trim())
+    .filter(Boolean);
   const fields = [];
   for (const line of lines) {
     if (line.startsWith('}')) break;
@@ -144,7 +165,9 @@ export class BrowserParserPort {
       enums: [],
       scalars: [],
       relationships: [],
-      toJSON() { return { version: '1.0.0', tables }; }
+      toJSON() {
+        return { version: '1.0.0', tables };
+      }
     };
   }
 }

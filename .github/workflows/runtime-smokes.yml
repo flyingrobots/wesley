@@ -2,9 +2,9 @@ name: Runtime Smokes
 
 on:
   push:
-    branches: ["**"]
+    branches: ['**']
   pull_request:
-    branches: ["**"]
+    branches: ['**']
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -35,7 +35,7 @@ jobs:
         env:
           BATS_LIB_PATH: packages/wesley-cli/test
           TERM: xterm
-          BATS_NO_COLOR: "1"
+          BATS_NO_COLOR: '1'
         run: |
           rm -rf test/hosts/bats-plugins || true
           ln -sfn "$PWD/packages/wesley-cli/test/bats-plugins" test/hosts/bats-plugins
@@ -60,7 +60,7 @@ jobs:
         env:
           BATS_LIB_PATH: packages/wesley-cli/test
           TERM: xterm
-          BATS_NO_COLOR: "1"
+          BATS_NO_COLOR: '1'
         run: |
           rm -rf test/hosts/bats-plugins || true
           ln -sfn "$PWD/packages/wesley-cli/test/bats-plugins" test/hosts/bats-plugins
@@ -94,7 +94,7 @@ jobs:
         env:
           BATS_LIB_PATH: packages/wesley-cli/test
           TERM: xterm
-          BATS_NO_COLOR: "1"
+          BATS_NO_COLOR: '1'
         run: |
           rm -rf test/hosts/bats-plugins || true
           ln -sfn "$PWD/packages/wesley-cli/test/bats-plugins" test/hosts/bats-plugins

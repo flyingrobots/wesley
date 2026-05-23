@@ -185,7 +185,7 @@ export class DatabaseSnapshot {
     }
 
     return {
-      identical: Object.values(differences).every(arr => arr.length === 0),
+      identical: Object.values(differences).every((arr) => arr.length === 0),
       differences
     };
   }
@@ -272,11 +272,10 @@ export class IntegrationTestHarness {
       }
 
       // Calculate summary
-      results.summary.passed = results.tests.filter(t => t.status === 'passed').length;
-      results.summary.failed = results.tests.filter(t => t.status === 'failed').length;
-      results.summary.skipped = results.tests.filter(t => t.status === 'skipped').length;
+      results.summary.passed = results.tests.filter((t) => t.status === 'passed').length;
+      results.summary.failed = results.tests.filter((t) => t.status === 'failed').length;
+      results.summary.skipped = results.tests.filter((t) => t.status === 'skipped').length;
       results.summary.totalTime = this.clock.nowMs() - suiteStartTime;
-
     } catch (error) {
       throw new IntegrationTestError(`Test suite execution failed: ${error.message}`, {
         suiteName,
@@ -375,7 +374,6 @@ export class IntegrationTestHarness {
       });
 
       result.status = 'passed';
-
     } catch (error) {
       result.status = 'failed';
       result.error = {
@@ -384,8 +382,13 @@ export class IntegrationTestHarness {
         details: error.details || {}
       };
 
-      this._emit(new TestFailed(testConfig.name, error, result.phases[result.phases.length - 1]?.name || 'unknown'));
-
+      this._emit(
+        new TestFailed(
+          testConfig.name,
+          error,
+          result.phases[result.phases.length - 1]?.name || 'unknown'
+        )
+      );
     } finally {
       // Run after hooks
       try {
@@ -423,11 +426,15 @@ export class IntegrationTestHarness {
 
     this.snapshotSequence += 1;
     const snapshotId = `${name}_${this.clock.nowMs()}_${this.snapshotSequence}`;
-    const snapshot = new DatabaseSnapshot(snapshotId, {
-      name,
-      strategy,
-      createdBy: 'IntegrationTestHarness'
-    }, this.clock);
+    const snapshot = new DatabaseSnapshot(
+      snapshotId,
+      {
+        name,
+        strategy,
+        createdBy: 'IntegrationTestHarness'
+      },
+      this.clock
+    );
 
     try {
       // Capture schema information
@@ -470,7 +477,6 @@ export class IntegrationTestHarness {
       this._emit(new SnapshotCreated(snapshotId, snapshot.metadata));
 
       return snapshotId;
-
     } catch (error) {
       throw new IntegrationTestError(`Failed to create snapshot ${snapshotId}: ${error.message}`, {
         snapshotId,
@@ -523,8 +529,8 @@ export class IntegrationTestHarness {
     );
 
     // Analyze concurrent execution results
-    const successful = results.filter(r => r.status === 'fulfilled').length;
-    const failed = results.filter(r => r.status === 'rejected').length;
+    const successful = results.filter((r) => r.status === 'fulfilled').length;
+    const failed = results.filter((r) => r.status === 'rejected').length;
 
     return {
       totalBatches: batches.length,
@@ -581,7 +587,6 @@ export class IntegrationTestHarness {
         rolledBackSnapshotId,
         differences: comparison.differences
       };
-
     } catch (error) {
       throw new RollbackVerificationError(
         `Rollback verification process failed: ${error.message}`,
@@ -687,11 +692,7 @@ export class IntegrationTestHarness {
       const regressionLimit = baseline.executionTime * (1 + threshold / 100);
 
       if (executionTime > regressionLimit) {
-        throw new PerformanceRegressionError(
-          testConfig.name,
-          regressionLimit,
-          executionTime
-        );
+        throw new PerformanceRegressionError(testConfig.name, regressionLimit, executionTime);
       }
     }
   }
@@ -701,18 +702,21 @@ export class IntegrationTestHarness {
    * @private
    */
   _generateRollbackOperations(operations) {
-    return operations.slice().reverse().map(op => {
-      const rollbackMap = {
-        'create_table': { kind: 'drop_table', table: op.table },
-        'drop_table': { kind: 'create_table', ...op },
-        'add_column': { kind: 'drop_column', table: op.table, column: op.column },
-        'drop_column': { kind: 'add_column', ...op },
-        'add_constraint': { kind: 'drop_constraint', table: op.table, constraint: op.constraint },
-        'drop_constraint': { kind: 'add_constraint', ...op }
-      };
+    return operations
+      .slice()
+      .reverse()
+      .map((op) => {
+        const rollbackMap = {
+          create_table: { kind: 'drop_table', table: op.table },
+          drop_table: { kind: 'create_table', ...op },
+          add_column: { kind: 'drop_column', table: op.table, column: op.column },
+          drop_column: { kind: 'add_column', ...op },
+          add_constraint: { kind: 'drop_constraint', table: op.table, constraint: op.constraint },
+          drop_constraint: { kind: 'add_constraint', ...op }
+        };
 
-      return rollbackMap[op.kind] || op;
-    });
+        return rollbackMap[op.kind] || op;
+      });
   }
 
   /**
@@ -751,7 +755,6 @@ export class IntegrationTestHarness {
         executionTime: this.clock.nowMs() - batchStartTime,
         success: true
       };
-
     } catch (error) {
       return {
         batchIndex,
@@ -809,17 +812,19 @@ export class IntegrationTestHarness {
     for (let i = 0; i < tests.length; i += concurrency) {
       const batch = tests.slice(i, i + concurrency);
       const batchResults = await Promise.allSettled(
-        batch.map(testConfig =>
-          this.executeTest(testConfig, options.operations || [], options)
-        )
+        batch.map((testConfig) => this.executeTest(testConfig, options.operations || [], options))
       );
 
-      results.push(...batchResults.map(r =>
-        r.status === 'fulfilled' ? r.value : {
-          status: 'failed',
-          error: r.reason?.message || 'Unknown error'
-        }
-      ));
+      results.push(
+        ...batchResults.map((r) =>
+          r.status === 'fulfilled'
+            ? r.value
+            : {
+                status: 'failed',
+                error: r.reason?.message || 'Unknown error'
+              }
+        )
+      );
     }
 
     return results;
@@ -831,8 +836,9 @@ export class IntegrationTestHarness {
    */
   async _manageSnapshotRetention() {
     if (this.activeSnapshots.size > this.snapshotRetention) {
-      const snapshots = Array.from(this.activeSnapshots.entries())
-        .sort(([, a], [, b]) => new Date(a.timestamp) - new Date(b.timestamp));
+      const snapshots = Array.from(this.activeSnapshots.entries()).sort(
+        ([, a], [, b]) => new Date(a.timestamp) - new Date(b.timestamp)
+      );
 
       const toDelete = snapshots.slice(0, snapshots.length - this.snapshotRetention);
 
@@ -877,9 +883,9 @@ export class IntegrationTestHarness {
   _createTimeoutInjector(config) {
     return {
       shouldInject: (operation) => {
-        return config.targetOperation ?
-          operation.kind === config.targetOperation :
-          this._chance(config.probability || 0.1);
+        return config.targetOperation
+          ? operation.kind === config.targetOperation
+          : this._chance(config.probability || 0.1);
       },
       inject: async (operation) => {
         await this._sleep(config.delay || 5000);
@@ -912,8 +918,7 @@ export class IntegrationTestHarness {
   _createConstraintViolationInjector(config) {
     return {
       shouldInject: (operation) => {
-        return operation.kind === 'add_constraint' &&
-               this._chance(config.probability || 0.1);
+        return operation.kind === 'add_constraint' && this._chance(config.probability || 0.1);
       },
       inject: async (operation) => {
         throw new Error(`Simulated constraint violation for ${operation.constraint}`);
@@ -928,8 +933,10 @@ export class IntegrationTestHarness {
   _createLockTimeoutInjector(config) {
     return {
       shouldInject: (operation) => {
-        return ['drop_table', 'alter_type'].includes(operation.kind) &&
-               this._chance(config.probability || 0.05);
+        return (
+          ['drop_table', 'alter_type'].includes(operation.kind) &&
+          this._chance(config.probability || 0.05)
+        );
       },
       inject: async (operation) => {
         throw new Error(`Simulated lock timeout for ${operation.kind} on ${operation.table}`);
@@ -944,8 +951,10 @@ export class IntegrationTestHarness {
   _createDiskFullInjector(config) {
     return {
       shouldInject: (operation) => {
-        return ['create_table', 'add_column'].includes(operation.kind) &&
-               this._chance(config.probability || 0.02);
+        return (
+          ['create_table', 'add_column'].includes(operation.kind) &&
+          this._chance(config.probability || 0.02)
+        );
       },
       inject: async (operation) => {
         throw new Error(`Simulated disk full error during ${operation.kind}`);
@@ -960,8 +969,7 @@ export class IntegrationTestHarness {
   _createMemoryPressureInjector(config) {
     return {
       shouldInject: (operation) => {
-        return operation.kind === 'create_index' &&
-               this._chance(config.probability || 0.05);
+        return operation.kind === 'create_index' && this._chance(config.probability || 0.05);
       },
       inject: async (_operation) => {
         throw new Error('Simulated out of memory error during index creation');

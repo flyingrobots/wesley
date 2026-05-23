@@ -89,7 +89,11 @@ export class DocumentationGenerator {
       this.examples.clear();
       this.dependencies.clear();
 
-      const sourceFiles = this.discoverFiles(sourceDir, config.includePatterns, config.excludePatterns);
+      const sourceFiles = this.discoverFiles(
+        sourceDir,
+        config.includePatterns,
+        config.excludePatterns
+      );
       for (const filePath of sourceFiles) {
         try {
           const parsed = await this.parseFile(filePath, config);
@@ -101,7 +105,11 @@ export class DocumentationGenerator {
       }
 
       if (config.extractExamples) {
-        const testFiles = this.discoverFiles(sourceDir, ['**/test/**/*.mjs', '**/tests/**/*.test.mjs'], []);
+        const testFiles = this.discoverFiles(
+          sourceDir,
+          ['**/test/**/*.mjs', '**/tests/**/*.test.mjs'],
+          []
+        );
         await this.extractExamples(testFiles);
       }
 
@@ -139,7 +147,10 @@ export class DocumentationGenerator {
           if (this.matchesPatterns(relativePath, excludePatterns)) continue;
           walkDir(fullPath);
         } else {
-          if (this.matchesPatterns(relativePath, includePatterns) && !this.matchesPatterns(relativePath, excludePatterns)) {
+          if (
+            this.matchesPatterns(relativePath, includePatterns) &&
+            !this.matchesPatterns(relativePath, excludePatterns)
+          ) {
             files.push(fullPath);
           }
         }
@@ -150,7 +161,7 @@ export class DocumentationGenerator {
   }
 
   matchesPatterns(path, patterns) {
-    return patterns.some(pattern => {
+    return patterns.some((pattern) => {
       const regex = pattern
         .replace(/([.+^${}()|[\]\\])/g, '\\$1')
         .replace(/\*\*/g, '.*')
@@ -162,8 +173,10 @@ export class DocumentationGenerator {
   async parseFile(filePath, _config) {
     const content = readFileSync(filePath, 'utf8');
     // Very lightweight parse: capture exported symbols and JSDoc blocks
-    const exports = Array.from(content.matchAll(/export\s+(?:class|function|const|let|var)\s+([A-Za-z0-9_]+)/g)).map(m => m[1]);
-    const jsdocBlocks = Array.from(content.matchAll(/\/\*\*[\s\S]*?\*\//g)).map(m => m[0]);
+    const exports = Array.from(
+      content.matchAll(/export\s+(?:class|function|const|let|var)\s+([A-Za-z0-9_]+)/g)
+    ).map((m) => m[1]);
+    const jsdocBlocks = Array.from(content.matchAll(/\/\*\*[\s\S]*?\*\//g)).map((m) => m[0]);
     return { exports, jsdocBlocks };
   }
 
@@ -172,14 +185,18 @@ export class DocumentationGenerator {
       try {
         const content = readFileSync(f, 'utf8');
         if (content.includes('@example')) this.examples.set(f, true);
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
   }
 
   buildDependencyGraph(sourceFiles) {
     for (const f of sourceFiles) {
       const content = readFileSync(f, 'utf8');
-      const imports = Array.from(content.matchAll(/import\s+.*?from\s+['"](.*?)['"]/g)).map(m => m[1]);
+      const imports = Array.from(content.matchAll(/import\s+.*?from\s+['"](.*?)['"]/g)).map(
+        (m) => m[1]
+      );
       this.dependencies.set(f, imports);
     }
   }
@@ -210,12 +227,15 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === fileURLToPath(process.
   const src = process.argv[2] || 'packages/wesley-core/src';
   const out = process.argv[3] || 'docs/api.md';
   const gen = new DocumentationGenerator({ logger: console });
-  gen.generate(src).then(doc => {
-    writeFileSync(out, doc.content, 'utf8');
-    console.log(`Wrote ${out}`);
-    return undefined;
-  }).catch(err => {
-    console.error(err);
-    process.exit(1);
-  });
+  gen
+    .generate(src)
+    .then((doc) => {
+      writeFileSync(out, doc.content, 'utf8');
+      console.log(`Wrote ${out}`);
+      return undefined;
+    })
+    .catch((err) => {
+      console.error(err);
+      process.exit(1);
+    });
 }

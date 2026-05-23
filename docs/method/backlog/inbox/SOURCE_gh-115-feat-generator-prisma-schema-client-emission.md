@@ -110,10 +110,10 @@ Map IR to Prisma schema definitions, generate optional client helper package, in
 
 ### QA Sign-off Matrix
 
-| Environment | Surface | Owner | Status | Notes |
-| --- | --- | --- | --- | --- |
-| Unit tests | Generator | TBD | pending | |
-| Sample project | Demo validation | TBD | pending | |
+| Environment    | Surface         | Owner | Status  | Notes |
+| -------------- | --------------- | ----- | ------- | ----- |
+| Unit tests     | Generator       | TBD   | pending |       |
+| Sample project | Demo validation | TBD   | pending |       |
 
 ## Requirements
 

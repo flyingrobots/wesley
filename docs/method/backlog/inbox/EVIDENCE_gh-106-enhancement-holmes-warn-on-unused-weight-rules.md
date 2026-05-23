@@ -109,9 +109,9 @@ Track matched rules during investigation, collect unused entries, emit warnings 
 
 ### QA Sign-off Matrix
 
-| Environment | Surface | Owner | Status | Notes |
-| --- | --- | --- | --- | --- |
-| Unit tests | Weight loader | TBD | pending | |
+| Environment | Surface       | Owner | Status  | Notes |
+| ----------- | ------------- | ----- | ------- | ----- |
+| Unit tests  | Weight loader | TBD   | pending |       |
 
 ## Requirements
 

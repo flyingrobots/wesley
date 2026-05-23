@@ -1,4 +1,11 @@
-import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import {
+  appendFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  writeFileSync
+} from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { EventStorePort, GENERATED_LEDGER_DIR, buildRuntimeRunSnapshot } from '@wesley/core';
@@ -24,7 +31,10 @@ export class GitWarpEventStore extends EventStorePort {
     }
 
     this._ensureReady();
-    const existing = findExistingByIdempotencyKey(this.readStream(event.streamId), event.idempotencyKey);
+    const existing = findExistingByIdempotencyKey(
+      this.readStream(event.streamId),
+      event.idempotencyKey
+    );
     if (existing) {
       return existing;
     }
@@ -47,9 +57,9 @@ export class GitWarpEventStore extends EventStorePort {
 
     return readFileSync(targetPath, 'utf8')
       .split('\n')
-      .map(line => line.trim())
+      .map((line) => line.trim())
       .filter(Boolean)
-      .map(line => JSON.parse(line));
+      .map((line) => JSON.parse(line));
   }
 
   listStreams() {
@@ -58,13 +68,13 @@ export class GitWarpEventStore extends EventStorePort {
     }
 
     return readdirSync(this.streamsDir)
-      .filter(name => name.endsWith(STREAM_FILE_SUFFIX))
-      .map(name => decodeURIComponent(name.slice(0, -STREAM_FILE_SUFFIX.length)))
+      .filter((name) => name.endsWith(STREAM_FILE_SUFFIX))
+      .map((name) => decodeURIComponent(name.slice(0, -STREAM_FILE_SUFFIX.length)))
       .sort();
   }
 
   readStreamSince(streamId, afterSequence = 0) {
-    return this.readStream(streamId).filter(event => {
+    return this.readStream(streamId).filter((event) => {
       return Number.isInteger(event?.sequence) ? event.sequence > afterSequence : true;
     });
   }
@@ -126,7 +136,7 @@ function findExistingByIdempotencyKey(events, idempotencyKey) {
   if (typeof idempotencyKey !== 'string' || !idempotencyKey.trim()) {
     return null;
   }
-  return events.find(event => event?.idempotencyKey === idempotencyKey) || null;
+  return events.find((event) => event?.idempotencyKey === idempotencyKey) || null;
 }
 
 function isTerminalRuntimeEvent(type) {

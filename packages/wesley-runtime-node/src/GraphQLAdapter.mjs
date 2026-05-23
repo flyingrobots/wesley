@@ -32,22 +32,37 @@ class GraphQLSchemaParser {
 
     // Canonical directive set
     this.canonicalDirectives = new Set([
-      'wes_table', 'wes_pk', 'wes_fk', 'wes_unique',
-      'wes_index', 'wes_tenant', 'wes_default', 'wes_rls'
+      'wes_table',
+      'wes_pk',
+      'wes_fk',
+      'wes_unique',
+      'wes_index',
+      'wes_tenant',
+      'wes_default',
+      'wes_rls'
     ]);
 
     // Legacy aliases (with deprecation warnings)
     this.legacyAliases = new Map([
       // Long aliases
-      ['wesley_table', 'wes_table'], ['wesley_pk', 'wes_pk'], ['wesley_fk', 'wes_fk'],
-      ['wesley_unique', 'wes_unique'], ['wesley_index', 'wes_index'],
-      ['wesley_tenant', 'wes_tenant'], ['wesley_default', 'wes_default'],
+      ['wesley_table', 'wes_table'],
+      ['wesley_pk', 'wes_pk'],
+      ['wesley_fk', 'wes_fk'],
+      ['wesley_unique', 'wes_unique'],
+      ['wesley_index', 'wes_index'],
+      ['wesley_tenant', 'wes_tenant'],
+      ['wesley_default', 'wes_default'],
       ['wesley_rls', 'wes_rls'],
       // Short/alternate aliases
-      ['table', 'wes_table'], ['pk', 'wes_pk'], ['fk', 'wes_fk'],
-      ['primaryKey', 'wes_pk'], ['foreignKey', 'wes_fk'],
-      ['unique', 'wes_unique'], ['index', 'wes_index'],
-      ['tenant', 'wes_tenant'], ['default', 'wes_default'],
+      ['table', 'wes_table'],
+      ['pk', 'wes_pk'],
+      ['fk', 'wes_fk'],
+      ['primaryKey', 'wes_pk'],
+      ['foreignKey', 'wes_fk'],
+      ['unique', 'wes_unique'],
+      ['index', 'wes_index'],
+      ['tenant', 'wes_tenant'],
+      ['default', 'wes_default'],
       ['rls', 'wes_rls']
     ]);
   }
@@ -74,9 +89,7 @@ class GraphQLSchemaParser {
    */
   parse(sdl, options = {}) {
     try {
-      const src = (options && options.filename)
-        ? new Source(sdl, options.filename)
-        : sdl; // graphql will synthesize a generic Source if we pass string
+      const src = options && options.filename ? new Source(sdl, options.filename) : sdl; // graphql will synthesize a generic Source if we pass string
       const ast = parse(src);
 
       // Validate directive usage if we have the directive schema
@@ -127,7 +140,8 @@ class GraphQLSchemaParser {
     for (const definition of objectDefinitions) {
       const tableDirective = this.findDirective(definition.directives, 'wes_table');
       if (tableDirective) {
-        const tableName = this.getDirectiveArgument(tableDirective, 'name') || definition.name.value;
+        const tableName =
+          this.getDirectiveArgument(tableDirective, 'name') || definition.name.value;
 
         if (tableNames.has(tableName)) {
           throw new WesleyParseError(`Duplicate table name: ${tableName}`);
@@ -184,7 +198,9 @@ class GraphQLSchemaParser {
     for (const extension of extensions) {
       const base = definitionsByName.get(extension.name.value);
       if (!base) {
-        throw new WesleyParseError(`Cannot extend type "${extension.name.value}": no base definition found`);
+        throw new WesleyParseError(
+          `Cannot extend type "${extension.name.value}": no base definition found`
+        );
       }
 
       this.validateObjectExtensionShape(extension);
@@ -219,10 +235,7 @@ class GraphQLSchemaParser {
 
   validateObjectExtensionShape(extension) {
     this.assertNoDuplicateFields(extension.fields, extension.name.value);
-    this.assertNoDuplicateWesleyDirectives(
-      extension.directives,
-      `type "${extension.name.value}"`
-    );
+    this.assertNoDuplicateWesleyDirectives(extension.directives, `type "${extension.name.value}"`);
 
     for (const field of extension.fields || []) {
       this.assertNoDuplicateWesleyDirectives(
@@ -245,7 +258,7 @@ class GraphQLSchemaParser {
   }
 
   assertNoMergedFieldDuplicates(base, extension) {
-    const baseFields = new Set((base.fields || []).map(field => field.name.value));
+    const baseFields = new Set((base.fields || []).map((field) => field.name.value));
 
     for (const field of extension.fields || []) {
       const fieldName = field.name.value;
@@ -282,7 +295,9 @@ class GraphQLSchemaParser {
       if (!canonical) continue;
 
       if (baseDirectives.has(canonical)) {
-        throw new WesleyParseError(`Duplicate directive "@${canonical}" on type "${base.name.value}"`);
+        throw new WesleyParseError(
+          `Duplicate directive "@${canonical}" on type "${base.name.value}"`
+        );
       }
       baseDirectives.add(canonical);
     }
@@ -329,7 +344,11 @@ class GraphQLSchemaParser {
           throw new WesleyParseError(`Table ${tableName} can have at most one primary key`);
         }
         if (field.nullable) {
-          throw new WesleyParseError(`Primary key field ${field.name} must be NonNull (end with !)`, 'wes_pk', field.name);
+          throw new WesleyParseError(
+            `Primary key field ${field.name} must be NonNull (end with !)`,
+            'wes_pk',
+            field.name
+          );
         }
         hasPrimaryKey = true;
       }
@@ -356,9 +375,12 @@ class GraphQLSchemaParser {
 
     // Validate tenant field exists
     if (tenantBy) {
-      const tenantField = fields.find(f => f.name === tenantBy);
+      const tenantField = fields.find((f) => f.name === tenantBy);
       if (!tenantField) {
-        throw new WesleyParseError(`@wes_tenant(by: "${tenantBy}") field must exist on table ${tableName}`, 'wes_tenant');
+        throw new WesleyParseError(
+          `@wes_tenant(by: "${tenantBy}") field must exist on table ${tableName}`,
+          'wes_tenant'
+        );
       }
     }
 
@@ -388,7 +410,7 @@ class GraphQLSchemaParser {
     if (tenantDirective) {
       const by = this.getDirectiveArgument(tenantDirective, 'by');
       if (!by) {
-        throw new WesleyParseError('@wes_tenant directive requires \'by\' argument', 'wes_tenant');
+        throw new WesleyParseError("@wes_tenant directive requires 'by' argument", 'wes_tenant');
       }
       result.tenant = { field: by };
     }
@@ -444,7 +466,11 @@ class GraphQLSchemaParser {
     if (defaultDirective) {
       const value = this.getDirectiveArgumentAny(defaultDirective, ['value', 'expr']);
       if (value === undefined || value === null) {
-        throw new WesleyParseError('@wes_default directive requires \'value\' (or \'expr\') argument', 'wes_default', fieldDef.name.value);
+        throw new WesleyParseError(
+          "@wes_default directive requires 'value' (or 'expr') argument",
+          'wes_default',
+          fieldDef.name.value
+        );
       }
       directives.default = { value };
     }
@@ -453,11 +479,19 @@ class GraphQLSchemaParser {
     if (fkDirective) {
       const ref = this.getDirectiveArgument(fkDirective, 'ref');
       if (!ref) {
-        throw new WesleyParseError('@wes_fk directive requires \'ref\' argument', 'wes_fk', fieldDef.name.value);
+        throw new WesleyParseError(
+          "@wes_fk directive requires 'ref' argument",
+          'wes_fk',
+          fieldDef.name.value
+        );
       }
       const [targetTable, targetField] = ref.split('.');
       if (!targetTable || !targetField) {
-        throw new WesleyParseError(`Foreign key ref must be in format 'Table.column', got: ${ref}`, 'wes_fk', fieldDef.name.value);
+        throw new WesleyParseError(
+          `Foreign key ref must be in format 'Table.column', got: ${ref}`,
+          'wes_fk',
+          fieldDef.name.value
+        );
       }
       directives.fk = { targetTable, targetField };
     }
@@ -488,7 +522,7 @@ class GraphQLSchemaParser {
    * Validate foreign key references using new IR shape (fields + structured directives).
    */
   validateForeignKeys(tables) {
-    const tableMap = new Map(tables.map(t => [t.name, t]));
+    const tableMap = new Map(tables.map((t) => [t.name, t]));
 
     for (const table of tables) {
       for (const field of table.fields) {
@@ -497,17 +531,23 @@ class GraphQLSchemaParser {
         const fk = field.directives.fk;
         const refTable = tableMap.get(fk.targetTable);
         if (!refTable) {
-          throw new WesleyParseError(`Foreign key ${table.name}.${field.name} references non-existent table: ${fk.targetTable}`);
+          throw new WesleyParseError(
+            `Foreign key ${table.name}.${field.name} references non-existent table: ${fk.targetTable}`
+          );
         }
 
-        const refField = refTable.fields.find(f => f.name === fk.targetField);
+        const refField = refTable.fields.find((f) => f.name === fk.targetField);
         if (!refField) {
-          throw new WesleyParseError(`Foreign key ${table.name}.${field.name} references non-existent column: ${fk.targetTable}.${fk.targetField}`);
+          throw new WesleyParseError(
+            `Foreign key ${table.name}.${field.name} references non-existent column: ${fk.targetTable}.${fk.targetField}`
+          );
         }
 
         // Type compatibility check (basic)
         if (field.type.base !== refField.type.base) {
-          console.warn(`Warning: Foreign key ${table.name}.${field.name} type '${field.type.base}' may be incompatible with ${fk.targetTable}.${fk.targetField} type '${refField.type.base}'`);
+          console.warn(
+            `Warning: Foreign key ${table.name}.${field.name} type '${field.type.base}' may be incompatible with ${fk.targetTable}.${fk.targetField} type '${refField.type.base}'`
+          );
         }
       }
     }
@@ -532,7 +572,9 @@ class GraphQLSchemaParser {
       if (canonical === canonicalName) {
         // Deprecation hint (silent by default; enable with WESLEY_WARN_DEPRECATED=1)
         if (process.env.WESLEY_WARN_DEPRECATED === '1') {
-          console.warn(`Deprecated directive @${directiveName} used. Use @${canonicalName} instead.`);
+          console.warn(
+            `Deprecated directive @${directiveName} used. Use @${canonicalName} instead.`
+          );
         }
         return directive;
       }
@@ -547,20 +589,20 @@ class GraphQLSchemaParser {
   getDirectiveArgument(directive, argName) {
     if (!directive.arguments) return null;
 
-    const arg = directive.arguments.find(a => a.name.value === argName);
+    const arg = directive.arguments.find((a) => a.name.value === argName);
     if (!arg) return null;
 
     switch (arg.value.kind) {
-    case Kind.STRING:
-      return arg.value.value;
-    case Kind.INT:
-      return parseInt(arg.value.value, 10);
-    case Kind.FLOAT:
-      return parseFloat(arg.value.value);
-    case Kind.BOOLEAN:
-      return arg.value.value;
-    default:
-      return null;
+      case Kind.STRING:
+        return arg.value.value;
+      case Kind.INT:
+        return parseInt(arg.value.value, 10);
+      case Kind.FLOAT:
+        return parseFloat(arg.value.value);
+      case Kind.BOOLEAN:
+        return arg.value.value;
+      default:
+        return null;
     }
   }
 
@@ -627,8 +669,9 @@ class GraphQLSchemaParser {
     const base = this.getBaseType(field.type);
     const isScalar = this.isScalarType(base);
     const hasFk = !!this.findDirective(field.directives, 'wes_fk');
-    const nameSet = new Set((field.directives || []).map(d => d.name.value));
-    const hasRelationHint = nameSet.has('belongsTo') || nameSet.has('hasMany') || nameSet.has('hasOne');
+    const nameSet = new Set((field.directives || []).map((d) => d.name.value));
+    const hasRelationHint =
+      nameSet.has('belongsTo') || nameSet.has('hasMany') || nameSet.has('hasOne');
     if (hasRelationHint) return true;
     if (!isScalar && !hasFk) return true;
     return false;
@@ -638,7 +681,18 @@ class GraphQLSchemaParser {
    * Minimal scalar whitelist for schema → SQL mapping
    */
   isScalarType(name) {
-    return new Set(['ID','UUID','String','Int','Float','Boolean','DateTime','Date','Time','JSON']).has(name);
+    return new Set([
+      'ID',
+      'UUID',
+      'String',
+      'Int',
+      'Float',
+      'Boolean',
+      'DateTime',
+      'Date',
+      'Time',
+      'JSON'
+    ]).has(name);
   }
 
   /**
@@ -654,7 +708,7 @@ class GraphQLSchemaParser {
    */
   parseComposed(units) {
     // 1. Concatenate mangled SDL
-    const mergedSdl = units.map(u => u.sdl).join('\n\n');
+    const mergedSdl = units.map((u) => u.sdl).join('\n\n');
 
     // 2. Parse the merged SDL
     let ast;
@@ -745,7 +799,7 @@ class GraphQLSchemaParser {
 
     // 7. Attach composition metadata
     ir.metadata = ir.metadata || {};
-    ir.metadata.units = units.map(u => ({
+    ir.metadata.units = units.map((u) => ({
       id: u.id,
       package: u.package,
       hash: u.hash,

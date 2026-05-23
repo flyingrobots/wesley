@@ -2,7 +2,7 @@ export function hashString(input) {
   // DJB2 hash (non-cryptographic), stable across environments
   let hash = 5381;
   for (let i = 0; i < input.length; i++) {
-    hash = ((hash << 5) + hash) + input.charCodeAt(i);
+    hash = (hash << 5) + hash + input.charCodeAt(i);
     hash = hash | 0; // 32-bit
   }
   // return as unsigned hex
@@ -18,4 +18,3 @@ export function randomHex(bytes = 4) {
   }
   return out;
 }
-

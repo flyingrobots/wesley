@@ -19,24 +19,26 @@ The smallest possible generator plugin:
 import { GeneratorPlugin } from '@wesley/core';
 
 export class HelloPlugin extends GeneratorPlugin {
-  get apiVersion() { return '1'; }
-  get name() { return 'hello'; }
+  get apiVersion() {
+    return '1';
+  }
+  get name() {
+    return 'hello';
+  }
 
   async plan(schema, context) {
     return {
-      artifacts: [
-        { path: 'hello.txt', reason: 'Greeting file' },
-      ],
+      artifacts: [{ path: 'hello.txt', reason: 'Greeting file' }],
       metadata: {
         sdlLength: schema.sdl.length,
-        outDir: context.emission.outDir ?? 'out',
-      },
+        outDir: context.emission.outDir ?? 'out'
+      }
     };
   }
 
   async generate(plan, context) {
     return {
-      'hello.txt': `Hello from Wesley! Schema has ${plan.metadata.sdlLength} chars.`,
+      'hello.txt': `Hello from Wesley! Schema has ${plan.metadata.sdlLength} chars.`
     };
   }
 }
@@ -57,20 +59,18 @@ export default {
       generators: [
         {
           name: 'hello',
-          plugin: new HelloPlugin(),
-        },
-      ],
-    },
-  },
+          plugin: new HelloPlugin()
+        }
+      ]
+    }
+  }
 };
 ```
 
 ```mjs
 // wesley.config.mjs
 export default {
-  modules: [
-    { specifier: './my-wesley-module.mjs' },
-  ],
+  modules: [{ specifier: './my-wesley-module.mjs' }]
 };
 ```
 
@@ -177,13 +177,13 @@ Every key returned should correspond to a path declared in `plan.artifacts`. Und
 
 Every call to `plan()` and `generate()` receives a frozen context object:
 
-| Field    | Type                          | Description                                      |
-|----------|-------------------------------|--------------------------------------------------|
-| `logger` | `LoggerPort`                  | Scoped child logger (has `.info()`, `.warn()`, `.error()`, `.debug()`) |
-| `clock`  | `{ now(): string }`           | Clock port returning ISO-8601 timestamps         |
-| `config` | `Readonly<Record<string, unknown>>` | Deep-frozen copy of the run config          |
-| `runId`  | `string`                      | Unique identifier for this run (e.g. `run-m3x7k-a1b2c3`) |
-| `emission` | `Readonly<{ outDir?: string }>` | Explicit runtime emission context such as the target output directory |
+| Field      | Type                                | Description                                                            |
+| ---------- | ----------------------------------- | ---------------------------------------------------------------------- |
+| `logger`   | `LoggerPort`                        | Scoped child logger (has `.info()`, `.warn()`, `.error()`, `.debug()`) |
+| `clock`    | `{ now(): string }`                 | Clock port returning ISO-8601 timestamps                               |
+| `config`   | `Readonly<Record<string, unknown>>` | Deep-frozen copy of the run config                                     |
+| `runId`    | `string`                            | Unique identifier for this run (e.g. `run-m3x7k-a1b2c3`)               |
+| `emission` | `Readonly<{ outDir?: string }>`     | Explicit runtime emission context such as the target output directory  |
 
 The context is immutable. Attempting to modify it will throw in strict mode.
 
@@ -193,12 +193,12 @@ The context is immutable. Attempting to modify it will throw in strict mode.
 
 Wesley uses coded errors to give clear diagnostics at every lifecycle phase.
 
-| Code     | Phase      | Meaning                                              |
-|----------|------------|------------------------------------------------------|
-| `WPLY001` | validate  | Plugin does not conform to the GeneratorPlugin contract (missing `apiVersion`, `name`, `plan`, or `generate`) |
-| `WPLY002` | init / plan / generate | Plugin threw an exception during execution  |
-| `WPLY003` | generate   | `generate()` returned an invalid type (must be `Record<string, string\|Uint8Array>`) |
-| `WPLY004` | plan       | `plan()` returned an invalid plan (missing or malformed `artifacts` array) |
+| Code      | Phase                  | Meaning                                                                                                       |
+| --------- | ---------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `WPLY001` | validate               | Plugin does not conform to the GeneratorPlugin contract (missing `apiVersion`, `name`, `plan`, or `generate`) |
+| `WPLY002` | init / plan / generate | Plugin threw an exception during execution                                                                    |
+| `WPLY003` | generate               | `generate()` returned an invalid type (must be `Record<string, string\|Uint8Array>`)                          |
+| `WPLY004` | plan                   | `plan()` returned an invalid plan (missing or malformed `artifacts` array)                                    |
 
 **What to throw vs. what to return:**
 
@@ -238,7 +238,7 @@ describe('HelloPlugin', () => {
 
   it('passes config to init', async () => {
     const artifacts = await testGenerator(new HelloPlugin(), sdl, {
-      format: 'yaml',
+      format: 'yaml'
     });
     expectArtifact(artifacts, 'hello.txt').toExist();
   });
@@ -247,11 +247,11 @@ describe('HelloPlugin', () => {
 
 ### Harness API
 
-| Function | Signature | Description |
-|----------|-----------|-------------|
-| `testGenerator` | `(plugin, sdl, config?) => Promise<Record<string, string\|Uint8Array>>` | Runs full lifecycle, returns artifacts |
-| `testGeneratorPlan` | `(plugin, sdl, config?) => Promise<GenerationPlan>` | Runs init + plan only, returns the plan |
-| `expectArtifact` | `(artifacts, path) => { toExist(), toContain(str), toMatchJSON(obj) }` | Fluent assertions on a single artifact |
+| Function            | Signature                                                               | Description                             |
+| ------------------- | ----------------------------------------------------------------------- | --------------------------------------- |
+| `testGenerator`     | `(plugin, sdl, config?) => Promise<Record<string, string\|Uint8Array>>` | Runs full lifecycle, returns artifacts  |
+| `testGeneratorPlan` | `(plugin, sdl, config?) => Promise<GenerationPlan>`                     | Runs init + plan only, returns the plan |
+| `expectArtifact`    | `(artifacts, path) => { toExist(), toContain(str), toMatchJSON(obj) }`  | Fluent assertions on a single artifact  |
 
 The harness uses a deterministic clock (`2020-01-01T00:00:00.000Z`), a null logger, and a fixed `runId` of `test-run-0` for snapshot-friendly output.
 
@@ -275,36 +275,34 @@ export default {
         {
           name: 'my-generator',
           plugin: new MyPlugin(),
-          config: { format: 'yaml', verbose: true },
+          config: { format: 'yaml', verbose: true }
         },
         {
           name: 'experimental',
           plugin: new ExperimentalPlugin(),
-          enabled: false,
-        },
-      ],
-    },
-  },
+          enabled: false
+        }
+      ]
+    }
+  }
 };
 ```
 
 ```mjs
 // wesley.config.mjs
 export default {
-  modules: [
-    { specifier: './my-wesley-module.mjs' },
-  ],
+  modules: [{ specifier: './my-wesley-module.mjs' }]
 };
 ```
 
 Each generator capability supports:
 
-| Field     | Type      | Required | Description                              |
-|-----------|-----------|----------|------------------------------------------|
-| `name`    | `string`  | yes      | Unique generator name within the module  |
+| Field     | Type      | Required | Description                                   |
+| --------- | --------- | -------- | --------------------------------------------- |
+| `name`    | `string`  | yes      | Unique generator name within the module       |
 | `plugin`  | `object`  | yes      | GeneratorPlugin instance or duck-typed object |
-| `config`  | `object`  | no       | Passed to `plugin.init(config)`          |
-| `enabled` | `boolean` | no       | Set to `false` to skip (default: `true`) |
+| `config`  | `object`  | no       | Passed to `plugin.init(config)`               |
+| `enabled` | `boolean` | no       | Set to `false` to skip (default: `true`)      |
 
 Module discovery resolves each configured module specifier, reads its
 `capabilities.wesley.generators` entries, validates each plugin contract, and

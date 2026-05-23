@@ -3,6 +3,7 @@
 Purpose: Enumerate real-world scenarios that stress Moriarty’s predictors and explain how to simulate each in package tests. This document is meant to be living guidance for writing and evolving targeted tests in `packages/wesley-holmes/test`.
 
 Key signals (quick refresher):
+
 - SCS – Schema Coverage (0..1), with EMA-smoothed velocity and slope
 - TCI – Test Confidence (0..1)
 - MRI – Migration Risk (0..1; lower is better)
@@ -17,6 +18,7 @@ Key signals (quick refresher):
   - Evidence Trust ≥ moderate when the latest history point carries citation-quality metadata
 
 Test harness knobs:
+
 - History points: `.wesley-cache/history.json`
 - Context: `.wesley-cache/moriarty-context.json` (issues closed, PRs merged, CI stability)
 - Git activity: parse of `git log` and `git merge-base` (we can stub `git` via PATH)
@@ -24,6 +26,7 @@ Test harness knobs:
 - Env tuning (optional): `MORIARTY_*` variables (see docs/architecture/holmes-architecture.md)
 
 General test strategies:
+
 - “Fake git” by injecting a temporary directory with a small executable `git` shim at the front of PATH that prints canned outputs for:
   - `git rev-parse --is-inside-work-tree`
   - `git merge-base HEAD origin/<base>`
@@ -40,7 +43,8 @@ General test strategies:
 
 Each scenario below includes: intent, minimal setup, expected outcomes, and concrete test ideas.
 
-1) Stable project, one tiny change after long quiet period
+1. Stable project, one tiny change after long quiet period
+
 - Intent: Validate plateau detection when both SCS and activity are low.
 - Setup:
   - history.json: two points same SCS (e.g., 0.82 → 0.82) days apart
@@ -52,7 +56,8 @@ Each scenario below includes: intent, minimal setup, expected outcomes, and conc
   - EXPLAIN: CI PASS; SCS/TCI/MRI PASS/FAIL based on thresholds
 - Test: Assert plateau; assert EXPLAIN lines render with correct PASS/FAIL.
 
-2) Stable project, one massive change in one commit
+2. Stable project, one massive change in one commit
+
 - Intent: Differentiate “big drop” work from slow drip; apply burstiness penalty.
 - Setup: history flat (no SCS change). git shim emits PR range log with 1 commit, thousands of relevant LOC touching 50 files.
 - Expect:
@@ -60,133 +65,159 @@ Each scenario below includes: intent, minimal setup, expected outcomes, and conc
   - Activity index high; confidence reduced by burstiness (≥5% penalty)
 - Test: Check `velocity.gitActivityIndex > 0.5` and `confidence` lower than default variance-only case.
 
-3) Tiny change that breaks things
+3. Tiny change that breaks things
+
 - Intent: Ensure activity doesn’t mask breakage; EXPLAIN remains truthful.
 - Setup: history small negative SCS delta or flat; git activity low; context without PR CI (base CI still high).
 - Expect: plateauDetected may be true; EXPLAIN could still PASS if scores meet thresholds.
 - Test: Note gap; propose adding PR-branch CI pass-ratio (see improvements).
 
-4) Many commits, no artifact movement (SCS unchanged)
+4. Many commits, no artifact movement (SCS unchanged)
+
 - Setup: Multiple PR commits with relevant files, SCS constant.
 - Expect: plateauDetected = false; no ETA; explanation line “Low SCS movement, but recent Git activity…”
 - Test: Assert plateau=false and `eta` absent.
 
-5) Doc-only churn
+5. Doc-only churn
+
 - Setup: git shim logs only docs; history flat.
 - Expect: activity index low; plateauDetected = true
 - Test: Assert plateau=true; activity index < 0.35.
 
-6) Big rename refactors (MRI.renames missing)
+6. Big rename refactors (MRI.renames missing)
+
 - Setup: SCS moves; generator’s MRI.renames not populated.
 - Expect: MRI remains low; EXPLAIN MRI may PASS unexpectedly.
 - Test: Document as known gap; assert current behavior; file follow-up issue when MRI.renames implemented.
 
-7) Heavy destructive migrations (drops)
+7. Heavy destructive migrations (drops)
+
 - Setup: history with same SCS; bundle scores include MRI.drops high → MRI total > 0.4.
 - Expect: EXPLAIN MRI FAIL; Holmes gate warns.
 - Test: Assert EXPLAIN MRI line shows FAIL.
 
-8) Velocity cliff (burst then stall)
+8. Velocity cliff (burst then stall)
+
 - Setup: history showing increase then flat; git activity decaying.
 - Expect: pattern `VELOCITY_CLIFF`; confidence lower via variance.
 - Test: Assert `patterns` contains `VELOCITY_CLIFF` and confidence lower than steady case.
 
-9) Long-lived PR with small steady commits
+9. Long-lived PR with small steady commits
+
 - Setup: history steady SCS increases; git activity modest but persistent.
 - Expect: plateau=false; ETA present; high confidence; blended velocity ~recent slope.
 - Test: Assert ETA present and `confidence > 70`.
 
-10) Force-push / history rewrite
+10. Force-push / history rewrite
+
 - Setup: emulate PR range with replaced commits; history points noisy.
 - Expect: velocity may wobble; confidence down via variance.
 - Test: Compare confidence to steady series; assert lower.
 
-11) Shallow clone / git graph unavailable
+11. Shallow clone / git graph unavailable
+
 - Setup: git shim returns non-zero for `rev-parse`; or omit shim entirely.
 - Expect: fallback to SCS-only; no `gitActivity` object; plateau likely if SCS flat.
 - Test: Assert `gitActivity === undefined` and plateau computed from SCS only.
 
-12) No history (<2 points)
+12. No history (<2 points)
+
 - Setup: history.json with one point.
 - Expect: status = `INSUFFICIENT_DATA` and explanatory text.
 - Test: Assert status and message.
 
-13) SCS high, TCI low (test lag)
+13. SCS high, TCI low (test lag)
+
 - Setup: scores with SCS ≥ 0.8, TCI < 0.5.
 - Expect: pattern `TEST_LAG`; EXPLAIN SCS PASS, TCI FAIL.
 - Test: Assert both.
 
-14) TCI high, SCS low
+14. TCI high, SCS low
+
 - Setup: SCS < 0.5, TCI ≥ 0.7.
 - Expect: EXPLAIN SCS FAIL, TCI PASS; no readiness.
 - Test: Assert EXPLAIN lines reflect that.
 
-15) Non-relevant churn + tiny SQL tweak
+15. Non-relevant churn + tiny SQL tweak
+
 - Setup: git logs include many non-relevant file changes; a single small SQL delta.
 - Expect: activity index remains low-medium; if SCS flat, plateau true; if SCS moved, small velocity.
 - Test: Assert index < 0.35 if relevant weight is tiny.
 
-16) Huge change split across 20 commits (healthy spread)
+16. Huge change split across 20 commits (healthy spread)
+
 - Setup: PR log with 20 relevant commits, balanced sizes; history with SCS increases.
 - Expect: high index, low burstiness → higher confidence; ETA present.
 - Test: Compare confidence vs single-mega-commit case; assert higher.
 
-17) Break/fix sequence before bundle refresh
+17. Break/fix sequence before bundle refresh
+
 - Setup: simulate several commits but history not updated between break/fix.
 - Expect: report smooth; known blind spot without PR CI.
 - Test: Document; propose PR CI signal addition (see improvements).
 
-18) Monorepo unrelated churn
+18. Monorepo unrelated churn
+
 - Setup: PR log with unrelated paths only; history flat.
 - Expect: activity index low; plateau true.
 - Test: Assert plateau.
 
-19) Weight configuration change only
+19. Weight configuration change only
+
 - Setup: scores.json unchanged; weights.json modified.
 - Expect: Moriarty SCS unaffected; Holmes table explains weight sources.
 - Test: Assert Moriarty headline unchanged; rely on Holmes unit tests for weights.
 
-20) Flaky CI on base
+20. Flaky CI on base
+
 - Setup: context ci.stability < 0.9.
 - Expect: EXPLAIN CI FAIL line, informational.
 - Test: Assert EXPLAIN CI shows FAIL; readiness isn’t auto-blocked by that alone.
 
-21) PR from fork (API limited)
+21. PR from fork (API limited)
+
 - Setup: context step absent; no moriarty-context.json.
 - Expect: EXPLAIN omits delivery lines; core unaffected.
 - Test: Assert absence of `explain.delivery` keys does not crash.
 
-22) Rename without @uid continuity
+22. Rename without @uid continuity
+
 - Setup: MRI.renames currently not populated; treat as gap.
 - Expect: MRI lower than it should be.
 - Test: Track improvement when generator adds renames vector.
 
-23) Intra-day re-runs
+23. Intra-day re-runs
+
 - Setup: multiple points with same `day`, slightly increasing SCS.
 - Expect: recent velocity somewhat attenuated; still positive.
 - Test: Assert velocity > 0; consider timestamp-based refinement later.
 
-24) Generated folder layout differences
+24. Generated folder layout differences
+
 - Setup: put relevant SQL under a non-standard path; current filters may miss.
 - Expect: lower activity index.
 - Test: Document repository-specific include list; propose config hook.
 
-25) High SCS/TCI but MRI spike (drops)
+25. High SCS/TCI but MRI spike (drops)
+
 - Setup: SCS ≥ 0.8, TCI ≥ 0.7, MRI > 0.4.
 - Expect: EXPLAIN MRI FAIL; readiness not implied.
 - Test: Assert FAIL and Holmes gate messages.
 
-26) Stop-start progress (high variance)
+26. Stop-start progress (high variance)
+
 - Setup: alternating increases and flats in SCS over many points.
 - Expect: lower confidence despite adequate current velocity.
 - Test: Assert `confidence` lower vs steady series baseline.
 
-27) “Work without evidence” (activity high, SCS flat for N days)
+27. “Work without evidence” (activity high, SCS flat for N days)
+
 - Setup: many PR commits with relevant files; SCS unchanged over several points.
 - Expect: plateau suppressed; no ETA; (proposed) pattern `EVIDENCE_LAG`.
 - Test: For now assert no ETA; add pattern when implemented.
 
-28) Strong scores, weak proof
+28. Strong scores, weak proof
+
 - Setup: history trends upward with SCS/TCI above threshold, but latest point carries `evidenceTrust = weak`.
 - Expect: EXPLAIN evidence-trust line FAILs and confidence is lower than the same score series with `evidenceTrust = strong`.
 - Test: Compare the two forecasts directly and assert the weak-proof run is penalized.
@@ -196,11 +227,13 @@ Each scenario below includes: intent, minimal setup, expected outcomes, and conc
 ## Concrete Test Recipes
 
 Utility fixture writers (proposed):
+
 - `writeHistory(dir, points)` → writes `.wesley-cache/history.json` with `{ points }`
 - `writeContext(dir, ctx)` → writes `.wesley-cache/moriarty-context.json`
 - `withFakeGit(scripts, fn)` → prepends a temp dir to PATH containing a `git` script that inspects `process.argv` and prints canned outputs for commands used by Moriarty
 
 Git outputs format examples:
+
 - `git log --since='ISO' --pretty=--%ct --numstat --no-merges`
   - Emit blocks like:
     ```
@@ -215,6 +248,7 @@ Git outputs format examples:
 - `git rev-parse --is-inside-work-tree` → exit 0
 
 Assertions to standardize:
+
 - Plateau: `json.plateauDetected === true/false`
 - ETA presence: `json.eta` exists or not
 - Activity index: `json.velocity.gitActivityIndex ∈ [0,1]`

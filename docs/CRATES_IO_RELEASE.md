@@ -1,4 +1,5 @@
 # CRATES.IO RELEASE
+
 <!-- docs-truth: status=experimental owner=@flyingrobots -->
 
 This is Wesley's official Rust release procedure.
@@ -35,12 +36,12 @@ For example, tag `v0.1.0-alpha.1` requires every published Wesley crate to have
 
 ## Published Units
 
-| Crate | Publishes | Purpose |
-| --- | --- | --- |
-| `wesley-core` | library | GraphQL lowering, schema hashing, schema diffing, operation analysis, and directive data extraction. |
-| `wesley-emit-rust` | library | Rust model and operation-binding projection from Wesley IR. |
-| `wesley-emit-typescript` | library | TypeScript declaration and operation-binding projection from Wesley IR. |
-| `wesley-cli` | binary package | Installs the `wesley` command. |
+| Crate                    | Publishes      | Purpose                                                                                              |
+| ------------------------ | -------------- | ---------------------------------------------------------------------------------------------------- |
+| `wesley-core`            | library        | GraphQL lowering, schema hashing, schema diffing, operation analysis, and directive data extraction. |
+| `wesley-emit-rust`       | library        | Rust model and operation-binding projection from Wesley IR.                                          |
+| `wesley-emit-typescript` | library        | TypeScript declaration and operation-binding projection from Wesley IR.                              |
+| `wesley-cli`             | binary package | Installs the `wesley` command.                                                                       |
 
 The bare `wesley` crate name is already occupied on crates.io, so the
 installable package is `wesley-cli`:

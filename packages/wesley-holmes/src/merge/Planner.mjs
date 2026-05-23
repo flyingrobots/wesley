@@ -18,7 +18,8 @@ export class MergePlanner {
    * @returns {object} plan
    */
   plan(opts = {}) {
-    const baseRef = opts.baseRef || process.env.GITHUB_BASE_REF || process.env.MORIARTY_BASE_REF || 'main';
+    const baseRef =
+      opts.baseRef || process.env.GITHUB_BASE_REF || process.env.MORIARTY_BASE_REF || 'main';
     return {
       status: 'planned',
       baseRef,
@@ -27,4 +28,3 @@ export class MergePlanner {
     };
   }
 }
-

@@ -45,9 +45,10 @@ export async function runSequentialGeneration({ ctx, context }) {
   const { writer } = ctx;
   const commandName = options.commandName || 'generate';
   const transmutation = options.transmutation || getDefaultTransmutationName();
-  const runId = typeof options.runId === 'string' && options.runId.trim()
-    ? options.runId.trim()
-    : createRunId();
+  const runId =
+    typeof options.runId === 'string' && options.runId.trim()
+      ? options.runId.trim()
+      : createRunId();
   const run = { runId, transmutation };
   const scope = createCommandEventScope(run, commandName);
   const eventCollector = createCommandEventCollector(ctx, run);
@@ -68,23 +69,24 @@ export async function runSequentialGeneration({ ctx, context }) {
     if (!context.units) {
       ctx.stderr.write('Warning: No composition directives found; printing raw schema.\n');
     }
-    const sdl = context.units
-      ? context.units.map(u => u.sdl).join('\n\n')
-      : schemaContent;
+    const sdl = context.units ? context.units.map((u) => u.sdl).join('\n\n') : schemaContent;
     ctx.stdout.write(sdl + '\n');
     if (options.dryRun) {
       emitRunCompleted(eventCollector, scope, {
         artifactCount: 0,
         dryRun: true
       });
-      return applyResumeMetadata({
-        transmutation,
-        runId,
-        artifacts: 0,
-        dryRun: true,
-        events: eventCollector.events,
-        run: buildCommandRunReport(eventCollector, run)
-      }, context.resumeState);
+      return applyResumeMetadata(
+        {
+          transmutation,
+          runId,
+          artifacts: 0,
+          dryRun: true,
+          events: eventCollector.events,
+          run: buildCommandRunReport(eventCollector, run)
+        },
+        context.resumeState
+      );
     }
   }
 
@@ -98,7 +100,10 @@ export async function runSequentialGeneration({ ctx, context }) {
   let ir = irResolution.ir;
 
   const unitFilter = options.unit
-    ? options.unit.flatMap(u => u.split(',')).map(s => s.trim()).filter(Boolean)
+    ? options.unit
+        .flatMap((u) => u.split(','))
+        .map((s) => s.trim())
+        .filter(Boolean)
     : null;
   if (unitFilter) {
     ir = filterIRByUnits(ir, unitFilter);
@@ -110,29 +115,44 @@ export async function runSequentialGeneration({ ctx, context }) {
   });
 
   if (options.printIr) {
-    ctx.stdout.write(JSON.stringify(ir, (key, val) => {
-      if (key === 'content' && typeof val === 'string' && val.length > 200) {
-        return `<${val.length} bytes>`;
-      }
-      return val;
-    }, 2) + '\n');
+    ctx.stdout.write(
+      JSON.stringify(
+        ir,
+        (key, val) => {
+          if (key === 'content' && typeof val === 'string' && val.length > 200) {
+            return `<${val.length} bytes>`;
+          }
+          return val;
+        },
+        2
+      ) + '\n'
+    );
     if (options.dryRun) {
       emitRunCompleted(eventCollector, scope, {
         artifactCount: 0,
         dryRun: true
       });
-      return applyResumeMetadata({
-        transmutation,
-        runId,
-        artifacts: 0,
-        dryRun: true,
-        events: eventCollector.events,
-        run: buildCommandRunReport(eventCollector, run)
-      }, context.resumeState);
+      return applyResumeMetadata(
+        {
+          transmutation,
+          runId,
+          artifacts: 0,
+          dryRun: true,
+          events: eventCollector.events,
+          run: buildCommandRunReport(eventCollector, run)
+        },
+        context.resumeState
+      );
     }
   }
   try {
-    const transmutationResult = await executeSequentialTransmutation({ ctx, context, ir, runId, eventCollector });
+    const transmutationResult = await executeSequentialTransmutation({
+      ctx,
+      context,
+      ir,
+      runId,
+      eventCollector
+    });
     const artifacts = flattenTransmutationArtifacts(transmutationResult);
 
     if (!options.dryRun && writer?.writeFiles) {
@@ -171,15 +191,18 @@ export async function runSequentialGeneration({ ctx, context }) {
       logger.info('');
     }
 
-    return applyResumeMetadata({
-      transmutation: transmutationResult.transmutation,
-      runId: transmutationResult.runId,
-      artifacts: artifacts.length,
-      outDir: options.outDir,
-      dryRun: options.dryRun || false,
-      events: eventCollector.events,
-      run: buildCommandRunReport(eventCollector, run)
-    }, context.resumeState);
+    return applyResumeMetadata(
+      {
+        transmutation: transmutationResult.transmutation,
+        runId: transmutationResult.runId,
+        artifacts: artifacts.length,
+        outDir: options.outDir,
+        dryRun: options.dryRun || false,
+        events: eventCollector.events,
+        run: buildCommandRunReport(eventCollector, run)
+      },
+      context.resumeState
+    );
   } catch (error) {
     if (isInjectedCrash(error)) {
       throw attachRunFailure(error, eventCollector, run);
@@ -209,7 +232,12 @@ async function persistSnapshot({ ctx, ir, logger, dryRun }) {
 
 async function executeSequentialTransmutation({ ctx, context, ir, runId, eventCollector }) {
   const { logger, options } = context;
-  const execution = createTransmutationExecution(options.transmutation, { ctx, context, ir, logger });
+  const execution = createTransmutationExecution(options.transmutation, {
+    ctx,
+    context,
+    ir,
+    logger
+  });
   const runner = new TransmutationRunner({
     logger,
     clock: createRunnerClock(ctx.clock),
@@ -223,20 +251,15 @@ async function executeSequentialTransmutation({ ctx, context, ir, runId, eventCo
 
   const sourceSha = await resolveSourceSha(ctx, logger);
 
-  const result = await runner.run(
-    execution.name,
-    execution.plugins,
-    execution.schema,
-    {
-      runId,
-      eventCollector,
-      sha: sourceSha,
-      emission: {
-        outDir: options.outDir
-      },
-      ...(execution.scoring ? { scoring: execution.scoring } : {})
-    }
-  );
+  const result = await runner.run(execution.name, execution.plugins, execution.schema, {
+    runId,
+    eventCollector,
+    sha: sourceSha,
+    emission: {
+      outDir: options.outDir
+    },
+    ...(execution.scoring ? { scoring: execution.scoring } : {})
+  });
 
   if (!result.success) {
     throw transmutationFailure(result);
@@ -257,7 +280,7 @@ function createRunnerClock(clock) {
 }
 
 function transmutationFailure(result) {
-  const failed = result?.results?.find(entry => entry.status === 'error');
+  const failed = result?.results?.find((entry) => entry.status === 'error');
   if (!failed) {
     return new Error(`Transmutation "${result?.transmutation || 'unknown'}" failed`);
   }
@@ -278,13 +301,23 @@ async function resolveSourceSha(ctx, logger) {
     if (value) return value;
     if (envSha) return envSha;
   } catch (error) {
-    logger.debug?.({ err: error }, 'Could not resolve git SHA for transmutation bundle; falling back to env/unknown.');
+    logger.debug?.(
+      { err: error },
+      'Could not resolve git SHA for transmutation bundle; falling back to env/unknown.'
+    );
   }
   if (envSha) sha = envSha;
   return sha;
 }
 
-async function persistTransmutationArtifacts({ ctx, transmutationResult, artifacts, outDir, logger, options }) {
+async function persistTransmutationArtifacts({
+  ctx,
+  transmutationResult,
+  artifacts,
+  outDir,
+  logger,
+  options
+}) {
   if (!options.emitBundle || options.dryRun) return;
   try {
     const { bundle, scores, evidenceTrust } = enrichBundleWithEvidenceTruth({
@@ -313,18 +346,23 @@ async function persistTransmutationArtifacts({ ctx, transmutationResult, artifac
           'main'
       });
       const day = Math.floor(Date.now() / 86400000);
-      const nextPoints = mergeHistoryPoints(history.points, [{
-        day,
-        timestamp: bundle.timestamp || scores.timestamp || new Date().toISOString(),
-        scs: scores.scores?.scs ?? 0,
-        tci: scores.scores?.tci ?? 0,
-        mri: scores.scores?.mri ?? 0,
-        evidenceTrust: evidenceTrust.level,
-        evidenceTrustReasons: evidenceTrust.reasons
-      }]);
+      const nextPoints = mergeHistoryPoints(history.points, [
+        {
+          day,
+          timestamp: bundle.timestamp || scores.timestamp || new Date().toISOString(),
+          scs: scores.scores?.scs ?? 0,
+          tci: scores.scores?.tci ?? 0,
+          mri: scores.scores?.mri ?? 0,
+          evidenceTrust: evidenceTrust.level,
+          evidenceTrustReasons: evidenceTrust.reasons
+        }
+      ]);
       await ctx.fs.write(GENERATED_HISTORY_PATH, JSON.stringify({ points: nextPoints }, null, 2));
     } catch (error) {
-      logger.debug?.({ err: error }, 'Could not refresh Moriarty history while persisting the transmutation bundle.');
+      logger.debug?.(
+        { err: error },
+        'Could not refresh Moriarty history while persisting the transmutation bundle.'
+      );
     }
   } catch (e) {
     logger.warn('Could not emit HOLMES evidence bundle: ' + (e?.message || e));
@@ -348,9 +386,13 @@ async function assertCleanGit(shell) {
   } catch {
     return;
   }
-  const out = (await shell?.exec?.('git status --porcelain', { env: gitEnv }))?.stdout?.trim?.() || '';
+  const out =
+    (await shell?.exec?.('git status --porcelain', { env: gitEnv }))?.stdout?.trim?.() || '';
   if (out.length > 0) {
-    throw new WesleyError('DIRTY_WORKTREE', 'Working tree has uncommitted changes. Commit or stash before running, or pass --allow-dirty.');
+    throw new WesleyError(
+      'DIRTY_WORKTREE',
+      'Working tree has uncommitted changes. Commit or stash before running, or pass --allow-dirty.'
+    );
   }
 }
 
@@ -423,7 +465,8 @@ function mergeHistoryPoints(...pointArrays) {
   for (const arr of pointArrays) {
     if (!Array.isArray(arr)) continue;
     for (const point of arr) {
-      const key = point?.timestamp || `${point?.day ?? 'unknown'}-${point?.scs ?? '0'}-${point?.tci ?? '0'}`;
+      const key =
+        point?.timestamp || `${point?.day ?? 'unknown'}-${point?.scs ?? '0'}-${point?.tci ?? '0'}`;
       dedupe.set(key, point);
     }
   }

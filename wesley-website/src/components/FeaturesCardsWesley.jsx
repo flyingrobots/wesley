@@ -1,43 +1,44 @@
-import { Badge, Card, Container, Group, SimpleGrid, Text, Title } from '@mantine/core'
-import classes from './FeaturesCardsWesley.module.css'
+import { Badge, Card, Container, Group, SimpleGrid, Text, Title } from '@mantine/core';
+import classes from './FeaturesCardsWesley.module.css';
 
 const tech = [
   {
     title: 'Directive‑Driven Design',
     description:
       'GraphQL directives encode database semantics (indexes, FKs, defaults). The compiler turns intent into concrete DDL.',
-    icon: '📑',
+    icon: '📑'
   },
   {
     title: 'Event‑Sourced Generation',
     description:
       'Every transformation emits events you can observe, extend, or replay for custom outputs.',
-    icon: '📡',
+    icon: '📡'
   },
   {
     title: 'Hexagonal Architecture',
     description:
       'A dependency‑free core with adapters for platforms and outputs keeps it portable and testable.',
-    icon: '⬡',
+    icon: '⬡'
   },
   {
     title: 'Command Pattern',
     description:
       'All operations are replayable commands — perfect for time‑travel, audits, and determinism.',
-    icon: '⌁',
+    icon: '⌁'
   },
   {
     title: 'Platform Abstraction',
-    description:
-      'Run anywhere: Node, Deno, Browser, Edge. Outputs are decoupled from execution.',
-    icon: '🧭',
-  },
-]
+    description: 'Run anywhere: Node, Deno, Browser, Edge. Outputs are decoupled from execution.',
+    icon: '🧭'
+  }
+];
 
 export default function FeaturesCardsWesley() {
   const features = tech.map((feature) => (
     <Card key={feature.title} shadow="md" radius="md" className={classes.card} padding="xl">
-      <div style={{ fontSize: 40 }} aria-hidden>{feature.icon}</div>
+      <div style={{ fontSize: 40 }} aria-hidden>
+        {feature.icon}
+      </div>
       <Text fz="lg" fw={600} className={classes.cardTitle} mt="md">
         {feature.title}
       </Text>
@@ -45,7 +46,7 @@ export default function FeaturesCardsWesley() {
         {feature.description}
       </Text>
     </Card>
-  ))
+  ));
 
   return (
     <Container size="lg" py="xl" id="how">
@@ -68,5 +69,5 @@ export default function FeaturesCardsWesley() {
         {features}
       </SimpleGrid>
     </Container>
-  )
+  );
 }

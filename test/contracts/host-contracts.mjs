@@ -4,21 +4,29 @@
  * No Node built-ins here; only Web APIs available everywhere.
  */
 
-function te(str) { return new TextEncoder().encode(str); }
+function te(str) {
+  return new TextEncoder().encode(str);
+}
 
 async function sha256Hex(input) {
   const subtle = globalThis.crypto && globalThis.crypto.subtle;
   if (!subtle) throw new Error('WebCrypto (crypto.subtle) is not available');
   const data = typeof input === 'string' ? te(input) : te(JSON.stringify(input));
   const d = await subtle.digest('SHA-256', data);
-  return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join('');
+  return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-function byteLen(str) { return te(str).length; }
+function byteLen(str) {
+  return te(str).length;
+}
 
 function sanitizeGraphQL(sdl, maxBytes = 5 * 1024 * 1024) {
   if (typeof sdl !== 'string') throw new Error('Schema must be a string');
-  if (byteLen(sdl) > maxBytes) { const e = new Error(`Schema exceeds max size (${maxBytes} bytes)`); e.code = 'EINPUTSIZE'; throw e; }
+  if (byteLen(sdl) > maxBytes) {
+    const e = new Error(`Schema exceeds max size (${maxBytes} bytes)`);
+    e.code = 'EINPUTSIZE';
+    throw e;
+  }
   return sdl.replace(/^\uFEFF/, '');
 }
 
@@ -45,14 +53,17 @@ export async function runAll(opts = {}) {
 
   // Case 1: minimal schema with two tables
   try {
-    const sdl = 'type Org @wes_table { id: ID! @wes_pk }\n' +
-                'type User @wes_table { id: ID! @wes_pk, org_id: ID! @wes_fk(ref: "Org.id") }';
+    const sdl =
+      'type Org @wes_table { id: ID! @wes_pk }\n' +
+      'type User @wes_table { id: ID! @wes_pk, org_id: ID! @wes_fk(ref: "Org.id") }';
     const clean = sanitizeGraphQL(sdl, opts.maxBytes ?? 1024 * 1024);
     const tables = detectTables(clean);
-    const token = await makeToken({ tables: tables.map(t => t.name).sort() });
+    const token = await makeToken({ tables: tables.map((t) => t.name).sort() });
     const ok = tables.length === 2 && token.startsWith('HC_OK:');
     add('basic-two-tables', ok, { tables: tables.length, token });
-  } catch (e) { add('basic-two-tables', false, { error: String(e?.message || e) }); }
+  } catch (e) {
+    add('basic-two-tables', false, { error: String(e?.message || e) });
+  }
 
   // Case 2: size guard trips with small limit
   try {
@@ -64,7 +75,9 @@ export async function runAll(opts = {}) {
       threw = e?.code === 'EINPUTSIZE';
     }
     add('size-guard', threw, null);
-  } catch (e) { add('size-guard', false, { error: String(e?.message || e) }); }
+  } catch (e) {
+    add('size-guard', false, { error: String(e?.message || e) });
+  }
 
   // Case 3: token stability for same input
   try {
@@ -72,9 +85,11 @@ export async function runAll(opts = {}) {
     const t1 = await makeToken(obj);
     const t2 = await makeToken(obj);
     add('token-stability', t1 === t2, { t1, t2 });
-  } catch (e) { add('token-stability', false, { error: String(e?.message || e) }); }
+  } catch (e) {
+    add('token-stability', false, { error: String(e?.message || e) });
+  }
 
-  const passed = results.filter(r => r.ok).length;
+  const passed = results.filter((r) => r.ok).length;
   const failed = results.length - passed;
   return { passed, failed, cases: results };
 }

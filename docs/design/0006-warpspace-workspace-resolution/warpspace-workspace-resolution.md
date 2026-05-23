@@ -1,5 +1,5 @@
 ---
-title: "WARPspace Workspace Resolution"
+title: 'WARPspace Workspace Resolution'
 ---
 
 ## Sponsors
@@ -73,12 +73,12 @@ longer the center of the design.
 
 ## Tier Placement
 
-| Tier | Owner | What belongs there | What does not |
-| --- | --- | --- | --- |
-| Tier Zero | Continuum | shared families, authorship, release semver, compatibility policy, consumer topology, projection intent, Holmes/Watson/Moriarty framing | app-specific output directories |
-| Tier One | Wesley and other cross-substrate tools | compile, release, witness, drift-watch, WARPspace loading, generator execution | semantic ownership of the shared contracts |
-| Tier Two | Host project / application | `warpspace.toml`, application schema, local generated roots, app-specific integration choices | ecosystem-wide contract authority |
-| Tier Three | Substrate and runtime packages/crates | Echo runtime crates, `git-warp` packages, `warp-ttd` packages, runtime behavior | compiler policy and release semantics |
+| Tier       | Owner                                  | What belongs there                                                                                                                      | What does not                              |
+| ---------- | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| Tier Zero  | Continuum                              | shared families, authorship, release semver, compatibility policy, consumer topology, projection intent, Holmes/Watson/Moriarty framing | app-specific output directories            |
+| Tier One   | Wesley and other cross-substrate tools | compile, release, witness, drift-watch, WARPspace loading, generator execution                                                          | semantic ownership of the shared contracts |
+| Tier Two   | Host project / application             | `warpspace.toml`, application schema, local generated roots, app-specific integration choices                                           | ecosystem-wide contract authority          |
+| Tier Three | Substrate and runtime packages/crates  | Echo runtime crates, `git-warp` packages, `warp-ttd` packages, runtime behavior                                                         | compiler policy and release semantics      |
 
 The key call is:
 

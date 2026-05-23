@@ -45,20 +45,20 @@ lastUpdate: String @wes_join(strategy: "lww")
 ```graphql
 type GameState @wes_table {
   id: ID! @pk
-  players: [Player!]!   @wes_join(strategy: "union")
-  maxScore: Int!        @wes_join(strategy: "max")
-  lastUpdate: String    @wes_join(strategy: "lww")
+  players: [Player!]! @wes_join(strategy: "union")
+  maxScore: Int! @wes_join(strategy: "max")
+  lastUpdate: String @wes_join(strategy: "lww")
 }
 ```
 
 ## Validation Rules
 
-| Rule | Error message |
-|------|---------------|
-| `union` on a non-list field | `@wes_join(strategy: "union") requires a list field, but "fieldName" is TypeName` |
-| `max` on a non-numeric field | `@wes_join(strategy: "max") requires Int or Float, but "fieldName" is TypeName` |
-| Unknown strategy | `Unknown @wes_join strategy "bad". Valid: union, max, lww` |
-| `@wes_join` on a type (not a field) | `@wes_join is only valid on field definitions, not on type "TypeName"` |
+| Rule                                | Error message                                                                     |
+| ----------------------------------- | --------------------------------------------------------------------------------- |
+| `union` on a non-list field         | `@wes_join(strategy: "union") requires a list field, but "fieldName" is TypeName` |
+| `max` on a non-numeric field        | `@wes_join(strategy: "max") requires Int or Float, but "fieldName" is TypeName`   |
+| Unknown strategy                    | `Unknown @wes_join strategy "bad". Valid: union, max, lww`                        |
+| `@wes_join` on a type (not a field) | `@wes_join is only valid on field definitions, not on type "TypeName"`            |
 
 `lww` has no type restriction -- it is accepted on any field.
 
@@ -78,10 +78,10 @@ When `@wes_join` is present on a field, the internal representation stores the m
 
 ```js
 const field = schema.getTable('GameState').getField('maxScore');
-field.getJoin();  // { strategy: 'max' }
+field.getJoin(); // { strategy: 'max' }
 
 // Fields without @wes_join:
-field.getJoin();  // null
+field.getJoin(); // null
 ```
 
 The canonical AST (via `schema.toAST()`) also includes the `@join` directive on each annotated field, making it available to downstream generators.

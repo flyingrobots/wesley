@@ -18,31 +18,39 @@ Trigger: default: runtime, host, operator-flow, CI, or repo execution surface.
 ## Original Issue
 
 ## Work Type
+
 integrity
 
 ## Hill Supported
+
 Supports the hill that maintainers can trust CI policy changes because bot behavior, rollback metadata, and lockfile guardrails fail loudly instead of drifting quietly.
 
 ## Sponsor Actor
+
 Maintainer changing GitHub workflows, policy checks, or release automation who needs quiet CI drift to become visible before merge.
 
 ## Scope
+
 Add workflow-policy regression coverage for bot comment updaters, rollback metadata expectations, and lockfile drift guards.
 
 ## Playback Impact
+
 A workflow-policy change that would previously have broken comment updates, rollback metadata, or lockfile enforcement is caught locally or in CI as an intentional regression instead of leaking onto `main`.
 
 ## Invariants To Preserve
+
 - CI policy should remain deterministic and repository-local where possible
 - workflow regressions should be testable without relying on fragile external state
 - policy gates should stay explicit and reviewable
 
 ## Non-Goals
+
 - redesign all GitHub workflows
 - replace existing workflow smoke coverage wholesale
 - add new bot features unrelated to policy regression protection
 
 ## Tasks
+
 - [ ] Add regression coverage for bot comment updater behavior.
 - [ ] Add regression coverage for rollback metadata expectations.
 - [ ] Add regression coverage for lockfile drift guards.

@@ -72,7 +72,12 @@ cat schema.graphql | pnpm wesley compile-ttd --schema - --out-dir ttd-out/
 ### Simple Schema Example
 
 ```graphql
-enum OrderState { PENDING CONFIRMED SHIPPED DELIVERED }
+enum OrderState {
+  PENDING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+}
 
 type OrderEvents @wes_channel(name: "orders", version: 1, ordered: true) {
   orderConfirmed: OrderConfirmed!
@@ -103,8 +108,11 @@ type Mutation {
 }
 
 type OrderSystem
-  @wes_invariant(name: "valid_transitions", expr: "forall o in Order: o.state != PENDING || o.state == CONFIRMED", severity: "error")
-{
+  @wes_invariant(
+    name: "valid_transitions"
+    expr: "forall o in Order: o.state != PENDING || o.state == CONFIRMED"
+    severity: "error"
+  ) {
   _placeholder: Boolean
 }
 ```
@@ -118,33 +126,33 @@ contract.
 
 ### Channel Directives
 
-| Directive | Purpose | Example |
-|-----------|---------|---------|
-| `@wes_channel` | Define an event channel | `@wes_channel(name: "orders", version: 1, ordered: true)` |
-| `@wes_codec` | Specify serialization format | `@wes_codec(format: "cbor", canonical: true)` |
+| Directive      | Purpose                      | Example                                                   |
+| -------------- | ---------------------------- | --------------------------------------------------------- |
+| `@wes_channel` | Define an event channel      | `@wes_channel(name: "orders", version: 1, ordered: true)` |
+| `@wes_codec`   | Specify serialization format | `@wes_codec(format: "cbor", canonical: true)`             |
 
 ### Operation Directives
 
-| Directive | Purpose | Example |
-|-----------|---------|---------|
-| `@wes_op` | Define an operation | `@wes_op(name: "confirmOrder", idempotent: true)` |
-| `@wes_rule` | State transition rule | `@wes_rule(name: "confirm", from: ["PENDING"], to: "CONFIRMED")` |
-| `@wes_emission` | Event emission contract | `@wes_emission(channel: "orders", event: "OrderConfirmed")` |
-| `@wes_footprint` | Read/write declarations | `@wes_footprint(reads: ["Order"], writes: ["Order"])` |
+| Directive        | Purpose                 | Example                                                          |
+| ---------------- | ----------------------- | ---------------------------------------------------------------- |
+| `@wes_op`        | Define an operation     | `@wes_op(name: "confirmOrder", idempotent: true)`                |
+| `@wes_rule`      | State transition rule   | `@wes_rule(name: "confirm", from: ["PENDING"], to: "CONFIRMED")` |
+| `@wes_emission`  | Event emission contract | `@wes_emission(channel: "orders", event: "OrderConfirmed")`      |
+| `@wes_footprint` | Read/write declarations | `@wes_footprint(reads: ["Order"], writes: ["Order"])`            |
 
 ### Type Directives
 
-| Directive | Purpose | Example |
-|-----------|---------|---------|
-| `@wes_registry` | Register type with ID | `@wes_registry(id: 1)` |
-| `@wes_version` | Type version | `@wes_version(major: 1, minor: 0)` |
-| `@wes_stateField` | Mark as state field | `@wes_stateField(key: true)` |
-| `@wes_constraint` | Field constraints | `@wes_constraint(min: 0, max: 100)` |
+| Directive         | Purpose               | Example                             |
+| ----------------- | --------------------- | ----------------------------------- |
+| `@wes_registry`   | Register type with ID | `@wes_registry(id: 1)`              |
+| `@wes_version`    | Type version          | `@wes_version(major: 1, minor: 0)`  |
+| `@wes_stateField` | Mark as state field   | `@wes_stateField(key: true)`        |
+| `@wes_constraint` | Field constraints     | `@wes_constraint(min: 0, max: 100)` |
 
 ### Invariant Directives
 
-| Directive | Purpose | Example |
-|-----------|---------|---------|
+| Directive        | Purpose                | Example                                                          |
+| ---------------- | ---------------------- | ---------------------------------------------------------------- |
 | `@wes_invariant` | System-level invariant | `@wes_invariant(name: "bounds", expr: "...", severity: "error")` |
 
 ## Generated Outputs
@@ -153,21 +161,21 @@ All generated files in this section are derived outputs from the SDL input.
 
 ### Manifest Files
 
-| File | Contents |
-|------|----------|
-| `manifest/schema.json` | Full TTD schema with channels, ops, rules, types |
-| `manifest/contracts.json` | Emission contracts, footprints, state machines |
-| `manifest/manifest.json` | Registry entries with type hashes |
-| `manifest/ttd-ir.json` | Raw TTD IR for external tools (e.g., Rust codegen) |
+| File                      | Contents                                           |
+| ------------------------- | -------------------------------------------------- |
+| `manifest/schema.json`    | Full TTD schema with channels, ops, rules, types   |
+| `manifest/contracts.json` | Emission contracts, footprints, state machines     |
+| `manifest/manifest.json`  | Registry entries with type hashes                  |
+| `manifest/ttd-ir.json`    | Raw TTD IR for external tools (e.g., Rust codegen) |
 
 ### TypeScript Files
 
-| File | Contents |
-|------|----------|
-| `typescript/types.ts` | TypeScript interfaces and enums |
-| `typescript/zod.ts` | Zod validators with constraints |
-| `typescript/registry.ts` | Type and op registry lookups |
-| `typescript/index.ts` | Barrel export |
+| File                     | Contents                        |
+| ------------------------ | ------------------------------- |
+| `typescript/types.ts`    | TypeScript interfaces and enums |
+| `typescript/zod.ts`      | Zod validators with constraints |
+| `typescript/registry.ts` | Type and op registry lookups    |
+| `typescript/index.ts`    | Barrel export                   |
 
 ### For Rust Codegen
 
@@ -209,23 +217,23 @@ import { compileTtdProtocol } from './wesley/ttd/index.mjs';
 const result = await compileTtdProtocol({
   sdl: schemaContent,
   targets: ['manifest', 'typescript'],
-  deps: { clock, crypto }, // optional DI for testing
+  deps: { clock, crypto } // optional DI for testing
 });
 
-console.log(result.schemaHash);     // "23dc0e310ad5658b89..."
-console.log(result.files);          // [{ path, content }, ...]
-console.log(result.validation);     // { valid: true, errors: [], warnings: [] }
-console.log(result.schema);         // Extracted TTD schema object
+console.log(result.schemaHash); // "23dc0e310ad5658b89..."
+console.log(result.files); // [{ path, content }, ...]
+console.log(result.validation); // { valid: true, errors: [], warnings: [] }
+console.log(result.schema); // Extracted TTD schema object
 ```
 
 ### Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `sdl` | `string` | required | GraphQL SDL with TTD directives |
-| `targets` | `string[]` | `['manifest', 'typescript']` | Output targets |
-| `deps.clock` | `ClockPort` | `systemClock` | Clock for timestamps |
-| `deps.crypto` | `CryptoPort` | required | Crypto adapter for hashing |
+| Option        | Type         | Default                      | Description                     |
+| ------------- | ------------ | ---------------------------- | ------------------------------- |
+| `sdl`         | `string`     | required                     | GraphQL SDL with TTD directives |
+| `targets`     | `string[]`   | `['manifest', 'typescript']` | Output targets                  |
+| `deps.clock`  | `ClockPort`  | `systemClock`                | Clock for timestamps            |
+| `deps.crypto` | `CryptoPort` | required                     | Crypto adapter for hashing      |
 
 ## Determinism Guarantees
 
@@ -245,6 +253,7 @@ console.log(result.schema);         // Extracted TTD schema object
 ### Schema Hash Inputs
 
 The schema hash is computed from:
+
 - Full SDL text (after whitespace normalization)
 - Uses SHA-256 with canonical encoding
 - Does NOT include timestamps or generated code
@@ -326,8 +335,8 @@ const verifier = createVerifier(schema);
 const state = {
   Counter: [
     { id: '1', value: 100, state: 'COUNTING' },
-    { id: '2', value: -5, state: 'IDLE' },  // violates invariant!
-  ],
+    { id: '2', value: -5, state: 'IDLE' } // violates invariant!
+  ]
 };
 
 const result = verifier.verify(state);

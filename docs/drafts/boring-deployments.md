@@ -27,7 +27,7 @@ The haters are right about naïve velocity. So we don’t do naïve.
 ### Model: features ≠ bugs ≠ chores
 
 - Classification: Conventional Commits or PR labels → feat, fix, refactor, chore, security.
-Separate EMAs per class; only feat impacts schema completion; fix/security impact readiness debt.
+  Separate EMAs per class; only feat impacts schema completion; fix/security impact readiness debt.
 - Regime shifts: If ≥30% contributors change or release cadence shifts, reset half-life and lower confidence.
 - Evidence-anchored, not LOC: Readiness pulls from proof artifacts, not commit counts:
 - % expand/backfill validated on shadow DB
@@ -48,13 +48,13 @@ export default {
     gates: { requireRehearsal: true, requirePgTap: true, maxRewriteMB: 16 }
   },
   moriarty: {
-    classifyBy: 'conventional-commits',     // or 'labels'
+    classifyBy: 'conventional-commits', // or 'labels'
     halfLifeDays: 10,
     regimeShiftAuthorDelta: 0.3,
     confidencePenaltyOnShift: 0.35,
     coldStartFloorConfidence: 0.4
   }
-}
+};
 ```
 
 ### Predictions you can fire people over

@@ -4,11 +4,7 @@ import { joinPath } from './path-utils.mjs';
 
 export class CompileCommand extends WesleyCommand {
   constructor(ctx) {
-    super(
-      ctx,
-      'compile',
-      'Compile one GraphQL contract family to one or more generated targets'
-    );
+    super(ctx, 'compile', 'Compile one GraphQL contract family to one or more generated targets');
     this.requiresSchema = true;
   }
 
@@ -17,7 +13,10 @@ export class CompileCommand extends WesleyCommand {
       .option('-s, --schema <path>', 'GraphQL schema file. Use "-" for stdin', 'schema.graphql')
       .option('--stdin', 'Read schema from stdin')
       .option('-o, --out-dir <dir>', 'Root output directory', 'out')
-      .option('-t, --target <targets>', 'Comma-separated module-provided targets. Defaults to all discovered targets.')
+      .option(
+        '-t, --target <targets>',
+        'Comma-separated module-provided targets. Defaults to all discovered targets.'
+      )
       .option('--schema-root <dir>', 'Root directory for resolving @wes_import paths')
       .option('--dry-run', 'Show what would be generated without writing files');
   }
@@ -78,11 +77,7 @@ function getCompileTargetDescriptors(ctx) {
   const aliases = new Map();
   const ordered = [];
 
-  for (const entry of listModuleCapabilities(
-    ctx?.moduleCapabilityRegistry,
-    'wesley',
-    'targets'
-  )) {
+  for (const entry of listModuleCapabilities(ctx?.moduleCapabilityRegistry, 'wesley', 'targets')) {
     addTargetDescriptor({
       byName,
       aliases,
@@ -95,13 +90,7 @@ function getCompileTargetDescriptors(ctx) {
   return { byName, aliases, ordered };
 }
 
-function addTargetDescriptor({
-  byName,
-  aliases,
-  ordered,
-  moduleName,
-  target
-}) {
+function addTargetDescriptor({ byName, aliases, ordered, moduleName, target }) {
   if (target == null || typeof target !== 'object' || Array.isArray(target)) {
     throw new WesleyError(
       'INVALID_TARGET_CAPABILITY',
@@ -164,12 +153,7 @@ function addTargetDescriptor({
   }
 }
 
-async function runCompileTargetDescriptor({
-  command,
-  descriptor,
-  context,
-  outDir
-}) {
+async function runCompileTargetDescriptor({ command, descriptor, context, outDir }) {
   if (typeof descriptor.compile !== 'function') {
     throw new WesleyError(
       'INVALID_TARGET_CAPABILITY',

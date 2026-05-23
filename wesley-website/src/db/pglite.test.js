@@ -18,7 +18,7 @@ describe('DbSession', () => {
   it('should apply migrations', async () => {
     const migrations = [
       'CREATE TABLE users (id SERIAL PRIMARY KEY, name TEXT);',
-      "INSERT INTO users (name) VALUES ('Alice');",
+      "INSERT INTO users (name) VALUES ('Alice');"
     ];
     await dbSession.applyMigrations(migrations);
 
@@ -35,13 +35,17 @@ describe('DbSession', () => {
     await dbSession.reset();
 
     // After reset, the table should not exist
-    await expect(dbSession.query('SELECT * FROM products;'))
-      .rejects.toThrow('Database query failed: relation "products" does not exist');
+    await expect(dbSession.query('SELECT * FROM products;')).rejects.toThrow(
+      'Database query failed: relation "products" does not exist'
+    );
   });
 
   it('should limit query results to 100 rows', async () => {
     const createTable = 'CREATE TABLE large_table (id SERIAL PRIMARY KEY);';
-    const insertStatements = Array.from({ length: 150 }, (_, i) => `INSERT INTO large_table VALUES (${i + 1});`);
+    const insertStatements = Array.from(
+      { length: 150 },
+      (_, i) => `INSERT INTO large_table VALUES (${i + 1});`
+    );
     await dbSession.applyMigrations([createTable, ...insertStatements]);
 
     const result = await dbSession.query('SELECT * FROM large_table ORDER BY id;');
@@ -51,7 +55,8 @@ describe('DbSession', () => {
   });
 
   it('should throw wrapped errors for invalid SQL', async () => {
-    await expect(dbSession.query('SELECT * FROM non_existent_table;'))
-      .rejects.toThrow('Database query failed: relation "non_existent_table" does not exist');
+    await expect(dbSession.query('SELECT * FROM non_existent_table;')).rejects.toThrow(
+      'Database query failed: relation "non_existent_table" does not exist'
+    );
   });
 });

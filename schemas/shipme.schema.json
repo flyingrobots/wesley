@@ -24,7 +24,15 @@
         { "type": "null" },
         {
           "type": "object",
-          "required": ["totalCitations", "exact", "wholeFile", "coarse", "strongestCitation", "trust", "reasons"],
+          "required": [
+            "totalCitations",
+            "exact",
+            "wholeFile",
+            "coarse",
+            "strongestCitation",
+            "trust",
+            "reasons"
+          ],
           "properties": {
             "totalCitations": { "type": "number", "minimum": 0 },
             "exact": { "type": "number", "minimum": 0 },
@@ -90,7 +98,7 @@
       ]
     },
     "realm": {
-      "anyOf": [ { "$ref": "realm.schema.json#" }, { "type": "null" } ]
+      "anyOf": [{ "$ref": "realm.schema.json#" }, { "type": "null" }]
     },
     "counterfactual": {
       "anyOf": [
@@ -143,7 +151,10 @@
           "keyId": { "type": "string", "minLength": 1 },
           "signature": { "type": "string", "minLength": 1 },
           "createdAt": { "type": ["string", "null"], "format": "date-time" },
-          "alg": { "type": ["string", "null"], "description": "Signing algorithm. Supported values: \"ed25519\", or null when unsigned." }
+          "alg": {
+            "type": ["string", "null"],
+            "description": "Signing algorithm. Supported values: \"ed25519\", or null when unsigned."
+          }
         },
         "additionalProperties": false
       },

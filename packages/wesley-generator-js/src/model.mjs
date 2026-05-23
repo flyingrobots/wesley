@@ -28,7 +28,7 @@ export class ModelGenerator {
     const { outDir = this.outputDir } = options;
 
     // Clear existing files
-    this.project.getSourceFiles().forEach(file => file.delete());
+    this.project.getSourceFiles().forEach((file) => file.delete());
 
     // Generate a model file for each table
     const generatedFiles = [];
@@ -114,10 +114,12 @@ export class ModelGenerator {
 
     sourceFile.addVariableStatement({
       declarationKind: VariableDeclarationKind.Const,
-      declarations: [{
-        name: schemaName,
-        initializer: schemaCode
-      }]
+      declarations: [
+        {
+          name: schemaName,
+          initializer: schemaCode
+        }
+      ]
     });
 
     // Export schema type
@@ -139,12 +141,17 @@ export class ModelGenerator {
 
     // Add @typedef for the main type (JS only)
     if (this.target === 'js') {
-      const typedefProperties = table.fields.map(field => {
-        const jsType = this.mapGraphQLToJSType(field.type, field.nullable);
-        return ` * @property {${jsType}} ${field.name}`;
-      }).join('\n');
+      const typedefProperties = table.fields
+        .map((field) => {
+          const jsType = this.mapGraphQLToJSType(field.type, field.nullable);
+          return ` * @property {${jsType}} ${field.name}`;
+        })
+        .join('\n');
 
-      sourceFile.insertText(sourceFile.getEnd(), `\n/**\n * @typedef {Object} ${className}Type\n${typedefProperties}\n */\n\n`);
+      sourceFile.insertText(
+        sourceFile.getEnd(),
+        `\n/**\n * @typedef {Object} ${className}Type\n${typedefProperties}\n */\n\n`
+      );
     }
 
     // Create class structure
@@ -202,25 +209,29 @@ export class ModelGenerator {
    */
   addConstructor(classDecl, table) {
     const constructor = classDecl.addConstructor({
-      parameters: [{
-        name: 'data',
-        type: this.target === 'ts' ? `Partial<${table.name}Type>` : undefined,
-        hasQuestionToken: this.target === 'ts'
-      }]
+      parameters: [
+        {
+          name: 'data',
+          type: this.target === 'ts' ? `Partial<${table.name}Type>` : undefined,
+          hasQuestionToken: this.target === 'ts'
+        }
+      ]
     });
 
     if (this.target === 'js') {
       constructor.addJsDoc({
         description: 'Create a new instance',
-        tags: [{
-          tagName: 'param',
-          text: `{${table.name}Type} [data] - Initial data`
-        }]
+        tags: [
+          {
+            tagName: 'param',
+            text: `{${table.name}Type} [data] - Initial data`
+          }
+        ]
       });
     }
 
     // Constructor body
-    const assignments = table.fields.map(field => {
+    const assignments = table.fields.map((field) => {
       const defaultValue = this.getDefaultValueForType(field.type, field.nullable);
       return `        this.${field.name} = data?.${field.name} ?? ${defaultValue};`;
     });
@@ -239,10 +250,12 @@ export class ModelGenerator {
     const fromMethod = classDecl.addMethod({
       name: 'from',
       isStatic: true,
-      parameters: [{
-        name: 'data',
-        type: this.target === 'ts' ? 'unknown' : undefined
-      }],
+      parameters: [
+        {
+          name: 'data',
+          type: this.target === 'ts' ? 'unknown' : undefined
+        }
+      ],
       returnType: this.target === 'ts' ? className : undefined,
       statements: [
         `const validated = ${schemaName}.parse(data);`,
@@ -262,17 +275,20 @@ export class ModelGenerator {
     }
 
     // safeFrom() method - returns result object
-    const safeReturnType = this.target === 'ts'
-      ? `{ success: true; data: ${className} } | { success: false; error: string }`
-      : undefined;
+    const safeReturnType =
+      this.target === 'ts'
+        ? `{ success: true; data: ${className} } | { success: false; error: string }`
+        : undefined;
 
     const safeFromMethod = classDecl.addMethod({
       name: 'safeFrom',
       isStatic: true,
-      parameters: [{
-        name: 'data',
-        type: this.target === 'ts' ? 'unknown' : undefined
-      }],
+      parameters: [
+        {
+          name: 'data',
+          type: this.target === 'ts' ? 'unknown' : undefined
+        }
+      ],
       returnType: safeReturnType,
       statements: [
         `const result = ${schemaName}.safeParse(data);`,
@@ -289,7 +305,10 @@ export class ModelGenerator {
         description: 'Safely create instance from unknown data',
         tags: [
           { tagName: 'param', text: '{unknown} data - Data to validate' },
-          { tagName: 'returns', text: `{{success: true, data: ${className}} | {success: false, error: string}}` }
+          {
+            tagName: 'returns',
+            text: `{{success: true, data: ${className}} | {success: false, error: string}}`
+          }
         ]
       });
     }
@@ -298,19 +317,13 @@ export class ModelGenerator {
     const toJSONMethod = classDecl.addMethod({
       name: 'toJSON',
       returnType: this.target === 'ts' ? 'Record<string, any>' : undefined,
-      statements: [
-        'return {',
-        ...table.fields.map(f => `  ${f.name}: this.${f.name},`),
-        '};'
-      ]
+      statements: ['return {', ...table.fields.map((f) => `  ${f.name}: this.${f.name},`), '};']
     });
 
     if (this.target === 'js') {
       toJSONMethod.addJsDoc({
         description: 'Convert to plain object',
-        tags: [
-          { tagName: 'returns', text: '{Object}' }
-        ]
+        tags: [{ tagName: 'returns', text: '{Object}' }]
       });
     }
 
@@ -324,9 +337,7 @@ export class ModelGenerator {
     if (this.target === 'js') {
       cloneMethod.addJsDoc({
         description: 'Create a deep copy',
-        tags: [
-          { tagName: 'returns', text: `{${className}}` }
-        ]
+        tags: [{ tagName: 'returns', text: `{${className}}` }]
       });
     }
   }
@@ -347,10 +358,12 @@ export class ModelGenerator {
     // Declare the schema constant
     sourceFile.addVariableStatement({
       declarationKind: 'declare const',
-      declarations: [{
-        name: schemaName,
-        type: 'z.ZodObject<any>'
-      }]
+      declarations: [
+        {
+          name: schemaName,
+          type: 'z.ZodObject<any>'
+        }
+      ]
     });
 
     // Export schema type
@@ -385,31 +398,37 @@ export class ModelGenerator {
 
     // Add constructor
     classDecl.addConstructor({
-      parameters: [{
-        name: 'data',
-        type: `Partial<${table.name}Type>`,
-        hasQuestionToken: true
-      }]
+      parameters: [
+        {
+          name: 'data',
+          type: `Partial<${table.name}Type>`,
+          hasQuestionToken: true
+        }
+      ]
     });
 
     // Add static methods
     classDecl.addMethod({
       name: 'from',
       isStatic: true,
-      parameters: [{
-        name: 'data',
-        type: 'unknown'
-      }],
+      parameters: [
+        {
+          name: 'data',
+          type: 'unknown'
+        }
+      ],
       returnType: className
     });
 
     classDecl.addMethod({
       name: 'safeFrom',
       isStatic: true,
-      parameters: [{
-        name: 'data',
-        type: 'unknown'
-      }],
+      parameters: [
+        {
+          name: 'data',
+          type: 'unknown'
+        }
+      ],
       returnType: `{ success: true; data: ${className} } | { success: false; error: string }`
     });
 
@@ -455,32 +474,32 @@ export class ModelGenerator {
   mapGraphQLToZod(fieldType) {
     let zodType;
     switch (fieldType.base) {
-    case 'ID':
-    case 'UUID':
-    case 'String':
-      zodType = 'z.string()';
-      break;
-    case 'Int':
-    case 'BigInt':
-      zodType = 'z.number().int()';
-      break;
-    case 'Float':
-    case 'Decimal':
-      zodType = 'z.number()';
-      break;
-    case 'Boolean':
-      zodType = 'z.boolean()';
-      break;
-    case 'DateTime':
-    case 'Date':
-    case 'Time':
-      zodType = 'z.date()';
-      break;
-    case 'JSON':
-      zodType = 'z.unknown()';
-      break;
-    default:
-      zodType = 'z.string()';
+      case 'ID':
+      case 'UUID':
+      case 'String':
+        zodType = 'z.string()';
+        break;
+      case 'Int':
+      case 'BigInt':
+        zodType = 'z.number().int()';
+        break;
+      case 'Float':
+      case 'Decimal':
+        zodType = 'z.number()';
+        break;
+      case 'Boolean':
+        zodType = 'z.boolean()';
+        break;
+      case 'DateTime':
+      case 'Date':
+      case 'Time':
+        zodType = 'z.date()';
+        break;
+      case 'JSON':
+        zodType = 'z.unknown()';
+        break;
+      default:
+        zodType = 'z.string()';
     }
 
     return fieldType.isList ? `z.array(${zodType})` : zodType;
@@ -492,30 +511,30 @@ export class ModelGenerator {
   mapGraphQLToJSType(fieldType, nullable = false) {
     let jsType;
     switch (fieldType.base) {
-    case 'ID':
-    case 'UUID':
-    case 'String':
-      jsType = 'string';
-      break;
-    case 'Int':
-    case 'Float':
-    case 'Decimal':
-    case 'BigInt':
-      jsType = 'number';
-      break;
-    case 'Boolean':
-      jsType = 'boolean';
-      break;
-    case 'DateTime':
-    case 'Date':
-    case 'Time':
-      jsType = 'Date';
-      break;
-    case 'JSON':
-      jsType = 'unknown';
-      break;
-    default:
-      jsType = 'string';
+      case 'ID':
+      case 'UUID':
+      case 'String':
+        jsType = 'string';
+        break;
+      case 'Int':
+      case 'Float':
+      case 'Decimal':
+      case 'BigInt':
+        jsType = 'number';
+        break;
+      case 'Boolean':
+        jsType = 'boolean';
+        break;
+      case 'DateTime':
+      case 'Date':
+      case 'Time':
+        jsType = 'Date';
+        break;
+      case 'JSON':
+        jsType = 'unknown';
+        break;
+      default:
+        jsType = 'string';
     }
 
     if (fieldType.isList) {
@@ -538,18 +557,18 @@ export class ModelGenerator {
     }
 
     switch (gqlBase) {
-    case 'String':
-    case 'ID':
-    case 'UUID':
-      return `"${defaultValue}"`;
-    case 'Boolean':
-    case 'Int':
-    case 'Float':
-    case 'Decimal':
-    case 'BigInt':
-      return defaultValue;
-    default:
-      return `"${defaultValue}"`;
+      case 'String':
+      case 'ID':
+      case 'UUID':
+        return `"${defaultValue}"`;
+      case 'Boolean':
+      case 'Int':
+      case 'Float':
+      case 'Decimal':
+      case 'BigInt':
+        return defaultValue;
+      default:
+        return `"${defaultValue}"`;
     }
   }
 
@@ -566,25 +585,25 @@ export class ModelGenerator {
     }
 
     switch (fieldType.base) {
-    case 'String':
-    case 'ID':
-    case 'UUID':
-      return '""';
-    case 'Int':
-    case 'Float':
-    case 'Decimal':
-    case 'BigInt':
-      return '0';
-    case 'Boolean':
-      return 'false';
-    case 'DateTime':
-    case 'Date':
-    case 'Time':
-      return 'new Date()';
-    case 'JSON':
-      return 'null';
-    default:
-      return '""';
+      case 'String':
+      case 'ID':
+      case 'UUID':
+        return '""';
+      case 'Int':
+      case 'Float':
+      case 'Decimal':
+      case 'BigInt':
+        return '0';
+      case 'Boolean':
+        return 'false';
+      case 'DateTime':
+      case 'Date':
+      case 'Time':
+        return 'new Date()';
+      case 'JSON':
+        return 'null';
+      default:
+        return '""';
     }
   }
 }

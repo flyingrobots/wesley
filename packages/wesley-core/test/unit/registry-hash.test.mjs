@@ -21,7 +21,10 @@ test('canonicalizeJSON: preserves array element order', () => {
 });
 
 test('canonicalizeJSON: sorts keys inside objects nested within arrays', () => {
-  const result = canonicalizeJSON([{ z: 1, a: 2 }, { b: 3, a: 4 }]);
+  const result = canonicalizeJSON([
+    { z: 1, a: 2 },
+    { b: 3, a: 4 }
+  ]);
   assert.equal(result, '[{"a":2,"z":1},{"a":4,"b":3}]');
 });
 
@@ -103,7 +106,15 @@ const GOLDEN_VECTORS = [
   },
   {
     name: 'single-type',
-    data: { types: [{ kind: 'OBJECT', name: 'User', fields: [{ name: 'id', type: 'ID', required: true, list: false }] }] },
+    data: {
+      types: [
+        {
+          kind: 'OBJECT',
+          name: 'User',
+          fields: [{ name: 'id', type: 'ID', required: true, list: false }]
+        }
+      ]
+    },
     hash: null
   },
   {
