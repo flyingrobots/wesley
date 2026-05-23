@@ -1,9 +1,10 @@
 #!/usr/bin/env node
-import { spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, relative, resolve } from 'node:path';
 import process from 'node:process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { Policy, TimeoutError } from '@git-stunts/alfred';
 import { canonicalizeJSON } from '../packages/wesley-core/src/domain/registryHash.mjs';
 import { sha256Hex } from './ir-parity-projection.mjs';
 
@@ -24,8 +25,24 @@ const WESLEY_CLI_ARGS = ['run', '--quiet', '-p', 'wesley-cli', '--'];
 const WESLEY_CLI_BIN = process.env.WESLEY_CLI_BIN || null;
 const DEFAULT_ITERATIONS = 3;
 const DEFAULT_WARMUPS = 1;
+const LOWER_TIMEOUT_MS = readPositiveIntegerEnv('WESLEY_PERF_TIMEOUT_MS', 120_000);
+const GIT_TIMEOUT_MS = readPositiveIntegerEnv('WESLEY_GIT_TIMEOUT_MS', 5_000);
+const LOWER_MAX_BUFFER_BYTES = readPositiveIntegerEnv(
+  'WESLEY_PERF_MAX_BUFFER_BYTES',
+  64 * 1024 * 1024
+);
+const GIT_MAX_BUFFER_BYTES = readPositiveIntegerEnv('WESLEY_GIT_MAX_BUFFER_BYTES', 1024 * 1024);
+const UNREF_CLOCK = Object.freeze({
+  now: () => Date.now(),
+  sleep(ms) {
+    return new Promise((resolve) => {
+      const timer = setTimeout(resolve, ms);
+      timer.unref?.();
+    });
+  }
+});
 
-function main() {
+async function main() {
   const options = parseArgs(process.argv.slice(2));
 
   if (options.help) {
@@ -40,7 +57,7 @@ function main() {
     return;
   }
 
-  const report = measurePerformance(options);
+  const report = await measurePerformance(options);
   const output = options.markdown ? renderMarkdown(report) : JSON.stringify(report, null, 2);
 
   if (options.outputPath) {
@@ -129,15 +146,22 @@ function parseNonNegativeInteger(value, flag) {
   return parsed;
 }
 
-function measurePerformance(options) {
-  const fixtures = options.fixtures.map((fixture) =>
-    measureFixture(resolve(ROOT_DIR, fixture), options)
-  );
+function readPositiveIntegerEnv(name, fallback) {
+  const raw = process.env[name];
+  if (raw === undefined || raw === '') return fallback;
+  return parsePositiveInteger(raw, name);
+}
+
+async function measurePerformance(options) {
+  const fixtures = [];
+  for (const fixture of options.fixtures) {
+    fixtures.push(await measureFixture(resolve(ROOT_DIR, fixture), options));
+  }
   const failed = fixtures.filter((fixture) => fixture.status !== 'pass').length;
 
   return {
     tool: PERFORMANCE_REPORT_VERSION,
-    gitHead: gitHead(),
+    gitHead: await gitHead(),
     lowerer: WESLEY_CLI_BIN || `${CARGO} ${WESLEY_CLI_ARGS.join(' ')}`,
     iterations: options.iterations,
     warmups: options.warmups,
@@ -155,7 +179,7 @@ function measurePerformance(options) {
   };
 }
 
-function measureFixture(fixturePath, options) {
+async function measureFixture(fixturePath, options) {
   const displayPath = relative(ROOT_DIR, fixturePath);
 
   try {
@@ -164,13 +188,13 @@ function measureFixture(fixturePath, options) {
     }
 
     for (let index = 0; index < options.warmups; index += 1) {
-      runLower(fixturePath);
+      await runLower(fixturePath);
     }
 
     const durationsMs = [];
     let lastOutput = '';
     for (let index = 0; index < options.iterations; index += 1) {
-      const measured = measureLower(fixturePath);
+      const measured = await measureLower(fixturePath);
       durationsMs.push(measured.durationMs);
       lastOutput = measured.stdout;
     }
@@ -197,9 +221,9 @@ function measureFixture(fixturePath, options) {
   }
 }
 
-function measureLower(fixturePath) {
+async function measureLower(fixturePath) {
   const started = process.hrtime.bigint();
-  const stdout = runLower(fixturePath);
+  const stdout = await runLower(fixturePath);
   const ended = process.hrtime.bigint();
   return {
     stdout,
@@ -207,19 +231,23 @@ function measureLower(fixturePath) {
   };
 }
 
-function runLower(fixturePath) {
+async function runLower(fixturePath) {
   const command = WESLEY_CLI_BIN || CARGO;
   const args = WESLEY_CLI_BIN
     ? ['schema', 'lower', '--schema', fixturePath, '--json']
     : [...WESLEY_CLI_ARGS, 'schema', 'lower', '--schema', fixturePath, '--json'];
-  const result = spawnSync(command, args, {
-    cwd: ROOT_DIR,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe']
-  });
 
-  if (result.error) {
-    throw result.error;
+  let result;
+  try {
+    result = await runProcess(command, args, {
+      timeoutMs: LOWER_TIMEOUT_MS,
+      maxBufferBytes: LOWER_MAX_BUFFER_BYTES
+    });
+  } catch (error) {
+    if (error instanceof TimeoutError) {
+      throw new Error(`${command} ${args.join(' ')} timed out after ${LOWER_TIMEOUT_MS}ms`);
+    }
+    throw error;
   }
 
   if (result.status !== 0) {
@@ -228,6 +256,73 @@ function runLower(fixturePath) {
   }
 
   return result.stdout;
+}
+
+export function runProcess(command, args, options) {
+  const timeoutPolicy = Policy.timeout(options.timeoutMs, { clock: options.clock ?? UNREF_CLOCK });
+  const spawnImpl = options.spawnImpl ?? spawn;
+  const cwd = options.cwd ?? ROOT_DIR;
+  return timeoutPolicy.execute(
+    (signal) =>
+      new Promise((resolve, reject) => {
+        let settled = false;
+        let stdout = '';
+        let stderr = '';
+
+        const settle = (settler, value) => {
+          if (settled) return;
+          settled = true;
+          settler(value);
+        };
+
+        const child = spawnImpl(command, args, {
+          cwd,
+          stdio: ['ignore', 'pipe', 'pipe'],
+          killSignal: 'SIGKILL'
+        });
+        signal.addEventListener('abort', () => child.kill('SIGKILL'), { once: true });
+
+        const appendOutput = (streamName, chunk) => {
+          if (settled) return;
+
+          const nextValue = (streamName === 'stdout' ? stdout : stderr) + chunk;
+          if (Buffer.byteLength(nextValue, 'utf8') > options.maxBufferBytes) {
+            child.kill('SIGKILL');
+            settle(
+              reject,
+              new Error(
+                `${command} ${args.join(' ')} exceeded ${options.maxBufferBytes} byte ${streamName} buffer`
+              )
+            );
+            return;
+          }
+
+          if (streamName === 'stdout') {
+            stdout = nextValue;
+          } else {
+            stderr = nextValue;
+          }
+        };
+
+        child.stdout?.setEncoding('utf8');
+        child.stderr?.setEncoding('utf8');
+        child.stdout?.on('data', (chunk) => appendOutput('stdout', chunk));
+        child.stderr?.on('data', (chunk) => appendOutput('stderr', chunk));
+        child.on('error', (error) => {
+          if (signal.aborted) return;
+          settle(reject, error);
+        });
+        child.on('close', (status, signalName) => {
+          if (signal.aborted) return;
+          settle(resolve, {
+            status,
+            signal: signalName,
+            stdout,
+            stderr
+          });
+        });
+      })
+  );
 }
 
 export function summarizeDurations(durations) {
@@ -252,12 +347,23 @@ function roundMs(value) {
   return Math.round(value * 1000) / 1000;
 }
 
-function gitHead() {
-  const result = spawnSync('git', ['rev-parse', '--short=12', 'HEAD'], {
-    cwd: ROOT_DIR,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'ignore']
-  });
+export async function gitHead(processRunner = runProcess) {
+  let result;
+  try {
+    result = await processRunner('git', ['rev-parse', '--short=12', 'HEAD'], {
+      timeoutMs: GIT_TIMEOUT_MS,
+      maxBufferBytes: GIT_MAX_BUFFER_BYTES
+    });
+  } catch (error) {
+    if (error instanceof TimeoutError) {
+      console.error(
+        `git rev-parse timed out after ${GIT_TIMEOUT_MS}ms; recording unknown git head`
+      );
+    } else {
+      console.error(`git rev-parse failed: ${error.message}; recording unknown git head`);
+    }
+    return null;
+  }
 
   if (result.status !== 0) return null;
   return result.stdout.trim() || null;
@@ -319,7 +425,7 @@ function isCliEntrypoint() {
 
 if (isCliEntrypoint()) {
   try {
-    main();
+    await main();
   } catch (error) {
     console.error(error?.message || String(error));
     process.exitCode = 1;

@@ -79,6 +79,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@git-stunts/alfred": "0.10.3",
     "@playwright/test": "1.58.2",
     "autoprefixer": "^10.4.21",
     "dependency-cruiser": "17.3.8",
