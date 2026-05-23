@@ -91,6 +91,16 @@ NODE
   assert_output --partial 'test/fixtures/ir-parity/schema-extensions-schema.graphql'
 }
 
+@test "Rust IR performance baseline computes even-sample median as midpoint" {
+  run node --input-type=module <<'NODE'
+import { summarizeDurations } from './scripts/measure-ir-performance.mjs';
+
+console.log(JSON.stringify(summarizeDurations([10, 20, 30, 40])));
+NODE
+  assert_success
+  assert_output '{"samples":[10,20,30,40],"min":10,"median":25,"mean":25,"max":40}'
+}
+
 @test "Rust IR performance baseline exits nonzero when lowering fails" {
   make_fake_wesley
   printf 'type Broken @wes_table { id: ID! @wes_pk\n' > "$TEST_TEMP_DIR/broken.graphql"

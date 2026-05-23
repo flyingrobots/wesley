@@ -3,7 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, relative, resolve } from 'node:path';
 import process from 'node:process';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { canonicalizeJSON } from '../packages/wesley-core/src/domain/registryHash.mjs';
 import { sha256Hex } from './ir-parity-projection.mjs';
 
@@ -230,13 +230,19 @@ function runLower(fixturePath) {
   return result.stdout;
 }
 
-function summarizeDurations(durations) {
+export function summarizeDurations(durations) {
   const sorted = [...durations].sort((left, right) => left - right);
   const total = sorted.reduce((sum, value) => sum + value, 0);
+  const midpoint = Math.floor(sorted.length / 2);
+  const median =
+    sorted.length % 2 === 0
+      ? roundMs((sorted[midpoint - 1] + sorted[midpoint]) / 2)
+      : sorted[midpoint];
+
   return {
     samples: durations,
     min: sorted[0],
-    median: sorted[Math.floor(sorted.length / 2)],
+    median,
     mean: roundMs(total / sorted.length),
     max: sorted[sorted.length - 1]
   };
@@ -306,9 +312,16 @@ Default fixtures:
 ${DEFAULT_PERFORMANCE_FIXTURES.map((fixture) => `  - ${fixture}`).join('\n')}`);
 }
 
-try {
-  main();
-} catch (error) {
-  console.error(error?.message || String(error));
-  process.exitCode = 1;
+function isCliEntrypoint() {
+  if (!process.argv[1]) return false;
+  return pathToFileURL(resolve(process.argv[1])).href === import.meta.url;
+}
+
+if (isCliEntrypoint()) {
+  try {
+    main();
+  } catch (error) {
+    console.error(error?.message || String(error));
+    process.exitCode = 1;
+  }
 }

@@ -49,6 +49,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **Rust IR performance baseline median**: Even-sized duration sample sets now
+  report median as the midpoint of the two central values instead of the upper
+  middle sample.
 - **Formatter gate ownership**: `pnpm run format:check` now uses the
   workspace-pinned Prettier binary against the repo-owned formatter surface,
   while leaving Wesley SDL compiler inputs and Rust IR golden bytes under
