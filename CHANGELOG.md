@@ -72,7 +72,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   without implying a single global comparison shape.
 - **Type-family repeated directives**: The JS side of
   `js-sdl-type-family-vs-rust-l1-type-family.v0` now preserves repeated
-  directive values as arrays instead of overwriting earlier occurrences.
+  directive values as ordered arrays instead of overwriting earlier occurrences
+  or re-sorting same-name directive instances.
 - **Rust directive alias normalization**: Rust L1 lowering now canonicalizes
   the current core Wesley directive aliases to `wes_*` names and rejects
   duplicate canonical directives instead of allowing last-write-wins drift,

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { createHash } from 'node:crypto';
-import { canonicalize } from '../packages/wesley-core/src/domain/canonicalize.mjs';
+import { parse } from 'graphql';
 import { canonicalizeJSON } from '../packages/wesley-core/src/domain/registryHash.mjs';
 
 export const TABLE_PROJECTION_NAME = 'js-table-vs-rust-table.v0';
@@ -40,7 +40,14 @@ const CANONICAL_KIND_TO_TYPE_FAMILY_KIND = new Map([
   ['EnumTypeDefinition', 'ENUM'],
   ['InputObjectTypeDefinition', 'INPUT_OBJECT']
 ]);
-const textDecoder = new TextDecoder();
+const TYPE_EXTENSION_TO_DEFINITION_KIND = new Map([
+  ['ScalarTypeExtension', 'ScalarTypeDefinition'],
+  ['ObjectTypeExtension', 'ObjectTypeDefinition'],
+  ['InterfaceTypeExtension', 'InterfaceTypeDefinition'],
+  ['UnionTypeExtension', 'UnionTypeDefinition'],
+  ['EnumTypeExtension', 'EnumTypeDefinition'],
+  ['InputObjectTypeExtension', 'InputObjectTypeDefinition']
+]);
 
 export function parityFixture(fixture, projection = TABLE_PROJECTION_NAME) {
   assertKnownProjection(projection);
@@ -113,11 +120,9 @@ export function projectRustL1IR(ir) {
 }
 
 export function projectLegacyTypeFamilySDL(sdl) {
-  const canonical = JSON.parse(textDecoder.decode(canonicalize(sdl)));
-  const types = canonical
-    .map(projectCanonicalTypeFamilyDefinition)
-    .filter(Boolean)
-    .sort(compareByNameThenKind);
+  const document = parse(sdl);
+  const definitions = foldTypeFamilyExtensions(document.definitions || []);
+  const types = definitions.map(projectGraphqlTypeFamilyDefinition).sort(compareByNameThenKind);
 
   return withProjectionEnvelope(TYPE_FAMILY_PROJECTION_NAME, { types });
 }
@@ -154,30 +159,95 @@ function withProjectionEnvelope(projection, value) {
   };
 }
 
-function projectCanonicalTypeFamilyDefinition(definition) {
+function foldTypeFamilyExtensions(definitions) {
+  const folded = [];
+  const byKey = new Map();
+  const extensions = [];
+
+  for (const definition of definitions) {
+    if (CANONICAL_KIND_TO_TYPE_FAMILY_KIND.has(definition.kind)) {
+      const clone = cloneTypeFamilyDefinition(definition);
+      folded.push(clone);
+      byKey.set(typeFamilyDefinitionKey(clone.kind, clone.name.value), clone);
+    } else if (TYPE_EXTENSION_TO_DEFINITION_KIND.has(definition.kind)) {
+      extensions.push(definition);
+    }
+  }
+
+  for (const extension of extensions) {
+    const baseKind = TYPE_EXTENSION_TO_DEFINITION_KIND.get(extension.kind);
+    const base = byKey.get(typeFamilyDefinitionKey(baseKind, extension.name.value));
+    if (!base) {
+      throw new Error(`Cannot extend type "${extension.name.value}": no base definition found`);
+    }
+    mergeTypeFamilyExtension(base, extension);
+  }
+
+  return folded;
+}
+
+function cloneTypeFamilyDefinition(definition) {
+  return {
+    ...definition,
+    directives: definition.directives ? [...definition.directives] : [],
+    fields: definition.fields ? [...definition.fields] : [],
+    interfaces: definition.interfaces ? [...definition.interfaces] : [],
+    types: definition.types ? [...definition.types] : [],
+    values: definition.values ? [...definition.values] : []
+  };
+}
+
+function typeFamilyDefinitionKey(kind, name) {
+  return `${kind}:${name}`;
+}
+
+function mergeTypeFamilyExtension(base, extension) {
+  if (extension.directives?.length > 0) {
+    base.directives.push(...extension.directives);
+  }
+  if (extension.fields?.length > 0) {
+    base.fields.push(...extension.fields);
+  }
+  if (extension.interfaces?.length > 0) {
+    base.interfaces.push(...extension.interfaces);
+  }
+  if (extension.types?.length > 0) {
+    base.types.push(...extension.types);
+  }
+  if (extension.values?.length > 0) {
+    base.values.push(...extension.values);
+  }
+}
+
+function projectGraphqlTypeFamilyDefinition(definition) {
   const kind = CANONICAL_KIND_TO_TYPE_FAMILY_KIND.get(definition.kind);
-  if (!kind) return null;
 
   const projected = {
-    name: definition.name,
+    name: normalizeAstString(definition.name.value),
     kind,
-    directives: projectCanonicalDirectives(definition.directives)
+    directives: projectGraphqlDirectives(definition.directives)
   };
 
   if (Array.isArray(definition.interfaces) && definition.interfaces.length > 0) {
-    projected.implements = [...definition.interfaces].sort(compareStrings);
+    projected.implements = definition.interfaces
+      .map((type) => normalizeAstString(type.name.value))
+      .sort(compareStrings);
   }
 
   if (Array.isArray(definition.fields) && definition.fields.length > 0) {
-    projected.fields = definition.fields.map(projectCanonicalTypeFamilyField).sort(compareByName);
+    projected.fields = definition.fields.map(projectGraphqlTypeFamilyField).sort(compareByName);
   }
 
-  if (Array.isArray(definition.members) && definition.members.length > 0) {
-    projected.unionMembers = [...definition.members].sort(compareStrings);
+  if (Array.isArray(definition.types) && definition.types.length > 0) {
+    projected.unionMembers = definition.types
+      .map((type) => normalizeAstString(type.name.value))
+      .sort(compareStrings);
   }
 
   if (Array.isArray(definition.values) && definition.values.length > 0) {
-    projected.enumValues = definition.values.map((value) => value.name).sort(compareStrings);
+    projected.enumValues = definition.values
+      .map((value) => normalizeAstString(value.name.value))
+      .sort(compareStrings);
   }
 
   return projected;
@@ -211,19 +281,19 @@ function projectRustTypeFamilyDefinition(type) {
   return projected;
 }
 
-function projectCanonicalTypeFamilyField(field) {
+function projectGraphqlTypeFamilyField(field) {
   const projected = {
-    name: field.name,
-    type: projectCanonicalType(field.type),
-    directives: projectCanonicalDirectives(field.directives)
+    name: normalizeAstString(field.name.value),
+    type: projectGraphqlType(field.type),
+    directives: projectGraphqlDirectives(field.directives)
   };
 
-  if (Object.hasOwn(field, 'defaultValue')) {
-    projected.defaultValue = field.defaultValue;
+  if (field.defaultValue) {
+    projected.defaultValue = projectGraphqlValue(field.defaultValue);
   }
 
   if (Array.isArray(field.arguments) && field.arguments.length > 0) {
-    projected.arguments = field.arguments.map(projectCanonicalTypeFamilyField).sort(compareByName);
+    projected.arguments = field.arguments.map(projectGraphqlTypeFamilyField).sort(compareByName);
   }
 
   return projected;
@@ -247,38 +317,38 @@ function projectRustTypeFamilyField(field) {
   return projected;
 }
 
-function projectCanonicalType(type) {
+function projectGraphqlType(type) {
   let nullable = true;
   let current = type;
 
-  if (current?.kind === 'NonNull') {
+  if (current?.kind === 'NonNullType') {
     nullable = false;
     current = current.type;
   }
 
-  if (current?.kind === 'Named') {
+  if (current?.kind === 'NamedType') {
     return {
-      base: current.name,
+      base: normalizeAstString(current.name.value),
       nullable,
       isList: false
     };
   }
 
-  if (current?.kind === 'List') {
+  if (current?.kind === 'ListType') {
     let listItemNullable = true;
     let item = current.type;
 
-    if (item?.kind === 'NonNull') {
+    if (item?.kind === 'NonNullType') {
       listItemNullable = false;
       item = item.type;
     }
 
-    if (item?.kind !== 'Named') {
+    if (item?.kind !== 'NamedType') {
       throw new Error('Nested list types are not supported by type-family parity projection v0');
     }
 
     return {
-      base: item.name,
+      base: normalizeAstString(item.name.value),
       nullable,
       isList: true,
       listItemNullable
@@ -302,14 +372,14 @@ function projectRustTypeFamilyFieldType(type) {
   return projected;
 }
 
-function projectCanonicalDirectives(directives = []) {
+function projectGraphqlDirectives(directives = []) {
   const projected = {};
 
   for (const directive of directives || []) {
     insertProjectedDirectiveValue(
       projected,
-      directive.name,
-      projectCanonicalDirectiveValue(directive)
+      normalizeAstString(directive.name.value),
+      projectGraphqlDirectiveValue(directive)
     );
   }
 
@@ -330,16 +400,43 @@ function insertProjectedDirectiveValue(target, name, value) {
   target[name] = [target[name], value];
 }
 
-function projectCanonicalDirectiveValue(directive) {
+function projectGraphqlDirectiveValue(directive) {
   if (!Array.isArray(directive.arguments) || directive.arguments.length === 0) {
     return true;
   }
 
   const args = {};
-  for (const arg of directive.arguments) {
-    args[arg.name] = arg.value;
+  for (const arg of [...directive.arguments].sort(compareAstNodeNames)) {
+    args[normalizeAstString(arg.name.value)] = projectGraphqlValue(arg.value);
   }
   return args;
+}
+
+function projectGraphqlValue(value) {
+  switch (value.kind) {
+    case 'StringValue':
+    case 'EnumValue':
+      return normalizeAstString(value.value);
+    case 'IntValue':
+      return Number.parseInt(value.value, 10);
+    case 'FloatValue':
+      return Number.parseFloat(value.value);
+    case 'BooleanValue':
+      return value.value;
+    case 'NullValue':
+      return null;
+    case 'ListValue':
+      return value.values.map(projectGraphqlValue);
+    case 'ObjectValue': {
+      const projected = {};
+      for (const field of [...value.fields].sort(compareAstNodeNames)) {
+        projected[normalizeAstString(field.name.value)] = projectGraphqlValue(field.value);
+      }
+      return projected;
+    }
+    default:
+      throw new Error(`Unknown GraphQL value kind: ${value.kind}`);
+  }
 }
 
 function projectRustDirectives(directives = {}) {
@@ -535,6 +632,14 @@ function compareStrings(left, right) {
   if (left < right) return -1;
   if (left > right) return 1;
   return 0;
+}
+
+function compareAstNodeNames(left, right) {
+  return compareStrings(normalizeAstString(left.name.value), normalizeAstString(right.name.value));
+}
+
+function normalizeAstString(value) {
+  return value.trim().normalize('NFC');
 }
 
 function findFirstMismatch(left, right, path) {

@@ -301,10 +301,10 @@ const typeFamilyRepeatableDirectiveIr = {
       directives: {
         tag: [
           {
-            name: 'alpha'
+            name: 'beta'
           },
           {
-            name: 'beta'
+            name: 'alpha'
           }
         ]
       },
@@ -319,10 +319,10 @@ const typeFamilyRepeatableDirectiveIr = {
           directives: {
             tag: [
               {
-                name: 'field-alpha'
+                name: 'field-beta'
               },
               {
-                name: 'field-beta'
+                name: 'field-alpha'
               }
             ]
           }
@@ -512,8 +512,8 @@ SDL
   cat > "$TEST_TEMP_DIR/repeatable-schema.gql" <<'SDL'
 directive @tag(name: String!) repeatable on OBJECT | FIELD_DEFINITION
 
-type User @tag(name: "alpha") @tag(name: "beta") {
-  id: ID! @tag(name: "field-alpha") @tag(name: "field-beta")
+type User @tag(name: "beta") @tag(name: "alpha") {
+  id: ID! @tag(name: "field-beta") @tag(name: "field-alpha")
 }
 SDL
 

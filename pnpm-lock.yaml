@@ -55,6 +55,9 @@ importers:
       globals:
         specifier: ^16.4.0
         version: 16.4.0
+      graphql:
+        specifier: 16.11.0
+        version: 16.11.0
       postcss:
         specifier: ^8.5.14
         version: 8.5.14

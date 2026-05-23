@@ -85,6 +85,7 @@
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-promise": "^7.2.1",
     "globals": "^16.4.0",
+    "graphql": "16.11.0",
     "postcss": "^8.5.14",
     "postcss-nesting": "^13.0.2",
     "prettier": "3.8.3"
