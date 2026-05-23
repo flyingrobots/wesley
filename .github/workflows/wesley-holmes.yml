@@ -26,7 +26,7 @@ jobs:
     steps:
       - name: Harden runner
 
-        uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411
 
         with:
           egress-policy: audit
@@ -81,7 +81,7 @@ jobs:
           fi
 
       - name: '📤 Upload Dashboard Template'
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: dashboard-template
           path: docs/holmes-dashboard
@@ -93,7 +93,7 @@ jobs:
           test -f "${{ steps.detect.outputs.bundle_dir }}/bundle.json"
 
       - name: '💾 Upload Bundle'
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: ${{ env.HOLMES_ARTIFACT }}
           path: |
@@ -110,7 +110,7 @@ jobs:
     steps:
       - name: Harden runner
 
-        uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411
 
         with:
           egress-policy: audit
@@ -135,7 +135,7 @@ jobs:
           bundle-dir: ${{ needs.wesley-generate.outputs.bundle_dir }}
 
       - name: '💾 Save Report'
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: holmes-report
           path: reports/holmes
@@ -149,7 +149,7 @@ jobs:
     steps:
       - name: Harden runner
 
-        uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411
 
         with:
           egress-policy: audit
@@ -174,7 +174,7 @@ jobs:
           bundle-dir: ${{ needs.wesley-generate.outputs.bundle_dir }}
 
       - name: '💾 Save Report'
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: watson-report
           path: reports/watson
@@ -188,7 +188,7 @@ jobs:
     steps:
       - name: Harden runner
 
-        uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411
 
         with:
           egress-policy: audit
@@ -334,7 +334,7 @@ jobs:
           MORIARTY_ACTIVITY_RELEVANT_PER_DAY: '4'
 
       - name: '💾 Save Report'
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: moriarty-report
           path: reports/moriarty
@@ -357,7 +357,7 @@ jobs:
     steps:
       - name: Harden runner
 
-        uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411
 
         with:
           egress-policy: audit
@@ -403,7 +403,7 @@ jobs:
           fi
 
       - name: '📤 Upload Dashboard'
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: holmes-dashboard
           path: dashboard
