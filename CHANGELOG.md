@@ -8,6 +8,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- **Rust IR performance baseline**: Added `pnpm perf:ir`, which measures Rust
+  CLI `schema lower` wall-clock samples over the explicit valid Rust IR fixture
+  corpus, including `large-schema.graphql`, and emits JSON or Markdown evidence
+  without implying memory, binding-overhead, or cutover-threshold claims.
 - **Type-family parity projection design**: Named
   `js-sdl-type-family-vs-rust-l1-type-family.v0` as the next fair parity
   projection for schema-extension and non-table GraphQL facts before admitting
@@ -45,6 +49,13 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **Rust IR performance process bounds**: `pnpm perf:ir` now wraps Rust lowerer
+  and Git metadata probes in `@git-stunts/alfred` timeouts with explicit output
+  buffers so hung or oversized child processes produce controlled evidence
+  instead of blocking CI.
+- **Rust IR performance baseline median**: Even-sized duration sample sets now
+  report median as the rounded midpoint of the two central values instead of
+  the upper middle sample.
 - **Formatter gate ownership**: `pnpm run format:check` now uses the
   workspace-pinned Prettier binary against the repo-owned formatter surface,
   while leaving Wesley SDL compiler inputs and Rust IR golden bytes under

@@ -96,7 +96,10 @@ Current v0.0.6 behavior:
 - fixture corpus covers small, medium, large, directive-heavy, invalid,
   legacy-alias, and schema-extension SDL cases
 - expected diagnostics include stable codes and spans where available
-- baseline Rust lowering time and memory are captured for the fixture corpus
+- baseline Rust lowering wall-clock evidence is captured for the valid fixture
+  corpus by `pnpm perf:ir`
+- memory and binding overhead remain separate follow-on evidence instead of
+  hidden claims inside the wall-clock baseline
 - parity failure output shows the first semantic mismatch, not just a raw diff
 - packet `0009`, packet `0013`, and follow-on backlog items link to this note
 
@@ -112,5 +115,6 @@ Current v0.0.6 behavior:
 - `schemas/`
 - `scripts/generate-ir-fixtures.mjs`
 - `scripts/check-ir-parity.mjs`
+- `scripts/measure-ir-performance.mjs`
 - `test/fixtures/ir-parity/`
 - `test/fixtures/ir-parity-invalid/`

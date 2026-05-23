@@ -26,6 +26,7 @@ files=(
   test/progress-dry-run.bats
   test/domain-empty-boundary.bats
   test/ir-fixtures.bats
+  test/ir-performance-baseline.bats
   test/ir-parity-sentinel.bats
   test/progress-safety.bats
   test/ci-browser-smoke.bats

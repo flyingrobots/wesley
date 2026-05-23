@@ -22,6 +22,8 @@ Current packets:
 - [`0012`](./0012-product-leftover-cleanup/product-leftover-cleanup.md): Product leftover cleanup for the v0.0.5 clean-house release
 - [`0013`](./0013-rust-ir-parity-sentinel/rust-ir-parity-sentinel.md): Rust IR parity sentinel for the v0.0.6 compiler-truth release, including the
   [type-family parity projection](./0013-rust-ir-parity-sentinel/SOURCE_type-family-parity-projection.md)
+  and
+  [Rust core performance baseline](./0013-rust-ir-parity-sentinel/EVIDENCE_rust-core-performance-baseline.md)
 - [`0014`](./0014-domain-empty-core-boundary/domain-empty-core-boundary.md): Domain-empty Wesley core boundary for the v0.0.6 compiler-truth release
 - [Module Contract](./wesley-module-contract.md): Generic core boundary versus external module-owned domain surfaces
 - [Module Capability Contract](./wesley-module-capability-contract.md): The capability surfaces external modules should implement

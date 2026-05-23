@@ -199,6 +199,25 @@ bytes.
 `large-schema.graphql` remains outside the default v0 sentinel corpus as scale
 coverage rather than first-pass compatibility evidence.
 
+## Performance Baseline
+
+The pulled
+[Rust core performance baseline](./EVIDENCE_rust-core-performance-baseline.md)
+slice adds:
+
+```bash
+pnpm perf:ir
+```
+
+The v0 baseline measures Rust CLI `schema lower` wall-clock samples over the
+valid Rust IR fixture corpus, including `large-schema.graphql`. It records
+fixture identity, SDL byte size, output byte size, Rust L1 semantic hash, type
+count, sample durations, and summary timings.
+
+This is evidence, not a cutover threshold. It explicitly does not capture peak
+RSS, JS lowering, Node binding overhead, WASM binding overhead, or external
+consumer in-process measurements.
+
 ## Type-Family Projection
 
 The second projection is defined in
