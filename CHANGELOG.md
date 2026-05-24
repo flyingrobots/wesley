@@ -8,6 +8,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- **Holmes assurance hexagon design**: Added design packet `0018` describing a
+  ground-up Rust Holmes redesign with hexagonal architecture, CLI/API/MCP
+  interfaces, dependency-injected ports, and a reporting abstraction where
+  GitHub PR comments are one publisher instead of the system center.
 - **Parity sentinel archive**: Added the `0017` parity sentinel archive so
   JS/Rust parity scripts remain migration evidence while Rust self-consistency
   and fixture truth become the product release gate.

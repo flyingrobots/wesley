@@ -29,6 +29,11 @@ The compatibility Node commands can remain while current CI and historical
 reports still reference them. New Rust compiler features should not depend on
 those commands.
 
+The Holmes/Watson/Moriarty exit path is now design packet
+[`0018-holmes-assurance-hexagon`](../0018-holmes-assurance-hexagon/holmes-assurance-hexagon.md).
+That packet defines Holmes as a Rust-native assurance hexagon with CLI, API,
+MCP, and reporting adapters instead of a direct port of the legacy Node package.
+
 ## Dynamic Module Loading Replacement
 
 NR-036 rejects a direct port of Node dynamic module loading. The replacement

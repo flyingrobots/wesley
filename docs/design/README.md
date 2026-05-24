@@ -36,6 +36,7 @@ Current packets:
   [legacy compatibility matrix](./0017-rust-native-front-door-and-node-retirement/LEGACY_COMPATIBILITY_MATRIX.md)
   and
   [parity sentinel archive](./0017-rust-native-front-door-and-node-retirement/PARITY_SENTINEL_ARCHIVE.md)
+- [`0018`](./0018-holmes-assurance-hexagon/holmes-assurance-hexagon.md): Holmes assurance hexagon redesign with CLI, API, MCP, and reporting adapters
 - [Module Contract](./wesley-module-contract.md): Generic core boundary versus external module-owned domain surfaces
 - [Module Capability Contract](./wesley-module-capability-contract.md): The capability surfaces external modules should implement
 - [Contract / Artifact / Runtime Boundary](./wesley-contract-family-artifact-runtime-value.md): GraphQL-authored families, Wesley-emitted artifacts, and later runtime values

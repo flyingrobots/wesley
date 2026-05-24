@@ -295,6 +295,18 @@ lower` references.
 - [ ] NR-096 Remove the campaign from active `BEARING` once the closeout is
       merged and only normal maintenance remains.
 
+### 10. Holmes Assurance Hexagon
+
+Holmes should be redesigned as a Rust-native assurance hexagon, not ported as a
+JavaScript-shaped crate. The new design lives in
+[0018-holmes-assurance-hexagon](./design/0018-holmes-assurance-hexagon/holmes-assurance-hexagon.md).
+
+The target shape is one assurance core with three interfaces: CLI, API, and
+MCP. Reporting is an abstraction over a structured `ReportDocument`; GitHub PR
+comments are one publisher, not the architecture. This is now the preferred
+exit path for the current `packages/wesley-holmes` blocker that keeps
+`@wesley/core` and `@wesley/runtime-node` alive.
+
 ## Tensions
 
 - **Two-Brain Confusion**: Rust and Node surfaces still coexist. The intended
@@ -319,7 +331,8 @@ lower` references.
 
 ## Next Target
 
-The immediate focus is **legacy package deletion without false gates**.
+The immediate focus is **Holmes assurance redesign and legacy package deletion
+without false gates**.
 
 The v0.0.6 compiler-truth work still matters, but the long-term goal now makes
 the priority sharper: delete only the package surfaces whose gates are actually
@@ -335,8 +348,9 @@ references, legacy aliases, invalid duplicate-directive coverage, parser parity
 acceptance evidence, IR parity projections, Rust CLI performance baselines,
 module-target dispatch coverage, the `0014` domain-empty boundary, the `0015`
 resilience boundary, and the `0016` binding observatory. Those remain the proof
-floor. The new `0017` packet names the retirement campaign that decides what
-all that proof is for.
+floor. The `0017` packet names the retirement campaign that decides what all
+that proof is for. The `0018` packet names the assurance architecture that lets
+Holmes survive without pinning Wesley to legacy Node.
 
 The next pulls after this drift check are:
 
@@ -344,8 +358,8 @@ The next pulls after this drift check are:
 2. Move or delete remaining root scripts that route through the Node host.
 3. Replace parity and performance helpers that import JS lowerer code with
    Rust fixture-truth checks.
-4. Split Holmes/runtime evidence from `@wesley/core` and
-   `@wesley/runtime-node` dependencies.
+4. Start the Holmes assurance hexagon by adding Rust domain/report contracts
+   and dependency-injected ports.
 5. Keep deleting leaf packages only when `pnpm -r test`, docs checks, and CI
    workflow references prove the package has no active owner in this repo.
 
