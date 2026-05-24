@@ -1,0 +1,19 @@
+directive @tag(name: String!) repeatable on FIELD_DEFINITION | OBJECT
+
+"A reusable user"
+type User @table @tag(name: "object") {
+  name: String @tag(name: "beta") @tag(name: "alpha")
+  "The stable id"
+  id: ID! @pk
+}
+
+input UserFilter {
+  settings: UserSettings = { flags: ["beta", "alpha"], theme: "dark" }
+  active: Boolean = true
+}
+
+input UserSettings {
+  theme: String = "light"
+  quote: String = "A \"quote\""
+  flags: [String!]! = []
+}

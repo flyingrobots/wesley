@@ -25,7 +25,8 @@ native binary stays small while core behavior moves into the Rust library.
 selection paths and extracting directive arguments; Echo-owned tooling owns
 Echo-specific footprint honesty checks.
 Use `wesley normalize-sdl --schema <path>` when you need the consolidated,
-sorted SDL view that the Rust compiler sees before emission or diffing.
+sorted SDL view that the Rust compiler sees before emission or diffing. Add
+`--hash` when you need stable evidence bytes for a normalized SDL snapshot.
 
 Use `cargo install wesley-cli --version 0.0.4` when you want the published
 alpha `wesley` binary on your PATH. Use
@@ -68,6 +69,8 @@ repo, not in Wesley.
 
 Audit proposed changes, emit HOLMES reports, and inspect the static dashboard
 artifact assembled by CI.
+These are historical assurance/tooling surfaces while the Node retirement
+campaign decides what moves, extracts, or disappears.
 
 - **Certificate**: `pnpm wesley cert-create --help`
 - **HOLMES report**: `pnpm --filter @wesley/holmes exec node src/cli.mjs report --help`

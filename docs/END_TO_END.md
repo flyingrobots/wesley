@@ -23,7 +23,7 @@ is not Echo, Continuum, jedit, WARPspace, or PostgreSQL. Wesley owns compiler
 truth. External modules and sibling projects own target meaning.
 
 ```mermaid
-flowchart LR
+flowchart TD
     Problem[Problem: many artifacts drift] --> Decision[Decision: one authored GraphQL contract]
     Decision --> Compiler[Wesley compiler kernel]
     Compiler --> Facts[Deterministic compiler facts]
@@ -137,7 +137,7 @@ footprint is honest for Echo, correct for jedit, or meaningful for a database.
 Those are domain decisions.
 
 ```mermaid
-flowchart LR
+flowchart TD
     SDL[GraphQL SDL] --> Shape[Shape facts]
     SDL --> DirectiveData[Directive data]
     Shape --> Wesley[Wesley core]
@@ -648,19 +648,20 @@ erDiagram
 Current JavaScript-side module capability areas include `wesley`, `holmes`,
 `watson`, `moriarty`, `blade`, and `cli`. A module can contribute target
 descriptors, commands, witness scopes, verification profiles, judgment
-profiles, or certification hooks.
+profiles, or certification hooks. The sequence below is historical legacy
+compatibility, not the product front door Wesley is moving toward.
 
 ```mermaid
 sequenceDiagram
     actor User
-    participant CLI as @wesley/cli
+    participant CLI as legacy @wesley/cli
     participant Loader as @wesley/runtime-node
     participant Registry as ModuleCapabilityRegistry
     participant Module as External target module
     participant Core as Wesley compiler facts
     participant Out as Generated artifacts
 
-    User->>CLI: pnpm wesley compile --schema schema.graphql --target targetName
+    User->>CLI: legacy pnpm wesley compile --schema schema.graphql --target targetName
     CLI->>Loader: discover config and env modules
     Loader->>Registry: register module capabilities
     CLI->>Registry: resolve requested target
@@ -892,7 +893,7 @@ truth checks, docs link checks, legacy package checks, parity sentinels, fixture
 generation, and performance evidence.
 
 ```mermaid
-flowchart LR
+flowchart TD
     Change[Proposed change] --> RustPreflight[cargo xtask preflight]
     Change --> LegacyPreflight[pnpm run preflight]
     Change --> Fixtures[pnpm fixtures:ir]
@@ -903,6 +904,7 @@ flowchart LR
     RustPreflight --> NativeHelp[native CLI help smoke]
     LegacyPreflight --> DocsLinks[docs links]
     LegacyPreflight --> DocsTruth[docs truth manifest]
+    LegacyPreflight --> NodeRetirement[Node retirement ledger guard]
     LegacyPreflight --> Lint[lint and format]
     LegacyPreflight --> PackageTests[package tests]
 
@@ -914,6 +916,7 @@ flowchart LR
     NativeHelp --> PR
     DocsLinks --> PR
     DocsTruth --> PR
+    NodeRetirement --> PR
     Lint --> PR
     PackageTests --> PR
     Golden --> PR
@@ -926,6 +929,10 @@ to declare legacy Node lowering dead. Its point is to make the compatibility
 claim explicit, fixture-backed, and reviewable before retiring more legacy
 surface area.
 
+The active Node retirement campaign adds another proof surface: a
+machine-readable ledger and drift guard that keeps the historical package
+surface classified while the Rust native front door grows.
+
 ## What Wesley Does Today
 
 Today, Wesley can:
@@ -933,6 +940,7 @@ Today, Wesley can:
 - lower GraphQL SDL into Rust L1 IR
 - preserve generic directive data
 - fold schema extensions into consolidated type facts
+- print normalized SDL and normalized SDL hashes from Rust compiler facts
 - compute canonical JSON and hashes
 - compute structural schema deltas
 - list root operations with argument and result types
@@ -957,6 +965,7 @@ mindmap
             List operations
             Analyze operations
         Native CLI
+            normalize-sdl
             schema lower
             schema hash
             schema diff
@@ -996,7 +1005,7 @@ Wesley does not own:
 This is not a weakness. It is the reason the compiler can stay useful.
 
 ```mermaid
-flowchart LR
+flowchart TD
     Wesley[Wesley owns compiler truth] --> Facts[IR, hashes, diffs, artifacts, evidence inputs]
 
     Echo[Echo owns runtime law] --> EchoRuntime[scheduling, admission, witnesses]

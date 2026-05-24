@@ -141,24 +141,24 @@ exists.
   native command map.
 - [x] NR-010 Reconcile pulled backlog cards into packet `0017`, docs, and
   changelog.
-- [ ] NR-011 Add a machine-readable Node retirement ledger export for CI and
+- [x] NR-011 Add a machine-readable Node retirement ledger export for CI and
   review automation.
-- [ ] NR-012 Add a drift check that fails when a new Node package appears
+- [x] NR-012 Add a drift check that fails when a new Node package appears
   without a ledger disposition.
-- [ ] NR-013 Add a drift check that fails when docs introduce `pnpm wesley` as a
+- [x] NR-013 Add a drift check that fails when docs introduce `pnpm wesley` as a
   primary product front door.
-- [ ] NR-014 Add a drift check that fails when `packages/wesley-core` gains new
+- [x] NR-014 Add a drift check that fails when `packages/wesley-core` gains new
   compiler authority without a Rust counterpart.
-- [ ] NR-015 Add Rust normalizer coverage for directive aliases and repeated
+- [x] NR-015 Add Rust normalizer coverage for directive aliases and repeated
   custom directives.
-- [ ] NR-016 Add Rust normalizer coverage for descriptions and escaped string
+- [x] NR-016 Add Rust normalizer coverage for descriptions and escaped string
   values.
-- [ ] NR-017 Add Rust normalizer coverage for input object defaults and nested
+- [x] NR-017 Add Rust normalizer coverage for input object defaults and nested
   object directive arguments.
-- [ ] NR-018 Publish normalized SDL hash evidence beside L1 IR hash evidence.
-- [ ] NR-019 Add a Rust parser diagnostics fixture corpus for syntax,
+- [x] NR-018 Publish normalized SDL hash evidence beside L1 IR hash evidence.
+- [x] NR-019 Add a Rust parser diagnostics fixture corpus for syntax,
   duplicate-directive, and semantic lowering failures.
-- [ ] NR-020 Update parser parity output to reference Rust normalized SDL where
+- [x] NR-020 Update parser parity output to reference Rust normalized SDL where
   useful.
 - [ ] NR-021 Port the remaining useful generic TypeScript emitter parity cases
   into `crates/wesley-emit-typescript`.
@@ -343,13 +343,15 @@ all that proof is for.
 
 The next pulls after this drift check are:
 
-1. Add automation that rejects new Node packages or Node-front-door docs unless
-   the retirement ledger names their disposition.
-2. Broaden `wesley normalize-sdl` coverage for directives, descriptions, and
-   input-object/default-value edge cases.
-3. Continue moving command authority from legacy Node CLI paths to Rust-native
+1. Port the remaining useful generic TypeScript emitter parity cases into
+   `crates/wesley-emit-typescript`.
+2. Add TypeScript emitter golden fixtures for operation request and response
+   bindings.
+3. Decide whether Zod emission remains generic Wesley or moves to an external
+   module.
+4. Continue moving command authority from legacy Node CLI paths to Rust-native
    `schema`, `emit`, `operation`, and future narrow `doctor` commands.
-4. Keep WASM/module capability governance queued, but do it after the Rust
+5. Keep WASM/module capability governance queued, but do it after the Rust
    native front door can explain compiler truth without Node.
 
 The `ninelives` decision is made: use `ninelives` for Rust resilience seams and

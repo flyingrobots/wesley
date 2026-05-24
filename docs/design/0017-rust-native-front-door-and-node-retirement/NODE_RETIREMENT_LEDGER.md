@@ -3,6 +3,8 @@
 This ledger is the active inventory for retiring the historical Node Wesley
 surface. `docs/LEGACY_NODE_MIGRATION.md` remains the public migration summary;
 this packet ledger is the working control surface for the 96-slice campaign.
+The machine-readable CI/review export lives beside this document as
+[`node-retirement-ledger.json`](./node-retirement-ledger.json).
 
 ## Dispositions
 

@@ -13,10 +13,18 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   extension-folded SDL view from compiler facts, with golden fixtures for
   sorted types, fields, arguments, unions, defaults, and nested list
   references.
+- **Normalized SDL hash evidence**: `wesley normalize-sdl --schema <path>
+  --hash` now emits a SHA-256 evidence hash for the normalized SDL view, and
+  parser parity reports include normalized SDL hash evidence for accepted Rust
+  fixtures.
 - **Legacy Node retirement campaign**: Added design packet `0017`, a Node
   retirement ledger, and a 96-slice `BEARING` checklist that tracks the
   Rust-native front-door work required to remove Node as compiler, runtime,
   release, and documentation authority.
+- **Node retirement guard**: Added a machine-readable Node retirement ledger and
+  `cargo xtask docs-check` validation that requires package dispositions,
+  guards primary docs against product-front-door `pnpm wesley` drift, and blocks
+  new legacy JS core authority without an explicit allowance.
 - **Rust core binding observatory**: Added `pnpm perf:bindings` and
   `pnpm perf:ir -- --observatory` to emit
   `rust-core-binding-observatory.v0` reports that separate Rust CLI, legacy JS

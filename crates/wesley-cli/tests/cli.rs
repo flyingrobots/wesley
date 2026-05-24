@@ -46,11 +46,22 @@ fn nested_command_help_exits_zero() {
 
 #[test]
 fn normalize_sdl_emits_sorted_consolidated_sdl() {
+    assert_normalized_sdl_fixture("extension-folded");
+}
+
+#[test]
+fn normalize_sdl_preserves_semantic_directives_descriptions_and_defaults() {
+    assert_normalized_sdl_fixture("directives-and-defaults");
+}
+
+#[test]
+fn normalize_sdl_hash_emits_sha256_evidence() {
     let output = wesley()
         .args(["normalize-sdl", "--schema"])
         .arg(fixture(
-            "test/fixtures/normalized-sdl/extension-folded.graphql",
+            "test/fixtures/normalized-sdl/directives-and-defaults.graphql",
         ))
+        .arg("--hash")
         .output()
         .expect("wesley should run");
 
@@ -58,11 +69,11 @@ fn normalize_sdl_emits_sorted_consolidated_sdl() {
     let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
     let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
     let expected = std::fs::read_to_string(fixture(
-        "test/fixtures/normalized-sdl/extension-folded.normalized.graphql",
+        "test/fixtures/normalized-sdl/directives-and-defaults.normalized.sha256",
     ))
-    .expect("normalized SDL fixture should read");
+    .expect("normalized SDL hash fixture should read");
 
-    assert_eq!(stdout, expected);
+    assert_eq!(stdout.trim(), expected.trim());
     assert!(stderr.is_empty());
 }
 
@@ -695,6 +706,27 @@ fn wesley() -> Command {
     Command::new(env!("CARGO_BIN_EXE_wesley"))
 }
 
+fn assert_normalized_sdl_fixture(name: &str) {
+    let output = wesley()
+        .args(["normalize-sdl", "--schema"])
+        .arg(fixture(format!(
+            "test/fixtures/normalized-sdl/{name}.graphql"
+        )))
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+    let expected = std::fs::read_to_string(fixture(format!(
+        "test/fixtures/normalized-sdl/{name}.normalized.graphql"
+    )))
+    .expect("normalized SDL fixture should read");
+
+    assert_eq!(stdout, expected);
+    assert!(stderr.is_empty());
+}
+
 fn assert_success(output: &std::process::Output) {
     if !output.status.success() {
         panic!(
@@ -706,7 +738,7 @@ fn assert_success(output: &std::process::Output) {
     }
 }
 
-fn fixture(relative: &str) -> std::path::PathBuf {
+fn fixture(relative: impl AsRef<std::path::Path>) -> std::path::PathBuf {
     std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../..")
         .join(relative)

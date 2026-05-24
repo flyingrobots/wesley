@@ -5,7 +5,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
 use wesley_core::{
-    compute_registry_hash, diff_schema_sdl, extract_operation_directive_args,
+    compute_content_hash, compute_registry_hash, diff_schema_sdl, extract_operation_directive_args,
     list_schema_operations_sdl, lower_schema_sdl, normalize_schema_sdl,
     resolve_operation_selections, resolve_operation_selections_with_schema, SchemaDelta,
     WesleyError,
@@ -57,7 +57,12 @@ fn run_normalize_sdl_command(args: &[String]) -> Result<u8, CliError> {
     let sdl = read_file(&schema_path, "schema")?;
     let normalized = normalize_schema_sdl(&sdl)?;
 
-    println!("{normalized}");
+    if options.hash {
+        println!("{}", compute_content_hash(&normalized));
+    } else {
+        println!("{normalized}");
+    }
+
     Ok(EXIT_OK)
 }
 
@@ -241,6 +246,7 @@ struct ParsedOptions {
     breaking_only: bool,
     exit_code: bool,
     json: bool,
+    hash: bool,
 }
 
 impl ParsedOptions {
@@ -342,6 +348,14 @@ fn parse_options(args: &[String], command: &str) -> Result<ParsedOptions, CliErr
             }
             "--json" => {
                 options.json = true;
+            }
+            "--hash" if command == "normalize-sdl" => {
+                options.hash = true;
+            }
+            "--hash" => {
+                return Err(CliError::usage(format!(
+                    "unknown option '--hash' for `{command}`"
+                )));
             }
             "--help" | "-h" => {
                 return Err(CliError::usage(format!(
@@ -674,10 +688,11 @@ fn print_normalize_sdl_help() {
 Wesley SDL normalizer
 
 Usage:
-  wesley normalize-sdl --schema <path>
+  wesley normalize-sdl --schema <path> [--hash]
 
 Options:
-  -s, --schema <path>  GraphQL SDL file"
+  -s, --schema <path>  GraphQL SDL file
+  --hash               Print the SHA-256 of the normalized SDL"
     );
 }
 

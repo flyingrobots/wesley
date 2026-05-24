@@ -29,6 +29,9 @@ documentation authority.
 The retirement campaign is a 96-slice campaign tracked in `docs/BEARING.md`.
 The active ledger lives in
 [`NODE_RETIREMENT_LEDGER.md`](./NODE_RETIREMENT_LEDGER.md).
+Its machine-readable export lives in
+[`node-retirement-ledger.json`](./node-retirement-ledger.json) and is checked
+by `cargo xtask docs-check`.
 
 The first ten slices establish the runway:
 
@@ -71,6 +74,10 @@ semantic SDL view:
 - union members and enum values sorted lexicographically
 - GraphQL type references rendered from Rust L1 facts
 - directive data rendered from the compiler-retained directive value model
+
+`wesley normalize-sdl --schema <path> --hash` prints the SHA-256 of that
+normalized SDL. The hash is evidence for the semantic SDL view, not a
+replacement for the L1 IR registry hash.
 
 This is a pre-compilation truth anchor. It is not a source-preserving
 formatter. Comments, original ordering, and trivia are not retained because the

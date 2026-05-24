@@ -1,0 +1,7 @@
+type Thing {
+  id: ID!
+}
+
+extend enum Thing {
+  NAME
+}

@@ -28,9 +28,9 @@ export const DEFAULT_PARSER_PARITY_CASES = Object.freeze([
   parserCase('test/fixtures/ir-parity/small-schema.graphql', EXPECTED_BOTH_ACCEPT),
   parserCase('test/fixtures/ir-parity/schema-extensions-schema.graphql', EXPECTED_BOTH_ACCEPT),
   parserCase('test/fixtures/ir-parity/nested-list-schema.graphql', EXPECTED_BOTH_ACCEPT),
-  parserCase('test/fixtures/ir-parity-invalid/parser-syntax-error.graphql', EXPECTED_BOTH_REJECT),
+  parserCase('test/fixtures/parser-diagnostics/parser-syntax-error.graphql', EXPECTED_BOTH_REJECT),
   parserCase(
-    'test/fixtures/ir-parity-invalid/duplicate-directive-alias.graphql',
+    'test/fixtures/parser-diagnostics/duplicate-directive-alias.graphql',
     EXPECTED_BOTH_REJECT,
     'Both lowerers reject duplicate canonical core directives after alias normalization.'
   )
@@ -152,12 +152,16 @@ async function runParserParity(cases) {
     gitHead: await gitHead(),
     lowerers: {
       legacy: 'GraphQLAdapter.parseSDL',
-      rust: WESLEY_CLI_BIN || `${CARGO} ${WESLEY_CLI_ARGS.join(' ')}`
+      rust: WESLEY_CLI_BIN || `${CARGO} ${WESLEY_CLI_ARGS.join(' ')}`,
+      rustNormalizedSdl: WESLEY_CLI_BIN
+        ? `${WESLEY_CLI_BIN} normalize-sdl`
+        : `${CARGO} ${WESLEY_CLI_ARGS.join(' ')} normalize-sdl`
     },
     projectionGapDecision: {
       status: 'nested-list-type-family-covered',
       defaultProjectionAdded: 'js-sdl-type-family-vs-rust-l1-type-family.v0',
-      fixture: 'test/fixtures/ir-parity/nested-list-schema.graphql'
+      fixture: 'test/fixtures/ir-parity/nested-list-schema.graphql',
+      normalizedSdlHashEvidence: 'reported for accepted Rust fixtures'
     },
     summary: {
       total: results.length,
@@ -221,9 +225,12 @@ async function lowerRust(fixturePath) {
   try {
     const stdout = await runWesley(['schema', 'lower', '--schema', fixturePath, '--json']);
     const ir = JSON.parse(stdout);
+    const normalizedSdlHash = (await runWesley(['normalize-sdl', '--schema', fixturePath, '--hash']))
+      .trim();
     return {
       status: 'accept',
-      typeCount: Array.isArray(ir?.types) ? ir.types.length : null
+      typeCount: Array.isArray(ir?.types) ? ir.types.length : null,
+      normalizedSdlHash
     };
   } catch (error) {
     return {
@@ -292,6 +299,7 @@ function printTextReport(report) {
     console.log(
       `Projection gap decision: ${report.projectionGapDecision.status} via ${report.projectionGapDecision.fixture}.`
     );
+    console.log('Accepted Rust fixtures include normalized SDL hash evidence.');
     return;
   }
 

@@ -51,7 +51,8 @@ It can:
 
 - parse and lower GraphQL SDL into the L1 semantic IR
 - consolidate `extend type` blocks before lowering
-- print a normalized SDL view of Rust compiler facts
+- print a normalized SDL view of Rust compiler facts and its SHA-256 evidence
+  hash
 - compute stable canonical JSON and hashes for L1 IR
 - compute structural L1 schema deltas
 - list schema root operations with arguments, result types, and directives
@@ -65,6 +66,7 @@ The native CLI exposes those facts through:
 
 ```bash
 wesley normalize-sdl --schema <path>
+wesley normalize-sdl --schema <path> --hash
 wesley schema lower --schema <path> --json
 wesley schema hash --schema <path>
 wesley schema operations --schema <path> --json
