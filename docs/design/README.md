@@ -28,7 +28,8 @@ Current packets:
 - [`0014`](./0014-domain-empty-core-boundary/domain-empty-core-boundary.md): Domain-empty Wesley core boundary for the v0.0.6 compiler-truth release
 - [`0015`](./0015-resilience-policy-boundary/resilience-policy-boundary.md): Resilience policy boundary for `ninelives` in Rust and `@git-stunts/alfred` in JavaScript tooling
 - [`0016`](./0016-rust-core-binding-observatory/rust-core-binding-observatory.md): Rust core binding observatory for Node/Rust/WASM cutover evidence
-- [`0017`](./0017-rust-native-front-door-and-node-retirement/rust-native-front-door-and-node-retirement.md): Rust native front door and legacy Node retirement campaign
+- [`0017`](./0017-rust-native-front-door-and-node-retirement/rust-native-front-door-and-node-retirement.md): Rust native front door and legacy Node retirement campaign, including
+  [assurance and capability extraction](./0017-rust-native-front-door-and-node-retirement/ASSURANCE_AND_CAPABILITY_EXTRACTION.md)
 - [Module Contract](./wesley-module-contract.md): Generic core boundary versus external module-owned domain surfaces
 - [Module Capability Contract](./wesley-module-capability-contract.md): The capability surfaces external modules should implement
 - [Contract / Artifact / Runtime Boundary](./wesley-contract-family-artifact-runtime-value.md): GraphQL-authored families, Wesley-emitted artifacts, and later runtime values

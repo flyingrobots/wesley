@@ -229,12 +229,19 @@ The portability rule should be:
 - WASM-capable features must declare `execution: "wasm"` or
   `execution: "wasm-or-native"`
 - host reports must show execution mode
+- Rust target descriptors must record execution mode and portability floor
 - docs must mark Node-only module behavior as Node-only
 - new cross-host capability families should prove a WASM fixture before being
   treated as portable
 
 The ABI does not need to be huge early. It does need to cover enough useful
 work that portable module authors do not immediately fall back to Node.
+
+The first Rust proof is deliberately small. `ModuleTargetRegistry` covers
+target selection and duplicate target rejection, while `HostFunctionPolicy`
+defines a `pure` profile that denies every WASM host import unless a future
+host explicitly grants it. A WASM target that requests an unavailable import is
+rejected before execution.
 
 ## Proposed Runtime Shape
 

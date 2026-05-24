@@ -16,6 +16,7 @@ pub use adapters::apollo::{
     normalize_schema_sdl, resolve_operation_selections, resolve_operation_selections_with_schema,
     ApolloLoweringAdapter,
 };
+pub use domain::capability::*;
 pub use domain::error::*;
 pub use domain::ir::*;
 pub use domain::operation::*;

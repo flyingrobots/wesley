@@ -1,7 +1,8 @@
 # Legacy Command Decisions
 
-This note records the command-boundary decisions made during slices NR-023
-through NR-030 of the Node retirement campaign.
+This note records the command-boundary decisions made during the Node
+retirement campaign. Assurance and runtime evidence boundaries are expanded in
+[`ASSURANCE_AND_CAPABILITY_EXTRACTION.md`](./ASSURANCE_AND_CAPABILITY_EXTRACTION.md).
 
 ## Rule
 
@@ -19,6 +20,10 @@ belong in external modules or owning repos.
 | `models` | Retire from core Wesley. | Model-class scaffolding is target/application ergonomics. The retained generic model facts now appear through Rust and TypeScript emitters; richer model classes need an owning target module. |
 | `init` | Retire legacy scaffolding. | The historical `init` shape can smuggle product conventions into generic Wesley. A future native `init` may create a tiny generic starter schema, but that is a new proposal, not a port of the Node command. |
 | `doctor` | Port a narrow Rust-native health check. | The retained native command checks only the Rust CLI, Rust lowerer, normalized SDL hash evidence, and Rust emitter crates. Node version, config, plugin, and package diagnostics remain legacy-only. |
+| `cert-create`, `cert-sign`, `stake`, `cert-verify`, `cert-badge` | Extract from the compiler front door. | Certificate and SHIPME workflows belong to assurance tooling, not the Rust compiler kernel or native product CLI. |
+| Holmes, Watson, Moriarty commands | Re-home under an explicit assurance package boundary. | The compiler may emit facts, but evidence judgment and forecasting should live beside assurance tooling. |
+| `runs` | Exit with assurance/runtime evidence tooling. | Run-ledger inspection is useful operational evidence, not compiler truth. |
+| package evidence commands in `packages/wesley-cli` | Compatibility-only until extracted. | Package-level evidence can remain for current CI and historical reports, but it is not a product front door. |
 
 ## Current Native Replacement
 
