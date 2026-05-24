@@ -12,15 +12,15 @@ Rust-native compiler and CLI decide product readiness.
 
 ## Host Package Decisions
 
-| Slice | Surface | Decision |
-| --- | --- | --- |
-| NR-045 | Browser/Bun/Deno host experiments | Classify as external ecosystem or compatibility-only packages. They do not block Rust product readiness. |
-| NR-046 | `packages/wesley-host-bun` | Keep only as legacy compatibility evidence until deleted or externalized. |
-| NR-047 | `packages/wesley-host-deno` | Keep only as legacy compatibility evidence until deleted or externalized. |
-| NR-048 | `packages/wesley-host-browser` | Keep only as legacy compatibility evidence until deleted or externalized. |
-| NR-049 | Node-host product smoke invocations | Replace generic product CI smoke with the native Rust CLI; leave Node invocations only in explicit legacy lanes. |
-| NR-050 | Node-host tests | Treat remaining Node host tests as compatibility-only evidence. |
-| NR-051 | CI labels and job names | Name Rust product checks and legacy compatibility checks explicitly so the merge view does not hide which surface is being tested. |
+| Slice  | Surface                             | Decision                                                                                                                           |
+| ------ | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| NR-045 | Browser/Bun/Deno host experiments   | Classify as external ecosystem or compatibility-only packages. They do not block Rust product readiness.                           |
+| NR-046 | `packages/wesley-host-bun`          | Keep only as legacy compatibility evidence until deleted or externalized.                                                          |
+| NR-047 | `packages/wesley-host-deno`         | Keep only as legacy compatibility evidence until deleted or externalized.                                                          |
+| NR-048 | `packages/wesley-host-browser`      | Keep only as legacy compatibility evidence until deleted or externalized.                                                          |
+| NR-049 | Node-host product smoke invocations | Replace generic product CI smoke with the native Rust CLI; leave Node invocations only in explicit legacy lanes.                   |
+| NR-050 | Node-host tests                     | Treat remaining Node host tests as compatibility-only evidence.                                                                    |
+| NR-051 | CI labels and job names             | Name Rust product checks and legacy compatibility checks explicitly so the merge view does not hide which surface is being tested. |
 
 ## Product Versus Compatibility
 
@@ -28,10 +28,10 @@ Product checks answer whether the Rust compiler kernel and native command body
 are healthy. Compatibility checks answer whether historical JavaScript package
 surfaces still behave while they are being retired.
 
-| Lane | Examples | Merge meaning |
-| --- | --- | --- |
-| Rust product | `cargo xtask preflight`, `wesley schema lower`, `wesley emit ...` | The Rust-native product spine is healthy. |
-| Repository hygiene | docs links, truth manifest, dependency boundaries | The repo is internally coherent. |
+| Lane                 | Examples                                                                             | Merge meaning                                                             |
+| -------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| Rust product         | `cargo xtask preflight`, `wesley schema lower`, `wesley emit ...`                    | The Rust-native product spine is healthy.                                 |
+| Repository hygiene   | docs links, truth manifest, dependency boundaries                                    | The repo is internally coherent.                                          |
 | Legacy compatibility | `@wesley/host-node`, `@wesley/host-bun`, `@wesley/host-deno`, `@wesley/host-browser` | Temporary historical host surfaces still pass their compatibility smokes. |
 
 Compatibility failures still matter while the packages remain in the repo, but

@@ -1,8 +1,17 @@
 {
   "name": "@wesley/cli",
   "version": "0.1.0",
+  "private": true,
   "type": "module",
-  "description": "Wesley CLI - GraphQL to Everything",
+  "description": "Legacy compatibility CLI for historical Wesley Node commands",
+  "wesley": {
+    "retirement": {
+      "status": "legacy-compatibility",
+      "disposition": "delete-after-command-migration",
+      "ledger": "docs/design/0017-rust-native-front-door-and-node-retirement/NODE_RETIREMENT_LEDGER.md",
+      "replacement": "Use the native Rust `wesley` binary from `cargo wesley` or `cargo install wesley-cli`; keep this package only for legacy command compatibility."
+    }
+  },
   "exports": {
     ".": "./src/index.mjs",
     "./src/main.mjs": "./src/main.mjs",

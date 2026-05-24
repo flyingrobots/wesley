@@ -1,9 +1,17 @@
 {
   "name": "@wesley/test-fixtures",
   "version": "0.1.0",
-  "type": "module",
   "private": true,
-  "description": "Shared test fixtures, mocks, and schema builders for the Wesley monorepo",
+  "type": "module",
+  "description": "Legacy compatibility fixtures for historical Wesley package tests",
+  "wesley": {
+    "retirement": {
+      "status": "legacy-compatibility",
+      "disposition": "replace",
+      "ledger": "docs/design/0017-rust-native-front-door-and-node-retirement/NODE_RETIREMENT_LEDGER.md",
+      "replacement": "Move useful fixtures into plain `test/fixtures` or Rust tests; keep this package only for legacy package tests."
+    }
+  },
   "main": "./src/index.mjs",
   "exports": {
     ".": "./src/index.mjs",

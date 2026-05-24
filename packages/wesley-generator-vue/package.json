@@ -1,8 +1,17 @@
 {
   "name": "@wesley/generator-vue",
   "version": "0.1.0",
-  "description": "Wesley Vue Generator - Vue composables, dispatchers, and reactivity wrappers",
+  "private": true,
   "type": "module",
+  "description": "Legacy compatibility Vue generator experiment",
+  "wesley": {
+    "retirement": {
+      "status": "legacy-compatibility",
+      "disposition": "delete-or-externalize",
+      "ledger": "docs/design/0017-rust-native-front-door-and-node-retirement/NODE_RETIREMENT_LEDGER.md",
+      "replacement": "Externalize Vue projections to a target owner or delete this package after compatibility evidence is no longer needed."
+    }
+  },
   "main": "src/index.mjs",
   "exports": {
     ".": "./src/index.mjs",

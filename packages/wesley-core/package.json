@@ -1,8 +1,17 @@
 {
   "name": "@wesley/core",
   "version": "0.1.0",
+  "private": true,
   "type": "module",
-  "description": "Wesley core domain logic - pure functions, no dependencies",
+  "description": "Legacy compatibility JS core for historical Wesley package tests",
+  "wesley": {
+    "retirement": {
+      "status": "legacy-compatibility",
+      "disposition": "port-then-delete",
+      "ledger": "docs/design/0017-rust-native-front-door-and-node-retirement/NODE_RETIREMENT_LEDGER.md",
+      "replacement": "Use `crates/wesley-core` for compiler truth; keep this package only while historical JS tests and migration evidence remain."
+    }
+  },
   "main": "./src/index.mjs",
   "exports": {
     ".": "./src/index.mjs",

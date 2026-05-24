@@ -1,8 +1,17 @@
 {
   "name": "@wesley/generator-js",
   "version": "0.1.0",
-  "description": "Wesley JavaScript/TypeScript Generators - Models, Types, and Zod schemas",
+  "private": true,
   "type": "module",
+  "description": "Legacy compatibility JavaScript and TypeScript generators",
+  "wesley": {
+    "retirement": {
+      "status": "legacy-compatibility",
+      "disposition": "port-typescript-extract-zod",
+      "ledger": "docs/design/0017-rust-native-front-door-and-node-retirement/NODE_RETIREMENT_LEDGER.md",
+      "replacement": "Use native `wesley emit typescript` for retained generic TypeScript output; move Zod and JavaScript-specific output to external target modules."
+    }
+  },
   "main": "src/index.mjs",
   "exports": {
     ".": "./src/index.mjs"

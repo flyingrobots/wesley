@@ -123,154 +123,154 @@ not by deleting files before equivalent Rust truth or explicit extraction
 exists.
 
 - [x] NR-001 Reset `BEARING` around the 96-slice legacy Node retirement
-  campaign.
+      campaign.
 - [x] NR-002 Open design packet `0017` for the Rust-native front door and Node
-  retirement doctrine.
+      retirement doctrine.
 - [x] NR-003 Promote the Node retirement ledger as the authoritative inventory
-  for product, runtime, tooling, and shadow surfaces.
+      for product, runtime, tooling, and shadow surfaces.
 - [x] NR-004 Record `apollo-parser` as the Rust parser choice for the retirement
-  runway.
+      runway.
 - [x] NR-005 Classify current Node packages and command surfaces by port,
-  extract, delete, or defer disposition.
+      extract, delete, or defer disposition.
 - [x] NR-006 Add a Rust-core SDL normalization API that renders consolidated
-  compiler facts.
+      compiler facts.
 - [x] NR-007 Expose `wesley normalize-sdl --schema <path>` from the native CLI.
 - [x] NR-008 Add golden normalized-SDL fixtures for extension folding, sorting,
-  argument defaults, unions, and nested list references.
+      argument defaults, unions, and nested list references.
 - [x] NR-009 Update front-door docs so Rust normalization is visible from the
-  native command map.
+      native command map.
 - [x] NR-010 Reconcile pulled backlog cards into packet `0017`, docs, and
-  changelog.
+      changelog.
 - [x] NR-011 Add a machine-readable Node retirement ledger export for CI and
-  review automation.
+      review automation.
 - [x] NR-012 Add a drift check that fails when a new Node package appears
-  without a ledger disposition.
+      without a ledger disposition.
 - [x] NR-013 Add a drift check that fails when docs introduce `pnpm wesley` as a
-  primary product front door.
+      primary product front door.
 - [x] NR-014 Add a drift check that fails when `packages/wesley-core` gains new
-  compiler authority without a Rust counterpart.
+      compiler authority without a Rust counterpart.
 - [x] NR-015 Add Rust normalizer coverage for directive aliases and repeated
-  custom directives.
+      custom directives.
 - [x] NR-016 Add Rust normalizer coverage for descriptions and escaped string
-  values.
+      values.
 - [x] NR-017 Add Rust normalizer coverage for input object defaults and nested
-  object directive arguments.
+      object directive arguments.
 - [x] NR-018 Publish normalized SDL hash evidence beside L1 IR hash evidence.
 - [x] NR-019 Add a Rust parser diagnostics fixture corpus for syntax,
-  duplicate-directive, and semantic lowering failures.
+      duplicate-directive, and semantic lowering failures.
 - [x] NR-020 Update parser parity output to reference Rust normalized SDL where
-  useful.
+      useful.
 - [x] NR-021 Port the remaining useful generic TypeScript emitter parity cases
-  into `crates/wesley-emit-typescript`.
+      into `crates/wesley-emit-typescript`.
 - [x] NR-022 Add TypeScript emitter golden fixtures for operation request and
-  response bindings.
+      response bindings.
 - [x] NR-023 Decide whether Zod emission remains generic Wesley or moves to an
-  external module.
+      external module.
 - [x] NR-024 If retained, add a Rust Zod emitter crate or module boundary
-  (closed by the non-retention decision; no core Zod crate added).
+      (closed by the non-retention decision; no core Zod crate added).
 - [x] NR-025 If extracted, move Zod retirement to the owning module/package
-  plan and stop presenting it as core Wesley.
+      plan and stop presenting it as core Wesley.
 - [x] NR-026 Replace legacy `generate` docs with explicit Rust `emit` command
-  docs where parity exists.
+      docs where parity exists.
 - [x] NR-027 Add native `wesley emit` metadata that records schema hash,
-  generator version, and execution mode.
+      generator version, and execution mode.
 - [x] NR-028 Add Rust emitter fixtures proving no domain-specific Postgres,
-  Echo, or jedit semantics leak into generic output.
+      Echo, or jedit semantics leak into generic output.
 - [x] NR-029 Port or retire legacy `models` command behavior.
 - [x] NR-030 Port or retire legacy `init` command behavior.
 - [x] NR-031 Port a narrow Rust `doctor` command only for Rust-native health
-  checks.
+      checks.
 - [x] NR-032 Extract certificate creation/signing/verification commands from the
-  compiler front door.
+      compiler front door.
 - [x] NR-033 Extract Holmes/Moriarty evidence commands or re-home them under an
-  explicit assurance package boundary.
+      explicit assurance package boundary.
 - [x] NR-034 Decide whether runtime run ledger inspection remains in Wesley or
-  exits with assurance tooling.
+      exits with assurance tooling.
 - [x] NR-035 Move package-level evidence tooling out of `packages/wesley-cli`
-  or mark it compatibility-only.
+      or mark it compatibility-only.
 - [x] NR-036 Replace Node dynamic module loading with a Rust-native target
-  registry or external-process protocol design.
+      registry or external-process protocol design.
 - [x] NR-037 Add Rust module target registry fixtures for no-module, default
-  target, explicit target, and duplicate target behavior.
+      target, explicit target, and duplicate target behavior.
 - [x] NR-038 Add Rust module capability metadata for execution mode and
-  portability floor.
+      portability floor.
 - [x] NR-039 Add a Rust capability report that names requested, granted, and
-  denied capabilities.
+      denied capabilities.
 - [x] NR-040 Add deny-by-default host-function governance for WASM module
-  execution.
+      execution.
 - [x] NR-041 Add WASM fixture rejection before execution when a module requests
-  unavailable host imports.
+      unavailable host imports.
 - [x] NR-042 Add capability versioning diagnostics for incompatible module
-  contracts.
+      contracts.
 - [x] NR-043 Define the stateless default runtime model and future resource
-  handle boundary.
+      handle boundary.
 - [x] NR-044 Add Rust-native fixture modules for hermetic cross-host capability
-  tests.
+      tests.
 - [x] NR-045 Move browser/Bun/Deno host experiments out of the core retirement
-  path or classify them as external ecosystem packages.
+      path or classify them as external ecosystem packages.
 - [x] NR-046 Delete or externalize `packages/wesley-host-bun` after its
-  compatibility evidence is obsolete.
+      compatibility evidence is obsolete.
 - [x] NR-047 Delete or externalize `packages/wesley-host-deno` after its
-  compatibility evidence is obsolete.
+      compatibility evidence is obsolete.
 - [x] NR-048 Delete or externalize `packages/wesley-host-browser` after its
-  compatibility evidence is obsolete.
+      compatibility evidence is obsolete.
 - [x] NR-049 Replace `packages/wesley-host-node/bin/wesley.mjs` test invocations
-  with native CLI invocations wherever tests are not explicitly legacy tests.
+      with native CLI invocations wherever tests are not explicitly legacy tests.
 - [x] NR-050 Move remaining Node-host tests into a compatibility-only lane.
 - [x] NR-051 Add CI labels or job names that distinguish Rust product checks
-  from legacy compatibility checks.
-- [ ] NR-052 Make `cargo xtask preflight` the ordinary product health check.
-- [ ] NR-053 Make `cargo xtask legacy-preflight` optional for legacy package
-  changes only.
-- [ ] NR-054 Remove docs command drift checks that treat Node CLI commands as
-  primary truth.
-- [ ] NR-055 Replace Node-based schema diff references with native `wesley
-  schema diff` references.
-- [ ] NR-056 Replace Node-based schema hash references with native `wesley
-  schema hash` references.
-- [ ] NR-057 Replace Node-based lowerer references with native `wesley schema
-  lower` references.
-- [ ] NR-058 Replace Node generator examples with Rust emitter examples where
-  parity exists.
-- [ ] NR-059 Add migration notes for users still calling `pnpm wesley`.
-- [ ] NR-060 Add deprecation warnings to legacy Node commands that have Rust
-  replacements.
-- [ ] NR-061 Add package metadata warnings for legacy Node packages.
-- [ ] NR-062 Stop publishing or presenting legacy packages as product-front-door
-  artifacts.
-- [ ] NR-063 Add release checklist entries for Rust crate/package publication
-  without npm authority.
-- [ ] NR-064 Add a compatibility matrix that names each remaining legacy package
-  and its retirement gate.
-- [ ] NR-065 Remove stale `runtime-node` product claims from README and package
-  docs.
-- [ ] NR-066 Remove stale `host-node` product claims from README and package
-  docs.
-- [ ] NR-067 Remove stale generator product claims from README and package docs
-  once Rust emitters cover the useful generic surface.
-- [ ] NR-068 Remove stale Holmes-as-core claims from docs once assurance is
-  extracted or isolated.
-- [ ] NR-069 Update `docs/END_TO_END.md` so the Rust-native pipeline is the
-  first and only product spine.
-- [ ] NR-070 Update `docs/ARCHITECTURE.md` so packages are compatibility
-  appendices, not system center.
-- [ ] NR-071 Update `docs/GUIDE.md` so `cargo wesley` and `cargo xtask` are the
-  normal path.
+      from legacy compatibility checks.
+- [x] NR-052 Make `cargo xtask preflight` the ordinary product health check.
+- [x] NR-053 Make `cargo xtask legacy-preflight` optional for legacy package
+      changes only.
+- [x] NR-054 Remove docs command drift checks that treat Node CLI commands as
+      primary truth.
+- [x] NR-055 Replace Node-based schema diff references with native `wesley
+schema diff` references.
+- [x] NR-056 Replace Node-based schema hash references with native `wesley
+schema hash` references.
+- [x] NR-057 Replace Node-based lowerer references with native `wesley schema
+lower` references.
+- [x] NR-058 Replace Node generator examples with Rust emitter examples where
+      parity exists.
+- [x] NR-059 Add migration notes for users still calling `pnpm wesley`.
+- [x] NR-060 Add deprecation warnings to legacy Node commands that have Rust
+      replacements.
+- [x] NR-061 Add package metadata warnings for legacy Node packages.
+- [x] NR-062 Stop publishing or presenting legacy packages as product-front-door
+      artifacts.
+- [x] NR-063 Add release checklist entries for Rust crate/package publication
+      without npm authority.
+- [x] NR-064 Add a compatibility matrix that names each remaining legacy package
+      and its retirement gate.
+- [x] NR-065 Remove stale `runtime-node` product claims from README and package
+      docs.
+- [x] NR-066 Remove stale `host-node` product claims from README and package
+      docs.
+- [x] NR-067 Remove stale generator product claims from README and package docs
+      once Rust emitters cover the useful generic surface.
+- [x] NR-068 Remove stale Holmes-as-core claims from docs once assurance is
+      extracted or isolated.
+- [x] NR-069 Update `docs/END_TO_END.md` so the Rust-native pipeline is the
+      first and only product spine.
+- [x] NR-070 Update `docs/ARCHITECTURE.md` so packages are compatibility
+      appendices, not system center.
+- [x] NR-071 Update `docs/GUIDE.md` so `cargo wesley` and `cargo xtask` are the
+      normal path.
 - [ ] NR-072 Update `docs/ENTRYPOINTS.md` after each command retirement.
 - [ ] NR-073 Remove legacy Node command references from public docs once their
-  migration gates close.
+      migration gates close.
 - [ ] NR-074 Replace JS lowerer parity as a release gate with Rust
-  self-consistency and fixture truth once migration is complete.
+      self-consistency and fixture truth once migration is complete.
 - [ ] NR-075 Archive JS/Rust parity sentinel reports as historical evidence
-  instead of active authority.
+      instead of active authority.
 - [ ] NR-076 Delete `packages/wesley-core` after generic useful behavior is
-  ported, extracted, or explicitly rejected.
+      ported, extracted, or explicitly rejected.
 - [ ] NR-077 Delete `packages/wesley-cli` after commands are ported, extracted,
-  or explicitly rejected.
+      or explicitly rejected.
 - [ ] NR-078 Delete `packages/wesley-host-node` after no product/test path uses
-  the Node executable wrapper.
+      the Node executable wrapper.
 - [ ] NR-079 Delete `packages/wesley-runtime-node` after module loading and
-  runtime evidence no longer depend on it.
+      runtime evidence no longer depend on it.
 - [ ] NR-080 Delete or externalize `packages/wesley-generator-js`.
 - [ ] NR-081 Delete or externalize `packages/wesley-generator-vue`.
 - [ ] NR-082 Delete or externalize `packages/wesley-scaffold-multitenant`.
@@ -279,23 +279,23 @@ exists.
 - [ ] NR-085 Remove package workspace entries for deleted legacy packages.
 - [ ] NR-086 Remove package scripts that only support deleted legacy packages.
 - [ ] NR-087 Remove lockfile dependency families that exist only for deleted
-  legacy packages.
+      legacy packages.
 - [ ] NR-088 Remove GitHub Actions jobs that exist only for deleted legacy
-  packages.
+      packages.
 - [ ] NR-089 Preserve website/docs tooling separately if JavaScript remains
-  useful outside product authority.
+      useful outside product authority.
 - [ ] NR-090 Preserve `@git-stunts/alfred` only for JavaScript tooling seams
-  that still need bounded child-process behavior.
+      that still need bounded child-process behavior.
 - [ ] NR-091 Preserve `ninelives` as the Rust resilience policy primitive for
-  compiler and capability seams.
+      compiler and capability seams.
 - [ ] NR-092 Run a repo-wide stale Node shadow audit after deletions.
 - [ ] NR-093 Run a docs link/truth audit after deletions.
 - [ ] NR-094 Run a CI/release dry-run proving Rust-only product release does not
-  require legacy Node packages.
+      require legacy Node packages.
 - [ ] NR-095 Publish the final legacy Node retirement closeout with migrated,
-  extracted, deleted, deferred, and rejected surfaces.
+      extracted, deleted, deferred, and rejected surfaces.
 - [ ] NR-096 Remove the campaign from active `BEARING` once the closeout is
-  merged and only normal maintenance remains.
+      merged and only normal maintenance remains.
 
 ## Tensions
 

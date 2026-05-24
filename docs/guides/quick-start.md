@@ -1,56 +1,63 @@
 # Quick Start
 
-This guide shows the fastest way to run the Wesley MVP flow using the local workspace. It uses the Node host entrypoint provided by `@wesley/host-node` and the HOLMES CLI located in the repo.
+This guide shows the fastest way to run the Rust-native Wesley compiler flow
+using the local workspace.
 
 ## Install
 
 ```bash
 pnpm install
+cargo xtask preflight
 ```
 
 ## Create a schema
 
-Create `schema.graphql` with the current hot-path directive subset:
+Create `schema.graphql`:
 
 ```graphql
-type User @wes_table {
-  id: ID! @wes_pk @wes_default(value: "gen_random_uuid()")
-  email: String! @wes_unique
-  created_at: DateTime! @wes_default(value: "now()")
+type User {
+  id: ID!
+  email: String!
+  createdAt: String!
+}
+
+type Query {
+  user(id: ID!): User
 }
 ```
 
-## Generate And Certify
+## Inspect and emit
 
-Use the host-node CLI entrypoint directly:
+Use the native CLI:
 
 ```bash
-# Generate artifacts through the default generic transmutation
-node packages/wesley-host-node/bin/wesley.mjs generate \
+cargo wesley schema lower --schema schema.graphql --json
+cargo wesley schema hash --schema schema.graphql
+cargo wesley schema operations --schema schema.graphql --json
+cargo wesley emit typescript \
   --schema schema.graphql \
-  --transmutation null-generator \
-  --emit-bundle
-
-# Create and verify SHIPME certificate
-node packages/wesley-host-node/bin/wesley.mjs cert-create --out .wesley-cache/SHIPME.md
-node packages/wesley-host-node/bin/wesley.mjs cert-verify --in .wesley-cache/SHIPME.md
+  --out generated/types.ts \
+  --metadata-out generated/types.metadata.json
 ```
 
-Generated runtime state lives under `.wesley-cache/` and is validated against JSON Schemas in `schemas/`.
+Generated compiler artifacts go wherever `--out` points. Metadata sidecars
+record the schema hash, generator identity, generator version, and native
+execution mode.
 
-## HOLMES (investigate/verify/predict)
+## Diff a schema change
 
-From the repo root:
+Copy the file, make a change, and compare the two SDL states:
 
 ```bash
-node packages/wesley-holmes/src/cli.mjs investigate
-node packages/wesley-holmes/src/cli.mjs verify
-node packages/wesley-holmes/src/cli.mjs predict --from .wesley-cache/scores.json
+cp schema.graphql schema.next.graphql
+cargo wesley schema diff --old schema.graphql --new schema.next.graphql --format summary
 ```
 
 ## Tips
 
-- Use canonical directives (`@wes_table`, `@wes_pk`, `@wes_fk`, `@wes_index`, `@wes_default`, `@wes_tenant`).
-- Aliases (e.g., `@table`, `@pk`) are accepted but deprecated.
-- Use [the directive truth table](../DIRECTIVES.md) when you need to know whether a directive is current, experimental, or TTD-only.
-- In CI, use the same entrypoint: `node packages/wesley-host-node/bin/wesley.mjs`.
+- Use `cargo wesley --help` for native compiler commands.
+- Use `cargo xtask docs-check` for documentation-only changes.
+- Use `cargo xtask legacy-preflight` only when changing legacy packages or
+  pnpm workspace files.
+- Use [the directive truth table](../DIRECTIVES.md) when you need to know
+  whether a directive is current, experimental, or TTD-only.

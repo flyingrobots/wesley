@@ -38,6 +38,8 @@ Assurance and module-runtime extraction decisions live in
 [`ASSURANCE_AND_CAPABILITY_EXTRACTION.md`](./ASSURANCE_AND_CAPABILITY_EXTRACTION.md).
 Host compatibility and CI lane decisions live in
 [`HOST_COMPATIBILITY_BOUNDARY.md`](./HOST_COMPATIBILITY_BOUNDARY.md).
+The package-by-package retirement gates live in
+[`LEGACY_COMPATIBILITY_MATRIX.md`](./LEGACY_COMPATIBILITY_MATRIX.md).
 
 The first ten slices establish the runway:
 
@@ -93,12 +95,12 @@ current output intentionally renders semantic compiler facts.
 
 Every Node surface gets one disposition before it can disappear:
 
-| Disposition | Meaning |
-| --- | --- |
-| Port | Rebuild the useful behavior in Rust. |
-| Extract | Move the behavior to the owning repo, module, or package family. |
-| Delete | Remove it once current consumers no longer depend on it. |
-| Defer | Keep temporarily because the owning Rust or external shape is not yet designed. |
+| Disposition | Meaning                                                                         |
+| ----------- | ------------------------------------------------------------------------------- |
+| Port        | Rebuild the useful behavior in Rust.                                            |
+| Extract     | Move the behavior to the owning repo, module, or package family.                |
+| Delete      | Remove it once current consumers no longer depend on it.                        |
+| Defer       | Keep temporarily because the owning Rust or external shape is not yet designed. |
 
 No file is deleted merely because it is JavaScript. A file is deleted when its
 capability has been ported, extracted, or proven unnecessary.

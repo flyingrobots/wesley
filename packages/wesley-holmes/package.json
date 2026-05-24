@@ -1,8 +1,17 @@
 {
   "name": "@wesley/holmes",
   "version": "0.1.0",
+  "private": true,
   "type": "module",
-  "description": "SHA-lock HOLMES - Schema intelligence sidecar for Wesley",
+  "description": "Legacy compatibility assurance and evidence tooling",
+  "wesley": {
+    "retirement": {
+      "status": "legacy-compatibility",
+      "disposition": "extract-or-rebuild-later",
+      "ledger": "docs/design/0017-rust-native-front-door-and-node-retirement/NODE_RETIREMENT_LEDGER.md",
+      "replacement": "Move assurance and evidence tooling behind an explicit non-compiler boundary; do not treat this package as Wesley compiler authority."
+    }
+  },
   "main": "./src/index.mjs",
   "bin": {
     "holmes": "./src/cli.mjs",

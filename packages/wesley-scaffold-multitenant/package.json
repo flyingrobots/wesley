@@ -1,8 +1,17 @@
 {
   "name": "@wesley/scaffold-multitenant",
   "version": "0.1.0",
-  "description": "Wesley Multi-tenant SaaS Scaffold - Production-ready GraphQL schema and CLI",
+  "private": true,
   "type": "module",
+  "description": "Legacy compatibility product scaffold pending deletion or ownership transfer",
+  "wesley": {
+    "retirement": {
+      "status": "legacy-compatibility",
+      "disposition": "delete-or-move-to-product-owner",
+      "ledger": "docs/design/0017-rust-native-front-door-and-node-retirement/NODE_RETIREMENT_LEDGER.md",
+      "replacement": "Move product scaffolding to an owning product repository or delete it from generic Wesley."
+    }
+  },
   "main": "src/index.mjs",
   "exports": {
     ".": "./src/index.mjs"

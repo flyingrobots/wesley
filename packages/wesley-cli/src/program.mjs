@@ -14,6 +14,14 @@ import { discoverAndRegisterWesleyCliModules } from './framework/module-loader.m
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const commandsDir = join(__dirname, 'commands');
 
+const LEGACY_COMMAND_REPLACEMENTS = new Map([
+  ['diff', 'wesley schema diff --old <old.graphql> --new <new.graphql>'],
+  ['doctor', 'wesley doctor'],
+  ['generate', 'wesley emit rust|typescript --schema <path> --out <path>'],
+  ['typescript', 'wesley emit typescript --schema <path> --out <path>'],
+  ['ts', 'wesley emit typescript --schema <path> --out <path>']
+]);
+
 /**
  * Auto-discover and instantiate all WesleyCommand subclasses from the
  * commands/ directory. Files prefixed with `_` are private helpers;
@@ -50,6 +58,32 @@ function resolveOutputWriters(ctx = {}) {
   return { writeOut, writeErr };
 }
 
+function shouldSuppressLegacyWarning(argv, env = {}) {
+  if (env.WESLEY_LEGACY_WARNINGS === '0') return true;
+  return argv.some((arg) =>
+    ['--help', '-h', '--json', '--quiet', '-q', '--version', '-V'].includes(arg)
+  );
+}
+
+function firstCommandToken(argv) {
+  for (const arg of argv.slice(2)) {
+    if (arg === '--') continue;
+    if (arg.startsWith('-')) continue;
+    return arg;
+  }
+  return null;
+}
+
+function emitLegacyCommandWarning(argv, ctx, writeErr) {
+  if (shouldSuppressLegacyWarning(argv, ctx?.env ?? process.env)) return;
+  const command = firstCommandToken(argv);
+  const replacement = LEGACY_COMMAND_REPLACEMENTS.get(command);
+  if (!replacement) return;
+  writeErr(
+    `Warning: legacy Node command \`${command}\` is compatibility-only. Prefer native \`${replacement}\` where it covers the needed output.\n`
+  );
+}
+
 export async function program(argv, ctx) {
   return WesleyCommand.withRegistry(WesleyCommand.createRegistry(), async (commandRegistry) => {
     // Auto-discover and register all commands
@@ -79,6 +113,7 @@ export async function program(argv, ctx) {
 
     // Register all commands from this invocation's registry
     WesleyCommand.registerAll(program, commandRegistry);
+    emitLegacyCommandWarning(argv, ctx, writeErr);
 
     // Parse and execute
     try {

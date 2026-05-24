@@ -200,6 +200,11 @@ cargo wesley emit typescript --schema test/fixtures/consumer-models/jedit-hot-te
 For the full map, read [ENTRYPOINTS.md](./docs/ENTRYPOINTS.md). For the
 developer-level operator guide, read [GUIDE.md](./docs/GUIDE.md).
 
+Historical `pnpm wesley` commands are migration bridges only. Prefer
+`wesley schema lower`, `wesley schema hash`, `wesley schema diff`,
+`wesley doctor`, and explicit `wesley emit ...` commands for generic compiler
+work. Legacy package commands now warn when a native replacement exists.
+
 ---
 
 ## Project status
@@ -208,26 +213,26 @@ developer-level operator guide, read [GUIDE.md](./docs/GUIDE.md).
 
 | Stage | Progress    |
 | ----- | ----------- |
-| MVP   | 61% → Alpha |
+| MVP   | 66% → Alpha |
 
 <!-- END:OVERALL_STATUS -->
 
 <!-- BEGIN:PACKAGE_MATRIX -->
 
-| Package                 | Status       | Stage | Progress    | CI                                                                                                                           | Notes                                                           |
-| ----------------------- | ------------ | ----- | ----------- | ---------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| `@wesley/core`          | Active       | MVP   | 45% → Alpha | ![pkg-core.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-core.yml/badge.svg?branch=main)                 | Pure domain logic, no Node builtins                             |
-| `@wesley/cli`           | Active       | Alpha | 50% → Beta  | ![pkg-cli.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-cli.yml/badge.svg?branch=main)                   | CLI + Bats suites                                               |
-| `@wesley/host-node`     | Active       | MVP   | 50% → Alpha | ![pkg-host-node.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-host-node.yml/badge.svg?branch=main)       | Node adapters + binary                                          |
-| `@wesley/host-browser`  | Experimental | MVP   | 40% → Alpha | ![browser-smoke.yml](https://github.com/flyingrobots/wesley/actions/workflows/browser-smoke.yml/badge.svg?branch=main)       | Pure ESM; in-memory FS; minimal parser; smoke-level only        |
-| `@wesley/generator-js`  | Active       | MVP   | 50% → Alpha | ![pkg-generator-js.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-generator-js.yml/badge.svg?branch=main) | Legacy TS/Zod emitters                                          |
-| `@wesley/generator-vue` | Experimental | MVP   | 0% → Alpha  | —                                                                                                                            | Vue-facing TS/composable emitters                               |
-| `@wesley/holmes`        | Active       | Alpha | 50% → Beta  | ![pkg-holmes.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-holmes.yml/badge.svg?branch=main)             | Evidence scoring                                                |
-| `@wesley/runtime-node`  | Active       | MVP   | 0% → Alpha  | —                                                                                                                            | Shared Node module loading, GraphQL parsing, and host utilities |
-| `@wesley/tasks`         | Active       | MVP   | 50% → Alpha | ![pkg-tasks.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-tasks.yml/badge.svg?branch=main)               | Planner utilities                                               |
-| `@wesley/host-deno`     | Experimental | Alpha | 50% → Beta  | ![pkg-host-deno.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-host-deno.yml/badge.svg?branch=main)       | Deno host runtime (demo)                                        |
-| `@wesley/host-bun`      | Experimental | Alpha | 50% → Beta  | ![pkg-host-bun.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-host-bun.yml/badge.svg?branch=main)         | Bun host runtime (demo)                                         |
-| `@wesley/test-fixtures` | Active       | MVP   | 20% → Alpha | —                                                                                                                            | Private shared fixtures + schema builders                       |
+| Package                 | Status               | Stage | Progress    | CI                                                                                                                           | Notes                                                                        |
+| ----------------------- | -------------------- | ----- | ----------- | ---------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `@wesley/core`          | Legacy Compatibility | MVP   | 45% → Alpha | ![pkg-core.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-core.yml/badge.svg?branch=main)                 | Historical JS core; Rust compiler authority lives in crates/wesley-core      |
+| `@wesley/cli`           | Legacy Compatibility | Alpha | 50% → Beta  | ![pkg-cli.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-cli.yml/badge.svg?branch=main)                   | Historical Node command framework; native Rust CLI is the product front door |
+| `@wesley/host-node`     | Legacy Compatibility | MVP   | 50% → Alpha | ![pkg-host-node.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-host-node.yml/badge.svg?branch=main)       | Legacy Node wrapper; use the native Rust CLI for product work                |
+| `@wesley/host-browser`  | Legacy Compatibility | MVP   | 40% → Alpha | ![browser-smoke.yml](https://github.com/flyingrobots/wesley/actions/workflows/browser-smoke.yml/badge.svg?branch=main)       | Host experiment pending deletion or externalization                          |
+| `@wesley/generator-js`  | Legacy Compatibility | MVP   | 50% → Alpha | ![pkg-generator-js.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-generator-js.yml/badge.svg?branch=main) | Legacy JS/Zod emitters; retained TypeScript output lives in Rust emitters    |
+| `@wesley/generator-vue` | Legacy Compatibility | MVP   | 0% → Alpha  | —                                                                                                                            | Vue projection experiment pending deletion or externalization                |
+| `@wesley/holmes`        | Legacy Compatibility | Alpha | 50% → Beta  | ![pkg-holmes.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-holmes.yml/badge.svg?branch=main)             | Assurance tooling pending explicit non-compiler boundary                     |
+| `@wesley/runtime-node`  | Legacy Compatibility | MVP   | 0% → Alpha  | —                                                                                                                            | Legacy Node module loading and host utilities                                |
+| `@wesley/tasks`         | Legacy Compatibility | MVP   | 50% → Alpha | ![pkg-tasks.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-tasks.yml/badge.svg?branch=main)               | Task utilities pending Rust proof or deletion                                |
+| `@wesley/host-deno`     | Legacy Compatibility | Alpha | 50% → Beta  | ![pkg-host-deno.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-host-deno.yml/badge.svg?branch=main)       | Host experiment pending deletion or externalization                          |
+| `@wesley/host-bun`      | Legacy Compatibility | Alpha | 50% → Beta  | ![pkg-host-bun.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-host-bun.yml/badge.svg?branch=main)         | Host experiment pending deletion or externalization                          |
+| `@wesley/test-fixtures` | Legacy Compatibility | MVP   | 20% → Alpha | —                                                                                                                            | Private legacy package fixtures pending replacement                          |
 
 <!-- END:PACKAGE_MATRIX -->
 

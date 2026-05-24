@@ -201,8 +201,8 @@ implementation surfaces.
    belongs in `crates/wesley-core` and the native `wesley` CLI.
 2. The **Node workspace** still carries legacy commands, module loading,
    generators, hosts, and evidence tooling. It remains useful as
-   compatibility evidence, but it is no longer the main compiler brain or
-   product front door.
+   compatibility evidence and migration harnesses, but it is no longer the
+   compiler brain, product front door, or release authority.
 
 ```mermaid
 flowchart LR
@@ -861,11 +861,11 @@ If you open the repository today, the important paths are:
 | `crates/wesley-emit-rust/`       | Rust projection crate.                                                        |
 | `crates/wesley-emit-typescript/` | TypeScript projection crate.                                                  |
 | `xtask/`                         | Rust repository automation, docs checks, preflight, release checks.           |
-| `packages/wesley-core/`          | Historical JavaScript compiler core and toolchain support.                    |
-| `packages/wesley-cli/`           | Historical JavaScript command framework and module-aware command surfaces.    |
-| `packages/wesley-runtime-node/`  | Node module discovery, loading, and host utilities.                           |
+| `packages/wesley-core/`          | Legacy JavaScript compiler core and toolchain support.                        |
+| `packages/wesley-cli/`           | Legacy JavaScript command framework and module-aware command surfaces.        |
+| `packages/wesley-runtime-node/`  | Legacy Node module discovery, loading, and host utilities.                    |
 | `packages/wesley-generator-*`    | Legacy generator surfaces that remain useful while migration continues.       |
-| `packages/wesley-holmes/`        | Evidence, verification, and judgment tooling.                                 |
+| `packages/wesley-holmes/`        | Legacy assurance, evidence, verification, and judgment tooling.               |
 | `docs/`                          | Architecture, method, design packets, release packets, and current direction. |
 | `test/fixtures/`                 | GraphQL fixtures, Rust L1 golden files, and parity inputs.                    |
 | `scripts/`                       | Fixture, parity, performance, docs, and CI support scripts.                   |
@@ -885,7 +885,7 @@ flowchart TB
             Xtask[xtask]
         end
 
-        subgraph Node["Legacy Node workspace"]
+        subgraph Node["Legacy compatibility appendices"]
             JsCore["@wesley/core"]
             JsCli["@wesley/cli"]
             Runtime["@wesley/runtime-node"]
@@ -930,18 +930,19 @@ generation, and performance evidence.
 ```mermaid
 flowchart TD
     Change[Proposed change] --> RustPreflight[cargo xtask preflight]
-    Change --> LegacyPreflight[pnpm run preflight]
+    Change --> LegacyPreflight[cargo xtask legacy-preflight]
     Change --> Fixtures[pnpm fixtures:ir]
     Change --> Parity[pnpm parity:ir and parity:parser]
     Change --> Perf[pnpm perf:ir]
 
     RustPreflight --> RustTests[cargo test --workspace]
     RustPreflight --> NativeHelp[native CLI help smoke]
-    LegacyPreflight --> DocsLinks[docs links]
-    LegacyPreflight --> DocsTruth[docs truth manifest]
+    LegacyPreflight --> PnpmLegacy[pnpm run legacy-preflight]
+    PnpmLegacy --> DocsLinks[legacy docs links]
+    PnpmLegacy --> DocsTruth[legacy docs truth manifest]
     RustPreflight --> NodeRetirement[Node retirement ledger guard]
-    LegacyPreflight --> Lint[lint and format]
-    LegacyPreflight --> PackageTests[package tests]
+    PnpmLegacy --> Lint[lint and format]
+    PnpmLegacy --> PackageTests[package tests]
 
     Fixtures --> Golden[L1 golden files]
     Parity --> Comparator[JS/Rust projection evidence]

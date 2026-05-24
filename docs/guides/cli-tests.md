@@ -27,4 +27,5 @@ Open the repository with VS Code’s Dev Containers extension (or `devcontainer 
 - Runs `pnpm install` and `pnpm run setup:bats-plugins` automatically
 - Leaves room to add a PostgreSQL service + pgTAP for future generated-test coverage
 
-Once the container starts, run `pnpm --filter @wesley/cli test` and `pnpm run preflight` for parity with CI.
+Once the container starts, run `pnpm --filter @wesley/cli test` for the legacy
+Node CLI lane and `cargo xtask preflight` for Rust product parity with CI.

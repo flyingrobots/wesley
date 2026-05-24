@@ -31,5 +31,5 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Verify lockfile unchanged
         run: git diff --exit-code -- pnpm-lock.yaml
-      - name: Run repository preflight
-        run: node scripts/preflight.mjs
+      - name: Run repository hygiene preflight
+        run: pnpm run legacy-preflight

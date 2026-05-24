@@ -1,8 +1,17 @@
 {
   "name": "@wesley/runtime-node",
   "version": "0.1.0",
+  "private": true,
   "type": "module",
-  "description": "Shared Node.js runtime adapters for Wesley-family CLIs",
+  "description": "Legacy compatibility Node runtime adapters for historical Wesley packages",
+  "wesley": {
+    "retirement": {
+      "status": "legacy-compatibility",
+      "disposition": "extract-or-delete",
+      "ledger": "docs/design/0017-rust-native-front-door-and-node-retirement/NODE_RETIREMENT_LEDGER.md",
+      "replacement": "Replace Node module loading with the Rust capability registry or explicit external process protocol before deleting this package."
+    }
+  },
   "main": "./src/index.mjs",
   "exports": {
     ".": "./src/index.mjs"

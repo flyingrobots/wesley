@@ -34,10 +34,11 @@ The repo is now split into three practical layers:
    exposes schema lowering, schema hashing, schema operation listing, schema
    diffing, Rust/TypeScript emission, operation selection analysis, and
    directive argument extraction from Rust crates.
-3. **Legacy Node tooling**: `packages/` still carries the historical Node
-   compiler, module runtime, generators, hosts, Holmes tooling, and fixture
-   packages. These remain useful, but they are no longer the center of gravity
-   for core compiler truth.
+3. **Legacy compatibility appendices**: `packages/` still carries the
+   historical Node compiler, module runtime, generators, hosts, Holmes tooling,
+   and fixture packages. These packages are compatibility evidence and migration
+   harnesses. They are not release authority, compiler authority, or product
+   entrypoints.
 
 The root `package.json` keeps the legacy Node workspace installable. It is not
 the Wesley product entry point.
@@ -63,7 +64,7 @@ flowchart LR
             Xtask[xtask]
         end
 
-        subgraph Node["Legacy Node packages"]
+        subgraph Node["Legacy compatibility appendices"]
             JsCore["@wesley/core"]
             JsCli["@wesley/cli"]
             Runtime["@wesley/runtime-node"]
@@ -95,7 +96,7 @@ flowchart LR
     Xtask --> NativeCli
     Xtask --> Core
 
-    SDL --> JsCli
+    SDL -. compatibility only .-> JsCli
     JsCli --> JsCore
     JsCli --> Runtime
     Runtime --> JsCore
@@ -105,7 +106,7 @@ flowchart LR
     Core --> Fixtures
     JsCore --> Schemas
     Scripts --> Docs
-    Scripts --> JsCli
+    Scripts -. legacy package hygiene .-> JsCli
 
     Core -. generic facts .-> Echo
     Core -. L1 IR .-> Postgres
@@ -126,16 +127,16 @@ semantics.
 | `crates/wesley-emit-rust/`                                               | Rust projection crate. Builds a Rust item/type AST from L1 IR and `SchemaOperation` data, then prints deterministic model and operation declarations.                    |
 | `crates/wesley-emit-typescript/`                                         | Rust TypeScript projection crate. Builds a TypeScript declaration AST from L1 IR and `SchemaOperation` data, then prints deterministic model and operation declarations. |
 | `xtask/`                                                                 | Rust repository automation: docs checks, tests, native preflight, release check, legacy preflight bridge.                                                                |
-| `packages/wesley-core/`                                                  | Historical JS core: domain/application/port modules, module capabilities, generation pipeline, hashes, runtime-event helpers.                                            |
-| `packages/wesley-cli/`                                                   | Historical JS CLI command framework and module-aware command surfaces.                                                                                                   |
+| `packages/wesley-core/`                                                  | Legacy compatibility JS core: domain/application/port modules, module capabilities, generation pipeline, hashes, runtime-event helpers.                                  |
+| `packages/wesley-cli/`                                                   | Legacy compatibility JS command framework and module-aware command surfaces.                                                                                             |
 | `packages/wesley-host-node/`                                             | Legacy compatibility Node executable wrapper around the JS CLI and runtime adapters.                                                                                     |
-| `packages/wesley-runtime-node/`                                          | Shared Node module discovery/loading and host utilities.                                                                                                                 |
-| `packages/wesley-generator-js/`                                          | TypeScript/Zod/model generation surface.                                                                                                                                 |
-| `packages/wesley-generator-vue/`                                         | Experimental Vue-facing generator surface.                                                                                                                               |
-| `packages/wesley-holmes/`                                                | Evidence, verification, counterfactual, Holmes/Moriarty-era tooling.                                                                                                     |
+| `packages/wesley-runtime-node/`                                          | Legacy compatibility Node module discovery/loading and host utilities.                                                                                                   |
+| `packages/wesley-generator-js/`                                          | Legacy TypeScript/Zod/model generation surface; retained generic TypeScript output belongs in Rust emitters.                                                             |
+| `packages/wesley-generator-vue/`                                         | Legacy Vue-facing generator experiment pending deletion or externalization.                                                                                              |
+| `packages/wesley-holmes/`                                                | Legacy assurance, verification, counterfactual, Holmes/Moriarty-era tooling pending explicit non-compiler boundary.                                                      |
 | `packages/wesley-host-browser/`, `wesley-host-bun/`, `wesley-host-deno/` | Legacy compatibility host experiments pending deletion or externalization.                                                                                               |
-| `packages/wesley-tasks/`                                                 | Task planning/orchestration utilities.                                                                                                                                   |
-| `packages/wesley-test-fixtures/`                                         | Shared test fixtures and schema builders for package tests.                                                                                                              |
+| `packages/wesley-tasks/`                                                 | Legacy task planning/orchestration utilities pending Rust proof or deletion.                                                                                             |
+| `packages/wesley-test-fixtures/`                                         | Legacy shared test fixtures and schema builders for package tests.                                                                                                       |
 | `schemas/`                                                               | JSON schemas and generic directive/schema assets used by tooling and tests.                                                                                              |
 | `test/fixtures/`                                                         | GraphQL fixtures, Rust L1 goldens, package examples, and reference schemas.                                                                                              |
 | `scripts/`                                                               | Preflight, docs truth, docs link, fixture generation, smoke, and CI helper scripts.                                                                                      |
@@ -452,7 +453,8 @@ flowchart LR
     CargoXtask --> Tests[cargo test --workspace]
     CargoXtask --> NativeHelp[cargo run --bin wesley -- --help]
     CargoXtask --> Release[cargo build --release + package wesley-core]
-    CargoXtask --> Legacy[pnpm run preflight]
+    CargoXtask --> Legacy[cargo xtask legacy-preflight]
+    Legacy --> Pnpm[pnpm run legacy-preflight]
 ```
 
 `schema diff` has two input modes. The explicit mode compares two schema files.
@@ -465,26 +467,26 @@ wesley schema diff --schema schema.graphql --against HEAD
 wesley schema diff --schema schema.graphql --base origin/main
 ```
 
-`cargo xtask preflight` is the current native health check. It runs Rust-native
-docs hygiene checks, Rust workspace tests, and verifies the native CLI help
-surface. `cargo xtask legacy-preflight` intentionally crosses into Node package
-tooling because legacy packages and module examples still need that coverage.
+`cargo xtask preflight` is the ordinary product health check. It runs
+Rust-native docs hygiene checks, Rust workspace tests, and verifies the native
+CLI help surface. `cargo xtask legacy-preflight` intentionally crosses into
+Node package tooling only for legacy package or pnpm-workspace changes.
 
 ## Legacy Node Tooling
 
-The Node packages are still active for legacy compiler workflows, module
-loading, generated TypeScript/Zod output, host compatibility experiments, and
-Holmes-era assurance tooling. They are not the preferred home for new
-compiler-kernel truth, and host packages now live in explicitly named legacy
-compatibility CI lanes.
+The Node packages are still present for legacy compiler workflows, module
+loading, historical TypeScript/Zod output, host compatibility experiments, and
+Holmes-era assurance tooling. They are compatibility appendices. They are not
+the preferred home for new compiler-kernel truth, and host packages now live in
+explicitly named legacy compatibility CI lanes.
 
 The central JS split is:
 
-- `@wesley/core`: package-era domain/application/ports layer.
-- `@wesley/cli`: command framework and module-aware CLI commands.
-- `@wesley/runtime-node`: module discovery/loading and Node host utilities.
-- `@wesley/host-node`: executable wrapper for the JS CLI.
-- generator packages: output-specific code generation.
+- `@wesley/core`: legacy package-era domain/application/ports layer.
+- `@wesley/cli`: legacy command framework and module-aware CLI commands.
+- `@wesley/runtime-node`: legacy module discovery/loading and Node host utilities.
+- `@wesley/host-node`: legacy executable wrapper for the JS CLI.
+- generator packages: legacy output-specific code generation.
 - Holmes/Watson/Moriarty/BLADE-era packages and docs: generic assurance work,
   still in extraction and cleanup.
 
@@ -548,7 +550,7 @@ sequenceDiagram
     participant Core as @wesley/core
     participant Out as Generated artifacts
 
-    User->>CLI: pnpm wesley compile --schema schema.graphql --target name
+    User->>CLI: legacy pnpm wesley compile --schema schema.graphql --target name
     CLI->>Loader: discover configured/env/default modules
     Loader->>Registry: normalize and freeze capabilities
     CLI->>Registry: list wesley.targets
@@ -601,7 +603,8 @@ Wesley currently does these things in this repo:
 - Resolves operation selection paths in schema-coordinate mode.
 - Extracts operation directive arguments by directive name.
 - Provides a native Rust workspace preflight and release check.
-- Maintains package-era JS compile/generate/module/host tooling.
+- Maintains package-era JS compile/generate/module/host tooling only as legacy
+  compatibility appendices.
 - Maintains docs, schemas, fixtures, CI scripts, and design packets around the
   broader compiler-and-assurance system.
 
@@ -626,7 +629,7 @@ flowchart LR
     RustTests --> CliTests[native CLI help/unknown command]
     Preflight[cargo xtask preflight] --> RustTests
     Preflight --> NativeHelp[native help smoke]
-    Legacy[cargo xtask legacy-preflight] --> Pnpm[pnpm run preflight]
+    Legacy[cargo xtask legacy-preflight] --> Pnpm[pnpm run legacy-preflight]
     Pnpm --> Links[docs links]
     Pnpm --> DocsTruth[docs truth manifest]
     Pnpm --> Literals[forbidden local literals]
@@ -634,8 +637,9 @@ flowchart LR
     Pnpm --> DepCruise[dependency-cruiser]
 ```
 
-Use native checks for Rust-core work. Use legacy preflight when changing docs,
-package boundaries, JS command examples, or module-loading behavior.
+Use native checks for Rust-core work. Use `cargo xtask docs-check` for docs
+only. Use legacy preflight when changing legacy packages, pnpm workspace files,
+JS command examples, or module-loading behavior.
 
 ## Ownership Rules
 

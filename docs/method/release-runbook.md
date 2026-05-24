@@ -64,14 +64,22 @@ per-version release log by default.
 Run validation strictly in order, using repo-native commands where available:
 
 - release pre-flight script, if the repo already has one
-- `pnpm run preflight`
+- `cargo xtask preflight`
+- `cargo xtask release-check`
+- `cargo xtask package-crates --tag vX.Y.Z`
+- `cargo xtask legacy-preflight`, only when the release changes legacy
+  packages, pnpm workspace files, or compatibility-only package metadata
 - build
 - lint, if present
 - typecheck, if present
 - full test suite
-- packaging or publish dry-runs for each publishable unit
+- crates.io packaging or publish dry-runs for each publishable Rust crate
 - dependency audit
 - registry-compatibility checks for dependencies and package metadata
+
+The Rust crates are the release authority for the native Wesley product. Do not
+use npm package publication as proof that a Wesley compiler release is ready;
+legacy packages are marked private while they remain in the retirement ledger.
 
 Abort on the first hard failure. Do not claim success from queued or in-progress
 CI state.

@@ -21,7 +21,7 @@ The release packet currently requires these checks before finalization:
 - `node --test packages/wesley-cli/test/module-loading.test.mjs`
 - `cargo test -p wesley-core`
 - `cargo test -p wesley-cli`
-- `pnpm run preflight`
+- `cargo xtask preflight`
 - `pnpm run lint`
 - `pnpm run format:check`
 - `git diff --check`

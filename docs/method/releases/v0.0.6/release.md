@@ -80,7 +80,7 @@ Rust crate API or retire legacy Node lowering.
 - `node --test packages/wesley-cli/test/module-loading.test.mjs` proves the
   fixture-module zoo boundary, including multi-module alias resolution and
   schema-hash mismatch rejection.
-- `pnpm run preflight`, `pnpm run lint`, `pnpm run format:check`, and
+- `cargo xtask preflight`, `pnpm run lint`, `pnpm run format:check`, and
   `git diff --check` pass before the release finalization PR is opened.
 - `CHANGELOG.md`, `docs/BEARING.md`, packet `0013`, packet `0014`, packet
   `0015`, and packet `0016` state exactly what is proved and what remains
