@@ -50,17 +50,15 @@ still match the legacy truth anchors where they are expected to match.
 - Keep jedit-shaped consumer fixtures as compiler coverage, not as jedit
   product ownership.
 
-### 4. Parity Sentinel Before Retirement
+### 4. Parity Sentinel Archive
 
-`pnpm fixtures:ir` regenerates Rust L1 golden files. It is not JS/Rust parity
-proof.
+`pnpm fixtures:ir` regenerates Rust L1 golden files. Rust fixture truth and
+native self-consistency are now the product release gate.
 
-The new sentinel work lives in
-[0013-rust-ir-parity-sentinel](./design/0013-rust-ir-parity-sentinel/rust-ir-parity-sentinel.md).
-It should compare normalized semantic IR from the legacy JS lowerer and the
-Rust lowerer over an explicit corpus, then fail with a useful mismatch path and
-hash evidence. Only after that evidence exists should Wesley retire or demote
-legacy Node lowering.
+The JS/Rust parity sentinel work remains useful as historical migration
+evidence, but it is no longer the release oracle. Current authority lives in
+Rust tests, Rust L1 goldens, native CLI behavior, and
+[the `0017` parity sentinel archive](./design/0017-rust-native-front-door-and-node-retirement/PARITY_SENTINEL_ARCHIVE.md).
 
 ### 5. Resilience Policy Boundary
 
@@ -256,12 +254,12 @@ lower` references.
       appendices, not system center.
 - [x] NR-071 Update `docs/GUIDE.md` so `cargo wesley` and `cargo xtask` are the
       normal path.
-- [ ] NR-072 Update `docs/ENTRYPOINTS.md` after each command retirement.
-- [ ] NR-073 Remove legacy Node command references from public docs once their
-      migration gates close.
-- [ ] NR-074 Replace JS lowerer parity as a release gate with Rust
-      self-consistency and fixture truth once migration is complete.
-- [ ] NR-075 Archive JS/Rust parity sentinel reports as historical evidence
+- [x] NR-072 Update `docs/ENTRYPOINTS.md` after each command retirement.
+- [x] NR-073 Remove closed-gate legacy Node command references from public docs.
+- [x] NR-074 Replace JS lowerer parity as a release gate with Rust
+      self-consistency and fixture truth while retaining parity scripts as
+      migration-only evidence.
+- [x] NR-075 Archive JS/Rust parity sentinel reports as historical evidence
       instead of active authority.
 - [ ] NR-076 Delete `packages/wesley-core` after generic useful behavior is
       ported, extracted, or explicitly rejected.
@@ -272,7 +270,7 @@ lower` references.
 - [ ] NR-079 Delete `packages/wesley-runtime-node` after module loading and
       runtime evidence no longer depend on it.
 - [ ] NR-080 Delete or externalize `packages/wesley-generator-js`.
-- [ ] NR-081 Delete or externalize `packages/wesley-generator-vue`.
+- [x] NR-081 Delete or externalize `packages/wesley-generator-vue`.
 - [ ] NR-082 Delete or externalize `packages/wesley-scaffold-multitenant`.
 - [ ] NR-083 Delete or replace `packages/wesley-test-fixtures`.
 - [ ] NR-084 Delete or externalize `packages/wesley-tasks`.
@@ -321,17 +319,15 @@ lower` references.
 
 ## Next Target
 
-The immediate focus is **Rust native front door and legacy Node retirement
-runway**.
+The immediate focus is **legacy package deletion without false gates**.
 
 The v0.0.6 compiler-truth work still matters, but the long-term goal now makes
-the priority sharper: Rust must become the normal way to inspect compiler
-facts before Wesley deletes or demotes the historical Node surface. The first
-ten retirement slices establish that posture through
-[design packet `0017`](./design/0017-rust-native-front-door-and-node-retirement/rust-native-front-door-and-node-retirement.md),
-the
-[Node retirement ledger](./design/0017-rust-native-front-door-and-node-retirement/NODE_RETIREMENT_LEDGER.md),
-and the native `wesley normalize-sdl --schema <path>` command.
+the priority sharper: delete only the package surfaces whose gates are actually
+closed, and record blockers for the rest. `packages/wesley-generator-vue/` is
+deleted. `packages/wesley-core/`, `packages/wesley-cli/`,
+`packages/wesley-host-node/`, `packages/wesley-runtime-node/`, and
+`packages/wesley-generator-js/` remain open because current workspace packages,
+scripts, tests, workflows, or evidence tools still depend on them.
 
 Current evidence still includes complete v0.0.5 publication proof, Rust L1
 fixtures for directive-heavy SDL, schema extensions, nested list type
@@ -344,15 +340,14 @@ all that proof is for.
 
 The next pulls after this drift check are:
 
-1. Port a narrow Rust `doctor` command for Rust-native health checks only.
-2. Extract certificate creation, signing, and verification commands from the
-   compiler front door.
-3. Extract Holmes/Moriarty evidence commands or re-home them under an explicit
-   assurance package boundary.
-4. Decide whether runtime run ledger inspection remains in Wesley or exits with
-   assurance tooling.
-5. Move package-level evidence tooling out of `packages/wesley-cli` or mark it
-   compatibility-only.
+1. Cut `packages/wesley-host-node/` out of any non-legacy smoke path.
+2. Move or delete remaining root scripts that route through the Node host.
+3. Replace parity and performance helpers that import JS lowerer code with
+   Rust fixture-truth checks.
+4. Split Holmes/runtime evidence from `@wesley/core` and
+   `@wesley/runtime-node` dependencies.
+5. Keep deleting leaf packages only when `pnpm -r test`, docs checks, and CI
+   workflow references prove the package has no active owner in this repo.
 
 The `ninelives` decision is made: use `ninelives` for Rust resilience seams and
 Alfred for JavaScript tooling seams. Keep the scope narrow: resilience policy

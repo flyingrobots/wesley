@@ -11,7 +11,6 @@ as product authority.
 | `packages/wesley-host-node/`            | Legacy Node executable wrapper                | Native Rust CLI covers product work; package tests are either native, compatibility-only, or deleted.                          |
 | `packages/wesley-runtime-node/`         | Legacy Node module loading and host utilities | Rust capability registry or external-process protocol covers retained module execution needs.                                  |
 | `packages/wesley-generator-js/`         | Legacy JS, TypeScript, and Zod emitters       | Native Rust emitters cover retained generic TypeScript; Zod and JavaScript-specific output move to an external target owner.   |
-| `packages/wesley-generator-vue/`        | Legacy Vue projection experiment              | A target owner accepts it outside generic Wesley, or the package is deleted.                                                   |
 | `packages/wesley-holmes/`               | Legacy assurance and evidence tooling         | Assurance has an explicit package or repo boundary separate from compiler authority.                                           |
 | `packages/wesley-host-browser/`         | Legacy browser host experiment                | Browser compatibility is externalized or no longer needed as evidence.                                                         |
 | `packages/wesley-host-bun/`             | Legacy Bun host experiment                    | Bun compatibility is externalized or no longer needed as evidence.                                                             |
@@ -24,3 +23,19 @@ All rows above must stay private npm workspace packages while they remain in
 the Node retirement ledger. The machine-readable warning lives in each
 `package.json` under `wesley.retirement`, and `cargo xtask docs-check` fails if
 that warning disappears.
+
+## Current Deletion Blockers
+
+| Slice  | Package                         | Blocking evidence                                                                                    |
+| ------ | ------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| NR-076 | `packages/wesley-core/`         | Still imported by Holmes, host compatibility packages, scaffold fixtures, JS generator, and scripts. |
+| NR-077 | `packages/wesley-cli/`          | Still owns legacy assurance/runtime commands and Bats compatibility suites.                          |
+| NR-078 | `packages/wesley-host-node/`    | Still referenced by compatibility workflows, root scripts, and legacy CLI smoke tests.               |
+| NR-079 | `packages/wesley-runtime-node/` | Still used by Holmes/runtime evidence and parser/parity migration scripts.                           |
+| NR-080 | `packages/wesley-generator-js/` | Still used by the legacy CLI for Zod/models/TypeScript compatibility commands.                       |
+
+## Retired
+
+| Package                          | Slice  | Outcome | Notes                                                                                             |
+| -------------------------------- | ------ | ------- | ------------------------------------------------------------------------------------------------- |
+| `packages/wesley-generator-vue/` | NR-081 | Deleted | The Vue projection experiment has no generic Wesley owner; future Vue output belongs in a module. |

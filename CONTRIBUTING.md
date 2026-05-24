@@ -138,11 +138,11 @@ Useful commands:
 ```bash
 pnpm lint
 pnpm test
-pnpm run preflight
+cargo xtask preflight
 node scripts/pre-push-sanity.mjs --dry-run --files <changed-file> ...
-pnpm --filter @wesley/core test
-pnpm --filter @wesley/cli test
-node packages/wesley-host-node/bin/wesley.mjs --help
+cargo test -p wesley-core
+cargo test -p wesley-cli
+cargo wesley --help
 ```
 
 For autonomous contributors, see [AGENTS.md](AGENTS.md).

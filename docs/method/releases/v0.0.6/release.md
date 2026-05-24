@@ -3,20 +3,17 @@
 ## Summary
 
 Wesley `0.0.6` is the compiler-truth release. It turns the v0.0.5 clean-house
-work into executable evidence: Rust L1 fixture truth, JS/Rust parity
-projections, parser acceptance evidence, module-boundary proof, and bounded
-tooling seams.
+work into executable evidence: Rust L1 fixture truth, parser acceptance
+evidence, module-boundary proof, bounded tooling seams, and an archived
+JS/Rust parity record that no longer acts as the release oracle.
 
 ## Included Scope
 
 - Rust L1 fixture corpus expansion for directive-heavy SDL, schema extensions,
   legacy aliases, nested list type references, and invalid SDL diagnostics.
-- `pnpm parity:ir` for explicit JS/Rust projection parity over the default v0
-  corpus.
-- `js-table-vs-rust-table.v0` and
-  `js-sdl-type-family-vs-rust-l1-type-family.v0` as named parity projections.
-- `pnpm parity:parser` for parser/lowerer acceptance evidence over valid,
-  syntax-invalid, and duplicate-directive fixtures.
+- Rust self-consistency and fixture truth as the product release gate.
+- Historical JS/Rust parity scripts retained only as migration evidence while
+  legacy lowerer files still exist.
 - `pnpm perf:ir` Rust CLI wall-clock evidence over the valid IR corpus, plus
   optional `--include-legacy-js` comparison evidence.
 - `pnpm perf:bindings` observatory evidence that separates Rust CLI, legacy JS
@@ -30,8 +27,8 @@ tooling seams.
 ## Sponsored Users
 
 - Rust-core maintainers can change lowering behavior and know whether they
-  changed Rust L1 truth, projection parity, parser acceptance, or fixture
-  goldens.
+  changed Rust L1 truth, parser acceptance, fixture goldens, or native emitter
+  output.
 - Module authors can rely on `wesley compile` dispatching through loaded module
   capabilities instead of built-in product/database target names.
 - Echo, jedit, Continuum, `warp-ttd`, `git-warp`, and `wesley-postgres`
@@ -40,29 +37,32 @@ tooling seams.
 
 ## Version Justification
 
-This remains a patch release because the public release claim is evidence and
-compiler-boundary hardening, not a new product/runtime feature. The release
-adds maintainer-facing commands and tests but does not intentionally break the
-Rust crate API or retire legacy Node lowering.
+This remains a patch release because the public release claim is evidence,
+compiler-boundary hardening, and legacy-surface retirement, not a new
+product/runtime feature. The release adds maintainer-facing commands and tests
+but does not intentionally break the Rust crate API.
 
 ## Explicit Non-Claims
 
-- Legacy Node lowering is not retired.
+- Legacy Node lowering is no longer a product release oracle, but the larger
+  legacy package surface is not fully deleted yet.
 - Rust parser/lowering spans are not claimed for semantic lowering errors.
 - `pnpm perf:ir` does not define a performance threshold.
 - Optional legacy JS perf comparison is not Node binding overhead, WASM
   overhead, peak RSS, or cutover proof.
 - `pnpm perf:bindings` does not implement a Node-to-Rust binding, does not
-  implement a WASM lowering binding, and does not authorize legacy JS lowering
-  retirement.
+  implement a WASM lowering binding, and does not authorize a production
+  binding choice.
 - Wesley does not own Echo, jedit, Continuum, WARPspace, `warp-ttd`,
   `git-warp`, or PostgreSQL/Supabase behavior.
 
 ## Acceptance
 
 - `pnpm fixtures:ir` regenerates all valid Rust L1 fixture sidecars.
-- `pnpm parity:ir` passes the explicit default v0 projection corpus.
-- `pnpm parity:parser` passes the explicit parser-sensitive corpus.
+- `cargo xtask preflight` passes as the Rust product gate.
+- `cargo test -p wesley-core` and `cargo test -p wesley-cli` pass.
+- JS/Rust parity scripts, when run, are treated as archived migration evidence
+  rather than release authority.
 - `pnpm perf:ir -- --list-fixtures` includes the valid IR fixture corpus,
   including `nested-list-schema.graphql`.
 - Optional JS comparison evidence is captured by:
@@ -77,11 +77,8 @@ Rust crate API or retire legacy Node lowering.
   pnpm perf:bindings -- --fixture test/fixtures/ir-parity/small-schema.graphql --iterations 1 --warmups 0 --json
   ```
 
-- `node --test packages/wesley-cli/test/module-loading.test.mjs` proves the
-  fixture-module zoo boundary, including multi-module alias resolution and
-  schema-hash mismatch rejection.
 - `cargo xtask preflight`, `pnpm run lint`, `pnpm run format:check`, and
   `git diff --check` pass before the release finalization PR is opened.
 - `CHANGELOG.md`, `docs/BEARING.md`, packet `0013`, packet `0014`, packet
-  `0015`, and packet `0016` state exactly what is proved and what remains
-  future work.
+  `0015`, packet `0016`, and packet `0017` state exactly what is proved and
+  what remains future work.

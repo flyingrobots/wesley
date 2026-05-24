@@ -72,7 +72,6 @@ Every legacy Node surface gets one disposition:
 | `packages/wesley-host-node/`            | Delete                          | Legacy compatibility only; native binary replaces the Node host as product front door.                                  |
 | `packages/wesley-runtime-node/`         | Extract or delete               | Node module loading should not define Wesley core.                                                                      |
 | `packages/wesley-generator-js/`         | Port TypeScript, extract Zod    | Basic Rust and TypeScript model emission has started in Rust. Zod exits to an external target boundary if still needed. |
-| `packages/wesley-generator-vue/`        | Delete or externalize           | Experimental frontend projection is not core.                                                                           |
 | `packages/wesley-holmes/`               | Extract or rebuild later        | Assurance/evidence tooling is adjacent, not a blocker for compiler-kernel Rustification.                                |
 | `packages/wesley-host-browser/`         | Delete or externalize           | Legacy compatibility only; externalize if browser ecosystem ownership remains useful.                                   |
 | `packages/wesley-host-bun/`             | Delete                          | Legacy compatibility only; delete or externalize after compatibility evidence is obsolete.                              |
@@ -80,6 +79,12 @@ Every legacy Node surface gets one disposition:
 | `packages/wesley-scaffold-multitenant/` | Delete or move to product owner | Product scaffold, not core Wesley.                                                                                      |
 | `packages/wesley-tasks/`                | Port only if generic            | Keep the idea only if Rust execution planning needs it.                                                                 |
 | `packages/wesley-test-fixtures/`        | Replace                         | Move useful fixtures into Rust tests or plain `test/fixtures`.                                                          |
+
+## Retired Package Inventory
+
+| Legacy package                   | Slice  | Outcome | Replacement / owner                                                                                  |
+| -------------------------------- | ------ | ------- | ---------------------------------------------------------------------------------------------------- |
+| `packages/wesley-generator-vue/` | NR-081 | Deleted | Vue output is no longer generic Wesley surface area; reintroduce it only through an external target. |
 
 ## Execution Order
 

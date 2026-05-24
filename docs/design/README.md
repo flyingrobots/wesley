@@ -34,6 +34,8 @@ Current packets:
   [host compatibility boundary](./0017-rust-native-front-door-and-node-retirement/HOST_COMPATIBILITY_BOUNDARY.md),
   plus the
   [legacy compatibility matrix](./0017-rust-native-front-door-and-node-retirement/LEGACY_COMPATIBILITY_MATRIX.md)
+  and
+  [parity sentinel archive](./0017-rust-native-front-door-and-node-retirement/PARITY_SENTINEL_ARCHIVE.md)
 - [Module Contract](./wesley-module-contract.md): Generic core boundary versus external module-owned domain surfaces
 - [Module Capability Contract](./wesley-module-capability-contract.md): The capability surfaces external modules should implement
 - [Contract / Artifact / Runtime Boundary](./wesley-contract-family-artifact-runtime-value.md): GraphQL-authored families, Wesley-emitted artifacts, and later runtime values

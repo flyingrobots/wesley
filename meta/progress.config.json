@@ -8,7 +8,6 @@
       "@wesley/cli": 0.15,
       "@wesley/host-node": 0.15,
       "@wesley/generator-js": 0.1,
-      "@wesley/generator-vue": 0,
       "@wesley/holmes": 0.1,
       "@wesley/host-browser": 0,
       "@wesley/host-deno": 0,
@@ -53,13 +52,6 @@
       "ci": "pkg-generator-js.yml",
       "readme": "packages/wesley-generator-js/README.md",
       "notes": "Legacy JS/Zod emitters; retained TypeScript output lives in Rust emitters"
-    },
-    {
-      "name": "@wesley/generator-vue",
-      "status": "Legacy Compatibility",
-      "ci": null,
-      "readme": "packages/wesley-generator-vue/README.md",
-      "notes": "Vue projection experiment pending deletion or externalization"
     },
     {
       "name": "@wesley/holmes",

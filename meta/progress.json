@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-24T19:07:33.055Z",
+  "generatedAt": "2026-05-24T20:12:13.365Z",
   "overall": {
     "stage": "MVP",
     "next": "Alpha",
@@ -93,25 +93,6 @@
         "hasStatus": true,
         "hasUsage": false,
         "hasApi": false,
-        "hasCaveats": false
-      },
-      "milestones": {
-        "alpha": null,
-        "beta": null
-      },
-      "coverage": null
-    },
-    {
-      "name": "@wesley/generator-vue",
-      "status": "Legacy Compatibility",
-      "stage": "MVP",
-      "progress": 0,
-      "next": "Alpha",
-      "passRate": null,
-      "docs": {
-        "hasStatus": false,
-        "hasUsage": false,
-        "hasApi": true,
         "hasCaveats": false
       },
       "milestones": {

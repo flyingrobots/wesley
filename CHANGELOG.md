@@ -8,6 +8,11 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- **Parity sentinel archive**: Added the `0017` parity sentinel archive so
+  JS/Rust parity scripts remain migration evidence while Rust self-consistency
+  and fixture truth become the product release gate.
+- **Package deletion blockers**: Added explicit blocker evidence for legacy
+  packages whose deletion gates remain open after the Vue generator removal.
 - **Legacy compatibility package matrix**: Added a Node-retirement
   compatibility matrix that names every remaining legacy package, its
   retirement lane, and the gate for deleting, extracting, or rebuilding it.
@@ -78,6 +83,12 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   acceptance over explicit parser-sensitive fixtures, including valid SDL,
   syntax-invalid SDL, nested list SDL, and shared rejection of duplicate
   canonical directive aliases.
+
+### Removed
+
+- **Vue generator package**: Deleted `packages/wesley-generator-vue` after the
+  retirement ledger classified Vue projection output as target-owned behavior
+  with no generic Wesley owner.
 - **Nested-list type-family parity fixture**: Added
   `nested-list-schema.graphql` to the default `pnpm parity:ir` corpus under
   `js-sdl-type-family-vs-rust-l1-type-family.v0`, and taught the projection to

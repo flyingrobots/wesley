@@ -40,6 +40,8 @@ Host compatibility and CI lane decisions live in
 [`HOST_COMPATIBILITY_BOUNDARY.md`](./HOST_COMPATIBILITY_BOUNDARY.md).
 The package-by-package retirement gates live in
 [`LEGACY_COMPATIBILITY_MATRIX.md`](./LEGACY_COMPATIBILITY_MATRIX.md).
+The JS/Rust parity sentinel archive lives in
+[`PARITY_SENTINEL_ARCHIVE.md`](./PARITY_SENTINEL_ARCHIVE.md).
 
 The first ten slices establish the runway:
 
@@ -135,6 +137,10 @@ Browser, Bun, Deno, and Node host packages are also compatibility surfaces, not
 the product spine. The native Rust CLI is the product front door; host package
 smokes keep historical surfaces honest until they are deleted or moved to
 external ecosystem ownership.
+
+The former Vue generator experiment has been deleted from generic Wesley.
+Future Vue output belongs to an external target module or product owner rather
+than a built-in Wesley package.
 
 ## Non-Goals
 

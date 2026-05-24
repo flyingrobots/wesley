@@ -132,7 +132,6 @@ semantics.
 | `packages/wesley-host-node/`                                             | Legacy compatibility Node executable wrapper around the JS CLI and runtime adapters.                                                                                     |
 | `packages/wesley-runtime-node/`                                          | Legacy compatibility Node module discovery/loading and host utilities.                                                                                                   |
 | `packages/wesley-generator-js/`                                          | Legacy TypeScript/Zod/model generation surface; retained generic TypeScript output belongs in Rust emitters.                                                             |
-| `packages/wesley-generator-vue/`                                         | Legacy Vue-facing generator experiment pending deletion or externalization.                                                                                              |
 | `packages/wesley-holmes/`                                                | Legacy assurance, verification, counterfactual, Holmes/Moriarty-era tooling pending explicit non-compiler boundary.                                                      |
 | `packages/wesley-host-browser/`, `wesley-host-bun/`, `wesley-host-deno/` | Legacy compatibility host experiments pending deletion or externalization.                                                                                               |
 | `packages/wesley-tasks/`                                                 | Legacy task planning/orchestration utilities pending Rust proof or deletion.                                                                                             |
@@ -146,6 +145,8 @@ semantics.
 Some directories still contain extraction residue. In particular,
 `packages/wesley-generator-echo/` exists on disk but is not an active tracked
 source package in this architecture. Echo-owned work should happen in Echo.
+The former `packages/wesley-generator-vue/` experiment has been deleted; Vue
+output should return only through an external target owner.
 
 ## Rust Kernel
 

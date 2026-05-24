@@ -580,7 +580,6 @@ packages/
 ├── wesley-continuum/
 ├── wesley-core/
 ├── wesley-generator-js/
-├── wesley-generator-vue/
 ├── wesley-holmes/
 ├── wesley-host-browser/
 ├── wesley-host-bun/

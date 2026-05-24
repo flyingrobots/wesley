@@ -26,7 +26,6 @@ The row-by-row retirement gate summary lives in
 | `packages/wesley-host-node/`            | Node executable wrapper and runtime adapter.                                                                | Delete                          | Tests and docs use native CLI except explicitly named legacy compatibility lanes.                                                    |
 | `packages/wesley-runtime-node/`         | Node module loading, counterfactual surface, runtime store helpers.                                         | Extract or delete               | Module/runtime evidence moves to Rust protocol, assurance tooling, or owning modules.                                                |
 | `packages/wesley-generator-js/`         | Legacy TypeScript/Zod projection surface.                                                                   | Port TypeScript, extract Zod    | Rust emitters cover retained generic output; Zod moves to an external target boundary if still needed.                               |
-| `packages/wesley-generator-vue/`        | Experimental Vue projection.                                                                                | Delete or externalize           | A target owner accepts it, or it leaves Wesley.                                                                                      |
 | `packages/wesley-holmes/`               | Holmes/Moriarty evidence and counterfactual tooling.                                                        | Extract or rebuild later        | Assurance tooling has an explicit package/repo boundary separate from compiler authority.                                            |
 | `packages/wesley-host-browser/`         | Browser-host experiment.                                                                                    | Delete or externalize           | Browser compatibility stays in a legacy compatibility lane until externalized or deleted.                                            |
 | `packages/wesley-host-bun/`             | Bun-host experiment.                                                                                        | Delete or externalize           | Bun compatibility stays in a legacy compatibility lane until obsolete, externalized, or deleted.                                     |
@@ -34,6 +33,22 @@ The row-by-row retirement gate summary lives in
 | `packages/wesley-scaffold-multitenant/` | Product scaffold.                                                                                           | Delete or move to product owner | Product/domain scaffolding leaves generic Wesley.                                                                                    |
 | `packages/wesley-tasks/`                | Task graph model.                                                                                           | Port only if generic            | Rust runtime planning proves it needs the concept; otherwise delete.                                                                 |
 | `packages/wesley-test-fixtures/`        | JS fixture helper package.                                                                                  | Replace                         | Useful fixtures move into plain `test/fixtures` or Rust tests.                                                                       |
+
+## Current Deletion Blockers
+
+| Slice  | Surface                         | Why the gate is still open                                                                         |
+| ------ | ------------------------------- | -------------------------------------------------------------------------------------------------- |
+| NR-076 | `packages/wesley-core/`         | Holmes, host compatibility packages, scaffold fixtures, JS generator, and scripts still import it. |
+| NR-077 | `packages/wesley-cli/`          | Legacy assurance/runtime commands and Bats compatibility suites still execute through it.          |
+| NR-078 | `packages/wesley-host-node/`    | Compatibility workflows, root scripts, and legacy CLI smoke tests still reference the wrapper.     |
+| NR-079 | `packages/wesley-runtime-node/` | Holmes/runtime evidence and parser/parity migration scripts still use it.                          |
+| NR-080 | `packages/wesley-generator-js/` | Legacy CLI Zod/models/TypeScript compatibility commands still use it.                              |
+
+## Retired Package Inventory
+
+| Surface                          | Slice  | Outcome | Replacement / owner                                                                                  |
+| -------------------------------- | ------ | ------- | ---------------------------------------------------------------------------------------------------- |
+| `packages/wesley-generator-vue/` | NR-081 | Deleted | Vue projection ownership exits generic Wesley; reintroduce it only through an external target owner. |
 
 ## Command Inventory
 

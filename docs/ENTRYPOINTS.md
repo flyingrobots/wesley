@@ -39,7 +39,7 @@ or ported. Their migration map lives in
 | Legacy JS core          | `packages/wesley-core/`               | Legacy/tooling                      | Historical JavaScript compiler domain, module registry, hashes, generation pipeline, and runtime helpers.                                                                                                                                     |
 | Legacy JS CLI           | `packages/wesley-cli/`                | Legacy/tooling                      | Historical command framework for generate/transform/typescript/zod/diff/cert/Holmes-era flows.                                                                                                                                                |
 | Legacy Node host        | `packages/wesley-host-node/`          | Legacy/tooling                      | Node executable wrapper and runtime adapter around the JS CLI.                                                                                                                                                                                |
-| Legacy generators       | `packages/wesley-generator-*`         | Legacy/tooling                      | Existing TypeScript/Zod/Vue projection surfaces. Useful until ported or externalized.                                                                                                                                                         |
+| Legacy JS generator     | `packages/wesley-generator-js/`       | Legacy/tooling                      | Existing TypeScript/Zod/model projection surface. Useful only until retained output is ported or externalized.                                                                                                                                |
 | Legacy evidence tooling | `packages/wesley-holmes/`             | Legacy/tooling                      | Holmes/Moriarty-era evidence, verification, and counterfactual tooling.                                                                                                                                                                       |
 | Root Node workspace     | `package.json`, `pnpm-workspace.yaml` | Workspace plumbing                  | Keeps old packages, docs checks, package tests, and website tooling installable. It is not the Wesley product entry point.                                                                                                                    |
 
@@ -105,6 +105,13 @@ Those surfaces are useful, but they are not the architectural center. When a
 Node surface is still needed, either keep it clearly marked as legacy tooling or
 move the capability to the owning module/repo. Do not add new core compiler
 truth to the Node side.
+
+## Retired Surfaces
+
+| Former surface                   | Outcome  | Replacement / owner                                                                                |
+| -------------------------------- | -------- | -------------------------------------------------------------------------------------------------- |
+| `packages/wesley-generator-vue/` | Deleted  | Vue projection behavior belongs in an external target module or product owner, not generic Wesley. |
+| JS/Rust parity release authority | Archived | Rust self-consistency and native fixture truth are the product release gate.                       |
 
 ## How To Choose
 
