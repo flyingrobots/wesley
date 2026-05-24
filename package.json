@@ -30,6 +30,7 @@
     "ci": "pnpm validate && pnpm generate:example && node packages/wesley-host-node/bin/wesley.mjs validate-bundle --bundle test/fixtures/examples/.wesley --schemas schemas/",
     "fixtures:ir": "node scripts/generate-ir-fixtures.mjs",
     "parity:ir": "node scripts/check-ir-parity.mjs",
+    "parity:parser": "node scripts/check-parser-parity.mjs",
     "perf:ir": "node scripts/measure-ir-performance.mjs"
   },
   "keywords": [

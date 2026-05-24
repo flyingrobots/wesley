@@ -123,19 +123,25 @@ The immediate focus is **v0.0.6 Rust IR parity and module-boundary
 enforcement**:
 
 Current evidence now includes complete v0.0.5 publication proof, an expanded
-Rust L1 corpus for directive-heavy SDL, schema extensions, legacy aliases, and
-invalid duplicate-directive coverage, `pnpm parity:ir` for the
+Rust L1 corpus for directive-heavy SDL, schema extensions, nested list type
+references, legacy aliases, and invalid duplicate-directive coverage,
+`pnpm parity:ir` for the
 `js-table-vs-rust-table.v0` compatibility projection over the first
 table-compatible sentinel corpus, `pnpm parity:ir` support for fixture-owned
 projections, the `js-sdl-type-family-vs-rust-l1-type-family.v0` projection
-over extension-folded SDL type-family facts, default sentinel admission for
-`schema-extensions-schema.graphql` under that projection, `pnpm perf:ir` Rust
-CLI wall-clock baseline evidence over the valid IR fixture corpus, the
-domain-empty ownership packet in `0014`, and executable module-target dispatch
-coverage for no-module diagnostics, default target discovery, requested-target
-validation, duplicate target rejection, alias conflicts in both registration
-orders, and the Rust IR fixture contract now housed under the active `0013`
-packet. The `0015` resilience boundary now has first proof on both sides:
+over extension-folded SDL type-family facts and nested list wrapper facts,
+default sentinel admission for `schema-extensions-schema.graphql` and
+`nested-list-schema.graphql` under that projection, `pnpm parity:parser` parser
+acceptance evidence over valid, syntax-invalid, and duplicate-directive
+rejection fixtures, `pnpm perf:ir` Rust CLI wall-clock baseline evidence over the
+valid IR fixture corpus, optional in-process legacy JS lowerer comparison via
+`pnpm perf:ir -- --include-legacy-js`, the domain-empty ownership packet in
+`0014`, and executable module-target dispatch coverage for no-module
+diagnostics, default target discovery, requested-target validation, duplicate
+target rejection, alias conflicts in both registration orders, multi-module
+alias resolution, and schema-hash agreement across generated module targets.
+The Rust IR fixture contract now lives under the active `0013` packet. The
+`0015` resilience boundary now has first proof on both sides:
 `ResilientLoweringPort` applies explicit cooperative `ninelives` timeout policy
 for Rust lowering seams, while the parity and performance scripts share an
 Alfred-backed child-process runner with timeout and output-buffer guards. The
@@ -147,14 +153,12 @@ remain explicitly absent.
 
 The next pulls are:
 
-1. Expand the fixture-module zoo only where it adds new boundary evidence:
-   target dispatch already rejects missing modules, invalid product/database
-   target names, duplicate names, and aliases that collide before or after the
-   owning target loads.
-2. Broaden performance evidence only where a separate harness can distinguish
-   JS lowering, Rust peak RSS, Node binding overhead, and WASM binding overhead.
-3. Add new parity fixtures only when they exercise a named projection boundary
+1. Broaden performance evidence only where a separate harness can distinguish
+   Rust peak RSS, Node binding overhead, and WASM binding overhead.
+2. Add new parity fixtures only when they exercise a named projection boundary
    that the current table and type-family corpus does not already cover.
+3. Move toward the Phase 3 module runtime runway only after v0.0.6 release
+   notes clearly state that legacy Node lowering is not retired yet.
 
 The `ninelives` decision is made: use `ninelives` for Rust resilience seams and
 Alfred for JavaScript tooling seams. Keep the scope narrow: resilience policy

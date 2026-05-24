@@ -17,12 +17,15 @@ make_fake_wesley() {
   cat > "$FAKE_WESLEY" <<'NODE'
 #!/usr/bin/env node
 import { createHash } from 'node:crypto';
-import { appendFileSync } from 'node:fs';
+import { appendFileSync, readFileSync } from 'node:fs';
 
 const args = process.argv.slice(2);
 if (process.env.WESLEY_FAKE_CALL_LOG) {
   appendFileSync(process.env.WESLEY_FAKE_CALL_LOG, `${args.join(' ')}\n`);
 }
+const schemaIndex = args.indexOf('--schema');
+const schemaPath = schemaIndex === -1 ? null : args[schemaIndex + 1];
+const sdl = schemaPath ? readFileSync(schemaPath, 'utf8') : '';
 
 const nullable = process.env.WESLEY_FAKE_VARIANT === 'nullable-mismatch';
 const tableIr = {
@@ -331,11 +334,58 @@ const typeFamilyRepeatableDirectiveIr = {
     }
   ]
 };
+const typeFamilyNestedListIr = {
+  version: '1.0.0',
+  types: [
+    {
+      name: 'MatrixHolder',
+      kind: 'OBJECT',
+      directives: {},
+      fields: [
+        {
+          name: 'id',
+          type: {
+            base: 'ID',
+            nullable: false,
+            isList: false
+          },
+          directives: {}
+        },
+        {
+          name: 'matrix',
+          type: {
+            base: 'Int',
+            nullable: false,
+            isList: true,
+            listItemNullable: false,
+            listWrappers: [{ nullable: false }, { nullable: false }],
+            leafNullable: false
+          },
+          directives: {}
+        },
+        {
+          name: 'optional',
+          type: {
+            base: 'String',
+            nullable: true,
+            isList: true,
+            listItemNullable: true,
+            listWrappers: [{ nullable: true }, { nullable: true }],
+            leafNullable: true
+          },
+          directives: {}
+        }
+      ]
+    }
+  ]
+};
 const ir = process.env.WESLEY_FAKE_VARIANT === 'type-family-extension'
   ? typeFamilyExtensionIr
   : process.env.WESLEY_FAKE_VARIANT === 'type-family-repeatable-directive'
     ? typeFamilyRepeatableDirectiveIr
-    : tableIr;
+    : process.env.WESLEY_FAKE_VARIANT === 'type-family-nested-list'
+      ? typeFamilyNestedListIr
+      : tableIr;
 
 if (process.env.WESLEY_FAKE_VARIANT === 'metadata') {
   ir.metadata = {
@@ -368,6 +418,14 @@ function semanticIr(value) {
 }
 
 if (args[0] === 'schema' && args[1] === 'lower') {
+  if (sdl.includes('type Broken')) {
+    console.error('Parse error: expected R_CURLY');
+    process.exit(1);
+  }
+  if (sdl.includes('@wes_table @table')) {
+    console.error("Lowering error: Duplicate directive '@wes_table' in directive");
+    process.exit(1);
+  }
   console.log(JSON.stringify(ir, null, 2));
 } else if (args[0] === 'schema' && args[1] === 'hash') {
   if (process.env.WESLEY_FAKE_VARIANT === 'hash-mismatch') {
@@ -564,6 +622,23 @@ SDL
   assert_output --partial 'UserFilter'
 }
 
+@test "IR parity sentinel compares nested list types in type-family projection" {
+  make_fake_wesley
+
+  run env \
+    WESLEY_CLI_BIN="$FAKE_WESLEY" \
+    WESLEY_FAKE_VARIANT="type-family-nested-list" \
+    node scripts/check-ir-parity.mjs \
+      --fixture test/fixtures/ir-parity/nested-list-schema.graphql \
+      --projection js-sdl-type-family-vs-rust-l1-type-family.v0 \
+      --json
+  assert_success
+  assert_output --partial '"fixture": "test/fixtures/ir-parity/nested-list-schema.graphql"'
+  assert_output --partial '"status": "pass"'
+  assert_output --partial 'listWrappers'
+  assert_output --partial 'leafNullable'
+}
+
 @test "IR parity sentinel preserves repeatable directive values in type-family projection" {
   make_fake_wesley
 
@@ -632,5 +707,33 @@ NODE
   assert_output --partial $'test/fixtures/ir-parity/directive-heavy-schema.graphql\tjs-table-vs-rust-table.v0'
   assert_output --partial $'test/fixtures/ir-parity/legacy-alias-schema.graphql\tjs-table-vs-rust-table.v0'
   assert_output --partial $'test/fixtures/ir-parity/schema-extensions-schema.graphql\tjs-sdl-type-family-vs-rust-l1-type-family.v0'
+  assert_output --partial $'test/fixtures/ir-parity/nested-list-schema.graphql\tjs-sdl-type-family-vs-rust-l1-type-family.v0'
   [[ "$output" != *"large-schema.graphql"* ]]
+}
+
+@test "parser parity spike records accepted and rejected parser-sensitive cases" {
+  make_fake_wesley
+
+  run env \
+    WESLEY_CLI_BIN="$FAKE_WESLEY" \
+    WESLEY_FAKE_VARIANT="type-family-nested-list" \
+    node scripts/check-parser-parity.mjs --json
+  assert_success
+  assert_output --partial '"tool": "parser-parity-spike.v0"'
+  assert_output --partial '"fixture": "test/fixtures/ir-parity/nested-list-schema.graphql"'
+  assert_output --partial '"observed": "both-accept"'
+  assert_output --partial '"fixture": "test/fixtures/ir-parity-invalid/parser-syntax-error.graphql"'
+  assert_output --partial '"expected": "both-reject"'
+  assert_output --partial '"fixture": "test/fixtures/ir-parity-invalid/duplicate-directive-alias.graphql"'
+  assert_output --partial '"expected": "both-reject"'
+  assert_output --partial '"status": "nested-list-type-family-covered"'
+}
+
+@test "parser parity spike lists default fixtures and expected outcomes" {
+  run node scripts/check-parser-parity.mjs --list-fixtures
+  assert_success
+  assert_output --partial $'test/fixtures/ir-parity/small-schema.graphql\tboth-accept'
+  assert_output --partial $'test/fixtures/ir-parity/nested-list-schema.graphql\tboth-accept'
+  assert_output --partial $'test/fixtures/ir-parity-invalid/parser-syntax-error.graphql\tboth-reject'
+  assert_output --partial $'test/fixtures/ir-parity-invalid/duplicate-directive-alias.graphql\tboth-reject'
 }

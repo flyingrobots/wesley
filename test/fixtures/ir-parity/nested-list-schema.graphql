@@ -1,0 +1,5 @@
+type MatrixHolder {
+  id: ID!
+  matrix: [[Int!]!]!
+  optional: [[String]]
+}

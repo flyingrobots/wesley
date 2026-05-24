@@ -117,7 +117,10 @@ export default {
   return modulePath;
 }
 
-function writeCompileTargetModule(tempDir, { fileName, moduleName, targetName, aliases = [] }) {
+function writeCompileTargetModule(
+  tempDir,
+  { fileName, moduleName, targetName, aliases = [], schemaHash = null }
+) {
   const modulePath = path.join(tempDir, fileName);
   writeFileSync(
     modulePath,
@@ -131,7 +134,10 @@ export default {
         name: ${JSON.stringify(targetName)},
         aliases: ${JSON.stringify(aliases)},
         async compile() {
-          return { kind: ${JSON.stringify(`fixture.${moduleName}.compile`)} };
+          return {
+            kind: ${JSON.stringify(`fixture.${moduleName}.compile`)},
+            ${schemaHash ? `schemaHash: ${JSON.stringify(schemaHash)},` : ''}
+          };
         }
       }]
     }
@@ -627,6 +633,120 @@ test('program rejects compile target aliases that collide with later target name
     assert.match(payload.error, /later-target/);
     assert.match(payload.error, /alias-first-module/);
     assert.match(payload.error, /target-later-module/);
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test('program dispatches multiple hermetic compile targets and resolves aliases canonically', async () => {
+  const tempDir = mkdtempSync(path.join(os.tmpdir(), 'wesley-module-compile-target-zoo-'));
+  const io = createIo();
+
+  try {
+    writeFileSync(path.join(tempDir, 'schema.graphql'), 'type Todo { id: ID! }\n');
+    const firstModule = writeCompileTargetModule(tempDir, {
+      fileName: 'artifact-module.mjs',
+      moduleName: 'artifact-module',
+      targetName: 'artifact-evidence',
+      aliases: ['artifact'],
+      schemaHash: 'sha256:fixture-shared'
+    });
+    const secondModule = writeCompileTargetModule(tempDir, {
+      fileName: 'portability-module.mjs',
+      moduleName: 'portability-module',
+      targetName: 'portability-evidence',
+      aliases: ['portable'],
+      schemaHash: 'sha256:fixture-shared'
+    });
+
+    const exitCode = await program(
+      [
+        'node',
+        'wesley',
+        '--json',
+        'compile',
+        '--schema',
+        'schema.graphql',
+        '--target',
+        'artifact,portable',
+        '--dry-run'
+      ],
+      {
+        cwd: tempDir,
+        env: {
+          WESLEY_MODULES: [firstModule, secondModule].join(path.delimiter)
+        },
+        fs: {
+          async read(targetPath) {
+            return readFileSync(path.resolve(tempDir, targetPath), 'utf8');
+          }
+        },
+        stdout: io.stdout,
+        stderr: io.stderr,
+        logger: nullLogger
+      }
+    );
+
+    assert.equal(exitCode, 0);
+    const payload = JSON.parse(io.readStdout());
+    assert.equal(payload.success, true);
+    assert.deepEqual(payload.result.targets, ['artifact-evidence', 'portability-evidence']);
+    assert.equal(payload.result.schemaHash, 'sha256:fixture-shared');
+    assert.equal(
+      payload.result.generatedTargets['artifact-evidence'].moduleName,
+      'artifact-module'
+    );
+    assert.equal(
+      payload.result.generatedTargets['portability-evidence'].moduleName,
+      'portability-module'
+    );
+    assert.equal(io.readStderr(), '');
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test('program rejects schema hash drift across hermetic compile targets', async () => {
+  const tempDir = mkdtempSync(path.join(os.tmpdir(), 'wesley-module-compile-hash-drift-'));
+  const io = createIo();
+
+  try {
+    writeFileSync(path.join(tempDir, 'schema.graphql'), 'type Todo { id: ID! }\n');
+    const firstModule = writeCompileTargetModule(tempDir, {
+      fileName: 'artifact-module.mjs',
+      moduleName: 'artifact-module',
+      targetName: 'artifact-evidence',
+      schemaHash: 'sha256:first'
+    });
+    const secondModule = writeCompileTargetModule(tempDir, {
+      fileName: 'portability-module.mjs',
+      moduleName: 'portability-module',
+      targetName: 'portability-evidence',
+      schemaHash: 'sha256:second'
+    });
+
+    const exitCode = await program(
+      ['node', 'wesley', '--json', 'compile', '--schema', 'schema.graphql', '--dry-run'],
+      {
+        cwd: tempDir,
+        env: {
+          WESLEY_MODULES: [firstModule, secondModule].join(path.delimiter)
+        },
+        fs: {
+          async read(targetPath) {
+            return readFileSync(path.resolve(tempDir, targetPath), 'utf8');
+          }
+        },
+        stdout: io.stdout,
+        stderr: io.stderr,
+        logger: nullLogger
+      }
+    );
+
+    assert.notEqual(exitCode, 0);
+    const payload = JSON.parse(io.readStderr());
+    assert.equal(payload.code, 'SCHEMA_HASH_MISMATCH');
+    assert.match(payload.error, /schema hash/i);
   } finally {
     rmSync(tempDir, { recursive: true, force: true });
   }

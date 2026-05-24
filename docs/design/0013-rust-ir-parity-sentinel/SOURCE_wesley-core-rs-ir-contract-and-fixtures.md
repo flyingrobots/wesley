@@ -30,6 +30,7 @@ The fixture contract is owned by generic Wesley compiler truth:
 - Invalid SDL fixtures live under `test/fixtures/ir-parity-invalid/`.
 - Rust golden regeneration is `pnpm fixtures:ir`.
 - JS/Rust parity evidence is `pnpm parity:ir`.
+- Parser acceptance evidence is `pnpm parity:parser`.
 - The current parity projections are `js-table-vs-rust-table.v0` and
   `js-sdl-type-family-vs-rust-l1-type-family.v0`.
 - The Rust command surface is `cargo run --quiet -p wesley-cli -- schema ...`.
@@ -49,6 +50,8 @@ The v0.0.6 corpus must keep these classes explicit:
 - **Legacy alias SDL**: compatibility input for supported core aliases.
 - **Schema-extension SDL**: Rust L1 coverage admitted to the default sentinel
   corpus under the type-family parity projection.
+- **Nested-list SDL**: structural type-reference coverage admitted to the
+  default sentinel corpus under the type-family parity projection.
 - **Invalid SDL**: negative diagnostics with stable codes and spans where the
   lowerer can provide them.
 
@@ -94,7 +97,7 @@ Current v0.0.6 behavior:
 - current JS parse/lower/hash functions are listed in the truth manifest
 - canonical IR JSON byte rules are written down here and in the sentinel packet
 - fixture corpus covers small, medium, large, directive-heavy, invalid,
-  legacy-alias, and schema-extension SDL cases
+  legacy-alias, schema-extension, and nested-list SDL cases
 - expected diagnostics include stable codes and spans where available
 - baseline Rust lowering wall-clock evidence is captured for the valid fixture
   corpus by `pnpm perf:ir`
@@ -115,6 +118,7 @@ Current v0.0.6 behavior:
 - `schemas/`
 - `scripts/generate-ir-fixtures.mjs`
 - `scripts/check-ir-parity.mjs`
+- `scripts/check-parser-parity.mjs`
 - `scripts/measure-ir-performance.mjs`
 - `test/fixtures/ir-parity/`
 - `test/fixtures/ir-parity-invalid/`

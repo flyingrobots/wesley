@@ -5,12 +5,11 @@ calendar.
 
 Current next pulls:
 
-1. `SOURCE_wesley-core-rs-parser-parity-spike.md`
-2. `RUNTIME_wasm-host-function-governance.md`
-3. `RUNTIME_wasm-capability-versioning-and-state.md`
-4. `RUNTIME_capability-portability-floor.md`
-5. `RUNTIME_node-rust-core-binding-strategy.md`
-6. `EVIDENCE_rust-core-binding-and-memory-baselines.md`
-7. `SOURCE_wesley-sdl-normalizer-command.md`
-8. `SOURCE_wesley-host-native.md`
-9. `RUNTIME_wesley-mcp-server.md`
+1. `RUNTIME_wasm-host-function-governance.md`
+2. `RUNTIME_wasm-capability-versioning-and-state.md`
+3. `RUNTIME_capability-portability-floor.md`
+4. `RUNTIME_node-rust-core-binding-strategy.md`
+5. `EVIDENCE_rust-core-binding-and-memory-baselines.md`
+6. `SOURCE_wesley-sdl-normalizer-command.md`
+7. `SOURCE_wesley-host-native.md`
+8. `RUNTIME_wesley-mcp-server.md`
