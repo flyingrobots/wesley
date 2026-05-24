@@ -8,14 +8,21 @@ use wesley_core::{
     compute_content_hash, compute_registry_hash, diff_schema_sdl, extract_operation_directive_args,
     list_schema_operations_sdl, lower_schema_sdl, normalize_schema_sdl,
     resolve_operation_selections, resolve_operation_selections_with_schema, SchemaDelta,
-    WesleyError,
+    WesleyError, WesleyIR,
 };
-use wesley_emit_rust::emit_rust_with_operations;
-use wesley_emit_typescript::emit_typescript_with_operations;
+use wesley_emit_rust::{
+    emit_rust_with_operations, GENERATOR_NAME as RUST_GENERATOR_NAME,
+    GENERATOR_VERSION as RUST_GENERATOR_VERSION,
+};
+use wesley_emit_typescript::{
+    emit_typescript_with_operations, GENERATOR_NAME as TYPESCRIPT_GENERATOR_NAME,
+    GENERATOR_VERSION as TYPESCRIPT_GENERATOR_VERSION,
+};
 
 const EXIT_OK: u8 = 0;
 const EXIT_FAILURE: u8 = 1;
 const EXIT_USAGE: u8 = 2;
+const RUST_NATIVE_EXECUTION_MODE: &str = "rust-native";
 
 fn main() -> ExitCode {
     let args = env::args().skip(1).collect::<Vec<_>>();
@@ -160,6 +167,12 @@ fn run_emit_command(args: &[String]) -> Result<u8, CliError> {
             let rust = emit_rust_with_operations(&ir, &operations);
 
             write_file(&out_path, &rust, "Rust output")?;
+            write_emit_metadata_if_requested(
+                options.metadata_out.as_deref(),
+                &ir,
+                RUST_GENERATOR_NAME,
+                RUST_GENERATOR_VERSION,
+            )?;
             Ok(EXIT_OK)
         }
         Some("typescript") if wants_help(&args[1..]) => {
@@ -176,6 +189,12 @@ fn run_emit_command(args: &[String]) -> Result<u8, CliError> {
             let typescript = emit_typescript_with_operations(&ir, &operations);
 
             write_file(&out_path, &typescript, "TypeScript output")?;
+            write_emit_metadata_if_requested(
+                options.metadata_out.as_deref(),
+                &ir,
+                TYPESCRIPT_GENERATOR_NAME,
+                TYPESCRIPT_GENERATOR_VERSION,
+            )?;
             Ok(EXIT_OK)
         }
         Some(command) => Err(CliError::usage(format!("unknown emit command '{command}'"))),
@@ -241,6 +260,7 @@ struct ParsedOptions {
     revision: Option<String>,
     operation: Option<PathBuf>,
     out: Option<PathBuf>,
+    metadata_out: Option<PathBuf>,
     directive: Option<String>,
     format: Option<String>,
     breaking_only: bool,
@@ -326,6 +346,19 @@ fn parse_options(args: &[String], command: &str) -> Result<ParsedOptions, CliErr
             "--out" => {
                 index += 1;
                 options.out = Some(PathBuf::from(required_value(args, index, "--out")?));
+            }
+            "--metadata-out" if command.starts_with("emit ") => {
+                index += 1;
+                options.metadata_out = Some(PathBuf::from(required_value(
+                    args,
+                    index,
+                    "--metadata-out",
+                )?));
+            }
+            "--metadata-out" => {
+                return Err(CliError::usage(format!(
+                    "unknown option '--metadata-out' for `{command}`"
+                )));
             }
             "--directive" | "-d" => {
                 index += 1;
@@ -421,6 +454,28 @@ fn write_file(path: &Path, content: &str, label: &str) -> Result<(), CliError> {
         path: path.to_path_buf(),
         source: source.to_string(),
     })
+}
+
+fn write_emit_metadata_if_requested(
+    path: Option<&Path>,
+    ir: &WesleyIR,
+    generator: &'static str,
+    generator_version: &'static str,
+) -> Result<(), CliError> {
+    let Some(path) = path else {
+        return Ok(());
+    };
+
+    let metadata = EmitMetadata {
+        schema_hash: compute_registry_hash(ir)?,
+        generator,
+        generator_version,
+        execution_mode: RUST_NATIVE_EXECUTION_MODE,
+    };
+    let mut json = serde_json::to_string_pretty(&metadata)?;
+    json.push('\n');
+
+    write_file(path, &json, "emit metadata")
 }
 
 fn read_schema_diff_inputs(options: &ParsedOptions) -> Result<(String, String), CliError> {
@@ -548,6 +603,15 @@ enum OutputFormat {
 struct FlatChange {
     breaking: bool,
     description: String,
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct EmitMetadata {
+    schema_hash: String,
+    generator: &'static str,
+    generator_version: &'static str,
+    execution_mode: &'static str,
 }
 
 fn print_schema_delta(
@@ -727,12 +791,13 @@ Emits model declarations and root operation bindings when the schema declares
 Query, Mutation, or Subscription fields.
 
 Usage:
-  wesley emit rust --schema <path> --out <path>
-  wesley emit typescript --schema <path> --out <path>
+  wesley emit rust --schema <path> --out <path> [--metadata-out <path>]
+  wesley emit typescript --schema <path> --out <path> [--metadata-out <path>]
 
 Options:
-  -s, --schema <path>  GraphQL SDL file
-  --out <path>         Output file"
+  -s, --schema <path>    GraphQL SDL file
+  --out <path>           Output file
+  --metadata-out <path>  Deterministic metadata JSON sidecar"
     );
 }
 

@@ -10,6 +10,12 @@ use wesley_core::{
     TypeReference, WesleyIR,
 };
 
+/// Stable generator identifier recorded in native emit metadata.
+pub const GENERATOR_NAME: &str = "wesley-emit-typescript";
+
+/// Version of the TypeScript emitter crate recorded in native emit metadata.
+pub const GENERATOR_VERSION: &str = env!("CARGO_PKG_VERSION");
+
 /// Emits TypeScript declarations for a Wesley L1 IR document.
 pub fn emit_typescript(ir: &WesleyIR) -> String {
     let program = TsProgram::from_ir(ir);
@@ -808,6 +814,22 @@ export interface UserFilter {
         assert!(text_window.contains("\"envelope\":\"ReadingEnvelope\""));
         assert!(actual.contains("export type QueryTextWindowOperation = {\n"));
         assert!(actual.contains("  metadata: typeof queryTextWindowOperation;"));
+    }
+
+    #[test]
+    fn emits_generic_operation_bindings_from_golden_fixture() {
+        let sdl =
+            include_str!("../../../test/fixtures/typescript-emitter/operation-bindings.graphql");
+        let expected = include_str!(
+            "../../../test/fixtures/typescript-emitter/operation-bindings.generated.ts"
+        );
+        let ir = lower_schema_sdl(sdl).expect("generic operation fixture should lower");
+        let operations =
+            list_schema_operations_sdl(sdl).expect("generic operations should resolve");
+
+        let actual = emit_typescript_with_operations(&ir, &operations);
+
+        assert_eq!(actual, expected);
     }
 
     #[test]

@@ -8,6 +8,14 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- **Native emit metadata**: `wesley emit rust` and `wesley emit typescript` now
+  accept `--metadata-out <path>` to write deterministic JSON sidecars with the
+  schema hash, generator identity, generator version, and `rust-native`
+  execution mode.
+- **Emitter retirement fixtures**: Added generic TypeScript operation-binding
+  golden fixtures and a domain-empty Rust emitter fixture so retained emitters
+  prove request/response bindings without leaking PostgreSQL, Echo, or jedit
+  semantics.
 - **Rust SDL normalizer**: Added `wesley normalize-sdl --schema <path>` and a
   Rust-core `normalize_schema_sdl` API that prints a deterministic,
   extension-folded SDL view from compiler facts, with golden fixtures for
@@ -96,6 +104,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Changed
 
+- **Legacy command retirement decisions**: Classified legacy `zod`, `models`,
+  and `init` as externalized or retired core behavior, and narrowed legacy
+  `generate` replacement to explicit native `emit` commands plus external
+  target modules.
 - **v0.0.6 bearing reset**: Reframed `docs/BEARING.md` around Rust IR parity,
   module-boundary enforcement, and explicit `wesley-postgres` preservation
   after the v0.0.5 clean-house release.

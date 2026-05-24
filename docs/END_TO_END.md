@@ -470,21 +470,24 @@ sequenceDiagram
     participant RustEmitter as wesley-emit-rust
     participant TSEmitter as wesley-emit-typescript
     participant Out as filesystem
+    participant Metadata as metadata sidecar
 
-    User->>CLI: wesley emit rust --schema schema.graphql --out model.rs
+    User->>CLI: wesley emit rust --schema schema.graphql --out model.rs --metadata-out model.metadata.json
     CLI->>Core: lower_schema_sdl(sdl)
     CLI->>Core: list_schema_operations_sdl(sdl)
     Core-->>CLI: WesleyIR and SchemaOperation facts
     CLI->>RustEmitter: build Rust file AST
     RustEmitter-->>CLI: deterministic Rust source
     CLI->>Out: write model.rs
+    CLI->>Metadata: write schema hash, generator version, execution mode
 
-    User->>CLI: wesley emit typescript --schema schema.graphql --out types.ts
+    User->>CLI: wesley emit typescript --schema schema.graphql --out types.ts --metadata-out types.metadata.json
     CLI->>Core: lower_schema_sdl(sdl)
     CLI->>Ops: root operation facts
     CLI->>TSEmitter: build TypeScript declaration AST
     TSEmitter-->>CLI: deterministic TypeScript source
     CLI->>Out: write types.ts
+    CLI->>Metadata: write schema hash, generator version, execution mode
 ```
 
 The important design choice is that pure generation does not need to inspect or
@@ -948,7 +951,9 @@ Today, Wesley can:
 - extract operation directive arguments
 - emit Rust models and operation bindings
 - emit TypeScript declarations and operation bindings
-- run legacy JavaScript TypeScript and Zod generation paths
+- write deterministic native emit metadata sidecars
+- keep legacy JavaScript generation paths only as compatibility surfaces while
+  Zod and target-specific outputs move to external ownership
 - load external modules through explicit configuration or environment paths
 - run parity sentinels across selected JS and Rust projections
 - run docs, lint, package, Rust, fixture, and preflight checks

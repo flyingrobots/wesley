@@ -160,23 +160,24 @@ exists.
   duplicate-directive, and semantic lowering failures.
 - [x] NR-020 Update parser parity output to reference Rust normalized SDL where
   useful.
-- [ ] NR-021 Port the remaining useful generic TypeScript emitter parity cases
+- [x] NR-021 Port the remaining useful generic TypeScript emitter parity cases
   into `crates/wesley-emit-typescript`.
-- [ ] NR-022 Add TypeScript emitter golden fixtures for operation request and
+- [x] NR-022 Add TypeScript emitter golden fixtures for operation request and
   response bindings.
-- [ ] NR-023 Decide whether Zod emission remains generic Wesley or moves to an
+- [x] NR-023 Decide whether Zod emission remains generic Wesley or moves to an
   external module.
-- [ ] NR-024 If retained, add a Rust Zod emitter crate or module boundary.
-- [ ] NR-025 If extracted, move Zod retirement to the owning module/package
+- [x] NR-024 If retained, add a Rust Zod emitter crate or module boundary
+  (closed by the non-retention decision; no core Zod crate added).
+- [x] NR-025 If extracted, move Zod retirement to the owning module/package
   plan and stop presenting it as core Wesley.
-- [ ] NR-026 Replace legacy `generate` docs with explicit Rust `emit` command
+- [x] NR-026 Replace legacy `generate` docs with explicit Rust `emit` command
   docs where parity exists.
-- [ ] NR-027 Add native `wesley emit` metadata that records schema hash,
+- [x] NR-027 Add native `wesley emit` metadata that records schema hash,
   generator version, and execution mode.
-- [ ] NR-028 Add Rust emitter fixtures proving no domain-specific Postgres,
+- [x] NR-028 Add Rust emitter fixtures proving no domain-specific Postgres,
   Echo, or jedit semantics leak into generic output.
-- [ ] NR-029 Port or retire legacy `models` command behavior.
-- [ ] NR-030 Port or retire legacy `init` command behavior.
+- [x] NR-029 Port or retire legacy `models` command behavior.
+- [x] NR-030 Port or retire legacy `init` command behavior.
 - [ ] NR-031 Port a narrow Rust `doctor` command only for Rust-native health
   checks.
 - [ ] NR-032 Extract certificate creation/signing/verification commands from the
@@ -343,16 +344,15 @@ all that proof is for.
 
 The next pulls after this drift check are:
 
-1. Port the remaining useful generic TypeScript emitter parity cases into
-   `crates/wesley-emit-typescript`.
-2. Add TypeScript emitter golden fixtures for operation request and response
-   bindings.
-3. Decide whether Zod emission remains generic Wesley or moves to an external
-   module.
-4. Continue moving command authority from legacy Node CLI paths to Rust-native
-   `schema`, `emit`, `operation`, and future narrow `doctor` commands.
-5. Keep WASM/module capability governance queued, but do it after the Rust
-   native front door can explain compiler truth without Node.
+1. Port a narrow Rust `doctor` command for Rust-native health checks only.
+2. Extract certificate creation, signing, and verification commands from the
+   compiler front door.
+3. Extract Holmes/Moriarty evidence commands or re-home them under an explicit
+   assurance package boundary.
+4. Decide whether runtime run ledger inspection remains in Wesley or exits with
+   assurance tooling.
+5. Move package-level evidence tooling out of `packages/wesley-cli` or mark it
+   compatibility-only.
 
 The `ninelives` decision is made: use `ninelives` for Rust resilience seams and
 Alfred for JavaScript tooling seams. Keep the scope narrow: resilience policy

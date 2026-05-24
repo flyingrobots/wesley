@@ -32,6 +32,8 @@ The active ledger lives in
 Its machine-readable export lives in
 [`node-retirement-ledger.json`](./node-retirement-ledger.json) and is checked
 by `cargo xtask docs-check`.
+The current legacy command decisions live in
+[`LEGACY_COMMAND_DECISIONS.md`](./LEGACY_COMMAND_DECISIONS.md).
 
 The first ten slices establish the runway:
 
@@ -96,6 +98,22 @@ Every Node surface gets one disposition before it can disappear:
 
 No file is deleted merely because it is JavaScript. A file is deleted when its
 capability has been ported, extracted, or proven unnecessary.
+
+## Current Command Decisions
+
+Native Wesley keeps explicit generic emit commands for retained model and
+operation-binding output:
+
+```bash
+wesley emit rust --schema <path> --out <path> --metadata-out <path>
+wesley emit typescript --schema <path> --out <path> --metadata-out <path>
+```
+
+The legacy umbrella `generate` command is being replaced by these explicit
+native commands plus external modules for target-owned outputs. Legacy `zod`,
+`models`, and `init` behavior is not being recreated in core Wesley during this
+campaign; each is either external target work or product scaffolding outside the
+compiler kernel.
 
 ## Non-Goals
 

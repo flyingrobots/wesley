@@ -23,7 +23,7 @@ The machine-readable CI/review export lives beside this document as
 | `packages/wesley-cli/` | Historical command framework for generate, transform, TypeScript, Zod, diff, cert, and Holmes-era commands. | Delete after command migration | Every useful command is ported, extracted, or rejected; docs no longer present `pnpm wesley` as product front door. |
 | `packages/wesley-host-node/` | Node executable wrapper and runtime adapter. | Delete | Tests and docs use native CLI except compatibility-only lanes. |
 | `packages/wesley-runtime-node/` | Node module loading, counterfactual surface, runtime store helpers. | Extract or delete | Module/runtime evidence moves to Rust protocol, assurance tooling, or owning modules. |
-| `packages/wesley-generator-js/` | Legacy TypeScript/Zod projection surface. | Port useful projections | Rust emitters cover retained generic output or the output is moved to external modules. |
+| `packages/wesley-generator-js/` | Legacy TypeScript/Zod projection surface. | Port TypeScript, extract Zod | Rust emitters cover retained generic output; Zod moves to an external target boundary if still needed. |
 | `packages/wesley-generator-vue/` | Experimental Vue projection. | Delete or externalize | A target owner accepts it, or it leaves Wesley. |
 | `packages/wesley-holmes/` | Holmes/Moriarty evidence and counterfactual tooling. | Extract or rebuild later | Assurance tooling has an explicit package/repo boundary separate from compiler authority. |
 | `packages/wesley-host-browser/` | Browser-host experiment. | Delete or externalize | Browser compatibility is an external ecosystem package or a documented non-goal. |
@@ -37,14 +37,14 @@ The machine-readable CI/review export lives beside this document as
 
 | Legacy command | Current file | Disposition | Rust or external exit |
 | --- | --- | --- | --- |
-| `generate` | `packages/wesley-cli/src/commands/generate.mjs` | Port in pieces, then delete | Native `emit` commands and external modules replace useful outputs. |
+| `generate` | `packages/wesley-cli/src/commands/generate.mjs` | Port generic pieces, then delete | Native `emit` commands and external modules replace useful outputs; do not preserve the umbrella command as a core noun. |
 | `transform` | `packages/wesley-cli/src/commands/transform.mjs` | Delete | Compatibility wrapper around generation; do not recreate as a core noun by default. |
 | `compile` | `packages/wesley-cli/src/commands/compile.mjs` | Defer, then rebuild | Replace Node module dispatch with Rust registry or external-process target protocol. |
 | `typescript` / `ts` | `packages/wesley-cli/src/commands/typescript.mjs` | Partially ported | `wesley emit typescript` owns retained generic TypeScript output. |
-| `zod` | `packages/wesley-cli/src/commands/zod.mjs` | Port or extract | Decide whether Zod remains generic Wesley. |
-| `models` | `packages/wesley-cli/src/commands/models.mjs` | Delete or extract | Model-class scaffolding is not compiler truth. |
+| `zod` | `packages/wesley-cli/src/commands/zod.mjs` | Extract | Zod is JavaScript validation output; keep it outside core Wesley unless an external target module owns it. |
+| `models` | `packages/wesley-cli/src/commands/models.mjs` | Retire from core | Model-class scaffolding is not compiler truth; retained generic model facts live in Rust and TypeScript emitters. |
 | `diff` | `packages/wesley-cli/src/commands/diff.mjs` | Ported for L1 structure | `wesley schema diff` owns generic schema diff; operation-argument deltas remain separate. |
-| `init` | `packages/wesley-cli/src/commands/init.mjs` | Port small or delete | Native `init` may only create tiny generic starter schemas. |
+| `init` | `packages/wesley-cli/src/commands/init.mjs` | Retire legacy scaffolding | Future native `init` may only create tiny generic starter schemas and must be designed as new work, not as a Node port. |
 | `doctor` | `packages/wesley-cli/src/commands/doctor.mjs` | Port narrow | Rust-native health checks only. |
 | `validate-bundle` | `packages/wesley-cli/src/commands/validate-bundle.mjs` | Defer | Port only if Rust evidence bundles remain Wesley-owned. |
 | `runs` | `packages/wesley-cli/src/commands/runs.mjs` | Extract or defer | Runtime ledger inspection belongs with assurance/runtime evidence if not compiler-core. |

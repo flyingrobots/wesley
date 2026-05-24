@@ -192,8 +192,8 @@ cargo wesley schema hash --schema test/fixtures/ir-parity/small-schema.graphql
 cargo wesley schema operations --schema test/fixtures/consumer-models/jedit-hot-text-runtime.graphql --json
 cargo wesley schema diff --old old.graphql --new new.graphql --format summary --exit-code
 cargo wesley schema diff --schema schema.graphql --against HEAD --format summary
-cargo wesley emit rust --schema test/fixtures/consumer-models/jedit-hot-text-runtime.graphql --out generated/model.rs
-cargo wesley emit typescript --schema test/fixtures/consumer-models/jedit-hot-text-runtime.graphql --out generated/types.ts
+cargo wesley emit rust --schema test/fixtures/consumer-models/jedit-hot-text-runtime.graphql --out generated/model.rs --metadata-out generated/model.metadata.json
+cargo wesley emit typescript --schema test/fixtures/consumer-models/jedit-hot-text-runtime.graphql --out generated/types.ts --metadata-out generated/types.metadata.json
 ```
 
 For the full map, read [ENTRYPOINTS.md](./docs/ENTRYPOINTS.md). For the
@@ -219,7 +219,7 @@ developer-level operator guide, read [GUIDE.md](./docs/GUIDE.md).
 | `@wesley/cli`           | Active       | Alpha | 50% → Beta  | ![pkg-cli.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-cli.yml/badge.svg?branch=main)                   | CLI + Bats suites                                               |
 | `@wesley/host-node`     | Active       | MVP   | 50% → Alpha | ![pkg-host-node.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-host-node.yml/badge.svg?branch=main)       | Node adapters + binary                                          |
 | `@wesley/host-browser`  | Experimental | MVP   | 40% → Alpha | ![browser-smoke.yml](https://github.com/flyingrobots/wesley/actions/workflows/browser-smoke.yml/badge.svg?branch=main)       | Pure ESM; in-memory FS; minimal parser; smoke-level only        |
-| `@wesley/generator-js`  | Active       | MVP   | 50% → Alpha | ![pkg-generator-js.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-generator-js.yml/badge.svg?branch=main) | TS/Zod emitters                                                 |
+| `@wesley/generator-js`  | Active       | MVP   | 50% → Alpha | ![pkg-generator-js.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-generator-js.yml/badge.svg?branch=main) | Legacy TS/Zod emitters                                          |
 | `@wesley/generator-vue` | Experimental | MVP   | 0% → Alpha  | —                                                                                                                            | Vue-facing TS/composable emitters                               |
 | `@wesley/holmes`        | Active       | Alpha | 50% → Beta  | ![pkg-holmes.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-holmes.yml/badge.svg?branch=main)             | Evidence scoring                                                |
 | `@wesley/runtime-node`  | Active       | MVP   | 0% → Alpha  | —                                                                                                                            | Shared Node module loading, GraphQL parsing, and host utilities |

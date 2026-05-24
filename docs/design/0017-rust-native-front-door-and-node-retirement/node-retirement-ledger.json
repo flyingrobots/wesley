@@ -11,7 +11,7 @@
     },
     {
       "path": "packages/wesley-generator-js",
-      "disposition": "port-useful-projections"
+      "disposition": "port-typescript-extract-zod"
     },
     {
       "path": "packages/wesley-generator-vue",
@@ -52,6 +52,78 @@
     {
       "path": "packages/wesley-test-fixtures",
       "disposition": "replace"
+    }
+  ],
+  "commands": [
+    {
+      "name": "generate",
+      "path": "packages/wesley-cli/src/commands/generate.mjs",
+      "disposition": "port-generic-pieces-then-delete"
+    },
+    {
+      "name": "transform",
+      "path": "packages/wesley-cli/src/commands/transform.mjs",
+      "disposition": "delete"
+    },
+    {
+      "name": "compile",
+      "path": "packages/wesley-cli/src/commands/compile.mjs",
+      "disposition": "defer-then-rebuild"
+    },
+    {
+      "name": "typescript",
+      "path": "packages/wesley-cli/src/commands/typescript.mjs",
+      "disposition": "partially-ported-to-wesley-emit-typescript"
+    },
+    {
+      "name": "zod",
+      "path": "packages/wesley-cli/src/commands/zod.mjs",
+      "disposition": "extract"
+    },
+    {
+      "name": "models",
+      "path": "packages/wesley-cli/src/commands/models.mjs",
+      "disposition": "retire-from-core"
+    },
+    {
+      "name": "init",
+      "path": "packages/wesley-cli/src/commands/init.mjs",
+      "disposition": "retire-legacy-scaffolding"
+    },
+    {
+      "name": "doctor",
+      "path": "packages/wesley-cli/src/commands/doctor.mjs",
+      "disposition": "port-narrow"
+    },
+    {
+      "name": "validate-bundle",
+      "path": "packages/wesley-cli/src/commands/validate-bundle.mjs",
+      "disposition": "defer"
+    },
+    {
+      "name": "runs",
+      "path": "packages/wesley-cli/src/commands/runs.mjs",
+      "disposition": "extract-or-defer"
+    },
+    {
+      "name": "cert-create",
+      "path": "packages/wesley-cli/src/commands/cert-create.mjs",
+      "disposition": "extract"
+    },
+    {
+      "name": "cert-sign",
+      "path": "packages/wesley-cli/src/commands/cert-sign.mjs",
+      "disposition": "extract"
+    },
+    {
+      "name": "cert-verify",
+      "path": "packages/wesley-cli/src/commands/cert-verify.mjs",
+      "disposition": "extract"
+    },
+    {
+      "name": "cert-badge",
+      "path": "packages/wesley-cli/src/commands/cert-badge.mjs",
+      "disposition": "extract-or-delete"
     }
   ],
   "frontDoorDocs": [

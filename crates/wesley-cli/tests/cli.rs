@@ -506,6 +506,84 @@ fn emit_rust_writes_ast_generated_models() {
 }
 
 #[test]
+fn emit_commands_write_deterministic_metadata_sidecars() {
+    let dir = temp_dir("emit-metadata");
+    let schema = dir.join("schema.graphql");
+    let rust_out = dir.join("generated").join("model.rs");
+    let typescript_out = dir.join("generated").join("types.ts");
+    let rust_metadata = dir.join("generated").join("model.metadata.json");
+    let typescript_metadata = dir.join("generated").join("types.metadata.json");
+
+    std::fs::write(
+        &schema,
+        r#"
+        type Query {
+          viewer: Viewer
+        }
+
+        type Viewer {
+          id: ID!
+        }
+        "#,
+    )
+    .expect("schema should write");
+
+    let rust_output = wesley()
+        .args(["emit", "rust", "--schema"])
+        .arg(&schema)
+        .arg("--out")
+        .arg(&rust_out)
+        .arg("--metadata-out")
+        .arg(&rust_metadata)
+        .output()
+        .expect("wesley should run");
+    assert_success(&rust_output);
+
+    let typescript_output = wesley()
+        .args(["emit", "typescript", "--schema"])
+        .arg(&schema)
+        .arg("--out")
+        .arg(&typescript_out)
+        .arg("--metadata-out")
+        .arg(&typescript_metadata)
+        .output()
+        .expect("wesley should run");
+    assert_success(&typescript_output);
+
+    let rust_json: serde_json::Value = serde_json::from_str(
+        &std::fs::read_to_string(&rust_metadata).expect("Rust metadata should read"),
+    )
+    .expect("Rust metadata should be JSON");
+    let typescript_json: serde_json::Value = serde_json::from_str(
+        &std::fs::read_to_string(&typescript_metadata).expect("TypeScript metadata should read"),
+    )
+    .expect("TypeScript metadata should be JSON");
+
+    assert_eq!(rust_json["schemaHash"], typescript_json["schemaHash"]);
+    assert_eq!(
+        rust_json["schemaHash"]
+            .as_str()
+            .expect("schema hash should be a string")
+            .len(),
+        64
+    );
+    assert_eq!(rust_json["generator"], "wesley-emit-rust");
+    assert_eq!(typescript_json["generator"], "wesley-emit-typescript");
+    assert_eq!(
+        rust_json["generatorVersion"],
+        wesley_emit_rust::GENERATOR_VERSION
+    );
+    assert_eq!(
+        typescript_json["generatorVersion"],
+        wesley_emit_typescript::GENERATOR_VERSION
+    );
+    assert_eq!(rust_json["executionMode"], "rust-native");
+    assert_eq!(typescript_json["executionMode"], "rust-native");
+
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
 fn emit_commands_include_jedit_operation_bindings() {
     let dir = temp_dir("emit-jedit-operation-bindings");
     let rust_out = dir.join("generated").join("model.rs");

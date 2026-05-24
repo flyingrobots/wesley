@@ -35,14 +35,18 @@ checkout. Use `cargo xtask release-check` before cutting native release
 artifacts; it runs the Rust tests, builds the optimized binary, and packages
 the Rust library crate without publishing anything.
 
-The historical package CLI still carries generic TypeScript/Zod/transform
-commands while those surfaces are being extracted or retired:
+The historical package CLI still carries compatibility-only TypeScript, Zod,
+and transform paths while those surfaces are being extracted or retired. Prefer
+the native emit commands where parity exists:
 
-- **TypeScript**: `pnpm wesley typescript --schema <path>`
-- **Zod**: `pnpm wesley zod --schema <path>`
-- **Transform**: `pnpm wesley transform --schema <path> --transmutation <target>`
+- **Rust**: `wesley emit rust --schema <path> --out <path>`
+- **TypeScript**: `wesley emit typescript --schema <path> --out <path>`
+- **Emit metadata**: add `--metadata-out <path>` to record schema hash,
+  generator identity, generator version, and `rust-native` execution mode.
 
-Those command paths reuse a hash-addressed IR cache in `.wesley-cache/ir/` when the authored SDL has not changed, which keeps the inner loop tighter across repeated local runs.
+Zod output is no longer treated as core Wesley retirement work. Reintroduce it
+through an external target module or package when a consumer needs JavaScript
+validation output.
 
 ### 2. External Module Lane
 

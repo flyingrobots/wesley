@@ -58,6 +58,8 @@ It can:
 - list schema root operations with arguments, result types, and directives
 - emit Rust data models and operation bindings through a Rust AST/printer path
 - emit TypeScript declarations and operation bindings through a Rust AST/printer path
+- write deterministic emit metadata sidecars with schema hash, generator
+  identity, generator version, and execution mode
 - resolve GraphQL operation selection paths
 - resolve schema-coordinate selections when schema SDL is available
 - extract arbitrary operation directive arguments as data
@@ -72,8 +74,8 @@ wesley schema hash --schema <path>
 wesley schema operations --schema <path> --json
 wesley schema diff --old <path> --new <path> [--format text|json|summary] [--exit-code]
 wesley schema diff --schema <path> --against <rev> [--format text|json|summary] [--exit-code]
-wesley emit rust --schema <path> --out <path>
-wesley emit typescript --schema <path> --out <path>
+wesley emit rust --schema <path> --out <path> [--metadata-out <path>]
+wesley emit typescript --schema <path> --out <path> [--metadata-out <path>]
 wesley operation selections --operation <path> [--schema <path>] [--json]
 wesley operation directive-args --operation <path> --directive <name> --json
 ```

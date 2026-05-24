@@ -1,0 +1,33 @@
+scalar DateTime
+
+enum ContractState {
+  DRAFT
+  ACTIVE
+  RETIRED
+}
+
+type Query {
+  contract(id: ID!): ContractRecord
+}
+
+type Mutation {
+  publishContract(input: PublishContractInput!): PublishContractResult!
+}
+
+type ContractRecord {
+  id: ID!
+  name: String!
+  state: ContractState!
+  tags: [String!]!
+  publishedAt: DateTime
+}
+
+input PublishContractInput {
+  name: String!
+  tags: [String!]
+}
+
+type PublishContractResult {
+  contract: ContractRecord!
+  changed: Boolean!
+}
