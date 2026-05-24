@@ -231,7 +231,7 @@ export class TransmutationRunner {
 
   /**
    * Build a task graph descriptor for this transmutation.
-   * Returns a plain object describing the DAG without a JavaScript task runtime.
+   * Returns a plain object describing the DAG — no dependency on @wesley/tasks.
    * Hosts or external modules can feed this into a compatible task executor.
    *
    * @param {string} name - Transmutation name

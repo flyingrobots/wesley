@@ -57,8 +57,12 @@ Allowed remaining references:
 
 Active-surface search over manifests, workspace config, progress config,
 `.github/`, `test/`, `packages/`, `crates/`, `scripts/`,
-`docs/truth-manifest.json`, and active backlog lanes finds only negative Bats
-assertions for the deleted workflow/package requirements.
+`docs/truth-manifest.json`, and active backlog lanes finds no manifest,
+workflow, script, import, dynamic import, or runtime dependency on the deleted
+packages. Broad text search still finds one pre-existing legacy-core comment
+that states the task graph descriptor has no dependency on the deleted task
+package; the retirement guard intentionally keeps that file unchanged until the
+larger `wesley-core` deletion/extraction gate closes.
 
 ## Remaining Open Gates
 
