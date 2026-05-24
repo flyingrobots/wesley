@@ -117,6 +117,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **Normalized SDL enum literals**: `normalize_schema_sdl` now renders schema
+  enum defaults and directive enum arguments as GraphQL enum literals while
+  preserving string literals that happen to share enum-like names.
 - **Rust IR performance process bounds**: `pnpm perf:ir` now wraps Rust lowerer
   and Git metadata probes in `@git-stunts/alfred` timeouts with explicit output
   buffers so hung or oversized child processes produce controlled evidence

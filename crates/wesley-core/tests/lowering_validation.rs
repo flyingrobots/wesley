@@ -1,8 +1,8 @@
 use std::fs;
 use std::path::PathBuf;
 use wesley_core::{
-    compute_registry_hash, to_canonical_json, ApolloLoweringAdapter, LoweringPort, TypeDefinition,
-    TypeKind,
+    compute_registry_hash, normalize_schema_sdl, to_canonical_json, ApolloLoweringAdapter,
+    LoweringPort, TypeDefinition, TypeKind,
 };
 
 fn get_fixture_path(name: &str) -> PathBuf {
@@ -212,6 +212,45 @@ async fn diagnostic_fixture_rejects_mixed_type_kind_consolidation() {
     assert!(diagnostic.message.contains("Thing"));
     assert!(diagnostic.message.contains("Object"));
     assert!(diagnostic.message.contains("Enum"));
+}
+
+#[test]
+fn normalize_sdl_preserves_enum_literals_without_rewriting_strings() {
+    let sdl = r#"
+        directive @defaultMode(mode: Mode!, label: String!) on FIELD_DEFINITION
+
+        enum Mode {
+          ACTIVE
+          DRAFT
+        }
+
+        input ContractFilter {
+          label: String = "ACTIVE"
+          mode: Mode = ACTIVE
+          modes: [Mode!] = [ACTIVE, DRAFT]
+        }
+
+        type Query {
+          contract(label: String = "DRAFT", mode: Mode = DRAFT): Contract
+            @defaultMode(label: "ACTIVE", mode: ACTIVE)
+        }
+
+        type Contract {
+          id: ID!
+        }
+    "#;
+
+    let normalized = normalize_schema_sdl(sdl).expect("schema should normalize");
+
+    assert!(normalized.contains("  label: String = \"ACTIVE\""));
+    assert!(normalized.contains("  mode: Mode = ACTIVE"));
+    assert!(normalized.contains("  modes: [Mode!] = [ACTIVE, DRAFT]"));
+    assert!(
+        normalized.contains(
+            "  contract(label: String = \"DRAFT\", mode: Mode = DRAFT): Contract @defaultMode(label: \"ACTIVE\", mode: ACTIVE)"
+        ),
+        "{normalized}"
+    );
 }
 
 #[tokio::test]
