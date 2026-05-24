@@ -30,6 +30,13 @@ Current packets:
 - [`0016`](./0016-rust-core-binding-observatory/rust-core-binding-observatory.md): Rust core binding observatory for Node/Rust/WASM cutover evidence
 - [`0017`](./0017-rust-native-front-door-and-node-retirement/rust-native-front-door-and-node-retirement.md): Rust native front door and legacy Node retirement campaign, including
   [assurance and capability extraction](./0017-rust-native-front-door-and-node-retirement/ASSURANCE_AND_CAPABILITY_EXTRACTION.md)
+  and
+  [host compatibility boundary](./0017-rust-native-front-door-and-node-retirement/HOST_COMPATIBILITY_BOUNDARY.md),
+  plus the
+  [legacy compatibility matrix](./0017-rust-native-front-door-and-node-retirement/LEGACY_COMPATIBILITY_MATRIX.md)
+  and
+  [parity sentinel archive](./0017-rust-native-front-door-and-node-retirement/PARITY_SENTINEL_ARCHIVE.md)
+- [`0018`](./0018-holmes-assurance-hexagon/holmes-assurance-hexagon.md): Holmes assurance hexagon redesign with CLI, API, MCP, and reporting adapters
 - [Module Contract](./wesley-module-contract.md): Generic core boundary versus external module-owned domain surfaces
 - [Module Capability Contract](./wesley-module-capability-contract.md): The capability surfaces external modules should implement
 - [Contract / Artifact / Runtime Boundary](./wesley-contract-family-artifact-runtime-value.md): GraphQL-authored families, Wesley-emitted artifacts, and later runtime values

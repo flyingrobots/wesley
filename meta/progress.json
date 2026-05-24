@@ -1,14 +1,14 @@
 {
-  "generatedAt": "2026-05-21T17:59:17.943Z",
+  "generatedAt": "2026-05-24T20:12:13.365Z",
   "overall": {
     "stage": "MVP",
     "next": "Alpha",
-    "progress": 61
+    "progress": 66
   },
   "results": [
     {
       "name": "@wesley/core",
-      "status": "Active",
+      "status": "Legacy Compatibility",
       "stage": "MVP",
       "progress": 45,
       "next": "Alpha",
@@ -27,7 +27,7 @@
     },
     {
       "name": "@wesley/cli",
-      "status": "Active",
+      "status": "Legacy Compatibility",
       "stage": "Alpha",
       "progress": 50,
       "next": "Beta",
@@ -46,7 +46,7 @@
     },
     {
       "name": "@wesley/host-node",
-      "status": "Active",
+      "status": "Legacy Compatibility",
       "stage": "MVP",
       "progress": 50,
       "next": "Alpha",
@@ -65,7 +65,7 @@
     },
     {
       "name": "@wesley/host-browser",
-      "status": "Experimental",
+      "status": "Legacy Compatibility",
       "stage": "MVP",
       "progress": 40,
       "next": "Alpha",
@@ -84,7 +84,7 @@
     },
     {
       "name": "@wesley/generator-js",
-      "status": "Active",
+      "status": "Legacy Compatibility",
       "stage": "MVP",
       "progress": 50,
       "next": "Alpha",
@@ -102,27 +102,8 @@
       "coverage": null
     },
     {
-      "name": "@wesley/generator-vue",
-      "status": "Experimental",
-      "stage": "MVP",
-      "progress": 0,
-      "next": "Alpha",
-      "passRate": null,
-      "docs": {
-        "hasStatus": false,
-        "hasUsage": false,
-        "hasApi": true,
-        "hasCaveats": false
-      },
-      "milestones": {
-        "alpha": null,
-        "beta": null
-      },
-      "coverage": null
-    },
-    {
       "name": "@wesley/holmes",
-      "status": "Active",
+      "status": "Legacy Compatibility",
       "stage": "Alpha",
       "progress": 50,
       "next": "Beta",
@@ -141,13 +122,13 @@
     },
     {
       "name": "@wesley/runtime-node",
-      "status": "Active",
+      "status": "Legacy Compatibility",
       "stage": "MVP",
       "progress": 0,
       "next": "Alpha",
       "passRate": null,
       "docs": {
-        "hasStatus": false,
+        "hasStatus": true,
         "hasUsage": false,
         "hasApi": true,
         "hasCaveats": false
@@ -160,7 +141,7 @@
     },
     {
       "name": "@wesley/tasks",
-      "status": "Active",
+      "status": "Legacy Compatibility",
       "stage": "MVP",
       "progress": 50,
       "next": "Alpha",
@@ -179,13 +160,13 @@
     },
     {
       "name": "@wesley/host-deno",
-      "status": "Experimental",
+      "status": "Legacy Compatibility",
       "stage": "Alpha",
       "progress": 50,
       "next": "Beta",
       "passRate": 1,
       "docs": {
-        "hasStatus": false,
+        "hasStatus": true,
         "hasUsage": true,
         "hasApi": true,
         "hasCaveats": false
@@ -198,13 +179,13 @@
     },
     {
       "name": "@wesley/host-bun",
-      "status": "Experimental",
+      "status": "Legacy Compatibility",
       "stage": "Alpha",
       "progress": 50,
       "next": "Beta",
       "passRate": 1,
       "docs": {
-        "hasStatus": false,
+        "hasStatus": true,
         "hasUsage": true,
         "hasApi": true,
         "hasCaveats": false
@@ -217,7 +198,7 @@
     },
     {
       "name": "@wesley/test-fixtures",
-      "status": "Active",
+      "status": "Legacy Compatibility",
       "stage": "MVP",
       "progress": 20,
       "next": "Alpha",

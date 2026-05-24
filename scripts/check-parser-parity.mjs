@@ -225,8 +225,9 @@ async function lowerRust(fixturePath) {
   try {
     const stdout = await runWesley(['schema', 'lower', '--schema', fixturePath, '--json']);
     const ir = JSON.parse(stdout);
-    const normalizedSdlHash = (await runWesley(['normalize-sdl', '--schema', fixturePath, '--hash']))
-      .trim();
+    const normalizedSdlHash = (
+      await runWesley(['normalize-sdl', '--schema', fixturePath, '--hash'])
+    ).trim();
     return {
       status: 'accept',
       typeCount: Array.isArray(ir?.types) ? ir.types.length : null,

@@ -310,15 +310,9 @@ calls `init()` with the entry's `config` if provided.
 
 ---
 
-## Real-World Example: VuePlugin
+## Retired Vue Example
 
-The `VuePlugin` in `packages/wesley-generator-vue/src/VuePlugin.mjs` is a simpler example that wraps the `generateVue()` function:
-
-```mjs
-import { VuePlugin } from '@wesley/generator-vue/plugin';
-
-const plugin = new VuePlugin();
-plugin.init({ outPath: 'custom/types.ts' }); // optional
-```
-
-See the full source at [`packages/wesley-generator-vue/src/VuePlugin.mjs`](../../packages/wesley-generator-vue/src/VuePlugin.mjs).
+The former `@wesley/generator-vue` package has been deleted from generic
+Wesley. Vue output is target-owned behavior, so future Vue projection examples
+should live in an external module that implements the generator capability
+contract shown above.

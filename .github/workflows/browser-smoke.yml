@@ -1,4 +1,4 @@
-name: Browser Smoke
+name: Legacy Compatibility - Browser Smoke
 
 on:
   # Avoid double-runs on PRs from same repo by running push only on main
@@ -21,6 +21,7 @@ permissions:
 
 jobs:
   browser-smoke:
+    name: Legacy compatibility - Browser host smoke
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -48,8 +49,8 @@ jobs:
       - name: Install deps (frozen)
         run: pnpm install --frozen-lockfile
 
-      - name: Preflight
-        run: pnpm run -s preflight
+      - name: Legacy preflight
+        run: pnpm run -s legacy-preflight
 
       - name: Cache Playwright browsers
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae

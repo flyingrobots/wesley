@@ -3,7 +3,7 @@
   "taskDescription": "Unify generator-vue ownership/entrypoint",
   "project": "wesley",
   "priority": "P1",
-  "status": "PLANNED",
+  "status": "SUPERSEDED",
   "track": "REAL_WAY",
   "dependencies": ["WES-002"],
   "requirements": [
@@ -22,35 +22,33 @@
     }
   },
   "acceptanceCriteria": [
-    "Generator-vue ownership and entrypoint are unified under one supported invocation path.",
-    "Legacy overlapping entrypoints are deprecated or removed with migration notes.",
-    "CI uses the unified entrypoint for generation validation."
+    "Generator-vue ownership is no longer represented as generic Wesley package scope.",
+    "Legacy overlapping entrypoints are removed with migration notes.",
+    "Future Vue generation work is handled by an external target owner."
   ],
   "testPlan": {
     "assertions": [
-      "CLI tests verify unified entrypoint covers previous generator-vue capabilities.",
-      "Repository docs/tests reference only the unified entrypoint.",
-      "Deprecation tests ensure old entrypoints fail with clear redirect message."
+      "Repository docs no longer point to a live generic generator-vue package.",
+      "The Node retirement ledger records the package as deleted.",
+      "Future Vue projection work is explicitly outside generic Wesley."
     ],
     "goldenPath": [
-      "Run unified entrypoint in a Vue consumer and verify artifacts compile without manual adaptation.",
-      "Execute CI generation workflow and confirm unified path is exercised."
+      "Run docs checks and confirm no live package links point to packages/wesley-generator-vue.",
+      "Run workspace install metadata refresh and confirm the package is absent from pnpm-lock.yaml."
     ],
     "edgeCases": [
-      "Existing consumer configs migrate with compatibility shim where necessary.",
-      "Unknown legacy flags fail with actionable mapping to new flags."
+      "Historical changelog references remain as historical entries.",
+      "Superseded plan metadata does not imply a supported package."
     ],
-    "fuzzScale": [
-      "Run unified entrypoint across multiple consumer templates to verify broad compatibility."
-    ],
+    "fuzzScale": ["No fuzz-scale work remains in generic Wesley for this superseded task."],
     "failureCases": [
-      "Broken migration mapping fails quickly with per-flag guidance.",
-      "Entry-point resolution conflict fails startup with deterministic error."
+      "A new package with the same scope must get a fresh ledger disposition.",
+      "Docs links to the deleted package must fail docs-check."
     ]
   },
   "scope": {
     "inScope": [
-      "Code, tests, and docs directly required to complete WES-005: Unify generator-vue ownership/entrypoint.",
+      "Docs and ledger changes required to supersede WES-005.",
       "Boundary contracts and adapters touched by this task within project ownership.",
       "Task-level observability needed to debug deterministic behavior and integration outcomes."
     ],
@@ -62,7 +60,7 @@
   },
   "definitionOfDone": [
     "All acceptance criteria are satisfied with linked test evidence.",
-    "Task metadata is updated to DONE in DAG source for WES-005.",
+    "Task metadata is updated to SUPERSEDED in DAG source for WES-005.",
     "Any architecture exceptions are either removed or documented with owner + expiry.",
     "No workaround-only seams were introduced to complete this task."
   ]

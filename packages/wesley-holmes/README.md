@@ -1,6 +1,11 @@
 # @wesley/holmes
 
-Implements SHA-lock investigative tooling for Wesley deployments.
+Status: Legacy compatibility assurance surface pending extraction or rebuild.
+
+Implements SHA-lock investigative tooling for historical Wesley deployments.
+This package is not part of the native compiler front door. It remains in the
+repo while assurance, evidence, and judgment tooling get an explicit boundary
+separate from Rust compiler authority.
 
 - **Holmes** – Inspects evidence bundles, computes scores, and produces machine-readable + markdown reports.
 - **Watson** – Verifies evidence maps against expectations and surfaces human-friendly commentary.
@@ -24,7 +29,9 @@ Generated artifacts are persisted under `.wesley-cache/` (for example `scores.js
 
 ## Status
 
-Status: Active
+Status: Legacy compatibility
 ![pkg-holmes](https://github.com/flyingrobots/wesley/actions/workflows/pkg-holmes.yml/badge.svg?branch=main)
 
-Production ready; weighting configuration is extensible via `wesley.weights.json`.
+Useful assurance tooling; weighting configuration is extensible via
+`wesley.weights.json`. Do not use this package as a reason to add compiler
+semantics to the legacy Node surface.

@@ -1,9 +1,12 @@
 # @wesley/host-node
 
-Status: Active
+Status: Legacy compatibility surface pending deletion.
 ![pkg-host-node](https://github.com/flyingrobots/wesley/actions/workflows/pkg-host-node.yml/badge.svg?branch=main)
 
 Node.js host runtime that wires the pure `@wesley/core` engine into CLI adapters.
+The native Rust CLI is the product front door; this package remains only for
+legacy command compatibility and historical package tests during the retirement
+campaign.
 
 ## Responsibilities
 

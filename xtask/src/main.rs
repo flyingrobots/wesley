@@ -114,7 +114,7 @@ fn run(args: Vec<OsString>) -> Result<(), Error> {
                 ],
             )
         }
-        "legacy-preflight" => run_command("pnpm", &["run", "preflight"]),
+        "legacy-preflight" => run_command("pnpm", &["run", "legacy-preflight"]),
         other => Err(Error::Usage(format!("unknown xtask command `{other}`"))),
     }
 }
@@ -915,6 +915,7 @@ fn check_node_retirement_ledger() -> Result<(), Error> {
 
     let mut failures = Vec::new();
     check_node_package_dispositions(&root, &ledger, &mut failures)?;
+    check_legacy_package_metadata(&root, &ledger, &mut failures)?;
     check_pnpm_wesley_front_door_docs(&root, &ledger, &mut failures)?;
     check_legacy_core_authority_changes(&root, &ledger, &mut failures)?;
 
@@ -965,6 +966,78 @@ fn check_node_package_dispositions(
         if !root.join(path).join("package.json").is_file() {
             failures.push(format!(
                 "{path} ledger entry does not point at a package.json"
+            ));
+        }
+    }
+
+    Ok(())
+}
+
+fn check_legacy_package_metadata(
+    root: &Path,
+    ledger: &serde_json::Value,
+    failures: &mut Vec<String>,
+) -> Result<(), Error> {
+    for entry in ledger_array(ledger, "packages", failures) {
+        let Some(path) = entry.get("path").and_then(serde_json::Value::as_str) else {
+            continue;
+        };
+        let package_json_path = root.join(path).join("package.json");
+        let package_json_text =
+            fs::read_to_string(&package_json_path).map_err(|source| Error::CheckFailed {
+                check: "node retirement ledger".to_string(),
+                failures: vec![format!(
+                    "legacy package `{}` is missing or unreadable: {source}",
+                    display_path(root, &package_json_path)
+                )],
+            })?;
+        let package_json: serde_json::Value =
+            serde_json::from_str(&package_json_text).map_err(|source| Error::CheckFailed {
+                check: "node retirement ledger".to_string(),
+                failures: vec![format!(
+                    "legacy package `{}` is not valid JSON: {source}",
+                    display_path(root, &package_json_path)
+                )],
+            })?;
+
+        if package_json
+            .get("private")
+            .and_then(serde_json::Value::as_bool)
+            != Some(true)
+        {
+            failures.push(format!(
+                "{path}/package.json must set `private: true` while it remains in the legacy Node retirement ledger"
+            ));
+        }
+
+        let retirement = package_json
+            .get("wesley")
+            .and_then(|value| value.get("retirement"));
+        if retirement
+            .and_then(|value| value.get("status"))
+            .and_then(serde_json::Value::as_str)
+            != Some("legacy-compatibility")
+        {
+            failures.push(format!(
+                "{path}/package.json must set `wesley.retirement.status` to `legacy-compatibility`"
+            ));
+        }
+        if retirement
+            .and_then(|value| value.get("ledger"))
+            .and_then(serde_json::Value::as_str)
+            .is_none_or(str::is_empty)
+        {
+            failures.push(format!(
+                "{path}/package.json must include `wesley.retirement.ledger`"
+            ));
+        }
+        if retirement
+            .and_then(|value| value.get("disposition"))
+            .and_then(serde_json::Value::as_str)
+            .is_none_or(str::is_empty)
+        {
+            failures.push(format!(
+                "{path}/package.json must include `wesley.retirement.disposition`"
             ));
         }
     }
@@ -1058,6 +1131,7 @@ fn check_legacy_core_authority_changes(
             .iter()
             .any(|prefix| path.starts_with(prefix))
             && !allowed_changes.iter().any(|allowed| allowed == &path)
+            && !legacy_core_package_metadata_only_change(&base, root, &path)?
         {
             failures.push(format!(
                 "{path} changes legacy JS core authority; move behavior to Rust or list an explicit temporary allowance in {NODE_RETIREMENT_LEDGER}"
@@ -1065,8 +1139,52 @@ fn check_legacy_core_authority_changes(
         }
     }
 
-    let _ = root;
     Ok(())
+}
+
+fn legacy_core_package_metadata_only_change(
+    base: &str,
+    root: &Path,
+    path: &str,
+) -> Result<bool, Error> {
+    if path != "packages/wesley-core/package.json" {
+        return Ok(false);
+    }
+
+    let Some(old_text) = git_file_text(base, path)? else {
+        return Ok(false);
+    };
+    let current_path = root.join(path);
+    let current_text = fs::read_to_string(&current_path).map_err(|source| Error::CheckFailed {
+        check: "node retirement ledger".to_string(),
+        failures: vec![format!(
+            "legacy package `{}` is missing or unreadable: {source}",
+            display_path(root, &current_path)
+        )],
+    })?;
+    let old_json: serde_json::Value =
+        serde_json::from_str(&old_text).map_err(|source| Error::CheckFailed {
+            check: "node retirement ledger".to_string(),
+            failures: vec![format!("{base}:{path} is not valid JSON: {source}")],
+        })?;
+    let current_json: serde_json::Value =
+        serde_json::from_str(&current_text).map_err(|source| Error::CheckFailed {
+            check: "node retirement ledger".to_string(),
+            failures: vec![format!("{path} is not valid JSON: {source}")],
+        })?;
+
+    Ok(package_json_without_retirement_metadata(&old_json)
+        == package_json_without_retirement_metadata(&current_json))
+}
+
+fn package_json_without_retirement_metadata(value: &serde_json::Value) -> serde_json::Value {
+    let mut normalized = value.clone();
+    if let Some(object) = normalized.as_object_mut() {
+        object.remove("description");
+        object.remove("private");
+        object.remove("wesley");
+    }
+    normalized
 }
 
 fn ledger_array<'a>(
@@ -1131,6 +1249,21 @@ fn git_changed_paths_against(base: &str) -> Result<Vec<String>, Error> {
         .filter(|line| !line.is_empty())
         .map(ToOwned::to_owned)
         .collect())
+}
+
+fn git_file_text(base: &str, path: &str) -> Result<Option<String>, Error> {
+    let revision_path = format!("{base}:{path}");
+    let label = format!("git show {revision_path}");
+    let output = Command::new("git")
+        .args(["show", &revision_path])
+        .output()
+        .map_err(|source| Error::Usage(format!("failed to spawn `{label}`: {source}")))?;
+
+    if !output.status.success() {
+        return Ok(None);
+    }
+
+    Ok(Some(String::from_utf8_lossy(&output.stdout).to_string()))
 }
 
 fn check_doc_links() -> Result<(), Error> {
@@ -1561,7 +1694,7 @@ Commands:
   release-prep-guard Verify release prep before a tag exists
   release-guard     Verify that a release tag is eligible to publish
   release-check     Build and package the native Rust release artifacts
-  legacy-preflight  Run the historical pnpm package preflight
+  legacy-preflight  Run the historical pnpm package preflight for legacy changes
   help              Show help
 
 Publish options:
@@ -1958,6 +2091,111 @@ mod tests {
             other => panic!("expected CheckFailed, got {other:?}"),
         }
         fs::remove_dir_all(root).expect("temp root should be removed");
+    }
+
+    #[test]
+    fn node_retirement_package_metadata_requires_private_compatibility_warning() {
+        let root = env::temp_dir().join(format!(
+            "wesley-xtask-package-metadata-{}",
+            std::process::id()
+        ));
+        let package_dir = root.join("packages/wesley-cli");
+        fs::create_dir_all(&package_dir).expect("temp package dir should be created");
+        fs::write(
+            package_dir.join("package.json"),
+            serde_json::json!({
+                "name": "@wesley/cli",
+                "version": "0.1.0",
+                "type": "module"
+            })
+            .to_string(),
+        )
+        .expect("temp package json should be written");
+        let ledger = serde_json::json!({
+            "packages": [
+                {
+                    "path": "packages/wesley-cli",
+                    "disposition": "delete-after-command-migration"
+                }
+            ]
+        });
+        let mut failures = Vec::new();
+
+        check_legacy_package_metadata(&root, &ledger, &mut failures)
+            .expect("metadata check should complete");
+
+        assert_eq!(
+            failures,
+            vec![
+                "packages/wesley-cli/package.json must set `private: true` while it remains in the legacy Node retirement ledger",
+                "packages/wesley-cli/package.json must set `wesley.retirement.status` to `legacy-compatibility`",
+                "packages/wesley-cli/package.json must include `wesley.retirement.ledger`",
+                "packages/wesley-cli/package.json must include `wesley.retirement.disposition`",
+            ]
+        );
+        fs::remove_dir_all(root).expect("temp root should be removed");
+    }
+
+    #[test]
+    fn legacy_core_package_metadata_changes_do_not_count_as_authority() {
+        let old = serde_json::json!({
+            "name": "@wesley/core",
+            "version": "0.1.0",
+            "type": "module",
+            "description": "old description",
+            "exports": {
+                ".": "./src/index.mjs"
+            },
+            "dependencies": {
+                "graphql": "^16.11.0"
+            }
+        });
+        let current = serde_json::json!({
+            "name": "@wesley/core",
+            "version": "0.1.0",
+            "private": true,
+            "type": "module",
+            "description": "Legacy compatibility JS core",
+            "wesley": {
+                "retirement": {
+                    "status": "legacy-compatibility"
+                }
+            },
+            "exports": {
+                ".": "./src/index.mjs"
+            },
+            "dependencies": {
+                "graphql": "^16.11.0"
+            }
+        });
+        let authority_change = serde_json::json!({
+            "name": "@wesley/core",
+            "version": "0.1.0",
+            "private": true,
+            "type": "module",
+            "description": "Legacy compatibility JS core",
+            "wesley": {
+                "retirement": {
+                    "status": "legacy-compatibility"
+                }
+            },
+            "exports": {
+                ".": "./src/index.mjs",
+                "./new-authority": "./src/new-authority.mjs"
+            },
+            "dependencies": {
+                "graphql": "^16.11.0"
+            }
+        });
+
+        assert_eq!(
+            package_json_without_retirement_metadata(&old),
+            package_json_without_retirement_metadata(&current)
+        );
+        assert_ne!(
+            package_json_without_retirement_metadata(&old),
+            package_json_without_retirement_metadata(&authority_change)
+        );
     }
 
     #[test]

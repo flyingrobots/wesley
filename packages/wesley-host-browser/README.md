@@ -4,8 +4,12 @@ Pure-ESM browser host for Wesley. Provides a minimal runtime using Web APIs only
 
 ## Status
 
-Status: Experimental (Too soon for package-level CI)
+Status: Legacy compatibility surface pending externalization or deletion.
 ![Browser Smoke](https://github.com/flyingrobots/wesley/actions/workflows/browser-smoke.yml/badge.svg?branch=main)
+
+This package is not on the Rust-native product path. It remains only as
+compatibility evidence while the legacy Node-era host matrix is retired or moved
+to external ecosystem ownership.
 
 - File I/O: in-memory only (for test harness)
 - Logging: `console`-backed

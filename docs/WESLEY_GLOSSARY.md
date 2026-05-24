@@ -47,8 +47,9 @@ Packages and commands that expose Wesley to humans and scripts.
 
 Examples:
 
-- `@wesley/cli`
-- top-level `pnpm wesley ...` command surfaces
+- `crates/wesley-cli`
+- native `wesley ...` command surfaces
+- legacy `pnpm wesley ...` migration surfaces
 
 #### Generators
 
@@ -57,14 +58,15 @@ Packages that emit generic target artifacts from Wesley IR.
 Examples:
 
 - `@wesley/generator-js`
-- `@wesley/generator-vue`
 
 Historical product and database generators still present in this repo are
 extraction debt. They should move into their owning module repos.
 
 #### Hosts
 
-Packages that provide environment-specific runtime services for running Wesley.
+Legacy compatibility packages that provide environment-specific runtime services
+for historical JavaScript Wesley surfaces. They are not the Rust-native product
+front door.
 
 Examples:
 

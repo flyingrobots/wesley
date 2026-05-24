@@ -200,8 +200,9 @@ implementation surfaces.
 1. The **Rust workspace** is the current compiler center. New compiler truth
    belongs in `crates/wesley-core` and the native `wesley` CLI.
 2. The **Node workspace** still carries legacy commands, module loading,
-   generators, hosts, and evidence tooling. It remains useful, but it is no
-   longer the main compiler brain.
+   generators, hosts, and evidence tooling. It remains useful as
+   compatibility evidence and migration harnesses, but it is no longer the
+   compiler brain, product front door, or release authority.
 
 ```mermaid
 flowchart LR
@@ -233,7 +234,7 @@ flowchart LR
     JsCore --> Holmes
     RuntimeNode --> Hosts
 
-    LegacySupport -. migration and compatibility .-> CurrentCenter
+    LegacySupport -. compatibility evidence .-> CurrentCenter
 ```
 
 The current v0.0.6 work is about making that migration honest: expand Rust IR
@@ -654,6 +655,37 @@ descriptors, commands, witness scopes, verification profiles, judgment
 profiles, or certification hooks. The sequence below is historical legacy
 compatibility, not the product front door Wesley is moving toward.
 
+The Rust-side capability model now records ABI compatibility and runtime state
+before execution. A target declares its capability ABI range, execution mode,
+portability floor, host imports, and resource-handle needs. The host evaluates
+that metadata first; unsupported ABI ranges produce typed diagnostics such as
+`WASM_ABI_UNSUPPORTED`, denied host functions are rejected before execution, and
+the default runtime model is stateless unless a future policy explicitly grants
+resource handles.
+
+```mermaid
+flowchart TD
+    Target[Module target descriptor]
+    Contract[Capability ABI requirement]
+    Runtime[Runtime state model]
+    Imports[Requested host imports]
+    Resources[Requested resource handles]
+    Host[Host policy]
+    Diagnostics[Typed pre-execution diagnostics]
+    Execute[Execution hook]
+
+    Target --> Contract
+    Target --> Runtime
+    Target --> Imports
+    Target --> Resources
+    Contract --> Host
+    Runtime --> Host
+    Imports --> Host
+    Resources --> Host
+    Host -->|accepted| Execute
+    Host -->|rejected| Diagnostics
+```
+
 ```mermaid
 sequenceDiagram
     actor User
@@ -829,11 +861,11 @@ If you open the repository today, the important paths are:
 | `crates/wesley-emit-rust/`       | Rust projection crate.                                                        |
 | `crates/wesley-emit-typescript/` | TypeScript projection crate.                                                  |
 | `xtask/`                         | Rust repository automation, docs checks, preflight, release checks.           |
-| `packages/wesley-core/`          | Historical JavaScript compiler core and toolchain support.                    |
-| `packages/wesley-cli/`           | Historical JavaScript command framework and module-aware command surfaces.    |
-| `packages/wesley-runtime-node/`  | Node module discovery, loading, and host utilities.                           |
+| `packages/wesley-core/`          | Legacy JavaScript compiler core and toolchain support.                        |
+| `packages/wesley-cli/`           | Legacy JavaScript command framework and module-aware command surfaces.        |
+| `packages/wesley-runtime-node/`  | Legacy Node module discovery, loading, and host utilities.                    |
 | `packages/wesley-generator-*`    | Legacy generator surfaces that remain useful while migration continues.       |
-| `packages/wesley-holmes/`        | Evidence, verification, and judgment tooling.                                 |
+| `packages/wesley-holmes/`        | Legacy assurance, evidence, verification, and judgment tooling.               |
 | `docs/`                          | Architecture, method, design packets, release packets, and current direction. |
 | `test/fixtures/`                 | GraphQL fixtures, Rust L1 golden files, and parity inputs.                    |
 | `scripts/`                       | Fixture, parity, performance, docs, and CI support scripts.                   |
@@ -853,7 +885,7 @@ flowchart TB
             Xtask[xtask]
         end
 
-        subgraph Node["Legacy Node workspace"]
+        subgraph Node["Legacy compatibility appendices"]
             JsCore["@wesley/core"]
             JsCli["@wesley/cli"]
             Runtime["@wesley/runtime-node"]
@@ -898,18 +930,19 @@ generation, and performance evidence.
 ```mermaid
 flowchart TD
     Change[Proposed change] --> RustPreflight[cargo xtask preflight]
-    Change --> LegacyPreflight[pnpm run preflight]
+    Change --> LegacyPreflight[cargo xtask legacy-preflight]
     Change --> Fixtures[pnpm fixtures:ir]
     Change --> Parity[pnpm parity:ir and parity:parser]
     Change --> Perf[pnpm perf:ir]
 
     RustPreflight --> RustTests[cargo test --workspace]
     RustPreflight --> NativeHelp[native CLI help smoke]
-    LegacyPreflight --> DocsLinks[docs links]
-    LegacyPreflight --> DocsTruth[docs truth manifest]
+    LegacyPreflight --> PnpmLegacy[pnpm run legacy-preflight]
+    PnpmLegacy --> DocsLinks[legacy docs links]
+    PnpmLegacy --> DocsTruth[legacy docs truth manifest]
     RustPreflight --> NodeRetirement[Node retirement ledger guard]
-    LegacyPreflight --> Lint[lint and format]
-    LegacyPreflight --> PackageTests[package tests]
+    PnpmLegacy --> Lint[lint and format]
+    PnpmLegacy --> PackageTests[package tests]
 
     Fixtures --> Golden[L1 golden files]
     Parity --> Comparator[JS/Rust projection evidence]
@@ -934,7 +967,10 @@ surface area.
 
 The active Node retirement campaign adds another proof surface: a
 machine-readable ledger and drift guard that keeps the historical package
-surface classified while the Rust native front door grows.
+surface classified while the Rust native front door grows. Current CI names now
+separate `Rust Product` checks from `Legacy Compatibility` host checks so a
+green browser/Bun/Deno/Node host smoke cannot be mistaken for product compiler
+authority.
 
 ## What Wesley Does Today
 
@@ -954,7 +990,8 @@ Today, Wesley can:
 - write deterministic native emit metadata sidecars
 - keep legacy JavaScript generation paths only as compatibility surfaces while
   Zod and target-specific outputs move to external ownership
-- load external modules through explicit configuration or environment paths
+- model external module targets through Rust capability descriptors, ABI
+  compatibility reports, stateless runtime policy, and hermetic fixture checks
 - run parity sentinels across selected JS and Rust projections
 - run docs, lint, package, Rust, fixture, and preflight checks
 - maintain evidence and design packets around releases and architectural

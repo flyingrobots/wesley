@@ -2,7 +2,7 @@
 
 ## Status
 
-Supporting note for slices NR-032 through NR-041.
+Supporting note for slices NR-032 through NR-044.
 
 ## Rule
 
@@ -18,16 +18,21 @@ decide what the Wesley compiler is.
 
 ## Assurance Command Boundary
 
-| Slice | Surface | Decision |
-| --- | --- | --- |
-| NR-032 | `cert-create`, `cert-sign`, `stake`, `cert-verify`, `cert-badge` | Extract as assurance tooling. The native Rust CLI does not grow certificate verbs during Node retirement. |
-| NR-033 | Holmes, Watson, Moriarty evidence commands | Re-home under an explicit assurance package or repo boundary. The compiler may emit facts; assurance tooling judges evidence. |
-| NR-034 | `runs` ledger inspection | Exit with assurance/runtime evidence tooling. It is not needed for the compiler kernel or native emitters. |
-| NR-035 | package-level evidence tooling under `packages/wesley-cli` | Mark compatibility-only until moved beside assurance tooling. It may use JavaScript process boundaries, but it is not a product front door. |
+| Slice  | Surface                                                          | Decision                                                                                                                                    |
+| ------ | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| NR-032 | `cert-create`, `cert-sign`, `stake`, `cert-verify`, `cert-badge` | Extract as assurance tooling. The native Rust CLI does not grow certificate verbs during Node retirement.                                   |
+| NR-033 | Holmes, Watson, Moriarty evidence commands                       | Re-home under an explicit assurance package or repo boundary. The compiler may emit facts; assurance tooling judges evidence.               |
+| NR-034 | `runs` ledger inspection                                         | Exit with assurance/runtime evidence tooling. It is not needed for the compiler kernel or native emitters.                                  |
+| NR-035 | package-level evidence tooling under `packages/wesley-cli`       | Mark compatibility-only until moved beside assurance tooling. It may use JavaScript process boundaries, but it is not a product front door. |
 
 The compatibility Node commands can remain while current CI and historical
 reports still reference them. New Rust compiler features should not depend on
 those commands.
+
+The Holmes/Watson/Moriarty exit path is now design packet
+[`0018-holmes-assurance-hexagon`](../0018-holmes-assurance-hexagon/holmes-assurance-hexagon.md).
+That packet defines Holmes as a Rust-native assurance hexagon with CLI, API,
+MCP, and reporting adapters instead of a direct port of the legacy Node package.
 
 ## Dynamic Module Loading Replacement
 
@@ -48,13 +53,16 @@ The first executable proof lives in
 
 ## Rust Capability Fixtures
 
-| Slice | Fixture proof |
-| --- | --- |
-| NR-037 | `ModuleTargetRegistry` covers no-module, default target, explicit target, and duplicate target behavior. |
-| NR-038 | `ModuleTargetDescriptor` records `executionMode` and `portabilityFloor`. |
-| NR-039 | `capability_report()` names requested, granted, and denied target capabilities. |
-| NR-040 | `HostFunctionPolicy::pure()` denies all WASM host imports by default. |
-| NR-041 | `reject_unavailable_imports_before_execution()` rejects a WASM target that requests unavailable imports before any execution hook exists. |
+| Slice  | Fixture proof                                                                                                                                              |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| NR-037 | `ModuleTargetRegistry` covers no-module, default target, explicit target, and duplicate target behavior.                                                   |
+| NR-038 | `ModuleTargetDescriptor` records `executionMode` and `portabilityFloor`.                                                                                   |
+| NR-039 | `capability_report()` names requested, granted, and denied target capabilities.                                                                            |
+| NR-040 | `HostFunctionPolicy::pure()` denies all WASM host imports by default.                                                                                      |
+| NR-041 | `reject_unavailable_imports_before_execution()` rejects a WASM target that requests unavailable imports before any execution hook exists.                  |
+| NR-042 | `HostCapabilityContract` reports incompatible capability ABI ranges with typed diagnostics before execution.                                               |
+| NR-043 | `RuntimeResourcePolicy::stateless_default()` defines the default stateless runtime and rejects future resource handles unless a future policy allows them. |
+| NR-044 | `HermeticCapabilityFixture` verifies that Rust-native, WASM, and external-process fixture outputs match for one canonical input digest.                    |
 
 This is not a full module runtime. It is the first Rust-side control surface
 that prevents Node loader behavior from becoming the template for the native

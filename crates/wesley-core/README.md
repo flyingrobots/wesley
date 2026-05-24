@@ -13,10 +13,11 @@ port with `ResilientLoweringPort` and a `ResiliencePolicy`. The wrapper uses
 deterministic parse and semantic errors as compiler errors.
 
 Rust-native module planning can use `ModuleTargetRegistry`,
-`ModuleTargetDescriptor`, and `HostFunctionPolicy` to model target selection,
-execution mode, portability floor, requested/granted/denied capabilities, and
-deny-by-default WASM host imports before any dynamic module or WASM execution
-hook exists.
+`ModuleTargetDescriptor`, `HostCapabilityContract`, `HostFunctionPolicy`,
+`RuntimeResourcePolicy`, and `HermeticCapabilityFixture` to model target
+selection, execution mode, portability floor, ABI compatibility, stateless
+runtime policy, requested/granted/denied capabilities, and deny-by-default host
+imports before any dynamic module or WASM execution hook exists.
 
 The timeout observes async cancellation points. It does not preempt
 synchronous CPU-bound parser or lowering work that runs to completion inside a

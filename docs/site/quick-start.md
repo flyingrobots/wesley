@@ -17,33 +17,33 @@ cd wesley
 pnpm install
 ```
 
-## 2. Generate artifacts
+## 2. Inspect compiler facts
 
-Compile the example schema through the default generic transmutation:
+Lower, hash, and list operations through the native Rust CLI:
 
 ```bash
-node packages/wesley-host-node/bin/wesley.mjs generate \
+cargo wesley schema lower --schema test/fixtures/examples/ecommerce.graphql --json
+cargo wesley schema hash --schema test/fixtures/examples/ecommerce.graphql
+cargo wesley schema operations --schema test/fixtures/examples/ecommerce.graphql --json
+```
+
+## 3. Emit TypeScript
+
+```bash
+cargo wesley emit typescript \
   --schema test/fixtures/examples/ecommerce.graphql \
-  --transmutation null-generator \
-  --emit-bundle \
-  --out-dir out/examples
+  --out out/examples/ecommerce.d.ts \
+  --metadata-out out/examples/ecommerce.metadata.json
 ```
 
-## 3. Inspect generated evidence
+The metadata sidecar records schema hash, generator identity, generator
+version, and native execution mode.
+
+## 4. Run health checks
 
 ```bash
-node packages/wesley-host-node/bin/wesley.mjs cert-create \
-  --out .wesley-cache/SHIPME.md
+cargo xtask preflight
 ```
-
-## 4. Verify the certificate
-
-```bash
-node packages/wesley-host-node/bin/wesley.mjs cert-verify \
-  --in .wesley-cache/SHIPME.md
-```
-
-This verifies the generic assurance certificate emitted from the local run.
 
 ## 5. Next steps
 
@@ -51,4 +51,6 @@ This verifies the generic assurance certificate emitted from the local run.
 - Read the direction map: [Roadmap](./roadmap.md)
 - Learn about HOLMES scoring: [docs/architecture/holmes-architecture.md](../architecture/holmes-architecture.md)
 
-Database-specific generators and fixtures live in `wesley-postgres`.
+Database-specific generators and fixtures live in `wesley-postgres`. Legacy
+certificate and HOLMES commands remain compatibility or assurance surfaces, not
+the native compiler quick start.

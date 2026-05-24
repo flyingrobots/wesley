@@ -74,7 +74,11 @@ function buildCommands(changedFiles) {
   }
 
   if (needsPreflight(changedFiles)) {
-    addCommand('preflight', 'Repository preflight', 'pnpm run preflight');
+    addCommand('preflight', 'Rust product preflight', 'cargo xtask preflight');
+  }
+
+  if (needsLegacyPreflight(changedFiles)) {
+    addCommand('legacy-preflight', 'Legacy package preflight', 'cargo xtask legacy-preflight');
   }
 
   if (needsRepoBats(changedFiles)) {
@@ -120,15 +124,30 @@ function packageForFile(file, packages) {
 function needsPreflight(changedFiles) {
   return changedFiles.some(
     (file) =>
+      file === 'Cargo.lock' ||
+      file === 'Cargo.toml' ||
       file === 'package.json' ||
-      file === 'pnpm-lock.yaml' ||
-      file === 'pnpm-workspace.yaml' ||
       file.startsWith('.github/') ||
       file.startsWith('.githooks/') ||
+      file.startsWith('crates/') ||
       file.startsWith('docs/') ||
       file.startsWith('schemas/') ||
       file.startsWith('scripts/') ||
+      file.startsWith('xtask/') ||
       file.endsWith('/package.json')
+  );
+}
+
+function needsLegacyPreflight(changedFiles) {
+  return changedFiles.some(
+    (file) =>
+      file === 'package.json' ||
+      file === 'pnpm-lock.yaml' ||
+      file === 'pnpm-workspace.yaml' ||
+      file.startsWith('.dependency-cruiser') ||
+      file.startsWith('packages/') ||
+      file === 'scripts/preflight.mjs' ||
+      file === 'scripts/check-doc-cli-commands.mjs'
   );
 }
 

@@ -35,3 +35,4 @@ migrations/
 # Wesley compiler inputs and fixture truth
 *.graphql
 test/fixtures/ir-parity/*.l1.json
+test/fixtures/typescript-emitter/*.generated.ts

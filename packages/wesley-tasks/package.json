@@ -1,8 +1,17 @@
 {
   "name": "@wesley/tasks",
   "version": "0.1.0",
-  "description": "Wesley T.A.S.K.S. - Task Abstraction, Scheduling, and Kernel System",
+  "private": true,
   "type": "module",
+  "description": "Legacy compatibility task planning utilities pending Rust proof or deletion",
+  "wesley": {
+    "retirement": {
+      "status": "legacy-compatibility",
+      "disposition": "port-only-if-generic",
+      "ledger": "docs/design/0017-rust-native-front-door-and-node-retirement/NODE_RETIREMENT_LEDGER.md",
+      "replacement": "Port only generic task concepts that Rust execution planning proves necessary; otherwise delete this package."
+    }
+  },
   "main": "src/index.mjs",
   "exports": {
     ".": "./src/index.mjs"

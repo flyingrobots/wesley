@@ -8,6 +8,32 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- **Holmes assurance hexagon design**: Added design packet `0018` describing a
+  ground-up Rust Holmes redesign with hexagonal architecture, CLI/API/MCP
+  interfaces, dependency-injected ports, and a reporting abstraction where
+  GitHub PR comments are one publisher instead of the system center.
+- **Parity sentinel archive**: Added the `0017` parity sentinel archive so
+  JS/Rust parity scripts remain migration evidence while Rust self-consistency
+  and fixture truth become the product release gate.
+- **Package deletion blockers**: Added explicit blocker evidence for legacy
+  packages whose deletion gates remain open after the Vue generator removal.
+- **Legacy compatibility package matrix**: Added a Node-retirement
+  compatibility matrix that names every remaining legacy package, its
+  retirement lane, and the gate for deleting, extracting, or rebuilding it.
+- **Legacy package retirement metadata**: Added machine-readable
+  `wesley.retirement` metadata and private-package warnings for every package
+  that remains in the Node retirement ledger.
+- **Legacy command deprecation warnings**: The historical Node CLI now warns
+  when `diff`, `doctor`, `generate`, `typescript`, or `ts` have native Rust
+  replacements.
+- **Capability ABI compatibility diagnostics**: Added Rust-core capability
+  contract version requirements, host compatibility reports, typed
+  `WASM_ABI_UNSUPPORTED` diagnostics, stateless runtime resource policy, and
+  hermetic cross-host capability fixture verification for the next Node
+  retirement slice.
+- **Host compatibility boundary**: Added a Node-retirement design note
+  classifying browser, Bun, Deno, and Node host packages as legacy
+  compatibility surfaces rather than Rust product checks.
 - **Rust module capability registry proof**: Added Rust-core target registry and
   WASM host-import policy fixtures covering no-module, default target, explicit
   target, duplicate target, execution-mode metadata, portability floor,
@@ -31,7 +57,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   sorted types, fields, arguments, unions, defaults, and nested list
   references.
 - **Normalized SDL hash evidence**: `wesley normalize-sdl --schema <path>
-  --hash` now emits a SHA-256 evidence hash for the normalized SDL view, and
+--hash` now emits a SHA-256 evidence hash for the normalized SDL view, and
   parser parity reports include normalized SDL hash evidence for accepted Rust
   fixtures.
 - **Legacy Node retirement campaign**: Added design packet `0017`, a Node
@@ -61,6 +87,12 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   acceptance over explicit parser-sensitive fixtures, including valid SDL,
   syntax-invalid SDL, nested list SDL, and shared rejection of duplicate
   canonical directive aliases.
+
+### Removed
+
+- **Vue generator package**: Deleted `packages/wesley-generator-vue` after the
+  retirement ledger classified Vue projection output as target-owned behavior
+  with no generic Wesley owner.
 - **Nested-list type-family parity fixture**: Added
   `nested-list-schema.graphql` to the default `pnpm parity:ir` corpus under
   `js-sdl-type-family-vs-rust-l1-type-family.v0`, and taught the projection to
@@ -113,6 +145,26 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Changed
 
+- **Product health check**: `cargo xtask preflight` is now the ordinary product
+  health gate, while `cargo xtask legacy-preflight` explicitly runs the
+  historical Node package preflight only for legacy package or pnpm workspace
+  changes.
+- **Native docs command truth**: Documentation command drift checks now read
+  the Rust-native `wesley --help` surface instead of treating the Node host CLI
+  as front-door truth.
+- **Rust-native documentation spine**: README, GUIDE, ENTRYPOINTS,
+  ARCHITECTURE, END_TO_END, quick-start docs, package docs, and the release
+  runbook now present native schema lower/hash/diff and Rust emitter commands
+  as the normal path, with `pnpm wesley` documented as a migration bridge.
+- **Package progress posture**: README package status now labels legacy npm
+  packages as compatibility surfaces instead of product-front-door artifacts.
+- **CI lane names**: Renamed Rust-native checks as `Rust Product`, repository
+  checks as `Repository Hygiene`, and browser/Bun/Deno/Node host checks as
+  `Legacy Compatibility`, and replaced the generic CI product schema smoke with
+  the native Rust CLI.
+- **Host package posture**: Marked `@wesley/host-node`,
+  `@wesley/host-browser`, `@wesley/host-bun`, and `@wesley/host-deno` docs as
+  legacy compatibility surfaces pending deletion or externalization.
 - **Assurance command boundary**: Classified certificate, SHIPME,
   Holmes/Moriarty, run-ledger, validate-bundle, and package-level evidence
   commands as assurance or compatibility surfaces rather than native compiler

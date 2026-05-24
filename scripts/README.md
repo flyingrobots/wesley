@@ -11,7 +11,7 @@ This directory contains helper scripts that power development workflows. Run the
 | `fix-package-metadata.mjs`   | Normalises `package.json` metadata across all workspaces (author, license, repository, etc.).                                                                              | `pnpm exec node scripts/fix-package-metadata.mjs` (no arguments)                                                                      |
 | `install-hooks.sh`           | Sets `core.hooksPath` to `.githooks`, ensuring local Git hooks run. Safe to rerun.                                                                                         | `bash scripts/install-hooks.sh`                                                                                                       |
 | `measure-ir-performance.mjs` | Measures Rust CLI `schema lower` wall-clock samples with bounded Alfred process calls, optionally comparing legacy JS lowering or emitting the binding observatory report. | `pnpm perf:ir -- --include-legacy-js --markdown --output out/rust-ir-performance-baseline.md`; `pnpm perf:bindings -- --json`         |
-| `preflight.mjs`              | Runs the repository hygiene suite (docs link check, dependency boundaries, ESLint purity, license audit).                                                                  | `pnpm run preflight` – respects `SKIP_PREFLIGHT=1` to bypass                                                                          |
+| `preflight.mjs`              | Runs the historical Node-package hygiene suite behind `cargo xtask legacy-preflight`.                                                                                      | `pnpm run legacy-preflight` – respects `SKIP_PREFLIGHT=1` to bypass                                                                   |
 | `pre-push-sanity.mjs`        | Selects targeted sanity checks for the refs being pushed, based on changed files.                                                                                          | `node scripts/pre-push-sanity.mjs --dry-run --files packages/wesley-holmes/src/cli.mjs` (`SKIP_PREPUSH_SANITY=1` bypasses all checks) |
 | `compute-progress.mjs`       | Aggregates package progress → `meta/progress.json` and updates README markers.                                                                                             | `node scripts/compute-progress.mjs [--dry-run]`                                                                                       |
 | `serve-static.mjs`           | Tiny static file server used by browser smokes. Exports `contentType()` and `isWithinRoot()`. Hardened against traversal.                                                  | `node scripts/serve-static.mjs --dir=... --port=8787`                                                                                 |
@@ -22,7 +22,7 @@ This directory contains helper scripts that power development workflows. Run the
 | `setup-bats-plugins.sh`      | Installs pinned Bats testing plugins into `packages/wesley-cli/test/bats-plugins`.                                                                                         | `bash scripts/setup-bats-plugins.sh`                                                                                                  |
 | `test-ci-locally.sh`         | Simulates the GitHub Actions CLI job locally (installs deps, runs Bats, emits TAP).                                                                                        | `pnpm run test:ci:local`                                                                                                              |
 | `smoke/repo-bats-prepush.sh` | Runs the fast repo-level Bats suite used by the smart pre-push hook.                                                                                                       | `bash scripts/smoke/repo-bats-prepush.sh`                                                                                             |
-| _(composite)_                | Convenience bootstrap script that installs dependencies, runs preflight, then runs the workspace tests.                                                                    | `pnpm run bootstrap`                                                                                                                  |
+| _(composite)_                | Convenience bootstrap script that installs dependencies, runs Rust product preflight, then runs the workspace tests.                                                       | `pnpm run bootstrap`                                                                                                                  |
 
 > [!tip]
 > All scripts assume Node 22+ and `pnpm` (pinned via `package.json`). Use `pnpm exec` to ensure the local toolchain is picked up.
@@ -33,10 +33,13 @@ This directory contains helper scripts that power development workflows. Run the
 Prettier binary. Prettier owns parseable source, documentation, configuration,
 and ordinary JSON/YAML assets.
 
-Prettier does not own Wesley SDL files or Rust IR golden bytes:
+Prettier does not own Wesley SDL files, Rust IR golden bytes, or Rust-emitter
+TypeScript golden bytes:
 
 - `*.graphql` files are compiler inputs. Some are valid GraphQL SDL, some use
   Wesley-specific fixture syntax, and some are intentionally invalid for
   diagnostic coverage.
 - `test/fixtures/ir-parity/*.l1.json` files are canonical Rust L1 fixture
   evidence and must stay under generator/hash control.
+- `test/fixtures/typescript-emitter/*.generated.ts` files are Rust emitter
+  golden outputs and must stay byte-for-byte under generator control.

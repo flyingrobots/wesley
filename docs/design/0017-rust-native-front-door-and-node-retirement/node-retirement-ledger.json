@@ -14,10 +14,6 @@
       "disposition": "port-typescript-extract-zod"
     },
     {
-      "path": "packages/wesley-generator-vue",
-      "disposition": "delete-or-externalize"
-    },
-    {
       "path": "packages/wesley-holmes",
       "disposition": "extract-or-rebuild-later"
     },
@@ -27,11 +23,11 @@
     },
     {
       "path": "packages/wesley-host-bun",
-      "disposition": "delete"
+      "disposition": "delete-or-externalize"
     },
     {
       "path": "packages/wesley-host-deno",
-      "disposition": "delete"
+      "disposition": "delete-or-externalize"
     },
     {
       "path": "packages/wesley-host-node",
@@ -52,6 +48,41 @@
     {
       "path": "packages/wesley-test-fixtures",
       "disposition": "replace"
+    }
+  ],
+  "retiredPackages": [
+    {
+      "path": "packages/wesley-generator-vue",
+      "disposition": "deleted",
+      "slice": "NR-081",
+      "replacement": "External Vue projection ownership; generic Wesley no longer carries a built-in Vue generator package."
+    }
+  ],
+  "deletionBlockers": [
+    {
+      "slice": "NR-076",
+      "path": "packages/wesley-core",
+      "blocker": "Still imported by Holmes, host compatibility packages, scaffold fixtures, the JS generator, and scripts."
+    },
+    {
+      "slice": "NR-077",
+      "path": "packages/wesley-cli",
+      "blocker": "Still owns legacy assurance/runtime commands and Bats compatibility suites."
+    },
+    {
+      "slice": "NR-078",
+      "path": "packages/wesley-host-node",
+      "blocker": "Still referenced by compatibility workflows, root scripts, and legacy CLI smoke tests."
+    },
+    {
+      "slice": "NR-079",
+      "path": "packages/wesley-runtime-node",
+      "blocker": "Still used by Holmes/runtime evidence and parser/parity migration scripts."
+    },
+    {
+      "slice": "NR-080",
+      "path": "packages/wesley-generator-js",
+      "blocker": "Still used by the legacy CLI for Zod/models/TypeScript compatibility commands."
     }
   ],
   "commands": [
@@ -126,12 +157,7 @@
       "disposition": "extract-or-delete"
     }
   ],
-  "frontDoorDocs": [
-    "README.md",
-    "docs/GUIDE.md",
-    "docs/ENTRYPOINTS.md",
-    "docs/END_TO_END.md"
-  ],
+  "frontDoorDocs": ["README.md", "docs/GUIDE.md", "docs/ENTRYPOINTS.md", "docs/END_TO_END.md"],
   "pnpmWesleyCompatibilityContext": [
     "legacy",
     "historical",
@@ -140,9 +166,11 @@
     "retir",
     "migration"
   ],
-  "legacyCoreAuthorityPaths": [
-    "packages/wesley-core/src/",
-    "packages/wesley-core/package.json"
-  ],
-  "legacyCoreAuthorityAllowedChanges": []
+  "legacyCoreAuthorityPaths": ["packages/wesley-core/src/", "packages/wesley-core/package.json"],
+  "legacyCoreAuthorityAllowedChanges": [],
+  "ciLaneLabels": {
+    "rustProduct": "Rust Product",
+    "repositoryHygiene": "Repository Hygiene",
+    "legacyCompatibility": "Legacy Compatibility"
+  }
 }

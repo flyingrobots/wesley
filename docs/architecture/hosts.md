@@ -1,13 +1,21 @@
 # Hosts and Runtimes
 
-This page tracks where Wesley runs today and any host‑specific notes.
+This page tracks historical host compatibility surfaces and host-specific
+notes. These packages are compatibility evidence during Node retirement, not
+the Rust-native product spine.
 
 ## Summary
 
-- Node.js (host-node): Stable. Full CLI and adapters live here.
-- Browser (host-browser): Experimental. Pure ESM, no Node builtins; in‑memory FS only; minimal SDL detector used in smokes.
-- Deno: Smoke coverage. Imports `@wesley/core` via `deno.json` import map; no dedicated host package yet.
-- Bun: Smoke coverage. Imports `@wesley/core`; no dedicated host package yet.
+- Rust native CLI: Product front door. Compiler truth and ordinary health checks
+  live in `crates/`.
+- Node.js (host-node): Legacy compatibility. Historical CLI and adapters live
+  here until deletion.
+- Browser (host-browser): Legacy compatibility. Pure ESM, no Node builtins;
+  in-memory FS only; minimal SDL detector used in smokes.
+- Deno: Legacy compatibility. Imports `@wesley/core` through compatibility
+  harnesses only.
+- Bun: Legacy compatibility. Imports `@wesley/core` through compatibility
+  harnesses only.
 
 ## Contracts suite (multi‑host)
 
@@ -57,9 +65,14 @@ HOST=bun bats test/hosts/host-contracts.bats
 
 ## CI
 
-- Browser: `.github/workflows/browser-smoke.yml` runs the contracts via Playwright.
-- Deno/Bun: `.github/workflows/runtime-smokes.yml` runs the contracts with HOST=deno and HOST=bun.
-- Node: same workflow includes HOST=node; in addition, CLI workflows provide deep coverage.
+- Rust product: `.github/workflows/rust-native.yml` runs `cargo xtask preflight`
+  under the `Rust Product - Native CLI` workflow name.
+- Browser: `.github/workflows/browser-smoke.yml` runs compatibility contracts
+  through Playwright under a `Legacy Compatibility` workflow name.
+- Deno/Bun: `.github/workflows/runtime-smokes.yml` runs compatibility contracts
+  with `HOST=deno` and `HOST=bun`.
+- Node: the same compatibility workflow includes `HOST=node`; package workflows
+  keep historical Node-host behavior honest until deletion.
 
 ## Progress & Maturity
 

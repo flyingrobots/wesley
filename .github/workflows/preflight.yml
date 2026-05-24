@@ -1,4 +1,4 @@
-name: Preflight
+name: Repository Hygiene - Preflight
 
 permissions:
   contents: read
@@ -11,6 +11,7 @@ on:
 
 jobs:
   preflight:
+    name: Repository hygiene preflight
     runs-on: ubuntu-latest
     steps:
       - name: Harden runner
@@ -30,5 +31,5 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Verify lockfile unchanged
         run: git diff --exit-code -- pnpm-lock.yaml
-      - name: Run repository preflight
-        run: node scripts/preflight.mjs
+      - name: Run repository hygiene preflight
+        run: pnpm run legacy-preflight

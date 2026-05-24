@@ -1,8 +1,17 @@
 {
   "name": "@wesley/host-deno",
   "version": "0.1.0",
+  "private": true,
   "type": "module",
-  "description": "Wesley Deno host runtime (pure ESM)",
+  "description": "Legacy compatibility Deno host experiment",
+  "wesley": {
+    "retirement": {
+      "status": "legacy-compatibility",
+      "disposition": "delete-or-externalize",
+      "ledger": "docs/design/0017-rust-native-front-door-and-node-retirement/NODE_RETIREMENT_LEDGER.md",
+      "replacement": "Externalize or delete the Deno host experiment after its legacy compatibility evidence is obsolete."
+    }
+  },
   "main": "./mod.ts",
   "exports": {
     ".": "./mod.ts"

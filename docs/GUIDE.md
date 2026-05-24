@@ -20,7 +20,7 @@ artifacts.
 - **Rust preflight**: `cargo xtask preflight`
 - **Release check**: `cargo xtask release-check`
 
-The Rust-native CLI is now the preferred front door for Wesley core work. The
+The Rust-native CLI is now the normal front door for Wesley core work. The
 native binary stays small while core behavior moves into the Rust library.
 `wesley-core` exposes generic operation analysis primitives for resolving
 selection paths and extracting directive arguments; Echo-owned tooling owns
@@ -40,13 +40,24 @@ artifacts; it runs the Rust tests, builds the optimized binary, and packages
 the Rust library crate without publishing anything.
 
 The historical package CLI still carries compatibility-only TypeScript, Zod,
-and transform paths while those surfaces are being extracted or retired. Prefer
-the native emit commands where parity exists:
+diff, generate, and transform paths while those surfaces are being extracted or
+retired. Prefer the native commands where parity exists:
+
+- **Lower**: `wesley schema lower --schema <path> --json`
+- **Hash**: `wesley schema hash --schema <path>`
+- **Diff**: `wesley schema diff --old <old> --new <new> --format summary`
 
 - **Rust**: `wesley emit rust --schema <path> --out <path>`
 - **TypeScript**: `wesley emit typescript --schema <path> --out <path>`
 - **Emit metadata**: add `--metadata-out <path>` to record schema hash,
   generator identity, generator version, and `rust-native` execution mode.
+
+For users still calling `pnpm wesley`, treat that command as a migration
+bridge. The direct replacements are `wesley schema lower`, `wesley schema
+hash`, `wesley schema diff`, `wesley doctor`, and `wesley emit typescript` or
+`wesley emit rust`. Zod, certificate, run-ledger, and Holmes-family commands
+remain legacy compatibility or assurance tooling until they move behind their
+own boundary.
 
 Zod output is no longer treated as core Wesley retirement work. Reintroduce it
 through an external target module or package when a consumer needs JavaScript
@@ -80,7 +91,7 @@ artifact assembled by CI.
 These are historical assurance/tooling surfaces while the Node retirement
 campaign decides what moves, extracts, or disappears.
 
-- **Certificate**: `pnpm wesley cert-create --help`
+- **Certificate**: legacy `pnpm wesley cert-create --help`
 - **HOLMES report**: `pnpm --filter @wesley/holmes exec node src/cli.mjs report --help`
 - **Dashboard artifact**: open `docs/holmes-dashboard/index.html` with the
   HOLMES workflow JSON artifacts. See
@@ -133,7 +144,8 @@ Wesley is a tiered engine designed to enforce contract integrity across platform
 ## Orientation Checklist
 
 - [ ] **I am setting up Rust core work**: Run `cargo xtask preflight`.
-- [ ] **I am changing docs or legacy packages**: Run `pnpm install` and `cargo xtask legacy-preflight`.
+- [ ] **I am changing docs only**: Run `cargo xtask docs-check`.
+- [ ] **I am changing legacy packages or pnpm workspace files**: Run `pnpm install` and `cargo xtask legacy-preflight`.
 - [ ] **I am modifying a schema**: Always start in the `.graphql` file.
 - [ ] **I am adding a generic projection**: Start in `crates/wesley-emit-rust` or `crates/wesley-emit-typescript`, and only touch legacy Node generators for legacy package work.
 - [ ] **I am adding a domain target**: Put it in an external module repo and load it into Wesley.
