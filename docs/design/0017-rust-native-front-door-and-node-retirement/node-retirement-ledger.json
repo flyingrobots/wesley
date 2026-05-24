@@ -27,11 +27,11 @@
     },
     {
       "path": "packages/wesley-host-bun",
-      "disposition": "delete"
+      "disposition": "delete-or-externalize"
     },
     {
       "path": "packages/wesley-host-deno",
-      "disposition": "delete"
+      "disposition": "delete-or-externalize"
     },
     {
       "path": "packages/wesley-host-node",
@@ -144,5 +144,10 @@
     "packages/wesley-core/src/",
     "packages/wesley-core/package.json"
   ],
-  "legacyCoreAuthorityAllowedChanges": []
+  "legacyCoreAuthorityAllowedChanges": [],
+  "ciLaneLabels": {
+    "rustProduct": "Rust Product",
+    "repositoryHygiene": "Repository Hygiene",
+    "legacyCompatibility": "Legacy Compatibility"
+  }
 }

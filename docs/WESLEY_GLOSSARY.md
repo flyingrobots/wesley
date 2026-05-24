@@ -64,7 +64,9 @@ extraction debt. They should move into their owning module repos.
 
 #### Hosts
 
-Packages that provide environment-specific runtime services for running Wesley.
+Legacy compatibility packages that provide environment-specific runtime services
+for historical JavaScript Wesley surfaces. They are not the Rust-native product
+front door.
 
 Examples:
 

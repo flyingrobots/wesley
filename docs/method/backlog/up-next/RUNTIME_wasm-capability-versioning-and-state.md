@@ -36,6 +36,8 @@ handles.
 
 ## Current Slice Status
 
-The first Rust-native metadata and registry fixtures now exist. Remaining work
-is the broader ABI compatibility surface: semver ranges, typed compatibility
-diagnostics, and hidden-state rejection fixtures.
+Rust-native metadata, registry fixtures, ABI version range diagnostics,
+stateless resource-handle rejection, and hermetic cross-host fixture checks now
+exist. Remaining work is the full runtime ABI: actual WASM execution,
+resource-handle implementation, kernel feature negotiation, and release
+artifact reporting.

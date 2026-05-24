@@ -1,6 +1,8 @@
 # Node Host
 
-The Node.js host composes Wesley’s pure `@wesley/core` engine with Node‑specific adapters and exposes the CLI.
+The Node.js host is a legacy compatibility surface. It composes Wesley's
+historical `@wesley/core` engine with Node-specific adapters and exposes the
+old JavaScript CLI while the Rust-native CLI takes over product authority.
 
 - Package: `@wesley/host-node`
 - Entrypoint: `packages/wesley-host-node/bin/wesley.mjs`
@@ -15,4 +17,5 @@ pnpm --filter @wesley/host-node run test
 node packages/wesley-host-node/bin/wesley.mjs --version
 ```
 
-See the root README for end‑to‑end CLI examples.
+Use native `wesley` examples for new product documentation. Node host examples
+belong in legacy compatibility or migration contexts only.

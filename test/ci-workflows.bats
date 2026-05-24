@@ -14,6 +14,54 @@ load 'bats-plugins/bats-assert/load'
   [ "$output" -ge 1 ]
 }
 
+@test "CI names distinguish Rust product checks from legacy compatibility checks" {
+  run bash -lc "grep -F 'name: Rust Product - Native CLI' .github/workflows/rust-native.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'Rust product preflight' .github/workflows/rust-native.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'name: Legacy Compatibility - Runtime Smokes' .github/workflows/runtime-smokes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'Legacy compatibility - Node host smoke' .github/workflows/runtime-smokes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'name: Legacy Compatibility - Browser Smoke' .github/workflows/browser-smoke.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'name: Legacy Compatibility - pkg-host-bun' .github/workflows/pkg-host-bun.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'name: Legacy Compatibility - pkg-host-deno' .github/workflows/pkg-host-deno.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'name: Legacy Compatibility - pkg-host-node' .github/workflows/pkg-host-node.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+}
+
+@test "general CI uses native CLI for product schema smoke" {
+  run bash -lc "grep -F 'Rust product native schema lower smoke' .github/workflows/ci.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'cargo run --bin wesley -- schema lower' .github/workflows/ci.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'node packages/wesley-host-node/bin/wesley.mjs generate --schema test/fixtures/examples/ecommerce.graphql' .github/workflows/ci.yml | wc -l || true"
+  assert_success
+  [ "$output" -eq 0 ]
+}
+
 @test "cert-shipme anchors and paginates bot comments" {
   run bash -lc "grep -F '<!-- SHIPME_COMMENT -->' .github/workflows/cert-shipme.yml | wc -l"
   assert_success

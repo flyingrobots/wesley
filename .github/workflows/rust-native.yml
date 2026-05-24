@@ -1,4 +1,4 @@
-name: Rust Native
+name: Rust Product - Native CLI
 
 permissions:
   contents: read
@@ -32,7 +32,8 @@ on:
       - 'xtask/**'
 
 jobs:
-  preflight:
+  rust-product-preflight:
+    name: Rust product preflight
     runs-on: ubuntu-latest
     steps:
       - name: Harden runner

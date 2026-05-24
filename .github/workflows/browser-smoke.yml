@@ -1,4 +1,4 @@
-name: Browser Smoke
+name: Legacy Compatibility - Browser Smoke
 
 on:
   # Avoid double-runs on PRs from same repo by running push only on main
@@ -21,6 +21,7 @@ permissions:
 
 jobs:
   browser-smoke:
+    name: Legacy compatibility - Browser host smoke
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

@@ -1,4 +1,4 @@
-name: Preflight
+name: Repository Hygiene - Preflight
 
 permissions:
   contents: read
@@ -11,6 +11,7 @@ on:
 
 jobs:
   preflight:
+    name: Repository hygiene preflight
     runs-on: ubuntu-latest
     steps:
       - name: Harden runner

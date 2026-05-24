@@ -400,6 +400,10 @@ Hidden mutable state inside a portable capability should not affect compiler
 truth. If it does, the capability is not portable truth; it is host behavior and
 must be labeled that way.
 
+The default Rust policy is `RuntimeResourcePolicy::stateless_default()`. It
+allows no resource handles. Future cache, registry, or session handles must be
+declared explicitly and accepted by a non-default policy before execution.
+
 ## Versioning And Compatibility
 
 Kernel versioning and ABI versioning are related but separate.
@@ -424,6 +428,11 @@ capability: example-target 0.1.0
 execution: wasm
 compatibility: accepted
 ```
+
+The first Rust proof now lives in `crates/wesley-core/src/domain/capability.rs`.
+`HostCapabilityContract` evaluates `CapabilityVersionRequirement` before any
+execution hook exists and emits typed diagnostics such as
+`WASM_ABI_UNSUPPORTED` when a module requires an unsupported ABI range.
 
 ## Echo In-Process Playback
 

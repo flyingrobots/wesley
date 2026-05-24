@@ -1,4 +1,4 @@
-name: Runtime Smokes
+name: Legacy Compatibility - Runtime Smokes
 
 on:
   push:
@@ -15,6 +15,7 @@ permissions:
 
 jobs:
   deno-smoke:
+    name: Legacy compatibility - Deno host smoke
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -43,6 +44,7 @@ jobs:
           HOST=deno bats -t test/hosts/host-contracts.bats
 
   bun-smoke:
+    name: Legacy compatibility - Bun host smoke
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -68,6 +70,7 @@ jobs:
           HOST=bun bats -t test/hosts/host-contracts.bats
 
   node-smoke:
+    name: Legacy compatibility - Node host smoke
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

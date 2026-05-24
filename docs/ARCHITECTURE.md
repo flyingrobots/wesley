@@ -128,12 +128,12 @@ semantics.
 | `xtask/`                                                                 | Rust repository automation: docs checks, tests, native preflight, release check, legacy preflight bridge.                                                                |
 | `packages/wesley-core/`                                                  | Historical JS core: domain/application/port modules, module capabilities, generation pipeline, hashes, runtime-event helpers.                                            |
 | `packages/wesley-cli/`                                                   | Historical JS CLI command framework and module-aware command surfaces.                                                                                                   |
-| `packages/wesley-host-node/`                                             | Node executable wrapper around the JS CLI and runtime adapters.                                                                                                          |
+| `packages/wesley-host-node/`                                             | Legacy compatibility Node executable wrapper around the JS CLI and runtime adapters.                                                                                     |
 | `packages/wesley-runtime-node/`                                          | Shared Node module discovery/loading and host utilities.                                                                                                                 |
 | `packages/wesley-generator-js/`                                          | TypeScript/Zod/model generation surface.                                                                                                                                 |
 | `packages/wesley-generator-vue/`                                         | Experimental Vue-facing generator surface.                                                                                                                               |
 | `packages/wesley-holmes/`                                                | Evidence, verification, counterfactual, Holmes/Moriarty-era tooling.                                                                                                     |
-| `packages/wesley-host-browser/`, `wesley-host-bun/`, `wesley-host-deno/` | Experimental host adapters.                                                                                                                                              |
+| `packages/wesley-host-browser/`, `wesley-host-bun/`, `wesley-host-deno/` | Legacy compatibility host experiments pending deletion or externalization.                                                                                               |
 | `packages/wesley-tasks/`                                                 | Task planning/orchestration utilities.                                                                                                                                   |
 | `packages/wesley-test-fixtures/`                                         | Shared test fixtures and schema builders for package tests.                                                                                                              |
 | `schemas/`                                                               | JSON schemas and generic directive/schema assets used by tooling and tests.                                                                                              |
@@ -473,9 +473,10 @@ tooling because legacy packages and module examples still need that coverage.
 ## Legacy Node Tooling
 
 The Node packages are still active for legacy compiler workflows, module
-loading, generated TypeScript/Zod output, host experiments, and Holmes-era
-assurance tooling. They are not the preferred home for new compiler-kernel
-truth.
+loading, generated TypeScript/Zod output, host compatibility experiments, and
+Holmes-era assurance tooling. They are not the preferred home for new
+compiler-kernel truth, and host packages now live in explicitly named legacy
+compatibility CI lanes.
 
 The central JS split is:
 

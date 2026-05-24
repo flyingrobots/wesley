@@ -52,14 +52,14 @@ Every legacy Node surface gets one disposition:
 | --------------------------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | `packages/wesley-core/`                 | Port then delete                | Audit for generic compiler behavior not already in `crates/wesley-core`; reject domain residue.            |
 | `packages/wesley-cli/`                  | Delete after command migration  | Native `crates/wesley-cli` is the product body.                                                            |
-| `packages/wesley-host-node/`            | Delete                          | Native binary replaces the Node host.                                                                      |
+| `packages/wesley-host-node/`            | Delete                          | Legacy compatibility only; native binary replaces the Node host as product front door.                     |
 | `packages/wesley-runtime-node/`         | Extract or delete               | Node module loading should not define Wesley core.                                                         |
 | `packages/wesley-generator-js/`         | Port TypeScript, extract Zod    | Basic Rust and TypeScript model emission has started in Rust. Zod exits to an external target boundary if still needed. |
 | `packages/wesley-generator-vue/`        | Delete or externalize           | Experimental frontend projection is not core.                                                              |
 | `packages/wesley-holmes/`               | Extract or rebuild later        | Assurance/evidence tooling is adjacent, not a blocker for compiler-kernel Rustification.                   |
-| `packages/wesley-host-browser/`         | Delete or externalize           | Browser host is an experiment, not the pure Rust path.                                                     |
-| `packages/wesley-host-bun/`             | Delete                          | Host experiment.                                                                                           |
-| `packages/wesley-host-deno/`            | Delete                          | Host experiment.                                                                                           |
+| `packages/wesley-host-browser/`         | Delete or externalize           | Legacy compatibility only; externalize if browser ecosystem ownership remains useful.                      |
+| `packages/wesley-host-bun/`             | Delete                          | Legacy compatibility only; delete or externalize after compatibility evidence is obsolete.                 |
+| `packages/wesley-host-deno/`            | Delete                          | Legacy compatibility only; delete or externalize after compatibility evidence is obsolete.                 |
 | `packages/wesley-scaffold-multitenant/` | Delete or move to product owner | Product scaffold, not core Wesley.                                                                         |
 | `packages/wesley-tasks/`                | Port only if generic            | Keep the idea only if Rust execution planning needs it.                                                    |
 | `packages/wesley-test-fixtures/`        | Replace                         | Move useful fixtures into Rust tests or plain `test/fixtures`.                                             |
@@ -75,7 +75,9 @@ Every legacy Node surface gets one disposition:
 4. Replace Node `generate` with explicit Rust emit commands:
    `wesley emit rust --schema <path> --out <path>` and
    `wesley emit typescript --schema <path> --out <path>`.
-5. Remove Node host/runtime packages once no CLI command needs them.
+5. Keep browser/Bun/Deno/Node host packages in explicitly named legacy
+   compatibility CI lanes only while their deletion or externalization gates
+   remain open.
 6. Remove root `package.json`, `pnpm-workspace.yaml`, and `pnpm-lock.yaml` only
    after package, website, and legacy CI references are gone or externalized.
 

@@ -2,7 +2,7 @@
 
 ## Status
 
-Supporting note for slices NR-032 through NR-041.
+Supporting note for slices NR-032 through NR-044.
 
 ## Rule
 
@@ -55,6 +55,9 @@ The first executable proof lives in
 | NR-039 | `capability_report()` names requested, granted, and denied target capabilities. |
 | NR-040 | `HostFunctionPolicy::pure()` denies all WASM host imports by default. |
 | NR-041 | `reject_unavailable_imports_before_execution()` rejects a WASM target that requests unavailable imports before any execution hook exists. |
+| NR-042 | `HostCapabilityContract` reports incompatible capability ABI ranges with typed diagnostics before execution. |
+| NR-043 | `RuntimeResourcePolicy::stateless_default()` defines the default stateless runtime and rejects future resource handles unless a future policy allows them. |
+| NR-044 | `HermeticCapabilityFixture` verifies that Rust-native, WASM, and external-process fixture outputs match for one canonical input digest. |
 
 This is not a full module runtime. It is the first Rust-side control surface
 that prevents Node loader behavior from becoming the template for the native

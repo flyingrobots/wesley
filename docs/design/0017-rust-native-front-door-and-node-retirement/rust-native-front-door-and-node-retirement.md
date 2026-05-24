@@ -36,6 +36,8 @@ The current legacy command decisions live in
 [`LEGACY_COMMAND_DECISIONS.md`](./LEGACY_COMMAND_DECISIONS.md).
 Assurance and module-runtime extraction decisions live in
 [`ASSURANCE_AND_CAPABILITY_EXTRACTION.md`](./ASSURANCE_AND_CAPABILITY_EXTRACTION.md).
+Host compatibility and CI lane decisions live in
+[`HOST_COMPATIBILITY_BOUNDARY.md`](./HOST_COMPATIBILITY_BOUNDARY.md).
 
 The first ten slices establish the runway:
 
@@ -126,6 +128,11 @@ compiler kernel.
 Certificate, Holmes/Moriarty, run-ledger, and package-evidence commands are
 not native compiler-front-door commands. They exit with assurance tooling or
 remain compatibility-only until that boundary exists.
+
+Browser, Bun, Deno, and Node host packages are also compatibility surfaces, not
+the product spine. The native Rust CLI is the product front door; host package
+smokes keep historical surfaces honest until they are deleted or moved to
+external ecosystem ownership.
 
 ## Non-Goals
 

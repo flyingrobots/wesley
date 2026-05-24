@@ -200,24 +200,24 @@ exists.
   execution.
 - [x] NR-041 Add WASM fixture rejection before execution when a module requests
   unavailable host imports.
-- [ ] NR-042 Add capability versioning diagnostics for incompatible module
+- [x] NR-042 Add capability versioning diagnostics for incompatible module
   contracts.
-- [ ] NR-043 Define the stateless default runtime model and future resource
+- [x] NR-043 Define the stateless default runtime model and future resource
   handle boundary.
-- [ ] NR-044 Add Rust-native fixture modules for hermetic cross-host capability
+- [x] NR-044 Add Rust-native fixture modules for hermetic cross-host capability
   tests.
-- [ ] NR-045 Move browser/Bun/Deno host experiments out of the core retirement
+- [x] NR-045 Move browser/Bun/Deno host experiments out of the core retirement
   path or classify them as external ecosystem packages.
-- [ ] NR-046 Delete or externalize `packages/wesley-host-bun` after its
+- [x] NR-046 Delete or externalize `packages/wesley-host-bun` after its
   compatibility evidence is obsolete.
-- [ ] NR-047 Delete or externalize `packages/wesley-host-deno` after its
+- [x] NR-047 Delete or externalize `packages/wesley-host-deno` after its
   compatibility evidence is obsolete.
-- [ ] NR-048 Delete or externalize `packages/wesley-host-browser` after its
+- [x] NR-048 Delete or externalize `packages/wesley-host-browser` after its
   compatibility evidence is obsolete.
-- [ ] NR-049 Replace `packages/wesley-host-node/bin/wesley.mjs` test invocations
+- [x] NR-049 Replace `packages/wesley-host-node/bin/wesley.mjs` test invocations
   with native CLI invocations wherever tests are not explicitly legacy tests.
-- [ ] NR-050 Move remaining Node-host tests into a compatibility-only lane.
-- [ ] NR-051 Add CI labels or job names that distinguish Rust product checks
+- [x] NR-050 Move remaining Node-host tests into a compatibility-only lane.
+- [x] NR-051 Add CI labels or job names that distinguish Rust product checks
   from legacy compatibility checks.
 - [ ] NR-052 Make `cargo xtask preflight` the ordinary product health check.
 - [ ] NR-053 Make `cargo xtask legacy-preflight` optional for legacy package

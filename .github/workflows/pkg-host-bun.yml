@@ -1,4 +1,4 @@
-name: pkg-host-bun
+name: Legacy Compatibility - pkg-host-bun
 
 on:
   push:
@@ -15,6 +15,7 @@ permissions:
 
 jobs:
   bun-host:
+    name: Legacy compatibility - host-bun package
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

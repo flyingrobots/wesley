@@ -1,4 +1,4 @@
-name: pkg-host-node
+name: Legacy Compatibility - pkg-host-node
 
 on:
   push:
@@ -17,6 +17,7 @@ permissions:
 
 jobs:
   test:
+    name: Legacy compatibility - host-node package
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

@@ -21,14 +21,14 @@ The machine-readable CI/review export lives beside this document as
 | --- | --- | --- | --- |
 | `packages/wesley-core/` | Historical JS compiler domain, generation pipeline, schema utilities, runtime helpers. | Port then delete | Rust core owns compiler facts, emitters own generic projections, and any remaining product/domain behavior is rejected or extracted. |
 | `packages/wesley-cli/` | Historical command framework for generate, transform, TypeScript, Zod, diff, cert, and Holmes-era commands. | Delete after command migration | Every useful command is ported, extracted, or rejected; docs no longer present `pnpm wesley` as product front door. |
-| `packages/wesley-host-node/` | Node executable wrapper and runtime adapter. | Delete | Tests and docs use native CLI except compatibility-only lanes. |
+| `packages/wesley-host-node/` | Node executable wrapper and runtime adapter. | Delete | Tests and docs use native CLI except explicitly named legacy compatibility lanes. |
 | `packages/wesley-runtime-node/` | Node module loading, counterfactual surface, runtime store helpers. | Extract or delete | Module/runtime evidence moves to Rust protocol, assurance tooling, or owning modules. |
 | `packages/wesley-generator-js/` | Legacy TypeScript/Zod projection surface. | Port TypeScript, extract Zod | Rust emitters cover retained generic output; Zod moves to an external target boundary if still needed. |
 | `packages/wesley-generator-vue/` | Experimental Vue projection. | Delete or externalize | A target owner accepts it, or it leaves Wesley. |
 | `packages/wesley-holmes/` | Holmes/Moriarty evidence and counterfactual tooling. | Extract or rebuild later | Assurance tooling has an explicit package/repo boundary separate from compiler authority. |
-| `packages/wesley-host-browser/` | Browser-host experiment. | Delete or externalize | Browser compatibility is an external ecosystem package or a documented non-goal. |
-| `packages/wesley-host-bun/` | Bun-host experiment. | Delete | Compatibility evidence is obsolete or externalized. |
-| `packages/wesley-host-deno/` | Deno-host experiment. | Delete | Compatibility evidence is obsolete or externalized. |
+| `packages/wesley-host-browser/` | Browser-host experiment. | Delete or externalize | Browser compatibility stays in a legacy compatibility lane until externalized or deleted. |
+| `packages/wesley-host-bun/` | Bun-host experiment. | Delete or externalize | Bun compatibility stays in a legacy compatibility lane until obsolete, externalized, or deleted. |
+| `packages/wesley-host-deno/` | Deno-host experiment. | Delete or externalize | Deno compatibility stays in a legacy compatibility lane until obsolete, externalized, or deleted. |
 | `packages/wesley-scaffold-multitenant/` | Product scaffold. | Delete or move to product owner | Product/domain scaffolding leaves generic Wesley. |
 | `packages/wesley-tasks/` | Task graph model. | Port only if generic | Rust runtime planning proves it needs the concept; otherwise delete. |
 | `packages/wesley-test-fixtures/` | JS fixture helper package. | Replace | Useful fixtures move into plain `test/fixtures` or Rust tests. |
@@ -61,7 +61,7 @@ The machine-readable CI/review export lives beside this document as
 | `docs/END_TO_END.md` | Can accidentally tell the system story through old packages. | Keep Rust-native pipeline first; describe Node only as historical support. |
 | `docs/ENTRYPOINTS.md` | Controls operator command choice. | Keep native CLI and `cargo xtask` first. |
 | `docs/GUIDE.md` | Controls contributor lane choice. | Keep Rust core and native CLI as core lane. |
-| CI job names | Can hide product checks behind legacy package checks. | Split Rust product checks from legacy compatibility checks. |
+| CI job names | Can hide product checks behind legacy package checks. | Rust checks use `Rust Product`; historical host checks use `Legacy Compatibility`; repo-wide checks use `Repository Hygiene`. |
 | `pnpm wesley` examples | Can resurrect Node as the apparent front door. | Allow only in compatibility/migration docs until retired. |
 | JS/Rust parity sentinels | Useful while migrating, harmful if they keep legacy JS as permanent authority. | Archive as historical evidence after Rust self-consistency is sufficient. |
 | `package.json` scripts | Can keep the Node workspace as the release spine. | Retire scripts as their package surfaces close. |

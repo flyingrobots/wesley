@@ -200,8 +200,9 @@ implementation surfaces.
 1. The **Rust workspace** is the current compiler center. New compiler truth
    belongs in `crates/wesley-core` and the native `wesley` CLI.
 2. The **Node workspace** still carries legacy commands, module loading,
-   generators, hosts, and evidence tooling. It remains useful, but it is no
-   longer the main compiler brain.
+   generators, hosts, and evidence tooling. It remains useful as
+   compatibility evidence, but it is no longer the main compiler brain or
+   product front door.
 
 ```mermaid
 flowchart LR
@@ -233,7 +234,7 @@ flowchart LR
     JsCore --> Holmes
     RuntimeNode --> Hosts
 
-    LegacySupport -. migration and compatibility .-> CurrentCenter
+    LegacySupport -. compatibility evidence .-> CurrentCenter
 ```
 
 The current v0.0.6 work is about making that migration honest: expand Rust IR
@@ -654,6 +655,37 @@ descriptors, commands, witness scopes, verification profiles, judgment
 profiles, or certification hooks. The sequence below is historical legacy
 compatibility, not the product front door Wesley is moving toward.
 
+The Rust-side capability model now records ABI compatibility and runtime state
+before execution. A target declares its capability ABI range, execution mode,
+portability floor, host imports, and resource-handle needs. The host evaluates
+that metadata first; unsupported ABI ranges produce typed diagnostics such as
+`WASM_ABI_UNSUPPORTED`, denied host functions are rejected before execution, and
+the default runtime model is stateless unless a future policy explicitly grants
+resource handles.
+
+```mermaid
+flowchart TD
+    Target[Module target descriptor]
+    Contract[Capability ABI requirement]
+    Runtime[Runtime state model]
+    Imports[Requested host imports]
+    Resources[Requested resource handles]
+    Host[Host policy]
+    Diagnostics[Typed pre-execution diagnostics]
+    Execute[Execution hook]
+
+    Target --> Contract
+    Target --> Runtime
+    Target --> Imports
+    Target --> Resources
+    Contract --> Host
+    Runtime --> Host
+    Imports --> Host
+    Resources --> Host
+    Host -->|accepted| Execute
+    Host -->|rejected| Diagnostics
+```
+
 ```mermaid
 sequenceDiagram
     actor User
@@ -934,7 +966,10 @@ surface area.
 
 The active Node retirement campaign adds another proof surface: a
 machine-readable ledger and drift guard that keeps the historical package
-surface classified while the Rust native front door grows.
+surface classified while the Rust native front door grows. Current CI names now
+separate `Rust Product` checks from `Legacy Compatibility` host checks so a
+green browser/Bun/Deno/Node host smoke cannot be mistaken for product compiler
+authority.
 
 ## What Wesley Does Today
 
@@ -954,7 +989,8 @@ Today, Wesley can:
 - write deterministic native emit metadata sidecars
 - keep legacy JavaScript generation paths only as compatibility surfaces while
   Zod and target-specific outputs move to external ownership
-- load external modules through explicit configuration or environment paths
+- model external module targets through Rust capability descriptors, ABI
+  compatibility reports, stateless runtime policy, and hermetic fixture checks
 - run parity sentinels across selected JS and Rust projections
 - run docs, lint, package, Rust, fixture, and preflight checks
 - maintain evidence and design packets around releases and architectural

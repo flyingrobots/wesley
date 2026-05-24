@@ -1,6 +1,10 @@
 # @wesley/host-bun
 
-Minimal Bun host for Wesley. Pure ESM, in-memory FS, WebCrypto.
+Status: Legacy compatibility surface pending externalization or deletion.
+
+Minimal Bun host for Wesley. Pure ESM, in-memory FS, WebCrypto. This package is
+not on the Rust-native product path; it remains only as compatibility evidence
+while the legacy Node-era host matrix is retired.
 
 - API: `createBunRuntime()`, `runInBun(schema: string)`
 

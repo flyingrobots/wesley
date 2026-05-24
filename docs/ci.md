@@ -5,10 +5,18 @@ This repository uses multiple GitHub Actions workflows to keep the codebase heal
 ## Workflows Overview
 
 - `ci.yml` — Main pipeline. Installs deps, runs unit tests, and executes a small set of repository-level Bats tests (server/progress/CI checks) when relevant.
-- `runtime-smokes.yml` — Runtime smoke tests for Node, Deno, and Bun host-contracts.
-- `browser-smoke.yml` — Builds the browser host-contracts bundle and runs Playwright.
-- `preflight.yml` — Hygiene checks (docs links, dependency boundaries, ESLint purity, license audit).
+- `rust-native.yml` — Rust product preflight for the native compiler kernel and CLI.
+- `runtime-smokes.yml` — Legacy compatibility smoke tests for Node, Deno, and Bun host-contracts.
+- `browser-smoke.yml` — Legacy compatibility browser host-contracts bundle and Playwright run.
+- `preflight.yml` — Repository hygiene checks (docs links, dependency boundaries, ESLint purity, license audit).
 - Package workflows — e.g., `pkg-core.yml`, `pkg-host-bun.yml` with focused tests.
+
+Workflow names distinguish product checks from compatibility checks:
+
+- `Rust Product ...` checks protect the native Rust product spine.
+- `Repository Hygiene ...` checks protect repo coherence.
+- `Legacy Compatibility ...` checks keep historical JavaScript host packages
+  honest while they are still present.
 
 ## Reusable Pieces
 

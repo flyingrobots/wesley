@@ -28,5 +28,16 @@ themselves Node-only.
 ## Repo Evidence
 
 - `docs/design/0009-rust-core-and-wasm-capability-abi/rust-core-and-wasm-capability-abi.md`
+- `docs/design/0017-rust-native-front-door-and-node-retirement/HOST_COMPATIBILITY_BOUNDARY.md`
+- `crates/wesley-core/src/domain/capability.rs`
+- `crates/wesley-core/tests/module_capability_registry.rs`
 - `docs/method/backlog/cool-ideas/DX_inspect-module-capabilities-command.md`
 - `docs/method/backlog/cool-ideas/DX_module-authoring-and-loading-guide.md`
+
+## Current Slice Status
+
+Execution mode and portability floor metadata now live in Rust. Hermetic
+fixture checks prove that portable capability outputs must agree across
+Rust-native, WASM, and external-process hosts for the same input digest.
+Browser, Bun, Deno, and Node host packages are explicitly compatibility lanes,
+not proof of portable compiler truth.

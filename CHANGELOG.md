@@ -8,6 +8,14 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- **Capability ABI compatibility diagnostics**: Added Rust-core capability
+  contract version requirements, host compatibility reports, typed
+  `WASM_ABI_UNSUPPORTED` diagnostics, stateless runtime resource policy, and
+  hermetic cross-host capability fixture verification for the next Node
+  retirement slice.
+- **Host compatibility boundary**: Added a Node-retirement design note
+  classifying browser, Bun, Deno, and Node host packages as legacy
+  compatibility surfaces rather than Rust product checks.
 - **Rust module capability registry proof**: Added Rust-core target registry and
   WASM host-import policy fixtures covering no-module, default target, explicit
   target, duplicate target, execution-mode metadata, portability floor,
@@ -113,6 +121,13 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Changed
 
+- **CI lane names**: Renamed Rust-native checks as `Rust Product`, repository
+  checks as `Repository Hygiene`, and browser/Bun/Deno/Node host checks as
+  `Legacy Compatibility`, and replaced the generic CI product schema smoke with
+  the native Rust CLI.
+- **Host package posture**: Marked `@wesley/host-node`,
+  `@wesley/host-browser`, `@wesley/host-bun`, and `@wesley/host-deno` docs as
+  legacy compatibility surfaces pending deletion or externalization.
 - **Assurance command boundary**: Classified certificate, SHIPME,
   Holmes/Moriarty, run-ledger, validate-bundle, and package-level evidence
   commands as assurance or compatibility surfaces rather than native compiler
