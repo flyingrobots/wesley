@@ -638,7 +638,7 @@ Follow-on slices to create:
 - [WASM host function governance](../../method/backlog/up-next/RUNTIME_wasm-host-function-governance.md)
 - [WASM capability versioning and state](../../method/backlog/up-next/RUNTIME_wasm-capability-versioning-and-state.md)
 - [Capability portability floor](../../method/backlog/up-next/RUNTIME_capability-portability-floor.md)
-- [Node Rust core binding strategy](../../method/backlog/up-next/RUNTIME_node-rust-core-binding-strategy.md)
+- [Node Rust core binding strategy](../0016-rust-core-binding-observatory/RUNTIME_node-rust-core-binding-strategy.md)
 - [Rust core performance baseline](../0013-rust-ir-parity-sentinel/EVIDENCE_rust-core-performance-baseline.md)
 - `RUNTIME_wasm-capability-abi-fixture`
 - `RUNTIME_echo-in-process-wesley-harness`

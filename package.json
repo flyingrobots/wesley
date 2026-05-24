@@ -31,7 +31,8 @@
     "fixtures:ir": "node scripts/generate-ir-fixtures.mjs",
     "parity:ir": "node scripts/check-ir-parity.mjs",
     "parity:parser": "node scripts/check-parser-parity.mjs",
-    "perf:ir": "node scripts/measure-ir-performance.mjs"
+    "perf:ir": "node scripts/measure-ir-performance.mjs",
+    "perf:bindings": "node scripts/measure-ir-performance.mjs --observatory"
   },
   "keywords": [
     "graphql",

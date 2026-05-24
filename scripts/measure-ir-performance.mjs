@@ -12,6 +12,7 @@ import { runProcess } from './resilient-process.mjs';
 export { runProcess } from './resilient-process.mjs';
 
 export const PERFORMANCE_REPORT_VERSION = 'rust-ir-performance-baseline.v0';
+export const OBSERVATORY_REPORT_VERSION = 'rust-core-binding-observatory.v0';
 export const DEFAULT_PERFORMANCE_FIXTURES = Object.freeze([
   'test/fixtures/ir-parity/small-schema.graphql',
   'test/fixtures/ir-parity/medium-schema.graphql',
@@ -52,7 +53,9 @@ async function main() {
     return;
   }
 
-  const report = await measurePerformance(options);
+  const report = options.observatory
+    ? await measureObservatory(options)
+    : await measurePerformance(options);
   const output = options.markdown ? renderMarkdown(report) : JSON.stringify(report, null, 2);
 
   if (options.outputPath) {
@@ -78,6 +81,7 @@ function parseArgs(args) {
   let markdown = false;
   let outputPath = null;
   let includeLegacyJs = false;
+  let observatory = false;
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
@@ -102,6 +106,8 @@ function parseArgs(args) {
       markdown = true;
     } else if (arg === '--include-legacy-js') {
       includeLegacyJs = true;
+    } else if (arg === '--observatory') {
+      observatory = true;
     } else if (arg === '--output') {
       outputPath = args[index + 1];
       if (!outputPath) throw new Error('--output requires a path');
@@ -125,6 +131,7 @@ function parseArgs(args) {
     help,
     markdown,
     includeLegacyJs,
+    observatory,
     outputPath
   };
 }
@@ -191,6 +198,96 @@ async function measurePerformance(options) {
   };
 }
 
+async function measureObservatory(options) {
+  const fixtures = [];
+  for (const fixture of options.fixtures) {
+    fixtures.push(await measureObservatoryFixture(resolve(ROOT_DIR, fixture), options));
+  }
+  const failed = fixtures.filter((fixture) => fixture.status !== 'pass').length;
+
+  return {
+    tool: OBSERVATORY_REPORT_VERSION,
+    gitHead: await gitHead(),
+    corpus: {
+      fixtureCount: options.fixtures.length,
+      fixtures: options.fixtures.map((fixture) => relative(ROOT_DIR, resolve(ROOT_DIR, fixture)))
+    },
+    iterations: options.iterations,
+    warmups: options.warmups,
+    adapters: {
+      rustCli: {
+        id: 'rust-cli',
+        status: 'captured',
+        host: 'native-rust-cli',
+        binding: 'child-process',
+        executionMode: 'rust-native',
+        lowerer: WESLEY_CLI_BIN || `${CARGO} ${WESLEY_CLI_ARGS.join(' ')}`,
+        bindingOverhead: {
+          status: 'not-applicable',
+          reason:
+            'Rust CLI measurement includes process launch and lowering; it is the baseline, not a binding hop.'
+        },
+        memory: rustCliMemoryPolicy()
+      },
+      legacyJsInProcess: {
+        id: 'legacy-js-in-process',
+        status: 'captured',
+        host: 'node',
+        binding: 'in-process-js',
+        executionMode: 'typescript-node',
+        lowerer: 'GraphQLAdapter.parseSDL',
+        caveat:
+          'Measured in-process JS lowerer wall-clock and heap delta only; this is not Node-to-Rust or WASM overhead.',
+        memory: {
+          heapDeltaBytes: {
+            status: 'captured',
+            caveat:
+              'heapUsed deltas are process-local samples and can be negative when the Node runtime releases memory.'
+          }
+        }
+      },
+      nodeRustBinding: {
+        id: 'node-rust-binding',
+        status: 'not-implemented',
+        host: 'node',
+        binding: 'napi-or-native-addon-pending',
+        executionMode: 'rust-native',
+        reason:
+          'No Node-to-Rust binding package is implemented yet; this report reserves the evidence slot without choosing N-API or another mechanism.'
+      },
+      wasmBinding: {
+        id: 'wasm-binding',
+        status: 'not-implemented',
+        host: 'portable-wasm-host',
+        binding: 'wasm-pending',
+        executionMode: 'wasm',
+        reason:
+          'No Rust-core WASM lowering binding is implemented yet; this report reserves the portability evidence slot.'
+      }
+    },
+    cutoverCriteria: {
+      status: 'not-evaluated',
+      requires: [
+        'correctness parity over named projections',
+        'Rust CLI latency baseline',
+        'legacy JS latency and memory baseline',
+        'Node binding overhead measurement',
+        'WASM binding overhead measurement',
+        'peak RSS strategy',
+        'normal CLI regression risk review'
+      ]
+    },
+    summary: {
+      total: fixtures.length,
+      passed: fixtures.length - failed,
+      failed,
+      capturedAdapters: ['rust-cli', 'legacy-js-in-process'],
+      notImplementedAdapters: ['node-rust-binding', 'wasm-binding']
+    },
+    fixtures
+  };
+}
+
 async function measureFixture(fixturePath, options) {
   const displayPath = relative(ROOT_DIR, fixturePath);
 
@@ -244,6 +341,71 @@ async function measureFixture(fixturePath, options) {
   }
 }
 
+async function measureObservatoryFixture(fixturePath, options) {
+  const displayPath = relative(ROOT_DIR, fixturePath);
+
+  try {
+    if (!existsSync(fixturePath)) {
+      throw new Error(`Fixture does not exist: ${displayPath}`);
+    }
+
+    for (let index = 0; index < options.warmups; index += 1) {
+      await runLower(fixturePath);
+      measureLegacyJsLower(fixturePath);
+    }
+
+    const rustDurationsMs = [];
+    const legacyJsDurationsMs = [];
+    const legacyJsHeapDeltaBytes = [];
+    let lastOutput = '';
+
+    for (let index = 0; index < options.iterations; index += 1) {
+      const measured = await measureLower(fixturePath);
+      rustDurationsMs.push(measured.durationMs);
+      lastOutput = measured.stdout;
+
+      const legacyMeasured = measureLegacyJsLower(fixturePath);
+      legacyJsDurationsMs.push(legacyMeasured.durationMs);
+      legacyJsHeapDeltaBytes.push(legacyMeasured.heapDeltaBytes);
+    }
+
+    const parsed = JSON.parse(lastOutput);
+    const semanticIr = { ...parsed };
+    delete semanticIr.metadata;
+
+    return {
+      fixture: displayPath,
+      status: 'pass',
+      schemaBytes: statSync(fixturePath).size,
+      rustCli: {
+        status: 'pass',
+        outputBytes: Buffer.byteLength(lastOutput),
+        rustL1Hash: sha256Hex(canonicalizeJSON(semanticIr)),
+        typeCount: Array.isArray(parsed.types) ? parsed.types.length : null,
+        durationMs: summarizeDurations(rustDurationsMs),
+        memory: rustCliMemoryPolicy()
+      },
+      legacyJsInProcess: {
+        status: 'pass',
+        durationMs: summarizeDurations(legacyJsDurationsMs),
+        memory: {
+          heapDeltaBytes: summarizeIntegerSamples(legacyJsHeapDeltaBytes),
+          caveat:
+            'heapUsed deltas are process-local samples and can be negative when the Node runtime releases memory.'
+        }
+      },
+      nodeRustBinding: bindingNotImplemented('node-rust-binding'),
+      wasmBinding: bindingNotImplemented('wasm-binding')
+    };
+  } catch (error) {
+    return {
+      fixture: displayPath,
+      status: 'error',
+      error: error?.message || String(error)
+    };
+  }
+}
+
 async function measureLower(fixturePath) {
   const started = process.hrtime.bigint();
   const stdout = await runLower(fixturePath);
@@ -256,12 +418,15 @@ async function measureLower(fixturePath) {
 
 function measureLegacyJsLower(fixturePath) {
   const sdl = readFileSync(fixturePath, 'utf8');
+  const heapBefore = process.memoryUsage().heapUsed;
   const started = process.hrtime.bigint();
   new GraphQLAdapter().parseSDL(sdl);
   const ended = process.hrtime.bigint();
+  const heapAfter = process.memoryUsage().heapUsed;
 
   return {
-    durationMs: roundMs(Number(ended - started) / 1_000_000)
+    durationMs: roundMs(Number(ended - started) / 1_000_000),
+    heapDeltaBytes: heapAfter - heapBefore
   };
 }
 
@@ -312,6 +477,43 @@ export function summarizeDurations(durations) {
   };
 }
 
+export function summarizeIntegerSamples(samples) {
+  const sorted = [...samples].sort((left, right) => left - right);
+  const total = sorted.reduce((sum, value) => sum + value, 0);
+  const midpoint = Math.floor(sorted.length / 2);
+  const median =
+    sorted.length % 2 === 0
+      ? Math.round((sorted[midpoint - 1] + sorted[midpoint]) / 2)
+      : sorted[midpoint];
+
+  return {
+    samples,
+    min: sorted[0],
+    median,
+    mean: Math.round(total / sorted.length),
+    max: sorted[sorted.length - 1]
+  };
+}
+
+function rustCliMemoryPolicy() {
+  return {
+    peakRssBytes: {
+      status: 'not-captured',
+      reason:
+        'Rust CLI peak RSS requires a platform-specific child-process memory harness; v0 records the evidence slot only.'
+    }
+  };
+}
+
+function bindingNotImplemented(id) {
+  return {
+    status: 'not-implemented',
+    adapter: id,
+    reason:
+      'Reserved observatory evidence slot; no executable binding adapter exists in this repo yet.'
+  };
+}
+
 function roundMs(value) {
   return Math.round(value * 1000) / 1000;
 }
@@ -339,6 +541,10 @@ export async function gitHead(processRunner = runProcess) {
 }
 
 function renderMarkdown(report) {
+  if (report.tool === OBSERVATORY_REPORT_VERSION) {
+    return renderObservatoryMarkdown(report);
+  }
+
   const lines = [
     '# Rust IR Performance Baseline',
     '',
@@ -401,6 +607,51 @@ function renderMarkdown(report) {
   return lines.join('\n');
 }
 
+function renderObservatoryMarkdown(report) {
+  const lines = [
+    '# Rust Core Binding Observatory',
+    '',
+    `- Tool: \`${report.tool}\``,
+    `- Git head: \`${report.gitHead ?? 'unknown'}\``,
+    `- Warmups: \`${report.warmups}\``,
+    `- Iterations: \`${report.iterations}\``,
+    `- Cutover criteria: \`${report.cutoverCriteria.status}\``,
+    '',
+    '| Adapter | Status | Host | Binding | Execution Mode |',
+    '| --- | --- | --- | --- | --- |'
+  ];
+
+  for (const adapter of Object.values(report.adapters)) {
+    lines.push(
+      `| \`${adapter.id}\` | ${adapter.status} | ${adapter.host} | ${adapter.binding} | ${adapter.executionMode} |`
+    );
+  }
+
+  lines.push(
+    '',
+    '| Fixture | Status | Types | Rust CLI Median ms | Legacy JS Median ms | Legacy JS Heap Delta Mean bytes | Node Binding | WASM Binding |',
+    '| --- | --- | ---: | ---: | ---: | ---: | --- | --- |'
+  );
+
+  for (const fixture of report.fixtures) {
+    if (fixture.status !== 'pass') {
+      lines.push(
+        `| \`${fixture.fixture}\` | ${fixture.status}: ${escapeMarkdownCell(fixture.error)} |  |  |  |  |  |  |`
+      );
+      continue;
+    }
+
+    lines.push(
+      `| \`${fixture.fixture}\` | ${fixture.status} | ${fixture.rustCli.typeCount ?? ''} | ` +
+        `${fixture.rustCli.durationMs.median} | ${fixture.legacyJsInProcess.durationMs.median} | ` +
+        `${fixture.legacyJsInProcess.memory.heapDeltaBytes.mean} | ` +
+        `${fixture.nodeRustBinding.status} | ${fixture.wasmBinding.status} |`
+    );
+  }
+
+  return lines.join('\n');
+}
+
 function escapeMarkdownCell(value) {
   return String(value ?? '')
     .replaceAll('|', '\\|')
@@ -408,10 +659,14 @@ function escapeMarkdownCell(value) {
 }
 
 function printHelp() {
-  console.log(`Usage: pnpm perf:ir [--json|--markdown] [--include-legacy-js] [--list-fixtures] [--fixture <path> ...] [--iterations <n>] [--warmups <n>] [--output <path>]
+  console.log(`Usage: pnpm perf:ir [--json|--markdown] [--include-legacy-js] [--observatory] [--list-fixtures] [--fixture <path> ...] [--iterations <n>] [--warmups <n>] [--output <path>]
 
 Measures Rust CLI schema-lower wall-clock duration over the explicit IR fixture
 corpus. The v0 report is evidence, not a pass/fail performance threshold.
+
+Pass --observatory to emit the Rust core binding observatory report, which
+captures Rust CLI and legacy JS measurements while reserving explicit
+not-implemented evidence slots for Node-to-Rust and WASM bindings.
 
 Default fixtures:
 ${DEFAULT_PERFORMANCE_FIXTURES.map((fixture) => `  - ${fixture}`).join('\n')}`);

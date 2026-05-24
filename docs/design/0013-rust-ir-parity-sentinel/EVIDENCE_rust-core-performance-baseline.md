@@ -82,7 +82,7 @@ These remain intentionally outside v0:
 - pass/fail cutover thresholds
 
 The follow-on queue item is
-`docs/method/backlog/up-next/EVIDENCE_rust-core-binding-and-memory-baselines.md`.
+`docs/design/0016-rust-core-binding-observatory/EVIDENCE_rust-core-binding-and-memory-baselines.md`.
 
 ## Playback Questions
 

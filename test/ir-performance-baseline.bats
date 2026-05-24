@@ -119,12 +119,14 @@ NODE
 
 @test "Rust IR performance baseline computes even-sample median as midpoint" {
   run node --input-type=module <<'NODE'
-import { summarizeDurations } from './scripts/measure-ir-performance.mjs';
+import { summarizeDurations, summarizeIntegerSamples } from './scripts/measure-ir-performance.mjs';
 
 console.log(JSON.stringify(summarizeDurations([10, 20, 30, 40])));
+console.log(JSON.stringify(summarizeIntegerSamples([10, -2, 6, 2])));
 NODE
   assert_success
-  assert_output '{"samples":[10,20,30,40],"min":10,"median":25,"mean":25,"max":40}'
+  assert_line '{"samples":[10,20,30,40],"min":10,"median":25,"mean":25,"max":40}'
+  assert_line '{"samples":[10,-2,6,2],"min":-2,"median":4,"mean":4,"max":10}'
 }
 
 @test "Rust IR performance baseline exits nonzero when lowering fails" {
@@ -295,4 +297,51 @@ NODE
   assert_success
   assert_output --partial 'Legacy JS comparison: `captured`'
   assert_output --partial '| Fixture | Status | Types | Rust Median ms | Rust Mean ms | Legacy JS Median ms | Legacy JS Mean ms | Rust L1 Hash |'
+}
+
+@test "Rust core binding observatory captures Rust CLI and legacy JS while reserving binding slots" {
+  make_fake_wesley
+
+  run env \
+    WESLEY_CLI_BIN="$FAKE_WESLEY" \
+    WESLEY_FAKE_CALL_LOG="$FAKE_WESLEY_CALL_LOG" \
+    pnpm perf:bindings -- \
+      --fixture test/fixtures/ir-parity/small-schema.graphql \
+      --iterations 2 \
+      --warmups 1 \
+      --json
+  assert_success
+  assert_output --partial '"tool": "rust-core-binding-observatory.v0"'
+  assert_output --partial '"rustCli": {'
+  assert_output --partial '"id": "rust-cli"'
+  assert_output --partial '"legacyJsInProcess": {'
+  assert_output --partial '"id": "legacy-js-in-process"'
+  assert_output --partial '"heapDeltaBytes": {'
+  assert_output --partial '"nodeRustBinding": {'
+  assert_output --partial '"status": "not-implemented"'
+  assert_output --partial '"wasmBinding": {'
+  assert_output --partial '"cutoverCriteria": {'
+  assert_output --partial '"status": "not-evaluated"'
+
+  run grep -c '^schema lower' "$FAKE_WESLEY_CALL_LOG"
+  assert_success
+  assert_output "3"
+}
+
+@test "Rust core binding observatory markdown names adapter status and binding columns" {
+  make_fake_wesley
+
+  run env \
+    WESLEY_CLI_BIN="$FAKE_WESLEY" \
+    node scripts/measure-ir-performance.mjs \
+      --observatory \
+      --fixture test/fixtures/ir-parity/small-schema.graphql \
+      --iterations 1 \
+      --warmups 0 \
+      --markdown
+  assert_success
+  assert_output --partial '# Rust Core Binding Observatory'
+  assert_output --partial '| Adapter | Status | Host | Binding | Execution Mode |'
+  assert_output --partial '| `node-rust-binding` | not-implemented | node | napi-or-native-addon-pending | rust-native |'
+  assert_output --partial '| Fixture | Status | Types | Rust CLI Median ms | Legacy JS Median ms | Legacy JS Heap Delta Mean bytes | Node Binding | WASM Binding |'
 }

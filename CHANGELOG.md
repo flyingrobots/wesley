@@ -8,6 +8,15 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- **Rust core binding observatory**: Added `pnpm perf:bindings` and
+  `pnpm perf:ir -- --observatory` to emit
+  `rust-core-binding-observatory.v0` reports that separate Rust CLI, legacy JS
+  in-process, future Node-to-Rust binding, future WASM binding, memory posture,
+  and cutover criteria over the explicit IR fixture corpus.
+- **Rust binding strategy packet**: Added design packet `0016` for the
+  evidence-first Node/Rust/WASM cutover runway, including the binding and memory
+  baseline evidence note and the Node Rust core binding strategy decision
+  matrix.
 - **End-to-end Wesley narrative**: Added `docs/END_TO_END.md`, a
   first-principles walkthrough of Wesley's authored SDL, Rust compiler facts,
   generic emitters, module boundary, assurance tooling, external ownership
