@@ -8,6 +8,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- **Rust-native doctor command**: Added `wesley doctor` with text and JSON
+  output for narrow Rust-native health checks covering the native CLI, Rust
+  lowerer, normalized SDL hash evidence, and Rust emitter crates without
+  inspecting legacy Node config, plugins, or package state.
 - **Native emit metadata**: `wesley emit rust` and `wesley emit typescript` now
   accept `--metadata-out <path>` to write deterministic JSON sidecars with the
   schema hash, generator identity, generator version, and `rust-native`

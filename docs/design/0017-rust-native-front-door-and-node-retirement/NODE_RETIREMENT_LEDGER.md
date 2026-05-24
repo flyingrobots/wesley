@@ -45,7 +45,7 @@ The machine-readable CI/review export lives beside this document as
 | `models` | `packages/wesley-cli/src/commands/models.mjs` | Retire from core | Model-class scaffolding is not compiler truth; retained generic model facts live in Rust and TypeScript emitters. |
 | `diff` | `packages/wesley-cli/src/commands/diff.mjs` | Ported for L1 structure | `wesley schema diff` owns generic schema diff; operation-argument deltas remain separate. |
 | `init` | `packages/wesley-cli/src/commands/init.mjs` | Retire legacy scaffolding | Future native `init` may only create tiny generic starter schemas and must be designed as new work, not as a Node port. |
-| `doctor` | `packages/wesley-cli/src/commands/doctor.mjs` | Port narrow | Rust-native health checks only. |
+| `doctor` | `packages/wesley-cli/src/commands/doctor.mjs` | Narrow port complete | `wesley doctor` runs Rust-native health checks only; legacy Node config, plugin, and package diagnostics stay legacy-only. |
 | `validate-bundle` | `packages/wesley-cli/src/commands/validate-bundle.mjs` | Defer | Port only if Rust evidence bundles remain Wesley-owned. |
 | `runs` | `packages/wesley-cli/src/commands/runs.mjs` | Extract or defer | Runtime ledger inspection belongs with assurance/runtime evidence if not compiler-core. |
 | `cert-create` | `packages/wesley-cli/src/commands/cert-create.mjs` | Extract | Certificate workflow exits the compiler front door. |

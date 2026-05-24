@@ -47,6 +47,11 @@ fn run(args: Vec<String>) -> Result<u8, CliError> {
             Ok(EXIT_OK)
         }
         Some("normalize-sdl") => run_normalize_sdl_command(&args[1..]),
+        Some("doctor") if wants_help(&args[1..]) => {
+            print_doctor_help();
+            Ok(EXIT_OK)
+        }
+        Some("doctor") => run_doctor_command(&args[1..]),
         Some("schema") => run_schema_command(&args[1..]),
         Some("emit") => run_emit_command(&args[1..]),
         Some("operation") => run_operation_command(&args[1..]),
@@ -71,6 +76,22 @@ fn run_normalize_sdl_command(args: &[String]) -> Result<u8, CliError> {
     }
 
     Ok(EXIT_OK)
+}
+
+fn run_doctor_command(args: &[String]) -> Result<u8, CliError> {
+    let output_format = parse_doctor_options(args)?;
+    let report = build_doctor_report();
+
+    match output_format {
+        DoctorOutputFormat::Text => print_doctor_text(&report),
+        DoctorOutputFormat::Json => print_json(&report)?,
+    }
+
+    if report.ok {
+        Ok(EXIT_OK)
+    } else {
+        Ok(EXIT_FAILURE)
+    }
 }
 
 fn run_schema_command(args: &[String]) -> Result<u8, CliError> {
@@ -249,6 +270,178 @@ fn run_operation_command(args: &[String]) -> Result<u8, CliError> {
         Some(command) => Err(CliError::usage(format!(
             "unknown operation command '{command}'"
         ))),
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum DoctorOutputFormat {
+    Text,
+    Json,
+}
+
+fn parse_doctor_options(args: &[String]) -> Result<DoctorOutputFormat, CliError> {
+    let mut output_format = DoctorOutputFormat::Text;
+    let mut index = 0;
+
+    while index < args.len() {
+        match args[index].as_str() {
+            "--json" => output_format = DoctorOutputFormat::Json,
+            "--format" => {
+                index += 1;
+                let format = required_value(args, index, "--format")?;
+                output_format = match format.as_str() {
+                    "text" => DoctorOutputFormat::Text,
+                    "json" => DoctorOutputFormat::Json,
+                    format => {
+                        return Err(CliError::usage(format!(
+                            "unknown output format '{format}'; expected text or json"
+                        )));
+                    }
+                };
+            }
+            "--help" | "-h" => {
+                return Err(CliError::usage(
+                    "`doctor` help should be handled before option parsing",
+                ));
+            }
+            value if value.starts_with('-') => {
+                return Err(CliError::usage(format!(
+                    "unknown option '{value}' for `doctor`"
+                )));
+            }
+            value => {
+                return Err(CliError::usage(format!(
+                    "unexpected argument '{value}' for `doctor`"
+                )));
+            }
+        }
+
+        index += 1;
+    }
+
+    Ok(output_format)
+}
+
+const DOCTOR_MINIMAL_SDL: &str = "type Query { health: Boolean }\n";
+
+fn build_doctor_report() -> DoctorReport {
+    let checks = vec![
+        DoctorCheck::pass(
+            "native-cli",
+            format!(
+                "wesley-cli {} ({RUST_NATIVE_EXECUTION_MODE})",
+                env!("CARGO_PKG_VERSION")
+            ),
+        ),
+        doctor_lowering_check(),
+        doctor_normalized_sdl_hash_check(),
+        doctor_rust_emitter_check(),
+        doctor_typescript_emitter_check(),
+    ];
+    let ok = checks
+        .iter()
+        .all(|check| check.status == DoctorStatus::Pass);
+
+    DoctorReport {
+        ok,
+        execution_mode: RUST_NATIVE_EXECUTION_MODE,
+        checks,
+    }
+}
+
+fn doctor_lowering_check() -> DoctorCheck {
+    match lower_schema_sdl(DOCTOR_MINIMAL_SDL) {
+        Ok(ir) if !ir.types.is_empty() => DoctorCheck::pass(
+            "rust-core-lowering",
+            "wesley-core lowerer accepts minimal SDL",
+        ),
+        Ok(_) => DoctorCheck::fail(
+            "rust-core-lowering",
+            "wesley-core lowerer returned no types",
+        ),
+        Err(error) => DoctorCheck::fail(
+            "rust-core-lowering",
+            format!("wesley-core lowerer rejected minimal SDL: {error}"),
+        ),
+    }
+}
+
+fn doctor_normalized_sdl_hash_check() -> DoctorCheck {
+    match normalize_schema_sdl(DOCTOR_MINIMAL_SDL) {
+        Ok(normalized) => {
+            let hash = compute_content_hash(&normalized);
+            if hash.len() == 64 && hash.chars().all(|character| character.is_ascii_hexdigit()) {
+                DoctorCheck::pass(
+                    "normalized-sdl-hash",
+                    "normalized SDL hash evidence is available",
+                )
+            } else {
+                DoctorCheck::fail(
+                    "normalized-sdl-hash",
+                    format!("normalized SDL hash had unexpected shape: {hash}"),
+                )
+            }
+        }
+        Err(error) => DoctorCheck::fail(
+            "normalized-sdl-hash",
+            format!("normalized SDL hash evidence failed: {error}"),
+        ),
+    }
+}
+
+fn doctor_rust_emitter_check() -> DoctorCheck {
+    match doctor_emitter_inputs() {
+        Ok((ir, operations)) => {
+            let output = emit_rust_with_operations(&ir, &operations);
+            if output.trim().is_empty() {
+                DoctorCheck::fail("rust-emitter", "wesley-emit-rust returned empty output")
+            } else {
+                DoctorCheck::pass(
+                    "rust-emitter",
+                    format!("wesley-emit-rust {RUST_GENERATOR_VERSION} available"),
+                )
+            }
+        }
+        Err(error) => DoctorCheck::fail(
+            "rust-emitter",
+            format!("wesley-emit-rust input preparation failed: {error}"),
+        ),
+    }
+}
+
+fn doctor_typescript_emitter_check() -> DoctorCheck {
+    match doctor_emitter_inputs() {
+        Ok((ir, operations)) => {
+            let output = emit_typescript_with_operations(&ir, &operations);
+            if output.trim().is_empty() {
+                DoctorCheck::fail(
+                    "typescript-emitter",
+                    "wesley-emit-typescript returned empty output",
+                )
+            } else {
+                DoctorCheck::pass(
+                    "typescript-emitter",
+                    format!("wesley-emit-typescript {TYPESCRIPT_GENERATOR_VERSION} available"),
+                )
+            }
+        }
+        Err(error) => DoctorCheck::fail(
+            "typescript-emitter",
+            format!("wesley-emit-typescript input preparation failed: {error}"),
+        ),
+    }
+}
+
+fn doctor_emitter_inputs() -> Result<(WesleyIR, Vec<wesley_core::SchemaOperation>), WesleyError> {
+    let ir = lower_schema_sdl(DOCTOR_MINIMAL_SDL)?;
+    let operations = list_schema_operations_sdl(DOCTOR_MINIMAL_SDL)?;
+
+    Ok((ir, operations))
+}
+
+fn print_doctor_text(report: &DoctorReport) {
+    for check in &report.checks {
+        println!("[{}] {}", check.status, check.message);
     }
 }
 
@@ -614,6 +807,56 @@ struct EmitMetadata {
     execution_mode: &'static str,
 }
 
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct DoctorReport {
+    ok: bool,
+    execution_mode: &'static str,
+    checks: Vec<DoctorCheck>,
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct DoctorCheck {
+    id: &'static str,
+    status: DoctorStatus,
+    message: String,
+}
+
+impl DoctorCheck {
+    fn pass(id: &'static str, message: impl Into<String>) -> Self {
+        Self {
+            id,
+            status: DoctorStatus::Pass,
+            message: message.into(),
+        }
+    }
+
+    fn fail(id: &'static str, message: impl Into<String>) -> Self {
+        Self {
+            id,
+            status: DoctorStatus::Fail,
+            message: message.into(),
+        }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "lowercase")]
+enum DoctorStatus {
+    Pass,
+    Fail,
+}
+
+impl std::fmt::Display for DoctorStatus {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Pass => write!(formatter, "pass"),
+            Self::Fail => write!(formatter, "fail"),
+        }
+    }
+}
+
 fn print_schema_delta(
     delta: &SchemaDelta,
     output_format: OutputFormat,
@@ -730,6 +973,7 @@ Usage:
 
 Commands:
   normalize-sdl            Print the Rust-core normalized SDL view
+  doctor                   Run Rust-native health checks
   schema lower              Lower GraphQL SDL to Wesley L1 IR JSON
   schema hash               Print the Wesley L1 registry hash for GraphQL SDL
   schema operations         List Query/Mutation/Subscription root operations
@@ -743,6 +987,24 @@ Commands:
 Options:
   -h, --help     Show help
   -V, --version  Show version"
+    );
+}
+
+fn print_doctor_help() {
+    println!(
+        "\
+Wesley native doctor
+
+Rust-native health checks only. This command does not inspect legacy Node,
+pnpm, config modules, or plugin packages.
+
+Usage:
+  wesley doctor [--json]
+  wesley doctor [--format text|json]
+
+Options:
+  --json                 Emit JSON output
+  --format text|json     Output format"
     );
 }
 
