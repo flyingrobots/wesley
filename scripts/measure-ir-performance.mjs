@@ -1,9 +1,10 @@
 #!/usr/bin/env node
-import { existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, relative, resolve } from 'node:path';
 import process from 'node:process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { TimeoutError } from '@git-stunts/alfred';
+import { GraphQLAdapter } from '../packages/wesley-runtime-node/src/index.mjs';
 import { canonicalizeJSON } from '../packages/wesley-core/src/domain/registryHash.mjs';
 import { sha256Hex } from './ir-parity-projection.mjs';
 import { runProcess } from './resilient-process.mjs';
@@ -17,7 +18,8 @@ export const DEFAULT_PERFORMANCE_FIXTURES = Object.freeze([
   'test/fixtures/ir-parity/large-schema.graphql',
   'test/fixtures/ir-parity/directive-heavy-schema.graphql',
   'test/fixtures/ir-parity/legacy-alias-schema.graphql',
-  'test/fixtures/ir-parity/schema-extensions-schema.graphql'
+  'test/fixtures/ir-parity/schema-extensions-schema.graphql',
+  'test/fixtures/ir-parity/nested-list-schema.graphql'
 ]);
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -75,6 +77,7 @@ function parseArgs(args) {
   let json = false;
   let markdown = false;
   let outputPath = null;
+  let includeLegacyJs = false;
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
@@ -97,6 +100,8 @@ function parseArgs(args) {
       json = true;
     } else if (arg === '--markdown') {
       markdown = true;
+    } else if (arg === '--include-legacy-js') {
+      includeLegacyJs = true;
     } else if (arg === '--output') {
       outputPath = args[index + 1];
       if (!outputPath) throw new Error('--output requires a path');
@@ -119,6 +124,7 @@ function parseArgs(args) {
     listFixtures,
     help,
     markdown,
+    includeLegacyJs,
     outputPath
   };
 }
@@ -156,6 +162,19 @@ async function measurePerformance(options) {
     tool: PERFORMANCE_REPORT_VERSION,
     gitHead: await gitHead(),
     lowerer: WESLEY_CLI_BIN || `${CARGO} ${WESLEY_CLI_ARGS.join(' ')}`,
+    comparisons: {
+      legacyJsLowering: options.includeLegacyJs
+        ? {
+            status: 'captured',
+            lowerer: 'GraphQLAdapter.parseSDL',
+            caveat:
+              'Measured in-process JS lowerer wall-clock time only; this is not Node binding or WASM overhead.'
+          }
+        : {
+            status: 'not-captured',
+            reason: 'pass --include-legacy-js to measure legacy JS lowerer wall-clock samples'
+          }
+    },
     iterations: options.iterations,
     warmups: options.warmups,
     memory: {
@@ -182,14 +201,22 @@ async function measureFixture(fixturePath, options) {
 
     for (let index = 0; index < options.warmups; index += 1) {
       await runLower(fixturePath);
+      if (options.includeLegacyJs) {
+        measureLegacyJsLower(fixturePath);
+      }
     }
 
     const durationsMs = [];
+    const legacyJsDurationsMs = [];
     let lastOutput = '';
     for (let index = 0; index < options.iterations; index += 1) {
       const measured = await measureLower(fixturePath);
       durationsMs.push(measured.durationMs);
       lastOutput = measured.stdout;
+
+      if (options.includeLegacyJs) {
+        legacyJsDurationsMs.push(measureLegacyJsLower(fixturePath).durationMs);
+      }
     }
 
     const parsed = JSON.parse(lastOutput);
@@ -203,7 +230,10 @@ async function measureFixture(fixturePath, options) {
       outputBytes: Buffer.byteLength(lastOutput),
       rustL1Hash: sha256Hex(canonicalizeJSON(semanticIr)),
       typeCount: Array.isArray(parsed.types) ? parsed.types.length : null,
-      durationMs: summarizeDurations(durationsMs)
+      durationMs: summarizeDurations(durationsMs),
+      ...(options.includeLegacyJs
+        ? { legacyJsDurationMs: summarizeDurations(legacyJsDurationsMs) }
+        : {})
     };
   } catch (error) {
     return {
@@ -220,6 +250,17 @@ async function measureLower(fixturePath) {
   const ended = process.hrtime.bigint();
   return {
     stdout,
+    durationMs: roundMs(Number(ended - started) / 1_000_000)
+  };
+}
+
+function measureLegacyJsLower(fixturePath) {
+  const sdl = readFileSync(fixturePath, 'utf8');
+  const started = process.hrtime.bigint();
+  new GraphQLAdapter().parseSDL(sdl);
+  const ended = process.hrtime.bigint();
+
+  return {
     durationMs: roundMs(Number(ended - started) / 1_000_000)
   };
 }
@@ -304,13 +345,43 @@ function renderMarkdown(report) {
     `- Tool: \`${report.tool}\``,
     `- Git head: \`${report.gitHead ?? 'unknown'}\``,
     `- Lowerer: \`${report.lowerer}\``,
+    `- Legacy JS comparison: \`${report.comparisons.legacyJsLowering.status}\``,
     `- Warmups: \`${report.warmups}\``,
     `- Iterations: \`${report.iterations}\``,
     `- Memory: \`${report.memory.status}\``,
-    '',
+    ''
+  ];
+
+  if (report.comparisons.legacyJsLowering.status === 'captured') {
+    lines.push(
+      '',
+      '| Fixture | Status | Types | Rust Median ms | Rust Mean ms | Legacy JS Median ms | Legacy JS Mean ms | Rust L1 Hash |',
+      '| --- | --- | ---: | ---: | ---: | ---: | ---: | --- |'
+    );
+
+    for (const fixture of report.fixtures) {
+      if (fixture.status !== 'pass') {
+        lines.push(
+          `| \`${fixture.fixture}\` | ${fixture.status}: ${escapeMarkdownCell(fixture.error)} |  |  |  |  |  |  |`
+        );
+        continue;
+      }
+
+      lines.push(
+        `| \`${fixture.fixture}\` | ${fixture.status} | ${fixture.typeCount ?? ''} | ` +
+          `${fixture.durationMs.median} | ${fixture.durationMs.mean} | ` +
+          `${fixture.legacyJsDurationMs?.median ?? ''} | ${fixture.legacyJsDurationMs?.mean ?? ''} | ` +
+          `\`${fixture.rustL1Hash}\` |`
+      );
+    }
+
+    return lines.join('\n');
+  }
+
+  lines.push(
     '| Fixture | Status | Types | Schema Bytes | Output Bytes | Median ms | Mean ms | Rust L1 Hash |',
     '| --- | --- | ---: | ---: | ---: | ---: | ---: | --- |'
-  ];
+  );
 
   for (const fixture of report.fixtures) {
     if (fixture.status !== 'pass') {
@@ -337,7 +408,7 @@ function escapeMarkdownCell(value) {
 }
 
 function printHelp() {
-  console.log(`Usage: pnpm perf:ir [--json|--markdown] [--list-fixtures] [--fixture <path> ...] [--iterations <n>] [--warmups <n>] [--output <path>]
+  console.log(`Usage: pnpm perf:ir [--json|--markdown] [--include-legacy-js] [--list-fixtures] [--fixture <path> ...] [--iterations <n>] [--warmups <n>] [--output <path>]
 
 Measures Rust CLI schema-lower wall-clock duration over the explicit IR fixture
 corpus. The v0 report is evidence, not a pass/fail performance threshold.

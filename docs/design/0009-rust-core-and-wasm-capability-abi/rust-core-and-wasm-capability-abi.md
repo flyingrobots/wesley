@@ -634,7 +634,7 @@ doctrine only.
 Follow-on slices to create:
 
 - [Wesley core-rs IR contract and fixtures](../0013-rust-ir-parity-sentinel/SOURCE_wesley-core-rs-ir-contract-and-fixtures.md)
-- [Wesley core-rs parser parity spike](../../method/backlog/up-next/SOURCE_wesley-core-rs-parser-parity-spike.md)
+- [Parser parity spike](../0013-rust-ir-parity-sentinel/SOURCE_parser-parity-spike.md)
 - [WASM host function governance](../../method/backlog/up-next/RUNTIME_wasm-host-function-governance.md)
 - [WASM capability versioning and state](../../method/backlog/up-next/RUNTIME_wasm-capability-versioning-and-state.md)
 - [Capability portability floor](../../method/backlog/up-next/RUNTIME_capability-portability-floor.md)

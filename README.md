@@ -26,6 +26,8 @@ For the bounded-autonomy direction, read
 [Wesley North Star](./docs/NORTHSTAR.md). For the SDL boundary, read
 [SDL, Shape, And Law](./docs/SDL.md). For the active ownership boundary, read
 [Domain-Empty Core Boundary](./docs/design/0014-domain-empty-core-boundary/domain-empty-core-boundary.md).
+For a full first-principles walkthrough, read
+[Wesley End To End](./docs/END_TO_END.md).
 
 ---
 

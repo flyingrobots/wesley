@@ -12,6 +12,11 @@
       "owner": "@flyingrobots"
     },
     {
+      "path": "docs/END_TO_END.md",
+      "status": "experimental",
+      "owner": "@flyingrobots"
+    },
+    {
       "path": "docs/BEARING.md",
       "status": "experimental",
       "owner": "@flyingrobots"

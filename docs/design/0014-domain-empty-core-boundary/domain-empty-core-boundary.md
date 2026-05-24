@@ -90,6 +90,23 @@ It:
 It does not move behavior into `wesley-postgres`, Echo, jedit, Continuum, or
 other sibling repos. Those moves need their own repo-local cycles.
 
+## Fixture Module Zoo Minimum
+
+The v0.0.6 release-proof slice keeps the module evidence hermetic:
+
+- `packages/wesley-cli/test/module-loading.test.mjs` now exercises two
+  independently loaded fixture modules that register separate compile targets
+  and aliases.
+- Requested aliases resolve to canonical target names in the compile summary.
+- Multiple module targets may share the same authored schema hash.
+- If generated targets report different authored schema hashes, `compile`
+  fails with `SCHEMA_HASH_MISMATCH` instead of letting modules publish
+  incoherent artifact evidence.
+
+This is intentionally a minimum zoo. It proves module-owned target dispatch and
+artifact identity agreement without importing Echo, jedit, Continuum,
+PostgreSQL, or runtime semantics into Wesley core.
+
 ## Playback Questions
 
 1. Does the active design map define what Wesley core owns and what external
@@ -101,14 +118,16 @@ other sibling repos. Those moves need their own repo-local cycles.
    built-in product or database names?
 5. Does PostgreSQL/Supabase behavior point at `wesley-postgres` as the owning
    home?
-6. Does this slice avoid changing sibling repositories?
+6. Do multiple hermetic module targets agree on authored schema identity before
+   Wesley treats generated target evidence as coherent?
+7. Does this slice avoid changing sibling repositories?
 
 ## Next Enforcement Slices
 
 - Turn product/database front-door wording into a stronger docs or metadata
   audit if new residue appears.
-- Add module capability fixture coverage for target dispatch, alias conflicts,
-  and no-module diagnostics.
+- Expand module capability fixture coverage only when a new capability
+  collection needs boundary evidence.
 - Decide which historical Node package command surfaces are legacy support
   only, extraction debt, or still generic Wesley toolchain behavior.
 - Keep `wesley-postgres` visible as the database extraction home while leaving
