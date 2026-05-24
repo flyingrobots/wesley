@@ -154,6 +154,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Changed
 
+- **Legacy CLI quick workflow**: Reclassified the CLI quick-check workflow as a
+  legacy compatibility check and removed its extra direct host-node smoke; the
+  package tests remain the compatibility proof.
 - **Product health check**: `cargo xtask preflight` is now the ordinary product
   health gate, while `cargo xtask legacy-preflight` explicitly runs the
   historical Node package preflight only for legacy package or pnpm workspace

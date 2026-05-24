@@ -362,7 +362,8 @@ Holmes survive without pinning Wesley to legacy Node.
 
 The next pulls after this drift check are:
 
-1. Cut `packages/wesley-host-node/` out of any non-legacy smoke path.
+1. Continue cutting `packages/wesley-host-node/` out of any non-legacy smoke
+   path.
 2. Move or delete remaining root scripts that route through the Node host.
 3. Replace parity and performance helpers that import JS lowerer code with
    Rust fixture-truth checks.

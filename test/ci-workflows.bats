@@ -62,6 +62,20 @@ load 'bats-plugins/bats-assert/load'
   [ "$output" -eq 0 ]
 }
 
+@test "CLI quick workflow is legacy-only and does not add a host-node smoke" {
+  run bash -lc "grep -F 'name: Legacy Compatibility - CLI Quick Check' .github/workflows/cli-quick.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'Legacy compatibility - CLI quick' .github/workflows/cli-quick.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'node ../wesley-host-node/bin/wesley.mjs --version' .github/workflows/cli-quick.yml | wc -l || true"
+  assert_success
+  [ "$output" -eq 0 ]
+}
+
 @test "cert-shipme anchors and paginates bot comments" {
   run bash -lc "grep -F '<!-- SHIPME_COMMENT -->' .github/workflows/cert-shipme.yml | wc -l"
   assert_success
