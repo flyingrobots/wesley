@@ -17,6 +17,7 @@ The release packet currently requires these checks before finalization:
 - `pnpm parity:ir -- --fixture test/fixtures/ir-parity/nested-list-schema.graphql --projection js-sdl-type-family-vs-rust-l1-type-family.v0 --json`
 - `pnpm parity:parser`
 - `pnpm perf:ir -- --list-fixtures`
+- `pnpm perf:bindings -- --fixture test/fixtures/ir-parity/small-schema.graphql --iterations 1 --warmups 0 --json`
 - `node --test packages/wesley-cli/test/module-loading.test.mjs`
 - `cargo test -p wesley-core`
 - `cargo test -p wesley-cli`

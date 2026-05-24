@@ -9,7 +9,7 @@ Current direction and active tensions. Historical ship data is in
 timeline
     Phase 1 : v0.0.5 Shipped : Clean House : Domain-Empty Backlog
     Phase 2 : v0.0.6 : Rust IR Parity : Boundary Proof
-    Phase 3 : Module Runtime : External Targets : Artifact Evidence
+    Phase 3 : Binding Observatory : Module Runtime : Artifact Evidence
     Phase 4 : Core Release : Legacy Node Retirement : Postgres Module Cutover
 ```
 
@@ -85,7 +85,21 @@ legacy Node lowering.
 - Move product/runtime/database semantics to owning repos or modules before
   deleting generic compatibility evidence that external consumers still need.
 
-### 7. Wesley-Postgres Preservation
+### 7. Rust Core Binding Observatory
+
+- `pnpm perf:bindings` is now the evidence seam for Node/Rust/WASM cutover
+  planning.
+- Keep Rust CLI, legacy JS, Node binding, and WASM binding as separate adapter
+  dimensions instead of collapsing them into one timing number.
+- Treat `node-rust-binding` and `wasm-binding` as explicit `not-implemented`
+  report slots until real adapters exist.
+- Do not choose N-API, WASM, or legacy JS retirement from performance vibes.
+  Cutover needs correctness parity, latency, memory, binding overhead, and
+  normal CLI regression evidence.
+- [0016-rust-core-binding-observatory](./design/0016-rust-core-binding-observatory/rust-core-binding-observatory.md)
+  is now the active Phase 3 runway packet.
+
+### 8. Wesley-Postgres Preservation
 
 `wesley-postgres` is the PostgreSQL-family extraction home. It is active and
 must not be abandoned while Wesley tightens its domain-empty boundary.
@@ -153,17 +167,23 @@ remain explicitly absent.
 
 The next pulls are:
 
-1. Broaden performance evidence only where a separate harness can distinguish
-   Rust peak RSS, Node binding overhead, and WASM binding overhead.
+1. Use `pnpm perf:bindings` to broaden performance evidence only where the
+   report distinguishes Rust CLI, legacy JS, Node binding, WASM binding, and
+   memory posture.
 2. Add new parity fixtures only when they exercise a named projection boundary
    that the current table and type-family corpus does not already cover.
-3. Move toward the Phase 3 module runtime runway only after v0.0.6 release
-   notes clearly state that legacy Node lowering is not retired yet.
+3. Move toward the Phase 3 module runtime runway through explicit adapter and
+   capability evidence, not by importing product/runtime semantics into core.
 
 The `ninelives` decision is made: use `ninelives` for Rust resilience seams and
 Alfred for JavaScript tooling seams. Keep the scope narrow: resilience policy
 wraps execution boundaries; it does not import product, database, scheduler, or
 runtime semantics into Wesley.
+
+The Node binding decision is intentionally not made yet. The current posture is
+Rust CLI as the authoritative native compiler path, legacy JS as compatibility
+fallback during parity migration, and observatory evidence before any N-API or
+WASM production binding choice.
 
 Echo and jedit do not need more Wesley feature gravity for their current work.
 Wesley should coordinate on compatibility only when a concrete artifact, hash,
