@@ -7,6 +7,8 @@ The machine-readable CI/review export lives beside this document as
 [`node-retirement-ledger.json`](./node-retirement-ledger.json).
 The row-by-row retirement gate summary lives in
 [`LEGACY_COMPATIBILITY_MATRIX.md`](./LEGACY_COMPATIBILITY_MATRIX.md).
+The leaf-package deletion audit lives in
+[`LEAF_PACKAGE_DELETION_AUDIT.md`](./LEAF_PACKAGE_DELETION_AUDIT.md).
 
 ## Dispositions
 
@@ -19,36 +21,36 @@ The row-by-row retirement gate summary lives in
 
 ## Package Inventory
 
-| Surface                                 | Current role                                                                                                | Disposition                     | Retirement gate                                                                                                                      |
-| --------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `packages/wesley-core/`                 | Historical JS compiler domain, generation pipeline, schema utilities, runtime helpers.                      | Port then delete                | Rust core owns compiler facts, emitters own generic projections, and any remaining product/domain behavior is rejected or extracted. |
-| `packages/wesley-cli/`                  | Historical command framework for generate, transform, TypeScript, Zod, diff, cert, and Holmes-era commands. | Delete after command migration  | Every useful command is ported, extracted, or rejected; docs no longer present `pnpm wesley` as product front door.                  |
-| `packages/wesley-host-node/`            | Node executable wrapper and runtime adapter.                                                                | Delete                          | Tests and docs use native CLI except explicitly named legacy compatibility lanes.                                                    |
-| `packages/wesley-runtime-node/`         | Node module loading, counterfactual surface, runtime store helpers.                                         | Extract or delete               | Module/runtime evidence moves to Rust protocol, assurance tooling, or owning modules.                                                |
-| `packages/wesley-generator-js/`         | Legacy TypeScript/Zod projection surface.                                                                   | Port TypeScript, extract Zod    | Rust emitters cover retained generic output; Zod moves to an external target boundary if still needed.                               |
-| `packages/wesley-holmes/`               | Holmes/Moriarty evidence and counterfactual tooling.                                                        | Extract or rebuild later        | Assurance tooling has an explicit package/repo boundary separate from compiler authority.                                            |
-| `packages/wesley-host-browser/`         | Browser-host experiment.                                                                                    | Delete or externalize           | Browser compatibility stays in a legacy compatibility lane until externalized or deleted.                                            |
-| `packages/wesley-host-bun/`             | Bun-host experiment.                                                                                        | Delete or externalize           | Bun compatibility stays in a legacy compatibility lane until obsolete, externalized, or deleted.                                     |
-| `packages/wesley-host-deno/`            | Deno-host experiment.                                                                                       | Delete or externalize           | Deno compatibility stays in a legacy compatibility lane until obsolete, externalized, or deleted.                                    |
-| `packages/wesley-scaffold-multitenant/` | Product scaffold.                                                                                           | Delete or move to product owner | Product/domain scaffolding leaves generic Wesley.                                                                                    |
-| `packages/wesley-tasks/`                | Task graph model.                                                                                           | Port only if generic            | Rust runtime planning proves it needs the concept; otherwise delete.                                                                 |
-| `packages/wesley-test-fixtures/`        | JS fixture helper package.                                                                                  | Replace                         | Useful fixtures move into plain `test/fixtures` or Rust tests.                                                                       |
+| Surface                         | Current role                                                                                                | Disposition                    | Retirement gate                                                                                                                      |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `packages/wesley-core/`         | Historical JS compiler domain, generation pipeline, schema utilities, runtime helpers.                      | Port then delete               | Rust core owns compiler facts, emitters own generic projections, and any remaining product/domain behavior is rejected or extracted. |
+| `packages/wesley-cli/`          | Historical command framework for generate, transform, TypeScript, Zod, diff, cert, and Holmes-era commands. | Delete after command migration | Every useful command is ported, extracted, or rejected; docs no longer present `pnpm wesley` as product front door.                  |
+| `packages/wesley-host-node/`    | Node executable wrapper and runtime adapter.                                                                | Delete                         | Tests and docs use native CLI except explicitly named legacy compatibility lanes.                                                    |
+| `packages/wesley-runtime-node/` | Node module loading, counterfactual surface, runtime store helpers.                                         | Extract or delete              | Module/runtime evidence moves to Rust protocol, assurance tooling, or owning modules.                                                |
+| `packages/wesley-generator-js/` | Legacy TypeScript/Zod projection surface.                                                                   | Port TypeScript, extract Zod   | Rust emitters cover retained generic output; Zod moves to an external target boundary if still needed.                               |
+| `packages/wesley-holmes/`       | Holmes/Moriarty evidence and counterfactual tooling.                                                        | Extract or rebuild later       | Assurance tooling has an explicit package/repo boundary separate from compiler authority.                                            |
+| `packages/wesley-host-browser/` | Browser-host experiment.                                                                                    | Delete or externalize          | Browser compatibility stays in a legacy compatibility lane until externalized or deleted.                                            |
+| `packages/wesley-host-bun/`     | Bun-host experiment.                                                                                        | Delete or externalize          | Bun compatibility stays in a legacy compatibility lane until obsolete, externalized, or deleted.                                     |
+| `packages/wesley-host-deno/`    | Deno-host experiment.                                                                                       | Delete or externalize          | Deno compatibility stays in a legacy compatibility lane until obsolete, externalized, or deleted.                                    |
 
 ## Current Deletion Blockers
 
-| Slice  | Surface                         | Why the gate is still open                                                                         |
-| ------ | ------------------------------- | -------------------------------------------------------------------------------------------------- |
-| NR-076 | `packages/wesley-core/`         | Holmes, host compatibility packages, scaffold fixtures, JS generator, and scripts still import it. |
-| NR-077 | `packages/wesley-cli/`          | Legacy assurance/runtime commands and Bats compatibility suites still execute through it.          |
-| NR-078 | `packages/wesley-host-node/`    | Compatibility workflows, root scripts, and legacy CLI smoke tests still reference the wrapper.     |
-| NR-079 | `packages/wesley-runtime-node/` | Holmes/runtime evidence and parser/parity migration scripts still use it.                          |
-| NR-080 | `packages/wesley-generator-js/` | Legacy CLI Zod/models/TypeScript compatibility commands still use it.                              |
+| Slice  | Surface                         | Why the gate is still open                                                                     |
+| ------ | ------------------------------- | ---------------------------------------------------------------------------------------------- |
+| NR-076 | `packages/wesley-core/`         | Holmes, host compatibility packages, JS generator, and scripts still import it.                |
+| NR-077 | `packages/wesley-cli/`          | Legacy assurance/runtime commands and Bats compatibility suites still execute through it.      |
+| NR-078 | `packages/wesley-host-node/`    | Compatibility workflows, root scripts, and legacy CLI smoke tests still reference the wrapper. |
+| NR-079 | `packages/wesley-runtime-node/` | Holmes/runtime evidence and parser/parity migration scripts still use it.                      |
+| NR-080 | `packages/wesley-generator-js/` | Legacy CLI Zod/models/TypeScript compatibility commands still use it.                          |
 
 ## Retired Package Inventory
 
-| Surface                          | Slice  | Outcome | Replacement / owner                                                                                  |
-| -------------------------------- | ------ | ------- | ---------------------------------------------------------------------------------------------------- |
-| `packages/wesley-generator-vue/` | NR-081 | Deleted | Vue projection ownership exits generic Wesley; reintroduce it only through an external target owner. |
+| Surface                                 | Slice  | Outcome | Replacement / owner                                                                                     |
+| --------------------------------------- | ------ | ------- | ------------------------------------------------------------------------------------------------------- |
+| `packages/wesley-generator-vue/`        | NR-081 | Deleted | Vue projection ownership exits generic Wesley; reintroduce it only through an external target owner.    |
+| `packages/wesley-scaffold-multitenant/` | NR-082 | Deleted | Product scaffolding exits generic Wesley; future scaffolds belong to an owning product repository.      |
+| `packages/wesley-test-fixtures/`        | NR-083 | Deleted | Useful fixtures live as plain `test/fixtures` assets or Rust tests, not as a workspace package.         |
+| `packages/wesley-tasks/`                | NR-084 | Deleted | Rust `TransmutationRunner` keeps descriptor-only task graph evidence without a JavaScript task runtime. |
 
 ## Command Inventory
 

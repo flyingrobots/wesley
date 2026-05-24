@@ -65,26 +65,26 @@ Every legacy Node surface gets one disposition:
 
 ## Package Inventory
 
-| Legacy package                          | Disposition                     | Notes                                                                                                                   |
-| --------------------------------------- | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `packages/wesley-core/`                 | Port then delete                | Audit for generic compiler behavior not already in `crates/wesley-core`; reject domain residue.                         |
-| `packages/wesley-cli/`                  | Delete after command migration  | Native `crates/wesley-cli` is the product body.                                                                         |
-| `packages/wesley-host-node/`            | Delete                          | Legacy compatibility only; native binary replaces the Node host as product front door.                                  |
-| `packages/wesley-runtime-node/`         | Extract or delete               | Node module loading should not define Wesley core.                                                                      |
-| `packages/wesley-generator-js/`         | Port TypeScript, extract Zod    | Basic Rust and TypeScript model emission has started in Rust. Zod exits to an external target boundary if still needed. |
-| `packages/wesley-holmes/`               | Extract or rebuild later        | Assurance/evidence tooling is adjacent, not a blocker for compiler-kernel Rustification.                                |
-| `packages/wesley-host-browser/`         | Delete or externalize           | Legacy compatibility only; externalize if browser ecosystem ownership remains useful.                                   |
-| `packages/wesley-host-bun/`             | Delete                          | Legacy compatibility only; delete or externalize after compatibility evidence is obsolete.                              |
-| `packages/wesley-host-deno/`            | Delete                          | Legacy compatibility only; delete or externalize after compatibility evidence is obsolete.                              |
-| `packages/wesley-scaffold-multitenant/` | Delete or move to product owner | Product scaffold, not core Wesley.                                                                                      |
-| `packages/wesley-tasks/`                | Port only if generic            | Keep the idea only if Rust execution planning needs it.                                                                 |
-| `packages/wesley-test-fixtures/`        | Replace                         | Move useful fixtures into Rust tests or plain `test/fixtures`.                                                          |
+| Legacy package                  | Disposition                    | Notes                                                                                                                   |
+| ------------------------------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| `packages/wesley-core/`         | Port then delete               | Audit for generic compiler behavior not already in `crates/wesley-core`; reject domain residue.                         |
+| `packages/wesley-cli/`          | Delete after command migration | Native `crates/wesley-cli` is the product body.                                                                         |
+| `packages/wesley-host-node/`    | Delete                         | Legacy compatibility only; native binary replaces the Node host as product front door.                                  |
+| `packages/wesley-runtime-node/` | Extract or delete              | Node module loading should not define Wesley core.                                                                      |
+| `packages/wesley-generator-js/` | Port TypeScript, extract Zod   | Basic Rust and TypeScript model emission has started in Rust. Zod exits to an external target boundary if still needed. |
+| `packages/wesley-holmes/`       | Extract or rebuild later       | Assurance/evidence tooling is adjacent, not a blocker for compiler-kernel Rustification.                                |
+| `packages/wesley-host-browser/` | Delete or externalize          | Legacy compatibility only; externalize if browser ecosystem ownership remains useful.                                   |
+| `packages/wesley-host-bun/`     | Delete                         | Legacy compatibility only; delete or externalize after compatibility evidence is obsolete.                              |
+| `packages/wesley-host-deno/`    | Delete                         | Legacy compatibility only; delete or externalize after compatibility evidence is obsolete.                              |
 
 ## Retired Package Inventory
 
-| Legacy package                   | Slice  | Outcome | Replacement / owner                                                                                  |
-| -------------------------------- | ------ | ------- | ---------------------------------------------------------------------------------------------------- |
-| `packages/wesley-generator-vue/` | NR-081 | Deleted | Vue output is no longer generic Wesley surface area; reintroduce it only through an external target. |
+| Legacy package                          | Slice  | Outcome | Replacement / owner                                                                                  |
+| --------------------------------------- | ------ | ------- | ---------------------------------------------------------------------------------------------------- |
+| `packages/wesley-generator-vue/`        | NR-081 | Deleted | Vue output is no longer generic Wesley surface area; reintroduce it only through an external target. |
+| `packages/wesley-scaffold-multitenant/` | NR-082 | Deleted | Product scaffolding belongs to product repositories, not generic Wesley.                             |
+| `packages/wesley-test-fixtures/`        | NR-083 | Deleted | Useful fixtures live as plain `test/fixtures` files or Rust tests.                                   |
+| `packages/wesley-tasks/`                | NR-084 | Deleted | Task graph truth remains descriptor-only in core until Rust planning proves a runtime need.          |
 
 ## Execution Order
 

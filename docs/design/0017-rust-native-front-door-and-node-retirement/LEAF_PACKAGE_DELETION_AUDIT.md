@@ -1,0 +1,88 @@
+# Leaf Package Deletion Audit
+
+<!-- docs-truth: status=experimental owner=@flyingrobots -->
+
+This audit records the NR-082 through NR-094 cleanup tranche. It is not the
+final Node retirement closeout: `packages/wesley-core/`, `packages/wesley-cli/`,
+`packages/wesley-host-node/`, `packages/wesley-runtime-node/`,
+`packages/wesley-generator-js/`, and `packages/wesley-holmes/` still have
+explicit open gates.
+
+## Deleted Packages
+
+| Slice  | Package                                 | Outcome | Replacement / owner                                                                                                        |
+| ------ | --------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------- |
+| NR-082 | `packages/wesley-scaffold-multitenant/` | Deleted | Product scaffold ownership belongs in a product repository, not generic Wesley.                                            |
+| NR-083 | `packages/wesley-test-fixtures/`        | Deleted | Useful fixtures live as plain `test/fixtures` files or Rust test assets.                                                   |
+| NR-084 | `packages/wesley-tasks/`                | Deleted | Wesley keeps task graph descriptors in core; scheduling/execution policy belongs to Rust or external runtimes once proved. |
+
+## Cleanup Evidence
+
+| Slice  | Evidence                                                                                                                |
+| ------ | ----------------------------------------------------------------------------------------------------------------------- |
+| NR-085 | Deleted package directories no longer contain `package.json`, so the `packages/*` workspace glob no longer admits them. |
+| NR-086 | Removed the dead optional `@wesley/tasks` load from `createNodeRuntime()` and removed package-only test wiring.         |
+| NR-087 | Regenerated `pnpm-lock.yaml` with the deleted package importers removed.                                                |
+| NR-088 | Deleted `.github/workflows/pkg-tasks.yml`; no package-only workflow remains for a deleted surface.                      |
+
+## Preserved JavaScript Tooling
+
+| Slice  | Decision                                                                                                                                                                                                 |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| NR-089 | JavaScript remains for repository tooling, docs/site generation, website builds, and legacy compatibility lanes. It is not product compiler authority.                                                   |
+| NR-090 | `@git-stunts/alfred` remains a root dev dependency only for JavaScript tooling seams that run bounded child processes. Current users are parity/performance scripts and `scripts/resilient-process.mjs`. |
+| NR-091 | `ninelives` remains the Rust resilience primitive in `crates/wesley-core` and `xtask`; it is the chosen policy library for cooperative Rust compiler and capability seams.                               |
+
+## Stale Shadow Audit
+
+The stale-package search intentionally still finds historical or retired
+references in changelog entries, graveyard notes, the retirement ledger, and
+this audit. It must not find a live package directory, package workflow, active
+progress row, or code path that imports the deleted packages as runtime
+dependencies.
+
+Allowed remaining references:
+
+- `CHANGELOG.md` historical entries.
+- Current docs whose purpose is to state retired package status:
+  `docs/ARCHITECTURE.md`, `docs/LEGACY_NODE_MIGRATION.md`,
+  `docs/WESLEY_GLOSSARY.md`, `docs/architecture/transmutations.md`, and
+  `docs/design/wesley-extraction-map.md`.
+- `docs/design/0017-rust-native-front-door-and-node-retirement/` package
+  retirement rows and this audit.
+- `docs/method/graveyard/` archived backlog notes.
+- `CHRONICLES_OF_THE_MACHINE-KIND_*.jsonl` historical machine logs.
+- Tests that assert deleted package names no longer appear in active workflow
+  requirements.
+
+Active-surface search over manifests, workspace config, progress config,
+`.github/`, `test/`, `packages/`, `crates/`, `scripts/`,
+`docs/truth-manifest.json`, and active backlog lanes finds only negative Bats
+assertions for the deleted workflow/package requirements.
+
+## Remaining Open Gates
+
+| Slice  | Surface                         | Reason it remains open                                                           |
+| ------ | ------------------------------- | -------------------------------------------------------------------------------- |
+| NR-076 | `packages/wesley-core/`         | Still feeds Holmes, compatibility packages, JS generator, and migration scripts. |
+| NR-077 | `packages/wesley-cli/`          | Still owns legacy assurance/runtime commands and compatibility tests.            |
+| NR-078 | `packages/wesley-host-node/`    | Still needed for compatibility workflows and legacy CLI smoke tests.             |
+| NR-079 | `packages/wesley-runtime-node/` | Still used by Holmes/runtime evidence and parser/parity migration scripts.       |
+| NR-080 | `packages/wesley-generator-js/` | Still used by legacy Zod/models/TypeScript compatibility commands.               |
+| NR-095 | Final closeout                  | Blocked until NR-076 through NR-080 are actually closed or externally extracted. |
+| NR-096 | Remove active campaign          | Blocked until final closeout is merged.                                          |
+
+## Verification
+
+| Command                         | Result |
+| ------------------------------- | ------ |
+| `git diff --check`              | Pass   |
+| `cargo xtask docs-check`        | Pass   |
+| `pnpm run lint:docs-whitespace` | Pass   |
+| `pnpm run format:check`         | Pass   |
+| `pnpm run lint`                 | Pass   |
+| `pnpm test`                     | Pass   |
+| `pnpm run preflight`            | Pass   |
+| `cargo xtask legacy-preflight`  | Pass   |
+| `cargo xtask preflight`         | Pass   |
+| `cargo xtask release-check`     | Pass   |

@@ -120,6 +120,13 @@ front door and retirement ledger. Later slices should retire Node by capability,
 not by deleting files before equivalent Rust truth or explicit extraction
 exists.
 
+Status: **89 / 96 slices closed**. The leaf package deletion tranche removed
+the scaffold, fixture, and task-runtime packages and proved the remaining Rust
+release path does not depend on them. The open retirement work is now
+concentrated in the large compatibility packages (`wesley-core`, `wesley-cli`,
+`wesley-host-node`, `wesley-runtime-node`, and `wesley-generator-js`) plus the
+final closeout/removal slices.
+
 - [x] NR-001 Reset `BEARING` around the 96-slice legacy Node retirement
       campaign.
 - [x] NR-002 Open design packet `0017` for the Rust-native front door and Node
@@ -271,24 +278,24 @@ lower` references.
       runtime evidence no longer depend on it.
 - [ ] NR-080 Delete or externalize `packages/wesley-generator-js`.
 - [x] NR-081 Delete or externalize `packages/wesley-generator-vue`.
-- [ ] NR-082 Delete or externalize `packages/wesley-scaffold-multitenant`.
-- [ ] NR-083 Delete or replace `packages/wesley-test-fixtures`.
-- [ ] NR-084 Delete or externalize `packages/wesley-tasks`.
-- [ ] NR-085 Remove package workspace entries for deleted legacy packages.
-- [ ] NR-086 Remove package scripts that only support deleted legacy packages.
-- [ ] NR-087 Remove lockfile dependency families that exist only for deleted
+- [x] NR-082 Delete or externalize `packages/wesley-scaffold-multitenant`.
+- [x] NR-083 Delete or replace `packages/wesley-test-fixtures`.
+- [x] NR-084 Delete or externalize `packages/wesley-tasks`.
+- [x] NR-085 Remove package workspace entries for deleted legacy packages.
+- [x] NR-086 Remove package scripts that only support deleted legacy packages.
+- [x] NR-087 Remove lockfile dependency families that exist only for deleted
       legacy packages.
-- [ ] NR-088 Remove GitHub Actions jobs that exist only for deleted legacy
+- [x] NR-088 Remove GitHub Actions jobs that exist only for deleted legacy
       packages.
-- [ ] NR-089 Preserve website/docs tooling separately if JavaScript remains
+- [x] NR-089 Preserve website/docs tooling separately if JavaScript remains
       useful outside product authority.
-- [ ] NR-090 Preserve `@git-stunts/alfred` only for JavaScript tooling seams
+- [x] NR-090 Preserve `@git-stunts/alfred` only for JavaScript tooling seams
       that still need bounded child-process behavior.
-- [ ] NR-091 Preserve `ninelives` as the Rust resilience policy primitive for
+- [x] NR-091 Preserve `ninelives` as the Rust resilience policy primitive for
       compiler and capability seams.
-- [ ] NR-092 Run a repo-wide stale Node shadow audit after deletions.
-- [ ] NR-093 Run a docs link/truth audit after deletions.
-- [ ] NR-094 Run a CI/release dry-run proving Rust-only product release does not
+- [x] NR-092 Run a repo-wide stale Node shadow audit after deletions.
+- [x] NR-093 Run a docs link/truth audit after deletions.
+- [x] NR-094 Run a CI/release dry-run proving Rust-only product release does not
       require legacy Node packages.
 - [ ] NR-095 Publish the final legacy Node retirement closeout with migrated,
       extracted, deleted, deferred, and rejected surfaces.

@@ -112,7 +112,6 @@ jobs:
             "wesley-core"
             "wesley-host-node"
             "wesley-cli"
-            "wesley-tasks"
             "wesley-generator-js"
           )
 
@@ -149,7 +148,7 @@ jobs:
           - Core domain extracted from god module
           - Generators moved to dedicated packages
           - CLI and Node.js code evicted from core
-          - T.A.S.K.S. planning primitives implemented
+          - Task graph descriptors live in @wesley/core without a JS task runtime
           - Package boundaries defined and enforced
 
           ### Package Structure
@@ -160,7 +159,6 @@ jobs:
           │   ├── wesley-core/              # Pure domain logic
           │   ├── wesley-host-node/         # Node.js adapters
           │   ├── wesley-cli/               # Platform-agnostic CLI
-          │   ├── wesley-tasks/             # Task scheduling system
           │   └── wesley-generator-js/      # JavaScript/TypeScript generators
           ```
 
@@ -169,8 +167,7 @@ jobs:
           1. **Core** → Only other core modules (hexagonal center)
           2. **Adapters** → Can use core + platform libraries
           3. **Generators** → Can use core, no cross-dependencies
-          4. **T.A.S.K.S.** → Independent scheduling system
-          5. **External executors** → Can consume Wesley task graphs from module repos
+          4. **Task descriptors** → @wesley/core can describe graphs; external executors own scheduling
 
           Generated at: $(date)
           EOF

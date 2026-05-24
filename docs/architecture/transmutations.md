@@ -584,9 +584,7 @@ packages/
 ├── wesley-host-browser/
 ├── wesley-host-bun/
 ├── wesley-host-deno/
-├── wesley-host-node/
-├── wesley-scaffold-multitenant/
-└── wesley-tasks/
+└── wesley-host-node/
 ```
 
 ### Proposed Structure
@@ -637,10 +635,8 @@ packages/
 │   ├── deno/                      #   @wesley/host-deno
 │   └── browser/                   #   @wesley/host-browser
 │
-├── tasks/                         # @wesley/tasks (T.A.S.K.S.)
-│
 └── stacks/                        # Full-stack scaffolds
-    └── scaffold-multitenant/
+    └── external product repositories
 ```
 
 Key changes:
@@ -841,13 +837,17 @@ graph LR
 - `packages/wesley-core/src/application/EvidenceMap.mjs` — wire into runner
 - `packages/wesley-core/src/application/Scoring.mjs` — wire into runner
 
-#### 0c. Wire T.A.S.K.S. into transmutation execution
+#### 0c. Keep transmutation task graphs descriptor-only
 
-**Problem**: `@wesley/tasks` has a complete DAG engine (`TaskDefinition`, `TaskDependency`, `TaskGraph`) but generic generation still runs through the sequential pipeline. The old `@wesley/slaps` PostgreSQL lock-aware executor moved to `wesley-postgres` as `@wesley/postgres-slaps`, so base Wesley should expose task graphs without depending on a database executor.
+**Problem**: The deleted `@wesley/tasks` package carried a JavaScript DAG
+runtime, but generic Wesley no longer has evidence that it needs to own task
+execution. The old `@wesley/slaps` PostgreSQL lock-aware executor moved to
+`wesley-postgres` as `@wesley/postgres-slaps`, so base Wesley should expose
+task graph descriptors without depending on a JavaScript or database executor.
 
 The sequential registry now carries more of the orchestration truth than it did originally: transmutations register their own prerequisites, plugin construction, and runtime capabilities, and the built-in `null-generator` witness exercises that seam without adding special cases to the runner.
 
-**Fix**: Each transmutation becomes a `TaskGraph`:
+**Fix**: Each transmutation can be described as a graph:
 
 ```mermaid
 graph LR
@@ -859,7 +859,8 @@ graph LR
     G3 --> E
 ```
 
-The `TransmutationRunner` builds this graph from the transmutation config, then hosts or modules can feed the descriptor into a compatible executor. Benefits:
+The `TransmutationRunner` builds this graph from the transmutation config, then
+hosts or modules can feed the descriptor into a compatible executor. Benefits:
 
 - **Parallelism**: Independent generators run concurrently (DDL and types don't depend on each other)
 - **`--dry-run` for free**: Render the task graph without executing it
@@ -868,8 +869,8 @@ The `TransmutationRunner` builds this graph from the transmutation config, then 
 
 **Files**:
 
-- `packages/wesley-tasks/src/TaskDefinition.mjs` — ready, use as-is
-- New: `packages/wesley-core/src/application/TransmutationRunner.mjs` — orchestrator
+- `packages/wesley-core/src/application/TransmutationRunner.mjs` — descriptor builder
+- external modules or owning runtimes — execution policy, retries, concurrency, and resource locks
 
 #### 0d. Standardize named exports (resolves CR-33)
 

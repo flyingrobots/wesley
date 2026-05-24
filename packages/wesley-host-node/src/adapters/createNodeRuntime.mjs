@@ -33,17 +33,6 @@ export async function createNodeRuntime() {
     console.warn('Warning: @wesley/generator-js not available, using stubs');
   }
 
-  // Try to load the generic task planner
-  let planner = null;
-
-  try {
-    planner = await import('@wesley/tasks');
-  } catch (_e) {
-    if (process.env.WESLEY_WARN_MISSING === '1') {
-      console.warn('Warning: @wesley/tasks not available');
-    }
-  }
-
   // Create a wrapper that respects quiet mode
   const isDevelopment = (process.env.NODE_ENV || 'development') === 'development';
   const usePretty = isDevelopment && process.env.WESLEY_LOG_FORMAT !== 'json';
@@ -163,8 +152,9 @@ export async function createNodeRuntime() {
       }
     },
 
-    // Planning (may be null); execution engines are module-owned.
-    planner,
+    // Planning stays descriptor-only in @wesley/core until Rust execution
+    // planning proves a generic runtime need.
+    planner: null,
 
     // File writer
     writer: {

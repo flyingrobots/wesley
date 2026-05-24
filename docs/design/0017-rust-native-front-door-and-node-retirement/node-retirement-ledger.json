@@ -36,18 +36,6 @@
     {
       "path": "packages/wesley-runtime-node",
       "disposition": "extract-or-delete"
-    },
-    {
-      "path": "packages/wesley-scaffold-multitenant",
-      "disposition": "delete-or-move-to-product-owner"
-    },
-    {
-      "path": "packages/wesley-tasks",
-      "disposition": "port-only-if-generic"
-    },
-    {
-      "path": "packages/wesley-test-fixtures",
-      "disposition": "replace"
     }
   ],
   "retiredPackages": [
@@ -56,13 +44,31 @@
       "disposition": "deleted",
       "slice": "NR-081",
       "replacement": "External Vue projection ownership; generic Wesley no longer carries a built-in Vue generator package."
+    },
+    {
+      "path": "packages/wesley-scaffold-multitenant",
+      "disposition": "deleted",
+      "slice": "NR-082",
+      "replacement": "Product scaffolding is no longer generic Wesley surface area; future scaffolds belong to an owning product repository."
+    },
+    {
+      "path": "packages/wesley-test-fixtures",
+      "disposition": "deleted",
+      "slice": "NR-083",
+      "replacement": "Useful fixtures live as plain files under test/fixtures or Rust tests instead of an npm workspace package."
+    },
+    {
+      "path": "packages/wesley-tasks",
+      "disposition": "deleted",
+      "slice": "NR-084",
+      "replacement": "Rust TransmutationRunner keeps descriptor-only task graph evidence; no generic JavaScript task runtime remains in Wesley."
     }
   ],
   "deletionBlockers": [
     {
       "slice": "NR-076",
       "path": "packages/wesley-core",
-      "blocker": "Still imported by Holmes, host compatibility packages, scaffold fixtures, the JS generator, and scripts."
+      "blocker": "Still imported by Holmes, host compatibility packages, the JS generator, and scripts."
     },
     {
       "slice": "NR-077",

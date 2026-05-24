@@ -193,28 +193,6 @@ importers:
         specifier: ^16.9.0
         version: 16.11.0
 
-  packages/wesley-scaffold-multitenant:
-    dependencies:
-      '@wesley/core':
-        specifier: workspace:*
-        version: link:../wesley-core
-    devDependencies:
-      vitest:
-        specifier: ^4.1.7
-        version: 4.1.7(jsdom@29.1.1)(rolldown-vite@7.1.14(esbuild@0.25.10)(sugarss@5.0.1(postcss@8.5.15)))
-
-  packages/wesley-tasks:
-    devDependencies:
-      vitest:
-        specifier: ^4.1.7
-        version: 4.1.7(jsdom@29.1.1)(rolldown-vite@7.1.14(esbuild@0.25.10)(sugarss@5.0.1(postcss@8.5.15)))
-
-  packages/wesley-test-fixtures:
-    dependencies:
-      fast-check:
-        specifier: ^4.3.0
-        version: 4.3.0
-
   wesley-website:
     dependencies:
       '@electric-sql/pglite':

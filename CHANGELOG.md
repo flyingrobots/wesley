@@ -90,6 +90,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Removed
 
+- **Leaf legacy packages**: Deleted `packages/wesley-scaffold-multitenant`,
+  `packages/wesley-test-fixtures`, and `packages/wesley-tasks`; removed the
+  package-only `pkg-tasks` workflow, lockfile importers, progress rows, and the
+  dead optional task-planner load from the Node host.
 - **Vue generator package**: Deleted `packages/wesley-generator-vue` after the
   retirement ledger classified Vue projection output as target-owned behavior
   with no generic Wesley owner.

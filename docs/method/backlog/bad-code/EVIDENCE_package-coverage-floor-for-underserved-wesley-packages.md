@@ -6,9 +6,9 @@ Legacy `TASKS.md` still carried explicit coverage gaps for:
 - `@wesley/host-bun`
 - deeper `@wesley/host-browser` behavior beyond the tiny smoke surface
 
-`@wesley/scaffold-multitenant` is intentionally excluded from this active
-coverage-debt card. Product scaffolding is extraction debt, not generic Wesley
-release progress.
+The deleted product-scaffolding package is intentionally excluded from this
+active coverage-debt card. Product scaffolding is extraction debt, not generic
+Wesley release progress.
 
 Done when:
 

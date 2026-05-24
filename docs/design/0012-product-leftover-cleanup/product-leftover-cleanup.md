@@ -143,7 +143,7 @@ This slice:
 - restores the README progress markers required by the progress script
 - regenerates the README package matrix from `meta/progress.config.json`
 - removes the extracted `@wesley/slaps` package from progress metadata
-- removes `@wesley/scaffold-multitenant` from active progress metadata because
+- removes the product-scaffolding package from active progress metadata because
   product scaffolding is legacy extraction work, not generic Wesley release
   progress
 - removes the scaffold package from active architecture-boundary required

@@ -180,6 +180,17 @@ load 'bats-plugins/bats-assert/load'
   [ "$output" -eq 0 ]
 }
 
+@test "architecture boundaries workflow excludes deleted task package from required packages" {
+  run bash -lc "grep -F 'wesley-tasks' .github/workflows/architecture-boundaries.yml | wc -l"
+  assert_success
+  [ "$output" -eq 0 ]
+}
+
+@test "deleted task package no longer has a package workflow" {
+  run test ! -e .github/workflows/pkg-tasks.yml
+  assert_success
+}
+
 @test "@wesley/cli package test script is compatible with Node 20 test runner globs" {
   run node -e "const pkg = JSON.parse(require('node:fs').readFileSync('packages/wesley-cli/package.json', 'utf8')); if (pkg.scripts.test.includes('\\\"test/*.test.mjs\\\"')) { throw new Error('quoted test glob is not expanded by Node 20'); } if (!pkg.scripts.test.includes('node --test test/*.test.mjs')) { throw new Error('expected shell-expanded test glob'); }"
   assert_success

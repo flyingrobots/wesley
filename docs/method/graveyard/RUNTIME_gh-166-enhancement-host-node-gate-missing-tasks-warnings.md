@@ -5,9 +5,15 @@
 - URL: https://github.com/flyingrobots/wesley/issues/166
 - Imported on: 2026-04-04
 - GitHub updated: 2026-03-18T14:44:13Z
-- Lane: `inbox`
+- Lane: `graveyard`
 - Legend: `RUNTIME`
 - Labels: `enhancement`, `pkg:wesley-host-node`
+
+## Graveyard Status
+
+Archived by NR-084. `packages/wesley-tasks/` has been deleted and
+`createNodeRuntime()` no longer attempts to load `@wesley/tasks`, so the warning
+surface this issue described no longer exists.
 
 ## Legend Fit
 
