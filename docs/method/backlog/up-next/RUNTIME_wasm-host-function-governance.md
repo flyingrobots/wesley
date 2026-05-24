@@ -29,5 +29,13 @@ the same policy or reject the capability before execution.
 ## Repo Evidence
 
 - `docs/design/0009-rust-core-and-wasm-capability-abi/rust-core-and-wasm-capability-abi.md`
+- `crates/wesley-core/src/domain/capability.rs`
+- `crates/wesley-core/tests/module_capability_registry.rs`
 - `docs/method/backlog/bad-code/RUNTIME_module-loading-trust-boundary.md`
 - `packages/wesley-runtime-node/src/ModuleEntryLoader.mjs`
+
+## Current Slice Status
+
+The first pure host-function profile now exists in Rust and rejects unavailable
+WASM host imports before execution. Remaining work is host-runtime integration,
+resource budgets, and shared Rust/Node report emission.

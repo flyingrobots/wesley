@@ -8,6 +8,11 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- **Rust module capability registry proof**: Added Rust-core target registry and
+  WASM host-import policy fixtures covering no-module, default target, explicit
+  target, duplicate target, execution-mode metadata, portability floor,
+  requested/granted/denied capability reports, and deny-by-default pre-execution
+  rejection for unavailable WASM host imports.
 - **Rust-native doctor command**: Added `wesley doctor` with text and JSON
   output for narrow Rust-native health checks covering the native CLI, Rust
   lowerer, normalized SDL hash evidence, and Rust emitter crates without
@@ -108,6 +113,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Changed
 
+- **Assurance command boundary**: Classified certificate, SHIPME,
+  Holmes/Moriarty, run-ledger, validate-bundle, and package-level evidence
+  commands as assurance or compatibility surfaces rather than native compiler
+  front-door commands.
 - **Legacy command retirement decisions**: Classified legacy `zod`, `models`,
   and `init` as externalized or retired core behavior, and narrowed legacy
   `generate` replacement to explicit native `emit` commands plus external

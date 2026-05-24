@@ -218,6 +218,13 @@ The important rule is:
 
 `wesley compile` remains a Wesley base-platform verb.
 
+The Rust replacement path starts with `ModuleTargetRegistry` in
+`crates/wesley-core`. That registry is intentionally metadata-first: it proves
+no-module, default target, explicit target, duplicate target, execution mode,
+portability floor, requested/granted/denied capability report, and WASM
+host-import rejection behavior before Wesley grows a dynamic Rust module
+runtime.
+
 What changes is how it decides what to compile.
 
 It should:

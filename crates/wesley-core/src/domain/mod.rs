@@ -1,5 +1,6 @@
 //! Domain models and core logic.
 
+pub mod capability;
 pub mod error;
 pub mod ir;
 pub(crate) mod normalized_sdl;

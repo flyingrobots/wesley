@@ -29,5 +29,13 @@ handles.
 ## Repo Evidence
 
 - `docs/design/0009-rust-core-and-wasm-capability-abi/rust-core-and-wasm-capability-abi.md`
+- `crates/wesley-core/src/domain/capability.rs`
+- `crates/wesley-core/tests/module_capability_registry.rs`
 - `docs/method/backlog/up-next/RUNTIME_wasm-host-function-governance.md`
 - `docs/method/backlog/bad-code/EVIDENCE_module-load-report-release-artifact.md`
+
+## Current Slice Status
+
+The first Rust-native metadata and registry fixtures now exist. Remaining work
+is the broader ABI compatibility surface: semver ranges, typed compatibility
+diagnostics, and hidden-state rejection fixtures.

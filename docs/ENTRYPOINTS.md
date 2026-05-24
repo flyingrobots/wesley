@@ -97,6 +97,10 @@ It can still run older package workflows such as:
 - Holmes/Moriarty evidence tooling
 - website and docs-support tooling
 
+Certificate, SHIPME, Holmes/Moriarty, run-ledger, and package-evidence
+commands are assurance or compatibility surfaces. They are not native compiler
+front-door commands, and new Rust compiler work should not depend on them.
+
 Those surfaces are useful, but they are not the architectural center. When a
 Node surface is still needed, either keep it clearly marked as legacy tooling or
 move the capability to the owning module/repo. Do not add new core compiler

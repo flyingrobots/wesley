@@ -180,25 +180,25 @@ exists.
 - [x] NR-030 Port or retire legacy `init` command behavior.
 - [x] NR-031 Port a narrow Rust `doctor` command only for Rust-native health
   checks.
-- [ ] NR-032 Extract certificate creation/signing/verification commands from the
+- [x] NR-032 Extract certificate creation/signing/verification commands from the
   compiler front door.
-- [ ] NR-033 Extract Holmes/Moriarty evidence commands or re-home them under an
+- [x] NR-033 Extract Holmes/Moriarty evidence commands or re-home them under an
   explicit assurance package boundary.
-- [ ] NR-034 Decide whether runtime run ledger inspection remains in Wesley or
+- [x] NR-034 Decide whether runtime run ledger inspection remains in Wesley or
   exits with assurance tooling.
-- [ ] NR-035 Move package-level evidence tooling out of `packages/wesley-cli`
+- [x] NR-035 Move package-level evidence tooling out of `packages/wesley-cli`
   or mark it compatibility-only.
-- [ ] NR-036 Replace Node dynamic module loading with a Rust-native target
+- [x] NR-036 Replace Node dynamic module loading with a Rust-native target
   registry or external-process protocol design.
-- [ ] NR-037 Add Rust module target registry fixtures for no-module, default
+- [x] NR-037 Add Rust module target registry fixtures for no-module, default
   target, explicit target, and duplicate target behavior.
-- [ ] NR-038 Add Rust module capability metadata for execution mode and
+- [x] NR-038 Add Rust module capability metadata for execution mode and
   portability floor.
-- [ ] NR-039 Add a Rust capability report that names requested, granted, and
+- [x] NR-039 Add a Rust capability report that names requested, granted, and
   denied capabilities.
-- [ ] NR-040 Add deny-by-default host-function governance for WASM module
+- [x] NR-040 Add deny-by-default host-function governance for WASM module
   execution.
-- [ ] NR-041 Add WASM fixture rejection before execution when a module requests
+- [x] NR-041 Add WASM fixture rejection before execution when a module requests
   unavailable host imports.
 - [ ] NR-042 Add capability versioning diagnostics for incompatible module
   contracts.

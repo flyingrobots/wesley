@@ -34,6 +34,8 @@ Its machine-readable export lives in
 by `cargo xtask docs-check`.
 The current legacy command decisions live in
 [`LEGACY_COMMAND_DECISIONS.md`](./LEGACY_COMMAND_DECISIONS.md).
+Assurance and module-runtime extraction decisions live in
+[`ASSURANCE_AND_CAPABILITY_EXTRACTION.md`](./ASSURANCE_AND_CAPABILITY_EXTRACTION.md).
 
 The first ten slices establish the runway:
 
@@ -120,6 +122,10 @@ native commands plus external modules for target-owned outputs. Legacy `zod`,
 `models`, and `init` behavior is not being recreated in core Wesley during this
 campaign; each is either external target work or product scaffolding outside the
 compiler kernel.
+
+Certificate, Holmes/Moriarty, run-ledger, and package-evidence commands are
+not native compiler-front-door commands. They exit with assurance tooling or
+remain compatibility-only until that boundary exists.
 
 ## Non-Goals
 
