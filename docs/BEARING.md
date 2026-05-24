@@ -120,12 +120,13 @@ front door and retirement ledger. Later slices should retire Node by capability,
 not by deleting files before equivalent Rust truth or explicit extraction
 exists.
 
-Status: **89 / 96 slices closed**. The leaf package deletion tranche removed
+Status: **90 / 96 slices closed**. The leaf package deletion tranche removed
 the scaffold, fixture, and task-runtime packages and proved the remaining Rust
-release path does not depend on them. The open retirement work is now
-concentrated in the large compatibility packages (`wesley-core`, `wesley-cli`,
-`wesley-host-node`, `wesley-runtime-node`, and `wesley-generator-js`) plus the
-final closeout/removal slices.
+release path does not depend on them. The follow-on generator tranche deleted
+`wesley-generator-js` and retired model-class scaffolding. The open retirement
+work is now concentrated in the large compatibility packages (`wesley-core`,
+`wesley-cli`, `wesley-host-node`, and `wesley-runtime-node`) plus the final
+closeout/removal slices.
 
 - [x] NR-001 Reset `BEARING` around the 96-slice legacy Node retirement
       campaign.
@@ -276,7 +277,7 @@ lower` references.
       the Node executable wrapper.
 - [ ] NR-079 Delete `packages/wesley-runtime-node` after module loading and
       runtime evidence no longer depend on it.
-- [ ] NR-080 Delete or externalize `packages/wesley-generator-js`.
+- [x] NR-080 Delete or externalize `packages/wesley-generator-js`.
 - [x] NR-081 Delete or externalize `packages/wesley-generator-vue`.
 - [x] NR-082 Delete or externalize `packages/wesley-scaffold-multitenant`.
 - [x] NR-083 Delete or replace `packages/wesley-test-fixtures`.
@@ -343,10 +344,10 @@ without false gates**.
 
 The v0.0.6 compiler-truth work still matters, but the long-term goal now makes
 the priority sharper: delete only the package surfaces whose gates are actually
-closed, and record blockers for the rest. `packages/wesley-generator-vue/` is
-deleted. `packages/wesley-core/`, `packages/wesley-cli/`,
-`packages/wesley-host-node/`, `packages/wesley-runtime-node/`, and
-`packages/wesley-generator-js/` remain open because current workspace packages,
+closed, and record blockers for the rest. `packages/wesley-generator-vue/` and
+`packages/wesley-generator-js/` are deleted. `packages/wesley-core/`,
+`packages/wesley-cli/`, `packages/wesley-host-node/`, and
+`packages/wesley-runtime-node/` remain open because current workspace packages,
 scripts, tests, workflows, or evidence tools still depend on them.
 
 Current evidence still includes complete v0.0.5 publication proof, Rust L1

@@ -14,7 +14,7 @@ const noopLogger = {
   }
 };
 
-const sampleSdl = 'type User @table { id: ID! @pk email: String! }';
+const sampleSdl = 'type User @table { id: ID! @pk email: String! createdAt: DateTime! }';
 const sampleIr = {
   tables: [
     {
@@ -30,6 +30,12 @@ const sampleIr = {
         {
           name: 'email',
           type: { base: 'String', isList: false },
+          nullable: false,
+          directives: {}
+        },
+        {
+          name: 'createdAt',
+          type: { base: 'DateTime', isList: false },
           nullable: false,
           directives: {}
         }
@@ -129,6 +135,8 @@ test('TypeScriptCommand lowers schema content through the core LoweringEngine', 
   assert.equal(state.writes.length, 1);
   assert.equal(state.writes[0].path, 'types.generated.ts');
   assert.match(state.writes[0].content, /interface User/);
+  assert.match(state.writes[0].content, /email\?: string \| null;/);
+  assert.doesNotMatch(state.writes[0].content, /createdAt\?:/);
 });
 
 test('TypeScriptCommand falls back to family projection for zero-table Continuum schemas', async () => {
@@ -183,6 +191,10 @@ test('ZodCommand lowers schema content through the core LoweringEngine', async (
   assert.equal(state.writes.length, 1);
   assert.equal(state.writes[0].path, 'zod.generated.ts');
   assert.match(state.writes[0].content, /z\.object/);
+  assert.doesNotMatch(
+    state.writes[0].content,
+    /createdAt: z\.string\(\)\.datetime\(\)\.optional\(\)/
+  );
 });
 
 test('ZodCommand falls back to family projection for zero-table Continuum schemas', async () => {

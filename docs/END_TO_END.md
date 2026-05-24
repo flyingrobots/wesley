@@ -200,7 +200,7 @@ implementation surfaces.
 1. The **Rust workspace** is the current compiler center. New compiler truth
    belongs in `crates/wesley-core` and the native `wesley` CLI.
 2. The **Node workspace** still carries legacy commands, module loading,
-   generators, hosts, and evidence tooling. It remains useful as
+   hosts, compatibility projections, and evidence tooling. It remains useful as
    compatibility evidence and migration harnesses, but it is no longer the
    compiler brain, product front door, or release authority.
 
@@ -218,7 +218,7 @@ flowchart LR
         JsCore[packages/wesley-core]
         JsCli[packages/wesley-cli]
         RuntimeNode[packages/wesley-runtime-node]
-        Generators[packages/wesley-generator-*]
+        CompatProjection[CLI-local compatibility projections]
         Holmes[packages/wesley-holmes]
         Hosts[packages/wesley-host-*]
     end
@@ -230,7 +230,7 @@ flowchart LR
     Xtask --> Cli
     JsCli --> JsCore
     JsCli --> RuntimeNode
-    JsCore --> Generators
+    JsCli --> CompatProjection
     JsCore --> Holmes
     RuntimeNode --> Hosts
 
@@ -864,7 +864,6 @@ If you open the repository today, the important paths are:
 | `packages/wesley-core/`          | Legacy JavaScript compiler core and toolchain support.                        |
 | `packages/wesley-cli/`           | Legacy JavaScript command framework and module-aware command surfaces.        |
 | `packages/wesley-runtime-node/`  | Legacy Node module discovery, loading, and host utilities.                    |
-| `packages/wesley-generator-*`    | Legacy generator surfaces that remain useful while migration continues.       |
 | `packages/wesley-holmes/`        | Legacy assurance, evidence, verification, and judgment tooling.               |
 | `docs/`                          | Architecture, method, design packets, release packets, and current direction. |
 | `test/fixtures/`                 | GraphQL fixtures, Rust L1 golden files, and parity inputs.                    |
@@ -988,8 +987,8 @@ Today, Wesley can:
 - emit Rust models and operation bindings
 - emit TypeScript declarations and operation bindings
 - write deterministic native emit metadata sidecars
-- keep legacy JavaScript generation paths only as compatibility surfaces while
-  Zod and target-specific outputs move to external ownership
+- keep only narrow legacy JavaScript compatibility projections while Zod and
+  target-specific outputs move to external ownership
 - model external module targets through Rust capability descriptors, ABI
   compatibility reports, stateless runtime policy, and hermetic fixture checks
 - run parity sentinels across selected JS and Rust projections

@@ -112,7 +112,6 @@ jobs:
             "wesley-core"
             "wesley-host-node"
             "wesley-cli"
-            "wesley-generator-js"
           )
 
           for package in "${required_packages[@]}"; do
@@ -146,7 +145,7 @@ jobs:
 
           ### Completed ✅
           - Core domain extracted from god module
-          - Generators moved to dedicated packages
+          - Retained generic emitters moved to Rust-native crates
           - CLI and Node.js code evicted from core
           - Task graph descriptors live in @wesley/core without a JS task runtime
           - Package boundaries defined and enforced
@@ -158,15 +157,14 @@ jobs:
           ├── packages/
           │   ├── wesley-core/              # Pure domain logic
           │   ├── wesley-host-node/         # Node.js adapters
-          │   ├── wesley-cli/               # Platform-agnostic CLI
-          │   └── wesley-generator-js/      # JavaScript/TypeScript generators
+          │   └── wesley-cli/               # Legacy compatibility CLI
           ```
 
           ### Dependency Rules
 
           1. **Core** → Only other core modules (hexagonal center)
           2. **Adapters** → Can use core + platform libraries
-          3. **Generators** → Can use core, no cross-dependencies
+          3. **Generators** → Generic emitters live in Rust crates or external target modules
           4. **Task descriptors** → @wesley/core can describe graphs; external executors own scheduling
 
           Generated at: $(date)

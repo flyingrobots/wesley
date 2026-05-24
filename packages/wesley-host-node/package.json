@@ -30,7 +30,6 @@
   "dependencies": {
     "@wesley/cli": "workspace:*",
     "@wesley/core": "workspace:*",
-    "@wesley/generator-js": "workspace:*",
     "@wesley/runtime-node": "workspace:*",
     "commander": "^14.0.2",
     "fast-glob": "^3.3.2",

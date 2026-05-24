@@ -10,10 +10,6 @@
       "disposition": "port-then-delete"
     },
     {
-      "path": "packages/wesley-generator-js",
-      "disposition": "port-typescript-extract-zod"
-    },
-    {
       "path": "packages/wesley-holmes",
       "disposition": "extract-or-rebuild-later"
     },
@@ -62,6 +58,12 @@
       "disposition": "deleted",
       "slice": "NR-084",
       "replacement": "Rust TransmutationRunner keeps descriptor-only task graph evidence; no generic JavaScript task runtime remains in Wesley."
+    },
+    {
+      "path": "packages/wesley-generator-js",
+      "disposition": "deleted",
+      "slice": "NR-080",
+      "replacement": "Native Rust TypeScript emitters own retained product TypeScript output; Zod remains only as a legacy CLI compatibility projection until extracted or removed with the CLI."
     }
   ],
   "deletionBlockers": [
@@ -84,11 +86,6 @@
       "slice": "NR-079",
       "path": "packages/wesley-runtime-node",
       "blocker": "Still used by Holmes/runtime evidence and parser/parity migration scripts."
-    },
-    {
-      "slice": "NR-080",
-      "path": "packages/wesley-generator-js",
-      "blocker": "Still used by the legacy CLI for Zod/models/TypeScript compatibility commands."
     }
   ],
   "commands": [
@@ -115,12 +112,12 @@
     {
       "name": "zod",
       "path": "packages/wesley-cli/src/commands/zod.mjs",
-      "disposition": "extract"
+      "disposition": "legacy-cli-local-compatibility-projection"
     },
     {
       "name": "models",
-      "path": "packages/wesley-cli/src/commands/models.mjs",
-      "disposition": "retire-from-core"
+      "path": "deleted",
+      "disposition": "deleted"
     },
     {
       "name": "init",

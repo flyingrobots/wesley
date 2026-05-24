@@ -12,11 +12,10 @@ For a full smoke run: `pnpm run bootstrap` (installs, preflight, workspace tests
 
 ## Suites & Commands
 
-| Test File                  | Run It With                                                    | Fixtures/Data                           | Recommended Environment    |
-| -------------------------- | -------------------------------------------------------------- | --------------------------------------- | -------------------------- |
-| `test/cli-generators.bats` | `pnpm --filter @wesley/cli exec bats test/cli-generators.bats` | Creates temporary schema inline         | Local Node runtime (no DB) |
-| `test/cli-models.bats`     | `pnpm --filter @wesley/cli exec bats test/cli-models.bats`     | Creates temporary schema inline         | Local Node runtime         |
-| `test/holmes-e2e.bats`     | `pnpm --filter @wesley/holmes exec bats test/holmes-e2e.bats`  | `test/fixtures/examples/schema.graphql` | Local Node runtime         |
+| Test File                  | Run It With                                                                      | Fixtures/Data                           | Recommended Environment    |
+| -------------------------- | -------------------------------------------------------------------------------- | --------------------------------------- | -------------------------- |
+| `test/cli-generators.bats` | `BATS_LIB_PATH=packages/wesley-cli/test pnpm exec bats test/cli-generators.bats` | Creates temporary schema inline         | Local Node runtime (no DB) |
+| `test/holmes-e2e.bats`     | `BATS_LIB_PATH=packages/wesley-cli/test pnpm exec bats test/holmes-e2e.bats`     | `test/fixtures/examples/schema.graphql` | Local Node runtime         |
 
 ### Notes
 
@@ -39,9 +38,8 @@ Workspace packages expose their own test commands:
 - `pnpm --filter @wesley/core test`
 - `pnpm --filter @wesley/cli test`
 - `pnpm --filter @wesley/holmes test`
-- `pnpm --filter @wesley/generator-js test`
 
-See the package READMEs for additional guidance. The `test/packages/` folder contains harnesses tailored to those packages; each directory now has its own README.
+See the package READMEs for additional guidance.
 
 ## CI/Coverage
 

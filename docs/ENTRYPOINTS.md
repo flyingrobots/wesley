@@ -39,7 +39,6 @@ or ported. Their migration map lives in
 | Legacy JS core          | `packages/wesley-core/`               | Legacy/tooling                      | Historical JavaScript compiler domain, module registry, hashes, generation pipeline, and runtime helpers.                                                                                                                                     |
 | Legacy JS CLI           | `packages/wesley-cli/`                | Legacy/tooling                      | Historical command framework for generate/transform/typescript/zod/diff/cert/Holmes-era flows.                                                                                                                                                |
 | Legacy Node host        | `packages/wesley-host-node/`          | Legacy/tooling                      | Node executable wrapper and runtime adapter around the JS CLI.                                                                                                                                                                                |
-| Legacy JS generator     | `packages/wesley-generator-js/`       | Legacy/tooling                      | Existing TypeScript/Zod/model projection surface. Useful only until retained output is ported or externalized.                                                                                                                                |
 | Legacy evidence tooling | `packages/wesley-holmes/`             | Legacy/tooling                      | Holmes/Moriarty-era evidence, verification, and counterfactual tooling.                                                                                                                                                                       |
 | Root Node workspace     | `package.json`, `pnpm-workspace.yaml` | Workspace plumbing                  | Keeps old packages, docs checks, package tests, and website tooling installable. It is not the Wesley product entry point.                                                                                                                    |
 
@@ -91,7 +90,7 @@ Node Wesley is the historical toolchain.
 It can still run older package workflows such as:
 
 - package preflight and package tests
-- TypeScript/Zod generation
+- legacy TypeScript/Zod compatibility projection
 - module-loaded compile/transform flows
 - Node host execution
 - Holmes/Moriarty evidence tooling
@@ -110,6 +109,7 @@ truth to the Node side.
 
 | Former surface                   | Outcome  | Replacement / owner                                                                                |
 | -------------------------------- | -------- | -------------------------------------------------------------------------------------------------- |
+| `packages/wesley-generator-js/`  | Deleted  | Generic TypeScript output belongs in Rust emitters; Zod is CLI-local compatibility debt.           |
 | `packages/wesley-generator-vue/` | Deleted  | Vue projection behavior belongs in an external target module or product owner, not generic Wesley. |
 | JS/Rust parity release authority | Archived | Rust self-consistency and native fixture truth are the product release gate.                       |
 
@@ -123,7 +123,7 @@ truth to the Node side.
 | Checking docs links/truth/local-path hygiene                            | `cargo xtask docs-check`                                               |
 | Preparing native release artifacts                                      | `cargo xtask release-check`                                            |
 | Touching old JS packages, pnpm workspace files, or legacy package tests | `cargo xtask legacy-preflight`                                         |
-| Using an old generator that only exists in JS                           | `pnpm wesley ...` for now, then plan a port or extraction              |
+| Using an old generator that only exists in JS                           | Externalize it to its owning module or port it to Rust                 |
 | Implementing Echo footprint honesty                                     | Echo-owned tooling, not generic Wesley                                 |
 | Implementing Postgres migrations or SQL projection                      | `wesley-postgres` or another external target module, not `wesley-core` |
 

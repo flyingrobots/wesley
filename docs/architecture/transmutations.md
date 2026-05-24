@@ -579,7 +579,6 @@ packages/
 ├── wesley-cli/
 ├── wesley-continuum/
 ├── wesley-core/
-├── wesley-generator-js/
 ├── wesley-holmes/
 ├── wesley-host-browser/
 ├── wesley-host-bun/
@@ -651,7 +650,9 @@ Key changes:
 This is a **naming and directory reorganization**, not a rewrite. The code inside each package stays the same. The main work is:
 
 1. Rename directories and update `pnpm-workspace.yaml`
-2. Update `package.json` names (`@wesley/generator-js` → `@wesley/transmute-js`; PostgreSQL/Supabase modules now belong in `wesley-postgres`)
+2. Update `package.json` names for remaining externalized target modules;
+   PostgreSQL/Supabase modules now belong in `wesley-postgres`, and the former
+   generic JavaScript generator package has been deleted rather than renamed.
 3. Update cross-package imports
 4. Add `evidence/` directories with contract and collector to each transmutation module
 5. Update `createNodeRuntime` to discover transmutation modules
@@ -792,7 +793,8 @@ If a generator needs a domain-specific shape (e.g., JS generators need `Schema`)
 
 **Files**:
 
-- `packages/wesley-generator-js/src/index.mjs` — internalize `irToSchema()` conversion
+- `packages/wesley-cli/src/utils/table-projections.mjs` — keep remaining
+  table-shaped TypeScript/Zod compatibility local until the legacy CLI exits
 - external PostgreSQL/Supabase module package — align `emitDDL()` etc.
 - `packages/wesley-core/src/application/LoweringEngine.mjs` — centralize SDL/IR/domain lowering before orchestration
 - `packages/wesley-cli/src/commands/typescript.mjs`, `zod.mjs` — remove inline adapter calls

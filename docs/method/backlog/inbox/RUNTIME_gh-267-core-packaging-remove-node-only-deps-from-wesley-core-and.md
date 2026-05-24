@@ -27,7 +27,8 @@ What
 
 - Move Node-only deps out of core:
   - `chokidar` → used by CLI watch; move to `@wesley/cli`.
-  - `ts-morph` → only used by JS generator; move to `@wesley/generator-js`.
+  - `ts-morph` → formerly used by the deleted JS generator; keep it out of
+    `@wesley/core` and do not reintroduce it without a new external owner.
 - Remove `engines.node` from `@wesley/core` (keep it in host packages).
 - Add a check in preflight to fail if core declares Node engines or Node-only deps.
 

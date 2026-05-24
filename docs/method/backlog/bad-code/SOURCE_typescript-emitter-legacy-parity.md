@@ -30,5 +30,5 @@ reduced to a compatibility note.
 - `crates/wesley-emit-typescript/src/lib.rs`
 - `crates/wesley-cli/src/main.rs`
 - `packages/wesley-cli/src/commands/typescript.mjs`
-- `packages/wesley-generator-js/`
+- `packages/wesley-cli/src/utils/table-projections.mjs`
 - `docs/LEGACY_NODE_MIGRATION.md`

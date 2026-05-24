@@ -16,8 +16,5 @@
 /packages/wesley-cli/ @flyingrobots
 /packages/wesley-host-node/ @flyingrobots
 
-# Generators
-/packages/wesley-generator-js/ @flyingrobots
-
 # Internals
 /packages/wesley-holmes/ @flyingrobots

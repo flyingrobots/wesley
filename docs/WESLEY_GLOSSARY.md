@@ -53,14 +53,11 @@ Examples:
 
 #### Generators
 
-Packages that emit generic target artifacts from Wesley IR.
+Packages or Rust crates that emit target artifacts from Wesley IR.
 
-Examples:
-
-- `@wesley/generator-js`
-
-Historical product and database generators still present in this repo are
-extraction debt. They should move into their owning module repos.
+The former generic `@wesley/generator-js` package has been deleted. Retained
+generic TypeScript output now belongs in Rust-native emitters; target-specific
+or product-specific generators should live with their owning module repos.
 
 #### Hosts
 

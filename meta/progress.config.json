@@ -7,7 +7,6 @@
       "@wesley/core": 0.25,
       "@wesley/cli": 0.15,
       "@wesley/host-node": 0.15,
-      "@wesley/generator-js": 0.1,
       "@wesley/holmes": 0.1,
       "@wesley/host-browser": 0,
       "@wesley/host-deno": 0,
@@ -43,13 +42,6 @@
       "ci": "browser-smoke.yml",
       "readme": "packages/wesley-host-browser/README.md",
       "notes": "Host experiment pending deletion or externalization"
-    },
-    {
-      "name": "@wesley/generator-js",
-      "status": "Legacy Compatibility",
-      "ci": "pkg-generator-js.yml",
-      "readme": "packages/wesley-generator-js/README.md",
-      "notes": "Legacy JS/Zod emitters; retained TypeScript output lives in Rust emitters"
     },
     {
       "name": "@wesley/holmes",

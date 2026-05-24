@@ -4,9 +4,8 @@
 
 This audit records the NR-082 through NR-094 cleanup tranche. It is not the
 final Node retirement closeout: `packages/wesley-core/`, `packages/wesley-cli/`,
-`packages/wesley-host-node/`, `packages/wesley-runtime-node/`,
-`packages/wesley-generator-js/`, and `packages/wesley-holmes/` still have
-explicit open gates.
+`packages/wesley-host-node/`, `packages/wesley-runtime-node/`, and
+`packages/wesley-holmes/` still have explicit open gates.
 
 ## Deleted Packages
 
@@ -66,15 +65,14 @@ larger `wesley-core` deletion/extraction gate closes.
 
 ## Remaining Open Gates
 
-| Slice  | Surface                         | Reason it remains open                                                           |
-| ------ | ------------------------------- | -------------------------------------------------------------------------------- |
-| NR-076 | `packages/wesley-core/`         | Still feeds Holmes, compatibility packages, JS generator, and migration scripts. |
-| NR-077 | `packages/wesley-cli/`          | Still owns legacy assurance/runtime commands and compatibility tests.            |
-| NR-078 | `packages/wesley-host-node/`    | Still needed for compatibility workflows and legacy CLI smoke tests.             |
-| NR-079 | `packages/wesley-runtime-node/` | Still used by Holmes/runtime evidence and parser/parity migration scripts.       |
-| NR-080 | `packages/wesley-generator-js/` | Still used by legacy Zod/models/TypeScript compatibility commands.               |
-| NR-095 | Final closeout                  | Blocked until NR-076 through NR-080 are actually closed or externally extracted. |
-| NR-096 | Remove active campaign          | Blocked until final closeout is merged.                                          |
+| Slice  | Surface                         | Reason it remains open                                                                            |
+| ------ | ------------------------------- | ------------------------------------------------------------------------------------------------- |
+| NR-076 | `packages/wesley-core/`         | Still feeds Holmes, compatibility packages, legacy CLI compatibility code, and migration scripts. |
+| NR-077 | `packages/wesley-cli/`          | Still owns legacy assurance/runtime commands and compatibility tests.                             |
+| NR-078 | `packages/wesley-host-node/`    | Still needed for compatibility workflows and legacy CLI smoke tests.                              |
+| NR-079 | `packages/wesley-runtime-node/` | Still used by Holmes/runtime evidence and parser/parity migration scripts.                        |
+| NR-095 | Final closeout                  | Blocked until NR-076 through NR-080 are actually closed or externally extracted.                  |
+| NR-096 | Remove active campaign          | Blocked until final closeout is merged.                                                           |
 
 ## Verification
 

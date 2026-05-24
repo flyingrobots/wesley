@@ -90,6 +90,11 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Removed
 
+- **Legacy JavaScript generator package**: Deleted
+  `packages/wesley-generator-js`, removed its package workflow, lockfile
+  importer, progress row, host shims, and `models` command. Retained generic
+  TypeScript output belongs in Rust emitters; Zod remains only as CLI-local
+  compatibility debt.
 - **Leaf legacy packages**: Deleted `packages/wesley-scaffold-multitenant`,
   `packages/wesley-test-fixtures`, and `packages/wesley-tasks`; removed the
   package-only `pkg-tasks` workflow, lockfile importers, progress rows, and the
