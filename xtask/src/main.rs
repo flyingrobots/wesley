@@ -1007,11 +1007,12 @@ fn check_pnpm_wesley_front_door_docs(
     let context_terms = ledger_strings(ledger, "pnpmWesleyCompatibilityContext", failures);
     for doc in ledger_strings(ledger, "frontDoorDocs", failures) {
         let path = root.join(&doc);
-        let content = fs::read_to_string(&path).map_err(|source| {
-            Error::Usage(format!(
-                "failed to read `{}`: {source}",
+        let content = fs::read_to_string(&path).map_err(|source| Error::CheckFailed {
+            check: "node retirement ledger".to_string(),
+            failures: vec![format!(
+                "front-door doc `{}` is missing or unreadable: {source}",
                 display_path(root, &path)
-            ))
+            )],
         })?;
         let lines = content.lines().collect::<Vec<_>>();
         for (index, line) in lines.iter().enumerate() {
@@ -1926,6 +1927,37 @@ mod tests {
                 "{name} README must use package-safe links"
             );
         }
+    }
+
+    #[test]
+    fn node_retirement_front_door_doc_read_errors_are_check_failures() {
+        let root = env::temp_dir().join(format!(
+            "wesley-xtask-front-door-doc-{}",
+            std::process::id()
+        ));
+        fs::create_dir_all(&root).expect("temp root should be created");
+        let ledger = serde_json::json!({
+            "frontDoorDocs": ["missing.md"],
+            "pnpmWesleyCompatibilityContext": ["legacy"]
+        });
+        let mut failures = Vec::new();
+
+        let error = check_pnpm_wesley_front_door_docs(&root, &ledger, &mut failures)
+            .expect_err("missing front-door doc should be a check failure");
+
+        match error {
+            Error::CheckFailed { check, failures } => {
+                assert_eq!(check, "node retirement ledger");
+                assert_eq!(failures.len(), 1);
+                assert!(
+                    failures[0].contains("front-door doc `missing.md` is missing or unreadable"),
+                    "unexpected failure: {:?}",
+                    failures
+                );
+            }
+            other => panic!("expected CheckFailed, got {other:?}"),
+        }
+        fs::remove_dir_all(root).expect("temp root should be removed");
     }
 
     #[test]

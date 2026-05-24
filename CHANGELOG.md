@@ -117,6 +117,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **Node retirement doc guard errors**: missing or unreadable
+  `frontDoorDocs` entries now fail `cargo xtask docs-check` as Node retirement
+  ledger check failures instead of CLI usage errors.
 - **Node retirement validation map**: `docs/END_TO_END.md` now routes the Node
   retirement ledger guard through Rust preflight, matching the actual
   `cargo xtask docs-check` ownership.
