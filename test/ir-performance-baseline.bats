@@ -78,6 +78,7 @@ NODE
   assert_output --partial '"memory": {'
   assert_output --partial '"status": "not-captured"'
   assert_output --partial '"legacyJsLowering": {'
+  assert_output --partial $'"legacyJsLowering": {\n      "status": "not-captured"'
 
   run grep -c '^schema lower' "$FAKE_WESLEY_CALL_LOG"
   assert_success
