@@ -422,7 +422,7 @@ if (args[0] === 'schema' && args[1] === 'lower') {
     console.error('Parse error: expected R_CURLY');
     process.exit(1);
   }
-  if (sdl.includes('@wes_table @table')) {
+  if (sdl.includes('@wes_table @table') || sdl.includes('@table @wes_table')) {
     console.error("Lowering error: Duplicate directive '@wes_table' in directive");
     process.exit(1);
   }
@@ -433,6 +433,8 @@ if (args[0] === 'schema' && args[1] === 'lower') {
     process.exit(0);
   }
   console.log(sha256Hex(canonicalizeJSON(semanticIr(ir))));
+} else if (args[0] === 'normalize-sdl' && args.includes('--hash')) {
+  console.log(sha256Hex(sdl));
 } else {
   console.error(`unexpected fake wesley args: ${args.join(' ')}`);
   process.exit(2);
@@ -722,9 +724,10 @@ NODE
   assert_output --partial '"tool": "parser-parity-spike.v0"'
   assert_output --partial '"fixture": "test/fixtures/ir-parity/nested-list-schema.graphql"'
   assert_output --partial '"observed": "both-accept"'
-  assert_output --partial '"fixture": "test/fixtures/ir-parity-invalid/parser-syntax-error.graphql"'
+  assert_output --partial '"normalizedSdlHash"'
+  assert_output --partial '"fixture": "test/fixtures/parser-diagnostics/parser-syntax-error.graphql"'
   assert_output --partial '"expected": "both-reject"'
-  assert_output --partial '"fixture": "test/fixtures/ir-parity-invalid/duplicate-directive-alias.graphql"'
+  assert_output --partial '"fixture": "test/fixtures/parser-diagnostics/duplicate-directive-alias.graphql"'
   assert_output --partial '"expected": "both-reject"'
   assert_output --partial '"status": "nested-list-type-family-covered"'
 }
@@ -734,6 +737,6 @@ NODE
   assert_success
   assert_output --partial $'test/fixtures/ir-parity/small-schema.graphql\tboth-accept'
   assert_output --partial $'test/fixtures/ir-parity/nested-list-schema.graphql\tboth-accept'
-  assert_output --partial $'test/fixtures/ir-parity-invalid/parser-syntax-error.graphql\tboth-reject'
-  assert_output --partial $'test/fixtures/ir-parity-invalid/duplicate-directive-alias.graphql\tboth-reject'
+  assert_output --partial $'test/fixtures/parser-diagnostics/parser-syntax-error.graphql\tboth-reject'
+  assert_output --partial $'test/fixtures/parser-diagnostics/duplicate-directive-alias.graphql\tboth-reject'
 }
