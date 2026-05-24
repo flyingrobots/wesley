@@ -178,7 +178,7 @@ exists.
   Echo, or jedit semantics leak into generic output.
 - [x] NR-029 Port or retire legacy `models` command behavior.
 - [x] NR-030 Port or retire legacy `init` command behavior.
-- [ ] NR-031 Port a narrow Rust `doctor` command only for Rust-native health
+- [x] NR-031 Port a narrow Rust `doctor` command only for Rust-native health
   checks.
 - [ ] NR-032 Extract certificate creation/signing/verification commands from the
   compiler front door.

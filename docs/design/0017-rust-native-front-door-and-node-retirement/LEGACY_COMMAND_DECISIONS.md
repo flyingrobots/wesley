@@ -18,10 +18,12 @@ belong in external modules or owning repos.
 | `zod` | Extract from core Wesley. | Zod is a JavaScript validation target, not compiler truth. It can be valuable as an external module or package, but it should not force a Rust Zod emitter crate into the core retirement path. |
 | `models` | Retire from core Wesley. | Model-class scaffolding is target/application ergonomics. The retained generic model facts now appear through Rust and TypeScript emitters; richer model classes need an owning target module. |
 | `init` | Retire legacy scaffolding. | The historical `init` shape can smuggle product conventions into generic Wesley. A future native `init` may create a tiny generic starter schema, but that is a new proposal, not a port of the Node command. |
+| `doctor` | Port a narrow Rust-native health check. | The retained native command checks only the Rust CLI, Rust lowerer, normalized SDL hash evidence, and Rust emitter crates. Node version, config, plugin, and package diagnostics remain legacy-only. |
 
 ## Current Native Replacement
 
 ```bash
+wesley doctor
 wesley emit rust --schema <path> --out <path> --metadata-out <path>
 wesley emit typescript --schema <path> --out <path> --metadata-out <path>
 ```

@@ -12,6 +12,7 @@ fn help_exits_zero_without_footprint_command() {
     assert!(stdout.contains("schema lower"));
     assert!(stdout.contains("schema operations"));
     assert!(stdout.contains("schema diff"));
+    assert!(stdout.contains("doctor"));
     assert!(stdout.contains("emit rust"));
     assert!(stdout.contains("emit typescript"));
     assert!(stdout.contains("operation selections"));
@@ -42,6 +43,71 @@ fn nested_command_help_exits_zero() {
     assert!(output.status.success());
     let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
     assert!(stdout.contains("wesley schema lower --schema <path>"));
+}
+
+#[test]
+fn doctor_help_exits_zero() {
+    let output = wesley()
+        .args(["doctor", "--help"])
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+
+    assert!(stdout.contains("Wesley native doctor"));
+    assert!(stdout.contains("wesley doctor [--json]"));
+    assert!(stdout.contains("Rust-native health checks only"));
+    assert!(stderr.is_empty());
+}
+
+#[test]
+fn doctor_reports_rust_native_health_checks_as_text() {
+    let output = wesley().arg("doctor").output().expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+
+    assert!(stdout.contains("[pass] wesley-cli "));
+    assert!(stdout.contains("[pass] wesley-core lowerer accepts minimal SDL"));
+    assert!(stdout.contains("[pass] normalized SDL hash evidence is available"));
+    assert!(stdout.contains("[pass] wesley-emit-rust "));
+    assert!(stdout.contains("[pass] wesley-emit-typescript "));
+    assert!(!stdout.contains("Node.js"));
+    assert!(!stdout.contains("wesley.config.mjs"));
+    assert!(!stdout.contains("Plugins"));
+    assert!(stderr.is_empty());
+}
+
+#[test]
+fn doctor_reports_rust_native_health_checks_as_json() {
+    let output = wesley()
+        .args(["doctor", "--json"])
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+    let report: serde_json::Value = serde_json::from_str(&stdout).expect("stdout should be json");
+
+    assert_eq!(report["ok"], true);
+    assert_eq!(report["executionMode"], "rust-native");
+    assert_eq!(
+        report["checks"]
+            .as_array()
+            .expect("checks should be array")
+            .len(),
+        5
+    );
+    assert_eq!(report["checks"][0]["id"], "native-cli");
+    assert_eq!(report["checks"][1]["id"], "rust-core-lowering");
+    assert_eq!(report["checks"][2]["id"], "normalized-sdl-hash");
+    assert_eq!(report["checks"][3]["id"], "rust-emitter");
+    assert_eq!(report["checks"][4]["id"], "typescript-emitter");
+    assert!(stderr.is_empty());
 }
 
 #[test]

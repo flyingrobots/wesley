@@ -105,9 +105,15 @@ Native Wesley keeps explicit generic emit commands for retained model and
 operation-binding output:
 
 ```bash
+wesley doctor
 wesley emit rust --schema <path> --out <path> --metadata-out <path>
 wesley emit typescript --schema <path> --out <path> --metadata-out <path>
 ```
+
+The native `doctor` command is intentionally narrow: it checks only the Rust
+CLI, Rust lowerer, normalized SDL hash evidence, and Rust emitter crates. It
+does not recreate the legacy Node command's config, plugin, package, or Node
+runtime diagnostics.
 
 The legacy umbrella `generate` command is being replaced by these explicit
 native commands plus external modules for target-owned outputs. Legacy `zod`,

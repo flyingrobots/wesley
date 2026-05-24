@@ -14,6 +14,7 @@ Compile authored GraphQL into generic or explicitly selected generated
 artifacts.
 
 - **Inspect native CLI**: `cargo wesley --help`
+- **Doctor native CLI**: `cargo wesley doctor`
 - **Install alpha from crates.io**: `cargo install wesley-cli --version 0.0.4`
 - **Install locally**: `cargo install --locked --path crates/wesley-cli`
 - **Rust preflight**: `cargo xtask preflight`
@@ -27,6 +28,9 @@ Echo-specific footprint honesty checks.
 Use `wesley normalize-sdl --schema <path>` when you need the consolidated,
 sorted SDL view that the Rust compiler sees before emission or diffing. Add
 `--hash` when you need stable evidence bytes for a normalized SDL snapshot.
+Use `wesley doctor` when you need a narrow Rust-native health check for the
+native CLI, Rust lowerer, normalized SDL hashing, and Rust emitter crates. It
+does not inspect legacy Node config, plugins, or package state.
 
 Use `cargo install wesley-cli --version 0.0.4` when you want the published
 alpha `wesley` binary on your PATH. Use
