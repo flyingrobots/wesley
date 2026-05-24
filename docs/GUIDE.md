@@ -24,6 +24,8 @@ native binary stays small while core behavior moves into the Rust library.
 `wesley-core` exposes generic operation analysis primitives for resolving
 selection paths and extracting directive arguments; Echo-owned tooling owns
 Echo-specific footprint honesty checks.
+Use `wesley normalize-sdl --schema <path>` when you need the consolidated,
+sorted SDL view that the Rust compiler sees before emission or diffing.
 
 Use `cargo install wesley-cli --version 0.0.4` when you want the published
 alpha `wesley` binary on your PATH. Use

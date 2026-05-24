@@ -6,8 +6,9 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
 use wesley_core::{
     compute_registry_hash, diff_schema_sdl, extract_operation_directive_args,
-    list_schema_operations_sdl, lower_schema_sdl, resolve_operation_selections,
-    resolve_operation_selections_with_schema, SchemaDelta, WesleyError,
+    list_schema_operations_sdl, lower_schema_sdl, normalize_schema_sdl,
+    resolve_operation_selections, resolve_operation_selections_with_schema, SchemaDelta,
+    WesleyError,
 };
 use wesley_emit_rust::emit_rust_with_operations;
 use wesley_emit_typescript::emit_typescript_with_operations;
@@ -34,6 +35,11 @@ fn run(args: Vec<String>) -> Result<u8, CliError> {
             print_help();
             Ok(EXIT_OK)
         }
+        Some("normalize-sdl") if wants_help(&args[1..]) => {
+            print_normalize_sdl_help();
+            Ok(EXIT_OK)
+        }
+        Some("normalize-sdl") => run_normalize_sdl_command(&args[1..]),
         Some("schema") => run_schema_command(&args[1..]),
         Some("emit") => run_emit_command(&args[1..]),
         Some("operation") => run_operation_command(&args[1..]),
@@ -43,6 +49,16 @@ fn run(args: Vec<String>) -> Result<u8, CliError> {
         }
         Some(command) => Err(CliError::usage(format!("unknown command '{command}'"))),
     }
+}
+
+fn run_normalize_sdl_command(args: &[String]) -> Result<u8, CliError> {
+    let options = parse_options(args, "normalize-sdl")?;
+    let schema_path = options.required_schema("normalize-sdl")?;
+    let sdl = read_file(&schema_path, "schema")?;
+    let normalized = normalize_schema_sdl(&sdl)?;
+
+    println!("{normalized}");
+    Ok(EXIT_OK)
 }
 
 fn run_schema_command(args: &[String]) -> Result<u8, CliError> {
@@ -635,6 +651,7 @@ Usage:
   wesley <command> [options]
 
 Commands:
+  normalize-sdl            Print the Rust-core normalized SDL view
   schema lower              Lower GraphQL SDL to Wesley L1 IR JSON
   schema hash               Print the Wesley L1 registry hash for GraphQL SDL
   schema operations         List Query/Mutation/Subscription root operations
@@ -648,6 +665,19 @@ Commands:
 Options:
   -h, --help     Show help
   -V, --version  Show version"
+    );
+}
+
+fn print_normalize_sdl_help() {
+    println!(
+        "\
+Wesley SDL normalizer
+
+Usage:
+  wesley normalize-sdl --schema <path>
+
+Options:
+  -s, --schema <path>  GraphQL SDL file"
     );
 }
 

@@ -8,6 +8,7 @@ fn help_exits_zero_without_footprint_command() {
     assert!(output.status.success());
     let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
     assert!(stdout.contains("Wesley native CLI"));
+    assert!(stdout.contains("normalize-sdl"));
     assert!(stdout.contains("schema lower"));
     assert!(stdout.contains("schema operations"));
     assert!(stdout.contains("schema diff"));
@@ -41,6 +42,28 @@ fn nested_command_help_exits_zero() {
     assert!(output.status.success());
     let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
     assert!(stdout.contains("wesley schema lower --schema <path>"));
+}
+
+#[test]
+fn normalize_sdl_emits_sorted_consolidated_sdl() {
+    let output = wesley()
+        .args(["normalize-sdl", "--schema"])
+        .arg(fixture(
+            "test/fixtures/normalized-sdl/extension-folded.graphql",
+        ))
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+    let expected = std::fs::read_to_string(fixture(
+        "test/fixtures/normalized-sdl/extension-folded.normalized.graphql",
+    ))
+    .expect("normalized SDL fixture should read");
+
+    assert_eq!(stdout, expected);
+    assert!(stderr.is_empty());
 }
 
 #[test]

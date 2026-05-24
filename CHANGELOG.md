@@ -8,6 +8,15 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- **Rust SDL normalizer**: Added `wesley normalize-sdl --schema <path>` and a
+  Rust-core `normalize_schema_sdl` API that prints a deterministic,
+  extension-folded SDL view from compiler facts, with golden fixtures for
+  sorted types, fields, arguments, unions, defaults, and nested list
+  references.
+- **Legacy Node retirement campaign**: Added design packet `0017`, a Node
+  retirement ledger, and a 96-slice `BEARING` checklist that tracks the
+  Rust-native front-door work required to remove Node as compiler, runtime,
+  release, and documentation authority.
 - **Rust core binding observatory**: Added `pnpm perf:bindings` and
   `pnpm perf:ir -- --observatory` to emit
   `rust-core-binding-observatory.v0` reports that separate Rust CLI, legacy JS

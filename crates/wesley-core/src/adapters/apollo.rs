@@ -2,6 +2,7 @@
 
 use crate::domain::error::WesleyError;
 use crate::domain::ir::*;
+use crate::domain::normalized_sdl::render_normalized_sdl;
 use crate::domain::operation::{
     OperationArgument, OperationDirectiveArgs, OperationType, SchemaOperation,
 };
@@ -43,6 +44,13 @@ impl LoweringPort for ApolloLoweringAdapter {
 /// Lowers GraphQL SDL into the Wesley L1 IR using the Apollo parser adapter.
 pub fn lower_schema_sdl(sdl: &str) -> Result<WesleyIR, WesleyError> {
     ApolloLoweringAdapter::new(0).parse_and_lower(sdl)
+}
+
+/// Renders GraphQL SDL as a deterministic Rust-core semantic view.
+pub fn normalize_schema_sdl(sdl: &str) -> Result<String, WesleyError> {
+    let ir = lower_schema_sdl(sdl)?;
+
+    Ok(render_normalized_sdl(&ir))
 }
 
 /// Computes the structural L1 delta between two GraphQL SDL documents.

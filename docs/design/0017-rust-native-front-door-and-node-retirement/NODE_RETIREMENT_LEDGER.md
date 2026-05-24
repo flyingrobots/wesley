@@ -1,0 +1,75 @@
+# Node Retirement Ledger
+
+This ledger is the active inventory for retiring the historical Node Wesley
+surface. `docs/LEGACY_NODE_MIGRATION.md` remains the public migration summary;
+this packet ledger is the working control surface for the 96-slice campaign.
+
+## Dispositions
+
+| Disposition | Meaning |
+| --- | --- |
+| Port | Rebuild useful behavior in Rust. |
+| Extract | Move useful behavior to an owning repo, module, or package family. |
+| Delete | Remove after dependents and evidence no longer need it. |
+| Defer | Keep temporarily because the replacement boundary is not designed yet. |
+
+## Package Inventory
+
+| Surface | Current role | Disposition | Retirement gate |
+| --- | --- | --- | --- |
+| `packages/wesley-core/` | Historical JS compiler domain, generation pipeline, schema utilities, runtime helpers. | Port then delete | Rust core owns compiler facts, emitters own generic projections, and any remaining product/domain behavior is rejected or extracted. |
+| `packages/wesley-cli/` | Historical command framework for generate, transform, TypeScript, Zod, diff, cert, and Holmes-era commands. | Delete after command migration | Every useful command is ported, extracted, or rejected; docs no longer present `pnpm wesley` as product front door. |
+| `packages/wesley-host-node/` | Node executable wrapper and runtime adapter. | Delete | Tests and docs use native CLI except compatibility-only lanes. |
+| `packages/wesley-runtime-node/` | Node module loading, counterfactual surface, runtime store helpers. | Extract or delete | Module/runtime evidence moves to Rust protocol, assurance tooling, or owning modules. |
+| `packages/wesley-generator-js/` | Legacy TypeScript/Zod projection surface. | Port useful projections | Rust emitters cover retained generic output or the output is moved to external modules. |
+| `packages/wesley-generator-vue/` | Experimental Vue projection. | Delete or externalize | A target owner accepts it, or it leaves Wesley. |
+| `packages/wesley-holmes/` | Holmes/Moriarty evidence and counterfactual tooling. | Extract or rebuild later | Assurance tooling has an explicit package/repo boundary separate from compiler authority. |
+| `packages/wesley-host-browser/` | Browser-host experiment. | Delete or externalize | Browser compatibility is an external ecosystem package or a documented non-goal. |
+| `packages/wesley-host-bun/` | Bun-host experiment. | Delete | Compatibility evidence is obsolete or externalized. |
+| `packages/wesley-host-deno/` | Deno-host experiment. | Delete | Compatibility evidence is obsolete or externalized. |
+| `packages/wesley-scaffold-multitenant/` | Product scaffold. | Delete or move to product owner | Product/domain scaffolding leaves generic Wesley. |
+| `packages/wesley-tasks/` | Task graph model. | Port only if generic | Rust runtime planning proves it needs the concept; otherwise delete. |
+| `packages/wesley-test-fixtures/` | JS fixture helper package. | Replace | Useful fixtures move into plain `test/fixtures` or Rust tests. |
+
+## Command Inventory
+
+| Legacy command | Current file | Disposition | Rust or external exit |
+| --- | --- | --- | --- |
+| `generate` | `packages/wesley-cli/src/commands/generate.mjs` | Port in pieces, then delete | Native `emit` commands and external modules replace useful outputs. |
+| `transform` | `packages/wesley-cli/src/commands/transform.mjs` | Delete | Compatibility wrapper around generation; do not recreate as a core noun by default. |
+| `compile` | `packages/wesley-cli/src/commands/compile.mjs` | Defer, then rebuild | Replace Node module dispatch with Rust registry or external-process target protocol. |
+| `typescript` / `ts` | `packages/wesley-cli/src/commands/typescript.mjs` | Partially ported | `wesley emit typescript` owns retained generic TypeScript output. |
+| `zod` | `packages/wesley-cli/src/commands/zod.mjs` | Port or extract | Decide whether Zod remains generic Wesley. |
+| `models` | `packages/wesley-cli/src/commands/models.mjs` | Delete or extract | Model-class scaffolding is not compiler truth. |
+| `diff` | `packages/wesley-cli/src/commands/diff.mjs` | Ported for L1 structure | `wesley schema diff` owns generic schema diff; operation-argument deltas remain separate. |
+| `init` | `packages/wesley-cli/src/commands/init.mjs` | Port small or delete | Native `init` may only create tiny generic starter schemas. |
+| `doctor` | `packages/wesley-cli/src/commands/doctor.mjs` | Port narrow | Rust-native health checks only. |
+| `validate-bundle` | `packages/wesley-cli/src/commands/validate-bundle.mjs` | Defer | Port only if Rust evidence bundles remain Wesley-owned. |
+| `runs` | `packages/wesley-cli/src/commands/runs.mjs` | Extract or defer | Runtime ledger inspection belongs with assurance/runtime evidence if not compiler-core. |
+| `cert-create` | `packages/wesley-cli/src/commands/cert-create.mjs` | Extract | Certificate workflow exits the compiler front door. |
+| `cert-sign` / `stake` | `packages/wesley-cli/src/commands/cert-sign.mjs` | Extract | Certificate workflow exits the compiler front door. |
+| `cert-verify` | `packages/wesley-cli/src/commands/cert-verify.mjs` | Extract | Certificate workflow exits the compiler front door. |
+| `cert-badge` | `packages/wesley-cli/src/commands/cert-badge.mjs` | Extract or delete | Keep only with certificate tooling. |
+
+## Shadow Inventory
+
+| Shadow | Why it matters | Disposition |
+| --- | --- | --- |
+| README package matrix | Can imply npm package authority even when Rust is the product spine. | Update continuously as packages are ported, extracted, or deleted. |
+| `docs/END_TO_END.md` | Can accidentally tell the system story through old packages. | Keep Rust-native pipeline first; describe Node only as historical support. |
+| `docs/ENTRYPOINTS.md` | Controls operator command choice. | Keep native CLI and `cargo xtask` first. |
+| `docs/GUIDE.md` | Controls contributor lane choice. | Keep Rust core and native CLI as core lane. |
+| CI job names | Can hide product checks behind legacy package checks. | Split Rust product checks from legacy compatibility checks. |
+| `pnpm wesley` examples | Can resurrect Node as the apparent front door. | Allow only in compatibility/migration docs until retired. |
+| JS/Rust parity sentinels | Useful while migrating, harmful if they keep legacy JS as permanent authority. | Archive as historical evidence after Rust self-consistency is sufficient. |
+| `package.json` scripts | Can keep the Node workspace as the release spine. | Retire scripts as their package surfaces close. |
+| `pnpm-lock.yaml` | Carries dependency families for legacy packages. | Shrink only after package deletion; do not churn early. |
+
+## First Drift Check
+
+Before deleting major Node surfaces, add automation that fails when:
+
+- a new package under `packages/` lacks a ledger disposition
+- docs promote `pnpm wesley` as the primary command
+- JS compiler files gain new public compiler behavior without a Rust counterpart
+- a CI job uses a legacy package check as the only product health signal

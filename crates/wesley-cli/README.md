@@ -4,6 +4,9 @@
 Rust compiler kernel, schema inspection commands, schema diffing, and Rust or
 TypeScript emitter commands.
 
+Use `wesley normalize-sdl --schema <path>` to print the deterministic,
+extension-folded SDL view produced from Rust compiler facts.
+
 The crate is named `wesley-cli` because the bare `wesley` crate name is already
 occupied on crates.io.
 

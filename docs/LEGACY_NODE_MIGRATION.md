@@ -6,6 +6,10 @@ This is the deletion map for the historical Node Wesley surface.
 
 The goal is not to port every file. The goal is to keep useful Wesley
 capabilities while removing Node as a product entry point.
+The active retirement campaign is tracked by
+[design packet `0017`](./design/0017-rust-native-front-door-and-node-retirement/rust-native-front-door-and-node-retirement.md)
+and its
+[Node retirement ledger](./design/0017-rust-native-front-door-and-node-retirement/NODE_RETIREMENT_LEDGER.md).
 
 The native Rust distribution path is crates.io: `cargo install wesley-cli`
 installs the `wesley` binary. Sibling-repo paths and Node entrypoints are local
